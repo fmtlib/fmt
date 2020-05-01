@@ -314,6 +314,9 @@ Projects using this library
 * `PenUltima Online (POL) <https://www.polserver.com/>`_:
   An MMO server, compatible with most Ultima Online clients
 
+* `PyTorch <https://github.com/pytorch/pytorch>`_: an open-source machine
+  learning library
+
 * `quasardb <https://www.quasardb.net/>`_: A distributed, high-performance,
   associative database
 
@@ -327,9 +330,6 @@ Projects using this library
 
 * `rpclib <http://rpclib.net/>`_: A modern C++ msgpack-RPC server and client
   library
-
-* `Saddy <https://github.com/mamontov-cpp/saddy-graphics-engine-2d>`_:
-  Small crossplatform 2D graphic engine
 
 * `Salesforce Analytics Cloud
   <https://www.salesforce.com/analytics-cloud/overview/>`_:
