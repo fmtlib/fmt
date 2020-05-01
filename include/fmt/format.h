@@ -1413,6 +1413,33 @@ inline OutputIt write_padded(OutputIt out,
   return write_padded(out, specs, size, size, f);
 }
 
+template <typename Char> struct write_int_params {
+  std::size_t size;
+  std::size_t padding;
+  Char fill;
+};
+
+template <typename Char>
+write_int_params<Char> make_write_int_params(int num_digits, string_view prefix,
+                                             basic_format_specs<Char>& specs) {
+  std::size_t size = prefix.size() + to_unsigned(num_digits);
+  Char fill = specs.fill[0];
+  std::size_t padding = 0;
+  if (specs.align == align::numeric) {
+    auto width = to_unsigned(specs.width);
+    if (width > size) {
+      padding = width - size;
+      size = width;
+    }
+  } else if (specs.precision > num_digits) {
+    size = prefix.size() + to_unsigned(specs.precision);
+    padding = to_unsigned(specs.precision - num_digits);
+    fill = static_cast<Char>('0');
+  }
+  if (specs.align == align::none) specs.align = align::right;
+  return {size, padding, fill};
+}
+
 // This template provides operations for formatting and writing data into a
 // character range.
 template <typename Range> class basic_writer {
@@ -1436,25 +1463,11 @@ template <typename Range> class basic_writer {
   // where <digits> are written by f(it).
   template <typename F>
   void write_int(int num_digits, string_view prefix, format_specs specs, F f) {
-    std::size_t size = prefix.size() + to_unsigned(num_digits);
-    char_type fill = specs.fill[0];
-    std::size_t padding = 0;
-    if (specs.align == align::numeric) {
-      auto unsiged_width = to_unsigned(specs.width);
-      if (unsiged_width > size) {
-        padding = unsiged_width - size;
-        size = unsiged_width;
-      }
-    } else if (specs.precision > num_digits) {
-      size = prefix.size() + to_unsigned(specs.precision);
-      padding = to_unsigned(specs.precision - num_digits);
-      fill = static_cast<char_type>('0');
-    }
-    if (specs.align == align::none) specs.align = align::right;
-    out_ = write_padded(out_, specs, size, [=](reserve_iterator it) {
+    auto params = make_write_int_params(num_digits, prefix, specs);
+    out_ = write_padded(out_, specs, params.size, [=](reserve_iterator it) {
       if (prefix.size() != 0)
         it = copy_str<char_type>(prefix.begin(), prefix.end(), it);
-      it = std::fill_n(it, padding, fill);
+      it = std::fill_n(it, params.padding, params.fill);
       f(it);
       return it;
     });
