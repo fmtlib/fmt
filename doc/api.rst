@@ -408,7 +408,7 @@ formatting::
 
   std::time_t t = std::time(nullptr);
   // Prints "The date is 2016-04-29." (with the current date)
-  fmt::print("The date is {:%Y-%m-%d}.", *std::localtime(&t));
+  fmt::print("The date is {:%Y-%m-%d}.", fmt::localtime(t));
 
 The format string syntax is described in the documentation of
 `strftime <http://en.cppreference.com/w/cpp/chrono/c/strftime>`_.
