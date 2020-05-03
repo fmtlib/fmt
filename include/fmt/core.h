@@ -117,6 +117,42 @@
 #  endif
 #endif
 
+#ifndef FMT_THROW
+#  if FMT_EXCEPTIONS
+#    if FMT_MSC_VER || FMT_NVCC
+FMT_BEGIN_NAMESPACE
+namespace internal {
+template <typename Exception> inline void do_throw(const Exception& x) {
+  // Silence unreachable code warnings in MSVC and NVCC because these
+  // are nearly impossible to fix in a generic code.
+  volatile bool b = true;
+  if (b) throw x;
+}
+}  // namespace internal
+FMT_END_NAMESPACE
+#      define FMT_THROW(x) internal::do_throw(x)
+#    else
+#      define FMT_THROW(x) throw x
+#    endif
+#    define FMT_RETHROW() throw
+#  else
+#    define FMT_THROW(x)              \
+      do {                            \
+        static_cast<void>(sizeof(x)); \
+        FMT_ASSERT(false, "");        \
+      } while (false)
+#    define FMT_RETHROW() FMT_ASSERT(false, "")
+#  endif
+#endif
+
+#if FMT_EXCEPTIONS
+#  define FMT_TRY try
+#  define FMT_CATCH(x) catch (x)
+#else
+#  define FMT_TRY if (true)
+#  define FMT_CATCH(x) if (false)
+#endif
+
 // Define FMT_USE_NOEXCEPT to make fmt use noexcept (C++11 feature).
 #ifndef FMT_USE_NOEXCEPT
 #  define FMT_USE_NOEXCEPT 0
@@ -1516,7 +1552,8 @@ class dynamic_format_arg_store
 
   unsigned long long get_types() const {
     return internal::is_unpacked_bit | data_.size() |
-           (named_info_.empty() ? 0ULL : internal::has_named_args_bit);
+           (named_info_.empty() ? 0ULL :
+               static_cast<unsigned long long>(internal::has_named_args_bit));
   }
 
   const basic_format_arg<Context>* data() const {
@@ -1532,12 +1569,12 @@ class dynamic_format_arg_store
     if (named_info_.empty())
       data_.insert(data_.begin(), basic_format_arg<Context>{});
     data_.emplace_back(internal::make_arg<Context>(arg));
-    try {
+    FMT_TRY {
       named_info_.push_back({arg.name, static_cast<int>(data_.size() - 2u)});
       data_[0].value_.named_args = {named_info_.data(), named_info_.size()};
-    } catch (...) {
+    } FMT_CATCH(...) {
       data_.pop_back();
-      throw;
+      FMT_RETHROW();
     }
   }
 
