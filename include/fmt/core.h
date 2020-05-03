@@ -284,7 +284,7 @@ namespace internal {
 
 // A helper function to suppress bogus "conditional expression is constant"
 // warnings.
-template <typename T> FMT_CONSTEXPR T const_check(T value) { return value; }
+template <typename T> constexpr T const_check(T value) { return value; }
 
 // A workaround for gcc 4.8 to make void_t work in a SFINAE context.
 template <typename... Ts> struct void_t_impl { using type = void; };
@@ -368,10 +368,10 @@ template <typename Char> class basic_string_view {
   using value_type = Char;
   using iterator = const Char*;
 
-  FMT_CONSTEXPR basic_string_view() FMT_NOEXCEPT : data_(nullptr), size_(0) {}
+  constexpr basic_string_view() FMT_NOEXCEPT : data_(nullptr), size_(0) {}
 
   /** Constructs a string reference object from a C string and a size. */
-  FMT_CONSTEXPR basic_string_view(const Char* s, size_t count) FMT_NOEXCEPT
+  constexpr basic_string_view(const Char* s, size_t count) FMT_NOEXCEPT
       : data_(s),
         size_(count) {}
 
@@ -401,15 +401,15 @@ template <typename Char> class basic_string_view {
                                                       size_(s.size()) {}
 
   /** Returns a pointer to the string data. */
-  FMT_CONSTEXPR const Char* data() const { return data_; }
+  constexpr const Char* data() const { return data_; }
 
   /** Returns the string size. */
-  FMT_CONSTEXPR size_t size() const { return size_; }
+  constexpr size_t size() const { return size_; }
 
-  FMT_CONSTEXPR iterator begin() const { return data_; }
-  FMT_CONSTEXPR iterator end() const { return data_ + size_; }
+  constexpr iterator begin() const { return data_; }
+  constexpr iterator end() const { return data_ + size_; }
 
-  FMT_CONSTEXPR const Char& operator[](size_t pos) const { return data_[pos]; }
+  constexpr const Char& operator[](size_t pos) const { return data_[pos]; }
 
   FMT_CONSTEXPR void remove_prefix(size_t n) {
     data_ += n;
@@ -530,8 +530,8 @@ template <typename S> struct char_t_impl<S, enable_if_t<is_string<S>::value>> {
 };
 
 struct error_handler {
-  FMT_CONSTEXPR error_handler() = default;
-  FMT_CONSTEXPR error_handler(const error_handler&) = default;
+  constexpr error_handler() = default;
+  constexpr error_handler(const error_handler&) = default;
 
   // This function is intentionally not constexpr to give a compile-time error.
   FMT_NORETURN FMT_API void on_error(const char* message);
@@ -567,7 +567,7 @@ class basic_format_parse_context : private ErrorHandler {
   using char_type = Char;
   using iterator = typename basic_string_view<Char>::iterator;
 
-  explicit FMT_CONSTEXPR basic_format_parse_context(
+  explicit constexpr basic_format_parse_context(
       basic_string_view<Char> format_str, ErrorHandler eh = {})
       : ErrorHandler(eh), format_str_(format_str), next_arg_id_(0) {}
 
@@ -575,14 +575,12 @@ class basic_format_parse_context : private ErrorHandler {
     Returns an iterator to the beginning of the format string range being
     parsed.
    */
-  FMT_CONSTEXPR iterator begin() const FMT_NOEXCEPT {
-    return format_str_.begin();
-  }
+  constexpr iterator begin() const FMT_NOEXCEPT { return format_str_.begin(); }
 
   /**
     Returns an iterator past the end of the format string range being parsed.
    */
-  FMT_CONSTEXPR iterator end() const FMT_NOEXCEPT { return format_str_.end(); }
+  constexpr iterator end() const FMT_NOEXCEPT { return format_str_.end(); }
 
   /** Advances the begin iterator to ``it``. */
   FMT_CONSTEXPR void advance_to(iterator it) {
@@ -618,7 +616,7 @@ class basic_format_parse_context : private ErrorHandler {
     ErrorHandler::on_error(message);
   }
 
-  FMT_CONSTEXPR ErrorHandler error_handler() const { return *this; }
+  constexpr ErrorHandler error_handler() const { return *this; }
 };
 
 using format_parse_context = basic_format_parse_context<char>;
@@ -886,11 +884,11 @@ FMT_TYPE_CONSTANT(const Char*, cstring_type);
 FMT_TYPE_CONSTANT(basic_string_view<Char>, string_type);
 FMT_TYPE_CONSTANT(const void*, pointer_type);
 
-FMT_CONSTEXPR bool is_integral_type(type t) {
+constexpr bool is_integral_type(type t) {
   return t > type::none_type && t <= type::last_integer_type;
 }
 
-FMT_CONSTEXPR bool is_arithmetic_type(type t) {
+constexpr bool is_arithmetic_type(type t) {
   return t > type::none_type && t <= type::last_numeric_type;
 }
 
@@ -935,8 +933,8 @@ template <typename Context> class value {
     named_arg_value<char_type> named_args;
   };
 
-  FMT_CONSTEXPR FMT_INLINE value(int val = 0) : int_value(val) {}
-  FMT_CONSTEXPR FMT_INLINE value(unsigned val) : uint_value(val) {}
+  constexpr FMT_INLINE value(int val = 0) : int_value(val) {}
+  constexpr FMT_INLINE value(unsigned val) : uint_value(val) {}
   FMT_INLINE value(long long val) : long_long_value(val) {}
   FMT_INLINE value(unsigned long long val) : ulong_long_value(val) {}
   FMT_INLINE value(int128_t val) : int128_value(val) {}
@@ -1162,9 +1160,9 @@ template <typename Context> class basic_format_arg {
     internal::custom_value<Context> custom_;
   };
 
-  FMT_CONSTEXPR basic_format_arg() : type_(internal::type::none_type) {}
+  constexpr basic_format_arg() : type_(internal::type::none_type) {}
 
-  FMT_CONSTEXPR explicit operator bool() const FMT_NOEXCEPT {
+  constexpr explicit operator bool() const FMT_NOEXCEPT {
     return type_ != internal::type::none_type;
   }
 
