@@ -51,7 +51,6 @@ FMT_FUNC void assert_fail(const char* file, int line, const char* message) {
   // Chosen instead of std::abort to satisfy Clang in CUDA mode during device
   // code pass.
   std::terminate();
-#endif
 }
 
 #ifndef _MSC_VER
