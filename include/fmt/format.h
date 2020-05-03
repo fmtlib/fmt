@@ -342,6 +342,9 @@ template <typename T> inline T* make_checked(T* p, std::size_t) { return p; }
 #endif
 
 template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
+#if FMT_CLANG_VERSION
+__attribute__((no_sanitize("undefined")))
+#endif
 inline checked_ptr<typename Container::value_type> reserve(
     std::back_insert_iterator<Container> it, std::size_t n) {
   Container& c = get_container(it);
