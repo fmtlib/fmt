@@ -364,7 +364,6 @@ template <typename Char> class basic_string_view {
   size_t size_;
 
  public:
-  using char_type FMT_DEPRECATED_ALIAS = Char;
   using value_type = Char;
   using iterator = const Char*;
 
@@ -637,11 +636,6 @@ struct formatter {
   // A deleted default constructor indicates a disabled formatter.
   formatter() = delete;
 };
-
-template <typename T, typename Char, typename Enable = void>
-struct FMT_DEPRECATED convert_to_int
-    : bool_constant<!std::is_arithmetic<T>::value &&
-                    std::is_convertible<T, int>::value> {};
 
 // Specifies if T has an enabled formatter specialization. A type can be
 // formattable even if it doesn't have a formatter e.g. via a conversion.
@@ -1401,8 +1395,6 @@ class format_arg_store
            : 0);
 
  public:
-  FMT_DEPRECATED static constexpr unsigned long long types = desc;
-
   format_arg_store(const Args&... args)
       :
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 409

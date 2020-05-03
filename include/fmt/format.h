@@ -226,11 +226,6 @@ FMT_END_NAMESPACE
 #  define FMT_NUMERIC_ALIGN 1
 #endif
 
-// Enable the deprecated percent specifier.
-#ifndef FMT_DEPRECATED_PERCENT
-#  define FMT_DEPRECATED_PERCENT 0
-#endif
-
 FMT_BEGIN_NAMESPACE
 namespace internal {
 
@@ -1086,7 +1081,6 @@ struct float_specs {
   sign_t sign : 8;
   bool upper : 1;
   bool locale : 1;
-  bool percent : 1;
   bool binary32 : 1;
   bool use_grisu : 1;
   bool showpoint : 1;
@@ -1288,12 +1282,6 @@ FMT_CONSTEXPR float_specs parse_float_type_spec(
     result.format = float_format::fixed;
     result.showpoint |= specs.precision != 0;
     break;
-#if FMT_DEPRECATED_PERCENT
-  case '%':
-    result.format = float_format::fixed;
-    result.percent = true;
-    break;
-#endif
   case 'A':
     result.upper = true;
     FMT_FALLTHROUGH;
@@ -1700,12 +1688,7 @@ template <typename Range> class basic_writer {
     }
     if (const_check(std::is_same<T, float>())) fspecs.binary32 = true;
     fspecs.use_grisu = use_grisu<T>();
-    if (const_check(FMT_DEPRECATED_PERCENT) && fspecs.percent) value *= 100;
     int exp = format_float(promote_float(value), precision, fspecs, buffer);
-    if (const_check(FMT_DEPRECATED_PERCENT) && fspecs.percent) {
-      buffer.push_back('%');
-      --exp;  // Adjust decimal place position.
-    }
     fspecs.precision = precision;
     char_type point = fspecs.locale ? decimal_point<char_type>(locale_)
                                     : static_cast<char_type>('.');
@@ -1821,7 +1804,6 @@ class arg_formatter_base {
 
  protected:
   writer_type& writer() { return writer_; }
-  FMT_DEPRECATED format_specs* spec() { return specs_; }
   format_specs* specs() { return specs_; }
   iterator out() { return writer_.out(); }
 
