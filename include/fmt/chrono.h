@@ -768,17 +768,23 @@ OutputIt format_duration_value(OutputIt out, Rep val, int precision) {
   return format_to(out, std::is_floating_point<Rep>::value ? fp_f : format,
                    val);
 }
+template <typename Char, typename OutputIt>
+OutputIt copy_unit(string_view unit, OutputIt out, Char) {
+  return std::copy(unit.begin(), unit.end(), out);
+}
+
+template <typename OutputIt>
+OutputIt copy_unit(string_view unit, OutputIt out, wchar_t) {
+  // This works when wchar_t is UTF-32 because units only contain characters
+  // that have the same representation in UTF-16 and UTF-32.
+  utf8_to_utf16 u(unit);
+  return std::copy(u.c_str(), u.c_str() + u.size(), out);
+}
 
 template <typename Char, typename Period, typename OutputIt>
 OutputIt format_duration_unit(OutputIt out) {
-  if (const char* unit = get_units<Period>()) {
-    string_view s(unit);
-    if (const_check(std::is_same<Char, wchar_t>())) {
-      utf8_to_utf16 u(s);
-      return std::copy(u.c_str(), u.c_str() + u.size(), out);
-    }
-    return std::copy(s.begin(), s.end(), out);
-  }
+  if (const char* unit = get_units<Period>())
+    return copy_unit(string_view(unit), out, Char());
   const Char num_f[] = {'[', '{', '}', ']', 's', 0};
   if (Period::den == 1) return format_to(out, num_f, Period::num);
   const Char num_def_f[] = {'[', '{', '}', '/', '{', '}', ']', 's', 0};

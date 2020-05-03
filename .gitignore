@@ -1,4 +1,5 @@
 .vscode/
+.vs/
 
 *.iml
 .idea/

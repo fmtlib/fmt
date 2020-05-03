@@ -13,7 +13,7 @@ namespace internal {
 template <typename T>
 int format_float(char* buf, std::size_t size, const char* format, int precision,
                  T value) {
-#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+#ifdef FMT_FUZZ
   if (precision > 100000)
     throw std::runtime_error(
         "fuzz mode - avoid large allocation inside snprintf");
@@ -29,7 +29,7 @@ struct sprintf_specs {
   bool alt : 1;
 
   template <typename Char>
-  constexpr sprintf_specs(basic_format_specs<Char> specs)
+  constexpr explicit sprintf_specs(basic_format_specs<Char> specs)
       : precision(specs.precision), type(specs.type), alt(specs.alt) {}
 
   constexpr bool has_precision() const { return precision >= 0; }
@@ -81,7 +81,8 @@ char* sprintf_format(Double value, internal::buffer<char>& buf,
       unsigned n = internal::to_unsigned(result);
       if (n < buf.capacity()) {
         // Find the decimal point.
-        auto p = buf.data(), end = p + n;
+        auto* p = buf.data();
+        auto* end = p + n;
         if (*p == '+' || *p == '-') ++p;
         if (specs.type != 'a' && specs.type != 'A') {
           while (p < end && *p >= '0' && *p <= '9') ++p;
@@ -112,6 +113,46 @@ char* sprintf_format(Double value, internal::buffer<char>& buf,
     }
   }
   return decimal_point_pos;
+}
+
+// DEPRECATED.
+template <typename Context> class arg_map {
+ private:
+  struct entry {
+    basic_string_view<typename Context::char_type> name;
+    basic_format_arg<Context> arg;
+  };
+
+  entry* map_;
+  unsigned size_;
+
+  void push_back(value<Context> val) {
+    const auto& named = *val.named_arg;
+    map_[size_] = {named.name, named.template deserialize<Context>()};
+    ++size_;
+  }
+
+ public:
+  void init(const basic_format_args<Context>& args);
+};
+
+// This is deprecated and is kept only to preserve ABI compatibility.
+template <typename Context>
+void arg_map<Context>::init(const basic_format_args<Context>& args) {
+  if (map_) return;
+  map_ = new entry[internal::to_unsigned(args.max_size())];
+  if (args.is_packed()) {
+    for (int i = 0;; ++i) {
+      internal::type arg_type = args.type(i);
+      if (arg_type == internal::type::none_type) return;
+      if (arg_type == internal::type::named_arg_type)
+        push_back(args.values_[i]);
+    }
+  }
+  for (int i = 0, n = args.max_size(); i < n; ++i) {
+    auto type = args.args_[i].type_;
+    if (type == internal::type::named_arg_type) push_back(args.args_[i].value_);
+  }
 }
 }  // namespace internal
 
@@ -170,7 +211,4 @@ template FMT_API wchar_t internal::decimal_point_impl(locale_ref);
 
 template FMT_API void internal::buffer<wchar_t>::append(const wchar_t*,
                                                         const wchar_t*);
-
-template FMT_API std::wstring internal::vformat<wchar_t>(
-    wstring_view, basic_format_args<wformat_context>);
 FMT_END_NAMESPACE

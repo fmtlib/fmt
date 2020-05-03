@@ -46,6 +46,7 @@ using fmt::format_error;
 using fmt::memory_buffer;
 using fmt::string_view;
 using fmt::wmemory_buffer;
+using fmt::wstring_view;
 using fmt::internal::basic_writer;
 using fmt::internal::max_value;
 
@@ -639,15 +640,14 @@ TEST(FormatterTest, ArgErrors) {
   EXPECT_THROW_MSG(format("{"), format_error, "invalid format string");
   EXPECT_THROW_MSG(format("{?}"), format_error, "invalid format string");
   EXPECT_THROW_MSG(format("{0"), format_error, "invalid format string");
-  EXPECT_THROW_MSG(format("{0}"), format_error, "argument index out of range");
+  EXPECT_THROW_MSG(format("{0}"), format_error, "argument not found");
   EXPECT_THROW_MSG(format("{00}", 42), format_error, "invalid format string");
 
   char format_str[BUFFER_SIZE];
   safe_sprintf(format_str, "{%u", INT_MAX);
   EXPECT_THROW_MSG(format(format_str), format_error, "invalid format string");
   safe_sprintf(format_str, "{%u}", INT_MAX);
-  EXPECT_THROW_MSG(format(format_str), format_error,
-                   "argument index out of range");
+  EXPECT_THROW_MSG(format(format_str), format_error, "argument not found");
 
   safe_sprintf(format_str, "{%u", INT_MAX + 1u);
   EXPECT_THROW_MSG(format(format_str), format_error, "number is too big");
@@ -672,13 +672,13 @@ template <> struct TestFormat<0> {
 TEST(FormatterTest, ManyArgs) {
   EXPECT_EQ("19", TestFormat<20>::format("{19}"));
   EXPECT_THROW_MSG(TestFormat<20>::format("{20}"), format_error,
-                   "argument index out of range");
+                   "argument not found");
   EXPECT_THROW_MSG(TestFormat<21>::format("{21}"), format_error,
-                   "argument index out of range");
+                   "argument not found");
   enum { max_packed_args = fmt::internal::max_packed_args };
   std::string format_str = fmt::format("{{{}}}", max_packed_args + 1);
   EXPECT_THROW_MSG(TestFormat<max_packed_args>::format(format_str),
-                   format_error, "argument index out of range");
+                   format_error, "argument not found");
 }
 
 TEST(FormatterTest, NamedArg) {
@@ -707,7 +707,7 @@ TEST(FormatterTest, AutoArgIndex) {
                    "cannot switch from manual to automatic argument indexing");
   EXPECT_THROW_MSG(format("{:.{0}}", 1.2345, 2), format_error,
                    "cannot switch from automatic to manual argument indexing");
-  EXPECT_THROW_MSG(format("{}"), format_error, "argument index out of range");
+  EXPECT_THROW_MSG(format("{}"), format_error, "argument not found");
 }
 
 TEST(FormatterTest, EmptySpecs) { EXPECT_EQ("42", format("{0:}", 42)); }
@@ -1010,8 +1010,7 @@ TEST(FormatterTest, RuntimeWidth) {
   EXPECT_THROW_MSG(format("{0:{}", 0), format_error,
                    "cannot switch from manual to automatic argument indexing");
   EXPECT_THROW_MSG(format("{0:{?}}", 0), format_error, "invalid format string");
-  EXPECT_THROW_MSG(format("{0:{1}}", 0), format_error,
-                   "argument index out of range");
+  EXPECT_THROW_MSG(format("{0:{1}}", 0), format_error, "argument not found");
 
   EXPECT_THROW_MSG(format("{0:{0:}}", 0), format_error,
                    "invalid format string");
@@ -1124,6 +1123,8 @@ TEST(FormatterTest, Precision) {
       "000000000000000000000000000000000000000000000000000P+127",
       format("{:.838A}", -2.14001164E+38));
   EXPECT_EQ("123.", format("{:#.0f}", 123.0));
+  EXPECT_EQ("1.23", format("{:.02f}", 1.234));
+  EXPECT_EQ("0.001", format("{:.1g}", 0.001));
 
   EXPECT_THROW_MSG(format("{0:.2}", reinterpret_cast<void*>(0xcafe)),
                    format_error,
@@ -1157,8 +1158,7 @@ TEST(FormatterTest, RuntimePrecision) {
                    "invalid format string");
   EXPECT_THROW_MSG(format("{0:.{1}", 0, 0), format_error,
                    "precision not allowed for this argument type");
-  EXPECT_THROW_MSG(format("{0:.{1}}", 0), format_error,
-                   "argument index out of range");
+  EXPECT_THROW_MSG(format("{0:.{1}}", 0), format_error, "argument not found");
 
   EXPECT_THROW_MSG(format("{0:.{0:}}", 0), format_error,
                    "invalid format string");
@@ -1253,7 +1253,7 @@ TEST(FormatterTest, FormatShort) {
 TEST(FormatterTest, FormatInt) {
   EXPECT_THROW_MSG(format("{0:v", 42), format_error,
                    "missing '}' in format string");
-  check_unknown_types(42, "bBdoxXn", "integer");
+  check_unknown_types(42, "bBdoxXnL", "integer");
 }
 
 TEST(FormatterTest, FormatBin) {
@@ -1394,6 +1394,7 @@ TEST(FormatterTest, FormatOct) {
 
 TEST(FormatterTest, FormatIntLocale) {
   EXPECT_EQ("1234", format("{:n}", 1234));
+  EXPECT_EQ("1234", format("{:L}", 1234));
 }
 
 struct ConvertibleToLongLong {
@@ -1409,7 +1410,7 @@ TEST(FormatterTest, FormatFloat) {
 }
 
 TEST(FormatterTest, FormatDouble) {
-  check_unknown_types(1.2, "eEfFgGaAn%", "double");
+  check_unknown_types(1.2, "eEfFgGaAnL%", "double");
   EXPECT_EQ("0.0", format("{:}", 0.0));
   EXPECT_EQ("0.000000", format("{:f}", 0.0));
   EXPECT_EQ("0", format("{:g}", 0.0));
@@ -1418,6 +1419,7 @@ TEST(FormatterTest, FormatDouble) {
   EXPECT_EQ("392.65", format("{:G}", 392.65));
   EXPECT_EQ("392.650000", format("{:f}", 392.65));
   EXPECT_EQ("392.650000", format("{:F}", 392.65));
+  EXPECT_EQ("42", format("{:L}", 42.0));
   char buffer[BUFFER_SIZE];
   safe_sprintf(buffer, "%e", 392.65);
   EXPECT_EQ(buffer, format("{0:e}", 392.65));
@@ -1488,7 +1490,7 @@ TEST(FormatterTest, FormatLongDouble) {
 }
 
 TEST(FormatterTest, FormatChar) {
-  const char types[] = "cbBdoxXn";
+  const char types[] = "cbBdoxXnL";
   check_unknown_types('a', types, "char");
   EXPECT_EQ("a", format("{0}", 'a'));
   EXPECT_EQ("z", format("{0:c}", 'z'));
@@ -1603,6 +1605,40 @@ TEST(FormatterTest, FormatExplicitlyConvertibleToStdStringView) {
             fmt::format("{}", explicitly_convertible_to_std_string_view()));
 }
 #endif
+
+// std::is_constructible is broken in MSVC until version 2015.
+#if !FMT_MSC_VER || FMT_MSC_VER >= 1900
+struct explicitly_convertible_to_wstring_view {
+  explicit operator fmt::wstring_view() const { return L"foo"; }
+};
+
+TEST(FormatTest, FormatExplicitlyConvertibleToWStringView) {
+  EXPECT_EQ(L"foo",
+            fmt::format(L"{}", explicitly_convertible_to_wstring_view()));
+}
+#endif
+
+namespace fake_qt {
+class QString {
+ public:
+  QString(const wchar_t* s) : s_(std::make_shared<std::wstring>(s)) {}
+  const wchar_t* utf16() const FMT_NOEXCEPT { return s_->data(); }
+  int size() const FMT_NOEXCEPT { return static_cast<int>(s_->size()); }
+
+ private:
+  std::shared_ptr<std::wstring> s_;
+};
+
+fmt::basic_string_view<wchar_t> to_string_view(const QString& s) FMT_NOEXCEPT {
+  return {s.utf16(), static_cast<std::size_t>(s.size())};
+}
+}  // namespace fake_qt
+
+TEST(FormatTest, FormatForeignStrings) {
+  using fake_qt::QString;
+  EXPECT_EQ(fmt::format(QString(L"{}"), 42), L"42");
+  EXPECT_EQ(fmt::format(QString(L"{}"), QString(L"42")), L"42");
+}
 
 FMT_BEGIN_NAMESPACE
 template <> struct formatter<Date> {
@@ -1754,6 +1790,8 @@ TEST(FormatTest, Print) {
   EXPECT_WRITE(stderr, fmt::print(stderr, "Don't {}!", "panic"),
                "Don't panic!");
 #endif
+  // Check that the wide print overload compiles.
+  if (fmt::internal::const_check(false)) fmt::print(L"test");
 }
 
 TEST(FormatTest, Variadic) {
@@ -1852,10 +1890,23 @@ TEST(FormatTest, UnpackedArgs) {
 struct string_like {};
 fmt::string_view to_string_view(string_like) { return "foo"; }
 
+constexpr char with_null[3] = {'{', '}', '\0'};
+constexpr char no_null[2] = {'{', '}'};
+
 TEST(FormatTest, CompileTimeString) {
   EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), 42));
   EXPECT_EQ(L"42", fmt::format(FMT_STRING(L"{}"), 42));
   EXPECT_EQ("foo", fmt::format(FMT_STRING("{}"), string_like()));
+  (void)with_null;
+  (void)no_null;
+#if __cplusplus >= 201703L
+  EXPECT_EQ("42", fmt::format(FMT_STRING(with_null), 42));
+  EXPECT_EQ("42", fmt::format(FMT_STRING(no_null), 42));
+#endif
+#if defined(FMT_USE_STRING_VIEW) && __cplusplus >= 201703L
+  EXPECT_EQ("42", fmt::format(FMT_STRING(std::string_view("{}")), 42));
+  EXPECT_EQ(L"42", fmt::format(FMT_STRING(std::wstring_view(L"{}")), 42));
+#endif
 }
 
 TEST(FormatTest, CustomFormatCompileTimeString) {
@@ -2240,8 +2291,9 @@ struct test_parse_context {
 };
 
 struct test_context {
-  typedef char char_type;
-  typedef fmt::basic_format_arg<test_context> format_arg;
+  using char_type = char;
+  using format_arg = fmt::basic_format_arg<test_context>;
+  using parse_context_type = fmt::format_parse_context;
 
   template <typename T> struct formatter_type {
     typedef fmt::formatter<T, char_type> type;
@@ -2401,8 +2453,10 @@ FMT_CONSTEXPR bool equal(const char* s1, const char* s2) {
 template <typename... Args>
 FMT_CONSTEXPR bool test_error(const char* fmt, const char* expected_error) {
   const char* actual_error = nullptr;
-  fmt::internal::do_check_format_string<char, test_error_handler, Args...>(
-      string_view(fmt, len(fmt)), test_error_handler(actual_error));
+  string_view s(fmt, len(fmt));
+  fmt::internal::format_string_checker<char, test_error_handler, Args...>
+      checker(s, test_error_handler(actual_error));
+  fmt::internal::parse_format_string<true>(s, checker);
   return equal(actual_error, expected_error);
 }
 
@@ -2415,12 +2469,12 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR_NOARGS("foo", nullptr);
   EXPECT_ERROR_NOARGS("}", "unmatched '}' in format string");
   EXPECT_ERROR("{0:s", "unknown format specifier", Date);
-#  if FMT_MSC_VER >= 1916
+#  if !FMT_MSC_VER || FMT_MSC_VER >= 1916
   // This causes an internal compiler error in MSVC2017.
   EXPECT_ERROR("{:{<}", "invalid fill character '{'", int);
   EXPECT_ERROR("{:10000000000}", "number is too big", int);
   EXPECT_ERROR("{:.10000000000}", "number is too big", int);
-  EXPECT_ERROR_NOARGS("{:x}", "argument index out of range");
+  EXPECT_ERROR_NOARGS("{:x}", "argument not found");
 #    if FMT_NUMERIC_ALIGN
   EXPECT_ERROR("{0:=5", "unknown format specifier", int);
   EXPECT_ERROR("{:=}", "format specifier requires numeric argument",
@@ -2439,6 +2493,8 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{:+}", "format specifier requires signed argument", unsigned);
   EXPECT_ERROR("{:-}", "format specifier requires signed argument", unsigned);
   EXPECT_ERROR("{: }", "format specifier requires signed argument", unsigned);
+  EXPECT_ERROR("{:{}}", "argument not found", int);
+  EXPECT_ERROR("{:.{}}", "argument not found", double);
   EXPECT_ERROR("{:.2}", "precision not allowed for this argument type", int);
   EXPECT_ERROR("{:s}", "invalid type specifier", int);
   EXPECT_ERROR("{:s}", "invalid type specifier", bool);
@@ -2461,8 +2517,8 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{:.{0x}}", "invalid format string", int);
   EXPECT_ERROR("{:.{-}}", "invalid format string", int);
   EXPECT_ERROR("{:.x}", "missing precision specifier", int);
-  EXPECT_ERROR_NOARGS("{}", "argument index out of range");
-  EXPECT_ERROR("{1}", "argument index out of range", int);
+  EXPECT_ERROR_NOARGS("{}", "argument not found");
+  EXPECT_ERROR("{1}", "argument not found", int);
   EXPECT_ERROR("{1}{}",
                "cannot switch from manual to automatic argument indexing", int,
                int);
@@ -2504,25 +2560,6 @@ TEST(FormatTest, FmtStringInTemplate) {
 
 #endif  // FMT_USE_CONSTEXPR
 
-// C++20 feature test, since r346892 Clang considers char8_t a fundamental
-// type in this mode. If this is the case __cpp_char8_t will be defined.
-#ifndef __cpp_char8_t
-// Locally provide type char8_t defined in format.h
-using fmt::char8_t;
-#endif
-
-// Convert 'char8_t' character sequences to 'char' sequences
-// Otherwise GTest will insist on inserting 'char8_t' NTBS into a 'char' stream,
-// but basic_ostream<char>::operator<< overloads taking 'char8_t' arguments
-// are defined as deleted by P1423.
-// Handling individual 'char8_t's is done inline.
-std::string from_u8str(const std::basic_string<char8_t>& str) {
-  return std::string(str.begin(), str.end());
-}
-std::string from_u8str(const fmt::basic_string_view<char8_t>& str) {
-  return std::string(str.begin(), str.end());
-}
-
 TEST(FormatTest, EmphasisNonHeaderOnly) {
   // Ensure this compiles even if FMT_HEADER_ONLY is not defined.
   EXPECT_EQ(fmt::format(fmt::emphasis::bold, "bold error"),
@@ -2561,10 +2598,18 @@ TEST(FormatTest, FormatCustomChar) {
   EXPECT_EQ(result[0], mychar('x'));
 }
 
+// Convert a char8_t string to std::string. Otherwise GTest will insist on
+// inserting `char8_t` NTBS into a `char` stream which is disabled by P1423.
+template <typename S> std::string from_u8str(const S& str) {
+  return std::string(str.begin(), str.end());
+}
+
 TEST(FormatTest, FormatUTF8Precision) {
-  using str_type = std::basic_string<char8_t>;
-  str_type format(reinterpret_cast<const char8_t*>(u8"{:.4}"));
-  str_type str(reinterpret_cast<const char8_t*>(u8"caf\u00e9s"));  // cafés
+  using str_type = std::basic_string<fmt::internal::char8_type>;
+  str_type format(
+      reinterpret_cast<const fmt::internal::char8_type*>(u8"{:.4}"));
+  str_type str(reinterpret_cast<const fmt::internal::char8_type*>(
+      u8"caf\u00e9s"));  // cafés
   auto result = fmt::format(format, str);
   EXPECT_EQ(fmt::internal::count_code_points(result), 4);
   EXPECT_EQ(result.size(), 5);

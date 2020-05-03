@@ -9,7 +9,8 @@ The {fmt} library API consists of the following parts:
 * :ref:`fmt/core.h <core-api>`: the core API providing argument handling
   facilities and a lightweight subset of formatting functions
 * :ref:`fmt/format.h <format-api>`: the full format API providing compile-time
-  format string checks, output iterator and user-defined type support
+  format string checks, wide string, output iterator and user-defined type
+  support
 * :ref:`fmt/ranges.h <ranges-api>`: additional formatting support for ranges
   and tuples
 * :ref:`fmt/chrono.h <chrono-api>`: date and time formatting
@@ -43,7 +44,7 @@ participate in an overload resolution if the latter is not a string.
 .. _format:
 
 .. doxygenfunction:: format(const S&, Args&&...)
-.. doxygenfunction:: vformat(const S&, basic_format_args<buffer_context<Char>>)
+.. doxygenfunction:: vformat(const S&, basic_format_args<buffer_context<type_identity_t<Char>>>)
 
 .. _print:
 
@@ -104,7 +105,7 @@ Format API
 ==========
 
 ``fmt/format.h`` defines the full format API providing compile-time format
-string checks, output iterator and user-defined type support.
+string checks, wide string, output iterator and user-defined type support.
 
 Compile-time Format String Checks
 ---------------------------------
@@ -178,8 +179,7 @@ example::
 
   enum class color {red, green, blue};
 
-  template <>
-  struct fmt::formatter<color>: formatter<string_view> {
+  template <> struct fmt::formatter<color>: formatter<string_view> {
     // parse is inherited from formatter<string_view>.
     template <typename FormatContext>
     auto format(color c, FormatContext& ctx) {
@@ -192,6 +192,15 @@ example::
       return formatter<string_view>::format(name, ctx);
     }
   };
+
+Since ``parse`` is inherited from ``formatter<string_view>`` it will recognize
+all string format specifications, for example
+
+.. code-block:: c++
+
+   fmt::format("{:>10}", color::blue)
+
+will return ``"      blue"``.
 
 You can also write a formatter for a hierarchy of classes::
 
@@ -399,7 +408,7 @@ formatting::
 
   std::time_t t = std::time(nullptr);
   // Prints "The date is 2016-04-29." (with the current date)
-  fmt::print("The date is {:%Y-%m-%d}.", *std::localtime(&t));
+  fmt::print("The date is {:%Y-%m-%d}.", fmt::localtime(t));
 
 The format string syntax is described in the documentation of
 `strftime <http://en.cppreference.com/w/cpp/chrono/c/strftime>`_.

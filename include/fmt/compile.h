@@ -576,7 +576,9 @@ OutputIt format_to(OutputIt out, const CompiledFormat& cf,
 }
 
 template <typename OutputIt, typename CompiledFormat, typename... Args,
-          FMT_ENABLE_IF(internal::is_output_iterator<OutputIt>::value)>
+          FMT_ENABLE_IF(
+              internal::is_output_iterator<OutputIt>::value&& std::is_base_of<
+                  internal::basic_compiled_format, CompiledFormat>::value)>
 format_to_n_result<OutputIt> format_to_n(OutputIt out, size_t n,
                                          const CompiledFormat& cf,
                                          const Args&... args) {

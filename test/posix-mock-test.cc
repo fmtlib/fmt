@@ -11,12 +11,14 @@
 #endif
 
 #include "posix-mock.h"
-#include "../src/os.cc"
 
 #include <errno.h>
 #include <fcntl.h>
+
 #include <climits>
 #include <memory>
+
+#include "../src/os.cc"
 
 #ifdef _WIN32
 #  include <io.h>
@@ -51,7 +53,7 @@ std::size_t read_nbyte;
 std::size_t write_nbyte;
 bool sysconf_error;
 
-enum FStatSimulation { NONE, MAX_SIZE, ERROR } fstat_sim;
+enum { NONE, MAX_SIZE, ERROR } fstat_sim;
 }  // namespace
 
 #define EMULATE_EINTR(func, error_result) \
@@ -215,10 +217,10 @@ TEST(UtilTest, GetPageSize) {
 }
 
 TEST(FileTest, OpenRetry) {
-  write_file("test", "there must be something here");
+  write_file("temp", "there must be something here");
   std::unique_ptr<file> f{nullptr};
-  EXPECT_RETRY(f.reset(new file("test", file::RDONLY)), open,
-               "cannot open file test");
+  EXPECT_RETRY(f.reset(new file("temp", file::RDONLY)), open,
+               "cannot open file temp");
 #  ifndef _WIN32
   char c = 0;
   f->read(&c, 1);
@@ -230,14 +232,15 @@ TEST(FileTest, CloseNoRetryInDtor) {
   file::pipe(read_end, write_end);
   std::unique_ptr<file> f(new file(std::move(read_end)));
   int saved_close_count = 0;
-  EXPECT_WRITE(stderr,
-               {
-                 close_count = 1;
-                 f.reset(nullptr);
-                 saved_close_count = close_count;
-                 close_count = 0;
-               },
-               format_system_error(EINTR, "cannot close file") + "\n");
+  EXPECT_WRITE(
+      stderr,
+      {
+        close_count = 1;
+        f.reset(nullptr);
+        saved_close_count = close_count;
+        close_count = 0;
+      },
+      format_system_error(EINTR, "cannot close file") + "\n");
   EXPECT_EQ(2, saved_close_count);
 }
 
@@ -252,8 +255,8 @@ TEST(FileTest, CloseNoRetry) {
 
 TEST(FileTest, Size) {
   std::string content = "top secret, destroy before reading";
-  write_file("test", content);
-  file f("test", file::RDONLY);
+  write_file("temp", content);
+  file f("temp", file::RDONLY);
   EXPECT_GE(f.size(), 0);
   EXPECT_EQ(content.size(), static_cast<unsigned long long>(f.size()));
 #  ifdef _WIN32
@@ -270,8 +273,8 @@ TEST(FileTest, Size) {
 }
 
 TEST(FileTest, MaxSize) {
-  write_file("test", "");
-  file f("test", file::RDONLY);
+  write_file("temp", "");
+  file f("temp", file::RDONLY);
   fstat_sim = MAX_SIZE;
   EXPECT_GE(f.size(), 0);
   EXPECT_EQ(max_file_size(), f.size());
@@ -385,10 +388,10 @@ TEST(FileTest, FdopenNoRetry) {
 }
 
 TEST(BufferedFileTest, OpenRetry) {
-  write_file("test", "there must be something here");
+  write_file("temp", "there must be something here");
   std::unique_ptr<buffered_file> f{nullptr};
-  EXPECT_RETRY(f.reset(new buffered_file("test", "r")), fopen,
-               "cannot open file test");
+  EXPECT_RETRY(f.reset(new buffered_file("temp", "r")), fopen,
+               "cannot open file temp");
 #  ifndef _WIN32
   char c = 0;
   if (fread(&c, 1, 1, f->get()) < 1)
@@ -401,14 +404,15 @@ TEST(BufferedFileTest, CloseNoRetryInDtor) {
   file::pipe(read_end, write_end);
   std::unique_ptr<buffered_file> f(new buffered_file(read_end.fdopen("r")));
   int saved_fclose_count = 0;
-  EXPECT_WRITE(stderr,
-               {
-                 fclose_count = 1;
-                 f.reset(nullptr);
-                 saved_fclose_count = fclose_count;
-                 fclose_count = 0;
-               },
-               format_system_error(EINTR, "cannot close file") + "\n");
+  EXPECT_WRITE(
+      stderr,
+      {
+        fclose_count = 1;
+        f.reset(nullptr);
+        saved_fclose_count = fclose_count;
+        fclose_count = 0;
+      },
+      format_system_error(EINTR, "cannot close file") + "\n");
   EXPECT_EQ(2, saved_fclose_count);
 }
 
@@ -433,33 +437,33 @@ TEST(BufferedFileTest, FilenoNoRetry) {
 }
 #endif  // FMT_USE_FCNTL
 
-struct TestMock {
-  static TestMock* instance;
-} * TestMock::instance;
+struct test_mock {
+  static test_mock* instance;
+} * test_mock::instance;
 
 TEST(ScopedMock, Scope) {
   {
-    ScopedMock<TestMock> mock;
-    EXPECT_EQ(&mock, TestMock::instance);
-    TestMock& copy = mock;
+    ScopedMock<test_mock> mock;
+    EXPECT_EQ(&mock, test_mock::instance);
+    test_mock& copy = mock;
     static_cast<void>(copy);
   }
-  EXPECT_EQ(nullptr, TestMock::instance);
+  EXPECT_EQ(nullptr, test_mock::instance);
 }
 
 #ifdef FMT_LOCALE
 
-typedef fmt::Locale::type LocaleType;
+typedef fmt::locale::type locale_type;
 
-struct LocaleMock {
-  static LocaleMock* instance;
-  MOCK_METHOD3(newlocale, LocaleType(int category_mask, const char* locale,
-                                     LocaleType base));
-  MOCK_METHOD1(freelocale, void(LocaleType locale));
+struct locale_mock {
+  static locale_mock* instance;
+  MOCK_METHOD3(newlocale, locale_type(int category_mask, const char* locale,
+                                      locale_type base));
+  MOCK_METHOD1(freelocale, void(locale_type locale));
 
   MOCK_METHOD3(strtod_l,
-               double(const char* nptr, char** endptr, LocaleType locale));
-} * LocaleMock::instance;
+               double(const char* nptr, char** endptr, locale_type locale));
+} * locale_mock::instance;
 
 #  ifdef _MSC_VER
 #    pragma warning(push)
@@ -470,15 +474,15 @@ struct LocaleMock {
 #    endif
 
 _locale_t _create_locale(int category, const char* locale) {
-  return LocaleMock::instance->newlocale(category, locale, 0);
+  return locale_mock::instance->newlocale(category, locale, 0);
 }
 
 void _free_locale(_locale_t locale) {
-  LocaleMock::instance->freelocale(locale);
+  locale_mock::instance->freelocale(locale);
 }
 
 double _strtod_l(const char* nptr, char** endptr, _locale_t locale) {
-  return LocaleMock::instance->strtod_l(nptr, endptr, locale);
+  return locale_mock::instance->strtod_l(nptr, endptr, locale);
 }
 #    ifdef __clang__
 #      pragma clang diagnostic pop
@@ -492,11 +496,6 @@ double _strtod_l(const char* nptr, char** endptr, _locale_t locale) {
 #    define FMT_LOCALE_THROW
 #  endif
 
-LocaleType newlocale(int category_mask, const char* locale,
-                     LocaleType base) FMT_LOCALE_THROW {
-  return LocaleMock::instance->newlocale(category_mask, locale, base);
-}
-
 #  if defined(__APPLE__) || \
       (defined(__FreeBSD__) && __FreeBSD_version < 1200002)
 typedef int FreeLocaleResult;
@@ -504,49 +503,55 @@ typedef int FreeLocaleResult;
 typedef void FreeLocaleResult;
 #  endif
 
-FreeLocaleResult freelocale(LocaleType locale) FMT_LOCALE_THROW {
-  LocaleMock::instance->freelocale(locale);
+FreeLocaleResult freelocale(locale_type locale) FMT_LOCALE_THROW {
+  locale_mock::instance->freelocale(locale);
   return FreeLocaleResult();
 }
 
 double strtod_l(const char* nptr, char** endptr,
-                LocaleType locale) FMT_LOCALE_THROW {
-  return LocaleMock::instance->strtod_l(nptr, endptr, locale);
+                locale_type locale) FMT_LOCALE_THROW {
+  return locale_mock::instance->strtod_l(nptr, endptr, locale);
 }
 
 #  undef FMT_LOCALE_THROW
 
-TEST(LocaleTest, LocaleMock) {
-  ScopedMock<LocaleMock> mock;
-  LocaleType locale = reinterpret_cast<LocaleType>(11);
-  EXPECT_CALL(mock, newlocale(222, StrEq("foo"), locale));
-  newlocale(222, "foo", locale);
+#  ifndef _WIN32
+locale_t test::newlocale(int category_mask, const char* locale, locale_t base) {
+  return locale_mock::instance->newlocale(category_mask, locale, base);
 }
+
+TEST(LocaleTest, LocaleMock) {
+  ScopedMock<locale_mock> mock;
+  locale_type locale = reinterpret_cast<locale_type>(11);
+  EXPECT_CALL(mock, newlocale(222, StrEq("foo"), locale));
+  FMT_SYSTEM(newlocale(222, "foo", locale));
+}
+#  endif
 
 TEST(LocaleTest, Locale) {
 #  ifndef LC_NUMERIC_MASK
   enum { LC_NUMERIC_MASK = LC_NUMERIC };
 #  endif
-  ScopedMock<LocaleMock> mock;
-  LocaleType impl = reinterpret_cast<LocaleType>(42);
+  ScopedMock<locale_mock> mock;
+  locale_type impl = reinterpret_cast<locale_type>(42);
   EXPECT_CALL(mock, newlocale(LC_NUMERIC_MASK, StrEq("C"), nullptr))
       .WillOnce(Return(impl));
   EXPECT_CALL(mock, freelocale(impl));
-  fmt::Locale locale;
-  EXPECT_EQ(impl, locale.get());
+  fmt::locale loc;
+  EXPECT_EQ(impl, loc.get());
 }
 
 TEST(LocaleTest, Strtod) {
-  ScopedMock<LocaleMock> mock;
+  ScopedMock<locale_mock> mock;
   EXPECT_CALL(mock, newlocale(_, _, _))
-      .WillOnce(Return(reinterpret_cast<LocaleType>(42)));
+      .WillOnce(Return(reinterpret_cast<locale_type>(42)));
   EXPECT_CALL(mock, freelocale(_));
-  fmt::Locale locale;
+  fmt::locale loc;
   const char* str = "4.2";
   char end = 'x';
-  EXPECT_CALL(mock, strtod_l(str, _, locale.get()))
+  EXPECT_CALL(mock, strtod_l(str, _, loc.get()))
       .WillOnce(testing::DoAll(testing::SetArgPointee<1>(&end), Return(777)));
-  EXPECT_EQ(777, locale.strtod(str));
+  EXPECT_EQ(777, loc.strtod(str));
   EXPECT_EQ(&end, str);
 }
 

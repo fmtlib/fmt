@@ -81,8 +81,8 @@ The general form of a *standard format specifier* is:
    sign: "+" | "-" | " "
    width: `integer` | "{" `arg_id` "}"
    precision: `integer` | "{" `arg_id` "}"
-   type: `int_type` | "a" | "A" | "c" | "e" | "E" | "f" | "F" | "g" | "G" | "p" | "s"
-   int_type: "b" | "B" | "d" | "n" | "o" | "x" | "X"
+   type: `int_type` | "a" | "A" | "c" | "e" | "E" | "f" | "F" | "g" | "G" | "L" | "p" | "s"
+   int_type: "b" | "B" | "d" | "o" | "x" | "X"
 
 The *fill* character can be any Unicode code point other than ``'{'`` or
 ``'}'``. The presence of a fill character is signaled by the character following
@@ -143,7 +143,7 @@ conversions, trailing zeros are not removed from the result.
 .. ifconfig:: False
 
    The ``','`` option signals the use of a comma for a thousands separator.
-   For a locale aware separator, use the ``'n'`` integer presentation type
+   For a locale aware separator, use the ``'L'`` integer presentation type
    instead.
 
 *width* is a decimal integer defining the minimum field width.  If not
@@ -214,9 +214,9 @@ The available integer presentation types are:
 |         | ``'#'`` option with this type adds the prefix ``"0X"``   |
 |         | to the output value.                                     |
 +---------+----------------------------------------------------------+
-| ``'n'`` | Number. This is the same as ``'d'``, except that it uses |
-|         | the current locale setting to insert the appropriate     |
-|         | number separator characters.                             |
+| ``'L'`` | Locale-specific format. This is the same as ``'d'``,     |
+|         | except that it uses the current locale setting to insert |
+|         | the appropriate number separator characters.             |
 +---------+----------------------------------------------------------+
 | none    | The same as ``'d'``.                                     |
 +---------+----------------------------------------------------------+
@@ -261,9 +261,9 @@ The available presentation types for floating-point values are:
 |         | ``'E'`` if the number gets too large. The                |
 |         | representations of infinity and NaN are uppercased, too. |
 +---------+----------------------------------------------------------+
-| ``'n'`` | Number. This is the same as ``'g'``, except that it uses |
-|         | the current locale setting to insert the appropriate     |
-|         | number separator characters.                             |
+| ``'L'`` | Locale-specific format. This is the same as ``'g'``,     |
+|         | except that it uses the current locale setting to insert |
+|         | the appropriate number separator characters.             |
 +---------+----------------------------------------------------------+
 | none    | Similar to ``'g'``, except that fixed-point notation,    |
 |         | when used, has at least one digit past the decimal       |
@@ -403,7 +403,7 @@ Using the comma as a thousands separator::
 
    #include <fmt/locale.h>
 
-   auto s = fmt::format(std::locale("en_US.UTF-8"), "{:n}", 1234567890);
+   auto s = fmt::format(std::locale("en_US.UTF-8"), "{:L}", 1234567890);
    // s == "1,234,567,890"
 
 .. ifconfig:: False

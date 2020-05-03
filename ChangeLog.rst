@@ -1,3 +1,216 @@
+6.2.0 - 2020-04-05
+------------------
+
+* Improved error reporting when trying to format an object of a non-formattable
+  type:
+
+  .. code:: c++
+
+     fmt::format("{}", S());
+
+  now gives::
+
+    include/fmt/core.h:1015:5: error: static_assert failed due to requirement
+    'formattable' "Cannot format argument. To make type T formattable provide a
+    formatter<T> specialization:
+    https://fmt.dev/latest/api.html#formatting-user-defined-types"
+        static_assert(
+        ^
+    ...
+    note: in instantiation of function template specialization
+    'fmt::v6::format<char [3], S, char>' requested here
+      fmt::format("{}", S());
+           ^
+
+  if ``S`` is not formattable.
+
+* Reduced library size by ~10%.
+
+* Always print decimal point if ``#`` is specified
+  (`#1476 <https://github.com/fmtlib/fmt/issues/1476>`_,
+  `#1498 <https://github.com/fmtlib/fmt/issues/1498>`_):
+
+  .. code:: c++
+
+     fmt::print("{:#.0f}", 42.0);
+
+  now prints ``42.``
+
+* Implemented the ``'L'`` specifier for locale-specific numeric formatting to
+  improve compatibility with ``std::format``. The ``'n'`` specifier is now
+  deprecated and will be removed in the next major release.
+
+* Moved OS-specific APIs such as ``windows_error`` from ``fmt/format.h`` to
+  ``fmt/os.h``. You can define ``FMT_DEPRECATED_INCLUDE_OS`` to automatically
+  include ``fmt/os.h`` from ``fmt/format.h`` for compatibility but this will be
+  disabled in the next major release.
+
+* Added precision overflow detection in floating-point formatting.
+
+* Implemented detection of invalid use of ``fmt::arg``.
+
+* Used ``type_identity`` to block unnecessary template argument deduction.
+  Thanks Tim Song.
+
+* Improved UTF-8 handling
+  (`#1109 <https://github.com/fmtlib/fmt/issues/1109>`_):
+
+  .. code:: c++
+
+     fmt::print("┌{0:─^{2}}┐\n"
+                "│{1: ^{2}}│\n"
+                "└{0:─^{2}}┘\n", "", "Привет, мир!", 20);
+
+  now prints::
+
+     ┌────────────────────┐
+     │    Привет, мир!    │
+     └────────────────────┘
+
+  on systems that support Unicode.
+
+* Added experimental dynamic argument storage
+  (`#1170 <https://github.com/fmtlib/fmt/issues/1170>`_,
+  `#1584 <https://github.com/fmtlib/fmt/pull/1584>`_):
+
+  .. code:: c++
+
+     fmt::dynamic_format_arg_store<fmt::format_context> store;
+     store.push_back("answer");
+     store.push_back(42);
+     fmt::vprint("The {} is {}.\n", store);
+  
+  prints::
+
+     The answer is 42.
+
+  Thanks `@vsolontsov-ll (Vladimir Solontsov)
+  <https://github.com/vsolontsov-ll>`_.
+
+* Made ``fmt::join`` accept ``initializer_list``
+  (`#1591 <https://github.com/fmtlib/fmt/pull/1591>`_).
+  Thanks `@Rapotkinnik (Nikolay Rapotkin) <https://github.com/Rapotkinnik>`_.
+
+* Fixed handling of empty tuples
+  (`#1588 <https://github.com/fmtlib/fmt/issues/1588>`_).
+
+* Fixed handling of output iterators in ``format_to_n``
+  (`#1506 <https://github.com/fmtlib/fmt/issues/1506>`_).
+
+* Fixed formatting of ``std::chrono::duration`` types to wide output
+  (`#1533 <https://github.com/fmtlib/fmt/pull/1533>`_).
+  Thanks `@zeffy (pilao) <https://github.com/zeffy>`_.
+
+* Added const ``begin`` and ``end`` overload to buffers
+  (`#1553 <https://github.com/fmtlib/fmt/pull/1553>`_).
+  Thanks `@dominicpoeschko <https://github.com/dominicpoeschko>`_.
+
+* Added the ability to disable floating-point formatting via ``FMT_USE_FLOAT``,
+  ``FMT_USE_DOUBLE`` and ``FMT_USE_LONG_DOUBLE`` macros for extremely
+  memory-constrained embedded system
+  (`#1590 <https://github.com/fmtlib/fmt/pull/1590>`_).
+  Thanks `@albaguirre (Alberto Aguirre) <https://github.com/albaguirre>`_.
+
+* Made ``FMT_STRING`` work with ``constexpr`` ``string_view``
+  (`#1589 <https://github.com/fmtlib/fmt/pull/1589>`_).
+  Thanks `@scramsby (Scott Ramsby) <https://github.com/scramsby>`_.
+
+* Implemented a minor optimization in the format string parser
+  (`#1560 <https://github.com/fmtlib/fmt/pull/1560>`_).
+  Thanks `@IkarusDeveloper <https://github.com/IkarusDeveloper>`_.
+
+* Improved attribute detection
+  (`#1469 <https://github.com/fmtlib/fmt/pull/1469>`_,
+  `#1475 <https://github.com/fmtlib/fmt/pull/1475>`_,
+  `#1576 <https://github.com/fmtlib/fmt/pull/1576>`_).
+  Thanks `@federico-busato (Federico) <https://github.com/federico-busato>`_,
+  `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_,
+  `@refnum <https://github.com/refnum>`_.
+
+* Improved documentation
+  (`#1481 <https://github.com/fmtlib/fmt/pull/1481>`_,
+  `#1523 <https://github.com/fmtlib/fmt/pull/1523>`_).
+  Thanks `@JackBoosY (Jack·Boos·Yu) <https://github.com/JackBoosY>`_,
+  `@imba-tjd (谭九鼎) <https://github.com/imba-tjd>`_.
+
+* Fixed symbol visibility on Linux when compiling with ``-fvisibility=hidden``
+  (`#1535 <https://github.com/fmtlib/fmt/pull/1535>`_).
+  Thanks `@milianw (Milian Wolff) <https://github.com/milianw>`_.
+
+* Implemented various build configuration fixes and improvements
+  (`#1264 <https://github.com/fmtlib/fmt/issues/1264>`_,
+  `#1460 <https://github.com/fmtlib/fmt/issues/1460>`_,
+  `#1534 <https://github.com/fmtlib/fmt/pull/1534>`_,
+  `#1536 <https://github.com/fmtlib/fmt/issues/1536>`_,
+  `#1545 <https://github.com/fmtlib/fmt/issues/1545>`_,
+  `#1546 <https://github.com/fmtlib/fmt/pull/1546>`_,
+  `#1566 <https://github.com/fmtlib/fmt/issues/1566>`_,
+  `#1582 <https://github.com/fmtlib/fmt/pull/1582>`_,
+  `#1597 <https://github.com/fmtlib/fmt/issues/1597>`_,
+  `#1598 <https://github.com/fmtlib/fmt/pull/1598>`_).
+  Thanks `@ambitslix (Attila M. Szilagyi) <https://github.com/ambitslix>`_,
+  `@jwillikers (Jordan Williams) <https://github.com/jwillikers>`_,
+  `@stac47 (Laurent Stacul) <https://github.com/stac47>`_.
+
+* Fixed various warnings and compilation issues
+  (`#1433 <https://github.com/fmtlib/fmt/pull/1433>`_,
+  `#1461 <https://github.com/fmtlib/fmt/issues/1461>`_,
+  `#1470 <https://github.com/fmtlib/fmt/pull/1470>`_,
+  `#1480 <https://github.com/fmtlib/fmt/pull/1480>`_,
+  `#1485 <https://github.com/fmtlib/fmt/pull/1485>`_,
+  `#1492 <https://github.com/fmtlib/fmt/pull/1492>`_,
+  `#1493 <https://github.com/fmtlib/fmt/issues/1493>`_,
+  `#1504 <https://github.com/fmtlib/fmt/issues/1504>`_,
+  `#1505 <https://github.com/fmtlib/fmt/pull/1505>`_,
+  `#1512 <https://github.com/fmtlib/fmt/pull/1512>`_,
+  `#1515 <https://github.com/fmtlib/fmt/issues/1515>`_,
+  `#1516 <https://github.com/fmtlib/fmt/pull/1516>`_,
+  `#1518 <https://github.com/fmtlib/fmt/pull/1518>`_,
+  `#1519 <https://github.com/fmtlib/fmt/pull/1519>`_,
+  `#1520 <https://github.com/fmtlib/fmt/pull/1520>`_,
+  `#1521 <https://github.com/fmtlib/fmt/pull/1521>`_,
+  `#1522 <https://github.com/fmtlib/fmt/pull/1522>`_,
+  `#1524 <https://github.com/fmtlib/fmt/issues/1524>`_,
+  `#1530 <https://github.com/fmtlib/fmt/pull/1530>`_,
+  `#1531 <https://github.com/fmtlib/fmt/issues/1531>`_,
+  `#1532 <https://github.com/fmtlib/fmt/pull/1532>`_,
+  `#1539 <https://github.com/fmtlib/fmt/issues/1539>`_,
+  `#1547 <https://github.com/fmtlib/fmt/issues/1547>`_,
+  `#1548 <https://github.com/fmtlib/fmt/issues/1548>`_,
+  `#1554 <https://github.com/fmtlib/fmt/pull/1554>`_,
+  `#1567 <https://github.com/fmtlib/fmt/issues/1567>`_,
+  `#1568 <https://github.com/fmtlib/fmt/pull/1568>`_,
+  `#1569 <https://github.com/fmtlib/fmt/pull/1569>`_,
+  `#1571 <https://github.com/fmtlib/fmt/pull/1571>`_,
+  `#1573 <https://github.com/fmtlib/fmt/pull/1573>`_,
+  `#1575 <https://github.com/fmtlib/fmt/pull/1575>`_,
+  `#1581 <https://github.com/fmtlib/fmt/pull/1581>`_,
+  `#1583 <https://github.com/fmtlib/fmt/issues/1583>`_,
+  `#1586 <https://github.com/fmtlib/fmt/issues/1586>`_,
+  `#1587 <https://github.com/fmtlib/fmt/issues/1587>`_,
+  `#1594 <https://github.com/fmtlib/fmt/issues/1594>`_,
+  `#1596 <https://github.com/fmtlib/fmt/pull/1596>`_,
+  `#1604 <https://github.com/fmtlib/fmt/issues/1604>`_,
+  `#1606 <https://github.com/fmtlib/fmt/pull/1606>`_,
+  `#1607 <https://github.com/fmtlib/fmt/issues/1607>`_,
+  `#1609 <https://github.com/fmtlib/fmt/issues/1609>`_).
+  Thanks `@marti4d (Chris Martin) <https://github.com/marti4d>`_,
+  `@iPherian <https://github.com/iPherian>`_,
+  `@parkertomatoes <https://github.com/parkertomatoes>`_,
+  `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_,
+  `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_,
+  `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_,
+  `@torsten48 <https://github.com/torsten48>`_,
+  `@tohammer (Tobias Hammer) <https://github.com/tohammer>`_,
+  `@lefticus (Jason Turner) <https://github.com/lefticus>`_,
+  `@ryusakki (Haise) <https://github.com/ryusakki>`_,
+  `@adnsv (Alex Denisov) <https://github.com/adnsv>`_,
+  `@fghzxm <https://github.com/fghzxm>`_,
+  `@refnum <https://github.com/refnum>`_,
+  `@pramodk (Pramod Kumbhar) <https://github.com/pramodk>`_,
+  `@Spirrwell <https://github.com/Spirrwell>`_,
+  `@scramsby (Scott Ramsby) <https://github.com/scramsby>`_.
+
 6.1.2 - 2019-12-11
 ------------------
 

@@ -113,14 +113,14 @@ TEST(PrintfTest, SwitchArgIndexing) {
 
 TEST(PrintfTest, InvalidArgIndex) {
   EXPECT_THROW_MSG(test_sprintf("%0$d", 42), format_error,
-                   "argument index out of range");
+                   "argument not found");
   EXPECT_THROW_MSG(test_sprintf("%2$d", 42), format_error,
-                   "argument index out of range");
+                   "argument not found");
   EXPECT_THROW_MSG(test_sprintf(format("%{}$d", INT_MAX), 42), format_error,
-                   "argument index out of range");
+                   "argument not found");
 
   EXPECT_THROW_MSG(test_sprintf("%2$", 42), format_error,
-                   "argument index out of range");
+                   "argument not found");
   EXPECT_THROW_MSG(test_sprintf(format("%{}$d", BIG_NUM), 42), format_error,
                    "number is too big");
 }
@@ -223,7 +223,7 @@ TEST(PrintfTest, DynamicWidth) {
   EXPECT_THROW_MSG(test_sprintf("%*d", 5.0, 42), format_error,
                    "width is not integer");
   EXPECT_THROW_MSG(test_sprintf("%*d"), format_error,
-                   "argument index out of range");
+                   "argument not found");
   EXPECT_THROW_MSG(test_sprintf("%*d", BIG_NUM, 42), format_error,
                    "number is too big");
 }
@@ -259,6 +259,11 @@ TEST(PrintfTest, FloatPrecision) {
   EXPECT_PRINTF(buffer, "%.3a", 1234.5678);
 }
 
+TEST(PrintfTest, StringPrecision) {
+  char test[] = {'H', 'e', 'l', 'l', 'o'};
+  EXPECT_EQ(fmt::sprintf("%.4s", test), "Hell");
+}
+
 TEST(PrintfTest, IgnorePrecisionForNonNumericArg) {
   EXPECT_PRINTF("abc", "%.5s", "abc");
 }
@@ -269,7 +274,7 @@ TEST(PrintfTest, DynamicPrecision) {
   EXPECT_THROW_MSG(test_sprintf("%.*d", 5.0, 42), format_error,
                    "precision is not integer");
   EXPECT_THROW_MSG(test_sprintf("%.*d"), format_error,
-                   "argument index out of range");
+                   "argument not found");
   EXPECT_THROW_MSG(test_sprintf("%.*d", BIG_NUM, 42), format_error,
                    "number is too big");
   if (sizeof(long long) != sizeof(int)) {
@@ -447,6 +452,12 @@ TEST(PrintfTest, String) {
   EXPECT_PRINTF(L"    (null)", L"%10s", null_wstr);
 }
 
+TEST(PrintfTest, UCharString) {
+  unsigned char str[] = "test";
+  unsigned char* pstr = str;
+  EXPECT_EQ("test", fmt::sprintf("%s", pstr));
+}
+
 TEST(PrintfTest, Pointer) {
   int n;
   void* p = &n;
@@ -502,9 +513,7 @@ TEST(PrintfTest, PrintfError) {
 TEST(PrintfTest, WideString) { EXPECT_EQ(L"abc", fmt::sprintf(L"%s", L"abc")); }
 
 TEST(PrintfTest, PrintfCustom) {
-  // The test is disabled for now because it requires decoupling
-  // fallback_formatter::format from format_context.
-  //EXPECT_EQ("abc", test_sprintf("%s", TestString("abc")));
+  EXPECT_EQ("abc", test_sprintf("%s", TestString("abc")));
 }
 
 TEST(PrintfTest, OStream) {

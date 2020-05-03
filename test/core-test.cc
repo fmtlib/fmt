@@ -15,9 +15,8 @@
 #include <string>
 #include <type_traits>
 
-#include "test-assert.h"
-
 #include "gmock.h"
+#include "test-assert.h"
 
 // Check if fmt/core.h compiles with windows.h included before it.
 #ifdef _WIN32
@@ -211,7 +210,8 @@ TEST(ArgTest, FormatArgs) {
 }
 
 struct custom_context {
-  typedef char char_type;
+  using char_type = char;
+  using parse_context_type = fmt::format_parse_context;
 
   template <typename T> struct formatter_type {
     template <typename ParseContext>
@@ -402,6 +402,86 @@ TEST(ArgTest, VisitInvalidArg) {
   fmt::visit_format_arg(visitor, arg);
 }
 
+TEST(FormatDynArgsTest, Basic) {
+  fmt::dynamic_format_arg_store<fmt::format_context> store;
+  store.push_back(42);
+  store.push_back("abc1");
+  store.push_back(1.5f);
+
+  std::string result = fmt::vformat("{} and {} and {}", store);
+  EXPECT_EQ("42 and abc1 and 1.5", result);
+}
+
+TEST(FormatDynArgsTest, StringsAndRefs) {
+  // Unfortunately the tests are compiled with old ABI so strings use COW.
+  fmt::dynamic_format_arg_store<fmt::format_context> store;
+  char str[] = "1234567890";
+  store.push_back(str);
+  store.push_back(std::cref(str));
+  store.push_back(fmt::string_view{str});
+  str[0] = 'X';
+
+  std::string result = fmt::vformat("{} and {} and {}", store);
+  EXPECT_EQ("1234567890 and X234567890 and X234567890", result);
+}
+
+struct custom_type {
+  int i = 0;
+};
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<custom_type> {
+  auto parse(format_parse_context& ctx) const -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
+
+  template <typename FormatContext>
+  auto format(const custom_type& p, FormatContext& ctx) -> decltype(ctx.out()) {
+    return format_to(ctx.out(), "cust={}", p.i);
+  }
+};
+FMT_END_NAMESPACE
+
+TEST(FormatDynArgsTest, CustomFormat) {
+  fmt::dynamic_format_arg_store<fmt::format_context> store;
+  custom_type c{};
+  store.push_back(c);
+  ++c.i;
+  store.push_back(c);
+  ++c.i;
+  store.push_back(std::cref(c));
+  ++c.i;
+
+  std::string result = fmt::vformat("{} and {} and {}", store);
+  EXPECT_EQ("cust=0 and cust=1 and cust=3", result);
+}
+
+struct copy_throwable {
+  copy_throwable() {}
+  copy_throwable(const copy_throwable&) { throw "deal with it"; }
+};
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<copy_throwable> {
+  auto parse(format_parse_context& ctx) const -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
+  auto format(copy_throwable, format_context& ctx) -> decltype(ctx.out()) {
+    return ctx.out();
+  }
+};
+FMT_END_NAMESPACE
+
+TEST(FormatDynArgsTest, ThrowOnCopy) {
+  fmt::dynamic_format_arg_store<fmt::format_context> store;
+  store.push_back(std::string("foo"));
+  try {
+    store.push_back(copy_throwable());
+  } catch (...) {
+  }
+  EXPECT_EQ(fmt::vformat("{}", store), "foo");
+}
+
 TEST(StringViewTest, ValueType) {
   static_assert(std::is_same<string_view::value_type, char>::value, "");
 }
@@ -520,23 +600,6 @@ inline fmt::basic_string_view<Char> to_string_view(const my_string<Char>& s)
 struct non_string {};
 }  // namespace my_ns
 
-namespace FakeQt {
-class QString {
- public:
-  QString(const wchar_t* s) : s_(std::make_shared<std::wstring>(s)) {}
-  const wchar_t* utf16() const FMT_NOEXCEPT { return s_->data(); }
-  int size() const FMT_NOEXCEPT { return static_cast<int>(s_->size()); }
-
- private:
-  std::shared_ptr<std::wstring> s_;
-};
-
-inline fmt::basic_string_view<wchar_t> to_string_view(const QString& s)
-    FMT_NOEXCEPT {
-  return {s.utf16(), static_cast<std::size_t>(s.size())};
-}
-}  // namespace FakeQt
-
 template <typename T> class IsStringTest : public testing::Test {};
 
 typedef ::testing::Types<char, wchar_t, char16_t, char32_t> StringCharTypes;
@@ -562,7 +625,6 @@ TYPED_TEST(IsStringTest, IsString) {
               fmt::internal::is_string<string_view>::value);
   EXPECT_TRUE(fmt::internal::is_string<my_ns::my_string<TypeParam>>::value);
   EXPECT_FALSE(fmt::internal::is_string<my_ns::non_string>::value);
-  EXPECT_TRUE(fmt::internal::is_string<FakeQt::QString>::value);
 }
 
 TEST(CoreTest, Format) {
@@ -585,33 +647,16 @@ TEST(CoreTest, FormatTo) {
 
 TEST(CoreTest, ToStringViewForeignStrings) {
   using namespace my_ns;
-  using namespace FakeQt;
   EXPECT_EQ(to_string_view(my_string<char>("42")), "42");
-  EXPECT_EQ(to_string_view(my_string<wchar_t>(L"42")), L"42");
-  EXPECT_EQ(to_string_view(QString(L"42")), L"42");
   fmt::internal::type type =
       fmt::internal::mapped_type_constant<my_string<char>,
                                           fmt::format_context>::value;
   EXPECT_EQ(type, fmt::internal::type::string_type);
-  type = fmt::internal::mapped_type_constant<my_string<wchar_t>,
-                                             fmt::wformat_context>::value;
-  EXPECT_EQ(type, fmt::internal::type::string_type);
-  type =
-      fmt::internal::mapped_type_constant<QString, fmt::wformat_context>::value;
-  EXPECT_EQ(type, fmt::internal::type::string_type);
-  // Does not compile: only wide format contexts are compatible with QString!
-  // type = fmt::internal::mapped_type_constant<QString,
-  // fmt::format_context>::value;
 }
 
 TEST(CoreTest, FormatForeignStrings) {
   using namespace my_ns;
-  using namespace FakeQt;
   EXPECT_EQ(fmt::format(my_string<char>("{}"), 42), "42");
-  EXPECT_EQ(fmt::format(my_string<wchar_t>(L"{}"), 42), L"42");
-  EXPECT_EQ(fmt::format(QString(L"{}"), 42), L"42");
-  EXPECT_EQ(fmt::format(QString(L"{}"), my_string<wchar_t>(L"42")), L"42");
-  EXPECT_EQ(fmt::format(my_string<wchar_t>(L"{}"), QString(L"42")), L"42");
 }
 
 struct implicitly_convertible_to_string {
@@ -646,15 +691,6 @@ TEST(FormatterTest, FormatExplicitlyConvertibleToStdStringView) {
             fmt::format("{}", explicitly_convertible_to_std_string_view()));
 }
 #  endif
-
-struct explicitly_convertible_to_wstring_view {
-  explicit operator fmt::wstring_view() const { return L"foo"; }
-};
-
-TEST(FormatterTest, FormatExplicitlyConvertibleToWStringView) {
-  EXPECT_EQ(L"foo",
-            fmt::format(L"{}", explicitly_convertible_to_wstring_view()));
-}
 #endif
 
 struct disabled_rvalue_conversion {
