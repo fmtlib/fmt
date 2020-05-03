@@ -2963,25 +2963,22 @@ struct formatter<T, Char,
           &specs_, internal::char_specs_checker<decltype(eh)>(specs_.type, eh));
       break;
     case internal::type::float_type:
-      if (internal::const_check(FMT_USE_FLOAT)) {
+      if (internal::const_check(FMT_USE_FLOAT))
         internal::parse_float_type_spec(specs_, eh);
-      } else {
+      else
         FMT_ASSERT(false, "float support disabled");
-      }
       break;
     case internal::type::double_type:
-      if (internal::const_check(FMT_USE_DOUBLE)) {
+      if (internal::const_check(FMT_USE_DOUBLE))
         internal::parse_float_type_spec(specs_, eh);
-      } else {
+      else
         FMT_ASSERT(false, "double support disabled");
-      }
       break;
     case internal::type::long_double_type:
-      if (internal::const_check(FMT_USE_LONG_DOUBLE)) {
+      if (internal::const_check(FMT_USE_LONG_DOUBLE))
         internal::parse_float_type_spec(specs_, eh);
-      } else {
+      else
         FMT_ASSERT(false, "long double support disabled");
-      }
       break;
     case internal::type::cstring_type:
       internal::handle_cstring_type_spec(
