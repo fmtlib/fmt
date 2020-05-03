@@ -48,10 +48,9 @@ namespace internal {
 
 FMT_FUNC void assert_fail(const char* file, int line, const char* message) {
   print(stderr, "{}:{}: assertion failed: {}", file, line, message);
-#if defined(__clang__) && defined(__CUDA__) && defined(__CUDA_ARCH__)
+  // Chosen instead of std::abort to satisfy Clang in CUDA mode during device
+  // code pass.
   std::terminate();
-#else
-  std::abort();
 #endif
 }
 
