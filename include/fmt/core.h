@@ -1760,8 +1760,8 @@ template <typename OutputIt, typename S, typename Char = char_t<S>,
 OutputIt vformat_to(
     OutputIt out, const S& format_str,
     basic_format_args<buffer_context<type_identity_t<Char>>> args) {
-  using container = remove_reference_t<decltype(internal::get_container(out))>;
-  internal::container_buffer<container> buf((internal::get_container(out)));
+  auto& c = internal::get_container(out);
+  internal::container_buffer<remove_reference_t<decltype(c)>> buf(c);
   internal::vformat_to(buf, to_string_view(format_str), args);
   return out;
 }
