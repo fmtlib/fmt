@@ -1665,16 +1665,11 @@ template <typename Range> class basic_writer {
       return;
     }
 
-    if (specs.align == align::none) {
-      specs.align = align::right;
-    } else if (specs.align == align::numeric) {
-      if (fspecs.sign) {
-        auto&& it = reserve(1);
-        *it++ = static_cast<char_type>(data::signs[fspecs.sign]);
-        fspecs.sign = sign::none;
-        if (specs.width != 0) --specs.width;
-      }
-      specs.align = align::right;
+    if (specs.align == align::numeric && fspecs.sign) {
+      auto&& it = reserve(1);
+      *it++ = static_cast<char_type>(data::signs[fspecs.sign]);
+      fspecs.sign = sign::none;
+      if (specs.width != 0) --specs.width;
     }
 
     memory_buffer buffer;
@@ -1698,7 +1693,7 @@ template <typename Range> class basic_writer {
                                     : static_cast<char_type>('.');
     float_writer<char_type> w(buffer.data(), static_cast<int>(buffer.size()),
                               exp, fspecs, point);
-    out_ = write_padded(out_, specs, w.size(), w);
+    out_ = write_padded<align::right>(out_, specs, w.size(), w);
   }
 
   void write(char value) {
