@@ -1409,13 +1409,11 @@ inline OutputIt write_padded(OutputIt out,
 template <typename Char> struct write_int_data {
   std::size_t size;
   std::size_t padding;
-  Char fill;
 
   write_int_data(int num_digits, string_view prefix,
                  basic_format_specs<Char>& specs)
       : size(prefix.size() + to_unsigned(num_digits)),
-        padding(0),
-        fill(specs.fill[0]) {
+        padding(0) {
     if (specs.align == align::numeric) {
       auto width = to_unsigned(specs.width);
       if (width > size) {
@@ -1425,7 +1423,6 @@ template <typename Char> struct write_int_data {
     } else if (specs.precision > num_digits) {
       size = prefix.size() + to_unsigned(specs.precision);
       padding = to_unsigned(specs.precision - num_digits);
-      fill = static_cast<Char>('0');
     }
     if (specs.align == align::none) specs.align = align::right;
   }
@@ -1442,7 +1439,7 @@ OutputIt write_int(OutputIt out, int num_digits, string_view prefix,
   return write_padded(out, specs, data.size, [=](iterator it) {
     if (prefix.size() != 0)
       it = copy_str<Char>(prefix.begin(), prefix.end(), it);
-    it = std::fill_n(it, data.padding, data.fill);
+    it = std::fill_n(it, data.padding, static_cast<Char>('0'));
     return f(it);
   });
 }

@@ -748,35 +748,7 @@ TEST(FormatterTest, RightAlign) {
 
 #if FMT_NUMERIC_ALIGN
 TEST(FormatterTest, NumericAlign) {
-  EXPECT_EQ("  42", format("{0:=4}", 42));
-  EXPECT_EQ("+ 42", format("{0:=+4}", 42));
-  EXPECT_EQ("  42", format("{0:=4o}", 042));
-  EXPECT_EQ("+ 42", format("{0:=+4o}", 042));
-  EXPECT_EQ("  42", format("{0:=4x}", 0x42));
-  EXPECT_EQ("+ 42", format("{0:=+4x}", 0x42));
-  EXPECT_EQ("-  42", format("{0:=5}", -42));
-  EXPECT_EQ("   42", format("{0:=5}", 42u));
-  EXPECT_EQ("-  42", format("{0:=5}", -42l));
-  EXPECT_EQ("   42", format("{0:=5}", 42ul));
-  EXPECT_EQ("-  42", format("{0:=5}", -42ll));
-  EXPECT_EQ("   42", format("{0:=5}", 42ull));
-  EXPECT_EQ("-  42.0", format("{0:=7}", -42.0));
-  EXPECT_EQ("-  42.0", format("{0:=7}", -42.0l));
-  EXPECT_THROW_MSG(format("{0:=5", 'c'), format_error,
-                   "missing '}' in format string");
-  EXPECT_THROW_MSG(format("{0:=5}", 'c'), format_error,
-                   "invalid format specifier for char");
-  EXPECT_THROW_MSG(format("{0:=5}", "abc"), format_error,
-                   "format specifier requires numeric argument");
-  EXPECT_THROW_MSG(format("{0:=8}", reinterpret_cast<void*>(0xface)),
-                   format_error, "format specifier requires numeric argument");
-  EXPECT_EQ(" 1.0", fmt::format("{:= }", 1.0));
-}
-
-TEST(FormatToTest, FormatToNonbackInsertIteratorWithSignAndNumericAlignment) {
-  char buffer[16] = {};
-  fmt::format_to(fmt::internal::make_checked(buffer, 16), "{: =+}", 42.0);
-  EXPECT_STREQ("+42.0", buffer);
+  EXPECT_EQ("0042", format("{0:=4}", 42));
 }
 #endif
 
