@@ -450,11 +450,11 @@ TEST(UtilTest, CountDigits) {
   test_count_digits<uint64_t>();
 }
 
-TEST(UtilTest, WriteUIntPtr) {
-  fmt::memory_buffer buf;
-  fmt::internal::writer writer(buf);
-  writer.write_pointer(
+TEST(UtilTest, WriteFallbackUIntPtr) {
+  std::string s;
+  fmt::internal::write_ptr<char>(
+      std::back_inserter(s),
       fmt::internal::fallback_uintptr(reinterpret_cast<void*>(0xface)),
       nullptr);
-  EXPECT_EQ("0xface", to_string(buf));
+  EXPECT_EQ(s, "0xface");
 }

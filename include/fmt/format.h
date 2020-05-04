@@ -1577,6 +1577,21 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
   }
 };
 
+template <typename Char, typename OutputIt, typename UIntPtr>
+OutputIt write_ptr(OutputIt out, UIntPtr value,
+                   const basic_format_specs<Char>* specs) {
+  int num_digits = count_digits<4>(value);
+  auto size = to_unsigned(num_digits) + size_t(2);
+  using iterator = remove_reference_t<decltype(reserve(out, 0))>;
+  auto write = [=](iterator it) {
+    *it++ = static_cast<Char>('0');
+    *it++ = static_cast<Char>('x');
+    return format_uint<4, Char>(it, value, num_digits);
+  };
+  return specs ? write_padded<align::right>(out, *specs, size, write)
+               : base_iterator(out, write(reserve(out, size)));
+}
+
 // This template provides operations for formatting and writing data into a
 // character range.
 template <typename Range> class basic_writer {
@@ -1742,17 +1757,7 @@ template <typename Range> class basic_writer {
 
   template <typename UIntPtr>
   void write_pointer(UIntPtr value, const format_specs* specs) {
-    int num_digits = count_digits<4>(value);
-    auto size = to_unsigned(num_digits) + size_t(2);
-    auto write = [=](reserve_iterator it) {
-      *it++ = static_cast<char_type>('0');
-      *it++ = static_cast<char_type>('x');
-      return format_uint<4, char_type>(it, value, num_digits);
-    };
-    if (!specs) return void(write(reserve(size)));
-    format_specs specs_copy = *specs;
-    if (specs_copy.align == align::none) specs_copy.align = align::right;
-    out_ = write_padded(out_, specs_copy, size, write);
+    out_ = write_ptr<char_type>(out_, value, specs);
   }
 };
 
