@@ -1768,7 +1768,7 @@ template <> struct is_integral<int128_t> : std::true_type {};
 template <> struct is_integral<uint128_t> : std::true_type {};
 
 template <typename Range, typename ErrorHandler = internal::error_handler>
-class arg_formatter_base {
+class arg_formatter_base : private basic_writer<Range> {
  public:
   using char_type = typename Range::value_type;
   using iterator = typename Range::iterator;
@@ -1776,8 +1776,11 @@ class arg_formatter_base {
 
  private:
   using writer_type = basic_writer<Range>;
-  writer_type writer_;
   format_specs* specs_;
+
+  using writer_type::write;
+  using writer_type::write_int;
+  using writer_type::write_pointer;
 
   struct char_writer {
     char_type value;
@@ -1792,24 +1795,23 @@ class arg_formatter_base {
 
   void write_char(char_type value) {
     if (specs_)
-      writer_.out() =
-          write_padded(writer_.out(), *specs_, 1, char_writer{value});
+      out() = write_padded(out(), *specs_, 1, char_writer{value});
     else
-      writer_.write(value);
+      write(value);
   }
 
   void write_pointer(const void* p) {
-    writer_.write_pointer(internal::to_uintptr(p), specs_);
+    write_pointer(internal::to_uintptr(p), specs_);
   }
 
  protected:
-  writer_type& writer() { return writer_; }
+  using writer_type::out;
+  writer_type& writer() { return *this; }
   format_specs* specs() { return specs_; }
-  iterator out() { return writer_.out(); }
 
   void write(bool value) {
     string_view sv(value ? "true" : "false");
-    specs_ ? writer_.write(sv, *specs_) : writer_.write(sv);
+    specs_ ? write(sv, *specs_) : write(sv);
   }
 
   void write(const char_type* value) {
@@ -1818,13 +1820,13 @@ class arg_formatter_base {
     } else {
       auto length = std::char_traits<char_type>::length(value);
       basic_string_view<char_type> sv(value, length);
-      specs_ ? writer_.write(sv, *specs_) : writer_.write(sv);
+      specs_ ? write(sv, *specs_) : write(sv);
     }
   }
 
  public:
   arg_formatter_base(Range r, format_specs* s, locale_ref loc)
-      : writer_(r, loc), specs_(s) {}
+      : basic_writer<Range>(r, loc), specs_(s) {}
 
   iterator operator()(monostate) {
     FMT_ASSERT(false, "invalid argument type");
@@ -1834,9 +1836,9 @@ class arg_formatter_base {
   template <typename T, FMT_ENABLE_IF(is_integral<T>::value)>
   iterator operator()(T value) {
     if (specs_)
-      writer_.write_int(value, *specs_);
+      write_int(value, *specs_);
     else
-      writer_.write(value);
+      write(value);
     return out();
   }
 
@@ -1855,7 +1857,7 @@ class arg_formatter_base {
   template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
   iterator operator()(T value) {
     if (const_check(is_supported_floating_point(value)))
-      writer_.write(value, specs_ ? *specs_ : format_specs());
+      write(value, specs_ ? *specs_ : format_specs());
     else
       FMT_ASSERT(false, "unsupported float argument type");
     return out();
@@ -1870,9 +1872,9 @@ class arg_formatter_base {
 
     void on_int() {
       if (formatter.specs_)
-        formatter.writer_.write_int(static_cast<int>(value), *formatter.specs_);
+        formatter.write_int(static_cast<int>(value), *formatter.specs_);
       else
-        formatter.writer_.write(value);
+        formatter.write(value);
     }
     void on_char() { formatter.write_char(value); }
   };
@@ -1898,9 +1900,9 @@ class arg_formatter_base {
   iterator operator()(basic_string_view<char_type> value) {
     if (specs_) {
       internal::check_string_type_spec(specs_->type, internal::error_handler());
-      writer_.write(value, *specs_);
+      write(value, *specs_);
     } else {
-      writer_.write(value);
+      write(value);
     }
     return out();
   }
