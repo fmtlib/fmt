@@ -1311,6 +1311,13 @@ template <typename T> struct is_reference_wrapper : std::false_type {};
 template <typename T>
 struct is_reference_wrapper<std::reference_wrapper<T>> : std::true_type {};
 
+template <typename T> struct unwrap_reference { using type = T; };
+template <typename T> struct unwrap_reference<std::reference_wrapper<T>> {
+  using type = T&;
+};
+template <typename T>
+using unwrap_reference_t = typename unwrap_reference<T>::type;
+
 class dynamic_arg_list {
   // Workaround for clang's -Wweak-vtables. Unlike for regular classes, for
   // templates it doesn't complain about inability to deduce single translation
@@ -1531,8 +1538,7 @@ class dynamic_format_arg_store
                 std::is_same<T, internal::std_string_view<char_type>>::value ||
                 (mapped_type != internal::type::cstring_type &&
                  mapped_type != internal::type::string_type &&
-                 mapped_type != internal::type::custom_type &&
-                 mapped_type != internal::type::named_arg_type))
+                 mapped_type != internal::type::custom_type))
     };
   };
 
@@ -1552,8 +1558,9 @@ class dynamic_format_arg_store
 
   unsigned long long get_types() const {
     return internal::is_unpacked_bit | data_.size() |
-           (named_info_.empty() ? 0ULL :
-               static_cast<unsigned long long>(internal::has_named_args_bit));
+           (named_info_.empty() ? 0ULL
+                                : static_cast<unsigned long long>(
+                                      internal::has_named_args_bit));
   }
 
   const basic_format_arg<Context>* data() const {
@@ -1566,13 +1573,19 @@ class dynamic_format_arg_store
 
   template <typename T>
   void emplace_arg(const internal::named_arg<T, char_type>& arg) {
-    if (named_info_.empty())
-      data_.insert(data_.begin(), basic_format_arg<Context>{});
-    data_.emplace_back(internal::make_arg<Context>(arg));
+    if (named_info_.empty()) {
+      data_.insert(
+          data_.begin(),
+          {static_cast<const internal::named_arg_info<char_type>*>(nullptr),
+           0});
+    }
+    data_.emplace_back(internal::make_arg<Context>(
+        static_cast<const internal::unwrap_reference_t<T>&>(arg.value)));
     FMT_TRY {
       named_info_.push_back({arg.name, static_cast<int>(data_.size() - 2u)});
       data_[0].value_.named_args = {named_info_.data(), named_info_.size()};
-    } FMT_CATCH(...) {
+    }
+    FMT_CATCH(...) {
       data_.pop_back();
       FMT_RETHROW();
     }
@@ -1603,9 +1616,42 @@ class dynamic_format_arg_store
     if (internal::const_check(need_copy<T>::value))
       emplace_arg(dynamic_args_.push<stored_type<T>>(arg));
     else
-      emplace_arg(arg);
+      emplace_arg(static_cast<const internal::unwrap_reference_t<T>&>(arg));
   }
 
+  /**
+    \rst
+    Adds a reference to the argument into the dynamic store for later passing to
+    a formating function. Supports wrapped named arguments.
+
+    **Example**::
+      fmt::dynamic_format_arg_store<fmt::format_context> store;
+      char str[] = "1234567890";
+      store.push_back(std::cref(str));
+      int a1_val{42};
+      auto a1 = fmt::arg("a1_", a1_val);
+      store.push_back(std::cref(a1));
+
+      // Changing str affects the output but only for string and custom types.
+      str[0] = 'X';
+
+      std::string result = fmt::vformat("{} and {a1_}");
+      assert(result == "X234567890 and 42");
+    \endrst
+  */
+  template <typename T> void push_back(std::reference_wrapper<T> arg) {
+    static_assert(
+        internal::is_named_arg<typename std::decay<T>::type>::value ||
+            need_copy<T>::value,
+        "objects of built-in types and string views are always copied");
+    emplace_arg(arg.get());
+  }
+
+  /**
+    Adds named argument into the dynamic store for later passing to a formating
+    function. std::reference_wrapper is supported to avoid copying of the
+    argument.
+  */
   template <typename T>
   void push_back(const internal::named_arg<T, char_type>& arg) {
     const char_type* arg_name =
@@ -1613,30 +1659,8 @@ class dynamic_format_arg_store
     if (internal::const_check(need_copy<T>::value)) {
       emplace_arg(
           fmt::arg(arg_name, dynamic_args_.push<stored_type<T>>(arg.value)));
-    }
-    else
+    } else
       emplace_arg(fmt::arg(arg_name, arg.value));
-  }
-
-  /**
-    Adds a reference to the argument into the dynamic store for later passing to
-    a formating function.
-  */
-  template <typename T> void push_back(std::reference_wrapper<T> arg) {
-    static_assert(
-        need_copy<T>::value,
-        "objects of built-in types and string views are always copied");
-    emplace_arg(arg.get());
-  }
-
-  /**
-    Adds a reference to the argument into the dynamic store for later passing to
-    a formating function.
-  */
-  template <typename T>
-  void push_back(
-      std::reference_wrapper<const internal::named_arg<T, char_type>> arg) {
-    emplace_arg(arg.get());
   }
 };
 
