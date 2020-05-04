@@ -15,6 +15,7 @@
 #include <cstdarg>
 #include <cstring>  // for std::memmove
 #include <cwchar>
+#include <exception>
 
 #include "format.h"
 #if !defined(FMT_STATIC_THOUSANDS_SEPARATOR)
@@ -47,7 +48,9 @@ namespace internal {
 
 FMT_FUNC void assert_fail(const char* file, int line, const char* message) {
   print(stderr, "{}:{}: assertion failed: {}", file, line, message);
-  std::abort();
+  // Chosen instead of std::abort to satisfy Clang in CUDA mode during device
+  // code pass.
+  std::terminate();
 }
 
 #ifndef _MSC_VER
