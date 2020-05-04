@@ -1448,6 +1448,135 @@ OutputIt write_int(OutputIt out, int num_digits, string_view prefix,
   });
 }
 
+// The handle_int_type_spec handler that writes an integer.
+template <typename OutputIt, typename Char, typename UInt> struct int_writer {
+  OutputIt out;
+  locale_ref locale;
+  const basic_format_specs<Char>& specs;
+  UInt abs_value;
+  char prefix[4];
+  unsigned prefix_size;
+
+  using iterator =
+      remove_reference_t<decltype(reserve(std::declval<OutputIt&>(), 0))>;
+
+  string_view get_prefix() const { return string_view(prefix, prefix_size); }
+
+  template <typename Int>
+  int_writer(OutputIt output, locale_ref loc, Int value,
+             const basic_format_specs<Char>& s)
+      : out(output),
+        locale(loc),
+        specs(s),
+        abs_value(static_cast<UInt>(value)),
+        prefix_size(0) {
+    static_assert(std::is_same<uint32_or_64_or_128_t<Int>, UInt>::value, "");
+    if (is_negative(value)) {
+      prefix[0] = '-';
+      ++prefix_size;
+      abs_value = 0 - abs_value;
+    } else if (specs.sign != sign::none && specs.sign != sign::minus) {
+      prefix[0] = specs.sign == sign::plus ? '+' : ' ';
+      ++prefix_size;
+    }
+  }
+
+  void on_dec() {
+    auto num_digits = count_digits(abs_value);
+    out = write_int(out, num_digits, get_prefix(), specs, [=](iterator it) {
+      return format_decimal<Char>(it, abs_value, num_digits);
+    });
+  }
+
+  void on_hex() {
+    if (specs.alt) {
+      prefix[prefix_size++] = '0';
+      prefix[prefix_size++] = specs.type;
+    }
+    int num_digits = count_digits<4>(abs_value);
+    out = write_int(out, num_digits, get_prefix(), specs, [=](iterator it) {
+      return format_uint<4, Char>(it, abs_value, num_digits, specs.type != 'x');
+    });
+  }
+
+  void on_bin() {
+    if (specs.alt) {
+      prefix[prefix_size++] = '0';
+      prefix[prefix_size++] = static_cast<char>(specs.type);
+    }
+    int num_digits = count_digits<1>(abs_value);
+    out = write_int(out, num_digits, get_prefix(), specs, [=](iterator it) {
+      return format_uint<1, Char>(it, abs_value, num_digits);
+    });
+  }
+
+  void on_oct() {
+    int num_digits = count_digits<3>(abs_value);
+    if (specs.alt && specs.precision <= num_digits && abs_value != 0) {
+      // Octal prefix '0' is counted as a digit, so only add it if precision
+      // is not greater than the number of digits.
+      prefix[prefix_size++] = '0';
+    }
+    out = write_int(out, num_digits, get_prefix(), specs, [=](iterator it) {
+      return format_uint<3, Char>(it, abs_value, num_digits);
+    });
+  }
+
+  enum { sep_size = 1 };
+
+  struct num_writer {
+    UInt abs_value;
+    int size;
+    const std::string& groups;
+    Char sep;
+
+    template <typename It> It operator()(It it) const {
+      basic_string_view<Char> s(&sep, sep_size);
+      // Index of a decimal digit with the least significant digit having
+      // index 0.
+      int digit_index = 0;
+      std::string::const_iterator group = groups.cbegin();
+      return format_decimal<Char>(
+          it, abs_value, size, [this, s, &group, &digit_index](Char*& buffer) {
+            if (*group <= 0 || ++digit_index % *group != 0 ||
+                *group == max_value<char>())
+              return;
+            if (group + 1 != groups.cend()) {
+              digit_index = 0;
+              ++group;
+            }
+            buffer -= s.size();
+            std::uninitialized_copy(s.data(), s.data() + s.size(),
+                                    make_checked(buffer, s.size()));
+          });
+    }
+  };
+
+  void on_num() {
+    std::string groups = grouping<Char>(locale);
+    if (groups.empty()) return on_dec();
+    auto sep = thousands_sep<Char>(locale);
+    if (!sep) return on_dec();
+    int num_digits = count_digits(abs_value);
+    int size = num_digits;
+    std::string::const_iterator group = groups.cbegin();
+    while (group != groups.cend() && num_digits > *group && *group > 0 &&
+           *group != max_value<char>()) {
+      size += sep_size;
+      num_digits -= *group;
+      ++group;
+    }
+    if (group == groups.cend())
+      size += sep_size * ((num_digits - 1) / groups.back());
+    out = write_int(out, size, get_prefix(), specs,
+                    num_writer{abs_value, size, groups, sep});
+  }
+
+  FMT_NORETURN void on_error() {
+    FMT_THROW(format_error("invalid type specifier"));
+  }
+};
+
 // This template provides operations for formatting and writing data into a
 // character range.
 template <typename Range> class basic_writer {
@@ -1478,141 +1607,6 @@ template <typename Range> class basic_writer {
     it = format_decimal<char_type>(it, abs_value, num_digits);
   }
 
-  // The handle_int_type_spec handler that writes an integer.
-  template <typename UInt> struct int_writer {
-    basic_writer<Range>& writer;
-    const basic_format_specs<char_type>& specs;
-    UInt abs_value;
-    char prefix[4];
-    unsigned prefix_size;
-
-    string_view get_prefix() const { return string_view(prefix, prefix_size); }
-
-    template <typename Int>
-    int_writer(basic_writer<Range>& w, Int value,
-               const basic_format_specs<char_type>& s)
-        : writer(w),
-          specs(s),
-          abs_value(static_cast<UInt>(value)),
-          prefix_size(0) {
-      static_assert(std::is_same<uint32_or_64_or_128_t<Int>, UInt>::value, "");
-      if (is_negative(value)) {
-        prefix[0] = '-';
-        ++prefix_size;
-        abs_value = 0 - abs_value;
-      } else if (specs.sign != sign::none && specs.sign != sign::minus) {
-        prefix[0] = specs.sign == sign::plus ? '+' : ' ';
-        ++prefix_size;
-      }
-    }
-
-    void on_dec() {
-      auto num_digits = count_digits(abs_value);
-      writer.out_ = internal::write_int(writer.out_, num_digits, get_prefix(),
-                                        specs, [=](reserve_iterator it) {
-                                          return format_decimal<char_type>(
-                                              it, abs_value, num_digits);
-                                        });
-    }
-
-    void on_hex() {
-      if (specs.alt) {
-        prefix[prefix_size++] = '0';
-        prefix[prefix_size++] = specs.type;
-      }
-      int num_digits = count_digits<4>(abs_value);
-      writer.out_ = internal::write_int(writer.out_, num_digits, get_prefix(),
-                                        specs, [=](reserve_iterator it) {
-                                          return format_uint<4, char_type>(
-                                              it, abs_value, num_digits,
-                                              specs.type != 'x');
-                                        });
-    }
-
-    void on_bin() {
-      if (specs.alt) {
-        prefix[prefix_size++] = '0';
-        prefix[prefix_size++] = static_cast<char>(specs.type);
-      }
-      int num_digits = count_digits<1>(abs_value);
-      writer.out_ = internal::write_int(writer.out_, num_digits, get_prefix(),
-                                        specs, [=](reserve_iterator it) {
-                                          return format_uint<1, char_type>(
-                                              it, abs_value, num_digits);
-                                        });
-    }
-
-    void on_oct() {
-      int num_digits = count_digits<3>(abs_value);
-      if (specs.alt && specs.precision <= num_digits && abs_value != 0) {
-        // Octal prefix '0' is counted as a digit, so only add it if precision
-        // is not greater than the number of digits.
-        prefix[prefix_size++] = '0';
-      }
-      writer.out_ = internal::write_int(writer.out_, num_digits, get_prefix(),
-                                        specs, [=](reserve_iterator it) {
-                                          return format_uint<3, char_type>(
-                                              it, abs_value, num_digits);
-                                        });
-    }
-
-    enum { sep_size = 1 };
-
-    struct num_writer {
-      UInt abs_value;
-      int size;
-      const std::string& groups;
-      char_type sep;
-
-      template <typename It> It operator()(It it) const {
-        basic_string_view<char_type> s(&sep, sep_size);
-        // Index of a decimal digit with the least significant digit having
-        // index 0.
-        int digit_index = 0;
-        std::string::const_iterator group = groups.cbegin();
-        return format_decimal<char_type>(
-            it, abs_value, size,
-            [this, s, &group, &digit_index](char_type*& buffer) {
-              if (*group <= 0 || ++digit_index % *group != 0 ||
-                  *group == max_value<char>())
-                return;
-              if (group + 1 != groups.cend()) {
-                digit_index = 0;
-                ++group;
-              }
-              buffer -= s.size();
-              std::uninitialized_copy(s.data(), s.data() + s.size(),
-                                      make_checked(buffer, s.size()));
-            });
-      }
-    };
-
-    void on_num() {
-      std::string groups = grouping<char_type>(writer.locale_);
-      if (groups.empty()) return on_dec();
-      auto sep = thousands_sep<char_type>(writer.locale_);
-      if (!sep) return on_dec();
-      int num_digits = count_digits(abs_value);
-      int size = num_digits;
-      std::string::const_iterator group = groups.cbegin();
-      while (group != groups.cend() && num_digits > *group && *group > 0 &&
-             *group != max_value<char>()) {
-        size += sep_size;
-        num_digits -= *group;
-        ++group;
-      }
-      if (group == groups.cend())
-        size += sep_size * ((num_digits - 1) / groups.back());
-      writer.out_ =
-          internal::write_int(writer.out_, size, get_prefix(), specs,
-                              num_writer{abs_value, size, groups, sep});
-    }
-
-    FMT_NORETURN void on_error() {
-      FMT_THROW(format_error("invalid type specifier"));
-    }
-  };
-
   using reserve_iterator = remove_reference_t<decltype(
       internal::reserve(std::declval<iterator&>(), 0))>;
 
@@ -1637,7 +1631,9 @@ template <typename Range> class basic_writer {
 
   template <typename T> void write_int(T value, const format_specs& spec) {
     using uint_type = uint32_or_64_or_128_t<T>;
-    handle_int_type_spec(spec.type, int_writer<uint_type>(*this, value, spec));
+    int_writer<iterator, char_type, uint_type> w(out_, locale_, value, spec);
+    handle_int_type_spec(spec.type, w);
+    out_ = w.out;
   }
 
   template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
