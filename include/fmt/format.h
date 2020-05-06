@@ -1561,6 +1561,22 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
   }
 };
 
+template <typename Char, typename OutputIt>
+OutputIt write_nonfinite(OutputIt out, bool isinf,
+                         const basic_format_specs<Char>& specs,
+                         const float_specs& fspecs) {
+  auto str =
+      isinf ? (fspecs.upper ? "INF" : "inf") : (fspecs.upper ? "NAN" : "nan");
+  constexpr size_t str_size = 3;
+  auto sign = fspecs.sign;
+  auto size = str_size + (sign ? 1 : 0);
+  using iterator = remove_reference_t<decltype(reserve(out, 0))>;
+  return write_padded(out, specs, size, [=](iterator it) {
+    if (sign) *it++ = static_cast<Char>(data::signs[sign]);
+    return copy_str<Char>(str, str + str_size, it);
+  });
+}
+
 template <typename Char, typename OutputIt, typename UIntPtr>
 OutputIt write_ptr(OutputIt out, UIntPtr value,
                    const basic_format_specs<Char>* specs) {
@@ -1648,15 +1664,7 @@ template <typename Range> class basic_writer {
     }
 
     if (!std::isfinite(value)) {
-      auto str = std::isinf(value) ? (fspecs.upper ? "INF" : "inf")
-                                   : (fspecs.upper ? "NAN" : "nan");
-      constexpr size_t str_size = 3;
-      auto sign = fspecs.sign;
-      auto size = str_size + (sign ? 1 : 0);
-      out_ = write_padded(out_, specs, size, [=](reserve_iterator it) {
-        if (sign) *it++ = static_cast<char_type>(data::signs[sign]);
-        return copy_str<char_type>(str, str + str_size, it);
-      });
+      out_ = write_nonfinite(out_, std::isinf(value), specs, fspecs);
       return;
     }
 
