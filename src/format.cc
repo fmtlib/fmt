@@ -23,97 +23,6 @@ int format_float(char* buf, std::size_t size, const char* format, int precision,
   return precision < 0 ? snprintf_ptr(buf, size, format, value)
                        : snprintf_ptr(buf, size, format, precision, value);
 }
-struct sprintf_specs {
-  int precision;
-  char type;
-  bool alt : 1;
-
-  template <typename Char>
-  constexpr explicit sprintf_specs(basic_format_specs<Char> specs)
-      : precision(specs.precision), type(specs.type), alt(specs.alt) {}
-
-  constexpr bool has_precision() const { return precision >= 0; }
-};
-
-// This is deprecated and is kept only to preserve ABI compatibility.
-template <typename Double>
-char* sprintf_format(Double value, internal::buffer<char>& buf,
-                     sprintf_specs specs) {
-  // Buffer capacity must be non-zero, otherwise MSVC's vsnprintf_s will fail.
-  FMT_ASSERT(buf.capacity() != 0, "empty buffer");
-
-  // Build format string.
-  enum { max_format_size = 10 };  // longest format: %#-*.*Lg
-  char format[max_format_size];
-  char* format_ptr = format;
-  *format_ptr++ = '%';
-  if (specs.alt || !specs.type) *format_ptr++ = '#';
-  if (specs.precision >= 0) {
-    *format_ptr++ = '.';
-    *format_ptr++ = '*';
-  }
-  if (std::is_same<Double, long double>::value) *format_ptr++ = 'L';
-
-  char type = specs.type;
-
-  if (type == '%')
-    type = 'f';
-  else if (type == 0 || type == 'n')
-    type = 'g';
-#if FMT_MSC_VER
-  if (type == 'F') {
-    // MSVC's printf doesn't support 'F'.
-    type = 'f';
-  }
-#endif
-  *format_ptr++ = type;
-  *format_ptr = '\0';
-
-  // Format using snprintf.
-  char* start = nullptr;
-  char* decimal_point_pos = nullptr;
-  for (;;) {
-    std::size_t buffer_size = buf.capacity();
-    start = &buf[0];
-    int result =
-        format_float(start, buffer_size, format, specs.precision, value);
-    if (result >= 0) {
-      unsigned n = internal::to_unsigned(result);
-      if (n < buf.capacity()) {
-        // Find the decimal point.
-        auto* p = buf.data();
-        auto* end = p + n;
-        if (*p == '+' || *p == '-') ++p;
-        if (specs.type != 'a' && specs.type != 'A') {
-          while (p < end && *p >= '0' && *p <= '9') ++p;
-          if (p < end && *p != 'e' && *p != 'E') {
-            decimal_point_pos = p;
-            if (!specs.type) {
-              // Keep only one trailing zero after the decimal point.
-              ++p;
-              if (*p == '0') ++p;
-              while (p != end && *p >= '1' && *p <= '9') ++p;
-              char* where = p;
-              while (p != end && *p == '0') ++p;
-              if (p == end || *p < '0' || *p > '9') {
-                if (p != end) std::memmove(where, p, to_unsigned(end - p));
-                n -= static_cast<unsigned>(p - where);
-              }
-            }
-          }
-        }
-        buf.resize(n);
-        break;  // The buffer is large enough - continue with formatting.
-      }
-      buf.reserve(n + 1);
-    } else {
-      // If result is negative we ask to increase the capacity by at least 1,
-      // but as std::vector, the buffer grows exponentially.
-      buf.reserve(buf.capacity() + 1);
-    }
-  }
-  return decimal_point_pos;
-}
 
 // DEPRECATED.
 template <typename Context> class arg_map {
@@ -155,12 +64,6 @@ void arg_map<Context>::init(const basic_format_args<Context>& args) {
   }
 }
 }  // namespace internal
-
-template FMT_API char* internal::sprintf_format(double, internal::buffer<char>&,
-                                                sprintf_specs);
-template FMT_API char* internal::sprintf_format(long double,
-                                                internal::buffer<char>&,
-                                                sprintf_specs);
 
 template struct FMT_INSTANTIATION_DEF_API internal::basic_data<void>;
 
