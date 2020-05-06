@@ -849,6 +849,10 @@ inline int count_digits(uint32_t n) {
 #endif
 
 template <typename Char> FMT_API std::string grouping_impl(locale_ref loc);
+#ifndef FMT_HEADER_ONLY
+extern template FMT_API std::string grouping_impl<char>(locale_ref loc);
+extern template FMT_API std::string grouping_impl<wchar_t>(locale_ref loc);
+#endif
 template <typename Char> inline std::string grouping(locale_ref loc) {
   return grouping_impl<char>(loc);
 }
@@ -857,6 +861,10 @@ template <> inline std::string grouping<wchar_t>(locale_ref loc) {
 }
 
 template <typename Char> FMT_API Char thousands_sep_impl(locale_ref loc);
+#ifndef FMT_HEADER_ONLY
+extern template FMT_API char thousands_sep_impl<char>(locale_ref loc);
+extern template FMT_API wchar_t thousands_sep_impl<wchar_t>(locale_ref loc);
+#endif
 template <typename Char> inline Char thousands_sep(locale_ref loc) {
   return Char(thousands_sep_impl<char>(loc));
 }
@@ -865,6 +873,10 @@ template <> inline wchar_t thousands_sep(locale_ref loc) {
 }
 
 template <typename Char> FMT_API Char decimal_point_impl(locale_ref loc);
+#ifndef FMT_HEADER_ONLY
+extern template FMT_API char decimal_point_impl(locale_ref loc);
+extern template FMT_API wchar_t decimal_point_impl(locale_ref loc);
+#endif
 template <typename Char> inline Char decimal_point(locale_ref loc) {
   return Char(decimal_point_impl<char>(loc));
 }
@@ -1205,10 +1217,30 @@ template <typename Char> class float_writer {
 template <typename T>
 int format_float(T value, int precision, float_specs specs, buffer<char>& buf);
 
+#ifndef FMT_HEADER_ONLY
+extern template
+int format_float<double>(double value, int precision, float_specs specs,
+                         buffer<char>& buf);
+extern template
+int format_float<long double>(long double value, int precision,
+                              float_specs specs, buffer<char>& buf);
+#endif
+
 // Formats a floating-point number with snprintf.
 template <typename T>
 int snprintf_float(T value, int precision, float_specs specs,
                    buffer<char>& buf);
+
+#ifndef FMT_HEADER_ONLY
+int snprintf_float(float value, int precision, float_specs specs,
+                   buffer<char>& buf) = delete;
+extern template
+int snprintf_float<double>(double value, int precision, float_specs specs,
+                           buffer<char>& buf);
+extern template
+int snprintf_float<long double>(long double value, int precision,
+                                float_specs specs, buffer<char>& buf);
+#endif
 
 template <typename T> T promote_float(T value) { return value; }
 inline double promote_float(float value) { return static_cast<double>(value); }
