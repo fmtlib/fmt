@@ -1256,13 +1256,16 @@ FMT_CONSTEXPR basic_format_arg<Context> make_arg(const T& value) {
   return arg;
 }
 
-template <bool IS_PACKED, typename Context, typename T,
+// The type template parameter is there to avoid an ODR violation when using
+// a fallback formatter in one translation unit and an implicit conversion in
+// another (not recommended).
+template <bool IS_PACKED, typename Context, type, typename T,
           FMT_ENABLE_IF(IS_PACKED)>
 inline value<Context> make_arg(const T& val) {
   return arg_mapper<Context>().map(val);
 }
 
-template <bool IS_PACKED, typename Context, typename T,
+template <bool IS_PACKED, typename Context, type, typename T,
           FMT_ENABLE_IF(!IS_PACKED)>
 inline basic_format_arg<Context> make_arg(const T& value) {
   return make_arg<Context>(value);
@@ -1400,7 +1403,9 @@ class format_arg_store
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
         basic_format_args<Context>(*this),
 #endif
-        data_{internal::make_arg<is_packed, Context>(args)...} {
+        data_{internal::make_arg<
+            is_packed, Context,
+            internal::mapped_type_constant<Args, Context>::value>(args)...} {
     internal::init_named_args(data_.named_args(), 0, 0, args...);
   }
 };
