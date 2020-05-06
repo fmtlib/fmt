@@ -88,6 +88,14 @@
 #  define FMT_FALLTHROUGH
 #endif
 
+#ifndef FMT_MAYBE_UNUSED
+#  if FMT_HAS_CPP17_ATTRIBUTE(maybe_unused)
+#    define FMT_MAYBE_UNUSED [[maybe_unused]]
+#  else
+#    define FMT_MAYBE_UNUSED
+#  endif
+#endif
+
 #ifndef FMT_THROW
 #  if FMT_EXCEPTIONS
 #    if FMT_MSC_VER || FMT_NVCC

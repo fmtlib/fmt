@@ -148,14 +148,6 @@
 #  define FMT_NORETURN
 #endif
 
-#ifndef FMT_MAYBE_UNUSED
-#  if FMT_HAS_CPP17_ATTRIBUTE(maybe_unused)
-#    define FMT_MAYBE_UNUSED [[maybe_unused]]
-#  else
-#    define FMT_MAYBE_UNUSED
-#  endif
-#endif
-
 #ifndef FMT_DEPRECATED
 #  if FMT_HAS_CPP14_ATTRIBUTE(deprecated) || FMT_MSC_VER >= 1900
 #    define FMT_DEPRECATED [[deprecated]]
@@ -170,19 +162,19 @@
 #  endif
 #endif
 
+// Workaround broken [[deprecated]] in the Intel, PGI and NVCC compilers.
+#if FMT_ICC_VERSION || defined(__PGI) || FMT_NVCC
+#  define FMT_DEPRECATED_ALIAS
+#else
+#  define FMT_DEPRECATED_ALIAS FMT_DEPRECATED
+#endif
+
 #ifndef FMT_INLINE
 #  if FMT_GCC_VERSION && FMT_USE_CONSTEXPR
 #    define FMT_INLINE inline __attribute__((always_inline))
 #  else
 #    define FMT_INLINE
 #  endif
-#endif
-
-// Workaround broken [[deprecated]] in the Intel, PGI and NVCC compilers.
-#if FMT_ICC_VERSION || defined(__PGI) || FMT_NVCC
-#  define FMT_DEPRECATED_ALIAS
-#else
-#  define FMT_DEPRECATED_ALIAS FMT_DEPRECATED
 #endif
 
 #ifndef FMT_BEGIN_NAMESPACE
