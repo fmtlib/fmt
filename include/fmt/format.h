@@ -43,10 +43,6 @@
 
 #include "core.h"
 
-#ifdef FMT_DEPRECATED_INCLUDE_OS
-#  include "os.h"
-#endif
-
 #ifdef __INTEL_COMPILER
 #  define FMT_ICC_VERSION __INTEL_COMPILER
 #elif defined(__ICL)
@@ -589,26 +585,6 @@ class buffer_range : public internal::output_range<
   buffer_range(internal::buffer<T>& buf)
       : internal::output_range<iterator, T>(std::back_inserter(buf)) {}
 };
-
-class FMT_DEPRECATED u8string_view
-    : public basic_string_view<internal::char8_type> {
- public:
-  u8string_view(const char* s)
-      : basic_string_view<internal::char8_type>(
-            reinterpret_cast<const internal::char8_type*>(s)) {}
-  u8string_view(const char* s, size_t count) FMT_NOEXCEPT
-      : basic_string_view<internal::char8_type>(
-            reinterpret_cast<const internal::char8_type*>(s), count) {}
-};
-
-#if FMT_USE_USER_DEFINED_LITERALS
-inline namespace literals {
-FMT_DEPRECATED inline basic_string_view<internal::char8_type> operator"" _u(
-    const char* s, std::size_t n) {
-  return {reinterpret_cast<const internal::char8_type*>(s), n};
-}
-}  // namespace literals
-#endif
 
 // The number of characters to store in the basic_memory_buffer object itself
 // to avoid dynamic memory allocation.
@@ -2702,10 +2678,6 @@ FMT_CONSTEXPR basic_string_view<Char> compile_string_to_view(
  */
 #define FMT_STRING(s) FMT_STRING_IMPL(s, )
 
-#if defined(FMT_STRING_ALIAS) && FMT_STRING_ALIAS
-#  define fmt(s) FMT_STRING_IMPL(s, [[deprecated]])
-#endif
-
 template <typename... Args, typename S,
           enable_if_t<(is_compile_string<S>::value), int>>
 void check_format_string(S format_str) {
@@ -2742,12 +2714,6 @@ FMT_API void format_error_code(buffer<char>& out, int error_code,
 FMT_API void report_error(format_func func, int error_code,
                           string_view message) FMT_NOEXCEPT;
 }  // namespace internal
-
-template <typename Range>
-using basic_writer FMT_DEPRECATED_ALIAS = internal::basic_writer<Range>;
-using writer FMT_DEPRECATED_ALIAS = internal::writer;
-using wwriter FMT_DEPRECATED_ALIAS =
-    internal::basic_writer<buffer_range<wchar_t>>;
 
 /** The default argument formatter. */
 template <typename Range>

@@ -439,11 +439,6 @@ template <typename Char> class basic_string_view {
 using string_view = basic_string_view<char>;
 using wstring_view = basic_string_view<wchar_t>;
 
-#ifndef __cpp_char8_t
-// char8_t is deprecated; use char instead.
-using char8_t FMT_DEPRECATED_ALIAS = internal::char8_type;
-#endif
-
 /** Specifies if ``T`` is a character type. Can be specialized by users. */
 template <typename T> struct is_char : std::false_type {};
 template <> struct is_char<char> : std::true_type {};
@@ -612,12 +607,6 @@ class basic_format_parse_context : private ErrorHandler {
 
 using format_parse_context = basic_format_parse_context<char>;
 using wformat_parse_context = basic_format_parse_context<wchar_t>;
-
-template <typename Char, typename ErrorHandler = internal::error_handler>
-using basic_parse_context FMT_DEPRECATED_ALIAS =
-    basic_format_parse_context<Char, ErrorHandler>;
-using parse_context FMT_DEPRECATED_ALIAS = basic_format_parse_context<char>;
-using wparse_context FMT_DEPRECATED_ALIAS = basic_format_parse_context<wchar_t>;
 
 template <typename Context> class basic_format_arg;
 template <typename Context> class basic_format_args;
@@ -889,10 +878,9 @@ template <typename Char> struct named_arg_value {
 };
 
 template <typename Context> struct custom_value {
-  using parse_context = basic_format_parse_context<typename Context::char_type>;
+  using parse_context = typename Context::parse_context_type;
   const void* value;
-  void (*format)(const void* arg,
-                 typename Context::parse_context_type& parse_ctx, Context& ctx);
+  void (*format)(const void* arg, parse_context& parse_ctx, Context& ctx);
 };
 
 // A formatting argument value.

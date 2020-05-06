@@ -426,9 +426,6 @@ TEST(FormatTest, FormatErrorCode) {
 }
 
 TEST(FormatTest, CountCodePoints) {
-#ifndef __cpp_char8_t
-  using fmt::char8_t;
-#endif
   EXPECT_EQ(
       4, fmt::internal::count_code_points(
              fmt::basic_string_view<fmt::internal::char8_type>(
