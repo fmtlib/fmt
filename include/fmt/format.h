@@ -1592,6 +1592,16 @@ OutputIt write_ptr(OutputIt out, UIntPtr value,
                : base_iterator(out, write(reserve(out, size)));
 }
 
+template <typename Char, typename OutputIt>
+OutputIt write_bytes(OutputIt out, string_view bytes,
+                     const basic_format_specs<Char>& specs) {
+  using iterator = remove_reference_t<decltype(reserve(out, 0))>;
+  return write_padded(out, specs, bytes.size(), [bytes](iterator it) {
+    const char* data = bytes.data();
+    return copy_str<Char>(data, data + bytes.size(), it);
+  });
+}
+
 // This template provides operations for formatting and writing data into a
 // character range.
 template <typename Range> class basic_writer {
@@ -1600,7 +1610,7 @@ template <typename Range> class basic_writer {
   using iterator = typename Range::iterator;
   using format_specs = basic_format_specs<char_type>;
 
- private:
+ protected:
   iterator out_;  // Output iterator.
   locale_ref locale_;
 
@@ -1679,7 +1689,8 @@ template <typename Range> class basic_writer {
     if (fspecs.format == float_format::hex) {
       if (fspecs.sign) buffer.push_back(data::signs[fspecs.sign]);
       snprintf_float(promote_float(value), specs.precision, fspecs, buffer);
-      return write_bytes({buffer.data(), buffer.size()}, specs);
+      out_ = write_bytes(out_, {buffer.data(), buffer.size()}, specs);
+      return;
     }
     int precision = specs.precision >= 0 || !specs.type ? specs.precision : 6;
     if (fspecs.format == float_format::exp) {
@@ -1738,19 +1749,6 @@ template <typename Range> class basic_writer {
       size = code_point_index(s, to_unsigned(specs.precision));
     write(data, size, specs);
   }
-
-  void write_bytes(string_view bytes, const format_specs& specs) {
-    out_ =
-        write_padded(out_, specs, bytes.size(), [bytes](reserve_iterator it) {
-          const char* data = bytes.data();
-          return copy_str<char_type>(data, data + bytes.size(), it);
-        });
-  }
-
-  template <typename UIntPtr>
-  void write_pointer(UIntPtr value, const format_specs* specs) {
-    out_ = write_ptr<char_type>(out_, value, specs);
-  }
 };
 
 using writer = basic_writer<buffer_range<char>>;
@@ -1768,11 +1766,11 @@ class arg_formatter_base : private basic_writer<Range> {
 
  private:
   using writer_type = basic_writer<Range>;
+  using writer_type::out_;
   format_specs* specs_;
 
   using writer_type::write;
   using writer_type::write_int;
-  using writer_type::write_pointer;
 
   struct char_writer {
     char_type value;
@@ -1793,7 +1791,7 @@ class arg_formatter_base : private basic_writer<Range> {
   }
 
   void write_pointer(const void* p) {
-    write_pointer(internal::to_uintptr(p), specs_);
+    out_ = write_ptr<char_type>(out_, internal::to_uintptr(p), specs_);
   }
 
  protected:
@@ -3216,11 +3214,7 @@ template <> struct formatter<bytes> {
         specs_.width, specs_.width_ref, ctx);
     internal::handle_dynamic_spec<internal::precision_checker>(
         specs_.precision, specs_.precision_ref, ctx);
-    using range_type =
-        internal::output_range<typename FormatContext::iterator, char>;
-    internal::basic_writer<range_type> w(range_type(ctx.out()));
-    w.write_bytes(b.data_, specs_);
-    return w.out();
+    return internal::write_bytes(ctx.out(), b.data_, specs_);
   }
 
  private:
