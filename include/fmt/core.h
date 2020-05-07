@@ -1573,7 +1573,8 @@ class dynamic_format_arg_store
     data_.emplace_back(internal::make_arg<Context>(
         static_cast<const internal::unwrap_reference_t<T>&>(arg.value)));
 
-    auto guard{internal::make_scope_exit([this]() { this->data_.pop_back(); })};
+    auto guard =
+        internal::make_scope_exit([this]() { this->data_.pop_back(); });
     named_info_.push_back({arg.name, static_cast<int>(data_.size() - 2u)});
     data_[0].value_.named_args = {named_info_.data(), named_info_.size()};
     guard.release();
