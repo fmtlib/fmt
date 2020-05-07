@@ -21,9 +21,9 @@ template <> struct formatter<test> : formatter<int> {
 };
 }  // namespace fmt
 
-#include "fmt/ostream.h"
-
 #include <sstream>
+
+#include "fmt/ostream.h"
 #include "gmock.h"
 #include "gtest-extra.h"
 #include "util.h"
@@ -269,7 +269,7 @@ std::ostream& operator<<(std::ostream& os,
   return os << "bar";
 }
 
-TEST(FormatterTest, FormatExplicitlyConvertibleToStringLike) {
+TEST(OStreamTest, FormatExplicitlyConvertibleToStringLike) {
   EXPECT_EQ("bar", fmt::format("{}", explicitly_convertible_to_string_like()));
 }
 
@@ -285,8 +285,20 @@ std::ostream& operator<<(std::ostream& os,
   return os << "bar";
 }
 
-TEST(FormatterTest, FormatExplicitlyConvertibleToStdStringView) {
+TEST(OStreamTest, FormatExplicitlyConvertibleToStdStringView) {
   EXPECT_EQ("bar", fmt::format("{}", explicitly_convertible_to_string_like()));
 }
 
 #endif  // FMT_USE_STRING_VIEW
+
+struct copyfmt_test {};
+
+std::ostream& operator<<(std::ostream& os, copyfmt_test) {
+  std::ios ios(nullptr);
+  ios.copyfmt(os);
+  return os << "foo";
+}
+
+TEST(OStreamTest, CopyFmt) {
+  EXPECT_EQ("foo", fmt::format("{}", copyfmt_test()));
+}

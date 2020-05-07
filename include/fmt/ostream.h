@@ -101,8 +101,8 @@ void format_value(buffer<Char>& buf, const T& value,
 #if !defined(FMT_STATIC_THOUSANDS_SEPARATOR)
   if (loc) output.imbue(loc.get<std::locale>());
 #endif
-  output.exceptions(std::ios_base::failbit | std::ios_base::badbit);
   output << value;
+  output.exceptions(std::ios_base::failbit | std::ios_base::badbit);
   buf.resize(buf.size());
 }
 
