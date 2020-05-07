@@ -1100,8 +1100,6 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     // is not specified.
     basic_memory_buffer<Char> buf;
     auto out = std::back_inserter(buf);
-    using range = internal::output_range<decltype(ctx.out()), Char>;
-    internal::basic_writer<range> w(range(ctx.out()));
     internal::handle_dynamic_spec<internal::width_checker>(specs.width,
                                                            width_ref, ctx);
     internal::handle_dynamic_spec<internal::precision_checker>(
@@ -1115,8 +1113,8 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
       f.precision = precision;
       parse_chrono_format(begin, end, f);
     }
-    w.write(buf.data(), buf.size(), specs);
-    return w.out();
+    return internal::write(
+        ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
   }
 };
 

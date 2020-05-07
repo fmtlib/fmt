@@ -383,9 +383,7 @@ OutputIt format_default(OutputIt out, T value) {
 
 template <typename Char, typename OutputIt>
 OutputIt format_default(OutputIt out, double value) {
-  basic_writer<buffer_range<char>> w(out);
-  w.write(value);
-  return w.out();
+  return internal::write(out, value);
 }
 
 template <typename Char, typename OutputIt>

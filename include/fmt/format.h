@@ -1562,6 +1562,16 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
 };
 
 template <typename Char, typename OutputIt>
+OutputIt write_bytes(OutputIt out, string_view bytes,
+                     const basic_format_specs<Char>& specs) {
+  using iterator = remove_reference_t<decltype(reserve(out, 0))>;
+  return write_padded(out, specs, bytes.size(), [bytes](iterator it) {
+    const char* data = bytes.data();
+    return copy_str<Char>(data, data + bytes.size(), it);
+  });
+}
+
+template <typename Char, typename OutputIt>
 OutputIt write_nonfinite(OutputIt out, bool isinf,
                          const basic_format_specs<Char>& specs,
                          const float_specs& fspecs) {
@@ -1574,6 +1584,71 @@ OutputIt write_nonfinite(OutputIt out, bool isinf,
   return write_padded(out, specs, size, [=](iterator it) {
     if (sign) *it++ = static_cast<Char>(data::signs[sign]);
     return copy_str<Char>(str, str + str_size, it);
+  });
+}
+
+template <typename Char, typename OutputIt, typename T,
+          FMT_ENABLE_IF(std::is_floating_point<T>::value)>
+OutputIt write(OutputIt out, T value, basic_format_specs<Char> specs = {},
+               locale_ref loc = {}) {
+  if (const_check(!is_supported_floating_point(value))) return out;
+  float_specs fspecs = parse_float_type_spec(specs);
+  fspecs.sign = specs.sign;
+  if (std::signbit(value)) {  // value < 0 is false for NaN so use signbit.
+    fspecs.sign = sign::minus;
+    value = -value;
+  } else if (fspecs.sign == sign::minus) {
+    fspecs.sign = sign::none;
+  }
+
+  if (!std::isfinite(value))
+    return write_nonfinite(out, std::isinf(value), specs, fspecs);
+
+  if (specs.align == align::numeric && fspecs.sign) {
+    auto it = reserve(out, 1);
+    *it++ = static_cast<Char>(data::signs[fspecs.sign]);
+    out = base_iterator(out, it);
+    fspecs.sign = sign::none;
+    if (specs.width != 0) --specs.width;
+  }
+
+  memory_buffer buffer;
+  if (fspecs.format == float_format::hex) {
+    if (fspecs.sign) buffer.push_back(data::signs[fspecs.sign]);
+    snprintf_float(promote_float(value), specs.precision, fspecs, buffer);
+    return write_bytes(out, {buffer.data(), buffer.size()}, specs);
+  }
+  int precision = specs.precision >= 0 || !specs.type ? specs.precision : 6;
+  if (fspecs.format == float_format::exp) {
+    if (precision == max_value<int>())
+      FMT_THROW(format_error("number is too big"));
+    else
+      ++precision;
+  }
+  if (const_check(std::is_same<T, float>())) fspecs.binary32 = true;
+  fspecs.use_grisu = use_grisu<T>();
+  int exp = format_float(promote_float(value), precision, fspecs, buffer);
+  fspecs.precision = precision;
+  Char point =
+      fspecs.locale ? decimal_point<Char>(loc) : static_cast<Char>('.');
+  float_writer<Char> w(buffer.data(), static_cast<int>(buffer.size()), exp,
+                       fspecs, point);
+  return write_padded<align::right>(out, specs, w.size(), w);
+}
+
+template <typename StrChar, typename Char, typename OutputIt>
+OutputIt write(OutputIt out, basic_string_view<StrChar> s,
+               const basic_format_specs<Char>& specs = {}) {
+  auto data = s.data();
+  auto size = s.size();
+  if (specs.precision >= 0 && to_unsigned(specs.precision) < size)
+    size = code_point_index(s, to_unsigned(specs.precision));
+  auto width = specs.width != 0
+                   ? count_code_points(basic_string_view<StrChar>(data, size))
+                   : 0;
+  using iterator = remove_reference_t<decltype(reserve(out, 0))>;
+  return write_padded(out, specs, size, width, [=](iterator it) {
+    return copy_str<Char>(data, data + size, it);
   });
 }
 
@@ -1592,32 +1667,47 @@ OutputIt write_ptr(OutputIt out, UIntPtr value,
                : base_iterator(out, write(reserve(out, size)));
 }
 
-template <typename Char, typename OutputIt>
-OutputIt write_bytes(OutputIt out, string_view bytes,
-                     const basic_format_specs<Char>& specs) {
-  using iterator = remove_reference_t<decltype(reserve(out, 0))>;
-  return write_padded(out, specs, bytes.size(), [bytes](iterator it) {
-    const char* data = bytes.data();
-    return copy_str<Char>(data, data + bytes.size(), it);
-  });
-}
+template <typename T> struct is_integral : std::is_integral<T> {};
+template <> struct is_integral<int128_t> : std::true_type {};
+template <> struct is_integral<uint128_t> : std::true_type {};
 
-// This template provides operations for formatting and writing data into a
-// character range.
-template <typename Range> class basic_writer {
+template <typename Range, typename ErrorHandler = internal::error_handler>
+class arg_formatter_base {
  public:
   using char_type = typename Range::value_type;
   using iterator = typename Range::iterator;
   using format_specs = basic_format_specs<char_type>;
 
- protected:
+ private:
   iterator out_;  // Output iterator.
   locale_ref locale_;
+  format_specs* specs_;
 
   // Attempts to reserve space for n extra characters in the output range.
   // Returns a pointer to the reserved range or a reference to out_.
   auto reserve(std::size_t n) -> decltype(internal::reserve(out_, n)) {
     return internal::reserve(out_, n);
+  }
+
+  using reserve_iterator = remove_reference_t<decltype(
+      internal::reserve(std::declval<iterator&>(), 0))>;
+
+  struct char_writer {
+    char_type value;
+
+    size_t size() const { return 1; }
+
+    template <typename It> It operator()(It it) const {
+      *it++ = value;
+      return it;
+    }
+  };
+
+  void write_char(char_type value) {
+    if (specs_)
+      out_ = write_padded(out_, *specs_, 1, char_writer{value});
+    else
+      write(value);
   }
 
   // Writes a decimal integer.
@@ -1631,15 +1721,6 @@ template <typename Range> class basic_writer {
     if (negative) *it++ = static_cast<char_type>('-');
     it = format_decimal<char_type>(it, abs_value, num_digits);
   }
-
-  using reserve_iterator = remove_reference_t<decltype(
-      internal::reserve(std::declval<iterator&>(), 0))>;
-
- public:
-  explicit basic_writer(Range out, locale_ref loc = locale_ref())
-      : out_(out.begin()), locale_(loc) {}
-
-  iterator& out() { return out_; }
 
   void write(int value) { write_decimal(value); }
   void write(long value) { write_decimal(value); }
@@ -1659,55 +1740,6 @@ template <typename Range> class basic_writer {
     int_writer<iterator, char_type, uint_type> w(out_, locale_, value, spec);
     handle_int_type_spec(spec.type, w);
     out_ = w.out;
-  }
-
-  template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
-  void write(T value, format_specs specs = {}) {
-    if (const_check(!is_supported_floating_point(value))) return;
-    float_specs fspecs = parse_float_type_spec(specs);
-    fspecs.sign = specs.sign;
-    if (std::signbit(value)) {  // value < 0 is false for NaN so use signbit.
-      fspecs.sign = sign::minus;
-      value = -value;
-    } else if (fspecs.sign == sign::minus) {
-      fspecs.sign = sign::none;
-    }
-
-    if (!std::isfinite(value)) {
-      out_ = write_nonfinite(out_, std::isinf(value), specs, fspecs);
-      return;
-    }
-
-    if (specs.align == align::numeric && fspecs.sign) {
-      auto&& it = reserve(1);
-      *it++ = static_cast<char_type>(data::signs[fspecs.sign]);
-      fspecs.sign = sign::none;
-      if (specs.width != 0) --specs.width;
-    }
-
-    memory_buffer buffer;
-    if (fspecs.format == float_format::hex) {
-      if (fspecs.sign) buffer.push_back(data::signs[fspecs.sign]);
-      snprintf_float(promote_float(value), specs.precision, fspecs, buffer);
-      out_ = write_bytes(out_, {buffer.data(), buffer.size()}, specs);
-      return;
-    }
-    int precision = specs.precision >= 0 || !specs.type ? specs.precision : 6;
-    if (fspecs.format == float_format::exp) {
-      if (precision == max_value<int>())
-        FMT_THROW(format_error("number is too big"));
-      else
-        ++precision;
-    }
-    if (const_check(std::is_same<T, float>())) fspecs.binary32 = true;
-    fspecs.use_grisu = use_grisu<T>();
-    int exp = format_float(promote_float(value), precision, fspecs, buffer);
-    fspecs.precision = precision;
-    char_type point = fspecs.locale ? decimal_point<char_type>(locale_)
-                                    : static_cast<char_type>('.');
-    float_writer<char_type> w(buffer.data(), static_cast<int>(buffer.size()),
-                              exp, fspecs, point);
-    out_ = write_padded<align::right>(out_, specs, w.size(), w);
   }
 
   void write(char value) {
@@ -1743,49 +1775,7 @@ template <typename Range> class basic_writer {
 
   template <typename Char>
   void write(basic_string_view<Char> s, const format_specs& specs = {}) {
-    const Char* data = s.data();
-    std::size_t size = s.size();
-    if (specs.precision >= 0 && to_unsigned(specs.precision) < size)
-      size = code_point_index(s, to_unsigned(specs.precision));
-    write(data, size, specs);
-  }
-};
-
-template <typename T> struct is_integral : std::is_integral<T> {};
-template <> struct is_integral<int128_t> : std::true_type {};
-template <> struct is_integral<uint128_t> : std::true_type {};
-
-template <typename Range, typename ErrorHandler = internal::error_handler>
-class arg_formatter_base : private basic_writer<Range> {
- public:
-  using char_type = typename Range::value_type;
-  using iterator = typename Range::iterator;
-  using format_specs = basic_format_specs<char_type>;
-
- private:
-  using writer_type = basic_writer<Range>;
-  using writer_type::out_;
-  format_specs* specs_;
-
-  using writer_type::write;
-  using writer_type::write_int;
-
-  struct char_writer {
-    char_type value;
-
-    size_t size() const { return 1; }
-
-    template <typename It> It operator()(It it) const {
-      *it++ = value;
-      return it;
-    }
-  };
-
-  void write_char(char_type value) {
-    if (specs_)
-      out() = write_padded(out(), *specs_, 1, char_writer{value});
-    else
-      write(value);
+    out_ = internal::write(out_, s, specs);
   }
 
   void write_pointer(const void* p) {
@@ -1793,8 +1783,7 @@ class arg_formatter_base : private basic_writer<Range> {
   }
 
  protected:
-  using writer_type::out;
-  writer_type& writer() { return *this; }
+  iterator out() { return out_; }
   format_specs* specs() { return specs_; }
 
   void write(bool value) {
@@ -1814,7 +1803,7 @@ class arg_formatter_base : private basic_writer<Range> {
 
  public:
   arg_formatter_base(Range r, format_specs* s, locale_ref loc)
-      : basic_writer<Range>(r, loc), specs_(s) {}
+      : out_(r.begin()), locale_(loc), specs_(s) {}
 
   iterator operator()(monostate) {
     FMT_ASSERT(false, "invalid argument type");
@@ -1844,8 +1833,9 @@ class arg_formatter_base : private basic_writer<Range> {
 
   template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
   iterator operator()(T value) {
+    auto specs = specs_ ? *specs_ : format_specs();
     if (const_check(is_supported_floating_point(value)))
-      write(value, specs_ ? *specs_ : format_specs());
+      out_ = internal::write(out_, value, specs, locale_);
     else
       FMT_ASSERT(false, "unsupported float argument type");
     return out();
@@ -2503,7 +2493,7 @@ template <typename Handler, typename Char> struct id_adapter {
 template <bool IS_CONSTEXPR, typename Char, typename Handler>
 FMT_CONSTEXPR void parse_format_string(basic_string_view<Char> format_str,
                                        Handler&& handler) {
-  struct pfs_writer {
+  struct writer {
     FMT_CONSTEXPR void operator()(const Char* begin, const Char* end) {
       if (begin == end) return;
       for (;;) {
@@ -3336,21 +3326,21 @@ extern template FMT_API char thousands_sep_impl<char>(locale_ref loc);
 extern template FMT_API wchar_t thousands_sep_impl<wchar_t>(locale_ref loc);
 extern template FMT_API char decimal_point_impl(locale_ref loc);
 extern template FMT_API wchar_t decimal_point_impl(locale_ref loc);
-extern template
-int format_float<double>(double value, int precision, float_specs specs,
-                         buffer<char>& buf);
-extern template
-int format_float<long double>(long double value, int precision,
-                              float_specs specs, buffer<char>& buf);
+extern template int format_float<double>(double value, int precision,
+                                         float_specs specs, buffer<char>& buf);
+extern template int format_float<long double>(long double value, int precision,
+                                              float_specs specs,
+                                              buffer<char>& buf);
 int snprintf_float(float value, int precision, float_specs specs,
                    buffer<char>& buf) = delete;
-extern template
-int snprintf_float<double>(double value, int precision, float_specs specs,
-                           buffer<char>& buf);
-extern template
-int snprintf_float<long double>(long double value, int precision,
-                                float_specs specs, buffer<char>& buf);
-}
+extern template int snprintf_float<double>(double value, int precision,
+                                           float_specs specs,
+                                           buffer<char>& buf);
+extern template int snprintf_float<long double>(long double value,
+                                                int precision,
+                                                float_specs specs,
+                                                buffer<char>& buf);
+}  // namespace internal
 #endif
 
 template <typename S, typename Char = char_t<S>,

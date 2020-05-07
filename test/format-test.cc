@@ -35,8 +35,6 @@
 #include "util.h"
 
 #undef ERROR
-#undef min
-#undef max
 
 using std::size_t;
 
@@ -47,7 +45,6 @@ using fmt::memory_buffer;
 using fmt::string_view;
 using fmt::wmemory_buffer;
 using fmt::wstring_view;
-using fmt::internal::basic_writer;
 using fmt::internal::max_value;
 
 using testing::Return;
@@ -102,47 +99,6 @@ void std_format(long double value, std::wstring& result) {
   result = buffer;
 }
 #endif
-
-// Checks if writing value to BasicWriter<Char> produces the same result
-// as writing it to std::basic_ostringstream<Char>.
-template <typename Char, typename T>
-::testing::AssertionResult check_write(const T& value, const char* type) {
-  fmt::basic_memory_buffer<Char> buffer;
-  using range = fmt::buffer_range<Char>;
-  basic_writer<range> writer(buffer);
-  writer.write(value);
-  std::basic_string<Char> actual = to_string(buffer);
-  std::basic_string<Char> expected;
-  std_format(value, expected);
-  if (expected == actual) return ::testing::AssertionSuccess();
-  return ::testing::AssertionFailure()
-         << "Value of: (Writer<" << type << ">() << value).str()\n"
-         << "  Actual: " << actual << "\n"
-         << "Expected: " << expected << "\n";
-}
-
-struct AnyWriteChecker {
-  template <typename T>
-  ::testing::AssertionResult operator()(const char*, const T& value) const {
-    ::testing::AssertionResult result = check_write<char>(value, "char");
-    return result ? check_write<wchar_t>(value, "wchar_t") : result;
-  }
-};
-
-template <typename Char> struct WriteChecker {
-  template <typename T>
-  ::testing::AssertionResult operator()(const char*, const T& value) const {
-    return check_write<Char>(value, "char");
-  }
-};
-
-// Checks if writing value to BasicWriter produces the same result
-// as writing it to std::ostringstream both for char and wchar_t.
-#define CHECK_WRITE(value) EXPECT_PRED_FORMAT1(AnyWriteChecker(), value)
-
-#define CHECK_WRITE_CHAR(value) EXPECT_PRED_FORMAT1(WriteChecker<char>(), value)
-#define CHECK_WRITE_WCHAR(value) \
-  EXPECT_PRED_FORMAT1(WriteChecker<wchar_t>(), value)
 }  // namespace
 
 struct uint32_pair {
@@ -478,92 +434,6 @@ TEST(StringViewTest, Ctor) {
   EXPECT_STREQ("defg", string_view(std::string("defg")).data());
   EXPECT_EQ(4u, string_view(std::string("defg")).size());
 }
-
-TEST(WriterTest, WriteInt) {
-  CHECK_WRITE(42);
-  CHECK_WRITE(-42);
-  CHECK_WRITE(static_cast<short>(12));
-  CHECK_WRITE(34u);
-  CHECK_WRITE(std::numeric_limits<int>::min());
-  CHECK_WRITE(max_value<int>());
-  CHECK_WRITE(max_value<unsigned>());
-}
-
-TEST(WriterTest, WriteLong) {
-  CHECK_WRITE(56l);
-  CHECK_WRITE(78ul);
-  CHECK_WRITE(std::numeric_limits<long>::min());
-  CHECK_WRITE(max_value<long>());
-  CHECK_WRITE(max_value<unsigned long>());
-}
-
-TEST(WriterTest, WriteLongLong) {
-  CHECK_WRITE(56ll);
-  CHECK_WRITE(78ull);
-  CHECK_WRITE(std::numeric_limits<long long>::min());
-  CHECK_WRITE(max_value<long long>());
-  CHECK_WRITE(max_value<unsigned long long>());
-}
-
-TEST(WriterTest, WriteDouble) {
-  CHECK_WRITE(4.2);
-  CHECK_WRITE(-4.2);
-  auto min = std::numeric_limits<double>::min();
-  auto max = max_value<double>();
-  if (fmt::internal::use_grisu<double>()) {
-    EXPECT_EQ("2.2250738585072014e-308", fmt::format("{}", min));
-    EXPECT_EQ("1.7976931348623157e+308", fmt::format("{}", max));
-  } else {
-    CHECK_WRITE(min);
-    CHECK_WRITE(max);
-  }
-}
-
-TEST(WriterTest, WriteLongDouble) {
-  CHECK_WRITE(4.2l);
-  CHECK_WRITE_CHAR(-4.2l);
-  std::wstring str;
-  std_format(4.2l, str);
-  if (str[0] != '-')
-    CHECK_WRITE_WCHAR(-4.2l);
-  else
-    fmt::print("warning: long double formatting with std::swprintf is broken");
-  auto min = std::numeric_limits<long double>::min();
-  auto max = max_value<long double>();
-  if (fmt::internal::use_grisu<long double>()) {
-    EXPECT_EQ("2.2250738585072014e-308", fmt::format("{}", min));
-    EXPECT_EQ("1.7976931348623157e+308", fmt::format("{}", max));
-  } else {
-    CHECK_WRITE(min);
-    CHECK_WRITE(max);
-  }
-}
-
-TEST(WriterTest, WriteDoubleAtBufferBoundary) {
-  memory_buffer buf;
-  for (int i = 0; i < 100; ++i) fmt::format_to(buf, "{}", 1.23456789);
-}
-
-TEST(WriterTest, WriteDoubleWithFilledBuffer) {
-  memory_buffer buf;
-  // Fill the buffer.
-  for (int i = 0; i < fmt::inline_buffer_size; ++i) fmt::format_to(buf, " ");
-  fmt::format_to(buf, "{}", 1.2);
-  fmt::string_view sv(buf.data(), buf.size());
-  sv.remove_prefix(fmt::inline_buffer_size);
-  EXPECT_EQ("1.2", sv);
-}
-
-TEST(WriterTest, WriteChar) { CHECK_WRITE('a'); }
-
-TEST(WriterTest, WriteWideChar) { CHECK_WRITE_WCHAR(L'a'); }
-
-TEST(WriterTest, WriteString) {
-  CHECK_WRITE_CHAR("abc");
-  CHECK_WRITE_WCHAR("abc");
-}
-
-TEST(WriterTest, WriteWideString) { CHECK_WRITE_WCHAR(L"abc"); }
 
 TEST(FormatToTest, FormatWithoutArgs) {
   std::string s;

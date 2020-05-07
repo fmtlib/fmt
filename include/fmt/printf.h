@@ -328,7 +328,9 @@ template <typename T> struct printf_formatter {
   }
 };
 
-/** This template formats data and writes the output to a writer. */
+/**
+ This template formats data and writes the output through an output iterator.
+ */
 template <typename OutputIt, typename Char> class basic_printf_context {
  public:
   /** The character type for the output. */
@@ -358,9 +360,8 @@ template <typename OutputIt, typename Char> class basic_printf_context {
  public:
   /**
    \rst
-   Constructs a ``printf_context`` object. References to the arguments and
-   the writer are stored in the context object so make sure they have
-   appropriate lifetimes.
+   Constructs a ``printf_context`` object. References to the arguments are
+   stored in the context object so make sure they have appropriate lifetimes.
    \endrst
    */
   basic_printf_context(OutputIt out, basic_string_view<char_type> format_str,
