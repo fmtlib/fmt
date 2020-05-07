@@ -88,6 +88,40 @@
 #  define FMT_FALLTHROUGH
 #endif
 
+#ifndef FMT_THROW
+#  if FMT_EXCEPTIONS
+#    if FMT_MSC_VER || FMT_NVCC
+FMT_BEGIN_NAMESPACE
+namespace internal {
+template <typename Exception> inline void do_throw(const Exception& x) {
+  // Silence unreachable code warnings in MSVC and NVCC because these
+  // are nearly impossible to fix in a generic code.
+  volatile bool b = true;
+  if (b) throw x;
+}
+}  // namespace internal
+FMT_END_NAMESPACE
+#      define FMT_THROW(x) internal::do_throw(x)
+#    else
+#      define FMT_THROW(x) throw x
+#    endif
+#  else
+#    define FMT_THROW(x)              \
+      do {                            \
+        static_cast<void>(sizeof(x)); \
+        FMT_ASSERT(false, "");        \
+      } while (false)
+#  endif
+#endif
+
+#if FMT_EXCEPTIONS
+#  define FMT_TRY try
+#  define FMT_CATCH(x) catch (x)
+#else
+#  define FMT_TRY if (true)
+#  define FMT_CATCH(x) if (false)
+#endif
+
 #ifndef FMT_USE_USER_DEFINED_LITERALS
 // For Intel and NVIDIA compilers both they and the system gcc/msc support UDLs.
 #  if (FMT_HAS_FEATURE(cxx_user_literals) || FMT_GCC_VERSION >= 407 ||      \

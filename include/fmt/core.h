@@ -204,42 +204,6 @@
     FMT_INLINE_NAMESPACE v6 {
 #endif
 
-#ifndef FMT_THROW
-#  if FMT_EXCEPTIONS
-#    if FMT_MSC_VER || FMT_NVCC
-FMT_BEGIN_NAMESPACE
-namespace internal {
-template <typename Exception> inline void do_throw(const Exception& x) {
-  // Silence unreachable code warnings in MSVC and NVCC because these
-  // are nearly impossible to fix in a generic code.
-  volatile bool b = true;
-  if (b) throw x;
-}
-}  // namespace internal
-FMT_END_NAMESPACE
-#      define FMT_THROW(x) internal::do_throw(x)
-#    else
-#      define FMT_THROW(x) throw x
-#    endif
-#    define FMT_RETHROW() throw
-#  else
-#    define FMT_THROW(x)              \
-      do {                            \
-        static_cast<void>(sizeof(x)); \
-        FMT_ASSERT(false, "");        \
-      } while (false)
-#    define FMT_RETHROW() FMT_ASSERT(false, "")
-#  endif
-#endif
-
-#if FMT_EXCEPTIONS
-#  define FMT_TRY try
-#  define FMT_CATCH(x) catch (x)
-#else
-#  define FMT_TRY if (true)
-#  define FMT_CATCH(x) if (false)
-#endif
-
 #if !defined(FMT_HEADER_ONLY) && defined(_WIN32)
 #  define FMT_CLASS_API FMT_SUPPRESS_MSC_WARNING(4275)
 #  ifdef FMT_EXPORT
@@ -1490,6 +1454,33 @@ struct named_arg : view, named_arg_base<Char> {
       : named_arg_base<Char>(name), value(val) {}
 };
 
+// scope_exit is proposed in TS v3. This implementation is slightly different
+// because without deduction guide there's no easy way to construct from lambda.
+// Factory template function is needed (see make_scope_exit).
+// Move assignment is disabled because of unclear semantic: whether to call
+// currently assigned functor or not...
+template <typename F> class scope_exit {
+  bool passive_{false};
+  F func_;
+
+ public:
+  explicit scope_exit(F&& f) noexcept : func_(std::forward<F>(f)) {}
+  ~scope_exit() {
+    if (!passive_) func_();
+  }
+  scope_exit(const F&) = delete;
+  scope_exit(scope_exit&& rhs) noexcept : func_{std::move(rhs.func_)} {
+    rhs.release();
+  }
+  const scope_exit& operator=(const scope_exit&) = delete;
+  const scope_exit& operator=(scope_exit&&) = delete;
+  void release() noexcept { passive_ = true; }
+};
+
+template <typename F> scope_exit<F> make_scope_exit(F&& f) {
+  return scope_exit<F>{std::forward<F>(f)};
+}
+
 }  // namespace internal
 
 /**
@@ -1581,14 +1572,11 @@ class dynamic_format_arg_store
     }
     data_.emplace_back(internal::make_arg<Context>(
         static_cast<const internal::unwrap_reference_t<T>&>(arg.value)));
-    FMT_TRY {
-      named_info_.push_back({arg.name, static_cast<int>(data_.size() - 2u)});
-      data_[0].value_.named_args = {named_info_.data(), named_info_.size()};
-    }
-    FMT_CATCH(...) {
-      data_.pop_back();
-      FMT_RETHROW();
-    }
+
+    auto guard{internal::make_scope_exit([this]() { this->data_.pop_back(); })};
+    named_info_.push_back({arg.name, static_cast<int>(data_.size() - 2u)});
+    data_[0].value_.named_args = {named_info_.data(), named_info_.size()};
+    guard.release();
   }
 
  public:
@@ -1622,7 +1610,8 @@ class dynamic_format_arg_store
   /**
     \rst
     Adds a reference to the argument into the dynamic store for later passing to
-    a formating function. Supports wrapped named arguments.
+    a formating function. Supports named arguments wrapped in
+    std::reference_wrapper (via std::ref()/std::cref()).
 
     **Example**::
       fmt::dynamic_format_arg_store<fmt::format_context> store;
