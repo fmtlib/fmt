@@ -507,7 +507,7 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
       auto str_end = str + specs.precision;
       auto nul = std::find(str, str_end, Char());
       arg = internal::make_arg<basic_printf_context>(basic_string_view<Char>(
-          str, nul != str_end ? nul - str : specs.precision));
+          str, internal::to_unsigned(nul != str_end ? nul - str : specs.precision)));
     }
     if (specs.alt && visit_format_arg(internal::is_zero_int(), arg))
       specs.alt = false;

@@ -1022,12 +1022,12 @@ template <typename Char> struct fill_t {
 // We cannot use enum classes as bit fields because of a gcc bug
 // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=61414.
 namespace align {
-enum type { none, left, right, center, numeric };
+enum type : uint8_t { none, left, right, center, numeric };
 }
 using align_t = align::type;
 
 namespace sign {
-enum type { none, minus, plus, space };
+enum type : uint8_t { none, minus, plus, space };
 }
 using sign_t = sign::type;
 
@@ -3331,6 +3331,28 @@ typename buffer_context<Char>::iterator internal::vformat_to(
 #ifndef FMT_HEADER_ONLY
 extern template format_context::iterator internal::vformat_to(
     internal::buffer<char>&, string_view, basic_format_args<format_context>);
+namespace internal {
+extern template FMT_API std::string grouping_impl<char>(locale_ref loc);
+extern template FMT_API std::string grouping_impl<wchar_t>(locale_ref loc);
+extern template FMT_API char thousands_sep_impl<char>(locale_ref loc);
+extern template FMT_API wchar_t thousands_sep_impl<wchar_t>(locale_ref loc);
+extern template FMT_API char decimal_point_impl(locale_ref loc);
+extern template FMT_API wchar_t decimal_point_impl(locale_ref loc);
+extern template
+int format_float<double>(double value, int precision, float_specs specs,
+                         buffer<char>& buf);
+extern template
+int format_float<long double>(long double value, int precision,
+                              float_specs specs, buffer<char>& buf);
+int snprintf_float(float value, int precision, float_specs specs,
+                   buffer<char>& buf) = delete;
+extern template
+int snprintf_float<double>(double value, int precision, float_specs specs,
+                           buffer<char>& buf);
+extern template
+int snprintf_float<long double>(long double value, int precision,
+                                float_specs specs, buffer<char>& buf);
+}
 #endif
 
 template <typename S, typename Char = char_t<S>,
