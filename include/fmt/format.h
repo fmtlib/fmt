@@ -1022,12 +1022,12 @@ template <typename Char> struct fill_t {
 // We cannot use enum classes as bit fields because of a gcc bug
 // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=61414.
 namespace align {
-enum type : uint8_t { none, left, right, center, numeric };
+enum type { none, left, right, center, numeric };
 }
 using align_t = align::type;
 
 namespace sign {
-enum type : uint8_t { none, minus, plus, space };
+enum type { none, minus, plus, space };
 }
 using sign_t = sign::type;
 
