@@ -172,7 +172,7 @@ FMT_END_NAMESPACE
 #  define FMT_BUILTIN_CLZLL(n) __builtin_clzll(n)
 #endif
 
-#if (__cplusplus >= 201703L)
+#if (__cplusplus > 201703L)
 #  define FMT_CAPTURE_OF_THIS , this
 #else
 #  define FMT_CAPTURE_OF_THIS
