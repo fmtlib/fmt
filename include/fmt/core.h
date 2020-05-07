@@ -1454,33 +1454,6 @@ struct named_arg : view, named_arg_base<Char> {
       : named_arg_base<Char>(name), value(val) {}
 };
 
-// scope_exit is proposed in TS v3. This implementation is slightly different
-// because without deduction guide there's no easy way to construct from lambda.
-// Factory template function is needed (see make_scope_exit).
-// Move assignment is disabled because of unclear semantic: whether to call
-// currently assigned functor or not...
-template <typename F> class scope_exit {
-  bool passive_{false};
-  F func_;
-
- public:
-  explicit scope_exit(F&& f) noexcept : func_(std::forward<F>(f)) {}
-  ~scope_exit() {
-    if (!passive_) func_();
-  }
-  scope_exit(const F&) = delete;
-  scope_exit(scope_exit&& rhs) noexcept : func_{std::move(rhs.func_)} {
-    rhs.release();
-  }
-  const scope_exit& operator=(const scope_exit&) = delete;
-  const scope_exit& operator=(scope_exit&&) = delete;
-  void release() noexcept { passive_ = true; }
-};
-
-template <typename F> scope_exit<F> make_scope_exit(F&& f) {
-  return scope_exit<F>{std::forward<F>(f)};
-}
-
 }  // namespace internal
 
 /**
@@ -1565,16 +1538,16 @@ class dynamic_format_arg_store
   template <typename T>
   void emplace_arg(const internal::named_arg<T, char_type>& arg) {
     if (named_info_.empty()) {
-      data_.insert(
-          data_.begin(),
-          {static_cast<const internal::named_arg_info<char_type>*>(nullptr),
-           0});
+      constexpr const internal::named_arg_info<char_type>* zero_ptr{nullptr};
+      data_.insert(data_.begin(), {zero_ptr, 0});
     }
     data_.emplace_back(internal::make_arg<Context>(
         static_cast<const internal::unwrap_reference_t<T>&>(arg.value)));
-
-    auto guard =
-        internal::make_scope_exit([this]() { this->data_.pop_back(); });
+    auto pop_one = [](std::vector<basic_format_arg<Context>>* data) {
+      data->pop_back();
+    };
+    std::unique_ptr<std::vector<basic_format_arg<Context>>, decltype(pop_one)>
+        guard{&data_, pop_one};
     named_info_.push_back({arg.name, static_cast<int>(data_.size() - 2u)});
     data_[0].value_.named_args = {named_info_.data(), named_info_.size()};
     guard.release();
@@ -1631,7 +1604,7 @@ class dynamic_format_arg_store
   */
   template <typename T> void push_back(std::reference_wrapper<T> arg) {
     static_assert(
-        internal::is_named_arg<typename std::decay<T>::type>::value ||
+        internal::is_named_arg<typename std::remove_cv<T>::type>::value ||
             need_copy<T>::value,
         "objects of built-in types and string views are always copied");
     emplace_arg(arg.get());
