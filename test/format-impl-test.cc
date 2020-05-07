@@ -376,7 +376,7 @@ TEST(FormatTest, StrError) {
   int result =
       fmt::internal::safe_strerror(error_code, message = buffer, BUFFER_SIZE);
   EXPECT_EQ(result, 0);
-  std::size_t message_size = std::strlen(message);
+  size_t message_size = std::strlen(message);
   EXPECT_GE(BUFFER_SIZE - 1u, message_size);
   EXPECT_EQ(get_system_error(error_code), message);
 
@@ -408,14 +408,14 @@ TEST(FormatTest, FormatErrorCode) {
     EXPECT_EQ(msg, to_string(buffer));
   }
   int codes[] = {42, -1};
-  for (std::size_t i = 0, n = sizeof(codes) / sizeof(*codes); i < n; ++i) {
+  for (size_t i = 0, n = sizeof(codes) / sizeof(*codes); i < n; ++i) {
     // Test maximum buffer size.
     msg = fmt::format("error {}", codes[i]);
     fmt::memory_buffer buffer;
     std::string prefix(fmt::inline_buffer_size - msg.size() - sep.size(), 'x');
     fmt::internal::format_error_code(buffer, codes[i], prefix);
     EXPECT_EQ(prefix + sep + msg, to_string(buffer));
-    std::size_t size = fmt::inline_buffer_size;
+    size_t size = fmt::inline_buffer_size;
     EXPECT_EQ(size, buffer.size());
     buffer.resize(0);
     // Test with a message that doesn't fit into the buffer.

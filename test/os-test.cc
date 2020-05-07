@@ -5,11 +5,12 @@
 //
 // For the license information refer to format.h.
 
+#include "fmt/os.h"
+
 #include <cstdlib>  // std::exit
 #include <cstring>
 #include <memory>
 
-#include "fmt/os.h"
 #include "gtest-extra.h"
 #include "util.h"
 
@@ -164,10 +165,10 @@ static file open_file() {
 
 // Attempts to write a string to a file.
 static void write(file& f, fmt::string_view s) {
-  std::size_t num_chars_left = s.size();
+  size_t num_chars_left = s.size();
   const char* ptr = s.data();
   do {
-    std::size_t count = f.write(ptr, num_chars_left);
+    size_t count = f.write(ptr, num_chars_left);
     ptr += count;
     // We can't write more than size_t bytes since num_chars_left
     // has type size_t.
@@ -238,16 +239,17 @@ TEST(BufferedFileTest, CloseFileInDtor) {
 
 TEST(BufferedFileTest, CloseErrorInDtor) {
   std::unique_ptr<buffered_file> f(new buffered_file(open_buffered_file()));
-  EXPECT_WRITE(stderr,
-               {
-                 // The close function must be called inside EXPECT_WRITE,
-                 // otherwise the system may recycle closed file descriptor when
-                 // redirecting the output in EXPECT_STDERR and the second close
-                 // will break output redirection.
-                 FMT_POSIX(close(f->fileno()));
-                 SUPPRESS_ASSERT(f.reset(nullptr));
-               },
-               format_system_error(EBADF, "cannot close file") + "\n");
+  EXPECT_WRITE(
+      stderr,
+      {
+        // The close function must be called inside EXPECT_WRITE,
+        // otherwise the system may recycle closed file descriptor when
+        // redirecting the output in EXPECT_STDERR and the second close
+        // will break output redirection.
+        FMT_POSIX(close(f->fileno()));
+        SUPPRESS_ASSERT(f.reset(nullptr));
+      },
+      format_system_error(EBADF, "cannot close file") + "\n");
 }
 
 TEST(BufferedFileTest, Close) {
@@ -369,16 +371,17 @@ TEST(FileTest, CloseFileInDtor) {
 
 TEST(FileTest, CloseErrorInDtor) {
   std::unique_ptr<file> f(new file(open_file()));
-  EXPECT_WRITE(stderr,
-               {
-                 // The close function must be called inside EXPECT_WRITE,
-                 // otherwise the system may recycle closed file descriptor when
-                 // redirecting the output in EXPECT_STDERR and the second close
-                 // will break output redirection.
-                 FMT_POSIX(close(f->descriptor()));
-                 SUPPRESS_ASSERT(f.reset(nullptr));
-               },
-               format_system_error(EBADF, "cannot close file") + "\n");
+  EXPECT_WRITE(
+      stderr,
+      {
+        // The close function must be called inside EXPECT_WRITE,
+        // otherwise the system may recycle closed file descriptor when
+        // redirecting the output in EXPECT_STDERR and the second close
+        // will break output redirection.
+        FMT_POSIX(close(f->descriptor()));
+        SUPPRESS_ASSERT(f.reset(nullptr));
+      },
+      format_system_error(EBADF, "cannot close file") + "\n");
 }
 
 TEST(FileTest, Close) {

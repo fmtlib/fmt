@@ -387,13 +387,13 @@ inline std::tm gmtime(std::time_t time) {
 }
 
 namespace internal {
-inline std::size_t strftime(char* str, std::size_t count, const char* format,
-                            const std::tm* time) {
+inline size_t strftime(char* str, size_t count, const char* format,
+                       const std::tm* time) {
   return std::strftime(str, count, format, time);
 }
 
-inline std::size_t strftime(wchar_t* str, std::size_t count,
-                            const wchar_t* format, const std::tm* time) {
+inline size_t strftime(wchar_t* str, size_t count, const wchar_t* format,
+                       const std::tm* time) {
   return std::wcsftime(str, count, format, time);
 }
 }  // namespace internal
@@ -414,11 +414,10 @@ template <typename Char> struct formatter<std::tm, Char> {
   template <typename FormatContext>
   auto format(const std::tm& tm, FormatContext& ctx) -> decltype(ctx.out()) {
     basic_memory_buffer<Char> buf;
-    std::size_t start = buf.size();
+    size_t start = buf.size();
     for (;;) {
-      std::size_t size = buf.capacity() - start;
-      std::size_t count =
-          internal::strftime(&buf[start], size, &tm_format[0], &tm);
+      size_t size = buf.capacity() - start;
+      size_t count = internal::strftime(&buf[start], size, &tm_format[0], &tm);
       if (count != 0) {
         buf.resize(start + count);
         break;
@@ -430,7 +429,7 @@ template <typename Char> struct formatter<std::tm, Char> {
         // https://github.com/fmtlib/fmt/issues/367
         break;
       }
-      const std::size_t MIN_GROWTH = 10;
+      const size_t MIN_GROWTH = 10;
       buf.reserve(buf.capacity() + (size > MIN_GROWTH ? size : MIN_GROWTH));
     }
     return std::copy(buf.begin(), buf.end(), ctx.out());

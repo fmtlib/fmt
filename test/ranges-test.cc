@@ -79,7 +79,7 @@ TEST(RangesTest, JoinInitializerList) {
 struct my_struct {
   int32_t i;
   std::string str;  // can throw
-  template <std::size_t N> decltype(auto) get() const noexcept {
+  template <size_t N> decltype(auto) get() const noexcept {
     if constexpr (N == 0)
       return i;
     else if constexpr (N == 1)
@@ -87,16 +87,15 @@ struct my_struct {
   }
 };
 
-template <std::size_t N> decltype(auto) get(const my_struct& s) noexcept {
+template <size_t N> decltype(auto) get(const my_struct& s) noexcept {
   return s.get<N>();
 }
 
 namespace std {
 
-template <>
-struct tuple_size<my_struct> : std::integral_constant<std::size_t, 2> {};
+template <> struct tuple_size<my_struct> : std::integral_constant<size_t, 2> {};
 
-template <std::size_t N> struct tuple_element<N, my_struct> {
+template <size_t N> struct tuple_element<N, my_struct> {
   using type = decltype(std::declval<my_struct>().get<N>());
 };
 

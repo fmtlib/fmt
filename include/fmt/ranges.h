@@ -33,7 +33,7 @@ template <typename Char> struct formatting_base {
 
 template <typename Char, typename Enable = void>
 struct formatting_range : formatting_base<Char> {
-  static FMT_CONSTEXPR_DECL const std::size_t range_length_limit =
+  static FMT_CONSTEXPR_DECL const size_t range_length_limit =
       FMT_RANGE_OUTPUT_LENGTH_LIMIT;  // output only up to N items from the
                                       // range.
   Char prefix;
@@ -118,26 +118,24 @@ template <typename T> class is_tuple_like_ {
 #if defined(__cpp_lib_integer_sequence) || FMT_MSC_VER >= 1900
 template <typename T, T... N>
 using integer_sequence = std::integer_sequence<T, N...>;
-template <std::size_t... N> using index_sequence = std::index_sequence<N...>;
-template <std::size_t N>
-using make_index_sequence = std::make_index_sequence<N>;
+template <size_t... N> using index_sequence = std::index_sequence<N...>;
+template <size_t N> using make_index_sequence = std::make_index_sequence<N>;
 #else
 template <typename T, T... N> struct integer_sequence {
   using value_type = T;
 
-  static FMT_CONSTEXPR std::size_t size() { return sizeof...(N); }
+  static FMT_CONSTEXPR size_t size() { return sizeof...(N); }
 };
 
-template <std::size_t... N>
-using index_sequence = integer_sequence<std::size_t, N...>;
+template <size_t... N> using index_sequence = integer_sequence<size_t, N...>;
 
-template <typename T, std::size_t N, T... Ns>
+template <typename T, size_t N, T... Ns>
 struct make_integer_sequence : make_integer_sequence<T, N - 1, N - 1, Ns...> {};
 template <typename T, T... Ns>
 struct make_integer_sequence<T, 0, Ns...> : integer_sequence<T, Ns...> {};
 
-template <std::size_t N>
-using make_index_sequence = make_integer_sequence<std::size_t, N>;
+template <size_t N>
+using make_index_sequence = make_integer_sequence<size_t, N>;
 #endif
 
 template <class Tuple, class F, size_t... Is>
@@ -212,7 +210,7 @@ struct formatter<TupleT, Char, enable_if_t<fmt::is_tuple_like<TupleT>::value>> {
     }
 
     formatting_tuple<Char>& formatting;
-    std::size_t& i;
+    size_t& i;
     typename std::add_lvalue_reference<decltype(
         std::declval<FormatContext>().out())>::type out;
   };
@@ -228,7 +226,7 @@ struct formatter<TupleT, Char, enable_if_t<fmt::is_tuple_like<TupleT>::value>> {
   template <typename FormatContext = format_context>
   auto format(const TupleT& values, FormatContext& ctx) -> decltype(ctx.out()) {
     auto out = ctx.out();
-    std::size_t i = 0;
+    size_t i = 0;
     internal::copy(formatting.prefix, out);
 
     internal::for_each(values, format_each<FormatContext>{formatting, i, out});
@@ -263,7 +261,7 @@ struct formatter<RangeT, Char,
   typename FormatContext::iterator format(const RangeT& values,
                                           FormatContext& ctx) {
     auto out = internal::copy(formatting.prefix, ctx.out());
-    std::size_t i = 0;
+    size_t i = 0;
     for (auto it = values.begin(), end = values.end(); it != end; ++it) {
       if (i > 0) {
         if (formatting.add_prepostfix_space) *out++ = ' ';

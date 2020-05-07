@@ -6,6 +6,7 @@
 // For the license information refer to format.h.
 
 #include <cstdlib>
+
 #include "gtest.h"
 
 #ifdef _WIN32

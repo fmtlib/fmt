@@ -36,8 +36,6 @@
 
 #undef ERROR
 
-using std::size_t;
-
 using fmt::basic_memory_buffer;
 using fmt::format;
 using fmt::format_error;
@@ -299,7 +297,7 @@ TEST(MemoryBufferTest, Grow) {
   mock_allocator<int> alloc;
   struct TestMemoryBuffer : Base {
     TestMemoryBuffer(Allocator alloc) : Base(alloc) {}
-    void grow(std::size_t size) { Base::grow(size); }
+    void grow(size_t size) { Base::grow(size); }
   } buffer((Allocator(&alloc)));
   buffer.resize(7);
   using fmt::internal::to_unsigned;
@@ -327,7 +325,7 @@ TEST(MemoryBufferTest, Allocator) {
     basic_memory_buffer<char, 10, TestAllocator> buffer2(
         (TestAllocator(&alloc)));
     EXPECT_EQ(&alloc, buffer2.get_allocator().get());
-    std::size_t size = 2 * fmt::inline_buffer_size;
+    size_t size = 2 * fmt::inline_buffer_size;
     EXPECT_CALL(alloc, allocate(size)).WillOnce(Return(&mem));
     buffer2.reserve(size);
     EXPECT_CALL(alloc, deallocate(&mem, size));
@@ -338,7 +336,7 @@ TEST(MemoryBufferTest, ExceptionInDeallocate) {
   typedef allocator_ref<mock_allocator<char>> TestAllocator;
   StrictMock<mock_allocator<char>> alloc;
   basic_memory_buffer<char, 10, TestAllocator> buffer((TestAllocator(&alloc)));
-  std::size_t size = 2 * fmt::inline_buffer_size;
+  size_t size = 2 * fmt::inline_buffer_size;
   std::vector<char> mem(size);
   {
     EXPECT_CALL(alloc, allocate(size)).WillOnce(Return(&mem[0]));
@@ -353,7 +351,7 @@ TEST(MemoryBufferTest, ExceptionInDeallocate) {
     EXPECT_THROW(buffer.reserve(2 * size), std::exception);
     EXPECT_EQ(&mem2[0], &buffer[0]);
     // Check that the data has been copied.
-    for (std::size_t i = 0; i < size; ++i) EXPECT_EQ('x', buffer[i]);
+    for (size_t i = 0; i < size; ++i) EXPECT_EQ('x', buffer[i]);
   }
   EXPECT_CALL(alloc, deallocate(&mem2[0], 2 * size));
 }
@@ -608,9 +606,7 @@ TEST(FormatterTest, RightAlign) {
 }
 
 #if FMT_NUMERIC_ALIGN
-TEST(FormatterTest, NumericAlign) {
-  EXPECT_EQ("0042", format("{0:=4}", 42));
-}
+TEST(FormatterTest, NumericAlign) { EXPECT_EQ("0042", format("{0:=4}", 42)); }
 #endif
 
 TEST(FormatterTest, CenterAlign) {
@@ -801,7 +797,7 @@ TEST(FormatterTest, Width) {
   safe_sprintf(format_str, "{0:%u", UINT_MAX);
   increment(format_str + 3);
   EXPECT_THROW_MSG(format(format_str, 0), format_error, "number is too big");
-  std::size_t size = std::strlen(format_str);
+  size_t size = std::strlen(format_str);
   format_str[size] = '}';
   format_str[size + 1] = 0;
   EXPECT_THROW_MSG(format(format_str, 0), format_error, "number is too big");
@@ -831,7 +827,7 @@ TEST(FormatterTest, RuntimeWidth) {
   safe_sprintf(format_str, "{0:{%u", UINT_MAX);
   increment(format_str + 4);
   EXPECT_THROW_MSG(format(format_str, 0), format_error, "number is too big");
-  std::size_t size = std::strlen(format_str);
+  size_t size = std::strlen(format_str);
   format_str[size] = '}';
   format_str[size + 1] = 0;
   EXPECT_THROW_MSG(format(format_str, 0), format_error, "number is too big");
@@ -884,7 +880,7 @@ TEST(FormatterTest, Precision) {
   safe_sprintf(format_str, "{0:.%u", UINT_MAX);
   increment(format_str + 4);
   EXPECT_THROW_MSG(format(format_str, 0), format_error, "number is too big");
-  std::size_t size = std::strlen(format_str);
+  size_t size = std::strlen(format_str);
   format_str[size] = '}';
   format_str[size + 1] = 0;
   EXPECT_THROW_MSG(format(format_str, 0), format_error, "number is too big");
@@ -976,7 +972,7 @@ TEST(FormatterTest, RuntimePrecision) {
   safe_sprintf(format_str, "{0:.{%u", UINT_MAX);
   increment(format_str + 5);
   EXPECT_THROW_MSG(format(format_str, 0), format_error, "number is too big");
-  std::size_t size = std::strlen(format_str);
+  size_t size = std::strlen(format_str);
   format_str[size] = '}';
   format_str[size + 1] = 0;
   EXPECT_THROW_MSG(format(format_str, 0), format_error, "number is too big");
@@ -1463,7 +1459,7 @@ class QString {
 };
 
 fmt::basic_string_view<wchar_t> to_string_view(const QString& s) FMT_NOEXCEPT {
-  return {s.utf16(), static_cast<std::size_t>(s.size())};
+  return {s.utf16(), static_cast<size_t>(s.size())};
 }
 }  // namespace fake_qt
 

@@ -83,20 +83,20 @@ TEST(BufferTest, Nonmoveable) {
 
 // A test buffer with a dummy grow method.
 template <typename T> struct test_buffer : buffer<T> {
-  void grow(std::size_t capacity) { this->set(nullptr, capacity); }
+  void grow(size_t capacity) { this->set(nullptr, capacity); }
 };
 
 template <typename T> struct mock_buffer : buffer<T> {
-  MOCK_METHOD1(do_grow, void(std::size_t capacity));
+  MOCK_METHOD1(do_grow, void(size_t capacity));
 
-  void grow(std::size_t capacity) {
+  void grow(size_t capacity) {
     this->set(this->data(), capacity);
     do_grow(capacity);
   }
 
   mock_buffer() {}
   mock_buffer(T* data) { this->set(data, 0); }
-  mock_buffer(T* data, std::size_t capacity) { this->set(data, capacity); }
+  mock_buffer(T* data, size_t capacity) { this->set(data, capacity); }
 };
 
 TEST(BufferTest, Ctor) {
@@ -115,7 +115,7 @@ TEST(BufferTest, Ctor) {
   }
   {
     int dummy;
-    std::size_t capacity = std::numeric_limits<std::size_t>::max();
+    size_t capacity = std::numeric_limits<size_t>::max();
     mock_buffer<int> buffer(&dummy, capacity);
     EXPECT_EQ(&dummy, &buffer[0]);
     EXPECT_EQ(static_cast<size_t>(0), buffer.size());
@@ -375,7 +375,7 @@ struct check_custom {
     struct test_buffer : fmt::internal::buffer<char> {
       char data[10];
       test_buffer() : fmt::internal::buffer<char>(data, 0, 10) {}
-      void grow(std::size_t) {}
+      void grow(size_t) {}
     } buffer;
     fmt::internal::buffer<char>& base = buffer;
     fmt::format_parse_context parse_ctx("");
@@ -496,9 +496,9 @@ TEST(StringViewTest, Length) {
 // Check string_view's comparison operator.
 template <template <typename> class Op> void check_op() {
   const char* inputs[] = {"foo", "fop", "fo"};
-  std::size_t num_inputs = sizeof(inputs) / sizeof(*inputs);
-  for (std::size_t i = 0; i < num_inputs; ++i) {
-    for (std::size_t j = 0; j < num_inputs; ++j) {
+  size_t num_inputs = sizeof(inputs) / sizeof(*inputs);
+  for (size_t i = 0; i < num_inputs; ++i) {
+    for (size_t j = 0; j < num_inputs; ++j) {
       string_view lhs(inputs[i]), rhs(inputs[j]);
       EXPECT_EQ(Op<int>()(lhs.compare(rhs), 0), Op<string_view>()(lhs, rhs));
     }
@@ -584,7 +584,7 @@ template <typename Char> class my_string {
  public:
   my_string(const Char* s) : s_(s) {}
   const Char* data() const FMT_NOEXCEPT { return s_.data(); }
-  std::size_t length() const FMT_NOEXCEPT { return s_.size(); }
+  size_t length() const FMT_NOEXCEPT { return s_.size(); }
   operator const Char*() const { return s_.c_str(); }
 
  private:

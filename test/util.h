@@ -19,7 +19,7 @@ enum { BUFFER_SIZE = 256 };
 #  define FMT_VSNPRINTF vsnprintf
 #endif
 
-template <std::size_t SIZE>
+template <size_t SIZE>
 void safe_sprintf(char (&buffer)[SIZE], const char* format, ...) {
   std::va_list args;
   va_start(args, format);

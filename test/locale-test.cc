@@ -6,6 +6,7 @@
 // For the license information refer to format.h.
 
 #include "fmt/locale.h"
+
 #include "gmock.h"
 
 using fmt::internal::max_value;

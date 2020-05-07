@@ -1,4 +1,5 @@
 #include <format>
+
 #include "gtest.h"
 
 TEST(StdFormatTest, Escaping) {

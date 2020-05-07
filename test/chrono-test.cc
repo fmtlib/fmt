@@ -10,9 +10,10 @@
 #endif
 
 #include "fmt/chrono.h"
-#include "gtest-extra.h"
 
 #include <iomanip>
+
+#include "gtest-extra.h"
 
 std::tm make_tm() {
   auto time = std::tm();

@@ -41,7 +41,7 @@
 // Dummy implementations of strerror_r and strerror_s called if corresponding
 // system functions are not available.
 inline fmt::internal::null<> strerror_r(int, char*, ...) { return {}; }
-inline fmt::internal::null<> strerror_s(char*, std::size_t, ...) { return {}; }
+inline fmt::internal::null<> strerror_s(char*, size_t, ...) { return {}; }
 
 FMT_BEGIN_NAMESPACE
 namespace internal {
@@ -76,14 +76,14 @@ inline int fmt_snprintf(char* buffer, size_t size, const char* format, ...) {
 //   other  - failure
 // Buffer should be at least of size 1.
 FMT_FUNC int safe_strerror(int error_code, char*& buffer,
-                           std::size_t buffer_size) FMT_NOEXCEPT {
+                           size_t buffer_size) FMT_NOEXCEPT {
   FMT_ASSERT(buffer != nullptr && buffer_size != 0, "invalid buffer");
 
   class dispatcher {
    private:
     int error_code_;
     char*& buffer_;
-    std::size_t buffer_size_;
+    size_t buffer_size_;
 
     // A noop assignment operator to avoid bogus warnings.
     void operator=(const dispatcher&) {}
@@ -128,7 +128,7 @@ FMT_FUNC int safe_strerror(int error_code, char*& buffer,
 #endif
 
    public:
-    dispatcher(int err_code, char*& buf, std::size_t buf_size)
+    dispatcher(int err_code, char*& buf, size_t buf_size)
         : error_code_(err_code), buffer_(buf), buffer_size_(buf_size) {}
 
     int run() { return handle(strerror_r(error_code_, buffer_, buffer_size_)); }
@@ -145,7 +145,7 @@ FMT_FUNC void format_error_code(internal::buffer<char>& out, int error_code,
   static const char SEP[] = ": ";
   static const char ERROR_STR[] = "error ";
   // Subtract 2 to account for terminating null characters in SEP and ERROR_STR.
-  std::size_t error_code_size = sizeof(SEP) + sizeof(ERROR_STR) - 2;
+  size_t error_code_size = sizeof(SEP) + sizeof(ERROR_STR) - 2;
   auto abs_value = static_cast<uint32_or_64_or_128_t<int>>(error_code);
   if (internal::is_negative(error_code)) {
     abs_value = 0 - abs_value;

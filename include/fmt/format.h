@@ -337,12 +337,12 @@ inline typename Container::value_type* get_data(Container& c) {
 #if defined(_SECURE_SCL) && _SECURE_SCL
 // Make a checked iterator to avoid MSVC warnings.
 template <typename T> using checked_ptr = stdext::checked_array_iterator<T*>;
-template <typename T> checked_ptr<T> make_checked(T* p, std::size_t size) {
+template <typename T> checked_ptr<T> make_checked(T* p, size_t size) {
   return {p, size};
 }
 #else
 template <typename T> using checked_ptr = T*;
-template <typename T> inline T* make_checked(T* p, std::size_t) { return p; }
+template <typename T> inline T* make_checked(T* p, size_t) { return p; }
 #endif
 
 template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
@@ -350,15 +350,14 @@ template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
 __attribute__((no_sanitize("undefined")))
 #endif
 inline checked_ptr<typename Container::value_type>
-reserve(std::back_insert_iterator<Container> it, std::size_t n) {
+reserve(std::back_insert_iterator<Container> it, size_t n) {
   Container& c = get_container(it);
-  std::size_t size = c.size();
+  size_t size = c.size();
   c.resize(size + n);
   return make_checked(get_data(c) + size, n);
 }
 
-template <typename Iterator>
-inline Iterator& reserve(Iterator& it, std::size_t) {
+template <typename Iterator> inline Iterator& reserve(Iterator& it, size_t) {
   return it;
 }
 
@@ -378,7 +377,7 @@ inline Iterator base_iterator(Iterator, Iterator it) {
 // discards them.
 class counting_iterator {
  private:
-  std::size_t count_;
+  size_t count_;
 
  public:
   using iterator_category = std::output_iterator_tag;
@@ -393,7 +392,7 @@ class counting_iterator {
 
   counting_iterator() : count_(0) {}
 
-  std::size_t count() const { return count_; }
+  size_t count() const { return count_; }
 
   counting_iterator& operator++() {
     ++count_;
@@ -412,10 +411,10 @@ class counting_iterator {
 template <typename OutputIt> class truncating_iterator_base {
  protected:
   OutputIt out_;
-  std::size_t limit_;
-  std::size_t count_;
+  size_t limit_;
+  size_t count_;
 
-  truncating_iterator_base(OutputIt out, std::size_t limit)
+  truncating_iterator_base(OutputIt out, size_t limit)
       : out_(out), limit_(limit), count_(0) {}
 
  public:
@@ -428,7 +427,7 @@ template <typename OutputIt> class truncating_iterator_base {
       truncating_iterator_base;  // Mark iterator as checked.
 
   OutputIt base() const { return out_; }
-  std::size_t count() const { return count_; }
+  size_t count() const { return count_; }
 };
 
 // An output iterator that truncates the output and counts the number of objects
@@ -446,7 +445,7 @@ class truncating_iterator<OutputIt, std::false_type>
  public:
   using value_type = typename truncating_iterator_base<OutputIt>::value_type;
 
-  truncating_iterator(OutputIt out, std::size_t limit)
+  truncating_iterator(OutputIt out, size_t limit)
       : truncating_iterator_base<OutputIt>(out, limit) {}
 
   truncating_iterator& operator++() {
@@ -469,7 +468,7 @@ template <typename OutputIt>
 class truncating_iterator<OutputIt, std::true_type>
     : public truncating_iterator_base<OutputIt> {
  public:
-  truncating_iterator(OutputIt out, std::size_t limit)
+  truncating_iterator(OutputIt out, size_t limit)
       : truncating_iterator_base<OutputIt>(out, limit) {}
 
   template <typename T> truncating_iterator& operator=(T val) {
@@ -568,7 +567,7 @@ template <typename T> constexpr bool use_grisu() {
 template <typename T>
 template <typename U>
 void buffer<T>::append(const U* begin, const U* end) {
-  std::size_t new_size = size_ + to_unsigned(end - begin);
+  size_t new_size = size_ + to_unsigned(end - begin);
   reserve(new_size);
   std::uninitialized_copy(begin, end, make_checked(ptr_, capacity_) + size_);
   size_ = new_size;
@@ -619,7 +618,7 @@ enum { inline_buffer_size = 500 };
   The output can be converted to an ``std::string`` with ``to_string(out)``.
   \endrst
  */
-template <typename T, std::size_t SIZE = inline_buffer_size,
+template <typename T, size_t SIZE = inline_buffer_size,
           typename Allocator = std::allocator<T>>
 class basic_memory_buffer : public internal::buffer<T> {
  private:
@@ -635,7 +634,7 @@ class basic_memory_buffer : public internal::buffer<T> {
   }
 
  protected:
-  void grow(std::size_t size) FMT_OVERRIDE;
+  void grow(size_t size) FMT_OVERRIDE;
 
  public:
   using value_type = T;
@@ -652,7 +651,7 @@ class basic_memory_buffer : public internal::buffer<T> {
   void move(basic_memory_buffer& other) {
     alloc_ = std::move(other.alloc_);
     T* data = other.data();
-    std::size_t size = other.size(), capacity = other.capacity();
+    size_t size = other.size(), capacity = other.capacity();
     if (data == other.store_) {
       this->set(store_, capacity);
       std::uninitialized_copy(other.store_, other.store_ + size,
@@ -691,13 +690,13 @@ class basic_memory_buffer : public internal::buffer<T> {
   Allocator get_allocator() const { return alloc_; }
 };
 
-template <typename T, std::size_t SIZE, typename Allocator>
-void basic_memory_buffer<T, SIZE, Allocator>::grow(std::size_t size) {
+template <typename T, size_t SIZE, typename Allocator>
+void basic_memory_buffer<T, SIZE, Allocator>::grow(size_t size) {
 #ifdef FMT_FUZZ
   if (size > 5000) throw std::runtime_error("fuzz mode - won't grow that much");
 #endif
-  std::size_t old_capacity = this->capacity();
-  std::size_t new_capacity = old_capacity + old_capacity / 2;
+  size_t old_capacity = this->capacity();
+  size_t new_capacity = old_capacity + old_capacity / 2;
   if (size > new_capacity) new_capacity = size;
   T* old_data = this->data();
   T* new_data =
@@ -1397,8 +1396,8 @@ inline OutputIt write_padded(OutputIt out,
 // Data for write_int that doesn't depend on output iterator type. It is used to
 // avoid template code bloat.
 template <typename Char> struct write_int_data {
-  std::size_t size;
-  std::size_t padding;
+  size_t size;
+  size_t padding;
 
   write_int_data(int num_digits, string_view prefix,
                  const basic_format_specs<Char>& specs)
@@ -1685,7 +1684,7 @@ class arg_formatter_base {
 
   // Attempts to reserve space for n extra characters in the output range.
   // Returns a pointer to the reserved range or a reference to out_.
-  auto reserve(std::size_t n) -> decltype(internal::reserve(out_, n)) {
+  auto reserve(size_t n) -> decltype(internal::reserve(out_, n)) {
     return internal::reserve(out_, n);
   }
 
@@ -1764,7 +1763,7 @@ class arg_formatter_base {
   }
 
   template <typename Char>
-  void write(const Char* s, std::size_t size, const format_specs& specs) {
+  void write(const Char* s, size_t size, const format_specs& specs) {
     auto width = specs.width != 0
                      ? count_code_points(basic_string_view<Char>(s, size))
                      : 0;
@@ -2868,7 +2867,7 @@ class format_int {
   explicit format_int(unsigned long long value) : str_(format_decimal(value)) {}
 
   /** Returns the number of characters written to the output buffer. */
-  std::size_t size() const {
+  size_t size() const {
     return internal::to_unsigned(buffer_ - str_ + buffer_size - 1);
   }
 
@@ -3302,7 +3301,7 @@ template <typename T> inline std::wstring to_wstring(const T& value) {
   return format(L"{}", value);
 }
 
-template <typename Char, std::size_t SIZE>
+template <typename Char, size_t SIZE>
 std::basic_string<Char> to_string(const basic_memory_buffer<Char, SIZE>& buf) {
   return std::basic_string<Char>(buf.data(), buf.size());
 }
@@ -3351,7 +3350,7 @@ inline typename buffer_context<Char>::iterator vformat_to(
   return internal::vformat_to(buf, to_string_view(format_str), args);
 }
 
-template <typename S, typename... Args, std::size_t SIZE = inline_buffer_size,
+template <typename S, typename... Args, size_t SIZE = inline_buffer_size,
           typename Char = enable_if_t<internal::is_string<S>::value, char_t<S>>>
 inline typename buffer_context<Char>::iterator format_to(
     basic_memory_buffer<Char, SIZE>& buf, const S& format_str, Args&&... args) {
@@ -3406,7 +3405,7 @@ template <typename OutputIt> struct format_to_n_result {
   /** Iterator past the end of the output range. */
   OutputIt out;
   /** Total (not truncated) output size. */
-  std::size_t size;
+  size_t size;
 };
 
 template <typename OutputIt, typename Char = typename OutputIt::value_type>
@@ -3426,7 +3425,7 @@ make_format_to_n_args(const Args&... args) {
 template <typename OutputIt, typename Char, typename... Args,
           FMT_ENABLE_IF(internal::is_output_iterator<OutputIt>::value)>
 inline format_to_n_result<OutputIt> vformat_to_n(
-    OutputIt out, std::size_t n, basic_string_view<Char> format_str,
+    OutputIt out, size_t n, basic_string_view<Char> format_str,
     format_to_n_args<type_identity_t<OutputIt>, type_identity_t<Char>> args) {
   auto it = vformat_to(internal::truncating_iterator<OutputIt>(out, n),
                        format_str, args);
@@ -3443,7 +3442,7 @@ inline format_to_n_result<OutputIt> vformat_to_n(
 template <typename OutputIt, typename S, typename... Args,
           FMT_ENABLE_IF(internal::is_string<S>::value&&
                             internal::is_output_iterator<OutputIt>::value)>
-inline format_to_n_result<OutputIt> format_to_n(OutputIt out, std::size_t n,
+inline format_to_n_result<OutputIt> format_to_n(OutputIt out, size_t n,
                                                 const S& format_str,
                                                 const Args&... args) {
   internal::check_format_string<Args...>(format_str);
@@ -3466,7 +3465,7 @@ std::basic_string<Char> internal::vformat(
   ``format(format_str, args...)``.
  */
 template <typename... Args>
-inline std::size_t formatted_size(string_view format_str, const Args&... args) {
+inline size_t formatted_size(string_view format_str, const Args&... args) {
   return format_to(internal::counting_iterator(), format_str, args...).count();
 }
 
@@ -3542,11 +3541,11 @@ FMT_CONSTEXPR internal::udl_formatter<Char, CHARS...> operator""_format() {
   \endrst
  */
 FMT_CONSTEXPR internal::udl_formatter<char> operator"" _format(const char* s,
-                                                               std::size_t n) {
+                                                               size_t n) {
   return {{s, n}};
 }
 FMT_CONSTEXPR internal::udl_formatter<wchar_t> operator"" _format(
-    const wchar_t* s, std::size_t n) {
+    const wchar_t* s, size_t n) {
   return {{s, n}};
 }
 #  endif  // FMT_USE_UDL_TEMPLATE
@@ -3561,12 +3560,11 @@ FMT_CONSTEXPR internal::udl_formatter<wchar_t> operator"" _format(
     fmt::print("Elapsed time: {s:.2f} seconds", "s"_a=1.23);
   \endrst
  */
-FMT_CONSTEXPR internal::udl_arg<char> operator"" _a(const char* s,
-                                                    std::size_t) {
+FMT_CONSTEXPR internal::udl_arg<char> operator"" _a(const char* s, size_t) {
   return {s};
 }
 FMT_CONSTEXPR internal::udl_arg<wchar_t> operator"" _a(const wchar_t* s,
-                                                       std::size_t) {
+                                                       size_t) {
   return {s};
 }
 }  // namespace literals

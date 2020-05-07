@@ -630,27 +630,27 @@ namespace internal {
 template <typename T> class buffer {
  private:
   T* ptr_;
-  std::size_t size_;
-  std::size_t capacity_;
+  size_t size_;
+  size_t capacity_;
 
  protected:
   // Don't initialize ptr_ since it is not accessed to save a few cycles.
   FMT_SUPPRESS_MSC_WARNING(26495)
-  buffer(std::size_t sz) FMT_NOEXCEPT : size_(sz), capacity_(sz) {}
+  buffer(size_t sz) FMT_NOEXCEPT : size_(sz), capacity_(sz) {}
 
-  buffer(T* p = nullptr, std::size_t sz = 0, std::size_t cap = 0) FMT_NOEXCEPT
+  buffer(T* p = nullptr, size_t sz = 0, size_t cap = 0) FMT_NOEXCEPT
       : ptr_(p),
         size_(sz),
         capacity_(cap) {}
 
   /** Sets the buffer data and capacity. */
-  void set(T* buf_data, std::size_t buf_capacity) FMT_NOEXCEPT {
+  void set(T* buf_data, size_t buf_capacity) FMT_NOEXCEPT {
     ptr_ = buf_data;
     capacity_ = buf_capacity;
   }
 
   /** Increases the buffer capacity to hold at least *capacity* elements. */
-  virtual void grow(std::size_t capacity) = 0;
+  virtual void grow(size_t capacity) = 0;
 
  public:
   using value_type = T;
@@ -667,10 +667,10 @@ template <typename T> class buffer {
   const T* end() const FMT_NOEXCEPT { return ptr_ + size_; }
 
   /** Returns the size of this buffer. */
-  std::size_t size() const FMT_NOEXCEPT { return size_; }
+  size_t size() const FMT_NOEXCEPT { return size_; }
 
   /** Returns the capacity of this buffer. */
-  std::size_t capacity() const FMT_NOEXCEPT { return capacity_; }
+  size_t capacity() const FMT_NOEXCEPT { return capacity_; }
 
   /** Returns a pointer to the buffer data. */
   T* data() FMT_NOEXCEPT { return ptr_; }
@@ -681,7 +681,7 @@ template <typename T> class buffer {
   /**
     Resizes the buffer. If T is a POD type new elements may not be initialized.
    */
-  void resize(std::size_t new_size) {
+  void resize(size_t new_size) {
     reserve(new_size);
     size_ = new_size;
   }
@@ -690,7 +690,7 @@ template <typename T> class buffer {
   void clear() { size_ = 0; }
 
   /** Reserves space to store at least *capacity* elements. */
-  void reserve(std::size_t new_capacity) {
+  void reserve(size_t new_capacity) {
     if (new_capacity > capacity_) grow(new_capacity);
   }
 
@@ -715,7 +715,7 @@ class container_buffer : public buffer<typename Container::value_type> {
   Container& container_;
 
  protected:
-  void grow(std::size_t capacity) FMT_OVERRIDE {
+  void grow(size_t capacity) FMT_OVERRIDE {
     container_.resize(capacity);
     this->set(&container_[0], capacity);
   }
@@ -869,12 +869,12 @@ constexpr bool is_arithmetic_type(type t) {
 
 template <typename Char> struct string_value {
   const Char* data;
-  std::size_t size;
+  size_t size;
 };
 
 template <typename Char> struct named_arg_value {
   const named_arg_info<Char>* data;
-  std::size_t size;
+  size_t size;
 };
 
 template <typename Context> struct custom_value {

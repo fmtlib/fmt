@@ -119,8 +119,7 @@ TEST(PrintfTest, InvalidArgIndex) {
   EXPECT_THROW_MSG(test_sprintf(format("%{}$d", INT_MAX), 42), format_error,
                    "argument not found");
 
-  EXPECT_THROW_MSG(test_sprintf("%2$", 42), format_error,
-                   "argument not found");
+  EXPECT_THROW_MSG(test_sprintf("%2$", 42), format_error, "argument not found");
   EXPECT_THROW_MSG(test_sprintf(format("%{}$d", BIG_NUM), 42), format_error,
                    "number is too big");
 }
@@ -222,8 +221,7 @@ TEST(PrintfTest, DynamicWidth) {
   EXPECT_EQ("42   ", test_sprintf("%*d", -5, 42));
   EXPECT_THROW_MSG(test_sprintf("%*d", 5.0, 42), format_error,
                    "width is not integer");
-  EXPECT_THROW_MSG(test_sprintf("%*d"), format_error,
-                   "argument not found");
+  EXPECT_THROW_MSG(test_sprintf("%*d"), format_error, "argument not found");
   EXPECT_THROW_MSG(test_sprintf("%*d", BIG_NUM, 42), format_error,
                    "number is too big");
 }
@@ -273,8 +271,7 @@ TEST(PrintfTest, DynamicPrecision) {
   EXPECT_EQ("42", test_sprintf("%.*d", -5, 42));
   EXPECT_THROW_MSG(test_sprintf("%.*d", 5.0, 42), format_error,
                    "precision is not integer");
-  EXPECT_THROW_MSG(test_sprintf("%.*d"), format_error,
-                   "argument not found");
+  EXPECT_THROW_MSG(test_sprintf("%.*d"), format_error, "argument not found");
   EXPECT_THROW_MSG(test_sprintf("%.*d", BIG_NUM, 42), format_error,
                    "number is too big");
   if (sizeof(long long) != sizeof(int)) {
@@ -372,7 +369,7 @@ TEST(PrintfTest, Length) {
   TestLength<long long>("ll");
   TestLength<unsigned long long>("ll");
   TestLength<intmax_t>("j");
-  TestLength<std::size_t>("z");
+  TestLength<size_t>("z");
   TestLength<std::ptrdiff_t>("t");
   long double max = max_value<long double>();
   EXPECT_PRINTF(fmt::format("{:.6}", max), "%g", max);

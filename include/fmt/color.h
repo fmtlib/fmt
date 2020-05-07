@@ -364,7 +364,7 @@ template <typename Char> struct ansi_color_escape {
       // 10 more.
       if (is_background) value += 10u;
 
-      std::size_t index = 0;
+      size_t index = 0;
       buffer[index++] = static_cast<Char>('\x1b');
       buffer[index++] = static_cast<Char>('[');
 
@@ -398,7 +398,7 @@ template <typename Char> struct ansi_color_escape {
     if (em_bits & static_cast<uint8_t>(emphasis::strikethrough))
       em_codes[3] = 9;
 
-    std::size_t index = 0;
+    size_t index = 0;
     for (int i = 0; i < 4; ++i) {
       if (!em_codes[i]) continue;
       buffer[index++] = static_cast<Char>('\x1b');

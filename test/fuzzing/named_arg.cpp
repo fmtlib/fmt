@@ -10,7 +10,7 @@
 #include "fuzzer_common.h"
 
 template <typename Item1>
-void invoke_fmt(const uint8_t* Data, std::size_t Size, unsigned int argsize) {
+void invoke_fmt(const uint8_t* Data, size_t Size, unsigned int argsize) {
   constexpr auto N1 = sizeof(Item1);
   static_assert(N1 <= fmt_fuzzer::Nfixed, "Nfixed too small");
   if (Size <= fmt_fuzzer::Nfixed) {
@@ -105,7 +105,7 @@ template <typename Callback> void invoke(int index, Callback callback) {
   }
 }
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* Data, std::size_t Size) {
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* Data, size_t Size) {
   if (Size <= 3) {
     return 0;
   }

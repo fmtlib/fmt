@@ -13,7 +13,7 @@
 using fmt_fuzzer::Nfixed;
 
 template <typename Item>
-void invoke_fmt(const uint8_t* Data, std::size_t Size) {
+void invoke_fmt(const uint8_t* Data, size_t Size) {
   constexpr auto N = sizeof(Item);
   static_assert(N <= Nfixed, "Nfixed is too small");
   if (Size <= Nfixed) {
@@ -40,7 +40,7 @@ void invoke_fmt(const uint8_t* Data, std::size_t Size) {
 #endif
 }
 
-void invoke_fmt_time(const uint8_t* Data, std::size_t Size) {
+void invoke_fmt_time(const uint8_t* Data, size_t Size) {
   using Item = std::time_t;
   constexpr auto N = sizeof(Item);
   static_assert(N <= Nfixed, "Nfixed too small");
@@ -69,7 +69,7 @@ void invoke_fmt_time(const uint8_t* Data, std::size_t Size) {
   }
 }
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* Data, std::size_t Size) {
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* Data, size_t Size) {
   if (Size <= 3) {
     return 0;
   }

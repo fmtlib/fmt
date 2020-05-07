@@ -49,8 +49,8 @@ int pipe_count;
 int fopen_count;
 int fclose_count;
 int fileno_count;
-std::size_t read_nbyte;
-std::size_t write_nbyte;
+size_t read_nbyte;
+size_t write_nbyte;
 bool sysconf_error;
 
 enum { NONE, MAX_SIZE, ERROR } fstat_sim;
@@ -288,7 +288,7 @@ TEST(FileTest, ReadRetry) {
   write_end.write("test", SIZE);
   write_end.close();
   char buffer[SIZE];
-  std::size_t count = 0;
+  size_t count = 0;
   EXPECT_RETRY(count = read_end.read(buffer, SIZE), read,
                "cannot read from file");
   EXPECT_EQ_POSIX(static_cast<std::streamsize>(SIZE), count);
@@ -298,7 +298,7 @@ TEST(FileTest, WriteRetry) {
   file read_end, write_end;
   file::pipe(read_end, write_end);
   enum { SIZE = 4 };
-  std::size_t count = 0;
+  size_t count = 0;
   EXPECT_RETRY(count = write_end.write("test", SIZE), write,
                "cannot write to file");
   write_end.close();
@@ -316,8 +316,8 @@ TEST(FileTest, ConvertReadCount) {
   file read_end, write_end;
   file::pipe(read_end, write_end);
   char c;
-  std::size_t size = UINT_MAX;
-  if (sizeof(unsigned) != sizeof(std::size_t)) ++size;
+  size_t size = UINT_MAX;
+  if (sizeof(unsigned) != sizeof(size_t)) ++size;
   read_count = 1;
   read_nbyte = 0;
   EXPECT_THROW(read_end.read(&c, size), fmt::system_error);
@@ -329,8 +329,8 @@ TEST(FileTest, ConvertWriteCount) {
   file read_end, write_end;
   file::pipe(read_end, write_end);
   char c;
-  std::size_t size = UINT_MAX;
-  if (sizeof(unsigned) != sizeof(std::size_t)) ++size;
+  size_t size = UINT_MAX;
+  if (sizeof(unsigned) != sizeof(size_t)) ++size;
   write_count = 1;
   write_nbyte = 0;
   EXPECT_THROW(write_end.write(&c, size), fmt::system_error);

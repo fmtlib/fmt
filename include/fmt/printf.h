@@ -508,7 +508,8 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
       auto str_end = str + specs.precision;
       auto nul = std::find(str, str_end, Char());
       arg = internal::make_arg<basic_printf_context>(basic_string_view<Char>(
-          str, internal::to_unsigned(nul != str_end ? nul - str : specs.precision)));
+          str,
+          internal::to_unsigned(nul != str_end ? nul - str : specs.precision)));
     }
     if (specs.alt && visit_format_arg(internal::is_zero_int(), arg))
       specs.alt = false;
@@ -546,7 +547,7 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
       convert_arg<intmax_t>(arg, t);
       break;
     case 'z':
-      convert_arg<std::size_t>(arg, t);
+      convert_arg<size_t>(arg, t);
       break;
     case 't':
       convert_arg<std::ptrdiff_t>(arg, t);
@@ -651,7 +652,7 @@ inline int vfprintf(
     basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args) {
   basic_memory_buffer<Char> buffer;
   vprintf(buffer, to_string_view(format), args);
-  std::size_t size = buffer.size();
+  size_t size = buffer.size();
   return std::fwrite(buffer.data(), sizeof(Char), size, f) < size
              ? -1
              : static_cast<int>(size);
