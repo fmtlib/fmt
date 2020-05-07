@@ -152,13 +152,10 @@ FMT_FUNC void format_error_code(internal::buffer<char>& out, int error_code,
     ++error_code_size;
   }
   error_code_size += internal::to_unsigned(internal::count_digits(abs_value));
-  internal::writer w(out);
-  if (message.size() <= inline_buffer_size - error_code_size) {
-    w.write(message);
-    w.write(SEP);
-  }
-  w.write(ERROR_STR);
-  w.write(error_code);
+  auto it = std::back_inserter(out);
+  if (message.size() <= inline_buffer_size - error_code_size)
+    format_to(it, "{}{}", message, SEP);
+  format_to(it, "{}{}", ERROR_STR, error_code);
   assert(out.size() <= inline_buffer_size);
 }
 
@@ -1348,10 +1345,7 @@ FMT_FUNC void format_system_error(internal::buffer<char>& out, int error_code,
       int result =
           internal::safe_strerror(error_code, system_message, buf.size());
       if (result == 0) {
-        internal::writer w(out);
-        w.write(message);
-        w.write(": ");
-        w.write(system_message);
+        format_to(std::back_inserter(out), "{}: {}", message, system_message);
         return;
       }
       if (result != ERANGE)

@@ -383,7 +383,7 @@ OutputIt format_default(OutputIt out, T value) {
 
 template <typename Char, typename OutputIt>
 OutputIt format_default(OutputIt out, double value) {
-  writer w(out);
+  basic_writer<buffer_range<char>> w(out);
   w.write(value);
   return w.out();
 }

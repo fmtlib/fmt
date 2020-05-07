@@ -1751,8 +1751,6 @@ template <typename Range> class basic_writer {
   }
 };
 
-using writer = basic_writer<buffer_range<char>>;
-
 template <typename T> struct is_integral : std::is_integral<T> {};
 template <> struct is_integral<int128_t> : std::true_type {};
 template <> struct is_integral<uint128_t> : std::true_type {};

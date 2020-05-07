@@ -479,13 +479,6 @@ TEST(StringViewTest, Ctor) {
   EXPECT_EQ(4u, string_view(std::string("defg")).size());
 }
 
-TEST(WriterTest, Data) {
-  memory_buffer buf;
-  fmt::internal::writer w(buf);
-  w.write(42);
-  EXPECT_EQ("42", to_string(buf));
-}
-
 TEST(WriterTest, WriteInt) {
   CHECK_WRITE(42);
   CHECK_WRITE(-42);
@@ -548,16 +541,14 @@ TEST(WriterTest, WriteLongDouble) {
 
 TEST(WriterTest, WriteDoubleAtBufferBoundary) {
   memory_buffer buf;
-  fmt::internal::writer writer(buf);
-  for (int i = 0; i < 100; ++i) writer.write(1.23456789);
+  for (int i = 0; i < 100; ++i) fmt::format_to(buf, "{}", 1.23456789);
 }
 
 TEST(WriterTest, WriteDoubleWithFilledBuffer) {
   memory_buffer buf;
-  fmt::internal::writer writer(buf);
   // Fill the buffer.
-  for (int i = 0; i < fmt::inline_buffer_size; ++i) writer.write(' ');
-  writer.write(1.2);
+  for (int i = 0; i < fmt::inline_buffer_size; ++i) fmt::format_to(buf, " ");
+  fmt::format_to(buf, "{}", 1.2);
   fmt::string_view sv(buf.data(), buf.size());
   sv.remove_prefix(fmt::inline_buffer_size);
   EXPECT_EQ("1.2", sv);

@@ -124,10 +124,7 @@ void internal::format_windows_error(internal::buffer<char>& out, int error_code,
       if (result != 0) {
         utf16_to_utf8 utf8_message;
         if (utf8_message.convert(system_message) == ERROR_SUCCESS) {
-          internal::writer w(out);
-          w.write(message);
-          w.write(": ");
-          w.write(utf8_message);
+          format_to(std::back_inserter(out), "{}: {}", message, utf8_message);
           return;
         }
         break;
