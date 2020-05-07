@@ -172,6 +172,12 @@ FMT_END_NAMESPACE
 #  define FMT_BUILTIN_CLZLL(n) __builtin_clzll(n)
 #endif
 
+#if (__cplusplus >= 201703L)
+#  define FMT_CAPTURE_OF_THIS , this
+#else
+#  define FMT_CAPTURE_OF_THIS
+#endif
+
 // Some compilers masquerade as both MSVC and GCC-likes or otherwise support
 // __builtin_clz and __builtin_clzll, so only define FMT_BUILTIN_CLZ using the
 // MSVC intrinsics if the clz and clzll builtins are not available.
@@ -1467,10 +1473,10 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
 
   void on_dec() {
     auto num_digits = count_digits(abs_value);
-    out =
-        write_int(out, num_digits, get_prefix(), specs, [=, this](iterator it) {
-          return format_decimal<Char>(it, abs_value, num_digits);
-        });
+    out = write_int(out, num_digits, get_prefix(), specs,
+                    [= FMT_CAPTURE_OF_THIS](iterator it) {
+                      return format_decimal<Char>(it, abs_value, num_digits);
+                    });
   }
 
   void on_hex() {
@@ -1479,11 +1485,11 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
       prefix[prefix_size++] = specs.type;
     }
     int num_digits = count_digits<4>(abs_value);
-    out =
-        write_int(out, num_digits, get_prefix(), specs, [=, this](iterator it) {
-          return format_uint<4, Char>(it, abs_value, num_digits,
-                                      specs.type != 'x');
-        });
+    out = write_int(out, num_digits, get_prefix(), specs,
+                    [= FMT_CAPTURE_OF_THIS](iterator it) {
+                      return format_uint<4, Char>(it, abs_value, num_digits,
+                                                  specs.type != 'x');
+                    });
   }
 
   void on_bin() {
@@ -1492,10 +1498,10 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
       prefix[prefix_size++] = static_cast<char>(specs.type);
     }
     int num_digits = count_digits<1>(abs_value);
-    out =
-        write_int(out, num_digits, get_prefix(), specs, [=, this](iterator it) {
-          return format_uint<1, Char>(it, abs_value, num_digits);
-        });
+    out = write_int(out, num_digits, get_prefix(), specs,
+                    [= FMT_CAPTURE_OF_THIS](iterator it) {
+                      return format_uint<1, Char>(it, abs_value, num_digits);
+                    });
   }
 
   void on_oct() {
@@ -1505,10 +1511,10 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
       // is not greater than the number of digits.
       prefix[prefix_size++] = '0';
     }
-    out =
-        write_int(out, num_digits, get_prefix(), specs, [=, this](iterator it) {
-          return format_uint<3, Char>(it, abs_value, num_digits);
-        });
+    out = write_int(out, num_digits, get_prefix(), specs,
+                    [= FMT_CAPTURE_OF_THIS](iterator it) {
+                      return format_uint<3, Char>(it, abs_value, num_digits);
+                    });
   }
 
   enum { sep_size = 1 };
