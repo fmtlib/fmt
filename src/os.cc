@@ -227,14 +227,14 @@ long long file::size() const {
 #  endif
 }
 
-std::size_t file::read(void* buffer, std::size_t count) {
+std::size_t file::read(void* buffer, std::size_t count) const {
   RWResult result = 0;
   FMT_RETRY(result, FMT_POSIX_CALL(read(fd_, buffer, convert_rwcount(count))));
   if (result < 0) FMT_THROW(system_error(errno, "cannot read from file"));
   return internal::to_unsigned(result);
 }
 
-std::size_t file::write(const void* buffer, std::size_t count) {
+std::size_t file::write(const void* buffer, std::size_t count) const {
   RWResult result = 0;
   FMT_RETRY(result, FMT_POSIX_CALL(write(fd_, buffer, convert_rwcount(count))));
   if (result < 0) FMT_THROW(system_error(errno, "cannot write to file"));
@@ -250,7 +250,7 @@ file file::dup(int fd) {
   return file(new_fd);
 }
 
-void file::dup2(int fd) {
+void file::dup2(int fd) const {
   int result = 0;
   FMT_RETRY(result, FMT_POSIX_CALL(dup2(fd_, fd)));
   if (result == -1) {
@@ -259,7 +259,7 @@ void file::dup2(int fd) {
   }
 }
 
-void file::dup2(int fd, error_code& ec) FMT_NOEXCEPT {
+void file::dup2(int fd, error_code& ec) const FMT_NOEXCEPT {
   int result = 0;
   FMT_RETRY(result, FMT_POSIX_CALL(dup2(fd_, fd)));
   if (result == -1) ec = error_code(errno);

@@ -313,10 +313,10 @@ class file {
   FMT_API long long size() const;
 
   // Attempts to read count bytes from the file into the specified buffer.
-  FMT_API size_t read(void* buffer, size_t count);
+  FMT_API size_t read(void* buffer, size_t count) const;
 
   // Attempts to write count bytes from the specified buffer to the file.
-  FMT_API size_t write(const void* buffer, size_t count);
+  FMT_API size_t write(const void* buffer, size_t count) const;
 
   // Duplicates a file descriptor with the dup function and returns
   // the duplicate as a file object.
@@ -324,11 +324,11 @@ class file {
 
   // Makes fd be the copy of this file descriptor, closing fd first if
   // necessary.
-  FMT_API void dup2(int fd);
+  FMT_API void dup2(int fd) const;
 
   // Makes fd be the copy of this file descriptor, closing fd first if
   // necessary.
-  FMT_API void dup2(int fd, error_code& ec) FMT_NOEXCEPT;
+  FMT_API void dup2(int fd, error_code& ec) const FMT_NOEXCEPT;
 
   // Creates a pipe setting up read_end and write_end file objects for reading
   // and writing respectively.
