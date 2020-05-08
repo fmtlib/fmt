@@ -1024,11 +1024,11 @@ template <typename Context> struct arg_mapper {
     return reinterpret_cast<const char*>(val);
   }
   FMT_CONSTEXPR const char* map(signed char* val) {
-    const auto* const_val = val;
+    const auto const_val = val;
     return map(const_val);
   }
   FMT_CONSTEXPR const char* map(unsigned char* val) {
-    const auto* const_val = val;
+    const auto const_val = val;
     return map(const_val);
   }
 

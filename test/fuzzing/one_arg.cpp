@@ -58,7 +58,7 @@ void invoke_fmt_time(const uint8_t* Data, size_t Size) {
 #else
   auto fmtstring = fmt::string_view(fmt_fuzzer::as_chars(Data), Size);
 #endif
-  auto* b = std::localtime(&item);
+  auto b = std::localtime(&item);
   if (b) {
 #if FMT_FUZZ_FORMAT_TO_STRING
     std::string message = fmt::format(fmtstring, *b);

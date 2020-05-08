@@ -1375,7 +1375,7 @@ inline OutputIt write_padded(OutputIt out,
   static_assert(align == align::left || align == align::right, "");
   unsigned spec_width = to_unsigned(specs.width);
   size_t padding = spec_width > width ? spec_width - width : 0;
-  auto* shifts = align == align::left ? data::left_padding_shifts
+  auto shifts = align == align::left ? data::left_padding_shifts
                                       : data::right_padding_shifts;
   size_t left_padding = padding >> shifts[specs.align];
   auto it = reserve(out, size + padding * specs.fill.size());
