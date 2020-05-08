@@ -145,19 +145,19 @@ void report_windows_error(int error_code,
 #endif  // _WIN32
 
 buffered_file::~buffered_file() FMT_NOEXCEPT {
-  if (file_ && FMT_SYSTEM(fclose(file_)) != 0)
+  if ((file_ != nullptr) && FMT_SYSTEM(fclose(file_)) != 0)
     report_system_error(errno, "cannot close file");
 }
 
 buffered_file::buffered_file(cstring_view filename, cstring_view mode) {
   FMT_RETRY_VAL(file_, FMT_SYSTEM(fopen(filename.c_str(), mode.c_str())),
                 nullptr);
-  if (!file_)
+  if (file_ == nullptr)
     FMT_THROW(system_error(errno, "cannot open file {}", filename.c_str()));
 }
 
 void buffered_file::close() {
-  if (!file_) return;
+  if (file_ == nullptr) return;
   int result = FMT_SYSTEM(fclose(file_));
   file_ = nullptr;
   if (result != 0) FMT_THROW(system_error(errno, "cannot close file"));
@@ -290,7 +290,7 @@ void file::pipe(file& read_end, file& write_end) {
 auto file::fdopen(const char* mode) -> buffered_file {
   // Don't retry as fdopen doesn't return EINTR.
   FILE* f = FMT_POSIX_CALL(fdopen(fd_, mode));
-  if (!f)
+  if (f == nullptr)
     FMT_THROW(
         system_error(errno, "cannot associate stream with file descriptor"));
   buffered_file bf(f);
