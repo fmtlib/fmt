@@ -201,7 +201,7 @@ void file::close() {
   if (result != 0) FMT_THROW(system_error(errno, "cannot close file"));
 }
 
-auto file::size() const -> long long {
+auto file::size() const -> int64_t {
 #  ifdef _WIN32
   // Use GetFileSize instead of GetFileSizeEx for the case when _WIN32_WINNT
   // is less than 0x0500 as is the case with some default MinGW builds.
@@ -214,14 +214,14 @@ auto file::size() const -> long long {
     if (error != NO_ERROR)
       FMT_THROW(windows_error(GetLastError(), "cannot get file size"));
   }
-  unsigned long long long_size = size_upper;
+  uint64_t long_size = size_upper;
   return (long_size << sizeof(DWORD) * CHAR_BIT) | size_lower;
 #  else
   using Stat = struct stat;
   Stat file_stat = Stat();
   if (FMT_POSIX_CALL(fstat(fd_, &file_stat)) == -1)
     FMT_THROW(system_error(errno, "cannot get file attributes"));
-  static_assert(sizeof(long long) >= sizeof(file_stat.st_size),
+  static_assert(sizeof(int64_t) >= sizeof(file_stat.st_size),
                 "return type of file::size is not large enough");
   return file_stat.st_size;
 #  endif

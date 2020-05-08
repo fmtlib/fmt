@@ -310,7 +310,7 @@ class file {
 
   // Returns the file size. The size has signed type for consistency with
   // stat::st_size.
-  FMT_API long long size() const;
+  FMT_API int64_t size() const;
 
   // Attempts to read count bytes from the file into the specified buffer.
   FMT_API size_t read(void* buffer, size_t count) const;
