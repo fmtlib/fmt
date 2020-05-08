@@ -11,8 +11,8 @@ FMT_BEGIN_NAMESPACE
 namespace internal {
 
 template <typename T>
-int format_float(char* buf, std::size_t size, const char* format, int precision,
-                 T value) {
+auto format_float(char* buf, std::size_t size, const char* format, int precision,
+                 T value) -> int {
 #ifdef FMT_FUZZ
   if (precision > 100000)
     throw std::runtime_error(
