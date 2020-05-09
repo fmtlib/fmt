@@ -1,3 +1,12 @@
+6.2.1 - TBD
+-----------
+
+* Fix ostream support in sprintf
+  (`#1631 <https://github.com/fmtlib/fmt/issues/1631>`_).
+
+* Fix inconsistent type detection
+  (`#1662 <https://github.com/fmtlib/fmt/issues/1662>`_).
+
 6.2.0 - 2020-04-05
 ------------------
 
