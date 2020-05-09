@@ -1,5 +1,5 @@
-6.2.1 - TBD
------------
+6.2.1 - 2020-05-09
+------------------
 
 * Fixed ostream support in ``sprintf``
   (`#1631 <https://github.com/fmtlib/fmt/issues/1631>`_).
