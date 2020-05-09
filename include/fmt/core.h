@@ -747,8 +747,14 @@ template <typename T, typename Context>
 using has_fallback_formatter =
     std::is_constructible<fallback_formatter<T, typename Context::char_type>>;
 
-template <typename Char> struct named_arg_base;
-template <typename T, typename Char> struct named_arg;
+struct view {};
+
+template <typename Char, typename T>
+struct named_arg : view {
+  const Char* name;
+  const T& value;
+  named_arg(const Char* n, const T& v) : name(n), value(v) {}
+};
 
 template <typename Char> struct named_arg_info {
   const Char* name;
@@ -789,7 +795,7 @@ void init_named_args(named_arg_info<Char>* named_args, int arg_count,
 
 template <typename Char, typename T, typename... Tail>
 void init_named_args(named_arg_info<Char>* named_args, int arg_count,
-                     int named_arg_count, const named_arg<T, Char>& arg,
+                     int named_arg_count, const named_arg<Char, T>& arg,
                      const Tail&... args) {
   named_args[named_arg_count++] = {arg.name, arg_count};
   init_named_args(named_args, arg_count + 1, named_arg_count, args...);
@@ -801,7 +807,7 @@ FMT_INLINE void init_named_args(std::nullptr_t, int, int, const Args&...) {}
 template <typename T> struct is_named_arg : std::false_type {};
 
 template <typename T, typename Char>
-struct is_named_arg<named_arg<T, Char>> : std::true_type {};
+struct is_named_arg<named_arg<Char, T>> : std::true_type {};
 
 template <bool B = false> constexpr size_t count() { return B ? 1 : 0; }
 template <bool B1, bool B2, bool... Tail> constexpr size_t count() {
@@ -903,7 +909,6 @@ template <typename Context> class value {
     const void* pointer;
     string_value<char_type> string;
     custom_value<Context> custom;
-    const named_arg_base<char_type>* named_arg;  // DEPRECATED
     named_arg_value<char_type> named_args;
   };
 
@@ -1062,7 +1067,7 @@ template <typename Context> struct arg_mapper {
   }
 
   template <typename T>
-  FMT_CONSTEXPR auto map(const named_arg<T, char_type>& val)
+  FMT_CONSTEXPR auto map(const named_arg<char_type, T>& val)
       -> decltype(std::declval<arg_mapper>().map(val.value)) {
     return map(val.value);
   }
@@ -1403,34 +1408,6 @@ inline format_arg_store<Context, Args...> make_format_args(
   return {args...};
 }
 
-namespace internal {
-template <typename Char> struct named_arg_base {
-  const Char* name;
-
-  // Serialized value<context>.
-  mutable char data[sizeof(basic_format_arg<buffer_context<Char>>)];
-
-  named_arg_base(const Char* nm) : name(nm) {}
-
-  template <typename Context> basic_format_arg<Context> deserialize() const {
-    basic_format_arg<Context> arg;
-    std::memcpy(&arg, data, sizeof(basic_format_arg<Context>));
-    return arg;
-  }
-};
-
-struct view {};
-
-template <typename T, typename Char>
-struct named_arg : view, named_arg_base<Char> {
-  const T& value;
-
-  named_arg(const Char* name, const T& val)
-      : named_arg_base<Char>(name), value(val) {}
-};
-
-}  // namespace internal
-
 /**
   \rst
   Returns a named argument to be used in a formatting function. It should only
@@ -1442,7 +1419,7 @@ struct named_arg : view, named_arg_base<Char> {
   \endrst
  */
 template <typename Char, typename T>
-inline internal::named_arg<T, Char> arg(const Char* name, const T& arg) {
+inline internal::named_arg<Char, T> arg(const Char* name, const T& arg) {
   static_assert(!internal::is_named_arg<T>(), "nested named arguments");
   return {name, arg};
 }
@@ -1511,7 +1488,7 @@ class dynamic_format_arg_store
   }
 
   template <typename T>
-  void emplace_arg(const internal::named_arg<T, char_type>& arg) {
+  void emplace_arg(const internal::named_arg<char_type, T>& arg) {
     if (named_info_.empty()) {
       constexpr const internal::named_arg_info<char_type>* zero_ptr{nullptr};
       data_.insert(data_.begin(), {zero_ptr, 0});
@@ -1547,9 +1524,6 @@ class dynamic_format_arg_store
     \endrst
   */
   template <typename T> void push_back(const T& arg) {
-    static_assert(
-        !std::is_base_of<internal::named_arg_base<char_type>, T>::value,
-        "named arguments are not supported yet");
     if (internal::const_check(need_copy<T>::value))
       emplace_arg(dynamic_args_.push<stored_type<T>>(arg));
     else
@@ -1591,7 +1565,7 @@ class dynamic_format_arg_store
     argument.
   */
   template <typename T>
-  void push_back(const internal::named_arg<T, char_type>& arg) {
+  void push_back(const internal::named_arg<char_type, T>& arg) {
     const char_type* arg_name =
         dynamic_args_.push<std::basic_string<char_type>>(arg.name).c_str();
     if (internal::const_check(need_copy<T>::value)) {

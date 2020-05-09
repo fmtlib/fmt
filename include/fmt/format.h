@@ -3515,7 +3515,7 @@ template <typename Char> struct udl_formatter {
 template <typename Char> struct udl_arg {
   const Char* str;
 
-  template <typename T> named_arg<T, Char> operator=(T&& value) const {
+  template <typename T> named_arg<Char, T> operator=(T&& value) const {
     return {str, std::forward<T>(value)};
   }
 };
