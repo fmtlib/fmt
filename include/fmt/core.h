@@ -814,7 +814,6 @@ template <typename... Args> constexpr size_t count_named_args() {
 
 enum class type {
   none_type,
-  named_arg_type,  // DEPRECATED
   // Integer types should go first,
   int_type,
   uint_type,
@@ -1085,7 +1084,7 @@ using mapped_type_constant =
     type_constant<decltype(arg_mapper<Context>().map(std::declval<const T&>())),
                   typename Context::char_type>;
 
-enum { packed_arg_bits = 5 };
+enum { packed_arg_bits = 4 };
 // Maximum number of arguments with packed types.
 enum { max_packed_args = 62 / packed_arg_bits };
 enum : unsigned long long { is_unpacked_bit = 1ULL << 63 };
@@ -1159,9 +1158,6 @@ FMT_CONSTEXPR auto visit_format_arg(Visitor&& vis,
   using char_type = typename Context::char_type;
   switch (arg.type_) {
   case internal::type::none_type:
-    break;
-  case internal::type::named_arg_type:
-    FMT_ASSERT(false, "invalid argument type");
     break;
   case internal::type::int_type:
     return vis(arg.value_.int_value);
@@ -1655,19 +1651,6 @@ template <typename Context> class basic_format_args {
   basic_format_args(unsigned long long desc, const format_arg* args)
       : desc_(desc), args_(args) {}
 
-  format_arg do_get(int index) const {
-    format_arg arg;
-    if (!is_packed()) {
-      if (index < max_size()) arg = args_[index];
-      return arg;
-    }
-    if (index >= internal::max_packed_args) return arg;
-    arg.type_ = type(index);
-    if (arg.type_ == internal::type::none_type) return arg;
-    arg.value_ = values_[index];
-    return arg;
-  }
-
  public:
   basic_format_args() : desc_(0) {}
 
@@ -1700,9 +1683,15 @@ template <typename Context> class basic_format_args {
 
   /** Returns the argument with the specified id. */
   format_arg get(int id) const {
-    format_arg arg = do_get(id);
-    if (arg.type_ == internal::type::named_arg_type)
-      arg = arg.value_.named_arg->template deserialize<Context>();
+    format_arg arg;
+    if (!is_packed()) {
+      if (id < max_size()) arg = args_[id];
+      return arg;
+    }
+    if (id >= internal::max_packed_args) return arg;
+    arg.type_ = type(id);
+    if (arg.type_ == internal::type::none_type) return arg;
+    arg.value_ = values_[id];
     return arg;
   }
 

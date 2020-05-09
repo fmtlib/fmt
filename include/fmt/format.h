@@ -2919,7 +2919,6 @@ struct formatter<T, Char,
     auto eh = ctx.error_handler();
     switch (type) {
     case internal::type::none_type:
-    case internal::type::named_arg_type:
       FMT_ASSERT(false, "invalid argument type");
       break;
     case internal::type::int_type:
