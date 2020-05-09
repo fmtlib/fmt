@@ -610,6 +610,7 @@ using wformat_parse_context = basic_format_parse_context<wchar_t>;
 
 template <typename Context> class basic_format_arg;
 template <typename Context> class basic_format_args;
+template <typename Context> class dynamic_format_arg_store;
 
 // A formatter for objects of type T.
 template <typename T, typename Char = char, typename Enable = void>
@@ -1111,6 +1112,7 @@ template <typename Context> class basic_format_arg {
 
   friend class basic_format_args<Context>;
   friend class internal::arg_map<Context>;
+  friend class dynamic_format_arg_store<Context>;
 
   using char_type = typename Context::char_type;
 
@@ -1252,9 +1254,13 @@ inline basic_format_arg<Context> make_arg(const T& value) {
 }
 
 template <typename T> struct is_reference_wrapper : std::false_type {};
-
 template <typename T>
 struct is_reference_wrapper<std::reference_wrapper<T>> : std::true_type {};
+
+template <typename T> const T& unwrap(const T& v) { return v; }
+template <typename T> const T& unwrap(const std::reference_wrapper<T>& v) {
+  return static_cast<const T&>(v);
+}
 
 class dynamic_arg_list {
   // Workaround for clang's -Wweak-vtables. Unlike for regular classes, for
@@ -1404,6 +1410,50 @@ inline format_arg_store<Context, Args...> make_format_args(
   return {args...};
 }
 
+namespace internal {
+template <typename Char> struct named_arg_base {
+  const Char* name;
+
+  // Serialized value<context>.
+  mutable char data[sizeof(basic_format_arg<buffer_context<Char>>)];
+
+  named_arg_base(const Char* nm) : name(nm) {}
+
+  template <typename Context> basic_format_arg<Context> deserialize() const {
+    basic_format_arg<Context> arg;
+    std::memcpy(&arg, data, sizeof(basic_format_arg<Context>));
+    return arg;
+  }
+};
+
+struct view {};
+
+template <typename T, typename Char>
+struct named_arg : view, named_arg_base<Char> {
+  const T& value;
+
+  named_arg(const Char* name, const T& val)
+      : named_arg_base<Char>(name), value(val) {}
+};
+
+}  // namespace internal
+
+/**
+  \rst
+  Returns a named argument to be used in a formatting function. It should only
+  be used in a call to a formatting function.
+
+  **Example**::
+
+    fmt::print("Elapsed time: {s:.2f} seconds", fmt::arg("s", 1.23));
+  \endrst
+ */
+template <typename Char, typename T>
+inline internal::named_arg<T, Char> arg(const Char* name, const T& arg) {
+  static_assert(!internal::is_named_arg<T>(), "nested named arguments");
+  return {name, arg};
+}
+
 /**
   \rst
   A dynamic version of `fmt::format_arg_store<>`.
@@ -1434,8 +1484,7 @@ class dynamic_format_arg_store
                 std::is_same<T, internal::std_string_view<char_type>>::value ||
                 (mapped_type != internal::type::cstring_type &&
                  mapped_type != internal::type::string_type &&
-                 mapped_type != internal::type::custom_type &&
-                 mapped_type != internal::type::named_arg_type))
+                 mapped_type != internal::type::custom_type))
     };
   };
 
@@ -1445,6 +1494,7 @@ class dynamic_format_arg_store
 
   // Storage of basic_format_arg must be contiguous.
   std::vector<basic_format_arg<Context>> data_;
+  std::vector<internal::named_arg_info<char_type>> named_info_;
 
   // Storage of arguments not fitting into basic_format_arg must grow
   // without relocation because items in data_ refer to it.
@@ -1453,11 +1503,36 @@ class dynamic_format_arg_store
   friend class basic_format_args<Context>;
 
   unsigned long long get_types() const {
-    return internal::is_unpacked_bit | data_.size();
+    return internal::is_unpacked_bit | data_.size() |
+           (named_info_.empty() ? 0ULL
+                                : static_cast<unsigned long long>(
+                                      internal::has_named_args_bit));
+  }
+
+  const basic_format_arg<Context>* data() const {
+    return named_info_.empty() ? data_.data() : data_.data() + 1;
   }
 
   template <typename T> void emplace_arg(const T& arg) {
     data_.emplace_back(internal::make_arg<Context>(arg));
+  }
+
+  template <typename T>
+  void emplace_arg(const internal::named_arg<T, char_type>& arg) {
+    if (named_info_.empty()) {
+      constexpr const internal::named_arg_info<char_type>* zero_ptr{nullptr};
+      data_.insert(data_.begin(), {zero_ptr, 0});
+    }
+    data_.emplace_back(
+        internal::make_arg<Context>(internal::unwrap(arg.value)));
+    auto pop_one = [](std::vector<basic_format_arg<Context>>* data) {
+      data->pop_back();
+    };
+    std::unique_ptr<std::vector<basic_format_arg<Context>>, decltype(pop_one)>
+        guard{&data_, pop_one};
+    named_info_.push_back({arg.name, static_cast<int>(data_.size() - 2u)});
+    data_[0].value_.named_args = {named_info_.data(), named_info_.size()};
+    guard.release();
   }
 
  public:
@@ -1485,18 +1560,53 @@ class dynamic_format_arg_store
     if (internal::const_check(need_copy<T>::value))
       emplace_arg(dynamic_args_.push<stored_type<T>>(arg));
     else
-      emplace_arg(arg);
+      emplace_arg(internal::unwrap(arg));
   }
 
   /**
+    \rst
     Adds a reference to the argument into the dynamic store for later passing to
-    a formating function.
+    a formating function. Supports named arguments wrapped in
+    std::reference_wrapper (via std::ref()/std::cref()).
+
+    **Example**::
+      fmt::dynamic_format_arg_store<fmt::format_context> store;
+      char str[] = "1234567890";
+      store.push_back(std::cref(str));
+      int a1_val{42};
+      auto a1 = fmt::arg("a1_", a1_val);
+      store.push_back(std::cref(a1));
+
+      // Changing str affects the output but only for string and custom types.
+      str[0] = 'X';
+
+      std::string result = fmt::vformat("{} and {a1_}");
+      assert(result == "X234567890 and 42");
+    \endrst
   */
   template <typename T> void push_back(std::reference_wrapper<T> arg) {
     static_assert(
-        need_copy<T>::value,
+        internal::is_named_arg<typename std::remove_cv<T>::type>::value ||
+            need_copy<T>::value,
         "objects of built-in types and string views are always copied");
     emplace_arg(arg.get());
+  }
+
+  /**
+    Adds named argument into the dynamic store for later passing to a formating
+    function. std::reference_wrapper is supported to avoid copying of the
+    argument.
+  */
+  template <typename T>
+  void push_back(const internal::named_arg<T, char_type>& arg) {
+    const char_type* arg_name =
+        dynamic_args_.push<std::basic_string<char_type>>(arg.name).c_str();
+    if (internal::const_check(need_copy<T>::value)) {
+      emplace_arg(
+          fmt::arg(arg_name, dynamic_args_.push<stored_type<T>>(arg.value)));
+    } else {
+      emplace_arg(fmt::arg(arg_name, arg.value));
+    }
   }
 };
 
@@ -1582,7 +1692,7 @@ template <typename Context> class basic_format_args {
    \endrst
    */
   FMT_INLINE basic_format_args(const dynamic_format_arg_store<Context>& store)
-      : basic_format_args(store.get_types(), store.data_.data()) {}
+      : basic_format_args(store.get_types(), store.data()) {}
 
   /**
    \rst
@@ -1644,31 +1754,6 @@ template <typename Container>
 struct is_contiguous_back_insert_iterator<std::back_insert_iterator<Container>>
     : is_contiguous<Container> {};
 
-template <typename Char> struct named_arg_base {
-  const Char* name;
-
-  // Serialized value<context>.
-  mutable char data[sizeof(basic_format_arg<buffer_context<Char>>)];
-
-  named_arg_base(const Char* nm) : name(nm) {}
-
-  template <typename Context> basic_format_arg<Context> deserialize() const {
-    basic_format_arg<Context> arg;
-    std::memcpy(&arg, data, sizeof(basic_format_arg<Context>));
-    return arg;
-  }
-};
-
-struct view {};
-
-template <typename T, typename Char>
-struct named_arg : view, named_arg_base<Char> {
-  const T& value;
-
-  named_arg(const Char* name, const T& val)
-      : named_arg_base<Char>(name), value(val) {}
-};
-
 // Reports a compile-time error if S is not a valid format string.
 template <typename..., typename S, FMT_ENABLE_IF(!is_compile_string<S>::value)>
 FMT_INLINE void check_format_string(const S&) {
@@ -1711,22 +1796,6 @@ FMT_API void vprint_mojibake(std::FILE*, string_view, format_args);
 inline void vprint_mojibake(std::FILE*, string_view, format_args) {}
 #endif
 }  // namespace internal
-
-/**
-  \rst
-  Returns a named argument to be used in a formatting function. It should only
-  be used in a call to a formatting function.
-
-  **Example**::
-
-    fmt::print("Elapsed time: {s:.2f} seconds", fmt::arg("s", 1.23));
-  \endrst
- */
-template <typename Char, typename T>
-inline internal::named_arg<T, Char> arg(const Char* name, const T& arg) {
-  static_assert(!internal::is_named_arg<T>(), "nested named arguments");
-  return {name, arg};
-}
 
 /** Formats a string and writes the output to ``out``. */
 // GCC 8 and earlier cannot handle std::back_insert_iterator<Container> with
