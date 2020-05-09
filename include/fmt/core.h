@@ -1271,16 +1271,13 @@ inline basic_format_arg<Context> make_arg(const T& value) {
 }
 
 template <typename T> struct is_reference_wrapper : std::false_type {};
-
 template <typename T>
 struct is_reference_wrapper<std::reference_wrapper<T>> : std::true_type {};
 
-template <typename T> struct unwrap_reference { using type = T; };
-template <typename T> struct unwrap_reference<std::reference_wrapper<T>> {
-  using type = T&;
-};
-template <typename T>
-using unwrap_reference_t = typename unwrap_reference<T>::type;
+template <typename T> const T& unwrap(const T& v) { return v; }
+template <typename T> const T& unwrap(const std::reference_wrapper<T>& v) {
+  return static_cast<const T&>(v);
+}
 
 class dynamic_arg_list {
   // Workaround for clang's -Wweak-vtables. Unlike for regular classes, for
@@ -1541,8 +1538,8 @@ class dynamic_format_arg_store
       constexpr const internal::named_arg_info<char_type>* zero_ptr{nullptr};
       data_.insert(data_.begin(), {zero_ptr, 0});
     }
-    data_.emplace_back(internal::make_arg<Context>(
-        static_cast<const internal::unwrap_reference_t<T>&>(arg.value)));
+    data_.emplace_back(
+        internal::make_arg<Context>(internal::unwrap(arg.value)));
     auto pop_one = [](std::vector<basic_format_arg<Context>>* data) {
       data->pop_back();
     };
@@ -1578,7 +1575,7 @@ class dynamic_format_arg_store
     if (internal::const_check(need_copy<T>::value))
       emplace_arg(dynamic_args_.push<stored_type<T>>(arg));
     else
-      emplace_arg(static_cast<const internal::unwrap_reference_t<T>&>(arg));
+      emplace_arg(internal::unwrap(arg));
   }
 
   /**
@@ -1622,8 +1619,9 @@ class dynamic_format_arg_store
     if (internal::const_check(need_copy<T>::value)) {
       emplace_arg(
           fmt::arg(arg_name, dynamic_args_.push<stored_type<T>>(arg.value)));
-    } else
+    } else {
       emplace_arg(fmt::arg(arg_name, arg.value));
+    }
   }
 };
 
