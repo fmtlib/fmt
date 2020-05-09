@@ -1466,9 +1466,10 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
 
   void on_dec() {
     auto num_digits = count_digits(abs_value);
-    out = write_int(out, num_digits, get_prefix(), specs, [=](iterator it) {
-      return format_decimal<Char>(it, abs_value, num_digits);
-    });
+    out = write_int(out, num_digits, get_prefix(), specs,
+                    [this, num_digits](iterator it) {
+                      return format_decimal<Char>(it, abs_value, num_digits);
+                    });
   }
 
   void on_hex() {
@@ -1477,9 +1478,11 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
       prefix[prefix_size++] = specs.type;
     }
     int num_digits = count_digits<4>(abs_value);
-    out = write_int(out, num_digits, get_prefix(), specs, [=](iterator it) {
-      return format_uint<4, Char>(it, abs_value, num_digits, specs.type != 'x');
-    });
+    out = write_int(out, num_digits, get_prefix(), specs,
+                    [this, num_digits](iterator it) {
+                      return format_uint<4, Char>(it, abs_value, num_digits,
+                                                  specs.type != 'x');
+                    });
   }
 
   void on_bin() {
@@ -1488,9 +1491,10 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
       prefix[prefix_size++] = static_cast<char>(specs.type);
     }
     int num_digits = count_digits<1>(abs_value);
-    out = write_int(out, num_digits, get_prefix(), specs, [=](iterator it) {
-      return format_uint<1, Char>(it, abs_value, num_digits);
-    });
+    out = write_int(out, num_digits, get_prefix(), specs,
+                    [this, num_digits](iterator it) {
+                      return format_uint<1, Char>(it, abs_value, num_digits);
+                    });
   }
 
   void on_oct() {
@@ -1500,9 +1504,10 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
       // is not greater than the number of digits.
       prefix[prefix_size++] = '0';
     }
-    out = write_int(out, num_digits, get_prefix(), specs, [=](iterator it) {
-      return format_uint<3, Char>(it, abs_value, num_digits);
-    });
+    out = write_int(out, num_digits, get_prefix(), specs,
+                    [this, num_digits](iterator it) {
+                      return format_uint<3, Char>(it, abs_value, num_digits);
+                    });
   }
 
   enum { sep_size = 1 };
