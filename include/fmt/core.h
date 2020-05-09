@@ -1090,8 +1090,6 @@ enum { packed_arg_bits = 5 };
 enum { max_packed_args = 62 / packed_arg_bits };
 enum : unsigned long long { is_unpacked_bit = 1ULL << 63 };
 enum : unsigned long long { has_named_args_bit = 1ULL << 62 };
-
-template <typename Context> class arg_map;
 }  // namespace internal
 
 // A formatting argument. It is a trivially copyable/constructible type to
@@ -1111,7 +1109,6 @@ template <typename Context> class basic_format_arg {
       -> decltype(vis(0));
 
   friend class basic_format_args<Context>;
-  friend class internal::arg_map<Context>;
   friend class dynamic_format_arg_store<Context>;
 
   using char_type = typename Context::char_type;
@@ -1651,8 +1648,6 @@ template <typename Context> class basic_format_args {
     unsigned int mask = (1 << internal::packed_arg_bits) - 1;
     return static_cast<internal::type>((desc_ >> shift) & mask);
   }
-
-  friend class internal::arg_map<Context>;
 
   basic_format_args(unsigned long long desc,
                     const internal::value<Context>* values)

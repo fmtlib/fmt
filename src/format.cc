@@ -23,46 +23,6 @@ int format_float(char* buf, std::size_t size, const char* format, int precision,
   return precision < 0 ? snprintf_ptr(buf, size, format, value)
                        : snprintf_ptr(buf, size, format, precision, value);
 }
-
-// DEPRECATED.
-template <typename Context> class arg_map {
- private:
-  struct entry {
-    basic_string_view<typename Context::char_type> name;
-    basic_format_arg<Context> arg;
-  };
-
-  entry* map_;
-  unsigned size_;
-
-  void push_back(value<Context> val) {
-    const auto& named = *val.named_arg;
-    map_[size_] = {named.name, named.template deserialize<Context>()};
-    ++size_;
-  }
-
- public:
-  void init(const basic_format_args<Context>& args);
-};
-
-// This is deprecated and is kept only to preserve ABI compatibility.
-template <typename Context>
-void arg_map<Context>::init(const basic_format_args<Context>& args) {
-  if (map_) return;
-  map_ = new entry[internal::to_unsigned(args.max_size())];
-  if (args.is_packed()) {
-    for (int i = 0;; ++i) {
-      internal::type arg_type = args.type(i);
-      if (arg_type == internal::type::none_type) return;
-      if (arg_type == internal::type::named_arg_type)
-        push_back(args.values_[i]);
-    }
-  }
-  for (int i = 0, n = args.max_size(); i < n; ++i) {
-    auto type = args.args_[i].type_;
-    if (type == internal::type::named_arg_type) push_back(args.args_[i].value_);
-  }
-}
 }  // namespace internal
 
 template struct FMT_INSTANTIATION_DEF_API internal::basic_data<void>;
@@ -84,9 +44,6 @@ template FMT_API char internal::thousands_sep_impl(locale_ref);
 template FMT_API char internal::decimal_point_impl(locale_ref);
 
 template FMT_API void internal::buffer<char>::append(const char*, const char*);
-
-template FMT_API void internal::arg_map<format_context>::init(
-    const basic_format_args<format_context>& args);
 
 template FMT_API std::string internal::vformat<char>(
     string_view, basic_format_args<format_context>);
