@@ -31,7 +31,7 @@ class scan_parse_context {
   FMT_CONSTEXPR iterator end() const { return format_.end(); }
 
   void advance_to(iterator it) {
-    format_.remove_prefix(internal::to_unsigned(it - begin()));
+    format_.remove_prefix(detail::to_unsigned(it - begin()));
   }
 };
 
@@ -48,11 +48,11 @@ struct scan_context {
   iterator end() const { return begin() + input_.size(); }
 
   void advance_to(iterator it) {
-    input_.remove_prefix(internal::to_unsigned(it - begin()));
+    input_.remove_prefix(detail::to_unsigned(it - begin()));
   }
 };
 
-namespace internal {
+namespace detail {
 enum class scan_type {
   none_type,
   int_type,
@@ -107,20 +107,20 @@ class scan_arg {
     ctx.advance_to(s.scan(*static_cast<T*>(arg), ctx));
   }
 };
-}  // namespace internal
+}  // namespace detail
 
 struct scan_args {
   int size;
-  const internal::scan_arg* data;
+  const detail::scan_arg* data;
 
   template <size_t N>
-  scan_args(const std::array<internal::scan_arg, N>& store)
+  scan_args(const std::array<detail::scan_arg, N>& store)
       : size(N), data(store.data()) {
     static_assert(N < INT_MAX, "too many arguments");
   }
 };
 
-namespace internal {
+namespace detail {
 
 struct scan_handler : error_handler {
  private:
@@ -215,17 +215,17 @@ struct scan_handler : error_handler {
     return parse_ctx_.begin();
   }
 };
-}  // namespace internal
+}  // namespace detail
 
 template <typename... Args>
-std::array<internal::scan_arg, sizeof...(Args)> make_scan_args(Args&... args) {
+std::array<detail::scan_arg, sizeof...(Args)> make_scan_args(Args&... args) {
   return {{args...}};
 }
 
 string_view::iterator vscan(string_view input, string_view format_str,
                             scan_args args) {
-  internal::scan_handler h(format_str, input, args);
-  internal::parse_format_string<false>(format_str, h);
+  detail::scan_handler h(format_str, input, args);
+  detail::parse_format_string<false>(format_str, h);
   return input.begin() + (h.pos() - &*input.begin());
 }
 

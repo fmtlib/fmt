@@ -261,8 +261,8 @@ TEST(FileTest, Size) {
   EXPECT_EQ(content.size(), static_cast<unsigned long long>(f.size()));
 #  ifdef _WIN32
   fmt::memory_buffer message;
-  fmt::internal::format_windows_error(message, ERROR_ACCESS_DENIED,
-                                      "cannot get file size");
+  fmt::detail::format_windows_error(message, ERROR_ACCESS_DENIED,
+                                    "cannot get file size");
   fstat_sim = ERROR;
   EXPECT_THROW_MSG(f.size(), fmt::windows_error, fmt::to_string(message));
   fstat_sim = NONE;

@@ -75,7 +75,7 @@ template <> struct scanner<tm> {
     if (it != ctx.end() && *it == ':') ++it;
     auto end = it;
     while (end != ctx.end() && *end != '}') ++end;
-    format.reserve(internal::to_unsigned(end - it + 1));
+    format.reserve(detail::to_unsigned(end - it + 1));
     format.append(it, end);
     format.push_back('\0');
     return end;

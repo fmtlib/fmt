@@ -17,7 +17,7 @@ FMT_BEGIN_NAMESPACE
 template <typename Char> class basic_printf_parse_context;
 template <typename OutputIt, typename Char> class basic_printf_context;
 
-namespace internal {
+namespace detail {
 
 template <class Char> class formatbuf : public std::basic_streambuf<Char> {
  private:
@@ -136,14 +136,14 @@ struct fallback_formatter<T, Char, enable_if_t<is_streamable<T, Char>::value>>
     return std::copy(buffer.begin(), buffer.end(), ctx.out());
   }
 };
-}  // namespace internal
+}  // namespace detail
 
 template <typename Char>
 void vprint(std::basic_ostream<Char>& os, basic_string_view<Char> format_str,
             basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   basic_memory_buffer<Char> buffer;
-  internal::vformat_to(buffer, format_str, args);
-  internal::write(os, buffer);
+  detail::vformat_to(buffer, format_str, args);
+  detail::write(os, buffer);
 }
 
 /**
@@ -156,10 +156,10 @@ void vprint(std::basic_ostream<Char>& os, basic_string_view<Char> format_str,
   \endrst
  */
 template <typename S, typename... Args,
-          typename Char = enable_if_t<internal::is_string<S>::value, char_t<S>>>
+          typename Char = enable_if_t<detail::is_string<S>::value, char_t<S>>>
 void print(std::basic_ostream<Char>& os, const S& format_str, Args&&... args) {
   vprint(os, to_string_view(format_str),
-         internal::make_args_checked<Args...>(format_str, args...));
+         detail::make_args_checked<Args...>(format_str, args...));
 }
 FMT_END_NAMESPACE
 

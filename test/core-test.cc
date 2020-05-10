@@ -30,8 +30,8 @@
 
 using fmt::basic_format_arg;
 using fmt::string_view;
-using fmt::internal::buffer;
-using fmt::internal::value;
+using fmt::detail::buffer;
+using fmt::detail::value;
 
 using testing::_;
 using testing::StrictMock;
@@ -42,7 +42,7 @@ struct test_struct {};
 
 template <typename Context, typename T>
 basic_format_arg<Context> make_arg(const T& value) {
-  return fmt::internal::make_arg<Context>(value);
+  return fmt::detail::make_arg<Context>(value);
 }
 }  // namespace
 
@@ -148,7 +148,7 @@ TEST(BufferTest, Access) {
   EXPECT_EQ(11, buffer[0]);
   buffer[3] = 42;
   EXPECT_EQ(42, *(&buffer[0] + 3));
-  const fmt::internal::buffer<char>& const_buffer = buffer;
+  const fmt::detail::buffer<char>& const_buffer = buffer;
   EXPECT_EQ(42, const_buffer[3]);
 }
 
@@ -234,20 +234,20 @@ struct custom_context {
 
 TEST(ArgTest, MakeValueWithCustomContext) {
   test_struct t;
-  fmt::internal::value<custom_context> arg(
-      fmt::internal::arg_mapper<custom_context>().map(t));
+  fmt::detail::value<custom_context> arg(
+      fmt::detail::arg_mapper<custom_context>().map(t));
   custom_context ctx = {false, fmt::format_parse_context("")};
   arg.custom.format(&t, ctx.parse_context(), ctx);
   EXPECT_TRUE(ctx.called);
 }
 
 FMT_BEGIN_NAMESPACE
-namespace internal {
+namespace detail {
 template <typename Char>
 bool operator==(custom_value<Char> lhs, custom_value<Char> rhs) {
   return lhs.value == rhs.value;
 }
-}  // namespace internal
+}  // namespace detail
 FMT_END_NAMESPACE
 
 // Use a unique result type to make sure that there are no undesirable
@@ -372,12 +372,12 @@ TEST(ArgTest, PointerArg) {
 struct check_custom {
   test_result operator()(
       fmt::basic_format_arg<fmt::format_context>::handle h) const {
-    struct test_buffer : fmt::internal::buffer<char> {
+    struct test_buffer : fmt::detail::buffer<char> {
       char data[10];
-      test_buffer() : fmt::internal::buffer<char>(data, 0, 10) {}
+      test_buffer() : fmt::detail::buffer<char>(data, 0, 10) {}
       void grow(size_t) {}
     } buffer;
-    fmt::internal::buffer<char>& base = buffer;
+    fmt::detail::buffer<char>& base = buffer;
     fmt::format_parse_context parse_ctx("");
     fmt::format_context ctx(std::back_inserter(base), fmt::format_args());
     h.format(parse_ctx, ctx);
@@ -470,9 +470,7 @@ TEST(FormatDynArgsTest, NamedStrings) {
   store.push_back(fmt::arg("a2", std::cref(str)));
   str[0] = 'X';
 
-  std::string result = fmt::vformat(
-      "{a1} and {a2}",
-      store);
+  std::string result = fmt::vformat("{a1} and {a2}", store);
 
   EXPECT_EQ("1234567890 and X234567890", result);
 }
@@ -495,9 +493,7 @@ TEST(FormatDynArgsTest, NamedArgByRef) {
   store.push_back(1.5f);
   store.push_back(std::cref(a1));
 
-  std::string result = fmt::vformat(
-      "{a1_} and {} and {} and {}",
-      store);
+  std::string result = fmt::vformat("{a1_} and {} and {} and {}", store);
 
   EXPECT_EQ("42 and abc and 1.5 and 42", result);
 }
@@ -671,20 +667,19 @@ struct derived_from_string_view : fmt::basic_string_view<Char> {};
 }  // namespace
 
 TYPED_TEST(IsStringTest, IsString) {
-  EXPECT_TRUE(fmt::internal::is_string<TypeParam*>::value);
-  EXPECT_TRUE(fmt::internal::is_string<const TypeParam*>::value);
-  EXPECT_TRUE(fmt::internal::is_string<TypeParam[2]>::value);
-  EXPECT_TRUE(fmt::internal::is_string<const TypeParam[2]>::value);
-  EXPECT_TRUE(fmt::internal::is_string<std::basic_string<TypeParam>>::value);
+  EXPECT_TRUE(fmt::detail::is_string<TypeParam*>::value);
+  EXPECT_TRUE(fmt::detail::is_string<const TypeParam*>::value);
+  EXPECT_TRUE(fmt::detail::is_string<TypeParam[2]>::value);
+  EXPECT_TRUE(fmt::detail::is_string<const TypeParam[2]>::value);
+  EXPECT_TRUE(fmt::detail::is_string<std::basic_string<TypeParam>>::value);
+  EXPECT_TRUE(fmt::detail::is_string<fmt::basic_string_view<TypeParam>>::value);
   EXPECT_TRUE(
-      fmt::internal::is_string<fmt::basic_string_view<TypeParam>>::value);
-  EXPECT_TRUE(
-      fmt::internal::is_string<derived_from_string_view<TypeParam>>::value);
-  using string_view = fmt::internal::std_string_view<TypeParam>;
+      fmt::detail::is_string<derived_from_string_view<TypeParam>>::value);
+  using string_view = fmt::detail::std_string_view<TypeParam>;
   EXPECT_TRUE(std::is_empty<string_view>::value !=
-              fmt::internal::is_string<string_view>::value);
-  EXPECT_TRUE(fmt::internal::is_string<my_ns::my_string<TypeParam>>::value);
-  EXPECT_FALSE(fmt::internal::is_string<my_ns::non_string>::value);
+              fmt::detail::is_string<string_view>::value);
+  EXPECT_TRUE(fmt::detail::is_string<my_ns::my_string<TypeParam>>::value);
+  EXPECT_FALSE(fmt::detail::is_string<my_ns::non_string>::value);
 }
 
 TEST(CoreTest, Format) {
@@ -708,10 +703,10 @@ TEST(CoreTest, FormatTo) {
 TEST(CoreTest, ToStringViewForeignStrings) {
   using namespace my_ns;
   EXPECT_EQ(to_string_view(my_string<char>("42")), "42");
-  fmt::internal::type type =
-      fmt::internal::mapped_type_constant<my_string<char>,
-                                          fmt::format_context>::value;
-  EXPECT_EQ(type, fmt::internal::type::string_type);
+  fmt::detail::type type =
+      fmt::detail::mapped_type_constant<my_string<char>,
+                                        fmt::format_context>::value;
+  EXPECT_EQ(type, fmt::detail::type::string_type);
 }
 
 TEST(CoreTest, FormatForeignStrings) {

@@ -54,7 +54,7 @@ struct formatting_tuple : formatting_base<Char> {
   static FMT_CONSTEXPR_DECL const bool add_prepostfix_space = false;
 };
 
-namespace internal {
+namespace detail {
 
 template <typename RangeT, typename OutputIterator>
 OutputIterator copy(const RangeT& range, OutputIterator out) {
@@ -183,11 +183,11 @@ FMT_CONSTEXPR const wchar_t* format_str_quoted(bool add_space, const wchar_t) {
   return add_space ? L" '{}'" : L"'{}'";
 }
 
-}  // namespace internal
+}  // namespace detail
 
 template <typename T> struct is_tuple_like {
   static FMT_CONSTEXPR_DECL const bool value =
-      internal::is_tuple_like_<T>::value && !internal::is_range_<T>::value;
+      detail::is_tuple_like_<T>::value && !detail::is_range_<T>::value;
 };
 
 template <typename TupleT, typename Char>
@@ -200,10 +200,10 @@ struct formatter<TupleT, Char, enable_if_t<fmt::is_tuple_like<TupleT>::value>> {
         if (formatting.add_prepostfix_space) {
           *out++ = ' ';
         }
-        out = internal::copy(formatting.delimiter, out);
+        out = detail::copy(formatting.delimiter, out);
       }
       out = format_to(out,
-                      internal::format_str_quoted(
+                      detail::format_str_quoted(
                           (formatting.add_delimiter_spaces && i > 0), v),
                       v);
       ++i;
@@ -227,13 +227,13 @@ struct formatter<TupleT, Char, enable_if_t<fmt::is_tuple_like<TupleT>::value>> {
   auto format(const TupleT& values, FormatContext& ctx) -> decltype(ctx.out()) {
     auto out = ctx.out();
     size_t i = 0;
-    internal::copy(formatting.prefix, out);
+    detail::copy(formatting.prefix, out);
 
-    internal::for_each(values, format_each<FormatContext>{formatting, i, out});
+    detail::for_each(values, format_each<FormatContext>{formatting, i, out});
     if (formatting.add_prepostfix_space) {
       *out++ = ' ';
     }
-    internal::copy(formatting.postfix, out);
+    detail::copy(formatting.postfix, out);
 
     return ctx.out();
   }
@@ -241,10 +241,9 @@ struct formatter<TupleT, Char, enable_if_t<fmt::is_tuple_like<TupleT>::value>> {
 
 template <typename T, typename Char> struct is_range {
   static FMT_CONSTEXPR_DECL const bool value =
-      internal::is_range_<T>::value &&
-      !internal::is_like_std_string<T>::value &&
+      detail::is_range_<T>::value && !detail::is_like_std_string<T>::value &&
       !std::is_convertible<T, std::basic_string<Char>>::value &&
-      !std::is_constructible<internal::std_string_view<Char>, T>::value;
+      !std::is_constructible<detail::std_string_view<Char>, T>::value;
 };
 
 template <typename RangeT, typename Char>
@@ -260,15 +259,15 @@ struct formatter<RangeT, Char,
   template <typename FormatContext>
   typename FormatContext::iterator format(const RangeT& values,
                                           FormatContext& ctx) {
-    auto out = internal::copy(formatting.prefix, ctx.out());
+    auto out = detail::copy(formatting.prefix, ctx.out());
     size_t i = 0;
     for (auto it = values.begin(), end = values.end(); it != end; ++it) {
       if (i > 0) {
         if (formatting.add_prepostfix_space) *out++ = ' ';
-        out = internal::copy(formatting.delimiter, out);
+        out = detail::copy(formatting.delimiter, out);
       }
       out = format_to(out,
-                      internal::format_str_quoted(
+                      detail::format_str_quoted(
                           (formatting.add_delimiter_spaces && i > 0), *it),
                       *it);
       if (++i > formatting.range_length_limit) {
@@ -277,11 +276,11 @@ struct formatter<RangeT, Char,
       }
     }
     if (formatting.add_prepostfix_space) *out++ = ' ';
-    return internal::copy(formatting.postfix, out);
+    return detail::copy(formatting.postfix, out);
   }
 };
 
-template <typename Char, typename... T> struct tuple_arg_join : internal::view {
+template <typename Char, typename... T> struct tuple_arg_join : detail::view {
   const std::tuple<T...>& tuple;
   basic_string_view<Char> sep;
 
@@ -299,14 +298,14 @@ struct formatter<tuple_arg_join<Char, T...>, Char> {
   template <typename FormatContext>
   typename FormatContext::iterator format(
       const tuple_arg_join<Char, T...>& value, FormatContext& ctx) {
-    return format(value, ctx, internal::make_index_sequence<sizeof...(T)>{});
+    return format(value, ctx, detail::make_index_sequence<sizeof...(T)>{});
   }
 
  private:
   template <typename FormatContext, size_t... N>
   typename FormatContext::iterator format(
       const tuple_arg_join<Char, T...>& value, FormatContext& ctx,
-      internal::index_sequence<N...>) {
+      detail::index_sequence<N...>) {
     return format_args(value, ctx, std::get<N>(value.tuple)...);
   }
 
@@ -369,13 +368,13 @@ FMT_CONSTEXPR tuple_arg_join<wchar_t, T...> join(const std::tuple<T...>& tuple,
   \endrst
  */
 template <typename T>
-arg_join<internal::iterator_t<const std::initializer_list<T>>, char> join(
+arg_join<detail::iterator_t<const std::initializer_list<T>>, char> join(
     std::initializer_list<T> list, string_view sep) {
   return join(std::begin(list), std::end(list), sep);
 }
 
 template <typename T>
-arg_join<internal::iterator_t<const std::initializer_list<T>>, wchar_t> join(
+arg_join<detail::iterator_t<const std::initializer_list<T>>, wchar_t> join(
     std::initializer_list<T> list, wstring_view sep) {
   return join(std::begin(list), std::end(list), sep);
 }

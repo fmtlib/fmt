@@ -17,7 +17,7 @@
 
 using fmt::format;
 using fmt::format_error;
-using fmt::internal::max_value;
+using fmt::detail::max_value;
 
 const unsigned BIG_NUM = INT_MAX + 1u;
 
@@ -300,7 +300,7 @@ void TestLength(const char* length_spec, U value) {
   unsigned long long unsigned_value = 0;
   // Apply integer promotion to the argument.
   unsigned long long max = max_value<U>();
-  using fmt::internal::const_check;
+  using fmt::detail::const_check;
   if (const_check(max <= static_cast<unsigned>(max_value<int>()))) {
     signed_value = static_cast<int>(value);
     unsigned_value = static_cast<unsigned long long>(value);

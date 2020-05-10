@@ -43,7 +43,7 @@ using fmt::memory_buffer;
 using fmt::string_view;
 using fmt::wmemory_buffer;
 using fmt::wstring_view;
-using fmt::internal::max_value;
+using fmt::detail::max_value;
 
 using testing::Return;
 using testing::StrictMock;
@@ -104,10 +104,10 @@ struct uint32_pair {
 };
 
 TEST(UtilTest, BitCast) {
-  auto s = fmt::internal::bit_cast<uint32_pair>(uint64_t{42});
-  EXPECT_EQ(fmt::internal::bit_cast<uint64_t>(s), 42ull);
-  s = fmt::internal::bit_cast<uint32_pair>(uint64_t(~0ull));
-  EXPECT_EQ(fmt::internal::bit_cast<uint64_t>(s), ~0ull);
+  auto s = fmt::detail::bit_cast<uint32_pair>(uint64_t{42});
+  EXPECT_EQ(fmt::detail::bit_cast<uint64_t>(s), 42ull);
+  s = fmt::detail::bit_cast<uint32_pair>(uint64_t(~0ull));
+  EXPECT_EQ(fmt::detail::bit_cast<uint64_t>(s), ~0ull);
 }
 
 TEST(UtilTest, Increment) {
@@ -132,18 +132,18 @@ TEST(UtilTest, ParseNonnegativeInt) {
   fmt::string_view s = "10000000000";
   auto begin = s.begin(), end = s.end();
   EXPECT_THROW_MSG(
-      parse_nonnegative_int(begin, end, fmt::internal::error_handler()),
+      parse_nonnegative_int(begin, end, fmt::detail::error_handler()),
       fmt::format_error, "number is too big");
   s = "2147483649";
   begin = s.begin();
   end = s.end();
   EXPECT_THROW_MSG(
-      parse_nonnegative_int(begin, end, fmt::internal::error_handler()),
+      parse_nonnegative_int(begin, end, fmt::detail::error_handler()),
       fmt::format_error, "number is too big");
 }
 
 TEST(IteratorTest, CountingIterator) {
-  fmt::internal::counting_iterator it;
+  fmt::detail::counting_iterator it;
   auto prev = it++;
   EXPECT_EQ(prev.count(), 0);
   EXPECT_EQ(it.count(), 1);
@@ -151,7 +151,7 @@ TEST(IteratorTest, CountingIterator) {
 
 TEST(IteratorTest, TruncatingIterator) {
   char* p = nullptr;
-  fmt::internal::truncating_iterator<char*> it(p, 3);
+  fmt::detail::truncating_iterator<char*> it(p, 3);
   auto prev = it++;
   EXPECT_EQ(prev.base(), p);
   EXPECT_EQ(it.base(), p + 1);
@@ -160,7 +160,7 @@ TEST(IteratorTest, TruncatingIterator) {
 TEST(IteratorTest, TruncatingBackInserter) {
   std::string buffer;
   auto bi = std::back_inserter(buffer);
-  fmt::internal::truncating_iterator<decltype(bi)> it(bi, 2);
+  fmt::detail::truncating_iterator<decltype(bi)> it(bi, 2);
   *it++ = '4';
   *it++ = '2';
   *it++ = '1';
@@ -169,20 +169,20 @@ TEST(IteratorTest, TruncatingBackInserter) {
 }
 
 TEST(IteratorTest, IsOutputIterator) {
-  EXPECT_TRUE(fmt::internal::is_output_iterator<char*>::value);
-  EXPECT_FALSE(fmt::internal::is_output_iterator<const char*>::value);
-  EXPECT_FALSE(fmt::internal::is_output_iterator<std::string>::value);
-  EXPECT_TRUE(fmt::internal::is_output_iterator<
+  EXPECT_TRUE(fmt::detail::is_output_iterator<char*>::value);
+  EXPECT_FALSE(fmt::detail::is_output_iterator<const char*>::value);
+  EXPECT_FALSE(fmt::detail::is_output_iterator<std::string>::value);
+  EXPECT_TRUE(fmt::detail::is_output_iterator<
               std::back_insert_iterator<std::string>>::value);
-  EXPECT_TRUE(fmt::internal::is_output_iterator<std::string::iterator>::value);
+  EXPECT_TRUE(fmt::detail::is_output_iterator<std::string::iterator>::value);
   EXPECT_FALSE(
-      fmt::internal::is_output_iterator<std::string::const_iterator>::value);
-  EXPECT_FALSE(fmt::internal::is_output_iterator<std::list<char>>::value);
+      fmt::detail::is_output_iterator<std::string::const_iterator>::value);
+  EXPECT_FALSE(fmt::detail::is_output_iterator<std::list<char>>::value);
   EXPECT_TRUE(
-      fmt::internal::is_output_iterator<std::list<char>::iterator>::value);
-  EXPECT_FALSE(fmt::internal::is_output_iterator<
-               std::list<char>::const_iterator>::value);
-  EXPECT_FALSE(fmt::internal::is_output_iterator<uint32_pair>::value);
+      fmt::detail::is_output_iterator<std::list<char>::iterator>::value);
+  EXPECT_FALSE(
+      fmt::detail::is_output_iterator<std::list<char>::const_iterator>::value);
+  EXPECT_FALSE(fmt::detail::is_output_iterator<uint32_pair>::value);
 }
 
 TEST(MemoryBufferTest, Ctor) {
@@ -300,7 +300,7 @@ TEST(MemoryBufferTest, Grow) {
     void grow(size_t size) { Base::grow(size); }
   } buffer((Allocator(&alloc)));
   buffer.resize(7);
-  using fmt::internal::to_unsigned;
+  using fmt::detail::to_unsigned;
   for (int i = 0; i < 7; ++i) buffer[to_unsigned(i)] = i * i;
   EXPECT_EQ(10u, buffer.capacity());
   int mem[20];
@@ -357,21 +357,21 @@ TEST(MemoryBufferTest, ExceptionInDeallocate) {
 }
 
 TEST(UtilTest, UTF8ToUTF16) {
-  fmt::internal::utf8_to_utf16 u("лошадка");
+  fmt::detail::utf8_to_utf16 u("лошадка");
   EXPECT_EQ(L"\x043B\x043E\x0448\x0430\x0434\x043A\x0430", u.str());
   EXPECT_EQ(7, u.size());
   // U+10437 { DESERET SMALL LETTER YEE }
-  EXPECT_EQ(L"\xD801\xDC37", fmt::internal::utf8_to_utf16("𐐷").str());
-  EXPECT_THROW_MSG(fmt::internal::utf8_to_utf16("\xc3\x28"), std::runtime_error,
+  EXPECT_EQ(L"\xD801\xDC37", fmt::detail::utf8_to_utf16("𐐷").str());
+  EXPECT_THROW_MSG(fmt::detail::utf8_to_utf16("\xc3\x28"), std::runtime_error,
                    "invalid utf8");
-  EXPECT_THROW_MSG(fmt::internal::utf8_to_utf16(fmt::string_view("л", 1)),
+  EXPECT_THROW_MSG(fmt::detail::utf8_to_utf16(fmt::string_view("л", 1)),
                    std::runtime_error, "invalid utf8");
-  EXPECT_EQ(L"123456", fmt::internal::utf8_to_utf16("123456").str());
+  EXPECT_EQ(L"123456", fmt::detail::utf8_to_utf16("123456").str());
 }
 
 TEST(UtilTest, UTF8ToUTF16EmptyString) {
   std::string s = "";
-  fmt::internal::utf8_to_utf16 u(s.c_str());
+  fmt::detail::utf8_to_utf16 u(s.c_str());
   EXPECT_EQ(L"", u.str());
   EXPECT_EQ(s.size(), u.size());
 }
@@ -534,7 +534,7 @@ TEST(FormatterTest, ManyArgs) {
                    "argument not found");
   EXPECT_THROW_MSG(TestFormat<21>::format("{21}"), format_error,
                    "argument not found");
-  enum { max_packed_args = fmt::internal::max_packed_args };
+  enum { max_packed_args = fmt::detail::max_packed_args };
   std::string format_str = fmt::format("{{{}}}", max_packed_args + 1);
   EXPECT_THROW_MSG(TestFormat<max_packed_args>::format(format_str),
                    format_error, "argument not found");
@@ -961,7 +961,7 @@ TEST(FormatterTest, Precision) {
   EXPECT_THROW_MSG(format("{0:.2f}", reinterpret_cast<void*>(0xcafe)),
                    format_error,
                    "precision not allowed for this argument type");
-  EXPECT_THROW_MSG(format("{:.{}e}", 42.0, fmt::internal::max_value<int>()),
+  EXPECT_THROW_MSG(format("{:.{}e}", 42.0, fmt::detail::max_value<int>()),
                    format_error, "number is too big");
 
   EXPECT_EQ("st", format("{0:.2}", "str"));
@@ -1510,7 +1510,7 @@ TEST(FormatterTest, CustomFormat) {
 TEST(FormatterTest, CustomFormatTo) {
   char buf[10] = {};
   auto end =
-      &*fmt::format_to(fmt::internal::make_checked(buf, 10), "{}", Answer());
+      &*fmt::format_to(fmt::detail::make_checked(buf, 10), "{}", Answer());
   EXPECT_EQ(end, buf + 2);
   EXPECT_STREQ(buf, "42");
 }
@@ -1620,7 +1620,7 @@ TEST(FormatTest, Print) {
                "Don't panic!");
 #endif
   // Check that the wide print overload compiles.
-  if (fmt::internal::const_check(false)) fmt::print(L"test");
+  if (fmt::detail::const_check(false)) fmt::print(L"test");
 }
 
 TEST(FormatTest, Variadic) {
@@ -1631,9 +1631,9 @@ TEST(FormatTest, Variadic) {
 TEST(FormatTest, Dynamic) {
   typedef fmt::format_context ctx;
   std::vector<fmt::basic_format_arg<ctx>> args;
-  args.emplace_back(fmt::internal::make_arg<ctx>(42));
-  args.emplace_back(fmt::internal::make_arg<ctx>("abc1"));
-  args.emplace_back(fmt::internal::make_arg<ctx>(1.5f));
+  args.emplace_back(fmt::detail::make_arg<ctx>(42));
+  args.emplace_back(fmt::detail::make_arg<ctx>("abc1"));
+  args.emplace_back(fmt::detail::make_arg<ctx>(1.5f));
 
   std::string result = fmt::vformat(
       "{} and {} and {}",
@@ -1808,7 +1808,7 @@ TEST(FormatTest, StrongEnum) {
 using buffer_range = fmt::buffer_range<char>;
 
 class mock_arg_formatter
-    : public fmt::internal::arg_formatter_base<buffer_range> {
+    : public fmt::detail::arg_formatter_base<buffer_range> {
  private:
 #if FMT_USE_INT128
   MOCK_METHOD1(call, void(__int128_t value));
@@ -1817,24 +1817,24 @@ class mock_arg_formatter
 #endif
 
  public:
-  typedef fmt::internal::arg_formatter_base<buffer_range> base;
+  typedef fmt::detail::arg_formatter_base<buffer_range> base;
   typedef buffer_range range;
 
   mock_arg_formatter(fmt::format_context& ctx, fmt::format_parse_context*,
                      fmt::format_specs* s = nullptr)
-      : base(fmt::internal::get_container(ctx.out()), s, ctx.locale()) {
+      : base(fmt::detail::get_container(ctx.out()), s, ctx.locale()) {
     EXPECT_CALL(*this, call(42));
   }
 
   template <typename T>
-  typename std::enable_if<fmt::internal::is_integral<T>::value, iterator>::type
+  typename std::enable_if<fmt::detail::is_integral<T>::value, iterator>::type
   operator()(T value) {
     call(value);
     return base::operator()(value);
   }
 
   template <typename T>
-  typename std::enable_if<!fmt::internal::is_integral<T>::value, iterator>::type
+  typename std::enable_if<!fmt::detail::is_integral<T>::value, iterator>::type
   operator()(T value) {
     return base::operator()(value);
   }
@@ -2020,7 +2020,7 @@ struct test_arg_id_handler {
 template <size_t N>
 FMT_CONSTEXPR test_arg_id_handler parse_arg_id(const char (&s)[N]) {
   test_arg_id_handler h;
-  fmt::internal::parse_arg_id(s, s + N, h);
+  fmt::detail::parse_arg_id(s, s + N, h);
   return h;
 }
 
@@ -2041,9 +2041,9 @@ struct test_format_specs_handler {
   fmt::align_t align = fmt::align::none;
   char fill = 0;
   int width = 0;
-  fmt::internal::arg_ref<char> width_ref;
+  fmt::detail::arg_ref<char> width_ref;
   int precision = 0;
-  fmt::internal::arg_ref<char> precision_ref;
+  fmt::detail::arg_ref<char> precision_ref;
   char type = 0;
 
   // Workaround for MSVC2017 bug that results in "expression did not evaluate
@@ -2069,12 +2069,12 @@ struct test_format_specs_handler {
   FMT_CONSTEXPR void on_zero() { res = ZERO; }
 
   FMT_CONSTEXPR void on_width(int w) { width = w; }
-  FMT_CONSTEXPR void on_dynamic_width(fmt::internal::auto_id) {}
+  FMT_CONSTEXPR void on_dynamic_width(fmt::detail::auto_id) {}
   FMT_CONSTEXPR void on_dynamic_width(int index) { width_ref = index; }
   FMT_CONSTEXPR void on_dynamic_width(string_view) {}
 
   FMT_CONSTEXPR void on_precision(int p) { precision = p; }
-  FMT_CONSTEXPR void on_dynamic_precision(fmt::internal::auto_id) {}
+  FMT_CONSTEXPR void on_dynamic_precision(fmt::detail::auto_id) {}
   FMT_CONSTEXPR void on_dynamic_precision(int index) { precision_ref = index; }
   FMT_CONSTEXPR void on_dynamic_precision(string_view) {}
 
@@ -2086,7 +2086,7 @@ struct test_format_specs_handler {
 template <size_t N>
 FMT_CONSTEXPR test_format_specs_handler parse_test_specs(const char (&s)[N]) {
   test_format_specs_handler h;
-  fmt::internal::parse_format_specs(s, s + N, h);
+  fmt::detail::parse_format_specs(s, s + N, h);
   return h;
 }
 
@@ -2130,7 +2130,7 @@ struct test_context {
 
   template <typename Id>
   FMT_CONSTEXPR fmt::basic_format_arg<test_context> arg(Id id) {
-    return fmt::internal::make_arg<test_context>(id);
+    return fmt::detail::make_arg<test_context>(id);
   }
 
   void on_error(const char*) {}
@@ -2143,7 +2143,7 @@ FMT_CONSTEXPR fmt::format_specs parse_specs(const char (&s)[N]) {
   auto specs = fmt::format_specs();
   auto parse_ctx = test_parse_context();
   auto ctx = test_context();
-  fmt::internal::specs_handler<test_parse_context, test_context> h(
+  fmt::detail::specs_handler<test_parse_context, test_context> h(
       specs, parse_ctx, ctx);
   parse_format_specs(s, s + N, h);
   return specs;
@@ -2167,11 +2167,11 @@ TEST(FormatTest, ConstexprSpecsHandler) {
 }
 
 template <size_t N>
-FMT_CONSTEXPR fmt::internal::dynamic_format_specs<char> parse_dynamic_specs(
+FMT_CONSTEXPR fmt::detail::dynamic_format_specs<char> parse_dynamic_specs(
     const char (&s)[N]) {
-  fmt::internal::dynamic_format_specs<char> specs;
+  fmt::detail::dynamic_format_specs<char> specs;
   test_parse_context ctx{};
-  fmt::internal::dynamic_specs_handler<test_parse_context> h(specs, ctx);
+  fmt::detail::dynamic_specs_handler<test_parse_context> h(specs, ctx);
   parse_format_specs(s, s + N, h);
   return specs;
 }
@@ -2195,8 +2195,8 @@ TEST(FormatTest, ConstexprDynamicSpecsHandler) {
 
 template <size_t N>
 FMT_CONSTEXPR test_format_specs_handler check_specs(const char (&s)[N]) {
-  fmt::internal::specs_checker<test_format_specs_handler> checker(
-      test_format_specs_handler(), fmt::internal::type::double_type);
+  fmt::detail::specs_checker<test_format_specs_handler> checker(
+      test_format_specs_handler(), fmt::detail::type::double_type);
   parse_format_specs(s, s + N, checker);
   return checker;
 }
@@ -2238,7 +2238,7 @@ struct test_format_string_handler {
 
 template <size_t N> FMT_CONSTEXPR bool parse_string(const char (&s)[N]) {
   test_format_string_handler h;
-  fmt::internal::parse_format_string<true>(fmt::string_view(s, N - 1), h);
+  fmt::detail::parse_format_string<true>(fmt::string_view(s, N - 1), h);
   return !h.error;
 }
 
@@ -2283,9 +2283,9 @@ template <typename... Args>
 FMT_CONSTEXPR bool test_error(const char* fmt, const char* expected_error) {
   const char* actual_error = nullptr;
   string_view s(fmt, len(fmt));
-  fmt::internal::format_string_checker<char, test_error_handler, Args...>
-      checker(s, test_error_handler(actual_error));
-  fmt::internal::parse_format_string<true>(s, checker);
+  fmt::detail::format_string_checker<char, test_error_handler, Args...> checker(
+      s, test_error_handler(actual_error));
+  fmt::detail::parse_format_string<true>(s, checker);
   return equal(actual_error, expected_error);
 }
 
@@ -2299,7 +2299,7 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR_NOARGS("}", "unmatched '}' in format string");
   EXPECT_ERROR("{0:s", "unknown format specifier", Date);
 #  if !FMT_MSC_VER || FMT_MSC_VER >= 1916
-  // This causes an internal compiler error in MSVC2017.
+  // This causes an detail compiler error in MSVC2017.
   EXPECT_ERROR("{:{<}", "invalid fill character '{'", int);
   EXPECT_ERROR("{:10000000000}", "number is too big", int);
   EXPECT_ERROR("{:.10000000000}", "number is too big", int);
@@ -2358,7 +2358,7 @@ TEST(FormatTest, FormatStringErrors) {
 
 TEST(FormatTest, VFormatTo) {
   typedef fmt::format_context context;
-  fmt::basic_format_arg<context> arg = fmt::internal::make_arg<context>(42);
+  fmt::basic_format_arg<context> arg = fmt::detail::make_arg<context>(42);
   fmt::basic_format_args<context> args(&arg, 1);
   std::string s;
   fmt::vformat_to(std::back_inserter(s), "{}", args);
@@ -2368,7 +2368,7 @@ TEST(FormatTest, VFormatTo) {
   EXPECT_EQ("42", s);
 
   typedef fmt::wformat_context wcontext;
-  fmt::basic_format_arg<wcontext> warg = fmt::internal::make_arg<wcontext>(42);
+  fmt::basic_format_arg<wcontext> warg = fmt::detail::make_arg<wcontext>(42);
   fmt::basic_format_args<wcontext> wargs(&warg, 1);
   std::wstring w;
   fmt::vformat_to(std::back_inserter(w), L"{}", wargs);
@@ -2396,7 +2396,7 @@ TEST(FormatTest, EmphasisNonHeaderOnly) {
 }
 
 TEST(FormatTest, CharTraitsIsNotAmbiguous) {
-  // Test that we don't inject internal names into the std namespace.
+  // Test that we don't inject detail names into the std namespace.
   using namespace std;
   char_traits<char>::char_type c;
   (void)c;
@@ -2434,13 +2434,12 @@ template <typename S> std::string from_u8str(const S& str) {
 }
 
 TEST(FormatTest, FormatUTF8Precision) {
-  using str_type = std::basic_string<fmt::internal::char8_type>;
-  str_type format(
-      reinterpret_cast<const fmt::internal::char8_type*>(u8"{:.4}"));
-  str_type str(reinterpret_cast<const fmt::internal::char8_type*>(
+  using str_type = std::basic_string<fmt::detail::char8_type>;
+  str_type format(reinterpret_cast<const fmt::detail::char8_type*>(u8"{:.4}"));
+  str_type str(reinterpret_cast<const fmt::detail::char8_type*>(
       u8"caf\u00e9s"));  // cafés
   auto result = fmt::format(format, str);
-  EXPECT_EQ(fmt::internal::count_code_points(result), 4);
+  EXPECT_EQ(fmt::detail::count_code_points(result), 4);
   EXPECT_EQ(result.size(), 5);
   EXPECT_EQ(from_u8str(result), from_u8str(str.substr(0, 5)));
 }
