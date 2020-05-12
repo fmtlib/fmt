@@ -468,7 +468,7 @@ constexpr auto compile_format_string(S format_str) {
   constexpr basic_string_view<char_type> str = format_str;
   if constexpr (str[POS] == '{') {
     if (POS + 1 == str.size())
-      throw format_error("unmatched '{' in format string");
+      FMT_THROW(format_error("unmatched '{' in format string"));
     if constexpr (str[POS + 1] == '{') {
       return parse_tail<Args, POS + 2, ID>(make_text(str, POS, 1), format_str);
     } else if constexpr (str[POS + 1] == '}') {
@@ -484,7 +484,7 @@ constexpr auto compile_format_string(S format_str) {
     }
   } else if constexpr (str[POS] == '}') {
     if (POS + 1 == str.size())
-      throw format_error("unmatched '}' in format string");
+      FMT_THROW(format_error("unmatched '}' in format string"));
     return parse_tail<Args, POS + 2, ID>(make_text(str, POS, 1), format_str);
   } else {
     constexpr auto end = parse_text(str, POS + 1);
