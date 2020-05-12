@@ -512,6 +512,32 @@ TEST(FormatDynArgsTest, NamedCustomFormat) {
   EXPECT_EQ("cust=0 and cust=1 and cust=3", result);
 }
 
+TEST(FormatDynArgsTest, Clear) {
+  fmt::dynamic_format_arg_store<fmt::format_context> store;
+  store.push_back(42);
+
+  std::string result = fmt::vformat("{}", store);
+  EXPECT_EQ("42", result);
+
+  store.push_back(43);
+  result = fmt::vformat("{} and {}", store);
+  EXPECT_EQ("42 and 43", result);
+
+  store.clear();
+  store.push_back(44);
+  result = fmt::vformat("{}", store);
+  EXPECT_EQ("44", result);
+}
+
+TEST(FormatDynArgsTest, Reserve) {
+  fmt::dynamic_format_arg_store<fmt::format_context> store;
+  store.reserve(2, 1);
+  store.push_back(1.5f);
+  store.push_back(fmt::arg("a1", 42));
+  std::string result = fmt::vformat("{a1} and {}", store);
+  EXPECT_EQ("42 and 1.5", result);
+}
+
 struct copy_throwable {
   copy_throwable() {}
   copy_throwable(const copy_throwable&) { throw "deal with it"; }

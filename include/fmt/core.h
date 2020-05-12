@@ -1572,6 +1572,24 @@ class dynamic_format_arg_store
       emplace_arg(fmt::arg(arg_name, arg.value));
     }
   }
+
+  /** Erase all elements from the store */
+  void clear() {
+    data_.clear();
+    named_info_.clear();
+    dynamic_args_ = internal::dynamic_arg_list();
+  }
+
+  /**
+    Reserves space to store at least *new_cap* arguments including
+    *new_cap_named* named arguments.
+  */
+  void reserve(size_t new_cap, size_t new_cap_named) {
+    FMT_ASSERT(new_cap >= new_cap_named,
+               "Set of arguments includes set of named arguments");
+    data_.reserve(new_cap);
+    named_info_.reserve(new_cap_named);
+  }
 };
 
 /**
