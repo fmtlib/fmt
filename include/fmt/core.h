@@ -1586,7 +1586,7 @@ class dynamic_format_arg_store
   */
   void reserve(size_t new_cap, size_t new_cap_named) {
     FMT_ASSERT(new_cap >= new_cap_named,
-               "Set of argument includes set of named arguments");
+               "Set of arguments includes set of named arguments");
     data_.reserve(new_cap);
     named_info_.reserve(new_cap_named);
   }
