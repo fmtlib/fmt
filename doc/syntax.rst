@@ -79,8 +79,8 @@ The general form of a *standard format specifier* is:
    fill: <a character other than '{' or '}'>
    align: "<" | ">" | "^"
    sign: "+" | "-" | " "
-   width: `integer` | "{" `arg_id` "}"
-   precision: `integer` | "{" `arg_id` "}"
+   width: `integer` | "{" [`arg_id`] "}"
+   precision: `integer` | "{" [`arg_id`] "}"
    type: `int_type` | "a" | "A" | "c" | "e" | "E" | "f" | "F" | "g" | "G" | "L" | "p" | "s"
    int_type: "b" | "B" | "d" | "o" | "x" | "X"
 
