@@ -69,6 +69,9 @@ Argument Lists
 .. doxygenclass:: fmt::format_arg_store
    :members:
 
+.. doxygenclass:: fmt::dynamic_format_arg_store
+   :members:
+
 .. doxygenclass:: fmt::basic_format_args
    :members:
 

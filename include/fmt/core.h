@@ -1425,7 +1425,7 @@ inline detail::named_arg<Char, T> arg(const Char* name, const T& arg) {
 /**
   \rst
   A dynamic version of `fmt::format_arg_store<>`.
-  It's equipped with a storage to potentially temporary objects which lifetime
+  It's equipped with a storage to potentially temporary objects which lifetimes
   could be shorter than the format arguments object.
 
   It can be implicitly converted into `~fmt::basic_format_args` for passing
@@ -1508,8 +1508,8 @@ class dynamic_format_arg_store
     Adds an argument into the dynamic store for later passing to a formating
     function.
 
-    Note that custom types and string types (but not string views!) are copied
-    into the store with dynamic memory (in addition to resizing vector).
+    Note that custom types and string types (but not string views) are copied
+    into the store dynamically allocating memory if necessary.
 
     **Example**::
 
@@ -1531,9 +1531,10 @@ class dynamic_format_arg_store
     \rst
     Adds a reference to the argument into the dynamic store for later passing to
     a formating function. Supports named arguments wrapped in
-    std::reference_wrapper (via std::ref()/std::cref()).
+    ``std::reference_wrapper`` via ``std::ref()``/``std::cref()``.
 
     **Example**::
+
       fmt::dynamic_format_arg_store<fmt::format_context> store;
       char str[] = "1234567890";
       store.push_back(std::cref(str));
@@ -1558,7 +1559,7 @@ class dynamic_format_arg_store
 
   /**
     Adds named argument into the dynamic store for later passing to a formating
-    function. std::reference_wrapper is supported to avoid copying of the
+    function. ``std::reference_wrapper`` is supported to avoid copying of the
     argument.
   */
   template <typename T>
@@ -1581,8 +1582,10 @@ class dynamic_format_arg_store
   }
 
   /**
+    \rst
     Reserves space to store at least *new_cap* arguments including
     *new_cap_named* named arguments.
+    \endrst
   */
   void reserve(size_t new_cap, size_t new_cap_named) {
     FMT_ASSERT(new_cap >= new_cap_named,
