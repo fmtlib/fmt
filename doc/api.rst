@@ -273,6 +273,9 @@ Utilities
 
 .. doxygenfunction:: fmt::join(It, It, string_view)
 
+.. doxygenclass:: fmt::detail::buffer
+   :members:
+
 .. doxygenclass:: fmt::basic_memory_buffer
    :protected-members:
    :members:

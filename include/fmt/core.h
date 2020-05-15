@@ -627,7 +627,12 @@ using has_formatter =
 
 namespace detail {
 
-/** A contiguous memory buffer with an optional growing ability. */
+/**
+  \rst
+  A contiguous memory buffer with an optional growing ability. It is an internal
+  class and shouldn't be used directly, only via `~fmt::basic_memory_buffer`.
+  \endrst
+ */
 template <typename T> class buffer {
  private:
   T* ptr_;
