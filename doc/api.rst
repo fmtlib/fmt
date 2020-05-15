@@ -250,9 +250,9 @@ Literal-based API
 
 The following user-defined literals are defined in ``fmt/format.h``.
 
-.. doxygenfunction:: operator""_format(const char *, std::size_t)
+.. doxygenfunction:: operator""_format(const char *, size_t)
 
-.. doxygenfunction:: operator""_a(const char *, std::size_t)
+.. doxygenfunction:: operator""_a(const char *, size_t)
 
 Utilities
 ---------
