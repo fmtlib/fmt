@@ -1424,7 +1424,7 @@ inline detail::named_arg<Char, T> arg(const Char* name, const T& arg) {
 
 /**
   \rst
-  A dynamic version of `fmt::format_arg_store<>`.
+  A dynamic version of `fmt::format_arg_store`.
   It's equipped with a storage to potentially temporary objects which lifetimes
   could be shorter than the format arguments object.
 
