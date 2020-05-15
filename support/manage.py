@@ -147,7 +147,7 @@ def update_site(env):
                 #b.data = b.data.replace('operator""_', 'operator"" _')
                 b.data = b.data.replace(', size_t', ', std::size_t')
                 b.data = b.data.replace('aa long', 'a long')
-                if version == '6.2.0':
+                if version.startswith('6.2.'):
                     b.data = b.data.replace(
                         'vformat(const S&, basic_format_args<' +
                         'buffer_context<Char>>)',
