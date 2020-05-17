@@ -368,13 +368,13 @@ FMT_CONSTEXPR tuple_arg_join<wchar_t, T...> join(const std::tuple<T...>& tuple,
   \endrst
  */
 template <typename T>
-arg_join<detail::iterator_t<const std::initializer_list<T>>, char> join(
+arg_join<const T*, const T*, char> join(
     std::initializer_list<T> list, string_view sep) {
   return join(std::begin(list), std::end(list), sep);
 }
 
 template <typename T>
-arg_join<detail::iterator_t<const std::initializer_list<T>>, wchar_t> join(
+arg_join<const T*, const T*, wchar_t> join(
     std::initializer_list<T> list, wstring_view sep) {
   return join(std::begin(list), std::end(list), sep);
 }
