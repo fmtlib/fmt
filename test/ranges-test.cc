@@ -153,4 +153,3 @@ TEST(RangesTest, JoinSentinel) {
   EXPECT_EQ("{'h', 'e', 'l', 'l', 'o'}", fmt::format("{}", hello));
   EXPECT_EQ("h_e_l_l_o", fmt::format("{}", fmt::join(hello, "_")));
 }
-
