@@ -1235,6 +1235,9 @@ FMT_CONSTEXPR void handle_int_type_spec(char spec, Handler&& handler) {
   case 'L':
     handler.on_num();
     break;
+  case 'c':
+    handler.on_chr();
+    break;
   default:
     handler.on_error();
   }
@@ -1326,6 +1329,7 @@ template <typename ErrorHandler> class int_type_checker : private ErrorHandler {
   FMT_CONSTEXPR void on_bin() {}
   FMT_CONSTEXPR void on_oct() {}
   FMT_CONSTEXPR void on_num() {}
+  FMT_CONSTEXPR void on_chr() {}
 
   FMT_CONSTEXPR void on_error() {
     ErrorHandler::on_error("invalid type specifier");
@@ -1560,6 +1564,8 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
     out = write_int(out, size, get_prefix(), specs,
                     num_writer{abs_value, size, groups, sep});
   }
+
+  void on_chr() { *out++ = static_cast<Char>(abs_value); }
 
   FMT_NORETURN void on_error() {
     FMT_THROW(format_error("invalid type specifier"));

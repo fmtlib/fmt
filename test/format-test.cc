@@ -1082,7 +1082,8 @@ TEST(FormatterTest, FormatShort) {
 TEST(FormatterTest, FormatInt) {
   EXPECT_THROW_MSG(format("{0:v", 42), format_error,
                    "missing '}' in format string");
-  check_unknown_types(42, "bBdoxXnL", "integer");
+  check_unknown_types(42, "bBdoxXnLc", "integer");
+  EXPECT_EQ("x", format("{:c}", static_cast<int>('x')));
 }
 
 TEST(FormatterTest, FormatBin) {
