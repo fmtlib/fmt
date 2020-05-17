@@ -405,7 +405,9 @@ void basic_printf_context<OutputIt, Char>::parse_flags(format_specs& specs,
       specs.fill[0] = '0';
       break;
     case ' ':
-      specs.sign = sign::space;
+      if (specs.sign != sign::plus) {
+        specs.sign = sign::space;
+      }
       break;
     case '#':
       specs.alt = true;
@@ -517,10 +519,11 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
     if (specs.alt && visit_format_arg(detail::is_zero_int(), arg))
       specs.alt = false;
     if (specs.fill[0] == '0') {
-      if (arg.is_arithmetic())
+      if (arg.is_arithmetic() && specs.align != align::left)
         specs.align = align::numeric;
       else
-        specs.fill[0] = ' ';  // Ignore '0' flag for non-numeric types.
+        specs.fill[0] = ' ';  // Ignore '0' flag for non-numeric types or if '-'
+                              // flag is also present.
     }
 
     // Parse length and convert the argument to the required type.

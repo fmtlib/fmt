@@ -151,6 +151,18 @@ TEST(PrintfTest, PlusFlag) {
 
   // '+' flag is ignored for non-numeric types.
   EXPECT_PRINTF("x", "%+c", 'x');
+
+  // '+' flag wins over space flag
+  EXPECT_PRINTF("+42", "%+ d", 42);
+  EXPECT_PRINTF("-42", "%+ d", -42);
+  EXPECT_PRINTF("+42", "% +d", 42);
+  EXPECT_PRINTF("-42", "% +d", -42);
+  EXPECT_PRINTF("+0042", "% +05d", 42);
+  EXPECT_PRINTF("+0042", "%0+ 5d", 42);
+
+  // '+' flag and space flag are both ignored for non-numeric types.
+  EXPECT_PRINTF("x", "%+ c", 'x');
+  EXPECT_PRINTF("x", "% +c", 'x');
 }
 
 TEST(PrintfTest, MinusFlag) {
@@ -160,6 +172,17 @@ TEST(PrintfTest, MinusFlag) {
   EXPECT_PRINTF("7    ", "%-5d", 7);
   EXPECT_PRINTF("97   ", "%-5hhi", 'a');
   EXPECT_PRINTF("a    ", "%-5c", 'a');
+
+  // '0' flag is ignored if '-' flag is given
+  EXPECT_PRINTF("7    ", "%-05d", 7);
+  EXPECT_PRINTF("7    ", "%0-5d", 7);
+  EXPECT_PRINTF("a    ", "%-05c", 'a');
+  EXPECT_PRINTF("a    ", "%0-5c", 'a');
+  EXPECT_PRINTF("97   ", "%-05hhi", 'a');
+  EXPECT_PRINTF("97   ", "%0-5hhi", 'a');
+
+  // '-' and space flag don't interfere
+  EXPECT_PRINTF(" 42", "%- d", 42);
 }
 
 TEST(PrintfTest, SpaceFlag) {
