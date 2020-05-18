@@ -291,6 +291,7 @@ template <> constexpr int num_bits<fallback_uintptr>() {
 // An approximation of iterator_t for pre-C++20 systems.
 template <typename T>
 using iterator_t = decltype(std::begin(std::declval<T&>()));
+template <typename T> using sentinel_t = decltype(std::end(std::declval<T&>()));
 
 // Detect the iterator category of *any* given type in a SFINAE-friendly way.
 // Unfortunately, older implementations of std::iterator_traits are not safe
@@ -3215,19 +3216,21 @@ template <> struct formatter<bytes> {
   detail::dynamic_format_specs<char> specs_;
 };
 
-template <typename It, typename Char> struct arg_join : detail::view {
+template <typename It, typename Sentinel, typename Char>
+struct arg_join : detail::view {
   It begin;
-  It end;
+  Sentinel end;
   basic_string_view<Char> sep;
 
-  arg_join(It b, It e, basic_string_view<Char> s) : begin(b), end(e), sep(s) {}
+  arg_join(It b, Sentinel e, basic_string_view<Char> s)
+      : begin(b), end(e), sep(s) {}
 };
 
-template <typename It, typename Char>
-struct formatter<arg_join<It, Char>, Char>
+template <typename It, typename Sentinel, typename Char>
+struct formatter<arg_join<It, Sentinel, Char>, Char>
     : formatter<typename std::iterator_traits<It>::value_type, Char> {
   template <typename FormatContext>
-  auto format(const arg_join<It, Char>& value, FormatContext& ctx)
+  auto format(const arg_join<It, Sentinel, Char>& value, FormatContext& ctx)
       -> decltype(ctx.out()) {
     using base = formatter<typename std::iterator_traits<It>::value_type, Char>;
     auto it = value.begin;
@@ -3248,13 +3251,13 @@ struct formatter<arg_join<It, Char>, Char>
   Returns an object that formats the iterator range `[begin, end)` with elements
   separated by `sep`.
  */
-template <typename It>
-arg_join<It, char> join(It begin, It end, string_view sep) {
+template <typename It, typename Sentinel>
+arg_join<It, Sentinel, char> join(It begin, Sentinel end, string_view sep) {
   return {begin, end, sep};
 }
 
-template <typename It>
-arg_join<It, wchar_t> join(It begin, It end, wstring_view sep) {
+template <typename It, typename Sentinel>
+arg_join<It, Sentinel, wchar_t> join(It begin, Sentinel end, wstring_view sep) {
   return {begin, end, sep};
 }
 
@@ -3275,14 +3278,15 @@ arg_join<It, wchar_t> join(It begin, It end, wstring_view sep) {
   \endrst
  */
 template <typename Range>
-arg_join<detail::iterator_t<const Range>, char> join(const Range& range,
-                                                     string_view sep) {
+arg_join<detail::iterator_t<const Range>, detail::sentinel_t<const Range>, char>
+join(const Range& range, string_view sep) {
   return join(std::begin(range), std::end(range), sep);
 }
 
 template <typename Range>
-arg_join<detail::iterator_t<const Range>, wchar_t> join(const Range& range,
-                                                        wstring_view sep) {
+arg_join<detail::iterator_t<const Range>, detail::sentinel_t<const Range>,
+         wchar_t>
+join(const Range& range, wstring_view sep) {
   return join(std::begin(range), std::end(range), sep);
 }
 
