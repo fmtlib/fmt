@@ -70,8 +70,6 @@ join(FMT_VERSION ${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.
                  ${CPACK_PACKAGE_VERSION_PATCH})
 message(STATUS "Version: ${FMT_VERSION}")
 
-message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
-
 if (NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 endif ()
@@ -90,6 +88,8 @@ if (${index} GREATER -1)
 endif ()
 message(STATUS "Required features: ${FMT_REQUIRED_FEATURES}")
 
+MESSAGE(STATUS "CMAKE_CXX_COMPILER_ID ${CMAKE_CXX_COMPILER_ID}")
+
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   set(PEDANTIC_COMPILE_FLAGS -pedantic-errors -Wall -Wextra -pedantic
       -Wold-style-cast -Wundef
@@ -100,6 +100,11 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
       -Winvalid-pch -Woverloaded-virtual
       -Wconversion -Wswitch-enum
       -Wno-ctor-dtor-privacy -Wno-format-nonliteral -Wno-shadow)
+  IF(MINGW)
+    MESSAGE(STATUS "MINGW")
+    add_definitions("-Wa,-mbig-obj")
+  ENDIF()
+    
   if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6)
       set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wnoexcept
          -Wno-dangling-else -Wno-unused-local-typedefs)
