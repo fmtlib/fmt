@@ -278,9 +278,6 @@ namespace detail {
 // warnings.
 template <typename T> constexpr T const_check(T value) { return value; }
 
-// A workaround for gcc 4.8 to make void_t work in a SFINAE context.
-template <typename... Ts> struct void_t_impl { using type = void; };
-
 FMT_NORETURN FMT_API void assert_fail(const char* file, int line,
                                       const char* message);
 
@@ -341,9 +338,6 @@ enum char8_type : unsigned char {};
 }  // namespace detail
 
 namespace internal = detail;  // DEPRECATED
-
-template <typename... Ts>
-using void_t = typename detail::void_t_impl<Ts...>::type;
 
 /**
   An implementation of ``std::basic_string_view`` for pre-C++17. It provides a

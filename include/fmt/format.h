@@ -288,6 +288,13 @@ template <> constexpr int num_bits<fallback_uintptr>() {
                           std::numeric_limits<unsigned char>::digits);
 }
 
+
+// A workaround for gcc 4.8 to make void_t work in a SFINAE context.
+template <typename... Ts> struct void_t_impl { using type = void; };
+
+template <typename... Ts>
+using void_t = typename detail::void_t_impl<Ts...>::type;
+
 // An approximation of iterator_t for pre-C++20 systems.
 template <typename T>
 using iterator_t = decltype(std::begin(std::declval<T&>()));
