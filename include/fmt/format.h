@@ -2513,7 +2513,12 @@ FMT_CONSTEXPR void parse_format_string(basic_string_view<Char> format_str,
                                        Handler&& handler) {
   struct writer {
     FMT_CONSTEXPR void operator()(const Char* begin, const Char* end) {
-      if (begin == end) return;
+      if (begin + 1 >= end) {
+        if (begin == end) return;
+        if (*begin == '}')
+          return handler_.on_error("unmatched '}' in format string");
+        return handler_.on_text(begin, begin + 1);
+      }
       for (;;) {
         const Char* p = nullptr;
         if (!find<IS_CONSTEXPR>(begin, end, '}', p))
