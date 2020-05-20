@@ -100,7 +100,7 @@ locale::
   #include <locale>
 
   std::locale::global(std::locale("en_US.UTF-8"));
-  auto s = fmt::format("{:n}", 1000000);  // s == "1,000,000"
+  auto s = fmt::format("{:L}", 1000000);  // s == "1,000,000"
 
 .. _format-api:
 
