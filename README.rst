@@ -301,7 +301,7 @@ Projects using this library
 
 * `Kodi <https://kodi.tv/>`_ (formerly xbmc): Home theater software
 
-* `Knuth <https://kth.cash/>`_: High-performance Bitcoin full-node.
+* `Knuth <https://kth.cash/>`_: High-performance Bitcoin full-node
 
 * `Lifeline <https://github.com/peter-clark/lifeline>`_: A 2D game
 
