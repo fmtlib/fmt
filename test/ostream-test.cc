@@ -302,3 +302,7 @@ std::ostream& operator<<(std::ostream& os, copyfmt_test) {
 TEST(OStreamTest, CopyFmt) {
   EXPECT_EQ("foo", fmt::format("{}", copyfmt_test()));
 }
+
+TEST(OStreamTest, CompileTimeString) {
+  EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), 42));
+}

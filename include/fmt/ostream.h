@@ -110,7 +110,8 @@ void format_value(buffer<Char>& buf, const T& value,
 template <typename T, typename Char>
 struct fallback_formatter<T, Char, enable_if_t<is_streamable<T, Char>::value>>
     : private formatter<basic_string_view<Char>, Char> {
-  auto parse(basic_format_parse_context<Char>& ctx) -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
+      -> decltype(ctx.begin()) {
     return formatter<basic_string_view<Char>, Char>::parse(ctx);
   }
   template <typename ParseCtx,
