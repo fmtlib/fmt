@@ -326,7 +326,7 @@ struct formatter<tuple_arg_join<Char, T...>, Char> {
     using base = formatter<typename std::decay<Arg>::type, Char>;
     auto out = ctx.out();
     out = base{}.format(arg, ctx);
-    if (sizeof...(Args) > 0) {
+    FMT_IF_CONSTEXPR(sizeof...(Args) > 0) {
       out = std::copy(value.sep.begin(), value.sep.end(), out);
       ctx.advance_to(out);
       return format_args(value, ctx, args...);

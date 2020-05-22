@@ -98,6 +98,12 @@
 #  define FMT_CONSTEXPR_DECL
 #endif
 
+#if defined(__cpp_if_constexpr) && __cpp_if_constexpr >= 201606L
+#  define FMT_IF_CONSTEXPR(...) if constexpr (__VA_ARGS__)
+#else
+#  define FMT_IF_CONSTEXPR(...) if (__VA_ARGS__)
+#endif
+
 #ifndef FMT_OVERRIDE
 #  if FMT_HAS_FEATURE(cxx_override) || \
       (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || FMT_MSC_VER >= 1900

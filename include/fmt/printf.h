@@ -246,12 +246,12 @@ class printf_arg_formatter : public detail::arg_formatter_base<Range> {
   iterator operator()(T value) {
     // MSVC2013 fails to compile separate overloads for bool and char_type so
     // use std::is_same instead.
-    if (std::is_same<T, bool>::value) {
+    FMT_IF_CONSTEXPR(std::is_same<T, bool>::value) {
       format_specs& fmt_specs = *this->specs();
       if (fmt_specs.type != 's') return base::operator()(value ? 1 : 0);
       fmt_specs.type = 0;
       this->write(value != 0);
-    } else if (std::is_same<T, char_type>::value) {
+    } else FMT_IF_CONSTEXPR(std::is_same<T, char_type>::value) {
       format_specs& fmt_specs = *this->specs();
       if (fmt_specs.type && fmt_specs.type != 'c')
         return (*this)(static_cast<int>(value));

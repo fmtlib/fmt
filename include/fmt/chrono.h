@@ -44,7 +44,7 @@ FMT_CONSTEXPR To lossless_integral_conversion(const From from, int& ec) {
   static_assert(T::is_integer, "To must be integral");
 
   // A and B are both signed, or both unsigned.
-  if (F::digits <= T::digits) {
+  FMT_IF_CONSTEXPR(F::digits <= T::digits) {
     // From fits in To without any problem.
   } else {
     // From does not always fit in To, resort to a dynamic check.
@@ -72,7 +72,7 @@ FMT_CONSTEXPR To lossless_integral_conversion(const From from, int& ec) {
   static_assert(F::is_integer, "From must be integral");
   static_assert(T::is_integer, "To must be integral");
 
-  if (F::is_signed && !T::is_signed) {
+  FMT_IF_CONSTEXPR(F::is_signed && !T::is_signed) {
     // From may be negative, not allowed!
     if (fmt::detail::is_negative(from)) {
       ec = 1;
@@ -80,7 +80,7 @@ FMT_CONSTEXPR To lossless_integral_conversion(const From from, int& ec) {
     }
 
     // From is positive. Can it always fit in To?
-    if (F::digits <= T::digits) {
+    FMT_IF_CONSTEXPR(F::digits <= T::digits) {
       // yes, From always fits in To.
     } else {
       // from may not fit in To, we have to do a dynamic check
@@ -91,9 +91,9 @@ FMT_CONSTEXPR To lossless_integral_conversion(const From from, int& ec) {
     }
   }
 
-  if (!F::is_signed && T::is_signed) {
+  FMT_IF_CONSTEXPR(!F::is_signed && T::is_signed) {
     // can from be held in To?
-    if (F::digits < T::digits) {
+    FMT_IF_CONSTEXPR(F::digits < T::digits) {
       // yes, From always fits in To.
     } else {
       // from may not fit in To, we have to do a dynamic check
@@ -194,7 +194,7 @@ To safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
     return {};
   }
   // multiply with Factor::num without overflow or underflow
-  if (Factor::num != 1) {
+  FMT_IF_CONSTEXPR(Factor::num != 1) {
     const auto max1 = detail::max_value<IntermediateRep>() / Factor::num;
     if (count > max1) {
       ec = 1;
@@ -209,7 +209,7 @@ To safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
   }
 
   // this can't go wrong, right? den>0 is checked earlier.
-  if (Factor::den != 1) {
+  FMT_IF_CONSTEXPR(Factor::den != 1) {
     count /= Factor::den;
   }
   // convert to the to type, safely
@@ -268,7 +268,7 @@ To safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
   }
 
   // multiply with Factor::num without overflow or underflow
-  if (Factor::num != 1) {
+  FMT_IF_CONSTEXPR(Factor::num != 1) {
     constexpr auto max1 = detail::max_value<IntermediateRep>() /
                           static_cast<IntermediateRep>(Factor::num);
     if (count > max1) {
@@ -285,7 +285,7 @@ To safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
   }
 
   // this can't go wrong, right? den>0 is checked earlier.
-  if (Factor::den != 1) {
+  FMT_IF_CONSTEXPR(Factor::den != 1) {
     using common_t = typename std::common_type<IntermediateRep, intmax_t>::type;
     count /= static_cast<common_t>(Factor::den);
   }
@@ -785,7 +785,7 @@ OutputIt format_duration_unit(OutputIt out) {
   if (const char* unit = get_units<Period>())
     return copy_unit(string_view(unit), out, Char());
   const Char num_f[] = {'[', '{', '}', ']', 's', 0};
-  if (Period::den == 1) return format_to(out, num_f, Period::num);
+  FMT_IF_CONSTEXPR(Period::den == 1) return format_to(out, num_f, Period::num);
   const Char num_def_f[] = {'[', '{', '}', '/', '{', '}', ']', 's', 0};
   return format_to(out, num_def_f, Period::num, Period::den);
 }
@@ -1072,7 +1072,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     begin = detail::parse_width(begin, end, handler);
     if (begin == end) return {begin, begin};
     if (*begin == '.') {
-      if (std::is_floating_point<Rep>::value)
+      FMT_IF_CONSTEXPR(std::is_floating_point<Rep>::value)
         begin = detail::parse_precision(begin, end, handler);
       else
         handler.on_error("precision not allowed for this argument type");
