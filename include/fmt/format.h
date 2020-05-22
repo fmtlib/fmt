@@ -288,6 +288,13 @@ template <> constexpr int num_bits<fallback_uintptr>() {
                           std::numeric_limits<unsigned char>::digits);
 }
 
+FMT_INLINE void assume(bool condition) {
+  (void)condition;
+#if FMT_HAS_BUILTIN(__builtin_assume)
+  __builtin_assume(condition);
+#endif
+}
+
 // A workaround for gcc 4.8 to make void_t work in a SFINAE context.
 template <typename... Ts> struct void_t_impl { using type = void; };
 
@@ -2508,7 +2515,7 @@ template <typename Handler, typename Char> struct id_adapter {
 };
 
 template <typename Char, typename Handler>
-FMT_CONSTEXPR FMT_INLINE const Char* parse_replacement_field(
+FMT_CONSTEXPR_DECL FMT_INLINE const Char* parse_replacement_field(
     const Char* begin, const Char* end, Handler&& handler) {
   ++begin;
   if (begin == end) return handler.on_error("invalid format string"), end;
@@ -3349,7 +3356,9 @@ template <typename T> inline std::wstring to_wstring(const T& value) {
 
 template <typename Char, size_t SIZE>
 std::basic_string<Char> to_string(const basic_memory_buffer<Char, SIZE>& buf) {
-  return std::basic_string<Char>(buf.data(), buf.size());
+  auto size = buf.size();
+  detail::assume(size < std::basic_string<Char>().max_size());
+  return std::basic_string<Char>(buf.data(), size);
 }
 
 template <typename Char>
