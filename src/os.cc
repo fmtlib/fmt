@@ -289,7 +289,11 @@ void file::pipe(file& read_end, file& write_end) {
 
 buffered_file file::fdopen(const char* mode) {
   // Don't retry as fdopen doesn't return EINTR.
+  #if defined(__MINGW32__) && defined(_POSIX_)
+  FILE* f = ::fdopen(fd_, mode);
+  #else
   FILE* f = FMT_POSIX_CALL(fdopen(fd_, mode));
+  #endif
   if (!f)
     FMT_THROW(
         system_error(errno, "cannot associate stream with file descriptor"));
