@@ -48,7 +48,7 @@ FMT_CONSTEXPR To lossless_integral_conversion(const From from, int& ec) {
     // From fits in To without any problem.
   } else {
     // From does not always fit in To, resort to a dynamic check.
-    if (from < T::min() || from > T::max()) {
+    if (from < (T::min)() || from > (T::max)()) {
       // outside range.
       ec = 1;
       return {};
@@ -84,7 +84,7 @@ FMT_CONSTEXPR To lossless_integral_conversion(const From from, int& ec) {
       // yes, From always fits in To.
     } else {
       // from may not fit in To, we have to do a dynamic check
-      if (from > static_cast<From>(T::max())) {
+      if (from > static_cast<From>((T::max)())) {
         ec = 1;
         return {};
       }
@@ -97,7 +97,7 @@ FMT_CONSTEXPR To lossless_integral_conversion(const From from, int& ec) {
       // yes, From always fits in To.
     } else {
       // from may not fit in To, we have to do a dynamic check
-      if (from > static_cast<From>(T::max())) {
+      if (from > static_cast<From>((T::max)())) {
         // outside range.
         ec = 1;
         return {};
@@ -141,7 +141,7 @@ FMT_CONSTEXPR To safe_float_conversion(const From from, int& ec) {
 
   // catch the only happy case
   if (std::isfinite(from)) {
-    if (from >= T::lowest() && from <= T::max()) {
+    if (from >= T::lowest() && from <= (T::max)()) {
       return static_cast<To>(from);
     }
     // not within range.
@@ -200,7 +200,7 @@ To safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
       ec = 1;
       return {};
     }
-    const auto min1 = std::numeric_limits<IntermediateRep>::min() / Factor::num;
+    const auto min1 = (std::numeric_limits<IntermediateRep>::min)() / Factor::num;
     if (count < min1) {
       ec = 1;
       return {};
