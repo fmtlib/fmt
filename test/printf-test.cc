@@ -139,8 +139,11 @@ TEST(PrintfTest, ZeroFlag) {
 
   EXPECT_PRINTF("+00042", "%00+6d", 42);
 
+  EXPECT_PRINTF("   42", "%05.d", 42);
+  EXPECT_PRINTF(" 0042", "%05.4d", 42);
+
   // '0' flag is ignored for non-numeric types.
-  EXPECT_PRINTF("0000x", "%05c", 'x');
+  EXPECT_PRINTF("    x", "%05c", 'x');
 }
 
 TEST(PrintfTest, PlusFlag) {

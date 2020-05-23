@@ -257,6 +257,7 @@ class printf_arg_formatter : public detail::arg_formatter_base<Range> {
         return (*this)(static_cast<int>(value));
       fmt_specs.sign = sign::none;
       fmt_specs.alt = false;
+      fmt_specs.fill[0] = ' ';  // Ignore '0' flag for char types.
       // align::numeric needs to be overwritten here since the '0' flag is
       // ignored for non-numeric types
       if (fmt_specs.align == align::none || fmt_specs.align == align::numeric)
@@ -508,6 +509,10 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
     }
 
     format_arg arg = get_arg(arg_index);
+    // For d, i, o, u, x, and X conversion specifiers, if a precision is
+    // specified, the '0' flag is ignored
+    if (specs.precision >= 0 && arg.is_integral())
+      specs.fill[0] = ' ';  // Ignore '0' flag for non-numeric types or if '-' present.
     if (specs.precision >= 0 && arg.type() == detail::type::cstring_type) {
       auto str = visit_format_arg(detail::get_cstring<Char>(), arg);
       auto str_end = str + specs.precision;
