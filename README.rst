@@ -303,7 +303,7 @@ Projects using this library
 
 * `Knuth <https://kth.cash/>`_: High-performance Bitcoin full-node
 
-* `Lifeline <https://github.com/peter-clark/lifeline>`_: A 2D game
+* `Microsoft Verona <https://github.com/microsoft/verona>`_: Research programming language for concurrent ownership
 
 * `MongoDB <https://mongodb.com/>`_: Distributed document database
 
