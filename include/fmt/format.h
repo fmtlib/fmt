@@ -3181,6 +3181,11 @@ typename Context::iterator vformat_to(
     basic_format_args<Context> args,
     detail::locale_ref loc = detail::locale_ref()) {
   format_handler<ArgFormatter, Char, Context> h(out, format_str, args, loc);
+  if (format_str.size() == 2 && format_str[0] == '{' && format_str[1] == '}') {
+    auto arg = detail::get_arg(h.context, 0);
+    h.parse_context.advance_to(&format_str[1]);
+    return visit_format_arg(ArgFormatter(h.context, &h.parse_context), arg);
+  }
   detail::parse_format_string<false>(format_str, h);
   return h.context.out();
 }
