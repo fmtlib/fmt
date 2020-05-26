@@ -197,8 +197,7 @@ endif ()
 target_compile_features(fmt INTERFACE ${FMT_REQUIRED_FEATURES})
 
 target_include_directories(fmt PUBLIC
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
 
 set(FMT_DEBUG_POSTFIX d CACHE STRING "Debug library postfix.")
 
@@ -232,8 +231,7 @@ target_compile_definitions(fmt-header-only INTERFACE FMT_HEADER_ONLY=1)
 target_compile_features(fmt-header-only INTERFACE ${FMT_REQUIRED_FEATURES})
 
 target_include_directories(fmt-header-only INTERFACE
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
 
 # Install targets.
 if (FMT_INSTALL)
@@ -247,11 +245,6 @@ if (FMT_INSTALL)
   set(pkgconfig ${PROJECT_BINARY_DIR}/fmt.pc)
   set(targets_export_name fmt-targets)
 
-  set (INSTALL_TARGETS fmt)
-  if (TARGET fmt-header-only)
-    set(INSTALL_TARGETS ${INSTALL_TARGETS} fmt-header-only)
-  endif ()
-
   set_verbose(FMT_LIB_DIR ${CMAKE_INSTALL_LIBDIR} CACHE STRING
               "Installation directory for libraries, a relative path "
               "that will be joined to ${CMAKE_INSTALL_PREFIX}, or an arbitrary absolute path.")
@@ -264,14 +257,22 @@ if (FMT_INSTALL)
               "Installation directory for pkgconfig (.pc) files, a relative path "
               "that will be joined to ${CMAKE_INSTALL_PREFIX}, or an arbitrary absolute path.")
 
+  get_filename_component(FMT_INC_DIR_PARENT "${FMT_INC_DIR}" DIRECTORY)
+
+  set(INSTALL_TARGETS fmt fmt-header-only)
+  target_include_directories(fmt PUBLIC
+    $<INSTALL_INTERFACE:${FMT_INC_DIR_PARENT}>)
+  target_include_directories(fmt-header-only INTERFACE
+    $<INSTALL_INTERFACE:${FMT_INC_DIR_PARENT}>)
+
   # Generate the version, config and target files into the build directory.
   write_basic_package_version_file(
     ${version_config}
     VERSION ${FMT_VERSION}
     COMPATIBILITY AnyNewerVersion)
 
-  join_paths(libdir_for_pc_file "\${exec_prefix}" "${CMAKE_INSTALL_LIBDIR}")
-  join_paths(includedir_for_pc_file "\${prefix}" "${CMAKE_INSTALL_INCLUDEDIR}")
+  join_paths(libdir_for_pc_file "\${exec_prefix}" "${FMT_LIB_DIR}")
+  join_paths(includedir_for_pc_file "\${prefix}" "${FMT_INC_DIR_PARENT}")
 
   configure_file(
     "${PROJECT_SOURCE_DIR}/support/cmake/fmt.pc.in"
