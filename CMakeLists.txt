@@ -196,9 +196,10 @@ endif ()
 
 target_compile_features(fmt INTERFACE ${FMT_REQUIRED_FEATURES})
 
+include(GNUInstallDirs)
 target_include_directories(fmt PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 set(FMT_DEBUG_POSTFIX d CACHE STRING "Debug library postfix.")
 
@@ -233,11 +234,10 @@ target_compile_features(fmt-header-only INTERFACE ${FMT_REQUIRED_FEATURES})
 
 target_include_directories(fmt-header-only INTERFACE
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 # Install targets.
 if (FMT_INSTALL)
-  include(GNUInstallDirs)
   include(CMakePackageConfigHelpers)
   set_verbose(FMT_CMAKE_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/fmt CACHE STRING
               "Installation directory for cmake files, a relative path "
