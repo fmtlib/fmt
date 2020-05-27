@@ -1719,6 +1719,9 @@ template <typename Char>
 struct is_contiguous<std::basic_string<Char>> : std::true_type {};
 
 template <typename Char>
+struct is_contiguous<std::vector<Char>> : std::true_type {};
+
+template <typename Char>
 struct is_contiguous<detail::buffer<Char>> : std::true_type {};
 
 namespace detail {
