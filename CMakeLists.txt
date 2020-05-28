@@ -44,6 +44,11 @@ if (MASTER_PROJECT AND NOT CMAKE_BUILD_TYPE)
               "CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel.")
 endif ()
 
+include(GNUInstallDirs)
+set_verbose(FMT_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR} CACHE STRING
+            "Installation directory for include files, a relative path "
+            "that will be joined to ${CMAKE_INSTALL_PREFIX}, or an arbitrary absolute path.")
+
 option(FMT_PEDANTIC "Enable extra warnings and expensive tests." OFF)
 option(FMT_WERROR "Halt the compilation with an error on compiler warnings."
        OFF)
@@ -197,7 +202,8 @@ endif ()
 target_compile_features(fmt INTERFACE ${FMT_REQUIRED_FEATURES})
 
 target_include_directories(fmt PUBLIC
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:${FMT_INC_DIR}>)
 
 set(FMT_DEBUG_POSTFIX d CACHE STRING "Debug library postfix.")
 
@@ -231,11 +237,11 @@ target_compile_definitions(fmt-header-only INTERFACE FMT_HEADER_ONLY=1)
 target_compile_features(fmt-header-only INTERFACE ${FMT_REQUIRED_FEATURES})
 
 target_include_directories(fmt-header-only INTERFACE
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:${FMT_INC_DIR}>)
 
 # Install targets.
 if (FMT_INSTALL)
-  include(GNUInstallDirs)
   include(CMakePackageConfigHelpers)
   set_verbose(FMT_CMAKE_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/fmt CACHE STRING
               "Installation directory for cmake files, a relative path "
@@ -249,19 +255,9 @@ if (FMT_INSTALL)
               "Installation directory for libraries, a relative path "
               "that will be joined to ${CMAKE_INSTALL_PREFIX}, or an arbitrary absolute path.")
 
-  set_verbose(FMT_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR} CACHE STRING
-              "Installation directory for include files, a relative path "
-              "that will be joined to ${CMAKE_INSTALL_PREFIX}, or an arbitrary absolute path.")
-
   set_verbose(FMT_PKGCONFIG_DIR ${CMAKE_INSTALL_LIBDIR}/pkgconfig CACHE PATH
               "Installation directory for pkgconfig (.pc) files, a relative path "
               "that will be joined to ${CMAKE_INSTALL_PREFIX}, or an arbitrary absolute path.")
-
-  set(INSTALL_TARGETS fmt fmt-header-only)
-  target_include_directories(fmt PUBLIC
-    $<INSTALL_INTERFACE:${FMT_INC_DIR}>)
-  target_include_directories(fmt-header-only INTERFACE
-    $<INSTALL_INTERFACE:${FMT_INC_DIR}>)
 
   # Generate the version, config and target files into the build directory.
   write_basic_package_version_file(
@@ -280,6 +276,8 @@ if (FMT_INSTALL)
     ${PROJECT_SOURCE_DIR}/support/cmake/fmt-config.cmake.in
     ${project_config}
     INSTALL_DESTINATION ${FMT_CMAKE_DIR})
+
+  set(INSTALL_TARGETS fmt fmt-header-only)
   # Use a namespace because CMake provides better diagnostics for namespaced
   # imported targets.
   export(TARGETS ${INSTALL_TARGETS} NAMESPACE fmt::
