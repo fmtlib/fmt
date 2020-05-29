@@ -2723,21 +2723,17 @@ FMT_API void report_error(format_func func, int error_code,
 }  // namespace detail
 
 /** The default argument formatter. */
-template <typename Range>
-class arg_formatter
-    : public detail::arg_formatter_base<typename Range::iterator,
-                                        typename Range::value_type> {
+template <typename OutputIt, typename Char>
+class arg_formatter : public detail::arg_formatter_base<OutputIt, Char> {
  private:
-  using char_type = typename Range::value_type;
-  using base = detail::arg_formatter_base<typename Range::iterator,
-                                          typename Range::value_type>;
-  using context_type = basic_format_context<typename base::iterator, char_type>;
+  using char_type = Char;
+  using base = detail::arg_formatter_base<OutputIt, Char>;
+  using context_type = basic_format_context<OutputIt, Char>;
 
   context_type& ctx_;
   basic_format_parse_context<char_type>* parse_ctx_;
 
  public:
-  using range = Range;
   using iterator = typename base::iterator;
   using format_specs = typename base::format_specs;
 
@@ -2990,9 +2986,9 @@ struct formatter<T, Char,
                                                        specs_.width_ref, ctx);
     detail::handle_dynamic_spec<detail::precision_checker>(
         specs_.precision, specs_.precision_ref, ctx);
-    using range_type = detail::output_range<typename FormatContext::iterator,
-                                            typename FormatContext::char_type>;
-    return visit_format_arg(arg_formatter<range_type>(ctx, nullptr, &specs_),
+    using af = arg_formatter<typename FormatContext::iterator,
+                             typename FormatContext::char_type>;
+    return visit_format_arg(af(ctx, nullptr, &specs_),
                             detail::make_arg<FormatContext>(val));
   }
 
@@ -3086,9 +3082,9 @@ template <typename Char = char> class dynamic_formatter {
     }
     if (specs_.alt) checker.on_hash();
     if (specs_.precision >= 0) checker.end_precision();
-    using range = detail::output_range<typename FormatContext::iterator,
-                                       typename FormatContext::char_type>;
-    visit_format_arg(arg_formatter<range>(ctx, nullptr, &specs_),
+    using af = arg_formatter<typename FormatContext::iterator,
+                             typename FormatContext::char_type>;
+    visit_format_arg(af(ctx, nullptr, &specs_),
                      detail::make_arg<FormatContext>(val));
     return ctx.out();
   }
@@ -3113,11 +3109,11 @@ FMT_CONSTEXPR void advance_to(
 
 template <typename ArgFormatter, typename Char, typename Context>
 struct format_handler : detail::error_handler {
-  using range = typename ArgFormatter::range;
+  using iterator = typename ArgFormatter::iterator;
 
-  format_handler(range r, basic_string_view<Char> str,
+  format_handler(iterator out, basic_string_view<Char> str,
                  basic_format_args<Context> format_args, detail::locale_ref loc)
-      : parse_context(str), context(r.begin(), format_args, loc) {}
+      : parse_context(str), context(out, format_args, loc) {}
 
   void on_text(const Char* begin, const Char* end) {
     auto size = detail::to_unsigned(end - begin);
@@ -3170,7 +3166,7 @@ struct format_handler : detail::error_handler {
 /** Formats arguments and writes the output to the range. */
 template <typename ArgFormatter, typename Char, typename Context>
 typename Context::iterator vformat_to(
-    typename ArgFormatter::range out, basic_string_view<Char> format_str,
+    typename ArgFormatter::iterator out, basic_string_view<Char> format_str,
     basic_format_args<Context> args,
     detail::locale_ref loc = detail::locale_ref()) {
   format_handler<ArgFormatter, Char, Context> h(out, format_str, args, loc);
@@ -3334,9 +3330,9 @@ template <typename Char>
 typename buffer_context<Char>::iterator detail::vformat_to(
     detail::buffer<Char>& buf, basic_string_view<Char> format_str,
     basic_format_args<buffer_context<type_identity_t<Char>>> args) {
-  using range = buffer_range<Char>;
-  return vformat_to<arg_formatter<range>>(buf, to_string_view(format_str),
-                                          args);
+  using af = arg_formatter<typename buffer_context<Char>::iterator, Char>;
+  return vformat_to<af>(std::back_inserter(buf), to_string_view(format_str),
+                        args);
 }
 
 #ifndef FMT_HEADER_ONLY
@@ -3397,9 +3393,8 @@ template <
 inline OutputIt vformat_to(
     OutputIt out, const S& format_str,
     format_args_t<type_identity_t<OutputIt>, char_t<S>> args) {
-  using range = detail::output_range<OutputIt, char_t<S>>;
-  return vformat_to<arg_formatter<range>>(range(out),
-                                          to_string_view(format_str), args);
+  using af = arg_formatter<OutputIt, char_t<S>>;
+  return vformat_to<af>(out, to_string_view(format_str), args);
 }
 
 /**

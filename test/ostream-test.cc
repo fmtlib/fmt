@@ -64,12 +64,13 @@ TEST(OStreamTest, Enum) {
   EXPECT_EQ(L"0", fmt::format(L"{}", unstreamable_enum()));
 }
 
-using range = fmt::buffer_range<char>;
-
-struct test_arg_formatter : fmt::arg_formatter<range> {
+struct test_arg_formatter
+    : fmt::arg_formatter<fmt::buffer_range<char>::iterator, char> {
   fmt::format_parse_context parse_ctx;
   test_arg_formatter(fmt::format_context& ctx, fmt::format_specs& s)
-      : fmt::arg_formatter<range>(ctx, &parse_ctx, &s), parse_ctx("") {}
+      : fmt::arg_formatter<fmt::buffer_range<char>::iterator, char>(
+            ctx, &parse_ctx, &s),
+        parse_ctx("") {}
 };
 
 TEST(OStreamTest, CustomArg) {

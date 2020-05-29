@@ -164,8 +164,10 @@ template <typename Range, typename Context, typename Id>
 void format_arg(
     basic_format_parse_context<typename Range::value_type>& parse_ctx,
     Context& ctx, Id arg_id) {
-  ctx.advance_to(
-      visit_format_arg(arg_formatter<Range>(ctx, &parse_ctx), ctx.arg(arg_id)));
+  ctx.advance_to(visit_format_arg(
+      arg_formatter<typename Range::iterator, typename Range::value_type>(
+          ctx, &parse_ctx),
+      ctx.arg(arg_id)));
 }
 
 // vformat_to is defined in a subnamespace to prevent ADL.
@@ -225,8 +227,10 @@ auto vformat_to(Range out, CompiledFormat& cf, basic_format_args<Context> args)
       if (specs.precision >= 0) checker.check_precision();
 
       advance_to(parse_ctx, part.arg_id_end);
-      ctx.advance_to(
-          visit_format_arg(arg_formatter<Range>(ctx, nullptr, &specs), arg));
+      ctx.advance_to(visit_format_arg(
+          arg_formatter<typename Range::iterator, typename Range::value_type>(
+              ctx, nullptr, &specs),
+          arg));
       break;
     }
     }
