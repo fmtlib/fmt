@@ -3175,6 +3175,14 @@ struct format_handler : detail::error_handler {
   basic_format_arg<Context> arg;
 };
 
+template <typename Char>
+bool equal2(const Char* lhs, const char* rhs) {
+  return lhs[0] == rhs[0] && lhs[1] == rhs[1];
+}
+inline bool equal2(const char* lhs, const char* rhs) {
+  return memcmp(lhs, rhs, 2) == 0;
+}
+
 /** Formats arguments and writes the output to the range. */
 template <typename ArgFormatter, typename Char, typename Context>
 typename Context::iterator vformat_to(
@@ -3182,7 +3190,7 @@ typename Context::iterator vformat_to(
     basic_format_args<Context> args,
     detail::locale_ref loc = detail::locale_ref()) {
   format_handler<ArgFormatter, Char, Context> h(out, format_str, args, loc);
-  if (format_str.size() == 2 && format_str[0] == '{' && format_str[1] == '}') {
+  if (format_str.size() == 2 && equal2(format_str.data(), "{}")) {
     auto arg = detail::get_arg(h.context, 0);
     h.parse_context.advance_to(&format_str[1]);
     return visit_format_arg(ArgFormatter(h.context, &h.parse_context), arg);
