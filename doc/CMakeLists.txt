@@ -9,4 +9,5 @@ add_custom_target(doc
   SOURCES api.rst syntax.rst usage.rst build.py conf.py _templates/layout.html)
 
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html/
-        DESTINATION share/doc/fmt OPTIONAL)
+        DESTINATION share/doc/fmt OPTIONAL
+        PATTERN ".doctrees" EXCLUDE)
