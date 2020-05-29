@@ -2862,16 +2862,17 @@ class format_int {
       // "Three Optimization Tips for C++". See speed-test for a comparison.
       auto index = static_cast<unsigned>((value % 100) * 2);
       value /= 100;
-      *--ptr = detail::data::digits[index + 1];
-      *--ptr = detail::data::digits[index];
+      ptr -= 2;
+      // memcpy is faster than copying character by character.
+      memcpy(ptr, detail::data::digits + index, 2);
     }
     if (value < 10) {
       *--ptr = static_cast<char>('0' + value);
       return ptr;
     }
     auto index = static_cast<unsigned>(value * 2);
-    *--ptr = detail::data::digits[index + 1];
-    *--ptr = detail::data::digits[index];
+    ptr -= 2;
+    memcpy(ptr, detail::data::digits + index, 2);
     return ptr;
   }
 
