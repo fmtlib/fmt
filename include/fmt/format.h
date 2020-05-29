@@ -886,34 +886,31 @@ template <> inline wchar_t decimal_point(locale_ref loc) {
   return decimal_point_impl<wchar_t>(loc);
 }
 
-// Formats a decimal unsigned integer value writing into buffer.
-// add_thousands_sep is called after writing each char to add a thousands
-// separator if necessary.
-template <typename UInt, typename Char, typename F>
-inline Char* format_decimal(Char* buffer, UInt value, int num_digits,
-                            F add_thousands_sep) {
+template <typename Char> void copy2(Char* dst, const char* src) {
+  *dst++ = static_cast<Char>(*src++);
+  *dst = static_cast<Char>(*src);
+}
+inline void copy2(char* dst, const char* src) { memcpy(dst, src, 2); }
+
+// Formats a decimal unsigned integer value writing into out.
+template <typename UInt, typename Char>
+inline Char* format_decimal(Char* out, UInt value, int num_digits) {
   FMT_ASSERT(num_digits >= 0, "invalid digit count");
-  buffer += num_digits;
-  Char* end = buffer;
+  out += num_digits;
+  Char* end = out;
   while (value >= 100) {
     // Integer division is slow so do it for a group of two digits instead
     // of for every digit. The idea comes from the talk by Alexandrescu
     // "Three Optimization Tips for C++". See speed-test for a comparison.
-    auto index = static_cast<unsigned>((value % 100) * 2);
+    out -= 2;
+    copy2(out, data::digits + static_cast<unsigned>((value % 100) * 2));
     value /= 100;
-    *--buffer = static_cast<Char>(data::digits[index + 1]);
-    add_thousands_sep(buffer);
-    *--buffer = static_cast<Char>(data::digits[index]);
-    add_thousands_sep(buffer);
   }
   if (value < 10) {
-    *--buffer = static_cast<Char>('0' + value);
+    *--out = static_cast<Char>('0' + value);
     return end;
   }
-  auto index = static_cast<unsigned>(value * 2);
-  *--buffer = static_cast<Char>(data::digits[index + 1]);
-  add_thousands_sep(buffer);
-  *--buffer = static_cast<Char>(data::digits[index]);
+  copy2(out - 2, data::digits + static_cast<unsigned>(value * 2));
   return end;
 }
 
@@ -923,20 +920,13 @@ template <typename Int> constexpr int digits10() FMT_NOEXCEPT {
 template <> constexpr int digits10<int128_t>() FMT_NOEXCEPT { return 38; }
 template <> constexpr int digits10<uint128_t>() FMT_NOEXCEPT { return 38; }
 
-template <typename Char, typename UInt, typename Iterator, typename F>
-inline Iterator format_decimal(Iterator out, UInt value, int num_digits,
-                               F add_thousands_sep) {
-  FMT_ASSERT(num_digits >= 0, "invalid digit count");
+template <typename Char, typename UInt, typename Iterator>
+inline Iterator format_decimal(Iterator out, UInt value, int num_digits) {
   // Buffer should be large enough to hold all digits (<= digits10 + 1).
   enum { max_size = digits10<UInt>() + 1 };
   Char buffer[2 * max_size];
-  auto end = format_decimal(buffer, value, num_digits, add_thousands_sep);
+  auto end = format_decimal(buffer, value, num_digits);
   return detail::copy_str<Char>(buffer, end, out);
-}
-
-template <typename Char, typename It, typename UInt>
-inline It format_decimal(It out, UInt value, int num_digits) {
-  return format_decimal<Char>(out, value, num_digits, [](Char*) {});
 }
 
 template <unsigned BASE_BITS, typename Char, typename UInt>
@@ -1412,6 +1402,16 @@ inline OutputIt write_padded(OutputIt out,
   return write_padded<align>(out, specs, size, size, f);
 }
 
+template <typename Char, typename OutputIt>
+OutputIt write_bytes(OutputIt out, string_view bytes,
+                     const basic_format_specs<Char>& specs) {
+  using iterator = remove_reference_t<decltype(reserve(out, 0))>;
+  return write_padded(out, specs, bytes.size(), [bytes](iterator it) {
+    const char* data = bytes.data();
+    return copy_str<Char>(data, data + bytes.size(), it);
+  });
+}
+
 // Data for write_int that doesn't depend on output iterator type. It is used to
 // avoid template code bloat.
 template <typename Char> struct write_int_data {
@@ -1531,52 +1531,43 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
 
   enum { sep_size = 1 };
 
-  struct num_writer {
-    UInt abs_value;
-    int size;
-    const std::string& groups;
-    Char sep;
-
-    template <typename It> It operator()(It it) const {
-      basic_string_view<Char> s(&sep, sep_size);
-      // Index of a decimal digit with the least significant digit having
-      // index 0.
-      int digit_index = 0;
-      std::string::const_iterator group = groups.cbegin();
-      return format_decimal<Char>(
-          it, abs_value, size, [this, s, &group, &digit_index](Char*& buffer) {
-            if (*group <= 0 || ++digit_index % *group != 0 ||
-                *group == max_value<char>())
-              return;
-            if (group + 1 != groups.cend()) {
-              digit_index = 0;
-              ++group;
-            }
-            buffer -= s.size();
-            std::uninitialized_copy(s.data(), s.data() + s.size(),
-                                    make_checked(buffer, s.size()));
-          });
-    }
-  };
-
   void on_num() {
     std::string groups = grouping<Char>(locale);
     if (groups.empty()) return on_dec();
     auto sep = thousands_sep<Char>(locale);
     if (!sep) return on_dec();
     int num_digits = count_digits(abs_value);
-    int size = num_digits;
+    int size = num_digits, n = num_digits;
     std::string::const_iterator group = groups.cbegin();
     while (group != groups.cend() && num_digits > *group && *group > 0 &&
            *group != max_value<char>()) {
       size += sep_size;
-      num_digits -= *group;
+      n -= *group;
       ++group;
     }
-    if (group == groups.cend())
-      size += sep_size * ((num_digits - 1) / groups.back());
-    out = write_int(out, size, get_prefix(), specs,
-                    num_writer{abs_value, size, groups, sep});
+    if (group == groups.cend()) size += sep_size * ((n - 1) / groups.back());
+    char digits[40];
+    format_decimal<Char>(digits, abs_value, num_digits);
+    memory_buffer buffer;
+    buffer.resize(size);
+    basic_string_view<Char> s(&sep, sep_size);
+    // Index of a decimal digit with the least significant digit having index 0.
+    int digit_index = 0;
+    group = groups.cbegin();
+    auto p = buffer.data() + size;
+    for (int i = num_digits - 1; i >= 0; --i) {
+      *--p = digits[i];
+      if (*group <= 0 || ++digit_index % *group != 0 ||
+          *group == max_value<char>())
+        continue;
+      if (group + 1 != groups.cend()) {
+        digit_index = 0;
+        ++group;
+      }
+      p -= s.size();
+      std::uninitialized_copy(s.data(), s.data() + s.size(), p);
+    }
+    write_bytes(out, {buffer.data(), buffer.size()}, specs);
   }
 
   void on_chr() { *out++ = static_cast<Char>(abs_value); }
@@ -1585,16 +1576,6 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
     FMT_THROW(format_error("invalid type specifier"));
   }
 };
-
-template <typename Char, typename OutputIt>
-OutputIt write_bytes(OutputIt out, string_view bytes,
-                     const basic_format_specs<Char>& specs) {
-  using iterator = remove_reference_t<decltype(reserve(out, 0))>;
-  return write_padded(out, specs, bytes.size(), [bytes](iterator it) {
-    const char* data = bytes.data();
-    return copy_str<Char>(data, data + bytes.size(), it);
-  });
-}
 
 template <typename Char, typename OutputIt>
 OutputIt write_nonfinite(OutputIt out, bool isinf,
@@ -3175,8 +3156,7 @@ struct format_handler : detail::error_handler {
   basic_format_arg<Context> arg;
 };
 
-template <typename Char>
-bool equal2(const Char* lhs, const char* rhs) {
+template <typename Char> bool equal2(const Char* lhs, const char* rhs) {
   return lhs[0] == rhs[0] && lhs[1] == rhs[1];
 }
 inline bool equal2(const char* lhs, const char* rhs) {
