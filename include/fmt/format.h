@@ -886,6 +886,13 @@ template <> inline wchar_t decimal_point(locale_ref loc) {
   return decimal_point_impl<wchar_t>(loc);
 }
 
+template <typename Char> bool equal2(const Char* lhs, const char* rhs) {
+  return lhs[0] == rhs[0] && lhs[1] == rhs[1];
+}
+inline bool equal2(const char* lhs, const char* rhs) {
+  return memcmp(lhs, rhs, 2) == 0;
+}
+
 template <typename Char> void copy2(Char* dst, const char* src) {
   *dst++ = static_cast<Char>(*src++);
   *dst = static_cast<Char>(*src);
@@ -1677,11 +1684,12 @@ template <typename T> struct is_integral : std::is_integral<T> {};
 template <> struct is_integral<int128_t> : std::true_type {};
 template <> struct is_integral<uint128_t> : std::true_type {};
 
-template <typename Range, typename ErrorHandler = detail::error_handler>
+template <typename OutputIt, typename Char,
+          typename ErrorHandler = detail::error_handler>
 class arg_formatter_base {
  public:
-  using char_type = typename Range::value_type;
-  using iterator = typename Range::iterator;
+  using char_type = Char;
+  using iterator = OutputIt;
   using format_specs = basic_format_specs<char_type>;
 
  private:
@@ -1753,8 +1761,8 @@ class arg_formatter_base {
     *it++ = value;
   }
 
-  template <typename Char, FMT_ENABLE_IF(std::is_same<Char, char_type>::value)>
-  void write(Char value) {
+  template <typename Ch, FMT_ENABLE_IF(std::is_same<Ch, char_type>::value)>
+  void write(Ch value) {
     auto&& it = reserve(1);
     *it++ = value;
   }
@@ -1769,18 +1777,18 @@ class arg_formatter_base {
     it = std::copy(value.begin(), value.end(), it);
   }
 
-  template <typename Char>
-  void write(const Char* s, size_t size, const format_specs& specs) {
+  template <typename Ch>
+  void write(const Ch* s, size_t size, const format_specs& specs) {
     auto width = specs.width != 0
-                     ? count_code_points(basic_string_view<Char>(s, size))
+                     ? count_code_points(basic_string_view<Ch>(s, size))
                      : 0;
     out_ = write_padded(out_, specs, size, width, [=](reserve_iterator it) {
       return copy_str<char_type>(s, s + size, it);
     });
   }
 
-  template <typename Char>
-  void write(basic_string_view<Char> s, const format_specs& specs = {}) {
+  template <typename Ch>
+  void write(basic_string_view<Ch> s, const format_specs& specs = {}) {
     out_ = detail::write(out_, s, specs);
   }
 
@@ -1808,8 +1816,8 @@ class arg_formatter_base {
   }
 
  public:
-  arg_formatter_base(Range r, format_specs* s, locale_ref loc)
-      : out_(r.begin()), locale_(loc), specs_(s) {}
+  arg_formatter_base(OutputIt out, format_specs* s, locale_ref loc)
+      : out_(out), locale_(loc), specs_(s) {}
 
   iterator operator()(monostate) {
     FMT_ASSERT(false, "invalid argument type");
@@ -2716,10 +2724,13 @@ FMT_API void report_error(format_func func, int error_code,
 
 /** The default argument formatter. */
 template <typename Range>
-class arg_formatter : public detail::arg_formatter_base<Range> {
+class arg_formatter
+    : public detail::arg_formatter_base<typename Range::iterator,
+                                        typename Range::value_type> {
  private:
   using char_type = typename Range::value_type;
-  using base = detail::arg_formatter_base<Range>;
+  using base = detail::arg_formatter_base<typename Range::iterator,
+                                          typename Range::value_type>;
   using context_type = basic_format_context<typename base::iterator, char_type>;
 
   context_type& ctx_;
@@ -2741,7 +2752,7 @@ class arg_formatter : public detail::arg_formatter_base<Range> {
       context_type& ctx,
       basic_format_parse_context<char_type>* parse_ctx = nullptr,
       format_specs* specs = nullptr)
-      : base(Range(ctx.out()), specs, ctx.locale()),
+      : base(ctx.out(), specs, ctx.locale()),
         ctx_(ctx),
         parse_ctx_(parse_ctx) {}
 
@@ -3156,13 +3167,6 @@ struct format_handler : detail::error_handler {
   basic_format_arg<Context> arg;
 };
 
-template <typename Char> bool equal2(const Char* lhs, const char* rhs) {
-  return lhs[0] == rhs[0] && lhs[1] == rhs[1];
-}
-inline bool equal2(const char* lhs, const char* rhs) {
-  return memcmp(lhs, rhs, 2) == 0;
-}
-
 /** Formats arguments and writes the output to the range. */
 template <typename ArgFormatter, typename Char, typename Context>
 typename Context::iterator vformat_to(
@@ -3170,7 +3174,7 @@ typename Context::iterator vformat_to(
     basic_format_args<Context> args,
     detail::locale_ref loc = detail::locale_ref()) {
   format_handler<ArgFormatter, Char, Context> h(out, format_str, args, loc);
-  if (format_str.size() == 2 && equal2(format_str.data(), "{}")) {
+  if (format_str.size() == 2 && detail::equal2(format_str.data(), "{}")) {
     auto arg = detail::get_arg(h.context, 0);
     h.parse_context.advance_to(&format_str[1]);
     return visit_format_arg(ArgFormatter(h.context, &h.parse_context), arg);

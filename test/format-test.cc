@@ -1809,7 +1809,7 @@ TEST(FormatTest, StrongEnum) {
 using buffer_range = fmt::buffer_range<char>;
 
 class mock_arg_formatter
-    : public fmt::detail::arg_formatter_base<buffer_range> {
+    : public fmt::detail::arg_formatter_base<buffer_range::iterator, char> {
  private:
 #if FMT_USE_INT128
   MOCK_METHOD1(call, void(__int128_t value));
@@ -1818,12 +1818,12 @@ class mock_arg_formatter
 #endif
 
  public:
-  typedef fmt::detail::arg_formatter_base<buffer_range> base;
+  typedef fmt::detail::arg_formatter_base<buffer_range::iterator, char> base;
   typedef buffer_range range;
 
   mock_arg_formatter(fmt::format_context& ctx, fmt::format_parse_context*,
                      fmt::format_specs* s = nullptr)
-      : base(fmt::detail::get_container(ctx.out()), s, ctx.locale()) {
+      : base(ctx.out(), s, ctx.locale()) {
     EXPECT_CALL(*this, call(42));
   }
 

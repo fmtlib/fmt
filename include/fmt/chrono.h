@@ -200,7 +200,8 @@ To safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
       ec = 1;
       return {};
     }
-    const auto min1 = (std::numeric_limits<IntermediateRep>::min)() / Factor::num;
+    const auto min1 =
+        (std::numeric_limits<IntermediateRep>::min)() / Factor::num;
     if (count < min1) {
       ec = 1;
       return {};

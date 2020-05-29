@@ -490,10 +490,12 @@ namespace detail {
 
 template <typename Range>
 class arg_formatter
-    : public fmt::internal::arg_formatter_base<Range, error_handler> {
+    : public fmt::internal::arg_formatter_base<
+        typename Range::iterator, typename Range::value_type, error_handler> {
  private:
   using char_type = typename Range::value_type;
-  using base = fmt::internal::arg_formatter_base<Range, error_handler>;
+  using base = fmt::internal::arg_formatter_base<
+    typename Range::iterator, char_type, error_handler>;
   using format_context = std::basic_format_context<typename base::iterator, char_type>;
   using parse_context = basic_format_parse_context<char_type>;
 
@@ -513,7 +515,7 @@ class arg_formatter
     \endrst
    */
   arg_formatter(format_context& ctx, parse_context* parse_ctx = nullptr, fmt::format_specs* spec = nullptr)
-      : base(Range(ctx.out()), spec, {}), parse_ctx_(parse_ctx), ctx_(ctx) {}
+      : base(ctx.out(), spec, {}), parse_ctx_(parse_ctx), ctx_(ctx) {}
 
   using base::operator();
 
@@ -693,7 +695,7 @@ struct formatter {
     fmt::internal::handle_dynamic_spec<fmt::internal::precision_checker>(
         specs_.precision, specs_.precision_ref, ctx);
     using range_type = fmt::internal::output_range<typename FormatContext::iterator,
-                         typename FormatContext::char_type>;
+                          typename FormatContext::char_type>;
     return visit_format_arg(arg_formatter<range_type>(ctx, nullptr, &specs_),
                             basic_format_arg<FormatContext>(val));
   }

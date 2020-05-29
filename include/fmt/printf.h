@@ -208,13 +208,16 @@ template <typename OutputIt, typename Char> class basic_printf_context;
   \endrst
  */
 template <typename Range>
-class printf_arg_formatter : public detail::arg_formatter_base<Range> {
+class printf_arg_formatter
+    : public detail::arg_formatter_base<typename Range::iterator,
+                                        typename Range::value_type> {
  public:
   using iterator = typename Range::iterator;
 
  private:
   using char_type = typename Range::value_type;
-  using base = detail::arg_formatter_base<Range>;
+  using base = detail::arg_formatter_base<typename Range::iterator,
+                                          typename Range::value_type>;
   using context_type = basic_printf_context<iterator, char_type>;
 
   context_type& context_;
@@ -240,7 +243,7 @@ class printf_arg_formatter : public detail::arg_formatter_base<Range> {
     \endrst
    */
   printf_arg_formatter(iterator iter, format_specs& specs, context_type& ctx)
-      : base(Range(iter), &specs, detail::locale_ref()), context_(ctx) {}
+      : base(iter, &specs, detail::locale_ref()), context_(ctx) {}
 
   template <typename T, FMT_ENABLE_IF(fmt::detail::is_integral<T>::value)>
   iterator operator()(T value) {
@@ -512,7 +515,8 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
     // For d, i, o, u, x, and X conversion specifiers, if a precision is
     // specified, the '0' flag is ignored
     if (specs.precision >= 0 && arg.is_integral())
-      specs.fill[0] = ' ';  // Ignore '0' flag for non-numeric types or if '-' present.
+      specs.fill[0] =
+          ' ';  // Ignore '0' flag for non-numeric types or if '-' present.
     if (specs.precision >= 0 && arg.type() == detail::type::cstring_type) {
       auto str = visit_format_arg(detail::get_cstring<Char>(), arg);
       auto str_end = str + specs.precision;
