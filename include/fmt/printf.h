@@ -194,8 +194,6 @@ FMT_DEPRECATED void printf(detail::buffer<Char>& buf,
 }
 using detail::vprintf;
 
-template <typename Range> class printf_arg_formatter;
-
 template <typename Char>
 class basic_printf_parse_context : public basic_format_parse_context<Char> {
   using basic_format_parse_context<Char>::basic_format_parse_context;
@@ -207,18 +205,16 @@ template <typename OutputIt, typename Char> class basic_printf_context;
   The ``printf`` argument formatter.
   \endrst
  */
-template <typename Range>
+template <typename OutputIt, typename Char>
 class printf_arg_formatter
-    : public detail::arg_formatter_base<typename Range::iterator,
-                                        typename Range::value_type> {
+    : public detail::arg_formatter_base<OutputIt, Char> {
  public:
-  using iterator = typename Range::iterator;
+  using iterator = OutputIt;
 
  private:
-  using char_type = typename Range::value_type;
-  using base = detail::arg_formatter_base<typename Range::iterator,
-                                          typename Range::value_type>;
-  using context_type = basic_printf_context<iterator, char_type>;
+  using char_type = Char;
+  using base = detail::arg_formatter_base<OutputIt, Char>;
+  using context_type = basic_printf_context<OutputIt, Char>;
 
   context_type& context_;
 
@@ -389,7 +385,7 @@ template <typename OutputIt, typename Char> class basic_printf_context {
   }
 
   /** Formats stored arguments and writes the output to the range. */
-  template <typename ArgFormatter = printf_arg_formatter<buffer_range<Char>>>
+  template <typename ArgFormatter = printf_arg_formatter<OutputIt, Char>>
   OutputIt format();
 };
 

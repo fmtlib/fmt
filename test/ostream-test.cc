@@ -65,10 +65,10 @@ TEST(OStreamTest, Enum) {
 }
 
 struct test_arg_formatter
-    : fmt::arg_formatter<fmt::buffer_range<char>::iterator, char> {
+    : fmt::arg_formatter<fmt::format_context::iterator, char> {
   fmt::format_parse_context parse_ctx;
   test_arg_formatter(fmt::format_context& ctx, fmt::format_specs& s)
-      : fmt::arg_formatter<fmt::buffer_range<char>::iterator, char>(
+      : fmt::arg_formatter<fmt::format_context::iterator, char>(
             ctx, &parse_ctx, &s),
         parse_ctx("") {}
 };

@@ -495,22 +495,6 @@ class truncating_iterator<OutputIt, std::true_type>
   truncating_iterator& operator*() { return *this; }
 };
 
-// A range with the specified output iterator and value type.
-template <typename OutputIt, typename T = typename OutputIt::value_type>
-class output_range {
- private:
-  OutputIt it_;
-
- public:
-  using value_type = T;
-  using iterator = OutputIt;
-  struct sentinel {};
-
-  explicit output_range(OutputIt it) : it_(it) {}
-  OutputIt begin() const { return it_; }
-  sentinel end() const { return {}; }  // Sentinel is not used yet.
-};
-
 template <typename Char>
 inline size_t count_code_points(basic_string_view<Char> s) {
   return s.size();
@@ -586,18 +570,6 @@ void buffer<T>::append(const U* begin, const U* end) {
   size_ = new_size;
 }
 }  // namespace detail
-
-// DEPRECATED! A range with an iterator appending to a buffer.
-template <typename T>
-class buffer_range
-    : public detail::output_range<std::back_insert_iterator<detail::buffer<T>>,
-                                  T> {
- public:
-  using iterator = std::back_insert_iterator<detail::buffer<T>>;
-  using detail::output_range<iterator, T>::output_range;
-  buffer_range(detail::buffer<T>& buf)
-      : detail::output_range<iterator, T>(std::back_inserter(buf)) {}
-};
 
 // The number of characters to store in the basic_memory_buffer object itself
 // to avoid dynamic memory allocation.
