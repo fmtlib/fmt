@@ -549,8 +549,6 @@ inline size_t code_point_index(basic_string_view<char8_type> s, size_t n) {
   return s.size();
 }
 
-inline char8_type to_char8_t(char c) { return static_cast<char8_type>(c); }
-
 template <typename InputIt, typename OutChar>
 using needs_conversion = bool_constant<
     std::is_same<typename std::iterator_traits<InputIt>::value_type,
@@ -566,7 +564,8 @@ OutputIt copy_str(InputIt begin, InputIt end, OutputIt it) {
 template <typename OutChar, typename InputIt, typename OutputIt,
           FMT_ENABLE_IF(needs_conversion<InputIt, OutChar>::value)>
 OutputIt copy_str(InputIt begin, InputIt end, OutputIt it) {
-  return std::transform(begin, end, it, to_char8_t);
+  return std::transform(begin, end, it,
+                        [](char c) { return static_cast<char8_type>(c); });
 }
 
 #ifndef FMT_USE_GRISU
