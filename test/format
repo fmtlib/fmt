@@ -488,24 +488,21 @@ template<class... Args>
 namespace std {
 namespace detail {
 
-template <typename Range>
+template <typename OutputIt, typename Char>
 class arg_formatter
-    : public fmt::internal::arg_formatter_base<
-        typename Range::iterator, typename Range::value_type, error_handler> {
+    : public fmt::internal::arg_formatter_base<OutputIt, Char, error_handler> {
  private:
-  using char_type = typename Range::value_type;
-  using base = fmt::internal::arg_formatter_base<
-    typename Range::iterator, char_type, error_handler>;
-  using format_context = std::basic_format_context<typename base::iterator, char_type>;
-  using parse_context = basic_format_parse_context<char_type>;
+  using char_type = Char;
+  using base = fmt::internal::arg_formatter_base<OutputIt, Char, error_handler>;
+  using format_context = std::basic_format_context<OutputIt, Char>;
+  using parse_context = basic_format_parse_context<Char>;
 
   parse_context* parse_ctx_;
   format_context& ctx_;
 
  public:
-  typedef Range range;
-  typedef typename base::iterator iterator;
-  typedef typename base::format_specs format_specs;
+  using iterator = OutputIt;
+  using format_specs = typename base::format_specs;
 
   /**
     \rst
@@ -584,12 +581,12 @@ class custom_formatter {
 
 template <typename ArgFormatter, typename Char, typename Context>
 struct format_handler : detail::error_handler {
-  typedef typename ArgFormatter::range range;
+  using iterator = typename ArgFormatter::iterator;
 
-  format_handler(range r, basic_string_view<Char> str,
+  format_handler(iterator out, basic_string_view<Char> str,
                  basic_format_args<Context> format_args,
                  fmt::internal::locale_ref loc)
-      : parse_ctx(str), context(r.begin(), format_args, loc) {}
+      : parse_ctx(str), context(out, format_args, loc) {}
 
   void on_text(const Char* begin, const Char* end) {
     auto size = fmt::internal::to_unsigned(end - begin);
@@ -694,9 +691,9 @@ struct formatter {
         specs_.width, specs_.width_ref, ctx);
     fmt::internal::handle_dynamic_spec<fmt::internal::precision_checker>(
         specs_.precision, specs_.precision_ref, ctx);
-    using range_type = fmt::internal::output_range<typename FormatContext::iterator,
-                          typename FormatContext::char_type>;
-    return visit_format_arg(arg_formatter<range_type>(ctx, nullptr, &specs_),
+    using af = arg_formatter<typename FormatContext::iterator,
+                             typename FormatContext::char_type>;
+    return visit_format_arg(af(ctx, nullptr, &specs_),
                             basic_format_arg<FormatContext>(val));
   }
 
@@ -719,9 +716,9 @@ template<class... Args>
 string vformat(string_view fmt, format_args args) {
   fmt::memory_buffer mbuf;
   fmt::internal::buffer<char>& buf = mbuf;
-  using range = fmt::buffer_range<char>;
-  detail::format_handler<detail::arg_formatter<range>, char, format_context>
-    h(range(std::back_inserter(buf)), fmt, args, {});
+  using af = detail::arg_formatter<fmt::format_context::iterator, char>;
+  detail::format_handler<af, char, format_context>
+    h(std::back_inserter(buf), fmt, args, {});
   fmt::internal::parse_format_string<false>(fmt::to_string_view(fmt), h);
   return to_string(mbuf);
 }
@@ -742,9 +739,9 @@ template<class Out, class... Args>
 
 template<class Out>
   Out vformat_to(Out out, string_view fmt, format_args_t<fmt::type_identity_t<Out>, char> args) {
-    using range = fmt::internal::output_range<Out, char>;
-    detail::format_handler<detail::arg_formatter<range>, char, basic_format_context<Out, char>>
-      h(range(out), fmt, args, {});
+    using af = detail::arg_formatter<Out, char>;
+    detail::format_handler<af, char, basic_format_context<Out, char>>
+      h(out, fmt, args, {});
     fmt::internal::parse_format_string<false>(fmt::to_string_view(fmt), h);
     return h.context.out();
   }
