@@ -587,7 +587,7 @@ void buffer<T>::append(const U* begin, const U* end) {
 }
 }  // namespace detail
 
-// A range with an iterator appending to a buffer.
+// DEPRECATED! A range with an iterator appending to a buffer.
 template <typename T>
 class buffer_range
     : public detail::output_range<std::back_insert_iterator<detail::buffer<T>>,

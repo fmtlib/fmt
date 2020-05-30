@@ -160,25 +160,25 @@ FMT_CONSTEXPR void compile_format_string(basic_string_view<Char> format_str,
       format_string_compiler<Char, PartHandler>(format_str, handler));
 }
 
-template <typename Range, typename Context, typename Id>
+template <typename OutputIt, typename Context, typename Id>
 void format_arg(
-    basic_format_parse_context<typename Range::value_type>& parse_ctx,
+    basic_format_parse_context<typename Context::char_type>& parse_ctx,
     Context& ctx, Id arg_id) {
   ctx.advance_to(visit_format_arg(
-      arg_formatter<typename Range::iterator, typename Range::value_type>(
+      arg_formatter<OutputIt, typename Context::char_type>(
           ctx, &parse_ctx),
       ctx.arg(arg_id)));
 }
 
 // vformat_to is defined in a subnamespace to prevent ADL.
 namespace cf {
-template <typename Context, typename Range, typename CompiledFormat>
-auto vformat_to(Range out, CompiledFormat& cf, basic_format_args<Context> args)
+template <typename Context, typename OutputIt, typename CompiledFormat>
+auto vformat_to(OutputIt out, CompiledFormat& cf, basic_format_args<Context> args)
     -> typename Context::iterator {
   using char_type = typename Context::char_type;
   basic_format_parse_context<char_type> parse_ctx(
       to_string_view(cf.format_str_));
-  Context ctx(out.begin(), args);
+  Context ctx(out, args);
 
   const auto& parts = cf.parts();
   for (auto part_it = std::begin(parts); part_it != std::end(parts);
@@ -199,12 +199,12 @@ auto vformat_to(Range out, CompiledFormat& cf, basic_format_args<Context> args)
 
     case format_part_t::kind::arg_index:
       advance_to(parse_ctx, part.arg_id_end);
-      detail::format_arg<Range>(parse_ctx, ctx, value.arg_index);
+      detail::format_arg<OutputIt>(parse_ctx, ctx, value.arg_index);
       break;
 
     case format_part_t::kind::arg_name:
       advance_to(parse_ctx, part.arg_id_end);
-      detail::format_arg<Range>(parse_ctx, ctx, value.str);
+      detail::format_arg<OutputIt>(parse_ctx, ctx, value.str);
       break;
 
     case format_part_t::kind::replacement: {
@@ -228,7 +228,7 @@ auto vformat_to(Range out, CompiledFormat& cf, basic_format_args<Context> args)
 
       advance_to(parse_ctx, part.arg_id_end);
       ctx.advance_to(visit_format_arg(
-          arg_formatter<typename Range::iterator, typename Range::value_type>(
+          arg_formatter<OutputIt, typename Context::char_type>(
               ctx, nullptr, &specs),
           arg));
       break;
@@ -322,8 +322,8 @@ class compiled_format : private compiled_format_base<S> {
  private:
   basic_string_view<char_type> format_str_;
 
-  template <typename Context, typename Range, typename CompiledFormat>
-  friend auto cf::vformat_to(Range out, CompiledFormat& cf,
+  template <typename Context, typename OutputIt, typename CompiledFormat>
+  friend auto cf::vformat_to(OutputIt out, CompiledFormat& cf,
                              basic_format_args<Context> args) ->
       typename Context::iterator;
 
@@ -558,9 +558,9 @@ template <typename CompiledFormat, typename... Args,
                                         CompiledFormat>::value)>
 std::basic_string<Char> format(const CompiledFormat& cf, const Args&... args) {
   basic_memory_buffer<Char> buffer;
-  using range = buffer_range<Char>;
   using context = buffer_context<Char>;
-  detail::cf::vformat_to<context>(range(buffer), cf,
+  detail::buffer<Char>& base = buffer;
+  detail::cf::vformat_to<context>(std::back_inserter(base), cf,
                                   make_format_args<context>(args...));
   return to_string(buffer);
 }
@@ -571,9 +571,8 @@ template <typename OutputIt, typename CompiledFormat, typename... Args,
 OutputIt format_to(OutputIt out, const CompiledFormat& cf,
                    const Args&... args) {
   using char_type = typename CompiledFormat::char_type;
-  using range = detail::output_range<OutputIt, char_type>;
   using context = format_context_t<OutputIt, char_type>;
-  return detail::cf::vformat_to<context>(range(out), cf,
+  return detail::cf::vformat_to<context>(out, cf,
                                          make_format_args<context>(args...));
 }
 
