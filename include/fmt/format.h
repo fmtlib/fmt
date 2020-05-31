@@ -871,7 +871,7 @@ template <typename Char> void copy2(Char* dst, const char* src) {
 inline void copy2(char* dst, const char* src) { memcpy(dst, src, 2); }
 
 // Formats a decimal unsigned integer value writing into out.
-template <typename UInt, typename Char>
+template <typename Char, typename UInt>
 inline Char* format_decimal(Char* out, UInt value, int num_digits) {
   FMT_ASSERT(num_digits >= 0, "invalid digit count");
   out += num_digits;
@@ -898,7 +898,8 @@ template <typename Int> constexpr int digits10() FMT_NOEXCEPT {
 template <> constexpr int digits10<int128_t>() FMT_NOEXCEPT { return 38; }
 template <> constexpr int digits10<uint128_t>() FMT_NOEXCEPT { return 38; }
 
-template <typename Char, typename UInt, typename Iterator>
+template <typename Char, typename UInt, typename Iterator,
+          FMT_ENABLE_IF(!std::is_pointer<remove_cvref_t<Iterator>>::value)>
 inline Iterator format_decimal(Iterator out, UInt value, int num_digits) {
   // Buffer should be large enough to hold all digits (<= digits10 + 1).
   enum { max_size = digits10<UInt>() + 1 };
@@ -1525,7 +1526,7 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
     }
     if (group == groups.cend()) size += sep_size * ((n - 1) / groups.back());
     char digits[40];
-    format_decimal<Char>(digits, abs_value, num_digits);
+    format_decimal(digits, abs_value, num_digits);
     memory_buffer buffer;
     buffer.resize(size);
     basic_string_view<Char> s(&sep, sep_size);
