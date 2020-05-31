@@ -170,7 +170,7 @@
 #endif
 
 #ifndef FMT_INLINE
-#  if FMT_GCC_VERSION && FMT_USE_CONSTEXPR
+#  if FMT_GCC_VERSION || FMT_CLANG_VERSION
 #    define FMT_INLINE inline __attribute__((always_inline))
 #  else
 #    define FMT_INLINE inline

@@ -2475,8 +2475,8 @@ template <typename Handler, typename Char> struct id_adapter {
 };
 
 template <bool IS_CONSTEXPR, typename Char, typename Handler>
-FMT_CONSTEXPR void parse_format_string(basic_string_view<Char> format_str,
-                                       Handler&& handler) {
+FMT_CONSTEXPR_DECL FMT_INLINE void parse_format_string(
+    basic_string_view<Char> format_str, Handler&& handler) {
   struct writer {
     FMT_CONSTEXPR void operator()(const Char* begin, const Char* end) {
       if (begin == end) return;
