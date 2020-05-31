@@ -1621,6 +1621,16 @@ OutputIt write(OutputIt out, T value, basic_format_specs<Char> specs = {},
   return write_padded<align::right>(out, specs, w.size(), w);
 }
 
+template <typename Char, typename OutputIt>
+OutputIt write_char(OutputIt out, Char value,
+                    const basic_format_specs<Char>& specs) {
+  using iterator = remove_reference_t<decltype(reserve(out, 0))>;
+  return write_padded(out, specs, 1, [=](iterator it) {
+    *it++ = value;
+    return it;
+  });
+}
+
 template <typename StrChar, typename Char, typename OutputIt>
 OutputIt write(OutputIt out, basic_string_view<StrChar> s,
                const basic_format_specs<Char>& specs = {}) {
@@ -1660,8 +1670,8 @@ template <typename OutputIt, typename Char,
           typename ErrorHandler = detail::error_handler>
 class arg_formatter_base {
  public:
-  using char_type = Char;
   using iterator = OutputIt;
+  using char_type = Char;
   using format_specs = basic_format_specs<char_type>;
 
  private:
@@ -1677,24 +1687,6 @@ class arg_formatter_base {
 
   using reserve_iterator = remove_reference_t<decltype(
       detail::reserve(std::declval<iterator&>(), 0))>;
-
-  struct char_writer {
-    char_type value;
-
-    size_t size() const { return 1; }
-
-    template <typename It> It operator()(It it) const {
-      *it++ = value;
-      return it;
-    }
-  };
-
-  void write_char(char_type value) {
-    if (specs_)
-      out_ = write_padded(out_, *specs_, 1, char_writer{value});
-    else
-      write(value);
-  }
 
   // Writes a decimal integer.
   template <typename Int> void write_decimal(Int value) {
@@ -1840,7 +1832,12 @@ class arg_formatter_base {
       else
         formatter.write(value);
     }
-    void on_char() { formatter.write_char(value); }
+    void on_char() {
+      if (formatter.specs_)
+        formatter.out_ = write_char(formatter.out_, value, *formatter.specs_);
+      else
+        formatter.write(value);
+    }
   };
 
   struct cstring_spec_handler : detail::error_handler {
