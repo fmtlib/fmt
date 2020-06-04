@@ -1431,6 +1431,22 @@ OutputIt write_int(OutputIt out, int num_digits, string_view prefix,
   });
 }
 
+template <typename StrChar, typename Char, typename OutputIt>
+OutputIt write(OutputIt out, basic_string_view<StrChar> s,
+               const basic_format_specs<Char>& specs = {}) {
+  auto data = s.data();
+  auto size = s.size();
+  if (specs.precision >= 0 && to_unsigned(specs.precision) < size)
+    size = code_point_index(s, to_unsigned(specs.precision));
+  auto width = specs.width != 0
+                   ? count_code_points(basic_string_view<StrChar>(data, size))
+                   : 0;
+  using iterator = remove_reference_t<decltype(reserve(out, 0))>;
+  return write_padded(out, specs, size, width, [=](iterator it) {
+    return copy_str<Char>(data, data + size, it);
+  });
+}
+
 // The handle_int_type_spec handler that writes an integer.
 template <typename OutputIt, typename Char, typename UInt> struct int_writer {
   OutputIt out;
@@ -1529,7 +1545,7 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
     if (group == groups.cend()) size += sep_size * ((n - 1) / groups.back());
     char digits[40];
     format_decimal(digits, abs_value, num_digits);
-    memory_buffer buffer;
+    basic_memory_buffer<Char> buffer;
     buffer.resize(size);
     basic_string_view<Char> s(&sep, sep_size);
     // Index of a decimal digit with the least significant digit having index 0.
@@ -1537,7 +1553,7 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
     group = groups.cbegin();
     auto p = buffer.data() + size;
     for (int i = num_digits - 1; i >= 0; --i) {
-      *--p = digits[i];
+      *--p = static_cast<Char>(digits[i]);
       if (*group <= 0 || ++digit_index % *group != 0 ||
           *group == max_value<char>())
         continue;
@@ -1546,9 +1562,10 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
         ++group;
       }
       p -= s.size();
-      std::uninitialized_copy(s.data(), s.data() + s.size(), p);
+      std::uninitialized_copy(s.data(), s.data() + s.size(),
+                              make_checked(p, s.size()));
     }
-    write_bytes(out, {buffer.data(), buffer.size()}, specs);
+    write(out, basic_string_view<Char>(buffer.data(), buffer.size()), specs);
   }
 
   void on_chr() { *out++ = static_cast<Char>(abs_value); }
@@ -1630,22 +1647,6 @@ OutputIt write_char(OutputIt out, Char value,
   return write_padded(out, specs, 1, [=](iterator it) {
     *it++ = value;
     return it;
-  });
-}
-
-template <typename StrChar, typename Char, typename OutputIt>
-OutputIt write(OutputIt out, basic_string_view<StrChar> s,
-               const basic_format_specs<Char>& specs = {}) {
-  auto data = s.data();
-  auto size = s.size();
-  if (specs.precision >= 0 && to_unsigned(specs.precision) < size)
-    size = code_point_index(s, to_unsigned(specs.precision));
-  auto width = specs.width != 0
-                   ? count_code_points(basic_string_view<StrChar>(data, size))
-                   : 0;
-  using iterator = remove_reference_t<decltype(reserve(out, 0))>;
-  return write_padded(out, specs, size, width, [=](iterator it) {
-    return copy_str<Char>(data, data + size, it);
   });
 }
 
