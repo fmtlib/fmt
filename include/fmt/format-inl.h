@@ -584,9 +584,10 @@ class bigint {
   void operator=(const bigint&) = delete;
 
   void assign(const bigint& other) {
-    bigits_.resize(other.bigits_.size());
+    auto size = other.bigits_.size();
+    bigits_.resize(size);
     auto data = other.bigits_.data();
-    std::copy(data, data + other.bigits_.size(), bigits_.data());
+    std::copy(data, data + size, make_checked(bigits_.data(), size));
     exp_ = other.exp_;
   }
 
