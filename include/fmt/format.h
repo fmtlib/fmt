@@ -833,6 +833,12 @@ inline int count_digits(uint32_t n) {
 }
 #endif
 
+template <typename Int> constexpr int digits10() FMT_NOEXCEPT {
+  return std::numeric_limits<Int>::digits10;
+}
+template <> constexpr int digits10<int128_t>() FMT_NOEXCEPT { return 38; }
+template <> constexpr int digits10<uint128_t>() FMT_NOEXCEPT { return 38; }
+
 template <typename Char> FMT_API std::string grouping_impl(locale_ref loc);
 template <typename Char> inline std::string grouping(locale_ref loc) {
   return grouping_impl<char>(loc);
@@ -857,6 +863,7 @@ template <> inline wchar_t decimal_point(locale_ref loc) {
   return decimal_point_impl<wchar_t>(loc);
 }
 
+// Compares two characters for equality.
 template <typename Char> bool equal2(const Char* lhs, const char* rhs) {
   return lhs[0] == rhs[0] && lhs[1] == rhs[1];
 }
@@ -864,6 +871,7 @@ inline bool equal2(const char* lhs, const char* rhs) {
   return memcmp(lhs, rhs, 2) == 0;
 }
 
+// Copies two characters from src to dst.
 template <typename Char> void copy2(Char* dst, const char* src) {
   *dst++ = static_cast<Char>(*src++);
   *dst = static_cast<Char>(*src);
@@ -891,12 +899,6 @@ inline Char* format_decimal(Char* out, UInt value, int num_digits) {
   copy2(out - 2, data::digits + static_cast<unsigned>(value * 2));
   return end;
 }
-
-template <typename Int> constexpr int digits10() FMT_NOEXCEPT {
-  return std::numeric_limits<Int>::digits10;
-}
-template <> constexpr int digits10<int128_t>() FMT_NOEXCEPT { return 38; }
-template <> constexpr int digits10<uint128_t>() FMT_NOEXCEPT { return 38; }
 
 template <typename Char, typename UInt, typename Iterator,
           FMT_ENABLE_IF(!std::is_pointer<remove_cvref_t<Iterator>>::value)>
