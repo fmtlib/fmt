@@ -88,8 +88,6 @@ if (${index} GREATER -1)
 endif ()
 message(STATUS "Required features: ${FMT_REQUIRED_FEATURES}")
 
-MESSAGE(STATUS "CMAKE_CXX_COMPILER_ID ${CMAKE_CXX_COMPILER_ID}")
-
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   set(PEDANTIC_COMPILE_FLAGS -pedantic-errors -Wall -Wextra -pedantic
       -Wold-style-cast -Wundef
@@ -100,11 +98,9 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
       -Winvalid-pch -Woverloaded-virtual
       -Wconversion -Wswitch-enum
       -Wno-ctor-dtor-privacy -Wno-format-nonliteral -Wno-shadow)
-  IF(MINGW)
-    MESSAGE(STATUS "MINGW")
+  if (MINGW)
     add_definitions("-Wa,-mbig-obj")
-  ENDIF()
-    
+  endif ()    
   if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6)
       set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wnoexcept
          -Wno-dangling-else -Wno-unused-local-typedefs)
