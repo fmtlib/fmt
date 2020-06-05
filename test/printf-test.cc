@@ -606,3 +606,23 @@ TEST(PrintfTest, VSPrintfMakeWArgsExample) {
                           {fmt::make_wprintf_args(42, L"something")}));
 #endif
 }
+
+TEST(PrintfTest, PrintfDetermineOutputSize) {
+  using backit = std::back_insert_iterator<std::vector<char>>;
+  using truncated_printf_context =
+      fmt::basic_printf_context<fmt::detail::truncating_iterator<backit>, char>;
+
+  auto v = std::vector<char>{};
+  auto it = std::back_inserter(v);
+
+  const auto format_string = "%s";
+  const auto format_arg = "Hello";
+  const auto expected_size = fmt::sprintf(format_string, format_arg).size();
+
+  EXPECT_EQ((truncated_printf_context(
+                 fmt::detail::truncating_iterator<backit>(it, 0), format_string,
+                 fmt::make_format_args<truncated_printf_context>(format_arg))
+                 .format()
+                 .count()),
+            expected_size);
+}
