@@ -206,8 +206,7 @@ template <typename OutputIt, typename Char> class basic_printf_context;
   \endrst
  */
 template <typename OutputIt, typename Char>
-class printf_arg_formatter
-    : public detail::arg_formatter_base<OutputIt, Char> {
+class printf_arg_formatter : public detail::arg_formatter_base<OutputIt, Char> {
  public:
   using iterator = OutputIt;
 
@@ -592,7 +591,7 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
     start = it;
 
     // Format argument.
-    visit_format_arg(ArgFormatter(out, specs, *this), arg);
+    out = visit_format_arg(ArgFormatter(out, specs, *this), arg);
   }
   return std::copy(start, it, out);
 }
