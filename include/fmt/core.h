@@ -1155,9 +1155,8 @@ template <typename Context> class basic_format_arg {
   \endrst
  */
 template <typename Visitor, typename Context>
-FMT_CONSTEXPR auto visit_format_arg(Visitor&& vis,
-                                    const basic_format_arg<Context>& arg)
-    -> decltype(vis(0)) {
+FMT_CONSTEXPR_DECL FMT_INLINE auto visit_format_arg(
+    Visitor&& vis, const basic_format_arg<Context>& arg) -> decltype(vis(0)) {
   using char_type = typename Context::char_type;
   switch (arg.type_) {
   case detail::type::none_type:
