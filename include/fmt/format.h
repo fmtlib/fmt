@@ -2544,6 +2544,62 @@ FMT_CONSTEXPR const typename ParseContext::char_type* parse_format_specs(
   return f.parse(ctx);
 }
 
+template <typename ArgFormatter, typename Char, typename Context>
+struct format_handler : detail::error_handler {
+  using iterator = typename ArgFormatter::iterator;
+
+  format_handler(iterator out, basic_string_view<Char> str,
+                 basic_format_args<Context> format_args, detail::locale_ref loc)
+      : parse_context(str), context(out, format_args, loc) {}
+
+  void on_text(const Char* begin, const Char* end) {
+    auto size = detail::to_unsigned(end - begin);
+    auto out = context.out();
+    auto&& it = detail::reserve(out, size);
+    it = std::copy_n(begin, size, it);
+    context.advance_to(out);
+  }
+
+  template <typename ID> void get_arg(ID id) {
+    arg = detail::get_arg(context, id);
+  }
+
+  void on_arg_id() { get_arg(parse_context.next_arg_id()); }
+  void on_arg_id(int id) {
+    parse_context.check_arg_id(id);
+    get_arg(id);
+  }
+  void on_arg_id(basic_string_view<Char> id) { get_arg(id); }
+
+  void on_replacement_field(const Char* p) {
+    advance_to(parse_context, p);
+    context.advance_to(
+        visit_format_arg(ArgFormatter(context, &parse_context), arg));
+  }
+
+  const Char* on_format_specs(const Char* begin, const Char* end) {
+    advance_to(parse_context, begin);
+    detail::custom_formatter<Context> f(parse_context, context);
+    if (visit_format_arg(f, arg)) return parse_context.begin();
+    basic_format_specs<Char> specs;
+    using detail::specs_handler;
+    using parse_context_t = basic_format_parse_context<Char>;
+    detail::specs_checker<specs_handler<parse_context_t, Context>> handler(
+        specs_handler<parse_context_t, Context>(specs, parse_context, context),
+        arg.type());
+    begin = parse_format_specs(begin, end, handler);
+    if (begin == end || *begin != '}') on_error("missing '}' in format string");
+    advance_to(parse_context, begin);
+    context.advance_to(
+        visit_format_arg(ArgFormatter(context, &parse_context, &specs), arg));
+    return begin;
+  }
+
+  basic_format_parse_context<Char> parse_context;
+  Context context;
+  basic_format_arg<Context> arg;
+};
+
 // A parse context with extra argument id checks. It is only used at compile
 // time because adding checks at runtime would introduce substantial overhead
 // and would be redundant since argument ids are checked when arguments are
@@ -3081,69 +3137,13 @@ FMT_CONSTEXPR void advance_to(
   ctx.advance_to(ctx.begin() + (p - &*ctx.begin()));
 }
 
-template <typename ArgFormatter, typename Char, typename Context>
-struct format_handler : detail::error_handler {
-  using iterator = typename ArgFormatter::iterator;
-
-  format_handler(iterator out, basic_string_view<Char> str,
-                 basic_format_args<Context> format_args, detail::locale_ref loc)
-      : parse_context(str), context(out, format_args, loc) {}
-
-  void on_text(const Char* begin, const Char* end) {
-    auto size = detail::to_unsigned(end - begin);
-    auto out = context.out();
-    auto&& it = detail::reserve(out, size);
-    it = std::copy_n(begin, size, it);
-    context.advance_to(out);
-  }
-
-  template <typename ID> void get_arg(ID id) {
-    arg = detail::get_arg(context, id);
-  }
-
-  void on_arg_id() { get_arg(parse_context.next_arg_id()); }
-  void on_arg_id(int id) {
-    parse_context.check_arg_id(id);
-    get_arg(id);
-  }
-  void on_arg_id(basic_string_view<Char> id) { get_arg(id); }
-
-  void on_replacement_field(const Char* p) {
-    advance_to(parse_context, p);
-    context.advance_to(
-        visit_format_arg(ArgFormatter(context, &parse_context), arg));
-  }
-
-  const Char* on_format_specs(const Char* begin, const Char* end) {
-    advance_to(parse_context, begin);
-    detail::custom_formatter<Context> f(parse_context, context);
-    if (visit_format_arg(f, arg)) return parse_context.begin();
-    basic_format_specs<Char> specs;
-    using detail::specs_handler;
-    using parse_context_t = basic_format_parse_context<Char>;
-    detail::specs_checker<specs_handler<parse_context_t, Context>> handler(
-        specs_handler<parse_context_t, Context>(specs, parse_context, context),
-        arg.type());
-    begin = parse_format_specs(begin, end, handler);
-    if (begin == end || *begin != '}') on_error("missing '}' in format string");
-    advance_to(parse_context, begin);
-    context.advance_to(
-        visit_format_arg(ArgFormatter(context, &parse_context, &specs), arg));
-    return begin;
-  }
-
-  basic_format_parse_context<Char> parse_context;
-  Context context;
-  basic_format_arg<Context> arg;
-};
-
 /** Formats arguments and writes the output to the range. */
 template <typename ArgFormatter, typename Char, typename Context>
 typename Context::iterator vformat_to(
     typename ArgFormatter::iterator out, basic_string_view<Char> format_str,
     basic_format_args<Context> args,
     detail::locale_ref loc = detail::locale_ref()) {
-  format_handler<ArgFormatter, Char, Context> h(out, format_str, args, loc);
+  detail::format_handler<ArgFormatter, Char, Context> h(out, format_str, args, loc);
   if (format_str.size() == 2 && detail::equal2(format_str.data(), "{}")) {
     auto arg = detail::get_arg(h.context, 0);
     h.parse_context.advance_to(&format_str[1]);
