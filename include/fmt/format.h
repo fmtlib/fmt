@@ -2546,9 +2546,12 @@ FMT_CONSTEXPR const typename ParseContext::char_type* parse_format_specs(
 
 template <typename ArgFormatter, typename Char, typename Context>
 struct format_handler : detail::error_handler {
-  using iterator = typename ArgFormatter::iterator;
+  basic_format_parse_context<Char> parse_context;
+  Context context;
+  int arg_id;
 
-  format_handler(iterator out, basic_string_view<Char> str,
+  format_handler(typename ArgFormatter::iterator out,
+                 basic_string_view<Char> str,
                  basic_format_args<Context> format_args, detail::locale_ref loc)
       : parse_context(str), context(out, format_args, loc) {}
 
@@ -2560,25 +2563,23 @@ struct format_handler : detail::error_handler {
     context.advance_to(out);
   }
 
-  template <typename ID> void get_arg(ID id) {
-    arg = detail::get_arg(context, id);
-  }
-
-  void on_arg_id() { get_arg(parse_context.next_arg_id()); }
+  void on_arg_id() { arg_id = parse_context.next_arg_id(); }
   void on_arg_id(int id) {
     parse_context.check_arg_id(id);
-    get_arg(id);
+    arg_id = id;
   }
-  void on_arg_id(basic_string_view<Char> id) { get_arg(id); }
+  void on_arg_id(basic_string_view<Char> id) { arg_id = context.arg_id(id); }
 
   void on_replacement_field(const Char* p) {
     advance_to(parse_context, p);
+    auto arg = get_arg(context, arg_id);
     context.advance_to(
         visit_format_arg(ArgFormatter(context, &parse_context), arg));
   }
 
   const Char* on_format_specs(const Char* begin, const Char* end) {
     advance_to(parse_context, begin);
+    auto arg = get_arg(context, arg_id);
     detail::custom_formatter<Context> f(parse_context, context);
     if (visit_format_arg(f, arg)) return parse_context.begin();
     basic_format_specs<Char> specs;
@@ -2594,10 +2595,6 @@ struct format_handler : detail::error_handler {
         visit_format_arg(ArgFormatter(context, &parse_context, &specs), arg));
     return begin;
   }
-
-  basic_format_parse_context<Char> parse_context;
-  Context context;
-  basic_format_arg<Context> arg;
 };
 
 // A parse context with extra argument id checks. It is only used at compile
@@ -3143,7 +3140,8 @@ typename Context::iterator vformat_to(
     typename ArgFormatter::iterator out, basic_string_view<Char> format_str,
     basic_format_args<Context> args,
     detail::locale_ref loc = detail::locale_ref()) {
-  detail::format_handler<ArgFormatter, Char, Context> h(out, format_str, args, loc);
+  detail::format_handler<ArgFormatter, Char, Context> h(out, format_str, args,
+                                                        loc);
   if (format_str.size() == 2 && detail::equal2(format_str.data(), "{}")) {
     auto arg = detail::get_arg(h.context, 0);
     h.parse_context.advance_to(&format_str[1]);

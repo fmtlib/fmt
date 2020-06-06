@@ -1320,10 +1320,8 @@ template <typename OutputIt, typename Char> class basic_format_context {
       : out_(out), args_(ctx_args), loc_(loc) {}
 
   format_arg arg(int id) const { return args_.get(id); }
-
-  // Checks if manual indexing is used and returns the argument with the
-  // specified name.
   format_arg arg(basic_string_view<char_type> name) { return args_.get(name); }
+  int arg_id(basic_string_view<char_type> name) { return args_.get_id(name); }
 
   detail::error_handler error_handler() { return {}; }
   void on_error(const char* message) { error_handler().on_error(message); }
@@ -1687,13 +1685,18 @@ template <typename Context> class basic_format_args {
   }
 
   template <typename Char> format_arg get(basic_string_view<Char> name) const {
+    int id = get_id(name);
+    return id >= 0 ? get(id) : format_arg();
+  }
+
+  template <typename Char> int get_id(basic_string_view<Char> name) const {
     if (!has_named_args()) return {};
     const auto& named_args =
         (is_packed() ? values_[-1] : args_[-1].value_).named_args;
     for (size_t i = 0; i < named_args.size; ++i) {
-      if (named_args.data[i].name == name) return get(named_args.data[i].id);
+      if (named_args.data[i].name == name) return named_args.data[i].id;
     }
-    return {};
+    return -1;
   }
 
   int max_size() const {
