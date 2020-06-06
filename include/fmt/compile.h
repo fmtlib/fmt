@@ -62,13 +62,15 @@ template <typename Char> struct part_counter {
     if (begin != end) ++num_parts;
   }
 
-  FMT_CONSTEXPR void on_arg_id() { ++num_parts; }
-  FMT_CONSTEXPR void on_arg_id(int) { ++num_parts; }
-  FMT_CONSTEXPR void on_arg_id(basic_string_view<Char>) { ++num_parts; }
+  FMT_CONSTEXPR int on_arg_id() { return ++num_parts, 0; }
+  FMT_CONSTEXPR int on_arg_id(int) { return ++num_parts, 0; }
+  FMT_CONSTEXPR int on_arg_id(basic_string_view<Char>) {
+    return ++num_parts, 0;
+  }
 
-  FMT_CONSTEXPR void on_replacement_field(const Char*) {}
+  FMT_CONSTEXPR void on_replacement_field(int, const Char*) {}
 
-  FMT_CONSTEXPR const Char* on_format_specs(const Char* begin,
+  FMT_CONSTEXPR const Char* on_format_specs(int, const Char* begin,
                                             const Char* end) {
     // Find the matching brace.
     unsigned brace_counter = 0;
@@ -116,25 +118,28 @@ class format_string_compiler : public error_handler {
       handler_(part::make_text({begin, to_unsigned(end - begin)}));
   }
 
-  FMT_CONSTEXPR void on_arg_id() {
+  FMT_CONSTEXPR int on_arg_id() {
     part_ = part::make_arg_index(parse_context_.next_arg_id());
+    return 0;
   }
 
-  FMT_CONSTEXPR void on_arg_id(int id) {
+  FMT_CONSTEXPR int on_arg_id(int id) {
     parse_context_.check_arg_id(id);
     part_ = part::make_arg_index(id);
+    return 0;
   }
 
-  FMT_CONSTEXPR void on_arg_id(basic_string_view<Char> id) {
+  FMT_CONSTEXPR int on_arg_id(basic_string_view<Char> id) {
     part_ = part::make_arg_name(id);
+    return 0;
   }
 
-  FMT_CONSTEXPR void on_replacement_field(const Char* ptr) {
+  FMT_CONSTEXPR void on_replacement_field(int, const Char* ptr) {
     part_.arg_id_end = ptr;
     handler_(part_);
   }
 
-  FMT_CONSTEXPR const Char* on_format_specs(const Char* begin,
+  FMT_CONSTEXPR const Char* on_format_specs(int, const Char* begin,
                                             const Char* end) {
     auto repl = typename part::replacement();
     dynamic_specs_handler<basic_format_parse_context<Char>> handler(
@@ -165,16 +170,15 @@ void format_arg(
     basic_format_parse_context<typename Context::char_type>& parse_ctx,
     Context& ctx, Id arg_id) {
   ctx.advance_to(visit_format_arg(
-      arg_formatter<OutputIt, typename Context::char_type>(
-          ctx, &parse_ctx),
+      arg_formatter<OutputIt, typename Context::char_type>(ctx, &parse_ctx),
       ctx.arg(arg_id)));
 }
 
 // vformat_to is defined in a subnamespace to prevent ADL.
 namespace cf {
 template <typename Context, typename OutputIt, typename CompiledFormat>
-auto vformat_to(OutputIt out, CompiledFormat& cf, basic_format_args<Context> args)
-    -> typename Context::iterator {
+auto vformat_to(OutputIt out, CompiledFormat& cf,
+                basic_format_args<Context> args) -> typename Context::iterator {
   using char_type = typename Context::char_type;
   basic_format_parse_context<char_type> parse_ctx(
       to_string_view(cf.format_str_));
@@ -227,10 +231,10 @@ auto vformat_to(OutputIt out, CompiledFormat& cf, basic_format_args<Context> arg
       if (specs.precision >= 0) checker.check_precision();
 
       advance_to(parse_ctx, part.arg_id_end);
-      ctx.advance_to(visit_format_arg(
-          arg_formatter<OutputIt, typename Context::char_type>(
-              ctx, nullptr, &specs),
-          arg));
+      ctx.advance_to(
+          visit_format_arg(arg_formatter<OutputIt, typename Context::char_type>(
+                               ctx, nullptr, &specs),
+                           arg));
       break;
     }
     }

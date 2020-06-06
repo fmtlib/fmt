@@ -2223,13 +2223,14 @@ TEST(FormatTest, ConstexprSpecsChecker) {
 struct test_format_string_handler {
   FMT_CONSTEXPR void on_text(const char*, const char*) {}
 
-  FMT_CONSTEXPR void on_arg_id() {}
+  FMT_CONSTEXPR int on_arg_id() { return 0; }
 
-  template <typename T> FMT_CONSTEXPR void on_arg_id(T) {}
+  template <typename T> FMT_CONSTEXPR int on_arg_id(T) { return 0; }
 
-  FMT_CONSTEXPR void on_replacement_field(const char*) {}
+  FMT_CONSTEXPR void on_replacement_field(int, const char*) {}
 
-  FMT_CONSTEXPR const char* on_format_specs(const char* begin, const char*) {
+  FMT_CONSTEXPR const char* on_format_specs(int, const char* begin,
+                                            const char*) {
     return begin;
   }
 

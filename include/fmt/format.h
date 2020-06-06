@@ -2466,15 +2466,17 @@ inline bool find<false, char>(const char* first, const char* last, char value,
 }
 
 template <typename Handler, typename Char> struct id_adapter {
-  FMT_CONSTEXPR void operator()() { handler.on_arg_id(); }
-  FMT_CONSTEXPR void operator()(int id) { handler.on_arg_id(id); }
+  Handler& handler;
+  int arg_id;
+
+  FMT_CONSTEXPR void operator()() { arg_id = handler.on_arg_id(); }
+  FMT_CONSTEXPR void operator()(int id) { arg_id = handler.on_arg_id(id); }
   FMT_CONSTEXPR void operator()(basic_string_view<Char> id) {
-    handler.on_arg_id(id);
+    arg_id = handler.on_arg_id(id);
   }
   FMT_CONSTEXPR void on_error(const char* message) {
     handler.on_error(message);
   }
-  Handler& handler;
 };
 
 template <bool IS_CONSTEXPR, typename Char, typename Handler>
@@ -2508,17 +2510,17 @@ FMT_CONSTEXPR_DECL FMT_INLINE void parse_format_string(
     ++p;
     if (p == end) return handler.on_error("invalid format string");
     if (static_cast<char>(*p) == '}') {
-      handler.on_arg_id();
-      handler.on_replacement_field(p);
+      handler.on_replacement_field(handler.on_arg_id(), p);
     } else if (*p == '{') {
       handler.on_text(p, p + 1);
     } else {
-      p = parse_arg_id(p, end, id_adapter<Handler, Char>{handler});
+      auto adapter = id_adapter<Handler, Char>{handler, 0};
+      p = parse_arg_id(p, end, adapter);
       Char c = p != end ? *p : Char();
       if (c == '}') {
-        handler.on_replacement_field(p);
+        handler.on_replacement_field(adapter.arg_id, p);
       } else if (c == ':') {
-        p = handler.on_format_specs(p + 1, end);
+        p = handler.on_format_specs(adapter.arg_id, p + 1, end);
         if (p == end || *p != '}')
           return handler.on_error("unknown format specifier");
       } else {
@@ -2548,7 +2550,6 @@ template <typename ArgFormatter, typename Char, typename Context>
 struct format_handler : detail::error_handler {
   basic_format_parse_context<Char> parse_context;
   Context context;
-  int arg_id;
 
   format_handler(typename ArgFormatter::iterator out,
                  basic_string_view<Char> str,
@@ -2563,23 +2564,20 @@ struct format_handler : detail::error_handler {
     context.advance_to(out);
   }
 
-  void on_arg_id() { arg_id = parse_context.next_arg_id(); }
-  void on_arg_id(int id) {
-    parse_context.check_arg_id(id);
-    arg_id = id;
-  }
-  void on_arg_id(basic_string_view<Char> id) { arg_id = context.arg_id(id); }
+  int on_arg_id() { return parse_context.next_arg_id(); }
+  int on_arg_id(int id) { return parse_context.check_arg_id(id), id; }
+  int on_arg_id(basic_string_view<Char> id) { return context.arg_id(id); }
 
-  void on_replacement_field(const Char* p) {
+  void on_replacement_field(int id, const Char* p) {
     advance_to(parse_context, p);
-    auto arg = get_arg(context, arg_id);
+    auto arg = get_arg(context, id);
     context.advance_to(
         visit_format_arg(ArgFormatter(context, &parse_context), arg));
   }
 
-  const Char* on_format_specs(const Char* begin, const Char* end) {
+  const Char* on_format_specs(int id, const Char* begin, const Char* end) {
     advance_to(parse_context, begin);
-    auto arg = get_arg(context, arg_id);
+    auto arg = get_arg(context, id);
     detail::custom_formatter<Context> f(parse_context, context);
     if (visit_format_arg(f, arg)) return parse_context.begin();
     basic_format_specs<Char> specs;
@@ -2632,26 +2630,24 @@ class format_string_checker {
  public:
   explicit FMT_CONSTEXPR format_string_checker(
       basic_string_view<Char> format_str, ErrorHandler eh)
-      : arg_id_(-1),
-        context_(format_str, num_args, eh),
+      : context_(format_str, num_args, eh),
         parse_funcs_{&parse_format_specs<Args, parse_context_type>...} {}
 
   FMT_CONSTEXPR void on_text(const Char*, const Char*) {}
 
-  FMT_CONSTEXPR void on_arg_id() { arg_id_ = context_.next_arg_id(); }
-  FMT_CONSTEXPR void on_arg_id(int id) {
-    arg_id_ = id;
-    context_.check_arg_id(id);
-  }
-  FMT_CONSTEXPR void on_arg_id(basic_string_view<Char>) {
+  FMT_CONSTEXPR int on_arg_id() { return context_.next_arg_id(); }
+  FMT_CONSTEXPR int on_arg_id(int id) { return context_.check_arg_id(id), id; }
+  FMT_CONSTEXPR int on_arg_id(basic_string_view<Char>) {
     on_error("compile-time checks don't support named arguments");
+    return 0;
   }
 
-  FMT_CONSTEXPR void on_replacement_field(const Char*) {}
+  FMT_CONSTEXPR void on_replacement_field(int, const Char*) {}
 
-  FMT_CONSTEXPR const Char* on_format_specs(const Char* begin, const Char*) {
+  FMT_CONSTEXPR const Char* on_format_specs(int id, const Char* begin,
+                                            const Char*) {
     advance_to(context_, begin);
-    return arg_id_ < num_args ? parse_funcs_[arg_id_](context_) : begin;
+    return id < num_args ? parse_funcs_[id](context_) : begin;
   }
 
   FMT_CONSTEXPR void on_error(const char* message) {
@@ -2665,7 +2661,6 @@ class format_string_checker {
   // Format specifier parsing function.
   using parse_func = const Char* (*)(parse_context_type&);
 
-  int arg_id_;
   parse_context_type context_;
   parse_func parse_funcs_[num_args > 0 ? num_args : 1];
 };

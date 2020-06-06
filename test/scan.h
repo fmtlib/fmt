@@ -169,14 +169,15 @@ struct scan_handler : error_handler {
     scan_ctx_.advance_to(it + size);
   }
 
-  void on_arg_id() { on_arg_id(next_arg_id_++); }
-  void on_arg_id(int id) {
+  int on_arg_id() { return on_arg_id(next_arg_id_++); }
+  int on_arg_id(int id) {
     if (id >= args_.size) on_error("argument index out of range");
     arg_ = args_.data[id];
+    return id;
   }
-  void on_arg_id(string_view) { on_error("invalid format"); }
+  int on_arg_id(string_view) { return on_error("invalid format"), 0; }
 
-  void on_replacement_field(const char*) {
+  void on_replacement_field(int, const char*) {
     auto it = scan_ctx_.begin(), end = scan_ctx_.end();
     switch (arg_.type) {
     case scan_type::int_type:
@@ -208,7 +209,7 @@ struct scan_handler : error_handler {
     }
   }
 
-  const char* on_format_specs(const char* begin, const char*) {
+  const char* on_format_specs(int, const char* begin, const char*) {
     if (arg_.type != scan_type::custom_type) return begin;
     parse_ctx_.advance_to(begin);
     arg_.custom.scan(arg_.custom.value, parse_ctx_, scan_ctx_);

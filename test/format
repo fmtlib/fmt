@@ -596,23 +596,20 @@ struct format_handler : detail::error_handler {
     context.advance_to(out);
   }
 
-  void on_arg_id() {
-    arg = context.arg(parse_ctx.next_arg_id());
-  }
-  void on_arg_id(unsigned id) {
-    parse_ctx.check_arg_id(id);
-    arg = context.arg(id);
-  }
-  void on_arg_id(fmt::basic_string_view<Char>) {}
+  int on_arg_id() { return parse_ctx.next_arg_id(); }
+  int on_arg_id(unsigned id) { return parse_ctx.check_arg_id(id), id; }
+  int on_arg_id(fmt::basic_string_view<Char>) { return 0; }
 
-  void on_replacement_field(const Char* p) {
-    parse_ctx.advance_to(parse_ctx.begin() + (p - &*parse_ctx.begin()));
+  void on_replacement_field(int id, const Char* p) {
+    auto arg = context.arg(id);
+    parse_ctx.advance_to(parse_ctx.begin() + (p  - &*parse_ctx.begin()));
     custom_formatter<Context> f(parse_ctx, context);
     if (!visit_format_arg(f, arg))
       context.advance_to(visit_format_arg(ArgFormatter(context, &parse_ctx), arg));
   }
 
-  const Char* on_format_specs(const Char* begin, const Char* end) {
+  const Char* on_format_specs(int id, const Char* begin, const Char* end) {
+    auto arg = context.arg(id);
     parse_ctx.advance_to(parse_ctx.begin() + (begin - &*parse_ctx.begin()));
     custom_formatter<Context> f(parse_ctx, context);
     if (visit_format_arg(f, arg)) return &*parse_ctx.begin();
@@ -630,7 +627,6 @@ struct format_handler : detail::error_handler {
 
   basic_format_parse_context<Char> parse_ctx;
   Context context;
-  basic_format_arg<Context> arg;
 };
 
 template <typename T, typename Char>
