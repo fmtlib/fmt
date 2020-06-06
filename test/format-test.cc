@@ -1821,7 +1821,7 @@ class mock_arg_formatter
   using base = fmt::detail::arg_formatter_base<buffer_iterator, char>;
 
   mock_arg_formatter(fmt::format_context& ctx, fmt::format_parse_context*,
-                     fmt::format_specs* s = nullptr)
+                     fmt::format_specs* s = nullptr, const char* = nullptr)
       : base(ctx.out(), s, ctx.locale()) {
     EXPECT_CALL(*this, call(42));
   }

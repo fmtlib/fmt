@@ -24,7 +24,8 @@ class custom_arg_formatter
 
   custom_arg_formatter(fmt::format_context& ctx,
                        fmt::format_parse_context* parse_ctx,
-                       fmt::format_specs* s = nullptr)
+                       fmt::format_specs* s = nullptr,
+                       const char* = nullptr)
       : base(ctx, parse_ctx, s) {}
 
   using base::operator();

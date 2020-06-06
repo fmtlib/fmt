@@ -2569,10 +2569,9 @@ struct format_handler : detail::error_handler {
   int on_arg_id(basic_string_view<Char> id) { return context.arg_id(id); }
 
   void on_replacement_field(int id, const Char* p) {
-    advance_to(parse_context, p);
     auto arg = get_arg(context, id);
-    context.advance_to(
-        visit_format_arg(ArgFormatter(context, &parse_context), arg));
+    context.advance_to(visit_format_arg(
+        ArgFormatter(context, &parse_context, nullptr, p), arg));
   }
 
   const Char* on_format_specs(int id, const Char* begin, const Char* end) {
@@ -2754,6 +2753,7 @@ class arg_formatter : public detail::arg_formatter_base<OutputIt, Char> {
 
   context_type& ctx_;
   basic_format_parse_context<char_type>* parse_ctx_;
+  const Char* ptr_;
 
  public:
   using iterator = typename base::iterator;
@@ -2769,15 +2769,17 @@ class arg_formatter : public detail::arg_formatter_base<OutputIt, Char> {
   explicit arg_formatter(
       context_type& ctx,
       basic_format_parse_context<char_type>* parse_ctx = nullptr,
-      format_specs* specs = nullptr)
+      format_specs* specs = nullptr, const Char* ptr = nullptr)
       : base(ctx.out(), specs, ctx.locale()),
         ctx_(ctx),
-        parse_ctx_(parse_ctx) {}
+        parse_ctx_(parse_ctx),
+        ptr_(ptr) {}
 
   using base::operator();
 
   /** Formats an argument of a user-defined type. */
   iterator operator()(typename basic_format_arg<context_type>::handle handle) {
+    if (ptr_) advance_to(*parse_ctx_, ptr_);
     handle.format(*parse_ctx_, ctx_);
     return ctx_.out();
   }
@@ -3139,8 +3141,9 @@ typename Context::iterator vformat_to(
                                                         loc);
   if (format_str.size() == 2 && detail::equal2(format_str.data(), "{}")) {
     auto arg = detail::get_arg(h.context, 0);
-    h.parse_context.advance_to(&format_str[1]);
-    return visit_format_arg(ArgFormatter(h.context, &h.parse_context), arg);
+    return visit_format_arg(
+        ArgFormatter(h.context, &h.parse_context, nullptr, &format_str[1]),
+        arg);
   }
   detail::parse_format_string<false>(format_str, h);
   return h.context.out();
