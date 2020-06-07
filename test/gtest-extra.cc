@@ -57,7 +57,7 @@ std::string OutputRedirect::restore_and_read() {
   if (read_end_.descriptor() == -1) return content;  // Already read.
   enum { BUFFER_SIZE = 4096 };
   char buffer[BUFFER_SIZE];
-  std::size_t count = 0;
+  size_t count = 0;
   do {
     count = read_end_.read(buffer, BUFFER_SIZE);
     content.append(buffer, count);
@@ -66,9 +66,9 @@ std::string OutputRedirect::restore_and_read() {
   return content;
 }
 
-std::string read(file& f, std::size_t count) {
+std::string read(file& f, size_t count) {
   std::string buffer(count, '\0');
-  std::size_t n = 0, offset = 0;
+  size_t n = 0, offset = 0;
   do {
     n = f.read(&buffer[offset], count - offset);
     // We can't read more than size_t bytes since count has type size_t.

@@ -17,7 +17,7 @@
 
 using fmt::format;
 using fmt::format_error;
-using fmt::internal::max_value;
+using fmt::detail::max_value;
 
 const unsigned BIG_NUM = INT_MAX + 1u;
 
@@ -113,14 +113,13 @@ TEST(PrintfTest, SwitchArgIndexing) {
 
 TEST(PrintfTest, InvalidArgIndex) {
   EXPECT_THROW_MSG(test_sprintf("%0$d", 42), format_error,
-                   "argument index out of range");
+                   "argument not found");
   EXPECT_THROW_MSG(test_sprintf("%2$d", 42), format_error,
-                   "argument index out of range");
+                   "argument not found");
   EXPECT_THROW_MSG(test_sprintf(format("%{}$d", INT_MAX), 42), format_error,
-                   "argument index out of range");
+                   "argument not found");
 
-  EXPECT_THROW_MSG(test_sprintf("%2$", 42), format_error,
-                   "argument index out of range");
+  EXPECT_THROW_MSG(test_sprintf("%2$", 42), format_error, "argument not found");
   EXPECT_THROW_MSG(test_sprintf(format("%{}$d", BIG_NUM), 42), format_error,
                    "number is too big");
 }
@@ -140,8 +139,11 @@ TEST(PrintfTest, ZeroFlag) {
 
   EXPECT_PRINTF("+00042", "%00+6d", 42);
 
+  EXPECT_PRINTF("   42", "%05.d", 42);
+  EXPECT_PRINTF(" 0042", "%05.4d", 42);
+
   // '0' flag is ignored for non-numeric types.
-  EXPECT_PRINTF("0000x", "%05c", 'x');
+  EXPECT_PRINTF("    x", "%05c", 'x');
 }
 
 TEST(PrintfTest, PlusFlag) {
@@ -152,11 +154,38 @@ TEST(PrintfTest, PlusFlag) {
 
   // '+' flag is ignored for non-numeric types.
   EXPECT_PRINTF("x", "%+c", 'x');
+
+  // '+' flag wins over space flag
+  EXPECT_PRINTF("+42", "%+ d", 42);
+  EXPECT_PRINTF("-42", "%+ d", -42);
+  EXPECT_PRINTF("+42", "% +d", 42);
+  EXPECT_PRINTF("-42", "% +d", -42);
+  EXPECT_PRINTF("+0042", "% +05d", 42);
+  EXPECT_PRINTF("+0042", "%0+ 5d", 42);
+
+  // '+' flag and space flag are both ignored for non-numeric types.
+  EXPECT_PRINTF("x", "%+ c", 'x');
+  EXPECT_PRINTF("x", "% +c", 'x');
 }
 
 TEST(PrintfTest, MinusFlag) {
   EXPECT_PRINTF("abc  ", "%-5s", "abc");
   EXPECT_PRINTF("abc  ", "%0--5s", "abc");
+
+  EXPECT_PRINTF("7    ", "%-5d", 7);
+  EXPECT_PRINTF("97   ", "%-5hhi", 'a');
+  EXPECT_PRINTF("a    ", "%-5c", 'a');
+
+  // '0' flag is ignored if '-' flag is given
+  EXPECT_PRINTF("7    ", "%-05d", 7);
+  EXPECT_PRINTF("7    ", "%0-5d", 7);
+  EXPECT_PRINTF("a    ", "%-05c", 'a');
+  EXPECT_PRINTF("a    ", "%0-5c", 'a');
+  EXPECT_PRINTF("97   ", "%-05hhi", 'a');
+  EXPECT_PRINTF("97   ", "%0-5hhi", 'a');
+
+  // '-' and space flag don't interfere
+  EXPECT_PRINTF(" 42", "%- d", 42);
 }
 
 TEST(PrintfTest, SpaceFlag) {
@@ -222,8 +251,7 @@ TEST(PrintfTest, DynamicWidth) {
   EXPECT_EQ("42   ", test_sprintf("%*d", -5, 42));
   EXPECT_THROW_MSG(test_sprintf("%*d", 5.0, 42), format_error,
                    "width is not integer");
-  EXPECT_THROW_MSG(test_sprintf("%*d"), format_error,
-                   "argument index out of range");
+  EXPECT_THROW_MSG(test_sprintf("%*d"), format_error, "argument not found");
   EXPECT_THROW_MSG(test_sprintf("%*d", BIG_NUM, 42), format_error,
                    "number is too big");
 }
@@ -259,6 +287,11 @@ TEST(PrintfTest, FloatPrecision) {
   EXPECT_PRINTF(buffer, "%.3a", 1234.5678);
 }
 
+TEST(PrintfTest, StringPrecision) {
+  char test[] = {'H', 'e', 'l', 'l', 'o'};
+  EXPECT_EQ(fmt::sprintf("%.4s", test), "Hell");
+}
+
 TEST(PrintfTest, IgnorePrecisionForNonNumericArg) {
   EXPECT_PRINTF("abc", "%.5s", "abc");
 }
@@ -268,8 +301,7 @@ TEST(PrintfTest, DynamicPrecision) {
   EXPECT_EQ("42", test_sprintf("%.*d", -5, 42));
   EXPECT_THROW_MSG(test_sprintf("%.*d", 5.0, 42), format_error,
                    "precision is not integer");
-  EXPECT_THROW_MSG(test_sprintf("%.*d"), format_error,
-                   "argument index out of range");
+  EXPECT_THROW_MSG(test_sprintf("%.*d"), format_error, "argument not found");
   EXPECT_THROW_MSG(test_sprintf("%.*d", BIG_NUM, 42), format_error,
                    "number is too big");
   if (sizeof(long long) != sizeof(int)) {
@@ -298,7 +330,7 @@ void TestLength(const char* length_spec, U value) {
   unsigned long long unsigned_value = 0;
   // Apply integer promotion to the argument.
   unsigned long long max = max_value<U>();
-  using fmt::internal::const_check;
+  using fmt::detail::const_check;
   if (const_check(max <= static_cast<unsigned>(max_value<int>()))) {
     signed_value = static_cast<int>(value);
     unsigned_value = static_cast<unsigned long long>(value);
@@ -367,7 +399,7 @@ TEST(PrintfTest, Length) {
   TestLength<long long>("ll");
   TestLength<unsigned long long>("ll");
   TestLength<intmax_t>("j");
-  TestLength<std::size_t>("z");
+  TestLength<size_t>("z");
   TestLength<std::ptrdiff_t>("t");
   long double max = max_value<long double>();
   EXPECT_PRINTF(fmt::format("{:.6}", max), "%g", max);
@@ -447,6 +479,12 @@ TEST(PrintfTest, String) {
   EXPECT_PRINTF(L"    (null)", L"%10s", null_wstr);
 }
 
+TEST(PrintfTest, UCharString) {
+  unsigned char str[] = "test";
+  unsigned char* pstr = str;
+  EXPECT_EQ("test", fmt::sprintf("%s", pstr));
+}
+
 TEST(PrintfTest, Pointer) {
   int n;
   void* p = &n;
@@ -502,9 +540,7 @@ TEST(PrintfTest, PrintfError) {
 TEST(PrintfTest, WideString) { EXPECT_EQ(L"abc", fmt::sprintf(L"%s", L"abc")); }
 
 TEST(PrintfTest, PrintfCustom) {
-  // The test is disabled for now because it requires decoupling
-  // fallback_formatter::format from format_context.
-  //EXPECT_EQ("abc", test_sprintf("%s", TestString("abc")));
+  EXPECT_EQ("abc", test_sprintf("%s", TestString("abc")));
 }
 
 TEST(PrintfTest, OStream) {
@@ -571,51 +607,22 @@ TEST(PrintfTest, VSPrintfMakeWArgsExample) {
 #endif
 }
 
-typedef fmt::printf_arg_formatter<fmt::buffer_range<char>> formatter_t;
-typedef fmt::basic_printf_context<formatter_t::iterator, char> context_t;
+TEST(PrintfTest, PrintfDetermineOutputSize) {
+  using backit = std::back_insert_iterator<std::vector<char>>;
+  using truncated_printf_context =
+      fmt::basic_printf_context<fmt::detail::truncating_iterator<backit>, char>;
 
-// A custom printf argument formatter that doesn't print `-` for floating-point
-// values rounded to 0.
-class custom_printf_arg_formatter : public formatter_t {
- public:
-  using formatter_t::iterator;
+  auto v = std::vector<char>{};
+  auto it = std::back_inserter(v);
 
-  custom_printf_arg_formatter(formatter_t::iterator iter,
-                              formatter_t::format_specs& specs, context_t& ctx)
-      : formatter_t(iter, specs, ctx) {}
+  const auto format_string = "%s";
+  const auto format_arg = "Hello";
+  const auto expected_size = fmt::sprintf(format_string, format_arg).size();
 
-  using formatter_t::operator();
-
-#if FMT_MSC_VER > 0 && FMT_MSC_VER <= 1804
-  template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
-  iterator operator()(T value){
-#else
-  iterator operator()(double value) {
-#endif
-      // Comparing a float to 0.0 is safe.
-      if (round(value * pow(10, specs()->precision)) == 0.0) value = 0;
-  return formatter_t::operator()(value);
-}
-}
-;
-
-typedef fmt::basic_format_args<context_t> format_args_t;
-
-std::string custom_vformat(fmt::string_view format_str, format_args_t args) {
-  fmt::memory_buffer buffer;
-  fmt::vprintf<custom_printf_arg_formatter>(buffer, format_str, args);
-  return std::string(buffer.data(), buffer.size());
-}
-
-template <typename... Args>
-std::string custom_format(const char* format_str, const Args&... args) {
-  auto va = fmt::make_printf_args(args...);
-  return custom_vformat(format_str, {va});
-}
-
-TEST(PrintfTest, CustomFormat) {
-  EXPECT_EQ("0.00", custom_format("%.2f", -.00001));
-  EXPECT_EQ("0.00", custom_format("%.2f", .00001));
-  EXPECT_EQ("1.00", custom_format("%.2f", 1.00001));
-  EXPECT_EQ("-1.00", custom_format("%.2f", -1.00001));
+  EXPECT_EQ((truncated_printf_context(
+                 fmt::detail::truncating_iterator<backit>(it, 0), format_string,
+                 fmt::make_format_args<truncated_printf_context>(format_arg))
+                 .format()
+                 .count()),
+            expected_size);
 }

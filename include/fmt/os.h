@@ -15,10 +15,9 @@
 
 #include <cerrno>
 #include <clocale>  // for locale_t
+#include <cstddef>
 #include <cstdio>
 #include <cstdlib>  // for strtod_l
-
-#include <cstddef>
 
 #if defined __APPLE__ || defined(__FreeBSD__)
 #  include <xlocale.h>  // for LC_NUMERIC_MASK on OS X
@@ -51,7 +50,7 @@
 #ifdef FMT_SYSTEM
 #  define FMT_POSIX_CALL(call) FMT_SYSTEM(call)
 #else
-#  define FMT_SYSTEM(call) call
+#  define FMT_SYSTEM(call) ::call
 #  ifdef _WIN32
 // Fix warnings about deprecated symbols.
 #    define FMT_POSIX_CALL(call) ::_##call
@@ -134,7 +133,7 @@ class error_code {
 };
 
 #ifdef _WIN32
-namespace internal {
+namespace detail {
 // A converter from UTF-16 to UTF-8.
 // It is only provided for Windows since other systems support UTF-8 natively.
 class utf16_to_utf8 {
@@ -157,7 +156,7 @@ class utf16_to_utf8 {
 
 FMT_API void format_windows_error(buffer<char>& out, int error_code,
                                   string_view message) FMT_NOEXCEPT;
-}  // namespace internal
+}  // namespace detail
 
 /** A Windows error. */
 class windows_error : public system_error {
@@ -314,10 +313,10 @@ class file {
   FMT_API long long size() const;
 
   // Attempts to read count bytes from the file into the specified buffer.
-  FMT_API std::size_t read(void* buffer, std::size_t count);
+  FMT_API size_t read(void* buffer, size_t count);
 
   // Attempts to write count bytes from the specified buffer to the file.
-  FMT_API std::size_t write(const void* buffer, std::size_t count);
+  FMT_API size_t write(const void* buffer, size_t count);
 
   // Duplicates a file descriptor with the dup function and returns
   // the duplicate as a file object.
@@ -346,21 +345,15 @@ long getpagesize();
 
 #ifdef FMT_LOCALE
 // A "C" numeric locale.
-class Locale {
+class locale {
  private:
 #  ifdef _WIN32
   using locale_t = _locale_t;
 
-  enum { LC_NUMERIC_MASK = LC_NUMERIC };
+  static void freelocale(locale_t loc) { _free_locale(loc); }
 
-  static locale_t newlocale(int category_mask, const char* locale, locale_t) {
-    return _create_locale(category_mask, locale);
-  }
-
-  static void freelocale(locale_t locale) { _free_locale(locale); }
-
-  static double strtod_l(const char* nptr, char** endptr, _locale_t locale) {
-    return _strtod_l(nptr, endptr, locale);
+  static double strtod_l(const char* nptr, char** endptr, _locale_t loc) {
+    return _strtod_l(nptr, endptr, loc);
   }
 #  endif
 
@@ -368,13 +361,18 @@ class Locale {
 
  public:
   using type = locale_t;
-  Locale(const Locale&) = delete;
-  void operator=(const Locale&) = delete;
+  locale(const locale&) = delete;
+  void operator=(const locale&) = delete;
 
-  Locale() : locale_(newlocale(LC_NUMERIC_MASK, "C", nullptr)) {
+  locale() {
+#  ifndef _WIN32
+    locale_ = FMT_SYSTEM(newlocale(LC_NUMERIC_MASK, "C", nullptr));
+#  else
+    locale_ = _create_locale(LC_NUMERIC, "C");
+#  endif
     if (!locale_) FMT_THROW(system_error(errno, "cannot create locale"));
   }
-  ~Locale() { freelocale(locale_); }
+  ~locale() { freelocale(locale_); }
 
   type get() const { return locale_; }
 
@@ -387,6 +385,7 @@ class Locale {
     return result;
   }
 };
+using Locale FMT_DEPRECATED_ALIAS = locale;
 #endif  // FMT_LOCALE
 FMT_END_NAMESPACE
 

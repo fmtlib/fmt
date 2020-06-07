@@ -1,4 +1,5 @@
 .vscode/
+.vs/
 
 *.iml
 .idea/
@@ -14,6 +15,7 @@ bin/
 /CMakeScripts
 /doc/doxyxml
 /doc/html
+/doc/node_modules
 virtualenv
 /Testing
 /install_manifest.txt

@@ -79,7 +79,7 @@ TEST(RangesTest, JoinInitializerList) {
 struct my_struct {
   int32_t i;
   std::string str;  // can throw
-  template <std::size_t N> decltype(auto) get() const noexcept {
+  template <size_t N> decltype(auto) get() const noexcept {
     if constexpr (N == 0)
       return i;
     else if constexpr (N == 1)
@@ -87,16 +87,15 @@ struct my_struct {
   }
 };
 
-template <std::size_t N> decltype(auto) get(const my_struct& s) noexcept {
+template <size_t N> decltype(auto) get(const my_struct& s) noexcept {
   return s.get<N>();
 }
 
 namespace std {
 
-template <>
-struct tuple_size<my_struct> : std::integral_constant<std::size_t, 2> {};
+template <> struct tuple_size<my_struct> : std::integral_constant<size_t, 2> {};
 
-template <std::size_t N> struct tuple_element<N, my_struct> {
+template <size_t N> struct tuple_element<N, my_struct> {
   using type = decltype(std::declval<my_struct>().get<N>());
 };
 
@@ -140,3 +139,17 @@ TEST(RangesTest, FormatStringLike) {
   EXPECT_EQ("foo", fmt::format("{}", string_like()));
 }
 #endif  // FMT_USE_STRING_VIEW
+
+struct zstring_sentinel {};
+bool operator==(const char* p, zstring_sentinel) { return *p == '\0'; }
+bool operator!=(const char* p, zstring_sentinel) { return *p != '\0'; }
+struct zstring {
+  const char* p;
+  const char* begin() const { return p; }
+  zstring_sentinel end() const { return {}; }
+};
+TEST(RangesTest, JoinSentinel) {
+  zstring hello{"hello"};
+  EXPECT_EQ("{'h', 'e', 'l', 'l', 'o'}", fmt::format("{}", hello));
+  EXPECT_EQ("h_e_l_l_o", fmt::format("{}", fmt::join(hello, "_")));
+}

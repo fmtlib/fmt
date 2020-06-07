@@ -5,11 +5,12 @@
 //
 // For the license information refer to format.h.
 
+#include "fmt/os.h"
+
 #include <cstdlib>  // std::exit
 #include <cstring>
 #include <memory>
 
-#include "fmt/os.h"
 #include "gtest-extra.h"
 #include "util.h"
 
@@ -26,14 +27,14 @@ using fmt::error_code;
 
 TEST(UtilTest, UTF16ToUTF8) {
   std::string s = "ёжик";
-  fmt::internal::utf16_to_utf8 u(L"\x0451\x0436\x0438\x043A");
+  fmt::detail::utf16_to_utf8 u(L"\x0451\x0436\x0438\x043A");
   EXPECT_EQ(s, u.str());
   EXPECT_EQ(s.size(), u.size());
 }
 
 TEST(UtilTest, UTF16ToUTF8EmptyString) {
   std::string s = "";
-  fmt::internal::utf16_to_utf8 u(L"");
+  fmt::detail::utf16_to_utf8 u(L"");
   EXPECT_EQ(s, u.str());
   EXPECT_EQ(s.size(), u.size());
 }
@@ -43,7 +44,7 @@ void check_utf_conversion_error(
     const char* message,
     fmt::basic_string_view<Char> str = fmt::basic_string_view<Char>(0, 1)) {
   fmt::memory_buffer out;
-  fmt::internal::format_windows_error(out, ERROR_INVALID_PARAMETER, message);
+  fmt::detail::format_windows_error(out, ERROR_INVALID_PARAMETER, message);
   fmt::system_error error(0, "");
   try {
     (Converter)(str);
@@ -55,12 +56,12 @@ void check_utf_conversion_error(
 }
 
 TEST(UtilTest, UTF16ToUTF8Error) {
-  check_utf_conversion_error<fmt::internal::utf16_to_utf8, wchar_t>(
+  check_utf_conversion_error<fmt::detail::utf16_to_utf8, wchar_t>(
       "cannot convert string from UTF-16 to UTF-8");
 }
 
 TEST(UtilTest, UTF16ToUTF8Convert) {
-  fmt::internal::utf16_to_utf8 u;
+  fmt::detail::utf16_to_utf8 u;
   EXPECT_EQ(ERROR_INVALID_PARAMETER, u.convert(fmt::wstring_view(0, 1)));
   EXPECT_EQ(ERROR_INVALID_PARAMETER,
             u.convert(fmt::wstring_view(L"foo", INT_MAX + 1u)));
@@ -73,17 +74,16 @@ TEST(UtilTest, FormatWindowsError) {
                  0, ERROR_FILE_EXISTS,
                  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                  reinterpret_cast<LPWSTR>(&message), 0, 0);
-  fmt::internal::utf16_to_utf8 utf8_message(message);
+  fmt::detail::utf16_to_utf8 utf8_message(message);
   LocalFree(message);
   fmt::memory_buffer actual_message;
-  fmt::internal::format_windows_error(actual_message, ERROR_FILE_EXISTS,
-                                      "test");
+  fmt::detail::format_windows_error(actual_message, ERROR_FILE_EXISTS, "test");
   EXPECT_EQ(fmt::format("test: {}", utf8_message.str()),
             fmt::to_string(actual_message));
   actual_message.resize(0);
-  auto max_size = fmt::internal::max_value<size_t>();
-  fmt::internal::format_windows_error(actual_message, ERROR_FILE_EXISTS,
-                                      fmt::string_view(0, max_size));
+  auto max_size = fmt::detail::max_value<size_t>();
+  fmt::detail::format_windows_error(actual_message, ERROR_FILE_EXISTS,
+                                    fmt::string_view(0, max_size));
   EXPECT_EQ(fmt::format("error {}", ERROR_FILE_EXISTS),
             fmt::to_string(actual_message));
 }
@@ -103,11 +103,11 @@ TEST(UtilTest, FormatLongWindowsError) {
                      reinterpret_cast<LPWSTR>(&message), 0, 0) == 0) {
     return;
   }
-  fmt::internal::utf16_to_utf8 utf8_message(message);
+  fmt::detail::utf16_to_utf8 utf8_message(message);
   LocalFree(message);
   fmt::memory_buffer actual_message;
-  fmt::internal::format_windows_error(actual_message, provisioning_not_allowed,
-                                      "test");
+  fmt::detail::format_windows_error(actual_message, provisioning_not_allowed,
+                                    "test");
   EXPECT_EQ(fmt::format("test: {}", utf8_message.str()),
             fmt::to_string(actual_message));
 }
@@ -120,14 +120,14 @@ TEST(UtilTest, WindowsError) {
     error = e;
   }
   fmt::memory_buffer message;
-  fmt::internal::format_windows_error(message, ERROR_FILE_EXISTS, "test error");
+  fmt::detail::format_windows_error(message, ERROR_FILE_EXISTS, "test error");
   EXPECT_EQ(to_string(message), error.what());
   EXPECT_EQ(ERROR_FILE_EXISTS, error.error_code());
 }
 
 TEST(UtilTest, ReportWindowsError) {
   fmt::memory_buffer out;
-  fmt::internal::format_windows_error(out, ERROR_FILE_EXISTS, "test error");
+  fmt::detail::format_windows_error(out, ERROR_FILE_EXISTS, "test error");
   out.push_back('\n');
   EXPECT_WRITE(stderr,
                fmt::report_windows_error(ERROR_FILE_EXISTS, "test error"),
@@ -164,10 +164,10 @@ static file open_file() {
 
 // Attempts to write a string to a file.
 static void write(file& f, fmt::string_view s) {
-  std::size_t num_chars_left = s.size();
+  size_t num_chars_left = s.size();
   const char* ptr = s.data();
   do {
-    std::size_t count = f.write(ptr, num_chars_left);
+    size_t count = f.write(ptr, num_chars_left);
     ptr += count;
     // We can't write more than size_t bytes since num_chars_left
     // has type size_t.
@@ -238,16 +238,17 @@ TEST(BufferedFileTest, CloseFileInDtor) {
 
 TEST(BufferedFileTest, CloseErrorInDtor) {
   std::unique_ptr<buffered_file> f(new buffered_file(open_buffered_file()));
-  EXPECT_WRITE(stderr,
-               {
-                 // The close function must be called inside EXPECT_WRITE,
-                 // otherwise the system may recycle closed file descriptor when
-                 // redirecting the output in EXPECT_STDERR and the second close
-                 // will break output redirection.
-                 FMT_POSIX(close(f->fileno()));
-                 SUPPRESS_ASSERT(f.reset(nullptr));
-               },
-               format_system_error(EBADF, "cannot close file") + "\n");
+  EXPECT_WRITE(
+      stderr,
+      {
+        // The close function must be called inside EXPECT_WRITE,
+        // otherwise the system may recycle closed file descriptor when
+        // redirecting the output in EXPECT_STDERR and the second close
+        // will break output redirection.
+        FMT_POSIX(close(f->fileno()));
+        SUPPRESS_ASSERT(f.reset(nullptr));
+      },
+      format_system_error(EBADF, "cannot close file") + "\n");
 }
 
 TEST(BufferedFileTest, Close) {
@@ -369,16 +370,17 @@ TEST(FileTest, CloseFileInDtor) {
 
 TEST(FileTest, CloseErrorInDtor) {
   std::unique_ptr<file> f(new file(open_file()));
-  EXPECT_WRITE(stderr,
-               {
-                 // The close function must be called inside EXPECT_WRITE,
-                 // otherwise the system may recycle closed file descriptor when
-                 // redirecting the output in EXPECT_STDERR and the second close
-                 // will break output redirection.
-                 FMT_POSIX(close(f->descriptor()));
-                 SUPPRESS_ASSERT(f.reset(nullptr));
-               },
-               format_system_error(EBADF, "cannot close file") + "\n");
+  EXPECT_WRITE(
+      stderr,
+      {
+        // The close function must be called inside EXPECT_WRITE,
+        // otherwise the system may recycle closed file descriptor when
+        // redirecting the output in EXPECT_STDERR and the second close
+        // will break output redirection.
+        FMT_POSIX(close(f->descriptor()));
+        SUPPRESS_ASSERT(f.reset(nullptr));
+      },
+      format_system_error(EBADF, "cannot close file") + "\n");
 }
 
 TEST(FileTest, Close) {
@@ -489,9 +491,9 @@ TEST(FileTest, Fdopen) {
 
 #  ifdef FMT_LOCALE
 TEST(LocaleTest, Strtod) {
-  fmt::Locale locale;
+  fmt::locale loc;
   const char *start = "4.2", *ptr = start;
-  EXPECT_EQ(4.2, locale.strtod(ptr));
+  EXPECT_EQ(4.2, loc.strtod(ptr));
   EXPECT_EQ(start + 3, ptr);
 }
 #  endif

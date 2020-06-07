@@ -21,9 +21,9 @@
 
 #undef max
 
-using fmt::internal::bigint;
-using fmt::internal::fp;
-using fmt::internal::max_value;
+using fmt::detail::bigint;
+using fmt::detail::fp;
+using fmt::detail::max_value;
 
 static_assert(!std::is_copy_constructible<bigint>::value, "");
 static_assert(!std::is_copy_assignable<bigint>::value, "");
@@ -102,7 +102,7 @@ TEST(BigIntTest, Multiply) {
 }
 
 TEST(BigIntTest, Accumulator) {
-  fmt::internal::accumulator acc;
+  fmt::detail::accumulator acc;
   EXPECT_EQ(acc.lower, 0);
   EXPECT_EQ(acc.upper, 0);
   acc.upper = 12;
@@ -110,7 +110,7 @@ TEST(BigIntTest, Accumulator) {
   EXPECT_EQ(static_cast<uint32_t>(acc), 34);
   acc += 56;
   EXPECT_EQ(acc.lower, 90);
-  acc += fmt::internal::max_value<uint64_t>();
+  acc += fmt::detail::max_value<uint64_t>();
   EXPECT_EQ(acc.upper, 13);
   EXPECT_EQ(acc.lower, 89);
   acc >>= 32;
@@ -262,7 +262,7 @@ TEST(FPTest, GetCachedPower) {
   typedef std::numeric_limits<double> limits;
   for (auto exp = limits::min_exponent; exp <= limits::max_exponent; ++exp) {
     int dec_exp = 0;
-    auto fp = fmt::internal::get_cached_power(exp, dec_exp);
+    auto fp = fmt::detail::get_cached_power(exp, dec_exp);
     EXPECT_LE(exp, fp.e);
     int dec_exp_step = 8;
     EXPECT_LE(fp.e, exp + dec_exp_step * log2(10));
@@ -271,8 +271,8 @@ TEST(FPTest, GetCachedPower) {
 }
 
 TEST(FPTest, GetRoundDirection) {
-  using fmt::internal::get_round_direction;
-  using fmt::internal::round_direction;
+  using fmt::detail::get_round_direction;
+  using fmt::detail::round_direction;
   EXPECT_EQ(round_direction::down, get_round_direction(100, 50, 0));
   EXPECT_EQ(round_direction::up, get_round_direction(100, 51, 0));
   EXPECT_EQ(round_direction::down, get_round_direction(100, 40, 10));
@@ -295,9 +295,9 @@ TEST(FPTest, GetRoundDirection) {
 }
 
 TEST(FPTest, FixedHandler) {
-  struct handler : fmt::internal::fixed_handler {
+  struct handler : fmt::detail::fixed_handler {
     char buffer[10];
-    handler(int prec = 0) : fmt::internal::fixed_handler() {
+    handler(int prec = 0) : fmt::detail::fixed_handler() {
       buf = buffer;
       precision = prec;
     }
@@ -306,7 +306,7 @@ TEST(FPTest, FixedHandler) {
   handler().on_digit('0', 100, 99, 0, exp, false);
   EXPECT_THROW(handler().on_digit('0', 100, 100, 0, exp, false),
                assertion_failure);
-  namespace digits = fmt::internal::digits;
+  namespace digits = fmt::detail::digits;
   EXPECT_EQ(handler(1).on_digit('0', 100, 10, 10, exp, false), digits::done);
   // Check that divisor - error doesn't overflow.
   EXPECT_EQ(handler(1).on_digit('0', 100, 10, 101, exp, false), digits::error);
@@ -318,7 +318,7 @@ TEST(FPTest, FixedHandler) {
 
 TEST(FPTest, GrisuFormatCompilesWithNonIEEEDouble) {
   fmt::memory_buffer buf;
-  format_float(0.42, -1, fmt::internal::float_specs(), buf);
+  format_float(0.42, -1, fmt::detail::float_specs(), buf);
 }
 
 template <typename T> struct value_extractor {
@@ -330,11 +330,11 @@ template <typename T> struct value_extractor {
 
 #if FMT_USE_INT128
   // Apple Clang does not define typeid for __int128_t and __uint128_t.
-  FMT_NORETURN T operator()(fmt::internal::int128_t) {
+  FMT_NORETURN T operator()(fmt::detail::int128_t) {
     throw std::runtime_error("invalid type __int128_t");
   }
 
-  FMT_NORETURN T operator()(fmt::internal::uint128_t) {
+  FMT_NORETURN T operator()(fmt::detail::uint128_t) {
     throw std::runtime_error("invalid type __uint128_t");
   }
 #endif
@@ -342,9 +342,9 @@ template <typename T> struct value_extractor {
 
 TEST(FormatTest, ArgConverter) {
   long long value = max_value<long long>();
-  auto arg = fmt::internal::make_arg<fmt::format_context>(value);
+  auto arg = fmt::detail::make_arg<fmt::format_context>(value);
   fmt::visit_format_arg(
-      fmt::internal::arg_converter<long long, fmt::format_context>(arg, 'd'),
+      fmt::detail::arg_converter<long long, fmt::format_context>(arg, 'd'),
       arg);
   EXPECT_EQ(value, fmt::visit_format_arg(value_extractor<long long>(), arg));
 }
@@ -360,9 +360,9 @@ TEST(FormatTest, FormatNegativeNaN) {
 TEST(FormatTest, StrError) {
   char* message = nullptr;
   char buffer[BUFFER_SIZE];
-  EXPECT_ASSERT(fmt::internal::safe_strerror(EDOM, message = nullptr, 0),
+  EXPECT_ASSERT(fmt::detail::safe_strerror(EDOM, message = nullptr, 0),
                 "invalid buffer");
-  EXPECT_ASSERT(fmt::internal::safe_strerror(EDOM, message = buffer, 0),
+  EXPECT_ASSERT(fmt::detail::safe_strerror(EDOM, message = buffer, 0),
                 "invalid buffer");
   buffer[0] = 'x';
 #if defined(_GNU_SOURCE) && !defined(__COVERITY__)
@@ -374,18 +374,18 @@ TEST(FormatTest, StrError) {
 #endif
 
   int result =
-      fmt::internal::safe_strerror(error_code, message = buffer, BUFFER_SIZE);
+      fmt::detail::safe_strerror(error_code, message = buffer, BUFFER_SIZE);
   EXPECT_EQ(result, 0);
-  std::size_t message_size = std::strlen(message);
+  size_t message_size = std::strlen(message);
   EXPECT_GE(BUFFER_SIZE - 1u, message_size);
   EXPECT_EQ(get_system_error(error_code), message);
 
   // safe_strerror never uses buffer on MinGW.
 #if !defined(__MINGW32__) && !defined(__sun)
   result =
-      fmt::internal::safe_strerror(error_code, message = buffer, message_size);
+      fmt::detail::safe_strerror(error_code, message = buffer, message_size);
   EXPECT_EQ(ERANGE, result);
-  result = fmt::internal::safe_strerror(error_code, message = buffer, 1);
+  result = fmt::detail::safe_strerror(error_code, message = buffer, 1);
   EXPECT_EQ(buffer, message);  // Message should point to buffer.
   EXPECT_EQ(ERANGE, result);
   EXPECT_STREQ("", message);
@@ -397,51 +397,48 @@ TEST(FormatTest, FormatErrorCode) {
   {
     fmt::memory_buffer buffer;
     format_to(buffer, "garbage");
-    fmt::internal::format_error_code(buffer, 42, "test");
+    fmt::detail::format_error_code(buffer, 42, "test");
     EXPECT_EQ("test: " + msg, to_string(buffer));
   }
   {
     fmt::memory_buffer buffer;
     std::string prefix(fmt::inline_buffer_size - msg.size() - sep.size() + 1,
                        'x');
-    fmt::internal::format_error_code(buffer, 42, prefix);
+    fmt::detail::format_error_code(buffer, 42, prefix);
     EXPECT_EQ(msg, to_string(buffer));
   }
   int codes[] = {42, -1};
-  for (std::size_t i = 0, n = sizeof(codes) / sizeof(*codes); i < n; ++i) {
+  for (size_t i = 0, n = sizeof(codes) / sizeof(*codes); i < n; ++i) {
     // Test maximum buffer size.
     msg = fmt::format("error {}", codes[i]);
     fmt::memory_buffer buffer;
     std::string prefix(fmt::inline_buffer_size - msg.size() - sep.size(), 'x');
-    fmt::internal::format_error_code(buffer, codes[i], prefix);
+    fmt::detail::format_error_code(buffer, codes[i], prefix);
     EXPECT_EQ(prefix + sep + msg, to_string(buffer));
-    std::size_t size = fmt::inline_buffer_size;
+    size_t size = fmt::inline_buffer_size;
     EXPECT_EQ(size, buffer.size());
     buffer.resize(0);
     // Test with a message that doesn't fit into the buffer.
     prefix += 'x';
-    fmt::internal::format_error_code(buffer, codes[i], prefix);
+    fmt::detail::format_error_code(buffer, codes[i], prefix);
     EXPECT_EQ(msg, to_string(buffer));
   }
 }
 
 TEST(FormatTest, CountCodePoints) {
-#ifndef __cpp_char8_t
-  using fmt::char8_t;
-#endif
-  EXPECT_EQ(
-      4, fmt::internal::count_code_points(
-             fmt::basic_string_view<fmt::internal::char8_type>(
-                 reinterpret_cast<const fmt::internal::char8_type*>("ёжик"))));
+  EXPECT_EQ(4,
+            fmt::detail::count_code_points(
+                fmt::basic_string_view<fmt::detail::char8_type>(
+                    reinterpret_cast<const fmt::detail::char8_type*>("ёжик"))));
 }
 
-// Tests fmt::internal::count_digits for integer type Int.
+// Tests fmt::detail::count_digits for integer type Int.
 template <typename Int> void test_count_digits() {
-  for (Int i = 0; i < 10; ++i) EXPECT_EQ(1u, fmt::internal::count_digits(i));
+  for (Int i = 0; i < 10; ++i) EXPECT_EQ(1u, fmt::detail::count_digits(i));
   for (Int i = 1, n = 1, end = max_value<Int>() / 10; n <= end; ++i) {
     n *= 10;
-    EXPECT_EQ(i, fmt::internal::count_digits(n - 1));
-    EXPECT_EQ(i + 1, fmt::internal::count_digits(n));
+    EXPECT_EQ(i, fmt::detail::count_digits(n - 1));
+    EXPECT_EQ(i + 1, fmt::detail::count_digits(n));
   }
 }
 
@@ -450,11 +447,10 @@ TEST(UtilTest, CountDigits) {
   test_count_digits<uint64_t>();
 }
 
-TEST(UtilTest, WriteUIntPtr) {
-  fmt::memory_buffer buf;
-  fmt::internal::writer writer(buf);
-  writer.write_pointer(
-      fmt::internal::fallback_uintptr(reinterpret_cast<void*>(0xface)),
-      nullptr);
-  EXPECT_EQ("0xface", to_string(buf));
+TEST(UtilTest, WriteFallbackUIntPtr) {
+  std::string s;
+  fmt::detail::write_ptr<char>(
+      std::back_inserter(s),
+      fmt::detail::fallback_uintptr(reinterpret_cast<void*>(0xface)), nullptr);
+  EXPECT_EQ(s, "0xface");
 }

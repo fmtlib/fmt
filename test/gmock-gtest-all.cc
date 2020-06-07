@@ -344,6 +344,7 @@ class GTEST_API_ SingleFailureChecker {
 #  include <sys/mman.h>  // NOLINT
 #  include <sys/time.h>  // NOLINT
 #  include <unistd.h>    // NOLINT
+
 #  include <string>
 
 #elif GTEST_OS_SYMBIAN
@@ -7728,6 +7729,7 @@ InternalRunDeathTestFlag* ParseInternalRunDeathTestFlag() {
 #  include <sys/syslimits.h>
 #else
 #  include <limits.h>
+
 #  include <climits>  // Some Linux distributions define PATH_MAX here.
 #endif                // GTEST_OS_WINDOWS_MOBILE
 
@@ -8899,6 +8901,7 @@ const char* StringFromGTestEnv(const char* flag, const char* default_value) {
 
 #include <ctype.h>
 #include <stdio.h>
+
 #include <ostream>  // NOLINT
 #include <string>
 
@@ -9494,6 +9497,7 @@ const char* TypedTestCasePState::VerifyRegisteredTestNames(
 // This file implements cardinalities.
 
 #include <limits.h>
+
 #include <ostream>  // NOLINT
 #include <sstream>
 #include <string>
@@ -9646,6 +9650,7 @@ GTEST_API_ Cardinality Exactly(int n) { return Between(n, n); }
 // USE THEM IN USER CODE.
 
 #include <ctype.h>
+
 #include <ostream>  // NOLINT
 #include <string>
 
@@ -9808,6 +9813,7 @@ GTEST_API_ void Log(LogSeverity severity, const string& message,
 // utilities for defining matchers.
 
 #include <string.h>
+
 #include <sstream>
 #include <string>
 
@@ -10291,6 +10297,7 @@ bool UnorderedElementsAreMatcherImplBase::
 // EXPECT_CALL).
 
 #include <stdlib.h>
+
 #include <iostream>  // NOLINT
 #include <map>
 #include <set>

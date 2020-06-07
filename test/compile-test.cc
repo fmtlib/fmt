@@ -6,6 +6,7 @@
 // For the license information refer to format.h.
 
 #include <stdint.h>
+
 #include <cctype>
 #include <cfloat>
 #include <climits>
@@ -39,8 +40,8 @@ using testing::StrictMock;
 #if FMT_USE_CONSTEXPR
 template <unsigned EXPECTED_PARTS_COUNT, typename Format>
 void check_prepared_parts_type(Format format) {
-  typedef fmt::internal::compiled_format_base<decltype(format)> provider;
-  typedef fmt::internal::format_part<char>
+  typedef fmt::detail::compiled_format_base<decltype(format)> provider;
+  typedef fmt::detail::format_part<char>
       expected_parts_type[EXPECTED_PARTS_COUNT];
   static_assert(std::is_same<typename provider::parts_container,
                              expected_parts_type>::value,
@@ -84,11 +85,11 @@ TEST(CompileTest, PassCompileString) {
 TEST(CompileTest, FormatToArrayOfChars) {
   char buffer[32] = {0};
   const auto prepared = fmt::compile<int>("4{}");
-  fmt::format_to(fmt::internal::make_checked(buffer, 32), prepared, 2);
+  fmt::format_to(fmt::detail::make_checked(buffer, 32), prepared, 2);
   EXPECT_EQ(std::string("42"), buffer);
   wchar_t wbuffer[32] = {0};
   const auto wprepared = fmt::compile<int>(L"4{}");
-  fmt::format_to(fmt::internal::make_checked(wbuffer, 32), wprepared, 2);
+  fmt::format_to(fmt::detail::make_checked(wbuffer, 32), wprepared, 2);
   EXPECT_EQ(std::wstring(L"42"), wbuffer);
 }
 

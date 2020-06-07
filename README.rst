@@ -264,8 +264,8 @@ or the bloat test::
 Projects using this library
 ---------------------------
 
-* `0 A.D. <https://play0ad.com/>`_: A free, open-source, cross-platform real-time
-  strategy game
+* `0 A.D. <https://play0ad.com/>`_: A free, open-source, cross-platform
+  real-time strategy game
 
 * `AMPL/MP <https://github.com/ampl/mp>`_:
   An open-source library for mathematical programming
@@ -282,6 +282,16 @@ Projects using this library
 * `CUAUV <http://cuauv.org/>`_: Cornell University's autonomous underwater
   vehicle
 
+* `Drake <https://drake.mit.edu/>`_: A planning, control, and analysis toolbox
+  for nonlinear dynamical systems (MIT)
+
+* `Envoy <https://lyft.github.io/envoy/>`_: C++ L7 proxy and communication bus
+  (Lyft)
+
+* `FiveM <https://fivem.net/>`_: a modification framework for GTA V
+
+* `Folly <https://github.com/facebook/folly>`_: Facebook open-source library
+
 * `HarpyWar/pvpgn <https://github.com/pvpgn/pvpgn-server>`_:
   Player vs Player Gaming Network with tweaks
 
@@ -291,26 +301,23 @@ Projects using this library
 
 * `Kodi <https://kodi.tv/>`_ (formerly xbmc): Home theater software
 
-* `Lifeline <https://github.com/peter-clark/lifeline>`_: A 2D game
+* `Knuth <https://kth.cash/>`_: High-performance Bitcoin full-node
 
-* `Drake <https://drake.mit.edu/>`_: A planning, control, and analysis toolbox
-  for nonlinear dynamical systems (MIT)
-
-* `Envoy <https://lyft.github.io/envoy/>`_: C++ L7 proxy and communication bus
-  (Lyft)
-
-* `FiveM <https://fivem.net/>`_: a modification framework for GTA V
+* `Microsoft Verona <https://github.com/microsoft/verona>`_: Research programming language for concurrent ownership
 
 * `MongoDB <https://mongodb.com/>`_: Distributed document database
 
 * `MongoDB Smasher <https://github.com/duckie/mongo_smasher>`_: A small tool to
   generate randomized datasets
 
-* `OpenSpace <https://openspaceproject.com/>`_: An open-source astrovisualization
-  framework
+* `OpenSpace <https://openspaceproject.com/>`_: An open-source
+  astrovisualization framework
 
 * `PenUltima Online (POL) <https://www.polserver.com/>`_:
   An MMO server, compatible with most Ultima Online clients
+
+* `PyTorch <https://github.com/pytorch/pytorch>`_: An open-source machine
+  learning library
 
 * `quasardb <https://www.quasardb.net/>`_: A distributed, high-performance,
   associative database
@@ -320,13 +327,14 @@ Projects using this library
 * `redis-cerberus <https://github.com/HunanTV/redis-cerberus>`_: A Redis cluster
   proxy
 
+* `redpanda <https://vectorized.io/redpanda>`_: A 10x faster Kafka® replacement
+  for mission critical systems written in C++
+
 * `rpclib <http://rpclib.net/>`_: A modern C++ msgpack-RPC server and client
   library
 
-* `Saddy <https://github.com/mamontov-cpp/saddy-graphics-engine-2d>`_:
-  Small crossplatform 2D graphic engine
-
-* `Salesforce Analytics Cloud <https://www.salesforce.com/analytics-cloud/overview/>`_:
+* `Salesforce Analytics Cloud
+  <https://www.salesforce.com/analytics-cloud/overview/>`_:
   Business intelligence software
 
 * `Scylla <https://www.scylladb.com/>`_: A Cassandra-compatible NoSQL data store
@@ -343,6 +351,9 @@ Projects using this library
 
 * `TrinityCore <https://github.com/TrinityCore/TrinityCore>`_: Open-source
   MMORPG framework
+
+* `Windows Terminal <https://github.com/microsoft/terminal>`_: The new Windows
+  Terminal
 
 `More... <https://github.com/search?q=fmtlib&type=Code>`_
 

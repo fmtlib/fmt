@@ -10,7 +10,7 @@
 #include "fuzzer_common.h"
 
 template <typename Item1>
-void invoke_fmt(const uint8_t* Data, std::size_t Size, unsigned int argsize) {
+void invoke_fmt(const uint8_t* Data, size_t Size, unsigned int argsize) {
   constexpr auto N1 = sizeof(Item1);
   static_assert(N1 <= fmt_fuzzer::Nfixed, "Nfixed too small");
   if (Size <= fmt_fuzzer::Nfixed) {
@@ -29,11 +29,11 @@ void invoke_fmt(const uint8_t* Data, std::size_t Size, unsigned int argsize) {
   // allocating buffers separately is slower, but increases chances
   // of detecting memory errors
 #if FMT_FUZZ_SEPARATE_ALLOCATION
-  std::vector<char> argnamebuffer(argsize);
+  std::vector<char> argnamebuffer(argsize + 1);
   std::memcpy(argnamebuffer.data(), Data, argsize);
-  auto argname = fmt::string_view(argnamebuffer.data(), argsize);
+  auto argname = argnamebuffer.data();
 #else
-  auto argname = fmt::string_view(fmt_fuzzer::as_chars(Data), argsize);
+  auto argname = fmt_fuzzer::as_chars(Data);
 #endif
   Data += argsize;
   Size -= argsize;
@@ -105,7 +105,7 @@ template <typename Callback> void invoke(int index, Callback callback) {
   }
 }
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* Data, std::size_t Size) {
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* Data, size_t Size) {
   if (Size <= 3) {
     return 0;
   }

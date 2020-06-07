@@ -44,6 +44,11 @@ if (MASTER_PROJECT AND NOT CMAKE_BUILD_TYPE)
               "CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel.")
 endif ()
 
+include(GNUInstallDirs)
+set_verbose(FMT_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR} CACHE STRING
+            "Installation directory for include files, a relative path "
+            "that will be joined to ${CMAKE_INSTALL_PREFIX}, or an arbitrary absolute path.")
+
 option(FMT_PEDANTIC "Enable extra warnings and expensive tests." OFF)
 option(FMT_WERROR "Halt the compilation with an error on compiler warnings."
        OFF)
@@ -54,7 +59,7 @@ option(FMT_INSTALL "Generate the install target." ${MASTER_PROJECT})
 option(FMT_TEST "Generate the test target." ${MASTER_PROJECT})
 option(FMT_FUZZ "Generate the fuzz target." OFF)
 option(FMT_CUDA_TEST "Generate the cuda-test target." OFF)
-
+option(FMT_OS "Include core requiring OS (Windows/Posix) " ON)
 project(FMT CXX)
 
 # Get version from core.h
@@ -79,6 +84,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
 
 include(cxx14)
 include(CheckCXXCompilerFlag)
+include(JoinPaths)
 
 list(FIND CMAKE_CXX_COMPILE_FEATURES "cxx_variadic_templates" index)
 if (${index} GREATER -1)
@@ -174,7 +180,11 @@ endfunction()
 # Define the fmt library, its includes and the needed defines.
 add_headers(FMT_HEADERS chrono.h color.h compile.h core.h format.h format-inl.h
                         locale.h os.h ostream.h posix.h printf.h ranges.h)
-set(FMT_SOURCES src/format.cc src/os.cc)
+if (FMT_OS)
+  set(FMT_SOURCES src/format.cc src/os.cc)
+else()
+  set(FMT_SOURCES src/format.cc)
+endif ()
 
 add_library(fmt ${FMT_SOURCES} ${FMT_HEADERS} README.rst ChangeLog.rst)
 add_library(fmt::fmt ALIAS fmt)
@@ -194,7 +204,7 @@ target_compile_features(fmt INTERFACE ${FMT_REQUIRED_FEATURES})
 
 target_include_directories(fmt PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+  $<INSTALL_INTERFACE:${FMT_INC_DIR}>)
 
 set(FMT_DEBUG_POSTFIX d CACHE STRING "Debug library postfix.")
 
@@ -203,8 +213,9 @@ set_target_properties(fmt PROPERTIES
   VERSION ${FMT_VERSION} SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR}
   DEBUG_POSTFIX "${FMT_DEBUG_POSTFIX}")
 
-# Set FMT_LIB_NAME for pkg-config fmt.pc.
-get_target_property(FMT_LIB_NAME fmt OUTPUT_NAME)
+# Set FMT_LIB_NAME for pkg-config fmt.pc. We cannot use the OUTPUT_NAME target
+# property because it's not set by default.
+set(FMT_LIB_NAME fmt)
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(FMT_LIB_NAME ${FMT_LIB_NAME}${FMT_DEBUG_POSTFIX})
 endif ()
@@ -229,42 +240,36 @@ target_compile_features(fmt-header-only INTERFACE ${FMT_REQUIRED_FEATURES})
 
 target_include_directories(fmt-header-only INTERFACE
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+  $<INSTALL_INTERFACE:${FMT_INC_DIR}>)
 
 # Install targets.
 if (FMT_INSTALL)
-  include(GNUInstallDirs)
   include(CMakePackageConfigHelpers)
   set_verbose(FMT_CMAKE_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/fmt CACHE STRING
-              "Installation directory for cmake files, relative to "
-              "${CMAKE_INSTALL_PREFIX}.")
+              "Installation directory for cmake files, a relative path "
+              "that will be joined to ${CMAKE_INSTALL_PREFIX}, or an arbitrary absolute path.")
   set(version_config ${PROJECT_BINARY_DIR}/fmt-config-version.cmake)
   set(project_config ${PROJECT_BINARY_DIR}/fmt-config.cmake)
   set(pkgconfig ${PROJECT_BINARY_DIR}/fmt.pc)
   set(targets_export_name fmt-targets)
 
-  set (INSTALL_TARGETS fmt)
-  if (TARGET fmt-header-only)
-    set(INSTALL_TARGETS ${INSTALL_TARGETS} fmt-header-only)
-  endif ()
-
   set_verbose(FMT_LIB_DIR ${CMAKE_INSTALL_LIBDIR} CACHE STRING
-              "Installation directory for libraries, relative to "
-              "${CMAKE_INSTALL_PREFIX}.")
-
-  set_verbose(FMT_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR}/fmt CACHE STRING
-              "Installation directory for include files, relative to "
-              "${CMAKE_INSTALL_PREFIX}.")
+              "Installation directory for libraries, a relative path "
+              "that will be joined to ${CMAKE_INSTALL_PREFIX}, or an arbitrary absolute path.")
 
   set_verbose(FMT_PKGCONFIG_DIR ${CMAKE_INSTALL_LIBDIR}/pkgconfig CACHE PATH
-              "Installation directory for pkgconfig (.pc) files, relative to "
-              "${CMAKE_INSTALL_PREFIX}.")
+              "Installation directory for pkgconfig (.pc) files, a relative path "
+              "that will be joined to ${CMAKE_INSTALL_PREFIX}, or an arbitrary absolute path.")
 
   # Generate the version, config and target files into the build directory.
   write_basic_package_version_file(
     ${version_config}
     VERSION ${FMT_VERSION}
     COMPATIBILITY AnyNewerVersion)
+
+  join_paths(libdir_for_pc_file "\${exec_prefix}" "${FMT_LIB_DIR}")
+  join_paths(includedir_for_pc_file "\${prefix}" "${FMT_INC_DIR}")
+
   configure_file(
     "${PROJECT_SOURCE_DIR}/support/cmake/fmt.pc.in"
     "${pkgconfig}"
@@ -273,6 +278,8 @@ if (FMT_INSTALL)
     ${PROJECT_SOURCE_DIR}/support/cmake/fmt-config.cmake.in
     ${project_config}
     INSTALL_DESTINATION ${FMT_CMAKE_DIR})
+
+  set(INSTALL_TARGETS fmt fmt-header-only)
   # Use a namespace because CMake provides better diagnostics for namespaced
   # imported targets.
   export(TARGETS ${INSTALL_TARGETS} NAMESPACE fmt::
@@ -293,7 +300,7 @@ if (FMT_INSTALL)
 
   install(FILES $<TARGET_PDB_FILE:${INSTALL_TARGETS}>
           DESTINATION ${FMT_LIB_DIR} OPTIONAL)
-  install(FILES ${FMT_HEADERS} DESTINATION ${FMT_INC_DIR})
+  install(FILES ${FMT_HEADERS} DESTINATION "${FMT_INC_DIR}/fmt")
   install(FILES "${pkgconfig}" DESTINATION "${FMT_PKGCONFIG_DIR}")
 endif ()
 
@@ -309,6 +316,7 @@ endif ()
 # Control fuzzing independent of the unit tests.
 if (FMT_FUZZ)
   add_subdirectory(test/fuzzing)
+  target_compile_definitions(fmt PUBLIC FMT_FUZZ)
 endif ()
 
 set(gitignore ${PROJECT_SOURCE_DIR}/.gitignore)

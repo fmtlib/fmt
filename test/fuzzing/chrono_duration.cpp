@@ -25,7 +25,7 @@ void invoke_inner(fmt::string_view formatstring, const Item item) {
 
 // Item is the underlying type for duration (int, long etc)
 template <typename Item>
-void invoke_outer(const uint8_t* Data, std::size_t Size, const int scaling) {
+void invoke_outer(const uint8_t* Data, size_t Size, const int scaling) {
   // always use a fixed location of the data
   using fmt_fuzzer::Nfixed;
 
@@ -97,7 +97,7 @@ void invoke_outer(const uint8_t* Data, std::size_t Size, const int scaling) {
   // doit_impl<Item,std::yotta>(buf.data(),item);
 }
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* Data, std::size_t Size) {
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* Data, size_t Size) {
   if (Size <= 4) {
     return 0;
   }
