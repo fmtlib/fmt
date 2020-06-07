@@ -1365,6 +1365,12 @@ FMT_FUNC void report_system_error(int error_code,
   report_error(format_system_error, error_code, message);
 }
 
+FMT_FUNC std::string detail::vformat(string_view format_str, format_args args) {
+  memory_buffer buffer;
+  detail::vformat_to(buffer, format_str, args);
+  return to_string(buffer);
+}
+
 FMT_FUNC void vprint(std::FILE* f, string_view format_str, format_args args) {
   memory_buffer buffer;
   detail::vformat_to(buffer, format_str,

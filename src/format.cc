@@ -44,9 +44,6 @@ template FMT_API char detail::decimal_point_impl(locale_ref);
 
 template FMT_API void detail::buffer<char>::append(const char*, const char*);
 
-template FMT_API std::string detail::vformat<char>(
-    string_view, basic_format_args<format_context>);
-
 template FMT_API format_context::iterator detail::vformat_to(
     detail::buffer<char>&, string_view, basic_format_args<format_context>);
 

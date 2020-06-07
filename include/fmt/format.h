@@ -3440,7 +3440,7 @@ inline format_to_n_result<OutputIt> format_to_n(OutputIt out, size_t n,
                       make_format_args<context>(args...));
 }
 
-template <typename Char>
+template <typename Char, enable_if_t<(!std::is_same<Char, char>::value), int>>
 std::basic_string<Char> detail::vformat(
     basic_string_view<Char> format_str,
     basic_format_args<buffer_context<type_identity_t<Char>>> args) {
