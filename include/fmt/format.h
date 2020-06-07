@@ -1794,7 +1794,7 @@ class arg_formatter_base {
   }
 
   template <typename T, FMT_ENABLE_IF(is_integral<T>::value)>
-  iterator operator()(T value) {
+  FMT_INLINE iterator operator()(T value) {
     if (specs_)
       write_int(value, *specs_);
     else
