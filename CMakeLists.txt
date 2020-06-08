@@ -105,9 +105,6 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
       -Winvalid-pch -Woverloaded-virtual
       -Wconversion -Wswitch-enum
       -Wno-ctor-dtor-privacy -Wno-format-nonliteral -Wno-shadow)
-  if (MINGW)
-    target_compile_options("-Wa,-mbig-obj")
-  endif ()    
   if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6)
       set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wnoexcept
          -Wno-dangling-else -Wno-unused-local-typedefs)
@@ -192,6 +189,11 @@ add_library(fmt::fmt ALIAS fmt)
 
 if (HAVE_STRTOD_L)
   target_compile_definitions(fmt PUBLIC FMT_LOCALE)
+endif ()
+
+if (MINGW)
+  target_compile_options(fmt PRIVATE "-Wa,-mbig-obj")
+#  target_compile_options(fmt PRIVATE "-g")
 endif ()
 
 if (FMT_WERROR)
