@@ -192,6 +192,10 @@ if (HAVE_STRTOD_L)
   target_compile_definitions(fmt PUBLIC FMT_LOCALE)
 endif ()
 
+if (MINGW)
+  target_compile_options(fmt PUBLIC "-Wa,-mbig-obj")
+endif ()
+
 if (FMT_WERROR)
   target_compile_options(fmt PRIVATE ${WERROR_FLAG})
 endif ()
