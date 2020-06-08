@@ -73,7 +73,9 @@ math(EXPR CPACK_PACKAGE_VERSION_MINOR ${CMAKE_MATCH_2})
 math(EXPR CPACK_PACKAGE_VERSION_PATCH ${CMAKE_MATCH_3})
 join(FMT_VERSION ${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.
                  ${CPACK_PACKAGE_VERSION_PATCH})
+
 message(STATUS "Version: ${FMT_VERSION}")
+message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 if (NOT CMAKE_RUNTIME_OUTPUT_DIRECTORY)
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
@@ -92,7 +94,6 @@ if (${index} GREATER -1)
   # compatibility with older CMake versions.
   set(FMT_REQUIRED_FEATURES cxx_variadic_templates)
 endif ()
-message(STATUS "Required features: ${FMT_REQUIRED_FEATURES}")
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   set(PEDANTIC_COMPILE_FLAGS -pedantic-errors -Wall -Wextra -pedantic
@@ -105,7 +106,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
       -Wconversion -Wswitch-enum
       -Wno-ctor-dtor-privacy -Wno-format-nonliteral -Wno-shadow)
   if (MINGW)
-    add_definitions("-Wa,-mbig-obj")
+    target_compile_options("-Wa,-mbig-obj")
   endif ()    
   if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6)
       set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wnoexcept
@@ -209,7 +210,6 @@ target_include_directories(fmt PUBLIC
 set(FMT_DEBUG_POSTFIX d CACHE STRING "Debug library postfix.")
 
 set_target_properties(fmt PROPERTIES
-  OUTPUT_NAME "fmt"
   VERSION ${FMT_VERSION} SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR}
   DEBUG_POSTFIX "${FMT_DEBUG_POSTFIX}")
 
