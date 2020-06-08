@@ -2550,7 +2550,11 @@ struct format_handler : detail::error_handler {
 
   int on_arg_id() { return parse_context.next_arg_id(); }
   int on_arg_id(int id) { return parse_context.check_arg_id(id), id; }
-  int on_arg_id(basic_string_view<Char> id) { return context.arg_id(id); }
+  int on_arg_id(basic_string_view<Char> id) {
+    int arg_id = context.arg_id(id);
+    if (arg_id < 0) on_error("argument not found");
+    return arg_id;
+  }
 
   void on_replacement_field(int id, const Char* p) {
     auto arg = get_arg(context, id);
