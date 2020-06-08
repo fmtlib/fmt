@@ -1680,7 +1680,7 @@ class arg_formatter_base {
   using format_specs = basic_format_specs<char_type>;
 
  private:
-  iterator out_;  // Output iterator.
+  iterator out_;
   locale_ref locale_;
   format_specs* specs_;
 
@@ -1704,19 +1704,6 @@ class arg_formatter_base {
     if (negative) *it++ = static_cast<char_type>('-');
     it = format_decimal<char_type>(it, abs_value, num_digits);
   }
-
-  void write(int value) { write_decimal(value); }
-  void write(long value) { write_decimal(value); }
-  void write(long long value) { write_decimal(value); }
-
-  void write(unsigned value) { write_decimal(value); }
-  void write(unsigned long value) { write_decimal(value); }
-  void write(unsigned long long value) { write_decimal(value); }
-
-#if FMT_USE_INT128
-  void write(int128_t value) { write_decimal(value); }
-  void write(uint128_t value) { write_decimal(value); }
-#endif
 
   template <typename T> void write_int(T value, const format_specs& spec) {
     using uint_type = uint32_or_64_or_128_t<T>;
@@ -1762,7 +1749,7 @@ class arg_formatter_base {
   }
 
   void write_pointer(const void* p) {
-    out_ = write_ptr<char_type>(out_, detail::to_uintptr(p), specs_);
+    out_ = write_ptr<char_type>(out_, to_uintptr(p), specs_);
   }
 
  protected:
@@ -1790,7 +1777,7 @@ class arg_formatter_base {
 
   iterator operator()(monostate) {
     FMT_ASSERT(false, "invalid argument type");
-    return out();
+    return out_;
   }
 
   template <typename T, FMT_ENABLE_IF(is_integral<T>::value)>
@@ -1798,20 +1785,20 @@ class arg_formatter_base {
     if (specs_)
       write_int(value, *specs_);
     else
-      write(value);
-    return out();
+      write_decimal(value);
+    return out_;
   }
 
   iterator operator()(char_type value) {
-    detail::handle_char_specs(
-        specs_, char_spec_handler(*this, static_cast<char_type>(value)));
-    return out();
+    handle_char_specs(specs_,
+                      char_spec_handler(*this, static_cast<char_type>(value)));
+    return out_;
   }
 
   iterator operator()(bool value) {
     if (specs_ && specs_->type) return (*this)(value ? 1 : 0);
     write(value != 0);
-    return out();
+    return out_;
   }
 
   template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
@@ -1821,7 +1808,7 @@ class arg_formatter_base {
       out_ = detail::write(out_, value, specs, locale_);
     else
       FMT_ASSERT(false, "unsupported float argument type");
-    return out();
+    return out_;
   }
 
   struct char_spec_handler : ErrorHandler {
@@ -1857,26 +1844,25 @@ class arg_formatter_base {
   };
 
   iterator operator()(const char_type* value) {
-    if (!specs_) return write(value), out();
-    detail::handle_cstring_type_spec(specs_->type,
-                                     cstring_spec_handler(*this, value));
-    return out();
+    if (!specs_) return write(value), out_;
+    handle_cstring_type_spec(specs_->type, cstring_spec_handler(*this, value));
+    return out_;
   }
 
   iterator operator()(basic_string_view<char_type> value) {
     if (specs_) {
-      detail::check_string_type_spec(specs_->type, detail::error_handler());
+      check_string_type_spec(specs_->type, error_handler());
       write(value, *specs_);
     } else {
       write(value);
     }
-    return out();
+    return out_;
   }
 
   iterator operator()(const void* value) {
-    if (specs_) check_pointer_type_spec(specs_->type, detail::error_handler());
+    if (specs_) check_pointer_type_spec(specs_->type, error_handler());
     write_pointer(value);
-    return out();
+    return out_;
   }
 };
 
