@@ -1672,7 +1672,7 @@ template <> struct is_integral<int128_t> : std::true_type {};
 template <> struct is_integral<uint128_t> : std::true_type {};
 
 template <typename OutputIt, typename Char,
-          typename ErrorHandler = detail::error_handler>
+          typename ErrorHandler = error_handler>
 class arg_formatter_base {
  public:
   using iterator = OutputIt;
@@ -1752,6 +1752,36 @@ class arg_formatter_base {
     out_ = write_ptr<char_type>(out_, to_uintptr(p), specs_);
   }
 
+  struct char_spec_handler : ErrorHandler {
+    arg_formatter_base& formatter;
+    char_type value;
+
+    char_spec_handler(arg_formatter_base& f, char_type val)
+        : formatter(f), value(val) {}
+
+    void on_int() {
+      // char is only formatted as int if there are specs.
+      formatter.write_int(static_cast<int>(value), *formatter.specs_);
+    }
+    void on_char() {
+      if (formatter.specs_)
+        formatter.out_ = write_char(formatter.out_, value, *formatter.specs_);
+      else
+        formatter.write(value);
+    }
+  };
+
+  struct cstring_spec_handler : error_handler {
+    arg_formatter_base& formatter;
+    const char_type* value;
+
+    cstring_spec_handler(arg_formatter_base& f, const char_type* val)
+        : formatter(f), value(val) {}
+
+    void on_string() { formatter.write(value); }
+    void on_pointer() { formatter.write_pointer(value); }
+  };
+
  protected:
   iterator out() { return out_; }
   format_specs* specs() { return specs_; }
@@ -1810,38 +1840,6 @@ class arg_formatter_base {
       FMT_ASSERT(false, "unsupported float argument type");
     return out_;
   }
-
-  struct char_spec_handler : ErrorHandler {
-    arg_formatter_base& formatter;
-    char_type value;
-
-    char_spec_handler(arg_formatter_base& f, char_type val)
-        : formatter(f), value(val) {}
-
-    void on_int() {
-      if (formatter.specs_)
-        formatter.write_int(static_cast<int>(value), *formatter.specs_);
-      else
-        formatter.write(value);
-    }
-    void on_char() {
-      if (formatter.specs_)
-        formatter.out_ = write_char(formatter.out_, value, *formatter.specs_);
-      else
-        formatter.write(value);
-    }
-  };
-
-  struct cstring_spec_handler : detail::error_handler {
-    arg_formatter_base& formatter;
-    const char_type* value;
-
-    cstring_spec_handler(arg_formatter_base& f, const char_type* val)
-        : formatter(f), value(val) {}
-
-    void on_string() { formatter.write(value); }
-    void on_pointer() { formatter.write_pointer(value); }
-  };
 
   iterator operator()(const char_type* value) {
     if (!specs_) return write(value), out_;
