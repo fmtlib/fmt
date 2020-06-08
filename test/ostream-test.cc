@@ -141,7 +141,7 @@ TEST(OStreamTest, WriteToOStream) {
   fmt::memory_buffer buffer;
   const char* foo = "foo";
   buffer.append(foo, foo + std::strlen(foo));
-  fmt::detail::write(os, buffer);
+  fmt::detail::write_buffer(os, buffer);
   EXPECT_EQ("foo", os.str());
 }
 
@@ -178,7 +178,7 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
     data += n;
     size -= n;
   } while (size != 0);
-  fmt::detail::write(os, buffer);
+  fmt::detail::write_buffer(os, buffer);
 }
 
 TEST(OStreamTest, Join) {

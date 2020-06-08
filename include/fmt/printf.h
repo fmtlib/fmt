@@ -714,7 +714,7 @@ inline int vfprintf(
     basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args) {
   basic_memory_buffer<Char> buffer;
   vprintf(buffer, to_string_view(format), args);
-  detail::write(os, buffer);
+  detail::write_buffer(os, buffer);
   return static_cast<int>(buffer.size());
 }
 

@@ -1435,7 +1435,7 @@ OutputIt write_int(OutputIt out, int num_digits, string_view prefix,
 
 template <typename StrChar, typename Char, typename OutputIt>
 OutputIt write(OutputIt out, basic_string_view<StrChar> s,
-               const basic_format_specs<Char>& specs = {}) {
+               const basic_format_specs<Char>& specs) {
   auto data = s.data();
   auto size = s.size();
   if (specs.precision >= 0 && to_unsigned(specs.precision) < size)
@@ -1671,13 +1671,100 @@ template <typename T> struct is_integral : std::is_integral<T> {};
 template <> struct is_integral<int128_t> : std::true_type {};
 template <> struct is_integral<uint128_t> : std::true_type {};
 
+template <typename Char, typename OutputIt>
+OutputIt write(OutputIt out, monostate) {
+  FMT_ASSERT(false, "");
+  return out;
+}
+
+template <typename Char, typename OutputIt,
+          FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
+OutputIt write(OutputIt out, string_view value) {
+  auto it = reserve(out, value.size());
+  it = copy_str<Char>(value.begin(), value.end(), it);
+  return base_iterator(out, it);
+}
+
+template <typename Char, typename OutputIt>
+OutputIt write(OutputIt out, basic_string_view<Char> value) {
+  auto it = reserve(out, value.size());
+  it = std::copy(value.begin(), value.end(), it);
+  return base_iterator(out, it);
+}
+
+template <typename Char, typename OutputIt, typename T,
+          FMT_ENABLE_IF(is_integral<T>::value &&
+                        !std::is_same<T, bool>::value &&
+                        !std::is_same<T, Char>::value)>
+OutputIt write(OutputIt out, T value) {
+  auto abs_value = static_cast<uint32_or_64_or_128_t<T>>(value);
+  bool negative = is_negative(value);
+  // Don't do -abs_value since it trips unsigned-integer-overflow sanitizer.
+  if (negative) abs_value = ~abs_value + 1;
+  int num_digits = count_digits(abs_value);
+  auto it = reserve(out, (negative ? 1 : 0) + static_cast<size_t>(num_digits));
+  if (negative) *it++ = static_cast<Char>('-');
+  it = format_decimal<Char>(it, abs_value, num_digits);
+  return base_iterator(out, it);
+}
+
+template <typename Char, typename OutputIt>
+OutputIt write(OutputIt out, bool value) {
+  return write<Char>(out, string_view(value ? "true" : "false"));
+}
+
+template <typename Char, typename OutputIt>
+OutputIt write(OutputIt out, Char value) {
+  auto it = reserve(out, 1);
+  *it++ = value;
+  return base_iterator(out, it);
+}
+
+template <typename Char, typename OutputIt>
+OutputIt write(OutputIt out, const Char* value) {
+  if (!value) {
+    FMT_THROW(format_error("string pointer is null"));
+  } else {
+    auto length = std::char_traits<Char>::length(value);
+    out = write(out, basic_string_view<Char>(value, length));
+  }
+  return out;
+}
+
+template <typename Char, typename OutputIt>
+OutputIt write(OutputIt out, const void* value) {
+  return write_ptr<Char>(out, to_uintptr(value), nullptr);
+}
+
+// An argument visitor that formats the argument and writes it via the output
+// iterator. It's a class and not a generic lambda for compatibility with C++11.
+template <typename OutputIt, typename Char> struct default_arg_formatter {
+  using context = basic_format_context<OutputIt, Char>;
+
+  OutputIt out;
+  basic_format_args<context> args;
+  locale_ref loc;
+
+  template <typename T> OutputIt operator()(T value) {
+    return write<Char>(out, value);
+  }
+
+  OutputIt operator()(typename basic_format_arg<context>::handle handle) {
+    Char s[] = {Char('}')};
+    basic_format_parse_context<Char> parse_ctx(basic_string_view<Char>(s, 1));
+    basic_format_context<OutputIt, Char> format_ctx(out, args, loc);
+    handle.format(parse_ctx, format_ctx);
+    return format_ctx.out();
+  }
+};
+
 template <typename OutputIt, typename Char,
           typename ErrorHandler = error_handler>
 class arg_formatter_base {
  public:
   using iterator = OutputIt;
   using char_type = Char;
-  using format_specs = basic_format_specs<char_type>;
+  using format_specs = basic_format_specs<Char>;
 
  private:
   iterator out_;
@@ -1693,21 +1780,9 @@ class arg_formatter_base {
   using reserve_iterator = remove_reference_t<decltype(
       detail::reserve(std::declval<iterator&>(), 0))>;
 
-  // Writes a decimal integer.
-  template <typename Int> void write_decimal(Int value) {
-    auto abs_value = static_cast<uint32_or_64_or_128_t<Int>>(value);
-    bool negative = is_negative(value);
-    // Don't do -abs_value since it trips unsigned-integer-overflow sanitizer.
-    if (negative) abs_value = ~abs_value + 1;
-    int num_digits = count_digits(abs_value);
-    auto&& it = reserve((negative ? 1 : 0) + static_cast<size_t>(num_digits));
-    if (negative) *it++ = static_cast<char_type>('-');
-    it = format_decimal<char_type>(it, abs_value, num_digits);
-  }
-
   template <typename T> void write_int(T value, const format_specs& spec) {
     using uint_type = uint32_or_64_or_128_t<T>;
-    int_writer<iterator, char_type, uint_type> w(out_, locale_, value, spec);
+    int_writer<iterator, Char, uint_type> w(out_, locale_, value, spec);
     handle_int_type_spec(spec.type, w);
     out_ = w.out;
   }
@@ -1717,18 +1792,17 @@ class arg_formatter_base {
     *it++ = value;
   }
 
-  template <typename Ch, FMT_ENABLE_IF(std::is_same<Ch, char_type>::value)>
+  template <typename Ch, FMT_ENABLE_IF(std::is_same<Ch, Char>::value)>
   void write(Ch value) {
-    auto&& it = reserve(1);
-    *it++ = value;
+    out_ = detail::write<Char>(out_, value);
   }
 
   void write(string_view value) {
     auto&& it = reserve(value.size());
-    it = copy_str<char_type>(value.begin(), value.end(), it);
+    it = copy_str<Char>(value.begin(), value.end(), it);
   }
   void write(wstring_view value) {
-    static_assert(std::is_same<char_type, wchar_t>::value, "");
+    static_assert(std::is_same<Char, wchar_t>::value, "");
     auto&& it = reserve(value.size());
     it = std::copy(value.begin(), value.end(), it);
   }
@@ -1739,7 +1813,7 @@ class arg_formatter_base {
                      ? count_code_points(basic_string_view<Ch>(s, size))
                      : 0;
     out_ = write_padded(out_, specs, size, width, [=](reserve_iterator it) {
-      return copy_str<char_type>(s, s + size, it);
+      return copy_str<Char>(s, s + size, it);
     });
   }
 
@@ -1754,9 +1828,9 @@ class arg_formatter_base {
 
   struct char_spec_handler : ErrorHandler {
     arg_formatter_base& formatter;
-    char_type value;
+    Char value;
 
-    char_spec_handler(arg_formatter_base& f, char_type val)
+    char_spec_handler(arg_formatter_base& f, Char val)
         : formatter(f), value(val) {}
 
     void on_int() {
@@ -1773,9 +1847,9 @@ class arg_formatter_base {
 
   struct cstring_spec_handler : error_handler {
     arg_formatter_base& formatter;
-    const char_type* value;
+    const Char* value;
 
-    cstring_spec_handler(arg_formatter_base& f, const char_type* val)
+    cstring_spec_handler(arg_formatter_base& f, const Char* val)
         : formatter(f), value(val) {}
 
     void on_string() { formatter.write(value); }
@@ -1787,11 +1861,13 @@ class arg_formatter_base {
   format_specs* specs() { return specs_; }
 
   void write(bool value) {
-    string_view sv(value ? "true" : "false");
-    specs_ ? write(sv, *specs_) : write(sv);
+    if (specs_)
+      write(string_view(value ? "true" : "false"), *specs_);
+    else
+      out_ = detail::write<Char>(out_, value);
   }
 
-  void write(const char_type* value) {
+  void write(const Char* value) {
     if (!value) {
       FMT_THROW(format_error("string pointer is null"));
     } else {
@@ -1815,13 +1891,13 @@ class arg_formatter_base {
     if (specs_)
       write_int(value, *specs_);
     else
-      write_decimal(value);
+      out_ = detail::write<Char>(out_, value);
     return out_;
   }
 
-  iterator operator()(char_type value) {
+  iterator operator()(Char value) {
     handle_char_specs(specs_,
-                      char_spec_handler(*this, static_cast<char_type>(value)));
+                      char_spec_handler(*this, static_cast<Char>(value)));
     return out_;
   }
 
@@ -1841,13 +1917,13 @@ class arg_formatter_base {
     return out_;
   }
 
-  iterator operator()(const char_type* value) {
+  iterator operator()(const Char* value) {
     if (!specs_) return write(value), out_;
     handle_cstring_type_spec(specs_->type, cstring_spec_handler(*this, value));
     return out_;
   }
 
-  iterator operator()(basic_string_view<char_type> value) {
+  iterator operator()(basic_string_view<Char> value) {
     if (specs_) {
       check_string_type_spec(specs_->type, error_handler());
       write(value, *specs_);
@@ -3125,14 +3201,15 @@ typename Context::iterator vformat_to(
     typename ArgFormatter::iterator out, basic_string_view<Char> format_str,
     basic_format_args<Context> args,
     detail::locale_ref loc = detail::locale_ref()) {
+  if (format_str.size() == 2 && detail::equal2(format_str.data(), "{}")) {
+    auto arg = args.get(0);
+    if (!arg) detail::error_handler().on_error("argument not found");
+    using it = typename ArgFormatter::iterator;
+    return visit_format_arg(
+        detail::default_arg_formatter<it, Char>{out, args, loc}, arg);
+  }
   detail::format_handler<ArgFormatter, Char, Context> h(out, format_str, args,
                                                         loc);
-  if (format_str.size() == 2 && detail::equal2(format_str.data(), "{}")) {
-    auto arg = detail::get_arg(h.context, 0);
-    return visit_format_arg(
-        ArgFormatter(h.context, &h.parse_context, nullptr, &format_str[1]),
-        arg);
-  }
   detail::parse_format_string<false>(format_str, h);
   return h.context.out();
 }

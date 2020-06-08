@@ -80,7 +80,7 @@ template <typename T, typename Char> class is_streamable {
 
 // Write the content of buf to os.
 template <typename Char>
-void write(std::basic_ostream<Char>& os, buffer<Char>& buf) {
+void write_buffer(std::basic_ostream<Char>& os, buffer<Char>& buf) {
   const Char* buf_data = buf.data();
   using unsigned_streamsize = std::make_unsigned<std::streamsize>::type;
   unsigned_streamsize size = buf.size();
@@ -144,7 +144,7 @@ void vprint(std::basic_ostream<Char>& os, basic_string_view<Char> format_str,
             basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   basic_memory_buffer<Char> buffer;
   detail::vformat_to(buffer, format_str, args);
-  detail::write(os, buffer);
+  detail::write_buffer(os, buffer);
 }
 
 /**
