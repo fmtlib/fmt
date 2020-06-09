@@ -1341,6 +1341,7 @@ template <typename OutputIt, typename Char> class basic_format_context {
   format_arg arg(int id) const { return args_.get(id); }
   format_arg arg(basic_string_view<char_type> name) { return args_.get(name); }
   int arg_id(basic_string_view<char_type> name) { return args_.get_id(name); }
+  const basic_format_args<basic_format_context>& args() const { return args_; }
 
   detail::error_handler error_handler() { return {}; }
   void on_error(const char* message) { error_handler().on_error(message); }
