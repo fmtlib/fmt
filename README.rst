@@ -36,8 +36,8 @@ Features
 * Implementation of `C++20 std::format <https://en.cppreference.com/w/cpp/utility/format>`__.
 * Support for user-defined types.
 * High performance: faster than common standard library implementations of
-  `printf <https://en.cppreference.com/w/cpp/io/c/fprintf>`_ and
-  iostreams. See `Speed tests`_ and `Fast integer to string conversion in C++
+  `printf <https://en.cppreference.com/w/cpp/io/c/fprintf>`_,
+  iostreams and `to_string`. See `Speed tests`_ and `Fast integer to string conversion in C++
   <http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`_.
 * Small code size both in terms of source code (the minimum configuration
   consists of just three header files, ``core.h``, ``format.h`` and
