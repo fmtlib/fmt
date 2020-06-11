@@ -786,7 +786,7 @@ OutputIt format_duration_unit(OutputIt out) {
   if (const char* unit = get_units<Period>())
     return copy_unit(string_view(unit), out, Char());
   const Char num_f[] = {'[', '{', '}', ']', 's', 0};
-  if (Period::den == 1) return format_to(out, num_f, Period::num);
+  if (const_check(Period::den == 1)) return format_to(out, num_f, Period::num);
   const Char num_def_f[] = {'[', '{', '}', '/', '{', '}', ']', 's', 0};
   return format_to(out, num_def_f, Period::num, Period::den);
 }
