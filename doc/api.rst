@@ -136,6 +136,7 @@ template and implement ``parse`` and ``format`` methods::
 
     // Parses format specifications of the form ['f' | 'e'].
     constexpr auto parse(format_parse_context& ctx) {
+    // auto parse(format_parse_context &ctx) -> decltype(ctx.begin()) //c++11
       // [ctx.begin(), ctx.end()) is a character range that contains a part of
       // the format string starting from the format specifications to be parsed,
       // e.g. in
@@ -163,6 +164,7 @@ template and implement ``parse`` and ``format`` methods::
     // stored in this formatter.
     template <typename FormatContext>
     auto format(const point& p, FormatContext& ctx) {
+    // auto format(const point &p, FormatContext &ctx) -> decltype(ctx.out()) //c++11
       // ctx.out() is an output iterator to write to.
       return format_to(
           ctx.out(),
