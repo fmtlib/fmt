@@ -763,7 +763,7 @@ template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
   static const char right_padding_shifts[5];
 };
 
-#ifndef FMT_EXPORT
+#ifndef FMT_EXPORTED
 FMT_EXTERN template struct basic_data<void>;
 #endif
 
