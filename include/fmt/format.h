@@ -700,6 +700,10 @@ void basic_memory_buffer<T, SIZE, Allocator>::grow(size_t size) {
 using memory_buffer = basic_memory_buffer<char>;
 using wmemory_buffer = basic_memory_buffer<wchar_t>;
 
+template <typename T, size_t SIZE, typename Allocator>
+struct is_contiguous<basic_memory_buffer<T, SIZE, Allocator>> : std::true_type {
+};
+
 /** A formatting error such as invalid format string. */
 FMT_CLASS_API
 class FMT_API format_error : public std::runtime_error {
@@ -2746,12 +2750,12 @@ FMT_CONSTEXPR basic_string_view<Char> compile_string_to_view(
   return {s.data(), s.size()};
 }
 
-#define FMT_STRING_IMPL(s, ...)                                   \
+#define FMT_STRING_IMPL(s, base)                                  \
   [] {                                                            \
     /* Use a macro-like name to avoid shadowing warnings. */      \
-    struct FMT_COMPILE_STRING : fmt::compile_string {             \
+    struct FMT_COMPILE_STRING : base {                            \
       using char_type = fmt::remove_cvref_t<decltype(s[0])>;      \
-      FMT_MAYBE_UNUSED __VA_ARGS__ FMT_CONSTEXPR                  \
+      FMT_MAYBE_UNUSED FMT_CONSTEXPR                              \
       operator fmt::basic_string_view<char_type>() const {        \
         return fmt::detail::compile_string_to_view<char_type>(s); \
       }                                                           \
@@ -2769,7 +2773,7 @@ FMT_CONSTEXPR basic_string_view<Char> compile_string_to_view(
     std::string s = format(FMT_STRING("{:d}"), "foo");
   \endrst
  */
-#define FMT_STRING(s) FMT_STRING_IMPL(s, )
+#define FMT_STRING(s) FMT_STRING_IMPL(s, fmt::compile_string)
 
 template <typename... Args, typename S,
           enable_if_t<(is_compile_string<S>::value), int>>
@@ -3344,8 +3348,13 @@ join(const Range& range, wstring_view sep) {
     std::string answer = fmt::to_string(42);
   \endrst
  */
-template <typename T> inline std::string to_string(const T& value) {
+template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value)>
+inline std::string to_string(const T& value) {
   return format("{}", value);
+}
+template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
+inline std::string to_string(T value) {
+  return format_int(value).str();
 }
 
 /**

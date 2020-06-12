@@ -15,6 +15,17 @@
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
+// A compile-time string which is compiled into fast formatting code.
+class compiled_string {};
+
+template <typename S>
+struct is_compiled_string : std::is_base_of<compiled_string, S> {};
+
+#define FMT_COMPILE(s) FMT_STRING_IMPL(s, fmt::detail::compiled_string)
+
+template <typename T, typename... Tail>
+const T& first(const T& value, const Tail&...) { return value; }
+
 // Part of a compiled format string. It can be either literal text or a
 // replacement field.
 template <typename Char> struct format_part {
@@ -381,31 +392,6 @@ constexpr text<Char> make_text(basic_string_view<Char> s, size_t pos,
   return {{&s[pos], size}};
 }
 
-template <typename Char, typename OutputIt, typename T,
-          std::enable_if_t<std::is_integral_v<T>, int> = 0>
-OutputIt format_default(OutputIt out, T value) {
-  // TODO: reserve
-  format_int fi(value);
-  return std::copy(fi.data(), fi.data() + fi.size(), out);
-}
-
-template <typename Char, typename OutputIt>
-OutputIt format_default(OutputIt out, double value) {
-  return detail::write(out, value);
-}
-
-template <typename Char, typename OutputIt>
-OutputIt format_default(OutputIt out, Char value) {
-  *out++ = value;
-  return out;
-}
-
-template <typename Char, typename OutputIt>
-OutputIt format_default(OutputIt out, const Char* value) {
-  auto length = std::char_traits<Char>::length(value);
-  return copy_str<Char>(value, value + length, out);
-}
-
 // A replacement field that refers to argument N.
 template <typename Char, typename T, int N> struct field {
   using char_type = Char;
@@ -414,7 +400,7 @@ template <typename Char, typename T, int N> struct field {
   OutputIt format(OutputIt out, const Args&... args) const {
     // This ensures that the argument type is convertile to `const T&`.
     const T& arg = get<N>(args...);
-    return format_default<Char>(out, arg);
+    return write<Char>(out, arg);
   }
 };
 
@@ -456,7 +442,8 @@ constexpr auto compile_format_string(S format_str);
 
 template <typename Args, size_t POS, int ID, typename T, typename S>
 constexpr auto parse_tail(T head, S format_str) {
-  if constexpr (POS != to_string_view(format_str).size()) {
+  if constexpr (POS !=
+                basic_string_view<typename S::char_type>(format_str).size()) {
     constexpr auto tail = compile_format_string<Args, POS, ID>(format_str);
     if constexpr (std::is_same<remove_cvref_t<decltype(tail)>,
                                unknown_format>())
@@ -506,7 +493,8 @@ constexpr auto compile_format_string(S format_str) {
 #if FMT_USE_CONSTEXPR
 #  ifdef __cpp_if_constexpr
 template <typename... Args, typename S,
-          FMT_ENABLE_IF(is_compile_string<S>::value)>
+          FMT_ENABLE_IF(is_compile_string<S>::value ||
+                        detail::is_compiled_string<S>::value)>
 constexpr auto compile(S format_str) {
   constexpr basic_string_view<typename S::char_type> str = format_str;
   if constexpr (str.size() == 0) {
@@ -529,7 +517,8 @@ template <typename CompiledFormat, typename... Args,
           FMT_ENABLE_IF(detail::is_compiled_format<CompiledFormat>::value)>
 std::basic_string<Char> format(const CompiledFormat& cf, const Args&... args) {
   basic_memory_buffer<Char> buffer;
-  cf.format(std::back_inserter(buffer), args...);
+  detail::buffer<Char>& base = buffer;
+  cf.format(std::back_inserter(base), args...);
   return to_string(buffer);
 }
 
@@ -567,6 +556,16 @@ std::basic_string<Char> format(const CompiledFormat& cf, const Args&... args) {
   detail::cf::vformat_to<context>(std::back_inserter(base), cf,
                                   make_format_args<context>(args...));
   return to_string(buffer);
+}
+
+template <typename S, typename... Args,
+          FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
+FMT_INLINE std::basic_string<typename S::char_type> format(S, Args&&... args) {
+  constexpr basic_string_view<typename S::char_type> str = S();
+  if (str.size() == 2 && str[0] == '{' && str[1] == '}')
+    return fmt::to_string(detail::first(args...));
+  constexpr auto compiled = compile<Args...>(S());
+  return format(compiled, std::forward<Args...>(args...));
 }
 
 template <typename OutputIt, typename CompiledFormat, typename... Args,

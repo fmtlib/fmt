@@ -481,7 +481,7 @@ inline basic_string_view<Char> to_string_view(detail::std_string_view<Char> s) {
 }
 
 // A base class for compile-time strings. It is defined in the fmt namespace to
-// make formatting functions visible via ADL, e.g. format(fmt("{}"), 42).
+// make formatting functions visible via ADL, e.g. format(FMT_STRING("{}"), 42).
 struct compile_string {};
 
 template <typename S>
@@ -1745,8 +1745,8 @@ template <typename..., typename S, FMT_ENABLE_IF(!is_compile_string<S>::value)>
 FMT_INLINE void check_format_string(const S&) {
 #ifdef FMT_ENFORCE_COMPILE_STRING
   static_assert(is_compile_string<S>::value,
-                "FMT_ENFORCE_COMPILE_STRING requires all format strings to "
-                "utilize FMT_STRING() or fmt().");
+                "FMT_ENFORCE_COMPILE_STRING requires all format strings to use "
+                "FMT_STRING.");
 #endif
 }
 template <typename..., typename S, FMT_ENABLE_IF(is_compile_string<S>::value)>
