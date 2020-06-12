@@ -269,7 +269,10 @@ Projects using this library
 
 * `AMPL/MP <https://github.com/ampl/mp>`_:
   An open-source library for mathematical programming
-  
+
+* `Aseprite <https://github.com/aseprite/aseprite>`_:
+  Animated sprite editor & pixel art tool 
+
 * `AvioBook <https://www.aviobook.aero/en>`_: A comprehensive aircraft
   operations suite
   
@@ -303,7 +306,8 @@ Projects using this library
 
 * `Knuth <https://kth.cash/>`_: High-performance Bitcoin full-node
 
-* `Microsoft Verona <https://github.com/microsoft/verona>`_: Research programming language for concurrent ownership
+* `Microsoft Verona <https://github.com/microsoft/verona>`_:
+  Research programming language for concurrent ownership
 
 * `MongoDB <https://mongodb.com/>`_: Distributed document database
 
