@@ -44,6 +44,7 @@ if (MASTER_PROJECT AND NOT CMAKE_BUILD_TYPE)
               "CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel.")
 endif ()
 
+project(FMT CXX)
 include(GNUInstallDirs)
 set_verbose(FMT_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR} CACHE STRING
             "Installation directory for include files, a relative path "
@@ -60,7 +61,6 @@ option(FMT_TEST "Generate the test target." ${MASTER_PROJECT})
 option(FMT_FUZZ "Generate the fuzz target." OFF)
 option(FMT_CUDA_TEST "Generate the cuda-test target." OFF)
 option(FMT_OS "Include core requiring OS (Windows/Posix) " ON)
-project(FMT CXX)
 
 # Get version from core.h
 file(READ include/fmt/core.h core_h)
