@@ -468,12 +468,8 @@ constexpr auto compile_format_string(S format_str) {
       return parse_tail<Args, POS + 2, ID>(make_text(str, POS, 1), format_str);
     } else if constexpr (str[POS + 1] == '}') {
       using type = get_type<ID, Args>;
-      if constexpr (std::is_same<type, int>::value) {
-        return parse_tail<Args, POS + 2, ID + 1>(field<char_type, type, ID>(),
-                                                 format_str);
-      } else {
-        return unknown_format();
-      }
+      return parse_tail<Args, POS + 2, ID + 1>(field<char_type, type, ID>(),
+                                               format_str);
     } else {
       return unknown_format();
     }
@@ -565,7 +561,7 @@ FMT_INLINE std::basic_string<typename S::char_type> format(S, Args&&... args) {
   if (str.size() == 2 && str[0] == '{' && str[1] == '}')
     return fmt::to_string(detail::first(args...));
   constexpr auto compiled = compile<Args...>(S());
-  return format(compiled, std::forward<Args...>(args...));
+  return format(compiled, std::forward<Args>(args)...);
 }
 
 template <typename OutputIt, typename CompiledFormat, typename... Args,

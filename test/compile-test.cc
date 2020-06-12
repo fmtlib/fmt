@@ -142,3 +142,10 @@ TEST(CompileTest, EmptyFormatString) {
   auto f = fmt::compile<>("");
   EXPECT_EQ(fmt::format(f), "");
 }
+
+#ifdef __cpp_if_constexpr
+TEST(CompileTest, Basic) {
+  EXPECT_EQ("42", fmt::format(FMT_COMPILE("{}"), 42));
+  EXPECT_EQ("foo", fmt::format(FMT_COMPILE("{}"), "foo"));
+}
+#endif
