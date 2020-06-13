@@ -2983,8 +2983,7 @@ class format_int {
     bool negative = value < 0;
     if (negative) abs_value = 0 - abs_value;
     str_ = format_decimal(abs_value);
-    str_[-1] = '-';
-    str_ -= negative ? 1 : 0;
+    if (negative) *--str_ = '-';
   }
 
  public:
