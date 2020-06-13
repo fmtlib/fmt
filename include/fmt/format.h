@@ -2971,14 +2971,9 @@ class format_int {
       // memcpy is faster than copying character by character.
       memcpy(ptr, detail::data::digits + index, 2);
     }
-    if (value < 10) {
-      *--ptr = static_cast<char>('0' + value);
-      return ptr;
-    }
     auto index = static_cast<unsigned>(value * 2);
-    ptr -= 2;
-    memcpy(ptr, detail::data::digits + index, 2);
-    return ptr;
+    memcpy(ptr - 2, detail::data::digits + index, 2);
+    return ptr - 1 - (value >= 10 ? 1 : 0);
   }
 
   void format_signed(long long value) {
@@ -2986,7 +2981,8 @@ class format_int {
     bool negative = value < 0;
     if (negative) abs_value = 0 - abs_value;
     str_ = format_decimal(abs_value);
-    if (negative) *--str_ = '-';
+    str_[-1] = '-';
+    str_ -= negative ? 1 : 0;
   }
 
  public:
