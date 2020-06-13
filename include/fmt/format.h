@@ -2543,9 +2543,55 @@ template <typename Handler, typename Char> struct id_adapter {
   }
 };
 
+template <typename Char, typename Handler>
+FMT_CONSTEXPR const Char* parse_replacement_field(
+    const Char* begin, const Char* end, Handler&& handler) {
+  ++begin;
+  if (begin == end) return handler.on_error("invalid format string"), end;
+  if (static_cast<char>(*begin) == '}') {
+    handler.on_replacement_field(handler.on_arg_id(), begin);
+  } else if (*begin == '{') {
+    handler.on_text(begin, begin + 1);
+  } else {
+    auto adapter = id_adapter<Handler, Char>{handler, 0};
+    begin = parse_arg_id(begin, end, adapter);
+    Char c = begin != end ? *begin : Char();
+    if (c == '}') {
+      handler.on_replacement_field(adapter.arg_id, begin);
+    } else if (c == ':') {
+      begin = handler.on_format_specs(adapter.arg_id, begin + 1, end);
+      if (begin == end || *begin != '}')
+        return handler.on_error("unknown format specifier"), end;
+    } else {
+      return handler.on_error("missing '}' in format string"), end;
+    }
+  }
+  return begin + 1;
+}
+
 template <bool IS_CONSTEXPR, typename Char, typename Handler>
 FMT_CONSTEXPR_DECL FMT_INLINE void parse_format_string(
     basic_string_view<Char> format_str, Handler&& handler) {
+  auto begin = format_str.data();
+  auto end = begin + format_str.size();
+  if (end - begin < 32) {
+    // Use a simple loop instead of memchr for small strings.
+    const Char* p = begin;
+    while (p != end) {
+      auto c = *p++;
+      if (c == '{') {
+        handler.on_text(begin, p - 1);
+        begin = p = parse_replacement_field(p - 1, end, handler);
+      } else if (c == '}') {
+        if (p == end || *p != '}')
+          return handler.on_error("unmatched '}' in format string");
+        handler.on_text(begin, p);
+        begin = ++p;
+      }
+    }
+    handler.on_text(begin, end);
+    return;
+  }
   struct writer {
     FMT_CONSTEXPR void operator()(const Char* begin, const Char* end) {
       if (begin == end) return;
@@ -2562,8 +2608,6 @@ FMT_CONSTEXPR_DECL FMT_INLINE void parse_format_string(
     }
     Handler& handler_;
   } write{handler};
-  auto begin = format_str.data();
-  auto end = begin + format_str.size();
   while (begin != end) {
     // Doing two passes with memchr (one for '{' and another for '}') is up to
     // 2.5x faster than the naive one-pass implementation on big format strings.
@@ -2571,27 +2615,7 @@ FMT_CONSTEXPR_DECL FMT_INLINE void parse_format_string(
     if (*begin != '{' && !find<IS_CONSTEXPR>(begin + 1, end, '{', p))
       return write(begin, end);
     write(begin, p);
-    ++p;
-    if (p == end) return handler.on_error("invalid format string");
-    if (static_cast<char>(*p) == '}') {
-      handler.on_replacement_field(handler.on_arg_id(), p);
-    } else if (*p == '{') {
-      handler.on_text(p, p + 1);
-    } else {
-      auto adapter = id_adapter<Handler, Char>{handler, 0};
-      p = parse_arg_id(p, end, adapter);
-      Char c = p != end ? *p : Char();
-      if (c == '}') {
-        handler.on_replacement_field(adapter.arg_id, p);
-      } else if (c == ':') {
-        p = handler.on_format_specs(adapter.arg_id, p + 1, end);
-        if (p == end || *p != '}')
-          return handler.on_error("unknown format specifier");
-      } else {
-        return handler.on_error("missing '}' in format string");
-      }
-    }
-    begin = p + 1;
+    begin = parse_replacement_field(p, end, handler);
   }
 }
 
@@ -2636,7 +2660,7 @@ struct format_handler : detail::error_handler {
     return arg_id;
   }
 
-  void on_replacement_field(int id, const Char*) {
+  FMT_INLINE void on_replacement_field(int id, const Char*) {
     auto arg = get_arg(context, id);
     context.advance_to(visit_format_arg(
         default_arg_formatter<typename ArgFormatter::iterator, Char>{
