@@ -1552,6 +1552,7 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
     char digits[40];
     format_decimal(digits, abs_value, num_digits);
     basic_memory_buffer<Char> buffer;
+    size += prefix_size;
     buffer.resize(size);
     basic_string_view<Char> s(&sep, sep_size);
     // Index of a decimal digit with the least significant digit having index 0.
@@ -1571,6 +1572,7 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
       std::uninitialized_copy(s.data(), s.data() + s.size(),
                               make_checked(p, s.size()));
     }
+    if (prefix_size != 0) p[-1] = static_cast<Char>('-');
     write(out, basic_string_view<Char>(buffer.data(), buffer.size()), specs);
   }
 
