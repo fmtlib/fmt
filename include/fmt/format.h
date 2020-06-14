@@ -2973,9 +2973,14 @@ class format_int {
       // memcpy is faster than copying character by character.
       memcpy(ptr, detail::data::digits + index, 2);
     }
+    if (value < 10) {
+      *--ptr = static_cast<char>('0' + value);
+      return ptr;
+    }
     auto index = static_cast<unsigned>(value * 2);
-    memcpy(ptr - 2, detail::data::digits + index, 2);
-    return ptr - 1 - (value >= 10 ? 1 : 0);
+    ptr -= 2;
+    memcpy(ptr, detail::data::digits + index, 2);
+    return ptr;
   }
 
   void format_signed(long long value) {
