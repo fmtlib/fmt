@@ -3380,7 +3380,10 @@ inline std::string to_string(const T& value) {
 }
 template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
 inline std::string to_string(T value) {
-  return format_int(value).str();
+  char buffer[detail::digits10<T>() + 2];
+  char* begin = buffer;
+  char* end = detail::write<char>(begin, value);
+  return std::string(begin, end);
 }
 
 /**
