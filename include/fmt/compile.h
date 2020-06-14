@@ -510,7 +510,8 @@ constexpr auto compile(S format_str) {
 template <typename CompiledFormat, typename... Args,
           typename Char = typename CompiledFormat::char_type,
           FMT_ENABLE_IF(detail::is_compiled_format<CompiledFormat>::value)>
-std::basic_string<Char> format(const CompiledFormat& cf, const Args&... args) {
+FMT_INLINE std::basic_string<Char> format(const CompiledFormat& cf,
+                                          const Args&... args) {
   basic_memory_buffer<Char> buffer;
   detail::buffer<Char>& base = buffer;
   cf.format(std::back_inserter(base), args...);
