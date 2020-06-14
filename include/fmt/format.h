@@ -3380,7 +3380,8 @@ inline std::string to_string(const T& value) {
 }
 template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
 inline std::string to_string(T value) {
-  char buffer[detail::digits10<T>() + 2];
+  // Buffer should be large enough to store the number or "false" (for bool).
+  char buffer[(std::max)(detail::digits10<T>() + 2, 5)];
   char* begin = buffer;
   char* end = detail::write<char>(begin, value);
   return std::string(begin, end);
