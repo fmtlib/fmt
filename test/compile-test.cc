@@ -155,4 +155,8 @@ TEST(CompileTest, FormatDefault) {
   EXPECT_EQ("foo", fmt::format(FMT_COMPILE("{}"), "foo"));
   EXPECT_EQ("foo", fmt::format(FMT_COMPILE("{}"), std::string("foo")));
 }
+
+TEST(CompileTest, TextAndArg) {
+  EXPECT_EQ(">>>42<<<", fmt::format(FMT_COMPILE(">>>{}<<<"), 42));
+}
 #endif

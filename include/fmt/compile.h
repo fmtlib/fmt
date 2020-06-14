@@ -378,8 +378,7 @@ template <typename Char> struct text {
 
   template <typename OutputIt, typename... Args>
   OutputIt format(OutputIt out, const Args&...) const {
-    // TODO: reserve
-    return copy_str<Char>(data.begin(), data.end(), out);
+    return write<Char>(out, data);
   }
 };
 
