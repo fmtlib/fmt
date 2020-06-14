@@ -895,7 +895,7 @@ template <typename Iterator> struct format_decimal_result {
 template <typename Char, typename UInt>
 inline format_decimal_result<Char*> format_decimal(Char* out, UInt value,
                                                    int size) {
-  //FMT_ASSERT(size >= count_digits(value), "invalid digit count");
+  FMT_ASSERT(size >= count_digits(value), "invalid digit count");
   out += size;
   Char* end = out;
   while (value >= 100) {
@@ -2971,25 +2971,28 @@ class format_int {
   mutable char buffer_[buffer_size];
   char* str_;
 
-  char* format_decimal(unsigned long long value) {
-    return detail::format_decimal(buffer_, value, buffer_size - 1).begin;
+  template <typename UInt> char* format_unsigned(UInt value) {
+    auto n = static_cast<detail::uint32_or_64_or_128_t<UInt>>(value);
+    return detail::format_decimal(buffer_, n, buffer_size - 1).begin;
   }
 
-  void format_signed(long long value) {
-    auto abs_value = static_cast<unsigned long long>(value);
+  template <typename Int> char* format_signed(Int value) {
+    auto abs_value = static_cast<detail::uint32_or_64_or_128_t<Int>>(value);
     bool negative = value < 0;
     if (negative) abs_value = 0 - abs_value;
-    str_ = format_decimal(abs_value);
-    if (negative) *--str_ = '-';
+    auto begin = format_unsigned(abs_value);
+    if (negative) *--begin = '-';
+    return begin;
   }
 
  public:
-  explicit format_int(int value) { format_signed(value); }
-  explicit format_int(long value) { format_signed(value); }
-  explicit format_int(long long value) { format_signed(value); }
-  explicit format_int(unsigned value) : str_(format_decimal(value)) {}
-  explicit format_int(unsigned long value) : str_(format_decimal(value)) {}
-  explicit format_int(unsigned long long value) : str_(format_decimal(value)) {}
+  explicit format_int(int value) : str_(format_signed(value)) {}
+  explicit format_int(long value) : str_(format_signed(value)) {}
+  explicit format_int(long long value) : str_(format_signed(value)) {}
+  explicit format_int(unsigned value) : str_(format_unsigned(value)) {}
+  explicit format_int(unsigned long value) : str_(format_unsigned(value)) {}
+  explicit format_int(unsigned long long value)
+      : str_(format_unsigned(value)) {}
 
   /** Returns the number of characters written to the output buffer. */
   size_t size() const {
@@ -3370,13 +3373,15 @@ template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value)>
 inline std::string to_string(const T& value) {
   return format("{}", value);
 }
+
 template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
 inline std::string to_string(T value) {
-  // Buffer should be large enough to store the number or "false" (for bool).
-  char buffer[(std::max)(detail::digits10<T>() + 2, 5)];
+  // The buffer should be large enough to store the number including the sign or
+  // "false" for bool.
+  constexpr int max_size = detail::digits10<T>() + 2;
+  char buffer[max_size > 5 ? max_size : 5];
   char* begin = buffer;
-  char* end = detail::write<char>(begin, value);
-  return std::string(begin, end);
+  return std::string(begin, detail::write<char>(begin, value));
 }
 
 /**
