@@ -895,7 +895,7 @@ template <typename Iterator> struct format_decimal_result {
 template <typename Char, typename UInt>
 inline format_decimal_result<Char*> format_decimal(Char* out, UInt value,
                                                    int size) {
-  FMT_ASSERT(size >= count_digits(value), "invalid digit count");
+  //FMT_ASSERT(size >= count_digits(value), "invalid digit count");
   out += size;
   Char* end = out;
   while (value >= 100) {
