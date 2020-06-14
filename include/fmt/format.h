@@ -884,11 +884,19 @@ template <typename Char> void copy2(Char* dst, const char* src) {
 }
 inline void copy2(char* dst, const char* src) { memcpy(dst, src, 2); }
 
-// Formats a decimal unsigned integer value writing into out.
+template <typename Iterator> struct format_decimal_result {
+  Iterator begin;
+  Iterator end;
+};
+
+// Formats a decimal unsigned integer value writing into out pointing to a
+// buffer of specified size. The caller must ensure that the buffer is large
+// enough.
 template <typename Char, typename UInt>
-inline Char* format_decimal(Char* out, UInt value, int num_digits) {
-  FMT_ASSERT(num_digits >= 0, "invalid digit count");
-  out += num_digits;
+inline format_decimal_result<Char*> format_decimal(Char* out, UInt value,
+                                                   int size) {
+  FMT_ASSERT(size >= count_digits(value), "invalid digit count");
+  out += size;
   Char* end = out;
   while (value >= 100) {
     // Integer division is slow so do it for a group of two digits instead
@@ -900,20 +908,22 @@ inline Char* format_decimal(Char* out, UInt value, int num_digits) {
   }
   if (value < 10) {
     *--out = static_cast<Char>('0' + value);
-    return end;
+    return {out, end};
   }
-  copy2(out - 2, data::digits + static_cast<unsigned>(value * 2));
-  return end;
+  out -= 2;
+  copy2(out, data::digits + static_cast<unsigned>(value * 2));
+  return {out, end};
 }
 
 template <typename Char, typename UInt, typename Iterator,
           FMT_ENABLE_IF(!std::is_pointer<remove_cvref_t<Iterator>>::value)>
-inline Iterator format_decimal(Iterator out, UInt value, int num_digits) {
+inline format_decimal_result<Iterator> format_decimal(Iterator out, UInt value,
+                                                      int num_digits) {
   // Buffer should be large enough to hold all digits (<= digits10 + 1).
   enum { max_size = digits10<UInt>() + 1 };
   Char buffer[2 * max_size];
-  auto end = format_decimal(buffer, value, num_digits);
-  return detail::copy_str<Char>(buffer, end, out);
+  auto end = format_decimal(buffer, value, num_digits).end;
+  return {out, detail::copy_str<Char>(buffer, end, out)};
 }
 
 template <unsigned BASE_BITS, typename Char, typename UInt>
@@ -1488,10 +1498,10 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
 
   void on_dec() {
     auto num_digits = count_digits(abs_value);
-    out = write_int(out, num_digits, get_prefix(), specs,
-                    [this, num_digits](iterator it) {
-                      return format_decimal<Char>(it, abs_value, num_digits);
-                    });
+    out = write_int(
+        out, num_digits, get_prefix(), specs, [this, num_digits](iterator it) {
+          return format_decimal<Char>(it, abs_value, num_digits).end;
+        });
   }
 
   void on_hex() {
@@ -1710,7 +1720,7 @@ OutputIt write(OutputIt out, T value) {
   int num_digits = count_digits(abs_value);
   auto it = reserve(out, (negative ? 1 : 0) + static_cast<size_t>(num_digits));
   if (negative) *it++ = static_cast<Char>('-');
-  it = format_decimal<Char>(it, abs_value, num_digits);
+  it = format_decimal<Char>(it, abs_value, num_digits).end;
   return base_iterator(out, it);
 }
 
@@ -2546,8 +2556,9 @@ template <typename Handler, typename Char> struct id_adapter {
 };
 
 template <typename Char, typename Handler>
-FMT_CONSTEXPR const Char* parse_replacement_field(
-    const Char* begin, const Char* end, Handler&& handler) {
+FMT_CONSTEXPR const Char* parse_replacement_field(const Char* begin,
+                                                  const Char* end,
+                                                  Handler&& handler) {
   ++begin;
   if (begin == end) return handler.on_error("invalid format string"), end;
   if (static_cast<char>(*begin) == '}') {
@@ -2960,27 +2971,8 @@ class format_int {
   mutable char buffer_[buffer_size];
   char* str_;
 
-  // Formats value in reverse and returns a pointer to the beginning.
   char* format_decimal(unsigned long long value) {
-    char* ptr = buffer_ + (buffer_size - 1);  // Parens to workaround MSVC bug.
-    while (value >= 100) {
-      // Integer division is slow so do it for a group of two digits instead
-      // of for every digit. The idea comes from the talk by Alexandrescu
-      // "Three Optimization Tips for C++". See speed-test for a comparison.
-      auto index = static_cast<unsigned>((value % 100) * 2);
-      value /= 100;
-      ptr -= 2;
-      // memcpy is faster than copying character by character.
-      memcpy(ptr, detail::data::digits + index, 2);
-    }
-    if (value < 10) {
-      *--ptr = static_cast<char>('0' + value);
-      return ptr;
-    }
-    auto index = static_cast<unsigned>(value * 2);
-    ptr -= 2;
-    memcpy(ptr, detail::data::digits + index, 2);
-    return ptr;
+    return detail::format_decimal(buffer_, value, buffer_size - 1).begin;
   }
 
   void format_signed(long long value) {

@@ -882,7 +882,7 @@ struct chrono_formatter {
         to_unsigned(to_nonnegative_int(value, max_value<int>()));
     int num_digits = detail::count_digits(n);
     if (width > num_digits) out = std::fill_n(out, width - num_digits, '0');
-    out = format_decimal<char_type>(out, n, num_digits);
+    out = format_decimal<char_type>(out, n, num_digits).end;
   }
 
   void write_nan() { std::copy_n("nan", 3, out); }
