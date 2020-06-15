@@ -29,7 +29,7 @@
 #    include <windows.h>
 #    undef WIN32_LEAN_AND_MEAN
 #    undef NOMINMAX
-#    else
+#  else
 #    include <windows.h>
 #  endif
 #  include <io.h>
