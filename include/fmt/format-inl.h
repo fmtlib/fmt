@@ -1365,7 +1365,26 @@ FMT_FUNC void report_system_error(int error_code,
   report_error(format_system_error, error_code, message);
 }
 
+struct stringifier {
+  template <typename T> FMT_INLINE std::string operator()(T value) const {
+    return to_string(value);
+  }
+  std::string operator()(basic_format_arg<format_context>::handle h) const {
+    memory_buffer buf;
+    internal::buffer<char>& base = buf;
+    format_parse_context parse_ctx({});
+    format_context format_ctx(std::back_inserter(base), {}, {});
+    h.format(parse_ctx, format_ctx);
+    return to_string(buf);
+  }
+};
+
 FMT_FUNC std::string detail::vformat(string_view format_str, format_args args) {
+  if (format_str.size() == 2 && equal2(format_str.data(), "{}")) {
+    auto arg = args.get(0);
+    if (!arg) error_handler().on_error("argument not found");
+    return visit_format_arg(stringifier(), arg);
+  }
   memory_buffer buffer;
   detail::vformat_to(buffer, format_str, args);
   return to_string(buffer);

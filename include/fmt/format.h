@@ -1766,8 +1766,7 @@ template <typename OutputIt, typename Char> struct default_arg_formatter {
   }
 
   OutputIt operator()(typename basic_format_arg<context>::handle handle) {
-    auto s = Char('}');
-    basic_format_parse_context<Char> parse_ctx(basic_string_view<Char>(&s, 1));
+    basic_format_parse_context<Char> parse_ctx({});
     basic_format_context<OutputIt, Char> format_ctx(out, args, loc);
     handle.format(parse_ctx, format_ctx);
     return format_ctx.out();

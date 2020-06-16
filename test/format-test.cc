@@ -1475,7 +1475,7 @@ template <> struct formatter<Date> {
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
     auto it = ctx.begin();
-    if (*it == 'd') ++it;
+    if (it != ctx.end() && *it == 'd') ++it;
     return it;
   }
 
