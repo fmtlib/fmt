@@ -3371,7 +3371,9 @@ join(const Range& range, wstring_view sep) {
  */
 template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value)>
 inline std::string to_string(const T& value) {
-  return format("{}", value);
+  std::string result;
+  detail::write<char>(std::back_inserter(result), value);
+  return result;
 }
 
 template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
