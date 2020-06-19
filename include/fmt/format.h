@@ -3336,14 +3336,14 @@ arg_join<internal::iterator_t<const Range>, wchar_t> join(const Range& range,
   \endrst
  */
 template <typename T> inline std::string to_string(const T& value) {
-  return format("{}", value);
+  return fmt::format("{}", value);
 }
 
 /**
   Converts *value* to ``std::wstring`` using the default format for type *T*.
  */
 template <typename T> inline std::wstring to_wstring(const T& value) {
-  return format(L"{}", value);
+  return fmt::format(L"{}", value);
 }
 
 template <typename Char, std::size_t SIZE>

@@ -2043,9 +2043,31 @@ TEST(FormatTest, DynamicFormatter) {
                    "precision not allowed for this argument type");
 }
 
+namespace unrelated {
+
+struct qwe{};
+
+std::string format(const char * /*fmt*/, const qwe &) {
+  // Return distinct string on purpose to check whether fmt used
+  // this format() via ADL by mistake
+  return "{unrelated free-standing format() function discovered by ADL by mistake}";
+}
+} // namespace unrelated
+
+template<>
+struct fmt::formatter<unrelated::qwe> {
+  template<typename ParseContext>
+  auto parse(ParseContext & ctx) -> decltype(ctx.begin()) { return ctx.begin(); }
+  template<typename FormatContext>
+  auto format(const unrelated::qwe &, FormatContext & ctx) -> decltype(ctx.out()) {
+    return fmt::format_to(ctx.out(), "[qwe]");
+  }
+};
+
 TEST(FormatTest, ToString) {
   EXPECT_EQ("42", fmt::to_string(42));
   EXPECT_EQ("0x1234", fmt::to_string(reinterpret_cast<void*>(0x1234)));
+  EXPECT_EQ("[qwe]", fmt::to_string(unrelated::qwe{}));
 }
 
 TEST(FormatTest, ToWString) { EXPECT_EQ(L"42", fmt::to_wstring(42)); }
