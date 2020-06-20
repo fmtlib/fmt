@@ -66,10 +66,13 @@ Print ``Hello, world!`` to ``stdout``:
 
 .. code:: c++
 
-    fmt::print("Hello, {}!", "world");  // Python-like format string syntax
-    fmt::printf("Hello, %s!", "world"); // printf format string syntax
+    #include <fmt/core.h>
+    
+    int main() {
+      fmt::print("Hello, world!\n");
+    }
 
-Format a string and use positional arguments:
+Format a string using positional arguments:
 
 .. code:: c++
 
