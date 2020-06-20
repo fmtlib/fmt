@@ -156,6 +156,13 @@ TEST(CompileTest, FormatDefault) {
   EXPECT_EQ("foo", fmt::format(FMT_COMPILE("{}"), std::string("foo")));
 }
 
+TEST(CompileTest, FormatTo) {
+  char buf[8];
+  auto end = fmt::format_to(buf, FMT_COMPILE("{}"), 42);
+  *end = '\0';
+  EXPECT_STREQ("42", buf);
+}
+
 TEST(CompileTest, TextAndArg) {
   EXPECT_EQ(">>>42<<<", fmt::format(FMT_COMPILE(">>>{}<<<"), 42));
 }

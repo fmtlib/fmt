@@ -24,7 +24,9 @@ struct is_compiled_string : std::is_base_of<compiled_string, S> {};
 #define FMT_COMPILE(s) FMT_STRING_IMPL(s, fmt::detail::compiled_string)
 
 template <typename T, typename... Tail>
-const T& first(const T& value, const Tail&...) { return value; }
+const T& first(const T& value, const Tail&...) {
+  return value;
+}
 
 // Part of a compiled format string. It can be either literal text or a
 // replacement field.
@@ -556,7 +558,8 @@ std::basic_string<Char> format(const CompiledFormat& cf, const Args&... args) {
 
 template <typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
-FMT_INLINE std::basic_string<typename S::char_type> format(S, Args&&... args) {
+FMT_INLINE std::basic_string<typename S::char_type> format(const S&,
+                                                           Args&&... args) {
   constexpr basic_string_view<typename S::char_type> str = S();
   if (str.size() == 2 && str[0] == '{' && str[1] == '}')
     return fmt::to_string(detail::first(args...));
@@ -573,6 +576,13 @@ OutputIt format_to(OutputIt out, const CompiledFormat& cf,
   using context = format_context_t<OutputIt, char_type>;
   return detail::cf::vformat_to<context>(out, cf,
                                          make_format_args<context>(args...));
+}
+
+template <typename OutputIt, typename S, typename... Args,
+          FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
+OutputIt format_to(OutputIt out, const S&, const Args&... args) {
+  constexpr auto compiled = compile<Args...>(S());
+  return format_to(out, compiled, args...);
 }
 
 template <
