@@ -1611,7 +1611,7 @@ OutputIt write_nonfinite(OutputIt out, bool isinf,
 
 template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(std::is_floating_point<T>::value)>
-OutputIt write(OutputIt out, T value, basic_format_specs<Char> specs = {},
+OutputIt write(OutputIt out, T value, basic_format_specs<Char> specs,
                locale_ref loc = {}) {
   if (const_check(!is_supported_floating_point(value))) return out;
   float_specs fspecs = parse_float_type_spec(specs);
@@ -1656,6 +1656,31 @@ OutputIt write(OutputIt out, T value, basic_format_specs<Char> specs = {},
   float_writer<Char> w(buffer.data(), static_cast<int>(buffer.size()), exp,
                        fspecs, point);
   return write_padded<align::right>(out, specs, w.size(), w);
+}
+
+template <typename Char, typename OutputIt, typename T,
+          FMT_ENABLE_IF(std::is_floating_point<T>::value)>
+OutputIt write(OutputIt out, T value) {
+  if (const_check(!is_supported_floating_point(value))) return out;
+  auto fspecs = float_specs();
+  if (std::signbit(value)) {  // value < 0 is false for NaN so use signbit.
+    fspecs.sign = sign::minus;
+    value = -value;
+  }
+
+  auto specs = basic_format_specs<Char>();
+  if (!std::isfinite(value))
+    return write_nonfinite(out, std::isinf(value), specs, fspecs);
+
+  memory_buffer buffer;
+  int precision = -1;
+  if (const_check(std::is_same<T, float>())) fspecs.binary32 = true;
+  fspecs.use_grisu = use_grisu<T>();
+  int exp = format_float(promote_float(value), precision, fspecs, buffer);
+  fspecs.precision = precision;
+  float_writer<Char> w(buffer.data(), static_cast<int>(buffer.size()), exp,
+                       fspecs, static_cast<Char>('.'));
+  return base_iterator(out, w(reserve(out, w.size())));
 }
 
 template <typename Char, typename OutputIt>
