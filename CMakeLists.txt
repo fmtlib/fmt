@@ -223,7 +223,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif ()
 
 if (BUILD_SHARED_LIBS)
-  if (UNIX AND NOT APPLE AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+  if (UNIX AND NOT APPLE AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS" AND NOT EMSCRIPTEN)
     # Fix rpmlint warning:
     # unused-direct-shlib-dependency /usr/lib/libformat.so.1.1.0 /lib/libm.so.6.
     target_link_libraries(fmt -Wl,--as-needed)
