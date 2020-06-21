@@ -1906,9 +1906,30 @@ TEST(FormatTest, DynamicFormatter) {
                    "precision not allowed for this argument type");
 }
 
+namespace adl_test {
+namespace fmt {
+namespace detail {
+struct foo {};
+template <typename, typename OutputIt> void write(OutputIt, foo) = delete;
+}  // namespace detail
+}  // namespace fmt
+}  // namespace adl_test
+
+FMT_BEGIN_NAMESPACE
+template <>
+struct formatter<adl_test::fmt::detail::foo> : formatter<std::string> {
+  template <typename FormatContext>
+  auto format(adl_test::fmt::detail::foo, FormatContext& ctx)
+      -> decltype(ctx.out()) {
+    return formatter<std::string>::format("foo", ctx);
+  }
+};
+FMT_END_NAMESPACE
+
 TEST(FormatTest, ToString) {
   EXPECT_EQ("42", fmt::to_string(42));
   EXPECT_EQ("0x1234", fmt::to_string(reinterpret_cast<void*>(0x1234)));
+  EXPECT_EQ("foo", fmt::to_string(adl_test::fmt::detail::foo()));
 }
 
 TEST(FormatTest, ToWString) { EXPECT_EQ(L"42", fmt::to_wstring(42)); }

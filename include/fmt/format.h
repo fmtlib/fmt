@@ -1777,6 +1777,15 @@ OutputIt write(OutputIt out, const void* value) {
   return write_ptr<Char>(out, to_uintptr(value), nullptr);
 }
 
+template <typename Char, typename OutputIt, typename T>
+auto write(OutputIt out, const T& value) -> typename std::enable_if<
+    mapped_type_constant<T, basic_format_context<OutputIt, Char>>::value ==
+        type::custom_type,
+    OutputIt>::type {
+  basic_format_context<OutputIt, Char> ctx(out, {}, {});
+  return formatter<T>().format(value, ctx);
+}
+
 // An argument visitor that formats the argument and writes it via the output
 // iterator. It's a class and not a generic lambda for compatibility with C++11.
 template <typename OutputIt, typename Char> struct default_arg_formatter {
