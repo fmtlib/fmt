@@ -1136,7 +1136,7 @@ int snprintf_float(T value, int precision, float_specs specs,
     precision = (precision >= 0 ? precision : 6) - 1;
 
   // Build the format string.
-  enum { max_format_size = 7 };  // Ths longest format is "%#.*Le".
+  enum { max_format_size = 7 };  // The longest format is "%#.*Le".
   char format[max_format_size];
   char* format_ptr = format;
   *format_ptr++ = '%';
@@ -1162,7 +1162,7 @@ int snprintf_float(T value, int precision, float_specs specs,
           "fuzz mode - avoid large allocation inside snprintf");
 #endif
     // Suppress the warning about a nonliteral format string.
-    // Cannot use auto becase of a bug in MinGW (#1532).
+    // Cannot use auto because of a bug in MinGW (#1532).
     int (*snprintf_ptr)(char*, size_t, const char*, ...) = FMT_SNPRINTF;
     int result = precision >= 0
                      ? snprintf_ptr(begin, capacity, format, precision, value)
