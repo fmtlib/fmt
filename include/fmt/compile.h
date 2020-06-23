@@ -408,6 +408,23 @@ template <typename Char, typename T, int N> struct field {
 template <typename Char, typename T, int N>
 struct is_compiled_format<field<Char, T, N>> : std::true_type {};
 
+// A replacement field that refers to argument N and has format specifiers.
+template <typename Char, typename T, int N> struct spec_field {
+  using char_type = Char;
+  mutable formatter<T, Char> fmt;
+
+  template <typename OutputIt, typename... Args>
+  OutputIt format(OutputIt out, const Args&... args) const {
+    // This ensures that the argument type is convertile to `const T&`.
+    const T& arg = get<N>(args...);
+    basic_format_context<OutputIt, Char> ctx(out, {});
+    return fmt.format(arg, ctx);
+  }
+};
+
+template <typename Char, typename T, int N>
+struct is_compiled_format<spec_field<Char, T, N>> : std::true_type {};
+
 template <typename L, typename R> struct concat {
   L lhs;
   R rhs;
@@ -456,6 +473,21 @@ constexpr auto parse_tail(T head, S format_str) {
   }
 }
 
+template <typename T, typename Char> struct parse_specs_result {
+  formatter<T, Char> fmt;
+  size_t end;
+};
+
+template <typename T, typename Char>
+constexpr parse_specs_result<T, Char> parse_specs(basic_string_view<Char> str,
+                                                  size_t pos) {
+  str.remove_prefix(pos);
+  auto ctx = basic_format_parse_context<Char>(str);
+  auto f = formatter<T, Char>();
+  auto end = f.parse(ctx);
+  return {f, pos + (end - str.data()) + 1};
+}
+
 // Compiles a non-empty format string and returns the compiled representation
 // or unknown_format() on unrecognized input.
 template <typename Args, size_t POS, int ID, typename S>
@@ -471,6 +503,11 @@ constexpr auto compile_format_string(S format_str) {
       using type = get_type<ID, Args>;
       return parse_tail<Args, POS + 2, ID + 1>(field<char_type, type, ID>(),
                                                format_str);
+    } else if constexpr (str[POS + 1] == ':') {
+      using type = get_type<ID, Args>;
+      constexpr auto result = parse_specs<type>(str, POS + 2);
+      return parse_tail<Args, result.end, ID + 1>(
+          spec_field<char_type, type, ID>{result.fmt}, format_str);
     } else {
       return unknown_format();
     }

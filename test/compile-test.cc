@@ -127,7 +127,8 @@ struct formattable {};
 
 FMT_BEGIN_NAMESPACE
 template <> struct formatter<formattable> : formatter<const char*> {
-  auto format(formattable, format_context& ctx) -> decltype(ctx.out()) {
+  template <typename FormatContext>
+  auto format(formattable, FormatContext& ctx) -> decltype(ctx.out()) {
     return formatter<const char*>::format("foo", ctx);
   }
 };
@@ -154,6 +155,11 @@ TEST(CompileTest, FormatDefault) {
   EXPECT_EQ("4.2", fmt::format(FMT_COMPILE("{}"), 4.2));
   EXPECT_EQ("foo", fmt::format(FMT_COMPILE("{}"), "foo"));
   EXPECT_EQ("foo", fmt::format(FMT_COMPILE("{}"), std::string("foo")));
+  EXPECT_EQ("foo", fmt::format(FMT_COMPILE("{}"), formattable()));
+}
+
+TEST(CompileTest, FormatSpecs) {
+  EXPECT_EQ("42", fmt::format(FMT_COMPILE("{:x}"), 0x42));
 }
 
 TEST(CompileTest, FormatTo) {
