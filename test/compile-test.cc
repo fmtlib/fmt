@@ -67,46 +67,37 @@ TEST(CompileTest, CompileTimePreparedPartsTypeProvider) {
 #endif
 
 TEST(CompileTest, PassStringLiteralFormat) {
-  const auto prepared = fmt::compile<int>("test {}");
+  const auto prepared = fmt::detail::compile<int>("test {}");
   EXPECT_EQ("test 42", fmt::format(prepared, 42));
-  const auto wprepared = fmt::compile<int>(L"test {}");
+  const auto wprepared = fmt::detail::compile<int>(L"test {}");
   EXPECT_EQ(L"test 42", fmt::format(wprepared, 42));
 }
-
-#if FMT_USE_CONSTEXPR
-TEST(CompileTest, PassCompileString) {
-  const auto prepared = fmt::compile<int>(FMT_STRING("test {}"));
-  EXPECT_EQ("test 42", fmt::format(prepared, 42));
-  const auto wprepared = fmt::compile<int>(FMT_STRING(L"test {}"));
-  EXPECT_EQ(L"test 42", fmt::format(wprepared, 42));
-}
-#endif
 
 TEST(CompileTest, FormatToArrayOfChars) {
   char buffer[32] = {0};
-  const auto prepared = fmt::compile<int>("4{}");
+  const auto prepared = fmt::detail::compile<int>("4{}");
   fmt::format_to(fmt::detail::make_checked(buffer, 32), prepared, 2);
   EXPECT_EQ(std::string("42"), buffer);
   wchar_t wbuffer[32] = {0};
-  const auto wprepared = fmt::compile<int>(L"4{}");
+  const auto wprepared = fmt::detail::compile<int>(L"4{}");
   fmt::format_to(fmt::detail::make_checked(wbuffer, 32), wprepared, 2);
   EXPECT_EQ(std::wstring(L"42"), wbuffer);
 }
 
 TEST(CompileTest, FormatToIterator) {
   std::string s(2, ' ');
-  const auto prepared = fmt::compile<int>("4{}");
+  const auto prepared = fmt::detail::compile<int>("4{}");
   fmt::format_to(s.begin(), prepared, 2);
   EXPECT_EQ("42", s);
   std::wstring ws(2, L' ');
-  const auto wprepared = fmt::compile<int>(L"4{}");
+  const auto wprepared = fmt::detail::compile<int>(L"4{}");
   fmt::format_to(ws.begin(), wprepared, 2);
   EXPECT_EQ(L"42", ws);
 }
 
 TEST(CompileTest, FormatToN) {
   char buf[5];
-  auto f = fmt::compile<int>("{:10}");
+  auto f = fmt::detail::compile<int>("{:10}");
   auto result = fmt::format_to_n(buf, 5, f, 42);
   EXPECT_EQ(result.size, 10);
   EXPECT_EQ(result.out, buf + 5);
@@ -114,12 +105,12 @@ TEST(CompileTest, FormatToN) {
 }
 
 TEST(CompileTest, FormattedSize) {
-  auto f = fmt::compile<int>("{:10}");
+  auto f = fmt::detail::compile<int>("{:10}");
   EXPECT_EQ(fmt::formatted_size(f, 42), 10);
 }
 
 TEST(CompileTest, MultipleTypes) {
-  auto f = fmt::compile<int, int>("{} {}");
+  auto f = fmt::detail::compile<int, int>("{} {}");
   EXPECT_EQ(fmt::format(f, 42, 42), "42 42");
 }
 
@@ -135,12 +126,12 @@ template <> struct formatter<formattable> : formatter<const char*> {
 FMT_END_NAMESPACE
 
 TEST(CompileTest, FormatUserDefinedType) {
-  auto f = fmt::compile<formattable>("{}");
+  auto f = fmt::detail::compile<formattable>("{}");
   EXPECT_EQ(fmt::format(f, formattable()), "foo");
 }
 
 TEST(CompileTest, EmptyFormatString) {
-  auto f = fmt::compile<>("");
+  auto f = fmt::detail::compile<>("");
   EXPECT_EQ(fmt::format(f), "");
 }
 
