@@ -1525,7 +1525,7 @@ class dynamic_format_arg_store
  public:
   /**
     \rst
-    Adds an argument into the dynamic store for later passing to a formating
+    Adds an argument into the dynamic store for later passing to a formatting
     function.
 
     Note that custom types and string types (but not string views) are copied
@@ -1550,7 +1550,7 @@ class dynamic_format_arg_store
   /**
     \rst
     Adds a reference to the argument into the dynamic store for later passing to
-    a formating function. Supports named arguments wrapped in
+    a formatting function. Supports named arguments wrapped in
     ``std::reference_wrapper`` via ``std::ref()``/``std::cref()``.
 
     **Example**::
@@ -1578,7 +1578,7 @@ class dynamic_format_arg_store
   }
 
   /**
-    Adds named argument into the dynamic store for later passing to a formating
+    Adds named argument into the dynamic store for later passing to a formatting
     function. ``std::reference_wrapper`` is supported to avoid copying of the
     argument.
   */
