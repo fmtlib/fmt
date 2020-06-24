@@ -185,7 +185,7 @@ further details refer to the `source
 
 {fmt} is 10x faster than ``std::ostringstream`` and ``sprintf`` on floating-point
 formatting (`dtoa-benchmark <https://github.com/fmtlib/dtoa-benchmark>`_)
-and as fast as `double-conversion <https://github.com/google/double-conversion>`_:
+and faster than `double-conversion <https://github.com/google/double-conversion>`_:
 
 .. image:: https://user-images.githubusercontent.com/576385/69767160-cdaca400-112f-11ea-9fc5-347c9f83caad.png
    :target: https://fmt.dev/unknown_mac64_clang10.0.html
