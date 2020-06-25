@@ -21,6 +21,19 @@ class compiled_string {};
 template <typename S>
 struct is_compiled_string : std::is_base_of<compiled_string, S> {};
 
+/**
+  \rst
+  Constructs a format string that will be translated into an efficient
+  formatting code at compile time from a string literal *s*. Requires C++17
+  ``constexpr if``.
+
+  **Example**::
+
+    // Converts 42 into std::string using the most efficient code and no runtime
+    // format string processing.
+    std::string s = fmt::format(FMT_COMPILE("{}"), 42);
+  \endrst
+ */
 #define FMT_COMPILE(s) FMT_STRING_IMPL(s, fmt::detail::compiled_string)
 
 template <typename T, typename... Tail>

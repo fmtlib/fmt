@@ -2840,7 +2840,7 @@ FMT_CONSTEXPR basic_string_view<Char> compile_string_to_view(
   **Example**::
 
     // A compile-time error because 'd' is an invalid specifier for strings.
-    std::string s = format(FMT_STRING("{:d}"), "foo");
+    std::string s = fmt::format(FMT_STRING("{:d}"), "foo");
   \endrst
  */
 #define FMT_STRING(s) FMT_STRING_IMPL(s, fmt::compile_string)

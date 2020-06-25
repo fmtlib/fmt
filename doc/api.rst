@@ -14,6 +14,7 @@ The {fmt} library API consists of the following parts:
 * :ref:`fmt/ranges.h <ranges-api>`: additional formatting support for ranges
   and tuples
 * :ref:`fmt/chrono.h <chrono-api>`: date and time formatting
+* :ref:`fmt/compile.h <compile-api>`: format string compilation
 * :ref:`fmt/ostream.h <ostream-api>`: ``std::ostream`` support
 * :ref:`fmt/printf.h <printf-api>`: ``printf`` formatting
 
@@ -420,6 +421,19 @@ formatting::
 
 The format string syntax is described in the documentation of
 `strftime <http://en.cppreference.com/w/cpp/chrono/c/strftime>`_.
+
+.. _compile-api:
+
+Format string compilation
+=========================
+
+Format strings can be processed at compile time for built-in and string types
+as well as user-defined types with ``constexpr`` ``parse`` functions in their
+``formatter`` specializations. Format string compilation can generate more
+binary code compared to the normal API and is only recommended in places where
+formatting is a performance bottleneck.
+
+.. doxygendefine:: FMT_COMPILE
 
 .. _ostream-api:
 
