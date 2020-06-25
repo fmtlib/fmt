@@ -23,14 +23,14 @@ struct is_compiled_string : std::is_base_of<compiled_string, S> {};
 
 /**
   \rst
-  Constructs a format string that will be translated into an efficient
-  formatting code at compile time from a string literal *s*. Requires C++17
-  ``constexpr if``.
+  Converts a string literal *s* into a format string that will be parsed at
+  compile time and converted into efficient formatting code. Requires C++17
+  ``constexpr if`` compiler support.
 
   **Example**::
 
-    // Converts 42 into std::string using the most efficient code and no runtime
-    // format string processing.
+    // Converts 42 into std::string using the most efficient method and no
+    // runtime format string processing.
     std::string s = fmt::format(FMT_COMPILE("{}"), 42);
   \endrst
  */

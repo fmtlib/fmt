@@ -427,11 +427,13 @@ The format string syntax is described in the documentation of
 Format string compilation
 =========================
 
-Format strings can be processed at compile time for built-in and string types
-as well as user-defined types with ``constexpr`` ``parse`` functions in their
-``formatter`` specializations. Format string compilation can generate more
-binary code compared to the normal API and is only recommended in places where
-formatting is a performance bottleneck.
+``fmt/compile.h`` provides format string compilation support. Format strings
+are parsed at compile time and converted into efficient formatting code. This
+supports arguments of built-in and string types as well as user-defined types
+with ``constexpr`` ``parse`` functions in their ``formatter`` specializations.
+Format string compilation can generate more binary code compared to the default
+API and is only recommended in places where formatting is a performance
+bottleneck.
 
 .. doxygendefine:: FMT_COMPILE
 
