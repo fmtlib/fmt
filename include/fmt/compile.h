@@ -573,7 +573,8 @@ auto compile(const Char (&format_str)[N])
 
 // DEPRECATED! use FMT_COMPILE instead.
 template <typename... Args>
-FMT_DEPRECATED auto compile(const Args&... args) -> decltype(detail::compile(args...)) {
+FMT_DEPRECATED auto compile(const Args&... args)
+    -> decltype(detail::compile(args...)) {
   return detail::compile(args...);
 }
 

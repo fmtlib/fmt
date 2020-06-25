@@ -73,7 +73,7 @@
 #  if defined(__clang__)
 #    define FMT_FALLTHROUGH [[clang::fallthrough]]
 #  elif FMT_GCC_VERSION >= 700 && !defined(__PGI) && \
-        (!defined(__EDG_VERSION__) || __EDG_VERSION__ >= 520)
+      (!defined(__EDG_VERSION__) || __EDG_VERSION__ >= 520)
 #    define FMT_FALLTHROUGH [[gnu::fallthrough]]
 #  else
 #    define FMT_FALLTHROUGH
@@ -129,9 +129,9 @@ FMT_END_NAMESPACE
 
 #ifndef FMT_USE_USER_DEFINED_LITERALS
 // EDG based compilers (Intel, NVIDIA, Elbrus, etc), GCC and MSVC support UDLs.
-#  if (FMT_HAS_FEATURE(cxx_user_literals) || FMT_GCC_VERSION >= 407 ||       \
-       FMT_MSC_VER >= 1900) &&                                               \
-       (!defined(__EDG_VERSION__) || __EDG_VERSION__ >= /* UDL feature */ 480)
+#  if (FMT_HAS_FEATURE(cxx_user_literals) || FMT_GCC_VERSION >= 407 || \
+       FMT_MSC_VER >= 1900) &&                                         \
+      (!defined(__EDG_VERSION__) || __EDG_VERSION__ >= /* UDL feature */ 480)
 #    define FMT_USE_USER_DEFINED_LITERALS 1
 #  else
 #    define FMT_USE_USER_DEFINED_LITERALS 0
@@ -141,9 +141,9 @@ FMT_END_NAMESPACE
 #ifndef FMT_USE_UDL_TEMPLATE
 // EDG frontend based compilers (icc, nvcc, etc) and GCC < 6.4 do not properly
 // support UDL templates and GCC >= 9 warns about them.
-#  if FMT_USE_USER_DEFINED_LITERALS &&                                       \
-      (!defined(__EDG_VERSION__) || __EDG_VERSION__ >= 501) &&               \
-      ((FMT_GCC_VERSION >= 604 && __cplusplus >= 201402L) ||                 \
+#  if FMT_USE_USER_DEFINED_LITERALS &&                         \
+      (!defined(__EDG_VERSION__) || __EDG_VERSION__ >= 501) && \
+      ((FMT_GCC_VERSION >= 604 && __cplusplus >= 201402L) ||   \
        FMT_CLANG_VERSION >= 304)
 #    define FMT_USE_UDL_TEMPLATE 1
 #  else
