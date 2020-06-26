@@ -49,7 +49,7 @@ FMT_BEGIN_NAMESPACE
 namespace detail {
 
 FMT_FUNC void assert_fail(const char* file, int line, const char* message) {
-  print(stderr, "{}:{}: assertion failed: {}", file, line, message);
+  std::fprintf(stderr, "%s:%d: assertion failed: %s", file, line, message);
   // Chosen instead of std::abort to satisfy Clang in CUDA mode during device
   // code pass.
   std::terminate();
