@@ -210,13 +210,7 @@
 #  define FMT_CLASS_API
 #endif
 #ifndef FMT_API
-#  if FMT_GCC_VERSION || FMT_CLANG_VERSION
-#    define FMT_API __attribute__((visibility("default")))
-#    define FMT_EXTERN_TEMPLATE_API FMT_API
-#    define FMT_INSTANTIATION_DEF_API
-#  else
-#    define FMT_API
-#  endif
+#  define FMT_API
 #endif
 #ifndef FMT_EXTERN_TEMPLATE_API
 #  define FMT_EXTERN_TEMPLATE_API
