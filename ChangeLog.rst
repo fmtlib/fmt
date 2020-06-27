@@ -8,7 +8,7 @@
 * Applied extern templates to improve compile times when using the core API
   and ``fmt/format.h`` (`#1452 <https://github.com/fmtlib/fmt/issues/1452>`_).
   For example, on macOS with clang the compile time dropped from 2.3s to 0.3s
-  with ``-O2`` or from 0.6s to 0.3s with the default settings (``-O0``).
+  with ``-O2`` and from 0.6s to 0.3s with the default settings (``-O0``).
 
   Before (``-O2``)::
 
