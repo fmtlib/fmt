@@ -752,7 +752,9 @@ template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
   static const uint64_t zero_or_powers_of_10_64[];
   static const uint64_t pow10_significands[];
   static const int16_t pow10_exponents[];
-  static const char digits[];
+  // GCC generates slightly better code for pairs than chars.
+  using digit_pair = char[2];
+  static const digit_pair digits[];
   static const char hex_digits[];
   static const char foreground_color[];
   static const char background_color[];
@@ -903,7 +905,7 @@ inline format_decimal_result<Char*> format_decimal(Char* out, UInt value,
     // of for every digit. The idea comes from the talk by Alexandrescu
     // "Three Optimization Tips for C++". See speed-test for a comparison.
     out -= 2;
-    copy2(out, data::digits + static_cast<unsigned>((value % 100) * 2));
+    copy2(out, data::digits[value % 100]);
     value /= 100;
   }
   if (value < 10) {
@@ -911,7 +913,7 @@ inline format_decimal_result<Char*> format_decimal(Char* out, UInt value,
     return {out, end};
   }
   out -= 2;
-  copy2(out, data::digits + static_cast<unsigned>(value * 2));
+  copy2(out, data::digits[value]);
   return {out, end};
 }
 
@@ -1085,12 +1087,12 @@ template <typename Char, typename It> It write_exponent(int exp, It it) {
     *it++ = static_cast<Char>('+');
   }
   if (exp >= 100) {
-    const char* top = data::digits + (exp / 100) * 2;
+    const char* top = data::digits[exp / 100];
     if (exp >= 1000) *it++ = static_cast<Char>(top[0]);
     *it++ = static_cast<Char>(top[1]);
     exp %= 100;
   }
-  const char* d = data::digits + exp * 2;
+  const char* d = data::digits[exp];
   *it++ = static_cast<Char>(d[0]);
   *it++ = static_cast<Char>(d[1]);
   return it;
