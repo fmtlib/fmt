@@ -1,8 +1,39 @@
 7.0.0 - TBD
+-----------
 
 * Reduced the library size. For example, on macOS the stripped binary
-  statically linked with {fmt} shrinked from ~368k to less than 100k:
+  statically linked with {fmt} shrank from ~368k to less than 100k:
   http://www.zverovich.net/2020/05/21/reducing-library-size.html
+
+* Applied extern templates to improve compile times when using the core API
+  and ``fmt/format.h`` (`#1452 <https://github.com/fmtlib/fmt/issues/1452>`_).
+  For example, on macOS with clang the compile time dropped from 2.3s to 0.3s
+  with ``-O2`` or from 0.6s to 0.3s with the default settings (``-O0``).
+
+  Before (``-O2``)::
+
+    % time c++ -c test.cc -I include -std=c++17 -O2
+    c++ -c test.cc -I include -std=c++17 -O2  2.22s user 0.08s system 99% cpu 2.311 total
+
+  After (``-O2``)::
+
+    % time c++ -c test.cc -I include -std=c++17 -O2
+    c++ -c test.cc -I include -std=c++17 -O2  0.26s user 0.04s system 98% cpu 0.303 total
+
+  Before (default)::
+
+    % time c++ -c test.cc -I include -std=c++17
+    c++ -c test.cc -I include -std=c++17  0.53s user 0.06s system 98% cpu 0.601 total
+
+  After (default)::
+
+    % time c++ -c test.cc -I include -std=c++17
+    c++ -c test.cc -I include -std=c++17  0.24s user 0.06s system 98% cpu 0.301 total
+
+  It is still recommended to use ``fmt/core.h`` instead of ``fmt/format.h`` but
+  the compile time difference is now smaller.
+
+  Thanks `@alex3d <https://github.com/alex3d>`_ for the suggestion.
 
 * Named arguments are now stored on stack (no dynamic memory allocations) and
   the generated binary code is more compact and efficient. For example
@@ -43,13 +74,53 @@
           .L.str.1:
                   .asciz  "answer"
 
+* Implemented compile-time checks for dynamic width and precision
+  (`#1614 <https://github.com/fmtlib/fmt/issues/1614>`_). For example
+
+  .. code:: c++
+
+     #include <fmt/format.h>
+
+     int main() {
+       fmt::print(FMT_STRING("{0:{1}}"), 42);
+     }
+
+  gives a compilation error because argument 1 doesn't exist::
+
+    In file included from test.cc:1:
+    include/fmt/format.h:2726:27: error: constexpr variable 'invalid_format' must be
+    initialized by a constant expression
+      FMT_CONSTEXPR_DECL bool invalid_format =
+                              ^
+    include/fmt/core.h:1727:3: note: in instantiation of function template specialization
+    'fmt::v6::internal::check_format_string<int, FMT_COMPILE_STRING, 0>' requested here
+      check_format_string<Args...>(format_str);
+      ^
+    ...
+    include/fmt/core.h:569:26: note: in call to
+    '&checker(s, {}).context_->on_error(&"argument not found"[0])'
+        if (id >= num_args_) on_error("argument not found");
+                            ^
+
 * Implemented the ``'L'`` specifier for locale-specific formatting of
   floating-point numbers to improve compatibility with ``std::format``
   (`#1624 <https://github.com/fmtlib/fmt/issues/1624>`_).
 
+* Made ``fmt::printf`` not compute string length when using precision to allow
+  passing non-nul-terminated strings
+  (`#1595 <https://github.com/fmtlib/fmt/issues/1595>`_):
+
+  .. code:: c++
+
+     char foo[] = {'H', 'e', 'l', 'l', 'o'};
+     fmt::printf("%.5s\n", foo);  // This is fine.
+
+* Removed the deprecated and disabled by default ``fmt`` macro and
+  ``FMT_STRING_ALIAS``.
+
 * Improved documentation
   (`#1643 <https://github.com/fmtlib/fmt/pull/1643>`_).
-  Thanks `@senior7515 (Alexander Gallego) <https://github.com/senior7515>`_,
+  Thanks `@senior7515 (Alexander Gallego) <https://github.com/senior7515>`_.
 
 * Fixed various warnings and compilation issues
   (`#1616 <https://github.com/fmtlib/fmt/pull/1616>`_,
@@ -58,7 +129,8 @@
   `#1628 <https://github.com/fmtlib/fmt/issues/1628>`_,
   `#1629 <https://github.com/fmtlib/fmt/pull/1629>`_
   `#1631 <https://github.com/fmtlib/fmt/issues/1631>`_,
-  `#1633 <https://github.com/fmtlib/fmt/pull/1633>`_).
+  `#1633 <https://github.com/fmtlib/fmt/pull/1633>`_,
+  `#1649 <https://github.com/fmtlib/fmt/pull/1649>`_).
   Thanks `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_,
   `@gabime (Gabi Melman) <https://github.com/gabime>`_,
   `@johnor (Johan) <https://github.com/johnor>`_,
@@ -100,7 +172,7 @@
 
   if ``S`` is not formattable.
 
-* Reduced library size by ~10%.
+* Reduced the library size by ~10%.
 
 * Always print decimal point if ``#`` is specified
   (`#1476 <https://github.com/fmtlib/fmt/issues/1476>`_,
