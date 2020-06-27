@@ -1373,7 +1373,7 @@ struct stringifier {
   }
   std::string operator()(basic_format_arg<format_context>::handle h) const {
     memory_buffer buf;
-    internal::buffer<char>& base = buf;
+    detail::buffer<char>& base = buf;
     format_parse_context parse_ctx({});
     format_context format_ctx(std::back_inserter(base), {}, {});
     h.format(parse_ctx, format_ctx);

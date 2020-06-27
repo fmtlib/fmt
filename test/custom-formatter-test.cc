@@ -39,7 +39,7 @@ class custom_arg_formatter
 
 std::string custom_vformat(fmt::string_view format_str, fmt::format_args args) {
   fmt::memory_buffer buffer;
-  fmt::internal::buffer<char>& base = buffer;
+  fmt::detail::buffer<char>& base = buffer;
   // Pass custom argument formatter as a template arg to vwrite.
   fmt::vformat_to<custom_arg_formatter>(std::back_inserter(base), format_str,
                                         args);

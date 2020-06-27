@@ -1,3 +1,69 @@
+7.0.0 - TBD
+
+* Reduced the library size. For example, on macOS the stripped binary
+  statically linked with {fmt} shrinked from ~368k to less than 100k:
+  http://www.zverovich.net/2020/05/21/reducing-library-size.html
+
+* Named arguments are now stored on stack (no dynamic memory allocations) and
+  the generated binary code is more compact and efficient. For example
+
+  .. code:: c++
+
+     #include <fmt/core.h>
+
+     int main() {
+       fmt::print("The answer is {answer}\n", fmt::arg("answer", 42));
+     }
+
+  compiles to just (`godbolt <https://godbolt.org/z/NcfEp_>`__)
+
+  .. code:: asm
+
+      .LC0:
+              .string "answer"
+      .LC1:
+              .string "The answer is {answer}\n"
+      main:
+              sub     rsp, 56
+              mov     edi, OFFSET FLAT:.LC1
+              mov     esi, 23
+              movabs  rdx, 4611686018427387905
+              lea     rax, [rsp+32]
+              lea     rcx, [rsp+16]
+              mov     QWORD PTR [rsp+8], 1
+              mov     QWORD PTR [rsp], rax
+              mov     DWORD PTR [rsp+16], 42
+              mov     QWORD PTR [rsp+32], OFFSET FLAT:.LC0
+              mov     DWORD PTR [rsp+40], 0
+              call    fmt::v6::vprint(fmt::v6::basic_string_view<char>, fmt::v6::format_args)
+              xor     eax, eax
+              add     rsp, 56
+              ret
+
+          .L.str.1:
+                  .asciz  "answer"
+
+* Implemented the ``'L'`` specifier for locale-specific formatting of
+  floating-point numbers to improve compatibility with ``std::format``
+  (`#1624 <https://github.com/fmtlib/fmt/issues/1624>`_).
+
+* Improved documentation
+  (`#1643 <https://github.com/fmtlib/fmt/pull/1643>`_).
+  Thanks `@senior7515 (Alexander Gallego) <https://github.com/senior7515>`_,
+
+* Fixed various warnings and compilation issues
+  (`#1616 <https://github.com/fmtlib/fmt/pull/1616>`_,
+  `#1622 <https://github.com/fmtlib/fmt/issues/1622>`_,
+  `#1627 <https://github.com/fmtlib/fmt/pull/1627>`_,
+  `#1628 <https://github.com/fmtlib/fmt/issues/1628>`_,
+  `#1629 <https://github.com/fmtlib/fmt/pull/1629>`_
+  `#1631 <https://github.com/fmtlib/fmt/issues/1631>`_,
+  `#1633 <https://github.com/fmtlib/fmt/pull/1633>`_).
+  Thanks `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_,
+  `@gabime (Gabi Melman) <https://github.com/gabime>`_,
+  `@johnor (Johan) <https://github.com/johnor>`_,
+  `@gabime (Dmitry Kurkin) <https://github.com/Kurkin>`_.
+
 6.2.1 - 2020-05-09
 ------------------
 

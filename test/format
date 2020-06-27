@@ -38,9 +38,9 @@ namespace std {
   
   template<class Out, class charT> class basic_format_context;
   using format_context = basic_format_context<
-    /* unspecified */ std::back_insert_iterator<fmt::internal::buffer<char>>, char>;
+    /* unspecified */ std::back_insert_iterator<fmt::detail::buffer<char>>, char>;
   using wformat_context = basic_format_context<
-    /* unspecified */ std::back_insert_iterator<fmt::internal::buffer<wchar_t>>, wchar_t>;
+    /* unspecified */ std::back_insert_iterator<fmt::detail::buffer<wchar_t>>, wchar_t>;
 
   template<class T, class charT = char> struct formatter {
     formatter() = delete;
@@ -219,7 +219,7 @@ namespace std {
 
     // Implementation details:
     using format_arg = basic_format_arg<basic_format_context>;
-    basic_format_context(Out out, basic_format_args<basic_format_context> args, fmt::internal::locale_ref)
+    basic_format_context(Out out, basic_format_args<basic_format_context> args, fmt::detail::locale_ref)
     : args_(args), out_(out) {}
     detail::error_handler error_handler() const { return {}; }
     basic_format_arg<basic_format_context> arg(fmt::basic_string_view<charT>) const {
@@ -490,10 +490,10 @@ namespace detail {
 
 template <typename OutputIt, typename Char>
 class arg_formatter
-    : public fmt::internal::arg_formatter_base<OutputIt, Char, error_handler> {
+    : public fmt::detail::arg_formatter_base<OutputIt, Char, error_handler> {
  private:
   using char_type = Char;
-  using base = fmt::internal::arg_formatter_base<OutputIt, Char, error_handler>;
+  using base = fmt::detail::arg_formatter_base<OutputIt, Char, error_handler>;
   using format_context = std::basic_format_context<OutputIt, Char>;
   using parse_context = basic_format_parse_context<Char>;
 
@@ -528,36 +528,36 @@ class arg_formatter
 };
 
 template <typename Context>
-inline fmt::internal::type get_type(basic_format_arg<Context> arg) {
+inline fmt::detail::type get_type(basic_format_arg<Context> arg) {
   return visit_format_arg([&] (auto val) {
     using char_type = typename Context::char_type;
     using T = decltype(val);
     if (std::is_same_v<T, monostate>)
-      return fmt::internal::type::none_type;
+      return fmt::detail::type::none_type;
     if (std::is_same_v<T, bool>)
-      return fmt::internal::type::bool_type;
+      return fmt::detail::type::bool_type;
     if (std::is_same_v<T, char_type>)
-      return fmt::internal::type::char_type;
+      return fmt::detail::type::char_type;
     if (std::is_same_v<T, int>)
-      return fmt::internal::type::int_type;
+      return fmt::detail::type::int_type;
     if (std::is_same_v<T, unsigned int>)
-      return fmt::internal::type::uint_type;
+      return fmt::detail::type::uint_type;
     if (std::is_same_v<T, long long int>)
-      return fmt::internal::type::long_long_type;
+      return fmt::detail::type::long_long_type;
     if (std::is_same_v<T, unsigned long long int>)
-      return fmt::internal::type::ulong_long_type;
+      return fmt::detail::type::ulong_long_type;
     if (std::is_same_v<T, double>)
-      return fmt::internal::type::double_type;
+      return fmt::detail::type::double_type;
     if (std::is_same_v<T, long double>)
-      return fmt::internal::type::long_double_type;
+      return fmt::detail::type::long_double_type;
     if (std::is_same_v<T, const char_type*>)
-      return fmt::internal::type::cstring_type;
+      return fmt::detail::type::cstring_type;
     if (std::is_same_v<T, basic_string_view<char_type>>)
-      return fmt::internal::type::string_type;
+      return fmt::detail::type::string_type;
     if (std::is_same_v<T, const void*>)
-      return fmt::internal::type::pointer_type;
+      return fmt::detail::type::pointer_type;
     assert(get_value(arg).index() == 12);
-    return fmt::internal::type::custom_type;
+    return fmt::detail::type::custom_type;
   }, arg);
 }
 
@@ -585,13 +585,13 @@ struct format_handler : detail::error_handler {
 
   format_handler(iterator out, basic_string_view<Char> str,
                  basic_format_args<Context> format_args,
-                 fmt::internal::locale_ref loc)
+                 fmt::detail::locale_ref loc)
       : parse_ctx(str), context(out, format_args, loc) {}
 
   void on_text(const Char* begin, const Char* end) {
-    auto size = fmt::internal::to_unsigned(end - begin);
+    auto size = fmt::detail::to_unsigned(end - begin);
     auto out = context.out();
-    auto&& it = fmt::internal::reserve(out, size);
+    auto&& it = fmt::detail::reserve(out, size);
     it = std::copy_n(begin, size, it);
     context.advance_to(out);
   }
@@ -614,9 +614,9 @@ struct format_handler : detail::error_handler {
     custom_formatter<Context> f(parse_ctx, context);
     if (visit_format_arg(f, arg)) return &*parse_ctx.begin();
     fmt::basic_format_specs<Char> specs;
-    using fmt::internal::specs_handler;
+    using fmt::detail::specs_handler;
     using parse_context = basic_format_parse_context<Char>;
-    fmt::internal::specs_checker<specs_handler<parse_context, Context>> handler(
+    fmt::detail::specs_checker<specs_handler<parse_context, Context>> handler(
         specs_handler<parse_context, Context>(specs, parse_ctx, context), get_type(arg));
     begin = parse_format_specs(begin, end, handler);
     if (begin == end || *begin != '}') on_error("missing '}' in format string");
@@ -635,45 +635,45 @@ struct formatter {
   // terminating '}'.
   template <typename ParseContext>
   FMT_CONSTEXPR typename ParseContext::iterator parse(ParseContext& ctx) {
-    namespace internal = fmt::internal;
-    typedef internal::dynamic_specs_handler<ParseContext> handler_type;
-    auto type = internal::mapped_type_constant<T, fmt::buffer_context<Char>>::value;
-    internal::specs_checker<handler_type> handler(handler_type(specs_, ctx),
+    namespace detail = fmt::detail;
+    typedef detail::dynamic_specs_handler<ParseContext> handler_type;
+    auto type = detail::mapped_type_constant<T, fmt::buffer_context<Char>>::value;
+    detail::specs_checker<handler_type> handler(handler_type(specs_, ctx),
                                                   type);
     auto it = parse_format_specs(ctx.begin(), ctx.end(), handler);
     auto type_spec = specs_.type;
     auto eh = ctx.error_handler();
     switch (type) {
-    case internal::type::none_type:
+    case detail::type::none_type:
       FMT_ASSERT(false, "invalid argument type");
       break;
-    case internal::type::int_type:
-    case internal::type::uint_type:
-    case internal::type::long_long_type:
-    case internal::type::ulong_long_type:
-    case internal::type::bool_type:
+    case detail::type::int_type:
+    case detail::type::uint_type:
+    case detail::type::long_long_type:
+    case detail::type::ulong_long_type:
+    case detail::type::bool_type:
       handle_int_type_spec(type_spec,
-                           internal::int_type_checker<decltype(eh)>(eh));
+                           detail::int_type_checker<decltype(eh)>(eh));
       break;
-    case internal::type::char_type:
+    case detail::type::char_type:
       handle_char_specs(
-          &specs_, internal::char_specs_checker<decltype(eh)>(type_spec, eh));
+          &specs_, detail::char_specs_checker<decltype(eh)>(type_spec, eh));
       break;
-    case internal::type::double_type:
-    case internal::type::long_double_type:
-      internal::parse_float_type_spec(specs_, eh);
+    case detail::type::double_type:
+    case detail::type::long_double_type:
+      detail::parse_float_type_spec(specs_, eh);
       break;
-    case internal::type::cstring_type:
-      internal::handle_cstring_type_spec(
-          type_spec, internal::cstring_type_checker<decltype(eh)>(eh));
+    case detail::type::cstring_type:
+      detail::handle_cstring_type_spec(
+          type_spec, detail::cstring_type_checker<decltype(eh)>(eh));
       break;
-    case internal::type::string_type:
-      internal::check_string_type_spec(type_spec, eh);
+    case detail::type::string_type:
+      detail::check_string_type_spec(type_spec, eh);
       break;
-    case internal::type::pointer_type:
-      internal::check_pointer_type_spec(type_spec, eh);
+    case detail::type::pointer_type:
+      detail::check_pointer_type_spec(type_spec, eh);
       break;
-    case internal::type::custom_type:
+    case detail::type::custom_type:
       // Custom format specifiers should be checked in parse functions of
       // formatter specializations.
       break;
@@ -683,9 +683,9 @@ struct formatter {
 
   template <typename FormatContext>
   auto format(const T& val, FormatContext& ctx) -> decltype(ctx.out()) {
-    fmt::internal::handle_dynamic_spec<fmt::internal::width_checker>(
+    fmt::detail::handle_dynamic_spec<fmt::detail::width_checker>(
         specs_.width, specs_.width_ref, ctx);
-    fmt::internal::handle_dynamic_spec<fmt::internal::precision_checker>(
+    fmt::detail::handle_dynamic_spec<fmt::detail::precision_checker>(
         specs_.precision, specs_.precision_ref, ctx);
     using af = arg_formatter<typename FormatContext::iterator,
                              typename FormatContext::char_type>;
@@ -694,7 +694,7 @@ struct formatter {
   }
 
  private:
-  fmt::internal::dynamic_format_specs<Char> specs_;
+  fmt::detail::dynamic_format_specs<Char> specs_;
 };
 }  // namespace detail
 
@@ -711,11 +711,11 @@ template<class... Args>
 
 string vformat(string_view fmt, format_args args) {
   fmt::memory_buffer mbuf;
-  fmt::internal::buffer<char>& buf = mbuf;
+  fmt::detail::buffer<char>& buf = mbuf;
   using af = detail::arg_formatter<fmt::format_context::iterator, char>;
   detail::format_handler<af, char, format_context>
     h(std::back_inserter(buf), fmt, args, {});
-  fmt::internal::parse_format_string<false>(fmt::to_string_view(fmt), h);
+  fmt::detail::parse_format_string<false>(fmt::to_string_view(fmt), h);
   return to_string(mbuf);
 }
 
@@ -738,7 +738,7 @@ template<class Out>
     using af = detail::arg_formatter<Out, char>;
     detail::format_handler<af, char, basic_format_context<Out, char>>
       h(out, fmt, args, {});
-    fmt::internal::parse_format_string<false>(fmt::to_string_view(fmt), h);
+    fmt::detail::parse_format_string<false>(fmt::to_string_view(fmt), h);
     return h.context.out();
   }
 

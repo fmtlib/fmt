@@ -332,7 +332,9 @@ enum char8_type : unsigned char {};
 #endif
 }  // namespace detail
 
+#ifdef FMT_USE_INTERNAL
 namespace internal = detail;  // DEPRECATED
+#endif
 
 /**
   An implementation of ``std::basic_string_view`` for pre-C++17. It provides a
@@ -1592,7 +1594,7 @@ class dynamic_format_arg_store
   void clear() {
     data_.clear();
     named_info_.clear();
-    dynamic_args_ = internal::dynamic_arg_list();
+    dynamic_args_ = detail::dynamic_arg_list();
   }
 
   /**
