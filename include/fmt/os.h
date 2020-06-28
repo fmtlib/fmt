@@ -277,7 +277,8 @@ class file {
   enum {
     RDONLY = FMT_POSIX(O_RDONLY),  // Open for reading only.
     WRONLY = FMT_POSIX(O_WRONLY),  // Open for writing only.
-    RDWR = FMT_POSIX(O_RDWR)       // Open for reading and writing.
+    RDWR = FMT_POSIX(O_RDWR),      // Open for reading and writing.
+    CREATE = FMT_POSIX(O_CREAT)    // Create if the file doesn't exist.
   };
 
   // Constructs a file object which doesn't represent any file.
@@ -341,6 +342,63 @@ class file {
 
 // Returns the memory page size.
 long getpagesize();
+
+class direct_buffered_file;
+
+template <typename S, typename... Args>
+void print(direct_buffered_file& f, const S& format_str,
+           const Args&... args);
+
+// A buffered file with a direct buffer access and no synchronization.
+class direct_buffered_file {
+ private:
+  file file_;
+
+  enum { buffer_size = 4096 };
+  char buffer_[buffer_size];
+  int pos_;
+
+  void flush() {
+    if (pos_ == 0) return;
+    file_.write(buffer_, pos_);
+    pos_ = 0;
+  }
+
+  int free_capacity() const { return buffer_size - pos_; }
+
+ public:
+  direct_buffered_file(cstring_view path, int oflag)
+    : file_(path, oflag), pos_(0) {}
+
+  ~direct_buffered_file() {
+    flush();
+  }
+
+  void close() {
+    flush();
+    file_.close();
+  }
+
+  template <typename S, typename... Args>
+  friend void print(direct_buffered_file& f, const S& format_str,
+                    const Args&... args) {
+    // We could avoid double buffering.
+    auto buf = fmt::memory_buffer();
+    fmt::format_to(std::back_inserter(buf), format_str, args...);
+    auto remaining_pos = 0;
+    auto remaining_size = buf.size();
+    while (remaining_size > detail::to_unsigned(f.free_capacity())) {
+      auto size = f.free_capacity();
+      memcpy(f.buffer_ + f.pos_, buf.data() + remaining_pos, size);
+      f.pos_ += size;
+      f.flush();
+      remaining_pos += size;
+      remaining_size -= size;
+    }
+    memcpy(f.buffer_ + f.pos_, buf.data() + remaining_pos, remaining_size);
+    f.pos_ += static_cast<int>(remaining_size);
+  }
+};
 #endif  // FMT_USE_FCNTL
 
 #ifdef FMT_LOCALE

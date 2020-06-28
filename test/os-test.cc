@@ -287,6 +287,26 @@ TEST(BufferedFileTest, Fileno) {
   EXPECT_READ(copy, FILE_CONTENT);
 }
 
+TEST(DirectBufferedFileTest, Print) {
+  fmt::direct_buffered_file out(
+    "test-file", fmt::file::WRONLY | fmt::file::CREATE);
+  fmt::print(out, "The answer is {}.\n", 42);
+  out.close();
+  file in("test-file", file::RDONLY);
+  EXPECT_READ(in, "The answer is 42.\n");
+}
+
+TEST(DirectBufferedFileTest, BufferBoundary) {
+  auto str = std::string(4096, 'x');
+  fmt::direct_buffered_file out(
+    "test-file", fmt::file::WRONLY | fmt::file::CREATE);
+  fmt::print(out, "{}", str);
+  fmt::print(out, "{}", str);
+  out.close();
+  file in("test-file", file::RDONLY);
+  EXPECT_READ(in, str + str);
+}
+
 TEST(FileTest, DefaultCtor) {
   file f;
   EXPECT_EQ(-1, f.descriptor());

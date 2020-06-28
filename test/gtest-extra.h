@@ -141,7 +141,8 @@ class SuppressAssert {
 std::string read(fmt::file& f, size_t count);
 
 #  define EXPECT_READ(file, expected_content) \
-    EXPECT_EQ(expected_content, read(file, std::strlen(expected_content)))
+    EXPECT_EQ(expected_content, \
+              read(file, fmt::string_view(expected_content).size()))
 
 #else
 #  define EXPECT_WRITE(file, statement, expected_output) SUCCEED()
