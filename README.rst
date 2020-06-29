@@ -116,7 +116,7 @@ Format objects of user-defined types via a simple `extension API
 
 .. code:: c++
 
-    #include "fmt/format.h"
+    #include <fmt/format.h>
 
     struct date {
       int year, month, day;
