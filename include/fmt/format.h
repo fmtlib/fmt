@@ -566,7 +566,7 @@ template <typename U>
 void buffer<T>::append(const U* begin, const U* end) {
   size_t new_size = size_ + to_unsigned(end - begin);
   reserve(new_size);
-  std::uninitialized_copy(begin, end, make_checked(ptr_, capacity_) + size_);
+  std::uninitialized_copy(begin, end, make_checked(ptr_ + size_, capacity_ - size_));
   size_ = new_size;
 }
 }  // namespace detail
