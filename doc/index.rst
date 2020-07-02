@@ -22,7 +22,7 @@ Format API
 ----------
 
 The format API is similar in spirit to the C ``printf`` family of function but
-is safer, simpler and serveral times `faster
+is safer, simpler and several times `faster
 <http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`_
 than common standard library implementations.
 The `format string syntax <syntax.html>`_ is similar to the one used by
