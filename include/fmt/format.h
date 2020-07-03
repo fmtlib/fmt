@@ -226,8 +226,8 @@ FMT_END_NAMESPACE
 #endif
 
 // Enable the deprecated numeric alignment.
-#ifndef FMT_NUMERIC_ALIGN
-#  define FMT_NUMERIC_ALIGN 1
+#ifndef FMT_DEPRECATED_NUMERIC_ALIGN
+#  define FMT_DEPRECATED_NUMERIC_ALIGN 1
 #endif
 
 FMT_BEGIN_NAMESPACE
@@ -2445,7 +2445,7 @@ FMT_CONSTEXPR const Char* parse_align(const Char* begin, const Char* end,
     case '>':
       align = align::right;
       break;
-#if FMT_NUMERIC_ALIGN
+#if FMT_DEPRECATED_NUMERIC_ALIGN
     case '=':
       align = align::numeric;
       break;
