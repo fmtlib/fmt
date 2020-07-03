@@ -227,7 +227,7 @@ FMT_END_NAMESPACE
 
 // Enable the deprecated numeric alignment.
 #ifndef FMT_DEPRECATED_NUMERIC_ALIGN
-#  define FMT_DEPRECATED_NUMERIC_ALIGN 1
+#  define FMT_DEPRECATED_NUMERIC_ALIGN 0
 #endif
 
 FMT_BEGIN_NAMESPACE
