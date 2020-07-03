@@ -1223,7 +1223,6 @@ TEST(FormatterTest, FormatOct) {
 }
 
 TEST(FormatterTest, FormatIntLocale) {
-  EXPECT_EQ("1234", format("{:n}", 1234));
   EXPECT_EQ("1234", format("{:L}", 1234));
 }
 
@@ -1320,7 +1319,7 @@ TEST(FormatterTest, FormatLongDouble) {
 }
 
 TEST(FormatterTest, FormatChar) {
-  const char types[] = "cbBdoxXnL";
+  const char types[] = "cbBdoxXL";
   check_unknown_types('a', types, "char");
   EXPECT_EQ("a", format("{0}", 'a'));
   EXPECT_EQ("z", format("{0:c}", 'z'));

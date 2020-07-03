@@ -1234,7 +1234,9 @@ FMT_CONSTEXPR void handle_int_type_spec(char spec, Handler&& handler) {
   case 'o':
     handler.on_oct();
     break;
+#ifdef FMT_DEPRECATED_N_SPECIFIER
   case 'n':
+#endif
   case 'L':
     handler.on_num();
     break;
@@ -1282,7 +1284,9 @@ FMT_CONSTEXPR float_specs parse_float_type_spec(
   case 'a':
     result.format = float_format::hex;
     break;
+#ifdef FMT_DEPRECATED_N_SPECIFIER
   case 'n':
+#endif
   case 'L':
     result.locale = true;
     break;
