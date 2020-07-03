@@ -74,8 +74,14 @@
           .L.str.1:
                   .asciz  "answer"
 
+* Added support for named args to ``dynamic_format_arg_store``
+  (`#1655 <https://github.com/fmtlib/fmt/issues/1655>`_,
+   `#1663 <https://github.com/fmtlib/fmt/issues/1663>`_).
+  Thanks `@vsolontsov-ll (Vladimir Solontsov)
+  <https://github.com/vsolontsov-ll>`_.
+
 * Implemented compile-time checks for dynamic width and precision
-  (`#1614 <https://github.com/fmtlib/fmt/issues/1614>`_). For example
+  (`#1614 <https://github.com/fmtlib/fmt/issues/1614>`_):
 
   .. code:: c++
 
@@ -85,7 +91,7 @@
        fmt::print(FMT_STRING("{0:{1}}"), 42);
      }
 
-  gives a compilation error because argument 1 doesn't exist::
+  now gives a compilation error because argument 1 doesn't exist::
 
     In file included from test.cc:1:
     include/fmt/format.h:2726:27: error: constexpr variable 'invalid_format' must be
@@ -102,9 +108,29 @@
         if (id >= num_args_) on_error("argument not found");
                             ^
 
-* Implemented the ``'L'`` specifier for locale-specific formatting of
-  floating-point numbers to improve compatibility with ``std::format``
+* Implemented the ``'L'`` format specifier for locale-specific formatting of
+  floating-point numbers for compatibility with ``std::format``
   (`#1624 <https://github.com/fmtlib/fmt/issues/1624>`_).
+  The ``'n'`` specifier is now disabled by default but can be enabled via the
+  ``FMT_DEPRECATED_N_SPECIFIER`` macro.
+
+* The ``'='`` format specifier is now deprecated and will be removed in a future
+  version for compatibility with ``std::format``.
+
+* Optimized handling of small format strings. For example,
+
+  .. code:: c++
+
+      fmt::format("Result: {}: ({},{},{},{})", str1, str2, str3, str4, str5)
+
+  is now ~40% faster (`#1685 <https://github.com/fmtlib/fmt/issues/1685>`_).
+
+* Added the ``FMT_OS`` CMake option to control inclusion of OS-specific APIs
+  in the fmt target. This can be useful for embedded platforms
+  (`#1654 <https://github.com/fmtlib/fmt/issues/1654>`_,
+   `#1656 <https://github.com/fmtlib/fmt/pull/1656>`_).
+  Thanks `@kwesolowski (Krzysztof Wesolowski)
+  <https://github.com/kwesolowski>`_.
 
 * Made ``fmt::printf`` not compute string length when using precision to allow
   passing non-nul-terminated strings
@@ -115,26 +141,53 @@
      char foo[] = {'H', 'e', 'l', 'l', 'o'};
      fmt::printf("%.5s\n", foo);  // This is fine.
 
-* Removed the deprecated and disabled by default ``fmt`` macro and
-  ``FMT_STRING_ALIAS``.
+* Fixed handling of ``operator<<` overloads that use ``copyfmt``
+  (`#1666 <https://github.com/fmtlib/fmt/issues/1666>`_).
+
+* Removed the following deprecated APIs:
+  * ``fmt`` and ``FMT_STRING_ALIAS`` macros - replaced by ``FMT_STRING``
+  * ``fmt::basic_string_view::char_type`` - replaced by
+    ``fmt::basic_string_view::value_type``
+  * ``convert_to_int``
+  * ``format_arg_store::types``
+  * ``*parse_context`` - replaced by ``*format_parse_context``
+  * ``FMT_DEPRECATED_INCLUDE_OS``
+  * ``FMT_DEPRECATED_PERCENT``
+  * ``*writer``
+
+* Replaced ``FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION`` with the ``FMT_FUZZ``
+  macro to prevent interferring with fuzzing projects using {fmt}
+  (`#1650 <https://github.com/fmtlib/fmt/pull/1650>`_).
+  Thanks `@asraa (Asra Ali) <https://github.com/asraa>`_.
 
 * Improved documentation
-  (`#1643 <https://github.com/fmtlib/fmt/pull/1643>`_).
-  Thanks `@senior7515 (Alexander Gallego) <https://github.com/senior7515>`_.
+  (`#1643 <https://github.com/fmtlib/fmt/pull/1643>`_,
+   `#1660 <https://github.com/fmtlib/fmt/pull/1660>`_).
+  Thanks `@senior7515 (Alexander Gallego) <https://github.com/senior7515>`_,
+  `@lsr0 (Lindsay Roberts) <https://github.com/lsr0>`_.
+
+* Implemented various build configuration fixes and improvements
+  (`#1657 <https://github.com/fmtlib/fmt/pull/1657>`_).
+  Thanks `@jtojnar (Jan Tojnar) <https://github.com/jtojnar>`_.
 
 * Fixed various warnings and compilation issues
   (`#1616 <https://github.com/fmtlib/fmt/pull/1616>`_,
   `#1622 <https://github.com/fmtlib/fmt/issues/1622>`_,
   `#1627 <https://github.com/fmtlib/fmt/pull/1627>`_,
   `#1628 <https://github.com/fmtlib/fmt/issues/1628>`_,
-  `#1629 <https://github.com/fmtlib/fmt/pull/1629>`_
+  `#1629 <https://github.com/fmtlib/fmt/pull/1629>`_,
   `#1631 <https://github.com/fmtlib/fmt/issues/1631>`_,
   `#1633 <https://github.com/fmtlib/fmt/pull/1633>`_,
-  `#1649 <https://github.com/fmtlib/fmt/pull/1649>`_).
+  `#1649 <https://github.com/fmtlib/fmt/pull/1649>`_,
+  `#1658 <https://github.com/fmtlib/fmt/issues/1658>`_,
+  `#1661 <https://github.com/fmtlib/fmt/pull/1661>`_,
+  `#1667 <https://github.com/fmtlib/fmt/pull/1667>`_).
   Thanks `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_,
   `@gabime (Gabi Melman) <https://github.com/gabime>`_,
   `@johnor (Johan) <https://github.com/johnor>`_,
-  `@gabime (Dmitry Kurkin) <https://github.com/Kurkin>`_.
+  `@gabime (Dmitry Kurkin) <https://github.com/Kurkin>`_,
+  `@invexed (James Beach) <https://github.com/invexed>`_,
+  `@peterbell10 <https://github.com/peterbell10>`_.
 
 6.2.1 - 2020-05-09
 ------------------
@@ -743,8 +796,8 @@
   which can be beneficial when identically formatting many objects of the same
   types. Thanks `@stryku (Mateusz Janek) <https://github.com/stryku>`_.
 
-* Added the ``%`` format specifier that formats floating-point values as
-  percentages (`#1060 <https://github.com/fmtlib/fmt/pull/1060>`_,
+* Added experimental ``%`` format specifier that formats floating-point values
+  as percentages (`#1060 <https://github.com/fmtlib/fmt/pull/1060>`_,
   `#1069 <https://github.com/fmtlib/fmt/pull/1069>`_,
   `#1071 <https://github.com/fmtlib/fmt/pull/1071>`_):
 
