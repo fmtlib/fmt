@@ -74,9 +74,11 @@
           .L.str.1:
                   .asciz  "answer"
 
-* Added support for named args to ``dynamic_format_arg_store``
+* Added support for named args, ``clear`` and ``reserve`` to
+  ``dynamic_format_arg_store``
   (`#1655 <https://github.com/fmtlib/fmt/issues/1655>`_,
-  `#1663 <https://github.com/fmtlib/fmt/issues/1663>`_).
+  `#1663 <https://github.com/fmtlib/fmt/pull/1663>`_,
+  `#1677 <https://github.com/fmtlib/fmt/pull/1677>`_).
   Thanks `@vsolontsov-ll (Vladimir Solontsov)
   <https://github.com/vsolontsov-ll>`_.
 
@@ -98,10 +100,6 @@
     initialized by a constant expression
       FMT_CONSTEXPR_DECL bool invalid_format =
                               ^
-    include/fmt/core.h:1727:3: note: in instantiation of function template specialization
-    'fmt::v6::internal::check_format_string<int, FMT_COMPILE_STRING, 0>' requested here
-      check_format_string<Args...>(format_str);
-      ^
     ...
     include/fmt/core.h:569:26: note: in call to
     '&checker(s, {}).context_->on_error(&"argument not found"[0])'
@@ -128,18 +126,15 @@
 * Added the ``FMT_OS`` CMake option to control inclusion of OS-specific APIs
   in the fmt target. This can be useful for embedded platforms
   (`#1654 <https://github.com/fmtlib/fmt/issues/1654>`_,
-   `#1656 <https://github.com/fmtlib/fmt/pull/1656>`_).
+  `#1656 <https://github.com/fmtlib/fmt/pull/1656>`_).
   Thanks `@kwesolowski (Krzysztof Wesolowski)
   <https://github.com/kwesolowski>`_.
 
-* Made ``fmt::printf`` not compute string length when using precision to allow
-  passing non-nul-terminated strings
-  (`#1595 <https://github.com/fmtlib/fmt/issues/1595>`_):
-
-  .. code:: c++
-
-     char foo[] = {'H', 'e', 'l', 'l', 'o'};
-     fmt::printf("%.5s\n", foo);  // This is fine.
+* Improved compatibility between ``fmt::printf`` with the standard specs
+  (`#1595 <https://github.com/fmtlib/fmt/issues/1595>`_,
+  `#1683 <https://github.com/fmtlib/fmt/pull/1683>`_,
+  `#1687 <https://github.com/fmtlib/fmt/pull/1687>`_).
+  Thanks `@rimathia <https://github.com/rimathia>`_.
 
 * Fixed handling of ``operator<<` overloads that use ``copyfmt``
   (`#1666 <https://github.com/fmtlib/fmt/issues/1666>`_).
@@ -148,7 +143,7 @@
 
   * ``fmt`` and ``FMT_STRING_ALIAS`` macros - replaced by ``FMT_STRING``
   * ``fmt::basic_string_view::char_type`` - replaced by
-      ``fmt::basic_string_view::value_type``
+    ``fmt::basic_string_view::value_type``
   * ``convert_to_int``
   * ``format_arg_store::types``
   * ``*parse_context`` - replaced by ``*format_parse_context``
@@ -156,16 +151,23 @@
   * ``FMT_DEPRECATED_PERCENT``
   * ``*writer``
 
+* Renamed the ``internal`` namespace to ``detail``
+  (`#1538 <https://github.com/fmtlib/fmt/issues/1538>`_). The former is still
+  provided as an alias if the ``FMT_USE_INTERNAL`` macro is defined.
+
 * Replaced ``FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION`` with the ``FMT_FUZZ``
-  macro to prevent interferring with fuzzing projects using {fmt}
+  macro to prevent interferring with fuzzing of projects using {fmt}
   (`#1650 <https://github.com/fmtlib/fmt/pull/1650>`_).
   Thanks `@asraa (Asra Ali) <https://github.com/asraa>`_.
 
 * Improved documentation
-  (`#1643 <https://github.com/fmtlib/fmt/pull/1643>`_,
-  `#1660 <https://github.com/fmtlib/fmt/pull/1660>`_).
+  (`#704 <https://github.com/fmtlib/fmt/issues/704>`_,
+  `#1643 <https://github.com/fmtlib/fmt/pull/1643>`_,
+  `#1660 <https://github.com/fmtlib/fmt/pull/1660>`_,
+  `#1681 <https://github.com/fmtlib/fmt/pull/1681>`_).
   Thanks `@senior7515 (Alexander Gallego) <https://github.com/senior7515>`_,
-  `@lsr0 (Lindsay Roberts) <https://github.com/lsr0>`_.
+  `@lsr0 (Lindsay Roberts) <https://github.com/lsr0>`_,
+  `@puetzk (Kevin Puetz) <https://github.com/puetzk>`_.
 
 * Implemented various build configuration fixes and improvements
   (`#1657 <https://github.com/fmtlib/fmt/pull/1657>`_).
@@ -182,13 +184,15 @@
   `#1649 <https://github.com/fmtlib/fmt/pull/1649>`_,
   `#1658 <https://github.com/fmtlib/fmt/issues/1658>`_,
   `#1661 <https://github.com/fmtlib/fmt/pull/1661>`_,
-  `#1667 <https://github.com/fmtlib/fmt/pull/1667>`_).
+  `#1667 <https://github.com/fmtlib/fmt/pull/1667>`_,
+  `#1669 <https://github.com/fmtlib/fmt/pull/1669>`_).
   Thanks `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_,
   `@gabime (Gabi Melman) <https://github.com/gabime>`_,
   `@johnor (Johan) <https://github.com/johnor>`_,
   `@gabime (Dmitry Kurkin) <https://github.com/Kurkin>`_,
   `@invexed (James Beach) <https://github.com/invexed>`_,
-  `@peterbell10 <https://github.com/peterbell10>`_.
+  `@peterbell10 <https://github.com/peterbell10>`_,
+  `@daixtrose (Markus Werle) <https://github.com/daixtrose>`_.
 
 6.2.1 - 2020-05-09
 ------------------
