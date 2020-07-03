@@ -76,7 +76,7 @@
 
 * Added support for named args to ``dynamic_format_arg_store``
   (`#1655 <https://github.com/fmtlib/fmt/issues/1655>`_,
-   `#1663 <https://github.com/fmtlib/fmt/issues/1663>`_).
+  `#1663 <https://github.com/fmtlib/fmt/issues/1663>`_).
   Thanks `@vsolontsov-ll (Vladimir Solontsov)
   <https://github.com/vsolontsov-ll>`_.
 
@@ -145,9 +145,10 @@
   (`#1666 <https://github.com/fmtlib/fmt/issues/1666>`_).
 
 * Removed the following deprecated APIs:
+
   * ``fmt`` and ``FMT_STRING_ALIAS`` macros - replaced by ``FMT_STRING``
   * ``fmt::basic_string_view::char_type`` - replaced by
-    ``fmt::basic_string_view::value_type``
+      ``fmt::basic_string_view::value_type``
   * ``convert_to_int``
   * ``format_arg_store::types``
   * ``*parse_context`` - replaced by ``*format_parse_context``
@@ -162,7 +163,7 @@
 
 * Improved documentation
   (`#1643 <https://github.com/fmtlib/fmt/pull/1643>`_,
-   `#1660 <https://github.com/fmtlib/fmt/pull/1660>`_).
+  `#1660 <https://github.com/fmtlib/fmt/pull/1660>`_).
   Thanks `@senior7515 (Alexander Gallego) <https://github.com/senior7515>`_,
   `@lsr0 (Lindsay Roberts) <https://github.com/lsr0>`_.
 
