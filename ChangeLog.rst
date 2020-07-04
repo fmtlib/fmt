@@ -2,11 +2,11 @@
 -----------
 
 * Reduced the library size. For example, on macOS the stripped binary
-  statically linked with {fmt} shrank from ~368k to less than 100k:
-  http://www.zverovich.net/2020/05/21/reducing-library-size.html.
+  statically linked with {fmt} `shrank from ~368k to less than 100k
+  <http://www.zverovich.net/2020/05/21/reducing-library-size.html>`_.
 
-* Added simpler and more efficient format string compilation API
-  (https://fmt.dev/dev/api.html#compile-api):
+* Added a simpler and more efficient `format string compilation API
+  <https://fmt.dev/dev/api.html#compile-api>`_:
 
   .. code:: c++
 
@@ -19,9 +19,9 @@
   The old ``fmt::compile`` API is now deprecated.
 
 * Optimized integer formatting: ``format_to`` with format string compilation
-  and a stack-allocated buffer is now faster than ``to_chars`` on both
+  and a stack-allocated buffer is now `faster than to_chars on both
   libc++ and libstdc++
-  (http://www.zverovich.net/2020/06/13/fast-int-to-string-revisited.html).
+  <http://www.zverovich.net/2020/06/13/fast-int-to-string-revisited.html>`_.
 
 * Applied extern templates to improve compile times when using the core API
   and ``fmt/format.h`` (`#1452`_). For example, on macOS with clang the compile
