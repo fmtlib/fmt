@@ -9,7 +9,9 @@
 
 .. image:: https://oss-fuzz-build-logs.storage.googleapis.com/badges/libfmt.svg
    :alt: fmt is continuously fuzzed att oss-fuzz
-   :target: https://bugs.chromium.org/p/oss-fuzz/issues/list?colspec=ID%20Type%20Component%20Status%20Proj%20Reported%20Owner%20Summary&q=proj%3Dlibfmt&can=1
+   :target: https://bugs.chromium.org/p/oss-fuzz/issues/list?\
+   colspec=ID%20Type%20Component%20Status%20Proj%20Reported%20Owner%20Summary&\
+   q=proj%3Dlibfmt&can=1
 
 .. image:: https://img.shields.io/badge/stackoverflow-fmt-blue.svg
    :alt: Ask questions at StackOverflow with the tag fmt
@@ -36,17 +38,17 @@ Features
 * Safe `printf implementation
   <https://fmt.dev/latest/api.html#printf-formatting>`_ including
   the POSIX extension for positional arguments
-* Extensibility: supports user-defined types
+* Extensibility: support for user-defined types
 * High performance: faster than common standard library implementations of
   `printf <https://en.cppreference.com/w/cpp/io/c/fprintf>`_,
-  iostreams, ``to_string`` and ``to_chars``. See `Speed tests`_ and
+  iostreams, ``to_string`` and ``to_chars``, see `Speed tests`_ and
   `Converting a hundred million integers to strings per second
-  <http://www.zverovich.net/2020/06/13/fast-int-to-string-revisited.html>`_.
+  <http://www.zverovich.net/2020/06/13/fast-int-to-string-revisited.html>`_
 * Small code size both in terms of source code (the minimum configuration
   consists of just three header files, ``core.h``, ``format.h`` and
-  ``format-inl.h``) and compiled code. See `Compile time and code bloat`_.
+  ``format-inl.h``) and compiled code. See `Compile time and code bloat`_
 * Reliability: the library has an extensive set of `unit tests
-  <https://github.com/fmtlib/fmt/tree/master/test>`_ and is continuously fuzzed.
+  <https://github.com/fmtlib/fmt/tree/master/test>`_ and is continuously fuzzed
 * Safety: the library is fully type safe, errors in format strings can be
   reported at compile time, automatic memory management prevents buffer overflow
   errors
@@ -58,7 +60,7 @@ Features
 * Clean warning-free codebase even on high warning levels
   (``-Wall -Wextra -pedantic``)
 * Locale-independence by default
-* Support for wide strings.
+* Support for wide strings
 * Optional header-only configuration enabled with the ``FMT_HEADER_ONLY`` macro
 
 See the `documentation <https://fmt.dev/latest/>`_ for more details.
