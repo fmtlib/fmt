@@ -174,8 +174,8 @@
   * ``format_arg_store::types``
   * ``*parse_context`` - replaced by ``*format_parse_context``
   * ``FMT_DEPRECATED_INCLUDE_OS``
-  * ``FMT_DEPRECATED_PERCENT``
-  * ``*writer``
+  * ``FMT_DEPRECATED_PERCENT`` - incompatible with ``std::format``
+  * ``*writer`` - replaced by compiled format API
 
 * Deprecated ``arg_formatter``.
 
@@ -192,15 +192,19 @@
   macro to prevent interferring with fuzzing of projects using {fmt} (`#1650`_).
   Thanks `@asraa (Asra Ali) <https://github.com/asraa>`_.
 
+* Fixed compatibility with emscripten (`#1736`_). Thanks `@ArthurSonzogni
+  (Arthur Sonzogni) <https://github.com/ArthurSonzogni>`_.
+
 * Improved documentation (`#704`_, `#1643`_, `#1660`_, `#1681`_, `#1691`_,
-  `#1706`_, `#1714`_, `#1721`_).
+  `#1706`_, `#1714`_, `#1721`_, `#1739`_, `#1740`_, `#1741`_).
   Thanks `@senior7515 (Alexander Gallego) <https://github.com/senior7515>`_,
   `@lsr0 (Lindsay Roberts) <https://github.com/lsr0>`_,
   `@puetzk (Kevin Puetz) <https://github.com/puetzk>`_,
   `@fpelliccioni (Fernando Pelliccioni) <https://github.com/fpelliccioni>`_,
   Alexey Kuzmenko, `@jelly (jelle van der Waa) <https://github.com/jelly>`_,
   `@claremacrae (Clare Macrae) <https://github.com/claremacrae>`_,
-  `@jiapengwen (文佳鹏) <https://github.com/jiapengwen>`_.
+  `@jiapengwen (文佳鹏) <https://github.com/jiapengwen>`_,
+  `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_.
 
 * Implemented various build configuration fixes and improvements
   (`#1657`_, `#1702`_, `#1728`_).
@@ -211,7 +215,7 @@
 * Fixed various warnings and compilation issues (`#1616`_, `#1622`_,
   `#1627`_, `#1628`_, `#1629`_, `#1631`_, `#1633`_, `#1649`_, `#1658`_,
   `#1661`_, `#1667`_, `#1669`_, `#1692`_, `#1696`_, `#1697`_, `#1712`_,
-  `#1716`_, `#1722`_).
+  `#1716`_, `#1722`_, `#1729`_, `#1738`_, `#1744`_, `#1750`_).
   Thanks `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_,
   `@gabime (Gabi Melman) <https://github.com/gabime>`_,
   `@johnor (Johan) <https://github.com/johnor>`_,
@@ -221,7 +225,11 @@
   `@daixtrose (Markus Werle) <https://github.com/daixtrose>`_,
   `@petrutlucian94 (Lucian Petrut) <https://github.com/petrutlucian94>`_,
   `@Neargye (Daniil Goncharov) <https://github.com/Neargye>`_,
-  `@ambitslix (Attila M. Szilagyi) <https://github.com/ambitslix>`_.
+  `@ambitslix (Attila M. Szilagyi) <https://github.com/ambitslix>`_,
+  `@gabime (Gabi Melman) <https://github.com/gabime>`_,
+  `@erthink (Leonid Yuriev) <https://github.com/erthink>`_,
+  `@tohammer (Tobias Hammer ) <https://github.com/tohammer>`_,
+  `@0x8000-0000 (Florin Iucha) <https://github.com/0x8000-0000>`_.
 
 6.2.1 - 2020-05-09
 ------------------
