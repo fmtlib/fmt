@@ -3,17 +3,30 @@
 
 * Reduced the library size. For example, on macOS the stripped binary
   statically linked with {fmt} shrank from ~368k to less than 100k:
-  http://www.zverovich.net/2020/05/21/reducing-library-size.html
+  http://www.zverovich.net/2020/05/21/reducing-library-size.html.
+
+* Added simpler and more efficient format string compilation API
+  (https://fmt.dev/dev/api.html#compile-api):
+
+  .. code:: c++
+
+     #include <fmt/compile.h>
+
+     // Converts 42 into std::string using the most efficient method and no
+     // runtime format string processing.
+     std::string s = fmt::format(FMT_COMPILE("{}"), 42);
+
+  The old ``fmt::compile`` API is now deprecated.
 
 * Optimized integer formatting: ``format_to`` with format string compilation
-  and a stack-allocated buffer is now faster than both libc++ and libstdc++
-  ``to_chars``
+  and a stack-allocated buffer is now faster than ``to_chars`` on both
+  libc++ and libstdc++
   (http://www.zverovich.net/2020/06/13/fast-int-to-string-revisited.html).
 
 * Applied extern templates to improve compile times when using the core API
-  and ``fmt/format.h`` (`#1452`_).
-  For example, on macOS with clang the compile time dropped from 2.3s to 0.3s
-  with ``-O2`` and from 0.6s to 0.3s with the default settings (``-O0``).
+  and ``fmt/format.h`` (`#1452`_). For example, on macOS with clang the compile
+  time of a test TU dropped from 2.3s to 0.3s with ``-O2`` and from 0.6s to 0.3s
+  with the default settings (``-O0``).
 
   Before (``-O2``)::
 
@@ -71,7 +84,8 @@
               mov     DWORD PTR [rsp+16], 42
               mov     QWORD PTR [rsp+32], OFFSET FLAT:.LC0
               mov     DWORD PTR [rsp+40], 0
-              call    fmt::v6::vprint(fmt::v6::basic_string_view<char>, fmt::v6::format_args)
+              call    fmt::v6::vprint(fmt::v6::basic_string_view<char>,
+                                      fmt::v6::format_args)
               xor     eax, eax
               add     rsp, 56
               ret
@@ -145,12 +159,6 @@
 
   is now ~40% faster (`#1685`_).
 
-* Added the ``FMT_OS`` CMake option to control inclusion of OS-specific APIs
-  in the fmt target. This can be useful for embedded platforms
-  (`#1654`_, `#1656`_).
-  Thanks `@kwesolowski (Krzysztof Wesolowski)
-  <https://github.com/kwesolowski>`_.
-
 * Improved compatibility between ``fmt::printf`` with the standard specs
   (`#1595`_, `#1683`_, `#1687`_, `#1699`_, `#1717`_).
   Thanks `@rimathia <https://github.com/rimathia>`_.
@@ -159,7 +167,7 @@
 
 * Removed the following deprecated APIs:
 
-  * ``fmt`` and ``FMT_STRING_ALIAS`` macros - replaced by ``FMT_STRING``
+  * ``FMT_STRING_ALIAS`` and ``fmt`` macros - replaced by ``FMT_STRING``
   * ``fmt::basic_string_view::char_type`` - replaced by
     ``fmt::basic_string_view::value_type``
   * ``convert_to_int``
@@ -174,28 +182,36 @@
 * Renamed the ``internal`` namespace to ``detail`` (`#1538`_). The former is
   still provided as an alias if the ``FMT_USE_INTERNAL`` macro is defined.
 
+* Added the ``FMT_OS`` CMake option to control inclusion of OS-specific APIs
+  in the fmt target. This can be useful for embedded platforms
+  (`#1654`_, `#1656`_).
+  Thanks `@kwesolowski (Krzysztof Wesolowski)
+  <https://github.com/kwesolowski>`_.
+
 * Replaced ``FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION`` with the ``FMT_FUZZ``
   macro to prevent interferring with fuzzing of projects using {fmt} (`#1650`_).
   Thanks `@asraa (Asra Ali) <https://github.com/asraa>`_.
 
-* Improved documentation
-  (`#704`_, `#1643`_, `#1660`_, `#1681`_, `#1691`_, `#1706`_, `#1714`_).
+* Improved documentation (`#704`_, `#1643`_, `#1660`_, `#1681`_, `#1691`_,
+  `#1706`_, `#1714`_, `#1721`_).
   Thanks `@senior7515 (Alexander Gallego) <https://github.com/senior7515>`_,
   `@lsr0 (Lindsay Roberts) <https://github.com/lsr0>`_,
   `@puetzk (Kevin Puetz) <https://github.com/puetzk>`_,
   `@fpelliccioni (Fernando Pelliccioni) <https://github.com/fpelliccioni>`_,
-  Alexey Kuzmenko,
-  `@jelly (jelle van der Waa) <https://github.com/jelly>`_,
-  `@claremacrae (Clare Macrae) <https://github.com/claremacrae>`_.
+  Alexey Kuzmenko, `@jelly (jelle van der Waa) <https://github.com/jelly>`_,
+  `@claremacrae (Clare Macrae) <https://github.com/claremacrae>`_,
+  `@jiapengwen (文佳鹏) <https://github.com/jiapengwen>`_.
 
 * Implemented various build configuration fixes and improvements
-  (`#1657`_, `#1702`_).
+  (`#1657`_, `#1702`_, `#1728`_).
   Thanks `@jtojnar (Jan Tojnar) <https://github.com/jtojnar>`_,
-  `@orivej (Orivej Desh) <https://github.com/orivej>`_.
+  `@orivej (Orivej Desh) <https://github.com/orivej>`_,
+  `@flagarde <https://github.com/flagarde>`_.
 
 * Fixed various warnings and compilation issues (`#1616`_, `#1622`_,
   `#1627`_, `#1628`_, `#1629`_, `#1631`_, `#1633`_, `#1649`_, `#1658`_,
-  `#1661`_, `#1667`_, `#1669`_, `#1692`_, `#1696`_, `#1697`_, `#1712`_).
+  `#1661`_, `#1667`_, `#1669`_, `#1692`_, `#1696`_, `#1697`_, `#1712`_,
+  `#1716`_, `#1722`_).
   Thanks `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_,
   `@gabime (Gabi Melman) <https://github.com/gabime>`_,
   `@johnor (Johan) <https://github.com/johnor>`_,
@@ -204,7 +220,8 @@
   `@peterbell10 <https://github.com/peterbell10>`_,
   `@daixtrose (Markus Werle) <https://github.com/daixtrose>`_,
   `@petrutlucian94 (Lucian Petrut) <https://github.com/petrutlucian94>`_,
-  `@Neargye (Daniil Goncharov) <https://github.com/Neargye>`_.
+  `@Neargye (Daniil Goncharov) <https://github.com/Neargye>`_,
+  `@ambitslix (Attila M. Szilagyi) <https://github.com/ambitslix>`_.
 
 6.2.1 - 2020-05-09
 ------------------
@@ -675,8 +692,8 @@
      #include <fmt/compile.h>
 
      auto f = fmt::compile<int>("{}");
-     std::string s = fmt::format(f, 42); // can be called multiple times to format
-                                         // different values
+     std::string s = fmt::format(f, 42); // can be called multiple times to
+                                         // format different values
      // s == "42"
 
   It moves the cost of parsing a format string outside of the format function
@@ -1486,7 +1503,8 @@
   `@LarsGullik <https://github.com/LarsGullik>`_,
   `@foonathan (Jonathan Müller) <https://github.com/foonathan>`_,
   `@eliaskosunen (Elias Kosunen) <https://github.com/eliaskosunen>`_,
-  `@christianparpart (Christian Parpart) <https://github.com/christianparpart>`_,
+  `@christianparpart (Christian Parpart)
+  <https://github.com/christianparpart>`_,
   `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_,
   and `@mwinterb <https://github.com/mwinterb>`_.
 
@@ -1790,8 +1808,8 @@
     // Prints "The date is 2016-04-29." (with the current date)
     fmt::print("The date is {:%Y-%m-%d}.", *std::localtime(&t));
 
-* ``std::ostream`` support including formatting of user-defined types that provide
-  overloaded ``operator<<`` has been moved to ``fmt/ostream.h``:
+* ``std::ostream`` support including formatting of user-defined types that
+  provide overloaded ``operator<<`` has been moved to ``fmt/ostream.h``:
 
   .. code:: c++
 
@@ -1800,7 +1818,8 @@
     class Date {
       int year_, month_, day_;
     public:
-      Date(int year, int month, int day) : year_(year), month_(month), day_(day) {}
+      Date(int year, int month, int day)
+        : year_(year), month_(month), day_(day) {}
 
       friend std::ostream &operator<<(std::ostream &os, const Date &d) {
         return os << d.year_ << '-' << d.month_ << '-' << d.day_;
@@ -1885,7 +1904,8 @@
   Thanks to `@mwinterb <https://github.com/mwinterb>`_.
 
 * Added ``fprintf`` overload that writes to a ``std::ostream`` (`#251`_).
-  Thanks to `nickhutchinson (Nicholas Hutchinson) <https://github.com/nickhutchinson>`_.
+  Thanks to `nickhutchinson (Nicholas Hutchinson)
+  <https://github.com/nickhutchinson>`_.
 
 * Export symbols when building a Windows DLL (`#245`_).
   Thanks to `macdems (Maciek Dems) <https://github.com/macdems>`_.
@@ -2028,8 +2048,8 @@ General
     fmt::printf("The date is %s", Date(2012, 12, 9));
 
 * [Breaking] The ``Buffer`` template is now part of the public API and can be
-  used to implement custom memory buffers (`#140`_).
-  Thanks to `@polyvertex (Jean-Charles Lefebvre) <https://github.com/polyvertex>`_.
+  used to implement custom memory buffers (`#140`_). Thanks to
+  `@polyvertex (Jean-Charles Lefebvre) <https://github.com/polyvertex>`_.
 
 * [Breaking] Improved compatibility between ``BasicStringRef`` and
   `std::experimental::basic_string_view
@@ -2075,8 +2095,8 @@ General
 Optimization
 ~~~~~~~~~~~~
 
-* Made formatting of user-defined types more efficient with a custom stream buffer
-  (`#92`_, `#230`_).
+* Made formatting of user-defined types more efficient with a custom stream
+  buffer (`#92`_, `#230`_).
   Thanks to `@NotImplemented <https://github.com/NotImplemented>`_.
 
 * Further improved performance of ``fmt::Writer`` on integer formatting
@@ -2110,8 +2130,9 @@ Distribution
 
   Thanks to `@jackyf (Eugene V. Lyubimkin) <https://github.com/jackyf>`_.
 
-* `Packages for Fedora and RHEL <https://admin.fedoraproject.org/pkgdb/package/cppformat/>`_
-  are now available. Thanks to Dave Johansen.
+* `Packages for Fedora and RHEL
+  <https://admin.fedoraproject.org/pkgdb/package/cppformat/>`_ are now
+  available. Thanks to Dave Johansen.
   
 * C++ Format can now be installed via `Homebrew <http://brew.sh/>`_ on OS X
   (`#157`_)::
@@ -2181,8 +2202,8 @@ Fixes
 * Fixed compiler warnings (`#95`_, `#96`_, `#114`_, `#135`_, `#142`_, `#145`_,
   `#146`_, `#158`_, `#163`_, `#175`_, `#190`_, `#191`_, `#194`_, `#196`_,
   `#216`_, `#218`_, `#220`_, `#229`_, `#233`_, `#234`_, `#236`_, `#281`_,
-  `#289`_).
-  Thanks to `@seanmiddleditch (Sean Middleditch) <https://github.com/seanmiddleditch>`_,
+  `#289`_). Thanks to
+  `@seanmiddleditch (Sean Middleditch) <https://github.com/seanmiddleditch>`_,
   `@dixlorenz (Dix Lorenz) <https://github.com/dixlorenz>`_,
   `@CarterLi (李通洲) <https://github.com/CarterLi>`_,
   `@Naios <https://github.com/Naios>`_,
