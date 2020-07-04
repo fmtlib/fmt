@@ -566,7 +566,8 @@ template <typename U>
 void buffer<T>::append(const U* begin, const U* end) {
   size_t new_size = size_ + to_unsigned(end - begin);
   reserve(new_size);
-  std::uninitialized_copy(begin, end, make_checked(ptr_ + size_, capacity_ - size_));
+  std::uninitialized_copy(begin, end,
+                          make_checked(ptr_ + size_, capacity_ - size_));
   size_ = new_size;
 }
 }  // namespace detail
@@ -2886,14 +2887,13 @@ FMT_API void format_error_code(buffer<char>& out, int error_code,
 
 FMT_API void report_error(format_func func, int error_code,
                           string_view message) FMT_NOEXCEPT;
-}  // namespace detail
 
 /** The default argument formatter. */
 template <typename OutputIt, typename Char>
-class arg_formatter : public detail::arg_formatter_base<OutputIt, Char> {
+class arg_formatter : public arg_formatter_base<OutputIt, Char> {
  private:
   using char_type = Char;
-  using base = detail::arg_formatter_base<OutputIt, Char>;
+  using base = arg_formatter_base<OutputIt, Char>;
   using context_type = basic_format_context<OutputIt, Char>;
 
   context_type& ctx_;
@@ -2929,6 +2929,11 @@ class arg_formatter : public detail::arg_formatter_base<OutputIt, Char> {
     return ctx_.out();
   }
 };
+}  // namespace detail
+
+template <typename OutputIt, typename Char>
+using arg_formatter FMT_DEPRECATED_ALIAS =
+  detail::arg_formatter<OutputIt, Char>;
 
 /**
  An error returned by an operating system or a language runtime,
@@ -3139,8 +3144,8 @@ struct formatter<T, Char,
                                                        specs_.width_ref, ctx);
     detail::handle_dynamic_spec<detail::precision_checker>(
         specs_.precision, specs_.precision_ref, ctx);
-    using af = arg_formatter<typename FormatContext::iterator,
-                             typename FormatContext::char_type>;
+    using af = detail::arg_formatter<typename FormatContext::iterator,
+                                     typename FormatContext::char_type>;
     return visit_format_arg(af(ctx, nullptr, &specs_),
                             detail::make_arg<FormatContext>(val));
   }
@@ -3235,8 +3240,8 @@ template <typename Char = char> class dynamic_formatter {
     }
     if (specs_.alt) checker.on_hash();
     if (specs_.precision >= 0) checker.end_precision();
-    using af = arg_formatter<typename FormatContext::iterator,
-                             typename FormatContext::char_type>;
+    using af = detail::arg_formatter<typename FormatContext::iterator,
+                                     typename FormatContext::char_type>;
     visit_format_arg(af(ctx, nullptr, &specs_),
                      detail::make_arg<FormatContext>(val));
     return ctx.out();
@@ -3506,7 +3511,7 @@ template <
 inline OutputIt vformat_to(
     OutputIt out, const S& format_str,
     format_args_t<type_identity_t<OutputIt>, char_t<S>> args) {
-  using af = arg_formatter<OutputIt, char_t<S>>;
+  using af = detail::arg_formatter<OutputIt, char_t<S>>;
   return vformat_to<af>(out, to_string_view(format_str), args);
 }
 

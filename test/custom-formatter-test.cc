@@ -18,9 +18,9 @@
 // A custom argument formatter that doesn't print `-` for floating-point values
 // rounded to 0.
 class custom_arg_formatter
-    : public fmt::arg_formatter<fmt::format_context::iterator, char> {
+    : public fmt::detail::arg_formatter<fmt::format_context::iterator, char> {
  public:
-  using base = fmt::arg_formatter<fmt::format_context::iterator, char>;
+  using base = fmt::detail::arg_formatter<fmt::format_context::iterator, char>;
 
   custom_arg_formatter(fmt::format_context& ctx,
                        fmt::format_parse_context* parse_ctx,
