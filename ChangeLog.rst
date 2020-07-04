@@ -136,7 +136,7 @@
   Thanks `@BRevzin (Barry Revzin) <https://github.com/BRevzin>`_.
 
 * Added support for named args, ``clear`` and ``reserve`` to
-  ``dynamic_format_arg_store`` (`#1655`_, `#1663`_, `#1677`_). Thanks
+  ``dynamic_format_arg_store`` (`#1655`_, `#1663`_, `#1674`_, `#1677`_). Thanks
   `@vsolontsov-ll (Vladimir Solontsov) <https://github.com/vsolontsov-ll>`_.
 
 * Added support for the ``'c'`` format specifier to integral types for
@@ -160,7 +160,7 @@
   is now ~40% faster (`#1685`_).
 
 * Improved compatibility between ``fmt::printf`` with the standard specs
-  (`#1595`_, `#1683`_, `#1687`_, `#1699`_, `#1717`_).
+  (`#1595`_, `#1682`_, `#1683`_, `#1687`_, `#1699`_, `#1717`_).
   Thanks `@rimathia <https://github.com/rimathia>`_.
 
 * Fixed handling of ``operator<<` overloads that use ``copyfmt`` (`#1666`_).
@@ -192,8 +192,9 @@
   macro to prevent interferring with fuzzing of projects using {fmt} (`#1650`_).
   Thanks `@asraa (Asra Ali) <https://github.com/asraa>`_.
 
-* Fixed compatibility with emscripten (`#1736`_). Thanks `@ArthurSonzogni
-  (Arthur Sonzogni) <https://github.com/ArthurSonzogni>`_.
+* Fixed compatibility with emscripten (`#1736`_, `#1737`_).
+  Thanks `@ArthurSonzogni (Arthur Sonzogni)
+  <https://github.com/ArthurSonzogni>`_.
 
 * Improved documentation (`#704`_, `#1643`_, `#1660`_, `#1681`_, `#1691`_,
   `#1706`_, `#1714`_, `#1721`_, `#1739`_, `#1740`_, `#1741`_).
@@ -207,15 +208,17 @@
   `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_.
 
 * Implemented various build configuration fixes and improvements
-  (`#1657`_, `#1702`_, `#1728`_).
-  Thanks `@jtojnar (Jan Tojnar) <https://github.com/jtojnar>`_,
+  (`#1603`_, `#1657`_, `#1702`_, `#1728`_).
+  Thanks `@scramsby (Scott Ramsby) <https://github.com/scramsby>`_,
+  `@jtojnar (Jan Tojnar) <https://github.com/jtojnar>`_,
   `@orivej (Orivej Desh) <https://github.com/orivej>`_,
   `@flagarde <https://github.com/flagarde>`_.
 
-* Fixed various warnings and compilation issues (`#1616`_, `#1622`_,
-  `#1627`_, `#1628`_, `#1629`_, `#1631`_, `#1633`_, `#1649`_, `#1658`_,
-  `#1661`_, `#1667`_, `#1669`_, `#1692`_, `#1696`_, `#1697`_, `#1712`_,
-  `#1716`_, `#1722`_, `#1729`_, `#1738`_, `#1744`_, `#1750`_).
+* Fixed various warnings and compilation issues (`#1616`_, `#1620`_,
+  `#1622`_, `#1625`_, `#1627`_, `#1628`_, `#1629`_, `#1631`_, `#1633`_,
+  `#1649`_, `#1658`_, `#1661`_, `#1667`_, `#1668`_, `#1669`_, `#1692`_,
+  `#1696`_, `#1697`_, `#1707`_, `#1712`_, `#1716`_, `#1722`_, `#1724`_,
+  `#1729`_, `#1738`_, `#1742`_, `#1743`_, `#1744`_, `#1747`_, `#1750`_).
   Thanks `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_,
   `@gabime (Gabi Melman) <https://github.com/gabime>`_,
   `@johnor (Johan) <https://github.com/johnor>`_,
