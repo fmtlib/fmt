@@ -9,8 +9,7 @@
 
 .. image:: https://oss-fuzz-build-logs.storage.googleapis.com/badges/libfmt.svg
    :alt: fmt is continuously fuzzed att oss-fuzz
-   :target: https://bugs.chromium.org/p/oss-fuzz/issues/list?colspec=ID%20Type\
-%20Component%20Status%20Proj%20Reported%20Owner%20Summary&q=proj%3Dlibfmt&can=1
+   :target: https://bugs.chromium.org/p/oss-fuzz/issues/list?colspec=ID%20Type%20Component%20Status%20Proj%20Reported%20Owner%20Summary&q=proj%3Dlibfmt&can=1
 
 .. image:: https://img.shields.io/badge/stackoverflow-fmt-blue.svg
    :alt: Ask questions at StackOverflow with the tag fmt
