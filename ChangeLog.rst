@@ -5,6 +5,11 @@
   statically linked with {fmt} shrank from ~368k to less than 100k:
   http://www.zverovich.net/2020/05/21/reducing-library-size.html
 
+* Optimized integer formatting: ``format_to`` with format string compilation
+  and a stack-allocated buffer is now faster than both libc++ and libstdc++
+  ``to_chars``
+  (http://www.zverovich.net/2020/06/13/fast-int-to-string-revisited.html).
+
 * Applied extern templates to improve compile times when using the core API
   and ``fmt/format.h`` (`#1452 <https://github.com/fmtlib/fmt/issues/1452>`_).
   For example, on macOS with clang the compile time dropped from 2.3s to 0.3s
@@ -74,14 +79,6 @@
           .L.str.1:
                   .asciz  "answer"
 
-* Added support for named args, ``clear`` and ``reserve`` to
-  ``dynamic_format_arg_store``
-  (`#1655 <https://github.com/fmtlib/fmt/issues/1655>`_,
-  `#1663 <https://github.com/fmtlib/fmt/pull/1663>`_,
-  `#1677 <https://github.com/fmtlib/fmt/pull/1677>`_).
-  Thanks `@vsolontsov-ll (Vladimir Solontsov)
-  <https://github.com/vsolontsov-ll>`_.
-
 * Implemented compile-time checks for dynamic width and precision
   (`#1614 <https://github.com/fmtlib/fmt/issues/1614>`_):
 
@@ -106,14 +103,47 @@
         if (id >= num_args_) on_error("argument not found");
                             ^
 
+* Added sentinel support to ``fmt::join``
+  (`#1689 <https://github.com/fmtlib/fmt/pull/1689>`_))
+
+  .. code:: c++
+
+    struct zstring_sentinel {};
+    bool operator==(const char* p, zstring_sentinel) { return *p == '\0'; }
+    bool operator!=(const char* p, zstring_sentinel) { return *p != '\0'; }
+
+    struct zstring {
+      const char* p;
+      const char* begin() const { return p; }
+      zstring_sentinel end() const { return {}; }
+    };
+
+    auto s = fmt::format("{}", fmt::join(zstring{"hello"}, "_"));
+    // s == "h_e_l_l_o"
+
+  Thanks `@BRevzin (Barry Revzin) <https://github.com/BRevzin>`_.
+
+* Added support for named args, ``clear`` and ``reserve`` to
+  ``dynamic_format_arg_store``
+  (`#1655 <https://github.com/fmtlib/fmt/issues/1655>`_,
+  `#1663 <https://github.com/fmtlib/fmt/pull/1663>`_,
+  `#1677 <https://github.com/fmtlib/fmt/pull/1677>`_).
+  Thanks `@vsolontsov-ll (Vladimir Solontsov)
+  <https://github.com/vsolontsov-ll>`_.
+
+* Added support for the ``'c'`` format specifier to integral types for
+  compatibility with ``std::format``
+  (`#1652 <https://github.com/fmtlib/fmt/issues/1652>`_).
+
 * Implemented the ``'L'`` format specifier for locale-specific formatting of
   floating-point numbers for compatibility with ``std::format``
   (`#1624 <https://github.com/fmtlib/fmt/issues/1624>`_).
   The ``'n'`` specifier is now disabled by default but can be enabled via the
   ``FMT_DEPRECATED_N_SPECIFIER`` macro.
 
-* The ``'='`` format specifier is now deprecated and will be removed in a future
-  version for compatibility with ``std::format``.
+* The ``'='`` format specifier is now disabled by default for compatibility with
+  ``std::format``. It can be enabled via the ``FMT_DEPRECATED_NUMERIC_ALIGN``
+  macro.
 
 * Optimized handling of small format strings. For example,
 
@@ -133,7 +163,8 @@
 * Improved compatibility between ``fmt::printf`` with the standard specs
   (`#1595 <https://github.com/fmtlib/fmt/issues/1595>`_,
   `#1683 <https://github.com/fmtlib/fmt/pull/1683>`_,
-  `#1687 <https://github.com/fmtlib/fmt/pull/1687>`_).
+  `#1687 <https://github.com/fmtlib/fmt/pull/1687>`_,
+  `#1699 <https://github.com/fmtlib/fmt/pull/1699>`_).
   Thanks `@rimathia <https://github.com/rimathia>`_.
 
 * Fixed handling of ``operator<<` overloads that use ``copyfmt``
@@ -164,14 +195,19 @@
   (`#704 <https://github.com/fmtlib/fmt/issues/704>`_,
   `#1643 <https://github.com/fmtlib/fmt/pull/1643>`_,
   `#1660 <https://github.com/fmtlib/fmt/pull/1660>`_,
-  `#1681 <https://github.com/fmtlib/fmt/pull/1681>`_).
+  `#1681 <https://github.com/fmtlib/fmt/pull/1681>`_,
+  `#1691 <https://github.com/fmtlib/fmt/pull/1691>`_).
   Thanks `@senior7515 (Alexander Gallego) <https://github.com/senior7515>`_,
   `@lsr0 (Lindsay Roberts) <https://github.com/lsr0>`_,
-  `@puetzk (Kevin Puetz) <https://github.com/puetzk>`_.
+  `@puetzk (Kevin Puetz) <https://github.com/puetzk>`_,
+  `@fpelliccioni (Fernando Pelliccioni ) <https://github.com/fpelliccioni>`_,
+  Alexey Kuzmenko.
 
 * Implemented various build configuration fixes and improvements
-  (`#1657 <https://github.com/fmtlib/fmt/pull/1657>`_).
-  Thanks `@jtojnar (Jan Tojnar) <https://github.com/jtojnar>`_.
+  (`#1657 <https://github.com/fmtlib/fmt/pull/1657>`_,
+  `#1702 <https://github.com/fmtlib/fmt/pull/1702>`_).
+  Thanks `@jtojnar (Jan Tojnar) <https://github.com/jtojnar>`_,
+  `@orivej (Orivej Desh) <https://github.com/orivej>`_.
 
 * Fixed various warnings and compilation issues
   (`#1616 <https://github.com/fmtlib/fmt/pull/1616>`_,
@@ -185,14 +221,19 @@
   `#1658 <https://github.com/fmtlib/fmt/issues/1658>`_,
   `#1661 <https://github.com/fmtlib/fmt/pull/1661>`_,
   `#1667 <https://github.com/fmtlib/fmt/pull/1667>`_,
-  `#1669 <https://github.com/fmtlib/fmt/pull/1669>`_).
+  `#1669 <https://github.com/fmtlib/fmt/pull/1669>`_,
+  `#1692 <https://github.com/fmtlib/fmt/issues/1692>`_,
+  `#1696 <https://github.com/fmtlib/fmt/pull/1696>`_,
+  `#1697 <https://github.com/fmtlib/fmt/pull/1697>`_).
   Thanks `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_,
   `@gabime (Gabi Melman) <https://github.com/gabime>`_,
   `@johnor (Johan) <https://github.com/johnor>`_,
   `@gabime (Dmitry Kurkin) <https://github.com/Kurkin>`_,
   `@invexed (James Beach) <https://github.com/invexed>`_,
   `@peterbell10 <https://github.com/peterbell10>`_,
-  `@daixtrose (Markus Werle) <https://github.com/daixtrose>`_.
+  `@daixtrose (Markus Werle) <https://github.com/daixtrose>`_,
+  `@petrutlucian94 (Lucian Petrut) <https://github.com/petrutlucian94>`_,
+  `@Neargye (Daniil Goncharov) <https://github.com/Neargye>`_.
 
 6.2.1 - 2020-05-09
 ------------------
