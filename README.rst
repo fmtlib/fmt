@@ -78,6 +78,13 @@ Print ``Hello, world!`` to ``stdout``:
       fmt::print("Hello, world!\n");
     }
 
+Format a string:
+
+.. code:: c++
+
+    std::string s = fmt::format("The answer is {}.", 42);
+    // s == "The answer is 42."
+
 Format a string using positional arguments:
 
 .. code:: c++
@@ -85,27 +92,29 @@ Format a string using positional arguments:
     std::string s = fmt::format("I'd rather be {1} than {0}.", "right", "happy");
     // s == "I'd rather be happy than right."
 
+Print a chrono duration:
+
+.. code:: c++
+
+    #include <fmt/chrono.h>
+
+    int main() {
+      using namespace std::chrono_literals;
+      fmt::print("Elapsed time: {}", 42ms);
+    }
+
+prints "Elapsed time: 42ms".
+
 Check a format string at compile time:
 
 .. code:: c++
 
     // test.cc
     #include <fmt/format.h>
-    std::string s = format(FMT_STRING("{2}"), 42);
+    std::string s = format(FMT_STRING("{:d}"), "hello");
 
-.. code::
-
-    $ c++ -Iinclude -std=c++14 test.cc
-    ...
-    test.cc:4:17: note: in instantiation of function template specialization 'fmt::v5::format<S, int>' requested here
-    std::string s = format(FMT_STRING("{2}"), 42);
-                    ^
-    include/fmt/core.h:778:19: note: non-constexpr function 'on_error' cannot be used in a constant expression
-        ErrorHandler::on_error(message);
-                      ^
-    include/fmt/format.h:2226:16: note: in call to '&checker.context_->on_error(&"argument index out of range"[0])'
-          context_.on_error("argument index out of range");
-                   ^
+gives a compile-time error because ``d`` is an invalid format specifier for a
+string.
 
 Use {fmt} as a safe portable replacement for ``itoa``
 (`godbolt <https://godbolt.org/g/NXmpU4>`_):
