@@ -437,3 +437,19 @@ argument type doesn't match its format specification.
 .. doxygenfunction:: fprintf(std::basic_ostream<Char>&, const S&, const Args&...)
 
 .. doxygenfunction:: sprintf(const S&, const Args&...)
+
+Compatibility with C++20 ``std::format``
+========================================
+
+{fmt} implements nearly all of the `C++20 formatting library
+<https://en.cppreference.com/w/cpp/utility/format>`_ with the following
+differences:
+
+* Types are defined in the ``fmt`` namespace instead of ``std`` to avoid
+  collisions with standard library implementations.
+* The ``'L'`` format specifier cannot be combined with presentation specifiers
+  yet.
+* Width calculation doesn't use grapheme clusterization - the latter has
+  been implemented in a separate branch but hasn't been integrated yet.
+* Chrono formatting doesn't support C++20 date types since they are not provided
+  by standard library implementations.
