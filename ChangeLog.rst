@@ -1,5 +1,5 @@
-7.0.0 - TBD
------------
+7.0.0 - 2020-07-05
+------------------
 
 * Reduced the library size. For example, on macOS a stripped test binary
   statically linked with {fmt} `shrank from ~368k to less than 100k
