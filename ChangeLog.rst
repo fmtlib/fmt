@@ -5,7 +5,7 @@
   statically linked with {fmt} `shrank from ~368k to less than 100k
   <http://www.zverovich.net/2020/05/21/reducing-library-size.html>`_.
 
-* Added a impler and more efficient `format string compilation API
+* Added a simpler and more efficient `format string compilation API
   <https://fmt.dev/dev/api.html#compile-api>`_:
 
   .. code:: c++
@@ -58,9 +58,8 @@
     c++ -c test.cc -I include -std=c++17  0.24s user 0.06s system 98% cpu 0.301 total
 
   It is still recommended to use ``fmt/core.h`` instead of ``fmt/format.h`` but
-  the compile time difference is now smaller.
-
-  Thanks `@alex3d <https://github.com/alex3d>`_ for the suggestion.
+  the compile time difference is now smaller. Thanks
+  `@alex3d <https://github.com/alex3d>`_ for the suggestion.
 
 * Named arguments are now stored on stack (no dynamic memory allocations) and
   the compiled code is more compact and efficient. For example
@@ -192,7 +191,7 @@
   `#1699 <https://github.com/fmtlib/fmt/pull/1699>`_).
   Thanks `@rimathia <https://github.com/rimathia>`_.
 
-* Fixed handling of ``operator<<` overloads that use ``copyfmt``
+* Fixed handling of ``operator<<`` overloads that use ``copyfmt``
   (`#1666 <https://github.com/fmtlib/fmt/issues/1666>`_).
 
 * Added the ``FMT_OS`` CMake option to control inclusion of OS-specific APIs
