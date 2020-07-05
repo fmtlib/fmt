@@ -291,6 +291,8 @@ Projects using this library
 
 * `ccache <https://ccache.dev/>`_: A compiler cache
 
+* `ClickHouse <https://github.com/ClickHouse/ClickHouse>`_: analytical database management system
+
 * `CUAUV <http://cuauv.org/>`_: Cornell University's autonomous underwater
   vehicle
 
