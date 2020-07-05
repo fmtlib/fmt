@@ -1,11 +1,11 @@
 7.0.0 - TBD
 -----------
 
-* Reduced the library size. For example, on macOS the stripped binary
+* Reduced the library size. For example, on macOS a stripped test binary
   statically linked with {fmt} `shrank from ~368k to less than 100k
   <http://www.zverovich.net/2020/05/21/reducing-library-size.html>`_.
 
-* Added sa impler and more efficient `format string compilation API
+* Added a impler and more efficient `format string compilation API
   <https://fmt.dev/dev/api.html#compile-api>`_:
 
   .. code:: c++
@@ -19,14 +19,23 @@
   The old ``fmt::compile`` API is now deprecated.
 
 * Optimized integer formatting: ``format_to`` with format string compilation
-  and a stack-allocated buffer is now `faster than to_chars` on both
+  and a stack-allocated buffer is now `faster than to_chars on both
   libc++ and libstdc++
   <http://www.zverovich.net/2020/06/13/fast-int-to-string-revisited.html>`_.
 
+* Optimized handling of small format strings. For example,
+
+  .. code:: c++
+
+      fmt::format("Result: {}: ({},{},{},{})", str1, str2, str3, str4, str5)
+
+  is now ~40% faster (`#1685 <https://github.com/fmtlib/fmt/issues/1685>`_).
+
 * Applied extern templates to improve compile times when using the core API
-  and ``fmt/format.h`` (`#1452`_). For example, on macOS with clang the compile
-  time of a test translation unit dropped from 2.3s to 0.3s with ``-O2`` and
-  from 0.6s to 0.3s with the default settings (``-O0``).
+  and ``fmt/format.h`` (`#1452 <https://github.com/fmtlib/fmt/issues/1452>`_).
+  For example, on macOS with clang the compile time of a test translation unit
+  dropped from 2.3s to 0.3s with ``-O2`` and from 0.6s to 0.3s with the default
+  settings (``-O0``).
 
   Before (``-O2``)::
 
@@ -54,7 +63,7 @@
   Thanks `@alex3d <https://github.com/alex3d>`_ for the suggestion.
 
 * Named arguments are now stored on stack (no dynamic memory allocations) and
-  the generated binary code is more compact and efficient. For example
+  the compiled code is more compact and efficient. For example
 
   .. code:: c++
 
@@ -150,34 +159,14 @@
   compatibility with ``std::format``
   (`#1652 <https://github.com/fmtlib/fmt/issues/1652>`_).
 
-* Implemented the ``'L'`` format specifier for locale-specific formatting of
-  floating-point numbers for compatibility with ``std::format``
-  (`#1624 <https://github.com/fmtlib/fmt/issues/1624>`_).
-  The ``'n'`` specifier is now disabled by default but can be enabled via the
-  ``FMT_DEPRECATED_N_SPECIFIER`` macro.
+* Replaced the ``'n'`` format specifier with ``'L'`` for compatibility with
+  ``std::format`` (`#1624 <https://github.com/fmtlib/fmt/issues/1624>`_).
+  The ``'n'`` specifier can be enabled via the ``FMT_DEPRECATED_N_SPECIFIER``
+  macro.
 
 * The ``'='`` format specifier is now disabled by default for compatibility with
   ``std::format``. It can be enabled via the ``FMT_DEPRECATED_NUMERIC_ALIGN``
   macro.
-
-* Optimized handling of small format strings. For example,
-
-  .. code:: c++
-
-      fmt::format("Result: {}: ({},{},{},{})", str1, str2, str3, str4, str5)
-
-  is now ~40% faster (`#1685 <https://github.com/fmtlib/fmt/issues/1685>`_).
-
-* Improved compatibility between ``fmt::printf`` with the standard specs
-  (`#1595 <https://github.com/fmtlib/fmt/issues/1595>`_,
-  `#1682 <https://github.com/fmtlib/fmt/pull/1682>`_,
-  `#1683 <https://github.com/fmtlib/fmt/pull/1683>`_,
-  `#1687 <https://github.com/fmtlib/fmt/pull/1687>`_,
-  `#1699 <https://github.com/fmtlib/fmt/pull/1699>`_).
-  Thanks `@rimathia <https://github.com/rimathia>`_.
-
-* Fixed handling of ``operator<<` overloads that use ``copyfmt``
-  (`#1666 <https://github.com/fmtlib/fmt/issues/1666>`_).
 
 * Removed the following deprecated APIs:
 
@@ -194,6 +183,17 @@
 * Renamed the ``internal`` namespace to ``detail``
   (`#1538 <https://github.com/fmtlib/fmt/issues/1538>`_). The former is still
   provided as an alias if the ``FMT_USE_INTERNAL`` macro is defined.
+
+* Improved compatibility between ``fmt::printf`` with the standard specs
+  (`#1595 <https://github.com/fmtlib/fmt/issues/1595>`_,
+  `#1682 <https://github.com/fmtlib/fmt/pull/1682>`_,
+  `#1683 <https://github.com/fmtlib/fmt/pull/1683>`_,
+  `#1687 <https://github.com/fmtlib/fmt/pull/1687>`_,
+  `#1699 <https://github.com/fmtlib/fmt/pull/1699>`_).
+  Thanks `@rimathia <https://github.com/rimathia>`_.
+
+* Fixed handling of ``operator<<` overloads that use ``copyfmt``
+  (`#1666 <https://github.com/fmtlib/fmt/issues/1666>`_).
 
 * Added the ``FMT_OS`` CMake option to control inclusion of OS-specific APIs
   in the fmt target. This can be useful for embedded platforms
@@ -224,7 +224,8 @@
   `#1721 <https://github.com/fmtlib/fmt/pull/1721>`_,
   `#1739 <https://github.com/fmtlib/fmt/pull/1739>`_,
   `#1740 <https://github.com/fmtlib/fmt/pull/1740>`_,
-  `#1741 <https://github.com/fmtlib/fmt/pull/1741>`_).
+  `#1741 <https://github.com/fmtlib/fmt/pull/1741>`_,
+  `#1751 <https://github.com/fmtlib/fmt/pull/1751>`_).
   Thanks `@senior7515 (Alexander Gallego) <https://github.com/senior7515>`_,
   `@lsr0 (Lindsay Roberts) <https://github.com/lsr0>`_,
   `@puetzk (Kevin Puetz) <https://github.com/puetzk>`_,
@@ -232,7 +233,8 @@
   Alexey Kuzmenko, `@jelly (jelle van der Waa) <https://github.com/jelly>`_,
   `@claremacrae (Clare Macrae) <https://github.com/claremacrae>`_,
   `@jiapengwen (文佳鹏) <https://github.com/jiapengwen>`_,
-  `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_.
+  `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_,
+  `@alexey-milovidov <https://github.com/alexey-milovidov>`_.
 
 * Implemented various build configuration fixes and improvements
   (`#1603 <https://github.com/fmtlib/fmt/pull/1603>`_,
