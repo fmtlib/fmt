@@ -126,7 +126,7 @@
                             ^
 
 * Added sentinel support to ``fmt::join``
-  (`#1689 <https://github.com/fmtlib/fmt/pull/1689>`_))
+  (`#1689 <https://github.com/fmtlib/fmt/pull/1689>`_)
 
   .. code:: c++
 
