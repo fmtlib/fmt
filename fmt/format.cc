@@ -188,7 +188,7 @@ int safe_strerror(
       buffer_ = strerror(error_code_);
       return errno;
 #else
-	  return 0;
+      return 0;
 #endif
     }
 
