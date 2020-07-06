@@ -145,7 +145,14 @@ def update_site(env):
                 b.data = b.data.replace('std::FILE*', 'std::FILE *')
                 b.data = b.data.replace('unsigned int', 'unsigned')
                 #b.data = b.data.replace('operator""_', 'operator"" _')
-                b.data = b.data.replace(', size_t', ', std::size_t')
+                if version.startswith('6.'):
+                    b.data = b.data.replace(', size_t', ', std::size_t')
+                elif version.startswith('7.'):
+                    b.data = b.data.replace(', std::size_t', ', size_t')
+                    b.data = b.data.replace('join(It, It', 'join(It, Sentinel')
+                    b.data = b.data.replace(
+                        'format_to_n(OutputIt, size_t, string_view, Args&&',
+                        'format_to_n(OutputIt, size_t, const S&, const Args&')
                 b.data = b.data.replace('aa long', 'a long')
                 b.data = b.data.replace('serveral', 'several')
                 if version.startswith('6.2.'):

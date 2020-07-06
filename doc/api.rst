@@ -244,7 +244,7 @@ Output Iterator Support
 -----------------------
 
 .. doxygenfunction:: fmt::format_to(OutputIt, const S&, Args&&...)
-.. doxygenfunction:: fmt::format_to_n(OutputIt, std::size_t, string_view, Args&&...)
+.. doxygenfunction:: fmt::format_to_n(OutputIt, size_t, const S&, const Args&...)
 .. doxygenstruct:: fmt::format_to_n_result
    :members:
 
@@ -274,7 +274,7 @@ Utilities
 
 .. doxygenfunction:: fmt::join(const Range&, string_view)
 
-.. doxygenfunction:: fmt::join(It, It, string_view)
+.. doxygenfunction:: fmt::join(It, Sentinel, string_view)
 
 .. doxygenclass:: fmt::detail::buffer
    :members:
