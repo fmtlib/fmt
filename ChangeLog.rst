@@ -1,5 +1,5 @@
-7.0.1 - TBD
------------
+7.0.1 - 2020-07-07
+------------------
 
 * Updated the inline version namespace name.
 
