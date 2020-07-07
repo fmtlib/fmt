@@ -12,7 +12,7 @@
 
 * Fixed minor issues with the documentation.
 
-7.0.0 - 2020-07-06
+7.0.0 - 2020-07-05
 ------------------
 
 * Reduced the library size. For example, on macOS a stripped test binary
