@@ -1765,7 +1765,7 @@ std::basic_string<Char> vformat(
     basic_string_view<Char> format_str,
     basic_format_args<buffer_context<type_identity_t<Char>>> args);
 
-std::string vformat(string_view format_str, format_args args);
+FMT_API std::string vformat(string_view format_str, format_args args);
 
 template <typename Char>
 typename buffer_context<Char>::iterator vformat_to(
