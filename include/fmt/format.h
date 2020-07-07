@@ -34,6 +34,7 @@
 #define FMT_FORMAT_H_
 
 #include <algorithm>
+#include <array>
 #include <cerrno>
 #include <cmath>
 #include <cstdint>
@@ -1552,13 +1553,18 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
   enum { sep_size = 1 };
 
   void on_num() {
+#if !defined(FMT_STATIC_THOUSANDS_SEPARATOR)
     std::string groups = grouping<Char>(locale);
+#else
+    constexpr const char kDefaultGroups[] = "\03";
+    basic_string_view<Char> groups(kDefaultGroups, sizeof(kDefaultGroups));
+#endif
     if (groups.empty()) return on_dec();
     auto sep = thousands_sep<Char>(locale);
     if (!sep) return on_dec();
     int num_digits = count_digits(abs_value);
     int size = num_digits, n = num_digits;
-    std::string::const_iterator group = groups.cbegin();
+    auto group = groups.cbegin();
     while (group != groups.cend() && num_digits > *group && *group > 0 &&
            *group != max_value<char>()) {
       size += sep_size;
@@ -1568,9 +1574,9 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
     if (group == groups.cend()) size += sep_size * ((n - 1) / groups.back());
     char digits[40];
     format_decimal(digits, abs_value, num_digits);
-    basic_memory_buffer<Char> buffer;
+    // TODO(kammce): remove the * 2!
+    std::array<Char, inline_buffer_size * 2> buffer;
     size += prefix_size;
-    buffer.resize(size);
     basic_string_view<Char> s(&sep, sep_size);
     // Index of a decimal digit with the least significant digit having index 0.
     int digit_index = 0;
@@ -1590,7 +1596,7 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
                               make_checked(p, s.size()));
     }
     if (prefix_size != 0) p[-1] = static_cast<Char>('-');
-    write(out, basic_string_view<Char>(buffer.data(), buffer.size()), specs);
+    write(out, basic_string_view<Char>(buffer.data(), size), specs);
   }
 
   void on_chr() { *out++ = static_cast<Char>(abs_value); }
