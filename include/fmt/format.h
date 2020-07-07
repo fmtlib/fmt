@@ -3482,9 +3482,9 @@ extern template int snprintf_float<long double>(long double value,
 
 template <typename S, typename Char = char_t<S>,
           FMT_ENABLE_IF(detail::is_string<S>::value)>
-inline typename buffer_context<Char>::iterator vformat_to(
+inline typename FMT_BUFFER_CONTEXT(Char)::iterator vformat_to(
     detail::buffer<Char>& buf, const S& format_str,
-    basic_format_args<buffer_context<type_identity_t<Char>>> args) {
+    basic_format_args<FMT_BUFFER_CONTEXT(type_identity_t<Char>)> args) {
   return detail::vformat_to(buf, to_string_view(format_str), args);
 }
 
