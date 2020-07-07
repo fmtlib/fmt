@@ -293,7 +293,7 @@
   Thanks `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_,
   `@gabime (Gabi Melman) <https://github.com/gabime>`_,
   `@johnor (Johan) <https://github.com/johnor>`_,
-  `@gabime (Dmitry Kurkin) <https://github.com/Kurkin>`_,
+  `@Kurkin (Dmitry Kurkin) <https://github.com/Kurkin>`_,
   `@invexed (James Beach) <https://github.com/invexed>`_,
   `@peterbell10 <https://github.com/peterbell10>`_,
   `@daixtrose (Markus Werle) <https://github.com/daixtrose>`_,
