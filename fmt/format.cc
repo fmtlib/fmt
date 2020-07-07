@@ -30,7 +30,9 @@
 #include <string.h>
 
 #include <cctype>
-#include <cerrno>
+#if !defined(UNDER_CE)
+# include <cerrno>
+#endif
 #include <climits>
 #include <cmath>
 #include <cstdarg>
@@ -98,7 +100,11 @@ namespace {
 inline int fmt_snprintf(char *buffer, size_t size, const char *format, ...) {
   va_list args;
   va_start(args, format);
+# if !defined(UNDER_CE)
   int result = vsnprintf_s(buffer, size, _TRUNCATE, format, args);
+# else
+  int result = _vsnprintf_s(buffer, size, _TRUNCATE, format, args);
+# endif
   va_end(args);
   return result;
 }
@@ -108,7 +114,11 @@ inline int fmt_snprintf(char *buffer, size_t size, const char *format, ...) {
 #if defined(_WIN32) && defined(__MINGW32__) && !defined(__NO_ISOCEXT)
 # define FMT_SWPRINTF snwprintf
 #else
-# define FMT_SWPRINTF swprintf
+# if defined(UNDER_CE)
+#  define FMT_SWPRINTF swprintf_s
+# else
+#  define FMT_SWPRINTF swprintf
+#endif
 #endif // defined(_WIN32) && defined(__MINGW32__) && !defined(__NO_ISOCEXT)
 
 const char RESET_COLOR[] = "\x1b[0m";
@@ -137,11 +147,13 @@ int safe_strerror(
     // A noop assignment operator to avoid bogus warnings.
     void operator=(const StrError &) {}
 
+#if !defined(UNDER_CE)
     // Handle the result of XSI-compliant version of strerror_r.
     int handle(int result) {
       // glibc versions before 2.13 return result in errno.
       return result == -1 ? errno : result;
     }
+#endif
 
     // Handle the result of GNU-specific version of strerror_r.
     int handle(char *message) {
@@ -171,9 +183,13 @@ int safe_strerror(
 
     // Fallback to strerror if strerror_r and strerror_s are not available.
     int fallback(internal::Null<>) {
+#if !defined(UNDER_CE)
       errno = 0;
       buffer_ = strerror(error_code_);
       return errno;
+#else
+      return 0;
+#endif
     }
 
 #ifdef __clang__
