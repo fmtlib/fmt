@@ -1,5 +1,19 @@
-7.0.0 - TBD
+7.0.1 - TBD
 -----------
+
+* Updated the inline version namespace name.
+
+* Worked around a gcc bug in mangling of alias templates
+  (`#1753 <https://github.com/fmtlib/fmt/issues/1753>`_).
+
+* Fixed a linkage error on Windows
+  (`#1757 <https://github.com/fmtlib/fmt/issues/1757>`_).
+  Thanks `@Kurkin (Dmitry Kurkin) <https://github.com/Kurkin>`_.
+
+* Fixed minor issues with the documentation.
+
+7.0.0 - 2020-07-06
+------------------
 
 * Reduced the library size. For example, on macOS a stripped test binary
   statically linked with {fmt} `shrank from ~368k to less than 100k
