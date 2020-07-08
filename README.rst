@@ -111,8 +111,8 @@ Check a format string at compile time:
 
 .. code:: c++
 
-    // test.cc
     #include <fmt/format.h>
+
     std::string s = format(FMT_STRING("{:d}"), "hello");
 
 gives a compile-time error because ``d`` is an invalid format specifier for a
