@@ -20,7 +20,7 @@
 **{fmt}** is an open-source formatting library for C++.
 It can be used as a safe and fast alternative to (s)printf and iostreams.
 
-`Documentation <https://fmt.dev/latest/>`__
+`Documentation <https://fmt.dev>`__
 
 Q&A: ask questions on `StackOverflow with the tag fmt
 <https://stackoverflow.com/questions/tagged/fmt>`_.
@@ -32,21 +32,20 @@ Features
   for localization
 * Implementation of `C++20 std::format
   <https://en.cppreference.com/w/cpp/utility/format>`__
-* `Format string syntax <https://fmt.dev/dev/syntax.html>`_ similar to the one
-  of Python's
+* `Format string syntax <https://fmt.dev/dev/syntax.html>`_ similar to Python's
   `format <https://docs.python.org/3/library/stdtypes.html#str.format>`_
 * Safe `printf implementation
-  <https://fmt.dev/latest/api.html#printf-formatting>`_ including
-  the POSIX extension for positional arguments
-* Extensibility: support for user-defined types
+  <https://fmt.dev/latest/api.html#printf-formatting>`_ including the POSIX
+  extension for positional arguments
+* Extensibility: `support for user-defined types
+  <https://fmt.dev/latest/api.html#formatting-user-defined-types>`_
 * High performance: faster than common standard library implementations of
-  `printf <https://en.cppreference.com/w/cpp/io/c/fprintf>`_,
-  iostreams, ``to_string`` and ``to_chars``, see `Speed tests`_ and
-  `Converting a hundred million integers to strings per second
+  ``(s)printf``, iostreams, ``to_string`` and ``to_chars``, see `Speed tests`_
+  and `Converting a hundred million integers to strings per second
   <http://www.zverovich.net/2020/06/13/fast-int-to-string-revisited.html>`_
-* Small code size both in terms of source code (the minimum configuration
-  consists of just three header files, ``core.h``, ``format.h`` and
-  ``format-inl.h``) and compiled code. See `Compile time and code bloat`_
+* Small code size both in terms of source code with the minimum configuration
+  consisting of just three files, ``core.h``, ``format.h`` and ``format-inl.h``,
+  and compiled code; see `Compile time and code bloat`_
 * Reliability: the library has an extensive set of `unit tests
   <https://github.com/fmtlib/fmt/tree/master/test>`_ and is continuously fuzzed
 * Safety: the library is fully type safe, errors in format strings can be
@@ -57,13 +56,12 @@ Features
   <https://github.com/fmtlib/fmt/blob/master/LICENSE.rst>`_
 * `Portability <https://fmt.dev/latest/index.html#portability>`_ with
   consistent output across platforms and support for older compilers
-* Clean warning-free codebase even on high warning levels
-  (``-Wall -Wextra -pedantic``)
+* Clean warning-free codebase even on high warning levels such as
+  ``-Wall -Wextra -pedantic``
 * Locale-independence by default
-* Support for wide strings
 * Optional header-only configuration enabled with the ``FMT_HEADER_ONLY`` macro
 
-See the `documentation <https://fmt.dev/latest/>`_ for more details.
+See the `documentation <https://fmt.dev>`_ for more details.
 
 Examples
 --------
@@ -92,18 +90,22 @@ Format a string using positional arguments:
     std::string s = fmt::format("I'd rather be {1} than {0}.", "right", "happy");
     // s == "I'd rather be happy than right."
 
-Print a chrono duration:
+Print chrono durations:
 
 .. code:: c++
 
     #include <fmt/chrono.h>
 
     int main() {
-      using namespace std::chrono_literals;
-      fmt::print("Elapsed time: {}", 42ms);
+      using namespace std::literals::chrono_literals;
+      fmt::print("Default format: {} {}\n", 42s, 100ms);
+      fmt::print("strftime-like format: {:%H:%M:%S}\n", 3h + 15min + 30s);
     }
 
-prints "Elapsed time: 42ms".
+Output::
+
+    Default format: 42s 100ms
+    strftime-like format: 03:15:30
 
 Check a format string at compile time:
 
@@ -125,30 +127,6 @@ Use {fmt} as a safe portable replacement for ``itoa``
     format_to(buf, "{}", 42);    // replaces itoa(42, buffer, 10)
     format_to(buf, "{:x}", 42);  // replaces itoa(42, buffer, 16)
     // access the string with to_string(buf) or buf.data()
-
-Format objects of user-defined types via a simple `extension API
-<https://fmt.dev/latest/api.html#formatting-user-defined-types>`_:
-
-.. code:: c++
-
-    #include <fmt/format.h>
-
-    struct date {
-      int year, month, day;
-    };
-
-    template <>
-    struct fmt::formatter<date> {
-      constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-
-      template <typename FormatContext>
-      auto format(const date& d, FormatContext& ctx) {
-        return format_to(ctx.out(), "{}-{}-{}", d.year, d.month, d.day);
-      }
-    };
-
-    std::string s = fmt::format("The date is {}", date{2012, 12, 9});
-    // s == "The date is 2012-12-9"
 
 Create your own functions similar to `format
 <https://fmt.dev/latest/api.html#format>`_ and
