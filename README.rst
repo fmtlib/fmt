@@ -111,22 +111,10 @@ Check a format string at compile time:
 
 .. code:: c++
 
-    #include <fmt/format.h>
+    std::string s = fmt::format(FMT_STRING("{:d}"), "don't panic");
 
-    std::string s = format(FMT_STRING("{:d}"), "hello");
-
-gives a compile-time error because ``d`` is an invalid format specifier for a
-string.
-
-Use {fmt} as a safe portable replacement for ``itoa``
-(`godbolt <https://godbolt.org/g/NXmpU4>`_):
-
-.. code:: c++
-
-    fmt::memory_buffer buf;
-    format_to(buf, "{}", 42);    // replaces itoa(42, buffer, 10)
-    format_to(buf, "{:x}", 42);  // replaces itoa(42, buffer, 16)
-    // access the string with to_string(buf) or buf.data()
+This gives a compile-time error because ``d`` is an invalid format specifier for
+a string.
 
 Create your own functions similar to `format
 <https://fmt.dev/latest/api.html#format>`_ and
