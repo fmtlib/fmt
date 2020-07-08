@@ -8,7 +8,7 @@
    :target: https://ci.appveyor.com/project/vitaut/fmt
 
 .. image:: https://oss-fuzz-build-logs.storage.googleapis.com/badges/libfmt.svg
-   :alt: fmt is continuously fuzzed att oss-fuzz
+   :alt: fmt is continuously fuzzed at oss-fuzz
    :target: https://bugs.chromium.org/p/oss-fuzz/issues/list?\
             colspec=ID%20Type%20Component%20Status%20Proj%20Reported%20Owner%20\
             Summary&q=proj%3Dlibfmt&can=1
@@ -286,7 +286,8 @@ Projects using this library
 * `HarpyWar/pvpgn <https://github.com/pvpgn/pvpgn-server>`_:
   Player vs Player Gaming Network with tweaks
 
-* `KBEngine <https://kbengine.org/>`_: An open-source MMOG server engine
+* `KBEngine <https://github.com/kbengine/kbengine>`_: An open-source MMOG server
+  engine
 
 * `Keypirinha <https://keypirinha.com/>`_: A semantic launcher for Windows
 
@@ -403,7 +404,7 @@ Boost Format
 
 This is a very powerful library which supports both ``printf``-like format
 strings and positional arguments. Its main drawback is performance. According to
-various benchmarks it is much slower than other methods considered here. Boost
+various, benchmarks it is much slower than other methods considered here. Boost
 Format also has excessive build times and severe code bloat issues (see
 `Benchmarks`_).
 
