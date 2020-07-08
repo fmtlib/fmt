@@ -180,7 +180,8 @@ further details refer to the `source
 floating-point formatting (`dtoa-benchmark <https://github.com/fmtlib/dtoa-benchmark>`_)
 and faster than `double-conversion <https://github.com/google/double-conversion>`_:
 
-.. image:: https://user-images.githubusercontent.com/576385/69767160-cdaca400-112f-11ea-9fc5-347c9f83caad.png
+.. image:: https://user-images.githubusercontent.com/576385/\
+           69767160-cdaca400-112f-11ea-9fc5-347c9f83caad.png
    :target: https://fmt.dev/unknown_mac64_clang10.0.html
 
 Compile time and code bloat
@@ -278,7 +279,8 @@ Projects using this library
 
 * `ccache <https://ccache.dev/>`_: A compiler cache
 
-* `ClickHouse <https://github.com/ClickHouse/ClickHouse>`_: analytical database management system
+* `ClickHouse <https://github.com/ClickHouse/ClickHouse>`_: analytical database
+  management system
 
 * `CUAUV <http://cuauv.org/>`_: Cornell University's autonomous underwater
   vehicle
