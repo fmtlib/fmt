@@ -728,9 +728,9 @@ template <typename T>
 class buffer_appender : public std::back_insert_iterator<buffer<T>> {
  public:
   explicit buffer_appender(buffer<T>& buf)
-    : std::back_insert_iterator<buffer<T>>(buf) {}
+      : std::back_insert_iterator<buffer<T>>(buf) {}
   buffer_appender(std::back_insert_iterator<buffer<T>> it)
-    : std::back_insert_iterator<buffer<T>>(it) {}
+      : std::back_insert_iterator<buffer<T>>(it) {}
 };
 
 // Extracts a reference to the container from back_insert_iterator.

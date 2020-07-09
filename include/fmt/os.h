@@ -346,8 +346,7 @@ long getpagesize();
 class direct_buffered_file;
 
 template <typename S, typename... Args>
-void print(direct_buffered_file& f, const S& format_str,
-           const Args&... args);
+void print(direct_buffered_file& f, const S& format_str, const Args&... args);
 
 // A buffered file with a direct buffer access and no synchronization.
 class direct_buffered_file {
@@ -368,11 +367,9 @@ class direct_buffered_file {
 
  public:
   direct_buffered_file(cstring_view path, int oflag)
-    : file_(path, oflag), pos_(0) {}
+      : file_(path, oflag), pos_(0) {}
 
-  ~direct_buffered_file() {
-    flush();
-  }
+  ~direct_buffered_file() { flush(); }
 
   void close() {
     flush();
