@@ -111,6 +111,7 @@ Print a container:
 
 .. code:: c++
 
+    #include <vector>
     #include <fmt/ranges.h>
 
     int main() {
