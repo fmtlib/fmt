@@ -608,8 +608,7 @@ template <typename CompiledFormat, typename... Args,
 std::basic_string<Char> format(const CompiledFormat& cf, const Args&... args) {
   basic_memory_buffer<Char> buffer;
   using context = buffer_context<Char>;
-  detail::buffer<Char>& base = buffer;
-  detail::cf::vformat_to<context>(std::back_inserter(base), cf,
+  detail::cf::vformat_to<context>(detail::buffer_appender<Char>(buffer), cf,
                                   make_format_args<context>(args...));
   return to_string(buffer);
 }

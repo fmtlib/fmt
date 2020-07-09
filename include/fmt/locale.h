@@ -21,7 +21,7 @@ typename buffer_context<Char>::iterator vformat_to(
     basic_string_view<Char> format_str,
     basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   using af = arg_formatter<typename buffer_context<Char>::iterator, Char>;
-  return vformat_to<af>(std::back_inserter(buf), to_string_view(format_str),
+  return vformat_to<af>(buffer_appender<Char>(buf), to_string_view(format_str),
                         args, detail::locale_ref(loc));
 }
 

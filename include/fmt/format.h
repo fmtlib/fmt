@@ -371,6 +371,11 @@ reserve(std::back_insert_iterator<Container> it, size_t n) {
   return make_checked(get_data(c) + size, n);
 }
 
+template <typename T>
+inline checked_ptr<T> reserve(buffer_appender<T> it, size_t n) {
+  return reserve(std::back_insert_iterator<buffer<T>>(it), n);
+}
+
 template <typename Iterator> inline Iterator& reserve(Iterator& it, size_t) {
   return it;
 }
@@ -2933,7 +2938,7 @@ class arg_formatter : public arg_formatter_base<OutputIt, Char> {
 
 template <typename OutputIt, typename Char>
 using arg_formatter FMT_DEPRECATED_ALIAS =
-  detail::arg_formatter<OutputIt, Char>;
+    detail::arg_formatter<OutputIt, Char>;
 
 /**
  An error returned by an operating system or a language runtime,
@@ -3445,11 +3450,11 @@ std::basic_string<Char> to_string(const basic_memory_buffer<Char, SIZE>& buf) {
 }
 
 template <typename Char>
-typename buffer_context<Char>::iterator detail::vformat_to(
+detail::buffer_appender<Char> detail::vformat_to(
     detail::buffer<Char>& buf, basic_string_view<Char> format_str,
     basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   using af = arg_formatter<typename buffer_context<Char>::iterator, Char>;
-  return vformat_to<af>(std::back_inserter(buf), to_string_view(format_str),
+  return vformat_to<af>(buffer_appender<Char>(buf), to_string_view(format_str),
                         args);
 }
 

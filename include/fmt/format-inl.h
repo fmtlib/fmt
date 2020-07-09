@@ -1296,6 +1296,19 @@ FMT_FUNC const char* utf8_decode(const char* buf, uint32_t* c, int* e) {
 
   return next;
 }
+
+struct stringifier {
+  template <typename T> FMT_INLINE std::string operator()(T value) const {
+    return to_string(value);
+  }
+  std::string operator()(basic_format_arg<format_context>::handle h) const {
+    memory_buffer buf;
+    format_parse_context parse_ctx({});
+    format_context format_ctx(buffer_appender<char>(buf), {}, {});
+    h.format(parse_ctx, format_ctx);
+    return to_string(buf);
+  }
+};
 }  // namespace detail
 
 template <> struct formatter<detail::bigint> {
@@ -1383,20 +1396,6 @@ FMT_FUNC void report_system_error(int error_code,
                                   fmt::string_view message) FMT_NOEXCEPT {
   report_error(format_system_error, error_code, message);
 }
-
-struct stringifier {
-  template <typename T> FMT_INLINE std::string operator()(T value) const {
-    return to_string(value);
-  }
-  std::string operator()(basic_format_arg<format_context>::handle h) const {
-    memory_buffer buf;
-    detail::buffer<char>& base = buf;
-    format_parse_context parse_ctx({});
-    format_context format_ctx(std::back_inserter(base), {}, {});
-    h.format(parse_ctx, format_ctx);
-    return to_string(buf);
-  }
-};
 
 FMT_FUNC std::string detail::vformat(string_view format_str, format_args args) {
   if (format_str.size() == 2 && equal2(format_str.data(), "{}")) {

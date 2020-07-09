@@ -722,6 +722,17 @@ class container_buffer : public buffer<typename Container::value_type> {
       : buffer<typename Container::value_type>(c.size()), container_(c) {}
 };
 
+// An output iterator that appends to the buffer.
+// It is used to reduce symbol sizes for the common case.
+template <typename T>
+class buffer_appender : public std::back_insert_iterator<buffer<T>> {
+ public:
+  explicit buffer_appender(buffer<T>& buf)
+    : std::back_insert_iterator<buffer<T>>(buf) {}
+  buffer_appender(std::back_insert_iterator<buffer<T>> it)
+    : std::back_insert_iterator<buffer<T>>(it) {}
+};
+
 // Extracts a reference to the container from back_insert_iterator.
 template <typename Container>
 inline Container& get_container(std::back_insert_iterator<Container> it) {
@@ -1356,13 +1367,13 @@ template <typename OutputIt, typename Char> class basic_format_context {
 
 template <typename Char>
 using buffer_context =
-    basic_format_context<std::back_insert_iterator<detail::buffer<Char>>, Char>;
+    basic_format_context<detail::buffer_appender<Char>, Char>;
 using format_context = buffer_context<char>;
 using wformat_context = buffer_context<wchar_t>;
 
-// Workaround a bug in gcc: https://stackoverflow.com/q/62767544/471164.
+// Workaround an alias issue: https://stackoverflow.com/q/62767544/471164.
 #define FMT_BUFFER_CONTEXT(Char) \
-  basic_format_context<std::back_insert_iterator<detail::buffer<Char>>, Char>
+  basic_format_context<detail::buffer_appender<Char>, Char>
 
 /**
   \rst
@@ -1772,7 +1783,7 @@ std::basic_string<Char> vformat(
 FMT_API std::string vformat(string_view format_str, format_args args);
 
 template <typename Char>
-typename FMT_BUFFER_CONTEXT(Char)::iterator vformat_to(
+buffer_appender<Char> vformat_to(
     buffer<Char>& buf, basic_string_view<Char> format_str,
     basic_format_args<FMT_BUFFER_CONTEXT(type_identity_t<Char>)> args);
 

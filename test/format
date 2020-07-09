@@ -38,9 +38,9 @@ namespace std {
   
   template<class Out, class charT> class basic_format_context;
   using format_context = basic_format_context<
-    /* unspecified */ std::back_insert_iterator<fmt::detail::buffer<char>>, char>;
+    /* unspecified */ fmt::detail::buffer_appender<char>, char>;
   using wformat_context = basic_format_context<
-    /* unspecified */ std::back_insert_iterator<fmt::detail::buffer<wchar_t>>, wchar_t>;
+    /* unspecified */ fmt::detail::buffer_appender<wchar_t>, wchar_t>;
 
   template<class T, class charT = char> struct formatter {
     formatter() = delete;
@@ -714,7 +714,7 @@ string vformat(string_view fmt, format_args args) {
   fmt::detail::buffer<char>& buf = mbuf;
   using af = detail::arg_formatter<fmt::format_context::iterator, char>;
   detail::format_handler<af, char, format_context>
-    h(std::back_inserter(buf), fmt, args, {});
+    h(fmt::detail::buffer_appender<char>(buf), fmt, args, {});
   fmt::detail::parse_format_string<false>(fmt::to_string_view(fmt), h);
   return to_string(mbuf);
 }

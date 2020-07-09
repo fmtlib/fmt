@@ -75,8 +75,8 @@ struct test_arg_formatter
 
 TEST(OStreamTest, CustomArg) {
   fmt::memory_buffer buffer;
-  fmt::detail::buffer<char>& base = buffer;
-  fmt::format_context ctx(std::back_inserter(base), fmt::format_args());
+  fmt::format_context ctx(
+    fmt::detail::buffer_appender<char>{buffer}, fmt::format_args());
   fmt::format_specs spec;
   test_arg_formatter af(ctx, spec);
   fmt::visit_format_arg(

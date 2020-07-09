@@ -53,10 +53,7 @@ template <typename Char> struct formatter<test_struct, Char> {
     return ctx.begin();
   }
 
-  typedef std::back_insert_iterator<buffer<Char>> iterator;
-
-  auto format(test_struct, basic_format_context<iterator, char>& ctx)
-      -> decltype(ctx.out()) {
+  auto format(test_struct, format_context& ctx) -> decltype(ctx.out()) {
     const Char* test = "test";
     return std::copy_n(test, std::strlen(test), ctx.out());
   }
@@ -377,9 +374,9 @@ struct check_custom {
       test_buffer() : fmt::detail::buffer<char>(data, 0, 10) {}
       void grow(size_t) {}
     } buffer;
-    fmt::detail::buffer<char>& base = buffer;
     fmt::format_parse_context parse_ctx("");
-    fmt::format_context ctx(std::back_inserter(base), fmt::format_args());
+    fmt::format_context ctx{
+      fmt::detail::buffer_appender<char>(buffer), fmt::format_args()};
     h.format(parse_ctx, ctx);
     EXPECT_EQ("test", std::string(buffer.data, buffer.size()));
     return test_result();
@@ -388,8 +385,8 @@ struct check_custom {
 
 TEST(ArgTest, CustomArg) {
   test_struct test;
-  typedef mock_visitor<fmt::basic_format_arg<fmt::format_context>::handle>
-      visitor;
+  using visitor =
+    mock_visitor<fmt::basic_format_arg<fmt::format_context>::handle>;
   testing::StrictMock<visitor> v;
   EXPECT_CALL(v, visit(_)).WillOnce(testing::Invoke(check_custom()));
   fmt::visit_format_arg(v, make_arg<fmt::format_context>(test));
