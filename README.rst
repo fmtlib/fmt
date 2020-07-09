@@ -107,6 +107,21 @@ Output::
     Default format: 42s 100ms
     strftime-like format: 03:15:30
 
+Print a container:
+
+.. code:: c++
+
+    #include <fmt/ranges.h>
+
+    int main() {
+      std::vector<int> v = {1, 2, 3};
+      fmt::print("{}\n", v);
+    }
+
+Output::
+
+    {1, 2, 3}
+
 Check a format string at compile time:
 
 .. code:: c++
