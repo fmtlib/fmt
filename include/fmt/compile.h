@@ -587,8 +587,7 @@ template <typename CompiledFormat, typename... Args,
 FMT_INLINE std::basic_string<Char> format(const CompiledFormat& cf,
                                           const Args&... args) {
   basic_memory_buffer<Char> buffer;
-  detail::buffer<Char>& base = buffer;
-  cf.format(std::back_inserter(base), args...);
+  cf.format(detail::buffer_appender<Char>(buffer), args...);
   return to_string(buffer);
 }
 

@@ -124,7 +124,7 @@ void detail::format_windows_error(detail::buffer<char>& out, int error_code,
       if (result != 0) {
         utf16_to_utf8 utf8_message;
         if (utf8_message.convert(system_message) == ERROR_SUCCESS) {
-          format_to(std::back_inserter(out), "{}: {}", message, utf8_message);
+          format_to(buffer_appender<char>(out), "{}: {}", message, utf8_message);
           return;
         }
         break;
@@ -312,6 +312,10 @@ long getpagesize() {
   if (size < 0) FMT_THROW(system_error(errno, "cannot get memory page size"));
   return size;
 #  endif
+}
+
+void direct_buffered_file::grow(size_t) {
+  if (this->size() == BUFSIZ) flush();
 }
 #endif  // FMT_USE_FCNTL
 FMT_END_NAMESPACE

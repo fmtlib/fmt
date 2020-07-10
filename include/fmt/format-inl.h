@@ -145,7 +145,7 @@ FMT_FUNC void format_error_code(detail::buffer<char>& out, int error_code,
   // Report error code making sure that the output fits into
   // inline_buffer_size to avoid dynamic memory allocation and potential
   // bad_alloc.
-  out.resize(0);
+  out.try_resize(0);
   static const char SEP[] = ": ";
   static const char ERROR_STR[] = "error ";
   // Subtract 2 to account for terminating null characters in SEP and ERROR_STR.
@@ -156,7 +156,7 @@ FMT_FUNC void format_error_code(detail::buffer<char>& out, int error_code,
     ++error_code_size;
   }
   error_code_size += detail::to_unsigned(detail::count_digits(abs_value));
-  auto it = std::back_inserter(out);
+  auto it = buffer_appender<char>(out);
   if (message.size() <= inline_buffer_size - error_code_size)
     format_to(it, "{}{}", message, SEP);
   format_to(it, "{}{}", ERROR_STR, error_code);
@@ -1051,7 +1051,7 @@ void fallback_format(Double d, buffer<char>& buf, int& exp10) {
         if (result > 0 || (result == 0 && (digit % 2) != 0))
           ++data[num_digits - 1];
       }
-      buf.resize(to_unsigned(num_digits));
+      buf.try_resize(to_unsigned(num_digits));
       exp10 -= num_digits - 1;
       return;
     }
@@ -1075,7 +1075,7 @@ int format_float(T value, int precision, float_specs specs, buffer<char>& buf) {
       buf.push_back('0');
       return 0;
     }
-    buf.resize(to_unsigned(precision));
+    buf.try_resize(to_unsigned(precision));
     std::uninitialized_fill_n(buf.data(), precision, '0');
     return -precision;
   }
@@ -1113,7 +1113,7 @@ int format_float(T value, int precision, float_specs specs, buffer<char>& buf) {
       fallback_format(value, buf, exp);
       return exp;
     }
-    buf.resize(to_unsigned(handler.size));
+    buf.try_resize(to_unsigned(handler.size));
   } else {
     if (precision > 17) return snprintf_float(value, precision, specs, buf);
     fp normalized = normalize(fp(value));
@@ -1131,7 +1131,7 @@ int format_float(T value, int precision, float_specs specs, buffer<char>& buf) {
         ++exp;
       }
     }
-    buf.resize(to_unsigned(num_digits));
+    buf.try_resize(to_unsigned(num_digits));
   }
   return exp - cached_exp10;
 }
@@ -1182,19 +1182,20 @@ int snprintf_float(T value, int precision, float_specs specs,
                      ? snprintf_ptr(begin, capacity, format, precision, value)
                      : snprintf_ptr(begin, capacity, format, value);
     if (result < 0) {
-      buf.reserve(buf.capacity() + 1);  // The buffer will grow exponentially.
+      // The buffer will grow exponentially.
+      buf.try_reserve(buf.capacity() + 1);
       continue;
     }
     auto size = to_unsigned(result);
     // Size equal to capacity means that the last character was truncated.
     if (size >= capacity) {
-      buf.reserve(size + offset + 1);  // Add 1 for the terminating '\0'.
+      buf.try_reserve(size + offset + 1);  // Add 1 for the terminating '\0'.
       continue;
     }
     auto is_digit = [](char c) { return c >= '0' && c <= '9'; };
     if (specs.format == float_format::fixed) {
       if (precision == 0) {
-        buf.resize(size);
+        buf.try_resize(size);
         return 0;
       }
       // Find and remove the decimal point.
@@ -1204,11 +1205,11 @@ int snprintf_float(T value, int precision, float_specs specs,
       } while (is_digit(*p));
       int fraction_size = static_cast<int>(end - p - 1);
       std::memmove(p, p + 1, to_unsigned(fraction_size));
-      buf.resize(size - 1);
+      buf.try_resize(size - 1);
       return -fraction_size;
     }
     if (specs.format == float_format::hex) {
-      buf.resize(size + offset);
+      buf.try_resize(size + offset);
       return 0;
     }
     // Find and parse the exponent.
@@ -1234,7 +1235,7 @@ int snprintf_float(T value, int precision, float_specs specs,
       fraction_size = static_cast<int>(fraction_end - begin - 1);
       std::memmove(begin + 1, begin + 2, to_unsigned(fraction_size));
     }
-    buf.resize(to_unsigned(fraction_size) + offset + 1);
+    buf.try_resize(to_unsigned(fraction_size) + offset + 1);
     return exp - fraction_size;
   }
 }
@@ -1373,7 +1374,8 @@ FMT_FUNC void format_system_error(detail::buffer<char>& out, int error_code,
       int result =
           detail::safe_strerror(error_code, system_message, buf.size());
       if (result == 0) {
-        format_to(std::back_inserter(out), "{}: {}", message, system_message);
+        format_to(detail::buffer_appender<char>(out), "{}: {}", message,
+                  system_message);
         return;
       }
       if (result != ERANGE)

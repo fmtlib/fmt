@@ -349,25 +349,26 @@ template <typename S, typename... Args>
 void print(direct_buffered_file& f, const S& format_str, const Args&... args);
 
 // A buffered file with a direct buffer access and no synchronization.
-class direct_buffered_file {
+class direct_buffered_file : private detail::buffer<char> {
  private:
   file file_;
 
-  enum { buffer_size = 4096 };
-  char buffer_[buffer_size];
-  int pos_;
+  char buffer_[BUFSIZ];
 
   void flush() {
-    if (pos_ == 0) return;
-    file_.write(buffer_, pos_);
-    pos_ = 0;
+    if (size() == 0) return;
+    file_.write(buffer_, size());
+    clear();
   }
 
-  int free_capacity() const { return buffer_size - pos_; }
+  int free_capacity() const { return static_cast<int>(BUFSIZ - size()); }
+
+ protected:
+  void grow(size_t) final;
 
  public:
-  direct_buffered_file(cstring_view path, int oflag)
-      : file_(path, oflag), pos_(0) {}
+  direct_buffered_file(const char* path, int oflag)
+      : buffer<char>(buffer_, 0, BUFSIZ), file_(path, oflag) {}
 
   ~direct_buffered_file() { flush(); }
 
@@ -379,21 +380,7 @@ class direct_buffered_file {
   template <typename S, typename... Args>
   friend void print(direct_buffered_file& f, const S& format_str,
                     const Args&... args) {
-    // We could avoid double buffering.
-    auto buf = fmt::memory_buffer();
-    fmt::format_to(std::back_inserter(buf), format_str, args...);
-    auto remaining_pos = 0;
-    auto remaining_size = buf.size();
-    while (remaining_size > detail::to_unsigned(f.free_capacity())) {
-      auto size = f.free_capacity();
-      memcpy(f.buffer_ + f.pos_, buf.data() + remaining_pos, size);
-      f.pos_ += size;
-      f.flush();
-      remaining_pos += size;
-      remaining_size -= size;
-    }
-    memcpy(f.buffer_ + f.pos_, buf.data() + remaining_pos, remaining_size);
-    f.pos_ += static_cast<int>(remaining_size);
+    fmt::format_to(detail::buffer_appender<char>(f), format_str, args...);
   }
 };
 #endif  // FMT_USE_FCNTL

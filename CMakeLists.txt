@@ -101,7 +101,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
       -Wold-style-cast -Wundef
       -Wredundant-decls -Wwrite-strings -Wpointer-arith
       -Wcast-qual -Wformat=2 -Wmissing-include-dirs
-      -Wcast-align -Wnon-virtual-dtor
+      -Wcast-align
       -Wctor-dtor-privacy -Wdisabled-optimization
       -Winvalid-pch -Woverloaded-virtual
       -Wconversion -Wswitch-enum

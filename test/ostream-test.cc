@@ -151,7 +151,8 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
   if (max_size <= fmt::detail::to_unsigned(max_streamsize)) return;
 
   struct test_buffer : fmt::detail::buffer<char> {
-    explicit test_buffer(size_t size) { resize(size); }
+    explicit test_buffer(size_t size)
+      : fmt::detail::buffer<char>(nullptr, size, size) {}
     void grow(size_t) {}
   } buffer(max_size);
 

@@ -629,18 +629,18 @@ template <typename T> class buffer {
   T* ptr_;
   size_t size_;
   size_t capacity_;
-  bool fixed_;
 
  protected:
   // Don't initialize ptr_ since it is not accessed to save a few cycles.
   FMT_SUPPRESS_MSC_WARNING(26495)
-  buffer(size_t sz) FMT_NOEXCEPT : size_(sz), capacity_(sz), fixed_(false) {}
+  buffer(size_t sz) FMT_NOEXCEPT : size_(sz), capacity_(sz) {}
 
-  buffer(T* p = nullptr, size_t sz = 0, size_t cap = 0,
-         bool fixed = false) FMT_NOEXCEPT : ptr_(p),
-                                            size_(sz),
-                                            capacity_(cap),
-                                            fixed_(fixed) {}
+  buffer(T* p = nullptr, size_t sz = 0, size_t cap = 0) FMT_NOEXCEPT
+      : ptr_(p),
+        size_(sz),
+        capacity_(cap) {}
+
+  ~buffer() = default;
 
   /** Sets the buffer data and capacity. */
   void set(T* buf_data, size_t buf_capacity) FMT_NOEXCEPT {
@@ -657,7 +657,6 @@ template <typename T> class buffer {
 
   buffer(const buffer&) = delete;
   void operator=(const buffer&) = delete;
-  virtual ~buffer() = default;
 
   T* begin() FMT_NOEXCEPT { return ptr_; }
   T* end() FMT_NOEXCEPT { return ptr_ + size_; }
@@ -677,24 +676,26 @@ template <typename T> class buffer {
   /** Returns a pointer to the buffer data. */
   const T* data() const FMT_NOEXCEPT { return ptr_; }
 
-  /**
-    Resizes the buffer. If T is a POD type new elements may not be initialized.
-   */
-  void resize(size_t new_size) {
-    reserve(new_size);
-    size_ = new_size;
-  }
-
   /** Clears this buffer. */
   void clear() { size_ = 0; }
 
-  /** Reserves space to store at least *capacity* elements. */
-  void reserve(size_t new_capacity) {
+  // Tries resizing the buffer to contain *count* elements. If T is a POD type
+  // the new elements may not be initialized.
+  void try_resize(size_t count) {
+    try_reserve(count);
+    size_ = count <= capacity_ ? count : capacity_;
+  }
+
+  // Tries increasing the buffer capacity to *new_capacity*. It can increase the
+  // capacity by a smaller amount than requested but guarantees there is space
+  // for at least one additional element either by increasing the capacity or by
+  // flushing the buffer if it is full.
+  void try_reserve(size_t new_capacity) {
     if (new_capacity > capacity_) grow(new_capacity);
   }
 
   void push_back(const T& value) {
-    reserve(size_ + 1);
+    try_reserve(size_ + 1);
     ptr_[size_++] = value;
   }
 
@@ -705,12 +706,6 @@ template <typename T> class buffer {
   template <typename I> const T& operator[](I index) const {
     return ptr_[index];
   }
-};
-
-// A fixed capacity buffer.
-template <typename T> class fixed_buffer : buffer<T> {
- public:
-  fixed_buffer(T* data, size_t capacity) : buffer<T>(data, 0, capacity, true) {}
 };
 
 // A container-backed buffer.
@@ -1815,7 +1810,10 @@ OutputIt vformat_to(
     OutputIt out, const S& format_str,
     basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   auto& c = detail::get_container(out);
-  detail::container_buffer<remove_reference_t<decltype(c)>> buf(c);
+  using container = remove_reference_t<decltype(c)>;
+  typename std::conditional<
+      std::is_same<container, detail::buffer<Char>>::value,
+      detail::buffer<Char>&, detail::container_buffer<container>>::type buf(c);
   detail::vformat_to(buf, to_string_view(format_str), args);
   return out;
 }

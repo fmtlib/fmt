@@ -103,7 +103,7 @@ void format_value(buffer<Char>& buf, const T& value,
 #endif
   output << value;
   output.exceptions(std::ios_base::failbit | std::ios_base::badbit);
-  buf.resize(buf.size());
+  buf.try_resize(buf.size());
 }
 
 // Formats an object of type T that has an overloaded ostream operator<<.

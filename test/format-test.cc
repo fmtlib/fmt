@@ -297,7 +297,7 @@ TEST(MemoryBufferTest, Grow) {
   mock_allocator<int> alloc;
   struct TestMemoryBuffer : Base {
     TestMemoryBuffer(Allocator alloc) : Base(alloc) {}
-    void grow(size_t size) { Base::grow(size); }
+    using Base::grow;
   } buffer((Allocator(&alloc)));
   buffer.resize(7);
   using fmt::detail::to_unsigned;

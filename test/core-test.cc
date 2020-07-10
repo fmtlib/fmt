@@ -34,6 +34,7 @@ using fmt::detail::buffer;
 using fmt::detail::value;
 
 using testing::_;
+using testing::Return;
 using testing::StrictMock;
 
 namespace {
@@ -84,16 +85,16 @@ template <typename T> struct test_buffer : buffer<T> {
 };
 
 template <typename T> struct mock_buffer : buffer<T> {
-  MOCK_METHOD1(do_grow, void(size_t capacity));
+  MOCK_METHOD1(do_grow, size_t(size_t capacity));
 
-  void grow(size_t capacity) {
-    this->set(this->data(), capacity);
-    do_grow(capacity);
+  void grow(size_t capacity) { this->set(this->data(), do_grow(capacity)); }
+
+  mock_buffer(T* data = nullptr, size_t capacity = 0) {
+    this->set(data, capacity);
+    ON_CALL(*this, do_grow(_))
+        .WillByDefault(
+            testing::Invoke([](size_t capacity) { return capacity; }));
   }
-
-  mock_buffer() {}
-  mock_buffer(T* data) { this->set(data, 0); }
-  mock_buffer(T* data, size_t capacity) { this->set(data, capacity); }
 };
 
 TEST(BufferTest, Ctor) {
@@ -120,22 +121,9 @@ TEST(BufferTest, Ctor) {
   }
 }
 
-struct dying_buffer : test_buffer<int> {
-  MOCK_METHOD0(die, void());
-  ~dying_buffer() { die(); }
-
- private:
-  virtual void avoid_weak_vtable();
-};
-
-void dying_buffer::avoid_weak_vtable() {}
-
-TEST(BufferTest, VirtualDtor) {
-  typedef StrictMock<dying_buffer> stict_mock_buffer;
-  stict_mock_buffer* mock_buffer = new stict_mock_buffer();
-  EXPECT_CALL(*mock_buffer, die());
-  buffer<int>* buffer = mock_buffer;
-  delete buffer;
+TEST(BufferTest, Indestructible) {
+  static_assert(!std::is_destructible<fmt::detail::buffer<int>>(),
+                "buffer's destructor is protected");
 }
 
 TEST(BufferTest, Access) {
@@ -149,30 +137,39 @@ TEST(BufferTest, Access) {
   EXPECT_EQ(42, const_buffer[3]);
 }
 
-TEST(BufferTest, Resize) {
+TEST(BufferTest, TryResize) {
   char data[123];
   mock_buffer<char> buffer(data, sizeof(data));
   buffer[10] = 42;
   EXPECT_EQ(42, buffer[10]);
-  buffer.resize(20);
+  buffer.try_resize(20);
   EXPECT_EQ(20u, buffer.size());
   EXPECT_EQ(123u, buffer.capacity());
   EXPECT_EQ(42, buffer[10]);
-  buffer.resize(5);
+  buffer.try_resize(5);
   EXPECT_EQ(5u, buffer.size());
   EXPECT_EQ(123u, buffer.capacity());
   EXPECT_EQ(42, buffer[10]);
-  // Check if resize calls grow.
+  // Check if try_resize calls grow.
   EXPECT_CALL(buffer, do_grow(124));
-  buffer.resize(124);
+  buffer.try_resize(124);
   EXPECT_CALL(buffer, do_grow(200));
-  buffer.resize(200);
+  buffer.try_resize(200);
+}
+
+TEST(BufferTest, TryResizePartial) {
+  char data[10];
+  mock_buffer<char> buffer(data, sizeof(data));
+  EXPECT_CALL(buffer, do_grow(20)).WillOnce(Return(15));
+  buffer.try_resize(20);
+  EXPECT_EQ(buffer.capacity(), 15);
+  EXPECT_EQ(buffer.size(), 15);
 }
 
 TEST(BufferTest, Clear) {
   test_buffer<char> buffer;
-  buffer.resize(20);
-  buffer.resize(0);
+  buffer.try_resize(20);
+  buffer.try_resize(0);
   EXPECT_EQ(static_cast<size_t>(0), buffer.size());
   EXPECT_EQ(20u, buffer.capacity());
 }
@@ -184,7 +181,7 @@ TEST(BufferTest, Append) {
   buffer.append(test, test + 5);
   EXPECT_STREQ(test, &buffer[0]);
   EXPECT_EQ(5u, buffer.size());
-  buffer.resize(10);
+  buffer.try_resize(10);
   EXPECT_CALL(buffer, do_grow(12));
   buffer.append(test, test + 2);
   EXPECT_EQ('t', buffer[10]);
@@ -196,7 +193,7 @@ TEST(BufferTest, AppendAllocatesEnoughStorage) {
   char data[19];
   mock_buffer<char> buffer(data, 10);
   const char* test = "abcdefgh";
-  buffer.resize(10);
+  buffer.try_resize(10);
   EXPECT_CALL(buffer, do_grow(19));
   buffer.append(test, test + 9);
 }
@@ -255,7 +252,7 @@ template <typename T> struct mock_visitor {
   template <typename U> struct result { typedef test_result type; };
 
   mock_visitor() {
-    ON_CALL(*this, visit(_)).WillByDefault(testing::Return(test_result()));
+    ON_CALL(*this, visit(_)).WillByDefault(Return(test_result()));
   }
 
   MOCK_METHOD1_T(visit, test_result(T value));

@@ -374,7 +374,7 @@ reserve(std::back_insert_iterator<Container> it, size_t n) {
 template <typename T>
 inline buffer_appender<T> reserve(buffer_appender<T> it, size_t n) {
   buffer<T>& buf = get_container(it);
-  buf.reserve(buf.size() + n);
+  buf.try_reserve(buf.size() + n);
   return it;
 }
 
@@ -572,7 +572,7 @@ template <typename T>
 template <typename U>
 void buffer<T>::append(const U* begin, const U* end) {
   size_t new_size = size_ + to_unsigned(end - begin);
-  reserve(new_size);
+  try_reserve(new_size);
   std::uninitialized_copy(begin, end,
                           make_checked(ptr_ + size_, capacity_ - size_));
   size_ = new_size;
@@ -628,7 +628,7 @@ class basic_memory_buffer : public detail::buffer<T> {
   }
 
  protected:
-  void grow(size_t size) FMT_OVERRIDE;
+  void grow(size_t size) final;
 
  public:
   using value_type = T;
@@ -638,7 +638,7 @@ class basic_memory_buffer : public detail::buffer<T> {
       : alloc_(alloc) {
     this->set(store_, SIZE);
   }
-  ~basic_memory_buffer() FMT_OVERRIDE { deallocate(); }
+  ~basic_memory_buffer() { deallocate(); }
 
  private:
   // Move data from other to this buffer.
@@ -682,6 +682,15 @@ class basic_memory_buffer : public detail::buffer<T> {
 
   // Returns a copy of the allocator associated with this buffer.
   Allocator get_allocator() const { return alloc_; }
+
+  /**
+    Resizes the buffer to contain *count* elements. If T is a POD type new
+    elements may not be initialized.
+   */
+  void resize(size_t count) { this->try_resize(count); }
+
+  /** Increases the buffer capacity to *new_capacity*. */
+  void reserve(size_t new_capacity) { this->try_reserve(new_capacity); }
 };
 
 template <typename T, size_t SIZE, typename Allocator>
