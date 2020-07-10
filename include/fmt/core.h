@@ -629,16 +629,18 @@ template <typename T> class buffer {
   T* ptr_;
   size_t size_;
   size_t capacity_;
+  bool fixed_;
 
  protected:
   // Don't initialize ptr_ since it is not accessed to save a few cycles.
   FMT_SUPPRESS_MSC_WARNING(26495)
-  buffer(size_t sz) FMT_NOEXCEPT : size_(sz), capacity_(sz) {}
+  buffer(size_t sz) FMT_NOEXCEPT : size_(sz), capacity_(sz), fixed_(false) {}
 
-  buffer(T* p = nullptr, size_t sz = 0, size_t cap = 0) FMT_NOEXCEPT
-      : ptr_(p),
-        size_(sz),
-        capacity_(cap) {}
+  buffer(T* p = nullptr, size_t sz = 0, size_t cap = 0,
+         bool fixed = false) FMT_NOEXCEPT : ptr_(p),
+                                            size_(sz),
+                                            capacity_(cap),
+                                            fixed_(fixed) {}
 
   /** Sets the buffer data and capacity. */
   void set(T* buf_data, size_t buf_capacity) FMT_NOEXCEPT {
@@ -703,6 +705,12 @@ template <typename T> class buffer {
   template <typename I> const T& operator[](I index) const {
     return ptr_[index];
   }
+};
+
+// A fixed capacity buffer.
+template <typename T> class fixed_buffer : buffer<T> {
+ public:
+  fixed_buffer(T* data, size_t capacity) : buffer<T>(data, 0, capacity, true) {}
 };
 
 // A container-backed buffer.

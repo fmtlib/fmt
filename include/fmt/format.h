@@ -372,8 +372,10 @@ reserve(std::back_insert_iterator<Container> it, size_t n) {
 }
 
 template <typename T>
-inline checked_ptr<T> reserve(buffer_appender<T> it, size_t n) {
-  return reserve(std::back_insert_iterator<buffer<T>>(it), n);
+inline buffer_appender<T> reserve(buffer_appender<T> it, size_t n) {
+  buffer<T>& buf = get_container(it);
+  buf.reserve(buf.size() + n);
+  return it;
 }
 
 template <typename Iterator> inline Iterator& reserve(Iterator& it, size_t) {
