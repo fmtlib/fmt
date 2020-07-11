@@ -31,21 +31,14 @@
 using fmt::basic_format_arg;
 using fmt::string_view;
 using fmt::detail::buffer;
+using fmt::detail::make_arg;
 using fmt::detail::value;
 
 using testing::_;
 using testing::Return;
 using testing::StrictMock;
 
-namespace {
-
 struct test_struct {};
-
-template <typename Context, typename T>
-basic_format_arg<Context> make_arg(const T& value) {
-  return fmt::detail::make_arg<Context>(value);
-}
-}  // namespace
 
 FMT_BEGIN_NAMESPACE
 template <typename Char> struct formatter<test_struct, Char> {
@@ -79,10 +72,10 @@ TEST(BufferTest, Nonmoveable) {
 }
 #endif
 
-// A test buffer with a dummy grow method.
-template <typename T> struct test_buffer : buffer<T> {
-  void grow(size_t capacity) { this->set(nullptr, capacity); }
-};
+TEST(BufferTest, Indestructible) {
+  static_assert(!std::is_destructible<fmt::detail::buffer<int>>(),
+                "buffer's destructor is protected");
+}
 
 template <typename T> struct mock_buffer : buffer<T> {
   MOCK_METHOD1(do_grow, size_t(size_t capacity));
@@ -119,11 +112,6 @@ TEST(BufferTest, Ctor) {
     EXPECT_EQ(static_cast<size_t>(0), buffer.size());
     EXPECT_EQ(capacity, buffer.capacity());
   }
-}
-
-TEST(BufferTest, Indestructible) {
-  static_assert(!std::is_destructible<fmt::detail::buffer<int>>(),
-                "buffer's destructor is protected");
 }
 
 TEST(BufferTest, Access) {
@@ -167,7 +155,8 @@ TEST(BufferTest, TryResizePartial) {
 }
 
 TEST(BufferTest, Clear) {
-  test_buffer<char> buffer;
+  mock_buffer<char> buffer;
+  EXPECT_CALL(buffer, do_grow(20));
   buffer.try_resize(20);
   buffer.try_resize(0);
   EXPECT_EQ(static_cast<size_t>(0), buffer.size());
@@ -177,7 +166,7 @@ TEST(BufferTest, Clear) {
 TEST(BufferTest, Append) {
   char data[15];
   mock_buffer<char> buffer(data, 10);
-  const char* test = "test";
+  auto test = "test";
   buffer.append(test, test + 5);
   EXPECT_STREQ(test, &buffer[0]);
   EXPECT_EQ(5u, buffer.size());
@@ -192,14 +181,14 @@ TEST(BufferTest, Append) {
 TEST(BufferTest, AppendAllocatesEnoughStorage) {
   char data[19];
   mock_buffer<char> buffer(data, 10);
-  const char* test = "abcdefgh";
+  auto test = "abcdefgh";
   buffer.try_resize(10);
   EXPECT_CALL(buffer, do_grow(19));
   buffer.append(test, test + 9);
 }
 
 TEST(ArgTest, FormatArgs) {
-  fmt::format_args args;
+  auto args = fmt::format_args();
   EXPECT_FALSE(args.get(1));
 }
 
@@ -227,7 +216,7 @@ struct custom_context {
 };
 
 TEST(ArgTest, MakeValueWithCustomContext) {
-  test_struct t;
+  auto t = test_struct();
   fmt::detail::value<custom_context> arg(
       fmt::detail::arg_mapper<custom_context>().map(t));
   custom_context ctx = {false, fmt::format_parse_context("")};
@@ -249,7 +238,7 @@ FMT_END_NAMESPACE
 struct test_result {};
 
 template <typename T> struct mock_visitor {
-  template <typename U> struct result { typedef test_result type; };
+  template <typename U> struct result { using type = test_result; };
 
   mock_visitor() {
     ON_CALL(*this, visit(_)).WillByDefault(Return(test_result()));
@@ -266,10 +255,10 @@ template <typename T> struct mock_visitor {
   }
 };
 
-template <typename T> struct visit_type { typedef T Type; };
+template <typename T> struct visit_type { using type = T; };
 
-#define VISIT_TYPE(Type_, visit_type_) \
-  template <> struct visit_type<Type_> { typedef visit_type_ Type; }
+#define VISIT_TYPE(type_, visit_type_) \
+  template <> struct visit_type<type_> { using type = visit_type_; }
 
 VISIT_TYPE(signed char, int);
 VISIT_TYPE(unsigned char, unsigned);
@@ -288,36 +277,34 @@ VISIT_TYPE(unsigned long, unsigned long long);
   {                                                                           \
     testing::StrictMock<mock_visitor<decltype(expected)>> visitor;            \
     EXPECT_CALL(visitor, visit(expected));                                    \
-    typedef std::back_insert_iterator<buffer<Char>> iterator;                 \
+    using iterator = std::back_insert_iterator<buffer<Char>>;                 \
     fmt::visit_format_arg(                                                    \
         visitor, make_arg<fmt::basic_format_context<iterator, Char>>(value)); \
   }
 
 #define CHECK_ARG(value, typename_)                          \
   {                                                          \
-    typedef decltype(value) value_type;                      \
-    typename_ visit_type<value_type>::Type expected = value; \
+    using value_type = decltype(value);                      \
+    typename_ visit_type<value_type>::type expected = value; \
     CHECK_ARG_(char, expected, value)                        \
     CHECK_ARG_(wchar_t, expected, value)                     \
   }
 
 template <typename T> class NumericArgTest : public testing::Test {};
 
-typedef ::testing::Types<bool, signed char, unsigned char, signed,
+using types = ::testing::Types<bool, signed char, unsigned char, signed,
                          unsigned short, int, unsigned, long, unsigned long,
                          long long, unsigned long long, float, double,
-                         long double>
-    Types;
-TYPED_TEST_CASE(NumericArgTest, Types);
+                         long double>;
+TYPED_TEST_CASE(NumericArgTest, types);
 
 template <typename T>
-typename std::enable_if<std::is_integral<T>::value, T>::type test_value() {
+fmt::enable_if_t<std::is_integral<T>::value, T> test_value() {
   return static_cast<T>(42);
 }
 
 template <typename T>
-typename std::enable_if<std::is_floating_point<T>::value, T>::type
-test_value() {
+fmt::enable_if_t<std::is_floating_point<T>::value, T> test_value() {
   return static_cast<T>(4.2);
 }
 
@@ -339,7 +326,7 @@ TEST(ArgTest, StringArg) {
   const char* cstr = str;
   CHECK_ARG_(char, cstr, str);
 
-  string_view sref(str);
+  auto sref = string_view(str);
   CHECK_ARG_(char, sref, std::string(str));
 }
 
@@ -401,9 +388,7 @@ TEST(FormatDynArgsTest, Basic) {
   store.push_back(42);
   store.push_back("abc1");
   store.push_back(1.5f);
-
-  std::string result = fmt::vformat("{} and {} and {}", store);
-  EXPECT_EQ("42 and abc1 and 1.5", result);
+  EXPECT_EQ("42 and abc1 and 1.5", fmt::vformat("{} and {} and {}", store));
 }
 
 TEST(FormatDynArgsTest, StringsAndRefs) {
@@ -445,7 +430,6 @@ TEST(FormatDynArgsTest, CustomFormat) {
   ++c.i;
   store.push_back(std::cref(c));
   ++c.i;
-
   std::string result = fmt::vformat("{} and {} and {}", store);
   EXPECT_EQ("cust=0 and cust=1 and cust=3", result);
 }
@@ -453,8 +437,7 @@ TEST(FormatDynArgsTest, CustomFormat) {
 TEST(FormatDynArgsTest, NamedInt) {
   fmt::dynamic_format_arg_store<fmt::format_context> store;
   store.push_back(fmt::arg("a1", 42));
-  std::string result = fmt::vformat("{a1}", store);
-  EXPECT_EQ("42", result);
+  EXPECT_EQ("42", fmt::vformat("{a1}", store));
 }
 
 TEST(FormatDynArgsTest, NamedStrings) {
@@ -463,10 +446,7 @@ TEST(FormatDynArgsTest, NamedStrings) {
   store.push_back(fmt::arg("a1", str));
   store.push_back(fmt::arg("a2", std::cref(str)));
   str[0] = 'X';
-
-  std::string result = fmt::vformat("{a1} and {a2}", store);
-
-  EXPECT_EQ("1234567890 and X234567890", result);
+  EXPECT_EQ("1234567890 and X234567890", fmt::vformat("{a1} and {a2}", store));
 }
 
 TEST(FormatDynArgsTest, NamedArgByRef) {
@@ -488,7 +468,6 @@ TEST(FormatDynArgsTest, NamedArgByRef) {
   store.push_back(std::cref(a1));
 
   std::string result = fmt::vformat("{a1_} and {} and {} and {}", store);
-
   EXPECT_EQ("42 and abc and 1.5 and 42", result);
 }
 
@@ -501,7 +480,6 @@ TEST(FormatDynArgsTest, NamedCustomFormat) {
   ++c.i;
   store.push_back(fmt::arg("c_ref", std::cref(c)));
   ++c.i;
-
   std::string result = fmt::vformat("{c1} and {c2} and {c_ref}", store);
   EXPECT_EQ("cust=0 and cust=1 and cust=3", result);
 }
@@ -657,14 +635,14 @@ TEST(CoreTest, FormatterOverridesImplicitConversion) {
 
 namespace my_ns {
 template <typename Char> class my_string {
+ private:
+  std::basic_string<Char> s_;
+
  public:
   my_string(const Char* s) : s_(s) {}
   const Char* data() const FMT_NOEXCEPT { return s_.data(); }
   size_t length() const FMT_NOEXCEPT { return s_.size(); }
   operator const Char*() const { return s_.c_str(); }
-
- private:
-  std::basic_string<Char> s_;
 };
 
 template <typename Char>
@@ -742,7 +720,7 @@ struct implicitly_convertible_to_string_view {
   operator fmt::string_view() const { return "foo"; }
 };
 
-TEST(FormatterTest, FormatImplicitlyConvertibleToStringView) {
+TEST(CoreTest, FormatImplicitlyConvertibleToStringView) {
   EXPECT_EQ("foo", fmt::format("{}", implicitly_convertible_to_string_view()));
 }
 
@@ -752,7 +730,7 @@ struct explicitly_convertible_to_string_view {
   explicit operator fmt::string_view() const { return "foo"; }
 };
 
-TEST(FormatterTest, FormatExplicitlyConvertibleToStringView) {
+TEST(CoreTest, FormatExplicitlyConvertibleToStringView) {
   EXPECT_EQ("foo", fmt::format("{}", explicitly_convertible_to_string_view()));
 }
 
@@ -761,7 +739,7 @@ struct explicitly_convertible_to_std_string_view {
   explicit operator std::string_view() const { return "foo"; }
 };
 
-TEST(FormatterTest, FormatExplicitlyConvertibleToStdStringView) {
+TEST(CoreTest, FormatExplicitlyConvertibleToStdStringView) {
   EXPECT_EQ("foo",
             fmt::format("{}", explicitly_convertible_to_std_string_view()));
 }
@@ -775,6 +753,6 @@ struct disabled_rvalue_conversion {
   operator const char*() && = delete;
 };
 
-TEST(FormatterTest, DisabledRValueConversion) {
+TEST(CoreTest, DisabledRValueConversion) {
   EXPECT_EQ("foo", fmt::format("{}", disabled_rvalue_conversion()));
 }
