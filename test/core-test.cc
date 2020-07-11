@@ -35,6 +35,7 @@ using fmt::detail::make_arg;
 using fmt::detail::value;
 
 using testing::_;
+using testing::Invoke;
 using testing::Return;
 using testing::StrictMock;
 
@@ -84,9 +85,9 @@ template <typename T> struct mock_buffer : buffer<T> {
 
   mock_buffer(T* data = nullptr, size_t capacity = 0) {
     this->set(data, capacity);
-    ON_CALL(*this, do_grow(_))
-        .WillByDefault(
-            testing::Invoke([](size_t capacity) { return capacity; }));
+    ON_CALL(*this, do_grow(_)).WillByDefault(Invoke([](size_t capacity) {
+      return capacity;
+    }));
   }
 };
 
@@ -176,6 +177,20 @@ TEST(BufferTest, Append) {
   EXPECT_EQ('t', buffer[10]);
   EXPECT_EQ('e', buffer[11]);
   EXPECT_EQ(12u, buffer.size());
+}
+
+TEST(BufferTest, AppendPartial) {
+  char data[10];
+  mock_buffer<char> buffer(data, sizeof(data));
+  testing::InSequence seq;
+  EXPECT_CALL(buffer, do_grow(15)).WillOnce(Return(10));
+  EXPECT_CALL(buffer, do_grow(15)).WillOnce(Invoke([&buffer](size_t) {
+    EXPECT_EQ(fmt::string_view(buffer.data(), buffer.size()), "0123456789");
+    buffer.clear();
+    return 10;
+  }));
+  auto test = "0123456789abcde";
+  buffer.append(test, test + 15);
 }
 
 TEST(BufferTest, AppendAllocatesEnoughStorage) {
@@ -292,10 +307,10 @@ VISIT_TYPE(unsigned long, unsigned long long);
 
 template <typename T> class NumericArgTest : public testing::Test {};
 
-using types = ::testing::Types<bool, signed char, unsigned char, signed,
-                         unsigned short, int, unsigned, long, unsigned long,
-                         long long, unsigned long long, float, double,
-                         long double>;
+using types =
+    ::testing::Types<bool, signed char, unsigned char, signed, unsigned short,
+                     int, unsigned, long, unsigned long, long long,
+                     unsigned long long, float, double, long double>;
 TYPED_TEST_CASE(NumericArgTest, types);
 
 template <typename T>
@@ -372,7 +387,7 @@ TEST(ArgTest, CustomArg) {
   using visitor =
       mock_visitor<fmt::basic_format_arg<fmt::format_context>::handle>;
   testing::StrictMock<visitor> v;
-  EXPECT_CALL(v, visit(_)).WillOnce(testing::Invoke(check_custom()));
+  EXPECT_CALL(v, visit(_)).WillOnce(Invoke(check_custom()));
   fmt::visit_format_arg(v, make_arg<fmt::format_context>(test));
 }
 

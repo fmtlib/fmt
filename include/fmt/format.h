@@ -571,11 +571,15 @@ template <typename T> constexpr bool use_grisu() {
 template <typename T>
 template <typename U>
 void buffer<T>::append(const U* begin, const U* end) {
-  size_t new_size = size_ + to_unsigned(end - begin);
-  try_reserve(new_size);
-  std::uninitialized_copy(begin, end,
-                          make_checked(ptr_ + size_, capacity_ - size_));
-  size_ = new_size;
+  do {
+    auto count = to_unsigned(end - begin);
+    try_reserve(size_ + count);
+    auto free_cap = capacity_ - size_;
+    if (free_cap < count) count = free_cap;
+    std::uninitialized_copy_n(begin, count, make_checked(ptr_ + size_, count));
+    size_ += count;
+    begin += count;
+  } while (begin != end);
 }
 }  // namespace detail
 

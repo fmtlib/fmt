@@ -1811,9 +1811,9 @@ OutputIt vformat_to(
     basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   auto& c = detail::get_container(out);
   using container = remove_reference_t<decltype(c)>;
-  typename std::conditional<
-      std::is_same<container, detail::buffer<Char>>::value,
-      detail::buffer<Char>&, detail::container_buffer<container>>::type buf(c);
+  conditional_t<std::is_same<container, detail::buffer<Char>>::value,
+                detail::buffer<Char>&, detail::container_buffer<container>>
+      buf(c);
   detail::vformat_to(buf, to_string_view(format_str), args);
   return out;
 }
