@@ -343,16 +343,10 @@ class file {
 // Returns the memory page size.
 long getpagesize();
 
-class direct_buffered_file;
-
-template <typename S, typename... Args>
-void print(direct_buffered_file& f, const S& format_str, const Args&... args);
-
 // A buffered file with a direct buffer access and no synchronization.
 class direct_buffered_file : private detail::buffer<char> {
  private:
   file file_;
-
   char buffer_[BUFSIZ];
 
   void flush() {
@@ -361,13 +355,10 @@ class direct_buffered_file : private detail::buffer<char> {
     clear();
   }
 
-  int free_capacity() const { return static_cast<int>(BUFSIZ - size()); }
-
- protected:
   void grow(size_t) final;
 
  public:
-  direct_buffered_file(const char* path, int oflag)
+  direct_buffered_file(cstring_view path, int oflag)
       : buffer<char>(buffer_, 0, BUFSIZ), file_(path, oflag) {}
 
   ~direct_buffered_file() { flush(); }
@@ -379,10 +370,13 @@ class direct_buffered_file : private detail::buffer<char> {
 
   template <typename S, typename... Args>
   friend void print(direct_buffered_file& f, const S& format_str,
-                    const Args&... args) {
-    fmt::format_to(detail::buffer_appender<char>(f), format_str, args...);
-  }
+                    const Args&... args);
 };
+
+template <typename S, typename... Args>
+void print(direct_buffered_file& f, const S& format_str, const Args&... args) {
+  format_to(detail::buffer_appender<char>(f), format_str, args...);
+}
 #endif  // FMT_USE_FCNTL
 
 #ifdef FMT_LOCALE
