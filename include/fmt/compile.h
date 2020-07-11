@@ -406,6 +406,19 @@ constexpr text<Char> make_text(basic_string_view<Char> s, size_t pos,
   return {{&s[pos], size}};
 }
 
+template <typename Char> struct code_unit {
+  Char value;
+  using char_type = Char;
+
+  template <typename OutputIt, typename... Args>
+  OutputIt format(OutputIt out, const Args&...) const {
+    return write<Char>(out, value);
+  }
+};
+
+template <typename Char>
+struct is_compiled_format<code_unit<Char>> : std::true_type {};
+
 // A replacement field that refers to argument N.
 template <typename Char, typename T, int N> struct field {
   using char_type = Char;
@@ -530,8 +543,13 @@ constexpr auto compile_format_string(S format_str) {
     return parse_tail<Args, POS + 2, ID>(make_text(str, POS, 1), format_str);
   } else {
     constexpr auto end = parse_text(str, POS + 1);
-    return parse_tail<Args, end, ID>(make_text(str, POS, end - POS),
-                                     format_str);
+    if constexpr (end - POS > 1) {
+      return parse_tail<Args, end, ID>(make_text(str, POS, end - POS),
+                                       format_str);
+    } else {
+      return parse_tail<Args, end, ID>(code_unit<char_type>{str[0]},
+                                       format_str);
+    }
   }
 }
 
