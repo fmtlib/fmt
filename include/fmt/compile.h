@@ -547,7 +547,7 @@ constexpr auto compile_format_string(S format_str) {
       return parse_tail<Args, end, ID>(make_text(str, POS, end - POS),
                                        format_str);
     } else {
-      return parse_tail<Args, end, ID>(code_unit<char_type>{str[0]},
+      return parse_tail<Args, end, ID>(code_unit<char_type>{str[POS]},
                                        format_str);
     }
   }

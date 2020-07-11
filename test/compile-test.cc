@@ -162,5 +162,6 @@ TEST(CompileTest, FormatTo) {
 
 TEST(CompileTest, TextAndArg) {
   EXPECT_EQ(">>>42<<<", fmt::format(FMT_COMPILE(">>>{}<<<"), 42));
+  EXPECT_EQ("42!", fmt::format(FMT_COMPILE("{}!"), 42));
 }
 #endif

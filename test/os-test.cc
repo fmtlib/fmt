@@ -81,7 +81,7 @@ TEST(UtilTest, FormatWindowsError) {
   EXPECT_EQ(fmt::format("test: {}", utf8_message.str()),
             fmt::to_string(actual_message));
   actual_message.resize(0);
-  auto max_size = fmt::detail::max_value<long long>();
+  auto max_size = fmt::detail::max_value<size_t>() / 2;
   fmt::detail::format_windows_error(actual_message, ERROR_FILE_EXISTS,
                                     fmt::string_view(nullptr, max_size));
   EXPECT_EQ(fmt::format("error {}", ERROR_FILE_EXISTS),
