@@ -1760,6 +1760,13 @@ OutputIt write(OutputIt out, basic_string_view<Char> value) {
   return base_iterator(out, it);
 }
 
+template <typename Char>
+buffer_appender<Char> write(buffer_appender<Char> out,
+                            basic_string_view<Char> value) {
+  get_container(out).append(value.begin(), value.end());
+  return out;
+}
+
 template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(is_integral<T>::value &&
                         !std::is_same<T, bool>::value &&
