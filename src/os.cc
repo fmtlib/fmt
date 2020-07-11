@@ -314,7 +314,7 @@ long getpagesize() {
 #  endif
 }
 
-void direct_buffered_file::grow(size_t) {
+void ostream::grow(size_t) {
   if (this->size() == BUFSIZ) flush();
 }
 #endif  // FMT_USE_FCNTL

@@ -287,21 +287,19 @@ TEST(BufferedFileTest, Fileno) {
   EXPECT_READ(copy, FILE_CONTENT);
 }
 
-TEST(DirectBufferedFileTest, Print) {
-  fmt::direct_buffered_file out("test-file",
-                                fmt::file::WRONLY | fmt::file::CREATE);
-  fmt::print(out, "The answer is {}.\n", 42);
+TEST(OStreamTest, Print) {
+  fmt::ostream out = fmt::output_file("test-file");
+  out.print("The answer is {}.\n", 42);
   out.close();
   file in("test-file", file::RDONLY);
   EXPECT_READ(in, "The answer is 42.\n");
 }
 
-TEST(DirectBufferedFileTest, BufferBoundary) {
+TEST(OStreamTest, BufferBoundary) {
   auto str = std::string(4096, 'x');
-  fmt::direct_buffered_file out("test-file",
-                                fmt::file::WRONLY | fmt::file::CREATE);
-  fmt::print(out, "{}", str);
-  fmt::print(out, "{}", str);
+  fmt::ostream out = fmt::output_file("test-file");
+  out.print("{}", str);
+  out.print("{}", str);
   out.close();
   file in("test-file", file::RDONLY);
   EXPECT_READ(in, str + str);

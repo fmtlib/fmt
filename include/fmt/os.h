@@ -343,8 +343,8 @@ class file {
 // Returns the memory page size.
 long getpagesize();
 
-// A buffered file with a direct buffer access and no synchronization.
-class direct_buffered_file : private detail::buffer<char> {
+// A fast output stream without synchronization.
+class ostream : private detail::buffer<char> {
  private:
   file file_;
   char buffer_[BUFSIZ];
@@ -357,11 +357,18 @@ class direct_buffered_file : private detail::buffer<char> {
 
   void grow(size_t) final;
 
- public:
-  direct_buffered_file(cstring_view path, int oflag)
+  ostream(cstring_view path, int oflag)
       : buffer<char>(buffer_, 0, BUFSIZ), file_(path, oflag) {}
 
-  ~direct_buffered_file() { flush(); }
+ public:
+  ostream(ostream&& other)
+      : buffer<char>(buffer_, 0, BUFSIZ), file_(std::move(other.file_)) {
+    append(other.begin(), other.end());
+    other.clear();
+  }
+  ~ostream() { flush(); }
+
+  friend ostream output_file(cstring_view path, int oflag);
 
   void close() {
     flush();
@@ -369,13 +376,14 @@ class direct_buffered_file : private detail::buffer<char> {
   }
 
   template <typename S, typename... Args>
-  friend void print(direct_buffered_file& f, const S& format_str,
-                    const Args&... args);
+  void print(const S& format_str, const Args&... args) {
+    format_to(detail::buffer_appender<char>(*this), format_str, args...);
+  }
 };
 
-template <typename S, typename... Args>
-void print(direct_buffered_file& f, const S& format_str, const Args&... args) {
-  format_to(detail::buffer_appender<char>(f), format_str, args...);
+inline ostream output_file(cstring_view path,
+                           int oflag = file::WRONLY | file::CREATE) {
+  return {path, oflag};
 }
 #endif  // FMT_USE_FCNTL
 
