@@ -343,7 +343,7 @@ class file {
 // Returns the memory page size.
 long getpagesize();
 
-// A fast output stream without synchronization.
+// A fast output stream which is not thread-safe.
 class ostream : private detail::buffer<char> {
  private:
   file file_;
