@@ -49,16 +49,26 @@ template <class Char> class formatbuf : public std::basic_streambuf<Char> {
   }
 };
 
+struct converter {
+  template <typename T, FMT_ENABLE_IF(is_integral<T>::value)> converter(T);
+};
+
 template <typename Char> struct test_stream : std::basic_ostream<Char> {
  private:
-  // Hide all operator<< from std::basic_ostream<Char>.
-  void_t<> operator<<(null<>);
-  void_t<> operator<<(const Char*);
-
-  template <typename T, FMT_ENABLE_IF(std::is_convertible<T, int>::value &&
-                                      !std::is_enum<T>::value)>
-  void_t<> operator<<(T);
+  void_t<> operator<<(converter);
 };
+
+// Hide insertion operators for built-in types.
+template <typename Char, typename Traits>
+void_t<> operator<<(std::basic_ostream<Char, Traits>&, Char);
+template <typename Char, typename Traits>
+void_t<> operator<<(std::basic_ostream<Char, Traits>&, char);
+template <typename Traits>
+void_t<> operator<<(std::basic_ostream<char, Traits>&, char);
+template <typename Traits>
+void_t<> operator<<(std::basic_ostream<char, Traits>&, signed char);
+template <typename Traits>
+void_t<> operator<<(std::basic_ostream<char, Traits>&, unsigned char);
 
 // Checks if T has a user-defined operator<< (e.g. not a member of
 // std::ostream).

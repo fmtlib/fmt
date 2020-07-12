@@ -290,8 +290,19 @@ std::ostream& operator<<(std::ostream& os,
 TEST(OStreamTest, FormatExplicitlyConvertibleToStdStringView) {
   EXPECT_EQ("bar", fmt::format("{}", explicitly_convertible_to_string_like()));
 }
-
 #endif  // FMT_USE_STRING_VIEW
+
+struct streamable_and_convertible_to_bool {
+  operator bool() const { return true; }
+};
+
+std::ostream& operator<<(std::ostream& os, streamable_and_convertible_to_bool) {
+  return os << "foo";
+}
+
+TEST(OStreamTest, FormatConvertibleToBool) {
+  EXPECT_EQ("foo", fmt::format("{}", streamable_and_convertible_to_bool()));
+}
 
 struct copyfmt_test {};
 
