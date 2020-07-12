@@ -132,6 +132,19 @@ Check a format string at compile time:
 This gives a compile-time error because ``d`` is an invalid format specifier for
 a string.
 
+Write a file from a single thread:
+
+.. code:: c++
+
+    #include <fmt/os.h>
+
+    int main() {
+      auto out = fmt::output_file("guide.txt");
+      out.print("Don't {}", "Panic");
+    }
+
+This is up to 6x faster than using ``printf``.
+
 Create your own functions similar to `format
 <https://fmt.dev/latest/api.html#format>`_ and
 `print <https://fmt.dev/latest/api.html#print>`_
