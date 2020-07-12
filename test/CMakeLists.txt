@@ -109,7 +109,7 @@ add_fmt_test(custom-formatter-test)
 add_fmt_test(ranges-test)
 add_fmt_test(scan-test)
 
-if (NOT DEFINED MSVC_STATIC_RUNTIME)
+if (NOT DEFINED MSVC_STATIC_RUNTIME AND MSVC)
   foreach (flag_var
 			 CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
 			 CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
