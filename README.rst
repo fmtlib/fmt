@@ -143,7 +143,7 @@ Write a file from a single thread:
       out.print("Don't {}", "Panic");
     }
 
-This is up to 6x faster than using ``printf``.
+This is up to 6x faster than using ``fprintf``.
 
 Create your own functions similar to `format
 <https://fmt.dev/latest/api.html#format>`_ and
