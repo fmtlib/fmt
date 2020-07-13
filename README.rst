@@ -28,11 +28,11 @@ Q&A: ask questions on `StackOverflow with the tag fmt
 Features
 --------
 
-* Simple `format API <https://fmt.dev/dev/api.html>`_ with positional arguments
+* Simple `format API <https://fmt.dev/latest/api.html>`_ with positional arguments
   for localization
 * Implementation of `C++20 std::format
   <https://en.cppreference.com/w/cpp/utility/format>`__
-* `Format string syntax <https://fmt.dev/dev/syntax.html>`_ similar to Python's
+* `Format string syntax <https://fmt.dev/latest/syntax.html>`_ similar to Python's
   `format <https://docs.python.org/3/library/stdtypes.html#str.format>`_
 * Safe `printf implementation
   <https://fmt.dev/latest/api.html#printf-formatting>`_ including the POSIX
