@@ -973,6 +973,8 @@ enum { long_short = sizeof(long) == sizeof(int) };
 using long_type = conditional_t<long_short, int, long long>;
 using ulong_type = conditional_t<long_short, unsigned, unsigned long long>;
 
+struct unformattable {};
+
 // Maps formatting arguments to core types.
 template <typename Context> struct arg_mapper {
   using char_type = typename Context::char_type;
@@ -1081,15 +1083,7 @@ template <typename Context> struct arg_mapper {
     return map(val.value);
   }
 
-  int map(...) {
-    constexpr bool formattable = sizeof(Context) == 0;
-    static_assert(
-        formattable,
-        "Cannot format argument. To make type T formattable provide a "
-        "formatter<T> specialization: "
-        "https://fmt.dev/latest/api.html#formatting-user-defined-types");
-    return 0;
-  }
+  unformattable map(...) { return {}; }
 };
 
 // A type constant after applying arg_mapper<Context>.
@@ -1264,13 +1258,27 @@ FMT_CONSTEXPR basic_format_arg<Context> make_arg(const T& value) {
   return arg;
 }
 
+template <typename T> struct formattable : std::false_type {};
+
+template <typename T> int check(unformattable) {
+  static_assert(
+      formattable<T>(),
+      "Cannot format argument. To make type T formattable provide a "
+      "formatter<T> specialization: "
+      "https://fmt.dev/latest/api.html#formatting-user-defined-types");
+  return 0;
+}
+template <typename T, typename U> inline const U& check(const U& val) {
+  return val;
+}
+
 // The type template parameter is there to avoid an ODR violation when using
 // a fallback formatter in one translation unit and an implicit conversion in
 // another (not recommended).
 template <bool IS_PACKED, typename Context, type, typename T,
           FMT_ENABLE_IF(IS_PACKED)>
 inline value<Context> make_arg(const T& val) {
-  return arg_mapper<Context>().map(val);
+  return check<T>(arg_mapper<Context>().map(val));
 }
 
 template <bool IS_PACKED, typename Context, type, typename T,
