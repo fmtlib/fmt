@@ -108,6 +108,7 @@ add_fmt_test(printf-test)
 add_fmt_test(custom-formatter-test)
 add_fmt_test(ranges-test)
 add_fmt_test(scan-test)
+add_fmt_test(user-defined-type-test)
 
 if (NOT MSVC_BUILD_STATIC)
   add_fmt_executable(posix-mock-test
