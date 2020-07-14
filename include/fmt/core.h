@@ -1214,6 +1214,8 @@ struct is_contiguous<std::basic_string<Char>> : std::true_type {};
 template <typename Char>
 struct is_contiguous<detail::buffer<Char>> : std::true_type {};
 
+template <typename T> struct formattable : std::false_type {};
+
 namespace detail {
 
 template <typename OutputIt>
@@ -1258,14 +1260,11 @@ FMT_CONSTEXPR basic_format_arg<Context> make_arg(const T& value) {
   return arg;
 }
 
-template <typename T> struct formattable : std::false_type {};
-
 template <typename T> int check(unformattable) {
   static_assert(
       formattable<T>(),
-      "Cannot format argument. To make type T formattable provide a "
-      "formatter<T> specialization: "
-      "https://fmt.dev/latest/api.html#formatting-user-defined-types");
+      "Cannot format an argument. To make type T formattable provide a "
+      "formatter<T> specialization: https://fmt.dev/dev/api.html#udt");
   return 0;
 }
 template <typename T, typename U> inline const U& check(const U& val) {
