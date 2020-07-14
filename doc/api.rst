@@ -120,6 +120,8 @@ specializations.
 
 .. doxygendefine:: FMT_STRING
 
+.. _udt:
+
 Formatting User-defined Types
 -----------------------------
 
