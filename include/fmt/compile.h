@@ -94,7 +94,7 @@ template <typename Char> struct part_counter {
     return ++num_parts, 0;
   }
 
-  FMT_CONSTEXPR void on_replacement_field(int, const Char*) {}
+  FMT_CONSTEXPR void on_replacement_field(int, const Char*, const Char*) {}
 
   FMT_CONSTEXPR const Char* on_format_specs(int, const Char* begin,
                                             const Char* end) {
@@ -160,7 +160,7 @@ class format_string_compiler : public error_handler {
     return 0;
   }
 
-  FMT_CONSTEXPR void on_replacement_field(int, const Char* ptr) {
+  FMT_CONSTEXPR void on_replacement_field(int, const Char* ptr, const Char*) {
     part_.arg_id_end = ptr;
     handler_(part_);
   }

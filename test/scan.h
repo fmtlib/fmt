@@ -177,7 +177,7 @@ struct scan_handler : error_handler {
   }
   int on_arg_id(string_view) { return on_error("invalid format"), 0; }
 
-  void on_replacement_field(int, const char*) {
+  void on_replacement_field(int, const char*, const char*) {
     auto it = scan_ctx_.begin(), end = scan_ctx_.end();
     switch (arg_.type) {
     case scan_type::int_type:

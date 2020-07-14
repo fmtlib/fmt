@@ -1826,6 +1826,7 @@ template <typename OutputIt, typename Char> struct default_arg_formatter {
   using context = basic_format_context<OutputIt, Char>;
 
   OutputIt out;
+  basic_string_view<Char> format_str;
   basic_format_args<context> args;
   locale_ref loc;
 
@@ -1834,7 +1835,7 @@ template <typename OutputIt, typename Char> struct default_arg_formatter {
   }
 
   OutputIt operator()(typename basic_format_arg<context>::handle handle) {
-    basic_format_parse_context<Char> parse_ctx({});
+    basic_format_parse_context<Char> parse_ctx(format_str);
     basic_format_context<OutputIt, Char> format_ctx(out, args, loc);
     handle.format(parse_ctx, format_ctx);
     return format_ctx.out();
@@ -2629,7 +2630,7 @@ FMT_CONSTEXPR const Char* parse_replacement_field(const Char* begin,
   ++begin;
   if (begin == end) return handler.on_error("invalid format string"), end;
   if (static_cast<char>(*begin) == '}') {
-    handler.on_replacement_field(handler.on_arg_id(), begin);
+    handler.on_replacement_field(handler.on_arg_id(), begin, end);
   } else if (*begin == '{') {
     handler.on_text(begin, begin + 1);
   } else {
@@ -2637,7 +2638,7 @@ FMT_CONSTEXPR const Char* parse_replacement_field(const Char* begin,
     begin = parse_arg_id(begin, end, adapter);
     Char c = begin != end ? *begin : Char();
     if (c == '}') {
-      handler.on_replacement_field(adapter.arg_id, begin);
+      handler.on_replacement_field(adapter.arg_id, begin, end);
     } else if (c == ':') {
       begin = handler.on_format_specs(adapter.arg_id, begin + 1, end);
       if (begin == end || *begin != '}')
@@ -2740,11 +2741,15 @@ struct format_handler : detail::error_handler {
     return arg_id;
   }
 
-  FMT_INLINE void on_replacement_field(int id, const Char*) {
+  FMT_INLINE void on_replacement_field(int id, const Char* begin,
+                                       const Char* end) {
     auto arg = get_arg(context, id);
     context.advance_to(visit_format_arg(
         default_arg_formatter<typename ArgFormatter::iterator, Char>{
-            context.out(), context.args(), context.locale()},
+            context.out(),
+            {begin, static_cast<size_t>(end - begin)},
+            context.args(),
+            context.locale()},
         arg));
   }
 
@@ -2814,7 +2819,7 @@ class format_string_checker {
     return 0;
   }
 
-  FMT_CONSTEXPR void on_replacement_field(int, const Char*) {}
+  FMT_CONSTEXPR void on_replacement_field(int, const Char*, const Char*) {}
 
   FMT_CONSTEXPR const Char* on_format_specs(int id, const Char* begin,
                                             const Char*) {
@@ -3303,7 +3308,9 @@ typename Context::iterator vformat_to(
     if (!arg) detail::error_handler().on_error("argument not found");
     using iterator = typename ArgFormatter::iterator;
     return visit_format_arg(
-        detail::default_arg_formatter<iterator, Char>{out, args, loc}, arg);
+        detail::default_arg_formatter<iterator, Char>{out, format_str, args,
+                                                      loc},
+        arg);
   }
   detail::format_handler<ArgFormatter, Char, Context> h(out, format_str, args,
                                                         loc);

@@ -2246,7 +2246,7 @@ struct test_format_string_handler {
 
   template <typename T> FMT_CONSTEXPR int on_arg_id(T) { return 0; }
 
-  FMT_CONSTEXPR void on_replacement_field(int, const char*) {}
+  FMT_CONSTEXPR void on_replacement_field(int, const char*, const char*) {}
 
   FMT_CONSTEXPR const char* on_format_specs(int, const char* begin,
                                             const char*) {
