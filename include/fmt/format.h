@@ -1397,43 +1397,81 @@ FMT_NOINLINE OutputIt fill(OutputIt it, size_t n, const fill_t<Char>& fill) {
   return it;
 }
 
-// Writes the output of f, padded according to format specifications in specs.
-// size: output size in code units.
-// width: output display width in (terminal) column positions.
-template <align::type align = align::left, typename OutputIt, typename Char,
-          typename F>
-inline OutputIt write_padded(OutputIt out,
-                             const basic_format_specs<Char>& specs, size_t size,
-                             size_t width, const F& f) {
-  static_assert(align == align::left || align == align::right, "");
-  unsigned spec_width = to_unsigned(specs.width);
-  size_t padding = spec_width > width ? spec_width - width : 0;
-  auto* shifts = align == align::left ? data::left_padding_shifts
-                                      : data::right_padding_shifts;
-  size_t left_padding = padding >> shifts[specs.align];
-  auto it = reserve(out, size + padding * specs.fill.size());
-  it = fill(it, left_padding, specs.fill);
-  it = f(it);
-  it = fill(it, padding - left_padding, specs.fill);
-  return base_iterator(out, it);
-}
+// Helper class to handle writing padding to an an output function according to
+// a format specification.
+// Typically Usage:
+//
+//  return write_padding(iterator, specs, size)
+//      .left()
+//      .content([](iterator it) {
+//        /* do something */
+//      })
+//      .right()
+//      .get_base_iterator();
+//
+template <typename OutputIt, typename Char> struct write_padding {
+  // Writes the output of f, padded according to format specifications in specs.
+  //
+  //  size: output size in code units.
+  // width: output display width in (terminal) column positions.
+  write_padding(OutputIt out, const basic_format_specs<Char>& specs,
+                size_t size, size_t width, align::type align = align::left)
+      : out_(out), specs_(specs) {
+    unsigned spec_width = to_unsigned(specs.width);
+    size_t padding = spec_width > width ? spec_width - width : 0;
+    auto* shifts = align == align::left ? data::left_padding_shifts
+                                        : data::right_padding_shifts;
+    left_padding_ = padding >> shifts[specs.align];
+    right_padding_ = padding - left_padding_;
+    it_ = reserve(out, size + padding * specs.fill.size());
+  }
 
-template <align::type align = align::left, typename OutputIt, typename Char,
-          typename F>
-inline OutputIt write_padded(OutputIt out,
-                             const basic_format_specs<Char>& specs, size_t size,
-                             const F& f) {
-  return write_padded<align>(out, specs, size, size, f);
-}
+  // Constructor that allows the width parameter to be omitted.
+  // Note that size becomes the new width.
+  write_padding(OutputIt out, const basic_format_specs<Char>& specs,
+                size_t size, align::type align = align::left)
+      : write_padding(out, specs, size, size, align) {}
+
+  write_padding& left() {
+    it_ = fill(it_, left_padding_, specs_.fill);
+    return *this;
+  }
+
+  // Writes the contents to the output using function f.
+  template <typename F> write_padding& content(const F& f) {
+    it_ = f(it_);
+    return *this;
+  }
+
+  write_padding& right() {
+    it_ = fill(it_, right_padding_, specs_.fill);
+    return *this;
+  }
+
+  OutputIt get_base_iterator() { return base_iterator(out_, it_); }
+
+  OutputIt out_;
+  const basic_format_specs<Char>& specs_;
+
+  using Iterator = decltype(reserve(out_, 0));
+  Iterator it_ = reserve(out_, 0);
+
+  size_t left_padding_ = 0;
+  size_t right_padding_ = 0;
+};
 
 template <typename Char, typename OutputIt>
 OutputIt write_bytes(OutputIt out, string_view bytes,
                      const basic_format_specs<Char>& specs) {
   using iterator = remove_reference_t<decltype(reserve(out, 0))>;
-  return write_padded(out, specs, bytes.size(), [bytes](iterator it) {
-    const char* data = bytes.data();
-    return copy_str<Char>(data, data + bytes.size(), it);
-  });
+  return write_padding<OutputIt, Char>(out, specs, bytes.size())
+      .left()
+      .content([bytes](iterator it) {
+        const char* data = bytes.data();
+        return copy_str<Char>(data, data + bytes.size(), it);
+      })
+      .right()
+      .get_base_iterator();
 }
 
 // Data for write_int that doesn't depend on output iterator type. It is used to
@@ -1466,12 +1504,16 @@ OutputIt write_int(OutputIt out, int num_digits, string_view prefix,
                    const basic_format_specs<Char>& specs, F f) {
   auto data = write_int_data<Char>(num_digits, prefix, specs);
   using iterator = remove_reference_t<decltype(reserve(out, 0))>;
-  return write_padded<align::right>(out, specs, data.size, [=](iterator it) {
-    if (prefix.size() != 0)
-      it = copy_str<Char>(prefix.begin(), prefix.end(), it);
-    it = std::fill_n(it, data.padding, static_cast<Char>('0'));
-    return f(it);
-  });
+  return write_padding<OutputIt, Char>(out, specs, data.size, align::right)
+      .left()
+      .content([=](iterator it) {
+        if (prefix.size() != 0)
+          it = copy_str<Char>(prefix.begin(), prefix.end(), it);
+        it = std::fill_n(it, data.padding, static_cast<Char>('0'));
+        return f(it);
+      })
+      .right()
+      .get_base_iterator();
 }
 
 template <typename StrChar, typename Char, typename OutputIt>
@@ -1485,9 +1527,12 @@ OutputIt write(OutputIt out, basic_string_view<StrChar> s,
                    ? count_code_points(basic_string_view<StrChar>(data, size))
                    : 0;
   using iterator = remove_reference_t<decltype(reserve(out, 0))>;
-  return write_padded(out, specs, size, width, [=](iterator it) {
-    return copy_str<Char>(data, data + size, it);
-  });
+  return write_padding<OutputIt, Char>(out, specs, size, width)
+      .left()
+      .content(
+          [=](iterator it) { return copy_str<Char>(data, data + size, it); })
+      .right()
+      .get_base_iterator();
 }
 
 // The handle_int_type_spec handler that writes an integer.
@@ -1630,10 +1675,14 @@ OutputIt write_nonfinite(OutputIt out, bool isinf,
   auto sign = fspecs.sign;
   auto size = str_size + (sign ? 1 : 0);
   using iterator = remove_reference_t<decltype(reserve(out, 0))>;
-  return write_padded(out, specs, size, [=](iterator it) {
-    if (sign) *it++ = static_cast<Char>(data::signs[sign]);
-    return copy_str<Char>(str, str + str_size, it);
-  });
+  return write_padding<OutputIt, Char>(out, specs, size)
+      .left()
+      .content([=](iterator it) {
+        if (sign) *it++ = static_cast<Char>(data::signs[sign]);
+        return copy_str<Char>(str, str + str_size, it);
+      })
+      .right()
+      .get_base_iterator();
 }
 
 template <typename Char, typename OutputIt, typename T,
@@ -1682,7 +1731,11 @@ OutputIt write(OutputIt out, T value, basic_format_specs<Char> specs,
       fspecs.locale ? decimal_point<Char>(loc) : static_cast<Char>('.');
   float_writer<Char> w(buffer.data(), static_cast<int>(buffer.size()), exp,
                        fspecs, point);
-  return write_padded<align::right>(out, specs, w.size(), w);
+  return write_padding<OutputIt, Char>(out, specs, w.size(), align::right)
+      .left()
+      .content(w)
+      .right()
+      .get_base_iterator();
 }
 
 template <typename Char, typename OutputIt, typename T,
@@ -1714,10 +1767,14 @@ template <typename Char, typename OutputIt>
 OutputIt write_char(OutputIt out, Char value,
                     const basic_format_specs<Char>& specs) {
   using iterator = remove_reference_t<decltype(reserve(out, 0))>;
-  return write_padded(out, specs, 1, [=](iterator it) {
-    *it++ = value;
-    return it;
-  });
+  return write_padding<OutputIt, Char>(out, specs, 1)
+      .left()
+      .content([=](iterator it) {
+        *it++ = value;
+        return it;
+      })
+      .right()
+      .get_base_iterator();
 }
 
 template <typename Char, typename OutputIt, typename UIntPtr>
@@ -1731,7 +1788,11 @@ OutputIt write_ptr(OutputIt out, UIntPtr value,
     *it++ = static_cast<Char>('x');
     return format_uint<4, Char>(it, value, num_digits);
   };
-  return specs ? write_padded<align::right>(out, *specs, size, write)
+  return specs ? write_padding<OutputIt, Char>(out, *specs, size, align::right)
+                     .left()
+                     .content(write)
+                     .right()
+                     .get_base_iterator()
                : base_iterator(out, write(reserve(out, size)));
 }
 
@@ -1895,9 +1956,13 @@ class arg_formatter_base {
     auto width = specs.width != 0
                      ? count_code_points(basic_string_view<Ch>(s, size))
                      : 0;
-    out_ = write_padded(out_, specs, size, width, [=](reserve_iterator it) {
-      return copy_str<Char>(s, s + size, it);
-    });
+    out_ = write_padding<OutputIt, Char>(out_, specs, size, width)
+               .left()
+               .content([=](reserve_iterator it) {
+                 return copy_str<Char>(s, s + size, it);
+               })
+               .right()
+               .get_base_iterator();
   }
 
   template <typename Ch>
