@@ -114,9 +114,12 @@ string checks, wide string, output iterator and user-defined type support.
 Compile-time Format String Checks
 ---------------------------------
 
-Compile-time checks are supported for built-in and string types as well as
-user-defined types with ``constexpr`` ``parse`` functions in their ``formatter``
-specializations.
+Compile-time checks are enabled when using ``FMT_STRING``. It supports built-in
+and string types as well as user-defined types with ``constexpr`` ``parse``
+functions in their ``formatter`` specializations.
+
+When the compiler supports UDL templates extensions, using the litteral string
+``""_format()`` will also enable compile-time checks.
 
 .. doxygendefine:: FMT_STRING
 
@@ -389,9 +392,10 @@ The format string syntax is described in the documentation of
 Format string compilation
 =========================
 
-``fmt/compile.h`` provides format string compilation support. Format strings
-are parsed at compile time and converted into efficient formatting code. This
-supports arguments of built-in and string types as well as user-defined types
+``fmt/compile.h`` provides format string compilation support when using
+``FMT_COMPILE``. Format strings are parsed, checked and converted
+into efficient formatting code at compile-time.
+This supports arguments of built-in and string types as well as user-defined types
 with ``constexpr`` ``parse`` functions in their ``formatter`` specializations.
 Format string compilation can generate more binary code compared to the default
 API and is only recommended in places where formatting is a performance
