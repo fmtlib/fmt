@@ -733,6 +733,12 @@ using uint32_or_64_or_128_t = conditional_t<
     std::numeric_limits<T>::digits <= 32, uint32_t,
     conditional_t<std::numeric_limits<T>::digits <= 64, uint64_t, uint128_t>>;
 
+// Selects the between uint64_t or uint128_t based on the how uint128_t is
+// defined. If macro FMT_USE_INT128 defined as 0, then its size will be 1 byte,
+// meaning the largest sized int that can be used is uint64_t.
+using uint_largest_t =
+    conditional_t<sizeof(uint128_t) < sizeof(uint64_t), uint64_t, uint128_t>;
+
 // Static data is placed in this class template for the header-only config.
 template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
   static const uint64_t powers_of_10_64[];
@@ -1458,11 +1464,21 @@ OutputIt write(OutputIt out, basic_string_view<StrChar> s,
 }
 
 // The handle_int_type_spec handler that writes an integer.
-template <typename OutputIt, typename Char, typename UInt> struct int_writer {
+template <typename OutputIt, typename Char> struct int_writer {
+  enum class int_bytes {
+    byte1 = sizeof(uint8_t),
+    byte2 = sizeof(uint16_t),
+    byte4 = sizeof(uint32_t),
+    byte8 = sizeof(uint64_t),
+    byte16 = 16,  // Must be directly set because uint128_t can be 16 bytes if
+                  // FMT_USE_INT128 == 1 and 1 byte if FMT_USE_INT128 == 0.
+  };
+
   OutputIt out;
   locale_ref locale;
   const basic_format_specs<Char>& specs;
-  UInt abs_value;
+  uint_largest_t abs_value;
+  int_bytes value_bytes;
   char prefix[4];
   unsigned prefix_size;
 
@@ -1477,9 +1493,11 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
       : out(output),
         locale(loc),
         specs(s),
-        abs_value(static_cast<UInt>(value)),
+        abs_value(static_cast<decltype(abs_value)>(value)),
+        value_bytes(int_bytes::byte8),
         prefix_size(0) {
-    static_assert(std::is_same<uint32_or_64_or_128_t<Int>, UInt>::value, "");
+    value_bytes = static_cast<int_bytes>(sizeof(value));
+
     if (is_negative(value)) {
       prefix[0] = '-';
       ++prefix_size;
@@ -1491,7 +1509,28 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
   }
 
   void on_dec() {
-    auto num_digits = count_digits(abs_value);
+    int num_digits = 0;
+
+    switch (value_bytes) {
+    case int_bytes::byte1:
+    case int_bytes::byte2:
+    case int_bytes::byte4:
+      num_digits = count_digits(static_cast<uint32_t>(abs_value));
+      break;
+    case int_bytes::byte8:
+      num_digits = count_digits(static_cast<uint64_t>(abs_value));
+      break;
+#if !FMT_USE_INT128
+    case int_bytes::byte16:
+      num_digits = count_digits(static_cast<uint64_t>(abs_value));
+      break;
+#else
+    case int_bytes::byte16:
+      num_digits = count_digits(abs_value);
+      break;
+#endif
+    }
+
     out = write_int(
         out, num_digits, get_prefix(), specs, [this, num_digits](iterator it) {
           return format_decimal<Char>(it, abs_value, num_digits).end;
@@ -1831,8 +1870,7 @@ class arg_formatter_base {
       detail::reserve(std::declval<iterator&>(), 0))>;
 
   template <typename T> void write_int(T value, const format_specs& spec) {
-    using uint_type = uint32_or_64_or_128_t<T>;
-    int_writer<iterator, Char, uint_type> w(out_, locale_, value, spec);
+    int_writer<iterator, Char> w(out_, locale_, value, spec);
     handle_int_type_spec(spec.type, w);
     out_ = w.out;
   }
