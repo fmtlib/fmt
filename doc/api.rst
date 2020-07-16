@@ -114,12 +114,9 @@ string checks, wide string, output iterator and user-defined type support.
 Compile-time Format String Checks
 ---------------------------------
 
-Compile-time checks are enabled when using ``FMT_STRING``. It supports built-in
+Compile-time checks are enabled when using ``FMT_STRING``. They support built-in
 and string types as well as user-defined types with ``constexpr`` ``parse``
 functions in their ``formatter`` specializations.
-
-When the compiler supports UDL templates extensions, using the litteral string
-``""_format()`` will also enable compile-time checks.
 
 .. doxygendefine:: FMT_STRING
 
