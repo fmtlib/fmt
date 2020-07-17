@@ -581,6 +581,12 @@ void buffer<T>::append(const U* begin, const U* end) {
     begin += count;
   } while (begin != end);
 }
+
+template <typename OutputIt, typename T>
+void iterator_buffer<OutputIt, T>::flush() {
+  out_ = std::copy(data_, data_ + this->size(), out_);
+  this->clear();
+}
 }  // namespace detail
 
 // The number of characters to store in the basic_memory_buffer object itself
@@ -3560,9 +3566,12 @@ template <typename OutputIt, typename S, typename... Args,
               detail::is_string<S>::value)>
 inline OutputIt format_to(OutputIt out, const S& format_str, Args&&... args) {
   detail::check_format_string<Args...>(format_str);
-  using context = format_context_t<OutputIt, char_t<S>>;
-  return vformat_to(out, to_string_view(format_str),
-                    make_format_args<context>(args...));
+  using Char = char_t<S>;
+  detail::iterator_buffer<OutputIt, Char> buf(out);
+  detail::vformat_to(buf, to_string_view(format_str),
+                     make_format_args<buffer_context<Char>>(args...));
+  buf.flush();
+  return buf.out();
 }
 
 template <typename OutputIt> struct format_to_n_result {

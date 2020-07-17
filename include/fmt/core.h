@@ -725,6 +725,41 @@ class container_buffer : public buffer<typename Container::value_type> {
       : buffer<typename Container::value_type>(c.size()), container_(c) {}
 };
 
+// A buffer that writes to an output iterator when flushed.
+template <typename OutputIt, typename T>
+class iterator_buffer : public buffer<T> {
+ private:
+  enum { buffer_size = 256 };
+
+  OutputIt out_;
+  T data_[buffer_size];
+
+ protected:
+  void grow(size_t) final {
+    if (this->size() == buffer_size) flush();
+  }
+
+ public:
+  explicit iterator_buffer(OutputIt out)
+    : buffer<T>(data_, 0, buffer_size), out_(out) {}
+  ~iterator_buffer() { flush(); }
+
+  OutputIt out() { return out_; }
+  void flush();
+};
+
+template <typename T>
+class iterator_buffer<T*, T> : public buffer<T> {
+ protected:
+  void grow(size_t) final {}
+
+ public:
+  explicit iterator_buffer(T* out) : buffer<T>(out, 0, ~size_t()) {}
+
+  T* out() { return &*this->end(); }
+  void flush() {}
+};
+
 // An output iterator that appends to the buffer.
 // It is used to reduce symbol sizes for the common case.
 template <typename T>
@@ -1229,6 +1264,9 @@ struct is_contiguous_back_insert_iterator : std::false_type {};
 template <typename Container>
 struct is_contiguous_back_insert_iterator<std::back_insert_iterator<Container>>
     : is_contiguous<Container> {};
+template <typename Char>
+struct is_contiguous_back_insert_iterator<buffer_appender<Char>>
+    : std::true_type {};
 
 // A type-erased reference to an std::locale to avoid heavy <locale> include.
 class locale_ref {
