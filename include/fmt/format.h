@@ -295,49 +295,10 @@ FMT_INLINE void assume(bool condition) {
 #endif
 }
 
-// A workaround for gcc 4.8 to make void_t work in a SFINAE context.
-template <typename... Ts> struct void_t_impl { using type = void; };
-
-template <typename... Ts>
-using void_t = typename detail::void_t_impl<Ts...>::type;
-
 // An approximation of iterator_t for pre-C++20 systems.
 template <typename T>
 using iterator_t = decltype(std::begin(std::declval<T&>()));
 template <typename T> using sentinel_t = decltype(std::end(std::declval<T&>()));
-
-// Detect the iterator category of *any* given type in a SFINAE-friendly way.
-// Unfortunately, older implementations of std::iterator_traits are not safe
-// for use in a SFINAE-context.
-template <typename It, typename Enable = void>
-struct iterator_category : std::false_type {};
-
-template <typename T> struct iterator_category<T*> {
-  using type = std::random_access_iterator_tag;
-};
-
-template <typename It>
-struct iterator_category<It, void_t<typename It::iterator_category>> {
-  using type = typename It::iterator_category;
-};
-
-// Detect if *any* given type models the OutputIterator concept.
-template <typename It> class is_output_iterator {
-  // Check for mutability because all iterator categories derived from
-  // std::input_iterator_tag *may* also meet the requirements of an
-  // OutputIterator, thereby falling into the category of 'mutable iterators'
-  // [iterator.requirements.general] clause 4. The compiler reveals this
-  // property only at the point of *actually dereferencing* the iterator!
-  template <typename U>
-  static decltype(*(std::declval<U>())) test(std::input_iterator_tag);
-  template <typename U> static char& test(std::output_iterator_tag);
-  template <typename U> static const char& test(...);
-
-  using type = decltype(test<It>(typename iterator_category<It>::type{}));
-
- public:
-  enum { value = !std::is_const<remove_reference_t<type>>::value };
-};
 
 // A workaround for std::string not having mutable data() until C++17.
 template <typename Char> inline Char* get_data(std::basic_string<Char>& s) {
@@ -3482,8 +3443,7 @@ detail::buffer_appender<Char> detail::vformat_to(
     detail::buffer<Char>& buf, basic_string_view<Char> format_str,
     basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   using af = arg_formatter<typename buffer_context<Char>::iterator, Char>;
-  return vformat_to<af>(buffer_appender<Char>(buf), to_string_view(format_str),
-                        args);
+  return vformat_to<af>(buffer_appender<Char>(buf), format_str, args);
 }
 
 #ifndef FMT_HEADER_ONLY
@@ -3537,43 +3497,6 @@ using format_context_t = basic_format_context<OutputIt, Char>;
 template <typename OutputIt, typename Char = char>
 using format_args_t = basic_format_args<format_context_t<OutputIt, Char>>;
 
-template <
-    typename S, typename OutputIt, typename... Args,
-    FMT_ENABLE_IF(detail::is_output_iterator<OutputIt>::value &&
-                  !detail::is_contiguous_back_insert_iterator<OutputIt>::value)>
-inline OutputIt vformat_to(
-    OutputIt out, const S& format_str,
-    format_args_t<type_identity_t<OutputIt>, char_t<S>> args) {
-  using af = detail::arg_formatter<OutputIt, char_t<S>>;
-  return vformat_to<af>(out, to_string_view(format_str), args);
-}
-
-/**
- \rst
- Formats arguments, writes the result to the output iterator ``out`` and returns
- the iterator past the end of the output range.
-
- **Example**::
-
-   std::vector<char> out;
-   fmt::format_to(std::back_inserter(out), "{}", 42);
- \endrst
- */
-template <typename OutputIt, typename S, typename... Args,
-          FMT_ENABLE_IF(
-              detail::is_output_iterator<OutputIt>::value &&
-              !detail::is_contiguous_back_insert_iterator<OutputIt>::value &&
-              detail::is_string<S>::value)>
-inline OutputIt format_to(OutputIt out, const S& format_str, Args&&... args) {
-  detail::check_format_string<Args...>(format_str);
-  using Char = char_t<S>;
-  detail::iterator_buffer<OutputIt, Char> buf(out);
-  detail::vformat_to(buf, to_string_view(format_str),
-                     make_format_args<buffer_context<Char>>(args...));
-  buf.flush();
-  return buf.out();
-}
-
 template <typename OutputIt> struct format_to_n_result {
   /** Iterator past the end of the output range. */
   OutputIt out;
@@ -3582,24 +3505,23 @@ template <typename OutputIt> struct format_to_n_result {
 };
 
 template <typename OutputIt, typename Char = typename OutputIt::value_type>
-using format_to_n_context =
-    format_context_t<detail::truncating_iterator<OutputIt>, Char>;
+using format_to_n_context FMT_DEPRECATED_ALIAS = buffer_context<Char>;
 
 template <typename OutputIt, typename Char = typename OutputIt::value_type>
-using format_to_n_args = basic_format_args<format_to_n_context<OutputIt, Char>>;
+using format_to_n_args FMT_DEPRECATED_ALIAS =
+    basic_format_args<buffer_context<Char>>;
 
 template <typename OutputIt, typename Char, typename... Args>
-inline format_arg_store<format_to_n_context<OutputIt, Char>, Args...>
+FMT_DEPRECATED format_arg_store<buffer_context<Char>, Args...>
 make_format_to_n_args(const Args&... args) {
-  return format_arg_store<format_to_n_context<OutputIt, Char>, Args...>(
-      args...);
+  return format_arg_store<buffer_context<Char>, Args...>(args...);
 }
 
 template <typename OutputIt, typename Char, typename... Args,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt>::value)>
 inline format_to_n_result<OutputIt> vformat_to_n(
     OutputIt out, size_t n, basic_string_view<Char> format_str,
-    format_to_n_args<type_identity_t<OutputIt>, type_identity_t<Char>> args) {
+    basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   auto it = vformat_to(detail::truncating_iterator<OutputIt>(out, n),
                        format_str, args);
   return {it.base(), it.count()};
@@ -3618,10 +3540,8 @@ template <typename OutputIt, typename S, typename... Args,
 inline format_to_n_result<OutputIt> format_to_n(OutputIt out, size_t n,
                                                 const S& format_str,
                                                 const Args&... args) {
-  detail::check_format_string<Args...>(format_str);
-  using context = format_to_n_context<OutputIt, char_t<S>>;
-  return vformat_to_n(out, n, to_string_view(format_str),
-                      make_format_args<context>(args...));
+  const auto& vargs = detail::make_args_checked<Args...>(format_str, args...);
+  return vformat_to_n(out, n, to_string_view(format_str), vargs);
 }
 
 template <typename Char, enable_if_t<(!std::is_same<Char, char>::value), int>>
