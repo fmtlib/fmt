@@ -311,6 +311,10 @@ struct int128_t {};
 struct uint128_t {};
 #endif
 
+#if !defined(FMT_USE_SMALLEST_INT)
+#define FMT_USE_SMALLEST_INT 1
+#endif
+
 // Casts a nonnegative integer to unsigned.
 template <typename Int>
 FMT_CONSTEXPR typename std::make_unsigned<Int>::type to_unsigned(Int value) {
