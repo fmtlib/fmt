@@ -61,6 +61,7 @@ TEST(LocaleTest, Format) {
 
   std::locale special_grouping_loc(std::locale(), new special_grouping<char>());
   EXPECT_EQ("1,23,45,678", fmt::format(special_grouping_loc, "{:L}", 12345678));
+  EXPECT_EQ("12,345", fmt::format(special_grouping_loc, "{:L}", 12345));
 
   std::locale small_grouping_loc(std::locale(), new small_grouping<char>());
   EXPECT_EQ("4,2,9,4,9,6,7,2,9,5",
