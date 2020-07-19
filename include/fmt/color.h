@@ -515,7 +515,7 @@ template <typename S, typename... Args,
 void print(std::FILE* f, const text_style& ts, const S& format_str,
            const Args&... args) {
   vprint(f, ts, format_str,
-         detail::make_args_checked<Args...>(format_str, args...));
+         fmt::make_args_checked<Args...>(format_str, args...));
 }
 
 /**
@@ -556,7 +556,7 @@ template <typename S, typename... Args, typename Char = char_t<S>>
 inline std::basic_string<Char> format(const text_style& ts, const S& format_str,
                                       const Args&... args) {
   return vformat(ts, to_string_view(format_str),
-                 detail::make_args_checked<Args...>(format_str, args...));
+                 fmt::make_args_checked<Args...>(format_str, args...));
 }
 
 FMT_END_NAMESPACE

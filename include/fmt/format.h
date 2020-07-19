@@ -3503,7 +3503,7 @@ template <typename S, typename... Args, size_t SIZE = inline_buffer_size,
           typename Char = enable_if_t<detail::is_string<S>::value, char_t<S>>>
 inline typename buffer_context<Char>::iterator format_to(
     basic_memory_buffer<Char, SIZE>& buf, const S& format_str, Args&&... args) {
-  const auto& vargs = detail::make_args_checked<Args...>(format_str, args...);
+  const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
   return detail::vformat_to(buf, to_string_view(format_str), vargs);
 }
 
@@ -3556,7 +3556,7 @@ template <typename OutputIt, typename S, typename... Args,
 inline format_to_n_result<OutputIt> format_to_n(OutputIt out, size_t n,
                                                 const S& format_str,
                                                 const Args&... args) {
-  const auto& vargs = detail::make_args_checked<Args...>(format_str, args...);
+  const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
   return vformat_to_n(out, n, to_string_view(format_str), vargs);
 }
 

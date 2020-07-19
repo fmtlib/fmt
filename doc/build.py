@@ -74,8 +74,8 @@ def build_docs(sphinx_executable='sphinx-build', version='dev', **kwargs):
       GENERATE_MAN      = NO
       GENERATE_RTF      = NO
       CASE_SENSE_NAMES  = NO
-      INPUT             = {0}/core.h {0}/compile.h {0}/format.h {0}/os.h \
-                          {0}/ostream.h {0}/printf.h {0}/time.h
+      INPUT             = {0}/color.h {0}/core.h {0}/compile.h {0}/format.h \
+                          {0}/os.h {0}/ostream.h {0}/printf.h {0}/time.h
       QUIET             = YES
       JAVADOC_AUTOBRIEF = YES
       AUTOLINK_SUPPORT  = NO

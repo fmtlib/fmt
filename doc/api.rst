@@ -68,6 +68,8 @@ Argument Lists
 
 .. doxygenfunction:: fmt::make_format_args(const Args&...)
 
+.. doxygenfunction:: fmt::make_args_checked(const S&, const remove_reference_t<Args>&...)
+
 .. doxygenclass:: fmt::format_arg_store
    :members:
 

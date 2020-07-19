@@ -506,6 +506,18 @@ template <typename S> struct char_t_impl<S, enable_if_t<is_string<S>::value>> {
   using type = typename result::value_type;
 };
 
+// Reports a compile-time error if S is not a valid format string.
+template <typename..., typename S, FMT_ENABLE_IF(!is_compile_string<S>::value)>
+FMT_INLINE void check_format_string(const S&) {
+#ifdef FMT_ENFORCE_COMPILE_STRING
+  static_assert(is_compile_string<S>::value,
+                "FMT_ENFORCE_COMPILE_STRING requires all format strings to use "
+                "FMT_STRING.");
+#endif
+}
+template <typename..., typename S, FMT_ENABLE_IF(is_compile_string<S>::value)>
+void check_format_string(S);
+
 struct error_handler {
   constexpr error_handler() = default;
   constexpr error_handler(const error_handler&) = default;
@@ -1555,6 +1567,20 @@ inline format_arg_store<Context, Args...> make_format_args(
   return {args...};
 }
 
+/** Same as `make_format_args` but with compile-time format string checks. */
+template <typename... Args, typename S, typename Char = char_t<S>>
+inline format_arg_store<buffer_context<Char>, remove_reference_t<Args>...>
+make_args_checked(const S& format_str,
+                  const remove_reference_t<Args>&... args) {
+  static_assert(
+      detail::count<(
+              std::is_base_of<detail::view, remove_reference_t<Args>>::value &&
+              std::is_reference<Args>::value)...>() == 0,
+      "passing views as lvalues is disallowed");
+  detail::check_format_string<Args...>(format_str);
+  return {args...};
+}
+
 /**
   \rst
   Returns a named argument to be used in a formatting function. It should only
@@ -1870,29 +1896,6 @@ struct wformat_args : basic_format_args<wformat_context> {
 
 namespace detail {
 
-// Reports a compile-time error if S is not a valid format string.
-template <typename..., typename S, FMT_ENABLE_IF(!is_compile_string<S>::value)>
-FMT_INLINE void check_format_string(const S&) {
-#ifdef FMT_ENFORCE_COMPILE_STRING
-  static_assert(is_compile_string<S>::value,
-                "FMT_ENFORCE_COMPILE_STRING requires all format strings to use "
-                "FMT_STRING.");
-#endif
-}
-template <typename..., typename S, FMT_ENABLE_IF(is_compile_string<S>::value)>
-void check_format_string(S);
-
-template <typename... Args, typename S, typename Char = char_t<S>>
-inline format_arg_store<buffer_context<Char>, remove_reference_t<Args>...>
-make_args_checked(const S& format_str,
-                  const remove_reference_t<Args>&... args) {
-  static_assert(count<(std::is_base_of<view, remove_reference_t<Args>>::value &&
-                       std::is_reference<Args>::value)...>() == 0,
-                "passing views as lvalues is disallowed");
-  check_format_string<Args...>(format_str);
-  return {args...};
-}
-
 template <typename Char, FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
 std::basic_string<Char> vformat(
     basic_string_view<Char> format_str,
@@ -1943,7 +1946,7 @@ template <typename OutputIt, typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt>::value&&
                             detail::is_string<S>::value)>
 inline OutputIt format_to(OutputIt out, const S& format_str, Args&&... args) {
-  const auto& vargs = detail::make_args_checked<Args...>(format_str, args...);
+  const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
   return vformat_to(out, to_string_view(format_str), vargs);
 }
 
@@ -1968,7 +1971,7 @@ FMT_INLINE std::basic_string<Char> vformat(
 // std::basic_string<char_t<S>> to reduce the symbol size.
 template <typename S, typename... Args, typename Char = char_t<S>>
 FMT_INLINE std::basic_string<Char> format(const S& format_str, Args&&... args) {
-  const auto& vargs = detail::make_args_checked<Args...>(format_str, args...);
+  const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
   return detail::vformat(to_string_view(format_str), vargs);
 }
 
@@ -1988,7 +1991,7 @@ FMT_API void vprint(std::FILE*, string_view, format_args);
  */
 template <typename S, typename... Args, typename Char = char_t<S>>
 inline void print(std::FILE* f, const S& format_str, Args&&... args) {
-  const auto& vargs = detail::make_args_checked<Args...>(format_str, args...);
+  const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
   return detail::is_unicode<Char>()
              ? vprint(f, to_string_view(format_str), vargs)
              : detail::vprint_mojibake(f, to_string_view(format_str), vargs);
@@ -2007,7 +2010,7 @@ inline void print(std::FILE* f, const S& format_str, Args&&... args) {
  */
 template <typename S, typename... Args, typename Char = char_t<S>>
 inline void print(const S& format_str, Args&&... args) {
-  const auto& vargs = detail::make_args_checked<Args...>(format_str, args...);
+  const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
   return detail::is_unicode<Char>()
              ? vprint(to_string_view(format_str), vargs)
              : detail::vprint_mojibake(stdout, to_string_view(format_str),

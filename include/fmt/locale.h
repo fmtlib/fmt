@@ -47,7 +47,7 @@ inline std::basic_string<Char> format(const std::locale& loc,
                                       const S& format_str, Args&&... args) {
   return detail::vformat(
       loc, to_string_view(format_str),
-      detail::make_args_checked<Args...>(format_str, args...));
+      fmt::make_args_checked<Args...>(format_str, args...));
 }
 
 template <typename S, typename OutputIt, typename... Args,
@@ -69,7 +69,7 @@ template <typename OutputIt, typename S, typename... Args,
                             detail::is_string<S>::value)>
 inline OutputIt format_to(OutputIt out, const std::locale& loc,
                           const S& format_str, Args&&... args) {
-  const auto& vargs = detail::make_args_checked<Args...>(format_str, args...);
+  const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
   return vformat_to(out, loc, to_string_view(format_str), vargs);
 }
 
