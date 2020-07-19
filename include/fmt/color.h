@@ -496,7 +496,7 @@ void vformat_to(basic_memory_buffer<Char>& buf, const text_style& ts,
 
 template <typename S, typename Char = char_t<S>>
 void vprint(std::FILE* f, const text_style& ts, const S& format,
-            basic_format_args<buffer_context<Char>> args) {
+            basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   basic_memory_buffer<Char> buf;
   detail::vformat_to(buf, ts, to_string_view(format), args);
   buf.push_back(Char(0));
@@ -514,10 +514,8 @@ template <typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_string<S>::value)>
 void print(std::FILE* f, const text_style& ts, const S& format_str,
            const Args&... args) {
-  detail::check_format_string<Args...>(format_str);
-  using context = buffer_context<char_t<S>>;
-  format_arg_store<context, Args...> as{args...};
-  vprint(f, ts, format_str, basic_format_args<context>(as));
+  vprint(f, ts, format_str,
+         detail::make_args_checked<Args...>(format_str, args...));
 }
 
 /**

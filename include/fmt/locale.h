@@ -55,10 +55,13 @@ template <typename S, typename OutputIt, typename... Args,
               detail::is_output_iterator<OutputIt>::value, char_t<S>>>
 inline OutputIt vformat_to(
     OutputIt out, const std::locale& loc, const S& format_str,
-    format_args_t<type_identity_t<OutputIt>, Char> args) {
-  using af = detail::arg_formatter<OutputIt, Char>;
-  return vformat_to<af>(out, to_string_view(format_str), args,
-                        detail::locale_ref(loc));
+    basic_format_args<buffer_context<type_identity_t<Char>>> args) {
+  decltype(detail::get_buffer<Char>(out)) buf(detail::get_buffer_init(out));
+  using af =
+    detail::arg_formatter<typename buffer_context<Char>::iterator, Char>;
+  vformat_to<af>(detail::buffer_appender<Char>(buf), to_string_view(format_str),
+                 args, detail::locale_ref(loc));
+  return detail::get_iterator(buf);
 }
 
 template <typename OutputIt, typename S, typename... Args,
@@ -66,11 +69,8 @@ template <typename OutputIt, typename S, typename... Args,
                             detail::is_string<S>::value)>
 inline OutputIt format_to(OutputIt out, const std::locale& loc,
                           const S& format_str, Args&&... args) {
-  detail::check_format_string<Args...>(format_str);
-  using context = format_context_t<OutputIt, char_t<S>>;
-  format_arg_store<context, Args...> as{args...};
-  return vformat_to(out, loc, to_string_view(format_str),
-                    basic_format_args<context>(as));
+  const auto& vargs = detail::make_args_checked<Args...>(format_str, args...);
+  return vformat_to(out, loc, to_string_view(format_str), vargs);
 }
 
 FMT_END_NAMESPACE

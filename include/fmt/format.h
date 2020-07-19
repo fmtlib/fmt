@@ -3503,10 +3503,8 @@ template <typename S, typename... Args, size_t SIZE = inline_buffer_size,
           typename Char = enable_if_t<detail::is_string<S>::value, char_t<S>>>
 inline typename buffer_context<Char>::iterator format_to(
     basic_memory_buffer<Char, SIZE>& buf, const S& format_str, Args&&... args) {
-  detail::check_format_string<Args...>(format_str);
-  using context = buffer_context<Char>;
-  return detail::vformat_to(buf, to_string_view(format_str),
-                            make_format_args<context>(args...));
+  const auto& vargs = detail::make_args_checked<Args...>(format_str, args...);
+  return detail::vformat_to(buf, to_string_view(format_str), vargs);
 }
 
 template <typename OutputIt, typename Char = char>
@@ -3604,8 +3602,7 @@ template <typename Char, Char... CHARS> class udl_formatter {
   template <typename... Args>
   std::basic_string<Char> operator()(Args&&... args) const {
     static FMT_CONSTEXPR_DECL Char s[] = {CHARS..., '\0'};
-    check_format_string<remove_cvref_t<Args>...>(FMT_STRING(s));
-    return format(s, std::forward<Args>(args)...);
+    return format(FMT_STRING(s), std::forward<Args>(args)...);
   }
 };
 #  else
