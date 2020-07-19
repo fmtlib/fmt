@@ -311,14 +311,6 @@ struct int128_t {};
 struct uint128_t {};
 #endif
 
-// Defining FMT_REDUCE_INT_INSTANTIATIONS to 1, will reduce the number of
-// int_writer template instances to just one by only using the largest integer
-// type. This results in a reduction in binary size but will cause a decrease in
-// integer formatting performance.
-#if !defined(FMT_REDUCE_INT_INSTANTIATIONS)
-#  define FMT_REDUCE_INT_INSTANTIATIONS 0
-#endif
-
 // Casts a nonnegative integer to unsigned.
 template <typename Int>
 FMT_CONSTEXPR typename std::make_unsigned<Int>::type to_unsigned(Int value) {

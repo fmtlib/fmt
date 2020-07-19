@@ -163,6 +163,14 @@ FMT_END_NAMESPACE
 #  define FMT_USE_LONG_DOUBLE 1
 #endif
 
+// Defining FMT_REDUCE_INT_INSTANTIATIONS to 1, will reduce the number of
+// int_writer template instances to just one by only using the largest integer
+// type. This results in a reduction in binary size but will cause a decrease in
+// integer formatting performance.
+#if !defined(FMT_REDUCE_INT_INSTANTIATIONS)
+#  define FMT_REDUCE_INT_INSTANTIATIONS 0
+#endif
+
 // __builtin_clz is broken in clang with Microsoft CodeGen:
 // https://github.com/fmtlib/fmt/issues/519
 #if (FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_clz)) && !FMT_MSC_VER
