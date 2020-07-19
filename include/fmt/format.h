@@ -343,6 +343,18 @@ template <typename Iterator> inline Iterator& reserve(Iterator& it, size_t) {
   return it;
 }
 
+template <typename T, typename OutputIt>
+constexpr T* to_pointer(OutputIt, size_t) {
+  return nullptr;
+}
+template <typename T> T* to_pointer(buffer_appender<T> it, size_t n) {
+  buffer<T>& buf = get_container(it);
+  auto size = buf.size();
+  if (buf.capacity() < size + n) return nullptr;
+  buf.try_resize(size + n);
+  return buf.data() + size;
+}
+
 template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
 inline std::back_insert_iterator<Container> base_iterator(
     std::back_insert_iterator<Container>& it,
@@ -1744,7 +1756,13 @@ OutputIt write(OutputIt out, T value) {
   // Don't do -abs_value since it trips unsigned-integer-overflow sanitizer.
   if (negative) abs_value = ~abs_value + 1;
   int num_digits = count_digits(abs_value);
-  auto it = reserve(out, (negative ? 1 : 0) + static_cast<size_t>(num_digits));
+  auto size = (negative ? 1 : 0) + static_cast<size_t>(num_digits);
+  auto it = reserve(out, size);
+  if (auto ptr = to_pointer<Char>(it, size)) {
+    if (negative) *ptr++ = static_cast<Char>('-');
+    format_decimal<Char>(ptr, abs_value, num_digits);
+    return out;
+  }
   if (negative) *it++ = static_cast<Char>('-');
   it = format_decimal<Char>(it, abs_value, num_digits).end;
   return base_iterator(out, it);
