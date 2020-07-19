@@ -15,6 +15,7 @@ The {fmt} library API consists of the following parts:
   and tuples
 * :ref:`fmt/chrono.h <chrono-api>`: date and time formatting
 * :ref:`fmt/compile.h <compile-api>`: format string compilation
+* :ref:`fmt/color.h <color-api>`: terminal color and text style
 * :ref:`fmt/ostream.h <ostream-api>`: ``std::ostream`` support
 * :ref:`fmt/printf.h <printf-api>`: ``printf`` formatting
 
@@ -399,6 +400,15 @@ API and is only recommended in places where formatting is a performance
 bottleneck.
 
 .. doxygendefine:: FMT_COMPILE
+
+.. _color-api:
+
+Terminal color and text style
+=============================
+
+``fmt/color.h`` provides support for terminal color and text style output.
+
+.. doxygenfunction:: print(const text_style&, const S&, const Args&...)
 
 .. _ostream-api:
 
