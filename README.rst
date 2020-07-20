@@ -102,7 +102,7 @@ Print chrono durations:
       fmt::print("strftime-like format: {:%H:%M:%S}\n", 3h + 15min + 30s);
     }
 
-Output::
+* Output::
 
     Default format: 42s 100ms
     strftime-like format: 03:15:30
@@ -119,7 +119,7 @@ Print a container:
       fmt::print("{}\n", v);
     }
 
-Output::
+* Output::
 
     {1, 2, 3}
 
