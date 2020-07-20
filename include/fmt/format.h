@@ -291,6 +291,9 @@ template <typename T> constexpr T max_value() {
 template <typename T> constexpr int num_bits() {
   return std::numeric_limits<T>::digits;
 }
+// std::numeric_limits<T>::digits may return 0 for 128-bit ints.
+template <> constexpr int num_bits<int128_t>() { return 128; }
+template <> constexpr int num_bits<uint128_t>() { return 128; }
 template <> constexpr int num_bits<fallback_uintptr>() {
   return static_cast<int>(sizeof(void*) *
                           std::numeric_limits<unsigned char>::digits);
@@ -756,8 +759,8 @@ using uint32_or_64_or_128_t =
 // represent all values of T.
 template <typename T>
 using uint32_or_64_or_128_t = conditional_t<
-    std::numeric_limits<T>::digits <= 32, uint32_t,
-    conditional_t<std::numeric_limits<T>::digits <= 64, uint64_t, uint128_t>>;
+    num_bits<T>() <= 32, uint32_t,
+    conditional_t<num_bits<T>() <= 64, uint64_t, uint128_t>>;
 #endif
 
 // Static data is placed in this class template for the header-only config.
