@@ -145,29 +145,6 @@ Write a file from a single thread:
 
 This is up to 6x faster than glibc's ``fprintf``.
 
-Create your own functions similar to `format
-<https://fmt.dev/latest/api.html#format>`_ and
-`print <https://fmt.dev/latest/api.html#print>`_
-which take arbitrary arguments (`godbolt <https://godbolt.org/g/MHjHVf>`_):
-
-.. code:: c++
-
-    // Prints formatted error message.
-    void vreport_error(const char* format, fmt::format_args args) {
-      fmt::print("Error: ");
-      fmt::vprint(format, args);
-    }
-    template <typename... Args>
-    void report_error(const char* format, const Args & ... args) {
-      vreport_error(format, fmt::make_format_args(args...));
-    }
-
-    report_error("file not found: {}", path);
-
-Note that ``vreport_error`` is not parameterized on argument types which can
-improve compile times and reduce code size compared to a fully parameterized
-version.
-
 Benchmarks
 ----------
 

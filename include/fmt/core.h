@@ -1567,11 +1567,18 @@ inline format_arg_store<Context, Args...> make_format_args(
   return {args...};
 }
 
-/** Same as `make_format_args` but with compile-time format string checks. */
+/**
+  \rst
+  Constructs an `~fmt::format_arg_store` object that contains references
+  to arguments and can be implicitly converted to `~fmt::format_args`.
+  If ``format_str`` is a compile-time string then `make_args_checked` checks
+  its validity at compile time.
+  \endrst
+ */
 template <typename... Args, typename S, typename Char = char_t<S>>
-inline format_arg_store<buffer_context<Char>, remove_reference_t<Args>...>
-make_args_checked(const S& format_str,
-                  const remove_reference_t<Args>&... args) {
+inline auto make_args_checked(const S& format_str,
+                              const remove_reference_t<Args>&... args)
+    -> format_arg_store<buffer_context<Char>, remove_reference_t<Args>...> {
   static_assert(
       detail::count<(
               std::is_base_of<detail::view, remove_reference_t<Args>>::value &&

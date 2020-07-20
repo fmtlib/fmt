@@ -66,6 +66,33 @@ Named arguments are not supported in compile-time checks at the moment.
 Argument Lists
 --------------
 
+You can create your own formatting function with compile-time checks and small
+binary footprint, for example (https://godbolt.org/z/oba4Mc):
+
+.. code:: c++
+
+    #include <fmt/format.h>
+
+    void vlog(const char* file, int line, fmt::string_view format,
+              fmt::format_args args) {
+      fmt::print("{}: {}: ", file, line);
+      fmt::vprint(format, args);
+    }
+
+    template <typename S, typename... Args>
+    void log(const char* file, int line, const S& format, Args&&... args) {
+      vlog(file, line, format,
+          fmt::make_args_checked<Args...>(format, args...));
+    }
+
+    #define MY_LOG(format, ...) \
+      log(__FILE__, __LINE__, FMT_STRING(format), __VA_ARGS__)
+
+    MY_LOG("invalid squishiness: {}", 42);
+
+Note that ``vlog`` is not parameterized on argument types which improves compile
+times and reduces binary code size compared to a fully parameterized version.
+
 .. doxygenfunction:: fmt::make_format_args(const Args&...)
 
 .. doxygenfunction:: fmt::make_args_checked(const S&, const remove_reference_t<Args>&...)
