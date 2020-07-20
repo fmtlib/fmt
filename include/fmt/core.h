@@ -1555,7 +1555,7 @@ class format_arg_store
 
 /**
   \rst
-  Constructs an `~fmt::format_arg_store` object that contains references to
+  Constructs a `~fmt::format_arg_store` object that contains references to
   arguments and can be implicitly converted to `~fmt::format_args`. `Context`
   can be omitted in which case it defaults to `~fmt::context`.
   See `~fmt::arg` for lifetime considerations.
@@ -1569,7 +1569,7 @@ inline format_arg_store<Context, Args...> make_format_args(
 
 /**
   \rst
-  Constructs an `~fmt::format_arg_store` object that contains references
+  Constructs a `~fmt::format_arg_store` object that contains references
   to arguments and can be implicitly converted to `~fmt::format_args`.
   If ``format_str`` is a compile-time string then `make_args_checked` checks
   its validity at compile time.
