@@ -154,38 +154,36 @@ TEST(RangesTest, JoinSentinel) {
   EXPECT_EQ("h_e_l_l_o", fmt::format("{}", fmt::join(hello, "_")));
 }
 
-// A range that provides non-const only begin()/end() to test fmt::join handles that
+// A range that provides non-const only begin()/end() to test fmt::join handles
+// that
 //
-// Some ranges (eg those produced by range-v3's views::filter()) can cache information
-// during iteration so they only provide non-const begin()/end().
-template <typename T>
-class non_const_only_range {
-  private:
-    std::vector<T> vec;
+// Some ranges (eg those produced by range-v3's views::filter()) can cache
+// information during iteration so they only provide non-const begin()/end().
+template <typename T> class non_const_only_range {
+ private:
+  std::vector<T> vec;
 
-  public:
-    using const_iterator = typename ::std::vector<T>::const_iterator;
+ public:
+  using const_iterator = typename ::std::vector<T>::const_iterator;
 
-    template <typename... Args>
-    explicit non_const_only_range(Args &&...args) : vec( ::std::forward<Args>( args )... ) {}
+  template <typename... Args>
+  explicit non_const_only_range(Args&&... args)
+      : vec(::std::forward<Args>(args)...) {}
 
-    const_iterator begin() {
-      return vec.begin();
-    }
-    const_iterator end() {
-      return vec.end();
-    }
+  const_iterator begin() { return vec.begin(); }
+  const_iterator end() { return vec.end(); }
 };
 
 TEST(RangesTest, JoinRange) {
-  non_const_only_range<int> x( 3, 0 );
+  non_const_only_range<int> x(3, 0);
   EXPECT_EQ("0,0,0", fmt::format("{}", fmt::join(x, ",")));
-  EXPECT_EQ("0,0,0", fmt::format("{}", fmt::join(non_const_only_range<int>( 3, 0 ), ",")));
+  EXPECT_EQ("0,0,0",
+            fmt::format("{}", fmt::join(non_const_only_range<int>(3, 0), ",")));
 
-  std::vector<int> y( 3, 0 );
+  std::vector<int> y(3, 0);
   EXPECT_EQ("0,0,0", fmt::format("{}", fmt::join(y, ",")));
-  EXPECT_EQ("0,0,0", fmt::format("{}", fmt::join(std::vector<int>( 3, 0 ), ",")));
+  EXPECT_EQ("0,0,0", fmt::format("{}", fmt::join(std::vector<int>(3, 0), ",")));
 
-  const std::vector<int> z( 3, 0 );
+  const std::vector<int> z(3, 0);
   EXPECT_EQ("0,0,0", fmt::format("{}", fmt::join(z, ",")));
 }
