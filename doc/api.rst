@@ -334,8 +334,6 @@ the value of ``errno`` being preserved by library functions.
 .. doxygenclass:: fmt::windows_error
    :members:
 
-.. _formatstrings:
-
 Custom Allocators
 -----------------
 
@@ -366,10 +364,10 @@ allocator::
       return vformat(alloc, format_str, fmt::make_format_args(args...));
     }
 
-The allocator will be used for the output container only. If you are using named
-arguments, the container that stores pointers to them will be allocated using
-the default allocator. Also floating-point formatting falls back on ``sprintf``
-which may do allocations.
+The allocator will be used for the output container only. Formatting functions
+normally don't do any allocations for built-in and string types except for
+non-default floating-point formatting that occasionally falls back on
+``sprintf``.
 
 .. _ranges-api:
 
