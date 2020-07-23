@@ -48,6 +48,8 @@ participate in an overload resolution if the latter is not a string.
 .. doxygenfunction:: format(const S&, Args&&...)
 .. doxygenfunction:: vformat(const S&, basic_format_args<buffer_context<type_identity_t<Char>>>)
 
+.. doxygenfunction:: fmt::formatted_size(string_view, Args&&...)
+
 .. _print:
 
 .. doxygenfunction:: print(const S&, Args&&...)
@@ -299,8 +301,6 @@ Utilities
 .. doxygenstruct:: fmt::is_char
 
 .. doxygentypedef:: fmt::char_t
-
-.. doxygenfunction:: fmt::formatted_size(string_view, const Args&...)
 
 .. doxygenfunction:: fmt::to_string(const T&)
 

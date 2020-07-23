@@ -269,8 +269,7 @@ struct monostate {};
 
 namespace detail {
 
-// A helper function to suppress bogus "conditional expression is constant"
-// warnings.
+// A helper function to suppress "conditional expression is constant" warnings.
 template <typename T> constexpr T const_check(T value) { return value; }
 
 FMT_NORETURN FMT_API void assert_fail(const char* file, int line,
@@ -797,9 +796,25 @@ class iterator_buffer<std::back_insert_iterator<Container>,
   }
 };
 
-template <typename Container>
-using container_buffer = iterator_buffer<std::back_insert_iterator<Container>,
-                                         typename Container::value_type>;
+// A buffer that counts the number of code units written discarding the output.
+template <typename T = char> class counting_buffer : public buffer<T> {
+ private:
+  enum { buffer_size = 256 };
+  T data_[buffer_size];
+  size_t count_ = 0;
+
+ protected:
+  void grow(size_t) final {
+    if (this->size() != buffer_size) return;
+    count_ += this->size();
+    this->clear();
+  }
+
+ public:
+  counting_buffer() : buffer<T>(data_, 0, buffer_size) {}
+
+  size_t count() { return count_ + this->size(); }
+};
 
 // An output iterator that appends to the buffer.
 // It is used to reduce symbol sizes for the common case.
@@ -1955,6 +1970,18 @@ template <typename OutputIt, typename S, typename... Args,
 inline OutputIt format_to(OutputIt out, const S& format_str, Args&&... args) {
   const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
   return vformat_to(out, to_string_view(format_str), vargs);
+}
+
+/**
+  Returns the number of characters in the output of
+  ``format(format_str, args...)``.
+ */
+template <typename... Args>
+inline size_t formatted_size(string_view format_str, Args&&... args) {
+  const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
+  detail::counting_buffer<> buf;
+  detail::vformat_to(buf, format_str, vargs);
+  return buf.count();
 }
 
 template <typename S, typename Char = char_t<S>>
