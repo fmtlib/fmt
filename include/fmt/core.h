@@ -152,7 +152,7 @@
 #  if FMT_HAS_CPP14_ATTRIBUTE(deprecated) || FMT_MSC_VER >= 1900
 #    define FMT_DEPRECATED [[deprecated]]
 #  else
-#    if defined(__GNUC__) || defined(__clang__)
+#    if (defined(__GNUC__) && !defined(__LCC__)) || defined(__clang__)
 #      define FMT_DEPRECATED __attribute__((deprecated))
 #    elif FMT_MSC_VER
 #      define FMT_DEPRECATED __declspec(deprecated)
