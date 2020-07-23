@@ -125,7 +125,7 @@ Compatibility
 Locale
 ------
 
-All formatting is locale-independent by default. Use the ``'n'`` format
+All formatting is locale-independent by default. Use the ``'L'`` format
 specifier to insert the appropriate number separator characters from the
 locale::
 
