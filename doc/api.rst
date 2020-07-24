@@ -48,6 +48,8 @@ participate in an overload resolution if the latter is not a string.
 .. doxygenfunction:: format(const S&, Args&&...)
 .. doxygenfunction:: vformat(const S&, basic_format_args<buffer_context<type_identity_t<Char>>>)
 
+.. doxygenfunction:: fmt::format_to(OutputIt, string_view, Args&&...)
+.. doxygenfunction:: fmt::format_to_n(OutputIt, size_t, string_view, Args&&...)
 .. doxygenfunction:: fmt::formatted_size(string_view, Args&&...)
 
 .. _print:

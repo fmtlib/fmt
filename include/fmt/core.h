@@ -735,13 +735,33 @@ template <typename T> class buffer {
   }
 };
 
-// A buffer that writes to an output iterator when flushed.
-template <typename OutputIt, typename T>
-class iterator_buffer : public buffer<T> {
- private:
-  enum { buffer_size = 256 };
+struct buffer_traits {
+  explicit buffer_traits(size_t) {}
+  size_t count() const { return 0; }
+  size_t limit(size_t size) { return size; }
+};
 
+class fixed_buffer_traits {
+ private:
+  size_t count_ = 0;
+  size_t limit_;
+
+ public:
+  explicit fixed_buffer_traits(size_t limit) : limit_(limit) {}
+  size_t count() const { return count_; }
+  size_t limit(size_t size) {
+    size_t n = limit_ - count_;
+    count_ += size;
+    return size < n ? size : n;
+  }
+};
+
+// A buffer that writes to an output iterator when flushed.
+template <typename OutputIt, typename T, typename Traits = buffer_traits>
+class iterator_buffer : public Traits, public buffer<T> {
+ private:
   OutputIt out_;
+  enum { buffer_size = 256 };
   T data_[buffer_size];
 
  protected:
@@ -751,14 +771,17 @@ class iterator_buffer : public buffer<T> {
   void flush();
 
  public:
-  explicit iterator_buffer(OutputIt out)
-      : buffer<T>(data_, 0, buffer_size), out_(out) {}
+  explicit iterator_buffer(OutputIt out, size_t n = 0)
+      : Traits(n),
+        buffer<T>(data_, 0, n < size_t(buffer_size) ? n : size_t(buffer_size)),
+        out_(out) {}
   ~iterator_buffer() { flush(); }
 
   OutputIt out() {
     flush();
     return out_;
   }
+  size_t count() const { return Traits::count() + this->size(); }
 };
 
 template <typename T> class iterator_buffer<T*, T> : public buffer<T> {
@@ -766,7 +789,7 @@ template <typename T> class iterator_buffer<T*, T> : public buffer<T> {
   void grow(size_t) final {}
 
  public:
-  explicit iterator_buffer(T* out) : buffer<T>(out, 0, ~size_t()) {}
+  explicit iterator_buffer(T* out, size_t = 0) : buffer<T>(out, 0, ~size_t()) {}
 
   T* out() { return &*this->end(); }
 };
@@ -781,7 +804,7 @@ class iterator_buffer<std::back_insert_iterator<Container>,
   Container& container_;
 
  protected:
-  void grow(size_t capacity) FMT_OVERRIDE {
+  void grow(size_t capacity) final {
     container_.resize(capacity);
     this->set(&container_[0], capacity);
   }
@@ -789,7 +812,7 @@ class iterator_buffer<std::back_insert_iterator<Container>,
  public:
   explicit iterator_buffer(Container& c)
       : buffer<typename Container::value_type>(c.size()), container_(c) {}
-  explicit iterator_buffer(std::back_insert_iterator<Container> out)
+  explicit iterator_buffer(std::back_insert_iterator<Container> out, size_t = 0)
       : iterator_buffer(get_container(out)) {}
   std::back_insert_iterator<Container> out() {
     return std::back_inserter(container_);
@@ -1970,6 +1993,41 @@ template <typename OutputIt, typename S, typename... Args,
 inline OutputIt format_to(OutputIt out, const S& format_str, Args&&... args) {
   const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
   return vformat_to(out, to_string_view(format_str), vargs);
+}
+
+template <typename OutputIt> struct format_to_n_result {
+  /** Iterator past the end of the output range. */
+  OutputIt out;
+  /** Total (not truncated) output size. */
+  size_t size;
+};
+
+template <typename OutputIt, typename Char, typename... Args,
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt>::value)>
+inline format_to_n_result<OutputIt> vformat_to_n(
+    OutputIt out, size_t n, basic_string_view<Char> format_str,
+    basic_format_args<buffer_context<type_identity_t<Char>>> args) {
+  detail::iterator_buffer<OutputIt, Char, detail::fixed_buffer_traits> buf(out,
+                                                                           n);
+  detail::vformat_to(buf, format_str, args);
+  return {buf.out(), buf.count()};
+}
+
+/**
+ \rst
+ Formats arguments, writes up to ``n`` characters of the result to the output
+ iterator ``out`` and returns the total output size and the iterator past the
+ end of the output range.
+ \endrst
+ */
+template <typename OutputIt, typename S, typename... Args,
+          FMT_ENABLE_IF(detail::is_string<S>::value&&
+                            detail::is_output_iterator<OutputIt>::value)>
+inline format_to_n_result<OutputIt> format_to_n(OutputIt out, size_t n,
+                                                const S& format_str,
+                                                const Args&... args) {
+  const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
+  return vformat_to_n(out, n, to_string_view(format_str), vargs);
 }
 
 /**
