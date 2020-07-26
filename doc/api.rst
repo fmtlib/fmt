@@ -437,6 +437,8 @@ Terminal color and text style
 
 ``fmt/color.h`` provides support for terminal color and text style output.
 
+.. doxygenenum:: fmt::color
+
 .. doxygenfunction:: print(const text_style&, const S&, const Args&...)
 
 .. _ostream-api:
