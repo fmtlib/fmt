@@ -145,6 +145,26 @@ Write a file from a single thread:
 
 This is up to 6x faster than glibc's ``fprintf``.
 
+Color support:
+
+.. code:: c++
+
+    #include <fmt/color.h>
+
+    int main() {
+      fmt::print(fg(fmt::color::crimson) | fmt::emphasis::bold,
+                 "Hello, {}!\n", "world");
+      fmt::print(fg(fmt::color::floral_white) | bg(fmt::color::slate_gray) |
+                 fmt::emphasis::underline, "Hello, {}!\n", "мир");
+      fmt::print(fg(fmt::color::steel_blue) | fmt::emphasis::italic,
+                 "Hello, {}!\n", "世界");
+    }
+
+prints the following on a modern terminal with RGB color support:
+
+.. image:: https://user-images.githubusercontent.com/
+           576385/50405788-b66e7500-076e-11e9-9592-7324d1f951d8.png
+
 Benchmarks
 ----------
 
