@@ -59,7 +59,7 @@ def create_build_env(dirname='virtualenv'):
               '129222318f7c8f865d2631e7da7b033567e7f56a',
               min_version='4.2.0')
 
-def build_docs(sphinx_executable='sphinx-build', version='dev', **kwargs):
+def build_docs(version='dev', **kwargs):
   doc_dir = kwargs.get('doc_dir', os.path.dirname(os.path.realpath(__file__)))
   work_dir = kwargs.get('work_dir', '.')
   include_dir = kwargs.get(
@@ -101,7 +101,7 @@ def build_docs(sphinx_executable='sphinx-build', version='dev', **kwargs):
     raise CalledProcessError(p.returncode, cmd)
   html_dir = os.path.join(work_dir, 'html')
   main_versions = reversed(versions[-3:])
-  check_call([sphinx_executable,
+  check_call(['sphinx-build',
               '-Dbreathe_projects.format=' + os.path.abspath(doxyxml_dir),
               '-Dversion=' + version, '-Drelease=' + version,
               '-Aversion=' + version, '-Aversions=' + ','.join(main_versions),
@@ -121,4 +121,4 @@ def build_docs(sphinx_executable='sphinx-build', version='dev', **kwargs):
 
 if __name__ == '__main__':
   create_build_env()
-  build_docs(sys.argv[1], sys.argv[2])
+  build_docs(sys.argv[1])

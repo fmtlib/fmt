@@ -5,11 +5,10 @@ if (NOT DOXYGEN)
 endif ()
 
 find_package(PythonInterp QUIET REQUIRED)
-find_program(SPHINX_EXECUTABLE NAMES sphinx-build sphinx-build-3)
 
 add_custom_target(doc
   COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/build.py
-                               ${SPHINX_EXECUTABLE} ${FMT_VERSION}
+                               ${FMT_VERSION}
   SOURCES api.rst syntax.rst usage.rst build.py conf.py _templates/layout.html)
 
 include(GNUInstallDirs)
