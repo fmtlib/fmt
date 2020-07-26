@@ -163,7 +163,7 @@ Color support:
 prints the following on a modern terminal with RGB color support:
 
 .. image:: https://user-images.githubusercontent.com/
-           576385/88485269-7adaf480-cf29-11ea-9b71-97b03ab73c6c.png
+           576385/88485460-b3c79900-cf2a-11ea-9b1d-495fbd081646.png
 
 Benchmarks
 ----------
