@@ -92,7 +92,7 @@ Examples
     std::string s = fmt::format("I'd rather be {1} than {0}.", "right", "happy");
     // s == "I'd rather be happy than right."
 
-**Print chrono durations** (`run <https://godbolt.org/z/zz6xqd>`_)
+**Print chrono durations** (`run <https://godbolt.org/z/K8s4Mc>`_)
 
 .. code:: c++
 
