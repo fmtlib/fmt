@@ -25,7 +25,7 @@ It can be used as a safe and fast alternative to (s)printf and iostreams.
 Q&A: ask questions on `StackOverflow with the tag fmt
 <https://stackoverflow.com/questions/tagged/fmt>`_.
 
-Try {fmt} on `Compiler Explorer <https://godbolt.org/z/Eq5763>`_.
+Try {fmt} in `Compiler Explorer <https://godbolt.org/z/Eq5763>`_.
 
 Features
 --------
