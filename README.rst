@@ -68,7 +68,7 @@ See the `documentation <https://fmt.dev>`_ for more details.
 Examples
 --------
 
-**Print to stdout**
+**Print to stdout** (`run <https://godbolt.org/z/Tevcjh>`_)
 
 .. code:: c++
 
