@@ -1,12 +1,8 @@
-7.0.2 - TBD
------------
+7.0.2 - 2020-07-29
+------------------
 
 * Worked around broken ``numeric_limits`` for 128-bit integers
   (`#1725 <https://github.com/fmtlib/fmt/issues/1725>`_).
-
-* Fixed a linkage error
-  (`#1757 <https://github.com/fmtlib/fmt/pull/1757>`_).
-  Thanks `@Kurkin (Dmitry Kurkin) <https://github.com/Kurkin>`_.
 
 * Fixed compatibility with CMake 3.4
   (`#1779 <https://github.com/fmtlib/fmt/issues/1779>`_).
