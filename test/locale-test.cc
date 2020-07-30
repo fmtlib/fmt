@@ -89,4 +89,16 @@ TEST(LocaleTest, WFormat) {
             fmt::format(small_grouping_loc, L"{:L}", max_value<uint32_t>()));
 }
 
+TEST(LocaleTest, DoubleFormatter) {
+  auto loc = std::locale(std::locale(), new special_grouping<char>());
+  auto f = fmt::formatter<int>();
+  auto parse_ctx = fmt::format_parse_context("L");
+  f.parse(parse_ctx);
+  char buf[10] = {};
+  fmt::basic_format_context<char*, char> format_ctx(
+      buf, {}, fmt::detail::locale_ref(loc));
+  *f.format(12345, format_ctx) = 0;
+  EXPECT_STREQ("12,345", buf);
+}
+
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR

@@ -758,9 +758,9 @@ using uint32_or_64_or_128_t =
 // Smallest of uint32_t, uint64_t, uint128_t that is large enough to
 // represent all values of T.
 template <typename T>
-using uint32_or_64_or_128_t = conditional_t<
-    num_bits<T>() <= 32, uint32_t,
-    conditional_t<num_bits<T>() <= 64, uint64_t, uint128_t>>;
+using uint32_or_64_or_128_t =
+    conditional_t<num_bits<T>() <= 32, uint32_t,
+                  conditional_t<num_bits<T>() <= 64, uint64_t, uint128_t>>;
 #endif
 
 // Static data is placed in this class template for the header-only config.
@@ -1607,7 +1607,8 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
                               make_checked(p, s.size()));
     }
     if (prefix_size != 0) p[-1] = static_cast<Char>('-');
-    write(out, basic_string_view<Char>(buffer.data(), buffer.size()), specs);
+    out = write(out, basic_string_view<Char>(buffer.data(), buffer.size()),
+                specs);
   }
 
   void on_chr() { *out++ = static_cast<Char>(abs_value); }
