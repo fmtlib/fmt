@@ -745,9 +745,9 @@ FMT_CONSTEXPR bool is_supported_floating_point(T) {
 // Smallest of uint32_t, uint64_t, uint128_t that is large enough to
 // represent all values of T.
 template <typename T>
-using uint32_or_64_or_128_t = conditional_t<
-    num_bits<T>() <= 32, uint32_t,
-    conditional_t<num_bits<T>() <= 64, uint64_t, uint128_t>>;
+using uint32_or_64_or_128_t =
+    conditional_t<num_bits<T>() <= 32, uint32_t,
+                  conditional_t<num_bits<T>() <= 64, uint64_t, uint128_t>>;
 
 // Static data is placed in this class template for the header-only config.
 template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
@@ -1593,7 +1593,8 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
                               make_checked(p, s.size()));
     }
     if (prefix_size != 0) p[-1] = static_cast<Char>('-');
-    write(out, basic_string_view<Char>(buffer.data(), buffer.size()), specs);
+    out = write(out, basic_string_view<Char>(buffer.data(), buffer.size()),
+                specs);
   }
 
   void on_chr() { *out++ = static_cast<Char>(abs_value); }
