@@ -732,17 +732,17 @@ class FMT_API format_error : public std::runtime_error {
 namespace detail {
 
 template <typename T>
-constexpr bool is_signed() {
-  return std::numeric_limits<T>::is_signed || std::is_same<T, int128_t>();
-}
+using is_signed =
+    std::integral_constant<bool, std::numeric_limits<T>::is_signed ||
+                                     std::is_same<T, int128_t>::value>;
 
 // Returns true if value is negative, false otherwise.
 // Same as `value < 0` but doesn't produce warnings if T is an unsigned type.
-template <typename T, FMT_ENABLE_IF(is_signed<T>())>
+template <typename T, FMT_ENABLE_IF(is_signed<T>::value)>
 FMT_CONSTEXPR bool is_negative(T value) {
   return value < 0;
 }
-template <typename T, FMT_ENABLE_IF(!is_signed<T>())>
+template <typename T, FMT_ENABLE_IF(!is_signed<T>::value)>
 FMT_CONSTEXPR bool is_negative(T) {
   return false;
 }
