@@ -358,21 +358,20 @@ struct buffer_size {
 struct ostream_params {
   int oflag = file::WRONLY | file::CREATE;
   size_t buffer_size = BUFSIZ;
+
+  ostream_params() {}
+
+  template <typename... T>
+  ostream_params(T... params, int oflag) : ostream_params(params...) {
+    this->oflag = oflag;
+  }
+
+  template <typename... T>
+  ostream_params(T... params, detail::buffer_size bs)
+      : ostream_params(params...) {
+    this->buffer_size = bs.value;
+  }
 };
-
-inline void get_params(ostream_params&) {}
-
-template <typename... T>
-inline void get_params(ostream_params& op, int oflag, T... params) {
-  op.oflag = oflag;
-  get_params(op, params...);
-}
-
-template <typename... T>
-inline void get_params(ostream_params& op, buffer_size bs, T... params) {
-  op.buffer_size = bs.value;
-  get_params(op, params...);
-}
 }  // namespace detail
 
 static constexpr detail::buffer_size buffer_size;
@@ -435,9 +434,7 @@ class ostream : private detail::buffer<char> {
  */
 template <typename... T>
 inline ostream output_file(cstring_view path, T... params) {
-  auto op = detail::ostream_params();
-  get_params(op, params...);
-  return {path, op};
+  return {path, detail::ostream_params(params...)};
 }
 #endif  // FMT_USE_FCNTL
 
