@@ -18,6 +18,7 @@
 #include <cstddef>
 #include <cstdio>
 #include <cstdlib>  // for strtod_l
+#include <memory>
 
 #if defined __APPLE__ || defined(__FreeBSD__)
 #  include <xlocale.h>  // for LC_NUMERIC_MASK on OS X
@@ -29,7 +30,7 @@
 #if FMT_HAS_INCLUDE("winapifamily.h")
 #  include <winapifamily.h>
 #endif
-#if FMT_HAS_INCLUDE("fcntl.h") && \
+#if (FMT_HAS_INCLUDE(<fcntl.h>) || defined(__APPLE__)) && \
     (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP))
 #  include <fcntl.h>  // for O_RDONLY
 #  define FMT_USE_FCNTL 1
@@ -343,32 +344,78 @@ class file {
 // Returns the memory page size.
 long getpagesize();
 
+namespace detail {
+
+struct buffer_size {
+  size_t value = 0;
+  buffer_size operator=(size_t val) const {
+    auto bs = buffer_size();
+    bs.value = val;
+    return bs;
+  }
+};
+
+struct ostream_params {
+  int oflag = file::WRONLY | file::CREATE;
+  size_t buffer_size = BUFSIZ;
+};
+
+inline void get_params(ostream_params&) {}
+
+template <typename... T>
+inline void get_params(ostream_params& op, int oflag, T... params) {
+  op.oflag = oflag;
+  get_params(op, params...);
+}
+
+template <typename... T>
+inline void get_params(ostream_params& op, buffer_size bs, T... params) {
+  op.buffer_size = bs.value;
+  get_params(op, params...);
+}
+}  // namespace detail
+
+static constexpr detail::buffer_size buffer_size;
+
 // A fast output stream which is not thread-safe.
 class ostream : private detail::buffer<char> {
  private:
   file file_;
-  char buffer_[BUFSIZ];
+  size_t buffer_size_;
+  std::unique_ptr<char[]> buffer_;
+
+  char* move_buffer(ostream&& other) {
+    buffer_ = std::move(other.buffer_);
+    buffer_size_ = other.buffer_size_;
+    return buffer_.get();
+  }
 
   void flush() {
     if (size() == 0) return;
-    file_.write(buffer_, size());
+    file_.write(buffer_.get(), size());
     clear();
   }
 
   void grow(size_t) final;
 
-  ostream(cstring_view path, int oflag)
-      : buffer<char>(buffer_, 0, BUFSIZ), file_(path, oflag) {}
+  ostream(cstring_view path, const detail::ostream_params& params)
+      : file_(path, params.oflag),
+        buffer_size_(params.buffer_size),
+        buffer_(new char[params.buffer_size]) {
+    set(buffer_.get(), params.buffer_size);
+  }
 
  public:
   ostream(ostream&& other)
-      : buffer<char>(buffer_, 0, BUFSIZ), file_(std::move(other.file_)) {
-    append(other.begin(), other.end());
+      : file_(std::move(other.file_)),
+        buffer_size_(other.buffer_size_),
+        buffer_(std::move(other.buffer_)) {
     other.clear();
   }
   ~ostream() { flush(); }
 
-  friend ostream output_file(cstring_view path, int oflag);
+  template <typename... T>
+  friend ostream output_file(cstring_view path, T... params);
 
   void close() {
     flush();
@@ -381,9 +428,16 @@ class ostream : private detail::buffer<char> {
   }
 };
 
-inline ostream output_file(cstring_view path,
-                           int oflag = file::WRONLY | file::CREATE) {
-  return {path, oflag};
+/**
+  Opens a file for writing. Supported parameters passed in `params`:
+  * ``<integer>``: Output flags (``file::WRONLY | file::CREATE`` by default)
+  * ``buffer_size=<integer>``: Output buffer size (``BUFSIZ`` by default)
+ */
+template <typename... T>
+inline ostream output_file(cstring_view path, T... params) {
+  auto op = detail::ostream_params();
+  get_params(op, params...);
+  return {path, op};
 }
 #endif  // FMT_USE_FCNTL
 

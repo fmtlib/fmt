@@ -305,6 +305,14 @@ TEST(OStreamTest, BufferBoundary) {
   EXPECT_READ(in, str + str);
 }
 
+TEST(OStreamTest, BufferSize) {
+  fmt::ostream out = fmt::output_file("test-file", fmt::buffer_size=1);
+  out.print("{}", "foo");
+  out.close();
+  file in("test-file", file::RDONLY);
+  EXPECT_READ(in, "foo");
+}
+
 TEST(FileTest, DefaultCtor) {
   file f;
   EXPECT_EQ(-1, f.descriptor());

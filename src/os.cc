@@ -315,7 +315,7 @@ long getpagesize() {
 }
 
 void ostream::grow(size_t) {
-  if (this->size() == BUFSIZ) flush();
+  if (this->size() == buffer_size_) flush();
 }
 #endif  // FMT_USE_FCNTL
 FMT_END_NAMESPACE
