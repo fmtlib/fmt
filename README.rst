@@ -78,7 +78,7 @@ Examples
       fmt::print("Hello, world!\n");
     }
 
-**Format a string**
+**Format a string** (`run <https://godbolt.org/z/oK8h33>`_)
 
 .. code:: c++
 
