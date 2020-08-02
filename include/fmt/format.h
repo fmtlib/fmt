@@ -770,6 +770,8 @@ using uint32_or_64_or_128_t =
 
 // Static data is placed in this class template for the header-only config.
 template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
+  // Maps the result of bsr(n) to ceil(log10(n)).
+  static const uint16_t bsr2log10[];
   static const uint64_t powers_of_10_64[];
   static const uint32_t zero_or_powers_of_10_32[];
   static const uint64_t zero_or_powers_of_10_64[];
@@ -799,10 +801,9 @@ struct data : basic_data<> {};
 // Returns the number of decimal digits in n. Leading zeros are not counted
 // except for n == 0 in which case count_digits returns 1.
 inline int count_digits(uint64_t n) {
-  // Based on http://graphics.stanford.edu/~seander/bithacks.html#IntegerLog10
-  // and the benchmark https://github.com/localvoid/cxx-benchmark-count-digits.
-  int t = ((FMT_BUILTIN_CLZLL(n | 1) ^ 63) + 1) * 1233 >> 12;
-  return t - (n < data::zero_or_powers_of_10_64[t]) + 1;
+  // https://github.com/fmtlib/format-benchmark/blob/master/digits10
+  auto t = data::bsr2log10[FMT_BUILTIN_CLZLL(n | 1) ^ 63];
+  return t - (n < data::zero_or_powers_of_10_64[t - 1]);
 }
 #else
 // Fallback version of count_digits used when __builtin_clz is not available.
@@ -859,8 +860,8 @@ template <> int count_digits<4>(detail::fallback_uintptr n);
 #ifdef FMT_BUILTIN_CLZ
 // Optional version of count_digits for better performance on 32-bit platforms.
 inline int count_digits(uint32_t n) {
-  int t = ((FMT_BUILTIN_CLZ(n | 1) ^ 31) + 1) * 1233 >> 12;
-  return t - (n < data::zero_or_powers_of_10_32[t]) + 1;
+  auto t = data::bsr2log10[FMT_BUILTIN_CLZ(n | 1) ^ 31];
+  return t - (n < data::zero_or_powers_of_10_32[t - 1]);
 }
 #endif
 

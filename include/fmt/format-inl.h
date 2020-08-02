@@ -263,6 +263,13 @@ const typename basic_data<T>::digit_pair basic_data<T>::digits[] = {
 template <typename T>
 const char basic_data<T>::hex_digits[] = "0123456789abcdef";
 
+template <typename T>
+const uint16_t basic_data<T>::bsr2log10[] = {
+    1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  4,  5,  5,  5,
+    6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  9,  9,  9,  10, 10, 10,
+    10, 11, 11, 11, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 15, 15,
+    15, 16, 16, 16, 16, 17, 17, 17, 18, 18, 18, 19, 19, 19, 19, 20};
+
 #define FMT_POWERS_OF_10(factor)                                             \
   factor * 10, (factor)*100, (factor)*1000, (factor)*10000, (factor)*100000, \
       (factor)*1000000, (factor)*10000000, (factor)*100000000,               \
