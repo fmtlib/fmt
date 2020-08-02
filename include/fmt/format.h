@@ -801,7 +801,7 @@ struct data : basic_data<> {};
 inline int count_digits(uint64_t n) {
   // Based on http://graphics.stanford.edu/~seander/bithacks.html#IntegerLog10
   // and the benchmark https://github.com/localvoid/cxx-benchmark-count-digits.
-  int t = (64 - FMT_BUILTIN_CLZLL(n | 1)) * 1233 >> 12;
+  int t = ((FMT_BUILTIN_CLZLL(n | 1) ^ 63) + 1) * 1233 >> 12;
   return t - (n < data::zero_or_powers_of_10_64[t]) + 1;
 }
 #else
@@ -859,7 +859,7 @@ template <> int count_digits<4>(detail::fallback_uintptr n);
 #ifdef FMT_BUILTIN_CLZ
 // Optional version of count_digits for better performance on 32-bit platforms.
 inline int count_digits(uint32_t n) {
-  int t = (32 - FMT_BUILTIN_CLZ(n | 1)) * 1233 >> 12;
+  int t = ((FMT_BUILTIN_CLZ(n | 1) ^ 31) + 1) * 1233 >> 12;
   return t - (n < data::zero_or_powers_of_10_32[t]) + 1;
 }
 #endif
