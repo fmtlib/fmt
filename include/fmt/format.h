@@ -3342,6 +3342,10 @@ class bytes {
 };
 
 template <> struct formatter<bytes> {
+ private:
+  detail::dynamic_format_specs<char> specs_;
+
+ public:
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
     using handler_type = detail::dynamic_specs_handler<ParseContext>;
@@ -3360,9 +3364,6 @@ template <> struct formatter<bytes> {
         specs_.precision, specs_.precision_ref, ctx);
     return detail::write_bytes(ctx.out(), b.data_, specs_);
   }
-
- private:
-  detail::dynamic_format_specs<char> specs_;
 };
 
 template <typename It, typename Sentinel, typename Char>

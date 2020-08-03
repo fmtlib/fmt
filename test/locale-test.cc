@@ -7,6 +7,8 @@
 
 #include "fmt/locale.h"
 
+#include <complex>
+
 #include "gmock.h"
 
 using fmt::detail::max_value;
@@ -99,6 +101,47 @@ TEST(LocaleTest, DoubleFormatter) {
       buf, {}, fmt::detail::locale_ref(loc));
   *f.format(12345, format_ctx) = 0;
   EXPECT_STREQ("12,345", buf);
+}
+
+FMT_BEGIN_NAMESPACE
+template <class charT> struct formatter<std::complex<double>, charT> {
+ private:
+  detail::dynamic_format_specs<char> specs_;
+
+ public:
+  typename basic_format_parse_context<charT>::iterator parse(
+      basic_format_parse_context<charT>& ctx) {
+    using handler_type =
+        detail::dynamic_specs_handler<basic_format_parse_context<charT>>;
+    detail::specs_checker<handler_type> handler(handler_type(specs_, ctx),
+                                                detail::type::string_type);
+    auto it = parse_format_specs(ctx.begin(), ctx.end(), handler);
+    detail::check_string_type_spec(specs_.type, ctx.error_handler());
+    return it;
+  }
+
+  template <class FormatContext>
+  typename FormatContext::iterator format(const std::complex<double>& c,
+                                          FormatContext& ctx) {
+    detail::handle_dynamic_spec<detail::precision_checker>(
+        specs_.precision, specs_.precision_ref, ctx);
+    auto format_specs = std::string();
+    auto real = fmt::format(ctx.locale().template get<std::locale>(),
+                            "{:" + format_specs + "}", c.real());
+    auto imag = fmt::format(ctx.locale().template get<std::locale>(),
+                            "{:" + format_specs + "}", c.imag());
+    auto fill_align_width = std::string();
+    return format_to(
+        ctx.out(), "{:" + fill_align_width + "}",
+        fmt::format(c.real() != 0 ? "({0}+{1}i)" : "{1}i", real, imag));
+  }
+};
+FMT_END_NAMESPACE
+
+TEST(FormatTest, Complex) {
+  std::string s = fmt::format("{}", std::complex<double>(1, 2));
+  // We might want to drop trailing zeros for consistency with to_chars.
+  EXPECT_EQ(s, "(1.0+2.0i)");
 }
 
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR
