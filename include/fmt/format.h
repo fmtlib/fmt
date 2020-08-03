@@ -1613,8 +1613,11 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
                               make_checked(p, s.size()));
     }
     if (prefix_size != 0) p[-1] = static_cast<Char>('-');
-    out = write(out, basic_string_view<Char>(buffer.data(), buffer.size()),
-                specs);
+    using iterator = remove_reference_t<decltype(reserve(out, 0))>;
+    auto data = buffer.data();
+    out = write_padded<align::right>(out, specs, size, size, [=](iterator it) {
+      return copy_str<Char>(data, data + size, it);
+    });
   }
 
   void on_chr() { *out++ = static_cast<Char>(abs_value); }
