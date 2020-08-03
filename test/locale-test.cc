@@ -68,6 +68,11 @@ TEST(LocaleTest, Format) {
             fmt::format(small_grouping_loc, "{:L}", max_value<uint32_t>()));
 }
 
+TEST(LocaleTest, FormatDetaultAlign) {
+  std::locale special_grouping_loc(std::locale(), new special_grouping<char>());
+  EXPECT_EQ("  12,345", fmt::format(special_grouping_loc, "{:8L}", 12345));
+}
+
 TEST(LocaleTest, WFormat) {
   std::locale loc(std::locale(), new numpunct<wchar_t>());
   EXPECT_EQ(L"1234567", fmt::format(std::locale(), L"{:L}", 1234567));
