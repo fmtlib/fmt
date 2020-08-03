@@ -281,12 +281,12 @@ const uint64_t basic_data<T>::powers_of_10_64[] = {
     10000000000000000000ULL};
 
 template <typename T>
-const uint32_t basic_data<T>::zero_or_powers_of_10_32[] = {0,
+const uint32_t basic_data<T>::zero_or_powers_of_10_32[] = {0, 0,
                                                            FMT_POWERS_OF_10(1)};
 
 template <typename T>
 const uint64_t basic_data<T>::zero_or_powers_of_10_64[] = {
-    0, FMT_POWERS_OF_10(1), FMT_POWERS_OF_10(1000000000ULL),
+    0, 0, FMT_POWERS_OF_10(1), FMT_POWERS_OF_10(1000000000ULL),
     10000000000000000000ULL};
 
 // Normalized 64-bit significands of pow(10, k), for k = -348, -340, ..., 340.
