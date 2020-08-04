@@ -357,7 +357,7 @@ struct buffer_size {
 
 struct ostream_params {
   int oflag = file::WRONLY | file::CREATE;
-  size_t buffer_size = BUFSIZ;
+  size_t buffer_size = BUFSIZ > 65536 ? BUFSIZ : 65536;
 
   ostream_params() {}
 
@@ -430,7 +430,7 @@ class ostream : private detail::buffer<char> {
 /**
   Opens a file for writing. Supported parameters passed in `params`:
   * ``<integer>``: Output flags (``file::WRONLY | file::CREATE`` by default)
-  * ``buffer_size=<integer>``: Output buffer size (``BUFSIZ`` by default)
+  * ``buffer_size=<integer>``: Output buffer size
  */
 template <typename... T>
 inline ostream output_file(cstring_view path, T... params) {
