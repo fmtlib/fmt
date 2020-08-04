@@ -85,7 +85,7 @@ Examples
     std::string s = fmt::format("The answer is {}.", 42);
     // s == "The answer is 42."
 
-**Format a string using positional arguments**
+**Format a string using positional arguments** (`run <https://godbolt.org/z/Yn7Txe>`_)
 
 .. code:: c++
 
