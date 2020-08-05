@@ -18,7 +18,6 @@
 #include <cstddef>
 #include <cstdio>
 #include <cstdlib>  // for strtod_l
-#include <memory>
 
 #if defined __APPLE__ || defined(__FreeBSD__)
 #  include <xlocale.h>  // for LC_NUMERIC_MASK on OS X
@@ -380,32 +379,28 @@ static constexpr detail::buffer_size buffer_size;
 class ostream : private detail::buffer<char> {
  private:
   file file_;
-  size_t buffer_size_;
-  std::unique_ptr<char[]> buffer_;
 
   void flush() {
     if (size() == 0) return;
-    file_.write(buffer_.get(), size());
+    file_.write(data(), size());
     clear();
   }
 
   void grow(size_t) final;
 
   ostream(cstring_view path, const detail::ostream_params& params)
-      : file_(path, params.oflag),
-        buffer_size_(params.buffer_size),
-        buffer_(new char[params.buffer_size]) {
-    set(buffer_.get(), params.buffer_size);
+      : file_(path, params.oflag) {
+    set(new char[params.buffer_size], params.buffer_size);
   }
 
  public:
-  ostream(ostream&& other)
-      : file_(std::move(other.file_)),
-        buffer_size_(other.buffer_size_),
-        buffer_(std::move(other.buffer_)) {
-    other.clear();
+  ostream(ostream&& other) : file_(std::move(other.file_)) {
+    other.set(nullptr, 0);
   }
-  ~ostream() { flush(); }
+  ~ostream() {
+    flush();
+    delete[] data();
+  }
 
   template <typename... T>
   friend ostream output_file(cstring_view path, T... params);
