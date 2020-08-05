@@ -1593,7 +1593,7 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
     format_decimal(digits, abs_value, num_digits);
     basic_memory_buffer<Char> buffer;
     size += prefix_size;
-    buffer.resize(size);
+    buffer.resize(to_unsigned(size));
     basic_string_view<Char> s(&sep, sep_size);
     // Index of a decimal digit with the least significant digit having index 0.
     int digit_index = 0;
