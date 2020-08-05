@@ -145,7 +145,8 @@ a string.
       out.print("Don't {}", "Panic");
     }
 
-This is up to 6x faster than glibc's ``fprintf``.
+This can be `5 to 9 times faster than fprintf
+<http://www.zverovich.net/2020/08/04/optimal-file-buffer-size.html>`_.
 
 **Color support**
 
