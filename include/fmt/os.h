@@ -383,12 +383,6 @@ class ostream : private detail::buffer<char> {
   size_t buffer_size_;
   std::unique_ptr<char[]> buffer_;
 
-  char* move_buffer(ostream&& other) {
-    buffer_ = std::move(other.buffer_);
-    buffer_size_ = other.buffer_size_;
-    return buffer_.get();
-  }
-
   void flush() {
     if (size() == 0) return;
     file_.write(buffer_.get(), size());
