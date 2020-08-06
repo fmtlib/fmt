@@ -1,5 +1,5 @@
-7.0.3 - TBD
------------
+7.0.3 - 2020-08-06
+------------------
 
 * Worked around broken ``numeric_limits`` for 128-bit integers
   (`#1787 <https://github.com/fmtlib/fmt/issues/1787>`_).
