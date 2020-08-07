@@ -109,7 +109,7 @@ Output::
     Default format: 42s 100ms
     strftime-like format: 03:15:30
 
-**Print a container**
+**Print a container** (`run <https://godbolt.org/z/MjsY7c>`_)
 
 .. code:: c++
 
