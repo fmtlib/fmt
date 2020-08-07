@@ -728,6 +728,7 @@ template <typename T> class buffer {
 
   /** Appends data to the end of the buffer. */
   template <typename U> void append(const U* begin, const U* end);
+  template <typename ContiguousRange> void append(const ContiguousRange&);
 
   template <typename I> T& operator[](I index) { return ptr_[index]; }
   template <typename I> const T& operator[](I index) const {

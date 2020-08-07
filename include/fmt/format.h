@@ -566,6 +566,12 @@ void buffer<T>::append(const U* begin, const U* end) {
   } while (begin != end);
 }
 
+template <typename T>
+template <typename ContiguousRange>
+void buffer<T>::append(const ContiguousRange& range) {
+  append(range.data(), range.data() + range.size());
+}
+
 template <typename OutputIt, typename T, typename Traits>
 void iterator_buffer<OutputIt, T, Traits>::flush() {
   out_ = std::copy_n(data_, this->limit(this->size()), out_);
