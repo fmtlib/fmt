@@ -1,5 +1,5 @@
-7.0.3 - TBD
------------
+7.0.3 - 2020-08-06
+------------------
 
 * Worked around broken ``numeric_limits`` for 128-bit integers
   (`#1787 <https://github.com/fmtlib/fmt/issues/1787>`_).
@@ -11,9 +11,9 @@
   (`#1800 <https://github.com/fmtlib/fmt/pull/1800>`_).
   Thanks `@Kingcom <https://github.com/Kingcom>`_.
 
-* Fixed issues in locale-specific integer formatting (#)
+* Fixed issues in locale-specific integer formatting
   (`#1782 <https://github.com/fmtlib/fmt/issues/1782>`_,
-  `#1801 <https://github.com/fmtlib/fmt/issues/1801>`_)
+  `#1801 <https://github.com/fmtlib/fmt/issues/1801>`_).
 
 7.0.2 - 2020-07-29
 ------------------
