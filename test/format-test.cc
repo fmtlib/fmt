@@ -1946,6 +1946,12 @@ TEST(FormatTest, FormattedSize) {
   EXPECT_EQ(2u, fmt::formatted_size("{}", 42));
 }
 
+TEST(FormatTest, FormatTo) {
+  std::vector<char> v;
+  fmt::format_to(std::back_inserter(v), "{}", "foo");
+  EXPECT_EQ(string_view(v.data(), v.size()), "foo");
+}
+
 TEST(FormatTest, FormatToN) {
   char buffer[4];
   buffer[3] = 'x';
