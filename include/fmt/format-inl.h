@@ -1131,7 +1131,7 @@ int format_float(T value, int precision, float_specs specs, buffer<char>& buf) {
     if (grisu_gen_digits(normalized, 1, exp, handler) == digits::error)
       return snprintf_float(value, precision, specs, buf);
     int num_digits = handler.size;
-    if (!fixed) {
+    if (!fixed && !specs.showpoint) {
       // Remove trailing zeros.
       while (num_digits > 0 && buf[num_digits - 1] == '0') {
         --num_digits;
