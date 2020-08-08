@@ -79,8 +79,8 @@ inline int fmt_snprintf(char* buffer, size_t size, const char* format, ...) {
 //   ERANGE - buffer is not large enough to store the error message
 //   other  - failure
 // Buffer should be at least of size 1.
-FMT_FUNC int safe_strerror(int error_code, char*& buffer,
-                           size_t buffer_size) FMT_NOEXCEPT {
+inline int safe_strerror(int error_code, char*& buffer,
+                         size_t buffer_size) FMT_NOEXCEPT {
   FMT_ASSERT(buffer != nullptr && buffer_size != 0, "invalid buffer");
 
   class dispatcher {
@@ -173,8 +173,8 @@ FMT_FUNC void report_error(format_func func, int error_code,
 }
 
 // A wrapper around fwrite that throws on error.
-FMT_FUNC void fwrite_fully(const void* ptr, size_t size, size_t count,
-                           FILE* stream) {
+inline void fwrite_fully(const void* ptr, size_t size, size_t count,
+                         FILE* stream) {
   size_t written = std::fwrite(ptr, size, count, stream);
   if (written < count) FMT_THROW(system_error(errno, "cannot write to file"));
 }
@@ -1264,7 +1264,7 @@ int snprintf_float(T value, int precision, float_specs specs,
  * occurs, this pointer will be a guess that depends on the particular
  * error, but it will always advance at least one byte.
  */
-FMT_FUNC const char* utf8_decode(const char* buf, uint32_t* c, int* e) {
+inline const char* utf8_decode(const char* buf, uint32_t* c, int* e) {
   static const char lengths[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
                                  1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
                                  0, 0, 2, 2, 2, 2, 3, 3, 4, 0};
