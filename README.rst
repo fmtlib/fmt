@@ -149,7 +149,7 @@ a string.
 This can be `5 to 9 times faster than fprintf
 <http://www.zverovich.net/2020/08/04/optimal-file-buffer-size.html>`_.
 
-**Color support**
+**Print with colors and text styles**
 
 .. code:: c++
 
