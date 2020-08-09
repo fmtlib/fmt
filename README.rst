@@ -50,7 +50,8 @@ Features
   and compiled code; see `Compile time and code bloat`_
 * Reliability: the library has an extensive set of `tests
   <https://github.com/fmtlib/fmt/tree/master/test>`_ and is `continuously fuzzed
-  <https://bugs.chromium.org/p/oss-fuzz/issues/list?colspec=ID%20Type%20Component%20Status%20Proj%20Reported%20Owner%20Summary&q=proj%3Dlibfmt&can=1>`_
+  <https://bugs.chromium.org/p/oss-fuzz/issues/list?colspec=ID%20Type%20
+  Component%20Status%20Proj%20Reported%20Owner%20Summary&q=proj%3Dlibfmt&can=1>`_
 * Safety: the library is fully type safe, errors in format strings can be
   reported at compile time, automatic memory management prevents buffer overflow
   errors
@@ -164,7 +165,7 @@ This can be `5 to 9 times faster than fprintf
                  "Hello, {}!\n", "世界");
     }
 
-prints the following on a modern terminal:
+Output on a modern terminal:
 
 .. image:: https://user-images.githubusercontent.com/
            576385/88485597-d312f600-cf2b-11ea-9cbe-61f535a86e28.png
