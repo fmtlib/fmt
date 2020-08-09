@@ -345,6 +345,8 @@ Projects using this library
 
 * `quasardb <https://www.quasardb.net/>`_: A distributed, high-performance,
   associative database
+  
+* `Quill <https://github.com/odygrd/quill>`_: Asynchronous low-latency logging library
 
 * `readpe <https://bitbucket.org/sys_dev/readpe>`_: Read Portable Executable
 
