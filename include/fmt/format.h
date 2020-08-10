@@ -777,8 +777,6 @@ using uint32_or_64_or_128_t =
 
 // Static data is placed in this class template for the header-only config.
 template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
-  // Maps bsr(n) to ceil(log10(pow(2, bsr(n) + 1) - 1)).
-  static const uint16_t bsr2log10[];
   static const uint64_t powers_of_10_64[];
   static const uint32_t zero_or_powers_of_10_32[];
   static const uint64_t zero_or_powers_of_10_64[];
@@ -797,6 +795,17 @@ template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
   static const char right_padding_shifts[5];
 };
 
+// Maps bsr(n) to ceil(log10(pow(2, bsr(n) + 1) - 1)).
+// This is a function instead of an array to workaround a bug in GCC10 (#1810).
+FMT_INLINE uint16_t bsr2log10(int bsr) {
+  constexpr uint16_t data[] = {
+    1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  4,  5,  5,  5,
+    6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  9,  9,  9,  10, 10, 10,
+    10, 11, 11, 11, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 15, 15,
+    15, 16, 16, 16, 16, 17, 17, 17, 18, 18, 18, 19, 19, 19, 19, 20};
+  return data[bsr];
+}
+
 #ifndef FMT_EXPORTED
 FMT_EXTERN template struct basic_data<void>;
 #endif
@@ -809,7 +818,7 @@ struct data : basic_data<> {};
 // except for n == 0 in which case count_digits returns 1.
 inline int count_digits(uint64_t n) {
   // https://github.com/fmtlib/format-benchmark/blob/master/digits10
-  auto t = data::bsr2log10[FMT_BUILTIN_CLZLL(n | 1) ^ 63];
+  auto t = bsr2log10(FMT_BUILTIN_CLZLL(n | 1) ^ 63);
   return t - (n < data::zero_or_powers_of_10_64[t]);
 }
 #else
@@ -867,7 +876,7 @@ template <> int count_digits<4>(detail::fallback_uintptr n);
 #ifdef FMT_BUILTIN_CLZ
 // Optional version of count_digits for better performance on 32-bit platforms.
 inline int count_digits(uint32_t n) {
-  auto t = data::bsr2log10[FMT_BUILTIN_CLZ(n | 1) ^ 31];
+  auto t = bsr2log10(FMT_BUILTIN_CLZ(n | 1) ^ 31);
   return t - (n < data::zero_or_powers_of_10_32[t]);
 }
 #endif
