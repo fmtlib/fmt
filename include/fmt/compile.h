@@ -443,7 +443,8 @@ template <typename Char, typename T, int N> struct spec_field {
   OutputIt format(OutputIt out, const Args&... args) const {
     // This ensures that the argument type is convertile to `const T&`.
     const T& arg = get<N>(args...);
-    basic_format_context<OutputIt, Char> ctx(out, {});
+    const auto& vargs = make_format_args(args...);
+    basic_format_context<OutputIt, Char> ctx(out, vargs);
     return fmt.format(arg, ctx);
   }
 };
@@ -502,16 +503,17 @@ constexpr auto parse_tail(T head, S format_str) {
 template <typename T, typename Char> struct parse_specs_result {
   formatter<T, Char> fmt;
   size_t end;
+  int next_arg_id;
 };
 
 template <typename T, typename Char>
 constexpr parse_specs_result<T, Char> parse_specs(basic_string_view<Char> str,
-                                                  size_t pos) {
+                                                  size_t pos, int arg_id) {
   str.remove_prefix(pos);
-  auto ctx = basic_format_parse_context<Char>(str);
+  auto ctx = basic_format_parse_context<Char>(str, {}, arg_id + 1);
   auto f = formatter<T, Char>();
   auto end = f.parse(ctx);
-  return {f, pos + (end - str.data()) + 1};
+  return {f, pos + (end - str.data()) + 1, ctx.next_arg_id()};
 }
 
 // Compiles a non-empty format string and returns the compiled representation
@@ -531,8 +533,8 @@ constexpr auto compile_format_string(S format_str) {
                                                format_str);
     } else if constexpr (str[POS + 1] == ':') {
       using type = get_type<ID, Args>;
-      constexpr auto result = parse_specs<type>(str, POS + 2);
-      return parse_tail<Args, result.end, ID + 1>(
+      constexpr auto result = parse_specs<type>(str, POS + 2, ID);
+      return parse_tail<Args, result.end, result.next_arg_id>(
           spec_field<char_type, type, ID>{result.fmt}, format_str);
     } else {
       return unknown_format();

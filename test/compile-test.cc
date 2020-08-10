@@ -153,6 +153,11 @@ TEST(CompileTest, FormatSpecs) {
   EXPECT_EQ("42", fmt::format(FMT_COMPILE("{:x}"), 0x42));
 }
 
+TEST(CompileTest, DynamicWidth) {
+  EXPECT_EQ("  42foo  ",
+            fmt::format(FMT_COMPILE("{:{}}{:{}}"), 42, 4, "foo", 5));
+}
+
 TEST(CompileTest, FormatTo) {
   char buf[8];
   auto end = fmt::format_to(buf, FMT_COMPILE("{}"), 42);
