@@ -139,12 +139,13 @@ FMT_END_NAMESPACE
 #endif
 
 #ifndef FMT_USE_UDL_TEMPLATE
-// EDG frontend based compilers (icc, nvcc, etc) and GCC < 6.4 do not properly
-// support UDL templates and GCC >= 9 warns about them.
+// EDG frontend based compilers (icc, nvcc, PGI, etc) and GCC < 6.4 do not
+// properly support UDL templates and GCC >= 9 warns about them.
 #  if FMT_USE_USER_DEFINED_LITERALS &&                         \
       (!defined(__EDG_VERSION__) || __EDG_VERSION__ >= 501) && \
       ((FMT_GCC_VERSION >= 604 && __cplusplus >= 201402L) ||   \
-       FMT_CLANG_VERSION >= 304)
+       FMT_CLANG_VERSION >= 304) &&                            \
+      !defined(__PGI)
 #    define FMT_USE_UDL_TEMPLATE 1
 #  else
 #    define FMT_USE_UDL_TEMPLATE 0
