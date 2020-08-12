@@ -1610,7 +1610,8 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
     format_decimal(digits, abs_value, num_digits);
     basic_memory_buffer<Char> buffer;
     size += prefix_size;
-    buffer.resize(to_unsigned(size));
+    const auto usize = to_unsigned(size);
+    buffer.resize(usize);
     basic_string_view<Char> s(&sep, sep_size);
     // Index of a decimal digit with the least significant digit having index 0.
     int digit_index = 0;
@@ -1631,7 +1632,7 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
     }
     if (prefix_size != 0) p[-1] = static_cast<Char>('-');
     auto data = buffer.data();
-    out = write_padded<align::right>(out, specs, size, size, [=](iterator it) {
+    out = write_padded<align::right>(out, specs, usize, usize, [=](iterator it) {
       return copy_str<Char>(data, data + size, it);
     });
   }
