@@ -145,7 +145,7 @@ FMT_END_NAMESPACE
       (!defined(__EDG_VERSION__) || __EDG_VERSION__ >= 501) && \
       ((FMT_GCC_VERSION >= 604 && __cplusplus >= 201402L) ||   \
        FMT_CLANG_VERSION >= 304) &&                            \
-      !defined(__PGI)
+      !defined(__PGI) && !defined(__NVCC__)
 #    define FMT_USE_UDL_TEMPLATE 1
 #  else
 #    define FMT_USE_UDL_TEMPLATE 0
