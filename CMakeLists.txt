@@ -130,7 +130,7 @@ endif ()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -pedantic -Wconversion
-      -Wno-sign-conversion -Wdeprecated -Wweak-vtables)
+      -Wdeprecated -Wweak-vtables)
   check_cxx_compiler_flag(-Wzero-as-null-pointer-constant HAS_NULLPTR_WARNING)
   if (HAS_NULLPTR_WARNING)
     set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS}
