@@ -2703,17 +2703,17 @@ FMT_CONSTEXPR_DECL FMT_INLINE void parse_format_string(
     return;
   }
   struct writer {
-    FMT_CONSTEXPR void operator()(const Char* begin, const Char* end) {
-      if (begin == end) return;
+    FMT_CONSTEXPR void operator()(const Char* pbegin, const Char* pend) {
+      if (pbegin == pend) return;
       for (;;) {
         const Char* p = nullptr;
-        if (!find<IS_CONSTEXPR>(begin, end, '}', p))
-          return handler_.on_text(begin, end);
+        if (!find<IS_CONSTEXPR>(pbegin, pend, '}', p))
+          return handler_.on_text(pbegin, pend);
         ++p;
-        if (p == end || *p != '}')
+        if (p == pend || *p != '}')
           return handler_.on_error("unmatched '}' in format string");
-        handler_.on_text(begin, p);
-        begin = p + 1;
+        handler_.on_text(pbegin, p);
+        pbegin = p + 1;
       }
     }
     Handler& handler_;
