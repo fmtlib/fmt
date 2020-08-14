@@ -2227,9 +2227,9 @@ template <typename Handler> class specs_checker : public Handler {
   FMT_CONSTEXPR specs_checker(const specs_checker& other)
       : Handler(other), checker_(error_handler(), other.arg_type_) {}
 
-  FMT_CONSTEXPR void on_align(align_t align) {
-    if (align == align::numeric) checker_.require_numeric_argument();
-    Handler::on_align(align);
+  FMT_CONSTEXPR void on_align(align_t align_param) {
+    if (align_param == align::numeric) checker_.require_numeric_argument();
+    Handler::on_align(align_param);
   }
 
   FMT_CONSTEXPR void on_plus() {
