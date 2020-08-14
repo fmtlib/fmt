@@ -2474,6 +2474,7 @@ TEST(FormatTest, FormatUTF8Precision) {
   EXPECT_EQ(from_u8str(result), from_u8str(str.substr(0, 5)));
 }
 
+#ifdef __cpp_decltype_auto
 struct lazy_optional {
   bool engaged;
   std::string value;
@@ -2499,3 +2500,5 @@ TEST(FormatTest, BackInsertSlicing) {
   EXPECT_EQ(fmt::format("{}", lazy_optional{false, ""}), "None()");
   EXPECT_EQ(fmt::format("{}", lazy_optional{true, "X"}), "Some(X)");
 }
+#endif
+
