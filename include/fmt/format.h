@@ -566,12 +566,6 @@ void buffer<T>::append(const U* begin, const U* end) {
     begin += count;
   } while (begin != end);
 }
-
-template <typename OutputIt, typename T, typename Traits>
-void iterator_buffer<OutputIt, T, Traits>::flush() {
-  out_ = std::copy_n(data_, this->limit(this->size()), out_);
-  this->clear();
-}
 }  // namespace detail
 
 // The number of characters to store in the basic_memory_buffer object itself

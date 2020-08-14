@@ -8,6 +8,7 @@
 #ifndef FMT_CORE_H_
 #define FMT_CORE_H_
 
+#include <algorithm>
 #include <cstdio>  // std::FILE
 #include <cstring>
 #include <functional>
@@ -770,7 +771,10 @@ class iterator_buffer : public Traits, public buffer<T> {
   void grow(size_t) final FMT_OVERRIDE {
     if (this->size() == buffer_size) flush();
   }
-  void flush();
+  void flush() {
+    out_ = std::copy_n(data_, this->limit(this->size()), out_);
+    this->clear();
+  }
 
  public:
   explicit iterator_buffer(OutputIt out, size_t n = buffer_size)
