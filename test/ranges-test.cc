@@ -175,15 +175,17 @@ template <typename T> class non_const_only_range {
 };
 
 TEST(RangesTest, JoinRange) {
-  non_const_only_range<int> x(3, 0);
+  non_const_only_range<int> x(3u, 0);
   EXPECT_EQ("0,0,0", fmt::format("{}", fmt::join(x, ",")));
-  EXPECT_EQ("0,0,0",
-            fmt::format("{}", fmt::join(non_const_only_range<int>(3, 0), ",")));
+  EXPECT_EQ(
+      "0,0,0",
+      fmt::format("{}", fmt::join(non_const_only_range<int>(3u, 0), ",")));
 
-  std::vector<int> y(3, 0);
+  std::vector<int> y(3u, 0);
   EXPECT_EQ("0,0,0", fmt::format("{}", fmt::join(y, ",")));
-  EXPECT_EQ("0,0,0", fmt::format("{}", fmt::join(std::vector<int>(3, 0), ",")));
+  EXPECT_EQ("0,0,0",
+            fmt::format("{}", fmt::join(std::vector<int>(3u, 0), ",")));
 
-  const std::vector<int> z(3, 0);
+  const std::vector<int> z(3u, 0);
   EXPECT_EQ("0,0,0", fmt::format("{}", fmt::join(z, ",")));
 }
