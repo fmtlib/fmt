@@ -2473,3 +2473,29 @@ TEST(FormatTest, FormatUTF8Precision) {
   EXPECT_EQ(result.size(), 5);
   EXPECT_EQ(from_u8str(result), from_u8str(str.substr(0, 5)));
 }
+
+struct lazy_optional {
+  bool engaged;
+  std::string value;
+};
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<lazy_optional> : formatter<std::string_view> {
+  template <typename Context>
+  auto format(const lazy_optional& opt, Context& ctx) {
+    if (opt.engaged) {
+      auto out = format_to(ctx.out(), "Some(");
+      out = format_to(out, "{}", opt.value);
+      *out = ')';
+      return ++out;
+    } else {
+      return format_to(ctx.out(), "None()");
+    }
+  }
+};
+FMT_END_NAMESPACE
+
+TEST(FormatTest, BackInsertSlicing) {
+  EXPECT_EQ(fmt::format("{}", lazy_optional{false, ""}), "None()");
+  EXPECT_EQ(fmt::format("{}", lazy_optional{true, "X"}), "Some(X)");
+}

@@ -845,11 +845,23 @@ template <typename T = char> class counting_buffer : public buffer<T> {
 // It is used to reduce symbol sizes for the common case.
 template <typename T>
 class buffer_appender : public std::back_insert_iterator<buffer<T>> {
+  using base = std::back_insert_iterator<buffer<T>>;
  public:
   explicit buffer_appender(buffer<T>& buf)
-      : std::back_insert_iterator<buffer<T>>(buf) {}
-  buffer_appender(std::back_insert_iterator<buffer<T>> it)
-      : std::back_insert_iterator<buffer<T>>(it) {}
+      : base(buf) {}
+  buffer_appender(base it)
+      : base(it) {}
+
+  buffer_appender& operator++() {
+    base::operator++();
+    return *this;
+  }
+
+  buffer_appender operator++(int) {
+    buffer_appender tmp = *this;
+    ++*this;
+    return tmp;
+  }
 };
 
 // Maps an output iterator into a buffer.
