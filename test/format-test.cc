@@ -1828,14 +1828,18 @@ class mock_arg_formatter
   }
 
   template <typename T>
-  typename std::enable_if<fmt::detail::is_integral<T>::value, iterator>::type
+  typename std::enable_if<fmt::detail::is_integral<T>::value &&
+                              fmt::detail::is_signed<T>::value,
+                          iterator>::type
   operator()(T value) {
     call(value);
     return base::operator()(value);
   }
 
   template <typename T>
-  typename std::enable_if<!fmt::detail::is_integral<T>::value, iterator>::type
+  typename std::enable_if<!(fmt::detail::is_integral<T>::value &&
+                            fmt::detail::is_signed<T>::value),
+                          iterator>::type
   operator()(T value) {
     return base::operator()(value);
   }
