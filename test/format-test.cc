@@ -2481,7 +2481,12 @@ struct lazy_optional {
 };
 
 FMT_BEGIN_NAMESPACE
-template <> struct formatter<lazy_optional> : formatter<std::string_view> {
+template <> struct formatter<lazy_optional> {
+  template <typename ParseContext>
+  auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
+
   template <typename Context>
   auto format(const lazy_optional& opt, Context& ctx) {
     if (opt.engaged) {
