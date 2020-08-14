@@ -316,14 +316,14 @@ TEST(MemoryBufferTest, Grow) {
 }
 
 TEST(MemoryBufferTest, Allocator) {
-  typedef allocator_ref<mock_allocator<char>> TestAllocator;
-  basic_memory_buffer<char, 10, TestAllocator> buffer;
+  typedef allocator_ref<mock_allocator<char>> LocalTestAllocator;
+  basic_memory_buffer<char, 10, LocalTestAllocator> buffer;
   EXPECT_EQ(nullptr, buffer.get_allocator().get());
   StrictMock<mock_allocator<char>> alloc;
   char mem;
   {
-    basic_memory_buffer<char, 10, TestAllocator> buffer2(
-        (TestAllocator(&alloc)));
+    basic_memory_buffer<char, 10, LocalTestAllocator> buffer2(
+        (LocalTestAllocator(&alloc)));
     EXPECT_EQ(&alloc, buffer2.get_allocator().get());
     size_t size = 2 * fmt::inline_buffer_size;
     EXPECT_CALL(alloc, allocate(size)).WillOnce(Return(&mem));
@@ -333,9 +333,9 @@ TEST(MemoryBufferTest, Allocator) {
 }
 
 TEST(MemoryBufferTest, ExceptionInDeallocate) {
-  typedef allocator_ref<mock_allocator<char>> TestAllocator;
+  typedef allocator_ref<mock_allocator<char>> LocalTestAllocator;
   StrictMock<mock_allocator<char>> alloc;
-  basic_memory_buffer<char, 10, TestAllocator> buffer((TestAllocator(&alloc)));
+  basic_memory_buffer<char, 10, LocalTestAllocator> buffer((LocalTestAllocator(&alloc)));
   size_t size = 2 * fmt::inline_buffer_size;
   std::vector<char> mem(size);
   {
@@ -408,8 +408,8 @@ TEST(UtilTest, SystemError) {
   fmt::system_error error(0, "");
   try {
     throw fmt::system_error(EDOM, "test {}", "error");
-  } catch (const fmt::system_error& e) {
-    error = e;
+  } catch (const fmt::system_error& e_caught) {
+    error = e_caught;
   }
   fmt::memory_buffer message;
   fmt::format_system_error(message, EDOM, "test error");
