@@ -319,3 +319,7 @@ TEST(OStreamTest, CopyFmt) {
 TEST(OStreamTest, CompileTimeString) {
   EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), 42));
 }
+
+TEST(OStreamTest, ToString) {
+  EXPECT_EQ("ABC", fmt::to_string(fmt_test::ABC()));
+}
