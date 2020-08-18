@@ -1841,13 +1841,26 @@ OutputIt write(OutputIt out, const void* value) {
   return write_ptr<Char>(out, to_uintptr(value), nullptr);
 }
 
-template <typename Char, typename OutputIt, typename T>
+template <typename Char, typename OutputIt, typename T,
+          FMT_ENABLE_IF(
+              has_formatter<T, basic_format_context<OutputIt, Char>>::value)>
 auto write(OutputIt out, const T& value) -> typename std::enable_if<
     mapped_type_constant<T, basic_format_context<OutputIt, Char>>::value ==
         type::custom_type,
     OutputIt>::type {
   basic_format_context<OutputIt, Char> ctx(out, {}, {});
   return formatter<T>().format(value, ctx);
+}
+
+template <typename Char, typename OutputIt, typename T,
+          FMT_ENABLE_IF(has_fallback_formatter<
+                        T, basic_format_context<OutputIt, Char>>::value)>
+auto write(OutputIt out, const T& value) -> typename std::enable_if<
+    mapped_type_constant<T, basic_format_context<OutputIt, Char>>::value ==
+        type::custom_type,
+    OutputIt>::type {
+  basic_format_context<OutputIt, Char> ctx(out, {}, {});
+  return fallback_formatter<T>().format(value, ctx);
 }
 
 // An argument visitor that formats the argument and writes it via the output
