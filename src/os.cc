@@ -92,11 +92,11 @@ int detail::utf16_to_utf8::convert(wstring_view s) {
 
   int length = WideCharToMultiByte(CP_UTF8, 0, s.data(), s_size, nullptr, 0,
                                    nullptr, nullptr);
-  if (length == 0) return GetLastError();
-  buffer_.resize(length + 1);
+  if (length == 0) return static_cast<int>(GetLastError());
+  buffer_.resize(static_cast<size_t>(length + 1));
   length = WideCharToMultiByte(CP_UTF8, 0, s.data(), s_size, &buffer_[0],
                                length, nullptr, nullptr);
-  if (length == 0) return GetLastError();
+  if (length == 0) return static_cast<int>(GetLastError());
   buffer_[length] = 0;
   return 0;
 }
@@ -117,10 +117,10 @@ void detail::format_windows_error(detail::buffer<char>& out, int error_code,
     buf.resize(inline_buffer_size);
     for (;;) {
       wchar_t* system_message = &buf[0];
-      int result = FormatMessageW(
+      int result = static_cast<int>(FormatMessageW(
           FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr,
-          error_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), system_message,
-          static_cast<uint32_t>(buf.size()), nullptr);
+          static_cast<DWORD>(error_code), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), system_message,
+          static_cast<uint32_t>(buf.size()), nullptr));
       if (result != 0) {
         utf16_to_utf8 utf8_message;
         if (utf8_message.convert(system_message) == ERROR_SUCCESS) {
@@ -212,10 +212,10 @@ long long file::size() const {
   if (size_lower == INVALID_FILE_SIZE) {
     DWORD error = GetLastError();
     if (error != NO_ERROR)
-      FMT_THROW(windows_error(GetLastError(), "cannot get file size"));
+      FMT_THROW(windows_error(static_cast<int>(GetLastError()), "cannot get file size"));
   }
   unsigned long long long_size = size_upper;
-  return (long_size << sizeof(DWORD) * CHAR_BIT) | size_lower;
+  return static_cast<long long int>((long_size << sizeof(DWORD) * CHAR_BIT) | size_lower);
 #  else
   using Stat = struct stat;
   Stat file_stat = Stat();
@@ -306,7 +306,7 @@ long getpagesize() {
 #  ifdef _WIN32
   SYSTEM_INFO si;
   GetSystemInfo(&si);
-  return si.dwPageSize;
+  return static_cast<long int>(si.dwPageSize);
 #  else
   long size = FMT_POSIX_CALL(sysconf(_SC_PAGESIZE));
   if (size < 0) FMT_THROW(system_error(errno, "cannot get memory page size"));
