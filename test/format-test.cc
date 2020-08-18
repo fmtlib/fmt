@@ -2474,36 +2474,27 @@ TEST(FormatTest, FormatUTF8Precision) {
   EXPECT_EQ(from_u8str(result), from_u8str(str.substr(0, 5)));
 }
 
-#ifdef __cpp_decltype_auto
-struct lazy_optional {
-  bool engaged;
-  std::string value;
-};
+struct check_back_appender {};
 
 FMT_BEGIN_NAMESPACE
-template <> struct formatter<lazy_optional> {
+template <> struct formatter<check_back_appender> {
   template <typename ParseContext>
   auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
     return ctx.begin();
   }
 
   template <typename Context>
-  auto format(const lazy_optional& opt, Context& ctx) {
-    if (opt.engaged) {
-      auto out = format_to(ctx.out(), "Some(");
-      out = format_to(out, "{}", opt.value);
-      *out = ')';
-      return ++out;
-    } else {
-      return format_to(ctx.out(), "None()");
-    }
+  auto format(check_back_appender, Context& ctx) -> decltype(ctx.out()) {
+    // needs to satisfy weakly_incrementable
+    auto out = ctx.out();
+    static_assert(std::is_same<decltype(++out), decltype(out)&>::value);
+    *out = 'y';
+    return ++out;
   }
 };
 FMT_END_NAMESPACE
 
 TEST(FormatTest, BackInsertSlicing) {
-  EXPECT_EQ(fmt::format("{}", lazy_optional{false, ""}), "None()");
-  EXPECT_EQ(fmt::format("{}", lazy_optional{true, "X"}), "Some(X)");
+  EXPECT_EQ(fmt::format("{}", check_back_appender{}), "y");
 }
-#endif
 
