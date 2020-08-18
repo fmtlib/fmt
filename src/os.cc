@@ -72,6 +72,8 @@ inline std::size_t convert_rwcount(std::size_t count) { return count; }
 
 FMT_BEGIN_NAMESPACE
 
+inline int get_windows_error() { return static_cast<int>(GetLastError()); }
+
 #ifdef _WIN32
 detail::utf16_to_utf8::utf16_to_utf8(wstring_view s) {
   if (int error_code = convert(s)) {
@@ -92,11 +94,11 @@ int detail::utf16_to_utf8::convert(wstring_view s) {
 
   int length = WideCharToMultiByte(CP_UTF8, 0, s.data(), s_size, nullptr, 0,
                                    nullptr, nullptr);
-  if (length == 0) return static_cast<int>(GetLastError());
+  if (length == 0) return get_windows_error();
   buffer_.resize(static_cast<size_t>(length + 1));
   length = WideCharToMultiByte(CP_UTF8, 0, s.data(), s_size, &buffer_[0],
                                length, nullptr, nullptr);
-  if (length == 0) return static_cast<int>(GetLastError());
+  if (length == 0) return get_windows_error();
   buffer_[length] = 0;
   return 0;
 }
@@ -119,12 +121,14 @@ void detail::format_windows_error(detail::buffer<char>& out, int error_code,
       wchar_t* system_message = &buf[0];
       int result = static_cast<int>(FormatMessageW(
           FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr,
-          static_cast<DWORD>(error_code), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), system_message,
+          static_cast<DWORD>(error_code),
+          MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), system_message,
           static_cast<uint32_t>(buf.size()), nullptr));
       if (result != 0) {
         utf16_to_utf8 utf8_message;
         if (utf8_message.convert(system_message) == ERROR_SUCCESS) {
-          format_to(buffer_appender<char>(out), "{}: {}", message, utf8_message);
+          format_to(buffer_appender<char>(out), "{}: {}", message,
+                    utf8_message);
           return;
         }
         break;
@@ -212,10 +216,11 @@ long long file::size() const {
   if (size_lower == INVALID_FILE_SIZE) {
     DWORD error = GetLastError();
     if (error != NO_ERROR)
-      FMT_THROW(windows_error(static_cast<int>(GetLastError()), "cannot get file size"));
+      FMT_THROW(windows_error(get_windows_error(), "cannot get file size"));
   }
   unsigned long long long_size = size_upper;
-  return static_cast<long long int>((long_size << sizeof(DWORD) * CHAR_BIT) | size_lower);
+  return static_cast<long long>((long_size << sizeof(DWORD) * CHAR_BIT) |
+                                size_lower);
 #  else
   using Stat = struct stat;
   Stat file_stat = Stat();
@@ -288,12 +293,12 @@ void file::pipe(file& read_end, file& write_end) {
 }
 
 buffered_file file::fdopen(const char* mode) {
-  // Don't retry as fdopen doesn't return EINTR.
-  #if defined(__MINGW32__) && defined(_POSIX_)
+// Don't retry as fdopen doesn't return EINTR.
+#  if defined(__MINGW32__) && defined(_POSIX_)
   FILE* f = ::fdopen(fd_, mode);
-  #else
+#  else
   FILE* f = FMT_POSIX_CALL(fdopen(fd_, mode));
-  #endif
+#  endif
   if (!f)
     FMT_THROW(
         system_error(errno, "cannot associate stream with file descriptor"));
@@ -306,7 +311,7 @@ long getpagesize() {
 #  ifdef _WIN32
   SYSTEM_INFO si;
   GetSystemInfo(&si);
-  return static_cast<long int>(si.dwPageSize);
+  return static_cast<long>(si.dwPageSize);
 #  else
   long size = FMT_POSIX_CALL(sysconf(_SC_PAGESIZE));
   if (size < 0) FMT_THROW(system_error(errno, "cannot get memory page size"));

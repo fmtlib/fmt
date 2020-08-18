@@ -669,7 +669,7 @@ template <typename T> class buffer {
         size_(sz),
         capacity_(cap) {}
 
-  virtual ~buffer() = default;
+  ~buffer() = default;
 
   /** Sets the buffer data and capacity. */
   void set(T* buf_data, size_t buf_capacity) FMT_NOEXCEPT {
