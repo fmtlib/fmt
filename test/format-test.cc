@@ -2477,3 +2477,27 @@ TEST(FormatTest, FormatUTF8Precision) {
   EXPECT_EQ(result.size(), 5);
   EXPECT_EQ(from_u8str(result), from_u8str(str.substr(0, 5)));
 }
+
+struct check_back_appender {};
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<check_back_appender> {
+  template <typename ParseContext>
+  auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
+
+  template <typename Context>
+  auto format(check_back_appender, Context& ctx) -> decltype(ctx.out()) {
+    auto out = ctx.out();
+    static_assert(std::is_same<decltype(++out), decltype(out)&>::value,
+                  "needs to satisfy weakly_incrementable");
+    *out = 'y';
+    return ++out;
+  }
+};
+FMT_END_NAMESPACE
+
+TEST(FormatTest, BackInsertSlicing) {
+  EXPECT_EQ(fmt::format("{}", check_back_appender{}), "y");
+}
