@@ -2485,9 +2485,9 @@ template <> struct formatter<check_back_appender> {
 
   template <typename Context>
   auto format(check_back_appender, Context& ctx) -> decltype(ctx.out()) {
-    // needs to satisfy weakly_incrementable
     auto out = ctx.out();
-    static_assert(std::is_same<decltype(++out), decltype(out)&>::value);
+    static_assert(std::is_same<decltype(++out), decltype(out)&>::value,
+                  "needs to satisfy weakly_incrementable");
     *out = 'y';
     return ++out;
   }
@@ -2497,4 +2497,3 @@ FMT_END_NAMESPACE
 TEST(FormatTest, BackInsertSlicing) {
   EXPECT_EQ(fmt::format("{}", check_back_appender{}), "y");
 }
-
