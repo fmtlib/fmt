@@ -1842,25 +1842,17 @@ OutputIt write(OutputIt out, const void* value) {
 }
 
 template <typename Char, typename OutputIt, typename T,
-          FMT_ENABLE_IF(
-              has_formatter<T, basic_format_context<OutputIt, Char>>::value)>
-auto write(OutputIt out, const T& value) -> typename std::enable_if<
-    mapped_type_constant<T, basic_format_context<OutputIt, Char>>::value ==
-        type::custom_type,
-    OutputIt>::type {
-  basic_format_context<OutputIt, Char> ctx(out, {}, {});
-  return formatter<T>().format(value, ctx);
-}
-
-template <typename Char, typename OutputIt, typename T,
-          FMT_ENABLE_IF(has_fallback_formatter<
-                        T, basic_format_context<OutputIt, Char>>::value)>
-auto write(OutputIt out, const T& value) -> typename std::enable_if<
-    mapped_type_constant<T, basic_format_context<OutputIt, Char>>::value ==
-        type::custom_type,
-    OutputIt>::type {
-  basic_format_context<OutputIt, Char> ctx(out, {}, {});
-  return fallback_formatter<T>().format(value, ctx);
+          typename Context = basic_format_context<OutputIt, Char>>
+auto write(OutputIt out, const T& value) ->
+    typename std::enable_if<mapped_type_constant<T, Context>::value ==
+                                type::custom_type,
+                            OutputIt>::type {
+  using formatter_type =
+      conditional_t<has_formatter<T, Context>::value,
+                    typename Context::template formatter_type<T>,
+                    fallback_formatter<T, Char>>;
+  Context ctx(out, {}, {});
+  return formatter_type().format(value, ctx);
 }
 
 // An argument visitor that formats the argument and writes it via the output
