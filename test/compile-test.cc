@@ -23,7 +23,6 @@
 #endif
 
 #include "fmt/compile.h"
-#include "fmt/ostream.h"
 #include "gmock.h"
 #include "gtest-extra.h"
 #include "mock-allocator.h"
@@ -170,15 +169,4 @@ TEST(CompileTest, TextAndArg) {
   EXPECT_EQ(">>>42<<<", fmt::format(FMT_COMPILE(">>>{}<<<"), 42));
   EXPECT_EQ("42!", fmt::format(FMT_COMPILE("{}!"), 42));
 }
-
-struct ostream_operator_test {};
-
-std::ostream& operator<<(std::ostream& os, ostream_operator_test) {
-  return os << "42";
-}
-
-TEST(CompileTest, WithOstreamOperator) {
-  EXPECT_EQ("42", fmt::format(FMT_COMPILE("{}"), ostream_operator_test()));
-}
-
 #endif
