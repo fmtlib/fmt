@@ -124,7 +124,8 @@ void detail::format_windows_error(detail::buffer<char>& out, int error_code,
       if (result != 0) {
         utf16_to_utf8 utf8_message;
         if (utf8_message.convert(system_message) == ERROR_SUCCESS) {
-          format_to(buffer_appender<char>(out), "{}: {}", message, utf8_message);
+          format_to(buffer_appender<char>(out), "{}: {}", message,
+                    utf8_message);
           return;
         }
         break;
@@ -288,12 +289,12 @@ void file::pipe(file& read_end, file& write_end) {
 }
 
 buffered_file file::fdopen(const char* mode) {
-  // Don't retry as fdopen doesn't return EINTR.
-  #if defined(__MINGW32__) && defined(_POSIX_)
+// Don't retry as fdopen doesn't return EINTR.
+#  if defined(__MINGW32__) && defined(_POSIX_)
   FILE* f = ::fdopen(fd_, mode);
-  #else
+#  else
   FILE* f = FMT_POSIX_CALL(fdopen(fd_, mode));
-  #endif
+#  endif
   if (!f)
     FMT_THROW(
         system_error(errno, "cannot associate stream with file descriptor"));
