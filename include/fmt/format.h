@@ -1841,17 +1841,17 @@ OutputIt write(OutputIt out, const void* value) {
   return write_ptr<Char>(out, to_uintptr(value), nullptr);
 }
 
-template <typename Char, typename OutputIt, typename T,
-          typename Context = basic_format_context<OutputIt, Char>>
-auto write(OutputIt out, const T& value) ->
-    typename std::enable_if<mapped_type_constant<T, Context>::value ==
-                                type::custom_type,
-                            OutputIt>::type {
+template <typename Char, typename OutputIt, typename T>
+auto write(OutputIt out, const T& value) -> typename std::enable_if<
+    mapped_type_constant<T, basic_format_context<OutputIt, Char>>::value ==
+        type::custom_type,
+    OutputIt>::type {
+  using context_type = basic_format_context<OutputIt, Char>;
   using formatter_type =
-      conditional_t<has_formatter<T, Context>::value,
-                    typename Context::template formatter_type<T>,
+      conditional_t<has_formatter<T, context_type>::value,
+                    typename context_type::template formatter_type<T>,
                     fallback_formatter<T, Char>>;
-  Context ctx(out, {}, {});
+  context_type ctx(out, {}, {});
   return formatter_type().format(value, ctx);
 }
 
