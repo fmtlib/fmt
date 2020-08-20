@@ -1847,8 +1847,13 @@ auto write(OutputIt out, const T& value) -> typename std::enable_if<
     mapped_type_constant<T, basic_format_context<OutputIt, Char>>::value ==
         type::custom_type,
     OutputIt>::type {
-  basic_format_context<OutputIt, Char> ctx(out, {}, {});
-  return formatter<T>().format(value, ctx);
+  using context_type = basic_format_context<OutputIt, Char>;
+  using formatter_type =
+      conditional_t<has_formatter<T, context_type>::value,
+                    typename context_type::template formatter_type<T>,
+                    fallback_formatter<T, Char>>;
+  context_type ctx(out, {}, {});
+  return formatter_type().format(value, ctx);
 }
 
 // An argument visitor that formats the argument and writes it via the output
