@@ -3347,9 +3347,15 @@ typename Context::iterator vformat_to(
   return h.context.out();
 }
 
-// Casts ``p`` to ``const void*`` for pointer formatting.
-// Example:
-//   auto s = format("{}", ptr(p));
+/**
+  \rst
+  Converts ``p`` to ``const void*`` for pointer formatting.
+
+  **Example**::
+
+    auto s = fmt::format("{}", fmt::ptr(p));
+  \endrst
+ */
 template <typename T> inline const void* ptr(const T* p) { return p; }
 template <typename T> inline const void* ptr(const std::unique_ptr<T>& p) {
   return p.get();

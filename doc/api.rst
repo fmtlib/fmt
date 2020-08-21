@@ -304,6 +304,10 @@ Utilities
 
 .. doxygentypedef:: fmt::char_t
 
+.. doxygenfunction:: fmt::ptr(const T *)
+.. doxygenfunction:: fmt::ptr(const std::unique_ptr<T>&)
+.. doxygenfunction:: fmt::ptr(const std::shared_ptr<T>&)
+
 .. doxygenfunction:: fmt::to_string(const T&)
 
 .. doxygenfunction:: fmt::to_wstring(const T&)
