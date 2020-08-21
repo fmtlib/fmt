@@ -37,7 +37,6 @@
 #include <cerrno>
 #include <cmath>
 #include <cstdint>
-#include <cstring>
 #include <limits>
 #include <memory>
 #include <stdexcept>

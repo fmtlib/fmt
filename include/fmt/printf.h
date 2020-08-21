@@ -9,9 +9,7 @@
 #define FMT_PRINTF_H_
 
 #include <algorithm>  // std::max
-#include <cstdint>
 #include <limits>     // std::numeric_limits
-#include <string>
 
 #include "ostream.h"
 
