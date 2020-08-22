@@ -121,7 +121,7 @@ template <class charT> struct formatter<std::complex<double>, charT> {
     detail::specs_checker<handler_type> handler(handler_type(specs_, ctx),
                                                 detail::type::string_type);
     auto it = parse_format_specs(ctx.begin(), ctx.end(), handler);
-    detail::check_string_type_spec(specs_.type, ctx.error_handler());
+    detail::parse_float_type_spec(specs_, ctx.error_handler());
     return it;
   }
 
@@ -131,11 +131,17 @@ template <class charT> struct formatter<std::complex<double>, charT> {
     detail::handle_dynamic_spec<detail::precision_checker>(
         specs_.precision, specs_.precision_ref, ctx);
     auto format_specs = std::string();
+    if (specs_.precision > 0)
+      format_specs = fmt::format(".{}", specs_.precision);
+    if (specs_.type)
+      format_specs += specs_.type;
     auto real = fmt::format(ctx.locale().template get<std::locale>(),
                             "{:" + format_specs + "}", c.real());
     auto imag = fmt::format(ctx.locale().template get<std::locale>(),
                             "{:" + format_specs + "}", c.imag());
     auto fill_align_width = std::string();
+    if (specs_.width > 0)
+      fill_align_width = fmt::format(">{}", specs_.width);
     return format_to(
         ctx.out(), "{:" + fill_align_width + "}",
         fmt::format(c.real() != 0 ? "({0}+{1}i)" : "{1}i", real, imag));
@@ -147,6 +153,8 @@ TEST(FormatTest, Complex) {
   std::string s = fmt::format("{}", std::complex<double>(1, 2));
   // We might want to drop trailing zeros for consistency with to_chars.
   EXPECT_EQ(s, "(1.0+2.0i)");
+  EXPECT_EQ(fmt::format("{:.2f}", std::complex<double>(1, 2)), "(1.00+2.00i)");
+  EXPECT_EQ(fmt::format("{:12}", std::complex<double>(1, 2)), "  (1.0+2.0i)");
 }
 
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR
