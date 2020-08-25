@@ -95,8 +95,14 @@ TEST(TimeTest, GMTime) {
   EXPECT_TRUE(EqualTime(tm, fmt::gmtime(t)));
 }
 
+#ifdef WIN32
+#  define ENV(key, val) _putenv_s(key, val)
+#else
+#  define ENV(key, val) setenv(key, val, 1)
+#endif
+
 TEST(TimeTest, TimePoint) {
-  setenv("TZ", "EST+5", 1);
+  ENV("TZ", "EST+5");
   tzset();
   std::chrono::system_clock::time_point point(std::chrono::seconds(1598412345));
   EXPECT_EQ("It is 2020-08-25 22:25:45.",
@@ -104,7 +110,7 @@ TEST(TimeTest, TimePoint) {
 }
 
 TEST(TimeTest, LocalTimeWithTimePoint) {
-  setenv("TZ", "EST+5", 1);
+  ENV("TZ", "EST+5");
   tzset();
   std::chrono::system_clock::time_point point(std::chrono::seconds(1598412345));
   EXPECT_EQ("It is 2020-08-25 22:25:45.",
