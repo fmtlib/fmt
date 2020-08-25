@@ -95,6 +95,28 @@ TEST(TimeTest, GMTime) {
   EXPECT_TRUE(EqualTime(tm, fmt::gmtime(t)));
 }
 
+TEST(TimeTest, TimePoint) {
+  setenv("TZ", "EST+5", 1);
+  tzset();
+  std::chrono::system_clock::time_point point(std::chrono::seconds(1598412345));
+  EXPECT_EQ("It is 2020-08-25 22:25:45.",
+            fmt::format("It is {:%Y-%m-%d %H:%M:%S}.", point));
+}
+
+TEST(TimeTest, LocalTimeWithTimePoint) {
+  setenv("TZ", "EST+5", 1);
+  tzset();
+  std::chrono::system_clock::time_point point(std::chrono::seconds(1598412345));
+  EXPECT_EQ("It is 2020-08-25 22:25:45.",
+            fmt::format("It is {:%Y-%m-%d %H:%M:%S}.", fmt::localtime(point)));
+}
+
+TEST(TimeTest, GMTimeWithTimePoint) {
+  std::chrono::system_clock::time_point point(std::chrono::seconds(1598412345));
+  EXPECT_EQ("It is 2020-08-26 03:25:45 UTC.",
+            fmt::format("It is {:%Y-%m-%d %H:%M:%S} UTC.", fmt::gmtime(point)));
+}
+
 #define EXPECT_TIME(spec, time, duration)                 \
   {                                                       \
     std::locale loc("ja_JP.utf8");                        \
