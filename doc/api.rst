@@ -48,8 +48,8 @@ participate in an overload resolution if the latter is not a string.
 .. doxygenfunction:: format(const S&, Args&&...)
 .. doxygenfunction:: vformat(const S&, basic_format_args<buffer_context<type_identity_t<Char>>>)
 
-.. doxygenfunction:: fmt::format_to(OutputIt, string_view, Args&&...)
-.. doxygenfunction:: fmt::format_to_n(OutputIt, size_t, string_view, Args&&...)
+.. doxygenfunction:: fmt::format_to(OutputIt, const S&, Args&&...)
+.. doxygenfunction:: fmt::format_to_n(OutputIt, size_t, const S&, const Args&...)
 .. doxygenfunction:: fmt::formatted_size(string_view, Args&&...)
 
 .. _print:
@@ -314,7 +314,7 @@ Utilities
 
 .. doxygenfunction:: fmt::to_string_view(const Char *)
 
-.. doxygenfunction:: fmt::join(const Range&, string_view)
+.. doxygenfunction:: fmt::join(Range&&, string_view)
 
 .. doxygenfunction:: fmt::join(It, Sentinel, string_view)
 
@@ -440,8 +440,6 @@ Terminal color and text style
 =============================
 
 ``fmt/color.h`` provides support for terminal color and text style output.
-
-.. doxygenenum:: fmt::color
 
 .. doxygenfunction:: print(const text_style&, const S&, const Args&...)
 
