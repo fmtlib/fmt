@@ -325,6 +325,11 @@ inline std::tm localtime(std::time_t time) {
   return lt.tm_;
 }
 
+inline std::tm localtime(
+    std::chrono::time_point<std::chrono::system_clock> time_point) {
+  return localtime(std::chrono::system_clock::to_time_t(time_point));
+}
+
 // Thread-safe replacement for std::gmtime
 inline std::tm gmtime(std::time_t time) {
   struct dispatcher {
@@ -361,6 +366,11 @@ inline std::tm gmtime(std::time_t time) {
   return gt.tm_;
 }
 
+inline std::tm gmtime(
+    std::chrono::time_point<std::chrono::system_clock> time_point) {
+  return gmtime(std::chrono::system_clock::to_time_t(time_point));
+}
+
 namespace detail {
 inline size_t strftime(char* str, size_t count, const char* format,
                        const std::tm* time) {
@@ -372,6 +382,17 @@ inline size_t strftime(wchar_t* str, size_t count, const wchar_t* format,
   return std::wcsftime(str, count, format, time);
 }
 }  // namespace detail
+
+template <typename Char>
+struct formatter<std::chrono::time_point<std::chrono::system_clock>, Char>
+    : formatter<std::tm, Char> {
+  template <typename FormatContext>
+  auto format(std::chrono::time_point<std::chrono::system_clock> val,
+              FormatContext& ctx) -> decltype(ctx.out()) {
+    std::tm time = localtime(val);
+    return formatter<std::tm, Char>::format(time, ctx);
+  }
+};
 
 template <typename Char> struct formatter<std::tm, Char> {
   template <typename ParseContext>
