@@ -83,6 +83,49 @@ Setting up your target to use a header-only version of ``fmt`` is equally easy::
 
    target_link_libraries(<your-target> PRIVATE fmt::fmt-header-only)
 
+Usage with build2
+=================
+
+You can use `build2 <https://build2.org>`_, a dependency manager and a
+build-system combined, to use ``fmt``.
+
+Currently this package is available in these package repositories:
+
+- **https://cppget.org/fmt/** for released and published versions.
+- `The git repository with the sources of the build2 package of fmt <https://github.com/build2-packaging/fmt.git>`_
+  for unreleased or custom revisions of ``fmt``.
+
+**Usage:**
+
+- ``build2`` package name: ``fmt``
+- Library target name : ``lib{fmt}``
+
+For example, to make your ``build2`` project depend on ``fmt``:
+
+- Add one of the repositories to your configurations, or in your
+  ``repositories.manifest``, if not already there::
+
+    :
+    role: prerequisite
+    location: https://pkg.cppget.org/1/stable
+
+- Add this package as a dependency to your ``./manifest`` file
+  (example for ``v7.0.x``)::
+
+    depends: fmt ~7.0.0
+
+- Import the target and use it as a prerequisite to your own target
+  using `fmt` in the appropriate ``buildfile``::
+
+    import fmt = fmt%lib{fmt}
+    lib{mylib} : cxx{**} ... $fmt
+
+Then build your project as usual with `b` or `bdep update`.
+
+For ``build2`` newcomers or to get more details and use cases, you can read the
+``build2``
+`toolchain introduction <https://build2.org/build2-toolchain/doc/build2-toolchain-intro.xhtml>`_.
+
 Building the Documentation
 ==========================
 
