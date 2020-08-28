@@ -95,32 +95,15 @@ TEST(TimeTest, GMTime) {
   EXPECT_TRUE(EqualTime(tm, fmt::gmtime(t)));
 }
 
-#ifdef WIN32
-#  define ENV(key, val) _putenv_s(key, val)
-#else
-#  define ENV(key, val) setenv(key, val, 1)
-#endif
-
 TEST(TimeTest, TimePoint) {
-  ENV("TZ", "EST+5");
-  tzset();
-  std::chrono::system_clock::time_point point(std::chrono::seconds(1598412345));
-  EXPECT_EQ("It is 2020-08-25 22:25:45.",
-            fmt::format("It is {:%Y-%m-%d %H:%M:%S}.", point));
-}
+  std::chrono::system_clock::time_point point = std::chrono::system_clock::now();
 
-TEST(TimeTest, LocalTimeWithTimePoint) {
-  ENV("TZ", "EST+5");
-  tzset();
-  std::chrono::system_clock::time_point point(std::chrono::seconds(1598412345));
-  EXPECT_EQ("It is 2020-08-25 22:25:45.",
-            fmt::format("It is {:%Y-%m-%d %H:%M:%S}.", fmt::localtime(point)));
-}
+  std::time_t t = std::chrono::system_clock::to_time_t(point);
+  std::tm tm = *std::localtime(&t);
+  char strftime_output[256];
+  std::strftime(strftime_output, sizeof(strftime_output), "It is %Y-%m-%d %H:%M:%S", &tm);
 
-TEST(TimeTest, GMTimeWithTimePoint) {
-  std::chrono::system_clock::time_point point(std::chrono::seconds(1598412345));
-  EXPECT_EQ("It is 2020-08-26 03:25:45 UTC.",
-            fmt::format("It is {:%Y-%m-%d %H:%M:%S} UTC.", fmt::gmtime(point)));
+  EXPECT_EQ(strftime_output, fmt::format("It is {:%Y-%m-%d %H:%M:%S}", point));
 }
 
 #define EXPECT_TIME(spec, time, duration)                 \
