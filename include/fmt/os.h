@@ -395,6 +395,7 @@ class ostream : private detail::buffer<char> {
 
  public:
   ostream(ostream&& other) : file_(std::move(other.file_)) {
+    set(other.data(), other.capacity());
     other.set(nullptr, 0);
   }
   ~ostream() {
