@@ -29,7 +29,8 @@
 #if FMT_HAS_INCLUDE("winapifamily.h")
 #  include <winapifamily.h>
 #endif
-#if (FMT_HAS_INCLUDE(<fcntl.h>) || defined(__APPLE__)) && \
+#if (FMT_HAS_INCLUDE(<fcntl.h>) || defined(__APPLE__) || \
+     defined(__linux__)) &&                              \
     (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP))
 #  include <fcntl.h>  // for O_RDONLY
 #  define FMT_USE_FCNTL 1
