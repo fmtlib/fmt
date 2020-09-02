@@ -231,6 +231,7 @@
     (defined(_MSVC_LANG) && _MSVC_LANG > 201402L && _MSC_VER >= 1910)
 #  include <string_view>
 #  define FMT_USE_STRING_VIEW
+// libstdc++ supports experimental/string_view in c++14
 #elif FMT_HAS_INCLUDE("experimental/string_view") && __cplusplus >= 201402L
 #  include <experimental/string_view>
 #  define FMT_USE_EXPERIMENTAL_STRING_VIEW
@@ -846,11 +847,10 @@ template <typename T = char> class counting_buffer : public buffer<T> {
 template <typename T>
 class buffer_appender : public std::back_insert_iterator<buffer<T>> {
   using base = std::back_insert_iterator<buffer<T>>;
+
  public:
-  explicit buffer_appender(buffer<T>& buf)
-      : base(buf) {}
-  buffer_appender(base it)
-      : base(it) {}
+  explicit buffer_appender(buffer<T>& buf) : base(buf) {}
+  buffer_appender(base it) : base(it) {}
 
   buffer_appender& operator++() {
     base::operator++();
