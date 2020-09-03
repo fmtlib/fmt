@@ -23,18 +23,14 @@
 #endif
 
 #ifdef _WIN32
-#  if !defined(NOMINMAX) && !defined(WIN32_LEAN_AND_MEAN)
+#  ifdef FMT_BIG_WIN
+#    include <windows.h>
+#  else
 #    define NOMINMAX
 #    define WIN32_LEAN_AND_MEAN
 #    include <windows.h>
 #    undef WIN32_LEAN_AND_MEAN
 #    undef NOMINMAX
-#  elif defined(NOMINMAX) && !defined(WIN32_LEAN_AND_MEAN) 
-#    define WIN32_LEAN_AND_MEAN 
-#    include <windows.h> 
-#    undef WIN32_LEAN_AND_MEAN 
-#  else
-#    include <windows.h>
 #  endif
 #  include <io.h>
 #endif
