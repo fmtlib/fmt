@@ -211,7 +211,9 @@ endif ()
 
 target_compile_features(fmt INTERFACE ${FMT_REQUIRED_FEATURES})
 
-target_include_directories(fmt PUBLIC
+target_include_directories(fmt PRIVATE ${PROJECT_SOURCE_DIR}/include)
+
+target_include_directories(fmt SYSTEM INTERFACE
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${FMT_INC_DIR}>)
 
@@ -246,7 +248,7 @@ add_library(fmt::fmt-header-only ALIAS fmt-header-only)
 target_compile_definitions(fmt-header-only INTERFACE FMT_HEADER_ONLY=1)
 target_compile_features(fmt-header-only INTERFACE ${FMT_REQUIRED_FEATURES})
 
-target_include_directories(fmt-header-only INTERFACE
+target_include_directories(fmt-header-only SYSTEM INTERFACE
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${FMT_INC_DIR}>)
 
