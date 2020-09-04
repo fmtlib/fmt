@@ -1097,7 +1097,10 @@ template <typename Context> class value {
                                 Context& ctx) {
     Formatter f;
     parse_ctx.advance_to(f.parse(parse_ctx));
-    ctx.advance_to(f.format(*static_cast<const T*>(arg), ctx));
+    // We cast away any constness in order to print filtered views (ranges)
+    // which cannot be const
+    // This is a private method and we know that won't modify the object
+    ctx.advance_to(f.format(*const_cast<T*>(static_cast<const T*>(arg)), ctx));
   }
 };
 

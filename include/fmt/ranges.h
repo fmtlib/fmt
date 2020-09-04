@@ -257,7 +257,7 @@ struct formatter<RangeT, Char,
   }
 
   template <typename FormatContext>
-  typename FormatContext::iterator format(const RangeT& values,
+  typename FormatContext::iterator format(RangeT& values,
                                           FormatContext& ctx) {
     auto out = detail::copy(formatting.prefix, ctx.out());
     size_t i = 0;
