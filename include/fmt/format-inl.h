@@ -23,7 +23,7 @@
 #endif
 
 #ifdef _WIN32
-#  if defined(FMT_BIG_WIN) || defined(__MINGW32__) || defined(__MINGW64__)
+#  if defined(FMT_BIG_WIN) || defined(NOMINMAX)
 #    include <windows.h>
 #  else
 #    define NOMINMAX
