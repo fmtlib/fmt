@@ -90,7 +90,7 @@ TEST(ColorsTest, Format) {
 }
 
 TEST(ColorsTest, FormatToOutAcceptsTextStyle) {
-  fmt::text_style const ts = fg(fmt::rgb(255, 20, 30));
+  fmt::text_style ts = fg(fmt::rgb(255, 20, 30));
   std::string out;
   fmt::format_to(std::back_inserter(out), ts, "rgb(255,20,30){}{}{}", 1, 2, 3);
 
