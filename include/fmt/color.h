@@ -563,7 +563,8 @@ inline std::basic_string<Char> format(const text_style& ts, const S& format_str,
                  fmt::make_args_checked<Args...>(format_str, args...));
 }
 
-/** Formats a string with the given text_style and writes the output to ``out``.
+/**
+  Formats a string with the given text_style and writes the output to ``out``.
  */
 template <typename OutputIt, typename Char,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt>::value)>
