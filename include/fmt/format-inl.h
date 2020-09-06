@@ -23,7 +23,7 @@
 #endif
 
 #ifdef _WIN32
-#  ifdef FMT_BIG_WIN
+#  if defined(FMT_BIG_WIN) || defined(NOMINMAX)
 #    include <windows.h>
 #  else
 #    define NOMINMAX
