@@ -57,6 +57,7 @@
 #  define FMT_MSC_VER 0
 #  define FMT_SUPPRESS_MSC_WARNING(n)
 #endif
+
 #ifdef __has_feature
 #  define FMT_HAS_FEATURE(x) __has_feature(x)
 #else
@@ -64,7 +65,7 @@
 #endif
 
 #if defined(__has_include) && !defined(__INTELLISENSE__) && \
-    !(FMT_ICC_VERSION && FMT_ICC_VERSION < 1600)
+    (!FMT_ICC_VERSION || FMT_ICC_VERSION >= 1600)
 #  define FMT_HAS_INCLUDE(x) __has_include(x)
 #else
 #  define FMT_HAS_INCLUDE(x) 0
@@ -846,11 +847,10 @@ template <typename T = char> class counting_buffer : public buffer<T> {
 template <typename T>
 class buffer_appender : public std::back_insert_iterator<buffer<T>> {
   using base = std::back_insert_iterator<buffer<T>>;
+
  public:
-  explicit buffer_appender(buffer<T>& buf)
-      : base(buf) {}
-  buffer_appender(base it)
-      : base(it) {}
+  explicit buffer_appender(buffer<T>& buf) : base(buf) {}
+  buffer_appender(base it) : base(it) {}
 
   buffer_appender& operator++() {
     base::operator++();
