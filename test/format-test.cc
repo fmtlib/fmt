@@ -762,8 +762,7 @@ TEST(FormatterTest, HashFlag) {
   EXPECT_EQ("4.e+01", format("{:#.0e}", 42.0));
   EXPECT_EQ("0.", format("{:#.0f}", 0.01));
   EXPECT_EQ("0.50", format("{:#.2g}", 0.5));
-  auto s = format("{:#.0f}", 0.5);  // MSVC's printf uses wrong rounding mode.
-  EXPECT_TRUE(s == "0." || s == "1.");
+  EXPECT_EQ("0.", format("{:#.0f}", 0.5));
   EXPECT_THROW_MSG(format("{0:#", 'c'), format_error,
                    "missing '}' in format string");
   EXPECT_THROW_MSG(format("{0:#}", 'c'), format_error,
@@ -1279,6 +1278,9 @@ TEST(FormatterTest, PrecisionRounding) {
   char buffer[64];
   safe_sprintf(buffer, "%f", n);
   EXPECT_EQ(buffer, format("{:f}", n));
+  EXPECT_EQ("225.51575035152063720",
+            fmt::format("{:.17f}", 225.51575035152064));
+  EXPECT_EQ("-761519619559038.2", fmt::format("{:.1f}", -761519619559038.2));
 }
 
 TEST(FormatterTest, FormatNaN) {

@@ -984,7 +984,7 @@ struct grisu_shortest_handler {
 // Floating-Point Printout ((FPP)^2) algorithm by Steele & White:
 // https://fmt.dev/p372-steele.pdf.
 template <typename Double>
-void fallback_format(Double d, buffer<char>& buf, int& exp10) {
+void fallback_format(Double d, int num_digits, buffer<char>& buf, int& exp10) {
   bigint numerator;    // 2 * R in (FPP)^2.
   bigint denominator;  // 2 * S in (FPP)^2.
   // lower and upper are differences between value and corresponding boundaries.
@@ -1031,34 +1031,71 @@ void fallback_format(Double d, buffer<char>& buf, int& exp10) {
       upper = &upper_store;
     }
   }
-  if (!upper) upper = &lower;
   // Invariant: value == (numerator / denominator) * pow(10, exp10).
-  bool even = (value.f & 1) == 0;
-  int num_digits = 0;
-  char* data = buf.data();
-  for (;;) {
-    int digit = numerator.divmod_assign(denominator);
-    bool low = compare(numerator, lower) - even < 0;  // numerator <[=] lower.
-    // numerator + upper >[=] pow10:
-    bool high = add_compare(numerator, *upper, denominator) + even > 0;
-    data[num_digits++] = static_cast<char>('0' + digit);
-    if (low || high) {
-      if (!low) {
-        ++data[num_digits - 1];
-      } else if (high) {
-        int result = add_compare(numerator, numerator, denominator);
-        // Round half to even.
-        if (result > 0 || (result == 0 && (digit % 2) != 0))
+  if (num_digits < 0) {
+    // Generate the shortest representation.
+    if (!upper) upper = &lower;
+    bool even = (value.f & 1) == 0;
+    num_digits = 0;
+    char* data = buf.data();
+    for (;;) {
+      int digit = numerator.divmod_assign(denominator);
+      bool low = compare(numerator, lower) - even < 0;  // numerator <[=] lower.
+      // numerator + upper >[=] pow10:
+      bool high = add_compare(numerator, *upper, denominator) + even > 0;
+      data[num_digits++] = static_cast<char>('0' + digit);
+      if (low || high) {
+        if (!low) {
           ++data[num_digits - 1];
+        } else if (high) {
+          int result = add_compare(numerator, numerator, denominator);
+          // Round half to even.
+          if (result > 0 || (result == 0 && (digit % 2) != 0))
+            ++data[num_digits - 1];
+        }
+        buf.try_resize(to_unsigned(num_digits));
+        exp10 -= num_digits - 1;
+        return;
       }
-      buf.try_resize(to_unsigned(num_digits));
-      exp10 -= num_digits - 1;
+      numerator *= 10;
+      lower *= 10;
+      if (upper != &lower) *upper *= 10;
+    }
+  }
+  // Generate the given number of digits.
+  exp10 -= num_digits - 1;
+  if (num_digits == 0) {
+    buf.try_resize(1);
+    denominator *= 10;
+    buf[0] = add_compare(numerator, numerator, denominator) > 0 ? '1' : '0';
+    return;
+  }
+  buf.try_resize(to_unsigned(num_digits));
+  for (int i = 0; i < num_digits - 1; ++i) {
+    int digit = numerator.divmod_assign(denominator);
+    buf[i] = static_cast<char>('0' + digit);
+    numerator *= 10;
+  }
+  int digit = numerator.divmod_assign(denominator);
+  auto result = add_compare(numerator, numerator, denominator);
+  if (result > 0 || (result == 0 && (digit % 2) != 0)) {
+    if (digit == 9) {
+      const auto overflow = '0' + 10;
+      buf[num_digits - 1] = overflow;
+      // Propagate the carry.
+      for (int i = num_digits - 1; i > 0 && buf[i] == overflow; --i) {
+        buf[i] = '0';
+        ++buf[i - 1];
+      }
+      if (buf[0] == overflow) {
+        buf[0] = '0';
+        ++exp10;
+      }
       return;
     }
-    numerator *= 10;
-    lower *= 10;
-    if (upper != &lower) *upper *= 10;
+    ++digit;
   }
+  buf[num_digits - 1] = static_cast<char>('0' + digit);
 }
 
 // Formats value using the Grisu algorithm
@@ -1110,7 +1147,7 @@ int format_float(T value, int precision, float_specs specs, buffer<char>& buf) {
                          boundaries.upper - boundaries.lower, exp, handler);
     if (result == digits::error) {
       exp += handler.size - cached_exp10 - 1;
-      fallback_format(value, buf, exp);
+      fallback_format(value, -1, buf, exp);
       return exp;
     }
     buf.try_resize(to_unsigned(handler.size));
@@ -1121,8 +1158,11 @@ int format_float(T value, int precision, float_specs specs, buffer<char>& buf) {
         min_exp - (normalized.e + fp::significand_size), cached_exp10);
     normalized = normalized * cached_pow;
     fixed_handler handler{buf.data(), 0, precision, -cached_exp10, fixed};
-    if (grisu_gen_digits(normalized, 1, exp, handler) == digits::error)
-      return snprintf_float(value, precision, specs, buf);
+    if (grisu_gen_digits(normalized, 1, exp, handler) == digits::error) {
+      exp += handler.size - cached_exp10 - 1;
+      fallback_format(value, handler.size, buf, exp);
+      return exp;
+    }
     int num_digits = handler.size;
     if (!fixed && !specs.showpoint) {
       // Remove trailing zeros.
