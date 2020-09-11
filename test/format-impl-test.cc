@@ -307,7 +307,7 @@ TEST(FPTest, FixedHandler) {
   EXPECT_THROW(handler().on_digit('0', 100, 100, 0, exp, false),
                assertion_failure);
   namespace digits = fmt::detail::digits;
-  EXPECT_EQ(handler(1).on_digit('0', 100, 10, 10, exp, false), digits::done);
+  EXPECT_EQ(handler(1).on_digit('0', 100, 10, 10, exp, false), digits::error);
   // Check that divisor - error doesn't overflow.
   EXPECT_EQ(handler(1).on_digit('0', 100, 10, 101, exp, false), digits::error);
   // Check that 2 * error doesn't overflow.

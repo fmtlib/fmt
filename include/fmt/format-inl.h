@@ -864,8 +864,7 @@ FMT_ALWAYS_INLINE digits::result grisu_gen_digits(fp value, uint64_t error,
       FMT_ASSERT(false, "invalid number of digits");
     }
     --exp;
-    uint64_t remainder =
-        (static_cast<uint64_t>(integral) << -one.e) + fractional;
+    auto remainder = (static_cast<uint64_t>(integral) << -one.e) + fractional;
     result = handler.on_digit(static_cast<char>('0' + digit),
                               data::powers_of_10_64[exp] << -one.e, remainder,
                               error, exp, true);
@@ -875,8 +874,7 @@ FMT_ALWAYS_INLINE digits::result grisu_gen_digits(fp value, uint64_t error,
   for (;;) {
     fractional *= 10;
     error *= 10;
-    char digit =
-        static_cast<char>('0' + static_cast<char>(fractional >> -one.e));
+    char digit = static_cast<char>('0' + (fractional >> -one.e));
     fractional &= one.f - 1;
     --exp;
     result = handler.on_digit(digit, one.f, fractional, error, exp, false);
@@ -913,6 +911,7 @@ struct fixed_handler {
                           uint64_t error, int, bool integral) {
     FMT_ASSERT(remainder < divisor, "");
     buf[size++] = digit;
+    if (!integral && error >= remainder) return digits::error;
     if (size < precision) return digits::more;
     if (!integral) {
       // Check if error * 2 < divisor with overflow prevention.
@@ -1152,7 +1151,6 @@ int format_float(T value, int precision, float_specs specs, buffer<char>& buf) {
     }
     buf.try_resize(to_unsigned(handler.size));
   } else {
-    if (precision > 17) return snprintf_float(value, precision, specs, buf);
     fp normalized = normalize(fp(value));
     const auto cached_pow = get_cached_power(
         min_exp - (normalized.e + fp::significand_size), cached_exp10);
@@ -1160,7 +1158,7 @@ int format_float(T value, int precision, float_specs specs, buffer<char>& buf) {
     fixed_handler handler{buf.data(), 0, precision, -cached_exp10, fixed};
     if (grisu_gen_digits(normalized, 1, exp, handler) == digits::error) {
       exp += handler.size - cached_exp10 - 1;
-      fallback_format(value, handler.size, buf, exp);
+      fallback_format(value, handler.precision, buf, exp);
       return exp;
     }
     int num_digits = handler.size;
