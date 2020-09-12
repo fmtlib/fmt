@@ -1062,7 +1062,7 @@ void fallback_format(Double d, int num_digits, buffer<char>& buf, int& exp10) {
     }
   }
   // Generate the given number of digits up to the maximum possible number of
-  // significant digits in a IEEE754 double.
+  // significant digits in an IEEE754 double.
   const int max_double_digits = 767;
   if (num_digits > max_double_digits) num_digits = max_double_digits;
   exp10 -= num_digits - 1;
@@ -1102,7 +1102,7 @@ void fallback_format(Double d, int num_digits, buffer<char>& buf, int& exp10) {
 
 // Formats value using the Grisu algorithm
 // (https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf)
-// if T is a IEEE754 binary32 or binary64 and snprintf otherwise.
+// if T is an IEEE754 binary32 or binary64 and snprintf otherwise.
 template <typename T>
 int format_float(T value, int precision, float_specs specs, buffer<char>& buf) {
   static_assert(!std::is_same<T, float>::value, "");
