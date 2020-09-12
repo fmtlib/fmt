@@ -1061,7 +1061,10 @@ void fallback_format(Double d, int num_digits, buffer<char>& buf, int& exp10) {
       if (upper != &lower) *upper *= 10;
     }
   }
-  // Generate the given number of digits.
+  // Generate the given number of digits up to the maximum possible number of
+  // significant digits in a IEEE754 double.
+  const int max_double_digits = 767;
+  if (num_digits > max_double_digits) num_digits = max_double_digits;
   exp10 -= num_digits - 1;
   if (num_digits == 0) {
     buf.try_resize(1);
