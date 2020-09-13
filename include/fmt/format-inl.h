@@ -1002,9 +1002,9 @@ void fallback_format(Double d, int num_digits, bool binary32, buffer<char>& buf,
   // Shift numerator and denominator by an extra bit or two (if lower boundary
   // is closer) to make lower and upper integers. This eliminates multiplication
   // by 2 during later computations.
-  int shift = (binary32 ? value.assign(static_cast<float>(d)) : value.assign(d))
-                  ? 2
-                  : 1;
+  const bool is_predecessor_closer =
+      binary32 ? value.assign(static_cast<float>(d)) : value.assign(d);
+  int shift = is_predecessor_closer ? 2 : 1;
   uint64_t significand = value.f << shift;
   if (value.e >= 0) {
     numerator.assign(significand);
