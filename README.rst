@@ -36,6 +36,8 @@ Features
   <https://en.cppreference.com/w/cpp/utility/format>`__
 * `Format string syntax <https://fmt.dev/latest/syntax.html>`_ similar to Python's
   `format <https://docs.python.org/3/library/stdtypes.html#str.format>`_
+* Fast IEEE 754 floating-point formatter with correct rounding, shortness and
+  round-trip guarantees.
 * Safe `printf implementation
   <https://fmt.dev/latest/api.html#printf-formatting>`_ including the POSIX
   extension for positional arguments
