@@ -177,4 +177,11 @@ TEST(CompileTest, TextAndArg) {
   EXPECT_EQ(">>>42<<<", fmt::format(FMT_COMPILE(">>>{}<<<"), 42));
   EXPECT_EQ("42!", fmt::format(FMT_COMPILE("{}!"), 42));
 }
+
+#  ifdef __cpp_char8_t
+TEST(CompileTest, Char8T) {
+  EXPECT_EQ(u8"42", fmt::format(FMT_COMPILE(u8"{}"), 42));
+  EXPECT_EQ(u8">>>42<<<", fmt::format(FMT_COMPILE(u8">>>{}<<<"), u8"42"));
+}
+#  endif
 #endif
