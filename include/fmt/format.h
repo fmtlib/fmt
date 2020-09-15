@@ -2501,7 +2501,7 @@ FMT_CONSTEXPR const Char* parse_align(const Char* begin, const Char* end,
   auto p = next_code_point(begin, end);
   if (p == end) p = begin;
   for (;;) {
-    switch (static_cast<char>(*p)) {
+    switch (static_cast<int>(*p)) {
     case '<':
       align = align::left;
       break;

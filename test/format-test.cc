@@ -1525,6 +1525,7 @@ TEST(FormatterTest, WideFormatString) {
   EXPECT_EQ(L"4.2", format(L"{}", 4.2));
   EXPECT_EQ(L"abc", format(L"{}", L"abc"));
   EXPECT_EQ(L"z", format(L"{}", L'z'));
+  EXPECT_THROW(fmt::format(L"{:*\x343E}", 42), fmt::format_error);
 }
 
 TEST(FormatterTest, FormatStringFromSpeedTest) {
