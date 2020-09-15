@@ -1936,6 +1936,14 @@ FMT_END_NAMESPACE
 
 TEST(FormatTest, ToString) {
   EXPECT_EQ("42", fmt::to_string(42));
+  EXPECT_EQ(L"42", fmt::to_string<wchar_t>(42));
+#ifdef __cpp_char8_t
+  EXPECT_EQ(u8"42", fmt::to_string<char8_t>(42));
+#else
+  EXPECT_EQ(u8"42", fmt::to_string<char>(42));
+#endif
+  EXPECT_EQ(u"42", fmt::to_string<char16_t>(42));
+  EXPECT_EQ(U"42", fmt::to_string<char32_t>(42));
   EXPECT_EQ("0x1234", fmt::to_string(reinterpret_cast<void*>(0x1234)));
   EXPECT_EQ("foo", fmt::to_string(adl_test::fmt::detail::foo()));
 }
