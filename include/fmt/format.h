@@ -3481,21 +3481,23 @@ arg_join<detail::iterator_t<Range>, detail::sentinel_t<Range>, wchar_t> join(
     std::string answer = fmt::to_string(42);
   \endrst
  */
-template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value)>
-inline std::string to_string(const T& value) {
-  std::string result;
-  detail::write<char>(std::back_inserter(result), value);
+template <typename Char = char, typename T,
+          FMT_ENABLE_IF(!std::is_integral<T>::value)>
+inline std::basic_string<Char> to_string(const T& value) {
+  std::basic_string<Char> result;
+  detail::write<Char>(std::back_inserter(result), value);
   return result;
 }
 
-template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
-inline std::string to_string(T value) {
+template <typename Char = char, typename T,
+          FMT_ENABLE_IF(std::is_integral<T>::value)>
+inline std::basic_string<Char> to_string(T value) {
   // The buffer should be large enough to store the number including the sign or
   // "false" for bool.
   constexpr int max_size = detail::digits10<T>() + 2;
-  char buffer[max_size > 5 ? max_size : 5];
-  char* begin = buffer;
-  return std::string(begin, detail::write<char>(begin, value));
+  Char buffer[max_size > 5 ? max_size : 5];
+  Char* begin = buffer;
+  return std::basic_string<Char>(begin, detail::write<Char>(begin, value));
 }
 
 /**

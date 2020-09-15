@@ -639,7 +639,7 @@ FMT_INLINE std::basic_string<typename S::char_type> format(const S&,
                                                            Args&&... args) {
   constexpr basic_string_view<typename S::char_type> str = S();
   if (str.size() == 2 && str[0] == '{' && str[1] == '}')
-    return fmt::to_string(detail::first(args...));
+    return fmt::to_string<typename S::char_type>(detail::first(args...));
   constexpr auto compiled = detail::compile<Args...>(S());
   return format(compiled, std::forward<Args>(args)...);
 }
