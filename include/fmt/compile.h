@@ -674,6 +674,16 @@ format_to_n_result<OutputIt> format_to_n(OutputIt out, size_t n,
   return {it.base(), it.count()};
 }
 
+template <typename OutputIt, typename S, typename... Args,
+          FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
+format_to_n_result<OutputIt> format_to_n(OutputIt out, size_t n, const S&,
+                                         const Args&... args) {
+  constexpr auto compiled = detail::compile<Args...>(S());
+  auto it = format_to(detail::truncating_iterator<OutputIt>(out, n), compiled,
+                      args...);
+  return {it.base(), it.count()};
+}
+
 template <typename CompiledFormat, typename... Args>
 size_t formatted_size(const CompiledFormat& cf, const Args&... args) {
   return format_to(detail::counting_iterator(), cf, args...).count();

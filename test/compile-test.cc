@@ -165,6 +165,14 @@ TEST(CompileTest, FormatTo) {
   EXPECT_STREQ("42", buf);
 }
 
+TEST(CompileTest, FormatToNWithCompileMacro) {
+  constexpr auto buffer_size = 8;
+  char buffer[buffer_size];
+  auto res = fmt::format_to_n(buffer, buffer_size, FMT_COMPILE("{}"), 42);
+  *res.out = '\0';
+  EXPECT_STREQ("42", buffer);
+}
+
 TEST(CompileTest, TextAndArg) {
   EXPECT_EQ(">>>42<<<", fmt::format(FMT_COMPILE(">>>{}<<<"), 42));
   EXPECT_EQ("42!", fmt::format(FMT_COMPILE("{}!"), 42));
