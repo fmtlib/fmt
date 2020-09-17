@@ -170,8 +170,9 @@ TEST(CompileTest, FormatTo) {
   }
   {
     char buf[100];
-    auto end = fmt::format_to(buf, FMT_COMPILE("{:.6f}:{:04}:{:+}:{}:{}:{}"),
-                              1.234, 42, 3.13, "str", (void*)1000, 'X');
+    auto end =
+        fmt::format_to(buf, FMT_COMPILE("{:.6f}:{:04}:{:+}:{}:{}:{}"), 1.234,
+                       42, 3.13, "str", reinterpret_cast<void*>(1000), 'X');
     *end = '\0';
     EXPECT_STREQ("1.234000:0042:+3.13:str:0x3e8:X", buf);
   }
@@ -188,9 +189,9 @@ TEST(CompileTest, FormatToNWithCompileMacro) {
   {
     constexpr auto buffer_size = 100;
     char buffer[buffer_size];
-    auto res = fmt::format_to_n(buffer, buffer_size,
-                                FMT_COMPILE("{:.6f}:{:04}:{:+}:{}:{}:{}"),
-                                1.234, 42, 3.13, "str", (void*)1000, 'X');
+    auto res = fmt::format_to_n(
+        buffer, buffer_size, FMT_COMPILE("{:.6f}:{:04}:{:+}:{}:{}:{}"), 1.234,
+        42, 3.13, "str", reinterpret_cast<void*>(1000), 'X');
     *res.out = '\0';
     EXPECT_STREQ("1.234000:0042:+3.13:str:0x3e8:X", buffer);
   }
