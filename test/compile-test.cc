@@ -153,7 +153,7 @@ TEST(CompileTest, FormatSpecs) {
   EXPECT_EQ("42", fmt::format(FMT_COMPILE("{:x}"), 0x42));
   EXPECT_EQ("1.234000:0042:+3.13:str:0x3e8:X",
             fmt::format(FMT_COMPILE("{:.6f}:{:04}:{:+}:{}:{}:{}"), 1.234, 42,
-                        3.13, "str", (void*)1000, 'X'));
+                        3.13, "str", reinterpret_cast<void*>(1000), 'X'));
 }
 
 TEST(CompileTest, DynamicWidth) {
