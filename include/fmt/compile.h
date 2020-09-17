@@ -444,7 +444,8 @@ template <typename Char, typename T, int N> struct spec_field {
   OutputIt format(OutputIt out, const Args&... args) const {
     // This ensures that the argument type is convertile to `const T&`.
     const T& arg = get<N>(args...);
-    const auto& vargs = make_format_args(args...);
+    const auto& vargs =
+        make_format_args<basic_format_context<OutputIt, Char>>(args...);
     basic_format_context<OutputIt, Char> ctx(out, vargs);
     return fmt.format(arg, ctx);
   }
