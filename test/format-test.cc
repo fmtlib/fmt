@@ -1248,6 +1248,7 @@ TEST(FormatterTest, FormatDouble) {
   EXPECT_EQ("392.65", format("{:}", 392.65));
   EXPECT_EQ("392.65", format("{:g}", 392.65));
   EXPECT_EQ("392.65", format("{:G}", 392.65));
+  EXPECT_EQ("4.9014e+06", format("{:g}", 4.9014e6));
   EXPECT_EQ("392.650000", format("{:f}", 392.65));
   EXPECT_EQ("392.650000", format("{:F}", 392.65));
   EXPECT_EQ("42", format("{:L}", 42.0));

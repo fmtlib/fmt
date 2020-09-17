@@ -1162,28 +1162,30 @@ int format_float(T value, int precision, float_specs specs, buffer<char>& buf) {
       return exp;
     }
     buf.try_resize(to_unsigned(handler.size));
-  } else {
-    fp normalized = normalize(fp(value));
-    const auto cached_pow = get_cached_power(
-        min_exp - (normalized.e + fp::significand_size), cached_exp10);
-    normalized = normalized * cached_pow;
-    fixed_handler handler{buf.data(), 0, precision, -cached_exp10, fixed};
-    if (grisu_gen_digits(normalized, 1, exp, handler) == digits::error) {
-      exp += handler.size - cached_exp10 - 1;
-      fallback_format(value, handler.precision, specs.binary32, buf, exp);
-      return exp;
-    }
-    int num_digits = handler.size;
-    if (!fixed && !specs.showpoint) {
-      // Remove trailing zeros.
-      while (num_digits > 0 && buf[num_digits - 1] == '0') {
-        --num_digits;
-        ++exp;
-      }
-    }
-    buf.try_resize(to_unsigned(num_digits));
+    return exp - cached_exp10;
   }
-  return exp - cached_exp10;
+  fp normalized = normalize(fp(value));
+  const auto cached_pow = get_cached_power(
+      min_exp - (normalized.e + fp::significand_size), cached_exp10);
+  normalized = normalized * cached_pow;
+  fixed_handler handler{buf.data(), 0, precision, -cached_exp10, fixed};
+  if (grisu_gen_digits(normalized, 1, exp, handler) == digits::error) {
+    exp += handler.size - cached_exp10 - 1;
+    fallback_format(value, handler.precision, specs.binary32, buf, exp);
+  } else {
+    exp -= cached_exp10;
+    buf.try_resize(to_unsigned(handler.size));
+  }
+  if (!fixed && !specs.showpoint) {
+    // Remove trailing zeros.
+    auto num_digits = buf.size();
+    while (num_digits > 0 && buf[num_digits - 1] == '0') {
+      --num_digits;
+      ++exp;
+    }
+    buf.try_resize(num_digits);
+  }
+  return exp;
 }
 
 template <typename T>
