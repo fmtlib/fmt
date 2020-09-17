@@ -637,9 +637,13 @@ template <typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
 FMT_INLINE std::basic_string<typename S::char_type> format(const S&,
                                                            Args&&... args) {
-  constexpr basic_string_view<typename S::char_type> str = S();
-  if (str.size() == 2 && str[0] == '{' && str[1] == '}')
-    return fmt::to_string(detail::first(args...));
+#ifdef __cpp_if_constexpr
+  if constexpr (std::is_same<typename S::char_type, char>::value) {
+    constexpr basic_string_view<typename S::char_type> str = S();
+    if (str.size() == 2 && str[0] == '{' && str[1] == '}')
+      return fmt::to_string(detail::first(args...));
+  }
+#endif
   constexpr auto compiled = detail::compile<Args...>(S());
   return format(compiled, std::forward<Args>(args)...);
 }

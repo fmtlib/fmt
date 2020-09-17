@@ -149,6 +149,10 @@ TEST(CompileTest, FormatDefault) {
   EXPECT_EQ("foo", fmt::format(FMT_COMPILE("{}"), test_formattable()));
 }
 
+TEST(CompileTest, FormatWideString) {
+  EXPECT_EQ(L"42", fmt::format(FMT_COMPILE(L"{}"), 42));
+}
+
 TEST(CompileTest, FormatSpecs) {
   EXPECT_EQ("42", fmt::format(FMT_COMPILE("{:x}"), 0x42));
 }
