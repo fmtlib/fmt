@@ -870,8 +870,10 @@ template <> int count_digits<4>(detail::fallback_uintptr n);
 
 #if FMT_GCC_VERSION || FMT_CLANG_VERSION
 #  define FMT_ALWAYS_INLINE inline __attribute__((always_inline))
+#elif FMT_MSC_VER
+#  define FMT_ALWAYS_INLINE __forceinline
 #else
-#  define FMT_ALWAYS_INLINE
+#  define FMT_ALWAYS_INLINE inline
 #endif
 
 #ifdef FMT_BUILTIN_CLZ
