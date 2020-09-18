@@ -2081,7 +2081,7 @@ template <> struct cache_accessor<double> {
                "k is out of range");
 
 #if FMT_USE_FULL_CACHE_DRAGONBOX
-    return data::dragonbox_pow10_significands_128[k - float_info<float>::min_k];
+    return data::dragonbox_pow10_significands_128[k - float_info<double>::min_k];
 #else
     static const int compression_ratio = 27;
 
@@ -2131,50 +2131,50 @@ template <> struct cache_accessor<double> {
       recovered_cache = {recovered_cache.high(), recovered_cache.low() + error};
 
       return recovered_cache;
+    }
 #endif
   }
-}
 
-static carrier_uint
-compute_mul(carrier_uint u, const cache_entry_type& cache) FMT_NOEXCEPT {
-  return umul192_upper64(u, cache);
-}
+  static carrier_uint compute_mul(carrier_uint u,
+                                  const cache_entry_type& cache) FMT_NOEXCEPT {
+    return umul192_upper64(u, cache);
+  }
 
-static uint32_t compute_delta(cache_entry_type const& cache,
-                              int beta_minus_1) FMT_NOEXCEPT {
-  return static_cast<uint32_t>(cache.high() >> (64 - 1 - beta_minus_1));
-}
+  static uint32_t compute_delta(cache_entry_type const& cache,
+                                int beta_minus_1) FMT_NOEXCEPT {
+    return static_cast<uint32_t>(cache.high() >> (64 - 1 - beta_minus_1));
+  }
 
-static bool compute_mul_parity(carrier_uint two_f,
-                               const cache_entry_type& cache,
-                               int beta_minus_1) FMT_NOEXCEPT {
-  FMT_ASSERT(beta_minus_1 >= 1, "");
-  FMT_ASSERT(beta_minus_1 < 64, "");
+  static bool compute_mul_parity(carrier_uint two_f,
+                                 const cache_entry_type& cache,
+                                 int beta_minus_1) FMT_NOEXCEPT {
+    FMT_ASSERT(beta_minus_1 >= 1, "");
+    FMT_ASSERT(beta_minus_1 < 64, "");
 
-  return ((umul192_middle64(two_f, cache) >> (64 - beta_minus_1)) & 1) != 0;
-}
+    return ((umul192_middle64(two_f, cache) >> (64 - beta_minus_1)) & 1) != 0;
+  }
 
-static carrier_uint compute_left_endpoint_for_shorter_interval_case(
-    const cache_entry_type& cache, int beta_minus_1) FMT_NOEXCEPT {
-  return (cache.high() -
-          (cache.high() >> (float_info<double>::significand_bits + 2))) >>
-         (64 - float_info<double>::significand_bits - 1 - beta_minus_1);
-}
+  static carrier_uint compute_left_endpoint_for_shorter_interval_case(
+      const cache_entry_type& cache, int beta_minus_1) FMT_NOEXCEPT {
+    return (cache.high() -
+            (cache.high() >> (float_info<double>::significand_bits + 2))) >>
+           (64 - float_info<double>::significand_bits - 1 - beta_minus_1);
+  }
 
-static carrier_uint compute_right_endpoint_for_shorter_interval_case(
-    const cache_entry_type& cache, int beta_minus_1) FMT_NOEXCEPT {
-  return (cache.high() +
-          (cache.high() >> (float_info<double>::significand_bits + 1))) >>
-         (64 - float_info<double>::significand_bits - 1 - beta_minus_1);
-}
+  static carrier_uint compute_right_endpoint_for_shorter_interval_case(
+      const cache_entry_type& cache, int beta_minus_1) FMT_NOEXCEPT {
+    return (cache.high() +
+            (cache.high() >> (float_info<double>::significand_bits + 1))) >>
+           (64 - float_info<double>::significand_bits - 1 - beta_minus_1);
+  }
 
-static carrier_uint compute_round_up_for_shorter_interval_case(
-    const cache_entry_type& cache, int beta_minus_1) FMT_NOEXCEPT {
-  return ((cache.high() >>
-           (64 - float_info<double>::significand_bits - 2 - beta_minus_1)) +
-          1) /
-         2;
-}
+  static carrier_uint compute_round_up_for_shorter_interval_case(
+      const cache_entry_type& cache, int beta_minus_1) FMT_NOEXCEPT {
+    return ((cache.high() >>
+             (64 - float_info<double>::significand_bits - 2 - beta_minus_1)) +
+            1) /
+           2;
+  }
 };  // namespace dragonbox
 
 // Various integer checks
@@ -2530,7 +2530,7 @@ small_divisor_case_label:
   }
   return ret_value;
 }
-}  // namespace detail
+}  // namespace dragonbox
 
 // Formats value using a variation of the Fixed-Precision Positive
 // Floating-Point Printout ((FPP)^2) algorithm by Steele & White:
