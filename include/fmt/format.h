@@ -182,6 +182,12 @@ FMT_END_NAMESPACE
 #if (FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_clzll)) && !FMT_MSC_VER
 #  define FMT_BUILTIN_CLZLL(n) __builtin_clzll(n)
 #endif
+#if (FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_ctz))
+#  define FMT_BUILTIN_CTZ(n) __builtin_ctz(n)
+#endif
+#if (FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_ctzll))
+#  define FMT_BUILTIN_CTZLL(n) __builtin_ctzll(n)
+#endif
 
 // Some compilers masquerade as both MSVC and GCC-likes or otherwise support
 // __builtin_clz and __builtin_clzll, so only define FMT_BUILTIN_CLZ using the
@@ -232,6 +238,59 @@ inline int clzll(uint64_t x) {
   return 63 - static_cast<int>(r);
 }
 #  define FMT_BUILTIN_CLZLL(n) detail::clzll(n)
+}  // namespace detail
+FMT_END_NAMESPACE
+#endif
+
+// Same for __builtin_ctz and __builtin_ctzll
+#if FMT_MSC_VER && !defined(FMT_BUILTIN_CTZLL) && !defined(_MANAGED)
+#  include <intrin.h>  // _BitScanReverse, _BitScanReverse64
+
+FMT_BEGIN_NAMESPACE
+namespace detail {
+// Avoid Clang with Microsoft CodeGen's -Wunknown-pragmas warning.
+#  ifndef __clang__
+#    pragma intrinsic(_BitScanForward)
+#  endif
+inline int ctz(uint32_t x) {
+  unsigned long r = 0;
+  _BitScanForward(&r, x);
+
+  FMT_ASSERT(x != 0, "");
+  // Static analysis complains about using uninitialized data
+  // "r", but the only way that can happen is if "x" is 0,
+  // which the callers guarantee to not happen.
+  FMT_SUPPRESS_MSC_WARNING(6102)
+  return static_cast<int>(r);
+}
+#  define FMT_BUILTIN_CTZ(n) detail::ctz(n)
+
+#  if defined(_WIN64) && !defined(__clang__)
+#    pragma intrinsic(_BitScanForward64)
+#  endif
+
+inline int ctzll(uint64_t x) {
+  unsigned long r = 0;
+  FMT_ASSERT(x != 0, "");
+  // Static analysis complains about using uninitialized data
+  // "r", but the only way that can happen is if "x" is 0,
+  // which the callers guarantee to not happen.
+  FMT_SUPPRESS_MSC_WARNING(6102)
+
+#  ifdef _WIN64
+  _BitScanForward64(&r, x);
+#  else
+  // Scan the low 32 bits.
+  if (_BitScanForward(&r, static_cast<uint32_t>(x))) return r;
+
+  // Scan the high 32 bits.
+  _BitScanReverse(&r, static_cast<uint32_t>(x >> 32));
+  r += 32;
+#  endif
+
+  return static_cast<int>(r);
+}
+#  define FMT_BUILTIN_CTZLL(n) detail::ctzll(n)
 }  // namespace detail
 FMT_END_NAMESPACE
 #endif
@@ -555,6 +614,10 @@ template <typename T> constexpr bool use_grisu() {
          sizeof(T) <= sizeof(double);
 }
 
+#ifndef FMT_USE_FULL_CACHE_DRAGONBOX
+#  define FMT_USE_FULL_CACHE_DRAGONBOX 0
+#endif
+
 template <typename T>
 template <typename U>
 void buffer<T>::append(const U* begin, const U* end) {
@@ -778,13 +841,72 @@ using uint32_or_64_or_128_t =
                   conditional_t<num_bits<T>() <= 64, uint64_t, uint128_t>>;
 #endif
 
+// 128-bit integer type used internally
+struct uint128_wrapper {
+  uint128_wrapper() = default;
+
+#if FMT_USE_INT128
+  uint128_t internal_;
+
+  uint128_wrapper(uint64_t high, uint64_t low) FMT_NOEXCEPT
+      : internal_{static_cast<uint128_t>(low) |
+                  (static_cast<uint128_t>(high) << 64)} {}
+
+  uint128_wrapper(uint128_t u) : internal_{u} {}
+
+  uint64_t high() const FMT_NOEXCEPT { return uint64_t(internal_ >> 64); }
+  uint64_t low() const FMT_NOEXCEPT { return uint64_t(internal_); }
+
+  uint128_wrapper& operator+=(uint64_t n) & FMT_NOEXCEPT {
+    internal_ += n;
+    return *this;
+  }
+#else
+  uint64_t high_;
+  uint64_t low_;
+
+  uint128_wrapper(uint64_t high, uint64_t low) FMT_NOEXCEPT : high_{high},
+                                                              low_{low} {}
+
+  uint64_t high() const FMT_NOEXCEPT { return high_; }
+  uint64_t low() const FMT_NOEXCEPT { return low_; }
+
+  uint128_wrapper& operator+=(uint64_t n) & FMT_NOEXCEPT {
+#  if defined(_MSC_VER) && defined(_M_X64)
+    unsigned char carry = _addcarry_u64(0, low_, n, &low_);
+    _addcarry_u64(carry, high_, 0, &high_);
+    return *this;
+#  else
+    uint64_t sum = low_ + n;
+    high_ += (sum < low_ ? 1 : 0);
+    low_ = sum;
+    return *this;
+#  endif
+  }
+#endif
+};
+
+// Table entry type for divisibility test used internally
+template <typename T> struct divtest_table_entry {
+  T mod_inv;
+  T max_quotient;
+};
+
 // Static data is placed in this class template for the header-only config.
 template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
   static const uint64_t powers_of_10_64[];
   static const uint32_t zero_or_powers_of_10_32[];
   static const uint64_t zero_or_powers_of_10_64[];
-  static const uint64_t pow10_significands[];
-  static const int16_t pow10_exponents[];
+  static const uint64_t grisu_pow10_significands[];
+  static const int16_t grisu_pow10_exponents[];
+  static const divtest_table_entry<uint32_t> divtest_table_for_pow5_32[];
+  static const divtest_table_entry<uint64_t> divtest_table_for_pow5_64[];
+  static const uint64_t dragonbox_pow10_significands_64[];
+  static const uint128_wrapper dragonbox_pow10_significands_128[];
+#if !FMT_USE_FULL_CACHE_DRAGONBOX
+  static const uint64_t powers_of_5_64[];
+  static const uint32_t dragonbox_pow10_recovery_errors[];
+#endif
   // GCC generates slightly better code for pairs than chars.
   using digit_pair = char[2];
   static const digit_pair digits[];
@@ -876,6 +998,13 @@ template <> int count_digits<4>(detail::fallback_uintptr n);
 #  define FMT_ALWAYS_INLINE __forceinline
 #else
 #  define FMT_ALWAYS_INLINE inline
+#endif
+
+// To suppress unnecessary security cookie checks
+#if defined(FMT_MSC_VER) && !defined(__clang__)
+#  define FMT_SAFEBUFFERS __declspec(safebuffers)
+#else
+#  define FMT_SAFEBUFFERS
 #endif
 
 #ifdef FMT_BUILTIN_CLZ
