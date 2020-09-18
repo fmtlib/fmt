@@ -281,10 +281,11 @@ inline int ctzll(uint64_t x) {
   _BitScanForward64(&r, x);
 #  else
   // Scan the low 32 bits.
-  if (_BitScanForward(&r, static_cast<uint32_t>(x))) return r;
+  if (_BitScanForward(&r, static_cast<uint32_t>(x)))
+      return static_cast<int>(r);
 
   // Scan the high 32 bits.
-  _BitScanReverse(&r, static_cast<uint32_t>(x >> 32));
+  _BitScanForward(&r, static_cast<uint32_t>(x >> 32));
   r += 32;
 #  endif
 
