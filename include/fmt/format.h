@@ -70,9 +70,11 @@
 #endif
 
 #if __cplusplus == 201103L || __cplusplus == 201402L
-#  if defined(__clang__)
+#  if defined(__INTEL_COMPILER) || defined(__PGI)
+#    define FMT_FALLTHROUGH
+#  elif defined(__clang__)
 #    define FMT_FALLTHROUGH [[clang::fallthrough]]
-#  elif FMT_GCC_VERSION >= 700 && !defined(__PGI) && \
+#  elif FMT_GCC_VERSION >= 700 && \
       (!defined(__EDG_VERSION__) || __EDG_VERSION__ >= 520)
 #    define FMT_FALLTHROUGH [[gnu::fallthrough]]
 #  else
