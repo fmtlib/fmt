@@ -180,7 +180,7 @@
 
 #ifndef FMT_BEGIN_NAMESPACE
 #  if FMT_HAS_FEATURE(cxx_inline_namespaces) || FMT_GCC_VERSION >= 404 || \
-      FMT_MSC_VER >= 1900
+      (FMT_MSC_VER >= 1900 && !_MANAGED)
 #    define FMT_INLINE_NAMESPACE inline namespace
 #    define FMT_END_NAMESPACE \
       }                       \
