@@ -2081,7 +2081,8 @@ template <> struct cache_accessor<double> {
                "k is out of range");
 
 #if FMT_USE_FULL_CACHE_DRAGONBOX
-    return data::dragonbox_pow10_significands_128[k - float_info<double>::min_k];
+    return data::dragonbox_pow10_significands_128[k -
+                                                  float_info<double>::min_k];
 #else
     static const int compression_ratio = 27;
 
@@ -2123,8 +2124,8 @@ template <> struct cache_accessor<double> {
       // Get error
       int error_idx = (k - float_info<double>::min_k) / 16;
       uint32_t error = (data::dragonbox_pow10_recovery_errors[error_idx] >>
-                   ((k - float_info<double>::min_k) % 16) * 2) &
-                  0x3;
+                        ((k - float_info<double>::min_k) % 16) * 2) &
+                       0x3;
 
       // Add the error back
       FMT_ASSERT(recovered_cache.low() + error >= recovered_cache.low(), "");
