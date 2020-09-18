@@ -1002,7 +1002,7 @@ template <> int count_digits<4>(detail::fallback_uintptr n);
 #endif
 
 // To suppress unnecessary security cookie checks
-#if defined(FMT_MSC_VER) && !defined(__clang__)
+#if FMT_MSC_VER && !FMT_CLANG_VERSION
 #  define FMT_SAFEBUFFERS __declspec(safebuffers)
 #else
 #  define FMT_SAFEBUFFERS
