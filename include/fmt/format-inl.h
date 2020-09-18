@@ -2122,7 +2122,7 @@ template <> struct cache_accessor<double> {
 
       // Get error
       int error_idx = (k - float_info<double>::min_k) / 16;
-      int error = (data::dragonbox_pow10_recovery_errors[error_idx] >>
+      uint32_t error = (data::dragonbox_pow10_recovery_errors[error_idx] >>
                    ((k - float_info<double>::min_k) % 16) * 2) &
                   0x3;
 
