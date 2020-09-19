@@ -189,12 +189,14 @@ FMT_END_NAMESPACE
 #  define FMT_BUILTIN_CTZLL(n) __builtin_ctzll(n)
 #endif
 
+#if FMT_MSC_VER
+#  include <intrin.h>  // _BitScanReverse[64], _BitScanForward[64], _umul128
+#endif
+
 // Some compilers masquerade as both MSVC and GCC-likes or otherwise support
 // __builtin_clz and __builtin_clzll, so only define FMT_BUILTIN_CLZ using the
 // MSVC intrinsics if the clz and clzll builtins are not available.
-#if FMT_MSC_VER && !defined(FMT_BUILTIN_CLZLL) && !defined(_MANAGED)
-#  include <intrin.h>  // _BitScanReverse, _BitScanReverse64
-
+#if FMT_MSC_VER && !defined(FMT_BUILTIN_CLZLL) && !defined(FMT_BUILTIN_CTZLL) && !defined(_MANAGED)
 FMT_BEGIN_NAMESPACE
 namespace detail {
 // Avoid Clang with Microsoft CodeGen's -Wunknown-pragmas warning.
@@ -204,7 +206,6 @@ namespace detail {
 inline int clz(uint32_t x) {
   unsigned long r = 0;
   _BitScanReverse(&r, x);
-
   FMT_ASSERT(x != 0, "");
   // Static analysis complains about using uninitialized data
   // "r", but the only way that can happen is if "x" is 0,
@@ -225,29 +226,15 @@ inline int clzll(uint64_t x) {
 #  else
   // Scan the high 32 bits.
   if (_BitScanReverse(&r, static_cast<uint32_t>(x >> 32))) return 63 - (r + 32);
-
   // Scan the low 32 bits.
   _BitScanReverse(&r, static_cast<uint32_t>(x));
 #  endif
-
   FMT_ASSERT(x != 0, "");
-  // Static analysis complains about using uninitialized data
-  // "r", but the only way that can happen is if "x" is 0,
-  // which the callers guarantee to not happen.
-  FMT_SUPPRESS_MSC_WARNING(6102)
+  FMT_SUPPRESS_MSC_WARNING(6102) // Suppress a bogus static analysis warning.
   return 63 - static_cast<int>(r);
 }
 #  define FMT_BUILTIN_CLZLL(n) detail::clzll(n)
-}  // namespace detail
-FMT_END_NAMESPACE
-#endif
 
-// Same for __builtin_ctz and __builtin_ctzll
-#if FMT_MSC_VER && !defined(FMT_BUILTIN_CTZLL) && !defined(_MANAGED)
-#  include <intrin.h>  // _BitScanReverse, _BitScanReverse64
-
-FMT_BEGIN_NAMESPACE
-namespace detail {
 // Avoid Clang with Microsoft CodeGen's -Wunknown-pragmas warning.
 #  ifndef __clang__
 #    pragma intrinsic(_BitScanForward)
@@ -255,12 +242,8 @@ namespace detail {
 inline int ctz(uint32_t x) {
   unsigned long r = 0;
   _BitScanForward(&r, x);
-
   FMT_ASSERT(x != 0, "");
-  // Static analysis complains about using uninitialized data
-  // "r", but the only way that can happen is if "x" is 0,
-  // which the callers guarantee to not happen.
-  FMT_SUPPRESS_MSC_WARNING(6102)
+  FMT_SUPPRESS_MSC_WARNING(6102) // Suppress a bogus static analysis warning.
   return static_cast<int>(r);
 }
 #  define FMT_BUILTIN_CTZ(n) detail::ctz(n)
@@ -272,23 +255,17 @@ inline int ctz(uint32_t x) {
 inline int ctzll(uint64_t x) {
   unsigned long r = 0;
   FMT_ASSERT(x != 0, "");
-  // Static analysis complains about using uninitialized data
-  // "r", but the only way that can happen is if "x" is 0,
-  // which the callers guarantee to not happen.
-  FMT_SUPPRESS_MSC_WARNING(6102)
-
+  FMT_SUPPRESS_MSC_WARNING(6102) // Suppress a bogus static analysis warning.
 #  ifdef _WIN64
   _BitScanForward64(&r, x);
 #  else
   // Scan the low 32 bits.
   if (_BitScanForward(&r, static_cast<uint32_t>(x)))
       return static_cast<int>(r);
-
   // Scan the high 32 bits.
   _BitScanForward(&r, static_cast<uint32_t>(x >> 32));
   r += 32;
 #  endif
-
   return static_cast<int>(r);
 }
 #  define FMT_BUILTIN_CTZLL(n) detail::ctzll(n)

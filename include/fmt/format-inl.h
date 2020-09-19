@@ -40,11 +40,6 @@
 #  pragma warning(disable : 4702)  // unreachable code
 #endif
 
-// For x64-specific MSVC intrinsics
-#if defined(_MSC_VER) && defined(_M_X64)
-#  include <intrin.h>
-#endif
-
 // Dummy implementations of strerror_r and strerror_s called if corresponding
 // system functions are not available.
 inline fmt::detail::null<> strerror_r(int, char*, ...) { return {}; }
