@@ -2612,10 +2612,7 @@ void fallback_format(Double d, int num_digits, bool binary32, buffer<char>& buf,
       if (upper != &lower) *upper *= 10;
     }
   }
-  // Generate the given number of digits up to the maximum possible number of
-  // significant digits in an IEEE754 double.
-  const int max_double_digits = 767;
-  if (num_digits > max_double_digits) num_digits = max_double_digits;
+  // Generate the given number of digits.
   exp10 -= num_digits - 1;
   if (num_digits == 0) {
     buf.try_resize(1);
@@ -2745,6 +2742,10 @@ int format_float(T value, int precision, float_specs specs, buffer<char>& buf) {
   const auto cached_pow = get_cached_power(
       min_exp - (normalized.e + fp::significand_size), cached_exp10);
   normalized = normalized * cached_pow;
+  // Limit precision to the maximum possible number of significant digits in an
+  // IEEE754 double because we don't need to generate zeros.
+  const int max_double_digits = 767;
+  if (precision > max_double_digits) precision = max_double_digits;
   fixed_handler handler{buf.data(), 0, precision, -cached_exp10, fixed};
   if (grisu_gen_digits(normalized, 1, exp, handler) == digits::error) {
     exp += handler.size - cached_exp10 - 1;
