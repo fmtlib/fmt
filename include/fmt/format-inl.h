@@ -1870,8 +1870,8 @@ template <> struct float_info<float> {
   static const int case_fc_upper_threshold = 6;
   static const int case_shorter_interval_left_endpoint_lower_threshold = 2;
   static const int case_shorter_interval_left_endpoint_upper_threshold = 3;
-  static const int shorter_interval_case_tie_lower_threshold = -35;
-  static const int shorter_interval_case_tie_upper_threshold = -35;
+  static const int shorter_interval_tie_lower_threshold = -35;
+  static const int shorter_interval_tie_upper_threshold = -35;
   static const int max_trailing_zeros = 7;
 };
 
@@ -1896,8 +1896,8 @@ template <> struct float_info<double> {
   static const int case_fc_upper_threshold = 9;
   static const int case_shorter_interval_left_endpoint_lower_threshold = 2;
   static const int case_shorter_interval_left_endpoint_upper_threshold = 3;
-  static const int shorter_interval_case_tie_lower_threshold = -77;
-  static const int shorter_interval_case_tie_upper_threshold = -77;
+  static const int shorter_interval_tie_lower_threshold = -77;
+  static const int shorter_interval_tie_upper_threshold = -77;
   static const int max_trailing_zeros = 16;
 };
 
@@ -2061,9 +2061,10 @@ template <> struct cache_accessor<float> {
 
   static carrier_uint compute_round_up_for_shorter_interval_case(
       const cache_entry_type& cache, int beta_minus_1) FMT_NOEXCEPT {
-    return carrier_uint(((cache >> (64 - float_info<float>::significand_bits -
-                                    2 - beta_minus_1)) +
-                         1)) /
+    return (static_cast<carrier_uint>(
+                cache >>
+                (64 - float_info<float>::significand_bits - 2 - beta_minus_1)) +
+            1) /
            2;
   }
 };
@@ -2377,8 +2378,8 @@ FMT_ALWAYS_INLINE FMT_SAFEBUFFERS void shorter_interval_case(
   ret_value.exponent = minus_k;
 
   // When tie occurs, choose one of them according to the rule
-  if (exponent >= float_info<T>::shorter_interval_case_tie_lower_threshold &&
-      exponent <= float_info<T>::shorter_interval_case_tie_upper_threshold) {
+  if (exponent >= float_info<T>::shorter_interval_tie_lower_threshold &&
+      exponent <= float_info<T>::shorter_interval_tie_upper_threshold) {
     ret_value.significand = ret_value.significand % 2 == 0
                                 ? ret_value.significand
                                 : ret_value.significand - 1;
@@ -2411,7 +2412,7 @@ template <class T> FMT_SAFEBUFFERS decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT {
   if (exponent != 0) {
     exponent += float_info<T>::exponent_bias - float_info<T>::significand_bits;
 
-    // Closer boundary case; proceed like Schubfach
+    // Shorter interval case; proceed like Schubfach
     if (significand == 0) {
       shorter_interval_case<T>(ret_value, exponent);
       return ret_value;
@@ -2461,10 +2462,12 @@ template <class T> FMT_SAFEBUFFERS decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT {
     }
   } else {
     // r == deltai; compare fractional parts
+    // Check conditions in the order different from the paper
+    // to take advantage of short-circuiting
     const carrier_uint two_fl = two_fc - 1;
-    if (!cache_accessor<T>::compute_mul_parity(two_fl, cache, beta_minus_1) &&
-        (!include_left_endpoint ||
-         !is_endpoint_integer<T>(two_fl, exponent, minus_k))) {
+    if ((!include_left_endpoint ||
+         !is_endpoint_integer<T>(two_fl, exponent, minus_k)) &&
+        !cache_accessor<T>::compute_mul_parity(two_fl, cache, beta_minus_1)) {
       goto small_divisor_case_label;
     }
   }
@@ -2497,7 +2500,7 @@ small_divisor_case_label:
       // We have either yi == zi - epsiloni or yi == (zi - epsiloni) - 1,
       // where yi == zi - epsiloni if and only if z^(f) >= epsilon^(f)
       // Since there are only 2 possibilities, we only need to care about the
-      // parity Also, zi and r should have the same parity since the divisor
+      // parity. Also, zi and r should have the same parity since the divisor
       // is an even number
       if (cache_accessor<T>::compute_mul_parity(two_fc, cache, beta_minus_1) !=
           approx_y_parity) {
