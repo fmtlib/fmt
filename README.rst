@@ -350,6 +350,8 @@ Projects using this library
   
 * `Quill <https://github.com/odygrd/quill>`_: Asynchronous low-latency logging library
 
+* `QKW <https://github.com/ravijanjam/qkw>`_: Generalizing aliasing to simplify navigation, and executing complex multi-line terminal command sequences
+
 * `readpe <https://bitbucket.org/sys_dev/readpe>`_: Read Portable Executable
 
 * `redis-cerberus <https://github.com/HunanTV/redis-cerberus>`_: A Redis cluster
