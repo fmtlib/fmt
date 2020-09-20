@@ -155,6 +155,9 @@ TEST(CompileTest, FormatWideString) {
 
 TEST(CompileTest, FormatSpecs) {
   EXPECT_EQ("42", fmt::format(FMT_COMPILE("{:x}"), 0x42));
+  EXPECT_EQ("1.234000:0042:+3.13:str:0x3e8:X",
+            fmt::format(FMT_COMPILE("{:.6f}:{:04}:{:+}:{}:{}:{}"), 1.234, 42,
+                        3.13, "str", reinterpret_cast<void*>(1000), 'X'));
 }
 
 TEST(CompileTest, DynamicWidth) {
@@ -163,18 +166,39 @@ TEST(CompileTest, DynamicWidth) {
 }
 
 TEST(CompileTest, FormatTo) {
-  char buf[8];
-  auto end = fmt::format_to(buf, FMT_COMPILE("{}"), 42);
-  *end = '\0';
-  EXPECT_STREQ("42", buf);
+  {
+    char buf[8];
+    auto end = fmt::format_to(buf, FMT_COMPILE("{}"), 42);
+    *end = '\0';
+    EXPECT_STREQ("42", buf);
+  }
+  {
+    char buf[100];
+    auto end =
+        fmt::format_to(buf, FMT_COMPILE("{:.6f}:{:04}:{:+}:{}:{}:{}"), 1.234,
+                       42, 3.13, "str", reinterpret_cast<void*>(1000), 'X');
+    *end = '\0';
+    EXPECT_STREQ("1.234000:0042:+3.13:str:0x3e8:X", buf);
+  }
 }
 
 TEST(CompileTest, FormatToNWithCompileMacro) {
-  constexpr auto buffer_size = 8;
-  char buffer[buffer_size];
-  auto res = fmt::format_to_n(buffer, buffer_size, FMT_COMPILE("{}"), 42);
-  *res.out = '\0';
-  EXPECT_STREQ("42", buffer);
+  {
+    constexpr auto buffer_size = 8;
+    char buffer[buffer_size];
+    auto res = fmt::format_to_n(buffer, buffer_size, FMT_COMPILE("{}"), 42);
+    *res.out = '\0';
+    EXPECT_STREQ("42", buffer);
+  }
+  {
+    constexpr auto buffer_size = 100;
+    char buffer[buffer_size];
+    auto res = fmt::format_to_n(
+        buffer, buffer_size, FMT_COMPILE("{:.6f}:{:04}:{:+}:{}:{}:{}"), 1.234,
+        42, 3.13, "str", reinterpret_cast<void*>(1000), 'X');
+    *res.out = '\0';
+    EXPECT_STREQ("1.234000:0042:+3.13:str:0x3e8:X", buffer);
+  }
 }
 
 TEST(CompileTest, TextAndArg) {
