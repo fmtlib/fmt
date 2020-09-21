@@ -211,7 +211,7 @@ inline int clz(uint32_t x) {
   // "r", but the only way that can happen is if "x" is 0,
   // which the callers guarantee to not happen.
   FMT_SUPPRESS_MSC_WARNING(6102)
-  return 31 - static_cast<int>(r);
+  return 31 ^ static_cast<int>(r);
 }
 #  define FMT_BUILTIN_CLZ(n) detail::clz(n)
 
@@ -225,13 +225,13 @@ inline int clzll(uint64_t x) {
   _BitScanReverse64(&r, x);
 #  else
   // Scan the high 32 bits.
-  if (_BitScanReverse(&r, static_cast<uint32_t>(x >> 32))) return 63 - (r + 32);
+  if (_BitScanReverse(&r, static_cast<uint32_t>(x >> 32))) return 63 ^ (r + 32);
   // Scan the low 32 bits.
   _BitScanReverse(&r, static_cast<uint32_t>(x));
 #  endif
   FMT_ASSERT(x != 0, "");
   FMT_SUPPRESS_MSC_WARNING(6102) // Suppress a bogus static analysis warning.
-  return 63 - static_cast<int>(r);
+  return 63 ^ static_cast<int>(r);
 }
 #  define FMT_BUILTIN_CLZLL(n) detail::clzll(n)
 
@@ -901,7 +901,7 @@ template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
 // Maps bsr(n) to ceil(log10(pow(2, bsr(n) + 1) - 1)).
 // This is a function instead of an array to workaround a bug in GCC10 (#1810).
 FMT_INLINE uint16_t bsr2log10(int bsr) {
-  constexpr uint16_t data[] = {
+  static constexpr uint16_t data[] = {
       1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  4,  5,  5,  5,
       6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  9,  9,  9,  10, 10, 10,
       10, 11, 11, 11, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 15, 15,
