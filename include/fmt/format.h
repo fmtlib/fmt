@@ -809,19 +809,13 @@ FMT_CONSTEXPR bool is_supported_floating_point(T) {
          (std::is_same<T, long double>::value && FMT_USE_LONG_DOUBLE);
 }
 
-#if FMT_REDUCE_INT_INSTANTIATIONS
-// Pick the largest integer container to represent all values of T.
-template <typename T>
-using uint32_or_64_or_128_t =
-    conditional_t<sizeof(uint128_t) < sizeof(uint64_t), uint64_t, uint128_t>;
-#else
 // Smallest of uint32_t, uint64_t, uint128_t that is large enough to
-// represent all values of T.
+// represent all values of an integral type T.
 template <typename T>
 using uint32_or_64_or_128_t =
-    conditional_t<num_bits<T>() <= 32, uint32_t,
+    conditional_t<num_bits<T>() <= 32 && !FMT_REDUCE_INT_INSTANTIATIONS,
+                  uint32_t,
                   conditional_t<num_bits<T>() <= 64, uint64_t, uint128_t>>;
-#endif
 
 // 128-bit integer type used internally
 struct uint128_wrapper {
