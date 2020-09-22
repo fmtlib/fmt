@@ -35,11 +35,6 @@
 #  include <io.h>
 #endif
 
-#ifdef _MSC_VER
-#  pragma warning(push)
-#  pragma warning(disable : 4702)  // unreachable code
-#endif
-
 // Dummy implementations of strerror_r and strerror_s called if corresponding
 // system functions are not available.
 inline fmt::detail::null<> strerror_r(int, char*, ...) { return {}; }
@@ -3076,9 +3071,5 @@ FMT_FUNC void vprint(string_view format_str, format_args args) {
 }
 
 FMT_END_NAMESPACE
-
-#ifdef _MSC_VER
-#  pragma warning(pop)
-#endif
 
 #endif  // FMT_FORMAT_INL_H_
