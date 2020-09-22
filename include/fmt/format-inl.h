@@ -1154,34 +1154,6 @@ class fp {
     *this = fp();
     return false;
   }
-
-  // Assigns d to this together with computing lower and upper boundaries,
-  // where a boundary is a value half way between the number and its predecessor
-  // (lower) or successor (upper). The upper boundary is normalized and lower
-  // has the same exponent but may be not normalized.
-  template <typename Double> boundaries assign_with_boundaries(Double d) {
-    bool is_lower_closer = assign(d);
-    fp lower =
-        is_lower_closer ? fp((f << 2) - 1, e - 2) : fp((f << 1) - 1, e - 1);
-    // 1 in normalize accounts for the exponent shift above.
-    fp upper = normalize<1>(fp((f << 1) + 1, e - 1));
-    lower.f <<= lower.e - upper.e;
-    return boundaries{lower.f, upper.f};
-  }
-
-  template <typename Double> boundaries assign_float_with_boundaries(Double d) {
-    assign(d);
-    constexpr int min_normal_e = std::numeric_limits<float>::min_exponent -
-                                 std::numeric_limits<double>::digits;
-    significand_type half_ulp = 1 << (std::numeric_limits<double>::digits -
-                                      std::numeric_limits<float>::digits - 1);
-    if (min_normal_e > e) half_ulp <<= min_normal_e - e;
-    fp upper = normalize<0>(fp(f + half_ulp, e));
-    fp lower = fp(
-        f - (half_ulp >> ((f == implicit_bit && e > min_normal_e) ? 1 : 0)), e);
-    lower.f <<= lower.e - upper.e;
-    return boundaries{lower.f, upper.f};
-  }
 };
 
 // Normalizes the value converted from double and multiplied by (1 << SHIFT).
