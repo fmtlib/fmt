@@ -2644,9 +2644,6 @@ void fallback_format(Double d, int num_digits, bool binary32, buffer<char>& buf,
   buf[num_digits - 1] = static_cast<char>('0' + digit);
 }
 
-// Formats value using the Grisu algorithm
-// (https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf)
-// if T is an IEEE754 binary32 or binary64 and snprintf otherwise.
 template <typename T>
 int format_float(T value, int precision, float_specs specs, buffer<char>& buf) {
   static_assert(!std::is_same<T, float>::value, "");
@@ -2665,72 +2662,20 @@ int format_float(T value, int precision, float_specs specs, buffer<char>& buf) {
 
   if (!specs.use_grisu) return snprintf_float(value, precision, specs, buf);
 
-  // Use Dragonbox for shortest
   if (precision < 0) {
-    int length;
-    uint32_t dec_significand;
-    int i = 0;
-    int exponent;
+    // Use Dragonbox for the shortest format.
     if (specs.binary32) {
-      detail::dragonbox::decimal_fp<float> dec =
-          detail::dragonbox::to_decimal(float(value));
-      length = detail::count_digits(dec.significand);
-      exponent = dec.exponent;
-      buf.try_resize(to_unsigned(length));
-
-      dec_significand = dec.significand;
-    } else {
-      detail::dragonbox::decimal_fp<double> dec =
-          detail::dragonbox::to_decimal(double(value));
-      length = detail::count_digits(dec.significand);
-      exponent = dec.exponent;
-      buf.try_resize(to_unsigned(length));
-
-      if (dec.significand >= 100000000) {
-        dec_significand = uint32_t(dec.significand / 100000000);
-        uint32_t r = uint32_t(dec.significand) - 100000000 * dec_significand;
-        uint32_t r1 = r / 10000;
-        uint32_t r2 = r % 10000;
-        uint32_t a = r1 / 100;
-        uint32_t b = r1 % 100;
-        uint32_t c = r2 / 100;
-        uint32_t d = r2 % 100;
-
-        copy2(buf.data() + length - 8, data::digits[a]);
-        copy2(buf.data() + length - 6, data::digits[b]);
-        copy2(buf.data() + length - 4, data::digits[c]);
-        copy2(buf.data() + length - 2, data::digits[d]);
-        i += 8;
-      } else {
-        dec_significand = uint32_t(dec.significand);
-      }
+      auto dec = dragonbox::to_decimal(static_cast<float>(value));
+      write<char>(buffer_appender<char>(buf), dec.significand);
+      return dec.exponent;
     }
-
-    while (dec_significand >= 10000) {
-      uint32_t r = dec_significand % 10000;
-      dec_significand /= 10000;
-
-      copy2(buf.data() + length - i - 4, data::digits[r / 100]);
-      copy2(buf.data() + length - i - 2, data::digits[r % 100]);
-      i += 4;
-    }
-    if (dec_significand >= 100) {
-      uint32_t r = dec_significand % 100;
-      dec_significand /= 100;
-
-      copy2(buf.data() + length - i - 2, data::digits[r]);
-      i += 2;
-    }
-    if (dec_significand >= 10) {
-      copy2(buf.data() + length - i - 2, data::digits[dec_significand]);
-    } else {
-      *buf.data() = char('0' + dec_significand);
-    }
-
-    return exponent;
+    auto dec = dragonbox::to_decimal(static_cast<double>(value));
+    write<char>(buffer_appender<char>(buf), dec.significand);
+    return dec.exponent;
   }
 
-  // Use Grisu + Dragon4 for fixed precision
+  // Use Grisu + Dragon4 for the given precision:
+  // https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf.
   int exp = 0;
   const int min_exp = -60;  // alpha in Grisu.
   int cached_exp10 = 0;     // K in Grisu.
