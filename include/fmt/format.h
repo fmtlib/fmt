@@ -443,10 +443,14 @@ class counting_iterator {
     ++count_;
     return *this;
   }
-
   counting_iterator operator++(int) {
     auto it = *this;
     ++*this;
+    return it;
+  }
+
+  friend counting_iterator operator+(counting_iterator it, difference_type n) {
+    it.count_ += static_cast<size_t>(n);
     return it;
   }
 
@@ -581,6 +585,12 @@ template <typename OutChar, typename InputIt, typename OutputIt,
 OutputIt copy_str(InputIt begin, InputIt end, OutputIt it) {
   return std::transform(begin, end, it,
                         [](char c) { return static_cast<char8_type>(c); });
+}
+
+template <typename Char, typename InputIt>
+inline counting_iterator copy_str(InputIt begin, InputIt end,
+                                  counting_iterator it) {
+  return it + (end - begin);
 }
 
 #ifndef FMT_USE_GRISU

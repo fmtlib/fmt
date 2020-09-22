@@ -147,6 +147,7 @@ TEST(IteratorTest, CountingIterator) {
   auto prev = it++;
   EXPECT_EQ(prev.count(), 0);
   EXPECT_EQ(it.count(), 1);
+  EXPECT_EQ((it + 41).count(), 42);
 }
 
 TEST(IteratorTest, TruncatingIterator) {
