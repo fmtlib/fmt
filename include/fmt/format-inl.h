@@ -1990,17 +1990,17 @@ template <int N> struct small_division_by_pow10_info;
 template <> struct small_division_by_pow10_info<1> {
   static const uint32_t magic_number = 0xcccd;
   static const int shift_amount = 19;
-  static const int divisor = 10;
+  static const int divisor_times_10 = 100;
 };
 
 template <> struct small_division_by_pow10_info<2> {
   static const uint32_t magic_number = 0xa3d8;
   static const int shift_amount = 22;
-  static const int divisor = 100;
+  static const int divisor_times_10 = 1000;
 };
 
 template <int N> uint32_t small_division_by_pow10(uint32_t n) FMT_NOEXCEPT {
-  FMT_ASSERT(n <= small_division_by_pow10_info<N>::divisor, "n is too large");
+  FMT_ASSERT(n <= small_division_by_pow10_info<N>::divisor_times_10, "n is too large");
   return (n * small_division_by_pow10_info<N>::magic_number) >>
          small_division_by_pow10_info<N>::shift_amount;
 }
