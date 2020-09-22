@@ -196,7 +196,8 @@ FMT_END_NAMESPACE
 // Some compilers masquerade as both MSVC and GCC-likes or otherwise support
 // __builtin_clz and __builtin_clzll, so only define FMT_BUILTIN_CLZ using the
 // MSVC intrinsics if the clz and clzll builtins are not available.
-#if FMT_MSC_VER && !defined(FMT_BUILTIN_CLZLL) && !defined(FMT_BUILTIN_CTZLL) && !defined(_MANAGED)
+#if FMT_MSC_VER && !defined(FMT_BUILTIN_CLZLL) && \
+    !defined(FMT_BUILTIN_CTZLL) && !defined(_MANAGED)
 FMT_BEGIN_NAMESPACE
 namespace detail {
 // Avoid Clang with Microsoft CodeGen's -Wunknown-pragmas warning.
@@ -230,7 +231,7 @@ inline int clzll(uint64_t x) {
   _BitScanReverse(&r, static_cast<uint32_t>(x));
 #  endif
   FMT_ASSERT(x != 0, "");
-  FMT_SUPPRESS_MSC_WARNING(6102) // Suppress a bogus static analysis warning.
+  FMT_SUPPRESS_MSC_WARNING(6102)  // Suppress a bogus static analysis warning.
   return 63 ^ static_cast<int>(r);
 }
 #  define FMT_BUILTIN_CLZLL(n) detail::clzll(n)
@@ -243,7 +244,7 @@ inline int ctz(uint32_t x) {
   unsigned long r = 0;
   _BitScanForward(&r, x);
   FMT_ASSERT(x != 0, "");
-  FMT_SUPPRESS_MSC_WARNING(6102) // Suppress a bogus static analysis warning.
+  FMT_SUPPRESS_MSC_WARNING(6102)  // Suppress a bogus static analysis warning.
   return static_cast<int>(r);
 }
 #  define FMT_BUILTIN_CTZ(n) detail::ctz(n)
@@ -255,13 +256,12 @@ inline int ctz(uint32_t x) {
 inline int ctzll(uint64_t x) {
   unsigned long r = 0;
   FMT_ASSERT(x != 0, "");
-  FMT_SUPPRESS_MSC_WARNING(6102) // Suppress a bogus static analysis warning.
+  FMT_SUPPRESS_MSC_WARNING(6102)  // Suppress a bogus static analysis warning.
 #  ifdef _WIN64
   _BitScanForward64(&r, x);
 #  else
   // Scan the low 32 bits.
-  if (_BitScanForward(&r, static_cast<uint32_t>(x)))
-      return static_cast<int>(r);
+  if (_BitScanForward(&r, static_cast<uint32_t>(x))) return static_cast<int>(r);
   // Scan the high 32 bits.
   _BitScanForward(&r, static_cast<uint32_t>(x >> 32));
   r += 32;
