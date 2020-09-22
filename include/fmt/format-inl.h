@@ -1720,10 +1720,9 @@ struct grisu_shortest_handler {
   }
 };
 
-// Implementation of Dragonbox algorithm
-// (https://github.com/jk-jeon/dragonbox)
+// Implementation of Dragonbox algorithm: https://github.com/jk-jeon/dragonbox.
 namespace dragonbox {
-// Gets 128-bit result of multiplication of two 64-bit unsigned integers
+// Computes 128-bit result of multiplication of two 64-bit unsigned integers.
 FMT_SAFEBUFFERS inline uint128_wrapper umul128(uint64_t x,
                                                uint64_t y) FMT_NOEXCEPT {
 #if FMT_USE_INT128
@@ -1752,8 +1751,7 @@ FMT_SAFEBUFFERS inline uint128_wrapper umul128(uint64_t x,
 #endif
 }
 
-// Gets upper 64-bits of multiplication of a 64-bit unsigned integer and a
-// 64-bit unsigned integer
+// Computes upper 64 bits of multiplication of two 64-bit unsigned integers.
 FMT_SAFEBUFFERS inline uint64_t umul128_upper64(uint64_t x,
                                                 uint64_t y) FMT_NOEXCEPT {
 #if FMT_USE_INT128
@@ -1780,8 +1778,8 @@ FMT_SAFEBUFFERS inline uint64_t umul128_upper64(uint64_t x,
 #endif
 }
 
-// Gets upper 64-bits of multiplication of a 64-bit unsigned integer and a
-// 128-bit unsigned integer
+// Computes upper 64 bits of multiplication of a 64-bit unsigned integer and a
+// 128-bit unsigned integer.
 FMT_SAFEBUFFERS inline uint64_t umul192_upper64(uint64_t x, uint128_wrapper y)
     FMT_NOEXCEPT {
   uint128_wrapper g0 = umul128(x, y.high());
@@ -1789,14 +1787,14 @@ FMT_SAFEBUFFERS inline uint64_t umul192_upper64(uint64_t x, uint128_wrapper y)
   return g0.high();
 }
 
-// Gets upper 32-bits of multiplication of a 32-bit unsigned integer and a
-// 64-bit unsigned integer
+// Computes upper 32 bits of multiplication of a 32-bit unsigned integer and a
+// 64-bit unsigned integer.
 inline uint32_t umul96_upper32(uint32_t x, uint64_t y) FMT_NOEXCEPT {
   return static_cast<uint32_t>(umul128_upper64(x, y));
 }
 
-// Gets middle 64-bits of multiplication of a 64-bit unsigned integer and a
-// 128-bit unsigned integer
+// Computes middle 64 bits of multiplication of a 64-bit unsigned integer and a
+// 128-bit unsigned integer.
 FMT_SAFEBUFFERS inline uint64_t umul192_middle64(uint64_t x, uint128_wrapper y)
     FMT_NOEXCEPT {
   uint64_t g01 = x * y.high();
@@ -1804,13 +1802,13 @@ FMT_SAFEBUFFERS inline uint64_t umul192_middle64(uint64_t x, uint128_wrapper y)
   return g01 + g10;
 }
 
-// Get middle 32-bits of multiplication of a 32-bit unsigned integer and a
-// 64-bit unsigned integer
+// Computes lower 64 bits of multiplication of a 32-bit unsigned integer and a
+// 64-bit unsigned integer.
 inline uint64_t umul96_lower64(uint32_t x, uint64_t y) FMT_NOEXCEPT {
   return x * y;
 }
 
-// Various fast log computations
+// Various fast log computations.
 inline int floor_log10_pow2(int e) FMT_NOEXCEPT {
   FMT_ASSERT(e <= 1700 && e >= -1700, "too large exponent");
   const uint64_t log10_2_fractional_digits = 0x4d104d427de7fbcc;
@@ -1841,7 +1839,7 @@ inline int floor_log10_pow2_minus_log10_4_over_3(int e) FMT_NOEXCEPT {
          shift_amount;
 }
 
-// Type-specific information that Dragonbox uses
+// Type-specific information that Dragonbox uses.
 template <class T> struct float_info;
 
 template <> struct float_info<float> {
@@ -1902,7 +1900,7 @@ template <class T> struct decimal_fp {
   int exponent;
 };
 
-// Fast divisibility test for powers of 2 (float)
+// Fast divisibility test for powers of 2 (float).
 inline bool divisible_by_power_of_2(uint32_t x, int exp) FMT_NOEXCEPT {
   FMT_ASSERT(exp >= 1, "");
   FMT_ASSERT(x != 0, "");
@@ -1915,7 +1913,7 @@ inline bool divisible_by_power_of_2(uint32_t x, int exp) FMT_NOEXCEPT {
   return x == ((x >> exp) << exp);
 #endif
 }
-// Fast divisibility test for powers of 2 (double)
+// Fast divisibility test for powers of 2 (double).
 inline bool divisible_by_power_of_2(uint64_t x, int exp) FMT_NOEXCEPT {
   FMT_ASSERT(exp >= 1, "");
   FMT_ASSERT(x != 0, "");
@@ -1929,13 +1927,13 @@ inline bool divisible_by_power_of_2(uint64_t x, int exp) FMT_NOEXCEPT {
 #endif
 }
 
-// Fast divisibility test for powers of 5 (float)
+// Fast divisibility test for powers of 5 (float).
 inline bool divisible_by_power_of_5(uint32_t x, int exp) FMT_NOEXCEPT {
   FMT_ASSERT(exp <= 10, "too large exponent");
   return (x * data::divtest_table_for_pow5_32[exp].mod_inv) <=
          data::divtest_table_for_pow5_32[exp].max_quotient;
 }
-// Fast divisibility test for powers of 5 (double)
+// Fast divisibility test for powers of 5 (double).
 inline bool divisible_by_power_of_5(uint64_t x, int exp) FMT_NOEXCEPT {
   FMT_ASSERT(exp <= 23, "too large exponent");
   return (x * data::divtest_table_for_pow5_64[exp].mod_inv) <=
@@ -2167,7 +2165,7 @@ template <> struct cache_accessor<double> {
             1) /
            2;
   }
-};  // namespace dragonbox
+};
 
 // Various integer checks
 template <class T>
