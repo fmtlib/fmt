@@ -202,8 +202,14 @@ FMT_BEGIN_NAMESPACE
 namespace detail {
 // Avoid Clang with Microsoft CodeGen's -Wunknown-pragmas warning.
 #  ifndef __clang__
+#    pragma intrinsic(_BitScanForward)
 #    pragma intrinsic(_BitScanReverse)
 #  endif
+#  if defined(_WIN64) && !defined(__clang__)
+#    pragma intrinsic(_BitScanForward64)
+#    pragma intrinsic(_BitScanReverse64)
+#  endif
+
 inline int clz(uint32_t x) {
   unsigned long r = 0;
   _BitScanReverse(&r, x);
@@ -215,10 +221,6 @@ inline int clz(uint32_t x) {
   return 31 ^ static_cast<int>(r);
 }
 #  define FMT_BUILTIN_CLZ(n) detail::clz(n)
-
-#  if defined(_WIN64) && !defined(__clang__)
-#    pragma intrinsic(_BitScanReverse64)
-#  endif
 
 inline int clzll(uint64_t x) {
   unsigned long r = 0;
@@ -236,10 +238,6 @@ inline int clzll(uint64_t x) {
 }
 #  define FMT_BUILTIN_CLZLL(n) detail::clzll(n)
 
-// Avoid Clang with Microsoft CodeGen's -Wunknown-pragmas warning.
-#  ifndef __clang__
-#    pragma intrinsic(_BitScanForward)
-#  endif
 inline int ctz(uint32_t x) {
   unsigned long r = 0;
   _BitScanForward(&r, x);
@@ -248,10 +246,6 @@ inline int ctz(uint32_t x) {
   return static_cast<int>(r);
 }
 #  define FMT_BUILTIN_CTZ(n) detail::ctz(n)
-
-#  if defined(_WIN64) && !defined(__clang__)
-#    pragma intrinsic(_BitScanForward64)
-#  endif
 
 inline int ctzll(uint64_t x) {
   unsigned long r = 0;
