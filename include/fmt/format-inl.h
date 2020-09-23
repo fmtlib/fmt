@@ -1858,30 +1858,23 @@ template <class T> struct decimal_fp {
   int exponent;
 };
 
-// Fast divisibility test for powers of 2 (float).
+// Returns true iff x is divisible by pow(2, exp).
 inline bool divisible_by_power_of_2(uint32_t x, int exp) FMT_NOEXCEPT {
   FMT_ASSERT(exp >= 1, "");
   FMT_ASSERT(x != 0, "");
 #ifdef FMT_BUILTIN_CTZ
   return FMT_BUILTIN_CTZ(x) >= exp;
 #else
-  if (exp >= num_bits<uint32_t>()) {
-    return false;
-  }
-  return x == ((x >> exp) << exp);
+  return exp < num_bits<uint32_t>() && x == ((x >> exp) << exp);
 #endif
 }
-// Fast divisibility test for powers of 2 (double).
 inline bool divisible_by_power_of_2(uint64_t x, int exp) FMT_NOEXCEPT {
   FMT_ASSERT(exp >= 1, "");
   FMT_ASSERT(x != 0, "");
 #ifdef FMT_BUILTIN_CTZLL
   return FMT_BUILTIN_CTZLL(x) >= exp;
 #else
-  if (exp >= num_bits<uint64_t>()) {
-    return false;
-  }
-  return x == ((x >> exp) << exp);
+  return exp < num_bits<uint64_t>()) && x == ((x >> exp) << exp);
 #endif
 }
 
