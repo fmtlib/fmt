@@ -1198,10 +1198,11 @@ inline fp operator*(fp x, fp y) { return {multiply(x.f, y.f), x.e + y.e + 64}; }
 // (binary) exponent satisfies `min_exponent <= c_k.e <= min_exponent + 28`.
 inline fp get_cached_power(int min_exponent, int& pow10_exponent) {
   const int shift = 32;
-  int index = static_cast<int>(((min_exponent + fp::significand_size - 1) *
-                                    (data::log10_2_significand >> shift) +
-                                ((int64_t(1) << shift) - 1))  // ceil
-                               >> 32  // arithmetic shift
+  const auto significand = static_cast<int64_t>(data::log10_2_significand);
+  int index = static_cast<int>(
+      ((min_exponent + fp::significand_size - 1) * (significand >> shift) +
+       ((int64_t(1) << shift) - 1))  // ceil
+      >> 32                          // arithmetic shift
   );
   // Decimal exponent of the first (smallest) cached power of 10.
   const int first_dec_exp = -348;

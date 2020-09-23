@@ -220,6 +220,19 @@ TEST(FPTest, GetCachedPower) {
   }
 }
 
+TEST(FPTest, DragonboxMaxK) {
+  using fmt::detail::dragonbox::floor_log10_pow2;
+  using float_info = fmt::detail::dragonbox::float_info<float>;
+  EXPECT_EQ(fmt::detail::const_check(float_info::max_k),
+            float_info::kappa - floor_log10_pow2(float_info::min_exponent -
+                                                 float_info::significand_bits));
+  using double_info = fmt::detail::dragonbox::float_info<double>;
+  EXPECT_EQ(
+      fmt::detail::const_check(double_info::max_k),
+      double_info::kappa - floor_log10_pow2(double_info::min_exponent -
+                                            double_info::significand_bits));
+}
+
 TEST(FPTest, GetRoundDirection) {
   using fmt::detail::get_round_direction;
   using fmt::detail::round_direction;
