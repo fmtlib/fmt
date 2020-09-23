@@ -1934,6 +1934,7 @@ template <class T> struct cache_accessor;
 template <> struct cache_accessor<float> {
   using carrier_uint = float_info<float>::carrier_uint;
   using cache_entry_type = uint64_t;
+
   static uint64_t get_cached_power(int k) FMT_NOEXCEPT {
     FMT_ASSERT(k >= float_info<float>::min_k && k <= float_info<float>::max_k,
                "k is out of range");
@@ -1986,6 +1987,7 @@ template <> struct cache_accessor<float> {
 template <> struct cache_accessor<double> {
   using carrier_uint = float_info<double>::carrier_uint;
   using cache_entry_type = uint128_wrapper;
+
   static uint128_wrapper get_cached_power(int k) FMT_NOEXCEPT {
     FMT_ASSERT(k >= float_info<double>::min_k && k <= float_info<double>::max_k,
                "k is out of range");
@@ -1996,53 +1998,46 @@ template <> struct cache_accessor<double> {
 #else
     static const int compression_ratio = 27;
 
-    // Compute base index
+    // Compute base index.
     int cache_index = (k - float_info<double>::min_k) / compression_ratio;
     int kb = cache_index * compression_ratio + float_info<double>::min_k;
     int offset = k - kb;
 
-    // Get base cache
+    // Get base cache.
     uint128_wrapper base_cache =
         data::dragonbox_pow10_significands_128[cache_index];
+    if (offset == 0) return base_cache;
 
-    if (offset == 0) {
-      return base_cache;
-    } else {
-      // Compute the required amount of bit-shift
-      int alpha = floor_log2_pow10(kb + offset) - floor_log2_pow10(kb) - offset;
-      FMT_ASSERT(alpha > 0 && alpha < 64, "shifting error detected");
+    // Compute the required amount of bit-shift.
+    int alpha = floor_log2_pow10(kb + offset) - floor_log2_pow10(kb) - offset;
+    FMT_ASSERT(alpha > 0 && alpha < 64, "shifting error detected");
 
-      // Try to recover the real cache
-      uint64_t pow5 = data::powers_of_5_64[offset];
-      uint128_wrapper recovered_cache = umul128(base_cache.high(), pow5);
-      uint128_wrapper middle_low =
-          umul128(base_cache.low() - (kb < 0 ? 1 : 0), pow5);
+    // Try to recover the real cache.
+    uint64_t pow5 = data::powers_of_5_64[offset];
+    uint128_wrapper recovered_cache = umul128(base_cache.high(), pow5);
+    uint128_wrapper middle_low =
+        umul128(base_cache.low() - (kb < 0 ? 1 : 0), pow5);
 
-      recovered_cache += middle_low.high();
+    recovered_cache += middle_low.high();
 
-      uint64_t high_to_middle = recovered_cache.high() << (64 - alpha);
-      uint64_t middle_to_low = recovered_cache.low() << (64 - alpha);
+    uint64_t high_to_middle = recovered_cache.high() << (64 - alpha);
+    uint64_t middle_to_low = recovered_cache.low() << (64 - alpha);
 
-      recovered_cache =
-          uint128_wrapper{(recovered_cache.low() >> alpha) | high_to_middle,
-                          ((middle_low.low() >> alpha) | middle_to_low)};
+    recovered_cache =
+        uint128_wrapper{(recovered_cache.low() >> alpha) | high_to_middle,
+                        ((middle_low.low() >> alpha) | middle_to_low)};
 
-      if (kb < 0) {
-        recovered_cache += 1;
-      }
+    if (kb < 0) recovered_cache += 1;
 
-      // Get error
-      int error_idx = (k - float_info<double>::min_k) / 16;
-      uint32_t error = (data::dragonbox_pow10_recovery_errors[error_idx] >>
-                        ((k - float_info<double>::min_k) % 16) * 2) &
-                       0x3;
+    // Get error.
+    int error_idx = (k - float_info<double>::min_k) / 16;
+    uint32_t error = (data::dragonbox_pow10_recovery_errors[error_idx] >>
+                      ((k - float_info<double>::min_k) % 16) * 2) &
+                     0x3;
 
-      // Add the error back
-      FMT_ASSERT(recovered_cache.low() + error >= recovered_cache.low(), "");
-      recovered_cache = {recovered_cache.high(), recovered_cache.low() + error};
-
-      return recovered_cache;
-    }
+    // Add the error back.
+    FMT_ASSERT(recovered_cache.low() + error >= recovered_cache.low(), "");
+    return {recovered_cache.high(), recovered_cache.low() + error};
 #endif
   }
 
