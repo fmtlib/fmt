@@ -1718,21 +1718,7 @@ FMT_SAFEBUFFERS inline uint64_t umul128_upper64(uint64_t x,
 #elif defined(_MSC_VER) && defined(_M_X64)
   return __umulh(x, y);
 #else
-  const uint64_t mask = (1ull << 32) - 1ull;
-
-  uint64_t a = x >> 32;
-  uint64_t b = x & mask;
-  uint64_t c = y >> 32;
-  uint64_t d = y & mask;
-
-  uint64_t ac = a * c;
-  uint64_t bc = b * c;
-  uint64_t ad = a * d;
-  uint64_t bd = b * d;
-
-  uint64_t intermediate = (bd >> 32) + (ad & mask) + (bc & mask);
-
-  return ac + (intermediate >> 32) + (ad >> 32) + (bc >> 32);
+  return umul128(x, y).high();
 #endif
 }
 
@@ -1878,53 +1864,35 @@ inline bool divisible_by_power_of_2(uint64_t x, int exp) FMT_NOEXCEPT {
 #endif
 }
 
-// Fast divisibility test for powers of 5 (float).
+// Returns true iff x is divisible by pow(5, exp).
 inline bool divisible_by_power_of_5(uint32_t x, int exp) FMT_NOEXCEPT {
   FMT_ASSERT(exp <= 10, "too large exponent");
-  return (x * data::divtest_table_for_pow5_32[exp].mod_inv) <=
+  return x * data::divtest_table_for_pow5_32[exp].mod_inv <=
          data::divtest_table_for_pow5_32[exp].max_quotient;
 }
-// Fast divisibility test for powers of 5 (double).
 inline bool divisible_by_power_of_5(uint64_t x, int exp) FMT_NOEXCEPT {
   FMT_ASSERT(exp <= 23, "too large exponent");
-  return (x * data::divtest_table_for_pow5_64[exp].mod_inv) <=
+  return x * data::divtest_table_for_pow5_64[exp].mod_inv <=
          data::divtest_table_for_pow5_64[exp].max_quotient;
 }
 
-// Replaces n by floor(n / 5^N)
-// Returns true if and only if n is divisible by 5^N
-// Precondition: n <= 2 * 5^(N+1)
-template <int N> struct check_divisibility_and_divide_by_pow5_info;
-
-template <> struct check_divisibility_and_divide_by_pow5_info<1> {
-  static const uint32_t magic_number = 0xcccd;
-  static const int bits_for_comparison = 16;
-  static const uint32_t threshold = 0x3333;
-  static const int shift_amount = 18;
-};
-
-template <> struct check_divisibility_and_divide_by_pow5_info<2> {
-  static const uint32_t magic_number = 0xa429;
-  static const int bits_for_comparison = 8;
-  static const uint32_t threshold = 0x0a;
-  static const int shift_amount = 20;
-};
-
+// Replaces n by floor(n / pow(5, N)) returning true if and only if n is
+// divisible by pow(5, N).
+// Precondition: n <= 2 * pow(5, N + 1).
 template <int N>
 bool check_divisibility_and_divide_by_pow5(uint32_t& n) FMT_NOEXCEPT {
-  using info = check_divisibility_and_divide_by_pow5_info<N>;
-  n *= info::magic_number;
-  const uint32_t comparison_mask =
-      info::bits_for_comparison >= 32 ? std::numeric_limits<uint32_t>::max()
-                                      : ((1u << info::bits_for_comparison) - 1);
-
-  if ((n & comparison_mask) <= info::threshold) {
-    n >>= info::shift_amount;
-    return true;
-  } else {
-    n >>= info::shift_amount;
-    return false;
-  }
+  static constexpr struct {
+    uint32_t magic_number;
+    int bits_for_comparison;
+    uint32_t threshold;
+    int shift_amount;
+  } infos[] = {{0xcccd, 16, 0x3333, 18}, {0xa429, 8, 0x0a, 20}};
+  constexpr auto info = infos[N - 1];
+  n *= info.magic_number;
+  const uint32_t comparison_mask = (1u << info.bits_for_comparison) - 1;
+  bool result = (n & comparison_mask) <= info.threshold;
+  n >>= info.shift_amount;
+  return result;
 }
 
 // Computes floor(n / 10^N) for small n and N
@@ -1944,7 +1912,8 @@ template <> struct small_division_by_pow10_info<2> {
 };
 
 template <int N> uint32_t small_division_by_pow10(uint32_t n) FMT_NOEXCEPT {
-  FMT_ASSERT(n <= small_division_by_pow10_info<N>::divisor_times_10, "n is too large");
+  FMT_ASSERT(n <= small_division_by_pow10_info<N>::divisor_times_10,
+             "n is too large");
   return (n * small_division_by_pow10_info<N>::magic_number) >>
          small_division_by_pow10_info<N>::shift_amount;
 }
@@ -2285,8 +2254,9 @@ FMT_ALWAYS_INLINE int remove_trailing_zeros(uint64_t& n) FMT_NOEXCEPT {
 
 // The main algorithm for shorter interval case
 template <class T>
-FMT_ALWAYS_INLINE FMT_SAFEBUFFERS void shorter_interval_case(
-    decimal_fp<T>& ret_value, int exponent) FMT_NOEXCEPT {
+FMT_ALWAYS_INLINE FMT_SAFEBUFFERS decimal_fp<T> shorter_interval_case(
+    int exponent) FMT_NOEXCEPT {
+  decimal_fp<T> ret_value;
   // Compute k and beta
   const int minus_k = floor_log10_pow2_minus_log10_4_over_3(exponent);
   const int beta_minus_1 = exponent + floor_log2_pow10(-minus_k);
@@ -2312,7 +2282,7 @@ FMT_ALWAYS_INLINE FMT_SAFEBUFFERS void shorter_interval_case(
   if (ret_value.significand * 10 >= xi) {
     ret_value.exponent = minus_k + 1;
     ret_value.exponent += remove_trailing_zeros(ret_value.significand);
-    return;
+    return ret_value;
   }
 
   // Otherwise, compute the round-up of y
@@ -2330,19 +2300,17 @@ FMT_ALWAYS_INLINE FMT_SAFEBUFFERS void shorter_interval_case(
   } else if (ret_value.significand < xi) {
     ++ret_value.significand;
   }
+  return ret_value;
 }
 
-// The main algorithm for the normal case
 template <class T> FMT_SAFEBUFFERS decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT {
-  // Step 1: integer promotion & Schubfach multiplier calculation
+  // Step 1: integer promotion & Schubfach multiplier calculation.
 
   using carrier_uint = typename float_info<T>::carrier_uint;
   using cache_entry_type = typename cache_accessor<T>::cache_entry_type;
+  auto br = bit_cast<carrier_uint>(x);
 
-  carrier_uint br = bit_cast<carrier_uint>(x);
-  decimal_fp<T> ret_value;
-
-  // Extract significand bits and exponent bits
+  // Extract significand bits and exponent bits.
   const carrier_uint significand_mask =
       (static_cast<carrier_uint>(1) << float_info<T>::significand_bits) - 1;
   carrier_uint significand = (br & significand_mask);
@@ -2352,28 +2320,24 @@ template <class T> FMT_SAFEBUFFERS decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT {
   int exponent =
       static_cast<int>((br & exponent_mask) >> float_info<T>::significand_bits);
 
-  // Deal with normal/subnormal dichotomy
-  if (exponent != 0) {
+  if (exponent != 0) {  // Check if normal.
     exponent += float_info<T>::exponent_bias - float_info<T>::significand_bits;
 
-    // Shorter interval case; proceed like Schubfach
-    if (significand == 0) {
-      shorter_interval_case<T>(ret_value, exponent);
-      return ret_value;
-    }
+    // Shorter interval case; proceed like Schubfach.
+    if (significand == 0)
+      return shorter_interval_case<T>(exponent);
 
     significand |=
         (static_cast<carrier_uint>(1) << float_info<T>::significand_bits);
-  }
-  // Subnormal case; interval is always regular
-  else {
+  } else {
+    // Subnormal case; the interval is always regular.
     exponent = float_info<T>::min_exponent - float_info<T>::significand_bits;
   }
 
   const bool include_left_endpoint = (significand % 2 == 0);
-  const bool include_right_endpoint = (significand % 2 == 0);
+  const bool include_right_endpoint = include_left_endpoint;
 
-  // Compute k and beta
+  // Compute k and beta.
   const int minus_k = floor_log10_pow2(exponent) - float_info<T>::kappa;
   const cache_entry_type cache = cache_accessor<T>::get_cached_power(-minus_k);
   const int beta_minus_1 = exponent + floor_log2_pow10(-minus_k);
@@ -2390,6 +2354,7 @@ template <class T> FMT_SAFEBUFFERS decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT {
 
   // Using an upper bound on zi, we might be able to optimize the division
   // better than the compiler; we are computing zi / big_divisor here
+  decimal_fp<T> ret_value;
   ret_value.significand = divide_by_10_to_kappa_plus_1(zi);
   uint32_t r = static_cast<uint32_t>(zi - float_info<T>::big_divisor *
                                               ret_value.significand);
