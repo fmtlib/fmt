@@ -54,7 +54,7 @@ TEST(RangesTest, FormatTuple) {
 TEST(RangesTest, JoinTuple) {
   // Value tuple args
   std::tuple<char, int, float> t1 = std::make_tuple('a', 1, 2.0f);
-  EXPECT_EQ("(a, 1, 2.0)", fmt::format("({})", fmt::join(t1, ", ")));
+  EXPECT_EQ("(a, 1, 2)", fmt::format("({})", fmt::join(t1, ", ")));
 
   // Testing lvalue tuple args
   int x = 4;
@@ -67,7 +67,7 @@ TEST(RangesTest, JoinTuple) {
 
   // Single element tuple
   std::tuple<float> t4{4.0f};
-  EXPECT_EQ("4.0", fmt::format("{}", fmt::join(t4, "/")));
+  EXPECT_EQ("4", fmt::format("{}", fmt::join(t4, "/")));
 }
 
 TEST(RangesTest, JoinInitializerList) {

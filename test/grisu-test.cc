@@ -35,7 +35,7 @@ TEST(GrisuTest, Inf) {
   EXPECT_EQ("-inf", fmt::format("{}", -inf));
 }
 
-TEST(GrisuTest, Zero) { EXPECT_EQ("0.0", fmt::format("{}", 0.0)); }
+TEST(GrisuTest, Zero) { EXPECT_EQ("0", fmt::format("{}", 0.0)); }
 
 TEST(GrisuTest, Round) {
   EXPECT_EQ("1.9156918820264798e-56",
@@ -47,9 +47,9 @@ TEST(GrisuTest, Prettify) {
   EXPECT_EQ("0.0001", fmt::format("{}", 1e-4));
   EXPECT_EQ("1e-05", fmt::format("{}", 1e-5));
   EXPECT_EQ("9.999e-05", fmt::format("{}", 9.999e-5));
-  EXPECT_EQ("10000000000.0", fmt::format("{}", 1e10));
-  EXPECT_EQ("100000000000.0", fmt::format("{}", 1e11));
-  EXPECT_EQ("12340000000.0", fmt::format("{}", 1234e7));
+  EXPECT_EQ("10000000000", fmt::format("{}", 1e10));
+  EXPECT_EQ("100000000000", fmt::format("{}", 1e11));
+  EXPECT_EQ("12340000000", fmt::format("{}", 1234e7));
   EXPECT_EQ("12.34", fmt::format("{}", 1234e-2));
   EXPECT_EQ("0.001234", fmt::format("{}", 1234e-6));
   EXPECT_EQ("0.1", fmt::format("{}", 0.1f));

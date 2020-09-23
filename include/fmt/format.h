@@ -1276,7 +1276,7 @@ template <typename Char> class float_writer {
       // 1234e7 -> 12340000000[.0+]
       it = copy_str<Char>(digits_, digits_ + num_digits_, it);
       it = std::fill_n(it, full_exp - num_digits_, static_cast<Char>('0'));
-      if (specs_.showpoint || specs_.precision < 0) {
+      if (specs_.showpoint) {
         *it++ = decimal_point_;
         int num_zeros = specs_.precision - full_exp;
         if (num_zeros <= 0) {

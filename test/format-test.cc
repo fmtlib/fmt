@@ -583,8 +583,8 @@ TEST(FormatterTest, LeftAlign) {
   EXPECT_EQ("42   ", format("{0:<5}", 42ul));
   EXPECT_EQ("-42  ", format("{0:<5}", -42ll));
   EXPECT_EQ("42   ", format("{0:<5}", 42ull));
-  EXPECT_EQ("-42.0  ", format("{0:<7}", -42.0));
-  EXPECT_EQ("-42.0  ", format("{0:<7}", -42.0l));
+  EXPECT_EQ("-42  ", format("{0:<5}", -42.0));
+  EXPECT_EQ("-42  ", format("{0:<5}", -42.0l));
   EXPECT_EQ("c    ", format("{0:<5}", 'c'));
   EXPECT_EQ("abc  ", format("{0:<5}", "abc"));
   EXPECT_EQ("0xface  ", format("{0:<8}", reinterpret_cast<void*>(0xface)));
@@ -600,8 +600,8 @@ TEST(FormatterTest, RightAlign) {
   EXPECT_EQ("   42", format("{0:>5}", 42ul));
   EXPECT_EQ("  -42", format("{0:>5}", -42ll));
   EXPECT_EQ("   42", format("{0:>5}", 42ull));
-  EXPECT_EQ("  -42.0", format("{0:>7}", -42.0));
-  EXPECT_EQ("  -42.0", format("{0:>7}", -42.0l));
+  EXPECT_EQ("  -42", format("{0:>5}", -42.0));
+  EXPECT_EQ("  -42", format("{0:>5}", -42.0l));
   EXPECT_EQ("    c", format("{0:>5}", 'c'));
   EXPECT_EQ("  abc", format("{0:>5}", "abc"));
   EXPECT_EQ("  0xface", format("{0:>8}", reinterpret_cast<void*>(0xface)));
@@ -621,8 +621,8 @@ TEST(FormatterTest, CenterAlign) {
   EXPECT_EQ(" 42  ", format("{0:^5}", 42ul));
   EXPECT_EQ(" -42 ", format("{0:^5}", -42ll));
   EXPECT_EQ(" 42  ", format("{0:^5}", 42ull));
-  EXPECT_EQ(" -42.0 ", format("{0:^7}", -42.0));
-  EXPECT_EQ(" -42.0 ", format("{0:^7}", -42.0l));
+  EXPECT_EQ(" -42 ", format("{0:^5}", -42.0));
+  EXPECT_EQ(" -42 ", format("{0:^5}", -42.0l));
   EXPECT_EQ("  c  ", format("{0:^5}", 'c'));
   EXPECT_EQ(" abc  ", format("{0:^6}", "abc"));
   EXPECT_EQ(" 0xface ", format("{0:^8}", reinterpret_cast<void*>(0xface)));
@@ -640,8 +640,8 @@ TEST(FormatterTest, Fill) {
   EXPECT_EQ("***42", format("{0:*>5}", 42ul));
   EXPECT_EQ("**-42", format("{0:*>5}", -42ll));
   EXPECT_EQ("***42", format("{0:*>5}", 42ull));
-  EXPECT_EQ("**-42.0", format("{0:*>7}", -42.0));
-  EXPECT_EQ("**-42.0", format("{0:*>7}", -42.0l));
+  EXPECT_EQ("**-42", format("{0:*>5}", -42.0));
+  EXPECT_EQ("**-42", format("{0:*>5}", -42.0l));
   EXPECT_EQ("c****", format("{0:*<5}", 'c'));
   EXPECT_EQ("abc**", format("{0:*<5}", "abc"));
   EXPECT_EQ("**0xface", format("{0:*>8}", reinterpret_cast<void*>(0xface)));
@@ -664,8 +664,8 @@ TEST(FormatterTest, PlusSign) {
   EXPECT_EQ("+42", format("{0:+}", 42ll));
   EXPECT_THROW_MSG(format("{0:+}", 42ull), format_error,
                    "format specifier requires signed argument");
-  EXPECT_EQ("+42.0", format("{0:+}", 42.0));
-  EXPECT_EQ("+42.0", format("{0:+}", 42.0l));
+  EXPECT_EQ("+42", format("{0:+}", 42.0));
+  EXPECT_EQ("+42", format("{0:+}", 42.0l));
   EXPECT_THROW_MSG(format("{0:+", 'c'), format_error,
                    "missing '}' in format string");
   EXPECT_THROW_MSG(format("{0:+}", 'c'), format_error,
@@ -688,8 +688,8 @@ TEST(FormatterTest, MinusSign) {
   EXPECT_EQ("42", format("{0:-}", 42ll));
   EXPECT_THROW_MSG(format("{0:-}", 42ull), format_error,
                    "format specifier requires signed argument");
-  EXPECT_EQ("42.0", format("{0:-}", 42.0));
-  EXPECT_EQ("42.0", format("{0:-}", 42.0l));
+  EXPECT_EQ("42", format("{0:-}", 42.0));
+  EXPECT_EQ("42", format("{0:-}", 42.0l));
   EXPECT_THROW_MSG(format("{0:-", 'c'), format_error,
                    "missing '}' in format string");
   EXPECT_THROW_MSG(format("{0:-}", 'c'), format_error,
@@ -712,8 +712,8 @@ TEST(FormatterTest, SpaceSign) {
   EXPECT_EQ(" 42", format("{0: }", 42ll));
   EXPECT_THROW_MSG(format("{0: }", 42ull), format_error,
                    "format specifier requires signed argument");
-  EXPECT_EQ(" 42.0", format("{0: }", 42.0));
-  EXPECT_EQ(" 42.0", format("{0: }", 42.0l));
+  EXPECT_EQ(" 42", format("{0: }", 42.0));
+  EXPECT_EQ(" 42", format("{0: }", 42.0l));
   EXPECT_THROW_MSG(format("{0: ", 'c'), format_error,
                    "missing '}' in format string");
   EXPECT_THROW_MSG(format("{0: }", 'c'), format_error,
@@ -782,8 +782,8 @@ TEST(FormatterTest, ZeroFlag) {
   EXPECT_EQ("00042", format("{0:05}", 42ul));
   EXPECT_EQ("-0042", format("{0:05}", -42ll));
   EXPECT_EQ("00042", format("{0:05}", 42ull));
-  EXPECT_EQ("-0042.0", format("{0:07}", -42.0));
-  EXPECT_EQ("-0042.0", format("{0:07}", -42.0l));
+  EXPECT_EQ("-000042", format("{0:07}", -42.0));
+  EXPECT_EQ("-000042", format("{0:07}", -42.0l));
   EXPECT_THROW_MSG(format("{0:0", 'c'), format_error,
                    "missing '}' in format string");
   EXPECT_THROW_MSG(format("{0:05}", 'c'), format_error,
@@ -956,7 +956,7 @@ TEST(FormatterTest, Precision) {
   EXPECT_EQ("123.", format("{:#.0f}", 123.0));
   EXPECT_EQ("1.23", format("{:.02f}", 1.234));
   EXPECT_EQ("0.001", format("{:.1g}", 0.001));
-  EXPECT_EQ("1019666400.0", format("{}", 1019666432.0f));
+  EXPECT_EQ("1019666400", format("{}", 1019666432.0f));
 
   EXPECT_THROW_MSG(format("{0:.2}", reinterpret_cast<void*>(0xcafe)),
                    format_error,
@@ -1243,7 +1243,7 @@ TEST(FormatterTest, FormatFloat) {
 
 TEST(FormatterTest, FormatDouble) {
   check_unknown_types(1.2, "eEfFgGaAnL%", "double");
-  EXPECT_EQ("0.0", format("{:}", 0.0));
+  EXPECT_EQ("0", format("{:}", 0.0));
   EXPECT_EQ("0.000000", format("{:f}", 0.0));
   EXPECT_EQ("0", format("{:g}", 0.0));
   EXPECT_EQ("392.65", format("{:}", 392.65));
@@ -1310,7 +1310,7 @@ TEST(FormatterTest, FormatInfinity) {
 }
 
 TEST(FormatterTest, FormatLongDouble) {
-  EXPECT_EQ("0.0", format("{0:}", 0.0l));
+  EXPECT_EQ("0", format("{0:}", 0.0l));
   EXPECT_EQ("0.000000", format("{0:f}", 0.0l));
   EXPECT_EQ("392.65", format("{0:}", 392.65l));
   EXPECT_EQ("392.65", format("{0:g}", 392.65l));
