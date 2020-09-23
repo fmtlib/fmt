@@ -879,6 +879,8 @@ template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
   static const divtest_table_entry<uint64_t> divtest_table_for_pow5_64[];
   static const uint64_t dragonbox_pow10_significands_64[];
   static const uint128_wrapper dragonbox_pow10_significands_128[];
+  // log10(2) = 0x0.4d104d427de7fbcc...
+  static const uint64_t log10_2_significand = 0x4d104d427de7fbcc;
 #if !FMT_USE_FULL_CACHE_DRAGONBOX
   static const uint64_t powers_of_5_64[];
   static const uint32_t dragonbox_pow10_recovery_errors[];

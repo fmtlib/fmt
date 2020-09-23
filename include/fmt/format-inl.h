@@ -1197,11 +1197,11 @@ inline fp operator*(fp x, fp y) { return {multiply(x.f, y.f), x.e + y.e + 64}; }
 // Returns a cached power of 10 `c_k = c_k.f * pow(2, c_k.e)` such that its
 // (binary) exponent satisfies `min_exponent <= c_k.e <= min_exponent + 28`.
 inline fp get_cached_power(int min_exponent, int& pow10_exponent) {
-  const int64_t one_over_log2_10 = 0x4d104d42;  // round(pow(2, 32) / log2(10))
-  int index = static_cast<int>(
-      ((min_exponent + fp::significand_size - 1) * one_over_log2_10 +
-       ((int64_t(1) << 32) - 1))  // ceil
-      >> 32                       // arithmetic shift
+  const int shift = 32;
+  int index = static_cast<int>(((min_exponent + fp::significand_size - 1) *
+                                    (data::log10_2_significand >> shift) +
+                                ((int64_t(1) << shift) - 1))  // ceil
+                               >> 32  // arithmetic shift
   );
   // Decimal exponent of the first (smallest) cached power of 10.
   const int first_dec_exp = -348;
@@ -1752,15 +1752,16 @@ inline uint64_t umul96_lower64(uint32_t x, uint64_t y) FMT_NOEXCEPT {
   return x * y;
 }
 
-// Various fast log computations.
+// Computes floor(log10(pow(2, e))) for e in [-1700, 1700] using the method from
+// https://fmt.dev/papers/Grisu-Exact.pdf#page=5, section 3.4.
 inline int floor_log10_pow2(int e) FMT_NOEXCEPT {
   FMT_ASSERT(e <= 1700 && e >= -1700, "too large exponent");
-  const uint64_t log10_2_fractional_digits = 0x4d104d427de7fbcc;
-  const int shift_amount = 22;
-  return (e *
-          static_cast<int>(log10_2_fractional_digits >> (64 - shift_amount))) >>
-         shift_amount;
+  const int shift = 22;
+  return (e * static_cast<int>(data::log10_2_significand >> (64 - shift))) >>
+         shift;
 }
+
+// Various fast log computations.
 inline int floor_log2_pow10(int e) FMT_NOEXCEPT {
   FMT_ASSERT(e <= 1233 && e >= -1233, "too large exponent");
   const uint64_t log2_10_integer_part = 3;
@@ -1773,10 +1774,9 @@ inline int floor_log2_pow10(int e) FMT_NOEXCEPT {
 }
 inline int floor_log10_pow2_minus_log10_4_over_3(int e) FMT_NOEXCEPT {
   FMT_ASSERT(e <= 1700 && e >= -1700, "too large exponent");
-  const uint64_t log10_2_fractional_digits = 0x4d104d427de7fbcc;
   const uint64_t log10_4_over_3_fractional_digits = 0x1ffbfc2bbc780375;
   const int shift_amount = 22;
-  return (e * static_cast<int>(log10_2_fractional_digits >>
+  return (e * static_cast<int>(data::log10_2_significand >>
                                (64 - shift_amount)) -
           static_cast<int>(log10_4_over_3_fractional_digits >>
                            (64 - shift_amount))) >>
@@ -2324,8 +2324,7 @@ template <class T> FMT_SAFEBUFFERS decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT {
     exponent += float_info<T>::exponent_bias - float_info<T>::significand_bits;
 
     // Shorter interval case; proceed like Schubfach.
-    if (significand == 0)
-      return shorter_interval_case<T>(exponent);
+    if (significand == 0) return shorter_interval_case<T>(exponent);
 
     significand |=
         (static_cast<carrier_uint>(1) << float_info<T>::significand_bits);
