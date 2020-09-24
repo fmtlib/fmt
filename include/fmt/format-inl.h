@@ -23,16 +23,15 @@
 #endif
 
 #ifdef _WIN32
-#  if defined(FMT_BIG_WIN) || defined(NOMINMAX)
-#    include <windows.h>
-#  else
-#    define NOMINMAX
-#    define WIN32_LEAN_AND_MEAN
-#    include <windows.h>
-#    undef WIN32_LEAN_AND_MEAN
-#    undef NOMINMAX
-#  endif
 #  include <io.h>
+FMT_BEGIN_NAMESPACE
+  using DWORD = uint32_t;
+  using HANDLE = void*;
+
+  extern "C" {
+    int __stdcall WriteConsoleW(void* hConsoleOutput, const void* lpBuffer, uint32_t nNumberOfCharsToWrite, uint32_t* lpNumberOfCharsWritten, void* lpReserved);
+  }
+FMT_END_NAMESPACE
 #endif
 
 // Dummy implementations of strerror_r and strerror_s called if corresponding
