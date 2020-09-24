@@ -818,7 +818,7 @@ using uint32_or_64_or_128_t =
                   conditional_t<num_bits<T>() <= 64, uint64_t, uint128_t>>;
 
 // 128-bit integer type used internally
-struct uint128_wrapper {
+struct FMT_EXTERN_TEMPLATE_API uint128_wrapper {
   uint128_wrapper() = default;
 
 #if FMT_USE_INT128
@@ -863,7 +863,7 @@ struct uint128_wrapper {
 };
 
 // Table entry type for divisibility test used internally
-template <typename T> struct divtest_table_entry {
+template <typename T> struct FMT_EXTERN_TEMPLATE_API divtest_table_entry {
   T mod_inv;
   T max_quotient;
 };
