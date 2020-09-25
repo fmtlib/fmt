@@ -2545,7 +2545,7 @@ void fallback_format(Double d, int num_digits, bool binary32, buffer<char>& buf,
         ++buf[i - 1];
       }
       if (buf[0] == overflow) {
-        buf[0] = '0';
+        buf[0] = '1';
         ++exp10;
       }
       return;
