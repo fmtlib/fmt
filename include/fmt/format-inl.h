@@ -23,16 +23,14 @@
 #endif
 
 #ifdef _WIN32
-#  include <io.h>
+#include <io.h>
 FMT_BEGIN_NAMESPACE
-  using DWORD = uint32_t;
-  using HANDLE = void*;
-
-  extern "C" {
-    int __stdcall WriteConsoleW(void* hConsoleOutput, const void* lpBuffer, uint32_t nNumberOfCharsToWrite, uint32_t* lpNumberOfCharsWritten, void* lpReserved);
-  }
+    extern "C" {
+        int __stdcall WriteConsoleW(void* hConsoleOutput, const void* lpBuffer, uint32_t nNumberOfCharsToWrite, uint32_t* lpNumberOfCharsWritten, void* lpReserved);
+    }
 FMT_END_NAMESPACE
 #endif
+
 
 // Dummy implementations of strerror_r and strerror_s called if corresponding
 // system functions are not available.
@@ -2896,9 +2894,9 @@ FMT_FUNC void vprint(std::FILE* f, string_view format_str, format_args args) {
   auto fd = _fileno(f);
   if (_isatty(fd)) {
     detail::utf8_to_utf16 u16(string_view(buffer.data(), buffer.size()));
-    auto written = DWORD();
-    if (!WriteConsoleW(reinterpret_cast<HANDLE>(_get_osfhandle(fd)),
-                       u16.c_str(), static_cast<DWORD>(u16.size()), &written,
+    auto written = uint32_t();
+    if (!WriteConsoleW(reinterpret_cast<void*>(_get_osfhandle(fd)),
+                       u16.c_str(), static_cast<uint32_t>(u16.size()), &written,
                        nullptr)) {
       FMT_THROW(format_error("failed to write to console"));
     }
