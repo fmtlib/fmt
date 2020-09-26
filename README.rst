@@ -22,7 +22,7 @@ It can be used as a safe and fast alternative to (s)printf and iostreams.
 
 If you like this project, please consider donating to BYSOL,
 an initiative to help victims of political repressions in Belarus:
-https://www.facebook.com/bysolidfound/.
+https://www.facebook.com/donate/759400044849707/108388587646909/.
 
 `Documentation <https://fmt.dev>`__
 
