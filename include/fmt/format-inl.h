@@ -13,34 +13,19 @@
 #include <climits>
 #include <cmath>
 #include <cstdarg>
-#include <cstring>  // for std::memmove
+#include <cstring>  // std::memmove
 #include <cwchar>
 #include <exception>
 
-#include "format.h"
-#if !defined(FMT_STATIC_THOUSANDS_SEPARATOR)
+#ifndef FMT_STATIC_THOUSANDS_SEPARATOR
 #  include <locale>
 #endif
 
 #ifdef _WIN32
-#  include <io.h>
-FMT_BEGIN_NAMESPACE
-namespace details {
-
-#  if !defined(__LP64__)
-using DWORD = unsigned long;
-#  else
-using DWORD = unsigned int;
-#  endif
-// WriteConsoleW should not become visible in global namespace
-extern "C" {
-int __stdcall WriteConsoleW(void* hConsoleOutput, const void* lpBuffer,
-                            DWORD nNumberOfCharsToWrite,
-                            DWORD* lpNumberOfCharsWritten, void* lpReserved);
-}
-}  // namespace details
-FMT_END_NAMESPACE
+#  include <io.h>  // _isatty
 #endif
+
+#include "format.h"
 
 // Dummy implementations of strerror_r and strerror_s called if corresponding
 // system functions are not available.
@@ -2896,6 +2881,16 @@ FMT_FUNC std::string detail::vformat(string_view format_str, format_args args) {
   return to_string(buffer);
 }
 
+#ifdef _WIN32
+namespace detail {
+extern "C" int __stdcall WriteConsoleW(void* hConsoleOutput,
+                                       const void* lpBuffer,
+                                       uint32_t nNumberOfCharsToWrite,
+                                       uint32_t* lpNumberOfCharsWritten,
+                                       void* lpReserved);
+}
+#endif
+
 FMT_FUNC void vprint(std::FILE* f, string_view format_str, format_args args) {
   memory_buffer buffer;
   detail::vformat_to(buffer, format_str,
@@ -2904,10 +2899,10 @@ FMT_FUNC void vprint(std::FILE* f, string_view format_str, format_args args) {
   auto fd = _fileno(f);
   if (_isatty(fd)) {
     detail::utf8_to_utf16 u16(string_view(buffer.data(), buffer.size()));
-    auto written = details::DWORD();
-    if (!details::WriteConsoleW(
-            reinterpret_cast<void*>(_get_osfhandle(fd)), u16.c_str(),
-            static_cast<details::DWORD>(u16.size()), &written, nullptr)) {
+    auto written = uint32_t();
+    if (!detail::WriteConsoleW(reinterpret_cast<void*>(_get_osfhandle(fd)),
+                               u16.c_str(), static_cast<uint32_t>(u16.size()),
+                               &written, nullptr)) {
       FMT_THROW(format_error("failed to write to console"));
     }
     return;
