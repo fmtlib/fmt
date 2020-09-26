@@ -20,6 +20,10 @@
 **{fmt}** is an open-source formatting library for C++.
 It can be used as a safe and fast alternative to (s)printf and iostreams.
 
+If you like this project, please consider donating to BYSOL,
+an initiative to help victims of political repressions in Belarus:
+https://www.facebook.com/bysolidfound/.
+
 `Documentation <https://fmt.dev>`__
 
 Q&A: ask questions on `StackOverflow with the tag fmt
