@@ -1277,14 +1277,30 @@ TEST(FormatterTest, PrecisionRounding) {
   EXPECT_EQ("1.000", format("{:.3f}", 0.9999));
   EXPECT_EQ("0.00123", format("{:.3}", 0.00123));
   EXPECT_EQ("0.1", format("{:.16g}", 0.1));
-  // Trigger rounding error in Grisu by a carefully chosen number.
-  auto n = 3788512123356.985352;
-  char buffer[64];
-  safe_sprintf(buffer, "%f", n);
-  EXPECT_EQ(buffer, format("{:f}", n));
+  EXPECT_EQ("1", fmt::format("{:.0}", 1.0));
   EXPECT_EQ("225.51575035152063720",
             fmt::format("{:.17f}", 225.51575035152064));
   EXPECT_EQ("-761519619559038.2", fmt::format("{:.1f}", -761519619559038.2));
+  EXPECT_EQ("1.9156918820264798e-56",
+            fmt::format("{}", 1.9156918820264798e-56));
+  EXPECT_EQ("0.0000", fmt::format("{:.4f}", 7.2809479766055470e-15));
+
+  // Trigger a rounding error in Grisu by a specially chosen number.
+  EXPECT_EQ("3788512123356.985352", format("{:f}", 3788512123356.985352));
+}
+
+TEST(FormatterTest, PrettifyFloat) {
+  EXPECT_EQ("0.0001", fmt::format("{}", 1e-4));
+  EXPECT_EQ("1e-05", fmt::format("{}", 1e-5));
+  EXPECT_EQ("9.999e-05", fmt::format("{}", 9.999e-5));
+  EXPECT_EQ("10000000000", fmt::format("{}", 1e10));
+  EXPECT_EQ("100000000000", fmt::format("{}", 1e11));
+  EXPECT_EQ("12340000000", fmt::format("{}", 1234e7));
+  EXPECT_EQ("12.34", fmt::format("{}", 1234e-2));
+  EXPECT_EQ("0.001234", fmt::format("{}", 1234e-6));
+  EXPECT_EQ("0.1", fmt::format("{}", 0.1f));
+  EXPECT_EQ("0.10000000149011612", fmt::format("{}", double(0.1f)));
+  EXPECT_EQ("1.3563156e-19", fmt::format("{}", 1.35631564e-19f));
 }
 
 TEST(FormatterTest, FormatNaN) {
