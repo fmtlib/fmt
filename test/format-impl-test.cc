@@ -312,14 +312,6 @@ TEST(FormatTest, ArgConverter) {
   EXPECT_EQ(value, fmt::visit_format_arg(value_extractor<long long>(), arg));
 }
 
-TEST(FormatTest, FormatNegativeNaN) {
-  double nan = std::numeric_limits<double>::quiet_NaN();
-  if (std::signbit(-nan))
-    EXPECT_EQ("-nan", fmt::format("{}", -nan));
-  else
-    fmt::print("Warning: compiler doesn't handle negative NaN correctly");
-}
-
 TEST(FormatTest, StrError) {
   char* message = nullptr;
   char buffer[BUFFER_SIZE];
