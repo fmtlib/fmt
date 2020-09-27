@@ -24,7 +24,6 @@
 // Check if fmt/format.h compiles with the X11 index macro defined.
 #define index(x, y) no nice things
 
-#include "fmt/color.h"
 #include "fmt/format.h"
 
 #undef index
@@ -2445,12 +2444,6 @@ TEST(FormatTest, FmtStringInTemplate) {
 }
 
 #endif  // FMT_USE_CONSTEXPR
-
-TEST(FormatTest, EmphasisNonHeaderOnly) {
-  // Ensure this compiles even if FMT_HEADER_ONLY is not defined.
-  EXPECT_EQ(fmt::format(fmt::emphasis::bold, "bold error"),
-            "\x1b[1mbold error\x1b[0m");
-}
 
 TEST(FormatTest, CharTraitsIsNotAmbiguous) {
   // Test that we don't inject detail names into the std namespace.
