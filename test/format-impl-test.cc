@@ -19,7 +19,10 @@
 #include "gtest-extra.h"
 #include "util.h"
 
-#undef max
+#ifdef _WIN32
+#  include <windows.h>
+#  undef max
+#endif
 
 using fmt::detail::bigint;
 using fmt::detail::fp;
@@ -409,3 +412,10 @@ TEST(UtilTest, WriteFallbackUIntPtr) {
       fmt::detail::fallback_uintptr(reinterpret_cast<void*>(0xface)), nullptr);
   EXPECT_EQ(s, "0xface");
 }
+
+#ifdef _WIN32
+TEST(UtilTest, WriteConsoleSignature) {
+  decltype(WriteConsoleW)* p = fmt::detail::WriteConsoleW;
+  (void)p;
+}
+#endif

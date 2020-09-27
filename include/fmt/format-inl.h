@@ -2824,12 +2824,13 @@ FMT_FUNC std::string detail::vformat(string_view format_str, format_args args) {
 
 #ifdef _WIN32
 namespace detail {
+using dword = conditional_t<sizeof(long) == 8, unsigned, unsigned long>;
 extern "C" int __stdcall WriteConsoleW(void* hConsoleOutput,
                                        const void* lpBuffer,
-                                       uint32_t nNumberOfCharsToWrite,
-                                       uint32_t* lpNumberOfCharsWritten,
+                                       dword nNumberOfCharsToWrite,
+                                       dword* lpNumberOfCharsWritten,
                                        void* lpReserved);
-}
+}  // namespace detail
 #endif
 
 FMT_FUNC void vprint(std::FILE* f, string_view format_str, format_args args) {
@@ -2840,7 +2841,7 @@ FMT_FUNC void vprint(std::FILE* f, string_view format_str, format_args args) {
   auto fd = _fileno(f);
   if (_isatty(fd)) {
     detail::utf8_to_utf16 u16(string_view(buffer.data(), buffer.size()));
-    auto written = uint32_t();
+    auto written = detail::dword();
     if (!detail::WriteConsoleW(reinterpret_cast<void*>(_get_osfhandle(fd)),
                                u16.c_str(), static_cast<uint32_t>(u16.size()),
                                &written, nullptr)) {
