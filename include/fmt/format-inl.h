@@ -2231,8 +2231,7 @@ FMT_ALWAYS_INLINE FMT_SAFEBUFFERS decimal_fp<T> shorter_interval_case(
 }
 
 template <typename T>
-FMT_SAFEBUFFERS enable_if_t<is_fast_float<T>(), decimal_fp<T>> to_decimal(T x)
-    FMT_NOEXCEPT {
+FMT_SAFEBUFFERS decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT {
   // Step 1: integer promotion & Schubfach multiplier calculation.
 
   using carrier_uint = typename float_info<T>::carrier_uint;

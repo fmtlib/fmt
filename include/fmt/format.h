@@ -587,9 +587,9 @@ inline counting_iterator copy_str(InputIt begin, InputIt end,
   return it + (end - begin);
 }
 
-template <typename T> constexpr bool is_fast_float() {
-  return std::numeric_limits<T>::is_iec559 && sizeof(T) <= sizeof(double);
-}
+template <typename T>
+using is_fast_float = bool_constant<std::numeric_limits<T>::is_iec559 &&
+                                    sizeof(T) <= sizeof(double)>;
 
 #ifndef FMT_USE_FULL_CACHE_DRAGONBOX
 #  define FMT_USE_FULL_CACHE_DRAGONBOX 0
@@ -1291,12 +1291,8 @@ template <typename Char> class float_writer {
       // 1234e-2 -> 12.34[0+]
       it = copy_str<Char>(digits_, digits_ + full_exp, it);
       if (!specs_.showpoint) {
-        // Remove trailing zeros.
-        int num_digits = num_digits_;
-        while (num_digits > full_exp && digits_[num_digits - 1] == '0')
-          --num_digits;
-        if (num_digits != full_exp) *it++ = decimal_point_;
-        return copy_str<Char>(digits_ + full_exp, digits_ + num_digits, it);
+        if (num_digits_ != full_exp) *it++ = decimal_point_;
+        return copy_str<Char>(digits_ + full_exp, digits_ + num_digits_, it);
       }
       *it++ = decimal_point_;
       it = copy_str<Char>(digits_ + full_exp, digits_ + num_digits_, it);
@@ -1309,18 +1305,14 @@ template <typename Char> class float_writer {
       // 1234e-6 -> 0.001234
       *it++ = static_cast<Char>('0');
       int num_zeros = -full_exp;
-      int num_digits = num_digits_;
-      if (num_digits == 0 && specs_.precision >= 0 &&
+      if (num_digits_ == 0 && specs_.precision >= 0 &&
           specs_.precision < num_zeros) {
         num_zeros = specs_.precision;
       }
-      // Remove trailing zeros.
-      if (!specs_.showpoint)
-        while (num_digits > 0 && digits_[num_digits - 1] == '0') --num_digits;
-      if (num_zeros != 0 || num_digits != 0 || specs_.showpoint) {
+      if (num_zeros != 0 || num_digits_ != 0 || specs_.showpoint) {
         *it++ = decimal_point_;
         it = std::fill_n(it, num_zeros, static_cast<Char>('0'));
-        it = copy_str<Char>(digits_, digits_ + num_digits, it);
+        it = copy_str<Char>(digits_, digits_ + num_digits_, it);
       }
     }
     return it;
@@ -1426,13 +1418,7 @@ template <typename T> struct decimal_fp {
   int exponent;
 };
 
-template <typename T>
-enable_if_t<is_fast_float<T>(), decimal_fp<T>> to_decimal(T x) FMT_NOEXCEPT;
-
-template <typename T>
-inline enable_if_t<!is_fast_float<T>(), unformattable> to_decimal(T) {
-  return {};
-}
+template <typename T> decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT;
 }  // namespace dragonbox
 
 template <typename Handler>
@@ -1887,8 +1873,9 @@ OutputIt write(OutputIt out, T value, basic_format_specs<Char> specs,
   return write_padded<align::right>(out, specs, w.size(), w);
 }
 
-template <typename Char, typename OutputIt, typename T,
-          FMT_ENABLE_IF(std::is_floating_point<T>::value)>
+template <
+    typename Char, typename OutputIt, typename T,
+    FMT_ENABLE_IF(std::is_floating_point<T>::value&& is_fast_float<T>::value)>
 OutputIt write(OutputIt out, T value) {
   if (const_check(!is_supported_floating_point(value))) return out;
   auto fspecs = float_specs();
@@ -1901,15 +1888,20 @@ OutputIt write(OutputIt out, T value) {
   if (!std::isfinite(value))
     return write_nonfinite(out, std::isinf(value), specs, fspecs);
 
-  memory_buffer buffer;
-  int precision = -1;
-  if (const_check(std::is_same<T, float>())) fspecs.binary32 = true;
-  fspecs.use_grisu = is_fast_float<T>();
-  int exp = format_float(promote_float(value), precision, fspecs, buffer);
-  fspecs.precision = precision;
-  float_writer<Char> w(buffer.data(), static_cast<int>(buffer.size()), exp,
+  using type = conditional_t<std::is_same<T, long double>::value, double, T>;
+  auto dec = dragonbox::to_decimal(static_cast<type>(value));
+  memory_buffer buf;
+  write<char>(buffer_appender<char>(buf), dec.significand);
+  float_writer<Char> w(buf.data(), static_cast<int>(buf.size()), dec.exponent,
                        fspecs, static_cast<Char>('.'));
   return base_iterator(out, w(reserve(out, w.size())));
+}
+
+template <typename Char, typename OutputIt, typename T,
+          FMT_ENABLE_IF(std::is_floating_point<T>::value &&
+                        !is_fast_float<T>::value)>
+inline OutputIt write(OutputIt out, T value) {
+  return write(out, value, basic_format_specs<Char>());
 }
 
 template <typename Char, typename OutputIt>
