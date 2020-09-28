@@ -2823,12 +2823,9 @@ FMT_FUNC std::string detail::vformat(string_view format_str, format_args args) {
 
 #ifdef _WIN32
 namespace detail {
-using dword = conditional_t<sizeof(long) == 8, unsigned, unsigned long>;
-extern "C" int __stdcall WriteConsoleW(void* hConsoleOutput,
-                                       const void* lpBuffer,
-                                       dword nNumberOfCharsToWrite,
-                                       dword* lpNumberOfCharsWritten,
-                                       void* lpReserved);
+using dword = conditional_t<sizeof(long) == 4, unsigned long, unsigned>;
+extern "C" __declspec(dllimport) int __stdcall WriteConsoleW(  //
+    void*, const void*, dword, dword*, void*);
 }  // namespace detail
 #endif
 
