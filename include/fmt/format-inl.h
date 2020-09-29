@@ -2307,6 +2307,10 @@ FMT_SAFEBUFFERS decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT {
       goto small_divisor_case_label;
     }
   }
+  if (ret_value.significand == 0) {
+    ret_value.exponent = 0;
+    return ret_value;
+  }
   ret_value.exponent = minus_k + float_info<T>::kappa + 1;
 
   // We may need to remove trailing zeros

@@ -1238,10 +1238,12 @@ TEST(FormatterTest, FormatConvertibleToLongLong) {
 }
 
 TEST(FormatterTest, FormatFloat) {
+  EXPECT_EQ("0", format("{}", 0.0f));
   EXPECT_EQ("392.500000", format("{0:f}", 392.5f));
 }
 
 TEST(FormatterTest, FormatDouble) {
+  EXPECT_EQ("0", format("{}", 0.0));
   check_unknown_types(1.2, "eEfFgGaAnL%", "double");
   EXPECT_EQ("0", format("{:}", 0.0));
   EXPECT_EQ("0.000000", format("{:f}", 0.0));
