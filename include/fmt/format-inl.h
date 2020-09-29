@@ -2258,6 +2258,9 @@ FMT_SAFEBUFFERS decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT {
         (static_cast<carrier_uint>(1) << float_info<T>::significand_bits);
   } else {
     // Subnormal case; the interval is always regular.
+    if (significand == 0) {
+      return decimal_fp<T>{0, 0};
+    }
     exponent = float_info<T>::min_exponent - float_info<T>::significand_bits;
   }
 
@@ -2306,10 +2309,6 @@ FMT_SAFEBUFFERS decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT {
         !cache_accessor<T>::compute_mul_parity(two_fl, cache, beta_minus_1)) {
       goto small_divisor_case_label;
     }
-  }
-  if (ret_value.significand == 0) {
-    ret_value.exponent = 0;
-    return ret_value;
   }
   ret_value.exponent = minus_k + float_info<T>::kappa + 1;
 
