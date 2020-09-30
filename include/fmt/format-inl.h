@@ -1629,48 +1629,6 @@ struct fixed_handler {
   }
 };
 
-// The shortest representation digit handler.
-struct grisu_shortest_handler {
-  char* buf;
-  int size;
-  // Distance between scaled value and upper bound (wp_W in Grisu3).
-  uint64_t diff;
-
-  digits::result on_start(uint64_t, uint64_t, uint64_t, int&) {
-    return digits::more;
-  }
-
-  // Decrement the generated number approaching value from above.
-  void round(uint64_t d, uint64_t divisor, uint64_t& remainder,
-             uint64_t error) {
-    while (
-        remainder < d && error - remainder >= divisor &&
-        (remainder + divisor < d || d - remainder >= remainder + divisor - d)) {
-      --buf[size - 1];
-      remainder += divisor;
-    }
-  }
-
-  // Implements Grisu's round_weed.
-  digits::result on_digit(char digit, uint64_t divisor, uint64_t remainder,
-                          uint64_t error, int exp, bool integral) {
-    buf[size++] = digit;
-    if (remainder >= error) return digits::more;
-    uint64_t unit = integral ? 1 : data::powers_of_10_64[-exp];
-    uint64_t up = (diff - 1) * unit;  // wp_Wup
-    round(up, divisor, remainder, error);
-    uint64_t down = (diff + 1) * unit;  // wp_Wdown
-    if (remainder < down && error - remainder >= divisor &&
-        (remainder + divisor < down ||
-         down - remainder > remainder + divisor - down)) {
-      return digits::error;
-    }
-    return 2 * unit <= remainder && remainder <= error - 4 * unit
-               ? digits::done
-               : digits::error;
-  }
-};
-
 // Implementation of Dragonbox algorithm: https://github.com/jk-jeon/dragonbox.
 namespace dragonbox {
 // Computes 128-bit result of multiplication of two 64-bit unsigned integers.
@@ -1827,27 +1785,17 @@ bool check_divisibility_and_divide_by_pow5(uint32_t& n) FMT_NOEXCEPT {
   return result;
 }
 
-// Computes floor(n / 10^N) for small n and N
-// Precondition: n <= 10^(N+1)
-template <int N> struct small_division_by_pow10_info;
-
-template <> struct small_division_by_pow10_info<1> {
-  static const uint32_t magic_number = 0xcccd;
-  static const int shift_amount = 19;
-  static const int divisor_times_10 = 100;
-};
-
-template <> struct small_division_by_pow10_info<2> {
-  static const uint32_t magic_number = 0xa3d8;
-  static const int shift_amount = 22;
-  static const int divisor_times_10 = 1000;
-};
-
+// Computes floor(n / pow(10, N)) for small n and N.
+// Precondition: n <= pow(10, N + 1).
 template <int N> uint32_t small_division_by_pow10(uint32_t n) FMT_NOEXCEPT {
-  FMT_ASSERT(n <= small_division_by_pow10_info<N>::divisor_times_10,
-             "n is too large");
-  return (n * small_division_by_pow10_info<N>::magic_number) >>
-         small_division_by_pow10_info<N>::shift_amount;
+  static constexpr struct {
+    uint32_t magic_number;
+    int shift_amount;
+    int divisor_times_10;
+  } infos[] = {{0xcccd, 19, 100}, {0xa3d8, 22, 1000}};
+  constexpr auto info = infos[N - 1];
+  FMT_ASSERT(n <= info.divisor_times_10, "n is too large");
+  return n * info.magic_number >> info.shift_amount;
 }
 
 // Computes floor(n / 10^(kappa + 1)) (float)
@@ -2026,38 +1974,25 @@ bool is_left_endpoint_integer_shorter_interval(int exponent) FMT_NOEXCEPT {
 template <class T>
 bool is_endpoint_integer(typename float_info<T>::carrier_uint two_f,
                          int exponent, int minus_k) FMT_NOEXCEPT {
-  if (exponent < float_info<T>::case_fc_pm_half_lower_threshold) {
-    return false;
-  }
-  // For k >= 0
-  else if (exponent <= float_info<T>::case_fc_pm_half_upper_threshold) {
-    return true;
-  }
-  // For k < 0
-  else if (exponent > float_info<T>::divisibility_check_by_5_threshold) {
-    return false;
-  } else {
-    return divisible_by_power_of_5(two_f, minus_k);
-  }
+  if (exponent < float_info<T>::case_fc_pm_half_lower_threshold) return false;
+  // For k >= 0.
+  if (exponent <= float_info<T>::case_fc_pm_half_upper_threshold) return true;
+  // For k < 0.
+  if (exponent > float_info<T>::divisibility_check_by_5_threshold) return false;
+  return divisible_by_power_of_5(two_f, minus_k);
 }
 
 template <class T>
 bool is_center_integer(typename float_info<T>::carrier_uint two_f, int exponent,
                        int minus_k) FMT_NOEXCEPT {
-  // Exponent for 5 is negative
-  if (exponent > float_info<T>::divisibility_check_by_5_threshold) {
-    return false;
-  } else if (exponent > float_info<T>::case_fc_upper_threshold) {
+  // Exponent for 5 is negative.
+  if (exponent > float_info<T>::divisibility_check_by_5_threshold) return false;
+  if (exponent > float_info<T>::case_fc_upper_threshold)
     return divisible_by_power_of_5(two_f, minus_k);
-  }
-  // Both exponents are nonnegative
-  else if (exponent >= float_info<T>::case_fc_lower_threshold) {
-    return true;
-  }
-  // Exponent for 2 is negative
-  else {
-    return divisible_by_power_of_2(two_f, minus_k - exponent + 1);
-  }
+  // Both exponents are nonnegative.
+  if (exponent >= float_info<T>::case_fc_lower_threshold) return true;
+  // Exponent for 2 is negative.
+  return divisible_by_power_of_2(two_f, minus_k - exponent + 1);
 }
 
 // Remove trailing zeros from n and return the number of zeros removed (float)
@@ -2067,9 +2002,8 @@ FMT_ALWAYS_INLINE int remove_trailing_zeros(uint32_t& n) FMT_NOEXCEPT {
 #else
   int t = ctz(n);
 #endif
-  if (t > float_info<float>::max_trailing_zeros) {
+  if (t > float_info<float>::max_trailing_zeros)
     t = float_info<float>::max_trailing_zeros;
-  }
 
   const uint32_t mod_inv1 = 0xcccccccd;
   const uint32_t max_quotient1 = 0x33333333;
@@ -2078,9 +2012,7 @@ FMT_ALWAYS_INLINE int remove_trailing_zeros(uint32_t& n) FMT_NOEXCEPT {
 
   int s = 0;
   for (; s < t - 1; s += 2) {
-    if (n * mod_inv2 > max_quotient2) {
-      break;
-    }
+    if (n * mod_inv2 > max_quotient2) break;
     n *= mod_inv2;
   }
   if (s < t && n * mod_inv1 <= max_quotient1) {
@@ -2098,9 +2030,8 @@ FMT_ALWAYS_INLINE int remove_trailing_zeros(uint64_t& n) FMT_NOEXCEPT {
 #else
   int t = ctzll(n);
 #endif
-  if (t > float_info<double>::max_trailing_zeros) {
+  if (t > float_info<double>::max_trailing_zeros)
     t = float_info<double>::max_trailing_zeros;
-  }
   // Divide by 10^8 and reduce to 32-bits
   // Since ret_value.significand <= (2^64 - 1) / 1000 < 10^17,
   // both of the quotient and the r should fit in 32-bits
@@ -2119,9 +2050,7 @@ FMT_ALWAYS_INLINE int remove_trailing_zeros(uint64_t& n) FMT_NOEXCEPT {
 
       int s = 8;
       for (; s < t; ++s) {
-        if (quotient * mod_inv1 > max_quotient1) {
-          break;
-        }
+        if (quotient * mod_inv1 > max_quotient1) break;
         quotient *= mod_inv1;
       }
       quotient >>= (s - 8);
@@ -2198,9 +2127,7 @@ FMT_ALWAYS_INLINE FMT_SAFEBUFFERS decimal_fp<T> shorter_interval_case(
       cache, beta_minus_1);
 
   // If the left endpoint is not an integer, increase it
-  if (!is_left_endpoint_integer_shorter_interval<T>(exponent)) {
-    ++xi;
-  }
+  if (!is_left_endpoint_integer_shorter_interval<T>(exponent)) ++xi;
 
   // Try bigger divisor
   ret_value.significand = zi / 10;
@@ -2258,9 +2185,7 @@ FMT_SAFEBUFFERS decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT {
         (static_cast<carrier_uint>(1) << float_info<T>::significand_bits);
   } else {
     // Subnormal case; the interval is always regular.
-    if (significand == 0) {
-      return decimal_fp<T>{0, 0};
-    }
+    if (significand == 0) return {0, 0};
     exponent = float_info<T>::min_exponent - float_info<T>::significand_bits;
   }
 
