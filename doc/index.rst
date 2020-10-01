@@ -23,7 +23,7 @@ Format API
 
 The format API is similar in spirit to the C ``printf`` family of function but
 is safer, simpler and several times `faster
-<http://zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html>`_
+<https://www.zverovich.net/2020/06/13/fast-int-to-string-revisited.html>`_
 than common standard library implementations.
 The `format string syntax <syntax.html>`_ is similar to the one used by
 `str.format <http://docs.python.org/3/library/stdtypes.html#str.format>`_ in
