@@ -48,21 +48,19 @@ The ``fmt::print`` function performs formatting and writes the result to a strea
 
   fmt::print(stderr, "System error code = {}\n", errno);
 
-The file argument can be omitted in which case the function prints to
-``stdout``:
+If you omit the file argument the function will print to ``stdout``:
 
 .. code:: c++
 
   fmt::print("Don't {}\n", "panic");
 
-The Format API also supports positional arguments useful for localization:
+The format API also supports positional arguments useful for localization:
 
 .. code:: c++
 
   fmt::print("I'd rather be {1} than {0}.", "right", "happy");
 
-Named arguments can be created with ``fmt::arg``. This makes it easier to track 
-what goes where when multiple arguments are being formatted:
+You can pass named arguments with ``fmt::arg``:
 
 .. code:: c++
 
@@ -91,16 +89,17 @@ time. For example, the code
 
   fmt::format("The answer is {:d}", "forty-two");
 
-throws a ``format_error`` exception with description "unknown format code 'd' for
-string", because the argument ``"forty-two"`` is a string while the format code
-``d`` only applies to integers, while
+throws the ``format_error`` exception because the argument ``"forty-two"`` is a
+string while the format code ``d`` only applies to integers.
+
+The code
 
 .. code:: c++
 
   format(FMT_STRING("The answer is {:d}"), "forty-two");
 
-reports a compile-time error for the same reason on compilers that support
-relaxed ``constexpr``. See `here <api.html#c.fmt>`_ for details.
+reports a compile-time error on compilers that support relaxed ``constexpr``.
+See `here <api.html#c.fmt>`_ for details.
 
 The following code
 
@@ -117,13 +116,13 @@ formatted into a narrow string. You can use a wide format string instead:
 
 For comparison, writing a wide character to ``std::ostream`` results in
 its numeric value being written to the stream (i.e. 1070 instead of letter 'ю'
-which is represented by ``L'\x42e'`` if we use Unicode) which is rarely what is
-needed.
+which is represented by ``L'\x42e'`` if we use Unicode) which is rarely
+desirable.
 
 Compact Binary Code
 -------------------
 
-The library is designed to produce compact per-call compiled code. For example
+The library produces compact per-call compiled code. For example
 (`godbolt <https://godbolt.org/g/TZU4KF>`_),
 
 .. code:: c++
@@ -144,8 +143,8 @@ compiles to just
      mov rcx, rsp
      mov edi, offset .L.str
      mov esi, 17
-     mov edx, 2
-     call fmt::v5::vprint(fmt::v5::basic_string_view<char>, fmt::v5::format_args)
+     mov edx, 1
+     call fmt::v7::vprint(fmt::v7::basic_string_view<char>, fmt::v7::format_args)
      xor eax, eax
      add rsp, 24
      ret
@@ -167,20 +166,19 @@ The library is highly portable and relies only on a small set of C++11 features:
 * deleted functions
 * alias templates
 
-These are available since GCC 4.8, Clang 3.0 and MSVC 19.0 (2015). For older
-compilers use {fmt} `version 4.x
-<https://github.com/fmtlib/fmt/releases/tag/4.1.0>`_ which continues to be
-maintained and only requires C++98.
+These are available in GCC 4.8, Clang 3.0, MSVC 19.0 (2015) and more recent
+compiler version. For older compilers use {fmt} `version 4.x
+<https://github.com/fmtlib/fmt/releases/tag/4.1.0>`_ which is maintained and
+only requires C++98.
 
-The output of all formatting functions is consistent across platforms. In
-particular, formatting a floating-point infinity always gives ``inf`` while the
-output of ``printf`` is platform-dependent. For example,
+The output of all formatting functions is consistent across platforms.
+For example,
 
 .. code::
 
   fmt::print("{}", std::numeric_limits<double>::infinity());
 
-always prints ``inf``.
+always prints ``inf`` while the output of ``printf`` is platform-dependent.
 
 .. _ease-of-use:
 

@@ -17,8 +17,8 @@
    :alt: Ask questions at StackOverflow with the tag fmt
    :target: https://stackoverflow.com/questions/tagged/fmt
 
-**{fmt}** is an open-source formatting library for C++.
-It can be used as a safe and fast alternative to (s)printf and iostreams.
+**{fmt}** is an open-source formatting library providing a fast and safe
+alternative to C stdio and C++ iostreams.
 
 If you like this project, please consider donating to BYSOL,
 an initiative to help victims of political repressions in Belarus:
