@@ -1791,7 +1791,7 @@ template <int N> uint32_t small_division_by_pow10(uint32_t n) FMT_NOEXCEPT {
   static constexpr struct {
     uint32_t magic_number;
     int shift_amount;
-    int divisor_times_10;
+    uint32_t divisor_times_10;
   } infos[] = {{0xcccd, 19, 100}, {0xa3d8, 22, 1000}};
   constexpr auto info = infos[N - 1];
   FMT_ASSERT(n <= info.divisor_times_10, "n is too large");
