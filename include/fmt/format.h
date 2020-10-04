@@ -1204,157 +1204,6 @@ template <typename Char> struct basic_format_specs {
 using format_specs = basic_format_specs<char>;
 
 namespace detail {
-
-// A floating-point presentation format.
-enum class float_format : unsigned char {
-  general,  // General: exponent notation or fixed point based on magnitude.
-  exp,      // Exponent notation with the default precision of 6, e.g. 1.2e-3.
-  fixed,    // Fixed point with the default precision of 6, e.g. 0.0012.
-  hex
-};
-
-struct float_specs {
-  int precision;
-  float_format format : 8;
-  sign_t sign : 8;
-  bool upper : 1;
-  bool locale : 1;
-  bool binary32 : 1;
-  bool use_grisu : 1;
-  bool showpoint : 1;
-};
-
-// Writes the exponent exp in the form "[+-]d{2,3}" to buffer.
-template <typename Char, typename It> It write_exponent(int exp, It it) {
-  FMT_ASSERT(-10000 < exp && exp < 10000, "exponent out of range");
-  if (exp < 0) {
-    *it++ = static_cast<Char>('-');
-    exp = -exp;
-  } else {
-    *it++ = static_cast<Char>('+');
-  }
-  if (exp >= 100) {
-    const char* top = data::digits[exp / 100];
-    if (exp >= 1000) *it++ = static_cast<Char>(top[0]);
-    *it++ = static_cast<Char>(top[1]);
-    exp %= 100;
-  }
-  const char* d = data::digits[exp];
-  *it++ = static_cast<Char>(d[0]);
-  *it++ = static_cast<Char>(d[1]);
-  return it;
-}
-
-template <typename Char> class float_writer {
- private:
-  // The number is given as v = digits_ * pow(10, exp_).
-  const char* digits_;
-  int num_digits_;
-  int exp_;
-  size_t size_;
-  float_specs specs_;
-  Char decimal_point_;
-
-  template <typename It> It prettify(It it) const {
-    // pow(10, full_exp - 1) <= v <= pow(10, full_exp).
-    int full_exp = num_digits_ + exp_;
-    if (specs_.format == float_format::exp) {
-      // Insert a decimal point after the first digit and add an exponent.
-      *it++ = static_cast<Char>(*digits_);
-      int num_zeros = specs_.precision - num_digits_;
-      if (num_digits_ > 1 || specs_.showpoint) *it++ = decimal_point_;
-      it = copy_str<Char>(digits_ + 1, digits_ + num_digits_, it);
-      if (num_zeros > 0 && specs_.showpoint)
-        it = std::fill_n(it, num_zeros, static_cast<Char>('0'));
-      *it++ = static_cast<Char>(specs_.upper ? 'E' : 'e');
-      return write_exponent<Char>(full_exp - 1, it);
-    }
-    if (num_digits_ <= full_exp) {
-      // 1234e7 -> 12340000000[.0+]
-      it = copy_str<Char>(digits_, digits_ + num_digits_, it);
-      it = std::fill_n(it, full_exp - num_digits_, static_cast<Char>('0'));
-      if (specs_.showpoint) {
-        *it++ = decimal_point_;
-        int num_zeros = specs_.precision - full_exp;
-        if (num_zeros <= 0) {
-          if (specs_.format != float_format::fixed)
-            *it++ = static_cast<Char>('0');
-          return it;
-        }
-#ifdef FMT_FUZZ
-        if (num_zeros > 5000)
-          throw std::runtime_error("fuzz mode - avoiding excessive cpu use");
-#endif
-        it = std::fill_n(it, num_zeros, static_cast<Char>('0'));
-      }
-    } else if (full_exp > 0) {
-      // 1234e-2 -> 12.34[0+]
-      it = copy_str<Char>(digits_, digits_ + full_exp, it);
-      if (!specs_.showpoint) {
-        if (num_digits_ != full_exp) *it++ = decimal_point_;
-        return copy_str<Char>(digits_ + full_exp, digits_ + num_digits_, it);
-      }
-      *it++ = decimal_point_;
-      it = copy_str<Char>(digits_ + full_exp, digits_ + num_digits_, it);
-      if (specs_.precision > num_digits_) {
-        // Add trailing zeros.
-        int num_zeros = specs_.precision - num_digits_;
-        it = std::fill_n(it, num_zeros, static_cast<Char>('0'));
-      }
-    } else {
-      // 1234e-6 -> 0.001234
-      *it++ = static_cast<Char>('0');
-      int num_zeros = -full_exp;
-      if (num_digits_ == 0 && specs_.precision >= 0 &&
-          specs_.precision < num_zeros) {
-        num_zeros = specs_.precision;
-      }
-      if (num_zeros != 0 || num_digits_ != 0 || specs_.showpoint) {
-        *it++ = decimal_point_;
-        it = std::fill_n(it, num_zeros, static_cast<Char>('0'));
-        it = copy_str<Char>(digits_, digits_ + num_digits_, it);
-      }
-    }
-    return it;
-  }
-
- public:
-  float_writer(const char* digits, int num_digits, int exp, float_specs specs,
-               Char decimal_point)
-      : digits_(digits),
-        num_digits_(num_digits),
-        exp_(exp),
-        specs_(specs),
-        decimal_point_(decimal_point) {
-    int full_exp = num_digits + exp - 1;
-    int precision = specs.precision > 0 ? specs.precision : 16;
-    if (specs_.format == float_format::general &&
-        !(full_exp >= -4 && full_exp < precision)) {
-      specs_.format = float_format::exp;
-    }
-    size_ = prettify(counting_iterator()).count();
-    size_ += specs.sign ? 1 : 0;
-  }
-
-  size_t size() const { return size_; }
-
-  template <typename It> It operator()(It it) const {
-    if (specs_.sign) *it++ = static_cast<Char>(data::signs[specs_.sign]);
-    return prettify(it);
-  }
-};
-
-template <typename T>
-int format_float(T value, int precision, float_specs specs, buffer<char>& buf);
-
-// Formats a floating-point number with snprintf.
-template <typename T>
-int snprintf_float(T value, int precision, float_specs specs,
-                   buffer<char>& buf);
-
-template <typename T> T promote_float(T value) { return value; }
-inline double promote_float(float value) { return static_cast<double>(value); }
-
 namespace dragonbox {
 
 // Type-specific information that Dragonbox uses.
@@ -1420,6 +1269,160 @@ template <typename T> struct decimal_fp {
 
 template <typename T> decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT;
 }  // namespace dragonbox
+
+// A floating-point presentation format.
+enum class float_format : unsigned char {
+  general,  // General: exponent notation or fixed point based on magnitude.
+  exp,      // Exponent notation with the default precision of 6, e.g. 1.2e-3.
+  fixed,    // Fixed point with the default precision of 6, e.g. 0.0012.
+  hex
+};
+
+struct float_specs {
+  int precision;
+  float_format format : 8;
+  sign_t sign : 8;
+  bool upper : 1;
+  bool locale : 1;
+  bool binary32 : 1;
+  bool use_grisu : 1;
+  bool showpoint : 1;
+};
+
+// Writes the exponent exp in the form "[+-]d{2,3}" to buffer.
+template <typename Char, typename It> It write_exponent(int exp, It it) {
+  FMT_ASSERT(-10000 < exp && exp < 10000, "exponent out of range");
+  if (exp < 0) {
+    *it++ = static_cast<Char>('-');
+    exp = -exp;
+  } else {
+    *it++ = static_cast<Char>('+');
+  }
+  if (exp >= 100) {
+    const char* top = data::digits[exp / 100];
+    if (exp >= 1000) *it++ = static_cast<Char>(top[0]);
+    *it++ = static_cast<Char>(top[1]);
+    exp %= 100;
+  }
+  const char* d = data::digits[exp];
+  *it++ = static_cast<Char>(d[0]);
+  *it++ = static_cast<Char>(d[1]);
+  return it;
+}
+
+template <typename OutputIt, typename Char>
+OutputIt write_float(OutputIt it, const buffer<char>& significand, int exp,
+                     float_specs specs, Char decimal_point) {
+  const char* digits = significand.data();
+  int num_digits = static_cast<int>(significand.size());
+  int full_exp = exp + num_digits;
+  auto format = specs.format;
+  if (format == float_format::general &&
+      !(full_exp >= -3 &&
+        full_exp < (specs.precision > 0 ? specs.precision : 16) + 1)) {
+    format = float_format::exp;
+  }
+  const Char zero = static_cast<Char>('0');
+  if (format == float_format::exp) {
+    // Insert a decimal point after the first digit and add an exponent.
+    *it++ = static_cast<Char>(*digits);
+    int num_zeros = specs.precision - num_digits;
+    if (num_digits > 1 || specs.showpoint) *it++ = decimal_point;
+    it = copy_str<Char>(digits + 1, digits + num_digits, it);
+    if (num_zeros > 0 && specs.showpoint) it = std::fill_n(it, num_zeros, zero);
+    *it++ = static_cast<Char>(specs.upper ? 'E' : 'e');
+    return write_exponent<Char>(full_exp - 1, it);
+  }
+  if (num_digits <= full_exp) {
+    // 1234e7 -> 12340000000[.0+]
+    it = copy_str<Char>(digits, digits + num_digits, it);
+    it = std::fill_n(it, full_exp - num_digits, zero);
+    if (specs.showpoint) {
+      *it++ = decimal_point;
+      int num_zeros = specs.precision - full_exp;
+      if (num_zeros <= 0) {
+        if (format != float_format::fixed) *it++ = zero;
+        return it;
+      }
+#ifdef FMT_FUZZ
+      if (num_zeros > 5000)
+        throw std::runtime_error("fuzz mode - avoiding excessive cpu use");
+#endif
+      it = std::fill_n(it, num_zeros, zero);
+    }
+  } else if (full_exp > 0) {
+    // 1234e-2 -> 12.34[0+]
+    it = copy_str<Char>(digits, digits + full_exp, it);
+    if (!specs.showpoint) {
+      if (num_digits != full_exp) *it++ = decimal_point;
+      return copy_str<Char>(digits + full_exp, digits + num_digits, it);
+    }
+    *it++ = decimal_point;
+    it = copy_str<Char>(digits + full_exp, digits + num_digits, it);
+    if (specs.precision > num_digits) {
+      // Add trailing zeros.
+      int num_zeros = specs.precision - num_digits;
+      it = std::fill_n(it, num_zeros, zero);
+    }
+  } else {
+    // 1234e-6 -> 0.001234
+    *it++ = zero;
+    int num_zeros = -full_exp;
+    if (num_digits == 0 && specs.precision >= 0 &&
+        specs.precision < num_zeros) {
+      num_zeros = specs.precision;
+    }
+    if (num_zeros != 0 || num_digits != 0 || specs.showpoint) {
+      *it++ = decimal_point;
+      it = std::fill_n(it, num_zeros, zero);
+      it = copy_str<Char>(digits, digits + num_digits, it);
+    }
+  }
+  return it;
+}
+
+template <typename Char> class float_writer {
+ private:
+  // The number is given as v = significand_ * pow(10, exp_).
+  const buffer<char>& significand_;
+  int exp_;
+  size_t size_;
+  float_specs specs_;
+  Char decimal_point_;
+
+  template <typename It> It prettify(It it) const {
+    return write_float(it, significand_, exp_, specs_, decimal_point_);
+  }
+
+ public:
+  float_writer(const buffer<char>& significand, int exp, float_specs specs,
+               Char decimal_point)
+      : significand_(significand),
+        exp_(exp),
+        specs_(specs),
+        decimal_point_(decimal_point) {
+    size_ = prettify(counting_iterator()).count();
+    size_ += specs.sign ? 1 : 0;
+  }
+
+  size_t size() const { return size_; }
+
+  template <typename It> It operator()(It it) const {
+    if (specs_.sign) *it++ = static_cast<Char>(data::signs[specs_.sign]);
+    return prettify(it);
+  }
+};
+
+template <typename T>
+int format_float(T value, int precision, float_specs specs, buffer<char>& buf);
+
+// Formats a floating-point number with snprintf.
+template <typename T>
+int snprintf_float(T value, int precision, float_specs specs,
+                   buffer<char>& buf);
+
+template <typename T> T promote_float(T value) { return value; }
+inline double promote_float(float value) { return static_cast<double>(value); }
 
 template <typename Handler>
 FMT_CONSTEXPR void handle_int_type_spec(char spec, Handler&& handler) {
@@ -1868,8 +1871,7 @@ OutputIt write(OutputIt out, T value, basic_format_specs<Char> specs,
   fspecs.precision = precision;
   Char point =
       fspecs.locale ? decimal_point<Char>(loc) : static_cast<Char>('.');
-  float_writer<Char> w(buffer.data(), static_cast<int>(buffer.size()), exp,
-                       fspecs, point);
+  float_writer<Char> w(buffer, exp, fspecs, point);
   return write_padded<align::right>(out, specs, w.size(), w);
 }
 
@@ -1892,8 +1894,7 @@ OutputIt write(OutputIt out, T value) {
   auto dec = dragonbox::to_decimal(static_cast<type>(value));
   memory_buffer buf;
   write<char>(buffer_appender<char>(buf), dec.significand);
-  float_writer<Char> w(buf.data(), static_cast<int>(buf.size()), dec.exponent,
-                       fspecs, static_cast<Char>('.'));
+  float_writer<Char> w(buf, dec.exponent, fspecs, static_cast<Char>('.'));
   return base_iterator(out, w(reserve(out, w.size())));
 }
 
