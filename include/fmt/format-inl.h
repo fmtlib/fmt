@@ -1262,9 +1262,8 @@ class bigint {
     FMT_ASSERT(compare(*this, other) >= 0, "");
     bigit borrow = 0;
     int i = other.exp_ - exp_;
-    for (size_t j = 0, n = other.bigits_.size(); j != n; ++i, ++j) {
+    for (size_t j = 0, n = other.bigits_.size(); j != n; ++i, ++j)
       subtract_bigits(i, other.bigits_[j], borrow);
-    }
     while (borrow > 0) subtract_bigits(i, 0, borrow);
     remove_leading_zeros();
   }
@@ -1436,22 +1435,26 @@ class bigint {
     exp_ *= 2;
   }
 
+  // If this bigint has a bigger exponent than other, adds trailing zero to make
+  // exponents equal. This simplifies some operations such as subtraction.
+  void align(const bigint& other) {
+    int exp_difference = exp_ - other.exp_;
+    if (exp_difference <= 0) return;
+    int num_bigits = static_cast<int>(bigits_.size());
+    bigits_.resize(to_unsigned(num_bigits + exp_difference));
+    for (int i = num_bigits - 1, j = i + exp_difference; i >= 0; --i, --j)
+      bigits_[j] = bigits_[i];
+    std::uninitialized_fill_n(bigits_.data(), exp_difference, 0);
+    exp_ -= exp_difference;
+  }
+
   // Divides this bignum by divisor, assigning the remainder to this and
   // returning the quotient.
   int divmod_assign(const bigint& divisor) {
     FMT_ASSERT(this != &divisor, "");
     if (compare(*this, divisor) < 0) return 0;
-    int num_bigits = static_cast<int>(bigits_.size());
     FMT_ASSERT(divisor.bigits_[divisor.bigits_.size() - 1u] != 0, "");
-    int exp_difference = exp_ - divisor.exp_;
-    if (exp_difference > 0) {
-      // Align bigints by adding trailing zeros to simplify subtraction.
-      bigits_.resize(to_unsigned(num_bigits + exp_difference));
-      for (int i = num_bigits - 1, j = i + exp_difference; i >= 0; --i, --j)
-        bigits_[j] = bigits_[i];
-      std::uninitialized_fill_n(bigits_.data(), exp_difference, 0);
-      exp_ -= exp_difference;
-    }
+    align(divisor);
     int quotient = 0;
     do {
       subtract_aligned(divisor);

@@ -212,14 +212,39 @@ TEST(FPTest, Multiply) {
 }
 
 TEST(FPTest, GetCachedPower) {
-  typedef std::numeric_limits<double> limits;
+  using limits = std::numeric_limits<double>;
   for (auto exp = limits::min_exponent; exp <= limits::max_exponent; ++exp) {
     int dec_exp = 0;
     auto fp = fmt::detail::get_cached_power(exp, dec_exp);
-    EXPECT_LE(exp, fp.e);
-    int dec_exp_step = 8;
-    EXPECT_LE(fp.e, exp + dec_exp_step * log2(10));
-    EXPECT_DOUBLE_EQ(pow(10, dec_exp), ldexp(static_cast<double>(fp.f), fp.e));
+    bigint exact, cache(fp.f);
+    if (dec_exp >= 0) {
+      exact.assign_pow10(dec_exp);
+      if (fp.e <= 0)
+        exact <<= -fp.e;
+      else
+        cache <<= fp.e;
+      exact.align(cache);
+      cache.align(exact);
+      auto exact_str = fmt::format("{}", exact);
+      auto cache_str = fmt::format("{}", cache);
+      EXPECT_EQ(exact_str.size(), cache_str.size());
+      EXPECT_EQ(exact_str.substr(0, 15), cache_str.substr(0, 15));
+      int diff = cache_str[15] - exact_str[15];
+      if (diff == 1)
+        EXPECT_GT(exact_str[16], '8');
+      else
+        EXPECT_EQ(diff, 0);
+    } else {
+      cache.assign_pow10(-dec_exp);
+      cache *= fp.f + 1;  // Inexact check.
+      exact.assign(1);
+      exact <<= -fp.e;
+      exact.align(cache);
+      auto exact_str = fmt::format("{}", exact);
+      auto cache_str = fmt::format("{}", cache);
+      EXPECT_EQ(exact_str.size(), cache_str.size());
+      EXPECT_EQ(exact_str.substr(0, 16), cache_str.substr(0, 16));
+    }
   }
 }
 
