@@ -176,12 +176,14 @@ request <https://github.com/Microsoft/vcpkg>`__ on the vcpkg repository.
 LHelper
 =======
 
-You can download and install fmt using `lhelper <https://github.com/franko/lhelper>`__ dependency manager::
+You can download and install fmt using
+`lhelper <https://github.com/franko/lhelper>`__ dependency manager::
 
   lhelper activate <some-environment>
   lhelper install fmt
 
-All the recipes for lhelper are kept in the `lhelper's recipe <https://github.com/franko/lhelper-recipes>`__ repository.
+All the recipes for lhelper are kept in the
+`lhelper's recipe <https://github.com/franko/lhelper-recipes>`__ repository.
 
 Android NDK
 ===========
