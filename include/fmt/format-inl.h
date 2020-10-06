@@ -2468,6 +2468,15 @@ int format_float(T value, int precision, float_specs specs, buffer<char>& buf) {
   } else {
     exp -= cached_exp10;
     buf.try_resize(to_unsigned(handler.size));
+    if ((specs.format == detail::float_format::exp) && (buf.size() > precision)) {
+      if (exp < 0) {
+        exp += (buf.size() - precision);
+      }
+      else {
+        exp -= (buf.size() - precision);
+      }
+      buf.try_resize(to_unsigned(precision));
+    }
   }
   if (!fixed && !specs.showpoint) {
     // Remove trailing zeros.
