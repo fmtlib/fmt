@@ -958,6 +958,10 @@ TEST(FormatterTest, Precision) {
   EXPECT_EQ("1019666400", format("{}", 1019666432.0f));
   EXPECT_EQ("1e+01", format("{:.0e}", 9.5));
 
+  EXPECT_EQ("1.0e-02", format("{:.1e}", 1e-2));
+  EXPECT_EQ("1.0e-12", format("{:.1e}", 1e-12));
+  EXPECT_EQ("1.0e+12", format("{:.1e}", 1e12));
+
   EXPECT_THROW_MSG(format("{0:.2}", reinterpret_cast<void*>(0xcafe)),
                    format_error,
                    "precision not allowed for this argument type");
