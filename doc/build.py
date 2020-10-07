@@ -95,8 +95,8 @@ def build_docs(version='dev', **kwargs):
                           "FMT_END_NAMESPACE=}}" \
                           "FMT_STRING_ALIAS=1" \
                           "FMT_ENABLE_IF(B)="
-      EXCLUDE_SYMBOLS   = fmt::detail::* fmt::formatter fmt::printf_formatter \
-                          fmt::arg_join fmt::basic_format_arg::handle
+      EXCLUDE_SYMBOLS   = fmt::formatter fmt::printf_formatter fmt::arg_join \
+                          fmt::basic_format_arg::handle
     '''.format(include_dir, doxyxml_dir).encode('UTF-8'))
   if p.returncode != 0:
     raise CalledProcessError(p.returncode, cmd)
