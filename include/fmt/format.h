@@ -1724,37 +1724,46 @@ OutputIt write_nonfinite(OutputIt out, bool isinf,
   });
 }
 
+// A decimal floating-point number significand * pow(10, exp).
+struct big_decimal_fp {
+  const char* significand;
+  int significand_size;
+  int exp;
+};
+
 template <typename OutputIt, typename Char>
-OutputIt write_float(OutputIt out, const buffer<char>& significand, int exp,
-                     float_specs specs, Char decimal_point) {
-  const char* digits = significand.data();
-  int num_digits = static_cast<int>(significand.size());
-  exp += num_digits;
+OutputIt write_float(OutputIt out, const big_decimal_fp& fp, float_specs specs,
+                     Char decimal_point) {
+  const char* digits = fp.significand;
   const Char zero = static_cast<Char>('0');
 
+  int output_exp = fp.exp + fp.significand_size - 1;
   auto use_exp_format = [=]() {
     if (specs.format == float_format::exp) return true;
     if (specs.format != float_format::general) return false;
-    const int exp_threshold = -4;  // Prefer 0.0001 to 1e-04.
-    return exp - 1 < exp_threshold ||
-           exp - 1 >= (specs.precision > 0 ? specs.precision : 17);
+    // Format numbers with the exponent in [exp_lower, exp_upper) using
+    // the fixed notation, e.g. prefer 0.0001 to 1e-04.
+    const int exp_lower = -4, exp_upper = 16;
+    return output_exp < exp_lower ||
+           output_exp >= (specs.precision > 0 ? specs.precision : exp_upper);
   };
   if (use_exp_format()) {
     // Insert a decimal point after the first digit and add an exponent.
     *out++ = static_cast<Char>(*digits);
-    int num_zeros = specs.precision - num_digits;
-    if (num_digits > 1 || specs.showpoint) *out++ = decimal_point;
-    out = copy_str<Char>(digits + 1, digits + num_digits, out);
+    int num_zeros = specs.precision - fp.significand_size;
+    if (fp.significand_size > 1 || specs.showpoint) *out++ = decimal_point;
+    out = copy_str<Char>(digits + 1, digits + fp.significand_size, out);
     if (num_zeros > 0 && specs.showpoint)
       out = std::fill_n(out, num_zeros, zero);
     *out++ = static_cast<Char>(specs.upper ? 'E' : 'e');
-    return write_exponent<Char>(exp - 1, out);
+    return write_exponent<Char>(output_exp, out);
   }
 
-  if (num_digits <= exp) {
+  int exp = fp.exp + fp.significand_size;
+  if (fp.significand_size <= exp) {
     // 1234e7 -> 12340000000[.0+]
-    out = copy_str<Char>(digits, digits + num_digits, out);
-    out = std::fill_n(out, exp - num_digits, zero);
+    out = copy_str<Char>(digits, digits + fp.significand_size, out);
+    out = std::fill_n(out, exp - fp.significand_size, zero);
     if (specs.showpoint) {
       *out++ = decimal_point;
       int num_zeros = specs.precision - exp;
@@ -1772,24 +1781,26 @@ OutputIt write_float(OutputIt out, const buffer<char>& significand, int exp,
     // 1234e-2 -> 12.34[0+]
     out = copy_str<Char>(digits, digits + exp, out);
     if (!specs.showpoint) {
-      if (num_digits != exp) *out++ = decimal_point;
-      return copy_str<Char>(digits + exp, digits + num_digits, out);
+      if (fp.significand_size != exp) *out++ = decimal_point;
+      return copy_str<Char>(digits + exp, digits + fp.significand_size, out);
     }
     *out++ = decimal_point;
-    out = copy_str<Char>(digits + exp, digits + num_digits, out);
+    out = copy_str<Char>(digits + exp, digits + fp.significand_size, out);
     // Add trailing zeros.
-    if (specs.precision > num_digits)
-      out = std::fill_n(out, specs.precision - num_digits, zero);
+    if (specs.precision > fp.significand_size)
+      out = std::fill_n(out, specs.precision - fp.significand_size, zero);
   } else {
     // 1234e-6 -> 0.001234
     *out++ = zero;
     int num_zeros = -exp;
-    if (num_digits == 0 && specs.precision >= 0 && specs.precision < num_zeros)
+    if (fp.significand_size == 0 && specs.precision >= 0 &&
+        specs.precision < num_zeros) {
       num_zeros = specs.precision;
-    if (num_zeros != 0 || num_digits != 0 || specs.showpoint) {
+    }
+    if (num_zeros != 0 || fp.significand_size != 0 || specs.showpoint) {
       *out++ = decimal_point;
       out = std::fill_n(out, num_zeros, zero);
-      out = copy_str<Char>(digits, digits + num_digits, out);
+      out = copy_str<Char>(digits, digits + fp.significand_size, out);
     }
   }
   return out;
@@ -1800,14 +1811,15 @@ template <typename OutputIt, typename Char>
 OutputIt write_float(OutputIt out, const buffer<char>& significand, int exp,
                      const basic_format_specs<Char>& specs, float_specs fspecs,
                      Char decimal_point) {
+  auto fp = big_decimal_fp{significand.data(),
+                           static_cast<int>(significand.size()), exp};
   auto size =
-      write_float(counting_iterator(), significand, exp, fspecs, decimal_point)
-          .count();
+      write_float(counting_iterator(), fp, fspecs, decimal_point).count();
   size += fspecs.sign ? 1 : 0;
   using iterator = remove_reference_t<decltype(reserve(out, 0))>;
   return write_padded<align::right>(out, specs, size, [&](iterator it) {
     if (fspecs.sign) *it++ = static_cast<Char>(data::signs[fspecs.sign]);
-    return write_float(it, significand, exp, fspecs, decimal_point);
+    return write_float(it, fp, fspecs, decimal_point);
   });
 }
 

@@ -1294,6 +1294,8 @@ TEST(FormatterTest, PrecisionRounding) {
 TEST(FormatterTest, PrettifyFloat) {
   EXPECT_EQ("0.0001", fmt::format("{}", 1e-4));
   EXPECT_EQ("1e-05", fmt::format("{}", 1e-5));
+  EXPECT_EQ("1000000000000000", fmt::format("{}", 1e15));
+  EXPECT_EQ("1e+16", fmt::format("{}", 1e16));
   EXPECT_EQ("9.999e-05", fmt::format("{}", 9.999e-5));
   EXPECT_EQ("10000000000", fmt::format("{}", 1e10));
   EXPECT_EQ("100000000000", fmt::format("{}", 1e11));
