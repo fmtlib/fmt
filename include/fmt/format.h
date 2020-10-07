@@ -1729,15 +1729,17 @@ OutputIt write_float(OutputIt out, const buffer<char>& significand, int exp,
                      float_specs specs, Char decimal_point) {
   const char* digits = significand.data();
   int num_digits = static_cast<int>(significand.size());
-  int full_exp = exp + num_digits;
-  auto format = specs.format;
-  if (format == float_format::general &&
-      !(full_exp >= -3 &&
-        full_exp < (specs.precision > 0 ? specs.precision : 16) + 1)) {
-    format = float_format::exp;
-  }
+  exp += num_digits;
   const Char zero = static_cast<Char>('0');
-  if (format == float_format::exp) {
+
+  auto use_exp_format = [=]() {
+    if (specs.format == float_format::exp) return true;
+    if (specs.format != float_format::general) return false;
+    const int exp_threshold = -4;  // Prefer 0.0001 to 1e-04.
+    return exp - 1 < exp_threshold ||
+           exp - 1 >= (specs.precision > 0 ? specs.precision : 17);
+  };
+  if (use_exp_format()) {
     // Insert a decimal point after the first digit and add an exponent.
     *out++ = static_cast<Char>(*digits);
     int num_zeros = specs.precision - num_digits;
@@ -1746,17 +1748,18 @@ OutputIt write_float(OutputIt out, const buffer<char>& significand, int exp,
     if (num_zeros > 0 && specs.showpoint)
       out = std::fill_n(out, num_zeros, zero);
     *out++ = static_cast<Char>(specs.upper ? 'E' : 'e');
-    return write_exponent<Char>(full_exp - 1, out);
+    return write_exponent<Char>(exp - 1, out);
   }
-  if (num_digits <= full_exp) {
+
+  if (num_digits <= exp) {
     // 1234e7 -> 12340000000[.0+]
     out = copy_str<Char>(digits, digits + num_digits, out);
-    out = std::fill_n(out, full_exp - num_digits, zero);
+    out = std::fill_n(out, exp - num_digits, zero);
     if (specs.showpoint) {
       *out++ = decimal_point;
-      int num_zeros = specs.precision - full_exp;
+      int num_zeros = specs.precision - exp;
       if (num_zeros <= 0) {
-        if (format != float_format::fixed) *out++ = zero;
+        if (specs.format != float_format::fixed) *out++ = zero;
         return out;
       }
 #ifdef FMT_FUZZ
@@ -1765,22 +1768,22 @@ OutputIt write_float(OutputIt out, const buffer<char>& significand, int exp,
 #endif
       out = std::fill_n(out, num_zeros, zero);
     }
-  } else if (full_exp > 0) {
+  } else if (exp > 0) {
     // 1234e-2 -> 12.34[0+]
-    out = copy_str<Char>(digits, digits + full_exp, out);
+    out = copy_str<Char>(digits, digits + exp, out);
     if (!specs.showpoint) {
-      if (num_digits != full_exp) *out++ = decimal_point;
-      return copy_str<Char>(digits + full_exp, digits + num_digits, out);
+      if (num_digits != exp) *out++ = decimal_point;
+      return copy_str<Char>(digits + exp, digits + num_digits, out);
     }
     *out++ = decimal_point;
-    out = copy_str<Char>(digits + full_exp, digits + num_digits, out);
+    out = copy_str<Char>(digits + exp, digits + num_digits, out);
     // Add trailing zeros.
     if (specs.precision > num_digits)
       out = std::fill_n(out, specs.precision - num_digits, zero);
   } else {
     // 1234e-6 -> 0.001234
     *out++ = zero;
-    int num_zeros = -full_exp;
+    int num_zeros = -exp;
     if (num_digits == 0 && specs.precision >= 0 && specs.precision < num_zeros)
       num_zeros = specs.precision;
     if (num_zeros != 0 || num_digits != 0 || specs.showpoint) {
