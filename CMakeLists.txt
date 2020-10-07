@@ -53,8 +53,8 @@ endif ()
 project(FMT CXX)
 include(GNUInstallDirs)
 set_verbose(FMT_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR} CACHE STRING
-            "Installation directory for include files, a relative path "
-            "that will be joined to ${CMAKE_INSTALL_PREFIX}, or an arbitrary absolute path.")
+            "Installation directory for include files, a relative path that "
+            "will be joined with ${CMAKE_INSTALL_PREFIX} or an absolute path.")
 
 option(FMT_PEDANTIC "Enable extra warnings and expensive tests." OFF)
 option(FMT_WERROR "Halt the compilation with an error on compiler warnings."
@@ -229,7 +229,8 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif ()
 
 if (BUILD_SHARED_LIBS)
-  if (UNIX AND NOT APPLE AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS" AND NOT EMSCRIPTEN)
+  if (UNIX AND NOT APPLE AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS" AND
+      NOT EMSCRIPTEN)
     # Fix rpmlint warning:
     # unused-direct-shlib-dependency /usr/lib/libformat.so.1.1.0 /lib/libm.so.6.
     target_link_libraries(fmt -Wl,--as-needed)
@@ -254,20 +255,22 @@ target_include_directories(fmt-header-only INTERFACE
 if (FMT_INSTALL)
   include(CMakePackageConfigHelpers)
   set_verbose(FMT_CMAKE_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/fmt CACHE STRING
-              "Installation directory for cmake files, a relative path "
-              "that will be joined to ${CMAKE_INSTALL_PREFIX}, or an arbitrary absolute path.")
+              "Installation directory for cmake files, a relative path that "
+              "will be joined with ${CMAKE_INSTALL_PREFIX} or an absolute "
+              "path.")
   set(version_config ${PROJECT_BINARY_DIR}/fmt-config-version.cmake)
   set(project_config ${PROJECT_BINARY_DIR}/fmt-config.cmake)
   set(pkgconfig ${PROJECT_BINARY_DIR}/fmt.pc)
   set(targets_export_name fmt-targets)
 
   set_verbose(FMT_LIB_DIR ${CMAKE_INSTALL_LIBDIR} CACHE STRING
-              "Installation directory for libraries, a relative path "
-              "that will be joined to ${CMAKE_INSTALL_PREFIX}, or an arbitrary absolute path.")
+              "Installation directory for libraries, a relative path that "
+              "will be joined to ${CMAKE_INSTALL_PREFIX} or an absolute path.")
 
   set_verbose(FMT_PKGCONFIG_DIR ${CMAKE_INSTALL_LIBDIR}/pkgconfig CACHE PATH
-              "Installation directory for pkgconfig (.pc) files, a relative path "
-              "that will be joined to ${CMAKE_INSTALL_PREFIX}, or an arbitrary absolute path.")
+              "Installation directory for pkgconfig (.pc) files, a relative "
+              "path that will be joined with ${CMAKE_INSTALL_PREFIX} or an "
+              "absolute path.")
 
   # Generate the version, config and target files into the build directory.
   write_basic_package_version_file(
