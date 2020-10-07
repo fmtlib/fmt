@@ -3412,8 +3412,10 @@ struct formatter<Char[N], Char> : formatter<basic_string_view<Char>, Char> {
 //   using variant = std::variant<int, std::string>;
 //   template <>
 //   struct formatter<variant>: dynamic_formatter<> {
-//     void format(buffer &buf, const variant &v, context &ctx) {
-//       visit([&](const auto &val) { format(buf, val, ctx); }, v);
+//     auto format(const variant& v, format_context& ctx) {
+//       return visit([&](const auto& val) {
+//           return dynamic_formatter<>::format(val, ctx);
+//       }, v);
 //     }
 //   };
 template <typename Char = char> class dynamic_formatter {
