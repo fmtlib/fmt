@@ -957,6 +957,7 @@ TEST(FormatterTest, Precision) {
   EXPECT_EQ("0.001", format("{:.1g}", 0.001));
   EXPECT_EQ("1019666400", format("{}", 1019666432.0f));
   EXPECT_EQ("1e+01", format("{:.0e}", 9.5));
+  EXPECT_EQ("1.0e-34", fmt::format("{:.1e}", 1e-34));
 
   EXPECT_THROW_MSG(format("{0:.2}", reinterpret_cast<void*>(0xcafe)),
                    format_error,

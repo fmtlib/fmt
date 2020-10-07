@@ -1626,7 +1626,8 @@ struct fixed_handler {
     }
     if (buf[0] > '9') {
       buf[0] = '1';
-      buf[size++] = '0';
+      if (fixed) buf[size++] = '0';
+      else ++exp10;
     }
     return digits::done;
   }
@@ -2466,7 +2467,7 @@ int format_float(T value, int precision, float_specs specs, buffer<char>& buf) {
     exp += handler.size - cached_exp10 - 1;
     fallback_format(value, handler.precision, specs.binary32, buf, exp);
   } else {
-    exp -= cached_exp10;
+    exp += handler.exp10;
     buf.try_resize(to_unsigned(handler.size));
   }
   if (!fixed && !specs.showpoint) {
