@@ -1731,96 +1731,112 @@ struct big_decimal_fp {
   int exp;
 };
 
-template <typename OutputIt, typename Char>
-OutputIt write_float(OutputIt out, const big_decimal_fp& fp, float_specs specs,
-                     Char decimal_point) {
-  const char* digits = fp.significand;
-  const Char zero = static_cast<Char>('0');
-
-  int output_exp = fp.exp + fp.significand_size - 1;
-  auto use_exp_format = [=]() {
-    if (specs.format == float_format::exp) return true;
-    if (specs.format != float_format::general) return false;
-    // Format numbers with the exponent in [exp_lower, exp_upper) using
-    // the fixed notation, e.g. prefer 0.0001 to 1e-04.
-    const int exp_lower = -4, exp_upper = 16;
-    return output_exp < exp_lower ||
-           output_exp >= (specs.precision > 0 ? specs.precision : exp_upper);
-  };
-  if (use_exp_format()) {
-    // Insert a decimal point after the first digit and add an exponent.
-    *out++ = static_cast<Char>(*digits);
-    int num_zeros = specs.precision - fp.significand_size;
-    if (fp.significand_size > 1 || specs.showpoint) *out++ = decimal_point;
-    out = copy_str<Char>(digits + 1, digits + fp.significand_size, out);
-    if (num_zeros > 0 && specs.showpoint)
-      out = std::fill_n(out, num_zeros, zero);
-    *out++ = static_cast<Char>(specs.upper ? 'E' : 'e');
-    return write_exponent<Char>(output_exp, out);
-  }
-
-  int exp = fp.exp + fp.significand_size;
-  if (fp.significand_size <= exp) {
-    // 1234e7 -> 12340000000[.0+]
-    out = copy_str<Char>(digits, digits + fp.significand_size, out);
-    out = std::fill_n(out, exp - fp.significand_size, zero);
-    if (specs.showpoint) {
-      *out++ = decimal_point;
-      int num_zeros = specs.precision - exp;
-      if (num_zeros <= 0) {
-        if (specs.format != float_format::fixed) *out++ = zero;
-        return out;
-      }
-#ifdef FMT_FUZZ
-      if (num_zeros > 5000)
-        throw std::runtime_error("fuzz mode - avoiding excessive cpu use");
-#endif
-      out = std::fill_n(out, num_zeros, zero);
-    }
-  } else if (exp > 0) {
-    // 1234e-2 -> 12.34[0+]
-    out = copy_str<Char>(digits, digits + exp, out);
-    if (!specs.showpoint) {
-      if (fp.significand_size != exp) *out++ = decimal_point;
-      return copy_str<Char>(digits + exp, digits + fp.significand_size, out);
-    }
-    *out++ = decimal_point;
-    out = copy_str<Char>(digits + exp, digits + fp.significand_size, out);
-    // Add trailing zeros.
-    if (specs.precision > fp.significand_size)
-      out = std::fill_n(out, specs.precision - fp.significand_size, zero);
-  } else {
-    // 1234e-6 -> 0.001234
-    *out++ = zero;
-    int num_zeros = -exp;
-    if (fp.significand_size == 0 && specs.precision >= 0 &&
-        specs.precision < num_zeros) {
-      num_zeros = specs.precision;
-    }
-    if (num_zeros != 0 || fp.significand_size != 0 || specs.showpoint) {
-      *out++ = decimal_point;
-      out = std::fill_n(out, num_zeros, zero);
-      out = copy_str<Char>(digits, digits + fp.significand_size, out);
-    }
-  }
-  return out;
-}
-
 // The number is given as v = significand * pow(10, exp).
 template <typename OutputIt, typename Char>
-OutputIt write_float(OutputIt out, const buffer<char>& significand, int exp,
+OutputIt write_float(OutputIt out, const buffer<char>& significand, int fpexp,
                      const basic_format_specs<Char>& specs, float_specs fspecs,
                      Char decimal_point) {
   auto fp = big_decimal_fp{significand.data(),
-                           static_cast<int>(significand.size()), exp};
-  auto size =
-      write_float(counting_iterator(), fp, fspecs, decimal_point).count();
-  size += fspecs.sign ? 1 : 0;
+                           static_cast<int>(significand.size()), fpexp};
+  const char* digits = fp.significand;
+  const Char zero = static_cast<Char>('0');
+  char sign = data::signs[fspecs.sign];
+  int size = fp.significand_size + (fspecs.sign ? 1 : 0);
   using iterator = remove_reference_t<decltype(reserve(out, 0))>;
-  return write_padded<align::right>(out, specs, size, [&](iterator it) {
-    if (fspecs.sign) *it++ = static_cast<Char>(data::signs[fspecs.sign]);
-    return write_float(it, fp, fspecs, decimal_point);
-  });
+
+  int output_exp = fp.exp + fp.significand_size - 1;
+  auto use_exp_format = [=]() {
+    if (fspecs.format == float_format::exp) return true;
+    if (fspecs.format != float_format::general) return false;
+    // Use the fixed notation if the exponent is in [exp_lower, exp_upper),
+    // e.g. 0.0001 instead of 1e-04. Otherwise use the exponent notation.
+    const int exp_lower = -4, exp_upper = 16;
+    return output_exp < exp_lower ||
+           output_exp >= (fspecs.precision > 0 ? fspecs.precision : exp_upper);
+  };
+  if (use_exp_format()) {
+    int num_zeros = 0;
+    if (fspecs.showpoint) {
+      num_zeros = fspecs.precision - fp.significand_size;
+      if (num_zeros < 0) num_zeros = 0;
+    } else if (fp.significand_size == 1) {
+      decimal_point = Char();
+    }
+
+    auto abs_output_exp = static_cast<unsigned>(output_exp);
+    if (output_exp < 0) abs_output_exp = 0 - abs_output_exp;
+    int exp_digits = 2;
+    if (abs_output_exp >= 100) exp_digits = abs_output_exp >= 1000 ? 4 : 3;
+
+    size += (decimal_point ? 1 : 0) + num_zeros + 2 + exp_digits;
+    char exp_char = fspecs.upper ? 'E' : 'e';
+    return write_padded<align::right>(
+        out, specs, to_unsigned(size), [=](iterator it) {
+          if (sign) *it++ = static_cast<Char>(sign);
+          // Insert a decimal point after the first digit and add an exponent.
+          *it++ = static_cast<Char>(*digits);
+          if (decimal_point) *it++ = decimal_point;
+          it = copy_str<Char>(digits + 1, digits + fp.significand_size, it);
+          if (num_zeros > 0) it = std::fill_n(it, num_zeros, zero);
+          *it++ = static_cast<Char>(exp_char);
+          return write_exponent<Char>(output_exp, it);
+        });
+  }
+
+  int exp = fp.exp + fp.significand_size;
+  if (fp.exp >= 0) {
+    // 1234e5 -> 123400000[.0+]
+    size += fp.exp;
+    int num_zeros = fspecs.precision - exp;
+#ifdef FMT_FUZZ
+    if (num_zeros > 5000)
+      throw std::runtime_error("fuzz mode - avoiding excessive cpu use");
+#endif
+    if (fspecs.showpoint) {
+      if (num_zeros <= 0 && fspecs.format != float_format::fixed) num_zeros = 1;
+      if (num_zeros > 0) size += num_zeros;
+    }
+    return write_padded<align::right>(
+        out, specs, to_unsigned(size), [&](iterator it) {
+          if (sign) *it++ = static_cast<Char>(sign);
+          it = copy_str<Char>(digits, digits + fp.significand_size, it);
+          it = std::fill_n(it, fp.exp, zero);
+          if (!fspecs.showpoint) return it;
+          *it++ = decimal_point;
+          return num_zeros > 0 ? std::fill_n(it, num_zeros, zero) : it;
+        });
+  } else if (exp > 0) {
+    // 1234e-2 -> 12.34[0+]
+    int num_zeros =
+        fspecs.showpoint ? fspecs.precision - fp.significand_size : 0;
+    size += 1 + (num_zeros > 0 ? num_zeros : 0);
+    return write_padded<align::right>(
+        out, specs, to_unsigned(size), [&](iterator it) {
+          if (sign) *it++ = static_cast<Char>(sign);
+          it = copy_str<Char>(digits, digits + exp, it);
+          *it++ = decimal_point;
+          it = copy_str<Char>(digits + exp, digits + fp.significand_size, it);
+          // Add trailing zeros.
+          return num_zeros > 0 ? std::fill_n(it, num_zeros, zero) : it;
+        });
+  }
+  // 1234e-6 -> 0.001234
+  int num_zeros = -exp;
+  if (fp.significand_size == 0 && fspecs.precision >= 0 &&
+      fspecs.precision < num_zeros) {
+    num_zeros = fspecs.precision;
+  }
+  size += 2 + num_zeros;
+  return write_padded<align::right>(
+      out, specs, to_unsigned(size), [&](iterator it) {
+        if (sign) *it++ = static_cast<Char>(sign);
+        *it++ = zero;
+        if (num_zeros == 0 && fp.significand_size == 0 && !fspecs.showpoint)
+          return it;
+        *it++ = decimal_point;
+        it = std::fill_n(it, num_zeros, zero);
+        return copy_str<Char>(digits, digits + fp.significand_size, it);
+      });
 }
 
 template <typename Char, typename OutputIt, typename T,
