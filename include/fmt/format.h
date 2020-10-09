@@ -1067,11 +1067,10 @@ inline format_decimal_result<Char*> format_decimal(Char* out, UInt value,
 template <typename Char, typename UInt, typename Iterator,
           FMT_ENABLE_IF(!std::is_pointer<remove_cvref_t<Iterator>>::value)>
 inline format_decimal_result<Iterator> format_decimal(Iterator out, UInt value,
-                                                      int num_digits) {
-  // Buffer should be large enough to hold all digits (<= digits10 + 1).
-  enum { max_size = digits10<UInt>() + 1 };
-  Char buffer[2 * max_size];
-  auto end = format_decimal(buffer, value, num_digits).end;
+                                                      int size) {
+  // Buffer is large enough to hold all digits (digits10 + 1).
+  Char buffer[digits10<UInt>() + 1];
+  auto end = format_decimal(buffer, value, size).end;
   return {out, detail::copy_str<Char>(buffer, end, out)};
 }
 
@@ -1488,7 +1487,7 @@ template <align::type align = align::left, typename OutputIt, typename Char,
           typename F>
 inline OutputIt write_padded(OutputIt out,
                              const basic_format_specs<Char>& specs, size_t size,
-                             size_t width, const F& f) {
+                             size_t width, F&& f) {
   static_assert(align == align::left || align == align::right, "");
   unsigned spec_width = to_unsigned(specs.width);
   size_t padding = spec_width > width ? spec_width - width : 0;
@@ -1506,7 +1505,7 @@ template <align::type align = align::left, typename OutputIt, typename Char,
           typename F>
 inline OutputIt write_padded(OutputIt out,
                              const basic_format_specs<Char>& specs, size_t size,
-                             const F& f) {
+                             F&& f) {
   return write_padded<align>(out, specs, size, size, f);
 }
 
@@ -1728,23 +1727,76 @@ OutputIt write_nonfinite(OutputIt out, bool isinf,
 struct big_decimal_fp {
   const char* significand;
   int significand_size;
-  int exp;
+  int exponent;
 };
 
-// The number is given as v = significand * pow(10, exp).
+inline int get_significand_size(const big_decimal_fp& fp) {
+  return fp.significand_size;
+}
+template <typename T>
+inline int get_significand_size(const dragonbox::decimal_fp<T>& fp) {
+  return count_digits(fp.significand);
+}
+
+template <typename Char, typename OutputIt>
+inline OutputIt write_significand(OutputIt out, const char* significand,
+                                  int& significand_size) {
+  return copy_str<Char>(significand, significand + significand_size, out);
+}
+template <typename Char, typename OutputIt, typename UInt>
+inline OutputIt write_significand(OutputIt out, UInt significand,
+                                  int significand_size) {
+  return format_decimal<Char>(out, significand, significand_size).end;
+}
+
+template <typename Char, typename UInt,
+          FMT_ENABLE_IF(std::is_integral<UInt>::value)>
+inline Char* write_significand(Char* out, UInt significand,
+                               int significand_size, int integral_size,
+                               Char decimal_point) {
+  if (!decimal_point)
+    return format_decimal(out, significand, significand_size).end;
+  auto end = format_decimal(out + 1, significand, significand_size).end;
+  std::copy_n(out + 1, integral_size, out);
+  out[integral_size] = decimal_point;
+  return end;
+}
+
+template <typename OutputIt, typename UInt, typename Char,
+          FMT_ENABLE_IF(!std::is_pointer<remove_cvref_t<OutputIt>>::value)>
+inline OutputIt write_significand(OutputIt out, UInt significand,
+                                  int significand_size, int integral_size,
+                                  Char decimal_point) {
+  // Buffer is large enough to hold digits (digits10 + 1) and a decimal point.
+  Char buffer[digits10<UInt>() + 2];
+  auto end = write_significand(buffer, significand, significand_size,
+                               integral_size, decimal_point);
+  return detail::copy_str<Char>(buffer, end, out);
+}
+
 template <typename OutputIt, typename Char>
-OutputIt write_float(OutputIt out, const buffer<char>& significand, int fpexp,
+inline OutputIt write_significand(OutputIt out, const char* significand,
+                                  int significand_size, int integral_size,
+                                  Char decimal_point) {
+  out = detail::copy_str<Char>(significand, significand + integral_size, out);
+  if (!decimal_point) return out;
+  *out++ = decimal_point;
+  return detail::copy_str<Char>(significand + integral_size,
+                                significand + significand_size, out);
+}
+
+template <typename OutputIt, typename DecimalFP, typename Char>
+OutputIt write_float(OutputIt out, const DecimalFP& fp,
                      const basic_format_specs<Char>& specs, float_specs fspecs,
                      Char decimal_point) {
-  auto fp = big_decimal_fp{significand.data(),
-                           static_cast<int>(significand.size()), fpexp};
-  const char* digits = fp.significand;
+  auto significand = fp.significand;
+  int significand_size = get_significand_size(fp);
   const Char zero = static_cast<Char>('0');
   char sign = data::signs[fspecs.sign];
-  int size = fp.significand_size + (fspecs.sign ? 1 : 0);
+  int size = significand_size + (fspecs.sign ? 1 : 0);
   using iterator = remove_reference_t<decltype(reserve(out, 0))>;
 
-  int output_exp = fp.exp + fp.significand_size - 1;
+  int output_exp = fp.exponent + significand_size - 1;
   auto use_exp_format = [=]() {
     if (fspecs.format == float_format::exp) return true;
     if (fspecs.format != float_format::general) return false;
@@ -1757,9 +1809,9 @@ OutputIt write_float(OutputIt out, const buffer<char>& significand, int fpexp,
   if (use_exp_format()) {
     int num_zeros = 0;
     if (fspecs.showpoint) {
-      num_zeros = fspecs.precision - fp.significand_size;
+      num_zeros = fspecs.precision - significand_size;
       if (num_zeros < 0) num_zeros = 0;
-    } else if (fp.significand_size == 1) {
+    } else if (significand_size == 1) {
       decimal_point = Char();
     }
 
@@ -1771,22 +1823,21 @@ OutputIt write_float(OutputIt out, const buffer<char>& significand, int fpexp,
     size += (decimal_point ? 1 : 0) + num_zeros + 2 + exp_digits;
     char exp_char = fspecs.upper ? 'E' : 'e';
     return write_padded<align::right>(
-        out, specs, to_unsigned(size), [=](iterator it) {
+        out, specs, to_unsigned(size), [=](iterator it) mutable {
           if (sign) *it++ = static_cast<Char>(sign);
           // Insert a decimal point after the first digit and add an exponent.
-          *it++ = static_cast<Char>(*digits);
-          if (decimal_point) *it++ = decimal_point;
-          it = copy_str<Char>(digits + 1, digits + fp.significand_size, it);
+          it = write_significand(it, significand, significand_size, 1,
+                                 decimal_point);
           if (num_zeros > 0) it = std::fill_n(it, num_zeros, zero);
           *it++ = static_cast<Char>(exp_char);
           return write_exponent<Char>(output_exp, it);
         });
   }
 
-  int exp = fp.exp + fp.significand_size;
-  if (fp.exp >= 0) {
+  int exp = fp.exponent + significand_size;
+  if (fp.exponent >= 0) {
     // 1234e5 -> 123400000[.0+]
-    size += fp.exp;
+    size += fp.exponent;
     int num_zeros = fspecs.precision - exp;
 #ifdef FMT_FUZZ
     if (num_zeros > 5000)
@@ -1797,45 +1848,42 @@ OutputIt write_float(OutputIt out, const buffer<char>& significand, int fpexp,
       if (num_zeros > 0) size += num_zeros;
     }
     return write_padded<align::right>(
-        out, specs, to_unsigned(size), [&](iterator it) {
+        out, specs, to_unsigned(size), [&](iterator it) mutable {
           if (sign) *it++ = static_cast<Char>(sign);
-          it = copy_str<Char>(digits, digits + fp.significand_size, it);
-          it = std::fill_n(it, fp.exp, zero);
+          it = write_significand<Char>(it, significand, significand_size);
+          it = std::fill_n(it, fp.exponent, zero);
           if (!fspecs.showpoint) return it;
           *it++ = decimal_point;
           return num_zeros > 0 ? std::fill_n(it, num_zeros, zero) : it;
         });
   } else if (exp > 0) {
     // 1234e-2 -> 12.34[0+]
-    int num_zeros =
-        fspecs.showpoint ? fspecs.precision - fp.significand_size : 0;
+    int num_zeros = fspecs.showpoint ? fspecs.precision - significand_size : 0;
     size += 1 + (num_zeros > 0 ? num_zeros : 0);
     return write_padded<align::right>(
-        out, specs, to_unsigned(size), [&](iterator it) {
+        out, specs, to_unsigned(size), [&](iterator it) mutable {
           if (sign) *it++ = static_cast<Char>(sign);
-          it = copy_str<Char>(digits, digits + exp, it);
-          *it++ = decimal_point;
-          it = copy_str<Char>(digits + exp, digits + fp.significand_size, it);
-          // Add trailing zeros.
+          it = write_significand(it, significand, significand_size, exp,
+                                 decimal_point);
           return num_zeros > 0 ? std::fill_n(it, num_zeros, zero) : it;
         });
   }
   // 1234e-6 -> 0.001234
   int num_zeros = -exp;
-  if (fp.significand_size == 0 && fspecs.precision >= 0 &&
+  if (significand_size == 0 && fspecs.precision >= 0 &&
       fspecs.precision < num_zeros) {
     num_zeros = fspecs.precision;
   }
   size += 2 + num_zeros;
   return write_padded<align::right>(
-      out, specs, to_unsigned(size), [&](iterator it) {
+      out, specs, to_unsigned(size), [&](iterator it) mutable {
         if (sign) *it++ = static_cast<Char>(sign);
         *it++ = zero;
-        if (num_zeros == 0 && fp.significand_size == 0 && !fspecs.showpoint)
+        if (num_zeros == 0 && significand_size == 0 && !fspecs.showpoint)
           return it;
         *it++ = decimal_point;
         it = std::fill_n(it, num_zeros, zero);
-        return copy_str<Char>(digits, digits + fp.significand_size, it);
+        return write_significand<Char>(it, significand, significand_size);
       });
 }
 
@@ -1883,12 +1931,12 @@ OutputIt write(OutputIt out, T value, basic_format_specs<Char> specs,
   fspecs.precision = precision;
   Char point =
       fspecs.locale ? decimal_point<Char>(loc) : static_cast<Char>('.');
-  return write_float(out, buffer, exp, specs, fspecs, point);
+  auto fp = big_decimal_fp{buffer.data(), static_cast<int>(buffer.size()), exp};
+  return write_float(out, fp, specs, fspecs, point);
 }
 
-template <
-    typename Char, typename OutputIt, typename T,
-    FMT_ENABLE_IF(std::is_floating_point<T>::value&& is_fast_float<T>::value)>
+template <typename Char, typename OutputIt, typename T,
+          FMT_ENABLE_IF(is_fast_float<T>::value)>
 OutputIt write(OutputIt out, T value) {
   if (const_check(!is_supported_floating_point(value))) return out;
   auto fspecs = float_specs();
@@ -1903,10 +1951,7 @@ OutputIt write(OutputIt out, T value) {
 
   using type = conditional_t<std::is_same<T, long double>::value, double, T>;
   auto dec = dragonbox::to_decimal(static_cast<type>(value));
-  memory_buffer buf;
-  write<char>(buffer_appender<char>(buf), dec.significand);
-  return write_float(out, buf, dec.exponent, specs, fspecs,
-                     static_cast<Char>('.'));
+  return write_float(out, dec, specs, fspecs, static_cast<Char>('.'));
 }
 
 template <typename Char, typename OutputIt, typename T,
