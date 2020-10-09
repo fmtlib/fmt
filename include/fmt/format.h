@@ -1269,6 +1269,13 @@ template <typename T> struct decimal_fp {
 template <typename T> decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT;
 }  // namespace dragonbox
 
+template <typename T>
+constexpr typename dragonbox::float_info<T>::carrier_uint exponent_mask() {
+  using uint = typename dragonbox::float_info<T>::carrier_uint;
+  return ((uint(1) << dragonbox::float_info<T>::exponent_bits) - 1)
+         << dragonbox::float_info<T>::significand_bits;
+}
+
 // A floating-point presentation format.
 enum class float_format : unsigned char {
   general,  // General: exponent notation or fixed point based on magnitude.
@@ -1791,7 +1798,7 @@ OutputIt write_float(OutputIt out, const DecimalFP& fp,
                      Char decimal_point) {
   auto significand = fp.significand;
   int significand_size = get_significand_size(fp);
-  const Char zero = static_cast<Char>('0');
+  static const Char zero = static_cast<Char>('0');
   char sign = data::signs[fspecs.sign];
   int size = significand_size + (fspecs.sign ? 1 : 0);
   using iterator = remove_reference_t<decltype(reserve(out, 0))>;
@@ -1822,16 +1829,19 @@ OutputIt write_float(OutputIt out, const DecimalFP& fp,
 
     size += (decimal_point ? 1 : 0) + num_zeros + 2 + exp_digits;
     char exp_char = fspecs.upper ? 'E' : 'e';
-    return write_padded<align::right>(
-        out, specs, to_unsigned(size), [=](iterator it) mutable {
-          if (sign) *it++ = static_cast<Char>(sign);
-          // Insert a decimal point after the first digit and add an exponent.
-          it = write_significand(it, significand, significand_size, 1,
-                                 decimal_point);
-          if (num_zeros > 0) it = std::fill_n(it, num_zeros, zero);
-          *it++ = static_cast<Char>(exp_char);
-          return write_exponent<Char>(output_exp, it);
-        });
+    auto write = [=](iterator it) {
+      if (sign) *it++ = static_cast<Char>(sign);
+      // Insert a decimal point after the first digit and add an exponent.
+      it = write_significand(it, significand, significand_size, 1,
+                             decimal_point);
+      if (num_zeros > 0) it = std::fill_n(it, num_zeros, zero);
+      *it++ = static_cast<Char>(exp_char);
+      return write_exponent<Char>(output_exp, it);
+    };
+    auto usize = to_unsigned(size);
+    return specs.width > 0
+               ? write_padded<align::right>(out, specs, usize, write)
+               : base_iterator(out, write(reserve(out, usize)));
   }
 
   int exp = fp.exponent + significand_size;
@@ -1848,7 +1858,7 @@ OutputIt write_float(OutputIt out, const DecimalFP& fp,
       if (num_zeros > 0) size += num_zeros;
     }
     return write_padded<align::right>(
-        out, specs, to_unsigned(size), [&](iterator it) mutable {
+        out, specs, to_unsigned(size), [&](iterator it) {
           if (sign) *it++ = static_cast<Char>(sign);
           it = write_significand<Char>(it, significand, significand_size);
           it = std::fill_n(it, fp.exponent, zero);
@@ -1861,7 +1871,7 @@ OutputIt write_float(OutputIt out, const DecimalFP& fp,
     int num_zeros = fspecs.showpoint ? fspecs.precision - significand_size : 0;
     size += 1 + (num_zeros > 0 ? num_zeros : 0);
     return write_padded<align::right>(
-        out, specs, to_unsigned(size), [&](iterator it) mutable {
+        out, specs, to_unsigned(size), [&](iterator it) {
           if (sign) *it++ = static_cast<Char>(sign);
           it = write_significand(it, significand, significand_size, exp,
                                  decimal_point);
@@ -1876,7 +1886,7 @@ OutputIt write_float(OutputIt out, const DecimalFP& fp,
   }
   size += 2 + num_zeros;
   return write_padded<align::right>(
-      out, specs, to_unsigned(size), [&](iterator it) mutable {
+      out, specs, to_unsigned(size), [&](iterator it) {
         if (sign) *it++ = static_cast<Char>(sign);
         *it++ = zero;
         if (num_zeros == 0 && significand_size == 0 && !fspecs.showpoint)
@@ -1939,17 +1949,23 @@ template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(is_fast_float<T>::value)>
 OutputIt write(OutputIt out, T value) {
   if (const_check(!is_supported_floating_point(value))) return out;
+
+  using type = conditional_t<std::is_same<T, long double>::value, double, T>;
+  using uint = typename dragonbox::float_info<type>::carrier_uint;
+  auto bits = bit_cast<uint>(value);
+
   auto fspecs = float_specs();
-  if (std::signbit(value)) {  // value < 0 is false for NaN so use signbit.
+  auto sign_bit = bits & (uint(1) << (num_bits<uint>() - 1));
+  if (sign_bit != 0) {
     fspecs.sign = sign::minus;
     value = -value;
   }
 
-  auto specs = basic_format_specs<Char>();
-  if (!std::isfinite(value))
+  static const auto specs = basic_format_specs<Char>();
+  uint mask = exponent_mask<type>();
+  if ((bits & mask) == mask)
     return write_nonfinite(out, std::isinf(value), specs, fspecs);
 
-  using type = conditional_t<std::is_same<T, long double>::value, double, T>;
   auto dec = dragonbox::to_decimal(static_cast<type>(value));
   return write_float(out, dec, specs, fspecs, static_cast<Char>('.'));
 }

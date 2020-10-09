@@ -2173,11 +2173,8 @@ FMT_SAFEBUFFERS decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT {
   const carrier_uint significand_mask =
       (static_cast<carrier_uint>(1) << float_info<T>::significand_bits) - 1;
   carrier_uint significand = (br & significand_mask);
-  const carrier_uint exponent_mask =
-      ((static_cast<carrier_uint>(1) << float_info<T>::exponent_bits) - 1)
-      << float_info<T>::significand_bits;
   int exponent =
-      static_cast<int>((br & exponent_mask) >> float_info<T>::significand_bits);
+      static_cast<int>((br & exponent_mask<T>()) >> float_info<T>::significand_bits);
 
   if (exponent != 0) {  // Check if normal.
     exponent += float_info<T>::exponent_bias - float_info<T>::significand_bits;
