@@ -1686,9 +1686,9 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
     // Index of a decimal digit with the least significant digit having index 0.
     int digit_index = 0;
     group = groups.cbegin();
-    auto p = buffer.data() + size;
-    for (int i = num_digits - 1; i >= 0; --i) {
-      *--p = static_cast<Char>(digits[i]);
+    auto p = buffer.data() + size - 1;
+    for (int i = num_digits - 1; i > 0; --i) {
+      *p-- = static_cast<Char>(digits[i]);
       if (*group <= 0 || ++digit_index % *group != 0 ||
           *group == max_value<char>())
         continue;
@@ -1696,11 +1696,12 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
         digit_index = 0;
         ++group;
       }
-      p -= s.size();
       std::uninitialized_copy(s.data(), s.data() + s.size(),
                               make_checked(p, s.size()));
+      p -= s.size();
     }
-    if (prefix_size != 0) p[-1] = static_cast<Char>('-');
+    *p-- = static_cast<Char>(*digits);
+    if (prefix_size != 0) *p = static_cast<Char>('-');
     auto data = buffer.data();
     out = write_padded<align::right>(
         out, specs, usize, usize,

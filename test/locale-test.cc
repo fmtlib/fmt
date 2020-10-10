@@ -52,6 +52,7 @@ TEST(LocaleTest, Format) {
   EXPECT_EQ("1234567", fmt::format(std::locale(), "{:L}", 1234567));
   EXPECT_EQ("1~234~567", fmt::format(loc, "{:L}", 1234567));
   EXPECT_EQ("-1~234~567", fmt::format(loc, "{:L}", -1234567));
+  EXPECT_EQ("-256", fmt::format(loc, "{:L}", -256));
   fmt::format_arg_store<fmt::format_context, int> as{1234567};
   EXPECT_EQ("1~234~567", fmt::vformat(loc, "{:L}", fmt::format_args(as)));
   std::string s;
