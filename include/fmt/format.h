@@ -1804,7 +1804,7 @@ OutputIt write_float(OutputIt out, const DecimalFP& fp,
   int significand_size = get_significand_size(fp);
   static const Char zero = static_cast<Char>('0');
   auto sign = fspecs.sign;
-  int size = significand_size + (sign ? 1 : 0);
+  long long size = significand_size + (sign ? 1 : 0);
   using iterator = remove_reference_t<decltype(reserve(out, 0))>;
 
   int output_exp = fp.exponent + significand_size - 1;
