@@ -828,7 +828,7 @@ struct FMT_EXTERN_TEMPLATE_API uint128_wrapper {
   uint64_t high() const FMT_NOEXCEPT { return uint64_t(internal_ >> 64); }
   uint64_t low() const FMT_NOEXCEPT { return uint64_t(internal_); }
 
-  uint128_wrapper& operator+=(uint64_t n) & FMT_NOEXCEPT {
+  uint128_wrapper& operator+=(uint64_t n) FMT_NOEXCEPT {
     internal_ += n;
     return *this;
   }
@@ -842,7 +842,7 @@ struct FMT_EXTERN_TEMPLATE_API uint128_wrapper {
   uint64_t high() const FMT_NOEXCEPT { return high_; }
   uint64_t low() const FMT_NOEXCEPT { return low_; }
 
-  uint128_wrapper& operator+=(uint64_t n) & FMT_NOEXCEPT {
+  uint128_wrapper& operator+=(uint64_t n) FMT_NOEXCEPT {
 #  if defined(_MSC_VER) && defined(_M_X64)
     unsigned char carry = _addcarry_u64(0, low_, n, &low_);
     _addcarry_u64(carry, high_, 0, &high_);
