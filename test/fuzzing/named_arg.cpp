@@ -1,128 +1,115 @@
 // Copyright (c) 2019, Paul Dreik
-// License: see LICENSE.rst in the fmt root directory
+// For the license information refer to format.h.
 
-#include <fmt/chrono.h>
-#include <fmt/core.h>
 #include <cstdint>
-#include <stdexcept>
 #include <type_traits>
 #include <vector>
+#include <fmt/chrono.h>
+
 #include "fuzzer_common.h"
 
 template <typename Item1>
-void invoke_fmt(const uint8_t* Data, size_t Size, unsigned int argsize) {
-  constexpr auto N1 = sizeof(Item1);
-  static_assert(N1 <= fmt_fuzzer::Nfixed, "Nfixed too small");
-  if (Size <= fmt_fuzzer::Nfixed) {
-    return;
-  }
-  const Item1 item1 = fmt_fuzzer::assignFromBuf<Item1>(Data);
+void invoke_fmt(const uint8_t* data, size_t size, unsigned int argsize) {
+  static_assert(sizeof(Item1) <= fmt_fuzzer::nfixed, "nfixed too small");
+  if (size <= fmt_fuzzer::nfixed) return;
+  const Item1 item1 = fmt_fuzzer::assignFromBuf<Item1>(data);
 
-  Data += fmt_fuzzer::Nfixed;
-  Size -= fmt_fuzzer::Nfixed;
+  data += fmt_fuzzer::nfixed;
+  size -= fmt_fuzzer::nfixed;
 
-  // how many chars should be used for the argument name?
-  if (argsize <= 0 || argsize >= Size) {
-    return;
-  }
+  // How many chars should be used for the argument name?
+  if (argsize <= 0 || argsize >= size) return;
 
-  // allocating buffers separately is slower, but increases chances
-  // of detecting memory errors
 #if FMT_FUZZ_SEPARATE_ALLOCATION
   std::vector<char> argnamebuffer(argsize + 1);
-  std::memcpy(argnamebuffer.data(), Data, argsize);
+  std::memcpy(argnamebuffer.data(), data, argsize);
   auto argname = argnamebuffer.data();
 #else
-  auto argname = fmt_fuzzer::as_chars(Data);
+  auto argname = fmt_fuzzer::as_chars(data);
 #endif
-  Data += argsize;
-  Size -= argsize;
+  data += argsize;
+  size -= argsize;
 
 #if FMT_FUZZ_SEPARATE_ALLOCATION
-  // allocates as tight as possible, making it easier to catch buffer overruns.
-  std::vector<char> fmtstringbuffer(Size);
-  std::memcpy(fmtstringbuffer.data(), Data, Size);
-  auto fmtstring = fmt::string_view(fmtstringbuffer.data(), Size);
+  std::vector<char> fmtstringbuffer(size);
+  std::memcpy(fmtstringbuffer.data(), data, size);
+  auto format_str = fmt::string_view(fmtstringbuffer.data(), size);
 #else
-  auto fmtstring = fmt::string_view(fmt_fuzzer::as_chars(Data), Size);
+  auto format_str = fmt::string_view(fmt_fuzzer::as_chars(data), size);
 #endif
 
 #if FMT_FUZZ_FORMAT_TO_STRING
-  std::string message = fmt::format(fmtstring, fmt::arg(argname, item1));
+  std::string message = fmt::format(format_str, fmt::arg(argname, item1));
 #else
-  fmt::memory_buffer outbuf;
-  fmt::format_to(outbuf, fmtstring, fmt::arg(argname, item1));
+  fmt::memory_buffer out;
+  fmt::format_to(out, format_str, fmt::arg(argname, item1));
 #endif
 }
 
-// for dynamic dispatching to an explicit instantiation
+// For dynamic dispatching to an explicit instantiation.
 template <typename Callback> void invoke(int index, Callback callback) {
   switch (index) {
   case 0:
-    callback(bool{});
+    callback(bool());
     break;
   case 1:
-    callback(char{});
+    callback(char());
     break;
   case 2:
     using sc = signed char;
-    callback(sc{});
+    callback(sc());
     break;
   case 3:
     using uc = unsigned char;
-    callback(uc{});
+    callback(uc());
     break;
   case 4:
-    callback(short{});
+    callback(short());
     break;
   case 5:
     using us = unsigned short;
-    callback(us{});
+    callback(us());
     break;
   case 6:
-    callback(int{});
+    callback(int());
     break;
   case 7:
-    callback(unsigned{});
+    callback(unsigned());
     break;
   case 8:
-    callback(long{});
+    callback(long());
     break;
   case 9:
     using ul = unsigned long;
-    callback(ul{});
+    callback(ul());
     break;
   case 10:
-    callback(float{});
+    callback(float());
     break;
   case 11:
-    callback(double{});
+    callback(double());
     break;
   case 12:
     using LD = long double;
-    callback(LD{});
+    callback(LD());
     break;
   }
 }
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* Data, size_t Size) {
-  if (Size <= 3) {
-    return 0;
-  }
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+  if (size <= 3) return 0;
 
-  // switch types depending on the first byte of the input
-  const auto first = Data[0] & 0x0F;
-  const unsigned int second = (Data[0] & 0xF0) >> 4;
-  Data++;
-  Size--;
-
-  auto outerfcn = [=](auto param1) {
-    invoke_fmt<decltype(param1)>(Data, Size, second);
-  };
+  // Switch types depending on the first byte of the input.
+  const auto first = data[0] & 0x0F;
+  const unsigned second = (data[0] & 0xF0) >> 4;
+  data++;
+  size--;
 
   try {
-    invoke(first, outerfcn);
-  } catch (std::exception& /*e*/) {
+    invoke(first, [=](auto param1) {
+      invoke_fmt<decltype(param1)>(data, size, second);
+    });
+  } catch (std::exception&) {
   }
   return 0;
 }

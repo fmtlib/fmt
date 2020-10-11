@@ -15,7 +15,6 @@ set(SOURCES
   chrono_duration.cpp
   named_arg.cpp
   one_arg.cpp
-  sprintf.cpp
   two_args.cpp
 )
 

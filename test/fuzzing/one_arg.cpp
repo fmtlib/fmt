@@ -1,131 +1,123 @@
 // Copyright (c) 2019, Paul Dreik
-// License: see LICENSE.rst in the fmt root directory
+// For the license information refer to format.h.
 
-#include <fmt/core.h>
 #include <cstdint>
 #include <stdexcept>
 #include <type_traits>
 #include <vector>
-
 #include <fmt/chrono.h>
+
 #include "fuzzer_common.h"
 
-using fmt_fuzzer::Nfixed;
+using fmt_fuzzer::nfixed;
 
 template <typename Item>
-void invoke_fmt(const uint8_t* Data, size_t Size) {
+void invoke_fmt(const uint8_t* data, size_t size) {
   constexpr auto N = sizeof(Item);
-  static_assert(N <= Nfixed, "Nfixed is too small");
-  if (Size <= Nfixed) {
+  static_assert(N <= nfixed, "Nfixed is too small");
+  if (size <= nfixed) {
     return;
   }
-  const Item item = fmt_fuzzer::assignFromBuf<Item>(Data);
-  Data += Nfixed;
-  Size -= Nfixed;
+  const Item item = fmt_fuzzer::assignFromBuf<Item>(data);
+  data += nfixed;
+  size -= nfixed;
 
 #if FMT_FUZZ_SEPARATE_ALLOCATION
-  // allocates as tight as possible, making it easier to catch buffer overruns.
-  std::vector<char> fmtstringbuffer(Size);
-  std::memcpy(fmtstringbuffer.data(), Data, Size);
-  auto fmtstring = fmt::string_view(fmtstringbuffer.data(), Size);
+  std::vector<char> fmtstringbuffer(size);
+  std::memcpy(fmtstringbuffer.data(), data, size);
+  auto format_str = fmt::string_view(fmtstringbuffer.data(), size);
 #else
-  auto fmtstring = fmt::string_view(fmt_fuzzer::as_chars(Data), Size);
+  auto format_str = fmt::string_view(fmt_fuzzer::as_chars(data), size);
 #endif
 
 #if FMT_FUZZ_FORMAT_TO_STRING
-  std::string message = fmt::format(fmtstring, item);
+  std::string message = fmt::format(format_str, item);
 #else
   fmt::memory_buffer message;
-  fmt::format_to(message, fmtstring, item);
+  fmt::format_to(message, format_str, item);
 #endif
 }
 
-void invoke_fmt_time(const uint8_t* Data, size_t Size) {
+void invoke_fmt_time(const uint8_t* data, size_t size) {
   using Item = std::time_t;
-  constexpr auto N = sizeof(Item);
-  static_assert(N <= Nfixed, "Nfixed too small");
-  if (Size <= Nfixed) {
-    return;
-  }
-  const Item item = fmt_fuzzer::assignFromBuf<Item>(Data);
-  Data += Nfixed;
-  Size -= Nfixed;
+  static_assert(sizeof(Item) <= nfixed, "Nfixed too small");
+  if (size <= nfixed) return;
+  const Item item = fmt_fuzzer::assignFromBuf<Item>(data);
+  data += nfixed;
+  size -= nfixed;
 #if FMT_FUZZ_SEPARATE_ALLOCATION
-  // allocates as tight as possible, making it easier to catch buffer overruns.
-  std::vector<char> fmtstringbuffer(Size);
-  std::memcpy(fmtstringbuffer.data(), Data, Size);
-  auto fmtstring = fmt::string_view(fmtstringbuffer.data(), Size);
+  std::vector<char> fmtstringbuffer(size);
+  std::memcpy(fmtstringbuffer.data(), data, size);
+  auto format_str = fmt::string_view(fmtstringbuffer.data(), size);
 #else
-  auto fmtstring = fmt::string_view(fmt_fuzzer::as_chars(Data), Size);
+  auto format_str = fmt::string_view(fmt_fuzzer::as_chars(data), size);
 #endif
   auto* b = std::localtime(&item);
   if (b) {
 #if FMT_FUZZ_FORMAT_TO_STRING
-    std::string message = fmt::format(fmtstring, *b);
+    std::string message = fmt::format(format_str, *b);
 #else
     fmt::memory_buffer message;
-    fmt::format_to(message, fmtstring, *b);
+    fmt::format_to(message, format_str, *b);
 #endif
   }
 }
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* Data, size_t Size) {
-  if (Size <= 3) {
-    return 0;
-  }
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+  if (size <= 3) return 0;
 
-  const auto first = Data[0];
-  Data++;
-  Size--;
+  const auto first = data[0];
+  data++;
+  size--;
 
   try {
     switch (first) {
     case 0:
-      invoke_fmt<bool>(Data, Size);
+      invoke_fmt<bool>(data, size);
       break;
     case 1:
-      invoke_fmt<char>(Data, Size);
+      invoke_fmt<char>(data, size);
       break;
     case 2:
-      invoke_fmt<unsigned char>(Data, Size);
+      invoke_fmt<unsigned char>(data, size);
       break;
     case 3:
-      invoke_fmt<signed char>(Data, Size);
+      invoke_fmt<signed char>(data, size);
       break;
     case 4:
-      invoke_fmt<short>(Data, Size);
+      invoke_fmt<short>(data, size);
       break;
     case 5:
-      invoke_fmt<unsigned short>(Data, Size);
+      invoke_fmt<unsigned short>(data, size);
       break;
     case 6:
-      invoke_fmt<int>(Data, Size);
+      invoke_fmt<int>(data, size);
       break;
     case 7:
-      invoke_fmt<unsigned int>(Data, Size);
+      invoke_fmt<unsigned int>(data, size);
       break;
     case 8:
-      invoke_fmt<long>(Data, Size);
+      invoke_fmt<long>(data, size);
       break;
     case 9:
-      invoke_fmt<unsigned long>(Data, Size);
+      invoke_fmt<unsigned long>(data, size);
       break;
     case 10:
-      invoke_fmt<float>(Data, Size);
+      invoke_fmt<float>(data, size);
       break;
     case 11:
-      invoke_fmt<double>(Data, Size);
+      invoke_fmt<double>(data, size);
       break;
     case 12:
-      invoke_fmt<long double>(Data, Size);
+      invoke_fmt<long double>(data, size);
       break;
     case 13:
-      invoke_fmt_time(Data, Size);
+      invoke_fmt_time(data, size);
       break;
     default:
       break;
     }
-  } catch (std::exception& /*e*/) {
+  } catch (std::exception&) {
   }
   return 0;
 }

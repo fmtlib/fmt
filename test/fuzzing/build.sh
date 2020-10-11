@@ -9,7 +9,7 @@
 #
 # Copyright (c) 2019 Paul Dreik
 #
-# License: see LICENSE.rst in the fmt root directory
+# For the license information refer to format.h.
 
 set -e
 me=$(basename $0)
@@ -23,8 +23,8 @@ here=$(pwd)
 CXXFLAGSALL="-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION= -g"
 CMAKEFLAGSALL="$root -GNinja -DCMAKE_BUILD_TYPE=Debug -DFMT_DOC=Off -DFMT_TEST=Off -DFMT_FUZZ=On -DCMAKE_CXX_STANDARD=17"
 
-#builds the fuzzers as one would do if using afl or just making
-#binaries for reproducing.
+# Builds the fuzzers as one would do if using afl or just making
+# binaries for reproducing.
 builddir=$here/build-fuzzers-reproduce
 mkdir -p $builddir
 cd $builddir
@@ -32,7 +32,7 @@ CXX="ccache g++" CXXFLAGS="$CXXFLAGSALL" cmake \
 $CMAKEFLAGSALL
 cmake --build $builddir
 
-#for performance analysis of the fuzzers
+# For performance analysis of the fuzzers.
 builddir=$here/build-fuzzers-perfanalysis
 mkdir -p $builddir
 cd $builddir
@@ -43,7 +43,7 @@ $CMAKEFLAGSALL \
 
 cmake --build $builddir
 
-#builds the fuzzers as oss-fuzz does
+# Builds the fuzzers as oss-fuzz does.
 builddir=$here/build-fuzzers-ossfuzz
 mkdir -p $builddir
 cd $builddir
@@ -56,7 +56,7 @@ cmake $CMAKEFLAGSALL \
 cmake --build $builddir
 
 
-#builds fuzzers for local fuzzing with libfuzzer with asan+usan
+# Builds fuzzers for local fuzzing with libfuzzer with asan+usan.
 builddir=$here/build-fuzzers-libfuzzer
 mkdir -p $builddir
 cd $builddir
@@ -68,7 +68,7 @@ cmake $CMAKEFLAGSALL \
 
 cmake --build $builddir
 
-#builds fuzzers for local fuzzing with libfuzzer with asan only
+# Builds fuzzers for local fuzzing with libfuzzer with asan only.
 builddir=$here/build-fuzzers-libfuzzer-addr
 mkdir -p $builddir
 cd $builddir
@@ -80,7 +80,7 @@ cmake $CMAKEFLAGSALL \
 
 cmake --build $builddir
 
-#builds a fast fuzzer for making coverage fast
+# Builds a fast fuzzer for making coverage fast.
 builddir=$here/build-fuzzers-fast
 mkdir -p $builddir
 cd $builddir
@@ -94,7 +94,7 @@ cmake $CMAKEFLAGSALL \
 cmake --build $builddir
 
 
-#builds fuzzers for local fuzzing with afl
+# Builds fuzzers for local fuzzing with afl.
 builddir=$here/build-fuzzers-afl
 mkdir -p $builddir
 cd $builddir
