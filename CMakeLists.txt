@@ -199,7 +199,10 @@ if (HAVE_STRTOD_L)
 endif ()
 
 if (MINGW)
-  target_compile_options(fmt PUBLIC "-Wa,-mbig-obj")
+  check_cxx_compiler_flag("Wa,-mbig-obj" FMT_HAS_MBIG_OBJ)
+  if (${FMT_HAS_MBIG_OBJ})
+    target_compile_options(fmt PUBLIC "-Wa,-mbig-obj")
+  endif()
 endif ()
 
 if (FMT_WERROR)
