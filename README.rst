@@ -201,13 +201,14 @@ or equivalent is filled 2,000,000 times with output sent to ``/dev/null``; for
 further details refer to the `source
 <https://github.com/fmtlib/format-benchmark/blob/master/tinyformat_test.cpp>`_.
 
-{fmt} is up to 10x faster than ``std::ostringstream`` and ``sprintf`` on
+{fmt} is up to 20-30x faster than ``std::ostringstream`` and ``sprintf`` on
 floating-point formatting (`dtoa-benchmark <https://github.com/fmtlib/dtoa-benchmark>`_)
-and faster than `double-conversion <https://github.com/google/double-conversion>`_:
+and faster than `double-conversion <https://github.com/google/double-conversion>`_ and
+`ryu <https://github.com/ulfjack/ryu>`_:
 
 .. image:: https://user-images.githubusercontent.com/576385/
-           69767160-cdaca400-112f-11ea-9fc5-347c9f83caad.png
-   :target: https://fmt.dev/unknown_mac64_clang10.0.html
+           95684665-11719600-0ba8-11eb-8e5b-972ff4e49428.png
+   :target: https://fmt.dev/unknown_mac64_clang12.0.html
 
 Compile time and code bloat
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
