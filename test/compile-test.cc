@@ -5,19 +5,10 @@
 //
 // For the license information refer to format.h.
 
-#include <stdint.h>
-
-#include <cctype>
-#include <cfloat>
-#include <climits>
-#include <cmath>
-#include <cstring>
-#include <deque>
-#include <list>
-#include <memory>
 #include <string>
+#include <type_traits>
 
-// Check if fmt/compile.h compiles with windows.h included before it.
+// Check that fmt/compile.h compiles with windows.h included before it.
 #ifdef _WIN32
 #  include <windows.h>
 #endif
@@ -25,15 +16,7 @@
 #include "fmt/compile.h"
 #include "gmock.h"
 #include "gtest-extra.h"
-#include "mock-allocator.h"
 #include "util.h"
-
-#undef ERROR
-#undef min
-#undef max
-
-using testing::Return;
-using testing::StrictMock;
 
 // compiletime_prepared_parts_type_provider is useful only with relaxed
 // constexpr.

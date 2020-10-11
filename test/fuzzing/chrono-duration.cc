@@ -4,11 +4,11 @@
 #include <cstdint>
 #include <fmt/chrono.h>
 
-#include "fuzzer_common.h"
+#include "fuzzer-common.h"
 
 template <typename Item, typename Ratio>
-void invoke_inner(fmt::string_view format_str, const Item item) {
-  const std::chrono::duration<Item, Ratio> value(item);
+void invoke_inner(fmt::string_view format_str, Item item) {
+  auto value = std::chrono::duration<Item, Ratio>(item);
   try {
 #if FMT_FUZZ_FORMAT_TO_STRING
     std::string message = fmt::format(format_str, value);

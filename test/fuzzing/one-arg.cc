@@ -7,7 +7,7 @@
 #include <vector>
 #include <fmt/chrono.h>
 
-#include "fuzzer_common.h"
+#include "fuzzer-common.h"
 
 using fmt_fuzzer::nfixed;
 
@@ -15,9 +15,7 @@ template <typename Item>
 void invoke_fmt(const uint8_t* data, size_t size) {
   constexpr auto N = sizeof(Item);
   static_assert(N <= nfixed, "Nfixed is too small");
-  if (size <= nfixed) {
-    return;
-  }
+  if (size <= nfixed) return;
   const Item item = fmt_fuzzer::assignFromBuf<Item>(data);
   data += nfixed;
   size -= nfixed;

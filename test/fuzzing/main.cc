@@ -2,7 +2,7 @@
 #include <fstream>
 #include <vector>
 
-#include "fuzzer_common.h"
+#include "fuzzer-common.h"
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size);
 

@@ -6,7 +6,7 @@
 #include <vector>
 #include <fmt/chrono.h>
 
-#include "fuzzer_common.h"
+#include "fuzzer-common.h"
 
 template <typename Item1>
 void invoke_fmt(const uint8_t* data, size_t size, unsigned int argsize) {

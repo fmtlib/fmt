@@ -330,7 +330,13 @@ endif ()
 # Control fuzzing independent of the unit tests.
 if (FMT_FUZZ)
   add_subdirectory(test/fuzzing)
-  target_compile_definitions(fmt PUBLIC FMT_FUZZ)
+
+  # The FMT_FUZZ macro is used to prevent resource exhaustion in fuzzing
+  # mode and make fuzzing practically possible. It is similar to
+  # FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION but uses a different name to
+  # avoid interfering with fuzzing of projects that use {fmt}.
+  # See also https://llvm.org/docs/LibFuzzer.html#fuzzer-friendly-build-mode.
+  target_compile_definitions(fmt PRIVATE FMT_FUZZ)
 endif ()
 
 set(gitignore ${PROJECT_SOURCE_DIR}/.gitignore)

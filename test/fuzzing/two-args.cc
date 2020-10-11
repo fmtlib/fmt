@@ -6,12 +6,11 @@
 #include <string>
 #include <fmt/format.h>
 
-#include "fuzzer_common.h"
-
-constexpr auto nfixed = fmt_fuzzer::nfixed;
+#include "fuzzer-common.h"
 
 template <typename Item1, typename Item2>
 void invoke_fmt(const uint8_t* data, size_t size) {
+  using fmt_fuzzer::nfixed;
   static_assert(sizeof(Item1) <= nfixed, "size1 exceeded");
   static_assert(sizeof(Item2) <= nfixed, "size2 exceeded");
   if (size <= nfixed + nfixed) return;
