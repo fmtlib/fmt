@@ -103,7 +103,6 @@ add_fmt_test(locale-test)
 add_fmt_test(ostream-test)
 add_fmt_test(compile-test)
 add_fmt_test(printf-test)
-add_fmt_test(custom-formatter-test)
 add_fmt_test(ranges-test)
 add_fmt_test(scan-test)
 
