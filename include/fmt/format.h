@@ -273,9 +273,9 @@ FMT_END_NAMESPACE
 #endif
 
 #ifdef __cpp_ref_qualifiers
-  #  define FMT_REF_QUALIFIER &
+#  define FMT_REF_QUALIFIER &
 #else
-  #  define FMT_REF_QUALIFIER
+#  define FMT_REF_QUALIFIER
 #endif
 
 FMT_BEGIN_NAMESPACE
