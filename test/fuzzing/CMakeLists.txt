@@ -11,7 +11,7 @@ set(FMT_FUZZ_LDFLAGS "" CACHE STRING "LDFLAGS for the fuzz targets")
 
 function(add_fuzzer source)
   get_filename_component(basename ${source} NAME_WE)
-  set(name fuzzer_${basename})
+  set(name ${basename}-fuzzer)
   add_executable(${name} ${source} fuzzer-common.h)
   if (FMT_FUZZ_LINKMAIN)
     target_sources(${name} PRIVATE main.cc)
