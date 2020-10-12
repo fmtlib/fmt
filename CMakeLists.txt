@@ -336,7 +336,7 @@ if (FMT_FUZZ)
   # FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION but uses a different name to
   # avoid interfering with fuzzing of projects that use {fmt}.
   # See also https://llvm.org/docs/LibFuzzer.html#fuzzer-friendly-build-mode.
-  target_compile_definitions(fmt PRIVATE FMT_FUZZ)
+  target_compile_definitions(fmt PUBLIC FMT_FUZZ)
 endif ()
 
 set(gitignore ${PROJECT_SOURCE_DIR}/.gitignore)
