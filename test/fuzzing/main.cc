@@ -17,6 +17,6 @@ int main(int argc, char** argv) {
     std::vector<char> buf(static_cast<size_t>(size));
     in.read(buf.data(), size);
     assert(in.gcount() == size);
-    LLVMFuzzerTestOneInput(fmt_fuzzer::as_bytes(buf.data()), buf.size());
+    LLVMFuzzerTestOneInput(as_bytes(buf.data()), buf.size());
   }
 }
