@@ -25,12 +25,15 @@ void invoke_fmt(const uint8_t* data, size_t size) {
   data += fixed_size;
   size -= fixed_size;
   data_to_string format_str(data, size);
+  try {
 #if FMT_FUZZ_FORMAT_TO_STRING
-  std::string message = fmt::format(format_str.get(), *value);
+    std::string message = fmt::format(format_str.get(), *value);
 #else
-  fmt::memory_buffer message;
-  fmt::format_to(message, format_str.get(), *value);
+    fmt::memory_buffer message;
+    fmt::format_to(message, format_str.get(), *value);
 #endif
+  } catch (std::exception&) {
+  }
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
@@ -40,54 +43,49 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   data++;
   size--;
 
-  try {
-    switch (first) {
-    case 0:
-      invoke_fmt<bool>(data, size);
-      break;
-    case 1:
-      invoke_fmt<char>(data, size);
-      break;
-    case 2:
-      invoke_fmt<unsigned char>(data, size);
-      break;
-    case 3:
-      invoke_fmt<signed char>(data, size);
-      break;
-    case 4:
-      invoke_fmt<short>(data, size);
-      break;
-    case 5:
-      invoke_fmt<unsigned short>(data, size);
-      break;
-    case 6:
-      invoke_fmt<int>(data, size);
-      break;
-    case 7:
-      invoke_fmt<unsigned int>(data, size);
-      break;
-    case 8:
-      invoke_fmt<long>(data, size);
-      break;
-    case 9:
-      invoke_fmt<unsigned long>(data, size);
-      break;
-    case 10:
-      invoke_fmt<float>(data, size);
-      break;
-    case 11:
-      invoke_fmt<double>(data, size);
-      break;
-    case 12:
-      invoke_fmt<long double>(data, size);
-      break;
-    case 13:
-      invoke_fmt<std::tm, std::time_t>(data, size);
-      break;
-    default:
-      break;
-    }
-  } catch (std::exception&) {
+  switch (first) {
+  case 0:
+    invoke_fmt<bool>(data, size);
+    break;
+  case 1:
+    invoke_fmt<char>(data, size);
+    break;
+  case 2:
+    invoke_fmt<unsigned char>(data, size);
+    break;
+  case 3:
+    invoke_fmt<signed char>(data, size);
+    break;
+  case 4:
+    invoke_fmt<short>(data, size);
+    break;
+  case 5:
+    invoke_fmt<unsigned short>(data, size);
+    break;
+  case 6:
+    invoke_fmt<int>(data, size);
+    break;
+  case 7:
+    invoke_fmt<unsigned int>(data, size);
+    break;
+  case 8:
+    invoke_fmt<long>(data, size);
+    break;
+  case 9:
+    invoke_fmt<unsigned long>(data, size);
+    break;
+  case 10:
+    invoke_fmt<float>(data, size);
+    break;
+  case 11:
+    invoke_fmt<double>(data, size);
+    break;
+  case 12:
+    invoke_fmt<long double>(data, size);
+    break;
+  case 13:
+    invoke_fmt<std::tm, std::time_t>(data, size);
+    break;
   }
   return 0;
 }

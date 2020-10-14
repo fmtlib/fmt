@@ -9,6 +9,8 @@ option(FMT_FUZZ_LINKMAIN "Enables the reproduce mode, instead of libFuzzer" On)
 # the fuzz targets, otherwise the CMake configuration step fails.
 set(FMT_FUZZ_LDFLAGS "" CACHE STRING "LDFLAGS for the fuzz targets")
 
+# Adds a binary for reproducing, i.e. no fuzzing, just enables replaying data
+# through the fuzzers.
 function(add_fuzzer source)
   get_filename_component(basename ${source} NAME_WE)
   set(name ${basename}-fuzzer)
@@ -23,6 +25,6 @@ function(add_fuzzer source)
   target_compile_features(${name} PRIVATE cxx_generic_lambdas)
 endfunction()
 
-foreach (source chrono-duration.cc named-arg.cc one-arg.cc two-args.cc)
+foreach (source chrono-duration.cc float.cc named-arg.cc one-arg.cc two-args.cc)
   add_fuzzer(${source})
 endforeach ()
