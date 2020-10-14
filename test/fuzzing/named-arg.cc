@@ -1,11 +1,10 @@
 // Copyright (c) 2019, Paul Dreik
 // For the license information refer to format.h.
 
-#include <fmt/chrono.h>
-
 #include <cstdint>
 #include <type_traits>
 #include <vector>
+#include <fmt/chrono.h>
 
 #include "fuzzer-common.h"
 
@@ -23,13 +22,16 @@ void invoke_fmt(const uint8_t* data, size_t size, unsigned arg_name_size) {
   size -= arg_name_size;
 
   data_to_string format_str(data, size);
+  try {
 #if FMT_FUZZ_FORMAT_TO_STRING
-  std::string message =
-    fmt::format(format_str.get(), fmt::arg(arg_name.data(), value));
+    std::string message =
+      fmt::format(format_str.get(), fmt::arg(arg_name.data(), value));
 #else
-  fmt::memory_buffer out;
-  fmt::format_to(out, format_str.get(), fmt::arg(arg_name.data(), value));
+    fmt::memory_buffer out;
+    fmt::format_to(out, format_str.get(), fmt::arg(arg_name.data(), value));
 #endif
+  } catch (std::exception&) {
+  }
 }
 
 // For dynamic dispatching to an explicit instantiation.
@@ -91,11 +93,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   data++;
   size--;
 
-  try {
-    invoke(type, [=](auto arg) {
-      invoke_fmt<decltype(arg)>(data, size, arg_name_size);
-    });
-  } catch (std::exception&) {
-  }
+  invoke(type, [=](auto arg) {
+    invoke_fmt<decltype(arg)>(data, size, arg_name_size);
+  });
   return 0;
 }

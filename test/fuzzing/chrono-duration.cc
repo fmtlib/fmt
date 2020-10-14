@@ -81,6 +81,7 @@ void invoke_outer(const uint8_t* data, size_t size, int period) {
     break;
   case 15:
     invoke_inner<std::exa>(format_str, rep);
+    break;
   }
 }
 
@@ -128,8 +129,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     break;
   case 12:
     invoke_outer<long double>(data, size, period);
-    break;
-  default:
     break;
   }
   return 0;

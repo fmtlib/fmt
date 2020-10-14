@@ -1,7 +1,6 @@
 #!/bin/sh
 #
 # Creates fuzzer builds of various kinds
-# - reproduce mode (no fuzzing, just enables replaying data through the fuzzers)
 # - oss-fuzz emulated mode (makes sure a simulated invocation by oss-fuzz works)
 # - libFuzzer build (you will need clang)
 # - afl build (you will need afl)
@@ -22,15 +21,6 @@ here=$(pwd)
 
 CXXFLAGSALL="-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION= -g"
 CMAKEFLAGSALL="$root -GNinja -DCMAKE_BUILD_TYPE=Debug -DFMT_DOC=Off -DFMT_TEST=Off -DFMT_FUZZ=On -DCMAKE_CXX_STANDARD=17"
-
-# Builds the fuzzers as one would do if using afl or just making
-# binaries for reproducing.
-builddir=$here/build-fuzzers-reproduce
-mkdir -p $builddir
-cd $builddir
-CXX="ccache g++" CXXFLAGS="$CXXFLAGSALL" cmake \
-$CMAKEFLAGSALL
-cmake --build $builddir
 
 # For performance analysis of the fuzzers.
 builddir=$here/build-fuzzers-perfanalysis
@@ -62,18 +52,6 @@ mkdir -p $builddir
 cd $builddir
 CXX="clang++" \
 CXXFLAGS="$CXXFLAGSALL -fsanitize=fuzzer-no-link,address,undefined" cmake \
-cmake $CMAKEFLAGSALL \
--DFMT_FUZZ_LINKMAIN=Off \
--DFMT_FUZZ_LDFLAGS="-fsanitize=fuzzer"
-
-cmake --build $builddir
-
-# Builds fuzzers for local fuzzing with libfuzzer with asan only.
-builddir=$here/build-fuzzers-libfuzzer-addr
-mkdir -p $builddir
-cd $builddir
-CXX="clang++" \
-CXXFLAGS="$CXXFLAGSALL -fsanitize=fuzzer-no-link,undefined" cmake \
 cmake $CMAKEFLAGSALL \
 -DFMT_FUZZ_LINKMAIN=Off \
 -DFMT_FUZZ_LDFLAGS="-fsanitize=fuzzer"
