@@ -378,7 +378,7 @@ struct ostream_params {
 static constexpr detail::buffer_size buffer_size;
 
 // A fast output stream which is not thread-safe.
-class ostream : private detail::buffer<char> {
+class ostream final : private detail::buffer<char> {
  private:
   file file_;
 

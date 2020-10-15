@@ -78,7 +78,7 @@ TEST(BufferTest, Indestructible) {
                 "buffer's destructor is protected");
 }
 
-template <typename T> struct mock_buffer : buffer<T> {
+template <typename T> struct mock_buffer final : buffer<T> {
   MOCK_METHOD1(do_grow, size_t(size_t capacity));
 
   void grow(size_t capacity) { this->set(this->data(), do_grow(capacity)); }
@@ -368,7 +368,7 @@ TEST(ArgTest, PointerArg) {
 struct check_custom {
   test_result operator()(
       fmt::basic_format_arg<fmt::format_context>::handle h) const {
-    struct test_buffer : fmt::detail::buffer<char> {
+    struct test_buffer final : fmt::detail::buffer<char> {
       char data[10];
       test_buffer() : fmt::detail::buffer<char>(data, 0, 10) {}
       void grow(size_t) {}
