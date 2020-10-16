@@ -293,12 +293,8 @@ TEST(MemoryBufferTest, MoveAssignment) {
 
 TEST(MemoryBufferTest, Grow) {
   typedef allocator_ref<mock_allocator<int>> Allocator;
-  typedef basic_memory_buffer<int, 10, Allocator> Base;
   mock_allocator<int> alloc;
-  struct TestMemoryBuffer : Base {
-    TestMemoryBuffer(Allocator alloc) : Base(alloc) {}
-    using Base::grow;
-  } buffer((Allocator(&alloc)));
+  basic_memory_buffer<int, 10, Allocator> buffer((Allocator(&alloc)));
   buffer.resize(7);
   using fmt::detail::to_unsigned;
   for (int i = 0; i < 7; ++i) buffer[to_unsigned(i)] = i * i;
@@ -306,7 +302,7 @@ TEST(MemoryBufferTest, Grow) {
   int mem[20];
   mem[7] = 0xdead;
   EXPECT_CALL(alloc, allocate(20)).WillOnce(Return(mem));
-  buffer.grow(20);
+  buffer.try_reserve(20);
   EXPECT_EQ(20u, buffer.capacity());
   // Check if size elements have been copied
   for (int i = 0; i < 7; ++i) EXPECT_EQ(i * i, buffer[to_unsigned(i)]);
