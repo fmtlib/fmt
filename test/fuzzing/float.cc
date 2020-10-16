@@ -28,7 +28,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   char* ptr = nullptr;
   if (std::strtod(buffer.data(), &ptr) != value)
     throw std::runtime_error("round trip failure");
-  if (ptr != buffer.end())
+  if (ptr + 1 != buffer.end())
     throw std::runtime_error("unparsed output");
   return 0;
 }
