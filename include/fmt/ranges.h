@@ -330,7 +330,10 @@ struct formatter<tuple_arg_join<Char, T...>, Char> {
   typename FormatContext::iterator format_args(
       const tuple_arg_join<Char, T...>& value, FormatContext& ctx,
       const Arg& arg, const Args&... args) {
-    using base = formatter<typename std::decay<Arg>::type, Char>;
+
+    using arg_type =  typename std::decay<Arg>::type;
+    using base = conditional_t<has_formatter<arg_type, FormatContext>::value, formatter<arg_type, Char>, detail::fallback_formatter<arg_type, Char>>;
+
     auto out = ctx.out();
     out = base{}.format(arg, ctx);
     if (sizeof...(Args) > 0) {
