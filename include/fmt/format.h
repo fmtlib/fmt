@@ -2737,6 +2737,17 @@ FMT_CONSTEXPR const Char* next_code_point(const Char* begin, const Char* end) {
   return begin;
 }
 
+// Converts a character to the underlying integral type.
+template <typename Char, FMT_ENABLE_IF(std::is_integral<Char>::value)>
+constexpr Char to_integral(Char value) {
+  return value;
+}
+
+template <typename Char, FMT_ENABLE_IF(std::is_enum<Char>::value)>
+constexpr typename std::underlying_type<Char>::type to_integral(Char value) {
+  return value;
+}
+
 // Parses fill and alignment.
 template <typename Char, typename Handler>
 FMT_CONSTEXPR const Char* parse_align(const Char* begin, const Char* end,
@@ -2746,7 +2757,7 @@ FMT_CONSTEXPR const Char* parse_align(const Char* begin, const Char* end,
   auto p = next_code_point(begin, end);
   if (p == end) p = begin;
   for (;;) {
-    switch (static_cast<int>(*p)) {
+    switch (to_integral(*p)) {
     case '<':
       align = align::left;
       break;
@@ -2831,7 +2842,7 @@ FMT_CONSTEXPR const Char* parse_format_specs(const Char* begin, const Char* end,
   if (begin == end) return begin;
 
   // Parse sign.
-  switch (static_cast<char>(*begin)) {
+  switch (to_integral(*begin)) {
   case '+':
     handler.on_plus();
     ++begin;
@@ -2908,7 +2919,7 @@ FMT_CONSTEXPR const Char* parse_replacement_field(const Char* begin,
                                                   Handler&& handler) {
   ++begin;
   if (begin == end) return handler.on_error("invalid format string"), end;
-  if (static_cast<char>(*begin) == '}') {
+  if (*begin == '}') {
     handler.on_replacement_field(handler.on_arg_id(), begin);
   } else if (*begin == '{') {
     handler.on_text(begin, begin + 1);

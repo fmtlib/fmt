@@ -719,6 +719,17 @@ TEST(FormatterTest, SpaceSign) {
                    "format specifier requires numeric argument");
 }
 
+TEST(FormatterTest, SignNotTruncated) {
+  wchar_t format_str[] = {
+    L'{',
+    L':',
+    '+' | (1 << fmt::detail::num_bits<char>()),
+    L'}',
+    0
+  };
+  EXPECT_THROW(format(format_str, 42), format_error);
+}
+
 TEST(FormatterTest, HashFlag) {
   EXPECT_EQ("42", format("{0:#}", 42));
   EXPECT_EQ("-42", format("{0:#}", -42));
@@ -2462,24 +2473,26 @@ TEST(FormatTest, CharTraitsIsNotAmbiguous) {
 #endif
 }
 
-struct mychar {
+struct custom_char {
   int value;
-  mychar() = default;
+  custom_char() = default;
 
-  template <typename T> mychar(T val) : value(static_cast<int>(val)) {}
+  template <typename T> custom_char(T val) : value(static_cast<int>(val)) {}
 
   operator int() const { return value; }
 };
 
+int to_integral(custom_char c) { return c; }
+
 FMT_BEGIN_NAMESPACE
-template <> struct is_char<mychar> : std::true_type {};
+template <> struct is_char<custom_char> : std::true_type {};
 FMT_END_NAMESPACE
 
 TEST(FormatTest, FormatCustomChar) {
-  const mychar format[] = {'{', '}', 0};
-  auto result = fmt::format(format, mychar('x'));
+  const custom_char format[] = {'{', '}', 0};
+  auto result = fmt::format(format, custom_char('x'));
   EXPECT_EQ(result.size(), 1);
-  EXPECT_EQ(result[0], mychar('x'));
+  EXPECT_EQ(result[0], custom_char('x'));
 }
 
 // Convert a char8_t string to std::string. Otherwise GTest will insist on
