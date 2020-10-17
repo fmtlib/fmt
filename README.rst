@@ -7,7 +7,7 @@
 .. image:: https://ci.appveyor.com/api/projects/status/ehjkiefde6gucy1v
    :target: https://ci.appveyor.com/project/vitaut/fmt
 
-.. image:: https://oss-fuzz-build-logs.storage.googleapis.com/badges/libfmt.svg
+.. image:: https://oss-fuzz-build-logs.storage.googleapis.com/badges/fmt.svg
    :alt: fmt is continuously fuzzed at oss-fuzz
    :target: https://bugs.chromium.org/p/oss-fuzz/issues/list?\
             colspec=ID%20Type%20Component%20Status%20Proj%20Reported%20Owner%20\
