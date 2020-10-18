@@ -1804,7 +1804,7 @@ OutputIt write_float(OutputIt out, const DecimalFP& fp,
   int significand_size = get_significand_size(fp);
   static const Char zero = static_cast<Char>('0');
   auto sign = fspecs.sign;
-  long long size = significand_size + (sign ? 1 : 0);
+  size_t size = to_unsigned(significand_size) + (sign ? 1 : 0);
   using iterator = remove_reference_t<decltype(reserve(out, 0))>;
 
   int output_exp = fp.exponent + significand_size - 1;
@@ -1821,7 +1821,7 @@ OutputIt write_float(OutputIt out, const DecimalFP& fp,
     int num_zeros = 0;
     if (fspecs.showpoint) {
       num_zeros = (std::max)(fspecs.precision - significand_size, 0);
-      size += num_zeros;
+      size += to_unsigned(num_zeros);
     } else if (significand_size == 1) {
       decimal_point = Char();
     }
@@ -1829,7 +1829,7 @@ OutputIt write_float(OutputIt out, const DecimalFP& fp,
     int exp_digits = 2;
     if (abs_output_exp >= 100) exp_digits = abs_output_exp >= 1000 ? 4 : 3;
 
-    size += (decimal_point ? 1 : 0) + 2 + exp_digits;
+    size += to_unsigned((decimal_point ? 1 : 0) + 2 + exp_digits);
     char exp_char = fspecs.upper ? 'E' : 'e';
     auto write = [=](iterator it) {
       if (sign) *it++ = static_cast<Char>(data::signs[sign]);
@@ -1840,16 +1840,14 @@ OutputIt write_float(OutputIt out, const DecimalFP& fp,
       *it++ = static_cast<Char>(exp_char);
       return write_exponent<Char>(output_exp, it);
     };
-    auto usize = to_unsigned(size);
-    return specs.width > 0
-               ? write_padded<align::right>(out, specs, usize, write)
-               : base_iterator(out, write(reserve(out, usize)));
+    return specs.width > 0 ? write_padded<align::right>(out, specs, size, write)
+                           : base_iterator(out, write(reserve(out, size)));
   }
 
   int exp = fp.exponent + significand_size;
   if (fp.exponent >= 0) {
     // 1234e5 -> 123400000[.0+]
-    size += fp.exponent;
+    size += to_unsigned(fp.exponent);
     int num_zeros = fspecs.precision - exp;
 #ifdef FMT_FUZZ
     if (num_zeros > 5000)
@@ -1857,28 +1855,26 @@ OutputIt write_float(OutputIt out, const DecimalFP& fp,
 #endif
     if (fspecs.showpoint) {
       if (num_zeros <= 0 && fspecs.format != float_format::fixed) num_zeros = 1;
-      if (num_zeros > 0) size += num_zeros;
+      if (num_zeros > 0) size += to_unsigned(num_zeros);
     }
-    return write_padded<align::right>(
-        out, specs, to_unsigned(size), [&](iterator it) {
-          if (sign) *it++ = static_cast<Char>(data::signs[sign]);
-          it = write_significand<Char>(it, significand, significand_size);
-          it = std::fill_n(it, fp.exponent, zero);
-          if (!fspecs.showpoint) return it;
-          *it++ = decimal_point;
-          return num_zeros > 0 ? std::fill_n(it, num_zeros, zero) : it;
-        });
+    return write_padded<align::right>(out, specs, size, [&](iterator it) {
+      if (sign) *it++ = static_cast<Char>(data::signs[sign]);
+      it = write_significand<Char>(it, significand, significand_size);
+      it = std::fill_n(it, fp.exponent, zero);
+      if (!fspecs.showpoint) return it;
+      *it++ = decimal_point;
+      return num_zeros > 0 ? std::fill_n(it, num_zeros, zero) : it;
+    });
   } else if (exp > 0) {
     // 1234e-2 -> 12.34[0+]
     int num_zeros = fspecs.showpoint ? fspecs.precision - significand_size : 0;
-    size += 1 + (num_zeros > 0 ? num_zeros : 0);
-    return write_padded<align::right>(
-        out, specs, to_unsigned(size), [&](iterator it) {
-          if (sign) *it++ = static_cast<Char>(data::signs[sign]);
-          it = write_significand(it, significand, significand_size, exp,
-                                 decimal_point);
-          return num_zeros > 0 ? std::fill_n(it, num_zeros, zero) : it;
-        });
+    size += 1 + to_unsigned(num_zeros > 0 ? num_zeros : 0);
+    return write_padded<align::right>(out, specs, size, [&](iterator it) {
+      if (sign) *it++ = static_cast<Char>(data::signs[sign]);
+      it = write_significand(it, significand, significand_size, exp,
+                             decimal_point);
+      return num_zeros > 0 ? std::fill_n(it, num_zeros, zero) : it;
+    });
   }
   // 1234e-6 -> 0.001234
   int num_zeros = -exp;
@@ -1886,17 +1882,15 @@ OutputIt write_float(OutputIt out, const DecimalFP& fp,
       fspecs.precision < num_zeros) {
     num_zeros = fspecs.precision;
   }
-  size += 2 + num_zeros;
-  return write_padded<align::right>(
-      out, specs, to_unsigned(size), [&](iterator it) {
-        if (sign) *it++ = static_cast<Char>(data::signs[sign]);
-        *it++ = zero;
-        if (num_zeros == 0 && significand_size == 0 && !fspecs.showpoint)
-          return it;
-        *it++ = decimal_point;
-        it = std::fill_n(it, num_zeros, zero);
-        return write_significand<Char>(it, significand, significand_size);
-      });
+  size += 2 + to_unsigned(num_zeros);
+  return write_padded<align::right>(out, specs, size, [&](iterator it) {
+    if (sign) *it++ = static_cast<Char>(data::signs[sign]);
+    *it++ = zero;
+    if (num_zeros == 0 && significand_size == 0 && !fspecs.showpoint) return it;
+    *it++ = decimal_point;
+    it = std::fill_n(it, num_zeros, zero);
+    return write_significand<Char>(it, significand, significand_size);
+  });
 }
 
 template <typename Char, typename OutputIt, typename T,
