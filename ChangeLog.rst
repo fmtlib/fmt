@@ -1,3 +1,10 @@
+7.1.0 - TBD
+-----------
+
+* Build configuration improvements
+  (`#1760 <https://github.com/fmtlib/fmt/pull/1760>`_).
+  Thanks `@xvitaly (Vitaly Zaitsev) <https://github.com/xvitaly>`_.
+
 7.0.3 - 2020-08-06
 ------------------
 
