@@ -1946,7 +1946,14 @@ template <typename Char, typename OutputIt, typename T,
 OutputIt write(OutputIt out, T value) {
   if (const_check(!is_supported_floating_point(value))) return out;
 
+#ifdef __GNUC__
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wshadow"
+#endif
   using type = conditional_t<std::is_same<T, long double>::value, double, T>;
+#ifdef __GNUC__
+#  pragma GCC diagnostic pop
+#endif
   using uint = typename dragonbox::float_info<type>::carrier_uint;
   auto bits = bit_cast<uint>(value);
 

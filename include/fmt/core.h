@@ -801,8 +801,8 @@ template <typename T> class iterator_buffer<T*, T> final : public buffer<T> {
 template <typename Container>
 class iterator_buffer<std::back_insert_iterator<Container>,
                       enable_if_t<is_contiguous<Container>::value,
-                                  typename Container::value_type>> final
-    : public buffer<typename Container::value_type> {
+                                  typename Container::value_type>>
+    final : public buffer<typename Container::value_type> {
  private:
   Container& container_;
 
@@ -1371,6 +1371,10 @@ struct iterator_category<It, void_t<typename It::iterator_category>> {
   using type = typename It::iterator_category;
 };
 
+#ifdef __GNUC__
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
+#endif
 // Detect if *any* given type models the OutputIterator concept.
 template <typename It> class is_output_iterator {
   // Check for mutability because all iterator categories derived from
@@ -1388,6 +1392,9 @@ template <typename It> class is_output_iterator {
  public:
   enum { value = !std::is_const<remove_reference_t<type>>::value };
 };
+#ifdef __GNUC__
+#  pragma GCC diagnostic pop
+#endif
 
 template <typename OutputIt>
 struct is_back_insert_iterator : std::false_type {};
