@@ -287,23 +287,25 @@ or the bloat test::
 Projects using this library
 ---------------------------
 
-* `0 A.D. <https://play0ad.com/>`_: A free, open-source, cross-platform
+* `0 A.D. <https://play0ad.com/>`_: a free, open-source, cross-platform
   real-time strategy game
 
 * `AMPL/MP <https://github.com/ampl/mp>`_:
-  An open-source library for mathematical programming
+  an open-source library for mathematical programming
 
 * `Aseprite <https://github.com/aseprite/aseprite>`_:
-  Animated sprite editor & pixel art tool 
+  animated sprite editor & pixel art tool 
 
-* `AvioBook <https://www.aviobook.aero/en>`_: A comprehensive aircraft
+* `AvioBook <https://www.aviobook.aero/en>`_: a comprehensive aircraft
   operations suite
   
-* `Celestia <https://celestia.space/>`_: Real-time 3D visualization of space
+* `Blizzard Battle.net <https://battle.net/>`_: an online gaming platform
+  
+* `Celestia <https://celestia.space/>`_: real-time 3D visualization of space
 
-* `Ceph <https://ceph.com/>`_: A scalable distributed storage system
+* `Ceph <https://ceph.com/>`_: a scalable distributed storage system
 
-* `ccache <https://ccache.dev/>`_: A compiler cache
+* `ccache <https://ccache.dev/>`_: a compiler cache
 
 * `ClickHouse <https://github.com/ClickHouse/ClickHouse>`_: analytical database
   management system
@@ -311,7 +313,7 @@ Projects using this library
 * `CUAUV <http://cuauv.org/>`_: Cornell University's autonomous underwater
   vehicle
 
-* `Drake <https://drake.mit.edu/>`_: A planning, control, and analysis toolbox
+* `Drake <https://drake.mit.edu/>`_: a planning, control, and analysis toolbox
   for nonlinear dynamical systems (MIT)
 
 * `Envoy <https://lyft.github.io/envoy/>`_: C++ L7 proxy and communication bus
@@ -324,72 +326,70 @@ Projects using this library
 * `HarpyWar/pvpgn <https://github.com/pvpgn/pvpgn-server>`_:
   Player vs Player Gaming Network with tweaks
 
-* `KBEngine <https://github.com/kbengine/kbengine>`_: An open-source MMOG server
+* `KBEngine <https://github.com/kbengine/kbengine>`_: an open-source MMOG server
   engine
 
-* `Keypirinha <https://keypirinha.com/>`_: A semantic launcher for Windows
+* `Keypirinha <https://keypirinha.com/>`_: a semantic launcher for Windows
 
-* `Kodi <https://kodi.tv/>`_ (formerly xbmc): Home theater software
+* `Kodi <https://kodi.tv/>`_ (formerly xbmc): home theater software
 
-* `Knuth <https://kth.cash/>`_: High-performance Bitcoin full-node
+* `Knuth <https://kth.cash/>`_: high-performance Bitcoin full-node
 
 * `Microsoft Verona <https://github.com/microsoft/verona>`_:
-  Research programming language for concurrent ownership
+  research programming language for concurrent ownership
 
-* `MongoDB <https://mongodb.com/>`_: Distributed document database
+* `MongoDB <https://mongodb.com/>`_: distributed document database
 
-* `MongoDB Smasher <https://github.com/duckie/mongo_smasher>`_: A small tool to
+* `MongoDB Smasher <https://github.com/duckie/mongo_smasher>`_: a small tool to
   generate randomized datasets
 
-* `OpenSpace <https://openspaceproject.com/>`_: An open-source
+* `OpenSpace <https://openspaceproject.com/>`_: an open-source
   astrovisualization framework
 
 * `PenUltima Online (POL) <https://www.polserver.com/>`_:
-  An MMO server, compatible with most Ultima Online clients
+  an MMO server, compatible with most Ultima Online clients
 
-* `PyTorch <https://github.com/pytorch/pytorch>`_: An open-source machine
+* `PyTorch <https://github.com/pytorch/pytorch>`_: an open-source machine
   learning library
 
-* `quasardb <https://www.quasardb.net/>`_: A distributed, high-performance,
+* `quasardb <https://www.quasardb.net/>`_: a distributed, high-performance,
   associative database
   
-* `Quill <https://github.com/odygrd/quill>`_: Asynchronous low-latency logging library
+* `Quill <https://github.com/odygrd/quill>`_: asynchronous low-latency logging library
 
-* `QKW <https://github.com/ravijanjam/qkw>`_: Generalizing aliasing to simplify
+* `QKW <https://github.com/ravijanjam/qkw>`_: generalizing aliasing to simplify
   navigation, and executing complex multi-line terminal command sequences
 
-* `readpe <https://bitbucket.org/sys_dev/readpe>`_: Read Portable Executable
-
-* `redis-cerberus <https://github.com/HunanTV/redis-cerberus>`_: A Redis cluster
+* `redis-cerberus <https://github.com/HunanTV/redis-cerberus>`_: a Redis cluster
   proxy
 
-* `redpanda <https://vectorized.io/redpanda>`_: A 10x faster Kafka® replacement
+* `redpanda <https://vectorized.io/redpanda>`_: a 10x faster Kafka® replacement
   for mission critical systems written in C++
 
-* `rpclib <http://rpclib.net/>`_: A modern C++ msgpack-RPC server and client
+* `rpclib <http://rpclib.net/>`_: a modern C++ msgpack-RPC server and client
   library
 
 * `Salesforce Analytics Cloud
   <https://www.salesforce.com/analytics-cloud/overview/>`_:
-  Business intelligence software
+  business intelligence software
 
-* `Scylla <https://www.scylladb.com/>`_: A Cassandra-compatible NoSQL data store
+* `Scylla <https://www.scylladb.com/>`_: a Cassandra-compatible NoSQL data store
   that can handle 1 million transactions per second on a single server
 
-* `Seastar <http://www.seastar-project.org/>`_: An advanced, open-source C++
+* `Seastar <http://www.seastar-project.org/>`_: an advanced, open-source C++
   framework for high-performance server applications on modern hardware
 
-* `spdlog <https://github.com/gabime/spdlog>`_: Super fast C++ logging library
+* `spdlog <https://github.com/gabime/spdlog>`_: super fast C++ logging library
 
-* `Stellar <https://www.stellar.org/>`_: Financial platform
+* `Stellar <https://www.stellar.org/>`_: financial platform
 
-* `Touch Surgery <https://www.touchsurgery.com/>`_: Surgery simulator
+* `Touch Surgery <https://www.touchsurgery.com/>`_: surgery simulator
 
-* `TrinityCore <https://github.com/TrinityCore/TrinityCore>`_: Open-source
+* `TrinityCore <https://github.com/TrinityCore/TrinityCore>`_: open-source
   MMORPG framework
 
-* `Windows Terminal <https://github.com/microsoft/terminal>`_: The new Windows
-  Terminal
+* `Windows Terminal <https://github.com/microsoft/terminal>`_: the new Windows
+  terminal
 
 `More... <https://github.com/search?q=fmtlib&type=Code>`_
 
