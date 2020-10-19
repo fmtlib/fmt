@@ -62,7 +62,7 @@ using RWResult = int;
 inline unsigned convert_rwcount(std::size_t count) {
   return count <= UINT_MAX ? static_cast<unsigned>(count) : UINT_MAX;
 }
-#else
+#elif FMT_USE_FCNTL
 // Return type of read and write functions.
 using RWResult = ssize_t;
 
