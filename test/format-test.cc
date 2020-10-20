@@ -169,20 +169,22 @@ TEST(IteratorTest, TruncatingBackInserter) {
 }
 
 TEST(IteratorTest, IsOutputIterator) {
-  EXPECT_TRUE(fmt::detail::is_output_iterator<char*>::value);
-  EXPECT_FALSE(fmt::detail::is_output_iterator<const char*>::value);
-  EXPECT_FALSE(fmt::detail::is_output_iterator<std::string>::value);
-  EXPECT_TRUE(fmt::detail::is_output_iterator<
-              std::back_insert_iterator<std::string>>::value);
-  EXPECT_TRUE(fmt::detail::is_output_iterator<std::string::iterator>::value);
-  EXPECT_FALSE(
-      fmt::detail::is_output_iterator<std::string::const_iterator>::value);
-  EXPECT_FALSE(fmt::detail::is_output_iterator<std::list<char>>::value);
+  EXPECT_TRUE((fmt::detail::is_output_iterator<char*, char>::value));
+  EXPECT_FALSE((fmt::detail::is_output_iterator<const char*, char>::value));
+  EXPECT_FALSE((fmt::detail::is_output_iterator<std::string, char>::value));
   EXPECT_TRUE(
-      fmt::detail::is_output_iterator<std::list<char>::iterator>::value);
-  EXPECT_FALSE(
-      fmt::detail::is_output_iterator<std::list<char>::const_iterator>::value);
-  EXPECT_FALSE(fmt::detail::is_output_iterator<uint32_pair>::value);
+      (fmt::detail::is_output_iterator<std::back_insert_iterator<std::string>,
+                                       char>::value));
+  EXPECT_TRUE(
+      (fmt::detail::is_output_iterator<std::string::iterator, char>::value));
+  EXPECT_FALSE((fmt::detail::is_output_iterator<std::string::const_iterator,
+                                                char>::value));
+  EXPECT_FALSE((fmt::detail::is_output_iterator<std::list<char>, char>::value));
+  EXPECT_TRUE((
+      fmt::detail::is_output_iterator<std::list<char>::iterator, char>::value));
+  EXPECT_FALSE((fmt::detail::is_output_iterator<std::list<char>::const_iterator,
+                                                char>::value));
+  EXPECT_FALSE((fmt::detail::is_output_iterator<uint32_pair, char>::value));
 }
 
 TEST(MemoryBufferTest, Ctor) {
@@ -720,13 +722,8 @@ TEST(FormatterTest, SpaceSign) {
 }
 
 TEST(FormatterTest, SignNotTruncated) {
-  wchar_t format_str[] = {
-    L'{',
-    L':',
-    '+' | (1 << fmt::detail::num_bits<char>()),
-    L'}',
-    0
-  };
+  wchar_t format_str[] = {L'{', L':',
+                          '+' | (1 << fmt::detail::num_bits<char>()), L'}', 0};
   EXPECT_THROW(format(format_str, 42), format_error);
 }
 

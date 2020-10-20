@@ -567,7 +567,7 @@ inline std::basic_string<Char> format(const text_style& ts, const S& format_str,
   Formats a string with the given text_style and writes the output to ``out``.
  */
 template <typename OutputIt, typename Char,
-          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt>::value)>
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value)>
 OutputIt vformat_to(
     OutputIt out, const text_style& ts, basic_string_view<Char> format_str,
     basic_format_args<buffer_context<type_identity_t<Char>>> args) {
@@ -589,7 +589,7 @@ OutputIt vformat_to(
   \endrst
 */
 template <typename OutputIt, typename S, typename... Args,
-          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt>::value&&
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char_t<S>>::value&&
                             detail::is_string<S>::value)>
 inline OutputIt format_to(OutputIt out, const text_style& ts,
                           const S& format_str, Args&&... args) {

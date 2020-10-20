@@ -667,10 +667,11 @@ OutputIt format_to(OutputIt out, const S&, const Args&... args) {
   return format_to(out, compiled, args...);
 }
 
-template <
-    typename OutputIt, typename CompiledFormat, typename... Args,
-    FMT_ENABLE_IF(detail::is_output_iterator<OutputIt>::value&& std::is_base_of<
-                  detail::basic_compiled_format, CompiledFormat>::value)>
+template <typename OutputIt, typename CompiledFormat, typename... Args,
+          FMT_ENABLE_IF(detail::is_output_iterator<
+                        OutputIt, typename CompiledFormat::char_type>::value&&
+                            std::is_base_of<detail::basic_compiled_format,
+                                            CompiledFormat>::value)>
 format_to_n_result<OutputIt> format_to_n(OutputIt out, size_t n,
                                          const CompiledFormat& cf,
                                          const Args&... args) {

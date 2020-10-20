@@ -801,8 +801,8 @@ template <typename T> class iterator_buffer<T*, T> final : public buffer<T> {
 template <typename Container>
 class iterator_buffer<std::back_insert_iterator<Container>,
                       enable_if_t<is_contiguous<Container>::value,
-                                  typename Container::value_type>> final
-    : public buffer<typename Container::value_type> {
+                                  typename Container::value_type>>
+    final : public buffer<typename Container::value_type> {
  private:
   Container& container_;
 
@@ -1371,23 +1371,15 @@ struct iterator_category<It, void_t<typename It::iterator_category>> {
   using type = typename It::iterator_category;
 };
 
-// Detect if *any* given type models the OutputIterator concept.
-template <typename It> class is_output_iterator {
-  // Check for mutability because all iterator categories derived from
-  // std::input_iterator_tag *may* also meet the requirements of an
-  // OutputIterator, thereby falling into the category of 'mutable iterators'
-  // [iterator.requirements.general] clause 4. The compiler reveals this
-  // property only at the point of *actually dereferencing* the iterator!
-  template <typename U>
-  static decltype(*(std::declval<U>())) test(std::input_iterator_tag);
-  template <typename U> static char& test(std::output_iterator_tag);
-  template <typename U> static const char& test(...);
+template <typename It, typename T, typename Enable = void>
+struct is_output_iterator : std::false_type {};
 
-  using type = decltype(test<It>(typename iterator_category<It>::type{}));
-
- public:
-  enum { value = !std::is_const<remove_reference_t<type>>::value };
-};
+template <typename It, typename T>
+struct is_output_iterator<
+    It, T,
+    void_t<typename iterator_category<It>::type,
+           decltype(*std::declval<It>() = std::declval<T>())>>
+    : std::true_type {};
 
 template <typename OutputIt>
 struct is_back_insert_iterator : std::false_type {};
@@ -1983,7 +1975,7 @@ inline void vprint_mojibake(std::FILE*, string_view, format_args) {}
 // GCC 8 and earlier cannot handle std::back_insert_iterator<Container> with
 // vformat_to<ArgFormatter>(...) overload, so SFINAE on iterator type instead.
 template <typename OutputIt, typename S, typename Char = char_t<S>,
-          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt>::value)>
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value)>
 OutputIt vformat_to(
     OutputIt out, const S& format_str,
     basic_format_args<buffer_context<type_identity_t<Char>>> args) {
@@ -2004,7 +1996,8 @@ OutputIt vformat_to(
  \endrst
  */
 template <typename OutputIt, typename S, typename... Args,
-          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt>::value&&
+          typename Char = char_t<S>,
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value&&
                             detail::is_string<S>::value)>
 inline OutputIt format_to(OutputIt out, const S& format_str, Args&&... args) {
   const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
@@ -2019,7 +2012,7 @@ template <typename OutputIt> struct format_to_n_result {
 };
 
 template <typename OutputIt, typename Char, typename... Args,
-          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt>::value)>
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value)>
 inline format_to_n_result<OutputIt> vformat_to_n(
     OutputIt out, size_t n, basic_string_view<Char> format_str,
     basic_format_args<buffer_context<type_identity_t<Char>>> args) {
@@ -2037,8 +2030,8 @@ inline format_to_n_result<OutputIt> vformat_to_n(
  \endrst
  */
 template <typename OutputIt, typename S, typename... Args,
-          FMT_ENABLE_IF(detail::is_string<S>::value&&
-                            detail::is_output_iterator<OutputIt>::value)>
+          FMT_ENABLE_IF(detail::is_string<S>::value&& detail::
+                            is_output_iterator<OutputIt, char_t<S>>::value)>
 inline format_to_n_result<OutputIt> format_to_n(OutputIt out, size_t n,
                                                 const S& format_str,
                                                 const Args&... args) {

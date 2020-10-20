@@ -45,28 +45,27 @@ inline std::basic_string<Char> vformat(
 template <typename S, typename... Args, typename Char = char_t<S>>
 inline std::basic_string<Char> format(const std::locale& loc,
                                       const S& format_str, Args&&... args) {
-  return detail::vformat(
-      loc, to_string_view(format_str),
-      fmt::make_args_checked<Args...>(format_str, args...));
+  return detail::vformat(loc, to_string_view(format_str),
+                         fmt::make_args_checked<Args...>(format_str, args...));
 }
 
 template <typename S, typename OutputIt, typename... Args,
-          typename Char = enable_if_t<
-              detail::is_output_iterator<OutputIt>::value, char_t<S>>>
+          typename Char = char_t<S>,
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value)>
 inline OutputIt vformat_to(
     OutputIt out, const std::locale& loc, const S& format_str,
     basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   decltype(detail::get_buffer<Char>(out)) buf(detail::get_buffer_init(out));
   using af =
-    detail::arg_formatter<typename buffer_context<Char>::iterator, Char>;
+      detail::arg_formatter<typename buffer_context<Char>::iterator, Char>;
   vformat_to<af>(detail::buffer_appender<Char>(buf), to_string_view(format_str),
                  args, detail::locale_ref(loc));
   return detail::get_iterator(buf);
 }
 
 template <typename OutputIt, typename S, typename... Args,
-          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt>::value&&
-                            detail::is_string<S>::value)>
+          typename Char = char_t<S>,
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value)>
 inline OutputIt format_to(OutputIt out, const std::locale& loc,
                           const S& format_str, Args&&... args) {
   const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
