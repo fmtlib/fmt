@@ -1946,8 +1946,8 @@ template <typename Char, typename OutputIt, typename T,
 OutputIt write(OutputIt out, T value) {
   if (const_check(!is_supported_floating_point(value))) return out;
 
-  using type = conditional_t<std::is_same<T, long double>::value, double, T>;
-  using uint = typename dragonbox::float_info<type>::carrier_uint;
+  using floaty = conditional_t<std::is_same<T, long double>::value, double, T>;
+  using uint = typename dragonbox::float_info<floaty>::carrier_uint;
   auto bits = bit_cast<uint>(value);
 
   auto fspecs = float_specs();
@@ -1958,11 +1958,11 @@ OutputIt write(OutputIt out, T value) {
   }
 
   static const auto specs = basic_format_specs<Char>();
-  uint mask = exponent_mask<type>();
+  uint mask = exponent_mask<floaty>();
   if ((bits & mask) == mask)
     return write_nonfinite(out, std::isinf(value), specs, fspecs);
 
-  auto dec = dragonbox::to_decimal(static_cast<type>(value));
+  auto dec = dragonbox::to_decimal(static_cast<floaty>(value));
   return write_float(out, dec, specs, fspecs, static_cast<Char>('.'));
 }
 
