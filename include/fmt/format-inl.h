@@ -1626,8 +1626,10 @@ struct fixed_handler {
     }
     if (buf[0] > '9') {
       buf[0] = '1';
-      if (fixed) buf[size++] = '0';
-      else ++exp10;
+      if (fixed)
+        buf[size++] = '0';
+      else
+        ++exp10;
     }
     return digits::done;
   }
@@ -2173,8 +2175,8 @@ FMT_SAFEBUFFERS decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT {
   const carrier_uint significand_mask =
       (static_cast<carrier_uint>(1) << float_info<T>::significand_bits) - 1;
   carrier_uint significand = (br & significand_mask);
-  int exponent =
-      static_cast<int>((br & exponent_mask<T>()) >> float_info<T>::significand_bits);
+  int exponent = static_cast<int>((br & exponent_mask<T>()) >>
+                                  float_info<T>::significand_bits);
 
   if (exponent != 0) {  // Check if normal.
     exponent += float_info<T>::exponent_bias - float_info<T>::significand_bits;
