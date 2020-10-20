@@ -1352,24 +1352,8 @@ namespace detail {
 
 // A workaround for gcc 4.8 to make void_t work in a SFINAE context.
 template <typename... Ts> struct void_t_impl { using type = void; };
-
 template <typename... Ts>
 using void_t = typename detail::void_t_impl<Ts...>::type;
-
-// Detect the iterator category of *any* given type in a SFINAE-friendly way.
-// Unfortunately, older implementations of std::iterator_traits are not safe
-// for use in a SFINAE-context.
-template <typename It, typename Enable = void>
-struct iterator_category : std::false_type {};
-
-template <typename T> struct iterator_category<T*> {
-  using type = std::random_access_iterator_tag;
-};
-
-template <typename It>
-struct iterator_category<It, void_t<typename It::iterator_category>> {
-  using type = typename It::iterator_category;
-};
 
 template <typename It, typename T, typename Enable = void>
 struct is_output_iterator : std::false_type {};
@@ -1377,7 +1361,7 @@ struct is_output_iterator : std::false_type {};
 template <typename It, typename T>
 struct is_output_iterator<
     It, T,
-    void_t<typename iterator_category<It>::type,
+    void_t<typename std::iterator_traits<It>::iterator_category,
            decltype(*std::declval<It>() = std::declval<T>())>>
     : std::true_type {};
 
