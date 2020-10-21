@@ -1112,7 +1112,7 @@ Char* format_uint(Char* buffer, detail::fallback_uintptr n, int num_digits,
 
 template <unsigned BASE_BITS, typename Char, typename It, typename UInt>
 inline It format_uint(It out, UInt value, int num_digits, bool upper = false) {
-  if (auto ptr = to_pointer<Char>(out, num_digits)) {
+  if (auto ptr = to_pointer<Char>(out, to_unsigned(num_digits))) {
     format_uint<BASE_BITS>(ptr, value, num_digits, upper);
     return out;
   }
@@ -2727,12 +2727,16 @@ template <typename SpecHandler, typename Char> struct precision_adapter {
 };
 
 template <typename Char>
-FMT_CONSTEXPR const Char* next_code_point(const Char* begin, const Char* end) {
-  if (const_check(sizeof(Char) != 1) || (*begin & 0x80) == 0) return begin + 1;
-  do {
-    ++begin;
-  } while (begin != end && (*begin & 0xc0) == 0x80);
-  return begin;
+FMT_CONSTEXPR int code_point_length(const Char* begin) {
+  if (const_check(sizeof(Char) != 1)) return 1;
+  constexpr char lengths[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                              0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 3, 3, 4, 0};
+  int len = lengths[static_cast<unsigned char>(*begin) >> 3];
+
+  // Compute the pointer to the next character early so that the next
+  // iteration can start working on the next character. Neither Clang
+  // nor GCC figure out this reordering on their own.
+  return len + !len;
 }
 
 // Converts a character to the underlying integral type.
@@ -2752,8 +2756,8 @@ FMT_CONSTEXPR const Char* parse_align(const Char* begin, const Char* end,
                                       Handler&& handler) {
   FMT_ASSERT(begin != end, "");
   auto align = align::none;
-  auto p = next_code_point(begin, end);
-  if (p == end) p = begin;
+  auto p = begin + code_point_length(begin);
+  if (p >= end) p = begin;
   for (;;) {
     switch (to_integral(*p)) {
     case '<':

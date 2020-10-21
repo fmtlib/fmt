@@ -2603,24 +2603,17 @@ int snprintf_float(T value, int precision, float_specs specs,
  * error, but it will always advance at least one byte.
  */
 inline const char* utf8_decode(const char* buf, uint32_t* c, int* e) {
-  static const char lengths[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-                                 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
-                                 0, 0, 2, 2, 2, 2, 3, 3, 4, 0};
   static const int masks[] = {0x00, 0x7f, 0x1f, 0x0f, 0x07};
   static const uint32_t mins[] = {4194304, 0, 128, 2048, 65536};
   static const int shiftc[] = {0, 18, 12, 6, 0};
   static const int shifte[] = {0, 6, 4, 2, 0};
 
-  auto s = reinterpret_cast<const unsigned char*>(buf);
-  int len = lengths[s[0] >> 3];
-
-  // Compute the pointer to the next character early so that the next
-  // iteration can start working on the next character. Neither Clang
-  // nor GCC figure out this reordering on their own.
-  const char* next = buf + len + !len;
+  int len = code_point_length(buf);
+  const char* next = buf + len;
 
   // Assume a four-byte character and load four bytes. Unused bits are
   // shifted out.
+  auto s = reinterpret_cast<const unsigned char*>(buf);
   *c = uint32_t(s[0] & masks[len]) << 18;
   *c |= uint32_t(s[1] & 0x3f) << 12;
   *c |= uint32_t(s[2] & 0x3f) << 6;
