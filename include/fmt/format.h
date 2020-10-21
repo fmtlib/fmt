@@ -2739,14 +2739,13 @@ FMT_CONSTEXPR int code_point_length(const Char* begin) {
   return len + !len;
 }
 
-// Converts a character to the underlying integral type.
+// Converts a character to ASCII. Returns a number > 127 on conversion failure.
 template <typename Char, FMT_ENABLE_IF(std::is_integral<Char>::value)>
-constexpr Char to_integral(Char value) {
+constexpr Char to_ascii(Char value) {
   return value;
 }
-
 template <typename Char, FMT_ENABLE_IF(std::is_enum<Char>::value)>
-constexpr typename std::underlying_type<Char>::type to_integral(Char value) {
+constexpr typename std::underlying_type<Char>::type to_ascii(Char value) {
   return value;
 }
 
@@ -2759,7 +2758,7 @@ FMT_CONSTEXPR const Char* parse_align(const Char* begin, const Char* end,
   auto p = begin + code_point_length(begin);
   if (p >= end) p = begin;
   for (;;) {
-    switch (to_integral(*p)) {
+    switch (to_ascii(*p)) {
     case '<':
       align = align::left;
       break;
@@ -2833,18 +2832,28 @@ FMT_CONSTEXPR const Char* parse_precision(const Char* begin, const Char* end,
   return begin;
 }
 
+template <typename Char>
+constexpr bool is_ascii_letter(Char c) {
+  return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+
 // Parses standard format specifiers and sends notifications about parsed
 // components to handler.
 template <typename Char, typename SpecHandler>
 FMT_CONSTEXPR const Char* parse_format_specs(const Char* begin, const Char* end,
                                              SpecHandler&& handler) {
-  if (begin == end || *begin == '}') return begin;
+  if (begin == end) return begin;
+
+  if (is_ascii_letter(*begin) && (begin + 1 == end || begin[1] == '}')) {
+    handler.on_type(*begin++);
+    return begin;
+  }
 
   begin = parse_align(begin, end, handler);
   if (begin == end) return begin;
 
   // Parse sign.
-  switch (to_integral(*begin)) {
+  switch (to_ascii(*begin)) {
   case '+':
     handler.on_plus();
     ++begin;
