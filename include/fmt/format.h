@@ -3746,29 +3746,28 @@ std::basic_string<Char> to_string(const basic_memory_buffer<Char, SIZE>& buf) {
 }
 
 template <typename Char>
-detail::buffer_appender<Char> detail::vformat_to(
+void detail::vformat_to(
     detail::buffer<Char>& buf, basic_string_view<Char> format_str,
     basic_format_args<buffer_context<type_identity_t<Char>>> args,
     detail::locale_ref loc) {
   using iterator = typename buffer_context<Char>::iterator;
   auto out = buffer_appender<Char>(buf);
-  if (format_str.size() == 2 && detail::equal2(format_str.data(), "{}")) {
+  if (format_str.size() == 2 && equal2(format_str.data(), "{}")) {
     auto arg = args.get(0);
-    if (!arg) detail::error_handler().on_error("argument not found");
-    return visit_format_arg(
-        detail::default_arg_formatter<iterator, Char>{out, args, loc}, arg);
+    if (!arg) error_handler().on_error("argument not found");
+    visit_format_arg(default_arg_formatter<iterator, Char>{out, args, loc},
+                     arg);
+    return;
   }
-  detail::format_handler<arg_formatter<iterator, Char>, Char,
-                         buffer_context<Char>>
-      h(out, format_str, args, loc);
-  detail::parse_format_string<false>(format_str, h);
-  return h.context.out();
+  format_handler<arg_formatter<iterator, Char>, Char, buffer_context<Char>> h(
+      out, format_str, args, loc);
+  parse_format_string<false>(format_str, h);
 }
 
 #ifndef FMT_HEADER_ONLY
-extern template format_context::iterator detail::vformat_to(
-    detail::buffer<char>&, string_view, basic_format_args<format_context>,
-    detail::locale_ref);
+extern template void detail::vformat_to(detail::buffer<char>&, string_view,
+                                        basic_format_args<format_context>,
+                                        detail::locale_ref);
 namespace detail {
 extern template FMT_API std::string grouping_impl<char>(locale_ref loc);
 extern template FMT_API std::string grouping_impl<wchar_t>(locale_ref loc);
@@ -3795,7 +3794,7 @@ extern template int snprintf_float<long double>(long double value,
 
 template <typename S, typename Char = char_t<S>,
           FMT_ENABLE_IF(detail::is_string<S>::value)>
-inline typename FMT_BUFFER_CONTEXT(Char)::iterator vformat_to(
+inline void vformat_to(
     detail::buffer<Char>& buf, const S& format_str,
     basic_format_args<FMT_BUFFER_CONTEXT(type_identity_t<Char>)> args) {
   return detail::vformat_to(buf, to_string_view(format_str), args);
@@ -3806,7 +3805,8 @@ template <typename S, typename... Args, size_t SIZE = inline_buffer_size,
 inline typename buffer_context<Char>::iterator format_to(
     basic_memory_buffer<Char, SIZE>& buf, const S& format_str, Args&&... args) {
   const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
-  return detail::vformat_to(buf, to_string_view(format_str), vargs);
+  detail::vformat_to(buf, to_string_view(format_str), vargs);
+  return detail::buffer_appender<Char>(buf);
 }
 
 template <typename OutputIt, typename Char = char>

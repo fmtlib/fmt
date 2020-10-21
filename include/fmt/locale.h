@@ -16,20 +16,11 @@ FMT_BEGIN_NAMESPACE
 
 namespace detail {
 template <typename Char>
-typename buffer_context<Char>::iterator vformat_to(
-    const std::locale& loc, buffer<Char>& buf,
-    basic_string_view<Char> format_str,
-    basic_format_args<buffer_context<type_identity_t<Char>>> args) {
-  return vformat_to(buf, to_string_view(format_str), args,
-                    detail::locale_ref(loc));
-}
-
-template <typename Char>
 std::basic_string<Char> vformat(
     const std::locale& loc, basic_string_view<Char> format_str,
     basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   basic_memory_buffer<Char> buffer;
-  detail::vformat_to(loc, buffer, format_str, args);
+  detail::vformat_to(buffer, format_str, args, detail::locale_ref(loc));
   return fmt::to_string(buffer);
 }
 }  // namespace detail
