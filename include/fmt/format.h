@@ -3579,25 +3579,6 @@ FMT_CONSTEXPR void advance_to(
   ctx.advance_to(ctx.begin() + (p - &*ctx.begin()));
 }
 
-/** Formats arguments and writes the output to the range. */
-template <typename ArgFormatter, typename Char, typename Context>
-typename Context::iterator vformat_to(
-    typename ArgFormatter::iterator out, basic_string_view<Char> format_str,
-    basic_format_args<Context> args,
-    detail::locale_ref loc = detail::locale_ref()) {
-  if (format_str.size() == 2 && detail::equal2(format_str.data(), "{}")) {
-    auto arg = args.get(0);
-    if (!arg) detail::error_handler().on_error("argument not found");
-    using iterator = typename ArgFormatter::iterator;
-    return visit_format_arg(
-        detail::default_arg_formatter<iterator, Char>{out, args, loc}, arg);
-  }
-  detail::format_handler<ArgFormatter, Char, Context> h(out, format_str, args,
-                                                        loc);
-  detail::parse_format_string<false>(format_str, h);
-  return h.context.out();
-}
-
 /**
   \rst
   Converts ``p`` to ``const void*`` for pointer formatting.
@@ -3767,14 +3748,27 @@ std::basic_string<Char> to_string(const basic_memory_buffer<Char, SIZE>& buf) {
 template <typename Char>
 detail::buffer_appender<Char> detail::vformat_to(
     detail::buffer<Char>& buf, basic_string_view<Char> format_str,
-    basic_format_args<buffer_context<type_identity_t<Char>>> args) {
-  using af = arg_formatter<typename buffer_context<Char>::iterator, Char>;
-  return vformat_to<af>(buffer_appender<Char>(buf), format_str, args);
+    basic_format_args<buffer_context<type_identity_t<Char>>> args,
+    detail::locale_ref loc) {
+  using iterator = typename buffer_context<Char>::iterator;
+  auto out = buffer_appender<Char>(buf);
+  if (format_str.size() == 2 && detail::equal2(format_str.data(), "{}")) {
+    auto arg = args.get(0);
+    if (!arg) detail::error_handler().on_error("argument not found");
+    return visit_format_arg(
+        detail::default_arg_formatter<iterator, Char>{out, args, loc}, arg);
+  }
+  detail::format_handler<arg_formatter<iterator, Char>, Char,
+                         buffer_context<Char>>
+      h(out, format_str, args, loc);
+  detail::parse_format_string<false>(format_str, h);
+  return h.context.out();
 }
 
 #ifndef FMT_HEADER_ONLY
 extern template format_context::iterator detail::vformat_to(
-    detail::buffer<char>&, string_view, basic_format_args<format_context>);
+    detail::buffer<char>&, string_view, basic_format_args<format_context>,
+    detail::locale_ref);
 namespace detail {
 extern template FMT_API std::string grouping_impl<char>(locale_ref loc);
 extern template FMT_API std::string grouping_impl<wchar_t>(locale_ref loc);

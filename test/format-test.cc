@@ -1842,62 +1842,6 @@ TEST(FormatTest, StrongEnum) {
 }
 #endif
 
-using buffer_iterator = fmt::format_context::iterator;
-
-class mock_arg_formatter
-    : public fmt::detail::arg_formatter_base<buffer_iterator, char> {
- private:
-#if FMT_USE_INT128
-  MOCK_METHOD1(call, void(__int128_t value));
-#else
-  MOCK_METHOD1(call, void(long long value));
-#endif
-
- public:
-  using base = fmt::detail::arg_formatter_base<buffer_iterator, char>;
-
-  mock_arg_formatter(fmt::format_context& ctx, fmt::format_parse_context*,
-                     fmt::format_specs* s = nullptr, const char* = nullptr)
-      : base(ctx.out(), s, ctx.locale()) {
-    EXPECT_CALL(*this, call(42));
-  }
-
-  template <typename T>
-  typename std::enable_if<fmt::detail::is_integral<T>::value &&
-                              fmt::detail::is_signed<T>::value,
-                          iterator>::type
-  operator()(T value) {
-    call(value);
-    return base::operator()(value);
-  }
-
-  template <typename T>
-  typename std::enable_if<!(fmt::detail::is_integral<T>::value &&
-                            fmt::detail::is_signed<T>::value),
-                          iterator>::type
-  operator()(T value) {
-    return base::operator()(value);
-  }
-
-  iterator operator()(fmt::basic_format_arg<fmt::format_context>::handle) {
-    return base::operator()(fmt::monostate());
-  }
-};
-
-static void custom_vformat(fmt::string_view format_str, fmt::format_args args) {
-  fmt::memory_buffer buf;
-  fmt::vformat_to<mock_arg_formatter>(fmt::detail::buffer_appender<char>(buf),
-                                      format_str, args);
-}
-
-template <typename... Args>
-void custom_format(const char* format_str, const Args&... args) {
-  auto va = fmt::make_format_args(args...);
-  return custom_vformat(format_str, va);
-}
-
-TEST(FormatTest, CustomArgFormatter) { custom_format("{}", 42); }
-
 TEST(FormatTest, NonNullTerminatedFormatString) {
   EXPECT_EQ("42", format(string_view("{}foo", 2), 42));
 }

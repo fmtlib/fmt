@@ -20,9 +20,8 @@ typename buffer_context<Char>::iterator vformat_to(
     const std::locale& loc, buffer<Char>& buf,
     basic_string_view<Char> format_str,
     basic_format_args<buffer_context<type_identity_t<Char>>> args) {
-  using af = arg_formatter<typename buffer_context<Char>::iterator, Char>;
-  return vformat_to<af>(buffer_appender<Char>(buf), to_string_view(format_str),
-                        args, detail::locale_ref(loc));
+  return vformat_to(buf, to_string_view(format_str), args,
+                    detail::locale_ref(loc));
 }
 
 template <typename Char>
@@ -56,10 +55,7 @@ inline OutputIt vformat_to(
     OutputIt out, const std::locale& loc, const S& format_str,
     basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   decltype(detail::get_buffer<Char>(out)) buf(detail::get_buffer_init(out));
-  using af =
-      detail::arg_formatter<typename buffer_context<Char>::iterator, Char>;
-  vformat_to<af>(detail::buffer_appender<Char>(buf), to_string_view(format_str),
-                 args, detail::locale_ref(loc));
+  vformat_to(buf, to_string_view(format_str), args, detail::locale_ref(loc));
   return detail::get_iterator(buf);
 }
 

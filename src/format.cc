@@ -46,7 +46,7 @@ template FMT_API void detail::buffer<char>::append(const char*, const char*);
 
 template FMT_API FMT_BUFFER_CONTEXT(char)::iterator detail::vformat_to(
     detail::buffer<char>&, string_view,
-    basic_format_args<FMT_BUFFER_CONTEXT(char)>);
+    basic_format_args<FMT_BUFFER_CONTEXT(char)>, detail::locale_ref);
 
 template FMT_API int detail::snprintf_float(double, int, detail::float_specs,
                                             detail::buffer<char>&);
