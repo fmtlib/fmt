@@ -14,4 +14,7 @@ exceptions:
 * snake_case should be used instead of UpperCamelCase for function and type
   names
 
+All documentation must adhere to the [Google Developer Documentation Style
+Guide](https://developers.google.com/style).
+
 Thanks for contributing!
