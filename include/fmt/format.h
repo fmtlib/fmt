@@ -1112,6 +1112,10 @@ Char* format_uint(Char* buffer, detail::fallback_uintptr n, int num_digits,
 
 template <unsigned BASE_BITS, typename Char, typename It, typename UInt>
 inline It format_uint(It out, UInt value, int num_digits, bool upper = false) {
+  if (auto ptr = to_pointer<Char>(out, num_digits)) {
+    format_uint<BASE_BITS>(ptr, value, num_digits, upper);
+    return out;
+  }
   // Buffer should be large enough to hold all digits (digits / BASE_BITS + 1).
   char buffer[num_bits<UInt>() / BASE_BITS + 1];
   format_uint<BASE_BITS>(buffer, value, num_digits, upper);
