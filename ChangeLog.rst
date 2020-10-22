@@ -3,7 +3,7 @@
 
 * Added an experimental unsynchronized file output API which, together with
   format string compilation, can give `5-9 times speed up compared to
-  fprintf <https://www.zverovich.net/2020/08/04/optimal-file-buffer-size.html>`__)
+  fprintf <https://www.zverovich.net/2020/08/04/optimal-file-buffer-size.html>`__
   on common platforms:
 
   .. code:: c++
@@ -42,7 +42,7 @@
        movw %dx, -2(%rax)
        ret
 
-  Here a single `mov` instruction writes `'x'` (`$120`) to the output buffer.
+  Here a single ``mov`` instruction writes ``'x'`` (``$120``) to the output buffer.
 
 * Improved error reporting for unformattable types: now you'll get the type name
   directly in the error message instead of the note:
