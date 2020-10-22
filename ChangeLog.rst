@@ -71,7 +71,7 @@
 
 * Build configuration improvements
   (`#1760 <https://github.com/fmtlib/fmt/pull/1760>`_,
-   `#1770 <https://github.com/fmtlib/fmt/pull/1770>`_).
+  `#1770 <https://github.com/fmtlib/fmt/pull/1770>`_).
   Thanks `@dvetutnev (Dmitriy Vetutnev) <https://github.com/dvetutnev>`_,
   `@xvitaly (Vitaly Zaitsev) <https://github.com/xvitaly>`_.
 
