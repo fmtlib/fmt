@@ -2,8 +2,8 @@
 -----------
 
 * Added an experimental unsynchronized file output API which, together with
-  format string compilation, can give [5-9 times speed up compared to
-  `fprintf`](https://www.zverovich.net/2020/08/04/optimal-file-buffer-size.html)
+  format string compilation, can give `5-9 times speed up compared to
+  fprintf <https://www.zverovich.net/2020/08/04/optimal-file-buffer-size.html>`__)
   on common platforms:
 
   .. code:: c++
@@ -15,7 +15,7 @@
        f.print("The answer is {}.", 42);
      }
 
-* Improved handling of single code units in `FMT_COMPILE`. For example:
+* Improved handling of single code units in ``FMT_COMPILE``. For example:
 
   .. code:: c++
 
