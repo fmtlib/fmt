@@ -1988,11 +1988,11 @@ OutputIt vformat_to(
    fmt::format_to(std::back_inserter(out), "{}", 42);
  \endrst
  */
+// We cannot use FMT_ENABLE_IF because of a bug in gcc 8.3.
 template <typename OutputIt, typename S, typename... Args,
-          typename Char = char_t<S>,
-          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value&&
-                            detail::is_string<S>::value)>
-inline OutputIt format_to(OutputIt out, const S& format_str, Args&&... args) {
+          bool enable = detail::is_output_iterator<OutputIt, char_t<S>>::value>
+inline auto format_to(OutputIt out, const S& format_str, Args&&... args) ->
+    typename std::enable_if<enable, OutputIt>::type {
   const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
   return vformat_to(out, to_string_view(format_str), vargs);
 }
@@ -2023,8 +2023,7 @@ inline format_to_n_result<OutputIt> vformat_to_n(
  \endrst
  */
 template <typename OutputIt, typename S, typename... Args,
-          FMT_ENABLE_IF(detail::is_string<S>::value&& detail::
-                            is_output_iterator<OutputIt, char_t<S>>::value)>
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char_t<S>>::value)>
 inline format_to_n_result<OutputIt> format_to_n(OutputIt out, size_t n,
                                                 const S& format_str,
                                                 const Args&... args) {
