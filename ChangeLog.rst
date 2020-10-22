@@ -1,9 +1,79 @@
 7.1.0 - TBD
 -----------
 
+* Added an experimental unsynchronized file output API which, together with
+  format string compilation, can give [5-9 times speed up compared to
+  `fprintf`](https://www.zverovich.net/2020/08/04/optimal-file-buffer-size.html)
+  on common platforms:
+
+  .. code:: c++
+
+     #include <fmt/os.h>
+
+     int main() {
+       auto f = fmt::output_file("guide");
+       f.print("The answer is {}.", 42);
+     }
+
+* Improved handling of single code units in `FMT_COMPILE`. For example:
+
+  .. code:: c++
+
+     #include <fmt/compile.h>
+
+     char* f(char* buf) {
+       return fmt::format_to(buf, FMT_COMPILE("x{}"), 42);
+     }
+
+  compiles to just (`godbolt <https://godbolt.org/z/5vncz3>`__):
+
+  .. code:: asm
+
+     _Z1fPc:
+       movb $120, (%rdi)
+       xorl %edx, %edx
+       cmpl $42, _ZN3fmt2v76detail10basic_dataIvE23zero_or_powers_of_10_32E+8(%rip)
+       movl $3, %eax
+       seta %dl
+       subl %edx, %eax
+       movzwl _ZN3fmt2v76detail10basic_dataIvE6digitsE+84(%rip), %edx
+       cltq
+       addq %rdi, %rax
+       movw %dx, -2(%rax)
+       ret
+
+  Here a single `mov` instruction writes `'x'` (`$120`) to the output buffer.
+
+* Improved error reporting for unformattable types: now you'll get the type name
+  directly in the error message instead of the note:
+
+  .. code:: c++
+
+     #include <fmt/core.h>
+
+     struct how_about_no {};
+
+     int main() {
+       fmt::print("{}", how_about_no());
+     }
+
+  Error (`godbolt <https://godbolt.org/z/GoxM4e>`__):
+
+    fmt/core.h:1438:3: error: static_assert failed due to requirement
+    'fmt::v7::formattable<how_about_no>()' "Cannot format an argument.
+    To make type T formattable provide a formatter<T> specialization:
+    https://fmt.dev/dev/api.html#udt"
+    ...
+
+* Fixed handling of types that have both an implicit conversion operator and
+  an overloaded `ostream` insertion operator
+  (`#1766 <https://github.com/fmtlib/fmt/issues/1766>`_).
+
 * Build configuration improvements
-  (`#1760 <https://github.com/fmtlib/fmt/pull/1760>`_).
-  Thanks `@xvitaly (Vitaly Zaitsev) <https://github.com/xvitaly>`_.
+  (`#1760 <https://github.com/fmtlib/fmt/pull/1760>`_,
+   `#1770 <https://github.com/fmtlib/fmt/pull/1770>`_).
+  Thanks `@dvetutnev (Dmitriy Vetutnev) <https://github.com/dvetutnev>`_,
+  `@xvitaly (Vitaly Zaitsev) <https://github.com/xvitaly>`_.
 
 7.0.3 - 2020-08-06
 ------------------
@@ -195,7 +265,7 @@
 
   Thanks `@BRevzin (Barry Revzin) <https://github.com/BRevzin>`_.
 
-* Added support for named args, ``clear`` and ``reserve`` to
+* Added support for named arguments, ``clear`` and ``reserve`` to
   ``dynamic_format_arg_store``
   (`#1655 <https://github.com/fmtlib/fmt/issues/1655>`_,
   `#1663 <https://github.com/fmtlib/fmt/pull/1663>`_,
