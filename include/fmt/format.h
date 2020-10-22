@@ -2340,12 +2340,11 @@ template <typename Context> class custom_formatter {
                             Context& ctx)
       : parse_ctx_(parse_ctx), ctx_(ctx) {}
 
-  bool operator()(typename basic_format_arg<Context>::handle h) const {
+  void operator()(typename basic_format_arg<Context>::handle h) const {
     h.format(parse_ctx_, ctx_);
-    return true;
   }
 
-  template <typename T> bool operator()(T) const { return false; }
+  template <typename T> void operator()(T) const {}
 };
 
 template <typename T>
@@ -2739,6 +2738,10 @@ FMT_CONSTEXPR int code_point_length(const Char* begin) {
   return len + !len;
 }
 
+template <typename Char> constexpr bool is_ascii_letter(Char c) {
+  return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+
 // Converts a character to ASCII. Returns a number > 127 on conversion failure.
 template <typename Char, FMT_ENABLE_IF(std::is_integral<Char>::value)>
 constexpr Char to_ascii(Char value) {
@@ -2832,22 +2835,12 @@ FMT_CONSTEXPR const Char* parse_precision(const Char* begin, const Char* end,
   return begin;
 }
 
-template <typename Char>
-constexpr bool is_ascii_letter(Char c) {
-  return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
-}
-
 // Parses standard format specifiers and sends notifications about parsed
 // components to handler.
 template <typename Char, typename SpecHandler>
 FMT_CONSTEXPR const Char* parse_format_specs(const Char* begin, const Char* end,
                                              SpecHandler&& handler) {
   if (begin == end) return begin;
-
-  if (is_ascii_letter(*begin) && (begin + 1 == end || begin[1] == '}')) {
-    handler.on_type(*begin++);
-    return begin;
-  }
 
   begin = parse_align(begin, end, handler);
   if (begin == end) return begin;
@@ -3051,18 +3044,25 @@ struct format_handler : detail::error_handler {
   }
 
   const Char* on_format_specs(int id, const Char* begin, const Char* end) {
-    advance_to(parse_context, begin);
     auto arg = get_arg(context, id);
-    custom_formatter<Context> f(parse_context, context);
-    if (visit_format_arg(f, arg)) return parse_context.begin();
-    basic_format_specs<Char> specs;
-    using parse_context_t = basic_format_parse_context<Char>;
-    specs_checker<specs_handler<parse_context_t, Context>> handler(
-        specs_handler<parse_context_t, Context>(specs, parse_context, context),
-        arg.type());
-    begin = parse_format_specs(begin, end, handler);
-    if (begin == end || *begin != '}') on_error("missing '}' in format string");
-    advance_to(parse_context, begin);
+    if (arg.type() == type::custom_type) {
+      advance_to(parse_context, begin);
+      visit_format_arg(custom_formatter<Context>(parse_context, context), arg);
+      return parse_context.begin();
+    }
+    auto specs = basic_format_specs<Char>();
+    if (begin + 1 < end && begin[1] == '}' && is_ascii_letter(*begin)) {
+      specs.type = *begin++;
+    } else {
+      using parse_context_t = basic_format_parse_context<Char>;
+      specs_checker<specs_handler<parse_context_t, Context>> handler(
+          specs_handler<parse_context_t, Context>(specs, parse_context,
+                                                  context),
+          arg.type());
+      begin = parse_format_specs(begin, end, handler);
+      if (begin == end || *begin != '}')
+        on_error("missing '}' in format string");
+    }
     context.advance_to(
         visit_format_arg(ArgFormatter(context, &parse_context, &specs), arg));
     return begin;
