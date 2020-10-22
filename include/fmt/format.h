@@ -2301,6 +2301,48 @@ class arg_formatter_base {
   }
 };
 
+/** The default argument formatter. */
+template <typename OutputIt, typename Char>
+class arg_formatter : public arg_formatter_base<OutputIt, Char> {
+ private:
+  using char_type = Char;
+  using base = arg_formatter_base<OutputIt, Char>;
+  using context_type = basic_format_context<OutputIt, Char>;
+
+  context_type& ctx_;
+  basic_format_parse_context<char_type>* parse_ctx_;
+  const Char* ptr_;
+
+ public:
+  using iterator = typename base::iterator;
+  using format_specs = typename base::format_specs;
+
+  /**
+    \rst
+    Constructs an argument formatter object.
+    *ctx* is a reference to the formatting context,
+    *specs* contains format specifier information for standard argument types.
+    \endrst
+   */
+  explicit arg_formatter(
+      context_type& ctx,
+      basic_format_parse_context<char_type>* parse_ctx = nullptr,
+      format_specs* specs = nullptr, const Char* ptr = nullptr)
+      : base(ctx.out(), specs, ctx.locale()),
+        ctx_(ctx),
+        parse_ctx_(parse_ctx),
+        ptr_(ptr) {}
+
+  using base::operator();
+
+  /** Formats an argument of a user-defined type. */
+  iterator operator()(typename basic_format_arg<context_type>::handle handle) {
+    if (ptr_) advance_to(*parse_ctx_, ptr_);
+    handle.format(*parse_ctx_, ctx_);
+    return ctx_.out();
+  }
+};
+
 template <typename Char> FMT_CONSTEXPR bool is_name_start(Char c) {
   return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || '_' == c;
 }
@@ -3009,12 +3051,12 @@ FMT_CONSTEXPR const typename ParseContext::char_type* parse_format_specs(
   return f.parse(ctx);
 }
 
-template <typename ArgFormatter, typename Char, typename Context>
+template <typename OutputIt, typename Char, typename Context>
 struct format_handler : detail::error_handler {
   basic_format_parse_context<Char> parse_context;
   Context context;
 
-  format_handler(typename ArgFormatter::iterator out,
+  format_handler(OutputIt out,
                  basic_string_view<Char> str,
                  basic_format_args<Context> format_args, detail::locale_ref loc)
       : parse_context(str), context(out, format_args, loc) {}
@@ -3038,7 +3080,7 @@ struct format_handler : detail::error_handler {
   FMT_INLINE void on_replacement_field(int id, const Char*) {
     auto arg = get_arg(context, id);
     context.advance_to(visit_format_arg(
-        default_arg_formatter<typename ArgFormatter::iterator, Char>{
+        default_arg_formatter<OutputIt, Char>{
             context.out(), context.args(), context.locale()},
         arg));
   }
@@ -3052,7 +3094,7 @@ struct format_handler : detail::error_handler {
     }
     auto specs = basic_format_specs<Char>();
     if (begin + 1 < end && begin[1] == '}' && is_ascii_letter(*begin)) {
-      specs.type = *begin++;
+      specs.type = static_cast<char>(*begin++);
     } else {
       using parse_context_t = basic_format_parse_context<Char>;
       specs_checker<specs_handler<parse_context_t, Context>> handler(
@@ -3064,7 +3106,7 @@ struct format_handler : detail::error_handler {
         on_error("missing '}' in format string");
     }
     context.advance_to(
-        visit_format_arg(ArgFormatter(context, &parse_context, &specs), arg));
+        visit_format_arg(arg_formatter<OutputIt, Char>(context, &parse_context, &specs), arg));
     return begin;
   }
 };
@@ -3216,48 +3258,6 @@ FMT_API void format_error_code(buffer<char>& out, int error_code,
 
 FMT_API void report_error(format_func func, int error_code,
                           string_view message) FMT_NOEXCEPT;
-
-/** The default argument formatter. */
-template <typename OutputIt, typename Char>
-class arg_formatter : public arg_formatter_base<OutputIt, Char> {
- private:
-  using char_type = Char;
-  using base = arg_formatter_base<OutputIt, Char>;
-  using context_type = basic_format_context<OutputIt, Char>;
-
-  context_type& ctx_;
-  basic_format_parse_context<char_type>* parse_ctx_;
-  const Char* ptr_;
-
- public:
-  using iterator = typename base::iterator;
-  using format_specs = typename base::format_specs;
-
-  /**
-    \rst
-    Constructs an argument formatter object.
-    *ctx* is a reference to the formatting context,
-    *specs* contains format specifier information for standard argument types.
-    \endrst
-   */
-  explicit arg_formatter(
-      context_type& ctx,
-      basic_format_parse_context<char_type>* parse_ctx = nullptr,
-      format_specs* specs = nullptr, const Char* ptr = nullptr)
-      : base(ctx.out(), specs, ctx.locale()),
-        ctx_(ctx),
-        parse_ctx_(parse_ctx),
-        ptr_(ptr) {}
-
-  using base::operator();
-
-  /** Formats an argument of a user-defined type. */
-  iterator operator()(typename basic_format_arg<context_type>::handle handle) {
-    if (ptr_) advance_to(*parse_ctx_, ptr_);
-    handle.format(*parse_ctx_, ctx_);
-    return ctx_.out();
-  }
-};
 }  // namespace detail
 
 template <typename OutputIt, typename Char>
@@ -3776,7 +3776,7 @@ void detail::vformat_to(
                      arg);
     return;
   }
-  format_handler<arg_formatter<iterator, Char>, Char, buffer_context<Char>> h(
+  format_handler<iterator, Char, buffer_context<Char>> h(
       out, format_str, args, loc);
   parse_format_string<false>(format_str, h);
 }
