@@ -2,9 +2,9 @@
 -----------
 
 * Added an experimental unsynchronized file output API which, together with
-  format string compilation, can give `5-9 times speed up compared to
-  fprintf <https://www.zverovich.net/2020/08/04/optimal-file-buffer-size.html>`__
-  on common platforms:
+  format string compilation, can give `5-9 times speed up compared to fprintf
+  <https://www.zverovich.net/2020/08/04/optimal-file-buffer-size.html>`__ on
+  common platforms:
 
   .. code:: c++
 
@@ -42,7 +42,8 @@
        movw %dx, -2(%rax)
        ret
 
-  Here a single ``mov`` instruction writes ``'x'`` (``$120``) to the output buffer.
+  Here a single ``mov`` instruction writes ``'x'`` (``$120``) to the output
+  buffer.
 
 * Improved error reporting for unformattable types: now you'll get the type name
   directly in the error message instead of the note:
@@ -65,15 +66,52 @@
     https://fmt.dev/dev/api.html#udt"
     ...
 
+* Added the [``make_args_checked``](https://fmt.dev/dev/api.html#argument-lists)
+  function template that allows you to write formatting functions with
+  compile-time format string checks:
+
+  .. code:: c++
+
+     void vlog(const char* file, int line, fmt::string_view format,
+               fmt::format_args args) {
+       fmt::print("{}: {}: ", file, line);
+       fmt::vprint(format, args);
+     }
+
+     template <typename S, typename... Args>
+     void log(const char* file, int line, const S& format, Args&&... args) {
+       vlog(file, line, format,
+           fmt::make_args_checked<Args...>(format, args...));
+     }
+
+     #define MY_LOG(format, ...) \
+       log(__FILE__, __LINE__, FMT_STRING(format), __VA_ARGS__)
+
+     MY_LOG("invalid squishiness: {}", 42);
+
 * Fixed handling of types that have both an implicit conversion operator and
   an overloaded `ostream` insertion operator
   (`#1766 <https://github.com/fmtlib/fmt/issues/1766>`_).
 
+* Improved documentation
+  (`#1772 <https://github.com/fmtlib/fmt/issues/1772)>`_,
+  `#1775 <https://github.com/fmtlib/fmt/pull/1775)>`_).
+  Thanks `@leolchat (Léonard Gérard) <https://github.com/leolchat>`_.
+
+* Added the ``FMT_REDUCE_INT_INSTANTIATIONS`` CMake option that reduces the
+  binary code size at the cost of some integer formatting performance. This can
+  be useful for extremely memory-constrained embedded systems
+  (`#1778 <https://github.com/fmtlib/fmt/issues/1778>`_,
+  `#1781 <https://github.com/fmtlib/fmt/pull/1781>`_).
+  Thanks `@kammce (Khalil Estell) <https://github.com/kammce>`_.
+
 * Build configuration improvements
   (`#1760 <https://github.com/fmtlib/fmt/pull/1760>`_,
-  `#1770 <https://github.com/fmtlib/fmt/pull/1770>`_).
+  `#1770 <https://github.com/fmtlib/fmt/pull/1770>`_,
+  `#1783 <https://github.com/fmtlib/fmt/pull/1783>`_).
   Thanks `@dvetutnev (Dmitriy Vetutnev) <https://github.com/dvetutnev>`_,
-  `@xvitaly (Vitaly Zaitsev) <https://github.com/xvitaly>`_.
+  `@xvitaly (Vitaly Zaitsev) <https://github.com/xvitaly>`_,
+  `@tambry (Raul Tambre) <https://github.com/tambry>`_.
 
 7.0.3 - 2020-08-06
 ------------------
