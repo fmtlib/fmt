@@ -1198,13 +1198,22 @@ template <typename Context> struct arg_mapper {
   FMT_CONSTEXPR const void* map(void* val) { return val; }
   FMT_CONSTEXPR const void* map(const void* val) { return val; }
   FMT_CONSTEXPR const void* map(std::nullptr_t val) { return val; }
-  template <typename T> FMT_CONSTEXPR int map(const T*) {
+
+  // We use SFINAE instead of a const T* parameter to avoid conflicting with
+  // the C array overload.
+  template <typename T>
+  FMT_CONSTEXPR auto map(T) -> enable_if_t<std::is_pointer<T>::value, int> {
     // Formatting of arbitrary pointers is disallowed. If you want to output
     // a pointer cast it to "void *" or "const void *". In particular, this
     // forbids formatting of "[const] volatile char *" which is printed as bool
     // by iostreams.
     static_assert(!sizeof(T), "formatting of non-void pointers is disallowed");
     return 0;
+  }
+
+  template <typename T, std::size_t N>
+  FMT_CONSTEXPR auto map(const T (&values)[N]) -> const T (&)[N] {
+    return values;
   }
 
   template <typename T,

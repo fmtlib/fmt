@@ -95,12 +95,100 @@ template <typename... Ts> struct conditional_helper {};
 template <typename T, typename _ = void> struct is_range_ : std::false_type {};
 
 #if !FMT_MSC_VER || FMT_MSC_VER > 1800
+
+#  define FMT_DECLTYPE_RETURN(val)  \
+    ->decltype(val) { return val; } \
+    static_assert(                  \
+        true, "")  // This makes it so that a semicolon is required after the
+                   // macro, which helps clang-format handle the formatting.
+
+// C array overload
+template <typename T, std::size_t N>
+auto range_begin(const T (&arr)[N]) -> const T* {
+  return arr;
+}
+template <typename T, std::size_t N>
+auto range_end(const T (&arr)[N]) -> const T* {
+  return arr + N;
+}
+
+template <typename T, typename Enable = void>
+struct has_member_fn_begin_end_t : std::false_type {};
+
 template <typename T>
-struct is_range_<
-    T, conditional_t<false,
-                     conditional_helper<decltype(std::declval<T>().begin()),
-                                        decltype(std::declval<T>().end())>,
-                     void>> : std::true_type {};
+struct has_member_fn_begin_end_t<T, void_t<decltype(std::declval<T>().begin()),
+                                           decltype(std::declval<T>().end())>>
+    : std::true_type {};
+
+// Member function overload
+template <typename T>
+auto range_begin(T&& rng) FMT_DECLTYPE_RETURN(static_cast<T&&>(rng).begin());
+template <typename T>
+auto range_end(T&& rng) FMT_DECLTYPE_RETURN(static_cast<T&&>(rng).end());
+
+// ADL overload. Only participates in overload resolution if member functions
+// are not found.
+template <typename T>
+auto range_begin(T&& rng)
+    -> enable_if_t<!has_member_fn_begin_end_t<T&&>::value,
+                   decltype(begin(static_cast<T&&>(rng)))> {
+  return begin(static_cast<T&&>(rng));
+}
+template <typename T>
+auto range_end(T&& rng) -> enable_if_t<!has_member_fn_begin_end_t<T&&>::value,
+                                       decltype(end(static_cast<T&&>(rng)))> {
+  return end(static_cast<T&&>(rng));
+}
+
+template <typename T, typename Enable = void>
+struct has_const_begin_end : std::false_type {};
+template <typename T, typename Enable = void>
+struct has_mutable_begin_end : std::false_type {};
+
+template <typename T>
+struct has_const_begin_end<
+    T, void_t<decltype(detail::range_begin(
+                  std::declval<const remove_cvref_t<T>&>())),
+              decltype(detail::range_begin(
+                  std::declval<const remove_cvref_t<T>&>()))>>
+    : std::true_type {};
+
+template <typename T>
+struct has_mutable_begin_end<
+    T, void_t<decltype(detail::range_begin(std::declval<T>())),
+              decltype(detail::range_begin(std::declval<T>())),
+              enable_if_t<std::is_copy_constructible<T>::value>>>
+    : std::true_type {};
+
+template <typename T>
+struct is_range_<T, void>
+    : std::integral_constant<bool, (has_const_begin_end<T>::value ||
+                                    has_mutable_begin_end<T>::value)> {};
+
+template <typename T, typename Enable = void> struct range_to_view;
+template <typename T>
+struct range_to_view<T, enable_if_t<has_const_begin_end<T>::value>> {
+  struct view_t {
+    const T* m_range_ptr;
+
+    auto begin() const FMT_DECLTYPE_RETURN(detail::range_begin(*m_range_ptr));
+    auto end() const FMT_DECLTYPE_RETURN(detail::range_end(*m_range_ptr));
+  };
+  static auto view(const T& range) -> view_t { return {&range}; }
+};
+
+template <typename T>
+struct range_to_view<T, enable_if_t<!has_const_begin_end<T>::value &&
+                                    has_mutable_begin_end<T>::value>> {
+  struct view_t {
+    T m_range_copy;
+
+    auto begin() FMT_DECLTYPE_RETURN(detail::range_begin(m_range_copy));
+    auto end() FMT_DECLTYPE_RETURN(detail::range_end(m_range_copy));
+  };
+  static auto view(const T& range) -> view_t { return {range}; }
+};
+#  undef FMT_DECLTYPE_RETURN
 #endif
 
 /// tuple_size and tuple_element check.
@@ -158,7 +246,8 @@ template <class Tuple, class F> void for_each(Tuple&& tup, F&& f) {
 }
 
 template <typename Range>
-using value_type = remove_cvref_t<decltype(*std::declval<Range>().begin())>;
+using value_type =
+    remove_cvref_t<decltype(*detail::range_begin(std::declval<Range>()))>;
 
 template <typename Arg, FMT_ENABLE_IF(!is_like_std_string<
                                       typename std::decay<Arg>::type>::value)>
@@ -268,8 +357,9 @@ struct formatter<
   typename FormatContext::iterator format(const T& values, FormatContext& ctx) {
     auto out = detail::copy(formatting.prefix, ctx.out());
     size_t i = 0;
-    auto it = values.begin();
-    auto end = values.end();
+    auto view = detail::range_to_view<T>::view(values);
+    auto it = view.begin();
+    auto end = view.end();
     for (; it != end; ++it) {
       if (i > 0) {
         if (formatting.add_prepostfix_space) *out++ = ' ';
