@@ -22,6 +22,18 @@
 #  include <string>
 #  include <vector>
 
+TEST(RangesTest, FormatArray) {
+  int32_t ia[] = {1, 2, 3, 5, 7, 11};
+  auto iaf = fmt::format("{}", ia);
+  EXPECT_EQ("{1, 2, 3, 5, 7, 11}", iaf);
+}
+
+TEST(RangesTest, Format2dArray) {
+  int32_t ia[][2] = {{1, 2}, {3, 5}, {7, 11}};
+  auto iaf = fmt::format("{}", ia);
+  EXPECT_EQ("{{1, 2}, {3, 5}, {7, 11}}", iaf);
+}
+
 TEST(RangesTest, FormatVector) {
   std::vector<int32_t> iv{1, 2, 3, 5, 7, 11};
   auto ivf = fmt::format("{}", iv);
@@ -177,7 +189,30 @@ template <typename T> class non_const_only_range {
   const_iterator end() { return vec.end(); }
 };
 
+template <typename T> class noncopyable_range {
+ private:
+  std::vector<T> vec;
+
+ public:
+  using const_iterator = typename ::std::vector<T>::const_iterator;
+
+  template <typename... Args>
+  explicit noncopyable_range(Args&&... args)
+      : vec(::std::forward<Args>(args)...) {}
+
+  noncopyable_range(noncopyable_range const&) = delete;
+  noncopyable_range(noncopyable_range&) = delete;
+
+  const_iterator begin() const { return vec.begin(); }
+  const_iterator end() const { return vec.end(); }
+};
+
 TEST(RangesTest, JoinRange) {
+  noncopyable_range<int> w(3u, 0);
+  EXPECT_EQ("0,0,0", fmt::format("{}", fmt::join(w, ",")));
+  EXPECT_EQ("0,0,0",
+            fmt::format("{}", fmt::join(noncopyable_range<int>(3u, 0), ",")));
+
   non_const_only_range<int> x(3u, 0);
   EXPECT_EQ("0,0,0", fmt::format("{}", fmt::join(x, ",")));
   EXPECT_EQ(
@@ -191,6 +226,23 @@ TEST(RangesTest, JoinRange) {
 
   const std::vector<int> z(3u, 0);
   EXPECT_EQ("0,0,0", fmt::format("{}", fmt::join(z, ",")));
+}
+
+TEST(RangesTest, Range) {
+  noncopyable_range<int> w(3u, 0);
+  EXPECT_EQ("{0, 0, 0}", fmt::format("{}", w));
+  EXPECT_EQ("{0, 0, 0}", fmt::format("{}", noncopyable_range<int>(3u, 0)));
+
+  non_const_only_range<int> x(3u, 0);
+  EXPECT_EQ("{0, 0, 0}", fmt::format("{}", x));
+  EXPECT_EQ("{0, 0, 0}", fmt::format("{}", non_const_only_range<int>(3u, 0)));
+
+  std::vector<int> y(3u, 0);
+  EXPECT_EQ("{0, 0, 0}", fmt::format("{}", y));
+  EXPECT_EQ("{0, 0, 0}", fmt::format("{}", std::vector<int>(3u, 0)));
+
+  const std::vector<int> z(3u, 0);
+  EXPECT_EQ("{0, 0, 0}", fmt::format("{}", z));
 }
 
 #if !FMT_MSC_VER || FMT_MSC_VER >= 1927
