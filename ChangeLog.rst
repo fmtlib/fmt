@@ -1,10 +1,23 @@
 7.1.0 - TBD
 -----------
 
+* Added a formatter for ``std::chrono::time_point<system_clock>``:
+
+  .. code:: c++
+
+     #include <fmt/chrono.h>
+
+     int main() {
+       auto now = std::chrono::system_clock::now();
+       fmt::print("The time is {:%H:%M:%S}.\n", now);
+     }
+
+  Thanks `@adamburgess (Adam Burgess) <https://github.com/adamburgess>`_.
+
 * Added an experimental unsynchronized file output API which, together with
-  format string compilation, can give `5-9 times speed up compared to fprintf
-  <https://www.zverovich.net/2020/08/04/optimal-file-buffer-size.html>`__ on
-  common platforms:
+  the format string compilation, can give `5-9 times speed up compared to
+  fprintf <https://www.zverovich.net/2020/08/04/optimal-file-buffer-size.html>`_
+  on common platforms:
 
   .. code:: c++
 
@@ -14,6 +27,33 @@
        auto f = fmt::output_file("guide");
        f.print("The answer is {}.", 42);
      }
+
+* Added support for ranges with non-const ``begin``/``end`` to ``fmt::join``
+  (`#1784 <https://github.com/fmtlib/fmt/issues/1784)>`_,
+  `#1786 <https://github.com/fmtlib/fmt/pull/1786)>`_) For example
+  (`godbolt <https://godbolt.org/z/jTzrPT>`__):
+
+  .. code:: c++
+
+     #include <fmt/ranges.h>
+     #include <range/v3/view/filter.hpp>
+
+     int main() {
+       using std::literals::string_literals::operator""s;
+       auto strs = std::array{"a"s, "bb"s, "ccc"s};
+       auto range = strs | ranges::views::filter(
+         [] (const std::string &x) { return x.size() != 2; }
+       );
+       fmt::print("{}\n", fmt::join(range, ""));
+     }
+
+  prints "accc".
+
+  Thanks `@tonyelewis (Tony E Lewis) <https://github.com/tonyelewis>`_.
+
+* Added a ``memory_buffer::append`` overload that takes a range
+  (`#1806 <https://github.com/fmtlib/fmt/pull/1806)>`_).
+  Thanks `@BRevzin (Barry Revzin) <https://github.com/BRevzin>`_.
 
 * Improved handling of single code units in ``FMT_COMPILE``. For example:
 
@@ -45,6 +85,9 @@
   Here a single ``mov`` instruction writes ``'x'`` (``$120``) to the output
   buffer.
 
+* Added dynamic width support to format string compilation
+  (`#1809 <https://github.com/fmtlib/fmt/issues/1809)>`_).
+
 * Improved error reporting for unformattable types: now you'll get the type name
   directly in the error message instead of the note:
 
@@ -66,9 +109,10 @@
     https://fmt.dev/dev/api.html#udt"
     ...
 
-* Added the [``make_args_checked``](https://fmt.dev/dev/api.html#argument-lists)
+* Added the [``make_args_checked``](https://fmt.dev/7.1.0/api.html#argument-lists)
   function template that allows you to write formatting functions with
-  compile-time format string checks:
+  compile-time format string checks
+  (`godbolt <https://godbolt.org/z/PEf9qr>`__):
 
   .. code:: c++
 
@@ -89,14 +133,58 @@
 
      MY_LOG("invalid squishiness: {}", 42);
 
+* Made ``format_to_n`` and ``formatted_size`` part of the `core API
+  <https://fmt.dev/latest/api.html#core-api>`__
+  (`godbolt <https://godbolt.org/z/33Pzo3>`__):
+
+  .. code:: c++
+
+     #include <fmt/core.h>
+
+     int main() {
+       char buf[10];
+       auto end = fmt::format_to_n(buf, sizeof(buf), "{}", 42);
+     }
+
+* Made `#` emit trailing zeros. For example
+  (`godbolt <https://godbolt.org/z/bhdcW9>`__):
+
+  .. code:: c++
+
+     #include <fmt/core.h>
+
+     int main() {
+       fmt::print("{:#.2g}", 0.5);
+     }
+
+  prints "0.50".
+
+* Made ``fmt::to_string`` fallback on ``ostream`` insertion operator if
+  the ``formatter`` specialization is not provided
+  (`#1815 <https://github.com/fmtlib/fmt/issues/1815>`_,
+  `#1829 <https://github.com/fmtlib/fmt/pull/1829>`_).
+  Thanks `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_.
+
+* Added support for the append mode to the experimental file API
+  (`#1847 <https://github.com/fmtlib/fmt/pull/1847>`_).
+  Thanks `@t-wiser <https://github.com/t-wiser>`_.
+
 * Fixed handling of types that have both an implicit conversion operator and
   an overloaded `ostream` insertion operator
   (`#1766 <https://github.com/fmtlib/fmt/issues/1766>`_).
 
+* Fixed a slicing issue in an internal iterator type
+  (`#1822 <https://github.com/fmtlib/fmt/pull/1822>`_).
+  Thanks `@BRevzin (Barry Revzin) <https://github.com/BRevzin>`_.
+
 * Improved documentation
   (`#1772 <https://github.com/fmtlib/fmt/issues/1772)>`_,
-  `#1775 <https://github.com/fmtlib/fmt/pull/1775)>`_).
-  Thanks `@leolchat (Léonard Gérard) <https://github.com/leolchat>`_.
+  `#1775 <https://github.com/fmtlib/fmt/pull/1775)>`_,
+  `#1792 <https://github.com/fmtlib/fmt/pull/1792)>`_,
+  `#1838 <https://github.com/fmtlib/fmt/pull/1838)>`_).
+  Thanks `@leolchat (Léonard Gérard) <https://github.com/leolchat>`_,
+  `@pepsiman (Malcolm Parsons) <https://github.com/pepsiman>`_,
+  `@Klaim (Joël Lamotte) <https://github.com/Klaim>`_.
 
 * Added the ``FMT_REDUCE_INT_INSTANTIATIONS`` CMake option that reduces the
   binary code size at the cost of some integer formatting performance. This can
@@ -108,10 +196,35 @@
 * Build configuration improvements
   (`#1760 <https://github.com/fmtlib/fmt/pull/1760>`_,
   `#1770 <https://github.com/fmtlib/fmt/pull/1770>`_,
-  `#1783 <https://github.com/fmtlib/fmt/pull/1783>`_).
+  `#1779 <https://github.com/fmtlib/fmt/issues/1779>`_,
+  `#1783 <https://github.com/fmtlib/fmt/pull/1783>`_,
+  `#1823 <https://github.com/fmtlib/fmt/pull/1823>`_).
   Thanks `@dvetutnev (Dmitriy Vetutnev) <https://github.com/dvetutnev>`_,
   `@xvitaly (Vitaly Zaitsev) <https://github.com/xvitaly>`_,
-  `@tambry (Raul Tambre) <https://github.com/tambry>`_.
+  `@tambry (Raul Tambre) <https://github.com/tambry>`_,
+  `@medithe <https://github.com/medithe>`_,
+  `@martinwuehrer (Martin Wührer) <https://github.com/martinwuehrer>`_.
+
+* Fixed various warnings and compilation issues
+  (`#1790 <https://github.com/fmtlib/fmt/pull/1790>`_,
+  `#1802 <https://github.com/fmtlib/fmt/pull/1802>`_,
+  `#1808 <https://github.com/fmtlib/fmt/pull/1808>`_,
+  `#1810 <https://github.com/fmtlib/fmt/issues/1810>`_,
+  `#1811 <https://github.com/fmtlib/fmt/issues/1811>`_,
+  `#1812 <https://github.com/fmtlib/fmt/pull/1812>`_,
+  `#1814 <https://github.com/fmtlib/fmt/pull/1814>`_,
+  `#1816 <https://github.com/fmtlib/fmt/pull/1816>`_,
+  `#1817 <https://github.com/fmtlib/fmt/pull/1817>`_,
+  `#1818 <https://github.com/fmtlib/fmt/pull/1818>`_,
+  `#1825 <https://github.com/fmtlib/fmt/issues/1825>`_,
+  `#1836 <https://github.com/fmtlib/fmt/pull/1836>`_).
+  Thanks `@TheQwertiest <https://github.com/TheQwertiest>`_,
+  `@medithe <https://github.com/medithe>`_,
+  `@martinwuehrer (Martin Wührer) <https://github.com/martinwuehrer>`_,
+  `@n16h7hunt3r <https://github.com/n16h7hunt3r>`_,
+  `@Othereum (Seokjin Lee) <https://github.com/Othereum>`_,
+  `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_,
+  `@AlexanderLanin (Alexander Lanin) <https://github.com/AlexanderLanin>`_.
 
 7.0.3 - 2020-08-06
 ------------------
@@ -164,7 +277,7 @@
   <http://www.zverovich.net/2020/05/21/reducing-library-size.html>`_.
 
 * Added a simpler and more efficient `format string compilation API
-  <https://fmt.dev/dev/api.html#compile-api>`_:
+  <https://fmt.dev/7.0.0/api.html#compile-api>`_:
 
   .. code:: c++
 
@@ -1820,7 +1933,7 @@
 
 * Implemented ``constexpr`` parsing of format strings and `compile-time format
   string checks
-  <https://fmt.dev/dev/api.html#compile-time-format-string-checks>`_. For
+  <https://fmt.dev/latest/api.html#compile-time-format-string-checks>`_. For
   example
 
   .. code:: c++
@@ -1881,7 +1994,7 @@
             throw format_error("invalid specifier");
 
 * Added `iterator support
-  <https://fmt.dev/dev/api.html#output-iterator-support>`_:
+  <https://fmt.dev/latest/api.html#output-iterator-support>`_:
 
   .. code:: c++
 
@@ -1892,7 +2005,7 @@
      fmt::format_to(std::back_inserter(out), "{}", 42);
 
 * Added the `format_to_n
-  <https://fmt.dev/dev/api.html#_CPPv2N3fmt11format_to_nE8OutputItNSt6size_tE11string_viewDpRK4Args>`_
+  <https://fmt.dev/latest/api.html#_CPPv2N3fmt11format_to_nE8OutputItNSt6size_tE11string_viewDpRK4Args>`_
   function that restricts the output to the specified number of characters
   (`#298 <https://github.com/fmtlib/fmt/issues/298>`_):
 
@@ -1903,7 +2016,7 @@
      // out == "1234" (without terminating '\0')
 
 * Added the `formatted_size
-  <https://fmt.dev/dev/api.html#_CPPv2N3fmt14formatted_sizeE11string_viewDpRK4Args>`_
+  <https://fmt.dev/latest/api.html#_CPPv2N3fmt14formatted_sizeE11string_viewDpRK4Args>`_
   function for computing the output size:
 
   .. code:: c++
@@ -1913,7 +2026,7 @@
      auto size = fmt::formatted_size("{}", 12345); // size == 5
 
 * Improved compile times by reducing dependencies on standard headers and
-  providing a lightweight `core API <https://fmt.dev/dev/api.html#core-api>`_:
+  providing a lightweight `core API <https://fmt.dev/latest/api.html#core-api>`_:
 
   .. code:: c++
 
@@ -1925,7 +2038,7 @@
   <https://github.com/fmtlib/fmt#compile-time-and-code-bloat>`_.
 
 * Added the `make_format_args
-  <https://fmt.dev/dev/api.html#_CPPv2N3fmt16make_format_argsEDpRK4Args>`_
+  <https://fmt.dev/latest/api.html#_CPPv2N3fmt16make_format_argsEDpRK4Args>`_
   function for capturing formatting arguments:
 
   .. code:: c++
@@ -2007,7 +2120,7 @@
      fmt::format("{} {two}", 1, fmt::arg("two", 2));
 
 * Removed the write API in favor of the `format API
-  <https://fmt.dev/dev/api.html#format-api>`_ with compile-time handling of
+  <https://fmt.dev/latest/api.html#format-api>`_ with compile-time handling of
   format strings.
 
 * Disallowed formatting of multibyte strings into a wide character target
