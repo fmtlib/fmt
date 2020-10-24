@@ -1,7 +1,40 @@
 7.1.0 - TBD
 -----------
 
-* Added a formatter for ``std::chrono::time_point<system_clock>``:
+* Switched from Grisu3 to `Dragonbox <https://github.com/jk-jeon/dragonbox>`_
+  for the default floating-point formatting which gives the shortest decimal
+  representation with round-trip and correct rounding guarantees
+  (`#1882 <https://github.com/fmtlib/fmt/pull/1882>`_,
+  `#1887 <https://github.com/fmtlib/fmt/pull/1887>`_,
+  `#1894 <https://github.com/fmtlib/fmt/pull/1894>`_). This makes {fmt} up to
+  20-30x faster than common implementations of ``std::ostringstream`` and
+  ``sprintf`` on `dtoa-benchmark <https://github.com/fmtlib/dtoa-benchmark>`_
+  and faster than double-conversion and ryu:
+
+  .. image:: https://user-images.githubusercontent.com/576385/
+             95684665-11719600-0ba8-11eb-8e5b-972ff4e49428.png
+
+  It is possible to get even better performance at the cost of larger binary
+  size by compiling with the ``FMT_USE_FULL_CACHE_DRAGONBOX`` macro set to 1.
+
+  Thanks `@jk-jeon (Junekey Jeon) <https://github.com/jk-jeon>`_.
+
+* Added an experimental unsynchronized file output API which, together with
+  the format string compilation, can give `5-9 times speed up compared to
+  fprintf <https://www.zverovich.net/2020/08/04/optimal-file-buffer-size.html>`_
+  on common platforms (`godbolt <https://godbolt.org/z/nsTcG8>`__):
+
+  .. code:: c++
+
+     #include <fmt/os.h>
+
+     int main() {
+       auto f = fmt::output_file("guide");
+       f.print("The answer is {}.", 42);
+     }
+
+* Added a formatter for ``std::chrono::time_point<system_clock>``
+  (`godbolt <https://godbolt.org/z/c4M6fh>`__):
 
   .. code:: c++
 
@@ -14,24 +47,10 @@
 
   Thanks `@adamburgess (Adam Burgess) <https://github.com/adamburgess>`_.
 
-* Added an experimental unsynchronized file output API which, together with
-  the format string compilation, can give `5-9 times speed up compared to
-  fprintf <https://www.zverovich.net/2020/08/04/optimal-file-buffer-size.html>`_
-  on common platforms:
-
-  .. code:: c++
-
-     #include <fmt/os.h>
-
-     int main() {
-       auto f = fmt::output_file("guide");
-       f.print("The answer is {}.", 42);
-     }
-
 * Added support for ranges with non-const ``begin``/``end`` to ``fmt::join``
   (`#1784 <https://github.com/fmtlib/fmt/issues/1784)>`_,
-  `#1786 <https://github.com/fmtlib/fmt/pull/1786)>`_) For example
-  (`godbolt <https://godbolt.org/z/jTzrPT>`__):
+  `#1786 <https://github.com/fmtlib/fmt/pull/1786)>`_). For example
+  (`godbolt <https://godbolt.org/z/jP63Tv>`__):
 
   .. code:: c++
 
@@ -133,6 +152,20 @@
 
      MY_LOG("invalid squishiness: {}", 42);
 
+* Replaced ``snprintf`` fallback with a faster internal IEEE 754 ``float`` and
+  ``double`` formatter for arbitrary precision. For example
+  (`godbolt <https://godbolt.org/z/dPhWvj>`__):
+
+  .. code:: c++
+
+     #include <fmt/core.h>
+
+     int main() {
+       fmt::print("{:.500}\n", 4.9406564584124654E-324);
+     }
+
+  prints 4.9406564584124654417656879286822137236505980261432476442558568250067550727020875186529983636163599237979656469544571773092665671035593979639877479601078187812630071319031140452784581716784898210368871863605699873072305000638740915356498438731247339727316961514003171538539807412623856559117102665855668676818703956031062493194527159149245532930545654440112748012970999954193198940908041656332452475714786901472678015935523861155013480352649347201937902681071074917033322268447533357208324319360923829e-324.
+
 * Made ``format_to_n`` and ``formatted_size`` part of the `core API
   <https://fmt.dev/latest/api.html#core-api>`__
   (`godbolt <https://godbolt.org/z/33Pzo3>`__):
@@ -145,6 +178,43 @@
        char buf[10];
        auto end = fmt::format_to_n(buf, sizeof(buf), "{}", 42);
      }
+
+* Added ``fmt::format_to_n`` overload with format string compilation
+  (`#1764 <https://github.com/fmtlib/fmt/issues/1764>`_,
+  `#1767 <https://github.com/fmtlib/fmt/pull/1767>`_,
+  `#1869 <https://github.com/fmtlib/fmt/pull/1869>`_). For example
+  (`godbolt <https://godbolt.org/z/xesWh7>`__):
+
+  .. code:: c++
+
+     #include <fmt/compile.h>
+
+     int main() {
+       char buf[8];
+       fmt::format_to_n(buf, sizeof(buf), FMT_COMPILE("{}"), 42);
+     }
+
+  Thanks `@Kurkin (Dmitry Kurkin) <https://github.com/Kurkin>`_,
+  `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_.
+
+* Added ``fmt::format_to`` overload that take ``text_style``
+  (`#1593 <https://github.com/fmtlib/fmt/issues/1593>`_,
+  `#1842 <https://github.com/fmtlib/fmt/issues/1842>`_,
+  `#1843 <https://github.com/fmtlib/fmt/pull/1843>`_). For example
+  (`godbolt <https://godbolt.org/z/91153r>`__):
+
+  .. code:: c++
+
+     #include <fmt/color.h>
+
+     int main() {
+       std::string out;
+       fmt::format_to(std::back_inserter(out),
+                      fmt::emphasis::bold | fg(fmt::color::red),
+                      "The answer is {}.", 42);
+     }
+
+  Thanks `@Naios (Denis Blank) <https://github.com/Naios>`_.
 
 * Made `#` emit trailing zeros. For example
   (`godbolt <https://godbolt.org/z/bhdcW9>`__):
@@ -165,8 +235,10 @@
   `#1829 <https://github.com/fmtlib/fmt/pull/1829>`_).
   Thanks `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_.
 
-* Added support for the append mode to the experimental file API
-  (`#1847 <https://github.com/fmtlib/fmt/pull/1847>`_).
+* Added support for the append mode to the experimental file API and
+  improved ``fcntl.h`` detection.
+  (`#1847 <https://github.com/fmtlib/fmt/pull/1847>`_,
+  `#1848 <https://github.com/fmtlib/fmt/pull/1848>`_).
   Thanks `@t-wiser <https://github.com/t-wiser>`_.
 
 * Fixed handling of types that have both an implicit conversion operator and
@@ -177,14 +249,24 @@
   (`#1822 <https://github.com/fmtlib/fmt/pull/1822>`_).
   Thanks `@BRevzin (Barry Revzin) <https://github.com/BRevzin>`_.
 
+* Improved ``FMT_ALWAYS_INLINE``
+  (`#1878 <https://github.com/fmtlib/fmt/pull/1878)>`_).
+  Thanks `@jk-jeon (Junekey Jeon) <https://github.com/jk-jeon>`_.
+
+* Optimized counting of decimal digits on MSVC
+  (`#1890 <https://github.com/fmtlib/fmt/pull/1890)>`_).
+  Thanks `@mwinterb <https://github.com/mwinterb>`_.
+
 * Improved documentation
   (`#1772 <https://github.com/fmtlib/fmt/issues/1772)>`_,
   `#1775 <https://github.com/fmtlib/fmt/pull/1775)>`_,
   `#1792 <https://github.com/fmtlib/fmt/pull/1792)>`_,
-  `#1838 <https://github.com/fmtlib/fmt/pull/1838)>`_).
+  `#1838 <https://github.com/fmtlib/fmt/pull/1838)>`_,
+  `#1888 <https://github.com/fmtlib/fmt/pull/1888)>`_).
   Thanks `@leolchat (Léonard Gérard) <https://github.com/leolchat>`_,
   `@pepsiman (Malcolm Parsons) <https://github.com/pepsiman>`_,
-  `@Klaim (Joël Lamotte) <https://github.com/Klaim>`_.
+  `@Klaim (Joël Lamotte) <https://github.com/Klaim>`_,
+  `@ravijanjam (Ravi J) <https://github.com/ravijanjam>`_.
 
 * Added the ``FMT_REDUCE_INT_INSTANTIATIONS`` CMake option that reduces the
   binary code size at the cost of some integer formatting performance. This can
@@ -193,7 +275,7 @@
   `#1781 <https://github.com/fmtlib/fmt/pull/1781>`_).
   Thanks `@kammce (Khalil Estell) <https://github.com/kammce>`_.
 
-* Build configuration improvements
+* Improved build configuration
   (`#1760 <https://github.com/fmtlib/fmt/pull/1760>`_,
   `#1770 <https://github.com/fmtlib/fmt/pull/1770>`_,
   `#1779 <https://github.com/fmtlib/fmt/issues/1779>`_,
@@ -217,14 +299,26 @@
   `#1817 <https://github.com/fmtlib/fmt/pull/1817>`_,
   `#1818 <https://github.com/fmtlib/fmt/pull/1818>`_,
   `#1825 <https://github.com/fmtlib/fmt/issues/1825>`_,
-  `#1836 <https://github.com/fmtlib/fmt/pull/1836>`_).
+  `#1836 <https://github.com/fmtlib/fmt/pull/1836>`_,
+  `#1855 <https://github.com/fmtlib/fmt/pull/1855>`_,
+  `#1856 <https://github.com/fmtlib/fmt/pull/1856>`_,
+  `#1860 <https://github.com/fmtlib/fmt/pull/1860>`_,
+  `#1877 <https://github.com/fmtlib/fmt/pull/1877>`_,
+  `#1879 <https://github.com/fmtlib/fmt/pull/1879>`_,
+  `#1880 <https://github.com/fmtlib/fmt/pull/1880>`_).
   Thanks `@TheQwertiest <https://github.com/TheQwertiest>`_,
   `@medithe <https://github.com/medithe>`_,
   `@martinwuehrer (Martin Wührer) <https://github.com/martinwuehrer>`_,
   `@n16h7hunt3r <https://github.com/n16h7hunt3r>`_,
   `@Othereum (Seokjin Lee) <https://github.com/Othereum>`_,
   `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_,
-  `@AlexanderLanin (Alexander Lanin) <https://github.com/AlexanderLanin>`_.
+  `@AlexanderLanin (Alexander Lanin) <https://github.com/AlexanderLanin>`_,
+  `@gcerretani (Giovanni Cerretani) <https://github.com/gcerretani>`_,
+  `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_,
+  `@noizefloor (Jan Schwers) <https://github.com/noizefloor>`_,
+  `@akohlmey (Axel Kohlmeyer) <https://github.com/akohlmey>`_,
+  `@jk-jeon (Junekey Jeon) <https://github.com/jk-jeon>`_,
+  `@rimathia <https://github.com/rimathia>`_.
 
 7.0.3 - 2020-08-06
 ------------------
