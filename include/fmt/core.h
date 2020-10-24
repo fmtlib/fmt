@@ -1422,7 +1422,7 @@ template <typename T> int check(unformattable) {
   static_assert(
       formattable<T>(),
       "Cannot format an argument. To make type T formattable provide a "
-      "formatter<T> specialization: https://fmt.dev/dev/api.html#udt");
+      "formatter<T> specialization: https://fmt.dev/latest/api.html#udt");
   return 0;
 }
 template <typename T, typename U> inline const U& check(const U& val) {
