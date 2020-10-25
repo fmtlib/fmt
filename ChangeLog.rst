@@ -1,15 +1,17 @@
 7.1.0 - TBD
 -----------
 
-* Switched from Grisu3 to `Dragonbox <https://github.com/jk-jeon/dragonbox>`_
-  for the default floating-point formatting which gives the shortest decimal
-  representation with round-trip and correct rounding guarantees
+* Switched from `Grisu3
+  <https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf>`_
+  to `Dragonbox <https://github.com/jk-jeon/dragonbox>`_ for the default
+  floating-point formatting which gives the shortest decimal representation
+  with round-trip guarantee and correct rounding
   (`#1882 <https://github.com/fmtlib/fmt/pull/1882>`_,
   `#1887 <https://github.com/fmtlib/fmt/pull/1887>`_,
   `#1894 <https://github.com/fmtlib/fmt/pull/1894>`_). This makes {fmt} up to
   20-30x faster than common implementations of ``std::ostringstream`` and
   ``sprintf`` on `dtoa-benchmark <https://github.com/fmtlib/dtoa-benchmark>`_
-  and faster than double-conversion and ryu:
+  and faster than double-conversion and Ryū:
 
   .. image:: https://user-images.githubusercontent.com/576385/
              95684665-11719600-0ba8-11eb-8e5b-972ff4e49428.png
@@ -20,8 +22,9 @@
   Thanks `@jk-jeon (Junekey Jeon) <https://github.com/jk-jeon>`_.
 
 * Added an experimental unsynchronized file output API which, together with
-  the format string compilation, can give `5-9 times speed up compared to
-  fprintf <https://www.zverovich.net/2020/08/04/optimal-file-buffer-size.html>`_
+  `format string compilation <https://fmt.dev/latest/api.html#compile-api>`_,
+  can give `5-9 times speed up compared to fprintf
+  <https://www.zverovich.net/2020/08/04/optimal-file-buffer-size.html>`_
   on common platforms (`godbolt <https://godbolt.org/z/nsTcG8>`__):
 
   .. code:: c++
@@ -127,12 +130,12 @@
     fmt/core.h:1438:3: error: static_assert failed due to requirement
     'fmt::v7::formattable<how_about_no>()' "Cannot format an argument.
     To make type T formattable provide a formatter<T> specialization:
-    https://fmt.dev/dev/api.html#udt"
+    https://fmt.dev/latest/api.html#udt"
     ...
 
 * Added the `make_args_checked <https://fmt.dev/7.1.0/api.html#argument-lists>`_
   function template that allows you to write formatting functions with
-  compile-time format string checks
+  compile-time format string checks and avoid binary code bloat
   (`godbolt <https://godbolt.org/z/PEf9qr>`__):
 
   .. code:: c++
@@ -166,34 +169,36 @@
        fmt::print("{:.500}\n", 4.9406564584124654E-324);
      }
 
-  prints ``4.9406564584124654417656879286822137236505980261432476442558568250067550727020875186529983636163599237979656469544571773092665671035593979639877479601078187812630071319031140452784581716784898210368871863605699873072305000638740915356498438731247339727316961514003171538539807412623856559117102665855668676818703956031062493194527159149245532930545654440112748012970999954193198940908041656332452475714786901472678015935523861155013480352649347201937902681071074917033322268447533357208324319360923829e-324``.
+  prints
+
+  ``4.9406564584124654417656879286822137236505980261432476442558568250067550727020875186529983636163599237979656469544571773092665671035593979639877479601078187812630071319031140452784581716784898210368871863605699873072305000638740915356498438731247339727316961514003171538539807412623856559117102665855668676818703956031062493194527159149245532930545654440112748012970999954193198940908041656332452475714786901472678015935523861155013480352649347201937902681071074917033322268447533357208324319360923829e-324``.
 
 * Made ``format_to_n`` and ``formatted_size`` part of the `core API
   <https://fmt.dev/latest/api.html#core-api>`__
-  (`godbolt <https://godbolt.org/z/33Pzo3>`__):
+  (`godbolt <https://godbolt.org/z/sPjY1K>`__):
 
   .. code:: c++
 
      #include <fmt/core.h>
 
      int main() {
-       char buf[10];
-       auto end = fmt::format_to_n(buf, sizeof(buf), "{}", 42);
+       char buffer[10];
+       auto result = fmt::format_to_n(buffer, sizeof(buffer), "{}", 42);
      }
 
 * Added ``fmt::format_to_n`` overload with format string compilation
   (`#1764 <https://github.com/fmtlib/fmt/issues/1764>`_,
   `#1767 <https://github.com/fmtlib/fmt/pull/1767>`_,
   `#1869 <https://github.com/fmtlib/fmt/pull/1869>`_). For example
-  (`godbolt <https://godbolt.org/z/xesWh7>`__):
+  (`godbolt <https://godbolt.org/z/93h86q>`__):
 
   .. code:: c++
 
      #include <fmt/compile.h>
 
      int main() {
-       char buf[8];
-       fmt::format_to_n(buf, sizeof(buf), FMT_COMPILE("{}"), 42);
+       char buffer[8];
+       fmt::format_to_n(buffer, sizeof(buffer), FMT_COMPILE("{}"), 42);
      }
 
   Thanks `@Kurkin (Dmitry Kurkin) <https://github.com/Kurkin>`_,
@@ -218,7 +223,7 @@
 
   Thanks `@Naios (Denis Blank) <https://github.com/Naios>`_.
 
-* Made `#` emit trailing zeros
+* Made the `#` specifier emit trailing zeros in addition to the decimal point
   (`#1797 <https://github.com/fmtlib/fmt/issues/1797>`_). For example
   (`godbolt <https://godbolt.org/z/bhdcW9>`__):
 
@@ -241,7 +246,7 @@
 * Fixed an issue with floating-point formatting that could result in addition of
   a non-significant trailing zero in rare cases e.g. ``1.00e-34`` instead of
   ``1.0e-34`` (`#1873 <https://github.com/fmtlib/fmt/issues/1873>`_,
-    `#1917 <https://github.com/fmtlib/fmt/issues/1917>`_).
+  `#1917 <https://github.com/fmtlib/fmt/issues/1917>`_).
 
 * Made ``fmt::to_string`` fallback on ``ostream`` insertion operator if
   the ``formatter`` specialization is not provided
@@ -256,7 +261,7 @@
   Thanks `@t-wiser <https://github.com/t-wiser>`_.
 
 * Fixed handling of types that have both an implicit conversion operator and
-  an overloaded `ostream` insertion operator
+  an overloaded ``ostream`` insertion operator
   (`#1766 <https://github.com/fmtlib/fmt/issues/1766>`_).
 
 * Fixed a slicing issue in an internal iterator type
@@ -288,7 +293,8 @@
   `#1792 <https://github.com/fmtlib/fmt/pull/1792>`_,
   `#1838 <https://github.com/fmtlib/fmt/pull/1838>`_,
   `#1888 <https://github.com/fmtlib/fmt/pull/1888>`_,
-  `#1918 <https://github.com/fmtlib/fmt/pull/1918>`_).
+  `#1918 <https://github.com/fmtlib/fmt/pull/1918>`_,
+  `#1939 <https://github.com/fmtlib/fmt/pull/1939>`_).
   Thanks `@leolchat (Léonard Gérard) <https://github.com/leolchat>`_,
   `@pepsiman (Malcolm Parsons) <https://github.com/pepsiman>`_,
   `@Klaim (Joël Lamotte) <https://github.com/Klaim>`_,
