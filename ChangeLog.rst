@@ -223,7 +223,7 @@
 
   Thanks `@Naios (Denis Blank) <https://github.com/Naios>`_.
 
-* Made the `#` specifier emit trailing zeros in addition to the decimal point
+* Made the ``#`` specifier emit trailing zeros in addition to the decimal point
   (`#1797 <https://github.com/fmtlib/fmt/issues/1797>`_). For example
   (`godbolt <https://godbolt.org/z/bhdcW9>`__):
 
@@ -235,7 +235,7 @@
        fmt::print("{:#.2g}", 0.5);
      }
 
-  prints "0.50".
+  prints ``0.50``.
 
 * Changed the default floating point format to not include ``.0`` for
   consistency with ``std::format`` and ``std::to_chars``
