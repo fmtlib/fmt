@@ -10,16 +10,6 @@ versions = ['1.0.0', '1.1.0', '2.0.0', '3.0.2', '4.0.0', '4.1.0', '5.0.0', '5.1.
 
 def pip_install(package, commit=None, **kwargs):
   "Install package using pip."
-  min_version = kwargs.get('min_version')
-  if min_version:
-    from pkg_resources import get_distribution, DistributionNotFound
-    try:
-      installed_version = get_distribution(os.path.basename(package)).version
-      if LooseVersion(installed_version) >= min_version:
-        print('{} {} already installed'.format(package, min_version))
-        return
-    except DistributionNotFound:
-      pass
   if commit:
     package = 'git+https://github.com/{0}.git@{1}'.format(package, commit)
   print('Installing {0}'.format(package))
@@ -56,8 +46,7 @@ def create_build_env(dirname='virtualenv'):
   # compatible with Breathe.
   pip_install('sphinx-doc/sphinx', '12b83372ac9316e8cbe86e7fed889296a4cc29ee')
   pip_install('michaeljones/breathe',
-              '129222318f7c8f865d2631e7da7b033567e7f56a',
-              min_version='4.2.0')
+              '129222318f7c8f865d2631e7da7b033567e7f56a')
 
 def build_docs(version='dev', **kwargs):
   doc_dir = kwargs.get('doc_dir', os.path.dirname(os.path.realpath(__file__)))
@@ -102,9 +91,7 @@ def build_docs(version='dev', **kwargs):
     raise CalledProcessError(p.returncode, cmd)
   html_dir = os.path.join(work_dir, 'html')
   main_versions = reversed(versions[-3:])
-  # Always use sphinx-build from virtualenv because the system one may be
-  # incompatible with the required version of breathe.
-  check_call([os.path.join('virtualenv', 'bin', 'sphinx-build'),
+  check_call(['sphinx-build',
               '-Dbreathe_projects.format=' + os.path.abspath(doxyxml_dir),
               '-Dversion=' + version, '-Drelease=' + version,
               '-Aversion=' + version, '-Aversions=' + ','.join(main_versions),
