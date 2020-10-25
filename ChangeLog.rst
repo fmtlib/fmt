@@ -1,5 +1,5 @@
-7.1.0 - TBD
------------
+7.1.0 - 2020-10-25
+------------------
 
 * Switched from `Grisu3
   <https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf>`_
