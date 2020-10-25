@@ -34,6 +34,8 @@
      }
 
 * Added a formatter for ``std::chrono::time_point<system_clock>``
+  (`#1819 <https://github.com/fmtlib/fmt/issues/1819>`_,
+  `#1837 <https://github.com/fmtlib/fmt/pull/1837>`_). For example
   (`godbolt <https://godbolt.org/z/c4M6fh>`__):
 
   .. code:: c++
@@ -216,7 +218,8 @@
 
   Thanks `@Naios (Denis Blank) <https://github.com/Naios>`_.
 
-* Made `#` emit trailing zeros. For example
+* Made `#` emit trailing zeros
+  (`#1797 <https://github.com/fmtlib/fmt/issues/1797>`_). For example
   (`godbolt <https://godbolt.org/z/bhdcW9>`__):
 
   .. code:: c++
@@ -228,6 +231,17 @@
      }
 
   prints "0.50".
+
+* Changed the default floating point format to not include ``.0`` for
+  consistency with ``std::format`` and ``std::to_chars``
+  (`#1893 <https://github.com/fmtlib/fmt/issues/1893>`_,
+  `#1943 <https://github.com/fmtlib/fmt/issues/1943>`_). It is possible to get
+  the decimal point and trailing zero with the ``#`` specifier.
+
+* Fixed an issue with floating-point formatting that could result in addition of
+  a non-significant trailing zero in rare cases e.g. ``1.00e-34`` instead of
+  ``1.0e-34`` (`#1873 <https://github.com/fmtlib/fmt/issues/1873>`_,
+    `#1917 <https://github.com/fmtlib/fmt/issues/1917>`_).
 
 * Made ``fmt::to_string`` fallback on ``ostream`` insertion operator if
   the ``formatter`` specialization is not provided
@@ -253,7 +267,8 @@
   (`#1927 <https://github.com/fmtlib/fmt/issues/1927>`_).
 
 * Fixed handling of exotic code unit types
-  (`#1932 <https://github.com/fmtlib/fmt/issues/1932>`_).
+  (`#1870 <https://github.com/fmtlib/fmt/issues/1870>`_,
+  `#1932 <https://github.com/fmtlib/fmt/issues/1932>`_).
 
 * Improved ``FMT_ALWAYS_INLINE``
   (`#1878 <https://github.com/fmtlib/fmt/pull/1878>`_).
@@ -323,15 +338,19 @@
   `#1877 <https://github.com/fmtlib/fmt/pull/1877>`_,
   `#1879 <https://github.com/fmtlib/fmt/pull/1879>`_,
   `#1880 <https://github.com/fmtlib/fmt/pull/1880>`_,
+  `#1896 <https://github.com/fmtlib/fmt/issues/1896>`_,
   `#1897 <https://github.com/fmtlib/fmt/pull/1897>`_,
   `#1898 <https://github.com/fmtlib/fmt/pull/1898>`_,
+  `#1904 <https://github.com/fmtlib/fmt/issues/1904>`_,
   `#1908 <https://github.com/fmtlib/fmt/pull/1908>`_,
+  `#1911 <https://github.com/fmtlib/fmt/issues/1911>`_,
   `#1912 <https://github.com/fmtlib/fmt/issues/1912>`_,
   `#1928 <https://github.com/fmtlib/fmt/issues/1928>`_,
   `#1929 <https://github.com/fmtlib/fmt/pull/1929>`_,
   `#1935 <https://github.com/fmtlib/fmt/issues/1935>`_
   `#1937 <https://github.com/fmtlib/fmt/pull/1937>`_,
-  `#1942 <https://github.com/fmtlib/fmt/pull/1942>`_).
+  `#1942 <https://github.com/fmtlib/fmt/pull/1942>`_,
+  `#1949 <https://github.com/fmtlib/fmt/issues/1949>`_).
   Thanks `@TheQwertiest <https://github.com/TheQwertiest>`_,
   `@medithe <https://github.com/medithe>`_,
   `@martinwuehrer (Martin Wührer) <https://github.com/martinwuehrer>`_,
