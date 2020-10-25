@@ -127,11 +127,11 @@
 
   Error (`godbolt <https://godbolt.org/z/GoxM4e>`__):
 
-  `fmt/core.h:1438:3: error: static_assert failed due to requirement
+  ``fmt/core.h:1438:3: error: static_assert failed due to requirement
   'fmt::v7::formattable<how_about_no>()' "Cannot format an argument.
   To make type T formattable provide a formatter<T> specialization:
   https://fmt.dev/latest/api.html#udt"
-  ...`
+  ...``
 
 * Added the `make_args_checked <https://fmt.dev/7.1.0/api.html#argument-lists>`_
   function template that allows you to write formatting functions with
