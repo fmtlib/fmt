@@ -48,8 +48,8 @@
   Thanks `@adamburgess (Adam Burgess) <https://github.com/adamburgess>`_.
 
 * Added support for ranges with non-const ``begin``/``end`` to ``fmt::join``
-  (`#1784 <https://github.com/fmtlib/fmt/issues/1784)>`_,
-  `#1786 <https://github.com/fmtlib/fmt/pull/1786)>`_). For example
+  (`#1784 <https://github.com/fmtlib/fmt/issues/1784>`_,
+  `#1786 <https://github.com/fmtlib/fmt/pull/1786>`_). For example
   (`godbolt <https://godbolt.org/z/jP63Tv>`__):
 
   .. code:: c++
@@ -71,7 +71,7 @@
   Thanks `@tonyelewis (Tony E Lewis) <https://github.com/tonyelewis>`_.
 
 * Added a ``memory_buffer::append`` overload that takes a range
-  (`#1806 <https://github.com/fmtlib/fmt/pull/1806)>`_).
+  (`#1806 <https://github.com/fmtlib/fmt/pull/1806>`_).
   Thanks `@BRevzin (Barry Revzin) <https://github.com/BRevzin>`_.
 
 * Improved handling of single code units in ``FMT_COMPILE``. For example:
@@ -105,7 +105,7 @@
   buffer.
 
 * Added dynamic width support to format string compilation
-  (`#1809 <https://github.com/fmtlib/fmt/issues/1809)>`_).
+  (`#1809 <https://github.com/fmtlib/fmt/issues/1809>`_).
 
 * Improved error reporting for unformattable types: now you'll get the type name
   directly in the error message instead of the note:
@@ -128,7 +128,7 @@
     https://fmt.dev/dev/api.html#udt"
     ...
 
-* Added the [``make_args_checked``](https://fmt.dev/7.1.0/api.html#argument-lists)
+* Added the `make_args_checked <https://fmt.dev/7.1.0/api.html#argument-lists>`_
   function template that allows you to write formatting functions with
   compile-time format string checks
   (`godbolt <https://godbolt.org/z/PEf9qr>`__):
@@ -164,7 +164,7 @@
        fmt::print("{:.500}\n", 4.9406564584124654E-324);
      }
 
-  prints 4.9406564584124654417656879286822137236505980261432476442558568250067550727020875186529983636163599237979656469544571773092665671035593979639877479601078187812630071319031140452784581716784898210368871863605699873072305000638740915356498438731247339727316961514003171538539807412623856559117102665855668676818703956031062493194527159149245532930545654440112748012970999954193198940908041656332452475714786901472678015935523861155013480352649347201937902681071074917033322268447533357208324319360923829e-324.
+  prints ``4.9406564584124654417656879286822137236505980261432476442558568250067550727020875186529983636163599237979656469544571773092665671035593979639877479601078187812630071319031140452784581716784898210368871863605699873072305000638740915356498438731247339727316961514003171538539807412623856559117102665855668676818703956031062493194527159149245532930545654440112748012970999954193198940908041656332452475714786901472678015935523861155013480352649347201937902681071074917033322268447533357208324319360923829e-324``.
 
 * Made ``format_to_n`` and ``formatted_size`` part of the `core API
   <https://fmt.dev/latest/api.html#core-api>`__
@@ -249,24 +249,37 @@
   (`#1822 <https://github.com/fmtlib/fmt/pull/1822>`_).
   Thanks `@BRevzin (Barry Revzin) <https://github.com/BRevzin>`_.
 
+* Fixed an issue in locale-specific integer formatting
+  (`#1927 <https://github.com/fmtlib/fmt/issues/1927>`_).
+
+* Fixed handling of exotic code unit types
+  (`#1932 <https://github.com/fmtlib/fmt/issues/1932>`_).
+
 * Improved ``FMT_ALWAYS_INLINE``
-  (`#1878 <https://github.com/fmtlib/fmt/pull/1878)>`_).
+  (`#1878 <https://github.com/fmtlib/fmt/pull/1878>`_).
   Thanks `@jk-jeon (Junekey Jeon) <https://github.com/jk-jeon>`_.
 
+* Removed dependency on ``windows.h``
+  (`#1900 <https://github.com/fmtlib/fmt/pull/1900>`_).
+  Thanks `@bernd5 (Bernd Baumanns) <https://github.com/bernd5>`_.
+
 * Optimized counting of decimal digits on MSVC
-  (`#1890 <https://github.com/fmtlib/fmt/pull/1890)>`_).
+  (`#1890 <https://github.com/fmtlib/fmt/pull/1890>`_).
   Thanks `@mwinterb <https://github.com/mwinterb>`_.
 
 * Improved documentation
-  (`#1772 <https://github.com/fmtlib/fmt/issues/1772)>`_,
-  `#1775 <https://github.com/fmtlib/fmt/pull/1775)>`_,
-  `#1792 <https://github.com/fmtlib/fmt/pull/1792)>`_,
-  `#1838 <https://github.com/fmtlib/fmt/pull/1838)>`_,
-  `#1888 <https://github.com/fmtlib/fmt/pull/1888)>`_).
+  (`#1772 <https://github.com/fmtlib/fmt/issues/1772>`_,
+  `#1775 <https://github.com/fmtlib/fmt/pull/1775>`_,
+  `#1792 <https://github.com/fmtlib/fmt/pull/1792>`_,
+  `#1838 <https://github.com/fmtlib/fmt/pull/1838>`_,
+  `#1888 <https://github.com/fmtlib/fmt/pull/1888>`_,
+  `#1918 <https://github.com/fmtlib/fmt/pull/1918>`_).
   Thanks `@leolchat (Léonard Gérard) <https://github.com/leolchat>`_,
   `@pepsiman (Malcolm Parsons) <https://github.com/pepsiman>`_,
   `@Klaim (Joël Lamotte) <https://github.com/Klaim>`_,
-  `@ravijanjam (Ravi J) <https://github.com/ravijanjam>`_.
+  `@ravijanjam (Ravi J) <https://github.com/ravijanjam>`_,
+  `@francesco-st <https://github.com/francesco-st>`_,
+  `@udnaan (Adnan) <https://github.com/udnaan>`_.
 
 * Added the ``FMT_REDUCE_INT_INSTANTIATIONS`` CMake option that reduces the
   binary code size at the cost of some integer formatting performance. This can
@@ -274,6 +287,10 @@
   (`#1778 <https://github.com/fmtlib/fmt/issues/1778>`_,
   `#1781 <https://github.com/fmtlib/fmt/pull/1781>`_).
   Thanks `@kammce (Khalil Estell) <https://github.com/kammce>`_.
+
+* Added the ``FMT_USE_INLINE_NAMESPACES`` macro to control usage of inline
+  namespaces (`#1945 <https://github.com/fmtlib/fmt/pull/1945>`_).
+  Thanks `@darklukee <https://github.com/darklukee>`_.
 
 * Improved build configuration
   (`#1760 <https://github.com/fmtlib/fmt/pull/1760>`_,
@@ -305,7 +322,16 @@
   `#1860 <https://github.com/fmtlib/fmt/pull/1860>`_,
   `#1877 <https://github.com/fmtlib/fmt/pull/1877>`_,
   `#1879 <https://github.com/fmtlib/fmt/pull/1879>`_,
-  `#1880 <https://github.com/fmtlib/fmt/pull/1880>`_).
+  `#1880 <https://github.com/fmtlib/fmt/pull/1880>`_,
+  `#1897 <https://github.com/fmtlib/fmt/pull/1897>`_,
+  `#1898 <https://github.com/fmtlib/fmt/pull/1898>`_,
+  `#1908 <https://github.com/fmtlib/fmt/pull/1908>`_,
+  `#1912 <https://github.com/fmtlib/fmt/issues/1912>`_,
+  `#1928 <https://github.com/fmtlib/fmt/issues/1928>`_,
+  `#1929 <https://github.com/fmtlib/fmt/pull/1929>`_,
+  `#1935 <https://github.com/fmtlib/fmt/issues/1935>`_
+  `#1937 <https://github.com/fmtlib/fmt/pull/1937>`_,
+  `#1942 <https://github.com/fmtlib/fmt/pull/1942>`_).
   Thanks `@TheQwertiest <https://github.com/TheQwertiest>`_,
   `@medithe <https://github.com/medithe>`_,
   `@martinwuehrer (Martin Wührer) <https://github.com/martinwuehrer>`_,
@@ -318,7 +344,13 @@
   `@noizefloor (Jan Schwers) <https://github.com/noizefloor>`_,
   `@akohlmey (Axel Kohlmeyer) <https://github.com/akohlmey>`_,
   `@jk-jeon (Junekey Jeon) <https://github.com/jk-jeon>`_,
-  `@rimathia <https://github.com/rimathia>`_.
+  `@rimathia <https://github.com/rimathia>`_,
+  `@rglarix (Riccardo Ghetta (larix)) <https://github.com/rglarix>`_,
+  `@moiwi <https://github.com/moiwi>`_,
+  `@heckad (Kazantcev Andrey) <https://github.com/heckad>`_,
+  `@MarcDirven <https://github.com/MarcDirven>`_.
+  `@BartSiwek (Bart Siwek) <https://github.com/BartSiwek>`_,
+  `@darklukee <https://github.com/darklukee>`_.
 
 7.0.3 - 2020-08-06
 ------------------
