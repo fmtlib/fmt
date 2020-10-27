@@ -3056,8 +3056,7 @@ struct format_handler : detail::error_handler {
   basic_format_parse_context<Char> parse_context;
   Context context;
 
-  format_handler(OutputIt out,
-                 basic_string_view<Char> str,
+  format_handler(OutputIt out, basic_string_view<Char> str,
                  basic_format_args<Context> format_args, detail::locale_ref loc)
       : parse_context(str), context(out, format_args, loc) {}
 
@@ -3080,8 +3079,8 @@ struct format_handler : detail::error_handler {
   FMT_INLINE void on_replacement_field(int id, const Char*) {
     auto arg = get_arg(context, id);
     context.advance_to(visit_format_arg(
-        default_arg_formatter<OutputIt, Char>{
-            context.out(), context.args(), context.locale()},
+        default_arg_formatter<OutputIt, Char>{context.out(), context.args(),
+                                              context.locale()},
         arg));
   }
 
@@ -3105,8 +3104,8 @@ struct format_handler : detail::error_handler {
       if (begin == end || *begin != '}')
         on_error("missing '}' in format string");
     }
-    context.advance_to(
-        visit_format_arg(arg_formatter<OutputIt, Char>(context, &parse_context, &specs), arg));
+    context.advance_to(visit_format_arg(
+        arg_formatter<OutputIt, Char>(context, &parse_context, &specs), arg));
     return begin;
   }
 };
@@ -3776,8 +3775,8 @@ void detail::vformat_to(
                      arg);
     return;
   }
-  format_handler<iterator, Char, buffer_context<Char>> h(
-      out, format_str, args, loc);
+  format_handler<iterator, Char, buffer_context<Char>> h(out, format_str, args,
+                                                         loc);
   parse_format_string<false>(format_str, h);
 }
 
