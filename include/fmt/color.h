@@ -589,10 +589,10 @@ OutputIt vformat_to(
   \endrst
 */
 template <typename OutputIt, typename S, typename... Args,
-          bool enable = (detail::is_output_iterator<OutputIt, char_t<S>>::value&&
-                             detail::is_string<S>::value)>
-inline auto format_to(OutputIt out, const text_style& ts,
-                      const S& format_str, Args&&... args) ->
+          bool enable = detail::is_output_iterator<OutputIt, char_t<S>>::value&&
+              detail::is_string<S>::value>
+inline auto format_to(OutputIt out, const text_style& ts, const S& format_str,
+                      Args&&... args) ->
     typename std::enable_if<enable, OutputIt>::type {
   return vformat_to(out, ts, to_string_view(format_str),
                     fmt::make_args_checked<Args...>(format_str, args...));

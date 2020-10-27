@@ -668,13 +668,14 @@ OutputIt format_to(OutputIt out, const S&, const Args&... args) {
 }
 
 template <typename OutputIt, typename CompiledFormat, typename... Args>
-typename std::enable_if<(detail::is_output_iterator<
-                         OutputIt, typename CompiledFormat::char_type>::value&&
-                             std::is_base_of<detail::basic_compiled_format,
-                                             CompiledFormat>::value),
-                        format_to_n_result<OutputIt>
->::type format_to_n(OutputIt out, size_t n,
-                    const CompiledFormat& cf, const Args&... args) {
+auto format_to_n(OutputIt out, size_t n, const CompiledFormat& cf,
+                 const Args&... args) ->
+    typename std::enable_if<
+        detail::is_output_iterator<OutputIt,
+                                   typename CompiledFormat::char_type>::value &&
+            std::is_base_of<detail::basic_compiled_format,
+                            CompiledFormat>::value,
+        format_to_n_result<OutputIt>>::type {
   auto it =
       format_to(detail::truncating_iterator<OutputIt>(out, n), cf, args...);
   return {it.base(), it.count()};
