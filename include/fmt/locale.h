@@ -51,10 +51,10 @@ inline OutputIt vformat_to(
 }
 
 template <typename OutputIt, typename S, typename... Args,
-          typename Char = char_t<S>,
-          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value)>
-inline OutputIt format_to(OutputIt out, const std::locale& loc,
-                          const S& format_str, Args&&... args) {
+          bool enable = detail::is_output_iterator<OutputIt, char_t<S>>::value>
+inline auto format_to(OutputIt out, const std::locale& loc,
+                      const S& format_str, Args&&... args) ->
+    typename std::enable_if<enable, OutputIt>::type {
   const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
   return vformat_to(out, loc, to_string_view(format_str), vargs);
 }
