@@ -23,6 +23,11 @@ int format_float(char* buf, std::size_t size, const char* format, int precision,
   return precision < 0 ? snprintf_ptr(buf, size, format, value)
                        : snprintf_ptr(buf, size, format, precision, value);
 }
+
+template dragonbox::decimal_fp<float> dragonbox::to_decimal(float x)
+    FMT_NOEXCEPT;
+template dragonbox::decimal_fp<double> dragonbox::to_decimal(double x)
+    FMT_NOEXCEPT;
 }  // namespace detail
 
 template struct FMT_INSTANTIATION_DEF_API detail::basic_data<void>;
