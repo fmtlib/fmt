@@ -1901,7 +1901,7 @@ template <> struct cache_accessor<double> {
     uint64_t pow5 = data::powers_of_5_64[offset];
     uint128_wrapper recovered_cache = umul128(base_cache.high(), pow5);
     uint128_wrapper middle_low =
-        umul128(base_cache.low() - (kb < 0 ? 1 : 0), pow5);
+        umul128(base_cache.low() - (kb < 0 ? 1u : 0u), pow5);
 
     recovered_cache += middle_low.high();
 
