@@ -363,8 +363,8 @@ struct ostream_params {
   ostream_params() {}
 
   template <typename... T>
-  ostream_params(T... params, int oflag) : ostream_params(params...) {
-    this->oflag = oflag;
+  ostream_params(T... params, int new_oflag) : ostream_params(params...) {
+    oflag = new_oflag;
   }
 
   template <typename... T>
