@@ -108,8 +108,8 @@ TEST(TimeTest, TimePoint) {
 
 #define EXPECT_TIME(spec, time, duration)                 \
   {                                                       \
-    std::locale loc("ja_JP.utf8");                        \
-    EXPECT_EQ(format_tm(time, spec, loc),                 \
+    std::locale jp_loc("ja_JP.utf8");                     \
+    EXPECT_EQ(format_tm(time, spec, jp_loc),              \
               fmt::format(loc, "{:" spec "}", duration)); \
   }
 

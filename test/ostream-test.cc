@@ -152,7 +152,7 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
 
   struct test_buffer final : fmt::detail::buffer<char> {
     explicit test_buffer(size_t size)
-      : fmt::detail::buffer<char>(nullptr, size, size) {}
+        : fmt::detail::buffer<char>(nullptr, size, size) {}
     void grow(size_t) {}
   } buffer(max_size);
 
@@ -165,7 +165,8 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
   } streambuf;
 
   struct test_ostream : std::ostream {
-    explicit test_ostream(mock_streambuf& buffer) : std::ostream(&buffer) {}
+    explicit test_ostream(mock_streambuf& output_buffer)
+        : std::ostream(&output_buffer) {}
   } os(streambuf);
 
   testing::InSequence sequence;
