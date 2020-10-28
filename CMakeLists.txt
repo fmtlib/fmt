@@ -5,6 +5,11 @@ if(${CMAKE_VERSION} VERSION_LESS 3.12)
   cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
 endif()
 
+# Enable generation of compile_commands.json if the CMake version is high enough
+if(${CMAKE_VERSION} VERSION_GREATER_EQUAL 3.5)
+  set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+endif()
+
 # Determine if fmt is built as a subproject (using add_subdirectory)
 # or if it is the master project.
 set(MASTER_PROJECT OFF)
