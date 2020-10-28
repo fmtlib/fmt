@@ -119,7 +119,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
       set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wdouble-promotion
           -Wtrampolines -Wzero-as-null-pointer-constant -Wuseless-cast
-          -Wvector-operation-performance -Wsized-deallocation)
+          -Wvector-operation-performance -Wsized-deallocation -Wshadow)
   endif ()
   if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 6.0)
       set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wshift-overflow=2
@@ -130,7 +130,7 @@ endif ()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -pedantic -Wconversion -Wundef
-      -Wdeprecated -Wweak-vtables)
+      -Wdeprecated -Wweak-vtables -Wshadow)
   check_cxx_compiler_flag(-Wzero-as-null-pointer-constant HAS_NULLPTR_WARNING)
   if (HAS_NULLPTR_WARNING)
     set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS}
