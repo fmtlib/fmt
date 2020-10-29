@@ -354,6 +354,53 @@ TEST(MemoryBufferTest, ExceptionInDeallocate) {
   EXPECT_CALL(alloc, deallocate(&mem2[0], 2 * size));
 }
 
+template <typename Allocator, size_t MaxSize>
+class allocator_max_size: public Allocator {
+ public:
+  using typename Allocator::value_type;
+  size_t max_size() const FMT_NOEXCEPT {
+    return MaxSize;
+  }
+  value_type* allocate(size_t n) {
+    if (n > max_size()) {
+      throw std::length_error("size > max_size");
+    }
+    return std::allocator_traits<Allocator>::allocate(
+      *static_cast<Allocator *>(this), n);
+  }
+  void deallocate(value_type* p, size_t n) {
+    std::allocator_traits<Allocator>::deallocate(
+      *static_cast<Allocator *>(this), p, n);
+  }
+};
+
+TEST(MemoryBufferTest, AllocatorMaxSize) {
+  // 160 = 128 + 32
+  using TestAllocator = allocator_max_size<std::allocator<char>, 160>;
+  basic_memory_buffer<char, 10, TestAllocator> buffer;
+  buffer.resize(128);
+  bool throws_on_resize = false;
+  try {
+    // new_capacity = 128 + 128/2 = 192 > 160
+    buffer.resize(160);
+  } catch (const std::exception &) {
+    throws_on_resize = true;
+  }
+  EXPECT_FALSE(throws_on_resize);
+}
+
+TEST(MemoryBufferTest, AllocatorMaxSizeOverflow) {
+  using TestAllocator = allocator_max_size<std::allocator<char>, 160>;
+  basic_memory_buffer<char, 10, TestAllocator> buffer;
+  bool throws_on_resize = false;
+  try {
+    buffer.resize(161);
+  } catch (const std::exception &) {
+    throws_on_resize = true;
+  }
+  EXPECT_TRUE(throws_on_resize);
+}
+
 TEST(UtilTest, UTF8ToUTF16) {
   fmt::detail::utf8_to_utf16 u("лошадка");
   EXPECT_EQ(L"\x043B\x043E\x0448\x0430\x0434\x043A\x0430", u.str());
