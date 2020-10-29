@@ -1756,7 +1756,7 @@ inline bool divisible_by_power_of_2(uint64_t x, int exp) FMT_NOEXCEPT {
 #ifdef FMT_BUILTIN_CTZLL
   return FMT_BUILTIN_CTZLL(x) >= exp;
 #else
-  return exp < num_bits<uint64_t>()) && x == ((x >> exp) << exp);
+  return exp < num_bits<uint64_t>() && x == ((x >> exp) << exp);
 #endif
 }
 
