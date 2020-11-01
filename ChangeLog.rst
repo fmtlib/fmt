@@ -1,3 +1,27 @@
+7.1.1 - TBD
+-----------
+
+* Fixed ABI compatibility with 7.0.x
+  (`#1961 <https://github.com/fmtlib/fmt/issues/1961>`_).
+
+* Added the ``FMT_ARM_ABI_COMPATIBILITY`` macro to work around ABI
+  incompatibility between GCC and Clang on ARM
+  (`#1919 <https://github.com/fmtlib/fmt/issues/1919>`_).
+
+* Worked around a SFINAE bug in GCC 8
+  (`#1957 <https://github.com/fmtlib/fmt/issues/1957>`_).
+
+* Fixed linkage errors when building with GCC's LTO
+  (`#1955 <https://github.com/fmtlib/fmt/issues/1955>`_).
+
+* Fixed a compilation error when building without ``__builtin_clz`` or equivalent
+  (`#1968 <https://github.com/fmtlib/fmt/pull/1968>`_).
+  Thanks `@tohammer (Tobias Hammer) <https://github.com/tohammer>`_.
+
+* Fixed a sign conversion warning
+  (`#1964 <https://github.com/fmtlib/fmt/pull/1964>`_).
+  Thanks `@OptoCloud <https://github.com/OptoCloud>`_.
+
 7.1.0 - 2020-10-25
 ------------------
 
