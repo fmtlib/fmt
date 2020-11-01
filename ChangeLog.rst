@@ -1,5 +1,5 @@
-7.1.1 - TBD
------------
+7.1.1 - 2020-11-01
+------------------
 
 * Fixed ABI compatibility with 7.0.x
   (`#1961 <https://github.com/fmtlib/fmt/issues/1961>`_).
