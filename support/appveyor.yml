@@ -6,24 +6,14 @@ clone_depth: 1
 
 image:
   - Visual Studio 2015
-  - Visual Studio 2019
-  - Visual Studio 2017
 
 platform:
-  - Win32
   - x64
 
 environment:
   CTEST_OUTPUT_ON_FAILURE: 1
   MSVC_DEFAULT_OPTIONS: ON
   BUILD: msvc
-
-matrix:
-  exclude:
-    - image: Visual Studio 2015
-      platform: Win32
-    - image: Visual Studio 2019
-      platform: Win32
 
 before_build:
  - mkdir build
