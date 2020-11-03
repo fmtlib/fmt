@@ -16,12 +16,12 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Create Build Environment
-      env:
-        CXX: ${{matrix.cxx}}
       run: cmake -E make_directory ${{runner.workspace}}/build
 
     - name: Configure CMake
       working-directory: ${{runner.workspace}}/build
+      env:
+        CXX: ${{matrix.cxx}}
       run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
 
     - name: Build
