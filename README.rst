@@ -2,13 +2,13 @@
 =====
 
 .. image:: https://github.com/fmtlib/fmt/workflows/linux/badge.svg
-   :target: https://github.com/fmtlib/fmt/actions
+   :target: https://github.com/fmtlib/fmt/actions?query=workflow%3Alinux
 
 .. image:: https://github.com/fmtlib/fmt/workflows/macos/badge.svg
-   :target: https://github.com/fmtlib/fmt/actions
+   :target: https://github.com/fmtlib/fmt/actions?query=workflow%3Amacos
 
 .. image:: https://github.com/fmtlib/fmt/workflows/windows/badge.svg
-   :target: https://github.com/fmtlib/fmt/actions
+   :target: https://github.com/fmtlib/fmt/actions?query=workflow%3Awindows
 
 .. image:: https://travis-ci.org/fmtlib/fmt.png?branch=master
    :target: https://travis-ci.org/fmtlib/fmt
