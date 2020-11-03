@@ -115,7 +115,7 @@ FMT_END_NAMESPACE
 #  else
 #    define FMT_THROW(x)              \
       do {                            \
-        static_cast<void>(sizeof(x)); \
+        static_cast<void>(x); \
         FMT_ASSERT(false, "");        \
       } while (false)
 #  endif
