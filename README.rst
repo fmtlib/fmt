@@ -1,6 +1,9 @@
 {fmt}
 =====
 
+.. image:: https://github.com/fmtlib/fmt/workflows/.github/workflows/linux.yml/badge.svg
+   :target: https://github.com/fmtlib/fmt/actions
+
 .. image:: https://travis-ci.org/fmtlib/fmt.png?branch=master
    :target: https://travis-ci.org/fmtlib/fmt
 
