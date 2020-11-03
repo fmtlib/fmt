@@ -8,12 +8,16 @@ env:
 jobs:
   build:
     runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        cxx: [g++-4.8, g++-8]
 
     steps:
     - uses: actions/checkout@v2
 
     - name: Create Build Environment
       run: cmake -E make_directory ${{runner.workspace}}/build
+      run: apt install ${{matrix.cxx}}
 
     - name: Configure CMake
       working-directory: ${{runner.workspace}}/build
