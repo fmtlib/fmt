@@ -16,8 +16,9 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Create Build Environment
-      run: cmake -E make_directory ${{runner.workspace}}/build
-      run: apt install ${{matrix.cxx}}
+      run: |
+       cmake -E make_directory ${{runner.workspace}}/build
+       apt install ${{matrix.cxx}}
 
     - name: Configure CMake
       working-directory: ${{runner.workspace}}/build
