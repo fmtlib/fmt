@@ -2,12 +2,19 @@ name: windows
 
 on: [push]
 
-env:
-  BUILD_TYPE: Release
-
 jobs:
   build:
-    runs-on: windows-2019
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        # windows-2016 and windows-2019 have MSVC 2017 and 2019 installed
+        # respectively: https://github.com/actions/virtual-environments.
+        os: [windows-2016, windows-2019]
+        platform: [Win32, x64]
+        build_type: [Debug, Release]
+        exclude:
+          - os: windows-2016
+            platform: Win32
 
     steps:
     - uses: actions/checkout@v2
@@ -16,18 +23,17 @@ jobs:
       run: cmake -E make_directory ${{runner.workspace}}/build
 
     - name: Configure CMake
-      # Use a bash shell so we can use the same syntax for environment variable
-      # access regardless of the host operating system
+      # Use a bash shell for $GITHUB_WORKSPACE.
       shell: bash
       working-directory: ${{runner.workspace}}/build
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+      run: |
+        cmake -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \
+              -A ${{matrix.platform}} $GITHUB_WORKSPACE
 
     - name: Build
       working-directory: ${{runner.workspace}}/build
-      shell: bash
-      run: cmake --build . --config $BUILD_TYPE
+      run: cmake --build . --config ${{matrix.build_type}}
 
     - name: Test
       working-directory: ${{runner.workspace}}/build
-      shell: bash
-      run: ctest -C $BUILD_TYPE
+      run: ctest -C ${{matrix.build_type}}
