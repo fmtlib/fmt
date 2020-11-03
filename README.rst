@@ -1,7 +1,13 @@
 {fmt}
 =====
 
-.. image:: https://github.com/fmtlib/fmt/workflows/.github/workflows/linux.yml/badge.svg
+.. image:: https://github.com/fmtlib/fmt/workflows/linux/badge.svg
+   :target: https://github.com/fmtlib/fmt/actions
+
+.. image:: https://github.com/fmtlib/fmt/workflows/macos/badge.svg
+   :target: https://github.com/fmtlib/fmt/actions
+
+.. image:: https://github.com/fmtlib/fmt/workflows/windows/badge.svg
    :target: https://github.com/fmtlib/fmt/actions
 
 .. image:: https://travis-ci.org/fmtlib/fmt.png?branch=master
