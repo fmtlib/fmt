@@ -9,23 +9,27 @@ jobs:
       matrix:
         cxx: [g++-4.8, g++-8, g++-10, clang++]
         build_type: [Debug, Release]
+        include:
+          - cxx: clang++
+            build_type: Debug
+            fuzz: -DFMT_FUZZ=ON -DFMT_FUZZ_LINKMAIN=ON
+          - cxx: g++-4.8
+            install: sudo apt install g++-4.8
 
     steps:
     - uses: actions/checkout@v2
 
-    - name: Install GCC
-      if: matrix.cxx == 'g++-4.8'
-      run: sudo apt install g++-4.8
-
     - name: Create Build Environment
-      run: cmake -E make_directory ${{runner.workspace}}/build
+      run: |
+        ${{matrix.install}}
+        cmake -E make_directory ${{runner.workspace}}/build
 
     - name: Configure
       working-directory: ${{runner.workspace}}/build
       env:
         CXX: ${{matrix.cxx}}
       run: |
-        cmake -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \
+        cmake -DCMAKE_BUILD_TYPE=${{matrix.build_type}} ${{matrix.fuzz}} \
               -DFMT_DOC=OFF -DFMT_PEDANTIC=ON -DFMT_WERROR=ON $GITHUB_WORKSPACE
 
     - name: Build
