@@ -375,9 +375,15 @@ TEST(OutputRedirectTest, DupErrorInCtor) {
   file copy = file::dup(fd);
   FMT_POSIX(close(fd));
   std::unique_ptr<OutputRedirect> redir{nullptr};
+#ifdef __OpenBSD__
+  EXPECT_SYSTEM_ERROR_NOASSERT(
+      redir.reset(new OutputRedirect(f.get())), EBADF,
+      fmt::format("cannot flush stream"));
+#else
   EXPECT_SYSTEM_ERROR_NOASSERT(
       redir.reset(new OutputRedirect(f.get())), EBADF,
       fmt::format("cannot duplicate file descriptor {}", fd));
+#endif
   copy.dup2(fd);  // "undo" close or dtor will fail
 }
 
