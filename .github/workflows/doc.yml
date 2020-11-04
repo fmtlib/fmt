@@ -11,13 +11,14 @@ jobs:
 
     - name: Create Build Environment
       run: |
-        sudo apt install doxygen
+        sudo apt install -y doxygen virtualenv npm
+        sudo npm install -g less
         cmake -E make_directory ${{runner.workspace}}/build
 
     - name: Configure
       working-directory: ${{runner.workspace}}/build
-      run: cmake -DCMAKE_BUILD_TYPE=${{matrix.build_type}} $GITHUB_WORKSPACE
+      run: cmake -DCMAKE_BUILD_TYPE=Release $GITHUB_WORKSPACE
 
     - name: Build
       working-directory: ${{runner.workspace}}/build
-      run: cmake --build . --config ${{matrix.build_type}}
+      run: cmake --build . --target doc --config Release
