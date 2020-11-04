@@ -3198,7 +3198,7 @@ FMT_CONSTEXPR basic_string_view<Char> compile_string_to_view(
   return {s.data(), s.size()};
 }
 
-#if defined(FMT_GCC_VERSION) && FMT_GCC_VERSION >= 400
+#if FMT_GCC_VERSION
 #  define FMT_COMPILE_STRING_VISIBILITY_ATTRIBUTE \
     __attribute__((visibility("hidden")))
 #else
