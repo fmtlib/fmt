@@ -2337,7 +2337,7 @@ void fallback_format(Double d, int num_digits, bool binary32, buffer<char>& buf,
       upper = &upper_store;
     }
     denominator.assign_pow10(exp10);
-    denominator <<= 1;
+    denominator <<= shift;
   } else if (exp10 < 0) {
     numerator.assign_pow10(-exp10);
     lower.assign(numerator);

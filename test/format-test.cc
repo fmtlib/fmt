@@ -1270,6 +1270,8 @@ TEST(FormatterTest, FormatDouble) {
   EXPECT_EQ(buffer, format("{:a}", -42.0));
   safe_sprintf(buffer, "%A", -42.0);
   EXPECT_EQ(buffer, format("{:A}", -42.0));
+  EXPECT_EQ("9223372036854775808.000000",
+            format("{:f}", 9223372036854775807.0));
 }
 
 TEST(FormatterTest, PrecisionRounding) {
