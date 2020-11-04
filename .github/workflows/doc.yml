@@ -23,7 +23,7 @@ jobs:
       working-directory: ${{runner.workspace}}/build
       run: cmake --build . --target doc --config Release
 
-    - name: Archive production artifacts
+    - name: Upload HTML documentation
       uses: actions/upload-artifact@v2
       with:
         name: HTML documentation
