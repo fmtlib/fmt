@@ -1,5 +1,5 @@
-7.1.2 - TBD
------------
+7.1.2 - 2020-11-04
+------------------
 
 * Fixed floating point formatting with large precision
   (`#1976 <https://github.com/fmtlib/fmt/issues/1976>`_).
