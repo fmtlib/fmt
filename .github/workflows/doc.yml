@@ -22,3 +22,11 @@ jobs:
     - name: Build
       working-directory: ${{runner.workspace}}/build
       run: cmake --build . --target doc --config Release
+
+    - name: Archive production artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: HTML documentation
+        path: |
+          ${{runner.workspace}}/build/doc/html
+          !${{runner.workspace}}/build/doc/html/.doctrees
