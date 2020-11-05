@@ -474,8 +474,18 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
   const Char* end = parse_ctx_.end();
   auto it = start;
   while (it != end) {
+    if (end - it < 32) {
+      // Use a simple linear search instead of memchr for small strings.
+      it = std::find(it, end, '%');
+    } else {
+      if (!detail::find<false, Char>(it, end, '%', it)) {
+        it = end;
+      }
+    }
+    if (it == end) {
+      continue;
+    }
     char_type c = *it++;
-    if (c != '%') continue;
     if (it != end && *it == c) {
       out = std::copy(start, it, out);
       start = ++it;
