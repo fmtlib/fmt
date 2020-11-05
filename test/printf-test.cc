@@ -619,10 +619,26 @@ TEST(PrintfTest, PrintfDetermineOutputSize) {
   const auto format_arg = "Hello";
   const auto expected_size = fmt::sprintf(format_string, format_arg).size();
 
-  EXPECT_EQ((truncated_printf_context(
+  EXPECT_EQ(expected_size,
+            (truncated_printf_context(
                  fmt::detail::truncating_iterator<backit>(it, 0), format_string,
                  fmt::make_format_args<truncated_printf_context>(format_arg))
                  .format()
-                 .count()),
-            expected_size);
+                 .count()));
+}
+
+TEST(PrintfTest, PrintfAppendToBuffer) {
+  using backit = std::back_insert_iterator<fmt::basic_memory_buffer<char>>;
+  using context = fmt::basic_printf_context<backit, char>;
+
+  const auto format_string = "%s";
+  const char* format_arg = "Hello";
+  fmt::basic_memory_buffer<char> buffer;
+  context(std::back_inserter(buffer), format_string,
+          fmt::make_format_args<context>(format_arg))
+      .format();
+
+  std::string result(std::begin(buffer), std::end(buffer));
+
+  EXPECT_EQ(std::string("Hello"), result);
 }

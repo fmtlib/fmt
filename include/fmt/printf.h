@@ -330,6 +330,40 @@ template <typename T> struct printf_formatter {
   }
 };
 
+namespace detail {
+template <typename, typename = void>
+struct has_container_append : std::false_type {};
+
+template <typename OutputIt>
+struct has_container_append<
+    OutputIt,
+    void_t<decltype(
+        get_container(std::declval<OutputIt>())
+            .append(std::declval<
+                        const typename OutputIt::container_type::value_type*>(),
+                    std::declval<const typename OutputIt::container_type::
+                                     value_type*>()))>> : std::true_type {};
+
+template <typename OutputIt>
+enable_if_t<has_container_append<OutputIt>::value, OutputIt>
+container_aware_copy(const typename OutputIt::container_type::value_type* first,
+                     const typename OutputIt::container_type::value_type* last,
+                     OutputIt out) {
+  detail::get_container(out).append(first, last);
+  return out;
+}
+
+static_assert(has_container_append<buffer_appender<char>>::value,
+              "has_container_append doesn't work");
+
+template <typename OutputIt, typename Char>
+enable_if_t<!has_container_append<OutputIt>::value, OutputIt>
+container_aware_copy(const Char* first, const Char* last, OutputIt out) {
+  return std::copy(first, last, out);
+}
+
+}  // namespace detail
+
 /**
  This template formats data and writes the output through an output iterator.
  */
@@ -480,11 +514,11 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
     }
     char_type c = *it++;
     if (it != end && *it == c) {
-      out = std::copy(start, it, out);
+      out = container_aware_copy(start, it, out);
       start = ++it;
       continue;
     }
-    out = std::copy(start, it - 1, out);
+    out = container_aware_copy(start, it - 1, out);
 
     format_specs specs;
     specs.align = align::right;
@@ -596,7 +630,7 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
     // Format argument.
     out = visit_format_arg(ArgFormatter(out, specs, *this), arg);
   }
-  return std::copy(start, it, out);
+  return container_aware_copy(start, it, out);
 }
 
 template <typename Char>
