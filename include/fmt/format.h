@@ -69,6 +69,13 @@
 #  define FMT_NOINLINE
 #endif
 
+// Special definition specific to GCC only
+#if FMT_GCC_VERSION
+#  define FMT_GCC_VISIBILITY_HIDDEN __attribute__((visibility("hidden")))
+#else
+#  define FMT_GCC_VISIBILITY_HIDDEN
+#endif
+
 #if __cplusplus == 201103L || __cplusplus == 201402L
 #  if defined(__INTEL_COMPILER) || defined(__PGI)
 #    define FMT_FALLTHROUGH
@@ -3200,8 +3207,10 @@ FMT_CONSTEXPR basic_string_view<Char> compile_string_to_view(
 
 #define FMT_STRING_IMPL(s, base)                                  \
   [] {                                                            \
+    /* Use a hidden visibility as workaround for some GCC, see */ \
+    /* https://github.com/fmtlib/fmt/issues/1973 for details */   \
     /* Use a macro-like name to avoid shadowing warnings. */      \
-    struct FMT_COMPILE_STRING : base {                            \
+    struct FMT_GCC_VISIBILITY_HIDDEN FMT_COMPILE_STRING : base {  \
       using char_type = fmt::remove_cvref_t<decltype(s[0])>;      \
       FMT_MAYBE_UNUSED FMT_CONSTEXPR                              \
       operator fmt::basic_string_view<char_type>() const {        \
