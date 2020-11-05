@@ -69,7 +69,6 @@
 #  define FMT_NOINLINE
 #endif
 
-// Special definition specific to GCC only
 #if FMT_GCC_VERSION
 #  define FMT_GCC_VISIBILITY_HIDDEN __attribute__((visibility("hidden")))
 #else
@@ -120,10 +119,10 @@ FMT_END_NAMESPACE
 #      define FMT_THROW(x) throw x
 #    endif
 #  else
-#    define FMT_THROW(x)              \
-      do {                            \
-        static_cast<void>(x); \
-        FMT_ASSERT(false, "");        \
+#    define FMT_THROW(x)       \
+      do {                     \
+        static_cast<void>(x);  \
+        FMT_ASSERT(false, ""); \
       } while (false)
 #  endif
 #endif
@@ -3205,19 +3204,18 @@ FMT_CONSTEXPR basic_string_view<Char> compile_string_to_view(
   return {s.data(), s.size()};
 }
 
-#define FMT_STRING_IMPL(s, base)                                  \
-  [] {                                                            \
-    /* Use a hidden visibility as workaround for some GCC, see */ \
-    /* https://github.com/fmtlib/fmt/issues/1973 for details */   \
-    /* Use a macro-like name to avoid shadowing warnings. */      \
-    struct FMT_GCC_VISIBILITY_HIDDEN FMT_COMPILE_STRING : base {  \
-      using char_type = fmt::remove_cvref_t<decltype(s[0])>;      \
-      FMT_MAYBE_UNUSED FMT_CONSTEXPR                              \
-      operator fmt::basic_string_view<char_type>() const {        \
-        return fmt::detail::compile_string_to_view<char_type>(s); \
-      }                                                           \
-    };                                                            \
-    return FMT_COMPILE_STRING();                                  \
+#define FMT_STRING_IMPL(s, base)                                           \
+  [] {                                                                     \
+    /* Use the hidden visibility as a workaround for a GCC bug (#1973). */ \
+    /* Use a macro-like name to avoid shadowing warnings. */               \
+    struct FMT_GCC_VISIBILITY_HIDDEN FMT_COMPILE_STRING : base {           \
+      using char_type = fmt::remove_cvref_t<decltype(s[0])>;               \
+      FMT_MAYBE_UNUSED FMT_CONSTEXPR                                       \
+      operator fmt::basic_string_view<char_type>() const {                 \
+        return fmt::detail::compile_string_to_view<char_type>(s);          \
+      }                                                                    \
+    };                                                                     \
+    return FMT_COMPILE_STRING();                                           \
   }()
 
 /**
