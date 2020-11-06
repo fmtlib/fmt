@@ -22,14 +22,6 @@
 
 namespace {
 
-// This is used to suppress coverity warnings about untrusted values.
-std::string sanitize(const std::string& s) {
-  std::string result;
-  for (std::string::const_iterator i = s.begin(), end = s.end(); i != end; ++i)
-    result.push_back(static_cast<char>(*i & 0xff));
-  return result;
-}
-
 // Tests that assertion macros evaluate their arguments exactly once.
 class SingleEvaluationTest : public ::testing::Test {
  protected:
@@ -388,8 +380,8 @@ TEST(OutputRedirectTest, RestoreAndRead) {
   std::fprintf(file.get(), "[[[");
   OutputRedirect redir(file.get());
   std::fprintf(file.get(), "censored");
-  EXPECT_EQ("censored", sanitize(redir.restore_and_read()));
-  EXPECT_EQ("", sanitize(redir.restore_and_read()));
+  EXPECT_EQ("censored", redir.restore_and_read());
+  EXPECT_EQ("", redir.restore_and_read());
   std::fprintf(file.get(), "]]]");
   file = buffered_file();
   EXPECT_READ(read_end, "[[[]]]");

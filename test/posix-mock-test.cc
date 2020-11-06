@@ -194,12 +194,12 @@ int(test::fileno)(FILE* stream) {
 #  define EXPECT_EQ_POSIX(expected, actual)
 #endif
 
+#if FMT_USE_FCNTL
 static void write_file(fmt::cstring_view filename, fmt::string_view content) {
   fmt::buffered_file f(filename, "w");
   f.print("{}", content);
 }
 
-#if FMT_USE_FCNTL
 using fmt::file;
 
 TEST(UtilTest, GetPageSize) {
