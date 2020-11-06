@@ -22,6 +22,7 @@
 
 namespace {
 
+#if FMT_USE_FCNTL
 // This is used to suppress coverity warnings about untrusted values.
 std::string sanitize(const std::string& s) {
   std::string result;
@@ -29,6 +30,7 @@ std::string sanitize(const std::string& s) {
     result.push_back(static_cast<char>(*i & 0xff));
   return result;
 }
+#endif
 
 // Tests that assertion macros evaluate their arguments exactly once.
 class SingleEvaluationTest : public ::testing::Test {
