@@ -12,6 +12,7 @@ jobs:
     - name: Create Build Environment
       run: |
         sudo apt install doxygen
+        sudo npm install -g less clean-css
         cmake -E make_directory ${{runner.workspace}}/build
 
     - name: Build

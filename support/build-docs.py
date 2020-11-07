@@ -22,8 +22,7 @@ def install_dependencies():
     check_call('echo "deb https://deb.nodesource.com/node_0.10 precise main" ' +
                '| sudo tee /etc/apt/sources.list.d/nodesource.list', shell=True)
     check_call(['sudo', 'apt-get', 'update'])
-    check_call(['sudo', 'apt-get', 'install', 'python-virtualenv', 'nodejs'])
-    check_call(['sudo', 'npm', 'install', '-g', 'less@2.6.1', 'less-plugin-clean-css'])
+    check_call(['sudo', 'apt-get', 'install', 'python-virtualenv'])
     deb_file = 'doxygen_1.8.6-2_amd64.deb'
     urllib.urlretrieve('http://mirrors.kernel.org/ubuntu/pool/main/d/doxygen/' +
                        deb_file, deb_file)
