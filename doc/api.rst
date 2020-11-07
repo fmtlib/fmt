@@ -408,7 +408,8 @@ Date and Time Formatting
 ``fmt/chrono.h`` provides formatters for
 
 * `std::chrono::duration <https://en.cppreference.com/w/cpp/chrono/duration>`_
-* `std::chrono::time_point <https://en.cppreference.com/w/cpp/chrono/time_point>`_
+* `std::chrono::time_point
+  <https://en.cppreference.com/w/cpp/chrono/time_point>`_
 * `std::tm <https://en.cppreference.com/w/cpp/chrono/c/tm>`_
 
 For example::
@@ -428,7 +429,7 @@ For example::
   // Prints "strftime-like format: 03:15:30":
   fmt::print("strftime-like format: {:%H:%M:%S}\n", 3h + 15min + 30s);
 
-Chrono format specifications are described in :ref:`chrono-specs`.
+The syntax is described in :ref:`chrono-specs`.
 
 .. _compile-api:
 
