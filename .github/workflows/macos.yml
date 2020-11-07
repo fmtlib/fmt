@@ -7,6 +7,7 @@ jobs:
     runs-on: macos-10.15
     strategy:
       matrix:
+        standard: [11, 14, 17, 20]
         build_type: [Debug, Release]
 
     steps:
@@ -19,7 +20,8 @@ jobs:
       working-directory: ${{runner.workspace}}/build
       run: |
         cmake -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \
-              -DFMT_DOC=OFF -DFMT_PEDANTIC=ON -DFMT_WERROR=ON $GITHUB_WORKSPACE
+              -DFMT_DOC=OFF -DFMT_PEDANTIC=ON -DFMT_WERROR=ON \
+              -DCMAKE_CXX_STANDARD=${{matrix.standard}} $GITHUB_WORKSPACE
 
     - name: Build
       working-directory: ${{runner.workspace}}/build
