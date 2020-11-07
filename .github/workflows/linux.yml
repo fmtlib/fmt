@@ -8,6 +8,7 @@ jobs:
     strategy:
       matrix:
         cxx: [g++-4.8, g++-8, g++-10, clang++-9]
+        standard: [11, 14, 17, 20]
         build_type: [Debug, Release]
         include:
           - cxx: clang++-9
@@ -15,6 +16,41 @@ jobs:
             fuzz: -DFMT_FUZZ=ON -DFMT_FUZZ_LINKMAIN=ON
           - cxx: g++-4.8
             install: sudo apt install g++-4.8
+        exclude: # filter some configurations
+          ### gcc 4.8
+          # does not fully support c++14
+          - cxx: g++-4.8
+            standard: 14
+          # does not support c++17
+          - cxx: g++-4.8
+            standard: 17
+          # does not support c++20
+          - cxx: g++-4.8
+            standard: 20
+
+          ### gcc 8
+          # has c++14 as default mode
+          - cxx: g++-8
+            standard: 11
+          # does not fully support c++20
+          - cxx: g++-8
+            standard: 20
+
+          ### gcc 10
+          # has c++14 as default mode
+          - cxx: g++-10
+            standard: 11
+          # does not fully support c++20
+          - cxx: g++-10
+            standard: 20
+
+          ### clang 9
+          # has c++14 as default mode
+          - cxx: clang++-9
+            standard: 11
+          # does not fully support c++20
+          - cxx: clang++-9
+            standard: 20
 
     steps:
     - uses: actions/checkout@v2
@@ -29,8 +65,8 @@ jobs:
       env:
         CXX: ${{matrix.cxx}}
       run: |
-        cmake -DCMAKE_BUILD_TYPE=${{matrix.build_type}} ${{matrix.fuzz}} \
-              -DFMT_DOC=OFF -DFMT_PEDANTIC=ON -DFMT_WERROR=ON $GITHUB_WORKSPACE
+        cmake -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DCMAKE_CXX_STANDARD=${{matrix.standard}} \
+              ${{matrix.fuzz}} -DFMT_DOC=OFF -DFMT_PEDANTIC=ON -DFMT_WERROR=ON $GITHUB_WORKSPACE
 
     - name: Build
       working-directory: ${{runner.workspace}}/build
