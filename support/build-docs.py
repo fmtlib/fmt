@@ -51,6 +51,7 @@ check_call(['git', 'clone', git_url + 'fmtlib/{}.git'.format(repo)])
 # Copy docs to the repo.
 target_dir = os.path.join(repo, 'dev')
 rmtree_if_exists(target_dir)
+check_call(['ls', '-R', html_dir])
 shutil.copytree(html_dir, target_dir, ignore=shutil.ignore_patterns('.*'))
 if is_ci:
     check_call(['git', 'config', '--global', 'user.name', 'amplbot'])
