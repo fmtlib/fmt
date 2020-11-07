@@ -12,13 +12,6 @@ def rmtree_if_exists(dir):
         if e.errno == errno.ENOENT:
             pass
 
-def makedirs_if_not_exist(dir):
-    try:
-        os.makedirs(dir)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
-
 def install_dependencies():
     branch = os.environ['GITHUB_REF']
     if branch != 'refs/heads/doc':

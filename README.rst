@@ -10,9 +10,6 @@
 .. image:: https://github.com/fmtlib/fmt/workflows/windows/badge.svg
    :target: https://github.com/fmtlib/fmt/actions?query=workflow%3Awindows
 
-.. image:: https://travis-ci.org/fmtlib/fmt.png?branch=master
-   :target: https://travis-ci.org/fmtlib/fmt
-
 .. image:: https://ci.appveyor.com/api/projects/status/ehjkiefde6gucy1v
    :target: https://ci.appveyor.com/project/vitaut/fmt
 
