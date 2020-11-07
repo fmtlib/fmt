@@ -16,7 +16,7 @@ literal text, it can be escaped by doubling: ``{{`` and ``}}``.
 The grammar for a replacement field is as follows:
 
 .. productionlist:: sf
-   replacement_field: "{" [`arg_id`] [":" `format_spec`] "}"
+   replacement_field: "{" [`arg_id`] [":" (`format_spec` | `chrono_format_spec`)] "}"
    arg_id: `integer` | `identifier`
    integer: `digit`+
    digit: "0"..."9"
@@ -27,8 +27,8 @@ The grammar for a replacement field is as follows:
 In less formal terms, the replacement field can start with an *arg_id*
 that specifies the argument whose value is to be formatted and inserted into
 the output instead of the replacement field.
-The *arg_id* is optionally followed by a *format_spec*, which is preceded
-by a colon ``':'``.  These specify a non-default format for the replacement value.
+The *arg_id* is optionally followed by a *format_spec*, which is preceded by a
+colon ``':'``.  These specify a non-default format for the replacement value.
 
 See also the :ref:`formatspec` section.
 
@@ -81,8 +81,8 @@ The general form of a *standard format specifier* is:
    sign: "+" | "-" | " "
    width: `integer` | "{" [`arg_id`] "}"
    precision: `integer` | "{" [`arg_id`] "}"
-   type: `int_type` | "a" | "A" | "c" | "e" | "E" | "f" | "F" | "g" | "G" | "L" | "p" | "s"
-   int_type: "b" | "B" | "d" | "o" | "x" | "X"
+   type: "a" | "A" | "b" | "B" | "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" |
+       : "L" | "o" | "p" | "s" | "x" | "X"
 
 The *fill* character can be any Unicode code point other than ``'{'`` or
 ``'}'``. The presence of a fill character is signaled by the character following
@@ -317,9 +317,9 @@ Format specifications for chrono types have the following syntax:
    literal_char: <a character other than '{', '}' or '%'>
    modifier: "E" | "O"
    chrono_type: "a" | "A" | "b" | "B" | "c" | "C" | "d" | "D" | "e" | "F" |
-                "g" | "G" | "h" | "H" | "I" | "j" | "m" | "M" | "n" | "p" |
-                "q" | "Q" | "r" | "R" | "S" | "t" | "T" | "u" | "U" | "V" |
-                "w" | "W" | "x" | "X" | "y" | "Y" | "z" | "Z" | "%"
+              : "g" | "G" | "h" | "H" | "I" | "j" | "m" | "M" | "n" | "p" |
+              : "q" | "Q" | "r" | "R" | "S" | "t" | "T" | "u" | "U" | "V" |
+              : "w" | "W" | "x" | "X" | "y" | "Y" | "z" | "Z" | "%" |
 
 .. _formatexamples:
 
