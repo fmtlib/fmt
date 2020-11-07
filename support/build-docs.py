@@ -50,11 +50,10 @@ check_call(['git', 'clone', git_url + 'fmtlib/{}.git'.format(repo)])
 # Copy docs to the repo.
 target_dir = os.path.join(repo, 'dev')
 rmtree_if_exists(target_dir)
-check_call(['ls', '-R', html_dir])
 shutil.copytree(html_dir, target_dir, ignore=shutil.ignore_patterns('.*'))
 if is_ci:
-    check_call(['git', 'config', '--global', 'user.name', 'amplbot'])
-    check_call(['git', 'config', '--global', 'user.email', 'viz@ampl.com'])
+    check_call(['git', 'config', '--global', 'user.name', 'fmtbot'])
+    check_call(['git', 'config', '--global', 'user.email', 'viz@fmt.dev'])
 # Push docs to GitHub pages.
 check_call(['git', 'add', '--all'], cwd=repo)
 if call(['git', 'diff-index', '--quiet', 'HEAD'], cwd=repo):

@@ -103,8 +103,6 @@ def build_docs(version='dev', **kwargs):
            os.path.join(html_dir, '_static', 'fmt.css')]
     print("Running {}".format(cmd))
     check_call(cmd)
-    sys.stdout.flush()
-    check_call(['ls', '-R', os.path.join(html_dir, '_static')])
   except OSError as e:
     if e.errno != errno.ENOENT:
       raise
