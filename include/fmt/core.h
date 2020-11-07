@@ -645,10 +645,17 @@ struct is_contiguous<std::basic_string<Char>> : std::true_type {};
 
 namespace detail {
 
+#ifdef FMT_USE_CUSTOM_BACK_INSERT_ITERATOR
+template <typename Container> class back_insert_iterator;
+#else
+template <typename Container>
+using back_insert_iterator = std::back_insert_iterator<Container>;
+#endif
+
 // Extracts a reference to the container from back_insert_iterator.
 template <typename Container>
-inline Container& get_container(std::back_insert_iterator<Container> it) {
-  using bi_iterator = std::back_insert_iterator<Container>;
+inline Container& get_container(back_insert_iterator<Container> it) {
+  using bi_iterator = back_insert_iterator<Container>;
   struct accessor : bi_iterator {
     accessor(bi_iterator iter) : bi_iterator(iter) {}
     using bi_iterator::container;
@@ -805,7 +812,82 @@ template <typename T> class iterator_buffer<T*, T> final : public buffer<T> {
   T* out() { return &*this->end(); }
 };
 
+#ifdef FMT_USE_CUSTOM_BACK_INSERT_ITERATOR
+template <class Container> class back_insert_iterator {
+ protected:
+  Container* container;
+
+ public:
+  using iterator_category = std::output_iterator_tag;
+  using value_type = void;
+  using difference_type = void;
+  using pointer = void;
+  using reference = void;
+
+  using container_type = Container;
+  using container_value_type = typename Container::value_type;
+
+  constexpr explicit back_insert_iterator(Container& container)
+      : container(std::addressof(container)) {}
+
+  constexpr explicit back_insert_iterator(
+      const std::back_insert_iterator<Container>& bi_iterator) {
+    using iterator = std::back_insert_iterator<Container>;
+    struct accessor : iterator {
+      explicit accessor(iterator iter) : iterator(iter) {}
+      using iterator::container;
+    };
+    container = accessor(bi_iterator).container;
+  }
+
+  constexpr back_insert_iterator& operator=(const container_value_type& value) {
+    container->push_back(value);
+    return *this;
+  }
+
+  constexpr back_insert_iterator& operator=(container_value_type&& value) {
+    container->push_back(std::move(value));
+    return *this;
+  }
+
+  constexpr back_insert_iterator& operator*() { return *this; }
+  constexpr back_insert_iterator& operator++() { return *this; }
+  constexpr back_insert_iterator operator++(int) { return *this; }
+};
+
+template <class Container>
+constexpr back_insert_iterator<Container> back_inserter(Container& container) {
+  return back_insert_iterator<Container>(container);
+}
+#endif
+
 // A buffer that writes to a container with the contiguous storage.
+template <typename Container>
+class iterator_buffer<back_insert_iterator<Container>,
+                      enable_if_t<is_contiguous<Container>::value,
+                                  typename Container::value_type>>
+    final : public buffer<typename Container::value_type> {
+ private:
+  Container& container_;
+
+ protected:
+  void grow(size_t capacity) final FMT_OVERRIDE {
+    container_.resize(capacity);
+    this->set(&container_[0], capacity);
+  }
+
+ public:
+  explicit iterator_buffer(Container& c)
+      : buffer<typename Container::value_type>(c.size()), container_(c) {}
+  explicit iterator_buffer(back_insert_iterator<Container> out, size_t = 0)
+      : iterator_buffer(get_container(out)) {}
+  back_insert_iterator<Container> out() {
+    return back_inserter(container_);
+  }
+};
+
+#if FMT_USE_CUSTOM_BACK_INSERT_ITERATOR
+// Explicit instantiation for std::back_insert_iterator
 template <typename Container>
 class iterator_buffer<std::back_insert_iterator<Container>,
                       enable_if_t<is_contiguous<Container>::value,
@@ -824,11 +906,12 @@ class iterator_buffer<std::back_insert_iterator<Container>,
   explicit iterator_buffer(Container& c)
       : buffer<typename Container::value_type>(c.size()), container_(c) {}
   explicit iterator_buffer(std::back_insert_iterator<Container> out, size_t = 0)
-      : iterator_buffer(get_container(out)) {}
+      : iterator_buffer(get_container(back_insert_iterator<Container>{out})) {}
   std::back_insert_iterator<Container> out() {
     return std::back_inserter(container_);
   }
 };
+#endif
 
 // A buffer that counts the number of code units written discarding the output.
 template <typename T = char> class counting_buffer final : public buffer<T> {
@@ -853,8 +936,8 @@ template <typename T = char> class counting_buffer final : public buffer<T> {
 // An output iterator that appends to the buffer.
 // It is used to reduce symbol sizes for the common case.
 template <typename T>
-class buffer_appender : public std::back_insert_iterator<buffer<T>> {
-  using base = std::back_insert_iterator<buffer<T>>;
+class buffer_appender : public back_insert_iterator<buffer<T>> {
+  using base = back_insert_iterator<buffer<T>>;
 
  public:
   explicit buffer_appender(buffer<T>& buf) : base(buf) {}
@@ -1385,13 +1468,13 @@ struct is_output_iterator<
 template <typename OutputIt>
 struct is_back_insert_iterator : std::false_type {};
 template <typename Container>
-struct is_back_insert_iterator<std::back_insert_iterator<Container>>
+struct is_back_insert_iterator<back_insert_iterator<Container>>
     : std::true_type {};
 
 template <typename OutputIt>
 struct is_contiguous_back_insert_iterator : std::false_type {};
 template <typename Container>
-struct is_contiguous_back_insert_iterator<std::back_insert_iterator<Container>>
+struct is_contiguous_back_insert_iterator<back_insert_iterator<Container>>
     : is_contiguous<Container> {};
 template <typename Char>
 struct is_contiguous_back_insert_iterator<buffer_appender<Char>>

@@ -175,6 +175,8 @@ TEST(IteratorTest, IsOutputIterator) {
   EXPECT_TRUE(
       (fmt::detail::is_output_iterator<std::back_insert_iterator<std::string>,
                                        char>::value));
+  EXPECT_TRUE((fmt::detail::is_output_iterator<
+               fmt::detail::back_insert_iterator<std::string>, char>::value));
   EXPECT_TRUE(
       (fmt::detail::is_output_iterator<std::string::iterator, char>::value));
   EXPECT_FALSE((fmt::detail::is_output_iterator<std::string::const_iterator,

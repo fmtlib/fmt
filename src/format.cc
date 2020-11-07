@@ -31,27 +31,27 @@ template dragonbox::decimal_fp<double> dragonbox::to_decimal(double x)
 
 // DEPRECATED! This function exists for ABI compatibility.
 template <typename Char>
-typename basic_format_context<std::back_insert_iterator<buffer<Char>>,
+typename basic_format_context<back_insert_iterator<buffer<Char>>,
                               Char>::iterator
 vformat_to(buffer<Char>& buf, basic_string_view<Char> format_str,
            basic_format_args<basic_format_context<
-               std::back_insert_iterator<buffer<type_identity_t<Char>>>,
+               back_insert_iterator<buffer<type_identity_t<Char>>>,
                type_identity_t<Char>>>
                args) {
-  using iterator = std::back_insert_iterator<buffer<char>>;
-  using context = basic_format_context<
-      std::back_insert_iterator<buffer<type_identity_t<Char>>>,
-      type_identity_t<Char>>;
+  using iterator = back_insert_iterator<buffer<char>>;
+  using context =
+      basic_format_context<back_insert_iterator<buffer<type_identity_t<Char>>>,
+                           type_identity_t<Char>>;
   auto out = iterator(buf);
   format_handler<iterator, Char, context> h(out, format_str, args, {});
   parse_format_string<false>(format_str, h);
   return out;
 }
-template basic_format_context<std::back_insert_iterator<buffer<char>>,
+template basic_format_context<back_insert_iterator<buffer<char>>,
                               char>::iterator
 vformat_to(buffer<char>&, string_view,
            basic_format_args<basic_format_context<
-               std::back_insert_iterator<buffer<type_identity_t<char>>>,
+               back_insert_iterator<buffer<type_identity_t<char>>>,
                type_identity_t<char>>>);
 }  // namespace detail
 

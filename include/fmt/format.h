@@ -376,7 +376,7 @@ template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
 __attribute__((no_sanitize("undefined")))
 #endif
 inline checked_ptr<typename Container::value_type>
-reserve(std::back_insert_iterator<Container> it, size_t n) {
+reserve(back_insert_iterator<Container> it, size_t n) {
   Container& c = get_container(it);
   size_t size = c.size();
   c.resize(size + n);
@@ -407,8 +407,8 @@ template <typename T> T* to_pointer(buffer_appender<T> it, size_t n) {
 }
 
 template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
-inline std::back_insert_iterator<Container> base_iterator(
-    std::back_insert_iterator<Container>& it,
+inline back_insert_iterator<Container> base_iterator(
+    back_insert_iterator<Container>& it,
     checked_ptr<typename Container::value_type>) {
   return it;
 }

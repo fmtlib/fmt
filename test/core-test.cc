@@ -292,7 +292,7 @@ VISIT_TYPE(unsigned long, unsigned long long);
   {                                                                           \
     testing::StrictMock<mock_visitor<decltype(expected)>> visitor;            \
     EXPECT_CALL(visitor, visit(expected));                                    \
-    using iterator = std::back_insert_iterator<buffer<Char>>;                 \
+    using iterator = fmt::detail::back_insert_iterator<buffer<Char>>;         \
     fmt::visit_format_arg(                                                    \
         visitor, make_arg<fmt::basic_format_context<iterator, Char>>(value)); \
   }
