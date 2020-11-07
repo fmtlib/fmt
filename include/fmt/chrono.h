@@ -288,7 +288,11 @@ inline null<> gmtime_r(...) { return null<>(); }
 inline null<> gmtime_s(...) { return null<>(); }
 }  // namespace detail
 
-// Thread-safe replacement for std::localtime
+/**
+  Converts given time since epoch as ``std::time_t`` value into calendar time,
+  expressed in local time. Unlike ``std::localtime``, this function is
+  thread-safe on most platforms.
+ */
 inline std::tm localtime(std::time_t time) {
   struct dispatcher {
     std::time_t time_;
@@ -330,7 +334,11 @@ inline std::tm localtime(
   return localtime(std::chrono::system_clock::to_time_t(time_point));
 }
 
-// Thread-safe replacement for std::gmtime
+/**
+  Converts given time since epoch as ``std::time_t`` value into calendar time,
+  expressed in Coordinated Universal Time (UTC). Unlike ``std::gmtime``, this
+  function is thread-safe on most platforms.
+ */
 inline std::tm gmtime(std::time_t time) {
   struct dispatcher {
     std::time_t time_;

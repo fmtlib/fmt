@@ -431,6 +431,10 @@ For example::
 
 The syntax is described in :ref:`chrono-specs`.
 
+.. doxygenfunction:: localtime(std::time_t)
+
+.. doxygenfunction:: gmtime(std::time_t)
+
 .. _compile-api:
 
 Format string compilation
