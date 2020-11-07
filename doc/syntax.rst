@@ -326,10 +326,10 @@ Literal chars are copied unchanged to the output. Precision is valid only for
 
 *conversion_spec* are conversion specifiers documented in `strftime
 <http://en.cppreference.com/w/cpp/chrono/c/strftime>`_ for ``std::tm`` and
-in `Meaning of conversion specifiers <https://eel.is/c++draft/time.format>`
+in `Meaning of conversion specifiers <https://eel.is/c++draft/time.format>`_
 for chrono durations and time points. Specifiers that have a calendaric
-component such as `'d'` are valid only for ``std::tm`` and not durations or time
-points.
+component such as `'d'` (the day of month) are valid only for ``std::tm`` and
+not durations or time points.
 
 .. _formatexamples:
 

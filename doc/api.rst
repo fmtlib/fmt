@@ -416,12 +416,15 @@ For example::
   #include <fmt/chrono.h>
 
   std::time_t t = std::time(nullptr);
+
   // Prints "The date is 2020-11-07." (with the current date):
   fmt::print("The date is {:%Y-%m-%d}.", fmt::localtime(t));
 
   using namespace std::literals::chrono_literals;
+
   // Prints "Default format: 42s 100ms":
   fmt::print("Default format: {} {}\n", 42s, 100ms);
+
   // Prints "strftime-like format: 03:15:30":
   fmt::print("strftime-like format: {:%H:%M:%S}\n", 3h + 15min + 30s);
 
