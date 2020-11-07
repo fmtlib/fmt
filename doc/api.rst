@@ -405,18 +405,30 @@ Using ``fmt::join``, you can separate tuple elements with a custom separator::
 Date and Time Formatting
 ========================
 
-The library supports `strftime
-<http://en.cppreference.com/w/cpp/chrono/c/strftime>`_-like date and time
-formatting::
+``fmt/chrono.h`` provides formatters for
+
+* `std::chrono::duration <https://en.cppreference.com/w/cpp/chrono/duration>`_
+* `std::chrono::time_point <https://en.cppreference.com/w/cpp/chrono/time_point>`_
+* `std::tm <https://en.cppreference.com/w/cpp/chrono/c/tm>`_
+
+For example::
 
   #include <fmt/chrono.h>
 
-  std::time_t t = std::time(nullptr);
-  // Prints "The date is 2016-04-29." (with the current date)
-  fmt::print("The date is {:%Y-%m-%d}.", fmt::localtime(t));
+  int main() {
+    using namespace std::literals::chrono_literals;
+    fmt::print("Default format: {} {}\n", 42s, 100ms);
+    fmt::print("strftime-like format: {:%H:%M:%S}\n", 3h + 15min + 30s);
+  }
 
-The format string syntax is described in the documentation of
-`strftime <http://en.cppreference.com/w/cpp/chrono/c/strftime>`_.
+prints::
+
+  Default format: 42s 100ms
+  strftime-like format: 03:15:30
+
+Chrono format specifications are described in :ref:`chrono-specs`.
+
+.. doxygenclass:: formatter<std::chrono::time_point<std::chrono::system_clock>, Char>
 
 .. _compile-api:
 

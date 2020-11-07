@@ -321,6 +321,12 @@ Format specifications for chrono types have the following syntax:
               : "q" | "Q" | "r" | "R" | "S" | "t" | "T" | "u" | "U" | "V" |
               : "w" | "W" | "x" | "X" | "y" | "Y" | "z" | "Z" | "%" |
 
+Literal chars are copied unchanged to the output. Precision is valid only for
+``std::chrono::duration`` types with a floating-point representation type.
+
+*conversion_spec* are conversion specifiers documented in `strftime
+<http://en.cppreference.com/w/cpp/chrono/c/strftime>`_.
+
 .. _formatexamples:
 
 Format Examples
