@@ -97,10 +97,12 @@ def build_docs(version='dev', **kwargs):
               '-Aversion=' + version, '-Aversions=' + ','.join(main_versions),
               '-b', 'html', doc_dir, html_dir])
   try:
-    check_call(['lessc', '--clean-css',
-                '--include-path=' + os.path.join(doc_dir, 'bootstrap'),
-                os.path.join(doc_dir, 'fmt.less'),
-                os.path.join(html_dir, '_static', 'fmt.css')])
+    cmd = ['lessc', '--clean-css',
+           '--include-path=' + os.path.join(doc_dir, 'bootstrap'),
+           os.path.join(doc_dir, 'fmt.less'),
+           os.path.join(html_dir, '_static', 'fmt.css')]
+    print("Running {}".format(cmd))
+    check_call(cmd)
   except OSError as e:
     if e.errno != errno.ENOENT:
       raise
