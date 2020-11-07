@@ -303,6 +303,24 @@ The available presentation types for pointers are:
 | none    | The same as ``'p'``.                                     |
 +---------+----------------------------------------------------------+
 
+.. _chrono-specs:
+
+Chrono Format Specifications
+============================
+
+Format specifications for chrono types have the following syntax:
+
+.. productionlist:: sf
+   chrono_format_spec: [[`fill`]`align`][`width`]["." `precision`][`chrono_specs`]
+   chrono_specs: [`chrono_specs`] `conversion_spec` | `chrono_specs` `literal_char`
+   conversion_spec: "%" [`modifier`] `chrono_type`
+   literal_char: <a character other than '{', '}' or '%'>
+   modifier: "E" | "O"
+   chrono_type: "a" | "A" | "b" | "B" | "c" | "C" | "d" | "D" | "e" | "F" |
+                "g" | "G" | "h" | "H" | "I" | "j" | "m" | "M" | "n" | "p" |
+                "q" | "Q" | "r" | "R" | "S" | "t" | "T" | "u" | "U" | "V" |
+                "w" | "W" | "x" | "X" | "y" | "Y" | "z" | "Z" | "%"
+
 .. _formatexamples:
 
 Format Examples
