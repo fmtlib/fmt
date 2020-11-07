@@ -421,14 +421,14 @@ For example::
     fmt::print("strftime-like format: {:%H:%M:%S}\n", 3h + 15min + 30s);
   }
 
-prints::
+prints:
 
-  Default format: 42s 100ms
-  strftime-like format: 03:15:30
+.. code:: none
+
+   Default format: 42s 100ms
+   strftime-like format: 03:15:30
 
 Chrono format specifications are described in :ref:`chrono-specs`.
-
-.. doxygenclass:: formatter<std::chrono::time_point<std::chrono::system_clock>, Char>
 
 .. _compile-api:
 
