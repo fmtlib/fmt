@@ -14,7 +14,7 @@ def rmtree_if_exists(dir):
 
 def install_dependencies():
     branch = os.environ['GITHUB_REF']
-    if branch != 'refs/heads/doc':
+    if branch != 'refs/heads/master':
         print('Branch: ' + branch)
         exit(0) # Ignore non-master branches
     check_call('curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key ' +
