@@ -324,12 +324,37 @@ Format specifications for chrono types have the following syntax:
 Literal chars are copied unchanged to the output. Precision is valid only for
 ``std::chrono::duration`` types with a floating-point representation type.
 
-*conversion_spec* are conversion specifiers documented in `strftime
-<http://en.cppreference.com/w/cpp/chrono/c/strftime>`_ for ``std::tm`` and
-in `Meaning of conversion specifiers <https://eel.is/c++draft/time.format>`_
-for chrono durations and time points. Specifiers that have a calendaric
-component such as `'d'` (the day of month) are valid only for ``std::tm`` and
-not durations or time points.
+The available presentation types (*chrono_type*) for chrono durations and time
+points are:
+
++---------+--------------------------------------------------------------------+
+| Type    | Meaning                                                            |
++=========+====================================================================+
+| ``'H'`` | The hour (24-hour clock) as a decimal number. If the result is a   |
+|         | single digit, it is prefixed with 0. The modified command ``%OH``  |
+|         | produces the locale's alternative representation.                  |
++---------+--------------------------------------------------------------------+
+| ``'M'`` | The minute as a decimal number. If the result is a single digit,   |
+|         | it is prefixed with 0. The modified command ``%OM`` produces the   |
+|         | locale's alternative representation.                               |
++---------+--------------------------------------------------------------------+
+| ``'S'`` | Seconds as a decimal number. If the number of seconds is less than |
+|         | 10, the result is prefixed with 0. If the precision of the input   |
+|         | cannot be exactly represented with seconds, then the format is a   |
+|         | decimal floating-point number with a fixed format and a precision  |
+|         | matching that of the precision of the input (or to a microseconds  |
+|         | precision if the conversion to floating-point decimal seconds      |
+|         | cannot be made within 18 fractional digits). The character for the |
+|         | decimal point is localized according to the locale. The modified   |
+|         | command ``%OS`` produces the locale's alternative representation.  |
++---------+--------------------------------------------------------------------+
+
+Specifiers that have a calendaric component such as `'d'` (the day of month)
+are valid only for ``std::tm`` and not durations or time points.
+
+``std::tm`` uses the system's `strftime
+<http://en.cppreference.com/w/cpp/chrono/c/strftime>`_ so refer to its
+documentation for details on supported conversion specifiers. 
 
 .. _formatexamples:
 
