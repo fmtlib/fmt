@@ -7,10 +7,10 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        cxx: [g++-4.8, g++-8, g++-10, clang++]
+        cxx: [g++-4.8, g++-8, g++-10, clang++-9]
         build_type: [Debug, Release]
         include:
-          - cxx: clang++
+          - cxx: clang++-9
             build_type: Debug
             fuzz: -DFMT_FUZZ=ON -DFMT_FUZZ_LINKMAIN=ON
           - cxx: g++-4.8
