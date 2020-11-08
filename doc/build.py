@@ -2,7 +2,7 @@
 # Build the documentation.
 
 from __future__ import print_function
-import errno, os, shutil, sys, tempfile
+import errno, os, re, shutil, sys, tempfile
 from subprocess import check_call, check_output, CalledProcessError, Popen, PIPE
 from distutils.version import LooseVersion
 
@@ -55,9 +55,9 @@ def build_docs(version='dev', **kwargs):
       'include_dir', os.path.join(os.path.dirname(doc_dir), 'include', 'fmt'))
   # Build docs.
   cmd = ['doxygen', '-']
-  p = Popen(cmd, stdin=PIPE)
+  p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=subprocess.STDOUT)
   doxyxml_dir = os.path.join(work_dir, 'doxyxml')
-  p.communicate(input=r'''
+  out, _ = p.communicate(input=r'''
       PROJECT_NAME      = fmt
       GENERATE_LATEX    = NO
       GENERATE_MAN      = NO
@@ -87,8 +87,13 @@ def build_docs(version='dev', **kwargs):
       EXCLUDE_SYMBOLS   = fmt::formatter fmt::printf_formatter fmt::arg_join \
                           fmt::basic_format_arg::handle
     '''.format(include_dir, doxyxml_dir).encode('UTF-8'))
+  out = re.sub(
+    out, ".*warning: Member .* of class fmt::detail::.* is not documented.\n",
+    "")
+  print(out)
   if p.returncode != 0:
     raise CalledProcessError(p.returncode, cmd)
+
   html_dir = os.path.join(work_dir, 'html')
   main_versions = reversed(versions[-3:])
   check_call(['sphinx-build',
