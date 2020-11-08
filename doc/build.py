@@ -89,11 +89,14 @@ def build_docs(version='dev', **kwargs):
                           fmt::basic_format_arg::handle
     '''.format(include_dir, doxyxml_dir).encode('UTF-8'))
   noisy_warnings = [
-    'warning: .* fmt::detail::.* is not documented.',
-    'warning: Internal inconsistency: member .* does not belong to any ' +
-    'container!'
+    'warning: Internal inconsistency: .* does not belong to any container!'
   ]
-  for w in noisy_warnings:
+  internal_symbols = [
+    'fmt::detail::.*',
+    'basic_data<>',
+    'fmt::dynamic_formatter'
+  ]
+  for w in noisy_warnings + ['(' + '|'.join(internal_symbols) + ')']:
       out = re.sub('.*' + w + '\n', '', out)
   print(out)
   if p.returncode != 0:
