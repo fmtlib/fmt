@@ -461,6 +461,10 @@ Terminal color and text style
 
 .. doxygenfunction:: print(const text_style&, const S&, const Args&...)
 
+.. doxygenfunction:: fg(detail::color_type)
+
+.. doxygenfunction:: bg(detail::color_type)
+
 .. _ostream-api:
 
 ``std::ostream`` Support

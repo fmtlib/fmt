@@ -223,7 +223,7 @@ struct color_type {
 };
 }  // namespace detail
 
-// Experimental text formatting support.
+/** A text style consisting of foreground and background colors and emphasis. */
 class text_style {
  public:
   FMT_CONSTEXPR text_style(emphasis em = emphasis()) FMT_NOEXCEPT
@@ -260,7 +260,7 @@ class text_style {
     return lhs |= rhs;
   }
 
-  FMT_CONSTEXPR text_style& operator&=(const text_style& rhs) {
+  FMT_DEPRECATED FMT_CONSTEXPR text_style& operator&=(const text_style& rhs) {
     if (!set_foreground_color) {
       set_foreground_color = rhs.set_foreground_color;
       foreground_color = rhs.foreground_color;
@@ -284,8 +284,8 @@ class text_style {
     return *this;
   }
 
-  friend FMT_CONSTEXPR text_style operator&(text_style lhs,
-                                            const text_style& rhs) {
+  FMT_DEPRECATED friend FMT_CONSTEXPR text_style
+  operator&(text_style lhs, const text_style& rhs) {
     return lhs &= rhs;
   }
 
@@ -326,10 +326,17 @@ class text_style {
     }
   }
 
+  /** Creates a text style from the foreground (text) color. */
   friend FMT_CONSTEXPR_DECL text_style fg(detail::color_type foreground)
-      FMT_NOEXCEPT;
+      FMT_NOEXCEPT {
+    return text_style(true, foreground);
+  }
+
+  /** Creates a text style from the background color. */
   friend FMT_CONSTEXPR_DECL text_style bg(detail::color_type background)
-      FMT_NOEXCEPT;
+      FMT_NOEXCEPT {
+    return text_style(false, background);
+  }
 
   detail::color_type foreground_color;
   detail::color_type background_color;
@@ -337,14 +344,6 @@ class text_style {
   bool set_background_color;
   emphasis ems;
 };
-
-FMT_CONSTEXPR text_style fg(detail::color_type foreground) FMT_NOEXCEPT {
-  return text_style(/*is_foreground=*/true, foreground);
-}
-
-FMT_CONSTEXPR text_style bg(detail::color_type background) FMT_NOEXCEPT {
-  return text_style(/*is_foreground=*/false, background);
-}
 
 FMT_CONSTEXPR text_style operator|(emphasis lhs, emphasis rhs) FMT_NOEXCEPT {
   return text_style(lhs) | rhs;
@@ -527,7 +526,7 @@ void print(std::FILE* f, const text_style& ts, const S& format_str,
   Formats a string and prints it to stdout using ANSI escape sequences to
   specify text formatting.
 
-  **Example**:
+  **Example**::
 
     fmt::print(fmt::emphasis::bold | fg(fmt::color::red),
                "Elapsed time: {0:.2f} seconds", 1.23);
