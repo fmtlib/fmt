@@ -475,10 +475,8 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
   auto it = start;
   while (it != end) {
     if (!detail::find<false, Char>(it, end, '%', it)) {
-      it = end;
-    }
-    if (it == end) {
-      continue;
+      it = end;  // detail::find leaves it == nullptr if it doesn't find '%'
+      break;
     }
     char_type c = *it++;
     if (it != end && *it == c) {
