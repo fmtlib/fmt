@@ -89,8 +89,8 @@ def build_docs(version='dev', **kwargs):
                           fmt::basic_format_arg::handle
     '''.format(include_dir, doxyxml_dir).encode('UTF-8'))
   out = re.sub(
-    out, ".*warning: Member .* of class fmt::detail::.* is not documented.\n",
-    "")
+    ".*warning: Member .* of class fmt::detail::.* is not documented.\n",
+    "", out)
   print(out)
   if p.returncode != 0:
     raise CalledProcessError(p.returncode, cmd)
