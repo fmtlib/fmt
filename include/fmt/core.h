@@ -252,6 +252,17 @@
 #  pragma execution_character_set("utf-8")
 #endif
 
+#if defined(FMT_ENABLE_COMPILE_TIME_FORMATTING)
+#  if !defined(FMT_HEADER_ONLY) || __cplusplus < 202002L
+#    error "compile time formatting could not be enabled"
+#  endif
+#  define FMT_CTF_CONSTEXPR constexpr
+#  define FMT_USE_CUSTOM_BACK_INSERT_ITERATOR 1
+#else
+#  define FMT_CTF_CONSTEXPR
+#  define FMT_USE_CUSTOM_BACK_INSERT_ITERATOR 0
+#endif
+
 FMT_BEGIN_NAMESPACE
 
 // Implementations of enable_if_t and other metafunctions for older systems.

@@ -146,6 +146,12 @@ else ()
   target_compile_definitions(header-only-test PRIVATE FMT_HEADER_ONLY=1)
 endif ()
 
+add_fmt_executable(compile-time-formatting-test
+  compile-time-formatting-test.cc test-main.cc)
+target_link_libraries(compile-time-formatting-test gmock)
+target_include_directories(compile-time-formatting-test SYSTEM PUBLIC gtest gmock)
+target_link_libraries(compile-time-formatting-test fmt::fmt-header-only)
+
 message(STATUS "FMT_PEDANTIC: ${FMT_PEDANTIC}")
 
 if (FMT_PEDANTIC)
