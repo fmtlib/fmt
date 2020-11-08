@@ -10,6 +10,13 @@
 
 #include "format.h"
 
+// __declspec(deprecated) is broken in some MSVC versions.
+#if FMT_MSC_VER
+#  define FMT_DEPRECATED_NONMSVC
+#else
+#  define FMT_DEPRECATED_NONMSVC FMT_DEPRECATED
+#endif
+
 FMT_BEGIN_NAMESPACE
 
 enum class color : uint32_t {
@@ -260,11 +267,12 @@ class text_style {
     return lhs |= rhs;
   }
 
-  FMT_DEPRECATED FMT_CONSTEXPR text_style& operator&=(const text_style& rhs) {
+  FMT_DEPRECATED_NONMSVC FMT_CONSTEXPR text_style& operator&=(
+      const text_style& rhs) {
     return and_assign(rhs);
   }
 
-  FMT_DEPRECATED friend FMT_CONSTEXPR text_style
+  FMT_DEPRECATED_NONMSVC friend FMT_CONSTEXPR text_style
   operator&(text_style lhs, const text_style& rhs) {
     return lhs.and_assign(rhs);
   }
