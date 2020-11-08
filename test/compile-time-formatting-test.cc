@@ -19,3 +19,40 @@ template <size_t max_string_length> struct constexpr_buffer_helper {
 
   std::array<char, max_string_length> buffer{};
 };
+
+TEST(CompileTimeFormattingTest, OneInteger) {
+  constexpr auto result42 = constexpr_buffer_helper<3>{}.modify(
+      [](auto& buffer) { fmt::format_to(buffer.data(), "{}", 42); });
+  EXPECT_EQ(result42, "42");
+  constexpr auto result420 = constexpr_buffer_helper<3>{}.modify(
+      [](auto& buffer) { fmt::format_to(buffer.data(), "{}", 420); });
+  EXPECT_EQ(result420, "420");
+}
+
+TEST(CompileTimeFormattingTest, TwoIntegers) {
+  constexpr auto result = constexpr_buffer_helper<6>{}.modify(
+      [](auto& buffer) { fmt::format_to(buffer.data(), "{} {}", 41, 43); });
+  EXPECT_EQ(result, "41 43");
+}
+
+TEST(CompileTimeFormattingTest, OneString) {
+  constexpr auto result = constexpr_buffer_helper<3>{}.modify(
+      [](auto& buffer) { fmt::format_to(buffer.data(), "{}", "42"); });
+  EXPECT_EQ(result, "42");
+}
+
+TEST(CompileTimeFormattingTest, TwoStrings) {
+  constexpr auto result =
+      constexpr_buffer_helper<17>{}.modify([](auto& buffer) {
+        fmt::format_to(buffer.data(), "{} is {}", "The answer", "42");
+      });
+  EXPECT_EQ(result, "The answer is 42");
+}
+
+TEST(CompileTimeFormattingTest, StringAndInteger) {
+  constexpr auto result =
+      constexpr_buffer_helper<17>{}.modify([](auto& buffer) {
+        fmt::format_to(buffer.data(), "{} is {}", "The answer", 42);
+      });
+  EXPECT_EQ(result, "The answer is 42");
+}
