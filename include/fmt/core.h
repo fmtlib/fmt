@@ -784,7 +784,7 @@ class iterator_buffer final : public Traits, public buffer<T> {
  public:
   explicit iterator_buffer(OutputIt out, size_t n = buffer_size)
       : Traits(n),
-        buffer<T>(data_, 0, n < size_t(buffer_size) ? n : size_t(buffer_size)),
+        buffer<T>(data_, 0, buffer_size),
         out_(out) {}
   ~iterator_buffer() { flush(); }
 
