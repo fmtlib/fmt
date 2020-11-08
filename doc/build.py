@@ -95,7 +95,8 @@ def build_docs(version='dev', **kwargs):
     'fmt::dynamic_formatter'
   ]
   noisy_warnings = [
-    'warning: Compound (' + '|'.join(internal_symbols) + ') is not documented.',
+    'warning: (Compound|Member .* of class) (' + '|'.join(internal_symbols) + \
+      ') is not documented.',
     'warning: Internal inconsistency: .* does not belong to any container!'
   ]
   for w in noisy_warnings:
