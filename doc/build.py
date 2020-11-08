@@ -3,7 +3,8 @@
 
 from __future__ import print_function
 import errno, os, re, shutil, sys, tempfile
-from subprocess import check_call, check_output, CalledProcessError, Popen, PIPE
+from subprocess import check_call, check_output, CalledProcessError, Popen
+from subprocess import PIPE, STDOUT
 from distutils.version import LooseVersion
 
 versions = ['1.0.0', '1.1.0', '2.0.0', '3.0.2', '4.0.0', '4.1.0', '5.0.0', '5.1.0', '5.2.0', '5.2.1', '5.3.0', '6.0.0', '6.1.0', '6.1.1', '6.1.2', '6.2.0', '6.2.1', '7.0.0', '7.0.1', '7.0.2', '7.0.3', '7.1.0', '7.1.1', '7.1.2']
@@ -55,7 +56,7 @@ def build_docs(version='dev', **kwargs):
       'include_dir', os.path.join(os.path.dirname(doc_dir), 'include', 'fmt'))
   # Build docs.
   cmd = ['doxygen', '-']
-  p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=subprocess.STDOUT)
+  p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
   doxyxml_dir = os.path.join(work_dir, 'doxyxml')
   out, _ = p.communicate(input=r'''
       PROJECT_NAME      = fmt
