@@ -474,8 +474,11 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
   const Char* end = parse_ctx_.end();
   auto it = start;
   while (it != end) {
+    if (!detail::find<false, Char>(it, end, '%', it)) {
+      it = end;  // detail::find leaves it == nullptr if it doesn't find '%'
+      break;
+    }
     char_type c = *it++;
-    if (c != '%') continue;
     if (it != end && *it == c) {
       out = std::copy(start, it, out);
       start = ++it;
