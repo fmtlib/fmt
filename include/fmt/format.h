@@ -42,6 +42,7 @@
 #include <stdexcept>
 
 #include "core.h"
+#include "data.h"
 
 #ifdef __INTEL_COMPILER
 #  define FMT_ICC_VERSION __INTEL_COMPILER
@@ -368,7 +369,9 @@ template <typename T> checked_ptr<T> make_checked(T* p, size_t size) {
 }
 #else
 template <typename T> using checked_ptr = T*;
-template <typename T> inline T* make_checked(T* p, size_t) { return p; }
+template <typename T> inline FMT_CTF_CONSTEXPR T* make_checked(T* p, size_t) {
+  return p;
+}
 #endif
 
 template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
@@ -384,7 +387,8 @@ reserve(back_insert_iterator<Container> it, size_t n) {
 }
 
 template <typename T>
-inline buffer_appender<T> reserve(buffer_appender<T> it, size_t n) {
+inline FMT_CTF_CONSTEXPR buffer_appender<T> reserve(buffer_appender<T> it,
+                                                    size_t n) {
   buffer<T>& buf = get_container(it);
   buf.try_reserve(buf.size() + n);
   return it;
@@ -398,7 +402,8 @@ template <typename T, typename OutputIt>
 constexpr T* to_pointer(OutputIt, size_t) {
   return nullptr;
 }
-template <typename T> T* to_pointer(buffer_appender<T> it, size_t n) {
+template <typename T>
+FMT_CTF_CONSTEXPR T* to_pointer(buffer_appender<T> it, size_t n) {
   buffer<T>& buf = get_container(it);
   auto size = buf.size();
   if (buf.capacity() < size + n) return nullptr;
@@ -407,14 +412,14 @@ template <typename T> T* to_pointer(buffer_appender<T> it, size_t n) {
 }
 
 template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
-inline back_insert_iterator<Container> base_iterator(
+inline FMT_CTF_CONSTEXPR back_insert_iterator<Container> base_iterator(
     back_insert_iterator<Container>& it,
     checked_ptr<typename Container::value_type>) {
   return it;
 }
 
 template <typename Iterator>
-inline Iterator base_iterator(Iterator, Iterator it) {
+inline FMT_CTF_CONSTEXPR Iterator base_iterator(Iterator, Iterator it) {
   return it;
 }
 
@@ -576,13 +581,13 @@ using needs_conversion = bool_constant<
 
 template <typename OutChar, typename InputIt, typename OutputIt,
           FMT_ENABLE_IF(!needs_conversion<InputIt, OutChar>::value)>
-OutputIt copy_str(InputIt begin, InputIt end, OutputIt it) {
+FMT_CTF_CONSTEXPR OutputIt copy_str(InputIt begin, InputIt end, OutputIt it) {
   return std::copy(begin, end, it);
 }
 
 template <typename OutChar, typename InputIt, typename OutputIt,
           FMT_ENABLE_IF(needs_conversion<InputIt, OutChar>::value)>
-OutputIt copy_str(InputIt begin, InputIt end, OutputIt it) {
+FMT_CTF_CONSTEXPR OutputIt copy_str(InputIt begin, InputIt end, OutputIt it) {
   return std::transform(begin, end, it,
                         [](char c) { return static_cast<char8_type>(c); });
 }
@@ -597,19 +602,20 @@ template <typename T>
 using is_fast_float = bool_constant<std::numeric_limits<T>::is_iec559 &&
                                     sizeof(T) <= sizeof(double)>;
 
-#ifndef FMT_USE_FULL_CACHE_DRAGONBOX
-#  define FMT_USE_FULL_CACHE_DRAGONBOX 0
-#endif
-
 template <typename T>
 template <typename U>
-void buffer<T>::append(const U* begin, const U* end) {
+FMT_CTF_CONSTEXPR void buffer<T>::append(const U* begin, const U* end) {
   do {
     auto count = to_unsigned(end - begin);
     try_reserve(size_ + count);
     auto free_cap = capacity_ - size_;
     if (free_cap < count) count = free_cap;
-    std::uninitialized_copy_n(begin, count, make_checked(ptr_ + size_, count));
+    if (FMT_CTF_CHECK) {
+      std::copy_n(begin, count, make_checked(ptr_ + size_, count));
+    } else {
+      std::uninitialized_copy_n(begin, count,
+                                make_checked(ptr_ + size_, count));
+    }
     size_ += count;
     begin += count;
   } while (begin != end);
@@ -665,7 +671,7 @@ class basic_memory_buffer final : public detail::buffer<T> {
   Allocator alloc_;
 
   // Deallocate memory allocated by the buffer.
-  void deallocate() {
+  FMT_CTF_CONSTEXPR void deallocate() {
     T* data = this->data();
     if (data != store_) alloc_.deallocate(data, this->capacity());
   }
@@ -677,11 +683,12 @@ class basic_memory_buffer final : public detail::buffer<T> {
   using value_type = T;
   using const_reference = const T&;
 
-  explicit basic_memory_buffer(const Allocator& alloc = Allocator())
+  FMT_CTF_CONSTEXPR explicit basic_memory_buffer(
+      const Allocator& alloc = Allocator())
       : alloc_(alloc) {
     this->set(store_, SIZE);
   }
-  ~basic_memory_buffer() { deallocate(); }
+  FMT_CTF_CONSTEXPR ~basic_memory_buffer() { deallocate(); }
 
  private:
   // Move data from other to this buffer.
@@ -891,8 +898,7 @@ template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
   static const uint32_t dragonbox_pow10_recovery_errors[];
 #endif
   // GCC generates slightly better code for pairs than chars.
-  using digit_pair = char[2];
-  static const digit_pair digits[];
+  static const data_digit_pair digits[];
   static const char hex_digits[];
   static const char foreground_color[];
   static const char background_color[];
@@ -925,17 +931,41 @@ FMT_EXTERN template struct basic_data<void>;
 // This is a struct rather than an alias to avoid shadowing warnings in gcc.
 struct data : basic_data<> {};
 
-#ifdef FMT_BUILTIN_CLZLL
+template <typename T> inline FMT_CTF_CONSTEXPR int count_digits_trivial(T n) {
+  int count = 1;
+  for (;;) {
+    // Integer division is slow so do it for a group of four digits instead
+    // of for every digit. The idea comes from the talk by Alexandrescu
+    // "Three Optimization Tips for C++". See speed-test for a comparison.
+    if (n < 10) return count;
+    if (n < 100) return count + 1;
+    if (n < 1000) return count + 2;
+    if (n < 10000) return count + 3;
+    n /= 10000u;
+    count += 4;
+  }
+}
+
+#if defined(FMT_BUILTIN_CLZLL)
 // Returns the number of decimal digits in n. Leading zeros are not counted
 // except for n == 0 in which case count_digits returns 1.
-inline int count_digits(uint64_t n) {
+inline FMT_CTF_CONSTEXPR int count_digits(uint64_t n) {
+  if (FMT_CTF_CHECK) {
+    return count_digits_trivial(n);
+  }
   // https://github.com/fmtlib/format-benchmark/blob/master/digits10
   auto t = bsr2log10(FMT_BUILTIN_CLZLL(n | 1) ^ 63);
   return t - (n < data::zero_or_powers_of_10_64_new[t]);
 }
 #else
 // Fallback version of count_digits used when __builtin_clz is not available.
-inline int count_digits(uint64_t n) {
+inline FMT_CTF_CONSTEXPR int count_digits(uint64_t n) {
+  return count_digits_trivial(n);
+}
+#endif
+
+#if FMT_USE_INT128
+inline FMT_CTF_CONSTEXPR int count_digits(uint128_t n) {
   int count = 1;
   for (;;) {
     // Integer division is slow so do it for a group of four digits instead
@@ -951,25 +981,9 @@ inline int count_digits(uint64_t n) {
 }
 #endif
 
-#if FMT_USE_INT128
-inline int count_digits(uint128_t n) {
-  int count = 1;
-  for (;;) {
-    // Integer division is slow so do it for a group of four digits instead
-    // of for every digit. The idea comes from the talk by Alexandrescu
-    // "Three Optimization Tips for C++". See speed-test for a comparison.
-    if (n < 10) return count;
-    if (n < 100) return count + 1;
-    if (n < 1000) return count + 2;
-    if (n < 10000) return count + 3;
-    n /= 10000U;
-    count += 4;
-  }
-}
-#endif
-
 // Counts the number of digits in n. BITS = log2(radix).
-template <unsigned BITS, typename UInt> inline int count_digits(UInt n) {
+template <unsigned BITS, typename UInt>
+inline FMT_CTF_CONSTEXPR int count_digits(UInt n) {
   int num_digits = 0;
   do {
     ++num_digits;
@@ -987,9 +1001,12 @@ template <> int count_digits<4>(detail::fallback_uintptr n);
 #  define FMT_ALWAYS_INLINE inline
 #endif
 
-#ifdef FMT_BUILTIN_CLZ
+#if defined(FMT_BUILTIN_CLZ)
 // Optional version of count_digits for better performance on 32-bit platforms.
-inline int count_digits(uint32_t n) {
+inline FMT_CTF_CONSTEXPR int count_digits(uint32_t n) {
+  if (FMT_CTF_CHECK) {
+    return count_digits_trivial(n);
+  }
   auto t = bsr2log10(FMT_BUILTIN_CLZ(n | 1) ^ 31);
   return t - (n < data::zero_or_powers_of_10_32_new[t]);
 }
@@ -1026,19 +1043,30 @@ template <> inline wchar_t decimal_point(locale_ref loc) {
 }
 
 // Compares two characters for equality.
-template <typename Char> bool equal2(const Char* lhs, const char* rhs) {
+template <typename Char>
+FMT_CTF_CONSTEXPR bool equal2(const Char* lhs, const char* rhs) {
   return lhs[0] == rhs[0] && lhs[1] == rhs[1];
 }
-inline bool equal2(const char* lhs, const char* rhs) {
+inline FMT_CTF_CONSTEXPR bool equal2(const char* lhs, const char* rhs) {
+  if (FMT_CTF_CHECK) {
+    return equal2<char>(lhs, rhs);
+  }
   return memcmp(lhs, rhs, 2) == 0;
 }
 
 // Copies two characters from src to dst.
-template <typename Char> void copy2(Char* dst, const char* src) {
+template <typename Char>
+FMT_CTF_CONSTEXPR void copy2(Char* dst, const char* src) {
   *dst++ = static_cast<Char>(*src++);
   *dst = static_cast<Char>(*src);
 }
-FMT_INLINE void copy2(char* dst, const char* src) { memcpy(dst, src, 2); }
+FMT_INLINE FMT_CTF_CONSTEXPR void copy2(char* dst, const char* src) {
+  if (FMT_CTF_CHECK) {
+    copy2<char>(dst, src);
+    return;
+  }
+  memcpy(dst, src, 2);
+}
 
 template <typename Iterator> struct format_decimal_result {
   Iterator begin;
@@ -1049,9 +1077,16 @@ template <typename Iterator> struct format_decimal_result {
 // buffer of specified size. The caller must ensure that the buffer is large
 // enough.
 template <typename Char, typename UInt>
-inline format_decimal_result<Char*> format_decimal(Char* out, UInt value,
-                                                   int size) {
+inline FMT_CTF_CONSTEXPR format_decimal_result<Char*> format_decimal(Char* out,
+                                                                     UInt value,
+                                                                     int size) {
   FMT_ASSERT(size >= count_digits(value), "invalid digit count");
+  const data_digit_pair* digits;
+  if (FMT_CTF_CHECK) {
+    digits = compile_time_formatting_data::digits;
+  } else {
+    digits = data::digits;
+  }
   out += size;
   Char* end = out;
   while (value >= 100) {
@@ -1059,7 +1094,7 @@ inline format_decimal_result<Char*> format_decimal(Char* out, UInt value,
     // of for every digit. The idea comes from the talk by Alexandrescu
     // "Three Optimization Tips for C++". See speed-test for a comparison.
     out -= 2;
-    copy2(out, data::digits[value % 100]);
+    copy2(out, digits[value % 100]);
     value /= 100;
   }
   if (value < 10) {
@@ -1067,7 +1102,7 @@ inline format_decimal_result<Char*> format_decimal(Char* out, UInt value,
     return {out, end};
   }
   out -= 2;
-  copy2(out, data::digits[value]);
+  copy2(out, digits[value]);
   return {out, end};
 }
 
@@ -1082,8 +1117,8 @@ inline format_decimal_result<Iterator> format_decimal(Iterator out, UInt value,
 }
 
 template <unsigned BASE_BITS, typename Char, typename UInt>
-inline Char* format_uint(Char* buffer, UInt value, int num_digits,
-                         bool upper = false) {
+inline FMT_CTF_CONSTEXPR Char* format_uint(Char* buffer, UInt value,
+                                           int num_digits, bool upper = false) {
   buffer += num_digits;
   Char* end = buffer;
   do {
@@ -1096,8 +1131,8 @@ inline Char* format_uint(Char* buffer, UInt value, int num_digits,
 }
 
 template <unsigned BASE_BITS, typename Char>
-Char* format_uint(Char* buffer, detail::fallback_uintptr n, int num_digits,
-                  bool = false) {
+FMT_CTF_CONSTEXPR Char* format_uint(Char* buffer, detail::fallback_uintptr n,
+                                    int num_digits, bool = false) {
   auto char_digits = std::numeric_limits<unsigned char>::digits / 4;
   int start = (num_digits + char_digits - 1) / char_digits - 1;
   if (int start_digits = num_digits % char_digits) {
@@ -1118,7 +1153,8 @@ Char* format_uint(Char* buffer, detail::fallback_uintptr n, int num_digits,
 }
 
 template <unsigned BASE_BITS, typename Char, typename It, typename UInt>
-inline It format_uint(It out, UInt value, int num_digits, bool upper = false) {
+inline FMT_CTF_CONSTEXPR It format_uint(It out, UInt value, int num_digits,
+                                        bool upper = false) {
   if (auto ptr = to_pointer<Char>(out, to_unsigned(num_digits))) {
     format_uint<BASE_BITS>(ptr, value, num_digits, upper);
     return out;
@@ -1503,9 +1539,9 @@ FMT_NOINLINE OutputIt fill(OutputIt it, size_t n, const fill_t<Char>& fill) {
 // width: output display width in (terminal) column positions.
 template <align::type align = align::left, typename OutputIt, typename Char,
           typename F>
-inline OutputIt write_padded(OutputIt out,
-                             const basic_format_specs<Char>& specs, size_t size,
-                             size_t width, F&& f) {
+inline FMT_CTF_CONSTEXPR OutputIt
+write_padded(OutputIt out, const basic_format_specs<Char>& specs, size_t size,
+             size_t width, F&& f) {
   static_assert(align == align::left || align == align::right, "");
   unsigned spec_width = to_unsigned(specs.width);
   size_t padding = spec_width > width ? spec_width - width : 0;
@@ -1521,9 +1557,8 @@ inline OutputIt write_padded(OutputIt out,
 
 template <align::type align = align::left, typename OutputIt, typename Char,
           typename F>
-inline OutputIt write_padded(OutputIt out,
-                             const basic_format_specs<Char>& specs, size_t size,
-                             F&& f) {
+inline FMT_CTF_CONSTEXPR OutputIt write_padded(
+    OutputIt out, const basic_format_specs<Char>& specs, size_t size, F&& f) {
   return write_padded<align>(out, specs, size, size, f);
 }
 
@@ -2014,29 +2049,29 @@ template <> struct is_integral<int128_t> : std::true_type {};
 template <> struct is_integral<uint128_t> : std::true_type {};
 
 template <typename Char, typename OutputIt>
-OutputIt write(OutputIt out, monostate) {
+FMT_CTF_CONSTEXPR OutputIt write(OutputIt out, monostate) {
   FMT_ASSERT(false, "");
   return out;
 }
 
 template <typename Char, typename OutputIt,
           FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
-OutputIt write(OutputIt out, string_view value) {
+FMT_CTF_CONSTEXPR OutputIt write(OutputIt out, string_view value) {
   auto it = reserve(out, value.size());
   it = copy_str<Char>(value.begin(), value.end(), it);
   return base_iterator(out, it);
 }
 
 template <typename Char, typename OutputIt>
-OutputIt write(OutputIt out, basic_string_view<Char> value) {
+FMT_CTF_CONSTEXPR OutputIt write(OutputIt out, basic_string_view<Char> value) {
   auto it = reserve(out, value.size());
   it = std::copy(value.begin(), value.end(), it);
   return base_iterator(out, it);
 }
 
 template <typename Char>
-buffer_appender<Char> write(buffer_appender<Char> out,
-                            basic_string_view<Char> value) {
+FMT_CTF_CONSTEXPR buffer_appender<Char> write(buffer_appender<Char> out,
+                                              basic_string_view<Char> value) {
   get_container(out).append(value.begin(), value.end());
   return out;
 }
@@ -2045,7 +2080,7 @@ template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(is_integral<T>::value &&
                         !std::is_same<T, bool>::value &&
                         !std::is_same<T, Char>::value)>
-OutputIt write(OutputIt out, T value) {
+FMT_CTF_CONSTEXPR OutputIt write(OutputIt out, T value) {
   auto abs_value = static_cast<uint32_or_64_or_128_t<T>>(value);
   bool negative = is_negative(value);
   // Don't do -abs_value since it trips unsigned-integer-overflow sanitizer.
@@ -2064,19 +2099,19 @@ OutputIt write(OutputIt out, T value) {
 }
 
 template <typename Char, typename OutputIt>
-OutputIt write(OutputIt out, bool value) {
+FMT_CTF_CONSTEXPR OutputIt write(OutputIt out, bool value) {
   return write<Char>(out, string_view(value ? "true" : "false"));
 }
 
 template <typename Char, typename OutputIt>
-OutputIt write(OutputIt out, Char value) {
+FMT_CTF_CONSTEXPR OutputIt write(OutputIt out, Char value) {
   auto it = reserve(out, 1);
   *it++ = value;
   return base_iterator(out, it);
 }
 
 template <typename Char, typename OutputIt>
-OutputIt write(OutputIt out, const Char* value) {
+FMT_CTF_CONSTEXPR OutputIt write(OutputIt out, const Char* value) {
   if (!value) {
     FMT_THROW(format_error("string pointer is null"));
   } else {
@@ -2087,15 +2122,16 @@ OutputIt write(OutputIt out, const Char* value) {
 }
 
 template <typename Char, typename OutputIt>
-OutputIt write(OutputIt out, const void* value) {
+FMT_CTF_CONSTEXPR OutputIt write(OutputIt out, const void* value) {
   return write_ptr<Char>(out, to_uintptr(value), nullptr);
 }
 
 template <typename Char, typename OutputIt, typename T>
-auto write(OutputIt out, const T& value) -> typename std::enable_if<
-    mapped_type_constant<T, basic_format_context<OutputIt, Char>>::value ==
-        type::custom_type,
-    OutputIt>::type {
+FMT_CTF_CONSTEXPR auto write(OutputIt out, const T& value) ->
+    typename std::enable_if<
+        mapped_type_constant<T, basic_format_context<OutputIt, Char>>::value ==
+            type::custom_type,
+        OutputIt>::type {
   using context_type = basic_format_context<OutputIt, Char>;
   using formatter_type =
       conditional_t<has_formatter<T, context_type>::value,
@@ -2114,7 +2150,7 @@ template <typename OutputIt, typename Char> struct default_arg_formatter {
   basic_format_args<context> args;
   locale_ref loc;
 
-  template <typename T> OutputIt operator()(T value) {
+  template <typename T> FMT_CTF_CONSTEXPR OutputIt operator()(T value) {
     return write<Char>(out, value);
   }
 
@@ -3063,11 +3099,12 @@ struct format_handler : detail::error_handler {
   basic_format_parse_context<Char> parse_context;
   Context context;
 
-  format_handler(OutputIt out, basic_string_view<Char> str,
-                 basic_format_args<Context> format_args, detail::locale_ref loc)
+  FMT_CTF_CONSTEXPR format_handler(OutputIt out, basic_string_view<Char> str,
+                                   basic_format_args<Context> format_args,
+                                   detail::locale_ref loc)
       : parse_context(str), context(out, format_args, loc) {}
 
-  void on_text(const Char* begin, const Char* end) {
+  FMT_CTF_CONSTEXPR void on_text(const Char* begin, const Char* end) {
     auto size = to_unsigned(end - begin);
     auto out = context.out();
     auto&& it = reserve(out, size);
@@ -3075,15 +3112,17 @@ struct format_handler : detail::error_handler {
     context.advance_to(out);
   }
 
-  int on_arg_id() { return parse_context.next_arg_id(); }
-  int on_arg_id(int id) { return parse_context.check_arg_id(id), id; }
-  int on_arg_id(basic_string_view<Char> id) {
+  FMT_CTF_CONSTEXPR int on_arg_id() { return parse_context.next_arg_id(); }
+  FMT_CTF_CONSTEXPR int on_arg_id(int id) {
+    return parse_context.check_arg_id(id), id;
+  }
+  FMT_CTF_CONSTEXPR int on_arg_id(basic_string_view<Char> id) {
     int arg_id = context.arg_id(id);
     if (arg_id < 0) on_error("argument not found");
     return arg_id;
   }
 
-  FMT_INLINE void on_replacement_field(int id, const Char*) {
+  FMT_INLINE FMT_CTF_CONSTEXPR void on_replacement_field(int id, const Char*) {
     auto arg = get_arg(context, id);
     context.advance_to(visit_format_arg(
         default_arg_formatter<OutputIt, Char>{context.out(), context.args(),
@@ -3770,7 +3809,7 @@ std::basic_string<Char> to_string(const basic_memory_buffer<Char, SIZE>& buf) {
 }
 
 template <typename Char>
-void detail::vformat_to(
+FMT_CTF_CONSTEXPR void detail::vformat_to(
     detail::buffer<Char>& buf, basic_string_view<Char> format_str,
     basic_format_args<buffer_context<type_identity_t<Char>>> args,
     detail::locale_ref loc) {
@@ -3819,7 +3858,7 @@ extern template int snprintf_float<long double>(long double value,
 
 template <typename S, typename Char = char_t<S>,
           FMT_ENABLE_IF(detail::is_string<S>::value)>
-inline void vformat_to(
+inline FMT_CTF_CONSTEXPR void vformat_to(
     detail::buffer<Char>& buf, const S& format_str,
     basic_format_args<FMT_BUFFER_CONTEXT(type_identity_t<Char>)> args) {
   return detail::vformat_to(buf, to_string_view(format_str), args);
