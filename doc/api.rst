@@ -48,20 +48,20 @@ participate in an overload resolution if the latter is not a string.
 .. doxygenfunction:: format(const S &format_str, Args&&... args)
 .. doxygenfunction:: vformat(const S &format_str, basic_format_args<buffer_context<type_identity_t<Char>>> args)
 
-.. doxygenfunction:: format_to(OutputIt out, const S &, Args&&... args)
+.. doxygenfunction:: format_to(OutputIt out, const S &format_str, Args&&... args)
 .. doxygenfunction:: format_to_n(OutputIt out, size_t n, const S&, const Args&... args)
 .. doxygenfunction:: formatted_size(string_view format_str, Args&&... args)
 
-.. _print:
-
-.. doxygenfunction:: print(string_view format_str, const Args&... args)
-.. doxygenfunction:: vprint(string_view, format_args)
-
-.. doxygenfunction:: print(std::FILE*, string_view, format_args)
-.. doxygenfunction:: vprint(std::FILE *, string_view, format_args)
-
 .. doxygenstruct:: fmt::format_to_n_result
    :members:
+
+.. _print:
+
+.. doxygenfunction:: print(const S &format_str, Args&&... args)
+.. doxygenfunction:: vprint(string_view, format_args)
+
+.. doxygenfunction:: print(std::FILE *f, const S &format_str, Args&&... args)
+.. doxygenfunction:: vprint(std::FILE*, string_view, format_args)
 
 Named Arguments
 ---------------
@@ -489,7 +489,7 @@ user-defined types that have overloaded ``operator<<``::
   std::string s = fmt::format("The date is {}", date(2012, 12, 9));
   // s == "The date is 2012-12-9"
 
-.. doxygenfunction:: print(std::basic_ostream<Char>&, const S&, Args&&...)
+.. doxygenfunction:: print(std::basic_ostream<Char> &os, const S &format_str, Args&&... args)
 
 .. _printf-api:
 
