@@ -105,7 +105,7 @@ struct uint32_pair {
 TEST(UtilTest, BitCast) {
   auto s = fmt::detail::bit_cast<uint32_pair>(uint64_t{42});
   EXPECT_EQ(fmt::detail::bit_cast<uint64_t>(s), 42ull);
-  s = fmt::detail::bit_cast<uint32_pair>(uint64_t(~0ull));
+  s = fmt::detail::bit_cast<uint32_pair>(~uint64_t{0});
   EXPECT_EQ(fmt::detail::bit_cast<uint64_t>(s), ~0ull);
 }
 
