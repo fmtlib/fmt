@@ -45,20 +45,23 @@ participate in an overload resolution if the latter is not a string.
 
 .. _format:
 
-.. doxygenfunction:: format(const S&, Args&&...)
-.. doxygenfunction:: vformat(const S&, basic_format_args<buffer_context<type_identity_t<Char>>>)
+.. doxygenfunction:: format(const S &format_str, Args&&... args)
+.. doxygenfunction:: vformat(const S &format_str, basic_format_args<buffer_context<type_identity_t<Char>>> args)
 
-.. doxygenfunction:: fmt::format_to(OutputIt, const S&, Args&&...)
-.. doxygenfunction:: fmt::format_to_n(OutputIt, size_t, const S&, const Args&...)
-.. doxygenfunction:: fmt::formatted_size(string_view, Args&&...)
+.. doxygenfunction:: format_to(OutputIt out, const S &, Args&&... args)
+.. doxygenfunction:: format_to_n(OutputIt out, size_t n, const S&, const Args&... args)
+.. doxygenfunction:: formatted_size(string_view format_str, Args&&... args)
 
 .. _print:
 
-.. doxygenfunction:: print(const S&, Args&&...)
+.. doxygenfunction:: print(string_view format_str, const Args&... args)
 .. doxygenfunction:: vprint(string_view, format_args)
 
-.. doxygenfunction:: print(std::FILE *, const S&, Args&&...)
+.. doxygenfunction:: print(std::FILE*, string_view, format_args)
 .. doxygenfunction:: vprint(std::FILE *, string_view, format_args)
+
+.. doxygenstruct:: fmt::format_to_n_result
+   :members:
 
 Named Arguments
 ---------------
@@ -286,14 +289,6 @@ conversion.
 .. doxygenclass:: fmt::basic_format_parse_context
    :members:
 
-Output Iterator Support
------------------------
-
-.. doxygenfunction:: fmt::format_to(OutputIt, const S&, Args&&...)
-.. doxygenfunction:: fmt::format_to_n(OutputIt, size_t, const S&, const Args&...)
-.. doxygenstruct:: fmt::format_to_n_result
-   :members:
-
 Literal-based API
 -----------------
 
@@ -310,19 +305,19 @@ Utilities
 
 .. doxygentypedef:: fmt::char_t
 
-.. doxygenfunction:: fmt::ptr(const T *)
-.. doxygenfunction:: fmt::ptr(const std::unique_ptr<T>&)
-.. doxygenfunction:: fmt::ptr(const std::shared_ptr<T>&)
+.. doxygenfunction:: fmt::ptr(const T *p)
+.. doxygenfunction:: fmt::ptr(const std::unique_ptr<T> &p)
+.. doxygenfunction:: fmt::ptr(const std::shared_ptr<T> &p)
 
-.. doxygenfunction:: fmt::to_string(const T&)
+.. doxygenfunction:: fmt::to_string(const T &value)
 
-.. doxygenfunction:: fmt::to_wstring(const T&)
+.. doxygenfunction:: fmt::to_wstring(const T &value)
 
 .. doxygenfunction:: fmt::to_string_view(const Char *)
 
-.. doxygenfunction:: fmt::join(Range&&, string_view)
+.. doxygenfunction:: fmt::join(Range &&range, string_view sep)
 
-.. doxygenfunction:: fmt::join(It, Sentinel, string_view)
+.. doxygenfunction:: fmt::join(It begin, Sentinel end, string_view sep)
 
 .. doxygenclass:: fmt::detail::buffer
    :members:

@@ -1,53 +1,31 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Build the documentation.
 
-from __future__ import print_function
-import errno, os, re, shutil, sys, tempfile
-from subprocess import check_call, check_output, CalledProcessError, Popen
-from subprocess import PIPE, STDOUT
-from distutils.version import LooseVersion
+import errno, os, re, sys
+from subprocess import check_call, CalledProcessError, Popen, PIPE, STDOUT
 
 versions = ['1.0.0', '1.1.0', '2.0.0', '3.0.2', '4.0.0', '4.1.0', '5.0.0', '5.1.0', '5.2.0', '5.2.1', '5.3.0', '6.0.0', '6.1.0', '6.1.1', '6.1.2', '6.2.0', '6.2.1', '7.0.0', '7.0.1', '7.0.2', '7.0.3', '7.1.0', '7.1.1', '7.1.2']
 
-def pip_install(package, commit=None, **kwargs):
-  "Install package using pip."
-  if commit:
-    package = 'git+https://github.com/{0}.git@{1}'.format(package, commit)
-  print('Installing {0}'.format(package))
-  check_call(['pip', 'install', package])
+class Pip:
+  def __init__(self, venv_dir):
+    self.path = os.path.join(venv_dir, 'bin', 'pip')
 
-def create_build_env(dirname='virtualenv'):
+  def install(self, package, commit=None):
+    "Install package using pip."
+    if commit:
+      package = 'git+https://github.com/{0}.git@{1}'.format(package, commit)
+    print('Installing {0}'.format(package))
+    check_call([self.path, 'install', package])
+
+def create_build_env(venv_dir='virtualenv'):
   # Create virtualenv.
-  if not os.path.exists(dirname):
-    check_call(['virtualenv', dirname])
-  import sysconfig
-  scripts_dir = os.path.basename(sysconfig.get_path('scripts'))
-  activate_this_file = os.path.join(dirname, scripts_dir, 'activate_this.py')
-  with open(activate_this_file) as f:
-    exec(f.read(), dict(__file__=activate_this_file))
-  # Import get_distribution after activating virtualenv to get info about
-  # the correct packages.
-  from pkg_resources import get_distribution, DistributionNotFound
-  # Upgrade pip because installation of sphinx with pip 1.1 available on Travis
-  # is broken (see #207) and it doesn't support the show command.
-  pip_version = get_distribution('pip').version
-  if LooseVersion(pip_version) < LooseVersion('1.5.4'):
-    print("Updating pip")
-    check_call(['pip', 'install', '--upgrade', 'pip'])
-  # Upgrade distribute because installation of sphinx with distribute 0.6.24
-  # available on Travis is broken (see #207).
-  try:
-    distribute_version = get_distribution('distribute').version
-    if LooseVersion(distribute_version) <= LooseVersion('0.6.24'):
-      print("Updating distribute")
-      check_call(['pip', 'install', '--upgrade', 'distribute'])
-  except DistributionNotFound:
-    pass
+  if not os.path.exists(venv_dir):
+    check_call(['python3', '-m', 'venv', venv_dir])
   # Install Sphinx and Breathe. Require the exact version of Sphinx which is
   # compatible with Breathe.
-  pip_install('sphinx-doc/sphinx', '12b83372ac9316e8cbe86e7fed889296a4cc29ee')
-  pip_install('michaeljones/breathe',
-              '129222318f7c8f865d2631e7da7b033567e7f56a')
+  pip = Pip(venv_dir)
+  pip.install('sphinx-doc/sphinx', 'v3.3.0')
+  pip.install('michaeljones/breathe', 'v4.23.0')
 
 def build_docs(version='dev', **kwargs):
   doc_dir = kwargs.get('doc_dir', os.path.dirname(os.path.realpath(__file__)))
@@ -84,7 +62,7 @@ def build_docs(version='dev', **kwargs):
                           "FMT_BEGIN_NAMESPACE=namespace fmt {{" \
                           "FMT_END_NAMESPACE=}}" \
                           "FMT_STRING_ALIAS=1" \
-                          "FMT_ENABLE_IF(B)="
+                          "FMT_DOC=1"
       EXCLUDE_SYMBOLS   = fmt::formatter fmt::printf_formatter fmt::arg_join \
                           fmt::basic_format_arg::handle
     '''.format(include_dir, doxyxml_dir).encode('UTF-8'))
@@ -107,7 +85,7 @@ def build_docs(version='dev', **kwargs):
 
   html_dir = os.path.join(work_dir, 'html')
   main_versions = reversed(versions[-3:])
-  check_call(['sphinx-build',
+  check_call([os.path.join('virtualenv', 'bin', 'sphinx-build'),
               '-Dbreathe_projects.format=' + os.path.abspath(doxyxml_dir),
               '-Dversion=' + version, '-Drelease=' + version,
               '-Aversion=' + version, '-Aversions=' + ','.join(main_versions),

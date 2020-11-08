@@ -274,7 +274,11 @@ struct monostate {};
 // An enable_if helper to be used in template parameters which results in much
 // shorter symbols: https://godbolt.org/z/sWw4vP. Extra parentheses are needed
 // to workaround a bug in MSVC 2019 (see #1140 and #1186).
-#define FMT_ENABLE_IF(...) enable_if_t<(__VA_ARGS__), int> = 0
+#ifdef FMT_DOC
+#  define FMT_ENABLE_IF(...)
+#else
+#  define FMT_ENABLE_IF(...) enable_if_t<(__VA_ARGS__), int> = 0
+#endif
 
 namespace detail {
 
