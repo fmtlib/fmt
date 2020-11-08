@@ -523,11 +523,15 @@ void print(std::FILE* f, const text_style& ts, const S& format_str,
 }
 
 /**
+  \rst
   Formats a string and prints it to stdout using ANSI escape sequences to
   specify text formatting.
-  Example:
+
+  **Example**:
+
     fmt::print(fmt::emphasis::bold | fg(fmt::color::red),
                "Elapsed time: {0:.2f} seconds", 1.23);
+  \endrst
  */
 template <typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_string<S>::value)>

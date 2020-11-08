@@ -412,24 +412,26 @@ Date and Time Formatting
   <https://en.cppreference.com/w/cpp/chrono/time_point>`_
 * `std::tm <https://en.cppreference.com/w/cpp/chrono/c/tm>`_
 
-For example::
+The format syntax is described in :ref:`chrono-specs`.
+
+**Example**::
 
   #include <fmt/chrono.h>
 
-  std::time_t t = std::time(nullptr);
+  int main() {
+    std::time_t t = std::time(nullptr);
 
-  // Prints "The date is 2020-11-07." (with the current date):
-  fmt::print("The date is {:%Y-%m-%d}.", fmt::localtime(t));
+    // Prints "The date is 2020-11-07." (with the current date):
+    fmt::print("The date is {:%Y-%m-%d}.", fmt::localtime(t));
 
-  using namespace std::literals::chrono_literals;
+    using namespace std::literals::chrono_literals;
 
-  // Prints "Default format: 42s 100ms":
-  fmt::print("Default format: {} {}\n", 42s, 100ms);
+    // Prints "Default format: 42s 100ms":
+    fmt::print("Default format: {} {}\n", 42s, 100ms);
 
-  // Prints "strftime-like format: 03:15:30":
-  fmt::print("strftime-like format: {:%H:%M:%S}\n", 3h + 15min + 30s);
-
-The syntax is described in :ref:`chrono-specs`.
+    // Prints "strftime-like format: 03:15:30":
+    fmt::print("strftime-like format: {:%H:%M:%S}\n", 3h + 15min + 30s);
+  }
 
 .. doxygenfunction:: localtime(std::time_t)
 

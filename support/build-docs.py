@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 import errno, os, shutil, subprocess, sys, urllib
-from subprocess import call, check_call, Popen, PIPE, STDOUT
+from subprocess import check_call, Popen, PIPE, STDOUT
 
 def rmtree_if_exists(dir):
     try:
@@ -12,23 +12,16 @@ def rmtree_if_exists(dir):
         if e.errno == errno.ENOENT:
             pass
 
-def install_dependencies():
-    deb_file = 'doxygen_1.8.6-2_amd64.deb'
-    urllib.urlretrieve('http://mirrors.kernel.org/ubuntu/pool/main/d/doxygen/' +
-                       deb_file, deb_file)
-    check_call(['sudo', 'dpkg', '-i', deb_file])
-
+# Build the docs.
 fmt_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-
-is_ci = 'CI' in os.environ
-if is_ci:
-    install_dependencies()
 sys.path.insert(0, os.path.join(fmt_dir, 'doc'))
 import build
 build.create_build_env()
 html_dir = build.build_docs()
+
 repo = 'fmtlib.github.io'
 branch = os.environ['GITHUB_REF']
+is_ci = 'CI' in os.environ
 if is_ci and branch != 'refs/heads/master':
     print('Branch: ' + branch)
     exit(0) # Ignore non-master branches
