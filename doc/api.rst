@@ -434,9 +434,9 @@ The format syntax is described in :ref:`chrono-specs`.
     fmt::print("strftime-like format: {:%H:%M:%S}\n", 3h + 15min + 30s);
   }
 
-.. doxygenfunction:: localtime(std::time_t)
+.. doxygenfunction:: localtime(std::time_t time)
 
-.. doxygenfunction:: gmtime(std::time_t)
+.. doxygenfunction:: gmtime(std::time_t time)
 
 .. _compile-api:
 
@@ -503,11 +503,11 @@ the POSIX extension for positional arguments. Unlike their standard
 counterparts, the ``fmt`` functions are type-safe and throw an exception if an
 argument type doesn't match its format specification.
 
-.. doxygenfunction:: printf(const S&, const Args&...)
+.. doxygenfunction:: printf(const S &format_str, const Args&... args)
 
-.. doxygenfunction:: fprintf(std::FILE *, const S&, const Args&...)
+.. doxygenfunction:: fprintf(std::FILE *f, const S &format, const Args&... args)
 
-.. doxygenfunction:: fprintf(std::basic_ostream<Char>&, const S&, const Args&...)
+.. doxygenfunction:: fprintf(std::basic_ostream<Char> &os, const S &format_str, const Args&... args)
 
 .. doxygenfunction:: sprintf(const S&, const Args&...)
 
