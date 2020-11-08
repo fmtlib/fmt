@@ -89,7 +89,9 @@ def build_docs(version='dev', **kwargs):
                           fmt::basic_format_arg::handle
     '''.format(include_dir, doxyxml_dir).encode('UTF-8'))
   noisy_warnings = [
-    'warning: .* fmt::detail::.* is not documented.'
+    'warning: .* fmt::detail::.* is not documented.',
+    'warning: Internal inconsistency: member .* does not belong to any ' +
+    'container!'
   ]
   for w in noisy_warnings:
       out = re.sub('.*' + w + '\n', '', out)
