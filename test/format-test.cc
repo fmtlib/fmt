@@ -1992,10 +1992,12 @@ TEST(FormatTest, FormatToN) {
   EXPECT_EQ(5u, result.size);
   EXPECT_EQ(buffer + 3, result.out);
   EXPECT_EQ("123x", fmt::string_view(buffer, 4));
+
   result = fmt::format_to_n(buffer, 3, "{:s}", "foobar");
   EXPECT_EQ(6u, result.size);
   EXPECT_EQ(buffer + 3, result.out);
   EXPECT_EQ("foox", fmt::string_view(buffer, 4));
+
   buffer[0] = 'x';
   buffer[1] = 'x';
   buffer[2] = 'x';
@@ -2003,10 +2005,15 @@ TEST(FormatTest, FormatToN) {
   EXPECT_EQ(1u, result.size);
   EXPECT_EQ(buffer + 1, result.out);
   EXPECT_EQ("Axxx", fmt::string_view(buffer, 4));
+
   result = fmt::format_to_n(buffer, 3, "{}{} ", 'B', 'C');
   EXPECT_EQ(3u, result.size);
   EXPECT_EQ(buffer + 3, result.out);
   EXPECT_EQ("BC x", fmt::string_view(buffer, 4));
+
+  result = fmt::format_to_n(buffer, 4, "{}", "ABCDE");
+  EXPECT_EQ(5u, result.size);
+  EXPECT_EQ("ABCD", fmt::string_view(buffer, 4));
 }
 
 TEST(FormatTest, WideFormatToN) {
