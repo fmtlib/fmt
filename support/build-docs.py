@@ -3,7 +3,7 @@
 
 from __future__ import print_function
 import errno, os, shutil, subprocess, sys, urllib
-from subprocess import check_call, Popen, PIPE, STDOUT
+from subprocess import call, check_call, Popen, PIPE, STDOUT
 
 def rmtree_if_exists(dir):
     try:
