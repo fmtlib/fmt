@@ -515,7 +515,7 @@ constexpr parse_specs_result<T, Char> parse_specs(basic_string_view<Char> str,
   auto ctx = basic_format_parse_context<Char>(str, {}, arg_id + 1);
   auto f = formatter<T, Char>();
   auto end = f.parse(ctx);
-  return {f, pos + (end - str.data()) + 1, ctx.next_arg_id()};
+  return {f, pos + static_cast<size_t>(end - str.data()) + 1, ctx.next_arg_id()};
 }
 
 // Compiles a non-empty format string and returns the compiled representation
