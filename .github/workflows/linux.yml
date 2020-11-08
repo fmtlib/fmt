@@ -39,3 +39,26 @@ jobs:
     - name: Test
       working-directory: ${{runner.workspace}}/build
       run: ctest -C ${{matrix.build_type}}
+
+  test-compile-time-formatting:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Create Build Environment
+        run: cmake -E make_directory ${{runner.workspace}}/build
+
+      - name: Configure
+        working-directory: ${{runner.workspace}}/build
+        env:
+          CXX: clang++-10
+        run: cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_STANDARD=20 -DFMT_ENABLE_COMPILE_TIME_FORMATTING=1 -DFMT_DOC=OFF -DFMT_PEDANTIC=ON -DFMT_WERROR=ON $GITHUB_WORKSPACE
+
+      - name: Build
+        working-directory: ${{runner.workspace}}/build
+        run: cmake --build . --config Debug --target compile-time-formatting-test
+
+      - name: Test
+        working-directory: ${{runner.workspace}}/build
+        run: ctest -C Debug -R compile-time-formatting-test
