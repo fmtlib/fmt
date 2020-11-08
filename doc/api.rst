@@ -48,7 +48,7 @@ participate in an overload resolution if the latter is not a string.
 .. doxygenfunction:: format(const S &format_str, Args&&... args)
 .. doxygenfunction:: vformat(const S &format_str, basic_format_args<buffer_context<type_identity_t<Char>>> args)
 
-.. doxygenfunction:: format_to(OutputIt out, const S &format_str, Args&&... args)
+.. doxygenfunction:: format_to(OutputIt out, const S&, const Args&... args)
 .. doxygenfunction:: format_to_n(OutputIt out, size_t n, const S&, const Args&... args)
 .. doxygenfunction:: formatted_size(string_view format_str, Args&&... args)
 
@@ -294,9 +294,9 @@ Literal-based API
 
 The following user-defined literals are defined in ``fmt/format.h``.
 
-.. doxygenfunction:: operator""_format(const char *, size_t)
+.. doxygenfunction:: operator""_format(const char *s, size_t n)
 
-.. doxygenfunction:: operator""_a(const char *, size_t)
+.. doxygenfunction:: operator""_a(const char *s, size_t)
 
 Utilities
 ---------
@@ -313,7 +313,7 @@ Utilities
 
 .. doxygenfunction:: fmt::to_wstring(const T &value)
 
-.. doxygenfunction:: fmt::to_string_view(const Char *)
+.. doxygenfunction:: fmt::to_string_view(const Char *s)
 
 .. doxygenfunction:: fmt::join(Range &&range, string_view sep)
 
@@ -460,7 +460,7 @@ Terminal color and text style
 
 ``fmt/color.h`` provides support for terminal color and text style output.
 
-.. doxygenfunction:: print(const text_style&, const S&, const Args&...)
+.. doxygenfunction:: print(const text_style &ts, const S &format_str, const Args&... args)
 
 .. doxygenfunction:: fg(detail::color_type)
 
