@@ -88,15 +88,17 @@ def build_docs(version='dev', **kwargs):
       EXCLUDE_SYMBOLS   = fmt::formatter fmt::printf_formatter fmt::arg_join \
                           fmt::basic_format_arg::handle
     '''.format(include_dir, doxyxml_dir).encode('UTF-8'))
-  noisy_warnings = [
-    'warning: Internal inconsistency: .* does not belong to any container!'
-  ]
   internal_symbols = [
     'fmt::detail::.*',
     'basic_data<>',
+    'fmt::type_identity',
     'fmt::dynamic_formatter'
   ]
-  for w in noisy_warnings + ['(' + '|'.join(internal_symbols) + ')']:
+  noisy_warnings = [
+    'warning: Compound (' + '|'.join(internal_symbols) + ') is not documented.',
+    'warning: Internal inconsistency: .* does not belong to any container!'
+  ]
+  for w in noisy_warnings:
       out = re.sub('.*' + w + '\n', '', out)
   print(out)
   if p.returncode != 0:
