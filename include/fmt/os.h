@@ -388,7 +388,7 @@ class ostream final : private detail::buffer<char> {
     clear();
   }
 
-  void grow(size_t) final;
+  void grow(size_t) override final;
 
   ostream(cstring_view path, const detail::ostream_params& params)
       : file_(path, params.oflag) {
