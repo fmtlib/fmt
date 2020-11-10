@@ -23,7 +23,7 @@
 #  include <windows.h>
 #endif
 
-#include "fmt/core.h"
+#include "fmt/args.h"
 
 #undef min
 #undef max
