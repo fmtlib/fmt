@@ -296,6 +296,8 @@ Projects using this library
 * `0 A.D. <https://play0ad.com/>`_: a free, open-source, cross-platform
   real-time strategy game
 
+* `2GIS <https://2gis.ru/>`_: free business listings with a city map
+
 * `AMPL/MP <https://github.com/ampl/mp>`_:
   an open-source library for mathematical programming
 
