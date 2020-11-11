@@ -3089,9 +3089,8 @@ struct format_handler : detail::error_handler {
       : parse_context(str), context(out, format_args, loc) {}
 
   void on_text(const Char* begin, const Char* end) {
-    auto size = to_unsigned(end - begin);
-    auto out = context.out();
-    context.advance_to(write<Char>(out, basic_string_view<Char>(begin, size)));
+    auto text = basic_string_view<Char>(begin, to_unsigned(end - begin));
+    context.advance_to(write<Char>(context.out(), text));
   }
 
   int on_arg_id() { return parse_context.next_arg_id(); }
