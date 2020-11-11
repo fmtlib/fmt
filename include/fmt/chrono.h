@@ -764,15 +764,13 @@ inline std::chrono::duration<Rep, std::milli> get_milliseconds(
 
 template <typename Char, typename Rep, typename OutputIt>
 OutputIt format_duration_value(OutputIt out, Rep val, int precision) {
-  if (precision >= 0)
-    return format_to(out, FMT_STRING("{:.{}f}"), val, precision);
-  if (std::is_floating_point<Rep>::value) {
-    return format_to(out, FMT_STRING("{:g}"), val);
-  } else {
-    return format_to(out, FMT_STRING("{}"), val);
-  }
+  const Char pr_f[] = {'{', ':', '.', '{', '}', 'f', '}', 0};
+  if (precision >= 0) return vformat_to(out, pr_f, make_format_args(val, precision));
+  const Char fp_f[] = {'{', ':', 'g', '}', 0};
+  const Char format[] = {'{', '}', 0};
+  return vformat_to(out, std::is_floating_point<Rep>::value ? fp_f : format,
+                   make_format_args(val));
 }
-
 template <typename Char, typename OutputIt>
 OutputIt copy_unit(string_view unit, OutputIt out, Char) {
   return std::copy(unit.begin(), unit.end(), out);
@@ -790,9 +788,10 @@ template <typename Char, typename Period, typename OutputIt>
 OutputIt format_duration_unit(OutputIt out) {
   if (const char* unit = get_units<Period>())
     return copy_unit(string_view(unit), out, Char());
-  if (const_check(Period::den == 1))
-    return format_to(out, FMT_STRING("[{}]s"), Period::num);
-  return format_to(out, FMT_STRING("[{}/{}]s"), Period::num, Period::den);
+  const Char num_f[] = {'[', '{', '}', ']', 's', 0};
+  if (const_check(Period::den == 1)) return vformat_to(out, num_f, make_format_args(Period::num));
+  const Char num_def_f[] = {'[', '{', '}', '/', '{', '}', ']', 's', 0};
+  return vformat_to(out, num_def_f, make_format_args(Period::num, Period::den));
 }
 
 template <typename FormatContext, typename OutputIt, typename Rep,
