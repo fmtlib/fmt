@@ -3070,9 +3070,7 @@ struct format_handler : detail::error_handler {
   void on_text(const Char* begin, const Char* end) {
     auto size = to_unsigned(end - begin);
     auto out = context.out();
-    auto&& it = reserve(out, size);
-    it = std::copy_n(begin, size, it);
-    context.advance_to(out);
+    context.advance_to(write<Char>(out, basic_string_view<Char>(begin, size)));
   }
 
   int on_arg_id() { return parse_context.next_arg_id(); }
