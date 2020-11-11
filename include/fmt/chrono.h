@@ -764,13 +764,20 @@ inline std::chrono::duration<Rep, std::milli> get_milliseconds(
 
 template <typename Char, typename Rep, typename OutputIt>
 OutputIt format_duration_value(OutputIt out, Rep val, int precision) {
+  using context = FMT_BUFFER_CONTEXT(type_identity_t<Char>);
+
   const Char pr_f[] = {'{', ':', '.', '{', '}', 'f', '}', 0};
-  if (precision >= 0) return vformat_to(out, pr_f, make_format_args(val, precision));
+  if (precision >= 0) {
+    return vformat_to(out, to_string_view(pr_f),
+                      make_format_args<context>(val, precision));
+  }
   const Char fp_f[] = {'{', ':', 'g', '}', 0};
   const Char format[] = {'{', '}', 0};
-  return vformat_to(out, std::is_floating_point<Rep>::value ? fp_f : format,
-                   make_format_args(val));
+  return vformat_to(
+      out, to_string_view(std::is_floating_point<Rep>::value ? fp_f : format),
+      make_format_args<context>(val));
 }
+
 template <typename Char, typename OutputIt>
 OutputIt copy_unit(string_view unit, OutputIt out, Char) {
   return std::copy(unit.begin(), unit.end(), out);
@@ -786,12 +793,19 @@ OutputIt copy_unit(string_view unit, OutputIt out, wchar_t) {
 
 template <typename Char, typename Period, typename OutputIt>
 OutputIt format_duration_unit(OutputIt out) {
-  if (const char* unit = get_units<Period>())
+  using context = FMT_BUFFER_CONTEXT(type_identity_t<Char>);
+
+  if (const char* unit = get_units<Period>()) {
     return copy_unit(string_view(unit), out, Char());
+  }
   const Char num_f[] = {'[', '{', '}', ']', 's', 0};
-  if (const_check(Period::den == 1)) return vformat_to(out, num_f, make_format_args(Period::num));
+  if (const_check(Period::den == 1)) {
+    return vformat_to(out, to_string_view(num_f),
+                      make_format_args<context>(Period::num));
+  }
   const Char num_def_f[] = {'[', '{', '}', '/', '{', '}', ']', 's', 0};
-  return vformat_to(out, num_def_f, make_format_args(Period::num, Period::den));
+  return vformat_to(out, to_string_view(num_def_f),
+                    make_format_args<context>(Period::num, Period::den));
 }
 
 template <typename FormatContext, typename OutputIt, typename Rep,
