@@ -8,6 +8,7 @@
 #ifndef FMT_COMPILE_H_
 #define FMT_COMPILE_H_
 
+#include <algorithm>
 #include <vector>
 
 #include "format.h"

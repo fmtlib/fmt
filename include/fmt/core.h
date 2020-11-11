@@ -784,9 +784,7 @@ class iterator_buffer final : public Traits, public buffer<T> {
 
  public:
   explicit iterator_buffer(OutputIt out, size_t n = buffer_size)
-      : Traits(n),
-        buffer<T>(data_, 0, buffer_size),
-        out_(out) {}
+      : Traits(n), buffer<T>(data_, 0, buffer_size), out_(out) {}
   ~iterator_buffer() { flush(); }
 
   OutputIt out() {
@@ -1918,7 +1916,7 @@ FMT_END_NAMESPACE
 #endif  // FMT_CORE_H_
 
 // Define FMT_DYNAMIC_ARGS to make core.h provide dynamic_format_arg_store
-// (not recommended).
+// DEPRECATED! Include fmt/args.h directly instead.
 #ifdef FMT_DYNAMIC_ARGS
-#  include "args.h"
+#include "args.h"
 #endif

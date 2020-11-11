@@ -33,13 +33,13 @@
 #ifndef FMT_FORMAT_H_
 #define FMT_FORMAT_H_
 
-#include <algorithm>
 #include <cerrno>
 #include <cmath>
 #include <cstdint>
 #include <limits>
 #include <memory>
 #include <stdexcept>
+#include <utility>  // std::swap
 
 #include "core.h"
 
@@ -561,11 +561,22 @@ inline size_t code_point_index(basic_string_view<char8_type> s, size_t n) {
   const char8_type* data = s.data();
   size_t num_code_points = 0;
   for (size_t i = 0, size = s.size(); i != size; ++i) {
-    if ((data[i] & 0xc0) != 0x80 && ++num_code_points > n) {
-      return i;
-    }
+    if ((data[i] & 0xc0) != 0x80 && ++num_code_points > n) return i;
   }
   return s.size();
+}
+
+// <algorithm> is spectacularly slow to compile in C++20 so use a simple fill_n
+// instead (#1998).
+template <typename OutputIt, typename Size, typename T>
+OutputIt fill_n(OutputIt out, Size count, const T& value) {
+  for (Size i = 0; i < count; ++i) *out++ = value;
+  return out;
+}
+template <typename T, typename Size>
+inline T* fill_n(T* out, Size count, char value) {
+  std::memset(out, value, to_unsigned(count));
+  return out + count;
 }
 
 template <typename InputIt, typename OutChar>
@@ -577,14 +588,21 @@ using needs_conversion = bool_constant<
 template <typename OutChar, typename InputIt, typename OutputIt,
           FMT_ENABLE_IF(!needs_conversion<InputIt, OutChar>::value)>
 OutputIt copy_str(InputIt begin, InputIt end, OutputIt it) {
-  return std::copy(begin, end, it);
+  while (begin != end) *it++ = *begin++;
+  return it;
+}
+
+template <typename OutChar, typename InputIt,
+          FMT_ENABLE_IF(!needs_conversion<InputIt, OutChar>::value)>
+inline OutChar* copy_str(InputIt begin, InputIt end, OutChar* out) {
+  return std::uninitialized_copy(begin, end, out);
 }
 
 template <typename OutChar, typename InputIt, typename OutputIt,
           FMT_ENABLE_IF(needs_conversion<InputIt, OutChar>::value)>
 OutputIt copy_str(InputIt begin, InputIt end, OutputIt it) {
-  return std::transform(begin, end, it,
-                        [](char c) { return static_cast<char8_type>(c); });
+  while (begin != end) *it++ = static_cast<char8_type>(*begin++);
+  return it;
 }
 
 template <typename Char, typename InputIt>
@@ -617,7 +635,7 @@ void buffer<T>::append(const U* begin, const U* end) {
 
 template <typename OutputIt, typename T, typename Traits>
 void iterator_buffer<OutputIt, T, Traits>::flush() {
-  out_ = std::copy_n(data_, this->limit(this->size()), out_);
+  out_ = copy_str<T>(data_, data_ + this->limit(this->size()), out_);
   this->clear();
 }
 }  // namespace detail
@@ -754,7 +772,7 @@ void basic_memory_buffer<T, SIZE, Allocator>::grow(size_t size) {
   if (size > new_capacity)
     new_capacity = size;
   else if (new_capacity > max_size)
-    new_capacity = (std::max)(size, max_size);
+    new_capacity = size > max_size ? size : max_size;
   T* old_data = this->data();
   T* new_data =
       std::allocator_traits<Allocator>::allocate(alloc_, new_capacity);
@@ -1493,8 +1511,10 @@ class cstring_type_checker : public ErrorHandler {
 template <typename OutputIt, typename Char>
 FMT_NOINLINE OutputIt fill(OutputIt it, size_t n, const fill_t<Char>& fill) {
   auto fill_size = fill.size();
-  if (fill_size == 1) return std::fill_n(it, n, fill[0]);
-  for (size_t i = 0; i < n; ++i) it = std::copy_n(fill.data(), fill_size, it);
+  if (fill_size == 1) return detail::fill_n(it, n, fill[0]);
+  auto data = fill.data();
+  for (size_t i = 0; i < n; ++i)
+    it = copy_str<Char>(data, data + fill_size, it);
   return it;
 }
 
@@ -1570,7 +1590,7 @@ OutputIt write_int(OutputIt out, int num_digits, string_view prefix,
   return write_padded<align::right>(out, specs, data.size, [=](iterator it) {
     if (prefix.size() != 0)
       it = copy_str<Char>(prefix.begin(), prefix.end(), it);
-    it = std::fill_n(it, data.padding, static_cast<Char>('0'));
+    it = detail::fill_n(it, data.padding, static_cast<Char>('0'));
     return f(it);
   });
 }
@@ -1779,7 +1799,7 @@ inline Char* write_significand(Char* out, UInt significand,
   if (integral_size == 1)
     out[0] = out[1];
   else
-    std::copy_n(out + 1, integral_size, out);
+    std::uninitialized_copy_n(out + 1, integral_size, out);
   out[integral_size] = decimal_point;
   return end;
 }
@@ -1831,7 +1851,8 @@ OutputIt write_float(OutputIt out, const DecimalFP& fp,
   if (use_exp_format()) {
     int num_zeros = 0;
     if (fspecs.showpoint) {
-      num_zeros = (std::max)(fspecs.precision - significand_size, 0);
+      num_zeros = fspecs.precision - significand_size;
+      if (num_zeros < 0) num_zeros = 0;
       size += to_unsigned(num_zeros);
     } else if (significand_size == 1) {
       decimal_point = Char();
@@ -1847,7 +1868,7 @@ OutputIt write_float(OutputIt out, const DecimalFP& fp,
       // Insert a decimal point after the first digit and add an exponent.
       it = write_significand(it, significand, significand_size, 1,
                              decimal_point);
-      if (num_zeros > 0) it = std::fill_n(it, num_zeros, zero);
+      if (num_zeros > 0) it = detail::fill_n(it, num_zeros, zero);
       *it++ = static_cast<Char>(exp_char);
       return write_exponent<Char>(output_exp, it);
     };
@@ -1871,10 +1892,10 @@ OutputIt write_float(OutputIt out, const DecimalFP& fp,
     return write_padded<align::right>(out, specs, size, [&](iterator it) {
       if (sign) *it++ = static_cast<Char>(data::signs[sign]);
       it = write_significand<Char>(it, significand, significand_size);
-      it = std::fill_n(it, fp.exponent, zero);
+      it = detail::fill_n(it, fp.exponent, zero);
       if (!fspecs.showpoint) return it;
       *it++ = decimal_point;
-      return num_zeros > 0 ? std::fill_n(it, num_zeros, zero) : it;
+      return num_zeros > 0 ? detail::fill_n(it, num_zeros, zero) : it;
     });
   } else if (exp > 0) {
     // 1234e-2 -> 12.34[0+]
@@ -1884,7 +1905,7 @@ OutputIt write_float(OutputIt out, const DecimalFP& fp,
       if (sign) *it++ = static_cast<Char>(data::signs[sign]);
       it = write_significand(it, significand, significand_size, exp,
                              decimal_point);
-      return num_zeros > 0 ? std::fill_n(it, num_zeros, zero) : it;
+      return num_zeros > 0 ? detail::fill_n(it, num_zeros, zero) : it;
     });
   }
   // 1234e-6 -> 0.001234
@@ -1899,7 +1920,7 @@ OutputIt write_float(OutputIt out, const DecimalFP& fp,
     *it++ = zero;
     if (num_zeros == 0 && significand_size == 0 && !fspecs.showpoint) return it;
     *it++ = decimal_point;
-    it = std::fill_n(it, num_zeros, zero);
+    it = detail::fill_n(it, num_zeros, zero);
     return write_significand<Char>(it, significand, significand_size);
   });
 }
@@ -2030,7 +2051,7 @@ OutputIt write(OutputIt out, string_view value) {
 template <typename Char, typename OutputIt>
 OutputIt write(OutputIt out, basic_string_view<Char> value) {
   auto it = reserve(out, value.size());
-  it = std::copy(value.begin(), value.end(), it);
+  it = copy_str<Char>(value.begin(), value.end(), it);
   return base_iterator(out, it);
 }
 
@@ -2172,7 +2193,7 @@ class arg_formatter_base {
   void write(wstring_view value) {
     static_assert(std::is_same<Char, wchar_t>::value, "");
     auto&& it = reserve(value.size());
-    it = std::copy(value.begin(), value.end(), it);
+    it = copy_str<Char>(value.begin(), value.end(), it);
   }
 
   template <typename Ch>
@@ -3674,7 +3695,7 @@ struct formatter<arg_join<It, Sentinel, Char>, Char>
     if (it != value.end) {
       out = base::format(*it++, ctx);
       while (it != value.end) {
-        out = std::copy(value.sep.begin(), value.sep.end(), out);
+        out = detail::copy_str<Char>(value.sep.begin(), value.sep.end(), out);
         ctx.advance_to(out);
         out = base::format(*it++, ctx);
       }

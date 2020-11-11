@@ -8,6 +8,7 @@
 #ifndef FMT_FORMAT_INL_H_
 #define FMT_FORMAT_INL_H_
 
+#include <algorithm>
 #include <cassert>
 #include <cctype>
 #include <climits>

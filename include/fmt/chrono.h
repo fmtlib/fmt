@@ -8,6 +8,7 @@
 #ifndef FMT_CHRONO_H_
 #define FMT_CHRONO_H_
 
+#include <algorithm>
 #include <chrono>
 #include <ctime>
 #include <locale>
