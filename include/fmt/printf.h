@@ -480,11 +480,13 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
     }
     char_type c = *it++;
     if (it != end && *it == c) {
-      out = detail::write(out, basic_string_view<Char>(start, it - start));
+      out = detail::write(
+          out, basic_string_view<Char>(start, detail::to_unsigned(it - start)));
       start = ++it;
       continue;
     }
-    out = detail::write(out, basic_string_view<Char>(start, it - 1 - start));
+    out = detail::write(out, basic_string_view<Char>(
+                                 start, detail::to_unsigned(it - 1 - start)));
 
     format_specs specs;
     specs.align = align::right;
@@ -596,7 +598,8 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
     // Format argument.
     out = visit_format_arg(ArgFormatter(out, specs, *this), arg);
   }
-  return detail::write(out, basic_string_view<Char>(start, it - start));
+  return detail::write(
+      out, basic_string_view<Char>(start, detail::to_unsigned(it - start)));
 }
 
 template <typename Char>
