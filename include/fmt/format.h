@@ -1274,7 +1274,7 @@ template <typename T> struct decimal_fp {
   int exponent;
 };
 
-template <typename T> decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT;
+template <typename T> FMT_API decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT;
 }  // namespace dragonbox
 
 template <typename T>

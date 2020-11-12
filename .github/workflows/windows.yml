@@ -1,0 +1,44 @@
+name: windows
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        # windows-2016 and windows-2019 have MSVC 2017 and 2019 installed
+        # respectively: https://github.com/actions/virtual-environments.
+        os: [windows-2016, windows-2019]
+        platform: [Win32, x64]
+        build_type: [Debug, Release]
+        include:
+          - os: windows-2016
+            platform: Win32
+            build_type: Debug
+            shared: -DBUILD_SHARED_LIBS=ON
+        exclude:
+          - os: windows-2016
+            platform: Win32
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Create Build Environment
+      run: cmake -E make_directory ${{runner.workspace}}/build
+
+    - name: Configure
+      # Use a bash shell for $GITHUB_WORKSPACE.
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
+      run: |
+        cmake -DCMAKE_BUILD_TYPE=${{matrix.build_type}} ${{matrix.shared}} \
+              -A ${{matrix.platform}} $GITHUB_WORKSPACE
+
+    - name: Build
+      working-directory: ${{runner.workspace}}/build
+      run: cmake --build . --config ${{matrix.build_type}}
+
+    - name: Test
+      working-directory: ${{runner.workspace}}/build
+      run: ctest -C ${{matrix.build_type}}
