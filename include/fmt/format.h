@@ -638,7 +638,6 @@ void iterator_buffer<OutputIt, T, Traits>::flush() {
   out_ = copy_str<T>(data_, data_ + this->limit(this->size()), out_);
   this->clear();
 }
-
 }  // namespace detail
 
 // The number of characters to store in the basic_memory_buffer object itself
