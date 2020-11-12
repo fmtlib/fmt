@@ -37,9 +37,9 @@
 #include <cmath>
 #include <cstdint>
 #include <limits>
-#include <memory>
 #include <stdexcept>
 #include <utility>  // std::swap
+#include <memory>
 
 #include "core.h"
 
@@ -223,7 +223,7 @@ inline int clz(uint32_t x) {
   // Static analysis complains about using uninitialized data
   // "r", but the only way that can happen is if "x" is 0,
   // which the callers guarantee to not happen.
-  FMT_SUPPRESS_MSC_WARNING(6102)
+  FMT_MSC_WARNING(suppress : 6102)
   return 31 ^ static_cast<int>(r);
 }
 #  define FMT_BUILTIN_CLZ(n) detail::clz(n)
@@ -239,7 +239,7 @@ inline int clzll(uint64_t x) {
   _BitScanReverse(&r, static_cast<uint32_t>(x));
 #  endif
   FMT_ASSERT(x != 0, "");
-  FMT_SUPPRESS_MSC_WARNING(6102)  // Suppress a bogus static analysis warning.
+  FMT_MSC_WARNING(suppress : 6102)  // Suppress a bogus static analysis warning.
   return 63 ^ static_cast<int>(r);
 }
 #  define FMT_BUILTIN_CLZLL(n) detail::clzll(n)
@@ -248,7 +248,7 @@ inline int ctz(uint32_t x) {
   unsigned long r = 0;
   _BitScanForward(&r, x);
   FMT_ASSERT(x != 0, "");
-  FMT_SUPPRESS_MSC_WARNING(6102)  // Suppress a bogus static analysis warning.
+  FMT_MSC_WARNING(suppress : 6102)  // Suppress a bogus static analysis warning.
   return static_cast<int>(r);
 }
 #  define FMT_BUILTIN_CTZ(n) detail::ctz(n)
@@ -256,7 +256,7 @@ inline int ctz(uint32_t x) {
 inline int ctzll(uint64_t x) {
   unsigned long r = 0;
   FMT_ASSERT(x != 0, "");
-  FMT_SUPPRESS_MSC_WARNING(6102)  // Suppress a bogus static analysis warning.
+  FMT_MSC_WARNING(suppress : 6102)  // Suppress a bogus static analysis warning.
 #  ifdef _WIN64
   _BitScanForward64(&r, x);
 #  else

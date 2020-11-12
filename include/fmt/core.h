@@ -49,10 +49,10 @@
 
 #ifdef _MSC_VER
 #  define FMT_MSC_VER _MSC_VER
-#  define FMT_SUPPRESS_MSC_WARNING(n) __pragma(warning(suppress : n))
+#  define FMT_MSC_WARNING(...) __pragma(warning(__VA_ARGS__))
 #else
 #  define FMT_MSC_VER 0
-#  define FMT_SUPPRESS_MSC_WARNING(n)
+#  define FMT_MSC_WARNING(...)
 #endif
 
 #ifdef __has_feature
@@ -203,7 +203,7 @@
 #endif
 
 #if !defined(FMT_HEADER_ONLY) && defined(_WIN32)
-#  define FMT_CLASS_API FMT_SUPPRESS_MSC_WARNING(4275)
+#  define FMT_CLASS_API FMT_MSC_WARNING(suppress : 4275)
 #  ifdef FMT_EXPORT
 #    define FMT_API __declspec(dllexport)
 #    define FMT_EXTERN_TEMPLATE_API FMT_API
@@ -328,7 +328,7 @@ FMT_CONSTEXPR typename std::make_unsigned<Int>::type to_unsigned(Int value) {
   return static_cast<typename std::make_unsigned<Int>::type>(value);
 }
 
-FMT_SUPPRESS_MSC_WARNING(4566) constexpr unsigned char micro[] = "\u00B5";
+FMT_MSC_WARNING(suppress : 4566) constexpr unsigned char micro[] = "\u00B5";
 
 template <typename Char> constexpr bool is_unicode() {
   return FMT_UNICODE || sizeof(Char) != 1 ||
@@ -671,7 +671,7 @@ template <typename T> class buffer {
 
  protected:
   // Don't initialize ptr_ since it is not accessed to save a few cycles.
-  FMT_SUPPRESS_MSC_WARNING(26495)
+  FMT_MSC_WARNING(suppress : 26495)
   buffer(size_t sz) FMT_NOEXCEPT : size_(sz), capacity_(sz) {}
 
   buffer(T* p = nullptr, size_t sz = 0, size_t cap = 0) FMT_NOEXCEPT
