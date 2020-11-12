@@ -315,7 +315,7 @@ long getpagesize() {
 #  endif
 }
 
-void ostream::grow(size_t) {
+FMT_API void ostream::grow(size_t) {
   if (this->size() == this->capacity()) flush();
 }
 #endif  // FMT_USE_FCNTL
