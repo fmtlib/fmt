@@ -617,14 +617,12 @@ TEST(PrintfTest, PrintfDetermineOutputSize) {
 
   const auto format_string = "%s";
   const auto format_arg = "Hello";
-  const auto expected_size = 5;
+  const auto expected_size = fmt::sprintf(format_string, format_arg).size();
 
-  EXPECT_EQ(expected_size, fmt::sprintf(format_string, format_arg).size());
-
-  EXPECT_EQ(expected_size,
-            (truncated_printf_context(
+  EXPECT_EQ((truncated_printf_context(
                  fmt::detail::truncating_iterator<backit>(it, 0), format_string,
                  fmt::make_format_args<truncated_printf_context>(format_arg))
                  .format()
-                 .count()));
+                 .count()),
+            expected_size);
 }
