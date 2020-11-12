@@ -395,4 +395,8 @@ TEST(ChronoTest, SpecialDurations) {
             "03:33:20");
 }
 
+TEST(ChronoTest, UnsignedDuration) {
+  EXPECT_EQ("42s", fmt::format("{}", std::chrono::duration<unsigned>(42)));
+}
+
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR
