@@ -103,13 +103,17 @@ template <> struct std::formatter<S> {
 
   // Parses a width argument id in the format { <digit> }.
   constexpr auto parse(format_parse_context& ctx) {
+    constexpr auto is_ascii_digit = [](const char c) {
+      return c >= '0' && c <= '9';
+    };
+
     auto iter = ctx.begin();
     // auto get_char = [&]() { return iter != ctx.end() ? *iter : 0; };
     auto get_char = [&]() { return iter != ctx.end() ? *iter : '\0'; };
     if (get_char() != '{') return iter;
     ++iter;
     char c = get_char();
-    if (!isdigit(c) || (++iter, get_char()) != '}')
+    if (!is_ascii_digit(c) || (++iter, get_char()) != '}')
       throw format_error("invalid format");
     width_arg_id = fmt::detail::to_unsigned(c - '0');
     ctx.check_arg_id(width_arg_id);
