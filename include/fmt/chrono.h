@@ -762,17 +762,20 @@ inline std::chrono::duration<Rep, std::milli> get_milliseconds(
   return std::chrono::duration<Rep, std::milli>(static_cast<Rep>(ms));
 }
 
-template <typename Char, typename Rep, typename OutputIt>
+template <typename Char, typename Rep, typename OutputIt,
+          FMT_ENABLE_IF(std::is_integral<Rep>::value)>
+OutputIt format_duration_value(OutputIt out, Rep val, int precision) {
+  static FMT_CONSTEXPR_DECL const Char format[] = {'{', '}', 0};
+  return format_to(out, FMT_STRING(format), val);
+}
+
+template <typename Char, typename Rep, typename OutputIt,
+          FMT_ENABLE_IF(std::is_floating_point<Rep>::value)>
 OutputIt format_duration_value(OutputIt out, Rep val, int precision) {
   static FMT_CONSTEXPR_DECL const Char pr_f[] = {'{', ':', '.', '{', '}', 'f', '}', 0};
   if (precision >= 0) return format_to(out, FMT_STRING(pr_f), val, precision);
   static FMT_CONSTEXPR_DECL const Char fp_f[] = {'{', ':', 'g', '}', 0};
-  static FMT_CONSTEXPR_DECL const Char format[] = {'{', '}', 0};
-  if(std::is_floating_point<Rep>::value) {
-    return format_to(out, FMT_STRING(fp_f), val);  
-  } else {
-    return format_to(out, FMT_STRING(format), val);
-  }
+  return format_to(out, FMT_STRING(fp_f), val);
 }
 
 template <typename Char, typename OutputIt>
