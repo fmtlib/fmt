@@ -605,6 +605,14 @@ OutputIt copy_str(InputIt begin, InputIt end, OutputIt it) {
   return it;
 }
 
+template <typename OutChar, typename InputIt,
+          FMT_ENABLE_IF(!needs_conversion<InputIt, OutChar>::value)>
+buffer_appender<OutChar> copy_str(InputIt begin, InputIt end,
+                                  buffer_appender<OutChar> out) {
+  get_container(out).append(begin, end);
+  return out;
+}
+
 template <typename Char, typename InputIt>
 inline counting_iterator copy_str(InputIt begin, InputIt end,
                                   counting_iterator it) {
@@ -1518,34 +1526,6 @@ FMT_NOINLINE OutputIt fill(OutputIt it, size_t n, const fill_t<Char>& fill) {
   return it;
 }
 
-template <typename Char, typename OutputIt>
-OutputIt write(OutputIt out, monostate) {
-  FMT_ASSERT(false, "");
-  return out;
-}
-
-template <typename Char, typename OutputIt,
-          FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
-OutputIt write(OutputIt out, string_view value) {
-  auto it = reserve(out, value.size());
-  it = copy_str<Char>(value.begin(), value.end(), it);
-  return base_iterator(out, it);
-}
-
-template <typename Char, typename OutputIt>
-OutputIt write(OutputIt out, basic_string_view<Char> value) {
-  auto it = reserve(out, value.size());
-  it = copy_str<Char>(value.begin(), value.end(), it);
-  return base_iterator(out, it);
-}
-
-template <typename Char>
-buffer_appender<Char> write(buffer_appender<Char> out,
-                            basic_string_view<Char> value) {
-  get_container(out).append(value.begin(), value.end());
-  return out;
-}
-
 // Writes the output of f, padded according to format specifications in specs.
 // size: output size in code units.
 // width: output display width in (terminal) column positions.
@@ -1635,7 +1615,7 @@ OutputIt write(OutputIt out, basic_string_view<StrChar> s,
                    : 0;
   using iterator = remove_reference_t<decltype(reserve(out, 0))>;
   return write_padded(out, specs, size, width, [=](iterator it) {
-    return detail::write<Char>(it, basic_string_view<StrChar>(data, size));
+    return copy_str<Char>(data, data + size, it);
   });
 }
 
@@ -2061,6 +2041,34 @@ OutputIt write_ptr(OutputIt out, UIntPtr value,
 template <typename T> struct is_integral : std::is_integral<T> {};
 template <> struct is_integral<int128_t> : std::true_type {};
 template <> struct is_integral<uint128_t> : std::true_type {};
+
+template <typename Char, typename OutputIt>
+OutputIt write(OutputIt out, monostate) {
+  FMT_ASSERT(false, "");
+  return out;
+}
+
+template <typename Char, typename OutputIt,
+          FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
+OutputIt write(OutputIt out, string_view value) {
+  auto it = reserve(out, value.size());
+  it = copy_str<Char>(value.begin(), value.end(), it);
+  return base_iterator(out, it);
+}
+
+template <typename Char, typename OutputIt>
+OutputIt write(OutputIt out, basic_string_view<Char> value) {
+  auto it = reserve(out, value.size());
+  it = copy_str<Char>(value.begin(), value.end(), it);
+  return base_iterator(out, it);
+}
+
+template <typename Char>
+buffer_appender<Char> write(buffer_appender<Char> out,
+                            basic_string_view<Char> value) {
+  get_container(out).append(value.begin(), value.end());
+  return out;
+}
 
 template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(is_integral<T>::value &&
