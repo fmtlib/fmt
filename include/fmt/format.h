@@ -605,6 +605,14 @@ OutputIt copy_str(InputIt begin, InputIt end, OutputIt it) {
   return it;
 }
 
+template <typename OutChar, typename InputIt,
+          FMT_ENABLE_IF(!needs_conversion<InputIt, OutChar>::value)>
+buffer_appender<OutChar> copy_str(InputIt begin, InputIt end,
+                                  buffer_appender<OutChar> out) {
+  get_container(out).append(begin, end);
+  return out;
+}
+
 template <typename Char, typename InputIt>
 inline counting_iterator copy_str(InputIt begin, InputIt end,
                                   counting_iterator it) {
@@ -2053,13 +2061,6 @@ OutputIt write(OutputIt out, basic_string_view<Char> value) {
   auto it = reserve(out, value.size());
   it = copy_str<Char>(value.begin(), value.end(), it);
   return base_iterator(out, it);
-}
-
-template <typename Char>
-buffer_appender<Char> write(buffer_appender<Char> out,
-                            basic_string_view<Char> value) {
-  get_container(out).append(value.begin(), value.end());
-  return out;
 }
 
 template <typename Char, typename OutputIt, typename T,
