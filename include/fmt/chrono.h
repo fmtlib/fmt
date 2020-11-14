@@ -763,29 +763,19 @@ inline std::chrono::duration<Rep, std::milli> get_milliseconds(
 }
 
 template <typename Char, typename Rep, typename OutputIt,
-          FMT_ENABLE_IF(std::is_integral<Rep>::value && std::is_same<Char, char>::value)>
+          FMT_ENABLE_IF(std::is_integral<Rep>::value)>
 OutputIt format_duration_value(OutputIt out, Rep val, int) {
-  return format_to(out, FMT_STRING("{}"), val);
+  static FMT_CONSTEXPR_DECL const Char format[] = {'{', '}', 0};
+  return format_to(out, compile_string_to_view(format), val);
 }
 
 template <typename Char, typename Rep, typename OutputIt,
-          FMT_ENABLE_IF(std::is_integral<Rep>::value && std::is_same<Char, wchar_t>::value)>
-OutputIt format_duration_value(OutputIt out, Rep val, int) {
-  return format_to(out, FMT_STRING(L"{}"), val);
-}
-
-template <typename Char, typename Rep, typename OutputIt,
-          FMT_ENABLE_IF(std::is_floating_point<Rep>::value && std::is_same<Char, char>::value)>
+          FMT_ENABLE_IF(std::is_floating_point<Rep>::value)>
 OutputIt format_duration_value(OutputIt out, Rep val, int precision) {
-  if (precision >= 0) return format_to(out, FMT_STRING("{:.{}f}"), val, precision);
-  return format_to(out, FMT_STRING("{:g}"), val);
-}
-
-template <typename Char, typename Rep, typename OutputIt,
-          FMT_ENABLE_IF(std::is_floating_point<Rep>::value && std::is_same<Char, wchar_t>::value)>
-OutputIt format_duration_value(OutputIt out, Rep val, int precision) {
-  if (precision >= 0) return format_to(out, FMT_STRING("L{:.{}f}"), val, precision);
-  return format_to(out, FMT_STRING("L{:g}"), val);
+  static FMT_CONSTEXPR_DECL const Char pr_f[] = {'{', ':', '.', '{', '}', 'f', '}', 0};
+  if (precision >= 0) return format_to(out, compile_string_to_view(pr_f), val, precision);
+  static FMT_CONSTEXPR_DECL const Char fp_f[] = {'{', ':', 'g', '}', 0};
+  return format_to(out, compile_string_to_view(fp_f), val);
 }
 
 template <typename Char, typename OutputIt>
@@ -801,22 +791,14 @@ OutputIt copy_unit(string_view unit, OutputIt out, wchar_t) {
   return std::copy(u.c_str(), u.c_str() + u.size(), out);
 }
 
-template <typename Char, typename Period, typename OutputIt,
-          FMT_ENABLE_IF(std::is_same<Char, char>::value)>
+template <typename Char, typename Period, typename OutputIt>
 OutputIt format_duration_unit(OutputIt out) {
   if (const char* unit = get_units<Period>())
     return copy_unit(string_view(unit), out, Char());
-  if (const_check(Period::den == 1)) return format_to(out, FMT_STRING("[{}]s"), Period::num);
-  return format_to(out, FMT_STRING("[{}/{}]s"), Period::num, Period::den);
-}
-
-template <typename Char, typename Period, typename OutputIt,
-          FMT_ENABLE_IF(std::is_same<Char, wchar_t>::value)>
-OutputIt format_duration_unit(OutputIt out) {
-  if (const char* unit = get_units<Period>())
-    return copy_unit(string_view(unit), out, Char());
-  if (const_check(Period::den == 1)) return format_to(out, FMT_STRING(L"[{}]s"), Period::num);
-  return format_to(out, FMT_STRING(L"[{}/{}]s"), Period::num, Period::den);
+  static FMT_CONSTEXPR_DECL const Char num_f[] = {'[', '{', '}', ']', 's', 0};
+  if (const_check(Period::den == 1)) return format_to(out, compile_string_to_view(num_f), Period::num);
+  static FMT_CONSTEXPR_DECL const Char num_def_f[] = {'[', '{', '}', '/', '{', '}', ']', 's', 0};
+  return format_to(out, compile_string_to_view(num_def_f), Period::num, Period::den);
 }
 
 template <typename FormatContext, typename OutputIt, typename Rep,
