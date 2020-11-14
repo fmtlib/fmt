@@ -764,7 +764,7 @@ inline std::chrono::duration<Rep, std::milli> get_milliseconds(
 
 template <typename Char, typename Rep, typename OutputIt,
           FMT_ENABLE_IF(std::is_integral<Rep>::value)>
-OutputIt format_duration_value(OutputIt out, Rep val, int precision) {
+OutputIt format_duration_value(OutputIt out, Rep val, int) {
   static FMT_CONSTEXPR_DECL const Char format[] = {'{', '}', 0};
   return format_to(out, FMT_STRING(format), val);
 }
