@@ -355,22 +355,20 @@ TEST(MemoryBufferTest, ExceptionInDeallocate) {
 }
 
 template <typename Allocator, size_t MaxSize>
-class allocator_max_size: public Allocator {
+class allocator_max_size : public Allocator {
  public:
   using typename Allocator::value_type;
-  size_t max_size() const FMT_NOEXCEPT {
-    return MaxSize;
-  }
+  size_t max_size() const FMT_NOEXCEPT { return MaxSize; }
   value_type* allocate(size_t n) {
     if (n > max_size()) {
       throw std::length_error("size > max_size");
     }
     return std::allocator_traits<Allocator>::allocate(
-      *static_cast<Allocator *>(this), n);
+        *static_cast<Allocator*>(this), n);
   }
   void deallocate(value_type* p, size_t n) {
-    std::allocator_traits<Allocator>::deallocate(
-      *static_cast<Allocator *>(this), p, n);
+    std::allocator_traits<Allocator>::deallocate(*static_cast<Allocator*>(this),
+                                                 p, n);
   }
 };
 
@@ -383,7 +381,7 @@ TEST(MemoryBufferTest, AllocatorMaxSize) {
   try {
     // new_capacity = 128 + 128/2 = 192 > 160
     buffer.resize(160);
-  } catch (const std::exception &) {
+  } catch (const std::exception&) {
     throws_on_resize = true;
   }
   EXPECT_FALSE(throws_on_resize);
@@ -395,7 +393,7 @@ TEST(MemoryBufferTest, AllocatorMaxSizeOverflow) {
   bool throws_on_resize = false;
   try {
     buffer.resize(161);
-  } catch (const std::exception &) {
+  } catch (const std::exception&) {
     throws_on_resize = true;
   }
   EXPECT_TRUE(throws_on_resize);
@@ -2470,16 +2468,16 @@ TEST(FormatTest, CharTraitsIsNotAmbiguous) {
 #endif
 }
 
+#if __cplusplus > 201103L
 struct custom_char {
   int value;
   custom_char() = default;
 
-  template <typename T> custom_char(T val) : value(static_cast<int>(val)) {}
+  template <typename T>
+  constexpr custom_char(T val) : value(static_cast<int>(val)) {}
 
   operator int() const { return value; }
 };
-
-int to_ascii(custom_char c) { return c; }
 
 FMT_BEGIN_NAMESPACE
 template <> struct is_char<custom_char> : std::true_type {};
@@ -2491,6 +2489,7 @@ TEST(FormatTest, FormatCustomChar) {
   EXPECT_EQ(result.size(), 1);
   EXPECT_EQ(result[0], custom_char('x'));
 }
+#endif
 
 // Convert a char8_t string to std::string. Otherwise GTest will insist on
 // inserting `char8_t` NTBS into a `char` stream which is disabled by P1423.

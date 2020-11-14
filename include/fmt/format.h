@@ -1174,8 +1174,8 @@ template <typename T = void> struct null {};
 template <typename Char> struct fill_t {
  private:
   enum { max_size = 4 };
-  Char data_[max_size];
-  unsigned char size_;
+  Char data_[max_size] = {Char(' '), Char(0), Char(0), Char(0)};
+  unsigned char size_ = 1;
 
  public:
   FMT_CONSTEXPR void operator=(basic_string_view<Char> s) {
@@ -1194,13 +1194,6 @@ template <typename Char> struct fill_t {
   FMT_CONSTEXPR Char& operator[](size_t index) { return data_[index]; }
   FMT_CONSTEXPR const Char& operator[](size_t index) const {
     return data_[index];
-  }
-
-  static FMT_CONSTEXPR fill_t<Char> make() {
-    auto fill = fill_t<Char>();
-    fill[0] = Char(' ');
-    fill.size_ = 1;
-    return fill;
   }
 };
 }  // namespace detail
@@ -1233,8 +1226,7 @@ template <typename Char> struct basic_format_specs {
         type(0),
         align(align::none),
         sign(sign::none),
-        alt(false),
-        fill(detail::fill_t<Char>::make()) {}
+        alt(false) {}
 };
 
 using format_specs = basic_format_specs<char>;
