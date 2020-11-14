@@ -1815,8 +1815,11 @@ TEST(FormatTest, CompileTimeString) {
   EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), 42));
   EXPECT_EQ(L"42", fmt::format(FMT_STRING(L"{}"), 42));
   EXPECT_EQ("foo", fmt::format(FMT_STRING("{}"), string_like()));
+
+#if defined(_MSC_VER) && _MSC_VER <= 1927
   EXPECT_EQ("42", fmt::format(FMT_STRING(static_with_null), 42));
   EXPECT_EQ(L"42", fmt::format(FMT_STRING(static_with_null_wide), 42));
+#endif
 
   (void)with_null;
   (void)no_null;
