@@ -96,6 +96,20 @@
 #  define FMT_CONSTEXPR_DECL
 #endif
 
+#if __cplusplus >= 201402L
+#  define FMT_CONSTEXPR14 constexpr
+#else
+#  define FMT_CONSTEXPR14
+#endif
+
+#if __cplusplus >= 202002L
+#  define FMT_CONSTEXPR20 constexpr
+#  define FMT_IS_CONSTANT_EVALUATED std::is_constant_evaluated()
+#else
+#  define FMT_CONSTEXPR20
+#  define FMT_IS_CONSTANT_EVALUATED false
+#endif
+
 #ifndef FMT_OVERRIDE
 #  if FMT_HAS_FEATURE(cxx_override_control) || \
       (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || FMT_MSC_VER >= 1900
