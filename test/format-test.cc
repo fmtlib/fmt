@@ -2423,16 +2423,16 @@ TEST(FormatTest, CharTraitsIsNotAmbiguous) {
 #endif
 }
 
+#if __cplusplus > 201103L
 struct custom_char {
   int value;
   custom_char() = default;
 
-  template <typename T> custom_char(T val) : value(static_cast<int>(val)) {}
+  template <typename T>
+  constexpr custom_char(T val) : value(static_cast<int>(val)) {}
 
   operator int() const { return value; }
 };
-
-int to_ascii(custom_char c) { return c; }
 
 FMT_BEGIN_NAMESPACE
 template <> struct is_char<custom_char> : std::true_type {};
@@ -2444,6 +2444,7 @@ TEST(FormatTest, FormatCustomChar) {
   EXPECT_EQ(result.size(), 1);
   EXPECT_EQ(result[0], custom_char('x'));
 }
+#endif
 
 // Convert a char8_t string to std::string. Otherwise GTest will insist on
 // inserting `char8_t` NTBS into a `char` stream which is disabled by P1423.
