@@ -9,12 +9,20 @@ jobs:
       matrix:
         cxx: [g++-4.8, g++-8, g++-10, clang++-9]
         build_type: [Debug, Release]
+        std: [11]
         include:
+          - cxx: g++-4.8
+            install: sudo apt install g++-4.8
+          - cxx: g++-8
+            std: 14
+          - cxx: g++-10
+            std: 17
+          - cxx: clang++-9
+            std: 11
           - cxx: clang++-9
             build_type: Debug
             fuzz: -DFMT_FUZZ=ON -DFMT_FUZZ_LINKMAIN=ON
-          - cxx: g++-4.8
-            install: sudo apt install g++-4.8
+            std: 17
 
     steps:
     - uses: actions/checkout@v2
@@ -30,7 +38,8 @@ jobs:
         CXX: ${{matrix.cxx}}
       run: |
         cmake -DCMAKE_BUILD_TYPE=${{matrix.build_type}} ${{matrix.fuzz}} \
-              -DFMT_DOC=OFF -DFMT_PEDANTIC=ON -DFMT_WERROR=ON $GITHUB_WORKSPACE
+              -DCMAKE_CXX_STANDARD=${{matrix.std}} -DFMT_DOC=OFF \
+              -DFMT_PEDANTIC=ON -DFMT_WERROR=ON $GITHUB_WORKSPACE
 
     - name: Build
       working-directory: ${{runner.workspace}}/build

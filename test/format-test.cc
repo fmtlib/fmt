@@ -2479,6 +2479,8 @@ struct custom_char {
   operator int() const { return value; }
 };
 
+int to_ascii(custom_char c) { return c; }
+
 FMT_BEGIN_NAMESPACE
 template <> struct is_char<custom_char> : std::true_type {};
 FMT_END_NAMESPACE
