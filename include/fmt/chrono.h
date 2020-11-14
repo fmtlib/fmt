@@ -772,8 +772,10 @@ OutputIt format_duration_value(OutputIt out, Rep val, int) {
 template <typename Char, typename Rep, typename OutputIt,
           FMT_ENABLE_IF(std::is_floating_point<Rep>::value)>
 OutputIt format_duration_value(OutputIt out, Rep val, int precision) {
-  static FMT_CONSTEXPR_DECL const Char pr_f[] = {'{', ':', '.', '{', '}', 'f', '}', 0};
-  if (precision >= 0) return format_to(out, compile_string_to_view(pr_f), val, precision);
+  static FMT_CONSTEXPR_DECL const Char pr_f[] = {'{', ':', '.', '{',
+                                                 '}', 'f', '}', 0};
+  if (precision >= 0)
+    return format_to(out, compile_string_to_view(pr_f), val, precision);
   static FMT_CONSTEXPR_DECL const Char fp_f[] = {'{', ':', 'g', '}', 0};
   return format_to(out, compile_string_to_view(fp_f), val);
 }
@@ -796,9 +798,12 @@ OutputIt format_duration_unit(OutputIt out) {
   if (const char* unit = get_units<Period>())
     return copy_unit(string_view(unit), out, Char());
   static FMT_CONSTEXPR_DECL const Char num_f[] = {'[', '{', '}', ']', 's', 0};
-  if (const_check(Period::den == 1)) return format_to(out, compile_string_to_view(num_f), Period::num);
-  static FMT_CONSTEXPR_DECL const Char num_def_f[] = {'[', '{', '}', '/', '{', '}', ']', 's', 0};
-  return format_to(out, compile_string_to_view(num_def_f), Period::num, Period::den);
+  if (const_check(Period::den == 1))
+    return format_to(out, compile_string_to_view(num_f), Period::num);
+  static FMT_CONSTEXPR_DECL const Char num_def_f[] = {'[', '{', '}', '/', '{',
+                                                      '}', ']', 's', 0};
+  return format_to(out, compile_string_to_view(num_def_f), Period::num,
+                   Period::den);
 }
 
 template <typename FormatContext, typename OutputIt, typename Rep,

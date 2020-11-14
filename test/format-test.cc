@@ -355,22 +355,20 @@ TEST(MemoryBufferTest, ExceptionInDeallocate) {
 }
 
 template <typename Allocator, size_t MaxSize>
-class allocator_max_size: public Allocator {
+class allocator_max_size : public Allocator {
  public:
   using typename Allocator::value_type;
-  size_t max_size() const FMT_NOEXCEPT {
-    return MaxSize;
-  }
+  size_t max_size() const FMT_NOEXCEPT { return MaxSize; }
   value_type* allocate(size_t n) {
     if (n > max_size()) {
       throw std::length_error("size > max_size");
     }
     return std::allocator_traits<Allocator>::allocate(
-      *static_cast<Allocator *>(this), n);
+        *static_cast<Allocator*>(this), n);
   }
   void deallocate(value_type* p, size_t n) {
-    std::allocator_traits<Allocator>::deallocate(
-      *static_cast<Allocator *>(this), p, n);
+    std::allocator_traits<Allocator>::deallocate(*static_cast<Allocator*>(this),
+                                                 p, n);
   }
 };
 
@@ -383,7 +381,7 @@ TEST(MemoryBufferTest, AllocatorMaxSize) {
   try {
     // new_capacity = 128 + 128/2 = 192 > 160
     buffer.resize(160);
-  } catch (const std::exception &) {
+  } catch (const std::exception&) {
     throws_on_resize = true;
   }
   EXPECT_FALSE(throws_on_resize);
@@ -395,7 +393,7 @@ TEST(MemoryBufferTest, AllocatorMaxSizeOverflow) {
   bool throws_on_resize = false;
   try {
     buffer.resize(161);
-  } catch (const std::exception &) {
+  } catch (const std::exception&) {
     throws_on_resize = true;
   }
   EXPECT_TRUE(throws_on_resize);
@@ -1808,7 +1806,8 @@ fmt::string_view to_string_view(string_like) { return "foo"; }
 constexpr char with_null[3] = {'{', '}', '\0'};
 constexpr char no_null[2] = {'{', '}'};
 static FMT_CONSTEXPR_DECL const char static_with_null[3] = {'{', '}', '\0'};
-static FMT_CONSTEXPR_DECL const wchar_t static_with_null_wide[3] = {'{', '}', '\0'};
+static FMT_CONSTEXPR_DECL const wchar_t static_with_null_wide[3] = {'{', '}',
+                                                                    '\0'};
 static FMT_CONSTEXPR_DECL const char static_no_null[2] = {'{', '}'};
 static FMT_CONSTEXPR_DECL const wchar_t static_no_null_wide[2] = {'{', '}'};
 
