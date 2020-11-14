@@ -1148,7 +1148,7 @@ namespace detail {
 using data_digit_pair = char[2];
 
 namespace compile_time_formatting_data {
-  constexpr data_digit_pair digits[] = FMT_DATA_DIGITS;
+constexpr data_digit_pair digits[] = FMT_DATA_DIGITS;
 }
 
 // An equivalent of `*reinterpret_cast<Dest*>(&source)` that doesn't have
@@ -1260,7 +1260,8 @@ inline buffer_appender<T> reserve(buffer_appender<T> it, size_t n) {
   return it;
 }
 
-template <typename Iterator> inline constexpr Iterator& reserve(Iterator& it, size_t) {
+template <typename Iterator>
+inline constexpr Iterator& reserve(Iterator& it, size_t) {
   return it;
 }
 
@@ -1462,10 +1463,10 @@ FMT_CONSTEXPR14 OutputIt copy_str(InputIt begin, InputIt end, OutputIt it) {
   return it;
 }
 
-// FMT_CONSTEXPR20 used because of FMT_IS_CONSTANT_EVALUATED which depends on C++20
 template <typename OutChar, typename InputIt,
           FMT_ENABLE_IF(!needs_conversion<InputIt, OutChar>::value)>
-inline FMT_CONSTEXPR20 OutChar* copy_str(InputIt begin, InputIt end, OutChar* out) {
+inline FMT_CONSTEXPR20 OutChar* copy_str(InputIt begin, InputIt end,
+                                         OutChar* out) {
   if (FMT_IS_CONSTANT_EVALUATED) {
     return copy_str<OutChar, InputIt, OutChar*>(begin, end, out);
   }
@@ -1831,7 +1832,6 @@ template <typename T> inline FMT_CONSTEXPR14 int count_digits_trivial(T n) {
 #if defined(FMT_BUILTIN_CLZLL)
 // Returns the number of decimal digits in n. Leading zeros are not counted
 // except for n == 0 in which case count_digits returns 1.
-// FMT_CONSTEXPR20 used because of FMT_IS_CONSTANT_EVALUATED which depends on C++20
 inline FMT_CONSTEXPR20 int count_digits(uint64_t n) {
   if (FMT_IS_CONSTANT_EVALUATED) {
     return count_digits_trivial(n);
@@ -1886,7 +1886,6 @@ template <> int count_digits<4>(detail::fallback_uintptr n);
 
 #if defined(FMT_BUILTIN_CLZ)
 // Optional version of count_digits for better performance on 32-bit platforms.
-// FMT_CONSTEXPR20 used because of FMT_IS_CONSTANT_EVALUATED which depends on C++20
 inline FMT_CONSTEXPR20 int count_digits(uint32_t n) {
   if (FMT_IS_CONSTANT_EVALUATED) {
     return count_digits_trivial(n);
@@ -1962,8 +1961,8 @@ template <typename Iterator> struct format_decimal_result {
 // enough.
 template <typename Char, typename UInt>
 inline FMT_CONSTEXPR20 format_decimal_result<Char*> format_decimal(Char* out,
-                                                                     UInt value,
-                                                                     int size) {
+                                                                   UInt value,
+                                                                   int size) {
   FMT_ASSERT(size >= count_digits(value), "invalid digit count");
   const data_digit_pair* digits;
   if (FMT_IS_CONSTANT_EVALUATED) {
