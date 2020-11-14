@@ -378,7 +378,7 @@ struct ostream_params {
 static constexpr detail::buffer_size buffer_size;
 
 // A fast output stream which is not thread-safe.
-class FMT_API ostream final : private detail::buffer<char> {
+class ostream final : private detail::buffer<char> {
  private:
   file file_;
 
@@ -388,7 +388,7 @@ class FMT_API ostream final : private detail::buffer<char> {
     clear();
   }
 
-  void grow(size_t) override final;
+  FMT_API void grow(size_t) override final;
 
   ostream(cstring_view path, const detail::ostream_params& params)
       : file_(path, params.oflag) {
