@@ -1809,9 +1809,15 @@ constexpr char with_null[3] = {'{', '}', '\0'};
 constexpr char no_null[2] = {'{', '}'};
 
 TEST(FormatTest, CompileTimeString) {
+  static FMT_CONSTEXPR_DECL const char static_with_null[3] = {'{', '}', '\0'};
+  static FMT_CONSTEXPR_DECL const wchar_t static_with_null_wide[3] = {'{', '}', '\0'};
+
   EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), 42));
   EXPECT_EQ(L"42", fmt::format(FMT_STRING(L"{}"), 42));
   EXPECT_EQ("foo", fmt::format(FMT_STRING("{}"), string_like()));
+  EXPECT_EQ("42", fmt::format(FMT_STRING(static_with_null), 42));
+  EXPECT_EQ(L"42", fmt::format(FMT_STRING(static_with_null_wide), 42));
+
   (void)with_null;
   (void)no_null;
 #if __cplusplus >= 201703L
