@@ -24,6 +24,9 @@
 #endif
 
 #include "fmt/args.h"
+#if defined(FMT_COMPILE_TIME_CHECKS) && FMT_COMPILE_TIME_CHECKS
+#  include "fmt/format.h"
+#endif
 
 #undef min
 #undef max
@@ -633,7 +636,7 @@ template <> struct formatter<convertible_to_int> {
 };
 
 template <> struct formatter<convertible_to_c_string> {
-  auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
     return ctx.begin();
   }
   auto format(convertible_to_c_string, format_context& ctx)
@@ -696,18 +699,10 @@ TYPED_TEST(IsStringTest, IsString) {
 }
 
 TEST(CoreTest, Format) {
-  // This should work without including fmt/format.h.
-#ifdef FMT_FORMAT_H_
-#  error fmt/format.h must not be included in the core test
-#endif
   EXPECT_EQ(fmt::format("{}", 42), "42");
 }
 
 TEST(CoreTest, FormatTo) {
-  // This should work without including fmt/format.h.
-#ifdef FMT_FORMAT_H_
-#  error fmt/format.h must not be included in the core test
-#endif
   std::string s;
   fmt::format_to(std::back_inserter(s), "{}", 42);
   EXPECT_EQ(s, "42");

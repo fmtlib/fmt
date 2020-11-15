@@ -249,6 +249,10 @@
 #  pragma execution_character_set("utf-8")
 #endif
 
+#ifndef FMT_COMPILE_TIME_CHECKS
+#  define FMT_COMPILE_TIME_CHECKS 0
+#endif
+
 FMT_BEGIN_NAMESPACE
 
 // Implementations of enable_if_t and other metafunctions for older systems.
@@ -1864,7 +1868,9 @@ FMT_INLINE std::basic_string<Char> vformat(
 */
 // Pass char_t as a default template parameter instead of using
 // std::basic_string<char_t<S>> to reduce the symbol size.
-template <typename S, typename... Args, typename Char = char_t<S>>
+template <typename S, typename... Args, typename Char = char_t<S>,
+          FMT_ENABLE_IF(!FMT_COMPILE_TIME_CHECKS ||
+                        !std::is_same<Char, char>::value)>
 FMT_INLINE std::basic_string<Char> format(const S& format_str, Args&&... args) {
   const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
   return detail::vformat(to_string_view(format_str), vargs);

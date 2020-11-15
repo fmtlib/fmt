@@ -96,12 +96,14 @@ TEST(TimeTest, GMTime) {
 }
 
 TEST(TimeTest, TimePoint) {
-  std::chrono::system_clock::time_point point = std::chrono::system_clock::now();
+  std::chrono::system_clock::time_point point =
+      std::chrono::system_clock::now();
 
   std::time_t t = std::chrono::system_clock::to_time_t(point);
   std::tm tm = *std::localtime(&t);
   char strftime_output[256];
-  std::strftime(strftime_output, sizeof(strftime_output), "It is %Y-%m-%d %H:%M:%S", &tm);
+  std::strftime(strftime_output, sizeof(strftime_output),
+                "It is %Y-%m-%d %H:%M:%S", &tm);
 
   EXPECT_EQ(strftime_output, fmt::format("It is {:%Y-%m-%d %H:%M:%S}", point));
 }
@@ -246,25 +248,25 @@ TEST(ChronoTest, FormatSpecs) {
 
 TEST(ChronoTest, InvalidSpecs) {
   auto sec = std::chrono::seconds(0);
-  EXPECT_THROW_MSG(fmt::format("{:%a}", sec), fmt::format_error, "no date");
-  EXPECT_THROW_MSG(fmt::format("{:%A}", sec), fmt::format_error, "no date");
-  EXPECT_THROW_MSG(fmt::format("{:%c}", sec), fmt::format_error, "no date");
-  EXPECT_THROW_MSG(fmt::format("{:%x}", sec), fmt::format_error, "no date");
-  EXPECT_THROW_MSG(fmt::format("{:%Ex}", sec), fmt::format_error, "no date");
-  EXPECT_THROW_MSG(fmt::format("{:%X}", sec), fmt::format_error, "no date");
-  EXPECT_THROW_MSG(fmt::format("{:%EX}", sec), fmt::format_error, "no date");
-  EXPECT_THROW_MSG(fmt::format("{:%D}", sec), fmt::format_error, "no date");
-  EXPECT_THROW_MSG(fmt::format("{:%F}", sec), fmt::format_error, "no date");
-  EXPECT_THROW_MSG(fmt::format("{:%Ec}", sec), fmt::format_error, "no date");
-  EXPECT_THROW_MSG(fmt::format("{:%w}", sec), fmt::format_error, "no date");
-  EXPECT_THROW_MSG(fmt::format("{:%u}", sec), fmt::format_error, "no date");
-  EXPECT_THROW_MSG(fmt::format("{:%b}", sec), fmt::format_error, "no date");
-  EXPECT_THROW_MSG(fmt::format("{:%B}", sec), fmt::format_error, "no date");
-  EXPECT_THROW_MSG(fmt::format("{:%z}", sec), fmt::format_error, "no date");
-  EXPECT_THROW_MSG(fmt::format("{:%Z}", sec), fmt::format_error, "no date");
-  EXPECT_THROW_MSG(fmt::format("{:%Eq}", sec), fmt::format_error,
+  EXPECT_THROW_MSG(fmt::format(+"{:%a}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format(+"{:%A}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format(+"{:%c}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format(+"{:%x}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format(+"{:%Ex}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format(+"{:%X}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format(+"{:%EX}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format(+"{:%D}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format(+"{:%F}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format(+"{:%Ec}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format(+"{:%w}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format(+"{:%u}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format(+"{:%b}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format(+"{:%B}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format(+"{:%z}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format(+"{:%Z}", sec), fmt::format_error, "no date");
+  EXPECT_THROW_MSG(fmt::format(+"{:%Eq}", sec), fmt::format_error,
                    "invalid format");
-  EXPECT_THROW_MSG(fmt::format("{:%Oq}", sec), fmt::format_error,
+  EXPECT_THROW_MSG(fmt::format(+"{:%Oq}", sec), fmt::format_error,
                    "invalid format");
 }
 
@@ -307,7 +309,7 @@ TEST(ChronoTest, FormatDefaultFP) {
 }
 
 TEST(ChronoTest, FormatPrecision) {
-  EXPECT_THROW_MSG(fmt::format("{:.2}", std::chrono::seconds(42)),
+  EXPECT_THROW_MSG(fmt::format(+"{:.2}", std::chrono::seconds(42)),
                    fmt::format_error,
                    "precision not allowed for this argument type");
   EXPECT_EQ("1.2ms", fmt::format("{:.1}", dms(1.234)));
@@ -334,7 +336,7 @@ TEST(ChronoTest, FormatSimpleQq) {
 }
 
 TEST(ChronoTest, FormatPrecisionQq) {
-  EXPECT_THROW_MSG(fmt::format("{:.2%Q %q}", std::chrono::seconds(42)),
+  EXPECT_THROW_MSG(fmt::format(+"{:.2%Q %q}", std::chrono::seconds(42)),
                    fmt::format_error,
                    "precision not allowed for this argument type");
   EXPECT_EQ("1.2 ms", fmt::format("{:.1%Q %q}", dms(1.234)));
@@ -351,12 +353,12 @@ TEST(ChronoTest, FormatFullSpecsQq) {
 }
 
 TEST(ChronoTest, InvalidWidthId) {
-  EXPECT_THROW(fmt::format("{:{o}", std::chrono::seconds(0)),
+  EXPECT_THROW(fmt::format(+"{:{o}", std::chrono::seconds(0)),
                fmt::format_error);
 }
 
 TEST(ChronoTest, InvalidColons) {
-  EXPECT_THROW(fmt::format("{0}=:{0::", std::chrono::seconds(0)),
+  EXPECT_THROW(fmt::format(+"{0}=:{0::", std::chrono::seconds(0)),
                fmt::format_error);
 }
 

@@ -2652,7 +2652,8 @@ struct stringifier {
 }  // namespace detail
 
 template <> struct formatter<detail::bigint> {
-  format_parse_context::iterator parse(format_parse_context& ctx) {
+  FMT_CONSTEXPR format_parse_context::iterator parse(
+      format_parse_context& ctx) {
     return ctx.begin();
   }
 

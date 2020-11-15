@@ -17,6 +17,9 @@ jobs:
             std: 14
           - cxx: g++-10
             std: 17
+          - cxx: g++-10
+            std: 20
+            cxxflags: -DFMT_COMPILE_TIME_CHECKS=1
           - cxx: clang++-9
             std: 11
           - cxx: clang++-9
@@ -36,6 +39,7 @@ jobs:
       working-directory: ${{runner.workspace}}/build
       env:
         CXX: ${{matrix.cxx}}
+        CXXFLAGS: ${{matrix.cxxflags}}
       run: |
         cmake -DCMAKE_BUILD_TYPE=${{matrix.build_type}} ${{matrix.fuzz}} \
               -DCMAKE_CXX_STANDARD=${{matrix.std}} -DFMT_DOC=OFF \

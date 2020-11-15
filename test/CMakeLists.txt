@@ -148,7 +148,7 @@ endif ()
 
 message(STATUS "FMT_PEDANTIC: ${FMT_PEDANTIC}")
 
-if (FMT_PEDANTIC)
+if (FMT_PEDANTIC AND CXX_STANDARD LESS 20)
   # MSVC fails to compile GMock when C++17 is enabled.
   if (FMT_HAS_VARIANT AND NOT MSVC)
     add_fmt_test(std-format-test)

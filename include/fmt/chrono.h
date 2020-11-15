@@ -404,20 +404,20 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock>, Char>
 };
 
 template <typename Char> struct formatter<std::tm, Char> {
-  template <typename ParseContext>
-  auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
     auto it = ctx.begin();
     if (it != ctx.end() && *it == ':') ++it;
     auto end = it;
     while (end != ctx.end() && *end != '}') ++end;
-    tm_format.reserve(detail::to_unsigned(end - it + 1));
-    tm_format.append(it, end);
-    tm_format.push_back('\0');
+    specs = {it, detail::to_unsigned(end - it)};
     return end;
   }
 
   template <typename FormatContext>
   auto format(const std::tm& tm, FormatContext& ctx) -> decltype(ctx.out()) {
+    basic_memory_buffer<Char> tm_format;
+    tm_format.append(specs.begin(), specs.end());
+    tm_format.push_back('\0');
     basic_memory_buffer<Char> buf;
     size_t start = buf.size();
     for (;;) {
@@ -440,7 +440,7 @@ template <typename Char> struct formatter<std::tm, Char> {
     return std::copy(buf.begin(), buf.end(), ctx.out());
   }
 
-  basic_memory_buffer<Char> tm_format;
+  basic_string_view<Char> specs;
 };
 
 namespace detail {
@@ -638,28 +638,29 @@ FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
 struct chrono_format_checker {
   FMT_NORETURN void report_no_date() { FMT_THROW(format_error("no date")); }
 
-  template <typename Char> void on_text(const Char*, const Char*) {}
+  template <typename Char>
+  FMT_CONSTEXPR void on_text(const Char*, const Char*) {}
   FMT_NORETURN void on_abbr_weekday() { report_no_date(); }
   FMT_NORETURN void on_full_weekday() { report_no_date(); }
   FMT_NORETURN void on_dec0_weekday(numeric_system) { report_no_date(); }
   FMT_NORETURN void on_dec1_weekday(numeric_system) { report_no_date(); }
   FMT_NORETURN void on_abbr_month() { report_no_date(); }
   FMT_NORETURN void on_full_month() { report_no_date(); }
-  void on_24_hour(numeric_system) {}
-  void on_12_hour(numeric_system) {}
-  void on_minute(numeric_system) {}
-  void on_second(numeric_system) {}
+  FMT_CONSTEXPR void on_24_hour(numeric_system) {}
+  FMT_CONSTEXPR void on_12_hour(numeric_system) {}
+  FMT_CONSTEXPR void on_minute(numeric_system) {}
+  FMT_CONSTEXPR void on_second(numeric_system) {}
   FMT_NORETURN void on_datetime(numeric_system) { report_no_date(); }
   FMT_NORETURN void on_loc_date(numeric_system) { report_no_date(); }
   FMT_NORETURN void on_loc_time(numeric_system) { report_no_date(); }
   FMT_NORETURN void on_us_date() { report_no_date(); }
   FMT_NORETURN void on_iso_date() { report_no_date(); }
-  void on_12_hour_time() {}
-  void on_24_hour_time() {}
-  void on_iso_time() {}
-  void on_am_pm() {}
-  void on_duration_value() {}
-  void on_duration_unit() {}
+  FMT_CONSTEXPR void on_12_hour_time() {}
+  FMT_CONSTEXPR void on_24_hour_time() {}
+  FMT_CONSTEXPR void on_iso_time() {}
+  FMT_CONSTEXPR void on_am_pm() {}
+  FMT_CONSTEXPR void on_duration_value() {}
+  FMT_CONSTEXPR void on_duration_unit() {}
   FMT_NORETURN void on_utc_offset() { report_no_date(); }
   FMT_NORETURN void on_tz_name() { report_no_date(); }
 };
@@ -1033,11 +1034,11 @@ template <typename Rep, typename Period, typename Char>
 struct formatter<std::chrono::duration<Rep, Period>, Char> {
  private:
   basic_format_specs<Char> specs;
-  int precision;
+  int precision = -1;
   using arg_ref_type = detail::arg_ref<Char>;
   arg_ref_type width_ref;
   arg_ref_type precision_ref;
-  mutable basic_string_view<Char> format_str;
+  basic_string_view<Char> format_str;
   using duration = std::chrono::duration<Rep, Period>;
 
   struct spec_handler {
@@ -1060,17 +1061,21 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     }
 
     void on_error(const char* msg) { FMT_THROW(format_error(msg)); }
-    void on_fill(basic_string_view<Char> fill) { f.specs.fill = fill; }
-    void on_align(align_t align) { f.specs.align = align; }
-    void on_width(int width) { f.specs.width = width; }
-    void on_precision(int _precision) { f.precision = _precision; }
-    void end_precision() {}
+    FMT_CONSTEXPR void on_fill(basic_string_view<Char> fill) {
+      f.specs.fill = fill;
+    }
+    FMT_CONSTEXPR void on_align(align_t align) { f.specs.align = align; }
+    FMT_CONSTEXPR void on_width(int width) { f.specs.width = width; }
+    FMT_CONSTEXPR void on_precision(int _precision) {
+      f.precision = _precision;
+    }
+    FMT_CONSTEXPR void end_precision() {}
 
-    template <typename Id> void on_dynamic_width(Id arg_id) {
+    template <typename Id> FMT_CONSTEXPR void on_dynamic_width(Id arg_id) {
       f.width_ref = make_arg_ref(arg_id);
     }
 
-    template <typename Id> void on_dynamic_precision(Id arg_id) {
+    template <typename Id> FMT_CONSTEXPR void on_dynamic_precision(Id arg_id) {
       f.precision_ref = make_arg_ref(arg_id);
     }
   };
@@ -1100,8 +1105,6 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
   }
 
  public:
-  formatter() : precision(-1) {}
-
   FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
       -> decltype(ctx.begin()) {
     auto range = do_parse(ctx);

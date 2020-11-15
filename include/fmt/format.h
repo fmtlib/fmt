@@ -3065,7 +3065,7 @@ FMT_CONSTEXPR const typename ParseContext::char_type* parse_format_specs(
   using mapped_type =
       conditional_t<detail::mapped_type_constant<T, context>::value !=
                         type::custom_type,
-                    decltype(arg_mapper<context>().map(std::declval<T>())), T>;
+                    decltype(arg_mapper<context>().map(std::declval<const T&>())), T>;
   auto f = conditional_t<has_formatter<mapped_type, context>::value,
                          formatter<mapped_type, char_type>,
                          detail::fallback_formatter<T, char_type>>();
@@ -3561,7 +3561,7 @@ template <typename Char = char> class dynamic_formatter {
 
  public:
   template <typename ParseContext>
-  auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
     format_str_ = ctx.begin();
     // Checks are deferred to formatting time when the argument type is known.
     detail::dynamic_specs_handler<ParseContext> handler(specs_, ctx);
@@ -3863,6 +3863,30 @@ FMT_DEPRECATED format_arg_store<buffer_context<Char>, Args...>
 make_format_to_n_args(const Args&... args) {
   return format_arg_store<buffer_context<Char>, Args...>(args...);
 }
+
+#if FMT_COMPILE_TIME_CHECKS
+template <typename... Args> struct format_string {
+  string_view str;
+
+  template <size_t N> consteval format_string(const char (&s)[N]) : str(s) {
+    if constexpr (detail::count_named_args<Args...>() == 0) {
+      using checker = detail::format_string_checker<char, detail::error_handler,
+                                                    remove_cvref_t<Args>...>;
+      detail::parse_format_string<true>(string_view(s, N), checker(s, {}));
+    }
+  }
+
+  template <typename T,
+            FMT_ENABLE_IF(std::is_constructible_v<string_view, const T&>)>
+  format_string(const T& s) : str(s) {}
+};
+
+template <typename... Args>
+FMT_INLINE std::string format(
+    format_string<std::type_identity_t<Args>...> format_str, Args&&... args) {
+  return detail::vformat(format_str.str, make_format_args(args...));
+}
+#endif
 
 template <typename Char, enable_if_t<(!std::is_same<Char, char>::value), int>>
 std::basic_string<Char> detail::vformat(

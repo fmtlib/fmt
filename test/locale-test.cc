@@ -115,7 +115,7 @@ template <class charT> struct formatter<std::complex<double>, charT> {
   detail::dynamic_format_specs<char> specs_;
 
  public:
-  typename basic_format_parse_context<charT>::iterator parse(
+  FMT_CONSTEXPR typename basic_format_parse_context<charT>::iterator parse(
       basic_format_parse_context<charT>& ctx) {
     using handler_type =
         detail::dynamic_specs_handler<basic_format_parse_context<charT>>;
