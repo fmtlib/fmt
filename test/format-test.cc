@@ -1805,11 +1805,28 @@ fmt::string_view to_string_view(string_like) { return "foo"; }
 
 constexpr char with_null[3] = {'{', '}', '\0'};
 constexpr char no_null[2] = {'{', '}'};
+static FMT_CONSTEXPR_DECL const char static_with_null[3] = {'{', '}', '\0'};
+static FMT_CONSTEXPR_DECL const wchar_t static_with_null_wide[3] = {'{', '}',
+                                                                    '\0'};
+static FMT_CONSTEXPR_DECL const char static_no_null[2] = {'{', '}'};
+static FMT_CONSTEXPR_DECL const wchar_t static_no_null_wide[2] = {'{', '}'};
 
 TEST(FormatTest, CompileTimeString) {
   EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), 42));
   EXPECT_EQ(L"42", fmt::format(FMT_STRING(L"{}"), 42));
   EXPECT_EQ("foo", fmt::format(FMT_STRING("{}"), string_like()));
+
+  (void)static_with_null;
+  (void)static_with_null_wide;
+  (void)static_no_null;
+  (void)static_no_null_wide;
+#if !defined(_MSC_VER)
+  EXPECT_EQ("42", fmt::format(FMT_STRING(static_with_null), 42));
+  EXPECT_EQ(L"42", fmt::format(FMT_STRING(static_with_null_wide), 42));
+  EXPECT_EQ("42", fmt::format(FMT_STRING(static_no_null), 42));
+  EXPECT_EQ(L"42", fmt::format(FMT_STRING(static_no_null_wide), 42));
+#endif
+
   (void)with_null;
   (void)no_null;
 #if __cplusplus >= 201703L

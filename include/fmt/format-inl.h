@@ -146,8 +146,8 @@ FMT_FUNC void format_error_code(detail::buffer<char>& out, int error_code,
   error_code_size += detail::to_unsigned(detail::count_digits(abs_value));
   auto it = buffer_appender<char>(out);
   if (message.size() <= inline_buffer_size - error_code_size)
-    format_to(it, "{}{}", message, SEP);
-  format_to(it, "{}{}", ERROR_STR, error_code);
+    format_to(it, FMT_STRING("{}{}"), message, SEP);
+  format_to(it, FMT_STRING("{}{}"), ERROR_STR, error_code);
   assert(out.size() <= inline_buffer_size);
 }
 
@@ -2663,14 +2663,15 @@ template <> struct formatter<detail::bigint> {
     for (auto i = n.bigits_.size(); i > 0; --i) {
       auto value = n.bigits_[i - 1u];
       if (first) {
-        out = format_to(out, "{:x}", value);
+        out = format_to(out, FMT_STRING("{:x}"), value);
         first = false;
         continue;
       }
-      out = format_to(out, "{:08x}", value);
+      out = format_to(out, FMT_STRING("{:08x}"), value);
     }
     if (n.exp_ > 0)
-      out = format_to(out, "p{}", n.exp_ * detail::bigint::bigit_bits);
+      out = format_to(out, FMT_STRING("p{}"),
+                      n.exp_ * detail::bigint::bigit_bits);
     return out;
   }
 };
@@ -2716,8 +2717,8 @@ FMT_FUNC void format_system_error(detail::buffer<char>& out, int error_code,
       int result =
           detail::safe_strerror(error_code, system_message, buf.size());
       if (result == 0) {
-        format_to(detail::buffer_appender<char>(out), "{}: {}", message,
-                  system_message);
+        format_to(detail::buffer_appender<char>(out), FMT_STRING("{}: {}"),
+                  message, system_message);
         return;
       }
       if (result != ERANGE)
