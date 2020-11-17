@@ -117,4 +117,16 @@ assemble.doLast
     // Remove empty directory
     delete "${rootDir}/libs/debug/obj"
     delete "${rootDir}/libs/release/obj"
+
+    // Copy AAR files. Notice that the aar is named after the folder of this script.
+    copy {
+        from "build/outputs/aar/support-release.aar"
+        into "${rootDir}/libs"
+        rename "support-release.aar", "fmt-release.aar"
+    }
+    copy {
+        from "build/outputs/aar/support-debug.aar"
+        into "${rootDir}/libs"
+        rename "support-debug.aar", "fmt-debug.aar"
+    }
 }
