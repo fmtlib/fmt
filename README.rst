@@ -28,7 +28,7 @@ alternative to C stdio and C++ iostreams.
 
 If you like this project, please consider donating to BYSOL,
 an initiative to help victims of political repressions in Belarus:
-https://www.facebook.com/donate/759400044849707/108388587646909/.
+https://www.facebook.com/donate/988051675049849/.
 
 `Documentation <https://fmt.dev>`__
 
