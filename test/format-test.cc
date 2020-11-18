@@ -2031,6 +2031,11 @@ TEST(FormatTest, FormatToN) {
   result = fmt::format_to_n(buffer, 4, "{}", "ABCDE");
   EXPECT_EQ(5u, result.size);
   EXPECT_EQ("ABCD", fmt::string_view(buffer, 4));
+
+  buffer[3] = 'x';
+  result = fmt::format_to_n(buffer, 3, "{}", std::string(1000, '*'));
+  EXPECT_EQ(1000u, result.size);
+  EXPECT_EQ("***x", fmt::string_view(buffer, 4));
 }
 
 TEST(FormatTest, WideFormatToN) {

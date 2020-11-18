@@ -766,7 +766,7 @@ class fixed_buffer_traits {
   explicit fixed_buffer_traits(size_t limit) : limit_(limit) {}
   size_t count() const { return count_; }
   size_t limit(size_t size) {
-    size_t n = limit_ - count_;
+    size_t n = limit_ > count_ ? limit_ - count_ : 0;
     count_ += size;
     return size < n ? size : n;
   }
