@@ -14,6 +14,10 @@ jobs:
         build_type: [Debug, Release]
         include:
           - os: windows-2016
+            standard: 11
+          - os: windows-2019
+            standard: 14
+          - os: windows-2016
             platform: Win32
             build_type: Debug
             shared: -DBUILD_SHARED_LIBS=ON
@@ -33,7 +37,9 @@ jobs:
       working-directory: ${{runner.workspace}}/build
       run: |
         cmake -DCMAKE_BUILD_TYPE=${{matrix.build_type}} ${{matrix.shared}} \
-              -A ${{matrix.platform}} $GITHUB_WORKSPACE
+              -A ${{matrix.platform}} \
+              -DCMAKE_CXX_STANDARD=${{matrix.standard}} \
+              $GITHUB_WORKSPACE
 
     - name: Build
       working-directory: ${{runner.workspace}}/build
