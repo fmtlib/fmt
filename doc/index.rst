@@ -166,7 +166,7 @@ The library is highly portable and relies only on a small set of C++11 features:
 * deleted functions
 * alias templates
 
-These are available in GCC 4.8, Clang 3.0, MSVC 19.0 (2015) and more recent
+These are available in GCC 4.8, Clang 3.4, MSVC 19.0 (2015) and more recent
 compiler version. For older compilers use {fmt} `version 4.x
 <https://github.com/fmtlib/fmt/releases/tag/4.1.0>`_ which is maintained and
 only requires C++98.
