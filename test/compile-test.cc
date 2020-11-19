@@ -7,6 +7,9 @@
 
 #include <string>
 #include <type_traits>
+#if __cplusplus >= 202002L
+#  include <string_view>
+#endif
 
 // Check that fmt/compile.h compiles with windows.h included before it.
 #ifdef _WIN32
@@ -169,5 +172,66 @@ TEST(CompileTest, FormatToNWithCompileMacro) {
 TEST(CompileTest, TextAndArg) {
   EXPECT_EQ(">>>42<<<", fmt::format(FMT_COMPILE(">>>{}<<<"), 42));
   EXPECT_EQ("42!", fmt::format(FMT_COMPILE("{}!"), 42));
+}
+#endif
+
+#if __cplusplus >= 202002L
+template <size_t max_string_length> struct constexpr_buffer_helper {
+  template <typename Func>
+  constexpr constexpr_buffer_helper& modify(Func func) {
+    func(buffer);
+    return *this;
+  }
+
+  template <typename T> constexpr bool operator==(const T& rhs) const noexcept {
+    return (std::string_view(rhs).compare(buffer.data()) == 0);
+  }
+
+  std::array<char, max_string_length> buffer{};
+};
+
+TEST(CompileTimeFormattingTest, OneInteger) {
+  constexpr auto result42 =
+      constexpr_buffer_helper<3>{}.modify([](auto& buffer) {
+        fmt::format_to(buffer.data(), FMT_COMPILE("{}"), 42);
+      });
+  EXPECT_EQ(result42, "42");
+  constexpr auto result420 =
+      constexpr_buffer_helper<3>{}.modify([](auto& buffer) {
+        fmt::format_to(buffer.data(), FMT_COMPILE("{}"), 420);
+      });
+  EXPECT_EQ(result420, "420");
+}
+
+TEST(CompileTimeFormattingTest, TwoIntegers) {
+  constexpr auto result = constexpr_buffer_helper<6>{}.modify([](auto& buffer) {
+    fmt::format_to(buffer.data(), FMT_COMPILE("{} {}"), 41, 43);
+  });
+  EXPECT_EQ(result, "41 43");
+}
+
+TEST(CompileTimeFormattingTest, OneString) {
+  constexpr auto result = constexpr_buffer_helper<3>{}.modify([](auto& buffer) {
+    fmt::format_to(buffer.data(), FMT_COMPILE("{}"), "42");
+  });
+  EXPECT_EQ(result, "42");
+}
+
+TEST(CompileTimeFormattingTest, TwoStrings) {
+  constexpr auto result =
+      constexpr_buffer_helper<17>{}.modify([](auto& buffer) {
+        fmt::format_to(buffer.data(), FMT_COMPILE("{} is {}"), "The answer",
+                       "42");
+      });
+  EXPECT_EQ(result, "The answer is 42");
+}
+
+TEST(CompileTimeFormattingTest, StringAndInteger) {
+  constexpr auto result =
+      constexpr_buffer_helper<17>{}.modify([](auto& buffer) {
+        fmt::format_to(buffer.data(), FMT_COMPILE("{} is {}"), "The answer",
+                       42);
+      });
+  EXPECT_EQ(result, "The answer is 42");
 }
 #endif
