@@ -5,7 +5,6 @@
 //
 // For the license information refer to format.h.
 
-#define FMT_STRING_ALIAS 1
 #include "fmt/format.h"
 
 struct test {};
@@ -24,6 +23,7 @@ template <> struct formatter<test> : formatter<int> {
 #include <sstream>
 
 #include "fmt/ostream.h"
+#include "fmt/ranges.h"
 #include "gmock.h"
 #include "gtest-extra.h"
 #include "util.h"
@@ -323,4 +323,9 @@ TEST(OStreamTest, CompileTimeString) {
 
 TEST(OStreamTest, ToString) {
   EXPECT_EQ("ABC", fmt::to_string(fmt_test::ABC()));
+}
+
+TEST(OStreamTest, Range) {
+  auto strs = std::vector<TestString>{TestString("foo"), TestString("bar")};
+  EXPECT_EQ("{foo, bar}", format("{}", strs));
 }
