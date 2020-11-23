@@ -96,18 +96,15 @@
 #  define FMT_CONSTEXPR_DECL
 #endif
 
-#if __cplusplus >= 201402L
-#  define FMT_CONSTEXPR14 constexpr
-#else
-#  define FMT_CONSTEXPR14
-#endif
-
 #if __cplusplus >= 202002L
 #  define FMT_CONSTEXPR20 constexpr
-#  define FMT_IS_CONSTANT_EVALUATED std::is_constant_evaluated()
+#  define FMT_HAS_IS_CONSTANT_EVALUATED 1
 #else
 #  define FMT_CONSTEXPR20
-#  define FMT_IS_CONSTANT_EVALUATED false
+#endif
+
+#ifndef FMT_HAS_IS_CONSTANT_EVALUATED
+#  define FMT_HAS_IS_CONSTANT_EVALUATED 0
 #endif
 
 #ifndef FMT_OVERRIDE
@@ -292,6 +289,14 @@ struct monostate {};
 #endif
 
 namespace detail {
+
+constexpr bool is_constant_evaluated() FMT_DETECTED_NOEXCEPT {
+#if FMT_HAS_IS_CONSTANT_EVALUATED
+  return std::is_constant_evaluated();
+#else
+  return false;
+#endif
+}
 
 // A helper function to suppress "conditional expression is constant" warnings.
 template <typename T> constexpr T const_check(T value) { return value; }

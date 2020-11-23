@@ -664,8 +664,7 @@ constexpr OutputIt format_to(OutputIt out, const CompiledFormat& cf,
 
 template <typename OutputIt, typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
-FMT_CONSTEXPR14 OutputIt format_to(OutputIt out, const S&,
-                                   const Args&... args) {
+FMT_CONSTEXPR OutputIt format_to(OutputIt out, const S&, const Args&... args) {
   constexpr auto compiled = detail::compile<Args...>(S());
   return format_to(out, compiled, args...);
 }

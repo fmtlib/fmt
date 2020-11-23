@@ -620,7 +620,7 @@ using needs_conversion = bool_constant<
 
 template <typename OutChar, typename InputIt, typename OutputIt,
           FMT_ENABLE_IF(!needs_conversion<InputIt, OutChar>::value)>
-FMT_CONSTEXPR14 OutputIt copy_str(InputIt begin, InputIt end, OutputIt it) {
+FMT_CONSTEXPR OutputIt copy_str(InputIt begin, InputIt end, OutputIt it) {
   while (begin != end) *it++ = *begin++;
   return it;
 }
@@ -629,7 +629,7 @@ template <typename OutChar, typename InputIt,
           FMT_ENABLE_IF(!needs_conversion<InputIt, OutChar>::value)>
 inline FMT_CONSTEXPR20 OutChar* copy_str(InputIt begin, InputIt end,
                                          OutChar* out) {
-  if (FMT_IS_CONSTANT_EVALUATED) {
+  if (is_constant_evaluated()) {
     return copy_str<OutChar, InputIt, OutChar*>(begin, end, out);
   }
   return std::uninitialized_copy(begin, end, out);
@@ -980,7 +980,7 @@ FMT_EXTERN template struct basic_data<void>;
 // This is a struct rather than an alias to avoid shadowing warnings in gcc.
 struct data : basic_data<> {};
 
-template <typename T> inline FMT_CONSTEXPR14 int count_digits_trivial(T n) {
+template <typename T> inline FMT_CONSTEXPR int count_digits_trivial(T n) {
   int count = 1;
   for (;;) {
     // Integer division is slow so do it for a group of four digits instead
@@ -999,7 +999,7 @@ template <typename T> inline FMT_CONSTEXPR14 int count_digits_trivial(T n) {
 // Returns the number of decimal digits in n. Leading zeros are not counted
 // except for n == 0 in which case count_digits returns 1.
 inline FMT_CONSTEXPR20 int count_digits(uint64_t n) {
-  if (FMT_IS_CONSTANT_EVALUATED) {
+  if (is_constant_evaluated()) {
     return count_digits_trivial(n);
   }
   // https://github.com/fmtlib/format-benchmark/blob/master/digits10
@@ -1008,13 +1008,13 @@ inline FMT_CONSTEXPR20 int count_digits(uint64_t n) {
 }
 #else
 // Fallback version of count_digits used when __builtin_clz is not available.
-inline FMT_CONSTEXPR14 int count_digits(uint64_t n) {
+inline FMT_CONSTEXPR int count_digits(uint64_t n) {
   return count_digits_trivial(n);
 }
 #endif
 
 #if FMT_USE_INT128
-inline FMT_CONSTEXPR14 int count_digits(uint128_t n) {
+inline FMT_CONSTEXPR int count_digits(uint128_t n) {
   int count = 1;
   for (;;) {
     // Integer division is slow so do it for a group of four digits instead
@@ -1032,7 +1032,7 @@ inline FMT_CONSTEXPR14 int count_digits(uint128_t n) {
 
 // Counts the number of digits in n. BITS = log2(radix).
 template <unsigned BITS, typename UInt>
-inline FMT_CONSTEXPR14 int count_digits(UInt n) {
+inline FMT_CONSTEXPR int count_digits(UInt n) {
   int num_digits = 0;
   do {
     ++num_digits;
@@ -1053,7 +1053,7 @@ template <> int count_digits<4>(detail::fallback_uintptr n);
 #if defined(FMT_BUILTIN_CLZ)
 // Optional version of count_digits for better performance on 32-bit platforms.
 inline FMT_CONSTEXPR20 int count_digits(uint32_t n) {
-  if (FMT_IS_CONSTANT_EVALUATED) {
+  if (is_constant_evaluated()) {
     return count_digits_trivial(n);
   }
   auto t = bsr2log10(FMT_BUILTIN_CLZ(n | 1) ^ 31);
@@ -1097,20 +1097,19 @@ constexpr bool equal2(const Char* lhs, const char* rhs) {
   return lhs[0] == rhs[0] && lhs[1] == rhs[1];
 }
 inline FMT_CONSTEXPR20 bool equal2(const char* lhs, const char* rhs) {
-  if (FMT_IS_CONSTANT_EVALUATED) {
+  if (is_constant_evaluated()) {
     return equal2<char>(lhs, rhs);
   }
   return memcmp(lhs, rhs, 2) == 0;
 }
 
 // Copies two characters from src to dst.
-template <typename Char>
-FMT_CONSTEXPR14 void copy2(Char* dst, const char* src) {
+template <typename Char> FMT_CONSTEXPR void copy2(Char* dst, const char* src) {
   *dst++ = static_cast<Char>(*src++);
   *dst = static_cast<Char>(*src);
 }
 FMT_INLINE FMT_CONSTEXPR20 void copy2(char* dst, const char* src) {
-  if (FMT_IS_CONSTANT_EVALUATED) {
+  if (is_constant_evaluated()) {
     copy2<char>(dst, src);
     return;
   }
@@ -1131,7 +1130,7 @@ inline FMT_CONSTEXPR20 format_decimal_result<Char*> format_decimal(Char* out,
                                                                    int size) {
   FMT_ASSERT(size >= count_digits(value), "invalid digit count");
   const data_digit_pair* digits;
-  if (FMT_IS_CONSTANT_EVALUATED) {
+  if (is_constant_evaluated()) {
     digits = compile_time_formatting_data::digits;
   } else {
     digits = data::digits;
@@ -2115,7 +2114,7 @@ OutputIt write(OutputIt out, string_view value) {
 }
 
 template <typename Char, typename OutputIt>
-FMT_CONSTEXPR14 OutputIt write(OutputIt out, basic_string_view<Char> value) {
+FMT_CONSTEXPR OutputIt write(OutputIt out, basic_string_view<Char> value) {
   auto it = reserve(out, value.size());
   it = copy_str<Char>(value.begin(), value.end(), it);
   return base_iterator(out, it);
@@ -2132,7 +2131,7 @@ template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(is_integral<T>::value &&
                         !std::is_same<T, bool>::value &&
                         !std::is_same<T, Char>::value)>
-FMT_CONSTEXPR14 OutputIt write(OutputIt out, T value) {
+FMT_CONSTEXPR OutputIt write(OutputIt out, T value) {
   auto abs_value = static_cast<uint32_or_64_or_128_t<T>>(value);
   bool negative = is_negative(value);
   // Don't do -abs_value since it trips unsigned-integer-overflow sanitizer.
@@ -2156,14 +2155,14 @@ constexpr OutputIt write(OutputIt out, bool value) {
 }
 
 template <typename Char, typename OutputIt>
-FMT_CONSTEXPR14 OutputIt write(OutputIt out, Char value) {
+FMT_CONSTEXPR OutputIt write(OutputIt out, Char value) {
   auto it = reserve(out, 1);
   *it++ = value;
   return base_iterator(out, it);
 }
 
 template <typename Char, typename OutputIt>
-FMT_CONSTEXPR14 OutputIt write(OutputIt out, const Char* value) {
+FMT_CONSTEXPR OutputIt write(OutputIt out, const Char* value) {
   if (!value) {
     FMT_THROW(format_error("string pointer is null"));
   } else {
