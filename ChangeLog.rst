@@ -1,3 +1,12 @@
+7.1.3 - TBD
+-----------
+
+* Fixed handling of buffer boundaries in `format_to_n`
+  (`#1996 <https://github.com/fmtlib/fmt/issues/1996>`_).
+
+* Fixed linkage errors when linking with a shared library
+  (`#2011 <https://github.com/fmtlib/fmt/issues/2011>`_).
+
 7.1.2 - 2020-11-04
 ------------------
 
