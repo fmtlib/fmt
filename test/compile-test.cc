@@ -196,6 +196,7 @@ TEST(CompileTimeFormattingTest, OneInteger) {
         fmt::format_to(buffer.data(), FMT_COMPILE("{}"), 42);
       });
   EXPECT_EQ(result42, "42");
+
   constexpr auto result420 =
       constexpr_buffer_helper<3>{}.modify([](auto& buffer) {
         fmt::format_to(buffer.data(), FMT_COMPILE("{}"), 420);
@@ -208,6 +209,14 @@ TEST(CompileTimeFormattingTest, TwoIntegers) {
     fmt::format_to(buffer.data(), FMT_COMPILE("{} {}"), 41, 43);
   });
   EXPECT_EQ(result, "41 43");
+
+  constexpr uint64_t value64 = 42;
+  constexpr uint32_t value32 = 42;
+  constexpr auto result4202 =
+      constexpr_buffer_helper<5>{}.modify([value64, value32](auto& buffer) {
+        fmt::format_to(buffer.data(), FMT_COMPILE("{} {}"), value64, value32);
+      });
+  EXPECT_EQ(result4202, "42 42");
 }
 
 TEST(CompileTimeFormattingTest, OneString) {
