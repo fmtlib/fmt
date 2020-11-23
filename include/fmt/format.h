@@ -3062,10 +3062,9 @@ FMT_CONSTEXPR const typename ParseContext::char_type* parse_format_specs(
     ParseContext& ctx) {
   using char_type = typename ParseContext::char_type;
   using context = buffer_context<char_type>;
-  using mapped_type =
-      conditional_t<detail::mapped_type_constant<T, context>::value !=
-                        type::custom_type,
-                    decltype(arg_mapper<context>().map(std::declval<const T&>())), T>;
+  using mapped_type = conditional_t<
+      detail::mapped_type_constant<T, context>::value != type::custom_type,
+      decltype(arg_mapper<context>().map(std::declval<const T&>())), T>;
   auto f = conditional_t<has_formatter<mapped_type, context>::value,
                          formatter<mapped_type, char_type>,
                          detail::fallback_formatter<T, char_type>>();
