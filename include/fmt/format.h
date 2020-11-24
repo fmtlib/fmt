@@ -980,7 +980,7 @@ FMT_EXTERN template struct basic_data<void>;
 // This is a struct rather than an alias to avoid shadowing warnings in gcc.
 struct data : basic_data<> {};
 
-template <typename T> inline FMT_CONSTEXPR int count_digits_trivial(T n) {
+template <typename T> FMT_CONSTEXPR int count_digits_trivial(T n) {
   int count = 1;
   for (;;) {
     // Integer division is slow so do it for a group of four digits instead
@@ -1008,13 +1008,13 @@ inline FMT_CONSTEXPR20 int count_digits(uint64_t n) {
 }
 #else
 // Fallback version of count_digits used when __builtin_clz is not available.
-inline FMT_CONSTEXPR int count_digits(uint64_t n) {
+FMT_CONSTEXPR int count_digits(uint64_t n) {
   return count_digits_trivial(n);
 }
 #endif
 
 #if FMT_USE_INT128
-inline FMT_CONSTEXPR int count_digits(uint128_t n) {
+FMT_CONSTEXPR int count_digits(uint128_t n) {
   int count = 1;
   for (;;) {
     // Integer division is slow so do it for a group of four digits instead
@@ -1032,7 +1032,7 @@ inline FMT_CONSTEXPR int count_digits(uint128_t n) {
 
 // Counts the number of digits in n. BITS = log2(radix).
 template <unsigned BITS, typename UInt>
-inline FMT_CONSTEXPR int count_digits(UInt n) {
+FMT_CONSTEXPR int count_digits(UInt n) {
   int num_digits = 0;
   do {
     ++num_digits;
