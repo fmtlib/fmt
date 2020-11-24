@@ -1,7 +1,7 @@
 7.1.3 - TBD
 -----------
 
-* Fixed handling of buffer boundaries in `format_to_n`
+* Fixed handling of buffer boundaries in ``format_to_n``
   (`#1996 <https://github.com/fmtlib/fmt/issues/1996>`_,
   `#2029 <https://github.com/fmtlib/fmt/issues/2029>`_).
 
