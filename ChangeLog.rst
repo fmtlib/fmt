@@ -8,10 +8,10 @@
 * Fixed linkage errors when linking with a shared library
   (`#2011 <https://github.com/fmtlib/fmt/issues/2011>`_).
 
-* Reintroduce ostream support to range formatters
+* Reintroduced ostream support to range formatters
   (`#2014 <https://github.com/fmtlib/fmt/issues/2014>`_).
 
-* Workaround an issue with mixing std versions in gcc
+* Worked around an issue with mixing std versions in gcc
   (`#2017 <https://github.com/fmtlib/fmt/issues/2017>`_).
 
 7.1.2 - 2020-11-04
