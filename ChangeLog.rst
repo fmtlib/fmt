@@ -1,5 +1,5 @@
-7.1.3 - TBD
------------
+7.1.3 - 2020-11-24
+------------------
 
 * Fixed handling of buffer boundaries in ``format_to_n``
   (`#1996 <https://github.com/fmtlib/fmt/issues/1996>`_,
