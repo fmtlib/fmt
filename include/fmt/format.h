@@ -3674,21 +3674,39 @@ struct arg_join : detail::view {
       : begin(b), end(e), sep(s) {}
 };
 
+template <typename Char>
+using iterator_arg_mapper = detail::arg_mapper<FMT_BUFFER_CONTEXT(Char)>;
+
+template <typename It, typename Char>
+using iterator_format_type =
+    decltype(std::declval<iterator_arg_mapper<Char>>().map(
+        std::declval<typename std::iterator_traits<It>::value_type>()));
+
+template <typename It, typename Char>
+using iterator_formatter = conditional_t<
+    has_formatter<iterator_format_type<It, Char>,
+                  FMT_BUFFER_CONTEXT(Char)>::value,
+    formatter<iterator_format_type<It, Char>, Char>,
+    detail::fallback_formatter<iterator_format_type<It, Char>, Char>>;
+
 template <typename It, typename Sentinel, typename Char>
 struct formatter<arg_join<It, Sentinel, Char>, Char>
-    : formatter<typename std::iterator_traits<It>::value_type, Char> {
+    : iterator_formatter<It, Char> {
   template <typename FormatContext>
   auto format(const arg_join<It, Sentinel, Char>& value, FormatContext& ctx)
       -> decltype(ctx.out()) {
-    using base = formatter<typename std::iterator_traits<It>::value_type, Char>;
+    using base = iterator_formatter<It, Char>;
+
+    iterator_arg_mapper<Char> mapper;
+
     auto it = value.begin;
     auto out = ctx.out();
     if (it != value.end) {
-      out = base::format(*it++, ctx);
+      out = base::format(mapper.map(*it++), ctx);
       while (it != value.end) {
         out = detail::copy_str<Char>(value.sep.begin(), value.sep.end(), out);
         ctx.advance_to(out);
-        out = base::format(*it++, ctx);
+        out = base::format(mapper.map(*it++), ctx);
       }
     }
     return out;

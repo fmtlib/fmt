@@ -11,6 +11,7 @@
 #include <cfloat>
 #include <climits>
 #include <cmath>
+#include <cstddef>
 #include <cstring>
 #include <list>
 #include <memory>
@@ -1759,6 +1760,20 @@ TEST(FormatTest, JoinArg) {
   EXPECT_EQ("(1, 2, 3)", format("({})", join(v1, ", ")));
   EXPECT_EQ("(+01.20, +03.40)", format("({:+06.2f})", join(v2, ", ")));
 #endif
+}
+
+TEST(FormatTest, JoinByte) {
+  using fmt::join;
+#if __cplusplus >= 201703L
+  using byte = std::byte;
+#else
+  enum class byte : unsigned char {};
+#endif
+
+  std::vector<byte> v = {static_cast<byte>(0x1), static_cast<byte>(0x2)};
+
+  EXPECT_EQ("(1, 2)", format("({})", join(v, ", ")));
+  EXPECT_EQ("(0x1, 0x2)", format("({0:#x})", join(v, ", ")));
 }
 
 template <typename T> std::string str(const T& value) {
