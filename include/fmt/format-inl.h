@@ -229,9 +229,6 @@ template <> FMT_FUNC int count_digits<4>(detail::fallback_uintptr n) {
 }
 
 template <typename T>
-const data_digit_pair basic_data<T>::digits[] = FMT_DATA_DIGITS;
-
-template <typename T>
 const char basic_data<T>::hex_digits[] = "0123456789abcdef";
 
 #define FMT_POWERS_OF_10(factor)                                             \

@@ -278,39 +278,31 @@ FMT_END_NAMESPACE
 #  define FMT_DEPRECATED_NUMERIC_ALIGN 0
 #endif
 
-#define FMT_DATA_DIGITS                                                     \
-  {                                                                         \
-    {'0', '0'}, {'0', '1'}, {'0', '2'}, {'0', '3'}, {'0', '4'}, {'0', '5'}, \
-        {'0', '6'}, {'0', '7'}, {'0', '8'}, {'0', '9'}, {'1', '0'},         \
-        {'1', '1'}, {'1', '2'}, {'1', '3'}, {'1', '4'}, {'1', '5'},         \
-        {'1', '6'}, {'1', '7'}, {'1', '8'}, {'1', '9'}, {'2', '0'},         \
-        {'2', '1'}, {'2', '2'}, {'2', '3'}, {'2', '4'}, {'2', '5'},         \
-        {'2', '6'}, {'2', '7'}, {'2', '8'}, {'2', '9'}, {'3', '0'},         \
-        {'3', '1'}, {'3', '2'}, {'3', '3'}, {'3', '4'}, {'3', '5'},         \
-        {'3', '6'}, {'3', '7'}, {'3', '8'}, {'3', '9'}, {'4', '0'},         \
-        {'4', '1'}, {'4', '2'}, {'4', '3'}, {'4', '4'}, {'4', '5'},         \
-        {'4', '6'}, {'4', '7'}, {'4', '8'}, {'4', '9'}, {'5', '0'},         \
-        {'5', '1'}, {'5', '2'}, {'5', '3'}, {'5', '4'}, {'5', '5'},         \
-        {'5', '6'}, {'5', '7'}, {'5', '8'}, {'5', '9'}, {'6', '0'},         \
-        {'6', '1'}, {'6', '2'}, {'6', '3'}, {'6', '4'}, {'6', '5'},         \
-        {'6', '6'}, {'6', '7'}, {'6', '8'}, {'6', '9'}, {'7', '0'},         \
-        {'7', '1'}, {'7', '2'}, {'7', '3'}, {'7', '4'}, {'7', '5'},         \
-        {'7', '6'}, {'7', '7'}, {'7', '8'}, {'7', '9'}, {'8', '0'},         \
-        {'8', '1'}, {'8', '2'}, {'8', '3'}, {'8', '4'}, {'8', '5'},         \
-        {'8', '6'}, {'8', '7'}, {'8', '8'}, {'8', '9'}, {'9', '0'},         \
-        {'9', '1'}, {'9', '2'}, {'9', '3'}, {'9', '4'}, {'9', '5'},         \
-        {'9', '6'}, {'9', '7'}, {'9', '8'}, {                               \
-      '9', '9'                                                              \
-    }                                                                       \
-  }
-
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
+// GCC generates slightly better code for pairs than chars.
 using data_digit_pair = char[2];
 
-namespace compile_time_formatting_data {
-constexpr data_digit_pair digits[] = FMT_DATA_DIGITS;
+namespace formatting_data {
+constexpr data_digit_pair digits[] = {
+    {'0', '0'}, {'0', '1'}, {'0', '2'}, {'0', '3'}, {'0', '4'}, {'0', '5'},
+    {'0', '6'}, {'0', '7'}, {'0', '8'}, {'0', '9'}, {'1', '0'}, {'1', '1'},
+    {'1', '2'}, {'1', '3'}, {'1', '4'}, {'1', '5'}, {'1', '6'}, {'1', '7'},
+    {'1', '8'}, {'1', '9'}, {'2', '0'}, {'2', '1'}, {'2', '2'}, {'2', '3'},
+    {'2', '4'}, {'2', '5'}, {'2', '6'}, {'2', '7'}, {'2', '8'}, {'2', '9'},
+    {'3', '0'}, {'3', '1'}, {'3', '2'}, {'3', '3'}, {'3', '4'}, {'3', '5'},
+    {'3', '6'}, {'3', '7'}, {'3', '8'}, {'3', '9'}, {'4', '0'}, {'4', '1'},
+    {'4', '2'}, {'4', '3'}, {'4', '4'}, {'4', '5'}, {'4', '6'}, {'4', '7'},
+    {'4', '8'}, {'4', '9'}, {'5', '0'}, {'5', '1'}, {'5', '2'}, {'5', '3'},
+    {'5', '4'}, {'5', '5'}, {'5', '6'}, {'5', '7'}, {'5', '8'}, {'5', '9'},
+    {'6', '0'}, {'6', '1'}, {'6', '2'}, {'6', '3'}, {'6', '4'}, {'6', '5'},
+    {'6', '6'}, {'6', '7'}, {'6', '8'}, {'6', '9'}, {'7', '0'}, {'7', '1'},
+    {'7', '2'}, {'7', '3'}, {'7', '4'}, {'7', '5'}, {'7', '6'}, {'7', '7'},
+    {'7', '8'}, {'7', '9'}, {'8', '0'}, {'8', '1'}, {'8', '2'}, {'8', '3'},
+    {'8', '4'}, {'8', '5'}, {'8', '6'}, {'8', '7'}, {'8', '8'}, {'8', '9'},
+    {'9', '0'}, {'9', '1'}, {'9', '2'}, {'9', '3'}, {'9', '4'}, {'9', '5'},
+    {'9', '6'}, {'9', '7'}, {'9', '8'}, {'9', '9'}};
 }
 
 // An equivalent of `*reinterpret_cast<Dest*>(&source)` that doesn't have
@@ -945,9 +937,6 @@ template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
   static const uint64_t powers_of_5_64[];
   static const uint32_t dragonbox_pow10_recovery_errors[];
 #endif
-  // GCC generates slightly better code for pairs than chars.
-  using digit_pair = char[2];
-  static const digit_pair digits[];
   static const char hex_digits[];
   static const char foreground_color[];
   static const char background_color[];
@@ -995,7 +984,7 @@ template <typename T> FMT_CONSTEXPR int count_digits_trivial(T n) {
   }
 }
 
-#if defined(FMT_BUILTIN_CLZLL)
+#ifdef FMT_BUILTIN_CLZLL
 // Returns the number of decimal digits in n. Leading zeros are not counted
 // except for n == 0 in which case count_digits returns 1.
 inline FMT_CONSTEXPR20 int count_digits(uint64_t n) {
@@ -1008,9 +997,7 @@ inline FMT_CONSTEXPR20 int count_digits(uint64_t n) {
 }
 #else
 // Fallback version of count_digits used when __builtin_clz is not available.
-FMT_CONSTEXPR int count_digits(uint64_t n) {
-  return count_digits_trivial(n);
-}
+FMT_CONSTEXPR int count_digits(uint64_t n) { return count_digits_trivial(n); }
 #endif
 
 #if FMT_USE_INT128
@@ -1031,8 +1018,7 @@ FMT_CONSTEXPR int count_digits(uint128_t n) {
 #endif
 
 // Counts the number of digits in n. BITS = log2(radix).
-template <unsigned BITS, typename UInt>
-FMT_CONSTEXPR int count_digits(UInt n) {
+template <unsigned BITS, typename UInt> FMT_CONSTEXPR int count_digits(UInt n) {
   int num_digits = 0;
   do {
     ++num_digits;
@@ -1050,7 +1036,7 @@ template <> int count_digits<4>(detail::fallback_uintptr n);
 #  define FMT_ALWAYS_INLINE inline
 #endif
 
-#if defined(FMT_BUILTIN_CLZ)
+#ifdef FMT_BUILTIN_CLZ
 // Optional version of count_digits for better performance on 32-bit platforms.
 inline FMT_CONSTEXPR20 int count_digits(uint32_t n) {
   if (is_constant_evaluated()) {
@@ -1129,12 +1115,6 @@ inline FMT_CONSTEXPR20 format_decimal_result<Char*> format_decimal(Char* out,
                                                                    UInt value,
                                                                    int size) {
   FMT_ASSERT(size >= count_digits(value), "invalid digit count");
-  const data_digit_pair* digits;
-  if (is_constant_evaluated()) {
-    digits = compile_time_formatting_data::digits;
-  } else {
-    digits = data::digits;
-  }
   out += size;
   Char* end = out;
   while (value >= 100) {
@@ -1142,7 +1122,7 @@ inline FMT_CONSTEXPR20 format_decimal_result<Char*> format_decimal(Char* out,
     // of for every digit. The idea comes from the talk by Alexandrescu
     // "Three Optimization Tips for C++". See speed-test for a comparison.
     out -= 2;
-    copy2(out, digits[value % 100]);
+    copy2(out, formatting_data::digits[value % 100]);
     value /= 100;
   }
   if (value < 10) {
@@ -1150,7 +1130,7 @@ inline FMT_CONSTEXPR20 format_decimal_result<Char*> format_decimal(Char* out,
     return {out, end};
   }
   out -= 2;
-  copy2(out, digits[value]);
+  copy2(out, formatting_data::digits[value]);
   return {out, end};
 }
 
@@ -1399,12 +1379,12 @@ template <typename Char, typename It> It write_exponent(int exp, It it) {
     *it++ = static_cast<Char>('+');
   }
   if (exp >= 100) {
-    const char* top = data::digits[exp / 100];
+    const char* top = formatting_data::digits[exp / 100];
     if (exp >= 1000) *it++ = static_cast<Char>(top[0]);
     *it++ = static_cast<Char>(top[1]);
     exp %= 100;
   }
-  const char* d = data::digits[exp];
+  const char* d = formatting_data::digits[exp];
   *it++ = static_cast<Char>(d[0]);
   *it++ = static_cast<Char>(d[1]);
   return it;

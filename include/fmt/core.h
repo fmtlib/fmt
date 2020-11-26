@@ -98,13 +98,8 @@
 
 #if __cplusplus >= 202002L
 #  define FMT_CONSTEXPR20 constexpr
-#  define FMT_HAS_IS_CONSTANT_EVALUATED 1
 #else
 #  define FMT_CONSTEXPR20
-#endif
-
-#ifndef FMT_HAS_IS_CONSTANT_EVALUATED
-#  define FMT_HAS_IS_CONSTANT_EVALUATED 0
 #endif
 
 #ifndef FMT_OVERRIDE
@@ -291,7 +286,7 @@ struct monostate {};
 namespace detail {
 
 constexpr bool is_constant_evaluated() FMT_DETECTED_NOEXCEPT {
-#if FMT_HAS_IS_CONSTANT_EVALUATED
+#ifdef __cpp_lib_is_constant_evaluated
   return std::is_constant_evaluated();
 #else
   return false;
