@@ -978,6 +978,7 @@ TEST(FormatterTest, Precision) {
   EXPECT_EQ("1.2", format("{0:.2}", 1.2345));
   EXPECT_EQ("1.2", format("{0:.2}", 1.2345l));
   EXPECT_EQ("1.2e+56", format("{:.2}", 1.234e56));
+  EXPECT_EQ("1.1", format("{0:.3}", 1.1));
   EXPECT_EQ("1e+00", format("{:.0e}", 1.0L));
   EXPECT_EQ("  0.0e+00", format("{:9.1e}", 0.0));
   EXPECT_EQ(

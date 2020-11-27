@@ -1396,7 +1396,6 @@ FMT_CONSTEXPR float_specs parse_float_type_spec(
   switch (specs.type) {
   case 0:
     result.format = float_format::general;
-    result.showpoint |= specs.precision > 0;
     break;
   case 'G':
     result.upper = true;
