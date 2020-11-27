@@ -190,57 +190,81 @@ template <size_t max_string_length> struct constexpr_buffer_helper {
   std::array<char, max_string_length> buffer{};
 };
 
-TEST(CompileTimeFormattingTest, OneInteger) {
-  constexpr auto result42 =
-      constexpr_buffer_helper<3>{}.modify([](auto& buffer) {
-        fmt::format_to(buffer.data(), FMT_COMPILE("{}"), 42);
-      });
-  EXPECT_EQ(result42, "42");
-
-  constexpr auto result420 =
-      constexpr_buffer_helper<3>{}.modify([](auto& buffer) {
-        fmt::format_to(buffer.data(), FMT_COMPILE("{}"), 420);
-      });
-  EXPECT_EQ(result420, "420");
+TEST(CompileTimeFormattingTest, Bool) {
+  {
+    constexpr auto result =
+        constexpr_buffer_helper<5>{}.modify([](auto& buffer) {
+          fmt::format_to(buffer.data(), FMT_COMPILE("{}"), true);
+        });
+    EXPECT_EQ(result, "true");
+  }
+  {
+    constexpr auto result =
+        constexpr_buffer_helper<6>{}.modify([](auto& buffer) {
+          fmt::format_to(buffer.data(), FMT_COMPILE("{}"), false);
+        });
+    EXPECT_EQ(result, "false");
+  }
 }
 
-TEST(CompileTimeFormattingTest, TwoIntegers) {
-  constexpr auto result = constexpr_buffer_helper<6>{}.modify([](auto& buffer) {
-    fmt::format_to(buffer.data(), FMT_COMPILE("{} {}"), 41, 43);
-  });
-  EXPECT_EQ(result, "41 43");
-
-  constexpr uint64_t value64 = 42;
-  constexpr uint32_t value32 = 42;
-  constexpr auto result4202 =
-      constexpr_buffer_helper<5>{}.modify([value64, value32](auto& buffer) {
-        fmt::format_to(buffer.data(), FMT_COMPILE("{} {}"), value64, value32);
-      });
-  EXPECT_EQ(result4202, "42 42");
+TEST(CompileTimeFormattingTest, Integer) {
+  {
+    constexpr auto result =
+        constexpr_buffer_helper<3>{}.modify([](auto& buffer) {
+          fmt::format_to(buffer.data(), FMT_COMPILE("{}"), 42);
+        });
+    EXPECT_EQ(result, "42");
+  }
+  {
+    constexpr auto result =
+        constexpr_buffer_helper<4>{}.modify([](auto& buffer) {
+          fmt::format_to(buffer.data(), FMT_COMPILE("{}"), 420);
+        });
+    EXPECT_EQ(result, "420");
+  }
+  {
+    constexpr auto result =
+        constexpr_buffer_helper<6>{}.modify([](auto& buffer) {
+          fmt::format_to(buffer.data(), FMT_COMPILE("{} {}"), 42, 42);
+        });
+    EXPECT_EQ(result, "42 42");
+  }
+  {
+    constexpr auto result =
+        constexpr_buffer_helper<6>{}.modify([=](auto& buffer) {
+          fmt::format_to(buffer.data(), FMT_COMPILE("{} {}"), uint32_t{42},
+                         uint64_t{42});
+        });
+    EXPECT_EQ(result, "42 42");
+  }
 }
 
-TEST(CompileTimeFormattingTest, OneString) {
-  constexpr auto result = constexpr_buffer_helper<3>{}.modify([](auto& buffer) {
-    fmt::format_to(buffer.data(), FMT_COMPILE("{}"), "42");
-  });
-  EXPECT_EQ(result, "42");
+TEST(CompileTimeFormattingTest, String) {
+  {
+    constexpr auto result =
+        constexpr_buffer_helper<3>{}.modify([](auto& buffer) {
+          fmt::format_to(buffer.data(), FMT_COMPILE("{}"), "42");
+        });
+    EXPECT_EQ(result, "42");
+  }
+  {
+    constexpr auto result =
+        constexpr_buffer_helper<17>{}.modify([](auto& buffer) {
+          fmt::format_to(buffer.data(), FMT_COMPILE("{} is {}"), "The answer",
+                         "42");
+        });
+    EXPECT_EQ(result, "The answer is 42");
+  }
 }
 
-TEST(CompileTimeFormattingTest, TwoStrings) {
-  constexpr auto result =
-      constexpr_buffer_helper<17>{}.modify([](auto& buffer) {
-        fmt::format_to(buffer.data(), FMT_COMPILE("{} is {}"), "The answer",
-                       "42");
-      });
-  EXPECT_EQ(result, "The answer is 42");
-}
-
-TEST(CompileTimeFormattingTest, StringAndInteger) {
-  constexpr auto result =
-      constexpr_buffer_helper<17>{}.modify([](auto& buffer) {
-        fmt::format_to(buffer.data(), FMT_COMPILE("{} is {}"), "The answer",
-                       42);
-      });
-  EXPECT_EQ(result, "The answer is 42");
+TEST(CompileTimeFormattingTest, Combination) {
+  {
+    constexpr auto result =
+        constexpr_buffer_helper<18>{}.modify([](auto& buffer) {
+          fmt::format_to(buffer.data(), FMT_COMPILE("{}, {}, {}"), 420, true,
+                         "answer");
+        });
+    EXPECT_EQ(result, "420, true, answer");
+  }
 }
 #endif
