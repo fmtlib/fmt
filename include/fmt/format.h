@@ -281,30 +281,6 @@ FMT_END_NAMESPACE
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
-// GCC generates slightly better code for pairs than chars.
-using data_digit_pair = char[2];
-
-namespace formatting_data {
-constexpr data_digit_pair digits[] = {
-    {'0', '0'}, {'0', '1'}, {'0', '2'}, {'0', '3'}, {'0', '4'}, {'0', '5'},
-    {'0', '6'}, {'0', '7'}, {'0', '8'}, {'0', '9'}, {'1', '0'}, {'1', '1'},
-    {'1', '2'}, {'1', '3'}, {'1', '4'}, {'1', '5'}, {'1', '6'}, {'1', '7'},
-    {'1', '8'}, {'1', '9'}, {'2', '0'}, {'2', '1'}, {'2', '2'}, {'2', '3'},
-    {'2', '4'}, {'2', '5'}, {'2', '6'}, {'2', '7'}, {'2', '8'}, {'2', '9'},
-    {'3', '0'}, {'3', '1'}, {'3', '2'}, {'3', '3'}, {'3', '4'}, {'3', '5'},
-    {'3', '6'}, {'3', '7'}, {'3', '8'}, {'3', '9'}, {'4', '0'}, {'4', '1'},
-    {'4', '2'}, {'4', '3'}, {'4', '4'}, {'4', '5'}, {'4', '6'}, {'4', '7'},
-    {'4', '8'}, {'4', '9'}, {'5', '0'}, {'5', '1'}, {'5', '2'}, {'5', '3'},
-    {'5', '4'}, {'5', '5'}, {'5', '6'}, {'5', '7'}, {'5', '8'}, {'5', '9'},
-    {'6', '0'}, {'6', '1'}, {'6', '2'}, {'6', '3'}, {'6', '4'}, {'6', '5'},
-    {'6', '6'}, {'6', '7'}, {'6', '8'}, {'6', '9'}, {'7', '0'}, {'7', '1'},
-    {'7', '2'}, {'7', '3'}, {'7', '4'}, {'7', '5'}, {'7', '6'}, {'7', '7'},
-    {'7', '8'}, {'7', '9'}, {'8', '0'}, {'8', '1'}, {'8', '2'}, {'8', '3'},
-    {'8', '4'}, {'8', '5'}, {'8', '6'}, {'8', '7'}, {'8', '8'}, {'8', '9'},
-    {'9', '0'}, {'9', '1'}, {'9', '2'}, {'9', '3'}, {'9', '4'}, {'9', '5'},
-    {'9', '6'}, {'9', '7'}, {'9', '8'}, {'9', '9'}};
-}
-
 // An equivalent of `*reinterpret_cast<Dest*>(&source)` that doesn't have
 // undefined behavior (e.g. due to type aliasing).
 // Example: uint64_t d = bit_cast<uint64_t>(2.718);
@@ -937,6 +913,9 @@ template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
   static const uint64_t powers_of_5_64[];
   static const uint32_t dragonbox_pow10_recovery_errors[];
 #endif
+  // GCC generates slightly better code for pairs than chars.
+  using digit_pair = char[2];
+  static const digit_pair digits[];
   static const char hex_digits[];
   static const char foreground_color[];
   static const char background_color[];
@@ -1078,29 +1057,19 @@ template <> inline wchar_t decimal_point(locale_ref loc) {
 }
 
 // Compares two characters for equality.
-template <typename Char>
-constexpr bool equal2(const Char* lhs, const char* rhs) {
+template <typename Char> bool equal2(const Char* lhs, const char* rhs) {
   return lhs[0] == rhs[0] && lhs[1] == rhs[1];
 }
-inline FMT_CONSTEXPR20 bool equal2(const char* lhs, const char* rhs) {
-  if (is_constant_evaluated()) {
-    return equal2<char>(lhs, rhs);
-  }
+inline bool equal2(const char* lhs, const char* rhs) {
   return memcmp(lhs, rhs, 2) == 0;
 }
 
 // Copies two characters from src to dst.
-template <typename Char> FMT_CONSTEXPR void copy2(Char* dst, const char* src) {
+template <typename Char> void copy2(Char* dst, const char* src) {
   *dst++ = static_cast<Char>(*src++);
   *dst = static_cast<Char>(*src);
 }
-FMT_INLINE FMT_CONSTEXPR20 void copy2(char* dst, const char* src) {
-  if (is_constant_evaluated()) {
-    copy2<char>(dst, src);
-    return;
-  }
-  memcpy(dst, src, 2);
-}
+FMT_INLINE void copy2(char* dst, const char* src) { memcpy(dst, src, 2); }
 
 template <typename Iterator> struct format_decimal_result {
   Iterator begin;
@@ -1117,12 +1086,20 @@ inline FMT_CONSTEXPR20 format_decimal_result<Char*> format_decimal(Char* out,
   FMT_ASSERT(size >= count_digits(value), "invalid digit count");
   out += size;
   Char* end = out;
+  if (is_constant_evaluated()) {
+    while (value >= 10) {
+      *--out = static_cast<Char>('0' + value % 10);
+      value /= 10;
+    }
+    *--out = static_cast<Char>('0' + value);
+    return {out, end};
+  }
   while (value >= 100) {
     // Integer division is slow so do it for a group of two digits instead
     // of for every digit. The idea comes from the talk by Alexandrescu
     // "Three Optimization Tips for C++". See speed-test for a comparison.
     out -= 2;
-    copy2(out, formatting_data::digits[value % 100]);
+    copy2(out, data::digits[value % 100]);
     value /= 100;
   }
   if (value < 10) {
@@ -1130,7 +1107,7 @@ inline FMT_CONSTEXPR20 format_decimal_result<Char*> format_decimal(Char* out,
     return {out, end};
   }
   out -= 2;
-  copy2(out, formatting_data::digits[value]);
+  copy2(out, data::digits[value]);
   return {out, end};
 }
 
@@ -1379,12 +1356,12 @@ template <typename Char, typename It> It write_exponent(int exp, It it) {
     *it++ = static_cast<Char>('+');
   }
   if (exp >= 100) {
-    const char* top = formatting_data::digits[exp / 100];
+    const char* top = data::digits[exp / 100];
     if (exp >= 1000) *it++ = static_cast<Char>(top[0]);
     *it++ = static_cast<Char>(top[1]);
     exp %= 100;
   }
-  const char* d = formatting_data::digits[exp];
+  const char* d = data::digits[exp];
   *it++ = static_cast<Char>(d[0]);
   *it++ = static_cast<Char>(d[1]);
   return it;
