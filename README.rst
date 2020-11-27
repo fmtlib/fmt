@@ -143,7 +143,7 @@ Output::
 
 .. code:: c++
 
-    std::string s = fmt::format(FMT_STRING("{:d}"), "don't panic");
+    std::string s = fmt::format(FMT_STRING("{:d}"), "I am not a number");
 
 This gives a compile-time error because ``d`` is an invalid format specifier for
 a string.
