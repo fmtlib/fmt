@@ -319,6 +319,19 @@ TEST(OStreamTest, BufferSize) {
   EXPECT_READ(in, "foo");
 }
 
+TEST(OStreamTest, Truncate) {
+  {
+    fmt::ostream out = fmt::output_file("test-file");
+    out.print("0123456789");
+  }
+  {
+    fmt::ostream out = fmt::output_file("test-file");
+    out.print("foo");
+  }
+  file in("test-file", file::RDONLY);
+  EXPECT_EQ("foo", read(in, 4));
+}
+
 TEST(FileTest, DefaultCtor) {
   file f;
   EXPECT_EQ(-1, f.descriptor());

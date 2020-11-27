@@ -280,7 +280,8 @@ class file {
     WRONLY = FMT_POSIX(O_WRONLY),  // Open for writing only.
     RDWR = FMT_POSIX(O_RDWR),      // Open for reading and writing.
     CREATE = FMT_POSIX(O_CREAT),   // Create if the file doesn't exist.
-    APPEND = FMT_POSIX(O_APPEND)   // Open in append mode.
+    APPEND = FMT_POSIX(O_APPEND),  // Open in append mode.
+    TRUNC = FMT_POSIX(O_TRUNC)     // Truncate the content of the file.
   };
 
   // Constructs a file object which doesn't represent any file.
@@ -357,7 +358,7 @@ struct buffer_size {
 };
 
 struct ostream_params {
-  int oflag = file::WRONLY | file::CREATE;
+  int oflag = file::WRONLY | file::CREATE | file::TRUNC;
   size_t buffer_size = BUFSIZ > 32768 ? BUFSIZ : 32768;
 
   ostream_params() {}
