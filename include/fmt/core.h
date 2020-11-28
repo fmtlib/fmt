@@ -99,7 +99,7 @@
 #if __cplusplus >= 202002L
 #  define FMT_CONSTEXPR20 constexpr
 #else
-#  define FMT_CONSTEXPR20
+#  define FMT_CONSTEXPR20 inline
 #endif
 
 #ifndef FMT_OVERRIDE

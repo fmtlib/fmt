@@ -390,8 +390,7 @@ inline buffer_appender<T> reserve(buffer_appender<T> it, size_t n) {
   return it;
 }
 
-template <typename Iterator>
-inline constexpr Iterator& reserve(Iterator& it, size_t) {
+template <typename Iterator> constexpr Iterator& reserve(Iterator& it, size_t) {
   return it;
 }
 
@@ -415,7 +414,7 @@ inline std::back_insert_iterator<Container> base_iterator(
 }
 
 template <typename Iterator>
-inline constexpr Iterator base_iterator(Iterator, Iterator it) {
+constexpr Iterator base_iterator(Iterator, Iterator it) {
   return it;
 }
 
@@ -595,8 +594,7 @@ FMT_CONSTEXPR OutputIt copy_str(InputIt begin, InputIt end, OutputIt it) {
 
 template <typename OutChar, typename InputIt,
           FMT_ENABLE_IF(!needs_conversion<InputIt, OutChar>::value)>
-inline FMT_CONSTEXPR20 OutChar* copy_str(InputIt begin, InputIt end,
-                                         OutChar* out) {
+FMT_CONSTEXPR20 OutChar* copy_str(InputIt begin, InputIt end, OutChar* out) {
   if (is_constant_evaluated()) {
     return copy_str<OutChar, InputIt, OutChar*>(begin, end, out);
   }
@@ -948,7 +946,7 @@ FMT_EXTERN template struct basic_data<void>;
 // This is a struct rather than an alias to avoid shadowing warnings in gcc.
 struct data : basic_data<> {};
 
-template <typename T> FMT_CONSTEXPR int count_digits_trivial(T n) {
+template <typename T> FMT_CONSTEXPR int count_digits_fallback(T n) {
   int count = 1;
   for (;;) {
     // Integer division is slow so do it for a group of four digits instead
@@ -966,9 +964,9 @@ template <typename T> FMT_CONSTEXPR int count_digits_trivial(T n) {
 #ifdef FMT_BUILTIN_CLZLL
 // Returns the number of decimal digits in n. Leading zeros are not counted
 // except for n == 0 in which case count_digits returns 1.
-inline FMT_CONSTEXPR20 int count_digits(uint64_t n) {
+FMT_CONSTEXPR20 int count_digits(uint64_t n) {
   if (is_constant_evaluated()) {
-    return count_digits_trivial(n);
+    return count_digits_fallback(n);
   }
   // https://github.com/fmtlib/format-benchmark/blob/master/digits10
   auto t = bsr2log10(FMT_BUILTIN_CLZLL(n | 1) ^ 63);
@@ -976,7 +974,7 @@ inline FMT_CONSTEXPR20 int count_digits(uint64_t n) {
 }
 #else
 // Fallback version of count_digits used when __builtin_clz is not available.
-FMT_CONSTEXPR int count_digits(uint64_t n) { return count_digits_trivial(n); }
+FMT_CONSTEXPR int count_digits(uint64_t n) { return count_digits_fallback(n); }
 #endif
 
 #if FMT_USE_INT128
@@ -1017,9 +1015,9 @@ template <> int count_digits<4>(detail::fallback_uintptr n);
 
 #ifdef FMT_BUILTIN_CLZ
 // Optional version of count_digits for better performance on 32-bit platforms.
-inline FMT_CONSTEXPR20 int count_digits(uint32_t n) {
+FMT_CONSTEXPR20 int count_digits(uint32_t n) {
   if (is_constant_evaluated()) {
-    return count_digits_trivial(n);
+    return count_digits_fallback(n);
   }
   auto t = bsr2log10(FMT_BUILTIN_CLZ(n | 1) ^ 31);
   return t - (n < data::zero_or_powers_of_10_32_new[t]);
@@ -1080,9 +1078,9 @@ template <typename Iterator> struct format_decimal_result {
 // buffer of specified size. The caller must ensure that the buffer is large
 // enough.
 template <typename Char, typename UInt>
-inline FMT_CONSTEXPR20 format_decimal_result<Char*> format_decimal(Char* out,
-                                                                   UInt value,
-                                                                   int size) {
+FMT_CONSTEXPR20 format_decimal_result<Char*> format_decimal(Char* out,
+                                                            UInt value,
+                                                            int size) {
   FMT_ASSERT(size >= count_digits(value), "invalid digit count");
   out += size;
   Char* end = out;
