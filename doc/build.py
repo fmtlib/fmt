@@ -24,6 +24,7 @@ def create_build_env(venv_dir='virtualenv'):
   # Install Sphinx and Breathe. Require the exact version of Sphinx which is
   # compatible with Breathe.
   pip = Pip(venv_dir)
+  pip.install('six')
   pip.install('sphinx-doc/sphinx', 'v3.3.0')
   pip.install('michaeljones/breathe', 'v4.23.0')
 
