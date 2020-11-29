@@ -235,10 +235,8 @@ TEST(CompileTimeFormattingTest, String) {
 }
 
 TEST(CompileTimeFormattingTest, Combination) {
-  {
-    constexpr auto result =
-        test_format<18>(FMT_COMPILE("{}, {}, {}"), 420, true, "answer");
-    EXPECT_EQ(result, "420, true, answer");
-  }
+  constexpr auto result =
+      test_format<18>(FMT_COMPILE("{}, {}, {}"), 420, true, "answer");
+  EXPECT_EQ(result, "420, true, answer");
 }
 #endif
