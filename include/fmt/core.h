@@ -96,12 +96,6 @@
 #  define FMT_CONSTEXPR_DECL
 #endif
 
-#if __cplusplus >= 202002L
-#  define FMT_CONSTEXPR20 constexpr
-#else
-#  define FMT_CONSTEXPR20 inline
-#endif
-
 #ifndef FMT_OVERRIDE
 #  if FMT_HAS_FEATURE(cxx_override_control) || \
       (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || FMT_MSC_VER >= 1900
@@ -288,14 +282,6 @@ struct monostate {};
 #endif
 
 namespace detail {
-
-constexpr bool is_constant_evaluated() FMT_DETECTED_NOEXCEPT {
-#ifdef __cpp_lib_is_constant_evaluated
-  return std::is_constant_evaluated();
-#else
-  return false;
-#endif
-}
 
 // A helper function to suppress "conditional expression is constant" warnings.
 template <typename T> constexpr T const_check(T value) { return value; }

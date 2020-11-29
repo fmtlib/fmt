@@ -281,6 +281,20 @@ FMT_END_NAMESPACE
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
+#if __cplusplus >= 202002L
+#  define FMT_CONSTEXPR20 constexpr
+#else
+#  define FMT_CONSTEXPR20 inline
+#endif
+
+constexpr bool is_constant_evaluated() FMT_DETECTED_NOEXCEPT {
+#ifdef __cpp_lib_is_constant_evaluated
+  return std::is_constant_evaluated();
+#else
+  return false;
+#endif
+}
+
 // An equivalent of `*reinterpret_cast<Dest*>(&source)` that doesn't have
 // undefined behavior (e.g. due to type aliasing).
 // Example: uint64_t d = bit_cast<uint64_t>(2.718);
