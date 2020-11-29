@@ -394,7 +394,7 @@ template <typename Char> struct text {
   using char_type = Char;
 
   template <typename OutputIt, typename... Args>
-  OutputIt format(OutputIt out, const Args&...) const {
+  constexpr OutputIt format(OutputIt out, const Args&...) const {
     return write<Char>(out, data);
   }
 };
@@ -413,7 +413,7 @@ template <typename Char> struct code_unit {
   using char_type = Char;
 
   template <typename OutputIt, typename... Args>
-  OutputIt format(OutputIt out, const Args&...) const {
+  constexpr OutputIt format(OutputIt out, const Args&...) const {
     return write<Char>(out, value);
   }
 };
@@ -426,7 +426,7 @@ template <typename Char, typename T, int N> struct field {
   using char_type = Char;
 
   template <typename OutputIt, typename... Args>
-  OutputIt format(OutputIt out, const Args&... args) const {
+  constexpr OutputIt format(OutputIt out, const Args&... args) const {
     // This ensures that the argument type is convertile to `const T&`.
     const T& arg = get<N>(args...);
     return write<Char>(out, arg);
@@ -461,7 +461,7 @@ template <typename L, typename R> struct concat {
   using char_type = typename L::char_type;
 
   template <typename OutputIt, typename... Args>
-  OutputIt format(OutputIt out, const Args&... args) const {
+  constexpr OutputIt format(OutputIt out, const Args&... args) const {
     out = lhs.format(out, args...);
     return rhs.format(out, args...);
   }
@@ -617,8 +617,8 @@ FMT_INLINE std::basic_string<Char> format(const CompiledFormat& cf,
 
 template <typename OutputIt, typename CompiledFormat, typename... Args,
           FMT_ENABLE_IF(detail::is_compiled_format<CompiledFormat>::value)>
-OutputIt format_to(OutputIt out, const CompiledFormat& cf,
-                   const Args&... args) {
+constexpr OutputIt format_to(OutputIt out, const CompiledFormat& cf,
+                             const Args&... args) {
   return cf.format(out, args...);
 }
 #  endif  // __cpp_if_constexpr
@@ -654,8 +654,8 @@ FMT_INLINE std::basic_string<typename S::char_type> format(const S&,
 template <typename OutputIt, typename CompiledFormat, typename... Args,
           FMT_ENABLE_IF(std::is_base_of<detail::basic_compiled_format,
                                         CompiledFormat>::value)>
-OutputIt format_to(OutputIt out, const CompiledFormat& cf,
-                   const Args&... args) {
+constexpr OutputIt format_to(OutputIt out, const CompiledFormat& cf,
+                             const Args&... args) {
   using char_type = typename CompiledFormat::char_type;
   using context = format_context_t<OutputIt, char_type>;
   return detail::cf::vformat_to<context>(out, cf,
@@ -664,7 +664,7 @@ OutputIt format_to(OutputIt out, const CompiledFormat& cf,
 
 template <typename OutputIt, typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
-OutputIt format_to(OutputIt out, const S&, const Args&... args) {
+FMT_CONSTEXPR OutputIt format_to(OutputIt out, const S&, const Args&... args) {
   constexpr auto compiled = detail::compile<Args...>(S());
   return format_to(out, compiled, args...);
 }
