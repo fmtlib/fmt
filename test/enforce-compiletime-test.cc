@@ -157,7 +157,7 @@ TEST(FormatTest, OutputIterators) {
 }
 
 TEST(FormatTest, FormattedSize) {
-  //EXPECT_EQ(2u, fmt::formatted_size(FMT_STRING("{}"), 42));
+  EXPECT_EQ(2u, fmt::formatted_size(FMT_STRING("{}"), 42));
 }
 
 TEST(FormatTest, FormatTo) {

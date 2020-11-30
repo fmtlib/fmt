@@ -1841,6 +1841,14 @@ inline auto format_to_n(OutputIt out, size_t n, const S& format_str,
   Returns the number of characters in the output of
   ``format(format_str, args...)``.
  */
+template <typename S, typename... Args, FMT_ENABLE_IF(is_compile_string<S>::value)>
+inline size_t formatted_size(const S& format_str, Args&&... args) {
+  const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
+  detail::counting_buffer<> buf;
+  detail::vformat_to(buf, to_string_view(format_str), vargs);
+  return buf.count();
+}
+
 template <typename... Args>
 inline size_t formatted_size(string_view format_str, Args&&... args) {
   const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
