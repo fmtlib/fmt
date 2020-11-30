@@ -145,7 +145,7 @@ TEST(FormatTest, ToString) {
   EXPECT_EQ("foo", fmt::to_string(adl_test::fmt::detail::foo()));
 }
 
-//TEST(FormatTest, ToWString) { EXPECT_EQ(L"42", fmt::to_wstring(42)); }
+TEST(FormatTest, ToWString) { EXPECT_EQ(L"42", fmt::to_wstring(42)); }
 
 TEST(FormatTest, OutputIterators) {
   std::list<char> out;
