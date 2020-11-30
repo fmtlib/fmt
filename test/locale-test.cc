@@ -10,6 +10,7 @@
 #include <complex>
 
 #include "gmock.h"
+#include "gtest-extra.h"
 
 using fmt::detail::max_value;
 
@@ -139,8 +140,7 @@ template <class charT> struct formatter<std::complex<double>, charT> {
     auto imag = fmt::format(ctx.locale().template get<std::locale>(),
                             "{:" + specs + "}", c.imag());
     auto fill_align_width = std::string();
-    if (specs_.width > 0)
-      fill_align_width = fmt::format(">{}", specs_.width);
+    if (specs_.width > 0) fill_align_width = fmt::format(">{}", specs_.width);
     return format_to(
         ctx.out(), "{:" + fill_align_width + "}",
         fmt::format(c.real() != 0 ? "({0}+{1}i)" : "{1}i", real, imag));
@@ -155,4 +155,14 @@ TEST(FormatTest, Complex) {
   EXPECT_EQ(fmt::format("{:8}", std::complex<double>(1, 2)), "  (1+2i)");
 }
 
+TEST(FormatTest, Print) {
+  std::locale special_grouping_loc(std::locale(), new special_grouping<char>());
+  EXPECT_WRITE(stdout, fmt::print(std::locale(), "{:L}", 12345678), "12345678");
+  EXPECT_WRITE(stdout, fmt::print(special_grouping_loc, "{:L}", 12345678),
+               "1,23,45,678");
+  EXPECT_WRITE(stdout, fmt::print(special_grouping_loc, "{:L}", 12345),
+               "12,345");
+  EXPECT_WRITE(stderr, fmt::print(stderr, special_grouping_loc, "{:L}", 12345),
+               "12,345");
+}
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR

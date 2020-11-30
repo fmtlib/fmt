@@ -52,11 +52,24 @@ inline OutputIt vformat_to(
 
 template <typename OutputIt, typename S, typename... Args,
           bool enable = detail::is_output_iterator<OutputIt, char_t<S>>::value>
-inline auto format_to(OutputIt out, const std::locale& loc,
-                      const S& format_str, Args&&... args) ->
+inline auto format_to(OutputIt out, const std::locale& loc, const S& format_str,
+                      Args&&... args) ->
     typename std::enable_if<enable, OutputIt>::type {
   const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
   return vformat_to(out, loc, to_string_view(format_str), vargs);
+}
+
+template <typename S, typename... Args, typename Char = char_t<S>>
+inline void print(std::FILE* f, const std::locale& loc, const S& format_str,
+                  Args&&... args) {
+  const auto str = fmt::format(loc, format_str, std::forward<Args>(args)...);
+
+  static FMT_CONSTEXPR_DECL const Char print_fmt_str[] = {'{', '}', 0};
+  fmt::print(f, FMT_STRING(print_fmt_str), str);
+}
+template <typename S, typename... Args, typename Char = char_t<S>>
+inline void print(const std::locale& loc, const S& format_str, Args&&... args) {
+  print(stdout, loc, format_str, std::forward<Args>(args)...);
 }
 
 FMT_END_NAMESPACE
