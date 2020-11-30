@@ -279,13 +279,13 @@ TEST(FormatTest, FmtStringInTemplate) {
 #include "fmt/chrono.h"
 
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
-/*
+
 TEST(ChronoTest, FormatDefault) {
   EXPECT_EQ("42s", fmt::format(FMT_STRING("{}"), std::chrono::seconds(42)));
 }
 
 TEST(ChronoTest, FormatWide) {
-  EXPECT_EQ(L"42s", fmt::format(L"{}", std::chrono::seconds(42)));
+  EXPECT_EQ(L"42s", fmt::format(FMT_STRING(L"{}"), std::chrono::seconds(42)));
 }
 
 typedef std::chrono::duration<double, std::milli> dms;
@@ -327,7 +327,7 @@ TEST(ChronoTest, FormatFullSpecsQq) {
 TEST(ChronoTest, UnsignedDuration) {
   EXPECT_EQ("42s", fmt::format(FMT_STRING("{}"), std::chrono::duration<unsigned>(42)));
 }
-*/
+
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR
 
 
