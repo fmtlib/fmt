@@ -164,5 +164,10 @@ TEST(FormatTest, Print) {
                "12,345");
   EXPECT_WRITE(stderr, fmt::print(stderr, special_grouping_loc, "{:L}", 12345),
                "12,345");
+
+  // The wide string overload is expected to compile, but fail to execute.
+  if (fmt::detail::const_check(false))
+    EXPECT_WRITE(stdout, fmt::print(std::locale(), L"{:L}", 12345678),
+                 "12345678");
 }
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR
