@@ -5,20 +5,25 @@
 //
 // For the license information refer to format.h.
 
-#include <list>
+#include <array>
 #include <iterator>
+#include <list>
+#include <map>
+#include <sstream>
 #include <string>
 #include <utility>
+#include <vector>
 
 #ifdef WIN32
 #  define _CRT_SECURE_NO_WARNINGS
 #endif
 
-#include "fmt/format.h"
-#include "fmt/locale.h"
 #include "fmt/chrono.h"
 #include "fmt/color.h"
+#include "fmt/format.h"
+#include "fmt/locale.h"
 #include "fmt/ostream.h"
+#include "fmt/ranges.h"
 
 #undef index
 
@@ -52,7 +57,15 @@ template <> struct formatter<Answer> : formatter<int> {
 };
 FMT_END_NAMESPACE
 
-struct string_like {};
+struct string_like {
+  const char* begin();
+  const char* end();
+#if defined(FMT_USE_STRING_VIEW)
+  explicit operator fmt::string_view() const { return "foo"; }
+  explicit operator std::string_view() const { return "foo"; }
+#endif
+};
+
 fmt::string_view to_string_view(string_like) { return "foo"; }
 
 constexpr char with_null[3] = {'{', '}', '\0'};
@@ -197,7 +210,8 @@ TEST(FormatTest, FormatToN) {
   EXPECT_EQ("ABCD", fmt::string_view(buffer, 4));
 
   buffer[3] = 'x';
-  result = fmt::format_to_n(buffer, 3, FMT_STRING("{}"), std::string(1000, '*'));
+  result =
+      fmt::format_to_n(buffer, 3, FMT_STRING("{}"), std::string(1000, '*'));
   EXPECT_EQ(1000u, result.size);
   EXPECT_EQ("***x", fmt::string_view(buffer, 4));
 }
@@ -274,10 +288,6 @@ TEST(FormatTest, FmtStringInTemplate) {
   EXPECT_EQ(FmtToString(0), "0");
 }
 
-
-
-#include "fmt/chrono.h"
-
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
 
 TEST(ChronoTest, FormatDefault) {
@@ -306,7 +316,7 @@ TEST(ChronoTest, FormatFullSpecs) {
 
 TEST(ChronoTest, FormatSimpleQq) {
   typedef std::chrono::duration<float> fs;
-  //EXPECT_EQ("1.234 s", fmt::format(FMT_STRING("{:%Q %q}"), fs(1.234)));
+  // EXPECT_EQ("1.234 s", fmt::format(FMT_STRING("{:%Q %q}"), fs(1.234)));
   typedef std::chrono::duration<float, std::milli> fms;
   EXPECT_EQ("1.234 ms", fmt::format(FMT_STRING("{:%Q %q}"), fms(1.234)));
   typedef std::chrono::duration<double> ds;
@@ -321,62 +331,74 @@ TEST(ChronoTest, FormatPrecisionQq) {
 
 TEST(ChronoTest, FormatFullSpecsQq) {
   EXPECT_EQ("1.2 ms ", fmt::format(FMT_STRING("{:7.1%Q %q}"), dms(1.234)));
-  EXPECT_EQ(" 1.2 ms ", fmt::format(FMT_STRING("{:^{}.{}%Q %q}"), dms(1.234), 8, 1));
+  EXPECT_EQ(" 1.2 ms ",
+            fmt::format(FMT_STRING("{:^{}.{}%Q %q}"), dms(1.234), 8, 1));
 }
 
 TEST(ChronoTest, UnsignedDuration) {
-  EXPECT_EQ("42s", fmt::format(FMT_STRING("{}"), std::chrono::duration<unsigned>(42)));
+  EXPECT_EQ("42s",
+            fmt::format(FMT_STRING("{}"), std::chrono::duration<unsigned>(42)));
 }
 
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR
 
-
 TEST(ColorsTest, ColorsPrint) {
-  EXPECT_WRITE(stdout, fmt::print(fg(fmt::rgb(255, 20, 30)), FMT_STRING("rgb(255,20,30)")),
-               "\x1b[38;2;255;020;030mrgb(255,20,30)\x1b[0m");
   EXPECT_WRITE(
       stdout,
-      fmt::print(fg(fmt::color::blue) | bg(fmt::color::red), FMT_STRING("two color")),
-      "\x1b[38;2;000;000;255m\x1b[48;2;255;000;000mtwo color\x1b[0m");
+      fmt::print(fg(fmt::rgb(255, 20, 30)), FMT_STRING("rgb(255,20,30)")),
+      "\x1b[38;2;255;020;030mrgb(255,20,30)\x1b[0m");
+  EXPECT_WRITE(stdout,
+               fmt::print(fg(fmt::color::blue) | bg(fmt::color::red),
+                          FMT_STRING("two color")),
+               "\x1b[38;2;000;000;255m\x1b[48;2;255;000;000mtwo color\x1b[0m");
   EXPECT_WRITE(stdout, fmt::print(fmt::emphasis::bold, FMT_STRING("bold")),
                "\x1b[1mbold\x1b[0m");
-  EXPECT_WRITE(
-      stdout,
-      fmt::print(fg(fmt::color::blue) | fmt::emphasis::bold, FMT_STRING("blue/bold")),
-      "\x1b[1m\x1b[38;2;000;000;255mblue/bold\x1b[0m");
+  EXPECT_WRITE(stdout,
+               fmt::print(fg(fmt::color::blue) | fmt::emphasis::bold,
+                          FMT_STRING("blue/bold")),
+               "\x1b[1m\x1b[38;2;000;000;255mblue/bold\x1b[0m");
   EXPECT_WRITE(stdout, fmt::print(fmt::text_style(), FMT_STRING("hi")), "hi");
-  EXPECT_WRITE(stdout, fmt::print(fg(fmt::terminal_color::red), FMT_STRING("tred")),
+  EXPECT_WRITE(stdout,
+               fmt::print(fg(fmt::terminal_color::red), FMT_STRING("tred")),
                "\x1b[31mtred\x1b[0m");
-  EXPECT_WRITE(stdout, fmt::print(bg(fmt::terminal_color::cyan), FMT_STRING("tcyan")),
+  EXPECT_WRITE(stdout,
+               fmt::print(bg(fmt::terminal_color::cyan), FMT_STRING("tcyan")),
                "\x1b[46mtcyan\x1b[0m");
   EXPECT_WRITE(stdout,
-               fmt::print(bg(fmt::terminal_color::bright_magenta), FMT_STRING("tbmagenta")),
+               fmt::print(bg(fmt::terminal_color::bright_magenta),
+                          FMT_STRING("tbmagenta")),
                "\x1b[105mtbmagenta\x1b[0m");
 }
 
 TEST(ColorsTest, Format) {
-  EXPECT_EQ("\x1b[38;2;255;020;030mrgb(255,20,30)\x1b[0m", fmt::format(fg(fmt::rgb(255, 20, 30)), FMT_STRING("rgb(255,20,30)")));
-  EXPECT_EQ("\x1b[38;2;000;000;255mblue\x1b[0m", fmt::format(fg(fmt::color::blue), FMT_STRING("blue")));
   EXPECT_EQ(
-      "\x1b[38;2;000;000;255m\x1b[48;2;255;000;000mtwo color\x1b[0m",
-      fmt::format(fg(fmt::color::blue) | bg(fmt::color::red), FMT_STRING("two color")));
-  EXPECT_EQ("\x1b[1mbold\x1b[0m", fmt::format(fmt::emphasis::bold, FMT_STRING("bold")));
-  EXPECT_EQ(
-    "\x1b[1m\x1b[38;2;000;000;255mblue/bold\x1b[0m",
-      fmt::format(fg(fmt::color::blue) | fmt::emphasis::bold, FMT_STRING("blue/bold")));
+      "\x1b[38;2;255;020;030mrgb(255,20,30)\x1b[0m",
+      fmt::format(fg(fmt::rgb(255, 20, 30)), FMT_STRING("rgb(255,20,30)")));
+  EXPECT_EQ("\x1b[38;2;000;000;255mblue\x1b[0m",
+            fmt::format(fg(fmt::color::blue), FMT_STRING("blue")));
+  EXPECT_EQ("\x1b[38;2;000;000;255m\x1b[48;2;255;000;000mtwo color\x1b[0m",
+            fmt::format(fg(fmt::color::blue) | bg(fmt::color::red),
+                        FMT_STRING("two color")));
+  EXPECT_EQ("\x1b[1mbold\x1b[0m",
+            fmt::format(fmt::emphasis::bold, FMT_STRING("bold")));
+  EXPECT_EQ("\x1b[1m\x1b[38;2;000;000;255mblue/bold\x1b[0m",
+            fmt::format(fg(fmt::color::blue) | fmt::emphasis::bold,
+                        FMT_STRING("blue/bold")));
   EXPECT_EQ("hi", fmt::format(fmt::text_style(), FMT_STRING("hi")));
-  EXPECT_EQ("\x1b[31mtred\x1b[0m", 
-        fmt::format(fg(fmt::terminal_color::red), FMT_STRING("tred")));
-  EXPECT_EQ("\x1b[46mtcyan\x1b[0m", 
-          fmt::format(bg(fmt::terminal_color::cyan), FMT_STRING("tcyan")));
-  EXPECT_EQ("\x1b[105mtbmagenta\x1b[0m", 
-          fmt::format(bg(fmt::terminal_color::bright_magenta), FMT_STRING("tbmagenta")));
+  EXPECT_EQ("\x1b[31mtred\x1b[0m",
+            fmt::format(fg(fmt::terminal_color::red), FMT_STRING("tred")));
+  EXPECT_EQ("\x1b[46mtcyan\x1b[0m",
+            fmt::format(bg(fmt::terminal_color::cyan), FMT_STRING("tcyan")));
+  EXPECT_EQ("\x1b[105mtbmagenta\x1b[0m",
+            fmt::format(bg(fmt::terminal_color::bright_magenta),
+                        FMT_STRING("tbmagenta")));
 }
 
 TEST(ColorsTest, FormatToOutAcceptsTextStyle) {
   fmt::text_style ts = fg(fmt::rgb(255, 20, 30));
   std::string out;
-  fmt::format_to(std::back_inserter(out), ts, FMT_STRING("rgb(255,20,30){}{}{}"), 1, 2, 3);
+  fmt::format_to(std::back_inserter(out), ts,
+                 FMT_STRING("rgb(255,20,30){}{}{}"), 1, 2, 3);
 
   EXPECT_EQ(fmt::to_string(out),
             "\x1b[38;2;255;020;030mrgb(255,20,30)123\x1b[0m");
@@ -388,9 +410,6 @@ TEST(ColorsTest, FormatToOutAcceptsTextStyle) {
 // All rights reserved.
 //
 // For the license information refer to format.h.
-
-#define FMT_STRING_ALIAS 1
-#include "fmt/format.h"
 
 struct test {};
 
@@ -404,10 +423,6 @@ template <> struct formatter<test> : formatter<int> {
   }
 };
 }  // namespace fmt
-
-#include <sstream>
-
-#include "fmt/ostream.h"
 
 struct EmptyTest {};
 static std::ostream& operator<<(std::ostream& os, EmptyTest) {
@@ -429,7 +444,8 @@ TEST(OStreamTest, Print) {
 
 TEST(OStreamTest, Join) {
   int v[3] = {1, 2, 3};
-  EXPECT_EQ("1, 2, 3", fmt::format(FMT_STRING("{}"), fmt::join(v, v + 3, ", ")));
+  EXPECT_EQ("1, 2, 3",
+            fmt::format(FMT_STRING("{}"), fmt::join(v, v + 3, ", ")));
 }
 
 namespace fmt_test {
@@ -480,17 +496,9 @@ TEST(OStreamTest, ToString) {
   EXPECT_EQ("ABC", fmt::to_string(fmt_test::ABC()));
 }
 
-
-#include "fmt/ranges.h"
-
 // Check if  'if constexpr' is supported.
 #if (__cplusplus > 201402L) || \
     (defined(_MSVC_LANG) && _MSVC_LANG > 201402L && _MSC_VER >= 1910)
-
-#  include <array>
-#  include <map>
-#  include <string>
-#  include <vector>
 
 TEST(RangesTest, FormatArray) {
   int32_t ia[] = {1, 2, 3, 5, 7, 11};
@@ -518,7 +526,8 @@ TEST(RangesTest, FormatVector2) {
 
 TEST(RangesTest, FormatMap) {
   std::map<std::string, int32_t> simap{{"one", 1}, {"two", 2}};
-  EXPECT_EQ("{(\"one\", 1), (\"two\", 2)}", fmt::format(FMT_STRING("{}"), simap));
+  EXPECT_EQ("{(\"one\", 1), (\"two\", 2)}",
+            fmt::format(FMT_STRING("{}"), simap));
 }
 
 TEST(RangesTest, FormatPair) {
@@ -529,7 +538,8 @@ TEST(RangesTest, FormatPair) {
 TEST(RangesTest, FormatTuple) {
   std::tuple<int64_t, float, std::string, char> t{42, 1.5f, "this is tuple",
                                                   'i'};
-  EXPECT_EQ("(42, 1.5, \"this is tuple\", 'i')", fmt::format(FMT_STRING("{}"), t));
+  EXPECT_EQ("(42, 1.5, \"this is tuple\", 'i')",
+            fmt::format(FMT_STRING("{}"), t));
   EXPECT_EQ("()", fmt::format(FMT_STRING("{}"), std::tuple<>()));
 }
 
@@ -553,9 +563,10 @@ TEST(RangesTest, JoinTuple) {
 }
 
 TEST(RangesTest, JoinInitializerList) {
-  EXPECT_EQ("1, 2, 3", fmt::format(FMT_STRING("{}"), fmt::join({1, 2, 3}, ", ")));
-  EXPECT_EQ("fmt rocks !",
-            fmt::format(FMT_STRING("{}"), fmt::join({"fmt", "rocks", "!"}, " ")));
+  EXPECT_EQ("1, 2, 3",
+            fmt::format(FMT_STRING("{}"), fmt::join({1, 2, 3}, ", ")));
+  EXPECT_EQ("fmt rocks !", fmt::format(FMT_STRING("{}"),
+                                       fmt::join({"fmt", "rocks", "!"}, " ")));
 }
 
 struct my_struct {
@@ -610,13 +621,6 @@ TEST(RangesTest, PathLike) {
         // 201402L && _MSC_VER >= 1910)
 
 #ifdef FMT_USE_STRING_VIEW
-struct string_like {
-  const char* begin();
-  const char* end();
-  explicit operator fmt::string_view() const { return "foo"; }
-  explicit operator std::string_view() const { return "foo"; }
-};
-
 TEST(RangesTest, FormatStringLike) {
   EXPECT_EQ("foo", fmt::format(FMT_STRING("{}"), string_like()));
 }
@@ -636,8 +640,9 @@ struct zstring {
 // TODO: Fix using zstrings with FMT_STRING
 TEST(RangesTest, JoinSentinel) {
   zstring hello{"hello"};
-  //EXPECT_EQ("{'h', 'e', 'l', 'l', 'o'}", fmt::format(FMT_STRING("{}"), hello));
-  //EXPECT_EQ("h_e_l_l_o", fmt::format(FMT_STRING("{}"), fmt::join(hello, "_")));
+  // EXPECT_EQ("{'h', 'e', 'l', 'l', 'o'}", fmt::format(FMT_STRING("{}"),
+  // hello)); EXPECT_EQ("h_e_l_l_o", fmt::format(FMT_STRING("{}"),
+  // fmt::join(hello, "_")));
 }
 
 // A range that provides non-const only begin()/end() to test fmt::join handles
@@ -678,19 +683,22 @@ template <typename T> class noncopyable_range {
   const_iterator end() const { return vec.end(); }
 };
 
-//TODO: Fixme
+// TODO: Fixme
 TEST(RangesTest, Range) {
   noncopyable_range<int> w(3u, 0);
   /*EXPECT_EQ("{0, 0, 0}", fmt::format(FMT_STRING("{}"), w));
-  EXPECT_EQ("{0, 0, 0}", fmt::format(FMT_STRING("{}"), noncopyable_range<int>(3u, 0)));
+  EXPECT_EQ("{0, 0, 0}", fmt::format(FMT_STRING("{}"),
+  noncopyable_range<int>(3u, 0)));
 
   non_const_only_range<int> x(3u, 0);
   EXPECT_EQ("{0, 0, 0}", fmt::format(FMT_STRING("{}"), x));
-  EXPECT_EQ("{0, 0, 0}", fmt::format(FMT_STRING("{}"), non_const_only_range<int>(3u, 0)));
+  EXPECT_EQ("{0, 0, 0}", fmt::format(FMT_STRING("{}"),
+  non_const_only_range<int>(3u, 0)));
 
   std::vector<int> y(3u, 0);
   EXPECT_EQ("{0, 0, 0}", fmt::format(FMT_STRING("{}"), y));
-  EXPECT_EQ("{0, 0, 0}", fmt::format(FMT_STRING("{}"), std::vector<int>(3u, 0)));
+  EXPECT_EQ("{0, 0, 0}", fmt::format(FMT_STRING("{}"), std::vector<int>(3u,
+  0)));
 
   const std::vector<int> z(3u, 0);
   EXPECT_EQ("{0, 0, 0}", fmt::format(FMT_STRING("{}"), z));*/
@@ -704,6 +712,3 @@ TEST(RangesTest, UnformattableRange) {
                                    fmt::format_context>::value));
 }
 #endif
-
-
-
