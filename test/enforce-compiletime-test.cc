@@ -316,7 +316,7 @@ TEST(ChronoTest, FormatFullSpecs) {
 
 TEST(ChronoTest, FormatSimpleQq) {
   typedef std::chrono::duration<float> fs;
-  // EXPECT_EQ("1.234 s", fmt::format(FMT_STRING("{:%Q %q}"), fs(1.234)));
+  EXPECT_EQ("1.234 s", fmt::format(FMT_STRING("{:%Q %q}"), fs(1.234)));
   typedef std::chrono::duration<float, std::milli> fms;
   EXPECT_EQ("1.234 ms", fmt::format(FMT_STRING("{:%Q %q}"), fms(1.234)));
   typedef std::chrono::duration<double> ds;
@@ -403,13 +403,6 @@ TEST(ColorsTest, FormatToOutAcceptsTextStyle) {
   EXPECT_EQ(fmt::to_string(out),
             "\x1b[38;2;255;020;030mrgb(255,20,30)123\x1b[0m");
 }
-
-// Formatting library for C++ - std::ostream support tests
-//
-// Copyright (c) 2012 - present, Victor Zverovich
-// All rights reserved.
-//
-// For the license information refer to format.h.
 
 struct test {};
 
@@ -637,12 +630,11 @@ struct zstring {
   zstring_sentinel end() const { return {}; }
 };
 
-// TODO: Fix using zstrings with FMT_STRING
 TEST(RangesTest, JoinSentinel) {
   zstring hello{"hello"};
-  // EXPECT_EQ("{'h', 'e', 'l', 'l', 'o'}", fmt::format(FMT_STRING("{}"),
-  // hello)); EXPECT_EQ("h_e_l_l_o", fmt::format(FMT_STRING("{}"),
-  // fmt::join(hello, "_")));
+   EXPECT_EQ("{'h', 'e', 'l', 'l', 'o'}", fmt::format(FMT_STRING("{}"),
+   hello)); EXPECT_EQ("h_e_l_l_o", fmt::format(FMT_STRING("{}"),
+   fmt::join(hello, "_")));
 }
 
 // A range that provides non-const only begin()/end() to test fmt::join handles
@@ -683,10 +675,9 @@ template <typename T> class noncopyable_range {
   const_iterator end() const { return vec.end(); }
 };
 
-// TODO: Fixme
 TEST(RangesTest, Range) {
   noncopyable_range<int> w(3u, 0);
-  /*EXPECT_EQ("{0, 0, 0}", fmt::format(FMT_STRING("{}"), w));
+  EXPECT_EQ("{0, 0, 0}", fmt::format(FMT_STRING("{}"), w));
   EXPECT_EQ("{0, 0, 0}", fmt::format(FMT_STRING("{}"),
   noncopyable_range<int>(3u, 0)));
 
@@ -701,7 +692,7 @@ TEST(RangesTest, Range) {
   0)));
 
   const std::vector<int> z(3u, 0);
-  EXPECT_EQ("{0, 0, 0}", fmt::format(FMT_STRING("{}"), z));*/
+  EXPECT_EQ("{0, 0, 0}", fmt::format(FMT_STRING("{}"), z));
 }
 
 #if !FMT_MSC_VER || FMT_MSC_VER >= 1927
