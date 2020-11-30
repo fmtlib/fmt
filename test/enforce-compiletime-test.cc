@@ -114,7 +114,7 @@ TEST(FormatTest, CustomFormatCompileTimeString) {
   EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), const_answer));
 }
 
-#if FMT_USE_USER_DEFINED_LITERALS
+#if FMT_USE_UDL_TEMPLATE
 // Passing user-defined literals directly to EXPECT_EQ causes problems
 // with macro argument stringification (#) on some versions of GCC.
 // Workaround: Assing the UDL result to a variable before the macro.
@@ -128,7 +128,7 @@ TEST(LiteralsTest, Format) {
   EXPECT_EQ(L"abc1", udl_format_w);
 }
 
-#endif  // FMT_USE_USER_DEFINED_LITERALS
+#endif  // FMT_USE_UDL_TEMPLATE
 
 enum TestEnum { A };
 
