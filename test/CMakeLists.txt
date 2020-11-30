@@ -106,6 +106,10 @@ add_fmt_test(printf-test)
 add_fmt_test(ranges-test)
 add_fmt_test(scan-test)
 
+
+add_fmt_test(enforce-compiletime-test)
+target_compile_definitions(enforce-compiletime-test PRIVATE "-DFMT_ENFORCE_COMPILE_STRING")
+
 if (NOT DEFINED MSVC_STATIC_RUNTIME AND MSVC)
   foreach (flag_var
 			 CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
