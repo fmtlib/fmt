@@ -157,9 +157,12 @@ string checks, wide string, output iterator and user-defined type support.
 Compile-time Format String Checks
 ---------------------------------
 
-Compile-time checks are enabled when using ``FMT_STRING``. They support built-in
-and string types as well as user-defined types with ``constexpr`` ``parse``
-functions in their ``formatter`` specializations.
+Compile-time checks are supported in C++14 and up. They are enabled when using
+``FMT_STRING`` and support built-in and string types as well as user-defined 
+types with ``constexpr`` ``parse`` functions in their ``formatter`` specializations.
+
+``FMT_STRING`` may function in C++11 environments, but is not supported and can
+produce illegible error messages. It is also known to fail in GCC when passing zero arguments. 
 
 .. doxygendefine:: FMT_STRING
 
