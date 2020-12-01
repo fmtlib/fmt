@@ -37,6 +37,28 @@ struct is_compiled_string : std::is_base_of<compiled_string, S> {};
  */
 #define FMT_COMPILE(s) FMT_STRING_IMPL(s, fmt::detail::compiled_string)
 
+#if defined(__cpp_nontype_template_parameter_class) && \
+    (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 903)
+template <typename Char, std::size_t N> struct fixed_string {
+  constexpr fixed_string(const Char (&str)[N + 1]) {
+    copy_str<Char, const Char*, Char*>(static_cast<const Char*>(str), str + N,
+                                       data);
+  }
+  Char data[N]{};
+};
+
+template <typename Char, std::size_t N>
+fixed_string(const Char (&str)[N]) -> fixed_string<Char, N - 1>;
+
+template <typename Char, std::size_t N, fixed_string<Char, N> Str>
+struct udl_compiled_string : compiled_string {
+  using char_type = Char;
+  constexpr operator basic_string_view<char_type>() const {
+    return {Str.data, N};
+  }
+};
+#endif
+
 template <typename T, typename... Tail>
 const T& first(const T& value, const Tail&...) {
   return value;
@@ -697,6 +719,18 @@ template <typename CompiledFormat, typename... Args>
 size_t formatted_size(const CompiledFormat& cf, const Args&... args) {
   return format_to(detail::counting_iterator(), cf, args...).count();
 }
+
+#if defined(__cpp_nontype_template_parameter_class) && \
+    (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 903)
+inline namespace literals {
+template <detail::fixed_string Str>
+constexpr detail::udl_compiled_string<remove_cvref_t<decltype(Str.data[0])>,
+                                      sizeof(Str.data), Str>
+operator""_cf() {
+  return {};
+}
+}  // namespace literals
+#endif
 
 FMT_END_NAMESPACE
 

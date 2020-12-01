@@ -179,6 +179,14 @@ TEST(CompileTest, Empty) {
 }
 #endif
 
+#if defined(__cpp_nontype_template_parameter_class) && \
+    (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 903)
+TEST(CompileTest, CompileFormatStringLiteral) {
+  using namespace fmt::literals;
+  EXPECT_EQ("42", fmt::format("{}"_cf, 42));
+}
+#endif
+
 #if __cplusplus >= 202002L
 template <size_t max_string_length> struct test_string {
   template <typename T> constexpr bool operator==(const T& rhs) const noexcept {
