@@ -371,7 +371,7 @@ struct formatter<
                            (formatting.add_delimiter_spaces && i > 0), *it),
                        make_format_args<FormatContext>(*it));
       if (++i > formatting.range_length_limit) {
-        out = format_to(out, FMT_STRING(" ... <other elements>"));
+        out = format_to(out, FMT_STRING("{}"), " ... <other elements>");
         break;
       }
     }
