@@ -292,8 +292,8 @@ struct formatter<TupleT, Char, enable_if_t<fmt::is_tuple_like<TupleT>::value>> {
         out = detail::copy(formatting.delimiter, out);
       }
       out = vformat_to(out,
-                       to_string_view(detail::format_str_quoted(
-                           (formatting.add_delimiter_spaces && i > 0), v)),
+                       detail::format_str_quoted(
+                           (formatting.add_delimiter_spaces && i > 0), v),
                        make_format_args<FormatContext>(v));
       ++i;
     }
@@ -367,8 +367,8 @@ struct formatter<
         out = detail::copy(formatting.delimiter, out);
       }
       out = vformat_to(out,
-                       to_string_view(detail::format_str_quoted(
-                           (formatting.add_delimiter_spaces && i > 0), *it)),
+                       detail::format_str_quoted(
+                           (formatting.add_delimiter_spaces && i > 0), *it),
                        make_format_args<FormatContext>(*it));
       if (++i > formatting.range_length_limit) {
         out = format_to(out, FMT_STRING(" ... <other elements>"));
