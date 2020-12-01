@@ -345,53 +345,57 @@ TEST(ChronoTest, UnsignedDuration) {
 TEST(ColorsTest, ColorsPrint) {
   EXPECT_WRITE(
       stdout,
-      fmt::print(fg(fmt::rgb(255, 20, 30)), FMT_STRING("rgb(255,20,30)")),
+      fmt::print(fg(fmt::rgb(255, 20, 30)), FMT_STRING("{}"), "rgb(255,20,30)"),
       "\x1b[38;2;255;020;030mrgb(255,20,30)\x1b[0m");
   EXPECT_WRITE(stdout,
                fmt::print(fg(fmt::color::blue) | bg(fmt::color::red),
-                          FMT_STRING("two color")),
+                          FMT_STRING("{}"), "two color"),
                "\x1b[38;2;000;000;255m\x1b[48;2;255;000;000mtwo color\x1b[0m");
-  EXPECT_WRITE(stdout, fmt::print(fmt::emphasis::bold, FMT_STRING("bold")),
+  EXPECT_WRITE(stdout,
+               fmt::print(fmt::emphasis::bold, FMT_STRING("{}"), "bold"),
                "\x1b[1mbold\x1b[0m");
   EXPECT_WRITE(stdout,
                fmt::print(fg(fmt::color::blue) | fmt::emphasis::bold,
-                          FMT_STRING("blue/bold")),
+                          FMT_STRING("{}"), "blue/bold"),
                "\x1b[1m\x1b[38;2;000;000;255mblue/bold\x1b[0m");
-  EXPECT_WRITE(stdout, fmt::print(fmt::text_style(), FMT_STRING("hi")), "hi");
-  EXPECT_WRITE(stdout,
-               fmt::print(fg(fmt::terminal_color::red), FMT_STRING("tred")),
-               "\x1b[31mtred\x1b[0m");
-  EXPECT_WRITE(stdout,
-               fmt::print(bg(fmt::terminal_color::cyan), FMT_STRING("tcyan")),
-               "\x1b[46mtcyan\x1b[0m");
+  EXPECT_WRITE(stdout, fmt::print(fmt::text_style(), FMT_STRING("{}"), "hi"),
+               "hi");
+  EXPECT_WRITE(
+      stdout,
+      fmt::print(fg(fmt::terminal_color::red), FMT_STRING("{}"), "tred"),
+      "\x1b[31mtred\x1b[0m");
+  EXPECT_WRITE(
+      stdout,
+      fmt::print(bg(fmt::terminal_color::cyan), FMT_STRING("{}"), "tcyan"),
+      "\x1b[46mtcyan\x1b[0m");
   EXPECT_WRITE(stdout,
                fmt::print(bg(fmt::terminal_color::bright_magenta),
-                          FMT_STRING("tbmagenta")),
+                          FMT_STRING("{}"), "tbmagenta"),
                "\x1b[105mtbmagenta\x1b[0m");
 }
 
 TEST(ColorsTest, Format) {
-  EXPECT_EQ(
-      "\x1b[38;2;255;020;030mrgb(255,20,30)\x1b[0m",
-      fmt::format(fg(fmt::rgb(255, 20, 30)), FMT_STRING("rgb(255,20,30)")));
+  EXPECT_EQ("\x1b[38;2;255;020;030mrgb(255,20,30)\x1b[0m",
+            fmt::format(fg(fmt::rgb(255, 20, 30)), FMT_STRING("{}"),
+                        "rgb(255,20,30)"));
   EXPECT_EQ("\x1b[38;2;000;000;255mblue\x1b[0m",
-            fmt::format(fg(fmt::color::blue), FMT_STRING("blue")));
+            fmt::format(fg(fmt::color::blue), FMT_STRING("{}"), "blue"));
   EXPECT_EQ("\x1b[38;2;000;000;255m\x1b[48;2;255;000;000mtwo color\x1b[0m",
             fmt::format(fg(fmt::color::blue) | bg(fmt::color::red),
-                        FMT_STRING("two color")));
+                        FMT_STRING("{}"), "two color"));
   EXPECT_EQ("\x1b[1mbold\x1b[0m",
-            fmt::format(fmt::emphasis::bold, FMT_STRING("bold")));
+            fmt::format(fmt::emphasis::bold, FMT_STRING("{}"), "bold"));
   EXPECT_EQ("\x1b[1m\x1b[38;2;000;000;255mblue/bold\x1b[0m",
             fmt::format(fg(fmt::color::blue) | fmt::emphasis::bold,
-                        FMT_STRING("blue/bold")));
-  EXPECT_EQ("hi", fmt::format(fmt::text_style(), FMT_STRING("hi")));
-  EXPECT_EQ("\x1b[31mtred\x1b[0m",
-            fmt::format(fg(fmt::terminal_color::red), FMT_STRING("tred")));
-  EXPECT_EQ("\x1b[46mtcyan\x1b[0m",
-            fmt::format(bg(fmt::terminal_color::cyan), FMT_STRING("tcyan")));
+                        FMT_STRING("{}"), "blue/bold"));
+  EXPECT_EQ("hi", fmt::format(fmt::text_style(), FMT_STRING("{}"), "hi"));
+  EXPECT_EQ("\x1b[31mtred\x1b[0m", fmt::format(fg(fmt::terminal_color::red),
+                                               FMT_STRING("{}"), "tred"));
+  EXPECT_EQ("\x1b[46mtcyan\x1b[0m", fmt::format(bg(fmt::terminal_color::cyan),
+                                                FMT_STRING("{}"), "tcyan"));
   EXPECT_EQ("\x1b[105mtbmagenta\x1b[0m",
             fmt::format(bg(fmt::terminal_color::bright_magenta),
-                        FMT_STRING("tbmagenta")));
+                        FMT_STRING("{}"), "tbmagenta"));
 }
 
 TEST(ColorsTest, FormatToOutAcceptsTextStyle) {
@@ -632,9 +636,8 @@ struct zstring {
 
 TEST(RangesTest, JoinSentinel) {
   zstring hello{"hello"};
-   EXPECT_EQ("{'h', 'e', 'l', 'l', 'o'}", fmt::format(FMT_STRING("{}"),
-   hello)); EXPECT_EQ("h_e_l_l_o", fmt::format(FMT_STRING("{}"),
-   fmt::join(hello, "_")));
+  EXPECT_EQ("{'h', 'e', 'l', 'l', 'o'}", fmt::format(FMT_STRING("{}"), hello));
+  EXPECT_EQ("h_e_l_l_o", fmt::format(FMT_STRING("{}"), fmt::join(hello, "_")));
 }
 
 // A range that provides non-const only begin()/end() to test fmt::join handles
@@ -678,18 +681,18 @@ template <typename T> class noncopyable_range {
 TEST(RangesTest, Range) {
   noncopyable_range<int> w(3u, 0);
   EXPECT_EQ("{0, 0, 0}", fmt::format(FMT_STRING("{}"), w));
-  EXPECT_EQ("{0, 0, 0}", fmt::format(FMT_STRING("{}"),
-  noncopyable_range<int>(3u, 0)));
+  EXPECT_EQ("{0, 0, 0}",
+            fmt::format(FMT_STRING("{}"), noncopyable_range<int>(3u, 0)));
 
   non_const_only_range<int> x(3u, 0);
   EXPECT_EQ("{0, 0, 0}", fmt::format(FMT_STRING("{}"), x));
-  EXPECT_EQ("{0, 0, 0}", fmt::format(FMT_STRING("{}"),
-  non_const_only_range<int>(3u, 0)));
+  EXPECT_EQ("{0, 0, 0}",
+            fmt::format(FMT_STRING("{}"), non_const_only_range<int>(3u, 0)));
 
   std::vector<int> y(3u, 0);
   EXPECT_EQ("{0, 0, 0}", fmt::format(FMT_STRING("{}"), y));
-  EXPECT_EQ("{0, 0, 0}", fmt::format(FMT_STRING("{}"), std::vector<int>(3u,
-  0)));
+  EXPECT_EQ("{0, 0, 0}",
+            fmt::format(FMT_STRING("{}"), std::vector<int>(3u, 0)));
 
   const std::vector<int> z(3u, 0);
   EXPECT_EQ("{0, 0, 0}", fmt::format(FMT_STRING("{}"), z));
