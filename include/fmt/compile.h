@@ -45,7 +45,7 @@ struct is_compiled_string : std::is_base_of<compiled_string, S> {};
 
 #ifdef FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
 template <typename Char, size_t N> struct fixed_string {
-  constexpr fixed_string(const Char (&str)[N + 1]) {
+  constexpr fixed_string(const Char (&str)[N]) {
     copy_str<Char, const Char*, Char*>(static_cast<const Char*>(str), str + N,
                                        data);
   }
@@ -53,13 +53,13 @@ template <typename Char, size_t N> struct fixed_string {
 };
 
 template <typename Char, size_t N>
-fixed_string(const Char (&str)[N]) -> fixed_string<Char, N - 1>;
+fixed_string(const Char (&str)[N]) -> fixed_string<Char, N>;
 
 template <typename Char, size_t N, fixed_string<Char, N> Str>
 struct udl_compiled_string : compiled_string {
   using char_type = Char;
   constexpr operator basic_string_view<char_type>() const {
-    return {Str.data, N};
+    return {Str.data, N - 1};
   }
 };
 #endif
