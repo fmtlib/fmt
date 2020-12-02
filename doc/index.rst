@@ -190,6 +190,8 @@ just three header files and no external dependencies.
 A permissive MIT `license <https://github.com/fmtlib/fmt#license>`_ allows
 using the library both in open-source and commercial projects.
 
+`Learn more... <contents.html>`_
+
 .. raw:: html
 
   <a class="btn btn-success" href="https://github.com/fmtlib/fmt">GitHub Repository</a>
