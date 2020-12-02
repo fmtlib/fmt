@@ -173,6 +173,10 @@ TEST(CompileTest, TextAndArg) {
   EXPECT_EQ(">>>42<<<", fmt::format(FMT_COMPILE(">>>{}<<<"), 42));
   EXPECT_EQ("42!", fmt::format(FMT_COMPILE("{}!"), 42));
 }
+
+TEST(CompileTest, Empty) {
+  EXPECT_EQ("", fmt::format(FMT_COMPILE("")));
+}
 #endif
 
 #if __cplusplus >= 202002L
