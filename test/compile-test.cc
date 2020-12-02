@@ -179,8 +179,7 @@ TEST(CompileTest, Empty) {
 }
 #endif
 
-#if defined(__cpp_nontype_template_parameter_class) && \
-    (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 903)
+#ifdef FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
 TEST(CompileTest, CompileFormatStringLiteral) {
   using namespace fmt::literals;
   EXPECT_EQ("42", fmt::format("{}"_cf, 42));
