@@ -35,6 +35,7 @@
 
 #include <cerrno>
 #include <cmath>
+#include <cstddef>  // std::byte
 #include <cstdint>
 #include <limits>
 #include <memory>
