@@ -3538,7 +3538,7 @@ struct formatter<T, Char,
   struct formatter<Type, Char> : formatter<Base, Char> {                      \
     template <typename FormatContext>                                         \
     auto format(Type const& val, FormatContext& ctx) -> decltype(ctx.out()) { \
-      return formatter<Base, Char>::format(val, ctx);                         \
+      return formatter<Base, Char>::format(static_cast<Base>(val), ctx);      \
     }                                                                         \
   }
 
@@ -3552,6 +3552,9 @@ FMT_FORMAT_AS(Char*, const Char*);
 FMT_FORMAT_AS(std::basic_string<Char>, basic_string_view<Char>);
 FMT_FORMAT_AS(std::nullptr_t, const void*);
 FMT_FORMAT_AS(detail::std_string_view<Char>, basic_string_view<Char>);
+#if __cplusplus >= 201703L
+FMT_FORMAT_AS(std::byte, unsigned);
+#endif
 
 template <typename Char>
 struct formatter<void*, Char> : formatter<const void*, Char> {
