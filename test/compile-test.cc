@@ -184,7 +184,6 @@ template <size_t max_string_length> struct test_string {
   template <typename T> constexpr bool operator==(const T& rhs) const noexcept {
     return (std::string_view(rhs).compare(buffer.data()) == 0);
   }
-
   std::array<char, max_string_length> buffer{};
 };
 
@@ -196,51 +195,26 @@ consteval auto test_format(auto format, const Args&... args) {
 }
 
 TEST(CompileTimeFormattingTest, Bool) {
-  {
-    constexpr auto result = test_format<5>(FMT_COMPILE("{}"), true);
-    EXPECT_EQ(result, "true");
-  }
-  {
-    constexpr auto result = test_format<6>(FMT_COMPILE("{}"), false);
-    EXPECT_EQ(result, "false");
-  }
+  EXPECT_EQ("true", test_format<5>(FMT_COMPILE("{}"), true));
+  EXPECT_EQ("false", test_format<6>(FMT_COMPILE("{}"), false));
 }
 
 TEST(CompileTimeFormattingTest, Integer) {
-  {
-    constexpr auto result = test_format<3>(FMT_COMPILE("{}"), 42);
-    EXPECT_EQ(result, "42");
-  }
-  {
-    constexpr auto result = test_format<4>(FMT_COMPILE("{}"), 420);
-    EXPECT_EQ(result, "420");
-  }
-  {
-    constexpr auto result = test_format<6>(FMT_COMPILE("{} {}"), 42, 42);
-    EXPECT_EQ(result, "42 42");
-  }
-  {
-    constexpr auto result =
-        test_format<6>(FMT_COMPILE("{} {}"), uint32_t{42}, uint64_t{42});
-    EXPECT_EQ(result, "42 42");
-  }
+  EXPECT_EQ("42", test_format<3>(FMT_COMPILE("{}"), 42));
+  EXPECT_EQ("420", test_format<4>(FMT_COMPILE("{}"), 420));
+  EXPECT_EQ("42 42", test_format<6>(FMT_COMPILE("{} {}"), 42, 42));
+  EXPECT_EQ("42 42",
+            test_format<6>(FMT_COMPILE("{} {}"), uint32_t{42}, uint64_t{42}));
 }
 
 TEST(CompileTimeFormattingTest, String) {
-  {
-    constexpr auto result = test_format<3>(FMT_COMPILE("{}"), "42");
-    EXPECT_EQ(result, "42");
-  }
-  {
-    constexpr auto result =
-        test_format<17>(FMT_COMPILE("{} is {}"), "The answer", "42");
-    EXPECT_EQ(result, "The answer is 42");
-  }
+  EXPECT_EQ("42", test_format<3>(FMT_COMPILE("{}"), "42"));
+  EXPECT_EQ("The answer is 42",
+            test_format<17>(FMT_COMPILE("{} is {}"), "The answer", "42"));
 }
 
 TEST(CompileTimeFormattingTest, Combination) {
-  constexpr auto result =
-      test_format<18>(FMT_COMPILE("{}, {}, {}"), 420, true, "answer");
-  EXPECT_EQ(result, "420, true, answer");
+  EXPECT_EQ("420, true, answer",
+            test_format<18>(FMT_COMPILE("{}, {}, {}"), 420, true, "answer"));
 }
 #endif
