@@ -2111,6 +2111,14 @@ FMT_CONSTEXPR OutputIt write(OutputIt out, T value) {
   return base_iterator(out, it);
 }
 
+template <typename Char, typename OutputIt, typename T,
+          FMT_ENABLE_IF(std::is_enum<T>::value &&
+                        !std::is_same<T, Char>::value)>
+FMT_CONSTEXPR OutputIt write(OutputIt out, T value) {
+  return write<Char>(
+      out, static_cast<typename std::underlying_type<T>::type>(value));
+}
+
 template <typename Char, typename OutputIt>
 constexpr OutputIt write(OutputIt out, bool value) {
   return write<Char>(out, string_view(value ? "true" : "false"));

@@ -1987,6 +1987,9 @@ TEST(FormatTest, ToString) {
   EXPECT_EQ("42", fmt::to_string(42));
   EXPECT_EQ("0x1234", fmt::to_string(reinterpret_cast<void*>(0x1234)));
   EXPECT_EQ("foo", fmt::to_string(adl_test::fmt::detail::foo()));
+
+  enum test_enum : unsigned char { test_value };
+  EXPECT_EQ("0", fmt::to_string(test_value));
 }
 
 TEST(FormatTest, ToWString) { EXPECT_EQ(L"42", fmt::to_wstring(42)); }
