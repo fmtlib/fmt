@@ -28,6 +28,7 @@
 #undef index
 
 #include "gmock.h"
+#include "gtest-extra.h"
 
 TEST(CompileTimeTest, FormatApi) {
   EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), 42));
