@@ -770,8 +770,8 @@ template <typename Char, typename Rep, typename OutputIt,
 OutputIt format_duration_value(OutputIt out, Rep val, int) {
   static FMT_CONSTEXPR_DECL const Char format[] = {'{', '}', 0};
 
-// Workaround a compiler error in MSVC <= 16.8.2
-#if FMT_MSC_VER && FMT_MSC_VER <= 1928
+// Note(12/3/2020): Workaround an as-of-yet unfixed compiler error in MSVC.
+#if FMT_MSC_VER
   return vformat_to(out, to_string_view(format),
                     make_format_args<buffer_context<Char>>(val));
 #else
@@ -821,7 +821,7 @@ OutputIt format_duration_unit(OutputIt out) {
     return copy_unit(string_view(unit), out, Char());
   static FMT_CONSTEXPR_DECL const Char num_f[] = {'[', '{', '}', ']', 's', 0};
   if (const_check(Period::den == 1)) {
-#if FMT_MSC_VER && FMT_MSC_VER <= 1928
+#if FMT_MSC_VER
     return vformat_to(out, to_string_view(num_f),
                       make_format_args<buffer_context<Char>>(Period::num));
 #else
@@ -830,7 +830,7 @@ OutputIt format_duration_unit(OutputIt out) {
   }
   static FMT_CONSTEXPR_DECL const Char num_def_f[] = {'[', '{', '}', '/', '{',
                                                       '}', ']', 's', 0};
-#if FMT_MSC_VER && FMT_MSC_VER <= 1928
+#if FMT_MSC_VER
   return vformat_to(
       out, to_string_view(num_def_f),
       make_format_args<buffer_context<Char>>(Period::num, Period::den));
