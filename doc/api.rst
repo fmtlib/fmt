@@ -33,7 +33,7 @@ include ``fmt/format.h`` instead of ``fmt/core.h``.
 
 The following functions use :ref:`format string syntax <syntax>`
 similar to that of Python's `str.format
-<http://docs.python.org/3/library/stdtypes.html#str.format>`_.
+<https://docs.python.org/3/library/stdtypes.html#str.format>`_.
 They take *format_str* and *args* as arguments.
 
 *format_str* is a format string that contains literal text and replacement
@@ -498,7 +498,7 @@ user-defined types that have overloaded ``operator<<``::
 
 The header ``fmt/printf.h`` provides ``printf``-like formatting functionality.
 The following functions use `printf format string syntax
-<http://pubs.opengroup.org/onlinepubs/009695399/functions/fprintf.html>`_ with
+<https://pubs.opengroup.org/onlinepubs/009695399/functions/fprintf.html>`_ with
 the POSIX extension for positional arguments. Unlike their standard
 counterparts, the ``fmt`` functions are type-safe and throw an exception if an
 argument type doesn't match its format specification.

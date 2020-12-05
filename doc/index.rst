@@ -26,7 +26,7 @@ is safer, simpler and several times `faster
 <https://www.zverovich.net/2020/06/13/fast-int-to-string-revisited.html>`_
 than common standard library implementations.
 The `format string syntax <syntax.html>`_ is similar to the one used by
-`str.format <http://docs.python.org/3/library/stdtypes.html#str.format>`_ in
+`str.format <https://docs.python.org/3/library/stdtypes.html#str.format>`_ in
 Python:
 
 .. code:: c++
@@ -197,6 +197,6 @@ using the library both in open-source and commercial projects.
   <a class="btn btn-success" href="https://github.com/fmtlib/fmt">GitHub Repository</a>
 
   <div class="section footer">
-    <iframe src="http://ghbtns.com/github-btn.html?user=fmtlib&amp;repo=fmt&amp;type=watch&amp;count=true"
+    <iframe src="https://ghbtns.com/github-btn.html?user=fmtlib&amp;repo=fmt&amp;type=watch&amp;count=true"
             class="github-btn" width="100" height="20"></iframe>
   </div>
