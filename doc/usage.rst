@@ -15,7 +15,7 @@ Building the Library
 
 The included `CMake build script`__ can be used to build the fmt
 library on a wide range of platforms. CMake is freely available for
-download from http://www.cmake.org/download/.
+download from https://www.cmake.org/download/.
 
 __ https://github.com/fmtlib/fmt/blob/master/CMakeLists.txt
 
@@ -50,7 +50,7 @@ To build a `shared library`__ set the ``BUILD_SHARED_LIBS`` CMake variable to
 
   cmake -DBUILD_SHARED_LIBS=TRUE ...
 
-__ http://en.wikipedia.org/wiki/Library_%28computing%29#Shared_libraries
+__ https://en.wikipedia.org/wiki/Library_%28computing%29#Shared_libraries
 
 
 To build a `static library` with position independent code (required if the main
@@ -207,6 +207,6 @@ __ https://github.com/fmtlib/fmt/blob/master/Android.mk
 Homebrew
 ========
 
-fmt can be installed on OS X using `Homebrew <http://brew.sh/>`_::
+fmt can be installed on OS X using `Homebrew <https://brew.sh/>`_::
 
   brew install fmt

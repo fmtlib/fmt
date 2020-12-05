@@ -353,7 +353,7 @@ Specifiers that have a calendaric component such as `'d'` (the day of month)
 are valid only for ``std::tm`` and not durations or time points.
 
 ``std::tm`` uses the system's `strftime
-<http://en.cppreference.com/w/cpp/chrono/c/strftime>`_ so refer to its
+<https://en.cppreference.com/w/cpp/chrono/c/strftime>`_ so refer to its
 documentation for details on supported conversion specifiers. 
 
 .. _formatexamples:

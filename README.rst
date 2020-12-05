@@ -318,7 +318,7 @@ Projects using this library
 * `ClickHouse <https://github.com/ClickHouse/ClickHouse>`_: analytical database
   management system
 
-* `CUAUV <http://cuauv.org/>`_: Cornell University's autonomous underwater
+* `CUAUV <https://cuauv.org/>`_: Cornell University's autonomous underwater
   vehicle
 
 * `Drake <https://drake.mit.edu/>`_: a planning, control, and analysis toolbox
