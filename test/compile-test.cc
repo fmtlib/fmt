@@ -179,7 +179,7 @@ TEST(CompileTest, Empty) {
 }
 #endif
 
-#ifdef FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+#if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
 TEST(CompileTest, CompileFormatStringLiteral) {
   using namespace fmt::literals;
   EXPECT_EQ("", fmt::format(""_cf));

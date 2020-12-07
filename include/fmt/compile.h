@@ -13,10 +13,13 @@
 
 #include "format.h"
 
-#if !defined(FMT_USE_NONTYPE_TEMPLATE_PARAMETERS) &&   \
-    defined(__cpp_nontype_template_parameter_class) && \
-    (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 903)
-#  define FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+#ifndef FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+#  if defined(__cpp_nontype_template_parameter_class) && \
+      (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 903)
+#    define FMT_USE_NONTYPE_TEMPLATE_PARAMETERS 1
+#  else
+#    define FMT_USE_NONTYPE_TEMPLATE_PARAMETERS 0
+#  endif
 #endif
 
 FMT_BEGIN_NAMESPACE
@@ -43,7 +46,7 @@ struct is_compiled_string : std::is_base_of<compiled_string, S> {};
  */
 #define FMT_COMPILE(s) FMT_STRING_IMPL(s, fmt::detail::compiled_string)
 
-#ifdef FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+#if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
 template <typename Char, size_t N> struct fixed_string {
   constexpr fixed_string(const Char (&str)[N]) {
     copy_str<Char, const Char*, Char*>(static_cast<const Char*>(str), str + N,
@@ -725,7 +728,7 @@ size_t formatted_size(const CompiledFormat& cf, const Args&... args) {
   return format_to(detail::counting_iterator(), cf, args...).count();
 }
 
-#ifdef FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+#if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
 inline namespace literals {
 template <detail::fixed_string Str>
 constexpr detail::udl_compiled_string<remove_cvref_t<decltype(Str.data[0])>,
