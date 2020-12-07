@@ -55,9 +55,6 @@ template <typename Char, size_t N> struct fixed_string {
   Char data[N]{};
 };
 
-template <typename Char, size_t N>
-fixed_string(const Char (&str)[N]) -> fixed_string<Char, N>;
-
 template <typename Char, size_t N, fixed_string<Char, N> Str>
 struct udl_compiled_string : compiled_string {
   using char_type = Char;
