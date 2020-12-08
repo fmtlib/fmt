@@ -188,6 +188,11 @@ TEST(OStreamTest, Join) {
   EXPECT_EQ("1, 2, 3", fmt::format("{}", fmt::join(v, v + 3, ", ")));
 }
 
+TEST(OStreamTest, JoinFallbackFormatter) {
+  auto strs = std::vector<TestString>{TestString("foo"), TestString("bar")};
+  EXPECT_EQ("foo, bar", fmt::format("{}", fmt::join(strs, ", ")));
+}
+
 #if FMT_USE_CONSTEXPR
 TEST(OStreamTest, ConstexprString) {
   EXPECT_EQ("42", format(FMT_STRING("{}"), std::string("42")));
