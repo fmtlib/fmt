@@ -123,7 +123,7 @@ void TestZString() {
   (void)fmt::format(FMT_STRING("{}"), fmt::join(hello, "_"));
 }
 
-int main(int argc, char** argv) {
+int main(int, char**) {
   TestFormatApi();
   TestLiteralsApi();
   FormatToNOutputIteratorTest();
