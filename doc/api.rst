@@ -165,13 +165,10 @@ functions in their ``formatter`` specializations.
 
 .. _udt:
 
-Enforcing Compile-time Format Checks
-------------------------------------
-To force the use of Compile-time checks, compile with 
-``FMT_ENFORCE_COMPILE_STRING`` defined. When this preprocessor definition is 
-given, functions accepting ``FMT_STRING`` will fail to compile with regular 
-strings. When this is set, runtime-checked formatting is still possible using
-``fmt::vformat``, ``fmt::vprint``, etc.
+To force the use of compile-time checks, define the preprocessor variable
+``FMT_ENFORCE_COMPILE_STRING``. When set, functions accepting ``FMT_STRING``
+will fail to compile with regular strings. Runtime-checked
+formatting is still possible using ``fmt::vformat``, ``fmt::vprint``, etc.
 
 Formatting User-defined Types
 -----------------------------
