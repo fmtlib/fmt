@@ -27,9 +27,11 @@
 
 // Exercise the API to verify that everything we expect to can compile.
 void TestFormatApi() {
-  (void)fmt::format(FMT_STRING("noop"));
   (void)fmt::format(FMT_STRING("{}"), 42);
   (void)fmt::format(FMT_STRING(L"{}"), 42);
+#if !FMT_GCC_VERSION
+  (void)fmt::format(FMT_STRING("noop"));
+#endif
 
   (void)fmt::to_string(42);
   (void)fmt::to_wstring(42);
