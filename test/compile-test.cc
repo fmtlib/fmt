@@ -217,6 +217,8 @@ TEST(CompileTimeFormattingTest, Integer) {
   EXPECT_EQ("42", test_format<3>(FMT_COMPILE("{:-}"), 42));
   EXPECT_EQ(" 42", test_format<4>(FMT_COMPILE("{: }"), 42));
 
+  EXPECT_EQ("-0042", test_format<6>(FMT_COMPILE("{:05}"), -42));
+
   EXPECT_EQ("101010", test_format<7>(FMT_COMPILE("{:b}"), 42));
   EXPECT_EQ("0b101010", test_format<9>(FMT_COMPILE("{:#b}"), 42));
   EXPECT_EQ("0B101010", test_format<9>(FMT_COMPILE("{:#B}"), 42));
