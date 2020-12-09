@@ -1666,7 +1666,7 @@ template <typename Context> class basic_format_args {
       : desc_(desc), args_(args) {}
 
  public:
-  constexpr basic_format_args() : desc_(0) {}
+  constexpr basic_format_args() : desc_(0), args_(nullptr) {}
 
   /**
    \rst
