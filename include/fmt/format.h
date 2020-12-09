@@ -551,7 +551,7 @@ inline size_t count_code_points(basic_string_view<Char> s) {
 }
 
 // Counts the number of code points in a UTF-8 string.
-inline size_t count_code_points(basic_string_view<char> s) {
+FMT_CONSTEXPR size_t count_code_points(basic_string_view<char> s) {
   const char* data = s.data();
   size_t num_code_points = 0;
   for (size_t i = 0, size = s.size(); i != size; ++i) {
@@ -584,12 +584,15 @@ inline size_t code_point_index(basic_string_view<char8_type> s, size_t n) {
 // <algorithm> is spectacularly slow to compile in C++20 so use a simple fill_n
 // instead (#1998).
 template <typename OutputIt, typename Size, typename T>
-OutputIt fill_n(OutputIt out, Size count, const T& value) {
+FMT_CONSTEXPR OutputIt fill_n(OutputIt out, Size count, const T& value) {
   for (Size i = 0; i < count; ++i) *out++ = value;
   return out;
 }
 template <typename T, typename Size>
-inline T* fill_n(T* out, Size count, char value) {
+FMT_CONSTEXPR20 T* fill_n(T* out, Size count, char value) {
+  if (is_constant_evaluated()) {
+    return fill_n<T*, Size, T>(out, count, value);
+  }
   std::memset(out, value, to_unsigned(count));
   return out + count;
 }
@@ -1143,12 +1146,14 @@ inline format_decimal_result<Iterator> format_decimal(Iterator out, UInt value,
 }
 
 template <unsigned BASE_BITS, typename Char, typename UInt>
-inline Char* format_uint(Char* buffer, UInt value, int num_digits,
-                         bool upper = false) {
+FMT_CONSTEXPR20 Char* format_uint(Char* buffer, UInt value, int num_digits,
+                                  bool upper = false) {
   buffer += num_digits;
   Char* end = buffer;
   do {
-    const char* digits = upper ? "0123456789ABCDEF" : data::hex_digits;
+    const char* digits = upper ? "0123456789ABCDEF"
+                               : (is_constant_evaluated() ? "0123456789abcdef"
+                                                          : data::hex_digits);
     unsigned digit = (value & ((1 << BASE_BITS) - 1));
     *--buffer = static_cast<Char>(BASE_BITS < 4 ? static_cast<char>('0' + digit)
                                                 : digits[digit]);
@@ -1223,8 +1228,8 @@ template <typename Char> struct fill_t {
     size_ = static_cast<unsigned char>(size);
   }
 
-  size_t size() const { return size_; }
-  const Char* data() const { return data_; }
+  constexpr size_t size() const { return size_; }
+  constexpr const Char* data() const { return data_; }
 
   FMT_CONSTEXPR Char& operator[](size_t index) { return data_[index]; }
   FMT_CONSTEXPR const Char& operator[](size_t index) const {
@@ -1543,7 +1548,8 @@ class cstring_type_checker : public ErrorHandler {
 };
 
 template <typename OutputIt, typename Char>
-FMT_NOINLINE OutputIt fill(OutputIt it, size_t n, const fill_t<Char>& fill) {
+FMT_NOINLINE FMT_CONSTEXPR OutputIt fill(OutputIt it, size_t n,
+                                         const fill_t<Char>& fill) {
   auto fill_size = fill.size();
   if (fill_size == 1) return detail::fill_n(it, n, fill[0]);
   auto data = fill.data();
@@ -1557,15 +1563,24 @@ FMT_NOINLINE OutputIt fill(OutputIt it, size_t n, const fill_t<Char>& fill) {
 // width: output display width in (terminal) column positions.
 template <align::type align = align::left, typename OutputIt, typename Char,
           typename F>
-inline OutputIt write_padded(OutputIt out,
-                             const basic_format_specs<Char>& specs, size_t size,
-                             size_t width, F&& f) {
+FMT_CONSTEXPR20 OutputIt write_padded(OutputIt out,
+                                      const basic_format_specs<Char>& specs,
+                                      size_t size, size_t width, F&& f) {
   static_assert(align == align::left || align == align::right, "");
   unsigned spec_width = to_unsigned(specs.width);
   size_t padding = spec_width > width ? spec_width - width : 0;
-  auto* shifts = align == align::left ? data::left_padding_shifts
-                                      : data::right_padding_shifts;
-  size_t left_padding = padding >> shifts[specs.align];
+  size_t left_padding = 0;
+  if (is_constant_evaluated()) {
+    const char left_padding_shifts[] = {31, 31, 0, 1, 0};
+    const char right_padding_shifts[] = {0, 31, 0, 1, 0};
+    auto* shifts =
+        align == align::left ? left_padding_shifts : right_padding_shifts;
+    left_padding = padding >> shifts[specs.align];
+  } else {
+    auto* shifts = align == align::left ? data::left_padding_shifts
+                                        : data::right_padding_shifts;
+    left_padding = padding >> shifts[specs.align];
+  }
   auto it = reserve(out, size + padding * specs.fill.size());
   it = fill(it, left_padding, specs.fill);
   it = f(it);
@@ -1575,9 +1590,9 @@ inline OutputIt write_padded(OutputIt out,
 
 template <align::type align = align::left, typename OutputIt, typename Char,
           typename F>
-inline OutputIt write_padded(OutputIt out,
-                             const basic_format_specs<Char>& specs, size_t size,
-                             F&& f) {
+constexpr OutputIt write_padded(OutputIt out,
+                                const basic_format_specs<Char>& specs,
+                                size_t size, F&& f) {
   return write_padded<align>(out, specs, size, size, f);
 }
 
@@ -1597,8 +1612,8 @@ template <typename Char> struct write_int_data {
   size_t size;
   size_t padding;
 
-  write_int_data(int num_digits, string_view prefix,
-                 const basic_format_specs<Char>& specs)
+  FMT_CONSTEXPR write_int_data(int num_digits, string_view prefix,
+                               const basic_format_specs<Char>& specs)
       : size(prefix.size() + to_unsigned(num_digits)), padding(0) {
     if (specs.align == align::numeric) {
       auto width = to_unsigned(specs.width);
@@ -1617,8 +1632,9 @@ template <typename Char> struct write_int_data {
 //   <left-padding><prefix><numeric-padding><digits><right-padding>
 // where <digits> are written by f(it).
 template <typename OutputIt, typename Char, typename F>
-OutputIt write_int(OutputIt out, int num_digits, string_view prefix,
-                   const basic_format_specs<Char>& specs, F f) {
+FMT_CONSTEXPR OutputIt write_int(OutputIt out, int num_digits,
+                                 string_view prefix,
+                                 const basic_format_specs<Char>& specs, F f) {
   auto data = write_int_data<Char>(num_digits, prefix, specs);
   using iterator = remove_reference_t<decltype(reserve(out, 0))>;
   return write_padded<align::right>(out, specs, data.size, [=](iterator it) {
@@ -1630,8 +1646,8 @@ OutputIt write_int(OutputIt out, int num_digits, string_view prefix,
 }
 
 template <typename StrChar, typename Char, typename OutputIt>
-OutputIt write(OutputIt out, basic_string_view<StrChar> s,
-               const basic_format_specs<Char>& specs) {
+FMT_CONSTEXPR OutputIt write(OutputIt out, basic_string_view<StrChar> s,
+                             const basic_format_specs<Char>& specs) {
   auto data = s.data();
   auto size = s.size();
   if (specs.precision >= 0 && to_unsigned(specs.precision) < size)
@@ -1657,11 +1673,13 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
   using iterator =
       remove_reference_t<decltype(reserve(std::declval<OutputIt&>(), 0))>;
 
-  string_view get_prefix() const { return string_view(prefix, prefix_size); }
+  constexpr string_view get_prefix() const {
+    return string_view(prefix, prefix_size);
+  }
 
   template <typename Int>
-  int_writer(OutputIt output, locale_ref loc, Int value,
-             const basic_format_specs<Char>& s)
+  FMT_CONSTEXPR int_writer(OutputIt output, locale_ref loc, Int value,
+                           const basic_format_specs<Char>& s)
       : out(output),
         locale(loc),
         specs(s),
@@ -1678,7 +1696,7 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
     }
   }
 
-  void on_dec() {
+  FMT_CONSTEXPR void on_dec() {
     auto num_digits = count_digits(abs_value);
     out = write_int(
         out, num_digits, get_prefix(), specs, [this, num_digits](iterator it) {
@@ -1686,7 +1704,7 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
         });
   }
 
-  void on_hex() {
+  FMT_CONSTEXPR void on_hex() {
     if (specs.alt) {
       prefix[prefix_size++] = '0';
       prefix[prefix_size++] = specs.type;
@@ -1699,7 +1717,7 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
                     });
   }
 
-  void on_bin() {
+  FMT_CONSTEXPR void on_bin() {
     if (specs.alt) {
       prefix[prefix_size++] = '0';
       prefix[prefix_size++] = static_cast<char>(specs.type);
@@ -1711,7 +1729,7 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
                     });
   }
 
-  void on_oct() {
+  FMT_CONSTEXPR void on_oct() {
     int num_digits = count_digits<3>(abs_value);
     if (specs.alt && specs.precision <= num_digits && abs_value != 0) {
       // Octal prefix '0' is counted as a digit, so only add it if precision
@@ -2040,8 +2058,8 @@ inline OutputIt write(OutputIt out, T value) {
 }
 
 template <typename Char, typename OutputIt>
-OutputIt write_char(OutputIt out, Char value,
-                    const basic_format_specs<Char>& specs) {
+constexpr OutputIt write_char(OutputIt out, Char value,
+                              const basic_format_specs<Char>& specs) {
   using iterator = remove_reference_t<decltype(reserve(out, 0))>;
   return write_padded(out, specs, 1, [=](iterator it) {
     *it++ = value;
@@ -2204,7 +2222,8 @@ class arg_formatter_base {
   using reserve_iterator = remove_reference_t<decltype(
       detail::reserve(std::declval<iterator&>(), 0))>;
 
-  template <typename T> void write_int(T value, const format_specs& spec) {
+  template <typename T>
+  FMT_CONSTEXPR void write_int(T value, const format_specs& spec) {
     using uint_type = uint32_or_64_or_128_t<T>;
     int_writer<iterator, Char, uint_type> w(out_, locale_, value, spec);
     handle_int_type_spec(spec.type, w);
@@ -2242,7 +2261,8 @@ class arg_formatter_base {
   }
 
   template <typename Ch>
-  void write(basic_string_view<Ch> s, const format_specs& specs = {}) {
+  FMT_CONSTEXPR void write(basic_string_view<Ch> s,
+                           const format_specs& specs = {}) {
     out_ = detail::write(out_, s, specs);
   }
 
@@ -2254,14 +2274,14 @@ class arg_formatter_base {
     arg_formatter_base& formatter;
     Char value;
 
-    char_spec_handler(arg_formatter_base& f, Char val)
+    constexpr char_spec_handler(arg_formatter_base& f, Char val)
         : formatter(f), value(val) {}
 
-    void on_int() {
+    FMT_CONSTEXPR void on_int() {
       // char is only formatted as int if there are specs.
       formatter.write_int(static_cast<int>(value), *formatter.specs_);
     }
-    void on_char() {
+    FMT_CONSTEXPR void on_char() {
       if (formatter.specs_)
         formatter.out_ = write_char(formatter.out_, value, *formatter.specs_);
       else
@@ -2284,7 +2304,7 @@ class arg_formatter_base {
   iterator out() { return out_; }
   format_specs* specs() { return specs_; }
 
-  void write(bool value) {
+  FMT_CONSTEXPR void write(bool value) {
     if (specs_)
       write(string_view(value ? "true" : "false"), *specs_);
     else
@@ -2302,7 +2322,7 @@ class arg_formatter_base {
   }
 
  public:
-  arg_formatter_base(OutputIt out, format_specs* s, locale_ref loc)
+  constexpr arg_formatter_base(OutputIt out, format_specs* s, locale_ref loc)
       : out_(out), locale_(loc), specs_(s) {}
 
   iterator operator()(monostate) {
@@ -2311,7 +2331,7 @@ class arg_formatter_base {
   }
 
   template <typename T, FMT_ENABLE_IF(is_integral<T>::value)>
-  FMT_INLINE iterator operator()(T value) {
+  FMT_CONSTEXPR iterator operator()(T value) {
     if (specs_)
       write_int(value, *specs_);
     else
@@ -2319,13 +2339,13 @@ class arg_formatter_base {
     return out_;
   }
 
-  iterator operator()(Char value) {
+  FMT_CONSTEXPR iterator operator()(Char value) {
     handle_char_specs(specs_,
                       char_spec_handler(*this, static_cast<Char>(value)));
     return out_;
   }
 
-  iterator operator()(bool value) {
+  FMT_CONSTEXPR iterator operator()(bool value) {
     if (specs_ && specs_->type) return (*this)(value ? 1 : 0);
     write(value != 0);
     return out_;
@@ -2347,7 +2367,7 @@ class arg_formatter_base {
     return out_;
   }
 
-  iterator operator()(basic_string_view<Char> value) {
+  FMT_CONSTEXPR iterator operator()(basic_string_view<Char> value) {
     if (specs_) {
       check_string_type_spec(specs_->type, error_handler());
       write(value, *specs_);
@@ -2387,7 +2407,7 @@ class arg_formatter : public arg_formatter_base<OutputIt, Char> {
     *specs* contains format specifier information for standard argument types.
     \endrst
    */
-  explicit arg_formatter(
+  constexpr explicit arg_formatter(
       context_type& ctx,
       basic_format_parse_context<char_type>* parse_ctx = nullptr,
       format_specs* specs = nullptr, const Char* ptr = nullptr)
@@ -3294,8 +3314,9 @@ void check_format_string(S format_str) {
 }
 
 template <template <typename> class Handler, typename Context>
-void handle_dynamic_spec(int& value, arg_ref<typename Context::char_type> ref,
-                         Context& ctx) {
+FMT_CONSTEXPR void handle_dynamic_spec(int& value,
+                                       arg_ref<typename Context::char_type> ref,
+                                       Context& ctx) {
   switch (ref.kind) {
   case arg_id_kind::none:
     break;
@@ -3527,7 +3548,8 @@ struct formatter<T, Char,
   }
 
   template <typename FormatContext>
-  auto format(const T& val, FormatContext& ctx) -> decltype(ctx.out()) {
+  FMT_CONSTEXPR auto format(const T& val, FormatContext& ctx)
+      -> decltype(ctx.out()) {
     detail::handle_dynamic_spec<detail::width_checker>(specs_.width,
                                                        specs_.width_ref, ctx);
     detail::handle_dynamic_spec<detail::precision_checker>(
@@ -3576,7 +3598,8 @@ struct formatter<void*, Char> : formatter<const void*, Char> {
 template <typename Char, size_t N>
 struct formatter<Char[N], Char> : formatter<basic_string_view<Char>, Char> {
   template <typename FormatContext>
-  auto format(const Char* val, FormatContext& ctx) -> decltype(ctx.out()) {
+  FMT_CONSTEXPR auto format(const Char* val, FormatContext& ctx)
+      -> decltype(ctx.out()) {
     return formatter<basic_string_view<Char>, Char>::format(val, ctx);
   }
 };
