@@ -202,7 +202,7 @@ For an example of using fmt with Android NDK, see the
 `android-ndk-example <https://github.com/fmtlib/android-ndk-example>`_
 repository.
 
-__ https://github.com/fmtlib/fmt/blob/master/Android.mk
+__ https://github.com/fmtlib/fmt/blob/master/support/Android.mk
 
 Homebrew
 ========
