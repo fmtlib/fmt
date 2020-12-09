@@ -85,6 +85,8 @@ template <typename T, typename Char> class is_streamable {
   using result = decltype(test<T>(0));
 
  public:
+  is_streamable() = default;
+
   static const bool value = result::value;
 };
 
