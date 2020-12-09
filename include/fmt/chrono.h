@@ -771,6 +771,7 @@ OutputIt format_duration_value(OutputIt out, Rep val, int) {
   static FMT_CONSTEXPR_DECL const Char format[] = {'{', '}', 0};
 
 // Note(12/3/2020): Workaround an as-of-yet unfixed compiler error in MSVC.
+// See https://developercommunity.visualstudio.com/content/problem/1277597/internal-compiler-c0001-error-on-complex-nested-la.html
 #if FMT_MSC_VER
   return vformat_to(out, to_string_view(format),
                     make_format_args<buffer_context<Char>>(val));
@@ -785,7 +786,7 @@ OutputIt format_duration_value(OutputIt out, Rep val, int precision) {
   static FMT_CONSTEXPR_DECL const Char pr_f[] = {'{', ':', '.', '{',
                                                  '}', 'f', '}', 0};
   if (precision >= 0) {
-#if FMT_MSC_VER && FMT_MSC_VER <= 1928
+#if FMT_MSC_VER
     return vformat_to(out, to_string_view(pr_f),
                       make_format_args<buffer_context<Char>>(val, precision));
 #else
@@ -794,7 +795,7 @@ OutputIt format_duration_value(OutputIt out, Rep val, int precision) {
   }
   static FMT_CONSTEXPR_DECL const Char fp_f[] = {'{', ':', 'g', '}', 0};
 
-#if FMT_MSC_VER && FMT_MSC_VER <= 1928
+#if FMT_MSC_VER
   return vformat_to(out, to_string_view(fp_f),
                     make_format_args<buffer_context<Char>>(val));
 #else
