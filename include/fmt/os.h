@@ -8,11 +8,6 @@
 #ifndef FMT_OS_H_
 #define FMT_OS_H_
 
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-// Workaround MinGW bug https://sourceforge.net/p/mingw/bugs/2024/.
-#  undef __STRICT_ANSI__
-#endif
-
 #include <cerrno>
 #include <clocale>  // for locale_t
 #include <cstddef>
