@@ -14,17 +14,21 @@ jobs:
 
     - name: Create Build Environment
       run: cmake -E make_directory ${{runner.workspace}}/build
+      if: always()
 
     - name: Configure
       working-directory: ${{runner.workspace}}/build
       run: |
         cmake -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \
               -DFMT_DOC=OFF -DFMT_PEDANTIC=ON -DFMT_WERROR=ON $GITHUB_WORKSPACE
+      if: always()
 
     - name: Build
       working-directory: ${{runner.workspace}}/build
       run: cmake --build . --config ${{matrix.build_type}}
+      if: always()
 
     - name: Test
       working-directory: ${{runner.workspace}}/build
       run: ctest -C ${{matrix.build_type}}
+      if: always()

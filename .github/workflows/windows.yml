@@ -30,6 +30,7 @@ jobs:
 
     - name: Create Build Environment
       run: cmake -E make_directory ${{runner.workspace}}/build
+      if: always()
 
     - name: Configure
       # Use a bash shell for $GITHUB_WORKSPACE.
@@ -40,11 +41,14 @@ jobs:
               -A ${{matrix.platform}} \
               -DCMAKE_CXX_STANDARD=${{matrix.standard}} \
               $GITHUB_WORKSPACE
+      if: always()
 
     - name: Build
       working-directory: ${{runner.workspace}}/build
       run: cmake --build . --config ${{matrix.build_type}}
+      if: always()
 
     - name: Test
       working-directory: ${{runner.workspace}}/build
       run: ctest -C ${{matrix.build_type}}
+      if: always()
