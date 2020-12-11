@@ -121,7 +121,7 @@ TEST(CompileTest, EmptyFormatString) {
   EXPECT_EQ(fmt::format(f), "");
 }
 
-#ifdef __cpp_if_constexpr
+//#ifdef __cpp_if_constexpr
 TEST(CompileTest, FormatDefault) {
   EXPECT_EQ("42", fmt::format(FMT_COMPILE("{}"), 42));
   EXPECT_EQ("42", fmt::format(FMT_COMPILE("{}"), 42u));
@@ -177,7 +177,7 @@ TEST(CompileTest, TextAndArg) {
 TEST(CompileTest, Empty) {
   EXPECT_EQ("", fmt::format(FMT_COMPILE("")));
 }
-#endif
+//#endif
 
 #if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
 TEST(CompileTest, CompileFormatStringLiteral) {
