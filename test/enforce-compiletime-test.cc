@@ -46,8 +46,6 @@ void TestFormatApi() {
 
   wchar_t wbuffer[4];
   (void)fmt::format_to_n(wbuffer, 3, FMT_STRING(L"{}"), 12345);
-
-  (void)fmt::formatted_size(FMT_STRING("{}"), 42);
 }
 void TestLiteralsApi() {
 #if FMT_USE_UDL_TEMPLATE
