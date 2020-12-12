@@ -6,6 +6,7 @@ jobs:
   build:
     runs-on: macos-10.15
     strategy:
+      fail-fast: false
       matrix:
         build_type: [Debug, Release]
 

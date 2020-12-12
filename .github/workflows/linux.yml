@@ -6,6 +6,7 @@ jobs:
   build:
     runs-on: ubuntu-18.04
     strategy:
+      fail-fast: false
       matrix:
         cxx: [g++-4.8, g++-8, g++-10, clang++-9]
         build_type: [Debug, Release]
