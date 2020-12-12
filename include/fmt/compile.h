@@ -31,6 +31,22 @@ class compiled_string {};
 template <typename S>
 struct is_compiled_string : std::is_base_of<compiled_string, S> {};
 
+#ifdef __cpp_if_constexpr
+# define FMT_COMPILE_IMPL(s) FMT_STRING_IMPL(s, fmt::detail::compiled_string)
+#else
+namespace fmt_compile_error {
+  template<class T> struct false_type : std::false_type {};
+  
+  template<class T> FMT_CONSTEXPR const char* report_compile_error() {
+    static_assert(
+        false_type<T>::value, "FMT_COMPILE requires C++17 `constexpr if` compiler support"
+    );
+    return "";
+  }
+}
+# define FMT_COMPILE_IMPL(s) ::fmt::detail::fmt_compile_error::report_compile_error<void*>()
+#endif
+
 /**
   \rst
   Converts a string literal *s* into a format string that will be parsed at
@@ -44,7 +60,7 @@ struct is_compiled_string : std::is_base_of<compiled_string, S> {};
     std::string s = fmt::format(FMT_COMPILE("{}"), 42);
   \endrst
  */
-#define FMT_COMPILE(s) FMT_STRING_IMPL(s, fmt::detail::compiled_string)
+#define FMT_COMPILE(s) FMT_COMPILE_IMPL(s)
 
 #if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
 template <typename Char, size_t N> struct fixed_string {
