@@ -14,10 +14,6 @@
 #include <utility>
 #include <vector>
 
-#ifdef WIN32
-#  define _CRT_SECURE_NO_WARNINGS
-#endif
-
 #include "fmt/chrono.h"
 #include "fmt/color.h"
 #include "fmt/format.h"
@@ -26,20 +22,16 @@
 #include "fmt/ranges.h"
 
 // Exercise the API to verify that everything we expect to can compile.
-void TestFormatApi() {
+void test_format_api() {
   (void)fmt::format(FMT_STRING("{}"), 42);
   (void)fmt::format(FMT_STRING(L"{}"), 42);
-#if !FMT_GCC_VERSION
   (void)fmt::format(FMT_STRING("noop"));
-#endif
 
   (void)fmt::to_string(42);
   (void)fmt::to_wstring(42);
 
   std::list<char> out;
   fmt::format_to(std::back_inserter(out), FMT_STRING("{}"), 42);
-  std::stringstream s;
-  fmt::format_to(std::ostream_iterator<char>(s), FMT_STRING("{}"), 42);
 
   char buffer[4];
   (void)fmt::format_to_n(buffer, 3, FMT_STRING("{}"), 12345);
@@ -47,12 +39,9 @@ void TestFormatApi() {
   wchar_t wbuffer[4];
   (void)fmt::format_to_n(wbuffer, 3, FMT_STRING(L"{}"), 12345);
 }
-void TestLiteralsApi() {
-#if FMT_USE_UDL_TEMPLATE
-  // Passing user-defined literals directly to EXPECT_EQ causes problems
-  // with macro argument stringification (#) on some versions of GCC.
-  // Workaround: Assing the UDL result to a variable before the macro.
 
+void test_literals_api() {
+#if FMT_USE_UDL_TEMPLATE
   using namespace fmt::literals;
 
   auto udl_format = "{}c{}"_format("ab", 1);
@@ -62,40 +51,12 @@ void TestLiteralsApi() {
 #endif
 }
 
-struct test_output_iterator {
-  char* data;
-
-  using iterator_category = std::output_iterator_tag;
-  using value_type = void;
-  using difference_type = void;
-  using pointer = void;
-  using reference = void;
-
-  test_output_iterator& operator++() {
-    ++data;
-    return *this;
-  }
-  test_output_iterator operator++(int) {
-    auto tmp = *this;
-    ++data;
-    return tmp;
-  }
-  char& operator*() { return *data; }
-};
-
-void FormatToNOutputIteratorTest() {
-  char buf[10] = {};
-  fmt::format_to_n(test_output_iterator{buf}, 10, FMT_STRING("{}"), 42);
-}
-
-void TestChrono() {
-#ifndef FMT_STATIC_THOUSANDS_SEPARATOR
+void test_chrono() {
   (void)fmt::format(FMT_STRING("{}"), std::chrono::seconds(42));
   (void)fmt::format(FMT_STRING(L"{}"), std::chrono::seconds(42));
-#endif  // FMT_STATIC_THOUSANDS_SEPARATOR
 }
 
-void TestTextStyle() {
+void test_text_style() {
   fmt::print(fg(fmt::rgb(255, 20, 30)), FMT_STRING("{}"), "rgb(255,20,30)");
   (void)fmt::format(fg(fmt::rgb(255, 20, 30)), FMT_STRING("{}"),
                     "rgb(255,20,30)");
@@ -117,19 +78,15 @@ struct zstring {
   zstring_sentinel end() const { return {}; }
 };
 
-void TestZString() {
+void test_zstring() {
   zstring hello{"hello"};
   (void)fmt::format(FMT_STRING("{}"), hello);
-  (void)fmt::format(FMT_STRING("{}"), fmt::join(hello, "_"));
 }
 
-int main(int, char**) {
-  TestFormatApi();
-  TestLiteralsApi();
-  FormatToNOutputIteratorTest();
-  TestChrono();
-  TestTextStyle();
-  TestZString();
-
-  return 0;
+int main() {
+  test_format_api();
+  test_literals_api();
+  test_chrono();
+  test_text_style();
+  test_zstring();
 }

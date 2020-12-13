@@ -770,14 +770,8 @@ template <typename Char, typename Rep, typename OutputIt,
 OutputIt format_duration_value(OutputIt out, Rep val, int) {
   static FMT_CONSTEXPR_DECL const Char format[] = {'{', '}', 0};
 
-// Note(12/3/2020): Workaround an as-of-yet unfixed compiler error in MSVC.
-// See https://developercommunity.visualstudio.com/content/problem/1277597/internal-compiler-c0001-error-on-complex-nested-la.html
-#if FMT_MSC_VER
   return vformat_to(out, to_string_view(format),
                     make_format_args<buffer_context<Char>>(val));
-#else
-  return format_to(out, FMT_STRING(format), val);
-#endif
 }
 
 template <typename Char, typename Rep, typename OutputIt,
@@ -786,21 +780,13 @@ OutputIt format_duration_value(OutputIt out, Rep val, int precision) {
   static FMT_CONSTEXPR_DECL const Char pr_f[] = {'{', ':', '.', '{',
                                                  '}', 'f', '}', 0};
   if (precision >= 0) {
-#if FMT_MSC_VER
     return vformat_to(out, to_string_view(pr_f),
                       make_format_args<buffer_context<Char>>(val, precision));
-#else
-    return format_to(out, FMT_STRING(pr_f), val, precision);
-#endif
   }
   static FMT_CONSTEXPR_DECL const Char fp_f[] = {'{', ':', 'g', '}', 0};
 
-#if FMT_MSC_VER
   return vformat_to(out, to_string_view(fp_f),
                     make_format_args<buffer_context<Char>>(val));
-#else
-  return format_to(out, FMT_STRING(fp_f), val);
-#endif
 }
 
 template <typename Char, typename OutputIt>
@@ -822,22 +808,14 @@ OutputIt format_duration_unit(OutputIt out) {
     return copy_unit(string_view(unit), out, Char());
   static FMT_CONSTEXPR_DECL const Char num_f[] = {'[', '{', '}', ']', 's', 0};
   if (const_check(Period::den == 1)) {
-#if FMT_MSC_VER
     return vformat_to(out, to_string_view(num_f),
                       make_format_args<buffer_context<Char>>(Period::num));
-#else
-    return format_to(out, FMT_STRING(num_f), Period::num);
-#endif
   }
   static FMT_CONSTEXPR_DECL const Char num_def_f[] = {'[', '{', '}', '/', '{',
                                                       '}', ']', 's', 0};
-#if FMT_MSC_VER
   return vformat_to(
       out, to_string_view(num_def_f),
       make_format_args<buffer_context<Char>>(Period::num, Period::den));
-#else
-  return format_to(out, FMT_STRING(num_def_f), Period::num, Period::den);
-#endif
 }
 
 template <typename FormatContext, typename OutputIt, typename Rep,

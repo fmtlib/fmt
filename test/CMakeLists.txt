@@ -106,9 +106,13 @@ add_fmt_test(printf-test)
 add_fmt_test(ranges-test)
 add_fmt_test(scan-test)
 
-
-add_fmt_test(enforce-compiletime-test)
-target_compile_definitions(enforce-compiletime-test PRIVATE "-DFMT_ENFORCE_COMPILE_STRING")
+if(NOT MSVC)
+  # FMT_ENFORCE_COMPILE_STRING not supported under MSVC
+  # See https://developercommunity.visualstudio.com/content/problem/1277597/internal-compiler-c0001-error-on-complex-nested-la.html
+  add_fmt_test(enforce-compile-string-test)
+  target_compile_definitions(enforce-compile-string-test PRIVATE
+    "-DFMT_ENFORCE_COMPILE_STRING")
+endif()
 
 if (NOT DEFINED MSVC_STATIC_RUNTIME AND MSVC)
   foreach (flag_var
