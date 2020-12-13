@@ -25,7 +25,10 @@
 void test_format_api() {
   (void)fmt::format(FMT_STRING("{}"), 42);
   (void)fmt::format(FMT_STRING(L"{}"), 42);
+#if !FMT_GCC_VERSION  // Currently will not compile: See
+                      // https://github.com/fmtlib/fmt/issues/2039
   (void)fmt::format(FMT_STRING("noop"));
+#endif
 
   (void)fmt::to_string(42);
   (void)fmt::to_wstring(42);
