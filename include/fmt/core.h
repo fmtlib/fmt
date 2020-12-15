@@ -283,6 +283,14 @@ struct monostate {};
 
 namespace detail {
 
+constexpr bool is_constant_evaluated() FMT_DETECTED_NOEXCEPT {
+#ifdef __cpp_lib_is_constant_evaluated
+  return std::is_constant_evaluated();
+#else
+  return false;
+#endif
+}
+
 // A helper function to suppress "conditional expression is constant" warnings.
 template <typename T> constexpr T const_check(T value) { return value; }
 
@@ -1082,7 +1090,12 @@ template <typename Context> class value {
   FMT_INLINE value(long double val) : long_double_value(val) {}
   constexpr FMT_INLINE value(bool val) : bool_value(val) {}
   constexpr FMT_INLINE value(char_type val) : char_value(val) {}
-  FMT_CONSTEXPR value(const char_type* val) : string() { string.data = val; }
+  FMT_CONSTEXPR value(const char_type* val) {
+    string.data = val;
+    if (is_constant_evaluated()) {
+      string.size = {};
+    }
+  }
   FMT_CONSTEXPR value(basic_string_view<char_type> val) {
     string.data = val.data();
     string.size = val.size();
