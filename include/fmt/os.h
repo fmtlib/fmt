@@ -411,8 +411,9 @@ class ostream final : private detail::buffer<char> {
   }
 
   template <typename S, typename... Args>
-  void print(const S& format_str, const Args&... args) {
-    format_to(detail::buffer_appender<char>(*this), format_str, args...);
+  void print(const S& format_str, Args&&... args) {
+    format_to(detail::buffer_appender<char>(*this), format_str,
+              std::forward<Args>(args)...);
   }
 };
 
