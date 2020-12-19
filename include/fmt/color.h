@@ -618,6 +618,16 @@ inline auto format_to(OutputIt out, const text_style& ts, const S& format_str,
                     fmt::make_args_checked<Args...>(format_str, args...));
 }
 
+template <typename S, typename... Args, size_t SIZE = inline_buffer_size,
+          typename Char = enable_if_t<detail::is_string<S>::value, char_t<S>>>
+inline typename buffer_context<Char>::iterator format_to(
+    basic_memory_buffer<Char, SIZE>& buf, const text_style& ts,
+    const S& format_str, Args&&... args) {
+  const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
+  detail::vformat_to(buf, ts, to_string_view(format_str), vargs);
+  return detail::buffer_appender<Char>(buf);
+}
+
 FMT_END_NAMESPACE
 
 #endif  // FMT_COLOR_H_

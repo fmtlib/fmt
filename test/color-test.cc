@@ -97,3 +97,12 @@ TEST(ColorsTest, FormatToOutAcceptsTextStyle) {
   EXPECT_EQ(fmt::to_string(out),
             "\x1b[38;2;255;020;030mrgb(255,20,30)123\x1b[0m");
 }
+
+TEST(ColorsTest, FormatToBufAcceptsTextStyle) {
+  fmt::text_style ts = fg(fmt::rgb(255, 20, 30));
+  fmt::memory_buffer buf;
+  fmt::format_to(buf, ts, "rgb(255,20,30){}{}{}", 1, 2, 3);
+
+  EXPECT_EQ(std::string(buf.data(), buf.size()),
+            "\x1b[38;2;255;020;030mrgb(255,20,30)123\x1b[0m");
+}
