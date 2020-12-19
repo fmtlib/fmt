@@ -3221,7 +3221,8 @@ class format_string_checker {
   FMT_CONSTEXPR const Char* on_format_specs(int id, const Char* begin,
                                             const Char*) {
     advance_to(context_, begin);
-    return id < num_args ? parse_funcs_[id](context_) : begin;
+    // id >= 0 check is a workaround for gcc 10 bug (#2065).
+    return id >= 0 && id < num_args ? parse_funcs_[id](context_) : begin;
   }
 
   FMT_CONSTEXPR void on_error(const char* message) {
