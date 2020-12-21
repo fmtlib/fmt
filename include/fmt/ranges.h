@@ -260,25 +260,33 @@ OutputIt add_range_formatting_spaces(OutputIt out,
   return out;
 }
 
-template <typename Char, typename OutputIt, typename Arg>
+template <
+    typename Char, typename OutputIt, typename Arg,
+    FMT_ENABLE_IF(std::is_same<Arg, const char*>::value ||
+                  is_like_std_string<typename std::decay<Arg>::type>::value)>
 OutputIt write_range_entry(OutputIt out, const Arg& v) {
-  FMT_CONSTEXPR_DECL const char quote = []() {
-    if (const_check(
-            std::is_same<Arg, const char*>::value ||
-            is_like_std_string<typename std::decay<Arg>::type>::value)) {
-      return '"';
-    } else if (const_check(std::is_same<Arg, Char>::value)) {
-      return '\'';
-    } else {
-      return '\0';
-    }
-  }();
-
-  if (const_check(quote)) *out++ = quote;
+  *out++ = '"';
   out = write<Char>(out, v);
-  if (const_check(quote)) *out++ = quote;
-
+  *out++ = '"';
   return out;
+}
+
+template <typename Char, typename OutputIt, typename Arg,
+          FMT_ENABLE_IF(std::is_same<Arg, Char>::value)>
+OutputIt write_range_entry(OutputIt out, const Arg v) {
+  *out++ = '\'';
+  *out++ = v;
+  *out++ = '\'';
+  return out;
+}
+
+template <
+    typename Char, typename OutputIt, typename Arg,
+    FMT_ENABLE_IF(!std::is_same<Arg, const char*>::value &&
+                  !is_like_std_string<typename std::decay<Arg>::type>::value &&
+                  !std::is_same<Arg, Char>::value)>
+OutputIt write_range_entry(OutputIt out, const Arg& v) {
+  return write<Char>(out, v);
 }
 
 }  // namespace detail
