@@ -6,13 +6,10 @@
 // For the license information refer to format.h.
 
 #include <array>
+#include <chrono>
 #include <iterator>
 #include <list>
-#include <map>
-#include <sstream>
 #include <string>
-#include <utility>
-#include <vector>
 
 #include "fmt/chrono.h"
 #include "fmt/color.h"
@@ -25,10 +22,7 @@
 void test_format_api() {
   (void)fmt::format(FMT_STRING("{}"), 42);
   (void)fmt::format(FMT_STRING(L"{}"), 42);
-#if !FMT_GCC_VERSION  // Currently will not compile: See
-                      // https://github.com/fmtlib/fmt/issues/2039
   (void)fmt::format(FMT_STRING("noop"));
-#endif
 
   (void)fmt::to_string(42);
   (void)fmt::to_wstring(42);
@@ -46,11 +40,8 @@ void test_format_api() {
 void test_literals_api() {
 #if FMT_USE_UDL_TEMPLATE
   using namespace fmt::literals;
-
-  auto udl_format = "{}c{}"_format("ab", 1);
-  auto udl_format_w = L"{}c{}"_format(L"ab", 1);
-  (void)udl_format;
-  (void)udl_format_w;
+  "{}c{}"_format("ab", 1);
+  L"{}c{}"_format(L"ab", 1);
 #endif
 }
 
@@ -70,19 +61,8 @@ void test_text_style() {
                  FMT_STRING("rgb(255,20,30){}{}{}"), 1, 2, 3);
 }
 
-struct zstring_sentinel {};
-
-bool operator==(const char* p, zstring_sentinel) { return *p == '\0'; }
-bool operator!=(const char* p, zstring_sentinel) { return *p != '\0'; }
-
-struct zstring {
-  const char* p;
-  const char* begin() const { return p; }
-  zstring_sentinel end() const { return {}; }
-};
-
-void test_zstring() {
-  zstring hello{"hello"};
+void test_range() {
+  std::array<char, 5> hello = {'h','e','l','l','o'};
   (void)fmt::format(FMT_STRING("{}"), hello);
 }
 
@@ -91,5 +71,5 @@ int main() {
   test_literals_api();
   test_chrono();
   test_text_style();
-  test_zstring();
+  test_range();
 }

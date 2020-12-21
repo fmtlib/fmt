@@ -769,7 +769,6 @@ template <typename Char, typename Rep, typename OutputIt,
           FMT_ENABLE_IF(std::is_integral<Rep>::value)>
 OutputIt format_duration_value(OutputIt out, Rep val, int) {
   static FMT_CONSTEXPR_DECL const Char format[] = {'{', '}', 0};
-
   return vformat_to(out, to_string_view(format),
                     make_format_args<buffer_context<Char>>(val));
 }
