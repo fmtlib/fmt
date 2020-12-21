@@ -52,8 +52,7 @@ void test_chrono() {
 
 void test_text_style() {
   fmt::print(fg(fmt::rgb(255, 20, 30)), FMT_STRING("{}"), "rgb(255,20,30)");
-  fmt::format(fg(fmt::rgb(255, 20, 30)), FMT_STRING("{}"),
-                    "rgb(255,20,30)");
+  fmt::format(fg(fmt::rgb(255, 20, 30)), FMT_STRING("{}"), "rgb(255,20,30)");
 
   fmt::text_style ts = fg(fmt::rgb(255, 20, 30));
   std::string out;
@@ -62,7 +61,7 @@ void test_text_style() {
 }
 
 void test_range() {
-  std::array<char, 5> hello = {'h','e','l','l','o'};
+  std::array<char, 5> hello = {'h', 'e', 'l', 'l', 'o'};
   fmt::format(FMT_STRING("{}"), hello);
 }
 

@@ -247,31 +247,40 @@ template <typename Range>
 using value_type =
     remove_cvref_t<decltype(*detail::range_begin(std::declval<Range>()))>;
 
-template <typename Arg, FMT_ENABLE_IF(!is_like_std_string<
-                                      typename std::decay<Arg>::type>::value)>
-FMT_CONSTEXPR const char* format_str_quoted(bool add_space, const Arg&) {
-  return add_space ? " {}" : "{}";
+template <typename OutputIt, typename Formatting>
+OutputIt add_range_formatting_spaces(OutputIt out,
+                                     const Formatting& formatting) {
+  if (const_check(formatting.add_prepostfix_space)) {
+    *out++ = ' ';
+  }
+  out = detail::copy(formatting.delimiter, out);
+  if (const_check(formatting.add_delimiter_spaces)) {
+    *out++ = ' ';
+  }
+  return out;
 }
 
-template <typename Arg, FMT_ENABLE_IF(is_like_std_string<
-                                      typename std::decay<Arg>::type>::value)>
-FMT_CONSTEXPR const char* format_str_quoted(bool add_space, const Arg&) {
-  return add_space ? " \"{}\"" : "\"{}\"";
+template <typename Char, typename OutputIt, typename Arg>
+OutputIt write_range_entry(OutputIt out, const Arg& v) {
+  FMT_CONSTEXPR_DECL const char quote = []() {
+    if (const_check(
+            std::is_same<Arg, const char*>::value ||
+            is_like_std_string<typename std::decay<Arg>::type>::value)) {
+      return '"';
+    } else if (const_check(std::is_same<Arg, Char>::value)) {
+      return '\'';
+    } else {
+      return '\0';
+    }
+  }();
+
+  if (const_check(quote)) *out++ = quote;
+  out = write<Char>(out, v);
+  if (const_check(quote)) *out++ = quote;
+
+  return out;
 }
 
-FMT_CONSTEXPR const char* format_str_quoted(bool add_space, const char*) {
-  return add_space ? " \"{}\"" : "\"{}\"";
-}
-FMT_CONSTEXPR const wchar_t* format_str_quoted(bool add_space, const wchar_t*) {
-  return add_space ? L" \"{}\"" : L"\"{}\"";
-}
-
-FMT_CONSTEXPR const char* format_str_quoted(bool add_space, const char) {
-  return add_space ? " '{}'" : "'{}'";
-}
-FMT_CONSTEXPR const wchar_t* format_str_quoted(bool add_space, const wchar_t) {
-  return add_space ? L" '{}'" : L"'{}'";
-}
 }  // namespace detail
 
 template <typename T> struct is_tuple_like {
@@ -286,15 +295,10 @@ struct formatter<TupleT, Char, enable_if_t<fmt::is_tuple_like<TupleT>::value>> {
   template <typename FormatContext> struct format_each {
     template <typename T> void operator()(const T& v) {
       if (i > 0) {
-        if (formatting.add_prepostfix_space) {
-          *out++ = ' ';
-        }
-        out = detail::copy(formatting.delimiter, out);
+        out = add_range_formatting_spaces(out, formatting);
       }
-      out = vformat_to(out,
-                       detail::format_str_quoted(
-                           (formatting.add_delimiter_spaces && i > 0), v),
-                       make_format_args<FormatContext>(v));
+
+      out = detail::write_range_entry<Char>(out, v);
       ++i;
     }
 
@@ -363,19 +367,19 @@ struct formatter<
     auto end = view.end();
     for (; it != end; ++it) {
       if (i > 0) {
-        if (formatting.add_prepostfix_space) *out++ = ' ';
-        out = detail::copy(formatting.delimiter, out);
+        out = detail::add_range_formatting_spaces(out, formatting);
       }
-      out = vformat_to(out,
-                       detail::format_str_quoted(
-                           (formatting.add_delimiter_spaces && i > 0), *it),
-                       make_format_args<FormatContext>(*it));
+
+      out = detail::write_range_entry<Char>(out, *it);
+
       if (++i > formatting.range_length_limit) {
         out = format_to(out, FMT_STRING("{}"), " ... <other elements>");
         break;
       }
     }
-    if (formatting.add_prepostfix_space) *out++ = ' ';
+    if (formatting.add_prepostfix_space) {
+      *out++ = ' ';
+    }
     return detail::copy(formatting.postfix, out);
   }
 };

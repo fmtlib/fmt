@@ -798,19 +798,17 @@ OutputIt format_duration_unit(OutputIt out) {
   if (const char* unit = get_units<Period>())
     return copy_unit(string_view(unit), out, Char());
 
-  basic_memory_buffer<Char> buffer;
-  auto bufOut = std::back_inserter(buffer);
-  *bufOut++ = '[';
-  bufOut = write<Char>(bufOut, Period::num);
+  *out++ = '[';
+  out = write<Char>(out, Period::num);
 
   if (const_check(Period::den != 1)) {
-    *bufOut++ = '/';
-    bufOut = write<Char>(bufOut, Period::den);
+    *out++ = '/';
+    out = write<Char>(out, Period::den);
   }
 
-  *bufOut++ = ']';
-  *bufOut++ = 's';
-  return write<Char>(out, {buffer.data(), buffer.size()});
+  *out++ = ']';
+  *out++ = 's';
+  return out;
 }
 
 template <typename FormatContext, typename OutputIt, typename Rep,
