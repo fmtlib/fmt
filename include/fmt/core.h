@@ -283,7 +283,7 @@ struct monostate {};
 
 namespace detail {
 
-constexpr bool is_constant_evaluated() FMT_DETECTED_NOEXCEPT {
+constexpr bool is_constant_evaluated() FMT_NOEXCEPT {
 #ifdef __cpp_lib_is_constant_evaluated
   return std::is_constant_evaluated();
 #else
