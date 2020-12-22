@@ -3540,6 +3540,20 @@ struct formatter<T, Char,
   }
 
   template <typename FormatContext>
+  FMT_CONSTEXPR auto format(const T& val, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    auto specs = specs_;
+    detail::handle_dynamic_spec<detail::width_checker>(specs.width,
+                                                       specs.width_ref, ctx);
+    detail::handle_dynamic_spec<detail::precision_checker>(
+        specs.precision, specs.precision_ref, ctx);
+    using af = detail::arg_formatter<typename FormatContext::iterator,
+                                     typename FormatContext::char_type>;
+    return visit_format_arg(af(ctx, nullptr, &specs),
+                            detail::make_arg<FormatContext>(val));
+  }
+
+  template <typename FormatContext>
   FMT_CONSTEXPR auto format(const T& val, FormatContext& ctx)
       -> decltype(ctx.out()) {
     detail::handle_dynamic_spec<detail::width_checker>(specs_.width,
@@ -3556,13 +3570,14 @@ struct formatter<T, Char,
   detail::dynamic_format_specs<Char> specs_;
 };
 
-#define FMT_FORMAT_AS(Type, Base)                                             \
-  template <typename Char>                                                    \
-  struct formatter<Type, Char> : formatter<Base, Char> {                      \
-    template <typename FormatContext>                                         \
-    auto format(Type const& val, FormatContext& ctx) -> decltype(ctx.out()) { \
-      return formatter<Base, Char>::format(static_cast<Base>(val), ctx);      \
-    }                                                                         \
+#define FMT_FORMAT_AS(Type, Base)                                        \
+  template <typename Char>                                               \
+  struct formatter<Type, Char> : formatter<Base, Char> {                 \
+    template <typename FormatContext>                                    \
+    auto format(Type const& val, FormatContext& ctx) const               \
+        -> decltype(ctx.out()) {                                         \
+      return formatter<Base, Char>::format(static_cast<Base>(val), ctx); \
+    }                                                                    \
   }
 
 FMT_FORMAT_AS(signed char, int);
@@ -3582,7 +3597,7 @@ FMT_FORMAT_AS(std::byte, unsigned);
 template <typename Char>
 struct formatter<void*, Char> : formatter<const void*, Char> {
   template <typename FormatContext>
-  auto format(void* val, FormatContext& ctx) -> decltype(ctx.out()) {
+  auto format(void* val, FormatContext& ctx) const -> decltype(ctx.out()) {
     return formatter<const void*, Char>::format(val, ctx);
   }
 };
@@ -3590,7 +3605,7 @@ struct formatter<void*, Char> : formatter<const void*, Char> {
 template <typename Char, size_t N>
 struct formatter<Char[N], Char> : formatter<basic_string_view<Char>, Char> {
   template <typename FormatContext>
-  FMT_CONSTEXPR auto format(const Char* val, FormatContext& ctx)
+  FMT_CONSTEXPR auto format(const Char* val, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     return formatter<basic_string_view<Char>, Char>::format(val, ctx);
   }
