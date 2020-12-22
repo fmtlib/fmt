@@ -1762,7 +1762,7 @@ TEST(FormatTest, JoinArg) {
 #endif
 }
 
-#if __cplusplus >= 201703L
+#ifdef __cpp_lib_byte
 TEST(FormatTest, JoinBytes) {
   std::vector<std::byte> v = {std::byte(1), std::byte(2), std::byte(3)};
   EXPECT_EQ("1, 2, 3", fmt::format("{}", fmt::join(v, ", ")));

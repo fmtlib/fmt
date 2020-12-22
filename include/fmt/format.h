@@ -2112,8 +2112,14 @@ FMT_CONSTEXPR OutputIt write(OutputIt out, T value) {
 }
 
 template <typename Char, typename OutputIt, typename T,
+#ifdef __cpp_lib_byte
+          FMT_ENABLE_IF(std::is_enum<T>::value &&
+                        !std::is_same<T, Char>::value &&
+                        !std::is_same<T, std::byte>::value)>
+#else
           FMT_ENABLE_IF(std::is_enum<T>::value &&
                         !std::is_same<T, Char>::value)>
+#endif
 FMT_CONSTEXPR OutputIt write(OutputIt out, T value) {
   return write<Char>(
       out, static_cast<typename std::underlying_type<T>::type>(value));
@@ -3562,7 +3568,7 @@ FMT_FORMAT_AS(Char*, const Char*);
 FMT_FORMAT_AS(std::basic_string<Char>, basic_string_view<Char>);
 FMT_FORMAT_AS(std::nullptr_t, const void*);
 FMT_FORMAT_AS(detail::std_string_view<Char>, basic_string_view<Char>);
-#if __cplusplus >= 201703L
+#ifdef __cpp_lib_byte
 FMT_FORMAT_AS(std::byte, unsigned);
 #endif
 
