@@ -1092,9 +1092,7 @@ template <typename Context> class value {
   constexpr FMT_INLINE value(char_type val) : char_value(val) {}
   FMT_CONSTEXPR value(const char_type* val) {
     string.data = val;
-    if (is_constant_evaluated()) {
-      string.size = {};
-    }
+    if (is_constant_evaluated()) string.size = {};
   }
   FMT_CONSTEXPR value(basic_string_view<char_type> val) {
     string.data = val.data();
