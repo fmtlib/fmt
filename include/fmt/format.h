@@ -282,7 +282,7 @@ FMT_END_NAMESPACE
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
-#if __cplusplus >= 202002L
+#if __cplusplus >= 202002L || FMT_GCC_VERSION >= 1002
 #  define FMT_CONSTEXPR20 constexpr
 #else
 #  define FMT_CONSTEXPR20 inline

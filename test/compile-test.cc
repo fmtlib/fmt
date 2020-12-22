@@ -184,7 +184,7 @@ TEST(CompileTest, CompileFormatStringLiteral) {
 }
 #endif
 
-#if __cplusplus >= 202002L
+#if __cplusplus >= 202002L || FMT_GCC_VERSION >= 1002
 template <size_t max_string_length, typename Char = char> struct test_string {
   template <typename T> constexpr bool operator==(const T& rhs) const noexcept {
     return fmt::basic_string_view<Char>(rhs).compare(buffer.data()) == 0;
