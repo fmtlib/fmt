@@ -37,6 +37,7 @@
 #include <cmath>
 #include <cstddef>  // std::byte
 #include <cstdint>
+#include <cwchar>
 #include <limits>
 #include <memory>
 #include <stdexcept>
