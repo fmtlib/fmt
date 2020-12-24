@@ -287,14 +287,10 @@ struct formatter<TupleT, Char, enable_if_t<fmt::is_tuple_like<TupleT>::value>> {
   // C++11 generic lambda for format()
   template <typename FormatContext> struct format_each {
     template <typename T> void operator()(const T& v) {
-      if (i > 0) {
-        out = write_delimiter(out);
-      }
-
+      if (i > 0) out = write_delimiter(out);
       out = detail::write_range_entry<Char>(out, v);
       ++i;
     }
-
     formatting_tuple<Char>& formatting;
     size_t& i;
     typename std::add_lvalue_reference<decltype(
@@ -356,12 +352,8 @@ struct formatter<
     auto it = view.begin();
     auto end = view.end();
     for (; it != end; ++it) {
-      if (i > 0) {
-        out = detail::write_delimiter(out);
-      }
-
+      if (i > 0) out = detail::write_delimiter(out);
       out = detail::write_range_entry<Char>(out, *it);
-
       if (++i > formatting.range_length_limit) {
         out = format_to(out, FMT_STRING("{}"), " ... <other elements>");
         break;

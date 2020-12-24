@@ -783,7 +783,7 @@ OutputIt format_duration_value(OutputIt out, Rep val, int) {
 template <typename Char, typename Rep, typename OutputIt,
           FMT_ENABLE_IF(std::is_floating_point<Rep>::value)>
 OutputIt format_duration_value(OutputIt out, Rep val, int precision) {
-  basic_format_specs<Char> specs;
+  auto specs = basic_format_specs<Char>();
   specs.precision = precision;
   specs.type = precision > 0 ? 'f' : 'g';
   return write<Char>(out, val, specs);
@@ -806,15 +806,12 @@ template <typename Char, typename Period, typename OutputIt>
 OutputIt format_duration_unit(OutputIt out) {
   if (const char* unit = get_units<Period>())
     return copy_unit(string_view(unit), out, Char());
-
   *out++ = '[';
   out = write<Char>(out, Period::num);
-
   if (const_check(Period::den != 1)) {
     *out++ = '/';
     out = write<Char>(out, Period::den);
   }
-
   *out++ = ']';
   *out++ = 's';
   return out;
