@@ -51,6 +51,11 @@ TEST(RangesTest, FormatMap) {
   EXPECT_EQ("{(\"one\", 1), (\"two\", 2)}", fmt::format("{}", simap));
 }
 
+TEST(RangesTest, FormatArrayOfLiterals) {
+  const char* aol[] = {"1234", "abcd"};
+  EXPECT_EQ("{\"1234\", \"abcd\"}", fmt::format("{}", aol));
+}
+
 TEST(RangesTest, FormatPair) {
   std::pair<int64_t, float> pa1{42, 1.5f};
   EXPECT_EQ("(42, 1.5)", fmt::format("{}", pa1));
@@ -243,10 +248,6 @@ TEST(RangesTest, Range) {
 
   const std::vector<int> z(3u, 0);
   EXPECT_EQ("{0, 0, 0}", fmt::format("{}", z));
-
-  const char* array_of_string_literals[] = {"1234", "abcd"};
-  EXPECT_EQ("{\"1234\", \"abcd\"}",
-            fmt::format("{}", array_of_string_literals));
 }
 
 #if !FMT_MSC_VER || FMT_MSC_VER >= 1927
