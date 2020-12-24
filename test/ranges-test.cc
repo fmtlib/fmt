@@ -51,6 +51,11 @@ TEST(RangesTest, FormatMap) {
   EXPECT_EQ("{(\"one\", 1), (\"two\", 2)}", fmt::format("{}", simap));
 }
 
+TEST(RangesTest, FormatArrayOfLiterals) {
+  const char* aol[] = {"1234", "abcd"};
+  EXPECT_EQ("{\"1234\", \"abcd\"}", fmt::format("{}", aol));
+}
+
 TEST(RangesTest, FormatPair) {
   std::pair<int64_t, float> pa1{42, 1.5f};
   EXPECT_EQ("(42, 1.5)", fmt::format("{}", pa1));

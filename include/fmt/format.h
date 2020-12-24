@@ -3829,7 +3829,7 @@ inline std::string to_string(T value) {
   Converts *value* to ``std::wstring`` using the default format for type *T*.
  */
 template <typename T> inline std::wstring to_wstring(const T& value) {
-  return format(L"{}", value);
+  return format(FMT_STRING(L"{}"), value);
 }
 
 template <typename Char, size_t SIZE>
