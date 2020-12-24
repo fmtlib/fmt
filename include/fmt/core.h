@@ -92,7 +92,7 @@
 #  define FMT_CONSTEXPR constexpr
 #  define FMT_CONSTEXPR_DECL constexpr
 #else
-#  define FMT_CONSTEXPR inline
+#  define FMT_CONSTEXPR
 #  define FMT_CONSTEXPR_DECL
 #endif
 

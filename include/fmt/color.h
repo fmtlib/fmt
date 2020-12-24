@@ -353,16 +353,17 @@ class text_style {
 };
 
 /** Creates a text style from the foreground (text) color. */
-FMT_CONSTEXPR text_style fg(detail::color_type foreground) FMT_NOEXCEPT {
+FMT_CONSTEXPR inline text_style fg(detail::color_type foreground) FMT_NOEXCEPT {
   return text_style(true, foreground);
 }
 
 /** Creates a text style from the background color. */
-FMT_CONSTEXPR text_style bg(detail::color_type background) FMT_NOEXCEPT {
+FMT_CONSTEXPR inline text_style bg(detail::color_type background) FMT_NOEXCEPT {
   return text_style(false, background);
 }
 
-FMT_CONSTEXPR text_style operator|(emphasis lhs, emphasis rhs) FMT_NOEXCEPT {
+FMT_CONSTEXPR inline text_style operator|(emphasis lhs,
+                                          emphasis rhs) FMT_NOEXCEPT {
   return text_style(lhs) | rhs;
 }
 

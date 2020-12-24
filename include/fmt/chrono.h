@@ -456,27 +456,61 @@ namespace detail {
 template <typename Period> FMT_CONSTEXPR const char* get_units() {
   return nullptr;
 }
-template <> FMT_CONSTEXPR const char* get_units<std::atto>() { return "as"; }
-template <> FMT_CONSTEXPR const char* get_units<std::femto>() { return "fs"; }
-template <> FMT_CONSTEXPR const char* get_units<std::pico>() { return "ps"; }
-template <> FMT_CONSTEXPR const char* get_units<std::nano>() { return "ns"; }
-template <> FMT_CONSTEXPR const char* get_units<std::micro>() { return "µs"; }
-template <> FMT_CONSTEXPR const char* get_units<std::milli>() { return "ms"; }
-template <> FMT_CONSTEXPR const char* get_units<std::centi>() { return "cs"; }
-template <> FMT_CONSTEXPR const char* get_units<std::deci>() { return "ds"; }
-template <> FMT_CONSTEXPR const char* get_units<std::ratio<1>>() { return "s"; }
-template <> FMT_CONSTEXPR const char* get_units<std::deca>() { return "das"; }
-template <> FMT_CONSTEXPR const char* get_units<std::hecto>() { return "hs"; }
-template <> FMT_CONSTEXPR const char* get_units<std::kilo>() { return "ks"; }
-template <> FMT_CONSTEXPR const char* get_units<std::mega>() { return "Ms"; }
-template <> FMT_CONSTEXPR const char* get_units<std::giga>() { return "Gs"; }
-template <> FMT_CONSTEXPR const char* get_units<std::tera>() { return "Ts"; }
-template <> FMT_CONSTEXPR const char* get_units<std::peta>() { return "Ps"; }
-template <> FMT_CONSTEXPR const char* get_units<std::exa>() { return "Es"; }
-template <> FMT_CONSTEXPR const char* get_units<std::ratio<60>>() {
+template <> FMT_CONSTEXPR inline const char* get_units<std::atto>() {
+  return "as";
+}
+template <> FMT_CONSTEXPR inline const char* get_units<std::femto>() {
+  return "fs";
+}
+template <> FMT_CONSTEXPR inline const char* get_units<std::pico>() {
+  return "ps";
+}
+template <> FMT_CONSTEXPR inline const char* get_units<std::nano>() {
+  return "ns";
+}
+template <> FMT_CONSTEXPR inline const char* get_units<std::micro>() {
+  return "µs";
+}
+template <> FMT_CONSTEXPR inline const char* get_units<std::milli>() {
+  return "ms";
+}
+template <> FMT_CONSTEXPR inline const char* get_units<std::centi>() {
+  return "cs";
+}
+template <> FMT_CONSTEXPR inline const char* get_units<std::deci>() {
+  return "ds";
+}
+template <> FMT_CONSTEXPR inline const char* get_units<std::ratio<1>>() {
+  return "s";
+}
+template <> FMT_CONSTEXPR inline const char* get_units<std::deca>() {
+  return "das";
+}
+template <> FMT_CONSTEXPR inline const char* get_units<std::hecto>() {
+  return "hs";
+}
+template <> FMT_CONSTEXPR inline const char* get_units<std::kilo>() {
+  return "ks";
+}
+template <> FMT_CONSTEXPR inline const char* get_units<std::mega>() {
+  return "Ms";
+}
+template <> FMT_CONSTEXPR inline const char* get_units<std::giga>() {
+  return "Gs";
+}
+template <> FMT_CONSTEXPR inline const char* get_units<std::tera>() {
+  return "Ts";
+}
+template <> FMT_CONSTEXPR inline const char* get_units<std::peta>() {
+  return "Ps";
+}
+template <> FMT_CONSTEXPR inline const char* get_units<std::exa>() {
+  return "Es";
+}
+template <> FMT_CONSTEXPR inline const char* get_units<std::ratio<60>>() {
   return "m";
 }
-template <> FMT_CONSTEXPR const char* get_units<std::ratio<3600>>() {
+template <> FMT_CONSTEXPR inline const char* get_units<std::ratio<3600>>() {
   return "h";
 }
 
