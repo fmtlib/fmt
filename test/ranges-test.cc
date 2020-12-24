@@ -243,6 +243,10 @@ TEST(RangesTest, Range) {
 
   const std::vector<int> z(3u, 0);
   EXPECT_EQ("{0, 0, 0}", fmt::format("{}", z));
+
+  const char* array_of_string_literals[] = {"1234", "abcd"};
+  EXPECT_EQ("{\"1234\", \"abcd\"}",
+            fmt::format("{}", array_of_string_literals));
 }
 
 #if !FMT_MSC_VER || FMT_MSC_VER >= 1927
