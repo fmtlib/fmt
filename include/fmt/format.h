@@ -933,14 +933,14 @@ template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
   // GCC generates slightly better code for pairs than chars.
   using digit_pair = char[2];
   static const digit_pair digits[];
-  static const char hex_digits[];
+  static constexpr const char hex_digits[] = "0123456789abcdef";
   static const char foreground_color[];
   static const char background_color[];
   static const char reset_color[5];
   static const wchar_t wreset_color[5];
   static const char signs[];
-  static const char left_padding_shifts[5];
-  static const char right_padding_shifts[5];
+  static constexpr const char left_padding_shifts[] = {31, 31, 0, 1, 0};
+  static constexpr const char right_padding_shifts[] = {0, 31, 0, 1, 0};
 
   // DEPRECATED! These are for ABI compatibility.
   static const uint32_t zero_or_powers_of_10_32[];
@@ -1144,9 +1144,7 @@ FMT_CONSTEXPR20 Char* format_uint(Char* buffer, UInt value, int num_digits,
   buffer += num_digits;
   Char* end = buffer;
   do {
-    const char* digits = upper ? "0123456789ABCDEF"
-                               : (is_constant_evaluated() ? "0123456789abcdef"
-                                                          : data::hex_digits);
+    const char* digits = upper ? "0123456789ABCDEF" : data::hex_digits;
     unsigned digit = (value & ((1 << BASE_BITS) - 1));
     *--buffer = static_cast<Char>(BASE_BITS < 4 ? static_cast<char>('0' + digit)
                                                 : digits[digit]);
@@ -1563,17 +1561,9 @@ FMT_CONSTEXPR20 OutputIt write_padded(OutputIt out,
   unsigned spec_width = to_unsigned(specs.width);
   size_t padding = spec_width > width ? spec_width - width : 0;
   size_t left_padding = 0;
-  if (is_constant_evaluated()) {
-    const char left_padding_shifts[] = {31, 31, 0, 1, 0};
-    const char right_padding_shifts[] = {0, 31, 0, 1, 0};
-    auto* shifts =
-        align == align::left ? left_padding_shifts : right_padding_shifts;
-    left_padding = padding >> shifts[specs.align];
-  } else {
-    auto* shifts = align == align::left ? data::left_padding_shifts
-                                        : data::right_padding_shifts;
-    left_padding = padding >> shifts[specs.align];
-  }
+  auto* shifts = align == align::left ? data::left_padding_shifts
+                                      : data::right_padding_shifts;
+  left_padding = padding >> shifts[specs.align];
   auto it = reserve(out, size + padding * specs.fill.size());
   it = fill(it, left_padding, specs.fill);
   it = f(it);
