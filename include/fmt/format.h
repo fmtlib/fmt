@@ -2111,12 +2111,14 @@ FMT_CONSTEXPR OutputIt write(OutputIt out, T value) {
   return base_iterator(out, it);
 }
 
+// FMT_ENABLE_IF() condition separated to workaround MSVC bug
 template <
     typename Char, typename OutputIt, typename T,
-    FMT_ENABLE_IF(
+    bool check =
         std::is_enum<T>::value && !std::is_same<T, Char>::value &&
         mapped_type_constant<T, basic_format_context<OutputIt, Char>>::value !=
-            type::custom_type)>
+            type::custom_type,
+    FMT_ENABLE_IF(check)>
 FMT_CONSTEXPR OutputIt write(OutputIt out, T value) {
   return write<Char>(
       out, static_cast<typename std::underlying_type<T>::type>(value));
