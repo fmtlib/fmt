@@ -1070,9 +1070,10 @@ template <typename T> const wchar_t basic_data<T>::wreset_color[] = L"\x1b[0m";
 template <typename T> const char basic_data<T>::signs[] = {0, '-', '+', ' '};
 
 #if __cplusplus < 201703L
-template <typename T> const char basic_data<T>::hex_digits[];
-template <typename T> const char basic_data<T>::left_padding_shifts[];
-template <typename T> const char basic_data<T>::right_padding_shifts[];
+template <typename T> constexpr const char basic_data<T>::hex_digits[];
+template <typename T> constexpr const char basic_data<T>::left_padding_shifts[];
+template <typename T>
+constexpr const char basic_data<T>::right_padding_shifts[];
 #endif
 
 template <typename T> struct bits {
