@@ -1139,8 +1139,8 @@ inline format_decimal_result<Iterator> format_decimal(Iterator out, UInt value,
 }
 
 template <unsigned BASE_BITS, typename Char, typename UInt>
-FMT_CONSTEXPR20 Char* format_uint(Char* buffer, UInt value, int num_digits,
-                                  bool upper = false) {
+FMT_CONSTEXPR Char* format_uint(Char* buffer, UInt value, int num_digits,
+                                bool upper = false) {
   buffer += num_digits;
   Char* end = buffer;
   do {
@@ -1554,9 +1554,9 @@ FMT_NOINLINE FMT_CONSTEXPR OutputIt fill(OutputIt it, size_t n,
 // width: output display width in (terminal) column positions.
 template <align::type align = align::left, typename OutputIt, typename Char,
           typename F>
-FMT_CONSTEXPR20 OutputIt write_padded(OutputIt out,
-                                      const basic_format_specs<Char>& specs,
-                                      size_t size, size_t width, F&& f) {
+FMT_CONSTEXPR OutputIt write_padded(OutputIt out,
+                                    const basic_format_specs<Char>& specs,
+                                    size_t size, size_t width, F&& f) {
   static_assert(align == align::left || align == align::right, "");
   unsigned spec_width = to_unsigned(specs.width);
   size_t padding = spec_width > width ? spec_width - width : 0;
