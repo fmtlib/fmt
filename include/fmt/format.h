@@ -3544,19 +3544,6 @@ struct formatter<T, Char,
                             detail::make_arg<FormatContext>(val));
   }
 
-  template <typename FormatContext>
-  FMT_CONSTEXPR auto format(const T& val, FormatContext& ctx)
-      -> decltype(ctx.out()) {
-    detail::handle_dynamic_spec<detail::width_checker>(specs_.width,
-                                                       specs_.width_ref, ctx);
-    detail::handle_dynamic_spec<detail::precision_checker>(
-        specs_.precision, specs_.precision_ref, ctx);
-    using af = detail::arg_formatter<typename FormatContext::iterator,
-                                     typename FormatContext::char_type>;
-    return visit_format_arg(af(ctx, nullptr, &specs_),
-                            detail::make_arg<FormatContext>(val));
-  }
-
  private:
   detail::dynamic_format_specs<Char> specs_;
 };
