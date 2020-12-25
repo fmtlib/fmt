@@ -283,6 +283,14 @@ struct monostate {};
 
 namespace detail {
 
+constexpr bool is_constant_evaluated() FMT_NOEXCEPT {
+#ifdef __cpp_lib_is_constant_evaluated
+  return std::is_constant_evaluated();
+#else
+  return false;
+#endif
+}
+
 // A helper function to suppress "conditional expression is constant" warnings.
 template <typename T> constexpr T const_check(T value) { return value; }
 
@@ -481,7 +489,7 @@ inline basic_string_view<Char> to_string_view(
 }
 
 template <typename Char>
-inline basic_string_view<Char> to_string_view(basic_string_view<Char> s) {
+constexpr basic_string_view<Char> to_string_view(basic_string_view<Char> s) {
   return s;
 }
 
@@ -938,9 +946,9 @@ struct arg_data<T, Char, NUM_ARGS, 0> {
   T args_[NUM_ARGS != 0 ? NUM_ARGS : +1];
 
   template <typename... U>
-  FMT_INLINE arg_data(const U&... init) : args_{init...} {}
-  FMT_INLINE const T* args() const { return args_; }
-  FMT_INLINE std::nullptr_t named_args() { return nullptr; }
+  FMT_CONSTEXPR arg_data(const U&... init) : args_{init...} {}
+  FMT_CONSTEXPR const T* args() const { return args_; }
+  FMT_CONSTEXPR std::nullptr_t named_args() { return nullptr; }
 };
 
 template <typename Char>
@@ -961,7 +969,7 @@ void init_named_args(named_arg_info<Char>* named_args, int arg_count,
 }
 
 template <typename... Args>
-FMT_INLINE void init_named_args(std::nullptr_t, int, int, const Args&...) {}
+FMT_CONSTEXPR void init_named_args(std::nullptr_t, int, int, const Args&...) {}
 
 template <typename T> struct is_named_arg : std::false_type {};
 
@@ -1073,17 +1081,20 @@ template <typename Context> class value {
 
   constexpr FMT_INLINE value(int val = 0) : int_value(val) {}
   constexpr FMT_INLINE value(unsigned val) : uint_value(val) {}
-  FMT_INLINE value(long long val) : long_long_value(val) {}
-  FMT_INLINE value(unsigned long long val) : ulong_long_value(val) {}
+  constexpr FMT_INLINE value(long long val) : long_long_value(val) {}
+  constexpr FMT_INLINE value(unsigned long long val) : ulong_long_value(val) {}
   FMT_INLINE value(int128_t val) : int128_value(val) {}
   FMT_INLINE value(uint128_t val) : uint128_value(val) {}
   FMT_INLINE value(float val) : float_value(val) {}
   FMT_INLINE value(double val) : double_value(val) {}
   FMT_INLINE value(long double val) : long_double_value(val) {}
-  FMT_INLINE value(bool val) : bool_value(val) {}
-  FMT_INLINE value(char_type val) : char_value(val) {}
-  FMT_INLINE value(const char_type* val) { string.data = val; }
-  FMT_INLINE value(basic_string_view<char_type> val) {
+  constexpr FMT_INLINE value(bool val) : bool_value(val) {}
+  constexpr FMT_INLINE value(char_type val) : char_value(val) {}
+  FMT_CONSTEXPR value(const char_type* val) {
+    string.data = val;
+    if (is_constant_evaluated()) string.size = {};
+  }
+  FMT_CONSTEXPR value(basic_string_view<char_type> val) {
     string.data = val.data();
     string.size = val.size();
   }
@@ -1406,7 +1417,7 @@ class locale_ref {
   const void* locale_;  // A type-erased pointer to std::locale.
 
  public:
-  locale_ref() : locale_(nullptr) {}
+  constexpr locale_ref() : locale_(nullptr) {}
   template <typename Locale> explicit locale_ref(const Locale& loc);
 
   explicit operator bool() const FMT_NOEXCEPT { return locale_ != nullptr; }
@@ -1437,7 +1448,7 @@ template <typename T> int check(unformattable) {
       "formatter<T> specialization: https://fmt.dev/latest/api.html#udt");
   return 0;
 }
-template <typename T, typename U> inline const U& check(const U& val) {
+template <typename T, typename U> constexpr const U& check(const U& val) {
   return val;
 }
 
@@ -1446,7 +1457,7 @@ template <typename T, typename U> inline const U& check(const U& val) {
 // another (not recommended).
 template <bool IS_PACKED, typename Context, type, typename T,
           FMT_ENABLE_IF(IS_PACKED)>
-inline value<Context> make_arg(const T& val) {
+constexpr value<Context> make_arg(const T& val) {
   return check<T>(arg_mapper<Context>().map(val));
 }
 
@@ -1480,28 +1491,30 @@ template <typename OutputIt, typename Char> class basic_format_context {
    Constructs a ``basic_format_context`` object. References to the arguments are
    stored in the object so make sure they have appropriate lifetimes.
    */
-  basic_format_context(OutputIt out,
-                       basic_format_args<basic_format_context> ctx_args,
-                       detail::locale_ref loc = detail::locale_ref())
+  constexpr basic_format_context(
+      OutputIt out, basic_format_args<basic_format_context> ctx_args,
+      detail::locale_ref loc = detail::locale_ref())
       : out_(out), args_(ctx_args), loc_(loc) {}
 
-  format_arg arg(int id) const { return args_.get(id); }
-  format_arg arg(basic_string_view<char_type> name) { return args_.get(name); }
+  constexpr format_arg arg(int id) const { return args_.get(id); }
+  FMT_CONSTEXPR format_arg arg(basic_string_view<char_type> name) {
+    return args_.get(name);
+  }
   int arg_id(basic_string_view<char_type> name) { return args_.get_id(name); }
   const basic_format_args<basic_format_context>& args() const { return args_; }
 
-  detail::error_handler error_handler() { return {}; }
+  FMT_CONSTEXPR detail::error_handler error_handler() { return {}; }
   void on_error(const char* message) { error_handler().on_error(message); }
 
   // Returns an iterator to the beginning of the output range.
-  iterator out() { return out_; }
+  FMT_CONSTEXPR iterator out() { return out_; }
 
   // Advances the begin iterator to ``it``.
   void advance_to(iterator it) {
     if (!detail::is_back_insert_iterator<iterator>()) out_ = it;
   }
 
-  detail::locale_ref locale() { return loc_; }
+  FMT_CONSTEXPR detail::locale_ref locale() { return loc_; }
 };
 
 template <typename Char>
@@ -1550,7 +1563,7 @@ class format_arg_store
            : 0);
 
  public:
-  format_arg_store(const Args&... args)
+  FMT_CONSTEXPR format_arg_store(const Args&... args)
       :
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
         basic_format_args<Context>(*this),
@@ -1571,7 +1584,7 @@ class format_arg_store
   \endrst
  */
 template <typename Context = format_context, typename... Args>
-inline format_arg_store<Context, Args...> make_format_args(
+constexpr format_arg_store<Context, Args...> make_format_args(
     const Args&... args) {
   return {args...};
 }
@@ -1644,25 +1657,27 @@ template <typename Context> class basic_format_args {
     const format_arg* args_;
   };
 
-  bool is_packed() const { return (desc_ & detail::is_unpacked_bit) == 0; }
+  constexpr bool is_packed() const {
+    return (desc_ & detail::is_unpacked_bit) == 0;
+  }
   bool has_named_args() const {
     return (desc_ & detail::has_named_args_bit) != 0;
   }
 
-  detail::type type(int index) const {
+  FMT_CONSTEXPR detail::type type(int index) const {
     int shift = index * detail::packed_arg_bits;
     unsigned int mask = (1 << detail::packed_arg_bits) - 1;
     return static_cast<detail::type>((desc_ >> shift) & mask);
   }
 
-  basic_format_args(unsigned long long desc,
-                    const detail::value<Context>* values)
+  constexpr basic_format_args(unsigned long long desc,
+                              const detail::value<Context>* values)
       : desc_(desc), values_(values) {}
-  basic_format_args(unsigned long long desc, const format_arg* args)
+  constexpr basic_format_args(unsigned long long desc, const format_arg* args)
       : desc_(desc), args_(args) {}
 
  public:
-  basic_format_args() : desc_(0) {}
+  constexpr basic_format_args() : desc_(0), args_(nullptr) {}
 
   /**
    \rst
@@ -1670,7 +1685,7 @@ template <typename Context> class basic_format_args {
    \endrst
    */
   template <typename... Args>
-  FMT_INLINE basic_format_args(const format_arg_store<Context, Args...>& store)
+  constexpr basic_format_args(const format_arg_store<Context, Args...>& store)
       : basic_format_args(store.desc, store.data_.args()) {}
 
   /**
@@ -1679,7 +1694,7 @@ template <typename Context> class basic_format_args {
    `~fmt::dynamic_format_arg_store`.
    \endrst
    */
-  FMT_INLINE basic_format_args(const dynamic_format_arg_store<Context>& store)
+  constexpr basic_format_args(const dynamic_format_arg_store<Context>& store)
       : basic_format_args(store.get_types(), store.data()) {}
 
   /**
@@ -1687,12 +1702,12 @@ template <typename Context> class basic_format_args {
    Constructs a `basic_format_args` object from a dynamic set of arguments.
    \endrst
    */
-  basic_format_args(const format_arg* args, int count)
+  constexpr basic_format_args(const format_arg* args, int count)
       : basic_format_args(detail::is_unpacked_bit | detail::to_unsigned(count),
                           args) {}
 
   /** Returns the argument with the specified id. */
-  format_arg get(int id) const {
+  FMT_CONSTEXPR format_arg get(int id) const {
     format_arg arg;
     if (!is_packed()) {
       if (id < max_size()) arg = args_[id];

@@ -7,9 +7,6 @@
 
 #include <string>
 #include <type_traits>
-#if __cplusplus >= 202002L
-#  include <string_view>
-#endif
 
 // Check that fmt/compile.h compiles with windows.h included before it.
 #ifdef _WIN32
@@ -187,17 +184,18 @@ TEST(CompileTest, CompileFormatStringLiteral) {
 }
 #endif
 
-#if __cplusplus >= 202002L
-template <size_t max_string_length> struct test_string {
+#if __cplusplus >= 202002L || \
+    (__cplusplus >= 201709L && FMT_GCC_VERSION >= 1002)
+template <size_t max_string_length, typename Char = char> struct test_string {
   template <typename T> constexpr bool operator==(const T& rhs) const noexcept {
-    return (std::string_view(rhs).compare(buffer.data()) == 0);
+    return fmt::basic_string_view<Char>(rhs).compare(buffer.data()) == 0;
   }
-  std::array<char, max_string_length> buffer{};
+  std::array<Char, max_string_length> buffer{};
 };
 
-template <size_t max_string_length, typename... Args>
+template <size_t max_string_length, typename Char = char, typename... Args>
 consteval auto test_format(auto format, const Args&... args) {
-  test_string<max_string_length> string{};
+  test_string<max_string_length, Char> string{};
   fmt::format_to(string.buffer.data(), format, args...);
   return string;
 }
@@ -205,6 +203,8 @@ consteval auto test_format(auto format, const Args&... args) {
 TEST(CompileTimeFormattingTest, Bool) {
   EXPECT_EQ("true", test_format<5>(FMT_COMPILE("{}"), true));
   EXPECT_EQ("false", test_format<6>(FMT_COMPILE("{}"), false));
+  EXPECT_EQ("true ", test_format<6>(FMT_COMPILE("{:5}"), true));
+  EXPECT_EQ("1", test_format<2>(FMT_COMPILE("{:d}"), true));
 }
 
 TEST(CompileTimeFormattingTest, Integer) {
@@ -213,16 +213,54 @@ TEST(CompileTimeFormattingTest, Integer) {
   EXPECT_EQ("42 42", test_format<6>(FMT_COMPILE("{} {}"), 42, 42));
   EXPECT_EQ("42 42",
             test_format<6>(FMT_COMPILE("{} {}"), uint32_t{42}, uint64_t{42}));
+
+  EXPECT_EQ("+42", test_format<4>(FMT_COMPILE("{:+}"), 42));
+  EXPECT_EQ("42", test_format<3>(FMT_COMPILE("{:-}"), 42));
+  EXPECT_EQ(" 42", test_format<4>(FMT_COMPILE("{: }"), 42));
+
+  EXPECT_EQ("-0042", test_format<6>(FMT_COMPILE("{:05}"), -42));
+
+  EXPECT_EQ("101010", test_format<7>(FMT_COMPILE("{:b}"), 42));
+  EXPECT_EQ("0b101010", test_format<9>(FMT_COMPILE("{:#b}"), 42));
+  EXPECT_EQ("0B101010", test_format<9>(FMT_COMPILE("{:#B}"), 42));
+  EXPECT_EQ("042", test_format<4>(FMT_COMPILE("{:#o}"), 042));
+  EXPECT_EQ("0x4a", test_format<5>(FMT_COMPILE("{:#x}"), 0x4a));
+  EXPECT_EQ("0X4A", test_format<5>(FMT_COMPILE("{:#X}"), 0x4a));
+
+  EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42));
+  EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42ll));
+  EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42ull));
+
+  EXPECT_EQ("42  ", test_format<5>(FMT_COMPILE("{:<4}"), 42));
+  EXPECT_EQ("  42", test_format<5>(FMT_COMPILE("{:>4}"), 42));
+  EXPECT_EQ(" 42 ", test_format<5>(FMT_COMPILE("{:^4}"), 42));
+  EXPECT_EQ("**-42", test_format<6>(FMT_COMPILE("{:*>5}"), -42));
+}
+
+TEST(CompileTimeFormattingTest, Char) {
+  EXPECT_EQ("c", test_format<2>(FMT_COMPILE("{}"), 'c'));
+
+  EXPECT_EQ("c  ", test_format<4>(FMT_COMPILE("{:3}"), 'c'));
+  EXPECT_EQ("99", test_format<3>(FMT_COMPILE("{:d}"), 'c'));
 }
 
 TEST(CompileTimeFormattingTest, String) {
   EXPECT_EQ("42", test_format<3>(FMT_COMPILE("{}"), "42"));
   EXPECT_EQ("The answer is 42",
             test_format<17>(FMT_COMPILE("{} is {}"), "The answer", "42"));
+
+  EXPECT_EQ("abc**", test_format<6>(FMT_COMPILE("{:*<5}"), "abc"));
+  EXPECT_EQ("**🤡**", test_format<9>(FMT_COMPILE("{:*^5}"), "🤡"));
 }
 
 TEST(CompileTimeFormattingTest, Combination) {
   EXPECT_EQ("420, true, answer",
             test_format<18>(FMT_COMPILE("{}, {}, {}"), 420, true, "answer"));
+
+  EXPECT_EQ(" -42", test_format<5>(FMT_COMPILE("{:{}}"), -42, 4));
+}
+
+TEST(CompileTimeFormattingTest, MultiByteFill) {
+  EXPECT_EQ("жж42", test_format<8>(FMT_COMPILE("{:ж>4}"), 42));
 }
 #endif

@@ -466,10 +466,10 @@ struct is_compiled_format<field<Char, T, N>> : std::true_type {};
 // A replacement field that refers to argument N and has format specifiers.
 template <typename Char, typename T, int N> struct spec_field {
   using char_type = Char;
-  mutable formatter<T, Char> fmt;
+  formatter<T, Char> fmt;
 
   template <typename OutputIt, typename... Args>
-  OutputIt format(OutputIt out, const Args&... args) const {
+  constexpr OutputIt format(OutputIt out, const Args&... args) const {
     // This ensures that the argument type is convertile to `const T&`.
     const T& arg = get<N>(args...);
     const auto& vargs =
