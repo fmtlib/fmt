@@ -545,7 +545,7 @@ inline size_t count_code_points(basic_string_view<Char> s) {
 }
 
 // Counts the number of code points in a UTF-8 string.
-FMT_CONSTEXPR size_t count_code_points(basic_string_view<char> s) {
+FMT_CONSTEXPR inline size_t count_code_points(basic_string_view<char> s) {
   const char* data = s.data();
   size_t num_code_points = 0;
   for (size_t i = 0, size = s.size(); i != size; ++i) {
