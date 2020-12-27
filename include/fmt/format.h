@@ -2317,7 +2317,7 @@ class arg_formatter_base {
   }
 
   template <typename T, FMT_ENABLE_IF(is_integral<T>::value)>
-  FMT_CONSTEXPR iterator operator()(T value) {
+  FMT_CONSTEXPR FMT_INLINE iterator operator()(T value) {
     if (specs_)
       write_int(value, *specs_);
     else
