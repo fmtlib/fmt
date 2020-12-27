@@ -245,9 +245,6 @@
 #ifndef FMT_UNICODE
 #  define FMT_UNICODE !FMT_MSC_VER
 #endif
-#if FMT_UNICODE && FMT_MSC_VER
-#  pragma execution_character_set("utf-8")
-#endif
 
 #ifndef FMT_COMPILE_TIME_CHECKS
 #  define FMT_COMPILE_TIME_CHECKS 0
