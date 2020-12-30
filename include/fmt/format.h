@@ -287,7 +287,7 @@ namespace detail {
     (__cplusplus >= 201709L && FMT_GCC_VERSION >= 1002)
 #  define FMT_CONSTEXPR20 constexpr
 #else
-#  define FMT_CONSTEXPR20 inline
+#  define FMT_CONSTEXPR20
 #endif
 
 // An equivalent of `*reinterpret_cast<Dest*>(&source)` that doesn't have
@@ -545,7 +545,7 @@ inline size_t count_code_points(basic_string_view<Char> s) {
 }
 
 // Counts the number of code points in a UTF-8 string.
-FMT_CONSTEXPR size_t count_code_points(basic_string_view<char> s) {
+FMT_CONSTEXPR inline size_t count_code_points(basic_string_view<char> s) {
   const char* data = s.data();
   size_t num_code_points = 0;
   for (size_t i = 0, size = s.size(); i != size; ++i) {
@@ -984,7 +984,7 @@ template <typename T> FMT_CONSTEXPR int count_digits_fallback(T n) {
 #ifdef FMT_BUILTIN_CLZLL
 // Returns the number of decimal digits in n. Leading zeros are not counted
 // except for n == 0 in which case count_digits returns 1.
-FMT_CONSTEXPR20 int count_digits(uint64_t n) {
+FMT_CONSTEXPR20 inline int count_digits(uint64_t n) {
   if (is_constant_evaluated()) {
     return count_digits_fallback(n);
   }
@@ -994,11 +994,13 @@ FMT_CONSTEXPR20 int count_digits(uint64_t n) {
 }
 #else
 // Fallback version of count_digits used when __builtin_clz is not available.
-FMT_CONSTEXPR int count_digits(uint64_t n) { return count_digits_fallback(n); }
+FMT_CONSTEXPR inline int count_digits(uint64_t n) {
+  return count_digits_fallback(n);
+}
 #endif
 
 #if FMT_USE_INT128
-FMT_CONSTEXPR int count_digits(uint128_t n) {
+FMT_CONSTEXPR inline int count_digits(uint128_t n) {
   int count = 1;
   for (;;) {
     // Integer division is slow so do it for a group of four digits instead
@@ -1035,7 +1037,7 @@ template <> int count_digits<4>(detail::fallback_uintptr n);
 
 #ifdef FMT_BUILTIN_CLZ
 // Optional version of count_digits for better performance on 32-bit platforms.
-FMT_CONSTEXPR20 int count_digits(uint32_t n) {
+FMT_CONSTEXPR20 inline int count_digits(uint32_t n) {
   if (is_constant_evaluated()) {
     return count_digits_fallback(n);
   }
@@ -2320,7 +2322,7 @@ class arg_formatter_base {
   }
 
   template <typename T, FMT_ENABLE_IF(is_integral<T>::value)>
-  FMT_CONSTEXPR iterator operator()(T value) {
+  FMT_CONSTEXPR FMT_INLINE iterator operator()(T value) {
     if (specs_)
       write_int(value, *specs_);
     else
@@ -4039,11 +4041,11 @@ FMT_CONSTEXPR detail::udl_formatter<Char, CHARS...> operator""_format() {
     std::string message = "The answer is {}"_format(42);
   \endrst
  */
-FMT_CONSTEXPR detail::udl_formatter<char> operator"" _format(const char* s,
-                                                             size_t n) {
+FMT_CONSTEXPR inline detail::udl_formatter<char> operator"" _format(
+    const char* s, size_t n) {
   return {{s, n}};
 }
-FMT_CONSTEXPR detail::udl_formatter<wchar_t> operator"" _format(
+FMT_CONSTEXPR inline detail::udl_formatter<wchar_t> operator"" _format(
     const wchar_t* s, size_t n) {
   return {{s, n}};
 }
@@ -4059,10 +4061,12 @@ FMT_CONSTEXPR detail::udl_formatter<wchar_t> operator"" _format(
     fmt::print("Elapsed time: {s:.2f} seconds", "s"_a=1.23);
   \endrst
  */
-FMT_CONSTEXPR detail::udl_arg<char> operator"" _a(const char* s, size_t) {
+FMT_CONSTEXPR inline detail::udl_arg<char> operator"" _a(const char* s,
+                                                         size_t) {
   return {s};
 }
-FMT_CONSTEXPR detail::udl_arg<wchar_t> operator"" _a(const wchar_t* s, size_t) {
+FMT_CONSTEXPR inline detail::udl_arg<wchar_t> operator"" _a(const wchar_t* s,
+                                                            size_t) {
   return {s};
 }
 }  // namespace literals

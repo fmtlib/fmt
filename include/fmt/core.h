@@ -92,7 +92,7 @@
 #  define FMT_CONSTEXPR constexpr
 #  define FMT_CONSTEXPR_DECL constexpr
 #else
-#  define FMT_CONSTEXPR inline
+#  define FMT_CONSTEXPR
 #  define FMT_CONSTEXPR_DECL
 #endif
 
@@ -943,9 +943,9 @@ struct arg_data<T, Char, NUM_ARGS, 0> {
   T args_[NUM_ARGS != 0 ? NUM_ARGS : +1];
 
   template <typename... U>
-  FMT_CONSTEXPR arg_data(const U&... init) : args_{init...} {}
-  FMT_CONSTEXPR const T* args() const { return args_; }
-  FMT_CONSTEXPR std::nullptr_t named_args() { return nullptr; }
+  FMT_CONSTEXPR FMT_INLINE arg_data(const U&... init) : args_{init...} {}
+  FMT_CONSTEXPR FMT_INLINE const T* args() const { return args_; }
+  FMT_CONSTEXPR FMT_INLINE std::nullptr_t named_args() { return nullptr; }
 };
 
 template <typename Char>
@@ -966,7 +966,8 @@ void init_named_args(named_arg_info<Char>* named_args, int arg_count,
 }
 
 template <typename... Args>
-FMT_CONSTEXPR void init_named_args(std::nullptr_t, int, int, const Args&...) {}
+FMT_CONSTEXPR FMT_INLINE void init_named_args(std::nullptr_t, int, int,
+                                              const Args&...) {}
 
 template <typename T> struct is_named_arg : std::false_type {};
 
@@ -1087,11 +1088,11 @@ template <typename Context> class value {
   FMT_INLINE value(long double val) : long_double_value(val) {}
   constexpr FMT_INLINE value(bool val) : bool_value(val) {}
   constexpr FMT_INLINE value(char_type val) : char_value(val) {}
-  FMT_CONSTEXPR value(const char_type* val) {
+  FMT_CONSTEXPR FMT_INLINE value(const char_type* val) {
     string.data = val;
     if (is_constant_evaluated()) string.size = {};
   }
-  FMT_CONSTEXPR value(basic_string_view<char_type> val) {
+  FMT_CONSTEXPR FMT_INLINE value(basic_string_view<char_type> val) {
     string.data = val.data();
     string.size = val.size();
   }
@@ -1682,7 +1683,8 @@ template <typename Context> class basic_format_args {
    \endrst
    */
   template <typename... Args>
-  constexpr basic_format_args(const format_arg_store<Context, Args...>& store)
+  constexpr FMT_INLINE basic_format_args(
+      const format_arg_store<Context, Args...>& store)
       : basic_format_args(store.desc, store.data_.args()) {}
 
   /**
@@ -1691,7 +1693,8 @@ template <typename Context> class basic_format_args {
    `~fmt::dynamic_format_arg_store`.
    \endrst
    */
-  constexpr basic_format_args(const dynamic_format_arg_store<Context>& store)
+  constexpr FMT_INLINE basic_format_args(
+      const dynamic_format_arg_store<Context>& store)
       : basic_format_args(store.get_types(), store.data()) {}
 
   /**
