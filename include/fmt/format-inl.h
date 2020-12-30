@@ -2768,12 +2768,13 @@ FMT_FUNC void vprint(std::FILE* f, string_view format_str, format_args args) {
   if (_isatty(fd)) {
     detail::utf8_to_utf16 u16(string_view(buffer.data(), buffer.size()));
     auto written = detail::dword();
-    if (!detail::WriteConsoleW(reinterpret_cast<void*>(_get_osfhandle(fd)),
-                               u16.c_str(), static_cast<uint32_t>(u16.size()),
-                               &written, nullptr)) {
-      FMT_THROW(format_error("failed to write to console"));
+    if (detail::WriteConsoleW(reinterpret_cast<void*>(_get_osfhandle(fd)),
+                              u16.c_str(), static_cast<uint32_t>(u16.size()),
+                              &written, nullptr)) {
+      return;
     }
-    return;
+    // Fallback to fwrite on failure. It can happen if the output has been
+    // redirected to NUL.
   }
 #endif
   detail::fwrite_fully(buffer.data(), 1, buffer.size(), f);
