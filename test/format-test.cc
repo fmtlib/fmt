@@ -2367,13 +2367,13 @@ struct test_error_handler {
   }
 };
 
-FMT_CONSTEXPR inline size_t len(const char* s) {
+FMT_CONSTEXPR size_t len(const char* s) {
   size_t len = 0;
   while (*s++) ++len;
   return len;
 }
 
-FMT_CONSTEXPR inline bool equal(const char* s1, const char* s2) {
+FMT_CONSTEXPR bool equal(const char* s1, const char* s2) {
   if (!s1 || !s2) return s1 == s2;
   while (*s1 && *s1 == *s2) {
     ++s1;
