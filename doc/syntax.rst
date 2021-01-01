@@ -444,7 +444,7 @@ Using type-specific formatting::
 
    auto t = tm();
    t.tm_year = 2010 - 1900;
-   t.tm_mon = 6;
+   t.tm_mon = 7;
    t.tm_mday = 4;
    t.tm_hour = 12;
    t.tm_min = 15;
