@@ -3720,7 +3720,7 @@ struct formatter<arg_join<It, Sentinel, Char>, Char> {
  private:
   using value_type = typename std::iterator_traits<It>::value_type;
   using formatter_type =
-      conditional_t<has_formatter<value_type, format_context>::value,
+      conditional_t<has_formatter<value_type, buffer_context<Char>>::value,
                     formatter<value_type, Char>,
                     detail::fallback_formatter<value_type, Char>>;
 
