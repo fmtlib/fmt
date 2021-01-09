@@ -373,7 +373,7 @@ struct ostream_params {
 
 static constexpr detail::buffer_size buffer_size;
 
-// A fast output stream which is not thread-safe.
+/** A fast output stream which is not thread-safe. */
 class ostream final : private detail::buffer<char> {
  private:
   file file_;
@@ -410,6 +410,10 @@ class ostream final : private detail::buffer<char> {
     file_.close();
   }
 
+  /**
+    Formats ``args`` according to specifications in ``format_str`` and writes
+    the output to the file.
+   */
   template <typename S, typename... Args>
   void print(const S& format_str, Args&&... args) {
     format_to(detail::buffer_appender<char>(*this), format_str,
@@ -418,9 +422,19 @@ class ostream final : private detail::buffer<char> {
 };
 
 /**
-  Opens a file for writing. Supported parameters passed in `params`:
-  * ``<integer>``: Output flags (``file::WRONLY | file::CREATE`` by default)
+  \rst
+  Opens a file for writing. Supported parameters passed in *params*:
+
+  * ``<integer>``: Flags passed to `open
+    <https://pubs.opengroup.org/onlinepubs/007904875/functions/open.html>`_
+    (``file::WRONLY | file::CREATE`` by default)
   * ``buffer_size=<integer>``: Output buffer size
+
+  **Example**::
+
+    auto out = fmt::output_file("guide.txt");
+    out.print("Don't {}", "Panic");
+  \endrst
  */
 template <typename... T>
 inline ostream output_file(cstring_view path, T... params) {

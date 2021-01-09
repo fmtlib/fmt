@@ -16,6 +16,7 @@ The {fmt} library API consists of the following parts:
 * :ref:`fmt/chrono.h <chrono-api>`: date and time formatting
 * :ref:`fmt/compile.h <compile-api>`: format string compilation
 * :ref:`fmt/color.h <color-api>`: terminal color and text style
+* :ref:`fmt/os.h <os-api>`: system APIs
 * :ref:`fmt/ostream.h <ostream-api>`: ``std::ostream`` support
 * :ref:`fmt/printf.h <printf-api>`: ``printf`` formatting
 
@@ -57,7 +58,7 @@ participate in an overload resolution if the latter is not a string.
 
 .. _print:
 
-.. doxygenfunction:: print(const S &format_str, Args&&... args)
+.. doxygenfunction:: fmt::print(const S &format_str, Args&&... args)
 .. doxygenfunction:: vprint(string_view, format_args)
 
 .. doxygenfunction:: print(std::FILE *f, const S &format_str, Args&&... args)
@@ -470,6 +471,14 @@ Terminal color and text style
 .. doxygenfunction:: fg(detail::color_type)
 
 .. doxygenfunction:: bg(detail::color_type)
+
+.. _os-api:
+
+System APIs
+===========
+
+.. doxygenclass:: fmt::ostream
+   :members:
 
 .. _ostream-api:
 
