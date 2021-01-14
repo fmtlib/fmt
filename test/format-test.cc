@@ -869,6 +869,7 @@ TEST(FormatterTest, Width) {
   EXPECT_EQ("x          ", format("{0:11}", 'x'));
   EXPECT_EQ("str         ", format("{0:12}", "str"));
   EXPECT_EQ(fmt::format("{:*^5}", "🤡"), "**🤡**");
+  EXPECT_EQ(fmt::format("{:#6}", 42.0), "  42.0");
 }
 
 template <typename T> inline T const_check(T value) { return value; }

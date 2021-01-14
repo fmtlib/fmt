@@ -1925,7 +1925,7 @@ OutputIt write_float(OutputIt out, const DecimalFP& fp,
 #endif
     if (fspecs.showpoint) {
       if (num_zeros <= 0 && fspecs.format != float_format::fixed) num_zeros = 1;
-      if (num_zeros > 0) size += to_unsigned(num_zeros);
+      if (num_zeros > 0) size += to_unsigned(num_zeros) + 1;
     }
     return write_padded<align::right>(out, specs, size, [&](iterator it) {
       if (sign) *it++ = static_cast<Char>(data::signs[sign]);
