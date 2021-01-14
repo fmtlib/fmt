@@ -1592,6 +1592,16 @@ OutputIt write_bytes(OutputIt out, string_view bytes,
   });
 }
 
+template <typename Char, typename OutputIt>
+constexpr OutputIt write_char(OutputIt out, Char value,
+                              const basic_format_specs<Char>& specs) {
+  using iterator = remove_reference_t<decltype(reserve(out, 0))>;
+  return write_padded(out, specs, 1, [=](iterator it) {
+    *it++ = value;
+    return it;
+  });
+}
+
 // Data for write_int that doesn't depend on output iterator type. It is used to
 // avoid template code bloat.
 template <typename Char> struct write_int_data {
@@ -1777,7 +1787,7 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
         [=](iterator it) { return copy_str<Char>(data, data + size, it); });
   }
 
-  void on_chr() { *out++ = static_cast<Char>(abs_value); }
+  void on_chr() { out = write_char(out, static_cast<Char>(abs_value), specs); }
 
   FMT_NORETURN void on_error() {
     FMT_THROW(format_error("invalid type specifier"));
@@ -2041,16 +2051,6 @@ template <typename Char, typename OutputIt, typename T,
                         !is_fast_float<T>::value)>
 inline OutputIt write(OutputIt out, T value) {
   return write(out, value, basic_format_specs<Char>());
-}
-
-template <typename Char, typename OutputIt>
-constexpr OutputIt write_char(OutputIt out, Char value,
-                              const basic_format_specs<Char>& specs) {
-  using iterator = remove_reference_t<decltype(reserve(out, 0))>;
-  return write_padded(out, specs, 1, [=](iterator it) {
-    *it++ = value;
-    return it;
-  });
 }
 
 template <typename Char, typename OutputIt, typename UIntPtr>
