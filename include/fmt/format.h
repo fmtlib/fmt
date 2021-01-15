@@ -1807,6 +1807,11 @@ struct big_decimal_fp {
   int exponent;
 };
 
+template <typename Char>
+inline Char get_default_decimal_point() {
+  return static_cast<Char>('.');
+}
+
 inline int get_significand_size(const big_decimal_fp& fp) {
   return fp.significand_size;
 }
@@ -2006,7 +2011,7 @@ OutputIt write(OutputIt out, T value, basic_format_specs<Char> specs,
   int exp = format_float(promote_float(value), precision, fspecs, buffer);
   fspecs.precision = precision;
   Char point =
-      fspecs.locale ? decimal_point<Char>(loc) : static_cast<Char>('.');
+      fspecs.locale ? decimal_point<Char>(loc) : get_default_decimal_point<Char>();
   auto fp = big_decimal_fp{buffer.data(), static_cast<int>(buffer.size()), exp};
   return write_float(out, fp, specs, fspecs, point);
 }
@@ -2033,7 +2038,7 @@ OutputIt write(OutputIt out, T value) {
     return write_nonfinite(out, std::isinf(value), specs, fspecs);
 
   auto dec = dragonbox::to_decimal(static_cast<floaty>(value));
-  return write_float(out, dec, specs, fspecs, static_cast<Char>('.'));
+  return write_float(out, dec, specs, fspecs, get_default_decimal_point<Char>());
 }
 
 template <typename Char, typename OutputIt, typename T,
