@@ -1962,11 +1962,12 @@ OutputIt write_float(OutputIt out, const DecimalFP& fp,
       fspecs.precision < num_zeros) {
     num_zeros = fspecs.precision;
   }
-  size += 2 + to_unsigned(num_zeros);
+  bool pointy = num_zeros != 0 || significand_size != 0 || fspecs.showpoint;
+  size += 1 + (pointy ? 1 : 0) + to_unsigned(num_zeros);
   return write_padded<align::right>(out, specs, size, [&](iterator it) {
     if (sign) *it++ = static_cast<Char>(data::signs[sign]);
     *it++ = zero;
-    if (num_zeros == 0 && significand_size == 0 && !fspecs.showpoint) return it;
+    if (!pointy) return it;
     *it++ = decimal_point;
     it = detail::fill_n(it, num_zeros, zero);
     return write_significand<Char>(it, significand, significand_size);

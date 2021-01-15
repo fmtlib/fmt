@@ -871,6 +871,7 @@ TEST(FormatterTest, Width) {
   EXPECT_EQ(format("{:*^5}", "🤡"), "**🤡**");
   EXPECT_EQ(format("{:#6}", 42.0), "  42.0");
   EXPECT_EQ(format("{:6c}", static_cast<int>('x')), "x     ");
+  EXPECT_EQ(format("{:>06.0f}", 0.00884311), "000000");
 }
 
 template <typename T> inline T const_check(T value) { return value; }
