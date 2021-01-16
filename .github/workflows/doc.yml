@@ -1,0 +1,22 @@
+name: doc
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Create Build Environment
+      run: |
+        sudo apt install doxygen python-virtualenv
+        sudo npm install -g less clean-css
+        cmake -E make_directory ${{runner.workspace}}/build
+
+    - name: Build
+      working-directory: ${{runner.workspace}}/build
+      env:
+        KEY: ${{secrets.KEY}}
+      run: $GITHUB_WORKSPACE/support/build-docs.py
