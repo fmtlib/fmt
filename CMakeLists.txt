@@ -7,10 +7,12 @@ endif()
 
 # Determine if fmt is built as a subproject (using add_subdirectory)
 # or if it is the master project.
-set(MASTER_PROJECT OFF)
-if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-  set(MASTER_PROJECT ON)
-  message(STATUS "CMake version: ${CMAKE_VERSION}")
+if (NOT DEFINED FMT_MASTER_PROJECT)
+  set(FMT_MASTER_PROJECT OFF)
+  if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    set(FMT_MASTER_PROJECT ON)
+    message(STATUS "CMake version: ${CMAKE_VERSION}")
+  endif ()
 endif ()
 
 # Joins arguments and places the results in ${result_var}.
@@ -44,7 +46,7 @@ endfunction()
 # Set the default CMAKE_BUILD_TYPE to Release.
 # This should be done before the project command since the latter can set
 # CMAKE_BUILD_TYPE itself (it does so for nmake).
-if (MASTER_PROJECT AND NOT CMAKE_BUILD_TYPE)
+if (FMT_MASTER_PROJECT AND NOT CMAKE_BUILD_TYPE)
   set_verbose(CMAKE_BUILD_TYPE Release CACHE STRING
               "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or "
               "CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel.")
@@ -61,9 +63,9 @@ option(FMT_WERROR "Halt the compilation with an error on compiler warnings."
        OFF)
 
 # Options that control generation of various targets.
-option(FMT_DOC "Generate the doc target." ${MASTER_PROJECT})
-option(FMT_INSTALL "Generate the install target." ${MASTER_PROJECT})
-option(FMT_TEST "Generate the test target." ${MASTER_PROJECT})
+option(FMT_DOC "Generate the doc target." ${FMT_MASTER_PROJECT})
+option(FMT_INSTALL "Generate the install target." ${FMT_MASTER_PROJECT})
+option(FMT_TEST "Generate the test target." ${FMT_MASTER_PROJECT})
 option(FMT_FUZZ "Generate the fuzz target." OFF)
 option(FMT_CUDA_TEST "Generate the cuda-test target." OFF)
 option(FMT_OS "Include core requiring OS (Windows/Posix) " ON)
@@ -144,7 +146,7 @@ if (MSVC)
   set(WERROR_FLAG /WX)
 endif ()
 
-if (MASTER_PROJECT AND CMAKE_GENERATOR MATCHES "Visual Studio")
+if (FMT_MASTER_PROJECT AND CMAKE_GENERATOR MATCHES "Visual Studio")
   # If Microsoft SDK is installed create script run-msbuild.bat that
   # calls SetEnv.cmd to set up build environment and runs msbuild.
   # It is useful when building Visual Studio projects with the SDK
@@ -341,7 +343,7 @@ if (FMT_FUZZ)
 endif ()
 
 set(gitignore ${PROJECT_SOURCE_DIR}/.gitignore)
-if (MASTER_PROJECT AND EXISTS ${gitignore})
+if (FMT_MASTER_PROJECT AND EXISTS ${gitignore})
   # Get the list of ignored files from .gitignore.
   file (STRINGS ${gitignore} lines)
   list(REMOVE_ITEM lines /doc/html)
