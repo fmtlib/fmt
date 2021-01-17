@@ -45,6 +45,7 @@ template <typename Char> struct small_grouping : std::numpunct<Char> {
 TEST(LocaleTest, DoubleDecimalPoint) {
   std::locale loc(std::locale(), new numpunct<char>());
   EXPECT_EQ("1?23", fmt::format(loc, "{:L}", 1.23));
+  EXPECT_EQ("1?230000", fmt::format(loc, "{:Lf}", 1.23));
 }
 
 TEST(LocaleTest, Format) {

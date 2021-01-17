@@ -1112,7 +1112,7 @@ TEST(FormatterTest, RuntimePrecision) {
 template <typename T>
 void check_unknown_types(const T& value, const char* types, const char*) {
   char format_str[BUFFER_SIZE];
-  const char* special = ".0123456789}";
+  const char* special = ".0123456789L}";
   for (int i = CHAR_MIN; i <= CHAR_MAX; ++i) {
     char c = static_cast<char>(i);
     if (std::strchr(types, c) || std::strchr(special, c) || !c) continue;
@@ -2140,7 +2140,7 @@ TEST(FormatTest, ConstexprParseArgID) {
 }
 
 struct test_format_specs_handler {
-  enum Result { NONE, PLUS, MINUS, SPACE, HASH, ZERO, ERROR };
+  enum Result { NONE, PLUS, MINUS, SPACE, HASH, ZERO, LOC, ERROR };
   Result res = NONE;
 
   fmt::align_t alignment = fmt::align::none;
@@ -2172,6 +2172,7 @@ struct test_format_specs_handler {
   FMT_CONSTEXPR void on_space() { res = SPACE; }
   FMT_CONSTEXPR void on_hash() { res = HASH; }
   FMT_CONSTEXPR void on_zero() { res = ZERO; }
+  FMT_CONSTEXPR void on_localized() { res = LOC; }
 
   FMT_CONSTEXPR void on_width(int w) { width = w; }
   FMT_CONSTEXPR void on_dynamic_width(fmt::detail::auto_id) {}
@@ -2204,6 +2205,7 @@ TEST(FormatTest, ConstexprParseFormatSpecs) {
   static_assert(parse_test_specs(" ").res == handler::SPACE, "");
   static_assert(parse_test_specs("#").res == handler::HASH, "");
   static_assert(parse_test_specs("0").res == handler::ZERO, "");
+  static_assert(parse_test_specs("L").res == handler::LOC, "");
   static_assert(parse_test_specs("42").width == 42, "");
   static_assert(parse_test_specs("{42}").width_ref.val.index == 42, "");
   static_assert(parse_test_specs(".42").precision == 42, "");

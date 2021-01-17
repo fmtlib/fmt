@@ -1252,6 +1252,7 @@ template <typename Char> struct basic_format_specs {
   align_t align : 4;
   sign_t sign : 3;
   bool alt : 1;  // Alternate form ('#').
+  bool localized : 1;
   detail::fill_t<Char> fill;
 
   constexpr basic_format_specs()
@@ -1260,7 +1261,8 @@ template <typename Char> struct basic_format_specs {
         type(0),
         align(align::none),
         sign(sign::none),
-        alt(false) {}
+        alt(false),
+        localized(false) {}
 };
 
 using format_specs = basic_format_specs<char>;
@@ -1427,6 +1429,7 @@ FMT_CONSTEXPR float_specs parse_float_type_spec(
     const basic_format_specs<Char>& specs, ErrorHandler&& eh = {}) {
   auto result = float_specs();
   result.showpoint = specs.alt;
+  result.locale = specs.localized;
   switch (specs.type) {
   case 0:
     result.format = float_format::general;
@@ -1693,6 +1696,7 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
   }
 
   FMT_CONSTEXPR void on_dec() {
+    if (specs.localized) return on_num();
     auto num_digits = count_digits(abs_value);
     out = write_int(
         out, num_digits, get_prefix(), specs, [this, num_digits](iterator it) {
@@ -2527,6 +2531,7 @@ template <typename Char> class specs_setter {
   FMT_CONSTEXPR void on_minus() { specs_.sign = sign::minus; }
   FMT_CONSTEXPR void on_space() { specs_.sign = sign::space; }
   FMT_CONSTEXPR void on_hash() { specs_.alt = true; }
+  FMT_CONSTEXPR void on_localized() { specs_.localized = true; }
 
   FMT_CONSTEXPR void on_zero() {
     specs_.align = align::numeric;
@@ -2614,6 +2619,11 @@ template <typename Handler> class specs_checker : public Handler {
   FMT_CONSTEXPR void on_hash() {
     checker_.require_numeric_argument();
     Handler::on_hash();
+  }
+
+  FMT_CONSTEXPR void on_localized() {
+    checker_.require_numeric_argument();
+    Handler::on_localized();
   }
 
   FMT_CONSTEXPR void on_zero() {
@@ -2996,6 +3006,12 @@ FMT_CONSTEXPR const Char* parse_format_specs(const Char* begin, const Char* end,
   // Parse precision.
   if (*begin == '.') {
     begin = parse_precision(begin, end, handler);
+    if (begin == end) return begin;
+  }
+
+  if (*begin == 'L') {
+    handler.on_localized();
+    ++begin;
   }
 
   // Parse type.
