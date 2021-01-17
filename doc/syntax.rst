@@ -75,14 +75,14 @@ although some of the formatting options are only supported by the numeric types.
 The general form of a *standard format specifier* is:
 
 .. productionlist:: sf
-   format_spec: [[`fill`]`align`][`sign`]["#"]["0"][`width`]["." `precision`][`type`]
+   format_spec: [[`fill`]`align`][`sign`]["#"]["0"][`width`]["." `precision`]["L"][`type`]
    fill: <a character other than '{' or '}'>
    align: "<" | ">" | "^"
    sign: "+" | "-" | " "
    width: `integer` | "{" [`arg_id`] "}"
    precision: `integer` | "{" [`arg_id`] "}"
    type: "a" | "A" | "b" | "B" | "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" |
-       : "L" | "o" | "p" | "s" | "x" | "X"
+       : "o" | "p" | "s" | "x" | "X"
 
 The *fill* character can be any Unicode code point other than ``'{'`` or
 ``'}'``. The presence of a fill character is signaled by the character following
@@ -163,6 +163,9 @@ indicates the maximum field size - in other words, how many characters will be
 used from the field content. The *precision* is not allowed for integer,
 character, Boolean, and pointer values.
 
+The ``'L'`` option uses the current locale setting to insert the appropriate
+number separator characters. This option is only valid for numeric types.
+
 Finally, the *type* determines how the data should be presented.
 
 The available string presentation types are:
@@ -214,10 +217,6 @@ The available integer presentation types are:
 |         | ``'#'`` option with this type adds the prefix ``"0X"``   |
 |         | to the output value.                                     |
 +---------+----------------------------------------------------------+
-| ``'L'`` | Locale-specific format. This is the same as ``'d'``,     |
-|         | except that it uses the current locale setting to insert |
-|         | the appropriate number separator characters.             |
-+---------+----------------------------------------------------------+
 | none    | The same as ``'d'``.                                     |
 +---------+----------------------------------------------------------+
 
@@ -260,10 +259,6 @@ The available presentation types for floating-point values are:
 | ``'G'`` | General format. Same as ``'g'`` except switches to       |
 |         | ``'E'`` if the number gets too large. The                |
 |         | representations of infinity and NaN are uppercased, too. |
-+---------+----------------------------------------------------------+
-| ``'L'`` | Locale-specific format. This is the same as ``'g'``,     |
-|         | except that it uses the current locale setting to insert |
-|         | the appropriate number separator characters.             |
 +---------+----------------------------------------------------------+
 | none    | Similar to ``'g'``, except that fixed-point notation,    |
 |         | when used, has at least one digit past the decimal       |
