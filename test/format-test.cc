@@ -1408,7 +1408,7 @@ TEST(FormatterTest, FormatLongDouble) {
 }
 
 TEST(FormatterTest, FormatChar) {
-  const char types[] = "cbBdoxXL";
+  const char types[] = "cbBdoxX";
   check_unknown_types('a', types, "char");
   EXPECT_EQ("a", format("{0}", 'a'));
   EXPECT_EQ("z", format("{0:c}", 'z'));
@@ -1416,7 +1416,8 @@ TEST(FormatterTest, FormatChar) {
   int n = 'x';
   for (const char* type = types + 1; *type; ++type) {
     std::string format_str = fmt::format("{{:{}}}", *type);
-    EXPECT_EQ(fmt::format(format_str, n), fmt::format(format_str, 'x'));
+    EXPECT_EQ(fmt::format(format_str, n), fmt::format(format_str, 'x'))
+        << format_str;
   }
   EXPECT_EQ(fmt::format("{:02X}", n), fmt::format("{:02X}", 'x'));
 }

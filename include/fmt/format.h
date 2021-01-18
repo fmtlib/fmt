@@ -1413,7 +1413,6 @@ FMT_CONSTEXPR void handle_int_type_spec(char spec, Handler&& handler) {
 #ifdef FMT_DEPRECATED_N_SPECIFIER
   case 'n':
 #endif
-  case 'L':
     handler.on_num();
     break;
   case 'c':
@@ -1463,7 +1462,6 @@ FMT_CONSTEXPR float_specs parse_float_type_spec(
 #ifdef FMT_DEPRECATED_N_SPECIFIER
   case 'n':
 #endif
-  case 'L':
     result.locale = true;
     break;
   default:
@@ -1676,6 +1674,14 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
     return string_view(prefix, prefix_size);
   }
 
+  void write_dec() {
+    auto num_digits = count_digits(abs_value);
+    out = write_int(
+        out, num_digits, get_prefix(), specs, [this, num_digits](iterator it) {
+          return format_decimal<Char>(it, abs_value, num_digits).end;
+        });
+  }
+
   template <typename Int>
   FMT_CONSTEXPR int_writer(OutputIt output, locale_ref loc, Int value,
                            const basic_format_specs<Char>& s)
@@ -1697,11 +1703,7 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
 
   FMT_CONSTEXPR void on_dec() {
     if (specs.localized) return on_num();
-    auto num_digits = count_digits(abs_value);
-    out = write_int(
-        out, num_digits, get_prefix(), specs, [this, num_digits](iterator it) {
-          return format_decimal<Char>(it, abs_value, num_digits).end;
-        });
+    write_dec();
   }
 
   FMT_CONSTEXPR void on_hex() {
@@ -1746,9 +1748,9 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
 
   void on_num() {
     std::string groups = grouping<Char>(locale);
-    if (groups.empty()) return on_dec();
+    if (groups.empty()) return write_dec();
     auto sep = thousands_sep<Char>(locale);
-    if (!sep) return on_dec();
+    if (!sep) return write_dec();
     int num_digits = count_digits(abs_value);
     int size = num_digits, n = num_digits;
     std::string::const_iterator group = groups.cbegin();
@@ -3179,7 +3181,8 @@ struct format_handler : detail::error_handler {
       return parse_context.begin();
     }
     auto specs = basic_format_specs<Char>();
-    if (begin + 1 < end && begin[1] == '}' && is_ascii_letter(*begin)) {
+    if (begin + 1 < end && begin[1] == '}' && is_ascii_letter(*begin) &&
+        *begin != 'L') {
       specs.type = static_cast<char>(*begin++);
     } else {
       using parse_context_t = basic_format_parse_context<Char>;
