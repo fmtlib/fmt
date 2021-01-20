@@ -1412,9 +1412,9 @@ FMT_CONSTEXPR void handle_int_type_spec(char spec, Handler&& handler) {
     break;
 #ifdef FMT_DEPRECATED_N_SPECIFIER
   case 'n':
-#endif
     handler.on_num();
     break;
+#endif
   case 'c':
     handler.on_chr();
     break;
@@ -1461,9 +1461,9 @@ FMT_CONSTEXPR float_specs parse_float_type_spec(
     break;
 #ifdef FMT_DEPRECATED_N_SPECIFIER
   case 'n':
-#endif
     result.locale = true;
     break;
+#endif
   default:
     eh.on_error("invalid type specifier");
     break;
