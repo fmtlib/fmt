@@ -1423,6 +1423,14 @@ FMT_CONSTEXPR void handle_int_type_spec(char spec, Handler&& handler) {
   }
 }
 
+template <typename Char, typename Handler>
+FMT_CONSTEXPR void handle_bool_type_spec(const basic_format_specs<Char>* specs,
+                                         Handler&& handler) {
+  if (!specs) return handler.on_str();
+  if (specs->type && specs->type != 's') return handler.on_int();
+  handler.on_str();
+}
+
 template <typename ErrorHandler = error_handler, typename Char>
 FMT_CONSTEXPR float_specs parse_float_type_spec(
     const basic_format_specs<Char>& specs, ErrorHandler&& eh = {}) {
@@ -1540,6 +1548,21 @@ class cstring_type_checker : public ErrorHandler {
 
   FMT_CONSTEXPR void on_string() {}
   FMT_CONSTEXPR void on_pointer() {}
+};
+
+template <typename ErrorHandler>
+class bool_type_checker : private ErrorHandler {
+ private:
+  char type_;
+
+ public:
+  FMT_CONSTEXPR explicit bool_type_checker(char type, ErrorHandler eh)
+      : ErrorHandler(eh), type_(type) {}
+
+  FMT_CONSTEXPR void on_int() {
+    handle_int_type_spec(type_, int_type_checker<ErrorHandler>(*this));
+  }
+  FMT_CONSTEXPR void on_str() {}
 };
 
 template <typename OutputIt, typename Char>
@@ -2344,7 +2367,8 @@ class arg_formatter_base {
   }
 
   FMT_CONSTEXPR iterator operator()(bool value) {
-    if (specs_ && specs_->type) return (*this)(value ? 1 : 0);
+    if (specs_ && specs_->type && specs_->type != 's')
+      return (*this)(value ? 1 : 0);
     write(value != 0);
     return out_;
   }
@@ -3515,9 +3539,12 @@ struct formatter<T, Char,
     case detail::type::ulong_long_type:
     case detail::type::int128_type:
     case detail::type::uint128_type:
-    case detail::type::bool_type:
       handle_int_type_spec(specs_.type,
                            detail::int_type_checker<decltype(eh)>(eh));
+      break;
+    case detail::type::bool_type:
+      handle_bool_type_spec(
+          &specs_, detail::bool_type_checker<decltype(eh)>(specs_.type, eh));
       break;
     case detail::type::char_type:
       handle_char_specs(
