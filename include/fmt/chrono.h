@@ -1090,7 +1090,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
 
     template <typename Id> FMT_CONSTEXPR arg_ref_type make_arg_ref(Id arg_id) {
       context.check_arg_id(arg_id);
-      return arg_ref_type(arg_id);
+      return arg_ref_type(arg_id, true);
     }
 
     FMT_CONSTEXPR arg_ref_type make_arg_ref(basic_string_view<Char> arg_id) {
@@ -1099,7 +1099,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     }
 
     FMT_CONSTEXPR arg_ref_type make_arg_ref(detail::auto_id) {
-      return arg_ref_type(context.next_arg_id());
+      return arg_ref_type(context.next_arg_id(), false);
     }
 
     void on_error(const char* msg) { FMT_THROW(format_error(msg)); }

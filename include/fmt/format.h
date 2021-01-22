@@ -2699,22 +2699,16 @@ class specs_handler : public specs_setter<typename Context::char_type> {
   Context& context_;
 };
 
-enum class arg_id_kind { none, index, name };
+enum class arg_id_kind { none, index_auto, index_manual, name };
 
 // An argument reference.
 template <typename Char> struct arg_ref {
   FMT_CONSTEXPR arg_ref() : kind(arg_id_kind::none), val() {}
 
-  FMT_CONSTEXPR explicit arg_ref(int index)
-      : kind(arg_id_kind::index), val(index) {}
+  FMT_CONSTEXPR explicit arg_ref(int index, bool is_manual)
+      : kind(is_manual ? arg_id_kind::index_manual : arg_id_kind::index_auto), val(index) {}
   FMT_CONSTEXPR explicit arg_ref(basic_string_view<Char> name)
       : kind(arg_id_kind::name), val(name) {}
-
-  FMT_CONSTEXPR arg_ref& operator=(int idx) {
-    kind = arg_id_kind::index;
-    val.index = idx;
-    return *this;
-  }
 
   arg_id_kind kind;
   union value {
@@ -2769,11 +2763,11 @@ class dynamic_specs_handler
 
   FMT_CONSTEXPR arg_ref_type make_arg_ref(int arg_id) {
     context_.check_arg_id(arg_id);
-    return arg_ref_type(arg_id);
+    return arg_ref_type(arg_id, true);
   }
 
   FMT_CONSTEXPR arg_ref_type make_arg_ref(auto_id) {
-    return arg_ref_type(context_.next_arg_id());
+    return arg_ref_type(context_.next_arg_id(), false);
   }
 
   FMT_CONSTEXPR arg_ref_type make_arg_ref(basic_string_view<char_type> arg_id) {
@@ -3332,7 +3326,8 @@ FMT_CONSTEXPR void handle_dynamic_spec(int& value,
   switch (ref.kind) {
   case arg_id_kind::none:
     break;
-  case arg_id_kind::index:
+  case arg_id_kind::index_auto:
+  case arg_id_kind::index_manual:
     value = detail::get_dynamic_spec<Handler>(ctx.arg(ref.val.index),
                                               ctx.error_handler());
     break;

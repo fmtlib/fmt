@@ -148,6 +148,40 @@ TEST(CompileTest, DynamicWidth) {
             fmt::format(FMT_COMPILE("{:{}}{:{}}"), 42, 4, "foo", 5));
 }
 
+TEST(CompileTest, ManualOrdering) {
+  EXPECT_EQ("42", fmt::format(FMT_COMPILE("{0}"), 42));
+  EXPECT_EQ(" -42", fmt::format(FMT_COMPILE("{0:4}"), -42));
+  EXPECT_EQ("41 43", fmt::format(FMT_COMPILE("{0} {1}"), 41, 43));
+  EXPECT_EQ("41 43", fmt::format(FMT_COMPILE("{1} {0}"), 43, 41));
+  EXPECT_EQ("41 43", fmt::format(FMT_COMPILE("{0} {2}"), 41, 42, 43));
+  EXPECT_EQ("  41   43", fmt::format(FMT_COMPILE("{1:{2}} {0:4}"), 43, 41, 4));
+  EXPECT_EQ(
+      "true 42 42 foo 0x1234 foo",
+      fmt::format(FMT_COMPILE("{0} {1} {2} {3} {4} {5}"), true, 42, 42.0f,
+                  "foo", reinterpret_cast<void*>(0x1234), test_formattable()));
+  EXPECT_EQ(L"42", fmt::format(FMT_COMPILE(L"{0}"), 42));
+}
+
+TEST(CompileTest, Named) {
+  EXPECT_EQ("41 43", fmt::format(FMT_COMPILE("{name1} {name2}"),
+                                 fmt::arg("name1", 41), fmt::arg("name2", 43)));
+  EXPECT_EQ("41 43",
+            fmt::format(FMT_COMPILE("{name1} {name2}"), fmt::arg("name1", 41),
+                        fmt::arg("name2", 43), fmt::arg("name3", 42)));
+  EXPECT_EQ("41 43", fmt::format(FMT_COMPILE("{name2} {name1}"),
+                                 fmt::arg("name1", 43), fmt::arg("name2", 41)));
+
+  EXPECT_EQ("  42",
+            fmt::format(FMT_COMPILE("{name1:4}"), fmt::arg("name1", 42)));
+  EXPECT_EQ("  41   43",
+            fmt::format(FMT_COMPILE("{name1:{name2}} {name3:4}"),
+                        fmt::arg("name2", 4), fmt::arg("name3", 43),
+                        fmt::arg("name1", 41)));
+
+  EXPECT_THROW(fmt::format(FMT_COMPILE("{invalid}"), fmt::arg("valid", 42)),
+               fmt::format_error);
+}
+
 TEST(CompileTest, FormatTo) {
   char buf[8];
   auto end = fmt::format_to(buf, FMT_COMPILE("{}"), 42);
@@ -174,9 +208,7 @@ TEST(CompileTest, TextAndArg) {
   EXPECT_EQ("42!", fmt::format(FMT_COMPILE("{}!"), 42));
 }
 
-TEST(CompileTest, Empty) {
-  EXPECT_EQ("", fmt::format(FMT_COMPILE("")));
-}
+TEST(CompileTest, Empty) { EXPECT_EQ("", fmt::format(FMT_COMPILE(""))); }
 #endif
 
 #if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS

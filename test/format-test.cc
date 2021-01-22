@@ -2177,12 +2177,16 @@ struct test_format_specs_handler {
 
   FMT_CONSTEXPR void on_width(int w) { width = w; }
   FMT_CONSTEXPR void on_dynamic_width(fmt::detail::auto_id) {}
-  FMT_CONSTEXPR void on_dynamic_width(int index) { width_ref = index; }
+  FMT_CONSTEXPR void on_dynamic_width(int index) {
+    width_ref = fmt::detail::arg_ref<char>(index, true);
+  }
   FMT_CONSTEXPR void on_dynamic_width(string_view) {}
 
   FMT_CONSTEXPR void on_precision(int p) { precision = p; }
   FMT_CONSTEXPR void on_dynamic_precision(fmt::detail::auto_id) {}
-  FMT_CONSTEXPR void on_dynamic_precision(int index) { precision_ref = index; }
+  FMT_CONSTEXPR void on_dynamic_precision(int index) {
+    precision_ref = fmt::detail::arg_ref<char>(index, true);
+  }
   FMT_CONSTEXPR void on_dynamic_precision(string_view) {}
 
   FMT_CONSTEXPR void end_precision() {}
