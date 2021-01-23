@@ -1129,6 +1129,9 @@ TEST(BoolTest, FormatBool) {
   EXPECT_EQ("1", format("{:d}", true));
   EXPECT_EQ("true ", format("{:5}", true));
   EXPECT_EQ(L"true", format(L"{}", true));
+  EXPECT_EQ("true", format("{:s}", true));
+  EXPECT_EQ("false", format("{:s}", false));
+  EXPECT_EQ("false ", format("{:6s}", false));
 }
 
 TEST(FormatterTest, FormatShort) {
@@ -2435,7 +2438,6 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{:.{}}", "argument not found", double);
   EXPECT_ERROR("{:.2}", "precision not allowed for this argument type", int);
   EXPECT_ERROR("{:s}", "invalid type specifier", int);
-  EXPECT_ERROR("{:s}", "invalid type specifier", bool);
   EXPECT_ERROR("{:s}", "invalid type specifier", char);
   EXPECT_ERROR("{:+}", "invalid format specifier for char", char);
   EXPECT_ERROR("{:s}", "invalid type specifier", double);
