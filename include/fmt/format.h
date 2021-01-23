@@ -1697,7 +1697,7 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
     return string_view(prefix, prefix_size);
   }
 
-  void write_dec() {
+  FMT_CONSTEXPR void write_dec() {
     auto num_digits = count_digits(abs_value);
     out = write_int(
         out, num_digits, get_prefix(), specs, [this, num_digits](iterator it) {

@@ -4,28 +4,35 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-18.04
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         cxx: [g++-4.8, g++-8, g++-10, clang++-9]
         build_type: [Debug, Release]
         std: [11]
+        os: [ubuntu-18.04]
         include:
           - cxx: g++-4.8
             install: sudo apt install g++-4.8
+            os: ubuntu-18.04
           - cxx: g++-8
             std: 14
+            os: ubuntu-18.04
           - cxx: g++-10
             std: 17
+            os: ubuntu-18.04
           - cxx: g++-10
             std: 20
             cxxflags: -DFMT_COMPILE_TIME_CHECKS=1
+            os: ubuntu-20.04
           - cxx: clang++-9
             std: 11
+            os: ubuntu-18.04
           - cxx: clang++-9
             build_type: Debug
             fuzz: -DFMT_FUZZ=ON -DFMT_FUZZ_LINKMAIN=ON
             std: 17
+            os: ubuntu-18.04
 
     steps:
     - uses: actions/checkout@v2
