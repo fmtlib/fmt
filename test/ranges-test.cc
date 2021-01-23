@@ -11,17 +11,18 @@
 
 #include "fmt/ranges.h"
 
+#include <array>
+#include <map>
+#include <string>
+#include <vector>
+
 #include "gtest.h"
 
-// Check if  'if constexpr' is supported.
-#if (__cplusplus > 201402L) || \
-    (defined(_MSVC_LANG) && _MSVC_LANG > 201402L && _MSC_VER >= 1910)
+#if FMT_GCC_VERSION == 0 || FMT_GCC_VERSION >= 601
+#  define FMT_ENABLE_C_STYLE_ARRAY_TEST
+#endif
 
-#  include <array>
-#  include <map>
-#  include <string>
-#  include <vector>
-
+#ifdef FMT_ENABLE_C_STYLE_ARRAY_TEST
 TEST(RangesTest, FormatArray) {
   int32_t ia[] = {1, 2, 3, 5, 7, 11};
   auto iaf = fmt::format("{}", ia);
@@ -33,6 +34,7 @@ TEST(RangesTest, Format2dArray) {
   auto iaf = fmt::format("{}", ia);
   EXPECT_EQ("{{1, 2}, {3, 5}, {7, 11}}", iaf);
 }
+#endif
 
 TEST(RangesTest, FormatVector) {
   std::vector<int32_t> iv{1, 2, 3, 5, 7, 11};
@@ -51,10 +53,12 @@ TEST(RangesTest, FormatMap) {
   EXPECT_EQ("{(\"one\", 1), (\"two\", 2)}", fmt::format("{}", simap));
 }
 
+#ifdef FMT_ENABLE_C_STYLE_ARRAY_TEST
 TEST(RangesTest, FormatArrayOfLiterals) {
   const char* aol[] = {"1234", "abcd"};
   EXPECT_EQ("{\"1234\", \"abcd\"}", fmt::format("{}", aol));
 }
+#endif
 
 TEST(RangesTest, FormatPair) {
   std::pair<int64_t, float> pa1{42, 1.5f};
@@ -96,15 +100,17 @@ TEST(RangesTest, JoinInitializerList) {
 struct my_struct {
   int32_t i;
   std::string str;  // can throw
-  template <size_t N> decltype(auto) get() const noexcept {
-    if constexpr (N == 0)
-      return i;
-    else if constexpr (N == 1)
-      return fmt::string_view{str};
+  template <size_t N> fmt::enable_if_t<N == 0, int32_t> get() const noexcept {
+    return i;
+  }
+  template <size_t N>
+  fmt::enable_if_t<N == 1, fmt::string_view> get() const noexcept {
+    return {str};
   }
 };
 
-template <size_t N> decltype(auto) get(const my_struct& s) noexcept {
+template <size_t N>
+auto get(const my_struct& s) noexcept -> decltype(s.get<N>()) {
   return s.get<N>();
 }
 
@@ -125,7 +131,7 @@ TEST(RangesTest, FormatStruct) {
 
 TEST(RangesTest, FormatTo) {
   char buf[10];
-  auto end = fmt::format_to(buf, "{}", std::vector{1, 2, 3});
+  auto end = fmt::format_to(buf, "{}", std::vector<int>{1, 2, 3});
   *end = '\0';
   EXPECT_STREQ(buf, "{1, 2, 3}");
 }
@@ -140,9 +146,6 @@ struct path_like {
 TEST(RangesTest, PathLike) {
   EXPECT_FALSE((fmt::is_range<path_like, char>::value));
 }
-
-#endif  // (__cplusplus > 201402L) || (defined(_MSVC_LANG) && _MSVC_LANG >
-        // 201402L && _MSC_VER >= 1910)
 
 #ifdef FMT_USE_STRING_VIEW
 struct string_like {

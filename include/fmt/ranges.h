@@ -368,7 +368,7 @@ template <typename Char, typename... T> struct tuple_arg_join : detail::view {
   basic_string_view<Char> sep;
 
   tuple_arg_join(const std::tuple<T...>& t, basic_string_view<Char> s)
-      : tuple{t}, sep{s} {}
+      : tuple(t), sep{s} {}
 };
 
 template <typename Char, typename... T>
