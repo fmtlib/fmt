@@ -2021,6 +2021,17 @@ TEST(FormatTest, FormatTo) {
   EXPECT_EQ(string_view(v.data(), v.size()), "foo");
 }
 
+struct nongrowing_container {
+  using value_type = char;
+  void push_back(char) { throw std::runtime_error("can't take it any more"); }
+};
+
+TEST(FormatTest, FormatToPropagatesExceptions) {
+  auto c = nongrowing_container();
+  EXPECT_THROW(fmt::format_to(std::back_inserter(c), "{}", 42),
+               std::runtime_error);
+}
+
 TEST(FormatTest, FormatToN) {
   char buffer[4];
   buffer[3] = 'x';

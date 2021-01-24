@@ -658,8 +658,9 @@ void buffer<T>::append(const U* begin, const U* end) {
 
 template <typename OutputIt, typename T, typename Traits>
 void iterator_buffer<OutputIt, T, Traits>::flush() {
-  out_ = copy_str<T>(data_, data_ + this->limit(this->size()), out_);
+  auto size = this->size();
   this->clear();
+  out_ = copy_str<T>(data_, data_ + this->limit(size), out_);
 }
 }  // namespace detail
 
