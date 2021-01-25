@@ -649,14 +649,11 @@ template <typename CompiledString> constexpr auto get_parts_array() {
   return result;
 }
 
-template <typename CompiledString>
-constexpr static auto compiled_parts = get_parts_array<CompiledString>();
-
 template <typename Args, typename CompiledString, size_t part_index>
 constexpr auto make_compiled_part() {
   using char_type = typename CompiledString::char_type;
 
-  constexpr format_part part = compiled_parts<CompiledString>[part_index];
+  constexpr auto part = get_parts_array<CompiledString>()[part_index];
   if constexpr (part.part_kind == decltype(part)::kind::arg_index_auto ||
                 part.part_kind == decltype(part)::kind::arg_index_manual) {
     using id_type = get_type<part.val.arg_index, Args>;
@@ -695,7 +692,7 @@ constexpr auto make_compiled_part() {
 // Prepares a compiled representation for non-empty format string
 template <typename Args, typename CompiledString, size_t part_index>
 constexpr auto make_compiled_parts() {
-  if constexpr (part_index == compiled_parts<CompiledString>.size() - 1) {
+  if constexpr (part_index == get_parts_array<CompiledString>().size() - 1) {
     return make_compiled_part<Args, CompiledString, part_index>();
   } else {
     return make_concat(
