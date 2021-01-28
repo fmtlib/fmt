@@ -554,7 +554,7 @@ constexpr auto compile_format_string(S format_str) {
   using char_type = typename S::char_type;
   constexpr basic_string_view<char_type> str = format_str;
   if constexpr (str[POS] == '{') {
-    if (POS + 1 == str.size())
+    if constexpr (POS + 1 == str.size())
       throw format_error("unmatched '{' in format string");
     if constexpr (str[POS + 1] == '{') {
       return parse_tail<Args, POS + 2, ID>(make_text(str, POS, 1), format_str);
@@ -571,7 +571,7 @@ constexpr auto compile_format_string(S format_str) {
       return unknown_format();
     }
   } else if constexpr (str[POS] == '}') {
-    if (POS + 1 == str.size())
+    if constexpr (POS + 1 == str.size())
       throw format_error("unmatched '}' in format string");
     return parse_tail<Args, POS + 2, ID>(make_text(str, POS, 1), format_str);
   } else {
