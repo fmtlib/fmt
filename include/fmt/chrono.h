@@ -423,7 +423,8 @@ template <typename Char> struct formatter<std::tm, Char> {
   }
 
   template <typename FormatContext>
-  auto format(const std::tm& tm, FormatContext& ctx) -> decltype(ctx.out()) {
+  auto format(const std::tm& tm, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
     basic_memory_buffer<Char> tm_format;
     tm_format.append(specs.begin(), specs.end());
     tm_format.push_back('\0');
