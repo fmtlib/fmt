@@ -381,7 +381,7 @@ template <typename T> inline T* make_checked(T* p, size_t) { return p; }
 #endif
 
 template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
-#if FMT_CLANG_VERSION
+#if FMT_CLANG_VERSION >= 307
 __attribute__((no_sanitize("undefined")))
 #endif
 inline checked_ptr<typename Container::value_type>
@@ -941,8 +941,8 @@ template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
   static const char reset_color[5];
   static const wchar_t wreset_color[5];
   static const char signs[];
-  static constexpr const char left_padding_shifts[] = {31, 31, 0, 1, 0};
-  static constexpr const char right_padding_shifts[] = {0, 31, 0, 1, 0};
+  static constexpr const char left_padding_shifts[5] = {31, 31, 0, 1, 0};
+  static constexpr const char right_padding_shifts[5] = {0, 31, 0, 1, 0};
 
   // DEPRECATED! These are for ABI compatibility.
   static const uint32_t zero_or_powers_of_10_32[];
