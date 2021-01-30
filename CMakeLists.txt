@@ -297,6 +297,13 @@ if (FMT_INSTALL)
     INSTALL_DESTINATION ${FMT_CMAKE_DIR})
 
   set(INSTALL_TARGETS fmt fmt-header-only)
+
+  # Install the library and headers.
+  install(TARGETS ${INSTALL_TARGETS} EXPORT ${targets_export_name}
+          LIBRARY DESTINATION ${FMT_LIB_DIR}
+          ARCHIVE DESTINATION ${FMT_LIB_DIR}
+          RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
   # Use a namespace because CMake provides better diagnostics for namespaced
   # imported targets.
   export(TARGETS ${INSTALL_TARGETS} NAMESPACE fmt::
@@ -308,12 +315,6 @@ if (FMT_INSTALL)
     DESTINATION ${FMT_CMAKE_DIR})
   install(EXPORT ${targets_export_name} DESTINATION ${FMT_CMAKE_DIR}
           NAMESPACE fmt::)
-
-  # Install the library and headers.
-  install(TARGETS ${INSTALL_TARGETS} EXPORT ${targets_export_name}
-          LIBRARY DESTINATION ${FMT_LIB_DIR}
-          ARCHIVE DESTINATION ${FMT_LIB_DIR}
-          RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
   install(FILES $<TARGET_PDB_FILE:${INSTALL_TARGETS}>
           DESTINATION ${FMT_LIB_DIR} OPTIONAL)
