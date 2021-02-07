@@ -463,6 +463,40 @@ template <typename Char, typename T, int N> struct field {
 template <typename Char, typename T, int N>
 struct is_compiled_format<field<Char, T, N>> : std::true_type {};
 
+// A replacement field that refers to argument with name.
+template <typename Char> struct runtime_named_field {
+  using char_type = Char;
+  basic_string_view<Char> name;
+
+  template <typename OutputIt, typename T>
+  constexpr static bool try_format_argument(OutputIt& end, OutputIt out,
+                                            basic_string_view<Char> arg_name,
+                                            const T& arg) {
+    if constexpr (!is_named_arg<typename std::remove_cv<T>::type>::value) {
+      return false;
+    } else {
+      if (arg_name == arg.name) {
+        end = write<Char>(out, arg.value);
+        return true;
+      }
+      return false;
+    }
+  }
+
+  template <typename OutputIt, typename... Args>
+  constexpr OutputIt format(OutputIt out, const Args&... args) const {
+    auto end = out;
+    bool found = (try_format_argument(end, out, name, args) || ...);
+    if (!found) {
+      throw format_error("argument with specified name is not found");
+    }
+    return end;
+  }
+};
+
+template <typename Char>
+struct is_compiled_format<runtime_named_field<Char>> : std::true_type {};
+
 // A replacement field that refers to argument N and has format specifiers.
 template <typename Char, typename T, int N> struct spec_field {
   using char_type = Char;
@@ -536,15 +570,51 @@ template <typename T, typename Char> struct parse_specs_result {
   int next_arg_id;
 };
 
+constexpr int manual_indexing_id() { return -1; }
+
 template <typename T, typename Char>
 constexpr parse_specs_result<T, Char> parse_specs(basic_string_view<Char> str,
-                                                  size_t pos, int arg_id) {
+                                                  size_t pos, int next_arg_id) {
   str.remove_prefix(pos);
-  auto ctx = basic_format_parse_context<Char>(str, {}, arg_id + 1);
+  auto ctx = basic_format_parse_context<Char>(str, {}, next_arg_id);
   auto f = formatter<T, Char>();
   auto end = f.parse(ctx);
   return {f, pos + fmt::detail::to_unsigned(end - str.data()) + 1,
-          ctx.next_arg_id()};
+          next_arg_id == 0 ? manual_indexing_id() : ctx.next_arg_id()};
+}
+
+template <typename Char> struct arg_id_handler {
+  constexpr void on_error(const char* message) { throw format_error(message); }
+
+  constexpr int on_arg_id() {
+    throw format_error("handler cannot be used for empty arg_id");
+    return 0;
+  }
+
+  constexpr int on_arg_id(int id) {
+    arg_id = arg_ref<Char>(id);
+    return 0;
+  }
+
+  constexpr int on_arg_id(basic_string_view<Char> id) {
+    arg_id = arg_ref<Char>(id);
+    return 0;
+  }
+
+  arg_ref<Char> arg_id;
+};
+
+template <typename Char> struct parse_arg_id_result {
+  arg_ref<Char> arg_id;
+  const Char* arg_id_end;
+};
+
+template <int ID, typename Char>
+constexpr auto parse_arg_id(const Char* begin, const Char* end) {
+  auto handler = arg_id_handler<Char>{arg_ref<Char>{}};
+  auto adapter = id_adapter<arg_id_handler<Char>, Char>{handler, 0};
+  auto arg_id_end = parse_arg_id(begin, end, adapter);
+  return parse_arg_id_result<Char>{handler.arg_id, arg_id_end};
 }
 
 // Compiles a non-empty format string and returns the compiled representation
@@ -558,17 +628,55 @@ constexpr auto compile_format_string(S format_str) {
       throw format_error("unmatched '{' in format string");
     if constexpr (str[POS + 1] == '{') {
       return parse_tail<Args, POS + 2, ID>(make_text(str, POS, 1), format_str);
-    } else if constexpr (str[POS + 1] == '}') {
+    } else if constexpr (str[POS + 1] == '}' || str[POS + 1] == ':') {
+      static_assert(ID != manual_indexing_id(),
+                    "cannot switch from manual to automatic argument indexing");
       using id_type = get_type<ID, Args>;
-      return parse_tail<Args, POS + 2, ID + 1>(field<char_type, id_type, ID>(),
-                                               format_str);
-    } else if constexpr (str[POS + 1] == ':') {
-      using id_type = get_type<ID, Args>;
-      constexpr auto result = parse_specs<id_type>(str, POS + 2, ID);
-      return parse_tail<Args, result.end, result.next_arg_id>(
-          spec_field<char_type, id_type, ID>{result.fmt}, format_str);
+      if constexpr (str[POS + 1] == '}') {
+        constexpr auto next_id =
+            ID != manual_indexing_id() ? ID + 1 : manual_indexing_id();
+        return parse_tail<Args, POS + 2, next_id>(
+            field<char_type, id_type, ID>(), format_str);
+      } else {
+        constexpr auto result = parse_specs<id_type>(str, POS + 2, ID + 1);
+        return parse_tail<Args, result.end, result.next_arg_id>(
+            spec_field<char_type, id_type, ID>{result.fmt}, format_str);
+      }
     } else {
-      return unknown_format();
+      constexpr auto arg_id_result =
+          parse_arg_id<ID>(str.data() + POS + 1, str.data() + str.size());
+      constexpr auto arg_id_end_pos = arg_id_result.arg_id_end - str.data();
+      constexpr char_type c =
+          arg_id_end_pos != str.size() ? str[arg_id_end_pos] : char_type();
+      static_assert(c == '}' || c == ':', "missing '}' in format string");
+      if constexpr (arg_id_result.arg_id.kind == arg_id_kind::index) {
+        static_assert(
+            ID == manual_indexing_id() || ID == 0,
+            "cannot switch from automatic to manual argument indexing");
+        constexpr auto arg_index = arg_id_result.arg_id.val.index;
+        using id_type = get_type<arg_index, Args>;
+        if constexpr (c == '}') {
+          return parse_tail<Args, arg_id_end_pos + 1, manual_indexing_id()>(
+              field<char_type, id_type, arg_index>(), format_str);
+        } else if constexpr (c == ':') {
+          constexpr auto result =
+              parse_specs<id_type>(str, arg_id_end_pos + 1, 0);
+          return parse_tail<Args, result.end, result.next_arg_id>(
+              spec_field<char_type, id_type, arg_index>{result.fmt},
+              format_str);
+        }
+      } else if constexpr (arg_id_result.arg_id.kind == arg_id_kind::name) {
+        static_assert(
+            ID != manual_indexing_id(),
+            "cannot switch from manual to automatic argument indexing");
+        if constexpr (c == '}') {
+          return parse_tail<Args, arg_id_end_pos + 1, ID + 1>(
+              runtime_named_field<char_type>{arg_id_result.arg_id.val.name},
+              format_str);
+        } else if constexpr (c == ':') {
+          return unknown_format();  // no type info for specs parsing
+        }
+      }
     }
   } else if constexpr (str[POS] == '}') {
     if constexpr (POS + 1 == str.size())
