@@ -413,7 +413,8 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock>, Char>
 };
 
 template <typename Char> struct formatter<std::tm, Char> {
-  FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+  template <typename ParseContext>
+  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
     auto it = ctx.begin();
     if (it != ctx.end() && *it == ':') ++it;
     auto end = it;

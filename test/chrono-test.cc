@@ -95,17 +95,29 @@ TEST(TimeTest, GMTime) {
   EXPECT_TRUE(EqualTime(tm, fmt::gmtime(t)));
 }
 
-TEST(TimeTest, TimePoint) {
-  std::chrono::system_clock::time_point point =
-      std::chrono::system_clock::now();
-
+TEST(TimeTest, FormatTM) {
+  auto point = std::chrono::system_clock::now();
   std::time_t t = std::chrono::system_clock::to_time_t(point);
   std::tm tm = *std::localtime(&t);
   char strftime_output[256];
   std::strftime(strftime_output, sizeof(strftime_output),
-                "It is %Y-%m-%d %H:%M:%S", &tm);
+                "%Y-%m-%d %H:%M:%S", &tm);
+  EXPECT_EQ(strftime_output, fmt::format("{:%Y-%m-%d %H:%M:%S}", tm));
+  auto wstrftime_output = std::wstring();
+  std::copy(strftime_output, strftime_output + strlen(strftime_output),
+            std::back_inserter(wstrftime_output));
+  EXPECT_EQ(wstrftime_output,
+            fmt::format(L"{:%Y-%m-%d %H:%M:%S}", tm));
+}
 
-  EXPECT_EQ(strftime_output, fmt::format("It is {:%Y-%m-%d %H:%M:%S}", point));
+TEST(TimeTest, TimePoint) {
+  auto point = std::chrono::system_clock::now();
+  std::time_t t = std::chrono::system_clock::to_time_t(point);
+  std::tm tm = *std::localtime(&t);
+  char strftime_output[256];
+  std::strftime(strftime_output, sizeof(strftime_output),
+                "%Y-%m-%d %H:%M:%S", &tm);
+  EXPECT_EQ(strftime_output, fmt::format("{:%Y-%m-%d %H:%M:%S}", point));
 }
 
 #define EXPECT_TIME(spec, time, duration)                 \
