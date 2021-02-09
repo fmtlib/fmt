@@ -3739,6 +3739,13 @@ template <typename T> inline const void* ptr(const std::unique_ptr<T>& p) {
 template <typename T> inline const void* ptr(const std::shared_ptr<T>& p) {
   return p.get();
 }
+#if !FMT_MSC_VER
+// MSVC lets function pointers decay to void pointers, so this
+// overload is unnecessary.
+template <typename T, typename... Args> inline const void* ptr(T (*fn)(Args...)) {
+  return detail::bit_cast<const void *>(fn);
+}
+#endif
 
 class bytes {
  private:
