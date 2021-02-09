@@ -1467,6 +1467,9 @@ TEST(FormatterTest, FormatUCharString) {
   EXPECT_EQ("test", format("{0:s}", ptr));
 }
 
+void function_pointer_test(int, double, std::string) {
+}
+
 TEST(FormatterTest, FormatPointer) {
   check_unknown_types(reinterpret_cast<void*>(0x1234), "p", "pointer");
   EXPECT_EQ("0x0", format("{0}", static_cast<void*>(nullptr)));
@@ -1479,6 +1482,8 @@ TEST(FormatterTest, FormatPointer) {
   EXPECT_EQ(format("{}", fmt::ptr(up.get())), format("{}", fmt::ptr(up)));
   std::shared_ptr<int> sp(new int(1));
   EXPECT_EQ(format("{}", fmt::ptr(sp.get())), format("{}", fmt::ptr(sp)));
+  EXPECT_EQ(format("{}", fmt::detail::bit_cast<const void *>(&function_pointer_test)),
+            format("{}", fmt::ptr(function_pointer_test)));
   EXPECT_EQ("0x0", format("{}", nullptr));
 }
 

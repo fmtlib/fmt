@@ -314,6 +314,7 @@ Utilities
 .. doxygenfunction:: fmt::ptr(const T *p)
 .. doxygenfunction:: fmt::ptr(const std::unique_ptr<T> &p)
 .. doxygenfunction:: fmt::ptr(const std::shared_ptr<T> &p)
+.. doxygenfunction:: fmt::ptr(T (*fn)(Args...))
 
 .. doxygenfunction:: fmt::to_string(const T &value)
 
