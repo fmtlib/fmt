@@ -1467,8 +1467,7 @@ TEST(FormatterTest, FormatUCharString) {
   EXPECT_EQ("test", format("{0:s}", ptr));
 }
 
-void function_pointer_test(int, double, std::string) {
-}
+void function_pointer_test(int, double, std::string) {}
 
 TEST(FormatterTest, FormatPointer) {
   check_unknown_types(reinterpret_cast<void*>(0x1234), "p", "pointer");
@@ -1482,8 +1481,9 @@ TEST(FormatterTest, FormatPointer) {
   EXPECT_EQ(format("{}", fmt::ptr(up.get())), format("{}", fmt::ptr(up)));
   std::shared_ptr<int> sp(new int(1));
   EXPECT_EQ(format("{}", fmt::ptr(sp.get())), format("{}", fmt::ptr(sp)));
-  EXPECT_EQ(format("{}", fmt::detail::bit_cast<const void *>(&function_pointer_test)),
-            format("{}", fmt::ptr(function_pointer_test)));
+  EXPECT_EQ(
+      format("{}", fmt::detail::bit_cast<const void*>(&function_pointer_test)),
+      format("{}", fmt::ptr(function_pointer_test)));
   EXPECT_EQ("0x0", format("{}", nullptr));
 }
 
@@ -2565,7 +2565,7 @@ TEST(FormatTest, FormatUTF8Precision) {
   str_type str(reinterpret_cast<const fmt::detail::char8_type*>(
       u8"caf\u00e9s"));  // cafés
   auto result = fmt::format(format, str);
-  EXPECT_EQ(fmt::detail::count_code_points(result), 4);
+  EXPECT_EQ(fmt::detail::compute_width(result), 4);
   EXPECT_EQ(result.size(), 5);
   EXPECT_EQ(from_u8str(result), from_u8str(str.substr(0, 5)));
 }

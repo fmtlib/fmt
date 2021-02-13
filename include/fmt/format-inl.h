@@ -2589,54 +2589,6 @@ int snprintf_float(T value, int precision, float_specs specs,
   }
 }
 
-// A public domain branchless UTF-8 decoder by Christopher Wellons:
-// https://github.com/skeeto/branchless-utf8
-/* Decode the next character, c, from buf, reporting errors in e.
- *
- * Since this is a branchless decoder, four bytes will be read from the
- * buffer regardless of the actual length of the next character. This
- * means the buffer _must_ have at least three bytes of zero padding
- * following the end of the data stream.
- *
- * Errors are reported in e, which will be non-zero if the parsed
- * character was somehow invalid: invalid byte sequence, non-canonical
- * encoding, or a surrogate half.
- *
- * The function returns a pointer to the next character. When an error
- * occurs, this pointer will be a guess that depends on the particular
- * error, but it will always advance at least one byte.
- */
-inline const char* utf8_decode(const char* buf, uint32_t* c, int* e) {
-  static const int masks[] = {0x00, 0x7f, 0x1f, 0x0f, 0x07};
-  static const uint32_t mins[] = {4194304, 0, 128, 2048, 65536};
-  static const int shiftc[] = {0, 18, 12, 6, 0};
-  static const int shifte[] = {0, 6, 4, 2, 0};
-
-  int len = code_point_length(buf);
-  const char* next = buf + len;
-
-  // Assume a four-byte character and load four bytes. Unused bits are
-  // shifted out.
-  auto s = reinterpret_cast<const unsigned char*>(buf);
-  *c = uint32_t(s[0] & masks[len]) << 18;
-  *c |= uint32_t(s[1] & 0x3f) << 12;
-  *c |= uint32_t(s[2] & 0x3f) << 6;
-  *c |= uint32_t(s[3] & 0x3f) << 0;
-  *c >>= shiftc[len];
-
-  // Accumulate the various error conditions.
-  *e = (*c < mins[len]) << 6;       // non-canonical encoding
-  *e |= ((*c >> 11) == 0x1b) << 7;  // surrogate half?
-  *e |= (*c > 0x10FFFF) << 8;       // out of range?
-  *e |= (s[1] & 0xc0) >> 2;
-  *e |= (s[2] & 0xc0) >> 4;
-  *e |= (s[3]) >> 6;
-  *e ^= 0x2a;  // top two bits of each tail byte correct?
-  *e >>= shifte[len];
-
-  return next;
-}
-
 struct stringifier {
   template <typename T> FMT_INLINE std::string operator()(T value) const {
     return to_string(value);
@@ -2678,10 +2630,7 @@ template <> struct formatter<detail::bigint> {
 };
 
 FMT_FUNC detail::utf8_to_utf16::utf8_to_utf16(string_view s) {
-  auto transcode = [this](const char* p) {
-    auto cp = uint32_t();
-    auto error = 0;
-    p = utf8_decode(p, &cp, &error);
+  for_each_codepoint(s, [this](uint32_t cp, int error) {
     if (error != 0) FMT_THROW(std::runtime_error("invalid utf8"));
     if (cp <= 0xFFFF) {
       buffer_.push_back(static_cast<wchar_t>(cp));
@@ -2690,21 +2639,7 @@ FMT_FUNC detail::utf8_to_utf16::utf8_to_utf16(string_view s) {
       buffer_.push_back(static_cast<wchar_t>(0xD800 + (cp >> 10)));
       buffer_.push_back(static_cast<wchar_t>(0xDC00 + (cp & 0x3FF)));
     }
-    return p;
-  };
-  auto p = s.data();
-  const size_t block_size = 4;  // utf8_decode always reads blocks of 4 chars.
-  if (s.size() >= block_size) {
-    for (auto end = p + s.size() - block_size + 1; p < end;) p = transcode(p);
-  }
-  if (auto num_chars_left = s.data() + s.size() - p) {
-    char buf[2 * block_size - 1] = {};
-    memcpy(buf, p, to_unsigned(num_chars_left));
-    p = buf;
-    do {
-      p = transcode(p);
-    } while (p - buf < num_chars_left);
-  }
+  });
   buffer_.push_back(0);
 }
 

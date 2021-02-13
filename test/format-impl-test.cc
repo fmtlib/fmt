@@ -408,9 +408,9 @@ TEST(FormatTest, FormatErrorCode) {
   }
 }
 
-TEST(FormatTest, CountCodePoints) {
+TEST(FormatTest, ComputeWidth) {
   EXPECT_EQ(4,
-            fmt::detail::count_code_points(
+            fmt::detail::compute_width(
                 fmt::basic_string_view<fmt::detail::char8_type>(
                     reinterpret_cast<const fmt::detail::char8_type*>("ёжик"))));
 }
