@@ -1810,7 +1810,7 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
       p -= s.size();
     }
     *p-- = static_cast<Char>(*digits);
-    if (prefix_size != 0) *p = static_cast<Char>('-');
+    if (prefix_size != 0) *p = static_cast<Char>(prefix[0]);
     auto data = buffer.data();
     out = write_padded<align::right>(
         out, specs, usize, usize,

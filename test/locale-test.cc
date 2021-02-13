@@ -73,8 +73,13 @@ TEST(LocaleTest, Format) {
 }
 
 TEST(LocaleTest, FormatDetaultAlign) {
-  std::locale special_grouping_loc(std::locale(), new special_grouping<char>());
-  EXPECT_EQ("  12,345", fmt::format(special_grouping_loc, "{:8L}", 12345));
+  auto loc = std::locale({}, new special_grouping<char>());
+  EXPECT_EQ("  12,345", fmt::format(loc, "{:8L}", 12345));
+}
+
+TEST(LocaleTest, FormatPlus) {
+  auto loc = std::locale({}, new special_grouping<char>());
+  EXPECT_EQ("+100", fmt::format(loc, "{:+L}", 100));
 }
 
 TEST(LocaleTest, WFormat) {
