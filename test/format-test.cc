@@ -868,7 +868,8 @@ TEST(FormatterTest, Width) {
   EXPECT_EQ("    0xcafe", format("{0:10}", reinterpret_cast<void*>(0xcafe)));
   EXPECT_EQ("x          ", format("{0:11}", 'x'));
   EXPECT_EQ("str         ", format("{0:12}", "str"));
-  EXPECT_EQ(format("{:*^5}", "🤡"), "**🤡**");
+  EXPECT_EQ(format("{:*^6}", "🤡"), "**🤡**");
+  EXPECT_EQ(format("{:*^8}", "你好"), "**你好**");
   EXPECT_EQ(format("{:#6}", 42.0), "  42.0");
   EXPECT_EQ(format("{:6c}", static_cast<int>('x')), "x     ");
   EXPECT_EQ(format("{:>06.0f}", 0.00884311), "000000");

@@ -253,7 +253,7 @@ TEST(CompileTimeFormattingTest, String) {
             test_format<17>(FMT_COMPILE("{} is {}"), "The answer", "42"));
 
   EXPECT_EQ("abc**", test_format<6>(FMT_COMPILE("{:*<5}"), "abc"));
-  EXPECT_EQ("**🤡**", test_format<9>(FMT_COMPILE("{:*^5}"), "🤡"));
+  EXPECT_EQ("**🤡**", test_format<9>(FMT_COMPILE("{:*^6}"), "🤡"));
 }
 
 TEST(CompileTimeFormattingTest, Combination) {
