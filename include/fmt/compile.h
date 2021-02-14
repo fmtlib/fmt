@@ -469,28 +469,25 @@ template <typename Char> struct runtime_named_field {
   basic_string_view<Char> name;
 
   template <typename OutputIt, typename T>
-  constexpr static bool try_format_argument(OutputIt& end, OutputIt out,
+  constexpr static bool try_format_argument(OutputIt& out,
                                             basic_string_view<Char> arg_name,
                                             const T& arg) {
-    if constexpr (!is_named_arg<typename std::remove_cv<T>::type>::value) {
-      return false;
-    } else {
+    if constexpr (is_named_arg<typename std::remove_cv<T>::type>::value) {
       if (arg_name == arg.name) {
-        end = write<Char>(out, arg.value);
+        out = write<Char>(out, arg.value);
         return true;
       }
-      return false;
     }
+    return false;
   }
 
   template <typename OutputIt, typename... Args>
   constexpr OutputIt format(OutputIt out, const Args&... args) const {
-    auto end = out;
-    bool found = (try_format_argument(end, out, name, args) || ...);
+    bool found = (try_format_argument(out, name, args) || ...);
     if (!found) {
       throw format_error("argument with specified name is not found");
     }
-    return end;
+    return out;
   }
 };
 
@@ -570,7 +567,7 @@ template <typename T, typename Char> struct parse_specs_result {
   int next_arg_id;
 };
 
-constexpr int manual_indexing_id() { return -1; }
+constexpr int manual_indexing_id = -1;
 
 template <typename T, typename Char>
 constexpr parse_specs_result<T, Char> parse_specs(basic_string_view<Char> str,
@@ -580,7 +577,7 @@ constexpr parse_specs_result<T, Char> parse_specs(basic_string_view<Char> str,
   auto f = formatter<T, Char>();
   auto end = f.parse(ctx);
   return {f, pos + fmt::detail::to_unsigned(end - str.data()) + 1,
-          next_arg_id == 0 ? manual_indexing_id() : ctx.next_arg_id()};
+          next_arg_id == 0 ? manual_indexing_id : ctx.next_arg_id()};
 }
 
 template <typename Char> struct arg_id_handler {
@@ -629,12 +626,12 @@ constexpr auto compile_format_string(S format_str) {
     if constexpr (str[POS + 1] == '{') {
       return parse_tail<Args, POS + 2, ID>(make_text(str, POS, 1), format_str);
     } else if constexpr (str[POS + 1] == '}' || str[POS + 1] == ':') {
-      static_assert(ID != manual_indexing_id(),
+      static_assert(ID != manual_indexing_id,
                     "cannot switch from manual to automatic argument indexing");
       using id_type = get_type<ID, Args>;
       if constexpr (str[POS + 1] == '}') {
         constexpr auto next_id =
-            ID != manual_indexing_id() ? ID + 1 : manual_indexing_id();
+            ID != manual_indexing_id ? ID + 1 : manual_indexing_id;
         return parse_tail<Args, POS + 2, next_id>(
             field<char_type, id_type, ID>(), format_str);
       } else {
@@ -651,12 +648,12 @@ constexpr auto compile_format_string(S format_str) {
       static_assert(c == '}' || c == ':', "missing '}' in format string");
       if constexpr (arg_id_result.arg_id.kind == arg_id_kind::index) {
         static_assert(
-            ID == manual_indexing_id() || ID == 0,
+            ID == manual_indexing_id || ID == 0,
             "cannot switch from automatic to manual argument indexing");
         constexpr auto arg_index = arg_id_result.arg_id.val.index;
         using id_type = get_type<arg_index, Args>;
         if constexpr (c == '}') {
-          return parse_tail<Args, arg_id_end_pos + 1, manual_indexing_id()>(
+          return parse_tail<Args, arg_id_end_pos + 1, manual_indexing_id>(
               field<char_type, id_type, arg_index>(), format_str);
         } else if constexpr (c == ':') {
           constexpr auto result =
@@ -667,7 +664,7 @@ constexpr auto compile_format_string(S format_str) {
         }
       } else if constexpr (arg_id_result.arg_id.kind == arg_id_kind::name) {
         static_assert(
-            ID != manual_indexing_id(),
+            ID != manual_indexing_id,
             "cannot switch from manual to automatic argument indexing");
         if constexpr (c == '}') {
           return parse_tail<Args, arg_id_end_pos + 1, ID + 1>(
