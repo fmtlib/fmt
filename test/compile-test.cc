@@ -255,17 +255,34 @@ TEST(CompileTest, ManualOrdering) {
 }
 
 TEST(CompileTest, Named) {
-  EXPECT_EQ("41 43", fmt::format(FMT_COMPILE("{name1} {name2}"),
-                                 fmt::arg("name1", 41), fmt::arg("name2", 43)));
-  EXPECT_EQ("41 43",
-            fmt::format(FMT_COMPILE("{} {name2}"), 41, fmt::arg("name2", 43)));
-  EXPECT_EQ("41 43",
-            fmt::format(FMT_COMPILE("{name1} {}"), fmt::arg("name1", 41), 43));
-  EXPECT_EQ("41 43",
-            fmt::format(FMT_COMPILE("{name1} {name2}"), fmt::arg("name1", 41),
-                        fmt::arg("name2", 43), fmt::arg("name3", 42)));
-  EXPECT_EQ("41 43", fmt::format(FMT_COMPILE("{name2} {name1}"),
-                                 fmt::arg("name1", 43), fmt::arg("name2", 41)));
+  EXPECT_EQ("42", fmt::format(FMT_COMPILE("{}"), fmt::arg("arg", 42)));
+  EXPECT_EQ("41 43", fmt::format(FMT_COMPILE("{} {}"), fmt::arg("arg", 41),
+                                 fmt::arg("arg", 43)));
+
+  EXPECT_EQ("foobar",
+            fmt::format(FMT_COMPILE("{a0}{a1}"), fmt::arg("a0", "foo"),
+                        fmt::arg("a1", "bar")));
+  EXPECT_EQ("foobar",
+            fmt::format(/*FMT_COMPILE(*/ "{}{a1}" /*)*/, fmt::arg("a0", "foo"),
+                        fmt::arg("a1", "bar")));
+  EXPECT_EQ("foofoo",
+            fmt::format(/*FMT_COMPILE(*/ "{a0}{}" /*)*/, fmt::arg("a0", "foo"),
+                        fmt::arg("a1", "bar")));
+  EXPECT_EQ("foobar",
+            fmt::format(/*FMT_COMPILE(*/ "{a0}{1}" /*)*/, fmt::arg("a0", "foo"),
+                        fmt::arg("a1", "bar")));
+  EXPECT_EQ("foobar",
+            fmt::format(/*FMT_COMPILE(*/ "{0}{a1}" /*)*/, fmt::arg("a0", "foo"),
+                        fmt::arg("a1", "bar")));
+
+  EXPECT_EQ("foobar",
+            fmt::format(FMT_COMPILE("{}{a1}"), "foo", fmt::arg("a1", "bar")));
+  EXPECT_EQ("foobar",
+            fmt::format(FMT_COMPILE("{a0}{a1}"), fmt::arg("a1", "bar"),
+                        fmt::arg("a2", "baz"), fmt::arg("a0", "foo")));
+  EXPECT_EQ(" bar foo ",
+            fmt::format(FMT_COMPILE(" {foo} {bar} "), fmt::arg("foo", "bar"),
+                        fmt::arg("bar", "foo")));
 
   EXPECT_THROW(fmt::format(FMT_COMPILE("{invalid}"), fmt::arg("valid", 42)),
                fmt::format_error);
