@@ -1158,27 +1158,30 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
   }
 
   template <typename FormatContext>
-  auto format(const duration& d, FormatContext& ctx) -> decltype(ctx.out()) {
+  auto format(const duration& d, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    auto specs_copy = specs;
+    auto precision_copy = precision;
     auto begin = format_str.begin(), end = format_str.end();
     // As a possible future optimization, we could avoid extra copying if width
     // is not specified.
     basic_memory_buffer<Char> buf;
     auto out = std::back_inserter(buf);
-    detail::handle_dynamic_spec<detail::width_checker>(specs.width, width_ref,
-                                                       ctx);
-    detail::handle_dynamic_spec<detail::precision_checker>(precision,
+    detail::handle_dynamic_spec<detail::width_checker>(specs_copy.width,
+                                                       width_ref, ctx);
+    detail::handle_dynamic_spec<detail::precision_checker>(precision_copy,
                                                            precision_ref, ctx);
     if (begin == end || *begin == '}') {
-      out = detail::format_duration_value<Char>(out, d.count(), precision);
+      out = detail::format_duration_value<Char>(out, d.count(), precision_copy);
       detail::format_duration_unit<Char, Period>(out);
     } else {
       detail::chrono_formatter<FormatContext, decltype(out), Rep, Period> f(
           ctx, out, d);
-      f.precision = precision;
+      f.precision = precision_copy;
       parse_chrono_format(begin, end, f);
     }
     return detail::write(
-        ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
+        ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs_copy);
   }
 };
 

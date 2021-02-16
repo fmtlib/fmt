@@ -13,6 +13,7 @@
 #  include <windows.h>
 #endif
 
+#include "fmt/chrono.h"
 #include "fmt/compile.h"
 #include "gmock.h"
 #include "gtest-extra.h"
@@ -139,102 +140,20 @@ TEST(CompileTest, FormatWideString) {
   EXPECT_EQ(L"42", fmt::format(FMT_COMPILE(L"{}"), 42));
 }
 
-struct test_custom_formattable {};
-
-FMT_BEGIN_NAMESPACE
-template <> struct formatter<test_custom_formattable> {
-  enum class output_type { two, four } type{output_type::two};
-
-  FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
-    auto it = ctx.begin(), end = ctx.end();
-    while (it != end && *it != '}') {
-      ++it;
-    }
-    auto spec = string_view(ctx.begin(), static_cast<size_t>(it - ctx.begin()));
-    auto tag = string_view("custom");
-    if (spec.size() == tag.size()) {
-      bool is_same = true;
-      for (size_t index = 0; index < spec.size(); ++index) {
-        if (spec[index] != tag[index]) {
-          is_same = false;
-          break;
-        }
-      }
-      type = is_same ? output_type::four : output_type::two;
-    } else {
-      type = output_type::two;
-    }
-    return it;
-  }
-
-  template <typename FormatContext>
-  auto format(const test_custom_formattable&, FormatContext& ctx) const
-      -> decltype(ctx.out()) {
-    return format_to(ctx.out(), type == output_type::two ? "{:>2}" : "{:>4}",
-                     42);
-  }
-};
-FMT_END_NAMESPACE
-
 TEST(CompileTest, FormatSpecs) {
   EXPECT_EQ("42", fmt::format(FMT_COMPILE("{:x}"), 0x42));
-  EXPECT_EQ("42", fmt::format(FMT_COMPILE("{}"), test_custom_formattable()));
-  EXPECT_EQ("  42",
-            fmt::format(FMT_COMPILE("{:custom}"), test_custom_formattable()));
+  EXPECT_EQ("1.2 ms ",
+            fmt::format(FMT_COMPILE("{:7.1%Q %q}"),
+                        std::chrono::duration<double, std::milli>(1.234)));
 }
 
-struct test_dynamic_formattable {};
-
-FMT_BEGIN_NAMESPACE
-template <> struct formatter<test_dynamic_formattable> {
-  size_t amount = 0;
-  detail::arg_ref<char> width_refs[3];
-
-  FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
-    amount = static_cast<size_t>(*ctx.begin() - '0');
-    if (amount >= 1) {
-      width_refs[0] = detail::arg_ref<char>(ctx.next_arg_id());
-    }
-    if (amount >= 2) {
-      width_refs[1] = detail::arg_ref<char>(ctx.next_arg_id());
-    }
-    if (amount >= 3) {
-      width_refs[2] = detail::arg_ref<char>(ctx.next_arg_id());
-    }
-    return ctx.begin() + 1;
-  }
-
-  template <typename FormatContext>
-  auto format(const test_dynamic_formattable&, FormatContext& ctx) const
-      -> decltype(ctx.out()) {
-    int widths[3]{};
-    for (size_t i = 0; i < amount; ++i) {
-      detail::handle_dynamic_spec<detail::width_checker>(widths[i],
-                                                         width_refs[i], ctx);
-    }
-    if (amount == 1) {
-      return format_to(ctx.out(), "{:{}}", 41, widths[0]);
-    } else if (amount == 2) {
-      return format_to(ctx.out(), "{:{}}{:{}}", 41, widths[0], 42, widths[1]);
-    } else if (amount == 3) {
-      return format_to(ctx.out(), "{:{}}{:{}}{:{}}", 41, widths[0], 42,
-                       widths[1], 43, widths[2]);
-    } else {
-      throw format_error("formatting error");
-    }
-  }
-};
-FMT_END_NAMESPACE
-
 TEST(CompileTest, DynamicFormatSpecs) {
-  EXPECT_EQ("  42foo  ",
-            fmt::format(FMT_COMPILE("{:{}}{:{}}"), 42, 4, "foo", 5));
-  EXPECT_EQ("  41",
-            fmt::format(FMT_COMPILE("{:1}"), test_dynamic_formattable(), 4));
-  EXPECT_EQ(" 41   42",
-            fmt::format(FMT_COMPILE("{:2}"), test_dynamic_formattable(), 3, 5));
-  EXPECT_EQ("   41 42  43", fmt::format(FMT_COMPILE("{:3}"),
-                                        test_dynamic_formattable(), 5, 3, 4));
+  EXPECT_EQ("foo  ", fmt::format(FMT_COMPILE("{:{}}"), "foo", 5));
+  EXPECT_EQ("  3.14", fmt::format(FMT_COMPILE("{:{}.{}f}"), 3.141592, 6, 2));
+  EXPECT_EQ(
+      "=1.234ms=",
+      fmt::format(FMT_COMPILE("{:=^{}.{}}"),
+                  std::chrono::duration<double, std::milli>(1.234), 9, 3));
 }
 
 TEST(CompileTest, ManualOrdering) {
@@ -244,9 +163,9 @@ TEST(CompileTest, ManualOrdering) {
   EXPECT_EQ("41 43", fmt::format(FMT_COMPILE("{1} {0}"), 43, 41));
   EXPECT_EQ("41 43", fmt::format(FMT_COMPILE("{0} {2}"), 41, 42, 43));
   EXPECT_EQ("  41   43", fmt::format(FMT_COMPILE("{1:{2}} {0:4}"), 43, 41, 4));
-  EXPECT_EQ("42   42",
-            fmt::format(FMT_COMPILE("{1} {0:custom}"),
-                        test_custom_formattable(), test_custom_formattable()));
+  EXPECT_EQ("42 1.2 ms ",
+            fmt::format(FMT_COMPILE("{0} {1:7.1%Q %q}"), 42,
+                        std::chrono::duration<double, std::milli>(1.234)));
   EXPECT_EQ(
       "true 42 42 foo 0x1234 foo",
       fmt::format(FMT_COMPILE("{0} {1} {2} {3} {4} {5}"), true, 42, 42.0f,
