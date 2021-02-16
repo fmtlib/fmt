@@ -262,18 +262,14 @@ TEST(CompileTest, Named) {
   EXPECT_EQ("foobar",
             fmt::format(FMT_COMPILE("{a0}{a1}"), fmt::arg("a0", "foo"),
                         fmt::arg("a1", "bar")));
-  EXPECT_EQ("foobar",
-            fmt::format(/*FMT_COMPILE(*/ "{}{a1}" /*)*/, fmt::arg("a0", "foo"),
-                        fmt::arg("a1", "bar")));
-  EXPECT_EQ("foofoo",
-            fmt::format(/*FMT_COMPILE(*/ "{a0}{}" /*)*/, fmt::arg("a0", "foo"),
-                        fmt::arg("a1", "bar")));
-  EXPECT_EQ("foobar",
-            fmt::format(/*FMT_COMPILE(*/ "{a0}{1}" /*)*/, fmt::arg("a0", "foo"),
-                        fmt::arg("a1", "bar")));
-  EXPECT_EQ("foobar",
-            fmt::format(/*FMT_COMPILE(*/ "{0}{a1}" /*)*/, fmt::arg("a0", "foo"),
-                        fmt::arg("a1", "bar")));
+  EXPECT_EQ("foobar", fmt::format(FMT_COMPILE("{}{a1}"), fmt::arg("a0", "foo"),
+                                  fmt::arg("a1", "bar")));
+  EXPECT_EQ("foofoo", fmt::format(FMT_COMPILE("{a0}{}"), fmt::arg("a0", "foo"),
+                                  fmt::arg("a1", "bar")));
+  EXPECT_EQ("foobar", fmt::format(FMT_COMPILE("{0}{a1}"), fmt::arg("a0", "foo"),
+                                  fmt::arg("a1", "bar")));
+  EXPECT_EQ("foobar", fmt::format(FMT_COMPILE("{a0}{1}"), fmt::arg("a0", "foo"),
+                                  fmt::arg("a1", "bar")));
 
   EXPECT_EQ("foobar",
             fmt::format(FMT_COMPILE("{}{a1}"), "foo", fmt::arg("a1", "bar")));

@@ -668,11 +668,8 @@ constexpr auto compile_format_string(S format_str) {
               format_str);
         }
       } else if constexpr (arg_id_result.arg_id.kind == arg_id_kind::name) {
-        static_assert(
-            ID != manual_indexing_id,
-            "cannot switch from manual to automatic argument indexing");
         if constexpr (c == '}') {
-          return parse_tail<Args, arg_id_end_pos + 1, ID + 1>(
+          return parse_tail<Args, arg_id_end_pos + 1, ID>(
               runtime_named_field<char_type>{arg_id_result.arg_id.val.name},
               format_str);
         } else if constexpr (c == ':') {
