@@ -589,7 +589,7 @@ template <typename Char> struct arg_id_handler {
   constexpr void on_error(const char* message) { throw format_error(message); }
 
   constexpr int on_arg_id() {
-    throw format_error("handler cannot be used for empty arg_id");
+    FMT_ASSERT(false, "handler cannot be used with automatic indexing");
     return 0;
   }
 
