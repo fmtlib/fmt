@@ -455,7 +455,7 @@ template <typename Char, typename T, int N> struct field {
   template <typename OutputIt, typename... Args>
   constexpr OutputIt format(OutputIt out, const Args&... args) const {
     if constexpr (is_named_arg<typename std::remove_cv<T>::type>::value) {
-      decltype(T::value) arg = get<N>(args...).value;
+      const auto& arg = get<N>(args...).value;
       return write<Char>(out, arg);
     } else {
       // This ensures that the argument type is convertile to `const T&`.
@@ -778,9 +778,9 @@ FMT_INLINE std::basic_string<typename S::char_type> format(const S&,
   if constexpr (std::is_same<typename S::char_type, char>::value) {
     constexpr basic_string_view<typename S::char_type> str = S();
     if constexpr (str.size() == 2 && str[0] == '{' && str[1] == '}') {
-      auto first = detail::first(args...);
-      if constexpr (detail::is_named_arg<typename std::remove_cv<
-                        decltype(first)>::type>::value) {
+      const auto& first = detail::first(args...);
+      if constexpr (detail::is_named_arg<
+                        remove_cvref_t<decltype(first)>>::value) {
         return fmt::to_string(first.value);
       } else {
         return fmt::to_string(first);
