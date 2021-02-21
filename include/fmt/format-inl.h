@@ -244,11 +244,6 @@ const typename basic_data<T>::digit_pair basic_data<T>::digits[] = {
     {'9', '0'}, {'9', '1'}, {'9', '2'}, {'9', '3'}, {'9', '4'}, {'9', '5'},
     {'9', '6'}, {'9', '7'}, {'9', '8'}, {'9', '9'}};
 
-#define FMT_POWERS_OF_10(factor)                                             \
-  factor * 10, (factor)*100, (factor)*1000, (factor)*10000, (factor)*100000, \
-      (factor)*1000000, (factor)*10000000, (factor)*100000000,               \
-      (factor)*1000000000
-
 template <typename T>
 const uint64_t basic_data<T>::powers_of_10_64[] = {
     1, FMT_POWERS_OF_10(1), FMT_POWERS_OF_10(1000000000ULL),
@@ -263,8 +258,7 @@ const uint64_t basic_data<T>::zero_or_powers_of_10_64[] = {
     10000000000000000000ULL};
 
 template <typename T>
-const uint32_t basic_data<T>::zero_or_powers_of_10_32_new[] = {
-    0, 0, FMT_POWERS_OF_10(1)};
+constexpr uint32_t basic_data<T>::zero_or_powers_of_10_32_new[];
 
 template <typename T>
 const uint64_t basic_data<T>::zero_or_powers_of_10_64_new[] = {

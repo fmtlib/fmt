@@ -1024,10 +1024,16 @@ template <typename T> struct FMT_EXTERN_TEMPLATE_API divtest_table_entry {
   T max_quotient;
 };
 
+#define FMT_POWERS_OF_10(factor)                                \
+  factor * 10u, (factor)*100u, (factor)*1000u, (factor)*10000u, \
+      (factor)*100000u, (factor)*1000000u, (factor)*10000000u,  \
+      (factor)*100000000u, (factor)*1000000000u
+
 // Static data is placed in this class template for the header-only config.
 template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
   static const uint64_t powers_of_10_64[];
-  static const uint32_t zero_or_powers_of_10_32_new[];
+  static constexpr uint32_t zero_or_powers_of_10_32_new[] = {
+      0, 0, FMT_POWERS_OF_10(1)};
   static const uint64_t zero_or_powers_of_10_64_new[];
   static const uint64_t grisu_pow10_significands[];
   static const int16_t grisu_pow10_exponents[];
