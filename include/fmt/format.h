@@ -123,8 +123,7 @@ FMT_END_NAMESPACE
 #  else
 #    define FMT_THROW(x)       \
       do {                     \
-        static_cast<void>(x);  \
-        FMT_ASSERT(false, ""); \
+        FMT_ASSERT(false, (x).what()); \
       } while (false)
 #  endif
 #endif
