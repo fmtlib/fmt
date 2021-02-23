@@ -3833,21 +3833,16 @@ FMT_CONSTEXPR void advance_to(
     auto s = fmt::format("{}", fmt::ptr(p));
   \endrst
  */
-template <typename T> inline const void* ptr(const T* p) { return p; }
-template <typename T> inline const void* ptr(const std::unique_ptr<T>& p) {
+template <typename T> const void* ptr(T p) {
+  static_assert(std::is_pointer<T>::value, "");
+  return detail::bit_cast<const void*>(p);
+}
+template <typename T> const void* ptr(const std::unique_ptr<T>& p) {
   return p.get();
 }
-template <typename T> inline const void* ptr(const std::shared_ptr<T>& p) {
+template <typename T> const void* ptr(const std::shared_ptr<T>& p) {
   return p.get();
 }
-#if !FMT_MSC_VER
-// MSVC lets function pointers decay to void pointers, so this
-// overload is unnecessary.
-template <typename T, typename... Args>
-inline const void* ptr(T (*fn)(Args...)) {
-  return detail::bit_cast<const void*>(fn);
-}
-#endif
 
 class bytes {
  private:
