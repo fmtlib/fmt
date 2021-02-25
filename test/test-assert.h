@@ -24,7 +24,7 @@ void assertion_failure::avoid_weak_vtable() {}
 
 inline void throw_assertion_failure (const char *message)
 {
-#  if FMT_GCC_VERSION >= 600
+#  if defined(__GNUC__) && __GNUC__ >= 6
      // Avoid warnings when FMT_ASSERT is used in a destructor.
 #    pragma GCC diagnostic push
 #    pragma GCC diagnostic ignored "-Wterminate"
@@ -32,7 +32,7 @@ inline void throw_assertion_failure (const char *message)
 
   throw assertion_failure(message);
 
-#  if FMT_GCC_VERSION >= 600
+#  if defined(__GNUC__) && __GNUC__ >= 6
 #    pragma GCC diagnostic pop
 #  endif
 }
