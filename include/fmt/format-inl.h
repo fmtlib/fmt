@@ -164,7 +164,7 @@ FMT_FUNC void report_error(format_func func, int error_code,
 inline void fwrite_fully(const void* ptr, size_t size, size_t count,
                          FILE* stream) {
   size_t written = std::fwrite(ptr, size, count, stream);
-  if (written < count) FMT_THROW(system_error(errno, "cannot write to file"));
+  if (written < count) FMT_ERROR(Error_type::system_error, errno, "cannot write to file");
 }
 
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
@@ -2627,7 +2627,7 @@ template <> struct formatter<detail::bigint> {
 
 FMT_FUNC detail::utf8_to_utf16::utf8_to_utf16(string_view s) {
   for_each_codepoint(s, [this](uint32_t cp, int error) {
-    if (error != 0) FMT_THROW(std::runtime_error("invalid utf8"));
+    if (error != 0) FMT_ERROR(Error_type::runtime_error, "invalid utf8");
     if (cp <= 0xFFFF) {
       buffer_.push_back(static_cast<wchar_t>(cp));
     } else {
@@ -2663,7 +2663,7 @@ FMT_FUNC void format_system_error(detail::buffer<char>& out, int error_code,
 }
 
 FMT_FUNC void detail::error_handler::on_error(const char* message) {
-  FMT_THROW(format_error(message));
+  FMT_ERROR(Error_type::format_error, message);
 }
 
 FMT_FUNC void report_system_error(int error_code,

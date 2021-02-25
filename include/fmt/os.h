@@ -198,6 +198,25 @@ class windows_error : public system_error {
 // Can be used to report errors from destructors.
 FMT_API void report_windows_error(int error_code,
                                   string_view message) FMT_NOEXCEPT;
+
+template <typename void_type> struct error_reporter_t<Error_type::windows_error, void_type> {
+  template <typename... Args>
+  FMT_NORETURN void operator () (int line, const char *func, const char *file, 
+                                 int error_code, const char *message,
+                                 const Args&... args) {
+#if FMT_EXCEPTIONS
+    static_cast<void>(line);
+    static_cast<void>(func);
+    static_cast<void>(file);
+
+    throw windows_error(error_code, message, args...);
+#else
+    report_windows_error(error_code, format(message, args...));
+    std::terminate();
+#endif
+  }
+};
+
 #endif  // _WIN32
 
 // A buffered file.
@@ -469,7 +488,7 @@ class locale {
 #  else
     locale_ = _create_locale(LC_NUMERIC, "C");
 #  endif
-    if (!locale_) FMT_THROW(system_error(errno, "cannot create locale"));
+    if (!locale_) FMT_ERROR(Error_type::system_error, errno, "cannot create locale");
   }
   ~locale() { freelocale(locale_); }
 

@@ -39,13 +39,13 @@ class printf_precision_handler {
   template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
   int operator()(T value) {
     if (!int_checker<std::numeric_limits<T>::is_signed>::fits_in_int(value))
-      FMT_THROW(format_error("number is too big"));
+      FMT_ERROR(Error_type::format_error, "number is too big");
     return (std::max)(static_cast<int>(value), 0);
   }
 
   template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value)>
   int operator()(T) {
-    FMT_THROW(format_error("precision is not integer"));
+    FMT_ERROR(Error_type::format_error, "precision is not integer");
     return 0;
   }
 };
@@ -167,13 +167,13 @@ template <typename Char> class printf_width_handler {
       width = 0 - width;
     }
     unsigned int_max = max_value<int>();
-    if (width > int_max) FMT_THROW(format_error("number is too big"));
+    if (width > int_max) FMT_ERROR(Error_type::format_error, "number is too big");
     return static_cast<unsigned>(width);
   }
 
   template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value)>
   unsigned operator()(T) {
-    FMT_THROW(format_error("width is not integer"));
+    FMT_ERROR(Error_type::format_error, "width is not integer");
     return 0;
   }
 };
@@ -577,7 +577,9 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
     }
 
     // Parse type.
-    if (it == end) FMT_THROW(format_error("invalid format string"));
+    if (it == end)
+      FMT_ERROR(Error_type::format_error, "invalid format string",
+                basic_string_view<Char>(start, static_cast<std::size_t>(end - start)));
     specs.type = static_cast<char>(*it++);
     if (arg.is_integral()) {
       // Normalize type.

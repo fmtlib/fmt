@@ -103,29 +103,53 @@
 #  endif
 #endif
 
-#ifndef FMT_THROW
-#  if FMT_EXCEPTIONS
-#    if FMT_MSC_VER || FMT_NVCC
+#ifndef FMT_ERROR
 FMT_BEGIN_NAMESPACE
-namespace detail {
-template <typename Exception> inline void do_throw(const Exception& x) {
-  // Silence unreachable code warnings in MSVC and NVCC because these
-  // are nearly impossible to fix in a generic code.
-  volatile bool b = true;
-  if (b) throw x;
-}
-}  // namespace detail
+enum class Error_type {
+  format_error,
+  system_error,
+  runtime_error,
+# ifdef _WIN32
+  windows_error,
+# endif
+};
+
+/**
+ * Use error_reporter_t as a customization point.
+ */
+template <Error_type error_type, typename = void> struct error_reporter_t;
+
+template <typename void_type> struct error_reporter_t<Error_type::format_error, void_type> {
+    template <typename Char = char>
+    FMT_NORETURN void operator () (int line, const char *func, const char *file, const char *msg,
+                                   basic_string_view<Char> fmt = basic_string_view<Char>());
+};
+
+template <typename void_type> struct error_reporter_t<Error_type::system_error, void_type> {
+    template <typename ...Args>
+    FMT_NORETURN void operator () (int line, const char *func, const char *file,
+                                   int error_code, const char *msg,
+                                   const Args&... args);
+};
+
+template <typename void_type> struct error_reporter_t<Error_type::runtime_error, void_type> {
+    FMT_NORETURN void operator () (int line, const char *func, const char *file, const char *msg);
+};
+
+# ifdef __GNUC__
+#  define FMT_ERROR(error_type, ...)                                          \
+    do {                                                                      \
+        ::fmt::error_reporter_t<(error_type)> error_reporter;                 \
+        error_reporter(__LINE__, __PRETTY_FUNCTION__, __FILE__, __VA_ARGS__); \
+    } while (0)
+# else
+#  define FMT_ERROR(error_type, ...)                                           \
+    do {                                                                      \
+        ::fmt::error_reporter_t<(error_type)> error_reporter;                 \
+        error_reporter(__LINE__, __FUNCTION__, __FILE__, __VA_ARGS__); \
+    } while (0)
+# endif
 FMT_END_NAMESPACE
-#      define FMT_THROW(x) detail::do_throw(x)
-#    else
-#      define FMT_THROW(x) throw x
-#    endif
-#  else
-#    define FMT_THROW(x)       \
-      do {                     \
-        FMT_ASSERT(false, (x).what()); \
-      } while (false)
-#  endif
 #endif
 
 #if FMT_EXCEPTIONS
@@ -940,7 +964,6 @@ class FMT_API format_error : public std::runtime_error {
 };
 
 namespace detail {
-
 template <typename T>
 using is_signed =
     std::integral_constant<bool, std::numeric_limits<T>::is_signed ||
@@ -1324,7 +1347,7 @@ template <typename Char> struct fill_t {
   FMT_CONSTEXPR void operator=(basic_string_view<Char> s) {
     auto size = s.size();
     if (size > max_size) {
-      FMT_THROW(format_error("invalid fill"));
+      FMT_ERROR(Error_type::format_error, "invalid fill");
       return;
     }
     for (size_t i = 0; i < size; ++i) data_[i] = s[i];
@@ -1928,7 +1951,7 @@ template <typename OutputIt, typename Char, typename UInt> struct int_writer {
   void on_chr() { out = write_char(out, static_cast<Char>(abs_value), specs); }
 
   FMT_NORETURN void on_error() {
-    FMT_THROW(format_error("invalid type specifier"));
+    FMT_ERROR(Error_type::format_error, "invalid type specifier");
   }
 };
 
@@ -2146,7 +2169,7 @@ OutputIt write(OutputIt out, T value, basic_format_specs<Char> specs,
   int precision = specs.precision >= 0 || !specs.type ? specs.precision : 6;
   if (fspecs.format == float_format::exp) {
     if (precision == max_value<int>())
-      FMT_THROW(format_error("number is too big"));
+      FMT_ERROR(Error_type::format_error, "number is too big");
     else
       ++precision;
   }
@@ -2282,7 +2305,7 @@ FMT_CONSTEXPR OutputIt write(OutputIt out, Char value) {
 template <typename Char, typename OutputIt>
 FMT_CONSTEXPR OutputIt write(OutputIt out, const Char* value) {
   if (!value) {
-    FMT_THROW(format_error("string pointer is null"));
+    FMT_ERROR(Error_type::format_error, "string pointer is null");
   } else {
     auto length = std::char_traits<Char>::length(value);
     out = write(out, basic_string_view<Char>(value, length));
@@ -2442,7 +2465,7 @@ class arg_formatter_base {
 
   void write(const Char* value) {
     if (!value) {
-      FMT_THROW(format_error("string pointer is null"));
+      FMT_ERROR(Error_type::format_error, "string pointer is null");
     } else {
       auto length = std::char_traits<char_type>::length(value);
       basic_string_view<char_type> sv(value, length);
@@ -3546,6 +3569,65 @@ FMT_API void format_system_error(detail::buffer<char>& out, int error_code,
 FMT_API void report_system_error(int error_code,
                                  string_view message) FMT_NOEXCEPT;
 
+/* Overload for format_error */
+template <typename void_type>
+template <typename Char>
+FMT_NORETURN void error_reporter_t<Error_type::format_error, void_type>::operator () (
+  int line, const char *func, const char *file,
+  const char *msg, basic_string_view<Char> fmt) {
+#if FMT_EXCEPTIONS
+  static_cast<void>(line);
+  static_cast<void>(func);
+  static_cast<void>(file);
+  static_cast<void>(fmt);
+
+  throw format_error(msg);
+#else
+  if (fmt.size())
+    std::fprintf(stderr, "%d of %s, %s failed to format %s: %s\n",
+                 line, func, file, fmt.data(), msg);
+  else
+    std::fprintf(stderr, "%d of %s, %s failed: %s\n",
+                 line, func, file, msg);
+  std::terminate();
+#endif
+}
+
+/* Overload for system_error */
+template <typename void_type>
+template <typename ...Args>
+FMT_NORETURN void error_reporter_t<Error_type::system_error, void_type>::operator () (
+  int line, const char *func, const char *file,
+  int error_code, const char *msg, const Args&... args) {
+#if FMT_EXCEPTIONS
+  static_cast<void>(line);
+  static_cast<void>(func);
+  static_cast<void>(file);
+
+  throw system_error(error_code, msg, args...);
+#else
+  report_system_error(error_code, format(msg, args...));
+  std::terminate();
+#endif
+}
+
+/* Overload for runtime_error */
+template <typename void_type>
+FMT_NORETURN void error_reporter_t<Error_type::runtime_error, void_type>::operator () (
+  int line, const char *func, const char *file,
+  const char *msg) {
+#if FMT_EXCEPTIONS
+  static_cast<void>(line);
+  static_cast<void>(func);
+  static_cast<void>(file);
+
+  throw std::runtime_error(msg);
+#else
+  std::fprintf(stderr, "Runtime error: %s\n", msg);
+  std::terminate();
+#endif
+}
+
 /** Fast integer formatter. */
 class format_int {
  private:
@@ -4123,7 +4205,7 @@ void vprint(std::FILE* f, basic_string_view<Char> format_str,
   detail::vformat_to(buffer, format_str, args);
   buffer.push_back(L'\0');
   if (std::fputws(buffer.data(), f) == -1)
-    FMT_THROW(system_error(errno, "cannot write to file"));
+    FMT_ERROR(Error_type::system_error, errno, "cannot write to file");
 }
 
 template <typename Char, FMT_ENABLE_IF(std::is_same<Char, wchar_t>::value)>

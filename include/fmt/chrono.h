@@ -326,7 +326,7 @@ inline std::tm localtime(std::time_t time) {
   };
   dispatcher lt(time);
   // Too big time values may be unsupported.
-  if (!lt.run()) FMT_THROW(format_error("time_t value out of range"));
+  if (!lt.run()) FMT_ERROR(Error_type::format_error, "time_t value out of range");
   return lt.tm_;
 }
 
@@ -371,7 +371,7 @@ inline std::tm gmtime(std::time_t time) {
   };
   dispatcher gt(time);
   // Too big time values may be unsupported.
-  if (!gt.run()) FMT_THROW(format_error("time_t value out of range"));
+  if (!gt.run()) FMT_ERROR(Error_type::format_error, "time_t value out of range");
   return gt.tm_;
 }
 
@@ -537,7 +537,9 @@ FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
     }
     if (begin != ptr) handler.on_text(begin, ptr);
     ++ptr;  // consume '%'
-    if (ptr == end) FMT_THROW(format_error("invalid format"));
+    if (ptr == end)
+      FMT_ERROR(Error_type::format_error, "invalid format",
+                basic_string_view<Char>(begin, static_cast<std::size_t>(end - begin)));
     c = *ptr++;
     switch (c) {
     case '%':
@@ -628,7 +630,9 @@ FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
       break;
     // Alternative representation:
     case 'E': {
-      if (ptr == end) FMT_THROW(format_error("invalid format"));
+      if (ptr == end)
+        FMT_ERROR(Error_type::format_error, "invalid format", 
+                  basic_string_view<Char>(begin, static_cast<std::size_t>(end - begin)));
       c = *ptr++;
       switch (c) {
       case 'c':
@@ -641,12 +645,15 @@ FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
         handler.on_loc_time(numeric_system::alternative);
         break;
       default:
-        FMT_THROW(format_error("invalid format"));
+        FMT_ERROR(Error_type::format_error, "invalid format", 
+                  basic_string_view<Char>(begin, static_cast<std::size_t>(end - begin)));
       }
       break;
     }
     case 'O':
-      if (ptr == end) FMT_THROW(format_error("invalid format"));
+      if (ptr == end)
+        FMT_ERROR(Error_type::format_error, "invalid format", 
+                  basic_string_view<Char>(begin, static_cast<std::size_t>(end - begin)));
       c = *ptr++;
       switch (c) {
       case 'w':
@@ -668,11 +675,13 @@ FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
         handler.on_second(numeric_system::alternative);
         break;
       default:
-        FMT_THROW(format_error("invalid format"));
+        FMT_ERROR(Error_type::format_error, "invalid format", 
+                  basic_string_view<Char>(begin, static_cast<std::size_t>(end - begin)));
       }
       break;
     default:
-      FMT_THROW(format_error("invalid format"));
+      FMT_ERROR(Error_type::format_error, "invalid format", 
+                basic_string_view<Char>(begin, static_cast<std::size_t>(end - begin)));
     }
     begin = ptr;
   }
@@ -681,7 +690,7 @@ FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
 }
 
 struct chrono_format_checker {
-  FMT_NORETURN void report_no_date() { FMT_THROW(format_error("no date")); }
+  FMT_NORETURN void report_no_date() { FMT_ERROR(Error_type::format_error, "no date"); }
 
   template <typename Char>
   FMT_CONSTEXPR void on_text(const Char*, const Char*) {}
@@ -771,7 +780,7 @@ template <typename To, typename FromRep, typename FromPeriod>
 To fmt_safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from) {
   int ec;
   To to = safe_duration_cast::safe_duration_cast<To>(from, ec);
-  if (ec) FMT_THROW(format_error("cannot format duration"));
+  if (ec) FMT_ERROR(Error_type::format_error, "cannot format duration");
   return to;
 }
 #endif
@@ -1104,7 +1113,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
       return arg_ref_type(context.next_arg_id());
     }
 
-    void on_error(const char* msg) { FMT_THROW(format_error(msg)); }
+    void on_error(const char* msg) { FMT_ERROR(Error_type::format_error, msg); }
     FMT_CONSTEXPR void on_fill(basic_string_view<Char> fill) {
       f.specs.fill = fill;
     }
