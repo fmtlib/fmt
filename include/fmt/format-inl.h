@@ -9,7 +9,6 @@
 #define FMT_FORMAT_INL_H_
 
 #include <algorithm>
-#include <cassert>
 #include <cctype>
 #include <climits>
 #include <cmath>
@@ -148,7 +147,7 @@ FMT_FUNC void format_error_code(detail::buffer<char>& out, int error_code,
   if (message.size() <= inline_buffer_size - error_code_size)
     format_to(it, FMT_STRING("{}{}"), message, SEP);
   format_to(it, FMT_STRING("{}{}"), ERROR_STR, error_code);
-  assert(out.size() <= inline_buffer_size);
+  FMT_ASSERT(out.size() <= inline_buffer_size, "must not require dynamic alloc");
 }
 
 FMT_FUNC void report_error(format_func func, int error_code,
@@ -1219,7 +1218,7 @@ struct accumulator {
     if (lower < n) ++upper;
   }
   void operator>>=(int shift) {
-    assert(shift == 32);
+    FMT_ASSERT(shift == 32, "only 32-bit shift is supported");
     (void)shift;
     lower = (upper << 32) | (lower >> 32);
     upper >>= 32;
@@ -1298,7 +1297,7 @@ class bigint {
  public:
   bigint() : exp_(0) {}
   explicit bigint(uint64_t n) { assign(n); }
-  ~bigint() { assert(bigits_.capacity() <= bigits_capacity); }
+  ~bigint() { FMT_ASSERT(bigits_.capacity() <= bigits_capacity, ""); }
 
   bigint(const bigint&) = delete;
   void operator=(const bigint&) = delete;
@@ -1324,7 +1323,7 @@ class bigint {
   int num_bigits() const { return static_cast<int>(bigits_.size()) + exp_; }
 
   FMT_NOINLINE bigint& operator<<=(int shift) {
-    assert(shift >= 0);
+    FMT_ASSERT(shift >= 0, "shift must be non-negative");
     exp_ += shift / bigit_bits;
     shift %= bigit_bits;
     if (shift == 0) return *this;
@@ -1386,7 +1385,7 @@ class bigint {
 
   // Assigns pow(10, exp) to this bigint.
   void assign_pow10(int exp) {
-    assert(exp >= 0);
+    FMT_ASSERT(exp >= 0, "exponent must be non-negative");
     if (exp == 0) return assign(1);
     // Find the top bit.
     int bitmask = 1;
@@ -2557,11 +2556,11 @@ int snprintf_float(T value, int precision, float_specs specs,
       --exp_pos;
     } while (*exp_pos != 'e');
     char sign = exp_pos[1];
-    assert(sign == '+' || sign == '-');
+    FMT_ASSERT(sign == '+' || sign == '-', "expect valid sign character");
     int exp = 0;
     auto p = exp_pos + 2;  // Skip 'e' and sign.
     do {
-      assert(is_digit(*p));
+      FMT_ASSERT(is_digit(*p), "expect digit");
       exp = exp * 10 + (*p++ - '0');
     } while (p != end);
     if (sign == '-') exp = -exp;
