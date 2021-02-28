@@ -617,6 +617,12 @@ TEST(CoreTest, HasFormatter) {
                 "");
 }
 
+TEST(CoreTest, IsFormattable) {
+  static_assert(fmt::is_formattable<enabled_formatter>::value, "");
+  static_assert(!fmt::is_formattable<disabled_formatter>::value, "");
+  static_assert(fmt::is_formattable<disabled_formatter_convertible>::value, "");
+}
+
 struct convertible_to_int {
   operator int() const { return 42; }
 };

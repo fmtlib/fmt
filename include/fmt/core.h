@@ -1525,6 +1525,11 @@ using wformat_context = buffer_context<wchar_t>;
 #define FMT_BUFFER_CONTEXT(Char) \
   basic_format_context<detail::buffer_appender<Char>, Char>
 
+template <typename T, typename Char = char>
+using is_formattable = bool_constant<!std::is_same<
+    decltype(detail::arg_mapper<buffer_context<Char>>().map(std::declval<T>())),
+    detail::unformattable>::value>;
+
 /**
   \rst
   An array of references to arguments. It can be implicitly converted into
