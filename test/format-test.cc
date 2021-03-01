@@ -166,8 +166,8 @@ TEST(IteratorTest, TruncatingIteratorDefaultConstruct) {
       "");
   
   fmt::detail::truncating_iterator<char*> it;
-  EXPECT_EQ(it.base(), nullptr);
-  EXPECT_EQ(it.count(), 0);
+  EXPECT_EQ(nullptr, it.base());
+  EXPECT_EQ(0, it.count());
 }
 
 #ifdef __cpp_lib_ranges
