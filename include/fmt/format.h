@@ -477,6 +477,9 @@ class truncating_iterator_default_construct_base<OutputIt, std::false_type> {
   OutputIt out_;
 
   truncating_iterator_default_construct_base() = delete;
+
+  explicit truncating_iterator_default_construct_base(OutputIt out) :
+    out_(std::move(out)) {}
 };
 
 template<typename OutputIt>
@@ -485,6 +488,9 @@ class truncating_iterator_default_construct_base<OutputIt, std::true_type> {
   OutputIt out_;
 
   truncating_iterator_default_construct_base() = default;
+
+  explicit truncating_iterator_default_construct_base(OutputIt out) :
+    out_(std::move(out)) {}
 };
 
 template <typename OutputIt> class truncating_iterator_base
