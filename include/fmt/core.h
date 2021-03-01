@@ -1379,10 +1379,14 @@ template <typename T> struct formattable : std::false_type {};
 
 namespace detail {
 
+#if FMT_GCC_VERSION && FMT_GCC_VERSION < 500
 // A workaround for gcc 4.8 to make void_t work in a SFINAE context.
 template <typename... Ts> struct void_t_impl { using type = void; };
 template <typename... Ts>
 using void_t = typename detail::void_t_impl<Ts...>::type;
+#else
+template <typename...> using void_t = void;
+#endif
 
 template <typename It, typename T, typename Enable = void>
 struct is_output_iterator : std::false_type {};
