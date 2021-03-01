@@ -293,7 +293,7 @@ inline size_t store_format_entry(void* buf, const S& format_str, Args&&... args)
 template <typename Context> inline
 void print_format_entry(basic_format_entry<Context>& entry) {
     auto& full_entry = static_cast<format_entry<Context>&>(entry);
-    vprint(entry.format_, {entry.desc_, full_entry.arg_store_.data_.args_});    ///// args_ or args + 1 depends on desc_ & detail::has_named_args_bit
+    vprint(entry.format_, {entry.desc_, &full_entry.arg_store_.data_.args_[entry.desc_ & fmt::detail::has_named_args_bit ? 1 : 0]});
     entry.destruct();
 }
 
