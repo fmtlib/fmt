@@ -172,7 +172,8 @@ TEST(IteratorTest, TruncatingIteratorDefaultConstruct) {
 
 #ifdef __cpp_lib_ranges
 TEST(IteratorTest, TruncatingIteratorOutputIterator) {
-  static_assert(std::output_iterator<fmt::detail::truncating_iterator<char*>>);
+  static_assert(std::output_iterator<fmt::detail::truncating_iterator<char*>,
+      char>);
 }
 #endif
 
