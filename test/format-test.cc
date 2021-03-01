@@ -15,6 +15,7 @@
 #include <list>
 #include <memory>
 #include <string>
+#include <type_traits>
 
 // Check if fmt/format.h compiles with windows.h included before it.
 #ifdef _WIN32
@@ -155,6 +156,16 @@ TEST(IteratorTest, TruncatingIterator) {
   auto prev = it++;
   EXPECT_EQ(prev.base(), p);
   EXPECT_EQ(it.base(), p + 1);
+}
+
+
+TEST(IteratorTest, TruncatingIteratorDefaultConstruct) {
+  static_assert(
+      std::is_default_constructible_v<fmt::detail::truncating_iterator<char*>>);
+  
+  fmt::detail::truncating_iterator<char*> it;
+  EXPECT_EQ(it.base(), nullptr);
+  EXPECT_EQ(it.count(), 0);
 }
 
 TEST(IteratorTest, TruncatingBackInserter) {

@@ -465,25 +465,50 @@ class counting_iterator {
   value_type operator*() const { return {}; }
 };
 
-template <typename OutputIt> class truncating_iterator_base {
+// Used to ensure that truncating_iterator SFINAEs properly on the underlying
+// iterator's default constructibility.
+template <typename OutputIt, typename = typename std::is_default_constructible<
+    OutputIt>::type>
+class truncating_iterator_default_construct_base;
+
+template<typename OutputIt>
+class truncating_iterator_default_construct_base<OutputIt, std::false_type> {
  protected:
   OutputIt out_;
-  size_t limit_;
-  size_t count_;
 
+  truncating_iterator_default_construct_base() = delete;
+};
+
+template<typename OutputIt>
+class truncating_iterator_default_construct_base<OutputIt, std::true_type> {
+ protected:
+  OutputIt out_;
+
+  truncating_iterator_default_construct_base() = default;
+};
+
+template <typename OutputIt> class truncating_iterator_base
+    : protected truncating_iterator_default_construct_base<OutputIt> {
+ protected:
+  size_t limit_ = 0;
+  size_t count_ = 0;
+
+  truncating_iterator_base() = default;
+  
   truncating_iterator_base(OutputIt out, size_t limit)
-      : out_(out), limit_(limit), count_(0) {}
+      : truncating_iterator_default_construct_base<OutputIt>(out),
+        limit_(limit), count_(0) {}
 
  public:
   using iterator_category = std::output_iterator_tag;
   using value_type = typename std::iterator_traits<OutputIt>::value_type;
-  using difference_type = void;
+  using difference_type = std::ptrdiff_t;
   using pointer = void;
   using reference = void;
   using _Unchecked_type =
       truncating_iterator_base;  // Mark iterator as checked.
 
-  OutputIt base() const { return out_; }
+  OutputIt base() const { return this->out_; }
   size_t count() const { return count_; }
 };
 
@@ -502,6 +527,8 @@ class truncating_iterator<OutputIt, std::false_type>
  public:
   using value_type = typename truncating_iterator_base<OutputIt>::value_type;
 
+  truncating_iterator() = default;
+  
   truncating_iterator(OutputIt out, size_t limit)
       : truncating_iterator_base<OutputIt>(out, limit) {}
 
@@ -525,6 +552,8 @@ template <typename OutputIt>
 class truncating_iterator<OutputIt, std::true_type>
     : public truncating_iterator_base<OutputIt> {
  public:
+  truncating_iterator() = default;
+
   truncating_iterator(OutputIt out, size_t limit)
       : truncating_iterator_base<OutputIt>(out, limit) {}
 
