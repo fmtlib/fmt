@@ -487,7 +487,7 @@ class truncating_iterator_default_construct_base<OutputIt, std::true_type> {
  protected:
   OutputIt out_;
 
-  truncating_iterator_default_construct_base() = default;
+  truncating_iterator_default_construct_base() : out_() {}
 
   explicit truncating_iterator_default_construct_base(OutputIt out) :
     out_(std::move(out)) {}
