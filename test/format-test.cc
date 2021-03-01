@@ -162,7 +162,8 @@ TEST(IteratorTest, TruncatingIterator) {
 
 TEST(IteratorTest, TruncatingIteratorDefaultConstruct) {
   static_assert(
-      std::is_default_constructible_v<fmt::detail::truncating_iterator<char*>>);
+      std::is_default_constructible<fmt::detail::truncating_iterator<char*>>::value,
+      "");
   
   fmt::detail::truncating_iterator<char*> it;
   EXPECT_EQ(it.base(), nullptr);
