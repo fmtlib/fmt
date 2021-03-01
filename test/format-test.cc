@@ -170,6 +170,27 @@ TEST(IteratorTest, TruncatingIteratorDefaultConstruct) {
   EXPECT_EQ(std::size_t{0}, it.count());
 }
 
+TEST(IteratorTest, TruncatingIteratorDeletedDefaultConstruct) {
+  struct non_default_constructible_iterator {
+    using iterator_category = std::output_iterator_tag;
+    using value_type = void;
+    using difference_type = std::ptrdiff_t;
+    using pointer = void;
+    using reference = void;
+
+    non_default_constructible_iterator() = delete;
+    
+    non_default_constructible_iterator& operator++();
+    non_default_constructible_iterator operator++(int);
+    char& operator*() const;
+  };
+
+  static_assert(
+      !std::is_default_constructible<fmt::detail::truncating_iterator<
+          non_default_constructible_iterator>>::value,
+      "");
+}
+
 #ifdef __cpp_lib_ranges
 TEST(IteratorTest, TruncatingIteratorOutputIterator) {
   static_assert(std::output_iterator<fmt::detail::truncating_iterator<char*>,
