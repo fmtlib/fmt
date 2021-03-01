@@ -22,10 +22,6 @@
 #  endif
 #endif
 
-#ifndef FMT_ENABLE_FALLBACK_TO_RUNTIME_API
-#  define FMT_ENABLE_FALLBACK_TO_RUNTIME_API 1
-#endif
-
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
@@ -708,12 +704,6 @@ constexpr auto compile(S format_str) {
     constexpr auto result =
         detail::compile_format_string<detail::type_list<Args...>, 0, 0>(
             format_str);
-#  if !FMT_ENABLE_FALLBACK_TO_RUNTIME_API
-    static_assert(!std::is_same<remove_cvref_t<decltype(result)>,
-                                detail::unknown_format>(),
-                  "format string is invalid for compile-time API, "
-                  "and fallback to runtime API is disabled");
-#  endif
     return result;
   }
 }

@@ -229,7 +229,6 @@ TEST(CompileTest, TextAndArg) {
   EXPECT_EQ("42!", fmt::format(FMT_COMPILE("{}!"), 42));
 }
 
-#  if FMT_ENABLE_FALLBACK_TO_RUNTIME_API
 TEST(CompileTest, UnknownFormatFallback) {
   EXPECT_EQ(" 42 ",
             fmt::format(FMT_COMPILE("{name:^4}"), fmt::arg("name", 42)));
@@ -246,7 +245,6 @@ TEST(CompileTest, UnknownFormatFallback) {
   EXPECT_EQ(buffer + 4, result.out);
   EXPECT_EQ(" 42 ", fmt::string_view(buffer, 4));
 }
-#  endif
 
 TEST(CompileTest, Empty) { EXPECT_EQ("", fmt::format(FMT_COMPILE(""))); }
 #endif
