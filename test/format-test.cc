@@ -12,6 +12,7 @@
 #include <climits>
 #include <cmath>
 #include <cstring>
+#include <iterator>
 #include <list>
 #include <memory>
 #include <string>
@@ -167,6 +168,12 @@ TEST(IteratorTest, TruncatingIteratorDefaultConstruct) {
   EXPECT_EQ(it.base(), nullptr);
   EXPECT_EQ(it.count(), 0);
 }
+
+#ifdef __cpp_lib_ranges
+TEST(IteratorTest, TruncatingIteratorOutputIterator) {
+  static_assert(std::output_iterator<fmt::detail::truncating_iterator<char*>>);
+}
+#endif
 
 TEST(IteratorTest, TruncatingBackInserter) {
   std::string buffer;
