@@ -67,7 +67,9 @@ using stored_as_string_object = std::integral_constant<bool, stored_as_string<Ty
 
 struct custom_store_method_checker {
     template <typename Arg, typename Context, typename RawT = std::decay_t<Arg>, typename Formatter = typename Context::template formatter_type<RawT>>
-    static std::enable_if_t<has_formatter<RawT, Context>::value, std::tuple<std::true_type, decltype(Formatter::store(std::declval<char*&>(), std::declval<Arg>()))>> test(int);
+    static std::enable_if_t<has_formatter<RawT, Context>::value, std::tuple<std::true_type, decltype(Formatter::store(std::declval<char*&>(), std::declval<Arg>()))>> test(double);
+    template <typename Arg, typename Context, typename RawT = std::decay_t<Arg>, typename Formatter = typename Context::template formatter_type<RawT>>
+    static std::enable_if_t<has_formatter<RawT, Context>::value, std::tuple<std::false_type, decltype(Formatter::store(std::declval<char*>(), std::declval<Arg>()))>> test(int);
     template <typename Arg, typename Context>
     static std::tuple<std::false_type, store_as_object> test(...);
 };
