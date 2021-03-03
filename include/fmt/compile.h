@@ -844,25 +844,9 @@ template <typename OutputIt, typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
 format_to_n_result<OutputIt> format_to_n(OutputIt out, size_t n, const S&,
                                          Args&&... args) {
-  constexpr auto compiled = detail::compile<Args...>(S());
-#ifdef __cpp_if_constexpr
-  if constexpr (std::is_same<remove_cvref_t<decltype(compiled)>,
-                             detail::unknown_format>()) {
-    auto it =
-        format_to(detail::truncating_iterator<OutputIt>(out, n),
-                  static_cast<basic_string_view<typename S::char_type>>(S()),
-                  std::forward<Args>(args)...);
-    return {it.base(), it.count()};
-  } else {
-    auto it = format_to(detail::truncating_iterator<OutputIt>(out, n), compiled,
-                        std::forward<Args>(args)...);
-    return {it.base(), it.count()};
-  }
-#else
-  auto it = format_to(detail::truncating_iterator<OutputIt>(out, n), compiled,
+  auto it = format_to(detail::truncating_iterator<OutputIt>(out, n), S(),
                       std::forward<Args>(args)...);
   return {it.base(), it.count()};
-#endif
 }
 
 template <typename CompiledFormat, typename... Args>

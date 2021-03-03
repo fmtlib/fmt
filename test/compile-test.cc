@@ -239,9 +239,9 @@ TEST(CompileTest, UnknownFormatFallback) {
   EXPECT_EQ(" 42 ", fmt::string_view(v.data(), v.size()));
 
   char buffer[4];
-  auto result = fmt::format_to_n(buffer, 4, FMT_COMPILE("{name:^4}"),
+  auto result = fmt::format_to_n(buffer, 4, FMT_COMPILE("{name:^5}"),
                                  fmt::arg("name", 42));
-  EXPECT_EQ(4u, result.size);
+  EXPECT_EQ(5u, result.size);
   EXPECT_EQ(buffer + 4, result.out);
   EXPECT_EQ(" 42 ", fmt::string_view(buffer, 4));
 }
