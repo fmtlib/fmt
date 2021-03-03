@@ -8,23 +8,44 @@ namespace fmtlog {
 using namespace fmt;
 
 template <typename Context> struct basic_format_entry {
+protected:
     using char_type = typename Context::char_type;
-    using format_arg = basic_format_arg<Context>;
+    using format_arg = fmt::detail::value<Context>;
     using arg_destructor = void (*)(void *p);
 
     basic_string_view<char_type> format_;
     unsigned long long desc_;
     arg_destructor dtor_;
 
-    void destruct() {
-        if (dtor_) {
-            fmt::print("calling dtor\n");
-            dtor_(this);
-        } else {
-            fmt::print("dtor is empty\n");
-        }
-    }
     FMT_CONSTEXPR basic_format_entry(basic_string_view<char_type> format) : format_(format), desc_(0), dtor_(0) {}
+    const format_arg* get_format_args() const;
+
+    template <typename OutIt, typename T = OutIt>
+    using enable_out = std::enable_if_t<fmt::detail::is_output_iterator<OutIt, char_type>::value, T>;
+public:
+    void destruct() { if (dtor_) dtor_(this); }
+
+    // libfmt public APIs
+    std::basic_string<char_type> format() const { return fmt::vformat(format_, {desc_, get_format_args()}); }
+
+    template <typename OutIt>
+    auto format_to(OutIt out) const -> enable_out<OutIt> {
+        return fmt::vformat_to(out, format_, {desc_, get_format_args()});
+    }
+
+    template <typename OutIt>
+    auto format_to_n(OutIt out, size_t n) const -> enable_out<OutIt, format_to_n_result<OutIt>> {
+        return fmt::vformat_to(fmt::detail::truncating_iterator<OutIt>(out, n), format_, {desc_, get_format_args()});
+    }
+
+    size_t formatted_size() const {
+        fmt::detail::counting_buffer<> buf;
+        format_to(buf);
+        return buf.count();
+    }
+
+    void print(std::FILE* file = stdout) const { return fmt::vprint(file, format_, {desc_, get_format_args()}); }
+
 };
 
 template <typename Context, typename... Args> struct format_entry : basic_format_entry<Context> {
@@ -36,7 +57,14 @@ template <typename Context, typename... Args> struct format_entry : basic_format
     FMT_CONSTEXPR format_entry(const S& format_str, const Args&... args) : entry(to_string_view(format_str)), arg_store_(args...) {
         entry::desc_ = arg_store_.desc;
     }
+    FMT_CONSTEXPR void set_dtor(typename entry::arg_destructor dtor) { this->dtor_ = dtor; }
 };
+
+template <typename Context>
+inline const typename basic_format_entry<Context>::format_arg* basic_format_entry<Context>::get_format_args() const {
+    auto& entry = static_cast<const format_entry<Context>&>(*this);
+    return &entry.arg_store_.data_.args_[entry.desc_ & fmt::detail::has_named_args_bit ? 1 : 0];
+}
 
 //
 // A stored entry looks like:
@@ -44,6 +72,8 @@ template <typename Context, typename... Args> struct format_entry : basic_format
 // | basic_format_entry | arg_store | stored_objs... | stored_buffers... |
 // -----------------------------------------------------------------------
 //
+
+namespace detail {
 
 enum class store_method {
     numeric,        // stored by libfmt as numeric value, no need for extra storage
@@ -115,17 +145,14 @@ template <typename Context, ptrdiff_t offset, typename... Args>
 using stored_objs_dtor = typename stored_objs_dtor_select<Context, offset, stored_objs_dtor_base, Args..., void>::type;
 
 // Collects internal details for generating index ranges [MIN, MAX)
-inline namespace detail
-{
-    template <size_t...> struct index_list {};
+template <size_t...> struct index_list {};
 
-    // Induction step
-    template <size_t MIN, size_t N, size_t... Is>
-    struct range_builder : public range_builder<MIN, N - 1, N - 1, Is...>  {};
+// Induction step
+template <size_t MIN, size_t N, size_t... Is>
+struct range_builder : public range_builder<MIN, N - 1, N - 1, Is...>  {};
 
-    // Base step
-    template <size_t MIN, size_t... Is> struct range_builder<MIN, MIN, Is...> { typedef index_list<Is...> type; };
-}
+// Base step
+template <size_t MIN, size_t... Is> struct range_builder<MIN, MIN, Is...> { typedef index_list<Is...> type; };
 
 // Meta-function that returns a [MIN, MAX) index range
 template<size_t MIN, size_t MAX>
@@ -164,7 +191,7 @@ private:
     template <typename S, size_t... Indice>
     constexpr format_entry_constructor(void* buf, const S& format_str, index_list<Indice...>, Args... args) : pEntry(reinterpret_cast<char*>(buf)), pBuffer(get_buffer_store(buf)) {
         auto p = new(buf) Entry(format_str, store<Indice>(std::forward<Args>(args))...);
-        p->dtor_ = Dtor::value ? Dtor::destruct : nullptr;
+        p->set_dtor(Dtor::value ? Dtor::destruct : nullptr);
     }
 
     template <size_t N> using arg_at = typename Trans::template arg_at<N>;
@@ -231,19 +258,48 @@ private:
     char* pBuffer;
 };
 
+template <typename Context>
+struct entry_destruct_sentry {
+    using Entry = basic_format_entry<Context>;
+    entry_destruct_sentry(Entry& entry) : entry_(entry) {}
+    ~entry_destruct_sentry() { entry_.destruct(); }
+    Entry& entry_;
+};
+
+}
+
 template <typename S, typename... Args, typename Char = char_t<S>>
 inline size_t store_format_entry(void* buf, const S& format_str, Args&&... args) {
     using Context = buffer_context<Char>;
-    using Constructor = format_entry_constructor<Context, Args&&...>;
+    using Constructor = detail::format_entry_constructor<Context, Args&&...>;
     return Constructor::construct(buf, format_str, std::forward<Args>(args)...);
 }
 
-template <typename Context> inline
-void print_format_entry(basic_format_entry<Context>& entry) {
-    auto& full_entry = static_cast<format_entry<Context>&>(entry);
-    vprint(entry.format_, {entry.desc_, &full_entry.arg_store_.data_.args_[entry.desc_ & fmt::detail::has_named_args_bit ? 1 : 0]});
-    entry.destruct();
+template <typename Context>
+inline auto format_entry_to_string(basic_format_entry<Context>& entry) -> decltype(entry.format()) {
+    detail::entry_destruct_sentry<Context> _(entry);
+    return entry.format();
 }
+
+template <typename OutIt, typename Context>
+inline auto format_entry_to(OutIt out, basic_format_entry<Context>& entry) -> decltype(entry.format_to(out)) {
+    detail::entry_destruct_sentry<Context> _(entry);
+    return entry.format_to(out);
+}
+
+template <typename OutIt, typename Context>
+inline auto format_entry_to_n(OutIt out, size_t n, basic_format_entry<Context>& entry) -> decltype(entry.format_to_n(out, n)) {
+    detail::entry_destruct_sentry<Context> _(entry);
+    return entry.format_to(out, n);
+}
+
+template <typename Context>
+inline void print_format_entry(std::FILE* f, basic_format_entry<Context>& entry) {
+    detail::entry_destruct_sentry<Context> _(entry);
+    entry.print(f);
+}
+
+template <typename Context> inline void print_format_entry(basic_format_entry<Context>& entry) { print_format_entry<Context>(stdout, entry); }
 
 }
 #endif
