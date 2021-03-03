@@ -10,7 +10,7 @@ using namespace fmt;
 template <typename Context> struct basic_format_entry {
 protected:
     using char_type = typename Context::char_type;
-    using format_arg = fmt::detail::value<Context>;
+    using format_arg = typename basic_format_args<Context>::format_arg;
     using arg_destructor = void (*)(void *p);
 
     basic_string_view<char_type> format_;
@@ -62,8 +62,17 @@ template <typename Context, typename... Args> struct format_entry : basic_format
 
 template <typename Context>
 inline const typename basic_format_entry<Context>::format_arg* basic_format_entry<Context>::get_format_args() const {
+    union obfuscated_args {
+        const fmt::detail::value<Context>* values_;
+        const format_arg* args_;
+        intptr_t pointer_; // more efficient to add integer with size, as the compiler is able to avoid emitting branch
+    } args;
     auto& entry = static_cast<const format_entry<Context>&>(*this);
-    return &entry.arg_store_.data_.args_[entry.desc_ & fmt::detail::has_named_args_bit ? 1 : 0];
+    args.values_ = entry.arg_store_.data_.args_;
+    if (entry.desc_ & fmt::detail::has_named_args_bit) {
+        args.pointer_ += (desc_ & fmt::detail::is_unpacked_bit) ? sizeof(*args.args_) : sizeof(*args.values_);
+    }
+    return args.args_;
 }
 
 //
