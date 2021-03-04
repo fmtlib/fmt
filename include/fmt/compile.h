@@ -704,12 +704,7 @@ constexpr auto compile(S format_str) {
     constexpr auto result =
         detail::compile_format_string<detail::type_list<Args...>, 0, 0>(
             format_str);
-    if constexpr (std::is_same<remove_cvref_t<decltype(result)>,
-                               detail::unknown_format>()) {
-      return detail::compiled_format<S, Args...>(to_string_view(format_str));
-    } else {
-      return result;
-    }
+    return result;
   }
 }
 #else
@@ -789,7 +784,17 @@ FMT_INLINE std::basic_string<typename S::char_type> format(const S&,
   }
 #endif
   constexpr auto compiled = detail::compile<Args...>(S());
+#ifdef __cpp_if_constexpr
+  if constexpr (std::is_same<remove_cvref_t<decltype(compiled)>,
+                             detail::unknown_format>()) {
+    return format(static_cast<basic_string_view<typename S::char_type>>(S()),
+                  std::forward<Args>(args)...);
+  } else {
+    return format(compiled, std::forward<Args>(args)...);
+  }
+#else
   return format(compiled, std::forward<Args>(args)...);
+#endif
 }
 
 template <typename OutputIt, typename CompiledFormat, typename... Args,
@@ -805,9 +810,20 @@ constexpr OutputIt format_to(OutputIt out, const CompiledFormat& cf,
 
 template <typename OutputIt, typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
-FMT_CONSTEXPR OutputIt format_to(OutputIt out, const S&, const Args&... args) {
+FMT_CONSTEXPR OutputIt format_to(OutputIt out, const S&, Args&&... args) {
   constexpr auto compiled = detail::compile<Args...>(S());
-  return format_to(out, compiled, args...);
+#ifdef __cpp_if_constexpr
+  if constexpr (std::is_same<remove_cvref_t<decltype(compiled)>,
+                             detail::unknown_format>()) {
+    return format_to(out,
+                     static_cast<basic_string_view<typename S::char_type>>(S()),
+                     std::forward<Args>(args)...);
+  } else {
+    return format_to(out, compiled, std::forward<Args>(args)...);
+  }
+#else
+  return format_to(out, compiled, std::forward<Args>(args)...);
+#endif
 }
 
 template <typename OutputIt, typename CompiledFormat, typename... Args>
@@ -827,10 +843,9 @@ auto format_to_n(OutputIt out, size_t n, const CompiledFormat& cf,
 template <typename OutputIt, typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
 format_to_n_result<OutputIt> format_to_n(OutputIt out, size_t n, const S&,
-                                         const Args&... args) {
-  constexpr auto compiled = detail::compile<Args...>(S());
-  auto it = format_to(detail::truncating_iterator<OutputIt>(out, n), compiled,
-                      args...);
+                                         Args&&... args) {
+  auto it = format_to(detail::truncating_iterator<OutputIt>(out, n), S(),
+                      std::forward<Args>(args)...);
   return {it.base(), it.count()};
 }
 
