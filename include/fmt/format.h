@@ -469,15 +469,17 @@ template <typename OutputIt> class truncating_iterator_base {
  protected:
   OutputIt out_;
   size_t limit_;
-  size_t count_;
+  size_t count_ = 0;
 
+  truncating_iterator_base() : out_(), limit_(0) {}
+  
   truncating_iterator_base(OutputIt out, size_t limit)
-      : out_(out), limit_(limit), count_(0) {}
+      : out_(out), limit_(limit) {}
 
  public:
   using iterator_category = std::output_iterator_tag;
   using value_type = typename std::iterator_traits<OutputIt>::value_type;
-  using difference_type = void;
+  using difference_type = std::ptrdiff_t;
   using pointer = void;
   using reference = void;
   using _Unchecked_type =
@@ -502,6 +504,8 @@ class truncating_iterator<OutputIt, std::false_type>
  public:
   using value_type = typename truncating_iterator_base<OutputIt>::value_type;
 
+  truncating_iterator() = default;
+  
   truncating_iterator(OutputIt out, size_t limit)
       : truncating_iterator_base<OutputIt>(out, limit) {}
 
@@ -525,6 +529,8 @@ template <typename OutputIt>
 class truncating_iterator<OutputIt, std::true_type>
     : public truncating_iterator_base<OutputIt> {
  public:
+  truncating_iterator() = default;
+
   truncating_iterator(OutputIt out, size_t limit)
       : truncating_iterator_base<OutputIt>(out, limit) {}
 
