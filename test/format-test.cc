@@ -151,43 +151,6 @@ TEST(IteratorTest, CountingIterator) {
   EXPECT_EQ((it + 41).count(), 42);
 }
 
-TEST(IteratorTest, TruncatingIterator) {
-  char* p = nullptr;
-  fmt::detail::truncating_iterator<char*> it(p, 3);
-  auto prev = it++;
-  EXPECT_EQ(prev.base(), p);
-  EXPECT_EQ(it.base(), p + 1);
-}
-
-
-TEST(IteratorTest, TruncatingIteratorDefaultConstruct) {
-  static_assert(
-      std::is_default_constructible<fmt::detail::truncating_iterator<char*>>::value,
-      "");
-  
-  fmt::detail::truncating_iterator<char*> it;
-  EXPECT_EQ(nullptr, it.base());
-  EXPECT_EQ(std::size_t{0}, it.count());
-}
-
-#ifdef __cpp_lib_ranges
-TEST(IteratorTest, TruncatingIteratorOutputIterator) {
-  static_assert(std::output_iterator<fmt::detail::truncating_iterator<char*>,
-      char>);
-}
-#endif
-
-TEST(IteratorTest, TruncatingBackInserter) {
-  std::string buffer;
-  auto bi = std::back_inserter(buffer);
-  fmt::detail::truncating_iterator<decltype(bi)> it(bi, 2);
-  *it++ = '4';
-  *it++ = '2';
-  *it++ = '1';
-  EXPECT_EQ(buffer.size(), 2);
-  EXPECT_EQ(buffer, "42");
-}
-
 TEST(IteratorTest, IsOutputIterator) {
   EXPECT_TRUE((fmt::detail::is_output_iterator<char*, char>::value));
   EXPECT_FALSE((fmt::detail::is_output_iterator<const char*, char>::value));
