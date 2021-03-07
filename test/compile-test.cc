@@ -261,6 +261,11 @@ TEST(CompileTest, FormatToNWithCompileMacro) {
   EXPECT_STREQ("2a", buffer);
 }
 
+TEST(CompileTest, FormattedSizeWithCompileMacro) {
+  EXPECT_EQ(2, fmt::formatted_size(FMT_COMPILE("{0}"), 42));
+  EXPECT_EQ(5, fmt::formatted_size(FMT_COMPILE("{0:<4.2f}"), 42.0));
+}
+
 TEST(CompileTest, TextAndArg) {
   EXPECT_EQ(">>>42<<<", fmt::format(FMT_COMPILE(">>>{}<<<"), 42));
   EXPECT_EQ("42!", fmt::format(FMT_COMPILE("{}!"), 42));

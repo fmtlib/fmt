@@ -928,7 +928,10 @@ format_to_n_result<OutputIt> format_to_n(OutputIt out, size_t n, const S&,
   return {it.base(), it.count()};
 }
 
-template <typename CompiledFormat, typename... Args>
+template <typename CompiledFormat, typename... Args,
+          FMT_ENABLE_IF(std::is_base_of<detail::basic_compiled_format,
+                                        CompiledFormat>::value ||
+                        detail::is_compiled_string<CompiledFormat>::value)>
 size_t formatted_size(const CompiledFormat& cf, const Args&... args) {
   return format_to(detail::counting_iterator(), cf, args...).count();
 }
