@@ -1022,26 +1022,27 @@ FMT_CONSTEXPR inline int count_digits(uint128_t n) {
 }
 #endif
 
-#ifdef FMT_BUILTIN_CLZLL
 // Returns the number of decimal digits in n. Leading zeros are not counted
 // except for n == 0 in which case count_digits returns 1.
 FMT_CONSTEXPR20 inline int count_digits(uint64_t n) {
   if (is_constant_evaluated()) {
     return count_digits_fallback(n);
   }
+#ifdef FMT_BUILTIN_CLZLL
   // https://github.com/fmtlib/format-benchmark/blob/master/digits10
   auto t = bsr2log10(FMT_BUILTIN_CLZLL(n | 1) ^ 63);
   return t - (n < data::zero_or_powers_of_10_64_new[t]);
-}
 #else
-// Fallback version of count_digits used when __builtin_clz is not available.
-FMT_CONSTEXPR inline int count_digits(uint64_t n) {
   return count_digits_fallback(n);
-}
 #endif
+}
 
 // Counts the number of digits in n. BITS = log2(radix).
-template <unsigned BITS, typename UInt> FMT_CONSTEXPR int count_digits(UInt n) {
+template <int BITS, typename UInt> FMT_CONSTEXPR int count_digits(UInt n) {
+#ifdef FMT_BUILTIN_CLZ
+  if (num_bits<UInt>() == 32)
+    return (FMT_BUILTIN_CLZ(static_cast<uint32_t>(n) | 1) ^ 31) / BITS + 1;
+#endif
   int num_digits = 0;
   do {
     ++num_digits;
