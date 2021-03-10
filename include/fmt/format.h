@@ -121,8 +121,8 @@ FMT_END_NAMESPACE
 #      define FMT_THROW(x) throw x
 #    endif
 #  else
-#    define FMT_THROW(x)       \
-      do {                     \
+#    define FMT_THROW(x)               \
+      do {                             \
         FMT_ASSERT(false, (x).what()); \
       } while (false)
 #  endif
@@ -2847,14 +2847,10 @@ class dynamic_specs_handler
 };
 
 template <typename Char, typename IDHandler>
-FMT_CONSTEXPR const Char* parse_arg_id(const Char* begin, const Char* end,
-                                       IDHandler&& handler) {
+FMT_CONSTEXPR const Char* do_parse_arg_id(const Char* begin, const Char* end,
+                                          IDHandler&& handler) {
   FMT_ASSERT(begin != end, "");
   Char c = *begin;
-  if (c == '}' || c == ':') {
-    handler();
-    return begin;
-  }
   if (c >= '0' && c <= '9') {
     int index = 0;
     if (c != '0')
@@ -2877,6 +2873,16 @@ FMT_CONSTEXPR const Char* parse_arg_id(const Char* begin, const Char* end,
   } while (it != end && (is_name_start(c = *it) || ('0' <= c && c <= '9')));
   handler(basic_string_view<Char>(begin, to_unsigned(it - begin)));
   return it;
+}
+
+template <typename Char, typename IDHandler>
+FMT_CONSTEXPR_DECL FMT_INLINE const Char* parse_arg_id(const Char* begin,
+                                                       const Char* end,
+                                                       IDHandler&& handler) {
+  Char c = *begin;
+  if (c != '}' && c != ':') return do_parse_arg_id(begin, end, handler);
+  handler();
+  return begin;
 }
 
 // Adapts SpecHandler to IDHandler API for dynamic width.
