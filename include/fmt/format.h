@@ -1016,6 +1016,11 @@ template <typename T> FMT_CONSTEXPR int count_digits_fallback(T n) {
     count += 4;
   }
 }
+#if FMT_USE_INT128
+FMT_CONSTEXPR inline int count_digits(uint128_t n) {
+  return count_digits_fallback(n);
+}
+#endif
 
 #ifdef FMT_BUILTIN_CLZLL
 // Returns the number of decimal digits in n. Leading zeros are not counted
@@ -1032,23 +1037,6 @@ FMT_CONSTEXPR20 inline int count_digits(uint64_t n) {
 // Fallback version of count_digits used when __builtin_clz is not available.
 FMT_CONSTEXPR inline int count_digits(uint64_t n) {
   return count_digits_fallback(n);
-}
-#endif
-
-#if FMT_USE_INT128
-FMT_CONSTEXPR inline int count_digits(uint128_t n) {
-  int count = 1;
-  for (;;) {
-    // Integer division is slow so do it for a group of four digits instead
-    // of for every digit. The idea comes from the talk by Alexandrescu
-    // "Three Optimization Tips for C++". See speed-test for a comparison.
-    if (n < 10) return count;
-    if (n < 100) return count + 1;
-    if (n < 1000) return count + 2;
-    if (n < 10000) return count + 3;
-    n /= 10000U;
-    count += 4;
-  }
 }
 #endif
 
