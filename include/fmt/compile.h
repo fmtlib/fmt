@@ -302,9 +302,13 @@ template <typename OutputIt, typename Context, typename Id>
 void format_arg(
     basic_format_parse_context<typename Context::char_type>& parse_ctx,
     Context& ctx, Id arg_id) {
-  ctx.advance_to(visit_format_arg(
-      arg_formatter<OutputIt, typename Context::char_type>(ctx, &parse_ctx),
-      ctx.arg(arg_id)));
+  auto arg = ctx.arg(arg_id);
+  if (arg.type() == type::custom_type) {
+    visit_format_arg(custom_formatter<Context>(parse_ctx, ctx), arg);
+  } else {
+    ctx.advance_to(visit_format_arg(
+        arg_formatter<OutputIt, typename Context::char_type>(ctx), arg));
+  }
 }
 
 // vformat_to is defined in a subnamespace to prevent ADL.
@@ -366,7 +370,7 @@ auto vformat_to(OutputIt out, CompiledFormat& cf,
       advance_to(parse_ctx, part.arg_id_end);
       ctx.advance_to(
           visit_format_arg(arg_formatter<OutputIt, typename Context::char_type>(
-                               ctx, nullptr, &specs),
+                               ctx, &specs),
                            arg));
       break;
     }

@@ -2450,8 +2450,6 @@ class arg_formatter : public arg_formatter_base<OutputIt, Char> {
   using context_type = basic_format_context<OutputIt, Char>;
 
   context_type& ctx_;
-  basic_format_parse_context<char_type>* parse_ctx_;
-  const Char* ptr_;
 
  public:
   using iterator = typename base::iterator;
@@ -2464,21 +2462,15 @@ class arg_formatter : public arg_formatter_base<OutputIt, Char> {
     *specs* contains format specifier information for standard argument types.
     \endrst
    */
-  constexpr explicit arg_formatter(
-      context_type& ctx,
-      basic_format_parse_context<char_type>* parse_ctx = nullptr,
-      format_specs* specs = nullptr, const Char* ptr = nullptr)
-      : base(ctx.out(), specs, ctx.locale()),
-        ctx_(ctx),
-        parse_ctx_(parse_ctx),
-        ptr_(ptr) {}
+  constexpr explicit arg_formatter(context_type& ctx,
+                                   format_specs* specs = nullptr)
+      : base(ctx.out(), specs, ctx.locale()), ctx_(ctx) {}
 
   using base::operator();
 
-  /** Formats an argument of a user-defined type. */
-  iterator operator()(typename basic_format_arg<context_type>::handle handle) {
-    if (ptr_) advance_to(*parse_ctx_, ptr_);
-    handle.format(*parse_ctx_, ctx_);
+  iterator operator()(typename basic_format_arg<context_type>::handle) {
+    // User-defined types are handled separately because they require access to
+    // the parse context.
     return ctx_.out();
   }
 };
@@ -3245,8 +3237,8 @@ struct format_handler : detail::error_handler {
         arg.type());
     begin = parse_format_specs(begin, end, handler);
     if (begin == end || *begin != '}') on_error("missing '}' in format string");
-    context.advance_to(visit_format_arg(
-        arg_formatter<OutputIt, Char>(context, &parse_context, &specs), arg));
+    context.advance_to(
+        visit_format_arg(arg_formatter<OutputIt, Char>(context, &specs), arg));
     return begin;
   }
 };
@@ -3623,7 +3615,7 @@ struct formatter<T, Char,
         specs.precision, specs.precision_ref, ctx);
     using af = detail::arg_formatter<typename FormatContext::iterator,
                                      typename FormatContext::char_type>;
-    return visit_format_arg(af(ctx, nullptr, &specs),
+    return visit_format_arg(af(ctx, &specs),
                             detail::make_arg<FormatContext>(val));
   }
 
@@ -3726,8 +3718,7 @@ template <typename Char = char> class dynamic_formatter {
     if (specs_.precision >= 0) checker.end_precision();
     using af = detail::arg_formatter<typename FormatContext::iterator,
                                      typename FormatContext::char_type>;
-    visit_format_arg(af(ctx, nullptr, &specs_),
-                     detail::make_arg<FormatContext>(val));
+    visit_format_arg(af(ctx, &specs_), detail::make_arg<FormatContext>(val));
     return ctx.out();
   }
 
