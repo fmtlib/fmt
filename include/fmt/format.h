@@ -2280,10 +2280,10 @@ class arg_formatter_base {
       detail::reserve(std::declval<iterator&>(), 0))>;
 
   template <typename T>
-  FMT_CONSTEXPR void write_int(T value, const format_specs& spec) {
+  FMT_CONSTEXPR void write_int(T value, const format_specs& specs) {
     using uint_type = uint32_or_64_or_128_t<T>;
-    int_writer<iterator, Char, uint_type> w(out_, locale_, value, spec);
-    handle_int_type_spec(spec.type, w);
+    int_writer<iterator, Char, uint_type> w(out_, locale_, value, specs);
+    handle_int_type_spec(specs.type, w);
     out_ = w.out;
   }
 
