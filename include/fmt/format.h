@@ -3019,8 +3019,14 @@ FMT_CONSTEXPR const Char* parse_precision(const Char* begin, const Char* end,
 // Parses standard format specifiers and sends notifications about parsed
 // components to handler.
 template <typename Char, typename SpecHandler>
-FMT_CONSTEXPR const Char* parse_format_specs(const Char* begin, const Char* end,
-                                             SpecHandler&& handler) {
+FMT_CONSTEXPR_DECL FMT_INLINE const Char* parse_format_specs(
+    const Char* begin, const Char* end, SpecHandler&& handler) {
+  if (begin + 1 < end && begin[1] == '}' && is_ascii_letter(*begin) &&
+      *begin != 'L') {
+    handler.on_type(*begin++);
+    return begin;
+  }
+
   if (begin == end) return begin;
 
   begin = parse_align(begin, end, handler);
@@ -3233,19 +3239,12 @@ struct format_handler : detail::error_handler {
       return parse_context.begin();
     }
     auto specs = basic_format_specs<Char>();
-    if (begin + 1 < end && begin[1] == '}' && is_ascii_letter(*begin) &&
-        *begin != 'L') {
-      specs.type = static_cast<char>(*begin++);
-    } else {
-      using parse_context_t = basic_format_parse_context<Char>;
-      specs_checker<specs_handler<parse_context_t, Context>> handler(
-          specs_handler<parse_context_t, Context>(specs, parse_context,
-                                                  context),
-          arg.type());
-      begin = parse_format_specs(begin, end, handler);
-      if (begin == end || *begin != '}')
-        on_error("missing '}' in format string");
-    }
+    using parse_context_t = basic_format_parse_context<Char>;
+    specs_checker<specs_handler<parse_context_t, Context>> handler(
+        specs_handler<parse_context_t, Context>(specs, parse_context, context),
+        arg.type());
+    begin = parse_format_specs(begin, end, handler);
+    if (begin == end || *begin != '}') on_error("missing '}' in format string");
     context.advance_to(visit_format_arg(
         arg_formatter<OutputIt, Char>(context, &parse_context, &specs), arg));
     return begin;
