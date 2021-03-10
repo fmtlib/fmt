@@ -27,12 +27,11 @@ TEST(IteratorTest, TruncatingIterator) {
   EXPECT_EQ(it.base(), p + 1);
 }
 
-
 TEST(IteratorTest, TruncatingIteratorDefaultConstruct) {
-  static_assert(
-      std::is_default_constructible<fmt::detail::truncating_iterator<char*>>::value,
-      "");
-  
+  static_assert(std::is_default_constructible<
+                    fmt::detail::truncating_iterator<char*>>::value,
+                "");
+
   fmt::detail::truncating_iterator<char*> it;
   EXPECT_EQ(nullptr, it.base());
   EXPECT_EQ(std::size_t{0}, it.count());
@@ -40,8 +39,8 @@ TEST(IteratorTest, TruncatingIteratorDefaultConstruct) {
 
 #ifdef __cpp_lib_ranges
 TEST(IteratorTest, TruncatingIteratorOutputIterator) {
-  static_assert(std::output_iterator<fmt::detail::truncating_iterator<char*>,
-      char>);
+  static_assert(
+      std::output_iterator<fmt::detail::truncating_iterator<char*>, char>);
 }
 #endif
 
