@@ -1612,14 +1612,14 @@ FMT_CONSTEXPR OutputIt write_padded(OutputIt out,
   static_assert(align == align::left || align == align::right, "");
   unsigned spec_width = to_unsigned(specs.width);
   size_t padding = spec_width > width ? spec_width - width : 0;
-  size_t left_padding = 0;
   auto* shifts = align == align::left ? data::left_padding_shifts
                                       : data::right_padding_shifts;
-  left_padding = padding >> shifts[specs.align];
+  size_t left_padding = padding >> shifts[specs.align];
+  size_t right_padding = padding - left_padding;
   auto it = reserve(out, size + padding * specs.fill.size());
-  it = fill(it, left_padding, specs.fill);
+  if (left_padding != 0) it = fill(it, left_padding, specs.fill);
   it = f(it);
-  it = fill(it, padding - left_padding, specs.fill);
+  if (right_padding != 0) it = fill(it, padding - left_padding, specs.fill);
   return base_iterator(out, it);
 }
 
