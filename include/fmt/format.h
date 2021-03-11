@@ -1680,18 +1680,24 @@ template <typename Char> struct write_int_data {
 
 // Writes an integer in the format
 //   <left-padding><prefix><numeric-padding><digits><right-padding>
-// where <digits> are written by f(it).
-template <typename OutputIt, typename Char, typename F>
-FMT_CONSTEXPR OutputIt write_int(OutputIt out, int num_digits,
-                                 string_view prefix,
-                                 const basic_format_specs<Char>& specs, F f) {
+// where <digits> are written by write_digits(it).
+template <typename OutputIt, typename Char, typename W>
+FMT_CONSTEXPR FMT_INLINE OutputIt
+write_int(OutputIt out, int num_digits, string_view prefix,
+          const basic_format_specs<Char>& specs, W write_digits) {
+  if (specs.width == 0 && specs.precision < 0) {
+    auto it = reserve(out, to_unsigned(num_digits) + prefix.size());
+    if (prefix.size() != 0)
+      it = copy_str<Char>(prefix.begin(), prefix.end(), it);
+    return base_iterator(out, write_digits(it));
+  }
   auto data = write_int_data<Char>(num_digits, prefix, specs);
   return write_padded<align::right>(
       out, specs, data.size, [=](reserve_iterator<OutputIt> it) {
         if (prefix.size() != 0)
           it = copy_str<Char>(prefix.begin(), prefix.end(), it);
         it = detail::fill_n(it, data.padding, static_cast<Char>('0'));
-        return f(it);
+        return write_digits(it);
       });
 }
 
