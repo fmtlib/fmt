@@ -902,6 +902,8 @@ using uint32_or_64_or_128_t =
     conditional_t<num_bits<T>() <= 32 && !FMT_REDUCE_INT_INSTANTIATIONS,
                   uint32_t,
                   conditional_t<num_bits<T>() <= 64, uint64_t, uint128_t>>;
+template <typename T>
+using uint64_or_128_t = conditional_t<num_bits<T>() <= 64, uint64_t, uint128_t>;
 
 // 128-bit integer type used internally
 struct FMT_EXTERN_TEMPLATE_API uint128_wrapper {
@@ -1707,6 +1709,7 @@ template <typename OutputIt, typename UInt, typename Char>
 OutputIt write_int_localized(OutputIt out, UInt value, string_view prefix,
                              const basic_format_specs<Char>& specs,
                              locale_ref loc) {
+  static_assert(std::is_same<uint64_or_128_t<UInt>, UInt>::value, "");
   const auto sep_size = 1;
   std::string groups = grouping<Char>(loc);
   if (groups.empty()) return write_dec(out, value, prefix, specs);
@@ -1759,11 +1762,9 @@ template <typename OutputIt, typename T, typename Char>
 FMT_CONSTEXPR OutputIt write_int(OutputIt out, T value,
                                  const basic_format_specs<Char>& specs,
                                  locale_ref loc) {
-  using uint_type = uint32_or_64_or_128_t<T>;
-  auto abs_value = static_cast<uint_type>(value);
-
   char prefix[4] = {};
   auto prefix_size = 0u;
+  auto abs_value = static_cast<uint32_or_64_or_128_t<T>>(value);
   if (is_negative(value)) {
     prefix[0] = '-';
     ++prefix_size;
@@ -1772,13 +1773,13 @@ FMT_CONSTEXPR OutputIt write_int(OutputIt out, T value,
     prefix[0] = specs.sign == sign::plus ? '+' : ' ';
     ++prefix_size;
   }
-
   switch (specs.type) {
   case 0:
   case 'd':
     return specs.localized
-               ? write_int_localized(out, abs_value, {prefix, prefix_size},
-                                     specs, loc)
+               ? write_int_localized(out,
+                                     static_cast<uint64_or_128_t<T>>(abs_value),
+                                     {prefix, prefix_size}, specs, loc)
                : write_dec(out, abs_value, {prefix, prefix_size}, specs);
   case 'x':
   case 'X': {
