@@ -64,26 +64,6 @@ TEST(OStreamTest, Enum) {
   EXPECT_EQ(L"0", fmt::format(L"{}", unstreamable_enum()));
 }
 
-struct test_arg_formatter
-    : fmt::detail::arg_formatter<fmt::format_context::iterator, char> {
-  fmt::format_parse_context parse_ctx;
-  test_arg_formatter(fmt::format_context& ctx, fmt::format_specs& s)
-      : fmt::detail::arg_formatter<fmt::format_context::iterator, char>(
-            ctx, &parse_ctx, &s),
-        parse_ctx("") {}
-};
-
-TEST(OStreamTest, CustomArg) {
-  fmt::memory_buffer buffer;
-  fmt::format_context ctx(fmt::detail::buffer_appender<char>{buffer},
-                          fmt::format_args());
-  fmt::format_specs spec;
-  test_arg_formatter af(ctx, spec);
-  fmt::visit_format_arg(
-      af, fmt::detail::make_arg<fmt::format_context>(streamable_enum()));
-  EXPECT_EQ("streamable_enum", std::string(buffer.data(), buffer.size()));
-}
-
 TEST(OStreamTest, Format) {
   EXPECT_EQ("a string", format("{0}", TestString("a string")));
   std::string s = format("The date is {0}", Date(2012, 12, 9));

@@ -25,6 +25,85 @@
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
+template <typename OutputIt> class truncating_iterator_base {
+ protected:
+  OutputIt out_;
+  size_t limit_;
+  size_t count_ = 0;
+
+  truncating_iterator_base() : out_(), limit_(0) {}
+
+  truncating_iterator_base(OutputIt out, size_t limit)
+      : out_(out), limit_(limit) {}
+
+ public:
+  using iterator_category = std::output_iterator_tag;
+  using value_type = typename std::iterator_traits<OutputIt>::value_type;
+  using difference_type = std::ptrdiff_t;
+  using pointer = void;
+  using reference = void;
+  using _Unchecked_type =
+      truncating_iterator_base;  // Mark iterator as checked.
+
+  OutputIt base() const { return out_; }
+  size_t count() const { return count_; }
+};
+
+// An output iterator that truncates the output and counts the number of objects
+// written to it.
+template <typename OutputIt,
+          typename Enable = typename std::is_void<
+              typename std::iterator_traits<OutputIt>::value_type>::type>
+class truncating_iterator;
+
+template <typename OutputIt>
+class truncating_iterator<OutputIt, std::false_type>
+    : public truncating_iterator_base<OutputIt> {
+  mutable typename truncating_iterator_base<OutputIt>::value_type blackhole_;
+
+ public:
+  using value_type = typename truncating_iterator_base<OutputIt>::value_type;
+
+  truncating_iterator() = default;
+
+  truncating_iterator(OutputIt out, size_t limit)
+      : truncating_iterator_base<OutputIt>(out, limit) {}
+
+  truncating_iterator& operator++() {
+    if (this->count_++ < this->limit_) ++this->out_;
+    return *this;
+  }
+
+  truncating_iterator operator++(int) {
+    auto it = *this;
+    ++*this;
+    return it;
+  }
+
+  value_type& operator*() const {
+    return this->count_ < this->limit_ ? *this->out_ : blackhole_;
+  }
+};
+
+template <typename OutputIt>
+class truncating_iterator<OutputIt, std::true_type>
+    : public truncating_iterator_base<OutputIt> {
+ public:
+  truncating_iterator() = default;
+
+  truncating_iterator(OutputIt out, size_t limit)
+      : truncating_iterator_base<OutputIt>(out, limit) {}
+
+  template <typename T> truncating_iterator& operator=(T val) {
+    if (this->count_++ < this->limit_) *this->out_++ = val;
+    return *this;
+  }
+
+  truncating_iterator& operator++() { return *this; }
+  truncating_iterator& operator++(int) { return *this; }
+  truncating_iterator& operator*() { return *this; }
+};
+
 // A compile-time string which is compiled into fast formatting code.
 class compiled_string {};
 
@@ -223,9 +302,13 @@ template <typename OutputIt, typename Context, typename Id>
 void format_arg(
     basic_format_parse_context<typename Context::char_type>& parse_ctx,
     Context& ctx, Id arg_id) {
-  ctx.advance_to(visit_format_arg(
-      arg_formatter<OutputIt, typename Context::char_type>(ctx, &parse_ctx),
-      ctx.arg(arg_id)));
+  auto arg = ctx.arg(arg_id);
+  if (arg.type() == type::custom_type) {
+    visit_format_arg(custom_formatter<Context>(parse_ctx, ctx), arg);
+  } else {
+    ctx.advance_to(visit_format_arg(
+        arg_formatter<OutputIt, typename Context::char_type>(ctx), arg));
+  }
 }
 
 // vformat_to is defined in a subnamespace to prevent ADL.
@@ -287,7 +370,7 @@ auto vformat_to(OutputIt out, CompiledFormat& cf,
       advance_to(parse_ctx, part.arg_id_end);
       ctx.advance_to(
           visit_format_arg(arg_formatter<OutputIt, typename Context::char_type>(
-                               ctx, nullptr, &specs),
+                               ctx, &specs),
                            arg));
       break;
     }
@@ -849,7 +932,10 @@ format_to_n_result<OutputIt> format_to_n(OutputIt out, size_t n, const S&,
   return {it.base(), it.count()};
 }
 
-template <typename CompiledFormat, typename... Args>
+template <typename CompiledFormat, typename... Args,
+          FMT_ENABLE_IF(std::is_base_of<detail::basic_compiled_format,
+                                        CompiledFormat>::value ||
+                        detail::is_compiled_string<CompiledFormat>::value)>
 size_t formatted_size(const CompiledFormat& cf, const Args&... args) {
   return format_to(detail::counting_iterator(), cf, args...).count();
 }
