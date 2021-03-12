@@ -3525,11 +3525,13 @@ struct formatter<T, Char,
   // terminating '}'.
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+    auto begin = ctx.begin(), end = ctx.end();
+    if (begin == end) return begin;
     using handler_type = detail::dynamic_specs_handler<ParseContext>;
     auto type = detail::type_constant<T, Char>::value;
     detail::specs_checker<handler_type> handler(handler_type(specs_, ctx),
                                                 type);
-    auto it = parse_format_specs(ctx.begin(), ctx.end(), handler);
+    auto it = parse_format_specs(begin, end, handler);
     auto eh = ctx.error_handler();
     switch (type) {
     case detail::type::none_type:
