@@ -1685,7 +1685,8 @@ template <typename OutputIt, typename Char, typename W>
 FMT_CONSTEXPR FMT_INLINE OutputIt
 write_int(OutputIt out, int num_digits, string_view prefix,
           const basic_format_specs<Char>& specs, W write_digits) {
-  if (specs.width == 0 && specs.precision < 0) {
+  // Slightly faster check for specs.width == 0 && specs.precision == -1.
+  if ((specs.width | (specs.precision + 1)) == 0) {
     auto it = reserve(out, to_unsigned(num_digits) + prefix.size());
     if (prefix.size() != 0)
       it = copy_str<Char>(prefix.begin(), prefix.end(), it);
