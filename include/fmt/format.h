@@ -1627,7 +1627,7 @@ FMT_CONSTEXPR OutputIt write_padded(OutputIt out,
   auto it = reserve(out, size + padding * specs.fill.size());
   if (left_padding != 0) it = fill(it, left_padding, specs.fill);
   it = f(it);
-  if (right_padding != 0) it = fill(it, padding - left_padding, specs.fill);
+  if (right_padding != 0) it = fill(it, right_padding, specs.fill);
   return base_iterator(out, it);
 }
 
