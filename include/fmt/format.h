@@ -982,8 +982,10 @@ template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
   static const char reset_color[5];
   static const wchar_t wreset_color[5];
   static const char signs[];
-  static constexpr const char left_padding_shifts[5] = {31, 31, 0, 1, 0};
-  static constexpr const char right_padding_shifts[5] = {0, 31, 0, 1, 0};
+  static constexpr const unsigned prefixes[] = {0, 0, 0x1000000u | '+',
+                                                0x1000000u | ' '};
+  static constexpr const char left_padding_shifts[] = {31, 31, 0, 1, 0};
+  static constexpr const char right_padding_shifts[] = {0, 31, 0, 1, 0};
 
   // DEPRECATED! These are for ABI compatibility.
   static const uint32_t zero_or_powers_of_10_32[];
@@ -1662,9 +1664,9 @@ template <typename Char> struct write_int_data {
   size_t size;
   size_t padding;
 
-  FMT_CONSTEXPR write_int_data(int num_digits, string_view prefix,
+  FMT_CONSTEXPR write_int_data(int num_digits, unsigned prefix,
                                const basic_format_specs<Char>& specs)
-      : size(prefix.size() + to_unsigned(num_digits)), padding(0) {
+      : size((prefix >> 24) + to_unsigned(num_digits)), padding(0) {
     if (specs.align == align::numeric) {
       auto width = to_unsigned(specs.width);
       if (width > size) {
@@ -1672,7 +1674,7 @@ template <typename Char> struct write_int_data {
         size = width;
       }
     } else if (specs.precision > num_digits) {
-      size = prefix.size() + to_unsigned(specs.precision);
+      size = (prefix >> 24) + to_unsigned(specs.precision);
       padding = to_unsigned(specs.precision - num_digits);
     }
   }
@@ -1681,29 +1683,32 @@ template <typename Char> struct write_int_data {
 // Writes an integer in the format
 //   <left-padding><prefix><numeric-padding><digits><right-padding>
 // where <digits> are written by write_digits(it).
+// prefix contains chars in three lower bytes and the size in the fourth byte.
 template <typename OutputIt, typename Char, typename W>
 FMT_CONSTEXPR FMT_INLINE OutputIt
-write_int(OutputIt out, int num_digits, string_view prefix,
+write_int(OutputIt out, int num_digits, unsigned prefix,
           const basic_format_specs<Char>& specs, W write_digits) {
   // Slightly faster check for specs.width == 0 && specs.precision == -1.
   if ((specs.width | (specs.precision + 1)) == 0) {
-    auto it = reserve(out, to_unsigned(num_digits) + prefix.size());
-    if (prefix.size() != 0)
-      it = copy_str<Char>(prefix.begin(), prefix.end(), it);
+    auto it = reserve(out, to_unsigned(num_digits) + (prefix >> 24));
+    if (prefix != 0) {
+      for (unsigned p = prefix & 0xffffff; p != 0; p >>= 8)
+        *it++ = static_cast<Char>(p & 0xff);
+    }
     return base_iterator(out, write_digits(it));
   }
   auto data = write_int_data<Char>(num_digits, prefix, specs);
   return write_padded<align::right>(
       out, specs, data.size, [=](reserve_iterator<OutputIt> it) {
-        if (prefix.size() != 0)
-          it = copy_str<Char>(prefix.begin(), prefix.end(), it);
+        for (unsigned p = prefix & 0xffffff; p != 0; p >>= 8)
+          *it++ = static_cast<Char>(p & 0xff);
         it = detail::fill_n(it, data.padding, static_cast<Char>('0'));
         return write_digits(it);
       });
 }
 
 template <typename OutputIt, typename UInt, typename Char>
-FMT_CONSTEXPR OutputIt write_dec(OutputIt out, UInt value, string_view prefix,
+FMT_CONSTEXPR OutputIt write_dec(OutputIt out, UInt value, unsigned prefix,
                                  const basic_format_specs<Char>& specs) {
   auto num_digits = count_digits(value);
   return write_int(out, num_digits, prefix, specs,
@@ -1713,7 +1718,7 @@ FMT_CONSTEXPR OutputIt write_dec(OutputIt out, UInt value, string_view prefix,
 }
 
 template <typename OutputIt, typename UInt, typename Char>
-OutputIt write_int_localized(OutputIt out, UInt value, string_view prefix,
+OutputIt write_int_localized(OutputIt out, UInt value, unsigned prefix,
                              const basic_format_specs<Char>& specs,
                              locale_ref loc) {
   static_assert(std::is_same<uint64_or_128_t<UInt>, UInt>::value, "");
@@ -1735,7 +1740,7 @@ OutputIt write_int_localized(OutputIt out, UInt value, string_view prefix,
   char digits[40];
   format_decimal(digits, value, num_digits);
   basic_memory_buffer<Char> buffer;
-  size += static_cast<int>(prefix.size());
+  if (prefix != 0) ++size;
   const auto usize = to_unsigned(size);
   buffer.resize(usize);
   basic_string_view<Char> s(&sep, sep_size);
@@ -1757,7 +1762,7 @@ OutputIt write_int_localized(OutputIt out, UInt value, string_view prefix,
     p -= s.size();
   }
   *p-- = static_cast<Char>(*digits);
-  if (prefix.size() != 0) *p = static_cast<Char>(prefix[0]);
+  if (prefix != 0) *p = static_cast<Char>(prefix);
   auto data = buffer.data();
   return write_padded<align::right>(
       out, specs, usize, usize, [=](reserve_iterator<OutputIt> it) {
@@ -1765,51 +1770,47 @@ OutputIt write_int_localized(OutputIt out, UInt value, string_view prefix,
       });
 }
 
+FMT_CONSTEXPR inline void prefix_append(unsigned& prefix, unsigned value) {
+  prefix |= prefix != 0 ? value << 8 : value;
+  prefix += (1u + (value > 0xff ? 1 : 0)) << 24;
+}
+
 template <typename OutputIt, typename T, typename Char>
 FMT_CONSTEXPR OutputIt write_int(OutputIt out, T value,
                                  const basic_format_specs<Char>& specs,
                                  locale_ref loc) {
-  char prefix[4] = {};
-  auto prefix_size = 0u;
+  auto prefix = 0u;
   auto abs_value = static_cast<uint32_or_64_or_128_t<T>>(value);
   if (is_negative(value)) {
-    prefix[0] = '-';
-    ++prefix_size;
+    prefix = 0x01000000 | '-';
     abs_value = 0 - abs_value;
-  } else if (specs.sign != sign::none && specs.sign != sign::minus) {
-    prefix[0] = specs.sign == sign::plus ? '+' : ' ';
-    ++prefix_size;
+  } else {
+    prefix = data::prefixes[specs.sign];
   }
+  auto utype = static_cast<unsigned>(specs.type);
   switch (specs.type) {
   case 0:
   case 'd':
     return specs.localized
                ? write_int_localized(out,
                                      static_cast<uint64_or_128_t<T>>(abs_value),
-                                     {prefix, prefix_size}, specs, loc)
-               : write_dec(out, abs_value, {prefix, prefix_size}, specs);
+                                     prefix, specs, loc)
+               : write_dec(out, abs_value, prefix, specs);
   case 'x':
   case 'X': {
-    if (specs.alt) {
-      prefix[prefix_size++] = '0';
-      prefix[prefix_size++] = specs.type;
-    }
+    if (specs.alt) prefix_append(prefix, (utype << 8) | '0');
     bool upper = specs.type != 'x';
     int num_digits = count_digits<4>(abs_value);
-    return write_int(out, num_digits, {prefix, prefix_size}, specs,
-                     [=](reserve_iterator<OutputIt> it) {
-                       return format_uint<4, Char>(it, abs_value, num_digits,
-                                                   upper);
-                     });
+    return write_int(
+        out, num_digits, prefix, specs, [=](reserve_iterator<OutputIt> it) {
+          return format_uint<4, Char>(it, abs_value, num_digits, upper);
+        });
   }
   case 'b':
   case 'B': {
-    if (specs.alt) {
-      prefix[prefix_size++] = '0';
-      prefix[prefix_size++] = static_cast<char>(specs.type);
-    }
+    if (specs.alt) prefix_append(prefix, (utype << 8) | '0');
     int num_digits = count_digits<1>(abs_value);
-    return write_int(out, num_digits, {prefix, prefix_size}, specs,
+    return write_int(out, num_digits, prefix, specs,
                      [=](reserve_iterator<OutputIt> it) {
                        return format_uint<1, Char>(it, abs_value, num_digits);
                      });
@@ -1819,17 +1820,16 @@ FMT_CONSTEXPR OutputIt write_int(OutputIt out, T value,
     if (specs.alt && specs.precision <= num_digits && abs_value != 0) {
       // Octal prefix '0' is counted as a digit, so only add it if precision
       // is not greater than the number of digits.
-      prefix[prefix_size++] = '0';
+      prefix_append(prefix, '0');
     }
-    return write_int(out, num_digits, {prefix, prefix_size}, specs,
+    return write_int(out, num_digits, prefix, specs,
                      [=](reserve_iterator<OutputIt> it) {
                        return format_uint<3, Char>(it, abs_value, num_digits);
                      });
   }
 #ifdef FMT_DEPRECATED_N_SPECIFIER
   case 'n':
-    return write_int_localized(out, abs_value, {prefix, prefix_size}, specs,
-                               loc);
+    return write_int_localized(out, abs_value, prefix, specs, loc);
 #endif
   case 'c':
     return write_char(out, static_cast<Char>(abs_value), specs);
