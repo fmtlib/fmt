@@ -487,7 +487,7 @@ System APIs
 ========================
 
 ``fmt/ostream.h`` provides ``std::ostream`` support including formatting of
-user-defined types that have overloaded ``operator<<``::
+user-defined types that have an overloaded insertion operator (``operator<<``)::
 
   #include <fmt/ostream.h>
 
@@ -503,6 +503,9 @@ user-defined types that have overloaded ``operator<<``::
 
   std::string s = fmt::format("The date is {}", date(2012, 12, 9));
   // s == "The date is 2012-12-9"
+
+{fmt} only supports insertion operators that are defined in the same namespaces
+as the types they format and can be found with the argument-dependent lookup.
 
 .. doxygenfunction:: print(std::basic_ostream<Char> &os, const S &format_str, Args&&... args)
 
