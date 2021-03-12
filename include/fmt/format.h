@@ -1425,45 +1425,6 @@ int snprintf_float(T value, int precision, float_specs specs,
 template <typename T> T promote_float(T value) { return value; }
 inline double promote_float(float value) { return static_cast<double>(value); }
 
-template <typename Handler>
-FMT_CONSTEXPR void handle_int_type_spec(char spec, Handler&& handler) {
-  switch (spec) {
-  case 0:
-  case 'd':
-    handler.on_dec();
-    break;
-  case 'x':
-  case 'X':
-    handler.on_hex();
-    break;
-  case 'b':
-  case 'B':
-    handler.on_bin();
-    break;
-  case 'o':
-    handler.on_oct();
-    break;
-#ifdef FMT_DEPRECATED_N_SPECIFIER
-  case 'n':
-    handler.on_num();
-    break;
-#endif
-  case 'c':
-    handler.on_chr();
-    break;
-  default:
-    handler.on_error();
-  }
-}
-
-template <typename Char, typename Handler>
-FMT_CONSTEXPR void handle_bool_type_spec(const basic_format_specs<Char>* specs,
-                                         Handler&& handler) {
-  if (!specs) return handler.on_str();
-  if (specs->type && specs->type != 's') return handler.on_int();
-  handler.on_str();
-}
-
 template <typename ErrorHandler = error_handler, typename Char>
 FMT_CONSTEXPR float_specs parse_float_type_spec(
     const basic_format_specs<Char>& specs, ErrorHandler&& eh = {}) {
@@ -1512,6 +1473,27 @@ FMT_CONSTEXPR float_specs parse_float_type_spec(
   return result;
 }
 
+template <typename ErrorHandler>
+FMT_CONSTEXPR void check_int_type_spec(char spec, ErrorHandler&& eh) {
+  switch (spec) {
+  case 0:
+  case 'd':
+  case 'x':
+  case 'X':
+  case 'b':
+  case 'B':
+  case 'o':
+#ifdef FMT_DEPRECATED_N_SPECIFIER
+  case 'n':
+#endif
+  case 'c':
+    break;
+  default:
+    eh.on_error("invalid type specifier");
+    break;
+  }
+}
+
 template <typename Char, typename Handler>
 FMT_CONSTEXPR void handle_char_specs(const basic_format_specs<Char>* specs,
                                      Handler&& handler) {
@@ -1542,22 +1524,6 @@ FMT_CONSTEXPR void check_pointer_type_spec(Char spec, ErrorHandler&& eh) {
   if (spec != 0 && spec != 'p') eh.on_error("invalid type specifier");
 }
 
-template <typename ErrorHandler> class int_type_checker : private ErrorHandler {
- public:
-  FMT_CONSTEXPR explicit int_type_checker(ErrorHandler eh) : ErrorHandler(eh) {}
-
-  FMT_CONSTEXPR void on_dec() {}
-  FMT_CONSTEXPR void on_hex() {}
-  FMT_CONSTEXPR void on_bin() {}
-  FMT_CONSTEXPR void on_oct() {}
-  FMT_CONSTEXPR void on_num() {}
-  FMT_CONSTEXPR void on_chr() {}
-
-  FMT_CONSTEXPR void on_error() {
-    ErrorHandler::on_error("invalid type specifier");
-  }
-};
-
 template <typename ErrorHandler>
 class char_specs_checker : public ErrorHandler {
  private:
@@ -1567,9 +1533,7 @@ class char_specs_checker : public ErrorHandler {
   FMT_CONSTEXPR char_specs_checker(char type, ErrorHandler eh)
       : ErrorHandler(eh), type_(type) {}
 
-  FMT_CONSTEXPR void on_int() {
-    handle_int_type_spec(type_, int_type_checker<ErrorHandler>(*this));
-  }
+  FMT_CONSTEXPR void on_int() { check_int_type_spec(type_, *this); }
   FMT_CONSTEXPR void on_char() {}
 };
 
@@ -1581,21 +1545,6 @@ class cstring_type_checker : public ErrorHandler {
 
   FMT_CONSTEXPR void on_string() {}
   FMT_CONSTEXPR void on_pointer() {}
-};
-
-template <typename ErrorHandler>
-class bool_type_checker : private ErrorHandler {
- private:
-  char type_;
-
- public:
-  FMT_CONSTEXPR explicit bool_type_checker(char type, ErrorHandler eh)
-      : ErrorHandler(eh), type_(type) {}
-
-  FMT_CONSTEXPR void on_int() {
-    handle_int_type_spec(type_, int_type_checker<ErrorHandler>(*this));
-  }
-  FMT_CONSTEXPR void on_str() {}
 };
 
 template <typename OutputIt, typename Char>
@@ -1708,25 +1657,15 @@ write_int(OutputIt out, int num_digits, unsigned prefix,
 }
 
 template <typename OutputIt, typename UInt, typename Char>
-FMT_CONSTEXPR OutputIt write_dec(OutputIt out, UInt value, unsigned prefix,
-                                 const basic_format_specs<Char>& specs) {
-  auto num_digits = count_digits(value);
-  return write_int(out, num_digits, prefix, specs,
-                   [=](reserve_iterator<OutputIt> it) {
-                     return format_decimal<Char>(it, value, num_digits).end;
-                   });
-}
-
-template <typename OutputIt, typename UInt, typename Char>
-OutputIt write_int_localized(OutputIt out, UInt value, unsigned prefix,
-                             const basic_format_specs<Char>& specs,
-                             locale_ref loc) {
+bool write_int_localized(OutputIt& out, UInt value, unsigned prefix,
+                         const basic_format_specs<Char>& specs,
+                         locale_ref loc) {
   static_assert(std::is_same<uint64_or_128_t<UInt>, UInt>::value, "");
   const auto sep_size = 1;
   std::string groups = grouping<Char>(loc);
-  if (groups.empty()) return write_dec(out, value, prefix, specs);
+  if (groups.empty()) return false;
   auto sep = thousands_sep<Char>(loc);
-  if (!sep) return write_dec(out, value, prefix, specs);
+  if (!sep) return false;
   int num_digits = count_digits(value);
   int size = num_digits, n = num_digits;
   std::string::const_iterator group = groups.cbegin();
@@ -1764,10 +1703,11 @@ OutputIt write_int_localized(OutputIt out, UInt value, unsigned prefix,
   *p-- = static_cast<Char>(*digits);
   if (prefix != 0) *p = static_cast<Char>(prefix);
   auto data = buffer.data();
-  return write_padded<align::right>(
+  out = write_padded<align::right>(
       out, specs, usize, usize, [=](reserve_iterator<OutputIt> it) {
         return copy_str<Char>(data, data + size, it);
       });
+  return true;
 }
 
 FMT_CONSTEXPR inline void prefix_append(unsigned& prefix, unsigned value) {
@@ -1790,12 +1730,18 @@ FMT_CONSTEXPR OutputIt write_int(OutputIt out, T value,
   auto utype = static_cast<unsigned>(specs.type);
   switch (specs.type) {
   case 0:
-  case 'd':
-    return specs.localized
-               ? write_int_localized(out,
-                                     static_cast<uint64_or_128_t<T>>(abs_value),
-                                     prefix, specs, loc)
-               : write_dec(out, abs_value, prefix, specs);
+  case 'd': {
+    if (specs.localized &&
+        write_int_localized(out, static_cast<uint64_or_128_t<T>>(abs_value),
+                            prefix, specs, loc)) {
+      return out;
+    }
+    auto num_digits = count_digits(abs_value);
+    return write_int(
+        out, num_digits, prefix, specs, [=](reserve_iterator<OutputIt> it) {
+          return format_decimal<Char>(it, abs_value, num_digits).end;
+        });
+  }
   case 'x':
   case 'X': {
     if (specs.alt) prefix_append(prefix, (utype << 8) | '0');
@@ -3537,18 +3483,16 @@ struct formatter<T, Char,
     case detail::type::none_type:
       FMT_ASSERT(false, "invalid argument type");
       break;
+    case detail::type::bool_type:
+      if (!specs_.type || specs_.type == 's') break;
+      FMT_FALLTHROUGH;
     case detail::type::int_type:
     case detail::type::uint_type:
     case detail::type::long_long_type:
     case detail::type::ulong_long_type:
     case detail::type::int128_type:
     case detail::type::uint128_type:
-      handle_int_type_spec(specs_.type,
-                           detail::int_type_checker<decltype(eh)>(eh));
-      break;
-    case detail::type::bool_type:
-      handle_bool_type_spec(
-          &specs_, detail::bool_type_checker<decltype(eh)>(specs_.type, eh));
+      detail::check_int_type_spec(specs_.type, eh);
       break;
     case detail::type::char_type:
       handle_char_specs(
