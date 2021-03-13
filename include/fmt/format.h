@@ -684,7 +684,7 @@ using is_fast_float = bool_constant<std::numeric_limits<T>::is_iec559 &&
 template <typename T>
 template <typename U>
 void buffer<T>::append(const U* begin, const U* end) {
-  do {
+  while (begin != end) {
     auto count = to_unsigned(end - begin);
     try_reserve(size_ + count);
     auto free_cap = capacity_ - size_;
@@ -692,7 +692,7 @@ void buffer<T>::append(const U* begin, const U* end) {
     std::uninitialized_copy_n(begin, count, make_checked(ptr_ + size_, count));
     size_ += count;
     begin += count;
-  } while (begin != end);
+  }
 }
 
 template <typename OutputIt, typename T, typename Traits>
@@ -1576,7 +1576,7 @@ FMT_CONSTEXPR OutputIt write_padded(OutputIt out,
   auto it = reserve(out, size + padding * specs.fill.size());
   if (left_padding != 0) it = fill(it, left_padding, specs.fill);
   it = f(it);
-  if (right_padding != 0) it = fill(it, padding - left_padding, specs.fill);
+  if (right_padding != 0) it = fill(it, right_padding, specs.fill);
   return base_iterator(out, it);
 }
 
