@@ -168,29 +168,21 @@ class dynamic_format_arg_store
   /**
     \rst
     Adds a reference to the argument into the dynamic store for later passing to
-    a formatting function. Supports named arguments wrapped in
-    ``std::reference_wrapper`` via ``std::ref()``/``std::cref()``.
+    a formatting function.
 
     **Example**::
 
       fmt::dynamic_format_arg_store<fmt::format_context> store;
-      char str[] = "1234567890";
-      store.push_back(std::cref(str));
-      int a1_val{42};
-      auto a1 = fmt::arg("a1_", a1_val);
-      store.push_back(std::cref(a1));
-
-      // Changing str affects the output but only for string and custom types.
-      str[0] = 'X';
-
-      std::string result = fmt::vformat("{} and {a1_}");
-      assert(result == "X234567890 and 42");
+      char band[] = "Rolling Stones";
+      store.push_back(std::cref(band));
+      band[9] = 'c'; // Changing str affects the output.
+      std::string result = fmt::vformat("{}", store);
+      // result == "Rolling Scones"
     \endrst
   */
   template <typename T> void push_back(std::reference_wrapper<T> arg) {
     static_assert(
-        detail::is_named_arg<typename std::remove_cv<T>::type>::value ||
-            need_copy<T>::value,
+        need_copy<T>::value,
         "objects of built-in types and string views are always copied");
     emplace_arg(arg.get());
   }
@@ -198,7 +190,7 @@ class dynamic_format_arg_store
   /**
     Adds named argument into the dynamic store for later passing to a formatting
     function. ``std::reference_wrapper`` is supported to avoid copying of the
-    argument.
+    argument. The name is always stored by reference.
   */
   template <typename T>
   void push_back(const detail::named_arg<char_type, T>& arg) {

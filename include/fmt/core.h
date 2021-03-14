@@ -1619,8 +1619,9 @@ inline auto make_args_checked(const S& format_str,
 
 /**
   \rst
-  Returns a named argument to be used in a formatting function. It should only
-  be used in a call to a formatting function.
+  Returns a named argument to be used in a formatting function.
+  It should only be used in a call to a formatting function or
+  `dynamic_format_arg_store::push_back`.
 
   **Example**::
 
