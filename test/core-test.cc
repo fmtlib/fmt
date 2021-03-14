@@ -471,7 +471,7 @@ TEST(FormatDynArgsTest, NamedArgByRef) {
   fmt::dynamic_format_arg_store<fmt::format_context> store;
   char band[] = "Rolling Stones";
   store.push_back(fmt::arg("band", std::cref(band)));
-  band[9] = 'c'; // Changing str affects the output.
+  band[9] = 'c'; // Changing band affects the output.
   EXPECT_EQ(fmt::vformat("{band}", store), "Rolling Scones");
 }
 
