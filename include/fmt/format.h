@@ -204,17 +204,18 @@ FMT_END_NAMESPACE
 // __builtin_clz and __builtin_clzll, so only define FMT_BUILTIN_CLZ using the
 // MSVC intrinsics if the clz and clzll builtins are not available.
 #if FMT_MSC_VER && !defined(FMT_BUILTIN_CLZLL) && \
-    !defined(FMT_BUILTIN_CTZLL) && !defined(_MANAGED)
+    !defined(FMT_BUILTIN_CTZLL)
 FMT_BEGIN_NAMESPACE
 namespace detail {
 // Avoid Clang with Microsoft CodeGen's -Wunknown-pragmas warning.
-#  ifndef __clang__
+#  if !defined(__clang__)
+#    pragma managed(push, off)
 #    pragma intrinsic(_BitScanForward)
 #    pragma intrinsic(_BitScanReverse)
-#  endif
-#  if defined(_WIN64) && !defined(__clang__)
-#    pragma intrinsic(_BitScanForward64)
-#    pragma intrinsic(_BitScanReverse64)
+#    if defined(_WIN64)
+#      pragma intrinsic(_BitScanForward64)
+#      pragma intrinsic(_BitScanReverse64)
+#    endif
 #  endif
 
 inline int clz(uint32_t x) {
@@ -270,6 +271,9 @@ inline int ctzll(uint64_t x) {
   return static_cast<int>(r);
 }
 #  define FMT_BUILTIN_CTZLL(n) detail::ctzll(n)
+#  if !defined(__clang__)
+#    pragma managed(pop)
+#  endif
 }  // namespace detail
 FMT_END_NAMESPACE
 #endif
