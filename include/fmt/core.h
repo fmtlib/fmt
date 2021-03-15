@@ -177,7 +177,7 @@
 
 #ifndef FMT_USE_INLINE_NAMESPACES
 #  if FMT_HAS_FEATURE(cxx_inline_namespaces) || FMT_GCC_VERSION >= 404 || \
-      (FMT_MSC_VER >= 1900 && !_MANAGED)
+      (FMT_MSC_VER >= 1900 && (!defined(_MANAGED) || !_MANAGED))
 #    define FMT_USE_INLINE_NAMESPACES 1
 #  else
 #    define FMT_USE_INLINE_NAMESPACES 0
