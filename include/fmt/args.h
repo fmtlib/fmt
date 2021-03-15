@@ -190,7 +190,7 @@ class dynamic_format_arg_store
   /**
     Adds named argument into the dynamic store for later passing to a formatting
     function. ``std::reference_wrapper`` is supported to avoid copying of the
-    argument. The name is always stored by reference.
+    argument. The name is always copied into the store.
   */
   template <typename T>
   void push_back(const detail::named_arg<char_type, T>& arg) {
