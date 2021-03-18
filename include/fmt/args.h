@@ -95,7 +95,9 @@ class dynamic_format_arg_store
   };
 
   template <typename T>
-  using stored_type = conditional_t<detail::is_string<T>::value,
+  using stored_type = conditional_t<detail::is_string<T>::value &&
+                                        !has_formatter<T, Context>::value &&
+                                        !detail::is_reference_wrapper<T>::value,
                                     std::basic_string<char_type>, T>;
 
   // Storage of basic_format_arg must be contiguous.
