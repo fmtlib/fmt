@@ -1460,7 +1460,7 @@ template <typename T, typename U> constexpr const U& check(const U& val) {
 template <bool IS_PACKED, typename Context, type, typename T,
           FMT_ENABLE_IF(IS_PACKED)>
 constexpr value<Context> make_arg(const T& val) {
-  return check<T>(arg_mapper<Context>().map(val));
+  return detail::check<T>(arg_mapper<Context>().map(val));
 }
 
 template <bool IS_PACKED, typename Context, type, typename T,

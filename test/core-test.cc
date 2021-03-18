@@ -471,7 +471,7 @@ TEST(FormatDynArgsTest, NamedArgByRef) {
   fmt::dynamic_format_arg_store<fmt::format_context> store;
   char band[] = "Rolling Stones";
   store.push_back(fmt::arg("band", std::cref(band)));
-  band[9] = 'c'; // Changing band affects the output.
+  band[9] = 'c';  // Changing band affects the output.
   EXPECT_EQ(fmt::vformat("{band}", store), "Rolling Scones");
 }
 
@@ -690,9 +690,10 @@ TYPED_TEST(IsStringTest, IsString) {
   EXPECT_FALSE(fmt::detail::is_string<my_ns::non_string>::value);
 }
 
-TEST(CoreTest, Format) {
-  EXPECT_EQ(fmt::format("{}", 42), "42");
-}
+TEST(CoreTest, Format) { EXPECT_EQ(fmt::format("{}", 42), "42"); }
+
+template <typename T> void check(T);
+TEST(CoreTest, ADL) { EXPECT_EQ(fmt::format("{}", test_struct()), "test"); }
 
 TEST(CoreTest, FormatTo) {
   std::string s;
