@@ -87,6 +87,7 @@ function(add_fmt_test name)
   add_test(NAME ${name} COMMAND ${name})
 endfunction()
 
+add_fmt_test(args-test)
 add_fmt_test(assert-test)
 add_fmt_test(chrono-test)
 add_fmt_test(color-test)
