@@ -147,20 +147,6 @@ FMT_END_NAMESPACE
 #  endif
 #endif
 
-#ifndef FMT_USE_UDL_TEMPLATE
-// EDG frontend based compilers (icc, nvcc, PGI, etc) and GCC < 6.4 do not
-// properly support UDL templates and GCC >= 9 warns about them.
-#  if FMT_USE_USER_DEFINED_LITERALS &&                         \
-      (!defined(__EDG_VERSION__) || __EDG_VERSION__ >= 501) && \
-      ((FMT_GCC_VERSION >= 604 && __cplusplus >= 201402L) ||   \
-       FMT_CLANG_VERSION >= 304) &&                            \
-      !defined(__PGI) && !defined(__NVCC__)
-#    define FMT_USE_UDL_TEMPLATE 1
-#  else
-#    define FMT_USE_UDL_TEMPLATE 0
-#  endif
-#endif
-
 #ifndef FMT_USE_FLOAT
 #  define FMT_USE_FLOAT 1
 #endif
@@ -3995,17 +3981,6 @@ void vprint(basic_string_view<Char> format_str, wformat_args args) {
 
 #if FMT_USE_USER_DEFINED_LITERALS
 namespace detail {
-
-#  if FMT_USE_UDL_TEMPLATE
-template <typename Char, Char... CHARS> class udl_formatter {
- public:
-  template <typename... Args>
-  std::basic_string<Char> operator()(Args&&... args) const {
-    static FMT_CONSTEXPR_DECL Char s[] = {CHARS..., '\0'};
-    return format(FMT_STRING(s), std::forward<Args>(args)...);
-  }
-};
-#  else
 template <typename Char> struct udl_formatter {
   basic_string_view<Char> str;
 
@@ -4014,7 +3989,6 @@ template <typename Char> struct udl_formatter {
     return format(str, std::forward<Args>(args)...);
   }
 };
-#  endif  // FMT_USE_UDL_TEMPLATE
 
 template <typename Char> struct udl_arg {
   const Char* str;
@@ -4026,18 +4000,6 @@ template <typename Char> struct udl_arg {
 }  // namespace detail
 
 inline namespace literals {
-#  if FMT_USE_UDL_TEMPLATE
-#    pragma GCC diagnostic push
-#    pragma GCC diagnostic ignored "-Wpedantic"
-#    if FMT_CLANG_VERSION
-#      pragma GCC diagnostic ignored "-Wgnu-string-literal-operator-template"
-#    endif
-template <typename Char, Char... CHARS>
-constexpr detail::udl_formatter<Char, CHARS...> operator""_format() {
-  return {};
-}
-#    pragma GCC diagnostic pop
-#  else
 /**
   \rst
   User-defined literal equivalent of :func:`fmt::format`.
@@ -4056,7 +4018,6 @@ constexpr detail::udl_formatter<wchar_t> operator"" _format(const wchar_t* s,
                                                             size_t n) {
   return {{s, n}};
 }
-#  endif  // FMT_USE_UDL_TEMPLATE
 
 /**
   \rst

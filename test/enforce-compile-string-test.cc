@@ -37,14 +37,6 @@ void test_format_api() {
   fmt::format_to_n(wbuffer, 3, FMT_STRING(L"{}"), 12345);
 }
 
-void test_literals_api() {
-#if FMT_USE_UDL_TEMPLATE
-  using namespace fmt::literals;
-  "{}c{}"_format("ab", 1);
-  L"{}c{}"_format(L"ab", 1);
-#endif
-}
-
 void test_chrono() {
   fmt::format(FMT_STRING("{}"), std::chrono::seconds(42));
   fmt::format(FMT_STRING(L"{}"), std::chrono::seconds(42));
@@ -67,7 +59,6 @@ void test_range() {
 
 int main() {
   test_format_api();
-  test_literals_api();
   test_chrono();
   test_text_style();
   test_range();
