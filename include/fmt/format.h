@@ -4033,7 +4033,7 @@ inline namespace literals {
 #      pragma GCC diagnostic ignored "-Wgnu-string-literal-operator-template"
 #    endif
 template <typename Char, Char... CHARS>
-FMT_CONSTEXPR detail::udl_formatter<Char, CHARS...> operator""_format() {
+constexpr detail::udl_formatter<Char, CHARS...> operator""_format() {
   return {};
 }
 #    pragma GCC diagnostic pop
@@ -4048,12 +4048,12 @@ FMT_CONSTEXPR detail::udl_formatter<Char, CHARS...> operator""_format() {
     std::string message = "The answer is {}"_format(42);
   \endrst
  */
-FMT_CONSTEXPR inline detail::udl_formatter<char> operator"" _format(
-    const char* s, size_t n) {
+constexpr detail::udl_formatter<char> operator"" _format(const char* s,
+                                                         size_t n) {
   return {{s, n}};
 }
-FMT_CONSTEXPR inline detail::udl_formatter<wchar_t> operator"" _format(
-    const wchar_t* s, size_t n) {
+constexpr detail::udl_formatter<wchar_t> operator"" _format(const wchar_t* s,
+                                                            size_t n) {
   return {{s, n}};
 }
 #  endif  // FMT_USE_UDL_TEMPLATE
@@ -4068,12 +4068,10 @@ FMT_CONSTEXPR inline detail::udl_formatter<wchar_t> operator"" _format(
     fmt::print("Elapsed time: {s:.2f} seconds", "s"_a=1.23);
   \endrst
  */
-FMT_CONSTEXPR inline detail::udl_arg<char> operator"" _a(const char* s,
-                                                         size_t) {
+constexpr detail::udl_arg<char> operator"" _a(const char* s, size_t) {
   return {s};
 }
-FMT_CONSTEXPR inline detail::udl_arg<wchar_t> operator"" _a(const wchar_t* s,
-                                                            size_t) {
+constexpr detail::udl_arg<wchar_t> operator"" _a(const wchar_t* s, size_t) {
   return {s};
 }
 }  // namespace literals
