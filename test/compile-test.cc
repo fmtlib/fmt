@@ -288,6 +288,27 @@ TEST(CompileTest, UnknownFormatFallback) {
 }
 
 TEST(CompileTest, Empty) { EXPECT_EQ("", fmt::format(FMT_COMPILE(""))); }
+
+struct to_stringable {
+  friend fmt::string_view to_string_view(to_stringable) { return {}; }
+};
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<to_stringable> {
+  auto parse(format_parse_context& ctx) const -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
+
+  template <typename FormatContext>
+  auto format(const to_stringable&, FormatContext& ctx) -> decltype(ctx.out()) {
+    return ctx.out();
+  }
+};
+FMT_END_NAMESPACE
+
+TEST(CompileTest, ToStringAndFormatter) {
+  fmt::format(FMT_COMPILE("{}"), to_stringable());
+}
 #endif
 
 #if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS

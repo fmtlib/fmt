@@ -203,8 +203,7 @@ FMT_END_NAMESPACE
 // Some compilers masquerade as both MSVC and GCC-likes or otherwise support
 // __builtin_clz and __builtin_clzll, so only define FMT_BUILTIN_CLZ using the
 // MSVC intrinsics if the clz and clzll builtins are not available.
-#if FMT_MSC_VER && !defined(FMT_BUILTIN_CLZLL) && \
-    !defined(FMT_BUILTIN_CTZLL)
+#if FMT_MSC_VER && !defined(FMT_BUILTIN_CLZLL) && !defined(FMT_BUILTIN_CTZLL)
 FMT_BEGIN_NAMESPACE
 namespace detail {
 // Avoid Clang with Microsoft CodeGen's -Wunknown-pragmas warning.
@@ -2101,6 +2100,12 @@ FMT_CONSTEXPR OutputIt write(OutputIt out, basic_string_view<Char> value) {
   auto it = reserve(out, value.size());
   it = copy_str<Char>(value.begin(), value.end(), it);
   return base_iterator(out, it);
+}
+
+template <typename Char, typename OutputIt, typename T,
+          FMT_ENABLE_IF(is_string<T>::value)>
+constexpr OutputIt write(OutputIt out, const T& value) {
+  return write<Char>(out, to_string_view(value));
 }
 
 template <typename Char, typename OutputIt, typename T,
