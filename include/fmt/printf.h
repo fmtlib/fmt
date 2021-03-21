@@ -207,50 +207,32 @@ template <typename OutputIt, typename Char> class basic_printf_context;
  */
 template <typename OutputIt, typename Char>
 class printf_arg_formatter : public detail::arg_formatter_base<OutputIt, Char> {
- public:
-  using iterator = OutputIt;
-
  private:
-  using char_type = Char;
   using base = detail::arg_formatter_base<OutputIt, Char>;
   using context_type = basic_printf_context<OutputIt, Char>;
+  using format_specs = typename base::format_specs;
 
   context_type& context_;
 
-  void write_null_pointer(char) {
-    this->specs()->type = 0;
-    this->write("(nil)");
-  }
-
-  void write_null_pointer(wchar_t) {
-    this->specs()->type = 0;
-    this->write(L"(nil)");
+  OutputIt write_null_pointer(bool is_string = false) {
+    auto s = this->specs();
+    s.type = 0;
+    return detail::write(this->out(),
+                         string_view(is_string ? "(null)" : "(nil)"), s);
   }
 
  public:
-  using format_specs = typename base::format_specs;
+  printf_arg_formatter(OutputIt iter, format_specs& specs, context_type& ctx)
+      : base(iter, specs, detail::locale_ref()), context_(ctx) {}
 
-  /**
-    \rst
-    Constructs an argument formatter object.
-    *buffer* is a reference to the output buffer and *specs* contains format
-    specifier information for standard argument types.
-    \endrst
-   */
-  printf_arg_formatter(iterator iter, format_specs& specs, context_type& ctx)
-      : base(iter, &specs, detail::locale_ref()), context_(ctx) {}
+  OutputIt operator()(monostate value) { return base::operator()(value); }
 
   template <typename T, FMT_ENABLE_IF(fmt::detail::is_integral<T>::value)>
-  iterator operator()(T value) {
-    // MSVC2013 fails to compile separate overloads for bool and char_type so
-    // use std::is_same instead.
-    if (std::is_same<T, bool>::value) {
-      format_specs& fmt_specs = *this->specs();
-      if (fmt_specs.type != 's') return base::operator()(value ? 1 : 0);
-      fmt_specs.type = 0;
-      this->write(value != 0);
-    } else if (std::is_same<T, char_type>::value) {
-      format_specs& fmt_specs = *this->specs();
+  OutputIt operator()(T value) {
+    // MSVC2013 fails to compile separate overloads for bool and Char so use
+    // std::is_same instead.
+    if (std::is_same<T, Char>::value) {
+      format_specs fmt_specs = this->specs();
       if (fmt_specs.type && fmt_specs.type != 'c')
         return (*this)(static_cast<int>(value));
       fmt_specs.sign = sign::none;
@@ -260,56 +242,39 @@ class printf_arg_formatter : public detail::arg_formatter_base<OutputIt, Char> {
       // ignored for non-numeric types
       if (fmt_specs.align == align::none || fmt_specs.align == align::numeric)
         fmt_specs.align = align::right;
-      return base::operator()(value);
-    } else {
-      return base::operator()(value);
+      return write_char(this->out(), static_cast<Char>(value), fmt_specs);
     }
-    return this->out();
+    return base::operator()(value);
   }
 
   template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
-  iterator operator()(T value) {
+  OutputIt operator()(T value) {
     return base::operator()(value);
   }
 
   /** Formats a null-terminated C string. */
-  iterator operator()(const char* value) {
-    if (value)
-      base::operator()(value);
-    else if (this->specs()->type == 'p')
-      write_null_pointer(char_type());
-    else
-      this->write("(null)");
-    return this->out();
+  OutputIt operator()(const char* value) {
+    if (value) return base::operator()(value);
+    return write_null_pointer(this->specs().type != 'p');
   }
 
   /** Formats a null-terminated wide C string. */
-  iterator operator()(const wchar_t* value) {
-    if (value)
-      base::operator()(value);
-    else if (this->specs()->type == 'p')
-      write_null_pointer(char_type());
-    else
-      this->write(L"(null)");
-    return this->out();
+  OutputIt operator()(const wchar_t* value) {
+    if (value) return base::operator()(value);
+    return write_null_pointer(this->specs().type != 'p');
   }
 
-  iterator operator()(basic_string_view<char_type> value) {
+  OutputIt operator()(basic_string_view<Char> value) {
     return base::operator()(value);
   }
 
-  iterator operator()(monostate value) { return base::operator()(value); }
-
   /** Formats a pointer. */
-  iterator operator()(const void* value) {
-    if (value) return base::operator()(value);
-    this->specs()->type = 0;
-    write_null_pointer(char_type());
-    return this->out();
+  OutputIt operator()(const void* value) {
+    return value ? base::operator()(value) : write_null_pointer();
   }
 
   /** Formats an argument of a custom (user-defined) type. */
-  iterator operator()(typename basic_format_arg<context_type>::handle handle) {
+  OutputIt operator()(typename basic_format_arg<context_type>::handle handle) {
     handle.format(context_.parse_context(), context_);
     return this->out();
   }

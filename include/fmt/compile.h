@@ -307,7 +307,9 @@ void format_arg(
     visit_format_arg(custom_formatter<Context>(parse_ctx, ctx), arg);
   } else {
     ctx.advance_to(visit_format_arg(
-        arg_formatter<OutputIt, typename Context::char_type>(ctx), arg));
+        default_arg_formatter<OutputIt, typename Context::char_type>{
+            ctx.out(), ctx.args(), ctx.locale()},
+        arg));
   }
 }
 
@@ -368,10 +370,9 @@ auto vformat_to(OutputIt out, CompiledFormat& cf,
       if (specs.precision >= 0) checker.check_precision();
 
       advance_to(parse_ctx, part.arg_id_end);
-      ctx.advance_to(
-          visit_format_arg(arg_formatter<OutputIt, typename Context::char_type>(
-                               ctx, &specs),
-                           arg));
+      ctx.advance_to(visit_format_arg(
+          arg_formatter<OutputIt, typename Context::char_type>(ctx, specs),
+          arg));
       break;
     }
     }
