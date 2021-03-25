@@ -16,7 +16,7 @@ jobs:
           - os: windows-2016
             standard: 11
           - os: windows-2019
-            standard: 14
+            standard: 17
           - os: windows-2016
             platform: Win32
             build_type: Debug

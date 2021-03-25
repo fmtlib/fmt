@@ -17,23 +17,15 @@ else ()
   target_compile_definitions(gmock PUBLIC GTEST_HAS_PTHREAD=0)
 endif ()
 
-target_compile_definitions(gmock PUBLIC GTEST_LANG_CXX11=0)
+target_compile_definitions(gmock PUBLIC GTEST_LANG_CXX11=1)
 
 if (MSVC)
-  # Workaround a bug in implementation of variadic templates in MSVC11.
-  target_compile_definitions(gmock PUBLIC _VARIADIC_MAX=10)
-  
   # Disable MSVC warnings of _CRT_INSECURE_DEPRECATE functions.
   target_compile_definitions(gmock PRIVATE _CRT_SECURE_NO_WARNINGS)
   if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     # Disable MSVC warnings of POSIX functions.
     target_compile_options(gmock PUBLIC -Wno-deprecated-declarations)
   endif ()
-endif ()
-
-# GTest doesn't detect <tuple> with clang.
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-  target_compile_definitions(gmock PUBLIC GTEST_USE_OWN_TR1_TUPLE=1)
 endif ()
 
 # Silence MSVC tr1 deprecation warning in gmock.
