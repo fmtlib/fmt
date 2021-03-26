@@ -1695,7 +1695,8 @@ template <typename Context> class basic_format_args {
   template <typename... Args>
   constexpr FMT_INLINE basic_format_args(
       const format_arg_store<Context, Args...>& store)
-      : basic_format_args(store.desc, store.data_.args()) {}
+      : basic_format_args(format_arg_store<Context, Args...>::desc,
+                          store.data_.args()) {}
 
   /**
    \rst
