@@ -344,6 +344,7 @@ long getpagesize();
 namespace detail {
 
 struct buffer_size {
+  buffer_size() = default;
   size_t value = 0;
   buffer_size operator=(size_t val) const {
     auto bs = buffer_size();
