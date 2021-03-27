@@ -254,7 +254,9 @@
 
 // Enable minimal optimizations for more compact code in debug mode.
 FMT_GCC_PRAGMA("GCC push_options")
+#ifndef __OPTIMIZE__
 FMT_GCC_PRAGMA("GCC optimize(\"Og\")")
+#endif
 
 FMT_BEGIN_NAMESPACE
 
