@@ -25,8 +25,10 @@
 
 #if defined(__GNUC__) && !defined(__clang__)
 #  define FMT_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
+#  define FMT_GCC_PRAGMA(arg) _Pragma(arg)
 #else
 #  define FMT_GCC_VERSION 0
+#  define FMT_GCC_PRAGMA(arg)
 #endif
 
 #if defined(__INTEL_COMPILER)
@@ -250,6 +252,10 @@
 #  define FMT_COMPILE_TIME_CHECKS 0
 #endif
 
+// Enable minimal optimizations for more compact code in debug mode.
+FMT_GCC_PRAGMA("GCC push_options")
+FMT_GCC_PRAGMA("GCC optimize(\"Og\")")
+
 FMT_BEGIN_NAMESPACE
 
 // Implementations of enable_if_t and other metafunctions for older systems.
@@ -387,7 +393,7 @@ template <typename Char> class basic_string_view {
 #if __cplusplus >= 201703L  // C++17's char_traits::length() is constexpr.
   FMT_CONSTEXPR
 #endif
-  basic_string_view(const Char* s)
+  FMT_INLINE basic_string_view(const Char* s)
       : data_(s), size_(std::char_traits<Char>::length(s)) {}
 
   /** Constructs a string reference from a ``std::basic_string`` object. */
@@ -475,7 +481,7 @@ template <> struct is_char<char32_t> : std::true_type {};
   \endrst
  */
 template <typename Char, FMT_ENABLE_IF(is_char<Char>::value)>
-inline basic_string_view<Char> to_string_view(const Char* s) {
+FMT_INLINE basic_string_view<Char> to_string_view(const Char* s) {
   return s;
 }
 
@@ -1570,7 +1576,7 @@ class format_arg_store
            : 0);
 
  public:
-  FMT_CONSTEXPR format_arg_store(const Args&... args)
+  FMT_CONSTEXPR FMT_INLINE format_arg_store(const Args&... args)
       :
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
         basic_format_args<Context>(*this),
@@ -1605,8 +1611,8 @@ constexpr format_arg_store<Context, Args...> make_format_args(
   \endrst
  */
 template <typename... Args, typename S, typename Char = char_t<S>>
-inline auto make_args_checked(const S& format_str,
-                              const remove_reference_t<Args>&... args)
+FMT_INLINE auto make_args_checked(const S& format_str,
+                                  const remove_reference_t<Args>&... args)
     -> format_arg_store<buffer_context<Char>, remove_reference_t<Args>...> {
   static_assert(
       detail::count<(
@@ -1943,6 +1949,7 @@ inline void print(const S& format_str, Args&&... args) {
              : detail::vprint_mojibake(stdout, to_string_view(format_str),
                                        vargs);
 }
+FMT_GCC_PRAGMA("GCC pop_options")
 FMT_END_NAMESPACE
 
 #endif  // FMT_CORE_H_
