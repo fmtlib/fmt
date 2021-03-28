@@ -1684,8 +1684,8 @@ template <typename Context> class basic_format_args {
     return static_cast<detail::type>((desc_ >> shift) & mask);
   }
 
-  constexpr basic_format_args(unsigned long long desc,
-                              const detail::value<Context>* values)
+  constexpr FMT_INLINE basic_format_args(unsigned long long desc,
+                                         const detail::value<Context>* values)
       : desc_(desc), values_(values) {}
   constexpr basic_format_args(unsigned long long desc, const format_arg* args)
       : desc_(desc), args_(args) {}
