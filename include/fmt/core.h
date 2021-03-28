@@ -1391,8 +1391,6 @@ FMT_CONSTEXPR_DECL FMT_INLINE auto visit_format_arg(
   return vis(monostate());
 }
 
-template <typename T> struct formattable : std::false_type {};
-
 namespace detail {
 
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 500
