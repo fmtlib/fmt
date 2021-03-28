@@ -395,8 +395,12 @@ template <typename Char> class basic_string_view {
 #if __cplusplus >= 201703L  // C++17's char_traits::length() is constexpr.
   FMT_CONSTEXPR
 #endif
-  FMT_INLINE basic_string_view(const Char* s)
-      : data_(s), size_(std::char_traits<Char>::length(s)) {}
+  FMT_INLINE basic_string_view(const Char* s) : data_(s) {
+    if (std::is_same<Char, char>::value)
+      size_ = std::strlen(reinterpret_cast<const char*>(s));
+    else
+      size_ = std::char_traits<Char>::length(s);
+  }
 
   /** Constructs a string reference from a ``std::basic_string`` object. */
   template <typename Traits, typename Alloc>
