@@ -1451,24 +1451,18 @@ FMT_CONSTEXPR basic_format_arg<Context> make_arg(const T& value) {
   return arg;
 }
 
-template <typename T> int check(unformattable) {
-  static_assert(
-      formattable<T>(),
-      "Cannot format an argument. To make type T formattable provide a "
-      "formatter<T> specialization: https://fmt.dev/latest/api.html#udt");
-  return 0;
-}
-template <typename T, typename U> constexpr const U& check(const U& val) {
-  return val;
-}
-
 // The type template parameter is there to avoid an ODR violation when using
 // a fallback formatter in one translation unit and an implicit conversion in
 // another (not recommended).
 template <bool IS_PACKED, typename Context, type, typename T,
           FMT_ENABLE_IF(IS_PACKED)>
-constexpr value<Context> make_arg(const T& val) {
-  return detail::check<T>(arg_mapper<Context>().map(val));
+FMT_CONSTEXPR value<Context> make_arg(const T& val) {
+  const auto& arg = arg_mapper<Context>().map(val);
+  static_assert(
+      !std::is_same<decltype(arg), const unformattable&>::value,
+      "Cannot format an argument. To make type T formattable provide a "
+      "formatter<T> specialization: https://fmt.dev/latest/api.html#udt");
+  return arg;
 }
 
 template <bool IS_PACKED, typename Context, type, typename T,
