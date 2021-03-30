@@ -293,6 +293,19 @@ TEST(OStreamTest, Move) {
   moved.print("hello");
 }
 
+TEST(OStreamTest, MoveWhileHoldingData) {
+  {
+    fmt::ostream out = fmt::output_file("test-file");
+    out.print("Hello, ");
+    fmt::ostream moved(std::move(out));
+    moved.print("world!\n");
+  }
+  {
+    file in("test-file", file::RDONLY);
+    EXPECT_READ(in, "Hello, world!\n");
+  }
+}
+
 TEST(OStreamTest, Print) {
   fmt::ostream out = fmt::output_file("test-file");
   out.print("The answer is {}.\n", fmt::join(std::initializer_list<int>{42}, ", "));
