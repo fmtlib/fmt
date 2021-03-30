@@ -267,21 +267,7 @@ TEST(BufferedFileTest, CloseError) {
 }
 
 TEST(BufferedFileTest, Fileno) {
-  buffered_file f;
-#  ifndef __COVERITY__
-  // fileno on a null FILE pointer either crashes or returns an error.
-  // Disable Coverity because this is intentional.
-  EXPECT_DEATH_IF_SUPPORTED(
-      {
-        try {
-          f.fileno();
-        } catch (const fmt::system_error&) {
-          std::exit(1);
-        }
-      },
-      "");
-#  endif
-  f = open_buffered_file();
+  auto f = open_buffered_file();
   EXPECT_TRUE(f.fileno() != -1);
   file copy = file::dup(f.fileno());
   EXPECT_READ(copy, FILE_CONTENT);
