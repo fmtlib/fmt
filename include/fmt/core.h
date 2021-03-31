@@ -877,7 +877,7 @@ class buffer_appender : public std::back_insert_iterator<buffer<T>> {
   using base = std::back_insert_iterator<buffer<T>>;
 
  public:
-  explicit buffer_appender(buffer<T>& buf) : base(buf) {}
+  using std::back_insert_iterator<buffer<T>>::back_insert_iterator;
   buffer_appender(base it) : base(it) {}
 
   buffer_appender& operator++() {

@@ -217,6 +217,23 @@ static void check_move_buffer(
   EXPECT_EQ(alloc, buffer2.get_allocator().get());
 }
 
+TEST(BufferAppenderTest, BufferAppenderDefaultConstruct) {
+  // back_insert_iterator is not default-constructible before C++20, so
+  // buffer_appender can only be default-constructible when back_insert_iterator
+  // is.
+  static_assert(
+      std::is_default_constructible<
+          std::back_insert_iterator<fmt::detail::buffer<char>>>::value ==
+      std::is_default_constructible<fmt::detail::buffer_appender<char>>::value,
+      "");
+}
+
+#ifdef __cpp_lib_ranges
+TEST(BufferAppenderTest, BufferAppenderOutputIterator) {
+  static_assert(std::output_iterator<fmt::detail::buffer_appender<char>, char>);
+}
+#endif
+
 TEST(MemoryBufferTest, MoveCtorInlineBuffer) {
   std::allocator<char> alloc;
   basic_memory_buffer<char, 5, std_allocator> buffer((std_allocator(&alloc)));
