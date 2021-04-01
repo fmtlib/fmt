@@ -7,7 +7,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        cxx: [g++-4.8, g++-8, g++-10, clang++-9]
+        cxx: [g++-4.8, g++-10, clang++-9]
         build_type: [Debug, Release]
         std: [11]
         os: [ubuntu-18.04]
@@ -17,6 +17,7 @@ jobs:
             os: ubuntu-18.04
           - cxx: g++-8
             std: 14
+            install: sudo apt install g++-8
             os: ubuntu-18.04
           - cxx: g++-10
             std: 17
