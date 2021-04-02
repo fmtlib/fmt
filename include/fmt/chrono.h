@@ -401,9 +401,9 @@ inline size_t strftime(wchar_t* str, size_t count, const wchar_t* format,
 }
 }  // namespace detail
 
-template <typename Char>
-struct formatter<std::chrono::time_point<std::chrono::system_clock>, Char>
-    : formatter<std::tm, Char> {
+template <typename Char, typename Duration>
+struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
+                 Char> : formatter<std::tm, Char> {
   template <typename FormatContext>
   auto format(std::chrono::time_point<std::chrono::system_clock> val,
               FormatContext& ctx) -> decltype(ctx.out()) {

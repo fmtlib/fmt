@@ -100,24 +100,30 @@ TEST(TimeTest, FormatTM) {
   std::time_t t = std::chrono::system_clock::to_time_t(point);
   std::tm tm = *std::localtime(&t);
   char strftime_output[256];
-  std::strftime(strftime_output, sizeof(strftime_output),
-                "%Y-%m-%d %H:%M:%S", &tm);
+  std::strftime(strftime_output, sizeof(strftime_output), "%Y-%m-%d %H:%M:%S",
+                &tm);
   EXPECT_EQ(strftime_output, fmt::format("{:%Y-%m-%d %H:%M:%S}", tm));
   auto wstrftime_output = std::wstring();
   std::copy(strftime_output, strftime_output + strlen(strftime_output),
             std::back_inserter(wstrftime_output));
-  EXPECT_EQ(wstrftime_output,
-            fmt::format(L"{:%Y-%m-%d %H:%M:%S}", tm));
+  EXPECT_EQ(wstrftime_output, fmt::format(L"{:%Y-%m-%d %H:%M:%S}", tm));
+}
+
+template <typename TimePoint> std::string strftime(TimePoint tp) {
+  std::time_t t = std::chrono::system_clock::to_time_t(tp);
+  std::tm tm = *std::localtime(&t);
+  char output[256];
+  std::strftime(output, sizeof(output), "%Y-%m-%d %H:%M:%S", &tm);
+  return output;
 }
 
 TEST(TimeTest, TimePoint) {
-  auto point = std::chrono::system_clock::now();
-  std::time_t t = std::chrono::system_clock::to_time_t(point);
-  std::tm tm = *std::localtime(&t);
-  char strftime_output[256];
-  std::strftime(strftime_output, sizeof(strftime_output),
-                "%Y-%m-%d %H:%M:%S", &tm);
-  EXPECT_EQ(strftime_output, fmt::format("{:%Y-%m-%d %H:%M:%S}", point));
+  auto t1 = std::chrono::system_clock::now();
+  EXPECT_EQ(strftime(t1), fmt::format("{:%Y-%m-%d %H:%M:%S}", t1));
+  using time_point =
+      std::chrono::time_point<std::chrono::system_clock, std::chrono::seconds>;
+  auto t2 = time_point(std::chrono::seconds(42));
+  EXPECT_EQ(strftime(t2), fmt::format("{:%Y-%m-%d %H:%M:%S}", t2));
 }
 
 #define EXPECT_TIME(spec, time, duration)                 \
