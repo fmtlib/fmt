@@ -2300,7 +2300,7 @@ small_divisor_case_label:
 
 // Formats value using a variation of the Fixed-Precision Positive
 // Floating-Point Printout ((FPP)^2) algorithm by Steele & White:
-// https://fmt.dev/p372-steele.pdf.
+// https://fmt.dev/papers/p372-steele.pdf.
 template <typename Double>
 void fallback_format(Double d, int num_digits, bool binary32, buffer<char>& buf,
                      int& exp10) {
