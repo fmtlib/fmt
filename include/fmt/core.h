@@ -98,6 +98,13 @@
 #  define FMT_CONSTEXPR_DECL
 #endif
 
+// C++17's char_traits::length() is constexpr.
+#if __cplusplus >= 201703L
+#  define FMT_CONSTEXPR_CHAR_TRAITS_LENGTH FMT_CONSTEXPR
+#else
+#  define FMT_CONSTEXPR_CHAR_TRAITS_LENGTH
+#endif
+
 #ifndef FMT_OVERRIDE
 #  if FMT_HAS_FEATURE(cxx_override_control) || \
       (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || FMT_MSC_VER >= 1900
@@ -392,11 +399,8 @@ template <typename Char> class basic_string_view {
     the size with ``std::char_traits<Char>::length``.
     \endrst
    */
-#if __cplusplus >= 201703L  // C++17's char_traits::length() is constexpr.
-  FMT_CONSTEXPR
-#endif
-  FMT_INLINE basic_string_view(const Char* s) : data_(s) {
-    if (std::is_same<Char, char>::value && !detail::is_constant_evaluated())
+  FMT_CONSTEXPR_CHAR_TRAITS_LENGTH FMT_INLINE basic_string_view(const Char* s) : data_(s) {
+    if FMT_CONSTEXPR_CHAR_TRAITS_LENGTH (std::is_same<Char, char>::value && !detail::is_constant_evaluated())
       size_ = std::strlen(reinterpret_cast<const char*>(s));
     else
       size_ = std::char_traits<Char>::length(s);
