@@ -971,8 +971,8 @@ template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
   static const char reset_color[5];
   static const wchar_t wreset_color[5];
   static const char signs[];
-  static constexpr const unsigned prefixes[] = {0, 0, 0x1000000u | '+',
-                                                0x1000000u | ' '};
+  static constexpr const unsigned prefixes[4] = {0, 0, 0x1000000u | '+',
+                                                 0x1000000u | ' '};
   static constexpr const char left_padding_shifts[] = {31, 31, 0, 1, 0};
   static constexpr const char right_padding_shifts[] = {0, 31, 0, 1, 0};
 
