@@ -901,14 +901,14 @@ struct FMT_EXTERN_TEMPLATE_API uint128_wrapper {
 #if FMT_USE_INT128
   uint128_t internal_;
 
-  FMT_CONSTEXPR uint128_wrapper(uint64_t high, uint64_t low) FMT_NOEXCEPT
+  constexpr uint128_wrapper(uint64_t high, uint64_t low) FMT_NOEXCEPT
       : internal_{static_cast<uint128_t>(low) |
                   (static_cast<uint128_t>(high) << 64)} {}
 
-  FMT_CONSTEXPR uint128_wrapper(uint128_t u) : internal_{u} {}
+  constexpr uint128_wrapper(uint128_t u) : internal_{u} {}
 
-  FMT_CONSTEXPR uint64_t high() const FMT_NOEXCEPT { return uint64_t(internal_ >> 64); }
-  FMT_CONSTEXPR uint64_t low() const FMT_NOEXCEPT { return uint64_t(internal_); }
+  constexpr uint64_t high() const FMT_NOEXCEPT { return uint64_t(internal_ >> 64); }
+  constexpr uint64_t low() const FMT_NOEXCEPT { return uint64_t(internal_); }
 
   uint128_wrapper& operator+=(uint64_t n) FMT_NOEXCEPT {
     internal_ += n;
@@ -918,11 +918,11 @@ struct FMT_EXTERN_TEMPLATE_API uint128_wrapper {
   uint64_t high_;
   uint64_t low_;
 
-  FMT_CONSTEXPR uint128_wrapper(uint64_t high, uint64_t low) FMT_NOEXCEPT : high_{high},
+  constexpr uint128_wrapper(uint64_t high, uint64_t low) FMT_NOEXCEPT : high_{high},
                                                               low_{low} {}
 
-  FMT_CONSTEXPR uint64_t high() const FMT_NOEXCEPT { return high_; }
-  FMT_CONSTEXPR uint64_t low() const FMT_NOEXCEPT { return low_; }
+  constexpr uint64_t high() const FMT_NOEXCEPT { return high_; }
+  constexpr uint64_t low() const FMT_NOEXCEPT { return low_; }
 
   uint128_wrapper& operator+=(uint64_t n) FMT_NOEXCEPT {
 #  if defined(_MSC_VER) && defined(_M_X64)
