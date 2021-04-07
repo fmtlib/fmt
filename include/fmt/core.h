@@ -393,10 +393,13 @@ template <typename Char> class basic_string_view {
     \endrst
    */
 #if __cplusplus >= 201703L  // C++17's char_traits::length() is constexpr.
-  FMT_CONSTEXPR
+  constexpr
 #endif
-  FMT_INLINE basic_string_view(const Char* s) : data_(s) {
-    if (std::is_same<Char, char>::value && !detail::is_constant_evaluated())
+      FMT_INLINE
+      basic_string_view(const Char* s)
+      : data_(s) {
+    if (detail::const_check(std::is_same<Char, char>::value &&
+                            !detail::is_constant_evaluated()))
       size_ = std::strlen(reinterpret_cast<const char*>(s));
     else
       size_ = std::char_traits<Char>::length(s);
