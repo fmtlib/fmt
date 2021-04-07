@@ -816,6 +816,8 @@ FMT_DEPRECATED auto compile(const Args&... args)
   return detail::compile(args...);
 }
 
+FMT_MODULE_EXPORT_BEGIN
+
 #if FMT_USE_CONSTEXPR
 #  ifdef __cpp_if_constexpr
 
@@ -953,6 +955,7 @@ operator""_cf() {
 }  // namespace literals
 #endif
 
+FMT_MODULE_EXPORT_END
 FMT_END_NAMESPACE
 
 #endif  // FMT_COMPILE_H_

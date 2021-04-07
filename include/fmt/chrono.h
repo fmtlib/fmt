@@ -289,6 +289,8 @@ inline null<> gmtime_r(...) { return null<>(); }
 inline null<> gmtime_s(...) { return null<>(); }
 }  // namespace detail
 
+FMT_MODULE_EXPORT_BEGIN
+
 /**
   Converts given time since epoch as ``std::time_t`` value into calendar time,
   expressed in local time. Unlike ``std::localtime``, this function is
@@ -380,6 +382,8 @@ inline std::tm gmtime(
   return gmtime(std::chrono::system_clock::to_time_t(time_point));
 }
 
+FMT_MODULE_EXPORT_END
+
 namespace detail {
 inline size_t strftime(char* str, size_t count, const char* format,
                        const std::tm* time) {
@@ -400,6 +404,8 @@ inline size_t strftime(wchar_t* str, size_t count, const wchar_t* format,
   return wcsftime(str, count, format, time);
 }
 }  // namespace detail
+
+FMT_MODULE_EXPORT_BEGIN
 
 template <typename Char, typename Duration>
 struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
@@ -1185,6 +1191,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
   }
 };
 
+FMT_MODULE_EXPORT_END
 FMT_END_NAMESPACE
 
 #endif  // FMT_CHRONO_H_
