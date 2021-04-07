@@ -27,9 +27,6 @@ jobs:
             cxxflags: -DFMT_COMPILE_TIME_CHECKS=1
             os: ubuntu-20.04
           - cxx: clang++-9
-            std: 11
-            os: ubuntu-18.04
-          - cxx: clang++-9
             build_type: Debug
             fuzz: -DFMT_FUZZ=ON -DFMT_FUZZ_LINKMAIN=ON
             std: 17
