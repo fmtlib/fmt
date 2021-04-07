@@ -392,7 +392,7 @@ template <typename Char> class basic_string_view {
     the size with ``std::char_traits<Char>::length``.
     \endrst
    */
-#if __cplusplus >= 201703L
+#if __cplusplus >= 201703L // C++17's char_traits::length() is constexpr.
   constexpr
 #endif
       FMT_INLINE
