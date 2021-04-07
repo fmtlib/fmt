@@ -16,13 +16,16 @@ jobs:
             install: sudo apt install g++-4.8
             os: ubuntu-18.04
           - cxx: g++-8
+            build_type: Debug
             std: 14
             install: sudo apt install g++-8
             os: ubuntu-18.04
           - cxx: g++-10
+            build_type: Debug
             std: 17
             os: ubuntu-18.04
           - cxx: g++-10
+            build_type: Debug
             std: 20
             cxxflags: -DFMT_COMPILE_TIME_CHECKS=1
             os: ubuntu-20.04
