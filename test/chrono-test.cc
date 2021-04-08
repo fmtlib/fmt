@@ -6,7 +6,9 @@
 // For the license information refer to format.h.
 
 #ifdef WIN32
-#  define _CRT_SECURE_NO_WARNINGS
+#  ifndef _CRT_SECURE_NO_WARNINGS
+#    define _CRT_SECURE_NO_WARNINGS
+#  endif
 #endif
 
 #include "fmt/chrono.h"
