@@ -323,15 +323,15 @@ TEST(CompileTest, CompileFormatStringLiteral) {
     (__cplusplus >= 201709L && FMT_GCC_VERSION >= 1002)
 template <size_t max_string_length, typename Char = char> struct test_string {
   template <typename T> constexpr bool operator==(const T& rhs) const noexcept {
-    return fmt::basic_string_view<Char>(rhs).compare(buffer.data()) == 0;
+    return fmt::basic_string_view<Char>(rhs).compare(buffer) == 0;
   }
-  std::array<Char, max_string_length> buffer{};
+  Char buffer[max_string_length]{};
 };
 
 template <size_t max_string_length, typename Char = char, typename... Args>
 consteval auto test_format(auto format, const Args&... args) {
   test_string<max_string_length, Char> string{};
-  fmt::format_to(string.buffer.data(), format, args...);
+  fmt::format_to(string.buffer, format, args...);
   return string;
 }
 
