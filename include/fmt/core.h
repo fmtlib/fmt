@@ -434,7 +434,7 @@ template <typename Char> class basic_string_view {
   }
 
   // Lexicographically compare this string reference to other.
-  int compare(basic_string_view other) const {
+  FMT_CONSTEXPR int compare(basic_string_view other) const {
     size_t str_size = size_ < other.size_ ? size_ : other.size_;
     int result = std::char_traits<Char>::compare(data_, other.data_, str_size);
     if (result == 0)
@@ -442,22 +442,22 @@ template <typename Char> class basic_string_view {
     return result;
   }
 
-  friend bool operator==(basic_string_view lhs, basic_string_view rhs) {
+  FMT_CONSTEXPR friend bool operator==(basic_string_view lhs, basic_string_view rhs) {
     return lhs.compare(rhs) == 0;
   }
-  friend bool operator!=(basic_string_view lhs, basic_string_view rhs) {
+  FMT_CONSTEXPR friend bool operator!=(basic_string_view lhs, basic_string_view rhs) {
     return lhs.compare(rhs) != 0;
   }
-  friend bool operator<(basic_string_view lhs, basic_string_view rhs) {
+  FMT_CONSTEXPR friend bool operator<(basic_string_view lhs, basic_string_view rhs) {
     return lhs.compare(rhs) < 0;
   }
-  friend bool operator<=(basic_string_view lhs, basic_string_view rhs) {
+  FMT_CONSTEXPR friend bool operator<=(basic_string_view lhs, basic_string_view rhs) {
     return lhs.compare(rhs) <= 0;
   }
-  friend bool operator>(basic_string_view lhs, basic_string_view rhs) {
+  FMT_CONSTEXPR friend bool operator>(basic_string_view lhs, basic_string_view rhs) {
     return lhs.compare(rhs) > 0;
   }
-  friend bool operator>=(basic_string_view lhs, basic_string_view rhs) {
+  FMT_CONSTEXPR friend bool operator>=(basic_string_view lhs, basic_string_view rhs) {
     return lhs.compare(rhs) >= 0;
   }
 };
