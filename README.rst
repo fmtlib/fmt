@@ -294,8 +294,8 @@ Migrating code
 --------------
 
 `clang-tidy-fmt <https://github.com/mikecrowe/clang-tidy-fmt>`_ provides clang
-tidy checks for converting occurrences of `printf` and `fprintf` to
-`fmt::print`.
+tidy checks for converting occurrences of ``printf`` and ``fprintf`` to
+``fmt::print``.
 
 Projects using this library
 ---------------------------
