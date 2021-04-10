@@ -4027,7 +4027,7 @@ constexpr detail::udl_arg<wchar_t> operator"" _a(const wchar_t* s, size_t) {
 #endif  // FMT_USE_USER_DEFINED_LITERALS
 
 namespace detail {
-extern template struct FMT_INSTANTIATION_DEF_API basic_data<void>;
+extern template struct basic_data<void>;
 }  // namespace detail
 FMT_END_NAMESPACE
 
