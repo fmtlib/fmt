@@ -1957,6 +1957,9 @@ inline void print(const S& format_str, Args&&... args) {
 FMT_GCC_PRAGMA("GCC pop_options")
 FMT_END_NAMESPACE
 
+#ifdef FMT_HEADER_ONLY
+#include "format.h"
+#endif
 #endif  // FMT_CORE_H_
 
 // Define FMT_DYNAMIC_ARGS to make core.h provide dynamic_format_arg_store
