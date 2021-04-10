@@ -29,8 +29,8 @@ Core API
 ========
 
 ``fmt/core.h`` defines the core API which provides argument handling facilities
-and a lightweight subset of formatting functions. In the header-only mode
-include ``fmt/format.h`` instead of ``fmt/core.h``.
+and a lightweight subset of formatting functions. It is only beneficial when
+using {fmt} as a library and not in the header-only mode.
 
 The following functions use :ref:`format string syntax <syntax>`
 similar to that of Python's `str.format
