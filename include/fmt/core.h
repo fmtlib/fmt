@@ -206,7 +206,6 @@
 
 #if !defined(FMT_HEADER_ONLY) && defined(_WIN32)
 #  define FMT_CLASS_API FMT_MSC_WARNING(suppress : 4275)
-#  define FMT_INSTANTIATION_DEF_API
 #  ifdef FMT_EXPORT
 #    define FMT_API __declspec(dllexport)
 #    define FMT_EXTERN_TEMPLATE_API FMT_API
