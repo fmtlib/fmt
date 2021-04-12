@@ -55,8 +55,8 @@ vformat_to(buffer<char>&, string_view,
                type_identity_t<char>>>);
 }  // namespace detail
 
-// Clang doesn't allow dllexport on template instantiation definitions (LLVM
-// D61118).
+// Clang doesn't allow dllexport on template instantiation definitions:
+// https://reviews.llvm.org/D61118.
 template struct detail::basic_data<void>;
 
 // Workaround a bug in MSVC2013 that prevents instantiation of format_float.
