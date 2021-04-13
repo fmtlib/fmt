@@ -773,7 +773,7 @@ TEST(FormatterTest, SignNotTruncated) {
   wchar_t format_str[] = {L'{', L':',
                           '+' | static_cast<wchar_t>(
                             1 << fmt::detail::num_bits<char>() 
-                            & static_cast<typename std::make_unsigned_t<wchar_t> >(-1) ),
+                            & static_cast<typename std::make_unsigned<int>::type >(-1) ),
                           L'}', 0};
   EXPECT_THROW(format(format_str, 42), format_error);
 }
