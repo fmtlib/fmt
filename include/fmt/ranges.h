@@ -427,16 +427,10 @@ struct formatter<tuple_arg_join<Char, T...>, Char> {
     // Output: "1, a"
   \endrst
  */
-template <typename... T>
-FMT_CONSTEXPR tuple_arg_join<char, T...> join(const std::tuple<T...>& tuple,
-                                              string_view sep) {
-  return {tuple, sep};
-}
-
-template <typename... T>
-FMT_CONSTEXPR tuple_arg_join<wchar_t, T...> join(const std::tuple<T...>& tuple,
-                                                 wstring_view sep) {
-  return {tuple, sep};
+template <typename... T, typename S>
+FMT_CONSTEXPR tuple_arg_join<char_t<S>, T...> join(const std::tuple<T...>& tuple,
+                                                   const S& sep) {
+  return {tuple, to_string_view(sep)};
 }
 
 /**
@@ -450,15 +444,9 @@ FMT_CONSTEXPR tuple_arg_join<wchar_t, T...> join(const std::tuple<T...>& tuple,
     // Output: "1, 2, 3"
   \endrst
  */
-template <typename T>
-arg_join<const T*, const T*, char> join(std::initializer_list<T> list,
-                                        string_view sep) {
-  return join(std::begin(list), std::end(list), sep);
-}
-
-template <typename T>
-arg_join<const T*, const T*, wchar_t> join(std::initializer_list<T> list,
-                                           wstring_view sep) {
+template <typename T, typename S>
+arg_join<const T*, const T*, char_t<S>> join(std::initializer_list<T> list,
+                                             const S& sep) {
   return join(std::begin(list), std::end(list), sep);
 }
 

@@ -3753,14 +3753,9 @@ struct formatter<arg_join<It, Sentinel, Char>, Char> {
   Returns an object that formats the iterator range `[begin, end)` with elements
   separated by `sep`.
  */
-template <typename It, typename Sentinel>
-arg_join<It, Sentinel, char> join(It begin, Sentinel end, string_view sep) {
-  return {begin, end, sep};
-}
-
-template <typename It, typename Sentinel>
-arg_join<It, Sentinel, wchar_t> join(It begin, Sentinel end, wstring_view sep) {
-  return {begin, end, sep};
+template <typename It, typename Sentinel, typename S>
+arg_join<It, Sentinel, char_t<S>> join(It begin, Sentinel end, const S& sep) {
+  return {begin, end, to_string_view(sep)};
 }
 
 /**
@@ -3779,15 +3774,9 @@ arg_join<It, Sentinel, wchar_t> join(It begin, Sentinel end, wstring_view sep) {
     // Output: "01, 02, 03"
   \endrst
  */
-template <typename Range>
-arg_join<detail::iterator_t<Range>, detail::sentinel_t<Range>, char> join(
-    Range&& range, string_view sep) {
-  return join(std::begin(range), std::end(range), sep);
-}
-
-template <typename Range>
-arg_join<detail::iterator_t<Range>, detail::sentinel_t<Range>, wchar_t> join(
-    Range&& range, wstring_view sep) {
+template <typename Range, typename S>
+arg_join<detail::iterator_t<Range>, detail::sentinel_t<Range>, char_t<S>> join(
+    Range&& range, const S& sep) {
   return join(std::begin(range), std::end(range), sep);
 }
 
