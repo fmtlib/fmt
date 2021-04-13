@@ -57,7 +57,7 @@ vformat_to(buffer<char>&, string_view,
 
 // Clang doesn't allow dllexport on template instantiation definitions:
 // https://reviews.llvm.org/D61118.
-template struct detail::basic_data<void>;
+template struct FMT_INSTANTIATION_DEF_API detail::basic_data<void>;
 
 // Workaround a bug in MSVC2013 that prevents instantiation of format_float.
 int (*instantiate_format_float)(double, int, detail::float_specs,
