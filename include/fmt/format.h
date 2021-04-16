@@ -3459,7 +3459,7 @@ struct formatter<T, Char,
     auto type = detail::type_constant<T, Char>::value;
     detail::specs_checker<handler_type> handler(handler_type(specs_, ctx),
                                                 type);
-    auto it = parse_format_specs(begin, end, handler);
+    auto it = detail::parse_format_specs(begin, end, handler);
     auto eh = ctx.error_handler();
     switch (type) {
     case detail::type::none_type:
@@ -3477,7 +3477,7 @@ struct formatter<T, Char,
       detail::check_int_type_spec(specs_.type, eh);
       break;
     case detail::type::char_type:
-      handle_char_specs(
+      detail::handle_char_specs(
           specs_, detail::char_specs_checker<decltype(eh)>(specs_.type, eh));
       break;
     case detail::type::float_type:
@@ -3603,7 +3603,7 @@ template <typename Char = char> class dynamic_formatter {
     format_str_ = ctx.begin();
     // Checks are deferred to formatting time when the argument type is known.
     detail::dynamic_specs_handler<ParseContext> handler(specs_, ctx);
-    return parse_format_specs(ctx.begin(), ctx.end(), handler);
+    return detail::parse_format_specs(ctx.begin(), ctx.end(), handler);
   }
 
   template <typename T, typename FormatContext>
