@@ -25,6 +25,8 @@ std::basic_string<Char> vformat(
 }
 }  // namespace detail
 
+FMT_MODULE_EXPORT_BEGIN
+
 template <typename S, typename Char = char_t<S>>
 inline std::basic_string<Char> vformat(
     const std::locale& loc, const S& format_str,
@@ -59,6 +61,7 @@ inline auto format_to(OutputIt out, const std::locale& loc, const S& format_str,
   return vformat_to(out, loc, to_string_view(format_str), vargs);
 }
 
+FMT_MODULE_EXPORT_END
 FMT_END_NAMESPACE
 
 #endif  // FMT_LOCALE_H_

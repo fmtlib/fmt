@@ -18,6 +18,7 @@
 #endif
 
 FMT_BEGIN_NAMESPACE
+FMT_MODULE_EXPORT_BEGIN
 
 enum class color : uint32_t {
   alice_blue = 0xF0F8FF,               // rgb(240,248,255)
@@ -205,6 +206,7 @@ struct rgb {
   uint8_t b;
 };
 
+FMT_MODULE_EXPORT_END
 namespace detail {
 
 // color is a struct of either a rgb color or a terminal color.
@@ -229,6 +231,7 @@ struct color_type {
   } value;
 };
 }  // namespace detail
+FMT_MODULE_EXPORT_BEGIN
 
 /** A text style consisting of foreground and background colors and emphasis. */
 class text_style {
@@ -367,6 +370,7 @@ FMT_CONSTEXPR inline text_style operator|(emphasis lhs,
   return text_style(lhs) | rhs;
 }
 
+FMT_MODULE_EXPORT_END
 namespace detail {
 
 template <typename Char> struct ansi_color_escape {
@@ -510,6 +514,7 @@ void vformat_to(buffer<Char>& buf, const text_style& ts,
   if (has_style) detail::reset_color<Char>(buf);
 }
 }  // namespace detail
+FMT_MODULE_EXPORT_BEGIN
 
 template <typename S, typename Char = char_t<S>>
 void vprint(std::FILE* f, const text_style& ts, const S& format,
@@ -619,6 +624,7 @@ inline auto format_to(OutputIt out, const text_style& ts, const S& format_str,
                     fmt::make_args_checked<Args...>(format_str, args...));
 }
 
+FMT_MODULE_EXPORT_END
 FMT_END_NAMESPACE
 
 #endif  // FMT_COLOR_H_

@@ -422,6 +422,8 @@ struct formatter<tuple_arg_join<Char, T...>, Char> {
   }
 };
 
+FMT_MODULE_EXPORT_BEGIN
+
 /**
   \rst
   Returns an object that formats `tuple` with elements separated by `sep`.
@@ -468,6 +470,7 @@ arg_join<const T*, const T*, wchar_t> join(std::initializer_list<T> list,
   return join(std::begin(list), std::end(list), sep);
 }
 
+FMT_MODULE_EXPORT_END
 FMT_END_NAMESPACE
 
 #endif  // FMT_RANGES_H_
