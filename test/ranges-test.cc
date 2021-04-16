@@ -224,6 +224,25 @@ TEST(RangesTest, JoinTuple) {
   EXPECT_EQ("4", fmt::format("{}", fmt::join(t4, "/")));
 }
 
+TEST(RangesTest, WideStringJoinTuple) {
+  // Value tuple args
+  std::tuple<wchar_t, int, float> t1 = std::make_tuple('a', 1, 2.0f);
+  EXPECT_EQ(L"(a, 1, 2)", fmt::format(L"({})", fmt::join(t1, L", ")));
+
+  // Testing lvalue tuple args
+  int x = 4;
+  std::tuple<wchar_t, int&> t2{'b', x};
+  EXPECT_EQ(L"b + 4", fmt::format(L"{}", fmt::join(t2, L" + ")));
+
+  // Empty tuple
+  std::tuple<> t3;
+  EXPECT_EQ(L"", fmt::format(L"{}", fmt::join(t3, L"|")));
+
+  // Single element tuple
+  std::tuple<float> t4{4.0f};
+  EXPECT_EQ(L"4", fmt::format(L"{}", fmt::join(t4, L"/")));
+}
+
 TEST(RangesTest, JoinInitializerList) {
   EXPECT_EQ("1, 2, 3", fmt::format("{}", fmt::join({1, 2, 3}, ", ")));
   EXPECT_EQ("fmt rocks !",

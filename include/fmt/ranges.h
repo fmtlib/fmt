@@ -67,6 +67,12 @@ OutputIterator copy(char ch, OutputIterator out) {
   return out;
 }
 
+template <typename OutputIterator>
+OutputIterator copy(wchar_t ch, OutputIterator out) {
+  *out++ = ch;
+  return out;
+}
+
 /// Return true value if T has std::string interface, like std::string_view.
 template <typename T> class is_like_std_string {
   template <typename U>
