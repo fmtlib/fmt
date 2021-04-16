@@ -2400,7 +2400,7 @@ FMT_CONSTEXPR int parse_nonnegative_int(const Char*& begin, const Char* end,
   FMT_ASSERT(begin != end && '0' <= *begin && *begin <= '9', "");
   unsigned value = 0;
   // Convert to unsigned to prevent a warning.
-  constexpr unsigned max_int = max_value<int>();
+  const unsigned max_int = to_unsigned(max_value<int>());
   unsigned big = max_int / 10;
   do {
     // Check for overflow.
