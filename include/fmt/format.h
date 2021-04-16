@@ -998,7 +998,9 @@ FMT_INLINE uint16_t bsr2log10(int bsr) {
   return data[bsr];
 }
 
+#ifndef FMT_EXPORTED
 FMT_EXTERN template struct FMT_INSTANTIATION_DECL_API basic_data<void>;
+#endif
 
 // This is a struct rather than an alias to avoid shadowing warnings in gcc.
 struct data : basic_data<> {};

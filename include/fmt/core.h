@@ -233,8 +233,19 @@
 #ifndef FMT_EXTERN_TEMPLATE_API
 #  define FMT_EXTERN_TEMPLATE_API
 #endif
-#ifndef FMT_INSTANTIATION_DECL_API
-#  define FMT_INSTANTIATION_DECL_API FMT_API
+#ifndef FMT_INSTANTIATION_DECL_API // clang marks dllexport at extern template.
+#  ifndef _MSC_VER
+#    define FMT_INSTANTIATION_DECL_API FMT_API
+#  else
+#    define FMT_INSTANTIATION_DECL_API
+#  endif
+#endif
+#ifndef FMT_INSTANTIATION_DEF_API // msvc marks dllexport at the definition itself.
+#  ifndef _MSC_VER
+#    define FMT_INSTANTIATION_DEF_API
+#  else
+#    define FMT_INSTANTIATION_DEF_API FMT_API
+# endif
 #endif
 
 #ifndef FMT_HEADER_ONLY
