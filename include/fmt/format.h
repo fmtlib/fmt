@@ -3941,6 +3941,24 @@ template <typename Char> struct udl_formatter {
   }
 };
 
+#  if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+template <typename T, typename Char, size_t N, fixed_string<Char, N> Str>
+struct statically_named_arg : view {
+  static constexpr auto name = Str.data;
+
+  const T& value;
+  statically_named_arg(const T& v) : value(v) {}
+};
+
+template <typename T, typename Char, size_t N, fixed_string<Char, N> Str>
+struct is_named_arg<statically_named_arg<T, Char, N, Str>> : std::true_type {};
+
+template <typename Char, size_t N, fixed_string<Char, N> Str> struct udl_arg {
+  template <typename T> auto operator=(T&& value) const {
+    return statically_named_arg<T, Char, N, Str>(std::forward<T>(value));
+  }
+};
+#  else
 template <typename Char> struct udl_arg {
   const Char* str;
 
@@ -3948,6 +3966,7 @@ template <typename Char> struct udl_arg {
     return {str, std::forward<T>(value)};
   }
 };
+#  endif
 }  // namespace detail
 FMT_MODULE_EXPORT_BEGIN
 
@@ -3981,12 +4000,21 @@ constexpr detail::udl_formatter<wchar_t> operator"" _format(const wchar_t* s,
     fmt::print("Elapsed time: {s:.2f} seconds", "s"_a=1.23);
   \endrst
  */
+#  if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+template <detail::fixed_string Str>
+constexpr detail::udl_arg<remove_cvref_t<decltype(Str.data[0])>,
+                          sizeof(Str.data) / sizeof(decltype(Str.data[0])), Str>
+operator""_a() {
+  return {};
+}
+#  else
 constexpr detail::udl_arg<char> operator"" _a(const char* s, size_t) {
   return {s};
 }
 constexpr detail::udl_arg<wchar_t> operator"" _a(const wchar_t* s, size_t) {
   return {s};
 }
+#  endif
 }  // namespace literals
 
 FMT_MODULE_EXPORT_END

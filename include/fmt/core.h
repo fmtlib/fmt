@@ -979,16 +979,22 @@ struct arg_data<T, Char, NUM_ARGS, 0> {
 template <typename Char>
 inline void init_named_args(named_arg_info<Char>*, int, int) {}
 
-template <typename Char, typename T, typename... Tail>
+template <typename T> struct is_named_arg : std::false_type {};
+
+template <typename T, typename Char>
+struct is_named_arg<named_arg<Char, T>> : std::true_type {};
+
+template <typename Char, typename T, typename... Tail,
+          FMT_ENABLE_IF(!is_named_arg<T>::value)>
 void init_named_args(named_arg_info<Char>* named_args, int arg_count,
                      int named_arg_count, const T&, const Tail&... args) {
   init_named_args(named_args, arg_count + 1, named_arg_count, args...);
 }
 
-template <typename Char, typename T, typename... Tail>
+template <typename Char, typename T, typename... Tail,
+          FMT_ENABLE_IF(is_named_arg<T>::value)>
 void init_named_args(named_arg_info<Char>* named_args, int arg_count,
-                     int named_arg_count, const named_arg<Char, T>& arg,
-                     const Tail&... args) {
+                     int named_arg_count, const T& arg, const Tail&... args) {
   named_args[named_arg_count++] = {arg.name, arg_count};
   init_named_args(named_args, arg_count + 1, named_arg_count, args...);
 }
@@ -996,11 +1002,6 @@ void init_named_args(named_arg_info<Char>* named_args, int arg_count,
 template <typename... Args>
 FMT_CONSTEXPR FMT_INLINE void init_named_args(std::nullptr_t, int, int,
                                               const Args&...) {}
-
-template <typename T> struct is_named_arg : std::false_type {};
-
-template <typename T, typename Char>
-struct is_named_arg<named_arg<Char, T>> : std::true_type {};
 
 template <bool B = false> constexpr size_t count() { return B ? 1 : 0; }
 template <bool B1, bool B2, bool... Tail> constexpr size_t count() {
@@ -1277,10 +1278,10 @@ template <typename Context> struct arg_mapper {
     return val;
   }
 
-  template <typename T>
-  FMT_CONSTEXPR FMT_INLINE auto map(const named_arg<char_type, T>& val)
-      -> decltype(std::declval<arg_mapper>().map(val.value)) {
-    return map(val.value);
+  template <typename T, FMT_ENABLE_IF(is_named_arg<T>::value)>
+  FMT_CONSTEXPR FMT_INLINE auto map(const T& named_arg)
+      -> decltype(std::declval<arg_mapper>().map(named_arg.value)) {
+    return map(named_arg.value);
   }
 
   unformattable map(...) { return {}; }
