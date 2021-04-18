@@ -947,8 +947,9 @@ size_t formatted_size(const CompiledFormat& cf, const Args&... args) {
 #if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
 inline namespace literals {
 template <detail::fixed_string Str>
-constexpr detail::udl_compiled_string<remove_cvref_t<decltype(Str.data[0])>,
-                                      sizeof(Str.data), Str>
+constexpr detail::udl_compiled_string<
+    remove_cvref_t<decltype(Str.data[0])>,
+    sizeof(Str.data) / sizeof(decltype(Str.data[0])), Str>
 operator""_cf() {
   return {};
 }
