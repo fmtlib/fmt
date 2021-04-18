@@ -3887,7 +3887,7 @@ extern template int snprintf_float<long double>(long double value,
                                                 int precision,
                                                 float_specs specs,
                                                 buffer<char>& buf);
-#ifndef MSC_VER_
+#ifndef _MSC_VER
 extern template FMT_INSTANTIATION_DECL_API const uint64_t basic_data<void>::powers_of_10_64[];
 extern template FMT_INSTANTIATION_DECL_API const uint32_t basic_data<void>::zero_or_powers_of_10_32_new[];
 extern template FMT_INSTANTIATION_DECL_API const uint64_t basic_data<void>::zero_or_powers_of_10_64_new[];
