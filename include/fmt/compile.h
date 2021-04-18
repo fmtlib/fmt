@@ -472,6 +472,26 @@ constexpr const auto& get([[maybe_unused]] const T& first,
     return get<N - 1>(rest...);
 }
 
+constexpr int invalid_arg_index = -1;
+
+template <int N, typename T, typename... Args, typename Char>
+constexpr int get_arg_index_by_name(basic_string_view<Char> name) {
+  if constexpr (detail::is_statically_named_arg<T>()) {
+    if (name == T::name) return N;
+  }
+  if constexpr (sizeof...(Args) == 0) {
+    return invalid_arg_index;
+  } else {
+    return get_arg_index_by_name<N + 1, Args...>(name);
+  }
+}
+
+template <typename Char, typename... Args>
+constexpr int get_arg_index_by_name(basic_string_view<Char> name,
+                                    type_list<Args...>) {
+  return get_arg_index_by_name<0, Args...>(name);
+}
+
 template <int N, typename> struct get_type_impl;
 
 template <int N, typename... Args> struct get_type_impl<N, type_list<Args...>> {
@@ -512,6 +532,17 @@ template <typename Char> struct code_unit {
   }
 };
 
+// This ensures that the argument type is convertile to `const T&`.
+template <typename T, int N, typename... Args>
+constexpr const T& get_arg_checked(const Args&... args) {
+  const auto& arg = get<N>(args...);
+  if constexpr (detail::is_named_arg<remove_cvref_t<decltype(arg)>>()) {
+    return arg.value;
+  } else {
+    return arg;
+  }
+}
+
 template <typename Char>
 struct is_compiled_format<code_unit<Char>> : std::true_type {};
 
@@ -521,14 +552,8 @@ template <typename Char, typename T, int N> struct field {
 
   template <typename OutputIt, typename... Args>
   constexpr OutputIt format(OutputIt out, const Args&... args) const {
-    if constexpr (is_named_arg<typename std::remove_cv<T>::type>::value) {
-      const auto& arg = get<N>(args...).value;
-      return write<Char>(out, arg);
-    } else {
-      // This ensures that the argument type is convertile to `const T&`.
-      const T& arg = get<N>(args...);
-      return write<Char>(out, arg);
-    }
+    const T& arg = get_arg_checked<T, N>(args...);
+    return write<Char>(out, arg);
   }
 };
 
@@ -574,8 +599,7 @@ template <typename Char, typename T, int N> struct spec_field {
 
   template <typename OutputIt, typename... Args>
   constexpr OutputIt format(OutputIt out, const Args&... args) const {
-    // This ensures that the argument type is convertile to `const T&`.
-    const T& arg = get<N>(args...);
+    const T& arg = get_arg_checked<T, N>(args...);
     const auto& vargs =
         make_format_args<basic_format_context<OutputIt, Char>>(args...);
     basic_format_context<OutputIt, Char> ctx(out, vargs);
@@ -687,6 +711,35 @@ constexpr auto parse_arg_id(const Char* begin, const Char* end) {
   return parse_arg_id_result<Char>{handler.arg_id, arg_id_end};
 }
 
+template <typename T, typename Enable = void> struct field_type {
+  using type = remove_cvref_t<T>;
+};
+
+template <typename T>
+struct field_type<T, enable_if_t<detail::is_named_arg<T>::value>> {
+  using type = remove_cvref_t<decltype(T::value)>;
+};
+
+template <typename T, typename Args, size_t END_POS, int ARG_INDEX, int NEXT_ID,
+          typename S>
+constexpr auto parse_replacement_field_then_tail(S format_str) {
+  using char_type = typename S::char_type;
+  constexpr basic_string_view<char_type> str = format_str;
+  constexpr char_type c = END_POS != str.size() ? str[END_POS] : char_type();
+  if constexpr (c == '}') {
+    return parse_tail<Args, END_POS + 1, NEXT_ID>(
+        field<char_type, typename field_type<T>::type, ARG_INDEX>(),
+        format_str);
+  } else if constexpr (c == ':') {
+    constexpr auto result = parse_specs<typename field_type<T>::type>(
+        str, END_POS + 1, NEXT_ID == manual_indexing_id ? 0 : NEXT_ID);
+    return parse_tail<Args, result.end, result.next_arg_id>(
+        spec_field<char_type, typename field_type<T>::type, ARG_INDEX>{
+            result.fmt},
+        format_str);
+  }
+}
+
 // Compiles a non-empty format string and returns the compiled representation
 // or unknown_format() on unrecognized input.
 template <typename Args, size_t POS, int ID, typename S>
@@ -701,17 +754,11 @@ constexpr auto compile_format_string(S format_str) {
     } else if constexpr (str[POS + 1] == '}' || str[POS + 1] == ':') {
       static_assert(ID != manual_indexing_id,
                     "cannot switch from manual to automatic argument indexing");
-      using id_type = get_type<ID, Args>;
-      if constexpr (str[POS + 1] == '}') {
-        constexpr auto next_id =
-            ID != manual_indexing_id ? ID + 1 : manual_indexing_id;
-        return parse_tail<Args, POS + 2, next_id>(
-            field<char_type, id_type, ID>(), format_str);
-      } else {
-        constexpr auto result = parse_specs<id_type>(str, POS + 2, ID + 1);
-        return parse_tail<Args, result.end, result.next_arg_id>(
-            spec_field<char_type, id_type, ID>{result.fmt}, format_str);
-      }
+      constexpr auto next_id =
+          ID != manual_indexing_id ? ID + 1 : manual_indexing_id;
+      return parse_replacement_field_then_tail<get_type<ID, Args>, Args,
+                                               POS + 1, ID, next_id>(
+          format_str);
     } else {
       constexpr auto arg_id_result =
           parse_arg_id<ID>(str.data() + POS + 1, str.data() + str.size());
@@ -724,24 +771,27 @@ constexpr auto compile_format_string(S format_str) {
             ID == manual_indexing_id || ID == 0,
             "cannot switch from automatic to manual argument indexing");
         constexpr auto arg_index = arg_id_result.arg_id.val.index;
-        using id_type = get_type<arg_index, Args>;
-        if constexpr (c == '}') {
-          return parse_tail<Args, arg_id_end_pos + 1, manual_indexing_id>(
-              field<char_type, id_type, arg_index>(), format_str);
-        } else if constexpr (c == ':') {
-          constexpr auto result =
-              parse_specs<id_type>(str, arg_id_end_pos + 1, 0);
-          return parse_tail<Args, result.end, result.next_arg_id>(
-              spec_field<char_type, id_type, arg_index>{result.fmt},
-              format_str);
-        }
+        return parse_replacement_field_then_tail<get_type<arg_index, Args>,
+                                                 Args, arg_id_end_pos,
+                                                 arg_index, manual_indexing_id>(
+            format_str);
       } else if constexpr (arg_id_result.arg_id.kind == arg_id_kind::name) {
-        if constexpr (c == '}') {
-          return parse_tail<Args, arg_id_end_pos + 1, ID>(
-              runtime_named_field<char_type>{arg_id_result.arg_id.val.name},
-              format_str);
-        } else if constexpr (c == ':') {
-          return unknown_format();  // no type info for specs parsing
+        constexpr auto arg_index =
+            get_arg_index_by_name(arg_id_result.arg_id.val.name, Args{});
+        if constexpr (arg_index != invalid_arg_index) {
+          constexpr auto next_id =
+              ID != manual_indexing_id ? ID + 1 : manual_indexing_id;
+          return parse_replacement_field_then_tail<
+              decltype(get_type<arg_index, Args>::value), Args, arg_id_end_pos,
+              arg_index, next_id>(format_str);
+        } else {
+          if constexpr (c == '}') {
+            return parse_tail<Args, arg_id_end_pos + 1, ID>(
+                runtime_named_field<char_type>{arg_id_result.arg_id.val.name},
+                format_str);
+          } else if constexpr (c == ':') {
+            return unknown_format();  // no type info for specs parsing
+          }
         }
       }
     }

@@ -451,7 +451,8 @@ template <typename Char> class basic_string_view {
     return result;
   }
 
-  friend bool operator==(basic_string_view lhs, basic_string_view rhs) {
+  FMT_CONSTEXPR_CHAR_TRAITS friend bool operator==(basic_string_view lhs,
+                                                   basic_string_view rhs) {
     return lhs.compare(rhs) == 0;
   }
   friend bool operator!=(basic_string_view lhs, basic_string_view rhs) {
