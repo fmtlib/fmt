@@ -13,15 +13,6 @@
 
 #include "format.h"
 
-#ifndef FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
-#  if defined(__cpp_nontype_template_parameter_class) && \
-      (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 903)
-#    define FMT_USE_NONTYPE_TEMPLATE_PARAMETERS 1
-#  else
-#    define FMT_USE_NONTYPE_TEMPLATE_PARAMETERS 0
-#  endif
-#endif
-
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
@@ -126,14 +117,6 @@ struct is_compiled_string : std::is_base_of<compiled_string, S> {};
 #define FMT_COMPILE(s) FMT_STRING_IMPL(s, fmt::detail::compiled_string)
 
 #if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
-template <typename Char, size_t N> struct fixed_string {
-  constexpr fixed_string(const Char (&str)[N]) {
-    copy_str<Char, const Char*, Char*>(static_cast<const Char*>(str), str + N,
-                                       data);
-  }
-  Char data[N]{};
-};
-
 template <typename Char, size_t N, fixed_string<Char, N> Str>
 struct udl_compiled_string : compiled_string {
   using char_type = Char;

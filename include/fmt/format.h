@@ -263,6 +263,15 @@ inline int ctzll(uint64_t x) {
 FMT_END_NAMESPACE
 #endif
 
+#ifndef FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+#  if defined(__cpp_nontype_template_parameter_class) && \
+      (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 903)
+#    define FMT_USE_NONTYPE_TEMPLATE_PARAMETERS 1
+#  else
+#    define FMT_USE_NONTYPE_TEMPLATE_PARAMETERS 0
+#  endif
+#endif
+
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
@@ -3908,6 +3917,19 @@ void vprint(basic_string_view<Char> format_str, wformat_args args) {
 }
 
 FMT_MODULE_EXPORT_END
+
+#if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+namespace detail {
+template <typename Char, size_t N> struct fixed_string {
+  constexpr fixed_string(const Char (&str)[N]) {
+    copy_str<Char, const Char*, Char*>(static_cast<const Char*>(str), str + N,
+                                       data);
+  }
+  Char data[N]{};
+};
+}  // namespace detail
+#endif
+
 #if FMT_USE_USER_DEFINED_LITERALS
 namespace detail {
 template <typename Char> struct udl_formatter {
