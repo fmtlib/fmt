@@ -3887,31 +3887,31 @@ extern template int snprintf_float<long double>(long double value,
                                                 int precision,
                                                 float_specs specs,
                                                 buffer<char>& buf);
-#ifndef _MSC_VER
-extern template const uint64_t basic_data<void>::powers_of_10_64[];
-extern template const uint32_t basic_data<void>::zero_or_powers_of_10_32_new[];
-extern template const uint64_t basic_data<void>::zero_or_powers_of_10_64_new[];
-extern template const uint64_t basic_data<void>::grisu_pow10_significands[];
-extern template const int16_t basic_data<void>::grisu_pow10_exponents[];
-extern template const divtest_table_entry<uint32_t> basic_data<void>::divtest_table_for_pow5_32[];
-extern template const divtest_table_entry<uint64_t> basic_data<void>::divtest_table_for_pow5_64[];
-extern template const uint64_t basic_data<void>::dragonbox_pow10_significands_64[];
-extern template const uint128_wrapper basic_data<void>::dragonbox_pow10_significands_128[];
+#if !defined(FMT_EXPORTED) || !defined(_MSC_VER)
+extern template FMT_INSTANTIATION_DECL_API const uint64_t basic_data<void>::powers_of_10_64[];
+extern template FMT_INSTANTIATION_DECL_API const uint32_t basic_data<void>::zero_or_powers_of_10_32_new[];
+extern template FMT_INSTANTIATION_DECL_API const uint64_t basic_data<void>::zero_or_powers_of_10_64_new[];
+extern template FMT_INSTANTIATION_DECL_API const uint64_t basic_data<void>::grisu_pow10_significands[];
+extern template FMT_INSTANTIATION_DECL_API const int16_t basic_data<void>::grisu_pow10_exponents[];
+extern template FMT_INSTANTIATION_DECL_API const divtest_table_entry<uint32_t> basic_data<void>::divtest_table_for_pow5_32[];
+extern template FMT_INSTANTIATION_DECL_API const divtest_table_entry<uint64_t> basic_data<void>::divtest_table_for_pow5_64[];
+extern template FMT_INSTANTIATION_DECL_API const uint64_t basic_data<void>::dragonbox_pow10_significands_64[];
+extern template FMT_INSTANTIATION_DECL_API const uint128_wrapper basic_data<void>::dragonbox_pow10_significands_128[];
 #  if !FMT_USE_FULL_CACHE_DRAGONBOX
-extern template const uint64_t basic_data<void>::powers_of_5_64[];
-extern template const uint32_t basic_data<void>::dragonbox_pow10_recovery_errors[];
+extern template FMT_INSTANTIATION_DECL_API const uint64_t basic_data<void>::powers_of_5_64[];
+extern template FMT_INSTANTIATION_DECL_API const uint32_t basic_data<void>::dragonbox_pow10_recovery_errors[];
 #  endif
 // GCC generates slightly better code for pairs than chars.
-extern template const basic_data<void>::digit_pair basic_data<void>::digits[];
-extern template const char basic_data<void>::foreground_color[];
-extern template const char basic_data<void>::background_color[];
-extern template const char basic_data<void>::reset_color[5];
-extern template const wchar_t basic_data<void>::wreset_color[5];
-extern template const char basic_data<void>::signs[];
+extern template FMT_INSTANTIATION_DECL_API const basic_data<void>::digit_pair basic_data<void>::digits[];
+extern template FMT_INSTANTIATION_DECL_API const char basic_data<void>::foreground_color[];
+extern template FMT_INSTANTIATION_DECL_API const char basic_data<void>::background_color[];
+extern template FMT_INSTANTIATION_DECL_API const char basic_data<void>::reset_color[5];
+extern template FMT_INSTANTIATION_DECL_API const wchar_t basic_data<void>::wreset_color[5];
+extern template FMT_INSTANTIATION_DECL_API const char basic_data<void>::signs[];
 // DEPRECATED! These are for ABI compatibility.
-extern template const uint32_t basic_data<void>::zero_or_powers_of_10_32[];
-extern template const uint64_t basic_data<void>::zero_or_powers_of_10_64[];
-#endif // #ifndef _MSC_VER
+extern template FMT_INSTANTIATION_DECL_API const uint32_t basic_data<void>::zero_or_powers_of_10_32[];
+extern template FMT_INSTANTIATION_DECL_API const uint64_t basic_data<void>::zero_or_powers_of_10_64[];
+#endif // #if !defined(FMT_EXPORTED) || !defined(MSC_VER_)
 }  // namespace detail
 #endif
 
