@@ -3887,7 +3887,7 @@ extern template int snprintf_float<long double>(long double value,
                                                 int precision,
                                                 float_specs specs,
                                                 buffer<char>& buf);
-#if !defined(FMT_EXPORTED) || !defined(_MSC_VER)
+#ifndef MSC_VER_
 extern template FMT_INSTANTIATION_DECL_API const uint64_t basic_data<void>::powers_of_10_64[];
 extern template FMT_INSTANTIATION_DECL_API const uint32_t basic_data<void>::zero_or_powers_of_10_32_new[];
 extern template FMT_INSTANTIATION_DECL_API const uint64_t basic_data<void>::zero_or_powers_of_10_64_new[];
@@ -3911,7 +3911,7 @@ extern template FMT_INSTANTIATION_DECL_API const char basic_data<void>::signs[];
 // DEPRECATED! These are for ABI compatibility.
 extern template FMT_INSTANTIATION_DECL_API const uint32_t basic_data<void>::zero_or_powers_of_10_32[];
 extern template FMT_INSTANTIATION_DECL_API const uint64_t basic_data<void>::zero_or_powers_of_10_64[];
-#endif // #if !defined(FMT_EXPORTED) || !defined(MSC_VER_)
+#endif // #ifndef MSC_VER_
 }  // namespace detail
 #endif
 
