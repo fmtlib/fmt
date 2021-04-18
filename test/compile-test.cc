@@ -210,6 +210,11 @@ TEST(CompileTest, ManualOrdering) {
 }
 
 TEST(CompileTest, Named) {
+  auto runtime_named_field_compiled =
+      fmt::detail::compile<decltype(fmt::arg("arg", 42))>(FMT_COMPILE("{arg}"));
+  static_assert(std::is_same_v<decltype(runtime_named_field_compiled),
+                               fmt::detail::runtime_named_field<char>>);
+
   EXPECT_EQ("42", fmt::format(FMT_COMPILE("{}"), fmt::arg("arg", 42)));
   EXPECT_EQ("41 43", fmt::format(FMT_COMPILE("{} {}"), fmt::arg("arg", 41),
                                  fmt::arg("arg", 43)));
@@ -237,6 +242,19 @@ TEST(CompileTest, Named) {
 
   EXPECT_THROW(fmt::format(FMT_COMPILE("{invalid}"), fmt::arg("valid", 42)),
                fmt::format_error);
+
+#  if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+  using namespace fmt::literals;
+  auto statically_named_field_compiled =
+      fmt::detail::compile<decltype("arg"_a = 42)>(FMT_COMPILE("{arg}"));
+  static_assert(std::is_same_v<decltype(statically_named_field_compiled),
+                               fmt::detail::field<char, int, 0>>);
+
+  EXPECT_EQ("41 43",
+            fmt::format(FMT_COMPILE("{a0} {a1}"), "a0"_a = 41, "a1"_a = 43));
+  EXPECT_EQ("41 43",
+            fmt::format(FMT_COMPILE("{a1} {a0}"), "a0"_a = 43, "a1"_a = 41));
+#  endif
 }
 
 TEST(CompileTest, FormatTo) {

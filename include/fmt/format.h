@@ -3941,6 +3941,9 @@ template <typename Char> struct udl_formatter {
   }
 };
 
+template <typename T, typename = void>
+struct is_statically_named_arg : std::false_type {};
+
 #  if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
 template <typename T, typename Char, size_t N, fixed_string<Char, N> Str>
 struct statically_named_arg : view {
@@ -3952,6 +3955,10 @@ struct statically_named_arg : view {
 
 template <typename T, typename Char, size_t N, fixed_string<Char, N> Str>
 struct is_named_arg<statically_named_arg<T, Char, N, Str>> : std::true_type {};
+
+template <typename T, typename Char, size_t N, fixed_string<Char, N> Str>
+struct is_statically_named_arg<statically_named_arg<T, Char, N, Str>>
+    : std::true_type {};
 
 template <typename Char, size_t N, fixed_string<Char, N> Str> struct udl_arg {
   template <typename T> auto operator=(T&& value) const {
