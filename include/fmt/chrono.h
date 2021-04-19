@@ -434,6 +434,10 @@ template <typename Char> struct formatter<std::tm, Char> {
       -> decltype(ctx.out()) {
     basic_memory_buffer<Char> tm_format;
     tm_format.append(specs.begin(), specs.end());
+    // By appending an extra space we can distinguish an empty result that
+    // indicates insufficient buffer size from a guaranteed non-empty result
+    // https://github.com/fmtlib/fmt/issues/2238
+    tm_format.push_back(' ');
     tm_format.push_back('\0');
     basic_memory_buffer<Char> buf;
     size_t start = buf.size();
@@ -444,17 +448,11 @@ template <typename Char> struct formatter<std::tm, Char> {
         buf.resize(start + count);
         break;
       }
-      if (size >= tm_format.size() * 256) {
-        // If the buffer is 256 times larger than the format string, assume
-        // that `strftime` gives an empty result. There doesn't seem to be a
-        // better way to distinguish the two cases:
-        // https://github.com/fmtlib/fmt/issues/367
-        break;
-      }
       const size_t MIN_GROWTH = 10;
       buf.reserve(buf.capacity() + (size > MIN_GROWTH ? size : MIN_GROWTH));
     }
-    return std::copy(buf.begin(), buf.end(), ctx.out());
+    // Remove the extra space.
+    return std::copy(buf.begin(), buf.end() - 1, ctx.out());
   }
 
   basic_string_view<Char> specs;
