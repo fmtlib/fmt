@@ -945,21 +945,10 @@ struct FMT_EXTERN_TEMPLATE_API uint128_wrapper {
 #endif
 };
 
-// Table entry type for divisibility test used internally
-template <typename T> struct FMT_EXTERN_TEMPLATE_API divtest_table_entry {
-  T mod_inv;
-  T max_quotient;
-};
-
 // Static data is placed in this class template for the header-only config.
 template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
-  static const uint64_t powers_of_10_64[];
-  static const uint32_t zero_or_powers_of_10_32_new[];
-  static const uint64_t zero_or_powers_of_10_64_new[];
-  static const uint64_t grisu_pow10_significands[];
-  static const int16_t grisu_pow10_exponents[];
-  static const divtest_table_entry<uint32_t> divtest_table_for_pow5_32[];
-  static const divtest_table_entry<uint64_t> divtest_table_for_pow5_64[];
+  static const uint32_t zero_or_powers_of_10_32[];
+  static const uint64_t zero_or_powers_of_10_64[];
   static const uint64_t dragonbox_pow10_significands_64[];
   static const uint128_wrapper dragonbox_pow10_significands_128[];
   // log10(2) = 0x0.4d104d427de7fbcc...
@@ -972,19 +961,11 @@ template <typename T = void> struct FMT_EXTERN_TEMPLATE_API basic_data {
   using digit_pair = char[2];
   static const digit_pair digits[];
   static constexpr const char hex_digits[] = "0123456789abcdef";
-  static const char foreground_color[];
-  static const char background_color[];
-  static const char reset_color[5];
-  static const wchar_t wreset_color[5];
   static const char signs[];
   static constexpr const unsigned prefixes[4] = {0, 0, 0x1000000u | '+',
                                                  0x1000000u | ' '};
   static constexpr const char left_padding_shifts[] = {31, 31, 0, 1, 0};
   static constexpr const char right_padding_shifts[] = {0, 31, 0, 1, 0};
-
-  // DEPRECATED! These are for ABI compatibility.
-  static const uint32_t zero_or_powers_of_10_32[];
-  static const uint64_t zero_or_powers_of_10_64[];
 };
 
 // Maps bsr(n) to ceil(log10(pow(2, bsr(n) + 1) - 1)).
@@ -1034,7 +1015,7 @@ FMT_CONSTEXPR20 inline int count_digits(uint64_t n) {
 #ifdef FMT_BUILTIN_CLZLL
   // https://github.com/fmtlib/format-benchmark/blob/master/digits10
   auto t = bsr2log10(FMT_BUILTIN_CLZLL(n | 1) ^ 63);
-  return t - (n < data::zero_or_powers_of_10_64_new[t]);
+  return t - (n < data::zero_or_powers_of_10_64[t]);
 #else
   return count_digits_fallback(n);
 #endif
@@ -1070,7 +1051,7 @@ FMT_CONSTEXPR20 inline int count_digits(uint32_t n) {
     return count_digits_fallback(n);
   }
   auto t = bsr2log10(FMT_BUILTIN_CLZ(n | 1) ^ 31);
-  return t - (n < data::zero_or_powers_of_10_32_new[t]);
+  return t - (n < data::zero_or_powers_of_10_32[t]);
 }
 #endif
 
@@ -2303,7 +2284,8 @@ class arg_formatter_base {
   }
 
  public:
-  constexpr arg_formatter_base(OutputIt out, const format_specs& s, locale_ref loc)
+  constexpr arg_formatter_base(OutputIt out, const format_specs& s,
+                               locale_ref loc)
       : out_(out), specs_(s), locale_(loc) {}
 
   iterator operator()(monostate) {
