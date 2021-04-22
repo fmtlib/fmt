@@ -264,8 +264,9 @@ FMT_END_NAMESPACE
 #endif
 
 #ifndef FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
-#  if defined(__cpp_nontype_template_parameter_class) && \
-      (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 903)
+#  if defined(__cpp_nontype_template_args) &&                \
+      ((FMT_GCC_VERSION >= 903 && __cplusplus >= 201709L) || \
+       __cpp_nontype_template_args >= 201911L)
 #    define FMT_USE_NONTYPE_TEMPLATE_PARAMETERS 1
 #  else
 #    define FMT_USE_NONTYPE_TEMPLATE_PARAMETERS 0
