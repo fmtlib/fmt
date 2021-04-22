@@ -532,7 +532,7 @@ template <typename Char> struct code_unit {
   }
 };
 
-// This ensures that the argument type is convertile to `const T&`.
+// This ensures that the argument type is convertible to `const T&`.
 template <typename T, int N, typename... Args>
 constexpr const T& get_arg_checked(const Args&... args) {
   const auto& arg = get<N>(args...);
@@ -552,8 +552,7 @@ template <typename Char, typename T, int N> struct field {
 
   template <typename OutputIt, typename... Args>
   constexpr OutputIt format(OutputIt out, const Args&... args) const {
-    const T& arg = get_arg_checked<T, N>(args...);
-    return write<Char>(out, arg);
+    return write<Char>(out, get_arg_checked<T, N>(args...));
   }
 };
 
@@ -599,11 +598,10 @@ template <typename Char, typename T, int N> struct spec_field {
 
   template <typename OutputIt, typename... Args>
   constexpr OutputIt format(OutputIt out, const Args&... args) const {
-    const T& arg = get_arg_checked<T, N>(args...);
     const auto& vargs =
         make_format_args<basic_format_context<OutputIt, Char>>(args...);
     basic_format_context<OutputIt, Char> ctx(out, vargs);
-    return fmt.format(arg, ctx);
+    return fmt.format(get_arg_checked<T, N>(args...), ctx);
   }
 };
 
