@@ -370,10 +370,6 @@ enum char8_type : unsigned char {};
 #endif
 }  // namespace detail
 
-#ifdef FMT_USE_INTERNAL
-namespace internal = detail;  // DEPRECATED
-#endif
-
 /**
   An implementation of ``std::basic_string_view`` for pre-C++17. It provides a
   subset of the API. ``fmt::basic_string_view`` is used for format strings even
@@ -1784,23 +1780,11 @@ template <typename Context> class basic_format_args {
   }
 };
 
-#ifdef FMT_ARM_ABI_COMPATIBILITY
 /** An alias to ``basic_format_args<format_context>``. */
 // Separate types would result in shorter symbols but break ABI compatibility
 // between clang and gcc on ARM (#1919).
 using format_args = basic_format_args<format_context>;
 using wformat_args = basic_format_args<wformat_context>;
-#else
-// DEPRECATED! These are kept for ABI compatibility.
-// It is a separate type rather than an alias to make symbols readable.
-struct format_args : basic_format_args<format_context> {
-  template <typename... Args>
-  FMT_INLINE format_args(const Args&... args) : basic_format_args(args...) {}
-};
-struct wformat_args : basic_format_args<wformat_context> {
-  using basic_format_args::basic_format_args;
-};
-#endif
 
 FMT_MODULE_EXPORT_END
 namespace detail {
@@ -1985,9 +1969,3 @@ FMT_END_NAMESPACE
 #  include "format.h"
 #endif
 #endif  // FMT_CORE_H_
-
-// Define FMT_DYNAMIC_ARGS to make core.h provide dynamic_format_arg_store
-// DEPRECATED! Include fmt/args.h directly instead.
-#ifdef FMT_DYNAMIC_ARGS
-#include "args.h"
-#endif

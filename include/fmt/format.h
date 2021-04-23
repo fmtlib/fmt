@@ -263,11 +263,6 @@ inline int ctzll(uint64_t x) {
 FMT_END_NAMESPACE
 #endif
 
-// Enable the deprecated numeric alignment.
-#ifndef FMT_DEPRECATED_NUMERIC_ALIGN
-#  define FMT_DEPRECATED_NUMERIC_ALIGN 0
-#endif
-
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
@@ -1410,11 +1405,6 @@ FMT_CONSTEXPR float_specs parse_float_type_spec(
   case 'a':
     result.format = float_format::hex;
     break;
-#ifdef FMT_DEPRECATED_N_SPECIFIER
-  case 'n':
-    result.locale = true;
-    break;
-#endif
   default:
     eh.on_error("invalid type specifier");
     break;
@@ -1432,9 +1422,6 @@ FMT_CONSTEXPR void check_int_type_spec(char spec, ErrorHandler&& eh) {
   case 'b':
   case 'B':
   case 'o':
-#ifdef FMT_DEPRECATED_N_SPECIFIER
-  case 'n':
-#endif
   case 'c':
     break;
   default:
@@ -1721,10 +1708,6 @@ FMT_CONSTEXPR OutputIt write_int(OutputIt out, T value,
                        return format_uint<3, Char>(it, abs_value, num_digits);
                      });
   }
-#ifdef FMT_DEPRECATED_N_SPECIFIER
-  case 'n':
-    return write_int_localized(out, abs_value, prefix, specs, loc);
-#endif
   case 'c':
     return write_char(out, static_cast<Char>(abs_value), specs);
   default:
@@ -2807,11 +2790,6 @@ FMT_CONSTEXPR const Char* parse_align(const Char* begin, const Char* end,
     case '>':
       align = align::right;
       break;
-#if FMT_DEPRECATED_NUMERIC_ALIGN
-    case '=':
-      align = align::numeric;
-      break;
-#endif
     case '^':
       align = align::center;
       break;

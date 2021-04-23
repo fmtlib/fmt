@@ -652,10 +652,6 @@ TEST(FormatterTest, RightAlign) {
   EXPECT_EQ("  0xface", format("{0:>8}", reinterpret_cast<void*>(0xface)));
 }
 
-#if FMT_DEPRECATED_NUMERIC_ALIGN
-TEST(FormatterTest, NumericAlign) { EXPECT_EQ("0042", format("{0:=4}", 42)); }
-#endif
-
 TEST(FormatterTest, CenterAlign) {
   EXPECT_EQ(" 42  ", format("{0:^5}", 42));
   EXPECT_EQ(" 42  ", format("{0:^5o}", 042));
@@ -770,9 +766,9 @@ TEST(FormatterTest, SpaceSign) {
 }
 
 TEST(FormatterTest, SignNotTruncated) {
-  wchar_t format_str[] = {L'{', L':',
-                          '+' | static_cast<wchar_t>(1 << fmt::detail::num_bits<char>()),
-                          L'}', 0};
+  wchar_t format_str[] = {
+      L'{', L':',
+      '+' | static_cast<wchar_t>(1 << fmt::detail::num_bits<char>()), L'}', 0};
   EXPECT_THROW(format(format_str, 42), format_error);
 }
 
@@ -1976,10 +1972,6 @@ TEST(FormatTest, DynamicFormatter) {
                    "cannot switch from manual to automatic argument indexing");
   EXPECT_THROW_MSG(format(+"{:{0}}", num), format_error,
                    "cannot switch from automatic to manual argument indexing");
-#if FMT_DEPRECATED_NUMERIC_ALIGN
-  EXPECT_THROW_MSG(format(+"{:=}", str), format_error,
-                   "format specifier requires numeric argument");
-#endif
   EXPECT_THROW_MSG(format(+"{:+}", str), format_error,
                    "format specifier requires numeric argument");
   EXPECT_THROW_MSG(format(+"{:-}", str), format_error,
@@ -2450,11 +2442,6 @@ TEST(FormatTest, FormatStringErrors) {
   EXPECT_ERROR("{:10000000000}", "number is too big", int);
   EXPECT_ERROR("{:.10000000000}", "number is too big", int);
   EXPECT_ERROR_NOARGS("{:x}", "argument not found");
-#    if FMT_DEPRECATED_NUMERIC_ALIGN
-  EXPECT_ERROR("{0:=5", "unknown format specifier", int);
-  EXPECT_ERROR("{:=}", "format specifier requires numeric argument",
-               const char*);
-#    endif
   EXPECT_ERROR("{:+}", "format specifier requires numeric argument",
                const char*);
   EXPECT_ERROR("{:-}", "format specifier requires numeric argument",

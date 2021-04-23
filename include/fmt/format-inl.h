@@ -2689,8 +2689,7 @@ extern "C" __declspec(dllimport) int __stdcall WriteConsoleW(  //
 
 FMT_FUNC void vprint(std::FILE* f, string_view format_str, format_args args) {
   memory_buffer buffer;
-  detail::vformat_to(buffer, format_str,
-                     basic_format_args<buffer_context<char>>(args));
+  detail::vformat_to(buffer, format_str, args);
 #ifdef _WIN32
   auto fd = _fileno(f);
   if (_isatty(fd)) {
