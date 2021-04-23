@@ -858,6 +858,54 @@ struct fixed_handler {
   }
 };
 
+// A 128-bit integer type used internally,
+struct uint128_wrapper {
+  uint128_wrapper() = default;
+
+#if FMT_USE_INT128
+  uint128_t internal_;
+
+  constexpr uint128_wrapper(uint64_t high, uint64_t low) FMT_NOEXCEPT
+      : internal_{static_cast<uint128_t>(low) |
+                  (static_cast<uint128_t>(high) << 64)} {}
+
+  constexpr uint128_wrapper(uint128_t u) : internal_{u} {}
+
+  constexpr uint64_t high() const FMT_NOEXCEPT {
+    return uint64_t(internal_ >> 64);
+  }
+  constexpr uint64_t low() const FMT_NOEXCEPT { return uint64_t(internal_); }
+
+  uint128_wrapper& operator+=(uint64_t n) FMT_NOEXCEPT {
+    internal_ += n;
+    return *this;
+  }
+#else
+  uint64_t high_;
+  uint64_t low_;
+
+  constexpr uint128_wrapper(uint64_t high, uint64_t low) FMT_NOEXCEPT
+      : high_{high},
+        low_{low} {}
+
+  constexpr uint64_t high() const FMT_NOEXCEPT { return high_; }
+  constexpr uint64_t low() const FMT_NOEXCEPT { return low_; }
+
+  uint128_wrapper& operator+=(uint64_t n) FMT_NOEXCEPT {
+#  if defined(_MSC_VER) && defined(_M_X64)
+    unsigned char carry = _addcarry_u64(0, low_, n, &low_);
+    _addcarry_u64(carry, high_, 0, &high_);
+    return *this;
+#  else
+    uint64_t sum = low_ + n;
+    high_ += (sum < low_ ? 1 : 0);
+    low_ = sum;
+    return *this;
+#  endif
+  }
+#endif
+};
+
 // Implementation of Dragonbox algorithm: https://github.com/jk-jeon/dragonbox.
 namespace dragonbox {
 // Computes 128-bit result of multiplication of two 64-bit unsigned integers.

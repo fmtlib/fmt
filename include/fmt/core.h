@@ -234,40 +234,14 @@
 #  define FMT_CLASS_API FMT_MSC_WARNING(suppress : 4275)
 #  ifdef FMT_EXPORT
 #    define FMT_API __declspec(dllexport)
-#    define FMT_EXTERN_TEMPLATE_API FMT_API
-#    define FMT_EXPORTED
 #  elif defined(FMT_SHARED)
 #    define FMT_API __declspec(dllimport)
-#    define FMT_EXTERN_TEMPLATE_API FMT_API
 #  endif
 #else
 #  define FMT_CLASS_API
 #endif
 #ifndef FMT_API
 #  define FMT_API
-#endif
-#ifndef FMT_EXTERN_TEMPLATE_API
-#  define FMT_EXTERN_TEMPLATE_API
-#endif
-#ifndef FMT_INSTANTIATION_DECL_API // clang marks dllexport at extern template.
-#  ifndef _MSC_VER
-#    define FMT_INSTANTIATION_DECL_API FMT_API
-#  else
-#    define FMT_INSTANTIATION_DECL_API
-#  endif
-#endif
-#ifndef FMT_INSTANTIATION_DEF_API // msvc marks dllexport at the definition itself.
-#  ifndef _MSC_VER
-#    define FMT_INSTANTIATION_DEF_API
-#  else
-#    define FMT_INSTANTIATION_DEF_API FMT_API
-# endif
-#endif
-
-#ifndef FMT_HEADER_ONLY
-#  define FMT_EXTERN extern
-#else
-#  define FMT_EXTERN
 #endif
 
 // libc++ supports string_view in pre-c++17.
@@ -432,9 +406,8 @@ template <typename Char> class basic_string_view {
     \endrst
    */
   FMT_CONSTEXPR_CHAR_TRAITS
-      FMT_INLINE
-      basic_string_view(const Char* s)
-      : data_(s) {
+  FMT_INLINE
+  basic_string_view(const Char* s) : data_(s) {
     if (detail::const_check(std::is_same<Char, char>::value &&
                             !detail::is_constant_evaluated()))
       size_ = std::strlen(reinterpret_cast<const char*>(s));
@@ -2009,7 +1982,7 @@ FMT_GCC_PRAGMA("GCC pop_options")
 FMT_END_NAMESPACE
 
 #ifdef FMT_HEADER_ONLY
-#include "format.h"
+#  include "format.h"
 #endif
 #endif  // FMT_CORE_H_
 
