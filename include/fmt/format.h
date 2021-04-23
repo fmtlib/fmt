@@ -2130,7 +2130,7 @@ FMT_CONSTEXPR OutputIt write(OutputIt out, Char value) {
 }
 
 template <typename Char, typename OutputIt>
-FMT_CONSTEXPR OutputIt write(OutputIt out, const Char* value) {
+FMT_CONSTEXPR_CHAR_TRAITS OutputIt write(OutputIt out, const Char* value) {
   if (!value) {
     FMT_THROW(format_error("string pointer is null"));
   } else {

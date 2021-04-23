@@ -43,6 +43,22 @@
 #  define FMT_HAS_GXX_CXX11 0
 #endif
 
+// Check if constexpr std::char_traits<>::compare,length is supported.
+// libstdc++: present on GCC 7 and newer and __cplusplus >= 201703L
+// MSVC, libc++: always if __cplusplus >= 201703L
+// NOTE: FMT_GCC_VERSION  - is not libstdc++ version.
+//       _GLIBCXX_RELEASE - is present in GCC 7 libstdc++ and newer.
+#if __cplusplus >= 201703L
+#  ifndef __GLIBCXX__
+#    define FMT_CONSTEXPR_CHAR_TRAITS constexpr
+#  elif defined(_GLIBCXX_RELEASE) && _GLIBCXX_RELEASE >= 7
+#    define FMT_CONSTEXPR_CHAR_TRAITS constexpr
+#  endif
+#endif
+#ifndef FMT_CONSTEXPR_CHAR_TRAITS
+#  define FMT_CONSTEXPR_CHAR_TRAITS
+#endif
+
 #ifdef __NVCC__
 #  define FMT_NVCC __NVCC__
 #else
@@ -415,9 +431,7 @@ template <typename Char> class basic_string_view {
     the size with ``std::char_traits<Char>::length``.
     \endrst
    */
-#if __cplusplus >= 201703L  // C++17's char_traits::length() is constexpr.
-  constexpr
-#endif
+  FMT_CONSTEXPR_CHAR_TRAITS
       FMT_INLINE
       basic_string_view(const Char* s)
       : data_(s) {
@@ -457,7 +471,7 @@ template <typename Char> class basic_string_view {
   }
 
   // Lexicographically compare this string reference to other.
-  int compare(basic_string_view other) const {
+  FMT_CONSTEXPR_CHAR_TRAITS int compare(basic_string_view other) const {
     size_t str_size = size_ < other.size_ ? size_ : other.size_;
     int result = std::char_traits<Char>::compare(data_, other.data_, str_size);
     if (result == 0)
