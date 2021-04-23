@@ -12,6 +12,7 @@
 #include <cstring>
 
 #include "fmt/core.h"
+#include "fmt/ostream.h"
 #include "gtest-extra.h"
 #include "util.h"
 

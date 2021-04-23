@@ -10,8 +10,9 @@
 
 #include <algorithm>  // std::max
 #include <limits>     // std::numeric_limits
+#include <ostream>
 
-#include "ostream.h"
+#include "format.h"
 
 FMT_BEGIN_NAMESPACE
 namespace detail {
@@ -194,7 +195,7 @@ FMT_DEPRECATED void printf(detail::buffer<Char>& buf,
 }
 using detail::vprintf;
 
-// already exported through "ostream.h" above
+// Exported from ostream.h.
 template <typename Char>
 class basic_printf_parse_context : public basic_format_parse_context<Char> {
   using basic_format_parse_context<Char>::basic_format_parse_context;
@@ -290,8 +291,7 @@ template <typename T> struct printf_formatter {
   }
 
   template <typename FormatContext>
-  auto format(const T& value, FormatContext& ctx) -> decltype(ctx.out()) {
-    detail::format_value(detail::get_container(ctx.out()), value);
+  auto format(const T&, FormatContext& ctx) -> decltype(ctx.out()) {
     return ctx.out();
   }
 };
@@ -688,7 +688,7 @@ inline int vfprintf(
     basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args) {
   basic_memory_buffer<Char> buffer;
   vprintf(buffer, to_string_view(format), args);
-  detail::write_buffer(os, buffer);
+  os.write(buffer.data(), static_cast<std::streamsize>(buffer.size()));
   return static_cast<int>(buffer.size());
 }
 
