@@ -6509,7 +6509,7 @@ class MatcherBase : private MatcherDescriberInterface {
   template <typename M>
   static constexpr bool IsInlined() {
     return sizeof(M) <= sizeof(Buffer) && alignof(M) <= alignof(Buffer) &&
-           std::is_trivially_copy_constructible<M>::value &&
+           std::is_pod<M>::value &&
            std::is_trivially_destructible<M>::value;
   }
 
