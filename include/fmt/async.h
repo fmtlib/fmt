@@ -90,6 +90,7 @@ namespace async {
 namespace detail {
 namespace detail = fmt::detail;
 template <typename T> using decay_t = typename std::decay<T>::type;
+template <typename T> using add_const_t = typename std::add_const<T>::type;
 
 enum class store_method {
     numeric,        // stored by libfmt as numeric value, no need for extra storage
@@ -188,7 +189,7 @@ struct arg_transformer {
 
 template <typename Arg, typename Context, typename Type = detail::mapped_type_constant<remove_reference_t<Arg>, Context>>
 using transformed_arg_type = conditional_t<custom_store_method<Arg, Context>::custom_store, typename custom_store_method<Arg, Context>::transformed_type,
-                             conditional_t<stored_as_string<Type>::value && !stored_as_string_object<Type, Arg>::value, basic_string_view<typename Context::char_type>, std::add_const_t<remove_reference_t<Arg>>&>
+                             conditional_t<stored_as_string<Type>::value && !stored_as_string_object<Type, Arg>::value, basic_string_view<typename Context::char_type>, add_const_t<remove_reference_t<Arg>>&>
                              >;
 
 template <typename Context, typename... Args>
@@ -205,7 +206,7 @@ struct async_entry_constructor {
 private:
     using range = typename range_builder<0, sizeof...(Args)>::type;
     template <typename S, size_t... Indice>
-    constexpr async_entry_constructor(void* buf, const S& format_str, index_list<Indice...>, Args... args) : pEntry(reinterpret_cast<char*>(buf)), pBuffer(get_buffer_store(buf)) {
+    FMT_CONSTEXPR async_entry_constructor(void* buf, const S& format_str, index_list<Indice...>, Args... args) : pEntry(reinterpret_cast<char*>(buf)), pBuffer(get_buffer_store(buf)) {
         auto p = new(buf) Entry(format_str, store<Indice>(std::forward<Args>(args))...);
         p->set_dtor(Dtor::value ? Dtor::destruct : nullptr);
     }
@@ -257,7 +258,7 @@ private:
         return basic_string_view<typename Context::char_type>(pStart, sv.size());
     }
 
-    static constexpr char* get_buffer_store(void* buf) {
+    static FMT_CONSTEXPR char* get_buffer_store(void* buf) {
         char* const pentry = reinterpret_cast<char*>(buf);      // entry will be constructed here
         char* const pobjs = pentry + sizeof(Entry);             // objects will be stored starting here
         char* const pbufs = pobjs + get_obj_size();             // buffers will be stored starting here
