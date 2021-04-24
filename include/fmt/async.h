@@ -1,5 +1,5 @@
-#ifndef FMT_FMTLOG_H_
-#define FMT_FMTLOG_H_
+#ifndef FMT_ASYNC_H_
+#define FMT_ASYNC_H_
 
 #include "format.h"
 #include <tuple>
@@ -20,7 +20,7 @@ protected:
     const format_arg* get_format_args() const;
 
     template <typename OutIt, typename T = OutIt>
-    using enable_out = std::enable_if_t<detail::is_output_iterator<OutIt, char_type>::value, T>;
+    using enable_out = enable_if_t<detail::is_output_iterator<OutIt, char_type>::value, T>;
 
     void destruct() { if (dtor_) dtor_(this); }
 public:
@@ -39,7 +39,7 @@ public:
     }
 
     template <typename OutIt>
-    auto format_to_n(OutIt out, size_t n) const -> enable_out<OutIt, format_to_n_result<OutIt>> {
+    auto format_to(OutIt out, size_t n) const -> enable_out<OutIt, format_to_n_result<OutIt>> {
         return vformat_to(detail::truncating_iterator<OutIt>(out, n), format_, {desc_, get_format_args()});
     }
 
@@ -86,8 +86,10 @@ inline const typename basic_async_entry<Context>::format_arg* basic_async_entry<
 // | basic_async_entry | arg_store | stored_objs... | stored_buffers... |
 // -----------------------------------------------------------------------
 //
-
+namespace async {
 namespace detail {
+namespace detail = fmt::detail;
+template <typename T> using decay_t = typename std::decay<T>::type;
 
 enum class store_method {
     numeric,        // stored by libfmt as numeric value, no need for extra storage
@@ -107,13 +109,13 @@ using stored_as_string = std::integral_constant<bool, Type::value == detail::typ
 template <typename T> struct is_basic_string : std::false_type {};
 template <typename C, typename T, typename A> struct is_basic_string<std::basic_string<C, T, A>> : std::true_type {};
 template <typename Type, typename T>
-using stored_as_string_object = std::integral_constant<bool, stored_as_string<Type>::value && is_basic_string<std::remove_reference_t<T>>::value && std::is_rvalue_reference<T>::value>;
+using stored_as_string_object = std::integral_constant<bool, stored_as_string<Type>::value && is_basic_string<remove_reference_t<T>>::value && std::is_rvalue_reference<T>::value>;
 
 struct custom_store_method_checker {
-    template <typename Arg, typename Context, typename RawT = std::decay_t<Arg>, typename Formatter = typename Context::template formatter_type<RawT>>
-    static std::enable_if_t<has_formatter<RawT, Context>::value, std::tuple<std::true_type, decltype(Formatter::store(std::declval<char*&>(), std::declval<Arg>()))>> test(double);
-    template <typename Arg, typename Context, typename RawT = std::decay_t<Arg>, typename Formatter = typename Context::template formatter_type<RawT>>
-    static std::enable_if_t<has_formatter<RawT, Context>::value, std::tuple<std::false_type, decltype(Formatter::store(std::declval<char*>(), std::declval<Arg>()))>> test(int);
+    template <typename Arg, typename Context, typename RawT = decay_t<Arg>, typename Formatter = typename Context::template formatter_type<RawT>>
+    static enable_if_t<has_formatter<RawT, Context>::value, std::tuple<std::true_type, decltype(Formatter::store(std::declval<char*&>(), std::declval<Arg>()))>> test(double);
+    template <typename Arg, typename Context, typename RawT = decay_t<Arg>, typename Formatter = typename Context::template formatter_type<RawT>>
+    static enable_if_t<has_formatter<RawT, Context>::value, std::tuple<std::false_type, decltype(Formatter::store(std::declval<char*>(), std::declval<Arg>()))>> test(int);
     template <typename Arg, typename Context>
     static std::tuple<std::false_type, store_as_object> test(...);
 };
@@ -121,11 +123,11 @@ struct custom_store_method_checker {
 template <typename Arg, typename Context>
 struct custom_store_method {
     using transformed_type = typename std::tuple_element<1, decltype(custom_store_method_checker::template test<Arg, Context>(0))>::type;
-    static constexpr bool custom_store = std::tuple_element<0, decltype(custom_store_method_checker::template test<Arg, Context>(0))>::type::value && !std::is_same_v<transformed_type, store_as_object>;
-    using store_type = std::conditional_t<std::is_same_v<transformed_type, store_as_object>, store_as_object, store_as_buffer>;
+    static constexpr bool custom_store = std::tuple_element<0, decltype(custom_store_method_checker::template test<Arg, Context>(0))>::type::value && !std::is_same<transformed_type, store_as_object>::value;
+    using store_type = conditional_t<std::is_same<transformed_type, store_as_object>::value, store_as_object, store_as_buffer>;
 };
 
-template <typename Arg, typename Context, typename Type = detail::mapped_type_constant<std::remove_reference_t<Arg>, Context>>
+template <typename Arg, typename Context, typename Type = detail::mapped_type_constant<remove_reference_t<Arg>, Context>>
 struct stored_method_constant : std::integral_constant<store_method,  // using class (not template using) to allow easier partial specialization.
     stored_as_numeric<Type>::value ? store_method::numeric :
     stored_as_string<Type>::value ? (stored_as_string_object<Type, Arg>::value ? store_method::object : store_method::buffer) :
@@ -146,10 +148,10 @@ struct stored_objs_dtor_gen : std::integral_constant<size_t, offset + sizeof(Raw
 
 template <typename Context, ptrdiff_t offset, typename Base, typename T, typename... Args>
 struct stored_objs_dtor_select {
-    using RawT = std::remove_reference_t<T>;
-    using type = std::conditional_t<stored_method_constant<T, Context>::value == store_method::object,
-                                    typename stored_objs_dtor_select<Context, offset + sizeof(RawT), stored_objs_dtor_gen<Base, offset, RawT>, Args...>::type,
-                                    typename stored_objs_dtor_select<Context, offset, Base, Args...>::type>;
+    using RawT = remove_reference_t<T>;
+    using type = conditional_t<stored_method_constant<T, Context>::value == store_method::object,
+                               typename stored_objs_dtor_select<Context, offset + sizeof(RawT), stored_objs_dtor_gen<Base, offset, RawT>, Args...>::type,
+                               typename stored_objs_dtor_select<Context, offset, Base, Args...>::type>;
 };
 
 template <typename Context, ptrdiff_t offset, typename Base>
@@ -176,22 +178,22 @@ template <typename... Args>
 struct arg_transformer {
     using arg_tuple = std::tuple<Args...>;
     template <size_t N> using arg_at = typename std::tuple_element<N, arg_tuple>::type;
-    using type_tuple = std::tuple<std::decay_t<Args>...>;
+    using type_tuple = std::tuple<decay_t<Args>...>;
     template <size_t N> using type_at = typename std::tuple_element<N, type_tuple>::type;
     template <size_t N> using size_at = std::integral_constant<size_t, sizeof(type_at<N>)>;
-    template <typename Context, size_t N> using objsize_at = std::conditional_t<stored_method_constant<arg_at<N>, Context>::value == store_method::object, size_at<N>, std::integral_constant<size_t, 0>>;
-    template <typename Context, size_t N> struct objsizesum_at : std::integral_constant<size_t, std::conditional_t<N == 0, std::integral_constant<size_t, 0>, objsizesum_at<Context, N - 1>>::value + objsize_at<Context, N>::value> {};
-    template <typename Context, size_t N> using objoffset_at = std::conditional_t<N == 0, std::integral_constant<size_t, 0>, objsizesum_at<Context, N - 1>>;
+    template <typename Context, size_t N> using objsize_at = conditional_t<stored_method_constant<arg_at<N>, Context>::value == store_method::object, size_at<N>, std::integral_constant<size_t, 0>>;
+    template <typename Context, size_t N> struct objsizesum_at : std::integral_constant<size_t, conditional_t<N == 0, std::integral_constant<size_t, 0>, objsizesum_at<Context, N - 1>>::value + objsize_at<Context, N>::value> {};
+    template <typename Context, size_t N> using objoffset_at = conditional_t<N == 0, std::integral_constant<size_t, 0>, objsizesum_at<Context, N - 1>>;
 };
 
-template <typename Arg, typename Context, typename Type = detail::mapped_type_constant<std::remove_reference_t<Arg>, Context>>
-using transformed_arg_type = std::conditional_t<custom_store_method<Arg, Context>::custom_store, typename custom_store_method<Arg, Context>::transformed_type,
-                             std::conditional_t<stored_as_string<Type>::value && !stored_as_string_object<Type, Arg>::value, basic_string_view<typename Context::char_type>, std::add_const_t<std::remove_reference_t<Arg>>&>
+template <typename Arg, typename Context, typename Type = detail::mapped_type_constant<remove_reference_t<Arg>, Context>>
+using transformed_arg_type = conditional_t<custom_store_method<Arg, Context>::custom_store, typename custom_store_method<Arg, Context>::transformed_type,
+                             conditional_t<stored_as_string<Type>::value && !stored_as_string_object<Type, Arg>::value, basic_string_view<typename Context::char_type>, std::add_const_t<remove_reference_t<Arg>>&>
                              >;
 
 template <typename Context, typename... Args>
 struct async_entry_constructor {
-    using Entry = async_entry<Context, std::decay_t<transformed_arg_type<Args, Context>>...>;
+    using Entry = async_entry<Context, decay_t<transformed_arg_type<Args, Context>>...>;
     using Dtor = stored_objs_dtor<Context, sizeof(Entry), Args...>;
     using Trans = arg_transformer<Args...>;
 
@@ -212,9 +214,9 @@ private:
     template <size_t N> transformed_arg_type<arg_at<N>, Context> store(typename Trans::template arg_at<N> arg) {
         using Arg = typename Trans::template arg_at<N>;
         using select_store_method = custom_store_method<Arg, Context>;
-        using MappedType = detail::mapped_type_constant<std::remove_reference_t<Arg>, Context>;
+        using MappedType = detail::mapped_type_constant<remove_reference_t<Arg>, Context>;
         if constexpr (select_store_method::custom_store == true) {
-            using Formatter = typename Context::template formatter_type<std::decay_t<Arg>>;
+            using Formatter = typename Context::template formatter_type<decay_t<Arg>>;
 
             return Formatter::store(pBuffer, std::forward<Arg>(arg));
         }
@@ -234,7 +236,7 @@ private:
     }
 
     static basic_string_view<typename Context::char_type> copy_string(char*& pBuffer, const typename Context::char_type* cstr) {
-        if constexpr (std::is_same_v<typename Context::char_type, wchar_t>) {
+        if constexpr (std::is_same<typename Context::char_type, wchar_t>::value) {
             wchar_t* pStart = reinterpret_cast<wchar_t*>(pBuffer);
             wchar_t* pEnd = wcpcpy(pStart, cstr);
             pBuffer = reinterpret_cast<char*>(pEnd);
@@ -267,40 +269,57 @@ private:
     char* pBuffer;
 };
 
-}
+}  // namespace detail
 
 template <typename S, typename... Args, typename Char = char_t<S>>
-inline size_t store_async_entry(void* buf, const S& format_str, Args&&... args) {
+inline size_t store(void* buf, const S& format_str, Args&&... args) {
     using Context = buffer_context<Char>;
     using Constructor = detail::async_entry_constructor<Context, Args&&...>;
     return Constructor::construct(buf, format_str, std::forward<Args>(args)...);
 }
 
 template <typename Context>
-inline auto async_entry_to_string(basic_async_entry<Context>& entry) -> decltype(entry.format()) {
+inline auto format(basic_async_entry<Context>& entry) -> decltype(entry.format()) {
     typename basic_async_entry<Context>::dtor_sentry _(entry);
     return entry.format();
 }
 
 template <typename OutIt, typename Context>
-inline auto async_entry_to(OutIt out, basic_async_entry<Context>& entry) -> decltype(entry.format_to(out)) {
+inline auto format_to(basic_async_entry<Context>& entry, OutIt out) -> decltype(entry.format_to(out)) {
     typename basic_async_entry<Context>::dtor_sentry _(entry);
     return entry.format_to(out);
 }
 
 template <typename OutIt, typename Context>
-inline auto async_entry_to_n(OutIt out, size_t n, basic_async_entry<Context>& entry) -> decltype(entry.format_to_n(out, n)) {
+inline auto format_to(basic_async_entry<Context>& entry, OutIt out, size_t n) -> decltype(entry.format_to_n(out, n)) {
     typename basic_async_entry<Context>::dtor_sentry _(entry);
     return entry.format_to(out, n);
 }
 
 template <typename Context>
-inline void print_async_entry(std::FILE* f, basic_async_entry<Context>& entry) {
+inline void print(basic_async_entry<Context>& entry, std::FILE* f = stdout) {
     typename basic_async_entry<Context>::dtor_sentry _(entry);
     entry.print(f);
 }
 
-template <typename Context> inline void print_async_entry(basic_async_entry<Context>& entry) { print_async_entry<Context>(stdout, entry); }
+// TODO should we add wrappers like this?
+// template <typename Context = format_context>
+// inline auto format(void* entry) -> decltype(format(std::declval<basic_async_entry<Context>&>())) {
+//     return format(*reinterpret_cast<basic_async_entry<Context>*>(entry));
+// }
+// inline auto wformat(void* entry) -> decltype(format<wformat_context>(entry)) { return format<wformat_context>(entry); }
 
+}  // namespace async
+
+template <typename S, typename... Args, typename Char = char_t<S>>
+inline auto make_async_entry(const S& format_str, Args&&... args) -> async_entry<buffer_context<Char>, remove_reference_t<Args>...> {
+    return { format_str, args... };
 }
-#endif
+
+template <typename S, typename... Args, typename Char = char_t<S>>
+inline size_t store_async_entry(void* buf, const S& format_str, Args&&... args) {
+    return async::store(buf, format_str, std::forward<Args>(args)...);
+}
+
+}  // namespace fmt
+#endif  // FMT_CORE_H_
