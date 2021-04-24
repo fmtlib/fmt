@@ -6336,6 +6336,14 @@ struct SharedPayload : SharedPayloadBase {
   T value;
 };
 
+template <typename T>
+using is_trivially_copy_constructible =
+#if defined(__GNUC__) && !defined(__clang__) && __GNUC__ < 5
+    std::has_trivial_copy_constructor<T>;
+#else
+    std::is_trivially_copy_constructible<T>;
+#endif
+
 // An internal class for implementing Matcher<T>, which will derive
 // from it.  We put functionalities common to all Matcher<T>
 // specializations here to avoid code duplication.
@@ -6509,7 +6517,7 @@ class MatcherBase : private MatcherDescriberInterface {
   template <typename M>
   static constexpr bool IsInlined() {
     return sizeof(M) <= sizeof(Buffer) && alignof(M) <= alignof(Buffer) &&
-           std::is_pod<M>::value &&
+           is_trivially_copy_constructible<M>::value &&
            std::is_trivially_destructible<M>::value;
   }
 
