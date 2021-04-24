@@ -665,6 +665,7 @@ struct formatter {
   formatter() = delete;
 };
 
+// DEPRECATED!
 // Specifies if T has an enabled formatter specialization. A type can be
 // formattable even if it doesn't have a formatter e.g. via a conversion.
 template <typename T, typename Context>
@@ -1510,6 +1511,7 @@ template <typename OutputIt, typename Char> class basic_format_context {
   using parse_context_type = basic_format_parse_context<Char>;
   template <typename T> using formatter_type = formatter<T, char_type>;
 
+  basic_format_context(basic_format_context&&) = default;
   basic_format_context(const basic_format_context&) = delete;
   void operator=(const basic_format_context&) = delete;
   /**
