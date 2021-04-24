@@ -14,12 +14,8 @@
 
 FMT_BEGIN_NAMESPACE
 
-FMT_MODULE_EXPORT_BEGIN
-
 template <typename Char> class basic_printf_parse_context;
 template <typename OutputIt, typename Char> class basic_printf_context;
-
-FMT_MODULE_EXPORT_END
 
 namespace detail {
 

@@ -195,12 +195,15 @@ FMT_DEPRECATED void printf(detail::buffer<Char>& buf,
 }
 using detail::vprintf;
 
-// Exported from ostream.h.
+FMT_MODULE_EXPORT_BEGIN
+
 template <typename Char>
 class basic_printf_parse_context : public basic_format_parse_context<Char> {
   using basic_format_parse_context<Char>::basic_format_parse_context;
 };
 template <typename OutputIt, typename Char> class basic_printf_context;
+
+FMT_MODULE_EXPORT_END
 
 /**
   \rst
