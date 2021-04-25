@@ -490,7 +490,8 @@ double _strtod_l(const char* nptr, char** endptr, _locale_t locale) {
 #    pragma warning(pop)
 #  endif
 
-#  if defined(__THROW) && FMT_GCC_VERSION > 0 && FMT_GCC_VERSION <= 408
+#  if defined(__THROW) && \
+      ((FMT_GCC_VERSION > 0 && FMT_GCC_VERSION <= 408) || defined(__e2k__))
 #    define FMT_LOCALE_THROW __THROW
 #  else
 #    define FMT_LOCALE_THROW
