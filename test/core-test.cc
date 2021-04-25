@@ -11,15 +11,14 @@
 
 #include "fmt/core.h"
 
-#include <algorithm>
-#include <climits>
-#include <cstring>
-#include <functional>
-#include <iterator>
-#include <limits>
-#include <memory>
-#include <string>
-#include <type_traits>
+#include <algorithm>    // std::copy_n
+#include <climits>      // INT_MAX
+#include <cstring>      // std::strlen
+#include <functional>   // std::equal_to
+#include <iterator>     // std::back_insert_iterator
+#include <limits>       // std::numeric_limits
+#include <string>       // std::string
+#include <type_traits>  // std::is_same
 
 #include "gmock.h"
 
@@ -69,6 +68,50 @@ TEST(string_view_test, compare) {
   check_op<std::less_equal>();
   check_op<std::greater>();
   check_op<std::greater_equal>();
+}
+
+namespace test_ns {
+template <typename Char> class test_string {
+ private:
+  std::basic_string<Char> s_;
+
+ public:
+  test_string(const Char* s) : s_(s) {}
+  const Char* data() const { return s_.data(); }
+  size_t length() const { return s_.size(); }
+  operator const Char*() const { return s_.c_str(); }
+};
+
+template <typename Char>
+fmt::basic_string_view<Char> to_string_view(const test_string<Char>& s) {
+  return {s.data(), s.length()};
+}
+
+struct non_string {};
+}  // namespace test_ns
+
+template <typename T> class is_string_test : public testing::Test {};
+
+using string_char_types = testing::Types<char, wchar_t, char16_t, char32_t>;
+TYPED_TEST_SUITE(is_string_test, string_char_types);
+
+template <typename Char>
+struct derived_from_string_view : fmt::basic_string_view<Char> {};
+
+TYPED_TEST(is_string_test, is_string) {
+  EXPECT_TRUE(fmt::detail::is_string<TypeParam*>::value);
+  EXPECT_TRUE(fmt::detail::is_string<const TypeParam*>::value);
+  EXPECT_TRUE(fmt::detail::is_string<TypeParam[2]>::value);
+  EXPECT_TRUE(fmt::detail::is_string<const TypeParam[2]>::value);
+  EXPECT_TRUE(fmt::detail::is_string<std::basic_string<TypeParam>>::value);
+  EXPECT_TRUE(fmt::detail::is_string<fmt::basic_string_view<TypeParam>>::value);
+  EXPECT_TRUE(
+      fmt::detail::is_string<derived_from_string_view<TypeParam>>::value);
+  using fmt_string_view = fmt::detail::std_string_view<TypeParam>;
+  EXPECT_TRUE(std::is_empty<fmt_string_view>::value !=
+              fmt::detail::is_string<fmt_string_view>::value);
+  EXPECT_TRUE(fmt::detail::is_string<test_ns::test_string<TypeParam>>::value);
+  EXPECT_FALSE(fmt::detail::is_string<test_ns::non_string>::value);
 }
 
 #if !FMT_GCC_VERSION || FMT_GCC_VERSION >= 470
@@ -453,6 +496,14 @@ TEST(core_test, is_formattable) {
   static_assert(fmt::is_formattable<disabled_formatter_convertible>::value, "");
 }
 
+TEST(core_test, format) { EXPECT_EQ(fmt::format("{}", 42), "42"); }
+
+TEST(core_test, format_to) {
+  std::string s;
+  fmt::format_to(std::back_inserter(s), "{}", 42);
+  EXPECT_EQ(s, "42");
+}
+
 struct convertible_to_int {
   operator int() const { return 42; }
 };
@@ -487,76 +538,24 @@ TEST(core_test, formatter_overrides_implicit_conversion) {
   EXPECT_EQ(fmt::format("{}", convertible_to_c_string()), "bar");
 }
 
-namespace my_ns {
-template <typename Char> class my_string {
- private:
-  std::basic_string<Char> s_;
-
- public:
-  my_string(const Char* s) : s_(s) {}
-  const Char* data() const FMT_NOEXCEPT { return s_.data(); }
-  size_t length() const FMT_NOEXCEPT { return s_.size(); }
-  operator const Char*() const { return s_.c_str(); }
-};
-
-template <typename Char>
-fmt::basic_string_view<Char> to_string_view(const my_string<Char>& s)
-    FMT_NOEXCEPT {
-  return {s.data(), s.length()};
-}
-
-struct non_string {};
-}  // namespace my_ns
-
-template <typename T> class IsStringTest : public testing::Test {};
-
-typedef testing::Types<char, wchar_t, char16_t, char32_t> StringCharTypes;
-TYPED_TEST_SUITE(IsStringTest, StringCharTypes);
-
-namespace {
-template <typename Char>
-struct derived_from_string_view : fmt::basic_string_view<Char> {};
-}  // namespace
-
-TYPED_TEST(IsStringTest, IsString) {
-  EXPECT_TRUE(fmt::detail::is_string<TypeParam*>::value);
-  EXPECT_TRUE(fmt::detail::is_string<const TypeParam*>::value);
-  EXPECT_TRUE(fmt::detail::is_string<TypeParam[2]>::value);
-  EXPECT_TRUE(fmt::detail::is_string<const TypeParam[2]>::value);
-  EXPECT_TRUE(fmt::detail::is_string<std::basic_string<TypeParam>>::value);
-  EXPECT_TRUE(fmt::detail::is_string<fmt::basic_string_view<TypeParam>>::value);
-  EXPECT_TRUE(
-      fmt::detail::is_string<derived_from_string_view<TypeParam>>::value);
-  using fmt_string_view = fmt::detail::std_string_view<TypeParam>;
-  EXPECT_TRUE(std::is_empty<fmt_string_view>::value !=
-              fmt::detail::is_string<fmt_string_view>::value);
-  EXPECT_TRUE(fmt::detail::is_string<my_ns::my_string<TypeParam>>::value);
-  EXPECT_FALSE(fmt::detail::is_string<my_ns::non_string>::value);
-}
-
-TEST(core_test, Format) { EXPECT_EQ(fmt::format("{}", 42), "42"); }
-
+// Test that check is not found by ADL.
 template <typename T> void check(T);
-TEST(core_test, ADL) { EXPECT_EQ(fmt::format("{}", test_struct()), "test"); }
-
-TEST(core_test, FormatTo) {
-  std::string s;
-  fmt::format_to(std::back_inserter(s), "{}", 42);
-  EXPECT_EQ(s, "42");
+TEST(core_test, adl_check) {
+  EXPECT_EQ(fmt::format("{}", test_struct()), "test");
 }
 
-TEST(core_test, ToStringViewForeignStrings) {
-  using namespace my_ns;
-  EXPECT_EQ(to_string_view(my_string<char>("42")), "42");
+TEST(core_test, to_string_view_foreign_strings) {
+  using namespace test_ns;
+  EXPECT_EQ(to_string_view(test_string<char>("42")), "42");
   fmt::detail::type type =
-      fmt::detail::mapped_type_constant<my_string<char>,
+      fmt::detail::mapped_type_constant<test_string<char>,
                                         fmt::format_context>::value;
   EXPECT_EQ(type, fmt::detail::type::string_type);
 }
 
-TEST(core_test, FormatForeignStrings) {
-  using namespace my_ns;
-  EXPECT_EQ(fmt::format(my_string<char>("{}"), 42), "42");
+TEST(core_test, format_foreign_strings) {
+  using namespace test_ns;
+  EXPECT_EQ(fmt::format(test_string<char>("{}"), 42), "42");
 }
 
 struct implicitly_convertible_to_string {
@@ -567,7 +566,7 @@ struct implicitly_convertible_to_string_view {
   operator fmt::string_view() const { return "foo"; }
 };
 
-TEST(core_test, FormatImplicitlyConvertibleToStringView) {
+TEST(core_test, format_implicitly_convertible_to_string_view) {
   EXPECT_EQ("foo", fmt::format("{}", implicitly_convertible_to_string_view()));
 }
 
@@ -577,7 +576,7 @@ struct explicitly_convertible_to_string_view {
   explicit operator fmt::string_view() const { return "foo"; }
 };
 
-TEST(core_test, FormatExplicitlyConvertibleToStringView) {
+TEST(core_test, format_explicitly_convertible_to_string_view) {
   EXPECT_EQ("foo", fmt::format("{}", explicitly_convertible_to_string_view()));
 }
 
@@ -586,7 +585,7 @@ struct explicitly_convertible_to_std_string_view {
   explicit operator std::string_view() const { return "foo"; }
 };
 
-TEST(core_test, FormatExplicitlyConvertibleToStdStringView) {
+TEST(core_test, format_explicitly_convertible_to_std_string_view) {
   EXPECT_EQ("foo",
             fmt::format("{}", explicitly_convertible_to_std_string_view()));
 }
@@ -600,6 +599,6 @@ struct disabled_rvalue_conversion {
   operator const char*() && = delete;
 };
 
-TEST(core_test, DisabledRValueConversion) {
+TEST(core_test, disabled_rvalue_conversion) {
   EXPECT_EQ("foo", fmt::format("{}", disabled_rvalue_conversion()));
 }
