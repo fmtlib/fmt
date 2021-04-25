@@ -200,8 +200,8 @@ FMT_API void report_windows_error(int error_code,
                                   string_view message) FMT_NOEXCEPT;
 #endif  // _WIN32
 
-// std::system is not available on iOS (#2248).
-#ifndef TARGET_OS_IPHONE
+// std::system is not available on some platforms such as iOS (#2248).
+#ifdef __OSX__
 template <typename S, typename... Args, typename Char = char_t<S>>
 void say(const S& format_str, Args&&... args) {
   std::system(format("say \"{}\"", format(format_str, args...)).c_str());
