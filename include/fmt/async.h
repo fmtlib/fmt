@@ -91,6 +91,9 @@ namespace detail {
 namespace detail = fmt::detail;
 template <typename T> using decay_t = typename std::decay<T>::type;
 template <typename T> using add_const_t = typename std::add_const<T>::type;
+template <typename...> struct disjunction : std::false_type {};
+template <typename B1> struct disjunction<B1> : B1 {};
+template <typename B1, typename... Bn> struct disjunction<B1, Bn...> : conditional_t<bool(B1::value), B1, disjunction<Bn...>> {};
 
 enum class store_method {
     numeric,        // stored by libfmt as numeric value, no need for extra storage
@@ -135,45 +138,29 @@ struct stored_method_constant : std::integral_constant<store_method,  // using c
     // store_method::object> {};
     custom_store_method<Arg, Context>::store_type::value> {};
 
-struct stored_objs_dtor_base : std::integral_constant<size_t, 0> {
-    static void destruct(void* p) {}
+// Check for integer_sequence
+#if defined(__cpp_lib_integer_sequence) || FMT_MSC_VER >= 1900
+template <typename T, T... N>
+using integer_sequence = std::integer_sequence<T, N...>;
+template <size_t... N> using index_sequence = std::index_sequence<N...>;
+template <size_t N> using make_index_sequence = std::make_index_sequence<N>;
+#else
+template <typename T, T... N> struct integer_sequence {
+  using value_type = T;
+
+  static FMT_CONSTEXPR size_t size() { return sizeof...(N); }
 };
 
-template <typename Base, ptrdiff_t offset, typename RawT>
-struct stored_objs_dtor_gen : std::integral_constant<size_t, offset + sizeof(RawT)> {
-    static void destruct(void* p) {
-        reinterpret_cast<RawT*>((reinterpret_cast<char*>(p) + offset))->~RawT();
-        Base::destruct(p);
-    }
-};
+template <size_t... N> using index_sequence = integer_sequence<size_t, N...>;
 
-template <typename Context, ptrdiff_t offset, typename Base, typename T, typename... Args>
-struct stored_objs_dtor_select {
-    using RawT = remove_reference_t<T>;
-    using type = conditional_t<stored_method_constant<T, Context>::value == store_method::object,
-                               typename stored_objs_dtor_select<Context, offset + sizeof(RawT), stored_objs_dtor_gen<Base, offset, RawT>, Args...>::type,
-                               typename stored_objs_dtor_select<Context, offset, Base, Args...>::type>;
-};
+template <typename T, size_t N, T... Ns>
+struct make_integer_sequence : make_integer_sequence<T, N - 1, N - 1, Ns...> {};
+template <typename T, T... Ns>
+struct make_integer_sequence<T, 0, Ns...> : integer_sequence<T, Ns...> {};
 
-template <typename Context, ptrdiff_t offset, typename Base>
-struct stored_objs_dtor_select<Context, offset, Base, void> { using type = Base; };
-
-template <typename Context, ptrdiff_t offset, typename... Args>
-using stored_objs_dtor = typename stored_objs_dtor_select<Context, offset, stored_objs_dtor_base, Args..., void>::type;
-
-// Collects internal details for generating index ranges [MIN, MAX)
-template <size_t...> struct index_list {};
-
-// Induction step
-template <size_t MIN, size_t N, size_t... Is>
-struct range_builder : public range_builder<MIN, N - 1, N - 1, Is...>  {};
-
-// Base step
-template <size_t MIN, size_t... Is> struct range_builder<MIN, MIN, Is...> { typedef index_list<Is...> type; };
-
-// Meta-function that returns a [MIN, MAX) index range
-template<size_t MIN, size_t MAX>
-using index_range = typename range_builder<MIN, MAX>::type;
+template <size_t N>
+using make_index_sequence = make_integer_sequence<size_t, N>;
+#endif
 
 template <typename... Args>
 struct arg_transformer {
@@ -194,50 +181,60 @@ using transformed_arg_type = conditional_t<custom_store_method<Arg, Context>::cu
 
 template <typename Context, typename... Args>
 struct async_entry_constructor {
-    using Entry = async_entry<Context, decay_t<transformed_arg_type<Args, Context>>...>;
-    using Dtor = stored_objs_dtor<Context, sizeof(Entry), Args...>;
-    using Trans = arg_transformer<Args...>;
-
     template <typename S>
     static size_t construct(void* buf, const S& format_str, Args... args) {
         return async_entry_constructor<Context, Args...>(buf, format_str, range(), std::forward<Args>(args)...).get_total_size();
     }
 
 private:
-    using range = typename range_builder<0, sizeof...(Args)>::type;
+    using entry = async_entry<Context, decay_t<transformed_arg_type<Args, Context>>...>;
+    using trans = arg_transformer<Args...>;
+    using char_type = typename Context::char_type;
+    using range = make_index_sequence<sizeof...(Args)>;
+
     template <typename S, size_t... Indice>
-    FMT_CONSTEXPR async_entry_constructor(void* buf, const S& format_str, index_list<Indice...>, Args... args) : pEntry(reinterpret_cast<char*>(buf)), pBuffer(get_buffer_store(buf)) {
-        auto p = new(buf) Entry(format_str, store<Indice>(std::forward<Args>(args))...);
-        p->set_dtor(Dtor::value ? Dtor::destruct : nullptr);
+    FMT_CONSTEXPR async_entry_constructor(void* buf, const S& format_str, index_sequence<Indice...>, Args... args) : pentry(reinterpret_cast<char*>(buf)), pBuffer(get_buffer_store(buf)) {
+        auto p = new(buf) entry(format_str, store<Indice>(std::forward<Args>(args))...);
+        if (disjunction<need_destruct<Indice>...>::value) p->set_dtor(destructor<Indice...>::dtor);
     }
 
-    template <size_t N> using arg_at = typename Trans::template arg_at<N>;
-    template <size_t N> transformed_arg_type<arg_at<N>, Context> store(typename Trans::template arg_at<N> arg) {
-        using Arg = typename Trans::template arg_at<N>;
+    template <size_t N> using arg_at = typename trans::template arg_at<N>;
+    template <size_t N> using type_at = typename trans::template type_at<N>;
+
+    template <size_t N> using need_destruct = std::integral_constant<bool, stored_method_constant<arg_at<N>, Context>::value == store_method::object && std::is_destructible<arg_at<N>>::value && !std::is_trivially_destructible<arg_at<N>>::value>;
+    template <size_t N> static bool destruct(void *p, std::true_type) { reinterpret_cast<type_at<N>*>(p + sizeof(entry) + trans::template objoffset_at<Context, N>::value)->~type_at<N>(); return true; }
+    template <size_t N> static bool destruct(void *p, std::false_type) { return false; }
+    template <size_t... Indice> struct destructor {
+        static void dummy(...) {}
+        static void dtor(void *p) { dummy(destruct<Indice>(p, need_destruct<Indice>())...); }
+    };
+
+    template <size_t N> transformed_arg_type<arg_at<N>, Context> store(arg_at<N> arg) {
+        using Arg = arg_at<N>;
         using select_store_method = custom_store_method<Arg, Context>;
-        using MappedType = detail::mapped_type_constant<remove_reference_t<Arg>, Context>;
+        using mapped_type = detail::mapped_type_constant<remove_reference_t<Arg>, Context>;
         if constexpr (select_store_method::custom_store == true) {
             using Formatter = typename Context::template formatter_type<decay_t<Arg>>;
 
             return Formatter::store(pBuffer, std::forward<Arg>(arg));
         }
-        else if constexpr (stored_as_string<MappedType>::value && !stored_as_string_object<MappedType, Arg>::value) {
+        else if constexpr (stored_as_string<mapped_type>::value && !stored_as_string_object<mapped_type, Arg>::value) {
             return copy_string(pBuffer, detail::arg_mapper<Context>().map(std::forward<Arg>(arg)));
         }
-        else if constexpr (stored_as_numeric<MappedType>::value) {
+        else if constexpr (stored_as_numeric<mapped_type>::value) {
             return std::forward<Arg>(arg);
         }
         else {
-            char* const pobjs = pEntry + sizeof(Entry);
-            char* const pobj = pobjs + Trans::template objoffset_at<Context, N>::value;
-            using Type = typename Trans::template type_at<N>;
+            char* const pobjs = pentry + sizeof(entry);
+            char* const pobj = pobjs + trans::template objoffset_at<Context, N>::value;
+            using Type = type_at<N>;
             auto p = new(pobj) Type(std::forward<Arg>(arg));
             return *p;
         }
     }
 
-    static basic_string_view<typename Context::char_type> copy_string(char*& pBuffer, const typename Context::char_type* cstr) {
-        if constexpr (std::is_same<typename Context::char_type, wchar_t>::value) {
+    static basic_string_view<char_type> copy_string(char*& pBuffer, const char_type* cstr) {
+        if constexpr (std::is_same<char_type, wchar_t>::value) {
             wchar_t* pStart = reinterpret_cast<wchar_t*>(pBuffer);
             wchar_t* pEnd = wcpcpy(pStart, cstr);
             pBuffer = reinterpret_cast<char*>(pEnd);
@@ -250,23 +247,23 @@ private:
             return basic_string_view<char>(pStart, pEnd - pStart);
         }
     }
-    static basic_string_view<typename Context::char_type> copy_string(char*& pBuffer, basic_string_view<typename Context::char_type> sv) {
-        typename Context::char_type* pStart = reinterpret_cast<typename Context::char_type*>(pBuffer);
-        size_t size = sizeof(typename Context::char_type) * sv.size();
+    static basic_string_view<char_type> copy_string(char*& pBuffer, basic_string_view<char_type> sv) {
+        char_type* pStart = reinterpret_cast<char_type*>(pBuffer);
+        size_t size = sizeof(char_type) * sv.size();
         std::memcpy(pStart, sv.data(), size);
         pBuffer += size;
-        return basic_string_view<typename Context::char_type>(pStart, sv.size());
+        return basic_string_view<char_type>(pStart, sv.size());
     }
 
     static FMT_CONSTEXPR char* get_buffer_store(void* buf) {
         char* const pentry = reinterpret_cast<char*>(buf);      // entry will be constructed here
-        char* const pobjs = pentry + sizeof(Entry);             // objects will be stored starting here
+        char* const pobjs = pentry + sizeof(entry);             // objects will be stored starting here
         char* const pbufs = pobjs + get_obj_size();             // buffers will be stored starting here
         return pbufs;
     }
-    static constexpr size_t get_obj_size() { return Trans::template objsizesum_at<Context, sizeof...(Args) - 1>::value; }
-    constexpr size_t get_total_size() const { return pBuffer - pEntry; }
-    char* const pEntry;
+    static constexpr size_t get_obj_size() { return trans::template objsizesum_at<Context, sizeof...(Args) - 1>::value; }
+    constexpr size_t get_total_size() const { return pBuffer - pentry; }
+    char* const pentry;
     char* pBuffer;
 };
 
@@ -323,4 +320,4 @@ inline size_t store_async_entry(void* buf, const S& format_str, Args&&... args) 
 }
 
 }  // namespace fmt
-#endif  // FMT_CORE_H_
+#endif  // FMT_ASYNC_H_

@@ -61,6 +61,26 @@ void make_async_entry_and_alter(const std::string& s) {
     formatted.front() = formatted.back() = '#';
     EXPECT_EQ(formatted, fmt::format("{}", str));
 }
+
+void make_async_entry_dtor_test(std::string s) {
+    static void* constructed;
+    static void* destructed;
+    struct my_string : std::string {
+        my_string(const std::string& s) : std::string(s) {
+            constructed = this;
+        }
+        ~my_string() { destructed = this; }
+    };
+    {
+        my_string str(s);
+        size_t entry_size = fmt::store_async_entry(buf, "{}", str);
+        fmt::async::format(entry);
+    }
+    EXPECT_NE(nullptr, constructed);
+    EXPECT_EQ(constructed, destructed);
+};
+
+
 }
 
 TEST(AsyncTest, TrivialEntry) {
@@ -98,6 +118,9 @@ TEST(AsyncTest, StoredEntry) {
     make_async_entry_test_args(short(1), (unsigned short)2, 3, 4U, 5L, 6UL, 7LL, 8ULL, 9.0F, 10.0, 11, 12, 13, 14, 15, 16, 17, 18);
     // make_async_entry_test(TWENTY_ARGS "{narg}", 1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,0/*ignore*/,"narg"_a="bingo");
 
-    // this API copies only reference.
+    // this API copies buffer.
     make_async_entry_and_alter("[change me]");
+
+    // dtor
+    make_async_entry_dtor_test("custom string copied as object");
 }
