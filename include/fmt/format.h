@@ -77,6 +77,12 @@
 #  define FMT_GCC_VISIBILITY_HIDDEN
 #endif
 
+#if FMT_MSC_VER
+#  define FMT_MSC_DEFAULT = default
+#else
+#  define FMT_MSC_DEFAULT
+#endif
+
 #if __cplusplus == 201103L || __cplusplus == 201402L
 #  if defined(__INTEL_COMPILER) || defined(__PGI)
 #    define FMT_FALLTHROUGH
@@ -865,7 +871,7 @@ class FMT_API format_error : public std::runtime_error {
   format_error& operator=(const format_error&) = default;
   format_error(format_error&&) = default;
   format_error& operator=(format_error&&) = default;
-  ~format_error() FMT_NOEXCEPT FMT_OVERRIDE;
+  ~format_error() FMT_NOEXCEPT FMT_OVERRIDE FMT_MSC_DEFAULT;
 };
 
 FMT_MODULE_EXPORT_END
@@ -3302,7 +3308,7 @@ class FMT_API system_error : public std::runtime_error {
   system_error& operator=(const system_error&) = default;
   system_error(system_error&&) = default;
   system_error& operator=(system_error&&) = default;
-  ~system_error() FMT_NOEXCEPT FMT_OVERRIDE;
+  ~system_error() FMT_NOEXCEPT FMT_OVERRIDE FMT_MSC_DEFAULT;
 
   int error_code() const { return error_code_; }
 };
