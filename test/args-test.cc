@@ -7,9 +7,9 @@
 
 #include "fmt/args.h"
 
-#include "gmock.h"
+#include "gtest.h"
 
-TEST(ArgsTest, Basic) {
+TEST(args_test, basic) {
   auto store = fmt::dynamic_format_arg_store<fmt::format_context>();
   store.push_back(42);
   store.push_back("abc1");
@@ -17,7 +17,7 @@ TEST(ArgsTest, Basic) {
   EXPECT_EQ("42 and abc1 and 1.5", fmt::vformat("{} and {} and {}", store));
 }
 
-TEST(ArgsTest, StringsAndRefs) {
+TEST(args_test, strings_and_refs) {
   // Unfortunately the tests are compiled with old ABI so strings use COW.
   auto store = fmt::dynamic_format_arg_store<fmt::format_context>();
   char str[] = "1234567890";
@@ -47,7 +47,7 @@ template <> struct formatter<custom_type> {
 };
 FMT_END_NAMESPACE
 
-TEST(ArgsTest, CustomFormat) {
+TEST(args_test, custom_format) {
   auto store = fmt::dynamic_format_arg_store<fmt::format_context>();
   auto c = custom_type();
   store.push_back(c);
@@ -70,14 +70,13 @@ template <> struct formatter<to_stringable> {
     return ctx.begin();
   }
 
-  template <typename FormatContext>
-  auto format(const to_stringable&, FormatContext& ctx) -> decltype(ctx.out()) {
+  auto format(to_stringable, format_context& ctx) -> decltype(ctx.out()) {
     return ctx.out();
   }
 };
 FMT_END_NAMESPACE
 
-TEST(ArgsTest, ToStringAndFormatter) {
+TEST(args_test, to_string_and_formatter) {
   auto store = fmt::dynamic_format_arg_store<fmt::format_context>();
   auto s = to_stringable();
   store.push_back(s);
@@ -85,13 +84,13 @@ TEST(ArgsTest, ToStringAndFormatter) {
   fmt::vformat("", store);
 }
 
-TEST(ArgsTest, NamedInt) {
+TEST(args_test, named_int) {
   auto store = fmt::dynamic_format_arg_store<fmt::format_context>();
   store.push_back(fmt::arg("a1", 42));
   EXPECT_EQ("42", fmt::vformat("{a1}", store));
 }
 
-TEST(ArgsTest, NamedStrings) {
+TEST(args_test, named_strings) {
   auto store = fmt::dynamic_format_arg_store<fmt::format_context>();
   char str[] = "1234567890";
   store.push_back(fmt::arg("a1", str));
@@ -100,7 +99,7 @@ TEST(ArgsTest, NamedStrings) {
   EXPECT_EQ("1234567890 and X234567890", fmt::vformat("{a1} and {a2}", store));
 }
 
-TEST(ArgsTest, NamedArgByRef) {
+TEST(args_test, named_arg_by_ref) {
   auto store = fmt::dynamic_format_arg_store<fmt::format_context>();
   char band[] = "Rolling Stones";
   store.push_back(fmt::arg("band", std::cref(band)));
@@ -108,7 +107,7 @@ TEST(ArgsTest, NamedArgByRef) {
   EXPECT_EQ(fmt::vformat("{band}", store), "Rolling Scones");
 }
 
-TEST(ArgsTest, NamedCustomFormat) {
+TEST(args_test, named_custom_format) {
   auto store = fmt::dynamic_format_arg_store<fmt::format_context>();
   auto c = custom_type();
   store.push_back(fmt::arg("c1", c));
@@ -121,7 +120,7 @@ TEST(ArgsTest, NamedCustomFormat) {
   EXPECT_EQ("cust=0 and cust=1 and cust=3", result);
 }
 
-TEST(ArgsTest, Clear) {
+TEST(args_test, clear) {
   auto store = fmt::dynamic_format_arg_store<fmt::format_context>();
   store.push_back(42);
 
@@ -138,7 +137,7 @@ TEST(ArgsTest, Clear) {
   EXPECT_EQ("44", result);
 }
 
-TEST(ArgsTest, Reserve) {
+TEST(args_test, reserve) {
   auto store = fmt::dynamic_format_arg_store<fmt::format_context>();
   store.reserve(2, 1);
   store.push_back(1.5f);
@@ -163,7 +162,7 @@ template <> struct formatter<copy_throwable> {
 };
 FMT_END_NAMESPACE
 
-TEST(ArgsTest, ThrowOnCopy) {
+TEST(args_test, throw_on_copy) {
   auto store = fmt::dynamic_format_arg_store<fmt::format_context>();
   store.push_back(std::string("foo"));
   try {

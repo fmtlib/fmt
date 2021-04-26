@@ -6,7 +6,7 @@
 // For the license information refer to format.h.
 
 #ifndef _CRT_SECURE_NO_WARNINGS
-#  define _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
 #endif
 
 #include "fmt/chrono.h"
@@ -48,7 +48,7 @@ std::string format_tm(const std::tm& time, const char* spec,
   return os.str();
 }
 
-TEST(TimeTest, Format) {
+TEST(time_test, Format) {
   std::tm tm = std::tm();
   tm.tm_year = 116;
   tm.tm_mon = 3;
@@ -57,7 +57,7 @@ TEST(TimeTest, Format) {
             fmt::format("The date is {:%Y-%m-%d}.", tm));
 }
 
-TEST(TimeTest, GrowBuffer) {
+TEST(time_test, GrowBuffer) {
   std::string s = "{:";
   for (int i = 0; i < 30; ++i) s += "%c";
   s += "}\n";
@@ -65,7 +65,7 @@ TEST(TimeTest, GrowBuffer) {
   fmt::format(s, *std::localtime(&t));
 }
 
-TEST(TimeTest, FormatToEmptyContainer) {
+TEST(time_test, FormatToEmptyContainer) {
   std::string s;
   auto time = std::tm();
   time.tm_sec = 42;
@@ -73,7 +73,7 @@ TEST(TimeTest, FormatToEmptyContainer) {
   EXPECT_EQ(s, "42");
 }
 
-TEST(TimeTest, EmptyResult) { EXPECT_EQ("", fmt::format("{}", std::tm())); }
+TEST(time_test, EmptyResult) { EXPECT_EQ("", fmt::format("{}", std::tm())); }
 
 static bool EqualTime(const std::tm& lhs, const std::tm& rhs) {
   return lhs.tm_sec == rhs.tm_sec && lhs.tm_min == rhs.tm_min &&
@@ -83,19 +83,19 @@ static bool EqualTime(const std::tm& lhs, const std::tm& rhs) {
          lhs.tm_isdst == rhs.tm_isdst;
 }
 
-TEST(TimeTest, LocalTime) {
+TEST(time_test, LocalTime) {
   std::time_t t = std::time(nullptr);
   std::tm tm = *std::localtime(&t);
   EXPECT_TRUE(EqualTime(tm, fmt::localtime(t)));
 }
 
-TEST(TimeTest, GMTime) {
+TEST(time_test, GMTime) {
   std::time_t t = std::time(nullptr);
   std::tm tm = *std::gmtime(&t);
   EXPECT_TRUE(EqualTime(tm, fmt::gmtime(t)));
 }
 
-TEST(TimeTest, FormatTM) {
+TEST(time_test, FormatTM) {
   auto point = std::chrono::system_clock::now();
   std::time_t t = std::chrono::system_clock::to_time_t(point);
   std::tm tm = *std::localtime(&t);
@@ -117,7 +117,7 @@ template <typename TimePoint> std::string strftime(TimePoint tp) {
   return output;
 }
 
-TEST(TimeTest, TimePoint) {
+TEST(time_test, TimePoint) {
   auto t1 = std::chrono::system_clock::now();
   EXPECT_EQ(strftime(t1), fmt::format("{:%Y-%m-%d %H:%M:%S}", t1));
   using time_point =
@@ -126,12 +126,12 @@ TEST(TimeTest, TimePoint) {
   EXPECT_EQ(strftime(t2), fmt::format("{:%Y-%m-%d %H:%M:%S}", t2));
 }
 
-#define EXPECT_TIME(spec, time, duration)                 \
-  {                                                       \
-    std::locale jp_loc("ja_JP.utf8");                     \
-    EXPECT_EQ(format_tm(time, spec, jp_loc),              \
-              fmt::format(loc, "{:" spec "}", duration)); \
-  }
+#define EXPECT_TIME(spec, time, duration)               \
+{                                                       \
+  std::locale jp_loc("ja_JP.utf8");                     \
+  EXPECT_EQ(format_tm(time, spec, jp_loc),              \
+            fmt::format(loc, "{:" spec "}", duration)); \
+}
 
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
 

@@ -12,7 +12,7 @@
 #include "fmt/core.h"
 #include "gtest.h"
 
-TEST(AssertTest, Fail) {
+TEST(assert_test, fail) {
 #if GTEST_HAS_DEATH_TEST
   EXPECT_DEBUG_DEATH(FMT_ASSERT(false, "don't panic!"), "don't panic!");
 #else
@@ -20,9 +20,8 @@ TEST(AssertTest, Fail) {
 #endif
 }
 
-bool test_condition = false;
-
-TEST(AssertTest, DanglingElse) {
+TEST(assert_test, dangling_else) {
+  bool test_condition = false;
   bool executed_else = false;
   if (test_condition)
     FMT_ASSERT(true, "");
