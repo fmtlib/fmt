@@ -48,7 +48,7 @@
 // MSVC, libc++: always if __cplusplus >= 201703L
 // NOTE: FMT_GCC_VERSION  - is not libstdc++ version.
 //       _GLIBCXX_RELEASE - is present in GCC 7 libstdc++ and newer.
-#if __cplusplus >= 201703L
+#if __cplusplus >= 201703L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
 #  ifndef __GLIBCXX__
 #    define FMT_CONSTEXPR_CHAR_TRAITS constexpr
 #  elif defined(_GLIBCXX_RELEASE) && _GLIBCXX_RELEASE >= 7
