@@ -44,14 +44,27 @@
 #endif
 
 // Check if constexpr std::char_traits<>::compare,length is supported.
-// libstdc++: present on GCC 7 and newer and __cplusplus >= 201703L
-// MSVC, libc++: always if __cplusplus >= 201703L
+//
+// libstdc++: GCC 7 and newer and __cplusplus >= 201703L
+// MSVC     : VS 2017 15.7 and newer and /std:c++17
+// https://docs.microsoft.com/en-us/cpp/overview/visual-cpp-language-conformance
+// https://docs.microsoft.com/en-us/cpp/preprocessor/predefined-macros
+// libc++   : 4.0 and newer and if __cplusplus >= 201703L
+// https://libcxx.llvm.org/docs/Cxx1zStatus.html
+//
 // NOTE: FMT_GCC_VERSION  - is not libstdc++ version.
 //       _GLIBCXX_RELEASE - is present in GCC 7 libstdc++ and newer.
-#if __cplusplus >= 201703L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
-#  ifndef __GLIBCXX__
+#if defined(_MSC_VER)
+#  if _MSVC_LANG >= 201703L && _MSC_VER >= 1914
 #    define FMT_CONSTEXPR_CHAR_TRAITS constexpr
-#  elif defined(_GLIBCXX_RELEASE) && _GLIBCXX_RELEASE >= 7
+#  endif
+#elif defined(_LIBCPP_VERSION)
+#  if __cplusplus >= 201703L && _LIBCPP_VERSION >= 4000
+#    define FMT_CONSTEXPR_CHAR_TRAITS constexpr
+#  endif
+#elif defined(__GLIBCXX__)
+#  if __cplusplus >= 201703L && defined(_GLIBCXX_RELEASE) && \
+      _GLIBCXX_RELEASE >= 7
 #    define FMT_CONSTEXPR_CHAR_TRAITS constexpr
 #  endif
 #endif
