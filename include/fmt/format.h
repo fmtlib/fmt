@@ -3741,6 +3741,21 @@ arg_join<detail::iterator_t<Range>, detail::sentinel_t<Range>, wchar_t> join(
   return join(std::begin(range), std::end(range), sep);
 }
 
+FMT_MODULE_EXPORT_END
+namespace detail {
+
+template <typename Char, typename T>
+inline std::basic_string<Char> integral_to_string(T value) {
+  // The buffer should be large enough to store the number including the sign or
+  // "false" for bool.
+  constexpr int max_size = detail::digits10<T>() + 2;
+  Char buffer[max_size > 5 ? static_cast<unsigned>(max_size) : 5];
+  Char* begin = buffer;
+  return std::basic_string<Char>(begin, detail::write<Char>(begin, value));
+}
+
+}
+FMT_MODULE_EXPORT_BEGIN
 /**
   \rst
   Converts *value* to ``std::string`` using the default format for type *T*.
@@ -3761,19 +3776,22 @@ inline std::string to_string(const T& value) {
 
 template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
 inline std::string to_string(T value) {
-  // The buffer should be large enough to store the number including the sign or
-  // "false" for bool.
-  constexpr int max_size = detail::digits10<T>() + 2;
-  char buffer[max_size > 5 ? static_cast<unsigned>(max_size) : 5];
-  char* begin = buffer;
-  return std::string(begin, detail::write<char>(begin, value));
+  return detail::integral_to_string<char>(value);
 }
 
 /**
   Converts *value* to ``std::wstring`` using the default format for type *T*.
  */
-template <typename T> inline std::wstring to_wstring(const T& value) {
-  return format(FMT_STRING(L"{}"), value);
+template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value)>
+inline std::wstring to_wstring(const T& value) {
+  std::wstring result;
+  detail::write<wchar_t>(std::back_inserter(result), value);
+  return result;
+}
+
+template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
+inline std::wstring to_wstring(T value) {
+  return detail::integral_to_string<wchar_t>(value);
 }
 
 template <typename Char, size_t SIZE>
