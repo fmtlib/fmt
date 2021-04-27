@@ -498,7 +498,9 @@ FMT_CONSTEXPR20 OutChar* copy_str(InputIt begin, InputIt end, OutChar* out) {
   if (is_constant_evaluated()) {
     return copy_str<OutChar, InputIt, OutChar*>(begin, end, out);
   }
-  return std::uninitialized_copy(begin, end, out);
+  auto size = to_unsigned(end - begin);
+  std::uninitialized_copy(begin, end, make_checked(out, size));
+  return out + size;
 }
 
 template <typename OutChar, typename InputIt, typename OutputIt,
@@ -1791,10 +1793,12 @@ inline Char* write_significand(Char* out, UInt significand,
   if (!decimal_point)
     return format_decimal(out, significand, significand_size).end;
   auto end = format_decimal(out + 1, significand, significand_size).end;
-  if (integral_size == 1)
+  if (integral_size == 1) {
     out[0] = out[1];
-  else
-    std::uninitialized_copy_n(out + 1, integral_size, out);
+  } else {
+    std::uninitialized_copy_n(out + 1, integral_size,
+                              make_checked(out, to_unsigned(integral_size)));
+  }
   out[integral_size] = decimal_point;
   return end;
 }

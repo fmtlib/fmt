@@ -896,6 +896,7 @@ class buffer_appender : public std::back_insert_iterator<buffer<T>> {
  public:
   using std::back_insert_iterator<buffer<T>>::back_insert_iterator;
   buffer_appender(base it) : base(it) {}
+  using _Unchecked_type = buffer_appender;  // Mark iterator as checked.
 
   buffer_appender& operator++() {
     base::operator++();
