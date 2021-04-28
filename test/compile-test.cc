@@ -155,6 +155,12 @@ TEST(CompileTest, EmptyFormatString) {
   EXPECT_EQ(fmt::format(f), "");
 }
 
+TEST(CompileTest, CompileFallback) {
+  // FMT_COMPILE should fallback on runtime formatting when `if constexpr` is
+  // not available.
+  EXPECT_EQ("42", fmt::format(FMT_COMPILE("{}"), 42));
+}
+
 #ifdef __cpp_if_constexpr
 TEST(CompileTest, FormatDefault) {
   EXPECT_EQ("42", fmt::format(FMT_COMPILE("{}"), 42));

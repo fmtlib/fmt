@@ -114,7 +114,11 @@ struct is_compiled_string : std::is_base_of<compiled_string, S> {};
     std::string s = fmt::format(FMT_COMPILE("{}"), 42);
   \endrst
  */
-#define FMT_COMPILE(s) FMT_STRING_IMPL(s, fmt::detail::compiled_string)
+#ifdef __cpp_if_constexpr
+#  define FMT_COMPILE(s) FMT_STRING_IMPL(s, fmt::detail::compiled_string)
+#else
+#  define FMT_COMPILE(s) FMT_STRING(s)
+#endif
 
 #if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
 template <typename Char, size_t N, fixed_string<Char, N> Str>
