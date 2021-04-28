@@ -24,7 +24,7 @@ template <> struct formatter<test> : formatter<int> {
 
 #include "fmt/ostream.h"
 #include "fmt/ranges.h"
-#include "gmock.h"
+#include "gmock/gmock.h"
 #include "gtest-extra.h"
 #include "util.h"
 

@@ -26,7 +26,7 @@
 #  undef ERROR
 #endif
 
-#include "gmock.h"
+#include "gmock/gmock.h"
 #include "gtest-extra.h"
 #include "util.h"
 

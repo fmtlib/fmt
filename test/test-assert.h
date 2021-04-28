@@ -10,7 +10,7 @@
 
 #include <stdexcept>
 
-#include "gtest.h"
+#include "gtest/gtest.h"
 
 class assertion_failure : public std::logic_error {
  public:

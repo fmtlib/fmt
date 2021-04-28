@@ -11,7 +11,7 @@
 
 #include <climits>
 
-#include "gmock.h"
+#include "gmock/gmock.h"
 #include "gtest-extra.h"
 
 TEST(ScanTest, ReadText) {

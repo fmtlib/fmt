@@ -7,7 +7,7 @@
 
 #include <cstdlib>
 
-#include "gtest.h"
+#include "gtest/gtest.h"
 
 #ifdef _WIN32
 #  include <windows.h>

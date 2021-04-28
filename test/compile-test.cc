@@ -15,7 +15,7 @@
 
 #include "fmt/chrono.h"
 #include "fmt/compile.h"
-#include "gmock.h"
+#include "gmock/gmock.h"
 #include "gtest-extra.h"
 #include "util.h"
 

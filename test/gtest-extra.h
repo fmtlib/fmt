@@ -11,7 +11,7 @@
 #include <string>
 
 #include "fmt/os.h"
-#include "gmock.h"
+#include "gmock/gmock.h"
 
 #define FMT_TEST_THROW_(statement, expected_exception, expected_message, fail) \
   GTEST_AMBIGUOUS_ELSE_BLOCKER_                                                \

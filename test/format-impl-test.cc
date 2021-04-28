@@ -15,7 +15,7 @@
 
 #include "../src/format.cc"
 #include "fmt/printf.h"
-#include "gmock.h"
+#include "gmock/gmock.h"
 #include "gtest-extra.h"
 #include "util.h"
 

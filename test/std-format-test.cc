@@ -1,6 +1,6 @@
 #include <format>
 
-#include "gtest.h"
+#include "gtest/gtest.h"
 
 TEST(StdFormatTest, Escaping) {
   using namespace std;
