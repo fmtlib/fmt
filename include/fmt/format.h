@@ -2998,6 +2998,9 @@ FMT_CONSTEXPR const Char* parse_replacement_field(const Char* begin,
 template <bool IS_CONSTEXPR, typename Char, typename Handler>
 FMT_CONSTEXPR_DECL FMT_INLINE void parse_format_string(
     basic_string_view<Char> format_str, Handler&& handler) {
+  // this is most likely a name-lookup defect in msvc's modules implementation
+  using detail::find;
+
   auto begin = format_str.data();
   auto end = begin + format_str.size();
   if (end - begin < 32) {
