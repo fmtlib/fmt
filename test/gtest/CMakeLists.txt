@@ -17,8 +17,6 @@ else ()
   target_compile_definitions(gtest PUBLIC GTEST_HAS_PTHREAD=0)
 endif ()
 
-target_compile_definitions(gtest PUBLIC GTEST_LANG_CXX11=1)
-
 if (MSVC)
   # Disable MSVC warnings of _CRT_INSECURE_DEPRECATE functions.
   target_compile_definitions(gtest PRIVATE _CRT_SECURE_NO_WARNINGS)
