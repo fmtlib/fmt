@@ -228,11 +228,11 @@ auto format_tm(const std::tm& time, fmt::string_view spec,
   return os.str();
 }
 
-#  define EXPECT_TIME(spec, time, duration)                 \
-    {                                                       \
-      auto jp_loc = std::locale("ja_JP.utf8");              \
-      EXPECT_EQ(format_tm(time, spec, jp_loc),              \
-                fmt::format(loc, "{:" spec "}", duration)); \
+#  define EXPECT_TIME(spec, time, duration)                     \
+    {                                                           \
+      auto jp_loc = std::locale("ja_JP.utf8");                  \
+      EXPECT_EQ(format_tm(time, spec, jp_loc),                  \
+                fmt::format(jp_loc, "{:L" spec "}", duration)); \
     }
 
 TEST(chrono_test, locale) {

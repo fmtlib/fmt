@@ -863,6 +863,7 @@ struct chrono_formatter {
   FormatContext& context;
   OutputIt out;
   int precision;
+  bool localized = false;
   // rep is unsigned to avoid overflow.
   using rep =
       conditional_t<std::is_integral<Rep>::value && sizeof(Rep) < sizeof(int),
@@ -957,7 +958,8 @@ struct chrono_formatter {
 
   void format_localized(const tm& time, char format, char modifier = 0) {
     if (isnan(val)) return write_nan();
-    auto locale = context.locale().template get<std::locale>();
+    auto locale = localized ? context.locale().template get<std::locale>()
+                            : std::locale::classic();
     auto& facet = std::use_facet<std::time_put<char_type>>(locale);
     std::basic_ostringstream<char_type> os;
     os.imbue(locale);
@@ -1086,6 +1088,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
   using arg_ref_type = detail::arg_ref<Char>;
   arg_ref_type width_ref;
   arg_ref_type precision_ref;
+  bool localized = false;
   basic_string_view<Char> format_str;
   using duration = std::chrono::duration<Rep, Period>;
 
@@ -1148,6 +1151,10 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
       else
         handler.on_error("precision not allowed for this argument type");
     }
+    if (begin != end && *begin == 'L') {
+      ++begin;
+      localized = true;
+    }
     end = parse_chrono_format(begin, end, detail::chrono_format_checker());
     return {begin, end};
   }
@@ -1182,6 +1189,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
       detail::chrono_formatter<FormatContext, decltype(out), Rep, Period> f(
           ctx, out, d);
       f.precision = precision_copy;
+      f.localized = localized;
       parse_chrono_format(begin, end, f);
     }
     return detail::write(
