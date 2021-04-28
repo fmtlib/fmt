@@ -9,7 +9,7 @@
 #define FMT_MOCK_ALLOCATOR_H_
 
 #include "fmt/format.h"
-#include "gmock.h"
+#include "gmock/gmock.h"
 
 template <typename T> class mock_allocator {
  public:

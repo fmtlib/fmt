@@ -20,7 +20,7 @@
 #include <string>       // std::string
 #include <type_traits>  // std::is_same
 
-#include "gmock.h"
+#include "gmock/gmock.h"
 
 #if defined(FMT_COMPILE_TIME_CHECKS) && FMT_COMPILE_TIME_CHECKS
 #  include "fmt/format.h"

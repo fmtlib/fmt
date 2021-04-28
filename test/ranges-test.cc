@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-#include "gtest.h"
+#include "gtest/gtest.h"
 
 #if !FMT_GCC_VERSION || FMT_GCC_VERSION >= 601
 #  define FMT_RANGES_TEST_ENABLE_C_STYLE_ARRAY

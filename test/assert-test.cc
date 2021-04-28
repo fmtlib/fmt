@@ -10,7 +10,7 @@
 // For the license information refer to format.h.
 
 #include "fmt/core.h"
-#include "gtest.h"
+#include "gtest/gtest.h"
 
 TEST(assert_test, fail) {
 #if GTEST_HAS_DEATH_TEST

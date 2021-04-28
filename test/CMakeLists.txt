@@ -1,44 +1,11 @@
-#------------------------------------------------------------------------------
-# Build the google test library
-
-# We compile Google Test ourselves instead of using pre-compiled libraries.
-# See the Google Test FAQ "Why is it not recommended to install a
-# pre-compiled copy of Google Test (for example, into /usr/local)?"
-# at http://code.google.com/p/googletest/wiki/FAQ for more details.
-add_library(gmock STATIC
-  gmock-gtest-all.cc gmock/gmock.h gtest/gtest.h gtest/gtest-spi.h)
-target_compile_definitions(gmock PUBLIC GTEST_HAS_STD_WSTRING=1)
-target_include_directories(gmock SYSTEM PUBLIC . gmock gtest)
-
-find_package(Threads)
-if (Threads_FOUND)
-  target_link_libraries(gmock ${CMAKE_THREAD_LIBS_INIT})
-else ()
-  target_compile_definitions(gmock PUBLIC GTEST_HAS_PTHREAD=0)
-endif ()
-
-target_compile_definitions(gmock PUBLIC GTEST_LANG_CXX11=1)
-
-if (MSVC)
-  # Disable MSVC warnings of _CRT_INSECURE_DEPRECATE functions.
-  target_compile_definitions(gmock PRIVATE _CRT_SECURE_NO_WARNINGS)
-  if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    # Disable MSVC warnings of POSIX functions.
-    target_compile_options(gmock PUBLIC -Wno-deprecated-declarations)
-  endif ()
-endif ()
-
-# Silence MSVC tr1 deprecation warning in gmock.
-target_compile_definitions(gmock
-  PUBLIC _SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING=1)
+add_subdirectory(gtest)
 
 #------------------------------------------------------------------------------
 # Build the actual library tests
 
 set(TEST_MAIN_SRC test-main.cc gtest-extra.cc gtest-extra.h util.cc)
 add_library(test-main STATIC ${TEST_MAIN_SRC})
-target_include_directories(test-main SYSTEM PUBLIC gtest gmock)
-target_link_libraries(test-main gmock fmt)
+target_link_libraries(test-main gtest fmt)
 
 include(CheckCXXCompilerFlag)
 
@@ -75,7 +42,6 @@ function(add_fmt_test name)
   if (FMT_WERROR)
     target_compile_options(${name} PRIVATE ${WERROR_FLAG})
   endif ()
-  target_include_directories(${name} SYSTEM PUBLIC gtest gmock)
   add_test(NAME ${name} COMMAND ${name})
 endfunction()
 
@@ -122,8 +88,7 @@ if (NOT MSVC_STATIC_RUNTIME)
     posix-mock-test.cc ../src/format.cc ${TEST_MAIN_SRC})
   target_include_directories(
     posix-mock-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
-  target_link_libraries(posix-mock-test gmock)
-  target_include_directories(posix-mock-test SYSTEM PUBLIC gtest gmock)
+  target_link_libraries(posix-mock-test gtest)
   if (FMT_PEDANTIC)
     target_compile_options(posix-mock-test PRIVATE ${PEDANTIC_COMPILE_FLAGS})
   endif ()
@@ -136,8 +101,7 @@ endif ()
 
 add_fmt_executable(header-only-test
   header-only-test.cc header-only-test2.cc test-main.cc)
-target_link_libraries(header-only-test gmock)
-target_include_directories(header-only-test SYSTEM PUBLIC gtest gmock)
+target_link_libraries(header-only-test gtest)
 if (TARGET fmt-header-only)
   target_link_libraries(header-only-test fmt-header-only)
 else ()

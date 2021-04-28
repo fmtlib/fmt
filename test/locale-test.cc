@@ -9,7 +9,7 @@
 
 #include <complex>
 
-#include "gmock.h"
+#include "gmock/gmock.h"
 
 using fmt::detail::max_value;
 
