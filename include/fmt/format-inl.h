@@ -225,10 +225,6 @@ template <> FMT_FUNC int count_digits<4>(detail::fallback_uintptr n) {
 
 #if __cplusplus < 201703L
 template <typename T>
-constexpr const uint32_t basic_data<T>::zero_or_powers_of_10_32[];
-template <typename T>
-constexpr const uint64_t basic_data<T>::zero_or_powers_of_10_64[];
-template <typename T>
 constexpr const typename basic_data<T>::digit_pair basic_data<T>::digits[];
 template <typename T> constexpr const char basic_data<T>::hex_digits[];
 template <typename T> constexpr const char basic_data<T>::signs[];

@@ -911,13 +911,6 @@ using uint64_or_128_t = conditional_t<num_bits<T>() <= 64, uint64_t, uint128_t>;
 
 // Static data is placed in this class template for the header-only config.
 template <typename T = void> struct basic_data {
-  static constexpr const uint32_t zero_or_powers_of_10_32[] = {
-      0, 0, FMT_POWERS_OF_10(1U)};
-
-  static constexpr const uint64_t zero_or_powers_of_10_64[] = {
-      0, 0, FMT_POWERS_OF_10(1U), FMT_POWERS_OF_10(1000000000ULL),
-      10000000000000000000ULL};
-
   // log10(2) = 0x0.4d104d427de7fbcc...
   static const uint64_t log10_2_significand = 0x4d104d427de7fbcc;
 
@@ -993,7 +986,10 @@ FMT_CONSTEXPR20 inline int count_digits(uint64_t n) {
 #ifdef FMT_BUILTIN_CLZLL
   // https://github.com/fmtlib/format-benchmark/blob/master/digits10
   auto t = bsr2log10(FMT_BUILTIN_CLZLL(n | 1) ^ 63);
-  return t - (n < data::zero_or_powers_of_10_64[t]);
+  constexpr const uint64_t zero_or_powers_of_10[] = {
+      0, 0, FMT_POWERS_OF_10(1U), FMT_POWERS_OF_10(1000000000ULL),
+      10000000000000000000ULL};
+  return t - (n < zero_or_powers_of_10[t]);
 #else
   return count_digits_fallback(n);
 #endif
@@ -1029,7 +1025,9 @@ FMT_CONSTEXPR20 inline int count_digits(uint32_t n) {
     return count_digits_fallback(n);
   }
   auto t = bsr2log10(FMT_BUILTIN_CLZ(n | 1) ^ 31);
-  return t - (n < data::zero_or_powers_of_10_32[t]);
+  constexpr const uint32_t zero_or_powers_of_10[] = {0, 0,
+                                                     FMT_POWERS_OF_10(1U)};
+  return t - (n < zero_or_powers_of_10[t]);
 }
 #endif
 
