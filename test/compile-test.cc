@@ -86,54 +86,6 @@ TEST(CompileTest, CompileTimePreparedPartsTypeProvider) {
 }
 #endif
 
-TEST(CompileTest, PassStringLiteralFormat) {
-  const auto prepared = fmt::detail::compile<int>("test {}");
-  EXPECT_EQ("test 42", fmt::format(prepared, 42));
-  const auto wprepared = fmt::detail::compile<int>(L"test {}");
-  EXPECT_EQ(L"test 42", fmt::format(wprepared, 42));
-}
-
-TEST(CompileTest, FormatToArrayOfChars) {
-  char buffer[32] = {0};
-  const auto prepared = fmt::detail::compile<int>("4{}");
-  fmt::format_to(fmt::detail::make_checked(buffer, 32), prepared, 2);
-  EXPECT_EQ(std::string("42"), buffer);
-  wchar_t wbuffer[32] = {0};
-  const auto wprepared = fmt::detail::compile<int>(L"4{}");
-  fmt::format_to(fmt::detail::make_checked(wbuffer, 32), wprepared, 2);
-  EXPECT_EQ(std::wstring(L"42"), wbuffer);
-}
-
-TEST(CompileTest, FormatToIterator) {
-  std::string s(2, ' ');
-  const auto prepared = fmt::detail::compile<int>("4{}");
-  fmt::format_to(s.begin(), prepared, 2);
-  EXPECT_EQ("42", s);
-  std::wstring ws(2, L' ');
-  const auto wprepared = fmt::detail::compile<int>(L"4{}");
-  fmt::format_to(ws.begin(), wprepared, 2);
-  EXPECT_EQ(L"42", ws);
-}
-
-TEST(CompileTest, FormatToN) {
-  char buf[5];
-  auto f = fmt::detail::compile<int>("{:10}");
-  auto result = fmt::format_to_n(buf, 5, f, 42);
-  EXPECT_EQ(result.size, 10);
-  EXPECT_EQ(result.out, buf + 5);
-  EXPECT_EQ(fmt::string_view(buf, 5), "     ");
-}
-
-TEST(CompileTest, FormattedSize) {
-  auto f = fmt::detail::compile<int>("{:10}");
-  EXPECT_EQ(fmt::formatted_size(f, 42), 10);
-}
-
-TEST(CompileTest, MultipleTypes) {
-  auto f = fmt::detail::compile<int, int>("{} {}");
-  EXPECT_EQ(fmt::format(f, 42, 42), "42 42");
-}
-
 struct test_formattable {};
 
 FMT_BEGIN_NAMESPACE
@@ -144,16 +96,6 @@ template <> struct formatter<test_formattable> : formatter<const char*> {
   }
 };
 FMT_END_NAMESPACE
-
-TEST(CompileTest, FormatUserDefinedType) {
-  auto f = fmt::detail::compile<test_formattable>("{}");
-  EXPECT_EQ(fmt::format(f, test_formattable()), "foo");
-}
-
-TEST(CompileTest, EmptyFormatString) {
-  auto f = fmt::detail::compile<>("");
-  EXPECT_EQ(fmt::format(f), "");
-}
 
 TEST(CompileTest, CompileFallback) {
   // FMT_COMPILE should fallback on runtime formatting when `if constexpr` is

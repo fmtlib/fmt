@@ -814,8 +814,7 @@ constexpr auto compile_format_string(S format_str) {
 }
 
 template <typename... Args, typename S,
-          FMT_ENABLE_IF(is_compile_string<S>::value ||
-                        detail::is_compiled_string<S>::value)>
+          FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
 constexpr auto compile(S format_str) {
   constexpr basic_string_view<typename S::char_type> str = format_str;
   if constexpr (str.size() == 0) {
@@ -834,27 +833,11 @@ constexpr auto compile(S format_str) -> detail::compiled_format<S, Args...> {
   return detail::compiled_format<S, Args...>(to_string_view(format_str));
 }
 #endif  // __cpp_if_constexpr
-
-// Compiles the format string which must be a string literal.
-template <typename... Args, typename Char, size_t N>
-auto compile(const Char (&format_str)[N])
-    -> detail::compiled_format<const Char*, Args...> {
-  return detail::compiled_format<const Char*, Args...>(
-      basic_string_view<Char>(format_str, N - 1));
-}
 }  // namespace detail
-
-// DEPRECATED! use FMT_COMPILE instead.
-template <typename... Args>
-FMT_DEPRECATED auto compile(const Args&... args)
-    -> decltype(detail::compile(args...)) {
-  return detail::compile(args...);
-}
 
 FMT_MODULE_EXPORT_BEGIN
 
-#if FMT_USE_CONSTEXPR
-#  ifdef __cpp_if_constexpr
+#ifdef __cpp_if_constexpr
 
 template <typename CompiledFormat, typename... Args,
           typename Char = typename CompiledFormat::char_type,
@@ -872,20 +855,7 @@ constexpr OutputIt format_to(OutputIt out, const CompiledFormat& cf,
                              const Args&... args) {
   return cf.format(out, args...);
 }
-#  endif  // __cpp_if_constexpr
-#endif    // FMT_USE_CONSTEXPR
-
-template <typename CompiledFormat, typename... Args,
-          typename Char = typename CompiledFormat::char_type,
-          FMT_ENABLE_IF(std::is_base_of<detail::basic_compiled_format,
-                                        CompiledFormat>::value)>
-std::basic_string<Char> format(const CompiledFormat& cf, const Args&... args) {
-  basic_memory_buffer<Char> buffer;
-  using context = buffer_context<Char>;
-  detail::cf::vformat_to<context>(detail::buffer_appender<Char>(buffer), cf,
-                                  make_format_args<context>(args...));
-  return to_string(buffer);
-}
+#endif  // __cpp_if_constexpr
 
 template <typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
@@ -919,17 +889,6 @@ FMT_INLINE std::basic_string<typename S::char_type> format(const S&,
 #endif
 }
 
-template <typename OutputIt, typename CompiledFormat, typename... Args,
-          FMT_ENABLE_IF(std::is_base_of<detail::basic_compiled_format,
-                                        CompiledFormat>::value)>
-constexpr OutputIt format_to(OutputIt out, const CompiledFormat& cf,
-                             const Args&... args) {
-  using char_type = typename CompiledFormat::char_type;
-  using context = format_context_t<OutputIt, char_type>;
-  return detail::cf::vformat_to<context>(out, cf,
-                                         make_format_args<context>(args...));
-}
-
 template <typename OutputIt, typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
 FMT_CONSTEXPR OutputIt format_to(OutputIt out, const S&, Args&&... args) {
@@ -948,35 +907,19 @@ FMT_CONSTEXPR OutputIt format_to(OutputIt out, const S&, Args&&... args) {
 #endif
 }
 
-template <typename OutputIt, typename CompiledFormat, typename... Args>
-auto format_to_n(OutputIt out, size_t n, const CompiledFormat& cf,
-                 const Args&... args) ->
-    typename std::enable_if<
-        detail::is_output_iterator<OutputIt,
-                                   typename CompiledFormat::char_type>::value &&
-            std::is_base_of<detail::basic_compiled_format,
-                            CompiledFormat>::value,
-        format_to_n_result<OutputIt>>::type {
-  auto it =
-      format_to(detail::truncating_iterator<OutputIt>(out, n), cf, args...);
-  return {it.base(), it.count()};
-}
-
 template <typename OutputIt, typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
-format_to_n_result<OutputIt> format_to_n(OutputIt out, size_t n, const S&,
-                                         Args&&... args) {
-  auto it = format_to(detail::truncating_iterator<OutputIt>(out, n), S(),
+format_to_n_result<OutputIt> format_to_n(OutputIt out, size_t n,
+                                         const S& format_str, Args&&... args) {
+  auto it = format_to(detail::truncating_iterator<OutputIt>(out, n), format_str,
                       std::forward<Args>(args)...);
   return {it.base(), it.count()};
 }
 
-template <typename CompiledFormat, typename... Args,
-          FMT_ENABLE_IF(std::is_base_of<detail::basic_compiled_format,
-                                        CompiledFormat>::value ||
-                        detail::is_compiled_string<CompiledFormat>::value)>
-size_t formatted_size(const CompiledFormat& cf, const Args&... args) {
-  return format_to(detail::counting_iterator(), cf, args...).count();
+template <typename S, typename... Args,
+          FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
+size_t formatted_size(const S& format_str, const Args&... args) {
+  return format_to(detail::counting_iterator(), format_str, args...).count();
 }
 
 #if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
