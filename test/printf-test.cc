@@ -51,6 +51,34 @@ std::wstring test_sprintf(fmt::wstring_view format, const Args&... args) {
       << "format: " << format;                          \
   EXPECT_EQ(expected_output, fmt::sprintf(make_positional(format), arg))
 
+template <typename T> struct value_extractor {
+  T operator()(T value) { return value; }
+
+  template <typename U> FMT_NORETURN T operator()(U) {
+    throw std::runtime_error(fmt::format("invalid type {}", typeid(U).name()));
+  }
+
+#if FMT_USE_INT128
+  // Apple Clang does not define typeid for __int128_t and __uint128_t.
+  FMT_NORETURN T operator()(fmt::detail::int128_t) {
+    throw std::runtime_error("invalid type __int128_t");
+  }
+
+  FMT_NORETURN T operator()(fmt::detail::uint128_t) {
+    throw std::runtime_error("invalid type __uint128_t");
+  }
+#endif
+};
+
+TEST(PrintfTest, ArgConverter) {
+  long long value = max_value<long long>();
+  auto arg = fmt::detail::make_arg<fmt::format_context>(value);
+  fmt::visit_format_arg(
+      fmt::detail::arg_converter<long long, fmt::format_context>(arg, 'd'),
+      arg);
+  EXPECT_EQ(value, fmt::visit_format_arg(value_extractor<long long>(), arg));
+}
+
 TEST(PrintfTest, NoArgs) {
   EXPECT_EQ("test", test_sprintf("test"));
   EXPECT_EQ(L"test", fmt::sprintf(L"test"));

@@ -5,23 +5,19 @@
 //
 // For the license information refer to format.h.
 
-#define FMT_NOEXCEPT
-#undef FMT_SHARED
-#include "test-assert.h"
-
-// Include format.cc instead of format.h to test implementation.
 #include <algorithm>
 #include <cstring>
 
+#include "test-assert.h"
+
+// Use the header-only mode to test the implementation.
 #include "../src/format.cc"
-#include "fmt/printf.h"
 #include "gmock/gmock.h"
 #include "gtest-extra.h"
 #include "util.h"
 
 #ifdef _WIN32
 #  include <windows.h>
-#  undef max
 #endif
 
 using fmt::detail::bigint;
@@ -31,13 +27,13 @@ using fmt::detail::max_value;
 static_assert(!std::is_copy_constructible<bigint>::value, "");
 static_assert(!std::is_copy_assignable<bigint>::value, "");
 
-TEST(BigIntTest, Construct) {
+TEST(bigint_test, construct) {
   EXPECT_EQ("", fmt::format("{}", bigint()));
   EXPECT_EQ("42", fmt::format("{}", bigint(0x42)));
   EXPECT_EQ("123456789abcedf0", fmt::format("{}", bigint(0x123456789abcedf0)));
 }
 
-TEST(BigIntTest, Compare) {
+TEST(bigint_test, compare) {
   bigint n1(42);
   bigint n2(42);
   EXPECT_EQ(compare(n1, n2), 0);
@@ -51,7 +47,7 @@ TEST(BigIntTest, Compare) {
   EXPECT_GT(compare(n4, n2), 0);
 }
 
-TEST(BigIntTest, AddCompare) {
+TEST(bigint_test, add_compare) {
   EXPECT_LT(
       add_compare(bigint(0xffffffff), bigint(0xffffffff), bigint(1) <<= 64), 0);
   EXPECT_LT(add_compare(bigint(1) <<= 32, bigint(1), bigint(1) <<= 96), 0);
@@ -77,7 +73,7 @@ TEST(BigIntTest, AddCompare) {
             0);
 }
 
-TEST(BigIntTest, ShiftLeft) {
+TEST(bigint_test, shift_left) {
   bigint n(0x42);
   n <<= 0;
   EXPECT_EQ("42", fmt::format("{}", n));
@@ -87,7 +83,7 @@ TEST(BigIntTest, ShiftLeft) {
   EXPECT_EQ("108000000", fmt::format("{}", n));
 }
 
-TEST(BigIntTest, Multiply) {
+TEST(bigint_test, multiply) {
   bigint n(0x42);
   EXPECT_THROW(n *= 0, assertion_failure);
   n *= 1;
@@ -104,7 +100,7 @@ TEST(BigIntTest, Multiply) {
   EXPECT_EQ("fffffffffffffffe0000000000000001", fmt::format("{}", bigmax));
 }
 
-TEST(BigIntTest, Accumulator) {
+TEST(bigint_test, accumulator) {
   fmt::detail::accumulator acc;
   EXPECT_EQ(acc.lower, 0);
   EXPECT_EQ(acc.upper, 0);
@@ -113,7 +109,7 @@ TEST(BigIntTest, Accumulator) {
   EXPECT_EQ(static_cast<uint32_t>(acc), 34);
   acc += 56;
   EXPECT_EQ(acc.lower, 90);
-  acc += fmt::detail::max_value<uint64_t>();
+  acc += max_value<uint64_t>();
   EXPECT_EQ(acc.upper, 13);
   EXPECT_EQ(acc.lower, 89);
   acc >>= 32;
@@ -121,7 +117,7 @@ TEST(BigIntTest, Accumulator) {
   EXPECT_EQ(acc.lower, 13 * 0x100000000);
 }
 
-TEST(BigIntTest, Square) {
+TEST(bigint_test, square) {
   bigint n0(0);
   n0.square();
   EXPECT_EQ("0", fmt::format("{}", n0));
@@ -139,18 +135,18 @@ TEST(BigIntTest, Square) {
   EXPECT_EQ("2540be400", fmt::format("{}", n4));
 }
 
-TEST(BigIntTest, DivModAssignZeroDivisor) {
+TEST(bigint_test, divmod_assign_zero_divisor) {
   bigint zero(0);
   EXPECT_THROW(bigint(0).divmod_assign(zero), assertion_failure);
   EXPECT_THROW(bigint(42).divmod_assign(zero), assertion_failure);
 }
 
-TEST(BigIntTest, DivModAssignSelf) {
+TEST(bigint_test, divmod_assign_self) {
   bigint n(100);
   EXPECT_THROW(n.divmod_assign(n), assertion_failure);
 }
 
-TEST(BigIntTest, DivModAssignUnaligned) {
+TEST(bigint_test, divmod_assign_unaligned) {
   // (42 << 340) / pow(10, 100):
   bigint n1(42);
   n1 <<= 340;
@@ -162,7 +158,7 @@ TEST(BigIntTest, DivModAssignUnaligned) {
             fmt::format("{}", n1));
 }
 
-TEST(BigIntTest, DivModAssign) {
+TEST(bigint_test, divmod_assign) {
   // 100 / 10:
   bigint n1(100);
   int result = n1.divmod_assign(bigint(10));
@@ -191,18 +187,18 @@ template <> void run_double_tests<true>() {
   EXPECT_EQ(fp(1.23), fp(0x13ae147ae147aeu, -52));
 }
 
-TEST(FPTest, DoubleTests) {
+TEST(fp_test, double_tests) {
   run_double_tests<std::numeric_limits<double>::is_iec559>();
 }
 
-TEST(FPTest, Normalize) {
+TEST(fp_test, normalize) {
   const auto v = fp(0xbeef, 42);
   auto normalized = normalize(v);
   EXPECT_EQ(0xbeef000000000000, normalized.f);
   EXPECT_EQ(-6, normalized.e);
 }
 
-TEST(FPTest, Multiply) {
+TEST(fp_test, multiply) {
   auto v = fp(123ULL << 32, 4) * fp(56ULL << 32, 7);
   EXPECT_EQ(v.f, 123u * 56u);
   EXPECT_EQ(v.e, 4 + 7 + 64);
@@ -211,7 +207,7 @@ TEST(FPTest, Multiply) {
   EXPECT_EQ(v.e, 4 + 8 + 64);
 }
 
-TEST(FPTest, GetCachedPower) {
+TEST(fp_test, get_cached_power) {
   using limits = std::numeric_limits<double>;
   for (auto exp = limits::min_exponent; exp <= limits::max_exponent; ++exp) {
     int dec_exp = 0;
@@ -248,7 +244,7 @@ TEST(FPTest, GetCachedPower) {
   }
 }
 
-TEST(FPTest, DragonboxMaxK) {
+TEST(fp_test, dragonbox_max_k) {
   using fmt::detail::dragonbox::floor_log10_pow2;
   using float_info = fmt::detail::dragonbox::float_info<float>;
   EXPECT_EQ(fmt::detail::const_check(float_info::max_k),
@@ -261,7 +257,7 @@ TEST(FPTest, DragonboxMaxK) {
                                             double_info::significand_bits));
 }
 
-TEST(FPTest, GetRoundDirection) {
+TEST(fp_test, get_round_direction) {
   using fmt::detail::get_round_direction;
   using fmt::detail::round_direction;
   EXPECT_EQ(round_direction::down, get_round_direction(100, 50, 0));
@@ -285,7 +281,7 @@ TEST(FPTest, GetRoundDirection) {
   EXPECT_EQ(round_direction::up, get_round_direction(max, max - 1, 1));
 }
 
-TEST(FPTest, FixedHandler) {
+TEST(fp_test, fixed_handler) {
   struct handler : fmt::detail::fixed_handler {
     char buffer[10];
     handler(int prec = 0) : fmt::detail::fixed_handler() {
@@ -307,37 +303,9 @@ TEST(FPTest, FixedHandler) {
             digits::error);
 }
 
-TEST(FPTest, GrisuFormatCompilesWithNonIEEEDouble) {
+TEST(fp_test, grisu_format_compiles_with_on_ieee_double) {
   fmt::memory_buffer buf;
   format_float(0.42, -1, fmt::detail::float_specs(), buf);
-}
-
-template <typename T> struct value_extractor {
-  T operator()(T value) { return value; }
-
-  template <typename U> FMT_NORETURN T operator()(U) {
-    throw std::runtime_error(fmt::format("invalid type {}", typeid(U).name()));
-  }
-
-#if FMT_USE_INT128
-  // Apple Clang does not define typeid for __int128_t and __uint128_t.
-  FMT_NORETURN T operator()(fmt::detail::int128_t) {
-    throw std::runtime_error("invalid type __int128_t");
-  }
-
-  FMT_NORETURN T operator()(fmt::detail::uint128_t) {
-    throw std::runtime_error("invalid type __uint128_t");
-  }
-#endif
-};
-
-TEST(FormatTest, ArgConverter) {
-  long long value = max_value<long long>();
-  auto arg = fmt::detail::make_arg<fmt::format_context>(value);
-  fmt::visit_format_arg(
-      fmt::detail::arg_converter<long long, fmt::format_context>(arg, 'd'),
-      arg);
-  EXPECT_EQ(value, fmt::visit_format_arg(value_extractor<long long>(), arg));
 }
 
 TEST(FormatTest, StrError) {
