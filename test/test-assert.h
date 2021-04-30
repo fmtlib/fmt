@@ -10,6 +10,11 @@
 
 #include <stdexcept>
 
+void throw_assertion_failure(const char* message);
+#define FMT_ASSERT(condition, message) \
+  if (!(condition)) throw_assertion_failure(message);
+
+#include "gtest-extra.h"
 #include "gtest/gtest.h"
 
 class assertion_failure : public std::logic_error {
@@ -27,9 +32,6 @@ void assertion_failure::avoid_weak_vtable() {}
 inline void throw_assertion_failure(const char* message) {
   throw assertion_failure(message);
 }
-
-#define FMT_ASSERT(condition, message) \
-  if (!(condition)) throw_assertion_failure(message);
 
 // Expects an assertion failure.
 #define EXPECT_ASSERT(stmt, message) \

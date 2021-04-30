@@ -8,17 +8,13 @@
 #include <algorithm>
 #include <cstring>
 
+// clang-format off
 #include "test-assert.h"
+// clang-format on
 
-// Use the header-only mode to test the implementation.
-#include "../src/format.cc"
+#include "fmt/format.h"
 #include "gmock/gmock.h"
-#include "gtest-extra.h"
 #include "util.h"
-
-#ifdef _WIN32
-#  include <windows.h>
-#endif
 
 using fmt::detail::bigint;
 using fmt::detail::fp;
@@ -308,7 +304,7 @@ TEST(fp_test, grisu_format_compiles_with_on_ieee_double) {
   format_float(0.42, -1, fmt::detail::float_specs(), buf);
 }
 
-TEST(FormatTest, StrError) {
+TEST(format_impl_test, strerror) {
   char* message = nullptr;
   char buffer[BUFFER_SIZE];
   EXPECT_ASSERT(fmt::detail::safe_strerror(EDOM, message = nullptr, 0),
@@ -343,7 +339,7 @@ TEST(FormatTest, StrError) {
 #endif
 }
 
-TEST(FormatTest, FormatErrorCode) {
+TEST(format_impl_test, format_error_code) {
   std::string msg = "error 42", sep = ": ";
   {
     fmt::memory_buffer buffer;
@@ -353,8 +349,8 @@ TEST(FormatTest, FormatErrorCode) {
   }
   {
     fmt::memory_buffer buffer;
-    std::string prefix(fmt::inline_buffer_size - msg.size() - sep.size() + 1,
-                       'x');
+    auto prefix =
+        std::string(fmt::inline_buffer_size - msg.size() - sep.size() + 1, 'x');
     fmt::detail::format_error_code(buffer, 42, prefix);
     EXPECT_EQ(msg, to_string(buffer));
   }
@@ -363,7 +359,8 @@ TEST(FormatTest, FormatErrorCode) {
     // Test maximum buffer size.
     msg = fmt::format("error {}", codes[i]);
     fmt::memory_buffer buffer;
-    std::string prefix(fmt::inline_buffer_size - msg.size() - sep.size(), 'x');
+    auto prefix =
+        std::string(fmt::inline_buffer_size - msg.size() - sep.size(), 'x');
     fmt::detail::format_error_code(buffer, codes[i], prefix);
     EXPECT_EQ(prefix + sep + msg, to_string(buffer));
     size_t size = fmt::inline_buffer_size;
@@ -376,7 +373,7 @@ TEST(FormatTest, FormatErrorCode) {
   }
 }
 
-TEST(FormatTest, ComputeWidth) {
+TEST(format_impl_test, compute_width) {
   EXPECT_EQ(4,
             fmt::detail::compute_width(
                 fmt::basic_string_view<fmt::detail::char8_type>(
@@ -393,12 +390,12 @@ template <typename Int> void test_count_digits() {
   }
 }
 
-TEST(UtilTest, CountDigits) {
+TEST(format_impl_test, count_digits) {
   test_count_digits<uint32_t>();
   test_count_digits<uint64_t>();
 }
 
-TEST(UtilTest, WriteFallbackUIntPtr) {
+TEST(format_impl_test, write_fallback_uintptr) {
   std::string s;
   fmt::detail::write_ptr<char>(
       std::back_inserter(s),
@@ -407,7 +404,11 @@ TEST(UtilTest, WriteFallbackUIntPtr) {
 }
 
 #ifdef _WIN32
-TEST(UtilTest, WriteConsoleSignature) {
+#  include <windows.h>
+#endif
+
+#ifdef _WIN32
+TEST(format_impl_test, write_console_signature) {
   decltype(WriteConsoleW)* p = fmt::detail::WriteConsoleW;
   (void)p;
 }

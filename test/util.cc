@@ -9,16 +9,6 @@
 
 #include <cstring>
 
-void increment(char* s) {
-  for (int i = static_cast<int>(std::strlen(s)) - 1; i >= 0; --i) {
-    if (s[i] != '9') {
-      ++s[i];
-      break;
-    }
-    s[i] = '0';
-  }
-}
-
 std::string get_system_error(int error_code) {
 #if defined(__MINGW32__) || !defined(_WIN32)
   return strerror(error_code);

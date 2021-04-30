@@ -5,11 +5,8 @@
 //
 // For the license information refer to format.h.
 
-#include <array>
-#include <chrono>
 #include <iterator>
-#include <list>
-#include <string>
+#include <vector>
 
 #include "fmt/chrono.h"
 #include "fmt/color.h"
@@ -27,7 +24,7 @@ void test_format_api() {
   fmt::to_string(42);
   fmt::to_wstring(42);
 
-  std::list<char> out;
+  std::vector<char> out;
   fmt::format_to(std::back_inserter(out), FMT_STRING("{}"), 42);
 
   char buffer[4];
@@ -53,7 +50,7 @@ void test_text_style() {
 }
 
 void test_range() {
-  std::array<char, 5> hello = {'h', 'e', 'l', 'l', 'o'};
+  std::vector<char> hello = {'h', 'e', 'l', 'l', 'o'};
   fmt::format(FMT_STRING("{}"), hello);
 }
 

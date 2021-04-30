@@ -27,9 +27,6 @@ void safe_sprintf(char (&buffer)[SIZE], const char* format, ...) {
   va_end(args);
 }
 
-// Increment a number in a string.
-void increment(char* s);
-
 std::string get_system_error(int error_code);
 
 extern const char* const FILE_CONTENT;

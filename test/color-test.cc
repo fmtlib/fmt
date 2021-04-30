@@ -9,7 +9,7 @@
 
 #include <iterator>  // std::back_inserter
 
-#include "gtest-extra.h"
+#include "gtest-extra.h"  // EXPECT_WRITE
 
 TEST(color_test, format) {
   EXPECT_EQ(fmt::format(fg(fmt::rgb(255, 20, 30)), "rgb(255,20,30)"),

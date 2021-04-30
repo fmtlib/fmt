@@ -7,7 +7,7 @@
 
 #include "fmt/chrono.h"
 
-#include "gtest-extra.h"
+#include "gtest-extra.h"  // EXPECT_THROW_MSG
 
 auto make_tm() -> std::tm {
   auto time = std::tm();

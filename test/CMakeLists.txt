@@ -1,8 +1,5 @@
 add_subdirectory(gtest)
 
-#------------------------------------------------------------------------------
-# Build the actual library tests
-
 set(TEST_MAIN_SRC test-main.cc gtest-extra.cc gtest-extra.h util.cc)
 add_library(test-main STATIC ${TEST_MAIN_SRC})
 target_link_libraries(test-main gtest fmt)
@@ -32,8 +29,19 @@ endfunction()
 # Adds a test.
 # Usage: add_fmt_test(name srcs...)
 function(add_fmt_test name)
-  add_fmt_executable(${name} ${name}.cc ${ARGN})
-  target_link_libraries(${name} test-main)
+  cmake_parse_arguments(ADD_FMT_TEST "HEADER_ONLY" "" "" ${ARGN})
+
+  set(sources ${name}.cc ${ADD_FMT_TEST_UNPARSED_ARGUMENTS})
+  set(libs test-main)
+  if (ADD_FMT_TEST_HEADER_ONLY)
+    set(sources ${sources} ${TEST_MAIN_SRC} ../src/os.cc)
+    set(libs gtest fmt-header-only)
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+      set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wno-weak-vtables)
+    endif ()
+  endif ()
+  add_fmt_executable(${name} ${sources})
+  target_link_libraries(${name} ${libs})
 
   # Define if certain C++ features can be used.
   if (FMT_PEDANTIC)
@@ -56,7 +64,7 @@ if (MSVC)
   target_compile_options(format-test PRIVATE /bigobj)
 endif ()
 if (NOT (MSVC AND BUILD_SHARED_LIBS))
-  add_fmt_test(format-impl-test)
+  add_fmt_test(format-impl-test HEADER_ONLY)
 endif ()
 add_fmt_test(locale-test)
 add_fmt_test(ostream-test)
