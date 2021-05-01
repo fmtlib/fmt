@@ -12,6 +12,14 @@
 #include "fmt/chrono.h"
 #include "gmock/gmock.h"
 
+TEST(iterator_test, counting_iterator) {
+  auto it = fmt::detail::counting_iterator();
+  auto prev = it++;
+  EXPECT_EQ(prev.count(), 0);
+  EXPECT_EQ(it.count(), 1);
+  EXPECT_EQ((it + 41).count(), 42);
+}
+
 TEST(iterator_test, truncating_iterator) {
   char* p = nullptr;
   auto it = fmt::detail::truncating_iterator<char*>(p, 3);

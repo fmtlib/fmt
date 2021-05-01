@@ -75,8 +75,8 @@ add_fmt_test(scan-test)
 
 if (NOT MSVC)
   # FMT_ENFORCE_COMPILE_STRING is not supported under MSVC due to compiler bugs.
-  add_fmt_test(enforce-compile-string-test)
-  target_compile_definitions(enforce-compile-string-test PRIVATE
+  add_fmt_test(enforce-checks-test)
+  target_compile_definitions(enforce-checks-test PRIVATE
                              -DFMT_ENFORCE_COMPILE_STRING)
 endif ()
 

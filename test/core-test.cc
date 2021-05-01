@@ -37,6 +37,14 @@ TEST(string_view_test, value_type) {
   static_assert(std::is_same<string_view::value_type, char>::value, "");
 }
 
+TEST(string_view_test, ctor) {
+  EXPECT_STREQ("abc", fmt::string_view("abc").data());
+  EXPECT_EQ(3u, fmt::string_view("abc").size());
+
+  EXPECT_STREQ("defg", fmt::string_view(std::string("defg")).data());
+  EXPECT_EQ(4u, fmt::string_view(std::string("defg")).size());
+}
+
 TEST(string_view_test, length) {
   // Test that string_view::size() returns string length, not buffer size.
   char str[100] = "some string";
@@ -112,6 +120,35 @@ TYPED_TEST(is_string_test, is_string) {
               fmt::detail::is_string<fmt_string_view>::value);
   EXPECT_TRUE(fmt::detail::is_string<test_ns::test_string<TypeParam>>::value);
   EXPECT_FALSE(fmt::detail::is_string<test_ns::non_string>::value);
+}
+
+TEST(core_test, is_output_iterator) {
+  EXPECT_TRUE((fmt::detail::is_output_iterator<char*, char>::value));
+  EXPECT_FALSE((fmt::detail::is_output_iterator<const char*, char>::value));
+  EXPECT_FALSE((fmt::detail::is_output_iterator<std::string, char>::value));
+  EXPECT_TRUE(
+      (fmt::detail::is_output_iterator<std::back_insert_iterator<std::string>,
+                                       char>::value));
+  EXPECT_TRUE(
+      (fmt::detail::is_output_iterator<std::string::iterator, char>::value));
+  EXPECT_FALSE((fmt::detail::is_output_iterator<std::string::const_iterator,
+                                                char>::value));
+}
+
+TEST(core_test, buffer_appender) {
+  // back_insert_iterator is not default-constructible before C++20, so
+  // buffer_appender can only be default-constructible when back_insert_iterator
+  // is.
+  static_assert(
+      std::is_default_constructible<
+          std::back_insert_iterator<fmt::detail::buffer<char>>>::value ==
+          std::is_default_constructible<
+              fmt::detail::buffer_appender<char>>::value,
+      "");
+
+#ifdef __cpp_lib_ranges
+  static_assert(std::output_iterator<fmt::detail::buffer_appender<char>, char>);
+#endif
 }
 
 #if !FMT_GCC_VERSION || FMT_GCC_VERSION >= 470
@@ -591,6 +628,14 @@ TEST(core_test, format_explicitly_convertible_to_std_string_view) {
 }
 #  endif
 #endif
+
+struct convertible_to_long_long {
+  operator long long() const { return 1LL << 32; }
+};
+
+TEST(format_test, format_convertible_to_long_long) {
+  EXPECT_EQ("100000000", fmt::format("{:x}", convertible_to_long_long()));
+}
 
 struct disabled_rvalue_conversion {
   operator const char*() const& { return "foo"; }

@@ -8,14 +8,18 @@
 #ifndef FMT_MOCK_ALLOCATOR_H_
 #define FMT_MOCK_ALLOCATOR_H_
 
-#include "fmt/format.h"
+#include <assert.h>  // assert
+#include <stddef.h>  // size_t
+
+#include <memory>  // std::allocator_traits
+
 #include "gmock/gmock.h"
 
 template <typename T> class mock_allocator {
  public:
   mock_allocator() {}
   mock_allocator(const mock_allocator&) {}
-  typedef T value_type;
+  using value_type = T;
   MOCK_METHOD1_T(allocate, T*(size_t n));
   MOCK_METHOD2_T(deallocate, void(T* p, size_t n));
 };
@@ -30,7 +34,7 @@ template <typename Allocator> class allocator_ref {
   }
 
  public:
-  typedef typename Allocator::value_type value_type;
+  using value_type = typename Allocator::value_type;
 
   explicit allocator_ref(Allocator* alloc = nullptr) : alloc_(alloc) {}
 
