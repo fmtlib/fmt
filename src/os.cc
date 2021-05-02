@@ -25,7 +25,6 @@
 #      define WIN32_LEAN_AND_MEAN
 #    endif
 #    include <io.h>
-#    include <windows.h>
 
 #    define O_CREAT _O_CREAT
 #    define O_TRUNC _O_TRUNC
@@ -55,7 +54,7 @@
 namespace {
 #ifdef _WIN32
 // Return type of read and write functions.
-using RWResult = int;
+using rwresult = int;
 
 // On Windows the count argument to read and write is unsigned, so convert
 // it from size_t preventing integer overflow.
@@ -64,7 +63,7 @@ inline unsigned convert_rwcount(std::size_t count) {
 }
 #elif FMT_USE_FCNTL
 // Return type of read and write functions.
-using RWResult = ssize_t;
+using rwresult = ssize_t;
 
 inline std::size_t convert_rwcount(std::size_t count) { return count; }
 #endif
@@ -229,14 +228,14 @@ long long file::size() const {
 }
 
 std::size_t file::read(void* buffer, std::size_t count) {
-  RWResult result = 0;
+  rwresult result = 0;
   FMT_RETRY(result, FMT_POSIX_CALL(read(fd_, buffer, convert_rwcount(count))));
   if (result < 0) FMT_THROW(system_error(errno, "cannot read from file"));
   return detail::to_unsigned(result);
 }
 
 std::size_t file::write(const void* buffer, std::size_t count) {
-  RWResult result = 0;
+  rwresult result = 0;
   FMT_RETRY(result, FMT_POSIX_CALL(write(fd_, buffer, convert_rwcount(count))));
   if (result < 0) FMT_THROW(system_error(errno, "cannot write to file"));
   return detail::to_unsigned(result);

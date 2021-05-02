@@ -8,6 +8,8 @@
 #ifndef FMT_GTEST_EXTRA_H_
 #define FMT_GTEST_EXTRA_H_
 
+#include <stdlib.h>  // _invalid_parameter_handler
+
 #include <string>
 
 #include "fmt/os.h"
@@ -61,20 +63,21 @@ std::string format_system_error(int error_code, fmt::string_view message);
 
 // Captures file output by redirecting it to a pipe.
 // The output it can handle is limited by the pipe capacity.
-class OutputRedirect {
+class output_redirect {
  private:
   FILE* file_;
   fmt::file original_;  // Original file passed to redirector.
   fmt::file read_end_;  // Read end of the pipe where the output is redirected.
 
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(OutputRedirect);
-
   void flush();
   void restore();
 
  public:
-  explicit OutputRedirect(FILE* file);
-  ~OutputRedirect() FMT_NOEXCEPT;
+  explicit output_redirect(FILE* file);
+  ~output_redirect() FMT_NOEXCEPT;
+
+  output_redirect(const output_redirect&) = delete;
+  void operator=(const output_redirect&) = delete;
 
   // Restores the original file, reads output from the pipe into a string
   // and returns it.
@@ -85,7 +88,7 @@ class OutputRedirect {
     GTEST_AMBIGUOUS_ELSE_BLOCKER_                                              \
     if (::testing::AssertionResult gtest_ar = ::testing::AssertionSuccess()) { \
       std::string gtest_expected_output = expected_output;                     \
-      OutputRedirect gtest_redir(file);                                        \
+      output_redirect gtest_redir(file);                                       \
       GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement);               \
       std::string gtest_output = gtest_redir.restore_and_read();               \
       if (gtest_output != gtest_expected_output) {                             \
@@ -106,7 +109,7 @@ class OutputRedirect {
 
 // Suppresses Windows assertions on invalid file descriptors, making
 // POSIX functions return proper error codes instead of crashing on Windows.
-class SuppressAssert {
+class suppress_assert {
  private:
   _invalid_parameter_handler original_handler_;
   int original_report_mode_;
@@ -115,11 +118,11 @@ class SuppressAssert {
                                        const wchar_t*, unsigned, uintptr_t) {}
 
  public:
-  SuppressAssert()
+  suppress_assert()
       : original_handler_(
             _set_invalid_parameter_handler(handle_invalid_parameter)),
         original_report_mode_(_CrtSetReportMode(_CRT_ASSERT, 0)) {}
-  ~SuppressAssert() {
+  ~suppress_assert() {
     _set_invalid_parameter_handler(original_handler_);
     _CrtSetReportMode(_CRT_ASSERT, original_report_mode_);
   }
@@ -127,7 +130,7 @@ class SuppressAssert {
 
 #    define SUPPRESS_ASSERT(statement) \
       {                                \
-        SuppressAssert sa;             \
+        suppress_assert sa;            \
         statement;                     \
       }
 #  else
@@ -141,7 +144,7 @@ class SuppressAssert {
 std::string read(fmt::file& f, size_t count);
 
 #  define EXPECT_READ(file, expected_content) \
-    EXPECT_EQ(expected_content, \
+    EXPECT_EQ(expected_content,               \
               read(file, fmt::string_view(expected_content).size()))
 
 #else
@@ -153,10 +156,5 @@ std::string read(fmt::file& f, size_t count);
       SUCCEED();                                         \
     } while (false)
 #endif  // FMT_USE_FCNTL
-
-template <typename Mock> struct ScopedMock : testing::StrictMock<Mock> {
-  ScopedMock() { Mock::instance = this; }
-  ~ScopedMock() { Mock::instance = nullptr; }
-};
 
 #endif  // FMT_GTEST_EXTRA_H_

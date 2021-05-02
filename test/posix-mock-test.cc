@@ -37,6 +37,11 @@ using testing::_;
 using testing::Return;
 using testing::StrEq;
 
+template <typename Mock> struct ScopedMock : testing::StrictMock<Mock> {
+  ScopedMock() { Mock::instance = this; }
+  ~ScopedMock() { Mock::instance = nullptr; }
+};
+
 namespace {
 int open_count;
 int close_count;

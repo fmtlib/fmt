@@ -25,14 +25,14 @@ using fmt::error_code;
 
 #  include <windows.h>
 
-TEST(UtilTest, UTF16ToUTF8) {
-  std::string s = "ёжик";
+TEST(util_test, utf16_to_utf8) {
+  auto s = std::string("ёжик");
   fmt::detail::utf16_to_utf8 u(L"\x0451\x0436\x0438\x043A");
   EXPECT_EQ(s, u.str());
   EXPECT_EQ(s.size(), u.size());
 }
 
-TEST(UtilTest, UTF16ToUTF8EmptyString) {
+TEST(util_test, utf16_to_utf8_empty_string) {
   std::string s = "";
   fmt::detail::utf16_to_utf8 u(L"");
   EXPECT_EQ(s, u.str());
@@ -45,7 +45,7 @@ void check_utf_conversion_error(
     fmt::basic_string_view<Char> str = fmt::basic_string_view<Char>(0, 1)) {
   fmt::memory_buffer out;
   fmt::detail::format_windows_error(out, ERROR_INVALID_PARAMETER, message);
-  fmt::system_error error(0, "");
+  auto error = fmt::system_error(0, "");
   try {
     (Converter)(str);
   } catch (const fmt::system_error& e) {
@@ -55,19 +55,19 @@ void check_utf_conversion_error(
   EXPECT_EQ(fmt::to_string(out), error.what());
 }
 
-TEST(UtilTest, UTF16ToUTF8Error) {
+TEST(util_test, utf16_to_utf8_error) {
   check_utf_conversion_error<fmt::detail::utf16_to_utf8, wchar_t>(
       "cannot convert string from UTF-16 to UTF-8");
 }
 
-TEST(UtilTest, UTF16ToUTF8Convert) {
+TEST(util_test, utf16_to_utf8_convert) {
   fmt::detail::utf16_to_utf8 u;
   EXPECT_EQ(ERROR_INVALID_PARAMETER, u.convert(fmt::wstring_view(0, 1)));
   EXPECT_EQ(ERROR_INVALID_PARAMETER,
             u.convert(fmt::wstring_view(L"foo", INT_MAX + 1u)));
 }
 
-TEST(UtilTest, FormatWindowsError) {
+TEST(os_test, format_windows_error) {
   LPWSTR message = 0;
   FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
                      FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -88,7 +88,7 @@ TEST(UtilTest, FormatWindowsError) {
             fmt::to_string(actual_message));
 }
 
-TEST(UtilTest, FormatLongWindowsError) {
+TEST(os_test, format_long_windows_error) {
   LPWSTR message = 0;
   // this error code is not available on all Windows platforms and
   // Windows SDKs, so do not fail the test if the error string cannot
@@ -112,8 +112,8 @@ TEST(UtilTest, FormatLongWindowsError) {
             fmt::to_string(actual_message));
 }
 
-TEST(UtilTest, WindowsError) {
-  fmt::system_error error(0, "");
+TEST(os_test, windows_error) {
+  auto error = fmt::system_error(0, "");
   try {
     throw fmt::windows_error(ERROR_FILE_EXISTS, "test {}", "error");
   } catch (const fmt::system_error& e) {
@@ -125,7 +125,7 @@ TEST(UtilTest, WindowsError) {
   EXPECT_EQ(ERROR_FILE_EXISTS, error.error_code());
 }
 
-TEST(UtilTest, ReportWindowsError) {
+TEST(os_test, report_windows_error) {
   fmt::memory_buffer out;
   fmt::detail::format_windows_error(out, ERROR_FILE_EXISTS, "test error");
   out.push_back('\n');
@@ -140,21 +140,15 @@ TEST(UtilTest, ReportWindowsError) {
 
 using fmt::file;
 
-// Checks if the file is open by reading one character from it.
-static bool isopen(int fd) {
+bool isclosed(int fd) {
   char buffer;
-  return FMT_POSIX(read(fd, &buffer, 1)) == 1;
-}
-
-static bool isclosed(int fd) {
-  char buffer;
-  std::streamsize result = 0;
+  auto result = std::streamsize();
   SUPPRESS_ASSERT(result = FMT_POSIX(read(fd, &buffer, 1)));
   return result == -1 && errno == EBADF;
 }
 
 // Opens a file for reading.
-static file open_file() {
+file open_file() {
   file read_end, write_end;
   file::pipe(read_end, write_end);
   write_end.write(FILE_CONTENT, std::strlen(FILE_CONTENT));
@@ -163,7 +157,7 @@ static file open_file() {
 }
 
 // Attempts to write a string to a file.
-static void write(file& f, fmt::string_view s) {
+void write(file& f, fmt::string_view s) {
   size_t num_chars_left = s.size();
   const char* ptr = s.data();
   do {
@@ -175,12 +169,12 @@ static void write(file& f, fmt::string_view s) {
   } while (num_chars_left != 0);
 }
 
-TEST(BufferedFileTest, DefaultCtor) {
-  buffered_file f;
+TEST(buffered_file_test, default_ctor) {
+  auto f = buffered_file();
   EXPECT_TRUE(f.get() == nullptr);
 }
 
-TEST(BufferedFileTest, MoveCtor) {
+TEST(buffered_file_test, move_ctor) {
   buffered_file bf = open_buffered_file();
   FILE* fp = bf.get();
   EXPECT_TRUE(fp != nullptr);
@@ -189,7 +183,7 @@ TEST(BufferedFileTest, MoveCtor) {
   EXPECT_TRUE(bf.get() == nullptr);
 }
 
-TEST(BufferedFileTest, MoveAssignment) {
+TEST(buffered_file_test, move_assignment) {
   buffered_file bf = open_buffered_file();
   FILE* fp = bf.get();
   EXPECT_TRUE(fp != nullptr);
@@ -199,7 +193,7 @@ TEST(BufferedFileTest, MoveAssignment) {
   EXPECT_TRUE(bf.get() == nullptr);
 }
 
-TEST(BufferedFileTest, MoveAssignmentClosesFile) {
+TEST(buffered_file_test, move_assignment_closes_file) {
   buffered_file bf = open_buffered_file();
   buffered_file bf2 = open_buffered_file();
   int old_fd = bf2.fileno();
@@ -207,27 +201,27 @@ TEST(BufferedFileTest, MoveAssignmentClosesFile) {
   EXPECT_TRUE(isclosed(old_fd));
 }
 
-TEST(BufferedFileTest, MoveFromTemporaryInCtor) {
+TEST(buffered_file_test, move_from_temporary_in_ctor) {
   FILE* fp = nullptr;
-  buffered_file f(open_buffered_file(&fp));
+  buffered_file f = open_buffered_file(&fp);
   EXPECT_EQ(fp, f.get());
 }
 
-TEST(BufferedFileTest, MoveFromTemporaryInAssignment) {
+TEST(buffered_file_test, move_from_temporary_in_assignment) {
   FILE* fp = nullptr;
-  buffered_file f;
+  auto f = buffered_file();
   f = open_buffered_file(&fp);
   EXPECT_EQ(fp, f.get());
 }
 
-TEST(BufferedFileTest, MoveFromTemporaryInAssignmentClosesFile) {
+TEST(buffered_file_test, move_from_temporary_in_assignment_closes_file) {
   buffered_file f = open_buffered_file();
   int old_fd = f.fileno();
   f = open_buffered_file();
   EXPECT_TRUE(isclosed(old_fd));
 }
 
-TEST(BufferedFileTest, CloseFileInDtor) {
+TEST(buffered_file_test, close_file_in_dtor) {
   int fd = 0;
   {
     buffered_file f = open_buffered_file();
@@ -236,8 +230,9 @@ TEST(BufferedFileTest, CloseFileInDtor) {
   EXPECT_TRUE(isclosed(fd));
 }
 
-TEST(BufferedFileTest, CloseErrorInDtor) {
-  std::unique_ptr<buffered_file> f(new buffered_file(open_buffered_file()));
+TEST(buffered_file_test, close_error_in_dtor) {
+  auto f =
+      std::unique_ptr<buffered_file>(new buffered_file(open_buffered_file()));
   EXPECT_WRITE(
       stderr,
       {
@@ -251,7 +246,7 @@ TEST(BufferedFileTest, CloseErrorInDtor) {
       format_system_error(EBADF, "cannot close file") + "\n");
 }
 
-TEST(BufferedFileTest, Close) {
+TEST(buffered_file_test, close) {
   buffered_file f = open_buffered_file();
   int fd = f.fileno();
   f.close();
@@ -259,27 +254,27 @@ TEST(BufferedFileTest, Close) {
   EXPECT_TRUE(isclosed(fd));
 }
 
-TEST(BufferedFileTest, CloseError) {
+TEST(buffered_file_test, close_error) {
   buffered_file f = open_buffered_file();
   FMT_POSIX(close(f.fileno()));
   EXPECT_SYSTEM_ERROR_NOASSERT(f.close(), EBADF, "cannot close file");
   EXPECT_TRUE(f.get() == nullptr);
 }
 
-TEST(BufferedFileTest, Fileno) {
+TEST(buffered_file_test, fileno) {
   auto f = open_buffered_file();
   EXPECT_TRUE(f.fileno() != -1);
   file copy = file::dup(f.fileno());
   EXPECT_READ(copy, FILE_CONTENT);
 }
 
-TEST(OStreamTest, Move) {
+TEST(ostream_test, move) {
   fmt::ostream out = fmt::output_file("test-file");
   fmt::ostream moved(std::move(out));
   moved.print("hello");
 }
 
-TEST(OStreamTest, MoveWhileHoldingData) {
+TEST(ostream_test, move_while_holding_data) {
   {
     fmt::ostream out = fmt::output_file("test-file");
     out.print("Hello, ");
@@ -292,15 +287,16 @@ TEST(OStreamTest, MoveWhileHoldingData) {
   }
 }
 
-TEST(OStreamTest, Print) {
+TEST(ostream_test, print) {
   fmt::ostream out = fmt::output_file("test-file");
-  out.print("The answer is {}.\n", fmt::join(std::initializer_list<int>{42}, ", "));
+  out.print("The answer is {}.\n",
+            fmt::join(std::initializer_list<int>{42}, ", "));
   out.close();
   file in("test-file", file::RDONLY);
   EXPECT_READ(in, "The answer is 42.\n");
 }
 
-TEST(OStreamTest, BufferBoundary) {
+TEST(ostream_test, buffer_boundary) {
   auto str = std::string(4096, 'x');
   fmt::ostream out = fmt::output_file("test-file");
   out.print("{}", str);
@@ -310,15 +306,15 @@ TEST(OStreamTest, BufferBoundary) {
   EXPECT_READ(in, str + str);
 }
 
-TEST(OStreamTest, BufferSize) {
-  fmt::ostream out = fmt::output_file("test-file", fmt::buffer_size=1);
+TEST(ostream_test, buffer_size) {
+  fmt::ostream out = fmt::output_file("test-file", fmt::buffer_size = 1);
   out.print("{}", "foo");
   out.close();
   file in("test-file", file::RDONLY);
   EXPECT_READ(in, "foo");
 }
 
-TEST(OStreamTest, Truncate) {
+TEST(ostream_test, truncate) {
   {
     fmt::ostream out = fmt::output_file("test-file");
     out.print("0123456789");
@@ -331,25 +327,28 @@ TEST(OStreamTest, Truncate) {
   EXPECT_EQ("foo", read(in, 4));
 }
 
-TEST(FileTest, DefaultCtor) {
+TEST(file_test, default_ctor) {
   file f;
   EXPECT_EQ(-1, f.descriptor());
 }
 
-TEST(FileTest, OpenBufferedFileInCtor) {
+TEST(file_test, open_buffered_file_in_ctor) {
   FILE* fp = safe_fopen("test-file", "w");
   std::fputs(FILE_CONTENT, fp);
   std::fclose(fp);
   file f("test-file", file::RDONLY);
-  ASSERT_TRUE(isopen(f.descriptor()));
+  // Check if the file is open by reading one character from it.
+  char buffer;
+  bool isopen = FMT_POSIX(read(f.descriptor(), &buffer, 1)) == 1;
+  ASSERT_TRUE(isopen);
 }
 
-TEST(FileTest, OpenBufferedFileError) {
+TEST(file_test, open_buffered_file_error) {
   EXPECT_SYSTEM_ERROR(file("nonexistent", file::RDONLY), ENOENT,
                       "cannot open file nonexistent");
 }
 
-TEST(FileTest, MoveCtor) {
+TEST(file_test, move_ctor) {
   file f = open_file();
   int fd = f.descriptor();
   EXPECT_NE(-1, fd);
@@ -358,7 +357,7 @@ TEST(FileTest, MoveCtor) {
   EXPECT_EQ(-1, f.descriptor());
 }
 
-TEST(FileTest, MoveAssignment) {
+TEST(file_test, move_assignment) {
   file f = open_file();
   int fd = f.descriptor();
   EXPECT_NE(-1, fd);
@@ -368,7 +367,7 @@ TEST(FileTest, MoveAssignment) {
   EXPECT_EQ(-1, f.descriptor());
 }
 
-TEST(FileTest, MoveAssignmentClosesFile) {
+TEST(file_test, move_assignment_closes_file) {
   file f = open_file();
   file f2 = open_file();
   int old_fd = f2.descriptor();
@@ -376,34 +375,34 @@ TEST(FileTest, MoveAssignmentClosesFile) {
   EXPECT_TRUE(isclosed(old_fd));
 }
 
-static file OpenBufferedFile(int& fd) {
+file open_buffered_file(int& fd) {
   file f = open_file();
   fd = f.descriptor();
   return f;
 }
 
-TEST(FileTest, MoveFromTemporaryInCtor) {
+TEST(file_test, move_from_temporary_in_ctor) {
   int fd = 0xdead;
-  file f(OpenBufferedFile(fd));
+  file f(open_buffered_file(fd));
   EXPECT_EQ(fd, f.descriptor());
 }
 
-TEST(FileTest, MoveFromTemporaryInAssignment) {
+TEST(file_test, move_from_temporary_in_assignment) {
   int fd = 0xdead;
   file f;
-  f = OpenBufferedFile(fd);
+  f = open_buffered_file(fd);
   EXPECT_EQ(fd, f.descriptor());
 }
 
-TEST(FileTest, MoveFromTemporaryInAssignmentClosesFile) {
+TEST(file_test, move_from_temporary_in_assignment_closes_file) {
   int fd = 0xdead;
   file f = open_file();
   int old_fd = f.descriptor();
-  f = OpenBufferedFile(fd);
+  f = open_buffered_file(fd);
   EXPECT_TRUE(isclosed(old_fd));
 }
 
-TEST(FileTest, CloseFileInDtor) {
+TEST(file_test, close_file_in_dtor) {
   int fd = 0;
   {
     file f = open_file();
@@ -412,7 +411,7 @@ TEST(FileTest, CloseFileInDtor) {
   EXPECT_TRUE(isclosed(fd));
 }
 
-TEST(FileTest, CloseErrorInDtor) {
+TEST(file_test, close_error_in_dtor) {
   std::unique_ptr<file> f(new file(open_file()));
   EXPECT_WRITE(
       stderr,
@@ -427,7 +426,7 @@ TEST(FileTest, CloseErrorInDtor) {
       format_system_error(EBADF, "cannot close file") + "\n");
 }
 
-TEST(FileTest, Close) {
+TEST(file_test, close) {
   file f = open_file();
   int fd = f.descriptor();
   f.close();
@@ -435,19 +434,19 @@ TEST(FileTest, Close) {
   EXPECT_TRUE(isclosed(fd));
 }
 
-TEST(FileTest, CloseError) {
+TEST(file_test, close_error) {
   file f = open_file();
   FMT_POSIX(close(f.descriptor()));
   EXPECT_SYSTEM_ERROR_NOASSERT(f.close(), EBADF, "cannot close file");
   EXPECT_EQ(-1, f.descriptor());
 }
 
-TEST(FileTest, Read) {
+TEST(file_test, read) {
   file f = open_file();
   EXPECT_READ(f, FILE_CONTENT);
 }
 
-TEST(FileTest, ReadError) {
+TEST(file_test, read_error) {
   file f("test-file", file::WRONLY);
   char buf;
   // We intentionally read from a file opened in the write-only mode to
@@ -455,7 +454,7 @@ TEST(FileTest, ReadError) {
   EXPECT_SYSTEM_ERROR(f.read(&buf, 1), EBADF, "cannot read from file");
 }
 
-TEST(FileTest, Write) {
+TEST(file_test, write) {
   file read_end, write_end;
   file::pipe(read_end, write_end);
   write(write_end, "test");
@@ -463,14 +462,14 @@ TEST(FileTest, Write) {
   EXPECT_READ(read_end, "test");
 }
 
-TEST(FileTest, WriteError) {
+TEST(file_test, write_error) {
   file f("test-file", file::RDONLY);
   // We intentionally write to a file opened in the read-only mode to
   // cause error.
   EXPECT_SYSTEM_ERROR(f.write(" ", 1), EBADF, "cannot write to file");
 }
 
-TEST(FileTest, Dup) {
+TEST(file_test, dup) {
   file f = open_file();
   file copy = file::dup(f.descriptor());
   EXPECT_NE(f.descriptor(), copy.descriptor());
@@ -478,14 +477,14 @@ TEST(FileTest, Dup) {
 }
 
 #  ifndef __COVERITY__
-TEST(FileTest, DupError) {
+TEST(file_test, dup_error) {
   int value = -1;
   EXPECT_SYSTEM_ERROR_NOASSERT(file::dup(value), EBADF,
                                "cannot duplicate file descriptor -1");
 }
 #  endif
 
-TEST(FileTest, Dup2) {
+TEST(file_test, dup2) {
   file f = open_file();
   file copy = open_file();
   f.dup2(copy.descriptor());
@@ -493,14 +492,14 @@ TEST(FileTest, Dup2) {
   EXPECT_READ(copy, FILE_CONTENT);
 }
 
-TEST(FileTest, Dup2Error) {
+TEST(file_test, dup2_error) {
   file f = open_file();
   EXPECT_SYSTEM_ERROR_NOASSERT(
       f.dup2(-1), EBADF,
       fmt::format("cannot duplicate file descriptor {} to -1", f.descriptor()));
 }
 
-TEST(FileTest, Dup2NoExcept) {
+TEST(file_test, dup2_noexcept) {
   file f = open_file();
   file copy = open_file();
   error_code ec;
@@ -510,14 +509,14 @@ TEST(FileTest, Dup2NoExcept) {
   EXPECT_READ(copy, FILE_CONTENT);
 }
 
-TEST(FileTest, Dup2NoExceptError) {
+TEST(file_test, dup2_noexcept_error) {
   file f = open_file();
   error_code ec;
   SUPPRESS_ASSERT(f.dup2(-1, ec));
   EXPECT_EQ(EBADF, ec.get());
 }
 
-TEST(FileTest, Pipe) {
+TEST(file_test, pipe) {
   file read_end, write_end;
   file::pipe(read_end, write_end);
   EXPECT_NE(-1, read_end.descriptor());
@@ -526,7 +525,7 @@ TEST(FileTest, Pipe) {
   EXPECT_READ(read_end, "test");
 }
 
-TEST(FileTest, Fdopen) {
+TEST(file_test, fdopen) {
   file read_end, write_end;
   file::pipe(read_end, write_end);
   int read_fd = read_end.descriptor();
@@ -534,7 +533,7 @@ TEST(FileTest, Fdopen) {
 }
 
 #  ifdef FMT_LOCALE
-TEST(LocaleTest, Strtod) {
+TEST(locale_test, strtod) {
   fmt::locale loc;
   const char *start = "4.2", *ptr = start;
   EXPECT_EQ(4.2, loc.strtod(ptr));

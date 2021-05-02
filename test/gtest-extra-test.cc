@@ -14,6 +14,8 @@
 #include <memory>
 #include <stdexcept>
 
+#include "fmt/os.h"
+
 #if defined(_WIN32) && !defined(__MINGW32__)
 #  include <crtdbg.h>  // for _CrtSetReportMode
 #endif                 // _WIN32
@@ -336,7 +338,7 @@ TEST(OutputRedirectTest, ScopedRedirect) {
     buffered_file file(write_end.fdopen("w"));
     std::fprintf(file.get(), "[[[");
     {
-      OutputRedirect redir(file.get());
+      output_redirect redir(file.get());
       std::fprintf(file.get(), "censored");
     }
     std::fprintf(file.get(), "]]]");
@@ -344,7 +346,7 @@ TEST(OutputRedirectTest, ScopedRedirect) {
   EXPECT_READ(read_end, "[[[]]]");
 }
 
-// Test that OutputRedirect handles errors in flush correctly.
+// Test that output_redirect handles errors in flush correctly.
 TEST(OutputRedirectTest, FlushErrorInCtor) {
   file read_end, write_end;
   file::pipe(read_end, write_end);
@@ -354,8 +356,8 @@ TEST(OutputRedirectTest, FlushErrorInCtor) {
   // Put a character in a file buffer.
   EXPECT_EQ('x', fputc('x', f.get()));
   FMT_POSIX(close(write_fd));
-  std::unique_ptr<OutputRedirect> redir{nullptr};
-  EXPECT_SYSTEM_ERROR_NOASSERT(redir.reset(new OutputRedirect(f.get())), EBADF,
+  std::unique_ptr<output_redirect> redir{nullptr};
+  EXPECT_SYSTEM_ERROR_NOASSERT(redir.reset(new output_redirect(f.get())), EBADF,
                                "cannot flush stream");
   redir.reset(nullptr);
   write_copy.dup2(write_fd);  // "undo" close or dtor will fail
@@ -366,9 +368,9 @@ TEST(OutputRedirectTest, DupErrorInCtor) {
   int fd = (f.fileno)();
   file copy = file::dup(fd);
   FMT_POSIX(close(fd));
-  std::unique_ptr<OutputRedirect> redir{nullptr};
+  std::unique_ptr<output_redirect> redir{nullptr};
   EXPECT_SYSTEM_ERROR_NOASSERT(
-      redir.reset(new OutputRedirect(f.get())), EBADF,
+      redir.reset(new output_redirect(f.get())), EBADF,
       fmt::format("cannot duplicate file descriptor {}", fd));
   copy.dup2(fd);  // "undo" close or dtor will fail
 }
@@ -378,7 +380,7 @@ TEST(OutputRedirectTest, RestoreAndRead) {
   file::pipe(read_end, write_end);
   buffered_file file(write_end.fdopen("w"));
   std::fprintf(file.get(), "[[[");
-  OutputRedirect redir(file.get());
+  output_redirect redir(file.get());
   std::fprintf(file.get(), "censored");
   EXPECT_EQ("censored", redir.restore_and_read());
   EXPECT_EQ("", redir.restore_and_read());
@@ -394,7 +396,7 @@ TEST(OutputRedirectTest, FlushErrorInRestoreAndRead) {
   int write_fd = write_end.descriptor();
   file write_copy = write_end.dup(write_fd);
   buffered_file f = write_end.fdopen("w");
-  OutputRedirect redir(f.get());
+  output_redirect redir(f.get());
   // Put a character in a file buffer.
   EXPECT_EQ('x', fputc('x', f.get()));
   FMT_POSIX(close(write_fd));
@@ -409,7 +411,7 @@ TEST(OutputRedirectTest, ErrorInDtor) {
   int write_fd = write_end.descriptor();
   file write_copy = write_end.dup(write_fd);
   buffered_file f = write_end.fdopen("w");
-  std::unique_ptr<OutputRedirect> redir(new OutputRedirect(f.get()));
+  std::unique_ptr<output_redirect> redir(new output_redirect(f.get()));
   // Put a character in a file buffer.
   EXPECT_EQ('x', fputc('x', f.get()));
   EXPECT_WRITE(
