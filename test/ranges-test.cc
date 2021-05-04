@@ -11,7 +11,6 @@
 
 #include "fmt/ranges.h"
 
-#include <array>
 #include <map>
 #include <string>
 #include <vector>
@@ -28,47 +27,45 @@
 #endif
 
 #ifdef FMT_RANGES_TEST_ENABLE_C_STYLE_ARRAY
-TEST(RangesTest, FormatArray) {
-  int32_t ia[] = {1, 2, 3, 5, 7, 11};
-  auto iaf = fmt::format("{}", ia);
-  EXPECT_EQ("{1, 2, 3, 5, 7, 11}", iaf);
+TEST(ranges_test, format_array) {
+  int arr[] = {1, 2, 3, 5, 7, 11};
+  EXPECT_EQ(fmt::format("{}", arr), "{1, 2, 3, 5, 7, 11}");
 }
 
-TEST(RangesTest, Format2dArray) {
-  int32_t ia[][2] = {{1, 2}, {3, 5}, {7, 11}};
-  auto iaf = fmt::format("{}", ia);
-  EXPECT_EQ("{{1, 2}, {3, 5}, {7, 11}}", iaf);
+TEST(ranges_test, format_2d_Array) {
+  int arr[][2] = {{1, 2}, {3, 5}, {7, 11}};
+  EXPECT_EQ(fmt::format("{}", arr), "{{1, 2}, {3, 5}, {7, 11}}");
 }
 
-TEST(RangesTest, FormatArrayOfLiterals) {
-  const char* aol[] = {"1234", "abcd"};
-  EXPECT_EQ("{\"1234\", \"abcd\"}", fmt::format("{}", aol));
+TEST(ranges_test, format_array_of_literals) {
+  const char* arr[] = {"1234", "abcd"};
+  EXPECT_EQ(fmt::format("{}", arr), "{\"1234\", \"abcd\"}");
 }
 #endif  // FMT_RANGES_TEST_ENABLE_C_STYLE_ARRAY
 
-TEST(RangesTest, FormatVector) {
+TEST(ranges_test, format_vector) {
   std::vector<int32_t> iv{1, 2, 3, 5, 7, 11};
   auto ivf = fmt::format("{}", iv);
   EXPECT_EQ("{1, 2, 3, 5, 7, 11}", ivf);
 }
 
-TEST(RangesTest, FormatVector2) {
+TEST(ranges_test, format_vector2) {
   std::vector<std::vector<int32_t>> ivv{{1, 2}, {3, 5}, {7, 11}};
   auto ivf = fmt::format("{}", ivv);
   EXPECT_EQ("{{1, 2}, {3, 5}, {7, 11}}", ivf);
 }
 
-TEST(RangesTest, FormatMap) {
+TEST(ranges_test, FormatMap) {
   std::map<std::string, int32_t> simap{{"one", 1}, {"two", 2}};
   EXPECT_EQ("{(\"one\", 1), (\"two\", 2)}", fmt::format("{}", simap));
 }
 
-TEST(RangesTest, FormatPair) {
+TEST(ranges_test, FormatPair) {
   std::pair<int64_t, float> pa1{42, 1.5f};
   EXPECT_EQ("(42, 1.5)", fmt::format("{}", pa1));
 }
 
-TEST(RangesTest, FormatTuple) {
+TEST(ranges_test, FormatTuple) {
   std::tuple<int64_t, float, std::string, char> t{42, 1.5f, "this is tuple",
                                                   'i'};
   EXPECT_EQ("(42, 1.5, \"this is tuple\", 'i')", fmt::format("{}", t));
@@ -103,13 +100,13 @@ template <size_t N> struct tuple_element<N, my_struct> {
 
 }  // namespace std
 
-TEST(RangesTest, FormatStruct) {
+TEST(ranges_test, FormatStruct) {
   my_struct mst{13, "my struct"};
   EXPECT_EQ("(13, \"my struct\")", fmt::format("{}", mst));
 }
 #endif  // FMT_RANGES_TEST_ENABLE_FORMAT_STRUCT
 
-TEST(RangesTest, FormatTo) {
+TEST(ranges_test, FormatTo) {
   char buf[10];
   auto end = fmt::format_to(buf, "{}", std::vector<int>{1, 2, 3});
   *end = '\0';
@@ -123,7 +120,7 @@ struct path_like {
   operator std::string() const;
 };
 
-TEST(RangesTest, PathLike) {
+TEST(ranges_test, PathLike) {
   EXPECT_FALSE((fmt::is_range<path_like, char>::value));
 }
 
@@ -135,7 +132,7 @@ struct string_like {
   explicit operator std::string_view() const { return "foo"; }
 };
 
-TEST(RangesTest, FormatStringLike) {
+TEST(ranges_test, FormatStringLike) {
   EXPECT_EQ("foo", fmt::format("{}", string_like()));
 }
 #endif  // FMT_USE_STRING_VIEW
@@ -178,7 +175,7 @@ template <typename T> class noncopyable_range {
   const_iterator end() const { return vec.end(); }
 };
 
-TEST(RangesTest, Range) {
+TEST(ranges_test, Range) {
   noncopyable_range<int> w(3u, 0);
   EXPECT_EQ("{0, 0, 0}", fmt::format("{}", w));
   EXPECT_EQ("{0, 0, 0}", fmt::format("{}", noncopyable_range<int>(3u, 0)));
@@ -198,14 +195,14 @@ TEST(RangesTest, Range) {
 #if !FMT_MSC_VER || FMT_MSC_VER >= 1927
 struct unformattable {};
 
-TEST(RangesTest, UnformattableRange) {
+TEST(ranges_test, UnformattableRange) {
   EXPECT_FALSE((fmt::has_formatter<std::vector<unformattable>,
                                    fmt::format_context>::value));
 }
 #endif
 
 #ifdef FMT_RANGES_TEST_ENABLE_JOIN
-TEST(RangesTest, JoinTuple) {
+TEST(ranges_test, JoinTuple) {
   // Value tuple args
   std::tuple<char, int, float> t1 = std::make_tuple('a', 1, 2.0f);
   EXPECT_EQ("(a, 1, 2)", fmt::format("({})", fmt::join(t1, ", ")));
@@ -224,7 +221,7 @@ TEST(RangesTest, JoinTuple) {
   EXPECT_EQ("4", fmt::format("{}", fmt::join(t4, "/")));
 }
 
-TEST(RangesTest, WideStringJoinTuple) {
+TEST(ranges_test, WideStringJoinTuple) {
   // Value tuple args
   std::tuple<wchar_t, int, float> t1 = std::make_tuple('a', 1, 2.0f);
   EXPECT_EQ(L"(a, 1, 2)", fmt::format(L"({})", fmt::join(t1, L", ")));
@@ -243,7 +240,7 @@ TEST(RangesTest, WideStringJoinTuple) {
   EXPECT_EQ(L"4", fmt::format(L"{}", fmt::join(t4, L"/")));
 }
 
-TEST(RangesTest, JoinInitializerList) {
+TEST(ranges_test, JoinInitializerList) {
   EXPECT_EQ("1, 2, 3", fmt::format("{}", fmt::join({1, 2, 3}, ", ")));
   EXPECT_EQ("fmt rocks !",
             fmt::format("{}", fmt::join({"fmt", "rocks", "!"}, " ")));
@@ -260,13 +257,13 @@ struct zstring {
   zstring_sentinel end() const { return {}; }
 };
 
-TEST(RangesTest, JoinSentinel) {
+TEST(ranges_test, JoinSentinel) {
   zstring hello{"hello"};
   EXPECT_EQ("{'h', 'e', 'l', 'l', 'o'}", fmt::format("{}", hello));
   EXPECT_EQ("h_e_l_l_o", fmt::format("{}", fmt::join(hello, "_")));
 }
 
-TEST(RangesTest, JoinRange) {
+TEST(ranges_test, JoinRange) {
   noncopyable_range<int> w(3u, 0);
   EXPECT_EQ("0,0,0", fmt::format("{}", fmt::join(w, ",")));
   EXPECT_EQ("0,0,0",

@@ -13,8 +13,7 @@ struct test {};
 // included after fmt/format.h.
 namespace fmt {
 template <> struct formatter<test> : formatter<int> {
-  template <typename FormatContext>
-  typename FormatContext::iterator format(const test&, FormatContext& ctx) {
+  auto format(const test&, format_context& ctx) -> decltype(ctx.out()) {
     return formatter<int>::format(42, ctx);
   }
 };
@@ -28,15 +27,12 @@ template <> struct formatter<test> : formatter<int> {
 #include "gtest-extra.h"
 #include "util.h"
 
-using fmt::format;
-using fmt::format_error;
-
-static std::ostream& operator<<(std::ostream& os, const Date& d) {
+std::ostream& operator<<(std::ostream& os, const Date& d) {
   os << d.year() << '-' << d.month() << '-' << d.day();
   return os;
 }
 
-static std::wostream& operator<<(std::wostream& os, const Date& d) {
+std::wostream& operator<<(std::wostream& os, const Date& d) {
   os << d.year() << L'-' << d.month() << L'-' << d.day();
   return os;
 }
@@ -47,63 +43,62 @@ template <typename T> void operator,(type_with_comma_op, const T&);
 template <typename T> type_with_comma_op operator<<(T&, const Date&);
 
 enum streamable_enum {};
-static std::ostream& operator<<(std::ostream& os, streamable_enum) {
+std::ostream& operator<<(std::ostream& os, streamable_enum) {
   return os << "streamable_enum";
 }
 
-static std::wostream& operator<<(std::wostream& os, streamable_enum) {
+std::wostream& operator<<(std::wostream& os, streamable_enum) {
   return os << L"streamable_enum";
 }
 
 enum unstreamable_enum {};
 
-TEST(OStreamTest, Enum) {
+TEST(ostream_test, enum) {
   EXPECT_EQ("streamable_enum", fmt::format("{}", streamable_enum()));
   EXPECT_EQ("0", fmt::format("{}", unstreamable_enum()));
   EXPECT_EQ(L"streamable_enum", fmt::format(L"{}", streamable_enum()));
   EXPECT_EQ(L"0", fmt::format(L"{}", unstreamable_enum()));
 }
 
-TEST(OStreamTest, Format) {
-  EXPECT_EQ("a string", format("{0}", TestString("a string")));
-  std::string s = format("The date is {0}", Date(2012, 12, 9));
+TEST(ostream_test, format) {
+  EXPECT_EQ("a string", fmt::format("{0}", TestString("a string")));
+  std::string s = fmt::format("The date is {0}", Date(2012, 12, 9));
   EXPECT_EQ("The date is 2012-12-9", s);
   Date date(2012, 12, 9);
   EXPECT_EQ(L"The date is 2012-12-9",
-            format(L"The date is {0}", Date(2012, 12, 9)));
+            fmt::format(L"The date is {0}", Date(2012, 12, 9)));
 }
 
-TEST(OStreamTest, FormatSpecs) {
-  EXPECT_EQ("def  ", format("{0:<5}", TestString("def")));
-  EXPECT_EQ("  def", format("{0:>5}", TestString("def")));
-  EXPECT_EQ(" def ", format("{0:^5}", TestString("def")));
-  EXPECT_EQ("def**", format("{0:*<5}", TestString("def")));
-  EXPECT_THROW_MSG(format(+"{0:+}", TestString()), format_error,
+TEST(ostream_test, format_specs) {
+  using fmt::format_error;
+  EXPECT_EQ("def  ", fmt::format("{0:<5}", TestString("def")));
+  EXPECT_EQ("  def", fmt::format("{0:>5}", TestString("def")));
+  EXPECT_EQ(" def ", fmt::format("{0:^5}", TestString("def")));
+  EXPECT_EQ("def**", fmt::format("{0:*<5}", TestString("def")));
+  EXPECT_THROW_MSG(fmt::format(+"{0:+}", TestString()), format_error,
                    "format specifier requires numeric argument");
-  EXPECT_THROW_MSG(format(+"{0:-}", TestString()), format_error,
+  EXPECT_THROW_MSG(fmt::format(+"{0:-}", TestString()), format_error,
                    "format specifier requires numeric argument");
-  EXPECT_THROW_MSG(format(+"{0: }", TestString()), format_error,
+  EXPECT_THROW_MSG(fmt::format(+"{0: }", TestString()), format_error,
                    "format specifier requires numeric argument");
-  EXPECT_THROW_MSG(format(+"{0:#}", TestString()), format_error,
+  EXPECT_THROW_MSG(fmt::format(+"{0:#}", TestString()), format_error,
                    "format specifier requires numeric argument");
-  EXPECT_THROW_MSG(format(+"{0:05}", TestString()), format_error,
+  EXPECT_THROW_MSG(fmt::format(+"{0:05}", TestString()), format_error,
                    "format specifier requires numeric argument");
-  EXPECT_EQ("test         ", format("{0:13}", TestString("test")));
-  EXPECT_EQ("test         ", format("{0:{1}}", TestString("test"), 13));
-  EXPECT_EQ("te", format("{0:.2}", TestString("test")));
-  EXPECT_EQ("te", format("{0:.{1}}", TestString("test"), 2));
+  EXPECT_EQ("test         ", fmt::format("{0:13}", TestString("test")));
+  EXPECT_EQ("test         ", fmt::format("{0:{1}}", TestString("test"), 13));
+  EXPECT_EQ("te", fmt::format("{0:.2}", TestString("test")));
+  EXPECT_EQ("te", fmt::format("{0:.{1}}", TestString("test"), 2));
 }
 
-struct EmptyTest {};
-static std::ostream& operator<<(std::ostream& os, EmptyTest) {
-  return os << "";
+struct empty_test {};
+std::ostream& operator<<(std::ostream& os, empty_test) { return os << ""; }
+
+TEST(ostream_test, empty_custom_output) {
+  EXPECT_EQ("", fmt::format("{}", empty_test()));
 }
 
-TEST(OStreamTest, EmptyCustomOutput) {
-  EXPECT_EQ("", fmt::format("{}", EmptyTest()));
-}
-
-TEST(OStreamTest, Print) {
+TEST(ostream_test, print) {
   std::ostringstream os;
   fmt::print(os, "Don't {}!", "panic");
   EXPECT_EQ("Don't panic!", os.str());
@@ -112,7 +107,7 @@ TEST(OStreamTest, Print) {
   EXPECT_EQ(L"Don't panic!", wos.str());
 }
 
-TEST(OStreamTest, WriteToOStream) {
+TEST(ostream_test, write_to_ostream) {
   std::ostringstream os;
   fmt::memory_buffer buffer;
   const char* foo = "foo";
@@ -121,9 +116,9 @@ TEST(OStreamTest, WriteToOStream) {
   EXPECT_EQ("foo", os.str());
 }
 
-TEST(OStreamTest, WriteToOStreamMaxSize) {
-  size_t max_size = fmt::detail::max_value<size_t>();
-  std::streamsize max_streamsize = fmt::detail::max_value<std::streamsize>();
+TEST(ostream_test, write_to_ostream_max_size) {
+  auto max_size = fmt::detail::max_value<size_t>();
+  auto max_streamsize = fmt::detail::max_value<std::streamsize>();
   if (max_size <= fmt::detail::to_unsigned(max_streamsize)) return;
 
   struct test_buffer final : fmt::detail::buffer<char> {
@@ -147,7 +142,7 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
 
   testing::InSequence sequence;
   const char* data = nullptr;
-  typedef std::make_unsigned<std::streamsize>::type ustreamsize;
+  using ustreamsize = std::make_unsigned<std::streamsize>::type;
   ustreamsize size = max_size;
   do {
     auto n = std::min(size, fmt::detail::to_unsigned(max_streamsize));
@@ -159,73 +154,62 @@ TEST(OStreamTest, WriteToOStreamMaxSize) {
   fmt::detail::write_buffer(os, buffer);
 }
 
-TEST(OStreamTest, Join) {
+TEST(ostream_test, join) {
   int v[3] = {1, 2, 3};
   EXPECT_EQ("1, 2, 3", fmt::format("{}", fmt::join(v, v + 3, ", ")));
 }
 
-TEST(OStreamTest, JoinFallbackFormatter) {
+TEST(ostream_test, join_fallback_formatter) {
   auto strs = std::vector<TestString>{TestString("foo"), TestString("bar")};
   EXPECT_EQ("foo, bar", fmt::format("{}", fmt::join(strs, ", ")));
 }
 
 #if FMT_USE_CONSTEXPR
-TEST(OStreamTest, ConstexprString) {
+TEST(ostream_test, constexpr_string) {
   EXPECT_EQ("42", format(FMT_STRING("{}"), std::string("42")));
   EXPECT_EQ("a string", format(FMT_STRING("{0}"), TestString("a string")));
 }
 #endif
 
 namespace fmt_test {
-struct ABC {};
+struct abc {};
 
-template <typename Output> Output& operator<<(Output& out, ABC) {
-  out << "ABC";
-  return out;
+template <typename Output> Output& operator<<(Output& out, abc) {
+  return out << "abc";
 }
 }  // namespace fmt_test
 
-template <typename T> struct TestTemplate {};
+template <typename T> struct test_template {};
 
 template <typename T>
-std::ostream& operator<<(std::ostream& os, TestTemplate<T>) {
+std::ostream& operator<<(std::ostream& os, test_template<T>) {
   return os << 1;
 }
 
 namespace fmt {
-template <typename T> struct formatter<TestTemplate<T>> : formatter<int> {
-  template <typename FormatContext>
-  typename FormatContext::iterator format(TestTemplate<T>, FormatContext& ctx) {
+template <typename T> struct formatter<test_template<T>> : formatter<int> {
+  auto format(test_template<T>, format_context& ctx) -> decltype(ctx.out()) {
     return formatter<int>::format(2, ctx);
   }
 };
 }  // namespace fmt
 
-#if !FMT_GCC_VERSION || FMT_GCC_VERSION >= 407
-TEST(OStreamTest, Template) {
-  EXPECT_EQ("2", fmt::format("{}", TestTemplate<int>()));
+TEST(ostream_test, template) {
+  EXPECT_EQ("2", fmt::format("{}", test_template<int>()));
 }
 
-TEST(FormatTest, FormatToN) {
+TEST(ostream_test, format_to_n) {
   char buffer[4];
   buffer[3] = 'x';
-  auto result = fmt::format_to_n(buffer, 3, "{}", fmt_test::ABC());
+  auto result = fmt::format_to_n(buffer, 3, "{}", fmt_test::abc());
   EXPECT_EQ(3u, result.size);
   EXPECT_EQ(buffer + 3, result.out);
-  EXPECT_EQ("ABCx", fmt::string_view(buffer, 4));
-  result = fmt::format_to_n(buffer, 3, "x{}y", fmt_test::ABC());
+  EXPECT_EQ("abcx", fmt::string_view(buffer, 4));
+  result = fmt::format_to_n(buffer, 3, "x{}y", fmt_test::abc());
   EXPECT_EQ(5u, result.size);
   EXPECT_EQ(buffer + 3, result.out);
-  EXPECT_EQ("xABx", fmt::string_view(buffer, 4));
+  EXPECT_EQ("xabx", fmt::string_view(buffer, 4));
 }
-#endif
-
-#if FMT_USE_USER_DEFINED_LITERALS
-TEST(FormatTest, UDL) {
-  using namespace fmt::literals;
-  EXPECT_EQ("{}"_format("test"), "test");
-}
-#endif
 
 template <typename T> struct convertible {
   T value;
@@ -233,7 +217,7 @@ template <typename T> struct convertible {
   operator T() const { return value; }
 };
 
-TEST(OStreamTest, DisableBuiltinOStreamOperators) {
+TEST(ostream_test, disable_builtin_ostream_operators) {
   EXPECT_EQ("42", fmt::format("{:d}", convertible<unsigned short>(42)));
   EXPECT_EQ(L"42", fmt::format(L"{:d}", convertible<unsigned short>(42)));
   EXPECT_EQ("foo", fmt::format("{}", convertible<const char*>("foo")));
@@ -253,7 +237,7 @@ std::ostream& operator<<(std::ostream& os,
   return os << "bar";
 }
 
-TEST(OStreamTest, FormatExplicitlyConvertibleToStringLike) {
+TEST(ostream_test, format_explicitly_convertible_to_string_like) {
   EXPECT_EQ("bar", fmt::format("{}", explicitly_convertible_to_string_like()));
 }
 
@@ -269,7 +253,7 @@ std::ostream& operator<<(std::ostream& os,
   return os << "bar";
 }
 
-TEST(OStreamTest, FormatExplicitlyConvertibleToStdStringView) {
+TEST(ostream_test, format_explicitly_convertible_to_std_string_view) {
   EXPECT_EQ("bar", fmt::format("{}", explicitly_convertible_to_string_like()));
 }
 #endif  // FMT_USE_STRING_VIEW
@@ -282,7 +266,7 @@ std::ostream& operator<<(std::ostream& os, streamable_and_convertible_to_bool) {
   return os << "foo";
 }
 
-TEST(OStreamTest, FormatConvertibleToBool) {
+TEST(ostream_test, format_convertible_to_bool) {
   EXPECT_EQ("foo", fmt::format("{}", streamable_and_convertible_to_bool()));
 }
 
@@ -294,19 +278,15 @@ std::ostream& operator<<(std::ostream& os, copyfmt_test) {
   return os << "foo";
 }
 
-TEST(OStreamTest, CopyFmt) {
+TEST(ostream_test, copyfmt) {
   EXPECT_EQ("foo", fmt::format("{}", copyfmt_test()));
 }
 
-TEST(OStreamTest, CompileTimeString) {
-  EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), 42));
+TEST(ostream_test, to_string) {
+  EXPECT_EQ("abc", fmt::to_string(fmt_test::abc()));
 }
 
-TEST(OStreamTest, ToString) {
-  EXPECT_EQ("ABC", fmt::to_string(fmt_test::ABC()));
-}
-
-TEST(OStreamTest, Range) {
+TEST(ostream_test, range) {
   auto strs = std::vector<TestString>{TestString("foo"), TestString("bar")};
-  EXPECT_EQ("{foo, bar}", format("{}", strs));
+  EXPECT_EQ("{foo, bar}", fmt::format("{}", strs));
 }

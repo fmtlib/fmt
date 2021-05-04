@@ -23,7 +23,6 @@
 #ifdef _WIN32
 #  include <io.h>
 #  undef max
-#  undef ERROR
 #endif
 
 #include "gmock/gmock.h"
@@ -37,9 +36,9 @@ using testing::_;
 using testing::Return;
 using testing::StrEq;
 
-template <typename Mock> struct ScopedMock : testing::StrictMock<Mock> {
-  ScopedMock() { Mock::instance = this; }
-  ~ScopedMock() { Mock::instance = nullptr; }
+template <typename Mock> struct scoped_mock : testing::StrictMock<Mock> {
+  scoped_mock() { Mock::instance = this; }
+  ~scoped_mock() { Mock::instance = nullptr; }
 };
 
 namespace {
@@ -58,7 +57,7 @@ size_t read_nbyte;
 size_t write_nbyte;
 bool sysconf_error;
 
-enum { NONE, MAX_SIZE, ERROR } fstat_sim;
+enum { none, max_size, error } fstat_sim;
 }  // namespace
 
 #define EMULATE_EINTR(func, error_result) \
@@ -96,7 +95,7 @@ static off_t max_file_size() { return std::numeric_limits<off_t>::max(); }
 
 int test::fstat(int fd, struct stat* buf) {
   int result = ::fstat(fd, buf);
-  if (fstat_sim == MAX_SIZE) buf->st_size = max_file_size();
+  if (fstat_sim == max_size) buf->st_size = max_file_size();
   return result;
 }
 
@@ -105,11 +104,11 @@ int test::fstat(int fd, struct stat* buf) {
 static LONGLONG max_file_size() { return std::numeric_limits<LONGLONG>::max(); }
 
 DWORD test::GetFileSize(HANDLE hFile, LPDWORD lpFileSizeHigh) {
-  if (fstat_sim == ERROR) {
+  if (fstat_sim == error) {
     SetLastError(ERROR_ACCESS_DENIED);
     return INVALID_FILE_SIZE;
   }
-  if (fstat_sim == MAX_SIZE) {
+  if (fstat_sim == max_size) {
     DWORD max = std::numeric_limits<DWORD>::max();
     *lpFileSizeHigh = max >> 1;
     return max;
@@ -200,14 +199,14 @@ int(test::fileno)(FILE* stream) {
 #endif
 
 #if FMT_USE_FCNTL
-static void write_file(fmt::cstring_view filename, fmt::string_view content) {
+void write_file(fmt::cstring_view filename, fmt::string_view content) {
   fmt::buffered_file f(filename, "w");
   f.print("{}", content);
 }
 
 using fmt::file;
 
-TEST(UtilTest, GetPageSize) {
+TEST(os_test, getpagesize) {
 #  ifdef _WIN32
   SYSTEM_INFO si = {};
   GetSystemInfo(&si);
@@ -221,7 +220,7 @@ TEST(UtilTest, GetPageSize) {
 #  endif
 }
 
-TEST(FileTest, OpenRetry) {
+TEST(file_test, open_retry) {
   write_file("temp", "there must be something here");
   std::unique_ptr<file> f{nullptr};
   EXPECT_RETRY(f.reset(new file("temp", file::RDONLY)), open,
@@ -232,7 +231,7 @@ TEST(FileTest, OpenRetry) {
 #  endif
 }
 
-TEST(FileTest, CloseNoRetryInDtor) {
+TEST(file_test, close_no_retry_in_dtor) {
   file read_end, write_end;
   file::pipe(read_end, write_end);
   std::unique_ptr<file> f(new file(std::move(read_end)));
@@ -249,7 +248,7 @@ TEST(FileTest, CloseNoRetryInDtor) {
   EXPECT_EQ(2, saved_close_count);
 }
 
-TEST(FileTest, CloseNoRetry) {
+TEST(file_test, close_no_retry) {
   file read_end, write_end;
   file::pipe(read_end, write_end);
   close_count = 1;
@@ -258,7 +257,7 @@ TEST(FileTest, CloseNoRetry) {
   close_count = 0;
 }
 
-TEST(FileTest, Size) {
+TEST(file_test, size) {
   std::string content = "top secret, destroy before reading";
   write_file("temp", content);
   file f("temp", file::RDONLY);
@@ -268,25 +267,25 @@ TEST(FileTest, Size) {
   fmt::memory_buffer message;
   fmt::detail::format_windows_error(message, ERROR_ACCESS_DENIED,
                                     "cannot get file size");
-  fstat_sim = ERROR;
+  fstat_sim = error;
   EXPECT_THROW_MSG(f.size(), fmt::windows_error, fmt::to_string(message));
-  fstat_sim = NONE;
+  fstat_sim = none;
 #  else
   f.close();
   EXPECT_SYSTEM_ERROR(f.size(), EBADF, "cannot get file attributes");
 #  endif
 }
 
-TEST(FileTest, MaxSize) {
+TEST(file_test, max_size) {
   write_file("temp", "");
   file f("temp", file::RDONLY);
-  fstat_sim = MAX_SIZE;
+  fstat_sim = max_size;
   EXPECT_GE(f.size(), 0);
   EXPECT_EQ(max_file_size(), f.size());
-  fstat_sim = NONE;
+  fstat_sim = none;
 }
 
-TEST(FileTest, ReadRetry) {
+TEST(file_test, read_retry) {
   file read_end, write_end;
   file::pipe(read_end, write_end);
   enum { SIZE = 4 };
@@ -299,7 +298,7 @@ TEST(FileTest, ReadRetry) {
   EXPECT_EQ_POSIX(static_cast<std::streamsize>(SIZE), count);
 }
 
-TEST(FileTest, WriteRetry) {
+TEST(file_test, write_retry) {
   file read_end, write_end;
   file::pipe(read_end, write_end);
   enum { SIZE = 4 };
@@ -317,7 +316,7 @@ TEST(FileTest, WriteRetry) {
 }
 
 #  ifdef _WIN32
-TEST(FileTest, ConvertReadCount) {
+TEST(file_test, convert_read_count) {
   file read_end, write_end;
   file::pipe(read_end, write_end);
   char c;
@@ -330,7 +329,7 @@ TEST(FileTest, ConvertReadCount) {
   EXPECT_EQ(UINT_MAX, read_nbyte);
 }
 
-TEST(FileTest, ConvertWriteCount) {
+TEST(file_test, convert_write_count) {
   file read_end, write_end;
   file::pipe(read_end, write_end);
   char c;
@@ -344,7 +343,7 @@ TEST(FileTest, ConvertWriteCount) {
 }
 #  endif
 
-TEST(FileTest, DupNoRetry) {
+TEST(file_test, dup_no_retry) {
   int stdout_fd = FMT_POSIX(fileno(stdout));
   dup_count = 1;
   EXPECT_SYSTEM_ERROR(
@@ -353,7 +352,7 @@ TEST(FileTest, DupNoRetry) {
   dup_count = 0;
 }
 
-TEST(FileTest, Dup2Retry) {
+TEST(file_test, dup2_retry) {
   int stdout_fd = FMT_POSIX(fileno(stdout));
   file f1 = file::dup(stdout_fd), f2 = file::dup(stdout_fd);
   EXPECT_RETRY(f1.dup2(f2.descriptor()), dup2,
@@ -361,7 +360,7 @@ TEST(FileTest, Dup2Retry) {
                            f1.descriptor(), f2.descriptor()));
 }
 
-TEST(FileTest, Dup2NoExceptRetry) {
+TEST(file_test, dup2_no_except_retry) {
   int stdout_fd = FMT_POSIX(fileno(stdout));
   file f1 = file::dup(stdout_fd), f2 = file::dup(stdout_fd);
   error_code ec;
@@ -375,7 +374,7 @@ TEST(FileTest, Dup2NoExceptRetry) {
   dup2_count = 0;
 }
 
-TEST(FileTest, PipeNoRetry) {
+TEST(file_test, pipe_no_retry) {
   file read_end, write_end;
   pipe_count = 1;
   EXPECT_SYSTEM_ERROR(file::pipe(read_end, write_end), EINTR,
@@ -383,7 +382,7 @@ TEST(FileTest, PipeNoRetry) {
   pipe_count = 0;
 }
 
-TEST(FileTest, FdopenNoRetry) {
+TEST(file_test, fdopen_no_retry) {
   file read_end, write_end;
   file::pipe(read_end, write_end);
   fdopen_count = 1;
@@ -392,7 +391,7 @@ TEST(FileTest, FdopenNoRetry) {
   fdopen_count = 0;
 }
 
-TEST(BufferedFileTest, OpenRetry) {
+TEST(buffered_file_test, open_retry) {
   write_file("temp", "there must be something here");
   std::unique_ptr<buffered_file> f{nullptr};
   EXPECT_RETRY(f.reset(new buffered_file("temp", "r")), fopen,
@@ -404,7 +403,7 @@ TEST(BufferedFileTest, OpenRetry) {
 #  endif
 }
 
-TEST(BufferedFileTest, CloseNoRetryInDtor) {
+TEST(buffered_file_test, close_no_retry_in_dtor) {
   file read_end, write_end;
   file::pipe(read_end, write_end);
   std::unique_ptr<buffered_file> f(new buffered_file(read_end.fdopen("r")));
@@ -421,7 +420,7 @@ TEST(BufferedFileTest, CloseNoRetryInDtor) {
   EXPECT_EQ(2, saved_fclose_count);
 }
 
-TEST(BufferedFileTest, CloseNoRetry) {
+TEST(buffered_file_test, close_no_retry) {
   file read_end, write_end;
   file::pipe(read_end, write_end);
   buffered_file f = read_end.fdopen("r");
@@ -431,7 +430,7 @@ TEST(BufferedFileTest, CloseNoRetry) {
   fclose_count = 0;
 }
 
-TEST(BufferedFileTest, FilenoNoRetry) {
+TEST(buffered_file_test, fileno_no_retry) {
   file read_end, write_end;
   file::pipe(read_end, write_end);
   buffered_file f = read_end.fdopen("r");
@@ -446,9 +445,9 @@ struct test_mock {
   static test_mock* instance;
 } * test_mock::instance;
 
-TEST(ScopedMock, Scope) {
+TEST(scoped_mock, scope) {
   {
-    ScopedMock<test_mock> mock;
+    scoped_mock<test_mock> mock;
     EXPECT_EQ(&mock, test_mock::instance);
     test_mock& copy = mock;
     static_cast<void>(copy);
@@ -458,7 +457,7 @@ TEST(ScopedMock, Scope) {
 
 #ifdef FMT_LOCALE
 
-typedef fmt::locale::type locale_type;
+using locale_type = fmt::locale::type;
 
 struct locale_mock {
   static locale_mock* instance;
@@ -526,20 +525,20 @@ locale_t test::newlocale(int category_mask, const char* locale, locale_t base) {
   return locale_mock::instance->newlocale(category_mask, locale, base);
 }
 
-TEST(LocaleTest, LocaleMock) {
-  ScopedMock<locale_mock> mock;
-  locale_type locale = reinterpret_cast<locale_type>(11);
+TEST(locale_test, locale_mock) {
+  scoped_mock<locale_mock> mock;
+  auto locale = reinterpret_cast<locale_type>(11);
   EXPECT_CALL(mock, newlocale(222, StrEq("foo"), locale));
   FMT_SYSTEM(newlocale(222, "foo", locale));
 }
 #  endif
 
-TEST(LocaleTest, Locale) {
+TEST(locale_test, locale) {
 #  ifndef LC_NUMERIC_MASK
   enum { LC_NUMERIC_MASK = LC_NUMERIC };
 #  endif
-  ScopedMock<locale_mock> mock;
-  locale_type impl = reinterpret_cast<locale_type>(42);
+  scoped_mock<locale_mock> mock;
+  auto impl = reinterpret_cast<locale_type>(42);
   EXPECT_CALL(mock, newlocale(LC_NUMERIC_MASK, StrEq("C"), nullptr))
       .WillOnce(Return(impl));
   EXPECT_CALL(mock, freelocale(impl));
@@ -547,8 +546,8 @@ TEST(LocaleTest, Locale) {
   EXPECT_EQ(impl, loc.get());
 }
 
-TEST(LocaleTest, Strtod) {
-  ScopedMock<locale_mock> mock;
+TEST(locale_test, strtod) {
+  scoped_mock<locale_mock> mock;
   EXPECT_CALL(mock, newlocale(_, _, _))
       .WillOnce(Return(reinterpret_cast<locale_type>(42)));
   EXPECT_CALL(mock, freelocale(_));
