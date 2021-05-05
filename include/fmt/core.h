@@ -949,9 +949,9 @@ struct fallback_formatter {
 };
 
 // Specifies if T has an enabled fallback_formatter specialization.
-template <typename T, typename Context>
+template <typename T, typename Char>
 using has_fallback_formatter =
-    std::is_constructible<fallback_formatter<T, typename Context::char_type>>;
+    std::is_constructible<fallback_formatter<T, Char>>;
 
 struct view {};
 
@@ -1224,7 +1224,7 @@ template <typename Context> struct arg_mapper {
             FMT_ENABLE_IF(
                 std::is_constructible<basic_string_view<char_type>, T>::value &&
                 !is_string<T>::value && !has_formatter<T, Context>::value &&
-                !has_fallback_formatter<T, Context>::value)>
+                !has_fallback_formatter<T, char_type>::value)>
   FMT_CONSTEXPR FMT_INLINE basic_string_view<char_type> map(const T& val) {
     return basic_string_view<char_type>(val);
   }
@@ -1234,7 +1234,7 @@ template <typename Context> struct arg_mapper {
           std::is_constructible<std_string_view<char_type>, T>::value &&
           !std::is_constructible<basic_string_view<char_type>, T>::value &&
           !is_string<T>::value && !has_formatter<T, Context>::value &&
-          !has_fallback_formatter<T, Context>::value)>
+          !has_fallback_formatter<T, char_type>::value)>
   FMT_CONSTEXPR FMT_INLINE basic_string_view<char_type> map(const T& val) {
     return std_string_view<char_type>(val);
   }
@@ -1279,7 +1279,7 @@ template <typename Context> struct arg_mapper {
   template <typename T,
             FMT_ENABLE_IF(std::is_enum<T>::value &&
                           !has_formatter<T, Context>::value &&
-                          !has_fallback_formatter<T, Context>::value)>
+                          !has_fallback_formatter<T, char_type>::value)>
   FMT_CONSTEXPR FMT_INLINE auto map(const T& val)
       -> decltype(std::declval<arg_mapper>().map(
           static_cast<typename std::underlying_type<T>::type>(val))) {
@@ -1288,7 +1288,7 @@ template <typename Context> struct arg_mapper {
   template <typename T,
             FMT_ENABLE_IF(!is_string<T>::value && !is_char<T>::value &&
                           (has_formatter<T, Context>::value ||
-                           has_fallback_formatter<T, Context>::value))>
+                           has_fallback_formatter<T, char_type>::value))>
   FMT_CONSTEXPR FMT_INLINE const T& map(const T& val) {
     return val;
   }
@@ -1578,9 +1578,11 @@ FMT_MODULE_EXPORT_END
 FMT_MODULE_EXPORT_BEGIN
 
 template <typename T, typename Char = char>
-using is_formattable = bool_constant<!std::is_same<
-    decltype(detail::arg_mapper<buffer_context<Char>>().map(std::declval<T>())),
-    detail::unformattable>::value>;
+using is_formattable = bool_constant<
+    !std::is_same<decltype(detail::arg_mapper<buffer_context<Char>>().map(
+                      std::declval<T>())),
+                  detail::unformattable>::value &&
+    !detail::has_fallback_formatter<T, Char>::value>;
 
 /**
   \rst
