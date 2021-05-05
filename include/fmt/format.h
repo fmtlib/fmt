@@ -3633,9 +3633,23 @@ template <typename It, typename Sentinel, typename Char>
 struct formatter<arg_join<It, Sentinel, Char>, Char> {
  private:
   using value_type = typename std::iterator_traits<It>::value_type;
+  using context = buffer_context<Char>;
+  using mapper = detail::arg_mapper<context>;
+
+  template <typename T, FMT_ENABLE_IF(has_formatter<T, context>::value)>
+  static auto map(const T& value) -> const T& {
+    return value;
+  }
+  template <typename T, FMT_ENABLE_IF(!has_formatter<T, context>::value)>
+  static auto map(const T& value) -> decltype(mapper().map(value)) {
+    return mapper().map(value);
+  }
+
   using formatter_type =
-      conditional_t<has_formatter<value_type, buffer_context<Char>>::value,
-                    formatter<value_type, Char>,
+      conditional_t<is_formattable<value_type>::value,
+                    formatter<remove_cvref_t<decltype(
+                                  map(std::declval<const value_type&>()))>,
+                              Char>,
                     detail::fallback_formatter<value_type, Char>>;
 
   formatter_type value_formatter_;
@@ -3652,11 +3666,11 @@ struct formatter<arg_join<It, Sentinel, Char>, Char> {
     auto it = value.begin;
     auto out = ctx.out();
     if (it != value.end) {
-      out = value_formatter_.format(*it++, ctx);
+      out = value_formatter_.format(map(*it++), ctx);
       while (it != value.end) {
         out = detail::copy_str<Char>(value.sep.begin(), value.sep.end(), out);
         ctx.advance_to(out);
-        out = value_formatter_.format(*it++, ctx);
+        out = value_formatter_.format(map(*it++), ctx);
       }
     }
     return out;

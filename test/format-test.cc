@@ -1609,6 +1609,8 @@ TEST(format_test, bytes) {
   EXPECT_EQ(10, s.size());
 }
 
+enum test_enum { foo, bar };
+
 TEST(format_test, join) {
   using fmt::join;
   int v1[3] = {1, 2, 3};
@@ -1632,6 +1634,9 @@ TEST(format_test, join) {
 
   EXPECT_EQ("(1, 2, 3)", fmt::format("({})", join(v1, ", ")));
   EXPECT_EQ("(+01.20, +03.40)", fmt::format("({:+06.2f})", join(v2, ", ")));
+
+  auto v4 = std::vector<test_enum>{foo, bar, foo};
+  EXPECT_EQ("0 1 0", fmt::format("{}", join(v4, " ")));
 }
 
 #ifdef __cpp_lib_byte
@@ -1763,9 +1768,7 @@ TEST(format_test, udl_pass_user_defined_object_as_lvalue) {
 }
 #endif  // FMT_USE_USER_DEFINED_LITERALS
 
-enum test_enum { A };
-
-TEST(format_test, enum) { EXPECT_EQ("0", fmt::format("{}", A)); }
+TEST(format_test, enum) { EXPECT_EQ("0", fmt::format("{}", foo)); }
 
 TEST(format_test, formatter_not_specialized) {
   static_assert(!fmt::has_formatter<fmt::formatter<test_enum>,
