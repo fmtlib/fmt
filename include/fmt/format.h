@@ -35,7 +35,6 @@
 
 #include <cerrno>   // errno
 #include <cmath>    // std::signbit
-#include <cstddef>  // std::byte
 #include <cstdint>
 #include <cwchar>
 #include <limits>     // std::numeric_limits
@@ -3468,9 +3467,6 @@ FMT_FORMAT_AS(Char*, const Char*);
 FMT_FORMAT_AS(std::basic_string<Char>, basic_string_view<Char>);
 FMT_FORMAT_AS(std::nullptr_t, const void*);
 FMT_FORMAT_AS(detail::std_string_view<Char>, basic_string_view<Char>);
-#ifdef __cpp_lib_byte
-FMT_FORMAT_AS(std::byte, unsigned);
-#endif
 
 template <typename Char>
 struct formatter<void*, Char> : formatter<const void*, Char> {
