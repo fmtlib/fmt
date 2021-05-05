@@ -29,33 +29,33 @@
 #ifdef FMT_RANGES_TEST_ENABLE_C_STYLE_ARRAY
 TEST(ranges_test, format_array) {
   int arr[] = {1, 2, 3, 5, 7, 11};
-  EXPECT_EQ(fmt::format("{}", arr), "{1, 2, 3, 5, 7, 11}");
+  EXPECT_EQ(fmt::format("{}", arr), "[1, 2, 3, 5, 7, 11]");
 }
 
-TEST(ranges_test, format_2d_Array) {
+TEST(ranges_test, format_2d_array) {
   int arr[][2] = {{1, 2}, {3, 5}, {7, 11}};
-  EXPECT_EQ(fmt::format("{}", arr), "{{1, 2}, {3, 5}, {7, 11}}");
+  EXPECT_EQ(fmt::format("{}", arr), "[[1, 2], [3, 5], [7, 11]]");
 }
 
 TEST(ranges_test, format_array_of_literals) {
   const char* arr[] = {"1234", "abcd"};
-  EXPECT_EQ(fmt::format("{}", arr), "{\"1234\", \"abcd\"}");
+  EXPECT_EQ(fmt::format("{}", arr), "[\"1234\", \"abcd\"]");
 }
 #endif  // FMT_RANGES_TEST_ENABLE_C_STYLE_ARRAY
 
 TEST(ranges_test, format_vector) {
   auto v = std::vector<int>{1, 2, 3, 5, 7, 11};
-  EXPECT_EQ(fmt::format("{}", v), "{1, 2, 3, 5, 7, 11}");
+  EXPECT_EQ(fmt::format("{}", v), "[1, 2, 3, 5, 7, 11]");
 }
 
 TEST(ranges_test, format_vector2) {
   auto v = std::vector<std::vector<int>>{{1, 2}, {3, 5}, {7, 11}};
-  EXPECT_EQ(fmt::format("{}", v), "{{1, 2}, {3, 5}, {7, 11}}");
+  EXPECT_EQ(fmt::format("{}", v), "[[1, 2], [3, 5], [7, 11]]");
 }
 
 TEST(ranges_test, format_map) {
   auto m = std::map<std::string, int>{{"one", 1}, {"two", 2}};
-  EXPECT_EQ(fmt::format("{}", m), "{(\"one\", 1), (\"two\", 2)}");
+  EXPECT_EQ(fmt::format("{}", m), "[(\"one\", 1), (\"two\", 2)]");
 }
 
 TEST(ranges_test, format_pair) {
@@ -89,12 +89,14 @@ auto get(const tuple_like& t) noexcept -> decltype(t.get<N>()) {
   return t.get<N>();
 }
 
+namespace std {
 template <>
-struct std::tuple_size<tuple_like> : std::integral_constant<size_t, 2> {};
+struct tuple_size<tuple_like> : std::integral_constant<size_t, 2> {};
 
-template <size_t N> struct std::tuple_element<N, tuple_like> {
+template <size_t N> struct tuple_element<N, tuple_like> {
   using type = decltype(std::declval<tuple_like>().get<N>());
 };
+}  // namespace std
 
 TEST(ranges_test, format_struct) {
   auto t = tuple_like{42, "foo"};
@@ -106,7 +108,7 @@ TEST(ranges_test, format_to) {
   char buf[10];
   auto end = fmt::format_to(buf, "{}", std::vector<int>{1, 2, 3});
   *end = '\0';
-  EXPECT_STREQ(buf, "{1, 2, 3}");
+  EXPECT_STREQ(buf, "[1, 2, 3]");
 }
 
 struct path_like {
@@ -173,19 +175,19 @@ template <typename T> class noncopyable_range {
 
 TEST(ranges_test, range) {
   noncopyable_range<int> w(3u, 0);
-  EXPECT_EQ(fmt::format("{}", w), "{0, 0, 0}");
-  EXPECT_EQ(fmt::format("{}", noncopyable_range<int>(3u, 0)), "{0, 0, 0}");
+  EXPECT_EQ(fmt::format("{}", w), "[0, 0, 0]");
+  EXPECT_EQ(fmt::format("{}", noncopyable_range<int>(3u, 0)), "[0, 0, 0]");
 
   non_const_only_range<int> x(3u, 0);
-  EXPECT_EQ(fmt::format("{}", x), "{0, 0, 0}");
-  EXPECT_EQ(fmt::format("{}", non_const_only_range<int>(3u, 0)), "{0, 0, 0}");
+  EXPECT_EQ(fmt::format("{}", x), "[0, 0, 0]");
+  EXPECT_EQ(fmt::format("{}", non_const_only_range<int>(3u, 0)), "[0, 0, 0]");
 
   auto y = std::vector<int>(3u, 0);
-  EXPECT_EQ(fmt::format("{}", y), "{0, 0, 0}");
-  EXPECT_EQ(fmt::format("{}", std::vector<int>(3u, 0)), "{0, 0, 0}");
+  EXPECT_EQ(fmt::format("{}", y), "[0, 0, 0]");
+  EXPECT_EQ(fmt::format("{}", std::vector<int>(3u, 0)), "[0, 0, 0]");
 
   const auto z = std::vector<int>(3u, 0);
-  EXPECT_EQ(fmt::format("{}", z), "{0, 0, 0}");
+  EXPECT_EQ(fmt::format("{}", z), "[0, 0, 0]");
 }
 
 #if !FMT_MSC_VER || FMT_MSC_VER >= 1927
@@ -241,7 +243,7 @@ struct zstring {
 
 TEST(ranges_test, join_sentinel) {
   auto hello = zstring{"hello"};
-  EXPECT_EQ(fmt::format("{}", hello), "{'h', 'e', 'l', 'l', 'o'}");
+  EXPECT_EQ(fmt::format("{}", hello), "['h', 'e', 'l', 'l', 'o']");
   EXPECT_EQ(fmt::format("{}", fmt::join(hello, "_")), "h_e_l_l_o");
 }
 

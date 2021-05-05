@@ -288,5 +288,5 @@ TEST(ostream_test, to_string) {
 
 TEST(ostream_test, range) {
   auto strs = std::vector<TestString>{TestString("foo"), TestString("bar")};
-  EXPECT_EQ("{foo, bar}", fmt::format("{}", strs));
+  EXPECT_EQ("[foo, bar]", fmt::format("{}", strs));
 }

@@ -28,8 +28,13 @@ template <typename Char> struct formatting_base {
 
 template <typename Char, typename Enable = void>
 struct formatting_range : formatting_base<Char> {
+#ifdef FMT_DEPRECATED_BRACED_RANGES
   Char prefix = '{';
   Char postfix = '}';
+#else
+  Char prefix = '[';
+  Char postfix = ']';
+#endif
 };
 
 template <typename Char, typename Enable = void>
@@ -66,7 +71,7 @@ OutputIterator copy(wchar_t ch, OutputIterator out) {
 }
 
 /// Return true value if T has std::string interface, like std::string_view.
-template <typename T> class is_like_std_string {
+template <typename T> class is_std_string_like {
   template <typename U>
   static auto check(U* p)
       -> decltype((void)p->find('a'), p->length(), (void)p->data(), int());
@@ -78,7 +83,7 @@ template <typename T> class is_like_std_string {
 };
 
 template <typename Char>
-struct is_like_std_string<fmt::basic_string_view<Char>> : std::true_type {};
+struct is_std_string_like<fmt::basic_string_view<Char>> : std::true_type {};
 
 template <typename... Ts> struct conditional_helper {};
 
@@ -247,7 +252,7 @@ template <typename OutputIt> OutputIt write_delimiter(OutputIt out) {
 
 template <
     typename Char, typename OutputIt, typename Arg,
-    FMT_ENABLE_IF(is_like_std_string<typename std::decay<Arg>::type>::value)>
+    FMT_ENABLE_IF(is_std_string_like<typename std::decay<Arg>::type>::value)>
 OutputIt write_range_entry(OutputIt out, const Arg& v) {
   *out++ = '"';
   out = write<Char>(out, v);
@@ -266,7 +271,7 @@ OutputIt write_range_entry(OutputIt out, const Arg v) {
 
 template <
     typename Char, typename OutputIt, typename Arg,
-    FMT_ENABLE_IF(!is_like_std_string<typename std::decay<Arg>::type>::value &&
+    FMT_ENABLE_IF(!is_std_string_like<typename std::decay<Arg>::type>::value &&
                   !std::is_same<Arg, Char>::value)>
 OutputIt write_range_entry(OutputIt out, const Arg& v) {
   return write<Char>(out, v);
@@ -318,7 +323,7 @@ struct formatter<TupleT, Char, enable_if_t<fmt::is_tuple_like<TupleT>::value>> {
 
 template <typename T, typename Char> struct is_range {
   static FMT_CONSTEXPR_DECL const bool value =
-      detail::is_range_<T>::value && !detail::is_like_std_string<T>::value &&
+      detail::is_range_<T>::value && !detail::is_std_string_like<T>::value &&
       !std::is_convertible<T, std::basic_string<Char>>::value &&
       !std::is_constructible<detail::std_string_view<Char>, T>::value;
 };
