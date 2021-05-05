@@ -17,11 +17,6 @@
 
 #include "format.h"
 
-// output only up to N items from the range.
-#ifndef FMT_RANGE_OUTPUT_LENGTH_LIMIT
-#  define FMT_RANGE_OUTPUT_LENGTH_LIMIT 256
-#endif
-
 FMT_BEGIN_NAMESPACE
 
 template <typename Char> struct formatting_base {
@@ -33,9 +28,6 @@ template <typename Char> struct formatting_base {
 
 template <typename Char, typename Enable = void>
 struct formatting_range : formatting_base<Char> {
-  static FMT_CONSTEXPR_DECL const size_t range_length_limit =
-      FMT_RANGE_OUTPUT_LENGTH_LIMIT;  // output only up to N items from the
-                                      // range.
   Char prefix = '{';
   Char postfix = '}';
 };
@@ -360,10 +352,7 @@ struct formatter<
     for (; it != end; ++it) {
       if (i > 0) out = detail::write_delimiter(out);
       out = detail::write_range_entry<Char>(out, *it);
-      if (++i > formatting.range_length_limit) {
-        out = format_to(out, FMT_STRING("{}"), " ... <other elements>");
-        break;
-      }
+      ++i;
     }
     return detail::copy(formatting.postfix, out);
   }
