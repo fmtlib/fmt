@@ -20,6 +20,7 @@
 
 using fmt::buffered_file;
 using fmt::error_code;
+using testing::HasSubstr;
 
 #ifdef _WIN32
 
@@ -45,14 +46,15 @@ void check_utf_conversion_error(
     fmt::basic_string_view<Char> str = fmt::basic_string_view<Char>(0, 1)) {
   fmt::memory_buffer out;
   fmt::detail::format_windows_error(out, ERROR_INVALID_PARAMETER, message);
-  auto error = fmt::system_error(0, "");
+  out.resize(out.size() - 2);  // Remove newline.
+  auto error = std::system_error(std::error_code());
   try {
     (Converter)(str);
-  } catch (const fmt::system_error& e) {
+  } catch (const std::system_error& e) {
     error = e;
   }
-  EXPECT_EQ(ERROR_INVALID_PARAMETER, error.error_code());
-  EXPECT_EQ(fmt::to_string(out), error.what());
+  EXPECT_EQ(ERROR_INVALID_PARAMETER, error.code().value());
+  EXPECT_THAT(error.what(), HasSubstr(fmt::to_string(out)));
 }
 
 TEST(util_test, utf16_to_utf8_error) {
@@ -69,11 +71,11 @@ TEST(util_test, utf16_to_utf8_convert) {
 
 TEST(os_test, format_windows_error) {
   LPWSTR message = 0;
-  FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
-                     FORMAT_MESSAGE_IGNORE_INSERTS,
-                 0, ERROR_FILE_EXISTS,
-                 MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                 reinterpret_cast<LPWSTR>(&message), 0, 0);
+  auto result = FormatMessageW(
+      FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+          FORMAT_MESSAGE_IGNORE_INSERTS,
+      0, ERROR_FILE_EXISTS, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+      reinterpret_cast<LPWSTR>(&message), 0, 0);
   fmt::detail::utf16_to_utf8 utf8_message(message);
   LocalFree(message);
   fmt::memory_buffer actual_message;
@@ -93,16 +95,14 @@ TEST(os_test, format_long_windows_error) {
   // this error code is not available on all Windows platforms and
   // Windows SDKs, so do not fail the test if the error string cannot
   // be retrieved.
-  const int provisioning_not_allowed =
-      0x80284013L /*TBS_E_PROVISIONING_NOT_ALLOWED*/;
-  if (FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                         FORMAT_MESSAGE_FROM_SYSTEM |
-                         FORMAT_MESSAGE_IGNORE_INSERTS,
-                     0, static_cast<DWORD>(provisioning_not_allowed),
-                     MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                     reinterpret_cast<LPWSTR>(&message), 0, 0) == 0) {
-    return;
-  }
+  int provisioning_not_allowed = 0x80284013L;  // TBS_E_PROVISIONING_NOT_ALLOWED
+  auto result = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                                   FORMAT_MESSAGE_FROM_SYSTEM |
+                                   FORMAT_MESSAGE_IGNORE_INSERTS,
+                               0, static_cast<DWORD>(provisioning_not_allowed),
+                               MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                               reinterpret_cast<LPWSTR>(&message), 0, 0);
+  EXPECT_NE(result, 0);
   fmt::detail::utf16_to_utf8 utf8_message(message);
   LocalFree(message);
   fmt::memory_buffer actual_message;
@@ -113,16 +113,17 @@ TEST(os_test, format_long_windows_error) {
 }
 
 TEST(os_test, windows_error) {
-  auto error = fmt::system_error(0, "");
+  auto error = std::system_error(std::error_code());
   try {
     throw fmt::windows_error(ERROR_FILE_EXISTS, "test {}", "error");
-  } catch (const fmt::system_error& e) {
+  } catch (const std::system_error& e) {
     error = e;
   }
   fmt::memory_buffer message;
   fmt::detail::format_windows_error(message, ERROR_FILE_EXISTS, "test error");
-  EXPECT_EQ(to_string(message), error.what());
-  EXPECT_EQ(ERROR_FILE_EXISTS, error.error_code());
+  message.resize(message.size() - 2);
+  EXPECT_THAT(error.what(), HasSubstr(to_string(message)));
+  EXPECT_EQ(ERROR_FILE_EXISTS, error.code().value());
 }
 
 TEST(os_test, report_windows_error) {

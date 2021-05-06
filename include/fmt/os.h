@@ -9,10 +9,11 @@
 #define FMT_OS_H_
 
 #include <cerrno>
-#include <clocale>  // for locale_t
+#include <clocale>  // locale_t
 #include <cstddef>
 #include <cstdio>
-#include <cstdlib>  // for strtod_l
+#include <cstdlib>       // strtod_l
+#include <system_error>  // std::system_error
 
 #if defined __APPLE__ || defined(__FreeBSD__)
 #  include <xlocale.h>  // for LC_NUMERIC_MASK on OS X
@@ -154,45 +155,42 @@ FMT_API void format_windows_error(buffer<char>& out, int error_code,
                                   string_view message) FMT_NOEXCEPT;
 }  // namespace detail
 
-/** A Windows error. */
-class windows_error : public system_error {
- private:
-  FMT_API void init(int error_code, string_view format_str, format_args args);
+FMT_API std::system_error vwindows_error(int error_code, string_view format_str,
+                                         format_args args);
 
- public:
-  /**
-   \rst
-   Constructs a :class:`fmt::windows_error` object with the description
-   of the form
+/**
+ \rst
+ Constructs a :class:`std::system_error` object with the description
+ of the form
 
-   .. parsed-literal::
-     *<message>*: *<system-message>*
+ .. parsed-literal::
+   *<message>*: *<system-message>*
 
-   where *<message>* is the formatted message and *<system-message>* is the
-   system message corresponding to the error code.
-   *error_code* is a Windows error code as given by ``GetLastError``.
-   If *error_code* is not a valid error code such as -1, the system message
-   will look like "error -1".
+ where *<message>* is the formatted message and *<system-message>* is the
+ system message corresponding to the error code.
+ *error_code* is a Windows error code as given by ``GetLastError``.
+ If *error_code* is not a valid error code such as -1, the system message
+ will look like "error -1".
 
-   **Example**::
+ **Example**::
 
-     // This throws a windows_error with the description
-     //   cannot open file 'madeup': The system cannot find the file specified.
-     // or similar (system message may vary).
-     const char *filename = "madeup";
-     LPOFSTRUCT of = LPOFSTRUCT();
-     HFILE file = OpenFile(filename, &of, OF_READ);
-     if (file == HFILE_ERROR) {
-       throw fmt::windows_error(GetLastError(),
-                                "cannot open file '{}'", filename);
-     }
-   \endrst
-  */
-  template <typename... Args>
-  windows_error(int error_code, string_view message, const Args&... args) {
-    init(error_code, message, make_format_args(args...));
-  }
-};
+   // This throws a windows_error with the description
+   //   cannot open file 'madeup': The system cannot find the file specified.
+   // or similar (system message may vary).
+   const char *filename = "madeup";
+   LPOFSTRUCT of = LPOFSTRUCT();
+   HFILE file = OpenFile(filename, &of, OF_READ);
+   if (file == HFILE_ERROR) {
+     throw fmt::windows_error(GetLastError(),
+                              "cannot open file '{}'", filename);
+   }
+ \endrst
+*/
+template <typename... Args>
+std::system_error windows_error(int error_code, string_view message,
+                                const Args&... args) {
+  return vwindows_error(error_code, message, make_format_args(args...));
+}
 
 // Reports a Windows error without throwing an exception.
 // Can be used to report errors from destructors.

@@ -100,13 +100,10 @@ int detail::utf16_to_utf8::convert(wstring_view s) {
   return 0;
 }
 
-void windows_error::init(int err_code, string_view format_str,
-                         format_args args) {
-  error_code_ = err_code;
-  memory_buffer buffer;
-  detail::format_windows_error(buffer, err_code, vformat(format_str, args));
-  std::runtime_error& base = *this;
-  base = std::runtime_error(to_string(buffer));
+std::system_error vwindows_error(int err_code, string_view format_str,
+                                 format_args args) {
+  auto ec = std::error_code(err_code, std::system_category());
+  throw std::system_error(ec, vformat(format_str, args));
 }
 
 void detail::format_windows_error(detail::buffer<char>& out, int error_code,

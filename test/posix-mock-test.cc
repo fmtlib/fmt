@@ -264,12 +264,16 @@ TEST(file_test, size) {
   EXPECT_GE(f.size(), 0);
   EXPECT_EQ(content.size(), static_cast<unsigned long long>(f.size()));
 #  ifdef _WIN32
-  fmt::memory_buffer message;
-  fmt::detail::format_windows_error(message, ERROR_ACCESS_DENIED,
-                                    "cannot get file size");
+  auto error_code = std::error_code();
   fstat_sim = error;
-  EXPECT_THROW_MSG(f.size(), fmt::windows_error, fmt::to_string(message));
+  try {
+    f.size();
+  } catch (const std::system_error& e) {
+    error_code = e.code();
+  }
   fstat_sim = none;
+  EXPECT_EQ(error_code,
+            std::error_code(ERROR_ACCESS_DENIED, std::system_category()));
 #  else
   f.close();
   EXPECT_SYSTEM_ERROR(f.size(), EBADF, "cannot get file attributes");
