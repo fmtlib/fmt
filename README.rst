@@ -336,6 +336,9 @@ Projects using this library
 
 * `FiveM <https://fivem.net/>`_: a modification framework for GTA V
 
+* `fmtlog <https://github.com/MengRao/fmtlog>`_: a performant fmtlib-style
+  logging library with latency in nanoseconds
+
 * `Folly <https://github.com/facebook/folly>`_: Facebook open-source library
 
 * `HarpyWar/pvpgn <https://github.com/pvpgn/pvpgn-server>`_:
