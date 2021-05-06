@@ -178,6 +178,14 @@
 #  define FMT_NORETURN
 #endif
 
+#ifndef FMT_MAYBE_UNUSED
+#  if FMT_HAS_CPP17_ATTRIBUTE(maybe_unused)
+#    define FMT_MAYBE_UNUSED [[maybe_unused]]
+#  else
+#    define FMT_MAYBE_UNUSED
+#  endif
+#endif
+
 #ifndef FMT_DEPRECATED
 #  if FMT_HAS_CPP14_ATTRIBUTE(deprecated) || FMT_MSC_VER >= 1900
 #    define FMT_DEPRECATED [[deprecated]]
@@ -256,6 +264,12 @@
 #endif
 #ifndef FMT_API
 #  define FMT_API
+#endif
+
+#if FMT_GCC_VERSION
+#  define FMT_GCC_VISIBILITY_HIDDEN __attribute__((visibility("hidden")))
+#else
+#  define FMT_GCC_VISIBILITY_HIDDEN
 #endif
 
 // libc++ supports string_view in pre-c++17.
@@ -1912,6 +1926,45 @@ FMT_CONSTEXPR const Char* parse_align(const Char* begin, const Char* end,
 }
 
 struct auto_id {};
+
+template <typename Char, typename IDHandler>
+FMT_CONSTEXPR const Char* do_parse_arg_id(const Char* begin, const Char* end,
+                                          IDHandler&& handler) {
+  FMT_ASSERT(begin != end, "");
+  Char c = *begin;
+  if (c >= '0' && c <= '9') {
+    int index = 0;
+    if (c != '0')
+      index = parse_nonnegative_int(begin, end, handler);
+    else
+      ++begin;
+    if (begin == end || (*begin != '}' && *begin != ':'))
+      handler.on_error("invalid format string");
+    else
+      handler(index);
+    return begin;
+  }
+  if (!is_name_start(c)) {
+    handler.on_error("invalid format string");
+    return begin;
+  }
+  auto it = begin;
+  do {
+    ++it;
+  } while (it != end && (is_name_start(c = *it) || ('0' <= c && c <= '9')));
+  handler(basic_string_view<Char>(begin, to_unsigned(it - begin)));
+  return it;
+}
+
+template <typename Char, typename IDHandler>
+FMT_CONSTEXPR_DECL FMT_INLINE const Char* parse_arg_id(const Char* begin,
+                                                       const Char* end,
+                                                       IDHandler&& handler) {
+  Char c = *begin;
+  if (c != '}' && c != ':') return do_parse_arg_id(begin, end, handler);
+  handler();
+  return begin;
+}
 
 // Adapts SpecHandler to IDHandler API for dynamic width.
 template <typename SpecHandler, typename Char> struct width_adapter {
