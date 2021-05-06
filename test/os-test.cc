@@ -151,7 +151,7 @@ bool isclosed(int fd) {
 file open_file() {
   file read_end, write_end;
   file::pipe(read_end, write_end);
-  write_end.write(FILE_CONTENT, std::strlen(FILE_CONTENT));
+  write_end.write(file_content, std::strlen(file_content));
   write_end.close();
   return read_end;
 }
@@ -265,7 +265,7 @@ TEST(buffered_file_test, fileno) {
   auto f = open_buffered_file();
   EXPECT_TRUE(f.fileno() != -1);
   file copy = file::dup(f.fileno());
-  EXPECT_READ(copy, FILE_CONTENT);
+  EXPECT_READ(copy, file_content);
 }
 
 TEST(ostream_test, move) {
@@ -334,7 +334,7 @@ TEST(file_test, default_ctor) {
 
 TEST(file_test, open_buffered_file_in_ctor) {
   FILE* fp = safe_fopen("test-file", "w");
-  std::fputs(FILE_CONTENT, fp);
+  std::fputs(file_content, fp);
   std::fclose(fp);
   file f("test-file", file::RDONLY);
   // Check if the file is open by reading one character from it.
@@ -443,7 +443,7 @@ TEST(file_test, close_error) {
 
 TEST(file_test, read) {
   file f = open_file();
-  EXPECT_READ(f, FILE_CONTENT);
+  EXPECT_READ(f, file_content);
 }
 
 TEST(file_test, read_error) {
@@ -473,7 +473,7 @@ TEST(file_test, dup) {
   file f = open_file();
   file copy = file::dup(f.descriptor());
   EXPECT_NE(f.descriptor(), copy.descriptor());
-  EXPECT_EQ(FILE_CONTENT, read(copy, std::strlen(FILE_CONTENT)));
+  EXPECT_EQ(file_content, read(copy, std::strlen(file_content)));
 }
 
 #  ifndef __COVERITY__
@@ -489,7 +489,7 @@ TEST(file_test, dup2) {
   file copy = open_file();
   f.dup2(copy.descriptor());
   EXPECT_NE(f.descriptor(), copy.descriptor());
-  EXPECT_READ(copy, FILE_CONTENT);
+  EXPECT_READ(copy, file_content);
 }
 
 TEST(file_test, dup2_error) {
@@ -506,7 +506,7 @@ TEST(file_test, dup2_noexcept) {
   f.dup2(copy.descriptor(), ec);
   EXPECT_EQ(ec.get(), 0);
   EXPECT_NE(f.descriptor(), copy.descriptor());
-  EXPECT_READ(copy, FILE_CONTENT);
+  EXPECT_READ(copy, file_content);
 }
 
 TEST(file_test, dup2_noexcept_error) {

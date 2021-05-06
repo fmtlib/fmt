@@ -11,8 +11,6 @@
 
 #include "fmt/os.h"
 
-enum { BUFFER_SIZE = 256 };
-
 #ifdef _MSC_VER
 #  define FMT_VSNPRINTF vsprintf_s
 #else
@@ -29,7 +27,7 @@ void safe_sprintf(char (&buffer)[SIZE], const char* format, ...) {
 
 std::string get_system_error(int error_code);
 
-extern const char* const FILE_CONTENT;
+extern const char* const file_content;
 
 // Opens a buffered file for reading.
 fmt::buffered_file open_buffered_file(FILE** fp = nullptr);
@@ -45,35 +43,35 @@ inline FILE* safe_fopen(const char* filename, const char* mode) {
 #endif
 }
 
-template <typename Char> class BasicTestString {
+template <typename Char> class basic_test_string {
  private:
   std::basic_string<Char> value_;
 
-  static const Char EMPTY[];
+  static const Char empty[];
 
  public:
-  explicit BasicTestString(const Char* value = EMPTY) : value_(value) {}
+  explicit basic_test_string(const Char* value = empty) : value_(value) {}
 
   const std::basic_string<Char>& value() const { return value_; }
 };
 
-template <typename Char> const Char BasicTestString<Char>::EMPTY[] = {0};
+template <typename Char> const Char basic_test_string<Char>::empty[] = {0};
 
-typedef BasicTestString<char> TestString;
-typedef BasicTestString<wchar_t> TestWString;
+typedef basic_test_string<char> test_string;
+typedef basic_test_string<wchar_t> test_wstring;
 
 template <typename Char>
 std::basic_ostream<Char>& operator<<(std::basic_ostream<Char>& os,
-                                     const BasicTestString<Char>& s) {
+                                     const basic_test_string<Char>& s) {
   os << s.value();
   return os;
 }
 
-class Date {
+class date {
   int year_, month_, day_;
 
  public:
-  Date(int year, int month, int day) : year_(year), month_(month), day_(day) {}
+  date(int year, int month, int day) : year_(year), month_(month), day_(day) {}
 
   int year() const { return year_; }
   int month() const { return month_; }

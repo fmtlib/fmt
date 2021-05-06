@@ -2,13 +2,13 @@
 
 #include "gtest/gtest.h"
 
-TEST(StdFormatTest, Escaping) {
+TEST(std_format_test, escaping) {
   using namespace std;
   string s = format("{0}-{{", 8);  // s == "8-{"
   EXPECT_EQ(s, "8-{");
 }
 
-TEST(StdFormatTest, Indexing) {
+TEST(std_format_test, indexing) {
   using namespace std;
   string s0 = format("{} to {}", "a", "b");    // OK: automatic indexing
   string s1 = format("{1} to {0}", "a", "b");  // OK: manual indexing
@@ -20,7 +20,7 @@ TEST(StdFormatTest, Indexing) {
   EXPECT_THROW(string s3 = format("{} to {1}", "a", "b"), std::format_error);
 }
 
-TEST(StdFormatTest, Alignment) {
+TEST(std_format_test, alignment) {
   using namespace std;
   char c = 120;
   string s0 = format("{:6}", 42);     // s0 == "    42"
@@ -41,7 +41,7 @@ TEST(StdFormatTest, Alignment) {
   EXPECT_EQ(s7, "true  ");
 }
 
-TEST(StdFormatTest, Float) {
+TEST(std_format_test, float) {
   using namespace std;
   double inf = numeric_limits<double>::infinity();
   double nan = numeric_limits<double>::quiet_NaN();
@@ -57,7 +57,7 @@ TEST(StdFormatTest, Float) {
   EXPECT_EQ(s3, "nan +nan nan  nan");
 }
 
-TEST(StdFormatTest, Int) {
+TEST(std_format_test, int) {
   using namespace std;
   string s0 = format("{}", 42);                       // s0 == "42"
   string s1 = format("{0:b} {0:d} {0:o} {0:x}", 42);  // s1 == "101010 42 52 2a"
@@ -83,7 +83,7 @@ template <> struct std::formatter<color> : std::formatter<const char*> {
 
 struct err {};
 
-TEST(StdFormatTest, Formatter) {
+TEST(std_format_test, formatter) {
   std::string s0 = std::format("{}", 42);  // OK: library-provided formatter
   // std::string s1 = std::format("{}", L"foo"); // Ill-formed: disabled
   // formatter
@@ -139,7 +139,7 @@ template <> struct std::formatter<S> {
   }
 };
 
-TEST(StdFormatTest, Parsing) {
+TEST(std_format_test, parsing) {
   std::string s = std::format("{0:{1}}", S{42}, 10);  // s == "        42"
   EXPECT_EQ(s, "        42");
 }
@@ -153,7 +153,7 @@ template <> struct std::formatter<__int128_t> : std::formatter<long long> {
   }
 };
 
-TEST(StdFormatTest, Int128) {
+TEST(std_format_test, int128) {
   __int128_t n = 42;
   auto s = std::format("{}", n);
   EXPECT_EQ(s, "42");

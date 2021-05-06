@@ -244,7 +244,7 @@ TEST(printf_test, hash_flag) {
   EXPECT_PRINTF("-42.000000", "%#f", -42.0);
   EXPECT_PRINTF("-42.000000", "%#F", -42.0);
 
-  char buffer[BUFFER_SIZE];
+  char buffer[256];
   safe_sprintf(buffer, "%#e", -42.0);
   EXPECT_PRINTF(buffer, "%#e", -42.0);
   safe_sprintf(buffer, "%#E", -42.0);
@@ -307,7 +307,7 @@ TEST(printf_test, int_precision) {
 }
 
 TEST(printf_test, float_precision) {
-  char buffer[BUFFER_SIZE];
+  char buffer[256];
   safe_sprintf(buffer, "%.3e", 1234.5678);
   EXPECT_PRINTF(buffer, "%.3e", 1234.5678);
   EXPECT_PRINTF("1234.568", "%.3f", 1234.5678);
@@ -463,7 +463,7 @@ TEST(printf_test, float) {
   EXPECT_PRINTF("392.6", "%.1f", 392.65);
   EXPECT_PRINTF("393", "%.f", 392.65);
   EXPECT_PRINTF("392.650000", "%F", 392.65);
-  char buffer[BUFFER_SIZE];
+  char buffer[256];
   safe_sprintf(buffer, "%e", 392.65);
   EXPECT_PRINTF(buffer, "%e", 392.65);
   safe_sprintf(buffer, "%E", 392.65);
@@ -567,7 +567,7 @@ TEST(printf_test, wide_string) {
 }
 
 TEST(printf_test, printf_custom) {
-  EXPECT_EQ("abc", test_sprintf("%s", TestString("abc")));
+  EXPECT_EQ("abc", test_sprintf("%s", test_string("abc")));
 }
 
 TEST(printf_test, ostream) {

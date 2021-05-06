@@ -27,12 +27,12 @@ template <> struct formatter<test> : formatter<int> {
 #include "gtest-extra.h"
 #include "util.h"
 
-std::ostream& operator<<(std::ostream& os, const Date& d) {
+std::ostream& operator<<(std::ostream& os, const date& d) {
   os << d.year() << '-' << d.month() << '-' << d.day();
   return os;
 }
 
-std::wostream& operator<<(std::wostream& os, const Date& d) {
+std::wostream& operator<<(std::wostream& os, const date& d) {
   os << d.year() << L'-' << d.month() << L'-' << d.day();
   return os;
 }
@@ -40,7 +40,7 @@ std::wostream& operator<<(std::wostream& os, const Date& d) {
 // Make sure that overloaded comma operators do no harm to is_streamable.
 struct type_with_comma_op {};
 template <typename T> void operator,(type_with_comma_op, const T&);
-template <typename T> type_with_comma_op operator<<(T&, const Date&);
+template <typename T> type_with_comma_op operator<<(T&, const date&);
 
 enum streamable_enum {};
 std::ostream& operator<<(std::ostream& os, streamable_enum) {
@@ -61,34 +61,33 @@ TEST(ostream_test, enum) {
 }
 
 TEST(ostream_test, format) {
-  EXPECT_EQ("a string", fmt::format("{0}", TestString("a string")));
-  std::string s = fmt::format("The date is {0}", Date(2012, 12, 9));
-  EXPECT_EQ("The date is 2012-12-9", s);
-  Date date(2012, 12, 9);
+  EXPECT_EQ("a string", fmt::format("{0}", test_string("a string")));
+  EXPECT_EQ("The date is 2012-12-9",
+            fmt::format("The date is {0}", date(2012, 12, 9)));
   EXPECT_EQ(L"The date is 2012-12-9",
-            fmt::format(L"The date is {0}", Date(2012, 12, 9)));
+            fmt::format(L"The date is {0}", date(2012, 12, 9)));
 }
 
 TEST(ostream_test, format_specs) {
   using fmt::format_error;
-  EXPECT_EQ("def  ", fmt::format("{0:<5}", TestString("def")));
-  EXPECT_EQ("  def", fmt::format("{0:>5}", TestString("def")));
-  EXPECT_EQ(" def ", fmt::format("{0:^5}", TestString("def")));
-  EXPECT_EQ("def**", fmt::format("{0:*<5}", TestString("def")));
-  EXPECT_THROW_MSG(fmt::format(+"{0:+}", TestString()), format_error,
+  EXPECT_EQ("def  ", fmt::format("{0:<5}", test_string("def")));
+  EXPECT_EQ("  def", fmt::format("{0:>5}", test_string("def")));
+  EXPECT_EQ(" def ", fmt::format("{0:^5}", test_string("def")));
+  EXPECT_EQ("def**", fmt::format("{0:*<5}", test_string("def")));
+  EXPECT_THROW_MSG(fmt::format(+"{0:+}", test_string()), format_error,
                    "format specifier requires numeric argument");
-  EXPECT_THROW_MSG(fmt::format(+"{0:-}", TestString()), format_error,
+  EXPECT_THROW_MSG(fmt::format(+"{0:-}", test_string()), format_error,
                    "format specifier requires numeric argument");
-  EXPECT_THROW_MSG(fmt::format(+"{0: }", TestString()), format_error,
+  EXPECT_THROW_MSG(fmt::format(+"{0: }", test_string()), format_error,
                    "format specifier requires numeric argument");
-  EXPECT_THROW_MSG(fmt::format(+"{0:#}", TestString()), format_error,
+  EXPECT_THROW_MSG(fmt::format(+"{0:#}", test_string()), format_error,
                    "format specifier requires numeric argument");
-  EXPECT_THROW_MSG(fmt::format(+"{0:05}", TestString()), format_error,
+  EXPECT_THROW_MSG(fmt::format(+"{0:05}", test_string()), format_error,
                    "format specifier requires numeric argument");
-  EXPECT_EQ("test         ", fmt::format("{0:13}", TestString("test")));
-  EXPECT_EQ("test         ", fmt::format("{0:{1}}", TestString("test"), 13));
-  EXPECT_EQ("te", fmt::format("{0:.2}", TestString("test")));
-  EXPECT_EQ("te", fmt::format("{0:.{1}}", TestString("test"), 2));
+  EXPECT_EQ("test         ", fmt::format("{0:13}", test_string("test")));
+  EXPECT_EQ("test         ", fmt::format("{0:{1}}", test_string("test"), 13));
+  EXPECT_EQ("te", fmt::format("{0:.2}", test_string("test")));
+  EXPECT_EQ("te", fmt::format("{0:.{1}}", test_string("test"), 2));
 }
 
 struct empty_test {};
@@ -160,14 +159,14 @@ TEST(ostream_test, join) {
 }
 
 TEST(ostream_test, join_fallback_formatter) {
-  auto strs = std::vector<TestString>{TestString("foo"), TestString("bar")};
+  auto strs = std::vector<test_string>{test_string("foo"), test_string("bar")};
   EXPECT_EQ("foo, bar", fmt::format("{}", fmt::join(strs, ", ")));
 }
 
 #if FMT_USE_CONSTEXPR
 TEST(ostream_test, constexpr_string) {
   EXPECT_EQ("42", format(FMT_STRING("{}"), std::string("42")));
-  EXPECT_EQ("a string", format(FMT_STRING("{0}"), TestString("a string")));
+  EXPECT_EQ("a string", format(FMT_STRING("{0}"), test_string("a string")));
 }
 #endif
 
@@ -287,6 +286,6 @@ TEST(ostream_test, to_string) {
 }
 
 TEST(ostream_test, range) {
-  auto strs = std::vector<TestString>{TestString("foo"), TestString("bar")};
+  auto strs = std::vector<test_string>{test_string("foo"), test_string("bar")};
   EXPECT_EQ("[foo, bar]", fmt::format("{}", strs));
 }

@@ -306,7 +306,7 @@ TEST(fp_test, grisu_format_compiles_with_on_ieee_double) {
 
 TEST(format_impl_test, strerror) {
   char* message = nullptr;
-  char buffer[BUFFER_SIZE];
+  char buffer[256];
   EXPECT_ASSERT(fmt::detail::safe_strerror(EDOM, message = nullptr, 0),
                 "invalid buffer");
   EXPECT_ASSERT(fmt::detail::safe_strerror(EDOM, message = buffer, 0),
@@ -320,11 +320,10 @@ TEST(format_impl_test, strerror) {
   int error_code = EDOM;
 #endif
 
-  int result =
-      fmt::detail::safe_strerror(error_code, message = buffer, BUFFER_SIZE);
+  int result = fmt::detail::safe_strerror(error_code, message = buffer, 256);
   EXPECT_EQ(result, 0);
   size_t message_size = std::strlen(message);
-  EXPECT_GE(BUFFER_SIZE - 1u, message_size);
+  EXPECT_GE(255u, message_size);
   EXPECT_EQ(get_system_error(error_code), message);
 
   // safe_strerror never uses buffer on MinGW.
