@@ -2263,10 +2263,6 @@ class arg_formatter : public arg_formatter_base<OutputIt, Char> {
   }
 };
 
-template <typename Char> FMT_CONSTEXPR bool is_name_start(Char c) {
-  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || '_' == c;
-}
-
 template <typename Context> class custom_formatter {
  private:
   using char_type = typename Context::char_type;

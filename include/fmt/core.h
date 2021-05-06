@@ -1927,6 +1927,10 @@ FMT_CONSTEXPR const Char* parse_align(const Char* begin, const Char* end,
 
 struct auto_id {};
 
+template <typename Char> FMT_CONSTEXPR bool is_name_start(Char c) {
+  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || '_' == c;
+}
+
 template <typename Char, typename IDHandler>
 FMT_CONSTEXPR const Char* do_parse_arg_id(const Char* begin, const Char* end,
                                           IDHandler&& handler) {
