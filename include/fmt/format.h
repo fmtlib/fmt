@@ -431,6 +431,12 @@ FMT_CONSTEXPR20 T* fill_n(T* out, Size count, char value) {
   return out + count;
 }
 
+#ifdef __cpp_char8_t
+using char8_type = char8_t;
+#else
+enum char8_type : unsigned char {};
+#endif
+
 template <typename InputIt, typename OutChar>
 using needs_conversion = bool_constant<
     std::is_same<typename std::iterator_traits<InputIt>::value_type,
@@ -633,6 +639,10 @@ void iterator_buffer<OutputIt, T, Traits>::flush() {
 }  // namespace detail
 
 FMT_MODULE_EXPORT_BEGIN
+
+template <> struct is_char<detail::char8_type> : std::true_type {};
+template <> struct is_char<char16_t> : std::true_type {};
+template <> struct is_char<char32_t> : std::true_type {};
 
 // The number of characters to store in the basic_memory_buffer object itself
 // to avoid dynamic memory allocation.
