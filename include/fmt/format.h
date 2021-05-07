@@ -2704,8 +2704,8 @@ FMT_API std::system_error vsystem_error(int error_code, string_view format_str,
    // This throws std::system_error with the description
    //   cannot open file 'madeup': No such file or directory
    // or similar (system message may vary).
-   const char *filename = "madeup";
-   std::FILE *file = std::fopen(filename, "r");
+   const char* filename = "madeup";
+   std::FILE* file = std::fopen(filename, "r");
    if (!file)
      throw fmt::system_error(errno, "cannot open file '{}'", filename);
  \endrst
