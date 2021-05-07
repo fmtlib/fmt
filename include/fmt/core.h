@@ -1612,6 +1612,7 @@ class format_arg_store
   using value_type = conditional_t<is_packed, detail::value<Context>,
                                    basic_format_arg<Context>>;
 
+ public:
   detail::arg_data<value_type, typename Context::char_type, num_args,
                    num_named_args>
       data_;
@@ -1625,7 +1626,6 @@ class format_arg_store
            ? static_cast<unsigned long long>(detail::has_named_args_bit)
            : 0);
 
- public:
   FMT_CONSTEXPR FMT_INLINE format_arg_store(const Args&... args)
       :
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
@@ -1734,13 +1734,13 @@ template <typename Context> class basic_format_args {
     return static_cast<detail::type>((desc_ >> shift) & mask);
   }
 
+ public:
   constexpr FMT_INLINE basic_format_args(unsigned long long desc,
                                          const detail::value<Context>* values)
       : desc_(desc), values_(values) {}
   constexpr basic_format_args(unsigned long long desc, const format_arg* args)
       : desc_(desc), args_(args) {}
 
- public:
   constexpr basic_format_args() : desc_(0), args_(nullptr) {}
 
   /**
