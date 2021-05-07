@@ -152,7 +152,7 @@ class utf16_to_utf8 {
 };
 
 FMT_API void format_windows_error(buffer<char>& out, int error_code,
-                                  string_view message) FMT_NOEXCEPT;
+                                  const char* message) FMT_NOEXCEPT;
 }  // namespace detail
 
 FMT_API std::system_error vwindows_error(int error_code, string_view format_str,
@@ -174,7 +174,7 @@ FMT_API std::system_error vwindows_error(int error_code, string_view format_str,
 
  **Example**::
 
-   // This throws a windows_error with the description
+   // This throws a system_error with the description
    //   cannot open file 'madeup': The system cannot find the file specified.
    // or similar (system message may vary).
    const char *filename = "madeup";
@@ -195,7 +195,7 @@ std::system_error windows_error(int error_code, string_view message,
 // Reports a Windows error without throwing an exception.
 // Can be used to report errors from destructors.
 FMT_API void report_windows_error(int error_code,
-                                  string_view message) FMT_NOEXCEPT;
+                                  const char* message) FMT_NOEXCEPT;
 #endif  // _WIN32
 
 // std::system is not available on some platforms such as iOS (#2248).

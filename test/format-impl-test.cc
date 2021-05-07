@@ -304,40 +304,6 @@ TEST(fp_test, grisu_format_compiles_with_on_ieee_double) {
   format_float(0.42, -1, fmt::detail::float_specs(), buf);
 }
 
-TEST(format_impl_test, strerror) {
-  char* message = nullptr;
-  char buffer[256];
-  EXPECT_ASSERT(fmt::detail::safe_strerror(EDOM, message = nullptr, 0),
-                "invalid buffer");
-  EXPECT_ASSERT(fmt::detail::safe_strerror(EDOM, message = buffer, 0),
-                "invalid buffer");
-  buffer[0] = 'x';
-#if defined(_GNU_SOURCE) && !defined(__COVERITY__)
-  // Use invalid error code to make sure that safe_strerror returns an error
-  // message in the buffer rather than a pointer to a static string.
-  int error_code = -1;
-#else
-  int error_code = EDOM;
-#endif
-
-  int result = fmt::detail::safe_strerror(error_code, message = buffer, 256);
-  EXPECT_EQ(result, 0);
-  size_t message_size = std::strlen(message);
-  EXPECT_GE(255u, message_size);
-  EXPECT_EQ(get_system_error(error_code), message);
-
-  // safe_strerror never uses buffer on MinGW.
-#if !defined(__MINGW32__) && !defined(__sun)
-  result =
-      fmt::detail::safe_strerror(error_code, message = buffer, message_size);
-  EXPECT_EQ(ERANGE, result);
-  result = fmt::detail::safe_strerror(error_code, message = buffer, 1);
-  EXPECT_EQ(buffer, message);  // Message should point to buffer.
-  EXPECT_EQ(ERANGE, result);
-  EXPECT_STREQ("", message);
-#endif
-}
-
 TEST(format_impl_test, format_error_code) {
   std::string msg = "error 42", sep = ": ";
   {

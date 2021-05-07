@@ -83,11 +83,6 @@ TEST(os_test, format_windows_error) {
   EXPECT_EQ(fmt::format("test: {}", utf8_message.str()),
             fmt::to_string(actual_message));
   actual_message.resize(0);
-  auto max_size = fmt::detail::max_value<size_t>() / 2;
-  fmt::detail::format_windows_error(actual_message, ERROR_FILE_EXISTS,
-                                    fmt::string_view(nullptr, max_size));
-  EXPECT_EQ(fmt::format("error {}", ERROR_FILE_EXISTS),
-            fmt::to_string(actual_message));
 }
 
 TEST(os_test, format_long_windows_error) {
@@ -244,7 +239,7 @@ TEST(buffered_file_test, close_error_in_dtor) {
         FMT_POSIX(close(f->fileno()));
         SUPPRESS_ASSERT(f.reset(nullptr));
       },
-      format_system_error(EBADF, "cannot close file") + "\n");
+      system_error_message(EBADF, "cannot close file") + "\n");
 }
 
 TEST(buffered_file_test, close) {
@@ -424,7 +419,7 @@ TEST(file_test, close_error_in_dtor) {
         FMT_POSIX(close(f->descriptor()));
         SUPPRESS_ASSERT(f.reset(nullptr));
       },
-      format_system_error(EBADF, "cannot close file") + "\n");
+      system_error_message(EBADF, "cannot close file") + "\n");
 }
 
 TEST(file_test, close) {

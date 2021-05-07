@@ -244,7 +244,7 @@ TEST(file_test, close_no_retry_in_dtor) {
         saved_close_count = close_count;
         close_count = 0;
       },
-      format_system_error(EINTR, "cannot close file") + "\n");
+      system_error_message(EINTR, "cannot close file") + "\n");
   EXPECT_EQ(2, saved_close_count);
 }
 
@@ -328,7 +328,7 @@ TEST(file_test, convert_read_count) {
   if (sizeof(unsigned) != sizeof(size_t)) ++size;
   read_count = 1;
   read_nbyte = 0;
-  EXPECT_THROW(read_end.read(&c, size), fmt::system_error);
+  EXPECT_THROW(read_end.read(&c, size), std::system_error);
   read_count = 0;
   EXPECT_EQ(UINT_MAX, read_nbyte);
 }
@@ -341,7 +341,7 @@ TEST(file_test, convert_write_count) {
   if (sizeof(unsigned) != sizeof(size_t)) ++size;
   write_count = 1;
   write_nbyte = 0;
-  EXPECT_THROW(write_end.write(&c, size), fmt::system_error);
+  EXPECT_THROW(write_end.write(&c, size), std::system_error);
   write_count = 0;
   EXPECT_EQ(UINT_MAX, write_nbyte);
 }
@@ -420,7 +420,7 @@ TEST(buffered_file_test, close_no_retry_in_dtor) {
         saved_fclose_count = fclose_count;
         fclose_count = 0;
       },
-      format_system_error(EINTR, "cannot close file") + "\n");
+      system_error_message(EINTR, "cannot close file") + "\n");
   EXPECT_EQ(2, saved_fclose_count);
 }
 

@@ -53,11 +53,15 @@
   FMT_TEST_THROW_(statement, expected_exception, expected_message,        \
                   GTEST_NONFATAL_FAILURE_)
 
-std::string format_system_error(int error_code, fmt::string_view message);
+inline std::string system_error_message(int error_code,
+                                        const std::string& message) {
+  auto ec = std::error_code(error_code, std::generic_category());
+  return std::system_error(ec, message).what();
+}
 
 #define EXPECT_SYSTEM_ERROR(statement, error_code, message) \
-  EXPECT_THROW_MSG(statement, fmt::system_error,            \
-                   format_system_error(error_code, message))
+  EXPECT_THROW_MSG(statement, std::system_error,            \
+                   system_error_message(error_code, message))
 
 #if FMT_USE_FCNTL
 

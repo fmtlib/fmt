@@ -37,10 +37,11 @@
 #include <cmath>   // std::signbit
 #include <cstdint>
 #include <cwchar>
-#include <limits>     // std::numeric_limits
-#include <memory>     // std::uninitialized_copy
-#include <stdexcept>  // std::runtime_error
-#include <utility>    // std::swap
+#include <limits>        // std::numeric_limits
+#include <memory>        // std::uninitialized_copy
+#include <stdexcept>     // std::runtime_error
+#include <system_error>  // std::system_error
+#include <utility>       // std::swap
 
 #include "core.h"
 
@@ -2675,13 +2676,13 @@ FMT_CONSTEXPR void handle_dynamic_spec(int& value,
   }
 }
 
-using format_func = void (*)(detail::buffer<char>&, int, string_view);
+using format_func = void (*)(detail::buffer<char>&, int, const char*);
 
 FMT_API void format_error_code(buffer<char>& out, int error_code,
                                string_view message) FMT_NOEXCEPT;
 
 FMT_API void report_error(format_func func, int error_code,
-                          string_view message) FMT_NOEXCEPT;
+                          const char* message) FMT_NOEXCEPT;
 }  // namespace detail
 FMT_MODULE_EXPORT_BEGIN
 
@@ -2689,76 +2690,55 @@ template <typename OutputIt, typename Char>
 using arg_formatter FMT_DEPRECATED_ALIAS =
     detail::arg_formatter<OutputIt, Char>;
 
+FMT_API std::system_error vsystem_error(int error_code, string_view format_str,
+                                        format_args args);
+
 /**
- An error returned by an operating system or a language runtime,
- for example a file opening error.
+ \rst
+ Constructs :class:`std::system_error` with a message formatted with
+ ``fmt::format(message, args...)``.
+  *error_code* is a system error code as given by ``errno``.
+
+ **Example**::
+
+   // This throws std::system_error with the description
+   //   cannot open file 'madeup': No such file or directory
+   // or similar (system message may vary).
+   const char *filename = "madeup";
+   std::FILE *file = std::fopen(filename, "r");
+   if (!file)
+     throw fmt::system_error(errno, "cannot open file '{}'", filename);
+ \endrst
 */
-FMT_CLASS_API
-class FMT_API system_error : public std::runtime_error {
- private:
-  void init(int err_code, string_view format_str, format_args args);
-
- protected:
-  int error_code_;
-
-  system_error() : std::runtime_error(""), error_code_(0) {}
-
- public:
-  /**
-   \rst
-   Constructs a :class:`fmt::system_error` object with a description
-   formatted with `fmt::format_system_error`. *message* and additional
-   arguments passed into the constructor are formatted similarly to
-   `fmt::format`.
-
-   **Example**::
-
-     // This throws a system_error with the description
-     //   cannot open file 'madeup': No such file or directory
-     // or similar (system message may vary).
-     const char *filename = "madeup";
-     std::FILE *file = std::fopen(filename, "r");
-     if (!file)
-       throw fmt::system_error(errno, "cannot open file '{}'", filename);
-   \endrst
-  */
-  template <typename... Args>
-  system_error(int error_code, string_view message, const Args&... args)
-      : std::runtime_error("") {
-    init(error_code, message, make_format_args(args...));
-  }
-  system_error(const system_error&) = default;
-  system_error& operator=(const system_error&) = default;
-  system_error(system_error&&) = default;
-  system_error& operator=(system_error&&) = default;
-  ~system_error() FMT_NOEXCEPT FMT_OVERRIDE FMT_MSC_DEFAULT;
-
-  int error_code() const { return error_code_; }
-};
+template <typename... Args>
+std::system_error system_error(int error_code, string_view message,
+                               const Args&... args) {
+  return vsystem_error(error_code, message, make_format_args(args...));
+}
 
 /**
   \rst
-  Formats an error returned by an operating system or a language runtime,
-  for example a file opening error, and writes it to *out* in the following
-  form:
+  Formats an error message for an error returned by an operating system or a
+  language runtime, for example a file opening error, and writes it to *out*.
+  The format is the same as the one used by ``std::system_error(ec, message)``
+  where ``ec`` is ``std::error_code(error_code, std::generic_category()})``.
+  It is implementation-defined but normally looks like:
 
   .. parsed-literal::
      *<message>*: *<system-message>*
 
-  where *<message>* is the passed message and *<system-message>* is
-  the system message corresponding to the error code.
+  where *<message>* is the passed message and *<system-message>* is the system
+  message corresponding to the error code.
   *error_code* is a system error code as given by ``errno``.
-  If *error_code* is not a valid error code such as -1, the system message
-  may look like "Unknown error -1" and is platform-dependent.
   \endrst
  */
 FMT_API void format_system_error(detail::buffer<char>& out, int error_code,
-                                 string_view message) FMT_NOEXCEPT;
+                                 const char* message) FMT_NOEXCEPT;
 
 // Reports a system error without throwing an exception.
 // Can be used to report errors from destructors.
 FMT_API void report_system_error(int error_code,
-                                 string_view message) FMT_NOEXCEPT;
+                                 const char* message) FMT_NOEXCEPT;
 
 /** Fast integer formatter. */
 class format_int {

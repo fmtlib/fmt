@@ -27,11 +27,6 @@
 
 #include "format.h"
 
-// Dummy implementations of strerror_r and strerror_s called if corresponding
-// system functions are not available.
-inline fmt::detail::null<> strerror_r(int, char*, ...) { return {}; }
-inline fmt::detail::null<> strerror_s(char*, size_t, ...) { return {}; }
-
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
@@ -57,75 +52,6 @@ inline int fmt_snprintf(char* buffer, size_t size, const char* format, ...) {
 #  define FMT_SNPRINTF fmt_snprintf
 #endif  // _MSC_VER
 
-// A portable thread-safe version of strerror.
-// Sets buffer to point to a string describing the error code.
-// This can be either a pointer to a string stored in buffer,
-// or a pointer to some static immutable string.
-// Returns one of the following values:
-//   0      - success
-//   ERANGE - buffer is not large enough to store the error message
-//   other  - failure
-// Buffer should be at least of size 1.
-inline int safe_strerror(int error_code, char*& buffer, size_t buffer_size) {
-  FMT_ASSERT(buffer != nullptr && buffer_size != 0, "invalid buffer");
-
-  class dispatcher {
-   private:
-    int error_code_;
-    char*& buffer_;
-    size_t buffer_size_;
-
-    // A noop assignment operator to avoid bogus warnings.
-    void operator=(const dispatcher&) {}
-
-    // Handle the result of XSI-compliant version of strerror_r.
-    int handle(int result) {
-      // glibc versions before 2.13 return result in errno.
-      return result == -1 ? errno : result;
-    }
-
-    // Handle the result of GNU-specific version of strerror_r.
-    FMT_MAYBE_UNUSED
-    int handle(char* message) {
-      // If the buffer is full then the message is probably truncated.
-      if (message == buffer_ && strlen(buffer_) == buffer_size_ - 1)
-        return ERANGE;
-      buffer_ = message;
-      return 0;
-    }
-
-    // Handle the case when strerror_r is not available.
-    FMT_MAYBE_UNUSED
-    int handle(detail::null<>) {
-      return fallback(strerror_s(buffer_, buffer_size_, error_code_));
-    }
-
-    // Fallback to strerror_s when strerror_r is not available.
-    FMT_MAYBE_UNUSED
-    int fallback(int result) {
-      // If the buffer is full then the message is probably truncated.
-      return result == 0 && strlen(buffer_) == buffer_size_ - 1 ? ERANGE
-                                                                : result;
-    }
-
-#if !FMT_MSC_VER
-    // Fallback to strerror if strerror_r and strerror_s are not available.
-    int fallback(detail::null<>) {
-      errno = 0;
-      buffer_ = strerror(error_code_);
-      return errno;
-    }
-#endif
-
-   public:
-    dispatcher(int err_code, char*& buf, size_t buf_size)
-        : error_code_(err_code), buffer_(buf), buffer_size_(buf_size) {}
-
-    int run() { return handle(strerror_r(error_code_, buffer_, buffer_size_)); }
-  };
-  return dispatcher(error_code, buffer, buffer_size).run();
-}
-
 FMT_FUNC void format_error_code(detail::buffer<char>& out, int error_code,
                                 string_view message) FMT_NOEXCEPT {
   // Report error code making sure that the output fits into
@@ -150,7 +76,7 @@ FMT_FUNC void format_error_code(detail::buffer<char>& out, int error_code,
 }
 
 FMT_FUNC void report_error(format_func func, int error_code,
-                           string_view message) FMT_NOEXCEPT {
+                           const char* message) FMT_NOEXCEPT {
   memory_buffer full_message;
   func(full_message, error_code, message);
   // Don't use fwrite_fully because the latter may throw.
@@ -202,16 +128,12 @@ template <typename Char> FMT_FUNC Char decimal_point_impl(locale_ref) {
 
 #if !FMT_MSC_VER
 FMT_API FMT_FUNC format_error::~format_error() FMT_NOEXCEPT = default;
-FMT_API FMT_FUNC system_error::~system_error() FMT_NOEXCEPT = default;
 #endif
 
-FMT_FUNC void system_error::init(int err_code, string_view format_str,
-                                 format_args args) {
-  error_code_ = err_code;
-  memory_buffer buffer;
-  format_system_error(buffer, err_code, vformat(format_str, args));
-  std::runtime_error& base = *this;
-  base = std::runtime_error(to_string(buffer));
+FMT_FUNC std::system_error vsystem_error(int error_code, string_view format_str,
+                                         format_args args) {
+  auto ec = std::error_code(error_code, std::generic_category());
+  return std::system_error(ec, vformat(format_str, args));
 }
 
 namespace detail {
@@ -2634,23 +2556,11 @@ FMT_FUNC detail::utf8_to_utf16::utf8_to_utf16(string_view s) {
 }
 
 FMT_FUNC void format_system_error(detail::buffer<char>& out, int error_code,
-                                  string_view message) FMT_NOEXCEPT {
+                                  const char* message) FMT_NOEXCEPT {
   FMT_TRY {
-    memory_buffer buf;
-    buf.resize(inline_buffer_size);
-    for (;;) {
-      char* system_message = &buf[0];
-      int result =
-          detail::safe_strerror(error_code, system_message, buf.size());
-      if (result == 0) {
-        format_to(detail::buffer_appender<char>(out), FMT_STRING("{}: {}"),
-                  message, system_message);
-        return;
-      }
-      if (result != ERANGE)
-        break;  // Can't get error message, report error code instead.
-      buf.resize(buf.size() * 2);
-    }
+    auto ec = std::error_code(error_code, std::generic_category());
+    write(std::back_inserter(out), std::system_error(ec, message).what());
+    return;
   }
   FMT_CATCH(...) {}
   format_error_code(out, error_code, message);
@@ -2661,7 +2571,7 @@ FMT_FUNC void detail::error_handler::on_error(const char* message) {
 }
 
 FMT_FUNC void report_system_error(int error_code,
-                                  fmt::string_view message) FMT_NOEXCEPT {
+                                  const char* message) FMT_NOEXCEPT {
   report_error(format_system_error, error_code, message);
 }
 

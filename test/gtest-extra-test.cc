@@ -281,10 +281,10 @@ TEST(ExpectTest, EXPECT_SYSTEM_ERROR) {
   EXPECT_NONFATAL_FAILURE(
       EXPECT_SYSTEM_ERROR(throw_exception(), EDOM, "test"),
       "Expected: throw_exception() throws an exception of "
-      "type fmt::system_error.\n  Actual: it throws a different type.");
+      "type std::system_error.\n  Actual: it throws a different type.");
   EXPECT_NONFATAL_FAILURE(
       EXPECT_SYSTEM_ERROR(do_nothing(), EDOM, "test"),
-      "Expected: do_nothing() throws an exception of type fmt::system_error.\n"
+      "Expected: do_nothing() throws an exception of type std::system_error.\n"
       "  Actual: it throws nothing.");
   EXPECT_NONFATAL_FAILURE(
       EXPECT_SYSTEM_ERROR(throw_system_error(), EDOM, "other"),
@@ -292,8 +292,8 @@ TEST(ExpectTest, EXPECT_SYSTEM_ERROR) {
           "throw_system_error() throws an exception with a different message.\n"
           "Expected: {}\n"
           "  Actual: {}",
-          format_system_error(EDOM, "other"),
-          format_system_error(EDOM, "test")));
+          system_error_message(EDOM, "other"),
+          system_error_message(EDOM, "test")));
 }
 
 TEST(StreamingAssertionsTest, EXPECT_THROW_MSG) {
@@ -317,7 +317,7 @@ TEST(StreamingAssertionsTest, EXPECT_SYSTEM_ERROR) {
 TEST(UtilTest, FormatSystemError) {
   fmt::memory_buffer out;
   fmt::format_system_error(out, EDOM, "test message");
-  EXPECT_EQ(to_string(out), format_system_error(EDOM, "test message"));
+  EXPECT_EQ(to_string(out), system_error_message(EDOM, "test message"));
 }
 
 #if FMT_USE_FCNTL
@@ -424,7 +424,7 @@ TEST(OutputRedirectTest, ErrorInDtor) {
         FMT_POSIX(close(write_fd));
         SUPPRESS_ASSERT(redir.reset(nullptr));
       },
-      format_system_error(EBADF, "cannot flush stream"));
+      system_error_message(EBADF, "cannot flush stream"));
   write_copy.dup2(write_fd);  // "undo" close or dtor of buffered_file will fail
 }
 

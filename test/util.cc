@@ -9,18 +9,6 @@
 
 #include <cstring>
 
-std::string get_system_error(int error_code) {
-#if defined(__MINGW32__) || !defined(_WIN32)
-  return strerror(error_code);
-#else
-  enum { buffer_size = 200 };
-  char buffer[buffer_size];
-  if (strerror_s(buffer, buffer_size, error_code))
-    throw std::exception("strerror_s failed");
-  return buffer;
-#endif
-}
-
 const char* const file_content = "Don't panic!";
 
 fmt::buffered_file open_buffered_file(FILE** fp) {

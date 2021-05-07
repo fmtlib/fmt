@@ -107,7 +107,7 @@ std::system_error vwindows_error(int err_code, string_view format_str,
 }
 
 void detail::format_windows_error(detail::buffer<char>& out, int error_code,
-                                  string_view message) FMT_NOEXCEPT {
+                                  const char* message) FMT_NOEXCEPT {
   FMT_TRY {
     wmemory_buffer buf;
     buf.resize(inline_buffer_size);
@@ -135,8 +135,7 @@ void detail::format_windows_error(detail::buffer<char>& out, int error_code,
   format_error_code(out, error_code, message);
 }
 
-void report_windows_error(int error_code,
-                          fmt::string_view message) FMT_NOEXCEPT {
+void report_windows_error(int error_code, const char* message) FMT_NOEXCEPT {
   report_error(detail::format_windows_error, error_code, message);
 }
 #endif  // _WIN32

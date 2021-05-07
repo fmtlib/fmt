@@ -136,8 +136,8 @@ TEST(util_test, allocator_ref) {
 TEST(util_test, format_system_error) {
   fmt::memory_buffer message;
   fmt::format_system_error(message, EDOM, "test");
-  EXPECT_EQ(fmt::format("test: {}", get_system_error(EDOM)),
-            to_string(message));
+  auto ec = std::error_code(EDOM, std::generic_category());
+  EXPECT_EQ(to_string(message), std::system_error(ec, "test").what());
   message = fmt::memory_buffer();
 
   // Check if std::allocator throws on allocating max size_t / 2 chars.
@@ -153,25 +153,24 @@ TEST(util_test, format_system_error) {
     fmt::print("warning: std::allocator allocates {} chars", max_size);
     return;
   }
-  fmt::format_system_error(message, EDOM, fmt::string_view(nullptr, max_size));
-  EXPECT_EQ(fmt::format("error {}", EDOM), to_string(message));
 }
 
 TEST(util_test, system_error) {
   auto test_error = fmt::system_error(EDOM, "test");
-  EXPECT_EQ(fmt::format("test: {}", get_system_error(EDOM)), test_error.what());
-  EXPECT_EQ(EDOM, test_error.error_code());
+  auto ec = std::error_code(EDOM, std::generic_category());
+  EXPECT_STREQ(test_error.what(), std::system_error(ec, "test").what());
+  EXPECT_EQ(test_error.code(), ec);
 
-  auto error = fmt::system_error(0, "");
+  auto error = std::system_error(std::error_code());
   try {
     throw fmt::system_error(EDOM, "test {}", "error");
-  } catch (const fmt::system_error& e) {
+  } catch (const std::system_error& e) {
     error = e;
   }
   fmt::memory_buffer message;
   fmt::format_system_error(message, EDOM, "test error");
-  EXPECT_EQ(to_string(message), error.what());
-  EXPECT_EQ(EDOM, error.error_code());
+  EXPECT_EQ(error.what(), to_string(message));
+  EXPECT_EQ(error.code(), std::error_code(EDOM, std::generic_category()));
 }
 
 TEST(util_test, report_system_error) {

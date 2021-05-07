@@ -25,8 +25,6 @@ void safe_sprintf(char (&buffer)[SIZE], const char* format, ...) {
   va_end(args);
 }
 
-std::string get_system_error(int error_code);
-
 extern const char* const file_content;
 
 // Opens a buffered file for reading.
