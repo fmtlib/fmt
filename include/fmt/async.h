@@ -38,10 +38,10 @@ public:
         return vformat_to(out, format_, {desc_, get_format_args()});
     }
 
-    template <typename OutIt>
-    auto format_to(OutIt out, size_t n) const -> enable_out<OutIt, format_to_n_result<OutIt>> {
-        return vformat_to(detail::truncating_iterator<OutIt>(out, n), format_, {desc_, get_format_args()});
-    }
+    // template <typename OutIt>
+    // auto format_to(OutIt out, size_t n) const -> enable_out<OutIt, format_to_n_result<OutIt>> {
+    //     return vformat_to(detail::truncating_iterator<OutIt>(out, n), format_, {desc_, get_format_args()});
+    // }
 
     size_t formatted_size() const {
         detail::counting_buffer<> buf;
@@ -288,11 +288,11 @@ inline auto format_to(basic_async_entry<Context>& entry, OutIt out) -> decltype(
     return entry.format_to(out);
 }
 
-template <typename OutIt, typename Context>
-inline auto format_to(basic_async_entry<Context>& entry, OutIt out, size_t n) -> decltype(entry.format_to_n(out, n)) {
-    typename basic_async_entry<Context>::dtor_sentry _(entry);
-    return entry.format_to(out, n);
-}
+// template <typename OutIt, typename Context>
+// inline auto format_to(basic_async_entry<Context>& entry, OutIt out, size_t n) -> decltype(entry.format_to_n(out, n)) {
+//     typename basic_async_entry<Context>::dtor_sentry _(entry);
+//     return entry.format_to(out, n);
+// }
 
 template <typename Context>
 inline void print(basic_async_entry<Context>& entry, std::FILE* f = stdout) {
