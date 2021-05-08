@@ -69,6 +69,11 @@ TEST(util_test, utf16_to_utf8_convert) {
             u.convert(fmt::wstring_view(L"foo", INT_MAX + 1u)));
 }
 
+TEST(os_test, error_code) {
+  EXPECT_EQ(error_code().get(), 0);
+  EXPECT_EQ(error_code(42).get(), 42);
+}
+
 TEST(os_test, format_windows_error) {
   LPWSTR message = 0;
   auto result = FormatMessageW(
