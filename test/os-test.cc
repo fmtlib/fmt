@@ -74,6 +74,30 @@ TEST(os_test, error_code) {
   EXPECT_EQ(error_code(42).get(), 42);
 }
 
+TEST(os_test, format_std_error_code) {
+  EXPECT_EQ("generic:42",
+            fmt::format(FMT_STRING("{0}"),
+                        std::error_code(42, std::generic_category())));
+  EXPECT_EQ("system:42",
+            fmt::format(FMT_STRING("{0}"),
+                        std::error_code(42, std::system_category())));
+  EXPECT_EQ("system:-42",
+            fmt::format(FMT_STRING("{0}"),
+                        std::error_code(-42, std::system_category())));
+}
+
+TEST(os_test, format_std_error_code_wide) {
+  EXPECT_EQ(L"generic:42",
+            fmt::format(FMT_STRING(L"{0}"),
+                        std::error_code(42, std::generic_category())));
+  EXPECT_EQ(L"system:42",
+            fmt::format(FMT_STRING(L"{0}"),
+                        std::error_code(42, std::system_category())));
+  EXPECT_EQ(L"system:-42",
+            fmt::format(FMT_STRING(L"{0}"),
+                        std::error_code(-42, std::system_category())));
+}
+
 TEST(os_test, format_windows_error) {
   LPWSTR message = 0;
   auto result = FormatMessageW(
