@@ -129,6 +129,23 @@ class error_code {
   int get() const FMT_NOEXCEPT { return value_; }
 };
 
+template <typename Char> struct formatter<std::error_code, Char> {
+  template <typename ParseContext>
+  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
+
+  template <typename FormatContext>
+  FMT_CONSTEXPR auto format(const std::error_code& ec, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    auto out = ctx.out();
+    out = detail::write<Char>(out, to_string_view(ec.category().name()));
+    out = detail::write<Char>(out, Char(':'));
+    out = detail::write<Char>(out, ec.value());
+    return out;
+  }
+};
+
 #ifdef _WIN32
 namespace detail {
 // A converter from UTF-16 to UTF-8.
