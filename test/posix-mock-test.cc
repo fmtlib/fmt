@@ -272,7 +272,7 @@ TEST(file_test, size) {
   }
   fstat_sim = none;
   EXPECT_EQ(error_code,
-            std::error_code(ERROR_ACCESS_DENIED, std::system_category()));
+            std::error_code(ERROR_ACCESS_DENIED, fmt::system_category()));
 #  else
   f.close();
   EXPECT_SYSTEM_ERROR(f.size(), EBADF, "cannot get file attributes");

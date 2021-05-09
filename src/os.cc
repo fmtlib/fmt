@@ -100,35 +100,78 @@ int detail::utf16_to_utf8::convert(wstring_view s) {
   return 0;
 }
 
+namespace detail {
+
+class system_message {
+  system_message(const system_message&) = delete;
+  void operator=(const system_message&) = delete;
+
+  unsigned long result_;
+  wchar_t* message_;
+
+  static bool is_whitespace(wchar_t c) FMT_NOEXCEPT {
+    return c == L' ' || c == L'\n' || c == L'\r' || c == L'\t' || c == L'\0';
+  }
+
+ public:
+  explicit system_message(unsigned long error_code)
+      : result_(0), message_(nullptr) {
+    result_ = FormatMessageW(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+            FORMAT_MESSAGE_IGNORE_INSERTS,
+        nullptr, error_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        reinterpret_cast<wchar_t*>(&message_), 0, nullptr);
+    if (result_ != 0) {
+      while (result_ != 0 && is_whitespace(message_[result_ - 1])) {
+        --result_;
+      }
+    }
+  }
+  ~system_message() { LocalFree(message_); }
+  explicit operator bool() const FMT_NOEXCEPT { return result_ != 0; }
+  operator wstring_view() const FMT_NOEXCEPT {
+    return wstring_view(message_, result_);
+  }
+};
+
+class utf8_system_category final : public std::error_category {
+ public:
+  const char* name() const FMT_NOEXCEPT override { return "system"; }
+  std::string message(int error_code) const override {
+    system_message msg(error_code);
+    if (msg) {
+      utf16_to_utf8 utf8_message;
+      if (utf8_message.convert(msg) == ERROR_SUCCESS) {
+        return utf8_message.str();
+      }
+    }
+    return "unknown error";
+  }
+};
+
+}  // namespace detail
+
+FMT_API const std::error_category& system_category() FMT_NOEXCEPT {
+  static const detail::utf8_system_category category;
+  return category;
+}
+
 std::system_error vwindows_error(int err_code, string_view format_str,
                                  format_args args) {
-  auto ec = std::error_code(err_code, std::system_category());
+  auto ec = std::error_code(err_code, system_category());
   throw std::system_error(ec, vformat(format_str, args));
 }
 
 void detail::format_windows_error(detail::buffer<char>& out, int error_code,
                                   const char* message) FMT_NOEXCEPT {
   FMT_TRY {
-    wmemory_buffer buf;
-    buf.resize(inline_buffer_size);
-    for (;;) {
-      wchar_t* system_message = &buf[0];
-      int result = FormatMessageW(
-          FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr,
-          error_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), system_message,
-          static_cast<uint32_t>(buf.size()), nullptr);
-      if (result != 0) {
-        utf16_to_utf8 utf8_message;
-        if (utf8_message.convert(system_message) == ERROR_SUCCESS) {
-          format_to(buffer_appender<char>(out), "{}: {}", message,
-                    utf8_message);
-          return;
-        }
-        break;
+    system_message msg(error_code);
+    if (msg) {
+      utf16_to_utf8 utf8_message;
+      if (utf8_message.convert(msg) == ERROR_SUCCESS) {
+        format_to(buffer_appender<char>(out), "{}: {}", message, utf8_message);
+        return;
       }
-      if (GetLastError() != ERROR_INSUFFICIENT_BUFFER)
-        break;  // Can't get error message, report error code instead.
-      buf.resize(buf.size() * 2);
     }
   }
   FMT_CATCH(...) {}
