@@ -1482,15 +1482,20 @@ OutputIt write_bytes(OutputIt out, string_view bytes,
 }
 
 template <typename Char, typename OutputIt>
-FMT_CONSTEXPR OutputIt write(OutputIt out, Char value,
-                             const basic_format_specs<Char>& specs,
-                             locale_ref loc = {}) {
-  if (specs.type && specs.type != 'c')
-    return write(out, static_cast<int>(value), specs, loc);
+FMT_CONSTEXPR OutputIt write_char(OutputIt out, Char value,
+                                  const basic_format_specs<Char>& specs) {
   return write_padded(out, specs, 1, [=](reserve_iterator<OutputIt> it) {
     *it++ = value;
     return it;
   });
+}
+template <typename Char, typename OutputIt>
+FMT_CONSTEXPR OutputIt write(OutputIt out, Char value,
+                             const basic_format_specs<Char>& specs,
+                             locale_ref loc = {}) {
+  return !specs.type || specs.type == 'c'
+             ? write_char(out, value, specs)
+             : write(out, static_cast<int>(value), specs, loc);
 }
 
 // Data for write_int that doesn't depend on output iterator type. It is used to
@@ -1662,7 +1667,7 @@ FMT_CONSTEXPR OutputIt write(OutputIt out, T value,
                      });
   }
   case 'c':
-    return write<Char>(out, static_cast<Char>(abs_value), specs);
+    return write_char(out, static_cast<Char>(abs_value), specs);
   default:
     FMT_THROW(format_error("invalid type specifier"));
   }
