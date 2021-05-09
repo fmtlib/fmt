@@ -30,7 +30,6 @@
 #include "util.h"
 
 using fmt::buffered_file;
-using fmt::error_code;
 
 using testing::_;
 using testing::Return;
@@ -367,13 +366,13 @@ TEST(file_test, dup2_retry) {
 TEST(file_test, dup2_no_except_retry) {
   int stdout_fd = FMT_POSIX(fileno(stdout));
   file f1 = file::dup(stdout_fd), f2 = file::dup(stdout_fd);
-  error_code ec;
+  std::error_code ec;
   dup2_count = 1;
   f1.dup2(f2.descriptor(), ec);
 #  ifndef _WIN32
   EXPECT_EQ(4, dup2_count);
 #  else
-  EXPECT_EQ(EINTR, ec.get());
+  EXPECT_EQ(EINTR, ec.value());
 #  endif
   dup2_count = 0;
 }

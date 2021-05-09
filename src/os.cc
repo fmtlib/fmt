@@ -255,10 +255,10 @@ void file::dup2(int fd) {
   }
 }
 
-void file::dup2(int fd, error_code& ec) FMT_NOEXCEPT {
+void file::dup2(int fd, std::error_code& ec) FMT_NOEXCEPT {
   int result = 0;
   FMT_RETRY(result, FMT_POSIX_CALL(dup2(fd_, fd)));
-  if (result == -1) ec = error_code(errno);
+  if (result == -1) ec = std::error_code(errno, std::generic_category());
 }
 
 void file::pipe(file& read_end, file& write_end) {

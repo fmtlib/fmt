@@ -311,7 +311,6 @@ TEST(gtest_extra_test, expect_system_error_streaming) {
 #if FMT_USE_FCNTL
 
 using fmt::buffered_file;
-using fmt::error_code;
 using fmt::file;
 
 TEST(output_redirect_test, scoped_redirect) {

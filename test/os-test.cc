@@ -19,7 +19,6 @@
 #endif
 
 using fmt::buffered_file;
-using fmt::error_code;
 using testing::HasSubstr;
 
 #ifdef _WIN32
@@ -67,11 +66,6 @@ TEST(util_test, utf16_to_utf8_convert) {
   EXPECT_EQ(ERROR_INVALID_PARAMETER, u.convert(fmt::wstring_view(0, 1)));
   EXPECT_EQ(ERROR_INVALID_PARAMETER,
             u.convert(fmt::wstring_view(L"foo", INT_MAX + 1u)));
-}
-
-TEST(os_test, error_code) {
-  EXPECT_EQ(error_code().get(), 0);
-  EXPECT_EQ(error_code(42).get(), 42);
 }
 
 TEST(os_test, format_std_error_code) {
@@ -527,18 +521,18 @@ TEST(file_test, dup2_error) {
 TEST(file_test, dup2_noexcept) {
   file f = open_file();
   file copy = open_file();
-  error_code ec;
+  std::error_code ec;
   f.dup2(copy.descriptor(), ec);
-  EXPECT_EQ(ec.get(), 0);
+  EXPECT_EQ(ec.value(), 0);
   EXPECT_NE(f.descriptor(), copy.descriptor());
   EXPECT_READ(copy, file_content);
 }
 
 TEST(file_test, dup2_noexcept_error) {
   file f = open_file();
-  error_code ec;
+  std::error_code ec;
   SUPPRESS_ASSERT(f.dup2(-1, ec));
-  EXPECT_EQ(EBADF, ec.get());
+  EXPECT_EQ(EBADF, ec.value());
 }
 
 TEST(file_test, pipe) {
