@@ -136,6 +136,8 @@ template <typename Char> struct formatter<std::error_code, Char> {
 };
 
 #ifdef _WIN32
+FMT_API const std::error_category& system_category() FMT_NOEXCEPT;
+
 namespace detail {
 // A converter from UTF-16 to UTF-8.
 // It is only provided for Windows since other systems support UTF-8 natively.
@@ -202,6 +204,10 @@ std::system_error windows_error(int error_code, string_view message,
 // Can be used to report errors from destructors.
 FMT_API void report_windows_error(int error_code,
                                   const char* message) FMT_NOEXCEPT;
+#else
+inline const std::error_category& system_category() FMT_NOEXCEPT {
+  return std::system_category();
+}
 #endif  // _WIN32
 
 // std::system is not available on some platforms such as iOS (#2248).
