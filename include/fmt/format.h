@@ -2897,12 +2897,16 @@ struct formatter<T, Char,
   template <typename FormatContext>
   FMT_CONSTEXPR auto format(const T& val, FormatContext& ctx) const
       -> decltype(ctx.out()) {
-    auto specs = specs_;
-    detail::handle_dynamic_spec<detail::width_checker>(specs.width,
-                                                       specs.width_ref, ctx);
-    detail::handle_dynamic_spec<detail::precision_checker>(
-        specs.precision, specs.precision_ref, ctx);
-    return detail::write<Char>(ctx.out(), val, specs, ctx.locale());
+    if (specs_.width_ref.kind != detail::arg_id_kind::none ||
+        specs_.precision_ref.kind != detail::arg_id_kind::none) {
+      auto specs = specs_;
+      detail::handle_dynamic_spec<detail::width_checker>(specs.width,
+                                                         specs.width_ref, ctx);
+      detail::handle_dynamic_spec<detail::precision_checker>(
+          specs.precision, specs.precision_ref, ctx);
+      return detail::write<Char>(ctx.out(), val, specs, ctx.locale());
+    }
+    return detail::write<Char>(ctx.out(), val, specs_, ctx.locale());
   }
 
  private:
