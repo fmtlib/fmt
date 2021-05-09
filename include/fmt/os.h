@@ -118,17 +118,6 @@ template <typename Char> class basic_cstring_view {
 using cstring_view = basic_cstring_view<char>;
 using wcstring_view = basic_cstring_view<wchar_t>;
 
-// An error code.
-class error_code {
- private:
-  int value_;
-
- public:
-  explicit error_code(int value = 0) FMT_NOEXCEPT : value_(value) {}
-
-  int get() const FMT_NOEXCEPT { return value_; }
-};
-
 template <typename Char> struct formatter<std::error_code, Char> {
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
@@ -351,7 +340,7 @@ class file {
 
   // Makes fd be the copy of this file descriptor, closing fd first if
   // necessary.
-  FMT_API void dup2(int fd, error_code& ec) FMT_NOEXCEPT;
+  FMT_API void dup2(int fd, std::error_code& ec) FMT_NOEXCEPT;
 
   // Creates a pipe setting up read_end and write_end file objects for reading
   // and writing respectively.
