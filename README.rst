@@ -137,7 +137,7 @@ Output::
 
 Output::
 
-    {1, 2, 3}
+    [1, 2, 3]
 
 **Check a format string at compile time**
 
