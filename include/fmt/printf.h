@@ -247,7 +247,8 @@ class printf_arg_formatter : public detail::arg_formatter_base<OutputIt, Char> {
       // ignored for non-numeric types
       if (fmt_specs.align == align::none || fmt_specs.align == align::numeric)
         fmt_specs.align = align::right;
-      return write_char(this->out(), static_cast<Char>(value), fmt_specs);
+      return detail::write<Char>(this->out(), static_cast<Char>(value),
+                                 fmt_specs);
     }
     return base::operator()(value);
   }

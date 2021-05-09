@@ -1482,8 +1482,11 @@ OutputIt write_bytes(OutputIt out, string_view bytes,
 }
 
 template <typename Char, typename OutputIt>
-constexpr OutputIt write_char(OutputIt out, Char value,
-                              const basic_format_specs<Char>& specs) {
+FMT_CONSTEXPR OutputIt write(OutputIt out, Char value,
+                             const basic_format_specs<Char>& specs,
+                             locale_ref loc = {}) {
+  if (specs.type && specs.type != 'c')
+    return write(out, static_cast<int>(value), specs, loc);
   return write_padded(out, specs, 1, [=](reserve_iterator<OutputIt> it) {
     *it++ = value;
     return it;
@@ -1598,10 +1601,12 @@ FMT_CONSTEXPR inline void prefix_append(unsigned& prefix, unsigned value) {
   prefix += (1u + (value > 0xff ? 1 : 0)) << 24;
 }
 
-template <typename OutputIt, typename T, typename Char>
-FMT_CONSTEXPR OutputIt write_int(OutputIt out, T value,
-                                 const basic_format_specs<Char>& specs,
-                                 locale_ref loc) {
+template <typename Char, typename OutputIt, typename T,
+          FMT_ENABLE_IF(std::is_integral<T>::value &&
+                        !std::is_same<T, bool>::value)>
+FMT_CONSTEXPR OutputIt write(OutputIt out, T value,
+                             const basic_format_specs<Char>& specs,
+                             locale_ref loc) {
   auto prefix = 0u;
   auto abs_value = static_cast<uint32_or_64_or_128_t<T>>(value);
   if (is_negative(value)) {
@@ -1657,7 +1662,7 @@ FMT_CONSTEXPR OutputIt write_int(OutputIt out, T value,
                      });
   }
   case 'c':
-    return write_char(out, static_cast<Char>(abs_value), specs);
+    return write<Char>(out, static_cast<Char>(abs_value), specs);
   default:
     FMT_THROW(format_error("invalid type specifier"));
   }
@@ -1678,6 +1683,13 @@ FMT_CONSTEXPR OutputIt write(OutputIt out, basic_string_view<StrChar> s,
                       [=](reserve_iterator<OutputIt> it) {
                         return copy_str<Char>(data, data + size, it);
                       });
+}
+template <typename Char, typename OutputIt>
+FMT_CONSTEXPR OutputIt write(OutputIt out,
+                             basic_string_view<type_identity_t<Char>> s,
+                             const basic_format_specs<Char>& specs,
+                             locale_ref) {
+  return write(out, s, specs);  // Adapt write to formatter::format.
 }
 
 template <typename Char, typename OutputIt>
@@ -2021,9 +2033,14 @@ FMT_CONSTEXPR OutputIt write(OutputIt out, T value) {
       out, static_cast<typename std::underlying_type<T>::type>(value));
 }
 
-template <typename Char, typename OutputIt>
-constexpr OutputIt write(OutputIt out, bool value) {
-  return write<Char>(out, string_view(value ? "true" : "false"));
+template <typename Char, typename OutputIt, typename T,
+          FMT_ENABLE_IF(std::is_same<T, bool>::value)>
+FMT_CONSTEXPR OutputIt write(OutputIt out, T value,
+                             const basic_format_specs<Char>& specs = {},
+                             locale_ref = {}) {
+  return specs.type && specs.type != 's'
+             ? write(out, value ? 1 : 0, specs, {})
+             : write(out, string_view(value ? "true" : "false"), specs);
 }
 
 template <typename Char, typename OutputIt>
@@ -2044,9 +2061,11 @@ FMT_CONSTEXPR_CHAR_TRAITS OutputIt write(OutputIt out, const Char* value) {
   return out;
 }
 
-template <typename Char, typename OutputIt>
-OutputIt write(OutputIt out, const void* value) {
-  return write_ptr<Char>(out, to_uintptr(value), nullptr);
+template <typename Char, typename OutputIt, typename T,
+          FMT_ENABLE_IF(std::is_same<T, void>::value)>
+OutputIt write(OutputIt out, const T* value,
+               const basic_format_specs<Char>& specs = {}, locale_ref = {}) {
+  return write_ptr<Char>(out, to_uintptr(value), &specs);
 }
 
 template <typename Char, typename OutputIt, typename T>
@@ -2152,12 +2171,12 @@ class arg_formatter_base {
 
     FMT_CONSTEXPR void on_int() {
       // char is only formatted as int if there are specs.
-      formatter.out_ =
-          detail::write_int(formatter.out_, static_cast<int>(value),
-                            formatter.specs_, formatter.locale_);
+      formatter.out_ = detail::write(formatter.out_, static_cast<int>(value),
+                                     formatter.specs_, formatter.locale_);
     }
     FMT_CONSTEXPR void on_char() {
-      formatter.out_ = write_char(formatter.out_, value, formatter.specs_);
+      formatter.out_ =
+          detail::write<Char>(formatter.out_, value, formatter.specs_);
     }
   };
 
@@ -2199,7 +2218,7 @@ class arg_formatter_base {
 
   template <typename T, FMT_ENABLE_IF(is_integral<T>::value)>
   FMT_CONSTEXPR FMT_INLINE iterator operator()(T value) {
-    return out_ = detail::write_int(out_, value, specs_, locale_);
+    return out_ = detail::write(out_, value, specs_, locale_);
   }
 
   FMT_CONSTEXPR iterator operator()(Char value) {
@@ -2883,10 +2902,7 @@ struct formatter<T, Char,
                                                        specs.width_ref, ctx);
     detail::handle_dynamic_spec<detail::precision_checker>(
         specs.precision, specs.precision_ref, ctx);
-    using af = detail::arg_formatter<typename FormatContext::iterator,
-                                     typename FormatContext::char_type>;
-    return visit_format_arg(af(ctx, specs),
-                            detail::make_arg<FormatContext>(val));
+    return detail::write<Char>(ctx.out(), val, specs, ctx.locale());
   }
 
  private:
