@@ -1609,9 +1609,9 @@ FMT_CONSTEXPR inline void prefix_append(unsigned& prefix, unsigned value) {
 template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(std::is_integral<T>::value &&
                         !std::is_same<T, bool>::value)>
-FMT_CONSTEXPR OutputIt write(OutputIt out, T value,
-                             const basic_format_specs<Char>& specs,
-                             locale_ref loc) {
+FMT_CONSTEXPR FMT_INLINE OutputIt
+write_int(OutputIt out, T value, const basic_format_specs<Char>& specs,
+          locale_ref loc) {
   auto prefix = 0u;
   auto abs_value = static_cast<uint32_or_64_or_128_t<T>>(value);
   if (is_negative(value)) {
@@ -1672,6 +1672,25 @@ FMT_CONSTEXPR OutputIt write(OutputIt out, T value,
     FMT_THROW(format_error("invalid type specifier"));
   }
   return out;
+}
+template <typename Char, typename OutputIt, typename T,
+          FMT_ENABLE_IF(std::is_integral<T>::value &&
+                        !std::is_same<T, bool>::value &&
+                        std::is_same<OutputIt, buffer_appender<Char>>::value)>
+FMT_CONSTEXPR OutputIt write(OutputIt out, T value,
+                             const basic_format_specs<Char>& specs,
+                             locale_ref loc) {
+  return write_int(out, value, specs, loc);
+}
+// An inlined version of format_int used in format string compilation.
+template <typename Char, typename OutputIt, typename T,
+          FMT_ENABLE_IF(std::is_integral<T>::value &&
+                        !std::is_same<T, bool>::value &&
+                        !std::is_same<OutputIt, buffer_appender<Char>>::value)>
+FMT_CONSTEXPR FMT_INLINE OutputIt write(OutputIt out, T value,
+                                        const basic_format_specs<Char>& specs,
+                                        locale_ref loc) {
+  return write_int(out, value, specs, loc);
 }
 
 template <typename OutputIt, typename StrChar, typename Char>
@@ -2900,7 +2919,7 @@ struct formatter<T, Char,
   }
 
   template <typename FormatContext>
-  FMT_CONSTEXPR auto format(const T& val, FormatContext& ctx) const
+  FMT_CONSTEXPR FMT_INLINE auto format(const T& val, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     if (specs_.width_ref.kind != detail::arg_id_kind::none ||
         specs_.precision_ref.kind != detail::arg_id_kind::none) {

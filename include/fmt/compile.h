@@ -319,7 +319,8 @@ template <typename Char, typename T, int N> struct spec_field {
   formatter<T, Char> fmt;
 
   template <typename OutputIt, typename... Args>
-  constexpr OutputIt format(OutputIt out, const Args&... args) const {
+  constexpr FMT_INLINE OutputIt format(OutputIt out,
+                                       const Args&... args) const {
     const auto& vargs =
         make_format_args<basic_format_context<OutputIt, Char>>(args...);
     basic_format_context<OutputIt, Char> ctx(out, vargs);
@@ -556,9 +557,9 @@ template <typename CompiledFormat, typename... Args,
           FMT_ENABLE_IF(detail::is_compiled_format<CompiledFormat>::value)>
 FMT_INLINE std::basic_string<Char> format(const CompiledFormat& cf,
                                           const Args&... args) {
-  basic_memory_buffer<Char> buffer;
-  cf.format(detail::buffer_appender<Char>(buffer), args...);
-  return to_string(buffer);
+  auto s = std::basic_string<Char>();
+  cf.format(std::back_inserter(s), args...);
+  return s;
 }
 
 template <typename OutputIt, typename CompiledFormat, typename... Args,
