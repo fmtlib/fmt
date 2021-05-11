@@ -541,9 +541,9 @@ class bigint {
   }
 
   void square() {
-    basic_memory_buffer<bigit, bigits_capacity> n(std::move(bigits_));
     int num_bigits = static_cast<int>(bigits_.size());
     int num_result_bigits = 2 * num_bigits;
+    basic_memory_buffer<bigit, bigits_capacity> n(std::move(bigits_));
     bigits_.resize(to_unsigned(num_result_bigits));
     using accumulator_t = conditional_t<FMT_USE_INT128, uint128_t, accumulator>;
     auto sum = accumulator_t();
