@@ -181,14 +181,12 @@ template and implement ``parse`` and ``format`` methods::
 
   struct point { double x, y; };
 
-  template <>
-  struct fmt::formatter<point> {
+  template <> struct fmt::formatter<point> {
     // Presentation format: 'f' - fixed, 'e' - exponential.
     char presentation = 'f';
 
     // Parses format specifications of the form ['f' | 'e'].
-    constexpr auto parse(format_parse_context& ctx) {
-    // auto parse(format_parse_context &ctx) -> decltype(ctx.begin()) // c++11
+    constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
       // [ctx.begin(), ctx.end()) is a character range that contains a part of
       // the format string starting from the format specifications to be parsed,
       // e.g. in
@@ -215,8 +213,7 @@ template and implement ``parse`` and ``format`` methods::
     // Formats the point p using the parsed format specification (presentation)
     // stored in this formatter.
     template <typename FormatContext>
-    auto format(const point& p, FormatContext& ctx) {
-    // auto format(const point &p, FormatContext &ctx) -> decltype(ctx.out()) // c++11
+    auto format(const point& p, FormatContext& ctx) -> decltype(ctx.out()) {
       // ctx.out() is an output iterator to write to.
       return format_to(
           ctx.out(),
