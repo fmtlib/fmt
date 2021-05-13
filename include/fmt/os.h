@@ -197,7 +197,7 @@ FMT_API std::system_error vwindows_error(int error_code, string_view format_str,
 template <typename... Args>
 std::system_error windows_error(int error_code, string_view message,
                                 const Args&... args) {
-  return vwindows_error(error_code, message, make_format_args(args...));
+  vwindows_error(error_code, message, make_format_args(args...));
 }
 
 // Reports a Windows error without throwing an exception.
