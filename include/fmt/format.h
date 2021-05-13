@@ -255,16 +255,6 @@ inline int ctzll(uint64_t x) {
 FMT_END_NAMESPACE
 #endif
 
-#ifndef FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
-#  if defined(__cpp_nontype_template_args) &&                \
-      ((FMT_GCC_VERSION >= 903 && __cplusplus >= 201709L) || \
-       __cpp_nontype_template_args >= 201911L)
-#    define FMT_USE_NONTYPE_TEMPLATE_PARAMETERS 1
-#  else
-#    define FMT_USE_NONTYPE_TEMPLATE_PARAMETERS 0
-#  endif
-#endif
-
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
@@ -3225,9 +3215,6 @@ template <typename Char> struct udl_formatter {
     return format(str, std::forward<Args>(args)...);
   }
 };
-
-template <typename T, typename = void>
-struct is_statically_named_arg : std::false_type {};
 
 #  if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
 template <typename T, typename Char, size_t N, fixed_string<Char, N> Str>

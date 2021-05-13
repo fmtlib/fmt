@@ -1694,6 +1694,14 @@ TEST(format_test, compile_time_string) {
   EXPECT_EQ(L"42", fmt::format(FMT_STRING(L"{}"), 42));
   EXPECT_EQ("foo", fmt::format(FMT_STRING("{}"), string_like()));
 
+#if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+  using namespace fmt::literals;
+  EXPECT_EQ("foobar", fmt::format(FMT_STRING("{foo}{bar}"), "bar"_a = "bar",
+                                  "foo"_a = "foo"));
+  EXPECT_EQ("", fmt::format(FMT_STRING("")));
+  EXPECT_EQ("", fmt::format(FMT_STRING(""), "arg"_a = 42));
+#endif
+
   (void)static_with_null;
   (void)static_with_null_wide;
   (void)static_no_null;
@@ -2339,8 +2347,15 @@ TEST(format_test, format_string_errors) {
 #  else
   fmt::print("warning: constexpr is broken in this version of MSVC\n");
 #  endif
-  EXPECT_ERROR("{foo", "compile-time checks don't support named arguments",
+#  if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+  EXPECT_ERROR("{foo}", "named argument is not found", decltype("bar"_a = 42));
+  EXPECT_ERROR("{foo}", "named argument is not found",
+               decltype(fmt::arg("foo", 42)));
+#  else
+  EXPECT_ERROR("{foo}",
+               "compile-time checks for named arguments require C++20 support",
                int);
+#  endif
   EXPECT_ERROR_NOARGS("{10000000000}", "number is too big");
   EXPECT_ERROR_NOARGS("{0x}", "invalid format string");
   EXPECT_ERROR_NOARGS("{-}", "invalid format string");
