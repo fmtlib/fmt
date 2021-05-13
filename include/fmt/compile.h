@@ -564,8 +564,8 @@ FMT_INLINE std::basic_string<Char> format(const CompiledFormat& cf,
 
 template <typename OutputIt, typename CompiledFormat, typename... Args,
           FMT_ENABLE_IF(detail::is_compiled_format<CompiledFormat>::value)>
-constexpr OutputIt format_to(OutputIt out, const CompiledFormat& cf,
-                             const Args&... args) {
+constexpr FMT_INLINE OutputIt format_to(OutputIt out, const CompiledFormat& cf,
+                                        const Args&... args) {
   return cf.format(out, args...);
 }
 
