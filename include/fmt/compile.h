@@ -191,24 +191,10 @@ constexpr const auto& get([[maybe_unused]] const T& first,
     return get<N - 1>(rest...);
 }
 
-constexpr int invalid_arg_index = -1;
-
-template <int N, typename T, typename... Args, typename Char>
-constexpr int get_arg_index_by_name(basic_string_view<Char> name) {
-  if constexpr (detail::is_statically_named_arg<T>()) {
-    if (name == T::name) return N;
-  }
-  if constexpr (sizeof...(Args) == 0) {
-    return invalid_arg_index;
-  } else {
-    return get_arg_index_by_name<N + 1, Args...>(name);
-  }
-}
-
 template <typename Char, typename... Args>
 constexpr int get_arg_index_by_name(basic_string_view<Char> name,
                                     type_list<Args...>) {
-  return get_arg_index_by_name<0, Args...>(name);
+  return get_arg_index_by_name<Args...>(name);
 }
 
 template <int N, typename> struct get_type_impl;

@@ -281,6 +281,16 @@
 #  define FMT_COMPILE_TIME_CHECKS 0
 #endif
 
+#ifndef FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+#  if defined(__cpp_nontype_template_args) &&                \
+      ((FMT_GCC_VERSION >= 903 && __cplusplus >= 201709L) || \
+       __cpp_nontype_template_args >= 201911L)
+#    define FMT_USE_NONTYPE_TEMPLATE_PARAMETERS 1
+#  else
+#    define FMT_USE_NONTYPE_TEMPLATE_PARAMETERS 0
+#  endif
+#endif
+
 // Enable minimal optimizations for more compact code in debug mode.
 FMT_GCC_PRAGMA("GCC push_options")
 #ifndef __OPTIMIZE__
@@ -991,6 +1001,7 @@ template <typename Char>
 inline void init_named_args(named_arg_info<Char>*, int, int) {}
 
 template <typename T> struct is_named_arg : std::false_type {};
+template <typename T> struct is_statically_named_arg : std::false_type {};
 
 template <typename T, typename Char>
 struct is_named_arg<named_arg<Char, T>> : std::true_type {};
@@ -2425,6 +2436,36 @@ class compile_parse_context
   using base::check_arg_id;
 };
 
+constexpr int invalid_arg_index = -1;
+
+#if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+template <int N, typename T, typename... Args, typename Char>
+constexpr int get_arg_index_by_name(basic_string_view<Char> name) {
+  if constexpr (detail::is_statically_named_arg<T>()) {
+    if (name == T::name) return N;
+  }
+  if constexpr (sizeof...(Args) == 0) {
+    return invalid_arg_index;
+  } else {
+    return get_arg_index_by_name<N + 1, Args...>(name);
+  }
+}
+
+template <typename... Args, typename Char>
+constexpr int get_arg_index_by_name(basic_string_view<Char> name) {
+  if constexpr (sizeof...(Args) == 0) {
+    return invalid_arg_index;
+  } else {
+    return get_arg_index_by_name<0, Args...>(name);
+  }
+}
+#else
+template <typename... Args, typename Char>
+constexpr int get_arg_index_by_name(basic_string_view<Char>) {
+  return invalid_arg_index;
+}
+#endif
+
 template <typename Char, typename ErrorHandler, typename... Args>
 class format_string_checker {
  public:
@@ -2437,9 +2478,16 @@ class format_string_checker {
 
   FMT_CONSTEXPR int on_arg_id() { return context_.next_arg_id(); }
   FMT_CONSTEXPR int on_arg_id(int id) { return context_.check_arg_id(id), id; }
-  FMT_CONSTEXPR int on_arg_id(basic_string_view<Char>) {
-    on_error("compile-time checks don't support named arguments");
+  FMT_CONSTEXPR int on_arg_id(basic_string_view<Char> id) {
+#if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+    auto index = get_arg_index_by_name<Args...>(id);
+    if (index == invalid_arg_index) on_error("named argument is not found");
+    return context_.check_arg_id(index), index;
+#else
+    (void)id;
+    on_error("compile-time checks for named arguments require C++20 support");
     return 0;
+#endif
   }
 
   FMT_CONSTEXPR void on_replacement_field(int, const Char*) {}
