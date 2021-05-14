@@ -24,6 +24,17 @@ function(join result_var)
   set(${result_var} "${result}" PARENT_SCOPE)
 endfunction()
 
+function(enable_module target)
+  if (MSVC)
+    set(BMI ${CMAKE_CURRENT_BINARY_DIR}/${target}.ifc)
+    target_compile_options(${target}
+      PRIVATE /interface /ifcOutput ${BMI}
+      INTERFACE /reference fmt=${BMI})
+  endif ()
+  set_target_properties(${target} PROPERTIES ADDITIONAL_CLEAN_FILES ${BMI})
+  set_source_files_properties(${BMI} PROPERTIES GENERATED ON)
+endfunction()
+
 include(CMakeParseArguments)
 
 # Sets a cache variable with a docstring joined from multiple arguments:
@@ -69,6 +80,22 @@ option(FMT_TEST "Generate the test target." ${FMT_MASTER_PROJECT})
 option(FMT_FUZZ "Generate the fuzz target." OFF)
 option(FMT_CUDA_TEST "Generate the cuda-test target." OFF)
 option(FMT_OS "Include core requiring OS (Windows/Posix) " ON)
+option(FMT_MODULE "Build a module instead of a traditional library." OFF)
+
+set(FMT_CAN_MODULE OFF)
+if (CMAKE_CXX_STANDARD GREATER_EQUAL 20 AND
+    # msvc 16.10-pre4
+    MSVC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.29.30036) 
+  set(FMT_CAN_MODULE ON)
+endif ()
+if (NOT FMT_CAN_MODULE)
+  set(FMT_MODULE OFF)
+  message(STATUS "Module support is disabled.")
+endif ()
+if (FMT_TEST AND FMT_MODULE)
+  # The tests require {fmt} to be compiled as traditional library
+  message(STATUS "Testing is incompatible with build mode 'module'.")
+endif ()
 
 # Get version from core.h
 file(READ include/fmt/core.h core_h)
@@ -189,7 +216,9 @@ endfunction()
 add_headers(FMT_HEADERS args.h chrono.h color.h compile.h core.h format.h
                         format-inl.h locale.h os.h ostream.h printf.h ranges.h
                         wchar.h)
-if (FMT_OS)
+if (FMT_MODULE)
+  set(FMT_SOURCES src/fmt.cc)
+elseif (FMT_OS)
   set(FMT_SOURCES src/format.cc src/os.cc)
 else()
   set(FMT_SOURCES src/format.cc)
@@ -214,6 +243,9 @@ if (FMT_WERROR)
 endif ()
 if (FMT_PEDANTIC)
   target_compile_options(fmt PRIVATE ${PEDANTIC_COMPILE_FLAGS})
+endif ()
+if (FMT_MODULE)
+  enable_module(fmt)
 endif ()
 
 target_compile_features(fmt INTERFACE ${FMT_REQUIRED_FEATURES})
