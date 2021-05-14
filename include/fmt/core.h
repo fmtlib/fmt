@@ -1906,6 +1906,98 @@ struct dynamic_format_specs : basic_format_specs<Char> {
   arg_ref<Char> precision_ref;
 };
 
+struct auto_id {};
+
+// A format specifier handler that sets fields in basic_format_specs.
+template <typename Char> class specs_setter {
+ public:
+  explicit FMT_CONSTEXPR specs_setter(basic_format_specs<Char>& specs)
+      : specs_(specs) {}
+
+  FMT_CONSTEXPR specs_setter(const specs_setter& other)
+      : specs_(other.specs_) {}
+
+  FMT_CONSTEXPR void on_align(align_t align) { specs_.align = align; }
+  FMT_CONSTEXPR void on_fill(basic_string_view<Char> fill) {
+    specs_.fill = fill;
+  }
+  FMT_CONSTEXPR void on_plus() { specs_.sign = sign::plus; }
+  FMT_CONSTEXPR void on_minus() { specs_.sign = sign::minus; }
+  FMT_CONSTEXPR void on_space() { specs_.sign = sign::space; }
+  FMT_CONSTEXPR void on_hash() { specs_.alt = true; }
+  FMT_CONSTEXPR void on_localized() { specs_.localized = true; }
+
+  FMT_CONSTEXPR void on_zero() {
+    specs_.align = align::numeric;
+    specs_.fill[0] = Char('0');
+  }
+
+  FMT_CONSTEXPR void on_width(int width) { specs_.width = width; }
+  FMT_CONSTEXPR void on_precision(int precision) {
+    specs_.precision = precision;
+  }
+  FMT_CONSTEXPR void end_precision() {}
+
+  FMT_CONSTEXPR void on_type(Char type) {
+    specs_.type = static_cast<char>(type);
+  }
+
+ protected:
+  basic_format_specs<Char>& specs_;
+};
+
+// Format spec handler that saves references to arguments representing dynamic
+// width and precision to be resolved at formatting time.
+template <typename ParseContext>
+class dynamic_specs_handler
+    : public specs_setter<typename ParseContext::char_type> {
+ public:
+  using char_type = typename ParseContext::char_type;
+
+  FMT_CONSTEXPR dynamic_specs_handler(dynamic_format_specs<char_type>& specs,
+                                      ParseContext& ctx)
+      : specs_setter<char_type>(specs), specs_(specs), context_(ctx) {}
+
+  FMT_CONSTEXPR dynamic_specs_handler(const dynamic_specs_handler& other)
+      : specs_setter<char_type>(other),
+        specs_(other.specs_),
+        context_(other.context_) {}
+
+  template <typename Id> FMT_CONSTEXPR void on_dynamic_width(Id arg_id) {
+    specs_.width_ref = make_arg_ref(arg_id);
+  }
+
+  template <typename Id> FMT_CONSTEXPR void on_dynamic_precision(Id arg_id) {
+    specs_.precision_ref = make_arg_ref(arg_id);
+  }
+
+  FMT_CONSTEXPR void on_error(const char* message) {
+    context_.on_error(message);
+  }
+
+ private:
+  using arg_ref_type = arg_ref<char_type>;
+
+  FMT_CONSTEXPR arg_ref_type make_arg_ref(int arg_id) {
+    context_.check_arg_id(arg_id);
+    return arg_ref_type(arg_id);
+  }
+
+  FMT_CONSTEXPR arg_ref_type make_arg_ref(auto_id) {
+    return arg_ref_type(context_.next_arg_id());
+  }
+
+  FMT_CONSTEXPR arg_ref_type make_arg_ref(basic_string_view<char_type> arg_id) {
+    context_.check_arg_id(arg_id);
+    basic_string_view<char_type> format_str(
+        context_.begin(), to_unsigned(context_.end() - context_.begin()));
+    return arg_ref_type(arg_id);
+  }
+
+  dynamic_format_specs<char_type>& specs_;
+  ParseContext& context_;
+};
+
 template <typename Char> constexpr bool is_ascii_letter(Char c) {
   return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
@@ -1996,8 +2088,6 @@ FMT_CONSTEXPR const Char* parse_align(const Char* begin, const Char* end,
   }
   return begin;
 }
-
-struct auto_id {};
 
 template <typename Char> FMT_CONSTEXPR bool is_name_start(Char c) {
   return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || '_' == c;
