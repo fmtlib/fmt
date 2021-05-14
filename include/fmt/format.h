@@ -815,6 +815,10 @@ class FMT_API format_error : public std::runtime_error {
 FMT_MODULE_EXPORT_END
 namespace detail {
 
+inline void throw_format_error(const char* message) {
+  FMT_THROW(format_error(message));
+}
+
 template <typename T> struct is_integral : std::is_integral<T> {};
 template <> struct is_integral<int128_t> : std::true_type {};
 template <> struct is_integral<uint128_t> : std::true_type {};
@@ -1138,65 +1142,6 @@ class utf8_to_utf16 {
 
 template <typename T = void> struct null {};
 
-// Workaround an array initialization issue in gcc 4.8.
-template <typename Char> struct fill_t {
- private:
-  enum { max_size = 4 };
-  Char data_[max_size] = {Char(' '), Char(0), Char(0), Char(0)};
-  unsigned char size_ = 1;
-
- public:
-  FMT_CONSTEXPR void operator=(basic_string_view<Char> s) {
-    auto size = s.size();
-    if (size > max_size) {
-      FMT_THROW(format_error("invalid fill"));
-      return;
-    }
-    for (size_t i = 0; i < size; ++i) data_[i] = s[i];
-    size_ = static_cast<unsigned char>(size);
-  }
-
-  constexpr size_t size() const { return size_; }
-  constexpr const Char* data() const { return data_; }
-
-  FMT_CONSTEXPR Char& operator[](size_t index) { return data_[index]; }
-  FMT_CONSTEXPR const Char& operator[](size_t index) const {
-    return data_[index];
-  }
-};
-}  // namespace detail
-FMT_MODULE_EXPORT_BEGIN
-
-namespace sign {
-enum type { none, minus, plus, space };
-}
-using sign_t = sign::type;
-
-// Format specifiers for built-in and string types.
-template <typename Char> struct basic_format_specs {
-  int width;
-  int precision;
-  char type;
-  align_t align : 4;
-  sign_t sign : 3;
-  bool alt : 1;  // Alternate form ('#').
-  bool localized : 1;
-  detail::fill_t<Char> fill;
-
-  constexpr basic_format_specs()
-      : width(0),
-        precision(-1),
-        type(0),
-        align(align::none),
-        sign(sign::none),
-        alt(false),
-        localized(false) {}
-};
-
-using format_specs = basic_format_specs<char>;
-
-FMT_MODULE_EXPORT_END
-namespace detail {
 namespace dragonbox {
 
 // Type-specific information that Dragonbox uses.
