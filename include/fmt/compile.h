@@ -319,7 +319,7 @@ template <typename Char, typename T, int N> struct spec_field {
   constexpr FMT_INLINE OutputIt format(OutputIt out,
                                        const Args&... args) const {
     const auto& vargs =
-        make_format_args<basic_format_context<OutputIt, Char>>(args...);
+        fmt::make_format_args<basic_format_context<OutputIt, Char>>(args...);
     basic_format_context<OutputIt, Char> ctx(out, vargs);
     return fmt.format(get_arg_checked<T, N>(args...), ctx);
   }
