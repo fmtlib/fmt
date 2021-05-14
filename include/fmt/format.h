@@ -815,6 +815,10 @@ class FMT_API format_error : public std::runtime_error {
 FMT_MODULE_EXPORT_END
 namespace detail {
 
+template <typename T> struct is_integral : std::is_integral<T> {};
+template <> struct is_integral<int128_t> : std::true_type {};
+template <> struct is_integral<uint128_t> : std::true_type {};
+
 template <typename T>
 using is_signed =
     std::integral_constant<bool, std::numeric_limits<T>::is_signed ||
@@ -1607,8 +1611,7 @@ FMT_CONSTEXPR inline void prefix_append(unsigned& prefix, unsigned value) {
 }
 
 template <typename Char, typename OutputIt, typename T,
-          FMT_ENABLE_IF(std::is_integral<T>::value &&
-                        !std::is_same<T, bool>::value)>
+          FMT_ENABLE_IF(is_integral<T>::value && !std::is_same<T, bool>::value)>
 FMT_CONSTEXPR FMT_INLINE OutputIt
 write_int(OutputIt out, T value, const basic_format_specs<Char>& specs,
           locale_ref loc) {
@@ -1674,7 +1677,7 @@ write_int(OutputIt out, T value, const basic_format_specs<Char>& specs,
   return out;
 }
 template <typename Char, typename OutputIt, typename T,
-          FMT_ENABLE_IF(std::is_integral<T>::value &&
+          FMT_ENABLE_IF(is_integral<T>::value &&
                         !std::is_same<T, bool>::value &&
                         std::is_same<OutputIt, buffer_appender<Char>>::value)>
 FMT_CONSTEXPR OutputIt write(OutputIt out, T value,
@@ -1682,9 +1685,9 @@ FMT_CONSTEXPR OutputIt write(OutputIt out, T value,
                              locale_ref loc) {
   return write_int(out, value, specs, loc);
 }
-// An inlined version of format_int used in format string compilation.
+// An inlined version of write used in format string compilation.
 template <typename Char, typename OutputIt, typename T,
-          FMT_ENABLE_IF(std::is_integral<T>::value &&
+          FMT_ENABLE_IF(is_integral<T>::value &&
                         !std::is_same<T, bool>::value &&
                         !std::is_same<OutputIt, buffer_appender<Char>>::value)>
 FMT_CONSTEXPR FMT_INLINE OutputIt write(OutputIt out, T value,
@@ -1990,10 +1993,6 @@ OutputIt write_ptr(OutputIt out, UIntPtr value,
   return specs ? write_padded<align::right>(out, *specs, size, write)
                : base_iterator(out, write(reserve(out, size)));
 }
-
-template <typename T> struct is_integral : std::is_integral<T> {};
-template <> struct is_integral<int128_t> : std::true_type {};
-template <> struct is_integral<uint128_t> : std::true_type {};
 
 template <typename Char, typename OutputIt>
 OutputIt write(OutputIt out, monostate) {
