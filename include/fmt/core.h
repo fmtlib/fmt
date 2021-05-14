@@ -241,6 +241,14 @@
 #ifndef FMT_MODULE_EXPORT_END
 #  define FMT_MODULE_EXPORT_END
 #endif
+#ifndef FMT_BEGIN_DETAIL_NAMESPACE
+#  define FMT_BEGIN_DETAIL_NAMESPACE \
+    namespace detail {
+#endif
+#ifndef FMT_END_DETAIL_NAMESPACE
+#  define FMT_END_DETAIL_NAMESPACE \
+    }
+#endif
 
 #if !defined(FMT_HEADER_ONLY) && defined(_WIN32)
 #  define FMT_CLASS_API FMT_MSC_WARNING(suppress : 4275)
@@ -317,8 +325,6 @@ template <typename T> using type_identity_t = typename type_identity<T>::type;
 
 struct monostate {};
 
-FMT_MODULE_EXPORT_END
-
 // An enable_if helper to be used in template parameters which results in much
 // shorter symbols: https://godbolt.org/z/sWw4vP. Extra parentheses are needed
 // to workaround a bug in MSVC 2019 (see #1140 and #1186).
@@ -328,7 +334,7 @@ FMT_MODULE_EXPORT_END
 #  define FMT_ENABLE_IF(...) enable_if_t<(__VA_ARGS__), int> = 0
 #endif
 
-namespace detail {
+FMT_BEGIN_DETAIL_NAMESPACE
 
 constexpr FMT_INLINE bool is_constant_evaluated() FMT_NOEXCEPT {
 #ifdef __cpp_lib_is_constant_evaluated
@@ -393,7 +399,8 @@ template <typename Char> constexpr bool is_unicode() {
   return FMT_UNICODE || sizeof(Char) != 1 ||
          (sizeof(micro) == 3 && micro[0] == 0xC2 && micro[1] == 0xB5);
 }
-}  // namespace detail
+
+FMT_END_DETAIL_NAMESPACE
 
 /**
   An implementation of ``std::basic_string_view`` for pre-C++17. It provides a
@@ -402,8 +409,6 @@ template <typename Char> constexpr bool is_unicode() {
   compiled with a different ``-std`` option than the client code (which is not
   recommended).
  */
-FMT_MODULE_EXPORT_BEGIN
-
 template <typename Char> class basic_string_view {
  private:
   const Char* data_;
@@ -552,8 +557,8 @@ constexpr basic_string_view<typename S::char_type> to_string_view(const S& s) {
   return s;
 }
 
-FMT_MODULE_EXPORT_END
-namespace detail {
+FMT_BEGIN_DETAIL_NAMESPACE
+
 void to_string_view(...);
 using fmt::v7::to_string_view;
 
@@ -589,8 +594,8 @@ struct error_handler {
   // This function is intentionally not constexpr to give a compile-time error.
   FMT_NORETURN FMT_API void on_error(const char* message);
 };
-}  // namespace detail
-FMT_MODULE_EXPORT_BEGIN
+
+FMT_END_DETAIL_NAMESPACE
 
 /** String's character type. */
 template <typename S> using char_t = typename detail::char_t_impl<S>::type;
@@ -700,8 +705,7 @@ template <typename T> struct is_contiguous : std::false_type {};
 template <typename Char>
 struct is_contiguous<std::basic_string<Char>> : std::true_type {};
 
-FMT_MODULE_EXPORT_END
-namespace detail {
+FMT_BEGIN_DETAIL_NAMESPACE
 
 // Extracts a reference to the container from back_insert_iterator.
 template <typename Container>
@@ -1320,8 +1324,8 @@ enum { packed_arg_bits = 4 };
 enum { max_packed_args = 62 / packed_arg_bits };
 enum : unsigned long long { is_unpacked_bit = 1ULL << 63 };
 enum : unsigned long long { has_named_args_bit = 1ULL << 62 };
-}  // namespace detail
-FMT_MODULE_EXPORT_BEGIN
+
+FMT_END_DETAIL_NAMESPACE
 
 // A formatting argument. It is a trivially copyable/constructible type to
 // allow storage in basic_memory_buffer.
@@ -1431,8 +1435,7 @@ FMT_CONSTEXPR_DECL FMT_INLINE auto visit_format_arg(
   return vis(monostate());
 }
 
-FMT_MODULE_EXPORT_END
-namespace detail {
+FMT_BEGIN_DETAIL_NAMESPACE
 
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 500
 // A workaround for gcc 4.8 to make void_t work in a SFINAE context.
@@ -1517,8 +1520,8 @@ template <bool IS_PACKED, typename Context, type, typename T,
 inline basic_format_arg<Context> make_arg(const T& value) {
   return make_arg<Context>(value);
 }
-}  // namespace detail
-FMT_MODULE_EXPORT_BEGIN
+
+FMT_END_DETAIL_NAMESPACE
 
 // Formatting context.
 template <typename OutputIt, typename Char> class basic_format_context {
@@ -1576,13 +1579,9 @@ using buffer_context =
 using format_context = buffer_context<char>;
 using wformat_context = buffer_context<wchar_t>;
 
-FMT_MODULE_EXPORT_END
-
 // Workaround an alias issue: https://stackoverflow.com/q/62767544/471164.
 #define FMT_BUFFER_CONTEXT(Char) \
   basic_format_context<detail::buffer_appender<Char>, Char>
-
-FMT_MODULE_EXPORT_BEGIN
 
 template <typename T, typename Char = char>
 using is_formattable = bool_constant<
@@ -1827,7 +1826,8 @@ enum type { none, minus, plus, space };
 }
 using sign_t = sign::type;
 
-namespace detail {
+FMT_BEGIN_DETAIL_NAMESPACE
+
 void throw_format_error(const char* message);
 
 // Workaround an array initialization issue in gcc 4.8.
@@ -1853,7 +1853,8 @@ template <typename Char> struct fill_t {
     return data_[index];
   }
 };
-}  // namespace detail
+
+FMT_END_DETAIL_NAMESPACE
 
 // Format specifiers for built-in and string types.
 template <typename Char> struct basic_format_specs {
@@ -1878,8 +1879,7 @@ template <typename Char> struct basic_format_specs {
 
 using format_specs = basic_format_specs<char>;
 
-FMT_MODULE_EXPORT_END
-namespace detail {
+FMT_BEGIN_DETAIL_NAMESPACE
 
 enum class arg_id_kind { none, index, name };
 
@@ -2583,8 +2583,8 @@ FMT_API void vprint_mojibake(std::FILE*, string_view, format_args);
 #ifndef _WIN32
 inline void vprint_mojibake(std::FILE*, string_view, format_args) {}
 #endif
-}  // namespace detail
-FMT_MODULE_EXPORT_BEGIN
+
+FMT_END_DETAIL_NAMESPACE
 
 /** Formats a string and writes the output to ``out``. */
 // GCC 8 and earlier cannot handle std::back_insert_iterator<Container> with
