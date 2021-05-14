@@ -802,8 +802,7 @@ class FMT_API format_error : public std::runtime_error {
   ~format_error() FMT_NOEXCEPT FMT_OVERRIDE FMT_MSC_DEFAULT;
 };
 
-FMT_MODULE_EXPORT_END
-namespace detail {
+FMT_BEGIN_DETAIL_NAMESPACE
 
 inline void throw_format_error(const char* message) {
   FMT_THROW(format_error(message));
@@ -2534,8 +2533,8 @@ FMT_API void format_error_code(buffer<char>& out, int error_code,
 
 FMT_API void report_error(format_func func, int error_code,
                           const char* message) FMT_NOEXCEPT;
-}  // namespace detail
-FMT_MODULE_EXPORT_BEGIN
+
+FMT_END_DETAIL_NAMESPACE
 
 template <typename OutputIt, typename Char>
 using arg_formatter FMT_DEPRECATED_ALIAS =

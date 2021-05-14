@@ -382,9 +382,8 @@ inline std::tm gmtime(
   return gmtime(std::chrono::system_clock::to_time_t(time_point));
 }
 
-FMT_MODULE_EXPORT_END
+FMT_BEGIN_DETAIL_NAMESPACE
 
-namespace detail {
 inline size_t strftime(char* str, size_t count, const char* format,
                        const std::tm* time) {
   // Assign to a pointer to suppress GCCs -Wformat-nonliteral
@@ -403,9 +402,8 @@ inline size_t strftime(wchar_t* str, size_t count, const wchar_t* format,
   wcsftime = std::wcsftime;
   return wcsftime(str, count, format, time);
 }
-}  // namespace detail
 
-FMT_MODULE_EXPORT_BEGIN
+FMT_END_DETAIL_NAMESPACE
 
 template <typename Char, typename Duration>
 struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
@@ -458,7 +456,8 @@ template <typename Char> struct formatter<std::tm, Char> {
   basic_string_view<Char> specs;
 };
 
-namespace detail {
+FMT_BEGIN_DETAIL_NAMESPACE
+
 template <typename Period> FMT_CONSTEXPR const char* get_units() {
   return nullptr;
 }
@@ -1078,7 +1077,8 @@ struct chrono_formatter {
     out = format_duration_unit<char_type, Period>(out);
   }
 };
-}  // namespace detail
+
+FMT_END_DETAIL_NAMESPACE
 
 template <typename Rep, typename Period, typename Char>
 struct formatter<std::chrono::duration<Rep, Period>, Char> {

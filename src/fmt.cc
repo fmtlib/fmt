@@ -70,6 +70,12 @@ export module fmt;
 #define FMT_MODULE_EXPORT export
 #define FMT_MODULE_EXPORT_BEGIN export {
 #define FMT_MODULE_EXPORT_END }
+#define FMT_BEGIN_DETAIL_NAMESPACE \
+  }                                \
+  namespace detail {
+#define FMT_END_DETAIL_NAMESPACE \
+  }                              \
+  export {
 
 // all library-provided declarations and definitions
 // must be in the module purview to be exported
