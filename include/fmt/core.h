@@ -2446,6 +2446,7 @@ constexpr int get_arg_index_by_name(basic_string_view<Char> name) {
   }
   if constexpr (sizeof...(Args) > 0)
     return get_arg_index_by_name<N + 1, Args...>(name);
+  (void)name;
   return invalid_arg_index;
 }
 #endif
