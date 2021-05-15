@@ -2444,27 +2444,21 @@ constexpr int get_arg_index_by_name(basic_string_view<Char> name) {
   if constexpr (detail::is_statically_named_arg<T>()) {
     if (name == T::name) return N;
   }
-  if constexpr (sizeof...(Args) == 0) {
-    return invalid_arg_index;
-  } else {
+  if constexpr (sizeof...(Args) > 0)
     return get_arg_index_by_name<N + 1, Args...>(name);
-  }
-}
-
-template <typename... Args, typename Char>
-constexpr int get_arg_index_by_name(basic_string_view<Char> name) {
-  if constexpr (sizeof...(Args) == 0) {
-    return invalid_arg_index;
-  } else {
-    return get_arg_index_by_name<0, Args...>(name);
-  }
-}
-#else
-template <typename... Args, typename Char>
-constexpr int get_arg_index_by_name(basic_string_view<Char>) {
   return invalid_arg_index;
 }
 #endif
+
+template <typename... Args, typename Char>
+FMT_CONSTEXPR int get_arg_index_by_name(basic_string_view<Char> name) {
+#if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+  if constexpr (sizeof...(Args) > 0)
+    return get_arg_index_by_name<0, Args...>(name);
+#endif
+  (void)name;
+  return invalid_arg_index;
+}
 
 template <typename Char, typename ErrorHandler, typename... Args>
 class format_string_checker {
