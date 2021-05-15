@@ -159,7 +159,7 @@ FMT_API const std::error_category& system_category() FMT_NOEXCEPT {
 std::system_error vwindows_error(int err_code, string_view format_str,
                                  format_args args) {
   auto ec = std::error_code(err_code, system_category());
-  throw std::system_error(ec, vformat(format_str, args));
+  return std::system_error(ec, vformat(format_str, args));
 }
 
 void detail::format_windows_error(detail::buffer<char>& out, int error_code,
