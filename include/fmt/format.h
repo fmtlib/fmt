@@ -110,6 +110,27 @@ FMT_END_NAMESPACE
 #  define FMT_CATCH(x) if (false)
 #endif
 
+#ifndef FMT_DEPRECATED
+#  if FMT_HAS_CPP14_ATTRIBUTE(deprecated) || FMT_MSC_VER >= 1900
+#    define FMT_DEPRECATED [[deprecated]]
+#  else
+#    if (defined(__GNUC__) && !defined(__LCC__)) || defined(__clang__)
+#      define FMT_DEPRECATED __attribute__((deprecated))
+#    elif FMT_MSC_VER
+#      define FMT_DEPRECATED __declspec(deprecated)
+#    else
+#      define FMT_DEPRECATED /* deprecated */
+#    endif
+#  endif
+#endif
+
+// Workaround broken [[deprecated]] in the Intel, PGI and NVCC compilers.
+#if FMT_ICC_VERSION || defined(__PGI) || FMT_NVCC
+#  define FMT_DEPRECATED_ALIAS
+#else
+#  define FMT_DEPRECATED_ALIAS FMT_DEPRECATED
+#endif
+
 #ifndef FMT_USE_USER_DEFINED_LITERALS
 // EDG based compilers (Intel, NVIDIA, Elbrus, etc), GCC and MSVC support UDLs.
 #  if (FMT_HAS_FEATURE(cxx_user_literals) || FMT_GCC_VERSION >= 407 || \
@@ -2481,9 +2502,7 @@ template <typename Char = char> class dynamic_formatter {
  private:
   struct null_handler : detail::error_handler {
     void on_align(align_t) {}
-    void on_plus() {}
-    void on_minus() {}
-    void on_space() {}
+    void on_sign(sign_t) {}
     void on_hash() {}
   };
 
@@ -2502,19 +2521,7 @@ template <typename Char = char> class dynamic_formatter {
     detail::specs_checker<null_handler> checker(
         null_handler(), detail::mapped_type_constant<T, FormatContext>::value);
     checker.on_align(specs_.align);
-    switch (specs_.sign) {
-    case sign::none:
-      break;
-    case sign::plus:
-      checker.on_plus();
-      break;
-    case sign::minus:
-      checker.on_minus();
-      break;
-    case sign::space:
-      checker.on_space();
-      break;
-    }
+    if (specs_.sign != sign::none) checker.on_sign(specs_.sign);
     if (specs_.alt) checker.on_hash();
     if (specs_.precision >= 0) checker.end_precision();
     using af = detail::arg_formatter<typename FormatContext::iterator,

@@ -2048,10 +2048,11 @@ TEST(format_test, constexpr_parse_arg_id) {
 }
 
 struct test_format_specs_handler {
-  enum result { none, plus, minus, space, hash, zero, loc, error };
+  enum result { none, hash, zero, loc, error };
   result res = none;
 
   fmt::align_t alignment = fmt::align::none;
+  fmt::sign_t sign = fmt::sign::none;
   char fill = 0;
   int width = 0;
   fmt::detail::arg_ref<char> width_ref;
@@ -2063,21 +2064,11 @@ struct test_format_specs_handler {
   // to a constant" with compiler-generated copy ctor.
   FMT_CONSTEXPR test_format_specs_handler() {}
   FMT_CONSTEXPR test_format_specs_handler(
-      const test_format_specs_handler& other)
-      : res(other.res),
-        alignment(other.alignment),
-        fill(other.fill),
-        width(other.width),
-        width_ref(other.width_ref),
-        precision(other.precision),
-        precision_ref(other.precision_ref),
-        type(other.type) {}
+      const test_format_specs_handler& other) = default;
 
   FMT_CONSTEXPR void on_align(fmt::align_t a) { alignment = a; }
   FMT_CONSTEXPR void on_fill(fmt::string_view f) { fill = f[0]; }
-  FMT_CONSTEXPR void on_plus() { res = plus; }
-  FMT_CONSTEXPR void on_minus() { res = minus; }
-  FMT_CONSTEXPR void on_space() { res = space; }
+  FMT_CONSTEXPR void on_sign(fmt::sign_t s) { sign = s; }
   FMT_CONSTEXPR void on_hash() { res = hash; }
   FMT_CONSTEXPR void on_zero() { res = zero; }
   FMT_CONSTEXPR void on_localized() { res = loc; }
@@ -2108,9 +2099,9 @@ TEST(format_test, constexpr_parse_format_specs) {
   using handler = test_format_specs_handler;
   static_assert(parse_test_specs("<").alignment == fmt::align::left, "");
   static_assert(parse_test_specs("*^").fill == '*', "");
-  static_assert(parse_test_specs("+").res == handler::plus, "");
-  static_assert(parse_test_specs("-").res == handler::minus, "");
-  static_assert(parse_test_specs(" ").res == handler::space, "");
+  static_assert(parse_test_specs("+").sign == fmt::sign::plus, "");
+  static_assert(parse_test_specs("-").sign == fmt::sign::minus, "");
+  static_assert(parse_test_specs(" ").sign == fmt::sign::space, "");
   static_assert(parse_test_specs("#").res == handler::hash, "");
   static_assert(parse_test_specs("0").res == handler::zero, "");
   static_assert(parse_test_specs("L").res == handler::loc, "");
@@ -2220,9 +2211,9 @@ TEST(format_test, constexpr_specs_checker) {
   using handler = test_format_specs_handler;
   static_assert(check_specs("<").alignment == fmt::align::left, "");
   static_assert(check_specs("*^").fill == '*', "");
-  static_assert(check_specs("+").res == handler::plus, "");
-  static_assert(check_specs("-").res == handler::minus, "");
-  static_assert(check_specs(" ").res == handler::space, "");
+  static_assert(check_specs("+").sign == fmt::sign::plus, "");
+  static_assert(check_specs("-").sign == fmt::sign::minus, "");
+  static_assert(check_specs(" ").sign == fmt::sign::space, "");
   static_assert(check_specs("#").res == handler::hash, "");
   static_assert(check_specs("0").res == handler::zero, "");
   static_assert(check_specs("42").width == 42, "");

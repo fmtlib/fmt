@@ -32,35 +32,16 @@
 #  define FMT_GCC_PRAGMA(arg)
 #endif
 
-#if defined(__INTEL_COMPILER)
-#  define FMT_ICC_VERSION __INTEL_COMPILER
-#else
-#  define FMT_ICC_VERSION 0
-#endif
-
 #if __cplusplus >= 201103L || defined(__GXX_EXPERIMENTAL_CXX0X__)
 #  define FMT_HAS_GXX_CXX11 FMT_GCC_VERSION
 #else
 #  define FMT_HAS_GXX_CXX11 0
 #endif
 
-// Check if constexpr std::char_traits<>::compare,length is supported.
-#if defined(__GLIBCXX__)
-#  if __cplusplus >= 201703L && defined(_GLIBCXX_RELEASE) && \
-      _GLIBCXX_RELEASE >= 7  // GCC 7+ libstdc++ has _GLIBCXX_RELEASE.
-#    define FMT_CONSTEXPR_CHAR_TRAITS constexpr
-#  endif
-#elif defined(_LIBCPP_VERSION)
-#  if __cplusplus >= 201703L && _LIBCPP_VERSION >= 4000
-#    define FMT_CONSTEXPR_CHAR_TRAITS constexpr
-#  endif
-#elif defined(_MSC_VER)
-#  if _MSVC_LANG >= 201703L && _MSC_VER >= 1914
-#    define FMT_CONSTEXPR_CHAR_TRAITS constexpr
-#  endif
-#endif
-#ifndef FMT_CONSTEXPR_CHAR_TRAITS
-#  define FMT_CONSTEXPR_CHAR_TRAITS
+#if defined(__INTEL_COMPILER)
+#  define FMT_ICC_VERSION __INTEL_COMPILER
+#else
+#  define FMT_ICC_VERSION 0
 #endif
 
 #ifdef __NVCC__
@@ -116,6 +97,22 @@
 #else
 #  define FMT_CONSTEXPR
 #  define FMT_CONSTEXPR_DECL
+#endif
+
+// Check if constexpr std::char_traits<>::compare,length is supported.
+#if defined(__GLIBCXX__)
+#  if __cplusplus >= 201703L && defined(_GLIBCXX_RELEASE) && \
+      _GLIBCXX_RELEASE >= 7  // GCC 7+ libstdc++ has _GLIBCXX_RELEASE.
+#    define FMT_CONSTEXPR_CHAR_TRAITS constexpr
+#  endif
+#elif defined(_LIBCPP_VERSION) && __cplusplus >= 201703L && \
+    _LIBCPP_VERSION >= 4000
+#  define FMT_CONSTEXPR_CHAR_TRAITS constexpr
+#elif FMT_MSC_VER >= 1914 && _MSVC_LANG >= 201703L
+#  define FMT_CONSTEXPR_CHAR_TRAITS constexpr
+#endif
+#ifndef FMT_CONSTEXPR_CHAR_TRAITS
+#  define FMT_CONSTEXPR_CHAR_TRAITS
 #endif
 
 #ifndef FMT_OVERRIDE
@@ -194,27 +191,6 @@
 #  define FMT_FALLTHROUGH
 #endif
 
-#ifndef FMT_DEPRECATED
-#  if FMT_HAS_CPP14_ATTRIBUTE(deprecated) || FMT_MSC_VER >= 1900
-#    define FMT_DEPRECATED [[deprecated]]
-#  else
-#    if (defined(__GNUC__) && !defined(__LCC__)) || defined(__clang__)
-#      define FMT_DEPRECATED __attribute__((deprecated))
-#    elif FMT_MSC_VER
-#      define FMT_DEPRECATED __declspec(deprecated)
-#    else
-#      define FMT_DEPRECATED /* deprecated */
-#    endif
-#  endif
-#endif
-
-// Workaround broken [[deprecated]] in the Intel, PGI and NVCC compilers.
-#if FMT_ICC_VERSION || defined(__PGI) || FMT_NVCC
-#  define FMT_DEPRECATED_ALIAS
-#else
-#  define FMT_DEPRECATED_ALIAS FMT_DEPRECATED
-#endif
-
 #ifndef FMT_USE_FLOAT
 #  define FMT_USE_FLOAT 1
 #endif
@@ -262,17 +238,9 @@
 
 #ifndef FMT_MODULE_EXPORT
 #  define FMT_MODULE_EXPORT
-#endif
-#ifndef FMT_MODULE_EXPORT_BEGIN
 #  define FMT_MODULE_EXPORT_BEGIN
-#endif
-#ifndef FMT_MODULE_EXPORT_END
 #  define FMT_MODULE_EXPORT_END
-#endif
-#ifndef FMT_BEGIN_DETAIL_NAMESPACE
 #  define FMT_BEGIN_DETAIL_NAMESPACE namespace detail {
-#endif
-#ifndef FMT_END_DETAIL_NAMESPACE
 #  define FMT_END_DETAIL_NAMESPACE }
 #endif
 
@@ -370,7 +338,7 @@ constexpr FMT_INLINE bool is_constant_evaluated() FMT_NOEXCEPT {
 #endif
 }
 
-// A helper function to suppress "conditional expression is constant" warnings.
+// A function to suppress "conditional expression is constant" warnings.
 template <typename T> constexpr T const_check(T value) { return value; }
 
 FMT_NORETURN FMT_API void assert_fail(const char* file, int line,
@@ -408,8 +376,10 @@ using uint128_t = __uint128_t;
 #  define FMT_USE_INT128 0
 #endif
 #if !FMT_USE_INT128
-struct int128_t {};
-struct uint128_t {};
+enum class int128_t {};
+enum class uint128_t {};
+inline monostate operator+(int128_t) { return {}; }
+inline monostate operator+(uint128_t) { return {}; }
 #endif
 
 // Casts a nonnegative integer to unsigned.
@@ -425,7 +395,6 @@ template <typename Char> constexpr bool is_unicode() {
   return FMT_UNICODE || sizeof(Char) != 1 ||
          (sizeof(micro) == 3 && micro[0] == 0xC2 && micro[1] == 0xB5);
 }
-
 FMT_END_DETAIL_NAMESPACE
 
 /**
@@ -620,7 +589,6 @@ struct error_handler {
   // This function is intentionally not constexpr to give a compile-time error.
   FMT_NORETURN FMT_API void on_error(const char* message);
 };
-
 FMT_END_DETAIL_NAMESPACE
 
 /** String's character type. */
@@ -1414,9 +1382,8 @@ template <typename Context> class basic_format_arg {
   \endrst
  */
 template <typename Visitor, typename Context>
-FMT_CONSTEXPR_DECL FMT_INLINE auto visit_format_arg(
+FMT_CONSTEXPR FMT_INLINE auto visit_format_arg(
     Visitor&& vis, const basic_format_arg<Context>& arg) -> decltype(vis(0)) {
-  using char_type = typename Context::char_type;
   switch (arg.type_) {
   case detail::type::none_type:
     break;
@@ -1428,16 +1395,11 @@ FMT_CONSTEXPR_DECL FMT_INLINE auto visit_format_arg(
     return vis(arg.value_.long_long_value);
   case detail::type::ulong_long_type:
     return vis(arg.value_.ulong_long_value);
-#if FMT_USE_INT128
   case detail::type::int128_type:
-    return vis(arg.value_.int128_value);
+    // + converts fallback to monostate to reduce template instantations.
+    return vis(+arg.value_.int128_value);
   case detail::type::uint128_type:
-    return vis(arg.value_.uint128_value);
-#else
-  case detail::type::int128_type:
-  case detail::type::uint128_type:
-    break;
-#endif
+    return vis(+arg.value_.uint128_value);
   case detail::type::bool_type:
     return vis(arg.value_.bool_value);
   case detail::type::char_type:
@@ -1451,8 +1413,8 @@ FMT_CONSTEXPR_DECL FMT_INLINE auto visit_format_arg(
   case detail::type::cstring_type:
     return vis(arg.value_.string.data);
   case detail::type::string_type:
-    return vis(basic_string_view<char_type>(arg.value_.string.data,
-                                            arg.value_.string.size));
+    using sv = basic_string_view<typename Context::char_type>;
+    return vis(sv(arg.value_.string.data, arg.value_.string.size));
   case detail::type::pointer_type:
     return vis(arg.value_.pointer);
   case detail::type::custom_type:
@@ -1546,7 +1508,6 @@ template <bool IS_PACKED, typename Context, type, typename T,
 inline basic_format_arg<Context> make_arg(const T& value) {
   return make_arg<Context>(value);
 }
-
 FMT_END_DETAIL_NAMESPACE
 
 // Formatting context.
@@ -1879,7 +1840,6 @@ template <typename Char> struct fill_t {
     return data_[index];
   }
 };
-
 FMT_END_DETAIL_NAMESPACE
 
 // Format specifiers for built-in and string types.
@@ -1947,6 +1907,9 @@ struct auto_id {};
 
 // A format specifier handler that sets fields in basic_format_specs.
 template <typename Char> class specs_setter {
+ protected:
+  basic_format_specs<Char>& specs_;
+
  public:
   explicit FMT_CONSTEXPR specs_setter(basic_format_specs<Char>& specs)
       : specs_(specs) {}
@@ -1958,9 +1921,7 @@ template <typename Char> class specs_setter {
   FMT_CONSTEXPR void on_fill(basic_string_view<Char> fill) {
     specs_.fill = fill;
   }
-  FMT_CONSTEXPR void on_plus() { specs_.sign = sign::plus; }
-  FMT_CONSTEXPR void on_minus() { specs_.sign = sign::minus; }
-  FMT_CONSTEXPR void on_space() { specs_.sign = sign::space; }
+  FMT_CONSTEXPR void on_sign(sign_t s) { specs_.sign = s; }
   FMT_CONSTEXPR void on_hash() { specs_.alt = true; }
   FMT_CONSTEXPR void on_localized() { specs_.localized = true; }
 
@@ -1978,9 +1939,6 @@ template <typename Char> class specs_setter {
   FMT_CONSTEXPR void on_type(Char type) {
     specs_.type = static_cast<char>(type);
   }
-
- protected:
-  basic_format_specs<Char>& specs_;
 };
 
 // Format spec handler that saves references to arguments representing dynamic
@@ -2060,6 +2018,23 @@ FMT_CONSTEXPR int code_point_length(const Char* begin) {
   // iteration can start working on the next character. Neither Clang
   // nor GCC figure out this reordering on their own.
   return len + !len;
+}
+
+// Return the result via the out param to workaround gcc bug 77539.
+template <bool IS_CONSTEXPR, typename T, typename Ptr = const T*>
+FMT_CONSTEXPR bool find(Ptr first, Ptr last, T value, Ptr& out) {
+  for (out = first; out != last; ++out) {
+    if (*out == value) return true;
+  }
+  return false;
+}
+
+template <>
+inline bool find<false, char>(const char* first, const char* last, char value,
+                              const char*& out) {
+  out = static_cast<const char*>(
+      std::memchr(first, value, to_unsigned(last - first)));
+  return out != nullptr;
 }
 
 // Parses the range [begin, end) as an unsigned integer. This function assumes
@@ -2261,15 +2236,15 @@ FMT_CONSTEXPR_DECL FMT_INLINE const Char* parse_format_specs(
   // Parse sign.
   switch (to_ascii(*begin)) {
   case '+':
-    handler.on_plus();
+    handler.on_sign(sign::plus);
     ++begin;
     break;
   case '-':
-    handler.on_minus();
+    handler.on_sign(sign::minus);
     ++begin;
     break;
   case ' ':
-    handler.on_space();
+    handler.on_sign(sign::space);
     ++begin;
     break;
   default:
@@ -2305,23 +2280,6 @@ FMT_CONSTEXPR_DECL FMT_INLINE const Char* parse_format_specs(
   // Parse type.
   if (begin != end && *begin != '}') handler.on_type(*begin++);
   return begin;
-}
-
-// Return the result via the out param to workaround gcc bug 77539.
-template <bool IS_CONSTEXPR, typename T, typename Ptr = const T*>
-FMT_CONSTEXPR bool find(Ptr first, Ptr last, T value, Ptr& out) {
-  for (out = first; out != last; ++out) {
-    if (*out == value) return true;
-  }
-  return false;
-}
-
-template <>
-inline bool find<false, char>(const char* first, const char* last, char value,
-                              const char*& out) {
-  out = static_cast<const char*>(
-      std::memchr(first, value, to_unsigned(last - first)));
-  return out != nullptr;
 }
 
 template <typename Handler, typename Char> struct id_adapter {
@@ -2564,34 +2522,6 @@ FMT_CONSTEXPR float_specs parse_float_type_spec(
   return result;
 }
 
-template <typename ErrorHandler> class numeric_specs_checker {
- public:
-  FMT_CONSTEXPR numeric_specs_checker(ErrorHandler& eh, detail::type arg_type)
-      : error_handler_(eh), arg_type_(arg_type) {}
-
-  FMT_CONSTEXPR void require_numeric_argument() {
-    if (!is_arithmetic_type(arg_type_))
-      error_handler_.on_error("format specifier requires numeric argument");
-  }
-
-  FMT_CONSTEXPR void check_sign() {
-    require_numeric_argument();
-    if (is_integral_type(arg_type_) && arg_type_ != type::int_type &&
-        arg_type_ != type::long_long_type && arg_type_ != type::char_type) {
-      error_handler_.on_error("format specifier requires signed argument");
-    }
-  }
-
-  FMT_CONSTEXPR void check_precision() {
-    if (is_integral_type(arg_type_) || arg_type_ == type::pointer_type)
-      error_handler_.on_error("precision not allowed for this argument type");
-  }
-
- private:
-  ErrorHandler& error_handler_;
-  detail::type arg_type_;
-};
-
 template <typename ErrorHandler>
 class cstring_type_checker : public ErrorHandler {
  public:
@@ -2626,54 +2556,50 @@ FMT_CONSTEXPR void check_pointer_type_spec(Char spec, ErrorHandler&& eh) {
 // argument type.
 template <typename Handler> class specs_checker : public Handler {
  private:
-  numeric_specs_checker<Handler> checker_;
+  detail::type arg_type_;
 
-  // Suppress an MSVC warning about using this in initializer list.
-  FMT_CONSTEXPR Handler& error_handler() { return *this; }
+  FMT_CONSTEXPR void require_numeric_argument() {
+    if (!is_arithmetic_type(arg_type_))
+      this->on_error("format specifier requires numeric argument");
+  }
 
  public:
   FMT_CONSTEXPR specs_checker(const Handler& handler, detail::type arg_type)
-      : Handler(handler), checker_(error_handler(), arg_type) {}
-
-  FMT_CONSTEXPR specs_checker(const specs_checker& other)
-      : Handler(other), checker_(error_handler(), other.arg_type_) {}
+      : Handler(handler), arg_type_(arg_type) {}
 
   FMT_CONSTEXPR void on_align(align_t align) {
-    if (align == align::numeric) checker_.require_numeric_argument();
+    if (align == align::numeric) require_numeric_argument();
     Handler::on_align(align);
   }
 
-  FMT_CONSTEXPR void on_plus() {
-    checker_.check_sign();
-    Handler::on_plus();
-  }
-
-  FMT_CONSTEXPR void on_minus() {
-    checker_.check_sign();
-    Handler::on_minus();
-  }
-
-  FMT_CONSTEXPR void on_space() {
-    checker_.check_sign();
-    Handler::on_space();
+  FMT_CONSTEXPR void on_sign(sign_t s) {
+    require_numeric_argument();
+    if (is_integral_type(arg_type_) && arg_type_ != type::int_type &&
+        arg_type_ != type::long_long_type && arg_type_ != type::char_type) {
+      this->on_error("format specifier requires signed argument");
+    }
+    Handler::on_sign(s);
   }
 
   FMT_CONSTEXPR void on_hash() {
-    checker_.require_numeric_argument();
+    require_numeric_argument();
     Handler::on_hash();
   }
 
   FMT_CONSTEXPR void on_localized() {
-    checker_.require_numeric_argument();
+    require_numeric_argument();
     Handler::on_localized();
   }
 
   FMT_CONSTEXPR void on_zero() {
-    checker_.require_numeric_argument();
+    require_numeric_argument();
     Handler::on_zero();
   }
 
-  FMT_CONSTEXPR void end_precision() { checker_.check_precision(); }
+  FMT_CONSTEXPR void end_precision() {
+    if (is_integral_type(arg_type_) || arg_type_ == type::pointer_type)
+      this->on_error("precision not allowed for this argument type");
+  }
 };
 
 constexpr int invalid_arg_index = -1;
@@ -2703,6 +2629,16 @@ FMT_CONSTEXPR int get_arg_index_by_name(basic_string_view<Char> name) {
 
 template <typename Char, typename ErrorHandler, typename... Args>
 class format_string_checker {
+ private:
+  using parse_context_type = compile_parse_context<Char, ErrorHandler>;
+  enum { num_args = sizeof...(Args) };
+
+  // Format specifier parsing function.
+  using parse_func = const Char* (*)(parse_context_type&);
+
+  parse_context_type context_;
+  parse_func parse_funcs_[num_args > 0 ? num_args : 1];
+
  public:
   explicit FMT_CONSTEXPR format_string_checker(
       basic_string_view<Char> format_str, ErrorHandler eh)
@@ -2737,16 +2673,6 @@ class format_string_checker {
   FMT_CONSTEXPR void on_error(const char* message) {
     context_.on_error(message);
   }
-
- private:
-  using parse_context_type = compile_parse_context<Char, ErrorHandler>;
-  enum { num_args = sizeof...(Args) };
-
-  // Format specifier parsing function.
-  using parse_func = const Char* (*)(parse_context_type&);
-
-  parse_context_type context_;
-  parse_func parse_funcs_[num_args > 0 ? num_args : 1];
 };
 
 template <typename... Args, typename S,
@@ -2760,20 +2686,17 @@ void check_format_string(S format_str) {
   (void)invalid_format;
 }
 
-// Converts string literals to basic_string_view.
+// Converts a compile-time string to basic_string_view.
 template <typename Char, size_t N>
-FMT_CONSTEXPR basic_string_view<Char> compile_string_to_view(
-    const Char (&s)[N]) {
-  // Remove trailing null character if needed. Won't be present if this is used
-  // with raw character array (i.e. not defined as a string).
-  return {s,
-          N - ((std::char_traits<Char>::to_int_type(s[N - 1]) == 0) ? 1 : 0)};
+constexpr auto compile_string_to_view(const Char (&s)[N])
+    -> basic_string_view<Char> {
+  // Remove trailing NUL character if needed. Won't be present if this is used
+  // with a raw character array (i.e. not defined as a string).
+  return {s, N - (std::char_traits<Char>::to_int_type(s[N - 1]) == 0 ? 1 : 0)};
 }
-
-// Converts string_view to basic_string_view.
 template <typename Char>
-FMT_CONSTEXPR basic_string_view<Char> compile_string_to_view(
-    const std_string_view<Char>& s) {
+constexpr auto compile_string_to_view(std_string_view<Char> s)
+    -> basic_string_view<Char> {
   return {s.data(), s.size()};
 }
 
@@ -2832,6 +2755,10 @@ template <typename T, typename Char>
 struct formatter<T, Char,
                  enable_if_t<detail::type_constant<T, Char>::value !=
                              detail::type::custom_type>> {
+ private:
+  detail::dynamic_format_specs<Char> specs_;
+
+ public:
   FMT_CONSTEXPR formatter() = default;
 
   // Parses format specifiers stopping either at the end of the range or at the
@@ -2902,11 +2829,8 @@ struct formatter<T, Char,
   }
 
   template <typename FormatContext>
-  FMT_CONSTEXPR FMT_INLINE auto format(const T& val, FormatContext& ctx) const
+  FMT_CONSTEXPR auto format(const T& val, FormatContext& ctx) const
       -> decltype(ctx.out());
-
- private:
-  detail::dynamic_format_specs<Char> specs_;
 };
 
 /** Formats a string and writes the output to ``out``. */
