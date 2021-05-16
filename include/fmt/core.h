@@ -372,14 +372,15 @@ template <typename T> struct std_string_view {};
 #  define FMT_USE_INT128 1
 using int128_t = __int128_t;
 using uint128_t = __uint128_t;
+template <typename T> inline T convert_for_visit(T value) { return value; }
 #else
 #  define FMT_USE_INT128 0
 #endif
 #if !FMT_USE_INT128
 enum class int128_t {};
 enum class uint128_t {};
-inline monostate operator+(int128_t) { return {}; }
-inline monostate operator+(uint128_t) { return {}; }
+// Reduce template instantiations.
+template <typename T> inline monostate convert_for_visit(T) { return {}; }
 #endif
 
 // Casts a nonnegative integer to unsigned.
@@ -1396,10 +1397,9 @@ FMT_CONSTEXPR FMT_INLINE auto visit_format_arg(
   case detail::type::ulong_long_type:
     return vis(arg.value_.ulong_long_value);
   case detail::type::int128_type:
-    // + converts fallback to monostate to reduce template instantations.
-    return vis(+arg.value_.int128_value);
+    return vis(detail::convert_for_visit(arg.value_.int128_value));
   case detail::type::uint128_type:
-    return vis(+arg.value_.uint128_value);
+    return vis(detail::convert_for_visit(arg.value_.uint128_value));
   case detail::type::bool_type:
     return vis(arg.value_.bool_value);
   case detail::type::char_type:
