@@ -176,6 +176,24 @@
 #  endif
 #endif
 
+#if __cplusplus == 201103L || __cplusplus == 201402L
+#  if defined(__INTEL_COMPILER) || defined(__PGI)
+#    define FMT_FALLTHROUGH
+#  elif defined(__clang__)
+#    define FMT_FALLTHROUGH [[clang::fallthrough]]
+#  elif FMT_GCC_VERSION >= 700 && \
+      (!defined(__EDG_VERSION__) || __EDG_VERSION__ >= 520)
+#    define FMT_FALLTHROUGH [[gnu::fallthrough]]
+#  else
+#    define FMT_FALLTHROUGH
+#  endif
+#elif FMT_HAS_CPP17_ATTRIBUTE(fallthrough) || \
+    (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
+#  define FMT_FALLTHROUGH [[fallthrough]]
+#else
+#  define FMT_FALLTHROUGH
+#endif
+
 #ifndef FMT_DEPRECATED
 #  if FMT_HAS_CPP14_ATTRIBUTE(deprecated) || FMT_MSC_VER >= 1900
 #    define FMT_DEPRECATED [[deprecated]]
@@ -195,6 +213,16 @@
 #  define FMT_DEPRECATED_ALIAS
 #else
 #  define FMT_DEPRECATED_ALIAS FMT_DEPRECATED
+#endif
+
+#ifndef FMT_USE_FLOAT
+#  define FMT_USE_FLOAT 1
+#endif
+#ifndef FMT_USE_DOUBLE
+#  define FMT_USE_DOUBLE 1
+#endif
+#ifndef FMT_USE_LONG_DOUBLE
+#  define FMT_USE_LONG_DOUBLE 1
 #endif
 
 #ifndef FMT_INLINE
@@ -242,12 +270,10 @@
 #  define FMT_MODULE_EXPORT_END
 #endif
 #ifndef FMT_BEGIN_DETAIL_NAMESPACE
-#  define FMT_BEGIN_DETAIL_NAMESPACE \
-    namespace detail {
+#  define FMT_BEGIN_DETAIL_NAMESPACE namespace detail {
 #endif
 #ifndef FMT_END_DETAIL_NAMESPACE
-#  define FMT_END_DETAIL_NAMESPACE \
-    }
+#  define FMT_END_DETAIL_NAMESPACE }
 #endif
 
 #if !defined(FMT_HEADER_ONLY) && defined(_WIN32)
@@ -2436,6 +2462,220 @@ class compile_parse_context
   using base::check_arg_id;
 };
 
+template <typename ErrorHandler>
+FMT_CONSTEXPR void check_int_type_spec(char spec, ErrorHandler&& eh) {
+  switch (spec) {
+  case 0:
+  case 'd':
+  case 'x':
+  case 'X':
+  case 'b':
+  case 'B':
+  case 'o':
+  case 'c':
+    break;
+  default:
+    eh.on_error("invalid type specifier");
+    break;
+  }
+}
+
+template <typename ErrorHandler>
+class char_specs_checker : public ErrorHandler {
+ private:
+  char type_;
+
+ public:
+  FMT_CONSTEXPR char_specs_checker(char type, ErrorHandler eh)
+      : ErrorHandler(eh), type_(type) {}
+
+  FMT_CONSTEXPR void on_int() { check_int_type_spec(type_, *this); }
+  FMT_CONSTEXPR void on_char() {}
+};
+
+template <typename Char, typename Handler>
+FMT_CONSTEXPR void handle_char_specs(const basic_format_specs<Char>& specs,
+                                     Handler&& handler) {
+  if (specs.type && specs.type != 'c') return handler.on_int();
+  if (specs.align == align::numeric || specs.sign != sign::none || specs.alt)
+    handler.on_error("invalid format specifier for char");
+  handler.on_char();
+}
+
+// A floating-point presentation format.
+enum class float_format : unsigned char {
+  general,  // General: exponent notation or fixed point based on magnitude.
+  exp,      // Exponent notation with the default precision of 6, e.g. 1.2e-3.
+  fixed,    // Fixed point with the default precision of 6, e.g. 0.0012.
+  hex
+};
+
+struct float_specs {
+  int precision;
+  float_format format : 8;
+  sign_t sign : 8;
+  bool upper : 1;
+  bool locale : 1;
+  bool binary32 : 1;
+  bool use_grisu : 1;
+  bool showpoint : 1;
+};
+
+template <typename ErrorHandler = error_handler, typename Char>
+FMT_CONSTEXPR float_specs parse_float_type_spec(
+    const basic_format_specs<Char>& specs, ErrorHandler&& eh = {}) {
+  auto result = float_specs();
+  result.showpoint = specs.alt;
+  result.locale = specs.localized;
+  switch (specs.type) {
+  case 0:
+    result.format = float_format::general;
+    break;
+  case 'G':
+    result.upper = true;
+    FMT_FALLTHROUGH;
+  case 'g':
+    result.format = float_format::general;
+    break;
+  case 'E':
+    result.upper = true;
+    FMT_FALLTHROUGH;
+  case 'e':
+    result.format = float_format::exp;
+    result.showpoint |= specs.precision != 0;
+    break;
+  case 'F':
+    result.upper = true;
+    FMT_FALLTHROUGH;
+  case 'f':
+    result.format = float_format::fixed;
+    result.showpoint |= specs.precision != 0;
+    break;
+  case 'A':
+    result.upper = true;
+    FMT_FALLTHROUGH;
+  case 'a':
+    result.format = float_format::hex;
+    break;
+  default:
+    eh.on_error("invalid type specifier");
+    break;
+  }
+  return result;
+}
+
+template <typename ErrorHandler> class numeric_specs_checker {
+ public:
+  FMT_CONSTEXPR numeric_specs_checker(ErrorHandler& eh, detail::type arg_type)
+      : error_handler_(eh), arg_type_(arg_type) {}
+
+  FMT_CONSTEXPR void require_numeric_argument() {
+    if (!is_arithmetic_type(arg_type_))
+      error_handler_.on_error("format specifier requires numeric argument");
+  }
+
+  FMT_CONSTEXPR void check_sign() {
+    require_numeric_argument();
+    if (is_integral_type(arg_type_) && arg_type_ != type::int_type &&
+        arg_type_ != type::long_long_type && arg_type_ != type::char_type) {
+      error_handler_.on_error("format specifier requires signed argument");
+    }
+  }
+
+  FMT_CONSTEXPR void check_precision() {
+    if (is_integral_type(arg_type_) || arg_type_ == type::pointer_type)
+      error_handler_.on_error("precision not allowed for this argument type");
+  }
+
+ private:
+  ErrorHandler& error_handler_;
+  detail::type arg_type_;
+};
+
+template <typename ErrorHandler>
+class cstring_type_checker : public ErrorHandler {
+ public:
+  FMT_CONSTEXPR explicit cstring_type_checker(ErrorHandler eh)
+      : ErrorHandler(eh) {}
+
+  FMT_CONSTEXPR void on_string() {}
+  FMT_CONSTEXPR void on_pointer() {}
+};
+
+template <typename Char, typename Handler>
+FMT_CONSTEXPR void handle_cstring_type_spec(Char spec, Handler&& handler) {
+  if (spec == 0 || spec == 's')
+    handler.on_string();
+  else if (spec == 'p')
+    handler.on_pointer();
+  else
+    handler.on_error("invalid type specifier");
+}
+
+template <typename Char, typename ErrorHandler>
+FMT_CONSTEXPR void check_string_type_spec(Char spec, ErrorHandler&& eh) {
+  if (spec != 0 && spec != 's') eh.on_error("invalid type specifier");
+}
+
+template <typename Char, typename ErrorHandler>
+FMT_CONSTEXPR void check_pointer_type_spec(Char spec, ErrorHandler&& eh) {
+  if (spec != 0 && spec != 'p') eh.on_error("invalid type specifier");
+}
+
+// A format specifier handler that checks if specifiers are consistent with the
+// argument type.
+template <typename Handler> class specs_checker : public Handler {
+ private:
+  numeric_specs_checker<Handler> checker_;
+
+  // Suppress an MSVC warning about using this in initializer list.
+  FMT_CONSTEXPR Handler& error_handler() { return *this; }
+
+ public:
+  FMT_CONSTEXPR specs_checker(const Handler& handler, detail::type arg_type)
+      : Handler(handler), checker_(error_handler(), arg_type) {}
+
+  FMT_CONSTEXPR specs_checker(const specs_checker& other)
+      : Handler(other), checker_(error_handler(), other.arg_type_) {}
+
+  FMT_CONSTEXPR void on_align(align_t align) {
+    if (align == align::numeric) checker_.require_numeric_argument();
+    Handler::on_align(align);
+  }
+
+  FMT_CONSTEXPR void on_plus() {
+    checker_.check_sign();
+    Handler::on_plus();
+  }
+
+  FMT_CONSTEXPR void on_minus() {
+    checker_.check_sign();
+    Handler::on_minus();
+  }
+
+  FMT_CONSTEXPR void on_space() {
+    checker_.check_sign();
+    Handler::on_space();
+  }
+
+  FMT_CONSTEXPR void on_hash() {
+    checker_.require_numeric_argument();
+    Handler::on_hash();
+  }
+
+  FMT_CONSTEXPR void on_localized() {
+    checker_.require_numeric_argument();
+    Handler::on_localized();
+  }
+
+  FMT_CONSTEXPR void on_zero() {
+    checker_.require_numeric_argument();
+    Handler::on_zero();
+  }
+
+  FMT_CONSTEXPR void end_precision() { checker_.check_precision(); }
+};
+
 constexpr int invalid_arg_index = -1;
 
 #if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
@@ -2446,7 +2686,7 @@ constexpr int get_arg_index_by_name(basic_string_view<Char> name) {
   }
   if constexpr (sizeof...(Args) > 0)
     return get_arg_index_by_name<N + 1, Args...>(name);
-  (void)name;
+  (void)name;  // Workaround an MSVC bug about "unused" parameter.
   return invalid_arg_index;
 }
 #endif
@@ -2489,7 +2729,7 @@ class format_string_checker {
 
   FMT_CONSTEXPR const Char* on_format_specs(int id, const Char* begin,
                                             const Char*) {
-    advance_to(context_, begin);
+    context_.advance_to(context_.begin() + (begin - &*context_.begin()));
     // id >= 0 check is a workaround for gcc 10 bug (#2065).
     return id >= 0 && id < num_args ? parse_funcs_[id](context_) : begin;
   }
@@ -2584,8 +2824,90 @@ FMT_API void vprint_mojibake(std::FILE*, string_view, format_args);
 #ifndef _WIN32
 inline void vprint_mojibake(std::FILE*, string_view, format_args) {}
 #endif
-
 FMT_END_DETAIL_NAMESPACE
+
+// A formatter specialization for the core types corresponding to detail::type
+// constants.
+template <typename T, typename Char>
+struct formatter<T, Char,
+                 enable_if_t<detail::type_constant<T, Char>::value !=
+                             detail::type::custom_type>> {
+  FMT_CONSTEXPR formatter() = default;
+
+  // Parses format specifiers stopping either at the end of the range or at the
+  // terminating '}'.
+  template <typename ParseContext>
+  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+    auto begin = ctx.begin(), end = ctx.end();
+    if (begin == end) return begin;
+    using handler_type = detail::dynamic_specs_handler<ParseContext>;
+    auto type = detail::type_constant<T, Char>::value;
+    detail::specs_checker<handler_type> handler(handler_type(specs_, ctx),
+                                                type);
+    auto it = detail::parse_format_specs(begin, end, handler);
+    auto eh = ctx.error_handler();
+    switch (type) {
+    case detail::type::none_type:
+      FMT_ASSERT(false, "invalid argument type");
+      break;
+    case detail::type::bool_type:
+      if (!specs_.type || specs_.type == 's') break;
+      FMT_FALLTHROUGH;
+    case detail::type::int_type:
+    case detail::type::uint_type:
+    case detail::type::long_long_type:
+    case detail::type::ulong_long_type:
+    case detail::type::int128_type:
+    case detail::type::uint128_type:
+      detail::check_int_type_spec(specs_.type, eh);
+      break;
+    case detail::type::char_type:
+      detail::handle_char_specs(
+          specs_, detail::char_specs_checker<decltype(eh)>(specs_.type, eh));
+      break;
+    case detail::type::float_type:
+      if (detail::const_check(FMT_USE_FLOAT))
+        detail::parse_float_type_spec(specs_, eh);
+      else
+        FMT_ASSERT(false, "float support disabled");
+      break;
+    case detail::type::double_type:
+      if (detail::const_check(FMT_USE_DOUBLE))
+        detail::parse_float_type_spec(specs_, eh);
+      else
+        FMT_ASSERT(false, "double support disabled");
+      break;
+    case detail::type::long_double_type:
+      if (detail::const_check(FMT_USE_LONG_DOUBLE))
+        detail::parse_float_type_spec(specs_, eh);
+      else
+        FMT_ASSERT(false, "long double support disabled");
+      break;
+    case detail::type::cstring_type:
+      detail::handle_cstring_type_spec(
+          specs_.type, detail::cstring_type_checker<decltype(eh)>(eh));
+      break;
+    case detail::type::string_type:
+      detail::check_string_type_spec(specs_.type, eh);
+      break;
+    case detail::type::pointer_type:
+      detail::check_pointer_type_spec(specs_.type, eh);
+      break;
+    case detail::type::custom_type:
+      // Custom format specifiers should be checked in parse functions of
+      // formatter specializations.
+      break;
+    }
+    return it;
+  }
+
+  template <typename FormatContext>
+  FMT_CONSTEXPR FMT_INLINE auto format(const T& val, FormatContext& ctx) const
+      -> decltype(ctx.out());
+
+ private:
+  detail::dynamic_format_specs<Char> specs_;
+};
 
 /** Formats a string and writes the output to ``out``. */
 // GCC 8 and earlier cannot handle std::back_insert_iterator<Container> with
