@@ -1,3 +1,10 @@
+8.0.0 - TBD
+-----------
+
+* Optimized handling of format specifiers during format string
+  compilation, including but not limited to hexadecimal formatting
+  (`#1944 <https://github.com/fmtlib/fmt/issues/1944>`_).
+
 7.1.3 - 2020-11-24
 ------------------
 
