@@ -2439,26 +2439,17 @@ FMT_CONSTEXPR void check_int_type_spec(char spec, ErrorHandler&& eh) {
   }
 }
 
-template <typename ErrorHandler>
-class char_specs_checker : public ErrorHandler {
- private:
-  char type_;
-
- public:
-  FMT_CONSTEXPR char_specs_checker(char type, ErrorHandler eh)
-      : ErrorHandler(eh), type_(type) {}
-
-  FMT_CONSTEXPR void on_int() { check_int_type_spec(type_, *this); }
-  FMT_CONSTEXPR void on_char() {}
-};
-
-template <typename Char, typename Handler>
-FMT_CONSTEXPR void handle_char_specs(const basic_format_specs<Char>& specs,
-                                     Handler&& handler) {
-  if (specs.type && specs.type != 'c') return handler.on_int();
+// Checks char specs and returns true if the type spec is char (and not int).
+template <typename Char, typename ErrorHandler>
+FMT_CONSTEXPR bool check_char_specs(const basic_format_specs<Char>& specs,
+                                    ErrorHandler&& eh) {
+  if (specs.type && specs.type != 'c') {
+    check_int_type_spec(specs.type, eh);
+    return false;
+  }
   if (specs.align == align::numeric || specs.sign != sign::none || specs.alt)
-    handler.on_error("invalid format specifier for char");
-  handler.on_char();
+    eh.on_error("invalid format specifier for char");
+  return true;
 }
 
 // A floating-point presentation format.
@@ -2789,8 +2780,7 @@ struct formatter<T, Char,
       detail::check_int_type_spec(specs_.type, eh);
       break;
     case detail::type::char_type:
-      detail::handle_char_specs(
-          specs_, detail::char_specs_checker<decltype(eh)>(specs_.type, eh));
+      detail::check_char_specs(specs_, eh);
       break;
     case detail::type::float_type:
       if (detail::const_check(FMT_USE_FLOAT))
@@ -2919,10 +2909,13 @@ FMT_INLINE auto vformat(
 }
 
 #if FMT_COMPILE_TIME_CHECKS
-template <typename... Args> struct format_string {
-  string_view str;
+template <typename Char, typename... Args> class basic_format_string {
+ private:
+  basic_string_view<Char> str;
 
-  template <size_t N> consteval format_string(const char (&s)[N]) : str(s) {
+ public:
+  template <size_t N>
+  consteval basic_format_string(const char (&s)[N]) : str(s) {
     if constexpr (detail::count_named_args<Args...>() == 0) {
       using checker = detail::format_string_checker<char, detail::error_handler,
                                                     remove_cvref_t<Args>...>;
@@ -2932,13 +2925,17 @@ template <typename... Args> struct format_string {
 
   template <typename T,
             FMT_ENABLE_IF(std::is_constructible_v<string_view, const T&>)>
-  format_string(const T& s) : str(s) {}
+  basic_format_string(const T& s) : str(s) {}
+
+  operator basic_string_view<Char>() const { return str; }
 };
 
 template <typename... Args>
-FMT_INLINE std::string format(
-    format_string<std::type_identity_t<Args>...> format_str, Args&&... args) {
-  return detail::vformat(format_str.str, make_format_args(args...));
+using format_string = basic_format_string<char, std::type_identity_t<Args>...>;
+
+template <typename... T>
+FMT_INLINE auto format(format_string<T...> str, T&&... args) -> std::string {
+  return detail::vformat(str, make_format_args(args...));
 }
 #endif
 

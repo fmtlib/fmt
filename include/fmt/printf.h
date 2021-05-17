@@ -191,33 +191,32 @@ template <typename Char> class printf_width_handler {
 
 // The ``printf`` argument formatter.
 template <typename OutputIt, typename Char>
-class printf_arg_formatter : public detail::arg_formatter_base<OutputIt, Char> {
+class printf_arg_formatter : public arg_formatter<OutputIt, Char> {
  private:
-  using base = detail::arg_formatter_base<OutputIt, Char>;
+  using base = arg_formatter<OutputIt, Char>;
   using context_type = basic_printf_context<OutputIt, Char>;
-  using format_specs = typename base::format_specs;
+  using format_specs = basic_format_specs<Char>;
 
   context_type& context_;
 
   OutputIt write_null_pointer(bool is_string = false) {
-    auto s = this->specs();
+    auto s = this->specs;
     s.type = 0;
-    return detail::write(this->out(),
-                         string_view(is_string ? "(null)" : "(nil)"), s);
+    return write(this->out, string_view(is_string ? "(null)" : "(nil)"), s);
   }
 
  public:
-  printf_arg_formatter(OutputIt iter, format_specs& specs, context_type& ctx)
-      : base(iter, specs, detail::locale_ref()), context_(ctx) {}
+  printf_arg_formatter(OutputIt iter, format_specs& s, context_type& ctx)
+      : base{iter, s, locale_ref()}, context_(ctx) {}
 
   OutputIt operator()(monostate value) { return base::operator()(value); }
 
-  template <typename T, FMT_ENABLE_IF(fmt::detail::is_integral<T>::value)>
+  template <typename T, FMT_ENABLE_IF(detail::is_integral<T>::value)>
   OutputIt operator()(T value) {
     // MSVC2013 fails to compile separate overloads for bool and Char so use
     // std::is_same instead.
     if (std::is_same<T, Char>::value) {
-      format_specs fmt_specs = this->specs();
+      format_specs fmt_specs = this->specs;
       if (fmt_specs.type && fmt_specs.type != 'c')
         return (*this)(static_cast<int>(value));
       fmt_specs.sign = sign::none;
@@ -227,8 +226,7 @@ class printf_arg_formatter : public detail::arg_formatter_base<OutputIt, Char> {
       // ignored for non-numeric types
       if (fmt_specs.align == align::none || fmt_specs.align == align::numeric)
         fmt_specs.align = align::right;
-      return detail::write<Char>(this->out(), static_cast<Char>(value),
-                                 fmt_specs);
+      return write<Char>(this->out, static_cast<Char>(value), fmt_specs);
     }
     return base::operator()(value);
   }
@@ -241,13 +239,13 @@ class printf_arg_formatter : public detail::arg_formatter_base<OutputIt, Char> {
   /** Formats a null-terminated C string. */
   OutputIt operator()(const char* value) {
     if (value) return base::operator()(value);
-    return write_null_pointer(this->specs().type != 'p');
+    return write_null_pointer(this->specs.type != 'p');
   }
 
   /** Formats a null-terminated wide C string. */
   OutputIt operator()(const wchar_t* value) {
     if (value) return base::operator()(value);
-    return write_null_pointer(this->specs().type != 'p');
+    return write_null_pointer(this->specs.type != 'p');
   }
 
   OutputIt operator()(basic_string_view<Char> value) {
@@ -262,7 +260,7 @@ class printf_arg_formatter : public detail::arg_formatter_base<OutputIt, Char> {
   /** Formats an argument of a custom (user-defined) type. */
   OutputIt operator()(typename basic_format_arg<context_type>::handle handle) {
     handle.format(context_.parse_context(), context_);
-    return this->out();
+    return this->out;
   }
 };
 

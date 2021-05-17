@@ -346,6 +346,8 @@ template <typename T> using checked_ptr = T*;
 template <typename T> inline T* make_checked(T* p, size_t) { return p; }
 #endif
 
+// Attempts to reserve space for n extra characters in the output range.
+// Returns a pointer to the reserved range or a reference to it.
 template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
 #if FMT_CLANG_VERSION >= 307 && !FMT_ICC_VERSION
 __attribute__((no_sanitize("undefined")))
@@ -1304,7 +1306,7 @@ template <typename Char, typename OutputIt>
 FMT_CONSTEXPR OutputIt write(OutputIt out, Char value,
                              const basic_format_specs<Char>& specs,
                              locale_ref loc = {}) {
-  return !specs.type || specs.type == 'c'
+  return check_char_specs(specs, error_handler())
              ? write_char(out, value, specs)
              : write(out, static_cast<int>(value), specs, loc);
 }
@@ -1807,7 +1809,8 @@ inline OutputIt write(OutputIt out, T value) {
 }
 
 template <typename Char, typename OutputIt>
-OutputIt write(OutputIt out, monostate) {
+OutputIt write(OutputIt out, monostate, basic_format_specs<Char> = {},
+               locale_ref = {}) {
   FMT_ASSERT(false, "");
   return out;
 }
@@ -1927,152 +1930,32 @@ template <typename OutputIt, typename Char> struct default_arg_formatter {
   basic_format_args<context> args;
   locale_ref loc;
 
-  template <typename T> OutputIt operator()(T value) {
+  template <typename T> auto operator()(T value) -> OutputIt {
     return write<Char>(out, value);
   }
-
-  OutputIt operator()(typename basic_format_arg<context>::handle handle) {
+  auto operator()(typename basic_format_arg<context>::handle h) -> OutputIt {
     basic_format_parse_context<Char> parse_ctx({});
     basic_format_context<OutputIt, Char> format_ctx(out, args, loc);
-    handle.format(parse_ctx, format_ctx);
+    h.format(parse_ctx, format_ctx);
     return format_ctx.out();
   }
 };
 
-template <typename OutputIt, typename Char,
-          typename ErrorHandler = error_handler>
-class arg_formatter_base {
- public:
-  using iterator = OutputIt;
-  using char_type = Char;
-  using format_specs = basic_format_specs<Char>;
+template <typename OutputIt, typename Char> struct arg_formatter {
+  using context = basic_format_context<OutputIt, Char>;
 
- private:
-  iterator out_;
-  const format_specs& specs_;
-  locale_ref locale_;
+  OutputIt out;
+  const basic_format_specs<Char>& specs;
+  locale_ref locale;
 
-  // Attempts to reserve space for n extra characters in the output range.
-  // Returns a pointer to the reserved range or a reference to out_.
-  auto reserve(size_t n) -> decltype(detail::reserve(out_, n)) {
-    return detail::reserve(out_, n);
+  template <typename T>
+  FMT_CONSTEXPR FMT_INLINE auto operator()(T value) -> OutputIt {
+    return detail::write(out, value, specs, locale);
   }
-
-  void write(char value) {
-    auto&& it = reserve(1);
-    *it++ = value;
-  }
-
-  template <typename Ch, FMT_ENABLE_IF(std::is_same<Ch, Char>::value)>
-  void write(Ch value) {
-    out_ = detail::write<Char>(out_, value);
-  }
-
-  void write(string_view value) {
-    auto&& it = reserve(value.size());
-    it = copy_str<Char>(value.begin(), value.end(), it);
-  }
-  void write(wstring_view value) {
-    static_assert(std::is_same<Char, wchar_t>::value, "");
-    auto&& it = reserve(value.size());
-    it = copy_str<Char>(value.begin(), value.end(), it);
-  }
-
-  template <typename Ch>
-  void write(const Ch* s, size_t size, const format_specs& specs) {
-    auto width =
-        specs.width != 0 ? compute_width(basic_string_view<Ch>(s, size)) : 0;
-    out_ = write_padded(out_, specs, size, width,
-                        [=](reserve_iterator<OutputIt> it) {
-                          return copy_str<Char>(s, s + size, it);
-                        });
-  }
-
-  template <typename Ch>
-  FMT_CONSTEXPR void write(basic_string_view<Ch> s,
-                           const format_specs& specs = {}) {
-    out_ = detail::write(out_, s, specs);
-  }
-
-  struct char_spec_handler : ErrorHandler {
-    arg_formatter_base& formatter;
-    Char value;
-
-    constexpr char_spec_handler(arg_formatter_base& f, Char val)
-        : formatter(f), value(val) {}
-
-    FMT_CONSTEXPR void on_int() {
-      // char is only formatted as int if there are specs.
-      formatter.out_ = detail::write(formatter.out_, static_cast<int>(value),
-                                     formatter.specs_, formatter.locale_);
-    }
-    FMT_CONSTEXPR void on_char() {
-      formatter.out_ =
-          detail::write<Char>(formatter.out_, value, formatter.specs_);
-    }
-  };
-
- protected:
-  iterator out() { return out_; }
-  const format_specs& specs() { return specs_; }
-
-  FMT_CONSTEXPR void write(bool value) {
-    write(string_view(value ? "true" : "false"), specs_);
-  }
-
-  void write(const Char* value) {
-    if (value)
-      write(basic_string_view<char_type>(value), specs_);
-    else
-      FMT_THROW(format_error("string pointer is null"));
-  }
-
- public:
-  constexpr arg_formatter_base(OutputIt out, const format_specs& s,
-                               locale_ref loc)
-      : out_(out), specs_(s), locale_(loc) {}
-
-  iterator operator()(monostate) {
-    FMT_ASSERT(false, "invalid argument type");
-    return out_;
-  }
-
-  template <typename T, FMT_ENABLE_IF(is_integral<T>::value)>
-  FMT_CONSTEXPR FMT_INLINE iterator operator()(T value) {
-    return out_ = detail::write(out_, value, specs_, locale_);
-  }
-
-  FMT_CONSTEXPR iterator operator()(Char value) {
-    handle_char_specs(specs_,
-                      char_spec_handler(*this, static_cast<Char>(value)));
-    return out_;
-  }
-
-  FMT_CONSTEXPR iterator operator()(bool value) {
-    if (specs_.type && specs_.type != 's') return (*this)(value ? 1 : 0);
-    write(value != 0);
-    return out_;
-  }
-
-  template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
-  iterator operator()(T value) {
-    if (const_check(is_supported_floating_point(value)))
-      out_ = detail::write(out_, value, specs_, locale_);
-    else
-      FMT_ASSERT(false, "unsupported float argument type");
-    return out_;
-  }
-
-  iterator operator()(const Char* value) {
-    return out_ = detail::write(out_, value, specs_, locale_);
-  }
-
-  FMT_CONSTEXPR iterator operator()(basic_string_view<Char> value) {
-    return out_ = detail::write(out_, value, specs_, locale_);
-  }
-
-  iterator operator()(const void* value) {
-    return out_ = detail::write(out_, value, specs_, locale_);
+  auto operator()(typename basic_format_arg<context>::handle) -> OutputIt {
+    // User-defined types are handled separately because they require access
+    // to the parse context.
+    return out;
   }
 };
 
@@ -2247,25 +2130,9 @@ struct format_handler : detail::error_handler {
         arg.type());
     begin = parse_format_specs(begin, end, handler);
     if (begin == end || *begin != '}') on_error("missing '}' in format string");
-
-    using arg_formatter_base = detail::arg_formatter_base<OutputIt, Char>;
-    struct arg_formatter : arg_formatter_base {
-      Context& ctx_;
-
-      FMT_CONSTEXPR explicit arg_formatter(
-          Context& ctx, const typename arg_formatter_base::format_specs& specs)
-          : arg_formatter_base(ctx.out(), specs, ctx.locale()), ctx_(ctx) {}
-
-      using arg_formatter_base::operator();
-
-      auto operator()(typename basic_format_arg<Context>::handle) ->
-          typename arg_formatter_base::iterator {
-        // User-defined types are handled separately because they require access
-        // to the parse context.
-        return ctx_.out();
-      }
-    };
-    context.advance_to(visit_format_arg(arg_formatter(context, specs), arg));
+    auto f = detail::arg_formatter<OutputIt, Char>{context.out(), specs,
+                                                   context.locale()};
+    context.advance_to(visit_format_arg(f, arg));
     return begin;
   }
 };
@@ -2631,8 +2498,8 @@ struct formatter<arg_join<It, Sentinel, Char>, Char> {
 };
 
 /**
-  Returns an object that formats the iterator range `[begin, end)` with elements
-  separated by `sep`.
+  Returns an object that formats the iterator range `[begin, end)` with
+  elements separated by `sep`.
  */
 template <typename It, typename Sentinel>
 arg_join<It, Sentinel, char> join(It begin, Sentinel end, string_view sep) {
@@ -2692,8 +2559,8 @@ inline std::string to_string(const T& value) {
 
 template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
 inline std::string to_string(T value) {
-  // The buffer should be large enough to store the number including the sign or
-  // "false" for bool.
+  // The buffer should be large enough to store the number including the sign
+  // or "false" for bool.
   constexpr int max_size = detail::digits10<T>() + 2;
   char buffer[max_size > 5 ? static_cast<unsigned>(max_size) : 5];
   char* begin = buffer;
