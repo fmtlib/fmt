@@ -15,6 +15,16 @@
 #include "format.h"
 
 FMT_BEGIN_NAMESPACE
+FMT_MODULE_EXPORT_BEGIN
+
+template <typename Char>
+class basic_printf_parse_context : public basic_format_parse_context<Char> {
+  using basic_format_parse_context<Char>::basic_format_parse_context;
+};
+template <typename OutputIt, typename Char> class basic_printf_context;
+
+FMT_MODULE_EXPORT_END
+
 namespace detail {
 
 // Checks if a value fits in int - used to avoid warnings about comparing
@@ -179,37 +189,7 @@ template <typename Char> class printf_width_handler {
   }
 };
 
-template <typename Char, typename Context>
-void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
-             basic_format_args<Context> args) {
-  Context(buffer_appender<Char>(buf), format, args).format();
-}
-}  // namespace detail
-
-// For printing into memory_buffer.
-template <typename Char, typename Context>
-FMT_DEPRECATED void printf(detail::buffer<Char>& buf,
-                           basic_string_view<Char> format,
-                           basic_format_args<Context> args) {
-  return detail::vprintf(buf, format, args);
-}
-using detail::vprintf;
-
-FMT_MODULE_EXPORT_BEGIN
-
-template <typename Char>
-class basic_printf_parse_context : public basic_format_parse_context<Char> {
-  using basic_format_parse_context<Char>::basic_format_parse_context;
-};
-template <typename OutputIt, typename Char> class basic_printf_context;
-
-FMT_MODULE_EXPORT_END
-
-/**
-  \rst
-  The ``printf`` argument formatter.
-  \endrst
- */
+// The ``printf`` argument formatter.
 template <typename OutputIt, typename Char>
 class printf_arg_formatter : public detail::arg_formatter_base<OutputIt, Char> {
  private:
@@ -286,6 +266,22 @@ class printf_arg_formatter : public detail::arg_formatter_base<OutputIt, Char> {
   }
 };
 
+template <typename Char, typename Context>
+void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
+             basic_format_args<Context> args) {
+  Context(buffer_appender<Char>(buf), format, args).format();
+}
+}  // namespace detail
+
+// For printing into memory_buffer.
+template <typename Char, typename Context>
+FMT_DEPRECATED void printf(detail::buffer<Char>& buf,
+                           basic_string_view<Char> format,
+                           basic_format_args<Context> args) {
+  return detail::vprintf(buf, format, args);
+}
+using detail::vprintf;
+
 template <typename T> struct printf_formatter {
   printf_formatter() = delete;
 
@@ -354,7 +350,6 @@ template <typename OutputIt, typename Char> class basic_printf_context {
   }
 
   /** Formats stored arguments and writes the output to the range. */
-  template <typename ArgFormatter = printf_arg_formatter<OutputIt, Char>>
   OutputIt format();
 };
 
@@ -437,7 +432,6 @@ int basic_printf_context<OutputIt, Char>::parse_header(const Char*& it,
 }
 
 template <typename OutputIt, typename Char>
-template <typename ArgFormatter>
 OutputIt basic_printf_context<OutputIt, Char>::format() {
   auto out = this->out();
   const Char* start = parse_ctx_.begin();
@@ -566,7 +560,8 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
     start = it;
 
     // Format argument.
-    out = visit_format_arg(ArgFormatter(out, specs, *this), arg);
+    out = visit_format_arg(
+        detail::printf_arg_formatter<OutputIt, Char>(out, specs, *this), arg);
   }
   return detail::write(
       out, basic_string_view<Char>(start, detail::to_unsigned(it - start)));
