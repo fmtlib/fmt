@@ -2776,47 +2776,27 @@ inline void vformat_to(
 
 template <typename S, typename... Args, size_t SIZE = inline_buffer_size,
           typename Char = enable_if_t<detail::is_string<S>::value, char_t<S>>>
-inline typename buffer_context<Char>::iterator format_to(
-    basic_memory_buffer<Char, SIZE>& buf, const S& format_str, Args&&... args) {
+inline auto format_to(basic_memory_buffer<Char, SIZE>& buf, const S& format_str,
+                      Args&&... args) ->
+    typename buffer_context<Char>::iterator {
   const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
   detail::vformat_to(buf, to_string_view(format_str), vargs);
   return detail::buffer_appender<Char>(buf);
 }
 
 template <typename OutputIt, typename Char = char>
-using format_context_t = basic_format_context<OutputIt, Char>;
+using format_context_t FMT_DEPRECATED_ALIAS =
+    basic_format_context<OutputIt, Char>;
 
 template <typename OutputIt, typename Char = char>
-using format_args_t = basic_format_args<format_context_t<OutputIt, Char>>;
-
-#if FMT_COMPILE_TIME_CHECKS
-template <typename... Args> struct format_string {
-  string_view str;
-
-  template <size_t N> consteval format_string(const char (&s)[N]) : str(s) {
-    if constexpr (detail::count_named_args<Args...>() == 0) {
-      using checker = detail::format_string_checker<char, detail::error_handler,
-                                                    remove_cvref_t<Args>...>;
-      detail::parse_format_string<true>(string_view(s, N), checker(s, {}));
-    }
-  }
-
-  template <typename T,
-            FMT_ENABLE_IF(std::is_constructible_v<string_view, const T&>)>
-  format_string(const T& s) : str(s) {}
-};
-
-template <typename... Args>
-FMT_INLINE std::string format(
-    format_string<std::type_identity_t<Args>...> format_str, Args&&... args) {
-  return detail::vformat(format_str.str, make_format_args(args...));
-}
-#endif
+using format_args_t FMT_DEPRECATED_ALIAS =
+    basic_format_args<basic_format_context<OutputIt, Char>>;
 
 template <typename Char, enable_if_t<(!std::is_same<Char, char>::value), int>>
-std::basic_string<Char> detail::vformat(
+auto detail::vformat(
     basic_string_view<Char> format_str,
-    basic_format_args<buffer_context<type_identity_t<Char>>> args) {
+    basic_format_args<buffer_context<type_identity_t<Char>>> args)
+    -> std::basic_string<Char> {
   basic_memory_buffer<Char> buffer;
   detail::vformat_to(buffer, format_str, args);
   return to_string(buffer);
@@ -2906,12 +2886,12 @@ inline namespace literals {
     std::string message = "The answer is {}"_format(42);
   \endrst
  */
-constexpr detail::udl_formatter<char> operator"" _format(const char* s,
-                                                         size_t n) {
+constexpr auto operator"" _format(const char* s, size_t n)
+    -> detail::udl_formatter<char> {
   return {{s, n}};
 }
-constexpr detail::udl_formatter<wchar_t> operator"" _format(const wchar_t* s,
-                                                            size_t n) {
+constexpr auto operator"" _format(const wchar_t* s, size_t n)
+    -> detail::udl_formatter<wchar_t> {
   return {{s, n}};
 }
 

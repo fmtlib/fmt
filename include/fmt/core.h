@@ -2834,8 +2834,6 @@ struct formatter<T, Char,
 };
 
 /** Formats a string and writes the output to ``out``. */
-// GCC 8 and earlier cannot handle std::back_insert_iterator<Container> with
-// vformat_to<ArgFormatter>(...) overload, so SFINAE on iterator type instead.
 template <typename OutputIt, typename S, typename Char = char_t<S>,
           bool enable = detail::is_output_iterator<OutputIt, Char>::value>
 auto vformat_to(OutputIt out, const S& format_str,
@@ -2919,6 +2917,30 @@ FMT_INLINE auto vformat(
     -> std::basic_string<Char> {
   return detail::vformat(to_string_view(format_str), args);
 }
+
+#if FMT_COMPILE_TIME_CHECKS
+template <typename... Args> struct format_string {
+  string_view str;
+
+  template <size_t N> consteval format_string(const char (&s)[N]) : str(s) {
+    if constexpr (detail::count_named_args<Args...>() == 0) {
+      using checker = detail::format_string_checker<char, detail::error_handler,
+                                                    remove_cvref_t<Args>...>;
+      detail::parse_format_string<true>(string_view(s, N), checker(s, {}));
+    }
+  }
+
+  template <typename T,
+            FMT_ENABLE_IF(std::is_constructible_v<string_view, const T&>)>
+  format_string(const T& s) : str(s) {}
+};
+
+template <typename... Args>
+FMT_INLINE std::string format(
+    format_string<std::type_identity_t<Args>...> format_str, Args&&... args) {
+  return detail::vformat(format_str.str, make_format_args(args...));
+}
+#endif
 
 /**
   \rst
