@@ -405,13 +405,6 @@ inline size_t strftime(wchar_t* str, size_t count, const wchar_t* format,
 
 FMT_END_DETAIL_NAMESPACE
 
-template <class Rep, class Period, class = std::enable_if<
-   std::chrono::duration<Rep, Period>::min() < std::chrono::duration<Rep, Period>::zero()>>
-constexpr std::chrono::duration<Rep, Period> abs(std::chrono::duration<Rep, Period> d)
-{
-    return d >= d.zero() ? d : -d;
-}
-
 template <typename Char, typename Rep, typename Period>
 struct formatter<std::chrono::time_point<std::chrono::system_clock, std::chrono::duration<Rep, Period>>,
                  Char> : formatter<std::tm, Char> {
@@ -421,7 +414,10 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, std::chrono:
     std::tm time = localtime(val);
     auto epoch = val.time_since_epoch();
     auto seconds = std::chrono::duration_cast<std::chrono::seconds>(epoch);
-    auto subseconds = abs(std::chrono::duration_cast<std::chrono::duration<Rep, Period>>(epoch - seconds));
+    // auto subseconds = abs(std::chrono::duration_cast<std::chrono::duration<Rep, Period>>(epoch - seconds));
+    auto subseconds = std::chrono::duration_cast<std::chrono::duration<Rep, Period>>(epoch - seconds);
+
+    if (subseconds < subseconds.zero()) subseconds = -subseconds;
 
     if (subseconds.count() > 0) {
       auto width = std::to_string(Period::den).size() - 1;
