@@ -411,7 +411,7 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, std::chrono:
   template <typename FormatContext>
   auto format(std::chrono::time_point<std::chrono::system_clock> val,
               FormatContext& ctx) -> decltype(ctx.out()) {
-    std::tm time = localtime(val);
+    std::tm time;
     auto epoch = val.time_since_epoch();
     auto seconds = std::chrono::duration_cast<std::chrono::seconds>(epoch);
     auto subseconds = std::chrono::duration_cast<std::chrono::duration<Rep, Period>>(epoch - seconds);
@@ -419,6 +419,8 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, std::chrono:
     if (subseconds < subseconds.zero()) {
       time = localtime(val - std::chrono::seconds{1});
       subseconds = std::chrono::seconds{1} + subseconds;
+    } else {
+      time = localtime(val);
     }
 
     if (subseconds.count() > 0) {
