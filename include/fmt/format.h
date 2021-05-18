@@ -1306,7 +1306,7 @@ template <typename Char, typename OutputIt>
 FMT_CONSTEXPR OutputIt write(OutputIt out, Char value,
                              const basic_format_specs<Char>& specs,
                              locale_ref loc = {}) {
-  return check_char_specs(specs, error_handler())
+  return check_char_specs(specs)
              ? write_char(out, value, specs)
              : write(out, static_cast<int>(value), specs, loc);
 }
@@ -1531,20 +1531,9 @@ template <typename Char, typename OutputIt>
 FMT_CONSTEXPR OutputIt write(OutputIt out, const Char* s,
                              const basic_format_specs<Char>& specs,
                              locale_ref) {
-  struct handler {
-    OutputIt out;
-    const Char* value;
-    const basic_format_specs<Char>& specs;
-
-    void on_string() {
-      out = write(out, basic_string_view<Char>(value), specs, {});
-    }
-    void on_pointer() { out = write_ptr<Char>(out, to_uintptr(value), &specs); }
-    void on_error(const char* message) { error_handler().on_error(message); }
-  };
-  auto h = handler{out, s, specs};
-  handle_cstring_type_spec(specs.type, h);
-  return h.out;
+  return check_cstring_type_spec(specs.type)
+             ? write(out, basic_string_view<Char>(s), specs, {})
+             : write_ptr<Char>(out, to_uintptr(s), &specs);
 }
 
 template <typename Char, typename OutputIt>

@@ -2440,9 +2440,9 @@ FMT_CONSTEXPR void check_int_type_spec(char spec, ErrorHandler&& eh) {
 }
 
 // Checks char specs and returns true if the type spec is char (and not int).
-template <typename Char, typename ErrorHandler>
+template <typename Char, typename ErrorHandler = error_handler>
 FMT_CONSTEXPR bool check_char_specs(const basic_format_specs<Char>& specs,
-                                    ErrorHandler&& eh) {
+                                    ErrorHandler&& eh = {}) {
   if (specs.type && specs.type != 'c') {
     check_int_type_spec(specs.type, eh);
     return false;
@@ -2514,23 +2514,11 @@ FMT_CONSTEXPR float_specs parse_float_type_spec(
   return result;
 }
 
-template <typename ErrorHandler>
-class cstring_type_checker : public ErrorHandler {
- public:
-  constexpr explicit cstring_type_checker(ErrorHandler eh) : ErrorHandler(eh) {}
-
-  FMT_CONSTEXPR void on_string() {}
-  FMT_CONSTEXPR void on_pointer() {}
-};
-
-template <typename Char, typename Handler>
-FMT_CONSTEXPR void handle_cstring_type_spec(Char spec, Handler&& handler) {
-  if (spec == 0 || spec == 's')
-    handler.on_string();
-  else if (spec == 'p')
-    handler.on_pointer();
-  else
-    handler.on_error("invalid type specifier");
+template <typename Char, typename ErrorHandler = error_handler>
+FMT_CONSTEXPR bool check_cstring_type_spec(Char spec, ErrorHandler&& eh = {}) {
+  if (spec == 0 || spec == 's') return true;
+  if (spec != 'p') eh.on_error("invalid type specifier");
+  return false;
 }
 
 template <typename Char, typename ErrorHandler>
@@ -2543,8 +2531,8 @@ FMT_CONSTEXPR void check_pointer_type_spec(Char spec, ErrorHandler&& eh) {
   if (spec != 0 && spec != 'p') eh.on_error("invalid type specifier");
 }
 
-// A format specifier handler that checks if specifiers are consistent with the
-// argument type.
+// A parse_format_specs handler that checks if specifiers are consistent with
+// the argument type.
 template <typename Handler> class specs_checker : public Handler {
  private:
   detail::type arg_type_;
@@ -2801,8 +2789,7 @@ struct formatter<T, Char,
         FMT_ASSERT(false, "long double support disabled");
       break;
     case detail::type::cstring_type:
-      detail::handle_cstring_type_spec(
-          specs_.type, detail::cstring_type_checker<decltype(eh)>(eh));
+      detail::check_cstring_type_spec(specs_.type, eh);
       break;
     case detail::type::string_type:
       detail::check_string_type_spec(specs_.type, eh);
