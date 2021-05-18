@@ -94,4 +94,7 @@ template FMT_API wchar_t detail::decimal_point_impl(locale_ref);
 
 template FMT_API void detail::buffer<wchar_t>::append(const wchar_t*,
                                                       const wchar_t*);
+
+template struct detail::basic_data<void>;
+
 FMT_END_NAMESPACE
