@@ -8,6 +8,8 @@ jobs:
     strategy:
       matrix:
         build_type: [Debug, Release]
+        include:
+          - shared: -DBUILD_SHARED_LIBS=ON
 
     steps:
     - uses: actions/checkout@v2
@@ -18,7 +20,8 @@ jobs:
     - name: Configure
       working-directory: ${{runner.workspace}}/build
       run: |
-        cmake -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \
+        cmake -DCMAKE_BUILD_TYPE=${{matrix.build_type}} ${{matrix.shared}} \
+              -DCMAKE_CXX_VISIBILITY_PRESET=hidden -DCMAKE_VISIBILITY_INLINES_HIDDEN=ON \
               -DFMT_DOC=OFF -DFMT_PEDANTIC=ON -DFMT_WERROR=ON $GITHUB_WORKSPACE
 
     - name: Build
