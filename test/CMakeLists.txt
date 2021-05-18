@@ -72,6 +72,7 @@ add_fmt_test(compile-test)
 add_fmt_test(printf-test)
 add_fmt_test(ranges-test)
 add_fmt_test(scan-test)
+add_fmt_test(wchar-test)
 
 if (NOT MSVC)
   # FMT_ENFORCE_COMPILE_STRING is not supported under MSVC due to compiler bugs.

@@ -187,7 +187,8 @@ endfunction()
 
 # Define the fmt library, its includes and the needed defines.
 add_headers(FMT_HEADERS args.h chrono.h color.h compile.h core.h format.h
-                        format-inl.h locale.h os.h ostream.h printf.h ranges.h)
+                        format-inl.h locale.h os.h ostream.h printf.h ranges.h
+                        wchar.h)
 if (FMT_OS)
   set(FMT_SOURCES src/format.cc src/os.cc)
 else()

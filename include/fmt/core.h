@@ -392,8 +392,8 @@ FMT_CONSTEXPR typename std::make_unsigned<Int>::type to_unsigned(Int value) {
 
 FMT_MSC_WARNING(suppress : 4566) constexpr unsigned char micro[] = "\u00B5";
 
-template <typename Char> constexpr bool is_unicode() {
-  return FMT_UNICODE || sizeof(Char) != 1 ||
+constexpr bool is_utf8() {
+  return FMT_UNICODE ||
          (sizeof(micro) == 3 && micro[0] == 0xC2 && micro[1] == 0xB5);
 }
 FMT_END_DETAIL_NAMESPACE
@@ -2895,12 +2895,12 @@ FMT_INLINE auto vformat(
   return detail::vformat(to_string_view(format_str), args);
 }
 
-#if FMT_COMPILE_TIME_CHECKS
 template <typename Char, typename... Args> class basic_format_string {
  private:
   basic_string_view<Char> str;
 
  public:
+#if FMT_COMPILE_TIME_CHECKS
   template <size_t N>
   consteval basic_format_string(const char (&s)[N]) : str(s) {
     if constexpr (detail::count_named_args<Args...>() == 0) {
@@ -2909,21 +2909,29 @@ template <typename Char, typename... Args> class basic_format_string {
       detail::parse_format_string<true>(string_view(s, N), checker(s, {}));
     }
   }
+#endif
 
   template <typename T,
-            FMT_ENABLE_IF(std::is_constructible_v<string_view, const T&>)>
-  basic_format_string(const T& s) : str(s) {}
+            FMT_ENABLE_IF(std::is_constructible<basic_string_view<Char>,
+                                                const T&>::value)>
+  basic_format_string(const T& s) : str(s) {
+    static_assert(
+        detail::count<
+            (std::is_base_of<detail::view, remove_reference_t<Args>>::value &&
+             std::is_reference<Args>::value)...>() == 0,
+        "passing views as lvalues is disallowed");
+    detail::check_format_string<Args...>(s);
+  }
 
-  operator basic_string_view<Char>() const { return str; }
+  FMT_INLINE operator basic_string_view<Char>() const { return str; }
 };
 
+#if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
+// Workaround broken conversion on older gcc.
+template <typename... Args> using format_string = string_view;
+#else
 template <typename... Args>
-using format_string = basic_format_string<char, std::type_identity_t<Args>...>;
-
-template <typename... T>
-FMT_INLINE auto format(format_string<T...> str, T&&... args) -> std::string {
-  return detail::vformat(str, make_format_args(args...));
-}
+using format_string = basic_format_string<char, type_identity_t<Args>...>;
 #endif
 
 /**
@@ -2936,15 +2944,9 @@ FMT_INLINE auto format(format_string<T...> str, T&&... args) -> std::string {
     std::string message = fmt::format("The answer is {}", 42);
   \endrst
 */
-// Pass char_t as a default template parameter instead of using
-// std::basic_string<char_t<S>> to reduce the symbol size.
-template <typename S, typename... Args, typename Char = char_t<S>,
-          FMT_ENABLE_IF(!FMT_COMPILE_TIME_CHECKS ||
-                        !std::is_same<Char, char>::value)>
-FMT_INLINE auto format(const S& format_str, Args&&... args)
-    -> std::basic_string<Char> {
-  const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
-  return detail::vformat(to_string_view(format_str), vargs);
+template <typename... T>
+FMT_INLINE auto format(format_string<T...> str, T&&... args) -> std::string {
+  return detail::vformat(str, make_format_args(args...));
 }
 
 FMT_API void vprint(string_view, format_args);
@@ -2952,8 +2954,8 @@ FMT_API void vprint(std::FILE*, string_view, format_args);
 
 /**
   \rst
-  Formats ``args`` according to specifications in ``format_str`` and writes the
-  output to the file ``f``. Strings are assumed to be Unicode-encoded unless the
+  Formats ``args`` according to specifications in ``str`` and writes the
+  output to the file ``f``. Strings are assumed to be in UTF-8 unless the
   ``FMT_UNICODE`` macro is set to 0.
 
   **Example**::
@@ -2961,32 +2963,29 @@ FMT_API void vprint(std::FILE*, string_view, format_args);
     fmt::print(stderr, "Don't {}!", "panic");
   \endrst
  */
-template <typename S, typename... Args, typename Char = char_t<S>>
-inline void print(std::FILE* f, const S& format_str, Args&&... args) {
-  const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
-  return detail::is_unicode<Char>()
-             ? vprint(f, to_string_view(format_str), vargs)
-             : detail::vprint_mojibake(f, to_string_view(format_str), vargs);
+template <typename... T>
+inline void print(std::FILE* f, format_string<T...> str, T&&... args) {
+  const auto& vargs = make_format_args(args...);
+  return detail::is_utf8() ? vprint(f, str, vargs)
+                           : detail::vprint_mojibake(f, str, vargs);
 }
 
 /**
   \rst
-  Formats ``args`` according to specifications in ``format_str`` and writes
-  the output to ``stdout``. Strings are assumed to be Unicode-encoded unless
-  the ``FMT_UNICODE`` macro is set to 0.
+  Formats ``args`` according to specifications in ``str`` and writes the output
+  to ``stdout``. Strings are assumed to be in UTF-8 unless the ``FMT_UNICODE``
+  macro is set to 0.
 
   **Example**::
 
     fmt::print("Elapsed time: {0:.2f} seconds", 1.23);
   \endrst
  */
-template <typename S, typename... Args, typename Char = char_t<S>>
-inline void print(const S& format_str, Args&&... args) {
-  const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
-  return detail::is_unicode<Char>()
-             ? vprint(to_string_view(format_str), vargs)
-             : detail::vprint_mojibake(stdout, to_string_view(format_str),
-                                       vargs);
+template <typename... T>
+inline void print(format_string<T...> str, T&&... args) {
+  const auto& vargs = make_format_args(args...);
+  return detail::is_utf8() ? vprint(str, vargs)
+                           : detail::vprint_mojibake(stdout, str, vargs);
 }
 
 FMT_MODULE_EXPORT_END

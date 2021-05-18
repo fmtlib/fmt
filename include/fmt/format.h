@@ -2658,6 +2658,16 @@ auto detail::vformat(
   return to_string(buffer);
 }
 
+// Pass char_t as a default template parameter instead of using
+// std::basic_string<char_t<S>> to reduce the symbol size.
+template <typename S, typename... Args, typename Char = char_t<S>,
+          FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
+FMT_INLINE auto format(const S& format_str, Args&&... args)
+    -> std::basic_string<Char> {
+  const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
+  return detail::vformat(to_string_view(format_str), vargs);
+}
+
 template <typename Char, FMT_ENABLE_IF(std::is_same<Char, wchar_t>::value)>
 void vprint(std::FILE* f, basic_string_view<Char> format_str,
             wformat_args args) {

@@ -590,11 +590,6 @@ TEST(core_test, to_string_view_foreign_strings) {
   EXPECT_EQ(type, fmt::detail::type::string_type);
 }
 
-TEST(core_test, format_foreign_strings) {
-  using namespace test_ns;
-  EXPECT_EQ(fmt::format(test_string<char>("{}"), 42), "42");
-}
-
 struct implicitly_convertible_to_string {
   operator std::string() const { return "foo"; }
 };
