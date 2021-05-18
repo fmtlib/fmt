@@ -414,10 +414,12 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, std::chrono:
     std::tm time = localtime(val);
     auto epoch = val.time_since_epoch();
     auto seconds = std::chrono::duration_cast<std::chrono::seconds>(epoch);
-    // auto subseconds = abs(std::chrono::duration_cast<std::chrono::duration<Rep, Period>>(epoch - seconds));
     auto subseconds = std::chrono::duration_cast<std::chrono::duration<Rep, Period>>(epoch - seconds);
 
-    if (subseconds < subseconds.zero()) subseconds = -subseconds;
+    if (subseconds < subseconds.zero()) {
+      time = localtime(val - std::chrono::seconds{1});
+      subseconds = std::chrono::seconds{1} + subseconds;
+    }
 
     if (subseconds.count() > 0) {
       auto width = std::to_string(Period::den).size() - 1;
