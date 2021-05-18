@@ -36,7 +36,6 @@
 #include <cerrno>  // errno
 #include <cmath>   // std::signbit
 #include <cstdint>
-#include <cwchar>
 #include <limits>        // std::numeric_limits
 #include <memory>        // std::uninitialized_copy
 #include <stdexcept>     // std::runtime_error
@@ -2667,22 +2666,6 @@ FMT_INLINE auto format(const S& format_str, Args&&... args)
   const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
   return detail::vformat(to_string_view(format_str), vargs);
 }
-
-template <typename Char, FMT_ENABLE_IF(std::is_same<Char, wchar_t>::value)>
-void vprint(std::FILE* f, basic_string_view<Char> format_str,
-            wformat_args args) {
-  wmemory_buffer buffer;
-  detail::vformat_to(buffer, format_str, args);
-  buffer.push_back(L'\0');
-  if (std::fputws(buffer.data(), f) == -1)
-    FMT_THROW(system_error(errno, "cannot write to file"));
-}
-
-template <typename Char, FMT_ENABLE_IF(std::is_same<Char, wchar_t>::value)>
-void vprint(basic_string_view<Char> format_str, wformat_args args) {
-  vprint(stdout, format_str, args);
-}
-
 FMT_MODULE_EXPORT_END
 
 #if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS

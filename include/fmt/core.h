@@ -2718,10 +2718,6 @@ void vformat_to(
     basic_format_args<FMT_BUFFER_CONTEXT(type_identity_t<Char>)> args,
     detail::locale_ref loc = {});
 
-template <typename Char, typename Args,
-          FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
-inline void vprint_mojibake(std::FILE*, basic_string_view<Char>, const Args&) {}
-
 FMT_API void vprint_mojibake(std::FILE*, string_view, format_args);
 #ifndef _WIN32
 inline void vprint_mojibake(std::FILE*, string_view, format_args) {}
@@ -2949,8 +2945,8 @@ FMT_INLINE auto format(format_string<T...> str, T&&... args) -> std::string {
   return detail::vformat(str, make_format_args(args...));
 }
 
-FMT_API void vprint(string_view, format_args);
 FMT_API void vprint(std::FILE*, string_view, format_args);
+FMT_API void vprint(string_view, format_args);
 
 /**
   \rst

@@ -8,6 +8,8 @@
 #ifndef FMT_WCHAR_H_
 #define FMT_WCHAR_H_
 
+#include <cwchar>
+
 #include "format.h"
 
 namespace fmt {
@@ -26,13 +28,25 @@ constexpr format_arg_store<wformat_context, Args...> make_wformat_args(
   return {args...};
 }
 
-template <typename... T>
-void print(std::FILE* f, wformat_string<T...> str, T&&... args) {
-  return vprint(f, wstring_view(str), make_wformat_args(args...));
+inline void vprint(std::FILE* f, wstring_view fmt, wformat_args args) {
+  wmemory_buffer buffer;
+  detail::vformat_to(buffer, fmt, args);
+  buffer.push_back(L'\0');
+  if (std::fputws(buffer.data(), f) == -1)
+    FMT_THROW(system_error(errno, "cannot write to file"));
 }
 
-template <typename... T> void print(wformat_string<T...> str, T&&... args) {
-  return vprint(wstring_view(str), make_wformat_args(args...));
+inline void vprint(wstring_view fmt, wformat_args args) {
+  vprint(stdout, fmt, args);
+}
+
+template <typename... T>
+void print(std::FILE* f, wformat_string<T...> fmt, T&&... args) {
+  return vprint(f, wstring_view(fmt), make_wformat_args(args...));
+}
+
+template <typename... T> void print(wformat_string<T...> fmt, T&&... args) {
+  return vprint(wstring_view(fmt), make_wformat_args(args...));
 }
 }  // namespace fmt
 
