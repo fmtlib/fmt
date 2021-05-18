@@ -550,7 +550,7 @@ struct is_compile_string : std::is_base_of<compile_string, S> {};
 
 template <typename S, FMT_ENABLE_IF(is_compile_string<S>::value)>
 constexpr basic_string_view<typename S::char_type> to_string_view(const S& s) {
-  return s;
+  return basic_string_view<typename S::char_type>(s);
 }
 
 FMT_BEGIN_DETAIL_NAMESPACE
@@ -841,6 +841,8 @@ class iterator_buffer final : public Traits, public buffer<T> {
  public:
   explicit iterator_buffer(OutputIt out, size_t n = buffer_size)
       : Traits(n), buffer<T>(data_, 0, buffer_size), out_(out) {}
+  iterator_buffer(iterator_buffer&& other)
+      : Traits(other), buffer<T>(data_, 0, buffer_size), out_(other.out_) {}
   ~iterator_buffer() { flush(); }
 
   OutputIt out() {
@@ -901,6 +903,7 @@ template <typename T = char> class counting_buffer final : public buffer<T> {
 
  public:
   counting_buffer() : buffer<T>(data_, 0, buffer_size) {}
+  counting_buffer(counting_buffer&&) : buffer<T>(data_, 0, buffer_size) {}
 
   size_t count() { return count_ + this->size(); }
 };
@@ -2679,13 +2682,13 @@ constexpr auto compile_string_to_view(std_string_view<Char> s)
   return {s.data(), s.size()};
 }
 
-#define FMT_STRING_IMPL(s, base)                                           \
+#define FMT_STRING_IMPL(s, base, explicit)                                 \
   [] {                                                                     \
     /* Use the hidden visibility as a workaround for a GCC bug (#1973). */ \
     /* Use a macro-like name to avoid shadowing warnings. */               \
     struct FMT_GCC_VISIBILITY_HIDDEN FMT_COMPILE_STRING : base {           \
       using char_type = fmt::remove_cvref_t<decltype(s[0])>;               \
-      FMT_MAYBE_UNUSED FMT_CONSTEXPR                                       \
+      FMT_MAYBE_UNUSED FMT_CONSTEXPR explicit                              \
       operator fmt::basic_string_view<char_type>() const {                 \
         return fmt::detail::compile_string_to_view<char_type>(s);          \
       }                                                                    \
@@ -2703,18 +2706,11 @@ constexpr auto compile_string_to_view(std_string_view<Char> s)
     std::string s = fmt::format(FMT_STRING("{:d}"), "foo");
   \endrst
  */
-#define FMT_STRING(s) FMT_STRING_IMPL(s, fmt::compile_string)
-
-template <typename Char, FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
-auto vformat(basic_string_view<Char> format_str,
-             basic_format_args<buffer_context<type_identity_t<Char>>> args)
-    -> std::basic_string<Char>;
-
-FMT_API auto vformat(string_view format_str, format_args args) -> std::string;
+#define FMT_STRING(s) FMT_STRING_IMPL(s, fmt::compile_string, )
 
 template <typename Char>
 void vformat_to(
-    buffer<Char>& buf, basic_string_view<Char> format_str,
+    buffer<type_identity_t<Char>>& buf, basic_string_view<Char> format_str,
     basic_format_args<FMT_BUFFER_CONTEXT(type_identity_t<Char>)> args,
     detail::locale_ref loc = {});
 
@@ -2806,99 +2802,14 @@ struct formatter<T, Char,
       -> decltype(ctx.out());
 };
 
-/** Formats a string and writes the output to ``out``. */
-template <typename OutputIt, typename S, typename Char = char_t<S>,
-          bool enable = detail::is_output_iterator<OutputIt, Char>::value>
-auto vformat_to(OutputIt out, const S& format_str,
-                basic_format_args<buffer_context<type_identity_t<Char>>> args)
-    -> enable_if_t<enable, OutputIt> {
-  decltype(detail::get_buffer<Char>(out)) buf(detail::get_buffer_init(out));
-  detail::vformat_to(buf, to_string_view(format_str), args);
-  return detail::get_iterator(buf);
-}
-
-/**
- \rst
- Formats arguments, writes the result to the output iterator ``out`` and returns
- the iterator past the end of the output range.
-
- **Example**::
-
-   std::vector<char> out;
-   fmt::format_to(std::back_inserter(out), "{}", 42);
- \endrst
- */
-// We cannot use FMT_ENABLE_IF because of a bug in gcc 8.3.
-template <typename OutputIt, typename S, typename... Args,
-          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char_t<S>>::value)>
-inline auto format_to(OutputIt out, const S& format_str, Args&&... args)
-    -> OutputIt {
-  const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
-  return vformat_to(out, to_string_view(format_str), vargs);
-}
-
-template <typename OutputIt> struct format_to_n_result {
-  /** Iterator past the end of the output range. */
-  OutputIt out;
-  /** Total (not truncated) output size. */
-  size_t size;
-};
-
-template <typename OutputIt, typename Char, typename... Args,
-          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value)>
-inline auto vformat_to_n(
-    OutputIt out, size_t n, basic_string_view<Char> format_str,
-    basic_format_args<buffer_context<type_identity_t<Char>>> args)
-    -> format_to_n_result<OutputIt> {
-  detail::iterator_buffer<OutputIt, Char, detail::fixed_buffer_traits> buf(out,
-                                                                           n);
-  detail::vformat_to(buf, format_str, args);
-  return {buf.out(), buf.count()};
-}
-
-/**
- \rst
- Formats arguments, writes up to ``n`` characters of the result to the output
- iterator ``out`` and returns the total output size and the iterator past the
- end of the output range.
- \endrst
- */
-template <typename OutputIt, typename S, typename... Args,
-          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char_t<S>>::value)>
-inline auto format_to_n(OutputIt out, size_t n, const S& format_str,
-                        const Args&... args) -> format_to_n_result<OutputIt> {
-  const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
-  return vformat_to_n(out, n, to_string_view(format_str), vargs);
-}
-
-/**
-  Returns the number of characters in the output of
-  ``format(format_str, args...)``.
- */
-template <typename S, typename... Args, typename Char = char_t<S>>
-inline auto formatted_size(const S& format_str, Args&&... args) -> size_t {
-  detail::counting_buffer<> buf;
-  const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
-  detail::vformat_to(buf, to_string_view(format_str), vargs);
-  return buf.count();
-}
-
-template <typename S, typename Char = char_t<S>>
-FMT_INLINE auto vformat(
-    const S& format_str,
-    basic_format_args<buffer_context<type_identity_t<Char>>> args)
-    -> std::basic_string<Char> {
-  return detail::vformat(to_string_view(format_str), args);
-}
-
 template <typename Char, typename... Args> class basic_format_string {
  private:
-  basic_string_view<Char> str;
+  basic_string_view<Char> str_;
 
  public:
 #if FMT_COMPILE_TIME_CHECKS
   template <size_t N>
-  consteval basic_format_string(const char (&s)[N]) : str(s) {
+  consteval basic_format_string(const char (&s)[N]) : str_(s) {
     if constexpr (detail::count_named_args<Args...>() == 0) {
       using checker = detail::format_string_checker<char, detail::error_handler,
                                                     remove_cvref_t<Args>...>;
@@ -2907,10 +2818,10 @@ template <typename Char, typename... Args> class basic_format_string {
   }
 #endif
 
-  template <typename T,
-            FMT_ENABLE_IF(std::is_constructible<basic_string_view<Char>,
-                                                const T&>::value)>
-  basic_format_string(const T& s) : str(s) {
+  template <typename S,
+            FMT_ENABLE_IF(
+                std::is_convertible<const S&, basic_string_view<Char>>::value)>
+  basic_format_string(const S& s) : str_(s) {
     static_assert(
         detail::count<
             (std::is_base_of<detail::view, remove_reference_t<Args>>::value &&
@@ -2919,7 +2830,7 @@ template <typename Char, typename... Args> class basic_format_string {
     detail::check_format_string<Args...>(s);
   }
 
-  FMT_INLINE operator basic_string_view<Char>() const { return str; }
+  FMT_INLINE operator basic_string_view<Char>() const { return str_; }
 };
 
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
@@ -2930,9 +2841,12 @@ template <typename... Args>
 using format_string = basic_format_string<char, type_identity_t<Args>...>;
 #endif
 
+FMT_API auto vformat(string_view fmt, format_args args) -> std::string;
+
 /**
   \rst
-  Formats arguments and returns the result as a string.
+  Formats ``args`` according to specifications in ``fmt`` and returns the result
+  as a string.
 
   **Example**::
 
@@ -2941,34 +2855,84 @@ using format_string = basic_format_string<char, type_identity_t<Args>...>;
   \endrst
 */
 template <typename... T>
-FMT_INLINE auto format(format_string<T...> str, T&&... args) -> std::string {
-  return detail::vformat(str, make_format_args(args...));
+FMT_INLINE auto format(format_string<T...> fmt, T&&... args) -> std::string {
+  return vformat(fmt, make_format_args(args...));
 }
 
-FMT_API void vprint(std::FILE*, string_view, format_args);
-FMT_API void vprint(string_view, format_args);
+/** Formats a string and writes the output to ``out``. */
+template <typename OutputIt,
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
+auto vformat_to(OutputIt out, string_view fmt, format_args args) -> OutputIt {
+  decltype(detail::get_buffer<char>(out)) buf(detail::get_buffer_init(out));
+  detail::vformat_to(buf, string_view(fmt), args);
+  return detail::get_iterator(buf);
+}
+
+/**
+ \rst
+ Formats ``args`` according to specifications in ``fmt``, writes the result to
+ the output iterator ``out`` and returns the iterator past the end of the output
+ range.
+
+ **Example**::
+
+   auto out = std::vector<char>();
+   fmt::format_to(std::back_inserter(out), "{}", 42);
+ \endrst
+ */
+template <typename OutputIt, typename... T,
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
+inline auto format_to(OutputIt out, format_string<T...> fmt, T&&... args)
+    -> OutputIt {
+  return vformat_to(out, fmt, make_format_args(args...));
+}
+
+template <typename OutputIt> struct format_to_n_result {
+  /** Iterator past the end of the output range. */
+  OutputIt out;
+  /** Total (not truncated) output size. */
+  size_t size;
+};
+
+template <typename OutputIt, typename... T,
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
+auto vformat_to_n(OutputIt out, size_t n, string_view fmt, format_args args)
+    -> format_to_n_result<OutputIt> {
+  using buffer =
+      detail::iterator_buffer<OutputIt, char, detail::fixed_buffer_traits>;
+  auto buf = buffer(out, n);
+  detail::vformat_to(buf, fmt, args);
+  return {buf.out(), buf.count()};
+}
 
 /**
   \rst
-  Formats ``args`` according to specifications in ``str`` and writes the
-  output to the file ``f``. Strings are assumed to be in UTF-8 unless the
-  ``FMT_UNICODE`` macro is set to 0.
-
-  **Example**::
-
-    fmt::print(stderr, "Don't {}!", "panic");
+  Formats ``args`` according to specifications in ``fmt``, writes up to ``n``
+  characters of the result to the output iterator ``out`` and returns the total
+  (not truncated) output size and the iterator past the end of the output range.
   \endrst
  */
-template <typename... T>
-inline void print(std::FILE* f, format_string<T...> str, T&&... args) {
-  const auto& vargs = make_format_args(args...);
-  return detail::is_utf8() ? vprint(f, str, vargs)
-                           : detail::vprint_mojibake(f, str, vargs);
+template <typename OutputIt, typename... T,
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
+inline auto format_to_n(OutputIt out, size_t n, format_string<T...> fmt,
+                        const T&... args) -> format_to_n_result<OutputIt> {
+  return vformat_to_n(out, n, fmt, make_format_args(args...));
 }
+
+/** Returns the number of chars in the output of ``format(fmt, args...)``. */
+template <typename... T>
+inline auto formatted_size(format_string<T...> fmt, T&&... args) -> size_t {
+  auto buf = detail::counting_buffer<>();
+  detail::vformat_to(buf, string_view(fmt), make_format_args(args...));
+  return buf.count();
+}
+
+FMT_API void vprint(string_view, format_args);
+FMT_API void vprint(std::FILE*, string_view, format_args);
 
 /**
   \rst
-  Formats ``args`` according to specifications in ``str`` and writes the output
+  Formats ``args`` according to specifications in ``fmt`` and writes the output
   to ``stdout``. Strings are assumed to be in UTF-8 unless the ``FMT_UNICODE``
   macro is set to 0.
 
@@ -2978,10 +2942,28 @@ inline void print(std::FILE* f, format_string<T...> str, T&&... args) {
   \endrst
  */
 template <typename... T>
-inline void print(format_string<T...> str, T&&... args) {
+inline void print(format_string<T...> fmt, T&&... args) {
   const auto& vargs = make_format_args(args...);
-  return detail::is_utf8() ? vprint(str, vargs)
-                           : detail::vprint_mojibake(stdout, str, vargs);
+  return detail::is_utf8() ? vprint(fmt, vargs)
+                           : detail::vprint_mojibake(stdout, fmt, vargs);
+}
+
+/**
+  \rst
+  Formats ``args`` according to specifications in ``fmt`` and writes the
+  output to the file ``f``. Strings are assumed to be in UTF-8 unless the
+  ``FMT_UNICODE`` macro is set to 0.
+
+  **Example**::
+
+    fmt::print(stderr, "Don't {}!", "panic");
+  \endrst
+ */
+template <typename... T>
+inline void print(std::FILE* f, format_string<T...> fmt, T&&... args) {
+  const auto& vargs = make_format_args(args...);
+  return detail::is_utf8() ? vprint(f, fmt, vargs)
+                           : detail::vprint_mojibake(f, fmt, vargs);
 }
 
 FMT_MODULE_EXPORT_END

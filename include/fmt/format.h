@@ -2573,7 +2573,8 @@ FMT_MODULE_EXPORT_END
 
 template <typename Char>
 void detail::vformat_to(
-    detail::buffer<Char>& buf, basic_string_view<Char> format_str,
+    detail::buffer<type_identity_t<Char>>& buf,
+    basic_string_view<Char> format_str,
     basic_format_args<buffer_context<type_identity_t<Char>>> args,
     detail::locale_ref loc) {
   using iterator = typename buffer_context<Char>::iterator;
@@ -2621,6 +2622,14 @@ extern template int snprintf_float<long double>(long double value,
 
 FMT_MODULE_EXPORT_BEGIN
 
+template <typename OutputIt, typename Char = char>
+using format_context_t FMT_DEPRECATED_ALIAS =
+    basic_format_context<OutputIt, Char>;
+
+template <typename OutputIt, typename Char = char>
+using format_args_t FMT_DEPRECATED_ALIAS =
+    basic_format_args<basic_format_context<OutputIt, Char>>;
+
 template <typename S, typename Char = char_t<S>,
           FMT_ENABLE_IF(detail::is_string<S>::value)>
 inline void vformat_to(
@@ -2639,18 +2648,61 @@ inline auto format_to(basic_memory_buffer<Char, SIZE>& buf, const S& format_str,
   return detail::buffer_appender<Char>(buf);
 }
 
-template <typename OutputIt, typename Char = char>
-using format_context_t FMT_DEPRECATED_ALIAS =
-    basic_format_context<OutputIt, Char>;
+template <typename OutputIt, typename S, typename Char = char_t<S>,
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value &&
+                        !std::is_same<Char, char>::value)>
+auto vformat_to(OutputIt out, const S& format_str,
+                basic_format_args<buffer_context<type_identity_t<Char>>> args)
+    -> OutputIt {
+  decltype(detail::get_buffer<Char>(out)) buf(detail::get_buffer_init(out));
+  detail::vformat_to(buf, to_string_view(format_str), args);
+  return detail::get_iterator(buf);
+}
 
-template <typename OutputIt, typename Char = char>
-using format_args_t FMT_DEPRECATED_ALIAS =
-    basic_format_args<basic_format_context<OutputIt, Char>>;
+template <typename OutputIt, typename S, typename... Args,
+          typename Char = char_t<S>,
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value &&
+                        !std::is_same<Char, char>::value)>
+inline auto format_to(OutputIt out, const S& fmt, Args&&... args) -> OutputIt {
+  const auto& vargs = fmt::make_args_checked<Args...>(fmt, args...);
+  return vformat_to(out, to_string_view(fmt), vargs);
+}
 
-template <typename Char, enable_if_t<(!std::is_same<Char, char>::value), int>>
-auto detail::vformat(
-    basic_string_view<Char> format_str,
+template <typename OutputIt, typename Char, typename... Args,
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value &&
+                        !std::is_same<Char, char>::value)>
+inline auto vformat_to_n(
+    OutputIt out, size_t n, basic_string_view<Char> format_str,
     basic_format_args<buffer_context<type_identity_t<Char>>> args)
+    -> format_to_n_result<OutputIt> {
+  detail::iterator_buffer<OutputIt, Char, detail::fixed_buffer_traits> buf(out,
+                                                                           n);
+  detail::vformat_to(buf, format_str, args);
+  return {buf.out(), buf.count()};
+}
+
+template <typename OutputIt, typename S, typename... Args,
+          typename Char = char_t<S>,
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value &&
+                        !std::is_same<Char, char>::value)>
+inline auto format_to_n(OutputIt out, size_t n, const S& fmt,
+                        const Args&... args) -> format_to_n_result<OutputIt> {
+  const auto& vargs = fmt::make_args_checked<Args...>(fmt, args...);
+  return vformat_to_n(out, n, to_string_view(fmt), vargs);
+}
+
+template <typename S, typename... Args, typename Char = char_t<S>,
+          FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
+inline auto formatted_size(const S& fmt, Args&&... args) -> size_t {
+  detail::counting_buffer<> buf;
+  const auto& vargs = fmt::make_args_checked<Args...>(fmt, args...);
+  detail::vformat_to(buf, to_string_view(fmt), vargs);
+  return buf.count();
+}
+
+template <typename Char, FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
+auto vformat(basic_string_view<Char> format_str,
+             basic_format_args<buffer_context<type_identity_t<Char>>> args)
     -> std::basic_string<Char> {
   basic_memory_buffer<Char> buffer;
   detail::vformat_to(buffer, format_str, args);
@@ -2661,10 +2713,9 @@ auto detail::vformat(
 // std::basic_string<char_t<S>> to reduce the symbol size.
 template <typename S, typename... Args, typename Char = char_t<S>,
           FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
-FMT_INLINE auto format(const S& format_str, Args&&... args)
-    -> std::basic_string<Char> {
+auto format(const S& format_str, Args&&... args) -> std::basic_string<Char> {
   const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
-  return detail::vformat(to_string_view(format_str), vargs);
+  return vformat(to_string_view(format_str), vargs);
 }
 FMT_MODULE_EXPORT_END
 

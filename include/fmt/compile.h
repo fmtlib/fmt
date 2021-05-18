@@ -157,7 +157,8 @@ struct is_compiled_string : std::is_base_of<compiled_string, S> {};
   \endrst
  */
 #ifdef __cpp_if_constexpr
-#  define FMT_COMPILE(s) FMT_STRING_IMPL(s, fmt::detail::compiled_string)
+#  define FMT_COMPILE(s) \
+    FMT_STRING_IMPL(s, fmt::detail::compiled_string, explicit)
 #else
 #  define FMT_COMPILE(s) FMT_STRING(s)
 #endif
@@ -428,7 +429,7 @@ template <typename T, typename Args, size_t END_POS, int ARG_INDEX, int NEXT_ID,
           typename S>
 constexpr auto parse_replacement_field_then_tail(S format_str) {
   using char_type = typename S::char_type;
-  constexpr basic_string_view<char_type> str = format_str;
+  constexpr auto str = basic_string_view<char_type>(format_str);
   constexpr char_type c = END_POS != str.size() ? str[END_POS] : char_type();
   if constexpr (c == '}') {
     return parse_tail<Args, END_POS + 1, NEXT_ID>(
@@ -449,7 +450,7 @@ constexpr auto parse_replacement_field_then_tail(S format_str) {
 template <typename Args, size_t POS, int ID, typename S>
 constexpr auto compile_format_string(S format_str) {
   using char_type = typename S::char_type;
-  constexpr basic_string_view<char_type> str = format_str;
+  constexpr auto str = basic_string_view<char_type>(format_str);
   if constexpr (str[POS] == '{') {
     if constexpr (POS + 1 == str.size())
       throw format_error("unmatched '{' in format string");
@@ -518,7 +519,7 @@ constexpr auto compile_format_string(S format_str) {
 template <typename... Args, typename S,
           FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
 constexpr auto compile(S format_str) {
-  constexpr basic_string_view<typename S::char_type> str = format_str;
+  constexpr auto str = basic_string_view<typename S::char_type>(format_str);
   if constexpr (str.size() == 0) {
     return detail::make_text(str, 0, 0);
   } else {
@@ -557,7 +558,7 @@ template <typename S, typename... Args,
 FMT_INLINE std::basic_string<typename S::char_type> format(const S&,
                                                            Args&&... args) {
   if constexpr (std::is_same<typename S::char_type, char>::value) {
-    constexpr basic_string_view<typename S::char_type> str = S();
+    constexpr auto str = basic_string_view<typename S::char_type>(S());
     if constexpr (str.size() == 2 && str[0] == '{' && str[1] == '}') {
       const auto& first = detail::first(args...);
       if constexpr (detail::is_named_arg<
