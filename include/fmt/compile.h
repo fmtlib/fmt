@@ -383,24 +383,22 @@ constexpr parse_specs_result<T, Char> parse_specs(basic_string_view<Char> str,
 }
 
 template <typename Char> struct arg_id_handler {
-  constexpr void on_error(const char* message) { throw format_error(message); }
+  arg_ref<Char> arg_id;
 
-  constexpr int on_arg_id() {
+  constexpr int operator()() {
     FMT_ASSERT(false, "handler cannot be used with automatic indexing");
     return 0;
   }
-
-  constexpr int on_arg_id(int id) {
+  constexpr int operator()(int id) {
+    arg_id = arg_ref<Char>(id);
+    return 0;
+  }
+  constexpr int operator()(basic_string_view<Char> id) {
     arg_id = arg_ref<Char>(id);
     return 0;
   }
 
-  constexpr int on_arg_id(basic_string_view<Char> id) {
-    arg_id = arg_ref<Char>(id);
-    return 0;
-  }
-
-  arg_ref<Char> arg_id;
+  constexpr void on_error(const char* message) { throw format_error(message); }
 };
 
 template <typename Char> struct parse_arg_id_result {
@@ -411,8 +409,7 @@ template <typename Char> struct parse_arg_id_result {
 template <int ID, typename Char>
 constexpr auto parse_arg_id(const Char* begin, const Char* end) {
   auto handler = arg_id_handler<Char>{arg_ref<Char>{}};
-  auto adapter = id_adapter<arg_id_handler<Char>, Char>{handler, 0};
-  auto arg_id_end = parse_arg_id(begin, end, adapter);
+  auto arg_id_end = parse_arg_id(begin, end, handler);
   return parse_arg_id_result<Char>{handler.arg_id, arg_id_end};
 }
 

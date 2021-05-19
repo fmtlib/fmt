@@ -87,7 +87,7 @@
 // GCC doesn't allow throw in constexpr until version 6 (bug 67371).
 #ifndef FMT_USE_CONSTEXPR
 #  define FMT_USE_CONSTEXPR                                           \
-    (FMT_HAS_FEATURE(cxx_relaxed_constexpr) || FMT_MSC_VER >= 1910 || \
+    (FMT_HAS_FEATURE(cxx_relaxed_constexpr) || FMT_MSC_VER >= 1920 || \
      (FMT_GCC_VERSION >= 600 && __cplusplus >= 201402L)) &&           \
         !FMT_NVCC && !FMT_ICC_VERSION
 #endif
@@ -310,8 +310,6 @@ using conditional_t = typename std::conditional<B, T, F>::type;
 template <bool B> using bool_constant = std::integral_constant<bool, B>;
 template <typename T>
 using remove_reference_t = typename std::remove_reference<T>::type;
-template <typename T>
-using remove_const_t = typename std::remove_const<T>::type;
 template <typename T>
 using remove_cvref_t = typename std::remove_cv<remove_reference_t<T>>::type;
 template <typename T> struct type_identity { using type = T; };
@@ -2126,33 +2124,28 @@ FMT_CONSTEXPR FMT_INLINE const Char* parse_arg_id(const Char* begin,
   return begin;
 }
 
-// Adapts SpecHandler to IDHandler API for dynamic width.
-template <typename SpecHandler, typename Char> struct width_adapter {
-  explicit FMT_CONSTEXPR width_adapter(SpecHandler& h) : handler(h) {}
-
-  FMT_CONSTEXPR void operator()() { handler.on_dynamic_width(auto_id()); }
-  FMT_CONSTEXPR void operator()(int id) { handler.on_dynamic_width(id); }
-  FMT_CONSTEXPR void operator()(basic_string_view<Char> id) {
-    handler.on_dynamic_width(id);
-  }
-
-  FMT_CONSTEXPR void on_error(const char* message) {
-    handler.on_error(message);
-  }
-
-  SpecHandler& handler;
-};
-
 template <typename Char, typename Handler>
 FMT_CONSTEXPR const Char* parse_width(const Char* begin, const Char* end,
                                       Handler&& handler) {
+  struct width_adapter {
+    Handler& handler;
+
+    FMT_CONSTEXPR void operator()() { handler.on_dynamic_width(auto_id()); }
+    FMT_CONSTEXPR void operator()(int id) { handler.on_dynamic_width(id); }
+    FMT_CONSTEXPR void operator()(basic_string_view<Char> id) {
+      handler.on_dynamic_width(id);
+    }
+    FMT_CONSTEXPR void on_error(const char* message) {
+      handler.on_error(message);
+    }
+  };
+
   FMT_ASSERT(begin != end, "");
   if ('0' <= *begin && *begin <= '9') {
     handler.on_width(parse_nonnegative_int(begin, end, handler));
   } else if (*begin == '{') {
     ++begin;
-    if (begin != end)
-      begin = parse_arg_id(begin, end, width_adapter<Handler, Char>(handler));
+    if (begin != end) begin = parse_arg_id(begin, end, width_adapter{handler});
     if (begin == end || *begin != '}')
       return handler.on_error("invalid format string"), begin;
     ++begin;
@@ -2160,36 +2153,30 @@ FMT_CONSTEXPR const Char* parse_width(const Char* begin, const Char* end,
   return begin;
 }
 
-// Adapts SpecHandler to IDHandler API for dynamic precision.
-template <typename SpecHandler, typename Char> struct precision_adapter {
-  explicit FMT_CONSTEXPR precision_adapter(SpecHandler& h) : handler(h) {}
-
-  FMT_CONSTEXPR void operator()() { handler.on_dynamic_precision(auto_id()); }
-  FMT_CONSTEXPR void operator()(int id) { handler.on_dynamic_precision(id); }
-  FMT_CONSTEXPR void operator()(basic_string_view<Char> id) {
-    handler.on_dynamic_precision(id);
-  }
-
-  FMT_CONSTEXPR void on_error(const char* message) {
-    handler.on_error(message);
-  }
-
-  SpecHandler& handler;
-};
-
 template <typename Char, typename Handler>
 FMT_CONSTEXPR const Char* parse_precision(const Char* begin, const Char* end,
                                           Handler&& handler) {
+  struct precision_adapter {
+    Handler& handler;
+
+    FMT_CONSTEXPR void operator()() { handler.on_dynamic_precision(auto_id()); }
+    FMT_CONSTEXPR void operator()(int id) { handler.on_dynamic_precision(id); }
+    FMT_CONSTEXPR void operator()(basic_string_view<Char> id) {
+      handler.on_dynamic_precision(id);
+    }
+    FMT_CONSTEXPR void on_error(const char* message) {
+      handler.on_error(message);
+    }
+  };
+
   ++begin;
   auto c = begin != end ? *begin : Char();
   if ('0' <= c && c <= '9') {
     handler.on_precision(parse_nonnegative_int(begin, end, handler));
   } else if (c == '{') {
     ++begin;
-    if (begin != end) {
-      begin =
-          parse_arg_id(begin, end, precision_adapter<Handler, Char>(handler));
-    }
+    if (begin != end)
+      begin = parse_arg_id(begin, end, precision_adapter{handler});
     if (begin == end || *begin++ != '}')
       return handler.on_error("invalid format string"), begin;
   } else {
@@ -2265,24 +2252,24 @@ FMT_CONSTEXPR FMT_INLINE const Char* parse_format_specs(const Char* begin,
   return begin;
 }
 
-template <typename Handler, typename Char> struct id_adapter {
-  Handler& handler;
-  int arg_id;
-
-  FMT_CONSTEXPR void operator()() { arg_id = handler.on_arg_id(); }
-  FMT_CONSTEXPR void operator()(int id) { arg_id = handler.on_arg_id(id); }
-  FMT_CONSTEXPR void operator()(basic_string_view<Char> id) {
-    arg_id = handler.on_arg_id(id);
-  }
-  FMT_CONSTEXPR void on_error(const char* message) {
-    handler.on_error(message);
-  }
-};
-
 template <typename Char, typename Handler>
 FMT_CONSTEXPR const Char* parse_replacement_field(const Char* begin,
                                                   const Char* end,
                                                   Handler&& handler) {
+  struct id_adapter {
+    Handler& handler;
+    int arg_id;
+
+    FMT_CONSTEXPR void operator()() { arg_id = handler.on_arg_id(); }
+    FMT_CONSTEXPR void operator()(int id) { arg_id = handler.on_arg_id(id); }
+    FMT_CONSTEXPR void operator()(basic_string_view<Char> id) {
+      arg_id = handler.on_arg_id(id);
+    }
+    FMT_CONSTEXPR void on_error(const char* message) {
+      handler.on_error(message);
+    }
+  };
+
   ++begin;
   if (begin == end) return handler.on_error("invalid format string"), end;
   if (*begin == '}') {
@@ -2290,7 +2277,7 @@ FMT_CONSTEXPR const Char* parse_replacement_field(const Char* begin,
   } else if (*begin == '{') {
     handler.on_text(begin, begin + 1);
   } else {
-    auto adapter = id_adapter<Handler, Char>{handler, 0};
+    auto adapter = id_adapter{handler, 0};
     begin = parse_arg_id(begin, end, adapter);
     Char c = begin != end ? *begin : Char();
     if (c == '}') {
@@ -2390,7 +2377,7 @@ class compile_parse_context
       ErrorHandler eh = {})
       : base(format_str, eh), num_args_(num_args) {}
 
-  FMT_CONSTEXPR int next_arg_id() {
+  FMT_CONSTEXPR auto next_arg_id() -> int {
     int id = base::next_arg_id();
     if (id >= num_args_) this->on_error("argument not found");
     return id;
@@ -2423,8 +2410,8 @@ FMT_CONSTEXPR void check_int_type_spec(char spec, ErrorHandler&& eh) {
 
 // Checks char specs and returns true if the type spec is char (and not int).
 template <typename Char, typename ErrorHandler = error_handler>
-FMT_CONSTEXPR bool check_char_specs(const basic_format_specs<Char>& specs,
-                                    ErrorHandler&& eh = {}) {
+FMT_CONSTEXPR auto check_char_specs(const basic_format_specs<Char>& specs,
+                                    ErrorHandler&& eh = {}) -> bool {
   if (specs.type && specs.type != 'c') {
     check_int_type_spec(specs.type, eh);
     return false;
@@ -2454,8 +2441,9 @@ struct float_specs {
 };
 
 template <typename ErrorHandler = error_handler, typename Char>
-FMT_CONSTEXPR float_specs parse_float_type_spec(
-    const basic_format_specs<Char>& specs, ErrorHandler&& eh = {}) {
+FMT_CONSTEXPR auto parse_float_type_spec(const basic_format_specs<Char>& specs,
+                                         ErrorHandler&& eh = {})
+    -> float_specs {
   auto result = float_specs();
   result.showpoint = specs.alt;
   result.locale = specs.localized;
@@ -2497,7 +2485,8 @@ FMT_CONSTEXPR float_specs parse_float_type_spec(
 }
 
 template <typename Char, typename ErrorHandler = error_handler>
-FMT_CONSTEXPR bool check_cstring_type_spec(Char spec, ErrorHandler&& eh = {}) {
+FMT_CONSTEXPR auto check_cstring_type_spec(Char spec, ErrorHandler&& eh = {})
+    -> bool {
   if (spec == 0 || spec == 's') return true;
   if (spec != 'p') eh.on_error("invalid type specifier");
   return false;
@@ -2567,7 +2556,7 @@ constexpr int invalid_arg_index = -1;
 
 #if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
 template <int N, typename T, typename... Args, typename Char>
-constexpr int get_arg_index_by_name(basic_string_view<Char> name) {
+constexpr auto get_arg_index_by_name(basic_string_view<Char> name) -> int {
   if constexpr (detail::is_statically_named_arg<T>()) {
     if (name == T::name) return N;
   }
@@ -2579,7 +2568,7 @@ constexpr int get_arg_index_by_name(basic_string_view<Char> name) {
 #endif
 
 template <typename... Args, typename Char>
-FMT_CONSTEXPR int get_arg_index_by_name(basic_string_view<Char> name) {
+FMT_CONSTEXPR auto get_arg_index_by_name(basic_string_view<Char> name) -> int {
 #if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
   if constexpr (sizeof...(Args) > 0)
     return get_arg_index_by_name<0, Args...>(name);
@@ -2608,9 +2597,11 @@ class format_string_checker {
 
   FMT_CONSTEXPR void on_text(const Char*, const Char*) {}
 
-  FMT_CONSTEXPR int on_arg_id() { return context_.next_arg_id(); }
-  FMT_CONSTEXPR int on_arg_id(int id) { return context_.check_arg_id(id), id; }
-  FMT_CONSTEXPR int on_arg_id(basic_string_view<Char> id) {
+  FMT_CONSTEXPR auto on_arg_id() -> int { return context_.next_arg_id(); }
+  FMT_CONSTEXPR auto on_arg_id(int id) -> int {
+    return context_.check_arg_id(id), id;
+  }
+  FMT_CONSTEXPR auto on_arg_id(basic_string_view<Char> id) -> int {
 #if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
     auto index = get_arg_index_by_name<Args...>(id);
     if (index == invalid_arg_index) on_error("named argument is not found");
@@ -2624,8 +2615,8 @@ class format_string_checker {
 
   FMT_CONSTEXPR void on_replacement_field(int, const Char*) {}
 
-  FMT_CONSTEXPR const Char* on_format_specs(int id, const Char* begin,
-                                            const Char*) {
+  FMT_CONSTEXPR auto on_format_specs(int id, const Char* begin, const Char*)
+      -> const Char* {
     context_.advance_to(context_.begin() + (begin - &*context_.begin()));
     // id >= 0 check is a workaround for gcc 10 bug (#2065).
     return id >= 0 && id < num_args ? parse_funcs_[id](context_) : begin;
