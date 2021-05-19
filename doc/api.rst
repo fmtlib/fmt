@@ -35,33 +35,33 @@ using {fmt} as a library and not in the header-only mode.
 The following functions use :ref:`format string syntax <syntax>`
 similar to that of Python's `str.format
 <https://docs.python.org/3/library/stdtypes.html#str.format>`_.
-They take *format_str* and *args* as arguments.
+They take *fmt* and *args* as arguments.
 
-*format_str* is a format string that contains literal text and replacement
+*fmt* is a format string that contains literal text and replacement
 fields surrounded by braces ``{}``. The fields are replaced with formatted
-arguments in the resulting string. A function taking *format_str* doesn't
+arguments in the resulting string. A function taking *fmt* doesn't
 participate in an overload resolution if the latter is not a string.
 
 *args* is an argument list representing objects to be formatted.
 
 .. _format:
 
-.. doxygenfunction:: format(const S &format_str, Args&&... args)
-.. doxygenfunction:: vformat(const S &format_str, basic_format_args<buffer_context<type_identity_t<Char>>> args)
+.. doxygenfunction:: format(format_string<T...> fmt, T&&... args)
+.. doxygenfunction:: vformat(string_view fmt, format_args args)
 
-.. doxygenfunction:: format_to(OutputIt out, const S&, const Args&... args)
-.. doxygenfunction:: format_to_n(OutputIt out, size_t n, const S&, const Args&... args)
-.. doxygenfunction:: formatted_size(string_view format_str, Args&&... args)
+.. doxygenfunction:: format_to(OutputIt out, format_string<T...> fmt, T&& args)
+.. doxygenfunction:: format_to_n(OutputIt out, size_t n, format_string<T...> fmt, const T&... args)
+.. doxygenfunction:: formatted_size(format_string<T...> fmt, T&&... args)
 
 .. doxygenstruct:: fmt::format_to_n_result
    :members:
 
 .. _print:
 
-.. doxygenfunction:: fmt::print(const S &format_str, Args&&... args)
+.. doxygenfunction:: fmt::print(format_string<T...> fmt, T&&... args)
 .. doxygenfunction:: vprint(string_view, format_args)
 
-.. doxygenfunction:: print(std::FILE *f, const S &format_str, Args&&... args)
+.. doxygenfunction:: print(std::FILE *f, format_string<T...> fmt, T&&... args)
 .. doxygenfunction:: vprint(std::FILE*, string_view, format_args)
 
 Named Arguments
