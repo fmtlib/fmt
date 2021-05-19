@@ -2858,8 +2858,7 @@ FMT_API void vprint(std::FILE*, string_view, format_args);
 /**
   \rst
   Formats ``args`` according to specifications in ``fmt`` and writes the output
-  to ``stdout``. Strings are assumed to be in UTF-8 unless the ``FMT_UNICODE``
-  macro is set to 0.
+  to ``stdout``.
 
   **Example**::
 
@@ -2876,8 +2875,7 @@ inline void print(format_string<T...> fmt, T&&... args) {
 /**
   \rst
   Formats ``args`` according to specifications in ``fmt`` and writes the
-  output to the file ``f``. Strings are assumed to be in UTF-8 unless the
-  ``FMT_UNICODE`` macro is set to 0.
+  output to the file ``f``.
 
   **Example**::
 
