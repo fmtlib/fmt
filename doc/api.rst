@@ -46,7 +46,7 @@ participate in an overload resolution if the latter is not a string.
 
 .. _format:
 
-.. doxygenfunction:: format(format_string<T...> fmt, T&&... args)
+.. doxygenfunction:: format(format_string<T...> fmt, T&&... args) -> std::string
 .. doxygenfunction:: vformat(string_view fmt, format_args args)
 
 .. doxygenfunction:: format_to(OutputIt out, format_string<T...> fmt, T&& args)
