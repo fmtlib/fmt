@@ -1644,27 +1644,6 @@ constexpr format_arg_store<Context, Args...> make_format_args(
 
 /**
   \rst
-  Constructs a `~fmt::format_arg_store` object that contains references
-  to arguments and can be implicitly converted to `~fmt::format_args`.
-  If ``format_str`` is a compile-time string then `make_args_checked` checks
-  its validity at compile time.
-  \endrst
- */
-template <typename... Args, typename S, typename Char = char_t<S>>
-FMT_INLINE auto make_args_checked(const S& format_str,
-                                  const remove_reference_t<Args>&... args)
-    -> format_arg_store<buffer_context<Char>, remove_reference_t<Args>...> {
-  static_assert(
-      detail::count<(
-              std::is_base_of<detail::view, remove_reference_t<Args>>::value &&
-              std::is_reference<Args>::value)...>() == 0,
-      "passing views as lvalues is disallowed");
-  detail::check_format_string<Args...>(format_str);
-  return {args...};
-}
-
-/**
-  \rst
   Returns a named argument to be used in a formatting function.
   It should only be used in a call to a formatting function or
   `dynamic_format_arg_store::push_back`.
@@ -2668,49 +2647,9 @@ void check_format_string(S format_str) {
   (void)invalid_format;
 }
 
-// Converts a compile-time string to basic_string_view.
-template <typename Char, size_t N>
-constexpr auto compile_string_to_view(const Char (&s)[N])
-    -> basic_string_view<Char> {
-  // Remove trailing NUL character if needed. Won't be present if this is used
-  // with a raw character array (i.e. not defined as a string).
-  return {s, N - (std::char_traits<Char>::to_int_type(s[N - 1]) == 0 ? 1 : 0)};
-}
-template <typename Char>
-constexpr auto compile_string_to_view(std_string_view<Char> s)
-    -> basic_string_view<Char> {
-  return {s.data(), s.size()};
-}
-
-#define FMT_STRING_IMPL(s, base, explicit)                                 \
-  [] {                                                                     \
-    /* Use the hidden visibility as a workaround for a GCC bug (#1973). */ \
-    /* Use a macro-like name to avoid shadowing warnings. */               \
-    struct FMT_GCC_VISIBILITY_HIDDEN FMT_COMPILE_STRING : base {           \
-      using char_type = fmt::remove_cvref_t<decltype(s[0])>;               \
-      FMT_MAYBE_UNUSED FMT_CONSTEXPR explicit                              \
-      operator fmt::basic_string_view<char_type>() const {                 \
-        return fmt::detail::compile_string_to_view<char_type>(s);          \
-      }                                                                    \
-    };                                                                     \
-    return FMT_COMPILE_STRING();                                           \
-  }()
-
-/**
-  \rst
-  Constructs a compile-time format string from a string literal *s*.
-
-  **Example**::
-
-    // A compile-time error because 'd' is an invalid specifier for strings.
-    std::string s = fmt::format(FMT_STRING("{:d}"), "foo");
-  \endrst
- */
-#define FMT_STRING(s) FMT_STRING_IMPL(s, fmt::compile_string, )
-
 template <typename Char>
 void vformat_to(
-    buffer<type_identity_t<Char>>& buf, basic_string_view<Char> format_str,
+    buffer<Char>& buf, basic_string_view<Char> fmt,
     basic_format_args<FMT_BUFFER_CONTEXT(type_identity_t<Char>)> args,
     detail::locale_ref loc = {});
 
@@ -2730,8 +2669,6 @@ struct formatter<T, Char,
   detail::dynamic_format_specs<Char> specs_;
 
  public:
-  FMT_CONSTEXPR formatter() = default;
-
   // Parses format specifiers stopping either at the end of the range or at the
   // terminating '}'.
   template <typename ParseContext>
@@ -2802,33 +2739,37 @@ struct formatter<T, Char,
       -> decltype(ctx.out());
 };
 
+template <typename Char> struct basic_runtime { basic_string_view<Char> str; };
+
 template <typename Char, typename... Args> class basic_format_string {
  private:
   basic_string_view<Char> str_;
 
  public:
-#if FMT_COMPILE_TIME_CHECKS
-  template <size_t N>
-  consteval basic_format_string(const char (&s)[N]) : str_(s) {
-    if constexpr (detail::count_named_args<Args...>() == 0) {
-      using checker = detail::format_string_checker<char, detail::error_handler,
-                                                    remove_cvref_t<Args>...>;
-      detail::parse_format_string<true>(string_view(s, N), checker(s, {}));
-    }
-  }
-#endif
-
   template <typename S,
             FMT_ENABLE_IF(
                 std::is_convertible<const S&, basic_string_view<Char>>::value)>
-  basic_format_string(const S& s) : str_(s) {
+#if FMT_COMPILE_TIME_CHECKS
+  consteval
+#endif
+      basic_format_string(const S& s)
+      : str_(s) {
     static_assert(
         detail::count<
             (std::is_base_of<detail::view, remove_reference_t<Args>>::value &&
              std::is_reference<Args>::value)...>() == 0,
         "passing views as lvalues is disallowed");
+#if FMT_COMPILE_TIME_CHECKS
+    if constexpr (detail::count_named_args<Args...>() == 0) {
+      using checker = detail::format_string_checker<Char, detail::error_handler,
+                                                    remove_cvref_t<Args>...>;
+      detail::parse_format_string<true>(str_, checker(s, {}));
+    }
+#else
     detail::check_format_string<Args...>(s);
+#endif
   }
+  basic_format_string(basic_runtime<Char> r) : str_(r.str) {}
 
   FMT_INLINE operator basic_string_view<Char>() const { return str_; }
 };
@@ -2836,9 +2777,16 @@ template <typename Char, typename... Args> class basic_format_string {
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
 // Workaround broken conversion on older gcc.
 template <typename... Args> using format_string = string_view;
+template <typename S> auto runtime(const S& s) -> basic_string_view<char_t<S>> {
+  return s;
+}
 #else
 template <typename... Args>
 using format_string = basic_format_string<char, type_identity_t<Args>...>;
+// Creates a runtime format string.
+template <typename S> auto runtime(const S& s) -> basic_runtime<char_t<S>> {
+  return {{s}};
+}
 #endif
 
 FMT_API auto vformat(string_view fmt, format_args args) -> std::string;

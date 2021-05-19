@@ -149,9 +149,9 @@ template <class charT> struct formatter<std::complex<double>, charT> {
                             "{:" + specs + "}", c.imag());
     auto fill_align_width = std::string();
     if (specs_.width > 0) fill_align_width = fmt::format(">{}", specs_.width);
-    return format_to(
-        ctx.out(), "{:" + fill_align_width + "}",
-        fmt::format(c.real() != 0 ? "({0}+{1}i)" : "{1}i", real, imag));
+    return format_to(ctx.out(), runtime("{:" + fill_align_width + "}"),
+                     c.real() != 0 ? fmt::format("({}+{}i)", real, imag)
+                                   : fmt::format("{}i", imag));
   }
 };
 FMT_END_NAMESPACE
