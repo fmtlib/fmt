@@ -191,9 +191,9 @@ template <typename Char> class printf_width_handler {
 
 // The ``printf`` argument formatter.
 template <typename OutputIt, typename Char>
-class printf_arg_formatter : public arg_formatter<OutputIt, Char> {
+class printf_arg_formatter : public arg_formatter<Char> {
  private:
-  using base = arg_formatter<OutputIt, Char>;
+  using base = arg_formatter<Char>;
   using context_type = basic_printf_context<OutputIt, Char>;
   using format_specs = basic_format_specs<Char>;
 

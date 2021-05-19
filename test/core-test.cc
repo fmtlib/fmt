@@ -501,6 +501,210 @@ TEST(arg_test, visit_invalid_arg) {
   fmt::visit_format_arg(visitor, arg);
 }
 
+#if FMT_USE_CONSTEXPR
+
+enum class arg_id_result { none, empty, index, name, error };
+struct test_arg_id_handler {
+  arg_id_result res = arg_id_result::none;
+  int index = 0;
+  string_view name;
+
+  constexpr void operator()() { res = arg_id_result::empty; }
+
+  constexpr void operator()(int i) {
+    res = arg_id_result::index;
+    index = i;
+  }
+
+  constexpr void operator()(string_view n) {
+    res = arg_id_result::name;
+    name = n;
+  }
+
+  constexpr void on_error(const char*) { res = arg_id_result::error; }
+};
+
+template <size_t N>
+constexpr test_arg_id_handler parse_arg_id(const char (&s)[N]) {
+  test_arg_id_handler h;
+  fmt::detail::parse_arg_id(s, s + N, h);
+  return h;
+}
+
+TEST(format_test, constexpr_parse_arg_id) {
+  static_assert(parse_arg_id(":").res == arg_id_result::empty, "");
+  static_assert(parse_arg_id("}").res == arg_id_result::empty, "");
+  static_assert(parse_arg_id("42:").res == arg_id_result::index, "");
+  static_assert(parse_arg_id("42:").index == 42, "");
+  static_assert(parse_arg_id("foo:").res == arg_id_result::name, "");
+  static_assert(parse_arg_id("foo:").name.size() == 3, "");
+  static_assert(parse_arg_id("!").res == arg_id_result::error, "");
+}
+
+struct test_format_specs_handler {
+  enum result { none, hash, zero, loc, error };
+  result res = none;
+
+  fmt::align_t alignment = fmt::align::none;
+  fmt::sign_t sign = fmt::sign::none;
+  char fill = 0;
+  int width = 0;
+  fmt::detail::arg_ref<char> width_ref;
+  int precision = 0;
+  fmt::detail::arg_ref<char> precision_ref;
+  char type = 0;
+
+  // Workaround for MSVC2017 bug that results in "expression did not evaluate
+  // to a constant" with compiler-generated copy ctor.
+  constexpr test_format_specs_handler() {}
+  constexpr test_format_specs_handler(const test_format_specs_handler& other) =
+      default;
+
+  constexpr void on_align(fmt::align_t a) { alignment = a; }
+  constexpr void on_fill(fmt::string_view f) { fill = f[0]; }
+  constexpr void on_sign(fmt::sign_t s) { sign = s; }
+  constexpr void on_hash() { res = hash; }
+  constexpr void on_zero() { res = zero; }
+  constexpr void on_localized() { res = loc; }
+
+  constexpr void on_width(int w) { width = w; }
+  constexpr void on_dynamic_width(fmt::detail::auto_id) {}
+  constexpr void on_dynamic_width(int index) { width_ref = index; }
+  constexpr void on_dynamic_width(string_view) {}
+
+  constexpr void on_precision(int p) { precision = p; }
+  constexpr void on_dynamic_precision(fmt::detail::auto_id) {}
+  constexpr void on_dynamic_precision(int index) { precision_ref = index; }
+  constexpr void on_dynamic_precision(string_view) {}
+
+  constexpr void end_precision() {}
+  constexpr void on_type(char t) { type = t; }
+  constexpr void on_error(const char*) { res = error; }
+};
+
+template <size_t N>
+constexpr test_format_specs_handler parse_test_specs(const char (&s)[N]) {
+  auto h = test_format_specs_handler();
+  fmt::detail::parse_format_specs(s, s + N, h);
+  return h;
+}
+
+TEST(core_test, constexpr_parse_format_specs) {
+  using handler = test_format_specs_handler;
+  static_assert(parse_test_specs("<").alignment == fmt::align::left, "");
+  static_assert(parse_test_specs("*^").fill == '*', "");
+  static_assert(parse_test_specs("+").sign == fmt::sign::plus, "");
+  static_assert(parse_test_specs("-").sign == fmt::sign::minus, "");
+  static_assert(parse_test_specs(" ").sign == fmt::sign::space, "");
+  static_assert(parse_test_specs("#").res == handler::hash, "");
+  static_assert(parse_test_specs("0").res == handler::zero, "");
+  static_assert(parse_test_specs("L").res == handler::loc, "");
+  static_assert(parse_test_specs("42").width == 42, "");
+  static_assert(parse_test_specs("{42}").width_ref.val.index == 42, "");
+  static_assert(parse_test_specs(".42").precision == 42, "");
+  static_assert(parse_test_specs(".{42}").precision_ref.val.index == 42, "");
+  static_assert(parse_test_specs("d").type == 'd', "");
+  static_assert(parse_test_specs("{<").res == handler::error, "");
+}
+
+struct test_parse_context {
+  using char_type = char;
+
+  constexpr int next_arg_id() { return 11; }
+  template <typename Id> FMT_CONSTEXPR void check_arg_id(Id) {}
+
+  constexpr const char* begin() { return nullptr; }
+  constexpr const char* end() { return nullptr; }
+
+  void on_error(const char*) {}
+};
+
+template <size_t N>
+constexpr fmt::detail::dynamic_format_specs<char> parse_dynamic_specs(
+    const char (&s)[N]) {
+  auto specs = fmt::detail::dynamic_format_specs<char>();
+  auto ctx = test_parse_context();
+  auto h = fmt::detail::dynamic_specs_handler<test_parse_context>(specs, ctx);
+  parse_format_specs(s, s + N, h);
+  return specs;
+}
+
+TEST(format_test, constexpr_dynamic_specs_handler) {
+  static_assert(parse_dynamic_specs("<").align == fmt::align::left, "");
+  static_assert(parse_dynamic_specs("*^").fill[0] == '*', "");
+  static_assert(parse_dynamic_specs("+").sign == fmt::sign::plus, "");
+  static_assert(parse_dynamic_specs("-").sign == fmt::sign::minus, "");
+  static_assert(parse_dynamic_specs(" ").sign == fmt::sign::space, "");
+  static_assert(parse_dynamic_specs("#").alt, "");
+  static_assert(parse_dynamic_specs("0").align == fmt::align::numeric, "");
+  static_assert(parse_dynamic_specs("42").width == 42, "");
+  static_assert(parse_dynamic_specs("{}").width_ref.val.index == 11, "");
+  static_assert(parse_dynamic_specs("{42}").width_ref.val.index == 42, "");
+  static_assert(parse_dynamic_specs(".42").precision == 42, "");
+  static_assert(parse_dynamic_specs(".{}").precision_ref.val.index == 11, "");
+  static_assert(parse_dynamic_specs(".{42}").precision_ref.val.index == 42, "");
+  static_assert(parse_dynamic_specs("d").type == 'd', "");
+}
+
+template <size_t N>
+constexpr test_format_specs_handler check_specs(const char (&s)[N]) {
+  fmt::detail::specs_checker<test_format_specs_handler> checker(
+      test_format_specs_handler(), fmt::detail::type::double_type);
+  parse_format_specs(s, s + N, checker);
+  return checker;
+}
+
+TEST(format_test, constexpr_specs_checker) {
+  using handler = test_format_specs_handler;
+  static_assert(check_specs("<").alignment == fmt::align::left, "");
+  static_assert(check_specs("*^").fill == '*', "");
+  static_assert(check_specs("+").sign == fmt::sign::plus, "");
+  static_assert(check_specs("-").sign == fmt::sign::minus, "");
+  static_assert(check_specs(" ").sign == fmt::sign::space, "");
+  static_assert(check_specs("#").res == handler::hash, "");
+  static_assert(check_specs("0").res == handler::zero, "");
+  static_assert(check_specs("42").width == 42, "");
+  static_assert(check_specs("{42}").width_ref.val.index == 42, "");
+  static_assert(check_specs(".42").precision == 42, "");
+  static_assert(check_specs(".{42}").precision_ref.val.index == 42, "");
+  static_assert(check_specs("d").type == 'd', "");
+  static_assert(check_specs("{<").res == handler::error, "");
+}
+
+struct test_format_string_handler {
+  constexpr void on_text(const char*, const char*) {}
+
+  constexpr int on_arg_id() { return 0; }
+
+  template <typename T> constexpr int on_arg_id(T) { return 0; }
+
+  constexpr void on_replacement_field(int, const char*) {}
+
+  constexpr const char* on_format_specs(int, const char* begin, const char*) {
+    return begin;
+  }
+
+  constexpr void on_error(const char*) { error = true; }
+
+  bool error = false;
+};
+
+template <size_t N> constexpr bool parse_string(const char (&s)[N]) {
+  auto h = test_format_string_handler();
+  fmt::detail::parse_format_string<true>(fmt::string_view(s, N - 1), h);
+  return !h.error;
+}
+
+TEST(format_test, constexpr_parse_format_string) {
+  static_assert(parse_string("foo"), "");
+  static_assert(!parse_string("}"), "");
+  static_assert(parse_string("{}"), "");
+  static_assert(parse_string("{42}"), "");
+  static_assert(parse_string("{foo}"), "");
+  static_assert(parse_string("{:}"), "");
+}
+#endif  // FMT_USE_CONSTEXPR
+
 struct enabled_formatter {};
 struct disabled_formatter {};
 struct disabled_formatter_convertible {
