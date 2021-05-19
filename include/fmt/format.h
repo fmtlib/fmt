@@ -623,6 +623,9 @@ void iterator_buffer<OutputIt, T, Traits>::flush() {
 
 FMT_MODULE_EXPORT_BEGIN
 
+using wstring_view = basic_string_view<wchar_t>;
+
+template <> struct is_char<wchar_t> : std::true_type {};
 template <> struct is_char<detail::char8_type> : std::true_type {};
 template <> struct is_char<char16_t> : std::true_type {};
 template <> struct is_char<char32_t> : std::true_type {};
@@ -2886,6 +2889,10 @@ FMT_END_NAMESPACE
 #  include "format-inl.h"
 #else
 #  define FMT_FUNC
+#endif
+
+#ifdef FMT_DEPRECATED_WCHAR
+#  include "wchar.h"
 #endif
 
 #endif  // FMT_FORMAT_H_

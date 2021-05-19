@@ -14,6 +14,10 @@
 
 FMT_BEGIN_NAMESPACE
 
+using wformat_parse_context = basic_format_parse_context<wchar_t>;
+using wformat_context = buffer_context<wchar_t>;
+using wformat_args = basic_format_args<wformat_context>;
+
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
 // Workaround broken conversion on older gcc.
 template <typename... Args> using wformat_string = wstring_view;

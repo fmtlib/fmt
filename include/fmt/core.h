@@ -494,12 +494,10 @@ template <typename Char> class basic_string_view {
 };
 
 using string_view = basic_string_view<char>;
-using wstring_view = basic_string_view<wchar_t>;
 
 /** Specifies if ``T`` is a character type. Can be specialized by users. */
 template <typename T> struct is_char : std::false_type {};
 template <> struct is_char<char> : std::true_type {};
-template <> struct is_char<wchar_t> : std::true_type {};
 
 /**
   \rst
@@ -597,16 +595,7 @@ template <typename S> using char_t = typename detail::char_t_impl<S>::type;
   \rst
   Parsing context consisting of a format string range being parsed and an
   argument counter for automatic indexing.
-
-  You can use one of the following type aliases for common character types:
-
-  +-----------------------+-------------------------------------+
-  | Type                  | Definition                          |
-  +=======================+=====================================+
-  | format_parse_context  | basic_format_parse_context<char>    |
-  +-----------------------+-------------------------------------+
-  | wformat_parse_context | basic_format_parse_context<wchar_t> |
-  +-----------------------+-------------------------------------+
+  You can use the ```format_parse_context`` type alias for ``char`` instead.
   \endrst
  */
 template <typename Char, typename ErrorHandler = detail::error_handler>
@@ -673,7 +662,6 @@ class basic_format_parse_context : private ErrorHandler {
 };
 
 using format_parse_context = basic_format_parse_context<char>;
-using wformat_parse_context = basic_format_parse_context<wchar_t>;
 
 template <typename Context> class basic_format_arg;
 template <typename Context> class basic_format_args;
@@ -1565,7 +1553,6 @@ template <typename Char>
 using buffer_context =
     basic_format_context<detail::buffer_appender<Char>, Char>;
 using format_context = buffer_context<char>;
-using wformat_context = buffer_context<wchar_t>;
 
 // Workaround an alias issue: https://stackoverflow.com/q/62767544/471164.
 #define FMT_BUFFER_CONTEXT(Char) \
@@ -1777,10 +1764,9 @@ template <typename Context> class basic_format_args {
 };
 
 /** An alias to ``basic_format_args<format_context>``. */
-// Separate types would result in shorter symbols but break ABI compatibility
+// A separate type would result in shorter symbols but break ABI compatibility
 // between clang and gcc on ARM (#1919).
 using format_args = basic_format_args<format_context>;
-using wformat_args = basic_format_args<wformat_context>;
 
 // We cannot use enum classes as bit fields because of a gcc bug
 // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=61414.

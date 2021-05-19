@@ -2380,16 +2380,6 @@ TEST(format_test, vformat_to) {
   s.clear();
   fmt::vformat_to(std::back_inserter(s), FMT_STRING("{}"), args);
   EXPECT_EQ("42", s);
-
-  using wcontext = fmt::wformat_context;
-  fmt::basic_format_arg<wcontext> warg = fmt::detail::make_arg<wcontext>(42);
-  auto wargs = fmt::basic_format_args<wcontext>(&warg, 1);
-  auto w = std::wstring();
-  fmt::vformat_to(std::back_inserter(w), L"{}", wargs);
-  EXPECT_EQ(L"42", w);
-  w.clear();
-  fmt::vformat_to(std::back_inserter(w), FMT_STRING(L"{}"), wargs);
-  EXPECT_EQ(L"42", w);
 }
 
 template <typename T> static std::string fmt_to_string(const T& t) {

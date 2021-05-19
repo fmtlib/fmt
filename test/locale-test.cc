@@ -88,8 +88,10 @@ TEST(locale_test, wformat) {
   auto loc = std::locale(std::locale(), new numpunct<wchar_t>());
   EXPECT_EQ(L"1234567", fmt::format(std::locale(), L"{:L}", 1234567));
   EXPECT_EQ(L"1~234~567", fmt::format(loc, L"{:L}", 1234567));
-  fmt::format_arg_store<fmt::wformat_context, int> as{1234567};
-  EXPECT_EQ(L"1~234~567", fmt::vformat(loc, L"{:L}", fmt::wformat_args(as)));
+  using wcontext = fmt::buffer_context<wchar_t>;
+  fmt::format_arg_store<wcontext, int> as{1234567};
+  EXPECT_EQ(L"1~234~567",
+            fmt::vformat(loc, L"{:L}", fmt::basic_format_args<wcontext>(as)));
   EXPECT_EQ(L"1234567", fmt::format(std::locale("C"), L"{:L}", 1234567));
 
   auto no_grouping_loc = std::locale(std::locale(), new no_grouping<wchar_t>());
