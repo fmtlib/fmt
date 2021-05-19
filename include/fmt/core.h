@@ -395,11 +395,11 @@ FMT_CONSTEXPR typename std::make_unsigned<Int>::type to_unsigned(Int value) {
 FMT_MSC_WARNING(suppress : 4566) constexpr unsigned char micro[] = "\u00B5";
 
 constexpr bool is_utf8() {
-  // avoid buggy sign extensions in MSVC's constant evaluation mode
+  // Avoid buggy sign extensions in MSVC's constant evaluation mode.
   // https://developercommunity.visualstudio.com/t/C-difference-in-behavior-for-unsigned/1233612
   using uchar = unsigned char;
-  return FMT_UNICODE || (sizeof(micro) == 3 && uchar{micro[0]} == 0xC2 &&
-                         uchar{micro[1]} == 0xB5);
+  return FMT_UNICODE || (sizeof(micro) == 3 && uchar(micro[0]) == 0xC2 &&
+                         uchar(micro[1]) == 0xB5);
 }
 FMT_END_DETAIL_NAMESPACE
 
