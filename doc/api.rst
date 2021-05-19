@@ -47,11 +47,11 @@ participate in an overload resolution if the latter is not a string.
 .. _format:
 
 .. doxygenfunction:: format(format_string<T...> fmt, T&&... args) -> std::string
-.. doxygenfunction:: vformat(string_view fmt, format_args args)
+.. doxygenfunction:: vformat(string_view fmt, format_args args) -> std::string
 
-.. doxygenfunction:: format_to(OutputIt out, format_string<T...> fmt, T&& args)
-.. doxygenfunction:: format_to_n(OutputIt out, size_t n, format_string<T...> fmt, const T&... args)
-.. doxygenfunction:: formatted_size(format_string<T...> fmt, T&&... args)
+.. doxygenfunction:: format_to(OutputIt out, format_string<T...> fmt, T&& args) -> OutputIt
+.. doxygenfunction:: format_to_n(OutputIt out, size_t n, format_string<T...> fmt, const T&... args) -> format_to_n_result<OutputIt>
+.. doxygenfunction:: formatted_size(format_string<T...> fmt, T&&... args) -> size_t
 
 .. doxygenstruct:: fmt::format_to_n_result
    :members:
