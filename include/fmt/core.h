@@ -2781,7 +2781,7 @@ FMT_API auto vformat(string_view fmt, format_args args) -> std::string;
 */
 template <typename... T>
 FMT_INLINE auto format(format_string<T...> fmt, T&&... args) -> std::string {
-  return vformat(fmt, make_format_args(args...));
+  return vformat(fmt, fmt::make_format_args(args...));
 }
 
 /** Formats a string and writes the output to ``out``. */
