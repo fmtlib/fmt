@@ -86,6 +86,7 @@ export module fmt;
 #include "fmt/locale.h"
 #include "fmt/chrono.h"
 #include "fmt/printf.h"
+#include "fmt/wchar.h"
 #include "fmt/os.h"
 
 module : private;

@@ -13,6 +13,7 @@
 #include "format.h"
 
 FMT_BEGIN_NAMESPACE
+FMT_MODULE_EXPORT_BEGIN
 
 using wformat_parse_context = basic_format_parse_context<wchar_t>;
 using wformat_context = buffer_context<wchar_t>;
@@ -60,6 +61,7 @@ template <typename... T> void print(wformat_string<T...> fmt, T&&... args) {
   return vprint(wstring_view(fmt), make_wformat_args(args...));
 }
 
+FMT_MODULE_EXPORT_END
 FMT_END_NAMESPACE
 
 #endif  // FMT_WCHAR_H_
