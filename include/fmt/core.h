@@ -693,6 +693,8 @@ template <typename T> struct is_contiguous : std::false_type {};
 template <typename Char>
 struct is_contiguous<std::basic_string<Char>> : std::true_type {};
 
+class appender;
+
 FMT_BEGIN_DETAIL_NAMESPACE
 
 // Extracts a reference to the container from back_insert_iterator.
@@ -901,30 +903,11 @@ template <typename T = char> class counting_buffer final : public buffer<T> {
   size_t count() { return count_ + this->size(); }
 };
 
-// An output iterator that appends to the buffer.
-// It is used to reduce symbol sizes for the common case.
 template <typename T>
-class buffer_appender : public std::back_insert_iterator<buffer<T>> {
-  using base = std::back_insert_iterator<buffer<T>>;
+using buffer_appender = conditional_t<std::is_same<T, char>::value, appender,
+                                      std::back_insert_iterator<buffer<T>>>;
 
- public:
-  using std::back_insert_iterator<buffer<T>>::back_insert_iterator;
-  buffer_appender(base it) : base(it) {}
-  using _Unchecked_type = buffer_appender;  // Mark iterator as checked.
-
-  buffer_appender& operator++() {
-    base::operator++();
-    return *this;
-  }
-
-  buffer_appender operator++(int) {
-    buffer_appender tmp = *this;
-    ++*this;
-    return tmp;
-  }
-};
-
-// Maps an output iterator into a buffer.
+// Maps an output iterator to a buffer.
 template <typename T, typename OutputIt>
 iterator_buffer<OutputIt, T> get_buffer(OutputIt);
 template <typename T> buffer<T>& get_buffer(buffer_appender<T>);
@@ -932,15 +915,12 @@ template <typename T> buffer<T>& get_buffer(buffer_appender<T>);
 template <typename OutputIt> OutputIt get_buffer_init(OutputIt out) {
   return out;
 }
-template <typename T> buffer<T>& get_buffer_init(buffer_appender<T> out) {
-  return get_container(out);
-}
 
 template <typename Buffer>
 auto get_iterator(Buffer& buf) -> decltype(buf.out()) {
   return buf.out();
 }
-template <typename T> buffer_appender<T> get_iterator(buffer<T>& buf) {
+template <typename T> auto get_iterator(buffer<T>& buf) -> buffer_appender<T> {
   return buffer_appender<T>(buf);
 }
 
@@ -1318,6 +1298,32 @@ enum : unsigned long long { has_named_args_bit = 1ULL << 62 };
 
 FMT_END_DETAIL_NAMESPACE
 
+// An output iterator that appends to a buffer.
+// It is used to reduce symbol sizes for the common case.
+class appender : public std::back_insert_iterator<detail::buffer<char>> {
+  using base = std::back_insert_iterator<detail::buffer<char>>;
+
+  friend detail::buffer<char>& get_buffer_init(appender out) {
+    return detail::get_container(out);
+  }
+
+ public:
+  using std::back_insert_iterator<detail::buffer<char>>::back_insert_iterator;
+  appender(base it) : base(it) {}
+  using _Unchecked_type = appender;  // Mark iterator as checked.
+
+  auto operator++() -> appender& {
+    base::operator++();
+    return *this;
+  }
+
+  auto operator++(int) -> appender {
+    auto tmp = *this;
+    ++*this;
+    return tmp;
+  }
+};
+
 // A formatting argument. It is a trivially copyable/constructible type to
 // allow storage in basic_memory_buffer.
 template <typename Context> class basic_format_arg {
@@ -1451,9 +1457,8 @@ struct is_contiguous_back_insert_iterator : std::false_type {};
 template <typename Container>
 struct is_contiguous_back_insert_iterator<std::back_insert_iterator<Container>>
     : is_contiguous<Container> {};
-template <typename Char>
-struct is_contiguous_back_insert_iterator<buffer_appender<Char>>
-    : std::true_type {};
+template <>
+struct is_contiguous_back_insert_iterator<appender> : std::true_type {};
 
 // A type-erased reference to an std::locale to avoid heavy <locale> include.
 class locale_ref {
@@ -2795,7 +2800,8 @@ FMT_INLINE auto format(format_string<T...> fmt, T&&... args) -> std::string {
 template <typename OutputIt,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
 auto vformat_to(OutputIt out, string_view fmt, format_args args) -> OutputIt {
-  decltype(detail::get_buffer<char>(out)) buf(detail::get_buffer_init(out));
+  using detail::get_buffer_init;
+  decltype(detail::get_buffer<char>(out)) buf(get_buffer_init(out));
   detail::vformat_to(buf, string_view(fmt), args);
   return detail::get_iterator(buf);
 }
@@ -2814,7 +2820,7 @@ auto vformat_to(OutputIt out, string_view fmt, format_args args) -> OutputIt {
  */
 template <typename OutputIt, typename... T,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
-inline auto format_to(OutputIt out, format_string<T...> fmt, T&&... args)
+FMT_INLINE auto format_to(OutputIt out, format_string<T...> fmt, T&&... args)
     -> OutputIt {
   return vformat_to(out, fmt, fmt::make_format_args(args...));
 }
@@ -2846,14 +2852,14 @@ auto vformat_to_n(OutputIt out, size_t n, string_view fmt, format_args args)
  */
 template <typename OutputIt, typename... T,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
-inline auto format_to_n(OutputIt out, size_t n, format_string<T...> fmt,
-                        const T&... args) -> format_to_n_result<OutputIt> {
+FMT_INLINE auto format_to_n(OutputIt out, size_t n, format_string<T...> fmt,
+                            const T&... args) -> format_to_n_result<OutputIt> {
   return vformat_to_n(out, n, fmt, fmt::make_format_args(args...));
 }
 
 /** Returns the number of chars in the output of ``format(fmt, args...)``. */
 template <typename... T>
-inline auto formatted_size(format_string<T...> fmt, T&&... args) -> size_t {
+FMT_INLINE auto formatted_size(format_string<T...> fmt, T&&... args) -> size_t {
   auto buf = detail::counting_buffer<>();
   detail::vformat_to(buf, string_view(fmt), fmt::make_format_args(args...));
   return buf.count();
@@ -2873,7 +2879,7 @@ FMT_API void vprint(std::FILE*, string_view, format_args);
   \endrst
  */
 template <typename... T>
-inline void print(format_string<T...> fmt, T&&... args) {
+FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
   const auto& vargs = fmt::make_format_args(args...);
   return detail::is_utf8() ? vprint(fmt, vargs)
                            : detail::vprint_mojibake(stdout, fmt, vargs);
@@ -2890,7 +2896,7 @@ inline void print(format_string<T...> fmt, T&&... args) {
   \endrst
  */
 template <typename... T>
-inline void print(std::FILE* f, format_string<T...> fmt, T&&... args) {
+FMT_INLINE void print(std::FILE* f, format_string<T...> fmt, T&&... args) {
   const auto& vargs = fmt::make_format_args(args...);
   return detail::is_utf8() ? vprint(f, fmt, vargs)
                            : detail::vprint_mojibake(f, fmt, vargs);
