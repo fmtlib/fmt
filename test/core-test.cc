@@ -846,3 +846,24 @@ struct disabled_rvalue_conversion {
 TEST(core_test, disabled_rvalue_conversion) {
   EXPECT_EQ("foo", fmt::format("{}", disabled_rvalue_conversion()));
 }
+
+namespace adl_test {
+template <typename... T> void make_format_args(const T&...) = delete;
+
+struct string : std::string {};
+}  // namespace adl_test
+
+// Test that formatting functions compile when make_format_args is found by ADL.
+TEST(core_test, adl) {
+  // Only check compilation and don't run the code to avoid polluting the output
+  // and since the output is tested elsewhere.
+  if (fmt::detail::const_check(true)) return;
+  auto s = adl_test::string();
+  char buf[10];
+  fmt::format("{}", s);
+  fmt::format_to(buf, "{}", s);
+  fmt::format_to_n(buf, 10, "{}", s);
+  fmt::formatted_size("{}", s);
+  fmt::print("{}", s);
+  fmt::print(stdout, "{}", s);
+}

@@ -2816,7 +2816,7 @@ template <typename OutputIt, typename... T,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
 inline auto format_to(OutputIt out, format_string<T...> fmt, T&&... args)
     -> OutputIt {
-  return vformat_to(out, fmt, make_format_args(args...));
+  return vformat_to(out, fmt, fmt::make_format_args(args...));
 }
 
 template <typename OutputIt> struct format_to_n_result {
@@ -2848,14 +2848,14 @@ template <typename OutputIt, typename... T,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
 inline auto format_to_n(OutputIt out, size_t n, format_string<T...> fmt,
                         const T&... args) -> format_to_n_result<OutputIt> {
-  return vformat_to_n(out, n, fmt, make_format_args(args...));
+  return vformat_to_n(out, n, fmt, fmt::make_format_args(args...));
 }
 
 /** Returns the number of chars in the output of ``format(fmt, args...)``. */
 template <typename... T>
 inline auto formatted_size(format_string<T...> fmt, T&&... args) -> size_t {
   auto buf = detail::counting_buffer<>();
-  detail::vformat_to(buf, string_view(fmt), make_format_args(args...));
+  detail::vformat_to(buf, string_view(fmt), fmt::make_format_args(args...));
   return buf.count();
 }
 
@@ -2874,7 +2874,7 @@ FMT_API void vprint(std::FILE*, string_view, format_args);
  */
 template <typename... T>
 inline void print(format_string<T...> fmt, T&&... args) {
-  const auto& vargs = make_format_args(args...);
+  const auto& vargs = fmt::make_format_args(args...);
   return detail::is_utf8() ? vprint(fmt, vargs)
                            : detail::vprint_mojibake(stdout, fmt, vargs);
 }
@@ -2891,7 +2891,7 @@ inline void print(format_string<T...> fmt, T&&... args) {
  */
 template <typename... T>
 inline void print(std::FILE* f, format_string<T...> fmt, T&&... args) {
-  const auto& vargs = make_format_args(args...);
+  const auto& vargs = fmt::make_format_args(args...);
   return detail::is_utf8() ? vprint(f, fmt, vargs)
                            : detail::vprint_mojibake(f, fmt, vargs);
 }
