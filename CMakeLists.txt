@@ -131,6 +131,18 @@ if (${index} GREATER -1)
 endif ()
 message(STATUS "Required features: ${FMT_REQUIRED_FEATURES}")
 
+if (FMT_MASTER_PROJECT AND NOT DEFINED CMAKE_CXX_VISIBILITY_PRESET)
+  set_verbose(CMAKE_CXX_VISIBILITY_PRESET hidden CACHE STRING
+              "Preset for the export of private symbols")
+  set_property(CACHE CMAKE_CXX_VISIBILITY_PRESET PROPERTY STRINGS
+               hidden default)
+endif ()
+
+if (FMT_MASTER_PROJECT AND NOT DEFINED CMAKE_VISIBILITY_INLINES_HIDDEN)
+  set_verbose(CMAKE_VISIBILITY_INLINES_HIDDEN ON CACHE BOOL
+              "Whether to add a compile flag to hide symbols of inline functions")
+endif ()
+
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   set(PEDANTIC_COMPILE_FLAGS -pedantic-errors -Wall -Wextra -pedantic
       -Wold-style-cast -Wundef
