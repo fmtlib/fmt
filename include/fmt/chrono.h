@@ -283,6 +283,7 @@ To safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
 #define FMT_NOMACRO
 
 namespace detail {
+template <typename T = void> struct null {};
 inline null<> localtime_r FMT_NOMACRO(...) { return null<>(); }
 inline null<> localtime_s(...) { return null<>(); }
 inline null<> gmtime_r(...) { return null<>(); }

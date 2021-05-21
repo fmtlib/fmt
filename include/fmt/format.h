@@ -1135,8 +1135,6 @@ class utf8_to_utf16 {
   std::wstring str() const { return {&buffer_[0], size()}; }
 };
 
-template <typename T = void> struct null {};
-
 namespace dragonbox {
 
 // Type-specific information that Dragonbox uses.
