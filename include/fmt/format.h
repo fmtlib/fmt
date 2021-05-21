@@ -1284,8 +1284,8 @@ constexpr OutputIt write_padded(OutputIt out,
 }
 
 template <typename Char, typename OutputIt>
-OutputIt write_bytes(OutputIt out, string_view bytes,
-                     const basic_format_specs<Char>& specs) {
+FMT_CONSTEXPR OutputIt write_bytes(OutputIt out, string_view bytes,
+                                   const basic_format_specs<Char>& specs) {
   return write_padded(out, specs, bytes.size(),
                       [bytes](reserve_iterator<OutputIt> it) {
                         const char* data = bytes.data();
@@ -1432,19 +1432,32 @@ FMT_CONSTEXPR inline void prefix_append(unsigned& prefix, unsigned value) {
   prefix += (1u + (value > 0xff ? 1 : 0)) << 24;
 }
 
-template <typename Char, typename OutputIt, typename T,
-          FMT_ENABLE_IF(is_integral<T>::value && !std::is_same<T, bool>::value)>
-FMT_CONSTEXPR FMT_INLINE OutputIt
-write_int(OutputIt out, T value, const basic_format_specs<Char>& specs,
-          locale_ref loc) {
+template <typename UInt> struct write_int_arg {
+  UInt abs_value;
+  unsigned prefix;
+};
+
+template <typename T>
+FMT_CONSTEXPR auto make_write_int_arg(T value, sign_t sign)
+    -> write_int_arg<uint32_or_64_or_128_t<T>> {
   auto prefix = 0u;
   auto abs_value = static_cast<uint32_or_64_or_128_t<T>>(value);
   if (is_negative(value)) {
     prefix = 0x01000000 | '-';
     abs_value = 0 - abs_value;
   } else {
-    prefix = data::prefixes[specs.sign];
+    prefix = data::prefixes[sign];
   }
+  return {abs_value, prefix};
+}
+
+template <typename Char, typename OutputIt, typename T>
+FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
+                                        const basic_format_specs<Char>& specs,
+                                        locale_ref loc) -> OutputIt {
+  static_assert(std::is_same<T, uint32_or_64_or_128_t<T>>::value, "");
+  auto abs_value = arg.abs_value;
+  auto prefix = arg.prefix;
   auto utype = static_cast<unsigned>(specs.type);
   switch (specs.type) {
   case 0:
@@ -1505,7 +1518,7 @@ template <typename Char, typename OutputIt, typename T,
 FMT_CONSTEXPR OutputIt write(OutputIt out, T value,
                              const basic_format_specs<Char>& specs,
                              locale_ref loc) {
-  return write_int(out, value, specs, loc);
+  return write_int(out, make_write_int_arg(value, specs.sign), specs, loc);
 }
 // An inlined version of write used in format string compilation.
 template <typename Char, typename OutputIt, typename T,
@@ -1515,19 +1528,18 @@ template <typename Char, typename OutputIt, typename T,
 FMT_CONSTEXPR FMT_INLINE OutputIt write(OutputIt out, T value,
                                         const basic_format_specs<Char>& specs,
                                         locale_ref loc) {
-  return write_int(out, value, specs, loc);
+  return write_int(out, make_write_int_arg(value, specs.sign), specs, loc);
 }
 
-template <typename OutputIt, typename StrChar, typename Char>
-FMT_CONSTEXPR OutputIt write(OutputIt out, basic_string_view<StrChar> s,
+template <typename Char, typename OutputIt>
+FMT_CONSTEXPR OutputIt write(OutputIt out, basic_string_view<Char> s,
                              const basic_format_specs<Char>& specs) {
   auto data = s.data();
   auto size = s.size();
   if (specs.precision >= 0 && to_unsigned(specs.precision) < size)
     size = code_point_index(s, to_unsigned(specs.precision));
-  auto width = specs.width != 0
-                   ? compute_width(basic_string_view<StrChar>(data, size))
-                   : 0;
+  auto width =
+      specs.width != 0 ? compute_width(basic_string_view<Char>(data, size)) : 0;
   return write_padded(out, specs, size, width,
                       [=](reserve_iterator<OutputIt> it) {
                         return copy_str<Char>(data, data + size, it);
@@ -1818,14 +1830,6 @@ OutputIt write(OutputIt out, monostate, basic_format_specs<Char> = {},
   return out;
 }
 
-template <typename Char, typename OutputIt,
-          FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
-OutputIt write(OutputIt out, string_view value) {
-  auto it = reserve(out, value.size());
-  it = copy_str<Char>(value.begin(), value.end(), it);
-  return base_iterator(out, it);
-}
-
 template <typename Char, typename OutputIt>
 FMT_CONSTEXPR OutputIt write(OutputIt out, basic_string_view<Char> value) {
   auto it = reserve(out, value.size());
@@ -1881,7 +1885,7 @@ FMT_CONSTEXPR OutputIt write(OutputIt out, T value,
                              locale_ref = {}) {
   return specs.type && specs.type != 's'
              ? write(out, value ? 1 : 0, specs, {})
-             : write(out, string_view(value ? "true" : "false"), specs);
+             : write_bytes(out, value ? "true" : "false", specs);
 }
 
 template <typename Char, typename OutputIt>

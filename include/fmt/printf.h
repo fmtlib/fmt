@@ -202,7 +202,7 @@ class printf_arg_formatter : public arg_formatter<Char> {
   OutputIt write_null_pointer(bool is_string = false) {
     auto s = this->specs;
     s.type = 0;
-    return write(this->out, string_view(is_string ? "(null)" : "(nil)"), s);
+    return write_bytes(this->out, is_string ? "(null)" : "(nil)", s);
   }
 
  public:
