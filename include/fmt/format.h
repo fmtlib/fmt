@@ -459,6 +459,12 @@ buffer_appender<OutChar> copy_str(InputIt begin, InputIt end,
   return out;
 }
 
+template <typename OutChar, typename InputIt, typename OutputIt>
+FMT_NOINLINE OutputIt copy_str_noinline(InputIt begin, InputIt end,
+                                        OutputIt it) {
+  return copy_str<OutChar>(begin, end, it);
+}
+
 // A public domain branchless UTF-8 decoder by Christopher Wellons:
 // https://github.com/skeeto/branchless-utf8
 /* Decode the next character, c, from s, reporting errors in e.
@@ -1065,7 +1071,7 @@ inline format_decimal_result<Iterator> format_decimal(Iterator out, UInt value,
   // Buffer is large enough to hold all digits (digits10 + 1).
   Char buffer[digits10<UInt>() + 1];
   auto end = format_decimal(buffer, value, size).end;
-  return {out, detail::copy_str<Char>(buffer, end, out)};
+  return {out, detail::copy_str_noinline<Char>(buffer, end, out)};
 }
 
 template <unsigned BASE_BITS, typename Char, typename UInt>
@@ -1113,7 +1119,7 @@ inline It format_uint(It out, UInt value, int num_digits, bool upper = false) {
   // Buffer should be large enough to hold all digits (digits / BASE_BITS + 1).
   char buffer[num_bits<UInt>() / BASE_BITS + 1];
   format_uint<BASE_BITS>(buffer, value, num_digits, upper);
-  return detail::copy_str<Char>(buffer, buffer + num_digits, out);
+  return detail::copy_str_noinline<Char>(buffer, buffer + num_digits, out);
 }
 
 // A converter from UTF-8 to UTF-16.
