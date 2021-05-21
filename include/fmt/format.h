@@ -2699,10 +2699,10 @@ inline void vformat_to(
   return detail::vformat_to(buf, to_string_view(format_str), args);
 }
 
-template <typename S, typename... Args, size_t SIZE = inline_buffer_size,
-          typename Char = enable_if_t<detail::is_string<S>::value, char_t<S>>>
-inline auto format_to(basic_memory_buffer<Char, SIZE>& buf, const S& format_str,
-                      Args&&... args) ->
+template <typename S, typename... Args, typename Char, size_t SIZE,
+          typename Allocator, FMT_ENABLE_IF(detail::is_string<S>::value)>
+inline auto format_to(basic_memory_buffer<Char, SIZE, Allocator>& buf,
+                      const S& format_str, Args&&... args) ->
     typename buffer_context<Char>::iterator {
   const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
   detail::vformat_to(buf, to_string_view(format_str), vargs);
