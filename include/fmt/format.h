@@ -428,9 +428,9 @@ using needs_conversion = bool_constant<
 
 template <typename OutChar, typename InputIt, typename OutputIt,
           FMT_ENABLE_IF(!needs_conversion<InputIt, OutChar>::value)>
-FMT_CONSTEXPR OutputIt copy_str(InputIt begin, InputIt end, OutputIt it) {
-  while (begin != end) *it++ = *begin++;
-  return it;
+FMT_CONSTEXPR OutputIt copy_str(InputIt begin, InputIt end, OutputIt out) {
+  while (begin != end) *out++ = *begin++;
+  return out;
 }
 
 template <typename OutChar, typename InputIt,
@@ -446,23 +446,23 @@ FMT_CONSTEXPR20 OutChar* copy_str(InputIt begin, InputIt end, OutChar* out) {
 
 template <typename OutChar, typename InputIt, typename OutputIt,
           FMT_ENABLE_IF(needs_conversion<InputIt, OutChar>::value)>
-OutputIt copy_str(InputIt begin, InputIt end, OutputIt it) {
-  while (begin != end) *it++ = static_cast<char8_type>(*begin++);
-  return it;
+OutputIt copy_str(InputIt begin, InputIt end, OutputIt out) {
+  while (begin != end) *out++ = static_cast<char8_type>(*begin++);
+  return out;
 }
 
 template <typename OutChar, typename InputIt,
           FMT_ENABLE_IF(!needs_conversion<InputIt, OutChar>::value)>
-buffer_appender<OutChar> copy_str(InputIt begin, InputIt end,
-                                  buffer_appender<OutChar> out) {
+appender copy_str(InputIt begin, InputIt end, appender out) {
   get_container(out).append(begin, end);
   return out;
 }
 
 template <typename OutChar, typename InputIt, typename OutputIt>
-FMT_NOINLINE OutputIt copy_str_noinline(InputIt begin, InputIt end,
-                                        OutputIt it) {
-  return copy_str<OutChar>(begin, end, it);
+FMT_CONSTEXPR FMT_NOINLINE OutputIt copy_str_noinline(InputIt begin,
+                                                      InputIt end,
+                                                      OutputIt out) {
+  return copy_str<OutChar>(begin, end, out);
 }
 
 // A public domain branchless UTF-8 decoder by Christopher Wellons:
@@ -1617,18 +1617,19 @@ inline OutputIt write_significand(OutputIt out, UInt significand,
   Char buffer[digits10<UInt>() + 2];
   auto end = write_significand(buffer, significand, significand_size,
                                integral_size, decimal_point);
-  return detail::copy_str<Char>(buffer, end, out);
+  return detail::copy_str_noinline<Char>(buffer, end, out);
 }
 
 template <typename OutputIt, typename Char>
 inline OutputIt write_significand(OutputIt out, const char* significand,
                                   int significand_size, int integral_size,
                                   Char decimal_point) {
-  out = detail::copy_str<Char>(significand, significand + integral_size, out);
+  out = detail::copy_str_noinline<Char>(significand,
+                                        significand + integral_size, out);
   if (!decimal_point) return out;
   *out++ = decimal_point;
-  return detail::copy_str<Char>(significand + integral_size,
-                                significand + significand_size, out);
+  return detail::copy_str_noinline<Char>(significand + integral_size,
+                                         significand + significand_size, out);
 }
 
 template <typename OutputIt, typename DecimalFP, typename Char>
@@ -1828,7 +1829,7 @@ OutputIt write(OutputIt out, string_view value) {
 template <typename Char, typename OutputIt>
 FMT_CONSTEXPR OutputIt write(OutputIt out, basic_string_view<Char> value) {
   auto it = reserve(out, value.size());
-  it = copy_str<Char>(value.begin(), value.end(), it);
+  it = copy_str_noinline<Char>(value.begin(), value.end(), it);
   return base_iterator(out, it);
 }
 
