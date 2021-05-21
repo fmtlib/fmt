@@ -185,9 +185,17 @@ enum class terminal_color : uint8_t {
 
 enum class emphasis : uint8_t {
   bold = 1,
-  italic = 1 << 1,
-  underline = 1 << 2,
-  strikethrough = 1 << 3
+  faint = 1 << 1,
+  dim = faint,
+  italic = 1 << 2,
+  underline = 1 << 3,
+  blink = 1 << 4,
+  slow_blink = blink,
+  reverse = 1 << 5,
+  invert = reverse,
+  conceal = 1 << 6,
+  hide = conceal,
+  strikethrough = 1 << 7,
 };
 
 // rgb is a struct for red, green and blue colors.
@@ -399,7 +407,7 @@ template <typename Char> struct ansi_color_escape {
       return;
     }
 
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < 8; i++) {
       buffer[i] = static_cast<Char>(esc[i]);
     }
     rgb color(text_color.value.rgb_color);
@@ -409,16 +417,19 @@ template <typename Char> struct ansi_color_escape {
     buffer[19] = static_cast<Char>(0);
   }
   FMT_CONSTEXPR ansi_color_escape(emphasis em) FMT_NOEXCEPT {
-    uint8_t em_codes[4] = {};
+    uint8_t em_codes[8] = {};
     uint8_t em_bits = static_cast<uint8_t>(em);
     if (em_bits & static_cast<uint8_t>(emphasis::bold)) em_codes[0] = 1;
-    if (em_bits & static_cast<uint8_t>(emphasis::italic)) em_codes[1] = 3;
-    if (em_bits & static_cast<uint8_t>(emphasis::underline)) em_codes[2] = 4;
-    if (em_bits & static_cast<uint8_t>(emphasis::strikethrough))
-      em_codes[3] = 9;
+    if (em_bits & static_cast<uint8_t>(emphasis::faint)) em_codes[1] = 2;
+    if (em_bits & static_cast<uint8_t>(emphasis::italic)) em_codes[2] = 3;
+    if (em_bits & static_cast<uint8_t>(emphasis::underline)) em_codes[3] = 4;
+    if (em_bits & static_cast<uint8_t>(emphasis::blink)) em_codes[4] = 5;
+    if (em_bits & static_cast<uint8_t>(emphasis::reverse)) em_codes[5] = 7;
+    if (em_bits & static_cast<uint8_t>(emphasis::conceal)) em_codes[6] = 8;
+    if (em_bits & static_cast<uint8_t>(emphasis::strikethrough)) em_codes[7] = 9;
 
     size_t index = 0;
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < 7; ++i) {
       if (!em_codes[i]) continue;
       buffer[index++] = static_cast<Char>('\x1b');
       buffer[index++] = static_cast<Char>('[');
@@ -435,7 +446,7 @@ template <typename Char> struct ansi_color_escape {
   }
 
  private:
-  Char buffer[7u + 3u * 4u + 1u];
+  Char buffer[7u + 3u * 8u + 1u];
 
   static FMT_CONSTEXPR void to_esc(uint8_t c, Char* out,
                                    char delimiter) FMT_NOEXCEPT {
