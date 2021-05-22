@@ -1,9 +1,44 @@
 8.0.0 - TBD
 -----------
 
+* Added compile-time formatting
+  (`#2019 <https://github.com/fmtlib/fmt/pull/2019>`_,
+  `#2044 <https://github.com/fmtlib/fmt/pull/2044>`_). For example:
+
+  .. code:: c++
+
+     #include <fmt/compile.h>
+
+     consteval std::array<char, 10> compile_time_itoa(int) {
+       using namespace fmt::literals;
+       auto result = std::array<char, 10>();
+       fmt::format_to(result.data(), "{}"_cf, 42);
+       return result;
+     }
+
+  Most of formatting functionality is available at compile time with a notable
+  exception of floating-point numbers and pointers.
+  Thanks `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_.
+
 * Optimized handling of format specifiers during format string
   compilation, including but not limited to hexadecimal formatting
   (`#1944 <https://github.com/fmtlib/fmt/issues/1944>`_).
+
+* Made ``std::byte`` formattable with ``fmt::join``
+  (`#1981 <https://github.com/fmtlib/fmt/issues/1981>`_). For example:
+
+  .. code:: c++
+
+     #include <fmt/format.h>
+     #include <cstddef>
+     #include <vector>
+
+     int main() {
+       auto bytes = std::vector{std::byte(4), std::byte(2)};
+       fmt::print("{}", fmt::join(bytes, ""));
+     }
+
+  prints "42".
 
 * Formatting floating-point numbers no longer produces trailing zeros by
   default for consistency with Python and ``std::format``. For example:
@@ -16,7 +51,7 @@
        fmt::print("{0:.3}", 1.1);
      }
 
-  prints "1.1". Use the `#` specifier to keep trailing zeros.
+  prints "1.1". Use the ``#`` specifier to keep trailing zeros.
 
 * The experimental fast output stream (``fmt::ostream``) is now truncated by
   default for consistency with ``fopen``. For example:
@@ -26,15 +61,34 @@
      #include <fmt/os.h>
 
      int main() {
-      fmt::ostream out1 = fmt::output_file("guide");
-      out1.print("Zaphod");
-      out1.close();
-      fmt::ostream out2 = fmt::output_file("guide");
-      out2.print("Ford");
+       fmt::ostream out1 = fmt::output_file("guide");
+       out1.print("Zaphod");
+       out1.close();
+       fmt::ostream out2 = fmt::output_file("guide");
+       out2.print("Ford");
      }
 
   writes "Ford" to the file "guide". To preserve the old file content if any
   pass ``fmt::file::WRONLY | fmt::file::CREATE`` flags to ``fmt::output_file``.
+
+* Fixed handling of enums in ``fmt::to_string``
+(`#2036 <https://github.com/fmtlib/fmt/issues/2036>`_)
+
+* Fixed handling of empty format strings during format string compilation
+  (`#2042 <https://github.com/fmtlib/fmt/issues/2042>`_):
+
+  .. code:: c++
+
+     auto s = fmt::format(FMT_COMPILE(""));
+
+  Thanks `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_.
+
+* Fixed various warnings and compilation issues
+  (`#2047 <https://github.com/fmtlib/fmt/issues/2047>`_).
+
+* Improved documentation
+  (`#2051 <https://github.com/fmtlib/fmt/pull/2051>`_).
+  Thanks `@imba-tjd (谭九鼎) <https://github.com/imba-tjd>`_.
 
 7.1.3 - 2020-11-24
 ------------------
