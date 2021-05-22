@@ -763,6 +763,7 @@ template <typename T> class buffer {
 
   buffer(const buffer&) = delete;
   void operator=(const buffer&) = delete;
+  buffer(buffer&&) = default;
 
   auto begin() FMT_NOEXCEPT -> T* { return ptr_; }
   auto end() FMT_NOEXCEPT -> T* { return ptr_ + size_; }
@@ -924,13 +925,9 @@ using buffer_appender = conditional_t<std::is_same<T, char>::value, appender,
                                       std::back_insert_iterator<buffer<T>>>;
 
 // Maps an output iterator to a buffer.
-template <typename OutputIt, typename T>
-using get_buffer_t =
-    conditional_t<std::is_same<OutputIt, buffer_appender<T>>::value, buffer<T>&,
-                  iterator_buffer<OutputIt, T>>;
-
-template <typename OutputIt> auto get_buffer(OutputIt out) -> OutputIt {
-  return out;
+template <typename T, typename OutputIt>
+auto get_buffer(OutputIt out) -> iterator_buffer<OutputIt, T> {
+  return iterator_buffer<OutputIt, T>(out);
 }
 
 template <typename Buffer>
@@ -1340,6 +1337,7 @@ FMT_END_DETAIL_NAMESPACE
 class appender : public std::back_insert_iterator<detail::buffer<char>> {
   using base = std::back_insert_iterator<detail::buffer<char>>;
 
+  template <typename T>
   friend auto get_buffer(appender out) -> detail::buffer<char>& {
     return detail::get_container(out);
   }
@@ -2849,7 +2847,7 @@ template <typename OutputIt,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
 auto vformat_to(OutputIt out, string_view fmt, format_args args) -> OutputIt {
   using detail::get_buffer;
-  detail::get_buffer_t<OutputIt, char> buf(get_buffer(out));
+  auto&& buf = get_buffer<char>(out);
   detail::vformat_to(buf, string_view(fmt), args);
   return detail::get_iterator(buf);
 }
