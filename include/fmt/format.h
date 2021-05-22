@@ -2641,14 +2641,6 @@ extern template int snprintf_float<long double>(long double value,
 
 FMT_MODULE_EXPORT_BEGIN
 
-template <typename OutputIt, typename Char = char>
-using format_context_t FMT_DEPRECATED_ALIAS =
-    basic_format_context<OutputIt, Char>;
-
-template <typename OutputIt, typename Char = char>
-using format_args_t FMT_DEPRECATED_ALIAS =
-    basic_format_args<basic_format_context<OutputIt, Char>>;
-
 /**
   \rst
   Constructs a `~fmt::format_arg_store` object that contains references

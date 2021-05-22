@@ -696,7 +696,6 @@ struct formatter {
   formatter() = delete;
 };
 
-// DEPRECATED!
 // Specifies if T has an enabled formatter specialization. A type can be
 // formattable even if it doesn't have a formatter e.g. via a conversion.
 template <typename T, typename Context>
