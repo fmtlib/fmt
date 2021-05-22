@@ -800,6 +800,27 @@ class FMT_API format_error : public std::runtime_error {
   ~format_error() FMT_NOEXCEPT FMT_OVERRIDE FMT_MSC_DEFAULT;
 };
 
+/**
+  \rst
+  Constructs a `~fmt::format_arg_store` object that contains references
+  to arguments and can be implicitly converted to `~fmt::format_args`.
+  If ``fmt`` is a compile-time string then `make_args_checked` checks
+  its validity at compile time.
+  \endrst
+ */
+template <typename... Args, typename S, typename Char = char_t<S>>
+FMT_INLINE auto make_args_checked(const S& fmt,
+                                  const remove_reference_t<Args>&... args)
+    -> format_arg_store<buffer_context<Char>, remove_reference_t<Args>...> {
+  static_assert(
+      detail::count<(
+              std::is_base_of<detail::view, remove_reference_t<Args>>::value &&
+              std::is_reference<Args>::value)...>() == 0,
+      "passing views as lvalues is disallowed");
+  detail::check_format_string<Args...>(fmt);
+  return {args...};
+}
+
 FMT_BEGIN_DETAIL_NAMESPACE
 
 inline void throw_format_error(const char* message) {
@@ -2135,6 +2156,58 @@ constexpr auto compile_string_to_view(std_string_view<Char> s)
  */
 #define FMT_STRING(s) FMT_STRING_IMPL(s, fmt::compile_string, )
 
+#if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+template <typename Char, size_t N> struct fixed_string {
+  constexpr fixed_string(const Char (&str)[N]) {
+    copy_str<Char, const Char*, Char*>(static_cast<const Char*>(str), str + N,
+                                       data);
+  }
+  Char data[N]{};
+};
+#endif
+
+#if FMT_USE_USER_DEFINED_LITERALS
+template <typename Char> struct udl_formatter {
+  basic_string_view<Char> str;
+
+  template <typename... T>
+  std::basic_string<Char> operator()(T&&... args) const {
+    return vformat(str, fmt::make_args_checked<T...>(str, args...));
+  }
+};
+
+#  if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+template <typename T, typename Char, size_t N, fixed_string<Char, N> Str>
+struct statically_named_arg : view {
+  static constexpr auto name = Str.data;
+
+  const T& value;
+  statically_named_arg(const T& v) : value(v) {}
+};
+
+template <typename T, typename Char, size_t N, fixed_string<Char, N> Str>
+struct is_named_arg<statically_named_arg<T, Char, N, Str>> : std::true_type {};
+
+template <typename T, typename Char, size_t N, fixed_string<Char, N> Str>
+struct is_statically_named_arg<statically_named_arg<T, Char, N, Str>>
+    : std::true_type {};
+
+template <typename Char, size_t N, fixed_string<Char, N> Str> struct udl_arg {
+  template <typename T> auto operator=(T&& value) const {
+    return statically_named_arg<T, Char, N, Str>(std::forward<T>(value));
+  }
+};
+#  else
+template <typename Char> struct udl_arg {
+  const Char* str;
+
+  template <typename T> named_arg<Char, T> operator=(T&& value) const {
+    return {str, std::forward<T>(value)};
+  }
+};
+#  endif
+#endif  // FMT_USE_USER_DEFINED_LITERALS
+
 using format_func = void (*)(detail::buffer<char>&, int, const char*);
 
 FMT_API void format_error_code(buffer<char>& out, int error_code,
@@ -2167,7 +2240,7 @@ FMT_API std::system_error vsystem_error(int error_code, string_view format_str,
 template <typename... Args>
 std::system_error system_error(int error_code, string_view message,
                                const Args&... args) {
-  return vsystem_error(error_code, message, make_format_args(args...));
+  return vsystem_error(error_code, message, fmt::make_format_args(args...));
 }
 
 /**
@@ -2611,10 +2684,11 @@ void detail::vformat_to(
 }
 
 #ifndef FMT_HEADER_ONLY
-extern template void detail::vformat_to(detail::buffer<char>&, string_view,
-                                        basic_format_args<format_context>,
-                                        detail::locale_ref);
 namespace detail {
+
+extern template void vformat_to(detail::buffer<char>&, string_view,
+                                basic_format_args<format_context>,
+                                detail::locale_ref);
 
 extern template FMT_API std::string grouping_impl<char>(locale_ref loc);
 extern template FMT_API std::string grouping_impl<wchar_t>(locale_ref loc);
@@ -2627,8 +2701,7 @@ extern template int format_float<double>(double value, int precision,
 extern template int format_float<long double>(long double value, int precision,
                                               float_specs specs,
                                               buffer<char>& buf);
-int snprintf_float(float value, int precision, float_specs specs,
-                   buffer<char>& buf) = delete;
+void snprintf_float(float, int, float_specs, buffer<char>&) = delete;
 extern template int snprintf_float<double>(double value, int precision,
                                            float_specs specs,
                                            buffer<char>& buf);
@@ -2637,29 +2710,65 @@ extern template int snprintf_float<long double>(long double value,
                                                 float_specs specs,
                                                 buffer<char>& buf);
 }  // namespace detail
-#endif
+#endif  // FMT_HEADER_ONLY
 
 FMT_MODULE_EXPORT_BEGIN
+inline namespace literals {
+/**
+  \rst
+  User-defined literal equivalent of :func:`fmt::arg`.
+
+  **Example**::
+
+    using namespace fmt::literals;
+    fmt::print("Elapsed time: {s:.2f} seconds", "s"_a=1.23);
+  \endrst
+ */
+#if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+template <detail::fixed_string Str>
+constexpr auto operator""_a()
+    -> detail::udl_arg<remove_cvref_t<decltype(Str.data[0])>,
+                       sizeof(Str.data) / sizeof(decltype(Str.data[0])), Str> {
+  return {};
+}
+#else
+constexpr auto operator"" _a(const char* s, size_t) -> detail::udl_arg<char> {
+  return {s};
+}
+#endif
 
 /**
   \rst
-  Constructs a `~fmt::format_arg_store` object that contains references
-  to arguments and can be implicitly converted to `~fmt::format_args`.
-  If ``fmt`` is a compile-time string then `make_args_checked` checks
-  its validity at compile time.
+  User-defined literal equivalent of :func:`fmt::format`.
+
+  **Example**::
+
+    using namespace fmt::literals;
+    std::string message = "The answer is {}"_format(42);
   \endrst
  */
-template <typename... Args, typename S, typename Char = char_t<S>>
-FMT_INLINE auto make_args_checked(const S& fmt,
-                                  const remove_reference_t<Args>&... args)
-    -> format_arg_store<buffer_context<Char>, remove_reference_t<Args>...> {
-  static_assert(
-      detail::count<(
-              std::is_base_of<detail::view, remove_reference_t<Args>>::value &&
-              std::is_reference<Args>::value)...>() == 0,
-      "passing views as lvalues is disallowed");
-  detail::check_format_string<Args...>(fmt);
-  return {args...};
+constexpr auto operator"" _format(const char* s, size_t n)
+    -> detail::udl_formatter<char> {
+  return {{s, n}};
+}
+}  // namespace literals
+
+template <typename Char, FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
+auto vformat(basic_string_view<Char> format_str,
+             basic_format_args<buffer_context<type_identity_t<Char>>> args)
+    -> std::basic_string<Char> {
+  basic_memory_buffer<Char> buffer;
+  detail::vformat_to(buffer, format_str, args);
+  return to_string(buffer);
+}
+
+// Pass char_t as a default template parameter instead of using
+// std::basic_string<char_t<S>> to reduce the symbol size.
+template <typename S, typename... Args, typename Char = char_t<S>,
+          FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
+auto format(const S& format_str, Args&&... args) -> std::basic_string<Char> {
+  const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
+  return vformat(to_string_view(format_str), vargs);
 }
 
 template <typename S, typename Char = char_t<S>,
@@ -2731,135 +2840,18 @@ inline auto formatted_size(const S& fmt, Args&&... args) -> size_t {
   detail::vformat_to(buf, to_string_view(fmt), vargs);
   return buf.count();
 }
-
-template <typename Char, FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
-auto vformat(basic_string_view<Char> format_str,
-             basic_format_args<buffer_context<type_identity_t<Char>>> args)
-    -> std::basic_string<Char> {
-  basic_memory_buffer<Char> buffer;
-  detail::vformat_to(buffer, format_str, args);
-  return to_string(buffer);
-}
-
-// Pass char_t as a default template parameter instead of using
-// std::basic_string<char_t<S>> to reduce the symbol size.
-template <typename S, typename... Args, typename Char = char_t<S>,
-          FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
-auto format(const S& format_str, Args&&... args) -> std::basic_string<Char> {
-  const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
-  return vformat(to_string_view(format_str), vargs);
-}
 FMT_MODULE_EXPORT_END
-
-#if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
-namespace detail {
-template <typename Char, size_t N> struct fixed_string {
-  constexpr fixed_string(const Char (&str)[N]) {
-    copy_str<Char, const Char*, Char*>(static_cast<const Char*>(str), str + N,
-                                       data);
-  }
-  Char data[N]{};
-};
-}  // namespace detail
-#endif
-
-#if FMT_USE_USER_DEFINED_LITERALS
-namespace detail {
-template <typename Char> struct udl_formatter {
-  basic_string_view<Char> str;
-
-  template <typename... T>
-  std::basic_string<Char> operator()(T&&... args) const {
-    return vformat(str, fmt::make_args_checked<T...>(str, args...));
-  }
-};
-
-#  if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
-template <typename T, typename Char, size_t N, fixed_string<Char, N> Str>
-struct statically_named_arg : view {
-  static constexpr auto name = Str.data;
-
-  const T& value;
-  statically_named_arg(const T& v) : value(v) {}
-};
-
-template <typename T, typename Char, size_t N, fixed_string<Char, N> Str>
-struct is_named_arg<statically_named_arg<T, Char, N, Str>> : std::true_type {};
-
-template <typename T, typename Char, size_t N, fixed_string<Char, N> Str>
-struct is_statically_named_arg<statically_named_arg<T, Char, N, Str>>
-    : std::true_type {};
-
-template <typename Char, size_t N, fixed_string<Char, N> Str> struct udl_arg {
-  template <typename T> auto operator=(T&& value) const {
-    return statically_named_arg<T, Char, N, Str>(std::forward<T>(value));
-  }
-};
-#  else
-template <typename Char> struct udl_arg {
-  const Char* str;
-
-  template <typename T> named_arg<Char, T> operator=(T&& value) const {
-    return {str, std::forward<T>(value)};
-  }
-};
-#  endif
-}  // namespace detail
-FMT_MODULE_EXPORT_BEGIN
-
-inline namespace literals {
-/**
-  \rst
-  User-defined literal equivalent of :func:`fmt::format`.
-
-  **Example**::
-
-    using namespace fmt::literals;
-    std::string message = "The answer is {}"_format(42);
-  \endrst
- */
-constexpr auto operator"" _format(const char* s, size_t n)
-    -> detail::udl_formatter<char> {
-  return {{s, n}};
-}
-
-/**
-  \rst
-  User-defined literal equivalent of :func:`fmt::arg`.
-
-  **Example**::
-
-    using namespace fmt::literals;
-    fmt::print("Elapsed time: {s:.2f} seconds", "s"_a=1.23);
-  \endrst
- */
-#  if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
-template <detail::fixed_string Str>
-constexpr detail::udl_arg<remove_cvref_t<decltype(Str.data[0])>,
-                          sizeof(Str.data) / sizeof(decltype(Str.data[0])), Str>
-operator""_a() {
-  return {};
-}
-#  else
-constexpr detail::udl_arg<char> operator"" _a(const char* s, size_t) {
-  return {s};
-}
-#  endif
-}  // namespace literals
-
-FMT_MODULE_EXPORT_END
-#endif  // FMT_USE_USER_DEFINED_LITERALS
 FMT_END_NAMESPACE
+
+#ifdef FMT_DEPRECATED_WCHAR
+#  include "wchar.h"
+#endif
 
 #ifdef FMT_HEADER_ONLY
 #  define FMT_FUNC inline
 #  include "format-inl.h"
 #else
 #  define FMT_FUNC
-#endif
-
-#ifdef FMT_DEPRECATED_WCHAR
-#  include "wchar.h"
 #endif
 
 #endif  // FMT_FORMAT_H_
