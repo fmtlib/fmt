@@ -148,7 +148,7 @@ class utf16_to_utf8 {
 
  public:
   utf16_to_utf8() {}
-  FMT_API explicit utf16_to_utf8(wstring_view s);
+  FMT_API explicit utf16_to_utf8(basic_string_view<wchar_t> s);
   operator string_view() const { return string_view(&buffer_[0], size()); }
   size_t size() const { return buffer_.size() - 1; }
   const char* c_str() const { return &buffer_[0]; }
@@ -157,7 +157,7 @@ class utf16_to_utf8 {
   // Performs conversion returning a system error code instead of
   // throwing exception on conversion error. This method may still throw
   // in case of memory allocation error.
-  FMT_API int convert(wstring_view s);
+  FMT_API int convert(basic_string_view<wchar_t> s);
 };
 
 FMT_API void format_windows_error(buffer<char>& out, int error_code,

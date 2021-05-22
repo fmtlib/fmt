@@ -20,6 +20,7 @@
 
 using fmt::buffered_file;
 using testing::HasSubstr;
+using wstring_view = fmt::basic_string_view<wchar_t>;
 
 #ifdef _WIN32
 
@@ -62,9 +63,9 @@ TEST(util_test, utf16_to_utf8_error) {
 
 TEST(util_test, utf16_to_utf8_convert) {
   fmt::detail::utf16_to_utf8 u;
-  EXPECT_EQ(ERROR_INVALID_PARAMETER, u.convert(fmt::wstring_view(0, 1)));
+  EXPECT_EQ(ERROR_INVALID_PARAMETER, u.convert(wstring_view(0, 1)));
   EXPECT_EQ(ERROR_INVALID_PARAMETER,
-            u.convert(fmt::wstring_view(L"foo", INT_MAX + 1u)));
+            u.convert(wstring_view(L"foo", INT_MAX + 1u)));
 }
 
 TEST(os_test, format_std_error_code) {
@@ -98,8 +99,7 @@ TEST(os_test, format_windows_error) {
           FORMAT_MESSAGE_IGNORE_INSERTS,
       0, ERROR_FILE_EXISTS, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
       reinterpret_cast<LPWSTR>(&message), 0, 0);
-  fmt::detail::utf16_to_utf8 utf8_message(
-      fmt::wstring_view(message, result - 2));
+  fmt::detail::utf16_to_utf8 utf8_message(wstring_view(message, result - 2));
   LocalFree(message);
   fmt::memory_buffer actual_message;
   fmt::detail::format_windows_error(actual_message, ERROR_FILE_EXISTS, "test");
@@ -124,8 +124,7 @@ TEST(os_test, format_long_windows_error) {
     LocalFree(message);
     return;
   }
-  fmt::detail::utf16_to_utf8 utf8_message(
-      fmt::wstring_view(message, result - 2));
+  fmt::detail::utf16_to_utf8 utf8_message(wstring_view(message, result - 2));
   LocalFree(message);
   fmt::memory_buffer actual_message;
   fmt::detail::format_windows_error(actual_message, provisioning_not_allowed,

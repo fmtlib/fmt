@@ -29,7 +29,7 @@ static std::string make_positional(fmt::string_view format) {
   return s;
 }
 
-static std::wstring make_positional(fmt::wstring_view format) {
+static std::wstring make_positional(fmt::basic_string_view<wchar_t> format) {
   std::wstring s(format.data(), format.size());
   s.replace(s.find(L'%'), 1, L"%1$");
   return s;
@@ -42,7 +42,8 @@ std::string test_sprintf(fmt::string_view format, const Args&... args) {
   return fmt::sprintf(format, args...);
 }
 template <typename... Args>
-std::wstring test_sprintf(fmt::wstring_view format, const Args&... args) {
+std::wstring test_sprintf(fmt::basic_string_view<wchar_t> format,
+                          const Args&... args) {
   return fmt::sprintf(format, args...);
 }
 

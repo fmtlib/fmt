@@ -629,8 +629,6 @@ void iterator_buffer<OutputIt, T, Traits>::flush() {
 
 FMT_MODULE_EXPORT_BEGIN
 
-using wstring_view = basic_string_view<wchar_t>;
-
 template <> struct is_char<wchar_t> : std::true_type {};
 template <> struct is_char<detail::char8_type> : std::true_type {};
 template <> struct is_char<char16_t> : std::true_type {};
@@ -1129,7 +1127,7 @@ class utf8_to_utf16 {
 
  public:
   FMT_API explicit utf8_to_utf16(string_view s);
-  operator wstring_view() const { return {&buffer_[0], size()}; }
+  operator basic_string_view<wchar_t>() const { return {&buffer_[0], size()}; }
   size_t size() const { return buffer_.size() - 1; }
   const wchar_t* c_str() const { return &buffer_[0]; }
   std::wstring str() const { return {&buffer_[0], size()}; }
@@ -2489,11 +2487,6 @@ arg_join<It, Sentinel, char> join(It begin, Sentinel end, string_view sep) {
   return {begin, end, sep};
 }
 
-template <typename It, typename Sentinel>
-arg_join<It, Sentinel, wchar_t> join(It begin, Sentinel end, wstring_view sep) {
-  return {begin, end, sep};
-}
-
 /**
   \rst
   Returns an object that formats `range` with elements separated by `sep`.
@@ -2513,12 +2506,6 @@ arg_join<It, Sentinel, wchar_t> join(It begin, Sentinel end, wstring_view sep) {
 template <typename Range>
 arg_join<detail::iterator_t<Range>, detail::sentinel_t<Range>, char> join(
     Range&& range, string_view sep) {
-  return join(std::begin(range), std::end(range), sep);
-}
-
-template <typename Range>
-arg_join<detail::iterator_t<Range>, detail::sentinel_t<Range>, wchar_t> join(
-    Range&& range, wstring_view sep) {
   return join(std::begin(range), std::end(range), sep);
 }
 
@@ -2548,13 +2535,6 @@ inline std::string to_string(T value) {
   char buffer[max_size > 5 ? static_cast<unsigned>(max_size) : 5];
   char* begin = buffer;
   return std::string(begin, detail::write<char>(begin, value));
-}
-
-/**
-  Converts *value* to ``std::wstring`` using the default format for type *T*.
- */
-template <typename T> inline std::wstring to_wstring(const T& value) {
-  return format(FMT_STRING(L"{}"), value);
 }
 
 template <typename Char, size_t SIZE>
@@ -2871,9 +2851,6 @@ operator""_a() {
 }
 #  else
 constexpr detail::udl_arg<char> operator"" _a(const char* s, size_t) {
-  return {s};
-}
-constexpr detail::udl_arg<wchar_t> operator"" _a(const wchar_t* s, size_t) {
   return {s};
 }
 #  endif

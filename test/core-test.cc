@@ -22,10 +22,6 @@
 
 #include "gmock/gmock.h"
 
-#if defined(FMT_COMPILE_TIME_CHECKS) && FMT_COMPILE_TIME_CHECKS
-#  include "fmt/format.h"
-#endif
-
 using fmt::string_view;
 using fmt::detail::buffer;
 
@@ -453,11 +449,11 @@ TEST(arg_test, wstring_arg) {
   wchar_t* str = str_data;
   const wchar_t* cstr = str;
 
-  auto sv = fmt::wstring_view(str);
+  auto sv = fmt::basic_string_view<wchar_t>(str);
   CHECK_ARG(wchar_t, cstr, str);
   CHECK_ARG(wchar_t, cstr, cstr);
   CHECK_ARG(wchar_t, sv, std::wstring(str));
-  CHECK_ARG(wchar_t, sv, fmt::wstring_view(str));
+  CHECK_ARG(wchar_t, sv, fmt::basic_string_view<wchar_t>(str));
 }
 
 TEST(arg_test, pointer_arg) {

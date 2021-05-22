@@ -435,8 +435,8 @@ FMT_CONSTEXPR tuple_arg_join<char, T...> join(const std::tuple<T...>& tuple,
 }
 
 template <typename... T>
-FMT_CONSTEXPR tuple_arg_join<wchar_t, T...> join(const std::tuple<T...>& tuple,
-                                                 wstring_view sep) {
+FMT_CONSTEXPR tuple_arg_join<wchar_t, T...> join(
+    const std::tuple<T...>& tuple, basic_string_view<wchar_t> sep) {
   return {tuple, sep};
 }
 
@@ -454,12 +454,6 @@ FMT_CONSTEXPR tuple_arg_join<wchar_t, T...> join(const std::tuple<T...>& tuple,
 template <typename T>
 arg_join<const T*, const T*, char> join(std::initializer_list<T> list,
                                         string_view sep) {
-  return join(std::begin(list), std::end(list), sep);
-}
-
-template <typename T>
-arg_join<const T*, const T*, wchar_t> join(std::initializer_list<T> list,
-                                           wstring_view sep) {
   return join(std::begin(list), std::end(list), sep);
 }
 
