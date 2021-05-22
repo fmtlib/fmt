@@ -594,7 +594,7 @@ template <typename OutputIt, typename Char,
 OutputIt vformat_to(
     OutputIt out, const text_style& ts, basic_string_view<Char> format_str,
     basic_format_args<buffer_context<type_identity_t<Char>>> args) {
-  decltype(detail::get_buffer<Char>(out)) buf(detail::get_buffer_init(out));
+  detail::get_buffer_t<OutputIt, Char> buf(detail::get_buffer(out));
   detail::vformat_to(buf, ts, format_str, args);
   return detail::get_iterator(buf);
 }

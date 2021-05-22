@@ -924,11 +924,12 @@ using buffer_appender = conditional_t<std::is_same<T, char>::value, appender,
                                       std::back_insert_iterator<buffer<T>>>;
 
 // Maps an output iterator to a buffer.
-template <typename T, typename OutputIt>
-auto get_buffer(OutputIt) -> iterator_buffer<OutputIt, T>;
-template <typename T> auto get_buffer(buffer_appender<T>) -> buffer<T>&;
+template <typename OutputIt, typename T>
+using get_buffer_t =
+    conditional_t<std::is_same<OutputIt, buffer_appender<T>>::value, buffer<T>&,
+                  iterator_buffer<OutputIt, T>>;
 
-template <typename OutputIt> auto get_buffer_init(OutputIt out) -> OutputIt {
+template <typename OutputIt> auto get_buffer(OutputIt out) -> OutputIt {
   return out;
 }
 
@@ -1339,7 +1340,7 @@ FMT_END_DETAIL_NAMESPACE
 class appender : public std::back_insert_iterator<detail::buffer<char>> {
   using base = std::back_insert_iterator<detail::buffer<char>>;
 
-  friend auto get_buffer_init(appender out) -> detail::buffer<char>& {
+  friend auto get_buffer(appender out) -> detail::buffer<char>& {
     return detail::get_container(out);
   }
 
@@ -2847,8 +2848,8 @@ FMT_INLINE auto format(format_string<T...> fmt, T&&... args) -> std::string {
 template <typename OutputIt,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
 auto vformat_to(OutputIt out, string_view fmt, format_args args) -> OutputIt {
-  using detail::get_buffer_init;
-  decltype(detail::get_buffer<char>(out)) buf(get_buffer_init(out));
+  using detail::get_buffer;
+  detail::get_buffer_t<OutputIt, char> buf(get_buffer(out));
   detail::vformat_to(buf, string_view(fmt), args);
   return detail::get_iterator(buf);
 }

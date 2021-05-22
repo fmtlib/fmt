@@ -47,7 +47,7 @@ template <typename S, typename OutputIt, typename... Args,
 inline OutputIt vformat_to(
     OutputIt out, const std::locale& loc, const S& format_str,
     basic_format_args<buffer_context<type_identity_t<Char>>> args) {
-  decltype(detail::get_buffer<Char>(out)) buf(detail::get_buffer_init(out));
+  detail::get_buffer_t<OutputIt, Char> buf(detail::get_buffer(out));
   vformat_to(buf, to_string_view(format_str), args, detail::locale_ref(loc));
   return detail::get_iterator(buf);
 }
