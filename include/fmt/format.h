@@ -33,9 +33,8 @@
 #ifndef FMT_FORMAT_H_
 #define FMT_FORMAT_H_
 
-#include <cerrno>  // errno
-#include <cmath>   // std::signbit
-#include <cstdint>
+#include <cmath>         // std::signbit
+#include <cstdint>       // uint32_t
 #include <limits>        // std::numeric_limits
 #include <memory>        // std::uninitialized_copy
 #include <stdexcept>     // std::runtime_error

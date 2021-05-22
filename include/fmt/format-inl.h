@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cerrno>  // errno
 #include <climits>
 #include <cmath>
 #include <cstdarg>
