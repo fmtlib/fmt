@@ -582,8 +582,8 @@ inline std::basic_string<Char> vformat(
 template <typename S, typename... Args, typename Char = char_t<S>>
 inline std::basic_string<Char> format(const text_style& ts, const S& format_str,
                                       const Args&... args) {
-  return vformat(ts, to_string_view(format_str),
-                 fmt::make_args_checked<Args...>(format_str, args...));
+  return fmt::vformat(ts, to_string_view(format_str),
+                      fmt::make_args_checked<Args...>(format_str, args...));
 }
 
 /**

@@ -64,6 +64,50 @@ arg_join<const T*, const T*, wchar_t> join(std::initializer_list<T> list,
   return join(std::begin(list), std::end(list), sep);
 }
 
+template <typename Locale, typename S, typename Char = char_t<S>,
+          FMT_ENABLE_IF(detail::is_locale<Locale>::value &&
+                        !std::is_same<Char, char>::value)>
+inline std::basic_string<Char> vformat(
+    const Locale& loc, const S& format_str,
+    basic_format_args<buffer_context<type_identity_t<Char>>> args) {
+  return detail::vformat(loc, to_string_view(format_str), args);
+}
+
+template <typename Locale, typename S, typename... Args,
+          typename Char = char_t<S>,
+          FMT_ENABLE_IF(detail::is_locale<Locale>::value &&
+                        !std::is_same<Char, char>::value)>
+inline std::basic_string<Char> format(const Locale& loc, const S& format_str,
+                                      Args&&... args) {
+  return detail::vformat(loc, to_string_view(format_str),
+                         fmt::make_args_checked<Args...>(format_str, args...));
+}
+
+template <typename Locale, typename S, typename OutputIt, typename... Args,
+          typename Char = char_t<S>,
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value&&
+                            detail::is_locale<Locale>::value &&
+                        !std::is_same<Char, char>::value)>
+inline OutputIt vformat_to(
+    OutputIt out, const Locale& loc, const S& format_str,
+    basic_format_args<buffer_context<type_identity_t<Char>>> args) {
+  auto&& buf = detail::get_buffer<Char>(out);
+  vformat_to(buf, to_string_view(format_str), args, detail::locale_ref(loc));
+  return detail::get_iterator(buf);
+}
+
+template <typename OutputIt, typename Locale, typename S, typename... Args,
+          typename Char = char_t<S>,
+          bool enable = detail::is_output_iterator<OutputIt, Char>::value&&
+                            detail::is_locale<Locale>::value &&
+                        !std::is_same<Char, char>::value>
+inline auto format_to(OutputIt out, const Locale& loc, const S& format_str,
+                      Args&&... args) ->
+    typename std::enable_if<enable, OutputIt>::type {
+  const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
+  return vformat_to(out, loc, to_string_view(format_str), vargs);
+}
+
 inline void vprint(std::FILE* f, wstring_view fmt, wformat_args args) {
   wmemory_buffer buffer;
   detail::vformat_to(buffer, fmt, args);
@@ -91,7 +135,6 @@ template <typename... T> void print(wformat_string<T...> fmt, T&&... args) {
 template <typename T> inline std::wstring to_wstring(const T& value) {
   return format(FMT_STRING(L"{}"), value);
 }
-
 FMT_MODULE_EXPORT_END
 FMT_END_NAMESPACE
 

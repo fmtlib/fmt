@@ -624,6 +624,11 @@ void iterator_buffer<OutputIt, T, Traits>::flush() {
   this->clear();
   out_ = copy_str<T>(data_, data_ + this->limit(size), out_);
 }
+
+template <typename T, typename Enable = void>
+struct is_locale : std::false_type {};
+template <typename T>
+struct is_locale<T, void_t<decltype(T::classic())>> : std::true_type {};
 }  // namespace detail
 
 FMT_MODULE_EXPORT_BEGIN
@@ -2208,6 +2213,15 @@ template <typename Char> struct udl_arg {
 #  endif
 #endif  // FMT_USE_USER_DEFINED_LITERALS
 
+template <typename Locale, typename Char>
+std::basic_string<Char> vformat(
+    const Locale& loc, basic_string_view<Char> format_str,
+    basic_format_args<buffer_context<type_identity_t<Char>>> args) {
+  basic_memory_buffer<Char> buffer;
+  detail::vformat_to(buffer, format_str, args, detail::locale_ref(loc));
+  return {buffer.data(), buffer.size()};
+}
+
 using format_func = void (*)(detail::buffer<char>&, int, const char*);
 
 FMT_API void format_error_code(buffer<char>& out, int error_code,
@@ -2771,6 +2785,19 @@ auto format(const S& format_str, Args&&... args) -> std::basic_string<Char> {
   return vformat(to_string_view(format_str), vargs);
 }
 
+template <typename Locale, FMT_ENABLE_IF(detail::is_locale<Locale>::value)>
+inline std::string vformat(const Locale& loc, string_view fmt,
+                           format_args args) {
+  return detail::vformat(loc, fmt, args);
+}
+
+template <typename Locale, typename... T,
+          FMT_ENABLE_IF(detail::is_locale<Locale>::value)>
+inline std::string format(const Locale& loc, format_string<T...> fmt,
+                          T&&... args) {
+  return vformat(loc, fmt, fmt::make_format_args(args...));
+}
+
 template <typename S, typename Char = char_t<S>,
           FMT_ENABLE_IF(detail::is_string<S>::value)>
 inline void vformat_to(
@@ -2807,6 +2834,25 @@ template <typename OutputIt, typename S, typename... Args,
 inline auto format_to(OutputIt out, const S& fmt, Args&&... args) -> OutputIt {
   const auto& vargs = fmt::make_args_checked<Args...>(fmt, args...);
   return vformat_to(out, to_string_view(fmt), vargs);
+}
+
+template <typename OutputIt, typename Locale,
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value&&
+                            detail::is_locale<Locale>::value)>
+auto vformat_to(const Locale& loc, OutputIt out, string_view fmt,
+                format_args args) -> OutputIt {
+  using detail::get_buffer;
+  auto&& buf = get_buffer<char>(out);
+  detail::vformat_to(buf, string_view(fmt), args, detail::locale_ref(loc));
+  return detail::get_iterator(buf);
+}
+
+template <typename OutputIt, typename Locale, typename... T,
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value&&
+                            detail::is_locale<Locale>::value)>
+FMT_INLINE auto format_to(OutputIt out, const Locale& loc,
+                          format_string<T...> fmt, T&&... args) -> OutputIt {
+  return vformat_to(loc, out, fmt, fmt::make_format_args(args...));
 }
 
 template <typename OutputIt, typename Char, typename... Args,
