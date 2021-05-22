@@ -5,6 +5,37 @@
   compilation, including but not limited to hexadecimal formatting
   (`#1944 <https://github.com/fmtlib/fmt/issues/1944>`_).
 
+* Formatting floating-point numbers no longer produces trailing zeros by
+  default for consistency with Python and ``std::format``. For example:
+
+  .. code:: c++
+
+     #include <fmt/core.h>
+
+     int main() {
+       fmt::print("{0:.3}", 1.1);
+     }
+
+  prints "1.1". Use the `#` specifier to keep trailing zeros.
+
+* The experimental fast output stream (``fmt::ostream``) is now truncated by
+  default for consistency with ``fopen``. For example:
+
+  .. code:: c++
+
+     #include <fmt/os.h>
+
+     int main() {
+      fmt::ostream out1 = fmt::output_file("guide");
+      out1.print("Zaphod");
+      out1.close();
+      fmt::ostream out2 = fmt::output_file("guide");
+      out2.print("Ford");
+     }
+
+  writes "Ford" to the file "guide". To preserve the old file content if any
+  pass ``fmt::file::WRONLY | fmt::file::CREATE`` flags to ``fmt::output_file``.
+
 7.1.3 - 2020-11-24
 ------------------
 
