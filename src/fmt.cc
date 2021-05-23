@@ -83,7 +83,6 @@ export module fmt;
 #include "fmt/args.h"
 #include "fmt/color.h"
 #include "fmt/compile.h"
-#include "fmt/locale.h"
 #include "fmt/chrono.h"
 #include "fmt/printf.h"
 #include "fmt/wchar.h"
