@@ -2629,13 +2629,14 @@ std::basic_string<Char> to_string(const basic_memory_buffer<Char, SIZE>& buf) {
   detail::assume(size < std::basic_string<Char>().max_size());
   return std::basic_string<Char>(buf.data(), size);
 }
-FMT_MODULE_EXPORT_END
+
+FMT_BEGIN_DETAIL_NAMESPACE
 
 template <typename Char>
-void detail::vformat_to(
-    detail::buffer<Char>& buf, basic_string_view<Char> fmt,
+void vformat_to(
+    buffer<Char>& buf, basic_string_view<Char> fmt,
     basic_format_args<buffer_context<type_identity_t<Char>>> args,
-    detail::locale_ref loc) {
+    locale_ref loc) {
   auto out = buffer_appender<Char>(buf);
   if (fmt.size() == 2 && equal2(fmt.data(), "{}")) {
     auto arg = args.get(0);
@@ -2644,13 +2645,13 @@ void detail::vformat_to(
     return;
   }
 
-  struct format_handler : detail::error_handler {
+  struct format_handler : error_handler {
     basic_format_parse_context<Char> parse_context;
     buffer_context<Char> context;
 
     format_handler(buffer_appender<Char> out, basic_string_view<Char> str,
                    basic_format_args<buffer_context<Char>> args,
-                   detail::locale_ref loc)
+                   locale_ref loc)
         : parse_context(str), context(out, args, loc) {}
 
     void on_text(const Char* begin, const Char* end) {
@@ -2698,7 +2699,6 @@ void detail::vformat_to(
 }
 
 #ifndef FMT_HEADER_ONLY
-namespace detail {
 
 extern template void vformat_to(detail::buffer<char>&, string_view,
                                 basic_format_args<format_context>,
@@ -2723,10 +2723,9 @@ extern template int snprintf_float<long double>(long double value,
                                                 int precision,
                                                 float_specs specs,
                                                 buffer<char>& buf);
-}  // namespace detail
 #endif  // FMT_HEADER_ONLY
 
-FMT_MODULE_EXPORT_BEGIN
+FMT_END_DETAIL_NAMESPACE
 inline namespace literals {
 /**
   \rst
