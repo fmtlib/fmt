@@ -23,9 +23,7 @@ class basic_printf_parse_context : public basic_format_parse_context<Char> {
 };
 template <typename OutputIt, typename Char> class basic_printf_context;
 
-FMT_MODULE_EXPORT_END
-
-namespace detail {
+FMT_BEGIN_DETAIL_NAMESPACE
 
 // Checks if a value fits in int - used to avoid warnings about comparing
 // signed and unsigned integers.
@@ -269,7 +267,8 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
              basic_format_args<Context> args) {
   Context(buffer_appender<Char>(buf), format, args).format();
 }
-}  // namespace detail
+
+FMT_END_DETAIL_NAMESPACE
 
 // For printing into memory_buffer.
 template <typename Char, typename Context>
@@ -564,8 +563,6 @@ OutputIt basic_printf_context<OutputIt, Char>::format() {
   return detail::write(
       out, basic_string_view<Char>(start, detail::to_unsigned(it - start)));
 }
-
-FMT_MODULE_EXPORT_BEGIN
 
 template <typename Char>
 using basic_printf_context_t =
