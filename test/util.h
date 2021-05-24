@@ -78,4 +78,4 @@ class date {
 };
 
 // Returns a locale with the given name if available or classic locale othewise.
-std::locale get_locale(const char* name);
+std::locale get_locale(const char* name, const char* alt_name = nullptr);

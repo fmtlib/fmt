@@ -1141,7 +1141,7 @@ template <> struct formatter<weekday> {
     if (end.failed()) FMT_THROW(format_error("failed to format time"));
     auto s = os.str();
     if (detail::is_utf8() && localized) {
-      // char16_t codecvt is broken in MSVC.
+      // char16_t and char32_t codecvts are broken in MSVC (linkage errors).
       using code_unit = conditional_t<FMT_MSC_VER, wchar_t, char16_t>;
       auto& f =
           std::use_facet<std::codecvt<code_unit, char, std::mbstate_t>>(loc);

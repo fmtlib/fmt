@@ -27,11 +27,20 @@ fmt::buffered_file open_buffered_file(FILE** fp) {
   return f;
 }
 
-std::locale get_locale(const char* name) {
+std::locale do_get_locale(const char* name) {
   try {
     return std::locale(name);
   } catch (const std::runtime_error&) {
-    fmt::print(stderr, "{} locale is missing.\n", name);
   }
   return std::locale::classic();
+}
+
+std::locale get_locale(const char* name, const char* alt_name) {
+  auto loc = do_get_locale(name);
+  if (loc == std::locale::classic() && alt_name) {
+    loc = do_get_locale(alt_name);
+  }
+  if (loc == std::locale::classic())
+    fmt::print(stderr, "{} locale is missing.\n", name);
+  return loc;
 }
