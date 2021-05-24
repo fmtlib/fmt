@@ -203,6 +203,8 @@ The available integer presentation types are:
 |         | ``'#'`` option with this type adds the prefix ``"0B"``   |
 |         | to the output value.                                     |
 +---------+----------------------------------------------------------+
+| ``'c'`` | Character format. Outputs the number as a character.     |
++---------+----------------------------------------------------------+
 | ``'d'`` | Decimal integer. Outputs the number in base 10.          |
 +---------+----------------------------------------------------------+
 | ``'o'`` | Octal format. Outputs the number in base 8.              |
