@@ -686,18 +686,6 @@ inline int vfprintf(
   return static_cast<int>(buffer.size());
 }
 
-/** Formats arguments and writes the output to the range. */
-template <typename ArgFormatter, typename Char,
-          typename Context =
-              basic_printf_context<typename ArgFormatter::iterator, Char>>
-typename ArgFormatter::iterator vprintf(
-    detail::buffer<Char>& out, basic_string_view<Char> format_str,
-    basic_format_args<type_identity_t<Context>> args) {
-  typename ArgFormatter::iterator iter(out);
-  Context(iter, format_str, args).template format<ArgFormatter>();
-  return iter;
-}
-
 /**
   \rst
   Prints formatted data to the stream *os*.
