@@ -26,3 +26,12 @@ fmt::buffered_file open_buffered_file(FILE** fp) {
 #endif
   return f;
 }
+
+std::locale get_locale(const char* name) {
+  try {
+    return std::locale(name);
+  } catch (const std::runtime_error&) {
+    fmt::print(stderr, "{} locale is missing.\n", name);
+  }
+  return std::locale::classic();
+}

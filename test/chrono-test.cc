@@ -8,8 +8,11 @@
 #include "fmt/chrono.h"
 
 #include "gtest-extra.h"  // EXPECT_THROW_MSG
+#include "util.h"         // get_locale
 
 using fmt::runtime;
+
+using testing::Contains;
 
 auto make_tm() -> std::tm {
   auto time = std::tm();
@@ -246,26 +249,15 @@ auto format_tm(const std::tm& time, fmt::string_view spec,
   return os.str();
 }
 
+TEST(chrono_test, locale) {
+  auto loc = get_locale("ja_JP.utf8");
+  if (loc == std::locale::classic()) return;
 #  define EXPECT_TIME(spec, time, duration)                     \
     {                                                           \
       auto jp_loc = std::locale("ja_JP.utf8");                  \
       EXPECT_EQ(format_tm(time, spec, jp_loc),                  \
                 fmt::format(jp_loc, "{:L" spec "}", duration)); \
     }
-
-TEST(chrono_test, locale) {
-  auto loc_name = "ja_JP.utf8";
-  bool has_locale = false;
-  auto loc = std::locale();
-  try {
-    loc = std::locale(loc_name);
-    has_locale = true;
-  } catch (const std::runtime_error&) {
-  }
-  if (!has_locale) {
-    fmt::print("{} locale is missing.\n", loc_name);
-    return;
-  }
   EXPECT_TIME("%OH", make_hour(14), std::chrono::hours(14));
   EXPECT_TIME("%OI", make_hour(14), std::chrono::hours(14));
   EXPECT_TIME("%OM", make_minute(42), std::chrono::minutes(42));
@@ -382,6 +374,16 @@ TEST(chrono_test, special_durations) {
 
 TEST(chrono_test, unsigned_duration) {
   EXPECT_EQ("42s", fmt::format("{}", std::chrono::duration<unsigned>(42)));
+}
+
+TEST(chrono_test, format_weekday) {
+  auto loc = get_locale("ru_RU.UTF-8");
+  std::locale::global(loc);
+  EXPECT_EQ(fmt::format("{}", fmt::weekday(1)), "Mon");
+  if (loc != std::locale::classic()) {
+    EXPECT_THAT((std::vector<std::string>{"пн", "Пн"}),
+                Contains(fmt::format(loc, "{:L}", fmt::weekday(1))));
+  }
 }
 
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR

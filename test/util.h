@@ -7,6 +7,7 @@
 
 #include <cstdarg>
 #include <cstdio>
+#include <locale>
 #include <string>
 
 #include "fmt/os.h"
@@ -75,3 +76,6 @@ class date {
   int month() const { return month_; }
   int day() const { return day_; }
 };
+
+// Returns a locale with the given name if available or classic locale othewise.
+std::locale get_locale(const char* name);

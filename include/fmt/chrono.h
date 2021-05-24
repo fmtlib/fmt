@@ -683,34 +683,50 @@ FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
   return ptr;
 }
 
-struct chrono_format_checker {
-  FMT_NORETURN void report_no_date() { FMT_THROW(format_error("no date")); }
+template <typename Derived> struct null_chrono_spec_handler {
+  FMT_CONSTEXPR void unsupported() {
+    static_cast<Derived*>(this)->unsupported();
+  }
+  FMT_CONSTEXPR void on_abbr_weekday() { unsupported(); }
+  FMT_CONSTEXPR void on_full_weekday() { unsupported(); }
+  FMT_CONSTEXPR void on_dec0_weekday(numeric_system) { unsupported(); }
+  FMT_CONSTEXPR void on_dec1_weekday(numeric_system) { unsupported(); }
+  FMT_CONSTEXPR void on_abbr_month() { unsupported(); }
+  FMT_CONSTEXPR void on_full_month() { unsupported(); }
+  FMT_CONSTEXPR void on_24_hour(numeric_system) { unsupported(); }
+  FMT_CONSTEXPR void on_12_hour(numeric_system) { unsupported(); }
+  FMT_CONSTEXPR void on_minute(numeric_system) { unsupported(); }
+  FMT_CONSTEXPR void on_second(numeric_system) { unsupported(); }
+  FMT_CONSTEXPR void on_datetime(numeric_system) { unsupported(); }
+  FMT_CONSTEXPR void on_loc_date(numeric_system) { unsupported(); }
+  FMT_CONSTEXPR void on_loc_time(numeric_system) { unsupported(); }
+  FMT_CONSTEXPR void on_us_date() { unsupported(); }
+  FMT_CONSTEXPR void on_iso_date() { unsupported(); }
+  FMT_CONSTEXPR void on_12_hour_time() { unsupported(); }
+  FMT_CONSTEXPR void on_24_hour_time() { unsupported(); }
+  FMT_CONSTEXPR void on_iso_time() { unsupported(); }
+  FMT_CONSTEXPR void on_am_pm() { unsupported(); }
+  FMT_CONSTEXPR void on_duration_value() { unsupported(); }
+  FMT_CONSTEXPR void on_duration_unit() { unsupported(); }
+  FMT_CONSTEXPR void on_utc_offset() { unsupported(); }
+  FMT_CONSTEXPR void on_tz_name() { unsupported(); }
+};
+
+struct chrono_format_checker : null_chrono_spec_handler<chrono_format_checker> {
+  FMT_NORETURN void unsupported() { FMT_THROW(format_error("no date")); }
 
   template <typename Char>
   FMT_CONSTEXPR void on_text(const Char*, const Char*) {}
-  FMT_NORETURN void on_abbr_weekday() { report_no_date(); }
-  FMT_NORETURN void on_full_weekday() { report_no_date(); }
-  FMT_NORETURN void on_dec0_weekday(numeric_system) { report_no_date(); }
-  FMT_NORETURN void on_dec1_weekday(numeric_system) { report_no_date(); }
-  FMT_NORETURN void on_abbr_month() { report_no_date(); }
-  FMT_NORETURN void on_full_month() { report_no_date(); }
   FMT_CONSTEXPR void on_24_hour(numeric_system) {}
   FMT_CONSTEXPR void on_12_hour(numeric_system) {}
   FMT_CONSTEXPR void on_minute(numeric_system) {}
   FMT_CONSTEXPR void on_second(numeric_system) {}
-  FMT_NORETURN void on_datetime(numeric_system) { report_no_date(); }
-  FMT_NORETURN void on_loc_date(numeric_system) { report_no_date(); }
-  FMT_NORETURN void on_loc_time(numeric_system) { report_no_date(); }
-  FMT_NORETURN void on_us_date() { report_no_date(); }
-  FMT_NORETURN void on_iso_date() { report_no_date(); }
   FMT_CONSTEXPR void on_12_hour_time() {}
   FMT_CONSTEXPR void on_24_hour_time() {}
   FMT_CONSTEXPR void on_iso_time() {}
   FMT_CONSTEXPR void on_am_pm() {}
   FMT_CONSTEXPR void on_duration_value() {}
   FMT_CONSTEXPR void on_duration_unit() {}
-  FMT_NORETURN void on_utc_offset() { report_no_date(); }
-  FMT_NORETURN void on_tz_name() { report_no_date(); }
 };
 
 template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
@@ -1079,6 +1095,81 @@ struct chrono_formatter {
 };
 
 FMT_END_DETAIL_NAMESPACE
+
+#if defined(__cpp_lib_chrono) && __cpp_lib_chrono >= 201907
+using weekday = std::chrono::weekday;
+#else
+// A fallback version of weekday.
+class weekday {
+ private:
+  unsigned char value;
+
+ public:
+  weekday() = default;
+  explicit constexpr weekday(unsigned wd) noexcept
+      : value(static_cast<unsigned char>(wd != 7 ? wd : 0)) {}
+  constexpr unsigned c_encoding() const noexcept { return value; }
+};
+#endif
+
+// A rudimentary weekday formatter.
+template <> struct formatter<weekday> {
+ private:
+  bool localized = false;
+
+ public:
+  FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+    auto begin = ctx.begin(), end = ctx.end();
+    if (begin != end && *begin == 'L') {
+      ++begin;
+      localized = true;
+    }
+    return begin;
+  }
+
+  auto format(weekday wd, format_context& ctx) -> decltype(ctx.out()) {
+    auto tm = std::tm();
+    tm.tm_wday = static_cast<int>(wd.c_encoding());
+    auto&& os = std::ostringstream();
+    using iterator = std::ostreambuf_iterator<char>;
+    auto& loc = localized ? ctx.locale().template get<std::locale>()
+                          : std::locale::classic();
+    const auto& tp = std::use_facet<std::time_put<char, iterator>>(loc);
+    auto fmt = string_view("%a");
+    auto end =
+        tp.put(iterator(os.rdbuf()), os, ' ', &tm, fmt.begin(), fmt.end());
+    if (end.failed()) FMT_THROW(format_error("failed to format time"));
+    auto s = os.str();
+    if (detail::is_utf8() && localized) {
+      // char16_t codecvt is broken in MSVC.
+      using code_unit = conditional_t<FMT_MSC_VER, wchar_t, char16_t>;
+      auto& f =
+          std::use_facet<std::codecvt<code_unit, char, std::mbstate_t>>(loc);
+      auto mb = std::mbstate_t();
+      const char* from_next = nullptr;
+      code_unit* to_next = nullptr;
+      constexpr size_t buf_size = 100;
+      code_unit buf[buf_size] = {};
+      auto result = f.in(mb, s.data(), s.data() + s.size(), from_next, buf,
+                         buf + buf_size, to_next);
+      if (result != std::codecvt_base::ok)
+        FMT_THROW(format_error("failed to format time"));
+      s.clear();
+      for (code_unit* p = buf; p != to_next; ++p) {
+        code_unit c = *p;
+        if (c < 0x80) {
+          s.push_back(static_cast<char>(c));
+        } else if (c < 0x800) {
+          s.push_back(static_cast<char>(0xc0 | (c >> 6)));
+          s.push_back(static_cast<char>(0x80 | (c & 0x3f)));
+        } else {
+          FMT_THROW(format_error("failed to format time"));
+        }
+      }
+    }
+    return std::copy(s.begin(), s.end(), ctx.out());
+  }
+};
 
 template <typename Rep, typename Period, typename Char>
 struct formatter<std::chrono::duration<Rep, Period>, Char> {
