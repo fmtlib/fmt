@@ -580,9 +580,9 @@ using wprintf_args = basic_format_args<wprintf_context>;
   arguments and can be implicitly converted to `~fmt::printf_args`.
   \endrst
  */
-template <typename... Args>
-inline format_arg_store<printf_context, Args...> make_printf_args(
-    const Args&... args) {
+template <typename... T>
+inline auto make_printf_args(const T&... args)
+    -> format_arg_store<printf_context, T...> {
   return {args...};
 }
 
@@ -592,18 +592,19 @@ inline format_arg_store<printf_context, Args...> make_printf_args(
   arguments and can be implicitly converted to `~fmt::wprintf_args`.
   \endrst
  */
-template <typename... Args>
-inline format_arg_store<wprintf_context, Args...> make_wprintf_args(
-    const Args&... args) {
+template <typename... T>
+inline auto make_wprintf_args(const T&... args)
+    -> format_arg_store<wprintf_context, T...> {
   return {args...};
 }
 
 template <typename S, typename Char = char_t<S>>
-inline std::basic_string<Char> vsprintf(
-    const S& format,
-    basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args) {
+inline auto vsprintf(
+    const S& fmt,
+    basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args)
+    -> std::basic_string<Char> {
   basic_memory_buffer<Char> buffer;
-  vprintf(buffer, to_string_view(format), args);
+  vprintf(buffer, to_string_view(fmt), args);
   return to_string(buffer);
 }
 
@@ -616,19 +617,20 @@ inline std::basic_string<Char> vsprintf(
     std::string message = fmt::sprintf("The answer is %d", 42);
   \endrst
 */
-template <typename S, typename... Args,
+template <typename S, typename... T,
           typename Char = enable_if_t<detail::is_string<S>::value, char_t<S>>>
-inline std::basic_string<Char> sprintf(const S& format, const Args&... args) {
+inline auto sprintf(const S& fmt, const T&... args) -> std::basic_string<Char> {
   using context = basic_printf_context_t<Char>;
-  return vsprintf(to_string_view(format), make_format_args<context>(args...));
+  return vsprintf(to_string_view(fmt), make_format_args<context>(args...));
 }
 
 template <typename S, typename Char = char_t<S>>
-inline int vfprintf(
-    std::FILE* f, const S& format,
-    basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args) {
+inline auto vfprintf(
+    std::FILE* f, const S& fmt,
+    basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args)
+    -> int {
   basic_memory_buffer<Char> buffer;
-  vprintf(buffer, to_string_view(format), args);
+  vprintf(buffer, to_string_view(fmt), args);
   size_t size = buffer.size();
   return std::fwrite(buffer.data(), sizeof(Char), size, f) < size
              ? -1
@@ -644,19 +646,18 @@ inline int vfprintf(
     fmt::fprintf(stderr, "Don't %s!", "panic");
   \endrst
  */
-template <typename S, typename... Args,
-          typename Char = enable_if_t<detail::is_string<S>::value, char_t<S>>>
-inline int fprintf(std::FILE* f, const S& format, const Args&... args) {
+template <typename S, typename... T, typename Char = char_t<S>>
+inline auto fprintf(std::FILE* f, const S& fmt, const T&... args) -> int {
   using context = basic_printf_context_t<Char>;
-  return vfprintf(f, to_string_view(format),
-                  make_format_args<context>(args...));
+  return vfprintf(f, to_string_view(fmt), make_format_args<context>(args...));
 }
 
 template <typename S, typename Char = char_t<S>>
-inline int vprintf(
-    const S& format,
-    basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args) {
-  return vfprintf(stdout, to_string_view(format), args);
+inline auto vprintf(
+    const S& fmt,
+    basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args)
+    -> int {
+  return vfprintf(stdout, to_string_view(fmt), args);
 }
 
 /**
@@ -668,20 +669,19 @@ inline int vprintf(
     fmt::printf("Elapsed time: %.2f seconds", 1.23);
   \endrst
  */
-template <typename S, typename... Args,
-          FMT_ENABLE_IF(detail::is_string<S>::value)>
-inline int printf(const S& format_str, const Args&... args) {
-  using context = basic_printf_context_t<char_t<S>>;
-  return vprintf(to_string_view(format_str),
-                 make_format_args<context>(args...));
+template <typename S, typename... T, FMT_ENABLE_IF(detail::is_string<S>::value)>
+inline auto printf(const S& fmt, const T&... args) -> int {
+  return vprintf(to_string_view(fmt),
+                 make_format_args<basic_printf_context_t<char_t<S>>>(args...));
 }
 
 template <typename S, typename Char = char_t<S>>
-inline int vfprintf(
-    std::basic_ostream<Char>& os, const S& format,
-    basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args) {
+inline auto vfprintf(
+    std::basic_ostream<Char>& os, const S& fmt,
+    basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args)
+    -> int {
   basic_memory_buffer<Char> buffer;
-  vprintf(buffer, to_string_view(format), args);
+  vprintf(buffer, to_string_view(fmt), args);
   os.write(buffer.data(), static_cast<std::streamsize>(buffer.size()));
   return static_cast<int>(buffer.size());
 }
@@ -695,12 +695,11 @@ inline int vfprintf(
     fmt::fprintf(cerr, "Don't %s!", "panic");
   \endrst
  */
-template <typename S, typename... Args, typename Char = char_t<S>>
-inline int fprintf(std::basic_ostream<Char>& os, const S& format_str,
-                   const Args&... args) {
-  using context = basic_printf_context_t<Char>;
-  return vfprintf(os, to_string_view(format_str),
-                  make_format_args<context>(args...));
+template <typename S, typename... T, typename Char = char_t<S>>
+inline auto fprintf(std::basic_ostream<Char>& os, const S& fmt,
+                    const T&... args) -> int {
+  return vfprintf(os, to_string_view(fmt),
+                  make_format_args<basic_printf_context_t<Char>>(args...));
 }
 
 FMT_MODULE_EXPORT_END
