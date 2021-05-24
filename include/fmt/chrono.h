@@ -287,6 +287,45 @@ inline null<> localtime_r FMT_NOMACRO(...) { return null<>(); }
 inline null<> localtime_s(...) { return null<>(); }
 inline null<> gmtime_r(...) { return null<>(); }
 inline null<> gmtime_s(...) { return null<>(); }
+
+template <typename OutputIt>
+OutputIt write(OutputIt out, const std::tm& time, const std::locale& loc,
+               char format, char modifier = 0) {
+  auto&& os = std::ostringstream();
+  using iterator = std::ostreambuf_iterator<char>;
+  const auto& facet = std::use_facet<std::time_put<char, iterator>>(loc);
+  auto end = facet.put(os, os, ' ', &time, format, modifier);
+  if (end.failed()) FMT_THROW(format_error("failed to format time"));
+  auto str = os.str();
+  if (detail::is_utf8() && loc != std::locale::classic()) {
+    // char16_t and char32_t codecvts are broken in MSVC (linkage errors).
+    using code_unit = conditional_t<FMT_MSC_VER, wchar_t, char16_t>;
+    auto& f =
+        std::use_facet<std::codecvt<code_unit, char, std::mbstate_t>>(loc);
+    auto mb = std::mbstate_t();
+    const char* from_next = nullptr;
+    code_unit* to_next = nullptr;
+    constexpr size_t buf_size = 32;
+    code_unit buf[buf_size] = {};
+    auto result = f.in(mb, str.data(), str.data() + str.size(), from_next, buf,
+                       buf + buf_size, to_next);
+    if (result != std::codecvt_base::ok)
+      FMT_THROW(format_error("failed to format time"));
+    str.clear();
+    for (code_unit* p = buf; p != to_next; ++p) {
+      code_unit c = *p;
+      if (c < 0x80) {
+        str.push_back(static_cast<char>(c));
+      } else if (c < 0x800) {
+        str.push_back(static_cast<char>(0xc0 | (c >> 6)));
+        str.push_back(static_cast<char>(0x80 | (c & 0x3f)));
+      } else {
+        FMT_THROW(format_error("failed to format time"));
+      }
+    }
+  }
+  return std::copy(str.begin(), str.end(), out);
+}
 }  // namespace detail
 
 FMT_MODULE_EXPORT_BEGIN
@@ -973,14 +1012,9 @@ struct chrono_formatter {
 
   void format_localized(const tm& time, char format, char modifier = 0) {
     if (isnan(val)) return write_nan();
-    auto locale = localized ? context.locale().template get<std::locale>()
-                            : std::locale::classic();
-    auto& facet = std::use_facet<std::time_put<char_type>>(locale);
-    std::basic_ostringstream<char_type> os;
-    os.imbue(locale);
-    facet.put(os, os, ' ', &time, format, modifier);
-    auto str = os.str();
-    std::copy(str.begin(), str.end(), out);
+    const auto& loc = localized ? context.locale().template get<std::locale>()
+                                : std::locale::classic();
+    out = detail::write(out, time, loc, format, modifier);
   }
 
   void on_text(const char_type* begin, const char_type* end) {
@@ -1128,46 +1162,11 @@ template <> struct formatter<weekday> {
   }
 
   auto format(weekday wd, format_context& ctx) -> decltype(ctx.out()) {
-    auto tm = std::tm();
-    tm.tm_wday = static_cast<int>(wd.c_encoding());
-    auto&& os = std::ostringstream();
-    using iterator = std::ostreambuf_iterator<char>;
-    auto& loc = localized ? ctx.locale().template get<std::locale>()
-                          : std::locale::classic();
-    const auto& tp = std::use_facet<std::time_put<char, iterator>>(loc);
-    auto fmt = string_view("%a");
-    auto end =
-        tp.put(iterator(os.rdbuf()), os, ' ', &tm, fmt.begin(), fmt.end());
-    if (end.failed()) FMT_THROW(format_error("failed to format time"));
-    auto s = os.str();
-    if (detail::is_utf8() && localized) {
-      // char16_t and char32_t codecvts are broken in MSVC (linkage errors).
-      using code_unit = conditional_t<FMT_MSC_VER, wchar_t, char16_t>;
-      auto& f =
-          std::use_facet<std::codecvt<code_unit, char, std::mbstate_t>>(loc);
-      auto mb = std::mbstate_t();
-      const char* from_next = nullptr;
-      code_unit* to_next = nullptr;
-      constexpr size_t buf_size = 100;
-      code_unit buf[buf_size] = {};
-      auto result = f.in(mb, s.data(), s.data() + s.size(), from_next, buf,
-                         buf + buf_size, to_next);
-      if (result != std::codecvt_base::ok)
-        FMT_THROW(format_error("failed to format time"));
-      s.clear();
-      for (code_unit* p = buf; p != to_next; ++p) {
-        code_unit c = *p;
-        if (c < 0x80) {
-          s.push_back(static_cast<char>(c));
-        } else if (c < 0x800) {
-          s.push_back(static_cast<char>(0xc0 | (c >> 6)));
-          s.push_back(static_cast<char>(0x80 | (c & 0x3f)));
-        } else {
-          FMT_THROW(format_error("failed to format time"));
-        }
-      }
-    }
-    return std::copy(s.begin(), s.end(), ctx.out());
+    auto time = std::tm();
+    time.tm_wday = static_cast<int>(wd.c_encoding());
+    const auto& loc = localized ? ctx.locale().template get<std::locale>()
+                                : std::locale::classic();
+    return detail::write(ctx.out(), time, loc, 'a');
   }
 };
 
