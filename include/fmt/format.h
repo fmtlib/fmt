@@ -1226,8 +1226,8 @@ template <typename T> FMT_API decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT;
 
 template <typename T>
 constexpr typename dragonbox::float_info<T>::carrier_uint exponent_mask() {
-  using uint = typename dragonbox::float_info<T>::carrier_uint;
-  return ((uint(1) << dragonbox::float_info<T>::exponent_bits) - 1)
+  using uinty = typename dragonbox::float_info<T>::carrier_uint;
+  return ((uinty(1) << dragonbox::float_info<T>::exponent_bits) - 1)
          << dragonbox::float_info<T>::significand_bits;
 }
 
@@ -1818,18 +1818,18 @@ OutputIt write(OutputIt out, T value) {
   if (const_check(!is_supported_floating_point(value))) return out;
 
   using floaty = conditional_t<std::is_same<T, long double>::value, double, T>;
-  using uint = typename dragonbox::float_info<floaty>::carrier_uint;
-  auto bits = bit_cast<uint>(value);
+  using uinty = typename dragonbox::float_info<floaty>::carrier_uint;
+  auto bits = bit_cast<uinty>(value);
 
   auto fspecs = float_specs();
-  auto sign_bit = bits & (uint(1) << (num_bits<uint>() - 1));
+  auto sign_bit = bits & (uinty(1) << (num_bits<uinty>() - 1));
   if (sign_bit != 0) {
     fspecs.sign = sign::minus;
     value = -value;
   }
 
   static const auto specs = basic_format_specs<Char>();
-  uint mask = exponent_mask<floaty>();
+  uinty mask = exponent_mask<floaty>();
   if ((bits & mask) == mask)
     return write_nonfinite(out, std::isinf(value), specs, fspecs);
 
