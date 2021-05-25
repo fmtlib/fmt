@@ -376,13 +376,14 @@ TEST(chrono_test, unsigned_duration) {
   EXPECT_EQ("42s", fmt::format("{}", std::chrono::duration<unsigned>(42)));
 }
 
-TEST(chrono_test, format_weekday) {
+TEST(chrono_test, weekday) {
   auto loc = get_locale("ru_RU.UTF-8");
   std::locale::global(loc);
-  EXPECT_EQ(fmt::format("{}", fmt::weekday(1)), "Mon");
+  auto mon = fmt::weekday(1);
+  EXPECT_EQ(fmt::format("{}", mon), "Mon");
   if (loc != std::locale::classic()) {
     EXPECT_THAT((std::vector<std::string>{"пн", "Пн"}),
-                Contains(fmt::format(loc, "{:L}", fmt::weekday(1))));
+                Contains(fmt::format(loc, "{:L}", mon)));
   }
 }
 

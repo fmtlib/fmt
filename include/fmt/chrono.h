@@ -288,42 +288,46 @@ inline null<> localtime_s(...) { return null<>(); }
 inline null<> gmtime_r(...) { return null<>(); }
 inline null<> gmtime_s(...) { return null<>(); }
 
-template <typename OutputIt>
-OutputIt write(OutputIt out, const std::tm& time, const std::locale& loc,
-               char format, char modifier = 0) {
+inline auto do_write(const std::tm& time, const std::locale& loc, char format,
+                     char modifier) -> std::string {
   auto&& os = std::ostringstream();
   using iterator = std::ostreambuf_iterator<char>;
   const auto& facet = std::use_facet<std::time_put<char, iterator>>(loc);
   auto end = facet.put(os, os, ' ', &time, format, modifier);
   if (end.failed()) FMT_THROW(format_error("failed to format time"));
   auto str = os.str();
-  if (detail::is_utf8() && loc != std::locale::classic()) {
-    // char16_t and char32_t codecvts are broken in MSVC (linkage errors).
-    using code_unit = conditional_t<FMT_MSC_VER, wchar_t, char16_t>;
-    auto& f =
-        std::use_facet<std::codecvt<code_unit, char, std::mbstate_t>>(loc);
-    auto mb = std::mbstate_t();
-    const char* from_next = nullptr;
-    code_unit* to_next = nullptr;
-    constexpr size_t buf_size = 32;
-    code_unit buf[buf_size] = {};
-    auto result = f.in(mb, str.data(), str.data() + str.size(), from_next, buf,
-                       buf + buf_size, to_next);
-    if (result != std::codecvt_base::ok)
+  if (!detail::is_utf8() || loc == std::locale::classic()) return str;
+  // char16_t and char32_t codecvts are broken in MSVC (linkage errors).
+  using code_unit = conditional_t<FMT_MSC_VER, wchar_t, char16_t>;
+  auto& f = std::use_facet<std::codecvt<code_unit, char, std::mbstate_t>>(loc);
+  auto mb = std::mbstate_t();
+  const char* from_next = nullptr;
+  code_unit* to_next = nullptr;
+  constexpr size_t buf_size = 32;
+  code_unit buf[buf_size] = {};
+  auto result = f.in(mb, str.data(), str.data() + str.size(), from_next, buf,
+                     buf + buf_size, to_next);
+  if (result != std::codecvt_base::ok)
+    FMT_THROW(format_error("failed to format time"));
+  str.clear();
+  for (code_unit* p = buf; p != to_next; ++p) {
+    auto c = *p;
+    if (c < 0x80) {
+      str.push_back(static_cast<char>(c));
+    } else if (c < 0x800) {
+      str.push_back(static_cast<char>(0xc0 | (c >> 6)));
+      str.push_back(static_cast<char>(0x80 | (c & 0x3f)));
+    } else {
       FMT_THROW(format_error("failed to format time"));
-    str.clear();
-    for (code_unit* p = buf; p != to_next; ++p) {
-      code_unit c = *p;
-      if (c < 0x80) {
-        str.push_back(static_cast<char>(c));
-      } else if (c < 0x800) {
-        str.push_back(static_cast<char>(0xc0 | (c >> 6)));
-        str.push_back(static_cast<char>(0x80 | (c & 0x3f)));
-      } else {
-        FMT_THROW(format_error("failed to format time"));
-      }
     }
   }
+  return str;
+}
+
+template <typename OutputIt>
+auto write(OutputIt out, const std::tm& time, const std::locale& loc,
+           char format, char modifier = 0) -> OutputIt {
+  auto str = do_write(time, loc, format, modifier);
   return std::copy(str.begin(), str.end(), out);
 }
 }  // namespace detail
