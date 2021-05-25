@@ -550,7 +550,7 @@ FMT_CONSTEXPR inline size_t compute_width(string_view s) {
     size_t* count;
     FMT_CONSTEXPR void operator()(uint32_t cp, int error) const {
       *count +=
-          1 +
+          detail::to_unsigned(1 +
           (error == 0 && cp >= 0x1100 &&
            (cp <= 0x115f ||  // Hangul Jamo init. consonants
             cp == 0x2329 ||  // LEFT-POINTING ANGLE BRACKET〈
@@ -568,7 +568,7 @@ FMT_CONSTEXPR inline size_t compute_width(string_view s) {
             // Miscellaneous Symbols and Pictographs + Emoticons:
             (cp >= 0x1f300 && cp <= 0x1f64f) ||
             // Supplemental Symbols and Pictographs:
-            (cp >= 0x1f900 && cp <= 0x1f9ff)));
+            (cp >= 0x1f900 && cp <= 0x1f9ff))));
     }
   };
   for_each_codepoint(s, count_code_points{&num_code_points});
