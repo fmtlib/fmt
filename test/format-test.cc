@@ -1297,7 +1297,7 @@ TEST(format_test, format_infinity) {
   EXPECT_EQ("-inf", fmt::format("{}", -inf));
   EXPECT_EQ("  +inf", fmt::format("{:+06}", inf));
   EXPECT_EQ("  -inf", fmt::format("{:+06}", -inf));
-   // '0'-fill option sets alignment to numeric overwriting any user-provided
+  // '0'-fill option sets alignment to numeric overwriting any user-provided
   // alignment
   EXPECT_EQ("  +inf", fmt::format("{:^+06}", inf));
   EXPECT_EQ("  +inf", fmt::format("{:<+06}", inf));
