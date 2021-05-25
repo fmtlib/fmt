@@ -606,6 +606,20 @@ size_t formatted_size(const S& format_str, const Args&... args) {
   return format_to(detail::counting_iterator(), format_str, args...).count();
 }
 
+template <typename S, typename... Args,
+          FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
+void print(std::FILE* f, const S& format_str, const Args&... args) {
+  memory_buffer buffer;
+  format_to(std::back_inserter(buffer), format_str, args...);
+  detail::print(f, {buffer.data(), buffer.size()});
+}
+
+template <typename S, typename... Args,
+          FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
+void print(const S& format_str, const Args&... args) {
+  print(stdout, format_str, args...);
+}
+
 #if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
 inline namespace literals {
 template <detail::fixed_string Str>

@@ -791,6 +791,10 @@ template <typename T, size_t SIZE, typename Allocator>
 struct is_contiguous<basic_memory_buffer<T, SIZE, Allocator>> : std::true_type {
 };
 
+namespace detail {
+FMT_API void print(std::FILE*, string_view);
+}
+
 /** A formatting error such as invalid format string. */
 FMT_CLASS_API
 class FMT_API format_error : public std::runtime_error {
