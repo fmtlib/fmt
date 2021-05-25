@@ -746,6 +746,7 @@ template <typename T> class buffer {
         capacity_(cap) {}
 
   ~buffer() = default;
+  buffer(buffer&&) = default;
 
   /** Sets the buffer data and capacity. */
   void set(T* buf_data, size_t buf_capacity) FMT_NOEXCEPT {
@@ -762,7 +763,6 @@ template <typename T> class buffer {
 
   buffer(const buffer&) = delete;
   void operator=(const buffer&) = delete;
-  buffer(buffer&&) = default;
 
   auto begin() FMT_NOEXCEPT -> T* { return ptr_; }
   auto end() FMT_NOEXCEPT -> T* { return ptr_ + size_; }
@@ -914,7 +914,6 @@ template <typename T = char> class counting_buffer final : public buffer<T> {
 
  public:
   counting_buffer() : buffer<T>(data_, 0, buffer_size) {}
-  counting_buffer(counting_buffer&&) : buffer<T>(data_, 0, buffer_size) {}
 
   auto count() -> size_t { return count_ + this->size(); }
 };
