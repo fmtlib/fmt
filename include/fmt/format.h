@@ -1584,22 +1584,21 @@ FMT_CONSTEXPR OutputIt write(OutputIt out, const Char* s,
 
 template <typename Char, typename OutputIt>
 OutputIt write_nonfinite(OutputIt out, bool isinf,
-                         const basic_format_specs<Char>& specs,
+                         basic_format_specs<Char> specs,
                          const float_specs& fspecs) {
   auto str =
       isinf ? (fspecs.upper ? "INF" : "inf") : (fspecs.upper ? "NAN" : "nan");
   constexpr size_t str_size = 3;
   auto sign = fspecs.sign;
   auto size = str_size + (sign ? 1 : 0);
-  auto copy_it = [=](reserve_iterator<OutputIt> it) {
-    if (sign) *it++ = static_cast<Char>(data::signs[sign]);
-    return copy_str<Char>(str, str + str_size, it);
-  };
-  // no '0'-padding applied for non-finite values
+  // replace '0'-padding with space for non-finite values
   const bool is_zero_fill =
       specs.fill.size() == 1 && *specs.fill.data() == static_cast<Char>('0');
-  return is_zero_fill ? base_iterator(out, copy_it(reserve(out, size)))
-                      : write_padded<align::right>(out, specs, size, copy_it);
+  if (is_zero_fill) specs.fill[0] = static_cast<Char>(' ');
+  return write_padded(out, specs, size, [=](reserve_iterator<OutputIt> it) {
+    if (sign) *it++ = static_cast<Char>(data::signs[sign]);
+    return copy_str<Char>(str, str + str_size, it);
+  });
 }
 
 // A decimal floating-point number significand * pow(10, exp).
