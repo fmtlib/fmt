@@ -198,7 +198,7 @@ FMT_API std::system_error vwindows_error(int error_code, string_view format_str,
 template <typename... Args>
 std::system_error windows_error(int error_code, string_view message,
                                 const Args&... args) {
-  return vwindows_error(error_code, message, make_format_args(args...));
+  return vwindows_error(error_code, message, fmt::make_format_args(args...));
 }
 
 // Reports a Windows error without throwing an exception.
@@ -269,7 +269,7 @@ class buffered_file {
 
   template <typename... Args>
   inline void print(string_view format_str, const Args&... args) {
-    vprint(format_str, make_format_args(args...));
+    vprint(format_str, fmt::make_format_args(args...));
   }
 };
 
@@ -438,7 +438,7 @@ class FMT_API ostream final : private detail::buffer<char> {
    */
   template <typename... T> void print(format_string<T...> fmt, T&&... args) {
     vformat_to(detail::buffer_appender<char>(*this), fmt,
-               make_format_args(args...));
+               fmt::make_format_args(args...));
   }
 };
 
