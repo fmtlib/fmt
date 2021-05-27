@@ -1591,7 +1591,7 @@ OutputIt write_nonfinite(OutputIt out, bool isinf,
   constexpr size_t str_size = 3;
   auto sign = fspecs.sign;
   auto size = str_size + (sign ? 1 : 0);
-  // replace '0'-padding with space for non-finite values
+  // Replace '0'-padding with space for non-finite values.
   const bool is_zero_fill =
       specs.fill.size() == 1 && *specs.fill.data() == static_cast<Char>('0');
   if (is_zero_fill) specs.fill[0] = static_cast<Char>(' ');

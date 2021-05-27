@@ -1279,8 +1279,9 @@ TEST(format_test, format_nan) {
   if (std::signbit(-nan)) {
     EXPECT_EQ("-nan", fmt::format("{}", -nan));
     EXPECT_EQ("  -nan", fmt::format("{:+06}", -nan));
-  } else
+  } else {
     fmt::print("Warning: compiler doesn't handle negative NaN correctly");
+  }
   EXPECT_EQ(" nan", fmt::format("{: }", nan));
   EXPECT_EQ("NAN", fmt::format("{:F}", nan));
   EXPECT_EQ("nan    ", fmt::format("{:<7}", nan));
