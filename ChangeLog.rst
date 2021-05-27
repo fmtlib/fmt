@@ -3,7 +3,9 @@
 
 * Added compile-time formatting
   (`#2019 <https://github.com/fmtlib/fmt/pull/2019>`_,
-  `#2044 <https://github.com/fmtlib/fmt/pull/2044>`_). For example:
+  `#2044 <https://github.com/fmtlib/fmt/pull/2044>`_,
+  `#2056 <https://github.com/fmtlib/fmt/pull/2056>`_,
+  `#2072 <https://github.com/fmtlib/fmt/pull/2072>`_). For example:
 
   .. code:: c++
 
@@ -102,14 +104,20 @@
   Thanks `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_.
 
 * Fixed various warnings and compilation issues
-  (`#2039 <https://github.com/fmtlib/fmt/issues/2039>`_,
+  (`#2038 <https://github.com/fmtlib/fmt/issues/2038>`_,
+  `#2039 <https://github.com/fmtlib/fmt/issues/2039>`_,
   `#2047 <https://github.com/fmtlib/fmt/issues/2047>`_,
   `#2053 <https://github.com/fmtlib/fmt/pull/2053>`_,
   `#2059 <https://github.com/fmtlib/fmt/issues/2059>`_,
   `#2065 <https://github.com/fmtlib/fmt/pull/2065>`_,
-  `#2068 <https://github.com/fmtlib/fmt/pull/2068>`_).
-  Thanks `@Finkman <https://github.com/Finkman>`_,
-  `@dkavolis (Daumantas Kavolis) <https://github.com/dkavolis>`_.
+  `#2067 <https://github.com/fmtlib/fmt/pull/2067>`_,
+  `#2068 <https://github.com/fmtlib/fmt/pull/2068>`_,
+  `#2073 <https://github.com/fmtlib/fmt/pull/2073>`_).
+  Thanks `@yeswalrus (Walter Gray) <https://github.com/yeswalrus>`_,
+  `@Finkman <https://github.com/Finkman>`_,
+  `@HazardyKnusperkeks (Björn Schäpers) <https://github.com/HazardyKnusperkeks>`_,
+  `@dkavolis (Daumantas Kavolis) <https://github.com/dkavolis>`_
+  `@concatime (Issam Maghni) <https://github.com/concatime>`_.
 
 * Improved documentation
   (`#2051 <https://github.com/fmtlib/fmt/pull/2051>`_,
