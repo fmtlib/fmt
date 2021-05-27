@@ -501,65 +501,27 @@ template <typename Char> struct formatter<std::tm, Char> {
 
 FMT_BEGIN_DETAIL_NAMESPACE
 
-template <typename Period> FMT_CONSTEXPR const char* get_units() {
+template <typename Period> FMT_CONSTEXPR inline const char* get_units() {
+  if (std::is_same<Period, std::atto>::value) return "as";
+  if (std::is_same<Period, std::femto>::value) return "fs";
+  if (std::is_same<Period, std::pico>::value) return "ps";
+  if (std::is_same<Period, std::nano>::value) return "ns";
+  if (std::is_same<Period, std::micro>::value) return "µs";
+  if (std::is_same<Period, std::milli>::value) return "ms";
+  if (std::is_same<Period, std::centi>::value) return "cs";
+  if (std::is_same<Period, std::deci>::value) return "ds";
+  if (std::is_same<Period, std::ratio<1>>::value) return "s";
+  if (std::is_same<Period, std::deca>::value) return "das";
+  if (std::is_same<Period, std::hecto>::value) return "hs";
+  if (std::is_same<Period, std::kilo>::value) return "ks";
+  if (std::is_same<Period, std::mega>::value) return "Ms";
+  if (std::is_same<Period, std::giga>::value) return "Gs";
+  if (std::is_same<Period, std::tera>::value) return "Ts";
+  if (std::is_same<Period, std::peta>::value) return "Ps";
+  if (std::is_same<Period, std::exa>::value) return "Es";
+  if (std::is_same<Period, std::ratio<60>>::value) return "m";
+  if (std::is_same<Period, std::ratio<3600>>::value) return "h";
   return nullptr;
-}
-template <> FMT_CONSTEXPR inline const char* get_units<std::atto>() {
-  return "as";
-}
-template <> FMT_CONSTEXPR inline const char* get_units<std::femto>() {
-  return "fs";
-}
-template <> FMT_CONSTEXPR inline const char* get_units<std::pico>() {
-  return "ps";
-}
-template <> FMT_CONSTEXPR inline const char* get_units<std::nano>() {
-  return "ns";
-}
-template <> FMT_CONSTEXPR inline const char* get_units<std::micro>() {
-  return "µs";
-}
-template <> FMT_CONSTEXPR inline const char* get_units<std::milli>() {
-  return "ms";
-}
-template <> FMT_CONSTEXPR inline const char* get_units<std::centi>() {
-  return "cs";
-}
-template <> FMT_CONSTEXPR inline const char* get_units<std::deci>() {
-  return "ds";
-}
-template <> FMT_CONSTEXPR inline const char* get_units<std::ratio<1>>() {
-  return "s";
-}
-template <> FMT_CONSTEXPR inline const char* get_units<std::deca>() {
-  return "das";
-}
-template <> FMT_CONSTEXPR inline const char* get_units<std::hecto>() {
-  return "hs";
-}
-template <> FMT_CONSTEXPR inline const char* get_units<std::kilo>() {
-  return "ks";
-}
-template <> FMT_CONSTEXPR inline const char* get_units<std::mega>() {
-  return "Ms";
-}
-template <> FMT_CONSTEXPR inline const char* get_units<std::giga>() {
-  return "Gs";
-}
-template <> FMT_CONSTEXPR inline const char* get_units<std::tera>() {
-  return "Ts";
-}
-template <> FMT_CONSTEXPR inline const char* get_units<std::peta>() {
-  return "Ps";
-}
-template <> FMT_CONSTEXPR inline const char* get_units<std::exa>() {
-  return "Es";
-}
-template <> FMT_CONSTEXPR inline const char* get_units<std::ratio<60>>() {
-  return "m";
-}
-template <> FMT_CONSTEXPR inline const char* get_units<std::ratio<3600>>() {
-  return "h";
 }
 
 enum class numeric_system {
