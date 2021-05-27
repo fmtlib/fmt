@@ -1947,7 +1947,7 @@ template <typename Char> class specs_setter {
   FMT_CONSTEXPR void on_localized() { specs_.localized = true; }
 
   FMT_CONSTEXPR void on_zero() {
-    specs_.align = align::numeric;
+    if (specs_.align == align::none) specs_.align = align::numeric;
     specs_.fill[0] = Char('0');
   }
 
