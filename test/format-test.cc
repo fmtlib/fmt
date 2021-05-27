@@ -1273,10 +1273,8 @@ TEST(format_test, format_nan) {
   EXPECT_EQ("nan", fmt::format("{}", nan));
   EXPECT_EQ("+nan", fmt::format("{:+}", nan));
   EXPECT_EQ("  +nan", fmt::format("{:+06}", nan));
-  // '0'-fill option sets alignment to numeric overwriting any user-provided
-  // alignment
-  EXPECT_EQ("  +nan", fmt::format("{:^+06}", nan));
-  EXPECT_EQ("  +nan", fmt::format("{:<+06}", nan));
+  EXPECT_EQ("+nan  ", fmt::format("{:<+06}", nan));
+  EXPECT_EQ(" +nan ", fmt::format("{:^+06}", nan));
   EXPECT_EQ("  +nan", fmt::format("{:>+06}", nan));
   if (std::signbit(-nan)) {
     EXPECT_EQ("-nan", fmt::format("{}", -nan));
@@ -1297,10 +1295,8 @@ TEST(format_test, format_infinity) {
   EXPECT_EQ("-inf", fmt::format("{}", -inf));
   EXPECT_EQ("  +inf", fmt::format("{:+06}", inf));
   EXPECT_EQ("  -inf", fmt::format("{:+06}", -inf));
-  // '0'-fill option sets alignment to numeric overwriting any user-provided
-  // alignment
-  EXPECT_EQ("  +inf", fmt::format("{:^+06}", inf));
-  EXPECT_EQ("  +inf", fmt::format("{:<+06}", inf));
+  EXPECT_EQ("+inf  ", fmt::format("{:<+06}", inf));
+  EXPECT_EQ(" +inf ", fmt::format("{:^+06}", inf));
   EXPECT_EQ("  +inf", fmt::format("{:>+06}", inf));
   EXPECT_EQ(" inf", fmt::format("{: }", inf));
   EXPECT_EQ("INF", fmt::format("{:F}", inf));
