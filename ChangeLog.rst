@@ -5,20 +5,21 @@
   (`#2019 <https://github.com/fmtlib/fmt/pull/2019>`_,
   `#2044 <https://github.com/fmtlib/fmt/pull/2044>`_,
   `#2056 <https://github.com/fmtlib/fmt/pull/2056>`_,
-  `#2072 <https://github.com/fmtlib/fmt/pull/2072>`_). For example:
+  `#2072 <https://github.com/fmtlib/fmt/pull/2072>`_,
+  `#2129 <https://github.com/fmtlib/fmt/pull/2129>`_). For example:
 
   .. code:: c++
 
      #include <fmt/compile.h>
 
-     consteval std::array<char, 10> compile_time_itoa(int value) {
+     consteval auto compile_time_itoa(int value) -> std::array<char, 10> {
        auto result = std::array<char, 10>();
        fmt::format_to(result.data(), FMT_COMPILE("{}"), value);
        return result;
      }
 
-  Most of formatting functionality is available at compile time with a notable
-  exception of floating-point numbers and pointers.
+  Most of the formatting functionality is available at compile time with a
+  notable exception of floating-point numbers and pointers.
   Thanks `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_.
 
 * Added the ``_cf`` user-defined literal to represent a compiled format string.
@@ -119,6 +120,11 @@
 
   Thanks `@mikecrowe (Mike Crowe) <https://github.com/mikecrowe>`_.
 
+* Fixed ``fmt::formatted_size`` with format string compilation
+  (`#2141 <https://github.com/fmtlib/fmt/pull/2141>`_,
+  `#2161 <https://github.com/fmtlib/fmt/pull/2161>`_).
+  Thanks `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_.
+
 * Fixed handling of empty format strings during format string compilation
   (`#2042 <https://github.com/fmtlib/fmt/issues/2042>`_):
 
@@ -166,13 +172,29 @@
   writes "Ford" to the file "guide". To preserve the old file content if any
   pass ``fmt::file::WRONLY | fmt::file::CREATE`` flags to ``fmt::output_file``.
 
+* Made iterators passed to ``formatter`` specializations via a format context
+  satisfy C++20 ``std::output_iterator`` requirements
+  (`#2156 <https://github.com/fmtlib/fmt/issues/2156>`_,
+  `#2158 <https://github.com/fmtlib/fmt/pull/2158>`_).
+  Thanks `@randomnetcat (Jason Cobb) <https://github.com/randomnetcat>`_.
+
+* Optimized writing to a buffer
+  (`#2164 <https://github.com/fmtlib/fmt/pull/2164>`_).
+  Thanks `@moiwi <https://github.com/moiwi>`_.
+
 * Fixed writing to ``stdout`` when it is redirected to ``NUL`` on Windows
   (`#2080 <https://github.com/fmtlib/fmt/issues/2080>`_).
 
 * Fixed exception propagation from iterators
   (`#2097 <https://github.com/fmtlib/fmt/issues/2097>`_).
 
+* Stopped using deprecated GCC UDL template extension.
+
 * Added ``fmt/args.h`` to the install target.
+
+* Error messages are now passed to assert when exceptions are disabled
+  (`#2145 <https://github.com/fmtlib/fmt/pull/2145>`_).
+  Thanks `@NobodyXu (Jiahao XU) <https://github.com/NobodyXu>`_.
 
 * Added the ``FMT_MASTER_PROJECT`` CMake option to control build and install
   targets when {fmt} is included via ``add_subdirectory``
@@ -197,7 +219,23 @@
   `#2107 <https://github.com/fmtlib/fmt/pull/2107>`_,
   `#2117 <https://github.com/fmtlib/fmt/pull/2117>`_,
   `#2119 <https://github.com/fmtlib/fmt/pull/2119>`_,
-  `#2128 <https://github.com/fmtlib/fmt/pull/2128>`_).
+  `#2128 <https://github.com/fmtlib/fmt/pull/2128>`_,
+  `#2142 <https://github.com/fmtlib/fmt/issues/2142>`_,
+  `#2143 <https://github.com/fmtlib/fmt/pull/2143>`_,
+  `#2144 <https://github.com/fmtlib/fmt/pull/2144>`_,
+  `#2147 <https://github.com/fmtlib/fmt/issues/2147>`_,
+  `#2148 <https://github.com/fmtlib/fmt/issues/2148>`_,
+  `#2152 <https://github.com/fmtlib/fmt/pull/2152>`_,
+  `#2160 <https://github.com/fmtlib/fmt/pull/2160>`_,
+  `#2175 <https://github.com/fmtlib/fmt/issues/2175>`_,
+  `#2177 <https://github.com/fmtlib/fmt/pull/2177>`_,
+  `#2179 <https://github.com/fmtlib/fmt/pull/2179>`_,
+  `#2180 <https://github.com/fmtlib/fmt/issues/2180>`_,
+  `#2181 <https://github.com/fmtlib/fmt/issues/2181>`_,
+  `#2183 <https://github.com/fmtlib/fmt/pull/2183>`_,
+  `#2184 <https://github.com/fmtlib/fmt/issues/2184>`_,
+  `#2186 <https://github.com/fmtlib/fmt/pull/2186>`_,
+  `#2192 <https://github.com/fmtlib/fmt/pull/2192>`_).
   Thanks `@yeswalrus (Walter Gray) <https://github.com/yeswalrus>`_,
   `@Finkman <https://github.com/Finkman>`_,
   `@HazardyKnusperkeks (Björn Schäpers) <https://github.com/HazardyKnusperkeks>`_,
@@ -205,7 +243,13 @@
   `@concatime (Issam Maghni) <https://github.com/concatime>`_,
   `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_,
   `@summivox (Yin Zhong) <https://github.com/summivox>`_,
-  `@yNeo <https://github.com/yNeo>`_.
+  `@yNeo <https://github.com/yNeo>`_,
+  `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_,
+  `@toojays (John Steele Scott) <https://github.com/toojays>`_,
+  `@Brainy0207 <https://github.com/Brainy0207>`_,
+  `@vadz (VZ) <https://github.com/vadz>`_,
+  `@imsherlock (Ryan Sherlock) <https://github.com/imsherlock>`_,
+  `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
 
 * Improved documentation
   (`#2051 <https://github.com/fmtlib/fmt/pull/2051>`_,
