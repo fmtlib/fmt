@@ -70,6 +70,7 @@
 #define FMT_RETRY(result, expression) FMT_RETRY_VAL(result, expression, -1)
 
 FMT_BEGIN_NAMESPACE
+FMT_MODULE_EXPORT_BEGIN
 
 /**
   \rst
@@ -139,7 +140,7 @@ template <typename Char> struct formatter<std::error_code, Char> {
 #ifdef _WIN32
 FMT_API const std::error_category& system_category() FMT_NOEXCEPT;
 
-namespace detail {
+FMT_BEGIN_DETAIL_NAMESPACE
 // A converter from UTF-16 to UTF-8.
 // It is only provided for Windows since other systems support UTF-8 natively.
 class utf16_to_utf8 {
@@ -162,7 +163,7 @@ class utf16_to_utf8 {
 
 FMT_API void format_windows_error(buffer<char>& out, int error_code,
                                   const char* message) FMT_NOEXCEPT;
-}  // namespace detail
+FMT_END_DETAIL_NAMESPACE
 
 FMT_API std::system_error vwindows_error(int error_code, string_view format_str,
                                          format_args args);
@@ -361,7 +362,7 @@ class file {
 // Returns the memory page size.
 long getpagesize();
 
-namespace detail {
+FMT_BEGIN_DETAIL_NAMESPACE
 
 struct buffer_size {
   buffer_size() = default;
@@ -390,7 +391,8 @@ struct ostream_params {
     this->buffer_size = bs.value;
   }
 };
-}  // namespace detail
+
+FMT_END_DETAIL_NAMESPACE
 
 static constexpr detail::buffer_size buffer_size;
 
@@ -507,6 +509,7 @@ class locale {
 };
 using Locale FMT_DEPRECATED_ALIAS = locale;
 #endif  // FMT_LOCALE
+FMT_MODULE_EXPORT_END
 FMT_END_NAMESPACE
 
 #endif  // FMT_OS_H_
