@@ -6,7 +6,8 @@
   `#2044 <https://github.com/fmtlib/fmt/pull/2044>`_,
   `#2056 <https://github.com/fmtlib/fmt/pull/2056>`_,
   `#2072 <https://github.com/fmtlib/fmt/pull/2072>`_,
-  `#2129 <https://github.com/fmtlib/fmt/pull/2129>`_). For example:
+  `#2129 <https://github.com/fmtlib/fmt/pull/2129>`_).
+  For example (`godbolt <https://godbolt.org/z/Mxx9d89jM`__):
 
   .. code:: c++
 
@@ -18,14 +19,16 @@
        return result;
      }
 
+     constexpr auto answer = compile_time_itoa(42);
+
   Most of the formatting functionality is available at compile time with a
   notable exception of floating-point numbers and pointers.
   Thanks `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_.
 
 * Optimized handling of format specifiers during format string compilation.
-  For example, hexadecimal formatting (``"{:x}"``) is 3-7x faster when using
-  ``format_to`` with format string compilation and a stack-allocated buffer
-  (`#1944 <https://github.com/fmtlib/fmt/issues/1944>`_).
+  For example, hexadecimal formatting (``"{:x}"``) is now 3-7x faster than
+  before when using ``format_to`` with format string compilation and a
+  stack-allocated buffer (`#1944 <https://github.com/fmtlib/fmt/issues/1944>`_).
 
   Before (7.1.3)::
 
@@ -62,7 +65,8 @@
     ----------------------------------------------------------------------------
 
   In other cases, especially involving ``std::string`` construction, the speed
-  up can be lower.
+  up can be lower because handling format specifiers takes smaller fraction of
+  total time.
 
 * Added the ``_cf`` user-defined literal to represent a compiled format string.
   It can be used instead of the ``FMT_COMPILE`` macro
@@ -141,9 +145,8 @@
 
   Thanks `@kamibo (Camille Bordignon) <https://github.com/kamibo>`_.
 
-* Made chrono formatting locale independent by default for consistency with
-  formatting of other types. Use the ``'L'`` specifier to get localized
-  formatting. For example:
+* Made more chrono specifiers locale independent by default. Use the ``'L'``
+  specifier to get localized formatting. For example:
 
   .. code:: c++
 
@@ -207,7 +210,7 @@
   `#2310 <https://github.com/fmtlib/fmt/pull/2310>`_).
   Thanks `@Liedtke (Matthias Liedtke) <https://github.com/Liedtke>`_.
 
-* Made the hex float formatting use the right alignment by default
+* Made the hexfloat formatting use the right alignment by default
   (`#2308 <https://github.com/fmtlib/fmt/issues/2308>`_,
   `#2317 <https://github.com/fmtlib/fmt/pull/2317>`_).
   Thanks `@Liedtke (Matthias Liedtke) <https://github.com/Liedtke>`_.
