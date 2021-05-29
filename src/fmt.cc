@@ -8,8 +8,10 @@ module;
 #  define WIN32_LEAN_AND_MEAN
 #endif
 
+#include <algorithm>
 #include <cctype>
 #include <cerrno>
+#include <chrono>
 #include <climits>
 #include <clocale>
 #include <cmath>
@@ -21,9 +23,6 @@ module;
 #include <cstring>
 #include <ctime>
 #include <cwchar>
-
-#include <algorithm>
-#include <chrono>
 #include <exception>
 #include <functional>
 #include <iterator>
@@ -76,17 +75,16 @@ export module fmt;
 #define FMT_END_DETAIL_NAMESPACE \
   }                              \
   export {
-
 // all library-provided declarations and definitions
 // must be in the module purview to be exported
-#include "fmt/format.h"
 #include "fmt/args.h"
+#include "fmt/chrono.h"
 #include "fmt/color.h"
 #include "fmt/compile.h"
-#include "fmt/chrono.h"
-#include "fmt/printf.h"
-#include "fmt/wchar.h"
+#include "fmt/format.h"
 #include "fmt/os.h"
+#include "fmt/printf.h"
+#include "fmt/xchar.h"
 
 module : private;
 

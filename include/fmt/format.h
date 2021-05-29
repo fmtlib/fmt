@@ -2889,8 +2889,8 @@ inline auto formatted_size(const S& fmt, Args&&... args) -> size_t {
 FMT_MODULE_EXPORT_END
 FMT_END_NAMESPACE
 
-#ifdef FMT_DEPRECATED_INCLUDE_WCHAR
-#  include "wchar.h"
+#ifdef FMT_DEPRECATED_INCLUDE_XCHAR
+#  include "xchar.h"
 #endif
 
 #ifdef FMT_HEADER_ONLY
