@@ -6,6 +6,7 @@
   `#2044 <https://github.com/fmtlib/fmt/pull/2044>`_,
   `#2056 <https://github.com/fmtlib/fmt/pull/2056>`_,
   `#2072 <https://github.com/fmtlib/fmt/pull/2072>`_,
+  `#2075 <https://github.com/fmtlib/fmt/pull/2075>`_,
   `#2129 <https://github.com/fmtlib/fmt/pull/2129>`_).
   For example (`godbolt <https://godbolt.org/z/Mxx9d89jM>`__):
 
@@ -124,7 +125,11 @@
   a ~15% reported reduction on one platform.
   Thanks `@sergiud (Sergiu Deitsch) <https://github.com/sergiud>`_.
 
-* Added support for ``std::byte`` and other formattable types to ``fmt::join``
+* Added support of ranges with non-const ``begin`` / ``end``
+  (`#1953 <https://github.com/fmtlib/fmt/pull/1953>`_).
+  Thanks `@kitegi (sarah) <https://github.com/kitegi>`_.
+
+* Added support of ``std::byte`` and other formattable types to ``fmt::join``
   (`#1981 <https://github.com/fmtlib/fmt/issues/1981>`_,
   `#2040 <https://github.com/fmtlib/fmt/issues/2040>`_,
   `#2050 <https://github.com/fmtlib/fmt/pull/2050>`_,
@@ -343,6 +348,10 @@
   (`#2300 <https://github.com/fmtlib/fmt/pull/2300>`_).
   Thanks `@voxmea <https://github.com/voxmea>`_.
 
+* Added ``Allocator::max_size`` support to ``basic_memory_buffer``.
+  (`#1960 <https://github.com/fmtlib/fmt/pull/1960>`_).
+  Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
+
 * Added wide string support to ``fmt::join``
   (`#2236 <https://github.com/fmtlib/fmt/pull/2236>`_).
   Thanks `@crbrz <https://github.com/crbrz>`_.
@@ -354,9 +363,13 @@
   `#2204 <https://github.com/fmtlib/fmt/pull/2204>`_).
   Thanks `@randomnetcat (Jason Cobb) <https://github.com/randomnetcat>`_.
 
-* Optimized writing to a buffer
-  (`#2164 <https://github.com/fmtlib/fmt/pull/2164>`_).
-  Thanks `@moiwi <https://github.com/moiwi>`_.
+* Optimized the ``printf`` implementation
+  (`#1982 <https://github.com/fmtlib/fmt/pull/1982>`_,
+  `#1984 <https://github.com/fmtlib/fmt/pull/1984>`_,
+  `#2016 <https://github.com/fmtlib/fmt/pull/2016>`_,
+  `#2164 <https://github.com/fmtlib/fmt/pull/2164>`_).
+  Thanks `@rimathia <https://github.com/rimathia>`_ and
+  `@moiwi <https://github.com/moiwi>`_.
 
 * Improved detection of ``constexpr`` ``char_traits``
   (`#2246 <https://github.com/fmtlib/fmt/pull/2246>`_,
@@ -387,11 +400,23 @@
   Thanks `@randomizedthinking <https://github.com/randomizedthinking>`_.
 
 * Improved build configuration
-  (`#2122 <https://github.com/fmtlib/fmt/pull/2122>`_).
-  Thanks `@ibaned (Dan Ibanez) <https://github.com/ibaned>`_.
+  (`#2026 <https://github.com/fmtlib/fmt/pull/2026>`_,
+  `#2122 <https://github.com/fmtlib/fmt/pull/2122>`_).
+  Thanks `@luncliff (Park DongHa) <https://github.com/luncliff>`_ and
+  `@ibaned (Dan Ibanez) <https://github.com/ibaned>`_.
 
 * Fixed various warnings and compilation issues
-  (`#2038 <https://github.com/fmtlib/fmt/issues/2038>`_,
+  (`#1959 <https://github.com/fmtlib/fmt/pull/1959>`_,
+  `#1963 <https://github.com/fmtlib/fmt/pull/1963>`_,
+  `#1965 <https://github.com/fmtlib/fmt/pull/1965>`_,
+  `#1974 <https://github.com/fmtlib/fmt/pull/1974>`_,
+  `#1975 <https://github.com/fmtlib/fmt/pull/1975>`_,
+  `#1990 <https://github.com/fmtlib/fmt/pull/1990>`_,
+  `#2001 <https://github.com/fmtlib/fmt/pull/2001>`_,
+  `#2006 <https://github.com/fmtlib/fmt/pull/2006>`_,
+  `#2009 <https://github.com/fmtlib/fmt/pull/2009>`_,
+  `#2010 <https://github.com/fmtlib/fmt/pull/2010>`_,
+  `#2038 <https://github.com/fmtlib/fmt/issues/2038>`_,
   `#2039 <https://github.com/fmtlib/fmt/issues/2039>`_,
   `#2047 <https://github.com/fmtlib/fmt/issues/2047>`_,
   `#2053 <https://github.com/fmtlib/fmt/pull/2053>`_,
@@ -450,7 +475,11 @@
   `#2313 <https://github.com/fmtlib/fmt/pull/2313>`_,
   `#2315 <https://github.com/fmtlib/fmt/pull/2315>`_,
   `#2321 <https://github.com/fmtlib/fmt/pull/2321>`_).
-  Thanks `@yeswalrus (Walter Gray) <https://github.com/yeswalrus>`_,
+  Thanks `@darklukee <https://github.com/darklukee>`_,
+  `@fagg (Ashton Fagg) <https://github.com/fagg>`_,
+  `@killerbot242 (Lieven de Cock) <https://github.com/killerbot242>`_,
+  `@jgopel (Jonathan Gopel) <https://github.com/jgopel>`_,
+  `@yeswalrus (Walter Gray) <https://github.com/yeswalrus>`_,
   `@Finkman <https://github.com/Finkman>`_,
   `@HazardyKnusperkeks (Björn Schäpers) <https://github.com/HazardyKnusperkeks>`_,
   `@dkavolis (Daumantas Kavolis) <https://github.com/dkavolis>`_
@@ -490,14 +519,17 @@
   `@mordante <https://github.com/mordante>`_.
 
 * Continuous integration and test improvements
-  (`#2110 <https://github.com/fmtlib/fmt/pull/2110>`_,
+  (`#1991 <https://github.com/fmtlib/fmt/pull/1991>`_,
+  `#2020 <https://github.com/fmtlib/fmt/pull/2020>`_,
+  `#2110 <https://github.com/fmtlib/fmt/pull/2110>`_,
   `#2114 <https://github.com/fmtlib/fmt/pull/2114>`_,
   `#2196 <https://github.com/fmtlib/fmt/issues/2196>`_,
   `#2217 <https://github.com/fmtlib/fmt/pull/2217>`_,
   `#2247 <https://github.com/fmtlib/fmt/pull/2247>`_,
   `#2256 <https://github.com/fmtlib/fmt/pull/2256>`_).
-  Thanks `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_.
-
+  Thanks `@jgopel (Jonathan Gopel) <https://github.com/jgopel>`_ and
+  `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_.
+  
 7.1.3 - 2020-11-24
 ------------------
 
