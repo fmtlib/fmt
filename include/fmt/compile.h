@@ -164,7 +164,8 @@ struct is_compiled_string : std::is_base_of<compiled_string, S> {};
 #endif
 
 #if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
-template <typename Char, size_t N, fixed_string<Char, N> Str>
+template <typename Char, size_t N,
+          fmt::detail_exported::fixed_string<Char, N> Str>
 struct udl_compiled_string : compiled_string {
   using char_type = Char;
   constexpr operator basic_string_view<char_type>() const {
@@ -622,7 +623,7 @@ void print(const S& format_str, const Args&... args) {
 
 #if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
 inline namespace literals {
-template <detail::fixed_string Str>
+template <detail_exported::fixed_string Str>
 constexpr detail::udl_compiled_string<
     remove_cvref_t<decltype(Str.data[0])>,
     sizeof(Str.data) / sizeof(decltype(Str.data[0])), Str>

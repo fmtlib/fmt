@@ -445,3 +445,11 @@ TEST(module_test, has_formatter) {
 TEST(module_test, is_formattable) {
   EXPECT_FALSE(fmt::is_formattable<disabled_formatter>::value);
 }
+
+TEST(module_test, compile_format_string) {
+  using namespace fmt::literals;
+  EXPECT_EQ("42", fmt::format("{0:x}"_cf, 0x42));
+  EXPECT_EQ(L"42", fmt::format(L"{:}"_cf, 42));
+  EXPECT_EQ("4.2", fmt::format("{arg:3.1f}"_cf, "arg"_a = 4.2));
+  EXPECT_EQ(L" 42", fmt::format(L"{arg:>3}"_cf, L"arg"_a = L"42"));
+}
