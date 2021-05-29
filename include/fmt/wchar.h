@@ -54,19 +54,21 @@ constexpr detail::udl_arg<wchar_t> operator"" _a(const wchar_t* s, size_t) {
 }  // namespace literals
 
 template <typename It, typename Sentinel>
-arg_join<It, Sentinel, wchar_t> join(It begin, Sentinel end, wstring_view sep) {
+auto join(It begin, Sentinel end, wstring_view sep)
+    -> join_view<It, Sentinel, wchar_t> {
   return {begin, end, sep};
 }
 
 template <typename Range>
-arg_join<detail::iterator_t<Range>, detail::sentinel_t<Range>, wchar_t> join(
-    Range&& range, wstring_view sep) {
+auto join(Range&& range, wstring_view sep)
+    -> join_view<detail::iterator_t<Range>, detail::sentinel_t<Range>,
+                 wchar_t> {
   return join(std::begin(range), std::end(range), sep);
 }
 
 template <typename T>
-arg_join<const T*, const T*, wchar_t> join(std::initializer_list<T> list,
-                                           wstring_view sep) {
+auto join(std::initializer_list<T> list, wstring_view sep)
+    -> join_view<const T*, const T*, wchar_t> {
   return join(std::begin(list), std::end(list), sep);
 }
 

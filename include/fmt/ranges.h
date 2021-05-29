@@ -296,8 +296,8 @@ struct formatter<TupleT, Char, enable_if_t<fmt::is_tuple_like<TupleT>::value>> {
     }
     formatting_tuple<Char>& formatting;
     size_t& i;
-    typename std::add_lvalue_reference<decltype(
-        std::declval<FormatContext>().out())>::type out;
+    typename std::add_lvalue_reference<
+        decltype(std::declval<FormatContext>().out())>::type out;
   };
 
  public:
@@ -452,8 +452,8 @@ FMT_CONSTEXPR tuple_arg_join<wchar_t, T...> join(
   \endrst
  */
 template <typename T>
-arg_join<const T*, const T*, char> join(std::initializer_list<T> list,
-                                        string_view sep) {
+join_view<const T*, const T*> join(std::initializer_list<T> list,
+                                   string_view sep) {
   return join(std::begin(list), std::end(list), sep);
 }
 

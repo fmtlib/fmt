@@ -2506,18 +2506,21 @@ template <> struct formatter<bytes> {
   }
 };
 
-template <typename It, typename Sentinel, typename Char>
-struct arg_join : detail::view {
+template <typename It, typename Sentinel, typename Char = char>
+struct join_view : detail::view {
   It begin;
   Sentinel end;
   basic_string_view<Char> sep;
 
-  arg_join(It b, Sentinel e, basic_string_view<Char> s)
+  join_view(It b, Sentinel e, basic_string_view<Char> s)
       : begin(b), end(e), sep(s) {}
 };
 
 template <typename It, typename Sentinel, typename Char>
-struct formatter<arg_join<It, Sentinel, Char>, Char> {
+using arg_join FMT_DEPRECATED_ALIAS = join_view<It, Sentinel, Char>;
+
+template <typename It, typename Sentinel, typename Char>
+struct formatter<join_view<It, Sentinel, Char>, Char> {
  private:
   using value_type = typename std::iterator_traits<It>::value_type;
   using context = buffer_context<Char>;
@@ -2548,7 +2551,7 @@ struct formatter<arg_join<It, Sentinel, Char>, Char> {
   }
 
   template <typename FormatContext>
-  auto format(const arg_join<It, Sentinel, Char>& value, FormatContext& ctx)
+  auto format(const join_view<It, Sentinel, Char>& value, FormatContext& ctx)
       -> decltype(ctx.out()) {
     auto it = value.begin;
     auto out = ctx.out();
@@ -2569,7 +2572,7 @@ struct formatter<arg_join<It, Sentinel, Char>, Char> {
   elements separated by `sep`.
  */
 template <typename It, typename Sentinel>
-arg_join<It, Sentinel, char> join(It begin, Sentinel end, string_view sep) {
+auto join(It begin, Sentinel end, string_view sep) -> join_view<It, Sentinel> {
   return {begin, end, sep};
 }
 
@@ -2590,8 +2593,8 @@ arg_join<It, Sentinel, char> join(It begin, Sentinel end, string_view sep) {
   \endrst
  */
 template <typename Range>
-arg_join<detail::iterator_t<Range>, detail::sentinel_t<Range>, char> join(
-    Range&& range, string_view sep) {
+auto join(Range&& range, string_view sep)
+    -> join_view<detail::iterator_t<Range>, detail::sentinel_t<Range>> {
   return join(std::begin(range), std::end(range), sep);
 }
 
