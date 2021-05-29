@@ -2881,7 +2881,7 @@ inline auto format_to_n(OutputIt out, size_t n, const S& fmt,
 template <typename S, typename... Args, typename Char = char_t<S>,
           FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
 inline auto formatted_size(const S& fmt, Args&&... args) -> size_t {
-  detail::counting_buffer<> buf;
+  detail::counting_buffer<Char> buf;
   const auto& vargs = fmt::make_args_checked<Args...>(fmt, args...);
   detail::vformat_to(buf, to_string_view(fmt), vargs);
   return buf.count();
