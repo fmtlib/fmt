@@ -647,15 +647,7 @@ enum { inline_buffer_size = 500 };
   A dynamically growing memory buffer for trivially copyable/constructible types
   with the first ``SIZE`` elements stored in the object itself.
 
-  You can use one of the following type aliases for common character types:
-
-  +----------------+------------------------------+
-  | Type           | Definition                   |
-  +================+==============================+
-  | memory_buffer  | basic_memory_buffer<char>    |
-  +----------------+------------------------------+
-  | wmemory_buffer | basic_memory_buffer<wchar_t> |
-  +----------------+------------------------------+
+  You can use the ```memory_buffer`` type alias for ``char`` instead.
 
   **Example**::
 
@@ -785,7 +777,6 @@ void basic_memory_buffer<T, SIZE, Allocator>::grow(size_t size) {
 }
 
 using memory_buffer = basic_memory_buffer<char>;
-using wmemory_buffer = basic_memory_buffer<wchar_t>;
 
 template <typename T, size_t SIZE, typename Allocator>
 struct is_contiguous<basic_memory_buffer<T, SIZE, Allocator>> : std::true_type {
@@ -1152,7 +1143,7 @@ inline It format_uint(It out, UInt value, int num_digits, bool upper = false) {
 // A converter from UTF-8 to UTF-16.
 class utf8_to_utf16 {
  private:
-  wmemory_buffer buffer_;
+  basic_memory_buffer<wchar_t> buffer_;
 
  public:
   FMT_API explicit utf8_to_utf16(string_view s);

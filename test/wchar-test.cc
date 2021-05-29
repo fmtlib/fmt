@@ -37,6 +37,12 @@ TEST(wchar_test, vformat_to) {
   EXPECT_EQ(L"42", w);
 }
 
+TEST(wchar_test, format_to_memory_buffer) {
+  auto buf = fmt::wmemory_buffer();
+  fmt::format_to(buf, L"{}", L"foo");
+  EXPECT_EQ(L"foo", to_string(buf));
+}
+
 TEST(format_test, wide_format_to_n) {
   wchar_t buffer[4];
   buffer[3] = L'x';

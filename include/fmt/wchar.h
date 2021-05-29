@@ -24,6 +24,7 @@ using wstring_view = basic_string_view<wchar_t>;
 using wformat_parse_context = basic_format_parse_context<wchar_t>;
 using wformat_context = buffer_context<wchar_t>;
 using wformat_args = basic_format_args<wformat_context>;
+using wmemory_buffer = basic_memory_buffer<wchar_t>;
 
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
 // Workaround broken conversion on older gcc.

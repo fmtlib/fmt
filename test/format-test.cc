@@ -13,7 +13,8 @@
 #include "fmt/format.h"
 // clang-format on
 
-#include <stdint.h>     // uint32_t
+#include <stdint.h>  // uint32_t
+
 #include <climits>      // INT_MAX
 #include <cmath>        // std::signbit
 #include <cstring>      // std::strlen
@@ -1896,12 +1897,9 @@ TEST(format_test, format_to_wide) {
 }
 
 TEST(format_test, format_to_memory_buffer) {
-  fmt::basic_memory_buffer<char, 100> buffer;
-  fmt::format_to(buffer, "{}", "foo");
-  EXPECT_EQ("foo", to_string(buffer));
-  fmt::wmemory_buffer wbuffer;
-  fmt::format_to(wbuffer, L"{}", L"foo");
-  EXPECT_EQ(L"foo", to_string(wbuffer));
+  auto buf = fmt::basic_memory_buffer<char, 100>();
+  fmt::format_to(buf, "{}", "foo");
+  EXPECT_EQ("foo", to_string(buf));
 }
 
 TEST(format_test, format_to_vector) {
