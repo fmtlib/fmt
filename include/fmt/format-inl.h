@@ -2501,19 +2501,6 @@ int snprintf_float(T value, int precision, float_specs specs,
     return exp - fraction_size;
   }
 }
-
-struct stringifier {
-  template <typename T> FMT_INLINE std::string operator()(T value) const {
-    return to_string(value);
-  }
-  std::string operator()(basic_format_arg<format_context>::handle h) const {
-    memory_buffer buf;
-    format_parse_context parse_ctx({});
-    format_context format_ctx(buffer_appender<char>(buf), {}, {});
-    h.format(parse_ctx, format_ctx);
-    return to_string(buf);
-  }
-};
 }  // namespace detail
 
 template <> struct formatter<detail::bigint> {
@@ -2577,12 +2564,9 @@ FMT_FUNC void report_system_error(int error_code,
 }
 
 FMT_FUNC std::string vformat(string_view fmt, format_args args) {
-  if (fmt.size() == 2 && detail::equal2(fmt.data(), "{}")) {
-    auto arg = args.get(0);
-    if (!arg) detail::error_handler().on_error("argument not found");
-    return visit_format_arg(detail::stringifier(), arg);
-  }
-  memory_buffer buffer;
+  // Don't optimize the "{}" case to keep the binary size small and because it
+  // can be better optimized in fmt::format anyway.
+  auto buffer = memory_buffer();
   detail::vformat_to(buffer, fmt, args);
   return to_string(buffer);
 }
