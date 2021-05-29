@@ -474,7 +474,8 @@
   `#2297 <https://github.com/fmtlib/fmt/pull/2297>`_,
   `#2313 <https://github.com/fmtlib/fmt/pull/2313>`_,
   `#2315 <https://github.com/fmtlib/fmt/pull/2315>`_,
-  `#2321 <https://github.com/fmtlib/fmt/pull/2321>`_).
+  `#2321 <https://github.com/fmtlib/fmt/pull/2321>`_,
+  `#2323 <https://github.com/fmtlib/fmt/pull/2323>`_).
   Thanks `@darklukee <https://github.com/darklukee>`_,
   `@fagg (Ashton Fagg) <https://github.com/fagg>`_,
   `@killerbot242 (Lieven de Cock) <https://github.com/killerbot242>`_,
