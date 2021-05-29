@@ -22,6 +22,48 @@
   notable exception of floating-point numbers and pointers.
   Thanks `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_.
 
+* Optimized handling of format specifiers during format string compilation.
+  For example, hexadecimal formatting (``"{:x}"``) is 3-7x faster when using
+  ``format_to`` with format string compilation and a stack-allocated buffer
+  (`#1944 <https://github.com/fmtlib/fmt/issues/1944>`_).
+
+  Before (7.1.3)::
+
+    ----------------------------------------------------------------------------
+    Benchmark                                  Time             CPU   Iterations
+    ----------------------------------------------------------------------------
+    FMTCompileOld/0                         15.5 ns         15.5 ns     43302898
+    FMTCompileOld/42                        16.6 ns         16.6 ns     43278267
+    FMTCompileOld/273123                    18.7 ns         18.6 ns     37035861
+    FMTCompileOld/9223372036854775807       19.4 ns         19.4 ns     35243000
+    ----------------------------------------------------------------------------
+
+  After (8.x)::
+
+    ----------------------------------------------------------------------------
+    Benchmark                                  Time             CPU   Iterations
+    ----------------------------------------------------------------------------
+    FMTCompileNew/0                         1.99 ns         1.99 ns    360523686
+    FMTCompileNew/42                        2.33 ns         2.33 ns    279865664
+    FMTCompileNew/273123                    3.72 ns         3.71 ns    190230315
+    FMTCompileNew/9223372036854775807       5.28 ns         5.26 ns    130711631
+    ----------------------------------------------------------------------------
+
+  And even faster than ``std::to_chars`` from libc++ compiled with clang on
+  macOS::
+
+    ----------------------------------------------------------------------------
+    Benchmark                                  Time             CPU   Iterations
+    ----------------------------------------------------------------------------
+    ToChars/0                               4.42 ns         4.41 ns    160196630
+    ToChars/42                              5.00 ns         4.98 ns    140735201
+    ToChars/273123                          7.26 ns         7.24 ns     95784130
+    ToChars/9223372036854775807             8.77 ns         8.75 ns     75872534
+    ----------------------------------------------------------------------------
+
+  In other cases, especially involving ``std::string`` construction, the speed
+  up can be lower.
+
 * Added the ``_cf`` user-defined literal to represent a compiled format string.
   It can be used instead of the ``FMT_COMPILE`` macro
   (`#2043 <https://github.com/fmtlib/fmt/pull/2043>`_,
@@ -77,10 +119,6 @@
   (`#2299 <https://github.com/fmtlib/fmt/pull/2299>`_). For example there was
   a ~15% reported reduction on one platform.
   Thanks `@sergiud (Sergiu Deitsch) <https://github.com/sergiud>`_.
-
-* Optimized handling of format specifiers during format string
-  compilation, including but not limited to hexadecimal formatting
-  (`#1944 <https://github.com/fmtlib/fmt/issues/1944>`_).
 
 * Added support for ``std::byte`` and other formattable types to ``fmt::join``
   (`#1981 <https://github.com/fmtlib/fmt/issues/1981>`_,
