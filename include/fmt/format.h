@@ -549,8 +549,8 @@ FMT_CONSTEXPR inline size_t compute_width(string_view s) {
   struct count_code_points {
     size_t* count;
     FMT_CONSTEXPR void operator()(uint32_t cp, int error) const {
-      *count +=
-          detail::to_unsigned(1 +
+      *count += detail::to_unsigned(
+          1 +
           (error == 0 && cp >= 0x1100 &&
            (cp <= 0x115f ||  // Hangul Jamo init. consonants
             cp == 0x2329 ||  // LEFT-POINTING ANGLE BRACKET〈
@@ -2543,8 +2543,8 @@ struct formatter<arg_join<It, Sentinel, Char>, Char> {
 
   using formatter_type =
       conditional_t<is_formattable<value_type>::value,
-                    formatter<remove_cvref_t<decltype(
-                                  map(std::declval<const value_type&>()))>,
+                    formatter<remove_cvref_t<decltype(map(
+                                  std::declval<const value_type&>()))>,
                               Char>,
                     detail::fallback_formatter<value_type, Char>>;
 
@@ -2642,10 +2642,9 @@ std::basic_string<Char> to_string(const basic_memory_buffer<Char, SIZE>& buf) {
 FMT_BEGIN_DETAIL_NAMESPACE
 
 template <typename Char>
-void vformat_to(
-    buffer<Char>& buf, basic_string_view<Char> fmt,
-    basic_format_args<buffer_context<type_identity_t<Char>>> args,
-    locale_ref loc) {
+void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
+                basic_format_args<buffer_context<type_identity_t<Char>>> args,
+                locale_ref loc) {
   auto out = buffer_appender<Char>(buf);
   if (fmt.size() == 2 && equal2(fmt.data(), "{}")) {
     auto arg = args.get(0);
@@ -2659,8 +2658,7 @@ void vformat_to(
     buffer_context<Char> context;
 
     format_handler(buffer_appender<Char> out, basic_string_view<Char> str,
-                   basic_format_args<buffer_context<Char>> args,
-                   locale_ref loc)
+                   basic_format_args<buffer_context<Char>> args, locale_ref loc)
         : parse_context(str), context(out, args, loc) {}
 
     void on_text(const Char* begin, const Char* end) {
@@ -2897,7 +2895,7 @@ inline auto formatted_size(const S& fmt, Args&&... args) -> size_t {
 FMT_MODULE_EXPORT_END
 FMT_END_NAMESPACE
 
-#ifdef FMT_DEPRECATED_WCHAR
+#ifdef FMT_DEPRECATED_INCLUDE_WCHAR
 #  include "wchar.h"
 #endif
 
