@@ -1,4 +1,8 @@
 module;
+#ifndef __cpp_modules
+#  error Module not supported.
+#endif
+
 // put all implementation-provided headers into the global module fragment
 // to prevent attachment to this module
 #if !defined(_CRT_SECURE_NO_WARNINGS) && defined(_MSC_VER)
@@ -75,10 +79,6 @@ export module fmt;
 #define FMT_END_DETAIL_NAMESPACE \
   }                              \
   export {
-
-#if defined(_MSC_FULL_VER) && _MSC_FULL_VER > 192930036
-#define FMT_USE_NONTYPE_TEMPLATE_PARAMETERS 0
-#endif
 
 // all library-provided declarations and definitions
 // must be in the module purview to be exported
