@@ -325,9 +325,10 @@
 
 * Replaced the ``fmt::windows_error`` exception with a function of the same
   name that constructs ``std::system_error`` with the category returned by
-  ``fmt::system_category()``. The latter is similar to ``std::sytem_category``
-  but correctly handles UTF-8.
-  (`#2274 <https://github.com/fmtlib/fmt/pull/2274>`_).
+  ``fmt::system_category()``
+  (`#2274 <https://github.com/fmtlib/fmt/issues/2274>`_,
+  `#2275 <https://github.com/fmtlib/fmt/pull/2275>`_).
+  The latter is similar to ``std::sytem_category`` but correctly handles UTF-8.
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
 
 * Replaced ``fmt::error_code`` with ``std::error_code`` and made it formattable
