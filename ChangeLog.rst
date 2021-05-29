@@ -64,9 +64,9 @@
     ToChars/9223372036854775807             8.77 ns         8.75 ns     75872534
     ----------------------------------------------------------------------------
 
-  In other cases, especially involving ``std::string`` construction, the speed
-  up can be lower because handling format specifiers takes smaller fraction of
-  total time.
+  In other cases, especially involving ``std::string`` construction, the
+  speed up is usually lower because handling format specifiers takes a smaller
+  fraction of the total time.
 
 * Added the ``_cf`` user-defined literal to represent a compiled format string.
   It can be used instead of the ``FMT_COMPILE`` macro
@@ -120,7 +120,7 @@
   Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_.
 
 * Made symbols private by default reducing shared library size
-  (`#2299 <https://github.com/fmtlib/fmt/pull/2299>`_). For example there was
+  (`#2301 <https://github.com/fmtlib/fmt/pull/2301>`_). For example there was
   a ~15% reported reduction on one platform.
   Thanks `@sergiud (Sergiu Deitsch) <https://github.com/sergiud>`_.
 
