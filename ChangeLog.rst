@@ -7,7 +7,7 @@
   `#2056 <https://github.com/fmtlib/fmt/pull/2056>`_,
   `#2072 <https://github.com/fmtlib/fmt/pull/2072>`_,
   `#2129 <https://github.com/fmtlib/fmt/pull/2129>`_).
-  For example (`godbolt <https://godbolt.org/z/Mxx9d89jM`__):
+  For example (`godbolt <https://godbolt.org/z/Mxx9d89jM>`__):
 
   .. code:: c++
 
