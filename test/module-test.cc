@@ -9,6 +9,12 @@
 // All Rights Reserved
 // {fmt} module.
 
+#ifdef _MSC_FULL_VER
+// hide some implementation bugs in msvc
+// that are not essential to users of the module.
+#  define FMT_HIDE_MODULE_BUGS
+#endif
+
 #include <bit>
 #include <chrono>
 #include <exception>
@@ -404,10 +410,10 @@ TEST(module_test, color) {
 }
 
 TEST(module_test, cstring_view) {
-  fmt::cstring_view nsv("fmt");
-  EXPECT_EQ("fmt", nsv.c_str());
-  fmt::wcstring_view wsv(L"fmt");
-  EXPECT_EQ(L"fmt", wsv.c_str());
+  auto s = "fmt";
+  EXPECT_EQ(s, fmt::cstring_view(s).c_str());
+  auto w = L"fmt";
+  EXPECT_EQ(w, fmt::wcstring_view(w).c_str());
 }
 
 TEST(module_test, buffered_file) {

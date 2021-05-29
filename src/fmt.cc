@@ -75,6 +75,11 @@ export module fmt;
 #define FMT_END_DETAIL_NAMESPACE \
   }                              \
   export {
+
+#if defined(_MSC_FULL_VER) && _MSC_FULL_VER > 192930036
+#define FMT_USE_NONTYPE_TEMPLATE_PARAMETERS 0
+#endif
+
 // all library-provided declarations and definitions
 // must be in the module purview to be exported
 #include "fmt/args.h"
@@ -86,7 +91,10 @@ export module fmt;
 #include "fmt/printf.h"
 #include "fmt/xchar.h"
 
+// gcc doesn't yet implement private module fragments
+#if !FMT_GCC_VERSION
 module : private;
+#endif
 
 #include "format.cc"
 #include "os.cc"
