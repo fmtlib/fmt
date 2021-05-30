@@ -1534,7 +1534,7 @@ TEST(format_test, format_examples) {
   EXPECT_EQ("42", fmt::format("{}", 42));
 
   memory_buffer out;
-  format_to(out, "The answer is {}.", 42);
+  format_to(std::back_inserter(out), "The answer is {}.", 42);
   EXPECT_EQ("The answer is 42.", to_string(out));
 
   const char* filename = "nonexistent";
@@ -1662,8 +1662,8 @@ TEST(format_test, join_bytes) {
 #endif
 
 std::string vformat_message(int id, const char* format, fmt::format_args args) {
-  fmt::memory_buffer buffer;
-  format_to(buffer, "[{}] ", id);
+  auto buffer = fmt::memory_buffer();
+  format_to(fmt::appender(buffer), "[{}] ", id);
   vformat_to(fmt::appender(buffer), format, args);
   return to_string(buffer);
 }
@@ -1892,7 +1892,7 @@ TEST(format_test, format_to) {
 
 TEST(format_test, format_to_memory_buffer) {
   auto buf = fmt::basic_memory_buffer<char, 100>();
-  fmt::format_to(buf, "{}", "foo");
+  fmt::format_to(fmt::appender(buf), "{}", "foo");
   EXPECT_EQ("foo", to_string(buf));
 }
 
