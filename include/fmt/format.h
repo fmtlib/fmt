@@ -2795,25 +2795,14 @@ template <typename Locale, typename... T,
           FMT_ENABLE_IF(detail::is_locale<Locale>::value)>
 inline std::string format(const Locale& loc, format_string<T...> fmt,
                           T&&... args) {
-  return vformat(loc, fmt, fmt::make_format_args(args...));
+  return vformat(loc, string_view(fmt), fmt::make_format_args(args...));
 }
 
-template <typename S, typename Char = char_t<S>,
-          FMT_ENABLE_IF(detail::is_string<S>::value)>
-inline void vformat_to(
-    detail::buffer<Char>& buf, const S& format_str,
-    basic_format_args<FMT_BUFFER_CONTEXT(type_identity_t<Char>)> args) {
-  return detail::vformat_to(buf, to_string_view(format_str), args);
-}
-
-template <typename S, typename... Args, typename Char, size_t SIZE,
-          typename Allocator, FMT_ENABLE_IF(detail::is_string<S>::value)>
-inline auto format_to(basic_memory_buffer<Char, SIZE, Allocator>& buf,
-                      const S& format_str, Args&&... args) ->
-    typename buffer_context<Char>::iterator {
-  const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
-  detail::vformat_to(buf, to_string_view(format_str), vargs);
-  return detail::buffer_appender<Char>(buf);
+template <typename... T, size_t SIZE, typename Allocator>
+inline auto format_to(basic_memory_buffer<char, SIZE, Allocator>& buf,
+                      format_string<T...> fmt, T&&... args) -> appender {
+  detail::vformat_to(buf, string_view(fmt), fmt::make_format_args(args...));
+  return appender(buf);
 }
 
 template <typename OutputIt, typename Locale,
@@ -2823,7 +2812,7 @@ auto vformat_to(OutputIt out, const Locale& loc, string_view fmt,
                 format_args args) -> OutputIt {
   using detail::get_buffer;
   auto&& buf = get_buffer<char>(out);
-  detail::vformat_to(buf, string_view(fmt), args, detail::locale_ref(loc));
+  detail::vformat_to(buf, fmt, args, detail::locale_ref(loc));
   return detail::get_iterator(buf);
 }
 

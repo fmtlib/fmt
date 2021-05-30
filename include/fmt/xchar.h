@@ -111,6 +111,16 @@ inline auto format_to(OutputIt out, const S& fmt, Args&&... args) -> OutputIt {
   return vformat_to(out, to_string_view(fmt), vargs);
 }
 
+template <typename S, typename... Args, typename Char, size_t SIZE,
+          typename Allocator, FMT_ENABLE_IF(detail::is_string<S>::value)>
+FMT_DEPRECATED auto format_to(basic_memory_buffer<Char, SIZE, Allocator>& buf,
+                              const S& format_str, Args&&... args) ->
+    typename buffer_context<Char>::iterator {
+  const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
+  detail::vformat_to(buf, to_string_view(format_str), vargs);
+  return detail::buffer_appender<Char>(buf);
+}
+
 template <typename Locale, typename S, typename OutputIt, typename... Args,
           typename Char = char_t<S>,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value&&

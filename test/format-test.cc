@@ -1664,7 +1664,7 @@ TEST(format_test, join_bytes) {
 std::string vformat_message(int id, const char* format, fmt::format_args args) {
   fmt::memory_buffer buffer;
   format_to(buffer, "[{}] ", id);
-  vformat_to(buffer, format, args);
+  vformat_to(fmt::appender(buffer), format, args);
   return to_string(buffer);
 }
 
