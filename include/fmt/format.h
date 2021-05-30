@@ -1935,10 +1935,11 @@ OutputIt write(OutputIt out, const T* value,
 }
 
 template <typename Char, typename OutputIt, typename T>
-auto write(OutputIt out, const T& value) -> typename std::enable_if<
-    mapped_type_constant<T, basic_format_context<OutputIt, Char>>::value ==
-        type::custom_type,
-    OutputIt>::type {
+FMT_CONSTEXPR auto write(OutputIt out, const T& value) ->
+    typename std::enable_if<
+        mapped_type_constant<T, basic_format_context<OutputIt, Char>>::value ==
+            type::custom_type,
+        OutputIt>::type {
   using context_type = basic_format_context<OutputIt, Char>;
   using formatter_type =
       conditional_t<has_formatter<T, context_type>::value,
