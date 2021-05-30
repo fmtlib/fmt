@@ -2816,26 +2816,6 @@ inline auto format_to(basic_memory_buffer<Char, SIZE, Allocator>& buf,
   return detail::buffer_appender<Char>(buf);
 }
 
-template <typename OutputIt, typename S, typename Char = char_t<S>,
-          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value &&
-                        !std::is_same<Char, char>::value)>
-auto vformat_to(OutputIt out, const S& format_str,
-                basic_format_args<buffer_context<type_identity_t<Char>>> args)
-    -> OutputIt {
-  auto&& buf = detail::get_buffer<Char>(out);
-  detail::vformat_to(buf, to_string_view(format_str), args);
-  return detail::get_iterator(buf);
-}
-
-template <typename OutputIt, typename S, typename... Args,
-          typename Char = char_t<S>,
-          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value &&
-                        !std::is_same<Char, char>::value)>
-inline auto format_to(OutputIt out, const S& fmt, Args&&... args) -> OutputIt {
-  const auto& vargs = fmt::make_args_checked<Args...>(fmt, args...);
-  return vformat_to(out, to_string_view(fmt), vargs);
-}
-
 template <typename OutputIt, typename Locale,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value&&
                             detail::is_locale<Locale>::value)>
@@ -2853,38 +2833,6 @@ template <typename OutputIt, typename Locale, typename... T,
 FMT_INLINE auto format_to(OutputIt out, const Locale& loc,
                           format_string<T...> fmt, T&&... args) -> OutputIt {
   return vformat_to(loc, out, fmt, fmt::make_format_args(args...));
-}
-
-template <typename OutputIt, typename Char, typename... Args,
-          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value &&
-                        !std::is_same<Char, char>::value)>
-inline auto vformat_to_n(
-    OutputIt out, size_t n, basic_string_view<Char> format_str,
-    basic_format_args<buffer_context<type_identity_t<Char>>> args)
-    -> format_to_n_result<OutputIt> {
-  detail::iterator_buffer<OutputIt, Char, detail::fixed_buffer_traits> buf(out,
-                                                                           n);
-  detail::vformat_to(buf, format_str, args);
-  return {buf.out(), buf.count()};
-}
-
-template <typename OutputIt, typename S, typename... Args,
-          typename Char = char_t<S>,
-          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value &&
-                        !std::is_same<Char, char>::value)>
-inline auto format_to_n(OutputIt out, size_t n, const S& fmt,
-                        const Args&... args) -> format_to_n_result<OutputIt> {
-  const auto& vargs = fmt::make_args_checked<Args...>(fmt, args...);
-  return vformat_to_n(out, n, to_string_view(fmt), vargs);
-}
-
-template <typename S, typename... Args, typename Char = char_t<S>,
-          FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
-inline auto formatted_size(const S& fmt, Args&&... args) -> size_t {
-  detail::counting_buffer<Char> buf;
-  const auto& vargs = fmt::make_args_checked<Args...>(fmt, args...);
-  detail::vformat_to(buf, to_string_view(fmt), vargs);
-  return buf.count();
 }
 FMT_MODULE_EXPORT_END
 FMT_END_NAMESPACE

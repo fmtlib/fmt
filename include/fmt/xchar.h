@@ -91,6 +91,26 @@ inline std::basic_string<Char> format(const Locale& loc, const S& format_str,
                          fmt::make_args_checked<Args...>(format_str, args...));
 }
 
+template <typename OutputIt, typename S, typename Char = char_t<S>,
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value&&
+                            detail::is_exotic_char<Char>::value)>
+auto vformat_to(OutputIt out, const S& format_str,
+                basic_format_args<buffer_context<type_identity_t<Char>>> args)
+    -> OutputIt {
+  auto&& buf = detail::get_buffer<Char>(out);
+  detail::vformat_to(buf, to_string_view(format_str), args);
+  return detail::get_iterator(buf);
+}
+
+template <typename OutputIt, typename S, typename... Args,
+          typename Char = char_t<S>,
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value&&
+                            detail::is_exotic_char<Char>::value)>
+inline auto format_to(OutputIt out, const S& fmt, Args&&... args) -> OutputIt {
+  const auto& vargs = fmt::make_args_checked<Args...>(fmt, args...);
+  return vformat_to(out, to_string_view(fmt), vargs);
+}
+
 template <typename Locale, typename S, typename OutputIt, typename... Args,
           typename Char = char_t<S>,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value&&
@@ -114,6 +134,38 @@ inline auto format_to(OutputIt out, const Locale& loc, const S& format_str,
     typename std::enable_if<enable, OutputIt>::type {
   const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
   return vformat_to(out, loc, to_string_view(format_str), vargs);
+}
+
+template <typename OutputIt, typename Char, typename... Args,
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value&&
+                            detail::is_exotic_char<Char>::value)>
+inline auto vformat_to_n(
+    OutputIt out, size_t n, basic_string_view<Char> format_str,
+    basic_format_args<buffer_context<type_identity_t<Char>>> args)
+    -> format_to_n_result<OutputIt> {
+  detail::iterator_buffer<OutputIt, Char, detail::fixed_buffer_traits> buf(out,
+                                                                           n);
+  detail::vformat_to(buf, format_str, args);
+  return {buf.out(), buf.count()};
+}
+
+template <typename OutputIt, typename S, typename... Args,
+          typename Char = char_t<S>,
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value&&
+                            detail::is_exotic_char<Char>::value)>
+inline auto format_to_n(OutputIt out, size_t n, const S& fmt,
+                        const Args&... args) -> format_to_n_result<OutputIt> {
+  const auto& vargs = fmt::make_args_checked<Args...>(fmt, args...);
+  return vformat_to_n(out, n, to_string_view(fmt), vargs);
+}
+
+template <typename S, typename... Args, typename Char = char_t<S>,
+          FMT_ENABLE_IF(detail::is_exotic_char<Char>::value)>
+inline auto formatted_size(const S& fmt, Args&&... args) -> size_t {
+  detail::counting_buffer<Char> buf;
+  const auto& vargs = fmt::make_args_checked<Args...>(fmt, args...);
+  detail::vformat_to(buf, to_string_view(fmt), vargs);
+  return buf.count();
 }
 
 inline void vprint(std::FILE* f, wstring_view fmt, wformat_args args) {

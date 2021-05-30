@@ -1890,12 +1890,6 @@ TEST(format_test, format_to) {
   EXPECT_EQ("part1part2", s);
 }
 
-TEST(format_test, format_to_wide) {
-  std::vector<wchar_t> buf;
-  fmt::format_to(std::back_inserter(buf), L"{}{}", 42, L'\0');
-  EXPECT_STREQ(buf.data(), L"42");
-}
-
 TEST(format_test, format_to_memory_buffer) {
   auto buf = fmt::basic_memory_buffer<char, 100>();
   fmt::format_to(buf, "{}", "foo");

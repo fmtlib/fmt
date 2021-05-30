@@ -24,6 +24,12 @@ TEST(wchar_test, format_explicitly_convertible_to_wstring_view) {
 }
 #endif
 
+TEST(wchar_test, format_to) {
+  auto buf = std::vector<wchar_t>();
+  fmt::format_to(std::back_inserter(buf), L"{}{}", 42, L'\0');
+  EXPECT_STREQ(buf.data(), L"42");
+}
+
 TEST(wchar_test, vformat_to) {
   using wcontext = fmt::wformat_context;
   fmt::basic_format_arg<wcontext> warg = fmt::detail::make_arg<wcontext>(42);
