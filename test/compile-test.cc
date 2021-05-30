@@ -53,17 +53,6 @@ TEST(iterator_test, truncating_back_inserter) {
   EXPECT_EQ(buffer, "42");
 }
 
-struct test_formattable {};
-
-FMT_BEGIN_NAMESPACE
-template <> struct formatter<test_formattable> : formatter<const char*> {
-  template <typename FormatContext>
-  auto format(test_formattable, FormatContext& ctx) -> decltype(ctx.out()) {
-    return formatter<const char*>::format("foo", ctx);
-  }
-};
-FMT_END_NAMESPACE
-
 TEST(compile_test, compile_fallback) {
   // FMT_COMPILE should fallback on runtime formatting when `if constexpr` is
   // not available.
@@ -71,6 +60,27 @@ TEST(compile_test, compile_fallback) {
 }
 
 #ifdef __cpp_if_constexpr
+struct test_formattable {};
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<test_formattable> : formatter<const char*> {
+  char word_spec = 'f';
+  constexpr auto parse(format_parse_context& ctx) {
+    auto it = ctx.begin(), end = ctx.end();
+    if (it == end || *it == '}') return it;
+    if (it != end && (*it == 'f' || *it == 'b')) word_spec = *it++;
+    if (it != end && *it != '}') throw format_error("invalid format");
+    return it;
+  }
+  template <typename FormatContext>
+  constexpr auto format(test_formattable, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    return formatter<const char*>::format(word_spec == 'f' ? "foo" : "bar",
+                                          ctx);
+  }
+};
+FMT_END_NAMESPACE
+
 TEST(compile_test, format_default) {
   EXPECT_EQ("42", fmt::format(FMT_COMPILE("{}"), 42));
   EXPECT_EQ("42", fmt::format(FMT_COMPILE("{}"), 42u));
@@ -334,6 +344,11 @@ TEST(compile_time_formatting_test, combination) {
             test_format<18>(FMT_COMPILE("{}, {}, {}"), 420, true, "answer"));
 
   EXPECT_EQ(" -42", test_format<5>(FMT_COMPILE("{:{}}"), -42, 4));
+}
+
+TEST(compile_time_formatting_test, custom_type) {
+  EXPECT_EQ("foo", test_format<4>(FMT_COMPILE("{}"), test_formattable()));
+  EXPECT_EQ("bar", test_format<4>(FMT_COMPILE("{:b}"), test_formattable()));
 }
 
 TEST(compile_time_formatting_test, multibyte_fill) {
