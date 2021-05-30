@@ -2819,7 +2819,7 @@ inline auto format_to(basic_memory_buffer<Char, SIZE, Allocator>& buf,
 template <typename OutputIt, typename Locale,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value&&
                             detail::is_locale<Locale>::value)>
-auto vformat_to(const Locale& loc, OutputIt out, string_view fmt,
+auto vformat_to(OutputIt out, const Locale& loc, string_view fmt,
                 format_args args) -> OutputIt {
   using detail::get_buffer;
   auto&& buf = get_buffer<char>(out);
@@ -2832,7 +2832,7 @@ template <typename OutputIt, typename Locale, typename... T,
                             detail::is_locale<Locale>::value)>
 FMT_INLINE auto format_to(OutputIt out, const Locale& loc,
                           format_string<T...> fmt, T&&... args) -> OutputIt {
-  return vformat_to(loc, out, fmt, fmt::make_format_args(args...));
+  return vformat_to(out, loc, fmt, fmt::make_format_args(args...));
 }
 FMT_MODULE_EXPORT_END
 FMT_END_NAMESPACE
