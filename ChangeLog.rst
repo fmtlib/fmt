@@ -86,6 +86,18 @@
   (a C++20 feature) which is available in GCC 9.3+.
   Thanks `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_.
 
+* Format string compilation now requires ``format`` functions of ``formatter``
+  specializations for user-defined types to be ``const``:
+
+  .. code:: c++
+
+     template <> struct fmt::formatter<my_type>: formatter<string_view> {
+       template <typename FormatContext>
+       auto format(my_type c, FormatContext& ctx) const {  // Note const here.
+         // ...
+       }
+     };
+
 * Added UDL-based named argument support to format string compilation
   (`#2243 <https://github.com/fmtlib/fmt/pull/2243>`_,
   `#2281 <https://github.com/fmtlib/fmt/pull/2281>`_). For example:
