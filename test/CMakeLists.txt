@@ -94,10 +94,10 @@ if (FMT_CAN_MODULE)
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
   enable_module(test-module)
 
-  add_fmt_test(module-test MODULE)
+  #add_fmt_test(module-test MODULE)
   if (MSVC)
     target_compile_options(test-module PRIVATE /utf-8)
-    target_compile_options(module-test PRIVATE /utf-8)
+    #target_compile_options(module-test PRIVATE /utf-8)
   endif ()
 endif ()
 
