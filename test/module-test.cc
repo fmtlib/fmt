@@ -33,11 +33,11 @@
 import fmt;
 
 // check for macros leaking from BMI
-static bool macro_leaked = 
+static bool macro_leaked =
 #if defined(FMT_CORE_H_) || defined(FMT_FORMAT_H)
-  true;
+    true;
 #else
-  false;
+    false;
 #endif
 
 #include "gtest-extra.h"
@@ -55,8 +55,8 @@ bool oops_detail_namespace_is_visible;
 
 namespace fmt {
 bool namespace_detail_invisible() {
-#if defined(FMT_HIDE_MODULE_BUGS) && \
-  defined(_MSC_FULL_VER) && _MSC_FULL_VER <= 192930129
+#if defined(FMT_HIDE_MODULE_BUGS) && defined(_MSC_FULL_VER) && \
+    _MSC_FULL_VER <= 192930129
   // bug in msvc up to 16.11-pre1:
   // the namespace is visible even when it is neither
   // implicitly nor explicitly exported
@@ -67,7 +67,7 @@ bool namespace_detail_invisible() {
   return !oops_detail_namespace_is_visible;
 #endif
 }
-} // namespace fmt
+}  // namespace fmt
 
 // the non-exported namespace 'detail' must be invisible [module.interface]/2
 TEST(module_test, detail_namespace) {
@@ -76,11 +76,11 @@ TEST(module_test, detail_namespace) {
 
 // macros must not be imported from a *named* module  [cpp.import]/5.1
 TEST(module_test, macros) {
-#if defined(FMT_HIDE_MODULE_BUGS) && \
-  defined(_MSC_FULL_VER) && _MSC_FULL_VER <= 192930129
-// bug in msvc up to 16.11-pre1:
-// include-guard macros leak from BMI
-// and even worse: they cannot be #undef-ined
+#if defined(FMT_HIDE_MODULE_BUGS) && defined(_MSC_FULL_VER) && \
+    _MSC_FULL_VER <= 192930129
+  // bug in msvc up to 16.11-pre1:
+  // include-guard macros leak from BMI
+  // and even worse: they cannot be #undef-ined
   macro_leaked = false;
 #endif
   EXPECT_FALSE(macro_leaked);
@@ -150,8 +150,7 @@ TEST(module_test, wformat_args) {
 }
 
 TEST(module_test, checked_format_args) {
-  fmt::basic_format_args args =
-    fmt::make_args_checked<int>("{}", 42);
+  fmt::basic_format_args args = fmt::make_args_checked<int>("{}", 42);
   EXPECT_TRUE(args.get(0));
 }
 
@@ -197,15 +196,14 @@ std::string as_string(std::wstring_view text) {
 }
 
 TEST(module_test, vprint) {
-  EXPECT_WRITE(stdout,
-    fmt::vprint("{:}µ", fmt::make_format_args(42)), "42µ");
-  EXPECT_WRITE(stderr,
-    fmt::vprint(stderr, "{}", fmt::make_format_args(4.2)), "4.2");
+  EXPECT_WRITE(stdout, fmt::vprint("{:}µ", fmt::make_format_args(42)), "42µ");
+  EXPECT_WRITE(stderr, fmt::vprint(stderr, "{}", fmt::make_format_args(4.2)),
+               "4.2");
 
-  EXPECT_WRITE(stdout,
-    fmt::vprint(L"{:}µ", fmt::make_wformat_args(42)), as_string(L"42µ"));
-  EXPECT_WRITE(stderr,
-    fmt::vprint(stderr, L"{}", fmt::make_wformat_args(42)), as_string(L"42"));
+  EXPECT_WRITE(stdout, fmt::vprint(L"{:}µ", fmt::make_wformat_args(42)),
+               as_string(L"42µ"));
+  EXPECT_WRITE(stderr, fmt::vprint(stderr, L"{}", fmt::make_wformat_args(42)),
+               as_string(L"42"));
 }
 
 TEST(module_test, named_args) {
@@ -278,10 +276,8 @@ TEST(module_test, ptr) {
 TEST(module_test, errors) {
   auto store = fmt::make_format_args(42);
   EXPECT_THROW(throw fmt::format_error("oops"), std::exception);
-  EXPECT_THROW(throw fmt::vsystem_error(0, "{}", store),
-               std::system_error);
-  EXPECT_THROW(throw fmt::system_error(0, "{}", 42),
-               std::system_error);
+  EXPECT_THROW(throw fmt::vsystem_error(0, "{}", store), std::system_error);
+  EXPECT_THROW(throw fmt::system_error(0, "{}", 42), std::system_error);
 
   fmt::memory_buffer buffer;
   fmt::format_system_error(buffer, 0, "oops");
@@ -290,10 +286,8 @@ TEST(module_test, errors) {
   EXPECT_WRITE(stderr, fmt::report_system_error(0, "oops"), oops + '\n');
 
 #ifdef _WIN32
-  EXPECT_THROW(throw fmt::vwindows_error(0, "{}", store),
-               std::system_error);
-  EXPECT_THROW(throw fmt::windows_error(0, "{}", 42),
-               std::system_error);
+  EXPECT_THROW(throw fmt::vwindows_error(0, "{}", store), std::system_error);
+  EXPECT_THROW(throw fmt::windows_error(0, "{}", 42), std::system_error);
   output_redirect redirect(stderr);
   fmt::report_windows_error(0, "oops");
   EXPECT_TRUE(redirect.restore_and_read().size() > 0);
@@ -302,11 +296,9 @@ TEST(module_test, errors) {
 
 TEST(module_test, error_code) {
   EXPECT_EQ("generic:42",
-            fmt::format("{0}",
-                        std::error_code(42, std::generic_category())));
+            fmt::format("{0}", std::error_code(42, std::generic_category())));
   EXPECT_EQ("system:42",
-            fmt::format("{0}",
-                        std::error_code(42, fmt::system_category())));
+            fmt::format("{0}", std::error_code(42, fmt::system_category())));
 }
 
 TEST(module_test, format_int) {
