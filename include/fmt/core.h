@@ -253,9 +253,10 @@
 #  endif
 #else
 #  define FMT_CLASS_API
-#  if defined(__GNUC__) || defined(__clang__)
-#    define FMT_API __attribute__((visibility("default")))
-#    define FMT_EXTERN_TEMPLATE_API FMT_API
+#  if defined(FMT_EXPORT) || defined(FMT_SHARED)
+#    if defined(__GNUC__) || defined(__clang__)
+#      define FMT_API __attribute__((visibility("default")))
+#    endif
 #  endif
 #endif
 #ifndef FMT_API
