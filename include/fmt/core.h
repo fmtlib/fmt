@@ -2169,6 +2169,7 @@ FMT_CONSTEXPR FMT_INLINE auto parse_arg_id(const Char* begin, const Char* end,
 template <typename Char, typename Handler>
 FMT_CONSTEXPR auto parse_width(const Char* begin, const Char* end,
                                Handler&& handler) -> const Char* {
+  using detail::auto_id;
   struct width_adapter {
     Handler& handler;
 
@@ -2198,6 +2199,7 @@ FMT_CONSTEXPR auto parse_width(const Char* begin, const Char* end,
 template <typename Char, typename Handler>
 FMT_CONSTEXPR auto parse_precision(const Char* begin, const Char* end,
                                    Handler&& handler) -> const Char* {
+  using detail::auto_id;
   struct precision_adapter {
     Handler& handler;
 
