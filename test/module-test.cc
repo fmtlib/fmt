@@ -224,7 +224,7 @@ TEST(module_test, locale) {
   EXPECT_EQ("4.2", fmt::format(classic, "{:L}", 4.2));
   EXPECT_EQ("4.2", fmt::vformat(classic, "{:L}", store));
   std::string s;
-  fmt::vformat_to(classic, std::back_inserter(s), "{:L}", store);
+  fmt::vformat_to(std::back_inserter(s), classic, "{:L}", store);
   EXPECT_EQ("4.2", s);
   EXPECT_EQ("4.2", fmt::format("{:L}", 4.2));
 }
