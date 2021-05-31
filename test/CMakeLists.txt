@@ -213,6 +213,21 @@ if (FMT_PEDANTIC AND NOT WIN32)
     "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 endif ()
 
+# This test are disabled on Windows because it is only *NIX issue.
+if (FMT_PEDANTIC AND NOT WIN32)
+  add_test(static-export-test ${CMAKE_CTEST_COMMAND}
+    -C ${CMAKE_BUILD_TYPE}
+    --build-and-test
+    "${CMAKE_CURRENT_SOURCE_DIR}/static-export-test"
+    "${CMAKE_CURRENT_BINARY_DIR}/static-export-test"
+    --build-generator ${CMAKE_GENERATOR}
+    --build-makeprogram ${CMAKE_MAKE_PROGRAM}
+    --build-options
+    "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+    "-DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}"
+    "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+endif ()
+
 # Activate optional CUDA tests if CUDA is found. For version selection see
 # https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#cpp14-language-features
 if (FMT_CUDA_TEST)

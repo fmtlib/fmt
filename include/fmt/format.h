@@ -902,7 +902,7 @@ template <typename T = void> struct basic_data {
   FMT_API static constexpr const char right_padding_shifts[] = {0, 31, 0, 1, 0};
 };
 
-#ifndef FMT_HEADER_ONLY
+#ifdef FMT_SHARED
 // Required for -flto, -fivisibility=hidden and -shared to work
 extern template struct basic_data<void>;
 #endif
