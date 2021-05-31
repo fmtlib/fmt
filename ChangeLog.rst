@@ -93,7 +93,7 @@
 
      template <> struct fmt::formatter<my_type>: formatter<string_view> {
        template <typename FormatContext>
-       auto format(my_type c, FormatContext& ctx) const {  // Note const here.
+       auto format(my_type obj, FormatContext& ctx) const {  // Note const here.
          // ...
        }
      };
