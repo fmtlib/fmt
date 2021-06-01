@@ -129,7 +129,8 @@
   `#2306 <https://github.com/fmtlib/fmt/pull/2306>`_,
   `#2307 <https://github.com/fmtlib/fmt/pull/2307>`_,
   `#2309 <https://github.com/fmtlib/fmt/pull/2309>`_,
-  `#2318 <https://github.com/fmtlib/fmt/pull/2318>`_).
+  `#2318 <https://github.com/fmtlib/fmt/pull/2318>`_,
+  `#2324 <https://github.com/fmtlib/fmt/pull/2324>`_).
   Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_.
 
 * Made symbols private by default reducing shared library size
@@ -175,6 +176,14 @@
        fmt::print("{}\n", monday);   // prints "Mon"
        fmt::print("{:L}\n", monday); // prints "пн"
      }
+
+* Deprecated ``fmt/locale.h`` moving the formatting functions that take a
+  locale to ``fmt/format.h`` (``char``) and ``fmt/xchar`` (other overloads).
+  This doesn't introduce a dependency on ``<locale>`` so there is virtually no
+  compile time effect.
+
+* Made parameter order in ``vformat_to`` consistent with ``format_to``
+  (`#2327 <https://github.com/fmtlib/fmt/issues/2327>`_).
 
 * Added support for time points with arbitrary durations
   (`#2208 <https://github.com/fmtlib/fmt/issues/2208>`_). For example:
@@ -338,7 +347,8 @@
   Thanks `@vtta <https://github.com/vtta>`_.
 
 * Replaced the ``fmt::system_error`` exception with a function of the same
-  name that constructs ``std::system_error``.
+  name that constructs ``std::system_error``
+  (`#2266 <https://github.com/fmtlib/fmt/issues/2266>`_).
 
 * Replaced the ``fmt::windows_error`` exception with a function of the same
   name that constructs ``std::system_error`` with the category returned by
@@ -349,7 +359,8 @@
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
 
 * Replaced ``fmt::error_code`` with ``std::error_code`` and made it formattable
-  (`#2270 <https://github.com/fmtlib/fmt/pull/2270>`_,
+  (`#2269 <https://github.com/fmtlib/fmt/issues/2269>`_,
+  `#2270 <https://github.com/fmtlib/fmt/pull/2270>`_,
   `#2273 <https://github.com/fmtlib/fmt/pull/2273>`_).
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
  
@@ -395,7 +406,8 @@
   (`#2097 <https://github.com/fmtlib/fmt/issues/2097>`_).
   
 * Improved ``strftime`` error handling 
-  (`#2244 <https://github.com/fmtlib/fmt/pull/2244>`_).
+  (`#2238 <https://github.com/fmtlib/fmt/issues/2238>`_,
+  `#2244 <https://github.com/fmtlib/fmt/pull/2244>`_).
   Thanks `@yumeyao <https://github.com/yumeyao>`_.
 
 * Stopped using deprecated GCC UDL template extension.
@@ -469,25 +481,32 @@
   `#2216 <https://github.com/fmtlib/fmt/pull/2216>`_,
   `#2218 <https://github.com/fmtlib/fmt/pull/2218>`_,
   `#2220 <https://github.com/fmtlib/fmt/pull/2220>`_,
+  `#2228 <https://github.com/fmtlib/fmt/issues/2228>`_,
   `#2229 <https://github.com/fmtlib/fmt/pull/2229>`_,
   `#2230 <https://github.com/fmtlib/fmt/pull/2230>`_,
   `#2233 <https://github.com/fmtlib/fmt/issues/2233>`_,
   `#2239 <https://github.com/fmtlib/fmt/pull/2239>`_,
   `#2248 <https://github.com/fmtlib/fmt/issues/2248>`_,
+  `#2252 <https://github.com/fmtlib/fmt/issues/2252>`_,
   `#2253 <https://github.com/fmtlib/fmt/pull/2253>`_,
   `#2255 <https://github.com/fmtlib/fmt/pull/2255>`_,
   `#2261 <https://github.com/fmtlib/fmt/issues/2261>`_,
   `#2278 <https://github.com/fmtlib/fmt/issues/2278>`_,
+  `#2284 <https://github.com/fmtlib/fmt/issues/2284>`_,
   `#2287 <https://github.com/fmtlib/fmt/pull/2287>`_,
   `#2289 <https://github.com/fmtlib/fmt/pull/2289>`_,
   `#2290 <https://github.com/fmtlib/fmt/pull/2290>`_,
   `#2293 <https://github.com/fmtlib/fmt/pull/2293>`_,
+  `#2295 <https://github.com/fmtlib/fmt/issues/2295>`_,
   `#2296 <https://github.com/fmtlib/fmt/pull/2296>`_,
   `#2297 <https://github.com/fmtlib/fmt/pull/2297>`_,
+  `#2311 <https://github.com/fmtlib/fmt/issues/2311>`_,
   `#2313 <https://github.com/fmtlib/fmt/pull/2313>`_,
   `#2315 <https://github.com/fmtlib/fmt/pull/2315>`_,
+  `#2320 <https://github.com/fmtlib/fmt/issues/2320>`_,
   `#2321 <https://github.com/fmtlib/fmt/pull/2321>`_,
-  `#2323 <https://github.com/fmtlib/fmt/pull/2323>`_).
+  `#2323 <https://github.com/fmtlib/fmt/pull/2323>`_,
+  `#2329 <https://github.com/fmtlib/fmt/pull/2329>`_).
   Thanks `@darklukee <https://github.com/darklukee>`_,
   `@fagg (Ashton Fagg) <https://github.com/fagg>`_,
   `@killerbot242 (Lieven de Cock) <https://github.com/killerbot242>`_,
