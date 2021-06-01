@@ -87,7 +87,7 @@
 // GCC doesn't allow throw in constexpr until version 6 (bug 67371).
 #ifndef FMT_USE_CONSTEXPR
 #  define FMT_USE_CONSTEXPR                                           \
-    (FMT_HAS_FEATURE(cxx_relaxed_constexpr) || FMT_MSC_VER >= 1920 || \
+    (FMT_HAS_FEATURE(cxx_relaxed_constexpr) || FMT_MSC_VER >= 1910 || \
      (FMT_GCC_VERSION >= 600 && __cplusplus >= 201402L)) &&           \
         !FMT_NVCC && !FMT_ICC_VERSION
 #endif
@@ -1581,7 +1581,7 @@ template <typename OutputIt, typename Char> class basic_format_context {
   FMT_CONSTEXPR auto arg(basic_string_view<char_type> name) -> format_arg {
     return args_.get(name);
   }
-  auto arg_id(basic_string_view<char_type> name) -> int {
+  FMT_CONSTEXPR auto arg_id(basic_string_view<char_type> name) -> int {
     return args_.get_id(name);
   }
   auto args() const -> const basic_format_args<basic_format_context>& {
@@ -2179,7 +2179,7 @@ FMT_CONSTEXPR auto parse_width(const Char* begin, const Char* end,
       handler.on_dynamic_width(id);
     }
     FMT_CONSTEXPR void on_error(const char* message) {
-      handler.on_error(message);
+      if (message) handler.on_error(message);
     }
   };
 
@@ -2209,7 +2209,7 @@ FMT_CONSTEXPR auto parse_precision(const Char* begin, const Char* end,
       handler.on_dynamic_precision(id);
     }
     FMT_CONSTEXPR void on_error(const char* message) {
-      handler.on_error(message);
+      if (message) handler.on_error(message);
     }
   };
 
@@ -2310,7 +2310,7 @@ FMT_CONSTEXPR auto parse_replacement_field(const Char* begin, const Char* end,
       arg_id = handler.on_arg_id(id);
     }
     FMT_CONSTEXPR void on_error(const char* message) {
-      handler.on_error(message);
+      if (message) handler.on_error(message);
     }
   };
 

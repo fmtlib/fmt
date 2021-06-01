@@ -169,13 +169,16 @@ struct scan_handler : error_handler {
     scan_ctx_.advance_to(it + size);
   }
 
-  int on_arg_id() { return on_arg_id(next_arg_id_++); }
-  int on_arg_id(int id) {
+  FMT_CONSTEXPR int on_arg_id() { return on_arg_id(next_arg_id_++); }
+  FMT_CONSTEXPR int on_arg_id(int id) {
     if (id >= args_.size) on_error("argument index out of range");
     arg_ = args_.data[id];
     return id;
   }
-  int on_arg_id(string_view) { return on_error("invalid format"), 0; }
+  FMT_CONSTEXPR int on_arg_id(string_view id) {
+    if (id.data()) on_error("invalid format");
+    return 0;
+  }
 
   void on_replacement_field(int, const char*) {
     auto it = scan_ctx_.begin(), end = scan_ctx_.end();

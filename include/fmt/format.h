@@ -2659,9 +2659,11 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
       context.advance_to(write<Char>(context.out(), text));
     }
 
-    int on_arg_id() { return parse_context.next_arg_id(); }
-    int on_arg_id(int id) { return parse_context.check_arg_id(id), id; }
-    int on_arg_id(basic_string_view<Char> id) {
+    FMT_CONSTEXPR int on_arg_id() { return parse_context.next_arg_id(); }
+    FMT_CONSTEXPR int on_arg_id(int id) {
+      return parse_context.check_arg_id(id), id;
+    }
+    FMT_CONSTEXPR int on_arg_id(basic_string_view<Char> id) {
       int arg_id = context.arg_id(id);
       if (arg_id < 0) on_error("argument not found");
       return arg_id;
