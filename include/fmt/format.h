@@ -875,8 +875,7 @@ template <typename T = void> struct basic_data {
   static const uint64_t log10_2_significand = 0x4d104d427de7fbcc;
 
   // GCC generates slightly better code for pairs than chars.
-  using digit_pair = char[2];
-  FMT_API static constexpr const digit_pair digits[] = {
+  FMT_API static constexpr const char digits[][2] = {
       {'0', '0'}, {'0', '1'}, {'0', '2'}, {'0', '3'}, {'0', '4'}, {'0', '5'},
       {'0', '6'}, {'0', '7'}, {'0', '8'}, {'0', '9'}, {'1', '0'}, {'1', '1'},
       {'1', '2'}, {'1', '3'}, {'1', '4'}, {'1', '5'}, {'1', '6'}, {'1', '7'},
