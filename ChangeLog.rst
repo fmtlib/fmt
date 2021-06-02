@@ -141,6 +141,10 @@
   a ~15% reported reduction on one platform.
   Thanks `@sergiud (Sergiu Deitsch) <https://github.com/sergiud>`_.
 
+* Optimized includes making the result of preprocessing ``fmt/format.h``
+  ~20% smaller with libstdc++/C++20 and slightly improving build times
+  (`#1998 <https://github.com/fmtlib/fmt/issues/1998>`_).
+
 * Added support of ranges with non-const ``begin`` / ``end``
   (`#1953 <https://github.com/fmtlib/fmt/pull/1953>`_).
   Thanks `@kitegi (sarah) <https://github.com/kitegi>`_.
@@ -439,9 +443,11 @@
   `@ibaned (Dan Ibanez) <https://github.com/ibaned>`_.
 
 * Fixed various warnings and compilation issues
-  (`#1959 <https://github.com/fmtlib/fmt/pull/1959>`_,
+  (`#1947 <https://github.com/fmtlib/fmt/issues/1947>`_,
+  `#1959 <https://github.com/fmtlib/fmt/pull/1959>`_,
   `#1963 <https://github.com/fmtlib/fmt/pull/1963>`_,
   `#1965 <https://github.com/fmtlib/fmt/pull/1965>`_,
+  `#1966 <https://github.com/fmtlib/fmt/issues/1966>`_,
   `#1974 <https://github.com/fmtlib/fmt/pull/1974>`_,
   `#1975 <https://github.com/fmtlib/fmt/pull/1975>`_,
   `#1990 <https://github.com/fmtlib/fmt/pull/1990>`_,
@@ -565,7 +571,8 @@
   `@twoixter (Jose Miguel Pérez) <https://github.com/twoixter>`_.
 
 * Improved documentation
-  (`#2051 <https://github.com/fmtlib/fmt/pull/2051>`_,
+  (`#1986 <https://github.com/fmtlib/fmt/issues/1986>`_,
+  `#2051 <https://github.com/fmtlib/fmt/pull/2051>`_,
   `#2057 <https://github.com/fmtlib/fmt/issues/2057>`_,
   `#2081 <https://github.com/fmtlib/fmt/pull/2081>`_,
   `#2084 <https://github.com/fmtlib/fmt/issues/2084>`_,
@@ -575,7 +582,8 @@
   `@mordante <https://github.com/mordante>`_.
 
 * Continuous integration and test improvements
-  (`#1991 <https://github.com/fmtlib/fmt/pull/1991>`_,
+  (`#1969 <https://github.com/fmtlib/fmt/issues/1969>`_,
+  `#1991 <https://github.com/fmtlib/fmt/pull/1991>`_,
   `#2020 <https://github.com/fmtlib/fmt/pull/2020>`_,
   `#2110 <https://github.com/fmtlib/fmt/pull/2110>`_,
   `#2114 <https://github.com/fmtlib/fmt/pull/2114>`_,
