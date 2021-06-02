@@ -19,6 +19,7 @@ The {fmt} library API consists of the following parts:
 * :ref:`fmt/os.h <os-api>`: system APIs
 * :ref:`fmt/ostream.h <ostream-api>`: ``std::ostream`` support
 * :ref:`fmt/printf.h <printf-api>`: ``printf`` formatting
+* :ref:`fmt/xchar.h <xchar-api>`: optional ``wchar_t`` support 
 
 All functions and types provided by the library reside in namespace ``fmt`` and
 macros have prefix ``FMT_``.
@@ -49,7 +50,7 @@ participate in an overload resolution if the latter is not a string.
 .. doxygenfunction:: format(format_string<T...> fmt, T&&... args) -> std::string
 .. doxygenfunction:: vformat(string_view fmt, format_args args) -> std::string
 
-.. doxygenfunction:: format_to(OutputIt out, format_string<T...> fmt, T&& args) -> OutputIt
+.. doxygenfunction:: format_to(OutputIt out, format_string<T...> fmt, T&&... args) -> OutputIt
 .. doxygenfunction:: format_to_n(OutputIt out, size_t n, format_string<T...> fmt, const T&... args) -> format_to_n_result<OutputIt>
 .. doxygenfunction:: formatted_size(format_string<T...> fmt, T&&... args) -> size_t
 
@@ -123,7 +124,6 @@ times and reduces binary code size compared to a fully parameterized version.
    :members:
 
 .. doxygentypedef:: fmt::format_context
-.. doxygentypedef:: fmt::wformat_context
 
 Compatibility
 -------------
@@ -132,7 +132,6 @@ Compatibility
    :members:
 
 .. doxygentypedef:: fmt::string_view
-.. doxygentypedef:: fmt::wstring_view
 
 Locale
 ------
@@ -297,14 +296,12 @@ Literal-based API
 
 The following user-defined literals are defined in ``fmt/format.h``.
 
-.. doxygenfunction:: operator""_format(const char *s, size_t n)
+.. doxygenfunction:: operator""_format(const char *s, size_t n) -> detail::udl_formatter<char> 
 
-.. doxygenfunction:: operator""_a(const char *s, size_t)
+.. doxygenfunction:: operator""_a(const char *s, size_t) -> detail::udl_arg<char>
 
 Utilities
 ---------
-
-.. doxygenstruct:: fmt::is_char
 
 .. doxygentypedef:: fmt::char_t
 
@@ -314,8 +311,6 @@ Utilities
 .. doxygenfunction:: fmt::ptr(T (*fn)(Args...))
 
 .. doxygenfunction:: fmt::to_string(const T &value)
-
-.. doxygenfunction:: fmt::to_wstring(const T &value)
 
 .. doxygenfunction:: fmt::to_string_view(const Char *s)
 
@@ -525,6 +520,20 @@ argument type doesn't match its format specification.
 .. doxygenfunction:: fprintf(std::basic_ostream<Char> &os, const S &format_str, const Args&... args)
 
 .. doxygenfunction:: sprintf(const S&, const Args&...)
+
+``wchar_t`` Support
+===================
+
+The optional header ``fmt/wchar_t.h`` provides support for ``wchar_t`` and
+exotic character types.
+
+.. doxygenstruct:: fmt::is_char
+
+.. doxygentypedef:: fmt::wstring_view
+
+.. doxygentypedef:: fmt::wformat_context
+
+.. doxygenfunction:: fmt::to_wstring(const T &value)
 
 Compatibility with C++20 ``std::format``
 ========================================
