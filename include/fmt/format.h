@@ -2237,7 +2237,7 @@ FMT_API std::system_error vsystem_error(int error_code, string_view format_str,
 /**
  \rst
  Constructs :class:`std::system_error` with a message formatted with
- ``fmt::format(message, args...)``.
+ ``fmt::format(fmt, args...)``.
   *error_code* is a system error code as given by ``errno``.
 
  **Example**::
@@ -2251,10 +2251,10 @@ FMT_API std::system_error vsystem_error(int error_code, string_view format_str,
      throw fmt::system_error(errno, "cannot open file '{}'", filename);
  \endrst
 */
-template <typename... Args>
-std::system_error system_error(int error_code, string_view message,
-                               const Args&... args) {
-  return vsystem_error(error_code, message, fmt::make_format_args(args...));
+template <typename... T>
+auto system_error(int error_code, format_string<T...> fmt, T&&... args)
+    -> std::system_error {
+  return vsystem_error(error_code, fmt, fmt::make_format_args(args...));
 }
 
 /**
@@ -2413,11 +2413,21 @@ struct formatter<Char[N], Char> : formatter<basic_string_view<Char>, Char> {
 //   };
 template <typename Char = char> class dynamic_formatter {
  private:
+  detail::dynamic_format_specs<Char> specs_;
+  const Char* format_str_;
+
   struct null_handler : detail::error_handler {
     void on_align(align_t) {}
     void on_sign(sign_t) {}
     void on_hash() {}
   };
+
+  template <typename Context> void handle_specs(Context& ctx) {
+    detail::handle_dynamic_spec<detail::width_checker>(specs_.width,
+                                                       specs_.width_ref, ctx);
+    detail::handle_dynamic_spec<detail::precision_checker>(
+        specs_.precision, specs_.precision_ref, ctx);
+  }
 
  public:
   template <typename ParseContext>
@@ -2439,17 +2449,6 @@ template <typename Char = char> class dynamic_formatter {
     if (specs_.precision >= 0) checker.end_precision();
     return detail::write<Char>(ctx.out(), val, specs_, ctx.locale());
   }
-
- private:
-  template <typename Context> void handle_specs(Context& ctx) {
-    detail::handle_dynamic_spec<detail::width_checker>(specs_.width,
-                                                       specs_.width_ref, ctx);
-    detail::handle_dynamic_spec<detail::precision_checker>(
-        specs_.precision, specs_.precision_ref, ctx);
-  }
-
-  detail::dynamic_format_specs<Char> specs_;
-  const Char* format_str_;
 };
 
 /**
@@ -2461,14 +2460,14 @@ template <typename Char = char> class dynamic_formatter {
     auto s = fmt::format("{}", fmt::ptr(p));
   \endrst
  */
-template <typename T> const void* ptr(T p) {
+template <typename T> auto ptr(T p) -> const void* {
   static_assert(std::is_pointer<T>::value, "");
   return detail::bit_cast<const void*>(p);
 }
-template <typename T> const void* ptr(const std::unique_ptr<T>& p) {
+template <typename T> auto ptr(const std::unique_ptr<T>& p) -> const void* {
   return p.get();
 }
-template <typename T> const void* ptr(const std::shared_ptr<T>& p) {
+template <typename T> auto ptr(const std::shared_ptr<T>& p) -> const void* {
   return p.get();
 }
 
