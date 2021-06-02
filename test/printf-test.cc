@@ -571,20 +571,12 @@ TEST(printf_test, printf_custom) {
   EXPECT_EQ("abc", test_sprintf("%s", test_string("abc")));
 }
 
-TEST(printf_test, ostream) {
-  std::ostringstream os;
-  int ret = fmt::fprintf(os, "Don't %s!", "panic");
-  EXPECT_EQ("Don't panic!", os.str());
-  EXPECT_EQ(12, ret);
-}
-
 TEST(printf_test, vprintf) {
   fmt::format_arg_store<fmt::printf_context, int> as{42};
   fmt::basic_format_args<fmt::printf_context> args(as);
   EXPECT_EQ(fmt::vsprintf("%d", args), "42");
   EXPECT_WRITE(stdout, fmt::vprintf("%d", args), "42");
   EXPECT_WRITE(stdout, fmt::vfprintf(stdout, "%d", args), "42");
-  EXPECT_WRITE(stdout, fmt::vfprintf(std::cout, "%d", args), "42");
 }
 
 template <typename... Args>
