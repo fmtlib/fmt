@@ -31,16 +31,18 @@ Python:
 
 .. code:: c++
 
-  fmt::format("The answer is {}.", 42);
+  std::string s = fmt::format("The answer is {}.", 42);
   
 The ``fmt::format`` function returns a string "The answer is 42.". You can use
 ``fmt::memory_buffer`` to avoid constructing ``std::string``:
 
 .. code:: c++
 
-  fmt::memory_buffer out;
-  format_to(out, "For a moment, {} happened.", "nothing");
-  out.data(); // returns a pointer to the formatted data
+  auto out = fmt::memory_buffer();
+  format_to(std::back_inserter(out),
+            "For a moment, {} happened.", "nothing");
+  auto data = out.data(); // pointer to the formatted data
+  auto size = out.size(); // size of the formatted data
 
 The ``fmt::print`` function performs formatting and writes the result to a stream:
 
@@ -108,16 +110,10 @@ The following code
   fmt::format("Cyrillic letter {}", L'\x42e');
   
 produces a compile-time error because wide character ``L'\x42e'`` cannot be
-formatted into a narrow string. You can use a wide format string instead:
-
-.. code:: c++
-
-  fmt::format(L"Cyrillic letter {}", L'\x42e');
-
-For comparison, writing a wide character to ``std::ostream`` results in
-its numeric value being written to the stream (i.e. 1070 instead of letter 'ю'
-which is represented by ``L'\x42e'`` if we use Unicode) which is rarely
-desirable.
+formatted into a narrow string. For comparison, writing a wide character to
+``std::ostream`` results in its numeric value being written to the stream
+(i.e. 1070 instead of letter 'ю' which is represented by ``L'\x42e'`` if we
+use Unicode) which is rarely desirable.
 
 Compact Binary Code
 -------------------
