@@ -267,17 +267,7 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
              basic_format_args<Context> args) {
   Context(buffer_appender<Char>(buf), format, args).format();
 }
-
 FMT_END_DETAIL_NAMESPACE
-
-// For printing into memory_buffer.
-template <typename Char, typename Context>
-FMT_DEPRECATED void printf(detail::buffer<Char>& buf,
-                           basic_string_view<Char> format,
-                           basic_format_args<Context> args) {
-  return detail::vprintf(buf, format, args);
-}
-using detail::vprintf;
 
 template <typename T> struct printf_formatter {
   printf_formatter() = delete;
@@ -649,7 +639,8 @@ inline auto vfprintf(
 template <typename S, typename... T, typename Char = char_t<S>>
 inline auto fprintf(std::FILE* f, const S& fmt, const T&... args) -> int {
   using context = basic_printf_context_t<Char>;
-  return vfprintf(f, to_string_view(fmt), fmt::make_format_args<context>(args...));
+  return vfprintf(f, to_string_view(fmt),
+                  fmt::make_format_args<context>(args...));
 }
 
 template <typename S, typename Char = char_t<S>>
@@ -671,8 +662,9 @@ inline auto vprintf(
  */
 template <typename S, typename... T, FMT_ENABLE_IF(detail::is_string<S>::value)>
 inline auto printf(const S& fmt, const T&... args) -> int {
-  return vprintf(to_string_view(fmt),
-                 fmt::make_format_args<basic_printf_context_t<char_t<S>>>(args...));
+  return vprintf(
+      to_string_view(fmt),
+      fmt::make_format_args<basic_printf_context_t<char_t<S>>>(args...));
 }
 
 template <typename S, typename Char = char_t<S>>
