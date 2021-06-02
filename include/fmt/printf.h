@@ -25,34 +25,25 @@ class basic_printf_parse_context : public basic_format_parse_context<Char> {
 };
 
 template <typename OutputIt, typename Char> class basic_printf_context {
+ private:
+  OutputIt out_;
+  basic_format_args<basic_printf_context> args_;
+
  public:
-  /** The character type for the output. */
   using char_type = Char;
-  using iterator = OutputIt;
   using format_arg = basic_format_arg<basic_printf_context>;
   using parse_context_type = basic_printf_parse_context<Char>;
   template <typename T> using formatter_type = printf_formatter<T>;
 
- private:
-  using format_specs = basic_format_specs<char_type>;
-
-  OutputIt out_;
-  basic_format_args<basic_printf_context> args_;
-  parse_context_type parse_ctx_;
-
-  static void parse_flags(format_specs& specs, const Char*& it,
-                          const Char* end);
-
- public:
   /**
     \rst
     Constructs a ``printf_context`` object. References to the arguments are
     stored in the context object so make sure they have appropriate lifetimes.
     \endrst
    */
-  basic_printf_context(OutputIt out, basic_string_view<char_type> format_str,
+  basic_printf_context(OutputIt out,
                        basic_format_args<basic_printf_context> args)
-      : out_(out), args_(args), parse_ctx_(format_str) {}
+      : out_(out), args_(args) {}
 
   OutputIt out() { return out_; }
   void advance_to(OutputIt it) { out_ = it; }
@@ -61,14 +52,8 @@ template <typename OutputIt, typename Char> class basic_printf_context {
 
   format_arg arg(int id) const { return args_.get(id); }
 
-  // Returns the argument with specified index or, if arg_index is -1, the next
-  // argument.
-  format_arg get_arg(int arg_index = -1);
-
-  parse_context_type& parse_context() { return parse_ctx_; }
-
   FMT_CONSTEXPR void on_error(const char* message) {
-    parse_ctx_.on_error(message);
+    detail::error_handler().on_error(message);
   }
 };
 
@@ -306,7 +291,9 @@ class printf_arg_formatter : public arg_formatter<Char> {
 
   /** Formats an argument of a custom (user-defined) type. */
   OutputIt operator()(typename basic_format_arg<context_type>::handle handle) {
-    handle.format(context_.parse_context(), context_);
+    auto parse_ctx =
+        basic_printf_parse_context<Char>(basic_string_view<Char>());
+    handle.format(parse_ctx, context_);
     return this->out;
   }
 };
@@ -371,7 +358,7 @@ int parse_header(const Char*& it, const Char* end,
     } else if (*it == '*') {
       ++it;
       specs.width = static_cast<int>(visit_format_arg(
-          detail::printf_width_handler<Char>(specs), get_arg()));
+          detail::printf_width_handler<Char>(specs), get_arg(-1)));
     }
   }
   return arg_index;
@@ -382,8 +369,19 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
              basic_format_args<Context> args) {
   using OutputIt = buffer_appender<Char>;
   auto out = OutputIt(buf);
-  auto context = basic_printf_context<OutputIt, Char>(out, format, args);
-  auto& parse_ctx = context.parse_context();
+  auto context = basic_printf_context<OutputIt, Char>(out, args);
+  auto parse_ctx = basic_printf_parse_context<Char>(format);
+
+  // Returns the argument with specified index or, if arg_index is -1, the next
+  // argument.
+  auto get_arg = [&](int arg_index) {
+    if (arg_index < 0)
+      arg_index = parse_ctx.next_arg_id();
+    else
+      parse_ctx.check_arg_id(--arg_index);
+    return detail::get_arg(context, arg_index);
+  };
+
   const Char* start = parse_ctx.begin();
   const Char* end = parse_ctx.end();
   auto it = start;
@@ -406,8 +404,7 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
     specs.align = align::right;
 
     // Parse argument index, flags and width.
-    int arg_index =
-        parse_header(it, end, specs, [&]() { return context.get_arg(); });
+    int arg_index = parse_header(it, end, specs, get_arg);
     if (arg_index == 0) parse_ctx.on_error("argument not found");
 
     // Parse precision.
@@ -419,14 +416,14 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
         specs.precision = parse_nonnegative_int(it, end, eh);
       } else if (c == '*') {
         ++it;
-        specs.precision = static_cast<int>(visit_format_arg(
-            detail::printf_precision_handler(), context.get_arg()));
+        specs.precision = static_cast<int>(
+            visit_format_arg(detail::printf_precision_handler(), get_arg(-1)));
       } else {
         specs.precision = 0;
       }
     }
 
-    auto arg = context.get_arg(arg_index);
+    auto arg = get_arg(arg_index);
     // For d, i, o, u, x, and X conversion specifiers, if a precision is
     // specified, the '0' flag is ignored
     if (specs.precision >= 0 && arg.is_integral())
@@ -519,16 +516,6 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
   detail::write(out, basic_string_view<Char>(start, to_unsigned(it - start)));
 }
 FMT_END_DETAIL_NAMESPACE
-
-template <typename OutputIt, typename Char>
-typename basic_printf_context<OutputIt, Char>::format_arg
-basic_printf_context<OutputIt, Char>::get_arg(int arg_index) {
-  if (arg_index < 0)
-    arg_index = parse_ctx_.next_arg_id();
-  else
-    parse_ctx_.check_arg_id(--arg_index);
-  return detail::get_arg(*this, arg_index);
-}
 
 template <typename Char>
 using basic_printf_context_t =
