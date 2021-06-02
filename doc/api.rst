@@ -305,18 +305,17 @@ Utilities
 
 .. doxygentypedef:: fmt::char_t
 
-.. doxygenfunction:: fmt::ptr(const T *p)
+.. doxygenfunction:: fmt::ptr(T p)
 .. doxygenfunction:: fmt::ptr(const std::unique_ptr<T> &p)
 .. doxygenfunction:: fmt::ptr(const std::shared_ptr<T> &p)
-.. doxygenfunction:: fmt::ptr(T (*fn)(Args...))
 
 .. doxygenfunction:: fmt::to_string(const T &value)
 
-.. doxygenfunction:: fmt::to_string_view(const Char *s)
+.. doxygenfunction:: fmt::to_string_view(const Char *s) -> basic_string_view<Char>
 
-.. doxygenfunction:: fmt::join(Range &&range, string_view sep)
+.. doxygenfunction:: fmt::join(Range &&range, string_view sep) -> join_view<detail::iterator_t<Range>, detail::sentinel_t<Range>>
 
-.. doxygenfunction:: fmt::join(It begin, Sentinel end, string_view sep)
+.. doxygenfunction:: fmt::join(It begin, Sentinel end, string_view sep) -> join_view<It, Sentinel>
 
 .. doxygenclass:: fmt::detail::buffer
    :members:
@@ -328,17 +327,13 @@ Utilities
 System Errors
 -------------
 
-fmt does not use ``errno`` to communicate errors to the user, but it may call
-system functions which set ``errno``. Users should not make any assumptions about
-the value of ``errno`` being preserved by library functions.
+{fmt} does not use ``errno`` to communicate errors to the user, but it may call
+system functions which set ``errno``. Users should not make any assumptions
+about the value of ``errno`` being preserved by library functions.
 
-.. doxygenclass:: fmt::system_error
-   :members:
+.. doxygenfunction:: fmt::system_error
 
 .. doxygenfunction:: fmt::format_system_error
-
-.. doxygenclass:: fmt::windows_error
-   :members:
 
 Custom Allocators
 -----------------
@@ -473,6 +468,9 @@ System APIs
 .. doxygenclass:: fmt::ostream
    :members:
 
+.. doxygenfunction:: fmt::windows_error
+   :members:
+
 .. _ostream-api:
 
 ``std::ostream`` Support
@@ -515,11 +513,11 @@ argument type doesn't match its format specification.
 
 .. doxygenfunction:: printf(const S &format_str, const Args&... args)
 
-.. doxygenfunction:: fprintf(std::FILE *f, const S &format, const Args&... args)
-
-.. doxygenfunction:: fprintf(std::basic_ostream<Char> &os, const S &format_str, const Args&... args)
+.. doxygenfunction:: fprintf(std::FILE *f, const S &format, const Args&... args) -> int
 
 .. doxygenfunction:: sprintf(const S&, const Args&...)
+
+.. _xchar-api:
 
 ``wchar_t`` Support
 ===================
@@ -546,5 +544,4 @@ differences:
   collisions with standard library implementations.
 * Width calculation doesn't use grapheme clusterization. The latter has been
   implemented in a separate branch but hasn't been integrated yet.
-* Chrono formatting doesn't support C++20 date types since they are not provided
-  by standard library implementations.
+* Most C++20 chrono types are not supported yet.
