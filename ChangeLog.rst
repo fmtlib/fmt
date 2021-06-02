@@ -7,7 +7,8 @@
   `#2056 <https://github.com/fmtlib/fmt/pull/2056>`_,
   `#2072 <https://github.com/fmtlib/fmt/pull/2072>`_,
   `#2075 <https://github.com/fmtlib/fmt/pull/2075>`_,
-  `#2129 <https://github.com/fmtlib/fmt/pull/2129>`_).
+  `#2129 <https://github.com/fmtlib/fmt/pull/2129>`_,
+  `#2326 <https://github.com/fmtlib/fmt/pull/2326>`_).
   For example (`godbolt <https://godbolt.org/z/Mxx9d89jM>`__):
 
   .. code:: c++
@@ -130,7 +131,8 @@
   `#2307 <https://github.com/fmtlib/fmt/pull/2307>`_,
   `#2309 <https://github.com/fmtlib/fmt/pull/2309>`_,
   `#2318 <https://github.com/fmtlib/fmt/pull/2318>`_,
-  `#2324 <https://github.com/fmtlib/fmt/pull/2324>`_).
+  `#2324 <https://github.com/fmtlib/fmt/pull/2324>`_,
+  `#2332 <https://github.com/fmtlib/fmt/pull/2332>`_).
   Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_.
 
 * Made symbols private by default reducing shared library size
@@ -383,6 +385,7 @@
   satisfy C++20 ``std::output_iterator`` requirements
   (`#2156 <https://github.com/fmtlib/fmt/issues/2156>`_,
   `#2158 <https://github.com/fmtlib/fmt/pull/2158>`_,
+  `#2195 <https://github.com/fmtlib/fmt/issues/2195>`_,
   `#2204 <https://github.com/fmtlib/fmt/pull/2204>`_).
   Thanks `@randomnetcat (Jason Cobb) <https://github.com/randomnetcat>`_.
 
@@ -454,15 +457,20 @@
   `#2117 <https://github.com/fmtlib/fmt/pull/2117>`_,
   `#2119 <https://github.com/fmtlib/fmt/pull/2119>`_,
   `#2128 <https://github.com/fmtlib/fmt/pull/2128>`_,
+  `#2140 <https://github.com/fmtlib/fmt/issues/2140>`_,
   `#2142 <https://github.com/fmtlib/fmt/issues/2142>`_,
   `#2143 <https://github.com/fmtlib/fmt/pull/2143>`_,
   `#2144 <https://github.com/fmtlib/fmt/pull/2144>`_,
   `#2147 <https://github.com/fmtlib/fmt/issues/2147>`_,
   `#2148 <https://github.com/fmtlib/fmt/issues/2148>`_,
+  `#2149 <https://github.com/fmtlib/fmt/issues/2149>`_,
   `#2152 <https://github.com/fmtlib/fmt/pull/2152>`_,
   `#2160 <https://github.com/fmtlib/fmt/pull/2160>`_,
+  `#2170 <https://github.com/fmtlib/fmt/issues/2170>`_,
   `#2175 <https://github.com/fmtlib/fmt/issues/2175>`_,
+  `#2176 <https://github.com/fmtlib/fmt/issues/2176>`_,
   `#2177 <https://github.com/fmtlib/fmt/pull/2177>`_,
+  `#2178 <https://github.com/fmtlib/fmt/issues/2178>`_,
   `#2179 <https://github.com/fmtlib/fmt/pull/2179>`_,
   `#2180 <https://github.com/fmtlib/fmt/issues/2180>`_,
   `#2181 <https://github.com/fmtlib/fmt/issues/2181>`_,
@@ -506,6 +514,7 @@
   `#2320 <https://github.com/fmtlib/fmt/issues/2320>`_,
   `#2321 <https://github.com/fmtlib/fmt/pull/2321>`_,
   `#2323 <https://github.com/fmtlib/fmt/pull/2323>`_,
+  `#2328 <https://github.com/fmtlib/fmt/issues/2328>`_,
   `#2329 <https://github.com/fmtlib/fmt/pull/2329>`_).
   Thanks `@darklukee <https://github.com/darklukee>`_,
   `@fagg (Ashton Fagg) <https://github.com/fagg>`_,
