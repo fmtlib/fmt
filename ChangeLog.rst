@@ -7,6 +7,7 @@
   `#2056 <https://github.com/fmtlib/fmt/pull/2056>`_,
   `#2072 <https://github.com/fmtlib/fmt/pull/2072>`_,
   `#2075 <https://github.com/fmtlib/fmt/pull/2075>`_,
+  `#2078 <https://github.com/fmtlib/fmt/issues/2078>`_,
   `#2129 <https://github.com/fmtlib/fmt/pull/2129>`_,
   `#2326 <https://github.com/fmtlib/fmt/pull/2326>`_).
   For example (`godbolt <https://godbolt.org/z/Mxx9d89jM>`__):
@@ -263,7 +264,8 @@
 
 * Added support for the ``'s'`` format specifier that gives textual
   representation of ``bool``
-  (`#2109 <https://github.com/fmtlib/fmt/pull/2109>`_). For example:
+  (`#2094 <https://github.com/fmtlib/fmt/issues/2094>`_,
+  `#2109 <https://github.com/fmtlib/fmt/pull/2109>`_). For example:
 
   .. code:: c++
 
@@ -307,7 +309,8 @@
   (`#2036 <https://github.com/fmtlib/fmt/issues/2036>`_).
 
 * Improved width computation
-  (`#2033 <https://github.com/fmtlib/fmt/issues/2033>`_). For example:
+  (`#2033 <https://github.com/fmtlib/fmt/issues/2033>`_,
+  `#2091 <https://github.com/fmtlib/fmt/issues/2091>`_). For example:
 
   .. code:: c++
 
@@ -326,7 +329,8 @@
   on a modern terminal.
 
 * The experimental fast output stream (``fmt::ostream``) is now truncated by
-  default for consistency with ``fopen``. For example:
+  default for consistency with ``fopen``
+  (`#2018 <https://github.com/fmtlib/fmt/issues/2018>`_). For example:
 
   .. code:: c++
 
@@ -415,7 +419,8 @@
 
 * Stopped using deprecated GCC UDL template extension.
 
-* Added ``fmt/args.h`` to the install target.
+* Added ``fmt/args.h`` to the install target
+  (`#2096 <https://github.com/fmtlib/fmt/issues/2096>`_).
 
 * Error messages are now passed to assert when exceptions are disabled
   (`#2145 <https://github.com/fmtlib/fmt/pull/2145>`_).
@@ -423,7 +428,8 @@
 
 * Added the ``FMT_MASTER_PROJECT`` CMake option to control build and install
   targets when {fmt} is included via ``add_subdirectory``
-  (`#2100 <https://github.com/fmtlib/fmt/pull/2100>`_).
+  (`#2098 <https://github.com/fmtlib/fmt/issues/2098>`_,
+  `#2100 <https://github.com/fmtlib/fmt/pull/2100>`_).
   Thanks `@randomizedthinking <https://github.com/randomizedthinking>`_.
 
 * Improved build configuration
@@ -439,7 +445,10 @@
   `#1974 <https://github.com/fmtlib/fmt/pull/1974>`_,
   `#1975 <https://github.com/fmtlib/fmt/pull/1975>`_,
   `#1990 <https://github.com/fmtlib/fmt/pull/1990>`_,
+  `#2000 <https://github.com/fmtlib/fmt/issues/2000>`_,
   `#2001 <https://github.com/fmtlib/fmt/pull/2001>`_,
+  `#2002 <https://github.com/fmtlib/fmt/issues/2002>`_,
+  `#2004 <https://github.com/fmtlib/fmt/issues/2004>`_,
   `#2006 <https://github.com/fmtlib/fmt/pull/2006>`_,
   `#2009 <https://github.com/fmtlib/fmt/pull/2009>`_,
   `#2010 <https://github.com/fmtlib/fmt/pull/2010>`_,
@@ -452,10 +461,15 @@
   `#2067 <https://github.com/fmtlib/fmt/pull/2067>`_,
   `#2068 <https://github.com/fmtlib/fmt/pull/2068>`_,
   `#2073 <https://github.com/fmtlib/fmt/pull/2073>`_,
+  `#2103 <https://github.com/fmtlib/fmt/issues/2103>`_
+  `#2105 <https://github.com/fmtlib/fmt/issues/2105>`_
   `#2106 <https://github.com/fmtlib/fmt/pull/2106>`_,
   `#2107 <https://github.com/fmtlib/fmt/pull/2107>`_,
+  `#2116 <https://github.com/fmtlib/fmt/issues/2116>`_
   `#2117 <https://github.com/fmtlib/fmt/pull/2117>`_,
+  `#2118 <https://github.com/fmtlib/fmt/issues/2118>`_
   `#2119 <https://github.com/fmtlib/fmt/pull/2119>`_,
+  `#2127 <https://github.com/fmtlib/fmt/issues/2127>`_,
   `#2128 <https://github.com/fmtlib/fmt/pull/2128>`_,
   `#2140 <https://github.com/fmtlib/fmt/issues/2140>`_,
   `#2142 <https://github.com/fmtlib/fmt/issues/2142>`_,
@@ -554,6 +568,7 @@
   (`#2051 <https://github.com/fmtlib/fmt/pull/2051>`_,
   `#2057 <https://github.com/fmtlib/fmt/issues/2057>`_,
   `#2081 <https://github.com/fmtlib/fmt/pull/2081>`_,
+  `#2084 <https://github.com/fmtlib/fmt/issues/2084>`_,
   `#2312 <https://github.com/fmtlib/fmt/pull/2312>`_).
   Thanks `@imba-tjd (谭九鼎) <https://github.com/imba-tjd>`_,
   `@0x416c69 (AlιAѕѕaѕѕιN) <https://github.com/0x416c69>`_,
