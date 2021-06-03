@@ -70,6 +70,7 @@ def build_docs(version='dev', **kwargs):
       EXCLUDE_SYMBOLS   = fmt::formatter fmt::printf_formatter fmt::arg_join \
                           fmt::basic_format_arg::handle
     '''.format(include_dir, doxyxml_dir).encode('UTF-8'))
+  out = out.decode('utf-8')
   internal_symbols = [
     'fmt::detail::.*',
     'basic_data<>',
