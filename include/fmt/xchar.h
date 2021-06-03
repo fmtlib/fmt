@@ -9,6 +9,7 @@
 #define FMT_WCHAR_H_
 
 #include <cwchar>
+#include <tuple>
 
 #include "format.h"
 
@@ -75,9 +76,10 @@ auto join(std::initializer_list<T> list, wstring_view sep)
 template <typename Locale, typename S, typename Char = char_t<S>,
           FMT_ENABLE_IF(detail::is_locale<Locale>::value&&
                             detail::is_exotic_char<Char>::value)>
-inline std::basic_string<Char> vformat(
+inline auto vformat(
     const Locale& loc, const S& format_str,
-    basic_format_args<buffer_context<type_identity_t<Char>>> args) {
+    basic_format_args<buffer_context<type_identity_t<Char>>> args)
+    -> std::basic_string<Char> {
   return detail::vformat(loc, to_string_view(format_str), args);
 }
 
@@ -85,8 +87,8 @@ template <typename Locale, typename S, typename... Args,
           typename Char = char_t<S>,
           FMT_ENABLE_IF(detail::is_locale<Locale>::value&&
                             detail::is_exotic_char<Char>::value)>
-inline std::basic_string<Char> format(const Locale& loc, const S& format_str,
-                                      Args&&... args) {
+inline auto format(const Locale& loc, const S& format_str, Args&&... args)
+    -> std::basic_string<Char> {
   return detail::vformat(loc, to_string_view(format_str),
                          fmt::make_args_checked<Args...>(format_str, args...));
 }
@@ -126,9 +128,9 @@ template <typename Locale, typename S, typename OutputIt, typename... Args,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value&&
                             detail::is_locale<Locale>::value&&
                                 detail::is_exotic_char<Char>::value)>
-inline OutputIt vformat_to(
+inline auto vformat_to(
     OutputIt out, const Locale& loc, const S& format_str,
-    basic_format_args<buffer_context<type_identity_t<Char>>> args) {
+    basic_format_args<buffer_context<type_identity_t<Char>>> args) -> OutputIt {
   auto&& buf = detail::get_buffer<Char>(out);
   vformat_to(buf, to_string_view(format_str), args, detail::locale_ref(loc));
   return detail::get_iterator(buf);
@@ -202,7 +204,7 @@ template <typename... T> void print(wformat_string<T...> fmt, T&&... args) {
 /**
   Converts *value* to ``std::wstring`` using the default format for type *T*.
  */
-template <typename T> inline std::wstring to_wstring(const T& value) {
+template <typename T> inline auto to_wstring(const T& value) -> std::wstring {
   return format(FMT_STRING(L"{}"), value);
 }
 FMT_MODULE_EXPORT_END

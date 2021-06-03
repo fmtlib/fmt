@@ -19,15 +19,7 @@
 
 FMT_BEGIN_NAMESPACE
 
-template <typename Char> struct formatting_base {
-  template <typename ParseContext>
-  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
-    return ctx.begin();
-  }
-};
-
-template <typename Char, typename Enable = void>
-struct formatting_range : formatting_base<Char> {
+template <typename Char, typename Enable = void> struct formatting_range {
 #ifdef FMT_DEPRECATED_BRACED_RANGES
   Char prefix = '{';
   Char postfix = '}';
@@ -35,12 +27,21 @@ struct formatting_range : formatting_base<Char> {
   Char prefix = '[';
   Char postfix = ']';
 #endif
+
+  template <typename ParseContext>
+  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
 };
 
-template <typename Char, typename Enable = void>
-struct formatting_tuple : formatting_base<Char> {
+template <typename Char, typename Enable = void> struct formatting_tuple {
   Char prefix = '(';
   Char postfix = ')';
+
+  template <typename ParseContext>
+  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
 };
 
 namespace detail {
@@ -362,50 +363,52 @@ struct formatter<
   }
 };
 
-template <typename Char, typename... T> struct tuple_arg_join : detail::view {
+template <typename Char, typename... T> struct tuple_join_view : detail::view {
   const std::tuple<T...>& tuple;
   basic_string_view<Char> sep;
 
-  tuple_arg_join(const std::tuple<T...>& t, basic_string_view<Char> s)
+  tuple_join_view(const std::tuple<T...>& t, basic_string_view<Char> s)
       : tuple(t), sep{s} {}
 };
 
 template <typename Char, typename... T>
-struct formatter<tuple_arg_join<Char, T...>, Char> {
+using tuple_arg_join = tuple_join_view<Char, T...>;
+
+template <typename Char, typename... T>
+struct formatter<tuple_join_view<Char, T...>, Char> {
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
     return ctx.begin();
   }
 
   template <typename FormatContext>
-  typename FormatContext::iterator format(
-      const tuple_arg_join<Char, T...>& value, FormatContext& ctx) {
+  auto format(const tuple_join_view<Char, T...>& value, FormatContext& ctx) ->
+      typename FormatContext::iterator {
     return format(value, ctx, detail::make_index_sequence<sizeof...(T)>{});
   }
 
  private:
   template <typename FormatContext, size_t... N>
-  typename FormatContext::iterator format(
-      const tuple_arg_join<Char, T...>& value, FormatContext& ctx,
-      detail::index_sequence<N...>) {
+  auto format(const tuple_join_view<Char, T...>& value, FormatContext& ctx,
+              detail::index_sequence<N...>) ->
+      typename FormatContext::iterator {
     return format_args(value, ctx, std::get<N>(value.tuple)...);
   }
 
   template <typename FormatContext>
-  typename FormatContext::iterator format_args(
-      const tuple_arg_join<Char, T...>&, FormatContext& ctx) {
+  auto format_args(const tuple_join_view<Char, T...>&, FormatContext& ctx) ->
+      typename FormatContext::iterator {
     // NOTE: for compilers that support C++17, this empty function instantiation
     // can be replaced with a constexpr branch in the variadic overload.
     return ctx.out();
   }
 
   template <typename FormatContext, typename Arg, typename... Args>
-  typename FormatContext::iterator format_args(
-      const tuple_arg_join<Char, T...>& value, FormatContext& ctx,
-      const Arg& arg, const Args&... args) {
+  auto format_args(const tuple_join_view<Char, T...>& value, FormatContext& ctx,
+                   const Arg& arg, const Args&... args) ->
+      typename FormatContext::iterator {
     using base = formatter<typename std::decay<Arg>::type, Char>;
-    auto out = ctx.out();
-    out = base{}.format(arg, ctx);
+    auto out = base().format(arg, ctx);
     if (sizeof...(Args) > 0) {
       out = std::copy(value.sep.begin(), value.sep.end(), out);
       ctx.advance_to(out);
@@ -429,14 +432,15 @@ FMT_MODULE_EXPORT_BEGIN
   \endrst
  */
 template <typename... T>
-FMT_CONSTEXPR tuple_arg_join<char, T...> join(const std::tuple<T...>& tuple,
-                                              string_view sep) {
+FMT_CONSTEXPR auto join(const std::tuple<T...>& tuple, string_view sep)
+    -> tuple_join_view<char, T...> {
   return {tuple, sep};
 }
 
 template <typename... T>
-FMT_CONSTEXPR tuple_arg_join<wchar_t, T...> join(
-    const std::tuple<T...>& tuple, basic_string_view<wchar_t> sep) {
+FMT_CONSTEXPR auto join(const std::tuple<T...>& tuple,
+                        basic_string_view<wchar_t> sep)
+    -> tuple_join_view<wchar_t, T...> {
   return {tuple, sep};
 }
 
@@ -452,8 +456,8 @@ FMT_CONSTEXPR tuple_arg_join<wchar_t, T...> join(
   \endrst
  */
 template <typename T>
-join_view<const T*, const T*> join(std::initializer_list<T> list,
-                                   string_view sep) {
+auto join(std::initializer_list<T> list, string_view sep)
+    -> join_view<const T*, const T*> {
   return join(std::begin(list), std::end(list), sep);
 }
 
