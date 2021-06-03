@@ -305,9 +305,9 @@ Utilities
 
 .. doxygentypedef:: fmt::char_t
 
-.. doxygenfunction:: fmt::ptr(T p)
-.. doxygenfunction:: fmt::ptr(const std::unique_ptr<T> &p)
-.. doxygenfunction:: fmt::ptr(const std::shared_ptr<T> &p)
+.. doxygenfunction:: fmt::ptr(T p) -> const void*
+.. doxygenfunction:: fmt::ptr(const std::unique_ptr<T> &p) -> const void*
+.. doxygenfunction:: fmt::ptr(const std::shared_ptr<T> &p) -> const void*
 
 .. doxygenfunction:: fmt::to_string(const T &value)
 
@@ -511,11 +511,11 @@ the POSIX extension for positional arguments. Unlike their standard
 counterparts, the ``fmt`` functions are type-safe and throw an exception if an
 argument type doesn't match its format specification.
 
-.. doxygenfunction:: printf(const S &format_str, const Args&... args)
+.. doxygenfunction:: printf(const S &format_str, const T&... args)
 
-.. doxygenfunction:: fprintf(std::FILE *f, const S &format, const Args&... args) -> int
+.. doxygenfunction:: fprintf(std::FILE *f, const S &fmt, const T&... args) -> int
 
-.. doxygenfunction:: sprintf(const S&, const Args&...)
+.. doxygenfunction:: sprintf(const S&, const T&...)
 
 .. _xchar-api:
 
