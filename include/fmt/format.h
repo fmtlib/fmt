@@ -2572,7 +2572,7 @@ struct formatter<join_view<It, Sentinel, Char>, Char> {
   }
 
   using formatter_type =
-      conditional_t<is_formattable<value_type>::value,
+      conditional_t<is_formattable<value_type, Char>::value,
                     formatter<remove_cvref_t<decltype(map(
                                   std::declval<const value_type&>()))>,
                               Char>,
