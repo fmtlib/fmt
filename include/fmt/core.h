@@ -2912,8 +2912,8 @@ FMT_INLINE auto formatted_size(format_string<T...> fmt, T&&... args) -> size_t {
   return buf.count();
 }
 
-FMT_API void vprint(string_view, format_args);
-FMT_API void vprint(std::FILE*, string_view, format_args);
+FMT_API void vprint(string_view fmt, format_args args);
+FMT_API void vprint(std::FILE* f, string_view fmt, format_args args);
 
 /**
   \rst

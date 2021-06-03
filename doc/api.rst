@@ -6,13 +6,11 @@ API Reference
 
 The {fmt} library API consists of the following parts:
 
-* :ref:`fmt/core.h <core-api>`: the core API providing argument handling
-  facilities and a lightweight subset of formatting functions
-* :ref:`fmt/format.h <format-api>`: the full format API providing compile-time
-  format string checks, wide string, output iterator and user-defined type
-  support
-* :ref:`fmt/ranges.h <ranges-api>`: additional formatting support for ranges
-  and tuples
+* :ref:`fmt/core.h <core-api>`: the core API providing main formatting functions
+  for ``char``/UTF-8 with compile-time checks and minimal dependencies
+* :ref:`fmt/format.h <format-api>`: the full format API providing additional
+  formatting functions and locale support
+* :ref:`fmt/ranges.h <ranges-api>`: formatting of ranges and tuples
 * :ref:`fmt/chrono.h <chrono-api>`: date and time formatting
 * :ref:`fmt/compile.h <compile-api>`: format string compilation
 * :ref:`fmt/color.h <color-api>`: terminal color and text style
@@ -29,9 +27,10 @@ macros have prefix ``FMT_``.
 Core API
 ========
 
-``fmt/core.h`` defines the core API which provides argument handling facilities
-and a lightweight subset of formatting functions. It is only beneficial when
-using {fmt} as a library and not in the header-only mode.
+``fmt/core.h`` defines the core API which provides main formatting functions for
+``char``/UTF-8 with compile-time checks. It has minimal include dependencies for
+better compile times. This header is only beneficial when using {fmt} as a
+library and not in the header-only mode.
 
 The following functions use :ref:`format string syntax <syntax>`
 similar to that of Python's `str.format
@@ -60,10 +59,24 @@ participate in an overload resolution if the latter is not a string.
 .. _print:
 
 .. doxygenfunction:: fmt::print(format_string<T...> fmt, T&&... args)
-.. doxygenfunction:: vprint(string_view, format_args)
+.. doxygenfunction:: vprint(string_view fmt, format_args args)
 
 .. doxygenfunction:: print(std::FILE *f, format_string<T...> fmt, T&&... args)
-.. doxygenfunction:: vprint(std::FILE*, string_view, format_args)
+.. doxygenfunction:: vprint(std::FILE* f, string_view fmt, format_args args)
+
+Compile-time Format String Checks
+---------------------------------
+
+Compile-time checks are enabled when using ``FMT_STRING``. They support built-in
+and string types as well as user-defined types with ``constexpr`` ``parse``
+functions in their ``formatter`` specializations.
+
+.. doxygendefine:: FMT_STRING
+
+To force the use of compile-time checks, define the preprocessor variable
+``FMT_ENFORCE_COMPILE_STRING``. When set, functions accepting ``FMT_STRING``
+will fail to compile with regular strings. Runtime-checked
+formatting is still possible using ``fmt::vformat``, ``fmt::vprint``, etc.
 
 Named Arguments
 ---------------
@@ -151,22 +164,8 @@ locale::
 Format API
 ==========
 
-``fmt/format.h`` defines the full format API providing compile-time format
-string checks, wide string, output iterator and user-defined type support.
-
-Compile-time Format String Checks
----------------------------------
-
-Compile-time checks are enabled when using ``FMT_STRING``. They support built-in
-and string types as well as user-defined types with ``constexpr`` ``parse``
-functions in their ``formatter`` specializations.
-
-.. doxygendefine:: FMT_STRING
-
-To force the use of compile-time checks, define the preprocessor variable
-``FMT_ENFORCE_COMPILE_STRING``. When set, functions accepting ``FMT_STRING``
-will fail to compile with regular strings. Runtime-checked
-formatting is still possible using ``fmt::vformat``, ``fmt::vprint``, etc.
+``fmt/format.h`` defines the full format API providing additional formatting
+functions and locale support.
 
 .. _udt:
 
@@ -302,8 +301,6 @@ The following user-defined literals are defined in ``fmt/format.h``.
 
 Utilities
 ---------
-
-.. doxygentypedef:: fmt::char_t
 
 .. doxygenfunction:: fmt::ptr(T p) -> const void*
 .. doxygenfunction:: fmt::ptr(const std::unique_ptr<T> &p) -> const void*
