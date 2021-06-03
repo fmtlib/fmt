@@ -62,7 +62,7 @@ participate in an overload resolution if the latter is not a string.
 .. doxygenfunction:: vprint(string_view fmt, format_args args)
 
 .. doxygenfunction:: print(std::FILE *f, format_string<T...> fmt, T&&... args)
-.. doxygenfunction:: vprint(std::FILE* f, string_view fmt, format_args args)
+.. doxygenfunction:: vprint(std::FILE *f, string_view fmt, format_args args)
 
 Compile-time Format String Checks
 ---------------------------------
