@@ -103,23 +103,18 @@ template <typename Locale> Locale locale_ref::get() const {
   return locale_ ? *static_cast<const std::locale*>(locale_) : std::locale();
 }
 
-template <typename Char> FMT_FUNC std::string grouping_impl(locale_ref loc) {
-  return std::use_facet<std::numpunct<Char>>(loc.get<std::locale>()).grouping();
-}
-template <typename Char> FMT_FUNC Char thousands_sep_impl(locale_ref loc) {
-  return std::use_facet<std::numpunct<Char>>(loc.get<std::locale>())
-      .thousands_sep();
+template <typename Char>
+FMT_FUNC auto thousands_sep_impl(locale_ref loc) -> thousands_sep_result<Char> {
+  auto& facet = std::use_facet<std::numpunct<Char>>(loc.get<std::locale>());
+  return {facet.grouping(), facet.thousands_sep()};
 }
 template <typename Char> FMT_FUNC Char decimal_point_impl(locale_ref loc) {
   return std::use_facet<std::numpunct<Char>>(loc.get<std::locale>())
       .decimal_point();
 }
 #else
-template <typename Char> FMT_FUNC std::string grouping_impl(locale_ref) {
-  return "\03";
-}
 template <typename Char> FMT_FUNC Char thousands_sep_impl(locale_ref) {
-  return FMT_STATIC_THOUSANDS_SEPARATOR;
+  return {"\03", FMT_STATIC_THOUSANDS_SEPARATOR};
 }
 template <typename Char> FMT_FUNC Char decimal_point_impl(locale_ref) {
   return '.';

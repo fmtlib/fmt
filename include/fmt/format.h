@@ -1015,22 +1015,20 @@ template <> constexpr auto digits10<uint128_t>() FMT_NOEXCEPT -> int {
   return 38;
 }
 
-// DEPRECATED! grouping will be merged into thousands_sep.
-template <typename Char>
-FMT_API auto grouping_impl(locale_ref loc) -> std::string;
-template <typename Char> inline auto grouping(locale_ref loc) -> std::string {
-  return grouping_impl<char>(loc);
-}
-template <> inline auto grouping<wchar_t>(locale_ref loc) -> std::string {
-  return grouping_impl<wchar_t>(loc);
-}
+template <typename Char> struct thousands_sep_result {
+  std::string grouping;
+  Char thousands_sep;
+};
 
 template <typename Char>
-FMT_API auto thousands_sep_impl(locale_ref loc) -> Char;
-template <typename Char> inline auto thousands_sep(locale_ref loc) -> Char {
-  return Char(thousands_sep_impl<char>(loc));
+FMT_API auto thousands_sep_impl(locale_ref loc) -> thousands_sep_result<Char>;
+template <typename Char>
+inline auto thousands_sep(locale_ref loc) -> thousands_sep_result<Char> {
+  auto result = thousands_sep_impl<char>(loc);
+  return {result.grouping, Char(result.thousands_sep)};
 }
-template <> inline auto thousands_sep(locale_ref loc) -> wchar_t {
+template <>
+inline auto thousands_sep(locale_ref loc) -> thousands_sep_result<wchar_t> {
   return thousands_sep_impl<wchar_t>(loc);
 }
 
@@ -1419,10 +1417,10 @@ auto write_int_localized(OutputIt& out, UInt value, unsigned prefix,
     -> bool {
   static_assert(std::is_same<uint64_or_128_t<UInt>, UInt>::value, "");
   const auto sep_size = 1;
-  std::string groups = grouping<Char>(loc);
-  if (groups.empty()) return false;
-  auto sep = thousands_sep<Char>(loc);
-  if (!sep) return false;
+  auto ts = thousands_sep<Char>(loc);
+  const std::string& groups = ts.grouping;
+  Char sep = ts.thousands_sep;
+  if (!sep || groups.empty()) return false;
   int num_digits = count_digits(value);
   int size = num_digits, n = num_digits;
   std::string::const_iterator group = groups.cbegin();
@@ -2736,10 +2734,10 @@ extern template void vformat_to(detail::buffer<char>&, string_view,
                                 basic_format_args<format_context>,
                                 detail::locale_ref);
 
-extern template FMT_API auto grouping_impl<char>(locale_ref) -> std::string;
-extern template FMT_API auto grouping_impl<wchar_t>(locale_ref) -> std::string;
-extern template FMT_API auto thousands_sep_impl<char>(locale_ref) -> char;
-extern template FMT_API auto thousands_sep_impl<wchar_t>(locale_ref) -> wchar_t;
+extern template FMT_API auto thousands_sep_impl<char>(locale_ref)
+    -> thousands_sep_result<char>;
+extern template FMT_API auto thousands_sep_impl<wchar_t>(locale_ref)
+    -> thousands_sep_result<wchar_t>;
 extern template FMT_API auto decimal_point_impl(locale_ref) -> char;
 extern template FMT_API auto decimal_point_impl(locale_ref) -> wchar_t;
 extern template auto format_float<double>(double value, int precision,
