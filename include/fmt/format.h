@@ -995,13 +995,26 @@ template <> auto count_digits<4>(detail::fallback_uintptr n) -> int;
 #ifdef FMT_BUILTIN_CLZ
 // Optional version of count_digits for better performance on 32-bit platforms.
 FMT_CONSTEXPR20 inline auto count_digits(uint32_t n) -> int {
-  if (is_constant_evaluated()) {
+  if (is_constant_evaluated() || FMT_MSC_VER) {
     return count_digits_fallback(n);
   }
-  auto t = bsr2log10(FMT_BUILTIN_CLZ(n | 1) ^ 31);
-  constexpr const uint32_t zero_or_powers_of_10[] = {0, 0,
-                                                     FMT_POWERS_OF_10(1U)};
-  return t - (n < zero_or_powers_of_10[t]);
+  // An optimization by Kendall Willets from https://bit.ly/3uOIQrB.
+  // This increments the upper 32 bits (log10(T) - 1) when >= T is added.
+#  define FMT_INC(T) (((sizeof(#  T) - 1) << 32) - T)
+  constexpr uint64_t table[] = {
+      FMT_INC(0),          FMT_INC(0),          FMT_INC(0),           // 8
+      FMT_INC(10),         FMT_INC(10),         FMT_INC(10),          // 64
+      FMT_INC(100),        FMT_INC(100),        FMT_INC(100),         // 512
+      FMT_INC(1000),       FMT_INC(1000),       FMT_INC(1000),        // 4096
+      FMT_INC(10000),      FMT_INC(10000),      FMT_INC(10000),       // 32k
+      FMT_INC(100000),     FMT_INC(100000),     FMT_INC(100000),      // 256k
+      FMT_INC(1000000),    FMT_INC(1000000),    FMT_INC(1000000),     // 2048k
+      FMT_INC(10000000),   FMT_INC(10000000),   FMT_INC(10000000),    // 16M
+      FMT_INC(100000000),  FMT_INC(100000000),  FMT_INC(100000000),   // 128M
+      FMT_INC(1000000000), FMT_INC(1000000000), FMT_INC(1000000000),  // 1024M
+      FMT_INC(1000000000), FMT_INC(1000000000)                        // 4B
+  };
+  return static_cast<int>((n + table[FMT_BUILTIN_CLZ(n | 1) ^ 31]) >> 32);
 }
 #endif
 
