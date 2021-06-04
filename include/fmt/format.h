@@ -2624,6 +2624,20 @@ template <typename Char>
 void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
                 basic_format_args<buffer_context<type_identity_t<Char>>> args,
                 locale_ref loc) {
+  // workaround for msvc bug regarding name-lookup in module
+  // link names into function scope
+  using detail::arg_formatter;
+  using detail::buffer_appender;
+  using detail::custom_formatter;
+  using detail::default_arg_formatter;
+  using detail::get_arg;
+  using detail::locale_ref;
+  using detail::parse_format_specs;
+  using detail::specs_checker;
+  using detail::specs_handler;
+  using detail::to_unsigned;
+  using detail::type;
+  using detail::write;
   auto out = buffer_appender<Char>(buf);
   if (fmt.size() == 2 && equal2(fmt.data(), "{}")) {
     auto arg = args.get(0);
@@ -2680,13 +2694,12 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
       begin = parse_format_specs(begin, end, handler);
       if (begin == end || *begin != '}')
         on_error("missing '}' in format string");
-      auto f =
-          detail::arg_formatter<Char>{context.out(), specs, context.locale()};
+      auto f = arg_formatter<Char>{context.out(), specs, context.locale()};
       context.advance_to(visit_format_arg(f, arg));
       return begin;
     }
   };
-  parse_format_string<false>(fmt, format_handler(out, fmt, args, loc));
+  detail::parse_format_string<false>(fmt, format_handler(out, fmt, args, loc));
 }
 
 #ifndef FMT_HEADER_ONLY
