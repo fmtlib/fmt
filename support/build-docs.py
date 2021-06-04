@@ -53,6 +53,6 @@ if call(['git', 'diff-index', '--quiet', 'HEAD'], cwd=repo):
         cmd += ' https://$KEY@github.com/fmtlib/fmtlib.github.io.git master'
     p = Popen(cmd, shell=True, stdout=PIPE, stderr=STDOUT, cwd=repo)
     # Print the output without the key.
-    print(p.communicate()[0].replace(os.environ['KEY'], '$KEY'))
+    print(p.communicate()[0].decode('utf-8').replace(os.environ['KEY'], '$KEY'))
     if p.returncode != 0:
         raise subprocess.CalledProcessError(p.returncode, cmd)
