@@ -995,12 +995,12 @@ template <> auto count_digits<4>(detail::fallback_uintptr n) -> int;
 #ifdef FMT_BUILTIN_CLZ
 // Optional version of count_digits for better performance on 32-bit platforms.
 FMT_CONSTEXPR20 inline auto count_digits(uint32_t n) -> int {
-  if (is_constant_evaluated() || FMT_MSC_VER) {
+  if (is_constant_evaluated()) {
     return count_digits_fallback(n);
   }
   // An optimization by Kendall Willets from https://bit.ly/3uOIQrB.
   // This increments the upper 32 bits (log10(T) - 1) when >= T is added.
-#  define FMT_INC(T) (((sizeof(#  T) - 1) << 32) - T)
+#  define FMT_INC(T) (((sizeof(#  T) - 1ull) << 32) - T)
   constexpr uint64_t table[] = {
       FMT_INC(0),          FMT_INC(0),          FMT_INC(0),           // 8
       FMT_INC(10),         FMT_INC(10),         FMT_INC(10),          // 64
