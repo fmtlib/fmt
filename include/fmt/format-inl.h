@@ -106,7 +106,9 @@ template <typename Locale> Locale locale_ref::get() const {
 template <typename Char>
 FMT_FUNC auto thousands_sep_impl(locale_ref loc) -> thousands_sep_result<Char> {
   auto& facet = std::use_facet<std::numpunct<Char>>(loc.get<std::locale>());
-  return {facet.grouping(), facet.thousands_sep()};
+  auto grouping = facet.grouping();
+  auto thousands_sep = grouping.empty() ? Char() : facet.thousands_sep();
+  return {std::move(grouping), thousands_sep};
 }
 template <typename Char> FMT_FUNC Char decimal_point_impl(locale_ref loc) {
   return std::use_facet<std::numpunct<Char>>(loc.get<std::locale>())

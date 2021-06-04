@@ -1418,11 +1418,10 @@ auto write_int_localized(OutputIt& out, UInt value, unsigned prefix,
   static_assert(std::is_same<uint64_or_128_t<UInt>, UInt>::value, "");
   const auto sep_size = 1;
   auto ts = thousands_sep<Char>(loc);
-  const std::string& groups = ts.grouping;
-  Char sep = ts.thousands_sep;
-  if (!sep || groups.empty()) return false;
+  if (!ts.thousands_sep) return false;
   int num_digits = count_digits(value);
   int size = num_digits, n = num_digits;
+  const std::string& groups = ts.grouping;
   std::string::const_iterator group = groups.cbegin();
   while (group != groups.cend() && n > *group && *group > 0 &&
          *group != max_value<char>()) {
@@ -1437,7 +1436,7 @@ auto write_int_localized(OutputIt& out, UInt value, unsigned prefix,
   if (prefix != 0) ++size;
   const auto usize = to_unsigned(size);
   buffer.resize(usize);
-  basic_string_view<Char> s(&sep, sep_size);
+  basic_string_view<Char> s(&ts.thousands_sep, sep_size);
   // Index of a decimal digit with the least significant digit having index 0.
   int digit_index = 0;
   group = groups.cbegin();
