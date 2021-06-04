@@ -102,11 +102,17 @@ TEST(module_test, macros) {
 TEST(module_test, to_string) {
   EXPECT_EQ("42", fmt::to_string(42));
   EXPECT_EQ("42", fmt::to_string(42.0));
+
+  EXPECT_EQ(L"42", fmt::to_wstring(42));
+  EXPECT_EQ(L"42", fmt::to_wstring(42.0));
 }
 
 TEST(module_test, format) {
   EXPECT_EQ("42", fmt::format("{:}", 42));
   EXPECT_EQ("-42", fmt::format("{0}", -42.0));
+
+  EXPECT_EQ(L"42", fmt::format(L"{:}", 42));
+  EXPECT_EQ(L"-42", fmt::format(L"{0}", -42.0));
 }
 
 TEST(module_test, format_to) {
@@ -121,10 +127,23 @@ TEST(module_test, format_to) {
   fmt::memory_buffer mb;
   fmt::format_to(mb, "{}", 42);
   EXPECT_EQ("42", std::string_view(buffer));
+
+  std::wstring w;
+  fmt::format_to(std::back_inserter(w), L"{}", 42);
+  EXPECT_EQ(L"42", w);
+
+  wchar_t wbuffer[4] = {0};
+  fmt::format_to(wbuffer, L"{}", 42);
+  EXPECT_EQ(L"42", std::wstring_view(wbuffer));
+
+  fmt::wmemory_buffer wb;
+  fmt::format_to(wb, L"{}", 42);
+  EXPECT_EQ(L"42", std::wstring_view(wbuffer));
 }
 
 TEST(module_test, formatted_size) {
   EXPECT_EQ(2u, fmt::formatted_size("{}", 42));
+  EXPECT_EQ(2u, fmt::formatted_size(L"{}", 42));
 }
 
 TEST(module_test, format_to_n) {
@@ -133,6 +152,12 @@ TEST(module_test, format_to_n) {
   EXPECT_EQ(2u, result.size);
   char buffer[4] = {0};
   fmt::format_to_n(buffer, 3, "{}", 12345);
+
+  std::wstring w;
+  auto wresult = fmt::format_to_n(std::back_inserter(w), 1, L"{}", 42);
+  EXPECT_EQ(2u, wresult.size);
+  wchar_t wbuffer[4] = {0};
+  fmt::format_to_n(wbuffer, 3, L"{}", 12345);
 }
 
 TEST(module_test, format_args) {
@@ -158,6 +183,8 @@ TEST(module_test, wformat_args) {
 TEST(module_test, checked_format_args) {
   fmt::basic_format_args args = fmt::make_args_checked<int>("{}", 42);
   EXPECT_TRUE(args.get(0));
+  fmt::basic_format_args wargs = fmt::make_args_checked<int>(L"{}", 42);
+  EXPECT_TRUE(wargs.get(0));
 }
 
 TEST(module_test, dynamic_format_args) {
@@ -166,10 +193,18 @@ TEST(module_test, dynamic_format_args) {
   fmt::basic_format_args args = dyn_store;
   EXPECT_FALSE(args.get(3));
   EXPECT_TRUE(args.get(fmt::string_view("a42")));
+
+  fmt::dynamic_format_arg_store<fmt::wformat_context> wdyn_store;
+  wdyn_store.push_back(fmt::arg(L"a42", 42));
+  fmt::basic_format_args wargs = wdyn_store;
+  EXPECT_FALSE(wargs.get(3));
+  EXPECT_TRUE(wargs.get(fmt::wstring_view(L"a42")));
 }
 
 TEST(module_test, vformat) {
   EXPECT_EQ("42", fmt::vformat("{}", fmt::make_format_args(42)));
+  EXPECT_EQ(L"42", fmt::vformat(fmt::to_string_view(L"{}"),
+                                fmt::make_wformat_args(42)));
 }
 
 TEST(module_test, vformat_to) {
@@ -181,6 +216,15 @@ TEST(module_test, vformat_to) {
   char buffer[4] = {0};
   fmt::vformat_to(buffer, "{:}", store);
   EXPECT_EQ("42", std::string_view(buffer));
+
+  auto wstore = fmt::make_wformat_args(42);
+  std::wstring w;
+  fmt::vformat_to(std::back_inserter(w), L"{}", wstore);
+  EXPECT_EQ(L"42", w);
+
+  wchar_t wbuffer[4] = {0};
+  fmt::vformat_to(wbuffer, L"{:}", wstore);
+  EXPECT_EQ(L"42", std::wstring_view(wbuffer));
 }
 
 TEST(module_test, vformat_to_n) {
@@ -189,11 +233,13 @@ TEST(module_test, vformat_to_n) {
   auto result = fmt::vformat_to_n(std::back_inserter(s), 1, "{}", store);
   char buffer[4] = {0};
   fmt::vformat_to_n(buffer, 3, "{:}", store);
-}
 
-TEST(module_test, print) {
-  EXPECT_WRITE(stdout, fmt::print("{}µ", 42), "42µ");
-  EXPECT_WRITE(stderr, fmt::print(stderr, "{}µ", 4.2), "4.2µ");
+  auto wstore = fmt::make_wformat_args(12345);
+  std::wstring w;
+  auto wresult = fmt::vformat_to_n(std::back_inserter(w), 1,
+                                   fmt::to_string_view(L"{}"), wstore);
+  wchar_t wbuffer[4] = {0};
+  fmt::vformat_to_n(wbuffer, 3, fmt::to_string_view(L"{:}"), wstore);
 }
 
 std::string as_string(std::wstring_view text) {
@@ -201,25 +247,38 @@ std::string as_string(std::wstring_view text) {
           text.size() * sizeof(text[0])};
 }
 
+TEST(module_test, print) {
+  EXPECT_WRITE(stdout, fmt::print("{}µ", 42), "42µ");
+  EXPECT_WRITE(stderr, fmt::print(stderr, "{}µ", 4.2), "4.2µ");
+  if (false) {
+    EXPECT_WRITE(stdout, fmt::print(L"{}µ", 42), as_string(L"42µ"));
+    EXPECT_WRITE(stderr, fmt::print(stderr, L"{}µ", 4.2), as_string(L"4.2µ"));
+  }
+}
+
 TEST(module_test, vprint) {
   EXPECT_WRITE(stdout, fmt::vprint("{:}µ", fmt::make_format_args(42)), "42µ");
   EXPECT_WRITE(stderr, fmt::vprint(stderr, "{}", fmt::make_format_args(4.2)),
                "4.2");
-
-  EXPECT_WRITE(stdout, fmt::vprint(L"{:}µ", fmt::make_wformat_args(42)),
-               as_string(L"42µ"));
-  EXPECT_WRITE(stderr, fmt::vprint(stderr, L"{}", fmt::make_wformat_args(42)),
-               as_string(L"42"));
+  if (false) {
+    EXPECT_WRITE(stdout, fmt::vprint(L"{:}µ", fmt::make_wformat_args(42)),
+                 as_string(L"42µ"));
+    EXPECT_WRITE(stderr, fmt::vprint(stderr, L"{}", fmt::make_wformat_args(42)),
+                 as_string(L"42"));
+  }
 }
 
 TEST(module_test, named_args) {
   EXPECT_EQ("42", fmt::format("{answer}", fmt::arg("answer", 42)));
+  EXPECT_EQ(L"42", fmt::format(L"{answer}", fmt::arg(L"answer", 42)));
 }
 
 TEST(module_test, literals) {
   using namespace fmt::literals;
   EXPECT_EQ("42", fmt::format("{answer}", "answer"_a = 42));
   EXPECT_EQ("42", "{}"_format(42));
+  EXPECT_EQ(L"42", fmt::format(L"{answer}", L"answer"_a = 42));
+  EXPECT_EQ(L"42", L"{}"_format(42));
 }
 
 TEST(module_test, locale) {
@@ -231,6 +290,14 @@ TEST(module_test, locale) {
   fmt::vformat_to(std::back_inserter(s), classic, "{:L}", store);
   EXPECT_EQ("4.2", s);
   EXPECT_EQ("4.2", fmt::format("{:L}", 4.2));
+
+  auto wstore = fmt::make_wformat_args(4.2);
+  EXPECT_EQ(L"4.2", fmt::format(classic, L"{:L}", 4.2));
+  EXPECT_EQ(L"4.2", fmt::vformat(classic, L"{:L}", wstore));
+  std::wstring w;
+  fmt::vformat_to(std::back_inserter(w), classic, L"{:L}", wstore);
+  EXPECT_EQ(L"4.2", w);
+  EXPECT_EQ(L"4.2", fmt::format(L"{:L}", 4.2));
 }
 
 TEST(module_test, string_view) {
@@ -305,6 +372,8 @@ TEST(module_test, error_code) {
             fmt::format("{0}", std::error_code(42, std::generic_category())));
   EXPECT_EQ("system:42",
             fmt::format("{0}", std::error_code(42, fmt::system_category())));
+  EXPECT_EQ(L"generic:42",
+            fmt::format(L"{0}", std::error_code(42, std::generic_category())));
 }
 
 TEST(module_test, format_int) {
@@ -330,10 +399,18 @@ TEST(module_test, formatter) {
 TEST(module_test, join) {
   int arr[3] = {1, 2, 3};
   std::vector<double> vec{1.0, 2.0, 3.0};
-  EXPECT_EQ("1, 2, 3", to_string(fmt::join(arr + 0, arr + 3, ", ")));
-  EXPECT_EQ("1, 2, 3", to_string(fmt::join(arr, ", ")));
-  EXPECT_EQ("1, 2, 3", to_string(fmt::join(vec.begin(), vec.end(), ", ")));
-  EXPECT_EQ("1, 2, 3", to_string(fmt::join(vec, ", ")));
+  std::initializer_list<int> il{1, 2, 3};
+  auto sep = fmt::to_string_view(", ");
+  EXPECT_EQ("1, 2, 3", to_string(fmt::join(arr + 0, arr + 3, sep)));
+  EXPECT_EQ("1, 2, 3", to_string(fmt::join(arr, sep)));
+  EXPECT_EQ("1, 2, 3", to_string(fmt::join(vec.begin(), vec.end(), sep)));
+  EXPECT_EQ("1, 2, 3", to_string(fmt::join(vec, sep)));
+  EXPECT_EQ("1, 2, 3", to_string(fmt::join(il, sep)));
+
+  auto wsep = fmt::to_string_view(L", ");
+  EXPECT_EQ(L"1, 2, 3", fmt::format(L"{}", fmt::join(arr + 0, arr + 3, wsep)));
+  EXPECT_EQ(L"1, 2, 3", fmt::format(L"{}", fmt::join(arr, wsep)));
+  EXPECT_EQ(L"1, 2, 3", fmt::format(L"{}", fmt::join(il, wsep)));
 }
 
 TEST(module_test, time) {
@@ -349,13 +426,19 @@ TEST(module_test, time_point) {
   auto now = std::chrono::system_clock::now();
   std::string_view past("2021-05-20 10:30:15");
   EXPECT_TRUE(past < fmt::format("{:%Y-%m-%d %H:%M:%S}", now));
+  std::wstring_view wpast(L"2021-05-20 10:30:15");
+  EXPECT_TRUE(wpast < fmt::format(L"{:%Y-%m-%d %H:%M:%S}", now));
 }
 
 TEST(module_test, time_duration) {
-  EXPECT_EQ("42s", fmt::format("{}", std::chrono::seconds{42}));
   using us = std::chrono::duration<double, std::micro>;
+  EXPECT_EQ("42s", fmt::format("{}", std::chrono::seconds{42}));
   EXPECT_EQ("4.2µs", fmt::format("{:3.1}", us{4.234}));
   EXPECT_EQ("4.2µs", fmt::format(std::locale::classic(), "{:L}", us{4.2}));
+
+  EXPECT_EQ(L"42s", fmt::format(L"{}", std::chrono::seconds{42}));
+  EXPECT_EQ(L"4.2µs", fmt::format(L"{:3.1}", us{4.234}));
+  EXPECT_EQ(L"4.2µs", fmt::format(std::locale::classic(), L"{:L}", us{4.2}));
 }
 
 TEST(module_test, weekday) {
@@ -374,6 +457,11 @@ TEST(module_test, to_string_view) {
 TEST(module_test, printf) {
   EXPECT_WRITE(stdout, fmt::printf("%f", 42.123456), "42.123456");
   EXPECT_WRITE(stdout, fmt::printf("%d", 42), "42");
+  if (false) {
+    EXPECT_WRITE(stdout, fmt::printf(L"%f", 42.123456),
+                 as_string(L"42.123456"));
+    EXPECT_WRITE(stdout, fmt::printf(L"%d", 42), as_string(L"42"));
+  }
 }
 
 TEST(module_test, fprintf) {
@@ -381,12 +469,24 @@ TEST(module_test, fprintf) {
   std::ostringstream os;
   fmt::fprintf(os, "%s", "bla");
   EXPECT_EQ("bla", os.str());
+
+  EXPECT_WRITE(stderr, fmt::fprintf(stderr, L"%d", 42), as_string(L"42"));
+  std::wostringstream ws;
+  fmt::fprintf(ws, L"%s", L"bla");
+  EXPECT_EQ(L"bla", ws.str());
 }
 
-TEST(module_test, sprintf) { EXPECT_EQ("42", fmt::sprintf("%d", 42)); }
+TEST(module_test, sprintf) {
+  EXPECT_EQ("42", fmt::sprintf("%d", 42));
+  EXPECT_EQ(L"42", fmt::sprintf(L"%d", 42));
+}
 
 TEST(module_test, vprintf) {
   EXPECT_WRITE(stdout, fmt::vprintf("%d", fmt::make_printf_args(42)), "42");
+  if (false) {
+    EXPECT_WRITE(stdout, fmt::vprintf(L"%d", fmt::make_wprintf_args(42)),
+                 as_string(L"42"));
+  }
 }
 
 TEST(module_test, vfprintf) {
@@ -395,10 +495,18 @@ TEST(module_test, vfprintf) {
   std::ostringstream os;
   fmt::vfprintf(os, "%d", args);
   EXPECT_EQ("42", os.str());
+  auto wargs = fmt::make_wprintf_args(42);
+  if (false) {
+    EXPECT_WRITE(stderr, fmt::vfprintf(stderr, L"%d", wargs), as_string(L"42"));
+  }
+  std::wostringstream ws;
+  fmt::vfprintf(ws, L"%d", wargs);
+  EXPECT_EQ(L"42", ws.str());
 }
 
 TEST(module_test, vsprintf) {
   EXPECT_EQ("42", fmt::vsprintf("%d", fmt::make_printf_args(42)));
+  EXPECT_EQ(L"42", fmt::vsprintf(L"%d", fmt::make_wprintf_args(42)));
 }
 
 TEST(module_test, color) {
@@ -407,6 +515,8 @@ TEST(module_test, color) {
   auto emphasis_check = fmt::emphasis::underline | fmt::emphasis::bold;
   EXPECT_EQ("\x1B[30m42\x1B[0m",
             fmt::format(fg(fmt::terminal_color::black), "{}", 42));
+  EXPECT_EQ(L"\x1B[30m42\x1B[0m",
+            fmt::format(fg(fmt::terminal_color::black), L"{}", 42));
 }
 
 TEST(module_test, cstring_view) {
