@@ -637,8 +637,8 @@ inline uint64_t power_of_10_64(int exp) {
 // error: the size of the region (lower, upper) outside of which numbers
 // definitely do not round to value (Delta in Grisu3).
 template <typename Handler>
-FMT_ALWAYS_INLINE digits::result grisu_gen_digits(fp value, uint64_t error,
-                                                  int& exp, Handler& handler) {
+FMT_INLINE digits::result grisu_gen_digits(fp value, uint64_t error, int& exp,
+                                           Handler& handler) {
   const fp one(1ULL << -value.e, value.e);
   // The integral part of scaled value (p1 in Grisu) = value / one. It cannot be
   // zero because it contains a product of two 64-bit numbers with MSB set (due
@@ -1916,7 +1916,7 @@ bool is_center_integer(typename float_info<T>::carrier_uint two_f, int exponent,
 }
 
 // Remove trailing zeros from n and return the number of zeros removed (float)
-FMT_ALWAYS_INLINE int remove_trailing_zeros(uint32_t& n) FMT_NOEXCEPT {
+FMT_INLINE int remove_trailing_zeros(uint32_t& n) FMT_NOEXCEPT {
 #ifdef FMT_BUILTIN_CTZ
   int t = FMT_BUILTIN_CTZ(n);
 #else
@@ -1944,7 +1944,7 @@ FMT_ALWAYS_INLINE int remove_trailing_zeros(uint32_t& n) FMT_NOEXCEPT {
 }
 
 // Removes trailing zeros and returns the number of zeros removed (double)
-FMT_ALWAYS_INLINE int remove_trailing_zeros(uint64_t& n) FMT_NOEXCEPT {
+FMT_INLINE int remove_trailing_zeros(uint64_t& n) FMT_NOEXCEPT {
 #ifdef FMT_BUILTIN_CTZLL
   int t = FMT_BUILTIN_CTZLL(n);
 #else
@@ -2030,8 +2030,7 @@ FMT_ALWAYS_INLINE int remove_trailing_zeros(uint64_t& n) FMT_NOEXCEPT {
 
 // The main algorithm for shorter interval case
 template <class T>
-FMT_ALWAYS_INLINE decimal_fp<T> shorter_interval_case(int exponent)
-    FMT_NOEXCEPT {
+FMT_INLINE decimal_fp<T> shorter_interval_case(int exponent) FMT_NOEXCEPT {
   decimal_fp<T> ret_value;
   // Compute k and beta
   const int minus_k = floor_log10_pow2_minus_log10_4_over_3(exponent);

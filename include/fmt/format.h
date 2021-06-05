@@ -991,14 +991,6 @@ FMT_CONSTEXPR auto count_digits(UInt n) -> int {
 
 template <> auto count_digits<4>(detail::fallback_uintptr n) -> int;
 
-#if FMT_GCC_VERSION || FMT_CLANG_VERSION
-#  define FMT_ALWAYS_INLINE inline __attribute__((always_inline))
-#elif FMT_MSC_VER
-#  define FMT_ALWAYS_INLINE __forceinline
-#else
-#  define FMT_ALWAYS_INLINE inline
-#endif
-
 #ifdef FMT_BUILTIN_CLZ
 // Optional version of count_digits for better performance on 32-bit platforms.
 FMT_CONSTEXPR20 inline auto count_digits(uint32_t n) -> int {
