@@ -926,17 +926,6 @@ extern template struct basic_data<void>;
 // This is a struct rather than an alias to avoid shadowing warnings in gcc.
 struct data : basic_data<> {};
 
-// Maps bsr(n) to ceil(log10(pow(2, bsr(n) + 1) - 1)).
-// This is a function instead of an array to workaround a bug in GCC10 (#1810).
-FMT_INLINE auto bsr2log10(int bsr) -> uint16_t {
-  static constexpr uint16_t data[] = {
-      1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  4,  5,  5,  5,
-      6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  9,  9,  9,  10, 10, 10,
-      10, 11, 11, 11, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 15, 15,
-      15, 16, 16, 16, 16, 17, 17, 17, 18, 18, 18, 19, 19, 19, 19, 20};
-  return data[bsr];
-}
-
 template <typename T> FMT_CONSTEXPR auto count_digits_fallback(T n) -> int {
   int count = 1;
   for (;;) {
@@ -965,7 +954,13 @@ FMT_CONSTEXPR20 inline auto count_digits(uint64_t n) -> int {
   }
 #ifdef FMT_BUILTIN_CLZLL
   // https://github.com/fmtlib/format-benchmark/blob/master/digits10
-  auto t = bsr2log10(FMT_BUILTIN_CLZLL(n | 1) ^ 63);
+  // Maps bsr(n) to ceil(log10(pow(2, bsr(n) + 1) - 1)).
+  FMT_STATIC_CONSTEXPR uint16_t bsr2log10[] = {
+      1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  4,  5,  5,  5,
+      6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  9,  9,  9,  10, 10, 10,
+      10, 11, 11, 11, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 15, 15,
+      15, 16, 16, 16, 16, 17, 17, 17, 18, 18, 18, 19, 19, 19, 19, 20};
+  auto t = bsr2log10[FMT_BUILTIN_CLZLL(n | 1) ^ 63];
   constexpr const uint64_t zero_or_powers_of_10[] = {
       0, 0, FMT_POWERS_OF_10(1U), FMT_POWERS_OF_10(1000000000ULL),
       10000000000000000000ULL};
