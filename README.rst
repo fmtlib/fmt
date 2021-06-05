@@ -341,6 +341,10 @@ Projects using this library
 
 * `Folly <https://github.com/facebook/folly>`_: Facebook open-source library
 
+* `Grand Mountain Adventure
+  <https://store.steampowered.com/app/1247360/Grand_Mountain_Adventure/>`_:
+  A beautiful open-world ski & snowboarding game
+
 * `HarpyWar/pvpgn <https://github.com/pvpgn/pvpgn-server>`_:
   Player vs Player Gaming Network with tweaks
 
