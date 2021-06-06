@@ -81,7 +81,7 @@ add_fmt_test(unicode-test HEADER_ONLY)
 if (MSVC)
   target_compile_options(unicode-test PRIVATE /utf-8)
 endif ()
-add_fmt_test(wchar-test)
+add_fmt_test(xchar-test)
 
 if (FMT_CAN_MODULE)
   # The tests need {fmt} to be compiled as traditional library

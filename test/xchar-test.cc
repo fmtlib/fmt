@@ -5,12 +5,13 @@
 //
 // For the license information refer to format.h.
 
+#include "fmt/xchar.h"
+
 #include <complex>
 
 #include "fmt/chrono.h"
 #include "fmt/ostream.h"
 #include "fmt/ranges.h"
-#include "fmt/xchar.h"
 #include "gtest/gtest.h"
 
 using fmt::detail::max_value;
@@ -21,13 +22,13 @@ struct explicitly_convertible_to_wstring_view {
   explicit operator fmt::wstring_view() const { return L"foo"; }
 };
 
-TEST(wchar_test, format_explicitly_convertible_to_wstring_view) {
+TEST(xchar_test, format_explicitly_convertible_to_wstring_view) {
   EXPECT_EQ(L"foo",
             fmt::format(L"{}", explicitly_convertible_to_wstring_view()));
 }
 #endif
 
-TEST(wchar_test, format) {
+TEST(xchar_test, format) {
   EXPECT_EQ(L"42", fmt::format(L"{}", 42));
   EXPECT_EQ(L"4.2", fmt::format(L"{}", 4.2));
   EXPECT_EQ(L"abc", fmt::format(L"{}", L"abc"));
@@ -41,7 +42,7 @@ TEST(wchar_test, format) {
   EXPECT_EQ(L"abc1", fmt::format(L"{}c{}", L"ab", 1));
 }
 
-TEST(wchar_test, compile_time_string) {
+TEST(xchar_test, compile_time_string) {
 #if defined(FMT_USE_STRING_VIEW) && __cplusplus >= 201703L
   EXPECT_EQ(L"42", fmt::format(FMT_STRING(std::wstring_view(L"{}")), 42));
 #endif
@@ -64,7 +65,7 @@ FMT_BEGIN_NAMESPACE
 template <> struct is_char<custom_char> : std::true_type {};
 FMT_END_NAMESPACE
 
-TEST(wchar_test, format_custom_char) {
+TEST(xchar_test, format_custom_char) {
   const custom_char format[] = {'{', '}', 0};
   auto result = fmt::format(format, custom_char('x'));
   EXPECT_EQ(result.size(), 1);
@@ -78,7 +79,7 @@ template <typename S> std::string from_u8str(const S& str) {
   return std::string(str.begin(), str.end());
 }
 
-TEST(wchar_test, format_utf8_precision) {
+TEST(xchar_test, format_utf8_precision) {
   using str_type = std::basic_string<fmt::detail::char8_type>;
   auto format =
       str_type(reinterpret_cast<const fmt::detail::char8_type*>(u8"{:.4}"));
@@ -90,13 +91,13 @@ TEST(wchar_test, format_utf8_precision) {
   EXPECT_EQ(from_u8str(result), from_u8str(str.substr(0, 5)));
 }
 
-TEST(wchar_test, format_to) {
+TEST(xchar_test, format_to) {
   auto buf = std::vector<wchar_t>();
   fmt::format_to(std::back_inserter(buf), L"{}{}", 42, L'\0');
   EXPECT_STREQ(buf.data(), L"42");
 }
 
-TEST(wchar_test, vformat_to) {
+TEST(xchar_test, vformat_to) {
   using wcontext = fmt::wformat_context;
   fmt::basic_format_arg<wcontext> warg = fmt::detail::make_arg<wcontext>(42);
   auto wargs = fmt::basic_format_args<wcontext>(&warg, 1);
@@ -129,12 +130,12 @@ TEST(format_test, wide_format_to_n) {
 }
 
 #if FMT_USE_USER_DEFINED_LITERALS
-TEST(wchar_test, format_udl) {
+TEST(xchar_test, format_udl) {
   using namespace fmt::literals;
   EXPECT_EQ(L"{}c{}"_format(L"ab", 1), fmt::format(L"{}c{}", L"ab", 1));
 }
 
-TEST(wchar_test, named_arg_udl) {
+TEST(xchar_test, named_arg_udl) {
   using namespace fmt::literals;
   auto udl_a =
       fmt::format(L"{first}{second}{first}{third}", L"first"_a = L"abra",
@@ -146,12 +147,12 @@ TEST(wchar_test, named_arg_udl) {
 }
 #endif  // FMT_USE_USER_DEFINED_LITERALS
 
-TEST(wchar_test, print) {
+TEST(xchar_test, print) {
   // Check that the wide print overload compiles.
   if (fmt::detail::const_check(false)) fmt::print(L"test");
 }
 
-TEST(wchar_test, join) {
+TEST(xchar_test, join) {
   int v[3] = {1, 2, 3};
   EXPECT_EQ(fmt::format(L"({})", fmt::join(v, v + 3, L", ")), L"(1, 2, 3)");
   auto t = std::tuple<wchar_t, int, float>('a', 1, 2.0f);
@@ -166,12 +167,12 @@ std::wostream& operator<<(std::wostream& os, streamable_enum) {
 
 enum unstreamable_enum {};
 
-TEST(wchar_test, enum) {
+TEST(xchar_test, enum) {
   EXPECT_EQ(L"streamable_enum", fmt::format(L"{}", streamable_enum()));
   EXPECT_EQ(L"0", fmt::format(L"{}", unstreamable_enum()));
 }
 
-TEST(wchar_test, sign_not_truncated) {
+TEST(xchar_test, sign_not_truncated) {
   wchar_t format_str[] = {
       L'{', L':',
       '+' | static_cast<wchar_t>(1 << fmt::detail::num_bits<char>()), L'}', 0};
@@ -200,7 +201,7 @@ TEST(format_test, format_foreign_strings) {
   EXPECT_EQ(fmt::format(QString(L"{}"), QString(L"42")), L"42");
 }
 
-TEST(wchar_test, chrono) {
+TEST(xchar_test, chrono) {
   auto tm = std::tm();
   tm.tm_year = 116;
   tm.tm_mon = 3;
@@ -213,7 +214,7 @@ TEST(wchar_test, chrono) {
   EXPECT_EQ(L"42s", fmt::format(L"{}", std::chrono::seconds(42)));
 }
 
-TEST(wchar_test, to_wstring) { EXPECT_EQ(L"42", fmt::to_wstring(42)); }
+TEST(xchar_test, to_wstring) { EXPECT_EQ(L"42", fmt::to_wstring(42)); }
 
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
 template <typename Char> struct numpunct : std::numpunct<Char> {
