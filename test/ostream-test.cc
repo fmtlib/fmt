@@ -45,12 +45,9 @@ template <typename T> void operator,(type_with_comma_op, const T&);
 template <typename T> type_with_comma_op operator<<(T&, const date&);
 
 enum streamable_enum {};
+
 std::ostream& operator<<(std::ostream& os, streamable_enum) {
   return os << "streamable_enum";
-}
-
-std::wostream& operator<<(std::wostream& os, streamable_enum) {
-  return os << L"streamable_enum";
 }
 
 enum unstreamable_enum {};
@@ -58,16 +55,12 @@ enum unstreamable_enum {};
 TEST(ostream_test, enum) {
   EXPECT_EQ("streamable_enum", fmt::format("{}", streamable_enum()));
   EXPECT_EQ("0", fmt::format("{}", unstreamable_enum()));
-  EXPECT_EQ(L"streamable_enum", fmt::format(L"{}", streamable_enum()));
-  EXPECT_EQ(L"0", fmt::format(L"{}", unstreamable_enum()));
 }
 
 TEST(ostream_test, format) {
   EXPECT_EQ("a string", fmt::format("{0}", test_string("a string")));
   EXPECT_EQ("The date is 2012-12-9",
             fmt::format("The date is {0}", date(2012, 12, 9)));
-  EXPECT_EQ(L"The date is 2012-12-9",
-            fmt::format(L"The date is {0}", date(2012, 12, 9)));
 }
 
 TEST(ostream_test, format_specs) {
@@ -220,7 +213,6 @@ template <typename T> struct convertible {
 
 TEST(ostream_test, disable_builtin_ostream_operators) {
   EXPECT_EQ("42", fmt::format("{:d}", convertible<unsigned short>(42)));
-  EXPECT_EQ(L"42", fmt::format(L"{:d}", convertible<unsigned short>(42)));
   EXPECT_EQ("foo", fmt::format("{}", convertible<const char*>("foo")));
 }
 

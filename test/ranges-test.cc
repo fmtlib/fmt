@@ -219,11 +219,6 @@ TEST(ranges_test, join_tuple) {
   EXPECT_EQ(fmt::format("{}", fmt::join(t4, "/")), "4");
 }
 
-TEST(ranges_test, wide_string_join_tuple) {
-  auto t = std::tuple<wchar_t, int, float>('a', 1, 2.0f);
-  EXPECT_EQ(fmt::format(L"({})", fmt::join(t, L", ")), L"(a, 1, 2)");
-}
-
 TEST(ranges_test, join_initializer_list) {
   EXPECT_EQ(fmt::format("{}", fmt::join({1, 2, 3}, ", ")), "1, 2, 3");
   EXPECT_EQ(fmt::format("{}", fmt::join({"fmt", "rocks", "!"}, " ")),

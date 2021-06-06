@@ -634,13 +634,6 @@ TEST(format_test, space_sign) {
                    format_error, "format specifier requires numeric argument");
 }
 
-TEST(format_test, sign_not_truncated) {
-  wchar_t format_str[] = {
-      L'{', L':',
-      '+' | static_cast<wchar_t>(1 << fmt::detail::num_bits<char>()), L'}', 0};
-  EXPECT_THROW(fmt::format(format_str, 42), format_error);
-}
-
 TEST(format_test, hash_flag) {
   EXPECT_EQ("42", fmt::format("{0:#}", 42));
   EXPECT_EQ("-42", fmt::format("{0:#}", -42));
@@ -1019,7 +1012,6 @@ TEST(format_test, format_bool) {
   EXPECT_EQ("false", fmt::format("{}", false));
   EXPECT_EQ("1", fmt::format("{:d}", true));
   EXPECT_EQ("true ", fmt::format("{:5}", true));
-  EXPECT_EQ(L"true", fmt::format(L"{}", true));
   EXPECT_EQ("true", fmt::format("{:s}", true));
   EXPECT_EQ("false", fmt::format("{:s}", false));
   EXPECT_EQ("false ", fmt::format("{:6s}", false));
@@ -1330,7 +1322,6 @@ TEST(format_test, format_char) {
   check_unknown_types('a', types, "char");
   EXPECT_EQ("a", fmt::format("{0}", 'a'));
   EXPECT_EQ("z", fmt::format("{0:c}", 'z'));
-  EXPECT_EQ(L"a", fmt::format(L"{0}", 'a'));
   int n = 'x';
   for (const char* type = types + 1; *type; ++type) {
     std::string format_str = fmt::format("{{:{}}}", *type);
@@ -1349,12 +1340,6 @@ TEST(format_test, format_volatile_char) {
 TEST(format_test, format_unsigned_char) {
   EXPECT_EQ("42", fmt::format("{}", static_cast<unsigned char>(42)));
   EXPECT_EQ("42", fmt::format("{}", static_cast<uint8_t>(42)));
-}
-
-TEST(format_test, format_wchar) {
-  EXPECT_EQ(L"a", fmt::format(L"{0}", L'a'));
-  // This shouldn't compile:
-  // format("{}", L'a');
 }
 
 TEST(format_test, format_cstring) {
@@ -1451,28 +1436,6 @@ TEST(format_test, format_explicitly_convertible_to_std_string_view) {
 }
 #endif
 
-namespace fake_qt {
-class QString {
- public:
-  QString(const wchar_t* s) : s_(s) {}
-  const wchar_t* utf16() const FMT_NOEXCEPT { return s_.data(); }
-  int size() const FMT_NOEXCEPT { return static_cast<int>(s_.size()); }
-
- private:
-  std::wstring s_;
-};
-
-fmt::basic_string_view<wchar_t> to_string_view(const QString& s) FMT_NOEXCEPT {
-  return {s.utf16(), static_cast<size_t>(s.size())};
-}
-}  // namespace fake_qt
-
-TEST(format_test, format_foreign_strings) {
-  using fake_qt::QString;
-  EXPECT_EQ(fmt::format(QString(L"{}"), 42), L"42");
-  EXPECT_EQ(fmt::format(QString(L"{}"), QString(L"42")), L"42");
-}
-
 class Answer {};
 
 FMT_BEGIN_NAMESPACE
@@ -1511,14 +1474,6 @@ TEST(format_test, format_to_custom) {
       &*fmt::format_to(fmt::detail::make_checked(buf, 10), "{}", Answer());
   EXPECT_EQ(end, buf + 2);
   EXPECT_STREQ(buf, "42");
-}
-
-TEST(format_test, wide_format_string) {
-  EXPECT_EQ(L"42", fmt::format(L"{}", 42));
-  EXPECT_EQ(L"4.2", fmt::format(L"{}", 4.2));
-  EXPECT_EQ(L"abc", fmt::format(L"{}", L"abc"));
-  EXPECT_EQ(L"z", fmt::format(L"{}", L'z'));
-  EXPECT_THROW(fmt::format(L"{:*\x343E}", 42), fmt::format_error);
 }
 
 TEST(format_test, format_string_from_speed_test) {
@@ -1587,9 +1542,6 @@ TEST(format_test, format_examples) {
   EXPECT_THROW_MSG(fmt::format(runtime("The answer is {:d}"), "forty-two"),
                    format_error, "invalid type specifier");
 
-  EXPECT_EQ(L"Cyrillic letter \x42e",
-            fmt::format(L"Cyrillic letter {}", L'\x42e'));
-
   EXPECT_WRITE(
       stdout, fmt::print("{}", std::numeric_limits<double>::infinity()), "inf");
 }
@@ -1602,7 +1554,6 @@ TEST(format_test, print) {
 
 TEST(format_test, variadic) {
   EXPECT_EQ("abc1", fmt::format("{}c{}", "ab", 1));
-  EXPECT_EQ(L"abc1", fmt::format(L"{}c{}", L"ab", 1));
 }
 
 TEST(format_test, dynamic) {
@@ -1698,15 +1649,11 @@ fmt::string_view to_string_view(string_like) { return "foo"; }
 constexpr char with_null[3] = {'{', '}', '\0'};
 constexpr char no_null[2] = {'{', '}'};
 static FMT_CONSTEXPR_DECL const char static_with_null[3] = {'{', '}', '\0'};
-static FMT_CONSTEXPR_DECL const wchar_t static_with_null_wide[3] = {'{', '}',
-                                                                    '\0'};
 static FMT_CONSTEXPR_DECL const char static_no_null[2] = {'{', '}'};
-static FMT_CONSTEXPR_DECL const wchar_t static_no_null_wide[2] = {'{', '}'};
 
 TEST(format_test, compile_time_string) {
   EXPECT_EQ("foo", fmt::format(FMT_STRING("foo")));
   EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), 42));
-  EXPECT_EQ(L"42", fmt::format(FMT_STRING(L"{}"), 42));
   EXPECT_EQ("foo", fmt::format(FMT_STRING("{}"), string_like()));
 
 #if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
@@ -1718,14 +1665,10 @@ TEST(format_test, compile_time_string) {
 #endif
 
   (void)static_with_null;
-  (void)static_with_null_wide;
   (void)static_no_null;
-  (void)static_no_null_wide;
 #ifndef _MSC_VER
   EXPECT_EQ("42", fmt::format(FMT_STRING(static_with_null), 42));
-  EXPECT_EQ(L"42", fmt::format(FMT_STRING(static_with_null_wide), 42));
   EXPECT_EQ("42", fmt::format(FMT_STRING(static_no_null), 42));
-  EXPECT_EQ(L"42", fmt::format(FMT_STRING(static_no_null_wide), 42));
 #endif
 
   (void)with_null;
@@ -1736,7 +1679,6 @@ TEST(format_test, compile_time_string) {
 #endif
 #if defined(FMT_USE_STRING_VIEW) && __cplusplus >= 201703L
   EXPECT_EQ("42", fmt::format(FMT_STRING(std::string_view("{}")), 42));
-  EXPECT_EQ(L"42", fmt::format(FMT_STRING(std::wstring_view(L"{}")), 42));
 #endif
 }
 
@@ -2117,49 +2059,6 @@ TEST(format_test, char_traits_is_not_ambiguous) {
   auto lval = begin(s);
   (void)lval;
 #endif
-}
-
-#if __cplusplus > 201103L
-struct custom_char {
-  int value;
-  custom_char() = default;
-
-  template <typename T>
-  constexpr custom_char(T val) : value(static_cast<int>(val)) {}
-
-  operator int() const { return value; }
-};
-
-int to_ascii(custom_char c) { return c; }
-
-FMT_BEGIN_NAMESPACE
-template <> struct is_char<custom_char> : std::true_type {};
-FMT_END_NAMESPACE
-
-TEST(format_test, format_custom_char) {
-  const custom_char format[] = {'{', '}', 0};
-  auto result = fmt::format(format, custom_char('x'));
-  EXPECT_EQ(result.size(), 1);
-  EXPECT_EQ(result[0], custom_char('x'));
-}
-#endif
-
-// Convert a char8_t string to std::string. Otherwise GTest will insist on
-// inserting `char8_t` NTBS into a `char` stream which is disabled by P1423.
-template <typename S> std::string from_u8str(const S& str) {
-  return std::string(str.begin(), str.end());
-}
-
-TEST(format_test, format_utf8_precision) {
-  using str_type = std::basic_string<fmt::detail::char8_type>;
-  auto format =
-      str_type(reinterpret_cast<const fmt::detail::char8_type*>(u8"{:.4}"));
-  auto str = str_type(reinterpret_cast<const fmt::detail::char8_type*>(
-      u8"caf\u00e9s"));  // cafés
-  auto result = fmt::format(format, str);
-  EXPECT_EQ(fmt::detail::compute_width(result), 4);
-  EXPECT_EQ(result.size(), 5);
-  EXPECT_EQ(from_u8str(result), from_u8str(str.substr(0, 5)));
 }
 
 struct check_back_appender {};

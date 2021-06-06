@@ -11,8 +11,8 @@
 #include <climits>
 #include <cstring>
 
-#include "fmt/core.h"
 #include "fmt/ostream.h"
+#include "fmt/xchar.h"
 #include "gtest-extra.h"
 #include "util.h"
 

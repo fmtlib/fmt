@@ -48,8 +48,6 @@ TEST(chrono_test, format_tm) {
   tm.tm_sec = 33;
   EXPECT_EQ(fmt::format("The date is {:%Y-%m-%d %H:%M:%S}.", tm),
             "The date is 2016-04-25 11:22:33.");
-  EXPECT_EQ(fmt::format(L"The date is {:%Y-%m-%d %H:%M:%S}.", tm),
-            L"The date is 2016-04-25 11:22:33.");
 }
 
 TEST(chrono_test, grow_buffer) {
@@ -149,10 +147,6 @@ TEST(chrono_test, format_default) {
   EXPECT_EQ(
       "42[15/4]s",
       fmt::format("{}", std::chrono::duration<int, std::ratio<15, 4>>(42)));
-}
-
-TEST(chrono_test, format_wide) {
-  EXPECT_EQ(L"42s", fmt::format(L"{}", std::chrono::seconds(42)));
 }
 
 TEST(chrono_test, align) {

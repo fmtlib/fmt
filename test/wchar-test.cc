@@ -7,6 +7,9 @@
 
 #include <complex>
 
+#include "fmt/chrono.h"
+#include "fmt/ostream.h"
+#include "fmt/ranges.h"
 #include "fmt/xchar.h"
 #include "gtest/gtest.h"
 
@@ -23,6 +26,69 @@ TEST(wchar_test, format_explicitly_convertible_to_wstring_view) {
             fmt::format(L"{}", explicitly_convertible_to_wstring_view()));
 }
 #endif
+
+TEST(wchar_test, format) {
+  EXPECT_EQ(L"42", fmt::format(L"{}", 42));
+  EXPECT_EQ(L"4.2", fmt::format(L"{}", 4.2));
+  EXPECT_EQ(L"abc", fmt::format(L"{}", L"abc"));
+  EXPECT_EQ(L"z", fmt::format(L"{}", L'z'));
+  EXPECT_THROW(fmt::format(L"{:*\x343E}", 42), fmt::format_error);
+  EXPECT_EQ(L"true", fmt::format(L"{}", true));
+  EXPECT_EQ(L"a", fmt::format(L"{0}", 'a'));
+  EXPECT_EQ(L"a", fmt::format(L"{0}", L'a'));
+  EXPECT_EQ(L"Cyrillic letter \x42e",
+            fmt::format(L"Cyrillic letter {}", L'\x42e'));
+  EXPECT_EQ(L"abc1", fmt::format(L"{}c{}", L"ab", 1));
+}
+
+TEST(wchar_test, compile_time_string) {
+#if defined(FMT_USE_STRING_VIEW) && __cplusplus >= 201703L
+  EXPECT_EQ(L"42", fmt::format(FMT_STRING(std::wstring_view(L"{}")), 42));
+#endif
+}
+
+#if __cplusplus > 201103L
+struct custom_char {
+  int value;
+  custom_char() = default;
+
+  template <typename T>
+  constexpr custom_char(T val) : value(static_cast<int>(val)) {}
+
+  operator int() const { return value; }
+};
+
+int to_ascii(custom_char c) { return c; }
+
+FMT_BEGIN_NAMESPACE
+template <> struct is_char<custom_char> : std::true_type {};
+FMT_END_NAMESPACE
+
+TEST(wchar_test, format_custom_char) {
+  const custom_char format[] = {'{', '}', 0};
+  auto result = fmt::format(format, custom_char('x'));
+  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result[0], custom_char('x'));
+}
+#endif
+
+// Convert a char8_t string to std::string. Otherwise GTest will insist on
+// inserting `char8_t` NTBS into a `char` stream which is disabled by P1423.
+template <typename S> std::string from_u8str(const S& str) {
+  return std::string(str.begin(), str.end());
+}
+
+TEST(wchar_test, format_utf8_precision) {
+  using str_type = std::basic_string<fmt::detail::char8_type>;
+  auto format =
+      str_type(reinterpret_cast<const fmt::detail::char8_type*>(u8"{:.4}"));
+  auto str = str_type(reinterpret_cast<const fmt::detail::char8_type*>(
+      u8"caf\u00e9s"));  // cafés
+  auto result = fmt::format(format, str);
+  EXPECT_EQ(fmt::detail::compute_width(result), 4);
+  EXPECT_EQ(result.size(), 5);
+  EXPECT_EQ(from_u8str(result), from_u8str(str.substr(0, 5)));
+}
 
 TEST(wchar_test, format_to) {
   auto buf = std::vector<wchar_t>();
@@ -88,6 +154,63 @@ TEST(wchar_test, print) {
 TEST(wchar_test, join) {
   int v[3] = {1, 2, 3};
   EXPECT_EQ(fmt::format(L"({})", fmt::join(v, v + 3, L", ")), L"(1, 2, 3)");
+  auto t = std::tuple<wchar_t, int, float>('a', 1, 2.0f);
+  EXPECT_EQ(fmt::format(L"({})", fmt::join(t, L", ")), L"(a, 1, 2)");
+}
+
+enum streamable_enum {};
+
+std::wostream& operator<<(std::wostream& os, streamable_enum) {
+  return os << L"streamable_enum";
+}
+
+enum unstreamable_enum {};
+
+TEST(wchar_test, enum) {
+  EXPECT_EQ(L"streamable_enum", fmt::format(L"{}", streamable_enum()));
+  EXPECT_EQ(L"0", fmt::format(L"{}", unstreamable_enum()));
+}
+
+TEST(wchar_test, sign_not_truncated) {
+  wchar_t format_str[] = {
+      L'{', L':',
+      '+' | static_cast<wchar_t>(1 << fmt::detail::num_bits<char>()), L'}', 0};
+  EXPECT_THROW(fmt::format(format_str, 42), fmt::format_error);
+}
+
+namespace fake_qt {
+class QString {
+ public:
+  QString(const wchar_t* s) : s_(s) {}
+  const wchar_t* utf16() const FMT_NOEXCEPT { return s_.data(); }
+  int size() const FMT_NOEXCEPT { return static_cast<int>(s_.size()); }
+
+ private:
+  std::wstring s_;
+};
+
+fmt::basic_string_view<wchar_t> to_string_view(const QString& s) FMT_NOEXCEPT {
+  return {s.utf16(), static_cast<size_t>(s.size())};
+}
+}  // namespace fake_qt
+
+TEST(format_test, format_foreign_strings) {
+  using fake_qt::QString;
+  EXPECT_EQ(fmt::format(QString(L"{}"), 42), L"42");
+  EXPECT_EQ(fmt::format(QString(L"{}"), QString(L"42")), L"42");
+}
+
+TEST(wchar_test, chrono) {
+  auto tm = std::tm();
+  tm.tm_year = 116;
+  tm.tm_mon = 3;
+  tm.tm_mday = 25;
+  tm.tm_hour = 11;
+  tm.tm_min = 22;
+  tm.tm_sec = 33;
+  EXPECT_EQ(fmt::format("The date is {:%Y-%m-%d %H:%M:%S}.", tm),
+            "The date is 2016-04-25 11:22:33.");
+  EXPECT_EQ(L"42s", fmt::format(L"{}", std::chrono::seconds(42)));
 }
 
 TEST(wchar_test, to_wstring) { EXPECT_EQ(L"42", fmt::to_wstring(42)); }
