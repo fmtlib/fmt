@@ -96,9 +96,6 @@ TEST(ostream_test, print) {
   std::ostringstream os;
   fmt::print(os, "Don't {}!", "panic");
   EXPECT_EQ("Don't panic!", os.str());
-  std::wostringstream wos;
-  fmt::print(wos, L"Don't {}!", L"panic");
-  EXPECT_EQ(L"Don't panic!", wos.str());
 }
 
 TEST(ostream_test, write_to_ostream) {

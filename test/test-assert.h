@@ -14,7 +14,6 @@ void throw_assertion_failure(const char* message);
 #define FMT_ASSERT(condition, message) \
   if (!(condition)) throw_assertion_failure(message);
 
-#include "gtest-extra.h"
 #include "gtest/gtest.h"
 
 class assertion_failure : public std::logic_error {

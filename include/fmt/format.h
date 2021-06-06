@@ -432,46 +432,6 @@ using char8_type = char8_t;
 enum char8_type : unsigned char {};
 #endif
 
-template <typename InputIt, typename OutChar>
-using needs_conversion = bool_constant<
-    std::is_same<typename std::iterator_traits<InputIt>::value_type,
-                 char>::value &&
-    std::is_same<OutChar, char8_type>::value>;
-
-template <typename OutChar, typename InputIt, typename OutputIt,
-          FMT_ENABLE_IF(!needs_conversion<InputIt, OutChar>::value)>
-FMT_CONSTEXPR auto copy_str(InputIt begin, InputIt end, OutputIt out)
-    -> OutputIt {
-  while (begin != end) *out++ = *begin++;
-  return out;
-}
-
-template <typename OutChar, typename InputIt,
-          FMT_ENABLE_IF(!needs_conversion<InputIt, OutChar>::value)>
-FMT_CONSTEXPR20 auto copy_str(InputIt begin, InputIt end, OutChar* out)
-    -> OutChar* {
-  if (is_constant_evaluated()) {
-    return copy_str<OutChar, InputIt, OutChar*>(begin, end, out);
-  }
-  auto size = to_unsigned(end - begin);
-  std::uninitialized_copy(begin, end, make_checked(out, size));
-  return out + size;
-}
-
-template <typename OutChar, typename InputIt, typename OutputIt,
-          FMT_ENABLE_IF(needs_conversion<InputIt, OutChar>::value)>
-auto copy_str(InputIt begin, InputIt end, OutputIt out) -> OutputIt {
-  while (begin != end) *out++ = static_cast<char8_type>(*begin++);
-  return out;
-}
-
-template <typename OutChar, typename InputIt,
-          FMT_ENABLE_IF(!needs_conversion<InputIt, OutChar>::value)>
-auto copy_str(InputIt begin, InputIt end, appender out) -> appender {
-  get_container(out).append(begin, end);
-  return out;
-}
-
 template <typename OutChar, typename InputIt, typename OutputIt>
 FMT_CONSTEXPR FMT_NOINLINE auto copy_str_noinline(InputIt begin, InputIt end,
                                                   OutputIt out) -> OutputIt {
@@ -633,13 +593,6 @@ void buffer<T>::append(const U* begin, const U* end) {
   }
 }
 
-template <typename OutputIt, typename T, typename Traits>
-void iterator_buffer<OutputIt, T, Traits>::flush() {
-  auto size = this->size();
-  this->clear();
-  out_ = copy_str<T>(data_, data_ + this->limit(size), out_);
-}
-
 template <typename T, typename Enable = void>
 struct is_locale : std::false_type {};
 template <typename T>
@@ -647,11 +600,6 @@ struct is_locale<T, void_t<decltype(T::classic())>> : std::true_type {};
 }  // namespace detail
 
 FMT_MODULE_EXPORT_BEGIN
-
-template <> struct is_char<wchar_t> : std::true_type {};
-template <> struct is_char<detail::char8_type> : std::true_type {};
-template <> struct is_char<char16_t> : std::true_type {};
-template <> struct is_char<char32_t> : std::true_type {};
 
 // The number of characters to store in the basic_memory_buffer object itself
 // to avoid dynamic memory allocation.

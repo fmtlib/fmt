@@ -724,6 +724,23 @@ inline auto get_container(std::back_insert_iterator<Container> it)
   return *accessor(it).container;
 }
 
+template <typename Char, typename InputIt, typename OutputIt>
+FMT_CONSTEXPR auto copy_str(InputIt begin, InputIt end, OutputIt out)
+    -> OutputIt {
+  while (begin != end) *out++ = static_cast<Char>(*begin++);
+  return out;
+}
+
+template <typename Char, FMT_ENABLE_IF(std::is_same<Char, char>::value)>
+FMT_CONSTEXPR auto copy_str(const Char* begin, const Char* end, Char* out)
+    -> Char* {
+  if (is_constant_evaluated())
+    return copy_str<Char, const Char*, Char*>(begin, end, out);
+  auto size = to_unsigned(end - begin);
+  memcpy(out, begin, size);
+  return out + size;
+}
+
 /**
   \rst
   A contiguous memory buffer with an optional growing ability. It is an internal
@@ -848,7 +865,12 @@ class iterator_buffer final : public Traits, public buffer<T> {
   void grow(size_t) final FMT_OVERRIDE {
     if (this->size() == buffer_size) flush();
   }
-  void flush();
+
+  void flush() {
+    auto size = this->size();
+    this->clear();
+    out_ = copy_str<T>(data_, data_ + this->limit(size), out_);
+  }
 
  public:
   explicit iterator_buffer(OutputIt out, size_t n = buffer_size)
@@ -1462,6 +1484,12 @@ FMT_CONSTEXPR FMT_INLINE auto visit_format_arg(
 }
 
 FMT_BEGIN_DETAIL_NAMESPACE
+
+template <typename Char, typename InputIt>
+auto copy_str(InputIt begin, InputIt end, appender out) -> appender {
+  get_container(out).append(begin, end);
+  return out;
+}
 
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 500
 // A workaround for gcc 4.8 to make void_t work in a SFINAE context.

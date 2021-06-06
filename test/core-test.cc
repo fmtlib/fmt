@@ -29,6 +29,10 @@ using testing::_;
 using testing::Invoke;
 using testing::Return;
 
+#ifdef FMT_FORMAT_H_
+#  error core-test includes format.h
+#endif
+
 TEST(string_view_test, value_type) {
   static_assert(std::is_same<string_view::value_type, char>::value, "");
 }
@@ -90,33 +94,7 @@ template <typename Char>
 fmt::basic_string_view<Char> to_string_view(const test_string<Char>& s) {
   return {s.data(), s.length()};
 }
-
-struct non_string {};
 }  // namespace test_ns
-
-template <typename T> class is_string_test : public testing::Test {};
-
-using string_char_types = testing::Types<char, wchar_t, char16_t, char32_t>;
-TYPED_TEST_SUITE(is_string_test, string_char_types);
-
-template <typename Char>
-struct derived_from_string_view : fmt::basic_string_view<Char> {};
-
-TYPED_TEST(is_string_test, is_string) {
-  EXPECT_TRUE(fmt::detail::is_string<TypeParam*>::value);
-  EXPECT_TRUE(fmt::detail::is_string<const TypeParam*>::value);
-  EXPECT_TRUE(fmt::detail::is_string<TypeParam[2]>::value);
-  EXPECT_TRUE(fmt::detail::is_string<const TypeParam[2]>::value);
-  EXPECT_TRUE(fmt::detail::is_string<std::basic_string<TypeParam>>::value);
-  EXPECT_TRUE(fmt::detail::is_string<fmt::basic_string_view<TypeParam>>::value);
-  EXPECT_TRUE(
-      fmt::detail::is_string<derived_from_string_view<TypeParam>>::value);
-  using fmt_string_view = fmt::detail::std_string_view<TypeParam>;
-  EXPECT_TRUE(std::is_empty<fmt_string_view>::value !=
-              fmt::detail::is_string<fmt_string_view>::value);
-  EXPECT_TRUE(fmt::detail::is_string<test_ns::test_string<TypeParam>>::value);
-  EXPECT_FALSE(fmt::detail::is_string<test_ns::non_string>::value);
-}
 
 TEST(core_test, is_output_iterator) {
   EXPECT_TRUE((fmt::detail::is_output_iterator<char*, char>::value));
@@ -427,6 +405,10 @@ TYPED_TEST(numeric_arg_test, make_and_visit) {
   CHECK_ARG_SIMPLE(std::numeric_limits<TypeParam>::min());
   CHECK_ARG_SIMPLE(std::numeric_limits<TypeParam>::max());
 }
+
+namespace fmt {
+template <> struct is_char<wchar_t> : std::true_type {};
+}  // namespace fmt
 
 TEST(arg_test, char_arg) {
   CHECK_ARG(char, 'a', 'a');

@@ -10,11 +10,56 @@
 #include <complex>
 
 #include "fmt/chrono.h"
+#include "fmt/color.h"
 #include "fmt/ostream.h"
 #include "fmt/ranges.h"
 #include "gtest/gtest.h"
 
 using fmt::detail::max_value;
+
+namespace test_ns {
+template <typename Char> class test_string {
+ private:
+  std::basic_string<Char> s_;
+
+ public:
+  test_string(const Char* s) : s_(s) {}
+  const Char* data() const { return s_.data(); }
+  size_t length() const { return s_.size(); }
+  operator const Char*() const { return s_.c_str(); }
+};
+
+template <typename Char>
+fmt::basic_string_view<Char> to_string_view(const test_string<Char>& s) {
+  return {s.data(), s.length()};
+}
+
+struct non_string {};
+}  // namespace test_ns
+
+template <typename T> class is_string_test : public testing::Test {};
+
+using string_char_types = testing::Types<char, wchar_t, char16_t, char32_t>;
+TYPED_TEST_SUITE(is_string_test, string_char_types);
+
+template <typename Char>
+struct derived_from_string_view : fmt::basic_string_view<Char> {};
+
+TYPED_TEST(is_string_test, is_string) {
+  EXPECT_TRUE(fmt::detail::is_string<TypeParam*>::value);
+  EXPECT_TRUE(fmt::detail::is_string<const TypeParam*>::value);
+  EXPECT_TRUE(fmt::detail::is_string<TypeParam[2]>::value);
+  EXPECT_TRUE(fmt::detail::is_string<const TypeParam[2]>::value);
+  EXPECT_TRUE(fmt::detail::is_string<std::basic_string<TypeParam>>::value);
+  EXPECT_TRUE(fmt::detail::is_string<fmt::basic_string_view<TypeParam>>::value);
+  EXPECT_TRUE(
+      fmt::detail::is_string<derived_from_string_view<TypeParam>>::value);
+  using fmt_string_view = fmt::detail::std_string_view<TypeParam>;
+  EXPECT_TRUE(std::is_empty<fmt_string_view>::value !=
+              fmt::detail::is_string<fmt_string_view>::value);
+  EXPECT_TRUE(fmt::detail::is_string<test_ns::test_string<TypeParam>>::value);
+  EXPECT_FALSE(fmt::detail::is_string<test_ns::non_string>::value);
+}
 
 // std::is_constructible is broken in MSVC until version 2015.
 #if !FMT_MSC_VER || FMT_MSC_VER >= 1900
@@ -212,6 +257,17 @@ TEST(xchar_test, chrono) {
   EXPECT_EQ(fmt::format("The date is {:%Y-%m-%d %H:%M:%S}.", tm),
             "The date is 2016-04-25 11:22:33.");
   EXPECT_EQ(L"42s", fmt::format(L"{}", std::chrono::seconds(42)));
+}
+
+TEST(xchar_test, color) {
+  EXPECT_EQ(fmt::format(fg(fmt::rgb(255, 20, 30)), L"rgb(255,20,30) wide"),
+            L"\x1b[38;2;255;020;030mrgb(255,20,30) wide\x1b[0m");
+}
+
+TEST(xchar_test, ostream) {
+  std::wostringstream wos;
+  fmt::print(wos, L"Don't {}!", L"panic");
+  EXPECT_EQ(L"Don't panic!", wos.str());
 }
 
 TEST(xchar_test, to_wstring) { EXPECT_EQ(L"42", fmt::to_wstring(42)); }

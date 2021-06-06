@@ -35,6 +35,11 @@ template <typename... Args>
 using wformat_string = basic_format_string<wchar_t, type_identity_t<Args>...>;
 #endif
 
+template <> struct is_char<wchar_t> : std::true_type {};
+template <> struct is_char<detail::char8_type> : std::true_type {};
+template <> struct is_char<char16_t> : std::true_type {};
+template <> struct is_char<char32_t> : std::true_type {};
+
 template <typename... Args>
 constexpr format_arg_store<wformat_context, Args...> make_wformat_args(
     const Args&... args) {
