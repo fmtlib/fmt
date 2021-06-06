@@ -1436,6 +1436,27 @@ TEST(format_test, format_explicitly_convertible_to_std_string_view) {
 }
 #endif
 
+struct converible_to_anything {
+  template <typename T> operator T() const { return T(); }
+};
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<converible_to_anything> {
+  FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
+
+  auto format(converible_to_anything, format_context& ctx)
+      -> decltype(ctx.out()) {
+    return format_to(ctx.out(), "foo");
+  }
+};
+FMT_END_NAMESPACE
+
+TEST(format_test, format_convertible_to_anything) {
+  EXPECT_EQ("foo", fmt::format("{}", converible_to_anything()));
+}
+
 class Answer {};
 
 FMT_BEGIN_NAMESPACE

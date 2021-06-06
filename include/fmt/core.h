@@ -1539,7 +1539,7 @@ FMT_CONSTEXPR FMT_INLINE auto make_arg(const T& val) -> value<Context> {
       !std::is_same<decltype(arg), const unformattable&>::value,
       "Cannot format an argument. To make type T formattable provide a "
       "formatter<T> specialization: https://fmt.dev/latest/api.html#udt");
-  return arg;
+  return {arg};
 }
 
 template <bool IS_PACKED, typename Context, type, typename T,
