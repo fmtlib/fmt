@@ -284,8 +284,16 @@
 #  define FMT_UNICODE !FMT_MSC_VER
 #endif
 
-#ifndef FMT_COMPILE_TIME_CHECKS
-#  define FMT_COMPILE_TIME_CHECKS 0
+#ifndef FMT_CONSTEVAL
+#  if ((FMT_GCC_VERSION >= 1000 || FMT_CLANG_VERSION >= 1101) && \
+       __cplusplus > 201703L) ||                                 \
+      (defined(__cpp_consteval) &&                               \
+       !FMT_MSC_VER)  // consteval is broken in MSVC.
+#    define FMT_CONSTEVAL consteval
+#    define FMT_HAS_CONSTEVAL
+#  else
+#    define FMT_CONSTEVAL
+#  endif
 #endif
 
 #ifndef FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
@@ -2813,17 +2821,13 @@ template <typename Char, typename... Args> class basic_format_string {
   template <typename S,
             FMT_ENABLE_IF(
                 std::is_convertible<const S&, basic_string_view<Char>>::value)>
-#if FMT_COMPILE_TIME_CHECKS
-  consteval
-#endif
-      basic_format_string(const S& s)
-      : str_(s) {
+  FMT_CONSTEVAL basic_format_string(const S& s) : str_(s) {
     static_assert(
         detail::count<
             (std::is_base_of<detail::view, remove_reference_t<Args>>::value &&
              std::is_reference<Args>::value)...>() == 0,
         "passing views as lvalues is disallowed");
-#if FMT_COMPILE_TIME_CHECKS
+#ifdef FMT_HAS_CONSTEVAL
     if constexpr (detail::count_named_args<Args...>() == 0) {
       using checker = detail::format_string_checker<Char, detail::error_handler,
                                                     remove_cvref_t<Args>...>;

@@ -2059,15 +2059,6 @@ TEST(format_test, vformat_to) {
   EXPECT_EQ("42", s);
 }
 
-template <typename T> static std::string fmt_to_string(const T& t) {
-  return fmt::format(FMT_STRING("{}"), t);
-}
-
-TEST(format_test, fmt_string_in_template) {
-  EXPECT_EQ(fmt_to_string(1), "1");
-  EXPECT_EQ(fmt_to_string(0), "0");
-}
-
 #endif  // FMT_USE_CONSTEXPR
 
 TEST(format_test, char_traits_is_not_ambiguous) {
