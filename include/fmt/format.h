@@ -899,18 +899,18 @@ FMT_CONSTEXPR inline auto count_digits(uint128_t n) -> int {
 FMT_CONSTEXPR20 inline auto count_digits(uint64_t n) -> int {
 #ifdef FMT_BUILTIN_CLZLL
   if (!is_constant_evaluated()) {
-  // https://github.com/fmtlib/format-benchmark/blob/master/digits10
-  // Maps bsr(n) to ceil(log10(pow(2, bsr(n) + 1) - 1)).
-  FMT_STATIC_CONSTEXPR uint16_t bsr2log10[] = {
-      1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  4,  5,  5,  5,
-      6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  9,  9,  9,  10, 10, 10,
-      10, 11, 11, 11, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 15, 15,
-      15, 16, 16, 16, 16, 17, 17, 17, 18, 18, 18, 19, 19, 19, 19, 20};
-  auto t = bsr2log10[FMT_BUILTIN_CLZLL(n | 1) ^ 63];
-  constexpr const uint64_t zero_or_powers_of_10[] = {
-      0, 0, FMT_POWERS_OF_10(1U), FMT_POWERS_OF_10(1000000000ULL),
-      10000000000000000000ULL};
-  return t - (n < zero_or_powers_of_10[t]);
+    // https://github.com/fmtlib/format-benchmark/blob/master/digits10
+    // Maps bsr(n) to ceil(log10(pow(2, bsr(n) + 1) - 1)).
+    FMT_STATIC_CONSTEXPR uint16_t bsr2log10[] = {
+        1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  4,  5,  5,  5,
+        6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  9,  9,  9,  10, 10, 10,
+        10, 11, 11, 11, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 15, 15,
+        15, 16, 16, 16, 16, 17, 17, 17, 18, 18, 18, 19, 19, 19, 19, 20};
+    auto t = bsr2log10[FMT_BUILTIN_CLZLL(n | 1) ^ 63];
+    constexpr const uint64_t zero_or_powers_of_10[] = {
+        0, 0, FMT_POWERS_OF_10(1U), FMT_POWERS_OF_10(1000000000ULL),
+        10000000000000000000ULL};
+    return t - (n < zero_or_powers_of_10[t]);
   }
 #endif
   return count_digits_fallback(n);
