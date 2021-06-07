@@ -935,15 +935,14 @@ FMT_CONSTEXPR auto count_digits(UInt n) -> int {
 template <> auto count_digits<4>(detail::fallback_uintptr n) -> int;
 
 #ifdef FMT_BUILTIN_CLZ
-// Optional version of count_digits for better performance on 32-bit platforms.
-FMT_CONSTEXPR20 inline auto count_digits(uint32_t n) -> int {
-  if (is_constant_evaluated()) {
-    return count_digits_fallback(n);
-  }
+
+// It is a separate function rather than a part of count_digits to workaround
+// the lack of static constexpr in constexpr functions.
+FMT_INLINE uint64_t count_digits_inc(int n) {
   // An optimization by Kendall Willets from https://bit.ly/3uOIQrB.
   // This increments the upper 32 bits (log10(T) - 1) when >= T is added.
 #  define FMT_INC(T) (((sizeof(#  T) - 1ull) << 32) - T)
-  FMT_STATIC_CONSTEXPR uint64_t table[] = {
+  static constexpr uint64_t table[] = {
       FMT_INC(0),          FMT_INC(0),          FMT_INC(0),           // 8
       FMT_INC(10),         FMT_INC(10),         FMT_INC(10),          // 64
       FMT_INC(100),        FMT_INC(100),        FMT_INC(100),         // 512
@@ -956,7 +955,14 @@ FMT_CONSTEXPR20 inline auto count_digits(uint32_t n) -> int {
       FMT_INC(1000000000), FMT_INC(1000000000), FMT_INC(1000000000),  // 1024M
       FMT_INC(1000000000), FMT_INC(1000000000)                        // 4B
   };
-  return static_cast<int>((n + table[FMT_BUILTIN_CLZ(n | 1) ^ 31]) >> 32);
+  return table[n];
+}
+
+// Optional version of count_digits for better performance on 32-bit platforms.
+FMT_CONSTEXPR20 inline auto count_digits(uint32_t n) -> int {
+  if (is_constant_evaluated()) return count_digits_fallback(n);
+  auto inc = count_digits_inc(FMT_BUILTIN_CLZ(n | 1) ^ 31);
+  return static_cast<int>((n + inc) >> 32);
 }
 #endif
 
