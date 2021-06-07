@@ -451,6 +451,27 @@ FMT_END_DETAIL_NAMESPACE
 template <typename Char, typename Duration>
 struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
                  Char> : formatter<std::tm, Char> {
+  FMT_CONSTEXPR FMT_INLINE void generate_defalut_spec(char) {
+    this->specs = "%Y-%m-%d %H:%M:%S";
+  }
+  FMT_CONSTEXPR FMT_INLINE void generate_defalut_spec(wchar_t) {
+    this->specs = L"%Y-%m-%d %H:%M:%S";
+  }
+
+  template <typename ParseContext>
+  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+    auto it = ctx.begin();
+    if (it != ctx.end() && *it == ':') ++it;
+    auto end = it;
+    while (end != ctx.end() && *end != '}') ++end;
+    if (end == it) {
+      generate_defalut_spec(typename ParseContext::char_type{});
+    } else {
+      this->specs = {it, detail::to_unsigned(end - it)};
+    }
+    return end;
+  }
+
   template <typename FormatContext>
   auto format(std::chrono::time_point<std::chrono::system_clock> val,
               FormatContext& ctx) -> decltype(ctx.out()) {
