@@ -262,10 +262,8 @@ The available presentation types for floating-point values are:
 |         | ``'E'`` if the number gets too large. The                |
 |         | representations of infinity and NaN are uppercased, too. |
 +---------+----------------------------------------------------------+
-| none    | Similar to ``'g'``, except that fixed-point notation,    |
-|         | when used, has at least one digit past the decimal       |
-|         | point. The default precision is as high as needed to     |
-|         | represent the particular value.                          |
+| none    | Similar to ``'g'``, except that the default precision is |
+|         | as high as needed to represent the particular value.     |
 +---------+----------------------------------------------------------+
 
 .. ifconfig:: False
