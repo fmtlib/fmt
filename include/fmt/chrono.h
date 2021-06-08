@@ -452,10 +452,10 @@ template <typename Char, typename Duration>
 struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
                  Char> : formatter<std::tm, Char> {
   FMT_CONSTEXPR FMT_INLINE void generate_defalut_spec(char) {
-    this->specs = "%Y-%m-%d %H:%M:%S";
+    this->specs = {"%Y-%m-%d %H:%M:%S", 17};
   }
   FMT_CONSTEXPR FMT_INLINE void generate_defalut_spec(wchar_t) {
-    this->specs = L"%Y-%m-%d %H:%M:%S";
+    this->specs = {L"%Y-%m-%d %H:%M:%S", 17};
   }
 
   template <typename ParseContext>
