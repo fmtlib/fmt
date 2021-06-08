@@ -27,7 +27,6 @@ jobs:
           - cxx: g++-10
             build_type: Debug
             std: 20
-            cxxflags: -DFMT_COMPILE_TIME_CHECKS=1
             os: ubuntu-20.04
           - cxx: clang++-9
             build_type: Debug
