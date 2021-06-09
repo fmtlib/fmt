@@ -458,8 +458,7 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
     auto end = it;
     while (end != ctx.end() && *end != '}') ++end;
     if (end == it)
-      this->specs = {default_spec,
-                     std::end(default_spec) - std::begin(default_spec)};
+      this->specs = {default_spec, 17};
     else
       this->specs = {it, detail::to_unsigned(end - it)};
     return end;
@@ -472,10 +471,15 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
     return formatter<std::tm, Char>::format(time, ctx);
   }
 
-  static constexpr inline Char default_spec[] = {'%', 'Y', '-', '%', 'm', '-',
-                                                 '%', 'd', ' ', '%', 'H', ':',
-                                                 '%', 'M', ':', '%', 'S'};
+  static constexpr Char default_spec[] = {'%', 'Y', '-', '%', 'm', '-',
+                                                '%', 'd', ' ', '%', 'H', ':',
+                                                '%', 'M', ':', '%', 'S'};
 };
+
+template <typename Char, typename Duration>
+constexpr Char
+    formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
+              Char>::default_spec[];
 
 template <typename Char> struct formatter<std::tm, Char> {
   template <typename ParseContext>
