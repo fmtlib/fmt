@@ -458,7 +458,8 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
     auto end = it;
     while (end != ctx.end() && *end != '}') ++end;
     if (end == it)
-      this->specs = {default_spec, 17};
+      this->specs = {default_spec,
+                     std::end(default_spec) - std::begin(default_spec)};
     else
       this->specs = {it, detail::to_unsigned(end - it)};
     return end;
@@ -470,10 +471,10 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
     std::tm time = localtime(val);
     return formatter<std::tm, Char>::format(time, ctx);
   }
-  
-  static constexpr Char default_spec[] = {'%', 'Y', '-', '%', 'm', '-',
-                                          '%', 'd', ' ', '%', 'H', ':',
-                                          '%', 'M', ':', '%', 'S'};
+
+  static constexpr inline Char default_spec[] = {'%', 'Y', '-', '%', 'm', '-',
+                                                 '%', 'd', ' ', '%', 'H', ':',
+                                                 '%', 'M', ':', '%', 'S'};
 };
 
 template <typename Char> struct formatter<std::tm, Char> {
