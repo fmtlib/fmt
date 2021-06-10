@@ -376,7 +376,7 @@ TEST(chrono_test, weekday) {
   auto mon = fmt::weekday(1);
   EXPECT_EQ(fmt::format("{}", mon), "Mon");
   if (loc != std::locale::classic()) {
-    EXPECT_THAT((std::vector<std::string>{"пн", "Пн"}),
+    EXPECT_THAT((std::vector<std::string>{"пн", "Пн", "пнд", "Пнд"}),
                 Contains(fmt::format(loc, "{:L}", mon)));
   }
 }
