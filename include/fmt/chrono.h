@@ -451,16 +451,17 @@ FMT_END_DETAIL_NAMESPACE
 template <typename Char, typename Duration>
 struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
                  Char> : formatter<std::tm, Char> {
+  FMT_CONSTEXPR formatter() {
+    this->specs = {default_spec, 17};
+  }
+
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
     auto it = ctx.begin();
     if (it != ctx.end() && *it == ':') ++it;
     auto end = it;
     while (end != ctx.end() && *end != '}') ++end;
-    if (end == it)
-      this->specs = {default_spec, 17};
-    else
-      this->specs = {it, detail::to_unsigned(end - it)};
+    if (end != it) this->specs = {it, detail::to_unsigned(end - it)};
     return end;
   }
 
