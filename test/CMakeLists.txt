@@ -82,6 +82,9 @@ if (MSVC)
   target_compile_options(unicode-test PRIVATE /utf-8)
 endif ()
 add_fmt_test(xchar-test)
+add_fmt_test(enforce-checks-test)
+target_compile_definitions(enforce-checks-test PRIVATE
+                           -DFMT_ENFORCE_COMPILE_STRING)
 
 if (FMT_CAN_MODULE)
   # The tests need {fmt} to be compiled as traditional library
@@ -99,13 +102,6 @@ if (FMT_CAN_MODULE)
     target_compile_options(test-module PRIVATE /utf-8)
     target_compile_options(module-test PRIVATE /utf-8)
   endif ()
-endif ()
-
-if (NOT MSVC)
-  # FMT_ENFORCE_COMPILE_STRING is not supported under MSVC due to compiler bugs.
-  add_fmt_test(enforce-checks-test)
-  target_compile_definitions(enforce-checks-test PRIVATE
-                             -DFMT_ENFORCE_COMPILE_STRING)
 endif ()
 
 if (NOT DEFINED MSVC_STATIC_RUNTIME AND MSVC)
