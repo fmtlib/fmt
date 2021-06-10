@@ -291,6 +291,7 @@ inline null<> gmtime_s(...) { return null<>(); }
 inline auto do_write(const std::tm& time, const std::locale& loc, char format,
                      char modifier) -> std::string {
   auto&& os = std::ostringstream();
+  os.imbue(loc);
   using iterator = std::ostreambuf_iterator<char>;
   const auto& facet = std::use_facet<std::time_put<char, iterator>>(loc);
   auto end = facet.put(os, os, ' ', &time, format, modifier);
