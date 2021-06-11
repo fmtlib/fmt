@@ -254,13 +254,6 @@ namespace detail {
 #  define FMT_CONSTEXPR20
 #endif
 
-// Workaround poor codegen in MSVC.
-#if FMT_MSC_VER
-#  define FMT_STATIC_CONSTEXPR static constexpr
-#else
-#  define FMT_STATIC_CONSTEXPR constexpr
-#endif
-
 // An equivalent of `*reinterpret_cast<Dest*>(&source)` that doesn't have
 // undefined behavior (e.g. due to type aliasing).
 // Example: uint64_t d = bit_cast<uint64_t>(2.718);
@@ -901,7 +894,7 @@ FMT_CONSTEXPR20 inline auto count_digits(uint64_t n) -> int {
   if (!is_constant_evaluated()) {
     // https://github.com/fmtlib/format-benchmark/blob/master/digits10
     // Maps bsr(n) to ceil(log10(pow(2, bsr(n) + 1) - 1)).
-    FMT_STATIC_CONSTEXPR uint16_t bsr2log10[] = {
+    constexpr uint16_t bsr2log10[] = {
         1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  4,  5,  5,  5,
         6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  9,  9,  9,  10, 10, 10,
         10, 11, 11, 11, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 15, 15,
