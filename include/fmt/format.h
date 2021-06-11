@@ -248,7 +248,8 @@ FMT_BEGIN_NAMESPACE
 namespace detail {
 
 #if __cplusplus >= 202002L || \
-    (__cplusplus >= 201709L && FMT_GCC_VERSION >= 1002)
+    (__cplusplus >= 201709L && FMT_GCC_VERSION >= 1002) || \
+    (defined(_MSVC_LANG) && _MSVC_LANG >= 201709L)
 #  define FMT_CONSTEXPR20 constexpr
 #else
 #  define FMT_CONSTEXPR20
@@ -864,6 +865,14 @@ template <typename T = void> struct basic_data {
                                                          0x1000000u | ' '};
   FMT_API static constexpr const char left_padding_shifts[] = {31, 31, 0, 1, 0};
   FMT_API static constexpr const char right_padding_shifts[] = {0, 31, 0, 1, 0};
+  FMT_API static constexpr const uint16_t bsr2log10[] = {
+      1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  4,  5,  5,  5,
+      6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  9,  9,  9,  10, 10, 10,
+      10, 11, 11, 11, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 15, 15,
+      15, 16, 16, 16, 16, 17, 17, 17, 18, 18, 18, 19, 19, 19, 19, 20};
+  FMT_API static constexpr const uint64_t zero_or_powers_of_10[] = {
+      0, 0, FMT_POWERS_OF_10(1U), FMT_POWERS_OF_10(1000000000ULL),
+      10000000000000000000ULL};
 };
 
 #ifdef FMT_SHARED
@@ -901,16 +910,8 @@ FMT_CONSTEXPR20 inline auto count_digits(uint64_t n) -> int {
   if (!is_constant_evaluated()) {
     // https://github.com/fmtlib/format-benchmark/blob/master/digits10
     // Maps bsr(n) to ceil(log10(pow(2, bsr(n) + 1) - 1)).
-    FMT_STATIC_CONSTEXPR uint16_t bsr2log10[] = {
-        1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  4,  5,  5,  5,
-        6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  9,  9,  9,  10, 10, 10,
-        10, 11, 11, 11, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 15, 15,
-        15, 16, 16, 16, 16, 17, 17, 17, 18, 18, 18, 19, 19, 19, 19, 20};
-    auto t = bsr2log10[FMT_BUILTIN_CLZLL(n | 1) ^ 63];
-    constexpr const uint64_t zero_or_powers_of_10[] = {
-        0, 0, FMT_POWERS_OF_10(1U), FMT_POWERS_OF_10(1000000000ULL),
-        10000000000000000000ULL};
-    return t - (n < zero_or_powers_of_10[t]);
+    auto t = data::bsr2log10[FMT_BUILTIN_CLZLL(n | 1) ^ 63];
+    return t - (n < data::zero_or_powers_of_10[t]);
   }
 #endif
   return count_digits_fallback(n);

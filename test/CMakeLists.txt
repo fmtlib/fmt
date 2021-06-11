@@ -99,8 +99,8 @@ if (FMT_CAN_MODULE)
 
   add_fmt_test(module-test MODULE)
   if (MSVC)
-    target_compile_options(test-module PRIVATE /utf-8)
-    target_compile_options(module-test PRIVATE /utf-8)
+    target_compile_options(test-module PRIVATE /utf-8 /Zc:__cplusplus)
+    target_compile_options(module-test PRIVATE /utf-8 /Zc:__cplusplus)
   endif ()
 endif ()
 

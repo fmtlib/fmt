@@ -153,6 +153,9 @@ template <typename T> constexpr const unsigned basic_data<T>::prefixes[];
 template <typename T> constexpr const char basic_data<T>::left_padding_shifts[];
 template <typename T>
 constexpr const char basic_data<T>::right_padding_shifts[];
+template <typename T> constexpr const uint16_t basic_data<T>::bsr2log10[];
+template <typename T>
+constexpr const uint64_t basic_data<T>::zero_or_powers_of_10[];
 #endif
 
 template <typename T> struct bits {
