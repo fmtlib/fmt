@@ -452,7 +452,7 @@ template <typename Char, typename Duration>
 struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
                  Char> : formatter<std::tm, Char> {
   FMT_CONSTEXPR formatter() {
-    this->specs = {default_spec, 17};
+    this->specs = {default_specs, 17};
   }
 
   template <typename ParseContext>
@@ -472,7 +472,7 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
     return formatter<std::tm, Char>::format(time, ctx);
   }
 
-  static constexpr Char default_spec[] = {'%', 'Y', '-', '%', 'm', '-',
+  static constexpr Char default_specs[] = {'%', 'Y', '-', '%', 'm', '-',
                                           '%', 'd', ' ', '%', 'H', ':',
                                           '%', 'M', ':', '%', 'S'};
 };
@@ -480,7 +480,7 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
 template <typename Char, typename Duration>
 constexpr Char
     formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
-              Char>::default_spec[];
+              Char>::default_specs[];
 
 template <typename Char> struct formatter<std::tm, Char> {
   template <typename ParseContext>
