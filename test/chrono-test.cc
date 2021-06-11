@@ -99,6 +99,7 @@ template <typename TimePoint> auto strftime(TimePoint tp) -> std::string {
 TEST(chrono_test, time_point) {
   auto t1 = std::chrono::system_clock::now();
   EXPECT_EQ(strftime(t1), fmt::format("{:%Y-%m-%d %H:%M:%S}", t1));
+  EXPECT_EQ(strftime(t1), fmt::format("{}", t1));
   using time_point =
       std::chrono::time_point<std::chrono::system_clock, std::chrono::seconds>;
   auto t2 = time_point(std::chrono::seconds(42));
