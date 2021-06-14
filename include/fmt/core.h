@@ -2119,9 +2119,10 @@ FMT_CONSTEXPR auto parse_nonnegative_int(const Char*& begin, const Char* end,
   if (num_digits == std::numeric_limits<int>::digits10 + 1 &&
       prev * 10ull + unsigned(p[-1] - '0') <= big) {
     return static_cast<int>(value);
+  } else {
+    eh.on_error("number is too big");
+    return -1;
   }
-  eh.on_error("number is too big");
-  return -1;
 }
 
 // Parses fill and alignment.
