@@ -8,10 +8,10 @@
 #ifndef FMT_CORE_H_
 #define FMT_CORE_H_
 
-#include <climits>  // INT_MAX
-#include <cstdio>   // std::FILE
+#include <cstdio>  // std::FILE
 #include <cstring>
 #include <iterator>
+#include <limits>
 #include <string>
 #include <type_traits>
 
@@ -2103,21 +2103,25 @@ template <typename Char, typename ErrorHandler>
 FMT_CONSTEXPR auto parse_nonnegative_int(const Char*& begin, const Char* end,
                                          ErrorHandler&& eh) -> int {
   FMT_ASSERT(begin != end && '0' <= *begin && *begin <= '9', "");
-  unsigned value = 0;
-  // Convert to unsigned to prevent a warning.
-  const unsigned max_int = to_unsigned(INT_MAX);
-  unsigned big = max_int / 10;
+  unsigned value = 0, prev = 0;
+  auto p = begin;
   do {
-    // Check for overflow.
-    if (value > big) {
-      value = max_int + 1;
-      break;
-    }
-    value = value * 10 + unsigned(*begin - '0');
-    ++begin;
-  } while (begin != end && '0' <= *begin && *begin <= '9');
-  if (value > max_int) eh.on_error("number is too big");
-  return static_cast<int>(value);
+    prev = value;
+    value = value * 10 + unsigned(*p - '0');
+    ++p;
+  } while (p != end && '0' <= *p && *p <= '9');
+  auto num_digits = p - begin;
+  begin = p;
+  if (num_digits <= std::numeric_limits<int>::digits10)
+    return static_cast<int>(value);
+  // Check for overflow.
+  const unsigned big = to_unsigned((std::numeric_limits<int>::max)());
+  if (num_digits == std::numeric_limits<int>::digits10 + 1 &&
+      prev * 10ull + unsigned(p[-1] - '0') <= big) {
+    return static_cast<int>(value);
+  }
+  eh.on_error("number is too big");
+  return -1;
 }
 
 // Parses fill and alignment.
@@ -2454,8 +2458,8 @@ class compile_parse_context
 
  public:
   explicit FMT_CONSTEXPR compile_parse_context(
-      basic_string_view<Char> format_str, int num_args = INT_MAX,
-      ErrorHandler eh = {})
+      basic_string_view<Char> format_str,
+      int num_args = (std::numeric_limits<int>::max)(), ErrorHandler eh = {})
       : base(format_str, eh), num_args_(num_args) {}
 
   FMT_CONSTEXPR auto next_arg_id() -> int {
