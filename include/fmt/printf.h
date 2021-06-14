@@ -334,16 +334,16 @@ int parse_header(const Char*& it, const Char* end,
   if (c >= '0' && c <= '9') {
     // Parse an argument index (if followed by '$') or a width possibly
     // preceded with '0' flag(s).
-    detail::error_handler eh;
-    int value = parse_nonnegative_int(it, end, eh);
+    int value = parse_nonnegative_int(it, end, -1);
     if (it != end && *it == '$') {  // value is an argument index
       ++it;
-      arg_index = value;
+      arg_index = value != -1 ? value : max_value<int>();
     } else {
       if (c == '0') specs.fill[0] = '0';
       if (value != 0) {
         // Nonzero value means that we parsed width and don't need to
         // parse it or flags again, so return now.
+        if (value == -1) FMT_THROW(format_error("number is too big"));
         specs.width = value;
         return arg_index;
       }
@@ -353,8 +353,8 @@ int parse_header(const Char*& it, const Char* end,
   // Parse width.
   if (it != end) {
     if (*it >= '0' && *it <= '9') {
-      detail::error_handler eh;
-      specs.width = parse_nonnegative_int(it, end, eh);
+      specs.width = parse_nonnegative_int(it, end, -1);
+      if (specs.width == -1) FMT_THROW(format_error("number is too big"));
     } else if (*it == '*') {
       ++it;
       specs.width = static_cast<int>(visit_format_arg(
@@ -412,8 +412,7 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
       ++it;
       c = it != end ? *it : 0;
       if ('0' <= c && c <= '9') {
-        detail::error_handler eh;
-        specs.precision = parse_nonnegative_int(it, end, eh);
+        specs.precision = parse_nonnegative_int(it, end, 0);
       } else if (c == '*') {
         ++it;
         specs.precision = static_cast<int>(

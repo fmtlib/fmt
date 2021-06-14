@@ -78,15 +78,11 @@ TEST(util_test, increment) {
 TEST(util_test, parse_nonnegative_int) {
   auto s = fmt::string_view("10000000000");
   auto begin = s.begin(), end = s.end();
-  EXPECT_THROW_MSG(
-      parse_nonnegative_int(begin, end, fmt::detail::error_handler()),
-      fmt::format_error, "number is too big");
+  EXPECT_EQ(fmt::detail::parse_nonnegative_int(begin, end, -1), -1);
   s = "2147483649";
   begin = s.begin();
   end = s.end();
-  EXPECT_THROW_MSG(
-      parse_nonnegative_int(begin, end, fmt::detail::error_handler()),
-      fmt::format_error, "number is too big");
+  EXPECT_EQ(fmt::detail::parse_nonnegative_int(begin, end, -1), -1);
 }
 
 TEST(util_test, utf8_to_utf16) {
@@ -416,10 +412,10 @@ TEST(format_test, arg_errors) {
 
   safe_sprintf(format_str, "{%u", INT_MAX + 1u);
   EXPECT_THROW_MSG(fmt::format(runtime(format_str)), format_error,
-                   "number is too big");
+                   "invalid format string");
   safe_sprintf(format_str, "{%u}", INT_MAX + 1u);
   EXPECT_THROW_MSG(fmt::format(runtime(format_str)), format_error,
-                   "number is too big");
+                   "argument not found");
 }
 
 template <int N> struct test_format {
@@ -747,16 +743,16 @@ TEST(format_test, runtime_width) {
   safe_sprintf(format_str, "{0:{%u", UINT_MAX);
   increment(format_str + 4);
   EXPECT_THROW_MSG(fmt::format(runtime(format_str), 0), format_error,
-                   "number is too big");
+                   "invalid format string");
   size_t size = std::strlen(format_str);
   format_str[size] = '}';
   format_str[size + 1] = 0;
   EXPECT_THROW_MSG(fmt::format(runtime(format_str), 0), format_error,
-                   "number is too big");
+                   "argument not found");
   format_str[size + 1] = '}';
   format_str[size + 2] = 0;
   EXPECT_THROW_MSG(fmt::format(runtime(format_str), 0), format_error,
-                   "number is too big");
+                   "argument not found");
 
   EXPECT_THROW_MSG(fmt::format(runtime("{0:{"), 0), format_error,
                    "invalid format string");
@@ -924,16 +920,16 @@ TEST(format_test, runtime_precision) {
   safe_sprintf(format_str, "{0:.{%u", UINT_MAX);
   increment(format_str + 5);
   EXPECT_THROW_MSG(fmt::format(runtime(format_str), 0), format_error,
-                   "number is too big");
+                   "invalid format string");
   size_t size = std::strlen(format_str);
   format_str[size] = '}';
   format_str[size + 1] = 0;
   EXPECT_THROW_MSG(fmt::format(runtime(format_str), 0), format_error,
-                   "number is too big");
+                   "argument not found");
   format_str[size + 1] = '}';
   format_str[size + 2] = 0;
   EXPECT_THROW_MSG(fmt::format(runtime(format_str), 0), format_error,
-                   "number is too big");
+                   "argument not found");
 
   EXPECT_THROW_MSG(fmt::format(runtime("{0:.{"), 0), format_error,
                    "invalid format string");
@@ -2029,7 +2025,7 @@ TEST(format_test, format_string_errors) {
                "compile-time checks for named arguments require C++20 support",
                int);
 #  endif
-  EXPECT_ERROR_NOARGS("{10000000000}", "number is too big");
+  EXPECT_ERROR_NOARGS("{10000000000}", "argument not found");
   EXPECT_ERROR_NOARGS("{0x}", "invalid format string");
   EXPECT_ERROR_NOARGS("{-}", "invalid format string");
   EXPECT_ERROR("{:{0x}}", "invalid format string", int);

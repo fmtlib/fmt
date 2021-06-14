@@ -86,9 +86,9 @@ TEST(printf_test, automatic_arg_indexing) {
 
 TEST(printf_test, number_is_too_big_in_arg_index) {
   EXPECT_THROW_MSG(test_sprintf(format("%{}$", big_num)), format_error,
-                   "number is too big");
+                   "argument not found");
   EXPECT_THROW_MSG(test_sprintf(format("%{}$d", big_num)), format_error,
-                   "number is too big");
+                   "argument not found");
 }
 
 TEST(printf_test, switch_arg_indexing) {
@@ -102,7 +102,7 @@ TEST(printf_test, switch_arg_indexing) {
   EXPECT_THROW_MSG(test_sprintf("%d%1$", 1, 2), format_error,
                    "cannot switch from automatic to manual argument indexing");
   EXPECT_THROW_MSG(test_sprintf(format("%d%{}$d", big_num), 1, 2), format_error,
-                   "number is too big");
+                   "cannot switch from automatic to manual argument indexing");
   EXPECT_THROW_MSG(test_sprintf("%d%1$d", 1, 2), format_error,
                    "cannot switch from automatic to manual argument indexing");
 
@@ -123,7 +123,7 @@ TEST(printf_test, invalid_arg_index) {
 
   EXPECT_THROW_MSG(test_sprintf("%2$", 42), format_error, "argument not found");
   EXPECT_THROW_MSG(test_sprintf(format("%{}$d", big_num), 42), format_error,
-                   "number is too big");
+                   "argument not found");
 }
 
 TEST(printf_test, default_align_right) {

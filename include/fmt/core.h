@@ -2099,9 +2099,9 @@ inline auto find<false, char>(const char* first, const char* last, char value,
 
 // Parses the range [begin, end) as an unsigned integer. This function assumes
 // that the range is non-empty and the first character is a digit.
-template <typename Char, typename ErrorHandler>
+template <typename Char>
 FMT_CONSTEXPR auto parse_nonnegative_int(const Char*& begin, const Char* end,
-                                         ErrorHandler&& eh) -> int {
+                                         int error_value) noexcept -> int {
   FMT_ASSERT(begin != end && '0' <= *begin && *begin <= '9', "");
   unsigned value = 0, prev = 0;
   auto p = begin;
@@ -2115,13 +2115,11 @@ FMT_CONSTEXPR auto parse_nonnegative_int(const Char*& begin, const Char* end,
   if (num_digits <= std::numeric_limits<int>::digits10)
     return static_cast<int>(value);
   // Check for overflow.
-  const unsigned big = to_unsigned((std::numeric_limits<int>::max)());
-  if (num_digits == std::numeric_limits<int>::digits10 + 1 &&
-      prev * 10ull + unsigned(p[-1] - '0') <= big) {
-    return static_cast<int>(value);
-  }
-  eh.on_error("number is too big");
-  return -1;
+  const unsigned max = to_unsigned((std::numeric_limits<int>::max)());
+  return num_digits == std::numeric_limits<int>::digits10 + 1 &&
+                 prev * 10ull + unsigned(p[-1] - '0') <= max
+             ? static_cast<int>(value)
+             : error_value;
 }
 
 // Parses fill and alignment.
@@ -2177,7 +2175,8 @@ FMT_CONSTEXPR auto do_parse_arg_id(const Char* begin, const Char* end,
   if (c >= '0' && c <= '9') {
     int index = 0;
     if (c != '0')
-      index = parse_nonnegative_int(begin, end, handler);
+      index =
+          parse_nonnegative_int(begin, end, (std::numeric_limits<int>::max)());
     else
       ++begin;
     if (begin == end || (*begin != '}' && *begin != ':'))
@@ -2226,7 +2225,11 @@ FMT_CONSTEXPR auto parse_width(const Char* begin, const Char* end,
 
   FMT_ASSERT(begin != end, "");
   if ('0' <= *begin && *begin <= '9') {
-    handler.on_width(parse_nonnegative_int(begin, end, handler));
+    int width = parse_nonnegative_int(begin, end, -1);
+    if (width != -1)
+      handler.on_width(width);
+    else
+      handler.on_error("number is too big");
   } else if (*begin == '{') {
     ++begin;
     if (begin != end) begin = parse_arg_id(begin, end, width_adapter{handler});
@@ -2257,7 +2260,11 @@ FMT_CONSTEXPR auto parse_precision(const Char* begin, const Char* end,
   ++begin;
   auto c = begin != end ? *begin : Char();
   if ('0' <= c && c <= '9') {
-    handler.on_precision(parse_nonnegative_int(begin, end, handler));
+    auto precision = parse_nonnegative_int(begin, end, -1);
+    if (precision != -1)
+      handler.on_precision(precision);
+    else
+      handler.on_error("number is too big");
   } else if (c == '{') {
     ++begin;
     if (begin != end)
