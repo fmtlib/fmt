@@ -328,7 +328,9 @@ using remove_cvref_t = typename std::remove_cv<remove_reference_t<T>>::type;
 template <typename T> struct type_identity { using type = T; };
 template <typename T> using type_identity_t = typename type_identity<T>::type;
 
-struct monostate {};
+struct monostate {
+  constexpr monostate() {}
+};
 
 // An enable_if helper to be used in template parameters which results in much
 // shorter symbols: https://godbolt.org/z/sWw4vP. Extra parentheses are needed
@@ -1131,6 +1133,7 @@ template <typename Context> class value {
   using char_type = typename Context::char_type;
 
   union {
+    monostate no_value;
     int int_value;
     unsigned uint_value;
     long long long_long_value;
@@ -1148,7 +1151,8 @@ template <typename Context> class value {
     named_arg_value<char_type> named_args;
   };
 
-  constexpr FMT_INLINE value(int val = 0) : int_value(val) {}
+  constexpr FMT_INLINE value() : no_value() {}
+  constexpr FMT_INLINE value(int val) : int_value(val) {}
   constexpr FMT_INLINE value(unsigned val) : uint_value(val) {}
   constexpr FMT_INLINE value(long long val) : long_long_value(val) {}
   constexpr FMT_INLINE value(unsigned long long val) : ulong_long_value(val) {}
