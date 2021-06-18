@@ -1,7 +1,8 @@
 8.0.0 - TBD
 -----------
 
-* Enabled compile-time check by default. For example
+* Enabled compile-time format string check by default.
+  For example (`godbolt <https://godbolt.org/z/sMxcohGjz>`__):
 
   .. code:: c++
 
@@ -14,6 +15,12 @@
   gives a compile-time error on compilers with C++20 ``consteval`` support
   (gcc 10+, clang 11+) because ``d`` is not a valid format specifier for a
   string.
+
+  To pass a runtime string wrap it in ``fmt::runtime``:
+
+  .. code:: c++
+
+     fmt::print(fmt::runtime("{:d}"), "I am not a number");
 
 * Added compile-time formatting
   (`#2019 <https://github.com/fmtlib/fmt/pull/2019>`_,
