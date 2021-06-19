@@ -90,7 +90,7 @@ def build_docs(version='dev', **kwargs):
 
   html_dir = os.path.join(work_dir, 'html')
   main_versions = reversed(versions[-3:])
-  check_call([os.path.join('virtualenv', 'bin', 'sphinx-build'),
+  check_call([os.path.join(work_dir, 'virtualenv', 'bin', 'sphinx-build'),
               '-Dbreathe_projects.format=' + os.path.abspath(doxyxml_dir),
               '-Dversion=' + version, '-Drelease=' + version,
               '-Aversion=' + version, '-Aversions=' + ','.join(main_versions),
