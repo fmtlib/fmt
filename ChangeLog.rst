@@ -76,7 +76,7 @@
     FMTCompileNew/9223372036854775807       5.28 ns         5.26 ns    130711631
     ----------------------------------------------------------------------------
 
-  And even faster than ``std::to_chars`` from libc++ compiled with clang on
+  It is even faster than ``std::to_chars`` from libc++ compiled with clang on
   macOS::
 
     ----------------------------------------------------------------------------
@@ -221,8 +221,8 @@
        fmt::print("{:L}\n", monday); // prints "пн"
      }
 
-* Improved locale handling in chrono formatting (
-  `#2337 <https://github.com/fmtlib/fmt/issues/2337>`_,
+* Improved locale handling in chrono formatting
+  (`#2337 <https://github.com/fmtlib/fmt/issues/2337>`_,
   `#2349 <https://github.com/fmtlib/fmt/pull/2349>`_,
   `#2350 <https://github.com/fmtlib/fmt/pull/2350>`_).
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
