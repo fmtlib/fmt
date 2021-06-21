@@ -1,5 +1,5 @@
-8.0.0 - TBD
------------
+8.0.0 - 2021-06-21
+------------------
 
 * Enabled compile-time format string check by default.
   For example (`godbolt <https://godbolt.org/z/sMxcohGjz>`__):
