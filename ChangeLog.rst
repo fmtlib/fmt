@@ -301,9 +301,9 @@
   ``make_format_to_n_args``. They have been replaced with ``format_context``,
   ``format_args` and ``make_format_args`` respectively.
 
-* Moved ``wchar_t``-specific functions and types to ``fmt/wchar.h``.
-  You can define ``FMT_DEPRECATED_INCLUDE_WCHAR`` to automatically include
-  ``fmt/wchar.h`` from ``fmt/format.h`` but this will be disabled in the next
+* Moved ``wchar_t``-specific functions and types to ``fmt/xchar.h``.
+  You can define ``FMT_DEPRECATED_INCLUDE_XCHAR`` to automatically include
+  ``fmt/xchar.h`` from ``fmt/format.h`` but this will be disabled in the next
   major release.
 
 * Fixed handling of the ``'+'`` specifier in localized formatting
