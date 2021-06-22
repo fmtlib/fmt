@@ -2730,6 +2730,8 @@ extern template auto snprintf_float<long double>(long double value,
 #endif  // FMT_HEADER_ONLY
 
 FMT_END_DETAIL_NAMESPACE
+
+#if FMT_USE_USER_DEFINED_LITERALS
 inline namespace literals {
 /**
   \rst
@@ -2741,18 +2743,18 @@ inline namespace literals {
     fmt::print("Elapsed time: {s:.2f} seconds", "s"_a=1.23);
   \endrst
  */
-#if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+#  if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
 template <detail_exported::fixed_string Str>
 constexpr auto operator""_a()
     -> detail::udl_arg<remove_cvref_t<decltype(Str.data[0])>,
                        sizeof(Str.data) / sizeof(decltype(Str.data[0])), Str> {
   return {};
 }
-#else
+#  else
 constexpr auto operator"" _a(const char* s, size_t) -> detail::udl_arg<char> {
   return {s};
 }
-#endif
+#  endif
 
 /**
   \rst
@@ -2769,6 +2771,7 @@ constexpr auto operator"" _format(const char* s, size_t n)
   return {{s, n}};
 }
 }  // namespace literals
+#endif  // FMT_USE_USER_DEFINED_LITERALS
 
 template <typename Locale, FMT_ENABLE_IF(detail::is_locale<Locale>::value)>
 inline auto vformat(const Locale& loc, string_view fmt, format_args args)
