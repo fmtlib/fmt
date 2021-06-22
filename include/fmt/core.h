@@ -64,7 +64,8 @@
 #  define FMT_HAS_FEATURE(x) 0
 #endif
 
-#if defined(__has_include) && !defined(__INTELLISENSE__) && \
+#if defined(__has_include) &&                             \
+    (!defined(__INTELLISENSE__) || FMT_MSC_VER > 1900) && \
     (!FMT_ICC_VERSION || FMT_ICC_VERSION >= 1600)
 #  define FMT_HAS_INCLUDE(x) __has_include(x)
 #else
