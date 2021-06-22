@@ -228,7 +228,7 @@
 #    define FMT_INLINE_NAMESPACE namespace
 #    define FMT_END_NAMESPACE \
       }                       \
-      using namespace v7;     \
+      using namespace v8;     \
       }
 #  endif
 #  define FMT_BEGIN_NAMESPACE \
