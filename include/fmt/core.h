@@ -233,7 +233,7 @@
 #  endif
 #  define FMT_BEGIN_NAMESPACE \
     namespace fmt {           \
-    FMT_INLINE_NAMESPACE v7 {
+    FMT_INLINE_NAMESPACE v8 {
 #endif
 
 #ifndef FMT_MODULE_EXPORT
@@ -581,7 +581,7 @@ constexpr auto to_string_view(const S& s)
 FMT_BEGIN_DETAIL_NAMESPACE
 
 void to_string_view(...);
-using fmt::v7::to_string_view;
+using fmt::v8::to_string_view;
 
 // Specifies whether S is a string type convertible to fmt::basic_string_view.
 // It should be a constexpr function but MSVC 2017 fails to compile it in
