@@ -24,7 +24,7 @@
 #  define FMT_CLANG_VERSION 0
 #endif
 
-#if defined(__GNUC__) && !defined(__clang__)
+#if defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER)
 #  define FMT_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
 #  define FMT_GCC_PRAGMA(arg) _Pragma(arg)
 #else
