@@ -859,7 +859,7 @@ template <typename T = void> struct basic_data {
   static const uint64_t log10_2_significand = 0x4d104d427de7fbcc;
 
   // GCC generates slightly better code for pairs than chars.
-  FMT_API static constexpr const char digits[][2] = {
+  FMT_API static constexpr const char digits[100][2] = {
       {'0', '0'}, {'0', '1'}, {'0', '2'}, {'0', '3'}, {'0', '4'}, {'0', '5'},
       {'0', '6'}, {'0', '7'}, {'0', '8'}, {'0', '9'}, {'1', '0'}, {'1', '1'},
       {'1', '2'}, {'1', '3'}, {'1', '4'}, {'1', '5'}, {'1', '6'}, {'1', '7'},
@@ -879,11 +879,11 @@ template <typename T = void> struct basic_data {
       {'9', '6'}, {'9', '7'}, {'9', '8'}, {'9', '9'}};
 
   FMT_API static constexpr const char hex_digits[] = "0123456789abcdef";
-  FMT_API static constexpr const char signs[] = {0, '-', '+', ' '};
+  FMT_API static constexpr const char signs[4] = {0, '-', '+', ' '};
   FMT_API static constexpr const unsigned prefixes[4] = {0, 0, 0x1000000u | '+',
                                                          0x1000000u | ' '};
-  FMT_API static constexpr const char left_padding_shifts[] = {31, 31, 0, 1, 0};
-  FMT_API static constexpr const char right_padding_shifts[] = {0, 31, 0, 1, 0};
+  FMT_API static constexpr const char left_padding_shifts[5] = {31, 31, 0, 1, 0};
+  FMT_API static constexpr const char right_padding_shifts[5] = {0, 31, 0, 1, 0};
 };
 
 #ifdef FMT_SHARED
