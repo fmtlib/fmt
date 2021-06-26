@@ -12,6 +12,7 @@ jobs:
 
     - name: Create Build Environment
       run: |
+        sudo apt update
         sudo apt install doxygen python3-virtualenv
         sudo npm install -g less clean-css
         cmake -E make_directory ${{runner.workspace}}/build
