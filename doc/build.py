@@ -27,7 +27,7 @@ def create_build_env(venv_dir='virtualenv'):
   pip.install('wheel')
   pip.install('six')
   pip.install('sphinx-doc/sphinx', 'v3.3.0')
-  pip.install('michaeljones/breathe', 'v4.30.0')
+  pip.install('michaeljones/breathe', 'v4.25.0')
 
 def build_docs(version='dev', **kwargs):
   doc_dir = kwargs.get('doc_dir', os.path.dirname(os.path.realpath(__file__)))
