@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """Manage site and releases.
 
@@ -163,6 +163,13 @@ def update_site(env):
                 if version.startswith('7.'):
                     b.data = b.data.replace(', std::size_t', ', size_t')
                     b.data = b.data.replace('join(It, It', 'join(It, Sentinel')
+                if version.startswith('7.1.'):
+                    b.data = b.data.replace(', std::size_t', ', size_t')
+                    b.data = b.data.replace('join(It, It', 'join(It, Sentinel')
+                    b.data = b.data.replace(
+                        'fmt::format_to(OutputIt, const S&, Args&&...)',
+                        'fmt::format_to(OutputIt, const S&, Args&&...) -> ' +
+                        'typename std::enable_if<enable, OutputIt>::type')
                 b.data = b.data.replace('aa long', 'a long')
                 b.data = b.data.replace('serveral', 'several')
                 if version.startswith('6.2.'):
