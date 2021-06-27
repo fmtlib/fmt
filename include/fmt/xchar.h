@@ -29,8 +29,11 @@ using wmemory_buffer = basic_memory_buffer<wchar_t>;
 
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
 // Workaround broken conversion on older gcc.
+template <typename Char, typename... Args> using xformat_string = basic_string_view<Char>;
 template <typename... Args> using wformat_string = wstring_view;
 #else
+template <typename Char, typename... Args>
+using xformat_string = basic_format_string<Char, type_identity_t<Args>...>;
 template <typename... Args>
 using wformat_string = basic_format_string<wchar_t, type_identity_t<Args>...>;
 #endif
@@ -39,6 +42,12 @@ template <> struct is_char<wchar_t> : std::true_type {};
 template <> struct is_char<detail::char8_type> : std::true_type {};
 template <> struct is_char<char16_t> : std::true_type {};
 template <> struct is_char<char32_t> : std::true_type {};
+
+template <typename Char, typename... Args>
+constexpr format_arg_store<buffer_context<Char>, Args...> make_xformat_args(
+    const Args&... args) {
+  return {args...};
+}
 
 template <typename... Args>
 constexpr format_arg_store<wformat_context, Args...> make_wformat_args(
@@ -87,10 +96,26 @@ auto vformat(basic_string_view<Char> format_str,
   return to_string(buffer);
 }
 
+template <typename... T>
+auto format(wformat_string<T...> fmt, T&&... args) -> std::wstring {
+  return vformat<wchar_t>(fmt, make_xformat_args<wchar_t>(args...));
+}
+
+template <typename... T>
+auto format(xformat_string<detail::char8_type, T...> fmt, T&&... args)
+    -> std::basic_string<detail::char8_type> {
+  return vformat<detail::char8_type>(
+      fmt, make_xformat_args<detail::char8_type>(args...));
+}
+
 // Pass char_t as a default template parameter instead of using
 // std::basic_string<char_t<S>> to reduce the symbol size.
 template <typename S, typename... Args, typename Char = char_t<S>,
-          FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
+          typename Str = xformat_string<Char, Args...>,
+          FMT_ENABLE_IF(!std::is_same<Char, char>::value &&
+                        (!std::is_convertible<S, Str>::value ||
+                         (!std::is_same<Char, wchar_t>::value &&
+                          !std::is_same<Char, detail::char8_type>::value)))>
 auto format(const S& format_str, Args&&... args) -> std::basic_string<Char> {
   const auto& vargs = fmt::make_args_checked<Args...>(format_str, args...);
   return vformat(to_string_view(format_str), vargs);

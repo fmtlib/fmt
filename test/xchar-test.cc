@@ -78,7 +78,7 @@ TEST(xchar_test, format) {
   EXPECT_EQ(L"4.2", fmt::format(L"{}", 4.2));
   EXPECT_EQ(L"abc", fmt::format(L"{}", L"abc"));
   EXPECT_EQ(L"z", fmt::format(L"{}", L'z'));
-  EXPECT_THROW(fmt::format(L"{:*\x343E}", 42), fmt::format_error);
+  EXPECT_THROW(fmt::format(fmt::runtime(L"{:*\x343E}"), 42), fmt::format_error);
   EXPECT_EQ(L"true", fmt::format(L"{}", true));
   EXPECT_EQ(L"a", fmt::format(L"{0}", 'a'));
   EXPECT_EQ(L"a", fmt::format(L"{0}", L'a'));
@@ -130,7 +130,7 @@ TEST(xchar_test, format_utf8_precision) {
       str_type(reinterpret_cast<const fmt::detail::char8_type*>(u8"{:.4}"));
   auto str = str_type(reinterpret_cast<const fmt::detail::char8_type*>(
       u8"caf\u00e9s"));  // cafés
-  auto result = fmt::format(format, str);
+  auto result = fmt::format(fmt::runtime(format), str);
   EXPECT_EQ(fmt::detail::compute_width(result), 4);
   EXPECT_EQ(result.size(), 5);
   EXPECT_EQ(from_u8str(result), from_u8str(str.substr(0, 5)));
@@ -221,7 +221,7 @@ TEST(xchar_test, sign_not_truncated) {
   wchar_t format_str[] = {
       L'{', L':',
       '+' | static_cast<wchar_t>(1 << fmt::detail::num_bits<char>()), L'}', 0};
-  EXPECT_THROW(fmt::format(format_str, 42), fmt::format_error);
+  EXPECT_THROW(fmt::format(fmt::runtime(format_str), 42), fmt::format_error);
 }
 
 namespace fake_qt {

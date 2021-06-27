@@ -11,6 +11,7 @@
 #endif
 // clang-format off
 #include "fmt/format.h"
+#include "fmt/xchar.h"
 // clang-format on
 
 #include <stdint.h>  // uint32_t
@@ -33,6 +34,7 @@ using fmt::memory_buffer;
 using fmt::runtime;
 using fmt::string_view;
 using fmt::detail::max_value;
+using fmt::char_t;
 
 using testing::Return;
 using testing::StrictMock;
@@ -1949,7 +1951,8 @@ struct test_error_handler {
   }
 };
 
-FMT_CONSTEXPR size_t len(const char* s) {
+template<typename Char>
+FMT_CONSTEXPR size_t len(const Char* s) {
   size_t len = 0;
   while (*s++) ++len;
   return len;
@@ -1964,12 +1967,12 @@ FMT_CONSTEXPR bool equal(const char* s1, const char* s2) {
   return *s1 == *s2;
 }
 
-template <typename... Args>
-FMT_CONSTEXPR bool test_error(const char* fmt, const char* expected_error) {
+template <typename Char, typename... Args>
+FMT_CONSTEXPR bool test_error(const Char* fmt, const char* expected_error) {
   const char* actual_error = nullptr;
-  auto s = string_view(fmt, len(fmt));
+  auto s = fmt::basic_string_view<Char>(fmt, len(fmt));
   auto checker =
-      fmt::detail::format_string_checker<char, test_error_handler, Args...>(
+      fmt::detail::format_string_checker<Char, test_error_handler, Args...>(
           s, test_error_handler(actual_error));
   fmt::detail::parse_format_string<true>(s, checker);
   return equal(actual_error, expected_error);
@@ -1978,7 +1981,7 @@ FMT_CONSTEXPR bool test_error(const char* fmt, const char* expected_error) {
 #  define EXPECT_ERROR_NOARGS(fmt, error) \
     static_assert(test_error(fmt, error), "")
 #  define EXPECT_ERROR(fmt, error, ...) \
-    static_assert(test_error<__VA_ARGS__>(fmt, error), "")
+    static_assert(test_error<char_t<decltype(fmt)>, __VA_ARGS__>(fmt, error), "")
 
 TEST(format_test, format_string_errors) {
   EXPECT_ERROR_NOARGS("foo", nullptr);
@@ -2041,6 +2044,9 @@ TEST(format_test, format_string_errors) {
   EXPECT_ERROR("{}{1}",
                "cannot switch from automatic to manual argument indexing", int,
                int);
+
+  EXPECT_ERROR(L"{:d}", "invalid type specifier", decltype(L""));
+  EXPECT_ERROR(u8"{:d}", "invalid type specifier", decltype(u8""));
 }
 
 TEST(format_test, vformat_to) {
