@@ -520,9 +520,9 @@ FMT_CONSTEXPR inline size_t compute_width(string_view s) {
           1 +
           (error == 0 && cp >= 0x1100 &&
            (cp <= 0x115f ||  // Hangul Jamo init. consonants
-            cp == 0x2329 ||  // LEFT-POINTING ANGLE BRACKET〈
-            cp == 0x232a ||  // RIGHT-POINTING ANGLE BRACKET 〉
-            // CJK ... Yi except Unicode Character “〿”:
+            cp == 0x2329 ||  // LEFT-POINTING ANGLE BRACKET
+            cp == 0x232a ||  // RIGHT-POINTING ANGLE BRACKET
+            // CJK ... Yi except IDEOGRAPHIC HALF FILL SPACE:
             (cp >= 0x2e80 && cp <= 0xa4cf && cp != 0x303f) ||
             (cp >= 0xac00 && cp <= 0xd7a3) ||    // Hangul Syllables
             (cp >= 0xf900 && cp <= 0xfaff) ||    // CJK Compatibility Ideographs
