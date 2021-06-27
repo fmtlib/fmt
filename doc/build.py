@@ -27,7 +27,7 @@ def create_build_env(venv_dir='virtualenv'):
   pip.install('wheel')
   pip.install('six')
   pip.install('sphinx-doc/sphinx', 'v3.3.0')
-  pip.install('michaeljones/breathe', 'v4.23.0')
+  pip.install('michaeljones/breathe', 'v4.30.0')
 
 def build_docs(version='dev', **kwargs):
   doc_dir = kwargs.get('doc_dir', os.path.dirname(os.path.realpath(__file__)))
@@ -58,6 +58,7 @@ def build_docs(version='dev', **kwargs):
       MACRO_EXPANSION   = YES
       PREDEFINED        = _WIN32=1 \
                           __linux__=1 \
+                          FMT_ENABLE_IF(...)=int = 0 \
                           FMT_USE_VARIADIC_TEMPLATES=1 \
                           FMT_USE_RVALUE_REFERENCES=1 \
                           FMT_USE_USER_DEFINED_LITERALS=1 \
@@ -66,6 +67,8 @@ def build_docs(version='dev', **kwargs):
                           "FMT_BEGIN_NAMESPACE=namespace fmt {{" \
                           "FMT_END_NAMESPACE=}}" \
                           "FMT_STRING_ALIAS=1" \
+                          "FMT_VARIADIC(...)=" \
+                          "FMT_VARIADIC_W(...)=" \
                           "FMT_DOC=1"
       EXCLUDE_SYMBOLS   = fmt::formatter fmt::printf_formatter fmt::arg_join \
                           fmt::basic_format_arg::handle
