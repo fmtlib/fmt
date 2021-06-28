@@ -332,9 +332,10 @@ struct monostate {
   constexpr monostate() {}
 };
 
-// Eliminate "unused variable" warnings on all compilers.  The `(void)var` method
-// does not work on many intel compilers.  This is from Herb Sutter, "Shutting
-// up compiler warnings", https://herbsutter.com/2009/10/18/mailbag-shutting-up-compiler-warnings/
+// Eliminate "unused variable" warnings on all compilers.  The
+// `(void)var` method does not work on many intel compilers.  This is
+// from Herb Sutter, "Shutting up compiler warnings",
+// https://herbsutter.com/2009/10/18/mailbag-shutting-up-compiler-warnings/
 template<class T> void ignore_unused( const T& ) { }
 
 // An enable_if helper to be used in template parameters which results in much
