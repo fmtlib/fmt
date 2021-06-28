@@ -115,12 +115,12 @@ TEST(ostream_test, write_to_ostream_max_size) {
   struct test_buffer final : fmt::detail::buffer<char> {
     explicit test_buffer(size_t size)
         : fmt::detail::buffer<char>(nullptr, size, size) {}
-    void grow(size_t) {}
+    void grow(size_t) override {}
   } buffer(max_size);
 
   struct mock_streambuf : std::streambuf {
     MOCK_METHOD2(xsputn, std::streamsize(const void* s, std::streamsize n));
-    std::streamsize xsputn(const char* s, std::streamsize n) {
+    std::streamsize xsputn(const char* s, std::streamsize n) override {
       const void* v = s;
       return xsputn(v, n);
     }

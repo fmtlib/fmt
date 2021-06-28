@@ -34,7 +34,7 @@ fmt::buffered_file open_buffered_file(FILE** fp = nullptr);
 inline FILE* safe_fopen(const char* filename, const char* mode) {
 #if defined(_WIN32) && !defined(__MINGW32__)
   // Fix MSVC warning about "unsafe" fopen.
-  FILE* f = 0;
+  FILE* f = nullptr;
   errno = fopen_s(&f, filename, mode);
   return f;
 #else

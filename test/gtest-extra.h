@@ -116,7 +116,7 @@ class output_redirect {
 class suppress_assert {
  private:
   _invalid_parameter_handler original_handler_;
-  int original_report_mode_;
+  FMT_MAYBE_UNUSED int original_report_mode_;
 
   static void handle_invalid_parameter(const wchar_t*, const wchar_t*,
                                        const wchar_t*, unsigned, uintptr_t) {}
