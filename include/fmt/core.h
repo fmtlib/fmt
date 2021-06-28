@@ -625,7 +625,7 @@ template <typename S> using char_t = typename detail::char_t_impl<S>::type;
   \rst
   Parsing context consisting of a format string range being parsed and an
   argument counter for automatic indexing.
-  You can use the ```format_parse_context`` type alias for ``char`` instead.
+  You can use the ``format_parse_context`` type alias for ``char`` instead.
   \endrst
  */
 template <typename Char, typename ErrorHandler = detail::error_handler>
