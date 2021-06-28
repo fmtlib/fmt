@@ -603,7 +603,7 @@ enum { inline_buffer_size = 500 };
   A dynamically growing memory buffer for trivially copyable/constructible types
   with the first ``SIZE`` elements stored in the object itself.
 
-  You can use the ```memory_buffer`` type alias for ``char`` instead.
+  You can use the ``memory_buffer`` type alias for ``char`` instead.
 
   **Example**::
 
