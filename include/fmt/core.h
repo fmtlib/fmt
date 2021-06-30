@@ -2427,7 +2427,7 @@ FMT_CONSTEXPR FMT_INLINE void parse_format_string(
       if (pbegin == pend) return;
       for (;;) {
         const Char* p = nullptr;
-        if (!find<IS_CONSTEXPR>(pbegin, pend, '}', p))
+        if (!find<IS_CONSTEXPR>(pbegin, pend, Char('}'), p))
           return handler_.on_text(pbegin, pend);
         ++p;
         if (p == pend || *p != '}')
@@ -2442,7 +2442,7 @@ FMT_CONSTEXPR FMT_INLINE void parse_format_string(
     // Doing two passes with memchr (one for '{' and another for '}') is up to
     // 2.5x faster than the naive one-pass implementation on big format strings.
     const Char* p = begin;
-    if (*begin != '{' && !find<IS_CONSTEXPR>(begin + 1, end, '{', p))
+    if (*begin != '{' && !find<IS_CONSTEXPR>(begin + 1, end, Char('{'), p))
       return write(begin, end);
     write(begin, p);
     begin = parse_replacement_field(p, end, handler);

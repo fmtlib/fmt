@@ -882,8 +882,10 @@ template <typename T = void> struct basic_data {
   FMT_API static constexpr const char signs[4] = {0, '-', '+', ' '};
   FMT_API static constexpr const unsigned prefixes[4] = {0, 0, 0x1000000u | '+',
                                                          0x1000000u | ' '};
-  FMT_API static constexpr const char left_padding_shifts[5] = {31, 31, 0, 1, 0};
-  FMT_API static constexpr const char right_padding_shifts[5] = {0, 31, 0, 1, 0};
+  FMT_API static constexpr const char left_padding_shifts[5] = {31, 31, 0, 1,
+                                                                0};
+  FMT_API static constexpr const char right_padding_shifts[5] = {0, 31, 0, 1,
+                                                                 0};
 };
 
 #ifdef FMT_SHARED
@@ -1023,7 +1025,7 @@ template <> inline auto decimal_point(locale_ref loc) -> wchar_t {
 
 // Compares two characters for equality.
 template <typename Char> auto equal2(const Char* lhs, const char* rhs) -> bool {
-  return lhs[0] == rhs[0] && lhs[1] == rhs[1];
+  return lhs[0] == Char(rhs[0]) && lhs[1] == Char(rhs[1]);
 }
 inline auto equal2(const char* lhs, const char* rhs) -> bool {
   return memcmp(lhs, rhs, 2) == 0;
