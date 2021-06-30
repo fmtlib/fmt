@@ -333,6 +333,12 @@ struct monostate {
   constexpr monostate() {}
 };
 
+// Eliminate "unused variable" warnings on all compilers.  The
+// `(void)var` method does not work on many intel compilers.  This is
+// from Herb Sutter, "Shutting up compiler warnings",
+// https://herbsutter.com/2009/10/18/mailbag-shutting-up-compiler-warnings/
+template <class T> void ignore_unused(const T&) {}
+
 // An enable_if helper to be used in template parameters which results in much
 // shorter symbols: https://godbolt.org/z/sWw4vP. Extra parentheses are needed
 // to workaround a bug in MSVC 2019 (see #1140 and #1186).
@@ -2739,7 +2745,7 @@ void check_format_string(S format_str) {
                                         remove_cvref_t<Args>...>;
   FMT_CONSTEXPR bool invalid_format =
       (parse_format_string<true>(s, checker(s, {})), true);
-  (void)invalid_format;
+  ignore_unused(invalid_format);
 }
 
 template <typename Char>
