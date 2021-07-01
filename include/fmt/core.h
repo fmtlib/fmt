@@ -532,39 +532,21 @@ using string_view = basic_string_view<char>;
 template <typename T> struct is_char : std::false_type {};
 template <> struct is_char<char> : std::true_type {};
 
-/**
-  \rst
-  Returns a string view of `s`. In order to add custom string type support to
-  {fmt} provide an overload of `to_string_view` for it in the same namespace as
-  the type for the argument-dependent lookup to work.
-
-  **Example**::
-
-    namespace my_ns {
-    inline string_view to_string_view(const my_string& s) {
-      return {s.data(), s.length()};
-    }
-    }
-    std::string message = fmt::format(my_string("The answer is {}"), 42);
-  \endrst
- */
+// Returns a string view of `s`.
 template <typename Char, FMT_ENABLE_IF(is_char<Char>::value)>
 FMT_INLINE auto to_string_view(const Char* s) -> basic_string_view<Char> {
   return s;
 }
-
 template <typename Char, typename Traits, typename Alloc>
 inline auto to_string_view(const std::basic_string<Char, Traits, Alloc>& s)
     -> basic_string_view<Char> {
   return s;
 }
-
 template <typename Char>
 constexpr auto to_string_view(basic_string_view<Char> s)
     -> basic_string_view<Char> {
   return s;
 }
-
 template <typename Char,
           FMT_ENABLE_IF(!std::is_empty<detail::std_string_view<Char>>::value)>
 inline auto to_string_view(detail::std_string_view<Char> s)
