@@ -1,5 +1,5 @@
-8.0.1 - TBD
------------
+8.0.1 - 2021-07-02
+------------------
 
 * Fixed the version number in the inline namespace
   (`#2374 <https://github.com/fmtlib/fmt/issues/2374>`_).
