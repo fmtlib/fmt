@@ -2734,7 +2734,7 @@ template <typename Char>
 void vformat_to(
     buffer<Char>& buf, basic_string_view<Char> fmt,
     basic_format_args<FMT_BUFFER_CONTEXT(type_identity_t<Char>)> args,
-    detail::locale_ref loc = {});
+    locale_ref loc = {});
 
 FMT_API void vprint_mojibake(std::FILE*, string_view, format_args);
 #ifndef _WIN32
@@ -2892,7 +2892,7 @@ template <typename OutputIt,
 auto vformat_to(OutputIt out, string_view fmt, format_args args) -> OutputIt {
   using detail::get_buffer;
   auto&& buf = get_buffer<char>(out);
-  detail::vformat_to(buf, string_view(fmt), args);
+  detail::vformat_to(buf, string_view(fmt), args, {});
   return detail::get_iterator(buf);
 }
 
@@ -2929,7 +2929,7 @@ auto vformat_to_n(OutputIt out, size_t n, string_view fmt, format_args args)
   using buffer =
       detail::iterator_buffer<OutputIt, char, detail::fixed_buffer_traits>;
   auto buf = buffer(out, n);
-  detail::vformat_to(buf, fmt, args);
+  detail::vformat_to(buf, fmt, args, {});
   return {buf.out(), buf.count()};
 }
 
@@ -2951,7 +2951,7 @@ FMT_INLINE auto format_to_n(OutputIt out, size_t n, format_string<T...> fmt,
 template <typename... T>
 FMT_INLINE auto formatted_size(format_string<T...> fmt, T&&... args) -> size_t {
   auto buf = detail::counting_buffer<>();
-  detail::vformat_to(buf, string_view(fmt), fmt::make_format_args(args...));
+  detail::vformat_to(buf, string_view(fmt), fmt::make_format_args(args...), {});
   return buf.count();
 }
 
