@@ -1,10 +1,51 @@
 8.0.1 - TBD
 -----------
 
+* Fixed the version number in the inline namespace
+  (`#2374 <https://github.com/fmtlib/fmt/issues/2374>`_).
+
 * Added a missing presentation type check for ``std::string``
   (`#2402 <https://github.com/fmtlib/fmt/issues/2402>`_).
 
-* Fixed documentation (`#2403 <https://github.com/fmtlib/fmt/issues/2403>`_).
+* Fixed a linkage error when mixing code built with clang and gcc
+  (`#2377 <https://github.com/fmtlib/fmt/issues/2377>`_).
+
+* Fixed documentation issues
+  (`#2396 <https://github.com/fmtlib/fmt/pull/2396>`_,
+  `#2403 <https://github.com/fmtlib/fmt/issues/2403>`_,
+  `#2406 <https://github.com/fmtlib/fmt/issues/2406>`_).
+  Thanks `@mkurdej (Marek Kurdej) <https://github.com/mkurdej>`_.
+
+* Removed dead code in FP formatter (
+  `#2398 <https://github.com/fmtlib/fmt/pull/2398>`_).
+  Thanks `@javierhonduco (Javier Honduvilla Coto)
+  <https://github.com/javierhonduco>`_.
+
+* Fixed various warnings and compilation issues
+  (`#2351 <https://github.com/fmtlib/fmt/issues/2351>`_,
+  `#2359 <https://github.com/fmtlib/fmt/issues/2359>`_,
+  `#2365 <https://github.com/fmtlib/fmt/pull/2365>`_,
+  `#2368 <https://github.com/fmtlib/fmt/issues/2368>`_,
+  `#2370 <https://github.com/fmtlib/fmt/pull/2370>`_,
+  `#2376 <https://github.com/fmtlib/fmt/pull/2376>`_,
+  `#2381 <https://github.com/fmtlib/fmt/pull/2381>`_,
+  `#2382 <https://github.com/fmtlib/fmt/pull/2382>`_,
+  `#2386 <https://github.com/fmtlib/fmt/issues/2386>`_,
+  `#2389 <https://github.com/fmtlib/fmt/pull/2389>`_,
+  `#2395 <https://github.com/fmtlib/fmt/pull/2395>`_,
+  `#2397 <https://github.com/fmtlib/fmt/pull/2397>`_,
+  `#2400 <https://github.com/fmtlib/fmt/issues/2400>`_
+  `#2401 <https://github.com/fmtlib/fmt/issues/2401>`_,
+  `#2407 <https://github.com/fmtlib/fmt/pull/2407>`_).
+  Thanks `@zx2c4 (Jason A. Donenfeld) <https://github.com/zx2c4>`_,
+  `@AidanSun05 (Aidan Sun) <https://github.com/AidanSun05>`_,
+  `@mattiasljungstrom (Mattias Ljungström)
+  <https://github.com/mattiasljungstrom>`_,
+  `@joemmett (Jonathan Emmett) <https://github.com/joemmett>`_,
+  `@erengy (Eren Okka) <https://github.com/erengy>`_,
+  `@patlkli (Patrick Geltinger) <https://github.com/patlkli>`_,
+  `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_,
+  `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
 
 8.0.0 - 2021-06-21
 ------------------
