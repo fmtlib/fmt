@@ -337,7 +337,7 @@ struct monostate {
 // `(void)var` method does not work on many intel compilers.  This is
 // from Herb Sutter, "Shutting up compiler warnings",
 // https://herbsutter.com/2009/10/18/mailbag-shutting-up-compiler-warnings/
-template <class T> void ignore_unused(const T&) {}
+template <class... Ts> FMT_CONSTEXPR void ignore_unused(const Ts&...) {}
 
 // An enable_if helper to be used in template parameters which results in much
 // shorter symbols: https://godbolt.org/z/sWw4vP. Extra parentheses are needed
@@ -367,7 +367,8 @@ FMT_NORETURN FMT_API void assert_fail(const char* file, int line,
 #ifndef FMT_ASSERT
 #  ifdef NDEBUG
 // FMT_ASSERT is not empty to avoid -Werror=empty-body.
-#    define FMT_ASSERT(condition, message) ((void)0)
+#    define FMT_ASSERT(condition, message) \
+      ::fmt::ignore_unused((condition), (message))
 #  else
 #    define FMT_ASSERT(condition, message)                                    \
       ((condition) /* void() fails with -Winvalid-constexpr on clang 4.0.1 */ \
