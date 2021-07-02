@@ -1,3 +1,11 @@
+8.0.1 - TBD
+-----------
+
+* Added a missing presentation type check for ``std::string``
+  (`#2402 <https://github.com/fmtlib/fmt/issues/2402>`_).
+
+* Fixed documentation (`#2403 <https://github.com/fmtlib/fmt/issues/2403>`_).
+
 8.0.0 - 2021-06-21
 ------------------
 
