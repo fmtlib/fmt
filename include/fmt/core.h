@@ -2577,8 +2577,8 @@ FMT_CONSTEXPR auto check_cstring_type_spec(Char spec, ErrorHandler&& eh = {})
   return false;
 }
 
-template <typename Char, typename ErrorHandler>
-FMT_CONSTEXPR void check_string_type_spec(Char spec, ErrorHandler&& eh) {
+template <typename Char, typename ErrorHandler = error_handler>
+FMT_CONSTEXPR void check_string_type_spec(Char spec, ErrorHandler&& eh = {}) {
   if (spec != 0 && spec != 's') eh.on_error("invalid type specifier");
 }
 

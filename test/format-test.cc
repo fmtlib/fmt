@@ -1390,6 +1390,8 @@ TEST(format_test, format_pointer) {
 
 TEST(format_test, format_string) {
   EXPECT_EQ("test", fmt::format("{0}", std::string("test")));
+  EXPECT_THROW(fmt::format(fmt::runtime("{:x}"), std::string("test")),
+               fmt::format_error);
 }
 
 TEST(format_test, format_string_view) {

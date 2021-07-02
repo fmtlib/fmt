@@ -1569,6 +1569,7 @@ FMT_CONSTEXPR auto write(OutputIt out,
                          basic_string_view<type_identity_t<Char>> s,
                          const basic_format_specs<Char>& specs, locale_ref)
     -> OutputIt {
+  check_string_type_spec(specs.type);
   return write(out, s, specs);
 }
 template <typename Char, typename OutputIt>
