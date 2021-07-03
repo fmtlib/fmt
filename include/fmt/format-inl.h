@@ -564,7 +564,6 @@ class bigint {
       sum >>= bits<bigit>::value;
     }
     remove_leading_zeros();
-    exp_ *= 2;
   }
 
   // If this bigint has a bigger exponent than other, adds trailing zero to make
