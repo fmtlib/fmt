@@ -143,10 +143,10 @@ Output::
 
 .. code:: c++
 
-    std::string s = fmt::format(FMT_STRING("{:d}"), "I am not a number");
+    std::string s = fmt::format("{:d}", "I am not a number");
 
-This gives a compile-time error because ``d`` is an invalid format specifier for
-a string.
+This gives a compile-time error in C++20 because ``d`` is an invalid format
+specifier for a string.
 
 **Write a file from a single thread**
 
