@@ -15,6 +15,8 @@
 #  define FMT_HIDE_MODULE_BUGS
 #endif
 
+#define FMT_MODULE_TEST
+
 #include <bit>
 #include <chrono>
 #include <exception>
