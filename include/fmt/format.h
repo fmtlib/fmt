@@ -1634,7 +1634,7 @@ inline auto get_significand_size(const dragonbox::decimal_fp<T>& fp) -> int {
 
 template <typename Char, typename OutputIt>
 inline auto write_significand(OutputIt out, const char* significand,
-                              int& significand_size) -> OutputIt {
+                              int significand_size) -> OutputIt {
   return copy_str<Char>(significand, significand + significand_size, out);
 }
 template <typename Char, typename OutputIt, typename UInt>
