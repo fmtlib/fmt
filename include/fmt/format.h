@@ -1393,56 +1393,74 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, int num_digits,
       });
 }
 
+template <typename Char> class digit_grouping {
+ private:
+  thousands_sep_result<Char> sep_;
+  std::string::const_iterator group_;
+  int pos_;
+
+ public:
+  explicit digit_grouping(locale_ref loc) {
+    if (loc) {
+      sep_ = thousands_sep<Char>(loc);
+      reset();
+    } else {
+      sep_.thousands_sep = Char();
+    }
+  }
+
+  void reset() {
+    group_ = sep_.grouping.begin();
+    pos_ = 0;
+  }
+
+  // Returns the next digit group separator position.
+  int next() {
+    if (!sep_.thousands_sep) return max_value<int>();
+    if (group_ == sep_.grouping.end()) return pos_ += sep_.grouping.back();
+    if (*group_ <= 0 || *group_ == max_value<char>()) return max_value<int>();
+    pos_ += *group_++;
+    return pos_;
+  }
+
+  int count_separators(int num_digits) {
+    int count = 0;
+    while (num_digits > next()) ++count;
+    reset();
+    return count;
+  }
+
+  Char separator() const { return sep_.thousands_sep; }
+};
+
 template <typename OutputIt, typename UInt, typename Char>
 auto write_int_localized(OutputIt& out, UInt value, unsigned prefix,
                          const basic_format_specs<Char>& specs, locale_ref loc)
     -> bool {
   static_assert(std::is_same<uint64_or_128_t<UInt>, UInt>::value, "");
-  const auto sep_size = 1;
-  auto ts = thousands_sep<Char>(loc);
-  if (!ts.thousands_sep) return false;
   int num_digits = count_digits(value);
-  int size = num_digits, n = num_digits;
-  const std::string& groups = ts.grouping;
-  std::string::const_iterator group = groups.cbegin();
-  while (group != groups.cend() && n > *group && *group > 0 &&
-         *group != max_value<char>()) {
-    size += sep_size;
-    n -= *group;
-    ++group;
-  }
-  if (group == groups.cend()) size += sep_size * ((n - 1) / groups.back());
   char digits[40];
   format_decimal(digits, value, num_digits);
-  basic_memory_buffer<Char> buffer;
-  if (prefix != 0) ++size;
-  const auto usize = to_unsigned(size);
-  buffer.resize(usize);
-  basic_string_view<Char> s(&ts.thousands_sep, sep_size);
-  // Index of a decimal digit with the least significant digit having index 0.
-  int digit_index = 0;
-  group = groups.cbegin();
-  auto p = buffer.data() + size - 1;
-  for (int i = num_digits - 1; i > 0; --i) {
-    *p-- = static_cast<Char>(digits[i]);
-    if (*group <= 0 || ++digit_index % *group != 0 ||
-        *group == max_value<char>())
-      continue;
-    if (group + 1 != groups.cend()) {
-      digit_index = 0;
-      ++group;
+
+  auto grouping = digit_grouping<Char>(loc);
+  unsigned size = to_unsigned((prefix != 0 ? 1 : 0) + num_digits +
+                              grouping.count_separators(num_digits));
+  auto buffer = basic_memory_buffer<Char>();
+  buffer.resize(size);
+  int separator_pos = grouping.next();
+  auto p = buffer.data() + size;
+  for (int i = 0; i < num_digits; ++i) {
+    if (i == separator_pos) {
+      *--p = grouping.separator();
+      separator_pos = grouping.next();
     }
-    std::uninitialized_copy(s.data(), s.data() + s.size(),
-                            make_checked(p, s.size()));
-    p -= s.size();
+    *--p = static_cast<Char>(digits[num_digits - i - 1]);
   }
-  *p-- = static_cast<Char>(*digits);
-  if (prefix != 0) *p = static_cast<Char>(prefix);
-  auto data = buffer.data();
-  out = write_padded<align::right>(
-      out, specs, usize, usize, [=](reserve_iterator<OutputIt> it) {
-        return copy_str<Char>(data, data + size, it);
-      });
+  if (prefix != 0) *--p = static_cast<Char>(prefix);
+  out = write_padded<align::right>(out, specs, size, size,
+                                   [=](reserve_iterator<OutputIt> it) {
+                                     return copy_str<Char>(p, p + size, it);
+                                   });
   return true;
 }
 
@@ -1669,13 +1687,16 @@ inline auto write_significand(OutputIt out, const char* significand,
 template <typename OutputIt, typename DecimalFP, typename Char>
 auto write_float(OutputIt out, const DecimalFP& fp,
                  const basic_format_specs<Char>& specs, float_specs fspecs,
-                 Char decimal_point) -> OutputIt {
+                 locale_ref loc) -> OutputIt {
   auto significand = fp.significand;
   int significand_size = get_significand_size(fp);
   static const Char zero = static_cast<Char>('0');
   auto sign = fspecs.sign;
   size_t size = to_unsigned(significand_size) + (sign ? 1 : 0);
   using iterator = reserve_iterator<OutputIt>;
+
+  Char decimal_point =
+      fspecs.locale ? detail::decimal_point<Char>(loc) : static_cast<Char>('.');
 
   int output_exp = fp.exponent + significand_size - 1;
   auto use_exp_format = [=]() {
@@ -1808,10 +1829,8 @@ auto write(OutputIt out, T value, basic_format_specs<Char> specs,
   fspecs.use_grisu = is_fast_float<T>();
   int exp = format_float(promote_float(value), precision, fspecs, buffer);
   fspecs.precision = precision;
-  Char point =
-      fspecs.locale ? decimal_point<Char>(loc) : static_cast<Char>('.');
   auto fp = big_decimal_fp{buffer.data(), static_cast<int>(buffer.size()), exp};
-  return write_float(out, fp, specs, fspecs, point);
+  return write_float(out, fp, specs, fspecs, loc);
 }
 
 template <typename Char, typename OutputIt, typename T,
@@ -1836,7 +1855,7 @@ auto write(OutputIt out, T value) -> OutputIt {
     return write_nonfinite(out, std::isinf(value), specs, fspecs);
 
   auto dec = dragonbox::to_decimal(static_cast<floaty>(value));
-  return write_float(out, dec, specs, fspecs, static_cast<Char>('.'));
+  return write_float(out, dec, specs, fspecs, {});
 }
 
 template <typename Char, typename OutputIt, typename T,
