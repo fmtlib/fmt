@@ -129,6 +129,7 @@ class suppress_assert {
   ~suppress_assert() {
     _set_invalid_parameter_handler(original_handler_);
     _CrtSetReportMode(_CRT_ASSERT, original_report_mode_);
+    (void)original_report_mode_;
   }
 };
 

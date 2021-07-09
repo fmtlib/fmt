@@ -151,7 +151,9 @@ TEST(buffer_test, indestructible) {
 template <typename T> struct mock_buffer final : buffer<T> {
   MOCK_METHOD1(do_grow, size_t(size_t capacity));
 
-  void grow(size_t capacity) { this->set(this->data(), do_grow(capacity)); }
+  void grow(size_t capacity) override {
+    this->set(this->data(), do_grow(capacity));
+  }
 
   mock_buffer(T* data = nullptr, size_t buf_capacity = 0) {
     this->set(data, buf_capacity);
@@ -452,7 +454,7 @@ struct check_custom {
     struct test_buffer final : fmt::detail::buffer<char> {
       char data[10];
       test_buffer() : fmt::detail::buffer<char>(data, 0, 10) {}
-      void grow(size_t) {}
+      void grow(size_t) override {}
     } buffer;
     auto parse_ctx = fmt::format_parse_context("");
     auto ctx = fmt::format_context(fmt::detail::buffer_appender<char>(buffer),

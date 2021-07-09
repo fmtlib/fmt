@@ -41,9 +41,9 @@ TEST(util_test, utf16_to_utf8_empty_string) {
 }
 
 template <typename Converter, typename Char>
-void check_utf_conversion_error(
-    const char* message,
-    fmt::basic_string_view<Char> str = fmt::basic_string_view<Char>(0, 1)) {
+void check_utf_conversion_error(const char* message,
+                                fmt::basic_string_view<Char> str =
+                                    fmt::basic_string_view<Char>(nullptr, 1)) {
   fmt::memory_buffer out;
   fmt::detail::format_windows_error(out, ERROR_INVALID_PARAMETER, message);
   auto error = std::system_error(std::error_code());
@@ -63,7 +63,7 @@ TEST(util_test, utf16_to_utf8_error) {
 
 TEST(util_test, utf16_to_utf8_convert) {
   fmt::detail::utf16_to_utf8 u;
-  EXPECT_EQ(ERROR_INVALID_PARAMETER, u.convert(wstring_view(0, 1)));
+  EXPECT_EQ(ERROR_INVALID_PARAMETER, u.convert(wstring_view(nullptr, 1)));
   EXPECT_EQ(ERROR_INVALID_PARAMETER,
             u.convert(wstring_view(L"foo", INT_MAX + 1u)));
 }
@@ -81,12 +81,12 @@ TEST(os_test, format_std_error_code) {
 }
 
 TEST(os_test, format_windows_error) {
-  LPWSTR message = 0;
+  LPWSTR message = nullptr;
   auto result = FormatMessageW(
       FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
           FORMAT_MESSAGE_IGNORE_INSERTS,
-      0, ERROR_FILE_EXISTS, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-      reinterpret_cast<LPWSTR>(&message), 0, 0);
+      nullptr, ERROR_FILE_EXISTS, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+      reinterpret_cast<LPWSTR>(&message), 0, nullptr);
   fmt::detail::utf16_to_utf8 utf8_message(wstring_view(message, result - 2));
   LocalFree(message);
   fmt::memory_buffer actual_message;
@@ -97,17 +97,17 @@ TEST(os_test, format_windows_error) {
 }
 
 TEST(os_test, format_long_windows_error) {
-  LPWSTR message = 0;
+  LPWSTR message = nullptr;
   // this error code is not available on all Windows platforms and
   // Windows SDKs, so do not fail the test if the error string cannot
   // be retrieved.
   int provisioning_not_allowed = 0x80284013L;  // TBS_E_PROVISIONING_NOT_ALLOWED
-  auto result = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                                   FORMAT_MESSAGE_FROM_SYSTEM |
-                                   FORMAT_MESSAGE_IGNORE_INSERTS,
-                               0, static_cast<DWORD>(provisioning_not_allowed),
-                               MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                               reinterpret_cast<LPWSTR>(&message), 0, 0);
+  auto result = FormatMessageW(
+      FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+          FORMAT_MESSAGE_IGNORE_INSERTS,
+      nullptr, static_cast<DWORD>(provisioning_not_allowed),
+      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+      reinterpret_cast<LPWSTR>(&message), 0, nullptr);
   if (result == 0) {
     LocalFree(message);
     return;
