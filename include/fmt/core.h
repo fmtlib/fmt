@@ -333,11 +333,6 @@ struct monostate {
   constexpr monostate() {}
 };
 
-// Suppress "unused variable" warnings with the method described in
-// https://herbsutter.com/2009/10/18/mailbag-shutting-up-compiler-warnings/.
-// (void)var does not work on many Intel compilers.
-template <typename... T> FMT_CONSTEXPR void ignore_unused(const T&...) {}
-
 // An enable_if helper to be used in template parameters which results in much
 // shorter symbols: https://godbolt.org/z/sWw4vP. Extra parentheses are needed
 // to workaround a bug in MSVC 2019 (see #1140 and #1186).
@@ -348,6 +343,11 @@ template <typename... T> FMT_CONSTEXPR void ignore_unused(const T&...) {}
 #endif
 
 FMT_BEGIN_DETAIL_NAMESPACE
+
+// Suppress "unused variable" warnings with the method described in
+// https://herbsutter.com/2009/10/18/mailbag-shutting-up-compiler-warnings/.
+// (void)var does not work on many Intel compilers.
+template <typename... T> FMT_CONSTEXPR void ignore_unused(const T&...) {}
 
 constexpr FMT_INLINE auto is_constant_evaluated() FMT_NOEXCEPT -> bool {
 #ifdef __cpp_lib_is_constant_evaluated
@@ -367,7 +367,7 @@ FMT_NORETURN FMT_API void assert_fail(const char* file, int line,
 #  ifdef NDEBUG
 // FMT_ASSERT is not empty to avoid -Werror=empty-body.
 #    define FMT_ASSERT(condition, message) \
-      ::fmt::ignore_unused((condition), (message))
+      ::fmt::detail::ignore_unused((condition), (message))
 #  else
 #    define FMT_ASSERT(condition, message)                                    \
       ((condition) /* void() fails with -Winvalid-constexpr on clang 4.0.1 */ \
