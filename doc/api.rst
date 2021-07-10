@@ -350,8 +350,8 @@ allocator::
 
     custom_string vformat(custom_allocator alloc, fmt::string_view format_str,
                           fmt::format_args args) {
-      custom_memory_buffer buf(alloc);
-      fmt::vformat_to(buf, format_str, args);
+      auto buf = custom_memory_buffer(alloc);
+      fmt::vformat_to(std::back_inserter(buf), format_str, args);
       return custom_string(buf.data(), buf.size(), alloc);
     }
 
