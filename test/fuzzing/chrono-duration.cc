@@ -13,8 +13,8 @@ void invoke_inner(fmt::string_view format_str, Rep rep) {
 #if FMT_FUZZ_FORMAT_TO_STRING
     std::string message = fmt::format(format_str, value);
 #else
-    fmt::memory_buffer buf;
-    fmt::format_to(buf, format_str, value);
+    auto buf = fmt::memory_buffer();
+    fmt::format_to(std::back_inserter(buf), format_str, value);
 #endif
   } catch (std::exception&) {
   }
