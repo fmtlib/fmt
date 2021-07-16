@@ -246,20 +246,17 @@ FMT_END_NAMESPACE
 
 FMT_BEGIN_NAMESPACE
 namespace detail {
-
-#if __cplusplus >= 202002L || \
-    (__cplusplus >= 201709L && FMT_GCC_VERSION >= 1002)
-#  define FMT_CONSTEXPR20 constexpr
-#else
-#  define FMT_CONSTEXPR20
-#endif
-
 // An equivalent of `*reinterpret_cast<Dest*>(&source)` that doesn't have
 // undefined behavior (e.g. due to type aliasing).
 // Example: uint64_t d = bit_cast<uint64_t>(2.718);
 template <typename Dest, typename Source>
-inline auto bit_cast(const Source& source) -> Dest {
+FMT_CONSTEXPR20 auto bit_cast(const Source& source) -> Dest {
   static_assert(sizeof(Dest) == sizeof(Source), "size mismatch");
+#ifdef __cpp_lib_bit_cast
+  if (is_constant_evaluated()) {
+    return std::bit_cast<Dest>(source);
+  }
+#endif
   Dest dest;
   std::memcpy(&dest, &source, sizeof(dest));
   return dest;
@@ -344,7 +341,9 @@ template <typename T> auto make_checked(T* p, size_t size) -> checked_ptr<T> {
 }
 #else
 template <typename T> using checked_ptr = T*;
-template <typename T> inline auto make_checked(T* p, size_t) -> T* { return p; }
+template <typename T> constexpr auto make_checked(T* p, size_t) -> T* {
+  return p;
+}
 #endif
 
 // Attempts to reserve space for n extra characters in the output range.
@@ -629,7 +628,7 @@ class basic_memory_buffer final : public detail::buffer<T> {
   Allocator alloc_;
 
   // Deallocate memory allocated by the buffer.
-  void deallocate() {
+  FMT_CONSTEXPR20 void deallocate() {
     T* data = this->data();
     if (data != store_) alloc_.deallocate(data, this->capacity());
   }
@@ -641,22 +640,31 @@ class basic_memory_buffer final : public detail::buffer<T> {
   using value_type = T;
   using const_reference = const T&;
 
-  explicit basic_memory_buffer(const Allocator& alloc = Allocator())
+  FMT_CONSTEXPR20 explicit basic_memory_buffer(
+      const Allocator& alloc = Allocator())
       : alloc_(alloc) {
     this->set(store_, SIZE);
+    if (detail::is_constant_evaluated()) {
+      detail::fill_n(store_, SIZE, T{});
+    }
   }
-  ~basic_memory_buffer() { deallocate(); }
+  FMT_CONSTEXPR20 ~basic_memory_buffer() { deallocate(); }
 
  private:
   // Move data from other to this buffer.
-  void move(basic_memory_buffer& other) {
+  FMT_CONSTEXPR20 void move(basic_memory_buffer& other) {
     alloc_ = std::move(other.alloc_);
     T* data = other.data();
     size_t size = other.size(), capacity = other.capacity();
     if (data == other.store_) {
       this->set(store_, capacity);
-      std::uninitialized_copy(other.store_, other.store_ + size,
-                              detail::make_checked(store_, capacity));
+      if (detail::is_constant_evaluated()) {
+        detail::copy_str<T>(other.store_, other.store_ + size,
+                            detail::make_checked(store_, capacity));
+      } else {
+        std::uninitialized_copy(other.store_, other.store_ + size,
+                                detail::make_checked(store_, capacity));
+      }
     } else {
       this->set(data, capacity);
       // Set pointer to the inline array so that delete is not called
@@ -673,7 +681,10 @@ class basic_memory_buffer final : public detail::buffer<T> {
     of the other object to it.
     \endrst
    */
-  basic_memory_buffer(basic_memory_buffer&& other) FMT_NOEXCEPT { move(other); }
+  FMT_CONSTEXPR20 basic_memory_buffer(basic_memory_buffer&& other)
+      FMT_NOEXCEPT {
+    move(other);
+  }
 
   /**
     \rst
@@ -695,7 +706,7 @@ class basic_memory_buffer final : public detail::buffer<T> {
     Resizes the buffer to contain *count* elements. If T is a POD type new
     elements may not be initialized.
    */
-  void resize(size_t count) { this->try_resize(count); }
+  FMT_CONSTEXPR20 void resize(size_t count) { this->try_resize(count); }
 
   /** Increases the buffer capacity to *new_capacity*. */
   void reserve(size_t new_capacity) { this->try_reserve(new_capacity); }
@@ -1226,7 +1237,7 @@ constexpr auto exponent_mask() ->
 
 // Writes the exponent exp in the form "[+-]d{2,3}" to buffer.
 template <typename Char, typename It>
-auto write_exponent(int exp, It it) -> It {
+FMT_CONSTEXPR20 auto write_exponent(int exp, It it) -> It {
   FMT_ASSERT(-10000 < exp && exp < 10000, "exponent out of range");
   if (exp < 0) {
     *it++ = static_cast<Char>('-');
@@ -1247,16 +1258,22 @@ auto write_exponent(int exp, It it) -> It {
 }
 
 template <typename T>
-auto format_float(T value, int precision, float_specs specs, buffer<char>& buf)
-    -> int;
+#ifdef FMT_HEADER_ONLY
+FMT_CONSTEXPR20
+#endif
+    auto
+    format_float(T value, int precision, float_specs specs, buffer<char>& buf)
+        -> int;
 
 // Formats a floating-point number with snprintf.
 template <typename T>
 auto snprintf_float(T value, int precision, float_specs specs,
                     buffer<char>& buf) -> int;
 
-template <typename T> auto promote_float(T value) -> T { return value; }
-inline auto promote_float(float value) -> double {
+template <typename T> constexpr auto promote_float(T value) -> T {
+  return value;
+}
+constexpr auto promote_float(float value) -> double {
   return static_cast<double>(value);
 }
 
@@ -1600,8 +1617,9 @@ FMT_CONSTEXPR auto write(OutputIt out, const Char* s,
 }
 
 template <typename Char, typename OutputIt>
-auto write_nonfinite(OutputIt out, bool isinf, basic_format_specs<Char> specs,
-                     const float_specs& fspecs) -> OutputIt {
+FMT_CONSTEXPR20 auto write_nonfinite(OutputIt out, bool isinf,
+                                     basic_format_specs<Char> specs,
+                                     const float_specs& fspecs) -> OutputIt {
   auto str =
       isinf ? (fspecs.upper ? "INF" : "inf") : (fspecs.upper ? "NAN" : "nan");
   constexpr size_t str_size = 3;
@@ -1624,7 +1642,7 @@ struct big_decimal_fp {
   int exponent;
 };
 
-inline auto get_significand_size(const big_decimal_fp& fp) -> int {
+constexpr auto get_significand_size(const big_decimal_fp& fp) -> int {
   return fp.significand_size;
 }
 template <typename T>
@@ -1633,8 +1651,8 @@ inline auto get_significand_size(const dragonbox::decimal_fp<T>& fp) -> int {
 }
 
 template <typename Char, typename OutputIt>
-inline auto write_significand(OutputIt out, const char* significand,
-                              int significand_size) -> OutputIt {
+FMT_CONSTEXPR auto write_significand(OutputIt out, const char* significand,
+                                     int significand_size) -> OutputIt {
   return copy_str<Char>(significand, significand + significand_size, out);
 }
 template <typename Char, typename OutputIt, typename UInt>
@@ -1673,9 +1691,9 @@ inline auto write_significand(OutputIt out, UInt significand,
 }
 
 template <typename OutputIt, typename Char>
-inline auto write_significand(OutputIt out, const char* significand,
-                              int significand_size, int integral_size,
-                              Char decimal_point) -> OutputIt {
+FMT_CONSTEXPR auto write_significand(OutputIt out, const char* significand,
+                                     int significand_size, int integral_size,
+                                     Char decimal_point) -> OutputIt {
   out = detail::copy_str_noinline<Char>(significand,
                                         significand + integral_size, out);
   if (!decimal_point) return out;
@@ -1685,12 +1703,13 @@ inline auto write_significand(OutputIt out, const char* significand,
 }
 
 template <typename OutputIt, typename DecimalFP, typename Char>
-auto write_float(OutputIt out, const DecimalFP& fp,
-                 const basic_format_specs<Char>& specs, float_specs fspecs,
-                 locale_ref loc) -> OutputIt {
+FMT_CONSTEXPR20 auto write_float(OutputIt out, const DecimalFP& fp,
+                                 const basic_format_specs<Char>& specs,
+                                 float_specs fspecs, locale_ref loc)
+    -> OutputIt {
   auto significand = fp.significand;
   int significand_size = get_significand_size(fp);
-  static const Char zero = static_cast<Char>('0');
+  constexpr const Char zero = static_cast<Char>('0');
   auto sign = fspecs.sign;
   size_t size = to_unsigned(significand_size) + (sign ? 1 : 0);
   using iterator = reserve_iterator<OutputIt>;
@@ -1788,12 +1807,32 @@ auto write_float(OutputIt out, const DecimalFP& fp,
 
 template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(std::is_floating_point<T>::value)>
-auto write(OutputIt out, T value, basic_format_specs<Char> specs,
-           locale_ref loc = {}) -> OutputIt {
+FMT_CONSTEXPR20 auto write(OutputIt out, T value,
+                           basic_format_specs<Char> specs, locale_ref loc = {})
+    -> OutputIt {
   if (const_check(!is_supported_floating_point(value))) return out;
   float_specs fspecs = parse_float_type_spec(specs);
   fspecs.sign = specs.sign;
-  if (std::signbit(value)) {  // value < 0 is false for NaN so use signbit.
+  bool is_negative;
+#ifdef __cpp_if_constexpr
+  if (is_constant_evaluated()) {
+    // bit check below is valid only for "fast float" types
+    if constexpr (is_fast_float<T>::value) {
+      using floaty =
+          conditional_t<std::is_same<T, long double>::value, double, T>;
+      using uint = typename dragonbox::float_info<floaty>::carrier_uint;
+      auto bits = bit_cast<uint>(value);
+      is_negative = (bits & (uint(1) << (num_bits<uint>() - 1))) != 0;
+    } else {
+      FMT_ASSERT(false, "floating point type is not supported");
+    }
+  } else
+#endif
+  {
+    // value < 0 is false for NaN so use signbit.
+    is_negative = std::signbit(value);
+  }
+  if (is_negative) {
     fspecs.sign = sign::minus;
     value = -value;
   } else if (fspecs.sign == sign::minus) {
@@ -1835,7 +1874,11 @@ auto write(OutputIt out, T value, basic_format_specs<Char> specs,
 
 template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(is_fast_float<T>::value)>
-auto write(OutputIt out, T value) -> OutputIt {
+FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
+  if (is_constant_evaluated()) {
+    return write(out, value, basic_format_specs<Char>());
+  }
+
   if (const_check(!is_supported_floating_point(value))) return out;
 
   using floaty = conditional_t<std::is_same<T, long double>::value, double, T>;
@@ -1849,7 +1892,7 @@ auto write(OutputIt out, T value) -> OutputIt {
     value = -value;
   }
 
-  static const auto specs = basic_format_specs<Char>();
+  constexpr auto specs = basic_format_specs<Char>();
   uint mask = exponent_mask<floaty>();
   if ((bits & mask) == mask)
     return write_nonfinite(out, std::isinf(value), specs, fspecs);

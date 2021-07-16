@@ -43,6 +43,11 @@ jobs:
             cxxflags: -stdlib=libc++
             os: ubuntu-20.04
             install: sudo apt install libc++-11-dev libc++abi-11-dev
+          - cxx: g++-11
+            build_type: Debug
+            std: 20
+            os: ubuntu-20.04
+            install: sudo apt install g++-11
           - shared: -DBUILD_SHARED_LIBS=ON
 
     steps:
