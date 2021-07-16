@@ -24,10 +24,11 @@ jobs:
             build_type: Debug
             std: 17
             os: ubuntu-18.04
-          - cxx: g++-10
+          - cxx: g++-11
             build_type: Debug
             std: 20
             os: ubuntu-20.04
+            install: sudo apt install g++-11
           - cxx: clang++-9
             build_type: Debug
             fuzz: -DFMT_FUZZ=ON -DFMT_FUZZ_LINKMAIN=ON
