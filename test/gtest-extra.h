@@ -12,7 +12,12 @@
 
 #include <string>
 
+#ifdef FMT_MODULE_TEST
+import fmt;
+#else
 #include "fmt/os.h"
+#endif // FMG_MODULE_TEST
+
 #include "gmock/gmock.h"
 
 #define FMT_TEST_THROW_(statement, expected_exception, expected_message, fail) \

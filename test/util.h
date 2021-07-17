@@ -10,7 +10,11 @@
 #include <locale>
 #include <string>
 
+#ifdef FMT_MODULE_TEST
+import fmt;
+#else
 #include "fmt/os.h"
+#endif // FMT_MODULE_TEST
 
 #ifdef _MSC_VER
 #  define FMT_VSNPRINTF vsprintf_s
