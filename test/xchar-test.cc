@@ -301,10 +301,12 @@ template <typename Char> struct small_grouping : std::numpunct<Char> {
   Char do_thousands_sep() const override { return ','; }
 };
 
-TEST(locale_test, double_decimal_point) {
+TEST(locale_test, localized_double) {
   auto loc = std::locale(std::locale(), new numpunct<char>());
   EXPECT_EQ("1?23", fmt::format(loc, "{:L}", 1.23));
   EXPECT_EQ("1?230000", fmt::format(loc, "{:Lf}", 1.23));
+  EXPECT_EQ("1~234?5", fmt::format(loc, "{:L}", 1234.5));
+  EXPECT_EQ("12~000", fmt::format(loc, "{:L}", 12000.0));
 }
 
 TEST(locale_test, format) {
