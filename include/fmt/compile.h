@@ -289,7 +289,7 @@ template <typename Char> struct runtime_named_field {
   constexpr OutputIt format(OutputIt out, const Args&... args) const {
     bool found = (try_format_argument(out, name, args) || ...);
     if (!found) {
-      throw format_error("argument with specified name is not found");
+      FMT_THROW(format_error("argument with specified name is not found"));
     }
     return out;
   }
@@ -399,7 +399,7 @@ template <typename Char> struct arg_id_handler {
     return 0;
   }
 
-  constexpr void on_error(const char* message) { throw format_error(message); }
+  constexpr void on_error(const char* message) { FMT_THROW(format_error(message)); }
 };
 
 template <typename Char> struct parse_arg_id_result {
@@ -451,7 +451,7 @@ constexpr auto compile_format_string(S format_str) {
   constexpr auto str = basic_string_view<char_type>(format_str);
   if constexpr (str[POS] == '{') {
     if constexpr (POS + 1 == str.size())
-      throw format_error("unmatched '{' in format string");
+      FMT_THROW(format_error("unmatched '{' in format string"));
     if constexpr (str[POS + 1] == '{') {
       return parse_tail<Args, POS + 2, ID>(make_text(str, POS, 1), format_str);
     } else if constexpr (str[POS + 1] == '}' || str[POS + 1] == ':') {
@@ -500,7 +500,7 @@ constexpr auto compile_format_string(S format_str) {
     }
   } else if constexpr (str[POS] == '}') {
     if constexpr (POS + 1 == str.size())
-      throw format_error("unmatched '}' in format string");
+      FMT_THROW(format_error("unmatched '}' in format string"));
     return parse_tail<Args, POS + 2, ID>(make_text(str, POS, 1), format_str);
   } else {
     constexpr auto end = parse_text(str, POS + 1);
