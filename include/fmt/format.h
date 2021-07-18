@@ -916,23 +916,31 @@ FMT_CONSTEXPR inline auto count_digits(uint128_t n) -> int {
 }
 #endif
 
+// It is a separate function rather than a part of count_digits to workaround
+// the lack of static constexpr in constexpr functions.
+inline auto do_count_digits(uint64_t n) -> int {
+  // This has comparable performance to the version by Kendall Willets
+  // (https://github.com/fmtlib/format-benchmark/blob/master/digits10)
+  // but uses smaller tables.
+  // Maps bsr(n) to ceil(log10(pow(2, bsr(n) + 1) - 1)).
+  static constexpr uint8_t bsr2log10[] = {
+      1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  4,  5,  5,  5,
+      6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  9,  9,  9,  10, 10, 10,
+      10, 11, 11, 11, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 15, 15,
+      15, 16, 16, 16, 16, 17, 17, 17, 18, 18, 18, 19, 19, 19, 19, 20};
+  auto t = bsr2log10[FMT_BUILTIN_CLZLL(n | 1) ^ 63];
+  static constexpr const uint64_t zero_or_powers_of_10[] = {
+      0, 0, FMT_POWERS_OF_10(1U), FMT_POWERS_OF_10(1000000000ULL),
+      10000000000000000000ULL};
+  return t - (n < zero_or_powers_of_10[t]);
+}
+
 // Returns the number of decimal digits in n. Leading zeros are not counted
 // except for n == 0 in which case count_digits returns 1.
 FMT_CONSTEXPR20 inline auto count_digits(uint64_t n) -> int {
 #ifdef FMT_BUILTIN_CLZLL
   if (!is_constant_evaluated()) {
-    // https://github.com/fmtlib/format-benchmark/blob/master/digits10
-    // Maps bsr(n) to ceil(log10(pow(2, bsr(n) + 1) - 1)).
-    constexpr uint16_t bsr2log10[] = {
-        1,  1,  1,  2,  2,  2,  3,  3,  3,  4,  4,  4,  4,  5,  5,  5,
-        6,  6,  6,  7,  7,  7,  7,  8,  8,  8,  9,  9,  9,  10, 10, 10,
-        10, 11, 11, 11, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 15, 15,
-        15, 16, 16, 16, 16, 17, 17, 17, 18, 18, 18, 19, 19, 19, 19, 20};
-    auto t = bsr2log10[FMT_BUILTIN_CLZLL(n | 1) ^ 63];
-    constexpr const uint64_t zero_or_powers_of_10[] = {
-        0, 0, FMT_POWERS_OF_10(1U), FMT_POWERS_OF_10(1000000000ULL),
-        10000000000000000000ULL};
-    return t - (n < zero_or_powers_of_10[t]);
+    return do_count_digits(n);
   }
 #endif
   return count_digits_fallback(n);
@@ -956,9 +964,9 @@ template <> auto count_digits<4>(detail::fallback_uintptr n) -> int;
 
 // It is a separate function rather than a part of count_digits to workaround
 // the lack of static constexpr in constexpr functions.
-FMT_INLINE uint64_t count_digits_inc(int n) {
-  // An optimization by Kendall Willets from https://bit.ly/3uOIQrB.
-  // This increments the upper 32 bits (log10(T) - 1) when >= T is added.
+FMT_INLINE auto do_count_digits(uint32_t n) -> int {
+// An optimization by Kendall Willets from https://bit.ly/3uOIQrB.
+// This increments the upper 32 bits (log10(T) - 1) when >= T is added.
 #define FMT_INC(T) (((sizeof(#T) - 1ull) << 32) - T)
   static constexpr uint64_t table[] = {
       FMT_INC(0),          FMT_INC(0),          FMT_INC(0),           // 8
@@ -973,15 +981,15 @@ FMT_INLINE uint64_t count_digits_inc(int n) {
       FMT_INC(1000000000), FMT_INC(1000000000), FMT_INC(1000000000),  // 1024M
       FMT_INC(1000000000), FMT_INC(1000000000)                        // 4B
   };
-  return table[n];
+  auto inc = table[FMT_BUILTIN_CLZ(n | 1) ^ 31];
+  return static_cast<int>((n + inc) >> 32);
 }
 
 // Optional version of count_digits for better performance on 32-bit platforms.
 FMT_CONSTEXPR20 inline auto count_digits(uint32_t n) -> int {
 #ifdef FMT_BUILTIN_CLZ
   if (!is_constant_evaluated()) {
-    auto inc = count_digits_inc(FMT_BUILTIN_CLZ(n | 1) ^ 31);
-    return static_cast<int>((n + inc) >> 32);
+    return do_count_digits(n);
   }
 #endif
   return count_digits_fallback(n);
