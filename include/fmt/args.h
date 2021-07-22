@@ -143,6 +143,18 @@ class dynamic_format_arg_store
   }
 
  public:
+  constexpr dynamic_format_arg_store() = default;
+
+  constexpr dynamic_format_arg_store(
+      const dynamic_format_arg_store<Context>& store)
+      :
+#if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
+        basic_format_args<Context>(),
+#endif
+        data_(store.data_),
+        named_info_(store.named_info_) {
+  }
+
   /**
     \rst
     Adds an argument into the dynamic store for later passing to a formatting

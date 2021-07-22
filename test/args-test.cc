@@ -171,3 +171,16 @@ TEST(args_test, throw_on_copy) {
   }
   EXPECT_EQ(fmt::vformat("{}", store), "foo");
 }
+
+TEST(args_test, copy_constructor) {
+  auto store = fmt::dynamic_format_arg_store<fmt::format_context>();
+  store.push_back(fmt::arg("test1", "value1"));
+  store.push_back(fmt::arg("test2", "value2"));
+  store.push_back(fmt::arg("test3", "value3"));
+
+  auto store2 = store;
+  store2.push_back(fmt::arg("test4", "value4"));
+
+  auto result = fmt::vformat("{test1} {test2} {test3} {test4}", store2);
+  EXPECT_EQ(result, "value1 value2 value3 value4");
+}
