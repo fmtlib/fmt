@@ -847,3 +847,43 @@ TEST(core_test, adl) {
   fmt::print("{}", s);
   fmt::print(stdout, "{}", s);
 }
+
+struct const_formattable {};
+struct nonconst_formattable {};
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<const_formattable> {
+  auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
+
+  auto format(const const_formattable&, format_context& ctx)
+      -> decltype(ctx.out()) {
+    auto test = string_view("test");
+    return std::copy_n(test.data(), test.size(), ctx.out());
+  }
+};
+
+template <> struct formatter<nonconst_formattable> {
+  auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
+
+  auto format(nonconst_formattable&, format_context& ctx)
+      -> decltype(ctx.out()) {
+    auto test = string_view("test");
+    return std::copy_n(test.data(), test.size(), ctx.out());
+  }
+};
+FMT_END_NAMESPACE
+
+TEST(core_test, is_const_formattable) {
+  EXPECT_TRUE((fmt::detail::is_const_formattable<const_formattable,
+                                                 fmt::format_context>()));
+  EXPECT_FALSE((fmt::detail::is_const_formattable<nonconst_formattable,
+                                                  fmt::format_context>()));
+}
+
+TEST(core_test, format_nonconst) {
+  EXPECT_EQ(fmt::format("{}", nonconst_formattable()), "test");
+}

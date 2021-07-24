@@ -711,6 +711,22 @@ class appender;
 
 FMT_BEGIN_DETAIL_NAMESPACE
 
+template <typename Context, typename T>
+constexpr auto is_const_formattable_impl(T*)
+    -> decltype(typename Context::template formatter_type<T>().format(
+                    std::declval<const T&>(), std::declval<Context&>()),
+                true) {
+  return true;
+}
+template <typename Context>
+constexpr auto is_const_formattable_impl(...) -> bool {
+  return false;
+}
+template <typename T, typename Context>
+constexpr auto is_const_formattable() -> bool {
+  return is_const_formattable_impl<Context>(static_cast<T*>(nullptr));
+}
+
 // Extracts a reference to the container from back_insert_iterator.
 template <typename Container>
 inline auto get_container(std::back_insert_iterator<Container> it)
@@ -1112,8 +1128,8 @@ template <typename Char> struct named_arg_value {
 
 template <typename Context> struct custom_value {
   using parse_context = typename Context::parse_context_type;
-  const void* value;
-  void (*format)(const void* arg, parse_context& parse_ctx, Context& ctx);
+  void* value;
+  void (*format)(void* arg, parse_context& parse_ctx, Context& ctx);
 };
 
 // A formatting argument value.
@@ -1164,26 +1180,30 @@ template <typename Context> class value {
   FMT_INLINE value(const named_arg_info<char_type>* args, size_t size)
       : named_args{args, size} {}
 
-  template <typename T> FMT_CONSTEXPR FMT_INLINE value(const T& val) {
-    custom.value = &val;
+  template <typename T> FMT_CONSTEXPR FMT_INLINE value(T& val) {
+    using value_type = remove_cvref_t<T>;
+    custom.value = const_cast<value_type*>(&val);
     // Get the formatter type through the context to allow different contexts
     // have different extension points, e.g. `formatter<T>` for `format` and
     // `printf_formatter<T>` for `printf`.
     custom.format = format_custom_arg<
-        T, conditional_t<has_formatter<T, Context>::value,
-                         typename Context::template formatter_type<T>,
-                         fallback_formatter<T, char_type>>>;
+        value_type,
+        conditional_t<has_formatter<value_type, Context>::value,
+                      typename Context::template formatter_type<value_type>,
+                      fallback_formatter<value_type, char_type>>>;
   }
 
  private:
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T, typename Formatter>
-  static void format_custom_arg(const void* arg,
+  static void format_custom_arg(void* arg,
                                 typename Context::parse_context_type& parse_ctx,
                                 Context& ctx) {
-    Formatter f;
+    auto f = Formatter();
     parse_ctx.advance_to(f.parse(parse_ctx));
-    ctx.advance_to(f.format(*static_cast<const T*>(arg), ctx));
+    using qualified_type =
+        conditional_t<is_const_formattable<T, Context>(), const T, T>;
+    ctx.advance_to(f.format(*static_cast<qualified_type*>(arg), ctx));
   }
 };
 
@@ -1323,11 +1343,16 @@ template <typename Context> struct arg_mapper {
           static_cast<typename std::underlying_type<T>::type>(val))) {
     return map(static_cast<typename std::underlying_type<T>::type>(val));
   }
-  template <typename T,
-            FMT_ENABLE_IF(!is_string<T>::value && !is_char<T>::value &&
-                          (has_formatter<T, Context>::value ||
-                           has_fallback_formatter<T, char_type>::value))>
-  FMT_CONSTEXPR FMT_INLINE auto map(const T& val) -> const T& {
+  template <typename T, typename U = remove_cvref_t<T>,
+            FMT_ENABLE_IF(!is_string<U>::value && !is_char<U>::value &&
+                          !std::is_array<U>::value &&
+                          (has_formatter<U, Context>::value ||
+                           has_fallback_formatter<U, char_type>::value))>
+  FMT_CONSTEXPR FMT_INLINE auto map(T&& val) -> T& {
+    static_assert(is_const_formattable<U, Context>() ||
+                      !std::is_const<remove_reference_t<T>>() ||
+                      has_fallback_formatter<U, char_type>(),
+                  "cannot format a const argument");
     return val;
   }
 
@@ -1562,8 +1587,8 @@ FMT_CONSTEXPR auto make_arg(const T& value) -> basic_format_arg<Context> {
 // another (not recommended).
 template <bool IS_PACKED, typename Context, type, typename T,
           FMT_ENABLE_IF(IS_PACKED)>
-FMT_CONSTEXPR FMT_INLINE auto make_arg(const T& val) -> value<Context> {
-  const auto& arg = arg_mapper<Context>().map(val);
+FMT_CONSTEXPR FMT_INLINE auto make_arg(T&& val) -> value<Context> {
+  const auto& arg = arg_mapper<Context>().map(std::forward<T>(val));
   static_assert(
       !std::is_same<decltype(arg), const unformattable&>::value,
       "Cannot format an argument. To make type T formattable provide a "
@@ -1684,14 +1709,16 @@ class format_arg_store
            : 0);
 
  public:
-  FMT_CONSTEXPR FMT_INLINE format_arg_store(const Args&... args)
+  template <typename... T>
+  FMT_CONSTEXPR FMT_INLINE format_arg_store(T&&... args)
       :
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
         basic_format_args<Context>(*this),
 #endif
         data_{detail::make_arg<
             is_packed, Context,
-            detail::mapped_type_constant<Args, Context>::value>(args)...} {
+            detail::mapped_type_constant<remove_cvref_t<T>, Context>::value>(
+            std::forward<T>(args))...} {
     detail::init_named_args(data_.named_args(), 0, 0, args...);
   }
 };
@@ -1705,9 +1732,9 @@ class format_arg_store
   \endrst
  */
 template <typename Context = format_context, typename... Args>
-constexpr auto make_format_args(const Args&... args)
-    -> format_arg_store<Context, Args...> {
-  return {args...};
+constexpr auto make_format_args(Args&&... args)
+    -> format_arg_store<Context, remove_cvref_t<Args>...> {
+  return {std::forward<Args>(args)...};
 }
 
 /**
