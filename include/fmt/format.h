@@ -916,9 +916,9 @@ FMT_CONSTEXPR inline auto count_digits(uint128_t n) -> int {
 }
 #endif
 
+#ifdef FMT_BUILTIN_CLZLL
 // It is a separate function rather than a part of count_digits to workaround
 // the lack of static constexpr in constexpr functions.
-#ifdef FMT_BUILTIN_CLZLL
 inline auto do_count_digits(uint64_t n) -> int {
   // This has comparable performance to the version by Kendall Willets
   // (https://github.com/fmtlib/format-benchmark/blob/master/digits10)
@@ -964,9 +964,9 @@ FMT_CONSTEXPR auto count_digits(UInt n) -> int {
 
 template <> auto count_digits<4>(detail::fallback_uintptr n) -> int;
 
+#ifdef FMT_BUILTIN_CLZ
 // It is a separate function rather than a part of count_digits to workaround
 // the lack of static constexpr in constexpr functions.
-#ifdef FMT_BUILTIN_CLZ
 FMT_INLINE auto do_count_digits(uint32_t n) -> int {
 // An optimization by Kendall Willets from https://bit.ly/3uOIQrB.
 // This increments the upper 32 bits (log10(T) - 1) when >= T is added.
