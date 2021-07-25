@@ -916,6 +916,7 @@ FMT_CONSTEXPR inline auto count_digits(uint128_t n) -> int {
 }
 #endif
 
+#ifdef FMT_BUILTIN_CLZLL
 // It is a separate function rather than a part of count_digits to workaround
 // the lack of static constexpr in constexpr functions.
 inline auto do_count_digits(uint64_t n) -> int {
@@ -934,6 +935,7 @@ inline auto do_count_digits(uint64_t n) -> int {
       10000000000000000000ULL};
   return t - (n < zero_or_powers_of_10[t]);
 }
+#endif
 
 // Returns the number of decimal digits in n. Leading zeros are not counted
 // except for n == 0 in which case count_digits returns 1.
@@ -962,6 +964,7 @@ FMT_CONSTEXPR auto count_digits(UInt n) -> int {
 
 template <> auto count_digits<4>(detail::fallback_uintptr n) -> int;
 
+#ifdef FMT_BUILTIN_CLZ
 // It is a separate function rather than a part of count_digits to workaround
 // the lack of static constexpr in constexpr functions.
 FMT_INLINE auto do_count_digits(uint32_t n) -> int {
@@ -984,6 +987,7 @@ FMT_INLINE auto do_count_digits(uint32_t n) -> int {
   auto inc = table[FMT_BUILTIN_CLZ(n | 1) ^ 31];
   return static_cast<int>((n + inc) >> 32);
 }
+#endif
 
 // Optional version of count_digits for better performance on 32-bit platforms.
 FMT_CONSTEXPR20 inline auto count_digits(uint32_t n) -> int {
