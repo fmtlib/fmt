@@ -918,6 +918,7 @@ FMT_CONSTEXPR inline auto count_digits(uint128_t n) -> int {
 
 // It is a separate function rather than a part of count_digits to workaround
 // the lack of static constexpr in constexpr functions.
+#ifdef FMT_BUILTIN_CLZLL
 inline auto do_count_digits(uint64_t n) -> int {
   // This has comparable performance to the version by Kendall Willets
   // (https://github.com/fmtlib/format-benchmark/blob/master/digits10)
@@ -934,6 +935,7 @@ inline auto do_count_digits(uint64_t n) -> int {
       10000000000000000000ULL};
   return t - (n < zero_or_powers_of_10[t]);
 }
+#endif
 
 // Returns the number of decimal digits in n. Leading zeros are not counted
 // except for n == 0 in which case count_digits returns 1.
@@ -964,6 +966,7 @@ template <> auto count_digits<4>(detail::fallback_uintptr n) -> int;
 
 // It is a separate function rather than a part of count_digits to workaround
 // the lack of static constexpr in constexpr functions.
+#ifdef FMT_BUILTIN_CLZ
 FMT_INLINE auto do_count_digits(uint32_t n) -> int {
 // An optimization by Kendall Willets from https://bit.ly/3uOIQrB.
 // This increments the upper 32 bits (log10(T) - 1) when >= T is added.
@@ -984,6 +987,7 @@ FMT_INLINE auto do_count_digits(uint32_t n) -> int {
   auto inc = table[FMT_BUILTIN_CLZ(n | 1) ^ 31];
   return static_cast<int>((n + inc) >> 32);
 }
+#endif
 
 // Optional version of count_digits for better performance on 32-bit platforms.
 FMT_CONSTEXPR20 inline auto count_digits(uint32_t n) -> int {
