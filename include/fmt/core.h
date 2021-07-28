@@ -1053,8 +1053,8 @@ FMT_CONSTEXPR FMT_INLINE void init_named_args(std::nullptr_t, int, int,
                                               const Args&...) {}
 
 template <bool B = false> constexpr auto count() -> size_t { return B ? 1 : 0; }
-template <bool B1, bool B2, bool... Tail> constexpr auto count() -> size_t {
-  return (B1 ? 1 : 0) + count<B2, Tail...>();
+template <bool B1_, bool B2_, bool... Tail> constexpr auto count() -> size_t {
+  return (B1_ ? 1 : 0) + count<B2_, Tail...>();
 }
 
 template <typename... Args> constexpr auto count_named_args() -> size_t {
