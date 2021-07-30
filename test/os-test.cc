@@ -336,6 +336,14 @@ TEST(ostream_test, truncate) {
   EXPECT_EQ("foo", read(in, 4));
 }
 
+TEST(ostream_test, flush) {
+  auto out = fmt::output_file("test-file");
+  out.print("x");
+  out.flush();
+  auto in = fmt::file("test-file", file::RDONLY);
+  EXPECT_READ(in, "x");
+}
+
 TEST(file_test, default_ctor) {
   file f;
   EXPECT_EQ(-1, f.descriptor());

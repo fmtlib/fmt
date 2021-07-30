@@ -401,12 +401,6 @@ class FMT_API ostream final : private detail::buffer<char> {
  private:
   file file_;
 
-  void flush() {
-    if (size() == 0) return;
-    file_.write(data(), size());
-    clear();
-  }
-
   void grow(size_t) override;
 
   ostream(cstring_view path, const detail::ostream_params& params)
@@ -424,6 +418,12 @@ class FMT_API ostream final : private detail::buffer<char> {
   ~ostream() {
     flush();
     delete[] data();
+  }
+
+  void flush() {
+    if (size() == 0) return;
+    file_.write(data(), size());
+    clear();
   }
 
   template <typename... T>
