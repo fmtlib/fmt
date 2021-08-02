@@ -26,6 +26,16 @@ function(add_fmt_executable name)
   if (MINGW)
     target_link_libraries(${name} -static-libgcc -static-libstdc++)
   endif ()
+  # (Wstringop-overflow) - [meta-bug] bogus/missing -Wstringop-overflow warnings
+  #   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=88443
+  # Bogus -Wstringop-overflow warning
+  #   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=100395
+  # [10 Regression] spurious -Wstringop-overflow writing to a trailing array plus offset
+  #   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=95353
+  if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND
+      NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.0)
+    target_link_libraries(${name} -Wno-stringop-overflow)
+  endif ()
 endfunction()
 
 # Adds a test.
