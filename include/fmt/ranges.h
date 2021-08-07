@@ -160,30 +160,6 @@ template <typename T>
 struct is_range_<T, void>
     : std::integral_constant<bool, (has_const_begin_end<T>::value ||
                                     has_mutable_begin_end<T>::value)> {};
-
-template <typename T, typename Enable = void> struct range_to_view;
-template <typename T>
-struct range_to_view<T, enable_if_t<has_const_begin_end<T>::value>> {
-  struct view_t {
-    const T* m_range_ptr;
-
-    auto begin() const FMT_DECLTYPE_RETURN(detail::range_begin(*m_range_ptr));
-    auto end() const FMT_DECLTYPE_RETURN(detail::range_end(*m_range_ptr));
-  };
-  static auto view(const T& range) -> view_t { return {&range}; }
-};
-
-template <typename T>
-struct range_to_view<T, enable_if_t<!has_const_begin_end<T>::value &&
-                                    has_mutable_begin_end<T>::value>> {
-  struct view_t {
-    T m_range_copy;
-
-    auto begin() FMT_DECLTYPE_RETURN(detail::range_begin(m_range_copy));
-    auto end() FMT_DECLTYPE_RETURN(detail::range_end(m_range_copy));
-  };
-  static auto view(const T& range) -> view_t { return {range}; }
-};
 #  undef FMT_DECLTYPE_RETURN
 #endif
 
@@ -347,13 +323,16 @@ struct formatter<
     return formatting.parse(ctx);
   }
 
-  template <typename FormatContext>
-  typename FormatContext::iterator format(const T& values, FormatContext& ctx) {
+  template <
+      typename FormatContext, typename U,
+      FMT_ENABLE_IF(
+          std::is_same<U, conditional_t<detail::has_const_begin_end<T>::value,
+                                        const T, T>>::value)>
+  auto format(U& values, FormatContext& ctx) -> decltype(ctx.out()) {
     auto out = detail::copy(formatting.prefix, ctx.out());
     size_t i = 0;
-    auto view = detail::range_to_view<T>::view(values);
-    auto it = view.begin();
-    auto end = view.end();
+    auto it = detail::range_begin(values);
+    auto end = detail::range_end(values);
     for (; it != end; ++it) {
       if (i > 0) out = detail::write_delimiter(out);
       out = detail::write_range_entry<Char>(out, *it);
