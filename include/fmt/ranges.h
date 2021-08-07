@@ -143,16 +143,16 @@ struct has_mutable_begin_end : std::false_type {};
 
 template <typename T>
 struct has_const_begin_end<
-    T, void_t<decltype(detail::range_begin(
-                  std::declval<const remove_cvref_t<T>&>())),
-              decltype(detail::range_begin(
-                  std::declval<const remove_cvref_t<T>&>()))>>
+    T,
+    void_t<
+        decltype(detail::range_begin(std::declval<const remove_cvref_t<T>&>())),
+        decltype(detail::range_end(std::declval<const remove_cvref_t<T>&>()))>>
     : std::true_type {};
 
 template <typename T>
 struct has_mutable_begin_end<
     T, void_t<decltype(detail::range_begin(std::declval<T>())),
-              decltype(detail::range_begin(std::declval<T>())),
+              decltype(detail::range_end(std::declval<T>())),
               enable_if_t<std::is_copy_constructible<T>::value>>>
     : std::true_type {};
 
@@ -331,8 +331,8 @@ struct formatter<
   auto format(U& values, FormatContext& ctx) -> decltype(ctx.out()) {
     auto out = detail::copy(formatting.prefix, ctx.out());
     size_t i = 0;
-    auto it = detail::range_begin(values);
-    auto end = detail::range_end(values);
+    auto it = std::begin(values);
+    auto end = std::end(values);
     for (; it != end; ++it) {
       if (i > 0) out = detail::write_delimiter(out);
       out = detail::write_range_entry<Char>(out, *it);
