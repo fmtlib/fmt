@@ -190,7 +190,14 @@ TEST(ranges_test, range) {
   EXPECT_EQ(fmt::format("{}", z), "[0, 0, 0]");
 }
 
-#if !FMT_MSC_VER || FMT_MSC_VER >= 1927
+enum class test_enum { foo };
+
+TEST(ranges_test, enum_range) {
+  auto v = std::vector<test_enum>{test_enum::foo};
+  EXPECT_EQ(fmt::format("{}", v), "[0]");
+}
+
+#if !FMT_MSC_VER
 struct unformattable {};
 
 TEST(ranges_test, unformattable_range) {

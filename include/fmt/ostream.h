@@ -72,10 +72,11 @@ class is_streamable {
 template <typename T, typename Char>
 struct is_streamable<
     T, Char,
-    enable_if_t<std::is_arithmetic<T>::value || std::is_array<T>::value ||
-                std::is_same<T, char8_type>::value ||
-                (std::is_convertible<T, int>::value &&
-                 !std::is_enum<T>::value)>> : std::false_type {};
+    enable_if_t<
+        std::is_arithmetic<T>::value || std::is_array<T>::value ||
+        std::is_pointer<T>::value || std::is_same<T, char8_type>::value ||
+        (std::is_convertible<T, int>::value && !std::is_enum<T>::value)>>
+    : std::false_type {};
 
 // Write the content of buf to os.
 // It is a separate function rather than a part of vprint to simplify testing.
