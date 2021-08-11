@@ -150,16 +150,16 @@ FMT_END_NAMESPACE
 
 // __builtin_clz is broken in clang with Microsoft CodeGen:
 // https://github.com/fmtlib/fmt/issues/519
-#if (FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_clz)) && !FMT_MSC_VER
+#if (FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_clz) || FMT_ICC_VERSION) && !FMT_MSC_VER
 #  define FMT_BUILTIN_CLZ(n) __builtin_clz(n)
 #endif
-#if (FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_clzll)) && !FMT_MSC_VER
+#if (FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_clzll) || FMT_ICC_VERSION) && !FMT_MSC_VER
 #  define FMT_BUILTIN_CLZLL(n) __builtin_clzll(n)
 #endif
-#if (FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_ctz))
+#if (FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_ctz) || FMT_ICC_VERSION)
 #  define FMT_BUILTIN_CTZ(n) __builtin_ctz(n)
 #endif
-#if (FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_ctzll))
+#if (FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_ctzll) || FMT_ICC_VERSION)
 #  define FMT_BUILTIN_CTZLL(n) __builtin_ctzll(n)
 #endif
 
