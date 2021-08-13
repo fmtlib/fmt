@@ -387,6 +387,9 @@
 
   Thanks `@mikecrowe (Mike Crowe) <https://github.com/mikecrowe>`_.
 
+* The undocumented support for specializing `formatter` for pointer types
+  has been removed.
+
 * Fixed ``fmt::formatted_size`` with format string compilation
   (`#2141 <https://github.com/fmtlib/fmt/pull/2141>`_,
   `#2161 <https://github.com/fmtlib/fmt/pull/2161>`_).
