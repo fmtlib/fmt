@@ -1430,8 +1430,8 @@ template <typename Char> class digit_grouping {
   }
 
  public:
-  explicit digit_grouping(locale_ref loc) {
-    if (loc)
+  explicit digit_grouping(locale_ref loc, bool localized = true) {
+    if (localized)
       sep_ = thousands_sep<Char>(loc);
     else
       sep_.thousands_sep = Char();
@@ -1806,7 +1806,7 @@ auto write_float(OutputIt out, const DecimalFP& fp,
       if (num_zeros <= 0 && fspecs.format != float_format::fixed) num_zeros = 1;
       if (num_zeros > 0) size += to_unsigned(num_zeros) + 1;
     }
-    auto grouping = digit_grouping<Char>(loc);
+    auto grouping = digit_grouping<Char>(loc, fspecs.locale);
     size += to_unsigned(grouping.count_separators(significand_size));
     return write_padded<align::right>(out, specs, size, [&](iterator it) {
       if (sign) *it++ = static_cast<Char>(data::signs[sign]);
@@ -1820,7 +1820,7 @@ auto write_float(OutputIt out, const DecimalFP& fp,
     // 1234e-2 -> 12.34[0+]
     int num_zeros = fspecs.showpoint ? fspecs.precision - significand_size : 0;
     size += 1 + to_unsigned(num_zeros > 0 ? num_zeros : 0);
-    auto grouping = digit_grouping<Char>(loc);
+    auto grouping = digit_grouping<Char>(loc, fspecs.locale);
     size += to_unsigned(grouping.count_separators(significand_size));
     return write_padded<align::right>(out, specs, size, [&](iterator it) {
       if (sign) *it++ = static_cast<Char>(data::signs[sign]);
