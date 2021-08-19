@@ -227,6 +227,10 @@ template <typename OutputIt> OutputIt write_delimiter(OutputIt out) {
   return out;
 }
 
+template <typename Char> inline bool is_printable_ascii(Char c) {
+  return c >= 0x20 && c < 0x7e;
+}
+
 template <
     typename Char, typename OutputIt, typename Arg,
     FMT_ENABLE_IF(is_std_string_like<typename std::decay<Arg>::type>::value)>
@@ -247,8 +251,14 @@ OutputIt write_range_entry(OutputIt out, const Arg& v) {
       c = 't';
       break;
     case '"':
+      FMT_FALLTHROUGH;
+    case '\\':
       *out++ = '\\';
       break;
+    default:
+      if (is_printable_ascii(c)) break;
+      out = format_to(out, "\\x{:02x}", c);
+      continue;
     }
     *out++ = c;
   }
