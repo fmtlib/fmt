@@ -262,3 +262,8 @@ TEST(ranges_test, join_range) {
   EXPECT_EQ(fmt::format("{}", fmt::join(z, ",")), "0,0,0");
 }
 #endif  // FMT_RANGES_TEST_ENABLE_JOIN
+
+TEST(ranges_test, escape_string) {
+  auto v = std::vector<std::string>{"\n\r\t\""};
+  EXPECT_EQ(fmt::format("{}", v), "[\"\\n\\r\\t\\\"\"]");
+}

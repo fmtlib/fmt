@@ -232,7 +232,26 @@ template <
     FMT_ENABLE_IF(is_std_string_like<typename std::decay<Arg>::type>::value)>
 OutputIt write_range_entry(OutputIt out, const Arg& v) {
   *out++ = '"';
-  out = write<Char>(out, v);
+  for (Char c : basic_string_view<Char>(v)) {
+    switch (c) {
+    case '\n':
+      *out++ = '\\';
+      c = 'n';
+      break;
+    case '\r':
+      *out++ = '\\';
+      c = 'r';
+      break;
+    case '\t':
+      *out++ = '\\';
+      c = 't';
+      break;
+    case '"':
+      *out++ = '\\';
+      break;
+    }
+    *out++ = c;
+  }
   *out++ = '"';
   return out;
 }
