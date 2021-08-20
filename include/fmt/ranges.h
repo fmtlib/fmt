@@ -232,11 +232,11 @@ template <typename Char> inline bool is_printable_ascii(Char c) {
 }
 
 template <
-    typename Char, typename OutputIt, typename Arg,
-    FMT_ENABLE_IF(is_std_string_like<typename std::decay<Arg>::type>::value)>
-OutputIt write_range_entry(OutputIt out, const Arg& v) {
+    typename Char, typename OutputIt, typename T,
+    FMT_ENABLE_IF(is_std_string_like<typename std::decay<T>::type>::value)>
+OutputIt write_range_entry(OutputIt out, const T& str) {
   *out++ = '"';
-  for (Char c : basic_string_view<Char>(v)) {
+  for (Char c : basic_string_view<Char>(str)) {
     switch (c) {
     case '\n':
       *out++ = '\\';
@@ -257,6 +257,7 @@ OutputIt write_range_entry(OutputIt out, const Arg& v) {
       break;
     default:
       if (is_printable_ascii(c)) break;
+      if (sizeof(Char) != 1 && c >= 0x80) break;
       out = format_to(out, "\\x{:02x}", c);
       continue;
     }
