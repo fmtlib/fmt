@@ -56,7 +56,9 @@ struct data_to_string {
 
   data_to_string(const uint8_t* data, size_t size, bool add_terminator = false)
       : buffer(size + (add_terminator ? 1 : 0)) {
-    std::memcpy(buffer.data(), data, size);
+    if (size) {
+      std::memcpy(buffer.data(), data, size);
+    }
   }
 
   fmt::string_view get() const { return {buffer.data(), buffer.size()}; }
