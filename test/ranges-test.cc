@@ -264,7 +264,8 @@ TEST(ranges_test, join_range) {
 #endif  // FMT_RANGES_TEST_ENABLE_JOIN
 
 TEST(ranges_test, escape_string) {
-  EXPECT_EQ(fmt::format("{}", std::vector<std::string>{"\n\r\t\"\\"}),
-            "[\"\\n\\r\\t\\\"\\\\\"]");
-  EXPECT_EQ(fmt::format("{}", std::vector<std::string>{"\x7"}), "[\"\\x07\"]");
+  using vec = std::vector<std::string>;
+  EXPECT_EQ(fmt::format("{}", vec{"\n\r\t\"\\"}), "[\"\\n\\r\\t\\\"\\\\\"]");
+  EXPECT_EQ(fmt::format("{}", vec{"\x07"}), "[\"\\x07\"]");
+  EXPECT_EQ(fmt::format("{}", vec{"\x7f"}), "[\"\\x7f\"]");
 }

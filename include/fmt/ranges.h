@@ -227,17 +227,65 @@ template <typename OutputIt> OutputIt write_delimiter(OutputIt out) {
   return out;
 }
 
-template <typename Char> inline bool is_printable_ascii(Char c) {
-  return c >= 0x20 && c < 0x7e;
+inline auto is_printable(uint32_t cp) -> bool {
+  if (0x2a6de <= cp && cp < 0x2a700) return false;
+  if (0x2b735 <= cp && cp < 0x2b740) return false;
+  if (0x2b81e <= cp && cp < 0x2b820) return false;
+  if (0x2cea2 <= cp && cp < 0x2ceb0) return false;
+  if (0x2ebe1 <= cp && cp < 0x2f800) return false;
+  if (0x2fa1e <= cp && cp < 0x30000) return false;
+  if (0x3134b <= cp && cp < 0xe0100) return false;
+  if (0xe01f0 <= cp && cp < 0x110000) return false;
+  return true;
 }
 
-template <
-    typename Char, typename OutputIt, typename T,
-    FMT_ENABLE_IF(is_std_string_like<typename std::decay<T>::type>::value)>
-OutputIt write_range_entry(OutputIt out, const T& str) {
+inline auto needs_escape(uint32_t cp) -> bool {
+  return cp < 0x20 || cp == 0x7f || cp == '"' || cp == '\\' ||
+         !is_printable(cp);
+}
+
+template <typename Char> struct find_escape_result {
+  const Char* begin;
+  const Char* end;
+  uint32_t cp;
+};
+
+template <typename Char>
+auto find_escape(const Char* begin, const Char* end)
+    -> find_escape_result<Char> {
+  for (; begin != end; ++begin) {
+    auto cp = static_cast<typename std::make_unsigned<Char>::type>(*begin);
+    if (needs_escape(cp)) return {begin, begin + 1, cp};
+  }
+  return {begin, nullptr, 0};
+}
+
+auto find_escape(const char* begin, const char* end)
+    -> find_escape_result<char> {
+  if (!is_utf8()) return find_escape<char>(begin, end);
+  auto result = find_escape_result<char>{end, nullptr, 0};
+  for_each_codepoint(string_view(begin, to_unsigned(end - begin)),
+                     [&](uint32_t cp, string_view sv) {
+                       if (needs_escape(cp)) {
+                         result = {sv.begin(), sv.end(), cp};
+                         return false;
+                       }
+                       return true;
+                     });
+  return result;
+}
+
+template <typename Char, typename OutputIt>
+auto write_range_entry(OutputIt out, basic_string_view<Char> str) -> OutputIt {
   *out++ = '"';
-  for (Char c : basic_string_view<Char>(str)) {
-    switch (c) {
+  auto begin = str.begin(), end = str.end();
+  do {
+    auto escape = find_escape(begin, end);
+    out = copy_str<Char>(begin, escape.begin, out);
+    begin = escape.end;
+    if (!begin) break;
+    auto c = static_cast<Char>(escape.cp);
+    switch (escape.cp) {
     case '\n':
       *out++ = '\\';
       c = 'n';
@@ -256,13 +304,14 @@ OutputIt write_range_entry(OutputIt out, const T& str) {
       *out++ = '\\';
       break;
     default:
-      if (is_printable_ascii(c)) break;
-      if (sizeof(Char) != 1 && c >= 0x80) break;
-      out = format_to(out, "\\x{:02x}", c);
+      for (Char escape_char : basic_string_view<Char>(
+               escape.begin, to_unsigned(escape.end - escape.begin))) {
+        out = format_to(out, "\\x{:02x}", escape_char);
+      }
       continue;
     }
     *out++ = c;
-  }
+  } while (begin != end);
   *out++ = '"';
   return out;
 }

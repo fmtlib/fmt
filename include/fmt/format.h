@@ -483,27 +483,38 @@ FMT_CONSTEXPR inline auto utf8_decode(const char* s, uint32_t* c, int* e)
   return next;
 }
 
+enum { invalid_code_point = ~uint32_t() };
+
+// Invokes f(cp, sv) for every code point cp in s with sv being the string view
+// corresponding to the code point. cp is invalid_code_point on error.
 template <typename F>
 FMT_CONSTEXPR void for_each_codepoint(string_view s, F f) {
-  auto decode = [f](const char* p) {
+  auto decode = [f](const char* buf_ptr, const char* ptr) {
     auto cp = uint32_t();
     auto error = 0;
-    p = utf8_decode(p, &cp, &error);
-    f(cp, error);
-    return p;
+    auto end = utf8_decode(buf_ptr, &cp, &error);
+    bool result = f(error ? invalid_code_point : cp,
+                    string_view(ptr, to_unsigned(end - buf_ptr)));
+    return result ? end : nullptr;
   };
   auto p = s.data();
   const size_t block_size = 4;  // utf8_decode always reads blocks of 4 chars.
   if (s.size() >= block_size) {
-    for (auto end = p + s.size() - block_size + 1; p < end;) p = decode(p);
+    for (auto end = p + s.size() - block_size + 1; p < end;) {
+      p = decode(p, p);
+      if (!p) return;
+    }
   }
   if (auto num_chars_left = s.data() + s.size() - p) {
     char buf[2 * block_size - 1] = {};
     copy_str<char>(p, p + num_chars_left, buf);
-    p = buf;
+    const char* buf_ptr = buf;
     do {
-      p = decode(p);
-    } while (p - buf < num_chars_left);
+      auto end = decode(buf_ptr, p);
+      if (!end) return;
+      p += end - buf_ptr;
+      buf_ptr = end;
+    } while (buf_ptr - buf < num_chars_left);
   }
 }
 
@@ -518,10 +529,10 @@ FMT_CONSTEXPR inline size_t compute_width(string_view s) {
   // It is not a lambda for compatibility with C++14.
   struct count_code_points {
     size_t* count;
-    FMT_CONSTEXPR void operator()(uint32_t cp, int error) const {
+    FMT_CONSTEXPR auto operator()(uint32_t cp, string_view) const -> bool {
       *count += detail::to_unsigned(
           1 +
-          (error == 0 && cp >= 0x1100 &&
+          (cp >= 0x1100 &&
            (cp <= 0x115f ||  // Hangul Jamo init. consonants
             cp == 0x2329 ||  // LEFT-POINTING ANGLE BRACKET
             cp == 0x232a ||  // RIGHT-POINTING ANGLE BRACKET
@@ -539,6 +550,7 @@ FMT_CONSTEXPR inline size_t compute_width(string_view s) {
             (cp >= 0x1f300 && cp <= 0x1f64f) ||
             // Supplemental Symbols and Pictographs:
             (cp >= 0x1f900 && cp <= 0x1f9ff))));
+      return true;
     }
   };
   for_each_codepoint(s, count_code_points{&num_code_points});
