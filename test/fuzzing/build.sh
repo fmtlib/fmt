@@ -22,6 +22,8 @@ here=$(pwd)
 CXXFLAGSALL="-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION= -g"
 CMAKEFLAGSALL="$root -GNinja -DCMAKE_BUILD_TYPE=Debug -DFMT_DOC=Off -DFMT_TEST=Off -DFMT_FUZZ=On -DCMAKE_CXX_STANDARD=17"
 
+CLANG=clang++-11
+
 # For performance analysis of the fuzzers.
 builddir=$here/build-fuzzers-perfanalysis
 mkdir -p $builddir
@@ -37,7 +39,7 @@ cmake --build $builddir
 builddir=$here/build-fuzzers-ossfuzz
 mkdir -p $builddir
 cd $builddir
-CXX="clang++" \
+CXX=$CLANG \
 CXXFLAGS="$CXXFLAGSALL -fsanitize=fuzzer-no-link" cmake \
 cmake $CMAKEFLAGSALL \
 -DFMT_FUZZ_LINKMAIN=Off \
@@ -50,7 +52,7 @@ cmake --build $builddir
 builddir=$here/build-fuzzers-libfuzzer
 mkdir -p $builddir
 cd $builddir
-CXX="clang++" \
+CXX=$CLANG \
 CXXFLAGS="$CXXFLAGSALL -fsanitize=fuzzer-no-link,address,undefined" cmake \
 cmake $CMAKEFLAGSALL \
 -DFMT_FUZZ_LINKMAIN=Off \
@@ -62,7 +64,7 @@ cmake --build $builddir
 builddir=$here/build-fuzzers-fast
 mkdir -p $builddir
 cd $builddir
-CXX="clang++" \
+CXX=$CLANG \
 CXXFLAGS="$CXXFLAGSALL -fsanitize=fuzzer-no-link -O3" cmake \
 cmake $CMAKEFLAGSALL \
 -DFMT_FUZZ_LINKMAIN=Off \
