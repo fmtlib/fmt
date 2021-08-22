@@ -232,10 +232,11 @@ struct singleton {
   unsigned char lower_count;
 };
 
-inline auto check(uint16_t x, const singleton* singleton_uppers,
-                  size_t singleton_uppers_size,
-                  const unsigned char* singleton_lowers,
-                  const unsigned char* normal, size_t normal_size) -> bool {
+inline auto is_printable(uint16_t x, const singleton* singleton_uppers,
+                         size_t singleton_uppers_size,
+                         const unsigned char* singleton_lowers,
+                         const unsigned char* normal, size_t normal_size)
+    -> bool {
   auto upper = x >> 8;
   auto lower_start = 0;
   for (size_t i = 0; i < singleton_uppers_size; ++i) {
@@ -394,14 +395,14 @@ inline auto is_printable(uint32_t cp) -> bool {
   };
   auto lower = static_cast<uint16_t>(cp);
   if (cp < 0x10000) {
-    return check(lower, singletons0_upper,
-                 sizeof(singletons0_upper) / sizeof(*singletons0_upper),
-                 singletons0_lower, normal0, sizeof(normal0));
+    return is_printable(lower, singletons0_upper,
+                        sizeof(singletons0_upper) / sizeof(*singletons0_upper),
+                        singletons0_lower, normal0, sizeof(normal0));
   }
   if (cp < 0x20000) {
-    return check(lower, singletons1_upper,
-                 sizeof(singletons1_upper) / sizeof(*singletons1_upper),
-                 singletons1_lower, normal1, sizeof(normal1));
+    return is_printable(lower, singletons1_upper,
+                        sizeof(singletons1_upper) / sizeof(*singletons1_upper),
+                        singletons1_lower, normal1, sizeof(normal1));
   }
   if (0x2a6de <= cp && cp < 0x2a700) return false;
   if (0x2b735 <= cp && cp < 0x2b740) return false;
