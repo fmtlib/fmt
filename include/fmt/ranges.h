@@ -431,6 +431,7 @@ auto find_escape(const Char* begin, const Char* end)
     -> find_escape_result<Char> {
   for (; begin != end; ++begin) {
     auto cp = static_cast<typename std::make_unsigned<Char>::type>(*begin);
+    if (sizeof(Char) == 1 && cp >= 0x80) continue;
     if (needs_escape(cp)) return {begin, begin + 1, cp};
   }
   return {begin, nullptr, 0};
@@ -480,9 +481,19 @@ auto write_range_entry(OutputIt out, basic_string_view<Char> str) -> OutputIt {
       *out++ = '\\';
       break;
     default:
-      if (is_utf8() && escape.cp > 0xffff) {
-        out = format_to(out, "\\U{:08x}", escape.cp);
-        continue;
+      if (is_utf8()) {
+        if (escape.cp < 0x100) {
+          out = format_to(out, "\\x{:02x}", escape.cp);
+          continue;
+        }
+        if (escape.cp < 0x10000) {
+          out = format_to(out, "\\u{:04x}", escape.cp);
+          continue;
+        }
+        if (escape.cp < 0x110000) {
+          out = format_to(out, "\\U{:08x}", escape.cp);
+          continue;
+        }
       }
       for (Char escape_char : basic_string_view<Char>(
                escape.begin, to_unsigned(escape.end - escape.begin))) {
