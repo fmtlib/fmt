@@ -1,11 +1,12 @@
 // A fuzzer for floating-point formatter.
 // For the license information refer to format.h.
 
+#include <fmt/format.h>
+
 #include <cstdint>
 #include <cstdlib>
-#include <stdexcept>
 #include <limits>
-#include <fmt/format.h>
+#include <stdexcept>
 
 #include "fuzzer-common.h"
 
@@ -24,8 +25,7 @@ void check_round_trip(fmt::string_view format_str, double value) {
   char* ptr = nullptr;
   if (std::strtod(buffer.data(), &ptr) != value)
     throw std::runtime_error("round trip failure");
-  if (ptr + 1 != buffer.end())
-    throw std::runtime_error("unparsed output");
+  if (ptr + 1 != buffer.end()) throw std::runtime_error("unparsed output");
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {

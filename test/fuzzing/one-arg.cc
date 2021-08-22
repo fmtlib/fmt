@@ -1,17 +1,18 @@
 // Copyright (c) 2019, Paul Dreik
 // For the license information refer to format.h.
 
+#include <fmt/chrono.h>
+
 #include <cstdint>
 #include <exception>
-#include <fmt/chrono.h>
 
 #include "fuzzer-common.h"
 
-template <typename T, typename Repr>
-const T* from_repr(const Repr& r) { return &r; }
+template <typename T, typename Repr> const T* from_repr(const Repr& r) {
+  return &r;
+}
 
-template <>
-const std::tm* from_repr<std::tm>(const std::time_t& t) {
+template <> const std::tm* from_repr<std::tm>(const std::time_t& t) {
   return std::localtime(&t);
 }
 
