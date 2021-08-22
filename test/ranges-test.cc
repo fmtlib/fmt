@@ -267,6 +267,7 @@ TEST(ranges_test, is_printable) {
   using fmt::detail::is_printable;
   EXPECT_TRUE(is_printable(0x0323));
   EXPECT_FALSE(is_printable(0x0378));
+  EXPECT_FALSE(is_printable(0x110000));
 }
 
 TEST(ranges_test, escape_string) {
