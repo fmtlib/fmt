@@ -4,11 +4,11 @@
 #ifndef FUZZER_COMMON_H
 #define FUZZER_COMMON_H
 
-#include <cstdint>      // std::uint8_t
-#include <cstring>      // memcpy
-#include <vector>
-
 #include <fmt/core.h>
+
+#include <cstdint>  // std::uint8_t
+#include <cstring>  // memcpy
+#include <vector>
 
 // One can format to either a string, or a buffer. The latter is faster, but
 // one may be interested in formatting to a string instead to verify it works

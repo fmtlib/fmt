@@ -1,10 +1,11 @@
 // Copyright (c) 2019, Paul Dreik
 // For the license information refer to format.h.
 
+#include <fmt/chrono.h>
+
 #include <cstdint>
 #include <type_traits>
 #include <vector>
-#include <fmt/chrono.h>
 
 #include "fuzzer-common.h"
 
@@ -25,7 +26,7 @@ void invoke_fmt(const uint8_t* data, size_t size, unsigned arg_name_size) {
   try {
 #if FMT_FUZZ_FORMAT_TO_STRING
     std::string message =
-      fmt::format(format_str.get(), fmt::arg(arg_name.data(), value));
+        fmt::format(format_str.get(), fmt::arg(arg_name.data(), value));
 #else
     fmt::memory_buffer out;
     fmt::format_to(out, format_str.get(), fmt::arg(arg_name.data(), value));
