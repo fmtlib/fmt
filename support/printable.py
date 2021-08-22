@@ -1,7 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # This script uses the following Unicode tables:
 # - UnicodeData.txt
+# Script license: https://github.com/rust-lang/rust/blob/master/LICENSE-MIT
 
 
 from collections import namedtuple
