@@ -304,9 +304,15 @@ auto write_range_entry(OutputIt out, basic_string_view<Char> str) -> OutputIt {
       *out++ = '\\';
       break;
     default:
+      if (is_utf8() && escape.cp > 0xffff) {
+        out = format_to(out, "\\U{:08x}", escape.cp);
+        continue;
+      }
       for (Char escape_char : basic_string_view<Char>(
                escape.begin, to_unsigned(escape.end - escape.begin))) {
-        out = format_to(out, "\\x{:02x}", escape_char);
+        out = format_to(
+            out, "\\x{:02x}",
+            static_cast<typename std::make_unsigned<Char>::type>(escape_char));
       }
       continue;
     }
