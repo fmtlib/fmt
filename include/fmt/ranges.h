@@ -244,7 +244,7 @@ inline auto check(uint16_t x, const singleton* singletonuppers,
     if (xupper < su.upper) break;
     if (xupper == su.upper) {
       for (auto j = lowerstart; j < lowerend; ++j) {
-        if (singletonlowers[j] == x) return false;
+        if (singletonlowers[j] == (x & 0xff)) return false;
       }
     }
     lowerstart = lowerend;
@@ -254,7 +254,7 @@ inline auto check(uint16_t x, const singleton* singletonuppers,
   auto current = true;
   for (size_t i = 0; i < normal_size; ++i) {
     auto v = static_cast<int>(normal[i]);
-    auto len = (v & 0x80) != 0 ? (v & 0x7f) << 8 | normal[i++] : v;
+    auto len = (v & 0x80) != 0 ? (v & 0x7f) << 8 | normal[++i] : v;
     xsigned -= len;
     if (xsigned < 0) break;
     current = !current;

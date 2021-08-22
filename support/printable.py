@@ -171,41 +171,6 @@ def main():
     normal1 = compress_normal(normal1)
 
     print("""\
-struct singleton {
-  unsigned char upper;
-  unsigned char lowercount;
-};
-
-inline auto check(uint16_t x, const singleton* singletonuppers,
-                  size_t singletonuppers_size,
-                  const unsigned char* singletonlowers,
-                  const unsigned char* normal, size_t normal_size) -> bool {
-  auto xupper = x >> 8;
-  auto lowerstart = 0;
-  for (size_t i = 0; i < singletonuppers_size; ++i) {
-    auto su = singletonuppers[i];
-    auto lowerend = lowerstart + su.lowercount;
-    if (xupper < su.upper) break;
-    if (xupper == su.upper) {
-      for (auto j = lowerstart; j < lowerend; ++j) {
-        if (singletonlowers[j] == x) return false;
-      }
-    }
-    lowerstart = lowerend;
-  }
-
-  auto xsigned = static_cast<int>(x);
-  auto current = true;
-  for (size_t i = 0; i < normal_size; ++i) {
-    auto v = static_cast<int>(normal[i]);
-    auto len = v & 0x80 != 0 ? (v & 0x7f) << 8 | normal[i++] : v;
-    xsigned -= len;
-    if (xsigned < 0) break;
-    current = !current;
-  }
-  return current;
-}
-
 inline auto is_printable(uint32_t cp) -> bool {\
 """)
     print_singletons(singletons0u, singletons0l, 'singletons0u', 'singletons0l')

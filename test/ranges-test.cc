@@ -263,6 +263,12 @@ TEST(ranges_test, join_range) {
 }
 #endif  // FMT_RANGES_TEST_ENABLE_JOIN
 
+TEST(ranges_test, is_printable) {
+  using fmt::detail::is_printable;
+  EXPECT_TRUE(is_printable(0x0323));
+  EXPECT_FALSE(is_printable(0x0378));
+}
+
 TEST(ranges_test, escape_string) {
   using vec = std::vector<std::string>;
   EXPECT_EQ(fmt::format("{}", vec{"\n\r\t\"\\"}), "[\"\\n\\r\\t\\\"\\\\\"]");
