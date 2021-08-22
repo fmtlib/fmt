@@ -173,21 +173,21 @@ def main():
     print("""\
 inline auto is_printable(uint32_t cp) -> bool {\
 """)
-    print_singletons(singletons0u, singletons0l, 'singletons0u', 'singletons0l')
-    print_singletons(singletons1u, singletons1l, 'singletons1u', 'singletons1l')
+    print_singletons(singletons0u, singletons0l, 'singletons0_upper', 'singletons0_lower')
+    print_singletons(singletons1u, singletons1l, 'singletons1_upper', 'singletons1_lower')
     print_normal(normal0, 'normal0')
     print_normal(normal1, 'normal1')
     print("""\
   auto lower = static_cast<uint16_t>(cp);
   if (cp < 0x10000) {
-    return check(lower, singletons0u,
-                 sizeof(singletons0u) / sizeof(*singletons0u), singletons0l,
-                 normal0, sizeof(normal0));
+    return check(lower, singletons0_upper,
+                 sizeof(singletons0_upper) / sizeof(*singletons0_upper),
+                 singletons0_lower, normal0, sizeof(normal0));
   }
   if (cp < 0x20000) {
-    return check(lower, singletons1u,
-                 sizeof(singletons1u) / sizeof(*singletons1u), singletons1l,
-                 normal1, sizeof(normal1));
+    return check(lower, singletons1_upper,
+                 sizeof(singletons1_upper) / sizeof(*singletons1_upper),
+                 singletons1_lower, normal1, sizeof(normal1));
   }\
 """)
     for a, b in extra:
