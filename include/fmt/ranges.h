@@ -385,7 +385,7 @@ struct formatter<tuple_join_view<Char, T...>, Char> {
     if (N > 1) {
       auto end1 = do_parse(ctx, std::integral_constant<size_t, N - 1>{});
       if (end != end1)
-        throw fmt::format_error("incompatible format specs for tuple elements");
+        FMT_THROW(format_error("incompatible format specs for tuple elements"));
     }
     return end;
   }
