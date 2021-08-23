@@ -629,14 +629,14 @@ template <typename Char, typename... T>
 struct formatter<tuple_join_view<Char, T...>, Char> {
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
-    return do_parse(ctx, std::integral_constant<size_t, sizeof...(T)>{});
+    return do_parse(ctx, std::integral_constant<size_t, sizeof...(T)>());
   }
 
   template <typename FormatContext>
   auto format(const tuple_join_view<Char, T...>& value,
               FormatContext& ctx) const -> typename FormatContext::iterator {
     return do_format(value, ctx,
-                     std::integral_constant<size_t, sizeof...(T)>{});
+                     std::integral_constant<size_t, sizeof...(T)>());
   }
 
  private:
@@ -655,7 +655,7 @@ struct formatter<tuple_join_view<Char, T...>, Char> {
       -> decltype(ctx.begin()) {
     auto end = std::get<sizeof...(T) - N>(formatters_).parse(ctx);
     if (N > 1) {
-      auto end1 = do_parse(ctx, std::integral_constant<size_t, N - 1>{});
+      auto end1 = do_parse(ctx, std::integral_constant<size_t, N - 1>());
       if (end != end1)
         FMT_THROW(format_error("incompatible format specs for tuple elements"));
     }
@@ -678,7 +678,7 @@ struct formatter<tuple_join_view<Char, T...>, Char> {
     if (N > 1) {
       out = std::copy(value.sep.begin(), value.sep.end(), out);
       ctx.advance_to(out);
-      return do_format(value, ctx, std::integral_constant<size_t, N - 1>{});
+      return do_format(value, ctx, std::integral_constant<size_t, N - 1>());
     }
     return out;
   }
