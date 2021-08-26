@@ -1116,6 +1116,9 @@ constexpr bool is_arithmetic_type(type t) {
   return t > type::none_type && t <= type::last_numeric_type;
 }
 
+struct unformattable {};
+struct unformattable_pointer : unformattable {};
+
 template <typename Char> struct string_value {
   const Char* data;
   size_t size;
@@ -1192,6 +1195,8 @@ template <typename Context> class value {
                       typename Context::template formatter_type<value_type>,
                       fallback_formatter<value_type, char_type>>>;
   }
+  value(unformattable);
+  value(unformattable_pointer);
 
  private:
   // Formats an argument of a custom type, such as a user-defined class.
@@ -1215,8 +1220,6 @@ FMT_CONSTEXPR auto make_arg(const T& value) -> basic_format_arg<Context>;
 enum { long_short = sizeof(long) == sizeof(int) };
 using long_type = conditional_t<long_short, int, long long>;
 using ulong_type = conditional_t<long_short, unsigned, unsigned long long>;
-
-struct unformattable {};
 
 // Maps formatting arguments to core types.
 template <typename Context> struct arg_mapper {
@@ -1320,16 +1323,17 @@ template <typename Context> struct arg_mapper {
   // We use SFINAE instead of a const T* parameter to avoid conflicting with
   // the C array overload.
   template <typename T>
-  FMT_CONSTEXPR auto map(T) -> enable_if_t<std::is_pointer<T>::value, int> {
+  FMT_CONSTEXPR auto map(T)
+      -> enable_if_t<std::is_pointer<T>::value, unformattable_pointer> {
     // Formatting of arbitrary pointers is disallowed. If you want to output
     // a pointer cast it to "void *" or "const void *". In particular, this
     // forbids formatting of "[const] volatile char *" which is printed as bool
     // by iostreams.
-    static_assert(!sizeof(T), "formatting of non-void pointers is disallowed");
-    return 0;
+    return {};
   }
 
-  template <typename T, std::size_t N>
+  template <typename T, std::size_t N,
+            FMT_ENABLE_IF(!std::is_same<T, wchar_t>::value)>
   FMT_CONSTEXPR FMT_INLINE auto map(const T (&values)[N]) -> const T (&)[N] {
     return values;
   }
@@ -1589,8 +1593,14 @@ template <bool IS_PACKED, typename Context, type, typename T,
           FMT_ENABLE_IF(IS_PACKED)>
 FMT_CONSTEXPR FMT_INLINE auto make_arg(T&& val) -> value<Context> {
   const auto& arg = arg_mapper<Context>().map(std::forward<T>(val));
+  constexpr bool void_ptr =
+      !std::is_same<decltype(arg), const unformattable_pointer&>::value;
+  static_assert(void_ptr,
+                "Formatting of non-void pointers is disallowed.");
+  constexpr bool formattable =
+      !std::is_same<decltype(arg), const unformattable&>::value;
   static_assert(
-      !std::is_same<decltype(arg), const unformattable&>::value,
+      formattable,
       "Cannot format an argument. To make type T formattable provide a "
       "formatter<T> specialization: https://fmt.dev/latest/api.html#udt");
   return {arg};
@@ -1668,9 +1678,9 @@ using format_context = buffer_context<char>;
 
 template <typename T, typename Char = char>
 using is_formattable = bool_constant<
-    !std::is_same<decltype(detail::arg_mapper<buffer_context<Char>>().map(
-                      std::declval<T>())),
-                  detail::unformattable>::value &&
+    !std::is_base_of<detail::unformattable,
+                     decltype(detail::arg_mapper<buffer_context<Char>>().map(
+                         std::declval<T>()))>::value &&
     !detail::has_fallback_formatter<T, Char>::value>;
 
 /**

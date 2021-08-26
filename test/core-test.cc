@@ -408,15 +408,7 @@ TYPED_TEST(numeric_arg_test, make_and_visit) {
   CHECK_ARG_SIMPLE(std::numeric_limits<TypeParam>::max());
 }
 
-namespace fmt {
-template <> struct is_char<wchar_t> : std::true_type {};
-}  // namespace fmt
-
-TEST(arg_test, char_arg) {
-  CHECK_ARG(char, 'a', 'a');
-  CHECK_ARG(wchar_t, L'a', 'a');
-  CHECK_ARG(wchar_t, L'a', L'a');
-}
+TEST(arg_test, char_arg) { CHECK_ARG(char, 'a', 'a'); }
 
 TEST(arg_test, string_arg) {
   char str_data[] = "test";
@@ -712,6 +704,8 @@ TEST(core_test, has_formatter) {
 }
 
 TEST(core_test, is_formattable) {
+  static_assert(!fmt::is_formattable<const wchar_t*>::value, "");
+  static_assert(!fmt::is_formattable<const wchar_t[3]>::value, "");
   static_assert(fmt::is_formattable<enabled_formatter>::value, "");
   static_assert(!fmt::is_formattable<disabled_formatter>::value, "");
   static_assert(fmt::is_formattable<disabled_formatter_convertible>::value, "");
