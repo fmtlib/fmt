@@ -100,6 +100,13 @@
 #  define FMT_CONSTEXPR_DECL
 #endif
 
+#if __cplusplus >= 202002L || \
+    (__cplusplus >= 201709L && FMT_GCC_VERSION >= 1002)
+#  define FMT_CONSTEXPR20 constexpr
+#else
+#  define FMT_CONSTEXPR20
+#endif
+
 // Check if constexpr std::char_traits<>::compare,length is supported.
 #if defined(__GLIBCXX__)
 #  if __cplusplus >= 201703L && defined(_GLIBCXX_RELEASE) && \
@@ -773,22 +780,22 @@ template <typename T> class buffer {
   FMT_MSC_WARNING(suppress : 26495)
   buffer(size_t sz) FMT_NOEXCEPT : size_(sz), capacity_(sz) {}
 
-  buffer(T* p = nullptr, size_t sz = 0, size_t cap = 0) FMT_NOEXCEPT
-      : ptr_(p),
-        size_(sz),
-        capacity_(cap) {}
+  FMT_CONSTEXPR20 buffer(T* p = nullptr, size_t sz = 0,
+                         size_t cap = 0) FMT_NOEXCEPT : ptr_(p),
+                                                        size_(sz),
+                                                        capacity_(cap) {}
 
-  ~buffer() = default;
+  FMT_CONSTEXPR20 ~buffer() = default;
   buffer(buffer&&) = default;
 
   /** Sets the buffer data and capacity. */
-  void set(T* buf_data, size_t buf_capacity) FMT_NOEXCEPT {
+  FMT_CONSTEXPR void set(T* buf_data, size_t buf_capacity) FMT_NOEXCEPT {
     ptr_ = buf_data;
     capacity_ = buf_capacity;
   }
 
   /** Increases the buffer capacity to hold at least *capacity* elements. */
-  virtual void grow(size_t capacity) = 0;
+  virtual FMT_CONSTEXPR20 void grow(size_t capacity) = 0;
 
  public:
   using value_type = T;
@@ -804,23 +811,23 @@ template <typename T> class buffer {
   auto end() const FMT_NOEXCEPT -> const T* { return ptr_ + size_; }
 
   /** Returns the size of this buffer. */
-  auto size() const FMT_NOEXCEPT -> size_t { return size_; }
+  constexpr auto size() const FMT_NOEXCEPT -> size_t { return size_; }
 
   /** Returns the capacity of this buffer. */
-  auto capacity() const FMT_NOEXCEPT -> size_t { return capacity_; }
+  constexpr auto capacity() const FMT_NOEXCEPT -> size_t { return capacity_; }
 
   /** Returns a pointer to the buffer data. */
-  auto data() FMT_NOEXCEPT -> T* { return ptr_; }
+  FMT_CONSTEXPR auto data() FMT_NOEXCEPT -> T* { return ptr_; }
 
   /** Returns a pointer to the buffer data. */
-  auto data() const FMT_NOEXCEPT -> const T* { return ptr_; }
+  FMT_CONSTEXPR auto data() const FMT_NOEXCEPT -> const T* { return ptr_; }
 
   /** Clears this buffer. */
   void clear() { size_ = 0; }
 
   // Tries resizing the buffer to contain *count* elements. If T is a POD type
   // the new elements may not be initialized.
-  void try_resize(size_t count) {
+  FMT_CONSTEXPR20 void try_resize(size_t count) {
     try_reserve(count);
     size_ = count <= capacity_ ? count : capacity_;
   }
@@ -829,11 +836,11 @@ template <typename T> class buffer {
   // capacity by a smaller amount than requested but guarantees there is space
   // for at least one additional element either by increasing the capacity or by
   // flushing the buffer if it is full.
-  void try_reserve(size_t new_capacity) {
+  FMT_CONSTEXPR20 void try_reserve(size_t new_capacity) {
     if (new_capacity > capacity_) grow(new_capacity);
   }
 
-  void push_back(const T& value) {
+  FMT_CONSTEXPR20 void push_back(const T& value) {
     try_reserve(size_ + 1);
     ptr_[size_++] = value;
   }
@@ -841,8 +848,11 @@ template <typename T> class buffer {
   /** Appends data to the end of the buffer. */
   template <typename U> void append(const U* begin, const U* end);
 
-  template <typename I> auto operator[](I index) -> T& { return ptr_[index]; }
-  template <typename I> auto operator[](I index) const -> const T& {
+  template <typename I> FMT_CONSTEXPR auto operator[](I index) -> T& {
+    return ptr_[index];
+  }
+  template <typename I>
+  FMT_CONSTEXPR auto operator[](I index) const -> const T& {
     return ptr_[index];
   }
 };

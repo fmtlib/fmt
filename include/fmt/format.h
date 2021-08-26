@@ -249,14 +249,6 @@ FMT_END_NAMESPACE
 
 FMT_BEGIN_NAMESPACE
 namespace detail {
-
-#if __cplusplus >= 202002L || \
-    (__cplusplus >= 201709L && FMT_GCC_VERSION >= 1002)
-#  define FMT_CONSTEXPR20 constexpr
-#else
-#  define FMT_CONSTEXPR20
-#endif
-
 // An equivalent of `*reinterpret_cast<Dest*>(&source)` that doesn't have
 // undefined behavior (e.g. due to type aliasing).
 // Example: uint64_t d = bit_cast<uint64_t>(2.718);
@@ -644,7 +636,7 @@ class basic_memory_buffer final : public detail::buffer<T> {
   Allocator alloc_;
 
   // Deallocate memory allocated by the buffer.
-  void deallocate() {
+  FMT_CONSTEXPR20 void deallocate() {
     T* data = this->data();
     if (data != store_) alloc_.deallocate(data, this->capacity());
   }
@@ -656,22 +648,31 @@ class basic_memory_buffer final : public detail::buffer<T> {
   using value_type = T;
   using const_reference = const T&;
 
-  explicit basic_memory_buffer(const Allocator& alloc = Allocator())
+  FMT_CONSTEXPR20 explicit basic_memory_buffer(
+      const Allocator& alloc = Allocator())
       : alloc_(alloc) {
     this->set(store_, SIZE);
+    if (detail::is_constant_evaluated()) {
+      detail::fill_n(store_, SIZE, T{});
+    }
   }
-  ~basic_memory_buffer() { deallocate(); }
+  FMT_CONSTEXPR20 ~basic_memory_buffer() { deallocate(); }
 
  private:
   // Move data from other to this buffer.
-  void move(basic_memory_buffer& other) {
+  FMT_CONSTEXPR20 void move(basic_memory_buffer& other) {
     alloc_ = std::move(other.alloc_);
     T* data = other.data();
     size_t size = other.size(), capacity = other.capacity();
     if (data == other.store_) {
       this->set(store_, capacity);
-      std::uninitialized_copy(other.store_, other.store_ + size,
-                              detail::make_checked(store_, capacity));
+      if (detail::is_constant_evaluated()) {
+        detail::copy_str<T>(other.store_, other.store_ + size,
+                            detail::make_checked(store_, capacity));
+      } else {
+        std::uninitialized_copy(other.store_, other.store_ + size,
+                                detail::make_checked(store_, capacity));
+      }
     } else {
       this->set(data, capacity);
       // Set pointer to the inline array so that delete is not called
@@ -688,7 +689,10 @@ class basic_memory_buffer final : public detail::buffer<T> {
     of the other object to it.
     \endrst
    */
-  basic_memory_buffer(basic_memory_buffer&& other) FMT_NOEXCEPT { move(other); }
+  FMT_CONSTEXPR20 basic_memory_buffer(basic_memory_buffer&& other)
+      FMT_NOEXCEPT {
+    move(other);
+  }
 
   /**
     \rst
@@ -710,7 +714,7 @@ class basic_memory_buffer final : public detail::buffer<T> {
     Resizes the buffer to contain *count* elements. If T is a POD type new
     elements may not be initialized.
    */
-  void resize(size_t count) { this->try_resize(count); }
+  FMT_CONSTEXPR20 void resize(size_t count) { this->try_resize(count); }
 
   /** Increases the buffer capacity to *new_capacity*. */
   void reserve(size_t new_capacity) { this->try_reserve(new_capacity); }
