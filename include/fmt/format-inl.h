@@ -161,7 +161,7 @@ template <typename T> struct bits {
 };
 
 class fp;
-template <int SHIFT = 0> fp normalize(fp value);
+template <int SHIFT = 0> FMT_CONSTEXPR fp normalize(fp value);
 
 // Lower (upper) boundary is a value half way between a floating-point value
 // and its predecessor (successor). Boundaries have the same exponent as the
@@ -194,16 +194,16 @@ class fp {
   static FMT_CONSTEXPR_DECL const int significand_size =
       bits<significand_type>::value;
 
-  fp() : f(0), e(0) {}
-  fp(uint64_t f_val, int e_val) : f(f_val), e(e_val) {}
+  constexpr fp() : f(0), e(0) {}
+  constexpr fp(uint64_t f_val, int e_val) : f(f_val), e(e_val) {}
 
   // Constructs fp from an IEEE754 double. It is a template to prevent compile
   // errors on platforms where double is not IEEE754.
-  template <typename Double> explicit fp(Double d) { assign(d); }
+  template <typename Double> explicit FMT_CONSTEXPR fp(Double d) { assign(d); }
 
   // Assigns d to this and return true iff predecessor is closer than successor.
   template <typename Float, FMT_ENABLE_IF(is_supported_float<Float>::value)>
-  bool assign(Float d) {
+  FMT_CONSTEXPR bool assign(Float d) {
     // Assume float is in the format [sign][exponent][significand].
     using limits = std::numeric_limits<Float>;
     const int float_significand_size = limits::digits - 1;
@@ -237,7 +237,7 @@ class fp {
 };
 
 // Normalizes the value converted from double and multiplied by (1 << SHIFT).
-template <int SHIFT> fp normalize(fp value) {
+template <int SHIFT> FMT_CONSTEXPR fp normalize(fp value) {
   // Handle subnormals.
   const auto shifted_implicit_bit = fp::implicit_bit << SHIFT;
   while ((value.f & shifted_implicit_bit) == 0) {
@@ -255,7 +255,7 @@ template <int SHIFT> fp normalize(fp value) {
 inline bool operator==(fp x, fp y) { return x.f == y.f && x.e == y.e; }
 
 // Computes lhs * rhs / pow(2, 64) rounded to nearest with half-up tie breaking.
-inline uint64_t multiply(uint64_t lhs, uint64_t rhs) {
+FMT_CONSTEXPR inline uint64_t multiply(uint64_t lhs, uint64_t rhs) {
 #if FMT_USE_INT128
   auto product = static_cast<__uint128_t>(lhs) * rhs;
   auto f = static_cast<uint64_t>(product >> 64);
@@ -272,7 +272,9 @@ inline uint64_t multiply(uint64_t lhs, uint64_t rhs) {
 #endif
 }
 
-inline fp operator*(fp x, fp y) { return {multiply(x.f, y.f), x.e + y.e + 64}; }
+FMT_CONSTEXPR inline fp operator*(fp x, fp y) {
+  return {multiply(x.f, y.f), x.e + y.e + 64};
+}
 
 // Returns a cached power of 10 `c_k = c_k.f * pow(2, c_k.e)` such that its
 // (binary) exponent satisfies `min_exponent <= c_k.e <= min_exponent + 28`.
@@ -345,14 +347,16 @@ struct accumulator {
   uint64_t lower;
   uint64_t upper;
 
-  accumulator() : lower(0), upper(0) {}
-  explicit operator uint32_t() const { return static_cast<uint32_t>(lower); }
+  constexpr accumulator() : lower(0), upper(0) {}
+  constexpr explicit operator uint32_t() const {
+    return static_cast<uint32_t>(lower);
+  }
 
-  void operator+=(uint64_t n) {
+  FMT_CONSTEXPR void operator+=(uint64_t n) {
     lower += n;
     if (lower < n) ++upper;
   }
-  void operator>>=(int shift) {
+  FMT_CONSTEXPR void operator>>=(int shift) {
     FMT_ASSERT(shift == 32, "");
     (void)shift;
     lower = (upper << 32) | (lower >> 32);
@@ -370,27 +374,31 @@ class bigint {
   basic_memory_buffer<bigit, bigits_capacity> bigits_;
   int exp_;
 
-  bigit operator[](int index) const { return bigits_[to_unsigned(index)]; }
-  bigit& operator[](int index) { return bigits_[to_unsigned(index)]; }
+  FMT_CONSTEXPR20 bigit operator[](int index) const {
+    return bigits_[to_unsigned(index)];
+  }
+  FMT_CONSTEXPR20 bigit& operator[](int index) {
+    return bigits_[to_unsigned(index)];
+  }
 
   static FMT_CONSTEXPR_DECL const int bigit_bits = bits<bigit>::value;
 
   friend struct formatter<bigint>;
 
-  void subtract_bigits(int index, bigit other, bigit& borrow) {
+  FMT_CONSTEXPR20 void subtract_bigits(int index, bigit other, bigit& borrow) {
     auto result = static_cast<double_bigit>((*this)[index]) - other - borrow;
     (*this)[index] = static_cast<bigit>(result);
     borrow = static_cast<bigit>(result >> (bigit_bits * 2 - 1));
   }
 
-  void remove_leading_zeros() {
+  FMT_CONSTEXPR20 void remove_leading_zeros() {
     int num_bigits = static_cast<int>(bigits_.size()) - 1;
     while (num_bigits > 0 && (*this)[num_bigits] == 0) --num_bigits;
     bigits_.resize(to_unsigned(num_bigits + 1));
   }
 
   // Computes *this -= other assuming aligned bigints and *this >= other.
-  void subtract_aligned(const bigint& other) {
+  FMT_CONSTEXPR20 void subtract_aligned(const bigint& other) {
     FMT_ASSERT(other.exp_ >= exp_, "unaligned bigints");
     FMT_ASSERT(compare(*this, other) >= 0, "");
     bigit borrow = 0;
@@ -401,7 +409,7 @@ class bigint {
     remove_leading_zeros();
   }
 
-  void multiply(uint32_t value) {
+  FMT_CONSTEXPR20 void multiply(uint32_t value) {
     const double_bigit wide_value = value;
     bigit carry = 0;
     for (size_t i = 0, n = bigits_.size(); i < n; ++i) {
@@ -412,7 +420,7 @@ class bigint {
     if (carry != 0) bigits_.push_back(carry);
   }
 
-  void multiply(uint64_t value) {
+  FMT_CONSTEXPR20 void multiply(uint64_t value) {
     const bigit mask = ~bigit(0);
     const double_bigit lower = value & mask;
     const double_bigit upper = value >> bigit_bits;
@@ -430,14 +438,16 @@ class bigint {
   }
 
  public:
-  bigint() : exp_(0) {}
+  FMT_CONSTEXPR20 bigint() : exp_(0) {}
   explicit bigint(uint64_t n) { assign(n); }
-  ~bigint() { FMT_ASSERT(bigits_.capacity() <= bigits_capacity, ""); }
+  FMT_CONSTEXPR20 ~bigint() {
+    FMT_ASSERT(bigits_.capacity() <= bigits_capacity, "");
+  }
 
   bigint(const bigint&) = delete;
   void operator=(const bigint&) = delete;
 
-  void assign(const bigint& other) {
+  FMT_CONSTEXPR20 void assign(const bigint& other) {
     auto size = other.bigits_.size();
     bigits_.resize(size);
     auto data = other.bigits_.data();
@@ -445,7 +455,7 @@ class bigint {
     exp_ = other.exp_;
   }
 
-  void assign(uint64_t n) {
+  FMT_CONSTEXPR20 void assign(uint64_t n) {
     size_t num_bigits = 0;
     do {
       bigits_[num_bigits++] = n & ~bigit(0);
@@ -455,9 +465,11 @@ class bigint {
     exp_ = 0;
   }
 
-  int num_bigits() const { return static_cast<int>(bigits_.size()) + exp_; }
+  FMT_CONSTEXPR20 int num_bigits() const {
+    return static_cast<int>(bigits_.size()) + exp_;
+  }
 
-  FMT_NOINLINE bigint& operator<<=(int shift) {
+  FMT_NOINLINE FMT_CONSTEXPR20 bigint& operator<<=(int shift) {
     FMT_ASSERT(shift >= 0, "");
     exp_ += shift / bigit_bits;
     shift %= bigit_bits;
@@ -472,13 +484,13 @@ class bigint {
     return *this;
   }
 
-  template <typename Int> bigint& operator*=(Int value) {
+  template <typename Int> FMT_CONSTEXPR20 bigint& operator*=(Int value) {
     FMT_ASSERT(value > 0, "");
     multiply(uint32_or_64_or_128_t<Int>(value));
     return *this;
   }
 
-  friend int compare(const bigint& lhs, const bigint& rhs) {
+  friend FMT_CONSTEXPR20 int compare(const bigint& lhs, const bigint& rhs) {
     int num_lhs_bigits = lhs.num_bigits(), num_rhs_bigits = rhs.num_bigits();
     if (num_lhs_bigits != num_rhs_bigits)
       return num_lhs_bigits > num_rhs_bigits ? 1 : -1;
@@ -495,8 +507,8 @@ class bigint {
   }
 
   // Returns compare(lhs1 + lhs2, rhs).
-  friend int add_compare(const bigint& lhs1, const bigint& lhs2,
-                         const bigint& rhs) {
+  friend FMT_CONSTEXPR20 int add_compare(const bigint& lhs1, const bigint& lhs2,
+                                         const bigint& rhs) {
     int max_lhs_bigits = (std::max)(lhs1.num_bigits(), lhs2.num_bigits());
     int num_rhs_bigits = rhs.num_bigits();
     if (max_lhs_bigits + 1 < num_rhs_bigits) return -1;
@@ -519,7 +531,7 @@ class bigint {
   }
 
   // Assigns pow(10, exp) to this bigint.
-  void assign_pow10(int exp) {
+  FMT_CONSTEXPR20 void assign_pow10(int exp) {
     FMT_ASSERT(exp >= 0, "");
     if (exp == 0) return assign(1);
     // Find the top bit.
@@ -538,7 +550,7 @@ class bigint {
     *this <<= exp;  // Multiply by pow(2, exp) by shifting.
   }
 
-  void square() {
+  FMT_CONSTEXPR20 void square() {
     int num_bigits = static_cast<int>(bigits_.size());
     int num_result_bigits = 2 * num_bigits;
     basic_memory_buffer<bigit, bigits_capacity> n(std::move(bigits_));
@@ -569,7 +581,7 @@ class bigint {
 
   // If this bigint has a bigger exponent than other, adds trailing zero to make
   // exponents equal. This simplifies some operations such as subtraction.
-  void align(const bigint& other) {
+  FMT_CONSTEXPR20 void align(const bigint& other) {
     int exp_difference = exp_ - other.exp_;
     if (exp_difference <= 0) return;
     int num_bigits = static_cast<int>(bigits_.size());
@@ -582,7 +594,7 @@ class bigint {
 
   // Divides this bignum by divisor, assigning the remainder to this and
   // returning the quotient.
-  int divmod_assign(const bigint& divisor) {
+  FMT_CONSTEXPR20 int divmod_assign(const bigint& divisor) {
     FMT_ASSERT(this != &divisor, "");
     if (compare(*this, divisor) < 0) return 0;
     FMT_ASSERT(divisor.bigits_[divisor.bigits_.size() - 1u] != 0, "");
@@ -602,8 +614,9 @@ enum class round_direction { unknown, up, down };
 // some number v and the error, returns whether v should be rounded up, down, or
 // whether the rounding direction can't be determined due to error.
 // error should be less than divisor / 2.
-inline round_direction get_round_direction(uint64_t divisor, uint64_t remainder,
-                                           uint64_t error) {
+FMT_CONSTEXPR inline round_direction get_round_direction(uint64_t divisor,
+                                                         uint64_t remainder,
+                                                         uint64_t error) {
   FMT_ASSERT(remainder < divisor, "");  // divisor - remainder won't overflow.
   FMT_ASSERT(error < divisor, "");      // divisor - error won't overflow.
   FMT_ASSERT(error < divisor - error, "");  // error * 2 won't overflow.
@@ -637,8 +650,10 @@ inline uint64_t power_of_10_64(int exp) {
 // error: the size of the region (lower, upper) outside of which numbers
 // definitely do not round to value (Delta in Grisu3).
 template <typename Handler>
-FMT_INLINE digits::result grisu_gen_digits(fp value, uint64_t error, int& exp,
-                                           Handler& handler) {
+FMT_INLINE FMT_CONSTEXPR digits::result grisu_gen_digits(fp value,
+                                                         uint64_t error,
+                                                         int& exp,
+                                                         Handler& handler) {
   const fp one(1ULL << -value.e, value.e);
   // The integral part of scaled value (p1 in Grisu) = value / one. It cannot be
   // zero because it contains a product of two 64-bit numbers with MSB set (due
@@ -724,8 +739,8 @@ struct fixed_handler {
   int exp10;
   bool fixed;
 
-  digits::result on_start(uint64_t divisor, uint64_t remainder, uint64_t error,
-                          int& exp) {
+  FMT_CONSTEXPR digits::result on_start(uint64_t divisor, uint64_t remainder,
+                                        uint64_t error, int& exp) {
     // Non-fixed formats require at least one digit and no precision adjustment.
     if (!fixed) return digits::more;
     // Adjust fixed precision by exponent because it is relative to decimal
@@ -741,8 +756,9 @@ struct fixed_handler {
     return digits::done;
   }
 
-  digits::result on_digit(char digit, uint64_t divisor, uint64_t remainder,
-                          uint64_t error, int, bool integral) {
+  FMT_CONSTEXPR digits::result on_digit(char digit, uint64_t divisor,
+                                        uint64_t remainder, uint64_t error, int,
+                                        bool integral) {
     FMT_ASSERT(remainder < divisor, "");
     buf[size++] = digit;
     if (!integral && error >= remainder) return digits::error;
