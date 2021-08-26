@@ -253,8 +253,13 @@ namespace detail {
 // undefined behavior (e.g. due to type aliasing).
 // Example: uint64_t d = bit_cast<uint64_t>(2.718);
 template <typename Dest, typename Source>
-inline auto bit_cast(const Source& source) -> Dest {
+FMT_CONSTEXPR20 auto bit_cast(const Source& source) -> Dest {
   static_assert(sizeof(Dest) == sizeof(Source), "size mismatch");
+#ifdef __cpp_lib_bit_cast
+  if (is_constant_evaluated()) {
+    return std::bit_cast<Dest>(source);
+  }
+#endif
   Dest dest;
   std::memcpy(&dest, &source, sizeof(dest));
   return dest;
