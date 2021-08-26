@@ -1270,7 +1270,8 @@ template <typename Context> struct arg_mapper {
   FMT_CONSTEXPR FMT_INLINE auto map(const char_type* val) -> const char_type* {
     return val;
   }
-  template <typename T, FMT_ENABLE_IF(is_string<T>::value)>
+  template <typename T,
+            FMT_ENABLE_IF(is_string<T>::value && !std::is_pointer<T>::value)>
   FMT_CONSTEXPR FMT_INLINE auto map(const T& val)
       -> basic_string_view<char_type> {
     static_assert(std::is_same<char_type, char_t<T>>::value,
@@ -1324,9 +1325,8 @@ template <typename Context> struct arg_mapper {
 
   // We use SFINAE instead of a const T* parameter to avoid conflicting with
   // the C array overload.
-  template <typename T>
-  FMT_CONSTEXPR auto map(T)
-      -> enable_if_t<std::is_pointer<T>::value, unformattable_pointer> {
+  template <typename T, FMT_ENABLE_IF(std::is_pointer<T>::value)>
+  FMT_CONSTEXPR auto map(T) -> unformattable_pointer {
     return {};
   }
 

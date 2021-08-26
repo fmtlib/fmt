@@ -87,6 +87,10 @@ TEST(xchar_test, format) {
   EXPECT_EQ(L"abc1", fmt::format(L"{}c{}", L"ab", 1));
 }
 
+TEST(xchar_test, is_formattable) {
+  static_assert(!fmt::is_formattable<const wchar_t*>::value, "");
+}
+
 TEST(xchar_test, compile_time_string) {
 #if defined(FMT_USE_STRING_VIEW) && __cplusplus >= 201703L
   EXPECT_EQ(L"42", fmt::format(FMT_STRING(std::wstring_view(L"{}")), 42));
