@@ -365,7 +365,9 @@ constexpr FMT_INLINE auto is_constant_evaluated() FMT_NOEXCEPT -> bool {
 }
 
 // A function to suppress "conditional expression is constant" warnings.
-template <typename T> constexpr auto const_check(T value) -> T { return value; }
+template <typename T> constexpr FMT_INLINE auto const_check(T value) -> T {
+  return value;
+}
 
 FMT_NORETURN FMT_API void assert_fail(const char* file, int line,
                                       const char* message);
@@ -2923,7 +2925,7 @@ template <typename Char, typename... Args> class basic_format_string {
   template <typename S,
             FMT_ENABLE_IF(
                 std::is_convertible<const S&, basic_string_view<Char>>::value)>
-  FMT_CONSTEVAL basic_format_string(const S& s) : str_(s) {
+  FMT_CONSTEVAL FMT_INLINE basic_format_string(const S& s) : str_(s) {
     static_assert(
         detail::count<
             (std::is_base_of<detail::view, remove_reference_t<Args>>::value &&
