@@ -1127,8 +1127,9 @@ constexpr bool is_arithmetic_type(type t) {
 }
 
 struct unformattable {};
-struct unformattable_pointer : unformattable {};
 struct unformattable_char : unformattable {};
+struct unformattable_const : unformattable {};
+struct unformattable_pointer : unformattable {};
 
 template <typename Char> struct string_value {
   const Char* data;
@@ -1207,8 +1208,9 @@ template <typename Context> class value {
                       fallback_formatter<value_type, char_type>>>;
   }
   value(unformattable);
-  value(unformattable_pointer);
   value(unformattable_char);
+  value(unformattable_const) {}
+  value(unformattable_pointer);
 
  private:
   // Formats an argument of a custom type, such as a user-defined class.
@@ -1365,17 +1367,37 @@ template <typename Context> struct arg_mapper {
           static_cast<typename std::underlying_type<T>::type>(val))) {
     return map(static_cast<typename std::underlying_type<T>::type>(val));
   }
+
+  template <typename T, typename U = remove_cvref_t<T>>
+  using formattable =
+      bool_constant<is_const_formattable<U, Context>() ||
+                    !std::is_const<remove_reference_t<T>>::value ||
+                    has_fallback_formatter<U, char_type>::value>;
+
+#if FMT_MSC_VER != 0 && FMT_MSC_VER < 1910
+  // Workaround a bug in MSVC.
+  template <typename T> FMT_CONSTEXPR FMT_INLINE auto do_map(T&& val) -> T& {
+    return val;
+  }
+#else
+  template <typename T, FMT_ENABLE_IF(formattable<T>::value)>
+  FMT_CONSTEXPR FMT_INLINE auto do_map(T&& val) -> T& {
+    return val;
+  }
+  template <typename T, FMT_ENABLE_IF(!formattable<T>::value)>
+  FMT_CONSTEXPR FMT_INLINE auto do_map(T&&) -> unformattable_const {
+    return {};
+  }
+#endif
+
   template <typename T, typename U = remove_cvref_t<T>,
             FMT_ENABLE_IF(!is_string<U>::value && !is_char<U>::value &&
                           !std::is_array<U>::value &&
                           (has_formatter<U, Context>::value ||
                            has_fallback_formatter<U, char_type>::value))>
-  FMT_CONSTEXPR FMT_INLINE auto map(T&& val) -> T& {
-    static_assert(is_const_formattable<U, Context>() ||
-                      !std::is_const<remove_reference_t<T>>() ||
-                      has_fallback_formatter<U, char_type>(),
-                  "cannot format a const argument");
-    return val;
+  FMT_CONSTEXPR FMT_INLINE auto map(T&& val)
+      -> decltype(this->do_map(std::forward<T>(val))) {
+    return do_map(std::forward<T>(val));
   }
 
   template <typename T, FMT_ENABLE_IF(is_named_arg<T>::value)>
@@ -1616,13 +1638,18 @@ FMT_CONSTEXPR FMT_INLINE auto make_arg(T&& val) -> value<Context> {
   // a pointer cast it to "void *" or "const void *". In particular, this
   // forbids formatting of "[const] volatile char *" which is printed as bool
   // by iostreams.
-  constexpr bool void_ptr =
+  constexpr bool formattable_pointer =
       !std::is_same<decltype(arg), const unformattable_pointer&>::value;
-  static_assert(void_ptr, "Formatting of non-void pointers is disallowed.");
+  static_assert(formattable_pointer,
+                "Formatting of non-void pointers is disallowed.");
 
-  constexpr bool same_char =
+  constexpr bool formattable_char =
       !std::is_same<decltype(arg), const unformattable_char&>::value;
-  static_assert(same_char, "Mixing character types is disallowed.");
+  static_assert(formattable_char, "Mixing character types is disallowed.");
+
+  constexpr bool formattable_const =
+      !std::is_same<decltype(arg), const unformattable_const&>::value;
+  static_assert(formattable_const, "Cannot format a const argument.");
 
   constexpr bool formattable =
       !std::is_same<decltype(arg), const unformattable&>::value;
