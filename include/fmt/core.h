@@ -1209,7 +1209,7 @@ template <typename Context> class value {
   }
   value(unformattable);
   value(unformattable_char);
-  value(unformattable_const) {}
+  value(unformattable_const);
   value(unformattable_pointer);
 
  private:
@@ -1634,6 +1634,14 @@ template <bool IS_PACKED, typename Context, type, typename T,
 FMT_CONSTEXPR FMT_INLINE auto make_arg(T&& val) -> value<Context> {
   const auto& arg = arg_mapper<Context>().map(std::forward<T>(val));
 
+  constexpr bool formattable_char =
+      !std::is_same<decltype(arg), const unformattable_char&>::value;
+  static_assert(formattable_char, "Mixing character types is disallowed.");
+
+  constexpr bool formattable_const =
+      !std::is_same<decltype(arg), const unformattable_const&>::value;
+  static_assert(formattable_const, "Cannot format a const argument.");
+
   // Formatting of arbitrary pointers is disallowed. If you want to output
   // a pointer cast it to "void *" or "const void *". In particular, this
   // forbids formatting of "[const] volatile char *" which is printed as bool
@@ -1642,14 +1650,6 @@ FMT_CONSTEXPR FMT_INLINE auto make_arg(T&& val) -> value<Context> {
       !std::is_same<decltype(arg), const unformattable_pointer&>::value;
   static_assert(formattable_pointer,
                 "Formatting of non-void pointers is disallowed.");
-
-  constexpr bool formattable_char =
-      !std::is_same<decltype(arg), const unformattable_char&>::value;
-  static_assert(formattable_char, "Mixing character types is disallowed.");
-
-  constexpr bool formattable_const =
-      !std::is_same<decltype(arg), const unformattable_const&>::value;
-  static_assert(formattable_const, "Cannot format a const argument.");
 
   constexpr bool formattable =
       !std::is_same<decltype(arg), const unformattable&>::value;
