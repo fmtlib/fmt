@@ -1128,6 +1128,7 @@ constexpr bool is_arithmetic_type(type t) {
 
 struct unformattable {};
 struct unformattable_pointer : unformattable {};
+struct unformattable_char : unformattable {};
 
 template <typename Char> struct string_value {
   const Char* data;
@@ -1207,6 +1208,7 @@ template <typename Context> class value {
   }
   value(unformattable);
   value(unformattable_pointer);
+  value(unformattable_char);
 
  private:
   // Formats an argument of a custom type, such as a user-defined class.
@@ -1260,12 +1262,15 @@ template <typename Context> struct arg_mapper {
   FMT_CONSTEXPR FMT_INLINE auto map(uint128_t val) -> uint128_t { return val; }
   FMT_CONSTEXPR FMT_INLINE auto map(bool val) -> bool { return val; }
 
-  template <typename T, FMT_ENABLE_IF(is_char<T>::value)>
+  template <typename T, FMT_ENABLE_IF(std::is_same<T, char>::value ||
+                                      std::is_same<T, char_type>::value)>
   FMT_CONSTEXPR FMT_INLINE auto map(T val) -> char_type {
-    static_assert(
-        std::is_same<T, char>::value || std::is_same<T, char_type>::value,
-        "mixing character types is disallowed");
     return val;
+  }
+  template <typename T, FMT_ENABLE_IF(std::is_same<T, wchar_t>::value &&
+                                      !std::is_same<wchar_t, char_type>::value)>
+  FMT_CONSTEXPR FMT_INLINE auto map(T) -> unformattable_char {
+    return {};
   }
 
   FMT_CONSTEXPR FMT_INLINE auto map(float val) -> float { return val; }
@@ -1281,12 +1286,17 @@ template <typename Context> struct arg_mapper {
     return val;
   }
   template <typename T,
-            FMT_ENABLE_IF(is_string<T>::value && !std::is_pointer<T>::value)>
+            FMT_ENABLE_IF(is_string<T>::value && !std::is_pointer<T>::value &&
+                          std::is_same<char_type, char_t<T>>::value)>
   FMT_CONSTEXPR FMT_INLINE auto map(const T& val)
       -> basic_string_view<char_type> {
-    static_assert(std::is_same<char_type, char_t<T>>::value,
-                  "mixing character types is disallowed");
     return to_string_view(val);
+  }
+  template <typename T,
+            FMT_ENABLE_IF(is_string<T>::value && !std::is_pointer<T>::value &&
+                          !std::is_same<char_type, char_t<T>>::value)>
+  FMT_CONSTEXPR FMT_INLINE auto map(const T&) -> unformattable_char {
+    return {};
   }
   template <typename T,
             FMT_ENABLE_IF(
@@ -1308,21 +1318,21 @@ template <typename Context> struct arg_mapper {
       -> basic_string_view<char_type> {
     return std_string_view<char_type>(val);
   }
-  FMT_CONSTEXPR FMT_INLINE auto map(const signed char* val) -> const char* {
-    static_assert(std::is_same<char_type, char>::value, "invalid string type");
-    return reinterpret_cast<const char*>(val);
+  FMT_CONSTEXPR FMT_INLINE auto map(const signed char* val)
+      -> decltype(this->map("")) {
+    return map(reinterpret_cast<const char*>(val));
   }
-  FMT_CONSTEXPR FMT_INLINE auto map(const unsigned char* val) -> const char* {
-    static_assert(std::is_same<char_type, char>::value, "invalid string type");
-    return reinterpret_cast<const char*>(val);
+  FMT_CONSTEXPR FMT_INLINE auto map(const unsigned char* val)
+      -> decltype(this->map("")) {
+    return map(reinterpret_cast<const char*>(val));
   }
-  FMT_CONSTEXPR FMT_INLINE auto map(signed char* val) -> const char* {
-    const auto* const_val = val;
-    return map(const_val);
+  FMT_CONSTEXPR FMT_INLINE auto map(signed char* val)
+      -> decltype(this->map("")) {
+    return map(reinterpret_cast<const char*>(val));
   }
-  FMT_CONSTEXPR FMT_INLINE auto map(unsigned char* val) -> const char* {
-    const auto* const_val = val;
-    return map(const_val);
+  FMT_CONSTEXPR FMT_INLINE auto map(unsigned char* val)
+      -> decltype(this->map("")) {
+    return map(reinterpret_cast<const char*>(val));
   }
 
   FMT_CONSTEXPR FMT_INLINE auto map(void* val) -> const void* { return val; }
@@ -1609,6 +1619,11 @@ FMT_CONSTEXPR FMT_INLINE auto make_arg(T&& val) -> value<Context> {
   constexpr bool void_ptr =
       !std::is_same<decltype(arg), const unformattable_pointer&>::value;
   static_assert(void_ptr, "Formatting of non-void pointers is disallowed.");
+
+  constexpr bool same_char =
+      !std::is_same<decltype(arg), const unformattable_char&>::value;
+  static_assert(same_char, "Mixing character types is disallowed.");
+
   constexpr bool formattable =
       !std::is_same<decltype(arg), const unformattable&>::value;
   static_assert(

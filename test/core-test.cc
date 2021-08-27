@@ -704,11 +704,23 @@ TEST(core_test, has_formatter) {
 }
 
 TEST(core_test, is_formattable) {
+  static_assert(fmt::is_formattable<signed char*>::value, "");
+  static_assert(fmt::is_formattable<unsigned char*>::value, "");
+  static_assert(fmt::is_formattable<const signed char*>::value, "");
+  static_assert(fmt::is_formattable<const unsigned char*>::value, "");
+  static_assert(!fmt::is_formattable<wchar_t>::value, "");
   static_assert(!fmt::is_formattable<const wchar_t*>::value, "");
   static_assert(!fmt::is_formattable<const wchar_t[3]>::value, "");
+  static_assert(!fmt::is_formattable<fmt::basic_string_view<wchar_t>>::value,
+                "");
   static_assert(fmt::is_formattable<enabled_formatter>::value, "");
   static_assert(!fmt::is_formattable<disabled_formatter>::value, "");
   static_assert(fmt::is_formattable<disabled_formatter_convertible>::value, "");
+
+  static_assert(!fmt::is_formattable<signed char*, wchar_t>::value, "");
+  static_assert(!fmt::is_formattable<unsigned char*, wchar_t>::value, "");
+  static_assert(!fmt::is_formattable<const signed char*, wchar_t>::value, "");
+  static_assert(!fmt::is_formattable<const unsigned char*, wchar_t>::value, "");
 }
 
 TEST(core_test, format) { EXPECT_EQ(fmt::format("{}", 42), "42"); }
