@@ -83,6 +83,9 @@ will fail to compile with regular strings. Runtime-checked
 formatting is still possible using ``fmt::vformat``, ``fmt::vprint``, etc.
 
 .. doxygenclass:: fmt::basic_format_string
+   :members:
+
+.. doxygentypedef:: fmt::format_string
 
 Named Arguments
 ---------------
