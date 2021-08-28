@@ -37,10 +37,14 @@ similar to that of Python's `str.format
 <https://docs.python.org/3/library/stdtypes.html#str.format>`_.
 They take *fmt* and *args* as arguments.
 
-*fmt* is a format string that contains literal text and replacement
-fields surrounded by braces ``{}``. The fields are replaced with formatted
-arguments in the resulting string. A function taking *fmt* doesn't
-participate in an overload resolution if the latter is not a string.
+*fmt* is a format string that contains literal text and replacement fields
+surrounded by braces ``{}``. The fields are replaced with formatted arguments
+in the resulting string. A function taking *fmt* doesn't participate in an
+overload resolution if the latter is not a string.
+
+Most formatting functions such as ``fmt::format`` require a format string to
+be known at compile time, i.e. be a string literal or a ``constexpr`` string.
+To pass a runtime format string wrap it in ``fmt::runtime``.
 
 *args* is an argument list representing objects to be formatted.
 
@@ -50,7 +54,7 @@ participate in an overload resolution if the latter is not a string.
 .. doxygenfunction:: vformat(string_view fmt, format_args args) -> std::string
 
 .. doxygenfunction:: format_to(OutputIt out, format_string<T...> fmt, T&&... args) -> OutputIt
-.. doxygenfunction:: format_to_n(OutputIt out, size_t n, format_string<T...> fmt, const T&... args) -> format_to_n_result<OutputIt>
+.. doxygenfunction:: format_to_n(OutputIt out, size_t n, format_string<T...> fmt, T&&... args) -> format_to_n_result<OutputIt>
 .. doxygenfunction:: formatted_size(format_string<T...> fmt, T&&... args) -> size_t
 
 .. doxygenstruct:: fmt::format_to_n_result
@@ -77,6 +81,8 @@ To force the use of compile-time checks, define the preprocessor variable
 ``FMT_ENFORCE_COMPILE_STRING``. When set, functions accepting ``FMT_STRING``
 will fail to compile with regular strings. Runtime-checked
 formatting is still possible using ``fmt::vformat``, ``fmt::vprint``, etc.
+
+.. doxygenclass:: fmt::format_string
 
 Named Arguments
 ---------------
