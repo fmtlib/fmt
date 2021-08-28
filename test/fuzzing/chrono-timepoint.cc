@@ -27,7 +27,7 @@ template <typename C> void doit(const uint8_t* data, size_t size) {
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   if (size < 1) return 0;
-  const auto action = data[0] & 0b11;
+  const auto action = data[0] & 0b1;
   data += 1;
   size -= 1;
 
@@ -37,12 +37,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       doit<std::chrono::system_clock>(data, size);
       break;
     case 1:
-      // won't compile
-      // doit<std::chrono::steady_clock>(data,size);
+        // may be the same as system_clock
+        doit<std::chrono::high_resolution_clock>(data, size);
       break;
     case 2:
-      // may be the same as system_clock
-      doit<std::chrono::high_resolution_clock>(data, size);
+      // won't compile
+      // doit<std::chrono::steady_clock>(data,size);
       break;
     }
   } catch (...) {
