@@ -467,9 +467,6 @@ struct locale_mock {
   MOCK_METHOD3(newlocale, locale_type(int category_mask, const char* locale,
                                       locale_type base));
   MOCK_METHOD1(freelocale, void(locale_type locale));
-
-  MOCK_METHOD3(strtod_l,
-               double(const char* nptr, char** endptr, locale_type locale));
 } * locale_mock::instance;
 
 #  ifdef _MSC_VER
@@ -486,10 +483,6 @@ _locale_t _create_locale(int category, const char* locale) {
 
 void _free_locale(_locale_t locale) {
   locale_mock::instance->freelocale(locale);
-}
-
-double _strtod_l(const char* nptr, char** endptr, _locale_t locale) {
-  return locale_mock::instance->strtod_l(nptr, endptr, locale);
 }
 #    ifdef __clang__
 #      pragma clang diagnostic pop
@@ -514,11 +507,6 @@ typedef void FreeLocaleResult;
 FreeLocaleResult freelocale(locale_type locale) FMT_LOCALE_THROW {
   locale_mock::instance->freelocale(locale);
   return FreeLocaleResult();
-}
-
-double strtod_l(const char* nptr, char** endptr,
-                locale_type locale) FMT_LOCALE_THROW {
-  return locale_mock::instance->strtod_l(nptr, endptr, locale);
 }
 
 #  undef FMT_LOCALE_THROW
@@ -547,20 +535,6 @@ TEST(locale_test, locale) {
   EXPECT_CALL(mock, freelocale(impl));
   fmt::locale loc;
   EXPECT_EQ(impl, loc.get());
-}
-
-TEST(locale_test, strtod) {
-  scoped_mock<locale_mock> mock;
-  EXPECT_CALL(mock, newlocale(_, _, _))
-      .WillOnce(Return(reinterpret_cast<locale_type>(42)));
-  EXPECT_CALL(mock, freelocale(_));
-  fmt::locale loc;
-  const char* str = "4.2";
-  char end = 'x';
-  EXPECT_CALL(mock, strtod_l(str, _, loc.get()))
-      .WillOnce(testing::DoAll(testing::SetArgPointee<1>(&end), Return(777)));
-  EXPECT_EQ(777, loc.strtod(str));
-  EXPECT_EQ(&end, str);
 }
 
 #endif  // FMT_LOCALE

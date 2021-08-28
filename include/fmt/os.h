@@ -502,7 +502,7 @@ class locale {
 
   // Converts string to floating-point number and advances str past the end
   // of the parsed input.
-  double strtod(const char*& str) const {
+  FMT_DEPRECATED double strtod(const char*& str) const {
     char* end = nullptr;
     double result = strtod_l(str, &end, locale_);
     str = end;

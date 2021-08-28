@@ -548,13 +548,4 @@ TEST(file_test, fdopen) {
   int read_fd = read_end.descriptor();
   EXPECT_EQ(read_fd, FMT_POSIX(fileno(read_end.fdopen("r").get())));
 }
-
-#  ifdef FMT_LOCALE
-TEST(locale_test, strtod) {
-  fmt::locale loc;
-  const char *start = "4.2", *ptr = start;
-  EXPECT_EQ(4.2, loc.strtod(ptr));
-  EXPECT_EQ(start + 3, ptr);
-}
-#  endif
 #endif  // FMT_USE_FCNTL
