@@ -82,7 +82,7 @@ To force the use of compile-time checks, define the preprocessor variable
 will fail to compile with regular strings. Runtime-checked
 formatting is still possible using ``fmt::vformat``, ``fmt::vprint``, etc.
 
-.. doxygenclass:: fmt::format_string
+.. doxygenclass:: fmt::basic_format_string
 
 Named Arguments
 ---------------
