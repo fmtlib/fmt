@@ -2917,6 +2917,7 @@ struct formatter<T, Char,
 
 template <typename Char> struct basic_runtime { basic_string_view<Char> str; };
 
+/** A compile-time format string. */
 template <typename Char, typename... Args> class basic_format_string {
  private:
   basic_string_view<Char> str_;
