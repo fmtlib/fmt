@@ -2956,7 +2956,7 @@ template <typename S> auto runtime(const S& s) -> basic_string_view<char_t<S>> {
 #else
 template <typename... Args>
 using format_string = basic_format_string<char, type_identity_t<Args>...>;
-// Creates a runtime format string.
+/** Creates a runtime format string. */
 template <typename S> auto runtime(const S& s) -> basic_runtime<char_t<S>> {
   return {{s}};
 }

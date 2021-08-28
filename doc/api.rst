@@ -42,9 +42,9 @@ surrounded by braces ``{}``. The fields are replaced with formatted arguments
 in the resulting string. A function taking *fmt* doesn't participate in an
 overload resolution if the latter is not a string.
 
-Most formatting functions such as ``fmt::format`` require a format string to
+Most formatting functions such as `fmt::format` require a format string to
 be known at compile time, i.e. be a string literal or a ``constexpr`` string.
-To pass a runtime format string wrap it in ``fmt::runtime``.
+To pass a runtime format string wrap it in `fmt::runtime`.
 
 *args* is an argument list representing objects to be formatted.
 
@@ -86,6 +86,8 @@ formatting is still possible using ``fmt::vformat``, ``fmt::vprint``, etc.
    :members:
 
 .. doxygentypedef:: fmt::format_string
+
+.. doxygenfunction:: fmt::runtime(const S&)
 
 Named Arguments
 ---------------
