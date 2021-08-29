@@ -25,6 +25,6 @@ function(add_fuzzer source)
   target_compile_features(${name} PRIVATE cxx_generic_lambdas)
 endfunction()
 
-foreach (source chrono-duration.cc float.cc named-arg.cc one-arg.cc two-args.cc)
+foreach (source chrono-duration.cc chrono-timepoint.cc float.cc named-arg.cc one-arg.cc two-args.cc)
   add_fuzzer(${source})
 endforeach ()
