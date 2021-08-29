@@ -39,12 +39,10 @@ They take *fmt* and *args* as arguments.
 
 *fmt* is a format string that contains literal text and replacement fields
 surrounded by braces ``{}``. The fields are replaced with formatted arguments
-in the resulting string. A function taking *fmt* doesn't participate in an
-overload resolution if the latter is not a string.
-
-Most formatting functions such as `fmt::format` require a format string to
-be known at compile time, i.e. be a string literal or a ``constexpr`` string.
-To pass a runtime format string wrap it in `fmt::runtime`.
+in the resulting string. `fmt::format_string` is a format string which can be
+constructed from a string literal or a ``constexpr`` string and is checked at
+compile time in C++20. To pass a runtime format string wrap it in
+`fmt::runtime`.
 
 *args* is an argument list representing objects to be formatted.
 
