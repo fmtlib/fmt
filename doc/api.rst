@@ -530,8 +530,8 @@ argument type doesn't match its format specification.
 ``wchar_t`` Support
 ===================
 
-The optional header ``fmt/wchar_t.h`` provides support for ``wchar_t`` and
-exotic character types.
+The optional header ``fmt/xchar.h`` provides support for ``wchar_t`` and exotic
+character types.
 
 .. doxygenstruct:: fmt::is_char
 
