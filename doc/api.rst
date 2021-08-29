@@ -39,9 +39,9 @@ They take *fmt* and *args* as arguments.
 
 *fmt* is a format string that contains literal text and replacement fields
 surrounded by braces ``{}``. The fields are replaced with formatted arguments
-in the resulting string. `fmt::format_string` is a format string which can be
-constructed from a string literal or a ``constexpr`` string and is checked at
-compile time in C++20. To pass a runtime format string wrap it in
+in the resulting string. `~fmt::format_string` is a format string which can be
+implicitly constructed from a string literal or a ``constexpr`` string and is
+checked at compile time in C++20. To pass a runtime format string wrap it in
 `fmt::runtime`.
 
 *args* is an argument list representing objects to be formatted.
@@ -61,7 +61,7 @@ compile time in C++20. To pass a runtime format string wrap it in
 .. _print:
 
 .. doxygenfunction:: fmt::print(format_string<T...> fmt, T&&... args)
-.. doxygenfunction:: vprint(string_view fmt, format_args args)
+.. doxygenfunction:: fmt::vprint(string_view fmt, format_args args)
 
 .. doxygenfunction:: print(std::FILE *f, format_string<T...> fmt, T&&... args)
 .. doxygenfunction:: vprint(std::FILE *f, string_view fmt, format_args args)
