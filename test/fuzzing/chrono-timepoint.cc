@@ -9,15 +9,13 @@
  * C is a clock (std::chrono::system_clock etc)
  */
 template <typename C> void doit(const uint8_t* data, size_t size) {
-  using D = typename C::duration;
-  using TP = typename C::time_point;
-  using Rep = typename TP::rep;
+  using Rep = typename C::time_point::rep;
   constexpr auto N = sizeof(Rep);
   if (size < N) return;
 
   const auto x = assign_from_buf<Rep>(data);
-  D dur{x};
-  TP timepoint{dur};
+  typename C::duration dur{x};
+  typename C::time_point timepoint{dur};
   data += N;
   size -= N;
   data_to_string format_str(data, size);
@@ -37,8 +35,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       doit<std::chrono::system_clock>(data, size);
       break;
     case 1:
-        // may be the same as system_clock
-        doit<std::chrono::high_resolution_clock>(data, size);
+      // may be the same as system_clock
+      doit<std::chrono::high_resolution_clock>(data, size);
       break;
     case 2:
       // won't compile
