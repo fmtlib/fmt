@@ -742,18 +742,7 @@ inline auto get_container(std::back_insert_iterator<Container> it)
 template <typename Char, typename InputIt, typename OutputIt>
 FMT_CONSTEXPR auto copy_str(InputIt begin, InputIt end, OutputIt out)
     -> OutputIt {
-  while (begin != end) *out++ = static_cast<Char>(*begin++);
-  return out;
-}
-
-template <typename Char, FMT_ENABLE_IF(std::is_same<Char, char>::value)>
-FMT_CONSTEXPR auto copy_str(const Char* begin, const Char* end, Char* out)
-    -> Char* {
-  if (is_constant_evaluated())
-    return copy_str<Char, const Char*, Char*>(begin, end, out);
-  auto size = to_unsigned(end - begin);
-  memcpy(out, begin, size);
-  return out + size;
+  return std::copy(begin, end, out);
 }
 
 /**
