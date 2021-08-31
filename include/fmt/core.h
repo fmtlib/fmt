@@ -1371,10 +1371,10 @@ template <typename Context> struct arg_mapper {
   }
 
   template <typename T, typename U = remove_cvref_t<T>>
-  using formattable =
-      bool_constant<is_const_formattable<U, Context>() ||
-                    !std::is_const<remove_reference_t<T>>::value ||
-                    has_fallback_formatter<U, char_type>::value>;
+  struct formattable
+      : bool_constant<is_const_formattable<U, Context>() ||
+                      !std::is_const<remove_reference_t<T>>::value ||
+                      has_fallback_formatter<U, char_type>::value> {};
 
 #if FMT_MSC_VER != 0 && FMT_MSC_VER < 1910
   // Workaround a bug in MSVC.
