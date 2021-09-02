@@ -4,10 +4,6 @@
 // All rights reserved.
 //
 // For the license information refer to format.h.
-//
-// Copyright (c) 2018 - present, Remotion (Igor Schulz)
-// All Rights Reserved
-// {fmt} support for ranges, containers and types tuple interface.
 
 #include "fmt/ranges.h"
 
@@ -15,6 +11,7 @@
 
 #include "gtest/gtest.h"
 
+// call fmt::format from another translation unit to test ODR
 TEST(ranges_odr_test, format_vector) {
   auto v = std::vector<int>{1, 2, 3, 5, 7, 11};
   EXPECT_EQ(fmt::format("{}", v), "[1, 2, 3, 5, 7, 11]");
