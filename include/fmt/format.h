@@ -579,9 +579,10 @@ inline auto code_point_index(basic_string_view<char8_type> s, size_t n)
   return s.size();
 }
 
-template <typename T>
-using is_fast_float = bool_constant<std::numeric_limits<T>::is_iec559 &&
-                                    sizeof(T) <= sizeof(double)>;
+template <typename T, bool = std::is_floating_point<T>::value>
+struct is_fast_float : bool_constant<std::numeric_limits<T>::is_iec559 &&
+                                     sizeof(T) <= sizeof(double)> {};
+template <typename T> struct is_fast_float<T, false> : std::false_type {};
 
 #ifndef FMT_USE_FULL_CACHE_DRAGONBOX
 #  define FMT_USE_FULL_CACHE_DRAGONBOX 0
