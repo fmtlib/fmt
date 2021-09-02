@@ -437,7 +437,7 @@ auto find_escape(const Char* begin, const Char* end)
   return {begin, nullptr, 0};
 }
 
-auto find_escape(const char* begin, const char* end)
+inline auto find_escape(const char* begin, const char* end)
     -> find_escape_result<char> {
   if (!is_utf8()) return find_escape<char>(begin, end);
   auto result = find_escape_result<char>{end, nullptr, 0};
