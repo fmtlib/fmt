@@ -332,6 +332,8 @@ template <bool B> using bool_constant = std::integral_constant<bool, B>;
 template <typename T>
 using remove_reference_t = typename std::remove_reference<T>::type;
 template <typename T>
+using remove_const_t = typename std::remove_const<T>::type;
+template <typename T>
 using remove_cvref_t = typename std::remove_cv<remove_reference_t<T>>::type;
 template <typename T> struct type_identity { using type = T; };
 template <typename T> using type_identity_t = typename type_identity<T>::type;
@@ -755,13 +757,14 @@ FMT_CONSTEXPR auto copy_str(InputIt begin, InputIt end, OutputIt out)
   return out;
 }
 
-template <typename Char, FMT_ENABLE_IF(std::is_same<Char, char>::value)>
-FMT_CONSTEXPR auto copy_str(const Char* begin, const Char* end, Char* out)
-    -> Char* {
+template <typename Char, typename T, typename U,
+FMT_ENABLE_IF(std::is_same<remove_const_t<T>, U>::value && is_char<U>::value)>
+FMT_CONSTEXPR auto copy_str(T* begin, T* end, U* out)
+    -> U* {
   if (is_constant_evaluated())
-    return copy_str<Char, const Char*, Char*>(begin, end, out);
+    return copy_str<Char, T*, U*>(begin, end, out);
   auto size = to_unsigned(end - begin);
-  memcpy(out, begin, size);
+  memcpy(out, begin, size * sizeof(U));
   return out + size;
 }
 
