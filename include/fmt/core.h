@@ -2446,7 +2446,7 @@ FMT_CONSTEXPR auto parse_replacement_field(const Char* begin, const Char* end,
 template <bool IS_CONSTEXPR, typename Char, typename Handler>
 FMT_CONSTEXPR FMT_INLINE void parse_format_string(
     basic_string_view<Char> format_str, Handler&& handler) {
-  // this is most likely a name-lookup defect in msvc's modules implementation
+  // Workaround a name-lookup bug in MSVC's modules implementation.
   using detail::find;
 
   auto begin = format_str.data();
@@ -2722,16 +2722,11 @@ constexpr auto get_arg_index_by_name(basic_string_view<Char> name) -> int {
 template <typename... Args, typename Char>
 FMT_CONSTEXPR auto get_arg_index_by_name(basic_string_view<Char> name) -> int {
 #if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
-  if constexpr (sizeof...(Args) > 0) {
+  if constexpr (sizeof...(Args) > 0)
     return get_arg_index_by_name<0, Args...>(name);
-  } else {
-    (void)name;
-    return invalid_arg_index;
-  }
-#else
+#endif
   (void)name;
   return invalid_arg_index;
-#endif
 }
 
 template <typename Char, typename ErrorHandler, typename... Args>
@@ -2967,7 +2962,7 @@ template <typename OutputIt,
 auto vformat_to(OutputIt out, string_view fmt, format_args args) -> OutputIt {
   using detail::get_buffer;
   auto&& buf = get_buffer<char>(out);
-  detail::vformat_to(buf, string_view(fmt), args, {});
+  detail::vformat_to(buf, fmt, args, {});
   return detail::get_iterator(buf);
 }
 
@@ -3001,9 +2996,8 @@ template <typename OutputIt, typename... T,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
 auto vformat_to_n(OutputIt out, size_t n, string_view fmt, format_args args)
     -> format_to_n_result<OutputIt> {
-  using buffer =
-      detail::iterator_buffer<OutputIt, char, detail::fixed_buffer_traits>;
-  auto buf = buffer(out, n);
+  using traits = detail::fixed_buffer_traits;
+  auto buf = detail::iterator_buffer<OutputIt, char, traits>(out, n);
   detail::vformat_to(buf, fmt, args, {});
   return {buf.out(), buf.count()};
 }
