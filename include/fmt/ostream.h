@@ -30,56 +30,35 @@ template <class Char> class formatbuf : public std::basic_streambuf<Char> {
   formatbuf(buffer<Char>& buf) : buffer_(buf) {}
 
  protected:
-  // The put-area is actually always empty. This makes the implementation
-  // simpler and has the advantage that the streambuf and the buffer are always
-  // in sync and sputc never writes into uninitialized memory. The obvious
-  // disadvantage is that each call to sputc always results in a (virtual) call
-  // to overflow. There is no disadvantage here for sputn since this always
-  // results in a call to xsputn.
+  // The put area is always empty. This makes the implementation simpler and has
+  // the advantage that the streambuf and the buffer are always in sync and
+  // sputc never writes into uninitialized memory. A disadvantage is that each
+  // call to sputc always results in a (virtual) call to overflow. There is no
+  // disadvantage here for sputn since this always results in a call to xsputn.
 
-  int_type overflow(int_type ch = traits_type::eof()) FMT_OVERRIDE {
+  auto overflow(int_type ch = traits_type::eof()) -> int_type FMT_OVERRIDE {
     if (!traits_type::eq_int_type(ch, traits_type::eof()))
       buffer_.push_back(static_cast<Char>(ch));
     return ch;
   }
 
-  std::streamsize xsputn(const Char* s, std::streamsize count) FMT_OVERRIDE {
+  auto xsputn(const Char* s, std::streamsize count)
+      -> std::streamsize override {
     buffer_.append(s, s + count);
     return count;
   }
 };
 
-struct converter {
-  template <typename T, FMT_ENABLE_IF(is_integral<T>::value)> converter(T);
-};
-
-template <typename Char> struct test_stream : std::basic_ostream<Char> {
- private:
-  void_t<> operator<<(converter);
-};
-
-// Hide insertion operators for built-in types.
-template <typename Char, typename Traits>
-void_t<> operator<<(std::basic_ostream<Char, Traits>&, Char);
-template <typename Char, typename Traits>
-void_t<> operator<<(std::basic_ostream<Char, Traits>&, char);
-template <typename Traits>
-void_t<> operator<<(std::basic_ostream<char, Traits>&, char);
-template <typename Traits>
-void_t<> operator<<(std::basic_ostream<char, Traits>&, signed char);
-template <typename Traits>
-void_t<> operator<<(std::basic_ostream<char, Traits>&, unsigned char);
-
-// Checks if T has a user-defined operator<< e.g. not a member of std::ostream.
-template <typename T, typename Char> class is_streamable {
+// Checks if T has a user-defined operator<<.
+template <typename T, typename Char, typename Enable = void>
+class is_streamable {
  private:
   template <typename U>
-  static bool_constant<!std::is_same<decltype(std::declval<test_stream<Char>&>()
-                                              << std::declval<U>()),
-                                     void_t<>>::value>
-  test(int);
+  static auto test(int)
+      -> bool_constant<sizeof(std::declval<std::basic_ostream<Char>&>()
+                              << std::declval<U>()) != 0>;
 
-  template <typename> static std::false_type test(...);
+  template <typename> static auto test(...) -> std::false_type;
 
   using result = decltype(test<T>(0));
 
@@ -89,10 +68,15 @@ template <typename T, typename Char> class is_streamable {
   static const bool value = result::value;
 };
 
-// Formatting of arrays is intentionally disabled to prevent conflicts with
-// standard (non-ostream) formatters.
-template <typename T, size_t N, typename Char>
-struct is_streamable<T[N], Char> : std::false_type {};
+// Formatting of built-in types and arrays is intentionally disabled because
+// it's handled by standard (non-ostream) formatters.
+template <typename T, typename Char>
+struct is_streamable<
+    T, Char,
+    enable_if_t<std::is_arithmetic<T>::value || std::is_array<T>::value ||
+                std::is_same<T, char8_type>::value ||
+                (std::is_convertible<T, int>::value &&
+                 !std::is_enum<T>::value)>> : std::false_type {};
 
 // Write the content of buf to os.
 template <typename Char>
@@ -130,6 +114,8 @@ struct fallback_formatter<T, Char, enable_if_t<is_streamable<T, Char>::value>>
       -> decltype(ctx.begin()) {
     return formatter<basic_string_view<Char>, Char>::parse(ctx);
   }
+
+  // DEPRECATED!
   template <typename ParseCtx,
             FMT_ENABLE_IF(std::is_same<
                           ParseCtx, basic_printf_parse_context<Char>>::value)>
@@ -145,6 +131,8 @@ struct fallback_formatter<T, Char, enable_if_t<is_streamable<T, Char>::value>>
     basic_string_view<Char> str(buffer.data(), buffer.size());
     return formatter<basic_string_view<Char>, Char>::format(str, ctx);
   }
+
+  // DEPRECATED!
   template <typename OutputIt>
   auto format(const T& value, basic_printf_context<OutputIt, Char>& ctx)
       -> OutputIt {
@@ -159,7 +147,7 @@ FMT_MODULE_EXPORT
 template <typename Char>
 void vprint(std::basic_ostream<Char>& os, basic_string_view<Char> format_str,
             basic_format_args<buffer_context<type_identity_t<Char>>> args) {
-  basic_memory_buffer<Char> buffer;
+  auto buffer = basic_memory_buffer<Char>();
   detail::vformat_to(buffer, format_str, args);
   detail::write_buffer(os, buffer);
 }
