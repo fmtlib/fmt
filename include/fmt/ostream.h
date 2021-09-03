@@ -14,7 +14,6 @@
 
 FMT_BEGIN_NAMESPACE
 
-template <typename Char> class basic_printf_parse_context;
 template <typename OutputIt, typename Char> class basic_printf_context;
 
 namespace detail {
@@ -27,7 +26,7 @@ template <class Char> class formatbuf : public std::basic_streambuf<Char> {
   buffer<Char>& buffer_;
 
  public:
-  formatbuf(buffer<Char>& buf) : buffer_(buf) {}
+  explicit formatbuf(buffer<Char>& buf) : buffer_(buf) {}
 
  protected:
   // The put area is always empty. This makes the implementation simpler and has
@@ -36,7 +35,7 @@ template <class Char> class formatbuf : public std::basic_streambuf<Char> {
   // call to sputc always results in a (virtual) call to overflow. There is no
   // disadvantage here for sputn since this always results in a call to xsputn.
 
-  auto overflow(int_type ch = traits_type::eof()) -> int_type FMT_OVERRIDE {
+  auto overflow(int_type ch = traits_type::eof()) -> int_type override {
     if (!traits_type::eq_int_type(ch, traits_type::eof()))
       buffer_.push_back(static_cast<Char>(ch));
     return ch;
@@ -79,6 +78,7 @@ struct is_streamable<
                  !std::is_enum<T>::value)>> : std::false_type {};
 
 // Write the content of buf to os.
+// It is a separate function rather than a part of vprint to simplify testing.
 template <typename Char>
 void write_buffer(std::basic_ostream<Char>& os, buffer<Char>& buf) {
   const Char* buf_data = buf.data();
@@ -96,8 +96,8 @@ void write_buffer(std::basic_ostream<Char>& os, buffer<Char>& buf) {
 template <typename Char, typename T>
 void format_value(buffer<Char>& buf, const T& value,
                   locale_ref loc = locale_ref()) {
-  formatbuf<Char> format_buf(buf);
-  std::basic_ostream<Char> output(&format_buf);
+  auto&& format_buf = formatbuf<Char>(buf);
+  auto&& output = std::basic_ostream<Char>(&format_buf);
 #if !defined(FMT_STATIC_THOUSANDS_SEPARATOR)
   if (loc) output.imbue(loc.get<std::locale>());
 #endif
@@ -110,33 +110,22 @@ void format_value(buffer<Char>& buf, const T& value,
 template <typename T, typename Char>
 struct fallback_formatter<T, Char, enable_if_t<is_streamable<T, Char>::value>>
     : private formatter<basic_string_view<Char>, Char> {
-  FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
-      -> decltype(ctx.begin()) {
-    return formatter<basic_string_view<Char>, Char>::parse(ctx);
-  }
-
-  // DEPRECATED!
-  template <typename ParseCtx,
-            FMT_ENABLE_IF(std::is_same<
-                          ParseCtx, basic_printf_parse_context<Char>>::value)>
-  auto parse(ParseCtx& ctx) -> decltype(ctx.begin()) {
-    return ctx.begin();
-  }
+  using formatter<basic_string_view<Char>, Char>::parse;
 
   template <typename OutputIt>
   auto format(const T& value, basic_format_context<OutputIt, Char>& ctx)
       -> OutputIt {
-    basic_memory_buffer<Char> buffer;
+    auto buffer = basic_memory_buffer<Char>();
     format_value(buffer, value, ctx.locale());
-    basic_string_view<Char> str(buffer.data(), buffer.size());
-    return formatter<basic_string_view<Char>, Char>::format(str, ctx);
+    return formatter<basic_string_view<Char>, Char>::format(
+        {buffer.data(), buffer.size()}, ctx);
   }
 
   // DEPRECATED!
   template <typename OutputIt>
   auto format(const T& value, basic_printf_context<OutputIt, Char>& ctx)
       -> OutputIt {
-    basic_memory_buffer<Char> buffer;
+    auto buffer = basic_memory_buffer<Char>();
     format_value(buffer, value, ctx.locale());
     return std::copy(buffer.begin(), buffer.end(), ctx.out());
   }
