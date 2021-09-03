@@ -70,8 +70,7 @@ void_t<> operator<<(std::basic_ostream<char, Traits>&, signed char);
 template <typename Traits>
 void_t<> operator<<(std::basic_ostream<char, Traits>&, unsigned char);
 
-// Checks if T has a user-defined operator<< (e.g. not a member of
-// std::ostream).
+// Checks if T has a user-defined operator<< e.g. not a member of std::ostream.
 template <typename T, typename Char> class is_streamable {
  private:
   template <typename U>
@@ -89,6 +88,11 @@ template <typename T, typename Char> class is_streamable {
 
   static const bool value = result::value;
 };
+
+// Formatting of arrays is intentionally disabled to prevent conflicts with
+// standard (non-ostream) formatters.
+template <typename T, size_t N, typename Char>
+struct is_streamable<T[N], Char> : std::false_type {};
 
 // Write the content of buf to os.
 template <typename Char>
