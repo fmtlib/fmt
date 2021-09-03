@@ -32,12 +32,6 @@
 #  define FMT_GCC_PRAGMA(arg)
 #endif
 
-#if __cplusplus >= 201103L || defined(__GXX_EXPERIMENTAL_CXX0X__)
-#  define FMT_HAS_GXX_CXX11 FMT_GCC_VERSION
-#else
-#  define FMT_HAS_GXX_CXX11 0
-#endif
-
 #if defined(__INTEL_COMPILER)
 #  define FMT_ICC_VERSION __INTEL_COMPILER
 #else
@@ -124,8 +118,8 @@
 #endif
 
 #ifndef FMT_OVERRIDE
-#  if FMT_HAS_FEATURE(cxx_override_control) || \
-      (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || FMT_MSC_VER >= 1900
+#  if FMT_HAS_FEATURE(cxx_override_control) || FMT_GCC_VERSION >= 408 || \
+      FMT_MSC_VER >= 1900
 #    define FMT_OVERRIDE override
 #  else
 #    define FMT_OVERRIDE
@@ -148,7 +142,7 @@
 #endif
 
 #if FMT_USE_NOEXCEPT || FMT_HAS_FEATURE(cxx_noexcept) || \
-    (FMT_GCC_VERSION >= 408 && FMT_HAS_GXX_CXX11) || FMT_MSC_VER >= 1900
+    FMT_GCC_VERSION >= 408 || FMT_MSC_VER >= 1900
 #  define FMT_DETECTED_NOEXCEPT noexcept
 #  define FMT_HAS_CXX11_NOEXCEPT 1
 #else
@@ -758,11 +752,10 @@ FMT_CONSTEXPR auto copy_str(InputIt begin, InputIt end, OutputIt out)
 }
 
 template <typename Char, typename T, typename U,
-FMT_ENABLE_IF(std::is_same<remove_const_t<T>, U>::value && is_char<U>::value)>
-FMT_CONSTEXPR auto copy_str(T* begin, T* end, U* out)
-    -> U* {
-  if (is_constant_evaluated())
-    return copy_str<Char, T*, U*>(begin, end, out);
+          FMT_ENABLE_IF(
+              std::is_same<remove_const_t<T>, U>::value&& is_char<U>::value)>
+FMT_CONSTEXPR auto copy_str(T* begin, T* end, U* out) -> U* {
+  if (is_constant_evaluated()) return copy_str<Char, T*, U*>(begin, end, out);
   auto size = to_unsigned(end - begin);
   memcpy(out, begin, size * sizeof(U));
   return out + size;
