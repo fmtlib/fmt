@@ -2701,12 +2701,10 @@ constexpr auto get_arg_index_by_name(basic_string_view<Char> name) -> int {
   if constexpr (detail::is_statically_named_arg<T>()) {
     if (name == T::name) return N;
   }
-  if constexpr (sizeof...(Args) > 0) {
+  if constexpr (sizeof...(Args) > 0)
     return get_arg_index_by_name<N + 1, Args...>(name);
-  } else {
-    (void)name;  // Workaround an MSVC bug about "unused" parameter.
-    return invalid_arg_index;
-  }
+  (void)name;  // Workaround an MSVC bug about "unused" parameter.
+  return invalid_arg_index;
 }
 #endif
 
