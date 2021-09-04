@@ -657,7 +657,7 @@ class basic_memory_buffer final : public detail::buffer<T> {
   }
 
  protected:
-  void grow(size_t size) FMT_OVERRIDE;
+  void grow(size_t size) override;
 
  public:
   using value_type = T;
@@ -788,7 +788,7 @@ class FMT_API format_error : public std::runtime_error {
   format_error& operator=(const format_error&) = default;
   format_error(format_error&&) = default;
   format_error& operator=(format_error&&) = default;
-  ~format_error() FMT_NOEXCEPT FMT_OVERRIDE FMT_MSC_DEFAULT;
+  ~format_error() FMT_NOEXCEPT override FMT_MSC_DEFAULT;
 };
 
 /**
