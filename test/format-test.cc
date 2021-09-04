@@ -1595,6 +1595,10 @@ TEST(format_test, bytes) {
   EXPECT_EQ(10, s.size());
 }
 
+TEST(format_test, thousands) {
+  EXPECT_EQ(fmt::format("{}", fmt::thousands(1000)), "1,000");
+}
+
 enum test_enum { foo, bar };
 
 TEST(format_test, join) {

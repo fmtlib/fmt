@@ -1467,6 +1467,7 @@ template <typename Char> class digit_grouping {
     else
       sep_.thousands_sep = Char();
   }
+  explicit digit_grouping(thousands_sep_result<Char> sep) : sep_(sep) {}
 
   Char separator() const { return sep_.thousands_sep; }
 
@@ -1501,22 +1502,28 @@ template <typename Char> class digit_grouping {
 };
 
 template <typename OutputIt, typename UInt, typename Char>
-auto write_int_localized(OutputIt& out, UInt value, unsigned prefix,
-                         const basic_format_specs<Char>& specs, locale_ref loc)
-    -> bool {
+auto write_int_localized(OutputIt out, UInt value, unsigned prefix,
+                         const basic_format_specs<Char>& specs,
+                         const digit_grouping<Char>& grouping) -> OutputIt {
   static_assert(std::is_same<uint64_or_128_t<UInt>, UInt>::value, "");
   int num_digits = count_digits(value);
   char digits[40];
   format_decimal(digits, value, num_digits);
-
-  auto grouping = digit_grouping<Char>(loc);
   unsigned size = to_unsigned((prefix != 0 ? 1 : 0) + num_digits +
                               grouping.count_separators(num_digits));
-  out = write_padded<align::right>(
+  return write_padded<align::right>(
       out, specs, size, size, [&](reserve_iterator<OutputIt> it) {
         if (prefix != 0) *it++ = static_cast<Char>(prefix);
         return grouping.apply(it, string_view(digits, to_unsigned(num_digits)));
       });
+}
+
+template <typename OutputIt, typename UInt, typename Char>
+auto write_int_localized(OutputIt& out, UInt value, unsigned prefix,
+                         const basic_format_specs<Char>& specs, locale_ref loc)
+    -> bool {
+  auto grouping = digit_grouping<Char>(loc);
+  out = write_int_localized(out, value, prefix, specs, grouping);
   return true;
 }
 
@@ -2601,6 +2608,22 @@ template <> struct formatter<bytes> {
     detail::handle_dynamic_spec<detail::precision_checker>(
         specs_.precision, specs_.precision_ref, ctx);
     return detail::write_bytes(ctx.out(), b.data_, specs_);
+  }
+};
+
+// thousands_view is not derived from view because it copies the argument.
+template <typename T> struct thousands_view { T value; };
+
+template <typename T> auto thousands(T value) -> thousands_view<T> {
+  return {value};
+}
+
+template <typename T> struct formatter<thousands_view<T>> : formatter<T> {
+  template <typename FormatContext>
+  auto format(thousands_view<T> t, FormatContext& ctx) -> decltype(ctx.out()) {
+    return detail::write_int_localized(
+        ctx.out(), static_cast<detail::uint64_or_128_t<T>>(t.value), 0,
+        format_specs(), detail::digit_grouping<char>({"\3", ','}));
   }
 };
 
