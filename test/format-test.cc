@@ -1596,7 +1596,8 @@ TEST(format_test, bytes) {
 }
 
 TEST(format_test, thousands) {
-  EXPECT_EQ(fmt::format("{}", fmt::thousands(1000)), "1,000");
+  EXPECT_EQ(fmt::format("{}", fmt::thousands(10000000)), "10,000,000");
+  EXPECT_EQ(fmt::format("{:8}", fmt::thousands(1000)), "   1,000");
 }
 
 enum test_enum { foo, bar };

@@ -2619,11 +2619,29 @@ template <typename T> auto thousands(T value) -> thousands_view<T> {
 }
 
 template <typename T> struct formatter<thousands_view<T>> : formatter<T> {
+ private:
+  detail::dynamic_format_specs<char> specs_;
+
+ public:
+  template <typename ParseContext>
+  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+    using handler_type = detail::dynamic_specs_handler<ParseContext>;
+    detail::specs_checker<handler_type> handler(handler_type(specs_, ctx),
+                                                detail::type::int_type);
+    auto it = parse_format_specs(ctx.begin(), ctx.end(), handler);
+    detail::check_string_type_spec(specs_.type, ctx.error_handler());
+    return it;
+  }
+
   template <typename FormatContext>
   auto format(thousands_view<T> t, FormatContext& ctx) -> decltype(ctx.out()) {
+    detail::handle_dynamic_spec<detail::width_checker>(specs_.width,
+                                                       specs_.width_ref, ctx);
+    detail::handle_dynamic_spec<detail::precision_checker>(
+        specs_.precision, specs_.precision_ref, ctx);
     return detail::write_int_localized(
         ctx.out(), static_cast<detail::uint64_or_128_t<T>>(t.value), 0,
-        format_specs(), detail::digit_grouping<char>({"\3", ','}));
+        specs_, detail::digit_grouping<char>({"\3", ','}));
   }
 };
 
