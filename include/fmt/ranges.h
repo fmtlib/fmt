@@ -625,6 +625,13 @@ template <typename Char, typename... T> struct tuple_join_view : detail::view {
 template <typename Char, typename... T>
 using tuple_arg_join = tuple_join_view<Char, T...>;
 
+// Define FMT_TUPLE_JOIN_SPECIFIERS to enable experimental format specifiers
+// support in tuple_join. It is disabled by default because of issues with
+// the dynamic width and precision.
+#ifndef FMT_TUPLE_JOIN_SPECIFIERS
+#  define FMT_TUPLE_JOIN_SPECIFIERS 0
+#endif
+
 template <typename Char, typename... T>
 struct formatter<tuple_join_view<Char, T...>, Char> {
   template <typename ParseContext>
@@ -654,11 +661,13 @@ struct formatter<tuple_join_view<Char, T...>, Char> {
                               std::integral_constant<size_t, N>)
       -> decltype(ctx.begin()) {
     auto end = std::get<sizeof...(T) - N>(formatters_).parse(ctx);
+#if FMT_TUPLE_JOIN_SPECIFIERS
     if (N > 1) {
       auto end1 = do_parse(ctx, std::integral_constant<size_t, N - 1>());
       if (end != end1)
         FMT_THROW(format_error("incompatible format specs for tuple elements"));
     }
+#endif
     return end;
   }
 
