@@ -891,11 +891,11 @@ TEST(core_test, adl) {
   fmt::print(stdout, "{}", s);
 }
 
-TEST(core_test, is_const_formattable) {
-  EXPECT_TRUE((fmt::detail::is_const_formattable<const_formattable,
+TEST(core_test, has_const_formatter) {
+  EXPECT_TRUE((fmt::detail::has_const_formatter<const_formattable,
+                                                fmt::format_context>()));
+  EXPECT_FALSE((fmt::detail::has_const_formatter<nonconst_formattable,
                                                  fmt::format_context>()));
-  EXPECT_FALSE((fmt::detail::is_const_formattable<nonconst_formattable,
-                                                  fmt::format_context>()));
 }
 
 TEST(core_test, format_nonconst) {

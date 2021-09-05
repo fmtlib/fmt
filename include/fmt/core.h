@@ -684,19 +684,19 @@ class appender;
 FMT_BEGIN_DETAIL_NAMESPACE
 
 template <typename Context, typename T>
-constexpr auto is_const_formattable_impl(T*)
+constexpr auto has_const_formatter_impl(T*)
     -> decltype(typename Context::template formatter_type<T>().format(
                     std::declval<const T&>(), std::declval<Context&>()),
                 true) {
   return true;
 }
 template <typename Context>
-constexpr auto is_const_formattable_impl(...) -> bool {
+constexpr auto has_const_formatter_impl(...) -> bool {
   return false;
 }
 template <typename T, typename Context>
-constexpr auto is_const_formattable() -> bool {
-  return is_const_formattable_impl<Context>(static_cast<T*>(nullptr));
+constexpr auto has_const_formatter() -> bool {
+  return has_const_formatter_impl<Context>(static_cast<T*>(nullptr));
 }
 
 // Extracts a reference to the container from back_insert_iterator.
@@ -1186,7 +1186,7 @@ template <typename Context> class value {
     auto f = Formatter();
     parse_ctx.advance_to(f.parse(parse_ctx));
     using qualified_type =
-        conditional_t<is_const_formattable<T, Context>(), const T, T>;
+        conditional_t<has_const_formatter<T, Context>(), const T, T>;
     ctx.advance_to(f.format(*static_cast<qualified_type*>(arg), ctx));
   }
 };
@@ -1335,7 +1335,7 @@ template <typename Context> struct arg_mapper {
 
   template <typename T, typename U = remove_cvref_t<T>>
   struct formattable
-      : bool_constant<is_const_formattable<U, Context>() ||
+      : bool_constant<has_const_formatter<U, Context>() ||
                       !std::is_const<remove_reference_t<T>>::value ||
                       has_fallback_formatter<U, char_type>::value> {};
 
