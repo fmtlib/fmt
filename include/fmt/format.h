@@ -2611,14 +2611,14 @@ template <> struct formatter<bytes> {
   }
 };
 
-// thousands_view is not derived from view because it copies the argument.
-template <typename T> struct thousands_view { T value; };
+// group_digits_view is not derived from view because it copies the argument.
+template <typename T> struct group_digits_view { T value; };
 
-template <typename T> auto thousands(T value) -> thousands_view<T> {
+template <typename T> auto group_digits(T value) -> group_digits_view<T> {
   return {value};
 }
 
-template <typename T> struct formatter<thousands_view<T>> : formatter<T> {
+template <typename T> struct formatter<group_digits_view<T>> : formatter<T> {
  private:
   detail::dynamic_format_specs<char> specs_;
 
@@ -2634,7 +2634,7 @@ template <typename T> struct formatter<thousands_view<T>> : formatter<T> {
   }
 
   template <typename FormatContext>
-  auto format(thousands_view<T> t, FormatContext& ctx) -> decltype(ctx.out()) {
+  auto format(group_digits_view<T> t, FormatContext& ctx) -> decltype(ctx.out()) {
     detail::handle_dynamic_spec<detail::width_checker>(specs_.width,
                                                        specs_.width_ref, ctx);
     detail::handle_dynamic_spec<detail::precision_checker>(
