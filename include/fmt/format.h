@@ -1611,14 +1611,21 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
   }
   return out;
 }
+template <typename Char, typename OutputIt, typename T>
+FMT_CONSTEXPR FMT_NOINLINE auto write_int_noinline(
+    OutputIt out, write_int_arg<T> arg, const basic_format_specs<Char>& specs,
+    locale_ref loc) -> OutputIt {
+  return write_int(out, arg, specs, loc);
+}
 template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(is_integral<T>::value &&
                         !std::is_same<T, bool>::value &&
                         std::is_same<OutputIt, buffer_appender<Char>>::value)>
-FMT_CONSTEXPR auto write(OutputIt out, T value,
-                         const basic_format_specs<Char>& specs, locale_ref loc)
-    -> OutputIt {
-  return write_int(out, make_write_int_arg(value, specs.sign), specs, loc);
+FMT_CONSTEXPR FMT_INLINE auto write(OutputIt out, T value,
+                                    const basic_format_specs<Char>& specs,
+                                    locale_ref loc) -> OutputIt {
+  return write_int_noinline(out, make_write_int_arg(value, specs.sign), specs,
+                            loc);
 }
 // An inlined version of write used in format string compilation.
 template <typename Char, typename OutputIt, typename T,
@@ -2634,14 +2641,15 @@ template <typename T> struct formatter<group_digits_view<T>> : formatter<T> {
   }
 
   template <typename FormatContext>
-  auto format(group_digits_view<T> t, FormatContext& ctx) -> decltype(ctx.out()) {
+  auto format(group_digits_view<T> t, FormatContext& ctx)
+      -> decltype(ctx.out()) {
     detail::handle_dynamic_spec<detail::width_checker>(specs_.width,
                                                        specs_.width_ref, ctx);
     detail::handle_dynamic_spec<detail::precision_checker>(
         specs_.precision, specs_.precision_ref, ctx);
     return detail::write_int_localized(
-        ctx.out(), static_cast<detail::uint64_or_128_t<T>>(t.value), 0,
-        specs_, detail::digit_grouping<char>({"\3", ','}));
+        ctx.out(), static_cast<detail::uint64_or_128_t<T>>(t.value), 0, specs_,
+        detail::digit_grouping<char>({"\3", ','}));
   }
 };
 
