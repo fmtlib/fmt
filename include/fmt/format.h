@@ -916,10 +916,6 @@ template <typename T = void> struct basic_data {
   FMT_API static constexpr const char signs[4] = {0, '-', '+', ' '};
   FMT_API static constexpr const unsigned prefixes[4] = {0, 0, 0x1000000u | '+',
                                                          0x1000000u | ' '};
-  FMT_API static constexpr const char left_padding_shifts[5] = {31, 31, 0, 1,
-                                                                0};
-  FMT_API static constexpr const char right_padding_shifts[5] = {0, 31, 0, 1,
-                                                                 0};
 };
 
 #ifdef FMT_SHARED
@@ -1328,8 +1324,7 @@ FMT_CONSTEXPR auto write_padded(OutputIt out,
   static_assert(align == align::left || align == align::right, "");
   unsigned spec_width = to_unsigned(specs.width);
   size_t padding = spec_width > width ? spec_width - width : 0;
-  auto* shifts = align == align::left ? data::left_padding_shifts
-                                      : data::right_padding_shifts;
+  auto* shifts = align == align::left ? "\x1f\x1f\x00\x01" : "\x00\x1f\x00\x01";
   size_t left_padding = padding >> shifts[specs.align];
   size_t right_padding = padding - left_padding;
   auto it = reserve(out, size + padding * specs.fill.size());
