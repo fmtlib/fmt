@@ -524,7 +524,7 @@ struct test_format_specs_handler {
   fmt::detail::arg_ref<char> width_ref;
   int precision = 0;
   fmt::detail::arg_ref<char> precision_ref;
-  char type = 0;
+  fmt::presentation_type type = fmt::presentation_type::none;
 
   // Workaround for MSVC2017 bug that results in "expression did not evaluate
   // to a constant" with compiler-generated copy ctor.
@@ -550,14 +550,14 @@ struct test_format_specs_handler {
   constexpr void on_dynamic_precision(string_view) {}
 
   constexpr void end_precision() {}
-  constexpr void on_type(char t) { type = t; }
+  constexpr void on_type(fmt::presentation_type t) { type = t; }
   constexpr void on_error(const char*) { res = error; }
 };
 
 template <size_t N>
 constexpr test_format_specs_handler parse_test_specs(const char (&s)[N]) {
   auto h = test_format_specs_handler();
-  fmt::detail::parse_format_specs(s, s + N, h);
+  fmt::detail::parse_format_specs(s, s + N - 1, h);
   return h;
 }
 
@@ -575,7 +575,7 @@ TEST(core_test, constexpr_parse_format_specs) {
   static_assert(parse_test_specs("{42}").width_ref.val.index == 42, "");
   static_assert(parse_test_specs(".42").precision == 42, "");
   static_assert(parse_test_specs(".{42}").precision_ref.val.index == 42, "");
-  static_assert(parse_test_specs("d").type == 'd', "");
+  static_assert(parse_test_specs("d").type == fmt::presentation_type::dec, "");
   static_assert(parse_test_specs("{<").res == handler::error, "");
 }
 
@@ -597,7 +597,7 @@ constexpr fmt::detail::dynamic_format_specs<char> parse_dynamic_specs(
   auto specs = fmt::detail::dynamic_format_specs<char>();
   auto ctx = test_parse_context();
   auto h = fmt::detail::dynamic_specs_handler<test_parse_context>(specs, ctx);
-  parse_format_specs(s, s + N, h);
+  parse_format_specs(s, s + N - 1, h);
   return specs;
 }
 
@@ -615,14 +615,15 @@ TEST(format_test, constexpr_dynamic_specs_handler) {
   static_assert(parse_dynamic_specs(".42").precision == 42, "");
   static_assert(parse_dynamic_specs(".{}").precision_ref.val.index == 11, "");
   static_assert(parse_dynamic_specs(".{42}").precision_ref.val.index == 42, "");
-  static_assert(parse_dynamic_specs("d").type == 'd', "");
+  static_assert(parse_dynamic_specs("d").type == fmt::presentation_type::dec,
+                "");
 }
 
 template <size_t N>
 constexpr test_format_specs_handler check_specs(const char (&s)[N]) {
   fmt::detail::specs_checker<test_format_specs_handler> checker(
       test_format_specs_handler(), fmt::detail::type::double_type);
-  parse_format_specs(s, s + N, checker);
+  parse_format_specs(s, s + N - 1, checker);
   return checker;
 }
 
@@ -639,7 +640,7 @@ TEST(format_test, constexpr_specs_checker) {
   static_assert(check_specs("{42}").width_ref.val.index == 42, "");
   static_assert(check_specs(".42").precision == 42, "");
   static_assert(check_specs(".{42}").precision_ref.val.index == 42, "");
-  static_assert(check_specs("d").type == 'd', "");
+  static_assert(check_specs("d").type == fmt::presentation_type::dec, "");
   static_assert(check_specs("{<").res == handler::error, "");
 }
 

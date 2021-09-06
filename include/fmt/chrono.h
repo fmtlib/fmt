@@ -904,7 +904,8 @@ template <typename Char, typename Rep, typename OutputIt,
 OutputIt format_duration_value(OutputIt out, Rep val, int precision) {
   auto specs = basic_format_specs<Char>();
   specs.precision = precision;
-  specs.type = precision > 0 ? 'f' : 'g';
+  specs.type = precision > 0 ? presentation_type::fixed_lower
+                             : presentation_type::general_lower;
   return write<Char>(out, val, specs);
 }
 

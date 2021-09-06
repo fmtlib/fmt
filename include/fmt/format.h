@@ -1558,10 +1558,10 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
   static_assert(std::is_same<T, uint32_or_64_or_128_t<T>>::value, "");
   auto abs_value = arg.abs_value;
   auto prefix = arg.prefix;
-  auto utype = static_cast<unsigned>(specs.type);
-  switch (specs.type) {
-  case 0:
-  case 'd': {
+  auto pres_type = static_cast<presentation_type>(specs.type);
+  switch (pres_type) {
+  case presentation_type::none:
+  case presentation_type::dec: {
     if (specs.localized &&
         write_int_localized(out, static_cast<uint64_or_128_t<T>>(abs_value),
                             prefix, specs, loc)) {
@@ -1573,38 +1573,40 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
           return format_decimal<Char>(it, abs_value, num_digits).end;
         });
   }
-  case 'x':
-  case 'X': {
-    if (specs.alt) prefix_append(prefix, (utype << 8) | '0');
-    bool upper = specs.type != 'x';
+  case presentation_type::hex_lower:
+  case presentation_type::hex_upper: {
+    bool upper = pres_type == presentation_type::hex_upper;
+    if (specs.alt)
+      prefix_append(prefix, unsigned(upper ? 'X' : 'x') << 8 | '0');
     int num_digits = count_digits<4>(abs_value);
     return write_int(
         out, num_digits, prefix, specs, [=](reserve_iterator<OutputIt> it) {
           return format_uint<4, Char>(it, abs_value, num_digits, upper);
         });
   }
-  case 'b':
-  case 'B': {
-    if (specs.alt) prefix_append(prefix, (utype << 8) | '0');
+  case presentation_type::bin_lower:
+  case presentation_type::bin_upper: {
+    bool upper = pres_type == presentation_type::bin_upper;
+    if (specs.alt)
+      prefix_append(prefix, unsigned(upper ? 'B' : 'b') << 8 | '0');
     int num_digits = count_digits<1>(abs_value);
     return write_int(out, num_digits, prefix, specs,
                      [=](reserve_iterator<OutputIt> it) {
                        return format_uint<1, Char>(it, abs_value, num_digits);
                      });
   }
-  case 'o': {
+  case presentation_type::oct: {
     int num_digits = count_digits<3>(abs_value);
-    if (specs.alt && specs.precision <= num_digits && abs_value != 0) {
-      // Octal prefix '0' is counted as a digit, so only add it if precision
-      // is not greater than the number of digits.
+    // Octal prefix '0' is counted as a digit, so only add it if precision
+    // is not greater than the number of digits.
+    if (specs.alt && specs.precision <= num_digits && abs_value != 0)
       prefix_append(prefix, '0');
-    }
     return write_int(out, num_digits, prefix, specs,
                      [=](reserve_iterator<OutputIt> it) {
                        return format_uint<3, Char>(it, abs_value, num_digits);
                      });
   }
-  case 'c':
+  case presentation_type::chr:
     return write_char(out, static_cast<Char>(abs_value), specs);
   default:
     FMT_THROW(format_error("invalid type specifier"));
@@ -1924,7 +1926,9 @@ auto write(OutputIt out, T value, basic_format_specs<Char> specs,
     return write_bytes<align::right>(out, {buffer.data(), buffer.size()},
                                      specs);
   }
-  int precision = specs.precision >= 0 || !specs.type ? specs.precision : 6;
+  int precision = specs.precision >= 0 || specs.type == presentation_type::none
+                      ? specs.precision
+                      : 6;
   if (fspecs.format == float_format::exp) {
     if (precision == max_value<int>())
       FMT_THROW(format_error("number is too big"));
@@ -2032,7 +2036,8 @@ template <typename Char, typename OutputIt, typename T,
 FMT_CONSTEXPR auto write(OutputIt out, T value,
                          const basic_format_specs<Char>& specs = {},
                          locale_ref = {}) -> OutputIt {
-  return specs.type && specs.type != 's'
+  return specs.type != presentation_type::none &&
+                 specs.type != presentation_type::string
              ? write(out, value ? 1 : 0, specs, {})
              : write_bytes(out, value ? "true" : "false", specs);
 }

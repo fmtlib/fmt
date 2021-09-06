@@ -555,7 +555,7 @@ TEST(format_test, fill) {
             fmt::format(string_view("{:\0>4}", 6), '*'));
   EXPECT_EQ("жж42", fmt::format("{0:ж>4}", 42));
   EXPECT_THROW_MSG(fmt::format(runtime("{:\x80\x80\x80\x80\x80>}"), 0),
-                   format_error, "missing '}' in format string");
+                   format_error, "invalid type specifier");
 }
 
 TEST(format_test, plus_sign) {
@@ -1037,7 +1037,7 @@ void check_unknown_types(const T& value, const char* types, const char*) {
 
 TEST(format_test, format_int) {
   EXPECT_THROW_MSG(fmt::format(runtime("{0:v"), 42), format_error,
-                   "missing '}' in format string");
+                   "invalid type specifier");
   check_unknown_types(42, "bBdoxXnLc", "integer");
   EXPECT_EQ("x", fmt::format("{:c}", static_cast<int>('x')));
 }

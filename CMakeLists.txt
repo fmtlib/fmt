@@ -151,7 +151,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
       -Wcast-align
       -Wctor-dtor-privacy -Wdisabled-optimization
       -Winvalid-pch -Woverloaded-virtual
-      -Wconversion -Wswitch-enum -Wundef
+      -Wconversion -Wundef
       -Wno-ctor-dtor-privacy -Wno-format-nonliteral)
   if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6)
       set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS}

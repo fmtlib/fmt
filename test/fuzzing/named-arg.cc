@@ -29,7 +29,8 @@ void invoke_fmt(const uint8_t* data, size_t size, unsigned arg_name_size) {
         fmt::format(format_str.get(), fmt::arg(arg_name.data(), value));
 #else
     fmt::memory_buffer out;
-    fmt::format_to(out, format_str.get(), fmt::arg(arg_name.data(), value));
+    fmt::format_to(std::back_inserter(out), format_str.get(),
+                   fmt::arg(arg_name.data(), value));
 #endif
   } catch (std::exception&) {
   }
