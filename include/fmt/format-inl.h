@@ -40,6 +40,10 @@ FMT_FUNC void assert_fail(const char* file, int line, const char* message) {
   std::terminate();
 }
 
+FMT_FUNC void throw_format_error(const char* message) {
+  FMT_THROW(format_error(message));
+}
+
 #ifndef _MSC_VER
 #  define FMT_SNPRINTF snprintf
 #else  // _MSC_VER
@@ -2561,10 +2565,6 @@ FMT_FUNC void format_system_error(detail::buffer<char>& out, int error_code,
   }
   FMT_CATCH(...) {}
   format_error_code(out, error_code, message);
-}
-
-FMT_FUNC void detail::error_handler::on_error(const char* message) {
-  FMT_THROW(format_error(message));
 }
 
 FMT_FUNC void report_system_error(int error_code,

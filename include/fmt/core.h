@@ -569,12 +569,14 @@ FMT_INLINE void check_format_string(const S&) {
 template <typename..., typename S, FMT_ENABLE_IF(is_compile_string<S>::value)>
 void check_format_string(S);
 
+FMT_NORETURN FMT_API void throw_format_error(const char* message);
+
 struct error_handler {
   constexpr error_handler() = default;
   constexpr error_handler(const error_handler&) = default;
 
   // This function is intentionally not constexpr to give a compile-time error.
-  FMT_NORETURN FMT_API void on_error(const char* message);
+  void on_error(const char* message) { throw_format_error(message); }
 };
 FMT_END_DETAIL_NAMESPACE
 
@@ -1921,8 +1923,6 @@ enum type { none, minus, plus, space };
 using sign_t = sign::type;
 
 FMT_BEGIN_DETAIL_NAMESPACE
-
-void throw_format_error(const char* message);
 
 // Workaround an array initialization issue in gcc 4.8.
 template <typename Char> struct fill_t {

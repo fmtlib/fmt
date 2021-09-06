@@ -841,10 +841,6 @@ constexpr auto compile_string_to_view(detail::std_string_view<Char> s)
 
 FMT_BEGIN_DETAIL_NAMESPACE
 
-inline void throw_format_error(const char* message) {
-  FMT_THROW(format_error(message));
-}
-
 template <typename T> struct is_integral : std::is_integral<T> {};
 template <> struct is_integral<int128_t> : std::true_type {};
 template <> struct is_integral<uint128_t> : std::true_type {};
@@ -1604,7 +1600,7 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
   case presentation_type::chr:
     return write_char(out, static_cast<Char>(abs_value), specs);
   default:
-    FMT_THROW(format_error("invalid type specifier"));
+    throw_format_error("invalid type specifier");
   }
   return out;
 }
@@ -1926,7 +1922,7 @@ auto write(OutputIt out, T value, basic_format_specs<Char> specs,
                       : 6;
   if (fspecs.format == float_format::exp) {
     if (precision == max_value<int>())
-      FMT_THROW(format_error("number is too big"));
+      throw_format_error("number is too big");
     else
       ++precision;
   }
@@ -2048,7 +2044,7 @@ template <typename Char, typename OutputIt>
 FMT_CONSTEXPR_CHAR_TRAITS auto write(OutputIt out, const Char* value)
     -> OutputIt {
   if (!value) {
-    FMT_THROW(format_error("string pointer is null"));
+    throw_format_error("string pointer is null");
   } else {
     auto length = std::char_traits<Char>::length(value);
     out = write(out, basic_string_view<Char>(value, length));
