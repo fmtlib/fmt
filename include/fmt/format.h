@@ -1320,6 +1320,8 @@ FMT_CONSTEXPR auto write_padded(OutputIt out,
   static_assert(align == align::left || align == align::right, "");
   unsigned spec_width = to_unsigned(specs.width);
   size_t padding = spec_width > width ? spec_width - width : 0;
+  // Shifts are encoded as string literals because static constexpr is not
+  // supported in constexpr functions.
   auto* shifts = align == align::left ? "\x1f\x1f\x00\x01" : "\x00\x1f\x00\x01";
   size_t left_padding = padding >> shifts[specs.align];
   size_t right_padding = padding - left_padding;
