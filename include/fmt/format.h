@@ -1551,8 +1551,7 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
   static_assert(std::is_same<T, uint32_or_64_or_128_t<T>>::value, "");
   auto abs_value = arg.abs_value;
   auto prefix = arg.prefix;
-  auto pres_type = static_cast<presentation_type>(specs.type);
-  switch (pres_type) {
+  switch (specs.type) {
   case presentation_type::none:
   case presentation_type::dec: {
     if (specs.localized &&
@@ -1568,7 +1567,7 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
   }
   case presentation_type::hex_lower:
   case presentation_type::hex_upper: {
-    bool upper = pres_type == presentation_type::hex_upper;
+    bool upper = specs.type == presentation_type::hex_upper;
     if (specs.alt)
       prefix_append(prefix, unsigned(upper ? 'X' : 'x') << 8 | '0');
     int num_digits = count_digits<4>(abs_value);
@@ -1579,7 +1578,7 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
   }
   case presentation_type::bin_lower:
   case presentation_type::bin_upper: {
-    bool upper = pres_type == presentation_type::bin_upper;
+    bool upper = specs.type == presentation_type::bin_upper;
     if (specs.alt)
       prefix_append(prefix, unsigned(upper ? 'B' : 'b') << 8 | '0');
     int num_digits = count_digits<1>(abs_value);
