@@ -879,6 +879,46 @@ class iterator_buffer final : public Traits, public buffer<T> {
   auto count() const -> size_t { return Traits::count() + this->size(); }
 };
 
+template <typename T>
+class iterator_buffer<T*, T, fixed_buffer_traits> final : public fixed_buffer_traits, public buffer<T> {
+ private:
+  T* out_;
+  enum { buffer_size = 256 };
+  T data_[buffer_size];
+
+ protected:
+  void grow(size_t) override {
+    if (this->size() == this->capacity()) flush();
+  }
+
+  void flush() {
+    size_t n = this->limit(this->size());
+    if (this->data() == out_) {
+      out_ += n;
+      this->set(data_, buffer_size);
+    }
+    this->clear();
+  }
+
+ public:
+  explicit iterator_buffer(T* out, size_t n = buffer_size)
+      : fixed_buffer_traits(n), buffer<T>(out, 0, n), out_(out) {}
+  iterator_buffer(iterator_buffer&& other)
+      : fixed_buffer_traits(other), buffer<T>(std::move(other)), out_(other.out_) {
+    if (this->data() != out_) {
+      this->set(data_, buffer_size);
+      this->clear();
+    }
+  }
+  ~iterator_buffer() { flush(); }
+
+  auto out() -> T* {
+    flush();
+    return out_;
+  }
+  auto count() const -> size_t { return fixed_buffer_traits::count() + this->size(); }
+};
+
 template <typename T> class iterator_buffer<T*, T> final : public buffer<T> {
  protected:
   void grow(size_t) override {}
