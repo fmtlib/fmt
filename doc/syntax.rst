@@ -112,18 +112,18 @@ meaning in this case.
 The *sign* option is only valid for number types, and can be one of the
 following:
 
-+---------+----------------------------------------------------------+
-| Option  | Meaning                                                  |
-+=========+==========================================================+
-| ``'+'`` | indicates that a sign should be used for both            |
-|         | positive as well as negative numbers.                    |
-+---------+----------------------------------------------------------+
-| ``'-'`` | indicates that a sign should be used only for negative   |
-|         | numbers (this is the default behavior).                  |
-+---------+----------------------------------------------------------+
-| space   | indicates that a leading space should be used on         |
-|         | positive numbers, and a minus sign on negative numbers.  |
-+---------+----------------------------------------------------------+
++---------+------------------------------------------------------------+
+| Option  | Meaning                                                    |
++=========+============================================================+
+| ``'+'`` | indicates that a sign should be used for both              |
+|         | nonnegative as well as negative numbers.                   |
++---------+------------------------------------------------------------+
+| ``'-'`` | indicates that a sign should be used only for negative     |
+|         | numbers (this is the default behavior).                    |
++---------+------------------------------------------------------------+
+| space   | indicates that a leading space should be used on           |
+|         | nonnegative numbers, and a minus sign on negative numbers. |
++---------+------------------------------------------------------------+
 
 The ``'#'`` option causes the "alternate form" to be used for the
 conversion.  The alternate form is defined differently for different
