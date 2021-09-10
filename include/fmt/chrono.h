@@ -485,8 +485,8 @@ inline size_t strftime(wchar_t* str, size_t count, const wchar_t* format,
 // Writes two-digit numbers a, b and c separated by sep to buf.
 // The method by Pavel Novikov based on
 // https://johnnylee-sde.github.io/Fast-unsigned-integer-to-time-string/.
-void write_digit2_separated(char* buf, unsigned a, unsigned b, unsigned c,
-                            char sep) {
+inline void write_digit2_separated(char* buf, unsigned a, unsigned b,
+                                   unsigned c, char sep) {
   unsigned long long digits =
       a | (b << 24) | (static_cast<unsigned long long>(c) << 48);
   // Convert each value to BCD.
