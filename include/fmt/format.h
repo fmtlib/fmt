@@ -885,9 +885,6 @@ using uint64_or_128_t = conditional_t<num_bits<T>() <= 64, uint64_t, uint128_t>;
 
 // Static data is placed in this class template for the header-only config.
 template <typename T = void> struct basic_data {
-  // log10(2) = 0x0.4d104d427de7fbcc...
-  static const uint64_t log10_2_significand = 0x4d104d427de7fbcc;
-
   // GCC generates slightly better code for pairs than chars.
   FMT_API static constexpr const char digits[100][2] = {
       {'0', '0'}, {'0', '1'}, {'0', '2'}, {'0', '3'}, {'0', '4'}, {'0', '5'},
