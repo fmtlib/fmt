@@ -1073,11 +1073,13 @@ inline auto equal2(const char* lhs, const char* rhs) -> bool {
 }
 
 // Copies two characters from src to dst.
-template <typename Char> void copy2(Char* dst, const char* src) {
-  *dst++ = static_cast<Char>(*src++);
-  *dst = static_cast<Char>(*src);
+template <typename Char>
+FMT_CONSTEXPR void copy2(Char* dst, const char* src) {
+  char dc0 = *src++;
+  char dc1 = *src;
+  *dst++ = static_cast<Char>(dc0);
+  *dst = static_cast<Char>(dc1);
 }
-FMT_INLINE void copy2(char* dst, const char* src) { memcpy(dst, src, 2); }
 
 template <typename Iterator> struct format_decimal_result {
   Iterator begin;
