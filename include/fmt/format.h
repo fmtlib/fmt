@@ -885,7 +885,10 @@ using uint64_or_128_t = conditional_t<num_bits<T>() <= 64, uint64_t, uint128_t>;
 
 // Static data is placed in this class template for the header-only config.
 template <typename T = void> struct basic_data {
-  // GCC generates slightly better code for pairs than chars.
+  FMT_API static constexpr const unsigned prefixes[4] = {0, 0, 0x1000000u | '+',
+                                                         0x1000000u | ' '};
+
+  // DEPRECATED!
   FMT_API static constexpr const char digits[100][2] = {
       {'0', '0'}, {'0', '1'}, {'0', '2'}, {'0', '3'}, {'0', '4'}, {'0', '5'},
       {'0', '6'}, {'0', '7'}, {'0', '8'}, {'0', '9'}, {'1', '0'}, {'1', '1'},
@@ -904,9 +907,12 @@ template <typename T = void> struct basic_data {
       {'8', '4'}, {'8', '5'}, {'8', '6'}, {'8', '7'}, {'8', '8'}, {'8', '9'},
       {'9', '0'}, {'9', '1'}, {'9', '2'}, {'9', '3'}, {'9', '4'}, {'9', '5'},
       {'9', '6'}, {'9', '7'}, {'9', '8'}, {'9', '9'}};
-
-  FMT_API static constexpr const unsigned prefixes[4] = {0, 0, 0x1000000u | '+',
-                                                         0x1000000u | ' '};
+  FMT_API static constexpr const char hex_digits[] = "0123456789abcdef";
+  FMT_API static constexpr const char signs[4] = {0, '-', '+', ' '};
+  FMT_API static constexpr const char left_padding_shifts[5] = {31, 31, 0, 1,
+                                                                0};
+  FMT_API static constexpr const char right_padding_shifts[5] = {0, 31, 0, 1,
+                                                                 0};
 };
 
 #ifdef FMT_SHARED
@@ -916,6 +922,16 @@ extern template struct basic_data<void>;
 
 // This is a struct rather than an alias to avoid shadowing warnings in gcc.
 struct data : basic_data<> {};
+
+// Converts value in the range [0, 100) to a string.
+constexpr const char* digits2(size_t value) {
+  // GCC generates slightly better code when value is pointer-size.
+  return &"0001020304050607080910111213141516171819"
+         "2021222324252627282930313233343536373839"
+         "4041424344454647484950515253545556575859"
+         "6061626364656667686970717273747576777879"
+         "8081828384858687888990919293949596979899"[value * 2];
+}
 
 // Sign is a template parameter to workaround a bug in gcc 4.8.
 template <typename Char, typename Sign> constexpr Char sign(Sign s) {
@@ -1106,7 +1122,7 @@ FMT_CONSTEXPR20 auto format_decimal(Char* out, UInt value, int size)
     // of for every digit. The idea comes from the talk by Alexandrescu
     // "Three Optimization Tips for C++". See speed-test for a comparison.
     out -= 2;
-    copy2(out, data::digits[value % 100]);
+    copy2(out, digits2(static_cast<size_t>(value % 100)));
     value /= 100;
   }
   if (value < 10) {
@@ -1114,7 +1130,7 @@ FMT_CONSTEXPR20 auto format_decimal(Char* out, UInt value, int size)
     return {out, end};
   }
   out -= 2;
-  copy2(out, data::digits[value]);
+  copy2(out, digits2(static_cast<size_t>(value)));
   return {out, end};
 }
 
@@ -1276,12 +1292,12 @@ auto write_exponent(int exp, It it) -> It {
     *it++ = static_cast<Char>('+');
   }
   if (exp >= 100) {
-    const char* top = data::digits[exp / 100];
+    const char* top = digits2(to_unsigned(exp / 100));
     if (exp >= 1000) *it++ = static_cast<Char>(top[0]);
     *it++ = static_cast<Char>(top[1]);
     exp %= 100;
   }
-  const char* d = data::digits[exp];
+  const char* d = digits2(to_unsigned(exp));
   *it++ = static_cast<Char>(d[0]);
   *it++ = static_cast<Char>(d[1]);
   return it;
