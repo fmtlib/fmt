@@ -573,7 +573,7 @@ template <typename Char> struct formatter<std::tm, Char> {
     auto year = 1900 + tm.tm_year;
     if (spec_ == spec::year_month_day && year >= 0 && year < 10000) {
       char buf[10];
-      detail::copy2(buf, detail::data::digits[year / 100]);
+      detail::copy2(buf, detail::digits2(detail::to_unsigned(year / 100)));
       detail::write_digit2_separated(buf + 2, year % 100,
                                      detail::to_unsigned(tm.tm_mon + 1),
                                      detail::to_unsigned(tm.tm_mday), '-');

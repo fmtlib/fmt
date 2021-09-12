@@ -883,46 +883,6 @@ using uint64_or_128_t = conditional_t<num_bits<T>() <= 64, uint64_t, uint128_t>;
       (factor)*1000000, (factor)*10000000, (factor)*100000000,               \
       (factor)*1000000000
 
-// Static data is placed in this class template for the header-only config.
-template <typename T = void> struct basic_data {
-  FMT_API static constexpr const unsigned prefixes[4] = {0, 0, 0x1000000u | '+',
-                                                         0x1000000u | ' '};
-
-  // DEPRECATED!
-  FMT_API static constexpr const char digits[100][2] = {
-      {'0', '0'}, {'0', '1'}, {'0', '2'}, {'0', '3'}, {'0', '4'}, {'0', '5'},
-      {'0', '6'}, {'0', '7'}, {'0', '8'}, {'0', '9'}, {'1', '0'}, {'1', '1'},
-      {'1', '2'}, {'1', '3'}, {'1', '4'}, {'1', '5'}, {'1', '6'}, {'1', '7'},
-      {'1', '8'}, {'1', '9'}, {'2', '0'}, {'2', '1'}, {'2', '2'}, {'2', '3'},
-      {'2', '4'}, {'2', '5'}, {'2', '6'}, {'2', '7'}, {'2', '8'}, {'2', '9'},
-      {'3', '0'}, {'3', '1'}, {'3', '2'}, {'3', '3'}, {'3', '4'}, {'3', '5'},
-      {'3', '6'}, {'3', '7'}, {'3', '8'}, {'3', '9'}, {'4', '0'}, {'4', '1'},
-      {'4', '2'}, {'4', '3'}, {'4', '4'}, {'4', '5'}, {'4', '6'}, {'4', '7'},
-      {'4', '8'}, {'4', '9'}, {'5', '0'}, {'5', '1'}, {'5', '2'}, {'5', '3'},
-      {'5', '4'}, {'5', '5'}, {'5', '6'}, {'5', '7'}, {'5', '8'}, {'5', '9'},
-      {'6', '0'}, {'6', '1'}, {'6', '2'}, {'6', '3'}, {'6', '4'}, {'6', '5'},
-      {'6', '6'}, {'6', '7'}, {'6', '8'}, {'6', '9'}, {'7', '0'}, {'7', '1'},
-      {'7', '2'}, {'7', '3'}, {'7', '4'}, {'7', '5'}, {'7', '6'}, {'7', '7'},
-      {'7', '8'}, {'7', '9'}, {'8', '0'}, {'8', '1'}, {'8', '2'}, {'8', '3'},
-      {'8', '4'}, {'8', '5'}, {'8', '6'}, {'8', '7'}, {'8', '8'}, {'8', '9'},
-      {'9', '0'}, {'9', '1'}, {'9', '2'}, {'9', '3'}, {'9', '4'}, {'9', '5'},
-      {'9', '6'}, {'9', '7'}, {'9', '8'}, {'9', '9'}};
-  FMT_API static constexpr const char hex_digits[] = "0123456789abcdef";
-  FMT_API static constexpr const char signs[4] = {0, '-', '+', ' '};
-  FMT_API static constexpr const char left_padding_shifts[5] = {31, 31, 0, 1,
-                                                                0};
-  FMT_API static constexpr const char right_padding_shifts[5] = {0, 31, 0, 1,
-                                                                 0};
-};
-
-#ifdef FMT_SHARED
-// Required for -flto, -fivisibility=hidden and -shared to work
-extern template struct basic_data<void>;
-#endif
-
-// This is a struct rather than an alias to avoid shadowing warnings in gcc.
-struct data : basic_data<> {};
-
 // Converts value in the range [0, 100) to a string.
 constexpr const char* digits2(size_t value) {
   // GCC generates slightly better code when value is pointer-size.
@@ -1558,7 +1518,9 @@ FMT_CONSTEXPR auto make_write_int_arg(T value, sign_t sign)
     prefix = 0x01000000 | '-';
     abs_value = 0 - abs_value;
   } else {
-    prefix = data::prefixes[sign];
+    constexpr const unsigned prefixes[4] = {0, 0, 0x1000000u | '+',
+                                            0x1000000u | ' '};
+    prefix = prefixes[sign];
   }
   return {abs_value, prefix};
 }
