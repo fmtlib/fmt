@@ -187,12 +187,7 @@ template <typename T = void> struct basic_data {
 extern template struct basic_data<void>;
 #endif
 
-// This is a struct rather than an alias to avoid shadowing warnings in gcc.
-struct data : basic_data<> {};
-
 #if __cplusplus < 201703L
-template <typename T> constexpr const unsigned basic_data<T>::prefixes[];
-
 // DEPRECATED! These are here only for ABI compatiblity.
 template <typename T> constexpr const char basic_data<T>::digits[][2];
 template <typename T> constexpr const char basic_data<T>::hex_digits[];
@@ -200,6 +195,7 @@ template <typename T> constexpr const char basic_data<T>::signs[];
 template <typename T> constexpr const char basic_data<T>::left_padding_shifts[];
 template <typename T>
 constexpr const char basic_data<T>::right_padding_shifts[];
+template <typename T> constexpr const unsigned basic_data<T>::prefixes[];
 #endif
 
 template <typename T> struct bits {
