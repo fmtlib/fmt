@@ -154,7 +154,6 @@ static constexpr uint64_t log10_2_significand = 0x4d104d427de7fbcc;
 
 #if __cplusplus < 201703L
 template <typename T> constexpr const char basic_data<T>::digits[][2];
-template <typename T> constexpr const char basic_data<T>::hex_digits[];
 template <typename T> constexpr const unsigned basic_data<T>::prefixes[];
 #endif
 
@@ -916,8 +915,7 @@ inline uint64_t umul96_lower64(uint32_t x, uint64_t y) FMT_NOEXCEPT {
 inline int floor_log10_pow2(int e) FMT_NOEXCEPT {
   FMT_ASSERT(e <= 1700 && e >= -1700, "too large exponent");
   const int shift = 22;
-  return (e * static_cast<int>(log10_2_significand >> (64 - shift))) >>
-         shift;
+  return (e * static_cast<int>(log10_2_significand >> (64 - shift))) >> shift;
 }
 
 // Various fast log computations.
@@ -935,8 +933,7 @@ inline int floor_log10_pow2_minus_log10_4_over_3(int e) FMT_NOEXCEPT {
   FMT_ASSERT(e <= 1700 && e >= -1700, "too large exponent");
   const uint64_t log10_4_over_3_fractional_digits = 0x1ffbfc2bbc780375;
   const int shift_amount = 22;
-  return (e * static_cast<int>(log10_2_significand >>
-                               (64 - shift_amount)) -
+  return (e * static_cast<int>(log10_2_significand >> (64 - shift_amount)) -
           static_cast<int>(log10_4_over_3_fractional_digits >>
                            (64 - shift_amount))) >>
          shift_amount;

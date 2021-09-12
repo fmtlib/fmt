@@ -905,7 +905,6 @@ template <typename T = void> struct basic_data {
       {'9', '0'}, {'9', '1'}, {'9', '2'}, {'9', '3'}, {'9', '4'}, {'9', '5'},
       {'9', '6'}, {'9', '7'}, {'9', '8'}, {'9', '9'}};
 
-  FMT_API static constexpr const char hex_digits[] = "0123456789abcdef";
   FMT_API static constexpr const unsigned prefixes[4] = {0, 0, 0x1000000u | '+',
                                                          0x1000000u | ' '};
 };
@@ -1135,7 +1134,7 @@ FMT_CONSTEXPR auto format_uint(Char* buffer, UInt value, int num_digits,
   buffer += num_digits;
   Char* end = buffer;
   do {
-    const char* digits = upper ? "0123456789ABCDEF" : data::hex_digits;
+    const char* digits = upper ? "0123456789ABCDEF" : "0123456789abcdef";
     unsigned digit = (value & ((1 << BASE_BITS) - 1));
     *--buffer = static_cast<Char>(BASE_BITS < 4 ? static_cast<char>('0' + digit)
                                                 : digits[digit]);
@@ -1158,7 +1157,7 @@ auto format_uint(Char* buffer, detail::fallback_uintptr n, int num_digits,
     auto p = buffer;
     for (int i = 0; i < char_digits; ++i) {
       unsigned digit = (value & ((1 << BASE_BITS) - 1));
-      *--p = static_cast<Char>(data::hex_digits[digit]);
+      *--p = static_cast<Char>("0123456789abcdef"[digit]);
       value >>= BASE_BITS;
     }
   }
