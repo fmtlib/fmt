@@ -1090,19 +1090,11 @@ template <typename Iterator> struct format_decimal_result {
 // buffer of specified size. The caller must ensure that the buffer is large
 // enough.
 template <typename Char, typename UInt>
-FMT_CONSTEXPR20 auto format_decimal(Char* out, UInt value, int size)
+FMT_CONSTEXPR auto format_decimal(Char* out, UInt value, int size)
     -> format_decimal_result<Char*> {
   FMT_ASSERT(size >= count_digits(value), "invalid digit count");
   out += size;
   Char* end = out;
-  if (is_constant_evaluated()) {
-    while (value >= 10) {
-      *--out = static_cast<Char>('0' + value % 10);
-      value /= 10;
-    }
-    *--out = static_cast<Char>('0' + value);
-    return {out, end};
-  }
   while (value >= 100) {
     // Integer division is slow so do it for a group of two digits instead
     // of for every digit. The idea comes from the talk by Alexandrescu
