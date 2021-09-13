@@ -49,6 +49,7 @@ TEST(chrono_test, format_tm) {
   EXPECT_EQ(fmt::format("The date is {:%Y-%m-%d %H:%M:%S}.", tm),
             "The date is 2016-04-25 11:22:33.");
   EXPECT_EQ(fmt::format("{:%F}", tm), "2016-04-25");
+  EXPECT_EQ(fmt::format("{:%T}", tm), "11:22:33");
 }
 
 TEST(chrono_test, grow_buffer) {
