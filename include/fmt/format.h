@@ -128,6 +128,14 @@ FMT_END_NAMESPACE
 #  endif
 #endif
 
+#ifndef FMT_MAYBE_UNUSED
+#  if FMT_HAS_CPP17_ATTRIBUTE(maybe_unused)
+#    define FMT_MAYBE_UNUSED [[maybe_unused]]
+#  else
+#    define FMT_MAYBE_UNUSED
+#  endif
+#endif
+
 // Workaround broken [[deprecated]] in the Intel, PGI and NVCC compilers.
 #if FMT_ICC_VERSION || defined(__PGI) || FMT_NVCC
 #  define FMT_DEPRECATED_ALIAS

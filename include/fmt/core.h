@@ -159,14 +159,6 @@
 #  define FMT_NORETURN
 #endif
 
-#ifndef FMT_MAYBE_UNUSED
-#  if FMT_HAS_CPP17_ATTRIBUTE(maybe_unused)
-#    define FMT_MAYBE_UNUSED [[maybe_unused]]
-#  else
-#    define FMT_MAYBE_UNUSED
-#  endif
-#endif
-
 #if __cplusplus == 201103L || __cplusplus == 201402L
 #  if defined(__INTEL_COMPILER) || defined(__PGI)
 #    define FMT_FALLTHROUGH
