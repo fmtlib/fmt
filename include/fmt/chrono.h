@@ -549,6 +549,7 @@ template <typename Char> struct formatter<std::tm, Char> {
   enum class spec {
     unknown,
     year_month_day,
+    hh_mm_ss,
   };
   spec spec_ = spec::unknown;
 
@@ -563,7 +564,10 @@ template <typename Char> struct formatter<std::tm, Char> {
     while (end != ctx.end() && *end != '}') ++end;
     auto size = detail::to_unsigned(end - it);
     specs = {it, size};
-    if (specs == string_view("%F", 2)) spec_ = spec::year_month_day;
+    if (specs == string_view("%F", 2))
+      spec_ = spec::year_month_day;
+    else if (specs == string_view("%T", 2))
+      spec_ = spec::hh_mm_ss;
     return end;
   }
 
@@ -577,6 +581,12 @@ template <typename Char> struct formatter<std::tm, Char> {
       detail::write_digit2_separated(buf + 2, year % 100,
                                      detail::to_unsigned(tm.tm_mon + 1),
                                      detail::to_unsigned(tm.tm_mday), '-');
+      return std::copy_n(buf, sizeof(buf), ctx.out());
+    } else if (spec_ == spec::hh_mm_ss) {
+      char buf[8];
+      detail::write_digit2_separated(buf, detail::to_unsigned(tm.tm_hour),
+                                     detail::to_unsigned(tm.tm_min),
+                                     detail::to_unsigned(tm.tm_sec), ':');
       return std::copy_n(buf, sizeof(buf), ctx.out());
     }
     basic_memory_buffer<Char> tm_format;
