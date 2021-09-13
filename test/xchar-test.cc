@@ -261,6 +261,8 @@ TEST(xchar_test, chrono) {
   EXPECT_EQ(fmt::format("The date is {:%Y-%m-%d %H:%M:%S}.", tm),
             "The date is 2016-04-25 11:22:33.");
   EXPECT_EQ(L"42s", fmt::format(L"{}", std::chrono::seconds(42)));
+  EXPECT_EQ(fmt::format(L"{:%F}", tm), L"2016-04-25");
+  EXPECT_EQ(fmt::format(L"{:%T}", tm), L"11:22:33");
 }
 
 TEST(xchar_test, color) {

@@ -564,10 +564,13 @@ template <typename Char> struct formatter<std::tm, Char> {
     while (end != ctx.end() && *end != '}') ++end;
     auto size = detail::to_unsigned(end - it);
     specs = {it, size};
-    if (specs == string_view("%F", 2))
-      spec_ = spec::year_month_day;
-    else if (specs == string_view("%T", 2))
-      spec_ = spec::hh_mm_ss;
+    // basic_string_view<>::compare isn't constexpr before C++17
+    if (specs.size() == 2 && specs[0] == Char('%')) {
+      if (specs[1] == Char('F'))
+        spec_ = spec::year_month_day;
+      else if (specs[1] == Char('T'))
+        spec_ = spec::hh_mm_ss;
+    }
     return end;
   }
 
