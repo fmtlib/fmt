@@ -2689,6 +2689,7 @@ template <> struct formatter<bytes> {
 template <typename T> struct group_digits_view { T value; };
 
 /**
+  \rst
   Returns a view that formats an integer value using ',' as a locale-independent
   thousands separator.
 
@@ -2696,6 +2697,7 @@ template <typename T> struct group_digits_view { T value; };
 
     fmt::print("{}", fmt::group_digits(12345));
     // Output: "12,345"
+  \endrst
  */
 template <typename T> auto group_digits(T value) -> group_digits_view<T> {
   return {value};
