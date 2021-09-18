@@ -2688,6 +2688,15 @@ template <> struct formatter<bytes> {
 // group_digits_view is not derived from view because it copies the argument.
 template <typename T> struct group_digits_view { T value; };
 
+/**
+  Returns a view that formats an integer value using ',' as a locale-independent
+  thousands separator.
+
+  **Example**::
+
+    fmt::print("{}", fmt::group_digits(12345));
+    // Output: "12,345"
+ */
 template <typename T> auto group_digits(T value) -> group_digits_view<T> {
   return {value};
 }
@@ -2782,8 +2791,8 @@ struct formatter<join_view<It, Sentinel, Char>, Char> {
 };
 
 /**
-  Returns an object that formats the iterator range `[begin, end)` with
-  elements separated by `sep`.
+  Returns a view that formats the iterator range `[begin, end)` with elements
+  separated by `sep`.
  */
 template <typename It, typename Sentinel>
 auto join(It begin, Sentinel end, string_view sep) -> join_view<It, Sentinel> {
@@ -2792,7 +2801,7 @@ auto join(It begin, Sentinel end, string_view sep) -> join_view<It, Sentinel> {
 
 /**
   \rst
-  Returns an object that formats `range` with elements separated by `sep`.
+  Returns a view that formats `range` with elements separated by `sep`.
 
   **Example**::
 

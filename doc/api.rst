@@ -323,6 +323,8 @@ Utilities
 
 .. doxygenfunction:: fmt::join(It begin, Sentinel end, string_view sep) -> join_view<It, Sentinel>
 
+.. doxygenfunction:: fmt::group_digits(T value) -> group_digits_view<T>
+
 .. doxygenclass:: fmt::detail::buffer
    :members:
 
