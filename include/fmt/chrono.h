@@ -864,10 +864,6 @@ template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
 inline bool isfinite(T) {
   return true;
 }
-template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
-inline bool isfinite(T value) {
-  return std::isfinite(value);
-}
 
 // Converts value to int and checks that it's in the range [0, upper).
 template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
