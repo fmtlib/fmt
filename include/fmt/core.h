@@ -247,7 +247,7 @@
 #endif
 
 #ifndef FMT_CONSTEVAL
-#  if ((FMT_GCC_VERSION >= 1000 || FMT_CLANG_VERSION >= 1101) && \
+#  if ((FMT_GCC_VERSION >= 1000) && \
        __cplusplus > 201703L) ||                                 \
       (defined(__cpp_consteval) &&                               \
        !FMT_MSC_VER)  // consteval is broken in MSVC.
