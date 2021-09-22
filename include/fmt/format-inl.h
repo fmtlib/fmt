@@ -1071,7 +1071,7 @@ template <> struct cache_accessor<float> {
   static uint64_t get_cached_power(int k) FMT_NOEXCEPT {
     FMT_ASSERT(k >= float_info<float>::min_k && k <= float_info<float>::max_k,
                "k is out of range");
-    constexpr const uint64_t pow10_significands[] = {
+    static constexpr const uint64_t pow10_significands[] = {
         0x81ceb32c4b43fcf5, 0xa2425ff75e14fc32, 0xcad2f7f5359a3b3f,
         0xfd87b5f28300ca0e, 0x9e74d1b791e07e49, 0xc612062576589ddb,
         0xf79687aed3eec552, 0x9abe14cd44753b53, 0xc16d9a0095928a28,
