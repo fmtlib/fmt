@@ -34,13 +34,13 @@
 
 #ifdef __ICL
 #  define FMT_ICC_VERSION __ICL
-#  define FMT_ICC_ON_WINDOWS 1
+#  define FMT_ICC_POSIX 0
 #elif defined(__INTEL_COMPILER)
 #  define FMT_ICC_VERSION __INTEL_COMPILER
-#  define FMT_ICC_ON_WINDOWS 0
+#  define FMT_ICC_POSIX 1
 #else
 #  define FMT_ICC_VERSION 0
-#  define FMT_ICC_ON_WINDOWS 0
+#  define FMT_ICC_POSIX 1
 #endif
 
 #ifdef __NVCC__

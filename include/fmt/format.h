@@ -166,12 +166,12 @@ FMT_END_NAMESPACE
 #  define FMT_BUILTIN_CLZLL(n) __builtin_clzll(n)
 #endif
 #if (FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_ctz) || FMT_ICC_VERSION) && \
-    !FMT_ICC_ON_WINDOWS
+    FMT_ICC_POSIX
 #  define FMT_BUILTIN_CTZ(n) __builtin_ctz(n)
 #endif
 #if (FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_ctzll) || \
      FMT_ICC_VERSION) &&                                    \
-    !FMT_ICC_ON_WINDOWS
+    FMT_ICC_POSIX
 #  define FMT_BUILTIN_CTZLL(n) __builtin_ctzll(n)
 #endif
 
@@ -187,9 +187,6 @@ FMT_BEGIN_NAMESPACE
 namespace detail {
 // Avoid Clang with Microsoft CodeGen's -Wunknown-pragmas warning.
 #  if !defined(__clang__)
-#    if !defined(__ICL)
-#       pragma managed(push, off)
-#    endif
 #    pragma intrinsic(_BitScanForward)
 #    pragma intrinsic(_BitScanReverse)
 #    if defined(_WIN64)
@@ -251,11 +248,6 @@ inline auto ctzll(uint64_t x) -> int {
   return static_cast<int>(r);
 }
 #  define FMT_BUILTIN_CTZLL(n) detail::ctzll(n)
-#  if !defined(__clang__)
-#      if !defined(__ICL)
-#        pragma managed(pop)
-#      endif
-#  endif
 }  // namespace detail
 FMT_END_NAMESPACE
 #endif
