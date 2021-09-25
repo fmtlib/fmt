@@ -48,7 +48,7 @@ On Mac OS X with Xcode installed, an :file:`.xcodeproj` file will be generated.
 To build a `shared library`__ set the ``BUILD_SHARED_LIBS`` CMake variable to
 ``TRUE``::
 
-  cmake -DBUILD_SHARED_LIBS=TRUE ...
+  cmake -DBUILD_SHARED_LIBS=TRUE ..
 
 __ https://en.wikipedia.org/wiki/Library_%28computing%29#Shared_libraries
 
@@ -57,7 +57,7 @@ To build a `static library` with position independent code (required if the main
 consumer of the fmt library is a shared library i.e. a Python extension) set the
 ``CMAKE_POSITION_INDEPENDENT_CODE`` CMake variable to ``TRUE``::
 
-  cmake -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE ...
+  cmake -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE ..
 
 
 Installing the Library
