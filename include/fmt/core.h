@@ -247,10 +247,10 @@
 #endif
 
 #ifndef FMT_CONSTEVAL
-#  if ((FMT_GCC_VERSION >= 1000 || FMT_CLANG_VERSION >= 1101) && \
-       __cplusplus > 201703L) ||                                 \
-      (defined(__cpp_consteval) &&                               \
-       !FMT_MSC_VER)  // consteval is broken in MSVC.
+#  if ((FMT_GCC_VERSION >= 1000 || FMT_CLANG_VERSION >= 1101) &&      \
+       __cplusplus > 201703L && !defined(__apple_build_version__)) || \
+      (defined(__cpp_consteval) &&                                    \
+       !FMT_MSC_VER)  // consteval is broken in MSVC and Apple clang 13.
 #    define FMT_CONSTEVAL consteval
 #    define FMT_HAS_CONSTEVAL
 #  else
@@ -872,7 +872,9 @@ class iterator_buffer final : public Traits, public buffer<T> {
 };
 
 template <typename T>
-class iterator_buffer<T*, T, fixed_buffer_traits> final : public fixed_buffer_traits, public buffer<T> {
+class iterator_buffer<T*, T, fixed_buffer_traits> final
+    : public fixed_buffer_traits,
+      public buffer<T> {
  private:
   T* out_;
   enum { buffer_size = 256 };
@@ -896,7 +898,9 @@ class iterator_buffer<T*, T, fixed_buffer_traits> final : public fixed_buffer_tr
   explicit iterator_buffer(T* out, size_t n = buffer_size)
       : fixed_buffer_traits(n), buffer<T>(out, 0, n), out_(out) {}
   iterator_buffer(iterator_buffer&& other)
-      : fixed_buffer_traits(other), buffer<T>(std::move(other)), out_(other.out_) {
+      : fixed_buffer_traits(other),
+        buffer<T>(std::move(other)),
+        out_(other.out_) {
     if (this->data() != out_) {
       this->set(data_, buffer_size);
       this->clear();
@@ -908,7 +912,9 @@ class iterator_buffer<T*, T, fixed_buffer_traits> final : public fixed_buffer_tr
     flush();
     return out_;
   }
-  auto count() const -> size_t { return fixed_buffer_traits::count() + this->size(); }
+  auto count() const -> size_t {
+    return fixed_buffer_traits::count() + this->size();
+  }
 };
 
 template <typename T> class iterator_buffer<T*, T> final : public buffer<T> {
