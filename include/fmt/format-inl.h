@@ -269,7 +269,7 @@ class fp {
 
   // Assigns d to this and return true iff predecessor is closer than successor.
   template <typename Float, FMT_ENABLE_IF(is_supported_float<Float>::value)>
-  FMT_CONSTEXPR bool assign(Float d) {
+  FMT_CONSTEXPR bool assign(Float n) {
     // Assume float is in the format [sign][exponent][significand].
     using limits = std::numeric_limits<Float>;
     const int float_significand_size = limits::digits - 1;
@@ -280,7 +280,7 @@ class fp {
     const uint64_t exponent_mask = (~0ULL >> 1) & ~significand_mask;
     const int exponent_bias = (1 << exponent_size) - limits::max_exponent - 1;
     constexpr bool is_double = sizeof(Float) == sizeof(uint64_t);
-    auto u = bit_cast<conditional_t<is_double, uint64_t, uint32_t>>(d);
+    auto u = bit_cast<conditional_t<is_double, uint64_t, uint32_t>>(n);
     f = u & significand_mask;
     int biased_e =
         static_cast<int>((u & exponent_mask) >> float_significand_size);
@@ -2239,11 +2239,11 @@ small_divisor_case_label:
 }
 }  // namespace dragonbox
 
-// Formats value using a variation of the Fixed-Precision Positive
-// Floating-Point Printout ((FPP)^2) algorithm by Steele & White:
+// Formats a floating-point number using a variation of the Fixed-Precision
+// Positive Floating-Point Printout ((FPP)^2) algorithm by Steele & White:
 // https://fmt.dev/papers/p372-steele.pdf.
-template <typename Double>
-FMT_CONSTEXPR20 void fallback_format(Double d, int num_digits, bool binary32,
+template <typename Float>
+FMT_CONSTEXPR20 void fallback_format(Float n, int num_digits, bool binary32,
                                      buffer<char>& buf, int& exp10) {
   bigint numerator;    // 2 * R in (FPP)^2.
   bigint denominator;  // 2 * S in (FPP)^2.
@@ -2256,7 +2256,7 @@ FMT_CONSTEXPR20 void fallback_format(Double d, int num_digits, bool binary32,
   // is closer) to make lower and upper integers. This eliminates multiplication
   // by 2 during later computations.
   const bool is_predecessor_closer =
-      binary32 ? value.assign(static_cast<float>(d)) : value.assign(d);
+      binary32 ? value.assign(static_cast<float>(n)) : value.assign(n);
   int shift = is_predecessor_closer ? 2 : 1;
   uint64_t significand = value.f << shift;
   if (value.e >= 0) {
@@ -2391,28 +2391,33 @@ FMT_HEADER_ONLY_CONSTEXPR20 int format_float(T value, int precision,
     return dec.exponent;
   }
 
-  // Use Grisu + Dragon4 for the given precision:
-  // https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf.
   int exp = 0;
-  const int min_exp = -60;  // alpha in Grisu.
-  int cached_exp10 = 0;     // K in Grisu.
-  fp normalized = normalize(fp(value));
-  const auto cached_pow = get_cached_power(
-      min_exp - (normalized.e + fp::significand_size), cached_exp10);
-  normalized = normalized * cached_pow;
-  // Limit precision to the maximum possible number of significant digits in an
-  // IEEE754 double because we don't need to generate zeros.
-  const int max_double_digits = 767;
-  if (precision > max_double_digits) precision = max_double_digits;
-  fixed_handler handler{buf.data(), 0, precision, -cached_exp10, fixed};
-  if (grisu_gen_digits(normalized, 1, exp, handler) == digits::error ||
-      is_constant_evaluated()) {
-    exp += handler.size - cached_exp10 - 1;
-    fallback_format(value, handler.precision, specs.binary32, buf, exp);
-  } else {
-    exp += handler.exp10;
-    buf.try_resize(to_unsigned(handler.size));
+  bool fallback = true;
+  if (is_fast_float<T>()) {
+    // Use Grisu + Dragon4 for the given precision:
+    // https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf.
+    const int min_exp = -60;  // alpha in Grisu.
+    int cached_exp10 = 0;     // K in Grisu.
+    fp normalized = normalize(fp(value));
+    const auto cached_pow = get_cached_power(
+        min_exp - (normalized.e + fp::significand_size), cached_exp10);
+    normalized = normalized * cached_pow;
+    // Limit precision to the maximum possible number of significant digits in
+    // an IEEE754 double because we don't need to generate zeros.
+    const int max_double_digits = 767;
+    if (precision > max_double_digits) precision = max_double_digits;
+    fixed_handler handler{buf.data(), 0, precision, -cached_exp10, fixed};
+    if (!is_constant_evaluated() &&
+        grisu_gen_digits(normalized, 1, exp, handler) != digits::error) {
+      exp += handler.exp10;
+      buf.try_resize(to_unsigned(handler.size));
+      fallback = false;
+    } else {
+      exp += handler.size - cached_exp10 - 1;
+      precision = handler.precision;
+    }
   }
+  if (fallback) fallback_format(value, precision, specs.binary32, buf, exp);
   if (!fixed && !specs.showpoint) {
     // Remove trailing zeros.
     auto num_digits = buf.size();
