@@ -8,12 +8,10 @@
 #include "fmt/compile.h"
 #include "gmock/gmock.h"
 
-#if defined(__cpp_lib_bit_cast) && __cpp_lib_bit_cast >= 201806 &&       \
-    defined(__cpp_constexpr) && __cpp_constexpr >= 201907 &&             \
-    defined(__cpp_constexpr_dynamic_alloc) &&                            \
-    __cpp_constexpr_dynamic_alloc >= 201907 && __cplusplus >= 202002L && \
-    !FMT_MSC_VER &&                                                      \
-    !FMT_GCC_VERSION  // MSVC & GCC constexpr limits are too low.
+#if defined(__cpp_lib_bit_cast) && __cpp_lib_bit_cast >= 201806 && \
+    defined(__cpp_constexpr) && __cpp_constexpr >= 201907 &&       \
+    defined(__cpp_constexpr_dynamic_alloc) &&                      \
+    __cpp_constexpr_dynamic_alloc >= 201907 && __cplusplus >= 202002L
 template <size_t max_string_length, typename Char = char> struct test_string {
   template <typename T> constexpr bool operator==(const T& rhs) const noexcept {
     return fmt::basic_string_view<Char>(rhs).compare(buffer) == 0;

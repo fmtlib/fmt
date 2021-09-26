@@ -2326,9 +2326,9 @@ FMT_CONSTEXPR20 void fallback_format(Float n, int num_digits, bool binary32,
   // Generate the given number of digits.
   exp10 -= num_digits - 1;
   if (num_digits == 0) {
-    buf.try_resize(1);
     denominator *= 10;
-    buf[0] = add_compare(numerator, numerator, denominator) > 0 ? '1' : '0';
+    auto digit = add_compare(numerator, numerator, denominator) > 0 ? '1' : '0';
+    buf.push_back(digit);
     return;
   }
   buf.try_resize(to_unsigned(num_digits));
@@ -2407,8 +2407,8 @@ FMT_HEADER_ONLY_CONSTEXPR20 int format_float(T value, int precision,
     const int max_double_digits = 767;
     if (precision > max_double_digits) precision = max_double_digits;
     fixed_handler handler{buf.data(), 0, precision, -cached_exp10, fixed};
-    if (!is_constant_evaluated() &&
-        grisu_gen_digits(normalized, 1, exp, handler) != digits::error) {
+    if (grisu_gen_digits(normalized, 1, exp, handler) != digits::error &&
+        !is_constant_evaluated()) {
       exp += handler.exp10;
       buf.try_resize(to_unsigned(handler.size));
       fallback = false;
