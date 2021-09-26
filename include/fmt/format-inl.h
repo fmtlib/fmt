@@ -2242,21 +2242,18 @@ small_divisor_case_label:
 // Formats a floating-point number using a variation of the Fixed-Precision
 // Positive Floating-Point Printout ((FPP)^2) algorithm by Steele & White:
 // https://fmt.dev/papers/p372-steele.pdf.
-template <typename Float>
-FMT_CONSTEXPR20 void fallback_format(Float n, int num_digits, bool binary32,
-                                     buffer<char>& buf, int& exp10) {
+FMT_CONSTEXPR20 inline void format_dragon(fp value, bool is_predecessor_closer,
+                                          int num_digits, buffer<char>& buf,
+                                          int& exp10) {
   bigint numerator;    // 2 * R in (FPP)^2.
   bigint denominator;  // 2 * S in (FPP)^2.
   // lower and upper are differences between value and corresponding boundaries.
   bigint lower;             // (M^- in (FPP)^2).
   bigint upper_store;       // upper's value if different from lower.
   bigint* upper = nullptr;  // (M^+ in (FPP)^2).
-  fp value;
   // Shift numerator and denominator by an extra bit or two (if lower boundary
   // is closer) to make lower and upper integers. This eliminates multiplication
   // by 2 during later computations.
-  const bool is_predecessor_closer =
-      binary32 ? value.assign(static_cast<float>(n)) : value.assign(n);
   int shift = is_predecessor_closer ? 2 : 1;
   uint64_t significand = value.f << shift;
   if (value.e >= 0) {
@@ -2359,11 +2356,12 @@ FMT_CONSTEXPR20 void fallback_format(Float n, int num_digits, bool binary32,
   buf[num_digits - 1] = static_cast<char>('0' + digit);
 }
 
-template <typename T>
-FMT_HEADER_ONLY_CONSTEXPR20 int format_float(T value, int precision,
+template <typename Float>
+FMT_HEADER_ONLY_CONSTEXPR20 int format_float(Float value, int precision,
                                              float_specs specs,
                                              buffer<char>& buf) {
-  static_assert(!std::is_same<T, float>::value, "");
+  // float is passed as double to reduce the number of instantiations.
+  static_assert(!std::is_same<Float, float>::value, "");
   FMT_ASSERT(value >= 0, "value is negative");
 
   const bool fixed = specs.format == float_format::fixed;
@@ -2392,8 +2390,8 @@ FMT_HEADER_ONLY_CONSTEXPR20 int format_float(T value, int precision,
   }
 
   int exp = 0;
-  bool fallback = true;
-  if (is_fast_float<T>()) {
+  bool use_dragon = true;
+  if (is_fast_float<Float>()) {
     // Use Grisu + Dragon4 for the given precision:
     // https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf.
     const int min_exp = -60;  // alpha in Grisu.
@@ -2411,13 +2409,18 @@ FMT_HEADER_ONLY_CONSTEXPR20 int format_float(T value, int precision,
         !is_constant_evaluated()) {
       exp += handler.exp10;
       buf.try_resize(to_unsigned(handler.size));
-      fallback = false;
+      use_dragon = false;
     } else {
       exp += handler.size - cached_exp10 - 1;
       precision = handler.precision;
     }
   }
-  if (fallback) fallback_format(value, precision, specs.binary32, buf, exp);
+  if (use_dragon) {
+    auto f = fp();
+    bool is_predecessor_closer =
+        specs.binary32 ? f.assign(static_cast<float>(value)) : f.assign(value);
+    format_dragon(f, is_predecessor_closer, precision, buf, exp);
+  }
   if (!fixed && !specs.showpoint) {
     // Remove trailing zeros.
     auto num_digits = buf.size();
