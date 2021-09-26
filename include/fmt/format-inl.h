@@ -226,46 +226,39 @@ template <typename T> struct bits {
       static_cast<int>(sizeof(T) * std::numeric_limits<unsigned char>::digits);
 };
 
-// Returns the number of significand bits in Float excluding implicit bit.
+// Returns the number of significand bits in Float excluding the implicit bit.
 template <typename Float> constexpr int num_significand_bits() {
   // Subtract 1 to account for an implicit most significant bit in the
   // normalized form.
   return std::numeric_limits<Float>::digits - 1;
 }
 
-// A handmade floating-point number f * pow(2, e).
-class fp {
- private:
-  using significand_type = uint64_t;
-
-  template <typename Float>
-  using is_supported_float = bool_constant<sizeof(Float) == sizeof(uint64_t) ||
-                                           sizeof(Float) == sizeof(uint32_t)>;
-
- public:
-  significand_type f;
+// A floating-point number f * pow(2, e).
+struct fp {
+  uint64_t f;
   int e;
 
-  static FMT_CONSTEXPR_DECL const uint64_t implicit_bit =
-      1ULL << num_significand_bits<double>();
-  static FMT_CONSTEXPR_DECL const int num_significand_bits =
-      bits<significand_type>::value;
+  static constexpr const int num_significand_bits = bits<decltype(f)>::value;
 
   constexpr fp() : f(0), e(0) {}
   constexpr fp(uint64_t f_val, int e_val) : f(f_val), e(e_val) {}
 
-  // Constructs fp from an IEEE754 double. It is a template to prevent compile
-  // errors on platforms where double is not IEEE754.
-  template <typename Double> explicit FMT_CONSTEXPR fp(Double d) { assign(d); }
+  // Constructs fp from an IEEE754 floating-point number. It is a template to
+  // prevent compile errors on systems where n is not IEEE754.
+  template <typename Float> explicit FMT_CONSTEXPR fp(Float n) { assign(n); }
+
+  template <typename Float>
+  using is_supported = bool_constant<sizeof(Float) == sizeof(uint64_t) ||
+                                     sizeof(Float) == sizeof(uint32_t)>;
 
   // Assigns d to this and return true iff predecessor is closer than successor.
-  template <typename Float, FMT_ENABLE_IF(is_supported_float<Float>::value)>
+  template <typename Float, FMT_ENABLE_IF(is_supported<Float>::value)>
   FMT_CONSTEXPR bool assign(Float n) {
     // Assume float is in the format [sign][exponent][significand].
     const int num_float_significand_bits =
         detail::num_significand_bits<Float>();
-    const uint64_t float_implicit_bit = 1ULL << num_float_significand_bits;
-    const uint64_t significand_mask = float_implicit_bit - 1;
+    const uint64_t implicit_bit = 1ULL << num_float_significand_bits;
+    const uint64_t significand_mask = implicit_bit - 1;
     constexpr bool is_double = sizeof(Float) == sizeof(uint64_t);
     auto u = bit_cast<conditional_t<is_double, uint64_t, uint32_t>>(n);
     f = u & significand_mask;
@@ -276,7 +269,7 @@ class fp {
     // than the smallest normalized number (biased_e > 1).
     bool is_predecessor_closer = f == 0 && biased_e > 1;
     if (biased_e != 0)
-      f += float_implicit_bit;
+      f += implicit_bit;
     else
       biased_e = 1;  // Subnormals use biased exponent 1 (min exponent).
     const int exponent_bias = std::numeric_limits<Float>::max_exponent - 1;
@@ -284,9 +277,9 @@ class fp {
     return is_predecessor_closer;
   }
 
-  template <typename Float, FMT_ENABLE_IF(!is_supported_float<Float>::value)>
+  template <typename Float, FMT_ENABLE_IF(!is_supported<Float>::value)>
   bool assign(Float) {
-    *this = fp();
+    FMT_ASSERT(false, "");
     return false;
   }
 };
@@ -294,7 +287,8 @@ class fp {
 // Normalizes the value converted from double and multiplied by (1 << SHIFT).
 template <int SHIFT = 0> FMT_CONSTEXPR fp normalize(fp value) {
   // Handle subnormals.
-  const auto shifted_implicit_bit = fp::implicit_bit << SHIFT;
+  const uint64_t implicit_bit = 1ULL << num_significand_bits<double>();
+  const auto shifted_implicit_bit = implicit_bit << SHIFT;
   while ((value.f & shifted_implicit_bit) == 0) {
     value.f <<= 1;
     --value.e;
