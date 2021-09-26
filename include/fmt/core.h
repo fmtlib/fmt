@@ -2676,7 +2676,7 @@ struct float_specs {
   bool upper : 1;
   bool locale : 1;
   bool binary32 : 1;
-  bool use_grisu : 1;
+  bool fallback : 1;
   bool showpoint : 1;
 };
 

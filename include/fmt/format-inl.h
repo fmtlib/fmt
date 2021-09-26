@@ -2375,7 +2375,7 @@ FMT_HEADER_ONLY_CONSTEXPR20 int format_float(Float value, int precision,
     return -precision;
   }
 
-  if (!specs.use_grisu) return snprintf_float(value, precision, specs, buf);
+  if (specs.fallback) return snprintf_float(value, precision, specs, buf);
 
   if (!is_constant_evaluated() && precision < 0) {
     // Use Dragonbox for the shortest format.
