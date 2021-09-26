@@ -278,25 +278,22 @@ TEST(fp_test, get_round_direction) {
 }
 
 TEST(fp_test, fixed_handler) {
-  struct handler : fmt::detail::fixed_handler {
+  struct handler : fmt::detail::gen_digits_handler {
     char buffer[10];
-    handler(int prec = 0) : fmt::detail::fixed_handler() {
+    handler(int prec = 0) : fmt::detail::gen_digits_handler() {
       buf = buffer;
       precision = prec;
     }
   };
-  int exp = 0;
-  handler().on_digit('0', 100, 99, 0, exp, false);
-  EXPECT_THROW(handler().on_digit('0', 100, 100, 0, exp, false),
-               assertion_failure);
+  handler().on_digit('0', 100, 99, 0, false);
+  EXPECT_THROW(handler().on_digit('0', 100, 100, 0, false), assertion_failure);
   namespace digits = fmt::detail::digits;
-  EXPECT_EQ(handler(1).on_digit('0', 100, 10, 10, exp, false), digits::error);
+  EXPECT_EQ(handler(1).on_digit('0', 100, 10, 10, false), digits::error);
   // Check that divisor - error doesn't overflow.
-  EXPECT_EQ(handler(1).on_digit('0', 100, 10, 101, exp, false), digits::error);
+  EXPECT_EQ(handler(1).on_digit('0', 100, 10, 101, false), digits::error);
   // Check that 2 * error doesn't overflow.
   uint64_t max = max_value<uint64_t>();
-  EXPECT_EQ(handler(1).on_digit('0', max, 10, max - 1, exp, false),
-            digits::error);
+  EXPECT_EQ(handler(1).on_digit('0', max, 10, max - 1, false), digits::error);
 }
 
 TEST(fp_test, grisu_format_compiles_with_on_ieee_double) {

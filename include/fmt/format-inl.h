@@ -226,16 +226,12 @@ template <typename T> struct bits {
       static_cast<int>(sizeof(T) * std::numeric_limits<unsigned char>::digits);
 };
 
-class fp;
-template <int SHIFT = 0> FMT_CONSTEXPR fp normalize(fp value);
-
-// Lower (upper) boundary is a value half way between a floating-point value
-// and its predecessor (successor). Boundaries have the same exponent as the
-// value so only significands are stored.
-struct boundaries {
-  uint64_t lower;
-  uint64_t upper;
-};
+// Returns the number of significand bits in Float excluding implicit bit.
+template <typename Float> constexpr int num_significand_bits() {
+  // Subtract 1 to account for an implicit most significant bit in the
+  // normalized form.
+  return std::numeric_limits<Float>::digits - 1;
+}
 
 // A handmade floating-point number f * pow(2, e).
 class fp {
@@ -250,14 +246,9 @@ class fp {
   significand_type f;
   int e;
 
-  // All sizes are in bits.
-  // Subtract 1 to account for an implicit most significant bit in the
-  // normalized form.
-  static FMT_CONSTEXPR_DECL const int double_significand_size =
-      std::numeric_limits<double>::digits - 1;
   static FMT_CONSTEXPR_DECL const uint64_t implicit_bit =
-      1ULL << double_significand_size;
-  static FMT_CONSTEXPR_DECL const int significand_size =
+      1ULL << num_significand_bits<double>();
+  static FMT_CONSTEXPR_DECL const int num_significand_bits =
       bits<significand_type>::value;
 
   constexpr fp() : f(0), e(0) {}
@@ -271,27 +262,25 @@ class fp {
   template <typename Float, FMT_ENABLE_IF(is_supported_float<Float>::value)>
   FMT_CONSTEXPR bool assign(Float n) {
     // Assume float is in the format [sign][exponent][significand].
-    using limits = std::numeric_limits<Float>;
-    const int float_significand_size = limits::digits - 1;
-    const int exponent_size =
-        bits<Float>::value - float_significand_size - 1;  // -1 for sign
-    const uint64_t float_implicit_bit = 1ULL << float_significand_size;
+    const int num_float_significand_bits =
+        detail::num_significand_bits<Float>();
+    const uint64_t float_implicit_bit = 1ULL << num_float_significand_bits;
     const uint64_t significand_mask = float_implicit_bit - 1;
-    const uint64_t exponent_mask = (~0ULL >> 1) & ~significand_mask;
-    const int exponent_bias = (1 << exponent_size) - limits::max_exponent - 1;
     constexpr bool is_double = sizeof(Float) == sizeof(uint64_t);
     auto u = bit_cast<conditional_t<is_double, uint64_t, uint32_t>>(n);
     f = u & significand_mask;
+    const uint64_t exponent_mask = (~0ULL >> 1) & ~significand_mask;
     int biased_e =
-        static_cast<int>((u & exponent_mask) >> float_significand_size);
-    // Predecessor is closer if d is a normalized power of 2 (f == 0) other than
-    // the smallest normalized number (biased_e > 1).
+        static_cast<int>((u & exponent_mask) >> num_float_significand_bits);
+    // The predecessor is closer if n is a normalized power of 2 (f == 0) other
+    // than the smallest normalized number (biased_e > 1).
     bool is_predecessor_closer = f == 0 && biased_e > 1;
     if (biased_e != 0)
       f += float_implicit_bit;
     else
       biased_e = 1;  // Subnormals use biased exponent 1 (min exponent).
-    e = biased_e - exponent_bias - float_significand_size;
+    const int exponent_bias = std::numeric_limits<Float>::max_exponent - 1;
+    e = biased_e - exponent_bias - num_float_significand_bits;
     return is_predecessor_closer;
   }
 
@@ -303,7 +292,7 @@ class fp {
 };
 
 // Normalizes the value converted from double and multiplied by (1 << SHIFT).
-template <int SHIFT> FMT_CONSTEXPR fp normalize(fp value) {
+template <int SHIFT = 0> FMT_CONSTEXPR fp normalize(fp value) {
   // Handle subnormals.
   const auto shifted_implicit_bit = fp::implicit_bit << SHIFT;
   while ((value.f & shifted_implicit_bit) == 0) {
@@ -312,7 +301,7 @@ template <int SHIFT> FMT_CONSTEXPR fp normalize(fp value) {
   }
   // Subtract 1 to account for hidden bit.
   const auto offset =
-      fp::significand_size - fp::double_significand_size - SHIFT - 1;
+      fp::num_significand_bits - num_significand_bits<double>() - SHIFT - 1;
   value.f <<= offset;
   value.e -= offset;
   return value;
@@ -349,7 +338,7 @@ FMT_CONSTEXPR inline fp get_cached_power(int min_exponent,
   const int shift = 32;
   const auto significand = static_cast<int64_t>(log10_2_significand);
   int index = static_cast<int>(
-      ((min_exponent + fp::significand_size - 1) * (significand >> shift) +
+      ((min_exponent + fp::num_significand_bits - 1) * (significand >> shift) +
        ((int64_t(1) << shift) - 1))  // ceil
       >> 32                          // arithmetic shift
   );
@@ -661,14 +650,52 @@ enum result {
 };
 }
 
+struct gen_digits_handler {
+  char* buf;
+  int size;
+  int precision;
+  int exp10;
+  bool fixed;
+
+  FMT_CONSTEXPR digits::result on_digit(char digit, uint64_t divisor,
+                                        uint64_t remainder, uint64_t error,
+                                        bool integral) {
+    FMT_ASSERT(remainder < divisor, "");
+    buf[size++] = digit;
+    if (!integral && error >= remainder) return digits::error;
+    if (size < precision) return digits::more;
+    if (!integral) {
+      // Check if error * 2 < divisor with overflow prevention.
+      // The check is not needed for the integral part because error = 1
+      // and divisor > (1 << 32) there.
+      if (error >= divisor || error >= divisor - error) return digits::error;
+    } else {
+      FMT_ASSERT(error == 1 && divisor > 2, "");
+    }
+    auto dir = get_round_direction(divisor, remainder, error);
+    if (dir != round_direction::up)
+      return dir == round_direction::down ? digits::done : digits::error;
+    ++buf[size - 1];
+    for (int i = size - 1; i > 0 && buf[i] > '9'; --i) {
+      buf[i] = '0';
+      ++buf[i - 1];
+    }
+    if (buf[0] > '9') {
+      buf[0] = '1';
+      if (fixed)
+        buf[size++] = '0';
+      else
+        ++exp10;
+    }
+    return digits::done;
+  }
+};
+
 // Generates output using the Grisu digit-gen algorithm.
 // error: the size of the region (lower, upper) outside of which numbers
 // definitely do not round to value (Delta in Grisu3).
-template <typename Handler>
-FMT_INLINE FMT_CONSTEXPR digits::result grisu_gen_digits(fp value,
-                                                         uint64_t error,
-                                                         int& exp,
-                                                         Handler& handler) {
+FMT_INLINE FMT_CONSTEXPR20 digits::result grisu_gen_digits(
+    fp value, uint64_t error, int& exp, gen_digits_handler& handler) {
   const fp one(1ULL << -value.e, value.e);
   // The integral part of scaled value (p1 in Grisu) = value / one. It cannot be
   // zero because it contains a product of two 64-bit numbers with MSB set (due
@@ -679,10 +706,23 @@ FMT_INLINE FMT_CONSTEXPR digits::result grisu_gen_digits(fp value,
   // The fractional part of scaled value (p2 in Grisu) c = value % one.
   uint64_t fractional = value.f & (one.f - 1);
   exp = count_digits(integral);  // kappa in Grisu.
-  // Divide by 10 to prevent overflow.
-  auto result = handler.on_start(impl_data::power_of_10_64[exp - 1] << -one.e,
-                                 value.f / 10, error * 10, exp);
-  if (result != digits::more) return result;
+  // Non-fixed formats require at least one digit and no precision adjustment.
+  if (handler.fixed) {
+    // Adjust fixed precision by exponent because it is relative to decimal
+    // point.
+    handler.precision += exp + handler.exp10;
+    // Check if precision is satisfied just by leading zeros, e.g.
+    // format("{:.2f}", 0.001) gives "0.00" without generating any digits.
+    if (handler.precision <= 0) {
+      if (handler.precision < 0) return digits::done;
+      // Divide by 10 to prevent overflow.
+      uint64_t divisor = impl_data::power_of_10_64[exp - 1] << -one.e;
+      auto dir = get_round_direction(divisor, value.f / 10, error * 10);
+      if (dir == round_direction::unknown) return digits::error;
+      handler.buf[handler.size++] = dir == round_direction::up ? '1' : '0';
+      return digits::done;
+    }
+  }
   // Generate digits for the integral part. This can produce up to 10 digits.
   do {
     uint32_t digit = 0;
@@ -729,9 +769,9 @@ FMT_INLINE FMT_CONSTEXPR digits::result grisu_gen_digits(fp value,
     }
     --exp;
     auto remainder = (static_cast<uint64_t>(integral) << -one.e) + fractional;
-    result = handler.on_digit(static_cast<char>('0' + digit),
-                              impl_data::power_of_10_64[exp] << -one.e,
-                              remainder, error, exp, true);
+    auto result = handler.on_digit(static_cast<char>('0' + digit),
+                                   impl_data::power_of_10_64[exp] << -one.e,
+                                   remainder, error, true);
     if (result != digits::more) return result;
   } while (exp > 0);
   // Generate digits for the fractional part.
@@ -741,69 +781,10 @@ FMT_INLINE FMT_CONSTEXPR digits::result grisu_gen_digits(fp value,
     char digit = static_cast<char>('0' + (fractional >> -one.e));
     fractional &= one.f - 1;
     --exp;
-    result = handler.on_digit(digit, one.f, fractional, error, exp, false);
+    auto result = handler.on_digit(digit, one.f, fractional, error, false);
     if (result != digits::more) return result;
   }
 }
-
-// The fixed precision digit handler.
-struct fixed_handler {
-  char* buf;
-  int size;
-  int precision;
-  int exp10;
-  bool fixed;
-
-  FMT_CONSTEXPR digits::result on_start(uint64_t divisor, uint64_t remainder,
-                                        uint64_t error, int& exp) {
-    // Non-fixed formats require at least one digit and no precision adjustment.
-    if (!fixed) return digits::more;
-    // Adjust fixed precision by exponent because it is relative to decimal
-    // point.
-    precision += exp + exp10;
-    // Check if precision is satisfied just by leading zeros, e.g.
-    // format("{:.2f}", 0.001) gives "0.00" without generating any digits.
-    if (precision > 0) return digits::more;
-    if (precision < 0) return digits::done;
-    auto dir = get_round_direction(divisor, remainder, error);
-    if (dir == round_direction::unknown) return digits::error;
-    buf[size++] = dir == round_direction::up ? '1' : '0';
-    return digits::done;
-  }
-
-  FMT_CONSTEXPR digits::result on_digit(char digit, uint64_t divisor,
-                                        uint64_t remainder, uint64_t error, int,
-                                        bool integral) {
-    FMT_ASSERT(remainder < divisor, "");
-    buf[size++] = digit;
-    if (!integral && error >= remainder) return digits::error;
-    if (size < precision) return digits::more;
-    if (!integral) {
-      // Check if error * 2 < divisor with overflow prevention.
-      // The check is not needed for the integral part because error = 1
-      // and divisor > (1 << 32) there.
-      if (error >= divisor || error >= divisor - error) return digits::error;
-    } else {
-      FMT_ASSERT(error == 1 && divisor > 2, "");
-    }
-    auto dir = get_round_direction(divisor, remainder, error);
-    if (dir != round_direction::up)
-      return dir == round_direction::down ? digits::done : digits::error;
-    ++buf[size - 1];
-    for (int i = size - 1; i > 0 && buf[i] > '9'; --i) {
-      buf[i] = '0';
-      ++buf[i - 1];
-    }
-    if (buf[0] > '9') {
-      buf[0] = '1';
-      if (fixed)
-        buf[size++] = '0';
-      else
-        ++exp10;
-    }
-    return digits::done;
-  }
-};
 
 // A 128-bit integer type used internally,
 struct uint128_wrapper {
@@ -2398,13 +2379,13 @@ FMT_HEADER_ONLY_CONSTEXPR20 int format_float(Float value, int precision,
     int cached_exp10 = 0;     // K in Grisu.
     fp normalized = normalize(fp(value));
     const auto cached_pow = get_cached_power(
-        min_exp - (normalized.e + fp::significand_size), cached_exp10);
+        min_exp - (normalized.e + fp::num_significand_bits), cached_exp10);
     normalized = normalized * cached_pow;
     // Limit precision to the maximum possible number of significant digits in
     // an IEEE754 double because we don't need to generate zeros.
     const int max_double_digits = 767;
     if (precision > max_double_digits) precision = max_double_digits;
-    fixed_handler handler{buf.data(), 0, precision, -cached_exp10, fixed};
+    gen_digits_handler handler{buf.data(), 0, precision, -cached_exp10, fixed};
     if (grisu_gen_digits(normalized, 1, exp, handler) != digits::error &&
         !is_constant_evaluated()) {
       exp += handler.exp10;
