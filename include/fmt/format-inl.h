@@ -2406,7 +2406,7 @@ FMT_HEADER_ONLY_CONSTEXPR20 int format_float(Float value, int precision,
     buf.try_resize(num_digits);
   }
   return exp;
-}  // namespace detail
+}
 
 template <typename T>
 int snprintf_float(T value, int precision, float_specs specs,
