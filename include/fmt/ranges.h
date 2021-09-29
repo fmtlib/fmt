@@ -19,15 +19,20 @@
 
 FMT_BEGIN_NAMESPACE
 
-template <typename Char, typename Enable = void> struct formatting_range {
-#ifdef FMT_DEPRECATED_BRACED_RANGES
-  Char prefix = '{';
-  Char postfix = '}';
-#else
-  Char prefix = '[';
-  Char postfix = ']';
+#ifndef FMT_RANGES_FORMATTING_CLASS_MEMBER_SIZE
+#  define FMT_RANGES_FORMATTING_CLASS_MEMBER_SIZE 8
 #endif
 
+template <typename Char, typename Enable = void> struct formatting_range {
+#ifdef FMT_DEPRECATED_BRACED_RANGES
+  Char prefix[FMT_RANGES_FORMATTING_CLASS_MEMBER_SIZE] = '{';
+  Char delimiter[FMT_RANGES_FORMATTING_CLASS_MEMBER_SIZE] = ", ";
+  Char postfix[FMT_RANGES_FORMATTING_CLASS_MEMBER_SIZE] = '}';
+#else
+  Char prefix[FMT_RANGES_FORMATTING_CLASS_MEMBER_SIZE] = "[";
+  Char delimiter[FMT_RANGES_FORMATTING_CLASS_MEMBER_SIZE] = ", ";
+  Char postfix[FMT_RANGES_FORMATTING_CLASS_MEMBER_SIZE] = "]";
+#endif
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
     return ctx.begin();
@@ -35,9 +40,9 @@ template <typename Char, typename Enable = void> struct formatting_range {
 };
 
 template <typename Char, typename Enable = void> struct formatting_tuple {
-  Char prefix = '(';
-  Char postfix = ')';
-
+  Char prefix[FMT_RANGES_FORMATTING_CLASS_MEMBER_SIZE] = "(";
+  Char delimiter[FMT_RANGES_FORMATTING_CLASS_MEMBER_SIZE] = ", ";
+  Char postfix[FMT_RANGES_FORMATTING_CLASS_MEMBER_SIZE] = ")";
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
     return ctx.begin();
@@ -46,15 +51,20 @@ template <typename Char, typename Enable = void> struct formatting_tuple {
 
 namespace detail {
 
-template <typename RangeT, typename OutputIterator>
+template <typename RangeT, typename OutputIterator,
+          FMT_ENABLE_IF(
+              !std::is_same_v<std::remove_cv_t<std::remove_reference_t<
+                                  std::remove_pointer_t<std::decay_t<RangeT>>>>,
+                              char>)>
 OutputIterator copy(const RangeT& range, OutputIterator out) {
   for (auto it = range.begin(), end = range.end(); it != end; ++it)
     *out++ = *it;
   return out;
 }
 
-template <typename OutputIterator>
-OutputIterator copy(const char* str, OutputIterator out) {
+template <typename CharT, typename OutputIterator,
+          FMT_ENABLE_IF(std::is_same_v<CharT, char>)>
+OutputIterator copy(const CharT* str, OutputIterator out) {
   while (*str) *out++ = *str++;
   return out;
 }
@@ -220,12 +230,6 @@ template <class Tuple, class F> void for_each(Tuple&& tup, F&& f) {
 template <typename Range>
 using value_type =
     remove_cvref_t<decltype(*detail::range_begin(std::declval<Range>()))>;
-
-template <typename OutputIt> OutputIt write_delimiter(OutputIt out) {
-  *out++ = ',';
-  *out++ = ' ';
-  return out;
-}
 
 struct singleton {
   unsigned char upper;
@@ -526,6 +530,17 @@ OutputIt write_range_entry(OutputIt out, const Arg& v) {
   return write<Char>(out, v);
 }
 
+#if FMT_HAS_CPP20_CONCEPTS
+template <typename T>
+concept Range = is_range_<T>::value;
+
+template <typename T>
+concept TupleLike = is_tuple_like_<T>::value;
+
+template <typename T>
+concept StdStringLike = is_std_string_like<T>::value;
+#endif
+
 }  // namespace detail
 
 template <typename T> struct is_tuple_like {
@@ -533,13 +548,25 @@ template <typename T> struct is_tuple_like {
       detail::is_tuple_like_<T>::value && !detail::is_range_<T>::value;
 };
 
+#if FMT_HAS_CPP20_CONCEPTS
+template <typename T>
+concept TupleLike = detail::TupleLike<T> && !detail::Range<T>;
+
+// A tuple formatter base.
+// This is useful for user code to reuse the range formatting instrument
+// by subclassing
+template <TupleLike TupleT, typename Char>
+struct tuple_formatter
+#else
 template <typename TupleT, typename Char>
-struct formatter<TupleT, Char, enable_if_t<fmt::is_tuple_like<TupleT>::value>> {
+struct tuple_formatter
+#endif
+{
  private:
   // C++11 generic lambda for format()
   template <typename FormatContext> struct format_each {
     template <typename T> void operator()(const T& v) {
-      if (i > 0) out = detail::write_delimiter(out);
+      if (i > 0) out = detail::copy(formatting.delimiter, out);
       out = detail::write_range_entry<Char>(out, v);
       ++i;
     }
@@ -570,6 +597,19 @@ struct formatter<TupleT, Char, enable_if_t<fmt::is_tuple_like<TupleT>::value>> {
   }
 };
 
+// The actual formatter specialization
+#if FMT_HAS_CPP20_CONCEPTS
+template <TupleLike TupleT, typename Char>
+struct formatter<TupleT, Char>
+#else
+template <typename TupleT, typename Char>
+struct formatter<TupleT, Char, enable_if_t<fmt::is_tuple_like<TupleT>::value>>
+#endif
+    : tuple_formatter<TupleT, Char> {
+  using tuple_formatter<TupleT, Char>::parse;
+  using tuple_formatter<TupleT, Char>::format;
+};
+
 template <typename T, typename Char> struct is_range {
   static FMT_CONSTEXPR_DECL const bool value =
       detail::is_range_<T>::value && !detail::is_std_string_like<T>::value &&
@@ -577,17 +617,29 @@ template <typename T, typename Char> struct is_range {
       !std::is_constructible<detail::std_string_view<Char>, T>::value;
 };
 
+#if FMT_HAS_CPP20_CONCEPTS
 template <typename T, typename Char>
-struct formatter<
-    T, Char,
-    enable_if_t<
-        fmt::is_range<T, Char>::value
+concept Range = detail::Range<T> && !detail::StdStringLike<T> &&
+                !std::is_convertible<T, std::basic_string<Char>>::value &&
+                !std::is_constructible<detail::std_string_view<Char>, T>::value;
+
+template <typename T, typename Char>
+concept FormattableRange = Range<T, Char>
 // Workaround a bug in MSVC 2019 and earlier.
-#if !FMT_MSC_VER
-        && (is_formattable<detail::value_type<T>, Char>::value ||
-            detail::has_fallback_formatter<detail::value_type<T>, Char>::value)
+#  if !FMT_MSC_VER
+    &&(is_formattable<detail::value_type<T>, Char>::value ||
+       detail::has_fallback_formatter<detail::value_type<T>, Char>::value)
+#  endif
+    ;
+
+template <typename T, typename Char>
+requires FormattableRange<T, Char>
+struct range_formatter
+#else
+template <typename T, typename Char>
+struct range_formatter
 #endif
-        >> {
+{
   formatting_range<Char> formatting;
 
   template <typename ParseContext>
@@ -606,12 +658,35 @@ struct formatter<
     auto it = std::begin(values);
     auto end = std::end(values);
     for (; it != end; ++it) {
-      if (i > 0) out = detail::write_delimiter(out);
+      if (i > 0) out = detail::copy(formatting.delimiter, out);
       out = detail::write_range_entry<Char>(out, *it);
       ++i;
     }
     return detail::copy(formatting.postfix, out);
   }
+};
+
+// The actual formatter specialization
+#if FMT_HAS_CPP20_CONCEPTS
+template <typename T, typename Char>
+requires FormattableRange<T, Char>
+struct formatter<T, Char>
+#else
+template <typename T, typename Char>
+struct formatter<
+    T, Char,
+    enable_if_t<
+        fmt::is_range<T, Char>::value
+// Workaround a bug in MSVC 2019 and earlier.
+#  if !FMT_MSC_VER
+        && (is_formattable<detail::value_type<T>, Char>::value ||
+            detail::has_fallback_formatter<detail::value_type<T>, Char>::value)
+#  endif
+        >>
+#endif
+    : range_formatter<T, Char> {
+  using range_formatter<T, Char>::parse;
+  using range_formatter<T, Char>::format;
 };
 
 template <typename Char, typename... T> struct tuple_join_view : detail::view {
