@@ -44,7 +44,7 @@ FMT_CONSTEXPR To lossless_integral_conversion(const From from, int& ec) {
   static_assert(T::is_integer, "To must be integral");
 
   // A and B are both signed, or both unsigned.
-  if (F::digits <= T::digits) {
+  if (detail::const_check(F::digits <= T::digits)) {
     // From fits in To without any problem.
   } else {
     // From does not always fit in To, resort to a dynamic check.
@@ -79,14 +79,14 @@ FMT_CONSTEXPR To lossless_integral_conversion(const From from, int& ec) {
       return {};
     }
     // From is positive. Can it always fit in To?
-    if (F::digits > T::digits &&
+    if (detail::const_check(F::digits > T::digits) &&
         from > static_cast<From>(detail::max_value<To>())) {
       ec = 1;
       return {};
     }
   }
 
-  if (!F::is_signed && T::is_signed && F::digits >= T::digits &&
+  if (detail::const_check(!F::is_signed && T::is_signed && F::digits >= T::digits) &&
       from > static_cast<From>(detail::max_value<To>())) {
     ec = 1;
     return {};
@@ -243,7 +243,7 @@ To safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
   }
 
   // multiply with Factor::num without overflow or underflow
-  if (Factor::num != 1) {
+  if (detail::const_check(Factor::num != 1)) {
     constexpr auto max1 = detail::max_value<IntermediateRep>() /
                           static_cast<IntermediateRep>(Factor::num);
     if (count > max1) {
@@ -260,7 +260,7 @@ To safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
   }
 
   // this can't go wrong, right? den>0 is checked earlier.
-  if (Factor::den != 1) {
+  if (detail::const_check(Factor::den != 1)) {
     using common_t = typename std::common_type<IntermediateRep, intmax_t>::type;
     count /= static_cast<common_t>(Factor::den);
   }
