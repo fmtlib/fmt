@@ -166,12 +166,12 @@ FMT_END_NAMESPACE
 #  define FMT_BUILTIN_CLZLL(n) __builtin_clzll(n)
 #endif
 #if (FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_ctz) || FMT_ICC_VERSION) && \
-    FMT_ICC_POSIX
+    !FMT_ICC_INTRINSIC_BUG
 #  define FMT_BUILTIN_CTZ(n) __builtin_ctz(n)
 #endif
 #if (FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_ctzll) || \
      FMT_ICC_VERSION) &&                                    \
-    FMT_ICC_POSIX
+    !FMT_ICC_INTRINSIC_BUG
 #  define FMT_BUILTIN_CTZLL(n) __builtin_ctzll(n)
 #endif
 
