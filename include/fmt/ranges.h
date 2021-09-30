@@ -51,11 +51,21 @@ template <typename Char, typename Enable = void> struct formatting_tuple {
 
 namespace detail {
 
+// These are needed traits to allow correct resolution of the
+// copy(...) function overloading for char[] and wchar_t[]
+template <typename T> using decay_t = typename std::decay<T>::type;
+template <typename T>
+using remove_pointer_t = typename std::remove_pointer<T>::type;
+
+template <typename T> struct is_char_like : std::false_type {};
+// Here we only add check for wchar_t, which is inline with the
+// copy(...) overload below for char and wchar_t type.
+template <> struct is_char_like<char> : std::true_type {};
+template <> struct is_char_like<wchar_t> : std::true_type {};
+
 template <typename RangeT, typename OutputIterator,
-          FMT_ENABLE_IF(
-              !std::is_same_v<std::remove_cv_t<std::remove_reference_t<
-                                  std::remove_pointer_t<std::decay_t<RangeT>>>>,
-                              char>)>
+          FMT_ENABLE_IF(!is_char_like<remove_cvref_t<
+                            remove_pointer_t<decay_t<RangeT>>>>::value)>
 OutputIterator copy(const RangeT& range, OutputIterator out) {
   for (auto it = range.begin(), end = range.end(); it != end; ++it)
     *out++ = *it;
@@ -63,7 +73,7 @@ OutputIterator copy(const RangeT& range, OutputIterator out) {
 }
 
 template <typename CharT, typename OutputIterator,
-          FMT_ENABLE_IF(std::is_same_v<CharT, char>)>
+          FMT_ENABLE_IF(is_char_like<CharT>::value)>
 OutputIterator copy(const CharT* str, OutputIterator out) {
   while (*str) *out++ = *str++;
   return out;

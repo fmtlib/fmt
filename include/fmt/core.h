@@ -103,7 +103,7 @@
 #endif
 
 // Check if C++20 concepts is supported.
-#if ((__cplusplus >= 202002L) && defined(__cpp_lib_concepts))
+#if ((__cplusplus >= 202002L) && defined(__cpp_lib_concepts) && !FMT_MSC_VER)
 #  define FMT_HAS_CPP20_CONCEPTS 1
 #else
 #  define FMT_HAS_CPP20_CONCEPTS 0
