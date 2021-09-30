@@ -422,11 +422,17 @@ template <typename Char> class basic_string_view {
    */
   FMT_CONSTEXPR_CHAR_TRAITS
   FMT_INLINE
-  basic_string_view(const Char* s) : data_(s) {
+  basic_string_view(const Char* s) : data_(s), size_(0) {
+    // This test is needed to ensure that this constructor is constexpr in C++17
+    // modes.
+#ifdef __cpp_lib_is_constant_evaluated
     if (detail::const_check(std::is_same<Char, char>::value &&
-                            !detail::is_constant_evaluated()))
+                            !detail::is_constant_evaluated())) {
+      // Call strlen directly for better code generation in non-optimized
+      // builds.
       size_ = std::strlen(reinterpret_cast<const char*>(s));
-    else
+    } else
+#endif
       size_ = std::char_traits<Char>::length(s);
   }
 
