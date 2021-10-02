@@ -26,10 +26,17 @@
 
 #if defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER)
 #  define FMT_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
-#  define FMT_GCC_PRAGMA(arg) _Pragma(arg)
 #else
 #  define FMT_GCC_VERSION 0
-#  define FMT_GCC_PRAGMA(arg)
+#endif
+
+#ifndef FMT_GCC_PRAGMA
+// Workaround _Pragma bug https://gcc.gnu.org/bugzilla/show_bug.cgi?id=59884.
+#  if FMT_GCC_VERSION >= 504
+#    define FMT_GCC_PRAGMA(arg) _Pragma(arg)
+#  else
+#    define FMT_GCC_PRAGMA(arg)
+#  endif
 #endif
 
 #ifdef __ICL

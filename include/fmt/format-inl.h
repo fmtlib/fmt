@@ -188,8 +188,8 @@ template <typename T = void> struct basic_impl_data {
   };
 
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
-  FMT_GCC_PRAGMA("GCC diagnostic push")
-  FMT_GCC_PRAGMA("GCC diagnostic ignored \"-Wnarrowing\"")
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wnarrowing"
 #endif
   // Binary exponents of pow(10, k), for k = -348, -340, ..., 340, corresponding
   // to significands above.
@@ -203,7 +203,7 @@ template <typename T = void> struct basic_impl_data {
       534,   561,   588,   614,   641,   667,   694,   720,   747,   774,  800,
       827,   853,   880,   907,   933,   960,   986,   1013,  1039,  1066};
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
-  FMT_GCC_PRAGMA("GCC diagnostic pop")
+#  pragma GCC diagnostic pop
 #endif
 
   static constexpr uint64_t power_of_10_64[20] = {
