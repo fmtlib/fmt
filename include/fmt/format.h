@@ -156,7 +156,7 @@ FMT_END_NAMESPACE
 
 // __builtin_clz is broken in clang with Microsoft CodeGen:
 // https://github.com/fmtlib/fmt/issues/519.
-#ifndef FMT_MSC_VER
+#if !FMT_MSC_VER
 #  if FMT_HAS_BUILTIN(__builtin_clz) || FMT_GCC_VERSION || FMT_ICC_VERSION
 #    define FMT_BUILTIN_CLZ(n) __builtin_clz(n)
 #  endif
