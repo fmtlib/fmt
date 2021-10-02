@@ -314,11 +314,13 @@ FMT_BEGIN_DETAIL_NAMESPACE
 // (void)var does not work on many Intel compilers.
 template <typename... T> FMT_CONSTEXPR void ignore_unused(const T&...) {}
 
-constexpr FMT_INLINE auto is_constant_evaluated() FMT_NOEXCEPT -> bool {
+constexpr FMT_INLINE auto is_constant_evaluated(bool default_value = false)
+    FMT_NOEXCEPT -> bool {
 #ifdef __cpp_lib_is_constant_evaluated
+  ignore_unused(default_value);
   return std::is_constant_evaluated();
 #else
-  return false;
+  return default_value;
 #endif
 }
 
@@ -426,7 +428,7 @@ template <typename Char> class basic_string_view {
   FMT_INLINE
   basic_string_view(const Char* s) : data_(s) {
     if (detail::const_check(std::is_same<Char, char>::value &&
-                            !detail::is_constant_evaluated()))
+                            !detail::is_constant_evaluated(true)))
       size_ = std::strlen(reinterpret_cast<const char*>(s));
     else
       size_ = std::char_traits<Char>::length(s);
