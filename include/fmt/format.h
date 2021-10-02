@@ -49,14 +49,6 @@
 #  define FMT_GCC_VISIBILITY_HIDDEN
 #endif
 
-#ifdef __INTEL_COMPILER
-#  define FMT_ICC_VERSION __INTEL_COMPILER
-#elif defined(__ICL)
-#  define FMT_ICC_VERSION __ICL
-#else
-#  define FMT_ICC_VERSION 0
-#endif
-
 #ifdef __NVCC__
 #  define FMT_CUDA_VERSION (__CUDACC_VER_MAJOR__ * 100 + __CUDACC_VER_MINOR__)
 #else
@@ -173,10 +165,13 @@ FMT_END_NAMESPACE
     !FMT_MSC_VER
 #  define FMT_BUILTIN_CLZLL(n) __builtin_clzll(n)
 #endif
-#if (FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_ctz) || FMT_ICC_VERSION)
+#if (FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_ctz) || FMT_ICC_VERSION) && \
+    !FMT_ICC_INTRINSIC_BUG
 #  define FMT_BUILTIN_CTZ(n) __builtin_ctz(n)
 #endif
-#if (FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_ctzll) || FMT_ICC_VERSION)
+#if (FMT_GCC_VERSION || FMT_HAS_BUILTIN(__builtin_ctzll) || \
+     FMT_ICC_VERSION) &&                                    \
+    !FMT_ICC_INTRINSIC_BUG
 #  define FMT_BUILTIN_CTZLL(n) __builtin_ctzll(n)
 #endif
 
@@ -192,7 +187,6 @@ FMT_BEGIN_NAMESPACE
 namespace detail {
 // Avoid Clang with Microsoft CodeGen's -Wunknown-pragmas warning.
 #  if !defined(__clang__)
-#    pragma managed(push, off)
 #    pragma intrinsic(_BitScanForward)
 #    pragma intrinsic(_BitScanReverse)
 #    if defined(_WIN64)
@@ -254,9 +248,6 @@ inline auto ctzll(uint64_t x) -> int {
   return static_cast<int>(r);
 }
 #  define FMT_BUILTIN_CTZLL(n) detail::ctzll(n)
-#  if !defined(__clang__)
-#    pragma managed(pop)
-#  endif
 }  // namespace detail
 FMT_END_NAMESPACE
 #endif
