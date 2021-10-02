@@ -2109,8 +2109,7 @@ FMT_CONSTEXPR_CHAR_TRAITS auto write(OutputIt out, const Char* value)
   if (!value) {
     throw_format_error("string pointer is null");
   } else {
-    auto length = std::char_traits<Char>::length(value);
-    out = write(out, basic_string_view<Char>(value, length));
+    out = write(out, basic_string_view<Char>(value));
   }
   return out;
 }
