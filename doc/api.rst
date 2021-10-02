@@ -186,7 +186,9 @@ template and implement ``parse`` and ``format`` methods::
 
   #include <fmt/format.h>
 
-  struct point { double x, y; };
+  struct point {
+    double x, y;
+  };
 
   template <> struct fmt::formatter<point> {
     // Presentation format: 'f' - fixed, 'e' - exponential.
@@ -210,8 +212,7 @@ template and implement ``parse`` and ``format`` methods::
       if (it != end && (*it == 'f' || *it == 'e')) presentation = *it++;
 
       // Check if reached the end of the range:
-      if (it != end && *it != '}')
-        throw format_error("invalid format");
+      if (it != end && *it != '}') throw format_error("invalid format");
 
       // Return an iterator past the end of the parsed range:
       return it;
@@ -222,10 +223,9 @@ template and implement ``parse`` and ``format`` methods::
     template <typename FormatContext>
     auto format(const point& p, FormatContext& ctx) -> decltype(ctx.out()) {
       // ctx.out() is an output iterator to write to.
-      return format_to(
-          ctx.out(),
-          presentation == 'f' ? "({:.1f}, {:.1f})" : "({:.1e}, {:.1e})",
-          p.x, p.y);
+      return presentation == 'f'
+                ? format_to(ctx.out(), "({:.1f}, {:.1f})", p.x, p.y)
+                : format_to(ctx.out(), "({:.1e}, {:.1e})", p.x, p.y);
     }
   };
 
