@@ -34,13 +34,10 @@
 
 #ifdef __ICL
 #  define FMT_ICC_VERSION __ICL
-#  define FMT_ICC_INTRINSIC_BUG 1
 #elif defined(__INTEL_COMPILER)
 #  define FMT_ICC_VERSION __INTEL_COMPILER
-#  define FMT_ICC_INTRINSIC_BUG 0
 #else
 #  define FMT_ICC_VERSION 0
-#  define FMT_ICC_INTRINSIC_BUG 0
 #endif
 
 #ifdef __NVCC__
