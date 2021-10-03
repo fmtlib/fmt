@@ -433,13 +433,12 @@ template <typename Char> class basic_string_view {
    */
   FMT_CONSTEXPR_CHAR_TRAITS
   FMT_INLINE
-  basic_string_view(const Char* s) : data_(s) {
-    if (detail::const_check(std::is_same<Char, char>::value &&
-                            !detail::is_constant_evaluated(true)))
-      size_ = std::strlen(reinterpret_cast<const char*>(s));
-    else
-      size_ = std::char_traits<Char>::length(s);
-  }
+  basic_string_view(const Char* s)
+      : data_(s),
+        size_(detail::const_check(std::is_same<Char, char>::value &&
+                                  !detail::is_constant_evaluated(true))
+                  ? std::strlen(reinterpret_cast<const char*>(s))
+                  : std::char_traits<Char>::length(s)) {}
 
   /** Constructs a string reference from a ``std::basic_string`` object. */
   template <typename Traits, typename Alloc>
