@@ -58,6 +58,7 @@ def build_docs(version='dev', **kwargs):
       MACRO_EXPANSION   = YES
       PREDEFINED        = _WIN32=1 \
                           __linux__=1 \
+                          FMT_ENABLE_IF(...)= \
                           FMT_USE_VARIADIC_TEMPLATES=1 \
                           FMT_USE_RVALUE_REFERENCES=1 \
                           FMT_USE_USER_DEFINED_LITERALS=1 \
