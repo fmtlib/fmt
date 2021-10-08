@@ -534,9 +534,7 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
     return formatter<std::tm, Char>::format(time, ctx);
   }
 
-  static constexpr Char default_specs[] = {'%', 'Y', '-', '%', 'm', '-',
-                                           '%', 'd', ' ', '%', 'H', ':',
-                                           '%', 'M', ':', '%', 'S'};
+  static constexpr Char default_specs[] = {'%', 'F', ' ', '%', 'T'};
 };
 
 template <typename Char, typename Duration>
