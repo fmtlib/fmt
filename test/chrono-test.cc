@@ -7,6 +7,8 @@
 
 #include "fmt/chrono.h"
 
+#include <vector>
+
 #include "gtest-extra.h"  // EXPECT_THROW_MSG
 #include "util.h"         // get_locale
 
@@ -48,7 +50,42 @@ TEST(chrono_test, format_tm) {
   tm.tm_sec = 33;
   EXPECT_EQ(fmt::format("The date is {:%Y-%m-%d %H:%M:%S}.", tm),
             "The date is 2016-04-25 11:22:33.");
+  EXPECT_EQ(fmt::format("{:%Y}", tm), "2016");
+  EXPECT_EQ(fmt::format("{:%e}", tm), "25");
+  EXPECT_EQ(fmt::format("{:%D}", tm), "04/25/16");
   EXPECT_EQ(fmt::format("{:%F}", tm), "2016-04-25");
+  EXPECT_EQ(fmt::format("{:%T}", tm), "11:22:33");
+}
+
+TEST(chrono_test, format_tm_future) {
+  auto tm = std::tm();
+  tm.tm_year = 10445;  // 10000+ years
+  tm.tm_mon = 3;
+  tm.tm_mday = 25;
+  tm.tm_hour = 11;
+  tm.tm_min = 22;
+  tm.tm_sec = 33;
+  EXPECT_EQ(fmt::format("The date is {:%Y-%m-%d %H:%M:%S}.", tm),
+            "The date is 12345-04-25 11:22:33.");
+  EXPECT_EQ(fmt::format("{:%Y}", tm), "12345");
+  EXPECT_EQ(fmt::format("{:%D}", tm), "04/25/45");
+  EXPECT_EQ(fmt::format("{:%F}", tm), "12345-04-25");
+  EXPECT_EQ(fmt::format("{:%T}", tm), "11:22:33");
+}
+
+TEST(chrono_test, format_tm_past) {
+  auto tm = std::tm();
+  tm.tm_year = -2001;
+  tm.tm_mon = 3;
+  tm.tm_mday = 25;
+  tm.tm_hour = 11;
+  tm.tm_min = 22;
+  tm.tm_sec = 33;
+  EXPECT_EQ(fmt::format("The date is {:%Y-%m-%d %H:%M:%S}.", tm),
+            "The date is -101-04-25 11:22:33.");
+  EXPECT_EQ(fmt::format("{:%Y}", tm), "-101");
+  EXPECT_EQ(fmt::format("{:%D}", tm), "04/25/01");
+  EXPECT_EQ(fmt::format("{:%F}", tm), "-101-04-25");
   EXPECT_EQ(fmt::format("{:%T}", tm), "11:22:33");
 }
 
@@ -106,6 +143,24 @@ TEST(chrono_test, time_point) {
       std::chrono::time_point<std::chrono::system_clock, std::chrono::seconds>;
   auto t2 = time_point(std::chrono::seconds(42));
   EXPECT_EQ(strftime(t2), fmt::format("{:%Y-%m-%d %H:%M:%S}", t2));
+
+  std::vector<std::string> spec_list = {
+      "%%",  "%n",  "%t",  "%Y",  "%EY", "%y",  "%Oy", "%Ey", "%C",  "%EC",
+      "%G",  "%g",  "%b",  "%h",  "%B",  "%m",  "%Om", "%U",  "%OU", "%W",
+      "%OW", "%V",  "%OV", "%j",  "%d",  "%Od", "%e",  "%Oe", "%a",  "%A",
+      "%w",  "%Ow", "%u",  "%Ou", "%H",  "%OH", "%I",  "%OI", "%M",  "%OM",
+      "%S",  "%OS", "%c",  "%Ec", "%x",  "%Ex", "%X",  "%EX", "%D",  "%F",
+      "%r",  "%R",  "%T",  "%p",  "%z",  "%Z"};
+  for (const auto& spec : spec_list) {
+    auto t = std::chrono::system_clock::to_time_t(t1);
+    auto tm = *std::localtime(&t);
+    char output[256] = {};
+    std::strftime(output, sizeof(output), spec.c_str(), &tm);
+
+    auto fmt_spec = std::string("{:").append(spec).append("}");
+    EXPECT_EQ(output, fmt::format(fmt::runtime(fmt_spec), t1));
+    EXPECT_EQ(output, fmt::format(fmt::runtime(fmt_spec), tm));
+  }
 }
 
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
