@@ -41,6 +41,10 @@
 #include <system_error>  // std::system_error
 #include <utility>       // std::swap
 
+#ifdef __cpp_lib_bit_cast
+#include <bit>           // std::bitcast
+#endif
+
 #include "core.h"
 
 #if FMT_GCC_VERSION
