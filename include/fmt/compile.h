@@ -190,7 +190,7 @@ constexpr const auto& get([[maybe_unused]] const T& first,
   if constexpr (N == 0)
     return first;
   else
-    return get<N - 1>(rest...);
+    return detail::get<N - 1>(rest...);
 }
 
 template <typename Char, typename... Args>
@@ -202,7 +202,8 @@ constexpr int get_arg_index_by_name(basic_string_view<Char> name,
 template <int N, typename> struct get_type_impl;
 
 template <int N, typename... Args> struct get_type_impl<N, type_list<Args...>> {
-  using type = remove_cvref_t<decltype(get<N>(std::declval<Args>()...))>;
+  using type =
+      remove_cvref_t<decltype(detail::get<N>(std::declval<Args>()...))>;
 };
 
 template <int N, typename T>
@@ -242,7 +243,7 @@ template <typename Char> struct code_unit {
 // This ensures that the argument type is convertible to `const T&`.
 template <typename T, int N, typename... Args>
 constexpr const T& get_arg_checked(const Args&... args) {
-  const auto& arg = get<N>(args...);
+  const auto& arg = detail::get<N>(args...);
   if constexpr (detail::is_named_arg<remove_cvref_t<decltype(arg)>>()) {
     return arg.value;
   } else {
@@ -399,7 +400,9 @@ template <typename Char> struct arg_id_handler {
     return 0;
   }
 
-  constexpr void on_error(const char* message) { FMT_THROW(format_error(message)); }
+  constexpr void on_error(const char* message) {
+    FMT_THROW(format_error(message));
+  }
 };
 
 template <typename Char> struct parse_arg_id_result {
