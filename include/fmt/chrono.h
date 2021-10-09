@@ -86,7 +86,8 @@ FMT_CONSTEXPR To lossless_integral_conversion(const From from, int& ec) {
     }
   }
 
-  if (detail::const_check(!F::is_signed && T::is_signed && F::digits >= T::digits) &&
+  if (detail::const_check(!F::is_signed && T::is_signed &&
+                          F::digits >= T::digits) &&
       from > static_cast<From>(detail::max_value<To>())) {
     ec = 1;
     return {};
@@ -507,114 +508,6 @@ inline void write_digit2_separated(char* buf, unsigned a, unsigned b,
   digits |= 0x3030003030003030 | (usep << 16) | (usep << 40);
   memcpy(buf, &digits, 8);
 }
-
-FMT_END_DETAIL_NAMESPACE
-
-template <typename Char, typename Duration>
-struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
-                 Char> : formatter<std::tm, Char> {
-  FMT_CONSTEXPR formatter() {
-    this->specs = {default_specs, sizeof(default_specs) / sizeof(Char)};
-  }
-
-  template <typename ParseContext>
-  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
-    auto it = ctx.begin();
-    if (it != ctx.end() && *it == ':') ++it;
-    auto end = it;
-    while (end != ctx.end() && *end != '}') ++end;
-    if (end != it) this->specs = {it, detail::to_unsigned(end - it)};
-    return end;
-  }
-
-  template <typename FormatContext>
-  auto format(std::chrono::time_point<std::chrono::system_clock> val,
-              FormatContext& ctx) -> decltype(ctx.out()) {
-    std::tm time = localtime(val);
-    return formatter<std::tm, Char>::format(time, ctx);
-  }
-
-  static constexpr Char default_specs[] = {'%', 'F', ' ', '%', 'T'};
-};
-
-template <typename Char, typename Duration>
-constexpr Char
-    formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
-              Char>::default_specs[];
-
-template <typename Char> struct formatter<std::tm, Char> {
- private:
-  enum class spec {
-    unknown,
-    year_month_day,
-    hh_mm_ss,
-  };
-  spec spec_ = spec::unknown;
-
- public:
-  basic_string_view<Char> specs;
-
-  template <typename ParseContext>
-  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
-    auto it = ctx.begin();
-    if (it != ctx.end() && *it == ':') ++it;
-    auto end = it;
-    while (end != ctx.end() && *end != '}') ++end;
-    auto size = detail::to_unsigned(end - it);
-    specs = {it, size};
-    // basic_string_view<>::compare isn't constexpr before C++17
-    if (specs.size() == 2 && specs[0] == Char('%')) {
-      if (specs[1] == Char('F'))
-        spec_ = spec::year_month_day;
-      else if (specs[1] == Char('T'))
-        spec_ = spec::hh_mm_ss;
-    }
-    return end;
-  }
-
-  template <typename FormatContext>
-  auto format(const std::tm& tm, FormatContext& ctx) const
-      -> decltype(ctx.out()) {
-    auto year = 1900 + tm.tm_year;
-    if (spec_ == spec::year_month_day && year >= 0 && year < 10000) {
-      char buf[10];
-      detail::copy2(buf, detail::digits2(detail::to_unsigned(year / 100)));
-      detail::write_digit2_separated(buf + 2, year % 100,
-                                     detail::to_unsigned(tm.tm_mon + 1),
-                                     detail::to_unsigned(tm.tm_mday), '-');
-      return std::copy_n(buf, sizeof(buf), ctx.out());
-    } else if (spec_ == spec::hh_mm_ss) {
-      char buf[8];
-      detail::write_digit2_separated(buf, detail::to_unsigned(tm.tm_hour),
-                                     detail::to_unsigned(tm.tm_min),
-                                     detail::to_unsigned(tm.tm_sec), ':');
-      return std::copy_n(buf, sizeof(buf), ctx.out());
-    }
-    basic_memory_buffer<Char> tm_format;
-    tm_format.append(specs.begin(), specs.end());
-    // By appending an extra space we can distinguish an empty result that
-    // indicates insufficient buffer size from a guaranteed non-empty result
-    // https://github.com/fmtlib/fmt/issues/2238
-    tm_format.push_back(' ');
-    tm_format.push_back('\0');
-    basic_memory_buffer<Char> buf;
-    size_t start = buf.size();
-    for (;;) {
-      size_t size = buf.capacity() - start;
-      size_t count = detail::strftime(&buf[start], size, &tm_format[0], &tm);
-      if (count != 0) {
-        buf.resize(start + count);
-        break;
-      }
-      const size_t MIN_GROWTH = 10;
-      buf.reserve(buf.capacity() + (size > MIN_GROWTH ? size : MIN_GROWTH));
-    }
-    // Remove the extra space.
-    return std::copy(buf.begin(), buf.end() - 1, ctx.out());
-  }
-};
-
-FMT_BEGIN_DETAIL_NAMESPACE
 
 template <typename Period> FMT_CONSTEXPR inline const char* get_units() {
   if (std::is_same<Period, std::atto>::value) return "as";
@@ -1325,7 +1218,8 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
       ++begin;
       localized = true;
     }
-    end = parse_chrono_format(begin, end, detail::chrono_format_checker());
+    end = detail::parse_chrono_format(begin, end,
+                                      detail::chrono_format_checker());
     return {begin, end};
   }
 
@@ -1364,6 +1258,110 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     }
     return detail::write(
         ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs_copy);
+  }
+};
+
+template <typename Char, typename Duration>
+struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
+                 Char> : formatter<std::tm, Char> {
+  FMT_CONSTEXPR formatter() {
+    this->specs = {default_specs, sizeof(default_specs) / sizeof(Char)};
+  }
+
+  template <typename ParseContext>
+  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+    auto it = ctx.begin();
+    if (it != ctx.end() && *it == ':') ++it;
+    auto end = it;
+    while (end != ctx.end() && *end != '}') ++end;
+    if (end != it) this->specs = {it, detail::to_unsigned(end - it)};
+    return end;
+  }
+
+  template <typename FormatContext>
+  auto format(std::chrono::time_point<std::chrono::system_clock> val,
+              FormatContext& ctx) -> decltype(ctx.out()) {
+    std::tm time = localtime(val);
+    return formatter<std::tm, Char>::format(time, ctx);
+  }
+
+  static constexpr Char default_specs[] = {'%', 'F', ' ', '%', 'T'};
+};
+
+template <typename Char, typename Duration>
+constexpr Char
+    formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
+              Char>::default_specs[];
+
+template <typename Char> struct formatter<std::tm, Char> {
+ private:
+  enum class spec {
+    unknown,
+    year_month_day,
+    hh_mm_ss,
+  };
+  spec spec_ = spec::unknown;
+
+ public:
+  basic_string_view<Char> specs;
+
+  template <typename ParseContext>
+  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+    auto it = ctx.begin();
+    if (it != ctx.end() && *it == ':') ++it;
+    auto end = it;
+    while (end != ctx.end() && *end != '}') ++end;
+    auto size = detail::to_unsigned(end - it);
+    specs = {it, size};
+    // basic_string_view<>::compare isn't constexpr before C++17
+    if (specs.size() == 2 && specs[0] == Char('%')) {
+      if (specs[1] == Char('F'))
+        spec_ = spec::year_month_day;
+      else if (specs[1] == Char('T'))
+        spec_ = spec::hh_mm_ss;
+    }
+    return end;
+  }
+
+  template <typename FormatContext>
+  auto format(const std::tm& tm, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    auto year = 1900 + tm.tm_year;
+    if (spec_ == spec::year_month_day && year >= 0 && year < 10000) {
+      char buf[10];
+      detail::copy2(buf, detail::digits2(detail::to_unsigned(year / 100)));
+      detail::write_digit2_separated(buf + 2, year % 100,
+                                     detail::to_unsigned(tm.tm_mon + 1),
+                                     detail::to_unsigned(tm.tm_mday), '-');
+      return std::copy_n(buf, sizeof(buf), ctx.out());
+    } else if (spec_ == spec::hh_mm_ss) {
+      char buf[8];
+      detail::write_digit2_separated(buf, detail::to_unsigned(tm.tm_hour),
+                                     detail::to_unsigned(tm.tm_min),
+                                     detail::to_unsigned(tm.tm_sec), ':');
+      return std::copy_n(buf, sizeof(buf), ctx.out());
+    }
+    basic_memory_buffer<Char> tm_format;
+    tm_format.append(specs.begin(), specs.end());
+    // By appending an extra space we can distinguish an empty result that
+    // indicates insufficient buffer size from a guaranteed non-empty result
+    // https://github.com/fmtlib/fmt/issues/2238
+    tm_format.push_back(' ');
+    tm_format.push_back('\0');
+    basic_memory_buffer<Char> buf;
+    size_t start = buf.size();
+    for (;;) {
+      size_t size = buf.capacity() - start;
+      size_t count = detail::strftime(&buf[start], size, &tm_format[0], &tm);
+      if (count != 0) {
+        buf.resize(start + count);
+        break;
+      }
+      const size_t MIN_GROWTH = 10;
+      buf.reserve(buf.capacity() + (size > MIN_GROWTH ? size : MIN_GROWTH));
+    }
+    // Remove the extra space.
+    return std::copy(buf.begin(), buf.end() - 1, ctx.out());
   }
 };
 
