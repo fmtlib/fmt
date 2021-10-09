@@ -1399,6 +1399,255 @@ struct tm_format_checker : null_chrono_spec_handler<tm_format_checker> {
   FMT_CONSTEXPR void on_tz_name() {}
 };
 
+template <typename FormatContext, typename OutputIt> struct tm_formatter {
+  using char_type = typename FormatContext::char_type;
+
+  FormatContext& ctx;
+  OutputIt out;
+  const std::tm& tm;
+
+  auto tm_year() const -> decltype(tm.tm_year) { return 1900 + tm.tm_year; }
+  auto tm_hour12() const -> decltype(tm.tm_hour) {
+    auto hour = tm.tm_hour % 12;
+    return hour == 0 ? 12 : hour;
+  }
+
+  static constexpr char digits1(size_t value) {
+    return detail::digits2(value)[1];
+  }
+
+  explicit tm_formatter(FormatContext& ctx_, OutputIt out_, const std::tm& tm_)
+      : ctx(ctx_), out(out_), tm(tm_) {}
+
+  void format_localized(char format, char modifier = 0) {
+    // By prepending an extra space we can distinguish an empty result that
+    // indicates insufficient buffer size from a guaranteed non-empty result
+    // https://github.com/fmtlib/fmt/issues/2238
+    char_type tm_format[5] = {' ', '%', 'x', '\0', '\0'};
+    if (modifier) {
+      tm_format[2] = modifier;
+      tm_format[3] = format;
+    } else {
+      tm_format[2] = format;
+    }
+
+    basic_memory_buffer<char_type> buf;
+    for (;;) {
+      size_t size = buf.capacity();
+      size_t count = detail::strftime(buf.data(), size, tm_format, &tm);
+      if (count != 0) {
+        buf.resize(count);
+        break;
+      }
+      const size_t MIN_GROWTH = 10;
+      buf.reserve(buf.capacity() + (size > MIN_GROWTH ? size : MIN_GROWTH));
+    }
+    // Remove the extra space.
+    out = std::copy(buf.begin() + 1, buf.end(), out);
+  }
+
+  FMT_CONSTEXPR void on_text(const char_type* begin, const char_type* end) {
+    out = std::copy(begin, end, out);
+  }
+  void on_abbr_weekday() { format_localized('a'); }
+  void on_full_weekday() { format_localized('A'); }
+  void on_dec0_weekday(numeric_system ns) {
+    if (ns == numeric_system::standard) {
+      *out++ = digits1(detail::to_unsigned(tm.tm_wday));
+    } else {
+      format_localized('w', 'O');
+    }
+  }
+  void on_dec1_weekday(numeric_system ns) {
+    if (ns == numeric_system::standard) {
+      *out++ = digits1(detail::to_unsigned(tm.tm_wday == 0 ? 7 : tm.tm_wday));
+    } else {
+      format_localized('u', 'O');
+    }
+  }
+  void on_abbr_month() { format_localized('b'); }
+  void on_full_month() { format_localized('B'); }
+
+  void on_datetime(numeric_system ns) {
+    format_localized('c', ns == numeric_system::standard ? '\0' : 'E');
+  }
+  void on_loc_date(numeric_system ns) {
+    format_localized('x', ns == numeric_system::standard ? '\0' : 'E');
+  }
+  void on_loc_time(numeric_system ns) {
+    format_localized('X', ns == numeric_system::standard ? '\0' : 'E');
+  }
+  void on_us_date() {
+    auto year = tm_year();
+    char buf[8];
+    detail::write_digit2_separated(
+        buf, detail::to_unsigned(tm.tm_mon + 1),
+        detail::to_unsigned(tm.tm_mday),
+        detail::to_unsigned((year < 0 ? -year : year) % 100), '/');
+    out = std::copy_n(buf, sizeof(buf), out);
+  }
+  void on_iso_date() {
+    auto year = tm_year();
+    char buf[10];
+    size_t offset = 0;
+    if (year >= 0 && year < 10000) {
+      detail::copy2(buf, detail::digits2(detail::to_unsigned(year / 100)));
+    } else {
+      offset = 4;
+      out = detail::write<char_type>(out, year);
+      year = 0;
+    }
+    detail::write_digit2_separated(buf + 2, year % 100,
+                                   detail::to_unsigned(tm.tm_mon + 1),
+                                   detail::to_unsigned(tm.tm_mday), '-');
+    out = std::copy_n(buf + offset, sizeof(buf) - offset, out);
+  }
+  void on_utc_offset() { format_localized('z'); }
+  void on_tz_name() { format_localized('Z'); }
+  void on_year(numeric_system ns) {
+    if (ns == numeric_system::standard) {
+      out = detail::write<char_type>(out, tm_year());
+    } else {
+      format_localized('Y', 'E');
+    }
+  }
+  void on_last2_year(numeric_system ns) {
+    if (ns == numeric_system::standard) {
+      // TODO: Negative years?
+      out = std::copy_n(detail::digits2(detail::to_unsigned(tm_year() % 100)),
+                        2, out);
+    } else {
+      format_localized('y', 'O');
+    }
+  }
+  void on_offset_year() { format_localized('y', 'E'); }
+  void on_base_year(numeric_system ns) {
+    if (ns == numeric_system::standard) {
+      // TODO: Negative years?
+      auto format_specs = basic_format_specs<char_type>();
+      format_specs.width = 2;
+      format_specs.align = align::numeric;
+      format_specs.fill[0] = char_type('0');
+      auto year = tm_year();
+      out = detail::write(out, year / 100, format_specs, {});
+    } else {
+      format_localized('C', 'E');
+    }
+  }
+  void on_dec_month(numeric_system ns) {
+    if (ns == numeric_system::standard) {
+      out = std::copy_n(detail::digits2(detail::to_unsigned(tm.tm_mon + 1)), 2,
+                        out);
+    } else {
+      format_localized('m', 'O');
+    }
+  }
+  void on_dec0_week_of_year(numeric_system ns) {
+    // TODO: Optimization
+    if (ns == numeric_system::standard) {
+      format_localized('U');
+    } else {
+      format_localized('U', 'O');
+    }
+  }
+  void on_dec1_week_of_year(numeric_system ns) {
+    // TODO: Optimization
+    if (ns == numeric_system::standard) {
+      format_localized('W');
+    } else {
+      format_localized('W', 'O');
+    }
+  }
+  void on_iso_week_of_year(numeric_system ns) {
+    // TODO: Optimization
+    if (ns == numeric_system::standard) {
+      format_localized('V');
+    } else {
+      format_localized('V', 'O');
+    }
+  }
+  void on_iso_week_based_year() {
+    // TODO: Optimization
+    format_localized('G');
+  }
+  void on_iso_week_based_year_last2() {
+    // TODO: Optimization
+    format_localized('g');
+  }
+  void on_day_of_year() {
+    auto yday = tm.tm_yday + 1;
+    *out++ = digits1(detail::to_unsigned(yday / 100));
+    out = std::copy_n(detail::digits2(detail::to_unsigned(yday % 100)), 2, out);
+  }
+  void on_day_of_month_zero(numeric_system ns) {
+    if (ns == numeric_system::standard) {
+      out =
+          std::copy_n(detail::digits2(detail::to_unsigned(tm.tm_mday)), 2, out);
+    } else {
+      format_localized('d', 'O');
+    }
+  }
+  void on_day_of_month_space(numeric_system ns) {
+    if (ns == numeric_system::standard) {
+      const char* d2 = detail::digits2(detail::to_unsigned(tm.tm_mday));
+      *out++ = tm.tm_mday < 10 ? ' ' : d2[0];
+      *out++ = d2[1];
+    } else {
+      format_localized('e', 'O');
+    }
+  }
+  void on_24_hour(numeric_system ns) {
+    if (ns == numeric_system::standard) {
+      out =
+          std::copy_n(detail::digits2(detail::to_unsigned(tm.tm_hour)), 2, out);
+    } else {
+      format_localized('H', 'O');
+    }
+  }
+  void on_12_hour(numeric_system ns) {
+    if (ns == numeric_system::standard) {
+      out = std::copy_n(detail::digits2(detail::to_unsigned(tm_hour12())), 2,
+                        out);
+    } else {
+      format_localized('I', 'O');
+    }
+  }
+  void on_minute(numeric_system ns) {
+    if (ns == numeric_system::standard) {
+      out =
+          std::copy_n(detail::digits2(detail::to_unsigned(tm.tm_min)), 2, out);
+    } else {
+      format_localized('M', 'O');
+    }
+  }
+  void on_second(numeric_system ns) {
+    if (ns == numeric_system::standard) {
+      out =
+          std::copy_n(detail::digits2(detail::to_unsigned(tm.tm_sec)), 2, out);
+    } else {
+      format_localized('S', 'O');
+    }
+  }
+  void on_12_hour_time() { format_localized('r'); }
+  void on_24_hour_time() {
+    out = std::copy_n(detail::digits2(detail::to_unsigned(tm.tm_hour)), 2, out);
+    *out++ = ':';
+    out = std::copy_n(detail::digits2(detail::to_unsigned(tm.tm_min)), 2, out);
+  }
+  void on_iso_time() {
+    char buf[8];
+    detail::write_digit2_separated(buf, detail::to_unsigned(tm.tm_hour),
+                                   detail::to_unsigned(tm.tm_min),
+                                   detail::to_unsigned(tm.tm_sec), ':');
+    out = std::copy_n(buf, sizeof(buf), out);
+  }
+  void on_am_pm() { format_localized('p'); }
+
+  // These are not implemented because durations don't have date information.
+  void on_duration_value() {}
+  void on_duration_unit() {}
+};
+
 FMT_END_DETAIL_NAMESPACE
 
 template <typename Char, typename Duration>
@@ -1465,42 +1714,19 @@ template <typename Char> struct formatter<std::tm, Char> {
   template <typename FormatContext>
   auto format(const std::tm& tm, FormatContext& ctx) const
       -> decltype(ctx.out()) {
-    auto year = 1900 + tm.tm_year;
-    if (spec_ == spec::year_month_day && year >= 0 && year < 10000) {
-      char buf[10];
-      detail::copy2(buf, detail::digits2(detail::to_unsigned(year / 100)));
-      detail::write_digit2_separated(buf + 2, year % 100,
-                                     detail::to_unsigned(tm.tm_mon + 1),
-                                     detail::to_unsigned(tm.tm_mday), '-');
-      return std::copy_n(buf, sizeof(buf), ctx.out());
+    detail::tm_formatter<FormatContext, decltype(ctx.out())> f(ctx, ctx.out(),
+                                                               tm);
+
+    if (spec_ == spec::year_month_day) {
+      f.on_iso_date();
+      return f.out;
     } else if (spec_ == spec::hh_mm_ss) {
-      char buf[8];
-      detail::write_digit2_separated(buf, detail::to_unsigned(tm.tm_hour),
-                                     detail::to_unsigned(tm.tm_min),
-                                     detail::to_unsigned(tm.tm_sec), ':');
-      return std::copy_n(buf, sizeof(buf), ctx.out());
+      f.on_iso_time();
+      return f.out;
     }
-    basic_memory_buffer<Char> tm_format;
-    tm_format.append(specs.begin(), specs.end());
-    // By appending an extra space we can distinguish an empty result that
-    // indicates insufficient buffer size from a guaranteed non-empty result
-    // https://github.com/fmtlib/fmt/issues/2238
-    tm_format.push_back(' ');
-    tm_format.push_back('\0');
-    basic_memory_buffer<Char> buf;
-    size_t start = buf.size();
-    for (;;) {
-      size_t size = buf.capacity() - start;
-      size_t count = detail::strftime(&buf[start], size, &tm_format[0], &tm);
-      if (count != 0) {
-        buf.resize(start + count);
-        break;
-      }
-      const size_t MIN_GROWTH = 10;
-      buf.reserve(buf.capacity() + (size > MIN_GROWTH ? size : MIN_GROWTH));
-    }
-    // Remove the extra space.
-    return std::copy(buf.begin(), buf.end() - 1, ctx.out());
+
+    detail::parse_chrono_format(specs.begin(), specs.end(), f);
+    return f.out;
   }
 };
 

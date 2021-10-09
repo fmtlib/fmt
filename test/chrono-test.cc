@@ -91,13 +91,15 @@ TEST(chrono_test, format_tm_past) {
             "The date is -101-04-25 11:22:33.");
   EXPECT_EQ(fmt::format("{:%Y}", tm), "-101");
 
-  // macOS %C - "-1"
-  // Linux %C - "-2"
-  // EXPECT_EQ(fmt::format("{:%C}", tm), "-1");
+  // macOS       %C - "-1"
+  // Linux       %C - "-2"
+  // Simple impl %C - "-1"
+  EXPECT_EQ(fmt::format("{:%C}", tm), "-1");
 
-  // macOS %D - "04/25/01" (%y)
-  // Linux %D - "04/25/99" (%y)
-  // EXPECT_EQ(fmt::format("{:%D}", tm), "04/25/01");
+  // macOS       %D - "04/25/01" (%y)
+  // Linux       %D - "04/25/99" (%y)
+  // Simple impl %D - "04/25/01" (%y)
+  EXPECT_EQ(fmt::format("{:%D}", tm), "04/25/01");
 
   EXPECT_EQ(fmt::format("{:%F}", tm), "-101-04-25");
   EXPECT_EQ(fmt::format("{:%T}", tm), "11:22:33");
