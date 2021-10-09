@@ -57,6 +57,10 @@ TEST(chrono_test, format_tm) {
   EXPECT_EQ(fmt::format("{:%T}", tm), "11:22:33");
 }
 
+// MSVC:
+//  minkernel\crts\ucrt\src\appcrt\time\wcsftime.cpp(971) : Assertion failed:
+//  timeptr->tm_year >= -1900 && timeptr->tm_year <= 8099
+#ifndef _WIN32
 TEST(chrono_test, format_tm_future) {
   auto tm = std::tm();
   tm.tm_year = 10445;  // 10000+ years
@@ -84,10 +88,15 @@ TEST(chrono_test, format_tm_past) {
   EXPECT_EQ(fmt::format("The date is {:%Y-%m-%d %H:%M:%S}.", tm),
             "The date is -101-04-25 11:22:33.");
   EXPECT_EQ(fmt::format("{:%Y}", tm), "-101");
-  EXPECT_EQ(fmt::format("{:%D}", tm), "04/25/01");
+
+  // macOS %D - "04/25/01" (%y)
+  // Linux %D - "04/25/99" (%y)
+  // EXPECT_EQ(fmt::format("{:%D}", tm), "04/25/01");
+
   EXPECT_EQ(fmt::format("{:%F}", tm), "-101-04-25");
   EXPECT_EQ(fmt::format("{:%T}", tm), "11:22:33");
 }
+#endif
 
 TEST(chrono_test, grow_buffer) {
   auto s = std::string("{:");
