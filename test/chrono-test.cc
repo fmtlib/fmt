@@ -51,6 +51,7 @@ TEST(chrono_test, format_tm) {
   EXPECT_EQ(fmt::format("The date is {:%Y-%m-%d %H:%M:%S}.", tm),
             "The date is 2016-04-25 11:22:33.");
   EXPECT_EQ(fmt::format("{:%Y}", tm), "2016");
+  EXPECT_EQ(fmt::format("{:%C}", tm), "20");
   EXPECT_EQ(fmt::format("{:%e}", tm), "25");
   EXPECT_EQ(fmt::format("{:%D}", tm), "04/25/16");
   EXPECT_EQ(fmt::format("{:%F}", tm), "2016-04-25");
@@ -72,6 +73,7 @@ TEST(chrono_test, format_tm_future) {
   EXPECT_EQ(fmt::format("The date is {:%Y-%m-%d %H:%M:%S}.", tm),
             "The date is 12345-04-25 11:22:33.");
   EXPECT_EQ(fmt::format("{:%Y}", tm), "12345");
+  EXPECT_EQ(fmt::format("{:%C}", tm), "123");
   EXPECT_EQ(fmt::format("{:%D}", tm), "04/25/45");
   EXPECT_EQ(fmt::format("{:%F}", tm), "12345-04-25");
   EXPECT_EQ(fmt::format("{:%T}", tm), "11:22:33");
@@ -88,6 +90,10 @@ TEST(chrono_test, format_tm_past) {
   EXPECT_EQ(fmt::format("The date is {:%Y-%m-%d %H:%M:%S}.", tm),
             "The date is -101-04-25 11:22:33.");
   EXPECT_EQ(fmt::format("{:%Y}", tm), "-101");
+
+  // macOS %C - "-1"
+  // Linux %C - "-2"
+  // EXPECT_EQ(fmt::format("{:%C}", tm), "-1");
 
   // macOS %D - "04/25/01" (%y)
   // Linux %D - "04/25/99" (%y)
@@ -160,6 +166,7 @@ TEST(chrono_test, time_point) {
       "%w",  "%Ow", "%u",  "%Ou", "%H",  "%OH", "%I",  "%OI", "%M",  "%OM",
       "%S",  "%OS", "%c",  "%Ec", "%x",  "%Ex", "%X",  "%EX", "%D",  "%F",
       "%r",  "%R",  "%T",  "%p",  "%z",  "%Z"};
+  spec_list.push_back("%Y-%m-%d %H:%M:%S");
   for (const auto& spec : spec_list) {
     auto t = std::chrono::system_clock::to_time_t(t1);
     auto tm = *std::localtime(&t);
