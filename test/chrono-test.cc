@@ -52,6 +52,7 @@ TEST(chrono_test, format_tm) {
             "The date is 2016-04-25 11:22:33.");
   EXPECT_EQ(fmt::format("{:%Y}", tm), "2016");
   EXPECT_EQ(fmt::format("{:%C}", tm), "20");
+  EXPECT_EQ(fmt::format("{:%C%y}", tm), fmt::format("{:%Y}", tm));
   EXPECT_EQ(fmt::format("{:%e}", tm), "25");
   EXPECT_EQ(fmt::format("{:%D}", tm), "04/25/16");
   EXPECT_EQ(fmt::format("{:%F}", tm), "2016-04-25");
@@ -74,6 +75,7 @@ TEST(chrono_test, format_tm_future) {
             "The date is 12345-04-25 11:22:33.");
   EXPECT_EQ(fmt::format("{:%Y}", tm), "12345");
   EXPECT_EQ(fmt::format("{:%C}", tm), "123");
+  EXPECT_EQ(fmt::format("{:%C%y}", tm), fmt::format("{:%Y}", tm));
   EXPECT_EQ(fmt::format("{:%D}", tm), "04/25/45");
   EXPECT_EQ(fmt::format("{:%F}", tm), "12345-04-25");
   EXPECT_EQ(fmt::format("{:%T}", tm), "11:22:33");
@@ -91,14 +93,15 @@ TEST(chrono_test, format_tm_past) {
             "The date is -101-04-25 11:22:33.");
   EXPECT_EQ(fmt::format("{:%Y}", tm), "-101");
 
-  // macOS       %C - "-1"
-  // Linux       %C - "-2"
-  // Simple impl %C - "-1"
+  // macOS  %C - "-1"
+  // Linux  %C - "-2"
+  // fmt    %C - "-1"
   EXPECT_EQ(fmt::format("{:%C}", tm), "-1");
+  EXPECT_EQ(fmt::format("{:%C%y}", tm), fmt::format("{:%Y}", tm));
 
-  // macOS       %D - "04/25/01" (%y)
-  // Linux       %D - "04/25/99" (%y)
-  // Simple impl %D - "04/25/01" (%y)
+  // macOS  %D - "04/25/01" (%y)
+  // Linux  %D - "04/25/99" (%y)
+  // fmt    %D - "04/25/01" (%y)
   EXPECT_EQ(fmt::format("{:%D}", tm), "04/25/01");
 
   EXPECT_EQ(fmt::format("{:%F}", tm), "-101-04-25");

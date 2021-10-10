@@ -1406,12 +1406,29 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
   OutputIt out;
   const std::tm& tm;
 
-  auto tm_year() const -> decltype(tm.tm_year) { return 1900 + tm.tm_year; }
+  auto tm_year() const -> int { return 1900 + tm.tm_year; }
+  // POSIX and the C Standard are unclear or inconsistent about what %C and %y
+  // do if the year is negative or exceeds 9999. Use the convention that %C
+  // concatenated with %y yields the same output as %Y, and that %Y contains at
+  // least 4 bytes, with more only if necessary.
+  struct split_year {
+    int upper;
+    int lower;
+  };
+  auto tm_split_year() const -> split_year {
+    auto year = tm_year();
+    auto q = year / 100;
+    auto r = year % 100;
+    if (r < 0) {
+      // r in [0, 99]
+      r = -r;
+    }
+    return {q, r};
+  }
   auto tm_hour12() const -> decltype(tm.tm_hour) {
     auto hour = tm.tm_hour % 12;
     return hour == 0 ? 12 : hour;
   }
-
   static constexpr char digits1(size_t value) {
     return detail::digits2(value)[1];
   }
@@ -1478,12 +1495,11 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
     format_localized('X', ns == numeric_system::standard ? '\0' : 'E');
   }
   void on_us_date() {
-    auto year = tm_year();
     char buf[8];
-    detail::write_digit2_separated(
-        buf, detail::to_unsigned(tm.tm_mon + 1),
-        detail::to_unsigned(tm.tm_mday),
-        detail::to_unsigned((year < 0 ? -year : year) % 100), '/');
+    detail::write_digit2_separated(buf, detail::to_unsigned(tm.tm_mon + 1),
+                                   detail::to_unsigned(tm.tm_mday),
+                                   detail::to_unsigned(tm_split_year().lower),
+                                   '/');
     out = std::copy_n(buf, sizeof(buf), out);
   }
   void on_iso_date() {
@@ -1513,9 +1529,8 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
   }
   void on_last2_year(numeric_system ns) {
     if (ns == numeric_system::standard) {
-      // TODO: Negative years?
-      out = std::copy_n(detail::digits2(detail::to_unsigned(tm_year() % 100)),
-                        2, out);
+      out = std::copy_n(
+          detail::digits2(detail::to_unsigned(tm_split_year().lower)), 2, out);
     } else {
       format_localized('y', 'O');
     }
@@ -1523,13 +1538,13 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
   void on_offset_year() { format_localized('y', 'E'); }
   void on_base_year(numeric_system ns) {
     if (ns == numeric_system::standard) {
-      // TODO: Negative years?
-      auto format_specs = basic_format_specs<char_type>();
-      format_specs.width = 2;
-      format_specs.align = align::numeric;
-      format_specs.fill[0] = char_type('0');
-      auto year = tm_year();
-      out = detail::write(out, year / 100, format_specs, {});
+      auto split = tm_split_year();
+      if (split.upper >= 0 && split.upper < 100) {
+        out = std::copy_n(detail::digits2(detail::to_unsigned(split.upper)), 2,
+                          out);
+      } else {
+        out = detail::write<char_type>(out, split.upper);
+      }
     } else {
       format_localized('C', 'E');
     }
