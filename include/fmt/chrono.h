@@ -1401,6 +1401,7 @@ struct tm_format_checker : null_chrono_spec_handler<tm_format_checker> {
 
 template <typename FormatContext, typename OutputIt> struct tm_formatter {
   using char_type = typename FormatContext::char_type;
+  static constexpr int daysperweek = 7;
 
   FormatContext& ctx;
   OutputIt out;
@@ -1415,8 +1416,7 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
     int upper;
     int lower;
   };
-  auto tm_split_year() const -> split_year {
-    auto year = tm_year();
+  auto tm_split_year(int year) const -> split_year {
     auto q = year / 100;
     auto r = year % 100;
     if (r < 0) {
@@ -1429,8 +1429,9 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
     auto hour = tm.tm_hour % 12;
     return hour == 0 ? 12 : hour;
   }
-  static constexpr char digits1(size_t value) {
-    return detail::digits2(value)[1];
+  void write1(size_t value) { *out++ = detail::digits2(value)[1]; }
+  void write2(size_t value) {
+    out = std::copy_n(detail::digits2(value), 2, out);
   }
 
   explicit tm_formatter(FormatContext& ctx_, OutputIt out_, const std::tm& tm_)
@@ -1470,14 +1471,14 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
   void on_full_weekday() { format_localized('A'); }
   void on_dec0_weekday(numeric_system ns) {
     if (ns == numeric_system::standard) {
-      *out++ = digits1(detail::to_unsigned(tm.tm_wday));
+      write1(detail::to_unsigned(tm.tm_wday));
     } else {
       format_localized('w', 'O');
     }
   }
   void on_dec1_weekday(numeric_system ns) {
     if (ns == numeric_system::standard) {
-      *out++ = digits1(detail::to_unsigned(tm.tm_wday == 0 ? 7 : tm.tm_wday));
+      write1(detail::to_unsigned(tm.tm_wday == 0 ? daysperweek : tm.tm_wday));
     } else {
       format_localized('u', 'O');
     }
@@ -1496,10 +1497,10 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
   }
   void on_us_date() {
     char buf[8];
-    detail::write_digit2_separated(buf, detail::to_unsigned(tm.tm_mon + 1),
-                                   detail::to_unsigned(tm.tm_mday),
-                                   detail::to_unsigned(tm_split_year().lower),
-                                   '/');
+    detail::write_digit2_separated(
+        buf, detail::to_unsigned(tm.tm_mon + 1),
+        detail::to_unsigned(tm.tm_mday),
+        detail::to_unsigned(tm_split_year(tm_year()).lower), '/');
     out = std::copy_n(buf, sizeof(buf), out);
   }
   void on_iso_date() {
@@ -1529,8 +1530,7 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
   }
   void on_last2_year(numeric_system ns) {
     if (ns == numeric_system::standard) {
-      out = std::copy_n(
-          detail::digits2(detail::to_unsigned(tm_split_year().lower)), 2, out);
+      write2(detail::to_unsigned(tm_split_year(tm_year()).lower));
     } else {
       format_localized('y', 'O');
     }
@@ -1538,10 +1538,9 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
   void on_offset_year() { format_localized('y', 'E'); }
   void on_base_year(numeric_system ns) {
     if (ns == numeric_system::standard) {
-      auto split = tm_split_year();
+      auto split = tm_split_year(tm_year());
       if (split.upper >= 0 && split.upper < 100) {
-        out = std::copy_n(detail::digits2(detail::to_unsigned(split.upper)), 2,
-                          out);
+        write2(detail::to_unsigned(split.upper));
       } else {
         out = detail::write<char_type>(out, split.upper);
       }
@@ -1551,31 +1550,32 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
   }
   void on_dec_month(numeric_system ns) {
     if (ns == numeric_system::standard) {
-      out = std::copy_n(detail::digits2(detail::to_unsigned(tm.tm_mon + 1)), 2,
-                        out);
+      write2(detail::to_unsigned(tm.tm_mon + 1));
     } else {
       format_localized('m', 'O');
     }
   }
   void on_dec0_week_of_year(numeric_system ns) {
-    // TODO: Optimization
     if (ns == numeric_system::standard) {
-      format_localized('U');
+      write2(detail::to_unsigned((tm.tm_yday + daysperweek - tm.tm_wday) /
+                                 daysperweek));
     } else {
       format_localized('U', 'O');
     }
   }
   void on_dec1_week_of_year(numeric_system ns) {
-    // TODO: Optimization
     if (ns == numeric_system::standard) {
-      format_localized('W');
+      write2(detail::to_unsigned(
+          (tm.tm_yday + daysperweek -
+           (tm.tm_wday == 0 ? (daysperweek - 1) : (tm.tm_wday - 1))) /
+          daysperweek));
     } else {
       format_localized('W', 'O');
     }
   }
   void on_iso_week_of_year(numeric_system ns) {
-    // TODO: Optimization
     if (ns == numeric_system::standard) {
+      // TODO: Optimization
       format_localized('V');
     } else {
       format_localized('V', 'O');
@@ -1591,13 +1591,12 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
   }
   void on_day_of_year() {
     auto yday = tm.tm_yday + 1;
-    *out++ = digits1(detail::to_unsigned(yday / 100));
-    out = std::copy_n(detail::digits2(detail::to_unsigned(yday % 100)), 2, out);
+    write1(detail::to_unsigned(yday / 100));
+    write2(detail::to_unsigned(yday % 100));
   }
   void on_day_of_month_zero(numeric_system ns) {
     if (ns == numeric_system::standard) {
-      out =
-          std::copy_n(detail::digits2(detail::to_unsigned(tm.tm_mday)), 2, out);
+      write2(detail::to_unsigned(tm.tm_mday));
     } else {
       format_localized('d', 'O');
     }
@@ -1613,41 +1612,37 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
   }
   void on_24_hour(numeric_system ns) {
     if (ns == numeric_system::standard) {
-      out =
-          std::copy_n(detail::digits2(detail::to_unsigned(tm.tm_hour)), 2, out);
+      write2(detail::to_unsigned(tm.tm_hour));
     } else {
       format_localized('H', 'O');
     }
   }
   void on_12_hour(numeric_system ns) {
     if (ns == numeric_system::standard) {
-      out = std::copy_n(detail::digits2(detail::to_unsigned(tm_hour12())), 2,
-                        out);
+      write2(detail::to_unsigned(tm_hour12()));
     } else {
       format_localized('I', 'O');
     }
   }
   void on_minute(numeric_system ns) {
     if (ns == numeric_system::standard) {
-      out =
-          std::copy_n(detail::digits2(detail::to_unsigned(tm.tm_min)), 2, out);
+      write2(detail::to_unsigned(tm.tm_min));
     } else {
       format_localized('M', 'O');
     }
   }
   void on_second(numeric_system ns) {
     if (ns == numeric_system::standard) {
-      out =
-          std::copy_n(detail::digits2(detail::to_unsigned(tm.tm_sec)), 2, out);
+      write2(detail::to_unsigned(tm.tm_sec));
     } else {
       format_localized('S', 'O');
     }
   }
   void on_12_hour_time() { format_localized('r'); }
   void on_24_hour_time() {
-    out = std::copy_n(detail::digits2(detail::to_unsigned(tm.tm_hour)), 2, out);
+    write2(detail::to_unsigned(tm.tm_hour));
     *out++ = ':';
-    out = std::copy_n(detail::digits2(detail::to_unsigned(tm.tm_min)), 2, out);
+    write2(detail::to_unsigned(tm.tm_min));
   }
   void on_iso_time() {
     char buf[8];
