@@ -1460,6 +1460,14 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
   void write2(size_t value) {
     out = std::copy_n(detail::digits2(value), 2, out);
   }
+  void write_year(int year) {
+    if (year >= 0 && year < 10000) {
+      write2(to_unsigned(year / 100));
+      write2(to_unsigned(year % 100));
+    } else {
+      out = detail::write<char_type>(out, year);
+    }
+  }
 
   explicit tm_formatter(FormatContext& ctx_, OutputIt out_, const std::tm& tm_)
       : ctx(ctx_), out(out_), tm(tm_) {}
@@ -1550,7 +1558,7 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
   void on_tz_name() { format_localized('Z'); }
   void on_year(numeric_system ns) {
     if (ns == numeric_system::standard) {
-      out = detail::write<char_type>(out, tm_year());
+      write_year(tm_year());
     } else {
       format_localized('Y', 'E');
     }
@@ -1607,9 +1615,7 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
       format_localized('V', 'O');
     }
   }
-  void on_iso_week_based_year() {
-    out = detail::write<char_type>(out, tm_iso_weak().year);
-  }
+  void on_iso_week_based_year() { write_year(tm_iso_weak().year); }
   void on_iso_week_based_year_last2() {
     write2(detail::to_unsigned(tm_split_year(tm_iso_weak().year).lower));
   }
