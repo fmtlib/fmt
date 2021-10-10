@@ -7,6 +7,8 @@
 
 #include "fmt/chrono.h"
 
+#include <time.h>
+
 #include <vector>
 
 #include "gtest-extra.h"  // EXPECT_THROW_MSG
@@ -57,6 +59,42 @@ TEST(chrono_test, format_tm) {
   EXPECT_EQ(fmt::format("{:%D}", tm), "04/25/16");
   EXPECT_EQ(fmt::format("{:%F}", tm), "2016-04-25");
   EXPECT_EQ(fmt::format("{:%T}", tm), "11:22:33");
+
+  // for week on the year
+  // https://www.cl.cam.ac.uk/~mgk25/iso-time.html
+  std::vector<std::string> str_tm_list = {
+      "1975-12-29",  // W01
+      "1977-01-02",  // W53
+      "1999-12-27",  // W52
+      "1999-12-31",  // W52
+      "2000-01-01",  // W52
+      "2000-01-02",  // W52
+      "2000-01-03",  // W1
+  };
+  std::vector<std::string> spec_list = {"%G", "%g", "%V"};
+  for (const auto& str_tm : str_tm_list) {
+    tm = std::tm();
+
+    // GCC 4 does not support std::get_time
+    // MSVC dows not support POSIX strptime
+#ifdef _WIN32
+    std::istringstream ss(str_tm);
+    ss >> std::get_time(&tm, "%Y-%m-%d");
+#else
+    strptime(str_tm.c_str(), "%Y-%m-%d", &tm);
+#endif
+    // Because std::get_time doesn't calculate tm_yday, tm_wday, etc.
+    tm.tm_isdst = 0;
+    auto t = std::mktime(&tm);
+    tm = *std::localtime(&t);
+
+    for (const auto& spec : spec_list) {
+      char output[256] = {};
+      std::strftime(output, sizeof(output), spec.c_str(), &tm);
+      auto fmt_spec = std::string("{:").append(spec).append("}");
+      EXPECT_EQ(output, fmt::format(fmt::runtime(fmt_spec), tm));
+    }
+  }
 }
 
 // MSVC:
