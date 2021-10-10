@@ -60,6 +60,11 @@ TEST(chrono_test, format_tm) {
   EXPECT_EQ(fmt::format("{:%F}", tm), "2016-04-25");
   EXPECT_EQ(fmt::format("{:%T}", tm), "11:22:33");
 
+  // Short year
+  tm.tm_year = 999 - 1900;
+  EXPECT_EQ(fmt::format("{:%Y}", tm), "0999");
+  EXPECT_EQ(fmt::format("{:%G}", tm), "0998");
+
   // for week on the year
   // https://www.cl.cam.ac.uk/~mgk25/iso-time.html
   std::vector<std::string> str_tm_list = {
