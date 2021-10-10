@@ -1425,10 +1425,37 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
     }
     return {q, r};
   }
+
+  // Algorithm:
+  // https://en.wikipedia.org/wiki/ISO_week_date#Calculating_the_week_number_from_a_month_and_day_of_the_month_or_ordinal_date
+  struct iso_weak {
+    int year;
+    int woy;
+  };
+  auto tm_iso_year_weaks(int year) -> int {
+    int p = (year + year / 4 - year / 100 + year / 400) % daysperweek;
+    int year_1 = year - 1;
+    int p_1 = (year_1 + year_1 / 4 - year_1 / 100 + year_1 / 400) % daysperweek;
+    return 52 + ((p == 4 || p_1 == 3) ? 1 : 0);
+  }
+  auto tm_iso_weak() -> iso_weak {
+    auto year = tm_year();
+    int w = (tm.tm_yday + 10 - (tm.tm_wday == 0 ? daysperweek : tm.tm_wday)) /
+            daysperweek;
+    if (w < 1) {
+      return {year - 1, tm_iso_year_weaks(year - 1)};
+    } else if (w > tm_iso_year_weaks(year)) {
+      return {year + 1, 1};
+    } else {
+      return {year, w};
+    }
+  }
+
   auto tm_hour12() const -> decltype(tm.tm_hour) {
     auto hour = tm.tm_hour % 12;
     return hour == 0 ? 12 : hour;
   }
+
   void write1(size_t value) { *out++ = detail::digits2(value)[1]; }
   void write2(size_t value) {
     out = std::copy_n(detail::digits2(value), 2, out);
@@ -1575,19 +1602,16 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
   }
   void on_iso_week_of_year(numeric_system ns) {
     if (ns == numeric_system::standard) {
-      // TODO: Optimization
-      format_localized('V');
+      write2(detail::to_unsigned(tm_iso_weak().woy));
     } else {
       format_localized('V', 'O');
     }
   }
   void on_iso_week_based_year() {
-    // TODO: Optimization
-    format_localized('G');
+    out = detail::write<char_type>(out, tm_iso_weak().year);
   }
   void on_iso_week_based_year_last2() {
-    // TODO: Optimization
-    format_localized('g');
+    write2(detail::to_unsigned(tm_split_year(tm_iso_weak().year).lower));
   }
   void on_day_of_year() {
     auto yday = tm.tm_yday + 1;
