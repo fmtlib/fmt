@@ -1714,11 +1714,11 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
   }
 
   // '}' - for detail::parse_chrono_format.
-  static constexpr Char default_specs[] = {'%', 'F', ' ', '%', 'T', '}'};
+  static constexpr const Char default_specs[] = {'%', 'F', ' ', '%', 'T', '}'};
 };
 
 template <typename Char, typename Duration>
-constexpr Char
+constexpr const Char
     formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
               Char>::default_specs[];
 
