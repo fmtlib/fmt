@@ -76,7 +76,7 @@ TEST(compile_test, compile_type_with_get) {
   EXPECT_EQ("42", fmt::format(FMT_COMPILE("{}"), type_with_get()));
 }
 
-#ifdef __cpp_if_constexpr
+#if defined(__cpp_if_constexpr) && defined(__cpp_return_type_deduction)
 struct test_formattable {};
 
 FMT_BEGIN_NAMESPACE

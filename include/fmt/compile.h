@@ -156,7 +156,7 @@ struct is_compiled_string : std::is_base_of<compiled_string, S> {};
     std::string s = fmt::format(FMT_COMPILE("{}"), 42);
   \endrst
  */
-#ifdef __cpp_if_constexpr
+#if defined(__cpp_if_constexpr) && defined(__cpp_return_type_deduction)
 #  define FMT_COMPILE(s) \
     FMT_STRING_IMPL(s, fmt::detail::compiled_string, explicit)
 #else
@@ -179,7 +179,7 @@ const T& first(const T& value, const Tail&...) {
   return value;
 }
 
-#ifdef __cpp_if_constexpr
+#if defined(__cpp_if_constexpr) && defined(__cpp_return_type_deduction)
 template <typename... Args> struct type_list {};
 
 // Returns a reference to the argument at index N from [first, rest...].
@@ -530,12 +530,12 @@ constexpr auto compile(S format_str) {
     return result;
   }
 }
-#endif  // __cpp_if_constexpr
+#endif  // defined(__cpp_if_constexpr) && defined(__cpp_return_type_deduction)
 }  // namespace detail
 
 FMT_MODULE_EXPORT_BEGIN
 
-#ifdef __cpp_if_constexpr
+#if defined(__cpp_if_constexpr) && defined(__cpp_return_type_deduction)
 
 template <typename CompiledFormat, typename... Args,
           typename Char = typename CompiledFormat::char_type,
