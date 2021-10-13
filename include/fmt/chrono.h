@@ -1458,7 +1458,9 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
 
   void write1(size_t value) { *out++ = detail::digits2(value)[1]; }
   void write2(size_t value) {
-    out = std::copy_n(detail::digits2(value), 2, out);
+    const char* d = detail::digits2(value);
+    *out++ = *d++;
+    *out++ = *d;
   }
   void write_year(int year) {
     if (year >= 0 && year < 10000) {
@@ -1496,11 +1498,11 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
       buf.reserve(buf.capacity() + (size > MIN_GROWTH ? size : MIN_GROWTH));
     }
     // Remove the extra space.
-    out = std::copy(buf.begin() + 1, buf.end(), out);
+    out = detail::copy_str<char_type>(buf.begin() + 1, buf.end(), out);
   }
 
   FMT_CONSTEXPR void on_text(const char_type* begin, const char_type* end) {
-    out = std::copy(begin, end, out);
+    out = detail::copy_str<char_type>(begin, end, out);
   }
   void on_abbr_weekday() { format_localized('a'); }
   void on_full_weekday() { format_localized('A'); }
@@ -1536,7 +1538,7 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
         buf, detail::to_unsigned(tm.tm_mon + 1),
         detail::to_unsigned(tm.tm_mday),
         detail::to_unsigned(tm_split_year(tm_year()).lower), '/');
-    out = std::copy_n(buf, sizeof(buf), out);
+    out = detail::copy_str<char_type>(std::begin(buf), std::end(buf), out);
   }
   void on_iso_date() {
     auto year = tm_year();
@@ -1552,7 +1554,8 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
     detail::write_digit2_separated(buf + 2, year % 100,
                                    detail::to_unsigned(tm.tm_mon + 1),
                                    detail::to_unsigned(tm.tm_mday), '-');
-    out = std::copy_n(buf + offset, sizeof(buf) - offset, out);
+    out = detail::copy_str<char_type>(std::begin(buf) + offset, std::end(buf),
+                                      out);
   }
   void on_utc_offset() { format_localized('z'); }
   void on_tz_name() { format_localized('Z'); }
@@ -1679,7 +1682,7 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
     detail::write_digit2_separated(buf, detail::to_unsigned(tm.tm_hour),
                                    detail::to_unsigned(tm.tm_min),
                                    detail::to_unsigned(tm.tm_sec), ':');
-    out = std::copy_n(buf, sizeof(buf), out);
+    out = detail::copy_str<char_type>(std::begin(buf), std::end(buf), out);
   }
   void on_am_pm() { format_localized('p'); }
 
