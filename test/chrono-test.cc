@@ -63,7 +63,12 @@ TEST(chrono_test, format_tm) {
   // Short year
   tm.tm_year = 999 - 1900;
   EXPECT_EQ(fmt::format("{:%Y}", tm), "0999");
+  EXPECT_EQ(fmt::format("{:%C%y}", tm), "0999");
   EXPECT_EQ(fmt::format("{:%G}", tm), "0998");
+
+  tm.tm_year = 27 - 1900;
+  EXPECT_EQ(fmt::format("{:%Y}", tm), "0027");
+  EXPECT_EQ(fmt::format("{:%C%y}", tm), "0027");
 
   // for week on the year
   // https://www.cl.cam.ac.uk/~mgk25/iso-time.html
