@@ -86,7 +86,8 @@ FMT_CONSTEXPR To lossless_integral_conversion(const From from, int& ec) {
     }
   }
 
-  if (detail::const_check(!F::is_signed && T::is_signed && F::digits >= T::digits) &&
+  if (detail::const_check(!F::is_signed && T::is_signed &&
+                          F::digits >= T::digits) &&
       from > static_cast<From>(detail::max_value<To>())) {
     ec = 1;
     return {};
@@ -582,13 +583,13 @@ template <typename Char> struct formatter<std::tm, Char> {
       detail::write_digit2_separated(buf + 2, year % 100,
                                      detail::to_unsigned(tm.tm_mon + 1),
                                      detail::to_unsigned(tm.tm_mday), '-');
-      return std::copy_n(buf, sizeof(buf), ctx.out());
+      return detail::copy_str<Char>(std::begin(buf), std::end(buf), ctx.out());
     } else if (spec_ == spec::hh_mm_ss) {
       char buf[8];
       detail::write_digit2_separated(buf, detail::to_unsigned(tm.tm_hour),
                                      detail::to_unsigned(tm.tm_min),
                                      detail::to_unsigned(tm.tm_sec), ':');
-      return std::copy_n(buf, sizeof(buf), ctx.out());
+      return detail::copy_str<Char>(std::begin(buf), std::end(buf), ctx.out());
     }
     basic_memory_buffer<Char> tm_format;
     tm_format.append(specs.begin(), specs.end());
@@ -610,7 +611,7 @@ template <typename Char> struct formatter<std::tm, Char> {
       buf.reserve(buf.capacity() + (size > MIN_GROWTH ? size : MIN_GROWTH));
     }
     // Remove the extra space.
-    return std::copy(buf.begin(), buf.end() - 1, ctx.out());
+    return detail::copy_str<Char>(buf.begin(), buf.end() - 1, ctx.out());
   }
 };
 
