@@ -267,6 +267,14 @@ TEST(xchar_test, chrono) {
   EXPECT_EQ(fmt::format(L"{:%T}", tm), L"11:22:33");
 }
 
+std::wstring system_wcsftime(const std::wstring& format, const std::tm* timeptr,
+                             size_t maxsize = 1024) {
+  std::vector<wchar_t> output(maxsize);
+  auto size =
+      std::wcsftime(output.data(), output.size(), format.c_str(), timeptr);
+  return std::wstring(output.data(), size);
+}
+
 TEST(chrono_test, time_point) {
   auto t1 = std::chrono::system_clock::now();
 
@@ -282,12 +290,12 @@ TEST(chrono_test, time_point) {
   for (const auto& spec : spec_list) {
     auto t = std::chrono::system_clock::to_time_t(t1);
     auto tm = *std::localtime(&t);
-    wchar_t output[1024] = {};
-    std::wcsftime(output, sizeof(output) / sizeof(wchar_t), spec.c_str(), &tm);
+
+    auto sys_output = system_wcsftime(spec, &tm);
 
     auto fmt_spec = std::wstring(L"{:").append(spec).append(L"}");
-    EXPECT_EQ(output, fmt::format(fmt_spec, t1));
-    EXPECT_EQ(output, fmt::format(fmt_spec, tm));
+    EXPECT_EQ(sys_output, fmt::format(fmt_spec, t1));
+    EXPECT_EQ(sys_output, fmt::format(fmt_spec, tm));
   }
 }
 
