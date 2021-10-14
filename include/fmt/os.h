@@ -390,6 +390,13 @@ struct ostream_params {
       : ostream_params(params...) {
     this->buffer_size = bs.value;
   }
+
+// Intel has a bug that results in failure to deduce a constructor
+// for empty parameter packs.
+#if defined(__INTEL_COMPILER) && __INTEL_COMPILER < 2000
+  ostream_params(int new_oflag) : oflag(new_oflag) {}
+  ostream_params(detail::buffer_size bs) : buffer_size(bs.value) {}
+#endif
 };
 
 FMT_END_DETAIL_NAMESPACE
