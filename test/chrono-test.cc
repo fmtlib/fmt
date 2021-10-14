@@ -62,9 +62,13 @@ TEST(chrono_test, format_tm) {
 
   // Short year
   tm.tm_year = 999 - 1900;
+  tm.tm_mon = 0;   // for %G
+  tm.tm_mday = 2;  // for %G
+  tm.tm_wday = 3;  // for %G
+  tm.tm_yday = 1;  // for %G
   EXPECT_EQ(fmt::format("{:%Y}", tm), "0999");
   EXPECT_EQ(fmt::format("{:%C%y}", tm), "0999");
-  EXPECT_EQ(fmt::format("{:%G}", tm), "0998");
+  EXPECT_EQ(fmt::format("{:%G}", tm), "0999");
 
   tm.tm_year = 27 - 1900;
   EXPECT_EQ(fmt::format("{:%Y}", tm), "0027");
@@ -95,7 +99,7 @@ TEST(chrono_test, format_tm) {
 #endif
     // Because std::get_time doesn't calculate tm_yday, tm_wday, etc.
     tm.tm_isdst = 0;
-    auto t = std::mktime(&tm);
+    std::time_t t = std::mktime(&tm);
     tm = *std::localtime(&t);
 
     for (const auto& spec : spec_list) {
