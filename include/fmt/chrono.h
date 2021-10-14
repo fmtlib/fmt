@@ -1412,11 +1412,11 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
   // do if the year is negative or exceeds 9999. Use the convention that %C
   // concatenated with %y yields the same output as %Y, and that %Y contains at
   // least 4 bytes, with more only if necessary.
-  struct split_year {
+  struct split_year_result {
     int upper;
     int lower;
   };
-  auto tm_split_year(int year) const -> split_year {
+  auto split_year(int year) const -> split_year_result {
     auto q = year / 100;
     auto r = year % 100;
     if (r < 0) {
@@ -1428,23 +1428,28 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
 
   // Algorithm:
   // https://en.wikipedia.org/wiki/ISO_week_date#Calculating_the_week_number_from_a_month_and_day_of_the_month_or_ordinal_date
-  struct iso_weak {
+  struct iso_week_result {
     int year;
     int woy;
   };
-  auto tm_iso_year_weaks(int year) -> int {
-    int p = (year + year / 4 - year / 100 + year / 400) % daysperweek;
-    int year_1 = year - 1;
-    int p_1 = (year_1 + year_1 / 4 - year_1 / 100 + year_1 / 400) % daysperweek;
-    return 52 + ((p == 4 || p_1 == 3) ? 1 : 0);
+  auto iso_year_weeks(const int curr_year) -> int {
+    const int prev_year = curr_year - 1;
+    const int curr_p =
+        (curr_year + curr_year / 4 - curr_year / 100 + curr_year / 400) %
+        daysperweek;
+    const int prev_p =
+        (prev_year + prev_year / 4 - prev_year / 100 + prev_year / 400) %
+        daysperweek;
+    return 52 + ((curr_p == 4 || prev_p == 3) ? 1 : 0);
   }
-  auto tm_iso_weak() -> iso_weak {
-    auto year = tm_year();
-    int w = (tm.tm_yday + 10 - (tm.tm_wday == 0 ? daysperweek : tm.tm_wday)) /
-            daysperweek;
+  auto tm_iso_week() -> iso_week_result {
+    const auto year = tm_year();
+    const int w =
+        (tm.tm_yday + 11 - (tm.tm_wday == 0 ? daysperweek : tm.tm_wday)) /
+        daysperweek;
     if (w < 1) {
-      return {year - 1, tm_iso_year_weaks(year - 1)};
-    } else if (w > tm_iso_year_weaks(year)) {
+      return {year - 1, iso_year_weeks(year - 1)};
+    } else if (w > iso_year_weeks(year)) {
       return {year + 1, 1};
     } else {
       return {year, w};
@@ -1537,7 +1542,7 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
     detail::write_digit2_separated(
         buf, detail::to_unsigned(tm.tm_mon + 1),
         detail::to_unsigned(tm.tm_mday),
-        detail::to_unsigned(tm_split_year(tm_year()).lower), '/');
+        detail::to_unsigned(split_year(tm_year()).lower), '/');
     out = detail::copy_str<char_type>(std::begin(buf), std::end(buf), out);
   }
   void on_iso_date() {
@@ -1568,7 +1573,7 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
   }
   void on_last2_year(numeric_system ns) {
     if (ns == numeric_system::standard) {
-      write2(detail::to_unsigned(tm_split_year(tm_year()).lower));
+      write2(detail::to_unsigned(split_year(tm_year()).lower));
     } else {
       format_localized('y', 'O');
     }
@@ -1576,7 +1581,7 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
   void on_offset_year() { format_localized('y', 'E'); }
   void on_base_year(numeric_system ns) {
     if (ns == numeric_system::standard) {
-      auto split = tm_split_year(tm_year());
+      auto split = split_year(tm_year());
       if (split.upper >= 0 && split.upper < 100) {
         write2(detail::to_unsigned(split.upper));
       } else {
@@ -1613,14 +1618,14 @@ template <typename FormatContext, typename OutputIt> struct tm_formatter {
   }
   void on_iso_week_of_year(numeric_system ns) {
     if (ns == numeric_system::standard) {
-      write2(detail::to_unsigned(tm_iso_weak().woy));
+      write2(detail::to_unsigned(tm_iso_week().woy));
     } else {
       format_localized('V', 'O');
     }
   }
-  void on_iso_week_based_year() { write_year(tm_iso_weak().year); }
+  void on_iso_week_based_year() { write_year(tm_iso_week().year); }
   void on_iso_week_based_year_last2() {
-    write2(detail::to_unsigned(tm_split_year(tm_iso_weak().year).lower));
+    write2(detail::to_unsigned(split_year(tm_iso_week().year).lower));
   }
   void on_day_of_year() {
     auto yday = tm.tm_yday + 1;
