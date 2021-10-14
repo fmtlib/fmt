@@ -85,10 +85,10 @@ TEST(chrono_test, format_tm) {
       "2000-01-02",  // W52
       "2000-01-03",  // W1
   };
-  std::vector<std::string> spec_list = {"%G", "%g", "%V"};
+  const std::string iso_week_spec = "%Y-%m-%d: %G %g %V";
+
   for (const auto& str_tm : str_tm_list) {
     tm = std::tm();
-
     // GCC 4 does not support std::get_time
     // MSVC dows not support POSIX strptime
 #ifdef _WIN32
@@ -102,12 +102,21 @@ TEST(chrono_test, format_tm) {
     std::time_t t = std::mktime(&tm);
     tm = *std::localtime(&t);
 
-    for (const auto& spec : spec_list) {
-      char output[256] = {};
-      std::strftime(output, sizeof(output), spec.c_str(), &tm);
-      auto fmt_spec = std::string("{:").append(spec).append("}");
-      EXPECT_EQ(output, fmt::format(fmt::runtime(fmt_spec), tm));
-    }
+    char output[256] = {};
+    std::strftime(output, sizeof(output), iso_week_spec.c_str(), &tm);
+    auto fmt_spec = std::string("{:").append(iso_week_spec).append("}");
+    EXPECT_EQ(output, fmt::format(fmt::runtime(fmt_spec), tm));
+  }
+
+  // Every day from 1970-01-01
+  std::time_t time_now = std::time(nullptr);
+  for (std::time_t t = 6 * 3600; t < time_now; t += 86400) {
+    tm = *std::localtime(&t);
+
+    char output[256] = {};
+    std::strftime(output, sizeof(output), iso_week_spec.c_str(), &tm);
+    auto fmt_spec = std::string("{:").append(iso_week_spec).append("}");
+    EXPECT_EQ(output, fmt::format(fmt::runtime(fmt_spec), tm));
   }
 }
 
