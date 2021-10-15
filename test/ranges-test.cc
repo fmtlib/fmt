@@ -261,18 +261,18 @@ struct zstring {
 #ifdef __cpp_lib_ranges
 struct cpp20_only_range {
   struct iterator {
-    int i = 0;
+    int val = 0;
 
     using value_type = int;
     using difference_type = std::ptrdiff_t;
     using iterator_concept = std::input_iterator_tag;
 
     iterator() = default;
-    iterator(int i) : i(i) { }
-    int operator*() const { return i; }
-    iterator& operator++() { ++i; return *this; }
+    iterator(int i) : val(i) { }
+    int operator*() const { return val; }
+    iterator& operator++() { ++val; return *this; }
     void operator++(int) { ++*this; }
-    bool operator==(const iterator& rhs) const { return i == rhs.i; }
+    bool operator==(const iterator& rhs) const { return val == rhs.val; }
   };
 
   int lo;
