@@ -293,7 +293,7 @@ TEST(chrono_test, time_point) {
 
     auto sys_output = system_wcsftime(spec, &tm);
 
-    auto fmt_spec = std::wstring(L"{:").append(spec).append(L"}");
+    auto fmt_spec = fmt::format(L"{{:{}}}", spec);
     EXPECT_EQ(sys_output, fmt::format(fmt_spec, t1));
     EXPECT_EQ(sys_output, fmt::format(fmt_spec, tm));
   }
