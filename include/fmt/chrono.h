@@ -1399,11 +1399,9 @@ struct tm_format_checker : null_chrono_spec_handler<tm_format_checker> {
   FMT_CONSTEXPR void on_tz_name() {}
 };
 
-template <typename FormatContext, typename OutputIt> class tm_writer {
-  using char_type = typename FormatContext::char_type;
+template <typename OutputIt, typename Char> class tm_writer {
   static constexpr int days_per_week = 7;
 
-  FormatContext& ctx_;
   OutputIt out_;
   const std::tm& tm_;
 
@@ -1480,7 +1478,7 @@ template <typename FormatContext, typename OutputIt> class tm_writer {
           to_unsigned(to_nonnegative_int(year, max_value<int>()));
       const int num_digits = count_digits(n);
       if (width > num_digits) out_ = std::fill_n(out_, width - num_digits, '0');
-      out_ = format_decimal<char_type>(out_, n, num_digits).end;
+      out_ = format_decimal<Char>(out_, n, num_digits).end;
     }
   }
 
@@ -1488,7 +1486,7 @@ template <typename FormatContext, typename OutputIt> class tm_writer {
     // By prepending an extra space we can distinguish an empty result that
     // indicates insufficient buffer size from a guaranteed non-empty result
     // https://github.com/fmtlib/fmt/issues/2238
-    char_type tm_format[5] = {' ', '%', 'x', '\0', '\0'};
+    Char tm_format[5] = {' ', '%', 'x', '\0', '\0'};
     if (modifier) {
       tm_format[2] = modifier;
       tm_format[3] = format;
@@ -1496,7 +1494,7 @@ template <typename FormatContext, typename OutputIt> class tm_writer {
       tm_format[2] = format;
     }
 
-    basic_memory_buffer<char_type> buf;
+    basic_memory_buffer<Char> buf;
     for (;;) {
       size_t size = buf.capacity();
       size_t count = detail::strftime(buf.data(), size, tm_format, &tm_);
@@ -1508,17 +1506,16 @@ template <typename FormatContext, typename OutputIt> class tm_writer {
       buf.reserve(buf.capacity() + (size > MIN_GROWTH ? size : MIN_GROWTH));
     }
     // Remove the extra space.
-    out_ = copy_str<char_type>(buf.begin() + 1, buf.end(), out_);
+    out_ = copy_str<Char>(buf.begin() + 1, buf.end(), out_);
   }
 
  public:
-  explicit tm_writer(FormatContext& ctx, OutputIt out, const std::tm& tm)
-      : ctx_(ctx), out_(out), tm_(tm) {}
+  explicit tm_writer(OutputIt out, const std::tm& tm) : out_(out), tm_(tm) {}
 
   OutputIt out() const { return out_; }
 
-  FMT_CONSTEXPR void on_text(const char_type* begin, const char_type* end) {
-    out_ = copy_str<char_type>(begin, end, out_);
+  FMT_CONSTEXPR void on_text(const Char* begin, const Char* end) {
+    out_ = copy_str<Char>(begin, end, out_);
   }
   void on_abbr_weekday() { format_localized('a'); }
   void on_full_weekday() { format_localized('A'); }
@@ -1551,7 +1548,7 @@ template <typename FormatContext, typename OutputIt> class tm_writer {
     write_digit2_separated(buf, to_unsigned(tm_.tm_mon + 1),
                            to_unsigned(tm_.tm_mday),
                            to_unsigned(split_year_lower(tm_year())), '/');
-    out_ = copy_str<char_type>(std::begin(buf), std::end(buf), out_);
+    out_ = copy_str<Char>(std::begin(buf), std::end(buf), out_);
   }
   void on_iso_date() {
     auto year = tm_year();
@@ -1566,7 +1563,7 @@ template <typename FormatContext, typename OutputIt> class tm_writer {
     }
     write_digit2_separated(buf + 2, year % 100, to_unsigned(tm_.tm_mon + 1),
                            to_unsigned(tm_.tm_mday), '-');
-    out_ = copy_str<char_type>(std::begin(buf) + offset, std::end(buf), out_);
+    out_ = copy_str<Char>(std::begin(buf) + offset, std::end(buf), out_);
   }
   void on_utc_offset() { format_localized('z'); }
   void on_tz_name() { format_localized('Z'); }
@@ -1594,7 +1591,7 @@ template <typename FormatContext, typename OutputIt> class tm_writer {
       } else if (upper >= 0 && upper < 100)
         write2(to_unsigned(upper));
       else
-        out_ = write<char_type>(out_, upper);
+        out_ = write<Char>(out_, upper);
     } else
       format_localized('C', 'E');
   }
@@ -1684,7 +1681,7 @@ template <typename FormatContext, typename OutputIt> class tm_writer {
     write_digit2_separated(buf, to_unsigned(tm_.tm_hour),
                            to_unsigned(tm_.tm_min), to_unsigned(tm_.tm_sec),
                            ':');
-    out_ = copy_str<char_type>(std::begin(buf), std::end(buf), out_);
+    out_ = copy_str<Char>(std::begin(buf), std::end(buf), out_);
   }
   void on_am_pm() { format_localized('p'); }
 
@@ -1762,7 +1759,7 @@ template <typename Char> struct formatter<std::tm, Char> {
   template <typename FormatContext>
   auto format(const std::tm& tm, FormatContext& ctx) const
       -> decltype(ctx.out()) {
-    detail::tm_writer<FormatContext, decltype(ctx.out())> f(ctx, ctx.out(), tm);
+    detail::tm_writer<decltype(ctx.out()), Char> f(ctx.out(), tm);
     if (spec_ == spec::year_month_day)
       f.on_iso_date();
     else if (spec_ == spec::hh_mm_ss)
