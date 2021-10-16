@@ -258,6 +258,36 @@ struct zstring {
   zstring_sentinel end() const { return {}; }
 };
 
+#  ifdef __cpp_lib_ranges
+struct cpp20_only_range {
+  struct iterator {
+    int val = 0;
+
+    using value_type = int;
+    using difference_type = std::ptrdiff_t;
+    using iterator_concept = std::input_iterator_tag;
+
+    iterator() = default;
+    iterator(int i) : val(i) {}
+    int operator*() const { return val; }
+    iterator& operator++() {
+      ++val;
+      return *this;
+    }
+    void operator++(int) { ++*this; }
+    bool operator==(const iterator& rhs) const { return val == rhs.val; }
+  };
+
+  int lo;
+  int hi;
+
+  iterator begin() const { return iterator(lo); }
+  iterator end() const { return iterator(hi); }
+};
+
+static_assert(std::input_iterator<cpp20_only_range::iterator>);
+#  endif
+
 TEST(ranges_test, join_sentinel) {
   auto hello = zstring{"hello"};
   EXPECT_EQ(fmt::format("{}", hello), "['h', 'e', 'l', 'l', 'o']");
@@ -282,6 +312,14 @@ TEST(ranges_test, join_range) {
 
   const auto z = std::vector<int>(3u, 0);
   EXPECT_EQ(fmt::format("{}", fmt::join(z, ",")), "0,0,0");
+
+#  ifdef __cpp_lib_ranges
+  EXPECT_EQ(fmt::format("{}", cpp20_only_range{.lo = 0, .hi = 5}),
+            "[0, 1, 2, 3, 4]");
+  EXPECT_EQ(
+      fmt::format("{}", fmt::join(cpp20_only_range{.lo = 0, .hi = 5}, ",")),
+      "0,1,2,3,4");
+#  endif
 }
 #endif  // FMT_RANGES_TEST_ENABLE_JOIN
 
