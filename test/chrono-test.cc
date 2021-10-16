@@ -7,8 +7,7 @@
 
 #include "fmt/chrono.h"
 
-#include <time.h>
-
+#include <ctime>
 #include <vector>
 
 #include "gtest-extra.h"  // EXPECT_THROW_MSG
@@ -50,6 +49,18 @@ std::string system_strftime(const std::string& format, const std::tm* timeptr,
   return std::string(output.data(), size);
 }
 
+FMT_CONSTEXPR std::tm make_tm(int year, int mon, int mday, int hour, int min,
+                              int sec) {
+  auto tm = std::tm();
+  tm.tm_sec = sec;
+  tm.tm_min = min;
+  tm.tm_hour = hour;
+  tm.tm_mday = mday;
+  tm.tm_mon = mon - 1;
+  tm.tm_year = year - 1900;
+  return tm;
+}
+
 TEST(chrono_test, format_tm) {
   auto tm = std::tm();
   tm.tm_year = 116;
@@ -84,33 +95,22 @@ TEST(chrono_test, format_tm) {
 
   // for week on the year
   // https://www.cl.cam.ac.uk/~mgk25/iso-time.html
-  std::vector<std::string> str_tm_list = {
-      "1975-12-29",  // W01
-      "1977-01-02",  // W53
-      "1999-12-27",  // W52
-      "1999-12-31",  // W52
-      "2000-01-01",  // W52
-      "2000-01-02",  // W52
-      "2000-01-03",  // W1
+  std::vector<std::tm> tm_list = {
+      make_tm(1975, 12, 29, 12, 14, 16),  // W01
+      make_tm(1977, 1, 2, 12, 14, 16),    // W53
+      make_tm(1999, 12, 27, 12, 14, 16),  // W52
+      make_tm(1999, 12, 31, 12, 14, 16),  // W52
+      make_tm(2000, 1, 1, 12, 14, 16),    // W52
+      make_tm(2000, 1, 2, 12, 14, 16),    // W52
+      make_tm(2000, 1, 3, 12, 14, 16)     // W1
   };
   const std::string iso_week_spec = "%Y-%m-%d: %G %g %V";
-
-  for (const auto& str_tm : str_tm_list) {
-    tm = std::tm();
-    // GCC 4 does not support std::get_time
-    // MSVC dows not support POSIX strptime
-#ifdef _WIN32
-    std::istringstream ss(str_tm);
-    ss >> std::get_time(&tm, "%Y-%m-%d");
-#else
-    strptime(str_tm.c_str(), "%Y-%m-%d", &tm);
-#endif
-    // Because std::get_time doesn't calculate tm_yday, tm_wday, etc.
-    tm.tm_isdst = 0;
-    std::time_t t = std::mktime(&tm);
+  for (auto ctm : tm_list) {
+    // Calculate tm_yday, tm_wday, etc.
+    std::time_t t = std::mktime(&ctm);
     tm = *std::localtime(&t);
 
-    auto fmt_spec = std::string("{:").append(iso_week_spec).append("}");
+    auto fmt_spec = fmt::format("{{:{}}}", iso_week_spec);
     EXPECT_EQ(system_strftime(iso_week_spec, &tm),
               fmt::format(fmt::runtime(fmt_spec), tm));
   }
@@ -120,7 +120,7 @@ TEST(chrono_test, format_tm) {
   for (std::time_t t = 6 * 3600; t < time_now; t += 86400) {
     tm = *std::localtime(&t);
 
-    auto fmt_spec = std::string("{:").append(iso_week_spec).append("}");
+    auto fmt_spec = fmt::format("{{:{}}}", iso_week_spec);
     EXPECT_EQ(system_strftime(iso_week_spec, &tm),
               fmt::format(fmt::runtime(fmt_spec), tm));
   }
@@ -173,6 +173,14 @@ TEST(chrono_test, format_tm_past) {
 
   EXPECT_EQ(fmt::format("{:%F}", tm), "-101-04-25");
   EXPECT_EQ(fmt::format("{:%T}", tm), "11:22:33");
+
+  tm.tm_year = -1901;  // -1
+  EXPECT_EQ(fmt::format("{:%Y}", tm), "-001");
+  EXPECT_EQ(fmt::format("{:%C%y}", tm), fmt::format("{:%Y}", tm));
+
+  tm.tm_year = -1911;  // -11
+  EXPECT_EQ(fmt::format("{:%Y}", tm), "-011");
+  EXPECT_EQ(fmt::format("{:%C%y}", tm), fmt::format("{:%Y}", tm));
 }
 #endif
 
@@ -243,7 +251,7 @@ TEST(chrono_test, time_point) {
 
     auto sys_output = system_strftime(spec, &tm);
 
-    auto fmt_spec = std::string("{:").append(spec).append("}");
+    auto fmt_spec = fmt::format("{{:{}}}", spec);
     EXPECT_EQ(sys_output, fmt::format(fmt::runtime(fmt_spec), t1));
     EXPECT_EQ(sys_output, fmt::format(fmt::runtime(fmt_spec), tm));
   }
