@@ -2749,11 +2749,11 @@ template <typename It, typename Sentinel, typename Char>
 struct formatter<join_view<It, Sentinel, Char>, Char> {
  private:
   using value_type =
-    #ifdef __cpp_lib_ranges
-    std::iter_value_t<It>;
-    #else
-    typename std::iterator_traits<It>::value_type;
-    #endif
+#ifdef __cpp_lib_ranges
+      std::iter_value_t<It>;
+#else
+      typename std::iterator_traits<It>::value_type;
+#endif
   using context = buffer_context<Char>;
   using mapper = detail::arg_mapper<context>;
 
