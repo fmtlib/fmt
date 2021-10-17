@@ -1420,14 +1420,15 @@ template <typename OutputIt, typename Char> class tm_writer {
 
   // Algorithm:
   // https://en.wikipedia.org/wiki/ISO_week_date#Calculating_the_week_number_from_a_month_and_day_of_the_month_or_ordinal_date
-  auto iso_year_weeks(const int curr_year) const noexcept -> int {
-    const int prev_year = curr_year - 1;
-    const int curr_p =
+  auto iso_year_weeks(const int year) const noexcept -> int {
+    const long long curr_year = year;
+    const long long prev_year = curr_year - 1;
+    const int curr_p = static_cast<int>(
         (curr_year + curr_year / 4 - curr_year / 100 + curr_year / 400) %
-        days_per_week;
-    const int prev_p =
+        days_per_week);
+    const int prev_p = static_cast<int>(
         (prev_year + prev_year / 4 - prev_year / 100 + prev_year / 400) %
-        days_per_week;
+        days_per_week);
     return 52 + ((curr_p == 4 || prev_p == 3) ? 1 : 0);
   }
   auto iso_week_num(int tm_yday, int tm_wday) const noexcept -> int {
