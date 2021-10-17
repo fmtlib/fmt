@@ -739,6 +739,11 @@ TEST(core_test, is_formattable) {
   static_assert(fmt::is_formattable<const signed char*>::value, "");
   static_assert(fmt::is_formattable<const unsigned char*>::value, "");
   static_assert(!fmt::is_formattable<wchar_t>::value, "");
+#ifdef __cpp_char8_t
+  static_assert(!fmt::is_formattable<char8_t>::value, "");
+#endif
+  static_assert(!fmt::is_formattable<char16_t>::value, "");
+  static_assert(!fmt::is_formattable<char32_t>::value, "");
   static_assert(!fmt::is_formattable<const wchar_t*>::value, "");
   static_assert(!fmt::is_formattable<const wchar_t[3]>::value, "");
   static_assert(!fmt::is_formattable<fmt::basic_string_view<wchar_t>>::value,
