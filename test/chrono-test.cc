@@ -536,10 +536,18 @@ TEST(chrono_test, weekday) {
   auto loc = get_locale("ru_RU.UTF-8");
   std::locale::global(loc);
   auto mon = fmt::weekday(1);
+
+  auto tm = std::tm();
+  tm.tm_wday = static_cast<int>(mon.c_encoding());
+
   EXPECT_EQ(fmt::format("{}", mon), "Mon");
+  EXPECT_EQ(fmt::format("{:%a}", tm), "Mon");
+
   if (loc != std::locale::classic()) {
     EXPECT_THAT((std::vector<std::string>{"пн", "Пн", "пнд", "Пнд"}),
                 Contains(fmt::format(loc, "{:L}", mon)));
+    EXPECT_THAT((std::vector<std::string>{"пн", "Пн", "пнд", "Пнд"}),
+                Contains(fmt::format(loc, "{:%a}", tm)));
   }
 }
 

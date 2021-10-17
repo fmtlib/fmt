@@ -1744,7 +1744,9 @@ template <typename Char> struct formatter<std::tm, Char> {
   template <typename FormatContext>
   auto format(const std::tm& tm, FormatContext& ctx) const
       -> decltype(ctx.out()) {
-    const auto& loc = std::locale::classic();
+    const auto& loc_ref = ctx.locale();
+    const auto& loc =
+        loc_ref ? loc_ref.template get<std::locale>() : std::locale::classic();
     auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), tm);
     if (spec_ == spec::year_month_day)
       w.on_iso_date();
