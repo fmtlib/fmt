@@ -42,11 +42,14 @@ auto make_second(int s) -> std::tm {
 }
 
 std::string system_strftime(const std::string& format, const std::tm* timeptr,
-                            size_t maxsize = 1024) {
-  std::vector<char> output(maxsize);
-  auto size =
-      std::strftime(output.data(), output.size(), format.c_str(), timeptr);
-  return std::string(output.data(), size);
+                            std::locale* locptr = nullptr) {
+  auto loc = locptr ? *locptr : std::locale::classic();
+  auto& facet = std::use_facet<std::time_put<char>>(loc);
+  std::ostringstream os;
+  os.imbue(loc);
+  facet.put(os, os, ' ', timeptr, format.c_str(),
+            format.c_str() + format.size());
+  return os.str();
 }
 
 FMT_CONSTEXPR std::tm make_tm(int year, int mon, int mday, int hour, int min,

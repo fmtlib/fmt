@@ -475,25 +475,6 @@ inline std::tm gmtime(
 
 FMT_BEGIN_DETAIL_NAMESPACE
 
-inline size_t strftime(char* str, size_t count, const char* format,
-                       const std::tm* time) {
-  // Assign to a pointer to suppress GCCs -Wformat-nonliteral
-  // First assign the nullptr to suppress -Wsuggest-attribute=format
-  std::size_t (*strftime)(char*, std::size_t, const char*, const std::tm*) =
-      nullptr;
-  strftime = std::strftime;
-  return strftime(str, count, format, time);
-}
-
-inline size_t strftime(wchar_t* str, size_t count, const wchar_t* format,
-                       const std::tm* time) {
-  // See above
-  std::size_t (*wcsftime)(wchar_t*, std::size_t, const wchar_t*,
-                          const std::tm*) = nullptr;
-  wcsftime = std::wcsftime;
-  return wcsftime(str, count, format, time);
-}
-
 // Writes two-digit numbers a, b and c separated by sep to buf.
 // The method by Pavel Novikov based on
 // https://johnnylee-sde.github.io/Fast-unsigned-integer-to-time-string/.
@@ -1416,6 +1397,7 @@ template <typename OutputIt, typename Char> class tm_writer {
  private:
   static constexpr int days_per_week = 7;
 
+  const std::locale& loc_;
   OutputIt out_;
   const std::tm& tm_;
 
@@ -1527,34 +1509,12 @@ template <typename OutputIt, typename Char> class tm_writer {
   }
 
   void format_localized(char format, char modifier = 0) {
-    // By prepending an extra space we can distinguish an empty result that
-    // indicates insufficient buffer size from a guaranteed non-empty result
-    // https://github.com/fmtlib/fmt/issues/2238
-    Char tm_format[5] = {' ', '%', 'x', '\0', '\0'};
-    if (modifier) {
-      tm_format[2] = modifier;
-      tm_format[3] = format;
-    } else {
-      tm_format[2] = format;
-    }
-
-    basic_memory_buffer<Char> buf;
-    for (;;) {
-      size_t size = buf.capacity();
-      size_t count = detail::strftime(buf.data(), size, tm_format, &tm_);
-      if (count != 0) {
-        buf.resize(count);
-        break;
-      }
-      const size_t min_growth = 10;
-      buf.reserve(buf.capacity() + (size > min_growth ? size : min_growth));
-    }
-    // Remove the extra space.
-    out_ = copy_str<Char>(buf.begin() + 1, buf.end(), out_);
+    out_ = write<Char>(out_, tm_, loc_, format, modifier);
   }
 
  public:
-  explicit tm_writer(OutputIt out, const std::tm& tm) : out_(out), tm_(tm) {}
+  explicit tm_writer(const std::locale& loc, OutputIt out, const std::tm& tm)
+      : loc_(loc), out_(out), tm_(tm) {}
 
   OutputIt out() const { return out_; }
 
@@ -1784,7 +1744,8 @@ template <typename Char> struct formatter<std::tm, Char> {
   template <typename FormatContext>
   auto format(const std::tm& tm, FormatContext& ctx) const
       -> decltype(ctx.out()) {
-    auto w = detail::tm_writer<decltype(ctx.out()), Char>(ctx.out(), tm);
+    const auto& loc = std::locale::classic();
+    auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), tm);
     if (spec_ == spec::year_month_day)
       w.on_iso_date();
     else if (spec_ == spec::hh_mm_ss)

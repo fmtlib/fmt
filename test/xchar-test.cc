@@ -270,11 +270,14 @@ TEST(xchar_test, chrono) {
 }
 
 std::wstring system_wcsftime(const std::wstring& format, const std::tm* timeptr,
-                             size_t maxsize = 1024) {
-  std::vector<wchar_t> output(maxsize);
-  auto size =
-      std::wcsftime(output.data(), output.size(), format.c_str(), timeptr);
-  return std::wstring(output.data(), size);
+                             std::locale* locptr = nullptr) {
+  auto loc = locptr ? *locptr : std::locale::classic();
+  auto& facet = std::use_facet<std::time_put<wchar_t>>(loc);
+  std::wostringstream os;
+  os.imbue(loc);
+  facet.put(os, os, L' ', timeptr, format.c_str(),
+            format.c_str() + format.size());
+  return os.str();
 }
 
 TEST(chrono_test, time_point) {
