@@ -1645,12 +1645,13 @@ FMT_CONSTEXPR auto write(OutputIt out,
   return write(out, s, specs);
 }
 template <typename Char, typename OutputIt>
-FMT_CONSTEXPR auto write(OutputIt out, const Char* s,
+FMT_CONSTEXPR auto write(OutputIt out,
+                         basic_c_string_view<type_identity_t<Char>> s,
                          const basic_format_specs<Char>& specs, locale_ref)
     -> OutputIt {
   return check_cstring_type_spec(specs.type)
-             ? write(out, basic_string_view<Char>(s), specs, {})
-             : write_ptr<Char>(out, to_uintptr(s), &specs);
+             ? write(out, static_cast<basic_string_view<Char>&>(s), specs, {})
+             : write_ptr<Char>(out, to_uintptr(s.data()), &specs);
 }
 
 template <typename Char, typename OutputIt>
@@ -2114,14 +2115,19 @@ FMT_CONSTEXPR auto write(OutputIt out, Char value) -> OutputIt {
 }
 
 template <typename Char, typename OutputIt>
+FMT_CONSTEXPR_CHAR_TRAITS auto write(OutputIt out,
+                                     basic_c_string_view<Char> value)
+    -> OutputIt {
+  if (!value.data()) throw_format_error("string pointer is null");
+
+  out = write(out, static_cast<basic_string_view<Char>&>(value));
+  return out;
+}
+
+template <typename Char, typename OutputIt>
 FMT_CONSTEXPR_CHAR_TRAITS auto write(OutputIt out, const Char* value)
     -> OutputIt {
-  if (!value) {
-    throw_format_error("string pointer is null");
-  } else {
-    out = write(out, basic_string_view<Char>(value));
-  }
-  return out;
+  return write(out, basic_c_string_view<Char>{value});
 }
 
 template <typename Char, typename OutputIt, typename T,
@@ -2537,9 +2543,13 @@ formatter<T, Char,
                                                        specs.width_ref, ctx);
     detail::handle_dynamic_spec<detail::precision_checker>(
         specs.precision, specs.precision_ref, ctx);
-    return detail::write<Char>(ctx.out(), val, specs, ctx.locale());
+    return detail::write<Char>(ctx.out(),
+                               detail::arg_mapper<FormatContext>{}.map(val),
+                               specs, ctx.locale());
   }
-  return detail::write<Char>(ctx.out(), val, specs_, ctx.locale());
+  return detail::write<Char>(ctx.out(),
+                             detail::arg_mapper<FormatContext>{}.map(val),
+                             specs_, ctx.locale());
 }
 
 #define FMT_FORMAT_AS(Type, Base)                                        \
@@ -2629,6 +2639,11 @@ template <typename Char = char> class dynamic_formatter {
     if (specs_.alt) checker.on_hash();
     if (specs_.precision >= 0) checker.end_precision();
     return detail::write<Char>(ctx.out(), val, specs_, ctx.locale());
+  }
+
+  template <typename FormatContext>
+  auto format(const Char* val, FormatContext& ctx) -> decltype(ctx.out()) {
+    return this->format(detail::basic_c_string_view<Char>{val}, ctx);
   }
 };
 

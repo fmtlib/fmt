@@ -414,9 +414,11 @@ TEST(arg_test, string_arg) {
   char str_data[] = "test";
   char* str = str_data;
   const char* cstr = str;
-  CHECK_ARG(char, cstr, str);
+  CHECK_ARG(char, fmt::detail::basic_c_string_view<char>{str}, str);
+  CHECK_ARG(char, fmt::detail::basic_c_string_view<char>{str}, cstr);
 
   auto sv = fmt::string_view(str);
+  CHECK_ARG(char, sv, sv);
   CHECK_ARG(char, sv, std::string(str));
 }
 
@@ -424,10 +426,10 @@ TEST(arg_test, wstring_arg) {
   wchar_t str_data[] = L"test";
   wchar_t* str = str_data;
   const wchar_t* cstr = str;
+  CHECK_ARG(wchar_t, fmt::detail::basic_c_string_view<wchar_t>{str}, str);
+  CHECK_ARG(wchar_t, fmt::detail::basic_c_string_view<wchar_t>{str}, cstr);
 
   auto sv = fmt::basic_string_view<wchar_t>(str);
-  CHECK_ARG(wchar_t, cstr, str);
-  CHECK_ARG(wchar_t, cstr, cstr);
   CHECK_ARG(wchar_t, sv, std::wstring(str));
   CHECK_ARG(wchar_t, sv, fmt::basic_string_view<wchar_t>(str));
 }

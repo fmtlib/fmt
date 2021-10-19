@@ -2558,7 +2558,8 @@ FMT_FUNC void format_system_error(detail::buffer<char>& out, int error_code,
                                   const char* message) FMT_NOEXCEPT {
   FMT_TRY {
     auto ec = std::error_code(error_code, std::generic_category());
-    write(std::back_inserter(out), std::system_error(ec, message).what());
+    write(std::back_inserter(out), detail::basic_c_string_view<char>{
+                                       std::system_error(ec, message).what()});
     return;
   }
   FMT_CATCH(...) {}

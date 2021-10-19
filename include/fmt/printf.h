@@ -187,8 +187,13 @@ template <typename Context> class char_converter {
 // An argument visitor that return a pointer to a C string if argument is a
 // string or null otherwise.
 template <typename Char> struct get_cstring {
-  template <typename T> const Char* operator()(T) { return nullptr; }
-  const Char* operator()(const Char* s) { return s; }
+  template <typename T> detail::basic_c_string_view<Char> operator()(T) {
+    return detail::basic_c_string_view<Char>{};
+  }
+  detail::basic_c_string_view<Char> operator()(
+      detail::basic_c_string_view<Char> s) {
+    return s;
+  }
 };
 
 // Checks if an argument is a valid printf width specifier and sets
@@ -271,14 +276,8 @@ class printf_arg_formatter : public arg_formatter<Char> {
   }
 
   /** Formats a null-terminated C string. */
-  OutputIt operator()(const char* value) {
-    if (value) return base::operator()(value);
-    return write_null_pointer(this->specs.type != presentation_type::pointer);
-  }
-
-  /** Formats a null-terminated wide C string. */
-  OutputIt operator()(const wchar_t* value) {
-    if (value) return base::operator()(value);
+  OutputIt operator()(basic_c_string_view<Char> value) {
+    if (value.data()) return base::operator()(value);
     return write_null_pointer(this->specs.type != presentation_type::pointer);
   }
 
@@ -431,13 +430,11 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
       specs.fill[0] =
           ' ';  // Ignore '0' flag for non-numeric types or if '-' present.
     if (specs.precision >= 0 && arg.type() == detail::type::cstring_type) {
-      auto str = visit_format_arg(detail::get_cstring<Char>(), arg);
-      auto str_end = str + specs.precision;
-      auto nul = std::find(str, str_end, Char());
+      const auto str = visit_format_arg(detail::get_cstring<Char>(), arg);
       arg = detail::make_arg<basic_printf_context<OutputIt, Char>>(
           basic_string_view<Char>(
-              str, detail::to_unsigned(nul != str_end ? nul - str
-                                                      : specs.precision)));
+              str.data(),
+              std::min(str.size(), static_cast<size_t>(specs.precision))));
     }
     if (specs.alt && visit_format_arg(detail::is_zero_int(), arg))
       specs.alt = false;

@@ -1110,6 +1110,14 @@ enum class type {
   custom_type
 };
 
+template <typename Char> struct basic_c_string_view : basic_string_view<Char> {
+  using basic_string_view<Char>::basic_string_view;
+  FMT_CONSTEXPR basic_c_string_view() = default;
+  FMT_CONSTEXPR basic_c_string_view(const Char* val)
+      : basic_string_view<Char>{
+            val, val ? std::char_traits<Char>::length(val) : 0} {}
+};
+
 // Maps core type T to the corresponding type enum constant.
 template <typename T, typename Char>
 struct type_constant : std::integral_constant<type, type::custom_type> {};
@@ -1131,6 +1139,7 @@ FMT_TYPE_CONSTANT(float, float_type);
 FMT_TYPE_CONSTANT(double, double_type);
 FMT_TYPE_CONSTANT(long double, long_double_type);
 FMT_TYPE_CONSTANT(const Char*, cstring_type);
+FMT_TYPE_CONSTANT(basic_c_string_view<Char>, cstring_type);
 FMT_TYPE_CONSTANT(basic_string_view<Char>, string_type);
 FMT_TYPE_CONSTANT(const void*, pointer_type);
 
@@ -1199,9 +1208,9 @@ template <typename Context> class value {
   FMT_INLINE value(long double val) : long_double_value(val) {}
   constexpr FMT_INLINE value(bool val) : bool_value(val) {}
   constexpr FMT_INLINE value(char_type val) : char_value(val) {}
-  FMT_CONSTEXPR FMT_INLINE value(const char_type* val) {
-    string.data = val;
-    if (is_constant_evaluated()) string.size = {};
+  FMT_CONSTEXPR FMT_INLINE value(basic_c_string_view<char_type> val) {
+    string.data = val.data();
+    string.size = val.size();
   }
   FMT_CONSTEXPR FMT_INLINE value(basic_string_view<char_type> val) {
     string.data = val.data();
@@ -1303,10 +1312,16 @@ template <typename Context> struct arg_mapper {
     return val;
   }
 
-  FMT_CONSTEXPR FMT_INLINE auto map(char_type* val) -> const char_type* {
+  FMT_CONSTEXPR FMT_INLINE auto map(char_type* val)
+      -> detail::basic_c_string_view<char_type> {
     return val;
   }
-  FMT_CONSTEXPR FMT_INLINE auto map(const char_type* val) -> const char_type* {
+  FMT_CONSTEXPR FMT_INLINE auto map(const char_type* val)
+      -> detail::basic_c_string_view<char_type> {
+    return val;
+  }
+  FMT_CONSTEXPR FMT_INLINE auto map(detail::basic_c_string_view<char_type> val)
+      -> detail::basic_c_string_view<char_type> {
     return val;
   }
   template <typename T,
@@ -1563,7 +1578,8 @@ FMT_CONSTEXPR FMT_INLINE auto visit_format_arg(
   case detail::type::long_double_type:
     return vis(arg.value_.long_double_value);
   case detail::type::cstring_type:
-    return vis(arg.value_.string.data);
+    using c_sv = detail::basic_c_string_view<typename Context::char_type>;
+    return vis(c_sv(arg.value_.string.data, arg.value_.string.size));
   case detail::type::string_type:
     using sv = basic_string_view<typename Context::char_type>;
     return vis(sv(arg.value_.string.data, arg.value_.string.size));
