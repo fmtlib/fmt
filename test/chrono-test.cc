@@ -500,7 +500,7 @@ TEST(chrono_test, negative_durations) {
 
 TEST(chrono_test, special_durations) {
   EXPECT_EQ(
-      "40.",
+      "40",
       fmt::format("{:%S}", std::chrono::duration<double>(1e20)).substr(0, 3));
   auto nan = std::numeric_limits<double>::quiet_NaN();
   EXPECT_EQ(
@@ -533,4 +533,41 @@ TEST(chrono_test, weekday) {
   }
 }
 
+TEST(chrono_test, cpp20_duration_subsecond_support) {
+  using attoseconds = std::chrono::duration<std::intmax_t, std::atto>;
+  // Check that 18 digits of subsecond precision are supported
+  EXPECT_EQ(fmt::format("{:%S}", attoseconds{673'231'113'420'148'734}),
+            "00.673231113420148734");
+  EXPECT_EQ(fmt::format("{:%S}", attoseconds{-673'231'113'420'148'734}),
+            "-00.673231113420148734");
+  EXPECT_EQ(fmt::format("{:%S}", std::chrono::nanoseconds{13'420'148'734}),
+            "13.420148734");
+  EXPECT_EQ(fmt::format("{:%S}", std::chrono::nanoseconds{-13'420'148'734}),
+            "-13.420148734");
+  EXPECT_EQ(fmt::format("{:%S}", std::chrono::milliseconds{1234}), "01.234");
+  {
+    // Check that {:%H:%M:%S} is equivalent to {:%T}
+    auto dur = std::chrono::milliseconds{3'601'234};
+    auto formatted_dur = fmt::format("{:%T}", dur);
+    EXPECT_EQ(formatted_dur, "01:00:01.234");
+    EXPECT_EQ(fmt::format("{:%H:%M:%S}", dur), formatted_dur);
+  }
+  using nanoseconds_dbl = std::chrono::duration<double, std::nano>;
+  EXPECT_EQ(fmt::format("{:%S}", nanoseconds_dbl{-123456789.123456789}),
+            "-00.123456789");
+  EXPECT_EQ(fmt::format("{:%S}", nanoseconds_dbl{9123456789.123456789}),
+            "09.123456789");
+  // Only seconds part is printed
+  EXPECT_EQ(fmt::format("{:%S}", nanoseconds_dbl{99123456789}), "39.123456789");
+  {
+    // Now the hour is printed, and we also test if negative doubles work
+    auto dur = nanoseconds_dbl{-99123456789};
+    auto formatted_dur = fmt::format("{:%T}", dur);
+    EXPECT_EQ(formatted_dur, "-00:01:39.123456789");
+    EXPECT_EQ(fmt::format("{:%H:%M:%S}", dur), formatted_dur);
+  }
+  // Check that durations with precision greater than std::chrono::seconds
+  // with no subsecond part print as regular seconds
+  EXPECT_EQ(fmt::format("{:%S}", std::chrono::microseconds{7'000'000}), "07");
+}
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR
