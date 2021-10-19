@@ -42,7 +42,7 @@
 #include <utility>       // std::swap
 
 #ifdef __cpp_lib_bit_cast
-#include <bit>           // std::bitcast
+#  include <bit>  // std::bitcast
 #endif
 
 #include "core.h"
@@ -1720,7 +1720,7 @@ inline auto write_significand(Char* out, UInt significand, int significand_size,
   out += significand_size + 1;
   Char* end = out;
   int floating_size = significand_size - integral_size;
-  for(int i = floating_size / 2; i > 0; --i) {
+  for (int i = floating_size / 2; i > 0; --i) {
     out -= 2;
     copy2(out, digits2(significand % 100));
     significand /= 100;
