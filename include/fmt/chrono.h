@@ -875,6 +875,57 @@ template <typename T> struct make_unsigned_or_unchanged<T, true> {
   using type = typename std::make_unsigned<T>::type;
 };
 
+#if FMT_USE_CONSTEXPR
+template <class Duration> FMT_CONSTEXPR unsigned int get_fractional_width() {
+  static_assert(Duration::period::num > 0 && Duration::period::den > 0,
+                "Numerator and denominator can't be less than 1.");
+  auto num = Duration::period::num;
+  constexpr auto den = Duration::period::den;
+  // Returns the number of fractional digits of num / den in the range
+  // [0, 18]. If it can't be represented, 6 is returned. Example:
+  // fractional_width(1, 8) would return 3 for 0.125.
+  unsigned int result = 0;
+  for (; num % den != 0 && result < 19; num = num % den * 10, ++result) {
+  }
+  return result == 19 ? 6 : result;
+}
+static FMT_CONSTEXPR intmax_t pow10(const unsigned int exp) {
+  std::intmax_t result = 1;
+  for (unsigned int i = 0; i < exp; ++i) {
+    result *= 10;
+  }
+  return result;
+}
+#else
+// Workaround for C++11
+// Thanks to Howard Hinnant's library
+// https://github.com/HowardHinnant/date/blob/master/include/date/date.h
+// Copyright Howard Hinnant 2019
+template <std::uint64_t n, std::uint64_t d, unsigned w = 0,
+          bool should_continue = n % d != 0 && (w < 19)>
+struct width {
+  static_assert(d > 0, "width called with zero denominator");
+  static constexpr unsigned value = 1 + width<n % d * 10, d, w + 1>::value;
+};
+
+template <std::uint64_t n, std::uint64_t d, unsigned w>
+struct width<n, d, w, false> {
+  static constexpr unsigned value = 0;
+};
+
+template <unsigned exp> struct static_pow10 {
+ private:
+  static constexpr std::uint64_t h = static_pow10<exp / 2>::value;
+
+ public:
+  static constexpr std::uint64_t value = h * h * (exp % 2 ? 10 : 1);
+};
+
+template <> struct static_pow10<0> {
+  static constexpr std::uint64_t value = 1;
+};
+#endif
+
 #if FMT_SAFE_DURATION_CAST
 // throwing version of safe_duration_cast
 template <typename To, typename FromRep, typename FromPeriod>
@@ -887,30 +938,22 @@ To fmt_safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from) {
 #endif
 
 template <class Duration> struct subsecond_helper {
-  static constexpr unsigned int fractional_width = [] {
-    static_assert(Duration::period::num > 0 && Duration::period::den > 0,
-                  "Numerator and denominator can't be less than 1.");
-    auto num = Duration::period::num;
-    constexpr auto den = Duration::period::den;
-    // Returns the number of fractional digits of num / den in the range
-    // [0, 18]. If it can't be represented, 6 is returned. Example:
-    // fractional_width(1, 8) would return 3 for 0.125.
-    unsigned int result = 0;
-    for (; num % den != 0 && result < 19; num = num % den * 10, ++result) {
-    }
-    return result == 19 ? 6 : result;
-  }();
+  static constexpr std::uintmax_t fractional_width =
+#if FMT_USE_CONSTEXPR
+      get_fractional_width<Duration>();
+#else
+      width<Duration::period::num, Duration::period::den>::value;
+#endif
 
-  static constexpr intmax_t pow10(const unsigned int exp) {
-    intmax_t result = 1;
-    for (unsigned int i = 0; i < exp; ++i) {
-      result *= 10;
-    }
-    return result;
-  }
+  static constexpr std::uintmax_t fractional_width_pow10 =
+#if FMT_USE_CONSTEXPR
+      pow10(fractional_width);
+#else
+      static_pow10<fractional_width>::value;
+#endif
 
   template <class Rep, class Period>
-  static constexpr std::chrono::duration<Rep, Period> abs(
+  static FMT_CONSTEXPR std::chrono::duration<Rep, Period> abs(
       std::chrono::duration<Rep, Period> d) {
     if FMT_CONSTEXPR (std::chrono::duration<Rep, Period>::min() <
                       std::chrono::duration<Rep, Period>::zero()) {
@@ -923,13 +966,13 @@ template <class Duration> struct subsecond_helper {
   using precision = std::chrono::duration<
       typename std::common_type<typename Duration::rep,
                                 std::chrono::seconds::rep>::type,
-      std::ratio<1, pow10(fractional_width)>>;
+      std::ratio<1, fractional_width_pow10>>;
 
   template <class Rep, class Period>
-  static constexpr precision get_subseconds(
-      std::chrono::duration<Rep, Period> d) {
-    if FMT_CONSTEXPR (std::chrono::treat_as_floating_point_v<
-                          typename precision::rep>) {
+  static FMT_CONSTEXPR precision
+  get_subseconds(std::chrono::duration<Rep, Period> d) {
+    if FMT_CONSTEXPR (std::chrono::treat_as_floating_point<
+                          typename precision::rep>::value) {
       return abs(d) - std::chrono::duration_cast<std::chrono::seconds>(d);
     } else {
       return std::chrono::duration_cast<precision>(

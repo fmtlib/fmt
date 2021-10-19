@@ -536,18 +536,18 @@ TEST(chrono_test, weekday) {
 TEST(chrono_test, cpp20_duration_subsecond_support) {
   using attoseconds = std::chrono::duration<std::intmax_t, std::atto>;
   // Check that 18 digits of subsecond precision are supported
-  EXPECT_EQ(fmt::format("{:%S}", attoseconds{673'231'113'420'148'734}),
+  EXPECT_EQ(fmt::format("{:%S}", attoseconds{673231113420148734}),
             "00.673231113420148734");
-  EXPECT_EQ(fmt::format("{:%S}", attoseconds{-673'231'113'420'148'734}),
+  EXPECT_EQ(fmt::format("{:%S}", attoseconds{-673231113420148734}),
             "-00.673231113420148734");
-  EXPECT_EQ(fmt::format("{:%S}", std::chrono::nanoseconds{13'420'148'734}),
+  EXPECT_EQ(fmt::format("{:%S}", std::chrono::nanoseconds{13420148734}),
             "13.420148734");
-  EXPECT_EQ(fmt::format("{:%S}", std::chrono::nanoseconds{-13'420'148'734}),
+  EXPECT_EQ(fmt::format("{:%S}", std::chrono::nanoseconds{-13420148734}),
             "-13.420148734");
   EXPECT_EQ(fmt::format("{:%S}", std::chrono::milliseconds{1234}), "01.234");
   {
     // Check that {:%H:%M:%S} is equivalent to {:%T}
-    auto dur = std::chrono::milliseconds{3'601'234};
+    auto dur = std::chrono::milliseconds{3601234};
     auto formatted_dur = fmt::format("{:%T}", dur);
     EXPECT_EQ(formatted_dur, "01:00:01.234");
     EXPECT_EQ(fmt::format("{:%H:%M:%S}", dur), formatted_dur);
@@ -568,6 +568,6 @@ TEST(chrono_test, cpp20_duration_subsecond_support) {
   }
   // Check that durations with precision greater than std::chrono::seconds
   // with no subsecond part print as regular seconds
-  EXPECT_EQ(fmt::format("{:%S}", std::chrono::microseconds{7'000'000}), "07");
+  EXPECT_EQ(fmt::format("{:%S}", std::chrono::microseconds{7000000}), "07");
 }
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR
