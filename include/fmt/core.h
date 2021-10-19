@@ -1112,8 +1112,8 @@ enum class type {
 
 template <typename Char> struct basic_c_string_view : basic_string_view<Char> {
   using basic_string_view<Char>::basic_string_view;
-  FMT_CONSTEXPR basic_c_string_view() = default;
-  FMT_CONSTEXPR basic_c_string_view(const Char* val)
+  constexpr basic_c_string_view() = default;
+  FMT_CONSTEXPR_CHAR_TRAITS basic_c_string_view(const Char* val)
       : basic_string_view<Char>{
             val, val ? std::char_traits<Char>::length(val) : 0} {}
 };
