@@ -955,8 +955,8 @@ template <class Duration> struct subsecond_helper {
   template <class Rep, class Period>
   static FMT_CONSTEXPR std::chrono::duration<Rep, Period> abs(
       std::chrono::duration<Rep, Period> d) {
-    if FMT_CONSTEXPR (std::chrono::duration<Rep, Period>::min() <
-                      std::chrono::duration<Rep, Period>::zero()) {
+    if (std::chrono::duration<Rep, Period>::min() <
+        std::chrono::duration<Rep, Period>::zero()) {
       return d >= d.zero() ? d : -d;
     } else {
       return d;
@@ -971,8 +971,7 @@ template <class Duration> struct subsecond_helper {
   template <class Rep, class Period>
   static FMT_CONSTEXPR precision
   get_subseconds(std::chrono::duration<Rep, Period> d) {
-    if FMT_CONSTEXPR (std::chrono::treat_as_floating_point<
-                          typename precision::rep>::value) {
+    if (std::chrono::treat_as_floating_point<typename precision::rep>::value) {
       return abs(d) - std::chrono::duration_cast<std::chrono::seconds>(d);
     } else {
       return std::chrono::duration_cast<precision>(
