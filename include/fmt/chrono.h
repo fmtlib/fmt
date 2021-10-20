@@ -876,6 +876,8 @@ template <typename T> struct make_unsigned_or_unchanged<T, true> {
 };
 
 #if FMT_USE_CONSTEXPR
+// Taken from MSVC <chrono> STL implementation
+// Copyright (c) Microsoft Corporation 2021
 template <class Duration> FMT_CONSTEXPR unsigned int get_fractional_width() {
   static_assert(Duration::period::num > 0 && Duration::period::den > 0,
                 "Numerator and denominator can't be less than 1.");
@@ -938,14 +940,16 @@ To fmt_safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from) {
 #endif
 
 template <class Duration> struct subsecond_helper {
-  static constexpr std::uintmax_t fractional_width =
+  static constexpr std::uint64_t fractional_width =
 #if FMT_USE_CONSTEXPR
       get_fractional_width<Duration>();
 #else
-      width<Duration::period::num, Duration::period::den>::value;
+      width<Duration::period::num, Duration::period::den>::value > 18
+          ? 6
+          : width<Duration::period::num, Duration::period::den>::value;
 #endif
 
-  static constexpr std::uintmax_t fractional_width_pow10 =
+  static constexpr std::uint64_t fractional_width_pow10 =
 #if FMT_USE_CONSTEXPR
       pow10(fractional_width);
 #else
@@ -1204,11 +1208,12 @@ struct chrono_formatter {
       const auto tmpval = std::chrono::duration<Rep, Period>(val);
 #endif
       using subsec_helper = detail::subsecond_helper<duration_Rep>;
-      const std::uintmax_t subseconds =
+      const std::uint64_t subseconds =
           subsec_helper::get_subseconds(tmpval).count();
       if (subseconds > 0) {
         *out++ = '.';
-        const auto num_digits = detail::count_digits(subseconds);
+        const std::uint32_t num_digits =
+            detail::count_digits(static_cast<std::uint64_t>(subseconds));
         if (subsec_helper::fractional_width > num_digits) {
           out = std::fill_n(out, subsec_helper::fractional_width - num_digits,
                             '0');
