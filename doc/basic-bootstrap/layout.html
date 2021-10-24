@@ -97,7 +97,7 @@
       };
     </script>
     {%- for scriptfile in script_files %}
-    <script type="text/javascript" src="{{ pathto(scriptfile, 1) }}"></script>
+    {{ js_tag(scriptfile) }}
     {%- endfor %}
 {%- endmacro %}
 
