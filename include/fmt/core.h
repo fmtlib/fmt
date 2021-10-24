@@ -18,6 +18,10 @@
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
 #define FMT_VERSION 80001
 
+#define FMT_VERSION_MAJOR (FMT_VERSION / 10000)
+#define FMT_VERSION_MINOR ((FMT_VERSION % 10000) / 100)
+#define FMT_VERSION_PATCH ((FMT_VERSION % 10000) % 100)
+
 #if defined (__clang__ ) && !defined(__ibmxl__)
 #  define FMT_CLANG_VERSION (__clang_major__ * 100 + __clang_minor__)
 #else
