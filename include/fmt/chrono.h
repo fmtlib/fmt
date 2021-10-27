@@ -1406,79 +1406,110 @@ template <typename OutputIt, typename Char> class tm_writer {
   OutputIt out_;
   const std::tm& tm_;
 
-  auto tm_year() const noexcept -> int { return 1900 + tm_.tm_year; }
+  auto tm_sec() const noexcept -> int {
+    FMT_ASSERT(tm_.tm_sec >= 0 && tm_.tm_sec <= 61, "");
+    return tm_.tm_sec;
+  }
+  auto tm_min() const noexcept -> int {
+    FMT_ASSERT(tm_.tm_min >= 0 && tm_.tm_min <= 59, "");
+    return tm_.tm_min;
+  }
+  auto tm_hour() const noexcept -> int {
+    FMT_ASSERT(tm_.tm_hour >= 0 && tm_.tm_hour <= 23, "");
+    return tm_.tm_hour;
+  }
+  auto tm_mday() const noexcept -> int {
+    FMT_ASSERT(tm_.tm_mday >= 1 && tm_.tm_mday <= 31, "");
+    return tm_.tm_mday;
+  }
+  auto tm_mon() const noexcept -> int {
+    FMT_ASSERT(tm_.tm_mon >= 0 && tm_.tm_mon <= 11, "");
+    return tm_.tm_mon;
+  }
+  auto tm_year() const noexcept -> long long { return 1900ll + tm_.tm_year; }
+  auto tm_wday() const noexcept -> int {
+    FMT_ASSERT(tm_.tm_wday >= 0 && tm_.tm_wday <= 6, "");
+    return tm_.tm_wday;
+  }
+  auto tm_yday() const noexcept -> int {
+    FMT_ASSERT(tm_.tm_yday >= 0 && tm_.tm_yday <= 365, "");
+    return tm_.tm_yday;
+  }
+
+  auto tm_hour12() const noexcept -> int {
+    auto hour = tm_hour() % 12;
+    return hour == 0 ? 12 : hour;
+  }
 
   // POSIX and the C Standard are unclear or inconsistent about what %C and %y
   // do if the year is negative or exceeds 9999. Use the convention that %C
   // concatenated with %y yields the same output as %Y, and that %Y contains at
   // least 4 characters, with more only if necessary.
-  auto split_year_lower(int year) const noexcept -> int {
+  auto split_year_lower(long long year) const noexcept -> int {
     auto l = year % 100;
     if (l < 0) l = -l;  // l in [0, 99]
-    return l;
+    return static_cast<int>(l);
   }
 
   // Algorithm:
   // https://en.wikipedia.org/wiki/ISO_week_date#Calculating_the_week_number_from_a_month_and_day_of_the_month_or_ordinal_date
-  auto iso_year_weeks(const int year) const noexcept -> int {
-    const long long curr_year = year;
-    const long long prev_year = curr_year - 1;
-    const int curr_p = static_cast<int>(
+  auto iso_year_weeks(long long curr_year) const noexcept -> int {
+    const auto prev_year = curr_year - 1;
+    const auto curr_p =
         (curr_year + curr_year / 4 - curr_year / 100 + curr_year / 400) %
-        days_per_week);
-    const int prev_p = static_cast<int>(
+        days_per_week;
+    const auto prev_p =
         (prev_year + prev_year / 4 - prev_year / 100 + prev_year / 400) %
-        days_per_week);
+        days_per_week;
     return 52 + ((curr_p == 4 || prev_p == 3) ? 1 : 0);
   }
   auto iso_week_num(int tm_yday, int tm_wday) const noexcept -> int {
     return (tm_yday + 11 - (tm_wday == 0 ? days_per_week : tm_wday)) /
            days_per_week;
   }
-  auto tm_iso_week_year() const noexcept -> int {
+  auto tm_iso_week_year() const noexcept -> long long {
     const auto year = tm_year();
-    const int w = iso_week_num(tm_.tm_yday, tm_.tm_wday);
+    const auto w = iso_week_num(tm_yday(), tm_wday());
     if (w < 1) return year - 1;
     if (w > iso_year_weeks(year)) return year + 1;
     return year;
   }
   auto tm_iso_week_of_year() const noexcept -> int {
     const auto year = tm_year();
-    const int w = iso_week_num(tm_.tm_yday, tm_.tm_wday);
+    const auto w = iso_week_num(tm_yday(), tm_wday());
     if (w < 1) return iso_year_weeks(year - 1);
     if (w > iso_year_weeks(year)) return 1;
     return w;
   }
 
-  auto tm_hour12() const noexcept -> int {
-    auto hour = tm_.tm_hour % 12;
-    return hour == 0 ? 12 : hour;
+  void write1(int value) {
+    *out_++ = static_cast<char>('0' + to_unsigned(value) % 10);
   }
-
-  void write1(int value) { *out_++ = static_cast<char>('0' + value % 10); }
   void write2(int value) {
-    const char* d = digits2(to_unsigned(value));
+    const char* d = digits2(to_unsigned(value) % 100);
     *out_++ = *d++;
     *out_++ = *d;
   }
 
-  void write_year(int year) {
+  void write_year_extended(long long year) {
+    // At least 4 characters.
+    int width = 4;
+    if (year < 0) {
+      *out_++ = '-';
+      year = 0 - year;
+      --width;
+    }
+    uint32_or_64_or_128_t<long long> n = to_unsigned(year);
+    const int num_digits = count_digits(n);
+    if (width > num_digits) out_ = std::fill_n(out_, width - num_digits, '0');
+    out_ = format_decimal<Char>(out_, n, num_digits).end;
+  }
+  void write_year(long long year) {
     if (year >= 0 && year < 10000) {
-      write2(year / 100);
-      write2(year % 100);
+      write2(static_cast<int>(year / 100));
+      write2(static_cast<int>(year % 100));
     } else {
-      // At least 4 characters.
-      int width = 4;
-      if (year < 0) {
-        *out_++ = '-';
-        year = 0 - year;
-        --width;
-      }
-      uint32_or_64_or_128_t<int> n =
-          to_unsigned(to_nonnegative_int(year, max_value<int>()));
-      const int num_digits = count_digits(n);
-      if (width > num_digits) out_ = std::fill_n(out_, width - num_digits, '0');
-      out_ = format_decimal<Char>(out_, n, num_digits).end;
+      write_year_extended(year);
     }
   }
 
@@ -1522,11 +1553,12 @@ template <typename OutputIt, typename Char> class tm_writer {
   void on_full_weekday() { format_localized('A'); }
   void on_dec0_weekday(numeric_system ns) {
     if (ns != numeric_system::standard) return format_localized('w', 'O');
-    write1(tm_.tm_wday);
+    write1(tm_wday());
   }
   void on_dec1_weekday(numeric_system ns) {
     if (ns != numeric_system::standard) return format_localized('u', 'O');
-    write1(tm_.tm_wday == 0 ? days_per_week : tm_.tm_wday);
+    auto wday = tm_wday();
+    write1(wday == 0 ? days_per_week : wday);
   }
 
   void on_abbr_month() { format_localized('b'); }
@@ -1543,8 +1575,8 @@ template <typename OutputIt, typename Char> class tm_writer {
   }
   void on_us_date() {
     char buf[8];
-    write_digit2_separated(buf, to_unsigned(tm_.tm_mon + 1),
-                           to_unsigned(tm_.tm_mday),
+    write_digit2_separated(buf, to_unsigned(tm_mon() + 1),
+                           to_unsigned(tm_mday()),
                            to_unsigned(split_year_lower(tm_year())), '/');
     out_ = copy_str<Char>(std::begin(buf), std::end(buf), out_);
   }
@@ -1556,11 +1588,12 @@ template <typename OutputIt, typename Char> class tm_writer {
       copy2(buf, digits2(to_unsigned(year / 100)));
     } else {
       offset = 4;
-      write_year(year);
+      write_year_extended(year);
       year = 0;
     }
-    write_digit2_separated(buf + 2, year % 100, to_unsigned(tm_.tm_mon + 1),
-                           to_unsigned(tm_.tm_mday), '-');
+    write_digit2_separated(buf + 2, static_cast<unsigned>(year % 100),
+                           to_unsigned(tm_mon() + 1), to_unsigned(tm_mday()),
+                           '-');
     out_ = copy_str<Char>(std::begin(buf) + offset, std::end(buf), out_);
   }
 
@@ -1586,7 +1619,7 @@ template <typename OutputIt, typename Char> class tm_writer {
       *out_++ = '-';
       *out_++ = '0';
     } else if (upper >= 0 && upper < 100) {
-      write2(upper);
+      write2(static_cast<int>(upper));
     } else {
       out_ = write<Char>(out_, upper);
     }
@@ -1594,17 +1627,18 @@ template <typename OutputIt, typename Char> class tm_writer {
 
   void on_dec_month(numeric_system ns) {
     if (ns != numeric_system::standard) return format_localized('m', 'O');
-    write2(tm_.tm_mon + 1);
+    write2(tm_mon() + 1);
   }
 
   void on_dec0_week_of_year(numeric_system ns) {
     if (ns != numeric_system::standard) return format_localized('U', 'O');
-    write2((tm_.tm_yday + days_per_week - tm_.tm_wday) / days_per_week);
+    write2((tm_yday() + days_per_week - tm_wday()) / days_per_week);
   }
   void on_dec1_week_of_year(numeric_system ns) {
     if (ns != numeric_system::standard) return format_localized('W', 'O');
-    write2((tm_.tm_yday + days_per_week -
-            (tm_.tm_wday == 0 ? (days_per_week - 1) : (tm_.tm_wday - 1))) /
+    auto wday = tm_wday();
+    write2((tm_yday() + days_per_week -
+            (wday == 0 ? (days_per_week - 1) : (wday - 1))) /
            days_per_week);
   }
   void on_iso_week_of_year(numeric_system ns) {
@@ -1618,24 +1652,25 @@ template <typename OutputIt, typename Char> class tm_writer {
   }
 
   void on_day_of_year() {
-    auto yday = tm_.tm_yday + 1;
+    auto yday = tm_yday() + 1;
     write1(yday / 100);
     write2(yday % 100);
   }
   void on_day_of_month(numeric_system ns) {
     if (ns != numeric_system::standard) return format_localized('d', 'O');
-    write2(tm_.tm_mday);
+    write2(tm_mday());
   }
   void on_day_of_month_space(numeric_system ns) {
     if (ns != numeric_system::standard) return format_localized('e', 'O');
-    const char* d2 = digits2(to_unsigned(tm_.tm_mday));
-    *out_++ = tm_.tm_mday < 10 ? ' ' : d2[0];
+    auto mday = to_unsigned(tm_mday()) % 100;
+    const char* d2 = digits2(mday);
+    *out_++ = mday < 10 ? ' ' : d2[0];
     *out_++ = d2[1];
   }
 
   void on_24_hour(numeric_system ns) {
     if (ns != numeric_system::standard) return format_localized('H', 'O');
-    write2(tm_.tm_hour);
+    write2(tm_hour());
   }
   void on_12_hour(numeric_system ns) {
     if (ns != numeric_system::standard) return format_localized('I', 'O');
@@ -1643,24 +1678,23 @@ template <typename OutputIt, typename Char> class tm_writer {
   }
   void on_minute(numeric_system ns) {
     if (ns != numeric_system::standard) return format_localized('M', 'O');
-    write2(tm_.tm_min);
+    write2(tm_min());
   }
   void on_second(numeric_system ns) {
     if (ns != numeric_system::standard) return format_localized('S', 'O');
-    write2(tm_.tm_sec);
+    write2(tm_sec());
   }
 
   void on_12_hour_time() { format_localized('r'); }
   void on_24_hour_time() {
-    write2(tm_.tm_hour);
+    write2(tm_hour());
     *out_++ = ':';
-    write2(tm_.tm_min);
+    write2(tm_min());
   }
   void on_iso_time() {
     char buf[8];
-    write_digit2_separated(buf, to_unsigned(tm_.tm_hour),
-                           to_unsigned(tm_.tm_min), to_unsigned(tm_.tm_sec),
-                           ':');
+    write_digit2_separated(buf, to_unsigned(tm_hour()), to_unsigned(tm_min()),
+                           to_unsigned(tm_sec()), ':');
     out_ = copy_str<Char>(std::begin(buf), std::end(buf), out_);
   }
 

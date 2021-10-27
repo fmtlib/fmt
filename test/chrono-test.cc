@@ -93,6 +93,13 @@ TEST(chrono_test, format_tm) {
   EXPECT_EQ(fmt::format("{:%Y}", tm), "0027");
   EXPECT_EQ(fmt::format("{:%C%y}", tm), "0027");
 
+  // Overflow year
+  tm.tm_year = 2147483647;
+  EXPECT_EQ(fmt::format("{:%Y}", tm), "2147485547");
+
+  tm.tm_year = -2147483648;
+  EXPECT_EQ(fmt::format("{:%Y}", tm), "-2147481748");
+
   // for week on the year
   // https://www.cl.cam.ac.uk/~mgk25/iso-time.html
   std::vector<std::tm> tm_list = {
