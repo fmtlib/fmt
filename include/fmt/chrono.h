@@ -1459,8 +1459,9 @@ template <typename OutputIt, typename Char> class tm_writer {
   }
 
   auto tm_hour12() const noexcept -> int {
-    auto hour = tm_hour() % 12;
-    return hour == 0 ? 12 : hour;
+    const auto h = tm_hour();
+    const auto z = h < 12 ? h : h - 12;
+    return z == 0 ? 12 : z;
   }
 
   // POSIX and the C Standard are unclear or inconsistent about what %C and %y
