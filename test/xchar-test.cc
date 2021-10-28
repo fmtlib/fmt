@@ -15,9 +15,11 @@
 #include "fmt/color.h"
 #include "fmt/ostream.h"
 #include "fmt/ranges.h"
-#include "gtest/gtest.h"
+#include "gtest-extra.h"  // Contains
+#include "util.h"         // get_locale
 
 using fmt::detail::max_value;
+using testing::Contains;
 
 namespace test_ns {
 template <typename Char> class test_string {
@@ -464,6 +466,22 @@ TEST(locale_test, complex) {
   EXPECT_EQ(s, "(1+2i)");
   EXPECT_EQ(fmt::format("{:.2f}", std::complex<double>(1, 2)), "(1.00+2.00i)");
   EXPECT_EQ(fmt::format("{:8}", std::complex<double>(1, 2)), "  (1+2i)");
+}
+
+TEST(locale_test, chrono_weekday) {
+  auto loc = get_locale("ru_RU.UTF-8", "Russian_Russia.1251");
+  auto loc_old = std::locale::global(loc);
+  auto mon = fmt::weekday(1);
+  EXPECT_EQ(fmt::format(L"{}", mon), L"Mon");
+  if (loc != std::locale::classic()) {
+    // {L"\x43F\x43D", L"\x41F\x43D", L"\x43F\x43D\x434", L"\x41F\x43D\x434"}
+    // {L"пн", L"Пн", L"пнд", L"Пнд"}
+    EXPECT_THAT(
+        (std::vector<std::wstring>{L"\x43F\x43D", L"\x41F\x43D",
+                                   L"\x43F\x43D\x434", L"\x41F\x43D\x434"}),
+        Contains(fmt::format(loc, L"{:L}", mon)));
+  }
+  std::locale::global(loc_old);
 }
 
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR
