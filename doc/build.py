@@ -26,6 +26,8 @@ def create_build_env(venv_dir='virtualenv'):
   pip = Pip(venv_dir)
   pip.install('wheel')
   pip.install('six')
+  # See: https://github.com/sphinx-doc/sphinx/issues/9777
+  pip.install('docutils==0.17.1')
   pip.install('sphinx-doc/sphinx', 'v3.3.0')
   pip.install('michaeljones/breathe', 'v4.25.0')
 
