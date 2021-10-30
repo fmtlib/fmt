@@ -15,9 +15,11 @@
 #include "fmt/color.h"
 #include "fmt/ostream.h"
 #include "fmt/ranges.h"
-#include "gtest/gtest.h"
+#include "gtest-extra.h"  // Contains
+#include "util.h"         // get_locale
 
 using fmt::detail::max_value;
+using testing::Contains;
 
 namespace test_ns {
 template <typename Char> class test_string {
@@ -268,25 +270,33 @@ TEST(xchar_test, chrono) {
 }
 
 std::wstring system_wcsftime(const std::wstring& format, const std::tm* timeptr,
-                             size_t maxsize = 1024) {
-  std::vector<wchar_t> output(maxsize);
-  auto size =
-      std::wcsftime(output.data(), output.size(), format.c_str(), timeptr);
-  return std::wstring(output.data(), size);
+                             std::locale* locptr = nullptr) {
+  auto loc = locptr ? *locptr : std::locale::classic();
+  auto& facet = std::use_facet<std::time_put<wchar_t>>(loc);
+  std::wostringstream os;
+  os.imbue(loc);
+  facet.put(os, os, L' ', timeptr, format.c_str(),
+            format.c_str() + format.size());
+  return os.str();
 }
 
 TEST(chrono_test, time_point) {
   auto t1 = std::chrono::system_clock::now();
 
   std::vector<std::wstring> spec_list = {
-      L"%%",  L"%n",  L"%t",  L"%Y",  L"%EY", L"%y",  L"%Oy", L"%Ey",
-      L"%C",  L"%EC", L"%G",  L"%g",  L"%b",  L"%h",  L"%B",  L"%m",
-      L"%Om", L"%U",  L"%OU", L"%W",  L"%OW", L"%V",  L"%OV", L"%j",
-      L"%d",  L"%Od", L"%e",  L"%Oe", L"%a",  L"%A",  L"%w",  L"%Ow",
-      L"%u",  L"%Ou", L"%H",  L"%OH", L"%I",  L"%OI", L"%M",  L"%OM",
-      L"%S",  L"%OS", L"%c",  L"%Ec", L"%x",  L"%Ex", L"%X",  L"%EX",
-      L"%D",  L"%F",  L"%r",  L"%R",  L"%T",  L"%p",  L"%z",  L"%Z"};
+      L"%%",  L"%n",  L"%t",  L"%Y",  L"%EY", L"%y",  L"%Oy", L"%Ey", L"%C",
+      L"%EC", L"%G",  L"%g",  L"%b",  L"%h",  L"%B",  L"%m",  L"%Om", L"%U",
+      L"%OU", L"%W",  L"%OW", L"%V",  L"%OV", L"%j",  L"%d",  L"%Od", L"%e",
+      L"%Oe", L"%a",  L"%A",  L"%w",  L"%Ow", L"%u",  L"%Ou", L"%H",  L"%OH",
+      L"%I",  L"%OI", L"%M",  L"%OM", L"%S",  L"%OS", L"%x",  L"%Ex", L"%X",
+      L"%EX", L"%D",  L"%F",  L"%R",  L"%T",  L"%p",  L"%z",  L"%Z"};
   spec_list.push_back(L"%Y-%m-%d %H:%M:%S");
+#ifndef _WIN32
+  // Disabled on Windows, because these formats is not consistent among
+  // platforms.
+  spec_list.insert(spec_list.end(), {L"%c", L"%Ec", L"%r"});
+#endif
+
   for (const auto& spec : spec_list) {
     auto t = std::chrono::system_clock::to_time_t(t1);
     auto tm = *std::localtime(&t);
@@ -464,6 +474,22 @@ TEST(locale_test, complex) {
   EXPECT_EQ(s, "(1+2i)");
   EXPECT_EQ(fmt::format("{:.2f}", std::complex<double>(1, 2)), "(1.00+2.00i)");
   EXPECT_EQ(fmt::format("{:8}", std::complex<double>(1, 2)), "  (1+2i)");
+}
+
+TEST(locale_test, chrono_weekday) {
+  auto loc = get_locale("ru_RU.UTF-8", "Russian_Russia.1251");
+  auto loc_old = std::locale::global(loc);
+  auto mon = fmt::weekday(1);
+  EXPECT_EQ(fmt::format(L"{}", mon), L"Mon");
+  if (loc != std::locale::classic()) {
+    // {L"\x43F\x43D", L"\x41F\x43D", L"\x43F\x43D\x434", L"\x41F\x43D\x434"}
+    // {L"пн", L"Пн", L"пнд", L"Пнд"}
+    EXPECT_THAT(
+        (std::vector<std::wstring>{L"\x43F\x43D", L"\x41F\x43D",
+                                   L"\x43F\x43D\x434", L"\x41F\x43D\x434"}),
+        Contains(fmt::format(loc, L"{:L}", mon)));
+  }
+  std::locale::global(loc_old);
 }
 
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR

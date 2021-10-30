@@ -42,11 +42,14 @@ auto make_second(int s) -> std::tm {
 }
 
 std::string system_strftime(const std::string& format, const std::tm* timeptr,
-                            size_t maxsize = 1024) {
-  std::vector<char> output(maxsize);
-  auto size =
-      std::strftime(output.data(), output.size(), format.c_str(), timeptr);
-  return std::string(output.data(), size);
+                            std::locale* locptr = nullptr) {
+  auto loc = locptr ? *locptr : std::locale::classic();
+  auto& facet = std::use_facet<std::time_put<char>>(loc);
+  std::ostringstream os;
+  os.imbue(loc);
+  facet.put(os, os, ' ', timeptr, format.c_str(),
+            format.c_str() + format.size());
+  return os.str();
 }
 
 FMT_CONSTEXPR std::tm make_tm(int year, int mon, int mday, int hour, int min,
@@ -245,13 +248,19 @@ TEST(chrono_test, time_point) {
   EXPECT_EQ(strftime_full(t2), fmt::format("{:%Y-%m-%d %H:%M:%S}", t2));
 
   std::vector<std::string> spec_list = {
-      "%%",  "%n",  "%t",  "%Y",  "%EY", "%y",  "%Oy", "%Ey", "%C",  "%EC",
-      "%G",  "%g",  "%b",  "%h",  "%B",  "%m",  "%Om", "%U",  "%OU", "%W",
-      "%OW", "%V",  "%OV", "%j",  "%d",  "%Od", "%e",  "%Oe", "%a",  "%A",
-      "%w",  "%Ow", "%u",  "%Ou", "%H",  "%OH", "%I",  "%OI", "%M",  "%OM",
-      "%S",  "%OS", "%c",  "%Ec", "%x",  "%Ex", "%X",  "%EX", "%D",  "%F",
-      "%r",  "%R",  "%T",  "%p",  "%z",  "%Z"};
+      "%%",  "%n",  "%t",  "%Y",  "%EY", "%y",  "%Oy", "%Ey", "%C",
+      "%EC", "%G",  "%g",  "%b",  "%h",  "%B",  "%m",  "%Om", "%U",
+      "%OU", "%W",  "%OW", "%V",  "%OV", "%j",  "%d",  "%Od", "%e",
+      "%Oe", "%a",  "%A",  "%w",  "%Ow", "%u",  "%Ou", "%H",  "%OH",
+      "%I",  "%OI", "%M",  "%OM", "%S",  "%OS", "%x",  "%Ex", "%X",
+      "%EX", "%D",  "%F",  "%R",  "%T",  "%p",  "%z",  "%Z"};
   spec_list.push_back("%Y-%m-%d %H:%M:%S");
+#ifndef _WIN32
+  // Disabled on Windows, because these formats is not consistent among
+  // platforms.
+  spec_list.insert(spec_list.end(), {"%c", "%Ec", "%r"});
+#endif
+
   for (const auto& spec : spec_list) {
     auto t = std::chrono::system_clock::to_time_t(t1);
     auto tm = *std::localtime(&t);
@@ -533,10 +542,18 @@ TEST(chrono_test, weekday) {
   auto loc = get_locale("ru_RU.UTF-8");
   std::locale::global(loc);
   auto mon = fmt::weekday(1);
+
+  auto tm = std::tm();
+  tm.tm_wday = static_cast<int>(mon.c_encoding());
+
   EXPECT_EQ(fmt::format("{}", mon), "Mon");
+  EXPECT_EQ(fmt::format("{:%a}", tm), "Mon");
+
   if (loc != std::locale::classic()) {
     EXPECT_THAT((std::vector<std::string>{"пн", "Пн", "пнд", "Пнд"}),
                 Contains(fmt::format(loc, "{:L}", mon)));
+    EXPECT_THAT((std::vector<std::string>{"пн", "Пн", "пнд", "Пнд"}),
+                Contains(fmt::format(loc, "{:%a}", tm)));
   }
 }
 
