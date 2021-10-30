@@ -284,14 +284,19 @@ TEST(chrono_test, time_point) {
   auto t1 = std::chrono::system_clock::now();
 
   std::vector<std::wstring> spec_list = {
-      L"%%",  L"%n",  L"%t",  L"%Y",  L"%EY", L"%y",  L"%Oy", L"%Ey",
-      L"%C",  L"%EC", L"%G",  L"%g",  L"%b",  L"%h",  L"%B",  L"%m",
-      L"%Om", L"%U",  L"%OU", L"%W",  L"%OW", L"%V",  L"%OV", L"%j",
-      L"%d",  L"%Od", L"%e",  L"%Oe", L"%a",  L"%A",  L"%w",  L"%Ow",
-      L"%u",  L"%Ou", L"%H",  L"%OH", L"%I",  L"%OI", L"%M",  L"%OM",
-      L"%S",  L"%OS", L"%c",  L"%Ec", L"%x",  L"%Ex", L"%X",  L"%EX",
-      L"%D",  L"%F",  L"%r",  L"%R",  L"%T",  L"%p",  L"%z",  L"%Z"};
+      L"%%",  L"%n",  L"%t",  L"%Y",  L"%EY", L"%y",  L"%Oy", L"%Ey", L"%C",
+      L"%EC", L"%G",  L"%g",  L"%b",  L"%h",  L"%B",  L"%m",  L"%Om", L"%U",
+      L"%OU", L"%W",  L"%OW", L"%V",  L"%OV", L"%j",  L"%d",  L"%Od", L"%e",
+      L"%Oe", L"%a",  L"%A",  L"%w",  L"%Ow", L"%u",  L"%Ou", L"%H",  L"%OH",
+      L"%I",  L"%OI", L"%M",  L"%OM", L"%S",  L"%OS", L"%x",  L"%Ex", L"%X",
+      L"%EX", L"%D",  L"%F",  L"%R",  L"%T",  L"%p",  L"%z",  L"%Z"};
   spec_list.push_back(L"%Y-%m-%d %H:%M:%S");
+#ifndef _WIN32
+  // Disabled on Windows, because these formats is not consistent among
+  // platforms.
+  spec_list.insert(spec_list.end(), {L"%c", L"%Ec", L"%r"});
+#endif
+
   for (const auto& spec : spec_list) {
     auto t = std::chrono::system_clock::to_time_t(t1);
     auto tm = *std::localtime(&t);

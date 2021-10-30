@@ -1590,11 +1590,6 @@ template <typename OutputIt, typename Char> class tm_writer {
 
   void on_datetime(numeric_system ns) {
     if (is_classic_) {
-#ifdef _WIN32
-      on_us_date();
-      *out_++ = ' ';
-      on_iso_time();
-#else
       on_abbr_weekday();
       *out_++ = ' ';
       on_abbr_month();
@@ -1604,7 +1599,6 @@ template <typename OutputIt, typename Char> class tm_writer {
       on_iso_time();
       *out_++ = ' ';
       on_year(numeric_system::standard);
-#endif
     } else {
       format_localized('c', ns == numeric_system::standard ? '\0' : 'E');
     }
@@ -1735,16 +1729,12 @@ template <typename OutputIt, typename Char> class tm_writer {
 
   void on_12_hour_time() {
     if (is_classic_) {
-#ifdef _WIN32
-      on_iso_time();
-#else
       char buf[8];
       write_digit2_separated(buf, to_unsigned(tm_hour12()),
                              to_unsigned(tm_min()), to_unsigned(tm_sec()), ':');
       out_ = copy_str<Char>(std::begin(buf), std::end(buf), out_);
       *out_++ = ' ';
       on_am_pm();
-#endif
     } else {
       format_localized('r');
     }

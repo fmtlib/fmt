@@ -248,13 +248,19 @@ TEST(chrono_test, time_point) {
   EXPECT_EQ(strftime_full(t2), fmt::format("{:%Y-%m-%d %H:%M:%S}", t2));
 
   std::vector<std::string> spec_list = {
-      "%%",  "%n",  "%t",  "%Y",  "%EY", "%y",  "%Oy", "%Ey", "%C",  "%EC",
-      "%G",  "%g",  "%b",  "%h",  "%B",  "%m",  "%Om", "%U",  "%OU", "%W",
-      "%OW", "%V",  "%OV", "%j",  "%d",  "%Od", "%e",  "%Oe", "%a",  "%A",
-      "%w",  "%Ow", "%u",  "%Ou", "%H",  "%OH", "%I",  "%OI", "%M",  "%OM",
-      "%S",  "%OS", "%c",  "%Ec", "%x",  "%Ex", "%X",  "%EX", "%D",  "%F",
-      "%r",  "%R",  "%T",  "%p",  "%z",  "%Z"};
+      "%%",  "%n",  "%t",  "%Y",  "%EY", "%y",  "%Oy", "%Ey", "%C",
+      "%EC", "%G",  "%g",  "%b",  "%h",  "%B",  "%m",  "%Om", "%U",
+      "%OU", "%W",  "%OW", "%V",  "%OV", "%j",  "%d",  "%Od", "%e",
+      "%Oe", "%a",  "%A",  "%w",  "%Ow", "%u",  "%Ou", "%H",  "%OH",
+      "%I",  "%OI", "%M",  "%OM", "%S",  "%OS", "%x",  "%Ex", "%X",
+      "%EX", "%D",  "%F",  "%R",  "%T",  "%p",  "%z",  "%Z"};
   spec_list.push_back("%Y-%m-%d %H:%M:%S");
+#ifndef _WIN32
+  // Disabled on Windows, because these formats is not consistent among
+  // platforms.
+  spec_list.insert(spec_list.end(), {"%c", "%Ec", "%r"});
+#endif
+
   for (const auto& spec : spec_list) {
     auto t = std::chrono::system_clock::to_time_t(t1);
     auto tm = *std::localtime(&t);
