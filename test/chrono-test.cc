@@ -256,7 +256,7 @@ TEST(chrono_test, time_point) {
       "%EX", "%D",  "%F",  "%R",  "%T",  "%p",  "%z",  "%Z"};
   spec_list.push_back("%Y-%m-%d %H:%M:%S");
 #ifndef _WIN32
-  // Disabled on Windows, because these formats is not consistent among
+  // Disabled on Windows because these formats are not consistent among
   // platforms.
   spec_list.insert(spec_list.end(), {"%c", "%Ec", "%r"});
 #endif
