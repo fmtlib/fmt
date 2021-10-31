@@ -1820,13 +1820,20 @@ struct formatter<adl_test::fmt::detail::foo> : formatter<std::string> {
 };
 FMT_END_NAMESPACE
 
-TEST(format_test, to_string) {
-  EXPECT_EQ("42", fmt::to_string(42));
-  EXPECT_EQ("0x1234", fmt::to_string(reinterpret_cast<void*>(0x1234)));
-  EXPECT_EQ("foo", fmt::to_string(adl_test::fmt::detail::foo()));
+struct convertible_to_int {
+  operator int() const { return value; }
 
-  enum test_enum2 : unsigned char { test_value };
-  EXPECT_EQ("0", fmt::to_string(test_value));
+  int value = 42;
+};
+
+TEST(format_test, to_string) {
+  EXPECT_EQ(fmt::to_string(42), "42");
+  EXPECT_EQ(fmt::to_string(reinterpret_cast<void*>(0x1234)), "0x1234");
+  EXPECT_EQ(fmt::to_string(adl_test::fmt::detail::foo()), "foo");
+  EXPECT_EQ(fmt::to_string(convertible_to_int()), "42");
+
+  enum foo : unsigned char { zero };
+  EXPECT_EQ(fmt::to_string(zero), "0");
 }
 
 TEST(format_test, output_iterators) {
