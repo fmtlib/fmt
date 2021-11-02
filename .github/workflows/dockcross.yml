@@ -27,10 +27,10 @@ jobs:
 
           # Web images
           - { image_name: web-wasm, cmake_arg: "-DCMAKE_CXX_STANDARD=17" }
-          - {
-              image_name: web-wasi,
-              cmake_arg: "-DCMAKE_CXX_FLAGS='${CMAKE_CXX_FLAGS} -fno-exceptions'",
-            }
+          #          - {
+          #              image_name: web-wasi,
+          #              cmake_arg: "-DCMAKE_CXX_FLAGS='${CMAKE_CXX_FLAGS} -fno-exceptions'",
+          #            }
 
           # Linux ARMv5 images
           - { image_name: linux-armv5, cmake_arg: "-DCMAKE_CXX_STANDARD=17" }
@@ -103,20 +103,20 @@ jobs:
           - { image_name: linux-ppc64le, cmake_arg: "-DCMAKE_CXX_STANDARD=17" }
 
           # Linux xtensa images
-          - {
-              image_name: linux-xtensa-uclibc,
-              cmake_arg: "-DCMAKE_CXX_STANDARD=17",
-            }
+          #          - {
+          #              image_name: linux-xtensa-uclibc,
+          #              cmake_arg: "-DCMAKE_CXX_STANDARD=17",
+          #            }
 
           # Linux riscv images
           - { image_name: linux-riscv32, cmake_arg: "-DCMAKE_CXX_STANDARD=17" }
           - { image_name: linux-riscv64, cmake_arg: "-DCMAKE_CXX_STANDARD=17" }
 
           # Linux m68k images
-          - {
-              image_name: linux-m68k-uclibc,
-              cmake_arg: "-DCMAKE_CXX_STANDARD=17",
-            }
+          #          - {
+          #              image_name: linux-m68k-uclibc,
+          #              cmake_arg: "-DCMAKE_CXX_STANDARD=17",
+          #            }
 
           # ManyLinux images
           - { image_name: manylinux1-x64, cmake_arg: "-DCMAKE_CXX_STANDARD=14" }
