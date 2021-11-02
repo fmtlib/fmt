@@ -193,9 +193,9 @@ jobs:
           chmod +x ./dockcross-${{ matrix.dockcross.image_name }}
 
       - name: "Config CMake build"
-        run:
+        run: |
           ./dockcross-${{ matrix.dockcross.image_name }} cmake -B build-${{ matrix.dockcross.image_name }} -S . \
-          -G Ninja -DFMT_DOC=OFF -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.dockcross.cmake_arg }}
+            -G Ninja -DFMT_DOC=OFF -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.dockcross.cmake_arg }}
 
       - name: "Build"
         run: ./dockcross-${{ matrix.dockcross.image_name }} ninja -C build-${{ matrix.dockcross.image_name }}
