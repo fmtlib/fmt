@@ -18,16 +18,31 @@
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
 #define FMT_VERSION 80001
 
+#if defined(__NVCOMPILER)
+#  define FMT_NVHPC_VERSION                                      \
+    (__NVCOMPILER_MAJOR__ * 10000 + __NVCOMPILER_MINOR__ * 100 + \
+     __NVCOMPILER_PATCHLEVEL__)
+#else
+#  define FMT_NVHPC_VERSION 0
+#endif
+
 #if defined (__clang__ ) && !defined(__ibmxl__)
 #  define FMT_CLANG_VERSION (__clang_major__ * 100 + __clang_minor__)
 #else
 #  define FMT_CLANG_VERSION 0
 #endif
 
-#if defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER) && !defined(__NVCOMPILER)
+#if defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER) && \
+    !defined(__NVCOMPILER)
 #  define FMT_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
 #else
 #  define FMT_GCC_VERSION 0
+#endif
+
+#if FMT_NVHPC_VERSION > 0
+#  define FMT_NVHPC_PRAGMA(arg) _Pragma(arg)
+#else
+#  define FMT_NVHPC_PRAGMA(arg)
 #endif
 
 #ifndef FMT_GCC_PRAGMA
