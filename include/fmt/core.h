@@ -279,7 +279,7 @@
 
 // Enable minimal optimizations for more compact code in debug mode.
 FMT_GCC_PRAGMA("GCC push_options")
-#ifndef __OPTIMIZE__
+#if !defined(__OPTIMIZE__) && !defined(__NVCOMPILER)
 FMT_GCC_PRAGMA("GCC optimize(\"Og\")")
 #endif
 
