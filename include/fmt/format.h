@@ -971,11 +971,11 @@ FMT_CONSTEXPR auto count_digits(UInt n) -> int {
     return (FMT_BUILTIN_CLZ(static_cast<uint32_t>(n) | 1) ^ 31) / BITS + 1;
 #endif
   // Lambda avoids unreachable code warnings from NVHPC.
-  return [](UInt n) {
+  return [](UInt m) {
     int num_digits = 0;
     do {
       ++num_digits;
-    } while ((n >>= BITS) != 0);
+    } while ((m >>= BITS) != 0);
     return num_digits;
   }(n);
 }
