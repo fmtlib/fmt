@@ -970,13 +970,14 @@ FMT_CONSTEXPR auto count_digits(UInt n) -> int {
   if (num_bits<UInt>() == 32)
     return (FMT_BUILTIN_CLZ(static_cast<uint32_t>(n) | 1) ^ 31) / BITS + 1;
 #endif
-  FMT_NVHPC_PRAGMA("diag_suppress initialization_not_reachable")
-  int num_digits = 0;
-  FMT_NVHPC_PRAGMA("diag_default initialization_not_reachable")
-  do {
-    ++num_digits;
-  } while ((n >>= BITS) != 0);
-  return num_digits;
+  // Lambda avoids unreachable code warnings from NVHPC.
+  return [](UInt n) {
+    int num_digits = 0;
+    do {
+      ++num_digits;
+    } while ((n >>= BITS) != 0);
+    return num_digits;
+  }(n);
 }
 
 template <> auto count_digits<4>(detail::fallback_uintptr n) -> int;
