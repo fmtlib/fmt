@@ -449,17 +449,30 @@ TEST(chrono_test, format_precision) {
   EXPECT_THROW_MSG(fmt::format(runtime("{:.2}"), std::chrono::seconds(42)),
                    fmt::format_error,
                    "precision not allowed for this argument type");
+  EXPECT_EQ("1ms", fmt::format("{:.0}", dms(1.234)));
   EXPECT_EQ("1.2ms", fmt::format("{:.1}", dms(1.234)));
   EXPECT_EQ("1.23ms", fmt::format("{:.{}}", dms(1.234), 2));
+
+  EXPECT_EQ("13ms", fmt::format("{:.0}", dms(12.56)));
+  EXPECT_EQ("12.6ms", fmt::format("{:.1}", dms(12.56)));
+  EXPECT_EQ("12.56ms", fmt::format("{:.2}", dms(12.56)));
 }
 
 TEST(chrono_test, format_full_specs) {
+  EXPECT_EQ("1ms   ", fmt::format("{:6.0}", dms(1.234)));
   EXPECT_EQ("1.2ms ", fmt::format("{:6.1}", dms(1.234)));
   EXPECT_EQ("  1.23ms", fmt::format("{:>8.{}}", dms(1.234), 2));
   EXPECT_EQ(" 1.2ms ", fmt::format("{:^{}.{}}", dms(1.234), 7, 1));
   EXPECT_EQ(" 1.23ms ", fmt::format("{0:^{2}.{1}}", dms(1.234), 2, 8));
   EXPECT_EQ("=1.234ms=", fmt::format("{:=^{}.{}}", dms(1.234), 9, 3));
   EXPECT_EQ("*1.2340ms*", fmt::format("{:*^10.4}", dms(1.234)));
+
+  EXPECT_EQ("13ms  ", fmt::format("{:6.0}", dms(12.56)));
+  EXPECT_EQ("    13ms", fmt::format("{:>8.{}}", dms(12.56), 0));
+  EXPECT_EQ(" 13ms ", fmt::format("{:^{}.{}}", dms(12.56), 6, 0));
+  EXPECT_EQ("  13ms  ", fmt::format("{0:^{2}.{1}}", dms(12.56), 0, 8));
+  EXPECT_EQ("==13ms===", fmt::format("{:=^{}.{}}", dms(12.56), 9, 0));
+  EXPECT_EQ("***13ms***", fmt::format("{:*^10.0}", dms(12.56)));
 }
 
 TEST(chrono_test, format_simple_q) {
@@ -481,12 +494,20 @@ TEST(chrono_test, format_precision_q) {
 }
 
 TEST(chrono_test, format_full_specs_q) {
+  EXPECT_EQ("1 ms   ", fmt::format("{:7.0%Q %q}", dms(1.234)));
   EXPECT_EQ("1.2 ms ", fmt::format("{:7.1%Q %q}", dms(1.234)));
   EXPECT_EQ(" 1.23 ms", fmt::format("{:>8.{}%Q %q}", dms(1.234), 2));
   EXPECT_EQ(" 1.2 ms ", fmt::format("{:^{}.{}%Q %q}", dms(1.234), 8, 1));
   EXPECT_EQ(" 1.23 ms ", fmt::format("{0:^{2}.{1}%Q %q}", dms(1.234), 2, 9));
   EXPECT_EQ("=1.234 ms=", fmt::format("{:=^{}.{}%Q %q}", dms(1.234), 10, 3));
   EXPECT_EQ("*1.2340 ms*", fmt::format("{:*^11.4%Q %q}", dms(1.234)));
+
+  EXPECT_EQ("13 ms  ", fmt::format("{:7.0%Q %q}", dms(12.56)));
+  EXPECT_EQ("   13 ms", fmt::format("{:>8.{}%Q %q}", dms(12.56), 0));
+  EXPECT_EQ(" 13 ms  ", fmt::format("{:^{}.{}%Q %q}", dms(12.56), 8, 0));
+  EXPECT_EQ("  13 ms  ", fmt::format("{0:^{2}.{1}%Q %q}", dms(12.56), 0, 9));
+  EXPECT_EQ("==13 ms==", fmt::format("{:=^{}.{}%Q %q}", dms(12.56), 9, 0));
+  EXPECT_EQ("***13 ms***", fmt::format("{:*^11.0%Q %q}", dms(12.56)));
 }
 
 TEST(chrono_test, invalid_width_id) {
