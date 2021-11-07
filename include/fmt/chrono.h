@@ -309,12 +309,17 @@ auto write(OutputIt out, const std::tm& time, const std::locale& loc,
   return std::copy(str.begin(), str.end(), out);
 }
 
+inline const std::locale& get_classic_locale() {
+  static const auto& locale = std::locale::classic();
+  return locale;
+}
+
 template <typename Char, typename OutputIt,
           FMT_ENABLE_IF(std::is_same<Char, char>::value)>
 auto write(OutputIt out, const std::tm& time, const std::locale& loc,
            char format, char modifier = 0) -> OutputIt {
   auto str = do_write<char>(time, loc, format, modifier);
-  if (detail::is_utf8() && loc != std::locale::classic()) {
+  if (detail::is_utf8() && loc != get_classic_locale()) {
     // char16_t and char32_t codecvts are broken in MSVC (linkage errors) and
     // gcc-4.
 #if FMT_MSC_VER != 0 || \
@@ -1057,9 +1062,14 @@ struct chrono_formatter {
 
   void format_localized(const tm& time, char format, char modifier = 0) {
     if (isnan(val)) return write_nan();
-    const auto& loc = localized ? context.locale().template get<std::locale>()
-                                : std::locale::classic();
-    out = detail::write<char_type>(out, time, loc, format, modifier);
+    if (localized) {
+      out = detail::write<char_type>(
+          out, time, context.locale().template get<std::locale>(), format,
+          modifier);
+    } else {
+      out = detail::write<char_type>(out, time, get_classic_locale(), format,
+                                     modifier);
+    }
   }
 
   void on_text(const char_type* begin, const char_type* end) {
@@ -1226,9 +1236,11 @@ template <typename Char> struct formatter<weekday, Char> {
   auto format(weekday wd, FormatContext& ctx) const -> decltype(ctx.out()) {
     auto time = std::tm();
     time.tm_wday = static_cast<int>(wd.c_encoding());
-    const auto& loc = localized ? ctx.locale().template get<std::locale>()
-                                : std::locale::classic();
-    return detail::write<Char>(ctx.out(), time, loc, 'a');
+    if (localized)
+      return detail::write<Char>(ctx.out(), time,
+                                 ctx.locale().template get<std::locale>(), 'a');
+    return detail::write<Char>(ctx.out(), time, detail::get_classic_locale(),
+                               'a');
   }
 };
 
@@ -1543,7 +1555,7 @@ template <typename OutputIt, typename Char> class tm_writer {
  public:
   explicit tm_writer(const std::locale& loc, OutputIt out, const std::tm& tm)
       : loc_(loc),
-        is_classic_(loc_ == std::locale::classic()),
+        is_classic_(loc_ == get_classic_locale()),
         out_(out),
         tm_(tm) {}
 
@@ -1822,6 +1834,18 @@ template <typename Char> struct formatter<std::tm, Char> {
     return end;
   }
 
+  template <typename It>
+  It do_format(It out, const std::tm& tm, const std::locale& loc) const {
+    auto w = detail::tm_writer<It, Char>(loc, out, tm);
+    if (spec_ == spec::year_month_day)
+      w.on_iso_date();
+    else if (spec_ == spec::hh_mm_ss)
+      w.on_iso_time();
+    else
+      detail::parse_chrono_format(specs.begin(), specs.end(), w);
+    return w.out();
+  }
+
  public:
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
@@ -1831,17 +1855,10 @@ template <typename Char> struct formatter<std::tm, Char> {
   template <typename FormatContext>
   auto format(const std::tm& tm, FormatContext& ctx) const
       -> decltype(ctx.out()) {
-    const auto& loc_ref = ctx.locale();
-    const auto& loc =
-        loc_ref ? loc_ref.template get<std::locale>() : std::locale::classic();
-    auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), tm);
-    if (spec_ == spec::year_month_day)
-      w.on_iso_date();
-    else if (spec_ == spec::hh_mm_ss)
-      w.on_iso_time();
-    else
-      detail::parse_chrono_format(specs.begin(), specs.end(), w);
-    return w.out();
+    if (const auto& loc_ref = ctx.locale())
+      return this->do_format(ctx.out(), tm,
+                             loc_ref.template get<std::locale>());
+    return this->do_format(ctx.out(), tm, detail::get_classic_locale());
   }
 };
 
