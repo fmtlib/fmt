@@ -1018,13 +1018,16 @@ template <typename OutputIt, typename Char> class tm_writer {
       format_localized('A');
   }
   void on_dec0_weekday(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('w', 'O');
-    write1(tm_wday());
+    if (is_classic_ || ns == numeric_system::standard) return write1(tm_wday());
+    format_localized('w', 'O');
   }
   void on_dec1_weekday(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('u', 'O');
-    auto wday = tm_wday();
-    write1(wday == 0 ? days_per_week : wday);
+    if (is_classic_ || ns == numeric_system::standard) {
+      auto wday = tm_wday();
+      write1(wday == 0 ? days_per_week : wday);
+    } else {
+      format_localized('u', 'O');
+    }
   }
 
   void on_abbr_month() {
@@ -1095,49 +1098,63 @@ template <typename OutputIt, typename Char> class tm_writer {
   void on_tz_name() { format_localized('Z'); }
 
   void on_year(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('Y', 'E');
-    write_year(tm_year());
+    if (is_classic_ || ns == numeric_system::standard)
+      return write_year(tm_year());
+    format_localized('Y', 'E');
   }
   void on_short_year(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('y', 'O');
-    write2(split_year_lower(tm_year()));
+    if (is_classic_ || ns == numeric_system::standard)
+      return write2(split_year_lower(tm_year()));
+    format_localized('y', 'O');
   }
-  void on_offset_year() { format_localized('y', 'E'); }
+  void on_offset_year() {
+    if (is_classic_) return write2(split_year_lower(tm_year()));
+    format_localized('y', 'E');
+  }
 
   void on_century(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('C', 'E');
-    auto year = tm_year();
-    auto upper = year / 100;
-    if (year >= -99 && year < 0) {
-      // Zero upper on negative year.
-      *out_++ = '-';
-      *out_++ = '0';
-    } else if (upper >= 0 && upper < 100) {
-      write2(static_cast<int>(upper));
+    if (is_classic_ || ns == numeric_system::standard) {
+      auto year = tm_year();
+      auto upper = year / 100;
+      if (year >= -99 && year < 0) {
+        // Zero upper on negative year.
+        *out_++ = '-';
+        *out_++ = '0';
+      } else if (upper >= 0 && upper < 100) {
+        write2(static_cast<int>(upper));
+      } else {
+        out_ = write<Char>(out_, upper);
+      }
     } else {
-      out_ = write<Char>(out_, upper);
+      format_localized('C', 'E');
     }
   }
 
   void on_dec_month(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('m', 'O');
-    write2(tm_mon() + 1);
+    if (is_classic_ || ns == numeric_system::standard)
+      return write2(tm_mon() + 1);
+    format_localized('m', 'O');
   }
 
   void on_dec0_week_of_year(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('U', 'O');
-    write2((tm_yday() + days_per_week - tm_wday()) / days_per_week);
+    if (is_classic_ || ns == numeric_system::standard)
+      return write2((tm_yday() + days_per_week - tm_wday()) / days_per_week);
+    format_localized('U', 'O');
   }
   void on_dec1_week_of_year(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('W', 'O');
-    auto wday = tm_wday();
-    write2((tm_yday() + days_per_week -
-            (wday == 0 ? (days_per_week - 1) : (wday - 1))) /
-           days_per_week);
+    if (is_classic_ || ns == numeric_system::standard) {
+      auto wday = tm_wday();
+      write2((tm_yday() + days_per_week -
+              (wday == 0 ? (days_per_week - 1) : (wday - 1))) /
+             days_per_week);
+    } else {
+      format_localized('W', 'O');
+    }
   }
   void on_iso_week_of_year(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('V', 'O');
-    write2(tm_iso_week_of_year());
+    if (is_classic_ || ns == numeric_system::standard)
+      return write2(tm_iso_week_of_year());
+    format_localized('V', 'O');
   }
 
   void on_iso_week_based_year() { write_year(tm_iso_week_year()); }
@@ -1151,32 +1168,36 @@ template <typename OutputIt, typename Char> class tm_writer {
     write2(yday % 100);
   }
   void on_day_of_month(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('d', 'O');
-    write2(tm_mday());
+    if (is_classic_ || ns == numeric_system::standard) return write2(tm_mday());
+    format_localized('d', 'O');
   }
   void on_day_of_month_space(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('e', 'O');
-    auto mday = to_unsigned(tm_mday()) % 100;
-    const char* d2 = digits2(mday);
-    *out_++ = mday < 10 ? ' ' : d2[0];
-    *out_++ = d2[1];
+    if (is_classic_ || ns == numeric_system::standard) {
+      auto mday = to_unsigned(tm_mday()) % 100;
+      const char* d2 = digits2(mday);
+      *out_++ = mday < 10 ? ' ' : d2[0];
+      *out_++ = d2[1];
+    } else {
+      format_localized('e', 'O');
+    }
   }
 
   void on_24_hour(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('H', 'O');
-    write2(tm_hour());
+    if (is_classic_ || ns == numeric_system::standard) return write2(tm_hour());
+    format_localized('H', 'O');
   }
   void on_12_hour(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('I', 'O');
-    write2(tm_hour12());
+    if (is_classic_ || ns == numeric_system::standard)
+      return write2(tm_hour12());
+    format_localized('I', 'O');
   }
   void on_minute(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('M', 'O');
-    write2(tm_min());
+    if (is_classic_ || ns == numeric_system::standard) return write2(tm_min());
+    format_localized('M', 'O');
   }
   void on_second(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('S', 'O');
-    write2(tm_sec());
+    if (is_classic_ || ns == numeric_system::standard) return write2(tm_sec());
+    format_localized('S', 'O');
   }
 
   void on_12_hour_time() {
