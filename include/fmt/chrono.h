@@ -804,6 +804,419 @@ template <typename Derived> struct null_chrono_spec_handler {
   FMT_CONSTEXPR void on_tz_name() { unsupported(); }
 };
 
+struct tm_format_checker : null_chrono_spec_handler<tm_format_checker> {
+  FMT_NORETURN void unsupported() { FMT_THROW(format_error("no format")); }
+
+  template <typename Char>
+  FMT_CONSTEXPR void on_text(const Char*, const Char*) {}
+  FMT_CONSTEXPR void on_year(numeric_system) {}
+  FMT_CONSTEXPR void on_short_year(numeric_system) {}
+  FMT_CONSTEXPR void on_offset_year() {}
+  FMT_CONSTEXPR void on_century(numeric_system) {}
+  FMT_CONSTEXPR void on_iso_week_based_year() {}
+  FMT_CONSTEXPR void on_iso_week_based_short_year() {}
+  FMT_CONSTEXPR void on_abbr_weekday() {}
+  FMT_CONSTEXPR void on_full_weekday() {}
+  FMT_CONSTEXPR void on_dec0_weekday(numeric_system) {}
+  FMT_CONSTEXPR void on_dec1_weekday(numeric_system) {}
+  FMT_CONSTEXPR void on_abbr_month() {}
+  FMT_CONSTEXPR void on_full_month() {}
+  FMT_CONSTEXPR void on_dec_month(numeric_system) {}
+  FMT_CONSTEXPR void on_dec0_week_of_year(numeric_system) {}
+  FMT_CONSTEXPR void on_dec1_week_of_year(numeric_system) {}
+  FMT_CONSTEXPR void on_iso_week_of_year(numeric_system) {}
+  FMT_CONSTEXPR void on_day_of_year() {}
+  FMT_CONSTEXPR void on_day_of_month(numeric_system) {}
+  FMT_CONSTEXPR void on_day_of_month_space(numeric_system) {}
+  FMT_CONSTEXPR void on_24_hour(numeric_system) {}
+  FMT_CONSTEXPR void on_12_hour(numeric_system) {}
+  FMT_CONSTEXPR void on_minute(numeric_system) {}
+  FMT_CONSTEXPR void on_second(numeric_system) {}
+  FMT_CONSTEXPR void on_datetime(numeric_system) {}
+  FMT_CONSTEXPR void on_loc_date(numeric_system) {}
+  FMT_CONSTEXPR void on_loc_time(numeric_system) {}
+  FMT_CONSTEXPR void on_us_date() {}
+  FMT_CONSTEXPR void on_iso_date() {}
+  FMT_CONSTEXPR void on_12_hour_time() {}
+  FMT_CONSTEXPR void on_24_hour_time() {}
+  FMT_CONSTEXPR void on_iso_time() {}
+  FMT_CONSTEXPR void on_am_pm() {}
+  FMT_CONSTEXPR void on_utc_offset() {}
+  FMT_CONSTEXPR void on_tz_name() {}
+};
+
+inline const char* tm_wday_full_name(int wday) {
+  static constexpr const char* full_name_list[] = {
+      "Sunday",   "Monday", "Tuesday", "Wednesday",
+      "Thursday", "Friday", "Saturday"};
+  return wday >= 0 && wday <= 6 ? full_name_list[wday] : "?";
+}
+inline const char* tm_wday_short_name(int wday) {
+  static constexpr const char* short_name_list[] = {"Sun", "Mon", "Tue", "Wed",
+                                                    "Thu", "Fri", "Sat"};
+  return wday >= 0 && wday <= 6 ? short_name_list[wday] : "???";
+}
+
+inline const char* tm_mon_full_name(int mon) {
+  static constexpr const char* full_name_list[] = {
+      "January", "February", "March",     "April",   "May",      "June",
+      "July",    "August",   "September", "October", "November", "December"};
+  return mon >= 0 && mon <= 11 ? full_name_list[mon] : "?";
+}
+inline const char* tm_mon_short_name(int mon) {
+  static constexpr const char* short_name_list[] = {
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  };
+  return mon >= 0 && mon <= 11 ? short_name_list[mon] : "???";
+}
+
+template <typename OutputIt, typename Char> class tm_writer {
+ private:
+  static constexpr int days_per_week = 7;
+
+  const std::locale& loc_;
+  const bool is_classic_;
+  OutputIt out_;
+  const std::tm& tm_;
+
+  auto tm_sec() const noexcept -> int {
+    FMT_ASSERT(tm_.tm_sec >= 0 && tm_.tm_sec <= 61, "");
+    return tm_.tm_sec;
+  }
+  auto tm_min() const noexcept -> int {
+    FMT_ASSERT(tm_.tm_min >= 0 && tm_.tm_min <= 59, "");
+    return tm_.tm_min;
+  }
+  auto tm_hour() const noexcept -> int {
+    FMT_ASSERT(tm_.tm_hour >= 0 && tm_.tm_hour <= 23, "");
+    return tm_.tm_hour;
+  }
+  auto tm_mday() const noexcept -> int {
+    FMT_ASSERT(tm_.tm_mday >= 1 && tm_.tm_mday <= 31, "");
+    return tm_.tm_mday;
+  }
+  auto tm_mon() const noexcept -> int {
+    FMT_ASSERT(tm_.tm_mon >= 0 && tm_.tm_mon <= 11, "");
+    return tm_.tm_mon;
+  }
+  auto tm_year() const noexcept -> long long { return 1900ll + tm_.tm_year; }
+  auto tm_wday() const noexcept -> int {
+    FMT_ASSERT(tm_.tm_wday >= 0 && tm_.tm_wday <= 6, "");
+    return tm_.tm_wday;
+  }
+  auto tm_yday() const noexcept -> int {
+    FMT_ASSERT(tm_.tm_yday >= 0 && tm_.tm_yday <= 365, "");
+    return tm_.tm_yday;
+  }
+
+  auto tm_hour12() const noexcept -> int {
+    const auto h = tm_hour();
+    const auto z = h < 12 ? h : h - 12;
+    return z == 0 ? 12 : z;
+  }
+
+  // POSIX and the C Standard are unclear or inconsistent about what %C and %y
+  // do if the year is negative or exceeds 9999. Use the convention that %C
+  // concatenated with %y yields the same output as %Y, and that %Y contains at
+  // least 4 characters, with more only if necessary.
+  auto split_year_lower(long long year) const noexcept -> int {
+    auto l = year % 100;
+    if (l < 0) l = -l;  // l in [0, 99]
+    return static_cast<int>(l);
+  }
+
+  // Algorithm:
+  // https://en.wikipedia.org/wiki/ISO_week_date#Calculating_the_week_number_from_a_month_and_day_of_the_month_or_ordinal_date
+  auto iso_year_weeks(long long curr_year) const noexcept -> int {
+    const auto prev_year = curr_year - 1;
+    const auto curr_p =
+        (curr_year + curr_year / 4 - curr_year / 100 + curr_year / 400) %
+        days_per_week;
+    const auto prev_p =
+        (prev_year + prev_year / 4 - prev_year / 100 + prev_year / 400) %
+        days_per_week;
+    return 52 + ((curr_p == 4 || prev_p == 3) ? 1 : 0);
+  }
+  auto iso_week_num(int tm_yday, int tm_wday) const noexcept -> int {
+    return (tm_yday + 11 - (tm_wday == 0 ? days_per_week : tm_wday)) /
+           days_per_week;
+  }
+  auto tm_iso_week_year() const noexcept -> long long {
+    const auto year = tm_year();
+    const auto w = iso_week_num(tm_yday(), tm_wday());
+    if (w < 1) return year - 1;
+    if (w > iso_year_weeks(year)) return year + 1;
+    return year;
+  }
+  auto tm_iso_week_of_year() const noexcept -> int {
+    const auto year = tm_year();
+    const auto w = iso_week_num(tm_yday(), tm_wday());
+    if (w < 1) return iso_year_weeks(year - 1);
+    if (w > iso_year_weeks(year)) return 1;
+    return w;
+  }
+
+  void write1(int value) {
+    *out_++ = static_cast<char>('0' + to_unsigned(value) % 10);
+  }
+  void write2(int value) {
+    const char* d = digits2(to_unsigned(value) % 100);
+    *out_++ = *d++;
+    *out_++ = *d;
+  }
+
+  void write_year_extended(long long year) {
+    // At least 4 characters.
+    int width = 4;
+    if (year < 0) {
+      *out_++ = '-';
+      year = 0 - year;
+      --width;
+    }
+    uint32_or_64_or_128_t<long long> n = to_unsigned(year);
+    const int num_digits = count_digits(n);
+    if (width > num_digits) out_ = std::fill_n(out_, width - num_digits, '0');
+    out_ = format_decimal<Char>(out_, n, num_digits).end;
+  }
+  void write_year(long long year) {
+    if (year >= 0 && year < 10000) {
+      write2(static_cast<int>(year / 100));
+      write2(static_cast<int>(year % 100));
+    } else {
+      write_year_extended(year);
+    }
+  }
+
+  void format_localized(char format, char modifier = 0) {
+    out_ = write<Char>(out_, tm_, loc_, format, modifier);
+  }
+
+ public:
+  explicit tm_writer(const std::locale& loc, OutputIt out, const std::tm& tm)
+      : loc_(loc),
+        is_classic_(loc_ == get_classic_locale()),
+        out_(out),
+        tm_(tm) {}
+
+  OutputIt out() const { return out_; }
+
+  FMT_CONSTEXPR void on_text(const Char* begin, const Char* end) {
+    out_ = copy_str<Char>(begin, end, out_);
+  }
+
+  void on_abbr_weekday() {
+    if (is_classic_)
+      out_ = write(out_, tm_wday_short_name(tm_wday()));
+    else
+      format_localized('a');
+  }
+  void on_full_weekday() {
+    if (is_classic_)
+      out_ = write(out_, tm_wday_full_name(tm_wday()));
+    else
+      format_localized('A');
+  }
+  void on_dec0_weekday(numeric_system ns) {
+    if (ns != numeric_system::standard) return format_localized('w', 'O');
+    write1(tm_wday());
+  }
+  void on_dec1_weekday(numeric_system ns) {
+    if (ns != numeric_system::standard) return format_localized('u', 'O');
+    auto wday = tm_wday();
+    write1(wday == 0 ? days_per_week : wday);
+  }
+
+  void on_abbr_month() {
+    if (is_classic_)
+      out_ = write(out_, tm_mon_short_name(tm_mon()));
+    else
+      format_localized('b');
+  }
+  void on_full_month() {
+    if (is_classic_)
+      out_ = write(out_, tm_mon_full_name(tm_mon()));
+    else
+      format_localized('B');
+  }
+
+  void on_datetime(numeric_system ns) {
+    if (is_classic_) {
+      on_abbr_weekday();
+      *out_++ = ' ';
+      on_abbr_month();
+      *out_++ = ' ';
+      on_day_of_month_space(numeric_system::standard);
+      *out_++ = ' ';
+      on_iso_time();
+      *out_++ = ' ';
+      on_year(numeric_system::standard);
+    } else {
+      format_localized('c', ns == numeric_system::standard ? '\0' : 'E');
+    }
+  }
+  void on_loc_date(numeric_system ns) {
+    if (is_classic_)
+      on_us_date();
+    else
+      format_localized('x', ns == numeric_system::standard ? '\0' : 'E');
+  }
+  void on_loc_time(numeric_system ns) {
+    if (is_classic_)
+      on_iso_time();
+    else
+      format_localized('X', ns == numeric_system::standard ? '\0' : 'E');
+  }
+  void on_us_date() {
+    char buf[8];
+    write_digit2_separated(buf, to_unsigned(tm_mon() + 1),
+                           to_unsigned(tm_mday()),
+                           to_unsigned(split_year_lower(tm_year())), '/');
+    out_ = copy_str<Char>(std::begin(buf), std::end(buf), out_);
+  }
+  void on_iso_date() {
+    auto year = tm_year();
+    char buf[10];
+    size_t offset = 0;
+    if (year >= 0 && year < 10000) {
+      copy2(buf, digits2(to_unsigned(year / 100)));
+    } else {
+      offset = 4;
+      write_year_extended(year);
+      year = 0;
+    }
+    write_digit2_separated(buf + 2, static_cast<unsigned>(year % 100),
+                           to_unsigned(tm_mon() + 1), to_unsigned(tm_mday()),
+                           '-');
+    out_ = copy_str<Char>(std::begin(buf) + offset, std::end(buf), out_);
+  }
+
+  void on_utc_offset() { format_localized('z'); }
+  void on_tz_name() { format_localized('Z'); }
+
+  void on_year(numeric_system ns) {
+    if (ns != numeric_system::standard) return format_localized('Y', 'E');
+    write_year(tm_year());
+  }
+  void on_short_year(numeric_system ns) {
+    if (ns != numeric_system::standard) return format_localized('y', 'O');
+    write2(split_year_lower(tm_year()));
+  }
+  void on_offset_year() { format_localized('y', 'E'); }
+
+  void on_century(numeric_system ns) {
+    if (ns != numeric_system::standard) return format_localized('C', 'E');
+    auto year = tm_year();
+    auto upper = year / 100;
+    if (year >= -99 && year < 0) {
+      // Zero upper on negative year.
+      *out_++ = '-';
+      *out_++ = '0';
+    } else if (upper >= 0 && upper < 100) {
+      write2(static_cast<int>(upper));
+    } else {
+      out_ = write<Char>(out_, upper);
+    }
+  }
+
+  void on_dec_month(numeric_system ns) {
+    if (ns != numeric_system::standard) return format_localized('m', 'O');
+    write2(tm_mon() + 1);
+  }
+
+  void on_dec0_week_of_year(numeric_system ns) {
+    if (ns != numeric_system::standard) return format_localized('U', 'O');
+    write2((tm_yday() + days_per_week - tm_wday()) / days_per_week);
+  }
+  void on_dec1_week_of_year(numeric_system ns) {
+    if (ns != numeric_system::standard) return format_localized('W', 'O');
+    auto wday = tm_wday();
+    write2((tm_yday() + days_per_week -
+            (wday == 0 ? (days_per_week - 1) : (wday - 1))) /
+           days_per_week);
+  }
+  void on_iso_week_of_year(numeric_system ns) {
+    if (ns != numeric_system::standard) return format_localized('V', 'O');
+    write2(tm_iso_week_of_year());
+  }
+
+  void on_iso_week_based_year() { write_year(tm_iso_week_year()); }
+  void on_iso_week_based_short_year() {
+    write2(split_year_lower(tm_iso_week_year()));
+  }
+
+  void on_day_of_year() {
+    auto yday = tm_yday() + 1;
+    write1(yday / 100);
+    write2(yday % 100);
+  }
+  void on_day_of_month(numeric_system ns) {
+    if (ns != numeric_system::standard) return format_localized('d', 'O');
+    write2(tm_mday());
+  }
+  void on_day_of_month_space(numeric_system ns) {
+    if (ns != numeric_system::standard) return format_localized('e', 'O');
+    auto mday = to_unsigned(tm_mday()) % 100;
+    const char* d2 = digits2(mday);
+    *out_++ = mday < 10 ? ' ' : d2[0];
+    *out_++ = d2[1];
+  }
+
+  void on_24_hour(numeric_system ns) {
+    if (ns != numeric_system::standard) return format_localized('H', 'O');
+    write2(tm_hour());
+  }
+  void on_12_hour(numeric_system ns) {
+    if (ns != numeric_system::standard) return format_localized('I', 'O');
+    write2(tm_hour12());
+  }
+  void on_minute(numeric_system ns) {
+    if (ns != numeric_system::standard) return format_localized('M', 'O');
+    write2(tm_min());
+  }
+  void on_second(numeric_system ns) {
+    if (ns != numeric_system::standard) return format_localized('S', 'O');
+    write2(tm_sec());
+  }
+
+  void on_12_hour_time() {
+    if (is_classic_) {
+      char buf[8];
+      write_digit2_separated(buf, to_unsigned(tm_hour12()),
+                             to_unsigned(tm_min()), to_unsigned(tm_sec()), ':');
+      out_ = copy_str<Char>(std::begin(buf), std::end(buf), out_);
+      *out_++ = ' ';
+      on_am_pm();
+    } else {
+      format_localized('r');
+    }
+  }
+  void on_24_hour_time() {
+    write2(tm_hour());
+    *out_++ = ':';
+    write2(tm_min());
+  }
+  void on_iso_time() {
+    char buf[8];
+    write_digit2_separated(buf, to_unsigned(tm_hour()), to_unsigned(tm_min()),
+                           to_unsigned(tm_sec()), ':');
+    out_ = copy_str<Char>(std::begin(buf), std::end(buf), out_);
+  }
+
+  void on_am_pm() {
+    if (is_classic_) {
+      *out_++ = tm_hour() < 12 ? 'A' : 'P';
+      *out_++ = 'M';
+    } else {
+      format_localized('p');
+    }
+  }
+
+  // These apply to chrono durations but not tm.
+  void on_duration_value() {}
+  void on_duration_unit() {}
+};
+
 struct chrono_format_checker : null_chrono_spec_handler<chrono_format_checker> {
   FMT_NORETURN void unsupported() { FMT_THROW(format_error("no date")); }
 
@@ -1361,423 +1774,6 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
         ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs_copy);
   }
 };
-
-FMT_BEGIN_DETAIL_NAMESPACE
-
-struct tm_format_checker : null_chrono_spec_handler<tm_format_checker> {
-  FMT_NORETURN void unsupported() { FMT_THROW(format_error("no format")); }
-
-  template <typename Char>
-  FMT_CONSTEXPR void on_text(const Char*, const Char*) {}
-  FMT_CONSTEXPR void on_year(numeric_system) {}
-  FMT_CONSTEXPR void on_short_year(numeric_system) {}
-  FMT_CONSTEXPR void on_offset_year() {}
-  FMT_CONSTEXPR void on_century(numeric_system) {}
-  FMT_CONSTEXPR void on_iso_week_based_year() {}
-  FMT_CONSTEXPR void on_iso_week_based_short_year() {}
-  FMT_CONSTEXPR void on_abbr_weekday() {}
-  FMT_CONSTEXPR void on_full_weekday() {}
-  FMT_CONSTEXPR void on_dec0_weekday(numeric_system) {}
-  FMT_CONSTEXPR void on_dec1_weekday(numeric_system) {}
-  FMT_CONSTEXPR void on_abbr_month() {}
-  FMT_CONSTEXPR void on_full_month() {}
-  FMT_CONSTEXPR void on_dec_month(numeric_system) {}
-  FMT_CONSTEXPR void on_dec0_week_of_year(numeric_system) {}
-  FMT_CONSTEXPR void on_dec1_week_of_year(numeric_system) {}
-  FMT_CONSTEXPR void on_iso_week_of_year(numeric_system) {}
-  FMT_CONSTEXPR void on_day_of_year() {}
-  FMT_CONSTEXPR void on_day_of_month(numeric_system) {}
-  FMT_CONSTEXPR void on_day_of_month_space(numeric_system) {}
-  FMT_CONSTEXPR void on_24_hour(numeric_system) {}
-  FMT_CONSTEXPR void on_12_hour(numeric_system) {}
-  FMT_CONSTEXPR void on_minute(numeric_system) {}
-  FMT_CONSTEXPR void on_second(numeric_system) {}
-  FMT_CONSTEXPR void on_datetime(numeric_system) {}
-  FMT_CONSTEXPR void on_loc_date(numeric_system) {}
-  FMT_CONSTEXPR void on_loc_time(numeric_system) {}
-  FMT_CONSTEXPR void on_us_date() {}
-  FMT_CONSTEXPR void on_iso_date() {}
-  FMT_CONSTEXPR void on_12_hour_time() {}
-  FMT_CONSTEXPR void on_24_hour_time() {}
-  FMT_CONSTEXPR void on_iso_time() {}
-  FMT_CONSTEXPR void on_am_pm() {}
-  FMT_CONSTEXPR void on_utc_offset() {}
-  FMT_CONSTEXPR void on_tz_name() {}
-};
-
-inline const char* tm_wday_full_name(int wday) {
-  static constexpr const char* full_name_list[] = {
-      "Sunday",   "Monday", "Tuesday", "Wednesday",
-      "Thursday", "Friday", "Saturday"};
-  return wday >= 0 && wday <= 6 ? full_name_list[wday] : "?";
-}
-inline const char* tm_wday_short_name(int wday) {
-  static constexpr const char* short_name_list[] = {"Sun", "Mon", "Tue", "Wed",
-                                                    "Thu", "Fri", "Sat"};
-  return wday >= 0 && wday <= 6 ? short_name_list[wday] : "???";
-}
-
-inline const char* tm_mon_full_name(int mon) {
-  static constexpr const char* full_name_list[] = {
-      "January", "February", "March",     "April",   "May",      "June",
-      "July",    "August",   "September", "October", "November", "December"};
-  return mon >= 0 && mon <= 11 ? full_name_list[mon] : "?";
-}
-inline const char* tm_mon_short_name(int mon) {
-  static constexpr const char* short_name_list[] = {
-      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-  };
-  return mon >= 0 && mon <= 11 ? short_name_list[mon] : "???";
-}
-
-template <typename OutputIt, typename Char> class tm_writer {
- private:
-  static constexpr int days_per_week = 7;
-
-  const std::locale& loc_;
-  const bool is_classic_;
-  OutputIt out_;
-  const std::tm& tm_;
-
-  auto tm_sec() const noexcept -> int {
-    FMT_ASSERT(tm_.tm_sec >= 0 && tm_.tm_sec <= 61, "");
-    return tm_.tm_sec;
-  }
-  auto tm_min() const noexcept -> int {
-    FMT_ASSERT(tm_.tm_min >= 0 && tm_.tm_min <= 59, "");
-    return tm_.tm_min;
-  }
-  auto tm_hour() const noexcept -> int {
-    FMT_ASSERT(tm_.tm_hour >= 0 && tm_.tm_hour <= 23, "");
-    return tm_.tm_hour;
-  }
-  auto tm_mday() const noexcept -> int {
-    FMT_ASSERT(tm_.tm_mday >= 1 && tm_.tm_mday <= 31, "");
-    return tm_.tm_mday;
-  }
-  auto tm_mon() const noexcept -> int {
-    FMT_ASSERT(tm_.tm_mon >= 0 && tm_.tm_mon <= 11, "");
-    return tm_.tm_mon;
-  }
-  auto tm_year() const noexcept -> long long { return 1900ll + tm_.tm_year; }
-  auto tm_wday() const noexcept -> int {
-    FMT_ASSERT(tm_.tm_wday >= 0 && tm_.tm_wday <= 6, "");
-    return tm_.tm_wday;
-  }
-  auto tm_yday() const noexcept -> int {
-    FMT_ASSERT(tm_.tm_yday >= 0 && tm_.tm_yday <= 365, "");
-    return tm_.tm_yday;
-  }
-
-  auto tm_hour12() const noexcept -> int {
-    const auto h = tm_hour();
-    const auto z = h < 12 ? h : h - 12;
-    return z == 0 ? 12 : z;
-  }
-
-  // POSIX and the C Standard are unclear or inconsistent about what %C and %y
-  // do if the year is negative or exceeds 9999. Use the convention that %C
-  // concatenated with %y yields the same output as %Y, and that %Y contains at
-  // least 4 characters, with more only if necessary.
-  auto split_year_lower(long long year) const noexcept -> int {
-    auto l = year % 100;
-    if (l < 0) l = -l;  // l in [0, 99]
-    return static_cast<int>(l);
-  }
-
-  // Algorithm:
-  // https://en.wikipedia.org/wiki/ISO_week_date#Calculating_the_week_number_from_a_month_and_day_of_the_month_or_ordinal_date
-  auto iso_year_weeks(long long curr_year) const noexcept -> int {
-    const auto prev_year = curr_year - 1;
-    const auto curr_p =
-        (curr_year + curr_year / 4 - curr_year / 100 + curr_year / 400) %
-        days_per_week;
-    const auto prev_p =
-        (prev_year + prev_year / 4 - prev_year / 100 + prev_year / 400) %
-        days_per_week;
-    return 52 + ((curr_p == 4 || prev_p == 3) ? 1 : 0);
-  }
-  auto iso_week_num(int tm_yday, int tm_wday) const noexcept -> int {
-    return (tm_yday + 11 - (tm_wday == 0 ? days_per_week : tm_wday)) /
-           days_per_week;
-  }
-  auto tm_iso_week_year() const noexcept -> long long {
-    const auto year = tm_year();
-    const auto w = iso_week_num(tm_yday(), tm_wday());
-    if (w < 1) return year - 1;
-    if (w > iso_year_weeks(year)) return year + 1;
-    return year;
-  }
-  auto tm_iso_week_of_year() const noexcept -> int {
-    const auto year = tm_year();
-    const auto w = iso_week_num(tm_yday(), tm_wday());
-    if (w < 1) return iso_year_weeks(year - 1);
-    if (w > iso_year_weeks(year)) return 1;
-    return w;
-  }
-
-  void write1(int value) {
-    *out_++ = static_cast<char>('0' + to_unsigned(value) % 10);
-  }
-  void write2(int value) {
-    const char* d = digits2(to_unsigned(value) % 100);
-    *out_++ = *d++;
-    *out_++ = *d;
-  }
-
-  void write_year_extended(long long year) {
-    // At least 4 characters.
-    int width = 4;
-    if (year < 0) {
-      *out_++ = '-';
-      year = 0 - year;
-      --width;
-    }
-    uint32_or_64_or_128_t<long long> n = to_unsigned(year);
-    const int num_digits = count_digits(n);
-    if (width > num_digits) out_ = std::fill_n(out_, width - num_digits, '0');
-    out_ = format_decimal<Char>(out_, n, num_digits).end;
-  }
-  void write_year(long long year) {
-    if (year >= 0 && year < 10000) {
-      write2(static_cast<int>(year / 100));
-      write2(static_cast<int>(year % 100));
-    } else {
-      write_year_extended(year);
-    }
-  }
-
-  void format_localized(char format, char modifier = 0) {
-    out_ = write<Char>(out_, tm_, loc_, format, modifier);
-  }
-
- public:
-  explicit tm_writer(const std::locale& loc, OutputIt out, const std::tm& tm)
-      : loc_(loc),
-        is_classic_(loc_ == get_classic_locale()),
-        out_(out),
-        tm_(tm) {}
-
-  OutputIt out() const { return out_; }
-
-  FMT_CONSTEXPR void on_text(const Char* begin, const Char* end) {
-    out_ = copy_str<Char>(begin, end, out_);
-  }
-
-  void on_abbr_weekday() {
-    if (is_classic_)
-      out_ = write(out_, tm_wday_short_name(tm_wday()));
-    else
-      format_localized('a');
-  }
-  void on_full_weekday() {
-    if (is_classic_)
-      out_ = write(out_, tm_wday_full_name(tm_wday()));
-    else
-      format_localized('A');
-  }
-  void on_dec0_weekday(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('w', 'O');
-    write1(tm_wday());
-  }
-  void on_dec1_weekday(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('u', 'O');
-    auto wday = tm_wday();
-    write1(wday == 0 ? days_per_week : wday);
-  }
-
-  void on_abbr_month() {
-    if (is_classic_)
-      out_ = write(out_, tm_mon_short_name(tm_mon()));
-    else
-      format_localized('b');
-  }
-  void on_full_month() {
-    if (is_classic_)
-      out_ = write(out_, tm_mon_full_name(tm_mon()));
-    else
-      format_localized('B');
-  }
-
-  void on_datetime(numeric_system ns) {
-    if (is_classic_) {
-      on_abbr_weekday();
-      *out_++ = ' ';
-      on_abbr_month();
-      *out_++ = ' ';
-      on_day_of_month_space(numeric_system::standard);
-      *out_++ = ' ';
-      on_iso_time();
-      *out_++ = ' ';
-      on_year(numeric_system::standard);
-    } else {
-      format_localized('c', ns == numeric_system::standard ? '\0' : 'E');
-    }
-  }
-  void on_loc_date(numeric_system ns) {
-    if (is_classic_)
-      on_us_date();
-    else
-      format_localized('x', ns == numeric_system::standard ? '\0' : 'E');
-  }
-  void on_loc_time(numeric_system ns) {
-    if (is_classic_)
-      on_iso_time();
-    else
-      format_localized('X', ns == numeric_system::standard ? '\0' : 'E');
-  }
-  void on_us_date() {
-    char buf[8];
-    write_digit2_separated(buf, to_unsigned(tm_mon() + 1),
-                           to_unsigned(tm_mday()),
-                           to_unsigned(split_year_lower(tm_year())), '/');
-    out_ = copy_str<Char>(std::begin(buf), std::end(buf), out_);
-  }
-  void on_iso_date() {
-    auto year = tm_year();
-    char buf[10];
-    size_t offset = 0;
-    if (year >= 0 && year < 10000) {
-      copy2(buf, digits2(to_unsigned(year / 100)));
-    } else {
-      offset = 4;
-      write_year_extended(year);
-      year = 0;
-    }
-    write_digit2_separated(buf + 2, static_cast<unsigned>(year % 100),
-                           to_unsigned(tm_mon() + 1), to_unsigned(tm_mday()),
-                           '-');
-    out_ = copy_str<Char>(std::begin(buf) + offset, std::end(buf), out_);
-  }
-
-  void on_utc_offset() { format_localized('z'); }
-  void on_tz_name() { format_localized('Z'); }
-
-  void on_year(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('Y', 'E');
-    write_year(tm_year());
-  }
-  void on_short_year(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('y', 'O');
-    write2(split_year_lower(tm_year()));
-  }
-  void on_offset_year() { format_localized('y', 'E'); }
-
-  void on_century(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('C', 'E');
-    auto year = tm_year();
-    auto upper = year / 100;
-    if (year >= -99 && year < 0) {
-      // Zero upper on negative year.
-      *out_++ = '-';
-      *out_++ = '0';
-    } else if (upper >= 0 && upper < 100) {
-      write2(static_cast<int>(upper));
-    } else {
-      out_ = write<Char>(out_, upper);
-    }
-  }
-
-  void on_dec_month(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('m', 'O');
-    write2(tm_mon() + 1);
-  }
-
-  void on_dec0_week_of_year(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('U', 'O');
-    write2((tm_yday() + days_per_week - tm_wday()) / days_per_week);
-  }
-  void on_dec1_week_of_year(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('W', 'O');
-    auto wday = tm_wday();
-    write2((tm_yday() + days_per_week -
-            (wday == 0 ? (days_per_week - 1) : (wday - 1))) /
-           days_per_week);
-  }
-  void on_iso_week_of_year(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('V', 'O');
-    write2(tm_iso_week_of_year());
-  }
-
-  void on_iso_week_based_year() { write_year(tm_iso_week_year()); }
-  void on_iso_week_based_short_year() {
-    write2(split_year_lower(tm_iso_week_year()));
-  }
-
-  void on_day_of_year() {
-    auto yday = tm_yday() + 1;
-    write1(yday / 100);
-    write2(yday % 100);
-  }
-  void on_day_of_month(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('d', 'O');
-    write2(tm_mday());
-  }
-  void on_day_of_month_space(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('e', 'O');
-    auto mday = to_unsigned(tm_mday()) % 100;
-    const char* d2 = digits2(mday);
-    *out_++ = mday < 10 ? ' ' : d2[0];
-    *out_++ = d2[1];
-  }
-
-  void on_24_hour(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('H', 'O');
-    write2(tm_hour());
-  }
-  void on_12_hour(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('I', 'O');
-    write2(tm_hour12());
-  }
-  void on_minute(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('M', 'O');
-    write2(tm_min());
-  }
-  void on_second(numeric_system ns) {
-    if (ns != numeric_system::standard) return format_localized('S', 'O');
-    write2(tm_sec());
-  }
-
-  void on_12_hour_time() {
-    if (is_classic_) {
-      char buf[8];
-      write_digit2_separated(buf, to_unsigned(tm_hour12()),
-                             to_unsigned(tm_min()), to_unsigned(tm_sec()), ':');
-      out_ = copy_str<Char>(std::begin(buf), std::end(buf), out_);
-      *out_++ = ' ';
-      on_am_pm();
-    } else {
-      format_localized('r');
-    }
-  }
-  void on_24_hour_time() {
-    write2(tm_hour());
-    *out_++ = ':';
-    write2(tm_min());
-  }
-  void on_iso_time() {
-    char buf[8];
-    write_digit2_separated(buf, to_unsigned(tm_hour()), to_unsigned(tm_min()),
-                           to_unsigned(tm_sec()), ':');
-    out_ = copy_str<Char>(std::begin(buf), std::end(buf), out_);
-  }
-
-  void on_am_pm() {
-    if (is_classic_) {
-      *out_++ = tm_hour() < 12 ? 'A' : 'P';
-      *out_++ = 'M';
-    } else {
-      format_localized('p');
-    }
-  }
-
-  // These apply to chrono durations but not tm.
-  void on_duration_value() {}
-  void on_duration_unit() {}
-};
-
-FMT_END_DETAIL_NAMESPACE
 
 template <typename Char, typename Duration>
 struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
