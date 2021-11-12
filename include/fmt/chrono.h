@@ -1374,6 +1374,27 @@ OutputIt format_duration_unit(OutputIt out) {
   return out;
 }
 
+struct get_locale {
+  explicit get_locale(bool localized, locale_ref loc_ref)
+      : has_locale{localized} {
+    if (localized)
+      ::new (&locale) std::locale{loc_ref.template get<std::locale>()};
+  }
+  ~get_locale() {
+    if (has_locale) locale.~locale();
+  }
+  operator const std::locale&() const {
+    return has_locale ? locale : get_classic_locale();
+  }
+
+ private:
+  union {
+    monostate dummy{};
+    std::locale locale;
+  };
+  bool has_locale = false;
+};
+
 template <typename FormatContext, typename OutputIt, typename Rep,
           typename Period>
 struct chrono_formatter {
@@ -1475,14 +1496,8 @@ struct chrono_formatter {
 
   void format_localized(const tm& time, char format, char modifier = 0) {
     if (isnan(val)) return write_nan();
-    if (localized) {
-      out = detail::write<char_type>(
-          out, time, context.locale().template get<std::locale>(), format,
-          modifier);
-    } else {
-      out = detail::write<char_type>(out, time, get_classic_locale(), format,
-                                     modifier);
-    }
+    out = detail::write<char_type>(
+        out, time, get_locale{localized, context.locale()}, format, modifier);
   }
 
   void on_text(const char_type* begin, const char_type* end) {
@@ -1649,11 +1664,8 @@ template <typename Char> struct formatter<weekday, Char> {
   auto format(weekday wd, FormatContext& ctx) const -> decltype(ctx.out()) {
     auto time = std::tm();
     time.tm_wday = static_cast<int>(wd.c_encoding());
-    if (localized)
-      return detail::write<Char>(ctx.out(), time,
-                                 ctx.locale().template get<std::locale>(), 'a');
-    return detail::write<Char>(ctx.out(), time, detail::get_classic_locale(),
-                               'a');
+    return detail::write<Char>(
+        ctx.out(), time, detail::get_locale{localized, ctx.locale()}, 'a');
   }
 };
 
@@ -1851,10 +1863,9 @@ template <typename Char> struct formatter<std::tm, Char> {
   template <typename FormatContext>
   auto format(const std::tm& tm, FormatContext& ctx) const
       -> decltype(ctx.out()) {
-    if (const auto& loc_ref = ctx.locale())
-      return this->do_format(ctx.out(), tm,
-                             loc_ref.template get<std::locale>());
-    return this->do_format(ctx.out(), tm, detail::get_classic_locale());
+    const auto loc_ref = ctx.locale();
+    return this->do_format(
+        ctx.out(), tm, detail::get_locale{static_cast<bool>(loc_ref), loc_ref});
   }
 };
 
