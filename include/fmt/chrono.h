@@ -13,6 +13,7 @@
 #include <ctime>
 #include <locale>
 #include <sstream>
+#include <type_traits>
 
 #include "format.h"
 
@@ -871,6 +872,22 @@ inline const char* tm_mon_short_name(int mon) {
   return mon >= 0 && mon <= 11 ? short_name_list[mon] : "???";
 }
 
+template <typename T, typename = void>
+struct has_member_data_tm_gmtoff : std::false_type {};
+template <typename T>
+struct has_member_data_tm_gmtoff<T, void_t<decltype(T::tm_gmtoff)>>
+    : std::true_type {};
+
+#if defined(_WIN32)
+inline void tzset_once() {
+  static bool init = []() -> bool {
+    _tzset();
+    return true;
+  }();
+  ignore_unused(init);
+}
+#endif
+
 template <typename OutputIt, typename Char> class tm_writer {
  private:
   static constexpr int days_per_week = 7;
@@ -988,6 +1005,36 @@ template <typename OutputIt, typename Char> class tm_writer {
     }
   }
 
+  void write_utc_offset(long offset) {
+    if (offset < 0) {
+      *out_++ = '-';
+      offset = -offset;
+    } else {
+      *out_++ = '+';
+    }
+    offset /= 60;
+    write2(static_cast<int>(offset / 60));
+    write2(static_cast<int>(offset % 60));
+  }
+  void format_utc_offset_impl(std::true_type) {
+    write_utc_offset(tm_.tm_gmtoff);
+  }
+  void format_utc_offset_impl(std::false_type) {
+#if defined(_WIN32)
+    tzset_once();
+    long offset = 0;
+    _get_timezone(&offset);
+    if (tm_.tm_isdst) {
+      long dstbias = 0;
+      _get_dstbias(&dstbias);
+      offset += dstbias;
+    }
+    write_utc_offset(-offset);
+#else
+    format_localized('z');
+#endif
+  }
+
   void format_localized(char format, char modifier = 0) {
     out_ = write<Char>(out_, tm_, loc_, format, modifier);
   }
@@ -1094,7 +1141,9 @@ template <typename OutputIt, typename Char> class tm_writer {
     out_ = copy_str<Char>(std::begin(buf) + offset, std::end(buf), out_);
   }
 
-  void on_utc_offset() { format_localized('z'); }
+  void on_utc_offset() {
+    format_utc_offset_impl(has_member_data_tm_gmtoff<std::tm>{});
+  }
   void on_tz_name() { format_localized('Z'); }
 
   void on_year(numeric_system ns) {

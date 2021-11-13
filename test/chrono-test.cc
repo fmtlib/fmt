@@ -49,7 +49,14 @@ std::string system_strftime(const std::string& format, const std::tm* timeptr,
   os.imbue(loc);
   facet.put(os, os, ' ', timeptr, format.c_str(),
             format.c_str() + format.size());
+#ifdef _WIN32
+  // Workaround a bug in older versions of Universal CRT.
+  auto str = os.str();
+  if (str == "-0000") str = "+0000";
+  return str;
+#else
   return os.str();
+#endif
 }
 
 FMT_CONSTEXPR std::tm make_tm(int year, int mon, int mday, int hour, int min,
