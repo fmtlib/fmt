@@ -993,7 +993,7 @@ template <typename OutputIt, typename Char> class tm_writer {
   }
 
  public:
-  explicit tm_writer(const std::locale& loc, OutputIt out, const std::tm& tm)
+  tm_writer(const std::locale& loc, OutputIt out, const std::tm& tm)
       : loc_(loc),
         is_classic_(loc_ == get_classic_locale()),
         out_(out),
@@ -1374,25 +1374,24 @@ OutputIt format_duration_unit(OutputIt out) {
   return out;
 }
 
-struct get_locale {
-  explicit get_locale(bool localized, locale_ref loc_ref)
-      : has_locale{localized} {
-    if (localized)
-      ::new (&locale) std::locale{loc_ref.template get<std::locale>()};
-  }
-  ~get_locale() {
-    if (has_locale) locale.~locale();
-  }
-  operator const std::locale&() const {
-    return has_locale ? locale : get_classic_locale();
-  }
-
+class get_locale {
  private:
   union {
-    monostate dummy{};
-    std::locale locale;
+    std::locale locale_;
   };
-  bool has_locale = false;
+  bool has_locale_ = false;
+
+ public:
+  get_locale(bool localized, locale_ref loc) : has_locale_(localized) {
+    if (localized)
+      ::new (&locale_) std::locale(loc.template get<std::locale>());
+  }
+  ~get_locale() {
+    if (has_locale_) locale_.~locale();
+  }
+  operator const std::locale&() const {
+    return has_locale_ ? locale_ : get_classic_locale();
+  }
 };
 
 template <typename FormatContext, typename OutputIt, typename Rep,
@@ -1414,8 +1413,8 @@ struct chrono_formatter {
 
   using char_type = typename FormatContext::char_type;
 
-  explicit chrono_formatter(FormatContext& ctx, OutputIt o,
-                            std::chrono::duration<Rep, Period> d)
+  chrono_formatter(FormatContext& ctx, OutputIt o,
+                   std::chrono::duration<Rep, Period> d)
       : context(ctx),
         out(o),
         val(static_cast<rep>(d.count())),
@@ -1497,7 +1496,7 @@ struct chrono_formatter {
   void format_localized(const tm& time, char format, char modifier = 0) {
     if (isnan(val)) return write_nan();
     out = detail::write<char_type>(
-        out, time, get_locale{localized, context.locale()}, format, modifier);
+        out, time, get_locale(localized, context.locale()), format, modifier);
   }
 
   void on_text(const char_type* begin, const char_type* end) {
@@ -1665,7 +1664,7 @@ template <typename Char> struct formatter<weekday, Char> {
     auto time = std::tm();
     time.tm_wday = static_cast<int>(wd.c_encoding());
     return detail::write<Char>(
-        ctx.out(), time, detail::get_locale{localized, ctx.locale()}, 'a');
+        ctx.out(), time, detail::get_locale(localized, ctx.locale()), 'a');
   }
 };
 
@@ -1863,9 +1862,9 @@ template <typename Char> struct formatter<std::tm, Char> {
   template <typename FormatContext>
   auto format(const std::tm& tm, FormatContext& ctx) const
       -> decltype(ctx.out()) {
-    const auto loc_ref = ctx.locale();
-    return this->do_format(
-        ctx.out(), tm, detail::get_locale{static_cast<bool>(loc_ref), loc_ref});
+    const auto loc = ctx.locale();
+    return this->do_format(ctx.out(), tm,
+                           detail::get_locale(static_cast<bool>(loc), loc));
   }
 };
 
