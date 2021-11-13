@@ -1847,18 +1847,6 @@ template <typename Char> struct formatter<std::tm, Char> {
     return end;
   }
 
-  template <typename It>
-  It do_format(It out, const std::tm& tm, const std::locale& loc) const {
-    auto w = detail::tm_writer<It, Char>(loc, out, tm);
-    if (spec_ == spec::year_month_day)
-      w.on_iso_date();
-    else if (spec_ == spec::hh_mm_ss)
-      w.on_iso_time();
-    else
-      detail::parse_chrono_format(specs.begin(), specs.end(), w);
-    return w.out();
-  }
-
  public:
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
@@ -1868,9 +1856,16 @@ template <typename Char> struct formatter<std::tm, Char> {
   template <typename FormatContext>
   auto format(const std::tm& tm, FormatContext& ctx) const
       -> decltype(ctx.out()) {
-    const auto loc = ctx.locale();
-    return this->do_format(ctx.out(), tm,
-                           detail::get_locale(static_cast<bool>(loc), loc));
+    const auto loc_ref = ctx.locale();
+    detail::get_locale loc(static_cast<bool>(loc_ref), loc_ref);
+    auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), tm);
+    if (spec_ == spec::year_month_day)
+      w.on_iso_date();
+    else if (spec_ == spec::hh_mm_ss)
+      w.on_iso_time();
+    else
+      detail::parse_chrono_format(specs.begin(), specs.end(), w);
+    return w.out();
   }
 };
 
