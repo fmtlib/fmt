@@ -1663,8 +1663,10 @@ template <typename Char> struct formatter<weekday, Char> {
   auto format(weekday wd, FormatContext& ctx) const -> decltype(ctx.out()) {
     auto time = std::tm();
     time.tm_wday = static_cast<int>(wd.c_encoding());
-    return detail::write<Char>(
-        ctx.out(), time, detail::get_locale(localized, ctx.locale()), 'a');
+    detail::get_locale loc(localized, ctx.locale());
+    auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
+    w.on_abbr_weekday();
+    return w.out();
   }
 };
 
