@@ -733,6 +733,10 @@ template <> struct formatter<nonconst_formattable> {
 };
 FMT_END_NAMESPACE
 
+struct convertible_to_pointer {
+  operator const int*() const { return nullptr; }
+};
+
 TEST(core_test, is_formattable) {
   static_assert(fmt::is_formattable<signed char*>::value, "");
   static_assert(fmt::is_formattable<unsigned char*>::value, "");
@@ -759,6 +763,8 @@ TEST(core_test, is_formattable) {
 #if !FMT_MSC_VER || FMT_MSC_VER >= 1910
   static_assert(!fmt::is_formattable<const nonconst_formattable&>::value, "");
 #endif
+
+  static_assert(!fmt::is_formattable<convertible_to_pointer>::value, "");
 
   static_assert(!fmt::is_formattable<signed char*, wchar_t>::value, "");
   static_assert(!fmt::is_formattable<unsigned char*, wchar_t>::value, "");
