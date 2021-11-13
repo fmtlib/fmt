@@ -277,7 +277,14 @@ std::wstring system_wcsftime(const std::wstring& format, const std::tm* timeptr,
   os.imbue(loc);
   facet.put(os, os, L' ', timeptr, format.c_str(),
             format.c_str() + format.size());
+#ifdef _WIN32
+  // Workaround a bug in older versions of Universal CRT.
+  auto str = os.str();
+  if (str == L"-0000") str = L"+0000";
+  return str;
+#else
   return os.str();
+#endif
 }
 
 TEST(chrono_test, time_point) {
