@@ -1412,6 +1412,7 @@ struct chrono_formatter {
   bool negative;
 
   using char_type = typename FormatContext::char_type;
+  using tm_writer_type = tm_writer<OutputIt, char_type>;
 
   chrono_formatter(FormatContext& ctx, OutputIt o,
                    std::chrono::duration<Rep, Period> d)
@@ -1493,10 +1494,13 @@ struct chrono_formatter {
   void write_pinf() { std::copy_n("inf", 3, out); }
   void write_ninf() { std::copy_n("-inf", 4, out); }
 
-  void format_localized(const tm& time, char format, char modifier = 0) {
+  template <typename Callback, typename... Args>
+  void format_tm(const tm& time, Callback cb, Args... args) {
     if (isnan(val)) return write_nan();
-    out = detail::write<char_type>(
-        out, time, get_locale(localized, context.locale()), format, modifier);
+    get_locale loc(localized, context.locale());
+    auto w = tm_writer_type(loc, out, time);
+    (w.*cb)(args...);
+    out = w.out();
   }
 
   void on_text(const char_type* begin, const char_type* end) {
@@ -1537,7 +1541,7 @@ struct chrono_formatter {
     if (ns == numeric_system::standard) return write(hour(), 2);
     auto time = tm();
     time.tm_hour = to_nonnegative_int(hour(), 24);
-    format_localized(time, 'H', 'O');
+    format_tm(time, &tm_writer_type::on_24_hour, ns);
   }
 
   void on_12_hour(numeric_system ns) {
@@ -1546,7 +1550,7 @@ struct chrono_formatter {
     if (ns == numeric_system::standard) return write(hour12(), 2);
     auto time = tm();
     time.tm_hour = to_nonnegative_int(hour12(), 12);
-    format_localized(time, 'I', 'O');
+    format_tm(time, &tm_writer_type::on_12_hour, ns);
   }
 
   void on_minute(numeric_system ns) {
@@ -1555,7 +1559,7 @@ struct chrono_formatter {
     if (ns == numeric_system::standard) return write(minute(), 2);
     auto time = tm();
     time.tm_min = to_nonnegative_int(minute(), 60);
-    format_localized(time, 'M', 'O');
+    format_tm(time, &tm_writer_type::on_minute, ns);
   }
 
   void on_second(numeric_system ns) {
@@ -1580,12 +1584,12 @@ struct chrono_formatter {
     }
     auto time = tm();
     time.tm_sec = to_nonnegative_int(second(), 60);
-    format_localized(time, 'S', 'O');
+    format_tm(time, &tm_writer_type::on_second, ns);
   }
 
   void on_12_hour_time() {
     if (handle_nan_inf()) return;
-    format_localized(time(), 'r');
+    format_tm(time(), &tm_writer_type::on_12_hour_time);
   }
 
   void on_24_hour_time() {
@@ -1609,7 +1613,7 @@ struct chrono_formatter {
 
   void on_am_pm() {
     if (handle_nan_inf()) return;
-    format_localized(time(), 'p');
+    format_tm(time(), &tm_writer_type::on_am_pm);
   }
 
   void on_duration_value() {
