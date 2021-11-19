@@ -77,8 +77,10 @@ template FMT_API dragonbox::decimal_fp<double> dragonbox::to_decimal(double x)
 }  // namespace detail
 
 // Workaround a bug in MSVC2013 that prevents instantiation of format_float.
+#if FMT_MSC_VER != 0 && FMT_MSC_VER <= 1800
 int (*instantiate_format_float)(double, int, detail::float_specs,
                                 detail::buffer<char>&) = detail::format_float;
+#endif
 
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
 template FMT_API detail::locale_ref::locale_ref(const std::locale& loc);
