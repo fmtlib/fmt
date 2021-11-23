@@ -1370,7 +1370,6 @@ template <typename Context> struct arg_mapper {
 
   // We use SFINAE instead of a const T* parameter to avoid conflicting with
   // the C array overload.
-
   template <
       typename T,
       FMT_ENABLE_IF(
