@@ -1368,33 +1368,17 @@ template <typename Context> struct arg_mapper {
     return val;
   }
 
-  template <typename T,
-            FMT_ENABLE_IF(
-                std::is_function<typename std::remove_pointer<T>::type>::value)>
-  FMT_CONSTEXPR auto map(const T&) -> unformattable_pointer {
-    return {};
-  }
-
-  template <typename T, FMT_ENABLE_IF(std::is_member_object_pointer<T>::value)>
-  FMT_CONSTEXPR auto map(const T&) -> unformattable_pointer {
-    return {};
-  }
-
-  template <typename T,
-            FMT_ENABLE_IF(std::is_member_function_pointer<T>::value)>
-  FMT_CONSTEXPR auto map(const T&) -> unformattable_pointer {
-    return {};
-  }
-
   // We use SFINAE instead of a const T* parameter to avoid conflicting with
   // the C array overload.
 
   template <
       typename T,
       FMT_ENABLE_IF(
-          !std::is_function<typename std::remove_pointer<T>::type>::value &&
-          std::is_convertible<const T&, const void*>::value &&
-          !std::is_convertible<const T&, const char_type*>::value)>
+          std::is_member_object_pointer<T>::value ||
+          std::is_member_function_pointer<T>::value ||
+          std::is_function<typename std::remove_pointer<T>::type>::value ||
+          (std::is_convertible<const T&, const void*>::value &&
+           !std::is_convertible<const T&, const char_type*>::value))>
   FMT_CONSTEXPR auto map(const T&) -> unformattable_pointer {
     return {};
   }
