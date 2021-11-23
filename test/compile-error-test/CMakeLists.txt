@@ -67,6 +67,12 @@ expect_compile_error("
   fmt::format(\"{}\", S());
 ")
 
+# Formatting a function
+expect_compile_error("
+  void (*f)();
+  fmt::format(\"{}\", f);
+")
+
 # Make sure that compiler features detected in the header
 # match the features detected in CMake.
 if (SUPPORTS_USER_DEFINED_LITERALS)
