@@ -1146,9 +1146,6 @@ constexpr bool is_arithmetic_type(type t) {
 struct unformattable {};
 struct unformattable_char : unformattable {};
 struct unformattable_const : unformattable {};
-struct unformattable_function_pointer : unformattable {};
-struct unformattable_member_function_pointer : unformattable {};
-struct unformattable_member_object_pointer : unformattable {};
 struct unformattable_pointer : unformattable {};
 
 template <typename Char> struct string_value {
@@ -1231,9 +1228,6 @@ template <typename Context> class value {
   value(unformattable_char);
   value(unformattable_const);
   value(unformattable_pointer);
-  value(unformattable_function_pointer);
-  value(unformattable_member_function_pointer);
-  value(unformattable_member_object_pointer);
 
  private:
   // Formats an argument of a custom type, such as a user-defined class.
@@ -1375,20 +1369,20 @@ template <typename Context> struct arg_mapper {
   }
 
   template <typename T,
-            FMT_ENABLE_IF(std::is_function<typename std::remove_pointer<
-                              remove_cvref_t<T>>::type>::value)>
-  FMT_CONSTEXPR auto map(const T&) -> unformattable_function_pointer {
+            FMT_ENABLE_IF(
+                std::is_function<typename std::remove_pointer<T>::type>::value)>
+  FMT_CONSTEXPR auto map(const T&) -> unformattable_pointer {
     return {};
   }
 
   template <typename T, FMT_ENABLE_IF(std::is_member_object_pointer<T>::value)>
-  FMT_CONSTEXPR auto map(const T&) -> unformattable_member_object_pointer {
+  FMT_CONSTEXPR auto map(const T&) -> unformattable_pointer {
     return {};
   }
 
   template <typename T,
             FMT_ENABLE_IF(std::is_member_function_pointer<T>::value)>
-  FMT_CONSTEXPR auto map(const T&) -> unformattable_member_function_pointer {
+  FMT_CONSTEXPR auto map(const T&) -> unformattable_pointer {
     return {};
   }
 
@@ -1397,10 +1391,10 @@ template <typename Context> struct arg_mapper {
 
   template <
       typename T,
-      FMT_ENABLE_IF(!std::is_function<typename std::remove_pointer<
-                        remove_cvref_t<T>>::type>::value &&
-                    std::is_convertible<const T&, const void*>::value &&
-                    !std::is_convertible<const T&, const char_type*>::value)>
+      FMT_ENABLE_IF(
+          !std::is_function<typename std::remove_pointer<T>::type>::value &&
+          std::is_convertible<const T&, const void*>::value &&
+          !std::is_convertible<const T&, const char_type*>::value)>
   FMT_CONSTEXPR auto map(const T&) -> unformattable_pointer {
     return {};
   }
@@ -1703,27 +1697,6 @@ FMT_CONSTEXPR FMT_INLINE auto make_arg(T&& val) -> value<Context> {
       !std::is_same<decltype(arg), const unformattable_pointer&>::value;
   static_assert(formattable_pointer,
                 "Formatting of non-void pointers is disallowed.");
-
-  // Formatting of function pointers is disallowed.
-  constexpr bool formattable_function_pointer =
-      !std::is_same<decltype(arg),
-                    const unformattable_function_pointer&>::value;
-  static_assert(formattable_function_pointer,
-                "Formatting of function pointers is disallowed.");
-
-  // Formatting of member function pointers is disallowed.
-  constexpr bool formattable_member_function_pointer =
-      !std::is_same<decltype(arg),
-                    const unformattable_member_function_pointer&>::value;
-  static_assert(formattable_member_function_pointer,
-                "Formatting of member function pointers is disallowed.");
-
-  // Formatting of member object pointers is disallowed.
-  constexpr bool formattable_member_object_pointer =
-      !std::is_same<decltype(arg),
-                    const unformattable_member_object_pointer&>::value;
-  static_assert(formattable_member_object_pointer,
-                "Formatting of member object pointers is disallowed.");
 
   constexpr bool formattable =
       !std::is_same<decltype(arg), const unformattable&>::value;
