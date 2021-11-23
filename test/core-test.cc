@@ -773,10 +773,10 @@ TEST(core_test, is_formattable) {
 
   static_assert(!fmt::is_formattable<void (*)()>::value, "");
 
-  struct S;
+  struct s;
 
-  static_assert(!fmt::is_formattable<int(S::*)>::value, "");
-  static_assert(!fmt::is_formattable<int (S::*)()>::value, "");
+  static_assert(!fmt::is_formattable<int(s::*)>::value, "");
+  static_assert(!fmt::is_formattable<int (s::*)()>::value, "");
 }
 
 TEST(core_test, format) { EXPECT_EQ(fmt::format("{}", 42), "42"); }
