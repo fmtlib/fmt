@@ -770,6 +770,13 @@ TEST(core_test, is_formattable) {
   static_assert(!fmt::is_formattable<unsigned char*, wchar_t>::value, "");
   static_assert(!fmt::is_formattable<const signed char*, wchar_t>::value, "");
   static_assert(!fmt::is_formattable<const unsigned char*, wchar_t>::value, "");
+
+  static_assert(!fmt::is_formattable<void (*)()>::value, "");
+
+  struct s;
+
+  static_assert(!fmt::is_formattable<int(s::*)>::value, "");
+  static_assert(!fmt::is_formattable<int (s::*)()>::value, "");
 }
 
 TEST(core_test, format) { EXPECT_EQ(fmt::format("{}", 42), "42"); }

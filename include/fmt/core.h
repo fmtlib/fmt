@@ -1372,8 +1372,11 @@ template <typename Context> struct arg_mapper {
   // the C array overload.
   template <
       typename T,
-      FMT_ENABLE_IF(std::is_convertible<const T&, const void*>::value &&
-                    !std::is_convertible<const T&, const char_type*>::value)>
+      FMT_ENABLE_IF(
+          std::is_member_pointer<T>::value ||
+          std::is_function<typename std::remove_pointer<T>::type>::value ||
+          (std::is_convertible<const T&, const void*>::value &&
+           !std::is_convertible<const T&, const char_type*>::value))>
   FMT_CONSTEXPR auto map(const T&) -> unformattable_pointer {
     return {};
   }
