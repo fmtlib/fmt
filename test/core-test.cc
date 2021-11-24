@@ -902,10 +902,10 @@ TEST(core_test, adl) {
   if (fmt::detail::const_check(true)) return;
   auto s = adl_test::string();
   char buf[10];
-  fmt::format("{}", s);
+  (void)fmt::format("{}", s);
   fmt::format_to(buf, "{}", s);
   fmt::format_to_n(buf, 10, "{}", s);
-  fmt::formatted_size("{}", s);
+  (void)fmt::formatted_size("{}", s);
   fmt::print("{}", s);
   fmt::print(stdout, "{}", s);
 }
