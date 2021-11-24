@@ -218,7 +218,7 @@ int buffered_file::fileno() const {
 
 #if FMT_USE_FCNTL
 file::file(cstring_view path, int oflag) {
-  int mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+  unsigned int mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
 #  if defined(_WIN32) && !defined(__MINGW32__)
   fd_ = -1;
   FMT_POSIX_CALL(sopen_s(&fd_, path.c_str(), oflag, _SH_DENYNO, mode));
