@@ -453,9 +453,9 @@ TEST(chrono_test, format_default_fp) {
 }
 
 TEST(chrono_test, format_precision) {
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{:.2}"), std::chrono::seconds(42)),
-                   fmt::format_error,
-                   "precision not allowed for this argument type");
+  EXPECT_THROW_MSG(
+      (void)fmt::format(runtime("{:.2}"), std::chrono::seconds(42)),
+      fmt::format_error, "precision not allowed for this argument type");
   EXPECT_EQ("1ms", fmt::format("{:.0}", dms(1.234)));
   EXPECT_EQ("1.2ms", fmt::format("{:.1}", dms(1.234)));
   EXPECT_EQ("1.23ms", fmt::format("{:.{}}", dms(1.234), 2));
@@ -493,9 +493,9 @@ TEST(chrono_test, format_simple_q) {
 }
 
 TEST(chrono_test, format_precision_q) {
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{:.2%Q %q}"), std::chrono::seconds(42)),
-                   fmt::format_error,
-                   "precision not allowed for this argument type");
+  EXPECT_THROW_MSG(
+      (void)fmt::format(runtime("{:.2%Q %q}"), std::chrono::seconds(42)),
+      fmt::format_error, "precision not allowed for this argument type");
   EXPECT_EQ("1.2 ms", fmt::format("{:.1%Q %q}", dms(1.234)));
   EXPECT_EQ("1.23 ms", fmt::format("{:.{}%Q %q}", dms(1.234), 2));
 }
@@ -551,7 +551,7 @@ TEST(chrono_test, special_durations) {
       "nan nan nan nan nan:nan nan",
       fmt::format("{:%I %H %M %S %R %r}", std::chrono::duration<double>(nan)));
   (void)fmt::format("{:%S}",
-              std::chrono::duration<float, std::atto>(1.79400457e+31f));
+                    std::chrono::duration<float, std::atto>(1.79400457e+31f));
   EXPECT_EQ(fmt::format("{}", std::chrono::duration<float, std::exa>(1)),
             "1Es");
   EXPECT_EQ(fmt::format("{}", std::chrono::duration<float, std::atto>(1)),
