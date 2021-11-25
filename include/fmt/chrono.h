@@ -11,8 +11,9 @@
 #include <algorithm>
 #include <chrono>
 #include <ctime>
+#include <iterator>
 #include <locale>
-#include <sstream>
+#include <ostream>
 #include <type_traits>
 
 #include "format.h"
@@ -291,23 +292,24 @@ inline null<> gmtime_r(...) { return null<>(); }
 inline null<> gmtime_s(...) { return null<>(); }
 
 template <typename Char>
-inline auto do_write(const std::tm& time, const std::locale& loc, char format,
-                     char modifier) -> std::basic_string<Char> {
-  auto&& os = std::basic_ostringstream<Char>();
+inline void do_write(buffer<Char>& buf, const std::tm& time,
+                     const std::locale& loc, char format, char modifier) {
+  auto&& format_buf = formatbuf<std::basic_streambuf<Char>>(buf);
+  auto&& os = std::basic_ostream<Char>(&format_buf);
   os.imbue(loc);
   using iterator = std::ostreambuf_iterator<Char>;
   const auto& facet = std::use_facet<std::time_put<Char, iterator>>(loc);
   auto end = facet.put(os, os, Char(' '), &time, format, modifier);
   if (end.failed()) FMT_THROW(format_error("failed to format time"));
-  return std::move(os).str();
 }
 
 template <typename Char, typename OutputIt,
           FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
 auto write(OutputIt out, const std::tm& time, const std::locale& loc,
            char format, char modifier = 0) -> OutputIt {
-  auto str = do_write<Char>(time, loc, format, modifier);
-  return std::copy(str.begin(), str.end(), out);
+  auto&& buffer = get_buffer<Char>(out);
+  do_write<Char>(buffer, time, loc, format, modifier);
+  return buffer.out();
 }
 
 inline const std::locale& get_classic_locale() {
@@ -319,7 +321,8 @@ template <typename Char, typename OutputIt,
           FMT_ENABLE_IF(std::is_same<Char, char>::value)>
 auto write(OutputIt out, const std::tm& time, const std::locale& loc,
            char format, char modifier = 0) -> OutputIt {
-  auto str = do_write<char>(time, loc, format, modifier);
+  auto&& buffer = basic_memory_buffer<Char>();
+  do_write<char>(buffer, time, loc, format, modifier);
   if (detail::is_utf8() && loc != get_classic_locale()) {
     // char16_t and char32_t codecvts are broken in MSVC (linkage errors) and
     // gcc-4.
@@ -347,11 +350,11 @@ auto write(OutputIt out, const std::tm& time, const std::locale& loc,
     code_unit* to_next = nullptr;
     constexpr size_t buf_size = 32;
     code_unit buf[buf_size] = {};
-    auto result = f.in(mb, str.data(), str.data() + str.size(), from_next, buf,
-                       buf + buf_size, to_next);
+    auto result = f.in(mb, buffer.data(), buffer.data() + buffer.size(),
+                       from_next, buf, buf + buf_size, to_next);
     if (result != std::codecvt_base::ok)
       FMT_THROW(format_error("failed to format time"));
-    str.clear();
+    buffer.clear();
     for (code_unit* p = buf; p != to_next; ++p) {
       uint32_t c = static_cast<uint32_t>(*p);
       if (sizeof(code_unit) == 2 && c >= 0xd800 && c <= 0xdfff) {
@@ -363,25 +366,25 @@ auto write(OutputIt out, const std::tm& time, const std::locale& loc,
         c = (c << 10) + static_cast<uint32_t>(*p) - 0x35fdc00;
       }
       if (c < 0x80) {
-        str.push_back(static_cast<char>(c));
+        buffer.push_back(static_cast<char>(c));
       } else if (c < 0x800) {
-        str.push_back(static_cast<char>(0xc0 | (c >> 6)));
-        str.push_back(static_cast<char>(0x80 | (c & 0x3f)));
+        buffer.push_back(static_cast<char>(0xc0 | (c >> 6)));
+        buffer.push_back(static_cast<char>(0x80 | (c & 0x3f)));
       } else if ((c >= 0x800 && c <= 0xd7ff) || (c >= 0xe000 && c <= 0xffff)) {
-        str.push_back(static_cast<char>(0xe0 | (c >> 12)));
-        str.push_back(static_cast<char>(0x80 | ((c & 0xfff) >> 6)));
-        str.push_back(static_cast<char>(0x80 | (c & 0x3f)));
+        buffer.push_back(static_cast<char>(0xe0 | (c >> 12)));
+        buffer.push_back(static_cast<char>(0x80 | ((c & 0xfff) >> 6)));
+        buffer.push_back(static_cast<char>(0x80 | (c & 0x3f)));
       } else if (c >= 0x10000 && c <= 0x10ffff) {
-        str.push_back(static_cast<char>(0xf0 | (c >> 18)));
-        str.push_back(static_cast<char>(0x80 | ((c & 0x3ffff) >> 12)));
-        str.push_back(static_cast<char>(0x80 | ((c & 0xfff) >> 6)));
-        str.push_back(static_cast<char>(0x80 | (c & 0x3f)));
+        buffer.push_back(static_cast<char>(0xf0 | (c >> 18)));
+        buffer.push_back(static_cast<char>(0x80 | ((c & 0x3ffff) >> 12)));
+        buffer.push_back(static_cast<char>(0x80 | ((c & 0xfff) >> 6)));
+        buffer.push_back(static_cast<char>(0x80 | (c & 0x3f)));
       } else {
         FMT_THROW(format_error("failed to format time"));
       }
     }
   }
-  return std::copy(str.begin(), str.end(), out);
+  return copy_str<Char>(buffer.data(), buffer.data() + buffer.size(), out);
 }
 
 }  // namespace detail
