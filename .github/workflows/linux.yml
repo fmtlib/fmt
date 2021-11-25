@@ -77,3 +77,20 @@ jobs:
       run: ctest -C ${{matrix.build_type}}
       env:
         CTEST_OUTPUT_ON_FAILURE: True
+
+  check-format:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        cxx: [clang++-13]
+        build_type: [Debug]
+        std: [20]
+        os: [ubuntu-20.04]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Check-format
+      working-directory: ${{runner.workspace}}
+      run: |
+        clang-format-13 -i --Werror --dry-run $(find . -name \*.cc) $(find . -name \*.h)
