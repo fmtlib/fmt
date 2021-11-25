@@ -28,8 +28,9 @@
 #  endif
 #  if (FMT_HAS_INCLUDE(<fcntl.h>) || defined(__APPLE__) || \
        defined(__linux__)) &&                              \
-      (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP))
-#  include <fcntl.h>  // for O_RDONLY
+      (!defined(WINAPI_FAMILY) ||                          \
+       (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP))
+#    include <fcntl.h>  // for O_RDONLY
 #    define FMT_USE_FCNTL 1
 #  else
 #    define FMT_USE_FCNTL 0
@@ -395,10 +396,10 @@ struct ostream_params {
 
 // Intel has a bug that results in failure to deduce a constructor
 // for empty parameter packs.
-#if defined(__INTEL_COMPILER) && __INTEL_COMPILER < 2000
+#  if defined(__INTEL_COMPILER) && __INTEL_COMPILER < 2000
   ostream_params(int new_oflag) : oflag(new_oflag) {}
   ostream_params(detail::buffer_size bs) : buffer_size(bs.value) {}
-#endif
+#  endif
 };
 
 FMT_END_DETAIL_NAMESPACE

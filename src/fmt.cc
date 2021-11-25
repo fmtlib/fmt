@@ -79,7 +79,6 @@ export module fmt;
 #define FMT_END_DETAIL_NAMESPACE \
   }                              \
   export {
-
 // all library-provided declarations and definitions
 // must be in the module purview to be exported
 #include "fmt/args.h"

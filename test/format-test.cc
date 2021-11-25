@@ -471,9 +471,11 @@ TEST(format_test, auto_arg_index) {
   EXPECT_THROW_MSG((void)fmt::format(runtime("{}{0}"), 'a', 'b'), format_error,
                    "cannot switch from automatic to manual argument indexing");
   EXPECT_EQ("1.2", fmt::format("{:.{}}", 1.2345, 2));
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0}:.{}"), 1.2345, 2), format_error,
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{0}:.{}"), 1.2345, 2),
+                   format_error,
                    "cannot switch from manual to automatic argument indexing");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{:.{0}}"), 1.2345, 2), format_error,
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:.{0}}"), 1.2345, 2),
+                   format_error,
                    "cannot switch from automatic to manual argument indexing");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{}")), format_error,
                    "argument not found");
@@ -578,8 +580,9 @@ TEST(format_test, plus_sign) {
                    "invalid format specifier for char");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:+}"), "abc"), format_error,
                    "format specifier requires numeric argument");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:+}"), reinterpret_cast<void*>(0x42)),
-                   format_error, "format specifier requires numeric argument");
+  EXPECT_THROW_MSG(
+      (void)fmt::format(runtime("{0:+}"), reinterpret_cast<void*>(0x42)),
+      format_error, "format specifier requires numeric argument");
 }
 
 TEST(format_test, minus_sign) {
@@ -602,8 +605,9 @@ TEST(format_test, minus_sign) {
                    "invalid format specifier for char");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:-}"), "abc"), format_error,
                    "format specifier requires numeric argument");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:-}"), reinterpret_cast<void*>(0x42)),
-                   format_error, "format specifier requires numeric argument");
+  EXPECT_THROW_MSG(
+      (void)fmt::format(runtime("{0:-}"), reinterpret_cast<void*>(0x42)),
+      format_error, "format specifier requires numeric argument");
 }
 
 TEST(format_test, space_sign) {
@@ -626,8 +630,9 @@ TEST(format_test, space_sign) {
                    "invalid format specifier for char");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0: }"), "abc"), format_error,
                    "format specifier requires numeric argument");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0: }"), reinterpret_cast<void*>(0x42)),
-                   format_error, "format specifier requires numeric argument");
+  EXPECT_THROW_MSG(
+      (void)fmt::format(runtime("{0: }"), reinterpret_cast<void*>(0x42)),
+      format_error, "format specifier requires numeric argument");
 }
 
 TEST(format_test, hash_flag) {
@@ -676,8 +681,9 @@ TEST(format_test, hash_flag) {
                    "invalid format specifier for char");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:#}"), "abc"), format_error,
                    "format specifier requires numeric argument");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:#}"), reinterpret_cast<void*>(0x42)),
-                   format_error, "format specifier requires numeric argument");
+  EXPECT_THROW_MSG(
+      (void)fmt::format(runtime("{0:#}"), reinterpret_cast<void*>(0x42)),
+      format_error, "format specifier requires numeric argument");
 }
 
 TEST(format_test, zero_flag) {
@@ -908,9 +914,9 @@ TEST(format_test, precision) {
   EXPECT_THROW_MSG(
       (void)fmt::format(runtime("{0:.2f}"), reinterpret_cast<void*>(0xcafe)),
       format_error, "precision not allowed for this argument type");
-  EXPECT_THROW_MSG(
-      (void)fmt::format(runtime("{:.{}e}"), 42.0, fmt::detail::max_value<int>()),
-      format_error, "number is too big");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:.{}e}"), 42.0,
+                                     fmt::detail::max_value<int>()),
+                   format_error, "number is too big");
 
   EXPECT_EQ("st", fmt::format("{0:.2}", "str"));
 }
@@ -970,35 +976,46 @@ TEST(format_test, runtime_precision) {
                    "precision not allowed for this argument type");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 42u, 2), format_error,
                    "precision not allowed for this argument type");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}f}"), 42u, 2), format_error,
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}f}"), 42u, 2),
+                   format_error,
                    "precision not allowed for this argument type");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 42l, 2), format_error,
                    "precision not allowed for this argument type");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}f}"), 42l, 2), format_error,
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}f}"), 42l, 2),
+                   format_error,
                    "precision not allowed for this argument type");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 42ul, 2), format_error,
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 42ul, 2),
+                   format_error,
                    "precision not allowed for this argument type");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}f}"), 42ul, 2), format_error,
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}f}"), 42ul, 2),
+                   format_error,
                    "precision not allowed for this argument type");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 42ll, 2), format_error,
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 42ll, 2),
+                   format_error,
                    "precision not allowed for this argument type");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}f}"), 42ll, 2), format_error,
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}f}"), 42ll, 2),
+                   format_error,
                    "precision not allowed for this argument type");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 42ull, 2), format_error,
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 42ull, 2),
+                   format_error,
                    "precision not allowed for this argument type");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}f}"), 42ull, 2), format_error,
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}f}"), 42ull, 2),
+                   format_error,
                    "precision not allowed for this argument type");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:3.{1}}"), 'x', 0), format_error,
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:3.{1}}"), 'x', 0),
+                   format_error,
                    "precision not allowed for this argument type");
   EXPECT_EQ("1.2", fmt::format("{0:.{1}}", 1.2345, 2));
   EXPECT_EQ("1.2", fmt::format("{1:.{0}}", 2, 1.2345l));
 
-  EXPECT_THROW_MSG(
-      (void)fmt::format(runtime("{0:.{1}}"), reinterpret_cast<void*>(0xcafe), 2),
-      format_error, "precision not allowed for this argument type");
-  EXPECT_THROW_MSG(
-      (void)fmt::format(runtime("{0:.{1}f}"), reinterpret_cast<void*>(0xcafe), 2),
-      format_error, "precision not allowed for this argument type");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"),
+                                     reinterpret_cast<void*>(0xcafe), 2),
+                   format_error,
+                   "precision not allowed for this argument type");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}f}"),
+                                     reinterpret_cast<void*>(0xcafe), 2),
+                   format_error,
+                   "precision not allowed for this argument type");
 
   EXPECT_EQ("st", fmt::format("{0:.{1}}", "str", 2));
 }
@@ -1029,8 +1046,8 @@ void check_unknown_types(const T& value, const char* types, const char*) {
     if (std::strchr(types, c) || std::strchr(special, c) || !c) continue;
     safe_sprintf(format_str, "{0:10%c}", c);
     const char* message = "invalid type specifier";
-    EXPECT_THROW_MSG((void)fmt::format(runtime(format_str), value), format_error,
-                     message)
+    EXPECT_THROW_MSG((void)fmt::format(runtime(format_str), value),
+                     format_error, message)
         << format_str << " " << message;
   }
 }
@@ -1558,8 +1575,9 @@ TEST(format_test, format_examples) {
             fmt::format("int: {0:d};  hex: {0:#x};  oct: {0:#o}", 42));
 
   EXPECT_EQ("The answer is 42", fmt::format("The answer is {}", 42));
-  EXPECT_THROW_MSG((void)fmt::format(runtime("The answer is {:d}"), "forty-two"),
-                   format_error, "invalid type specifier");
+  EXPECT_THROW_MSG(
+      (void)fmt::format(runtime("The answer is {:d}"), "forty-two"),
+      format_error, "invalid type specifier");
 
   EXPECT_WRITE(
       stdout, fmt::print("{}", std::numeric_limits<double>::infinity()), "inf");
