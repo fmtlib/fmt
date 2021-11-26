@@ -82,11 +82,17 @@
 #  define FMT_HAS_CPP_ATTRIBUTE(x) 0
 #endif
 
+#ifdef _MSVC_LANG
+#  define FMT_CPLUSPLUS _MSVC_LANG
+#else
+#  define FMT_CPLUSPLUS __cplusplus
+#endif
+
 #define FMT_HAS_CPP14_ATTRIBUTE(attribute) \
-  (__cplusplus >= 201402L && FMT_HAS_CPP_ATTRIBUTE(attribute))
+  (FMT_CPLUSPLUS >= 201402L && FMT_HAS_CPP_ATTRIBUTE(attribute))
 
 #define FMT_HAS_CPP17_ATTRIBUTE(attribute) \
-  (__cplusplus >= 201703L && FMT_HAS_CPP_ATTRIBUTE(attribute))
+  (FMT_CPLUSPLUS >= 201703L && FMT_HAS_CPP_ATTRIBUTE(attribute))
 
 // Check if relaxed C++14 constexpr is supported.
 // GCC doesn't allow throw in constexpr until version 6 (bug 67371).
@@ -180,8 +186,7 @@
 #  else
 #    define FMT_FALLTHROUGH
 #  endif
-#elif FMT_HAS_CPP17_ATTRIBUTE(fallthrough) || \
-    (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
+#elif FMT_HAS_CPP17_ATTRIBUTE(fallthrough)
 #  define FMT_FALLTHROUGH [[fallthrough]]
 #else
 #  define FMT_FALLTHROUGH
