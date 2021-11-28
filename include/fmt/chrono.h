@@ -1320,19 +1320,19 @@ inline bool isfinite(T) {
 
 // Converts value to int and checks that it's in the range [0, upper).
 template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
-inline int to_nonnegative_int(T value, int upper) {
+inline std::intmax_t to_nonnegative_int(T value, std::intmax_t upper) {
   FMT_ASSERT(value >= 0 && to_unsigned(value) <= to_unsigned(upper),
              "invalid value");
   (void)upper;
-  return static_cast<int>(value);
+  return static_cast<std::intmax_t>(value);
 }
 template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value)>
-inline int to_nonnegative_int(T value, int upper) {
+inline std::intmax_t to_nonnegative_int(T value, std::intmax_t upper) {
   FMT_ASSERT(
       std::isnan(value) || (value >= 0 && value <= static_cast<T>(upper)),
       "invalid value");
   (void)upper;
-  return static_cast<int>(value);
+  return static_cast<std::intmax_t>(value);
 }
 
 template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
@@ -1389,16 +1389,55 @@ inline std::chrono::duration<Rep, std::milli> get_milliseconds(
 #endif
 }
 
-template <typename Rep, typename Period,
-          FMT_ENABLE_IF(std::is_floating_point<Rep>::value)>
-inline std::chrono::duration<Rep, std::milli> get_milliseconds(
-    std::chrono::duration<Rep, Period> d) {
-  using common_type = typename std::common_type<Rep, std::intmax_t>::type;
-  auto ms = mod(d.count() * static_cast<common_type>(Period::num) /
-                    static_cast<common_type>(Period::den) * 1000,
-                1000);
-  return std::chrono::duration<Rep, std::milli>(static_cast<Rep>(ms));
-}
+template <class Duration> class subsecond_helper {
+  /// Returns the amount of digits according to the c++ 20 spec
+  /// In the range [0, 18], if more than 18 fractional digits are required,
+  /// then we return 6 for microseconds precision
+  static constexpr int num_digits(std::intmax_t num,
+                                  std::intmax_t den,
+                                  std::uint32_t n = 0) {
+    return num % den == 0 ? n : (n > 18 ? 6 : num_digits(num * 10, den, n + 1));
+  }
+
+  static constexpr std::intmax_t pow10(std::uint32_t n) {
+    return n == 0 ? 1 : 10 * pow10(n - 1);
+  }
+
+  template <class Rep, class Period,
+            FMT_ENABLE_IF(std::numeric_limits<Rep>::is_signed)>
+  static constexpr std::chrono::duration<Rep, Period> abs(
+      std::chrono::duration<Rep, Period> d) {
+    return d >= d.zero() ? d : -d;
+  }
+
+  template <class Rep, class Period,
+            FMT_ENABLE_IF(!std::numeric_limits<Rep>::is_signed)>
+  static constexpr std::chrono::duration<Rep, Period> abs(
+      std::chrono::duration<Rep, Period> d) {
+    return d;
+  }
+
+ public:
+  static constexpr auto fractional_width =
+      num_digits(Duration::period::num, Duration::period::den);
+
+  using precision = std::chrono::duration<
+      typename std::common_type<typename Duration::rep,
+                                std::chrono::seconds::rep>::type,
+      std::ratio<1, pow10(fractional_width)>>;
+
+  template <class Rep, class Period>
+  static constexpr typename precision::rep get_subseconds(
+      std::chrono::duration<Rep, Period> d) {
+    return std::chrono::treat_as_floating_point<typename precision::rep>::value
+               ? (abs(d) - std::chrono::duration_cast<std::chrono::seconds>(d))
+                     .count()
+               : std::chrono::duration_cast<precision>(
+                     abs(d) -
+                     std::chrono::duration_cast<std::chrono::seconds>(d))
+                     .count();
+  }
+};
 
 template <typename Char, typename Rep, typename OutputIt,
           FMT_ENABLE_IF(std::is_integral<Rep>::value)>
@@ -1553,8 +1592,8 @@ struct chrono_formatter {
   void write(Rep value, int width) {
     write_sign();
     if (isnan(value)) return write_nan();
-    uint32_or_64_or_128_t<int> n =
-        to_unsigned(to_nonnegative_int(value, max_value<int>()));
+    uint32_or_64_or_128_t<std::intmax_t> n =
+        to_unsigned(to_nonnegative_int(value, max_value<std::intmax_t>()));
     int num_digits = detail::count_digits(n);
     if (width > num_digits) out = std::fill_n(out, width - num_digits, '0');
     out = format_decimal<char_type>(out, n, num_digits).end;
@@ -1645,10 +1684,12 @@ struct chrono_formatter {
 #else
       auto tmpval = std::chrono::duration<Rep, Period>(val);
 #endif
-      auto ms = get_milliseconds(tmpval);
-      if (ms != std::chrono::milliseconds(0)) {
+      using subsec_helper = detail::subsecond_helper<duration_Rep>;
+      // Could use c++ 17 if constexpr
+      if (std::ratio_less<typename subsec_helper::precision::period,
+                          std::chrono::seconds::period>::value) {
         *out++ = '.';
-        write(ms.count(), 3);
+        write(subsec_helper::get_subseconds(tmpval), subsec_helper::fractional_width);
       }
       return;
     }
@@ -1678,7 +1719,7 @@ struct chrono_formatter {
     on_24_hour_time();
     *out++ = ':';
     if (handle_nan_inf()) return;
-    write(second(), 2);
+    on_second(numeric_system::standard);
   }
 
   void on_am_pm() {
