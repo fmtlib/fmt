@@ -550,8 +550,6 @@ TEST(chrono_test, special_durations) {
   EXPECT_EQ(
       "nan nan nan nan nan:nan nan",
       fmt::format("{:%I %H %M %S %R %r}", std::chrono::duration<double>(nan)));
-  (void)fmt::format("{:%S}",
-                    std::chrono::duration<float, std::atto>(1.79400457e+31f));
   EXPECT_EQ(fmt::format("{}", std::chrono::duration<float, std::exa>(1)),
             "1Es");
   EXPECT_EQ(fmt::format("{}", std::chrono::duration<float, std::atto>(1)),
@@ -588,6 +586,8 @@ TEST(chrono_test, weekday) {
 TEST(chrono_test, cpp20_duration_subsecond_support) {
   using attoseconds = std::chrono::duration<std::intmax_t, std::atto>;
   // Check that 18 digits of subsecond precision are supported
+  EXPECT_EQ(fmt::format("{:%S}", attoseconds{999999999999999999}),
+            "00.999999999999999999");
   EXPECT_EQ(fmt::format("{:%S}", attoseconds{673231113420148734}),
             "00.673231113420148734");
   EXPECT_EQ(fmt::format("{:%S}", attoseconds{-673231113420148734}),
