@@ -72,6 +72,7 @@ Compile-time Format String Checks
 Compile-time checks are enabled when using ``FMT_STRING``. They support built-in
 and string types as well as user-defined types with ``constexpr`` ``parse``
 functions in their ``formatter`` specializations.
+Requires C++14 and is a no-op in C++11.
 
 .. doxygendefine:: FMT_STRING
 
