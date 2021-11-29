@@ -1319,20 +1319,20 @@ inline bool isfinite(T) {
 }
 
 // Converts value to int and checks that it's in the range [0, upper).
-template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
-inline std::intmax_t to_nonnegative_int(T value, std::intmax_t upper) {
+template <typename T, typename Int, FMT_ENABLE_IF(std::is_integral<T>::value)>
+inline Int to_nonnegative_int(T value, Int upper) {
   FMT_ASSERT(value >= 0 && to_unsigned(value) <= to_unsigned(upper),
              "invalid value");
   (void)upper;
-  return static_cast<std::intmax_t>(value);
+  return static_cast<Int>(value);
 }
-template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value)>
-inline std::intmax_t to_nonnegative_int(T value, std::intmax_t upper) {
+template <typename T, typename Int, FMT_ENABLE_IF(!std::is_integral<T>::value)>
+inline Int to_nonnegative_int(T value, Int upper) {
   FMT_ASSERT(
       std::isnan(value) || (value >= 0 && value <= static_cast<T>(upper)),
       "invalid value");
   (void)upper;
-  return static_cast<std::intmax_t>(value);
+  return static_cast<Int>(value);
 }
 
 template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
