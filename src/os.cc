@@ -20,6 +20,9 @@
 
 #  ifndef _WIN32
 #    include <unistd.h>
+#    ifndef mode_t
+#      define mode_t unsigned int
+#    endif
 #  else
 #    ifndef WIN32_LEAN_AND_MEAN
 #      define WIN32_LEAN_AND_MEAN
@@ -40,6 +43,9 @@
 #    endif
 #    ifndef S_IROTH
 #      define S_IROTH 0
+#    endif
+#    ifndef mode_t
+#      define mode_t int
 #    endif
 
 #    ifdef __MINGW32__
@@ -218,7 +224,7 @@ int buffered_file::fileno() const {
 
 #if FMT_USE_FCNTL
 file::file(cstring_view path, int oflag) {
-  unsigned int mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+  mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
 #  if defined(_WIN32) && !defined(__MINGW32__)
   fd_ = -1;
   FMT_POSIX_CALL(sopen_s(&fd_, path.c_str(), oflag, _SH_DENYNO, mode));
