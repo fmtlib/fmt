@@ -1589,7 +1589,8 @@ struct chrono_formatter {
     }
   }
 
-  void write(Rep value, int width) {
+  template <typename RepType>
+  void write(RepType value, int width) {
     write_sign();
     if (isnan(value)) return write_nan();
     uint32_or_64_or_128_t<std::intmax_t> n =
@@ -1676,20 +1677,13 @@ struct chrono_formatter {
 
     if (ns == numeric_system::standard) {
       write(second(), 2);
-#if FMT_SAFE_DURATION_CAST
-      // convert rep->Rep
       using duration_rep = std::chrono::duration<rep, Period>;
-      using duration_Rep = std::chrono::duration<Rep, Period>;
-      auto tmpval = fmt_safe_duration_cast<duration_Rep>(duration_rep{val});
-#else
-      auto tmpval = std::chrono::duration<Rep, Period>(val);
-#endif
-      using subsec_helper = detail::subsecond_helper<duration_Rep>;
+      using subsec_helper = detail::subsecond_helper<duration_rep>;
       // Could use c++ 17 if constexpr
       if (std::ratio_less<typename subsec_helper::precision::period,
                           std::chrono::seconds::period>::value) {
         *out++ = '.';
-        write(subsec_helper::get_subseconds(tmpval), subsec_helper::fractional_width);
+        write(subsec_helper::get_subseconds(duration_rep{val}), subsec_helper::fractional_width);
       }
       return;
     }
