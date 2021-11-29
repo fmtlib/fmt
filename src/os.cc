@@ -21,7 +21,7 @@
 #  ifndef _WIN32
 #    include <unistd.h>
 #    ifndef mode_t
-#      define mode_t unsigned int
+#      define mode_t unsigned short
 #    endif
 #  else
 #    ifndef WIN32_LEAN_AND_MEAN
@@ -367,5 +367,8 @@ long getpagesize() {
 FMT_API void ostream::grow(size_t) {
   if (this->size() == this->capacity()) flush();
 }
+#    ifdef mode_t
+#        undef mode_t
+#    endif
 #endif  // FMT_USE_FCNTL
 FMT_END_NAMESPACE
