@@ -42,11 +42,8 @@
 #      define S_IROTH 0
 #    endif
 
-
 #    ifdef __MINGW32__
 #      define _SH_DENYNO 0x40
-#    else
-       using mode_t = int;
 #    endif
 #  endif  // _WIN32
 #endif    // FMT_USE_FCNTL
@@ -109,6 +106,8 @@ int detail::utf16_to_utf8::convert(basic_string_view<wchar_t> s) {
 }
 
 namespace detail {
+
+using mode_t = int;
 
 class system_message {
   system_message(const system_message&) = delete;
@@ -221,6 +220,7 @@ int buffered_file::fileno() const {
 
 #if FMT_USE_FCNTL
 file::file(cstring_view path, int oflag) {
+  using namespace detail;
   mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
 #  if defined(_WIN32) && !defined(__MINGW32__)
   fd_ = -1;
