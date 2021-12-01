@@ -107,6 +107,8 @@ int detail::utf16_to_utf8::convert(basic_string_view<wchar_t> s) {
 
 namespace detail {
 
+using mode_t = int;
+
 class system_message {
   system_message(const system_message&) = delete;
   void operator=(const system_message&) = delete;
@@ -218,7 +220,8 @@ int buffered_file::fileno() const {
 
 #if FMT_USE_FCNTL
 file::file(cstring_view path, int oflag) {
-  int mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+  using namespace detail;
+  mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
 #  if defined(_WIN32) && !defined(__MINGW32__)
   fd_ = -1;
   FMT_POSIX_CALL(sopen_s(&fd_, path.c_str(), oflag, _SH_DENYNO, mode));
