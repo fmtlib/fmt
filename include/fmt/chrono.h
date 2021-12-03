@@ -878,7 +878,7 @@ template <typename T>
 struct has_member_data_tm_gmtoff<T, void_t<decltype(T::tm_gmtoff)>>
     : std::true_type {};
 
-#if defined(_WIN32)
+#if defined(_WIN32) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP))
 inline void tzset_once() {
   static bool init = []() -> bool {
     _tzset();
@@ -1020,7 +1020,7 @@ template <typename OutputIt, typename Char> class tm_writer {
     write_utc_offset(tm_.tm_gmtoff);
   }
   void format_utc_offset_impl(std::false_type) {
-#if defined(_WIN32)
+#if defined(_WIN32) && (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP))
     tzset_once();
     long offset = 0;
     _get_timezone(&offset);
