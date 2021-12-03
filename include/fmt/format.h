@@ -667,7 +667,7 @@ class basic_memory_buffer final : public detail::buffer<T> {
   }
 
  protected:
-  void grow(size_t size) override;
+  FMT_CONSTEXPR20 void grow(size_t size) override;
 
  public:
   using value_type = T;
@@ -753,7 +753,7 @@ class basic_memory_buffer final : public detail::buffer<T> {
 };
 
 template <typename T, size_t SIZE, typename Allocator>
-void basic_memory_buffer<T, SIZE, Allocator>::grow(size_t size) {
+FMT_CONSTEXPR20 void basic_memory_buffer<T, SIZE, Allocator>::grow(size_t size) {
 #ifdef FMT_FUZZ
   if (size > 5000) throw std::runtime_error("fuzz mode - won't grow that much");
 #endif
