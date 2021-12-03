@@ -872,7 +872,7 @@ class iterator_buffer final : public Traits, public buffer<T> {
   T data_[buffer_size];
 
  protected:
-  void grow(size_t) override {
+  FMT_CONSTEXPR20 void grow(size_t) override {
     if (this->size() == buffer_size) flush();
   }
 
@@ -906,7 +906,7 @@ class iterator_buffer<T*, T, fixed_buffer_traits> final
   T data_[buffer_size];
 
  protected:
-  void grow(size_t) override {
+  FMT_CONSTEXPR20 void grow(size_t) override {
     if (this->size() == this->capacity()) flush();
   }
 
@@ -944,7 +944,7 @@ class iterator_buffer<T*, T, fixed_buffer_traits> final
 
 template <typename T> class iterator_buffer<T*, T> final : public buffer<T> {
  protected:
-  void grow(size_t) override {}
+  FMT_CONSTEXPR20 void grow(size_t) override {}
 
  public:
   explicit iterator_buffer(T* out, size_t = 0) : buffer<T>(out, 0, ~size_t()) {}
@@ -962,7 +962,7 @@ class iterator_buffer<std::back_insert_iterator<Container>,
   Container& container_;
 
  protected:
-  void grow(size_t capacity) override {
+  FMT_CONSTEXPR20 void grow(size_t capacity) override {
     container_.resize(capacity);
     this->set(&container_[0], capacity);
   }
@@ -985,7 +985,7 @@ template <typename T = char> class counting_buffer final : public buffer<T> {
   size_t count_ = 0;
 
  protected:
-  void grow(size_t) override {
+  FMT_CONSTEXPR20 void grow(size_t) override {
     if (this->size() != buffer_size) return;
     count_ += this->size();
     this->clear();
