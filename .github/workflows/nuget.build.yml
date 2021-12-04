@@ -1,0 +1,39 @@
+name: windows
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Create Build Environment
+      run: cmake -E make_directory ${{runner.workspace}}/build
+
+    - name: Configure
+      # Use a bash shell for $GITHUB_WORKSPACE.
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
+      run: |
+        cmake -DCMAKE_BUILD_TYPE=Debug   -A Win32 -DCMAKE_CXX_STANDARD=17 $GITHUB_WORKSPACE
+        cmake -DCMAKE_BUILD_TYPE=Debug   -A x64   -DCMAKE_CXX_STANDARD=17 $GITHUB_WORKSPACE
+        cmake -DCMAKE_BUILD_TYPE=Release -A Win21 -DCMAKE_CXX_STANDARD=17 $GITHUB_WORKSPACE
+        cmake -DCMAKE_BUILD_TYPE=Release -A x64   -DCMAKE_CXX_STANDARD=17 $GITHUB_WORKSPACE
+
+    - name: Build
+      working-directory: ${{runner.workspace}}/build
+      run: |
+        $threads = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
+        cmake --build . --config ${{matrix.build_type}} --parallel $threads
+
+    - name: Test
+      working-directory: ${{runner.workspace}}/build
+      run: ctest -C Debug -V
+      env:
+        CTEST_OUTPUT_ON_FAILURE: True
+
+    - name: Pack
+      run: |
+        nuget pack -version 1.0.0 wuganhao.fmt.nuspec

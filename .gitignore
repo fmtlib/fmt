@@ -41,3 +41,4 @@ fmt.pc
 *.vcxproj.filters
 *.vcxproj
 *.sln
+/Release/

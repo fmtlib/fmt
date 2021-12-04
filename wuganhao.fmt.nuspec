@@ -8,12 +8,13 @@
     <owners>Wu, Ganhao&lt;wuganhao@hotmail.com&gt;</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>fmtlib</description>
-    <releaseNotes>Create fmtlib for VS 2019</releaseNotes>
+    <releaseNotes>fmt lib</releaseNotes>
     <tags>fmtlib std::format</tags>
   </metadata>
   <files>
-    <file src="Debug\fmtd.lib" target="lib\native\x64\Debug\" />
-    <file src="Debug\fmtd.lib" target="lib\native\x64\Debug\" />
-    <file src="include\fmt\*.h" target="build\include\fmt\" />
+    <file src="Debug\fmtd.*"     target="lib\native\x64\Debug\" />
+    <file src="Release\fmtd.lib" target="lib\native\x64\Release\" />
+    <file src="include\fmt\*.h"      target="include\fmt\" />
+	<file src="*.targets"            target="build\" />
   </files>
 </package>

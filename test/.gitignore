@@ -21,3 +21,9 @@
 /scan-test.dir/
 *.vcxproj.filters
 *.vcxproj
+/args-test.dir/
+/compile-fp-test.dir/
+/enforce-checks-test.dir/
+/Release/
+/unicode-test.dir/
+/xchar-test.dir/
