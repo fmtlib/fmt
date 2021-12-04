@@ -1,4 +1,4 @@
-name: windows
+name: nuget.build
 
 on: [push, pull_request]
 
