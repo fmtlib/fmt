@@ -5,29 +5,31 @@
 //
 // For the license information refer to format.h.
 
-#include <time.h>
-#include <climits>
-
-#include "gmock.h"
-#include "gtest-extra.h"
 #include "scan.h"
 
-TEST(ScanTest, ReadText) {
-  fmt::string_view s = "foo";
+#include <time.h>
+
+#include <climits>
+
+#include "gmock/gmock.h"
+#include "gtest-extra.h"
+
+TEST(scan_test, read_text) {
+  auto s = fmt::string_view("foo");
   auto end = fmt::scan(s, "foo");
   EXPECT_EQ(end, s.end());
   EXPECT_THROW_MSG(fmt::scan("fob", "foo"), fmt::format_error, "invalid input");
 }
 
-TEST(ScanTest, ReadInt) {
-  int n = 0;
+TEST(scan_test, read_int) {
+  auto n = int();
   fmt::scan("42", "{}", n);
   EXPECT_EQ(n, 42);
   fmt::scan("-42", "{}", n);
   EXPECT_EQ(n, -42);
 }
 
-TEST(ScanTest, ReadLongLong) {
+TEST(scan_test, read_longlong) {
   long long n = 0;
   fmt::scan("42", "{}", n);
   EXPECT_EQ(n, 42);
@@ -35,15 +37,15 @@ TEST(ScanTest, ReadLongLong) {
   EXPECT_EQ(n, -42);
 }
 
-TEST(ScanTest, ReadUInt) {
-  unsigned n = 0;
+TEST(scan_test, read_uint) {
+  auto n = unsigned();
   fmt::scan("42", "{}", n);
   EXPECT_EQ(n, 42);
   EXPECT_THROW_MSG(fmt::scan("-42", "{}", n), fmt::format_error,
                    "invalid input");
 }
 
-TEST(ScanTest, ReadULongLong) {
+TEST(scan_test, read_ulonglong) {
   unsigned long long n = 0;
   fmt::scan("42", "{}", n);
   EXPECT_EQ(n, 42);
@@ -51,14 +53,14 @@ TEST(ScanTest, ReadULongLong) {
                    "invalid input");
 }
 
-TEST(ScanTest, ReadString) {
-  std::string s;
+TEST(scan_test, read_string) {
+  auto s = std::string();
   fmt::scan("foo", "{}", s);
   EXPECT_EQ(s, "foo");
 }
 
-TEST(ScanTest, ReadStringView) {
-  fmt::string_view s;
+TEST(scan_test, read_string_view) {
+  auto s = fmt::string_view();
   fmt::scan("foo", "{}", s);
   EXPECT_EQ(s, "foo");
 }
@@ -73,7 +75,7 @@ template <> struct scanner<tm> {
     if (it != ctx.end() && *it == ':') ++it;
     auto end = it;
     while (end != ctx.end() && *end != '}') ++end;
-    format.reserve(internal::to_unsigned(end - it + 1));
+    format.reserve(detail::to_unsigned(end - it + 1));
     format.append(it, end);
     format.push_back('\0');
     return end;
@@ -88,8 +90,8 @@ template <> struct scanner<tm> {
 };
 }  // namespace fmt
 
-TEST(ScanTest, ReadCustom) {
-  const char* input = "Date: 1985-10-25";
+TEST(scan_test, read_custom) {
+  auto input = "Date: 1985-10-25";
   auto t = tm();
   fmt::scan(input, "Date: {0:%Y-%m-%d}", t);
   EXPECT_EQ(t.tm_year, 85);
@@ -98,16 +100,16 @@ TEST(ScanTest, ReadCustom) {
 }
 #endif
 
-TEST(ScanTest, InvalidFormat) {
+TEST(scan_test, invalid_format) {
   EXPECT_THROW_MSG(fmt::scan("", "{}"), fmt::format_error,
                    "argument index out of range");
   EXPECT_THROW_MSG(fmt::scan("", "{"), fmt::format_error,
                    "invalid format string");
 }
 
-TEST(ScanTest, Example) {
-  std::string key;
-  int value;
+TEST(scan_test, example) {
+  auto key = std::string();
+  auto value = int();
   fmt::scan("answer = 42", "{} = {}", key, value);
   EXPECT_EQ(key, "answer");
   EXPECT_EQ(value, 42);

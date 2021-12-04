@@ -7,11 +7,14 @@
 
 #include <cstdarg>
 #include <cstdio>
+#include <locale>
 #include <string>
 
-#include "fmt/os.h"
-
-enum { BUFFER_SIZE = 256 };
+#ifdef FMT_MODULE_TEST
+import fmt;
+#else
+#  include "fmt/os.h"
+#endif  // FMT_MODULE_TEST
 
 #ifdef _MSC_VER
 #  define FMT_VSNPRINTF vsprintf_s
@@ -19,7 +22,7 @@ enum { BUFFER_SIZE = 256 };
 #  define FMT_VSNPRINTF vsnprintf
 #endif
 
-template <std::size_t SIZE>
+template <size_t SIZE>
 void safe_sprintf(char (&buffer)[SIZE], const char* format, ...) {
   std::va_list args;
   va_start(args, format);
@@ -27,12 +30,7 @@ void safe_sprintf(char (&buffer)[SIZE], const char* format, ...) {
   va_end(args);
 }
 
-// Increment a number in a string.
-void increment(char* s);
-
-std::string get_system_error(int error_code);
-
-extern const char* const FILE_CONTENT;
+extern const char* const file_content;
 
 // Opens a buffered file for reading.
 fmt::buffered_file open_buffered_file(FILE** fp = nullptr);
@@ -40,7 +38,7 @@ fmt::buffered_file open_buffered_file(FILE** fp = nullptr);
 inline FILE* safe_fopen(const char* filename, const char* mode) {
 #if defined(_WIN32) && !defined(__MINGW32__)
   // Fix MSVC warning about "unsafe" fopen.
-  FILE* f = 0;
+  FILE* f = nullptr;
   errno = fopen_s(&f, filename, mode);
   return f;
 #else
@@ -48,37 +46,40 @@ inline FILE* safe_fopen(const char* filename, const char* mode) {
 #endif
 }
 
-template <typename Char> class BasicTestString {
+template <typename Char> class basic_test_string {
  private:
   std::basic_string<Char> value_;
 
-  static const Char EMPTY[];
+  static const Char empty[];
 
  public:
-  explicit BasicTestString(const Char* value = EMPTY) : value_(value) {}
+  explicit basic_test_string(const Char* value = empty) : value_(value) {}
 
   const std::basic_string<Char>& value() const { return value_; }
 };
 
-template <typename Char> const Char BasicTestString<Char>::EMPTY[] = {0};
+template <typename Char> const Char basic_test_string<Char>::empty[] = {0};
 
-typedef BasicTestString<char> TestString;
-typedef BasicTestString<wchar_t> TestWString;
+typedef basic_test_string<char> test_string;
+typedef basic_test_string<wchar_t> test_wstring;
 
 template <typename Char>
 std::basic_ostream<Char>& operator<<(std::basic_ostream<Char>& os,
-                                     const BasicTestString<Char>& s) {
+                                     const basic_test_string<Char>& s) {
   os << s.value();
   return os;
 }
 
-class Date {
+class date {
   int year_, month_, day_;
 
  public:
-  Date(int year, int month, int day) : year_(year), month_(month), day_(day) {}
+  date(int year, int month, int day) : year_(year), month_(month), day_(day) {}
 
   int year() const { return year_; }
   int month() const { return month_; }
   int day() const { return day_; }
 };
+
+// Returns a locale with the given name if available or classic locale othewise.
+std::locale get_locale(const char* name, const char* alt_name = nullptr);

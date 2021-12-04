@@ -1,52 +1,10 @@
-#------------------------------------------------------------------------------
-# Build the google test library
-
-# We compile Google Test ourselves instead of using pre-compiled libraries.
-# See the Google Test FAQ "Why is it not recommended to install a
-# pre-compiled copy of Google Test (for example, into /usr/local)?"
-# at http://code.google.com/p/googletest/wiki/FAQ for more details.
-add_library(gmock STATIC
-  gmock-gtest-all.cc gmock/gmock.h gtest/gtest.h gtest/gtest-spi.h)
-target_compile_definitions(gmock PUBLIC GTEST_HAS_STD_WSTRING=1)
-target_include_directories(gmock SYSTEM PUBLIC . gmock gtest)
-
-find_package(Threads)
-if (Threads_FOUND)
-  target_link_libraries(gmock ${CMAKE_THREAD_LIBS_INIT})
-else ()
-  target_compile_definitions(gmock PUBLIC GTEST_HAS_PTHREAD=0)
-endif ()
-
-target_compile_definitions(gmock PUBLIC GTEST_LANG_CXX11=0)
-
-if (MSVC)
-  # Workaround a bug in implementation of variadic templates in MSVC11.
-  target_compile_definitions(gmock PUBLIC _VARIADIC_MAX=10)
-  
-  # Disable MSVC warnings of _CRT_INSECURE_DEPRECATE functions.
-  target_compile_definitions(gmock PRIVATE _CRT_SECURE_NO_WARNINGS)
-  if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    # Disable MSVC warnings of POSIX functions.
-    target_compile_options(gmock PUBLIC -Wno-deprecated-declarations)
-  endif ()
-endif ()
-
-# GTest doesn't detect <tuple> with clang.
-if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-  target_compile_definitions(gmock PUBLIC GTEST_USE_OWN_TR1_TUPLE=1)
-endif ()
-
-# Silence MSVC tr1 deprecation warning in gmock.
-target_compile_definitions(gmock
-  PUBLIC _SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING=1)
-
-#------------------------------------------------------------------------------
-# Build the actual library tests
+add_subdirectory(gtest)
 
 set(TEST_MAIN_SRC test-main.cc gtest-extra.cc gtest-extra.h util.cc)
 add_library(test-main STATIC ${TEST_MAIN_SRC})
-target_include_directories(test-main SYSTEM PUBLIC gtest gmock)
-target_link_libraries(test-main gmock fmt)
+target_include_directories(test-main PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
+target_link_libraries(test-main gtest)
 
 include(CheckCXXCompilerFlag)
 
@@ -68,13 +26,38 @@ function(add_fmt_executable name)
   if (MINGW)
     target_link_libraries(${name} -static-libgcc -static-libstdc++)
   endif ()
+  # (Wstringop-overflow) - [meta-bug] bogus/missing -Wstringop-overflow warnings
+  #   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=88443
+  # Bogus -Wstringop-overflow warning
+  #   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=100395
+  # [10 Regression] spurious -Wstringop-overflow writing to a trailing array plus offset
+  #   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=95353
+  if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND
+      NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.0)
+    target_link_libraries(${name} -Wno-stringop-overflow)
+  endif ()
 endfunction()
 
 # Adds a test.
 # Usage: add_fmt_test(name srcs...)
 function(add_fmt_test name)
-  add_fmt_executable(${name} ${name}.cc ${ARGN})
-  target_link_libraries(${name} test-main)
+  cmake_parse_arguments(ADD_FMT_TEST "HEADER_ONLY;MODULE" "" "" ${ARGN})
+
+  set(sources ${name}.cc ${ADD_FMT_TEST_UNPARSED_ARGUMENTS})
+  if (ADD_FMT_TEST_HEADER_ONLY)
+    set(sources ${sources} ${TEST_MAIN_SRC} ../src/os.cc)
+    set(libs gtest fmt-header-only)
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+      set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wno-weak-vtables)
+    endif ()
+  elseif (ADD_FMT_TEST_MODULE)
+    set(libs gtest test-module)
+    set_source_files_properties(${name}.cc PROPERTIES OBJECT_DEPENDS test-module)
+  else ()
+    set(libs test-main fmt)
+  endif ()
+  add_fmt_executable(${name} ${sources})
+  target_link_libraries(${name} ${libs})
 
   # Define if certain C++ features can be used.
   if (FMT_PEDANTIC)
@@ -83,39 +66,78 @@ function(add_fmt_test name)
   if (FMT_WERROR)
     target_compile_options(${name} PRIVATE ${WERROR_FLAG})
   endif ()
-  target_include_directories(${name} SYSTEM PUBLIC gtest gmock)
   add_test(NAME ${name} COMMAND ${name})
 endfunction()
 
+add_fmt_test(args-test)
 add_fmt_test(assert-test)
 add_fmt_test(chrono-test)
 add_fmt_test(color-test)
 add_fmt_test(core-test)
-add_fmt_test(grisu-test)
-target_compile_definitions(grisu-test PRIVATE FMT_USE_GRISU=1)
 add_fmt_test(gtest-extra-test)
 add_fmt_test(format-test mock-allocator.h)
 if (MSVC)
   target_compile_options(format-test PRIVATE /bigobj)
 endif ()
 if (NOT (MSVC AND BUILD_SHARED_LIBS))
-  add_fmt_test(format-impl-test)
+  add_fmt_test(format-impl-test HEADER_ONLY header-only-test.cc)
 endif ()
-add_fmt_test(locale-test)
 add_fmt_test(ostream-test)
 add_fmt_test(compile-test)
+add_fmt_test(compile-fp-test HEADER_ONLY)
+if (MSVC)
+  # Without this option, MSVC returns 199711L for the __cplusplus macro.
+  target_compile_options(compile-fp-test PRIVATE /Zc:__cplusplus)
+endif()
 add_fmt_test(printf-test)
-add_fmt_test(custom-formatter-test)
-add_fmt_test(ranges-test)
+add_fmt_test(ranges-test ranges-odr-test.cc)
 add_fmt_test(scan-test)
+add_fmt_test(unicode-test HEADER_ONLY)
+if (MSVC)
+  target_compile_options(unicode-test PRIVATE /utf-8)
+endif ()
+add_fmt_test(xchar-test)
+add_fmt_test(enforce-checks-test)
+target_compile_definitions(enforce-checks-test PRIVATE
+                           -DFMT_ENFORCE_COMPILE_STRING)
 
-if (NOT MSVC_BUILD_STATIC)
+if (FMT_CAN_MODULE)
+  # The tests need {fmt} to be compiled as traditional library
+  # because of visibility of implementation details.
+  # If module support is present the module tests require a
+  # test-only module to be built from {fmt}
+  add_library(test-module OBJECT ${CMAKE_SOURCE_DIR}/src/fmt.cc)
+  target_compile_features(test-module PUBLIC ${FMT_REQUIRED_FEATURES})
+  target_include_directories(test-module PUBLIC
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
+  enable_module(test-module)
+
+  add_fmt_test(module-test MODULE test-main.cc)
+  if (MSVC)
+    target_compile_options(test-module PRIVATE /utf-8 /Zc:__cplusplus
+                           /Zc:externConstexpr /Zc:inline)
+    target_compile_options(module-test PRIVATE /utf-8 /Zc:__cplusplus
+                           /Zc:externConstexpr /Zc:inline)
+  endif ()
+endif ()
+
+if (NOT DEFINED MSVC_STATIC_RUNTIME AND MSVC)
+  foreach (flag_var
+			 CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
+			 CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+	if (${flag_var} MATCHES "^(/|-)(MT|MTd)")
+	  set(MSVC_STATIC_RUNTIME ON)
+	  break()
+	endif()
+  endforeach()
+endif()
+
+if (NOT MSVC_STATIC_RUNTIME)
   add_fmt_executable(posix-mock-test
     posix-mock-test.cc ../src/format.cc ${TEST_MAIN_SRC})
   target_include_directories(
     posix-mock-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
-  target_link_libraries(posix-mock-test gmock)
-  target_include_directories(posix-mock-test SYSTEM PUBLIC gtest gmock)
+  target_link_libraries(posix-mock-test gtest)
   if (FMT_PEDANTIC)
     target_compile_options(posix-mock-test PRIVATE ${PEDANTIC_COMPILE_FLAGS})
   endif ()
@@ -126,21 +148,9 @@ if (NOT MSVC_BUILD_STATIC)
   add_fmt_test(os-test)
 endif ()
 
-add_fmt_executable(header-only-test
-  header-only-test.cc header-only-test2.cc test-main.cc)
-target_link_libraries(header-only-test gmock)
-target_include_directories(header-only-test SYSTEM PUBLIC gtest gmock)
-if (TARGET fmt-header-only)
-  target_link_libraries(header-only-test fmt-header-only)
-else ()
-  target_include_directories(
-    header-only-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
-  target_compile_definitions(header-only-test PRIVATE FMT_HEADER_ONLY=1)
-endif ()
-
 message(STATUS "FMT_PEDANTIC: ${FMT_PEDANTIC}")
 
-if (FMT_PEDANTIC)
+if (FMT_PEDANTIC AND CXX_STANDARD LESS 20)
   # MSVC fails to compile GMock when C++17 is enabled.
   if (FMT_HAS_VARIANT AND NOT MSVC)
     add_fmt_test(std-format-test)
@@ -195,6 +205,7 @@ if (FMT_PEDANTIC AND NOT WIN32)
     --build-makeprogram ${CMAKE_MAKE_PROGRAM}
     --build-options
     "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+    "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}"
     "-DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}"
     "-DFMT_DIR=${PROJECT_BINARY_DIR}"
     "-DPEDANTIC_COMPILE_FLAGS=${PEDANTIC_COMPILE_FLAGS}"
@@ -212,6 +223,21 @@ if (FMT_PEDANTIC AND NOT WIN32)
     "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
     "-DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}"
     "-DPEDANTIC_COMPILE_FLAGS=${PEDANTIC_COMPILE_FLAGS}"
+    "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+endif ()
+
+# This test are disabled on Windows because it is only *NIX issue.
+if (FMT_PEDANTIC AND NOT WIN32)
+  add_test(static-export-test ${CMAKE_CTEST_COMMAND}
+    -C ${CMAKE_BUILD_TYPE}
+    --build-and-test
+    "${CMAKE_CURRENT_SOURCE_DIR}/static-export-test"
+    "${CMAKE_CURRENT_BINARY_DIR}/static-export-test"
+    --build-generator ${CMAKE_GENERATOR}
+    --build-makeprogram ${CMAKE_MAKE_PROGRAM}
+    --build-options
+    "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+    "-DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}"
     "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 endif ()
 

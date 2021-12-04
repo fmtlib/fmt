@@ -90,12 +90,14 @@
         VERSION:     '{{ release|e }}',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '{{ '' if no_search_suffix else file_suffix }}',
+        LINK_SUFFIX: '{{ link_suffix }}',
+        SOURCELINK_SUFFIX: '{{ sourcelink_suffix }}',
         HAS_SOURCE:  {{ has_source|lower }},
         SOURCELINK_SUFFIX:  '{{ sourcelink_suffix }}'
       };
     </script>
     {%- for scriptfile in script_files %}
-    <script type="text/javascript" src="{{ pathto(scriptfile, 1) }}"></script>
+    {{ js_tag(scriptfile) }}
     {%- endfor %}
 {%- endmacro %}
 

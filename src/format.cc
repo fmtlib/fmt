@@ -8,12 +8,58 @@
 #include "fmt/format-inl.h"
 
 FMT_BEGIN_NAMESPACE
-namespace internal {
+namespace detail {
+
+// DEPRECATED!
+template <typename T = void> struct basic_data {
+  FMT_API static constexpr const char digits[100][2] = {
+      {'0', '0'}, {'0', '1'}, {'0', '2'}, {'0', '3'}, {'0', '4'}, {'0', '5'},
+      {'0', '6'}, {'0', '7'}, {'0', '8'}, {'0', '9'}, {'1', '0'}, {'1', '1'},
+      {'1', '2'}, {'1', '3'}, {'1', '4'}, {'1', '5'}, {'1', '6'}, {'1', '7'},
+      {'1', '8'}, {'1', '9'}, {'2', '0'}, {'2', '1'}, {'2', '2'}, {'2', '3'},
+      {'2', '4'}, {'2', '5'}, {'2', '6'}, {'2', '7'}, {'2', '8'}, {'2', '9'},
+      {'3', '0'}, {'3', '1'}, {'3', '2'}, {'3', '3'}, {'3', '4'}, {'3', '5'},
+      {'3', '6'}, {'3', '7'}, {'3', '8'}, {'3', '9'}, {'4', '0'}, {'4', '1'},
+      {'4', '2'}, {'4', '3'}, {'4', '4'}, {'4', '5'}, {'4', '6'}, {'4', '7'},
+      {'4', '8'}, {'4', '9'}, {'5', '0'}, {'5', '1'}, {'5', '2'}, {'5', '3'},
+      {'5', '4'}, {'5', '5'}, {'5', '6'}, {'5', '7'}, {'5', '8'}, {'5', '9'},
+      {'6', '0'}, {'6', '1'}, {'6', '2'}, {'6', '3'}, {'6', '4'}, {'6', '5'},
+      {'6', '6'}, {'6', '7'}, {'6', '8'}, {'6', '9'}, {'7', '0'}, {'7', '1'},
+      {'7', '2'}, {'7', '3'}, {'7', '4'}, {'7', '5'}, {'7', '6'}, {'7', '7'},
+      {'7', '8'}, {'7', '9'}, {'8', '0'}, {'8', '1'}, {'8', '2'}, {'8', '3'},
+      {'8', '4'}, {'8', '5'}, {'8', '6'}, {'8', '7'}, {'8', '8'}, {'8', '9'},
+      {'9', '0'}, {'9', '1'}, {'9', '2'}, {'9', '3'}, {'9', '4'}, {'9', '5'},
+      {'9', '6'}, {'9', '7'}, {'9', '8'}, {'9', '9'}};
+  FMT_API static constexpr const char hex_digits[] = "0123456789abcdef";
+  FMT_API static constexpr const char signs[4] = {0, '-', '+', ' '};
+  FMT_API static constexpr const char left_padding_shifts[5] = {31, 31, 0, 1,
+                                                                0};
+  FMT_API static constexpr const char right_padding_shifts[5] = {0, 31, 0, 1,
+                                                                 0};
+  FMT_API static constexpr const unsigned prefixes[4] = {0, 0, 0x1000000u | '+',
+                                                         0x1000000u | ' '};
+};
+
+#ifdef FMT_SHARED
+// Required for -flto, -fivisibility=hidden and -shared to work
+extern template struct basic_data<void>;
+#endif
+
+#if __cplusplus < 201703L
+// DEPRECATED! These are here only for ABI compatiblity.
+template <typename T> constexpr const char basic_data<T>::digits[][2];
+template <typename T> constexpr const char basic_data<T>::hex_digits[];
+template <typename T> constexpr const char basic_data<T>::signs[];
+template <typename T> constexpr const char basic_data<T>::left_padding_shifts[];
+template <typename T>
+constexpr const char basic_data<T>::right_padding_shifts[];
+template <typename T> constexpr const unsigned basic_data<T>::prefixes[];
+#endif
 
 template <typename T>
 int format_float(char* buf, std::size_t size, const char* format, int precision,
                  T value) {
-#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+#ifdef FMT_FUZZ
   if (precision > 100000)
     throw std::runtime_error(
         "fuzz mode - avoid large allocation inside snprintf");
@@ -23,154 +69,56 @@ int format_float(char* buf, std::size_t size, const char* format, int precision,
   return precision < 0 ? snprintf_ptr(buf, size, format, value)
                        : snprintf_ptr(buf, size, format, precision, value);
 }
-struct sprintf_specs {
-  int precision;
-  char type;
-  bool alt : 1;
 
-  template <typename Char>
-  constexpr sprintf_specs(basic_format_specs<Char> specs)
-      : precision(specs.precision), type(specs.type), alt(specs.alt) {}
-
-  constexpr bool has_precision() const { return precision >= 0; }
-};
-
-// This is deprecated and is kept only to preserve ABI compatibility.
-template <typename Double>
-char* sprintf_format(Double value, internal::buffer<char>& buf,
-                     sprintf_specs specs) {
-  // Buffer capacity must be non-zero, otherwise MSVC's vsnprintf_s will fail.
-  FMT_ASSERT(buf.capacity() != 0, "empty buffer");
-
-  // Build format string.
-  enum { max_format_size = 10 };  // longest format: %#-*.*Lg
-  char format[max_format_size];
-  char* format_ptr = format;
-  *format_ptr++ = '%';
-  if (specs.alt || !specs.type) *format_ptr++ = '#';
-  if (specs.precision >= 0) {
-    *format_ptr++ = '.';
-    *format_ptr++ = '*';
-  }
-  if (std::is_same<Double, long double>::value) *format_ptr++ = 'L';
-
-  char type = specs.type;
-
-  if (type == '%')
-    type = 'f';
-  else if (type == 0 || type == 'n')
-    type = 'g';
-#if FMT_MSC_VER
-  if (type == 'F') {
-    // MSVC's printf doesn't support 'F'.
-    type = 'f';
-  }
-#endif
-  *format_ptr++ = type;
-  *format_ptr = '\0';
-
-  // Format using snprintf.
-  char* start = nullptr;
-  char* decimal_point_pos = nullptr;
-  for (;;) {
-    std::size_t buffer_size = buf.capacity();
-    start = &buf[0];
-    int result =
-        format_float(start, buffer_size, format, specs.precision, value);
-    if (result >= 0) {
-      unsigned n = internal::to_unsigned(result);
-      if (n < buf.capacity()) {
-        // Find the decimal point.
-        auto p = buf.data(), end = p + n;
-        if (*p == '+' || *p == '-') ++p;
-        if (specs.type != 'a' && specs.type != 'A') {
-          while (p < end && *p >= '0' && *p <= '9') ++p;
-          if (p < end && *p != 'e' && *p != 'E') {
-            decimal_point_pos = p;
-            if (!specs.type) {
-              // Keep only one trailing zero after the decimal point.
-              ++p;
-              if (*p == '0') ++p;
-              while (p != end && *p >= '1' && *p <= '9') ++p;
-              char* where = p;
-              while (p != end && *p == '0') ++p;
-              if (p == end || *p < '0' || *p > '9') {
-                if (p != end) std::memmove(where, p, to_unsigned(end - p));
-                n -= static_cast<unsigned>(p - where);
-              }
-            }
-          }
-        }
-        buf.resize(n);
-        break;  // The buffer is large enough - continue with formatting.
-      }
-      buf.reserve(n + 1);
-    } else {
-      // If result is negative we ask to increase the capacity by at least 1,
-      // but as std::vector, the buffer grows exponentially.
-      buf.reserve(buf.capacity() + 1);
-    }
-  }
-  return decimal_point_pos;
-}
-}  // namespace internal
-
-template FMT_API char* internal::sprintf_format(double, internal::buffer<char>&,
-                                                sprintf_specs);
-template FMT_API char* internal::sprintf_format(long double,
-                                                internal::buffer<char>&,
-                                                sprintf_specs);
-
-template struct FMT_INSTANTIATION_DEF_API internal::basic_data<void>;
+template FMT_API dragonbox::decimal_fp<float> dragonbox::to_decimal(float x)
+    FMT_NOEXCEPT;
+template FMT_API dragonbox::decimal_fp<double> dragonbox::to_decimal(double x)
+    FMT_NOEXCEPT;
+}  // namespace detail
 
 // Workaround a bug in MSVC2013 that prevents instantiation of format_float.
-int (*instantiate_format_float)(double, int, internal::float_specs,
-                                internal::buffer<char>&) =
-    internal::format_float;
+int (*instantiate_format_float)(double, int, detail::float_specs,
+                                detail::buffer<char>&) = detail::format_float;
 
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
-template FMT_API internal::locale_ref::locale_ref(const std::locale& loc);
-template FMT_API std::locale internal::locale_ref::get<std::locale>() const;
+template FMT_API detail::locale_ref::locale_ref(const std::locale& loc);
+template FMT_API std::locale detail::locale_ref::get<std::locale>() const;
 #endif
 
 // Explicit instantiations for char.
 
-template FMT_API std::string internal::grouping_impl<char>(locale_ref);
-template FMT_API char internal::thousands_sep_impl(locale_ref);
-template FMT_API char internal::decimal_point_impl(locale_ref);
+template FMT_API auto detail::thousands_sep_impl(locale_ref)
+    -> thousands_sep_result<char>;
+template FMT_API char detail::decimal_point_impl(locale_ref);
 
-template FMT_API void internal::buffer<char>::append(const char*, const char*);
+template FMT_API void detail::buffer<char>::append(const char*, const char*);
 
-template FMT_API void internal::arg_map<format_context>::init(
-    const basic_format_args<format_context>& args);
+// DEPRECATED!
+// There is no correspondent extern template in format.h because of
+// incompatibility between clang and gcc (#2377).
+template FMT_API void detail::vformat_to(
+    detail::buffer<char>&, string_view,
+    basic_format_args<FMT_BUFFER_CONTEXT(char)>, detail::locale_ref);
 
-template FMT_API std::string internal::vformat<char>(
-    string_view, basic_format_args<format_context>);
-
-template FMT_API format_context::iterator internal::vformat_to(
-    internal::buffer<char>&, string_view, basic_format_args<format_context>);
-
-template FMT_API int internal::snprintf_float(double, int,
-                                              internal::float_specs,
-                                              internal::buffer<char>&);
-template FMT_API int internal::snprintf_float(long double, int,
-                                              internal::float_specs,
-                                              internal::buffer<char>&);
-template FMT_API int internal::format_float(double, int, internal::float_specs,
-                                            internal::buffer<char>&);
-template FMT_API int internal::format_float(long double, int,
-                                            internal::float_specs,
-                                            internal::buffer<char>&);
+template FMT_API int detail::snprintf_float(double, int, detail::float_specs,
+                                            detail::buffer<char>&);
+template FMT_API int detail::snprintf_float(long double, int,
+                                            detail::float_specs,
+                                            detail::buffer<char>&);
+template FMT_API int detail::format_float(double, int, detail::float_specs,
+                                          detail::buffer<char>&);
+template FMT_API int detail::format_float(long double, int, detail::float_specs,
+                                          detail::buffer<char>&);
 
 // Explicit instantiations for wchar_t.
 
-template FMT_API std::string internal::grouping_impl<wchar_t>(locale_ref);
-template FMT_API wchar_t internal::thousands_sep_impl(locale_ref);
-template FMT_API wchar_t internal::decimal_point_impl(locale_ref);
+template FMT_API auto detail::thousands_sep_impl(locale_ref)
+    -> thousands_sep_result<wchar_t>;
+template FMT_API wchar_t detail::decimal_point_impl(locale_ref);
 
-template FMT_API void internal::buffer<wchar_t>::append(const wchar_t*,
-                                                        const wchar_t*);
+template FMT_API void detail::buffer<wchar_t>::append(const wchar_t*,
+                                                      const wchar_t*);
 
-template FMT_API std::wstring internal::vformat<wchar_t>(
-    wstring_view, basic_format_args<wformat_context>);
+template struct detail::basic_data<void>;
+
 FMT_END_NAMESPACE

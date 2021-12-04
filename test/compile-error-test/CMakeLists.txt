@@ -1,6 +1,6 @@
 # Test if compile errors are produced where necessary.
 
-cmake_minimum_required(VERSION 3.1.0)
+cmake_minimum_required(VERSION 3.1...3.18)
 
 include(CheckCXXSourceCompiles)
 include(CheckCXXCompilerFlag)
@@ -65,6 +65,12 @@ expect_compile_error("
     operator std::string() const { return std::string(); }
   };
   fmt::format(\"{}\", S());
+")
+
+# Formatting a function
+expect_compile_error("
+  void (*f)();
+  fmt::format(\"{}\", f);
 ")
 
 # Make sure that compiler features detected in the header

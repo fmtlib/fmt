@@ -1,0 +1,24 @@
+name: doc
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    # Use Ubuntu 20.04 because doxygen 1.8.13 from Ubuntu 18.04 is broken.
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Create Build Environment
+      run: |
+        sudo apt update
+        sudo apt install doxygen python3-virtualenv
+        sudo npm install -g less clean-css
+        cmake -E make_directory ${{runner.workspace}}/build
+
+    - name: Build
+      working-directory: ${{runner.workspace}}/build
+      env:
+        KEY: ${{secrets.KEY}}
+      run: $GITHUB_WORKSPACE/support/build-docs.py
