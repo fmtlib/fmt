@@ -1395,7 +1395,7 @@ template <class Duration> class subsecond_helper {
   /// then we return 6 for microseconds precision
   static constexpr int num_digits(std::intmax_t num,
                                   std::intmax_t den,
-                                  std::uint32_t n = 0) {
+                                  int n = 0) {
     return num % den == 0 ? n : (n > 18 ? 6 : num_digits(num * 10, den, n + 1));
   }
 
