@@ -1390,9 +1390,9 @@ inline std::chrono::duration<Rep, std::milli> get_milliseconds(
 }
 
 template <class Duration> class subsecond_helper {
-  /// Returns the amount of digits according to the c++ 20 spec
-  /// In the range [0, 18], if more than 18 fractional digits are required,
-  /// then we return 6 for microseconds precision
+  // Returns the amount of digits according to the c++ 20 spec
+  // In the range [0, 18], if more than 18 fractional digits are required,
+  // then we return 6 for microseconds precision
   static constexpr int num_digits(std::intmax_t num, std::intmax_t den,
                                   int n = 0) {
     return num % den == 0 ? n : (n > 18 ? 6 : num_digits(num * 10, den, n + 1));
