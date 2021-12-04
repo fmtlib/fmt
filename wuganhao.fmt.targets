@@ -29,12 +29,4 @@
       <AdditionalLibraryDirectories>$(MSBuildThisFileDirectory)..\lib\native\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
    </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Platform)'=='x86' Or '$(Platform)'=='Win32'">
-    <Link>
-      <AdditionalLibraryDirectories>$(MSBuildThisFileDirectory)..\lib\native\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-    </Link>
-	<Lib>
-      <AdditionalLibraryDirectories>$(MSBuildThisFileDirectory)..\lib\native\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-    </Lib>
-   </ItemDefinitionGroup>   
 </Project>

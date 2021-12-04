@@ -12,21 +12,15 @@ jobs:
     - name: Create Build Environment
       run: cmake -E make_directory ${{runner.workspace}}/build
 
-    - name: Configure
-      # Use a bash shell for $GITHUB_WORKSPACE.
-      shell: bash
-      working-directory: ${{runner.workspace}}/build
+    - name: 
       run: |
-        cmake -DCMAKE_BUILD_TYPE=Debug   -A Win32 -DCMAKE_CXX_STANDARD=17 $GITHUB_WORKSPACE
-        cmake -DCMAKE_BUILD_TYPE=Debug   -A x64   -DCMAKE_CXX_STANDARD=17 $GITHUB_WORKSPACE
-        cmake -DCMAKE_BUILD_TYPE=Release -A Win21 -DCMAKE_CXX_STANDARD=17 $GITHUB_WORKSPACE
-        cmake -DCMAKE_BUILD_TYPE=Release -A x64   -DCMAKE_CXX_STANDARD=17 $GITHUB_WORKSPACE
+        cmake -A x64 -DCMAKE_CXX_STANDARD=17
 
     - name: Build
-      working-directory: ${{runner.workspace}}/build
       run: |
         $threads = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
-        cmake --build . --config ${{matrix.build_type}} --parallel $threads
+        cmake --build . --config Release --parallel $threads
+        cmake --build . --config Debug   --parallel $threads
 
     - name: Test
       working-directory: ${{runner.workspace}}/build
