@@ -30,4 +30,4 @@ jobs:
 
     - name: Pack
       run: |
-        nuget pack -version 1.0.0 wuganhao.fmt.nuspec
+        nuget pack -version 1.0.0 wuganhao.fmtlib.nuspec -outputdirectory dist

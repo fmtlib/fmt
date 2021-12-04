@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
-    <id>fmtlib</id>
+    <id>wuganhao.fmtlib</id>
     <version>$version$</version>
     <title>{fmt} lib nuget package</title>
     <authors>Wu, Ganhao&lt;wuganhao@hotmail.com&gt;</authors>
@@ -10,11 +10,14 @@
     <description>fmtlib</description>
     <releaseNotes>fmt lib</releaseNotes>
     <tags>fmtlib std::format</tags>
+	<dependencies>
+      <group targetFramework="native0.0" />
+    </dependencies>
   </metadata>
   <files>
-    <file src="Debug\fmtd.*"     target="lib\native\x64\Debug\" />
-    <file src="Release\fmtd.lib" target="lib\native\x64\Release\" />
-    <file src="include\fmt\*.h"      target="include\fmt\" />
-	<file src="*.targets"            target="build\" />
+    <file src="Debug\*"          target="lib\native\x64\Debug\" />
+    <file src="Release\*"        target="lib\native\x64\Release\" />
+    <file src="include\fmt\**\*" target="include\fmt\" />
+	<file src="*.targets"        target="build\" />
   </files>
 </package>
