@@ -11,8 +11,9 @@
 #include <algorithm>
 #include <chrono>
 #include <ctime>
+#include <iterator>
 #include <locale>
-#include <sstream>
+#include <ostream>
 #include <type_traits>
 
 #include "format.h"
@@ -290,36 +291,42 @@ inline null<> localtime_s(...) { return null<>(); }
 inline null<> gmtime_r(...) { return null<>(); }
 inline null<> gmtime_s(...) { return null<>(); }
 
-template <typename Char>
-inline auto do_write(const std::tm& time, const std::locale& loc, char format,
-                     char modifier) -> std::basic_string<Char> {
-  auto&& os = std::basic_ostringstream<Char>();
-  os.imbue(loc);
-  using iterator = std::ostreambuf_iterator<Char>;
-  const auto& facet = std::use_facet<std::time_put<Char, iterator>>(loc);
-  auto end = facet.put(os, os, Char(' '), &time, format, modifier);
-  if (end.failed()) FMT_THROW(format_error("failed to format time"));
-  return std::move(os).str();
-}
-
-template <typename Char, typename OutputIt,
-          FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
-auto write(OutputIt out, const std::tm& time, const std::locale& loc,
-           char format, char modifier = 0) -> OutputIt {
-  auto str = do_write<Char>(time, loc, format, modifier);
-  return std::copy(str.begin(), str.end(), out);
-}
-
 inline const std::locale& get_classic_locale() {
   static const auto& locale = std::locale::classic();
   return locale;
 }
 
-template <typename Char, typename OutputIt,
-          FMT_ENABLE_IF(std::is_same<Char, char>::value)>
-auto write(OutputIt out, const std::tm& time, const std::locale& loc,
-           char format, char modifier = 0) -> OutputIt {
-  auto str = do_write<char>(time, loc, format, modifier);
+template <typename CodeUnit> struct codecvt_result {
+  static constexpr const size_t max_size = 32;
+  CodeUnit buf[max_size];
+  CodeUnit* end;
+};
+template <typename CodeUnit>
+constexpr const size_t codecvt_result<CodeUnit>::max_size;
+
+template <typename CodeUnit>
+void write_codecvt(codecvt_result<CodeUnit>& out, string_view in_buf,
+                   const std::locale& loc) {
+  using codecvt = std::codecvt<CodeUnit, char, std::mbstate_t>;
+#if FMT_CLANG_VERSION
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wdeprecated"
+  auto& f = std::use_facet<codecvt>(loc);
+#  pragma clang diagnostic pop
+#else
+  auto& f = std::use_facet<codecvt>(loc);
+#endif
+  auto mb = std::mbstate_t();
+  const char* from_next = nullptr;
+  auto result = f.in(mb, in_buf.begin(), in_buf.end(), from_next,
+                     std::begin(out.buf), std::end(out.buf), out.end);
+  if (result != std::codecvt_base::ok)
+    FMT_THROW(format_error("failed to format time"));
+}
+
+template <typename OutputIt>
+auto write_encoded_tm_str(OutputIt out, string_view in, const std::locale& loc)
+    -> OutputIt {
   if (detail::is_utf8() && loc != get_classic_locale()) {
     // char16_t and char32_t codecvts are broken in MSVC (linkage errors) and
     // gcc-4.
@@ -332,56 +339,89 @@ auto write(OutputIt out, const std::tm& time, const std::locale& loc,
     using code_unit = char32_t;
 #endif
 
-    using codecvt = std::codecvt<code_unit, char, std::mbstate_t>;
-#if FMT_CLANG_VERSION
-#  pragma clang diagnostic push
-#  pragma clang diagnostic ignored "-Wdeprecated"
-    auto& f = std::use_facet<codecvt>(loc);
-#  pragma clang diagnostic pop
-#else
-    auto& f = std::use_facet<codecvt>(loc);
-#endif
-
-    auto mb = std::mbstate_t();
-    const char* from_next = nullptr;
-    code_unit* to_next = nullptr;
-    constexpr size_t buf_size = 32;
-    code_unit buf[buf_size] = {};
-    auto result = f.in(mb, str.data(), str.data() + str.size(), from_next, buf,
-                       buf + buf_size, to_next);
-    if (result != std::codecvt_base::ok)
-      FMT_THROW(format_error("failed to format time"));
-    str.clear();
-    for (code_unit* p = buf; p != to_next; ++p) {
+    using unit_t = codecvt_result<code_unit>;
+    unit_t unit;
+    write_codecvt(unit, in, loc);
+    // In UTF-8 is used one to four one-byte code units.
+    auto&& buf = basic_memory_buffer<char, unit_t::max_size * 4>();
+    for (code_unit* p = unit.buf; p != unit.end; ++p) {
       uint32_t c = static_cast<uint32_t>(*p);
       if (sizeof(code_unit) == 2 && c >= 0xd800 && c <= 0xdfff) {
         // surrogate pair
         ++p;
-        if (p == to_next || (c & 0xfc00) != 0xd800 || (*p & 0xfc00) != 0xdc00) {
+        if (p == unit.end || (c & 0xfc00) != 0xd800 ||
+            (*p & 0xfc00) != 0xdc00) {
           FMT_THROW(format_error("failed to format time"));
         }
         c = (c << 10) + static_cast<uint32_t>(*p) - 0x35fdc00;
       }
       if (c < 0x80) {
-        str.push_back(static_cast<char>(c));
+        buf.push_back(static_cast<char>(c));
       } else if (c < 0x800) {
-        str.push_back(static_cast<char>(0xc0 | (c >> 6)));
-        str.push_back(static_cast<char>(0x80 | (c & 0x3f)));
+        buf.push_back(static_cast<char>(0xc0 | (c >> 6)));
+        buf.push_back(static_cast<char>(0x80 | (c & 0x3f)));
       } else if ((c >= 0x800 && c <= 0xd7ff) || (c >= 0xe000 && c <= 0xffff)) {
-        str.push_back(static_cast<char>(0xe0 | (c >> 12)));
-        str.push_back(static_cast<char>(0x80 | ((c & 0xfff) >> 6)));
-        str.push_back(static_cast<char>(0x80 | (c & 0x3f)));
+        buf.push_back(static_cast<char>(0xe0 | (c >> 12)));
+        buf.push_back(static_cast<char>(0x80 | ((c & 0xfff) >> 6)));
+        buf.push_back(static_cast<char>(0x80 | (c & 0x3f)));
       } else if (c >= 0x10000 && c <= 0x10ffff) {
-        str.push_back(static_cast<char>(0xf0 | (c >> 18)));
-        str.push_back(static_cast<char>(0x80 | ((c & 0x3ffff) >> 12)));
-        str.push_back(static_cast<char>(0x80 | ((c & 0xfff) >> 6)));
-        str.push_back(static_cast<char>(0x80 | (c & 0x3f)));
+        buf.push_back(static_cast<char>(0xf0 | (c >> 18)));
+        buf.push_back(static_cast<char>(0x80 | ((c & 0x3ffff) >> 12)));
+        buf.push_back(static_cast<char>(0x80 | ((c & 0xfff) >> 6)));
+        buf.push_back(static_cast<char>(0x80 | (c & 0x3f)));
       } else {
         FMT_THROW(format_error("failed to format time"));
       }
     }
+    return copy_str<char>(buf.data(), buf.data() + buf.size(), out);
   }
-  return std::copy(str.begin(), str.end(), out);
+  return copy_str<char>(in.data(), in.data() + in.size(), out);
+}
+
+template <typename Char, typename OutputIt,
+          FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
+auto write_tm_str(OutputIt out, string_view sv, const std::locale& loc)
+    -> OutputIt {
+  codecvt_result<Char> unit;
+  write_codecvt(unit, sv, loc);
+  return copy_str<Char>(unit.buf, unit.end, out);
+}
+
+template <typename Char, typename OutputIt,
+          FMT_ENABLE_IF(std::is_same<Char, char>::value)>
+auto write_tm_str(OutputIt out, string_view sv, const std::locale& loc)
+    -> OutputIt {
+  return write_encoded_tm_str(out, sv, loc);
+}
+
+template <typename Char>
+inline void do_write(buffer<Char>& buf, const std::tm& time,
+                     const std::locale& loc, char format, char modifier) {
+  auto&& format_buf = formatbuf<std::basic_streambuf<Char>>(buf);
+  auto&& os = std::basic_ostream<Char>(&format_buf);
+  os.imbue(loc);
+  using iterator = std::ostreambuf_iterator<Char>;
+  const auto& facet = std::use_facet<std::time_put<Char, iterator>>(loc);
+  auto end = facet.put(os, os, Char(' '), &time, format, modifier);
+  if (end.failed()) FMT_THROW(format_error("failed to format time"));
+}
+
+template <typename Char, typename OutputIt,
+          FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
+auto write(OutputIt out, const std::tm& time, const std::locale& loc,
+           char format, char modifier = 0) -> OutputIt {
+  auto&& buf = get_buffer<Char>(out);
+  do_write<Char>(buf, time, loc, format, modifier);
+  return buf.out();
+}
+
+template <typename Char, typename OutputIt,
+          FMT_ENABLE_IF(std::is_same<Char, char>::value)>
+auto write(OutputIt out, const std::tm& time, const std::locale& loc,
+           char format, char modifier = 0) -> OutputIt {
+  auto&& buf = basic_memory_buffer<Char>();
+  do_write<char>(buf, time, loc, format, modifier);
+  return write_encoded_tm_str(out, string_view(buf.data(), buf.size()), loc);
 }
 
 }  // namespace detail
@@ -878,6 +918,12 @@ template <typename T>
 struct has_member_data_tm_gmtoff<T, void_t<decltype(T::tm_gmtoff)>>
     : std::true_type {};
 
+template <typename T, typename = void>
+struct has_member_data_tm_zone : std::false_type {};
+template <typename T>
+struct has_member_data_tm_zone<T, void_t<decltype(T::tm_zone)>>
+    : std::true_type {};
+
 #if defined(_WIN32)
 inline void tzset_once() {
   static bool init = []() -> bool {
@@ -1035,6 +1081,14 @@ template <typename OutputIt, typename Char> class tm_writer {
 #endif
   }
 
+  void format_tz_name_impl(std::true_type) {
+    if (is_classic_)
+      out_ = write_tm_str<Char>(out_, tm_.tm_zone, loc_);
+    else
+      format_localized('Z');
+  }
+  void format_tz_name_impl(std::false_type) { format_localized('Z'); }
+
   void format_localized(char format, char modifier = 0) {
     out_ = write<Char>(out_, tm_, loc_, format, modifier);
   }
@@ -1144,7 +1198,7 @@ template <typename OutputIt, typename Char> class tm_writer {
   void on_utc_offset() {
     format_utc_offset_impl(has_member_data_tm_gmtoff<std::tm>{});
   }
-  void on_tz_name() { format_localized('Z'); }
+  void on_tz_name() { format_tz_name_impl(has_member_data_tm_zone<std::tm>{}); }
 
   void on_year(numeric_system ns) {
     if (is_classic_ || ns == numeric_system::standard)
