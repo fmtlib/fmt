@@ -704,7 +704,12 @@ FMT_INLINE FMT_CONSTEXPR20 digits::result grisu_gen_digits(
   if (handler.fixed) {
     // Adjust fixed precision by exponent because it is relative to decimal
     // point.
-    handler.precision += exp + handler.exp10;
+    int precision_offset = exp + handler.exp10;
+    if (precision_offset > 0 &&
+        handler.precision > max_value<int>() - precision_offset) {
+      throw format_error("number is too big");
+    }
+    handler.precision += precision_offset;
     // Check if precision is satisfied just by leading zeros, e.g.
     // format("{:.2f}", 0.001) gives "0.00" without generating any digits.
     if (handler.precision <= 0) {

@@ -934,6 +934,9 @@ TEST(format_test, precision) {
   EXPECT_THROW_MSG((void)fmt::format(runtime("{:.{}e}"), 42.0,
                                      fmt::detail::max_value<int>()),
                    format_error, "number is too big");
+  EXPECT_THROW_MSG(
+      (void)fmt::format("{:.2147483646f}", -2.2121295195081227E+304),
+      format_error, "number is too big");
 
   EXPECT_EQ("st", fmt::format("{0:.2}", "str"));
 }
