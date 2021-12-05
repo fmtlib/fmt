@@ -1595,20 +1595,21 @@ struct chrono_formatter {
     static constexpr auto fractional_width =
         detail::num_digits(Duration::period::num, Duration::period::den);
 
-    using precision = std::chrono::duration<
+    using subsecond_precision = std::chrono::duration<
         typename std::common_type<typename Duration::rep,
                                   std::chrono::seconds::rep>::type,
         std::ratio<1, detail::pow10(fractional_width)>>;
     // We could use c++ 17 if constexpr here.
-    if (std::ratio_less<typename precision::period,
+    if (std::ratio_less<typename subsecond_precision::period,
                         std::chrono::seconds::period>::value) {
       *out++ = '.';
       const auto subseconds =
-          std::chrono::treat_as_floating_point<typename precision::rep>::value
+          std::chrono::treat_as_floating_point<
+              typename subsecond_precision::rep>::value
               ? (detail::abs(d) -
                  std::chrono::duration_cast<std::chrono::seconds>(d))
                     .count()
-              : std::chrono::duration_cast<precision>(
+              : std::chrono::duration_cast<subsecond_precision>(
                     detail::abs(d) -
                     std::chrono::duration_cast<std::chrono::seconds>(d))
                     .count();
