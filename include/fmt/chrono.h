@@ -1393,12 +1393,11 @@ template <class Duration> class subsecond_helper {
   // Returns the amount of digits according to the c++ 20 spec
   // In the range [0, 18], if more than 18 fractional digits are required,
   // then we return 6 for microseconds precision
-  static constexpr int num_digits(std::intmax_t num, std::intmax_t den,
-                                  int n = 0) {
+  static constexpr int num_digits(long long num, long long den, int n = 0) {
     return num % den == 0 ? n : (n > 18 ? 6 : num_digits(num * 10, den, n + 1));
   }
 
-  static constexpr std::intmax_t pow10(std::uint32_t n) {
+  static constexpr long long pow10(std::uint32_t n) {
     return n == 0 ? 1 : 10 * pow10(n - 1);
   }
 
@@ -1406,7 +1405,13 @@ template <class Duration> class subsecond_helper {
             FMT_ENABLE_IF(std::numeric_limits<Rep>::is_signed)>
   static constexpr std::chrono::duration<Rep, Period> abs(
       std::chrono::duration<Rep, Period> d) {
-    return d >= d.zero() ? d : -d;
+    // We need to compare the duration using the count() method directly
+    // due to a compiler bug in clang-11 regarding the spaceship operator,
+    // when -Wzero-as-null-pointer-constant is enabled.
+    // In clang-12 the bug has been fixed. See
+    // https://bugs.llvm.org/show_bug.cgi?id=46235 and the reproducible example:
+    // https://www.godbolt.org/z/Knbb5joYx
+    return d.count() >= d.zero().count() ? d : -d;
   }
 
   template <class Rep, class Period,
@@ -1591,8 +1596,8 @@ struct chrono_formatter {
   template <typename RepType> void write(RepType value, int width) {
     write_sign();
     if (isnan(value)) return write_nan();
-    uint32_or_64_or_128_t<std::intmax_t> n =
-        to_unsigned(to_nonnegative_int(value, max_value<std::intmax_t>()));
+    uint32_or_64_or_128_t<long long> n =
+        to_unsigned(to_nonnegative_int(value, max_value<long long>()));
     int num_digits = detail::count_digits(n);
     if (width > num_digits) out = std::fill_n(out, width - num_digits, '0');
     out = format_decimal<char_type>(out, n, num_digits).end;
