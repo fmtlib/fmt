@@ -1420,17 +1420,6 @@ static constexpr std::chrono::duration<Rep, Period> abs(
   return d;
 }
 
-template <class Rep, class Period, class ToDuration>
-static constexpr typename ToDuration::rep get_subseconds(
-    std::chrono::duration<Rep, Period> d) {
-  return std::chrono::treat_as_floating_point<typename ToDuration::rep>::value
-             ? (abs(d) - std::chrono::duration_cast<std::chrono::seconds>(d))
-                   .count()
-             : std::chrono::duration_cast<ToDuration>(
-                   abs(d) - std::chrono::duration_cast<std::chrono::seconds>(d))
-                   .count();
-}
-
 template <typename Char, typename Rep, typename OutputIt,
           FMT_ENABLE_IF(std::is_integral<Rep>::value)>
 OutputIt format_duration_value(OutputIt out, Rep val, int) {
