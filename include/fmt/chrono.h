@@ -20,6 +20,20 @@
 
 FMT_BEGIN_NAMESPACE
 
+// Enable tzset.
+#ifndef FMT_USE_TZSET
+// UWP doesn't provide _tzset.
+#  if FMT_HAS_INCLUDE("winapifamily.h")
+#    include <winapifamily.h>
+#  endif
+#  if defined(_WIN32) && (!defined(WINAPI_FAMILY) || \
+                          (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP))
+#    define FMT_USE_TZSET 1
+#  else
+#    define FMT_USE_TZSET 0
+#  endif
+#endif
+
 // Enable safe chrono durations, unless explicitly disabled.
 #ifndef FMT_SAFE_DURATION_CAST
 #  define FMT_SAFE_DURATION_CAST 1
@@ -924,7 +938,7 @@ template <typename T>
 struct has_member_data_tm_zone<T, void_t<decltype(T::tm_zone)>>
     : std::true_type {};
 
-#if defined(_WIN32)
+#if FMT_USE_TZSET
 inline void tzset_once() {
   static bool init = []() -> bool {
     _tzset();
@@ -1067,7 +1081,9 @@ template <typename OutputIt, typename Char> class tm_writer {
   }
   void format_utc_offset_impl(std::false_type) {
 #if defined(_WIN32)
+#  if FMT_USE_TZSET
     tzset_once();
+#  endif
     long offset = 0;
     _get_timezone(&offset);
     if (tm_.tm_isdst) {
