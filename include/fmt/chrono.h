@@ -1318,7 +1318,7 @@ inline bool isfinite(T) {
   return true;
 }
 
-// Converts value to int and checks that it's in the range [0, upper).
+// Converts value to Int and checks that it's in the range [0, upper).
 template <typename T, typename Int, FMT_ENABLE_IF(std::is_integral<T>::value)>
 inline Int to_nonnegative_int(T value, Int upper) {
   FMT_ASSERT(value >= 0 && to_unsigned(value) <= to_unsigned(upper),
