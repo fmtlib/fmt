@@ -544,9 +544,7 @@ TEST(chrono_test, negative_durations) {
 
 TEST(chrono_test, special_durations) {
   auto value = fmt::format("{:%S}", std::chrono::duration<double>(1e20));
-  // No decimal point is printed so size() is 2.
-  EXPECT_EQ(value.size(), 2);
-  EXPECT_EQ("40", value.substr(0, 2));
+  EXPECT_EQ(value, "40");
   auto nan = std::numeric_limits<double>::quiet_NaN();
   EXPECT_EQ(
       "nan nan nan nan nan:nan nan",
