@@ -278,7 +278,7 @@ You can also write a formatter for a hierarchy of classes::
   };
 
   template <typename T>
-  struct fmt::formatter<T, std::enable_if_t<std::is_base_of<A, T>::value, char>> :
+  struct fmt::formatter<T, char, std::enable_if_t<std::is_base_of<A, T>::value>> :
       fmt::formatter<std::string> {
     template <typename FormatCtx>
     auto format(const A& a, FormatCtx& ctx) {
