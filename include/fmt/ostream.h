@@ -45,6 +45,8 @@ struct is_streamable<
     enable_if_t<
         std::is_arithmetic<T>::value || std::is_array<T>::value ||
         std::is_pointer<T>::value || std::is_same<T, char8_type>::value ||
+        std::is_same<T, std::basic_string<Char>>::value ||
+        std::is_same<T, std_string_view<Char>>::value ||
         (std::is_convertible<T, int>::value && !std::is_enum<T>::value)>>
     : std::false_type {};
 
