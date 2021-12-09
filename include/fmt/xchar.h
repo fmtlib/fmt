@@ -5,8 +5,8 @@
 //
 // For the license information refer to format.h.
 
-#ifndef FMT_WCHAR_H_
-#define FMT_WCHAR_H_
+#ifndef FMT_XCHAR_H_
+#define FMT_XCHAR_H_
 
 #include <cwchar>
 #include <tuple>
@@ -233,4 +233,4 @@ template <typename T> inline auto to_wstring(const T& value) -> std::wstring {
 FMT_MODULE_EXPORT_END
 FMT_END_NAMESPACE
 
-#endif  // FMT_WCHAR_H_
+#endif  // FMT_XCHAR_H_
