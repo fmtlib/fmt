@@ -1389,20 +1389,20 @@ inline std::chrono::duration<Rep, std::milli> get_milliseconds(
 #endif
 }
 
-// Returns the amount of digits according to the c++ 20 spec
+// Returns the number of digits according to the c++ 20 spec
 // In the range [0, 18], if more than 18 fractional digits are required,
 // then we return 6 for microseconds precision.
-static constexpr int num_digits(long long num, long long den, int n = 0) {
+constexpr int num_digits(long long num, long long den, int n = 0) {
   return num % den == 0 ? n : (n > 18 ? 6 : num_digits(num * 10, den, n + 1));
 }
 
-static constexpr long long pow10(std::uint32_t n) {
+constexpr long long pow10(std::uint32_t n) {
   return n == 0 ? 1 : 10 * pow10(n - 1);
 }
 
 template <class Rep, class Period,
           FMT_ENABLE_IF(std::numeric_limits<Rep>::is_signed)>
-static constexpr std::chrono::duration<Rep, Period> abs(
+constexpr std::chrono::duration<Rep, Period> abs(
     std::chrono::duration<Rep, Period> d) {
   // We need to compare the duration using the count() method directly
   // due to a compiler bug in clang-11 regarding the spaceship operator,
@@ -1581,7 +1581,7 @@ struct chrono_formatter {
   }
 
   template <class Duration> void write_fractional_seconds(Duration d) {
-    static constexpr auto fractional_width =
+    constexpr auto fractional_width =
         detail::num_digits(Duration::period::num, Duration::period::den);
 
     using subsecond_precision = std::chrono::duration<
