@@ -217,11 +217,11 @@ inline void vprint(wstring_view fmt, wformat_args args) {
 
 template <typename... T>
 void print(std::FILE* f, wformat_string<T...> fmt, T&&... args) {
-  return vprint(f, wstring_view(fmt), make_wformat_args(args...));
+  return vprint(f, wstring_view(fmt), fmt::make_wformat_args(args...));
 }
 
 template <typename... T> void print(wformat_string<T...> fmt, T&&... args) {
-  return vprint(wstring_view(fmt), make_wformat_args(args...));
+  return vprint(wstring_view(fmt), fmt::make_wformat_args(args...));
 }
 
 /**
