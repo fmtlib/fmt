@@ -1761,12 +1761,30 @@ TEST(format_test, custom_format_compile_time_string) {
 
 using namespace fmt::literals;
 
+#  if FMT_GCC_VERSION
+#    define FMT_CHECK_DEPRECATED_UDL_FORMAT 1
+#  elif FMT_CLANG_VERSION && defined(__has_warning)
+#    if __has_warning("-Wdeprecated-declarations")
+#      define FMT_CHECK_DEPRECATED_UDL_FORMAT 1
+#    endif
+#  endif
+#  ifndef FMT_CHECK_DEPRECATED_UDL_FORMAT
+#    define FMT_CHECK_DEPRECATED_UDL_FORMAT 0
+#  endif
+
+#  if FMT_CHECK_DEPRECATED_UDL_FORMAT
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 TEST(format_test, format_udl) {
   EXPECT_EQ("{}c{}"_format("ab", 1), fmt::format("{}c{}", "ab", 1));
   EXPECT_EQ("foo"_format(), "foo");
   EXPECT_EQ("{0:10}"_format(42), "        42");
   EXPECT_EQ("{}"_format(date(2015, 10, 21)), "2015-10-21");
 }
+
+#    pragma GCC diagnostic pop
+#  endif
 
 TEST(format_test, named_arg_udl) {
   auto udl_a = fmt::format("{first}{second}{first}{third}", "first"_a = "abra",
