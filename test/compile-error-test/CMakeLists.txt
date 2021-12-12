@@ -1,77 +1,145 @@
 # Test if compile errors are produced where necessary.
 
 cmake_minimum_required(VERSION 3.1...3.18)
+project(compile-error-test CXX)
 
-include(CheckCXXSourceCompiles)
-include(CheckCXXCompilerFlag)
+set(fmt_headers "
+  #include <fmt/format.h>
+  #include <fmt/xchar.h>
+")
 
-set(CMAKE_REQUIRED_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/../../include)
-set(CMAKE_REQUIRED_FLAGS ${CXX_STANDARD_FLAG} ${PEDANTIC_COMPILE_FLAGS})
+set(error_test_names "")
+set(non_error_test_content "")
 
-function (generate_source result fragment)
-  set(${result} "
-  #define FMT_HEADER_ONLY 1
-  #include \"fmt/format.h\"
-  int main() {
-    ${fragment}
-  }
-  " PARENT_SCOPE)
+# For error tests (we expect them to produce compilation error):
+#  * adds a name of test into `error_test_names` list
+#  * generates a single source file (with the same name) for each test
+# For non-error tests (we expect them to compile successfully):
+#  * adds a code segment as separate function to `non_error_test_content`
+function (expect_compile name code_fragment)
+  cmake_parse_arguments(EXPECT_COMPILE "ERROR" "" "" ${ARGN})
+  string(MAKE_C_IDENTIFIER "${name}" test_name)
+
+  if (EXPECT_COMPILE_ERROR)
+    file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/test/${test_name}.cc" "
+      ${fmt_headers}
+      void ${test_name}() {
+        ${code_fragment}
+      }
+    ")
+    set(error_test_names_copy "${error_test_names}")
+    list(APPEND error_test_names_copy "${test_name}")
+    set(error_test_names "${error_test_names_copy}" PARENT_SCOPE)
+  else()
+    set(non_error_test_content "
+      ${non_error_test_content}
+      void ${test_name}() {
+        ${code_fragment}
+      }" PARENT_SCOPE)
+  endif()
 endfunction ()
 
-function (expect_compile code)
-  generate_source(source "${code}")
-  check_cxx_source_compiles("${source}" compiles)
-  if (NOT compiles)
-    set(error_msg "Compile error for: ${code}")
-  endif ()
-  # Unset the CMake cache variable compiles. Otherwise the compile test will
-  # just use cached information next time it runs.
-  unset(compiles CACHE)
-  if (error_msg)
-    message(FATAL_ERROR ${error_msg})
+# Generates a source file for non-error test with `non_error_test_content` and
+# CMake project file with all error and single non-error test targets.
+function (run_tests)
+  set(cmake_targets "")
+  foreach(test_name IN LISTS error_test_names)
+    set(cmake_targets "
+      ${cmake_targets}
+      add_library(test-${test_name} ${test_name}.cc)
+      target_link_libraries(test-${test_name} PRIVATE fmt::fmt)
+    ")
+  endforeach()
+
+  file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/test/non_error_test.cc" "
+    ${fmt_headers}
+    ${non_error_test_content}
+  ")
+  set(cmake_targets "
+    ${cmake_targets}
+    add_library(non-error-test non_error_test.cc)
+    target_link_libraries(non-error-test PRIVATE fmt::fmt)
+  ")
+
+  file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/test/CMakeLists.txt" "
+    cmake_minimum_required(VERSION 3.1...3.18)
+    project(tests CXX)
+    add_subdirectory(${FMT_DIR} fmt)
+    ${cmake_targets}
+  ")
+
+  set(build_directory "${CMAKE_CURRENT_BINARY_DIR}/test/build")
+  file(MAKE_DIRECTORY "${build_directory}")
+  execute_process(
+    COMMAND
+      "${CMAKE_COMMAND}"
+      "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+      "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}"
+      "-DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}"
+      "-DCMAKE_GENERATOR=${CMAKE_GENERATOR}"
+      "-DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}"
+      "-DFMT_DIR=${FMT_DIR}"
+      "${CMAKE_CURRENT_BINARY_DIR}/test"
+    WORKING_DIRECTORY "${build_directory}"
+    RESULT_VARIABLE result_var
+    OUTPUT_VARIABLE output_var
+    ERROR_VARIABLE output_var)
+  if (NOT result_var EQUAL 0)
+    message(FATAL_ERROR "Unable to configure:\n${output_var}")
+  endif()
+
+  foreach(test_name IN LISTS error_test_names)
+    execute_process(
+      COMMAND
+        "${CMAKE_COMMAND}" --build "${build_directory}" --target "test-${test_name}"
+      WORKING_DIRECTORY "${build_directory}"
+      RESULT_VARIABLE result_var
+      OUTPUT_VARIABLE output_var
+      ERROR_QUIET)
+    if (result_var EQUAL 0)
+      message(SEND_ERROR "No compile error for \"${test_name}\":\n${output_var}")
+    endif ()
+  endforeach()
+
+  execute_process(
+    COMMAND
+      "${CMAKE_COMMAND}" --build "${build_directory}" --target "non-error-test"
+    WORKING_DIRECTORY "${build_directory}"
+    RESULT_VARIABLE result_var
+    OUTPUT_VARIABLE output_var
+    ERROR_VARIABLE output_var)
+  if (NOT result_var EQUAL 0)
+    message(SEND_ERROR "Compile error for combined non-error test:\n${output_var}")
   endif ()
 endfunction ()
 
-function (expect_compile_error code)
-  generate_source(source "${code}")
-  check_cxx_source_compiles("${source}" compiles)
-  if (compiles)
-    set(error_msg "No compile error for: ${code}")
-  endif ()
-  # Unset the CMake cache variable compiles. Otherwise the compile test will
-  # just use cached information next time it runs.
-  unset(compiles CACHE)
-  if (error_msg)
-    message(FATAL_ERROR ${error_msg})
-  endif ()
-endfunction ()
 
 # check if the source file skeleton compiles
-expect_compile("")
+expect_compile(check "")
 
 # Formatting a wide character with a narrow format string is forbidden.
-expect_compile_error("fmt::format(\"{}\", L'a');")
+expect_compile(wide-character-narrow-format-string "fmt::format(\"{}\", L'a');" ERROR)
 
 # Formatting a wide string with a narrow format string is forbidden.
-expect_compile_error("fmt::format(\"{}\", L\"foo\");")
+expect_compile(wide-string-narrow-format-string "fmt::format(\"{}\", L\"foo\");" ERROR)
 
 # Formatting a narrow string with a wide format string is forbidden because
 # mixing UTF-8 with UTF-16/32 can result in an invalid output.
-expect_compile_error("fmt::format(L\"{}\", \"foo\");")
+expect_compile(narrow-string-wide-format-string "fmt::format(L\"{}\", \"foo\");" ERROR)
 
 # Formatting a wide string with a narrow format string is forbidden.
-expect_compile_error("
+expect_compile(cast-to-string "
   struct S {
     operator std::string() const { return std::string(); }
   };
   fmt::format(\"{}\", S());
-")
+" ERROR)
 
 # Formatting a function
-expect_compile_error("
+expect_compile(format-function "
   void (*f)();
   fmt::format(\"{}\", f);
-")
+" ERROR)
 
 # Make sure that compiler features detected in the header
 # match the features detected in CMake.
@@ -80,6 +148,11 @@ if (SUPPORTS_USER_DEFINED_LITERALS)
 else ()
   set(supports_udl 0)
 endif ()
-expect_compile("#if FMT_USE_USER_DEFINED_LITERALS != ${supports_udl}
-                # error
-                #endif")
+expect_compile(udl-check "
+  #if FMT_USE_USER_DEFINED_LITERALS != ${supports_udl}
+  # error
+  #endif
+")
+
+# Run all tests
+run_tests()
