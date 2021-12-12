@@ -116,19 +116,28 @@ endfunction ()
 
 # check if the source file skeleton compiles
 expect_compile(check "")
+expect_compile(check-error "compilation_error" ERROR)
 
 # Formatting a wide character with a narrow format string is forbidden.
-expect_compile(wide-character-narrow-format-string "fmt::format(\"{}\", L'a');" ERROR)
+expect_compile(wide-character-narrow-format-string "fmt::format(L\"{}\", L'a');")
+expect_compile(wide-character-narrow-format-string-error "fmt::format(\"{}\", L'a');" ERROR)
 
 # Formatting a wide string with a narrow format string is forbidden.
-expect_compile(wide-string-narrow-format-string "fmt::format(\"{}\", L\"foo\");" ERROR)
+expect_compile(wide-string-narrow-format-string "fmt::format(L\"{}\", L\"foo\");")
+expect_compile(wide-string-narrow-format-string-error "fmt::format(\"{}\", L\"foo\");" ERROR)
 
 # Formatting a narrow string with a wide format string is forbidden because
 # mixing UTF-8 with UTF-16/32 can result in an invalid output.
-expect_compile(narrow-string-wide-format-string "fmt::format(L\"{}\", \"foo\");" ERROR)
+expect_compile(narrow-string-wide-format-string "fmt::format(L\"{}\", L\"foo\");")
+expect_compile(narrow-string-wide-format-string-error "fmt::format(L\"{}\", \"foo\");" ERROR)
 
-# Formatting a wide string with a narrow format string is forbidden.
 expect_compile(cast-to-string "
+  struct S {
+    operator std::string() const { return std::string(); }
+  };
+  fmt::format(\"{}\", std::string(S()));
+")
+expect_compile(cast-to-string-error "
   struct S {
     operator std::string() const { return std::string(); }
   };
@@ -137,6 +146,10 @@ expect_compile(cast-to-string "
 
 # Formatting a function
 expect_compile(format-function "
+  void (*f)();
+  fmt::format(\"{}\", fmt::ptr(f));
+")
+expect_compile(format-function-error "
   void (*f)();
   fmt::format(\"{}\", f);
 " ERROR)
