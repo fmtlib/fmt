@@ -707,7 +707,7 @@ FMT_INLINE FMT_CONSTEXPR20 digits::result grisu_gen_digits(
     int precision_offset = exp + handler.exp10;
     if (precision_offset > 0 &&
         handler.precision > max_value<int>() - precision_offset) {
-      throw format_error("number is too big");
+      FMT_THROW(format_error("number is too big"));
     }
     handler.precision += precision_offset;
     // Check if precision is satisfied just by leading zeros, e.g.
