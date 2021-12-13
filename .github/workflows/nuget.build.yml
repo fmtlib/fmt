@@ -1,0 +1,33 @@
+name: nuget.build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Create Build Environment
+      run: cmake -E make_directory ${{runner.workspace}}/build
+
+    - name: 
+      run: |
+        cmake -A x64 -DCMAKE_CXX_STANDARD=17
+
+    - name: Build
+      run: |
+        $threads = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
+        cmake --build . --config Release --parallel $threads
+        cmake --build . --config Debug   --parallel $threads
+
+    - name: Test
+      working-directory: ${{runner.workspace}}/build
+      run: ctest -C Debug -V
+      env:
+        CTEST_OUTPUT_ON_FAILURE: True
+
+    - name: Pack
+      run: |
+        nuget pack -version 1.0.0 wuganhao.fmtlib.nuspec -outputdirectory dist
