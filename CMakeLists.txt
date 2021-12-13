@@ -81,6 +81,7 @@ option(FMT_FUZZ "Generate the fuzz target." OFF)
 option(FMT_CUDA_TEST "Generate the cuda-test target." OFF)
 option(FMT_OS "Include core requiring OS (Windows/Posix) " ON)
 option(FMT_MODULE "Build a module instead of a traditional library." OFF)
+option(FMT_SYSTEM_HEADERS "Expose headers with marking them as system." OFF)
 
 set(FMT_CAN_MODULE OFF)
 if (CMAKE_CXX_STANDARD GREATER 17 AND
@@ -95,6 +96,10 @@ endif ()
 if (FMT_TEST AND FMT_MODULE)
   # The tests require {fmt} to be compiled as traditional library
   message(STATUS "Testing is incompatible with build mode 'module'.")
+endif ()
+set(FMT_SYSTEM_HEADERS_ATTRIBUTE "")
+if (FMT_SYSTEM_HEADERS)
+  set(FMT_SYSTEM_HEADERS_ATTRIBUTE SYSTEM)
 endif ()
 
 # Get version from core.h
@@ -262,7 +267,7 @@ endif ()
 
 target_compile_features(fmt INTERFACE ${FMT_REQUIRED_FEATURES})
 
-target_include_directories(fmt PUBLIC
+target_include_directories(fmt ${FMT_SYSTEM_HEADERS_ATTRIBUTE} PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${FMT_INC_DIR}>)
 
@@ -298,7 +303,7 @@ add_library(fmt::fmt-header-only ALIAS fmt-header-only)
 target_compile_definitions(fmt-header-only INTERFACE FMT_HEADER_ONLY=1)
 target_compile_features(fmt-header-only INTERFACE ${FMT_REQUIRED_FEATURES})
 
-target_include_directories(fmt-header-only INTERFACE
+target_include_directories(fmt-header-only ${FMT_SYSTEM_HEADERS_ATTRIBUTE} INTERFACE
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${FMT_INC_DIR}>)
 
