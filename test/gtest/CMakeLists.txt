@@ -17,6 +17,13 @@ else ()
   target_compile_definitions(gtest PUBLIC GTEST_HAS_PTHREAD=0)
 endif ()
 
+# Workaround GTest bug https://github.com/google/googletest/issues/705.
+check_cxx_compiler_flag(
+  -fno-delete-null-pointer-checks HAVE_FNO_DELETE_NULL_POINTER_CHECKS)
+if (HAVE_FNO_DELETE_NULL_POINTER_CHECKS)
+  target_compile_options(gtest PUBLIC -fno-delete-null-pointer-checks)
+endif ()
+
 if (MSVC)
   # Disable MSVC warnings of _CRT_INSECURE_DEPRECATE functions.
   target_compile_definitions(gtest PRIVATE _CRT_SECURE_NO_WARNINGS)
