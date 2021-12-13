@@ -8,12 +8,6 @@ target_link_libraries(test-main gtest)
 
 include(CheckCXXCompilerFlag)
 
-# Use less strict pedantic flags for the tests because GMock doesn't compile
-# cleanly with -pedantic and -std=c++98.
-if (CMAKE_COMPILER_IS_GNUCXX OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
-    #set(PEDANTIC_COMPILE_FLAGS -Wall -Wextra -Wno-long-long -Wno-variadic-macros)
-endif ()
-
 function(add_fmt_executable name)
   add_executable(${name} ${ARGN})
   if (MINGW)
