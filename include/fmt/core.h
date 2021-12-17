@@ -2482,6 +2482,8 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(const Char* begin,
                                                  const Char* end,
                                                  SpecHandler&& handler)
     -> const Char* {
+  if (begin == end) return begin;
+
   if (begin + 1 < end && begin[1] == '}' && is_ascii_letter(*begin) &&
       *begin != 'L') {
     presentation_type type = parse_presentation_type(*begin++);
@@ -2490,8 +2492,6 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(const Char* begin,
     handler.on_type(type);
     return begin;
   }
-
-  if (begin == end) return begin;
 
   begin = parse_align(begin, end, handler);
   if (begin == end) return begin;
