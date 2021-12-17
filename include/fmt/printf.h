@@ -485,6 +485,23 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
       // printf produces garbage when 'L' is omitted for long double, no
       // need to do the same.
       break;
+    case 'I':
+      if (t == '6') {
+        ++it;
+        t = it != end ? *it : 0;
+        if (t == '4') {
+          ++it;
+          t = it != end ? *it : 0;
+          convert_arg<long long>(arg, t);
+        }
+        else {
+          convert_arg<long>(arg, t);
+        }
+      }
+      else {
+        convert_arg<long>(arg, t);
+      }
+      break;
     default:
       --it;
       convert_arg<void>(arg, c);
