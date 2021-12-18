@@ -71,7 +71,7 @@ OutputIterator copy(wchar_t ch, OutputIterator out) {
   return out;
 }
 
-/// Return true value if T has std::string interface, like std::string_view.
+// Returns true if T has a std::string-like interface, like std::string_view.
 template <typename T> class is_std_string_like {
   template <typename U>
   static auto check(U* p)
@@ -85,6 +85,19 @@ template <typename T> class is_std_string_like {
 
 template <typename Char>
 struct is_std_string_like<fmt::basic_string_view<Char>> : std::true_type {};
+
+template <typename T> class is_map {
+  template <typename U> static auto check(U*) -> typename U::key_type;
+  template <typename> static void check(...);
+
+ public:
+#ifdef FMT_FORMAT_MAP_AS_LIST
+  static FMT_CONSTEXPR_DECL const bool value = false;
+#else
+  static FMT_CONSTEXPR_DECL const bool value =
+      !std::is_void<decltype(check<T>(nullptr))>::value;
+#endif
+};
 
 template <typename... Ts> struct conditional_helper {};
 
@@ -573,6 +586,7 @@ struct formatter<TupleT, Char, enable_if_t<fmt::is_tuple_like<TupleT>::value>> {
 template <typename T, typename Char> struct is_range {
   static FMT_CONSTEXPR_DECL const bool value =
       detail::is_range_<T>::value && !detail::is_std_string_like<T>::value &&
+      !detail::is_map<T>::value &&
       !std::is_convertible<T, std::basic_string<Char>>::value &&
       !std::is_constructible<detail::std_string_view<Char>, T>::value;
 };
@@ -611,6 +625,44 @@ struct formatter<
       ++i;
     }
     return detail::copy(formatting.postfix, out);
+  }
+};
+
+template <typename T, typename Char>
+struct formatter<
+    T, Char,
+    enable_if_t<
+        detail::is_map<T>::value
+// Workaround a bug in MSVC 2019 and earlier.
+#if !FMT_MSC_VER
+        && (is_formattable<detail::value_type<T>, Char>::value ||
+            detail::has_fallback_formatter<detail::value_type<T>, Char>::value)
+#endif
+        >> {
+  template <typename ParseContext>
+  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
+
+  template <
+      typename FormatContext, typename U,
+      FMT_ENABLE_IF(
+          std::is_same<U, conditional_t<detail::has_const_begin_end<T>::value,
+                                        const T, T>>::value)>
+  auto format(U& map, FormatContext& ctx) -> decltype(ctx.out()) {
+    auto out = ctx.out();
+    *out++ = '{';
+    int i = 0;
+    for (const auto& item : map) {
+      if (i > 0) out = detail::write_delimiter(out);
+      out = detail::write_range_entry<Char>(out, item.first);
+      *out++ = ':';
+      *out++ = ' ';
+      out = detail::write_range_entry<Char>(out, item.second);
+      ++i;
+    }
+    *out++ = '}';
+    return out;
   }
 };
 
