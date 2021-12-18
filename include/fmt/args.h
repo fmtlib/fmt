@@ -145,9 +145,6 @@ class dynamic_format_arg_store
  public:
   constexpr dynamic_format_arg_store() = default;
 
-  constexpr dynamic_format_arg_store(
-      const dynamic_format_arg_store<Context>& store) = delete;
-
   /**
     \rst
     Adds an argument into the dynamic store for later passing to a formatting
