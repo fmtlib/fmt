@@ -1415,15 +1415,18 @@ template <typename Context> struct arg_mapper {
   }
 
   template <typename T,
-            FMT_ENABLE_IF(std::is_enum<T>::value &&
-                          (std::is_convertible<T, int>::value ||
-                           std::is_same<T, detail::byte>::value) &&
-                          !has_formatter<T, Context>::value &&
-                          !has_fallback_formatter<T, char_type>::value)>
+            FMT_ENABLE_IF(
+                std::is_enum<T>::value&& std::is_convertible<T, int>::value &&
+                !has_formatter<T, Context>::value &&
+                !has_fallback_formatter<T, char_type>::value)>
   FMT_CONSTEXPR FMT_INLINE auto map(const T& val)
       -> decltype(std::declval<arg_mapper>().map(
           static_cast<typename std::underlying_type<T>::type>(val))) {
     return map(static_cast<typename std::underlying_type<T>::type>(val));
+  }
+
+  FMT_CONSTEXPR FMT_INLINE auto map(detail::byte val) -> unsigned char {
+    return map(static_cast<unsigned char>(val));
   }
 
   template <typename T, typename U = remove_cvref_t<T>>
