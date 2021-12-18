@@ -58,6 +58,11 @@ TEST(ranges_test, format_map) {
   EXPECT_EQ(fmt::format("{}", m), "{\"one\": 1, \"two\": 2}");
 }
 
+TEST(ranges_test, format_set) {
+  EXPECT_EQ(fmt::format("{}", std::set<std::string>{"one", "two"}),
+            "{\"one\", \"two\"}");
+}
+
 TEST(ranges_test, format_pair) {
   auto p = std::pair<int, float>(42, 1.5f);
   EXPECT_EQ(fmt::format("{}", p), "(42, 1.5)");

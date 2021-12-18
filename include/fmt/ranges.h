@@ -19,21 +19,6 @@
 
 FMT_BEGIN_NAMESPACE
 
-template <typename Char, typename Enable = void> struct formatting_range {
-#ifdef FMT_DEPRECATED_BRACED_RANGES
-  Char prefix = '{';
-  Char postfix = '}';
-#else
-  Char prefix = '[';
-  Char postfix = ']';
-#endif
-
-  template <typename ParseContext>
-  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
-    return ctx.begin();
-  }
-};
-
 template <typename Char, typename Enable = void> struct formatting_tuple {
   Char prefix = '(';
   Char postfix = ')';
@@ -87,7 +72,7 @@ template <typename Char>
 struct is_std_string_like<fmt::basic_string_view<Char>> : std::true_type {};
 
 template <typename T> class is_map {
-  template <typename U> static auto check(U*) -> typename U::key_type;
+  template <typename U> static auto check(U*) -> typename U::mapped_type;
   template <typename> static void check(...);
 
  public:
@@ -96,6 +81,19 @@ template <typename T> class is_map {
 #else
   static FMT_CONSTEXPR_DECL const bool value =
       !std::is_void<decltype(check<T>(nullptr))>::value;
+#endif
+};
+
+template <typename T> class is_set {
+  template <typename U> static auto check(U*) -> typename U::key_type;
+  template <typename> static void check(...);
+
+ public:
+#ifdef FMT_FORMAT_SET_AS_LIST
+  static FMT_CONSTEXPR_DECL const bool value = false;
+#else
+  static FMT_CONSTEXPR_DECL const bool value =
+      !std::is_void<decltype(check<T>(nullptr))>::value && !is_map<T>::value;
 #endif
 };
 
@@ -602,11 +600,9 @@ struct formatter<
             detail::has_fallback_formatter<detail::value_type<T>, Char>::value)
 #endif
         >> {
-  formatting_range<Char> formatting;
-
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
-    return formatting.parse(ctx);
+    return ctx.begin();
   }
 
   template <
@@ -614,17 +610,26 @@ struct formatter<
       FMT_ENABLE_IF(
           std::is_same<U, conditional_t<detail::has_const_begin_end<T>::value,
                                         const T, T>>::value)>
-  auto format(U& values, FormatContext& ctx) -> decltype(ctx.out()) {
-    auto out = detail::copy(formatting.prefix, ctx.out());
-    size_t i = 0;
-    auto it = std::begin(values);
-    auto end = std::end(values);
+  auto format(U& range, FormatContext& ctx) -> decltype(ctx.out()) {
+#ifdef FMT_DEPRECATED_BRACED_RANGES
+    Char prefix = '{';
+    Char postfix = '}';
+#else
+    Char prefix = detail::is_set<T>::value ? '{' : '[';
+    Char postfix = detail::is_set<T>::value ? '}' : ']';
+#endif
+    auto out = ctx.out();
+    *out++ = prefix;
+    int i = 0;
+    auto it = std::begin(range);
+    auto end = std::end(range);
     for (; it != end; ++it) {
       if (i > 0) out = detail::write_delimiter(out);
       out = detail::write_range_entry<Char>(out, *it);
       ++i;
     }
-    return detail::copy(formatting.postfix, out);
+    *out++ = postfix;
+    return out;
   }
 };
 
