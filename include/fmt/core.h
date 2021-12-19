@@ -1425,7 +1425,7 @@ template <typename Context> struct arg_mapper {
     return map(static_cast<typename std::underlying_type<T>::type>(val));
   }
 
-  FMT_CONSTEXPR FMT_INLINE auto map(detail::byte val) -> unsigned char {
+  FMT_CONSTEXPR FMT_INLINE auto map(detail::byte val) -> unsigned {
     return map(static_cast<unsigned char>(val));
   }
 
