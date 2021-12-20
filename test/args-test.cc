@@ -7,6 +7,8 @@
 
 #include "fmt/args.h"
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
 TEST(args_test, basic) {
@@ -176,8 +178,8 @@ TEST(args_test, move_constructor) {
   const int test_integer = 42;
   const char* const test_c_string = "foo";
 
-  auto store_uptr =
-      std::make_unique<fmt::dynamic_format_arg_store<fmt::format_context>>();
+  std::unique_ptr<fmt::dynamic_format_arg_store<fmt::format_context>>
+      store_uptr(new fmt::dynamic_format_arg_store<fmt::format_context>());
   store_uptr->push_back(test_integer);
   store_uptr->push_back(std::string(test_c_string));
   store_uptr->push_back(fmt::arg("a1", test_c_string));
