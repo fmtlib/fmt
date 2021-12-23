@@ -1663,15 +1663,16 @@ struct chrono_formatter {
     if (std::ratio_less<typename subsecond_precision::period,
                         std::chrono::seconds::period>::value) {
       *out++ = '.';
+      // Don't convert long double to integer seconds to avoid overflow.
+      using sec = conditional_t<
+          std::is_same<typename Duration::rep, long double>::value,
+          std::chrono::duration<long double>, std::chrono::seconds>;
+      auto fractional = detail::abs(d) - std::chrono::duration_cast<sec>(d);
       const auto subseconds =
           std::chrono::treat_as_floating_point<
               typename subsecond_precision::rep>::value
-              ? (detail::abs(d) -
-                 std::chrono::duration_cast<std::chrono::seconds>(d))
-                    .count()
-              : std::chrono::duration_cast<subsecond_precision>(
-                    detail::abs(d) -
-                    std::chrono::duration_cast<std::chrono::seconds>(d))
+              ? fractional.count()
+              : std::chrono::duration_cast<subsecond_precision>(fractional)
                     .count();
       uint32_or_64_or_128_t<long long> n =
           to_unsigned(to_nonnegative_int(subseconds, max_value<long long>()));
