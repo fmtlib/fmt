@@ -1,12 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <fmtIncludePaths>$(MSBuildThisFileDirectory)..\include\;$(MSBuildThisFileDirectory)..\lib\native\x64\$(Configuration)</fmtIncludePaths>
+    <fmtIncludePaths>$(MSBuildThisFileDirectory)..\include\</fmtIncludePaths>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
-    <fmtLibs>fmt.lib;</fmtLibs>
+    <fmtLibs>fmt.lib</fmtLibs>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <fmtLibs>fmtd.lib;</fmtLibs>
+    <fmtLibs>fmtd.lib</fmtLibs>
   </PropertyGroup>
 </Project>

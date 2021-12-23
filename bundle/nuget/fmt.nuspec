@@ -9,8 +9,8 @@
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>{fmt} is an open-source formatting library providing a fast and safe alternative to C stdio and C++ iostreams.</description>
         <repository type="git" url="https://github.com/$repository$/" />
-		<license type="file">docs\license.md</license>
-		<readme>docs\readme.md</readme>
+        <license type="file">docs\license.md</license>
+        <readme>docs\readme.md</readme>
         <dependencies>
             <group targetFramework="native0.0" />
         </dependencies>
@@ -18,13 +18,13 @@
     <files>
         <file src="include\fmt\**\*"          target="include\fmt\" />
         <file src="build\Debug\fmtd.lib"      target="lib\native\x64\debug\" />
-		<file src="build\bin\Debug\fmtd.dll"  target="lib\native\x64\debug\" />
-		<file src="build\bin\Debug\fmtd.pdb"  target="lib\native\x64\debug\" />
-        <file src="build\Release\fmt.lib"     target="lib\native\x64\debug\" />
-		<file src="build\bin\Release\fmt.dll" target="lib\native\x64\debug\" />
+        <file src="build\bin\Debug\fmtd.dll"  target="lib\native\x64\debug\" />
+        <file src="build\bin\Debug\fmtd.pdb"  target="lib\native\x64\debug\" />
+        <file src="build\Release\fmt.lib"     target="lib\native\x64\release\" />
+        <file src="build\bin\Release\fmt.dll" target="lib\native\x64\release\" />
         <file src="bundle\nuget\fmt.props"    target="build\$Id$.props" />
         <file src="bundle\nuget\fmt.targets"  target="build\$Id$.targets" />
-		<file src="license.md"                target="docs\" />
-		<file src="readme.md"                 target="docs\" />
+        <file src="license.md"                target="docs\" />
+        <file src="readme.md"                 target="docs\" />
     </files>
 </package>
