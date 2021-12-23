@@ -12,7 +12,7 @@ jobs:
         os: [windows-2019, windows-latest]
         platform: [Win32, x64]
         build_type: [Debug, Release]
-        standard: [11, 17, 20]
+        standard: [11, 17]
         shared: [ -DBUILD_SHARED_LIBS=ON ]
 
     steps:
