@@ -7,6 +7,8 @@
 
 #include "fmt/args.h"
 
+#include <memory>
+
 #include "gtest/gtest.h"
 
 TEST(args_test, basic) {
@@ -170,4 +172,22 @@ TEST(args_test, throw_on_copy) {
   } catch (...) {
   }
   EXPECT_EQ(fmt::vformat("{}", store), "foo");
+}
+
+TEST(args_test, move_constructor) {
+  const int test_integer = 42;
+  const char* const test_c_string = "foo";
+
+  std::unique_ptr<fmt::dynamic_format_arg_store<fmt::format_context>>
+      store_uptr(new fmt::dynamic_format_arg_store<fmt::format_context>());
+  store_uptr->push_back(test_integer);
+  store_uptr->push_back(std::string(test_c_string));
+  store_uptr->push_back(fmt::arg("a1", test_c_string));
+
+  fmt::dynamic_format_arg_store<fmt::format_context> moved_store(
+      std::move(*store_uptr));
+  store_uptr.reset();
+  EXPECT_EQ(
+      fmt::vformat("{} {} {a1}", moved_store),
+      std::to_string(test_integer) + " " + test_c_string + " " + test_c_string);
 }
