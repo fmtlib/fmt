@@ -159,7 +159,11 @@ if (FMT_PEDANTIC)
     nolocale-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
   target_compile_definitions(
     nolocale-test PRIVATE FMT_STATIC_THOUSANDS_SEPARATOR=1)
+endif ()
 
+# These tests are disabled on Windows because they take too long.
+if (FMT_PEDANTIC AND NOT WIN32)
+  # Test if incorrect API usages produce compilation error.
   add_test(compile-error-test ${CMAKE_CTEST_COMMAND}
     --build-and-test
     "${CMAKE_CURRENT_SOURCE_DIR}/compile-error-test"
@@ -172,10 +176,7 @@ if (FMT_PEDANTIC)
     "-DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}"
     "-DFMT_DIR=${CMAKE_SOURCE_DIR}"
     "-DSUPPORTS_USER_DEFINED_LITERALS=${SUPPORTS_USER_DEFINED_LITERALS}")
-endif ()
 
-# These tests are disabled on Windows because they take too long.
-if (FMT_PEDANTIC AND NOT WIN32)
   # Test if the targets are found from the build directory.
   add_test(find-package-test ${CMAKE_CTEST_COMMAND}
     -C ${CMAKE_BUILD_TYPE}
