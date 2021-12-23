@@ -1,0 +1,41 @@
+name: nuget
+
+on: pull_request
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: nuget/setup-nuget@v1
+      with:
+        nuget-api-key: ${{ secrets.nuget_apikey }}
+        nuget-version: '5.x'
+
+    - name: Create Build Environment
+      run: cmake -E make_directory build
+
+    - name: Configure
+      working-directory: build
+      run: |
+        cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=ON -A x64 -DCMAKE_CXX_STANDARD=17 ..
+
+    - name: Build
+      working-directory: build
+      run: |
+        cmake --build . --config Debug
+        cmake --build . --config Release
+
+    - name: Test
+      working-directory: build
+      run: ctest -C Debug -V
+      env:
+        CTEST_OUTPUT_ON_FAILURE: True
+
+    - name: NuGet Pack
+      run: |
+        cp readme.rst  readme.md
+        cp license.rst license.md
+        nuget pack bundle\nuget\fmt.nuspec -properties Id=wuganhao.fmt -version 1.0-dev -basepath .  -OutputFileNamesWithoutVersion
