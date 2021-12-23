@@ -1,4 +1,4 @@
-name: windows
+name: nuget
 
 on: pull_request
 
