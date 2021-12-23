@@ -1076,34 +1076,41 @@ template <typename OutputIt, typename Char> class tm_writer {
     write2(static_cast<int>(offset / 60));
     write2(static_cast<int>(offset % 60));
   }
-  void format_utc_offset_impl(std::true_type) {
-    write_utc_offset(tm_.tm_gmtoff);
+  template <typename T, FMT_ENABLE_IF(has_member_data_tm_gmtoff<T>::value)>
+  void format_utc_offset_impl(const T& tm) {
+    write_utc_offset(tm.tm_gmtoff);
   }
-  void format_utc_offset_impl(std::false_type) {
+  template <typename T, FMT_ENABLE_IF(!has_member_data_tm_gmtoff<T>::value)>
+  void format_utc_offset_impl(const T& tm) {
 #if defined(_WIN32)
 #  if FMT_USE_TZSET
     tzset_once();
 #  endif
     long offset = 0;
     _get_timezone(&offset);
-    if (tm_.tm_isdst) {
+    if (tm.tm_isdst) {
       long dstbias = 0;
       _get_dstbias(&dstbias);
       offset += dstbias;
     }
     write_utc_offset(-offset);
 #else
+    ignore_unused(tm);
     format_localized('z');
 #endif
   }
 
-  void format_tz_name_impl(std::true_type) {
+  template <typename T, FMT_ENABLE_IF(has_member_data_tm_zone<T>::value)>
+  void format_tz_name_impl(const T& tm) {
     if (is_classic_)
-      out_ = write_tm_str<Char>(out_, tm_.tm_zone, loc_);
+      out_ = write_tm_str<Char>(out_, tm.tm_zone, loc_);
     else
       format_localized('Z');
   }
-  void format_tz_name_impl(std::false_type) { format_localized('Z'); }
+  template <typename T, FMT_ENABLE_IF(!has_member_data_tm_zone<T>::value)>
+  void format_tz_name_impl(const T&) {
+    format_localized('Z');
+  }
 
   void format_localized(char format, char modifier = 0) {
     out_ = write<Char>(out_, tm_, loc_, format, modifier);
@@ -1211,10 +1218,8 @@ template <typename OutputIt, typename Char> class tm_writer {
     out_ = copy_str<Char>(std::begin(buf) + offset, std::end(buf), out_);
   }
 
-  void on_utc_offset() {
-    format_utc_offset_impl(has_member_data_tm_gmtoff<std::tm>{});
-  }
-  void on_tz_name() { format_tz_name_impl(has_member_data_tm_zone<std::tm>{}); }
+  void on_utc_offset() { format_utc_offset_impl(tm_); }
+  void on_tz_name() { format_tz_name_impl(tm_); }
 
   void on_year(numeric_system ns) {
     if (is_classic_ || ns == numeric_system::standard)
