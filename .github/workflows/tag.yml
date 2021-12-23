@@ -23,7 +23,7 @@ jobs:
         cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=ON -A x64 -DCMAKE_CXX_STANDARD=17 ..
 
     - name: Build
-      working-directory: ${{runner.workspace}}/build
+      working-directory: build
       run: |
         cmake --build . --config Debug
         cmake --build . --config Release
