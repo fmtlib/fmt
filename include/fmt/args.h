@@ -146,14 +146,7 @@ class dynamic_format_arg_store
   constexpr dynamic_format_arg_store() = default;
 
   constexpr dynamic_format_arg_store(
-      const dynamic_format_arg_store<Context>& store)
-      :
-#if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
-        basic_format_args<Context>(),
-#endif
-        data_(store.data_),
-        named_info_(store.named_info_) {
-  }
+      const dynamic_format_arg_store<Context>& store) = delete;
 
   /**
     \rst

@@ -11,13 +11,28 @@
 #include <algorithm>
 #include <chrono>
 #include <ctime>
+#include <iterator>
 #include <locale>
-#include <sstream>
+#include <ostream>
 #include <type_traits>
 
 #include "format.h"
 
 FMT_BEGIN_NAMESPACE
+
+// Enable tzset.
+#ifndef FMT_USE_TZSET
+// UWP doesn't provide _tzset.
+#  if FMT_HAS_INCLUDE("winapifamily.h")
+#    include <winapifamily.h>
+#  endif
+#  if defined(_WIN32) && (!defined(WINAPI_FAMILY) || \
+                          (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP))
+#    define FMT_USE_TZSET 1
+#  else
+#    define FMT_USE_TZSET 0
+#  endif
+#endif
 
 // Enable safe chrono durations, unless explicitly disabled.
 #ifndef FMT_SAFE_DURATION_CAST
@@ -290,36 +305,42 @@ inline null<> localtime_s(...) { return null<>(); }
 inline null<> gmtime_r(...) { return null<>(); }
 inline null<> gmtime_s(...) { return null<>(); }
 
-template <typename Char>
-inline auto do_write(const std::tm& time, const std::locale& loc, char format,
-                     char modifier) -> std::basic_string<Char> {
-  auto&& os = std::basic_ostringstream<Char>();
-  os.imbue(loc);
-  using iterator = std::ostreambuf_iterator<Char>;
-  const auto& facet = std::use_facet<std::time_put<Char, iterator>>(loc);
-  auto end = facet.put(os, os, Char(' '), &time, format, modifier);
-  if (end.failed()) FMT_THROW(format_error("failed to format time"));
-  return std::move(os).str();
-}
-
-template <typename Char, typename OutputIt,
-          FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
-auto write(OutputIt out, const std::tm& time, const std::locale& loc,
-           char format, char modifier = 0) -> OutputIt {
-  auto str = do_write<Char>(time, loc, format, modifier);
-  return std::copy(str.begin(), str.end(), out);
-}
-
 inline const std::locale& get_classic_locale() {
   static const auto& locale = std::locale::classic();
   return locale;
 }
 
-template <typename Char, typename OutputIt,
-          FMT_ENABLE_IF(std::is_same<Char, char>::value)>
-auto write(OutputIt out, const std::tm& time, const std::locale& loc,
-           char format, char modifier = 0) -> OutputIt {
-  auto str = do_write<char>(time, loc, format, modifier);
+template <typename CodeUnit> struct codecvt_result {
+  static constexpr const size_t max_size = 32;
+  CodeUnit buf[max_size];
+  CodeUnit* end;
+};
+template <typename CodeUnit>
+constexpr const size_t codecvt_result<CodeUnit>::max_size;
+
+template <typename CodeUnit>
+void write_codecvt(codecvt_result<CodeUnit>& out, string_view in_buf,
+                   const std::locale& loc) {
+  using codecvt = std::codecvt<CodeUnit, char, std::mbstate_t>;
+#if FMT_CLANG_VERSION
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wdeprecated"
+  auto& f = std::use_facet<codecvt>(loc);
+#  pragma clang diagnostic pop
+#else
+  auto& f = std::use_facet<codecvt>(loc);
+#endif
+  auto mb = std::mbstate_t();
+  const char* from_next = nullptr;
+  auto result = f.in(mb, in_buf.begin(), in_buf.end(), from_next,
+                     std::begin(out.buf), std::end(out.buf), out.end);
+  if (result != std::codecvt_base::ok)
+    FMT_THROW(format_error("failed to format time"));
+}
+
+template <typename OutputIt>
+auto write_encoded_tm_str(OutputIt out, string_view in, const std::locale& loc)
+    -> OutputIt {
   if (detail::is_utf8() && loc != get_classic_locale()) {
     // char16_t and char32_t codecvts are broken in MSVC (linkage errors) and
     // gcc-4.
@@ -332,56 +353,89 @@ auto write(OutputIt out, const std::tm& time, const std::locale& loc,
     using code_unit = char32_t;
 #endif
 
-    using codecvt = std::codecvt<code_unit, char, std::mbstate_t>;
-#if FMT_CLANG_VERSION
-#  pragma clang diagnostic push
-#  pragma clang diagnostic ignored "-Wdeprecated"
-    auto& f = std::use_facet<codecvt>(loc);
-#  pragma clang diagnostic pop
-#else
-    auto& f = std::use_facet<codecvt>(loc);
-#endif
-
-    auto mb = std::mbstate_t();
-    const char* from_next = nullptr;
-    code_unit* to_next = nullptr;
-    constexpr size_t buf_size = 32;
-    code_unit buf[buf_size] = {};
-    auto result = f.in(mb, str.data(), str.data() + str.size(), from_next, buf,
-                       buf + buf_size, to_next);
-    if (result != std::codecvt_base::ok)
-      FMT_THROW(format_error("failed to format time"));
-    str.clear();
-    for (code_unit* p = buf; p != to_next; ++p) {
+    using unit_t = codecvt_result<code_unit>;
+    unit_t unit;
+    write_codecvt(unit, in, loc);
+    // In UTF-8 is used one to four one-byte code units.
+    auto&& buf = basic_memory_buffer<char, unit_t::max_size * 4>();
+    for (code_unit* p = unit.buf; p != unit.end; ++p) {
       uint32_t c = static_cast<uint32_t>(*p);
       if (sizeof(code_unit) == 2 && c >= 0xd800 && c <= 0xdfff) {
         // surrogate pair
         ++p;
-        if (p == to_next || (c & 0xfc00) != 0xd800 || (*p & 0xfc00) != 0xdc00) {
+        if (p == unit.end || (c & 0xfc00) != 0xd800 ||
+            (*p & 0xfc00) != 0xdc00) {
           FMT_THROW(format_error("failed to format time"));
         }
         c = (c << 10) + static_cast<uint32_t>(*p) - 0x35fdc00;
       }
       if (c < 0x80) {
-        str.push_back(static_cast<char>(c));
+        buf.push_back(static_cast<char>(c));
       } else if (c < 0x800) {
-        str.push_back(static_cast<char>(0xc0 | (c >> 6)));
-        str.push_back(static_cast<char>(0x80 | (c & 0x3f)));
+        buf.push_back(static_cast<char>(0xc0 | (c >> 6)));
+        buf.push_back(static_cast<char>(0x80 | (c & 0x3f)));
       } else if ((c >= 0x800 && c <= 0xd7ff) || (c >= 0xe000 && c <= 0xffff)) {
-        str.push_back(static_cast<char>(0xe0 | (c >> 12)));
-        str.push_back(static_cast<char>(0x80 | ((c & 0xfff) >> 6)));
-        str.push_back(static_cast<char>(0x80 | (c & 0x3f)));
+        buf.push_back(static_cast<char>(0xe0 | (c >> 12)));
+        buf.push_back(static_cast<char>(0x80 | ((c & 0xfff) >> 6)));
+        buf.push_back(static_cast<char>(0x80 | (c & 0x3f)));
       } else if (c >= 0x10000 && c <= 0x10ffff) {
-        str.push_back(static_cast<char>(0xf0 | (c >> 18)));
-        str.push_back(static_cast<char>(0x80 | ((c & 0x3ffff) >> 12)));
-        str.push_back(static_cast<char>(0x80 | ((c & 0xfff) >> 6)));
-        str.push_back(static_cast<char>(0x80 | (c & 0x3f)));
+        buf.push_back(static_cast<char>(0xf0 | (c >> 18)));
+        buf.push_back(static_cast<char>(0x80 | ((c & 0x3ffff) >> 12)));
+        buf.push_back(static_cast<char>(0x80 | ((c & 0xfff) >> 6)));
+        buf.push_back(static_cast<char>(0x80 | (c & 0x3f)));
       } else {
         FMT_THROW(format_error("failed to format time"));
       }
     }
+    return copy_str<char>(buf.data(), buf.data() + buf.size(), out);
   }
-  return std::copy(str.begin(), str.end(), out);
+  return copy_str<char>(in.data(), in.data() + in.size(), out);
+}
+
+template <typename Char, typename OutputIt,
+          FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
+auto write_tm_str(OutputIt out, string_view sv, const std::locale& loc)
+    -> OutputIt {
+  codecvt_result<Char> unit;
+  write_codecvt(unit, sv, loc);
+  return copy_str<Char>(unit.buf, unit.end, out);
+}
+
+template <typename Char, typename OutputIt,
+          FMT_ENABLE_IF(std::is_same<Char, char>::value)>
+auto write_tm_str(OutputIt out, string_view sv, const std::locale& loc)
+    -> OutputIt {
+  return write_encoded_tm_str(out, sv, loc);
+}
+
+template <typename Char>
+inline void do_write(buffer<Char>& buf, const std::tm& time,
+                     const std::locale& loc, char format, char modifier) {
+  auto&& format_buf = formatbuf<std::basic_streambuf<Char>>(buf);
+  auto&& os = std::basic_ostream<Char>(&format_buf);
+  os.imbue(loc);
+  using iterator = std::ostreambuf_iterator<Char>;
+  const auto& facet = std::use_facet<std::time_put<Char, iterator>>(loc);
+  auto end = facet.put(os, os, Char(' '), &time, format, modifier);
+  if (end.failed()) FMT_THROW(format_error("failed to format time"));
+}
+
+template <typename Char, typename OutputIt,
+          FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
+auto write(OutputIt out, const std::tm& time, const std::locale& loc,
+           char format, char modifier = 0) -> OutputIt {
+  auto&& buf = get_buffer<Char>(out);
+  do_write<Char>(buf, time, loc, format, modifier);
+  return buf.out();
+}
+
+template <typename Char, typename OutputIt,
+          FMT_ENABLE_IF(std::is_same<Char, char>::value)>
+auto write(OutputIt out, const std::tm& time, const std::locale& loc,
+           char format, char modifier = 0) -> OutputIt {
+  auto&& buf = basic_memory_buffer<Char>();
+  do_write<char>(buf, time, loc, format, modifier);
+  return write_encoded_tm_str(out, string_view(buf.data(), buf.size()), loc);
 }
 
 }  // namespace detail
@@ -878,7 +932,13 @@ template <typename T>
 struct has_member_data_tm_gmtoff<T, void_t<decltype(T::tm_gmtoff)>>
     : std::true_type {};
 
-#if defined(_WIN32)
+template <typename T, typename = void>
+struct has_member_data_tm_zone : std::false_type {};
+template <typename T>
+struct has_member_data_tm_zone<T, void_t<decltype(T::tm_zone)>>
+    : std::true_type {};
+
+#if FMT_USE_TZSET
 inline void tzset_once() {
   static bool init = []() -> bool {
     _tzset();
@@ -1021,7 +1081,9 @@ template <typename OutputIt, typename Char> class tm_writer {
   }
   void format_utc_offset_impl(std::false_type) {
 #if defined(_WIN32)
+#  if FMT_USE_TZSET
     tzset_once();
+#  endif
     long offset = 0;
     _get_timezone(&offset);
     if (tm_.tm_isdst) {
@@ -1034,6 +1096,14 @@ template <typename OutputIt, typename Char> class tm_writer {
     format_localized('z');
 #endif
   }
+
+  void format_tz_name_impl(std::true_type) {
+    if (is_classic_)
+      out_ = write_tm_str<Char>(out_, tm_.tm_zone, loc_);
+    else
+      format_localized('Z');
+  }
+  void format_tz_name_impl(std::false_type) { format_localized('Z'); }
 
   void format_localized(char format, char modifier = 0) {
     out_ = write<Char>(out_, tm_, loc_, format, modifier);
@@ -1144,7 +1214,7 @@ template <typename OutputIt, typename Char> class tm_writer {
   void on_utc_offset() {
     format_utc_offset_impl(has_member_data_tm_gmtoff<std::tm>{});
   }
-  void on_tz_name() { format_localized('Z'); }
+  void on_tz_name() { format_tz_name_impl(has_member_data_tm_zone<std::tm>{}); }
 
   void on_year(numeric_system ns) {
     if (is_classic_ || ns == numeric_system::standard)
@@ -1318,21 +1388,21 @@ inline bool isfinite(T) {
   return true;
 }
 
-// Converts value to int and checks that it's in the range [0, upper).
-template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
-inline int to_nonnegative_int(T value, int upper) {
+// Converts value to Int and checks that it's in the range [0, upper).
+template <typename T, typename Int, FMT_ENABLE_IF(std::is_integral<T>::value)>
+inline Int to_nonnegative_int(T value, Int upper) {
   FMT_ASSERT(value >= 0 && to_unsigned(value) <= to_unsigned(upper),
              "invalid value");
   (void)upper;
-  return static_cast<int>(value);
+  return static_cast<Int>(value);
 }
-template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value)>
-inline int to_nonnegative_int(T value, int upper) {
+template <typename T, typename Int, FMT_ENABLE_IF(!std::is_integral<T>::value)>
+inline Int to_nonnegative_int(T value, Int upper) {
   FMT_ASSERT(
       std::isnan(value) || (value >= 0 && value <= static_cast<T>(upper)),
       "invalid value");
   (void)upper;
-  return static_cast<int>(value);
+  return static_cast<Int>(value);
 }
 
 template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
@@ -1389,15 +1459,37 @@ inline std::chrono::duration<Rep, std::milli> get_milliseconds(
 #endif
 }
 
-template <typename Rep, typename Period,
-          FMT_ENABLE_IF(std::is_floating_point<Rep>::value)>
-inline std::chrono::duration<Rep, std::milli> get_milliseconds(
+// Returns the number of fractional digits in the range [0, 18] according to the
+// C++20 spec. If more than 18 fractional digits are required then returns 6 for
+// microseconds precision.
+constexpr int count_fractional_digits(long long num, long long den, int n = 0) {
+  return num % den == 0
+             ? n
+             : (n > 18 ? 6 : count_fractional_digits(num * 10, den, n + 1));
+}
+
+constexpr long long pow10(std::uint32_t n) {
+  return n == 0 ? 1 : 10 * pow10(n - 1);
+}
+
+template <class Rep, class Period,
+          FMT_ENABLE_IF(std::numeric_limits<Rep>::is_signed)>
+constexpr std::chrono::duration<Rep, Period> abs(
     std::chrono::duration<Rep, Period> d) {
-  using common_type = typename std::common_type<Rep, std::intmax_t>::type;
-  auto ms = mod(d.count() * static_cast<common_type>(Period::num) /
-                    static_cast<common_type>(Period::den) * 1000,
-                1000);
-  return std::chrono::duration<Rep, std::milli>(static_cast<Rep>(ms));
+  // We need to compare the duration using the count() method directly
+  // due to a compiler bug in clang-11 regarding the spaceship operator,
+  // when -Wzero-as-null-pointer-constant is enabled.
+  // In clang-12 the bug has been fixed. See
+  // https://bugs.llvm.org/show_bug.cgi?id=46235 and the reproducible example:
+  // https://www.godbolt.org/z/Knbb5joYx.
+  return d.count() >= d.zero().count() ? d : -d;
+}
+
+template <class Rep, class Period,
+          FMT_ENABLE_IF(!std::numeric_limits<Rep>::is_signed)>
+constexpr std::chrono::duration<Rep, Period> abs(
+    std::chrono::duration<Rep, Period> d) {
+  return d;
 }
 
 template <typename Char, typename Rep, typename OutputIt,
@@ -1560,6 +1652,36 @@ struct chrono_formatter {
     out = format_decimal<char_type>(out, n, num_digits).end;
   }
 
+  template <class Duration> void write_fractional_seconds(Duration d) {
+    constexpr auto num_fractional_digits =
+        count_fractional_digits(Duration::period::num, Duration::period::den);
+
+    using subsecond_precision = std::chrono::duration<
+        typename std::common_type<typename Duration::rep,
+                                  std::chrono::seconds::rep>::type,
+        std::ratio<1, detail::pow10(num_fractional_digits)>>;
+    if (std::ratio_less<typename subsecond_precision::period,
+                        std::chrono::seconds::period>::value) {
+      *out++ = '.';
+      const auto subseconds =
+          std::chrono::treat_as_floating_point<
+              typename subsecond_precision::rep>::value
+              ? (detail::abs(d) -
+                 std::chrono::duration_cast<std::chrono::seconds>(d))
+                    .count()
+              : std::chrono::duration_cast<subsecond_precision>(
+                    detail::abs(d) -
+                    std::chrono::duration_cast<std::chrono::seconds>(d))
+                    .count();
+      uint32_or_64_or_128_t<long long> n =
+          to_unsigned(to_nonnegative_int(subseconds, max_value<long long>()));
+      int num_digits = detail::count_digits(n);
+      if (num_fractional_digits > num_digits)
+        out = std::fill_n(out, num_fractional_digits - num_digits, '0');
+      out = format_decimal<char_type>(out, n, num_digits).end;
+    }
+  }
+
   void write_nan() { std::copy_n("nan", 3, out); }
   void write_pinf() { std::copy_n("inf", 3, out); }
   void write_ninf() { std::copy_n("-inf", 4, out); }
@@ -1637,19 +1759,7 @@ struct chrono_formatter {
 
     if (ns == numeric_system::standard) {
       write(second(), 2);
-#if FMT_SAFE_DURATION_CAST
-      // convert rep->Rep
-      using duration_rep = std::chrono::duration<rep, Period>;
-      using duration_Rep = std::chrono::duration<Rep, Period>;
-      auto tmpval = fmt_safe_duration_cast<duration_Rep>(duration_rep{val});
-#else
-      auto tmpval = std::chrono::duration<Rep, Period>(val);
-#endif
-      auto ms = get_milliseconds(tmpval);
-      if (ms != std::chrono::milliseconds(0)) {
-        *out++ = '.';
-        write(ms.count(), 3);
-      }
+      write_fractional_seconds(std::chrono::duration<rep, Period>{val});
       return;
     }
     auto time = tm();
@@ -1678,7 +1788,7 @@ struct chrono_formatter {
     on_24_hour_time();
     *out++ = ':';
     if (handle_nan_inf()) return;
-    write(second(), 2);
+    on_second(numeric_system::standard);
   }
 
   void on_am_pm() {

@@ -737,6 +737,8 @@ struct convertible_to_pointer {
   operator const int*() const { return nullptr; }
 };
 
+enum class test_scoped_enum {};
+
 TEST(core_test, is_formattable) {
   static_assert(fmt::is_formattable<signed char*>::value, "");
   static_assert(fmt::is_formattable<unsigned char*>::value, "");
@@ -777,6 +779,7 @@ TEST(core_test, is_formattable) {
 
   static_assert(!fmt::is_formattable<int(s::*)>::value, "");
   static_assert(!fmt::is_formattable<int (s::*)()>::value, "");
+  static_assert(!fmt::is_formattable<test_scoped_enum>::value, "");
 }
 
 TEST(core_test, format) { EXPECT_EQ(fmt::format("{}", 42), "42"); }

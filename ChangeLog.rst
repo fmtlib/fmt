@@ -281,6 +281,9 @@
   This doesn't introduce a dependency on ``<locale>`` so there is virtually no
   compile time effect.
 
+* Deprecated an undocumented ``format_to`` overload that takes
+  ``basic_memory_buffer``.
+
 * Made parameter order in ``vformat_to`` consistent with ``format_to``
   (`#2327 <https://github.com/fmtlib/fmt/issues/2327>`_).
 
