@@ -27,11 +27,11 @@ jobs:
         cmake -DCMAKE_BUILD_TYPE=${{matrix.build_type}} ${{matrix.shared}} -A ${{matrix.platform}} -DCMAKE_CXX_STANDARD=${{matrix.standard}} ..
 
     - name: Build
-      working-directory: ${{runner.workspace}}/build
+      working-directory: build
       run: cmake --build . --config ${{matrix.build_type}}
 
     - name: Test
-      working-directory: ${{runner.workspace}}/build
+      working-directory: build
       run: ctest -C ${{matrix.build_type}} -V
       env:
         CTEST_OUTPUT_ON_FAILURE: True
