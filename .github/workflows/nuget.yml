@@ -36,6 +36,6 @@ jobs:
 
     - name: NuGet Pack
       run: |
-        cp readme.rst readme.md
-        cp license.rst readme.md
+        cp readme.rst  readme.md
+        cp license.rst license.md
         nuget pack bundle\nuget\fmt.nuspec -properties Id=wuganhao.fmt -version 1.0-dev -basepath .  -OutputFileNamesWithoutVersion

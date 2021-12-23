@@ -36,8 +36,8 @@ jobs:
 
     - name: NuGet Pack
       run: |
-        cp readme.rst readme.md
-        cp license.rst readme.md
+        cp readme.rst  readme.md
+        cp license.rst license.md
         $Tag = "${{ github.ref }}" -replace '(refs/tags/)(.+)', '$2'
         $Version = $Tag -replace '((\d+)(\.\d+){1,3})(-.+|)', '$1'
         $InformationalVersion = "$Tag SHA-${{ github.SHA }}"

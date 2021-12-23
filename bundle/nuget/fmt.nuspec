@@ -24,7 +24,7 @@
 		<file src="build\bin\Release\fmt.dll" target="lib\native\x64\debug\" />
         <file src="bundle\nuget\fmt.props"    target="build\$Id$.props" />
         <file src="bundle\nuget\fmt.targets"  target="build\$Id$.targets" />
-		<file src="LICENSE.md"               target="docs\" />
-		<file src="README.md"                target="docs\" />
+		<file src="license.md"                target="docs\" />
+		<file src="readme.md"                 target="docs\" />
     </files>
 </package>
