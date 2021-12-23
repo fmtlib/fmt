@@ -138,12 +138,6 @@ endif ()
 message(STATUS "FMT_PEDANTIC: ${FMT_PEDANTIC}")
 
 if (FMT_PEDANTIC AND CXX_STANDARD LESS 20)
-  # MSVC fails to compile GMock when C++17 is enabled.
-  if (FMT_HAS_VARIANT AND NOT MSVC)
-    add_fmt_test(std-format-test)
-    set_property(TARGET std-format-test PROPERTY CXX_STANDARD 17)
-  endif ()
-
   # Test that the library can be compiled with exceptions disabled.
   # -fno-exception is broken in icc: https://github.com/fmtlib/fmt/issues/822.
   if (NOT CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
