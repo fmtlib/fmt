@@ -25,9 +25,8 @@ jobs:
     - name: Build
       working-directory: ${{runner.workspace}}/build
       run: |
-        $threads = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
-        cmake --build . --config Debug   --parallel $threads
-        cmake --build . --config Release --parallel $threads
+        cmake --build . --config Debug
+        cmake --build . --config Release
 
     - name: Test
       working-directory: build

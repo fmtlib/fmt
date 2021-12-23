@@ -33,9 +33,7 @@ jobs:
 
     - name: Build
       working-directory: ${{runner.workspace}}/build
-      run: |
-        $threads = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
-        cmake --build . --config ${{matrix.build_type}} --parallel $threads
+      run: cmake --build . --config ${{matrix.build_type}}
 
     - name: Test
       working-directory: ${{runner.workspace}}/build
