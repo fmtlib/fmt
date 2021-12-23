@@ -1,0 +1,55 @@
+name: tagging
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: nuget/setup-nuget@v1
+      with:
+        nuget-api-key: ${{ secrets.nuget_apikey }}
+        nuget-version: '5.x'
+
+    - name: Create Build Environment
+      run: cmake -E make_directory build
+
+    - name: Configure
+      working-directory: build
+      run: |
+        cmake -DCMAKE_BUILD_TYPE=Debug -DBUILD_SHARED_LIBS=ON -A x64 -DCMAKE_CXX_STANDARD=17 ..
+
+    - name: Build
+      working-directory: build
+      run: |
+        cmake --build . --config Debug
+        cmake --build . --config Release
+
+    - name: Test
+      working-directory: build
+      run: ctest -C Debug -V
+      env:
+        CTEST_OUTPUT_ON_FAILURE: True
+
+    - name: NuGet Pack
+      run: |
+        cp readme.rst  readme.md
+        cp license.rst license.md
+        $Tag = "${{ github.ref }}" -replace '(refs/tags/)(.+)', '$2'
+        $Version = $Tag -replace '((\d+)(\.\d+){1,3})(-.+|)', '$1'
+        $InformationalVersion = "$Tag SHA-${{ github.SHA }}"
+        $PackageVersion = $Tag
+        echo "Version: $Tag"
+        echo "Informational Version: $InformationalVersion"
+        echo "Package Version: $Tag"
+        nuget pack bundle\nuget\fmt.nuspec -properties Id=wuganhao.fmt -version $PackageVersion -basepath . -OutputFileNamesWithoutVersion -OutputDirectory dist
+        
+    - name: Nuget Push
+      run: |
+        nuget push dist\*.nupkg -source https://api.nuget.org/v3/index.json -apikey ${{ secrets.nuget_apikey }}

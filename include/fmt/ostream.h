@@ -18,36 +18,6 @@ template <typename OutputIt, typename Char> class basic_printf_context;
 
 namespace detail {
 
-template <class Char> class formatbuf : public std::basic_streambuf<Char> {
- private:
-  using int_type = typename std::basic_streambuf<Char>::int_type;
-  using traits_type = typename std::basic_streambuf<Char>::traits_type;
-
-  buffer<Char>& buffer_;
-
- public:
-  explicit formatbuf(buffer<Char>& buf) : buffer_(buf) {}
-
- protected:
-  // The put area is always empty. This makes the implementation simpler and has
-  // the advantage that the streambuf and the buffer are always in sync and
-  // sputc never writes into uninitialized memory. A disadvantage is that each
-  // call to sputc always results in a (virtual) call to overflow. There is no
-  // disadvantage here for sputn since this always results in a call to xsputn.
-
-  auto overflow(int_type ch = traits_type::eof()) -> int_type override {
-    if (!traits_type::eq_int_type(ch, traits_type::eof()))
-      buffer_.push_back(static_cast<Char>(ch));
-    return ch;
-  }
-
-  auto xsputn(const Char* s, std::streamsize count)
-      -> std::streamsize override {
-    buffer_.append(s, s + count);
-    return count;
-  }
-};
-
 // Checks if T has a user-defined operator<<.
 template <typename T, typename Char, typename Enable = void>
 class is_streamable {
@@ -75,6 +45,8 @@ struct is_streamable<
     enable_if_t<
         std::is_arithmetic<T>::value || std::is_array<T>::value ||
         std::is_pointer<T>::value || std::is_same<T, char8_type>::value ||
+        std::is_same<T, std::basic_string<Char>>::value ||
+        std::is_same<T, std_string_view<Char>>::value ||
         (std::is_convertible<T, int>::value && !std::is_enum<T>::value)>>
     : std::false_type {};
 
@@ -97,7 +69,7 @@ void write_buffer(std::basic_ostream<Char>& os, buffer<Char>& buf) {
 template <typename Char, typename T>
 void format_value(buffer<Char>& buf, const T& value,
                   locale_ref loc = locale_ref()) {
-  auto&& format_buf = formatbuf<Char>(buf);
+  auto&& format_buf = formatbuf<std::basic_streambuf<Char>>(buf);
   auto&& output = std::basic_ostream<Char>(&format_buf);
 #if !defined(FMT_STATIC_THOUSANDS_SEPARATOR)
   if (loc) output.imbue(loc.get<std::locale>());

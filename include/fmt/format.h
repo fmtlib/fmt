@@ -265,6 +265,38 @@ FMT_END_NAMESPACE
 
 FMT_BEGIN_NAMESPACE
 namespace detail {
+
+template <typename Streambuf> class formatbuf : public Streambuf {
+ private:
+  using char_type = typename Streambuf::char_type;
+  using streamsize = decltype(std::declval<Streambuf>().sputn(nullptr, 0));
+  using int_type = typename Streambuf::int_type;
+  using traits_type = typename Streambuf::traits_type;
+
+  buffer<char_type>& buffer_;
+
+ public:
+  explicit formatbuf(buffer<char_type>& buf) : buffer_(buf) {}
+
+ protected:
+  // The put area is always empty. This makes the implementation simpler and has
+  // the advantage that the streambuf and the buffer are always in sync and
+  // sputc never writes into uninitialized memory. A disadvantage is that each
+  // call to sputc always results in a (virtual) call to overflow. There is no
+  // disadvantage here for sputn since this always results in a call to xsputn.
+
+  auto overflow(int_type ch) -> int_type override {
+    if (!traits_type::eq_int_type(ch, traits_type::eof()))
+      buffer_.push_back(static_cast<char_type>(ch));
+    return ch;
+  }
+
+  auto xsputn(const char_type* s, streamsize count) -> streamsize override {
+    buffer_.append(s, s + count);
+    return count;
+  }
+};
+
 // An equivalent of `*reinterpret_cast<Dest*>(&source)` that doesn't have
 // undefined behavior (e.g. due to type aliasing).
 // Example: uint64_t d = bit_cast<uint64_t>(2.718);
@@ -2574,6 +2606,7 @@ FMT_FORMAT_AS(unsigned long, unsigned long long);
 FMT_FORMAT_AS(Char*, const Char*);
 FMT_FORMAT_AS(std::basic_string<Char>, basic_string_view<Char>);
 FMT_FORMAT_AS(std::nullptr_t, const void*);
+FMT_FORMAT_AS(detail::byte, unsigned char);
 FMT_FORMAT_AS(detail::std_string_view<Char>, basic_string_view<Char>);
 
 template <typename Char>
@@ -3016,16 +3049,14 @@ constexpr auto operator"" _a(const char* s, size_t) -> detail::udl_arg<char> {
 #  endif
 
 /**
-  \rst
-  User-defined literal equivalent of :func:`fmt::format`.
+  DEPRECATED! User-defined literal equivalent of fmt::format.
 
   **Example**::
 
     using namespace fmt::literals;
     std::string message = "The answer is {}"_format(42);
-  \endrst
  */
-constexpr auto operator"" _format(const char* s, size_t n)
+FMT_DEPRECATED constexpr auto operator"" _format(const char* s, size_t n)
     -> detail::udl_formatter<char> {
   return {{s, n}};
 }

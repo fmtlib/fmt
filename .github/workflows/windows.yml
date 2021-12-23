@@ -9,52 +9,29 @@ jobs:
       matrix:
         # windows-2016 and windows-2019 have MSVC 2017 and 2019 installed
         # respectively: https://github.com/actions/virtual-environments.
-        os: [windows-2016, windows-2019]
+        os: [windows-2019, windows-latest]
         platform: [Win32, x64]
         build_type: [Debug, Release]
-        standard: [11, 17, 20]
-        include:
-          - os: windows-2016
-            platform: Win32
-            build_type: Debug
-            shared: -DBUILD_SHARED_LIBS=ON
-        exclude:
-          - os: windows-2016
-            platform: Win32
-          - os: windows-2016
-            standard: 17
-          - os: windows-2016
-            standard: 20
-          - os: windows-2019
-            standard: 11
-          - os: windows-2019
-            standard: 20
-            platform: Win32
+        standard: [11, 17]
+        shared: [ -DBUILD_SHARED_LIBS=ON ]
 
     steps:
     - uses: actions/checkout@v2
 
     - name: Create Build Environment
-      run: cmake -E make_directory ${{runner.workspace}}/build
+      run: cmake -E make_directory build
 
     - name: Configure
-      # Use a bash shell for $GITHUB_WORKSPACE.
-      shell: bash
-      working-directory: ${{runner.workspace}}/build
+      working-directory: build
       run: |
-        cmake -DCMAKE_BUILD_TYPE=${{matrix.build_type}} ${{matrix.shared}} \
-              -A ${{matrix.platform}} \
-              -DCMAKE_CXX_STANDARD=${{matrix.standard}} \
-              $GITHUB_WORKSPACE
+        cmake -DCMAKE_BUILD_TYPE=${{matrix.build_type}} ${{matrix.shared}} -A ${{matrix.platform}} -DCMAKE_CXX_STANDARD=${{matrix.standard}} ..
 
     - name: Build
-      working-directory: ${{runner.workspace}}/build
-      run: |
-        $threads = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
-        cmake --build . --config ${{matrix.build_type}} --parallel $threads
+      working-directory: build
+      run: cmake --build . --config ${{matrix.build_type}}
 
     - name: Test
-      working-directory: ${{runner.workspace}}/build
+      working-directory: build
       run: ctest -C ${{matrix.build_type}} -V
       env:
         CTEST_OUTPUT_ON_FAILURE: True

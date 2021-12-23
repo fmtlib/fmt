@@ -12,7 +12,7 @@
 
 void check_round_trip(fmt::string_view format_str, double value) {
   auto buffer = fmt::memory_buffer();
-  fmt::format_to(buffer, format_str, value);
+  fmt::format_to(std::back_inserter(buffer), format_str, value);
 
   if (std::isnan(value)) {
     auto nan = std::signbit(value) ? "-nan" : "nan";

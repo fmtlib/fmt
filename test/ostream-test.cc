@@ -294,3 +294,8 @@ struct abstract {
 void format_abstract_compiles(const abstract& a) {
   fmt::format(FMT_COMPILE("{}"), a);
 }
+
+TEST(ostream_test, is_formattable) {
+  EXPECT_TRUE(fmt::is_formattable<std::string>());
+  EXPECT_TRUE(fmt::is_formattable<fmt::detail::std_string_view<char>>());
+}

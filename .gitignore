@@ -42,3 +42,6 @@ fmt.pc
 *.vcxproj
 *.sln
 /Release/
+*.nupkg
+/license.md
+/readme.md
