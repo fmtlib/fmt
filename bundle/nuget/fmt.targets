@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(fmtIncludePaths);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup>
+    <Link>
+      <AdditionalDependencies>%(fmtLibs);%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup>
+    <Link>
+      <AdditionalLibraryDirectories>$(MSBuildThisFileDirectory)..\lib\native\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+   </ItemDefinitionGroup>
+  <PropertyGroup Label="Globals">
+    <BuildDependsOn>$(BuildDependsOn);DeployfmtArtifacts</BuildDependsOn>
+  </PropertyGroup>
+  <ItemGroup>
+    <wxWidgetsArtifacts Include="$(MSBuildThisFileDirectory)..\lib\native\x64\$(Configuration)\*.dll" />
+    <wxWidgetsArtifacts Condition="'$(Configuration)'=='Debug'" Include="$(MSBuildThisFileDirectory)..\lib\native\x64\$(Configuration)\*.pdb" />
+  </ItemGroup>
+  <Target Name="DeployfmtArtifacts">
+    <Error Text="Package 'wxWidgets' currently only support 64bit build" Condition="'$(Platform)'!='x64'" />
+    <Copy SourceFiles="@(fmtArtifacts)" DestinationFolder="$(TargetDir)\" />
+  </Target>
+</Project>
