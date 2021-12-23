@@ -1,6 +1,9 @@
 name: tagging
 
-on: pull_request
+on:
+  push:
+    tags:
+      - '*'
 
 jobs:
   build:
