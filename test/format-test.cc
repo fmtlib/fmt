@@ -1417,12 +1417,17 @@ TEST(format_test, format_enum_class) {
 
 TEST(format_test, format_string) {
   EXPECT_EQ(fmt::format("{0}", std::string("test")), "test");
+  EXPECT_EQ(fmt::format("{0}", std::string("test")), "test");
+  EXPECT_EQ(fmt::format("{:?}", std::string("test")), "\"test\"");
+  EXPECT_EQ(fmt::format("{:*^10?}", std::string("test")), "**\"test\"**");
+  EXPECT_EQ(fmt::format("{:?}", std::string("\test")), "\"\\test\"");
   EXPECT_THROW((void)fmt::format(fmt::runtime("{:x}"), std::string("test")),
                fmt::format_error);
 }
 
 TEST(format_test, format_string_view) {
   EXPECT_EQ("test", fmt::format("{}", string_view("test")));
+  EXPECT_EQ("\"t\\nst\"", fmt::format("{:?}", string_view("t\nst")));
   EXPECT_EQ("", fmt::format("{}", string_view()));
 }
 
