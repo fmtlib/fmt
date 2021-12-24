@@ -1947,6 +1947,8 @@ FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
   if (specs.width != 0) {
     if (is_debug) {
       struct counting_iterator {
+        using iterator_category = std::output_iterator_tag;
+
         int n = 0;
         struct proxy {
           int& n;
