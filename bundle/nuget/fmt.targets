@@ -7,7 +7,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
     <Link>
-      <AdditionalDependencies>%(fmtLibs);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(fmtLibs);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
@@ -20,7 +20,7 @@
   </PropertyGroup>
   <ItemGroup>
     <wxWidgetsArtifacts Include="$(MSBuildThisFileDirectory)..\lib\native\x64\$(Configuration)\*.dll" />
-    <wxWidgetsArtifacts Condition="'$(Configuration)'=='Debug'" Include="$(MSBuildThisFileDirectory)..\lib\native\x64\$(Configuration)\*.pdb" />
+    <wxWidgetsArtifacts Condition="'$(Configuration)'=='Debug'" Include="$(MSBuildThisFileDirectory)..\lib\native\$(Platform)\$(Configuration)\*.pdb" />
   </ItemGroup>
   <Target Name="DeployfmtArtifacts">
     <Error Text="Package 'wxWidgets' currently only support 64bit build" Condition="'$(Platform)'!='x64'" />
