@@ -605,7 +605,8 @@ struct formatter<
   }
   template <typename T,
             FMT_ENABLE_IF(!has_formatter<remove_cvref_t<T>, context>::value)>
-  static auto map(T&& value) -> decltype(mapper().map(static_cast<T&&>(value))) {
+  static auto map(T&& value)
+      -> decltype(mapper().map(static_cast<T&&>(value))) {
     return mapper().map(static_cast<T&&>(value));
   }
 
