@@ -1600,7 +1600,7 @@ inline auto find_escape(const char* begin, const char* end)
 
 template <typename Char, typename OutputIt>
 auto write_escaped_string(OutputIt out, basic_string_view<Char> str,
-                          Char bracket = '"') -> OutputIt {
+                          Char bracket = Char('"')) -> OutputIt {
   *out++ = bracket;
   auto begin = str.begin(), end = str.end();
   do {
