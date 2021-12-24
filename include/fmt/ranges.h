@@ -265,10 +265,7 @@ inline auto write_range_entry(OutputIt out, const T& str) -> OutputIt {
 template <typename Char, typename OutputIt, typename Arg,
           FMT_ENABLE_IF(std::is_same<Arg, Char>::value)>
 OutputIt write_range_entry(OutputIt out, const Arg v) {
-  *out++ = '\'';
-  *out++ = v;
-  *out++ = '\'';
-  return out;
+  return write_escaped_char(out, v);
 }
 
 template <

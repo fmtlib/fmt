@@ -1060,7 +1060,7 @@ TEST(format_test, format_short) {
 template <typename T>
 void check_unknown_types(const T& value, const char* types, const char*) {
   char format_str[buffer_size];
-  const char* special = ".0123456789L}";
+  const char* special = ".0123456789L?}";
   for (int i = CHAR_MIN; i <= CHAR_MAX; ++i) {
     char c = static_cast<char>(i);
     if (std::strchr(types, c) || std::strchr(special, c) || !c) continue;
@@ -1363,6 +1363,9 @@ TEST(format_test, format_char) {
         << format_str;
   }
   EXPECT_EQ(fmt::format("{:02X}", n), fmt::format("{:02X}", 'x'));
+
+  EXPECT_EQ("\n", fmt::format("{}", '\n'));
+  EXPECT_EQ("'\\n'", fmt::format("{:?}", '\n'));
 }
 
 TEST(format_test, format_volatile_char) {

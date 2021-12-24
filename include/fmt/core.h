@@ -2707,7 +2707,8 @@ template <typename Char, typename ErrorHandler = error_handler>
 FMT_CONSTEXPR auto check_char_specs(const basic_format_specs<Char>& specs,
                                     ErrorHandler&& eh = {}) -> bool {
   if (specs.type != presentation_type::none &&
-      specs.type != presentation_type::chr) {
+      specs.type != presentation_type::chr &&
+      specs.type != presentation_type::debug) {
     check_int_type_spec(specs.type, eh);
     return false;
   }
