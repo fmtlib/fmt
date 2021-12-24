@@ -1567,11 +1567,10 @@ template <typename Char> struct find_escape_result {
 };
 
 template <typename Char>
-using make_unsigned_char = typename conditional_t<
-  std::is_integral<Char>::value,
-  std::make_unsigned<Char>,
-  type_identity<uint32_t>
-  >::type;
+using make_unsigned_char =
+    typename conditional_t<std::is_integral<Char>::value,
+                           std::make_unsigned<Char>,
+                           type_identity<uint32_t>>::type;
 
 template <typename Char>
 auto find_escape(const Char* begin, const Char* end)
@@ -1600,7 +1599,8 @@ inline auto find_escape(const char* begin, const char* end)
 }
 
 template <typename Char, typename OutputIt>
-auto write_escaped_string(OutputIt out, basic_string_view<Char> str, Char bracket = '"') -> OutputIt {
+auto write_escaped_string(OutputIt out, basic_string_view<Char> str,
+                          Char bracket = '"') -> OutputIt {
   *out++ = bracket;
   auto begin = str.begin(), end = str.end();
   do {
@@ -1644,9 +1644,8 @@ auto write_escaped_string(OutputIt out, basic_string_view<Char> str, Char bracke
       }
       for (Char escape_char : basic_string_view<Char>(
                escape.begin, to_unsigned(escape.end - escape.begin))) {
-        out = format_to(
-            out, "\\x{:02x}",
-            static_cast<make_unsigned_char<Char>>(escape_char));
+        out = format_to(out, "\\x{:02x}",
+                        static_cast<make_unsigned_char<Char>>(escape_char));
       }
       continue;
     }

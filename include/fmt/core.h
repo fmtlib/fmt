@@ -2792,7 +2792,8 @@ FMT_CONSTEXPR auto check_cstring_type_spec(presentation_type type,
 template <typename ErrorHandler = error_handler>
 FMT_CONSTEXPR void check_string_type_spec(presentation_type type,
                                           ErrorHandler&& eh = {}) {
-  if (type != presentation_type::none && type != presentation_type::string && type != presentation_type::debug)
+  if (type != presentation_type::none && type != presentation_type::string &&
+      type != presentation_type::debug)
     eh.on_error("invalid type specifier");
 }
 
