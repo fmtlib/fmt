@@ -1598,17 +1598,49 @@ inline auto find_escape(const char* begin, const char* end)
   return result;
 }
 
+#define FMT_STRING_IMPL(s, base, explicit)                                 \
+  [] {                                                                     \
+    /* Use the hidden visibility as a workaround for a GCC bug (#1973). */ \
+    /* Use a macro-like name to avoid shadowing warnings. */               \
+    struct FMT_GCC_VISIBILITY_HIDDEN FMT_COMPILE_STRING : base {           \
+      using char_type = fmt::remove_cvref_t<decltype(s[0])>;               \
+      FMT_MAYBE_UNUSED FMT_CONSTEXPR explicit                              \
+      operator fmt::basic_string_view<char_type>() const {                 \
+        return fmt::detail_exported::compile_string_to_view<char_type>(s); \
+      }                                                                    \
+    };                                                                     \
+    return FMT_COMPILE_STRING();                                           \
+  }()
+
+/**
+  \rst
+  Constructs a compile-time format string from a string literal *s*.
+
+  **Example**::
+
+    // A compile-time error because 'd' is an invalid specifier for strings.
+    std::string s = fmt::format(FMT_STRING("{:d}"), "foo");
+  \endrst
+ */
+#define FMT_STRING(s) FMT_STRING_IMPL(s, fmt::compile_string, )
+
 template <typename Char, typename OutputIt>
 auto write_escaped_string(OutputIt out, basic_string_view<Char> str,
-                          Char bracket = Char('"')) -> OutputIt {
+                          Char = Char('"')) -> OutputIt {
+  return copy_str<Char>(str.data(), str.data() + str.size(), out);
+}
+
+template <typename OutputIt>
+auto write_escaped_string(OutputIt out, basic_string_view<char> str,
+                          char bracket = '"') -> OutputIt {
   *out++ = bracket;
   auto begin = str.begin(), end = str.end();
   do {
     auto escape = find_escape(begin, end);
-    out = copy_str<Char>(begin, escape.begin, out);
+    out = copy_str<char>(begin, escape.begin, out);
     begin = escape.end;
     if (!begin) break;
-    auto c = static_cast<Char>(escape.cp);
+    auto c = static_cast<char>(escape.cp);
     switch (escape.cp) {
     case '\n':
       *out++ = '\\';
@@ -1630,22 +1662,22 @@ auto write_escaped_string(OutputIt out, basic_string_view<Char> str,
     default:
       if (is_utf8()) {
         if (escape.cp < 0x100) {
-          out = format_to(out, "\\x{:02x}", escape.cp);
+          out = format_to(out, FMT_STRING("\\x{:02x}"), escape.cp);
           continue;
         }
         if (escape.cp < 0x10000) {
-          out = format_to(out, "\\u{:04x}", escape.cp);
+          out = format_to(out, FMT_STRING("\\u{:04x}"), escape.cp);
           continue;
         }
         if (escape.cp < 0x110000) {
-          out = format_to(out, "\\U{:08x}", escape.cp);
+          out = format_to(out, FMT_STRING("\\U{:08x}"), escape.cp);
           continue;
         }
       }
-      for (Char escape_char : basic_string_view<Char>(
+      for (char escape_char : basic_string_view<char>(
                escape.begin, to_unsigned(escape.end - escape.begin))) {
-        out = format_to(out, "\\x{:02x}",
-                        static_cast<make_unsigned_char<Char>>(escape_char));
+        out = format_to(out, FMT_STRING("\\x{:02x}"),
+                        static_cast<make_unsigned_char<char>>(escape_char));
       }
       continue;
     }
@@ -2693,32 +2725,6 @@ FMT_CONSTEXPR void handle_dynamic_spec(int& value,
     break;
   }
 }
-
-#define FMT_STRING_IMPL(s, base, explicit)                                 \
-  [] {                                                                     \
-    /* Use the hidden visibility as a workaround for a GCC bug (#1973). */ \
-    /* Use a macro-like name to avoid shadowing warnings. */               \
-    struct FMT_GCC_VISIBILITY_HIDDEN FMT_COMPILE_STRING : base {           \
-      using char_type = fmt::remove_cvref_t<decltype(s[0])>;               \
-      FMT_MAYBE_UNUSED FMT_CONSTEXPR explicit                              \
-      operator fmt::basic_string_view<char_type>() const {                 \
-        return fmt::detail_exported::compile_string_to_view<char_type>(s); \
-      }                                                                    \
-    };                                                                     \
-    return FMT_COMPILE_STRING();                                           \
-  }()
-
-/**
-  \rst
-  Constructs a compile-time format string from a string literal *s*.
-
-  **Example**::
-
-    // A compile-time error because 'd' is an invalid specifier for strings.
-    std::string s = fmt::format(FMT_STRING("{:d}"), "foo");
-  \endrst
- */
-#define FMT_STRING(s) FMT_STRING_IMPL(s, fmt::compile_string, )
 
 #if FMT_USE_USER_DEFINED_LITERALS
 template <typename Char> struct udl_formatter {
