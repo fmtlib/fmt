@@ -1982,7 +1982,7 @@ FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
   if (specs.precision >= 0 && to_unsigned(specs.precision) < size)
     size = code_point_index(s, to_unsigned(specs.precision));
   bool is_debug = specs.type == presentation_type::debug;
-  auto width = 0;
+  size_t width = 0;
   if (specs.width != 0) {
     if (is_debug) {
       width = write_escaped_string(counting_iterator{}, s).count();
