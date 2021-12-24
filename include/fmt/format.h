@@ -1935,6 +1935,45 @@ FMT_CONSTEXPR FMT_INLINE auto write(OutputIt out, T value,
   return write_int(out, make_write_int_arg(value, specs.sign), specs, loc);
 }
 
+// An output iterator that counts the number of objects written to it and
+// discards them.
+class counting_iterator {
+ private:
+  size_t count_;
+
+ public:
+  using iterator_category = std::output_iterator_tag;
+  using difference_type = std::ptrdiff_t;
+  using pointer = void;
+  using reference = void;
+  using _Unchecked_type = counting_iterator;  // Mark iterator as checked.
+
+  struct value_type {
+    template <typename T> void operator=(const T&) {}
+  };
+
+  counting_iterator() : count_(0) {}
+
+  size_t count() const { return count_; }
+
+  counting_iterator& operator++() {
+    ++count_;
+    return *this;
+  }
+  counting_iterator operator++(int) {
+    auto it = *this;
+    ++*this;
+    return it;
+  }
+
+  friend counting_iterator operator+(counting_iterator it, difference_type n) {
+    it.count_ += static_cast<size_t>(n);
+    return it;
+  }
+
+  value_type operator*() const { return {}; }
+};
+
 template <typename Char, typename OutputIt>
 FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
                          const basic_format_specs<Char>& specs) -> OutputIt {
@@ -1946,24 +1985,7 @@ FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
   auto width = 0;
   if (specs.width != 0) {
     if (is_debug) {
-      struct counting_iterator {
-        using iterator_category = std::output_iterator_tag;
-
-        int n = 0;
-        struct proxy {
-          int& n;
-
-          proxy& operator=(Char) {
-            ++n;
-            return *this;
-          }
-        };
-
-        counting_iterator& operator++() { return *this; }
-        counting_iterator& operator++(int) { return *this; }
-        auto operator*() -> proxy { return proxy{n}; }
-      };
-      width = write_escaped_string(counting_iterator{}, s).n;
+      width = write_escaped_string(counting_iterator{}, s).count();
     } else {
       width = compute_width(basic_string_view<Char>(data, size));
     }
