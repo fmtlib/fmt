@@ -1700,10 +1700,9 @@ auto write_escaped_char(OutputIt out, Char v) -> OutputIt {
 template <typename OutputIt>
 auto write_escaped_char(OutputIt out, char v) -> OutputIt {
   *out++ = '\'';
-  if ((needs_escape(v) && v != '"') || v == '\'') {
-    out = write_escaped_cp(out, find_escape_result<char>{
-      &v, &v+1, static_cast<uint32_t>(v)
-    });
+  if ((needs_escape(static_cast<uint32_t>(v)) && v != '"') || v == '\'') {
+    out = write_escaped_cp(
+        out, find_escape_result<char>{&v, &v + 1, static_cast<uint32_t>(v)});
   } else {
     *out++ = v;
   }
