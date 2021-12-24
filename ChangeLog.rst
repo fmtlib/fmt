@@ -1,3 +1,23 @@
+8.1.0 - TBD
+-----------
+
+* Optimized ``tm`` formatting
+  (`#2602 <https://github.com/fmtlib/fmt/pull/2602>`_,
+  `#2670 <https://github.com/fmtlib/fmt/issues/2670>`_
+  `#2671 <https://github.com/fmtlib/fmt/pull/2671>`_).
+  Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
+
+* Disabled a partially broken copy ctor for ``dynamic_format_arg_store`` and
+  enabled a working move ctor
+  (`#2664 <https://github.com/fmtlib/fmt/pull/2664>`_).
+  Thanks `@lucpelletier <https://github.com/lucpelletier>`_.
+
+* Improved build configuration
+  (`#2650 <https://github.com/fmtlib/fmt/pull/2650>`_,
+  `#2651 <https://github.com/fmtlib/fmt/pull/2651>`_,
+  `#2663 <https://github.com/fmtlib/fmt/pull/2663>`_).
+  Thanks `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_.
+
 8.0.1 - 2021-07-02
 ------------------
 
