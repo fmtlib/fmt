@@ -1625,71 +1625,84 @@ inline auto find_escape(const char* begin, const char* end)
 #define FMT_STRING(s) FMT_STRING_IMPL(s, fmt::compile_string, )
 
 template <typename Char, typename OutputIt>
-auto write_escaped_string(OutputIt out, basic_string_view<Char> str,
-                          Char = Char('"')) -> OutputIt {
+auto write_escaped_string(OutputIt out, basic_string_view<Char> str) -> OutputIt {
   return copy_str<Char>(str.data(), str.data() + str.size(), out);
 }
 
+template <typename OutputIt, typename Char>
+auto write_escaped_cp(OutputIt out, find_escape_result<Char> const& escape) -> OutputIt
+{
+  auto c = static_cast<Char>(escape.cp);
+  switch (escape.cp) {
+  case '\n':
+    *out++ = '\\';
+    c = 'n';
+    break;
+  case '\r':
+    *out++ = '\\';
+    c = 'r';
+    break;
+  case '\t':
+    *out++ = '\\';
+    c = 't';
+    break;
+  case '"':
+    FMT_FALLTHROUGH;
+  case '\'':
+    FMT_FALLTHROUGH;
+  case '\\':
+    *out++ = '\\';
+    break;
+  default:
+    if (is_utf8()) {
+      if (escape.cp < 0x100) {
+        return format_to(out, FMT_STRING("\\x{:02x}"), escape.cp);
+      }
+      if (escape.cp < 0x10000) {
+        return format_to(out, FMT_STRING("\\u{:04x}"), escape.cp);
+      }
+      if (escape.cp < 0x110000) {
+        return format_to(out, FMT_STRING("\\U{:08x}"), escape.cp);
+      }
+    }
+    for (char escape_char : basic_string_view<Char>(
+              escape.begin, to_unsigned(escape.end - escape.begin))) {
+      out = format_to(out, FMT_STRING("\\x{:02x}"),
+                      static_cast<make_unsigned_char<Char>>(escape_char));
+    }
+    return out;
+  }
+  *out++ = c;
+  return out;
+}
+
 template <typename OutputIt>
-auto write_escaped_string(OutputIt out, basic_string_view<char> str,
-                          char bracket = '"') -> OutputIt {
-  *out++ = bracket;
+auto write_escaped_string(OutputIt out, basic_string_view<char> str) -> OutputIt {
+  *out++ = '"';
   auto begin = str.begin(), end = str.end();
   do {
     auto escape = find_escape(begin, end);
     out = copy_str<char>(begin, escape.begin, out);
     begin = escape.end;
     if (!begin) break;
-    auto c = static_cast<char>(escape.cp);
-    switch (escape.cp) {
-    case '\n':
-      *out++ = '\\';
-      c = 'n';
-      break;
-    case '\r':
-      *out++ = '\\';
-      c = 'r';
-      break;
-    case '\t':
-      *out++ = '\\';
-      c = 't';
-      break;
-    case '"':
-      FMT_FALLTHROUGH;
-    case '\\':
-      *out++ = '\\';
-      break;
-    default:
-      if (is_utf8()) {
-        if (escape.cp < 0x100) {
-          out = format_to(out, FMT_STRING("\\x{:02x}"), escape.cp);
-          continue;
-        }
-        if (escape.cp < 0x10000) {
-          out = format_to(out, FMT_STRING("\\u{:04x}"), escape.cp);
-          continue;
-        }
-        if (escape.cp < 0x110000) {
-          out = format_to(out, FMT_STRING("\\U{:08x}"), escape.cp);
-          continue;
-        }
-      }
-      for (char escape_char : basic_string_view<char>(
-               escape.begin, to_unsigned(escape.end - escape.begin))) {
-        out = format_to(out, FMT_STRING("\\x{:02x}"),
-                        static_cast<make_unsigned_char<char>>(escape_char));
-      }
-      continue;
-    }
-    *out++ = c;
+    out = write_escaped_cp(out, escape);
   } while (begin != end);
-  *out++ = bracket;
+  *out++ = '"';
   return out;
 }
 
 template <typename Char, typename OutputIt>
 auto write_escaped_char(OutputIt out, Char v) -> OutputIt {
-  return write_escaped_string(out, basic_string_view<Char>(&v, 1), Char('\''));
+  *out++ = '\'';
+  if (needs_escape(v) && v != '"' || v == '\'') {
+    out = write_escaped_cp(out, find_escape_result<Char>{
+      &v, &v+1, static_cast<uint32_t>(v)
+    });
+  } else {
+    *out++ = v;
+  }
+  *out++ = '\'';
+  return out;
 }
 
 template <typename Char, typename OutputIt>
