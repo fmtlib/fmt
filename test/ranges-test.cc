@@ -46,11 +46,13 @@ TEST(ranges_test, format_array_of_literals) {
 TEST(ranges_test, format_vector) {
   auto v = std::vector<int>{1, 2, 3, 5, 7, 11};
   EXPECT_EQ(fmt::format("{}", v), "[1, 2, 3, 5, 7, 11]");
+  EXPECT_EQ(fmt::format("{::#x}", v), "[0x1, 0x2, 0x3, 0x5, 0x7, 0xb]");
 }
 
 TEST(ranges_test, format_vector2) {
   auto v = std::vector<std::vector<int>>{{1, 2}, {3, 5}, {7, 11}};
   EXPECT_EQ(fmt::format("{}", v), "[[1, 2], [3, 5], [7, 11]]");
+  EXPECT_EQ(fmt::format("{:::#x}", v), "[[0x1, 0x2], [0x3, 0x5], [0x7, 0xb]]");
 }
 
 TEST(ranges_test, format_map) {
@@ -296,6 +298,7 @@ static_assert(std::input_iterator<cpp20_only_range::iterator>);
 TEST(ranges_test, join_sentinel) {
   auto hello = zstring{"hello"};
   EXPECT_EQ(fmt::format("{}", hello), "['h', 'e', 'l', 'l', 'o']");
+  EXPECT_EQ(fmt::format("{::}", hello), "[h, e, l, l, o]");
   EXPECT_EQ(fmt::format("{}", fmt::join(hello, "_")), "h_e_l_l_o");
 }
 
