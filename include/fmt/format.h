@@ -1576,7 +1576,7 @@ template <typename Char>
 auto find_escape(const Char* begin, const Char* end)
     -> find_escape_result<Char> {
   for (; begin != end; ++begin) {
-    auto cp = static_cast<make_unsigned_char<Char>>(*begin);
+    uint32_t cp = static_cast<make_unsigned_char<Char>>(*begin);
     if (sizeof(Char) == 1 && cp >= 0x80) continue;
     if (needs_escape(cp)) return {begin, begin + 1, cp};
   }
