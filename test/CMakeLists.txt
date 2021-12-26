@@ -144,7 +144,7 @@ if (FMT_PEDANTIC)
     check_cxx_compiler_flag(-fno-exceptions HAVE_FNO_EXCEPTIONS_FLAG)
   endif ()
   if (HAVE_FNO_EXCEPTIONS_FLAG)
-    add_library(noexception-test ../src/format.cc)
+    add_library(noexception-test ../src/format.cc noexception-test.cc)
     target_include_directories(
       noexception-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
     target_compile_options(noexception-test PRIVATE -fno-exceptions)
