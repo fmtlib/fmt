@@ -161,7 +161,8 @@ displayed after the decimal point for a floating-point value formatted with
 value formatted with ``'g'`` or ``'G'``.  For non-number types the field
 indicates the maximum field size - in other words, how many characters will be
 used from the field content. The *precision* is not allowed for integer,
-character, Boolean, and pointer values.
+character, Boolean, and pointer values. Note that a C string must be
+null-terminated even if precision is specified.
 
 The ``'L'`` option uses the current locale setting to insert the appropriate
 number separator characters. This option is only valid for numeric types.
