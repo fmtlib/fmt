@@ -1403,10 +1403,8 @@ inline Int to_nonnegative_int(T value, Int upper) {
 }
 template <typename T, typename Int, FMT_ENABLE_IF(!std::is_integral<T>::value)>
 inline Int to_nonnegative_int(T value, Int upper) {
-  FMT_ASSERT(
-      std::isnan(value) || (value >= 0 && value <= static_cast<T>(upper)),
-      "invalid value");
-  (void)upper;
+  if (value < 0 || value > static_cast<T>(upper))
+    throw format_error("invalid value");
   return static_cast<Int>(value);
 }
 
