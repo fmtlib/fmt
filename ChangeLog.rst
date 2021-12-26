@@ -3,12 +3,13 @@
 
 * Optimized ``tm`` formatting
   (`#2602 <https://github.com/fmtlib/fmt/pull/2602>`_,
+  `#2617 <https://github.com/fmtlib/fmt/pull/2617>`_,
   `#2628 <https://github.com/fmtlib/fmt/issues/2628>`_
   `#2633 <https://github.com/fmtlib/fmt/pull/2633>`_,
   `#2670 <https://github.com/fmtlib/fmt/issues/2670>`_
   `#2671 <https://github.com/fmtlib/fmt/pull/2671>`_).
 
-  Processing of some specifiers such as ``%z`` and ``%Y`` is now up to 10-20x
+  Processing of some specifiers such as ``%z`` and ``%Y`` is now up to 10-20
   times faster::
 
     ----------------------------------------------------------------------------
@@ -36,12 +37,15 @@
 
   prints "01.234".
 
-  Thanks `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_.
-
+  Thanks `@matrackif <https://github.com/matrackif>`_.
 
 * Deprecated ``_format``, an undocumented UDL-based format API
   (`#2646 <https://github.com/fmtlib/fmt/pull/2646>`_).
   Thanks `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_.
+
+* Marked ``format``, ``formatted_size`` and ``to_string`` as ``[[nodiscard]]``
+  (`#2612 <https://github.com/fmtlib/fmt/pull/2612>`_).
+  `@0x8000-0000 (Florin Iucha) <https://github.com/0x8000-0000>`_.
 
 * Disabled a partially broken copy ctor for ``dynamic_format_arg_store`` and
   enabled a working move ctor
@@ -82,8 +86,14 @@
   `#2643 <https://github.com/fmtlib/fmt/pull/2643>`_).
   Thanks `@mkurdej (Marek Kurdej) <https://github.com/mkurdej>`_.
 
+* Improved C++14/17 attribute detection
+  (`#2615 <https://github.com/fmtlib/fmt/pull/2615>`_).
+  Thanks `@AlexGuteniev (Alex Guteniev) <https://github.com/AlexGuteniev>`_.
+
 * Improved documentation
-  (`#2676 <https://github.com/fmtlib/fmt/issues/2676>`_).
+  (`#2620 <https://github.com/fmtlib/fmt/pull/2620>`_,
+  `#2676 <https://github.com/fmtlib/fmt/issues/2676>`_).
+  Thanks `@Lounarok <https://github.com/Lounarok>`_.
 
 * Improved build configuration
   (`#2650 <https://github.com/fmtlib/fmt/pull/2650>`_,
@@ -92,8 +102,10 @@
   Thanks `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_.
 
 * Fixed various warnings and compilation issues
-  (`#2627 <https://github.com/fmtlib/fmt/issues/2627>`_,
-  `#2630 <https://github.com/fmtlib/fmt/pull/2630>`_). Thanks
+  (`#2611 <https://github.com/fmtlib/fmt/pull/2611>`_,
+  `#2627 <https://github.com/fmtlib/fmt/issues/2627>`_,
+  `#2630 <https://github.com/fmtlib/fmt/pull/2630>`_).
+  Thanks `@Acretock <https://github.com/Acretock>`_,
   `@andrewcorrigan (Andrew Corrigan) <https://github.com/andrewcorrigan>`_.
 
 8.0.1 - 2021-07-02
