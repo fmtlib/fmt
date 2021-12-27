@@ -350,3 +350,14 @@ TEST(ranges_test, escape_string) {
               "[\"\\xf4\\x8f\\xbf\\xc0\"]");
   }
 }
+
+#ifdef FMT_USE_STRING_VIEW
+struct convertible_to_string_view {
+  operator std::string_view() const { return "foo"; }
+};
+
+TEST(ranges_test, escape_convertible_to_string_view) {
+  EXPECT_EQ(fmt::format("{}", std::vector<convertible_to_string_view>(1)),
+            "[\"foo\"]");
+}
+#endif  // FMT_USE_STRING_VIEW

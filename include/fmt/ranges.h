@@ -65,7 +65,9 @@ template <typename T> class is_std_string_like {
 
  public:
   static FMT_CONSTEXPR_DECL const bool value =
-      is_string<T>::value || !std::is_void<decltype(check<T>(nullptr))>::value;
+      is_string<T>::value ||
+      std::is_convertible<T, std_string_view<char>>::value ||
+      !std::is_void<decltype(check<T>(nullptr))>::value;
 };
 
 template <typename Char>
@@ -518,6 +520,13 @@ auto write_range_entry(OutputIt out, basic_string_view<Char> str) -> OutputIt {
   } while (begin != end);
   *out++ = '"';
   return out;
+}
+
+template <typename Char, typename OutputIt, typename T,
+          FMT_ENABLE_IF(std::is_convertible<T, std_string_view<char>>::value)>
+inline auto write_range_entry(OutputIt out, const T& str) -> OutputIt {
+  auto sv = std_string_view<Char>(str);
+  return write_range_entry<Char>(out, basic_string_view<Char>(sv));
 }
 
 template <typename Char, typename OutputIt, typename Arg,
