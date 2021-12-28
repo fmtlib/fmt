@@ -10,7 +10,7 @@
   `#2671 <https://github.com/fmtlib/fmt/pull/2671>`_).
 
   Processing of some specifiers such as ``%z`` and ``%Y`` is now up to 10-20
-  times faster::
+  times faster, for example on GCC 11 with libstdc++::
 
     ----------------------------------------------------------------------------
     Benchmark                                  Before             After
@@ -47,6 +47,11 @@
   (`#2612 <https://github.com/fmtlib/fmt/pull/2612>`_).
   `@0x8000-0000 (Florin Iucha) <https://github.com/0x8000-0000>`_.
 
+* Added missing diagnostic when trying to format function and member pointers
+  which is explicitly disallowed
+  (`#2610 <https://github.com/fmtlib/fmt/pull/2610>`_).
+  Thanks `@AlexGuteniev (Alex Guteniev) <https://github.com/AlexGuteniev>`_.
+
 * Disabled a partially broken copy ctor for ``dynamic_format_arg_store`` and
   enabled a working move ctor
   (`#2664 <https://github.com/fmtlib/fmt/pull/2664>`_).
@@ -66,14 +71,10 @@
        fmt::print("{answer:s}", "answer"_a=42);
      }
 
-  gives a compile-time error on compilers with C++20 ``consteval`` support
-  (gcc 10+, clang 11+) because ``d`` is not a valid format specifier for a
-  string.
+  gives a compile-time error on compilers with C++20 ``consteval`` and non-type
+  template parameter support (gcc 10+) because ``s`` is not a valid format
+  specifier for an integer.
 
-  Thanks `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_.
-
-* Made floating point precision overflow check work with exceptions disabled
-  (`#2647 <https://github.com/fmtlib/fmt/pull/2647>`_).
   Thanks `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_.
 
 * Resolved lookup ambiguity with C++20 format-related functions due to ADL
@@ -91,9 +92,11 @@
   Thanks `@AlexGuteniev (Alex Guteniev) <https://github.com/AlexGuteniev>`_.
 
 * Improved documentation
-  (`#2620 <https://github.com/fmtlib/fmt/pull/2620>`_,
+  (`#2606 <https://github.com/fmtlib/fmt/pull/2606>`_,
+  `#2620 <https://github.com/fmtlib/fmt/pull/2620>`_,
   `#2676 <https://github.com/fmtlib/fmt/issues/2676>`_).
-  Thanks `@Lounarok <https://github.com/Lounarok>`_.
+  Thanks `@ericcurtin (Eric Curtin) <https://github.com/ericcurtin>`_,
+  `@Lounarok <https://github.com/Lounarok>`_.
 
 * Improved build configuration
   (`#2650 <https://github.com/fmtlib/fmt/pull/2650>`_,
@@ -103,9 +106,11 @@
 
 * Fixed various warnings and compilation issues
   (`#2611 <https://github.com/fmtlib/fmt/pull/2611>`_,
+  `#2647 <https://github.com/fmtlib/fmt/pull/2647>`_,
   `#2627 <https://github.com/fmtlib/fmt/issues/2627>`_,
   `#2630 <https://github.com/fmtlib/fmt/pull/2630>`_).
   Thanks `@Acretock <https://github.com/Acretock>`_,
+  `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_,
   `@andrewcorrigan (Andrew Corrigan) <https://github.com/andrewcorrigan>`_.
 
 8.0.1 - 2021-07-02
