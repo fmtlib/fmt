@@ -710,8 +710,9 @@ struct formatter<tuple_join_view<Char, T...>, Char> {
   FMT_CONSTEXPR auto do_parse(ParseContext& ctx,
                               std::integral_constant<size_t, N>)
       -> decltype(ctx.begin()) {
-    auto end = std::get<sizeof...(T) - N>(formatters_).parse(ctx);
+    auto end = ctx.begin();
 #if FMT_TUPLE_JOIN_SPECIFIERS
+    end = std::get<sizeof...(T) - N>(formatters_).parse(ctx);
     if (N > 1) {
       auto end1 = do_parse(ctx, std::integral_constant<size_t, N - 1>());
       if (end != end1)
