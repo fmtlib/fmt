@@ -59,7 +59,7 @@
 
 * Added support for faint, conceal, reverse and blink text styles
   (`#2394 <https://github.com/fmtlib/fmt/pull/2394>`_):
-  
+
   https://user-images.githubusercontent.com/576385/147710227-c68f5317-f8fa-42c3-9123-7c4ba3c398cb.mp4
 
   Thanks `@benit8 (Benoît Lormeau) <https://github.com/benit8>`_ and
@@ -95,7 +95,7 @@
   (`#2549 <https://github.com/fmtlib/fmt/pull/2549>`_).
   Thanks `@BRevzin (Barry Revzin) <https://github.com/BRevzin>`_.
 
-* Deprecated ``_format``, an undocumented UDL-based format API
+* Deprecated ``_format``, a legacy UDL-based format API
   (`#2646 <https://github.com/fmtlib/fmt/pull/2646>`_).
   Thanks `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_.
 
