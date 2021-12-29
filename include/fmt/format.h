@@ -297,28 +297,23 @@ template <typename Streambuf> class formatbuf : public Streambuf {
   }
 };
 
-// An equivalent of `*reinterpret_cast<Dest*>(&source)` that doesn't have
-// undefined behavior (e.g. due to type aliasing).
-// Example: uint64_t d = bit_cast<uint64_t>(2.718);
-template <typename Dest, typename Source>
-FMT_CONSTEXPR20 auto bit_cast(const Source& source) -> Dest {
-  static_assert(sizeof(Dest) == sizeof(Source), "size mismatch");
+// Implementation of std::bit_cast for pre-C++20.
+template <typename To, typename From>
+FMT_CONSTEXPR20 auto bit_cast(const From& from) -> To {
+  static_assert(sizeof(To) == sizeof(From), "size mismatch");
 #ifdef __cpp_lib_bit_cast
-  if (is_constant_evaluated()) {
-    return std::bit_cast<Dest>(source);
-  }
+  if (is_constant_evaluated()) return std::bit_cast<To>(from);
 #endif
-  Dest dest;
-  std::memcpy(&dest, &source, sizeof(dest));
-  return dest;
+  auto to = To();
+  std::memcpy(&to, &from, sizeof(to));
+  return to;
 }
 
 inline auto is_big_endian() -> bool {
-  const auto u = 1u;
   struct bytes {
-    char data[sizeof(u)];
+    char data[sizeof(int)];
   };
-  return bit_cast<bytes>(u).data[0] == 0;
+  return bit_cast<bytes>(1).data[0] == 0;
 }
 
 // A fallback implementation of uintptr_t for systems that lack it.
@@ -785,7 +780,8 @@ class basic_memory_buffer final : public detail::buffer<T> {
 };
 
 template <typename T, size_t SIZE, typename Allocator>
-FMT_CONSTEXPR20 void basic_memory_buffer<T, SIZE, Allocator>::grow(size_t size) {
+FMT_CONSTEXPR20 void basic_memory_buffer<T, SIZE, Allocator>::grow(
+    size_t size) {
 #ifdef FMT_FUZZ
   if (size > 5000) throw std::runtime_error("fuzz mode - won't grow that much");
 #endif
