@@ -13,21 +13,12 @@
 #define FMT_RANGES_H_
 
 #include <initializer_list>
+#include <tuple>
 #include <type_traits>
 
 #include "format.h"
 
 FMT_BEGIN_NAMESPACE
-
-template <typename Char, typename Enable = void> struct formatting_tuple {
-  Char prefix = '(';
-  Char postfix = ')';
-
-  template <typename ParseContext>
-  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
-    return ctx.begin();
-  }
-};
 
 namespace detail {
 
@@ -176,7 +167,7 @@ struct is_range_<T, void>
 #  undef FMT_DECLTYPE_RETURN
 #endif
 
-/// tuple_size and tuple_element check.
+// tuple_size and tuple_element check.
 template <typename T> class is_tuple_like_ {
   template <typename U>
   static auto check(U* p) -> decltype(std::tuple_size<U>::value, int());
@@ -556,37 +547,30 @@ template <typename T> struct is_tuple_like {
 template <typename TupleT, typename Char>
 struct formatter<TupleT, Char, enable_if_t<fmt::is_tuple_like<TupleT>::value>> {
  private:
-  // C++11 generic lambda for format()
+  // C++11 generic lambda for format().
   template <typename FormatContext> struct format_each {
     template <typename T> void operator()(const T& v) {
       if (i > 0) out = detail::write_delimiter(out);
       out = detail::write_range_entry<Char>(out, v);
       ++i;
     }
-    formatting_tuple<Char>& formatting;
-    size_t& i;
-    typename std::add_lvalue_reference<
-        decltype(std::declval<FormatContext>().out())>::type out;
+    int i;
+    typename FormatContext::iterator& out;
   };
 
  public:
-  formatting_tuple<Char> formatting;
-
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
-    return formatting.parse(ctx);
+    return ctx.begin();
   }
 
   template <typename FormatContext = format_context>
   auto format(const TupleT& values, FormatContext& ctx) -> decltype(ctx.out()) {
     auto out = ctx.out();
-    size_t i = 0;
-
-    detail::copy(formatting.prefix, out);
-    detail::for_each(values, format_each<FormatContext>{formatting, i, out});
-    detail::copy(formatting.postfix, out);
-
-    return ctx.out();
+    *out++ = '(';
+    detail::for_each(values, format_each<FormatContext>{0, out});
+    *out++ = ')';
+    return out;
   }
 };
 
