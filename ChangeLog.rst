@@ -1,8 +1,13 @@
 8.1.0 - TBD
 -----------
 
-* Optimized ``tm`` formatting
-  (`#2576 <https://github.com/fmtlib/fmt/pull/2576>`_,
+* Optimized chrono formatting
+  (`#2500 <https://github.com/fmtlib/fmt/pull/2500>`_,
+  `#2537 <https://github.com/fmtlib/fmt/pull/2537>`_,
+  `#2544 <https://github.com/fmtlib/fmt/pull/2544>`_,
+  `#2550 <https://github.com/fmtlib/fmt/pull/2550>`_,
+  `#2551 <https://github.com/fmtlib/fmt/pull/2551>`_,
+  `#2576 <https://github.com/fmtlib/fmt/pull/2576>`_,
   `#2586 <https://github.com/fmtlib/fmt/pull/2586>`_,
   `#2591 <https://github.com/fmtlib/fmt/pull/2591>`_,
   `#2594 <https://github.com/fmtlib/fmt/pull/2594>`_,
@@ -48,27 +53,22 @@
   (`#2588 <https://github.com/fmtlib/fmt/pull/2588>`_).
   Thanks `@lukester1975 <https://github.com/lukester1975>`_.
 
-* Fixed a potential overflow in the `tm` formatter
-  (`#2564 <https://github.com/fmtlib/fmt/issues/2564>`_).
-  Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_,
+* Fixed an overflow on invalid inputs in the `tm` formatter
+  (`#2564 <https://github.com/fmtlib/fmt/pull/2564>`_).
+  Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
 
-* Deprecated ``_format``, an undocumented UDL-based format API
-  (`#2646 <https://github.com/fmtlib/fmt/pull/2646>`_).
+* Added support for faint, conceal, reverse and blink text styles
+  (`#2394 <https://github.com/fmtlib/fmt/pull/2394>`_):
+  https://user-images.githubusercontent.com/576385/147710227-c68f5317-f8fa-42c3-9123-7c4ba3c398cb.mp4
+
+  Thanks `@benit8 (Benoît Lormeau) <https://github.com/benit8>`_ and
+  `@data-man (Dmitry Atamanov) <https://github.com/data-man>`_.
+
+* Added experimental support for compile-time floating point formatting
+  (`#2426 <https://github.com/fmtlib/fmt/pull/2426>`_,
+  `#2470 <https://github.com/fmtlib/fmt/pull/2470>`_).
+  It is currently limited to the header-only mode.
   Thanks `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_.
-
-* Marked ``format``, ``formatted_size`` and ``to_string`` as ``[[nodiscard]]``
-  (`#2612 <https://github.com/fmtlib/fmt/pull/2612>`_).
-  `@0x8000-0000 (Florin Iucha) <https://github.com/0x8000-0000>`_.
-
-* Added missing diagnostic when trying to format function and member pointers
-  which is explicitly disallowed
-  (`#2610 <https://github.com/fmtlib/fmt/pull/2610>`_).
-  Thanks `@AlexGuteniev (Alex Guteniev) <https://github.com/AlexGuteniev>`_.
-
-* Disabled a partially broken copy ctor for ``dynamic_format_arg_store`` and
-  enabled a working move ctor
-  (`#2664 <https://github.com/fmtlib/fmt/pull/2664>`_).
-  Thanks `@lucpelletier <https://github.com/lucpelletier>`_.
 
 * Added UDL-based named argument support to compile-time format string checks
   (`#2640 <https://github.com/fmtlib/fmt/issues/2640>`_,
@@ -90,6 +90,40 @@
 
   Thanks `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_.
 
+* Extended ``fmt::join`` to support C++20-only ranges
+  (`#2549 <https://github.com/fmtlib/fmt/pull/2549>`_).
+  Thanks `@BRevzin (Barry Revzin) <https://github.com/BRevzin>`_.
+
+* Deprecated ``_format``, an undocumented UDL-based format API
+  (`#2646 <https://github.com/fmtlib/fmt/pull/2646>`_).
+  Thanks `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_.
+
+* Marked ``format``, ``formatted_size`` and ``to_string`` as ``[[nodiscard]]``
+  (`#2612 <https://github.com/fmtlib/fmt/pull/2612>`_).
+  `@0x8000-0000 (Florin Iucha) <https://github.com/0x8000-0000>`_.
+
+* Added missing diagnostic when trying to format function and member pointers
+  which is explicitly disallowed
+  (`#2610 <https://github.com/fmtlib/fmt/pull/2610>`_).
+  Thanks `@AlexGuteniev (Alex Guteniev) <https://github.com/AlexGuteniev>`_.
+
+* Optimized writing to a contiguous buffer with ``format_to_n``
+  (`#2489 <https://github.com/fmtlib/fmt/pull/2489>`_).
+  Thanks `@Roman-Koshelev <https://github.com/Roman-Koshelev>`_.
+
+* Optimized writing to non-``char`` buffers
+  (`#2477 <https://github.com/fmtlib/fmt/pull/2477>`_).
+  Thanks `@Roman-Koshelev <https://github.com/Roman-Koshelev>`_.
+
+* Improved floating point formatter implementation
+  (`#2498 <https://github.com/fmtlib/fmt/pull/2498>`_,
+  `#2499 <https://github.com/fmtlib/fmt/pull/2499>`_).
+  Thanks `@Roman-Koshelev <https://github.com/Roman-Koshelev>`_.
+
+* Made a table of cached powers used in FP formatting static
+  (`#2509 <https://github.com/fmtlib/fmt/pull/2509>`_).
+  Thanks `@jk-jeon (Junekey Jeon) <https://github.com/jk-jeon>`_.
+
 * Resolved lookup ambiguity with C++20 format-related functions due to ADL
   (`#2639 <https://github.com/fmtlib/fmt/issues/2639>`_,
   `#2641 <https://github.com/fmtlib/fmt/pull/2641>`_).
@@ -109,37 +143,88 @@
   Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_.
 
 * Improved documentation
-  (`#2562 <https://github.com/fmtlib/fmt/pull/2562>`_,
+  (`#2446 <https://github.com/fmtlib/fmt/pull/2446>`_,
+  `#2515 <https://github.com/fmtlib/fmt/pull/2515>`_,
+  `#2562 <https://github.com/fmtlib/fmt/pull/2562>`_,
   `#2575 <https://github.com/fmtlib/fmt/pull/2575>`_,
   `#2606 <https://github.com/fmtlib/fmt/pull/2606>`_,
   `#2620 <https://github.com/fmtlib/fmt/pull/2620>`_,
   `#2676 <https://github.com/fmtlib/fmt/issues/2676>`_).
-  Thanks `@zhsj <https://github.com/zhsj>`_,
+  Thanks `@sobolevn (Nikita Sobolev) <https://github.com/sobolevn>`_,
+  `@UnePierre (Max FERGER) <https://github.com/UnePierre>`_,
+  `@zhsj <https://github.com/zhsj>`_,
   `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_,
   `@ericcurtin (Eric Curtin) <https://github.com/ericcurtin>`_,
   `@Lounarok <https://github.com/Lounarok>`_.
 
+* Improved fuzzers and added a fuzzer for chrono timepoint formatting
+  (`#2461 <https://github.com/fmtlib/fmt/pull/2461>`_,
+  `#2469 <https://github.com/fmtlib/fmt/pull/2469>`_).
+  `@pauldreik (Paul Dreik) <https://github.com/pauldreik>`_,
+
+* Added the Bazel build system support
+  (`#2505 <https://github.com/fmtlib/fmt/pull/2505>`_,
+  `#2516 <https://github.com/fmtlib/fmt/pull/2516>`_).
+  Thanks `@Vertexwahn <https://github.com/Vertexwahn>`_.
+
 * Improved build configuration and tests
-  (`#2650 <https://github.com/fmtlib/fmt/pull/2650>`_,
+  (`#2558 <https://github.com/fmtlib/fmt/pull/2558>`_,
+  `#2650 <https://github.com/fmtlib/fmt/pull/2650>`_,
   `#2651 <https://github.com/fmtlib/fmt/pull/2651>`_,
   `#2663 <https://github.com/fmtlib/fmt/pull/2663>`_,
   `#2677 <https://github.com/fmtlib/fmt/pull/2677>`_).
-  Thanks `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_,
+  Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_,
+  `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_,
   `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
 
 * Fixed various warnings and compilation issues
-  (`#2570 <https://github.com/fmtlib/fmt/issues/2570>`_,
+  (`#2399 <https://github.com/fmtlib/fmt/pull/2399>`_,
+  `#2414 <https://github.com/fmtlib/fmt/pull/2414>`_,
+  `#2427 <https://github.com/fmtlib/fmt/pull/2427>`_,
+  `#2442 <https://github.com/fmtlib/fmt/pull/2442>`_,
+  `#2434 <https://github.com/fmtlib/fmt/pull/2434>`_,
+  `#2447 <https://github.com/fmtlib/fmt/pull/2447>`_,
+  `#2450 <https://github.com/fmtlib/fmt/pull/2450>`_,
+  `#2474 <https://github.com/fmtlib/fmt/issues/2474>`_,
+  `#2476 <https://github.com/fmtlib/fmt/pull/2476>`_,
+  `#2482 <https://github.com/fmtlib/fmt/pull/2482>`_,
+  `#2483 <https://github.com/fmtlib/fmt/pull/2483>`_,
+  `#2491 <https://github.com/fmtlib/fmt/pull/2491>`_,
+  `#2510 <https://github.com/fmtlib/fmt/pull/2510>`_,
+  `#2518 <https://github.com/fmtlib/fmt/pull/2518>`_,
+  `#2529 <https://github.com/fmtlib/fmt/pull/2529>`_,
+  `#2539 <https://github.com/fmtlib/fmt/pull/2539>`_,
+  `#2545 <https://github.com/fmtlib/fmt/pull/2545>`_,
+  `#2555 <https://github.com/fmtlib/fmt/pull/2555>`_,
+  `#2570 <https://github.com/fmtlib/fmt/issues/2570>`_,
   `#2573 <https://github.com/fmtlib/fmt/pull/2573>`_,
   `#2582 <https://github.com/fmtlib/fmt/pull/2582>`_,
   `#2611 <https://github.com/fmtlib/fmt/pull/2611>`_,
   `#2647 <https://github.com/fmtlib/fmt/pull/2647>`_,
   `#2627 <https://github.com/fmtlib/fmt/issues/2627>`_,
-  `#2630 <https://github.com/fmtlib/fmt/pull/2630>`_).
-  Thanks  `@timkalu <https://github.com/timkalu>`_,
+  `#2630 <https://github.com/fmtlib/fmt/pull/2630>`_,
+  `#2664 <https://github.com/fmtlib/fmt/pull/2664>`_).
+  Thanks `@mwinterb <https://github.com/mwinterb>`_,
+  `@cdacamar (Cameron DaCamara) <https://github.com/cdacamar>`_,
+  `@TrebledJ (Johnathan) <https://github.com/TrebledJ>`_,
+  `@bodomartin (brm) <https://github.com/bodomartin>`_,
+  `@cquammen (Cory Quammen) <https://github.com/cquammen>`_,
+  `@white238 (Chris White) <https://github.com/white238>`_,
+  `@mmarkeloff (Max) <https://github.com/mmarkeloff>`_,
+  `@palacaze (Pierre-Antoine Lacaze) <https://github.com/palacaze>`_,
+  `@jcelerier (Jean-Michaël Celerier) <https://github.com/jcelerier>`_,
+  `@mborn-adi (Mathias Born) <https://github.com/mborn-adi>`_,
+  `@BrukerJWD (Jonathan W) <https://github.com/BrukerJWD>`_,
+  `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_,
+  `@oliverlee (Oliver Lee) <https://github.com/oliverlee>`_,
+  `@joshessman-llnl (Josh Essman) <https://github.com/joshessman-llnl>`_,
+  `@akohlmey (Axel Kohlmeyer) <https://github.com/akohlmey>`_,
+  `@timkalu <https://github.com/timkalu>`_,
   `@olupton (Olli Lupton) <https://github.com/olupton>`_,
   `@Acretock <https://github.com/Acretock>`_,
   `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_,
-  `@andrewcorrigan (Andrew Corrigan) <https://github.com/andrewcorrigan>`_.
+  `@andrewcorrigan (Andrew Corrigan) <https://github.com/andrewcorrigan>`_,
+  `@lucpelletier <https://github.com/lucpelletier>`_.
 
 8.0.1 - 2021-07-02
 ------------------
