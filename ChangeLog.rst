@@ -2,7 +2,11 @@
 -----------
 
 * Optimized ``tm`` formatting
-  (`#2602 <https://github.com/fmtlib/fmt/pull/2602>`_,
+  (`#2576 <https://github.com/fmtlib/fmt/pull/2576>`_,
+  `#2586 <https://github.com/fmtlib/fmt/pull/2586>`_,
+  `#2591 <https://github.com/fmtlib/fmt/pull/2591>`_,
+  `#2594 <https://github.com/fmtlib/fmt/pull/2594>`_,
+  `#2602 <https://github.com/fmtlib/fmt/pull/2602>`_,
   `#2617 <https://github.com/fmtlib/fmt/pull/2617>`_,
   `#2628 <https://github.com/fmtlib/fmt/issues/2628>`_
   `#2633 <https://github.com/fmtlib/fmt/pull/2633>`_,
@@ -21,7 +25,8 @@
     FMTFormatterCompile_Y                      244 ns             10.5 ns
     ----------------------------------------------------------------------------
 
-  Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
+  Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_ and
+  `@toughengineer (Pavel Novikov) <https://github.com/toughengineer>`_.
 
 * Implemented subsecond formatting for chrono durations
   (`#2623 <https://github.com/fmtlib/fmt/pull/2623>`_).
@@ -38,6 +43,14 @@
   prints "01.234".
 
   Thanks `@matrackif <https://github.com/matrackif>`_.
+
+* Fixed handling of precision 0 when formatting chrono durations
+  (`#2588 <https://github.com/fmtlib/fmt/pull/2588>`_).
+  Thanks `@lukester1975 <https://github.com/lukester1975>`_.
+
+* Fixed a potential overflow in the `tm` formatter
+  (`#2564 <https://github.com/fmtlib/fmt/issues/2564>`_).
+  Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_,
 
 * Deprecated ``_format``, an undocumented UDL-based format API
   (`#2646 <https://github.com/fmtlib/fmt/pull/2646>`_).
@@ -91,25 +104,40 @@
   (`#2615 <https://github.com/fmtlib/fmt/pull/2615>`_).
   Thanks `@AlexGuteniev (Alex Guteniev) <https://github.com/AlexGuteniev>`_.
 
+* Improved ``consteval`` detection for MSVC
+  (`#2559 <https://github.com/fmtlib/fmt/pull/2559>`_).
+  Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_.
+
 * Improved documentation
-  (`#2606 <https://github.com/fmtlib/fmt/pull/2606>`_,
+  (`#2562 <https://github.com/fmtlib/fmt/pull/2562>`_,
+  `#2575 <https://github.com/fmtlib/fmt/pull/2575>`_,
+  `#2606 <https://github.com/fmtlib/fmt/pull/2606>`_,
   `#2620 <https://github.com/fmtlib/fmt/pull/2620>`_,
   `#2676 <https://github.com/fmtlib/fmt/issues/2676>`_).
-  Thanks `@ericcurtin (Eric Curtin) <https://github.com/ericcurtin>`_,
+  Thanks `@zhsj <https://github.com/zhsj>`_,
+  `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_,
+  `@ericcurtin (Eric Curtin) <https://github.com/ericcurtin>`_,
   `@Lounarok <https://github.com/Lounarok>`_.
 
-* Improved build configuration
+* Improved build configuration and tests
   (`#2650 <https://github.com/fmtlib/fmt/pull/2650>`_,
   `#2651 <https://github.com/fmtlib/fmt/pull/2651>`_,
-  `#2663 <https://github.com/fmtlib/fmt/pull/2663>`_).
-  Thanks `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_.
+  `#2663 <https://github.com/fmtlib/fmt/pull/2663>`_,
+  `#2677 <https://github.com/fmtlib/fmt/pull/2677>`_).
+  Thanks `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_,
+  `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
 
 * Fixed various warnings and compilation issues
-  (`#2611 <https://github.com/fmtlib/fmt/pull/2611>`_,
+  (`#2570 <https://github.com/fmtlib/fmt/issues/2570>`_,
+  `#2573 <https://github.com/fmtlib/fmt/pull/2573>`_,
+  `#2582 <https://github.com/fmtlib/fmt/pull/2582>`_,
+  `#2611 <https://github.com/fmtlib/fmt/pull/2611>`_,
   `#2647 <https://github.com/fmtlib/fmt/pull/2647>`_,
   `#2627 <https://github.com/fmtlib/fmt/issues/2627>`_,
   `#2630 <https://github.com/fmtlib/fmt/pull/2630>`_).
-  Thanks `@Acretock <https://github.com/Acretock>`_,
+  Thanks  `@timkalu <https://github.com/timkalu>`_,
+  `@olupton (Olli Lupton) <https://github.com/olupton>`_,
+  `@Acretock <https://github.com/Acretock>`_,
   `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_,
   `@andrewcorrigan (Andrew Corrigan) <https://github.com/andrewcorrigan>`_.
 
