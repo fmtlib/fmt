@@ -59,6 +59,7 @@
 
 * Added support for faint, conceal, reverse and blink text styles
   (`#2394 <https://github.com/fmtlib/fmt/pull/2394>`_):
+  
   https://user-images.githubusercontent.com/576385/147710227-c68f5317-f8fa-42c3-9123-7c4ba3c398cb.mp4
 
   Thanks `@benit8 (Benoît Lormeau) <https://github.com/benit8>`_ and
@@ -178,7 +179,9 @@
   `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
 
 * Fixed various warnings and compilation issues
-  (`#2399 <https://github.com/fmtlib/fmt/pull/2399>`_,
+  (`#2353 <https://github.com/fmtlib/fmt/pull/2353>`_,
+  `#2356 <https://github.com/fmtlib/fmt/pull/2356>`_,
+  `#2399 <https://github.com/fmtlib/fmt/pull/2399>`_,
   `#2414 <https://github.com/fmtlib/fmt/pull/2414>`_,
   `#2427 <https://github.com/fmtlib/fmt/pull/2427>`_,
   `#2442 <https://github.com/fmtlib/fmt/pull/2442>`_,
@@ -204,7 +207,8 @@
   `#2627 <https://github.com/fmtlib/fmt/issues/2627>`_,
   `#2630 <https://github.com/fmtlib/fmt/pull/2630>`_,
   `#2664 <https://github.com/fmtlib/fmt/pull/2664>`_).
-  Thanks `@mwinterb <https://github.com/mwinterb>`_,
+  Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_,
+  `@mwinterb <https://github.com/mwinterb>`_,
   `@cdacamar (Cameron DaCamara) <https://github.com/cdacamar>`_,
   `@TrebledJ (Johnathan) <https://github.com/TrebledJ>`_,
   `@bodomartin (brm) <https://github.com/bodomartin>`_,
