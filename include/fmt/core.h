@@ -475,19 +475,19 @@ template <typename Char> class basic_string_view {
                                                       size_(s.size()) {}
 
   /** Returns a pointer to the string data. */
-  constexpr auto data() const -> const Char* { return data_; }
+  constexpr auto data() const FMT_NOEXCEPT -> const Char* { return data_; }
 
   /** Returns the string size. */
-  constexpr auto size() const -> size_t { return size_; }
+  constexpr auto size() const FMT_NOEXCEPT -> size_t { return size_; }
 
-  constexpr auto begin() const -> iterator { return data_; }
-  constexpr auto end() const -> iterator { return data_ + size_; }
+  constexpr auto begin() const FMT_NOEXCEPT -> iterator { return data_; }
+  constexpr auto end() const FMT_NOEXCEPT -> iterator { return data_ + size_; }
 
-  constexpr auto operator[](size_t pos) const -> const Char& {
+  constexpr auto operator[](size_t pos) const FMT_NOEXCEPT -> const Char& {
     return data_[pos];
   }
 
-  FMT_CONSTEXPR void remove_prefix(size_t n) {
+  FMT_CONSTEXPR void remove_prefix(size_t n) FMT_NOEXCEPT {
     data_ += n;
     size_ -= n;
   }
@@ -1496,14 +1496,14 @@ class appender : public std::back_insert_iterator<detail::buffer<char>> {
 
  public:
   using std::back_insert_iterator<detail::buffer<char>>::back_insert_iterator;
-  appender(base it) : base(it) {}
+  appender(base it) FMT_NOEXCEPT : base(it) {}
   using _Unchecked_type = appender;  // Mark iterator as checked.
 
-  auto operator++() -> appender& {
+  auto operator++() FMT_NOEXCEPT -> appender& {
     return *this;
   }
 
-  auto operator++(int) -> appender {
+  auto operator++(int) FMT_NOEXCEPT -> appender {
     return *this;
   }
 };
