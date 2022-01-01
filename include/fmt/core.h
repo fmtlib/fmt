@@ -1373,16 +1373,20 @@ template <typename Context> struct arg_mapper {
   using cstring_result = conditional_t<std::is_same<char_type, char>::value,
                                        const char*, unformattable_pointer>;
 
+  // DEPRECATED!
   FMT_CONSTEXPR FMT_INLINE auto map(const signed char* val) -> cstring_result {
     return map(reinterpret_cast<const char*>(val));
   }
+  // DEPRECATED!
   FMT_CONSTEXPR FMT_INLINE auto map(const unsigned char* val)
       -> cstring_result {
     return map(reinterpret_cast<const char*>(val));
   }
+  // DEPRECATED!
   FMT_CONSTEXPR FMT_INLINE auto map(signed char* val) -> cstring_result {
     return map(reinterpret_cast<const char*>(val));
   }
+  // DEPRECATED!
   FMT_CONSTEXPR FMT_INLINE auto map(unsigned char* val) -> cstring_result {
     return map(reinterpret_cast<const char*>(val));
   }
@@ -1499,13 +1503,9 @@ class appender : public std::back_insert_iterator<detail::buffer<char>> {
   appender(base it) FMT_NOEXCEPT : base(it) {}
   using _Unchecked_type = appender;  // Mark iterator as checked.
 
-  auto operator++() FMT_NOEXCEPT -> appender& {
-    return *this;
-  }
+  auto operator++() FMT_NOEXCEPT -> appender& { return *this; }
 
-  auto operator++(int) FMT_NOEXCEPT -> appender {
-    return *this;
-  }
+  auto operator++(int) FMT_NOEXCEPT -> appender { return *this; }
 };
 
 // A formatting argument. It is a trivially copyable/constructible type to
