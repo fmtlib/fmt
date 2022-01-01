@@ -94,6 +94,25 @@
 
   Thanks `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_.
 
+* Implemented escaping of string range elements. For example:
+
+  .. code:: c++
+
+     #include <fmt/ranges.h>
+
+     int main() {
+       fmt::print("{}", std::vector<std::string>{"\naan"};
+     }
+
+  is now printed as::
+
+  ["\naan"]
+
+  instead of::
+  
+  ["
+  aan"]
+
 * Extended ``fmt::join`` to support C++20-only ranges
   (`#2549 <https://github.com/fmtlib/fmt/pull/2549>`_).
   Thanks `@BRevzin (Barry Revzin) <https://github.com/BRevzin>`_.
@@ -204,6 +223,7 @@
 * Improved build configuration and tests
   (`#2437 <https://github.com/fmtlib/fmt/issues/2437>`_,
   `#2558 <https://github.com/fmtlib/fmt/pull/2558>`_,
+  `#2648 <https://github.com/fmtlib/fmt/pull/2648>`_,
   `#2650 <https://github.com/fmtlib/fmt/pull/2650>`_,
   `#2663 <https://github.com/fmtlib/fmt/pull/2663>`_,
   `#2677 <https://github.com/fmtlib/fmt/pull/2677>`_).
