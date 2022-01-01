@@ -4,10 +4,12 @@
 * Optimized chrono formatting
   (`#2500 <https://github.com/fmtlib/fmt/pull/2500>`_,
   `#2537 <https://github.com/fmtlib/fmt/pull/2537>`_,
+  `#2541 <https://github.com/fmtlib/fmt/issues/2541>`_,
   `#2544 <https://github.com/fmtlib/fmt/pull/2544>`_,
   `#2550 <https://github.com/fmtlib/fmt/pull/2550>`_,
   `#2551 <https://github.com/fmtlib/fmt/pull/2551>`_,
   `#2576 <https://github.com/fmtlib/fmt/pull/2576>`_,
+  `#2577 <https://github.com/fmtlib/fmt/issues/2577>`_,
   `#2586 <https://github.com/fmtlib/fmt/pull/2586>`_,
   `#2591 <https://github.com/fmtlib/fmt/pull/2591>`_,
   `#2594 <https://github.com/fmtlib/fmt/pull/2594>`_,
@@ -106,7 +108,7 @@
 
 * Added missing diagnostic when trying to format function and member pointers
   as well as objects convertible to pointers which is explicitly disallowed
-  (`#2598 <https://github.com/fmtlib/fmt/pull/2598>`_,
+  (`#2598 <https://github.com/fmtlib/fmt/issues/2598>`_,
   `#2609 <https://github.com/fmtlib/fmt/pull/2609>`_,
   `#2610 <https://github.com/fmtlib/fmt/pull/2610>`_).
   Thanks `@AlexGuteniev (Alex Guteniev) <https://github.com/AlexGuteniev>`_.
@@ -141,6 +143,21 @@
   `#2643 <https://github.com/fmtlib/fmt/pull/2643>`_).
   Thanks `@mkurdej (Marek Kurdej) <https://github.com/mkurdej>`_.
 
+* Implemented argument forwarding in ``format_to_n``
+  (`#2462 <https://github.com/fmtlib/fmt/issues/2462>`_,
+  `#2463 <https://github.com/fmtlib/fmt/pull/2463>`_).
+  Thanks `@owent (WenTao Ou) <https://github.com/owent>`_.
+
+* Fixed handling of implicit conversions in ``fmt::to_string`` and format string
+  compilation (`#2565 <https://github.com/fmtlib/fmt/issues/2565>`_).
+
+* Changed the default access mode of files created by ``fmt::output_file`` to
+  ``-rw-r--r--`` for consistency with ``fopen``
+  (`#2530 <https://github.com/fmtlib/fmt/issues/2530>`_).
+
+* Make ``fmt::ostream::flush`` public
+  (`#2435 <https://github.com/fmtlib/fmt/issues/2435>`_).
+
 * Improved C++14/17 attribute detection
   (`#2615 <https://github.com/fmtlib/fmt/pull/2615>`_).
   Thanks `@AlexGuteniev (Alex Guteniev) <https://github.com/AlexGuteniev>`_.
@@ -150,8 +167,12 @@
   Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_.
 
 * Improved documentation
-  (`#2446 <https://github.com/fmtlib/fmt/pull/2446>`_,
+  (`#2406 <https://github.com/fmtlib/fmt/issues/2406>`_,
+  `#2446 <https://github.com/fmtlib/fmt/pull/2446>`_,
+  `#2493 <https://github.com/fmtlib/fmt/issues/2493>`_,
+  `#2513 <https://github.com/fmtlib/fmt/issues/2513>`_,
   `#2515 <https://github.com/fmtlib/fmt/pull/2515>`_,
+  `#2522 <https://github.com/fmtlib/fmt/issues/2522>`_,
   `#2562 <https://github.com/fmtlib/fmt/pull/2562>`_,
   `#2575 <https://github.com/fmtlib/fmt/pull/2575>`_,
   `#2606 <https://github.com/fmtlib/fmt/pull/2606>`_,
@@ -181,7 +202,8 @@
   Thanks `@Vertexwahn <https://github.com/Vertexwahn>`_.
 
 * Improved build configuration and tests
-  (`#2558 <https://github.com/fmtlib/fmt/pull/2558>`_,
+  (`#2437 <https://github.com/fmtlib/fmt/issues/2437>`_,
+  `#2558 <https://github.com/fmtlib/fmt/pull/2558>`_,
   `#2650 <https://github.com/fmtlib/fmt/pull/2650>`_,
   `#2663 <https://github.com/fmtlib/fmt/pull/2663>`_,
   `#2677 <https://github.com/fmtlib/fmt/pull/2677>`_).
@@ -193,23 +215,35 @@
   (`#2353 <https://github.com/fmtlib/fmt/pull/2353>`_,
   `#2356 <https://github.com/fmtlib/fmt/pull/2356>`_,
   `#2399 <https://github.com/fmtlib/fmt/pull/2399>`_,
+  `#2408 <https://github.com/fmtlib/fmt/issues/2408>`_,
   `#2414 <https://github.com/fmtlib/fmt/pull/2414>`_,
   `#2427 <https://github.com/fmtlib/fmt/pull/2427>`_,
   `#2442 <https://github.com/fmtlib/fmt/pull/2442>`_,
   `#2434 <https://github.com/fmtlib/fmt/pull/2434>`_,
+  `#2439 <https://github.com/fmtlib/fmt/issues/2439>`_,
   `#2447 <https://github.com/fmtlib/fmt/pull/2447>`_,
   `#2450 <https://github.com/fmtlib/fmt/pull/2450>`_,
+  `#2455 <https://github.com/fmtlib/fmt/issues/2455>`_,
+  `#2465 <https://github.com/fmtlib/fmt/issues/2465>`_,
+  `#2472 <https://github.com/fmtlib/fmt/issues/2472>`_,
   `#2474 <https://github.com/fmtlib/fmt/issues/2474>`_,
   `#2476 <https://github.com/fmtlib/fmt/pull/2476>`_,
+  `#2478 <https://github.com/fmtlib/fmt/issues/2478>`_,
+  `#2479 <https://github.com/fmtlib/fmt/issues/2479>`_,
+  `#2481 <https://github.com/fmtlib/fmt/issues/2481>`_,
   `#2482 <https://github.com/fmtlib/fmt/pull/2482>`_,
   `#2483 <https://github.com/fmtlib/fmt/pull/2483>`_,
+  `#2490 <https://github.com/fmtlib/fmt/issues/2490>`_,
   `#2491 <https://github.com/fmtlib/fmt/pull/2491>`_,
   `#2510 <https://github.com/fmtlib/fmt/pull/2510>`_,
   `#2518 <https://github.com/fmtlib/fmt/pull/2518>`_,
+  `#2528 <https://github.com/fmtlib/fmt/issues/2528>`_,
   `#2529 <https://github.com/fmtlib/fmt/pull/2529>`_,
   `#2539 <https://github.com/fmtlib/fmt/pull/2539>`_,
+  `#2540 <https://github.com/fmtlib/fmt/issues/2540>`_,
   `#2545 <https://github.com/fmtlib/fmt/pull/2545>`_,
   `#2555 <https://github.com/fmtlib/fmt/pull/2555>`_,
+  `#2557 <https://github.com/fmtlib/fmt/issues/2557>`_,
   `#2570 <https://github.com/fmtlib/fmt/issues/2570>`_,
   `#2573 <https://github.com/fmtlib/fmt/pull/2573>`_,
   `#2582 <https://github.com/fmtlib/fmt/pull/2582>`_,
@@ -223,7 +257,8 @@
   `#2653 <https://github.com/fmtlib/fmt/issues/2653>`_,
   `#2654 <https://github.com/fmtlib/fmt/issues/2654>`_,
   `#2661 <https://github.com/fmtlib/fmt/issues/2661>`_,
-  `#2664 <https://github.com/fmtlib/fmt/pull/2664>`_).
+  `#2664 <https://github.com/fmtlib/fmt/pull/2664>`_,
+  `#2684 <https://github.com/fmtlib/fmt/pull/2684>`_).
   Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_,
   `@mwinterb <https://github.com/mwinterb>`_,
   `@cdacamar (Cameron DaCamara) <https://github.com/cdacamar>`_,
@@ -245,7 +280,8 @@
   `@Acretock <https://github.com/Acretock>`_,
   `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_,
   `@andrewcorrigan (Andrew Corrigan) <https://github.com/andrewcorrigan>`_,
-  `@lucpelletier <https://github.com/lucpelletier>`_.
+  `@lucpelletier <https://github.com/lucpelletier>`_,
+  `@HazardyKnusperkeks (Björn Schäpers) <https://github.com/HazardyKnusperkeks>`_.
 
 8.0.1 - 2021-07-02
 ------------------
