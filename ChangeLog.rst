@@ -13,9 +13,9 @@
   `#2594 <https://github.com/fmtlib/fmt/pull/2594>`_,
   `#2602 <https://github.com/fmtlib/fmt/pull/2602>`_,
   `#2617 <https://github.com/fmtlib/fmt/pull/2617>`_,
-  `#2628 <https://github.com/fmtlib/fmt/issues/2628>`_
+  `#2628 <https://github.com/fmtlib/fmt/issues/2628>`_,
   `#2633 <https://github.com/fmtlib/fmt/pull/2633>`_,
-  `#2670 <https://github.com/fmtlib/fmt/issues/2670>`_
+  `#2670 <https://github.com/fmtlib/fmt/issues/2670>`_,
   `#2671 <https://github.com/fmtlib/fmt/pull/2671>`_).
 
   Processing of some specifiers such as ``%z`` and ``%Y`` is now up to 10-20
@@ -50,7 +50,8 @@
   Thanks `@matrackif <https://github.com/matrackif>`_.
 
 * Fixed handling of precision 0 when formatting chrono durations
-  (`#2588 <https://github.com/fmtlib/fmt/pull/2588>`_).
+  (`#2587 <https://github.com/fmtlib/fmt/issues/2587>`_,
+  `#2588 <https://github.com/fmtlib/fmt/pull/2588>`_).
   Thanks `@lukester1975 <https://github.com/lukester1975>`_.
 
 * Fixed an overflow on invalid inputs in the `tm` formatter
@@ -104,8 +105,10 @@
   `@0x8000-0000 (Florin Iucha) <https://github.com/0x8000-0000>`_.
 
 * Added missing diagnostic when trying to format function and member pointers
-  which is explicitly disallowed
-  (`#2610 <https://github.com/fmtlib/fmt/pull/2610>`_).
+  as well as objects convertible to pointers which is explicitly disallowed
+  (`#2598 <https://github.com/fmtlib/fmt/pull/2598>`_,
+  `#2609 <https://github.com/fmtlib/fmt/pull/2609>`_,
+  `#2610 <https://github.com/fmtlib/fmt/pull/2610>`_).
   Thanks `@AlexGuteniev (Alex Guteniev) <https://github.com/AlexGuteniev>`_.
 
 * Optimized writing to a contiguous buffer with ``format_to_n``
@@ -121,11 +124,14 @@
   `#2499 <https://github.com/fmtlib/fmt/pull/2499>`_).
   Thanks `@Roman-Koshelev <https://github.com/Roman-Koshelev>`_.
 
+* Fixed handling of very large precision in fixed format
+  (`#2616 <https://github.com/fmtlib/fmt/pull/2616>`_).
+
 * Made a table of cached powers used in FP formatting static
   (`#2509 <https://github.com/fmtlib/fmt/pull/2509>`_).
   Thanks `@jk-jeon (Junekey Jeon) <https://github.com/jk-jeon>`_.
 
-* Resolved lookup ambiguity with C++20 format-related functions due to ADL
+* Resolved a lookup ambiguity with C++20 format-related functions due to ADL
   (`#2639 <https://github.com/fmtlib/fmt/issues/2639>`_,
   `#2641 <https://github.com/fmtlib/fmt/pull/2641>`_).
   Thanks `@mkurdej (Marek Kurdej) <https://github.com/mkurdej>`_.
@@ -163,6 +169,12 @@
   `#2469 <https://github.com/fmtlib/fmt/pull/2469>`_).
   `@pauldreik (Paul Dreik) <https://github.com/pauldreik>`_,
 
+* Added the ``FMT_SYSTEM_HEADERS`` CMake option setting which marks {fmt}'s
+  headers as system. It can be used to suppress warnings
+  (`#2644 <https://github.com/fmtlib/fmt/issues/2644>`_,
+  `#2651 <https://github.com/fmtlib/fmt/pull/2651>`_).
+  Thanks `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_.
+
 * Added the Bazel build system support
   (`#2505 <https://github.com/fmtlib/fmt/pull/2505>`_,
   `#2516 <https://github.com/fmtlib/fmt/pull/2516>`_).
@@ -171,7 +183,6 @@
 * Improved build configuration and tests
   (`#2558 <https://github.com/fmtlib/fmt/pull/2558>`_,
   `#2650 <https://github.com/fmtlib/fmt/pull/2650>`_,
-  `#2651 <https://github.com/fmtlib/fmt/pull/2651>`_,
   `#2663 <https://github.com/fmtlib/fmt/pull/2663>`_,
   `#2677 <https://github.com/fmtlib/fmt/pull/2677>`_).
   Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_,
@@ -202,10 +213,16 @@
   `#2570 <https://github.com/fmtlib/fmt/issues/2570>`_,
   `#2573 <https://github.com/fmtlib/fmt/pull/2573>`_,
   `#2582 <https://github.com/fmtlib/fmt/pull/2582>`_,
+  `#2605 <https://github.com/fmtlib/fmt/issues/2605>`_,
   `#2611 <https://github.com/fmtlib/fmt/pull/2611>`_,
   `#2647 <https://github.com/fmtlib/fmt/pull/2647>`_,
   `#2627 <https://github.com/fmtlib/fmt/issues/2627>`_,
   `#2630 <https://github.com/fmtlib/fmt/pull/2630>`_,
+  `#2635 <https://github.com/fmtlib/fmt/issues/2635>`_,
+  `#2638 <https://github.com/fmtlib/fmt/issues/2638>`_,
+  `#2653 <https://github.com/fmtlib/fmt/issues/2653>`_,
+  `#2654 <https://github.com/fmtlib/fmt/issues/2654>`_,
+  `#2661 <https://github.com/fmtlib/fmt/issues/2661>`_,
   `#2664 <https://github.com/fmtlib/fmt/pull/2664>`_).
   Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_,
   `@mwinterb <https://github.com/mwinterb>`_,
@@ -266,7 +283,7 @@
   `#2389 <https://github.com/fmtlib/fmt/pull/2389>`_,
   `#2395 <https://github.com/fmtlib/fmt/pull/2395>`_,
   `#2397 <https://github.com/fmtlib/fmt/pull/2397>`_,
-  `#2400 <https://github.com/fmtlib/fmt/issues/2400>`_
+  `#2400 <https://github.com/fmtlib/fmt/issues/2400>`_,
   `#2401 <https://github.com/fmtlib/fmt/issues/2401>`_,
   `#2407 <https://github.com/fmtlib/fmt/pull/2407>`_).
   Thanks `@zx2c4 (Jason A. Donenfeld) <https://github.com/zx2c4>`_,
@@ -797,13 +814,13 @@
   `#2067 <https://github.com/fmtlib/fmt/pull/2067>`_,
   `#2068 <https://github.com/fmtlib/fmt/pull/2068>`_,
   `#2073 <https://github.com/fmtlib/fmt/pull/2073>`_,
-  `#2103 <https://github.com/fmtlib/fmt/issues/2103>`_
-  `#2105 <https://github.com/fmtlib/fmt/issues/2105>`_
+  `#2103 <https://github.com/fmtlib/fmt/issues/2103>`_,
+  `#2105 <https://github.com/fmtlib/fmt/issues/2105>`_,
   `#2106 <https://github.com/fmtlib/fmt/pull/2106>`_,
   `#2107 <https://github.com/fmtlib/fmt/pull/2107>`_,
-  `#2116 <https://github.com/fmtlib/fmt/issues/2116>`_
+  `#2116 <https://github.com/fmtlib/fmt/issues/2116>`_,
   `#2117 <https://github.com/fmtlib/fmt/pull/2117>`_,
-  `#2118 <https://github.com/fmtlib/fmt/issues/2118>`_
+  `#2118 <https://github.com/fmtlib/fmt/issues/2118>`_,
   `#2119 <https://github.com/fmtlib/fmt/pull/2119>`_,
   `#2127 <https://github.com/fmtlib/fmt/issues/2127>`_,
   `#2128 <https://github.com/fmtlib/fmt/pull/2128>`_,
@@ -876,7 +893,7 @@
   `@yeswalrus (Walter Gray) <https://github.com/yeswalrus>`_,
   `@Finkman <https://github.com/Finkman>`_,
   `@HazardyKnusperkeks (Björn Schäpers) <https://github.com/HazardyKnusperkeks>`_,
-  `@dkavolis (Daumantas Kavolis) <https://github.com/dkavolis>`_
+  `@dkavolis (Daumantas Kavolis) <https://github.com/dkavolis>`_,
   `@concatime (Issam Maghni) <https://github.com/concatime>`_,
   `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_,
   `@summivox (Yin Zhong) <https://github.com/summivox>`_,
@@ -1333,7 +1350,7 @@
   `#1912 <https://github.com/fmtlib/fmt/issues/1912>`_,
   `#1928 <https://github.com/fmtlib/fmt/issues/1928>`_,
   `#1929 <https://github.com/fmtlib/fmt/pull/1929>`_,
-  `#1935 <https://github.com/fmtlib/fmt/issues/1935>`_
+  `#1935 <https://github.com/fmtlib/fmt/issues/1935>`_,
   `#1937 <https://github.com/fmtlib/fmt/pull/1937>`_,
   `#1942 <https://github.com/fmtlib/fmt/pull/1942>`_,
   `#1949 <https://github.com/fmtlib/fmt/issues/1949>`_).
