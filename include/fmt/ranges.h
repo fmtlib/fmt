@@ -633,7 +633,7 @@ struct formatter<
     if (it == end || *it == '}') return it;
 
     if (*it != ':')
-      throw format_error("no top-level range formatters supported");
+      FMT_THROW(format_error("no top-level range formatters supported"));
 
     custom_specs_ = true;
     ++it;
