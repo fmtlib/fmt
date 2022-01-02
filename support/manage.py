@@ -240,7 +240,7 @@ def release(args):
     # Update the version in the changelog.
     title_len = 0
     for line in fileinput.input(changelog_path, inplace=True):
-        if line.decode('utf-8').startswith(version + ' - TBD'):
+        if line.startswith(version + ' - TBD'):
             line = version + ' - ' + datetime.date.today().isoformat()
             title_len = len(line)
             line += '\n'
