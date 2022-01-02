@@ -582,6 +582,33 @@ template <typename T, typename Char> struct is_range {
       !std::is_constructible<detail::std_string_view<Char>, T>::value;
 };
 
+namespace detail {
+template <typename Context, typename Element> struct range_mapper {
+  using mapper = arg_mapper<Context>;
+
+  template <typename T,
+            FMT_ENABLE_IF(has_formatter<remove_cvref_t<T>, Context>::value)>
+  static auto map(T&& value) -> T&& {
+    return static_cast<T&&>(value);
+  }
+  template <typename T,
+            FMT_ENABLE_IF(!has_formatter<remove_cvref_t<T>, Context>::value)>
+  static auto map(T&& value)
+      -> decltype(mapper().map(static_cast<T&&>(value))) {
+    return mapper().map(static_cast<T&&>(value));
+  }
+};
+
+template <typename Char, typename Element>
+using range_formatter_type =
+    conditional_t<is_formattable<Element, Char>::value,
+                  formatter<remove_cvref_t<decltype(
+                                range_mapper<buffer_context<Char>, Element>{}
+                                    .map(std::declval<Element>()))>,
+                            Char>,
+                  fallback_formatter<Element, Char>>;
+}  // namespace detail
+
 template <typename R, typename Char>
 struct formatter<
     R, Char,
@@ -594,26 +621,8 @@ struct formatter<
 #endif
                 >> {
 
-  using context = buffer_context<Char>;
-  using mapper = detail::arg_mapper<context>;
-  using element = detail::uncvref_type<R>;
-
-  template <typename T,
-            FMT_ENABLE_IF(has_formatter<remove_cvref_t<T>, context>::value)>
-  static auto map(T&& value) -> T&& {
-    return static_cast<T&&>(value);
-  }
-  template <typename T,
-            FMT_ENABLE_IF(!has_formatter<remove_cvref_t<T>, context>::value)>
-  static auto map(T&& value)
-      -> decltype(mapper().map(static_cast<T&&>(value))) {
-    return mapper().map(static_cast<T&&>(value));
-  }
-
-  using formatter_type = conditional_t<
-      is_formattable<element, Char>::value,
-      formatter<remove_cvref_t<decltype(map(std::declval<element>()))>, Char>,
-      detail::fallback_formatter<element, Char>>;
+  using formatter_type =
+      detail::range_formatter_type<Char, detail::uncvref_type<R>>;
   formatter_type underlying_;
   bool custom_specs_ = false;
 
@@ -621,14 +630,10 @@ struct formatter<
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
     auto it = ctx.begin();
     auto end = ctx.end();
-    if (it == end || *it == '}') {
-      return it;
-    }
+    if (it == end || *it == '}') return it;
 
-    if (*it != ':') {
-      // no top-level range formatters yet
+    if (*it != ':')
       throw format_error("no top-level range formatters supported");
-    }
 
     custom_specs_ = true;
     ++it;
