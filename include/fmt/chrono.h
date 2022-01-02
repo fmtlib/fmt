@@ -538,7 +538,7 @@ FMT_BEGIN_DETAIL_NAMESPACE
 // Writes two-digit numbers a, b and c separated by sep to buf.
 // The method by Pavel Novikov based on
 // https://johnnylee-sde.github.io/Fast-unsigned-integer-to-time-string/.
-inline void write_digit2_separated(char* buf, unsigned a, unsigned b,
+inline void write_digit2_separated(char (&buf)[8], unsigned a, unsigned b,
                                    unsigned c, char sep) {
   unsigned long long digits =
       a | (b << 24) | (static_cast<unsigned long long>(c) << 48);
@@ -558,7 +558,7 @@ inline void write_digit2_separated(char* buf, unsigned a, unsigned b,
   auto usep = static_cast<unsigned long long>(sep);
   // Add ASCII '0' to each digit byte and insert separators.
   digits |= 0x3030003030003030 | (usep << 16) | (usep << 40);
-  memcpy(buf, &digits, 8);
+  memcpy(buf, &digits, sizeof buf);
 }
 
 template <typename Period> FMT_CONSTEXPR inline const char* get_units() {
