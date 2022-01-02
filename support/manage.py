@@ -270,9 +270,9 @@ def release(args):
 
     # Create a release on GitHub.
     fmt_repo.push('origin', 'release')
-    params = {'access_token': os.getenv('FMT_TOKEN')}
+    auth_headers = {'Authorization': 'token ' + os.getenv('FMT_TOKEN')}
     r = requests.post('https://api.github.com/repos/fmtlib/fmt/releases',
-                      params=params,
+                      headers=auth_headers,
                       data=json.dumps({'tag_name': version,
                                        'target_commitish': 'release',
                                        'body': changes, 'draft': True}))
@@ -283,8 +283,8 @@ def release(args):
     package = 'fmt-{}.zip'.format(version)
     r = requests.post(
         '{}/{}/assets?name={}'.format(uploads_url, id, package),
-        headers={'Content-Type': 'application/zip'},
-        params=params, data=open('build/fmt/' + package, 'rb'))
+        headers={'Content-Type': 'application/zip'} | auth_headers,
+        data=open('build/fmt/' + package, 'rb'))
     if r.status_code != 201:
         raise Exception('Failed to upload an asset ' + str(r))
 
