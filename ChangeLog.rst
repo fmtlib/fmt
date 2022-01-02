@@ -60,6 +60,20 @@
   (`#2564 <https://github.com/fmtlib/fmt/pull/2564>`_).
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
 
+* Added ``fmt::group_digits`` that formats integers with a non-localized digit
+  separator (comma) for groups of three digits.
+  For example (`godbolt <https://godbolt.org/z/TxGxG9Poq>`__):
+
+  .. code:: c++
+
+     #include <fmt/format.h>
+
+     int main() {
+       fmt::print("{} dollars", fmt::group_digits(1000000));
+     }
+
+  prints ``1,000,000 dollars``.
+
 * Added support for faint, conceal, reverse and blink text styles
   (`#2394 <https://github.com/fmtlib/fmt/pull/2394>`_):
 
@@ -67,6 +81,8 @@
 
   Thanks `@benit8 (Benoît Lormeau) <https://github.com/benit8>`_ and
   `@data-man (Dmitry Atamanov) <https://github.com/data-man>`_.
+
+* Decimal point is now localized when using the ``L`` specifier.
 
 * Added experimental support for compile-time floating point formatting
   (`#2426 <https://github.com/fmtlib/fmt/pull/2426>`_,
@@ -94,28 +110,57 @@
 
   Thanks `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_.
 
-* Implemented escaping of string range elements. For example:
+* Implemented escaping of string range elements.
+  For example (`godbolt <https://godbolt.org/z/rKvM1vKf3>`__):
 
   .. code:: c++
 
      #include <fmt/ranges.h>
+     #include <vector>
 
      int main() {
-       fmt::print("{}", std::vector<std::string>{"\naan"};
+       fmt::print("{}", std::vector<std::string>{"\naan"});
      }
 
   is now printed as::
 
-  ["\naan"]
+    ["\naan"]
 
   instead of::
   
-  ["
-  aan"]
+    ["
+    aan"]
+
+* Switched to JSON-like representation of maps and sets for consistency with
+  Python's `str.format``.
+  For example (`godbolt <https://godbolt.org/z/seKjoY9W5>`__):
+
+  .. code:: c++
+
+     #include <fmt/ranges.h>
+     #include <map>
+
+     int main() {
+       fmt::print("{}", std::map<std::string, int>{{"answer", 42}});
+     }
+
+  is now printed as::
+
+    {"answer": 42}
 
 * Extended ``fmt::join`` to support C++20-only ranges
   (`#2549 <https://github.com/fmtlib/fmt/pull/2549>`_).
   Thanks `@BRevzin (Barry Revzin) <https://github.com/BRevzin>`_.
+
+* Optimized handling of non-const-iterable ranges and implemented initial
+  support for non-const-formattable types.
+
+* Disabled implicit conversions of scoped enums to integers that was
+  accidentally introduced in earlier versions
+  (`#1841 <https://github.com/fmtlib/fmt/pull/1841>`_).
+
+* Deprecated implicit conversion of ``[const] signed char*`` and 
+  ``[const] unsigned char*`` to C strings.
 
 * Deprecated ``_format``, a legacy UDL-based format API
   (`#2646 <https://github.com/fmtlib/fmt/pull/2646>`_).
@@ -238,6 +283,7 @@
   `#2408 <https://github.com/fmtlib/fmt/issues/2408>`_,
   `#2414 <https://github.com/fmtlib/fmt/pull/2414>`_,
   `#2427 <https://github.com/fmtlib/fmt/pull/2427>`_,
+  `#2432 <https://github.com/fmtlib/fmt/pull/2432>`_,
   `#2442 <https://github.com/fmtlib/fmt/pull/2442>`_,
   `#2434 <https://github.com/fmtlib/fmt/pull/2434>`_,
   `#2439 <https://github.com/fmtlib/fmt/issues/2439>`_,
@@ -291,6 +337,7 @@
   `@jcelerier (Jean-Michaël Celerier) <https://github.com/jcelerier>`_,
   `@mborn-adi (Mathias Born) <https://github.com/mborn-adi>`_,
   `@BrukerJWD (Jonathan W) <https://github.com/BrukerJWD>`_,
+  `@spyridon97 (Spiros Tsalikis) <https://github.com/spyridon97>`_,
   `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_,
   `@oliverlee (Oliver Lee) <https://github.com/oliverlee>`_,
   `@joshessman-llnl (Josh Essman) <https://github.com/joshessman-llnl>`_,
