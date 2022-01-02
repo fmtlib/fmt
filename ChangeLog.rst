@@ -1,5 +1,5 @@
-8.1.0 - TBD
------------
+8.1.0 - 2022-01-02
+------------------
 
 * Optimized chrono formatting
   (`#2500 <https://github.com/fmtlib/fmt/pull/2500>`_,
