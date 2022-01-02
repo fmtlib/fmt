@@ -72,7 +72,7 @@
        fmt::print("{} dollars", fmt::group_digits(1000000));
      }
 
-  prints ``1,000,000 dollars``.
+  prints "1,000,000 dollars".
 
 * Added support for faint, conceal, reverse and blink text styles
   (`#2394 <https://github.com/fmtlib/fmt/pull/2394>`_):
@@ -81,8 +81,6 @@
 
   Thanks `@benit8 (Benoît Lormeau) <https://github.com/benit8>`_ and
   `@data-man (Dmitry Atamanov) <https://github.com/data-man>`_.
-
-* Decimal point is now localized when using the ``L`` specifier.
 
 * Added experimental support for compile-time floating point formatting
   (`#2426 <https://github.com/fmtlib/fmt/pull/2426>`_,
@@ -132,7 +130,7 @@
     aan"]
 
 * Switched to JSON-like representation of maps and sets for consistency with
-  Python's `str.format``.
+  Python's ``str.format``.
   For example (`godbolt <https://godbolt.org/z/seKjoY9W5>`__):
 
   .. code:: c++
@@ -184,6 +182,8 @@
 * Optimized writing to non-``char`` buffers
   (`#2477 <https://github.com/fmtlib/fmt/pull/2477>`_).
   Thanks `@Roman-Koshelev <https://github.com/Roman-Koshelev>`_.
+
+* Decimal point is now localized when using the ``L`` specifier.
 
 * Improved floating point formatter implementation
   (`#2498 <https://github.com/fmtlib/fmt/pull/2498>`_,
