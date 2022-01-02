@@ -56,7 +56,7 @@
   `#2588 <https://github.com/fmtlib/fmt/pull/2588>`_).
   Thanks `@lukester1975 <https://github.com/lukester1975>`_.
 
-* Fixed an overflow on invalid inputs in the `tm` formatter
+* Fixed an overflow on invalid inputs in the ``tm`` formatter
   (`#2564 <https://github.com/fmtlib/fmt/pull/2564>`_).
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
 
