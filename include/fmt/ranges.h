@@ -654,6 +654,7 @@ struct formatter<
     Char prefix = detail::is_set<R>::value ? '{' : '[';
     Char postfix = detail::is_set<R>::value ? '}' : ']';
 #endif
+    detail::range_mapper<buffer_context<Char>, detail::uncvref_type<R>> mapper;
     auto out = ctx.out();
     *out++ = prefix;
     int i = 0;
@@ -663,7 +664,7 @@ struct formatter<
       if (i > 0) out = detail::write_delimiter(out);
       if (custom_specs_) {
         ctx.advance_to(out);
-        out = underlying_.format(*it, ctx);
+        out = underlying_.format(mapper.map(*it), ctx);
       } else {
         out = detail::write_range_entry<Char>(out, *it);
       }
