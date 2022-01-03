@@ -1386,22 +1386,6 @@ TEST(format_test, format_cstring) {
       format_error, "string pointer is null");
 }
 
-TEST(format_test, format_schar_string) {
-  signed char str[] = "test";
-  EXPECT_EQ("test", fmt::format("{0:s}", str));
-  const signed char* const_str = str;
-  EXPECT_EQ("test", fmt::format("{0:s}", const_str));
-}
-
-TEST(format_test, format_uchar_string) {
-  unsigned char str[] = "test";
-  EXPECT_EQ("test", fmt::format("{0:s}", str));
-  const unsigned char* const_str = str;
-  EXPECT_EQ("test", fmt::format("{0:s}", const_str));
-  unsigned char* ptr = str;
-  EXPECT_EQ("test", fmt::format("{0:s}", ptr));
-}
-
 void function_pointer_test(int, double, std::string) {}
 
 TEST(format_test, format_pointer) {

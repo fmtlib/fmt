@@ -481,12 +481,6 @@ TEST(printf_test, string) {
   EXPECT_PRINTF(L"    (null)", L"%10s", null_wstr);
 }
 
-TEST(printf_test, uchar_string) {
-  unsigned char str[] = "test";
-  unsigned char* pstr = str;
-  EXPECT_EQ("test", fmt::sprintf("%s", pstr));
-}
-
 TEST(printf_test, pointer) {
   int n;
   void* p = &n;

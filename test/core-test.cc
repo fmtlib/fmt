@@ -740,10 +740,13 @@ struct convertible_to_pointer {
 enum class test_scoped_enum {};
 
 TEST(core_test, is_formattable) {
+#if 0
+  // This should be enabled once corresponding map overloads are gone.
   static_assert(fmt::is_formattable<signed char*>::value, "");
   static_assert(fmt::is_formattable<unsigned char*>::value, "");
   static_assert(fmt::is_formattable<const signed char*>::value, "");
   static_assert(fmt::is_formattable<const unsigned char*>::value, "");
+#endif
   static_assert(!fmt::is_formattable<wchar_t>::value, "");
 #ifdef __cpp_char8_t
   static_assert(!fmt::is_formattable<char8_t>::value, "");
@@ -767,11 +770,6 @@ TEST(core_test, is_formattable) {
 #endif
 
   static_assert(!fmt::is_formattable<convertible_to_pointer>::value, "");
-
-  static_assert(!fmt::is_formattable<signed char*, wchar_t>::value, "");
-  static_assert(!fmt::is_formattable<unsigned char*, wchar_t>::value, "");
-  static_assert(!fmt::is_formattable<const signed char*, wchar_t>::value, "");
-  static_assert(!fmt::is_formattable<const unsigned char*, wchar_t>::value, "");
 
   static_assert(!fmt::is_formattable<void (*)()>::value, "");
 
