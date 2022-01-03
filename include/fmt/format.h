@@ -1572,6 +1572,10 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
   static_assert(std::is_same<T, uint32_or_64_or_128_t<T>>::value, "");
   auto abs_value = arg.abs_value;
   auto prefix = arg.prefix;
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4061)
+#endif
   switch (specs.type) {
   case presentation_type::none:
   case presentation_type::dec: {
@@ -1621,19 +1625,12 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
   }
   case presentation_type::chr:
     return write_char(out, static_cast<Char>(abs_value), specs);
-  case presentation_type::hexfloat_lower:
-  case presentation_type::hexfloat_upper:
-  case presentation_type::exp_lower:
-  case presentation_type::exp_upper:
-  case presentation_type::fixed_lower:
-  case presentation_type::fixed_upper:
-  case presentation_type::general_lower:
-  case presentation_type::general_upper:
-  case presentation_type::string:
-  case presentation_type::pointer:
   default:
     throw_format_error("invalid type specifier");
   }
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
   return out;
 }
 template <typename Char, typename OutputIt, typename T>
