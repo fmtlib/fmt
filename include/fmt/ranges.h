@@ -222,8 +222,13 @@ template <class Tuple, class F> void for_each(Tuple&& tup, F&& f) {
 }
 
 template <typename Range>
-using uncvref_type =
-    remove_cvref_t<decltype(*detail::range_begin(std::declval<Range>()))>;
+using range_reference_type =
+    decltype(*detail::range_begin(std::declval<Range>()));
+
+// We don't use the Range's value_type for anything, but we do need the Range's
+// reference type, with cv-ref stripped
+template <typename Range>
+using uncvref_type = remove_cvref_t<range_reference_type<Range>>;
 
 template <typename OutputIt> OutputIt write_delimiter(OutputIt out) {
   *out++ = ',';
