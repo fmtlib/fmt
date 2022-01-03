@@ -17,10 +17,7 @@
 #include <cstring>  // std::memmove
 #include <cwchar>
 #include <exception>
-
-#ifndef FMT_STATIC_THOUSANDS_SEPARATOR
-#  include <locale>
-#endif
+#include <locale>
 
 #ifdef _WIN32
 #  include <io.h>  // _isatty
@@ -96,7 +93,6 @@ inline void fwrite_fully(const void* ptr, size_t size, size_t count,
   if (written < count) FMT_THROW(system_error(errno, "cannot write to file"));
 }
 
-#ifndef FMT_STATIC_THOUSANDS_SEPARATOR
 template <typename Locale>
 locale_ref::locale_ref(const Locale& loc) : locale_(&loc) {
   static_assert(std::is_same<Locale, std::locale>::value, "");
@@ -107,6 +103,7 @@ template <typename Locale> Locale locale_ref::get() const {
   return locale_ ? *static_cast<const std::locale*>(locale_) : std::locale();
 }
 
+#ifndef FMT_STATIC_THOUSANDS_SEPARATOR
 template <typename Char>
 FMT_FUNC auto thousands_sep_impl(locale_ref loc) -> thousands_sep_result<Char> {
   auto& facet = std::use_facet<std::numpunct<Char>>(loc.get<std::locale>());
