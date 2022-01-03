@@ -2769,6 +2769,15 @@ FMT_CONSTEXPR auto parse_float_type_spec(const basic_format_specs<Char>& specs,
   case presentation_type::hexfloat_lower:
     result.format = float_format::hex;
     break;
+  case presentation_type::dec:
+  case presentation_type::oct:
+  case presentation_type::hex_lower:
+  case presentation_type::hex_upper:
+  case presentation_type::bin_lower:
+  case presentation_type::bin_upper:
+  case presentation_type::chr:
+  case presentation_type::string:
+  case presentation_type::pointer:
   default:
     eh.on_error("invalid type specifier");
     break;

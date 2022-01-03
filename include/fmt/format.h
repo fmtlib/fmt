@@ -1621,6 +1621,16 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
   }
   case presentation_type::chr:
     return write_char(out, static_cast<Char>(abs_value), specs);
+  case presentation_type::hexfloat_lower:
+  case presentation_type::hexfloat_upper:
+  case presentation_type::exp_lower:
+  case presentation_type::exp_upper:
+  case presentation_type::fixed_lower:
+  case presentation_type::fixed_upper:
+  case presentation_type::general_lower:
+  case presentation_type::general_upper:
+  case presentation_type::string:
+  case presentation_type::pointer:
   default:
     throw_format_error("invalid type specifier");
   }
