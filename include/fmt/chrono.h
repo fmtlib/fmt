@@ -1082,7 +1082,7 @@ template <typename OutputIt, typename Char> class tm_writer {
   }
   template <typename T, FMT_ENABLE_IF(!has_member_data_tm_gmtoff<T>::value)>
   void format_utc_offset_impl(const T& tm) {
-#if defined(_WIN32)
+#if defined(_WIN32) && defined(_UCRT)
 #  if FMT_USE_TZSET
     tzset_once();
 #  endif
