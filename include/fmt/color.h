@@ -530,7 +530,10 @@ void vprint(std::FILE* f, const text_style& ts, const S& format,
   basic_memory_buffer<Char> buf;
   detail::vformat_to(buf, ts, to_string_view(format), args);
   buf.push_back(Char(0));
-  detail::fputs(buf.data(), f);
+  if (detail::is_utf8())
+    detail::print(f, basic_string_view<Char>(buf.begin(), buf.size()));
+  else
+    detail::fputs(buf.data(), f);
 }
 
 /**
