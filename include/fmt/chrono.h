@@ -558,7 +558,15 @@ inline void write_digit2_separated(char* buf, unsigned a, unsigned b,
   auto usep = static_cast<unsigned long long>(sep);
   // Add ASCII '0' to each digit byte and insert separators.
   digits |= 0x3030003030003030 | (usep << 16) | (usep << 40);
-  memcpy(buf, &digits, 8);
+
+  constexpr const size_t len = 8;
+  if (const_check(is_big_endian())) {
+    char tmp[len];
+    memcpy(tmp, &digits, len);
+    std::reverse_copy(tmp, tmp + len, buf);
+  } else {
+    memcpy(buf, &digits, len);
+  }
 }
 
 template <typename Period> FMT_CONSTEXPR inline const char* get_units() {

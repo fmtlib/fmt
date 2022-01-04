@@ -296,10 +296,18 @@ FMT_CONSTEXPR20 auto bit_cast(const From& from) -> To {
 }
 
 inline auto is_big_endian() -> bool {
+#ifdef _WIN32
+  return false;
+#elif defined(__BIG_ENDIAN__)
+  return true;
+#elif defined(__BYTE_ORDER__) && defined(__ORDER_BIG_ENDIAN__)
+  return __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__;
+#else
   struct bytes {
     char data[sizeof(int)];
   };
   return bit_cast<bytes>(1).data[0] == 0;
+#endif
 }
 
 // A fallback implementation of uintptr_t for systems that lack it.
@@ -309,7 +317,7 @@ struct fallback_uintptr {
   fallback_uintptr() = default;
   explicit fallback_uintptr(const void* p) {
     *this = bit_cast<fallback_uintptr>(p);
-    if (is_big_endian()) {
+    if (const_check(is_big_endian())) {
       for (size_t i = 0, j = sizeof(void*) - 1; i < j; ++i, --j)
         std::swap(value[i], value[j]);
     }
