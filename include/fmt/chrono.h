@@ -558,7 +558,7 @@ inline void write_digit2_separated(char* buf, unsigned a, unsigned b,
   auto usep = static_cast<unsigned long long>(sep);
   // Add ASCII '0' to each digit byte and insert separators.
   digits |= 0x3030003030003030 | (usep << 16) | (usep << 40);
-  if (is_big_endian()) {
+  if (const_check(is_big_endian())) {
     char tmp[8];
     memcpy(tmp, &digits, 8);
     std::reverse_copy(tmp, tmp + 8, buf);
