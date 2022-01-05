@@ -2575,6 +2575,12 @@ FMT_FUNC void report_system_error(int error_code,
   report_error(format_system_error, error_code, message);
 }
 
+// DEPRECATED!
+// This function is defined here and not inline for ABI compatiblity.
+FMT_FUNC void detail::error_handler::on_error(const char* message) {
+  throw_format_error(message);
+}
+
 FMT_FUNC std::string vformat(string_view fmt, format_args args) {
   // Don't optimize the "{}" case to keep the binary size small and because it
   // can be better optimized in fmt::format anyway.
