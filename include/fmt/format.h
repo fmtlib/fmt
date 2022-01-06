@@ -3038,14 +3038,8 @@ constexpr auto operator"" _a(const char* s, size_t) -> detail::udl_arg<char> {
 }
 #  endif
 
-/**
-  DEPRECATED! User-defined literal equivalent of fmt::format.
-
-  **Example**::
-
-    using namespace fmt::literals;
-    std::string message = "The answer is {}"_format(42);
- */
+// DEPRECATED!
+// User-defined literal equivalent of fmt::format.
 FMT_DEPRECATED constexpr auto operator"" _format(const char* s, size_t n)
     -> detail::udl_formatter<char> {
   return {{s, n}};
