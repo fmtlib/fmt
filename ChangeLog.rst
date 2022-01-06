@@ -1,5 +1,5 @@
-8.1.1 - TBD
------------
+8.1.1 - 2022-01-06
+------------------
 
 * Restored ABI compatibility with version 8.0.x
   (`#2695 <https://github.com/fmtlib/fmt/issues/2695>`_,
