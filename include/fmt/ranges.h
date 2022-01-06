@@ -221,9 +221,23 @@ template <class Tuple, class F> void for_each(Tuple&& tup, F&& f) {
   for_each(indexes, std::forward<Tuple>(tup), std::forward<F>(f));
 }
 
+#if FMT_MSC_VER
+// older MSVC doesn't get the reference type correctly for arrays
+template <typename R> struct range_reference_type_impl {
+  using type = decltype(*detail::range_begin(std::declval<R&>()));
+};
+
+template <typename T, std::size_t N> struct range_reference_type_impl<T[N]> {
+  using type = T&;
+};
+
+template <typename T>
+using range_reference_type = typename range_reference_type_impl<T>::type;
+#else
 template <typename Range>
 using range_reference_type =
-    decltype(*detail::range_begin(std::declval<Range>()));
+    decltype(*detail::range_begin(std::declval<Range&>()));
+#endif
 
 // We don't use the Range's value_type for anything, but we do need the Range's
 // reference type, with cv-ref stripped
