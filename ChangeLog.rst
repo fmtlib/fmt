@@ -6,7 +6,7 @@
   `#2696 <https://github.com/fmtlib/fmt/pull/2696>`_).
   Thanks `@saraedum (Julian Rüth) <https://github.com/saraedum>`_.
 
-* Fixed chorno formatting on big endian systems
+* Fixed chrono formatting on big endian systems
   (`#2698 <https://github.com/fmtlib/fmt/issues/2698>`_,
   `#2699 <https://github.com/fmtlib/fmt/pull/2699>`_).
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_ and
