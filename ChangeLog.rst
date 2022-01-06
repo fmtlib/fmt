@@ -9,7 +9,7 @@
 * Fixed chorno formatting on big endian systems
   (`#2698 <https://github.com/fmtlib/fmt/issues/2698>`_,
   `#2699 <https://github.com/fmtlib/fmt/pull/2699>`_).
-  Thanks `@saraedum (Julian Rüth) <https://github.com/saraedum>`_.
+  Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
 
 * Fixed a linkage error with mingw
   (`#2691 <https://github.com/fmtlib/fmt/issues/2691>`_,
