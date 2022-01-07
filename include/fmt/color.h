@@ -474,26 +474,27 @@ FMT_CONSTEXPR ansi_color_escape<Char> make_emphasis(emphasis em) FMT_NOEXCEPT {
   return ansi_color_escape<Char>(em);
 }
 
-template <typename Char>
-inline void fputs(const Char* chars, FILE* stream) FMT_NOEXCEPT {
-  std::fputs(chars, stream);
+template <typename Char> inline void fputs(const Char* chars, FILE* stream) {
+  int result = std::fputs(chars, stream);
+  if (result < 0)
+    FMT_THROW(system_error(errno, FMT_STRING("cannot write to file")));
 }
 
-template <>
-inline void fputs<wchar_t>(const wchar_t* chars, FILE* stream) FMT_NOEXCEPT {
-  std::fputws(chars, stream);
+template <> inline void fputs<wchar_t>(const wchar_t* chars, FILE* stream) {
+  int result = std::fputws(chars, stream);
+  if (result < 0)
+    FMT_THROW(system_error(errno, FMT_STRING("cannot write to file")));
 }
 
-template <typename Char> inline void reset_color(FILE* stream) FMT_NOEXCEPT {
+template <typename Char> inline void reset_color(FILE* stream) {
   fputs("\x1b[0m", stream);
 }
 
-template <> inline void reset_color<wchar_t>(FILE* stream) FMT_NOEXCEPT {
+template <> inline void reset_color<wchar_t>(FILE* stream) {
   fputs(L"\x1b[0m", stream);
 }
 
-template <typename Char>
-inline void reset_color(buffer<Char>& buffer) FMT_NOEXCEPT {
+template <typename Char> inline void reset_color(buffer<Char>& buffer) {
   auto reset_color = string_view("\x1b[0m");
   buffer.append(reset_color.begin(), reset_color.end());
 }
@@ -529,8 +530,12 @@ void vprint(std::FILE* f, const text_style& ts, const S& format,
             basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   basic_memory_buffer<Char> buf;
   detail::vformat_to(buf, ts, to_string_view(format), args);
-  buf.push_back(Char(0));
-  detail::fputs(buf.data(), f);
+  if (detail::is_utf8()) {
+    detail::print(f, basic_string_view<Char>(buf.begin(), buf.size()));
+  } else {
+    buf.push_back(Char(0));
+    detail::fputs(buf.data(), f);
+  }
 }
 
 /**
