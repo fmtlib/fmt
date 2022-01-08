@@ -360,7 +360,7 @@ Range Format Specifications
 Format specifications for range types have the following syntax:
 
 ..productionlist:: sf
-  range_format_spec: [:[`underlying_spec`]]
+  range_format_spec: [":" [`underlying_spec`]]
 
 The `underlying_spec` is parsed based on the formatter of the range's
 reference type.
