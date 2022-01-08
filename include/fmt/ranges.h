@@ -221,9 +221,28 @@ template <class Tuple, class F> void for_each(Tuple&& tup, F&& f) {
   for_each(indexes, std::forward<Tuple>(tup), std::forward<F>(f));
 }
 
+#if FMT_MSC_VER
+// older MSVC doesn't get the reference type correctly for arrays
+template <typename R> struct range_reference_type_impl {
+  using type = decltype(*detail::range_begin(std::declval<R&>()));
+};
+
+template <typename T, std::size_t N> struct range_reference_type_impl<T[N]> {
+  using type = T&;
+};
+
+template <typename T>
+using range_reference_type = typename range_reference_type_impl<T>::type;
+#else
 template <typename Range>
-using value_type =
-    remove_cvref_t<decltype(*detail::range_begin(std::declval<Range>()))>;
+using range_reference_type =
+    decltype(*detail::range_begin(std::declval<Range&>()));
+#endif
+
+// We don't use the Range's value_type for anything, but we do need the Range's
+// reference type, with cv-ref stripped
+template <typename Range>
+using uncvref_type = remove_cvref_t<range_reference_type<Range>>;
 
 template <typename OutputIt> OutputIt write_delimiter(OutputIt out) {
   *out++ = ',';
@@ -582,35 +601,79 @@ template <typename T, typename Char> struct is_range {
       !std::is_constructible<detail::std_string_view<Char>, T>::value;
 };
 
-template <typename T, typename Char>
+namespace detail {
+template <typename Context, typename Element> struct range_mapper {
+  using mapper = arg_mapper<Context>;
+
+  template <typename T,
+            FMT_ENABLE_IF(has_formatter<remove_cvref_t<T>, Context>::value)>
+  static auto map(T&& value) -> T&& {
+    return static_cast<T&&>(value);
+  }
+  template <typename T,
+            FMT_ENABLE_IF(!has_formatter<remove_cvref_t<T>, Context>::value)>
+  static auto map(T&& value)
+      -> decltype(mapper().map(static_cast<T&&>(value))) {
+    return mapper().map(static_cast<T&&>(value));
+  }
+};
+
+template <typename Char, typename Element>
+using range_formatter_type =
+    conditional_t<is_formattable<Element, Char>::value,
+                  formatter<remove_cvref_t<decltype(
+                                range_mapper<buffer_context<Char>, Element>{}
+                                    .map(std::declval<Element>()))>,
+                            Char>,
+                  fallback_formatter<Element, Char>>;
+}  // namespace detail
+
+template <typename R, typename Char>
 struct formatter<
-    T, Char,
-    enable_if_t<
-        fmt::is_range<T, Char>::value
+    R, Char,
+    enable_if_t<fmt::is_range<R, Char>::value
 // Workaround a bug in MSVC 2019 and earlier.
 #if !FMT_MSC_VER
-        && (is_formattable<detail::value_type<T>, Char>::value ||
-            detail::has_fallback_formatter<detail::value_type<T>, Char>::value)
+                && (is_formattable<detail::uncvref_type<R>, Char>::value ||
+                    detail::has_fallback_formatter<detail::uncvref_type<R>,
+                                                   Char>::value)
 #endif
-        >> {
+                >> {
+
+  using formatter_type =
+      detail::range_formatter_type<Char, detail::uncvref_type<R>>;
+  formatter_type underlying_;
+  bool custom_specs_ = false;
+
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
-    return ctx.begin();
+    auto it = ctx.begin();
+    auto end = ctx.end();
+    if (it == end || *it == '}') return it;
+
+    if (*it != ':')
+      FMT_THROW(format_error("no top-level range formatters supported"));
+
+    custom_specs_ = true;
+    ++it;
+    ctx.advance_to(it);
+    return underlying_.parse(ctx);
   }
 
   template <
       typename FormatContext, typename U,
       FMT_ENABLE_IF(
-          std::is_same<U, conditional_t<detail::has_const_begin_end<T>::value,
-                                        const T, T>>::value)>
+          std::is_same<U, conditional_t<detail::has_const_begin_end<R>::value,
+                                        const R, R>>::value)>
   auto format(U& range, FormatContext& ctx) -> decltype(ctx.out()) {
 #ifdef FMT_DEPRECATED_BRACED_RANGES
     Char prefix = '{';
     Char postfix = '}';
 #else
-    Char prefix = detail::is_set<T>::value ? '{' : '[';
-    Char postfix = detail::is_set<T>::value ? '}' : ']';
+    Char prefix = detail::is_set<R>::value ? '{' : '[';
+    Char postfix = detail::is_set<R>::value ? '}' : ']';
 #endif
+    detail::range_mapper<buffer_context<Char>, detail::uncvref_type<R>> mapper;
     auto out = ctx.out();
     *out++ = prefix;
     int i = 0;
@@ -618,7 +681,12 @@ struct formatter<
     auto end = std::end(range);
     for (; it != end; ++it) {
       if (i > 0) out = detail::write_delimiter(out);
-      out = detail::write_range_entry<Char>(out, *it);
+      if (custom_specs_) {
+        ctx.advance_to(out);
+        out = underlying_.format(mapper.map(*it), ctx);
+      } else {
+        out = detail::write_range_entry<Char>(out, *it);
+      }
       ++i;
     }
     *out++ = postfix;
@@ -629,14 +697,14 @@ struct formatter<
 template <typename T, typename Char>
 struct formatter<
     T, Char,
-    enable_if_t<
-        detail::is_map<T>::value
+    enable_if_t<detail::is_map<T>::value
 // Workaround a bug in MSVC 2019 and earlier.
 #if !FMT_MSC_VER
-        && (is_formattable<detail::value_type<T>, Char>::value ||
-            detail::has_fallback_formatter<detail::value_type<T>, Char>::value)
+                && (is_formattable<detail::uncvref_type<T>, Char>::value ||
+                    detail::has_fallback_formatter<detail::uncvref_type<T>,
+                                                   Char>::value)
 #endif
-        >> {
+                >> {
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
     return ctx.begin();
