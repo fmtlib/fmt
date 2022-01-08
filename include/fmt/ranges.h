@@ -222,7 +222,7 @@ template <class Tuple, class F> void for_each(Tuple&& tup, F&& f) {
 }
 
 #if FMT_MSC_VER
-// older MSVC doesn't get the reference type correctly for arrays
+// Older MSVC doesn't get the reference type correctly for arrays.
 template <typename R> struct range_reference_type_impl {
   using type = decltype(*detail::range_begin(std::declval<R&>()));
 };
@@ -240,7 +240,7 @@ using range_reference_type =
 #endif
 
 // We don't use the Range's value_type for anything, but we do need the Range's
-// reference type, with cv-ref stripped
+// reference type, with cv-ref stripped.
 template <typename Range>
 using uncvref_type = remove_cvref_t<range_reference_type<Range>>;
 
