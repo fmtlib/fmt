@@ -1664,6 +1664,7 @@ struct chrono_formatter {
   }
 
   template <typename Duration> void write_fractional_seconds(Duration d) {
+    FMT_ASSERT(!std::is_floating_point<typename Duration::rep>::value, "");
     constexpr auto num_fractional_digits =
         count_fractional_digits(Duration::period::num, Duration::period::den);
 
@@ -1674,12 +1675,9 @@ struct chrono_formatter {
     if (std::ratio_less<typename subsecond_precision::period,
                         std::chrono::seconds::period>::value) {
       *out++ = '.';
-      // Don't convert long double to integer seconds to avoid overflow.
-      using sec = conditional_t<
-          std::is_same<typename Duration::rep, long double>::value,
-          std::chrono::duration<long double>, std::chrono::seconds>;
-      auto fractional = detail::abs(d) - std::chrono::duration_cast<sec>(d);
-      const auto subseconds =
+      auto fractional =
+          detail::abs(d) - std::chrono::duration_cast<std::chrono::seconds>(d);
+      auto subseconds =
           std::chrono::treat_as_floating_point<
               typename subsecond_precision::rep>::value
               ? fractional.count()
