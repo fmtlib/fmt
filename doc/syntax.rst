@@ -350,7 +350,37 @@ are valid only for ``std::tm`` and not durations or time points.
 
 ``std::tm`` uses the system's `strftime
 <https://en.cppreference.com/w/cpp/chrono/c/strftime>`_ so refer to its
-documentation for details on supported conversion specifiers. 
+documentation for details on supported conversion specifiers.
+
+.. range-specs:
+
+Range Format Specifications
+===========================
+
+Format specifications for range types have the following syntax:
+
+..productionlist:: sf
+  range_format_spec: [":" [`underlying_spec`]]
+
+The `underlying_spec` is parsed based on the formatter of the range's
+reference type.
+
+By default, a range of characters or strings is printed escaped and quoted. But
+if any `underlying_spec` is provided (even if it is empty), then the characters
+or strings are printed according to the provided specification.
+
+Examples:
+
+  fmt::format("{}", std::vector{10, 20, 30});
+  // Result: [10, 20, 30]
+  fmt::format("{::#x}", std::vector{10, 20, 30});
+  // Result: [0xa, 0x14, 0x13]
+  fmt::format("{}", vector{'h', 'e', 'l', 'l', 'o'});
+  // Result: ['h', 'e', 'l', 'l', 'o']
+  fmt::format("{::}", vector{'h', 'e', 'l', 'l', 'o'});
+  // Result: [h, e, l, l, o]
+  fmt::format("{::d}", vector{'h', 'e', 'l', 'l', 'o'});
+  // Result: [104, 101, 108, 108, 111]
 
 .. _formatexamples:
 
