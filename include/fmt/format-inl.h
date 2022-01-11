@@ -907,6 +907,7 @@ inline uint64_t umul96_lower64(uint32_t x, uint64_t y) FMT_NOEXCEPT {
 // https://fmt.dev/papers/Grisu-Exact.pdf#page=5, section 3.4.
 inline int floor_log10_pow2(int e) FMT_NOEXCEPT {
   FMT_ASSERT(e <= 1700 && e >= -1700, "too large exponent");
+  static_assert((-1 >> 1) == -1, "right shift is not arithmetic");
   const int shift = 22;
   return (e * static_cast<int>(log10_2_significand >> (64 - shift))) >> shift;
 }
