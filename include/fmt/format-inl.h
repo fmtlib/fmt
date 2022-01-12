@@ -789,48 +789,36 @@ FMT_INLINE FMT_CONSTEXPR20 digits::result grisu_gen_digits(
 struct uint128_wrapper {
   uint128_wrapper() = default;
 
-#if FMT_USE_INT128
-  uint128_t internal_;
-
-  constexpr uint128_wrapper(uint64_t high, uint64_t low) FMT_NOEXCEPT
-      : internal_{static_cast<uint128_t>(low) |
-                  (static_cast<uint128_t>(high) << 64)} {}
-
-  constexpr uint128_wrapper(uint128_t u) : internal_{u} {}
-
-  constexpr uint64_t high() const FMT_NOEXCEPT {
-    return uint64_t(internal_ >> 64);
-  }
-  constexpr uint64_t low() const FMT_NOEXCEPT { return uint64_t(internal_); }
-
-  uint128_wrapper& operator+=(uint64_t n) FMT_NOEXCEPT {
-    internal_ += n;
-    return *this;
-  }
-#else
   uint64_t high_;
   uint64_t low_;
 
-  constexpr uint128_wrapper(uint64_t high, uint64_t low) FMT_NOEXCEPT
-      : high_{high},
-        low_{low} {}
+  constexpr uint128_wrapper(uint64_t high, uint64_t low) noexcept
+      : high_{high}, low_{low} {}
 
-  constexpr uint64_t high() const FMT_NOEXCEPT { return high_; }
-  constexpr uint64_t low() const FMT_NOEXCEPT { return low_; }
+  constexpr uint64_t high() const noexcept { return high_; }
+  constexpr uint64_t low() const noexcept { return low_; }
 
-  uint128_wrapper& operator+=(uint64_t n) FMT_NOEXCEPT {
-#  if defined(_MSC_VER) && defined(_M_X64)
-    unsigned char carry = _addcarry_u64(0, low_, n, &low_);
+  uint128_wrapper& operator+=(uint64_t n) & noexcept {
+#if FMT_HAS_BUILTIN(__builtin_addcll)
+    unsigned long long carry;
+    low_ = __builtin_addcll(low_, n, 0, &carry);
+    high_ = __builtin_addcll(high_, 0, carry, &carry);
+#elif FMT_HAS_BUILTIN(__builtin_ia32_addcarryx_u64)
+    unsigned long long result;
+    auto carry = __builtin_ia32_addcarryx_u64(0, low_, n, &result);
+    low_ = result;
+    __builtin_ia32_addcarryx_u64(carry, high_, 0, &result);
+    high_ = result;
+#elif defined(_MSC_VER) && defined(_M_X64)
+    auto carry = _addcarry_u64(0, low_, n, &low_);
     _addcarry_u64(carry, high_, 0, &high_);
-    return *this;
-#  else
-    uint64_t sum = low_ + n;
+#else
+    auto sum = low_ + n;
     high_ += (sum < low_ ? 1 : 0);
     low_ = sum;
-    return *this;
-#  endif
-  }
 #endif
+    return *this;
+  }
 };
 
 // Implementation of Dragonbox algorithm: https://github.com/jk-jeon/dragonbox.
@@ -838,7 +826,8 @@ namespace dragonbox {
 // Computes 128-bit result of multiplication of two 64-bit unsigned integers.
 inline uint128_wrapper umul128(uint64_t x, uint64_t y) FMT_NOEXCEPT {
 #if FMT_USE_INT128
-  return static_cast<uint128_t>(x) * static_cast<uint128_t>(y);
+  auto p = static_cast<uint128_t>(x) * static_cast<uint128_t>(y);
+  return {static_cast<uint64_t>(p >> 64), static_cast<uint64_t>(p)};
 #elif defined(_MSC_VER) && defined(_M_X64)
   uint128_wrapper result;
   result.low_ = _umul128(x, y, &result.high_);
