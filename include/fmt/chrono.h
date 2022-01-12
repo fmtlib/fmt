@@ -965,37 +965,37 @@ template <typename OutputIt, typename Char> class tm_writer {
   OutputIt out_;
   const std::tm& tm_;
 
-  auto tm_sec() const noexcept -> int {
+  auto tm_sec() const FMT_NOEXCEPT -> int {
     FMT_ASSERT(tm_.tm_sec >= 0 && tm_.tm_sec <= 61, "");
     return tm_.tm_sec;
   }
-  auto tm_min() const noexcept -> int {
+  auto tm_min() const FMT_NOEXCEPT -> int {
     FMT_ASSERT(tm_.tm_min >= 0 && tm_.tm_min <= 59, "");
     return tm_.tm_min;
   }
-  auto tm_hour() const noexcept -> int {
+  auto tm_hour() const FMT_NOEXCEPT -> int {
     FMT_ASSERT(tm_.tm_hour >= 0 && tm_.tm_hour <= 23, "");
     return tm_.tm_hour;
   }
-  auto tm_mday() const noexcept -> int {
+  auto tm_mday() const FMT_NOEXCEPT -> int {
     FMT_ASSERT(tm_.tm_mday >= 1 && tm_.tm_mday <= 31, "");
     return tm_.tm_mday;
   }
-  auto tm_mon() const noexcept -> int {
+  auto tm_mon() const FMT_NOEXCEPT -> int {
     FMT_ASSERT(tm_.tm_mon >= 0 && tm_.tm_mon <= 11, "");
     return tm_.tm_mon;
   }
-  auto tm_year() const noexcept -> long long { return 1900ll + tm_.tm_year; }
-  auto tm_wday() const noexcept -> int {
+  auto tm_year() const FMT_NOEXCEPT -> long long { return 1900ll + tm_.tm_year; }
+  auto tm_wday() const FMT_NOEXCEPT -> int {
     FMT_ASSERT(tm_.tm_wday >= 0 && tm_.tm_wday <= 6, "");
     return tm_.tm_wday;
   }
-  auto tm_yday() const noexcept -> int {
+  auto tm_yday() const FMT_NOEXCEPT -> int {
     FMT_ASSERT(tm_.tm_yday >= 0 && tm_.tm_yday <= 365, "");
     return tm_.tm_yday;
   }
 
-  auto tm_hour12() const noexcept -> int {
+  auto tm_hour12() const FMT_NOEXCEPT -> int {
     const auto h = tm_hour();
     const auto z = h < 12 ? h : h - 12;
     return z == 0 ? 12 : z;
@@ -1005,7 +1005,7 @@ template <typename OutputIt, typename Char> class tm_writer {
   // do if the year is negative or exceeds 9999. Use the convention that %C
   // concatenated with %y yields the same output as %Y, and that %Y contains at
   // least 4 characters, with more only if necessary.
-  auto split_year_lower(long long year) const noexcept -> int {
+  auto split_year_lower(long long year) const FMT_NOEXCEPT -> int {
     auto l = year % 100;
     if (l < 0) l = -l;  // l in [0, 99]
     return static_cast<int>(l);
@@ -1013,7 +1013,7 @@ template <typename OutputIt, typename Char> class tm_writer {
 
   // Algorithm:
   // https://en.wikipedia.org/wiki/ISO_week_date#Calculating_the_week_number_from_a_month_and_day_of_the_month_or_ordinal_date
-  auto iso_year_weeks(long long curr_year) const noexcept -> int {
+  auto iso_year_weeks(long long curr_year) const FMT_NOEXCEPT -> int {
     const auto prev_year = curr_year - 1;
     const auto curr_p =
         (curr_year + curr_year / 4 - curr_year / 100 + curr_year / 400) %
@@ -1023,18 +1023,18 @@ template <typename OutputIt, typename Char> class tm_writer {
         days_per_week;
     return 52 + ((curr_p == 4 || prev_p == 3) ? 1 : 0);
   }
-  auto iso_week_num(int tm_yday, int tm_wday) const noexcept -> int {
+  auto iso_week_num(int tm_yday, int tm_wday) const FMT_NOEXCEPT -> int {
     return (tm_yday + 11 - (tm_wday == 0 ? days_per_week : tm_wday)) /
            days_per_week;
   }
-  auto tm_iso_week_year() const noexcept -> long long {
+  auto tm_iso_week_year() const FMT_NOEXCEPT -> long long {
     const auto year = tm_year();
     const auto w = iso_week_num(tm_yday(), tm_wday());
     if (w < 1) return year - 1;
     if (w > iso_year_weeks(year)) return year + 1;
     return year;
   }
-  auto tm_iso_week_of_year() const noexcept -> int {
+  auto tm_iso_week_of_year() const FMT_NOEXCEPT -> int {
     const auto year = tm_year();
     const auto w = iso_week_num(tm_yday(), tm_wday());
     if (w < 1) return iso_year_weeks(year - 1);
@@ -1843,9 +1843,9 @@ class weekday {
 
  public:
   weekday() = default;
-  explicit constexpr weekday(unsigned wd) noexcept
+  explicit constexpr weekday(unsigned wd) FMT_NOEXCEPT
       : value(static_cast<unsigned char>(wd != 7 ? wd : 0)) {}
-  constexpr unsigned c_encoding() const noexcept { return value; }
+  constexpr unsigned c_encoding() const FMT_NOEXCEPT { return value; }
 };
 
 class year_month_day {};

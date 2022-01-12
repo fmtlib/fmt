@@ -2274,7 +2274,7 @@ inline auto find<false, char>(const char* first, const char* last, char value,
 // that the range is non-empty and the first character is a digit.
 template <typename Char>
 FMT_CONSTEXPR auto parse_nonnegative_int(const Char*& begin, const Char* end,
-                                         int error_value) noexcept -> int {
+                                         int error_value) FMT_NOEXCEPT -> int {
   FMT_ASSERT(begin != end && '0' <= *begin && *begin <= '9', "");
   unsigned value = 0, prev = 0;
   auto p = begin;
