@@ -265,6 +265,7 @@ class buffered_file {
 
   // We place parentheses around fileno to workaround a bug in some versions
   // of MinGW that define fileno as a macro.
+  // DEPRECATED! Rename to descriptor to avoid issues with macros.
   FMT_API int(fileno)() const;
 
   void vprint(string_view format_str, format_args args) {
