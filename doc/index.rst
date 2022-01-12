@@ -101,7 +101,7 @@ The code
   format(FMT_STRING("The answer is {:d}"), "forty-two");
 
 reports a compile-time error on compilers that support relaxed ``constexpr``.
-See `here <api.html#c.fmt>`_ for details.
+See `here <api.html#compile-time-format-string-checks>`_ for details.
 
 The following code
 
