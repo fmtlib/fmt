@@ -792,13 +792,13 @@ struct uint128_wrapper {
   uint64_t high_;
   uint64_t low_;
 
-  constexpr uint128_wrapper(uint64_t high, uint64_t low) noexcept
+  constexpr uint128_wrapper(uint64_t high, uint64_t low) FMT_NOEXCEPT
       : high_{high}, low_{low} {}
 
-  constexpr uint64_t high() const noexcept { return high_; }
-  constexpr uint64_t low() const noexcept { return low_; }
+  constexpr uint64_t high() const FMT_NOEXCEPT { return high_; }
+  constexpr uint64_t low() const FMT_NOEXCEPT { return low_; }
 
-  uint128_wrapper& operator+=(uint64_t n) & noexcept {
+  uint128_wrapper& operator+=(uint64_t n) FMT_NOEXCEPT {
 #if FMT_HAS_BUILTIN(__builtin_addcll)
     unsigned long long carry;
     low_ = __builtin_addcll(low_, n, 0, &carry);
