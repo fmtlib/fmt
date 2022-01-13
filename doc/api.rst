@@ -182,6 +182,11 @@ functions and locale support.
 Formatting User-defined Types
 -----------------------------
 
+The {fmt} library provides formatters for many standard C++ types.
+See :ref:`fmt/ranges.h <ranges-api>` for ranges and tuples including standard
+containers such as ``std::vector`` and :ref:`fmt/chrono.h <chrono-api>` for date
+and time formatting.
+
 To make a user-defined type formattable, specialize the ``formatter<T>`` struct
 template and implement ``parse`` and ``format`` methods::
 
