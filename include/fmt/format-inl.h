@@ -812,9 +812,8 @@ struct uint128_wrapper {
     auto carry = _addcarry_u64(0, low_, n, &low_);
     _addcarry_u64(carry, high_, 0, &high_);
 #else
-    auto sum = low_ + n;
-    high_ += (sum < low_ ? 1 : 0);
-    low_ = sum;
+    low_ += n;
+    high_ += (low_ < n ? 1 : 0);
 #endif
     return *this;
   }
