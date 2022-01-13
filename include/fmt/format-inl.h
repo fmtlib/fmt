@@ -990,22 +990,22 @@ inline bool divisible_by_power_of_5(uint64_t x, int exp) FMT_NOEXCEPT {
   return x * divtest_table[exp].mod_inv <= divtest_table[exp].max_quotient;
 }
 
-// Replaces n by floor(n / pow(5, N)) returning true if and only if n is
-// divisible by pow(5, N).
-// Precondition: n <= 2 * pow(5, N + 1).
+// Replaces n by floor(n / pow(10, N)) returning true if and only if n is
+// divisible by pow(10, N).
+// Precondition: n <= pow(10, N + 1).
 template <int N>
-bool check_divisibility_and_divide_by_pow5(uint32_t& n) FMT_NOEXCEPT {
+bool check_divisibility_and_divide_by_pow10(uint32_t& n) FMT_NOEXCEPT {
   static constexpr struct {
     uint32_t magic_number;
-    int bits_for_comparison;
-    uint32_t threshold;
-    int shift_amount;
-  } infos[] = {{0xcccd, 16, 0x3333, 18}, {0xa429, 8, 0x0a, 20}};
+    int margin_bits;
+    int divisibility_check_bits;
+  } infos[] = {{0x199a, 8, 8}, {0xa3d71, 10, 16}};
   constexpr auto info = infos[N - 1];
   n *= info.magic_number;
-  const uint32_t comparison_mask = (1u << info.bits_for_comparison) - 1;
-  bool result = (n & comparison_mask) <= info.threshold;
-  n >>= info.shift_amount;
+  n >>= margin_bits;
+  const uint32_t comparison_mask = (1u << info.divisibility_check_bits) - 1;
+  bool result = (n & comparison_mask) == 0;
+  n >>= info.divisibility_check_bits;
   return result;
 }
 
@@ -2111,7 +2111,7 @@ template <typename T> decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT {
   const cache_entry_type cache = cache_accessor<T>::get_cached_power(-minus_k);
   const int beta_minus_1 = exponent + floor_log2_pow10(-minus_k);
 
-  // Compute zi and deltai
+  // Compute zi and deltai.
   // 10^kappa <= deltai < 10^(kappa + 1)
   const uint32_t deltai = cache_accessor<T>::compute_delta(cache, beta_minus_1);
   const carrier_uint two_fc = significand << 1;
@@ -2119,10 +2119,10 @@ template <typename T> decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT {
   const carrier_uint zi =
       cache_accessor<T>::compute_mul(two_fr << beta_minus_1, cache);
 
-  // Step 2: Try larger divisor; remove trailing zeros if necessary
+  // Step 2: Try larger divisor; remove trailing zeros if necessary.
 
   // Using an upper bound on zi, we might be able to optimize the division
-  // better than the compiler; we are computing zi / big_divisor here
+  // better than the compiler; we are computing zi / big_divisor here.
   decimal_fp<T> ret_value;
   ret_value.significand = divide_by_10_to_kappa_plus_1(zi);
   uint32_t r = static_cast<uint32_t>(zi - float_info<T>::big_divisor *
@@ -2131,7 +2131,7 @@ template <typename T> decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT {
   if (r > deltai) {
     goto small_divisor_case_label;
   } else if (r < deltai) {
-    // Exclude the right endpoint if necessary
+    // Exclude the right endpoint if necessary.
     if (r == 0 && !include_right_endpoint &&
         is_endpoint_integer<T>(two_fr, exponent, minus_k)) {
       --ret_value.significand;
@@ -2141,7 +2141,7 @@ template <typename T> decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT {
   } else {
     // r == deltai; compare fractional parts
     // Check conditions in the order different from the paper
-    // to take advantage of short-circuiting
+    // to take advantage of short-circuiting.
     const carrier_uint two_fl = two_fc - 1;
     if ((!include_left_endpoint ||
          !is_endpoint_integer<T>(two_fl, exponent, minus_k)) &&
@@ -2151,59 +2151,44 @@ template <typename T> decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT {
   }
   ret_value.exponent = minus_k + float_info<T>::kappa + 1;
 
-  // We may need to remove trailing zeros
+  // We may need to remove trailing zeros.
   ret_value.exponent += remove_trailing_zeros(ret_value.significand);
   return ret_value;
 
-  // Step 3: Find the significand with the smaller divisor
+  // Step 3: Find the significand with the smaller divisor.
 
 small_divisor_case_label:
   ret_value.significand *= 10;
   ret_value.exponent = minus_k + float_info<T>::kappa;
 
-  const uint32_t mask = (1u << float_info<T>::kappa) - 1;
   auto dist = r - (deltai / 2) + (float_info<T>::small_divisor / 2);
+  bool const approx_y_parity = ((dist ^ (small_divisor / 2)) & 1) != 0;
 
-  // Is dist divisible by 2^kappa?
-  if ((dist & mask) == 0) {
-    const bool approx_y_parity =
-        ((dist ^ (float_info<T>::small_divisor / 2)) & 1) != 0;
-    dist >>= float_info<T>::kappa;
+  // Is dist divisible by 10^kappa?
+  bool divisible_by_10_to_the_kappa =
+      check_divisibility_and_divide_by_pow10<float_info<T>::kappa>(dist);
 
-    // Is dist divisible by 5^kappa?
-    if (check_divisibility_and_divide_by_pow5<float_info<T>::kappa>(dist)) {
-      ret_value.significand += dist;
+  // Add dist / 10^kappa to the significand.
+  ret_value.significand += dist;
 
-      // Check z^(f) >= epsilon^(f)
-      // We have either yi == zi - epsiloni or yi == (zi - epsiloni) - 1,
-      // where yi == zi - epsiloni if and only if z^(f) >= epsilon^(f)
-      // Since there are only 2 possibilities, we only need to care about the
-      // parity. Also, zi and r should have the same parity since the divisor
-      // is an even number
-      if (cache_accessor<T>::compute_mul_parity(two_fc, cache, beta_minus_1) !=
-          approx_y_parity) {
-        --ret_value.significand;
-      } else {
-        // If z^(f) >= epsilon^(f), we might have a tie
-        // when z^(f) == epsilon^(f), or equivalently, when y is an integer
-        if (is_center_integer<T>(two_fc, exponent, minus_k)) {
-          ret_value.significand = ret_value.significand % 2 == 0
-                                      ? ret_value.significand
-                                      : ret_value.significand - 1;
-        }
+  if (divisible_by_10_to_the_kappa) {
+    // Check z^(f) >= epsilon^(f).
+    // We have either yi == zi - epsiloni or yi == (zi - epsiloni) - 1,
+    // where yi == zi - epsiloni if and only if z^(f) >= epsilon^(f)
+    // Since there are only 2 possibilities, we only need to care about the
+    // parity. Also, zi and r should have the same parity since the divisor
+    // is an even number.
+    if (cache_accessor<T>::compute_mul_parity(two_fc, cache, beta_minus_1) !=
+        approx_y_parity) {
+      --ret_value.significand;
+    } else {
+      // If z^(f) >= epsilon^(f), we might have a tie
+      // when z^(f) == epsilon^(f), or equivalently, when y is an integer
+      if (is_center_integer<T>(two_fc, exponent, minus_k)) {
+        ret_value.significand = ret_value.significand % 2 == 0
+                                    ? ret_value.significand
+                                    : ret_value.significand - 1;
       }
-    }
-    // Is dist not divisible by 5^kappa?
-    else {
-      ret_value.significand += dist;
-    }
-  }
-  // Is dist not divisible by 2^kappa?
-  else {
-    // Since we know dist is small, we might be able to optimize the division
-    // better than the compiler; we are computing dist / small_divisor here
-    ret_value.significand +=
-        small_division_by_pow10<float_info<T>::kappa>(dist);
   }
   return ret_value;
 }
