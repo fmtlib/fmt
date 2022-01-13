@@ -1218,9 +1218,6 @@ template <> struct float_info<float> {
   static const int cache_bits = 64;
   static const int divisibility_check_by_5_threshold = 39;
   static const int case_fc_pm_half_lower_threshold = -1;
-  static const int case_fc_pm_half_upper_threshold = 6;
-  static const int case_fc_lower_threshold = -2;
-  static const int case_fc_upper_threshold = 6;
   static const int case_shorter_interval_left_endpoint_lower_threshold = 2;
   static const int case_shorter_interval_left_endpoint_upper_threshold = 3;
   static const int shorter_interval_tie_lower_threshold = -35;
@@ -1244,9 +1241,6 @@ template <> struct float_info<double> {
   static const int cache_bits = 128;
   static const int divisibility_check_by_5_threshold = 86;
   static const int case_fc_pm_half_lower_threshold = -2;
-  static const int case_fc_pm_half_upper_threshold = 9;
-  static const int case_fc_lower_threshold = -4;
-  static const int case_fc_upper_threshold = 9;
   static const int case_shorter_interval_left_endpoint_lower_threshold = 2;
   static const int case_shorter_interval_left_endpoint_upper_threshold = 3;
   static const int shorter_interval_tie_lower_threshold = -77;
