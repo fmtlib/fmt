@@ -936,7 +936,7 @@ bool check_divisibility_and_divide_by_pow10(uint32_t& n) FMT_NOEXCEPT {
   } infos[] = {{0x199a, 8, 8}, {0xa3d71, 10, 16}};
   constexpr auto info = infos[N - 1];
   n *= info.magic_number;
-  n >>= margin_bits;
+  n >>= info.margin_bits;
   const uint32_t comparison_mask = (1u << info.divisibility_check_bits) - 1;
   bool result = (n & comparison_mask) == 0;
   n >>= info.divisibility_check_bits;
@@ -2060,7 +2060,7 @@ template <typename T> decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT {
   // better than the compiler; we are computing zi / big_divisor here.
   decimal_fp<T> ret_value;
   ret_value.significand = divide_by_10_to_kappa_plus_1(z_mul.result);
-  const uint32_t r = static_cast<uint32_t>(
+  uint32_t r = static_cast<uint32_t>(
       z_mul.result - float_info<T>::big_divisor * ret_value.significand);
 
   if (r > deltai) {
@@ -2089,8 +2089,8 @@ template <typename T> decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT {
         goto small_divisor_case_label;
       }
     } else {
-      const typename cache_accessor<T>::compute_mul_parity_result x_mul = =
-          compute_mul_parity(two_fl, cache, beta_minus_1);
+      const typename cache_accessor<T>::compute_mul_parity_result x_mul =
+          cache_accessor<T>::compute_mul_parity(two_fl, cache, beta_minus_1);
       if (!x_mul.parity && !x_mul.is_integer) {
         goto small_divisor_case_label;
       }
@@ -2126,8 +2126,8 @@ small_divisor_case_label:
     // Since there are only 2 possibilities, we only need to care about the
     // parity. Also, zi and r should have the same parity since the divisor
     // is an even number.
-    const typename cache_accessor<T>::compute_mul_parity_result y_mul = =
-        compute_mul_parity(two_fc, cache, beta_minus_1);
+    const typename cache_accessor<T>::compute_mul_parity_result y_mul =
+        cache_accessor<T>::compute_mul_parity(two_fc, cache, beta_minus_1);
 
     if (y_mul.parity != approx_y_parity) {
       --ret_value.significand;
@@ -2140,8 +2140,9 @@ small_divisor_case_label:
                                     : ret_value.significand - 1;
       }
     }
-    return ret_value;
   }
+  return ret_value;
+}
 }  // namespace dragonbox
 
 // Formats a floating-point number using a variation of the Fixed-Precision
