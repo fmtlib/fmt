@@ -144,13 +144,8 @@
 #    define FMT_EXCEPTIONS 1
 #  endif
 #endif
-
 #ifndef FMT_NOEXCEPT
-#  if FMT_EXCEPTIONS
-#    define FMT_NOEXCEPT noexcept
-#  else
-#    define FMT_NOEXCEPT
-#  endif
+#  define FMT_NOEXCEPT noexcept
 #endif
 
 // [[noreturn]] is disabled on MSVC and NVCC because of bogus unreachable code
