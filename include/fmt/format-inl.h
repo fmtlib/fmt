@@ -864,26 +864,27 @@ inline uint64_t umul128_upper64(uint64_t x, uint64_t y) FMT_NOEXCEPT {
 #endif
 }
 
-// Computes upper 64 bits of multiplication of a 64-bit unsigned integer and a
+// Computes upper 128 bits of multiplication of a 64-bit unsigned integer and a
 // 128-bit unsigned integer.
-inline uint64_t umul192_upper64(uint64_t x, uint128_wrapper y) FMT_NOEXCEPT {
-  uint128_wrapper g0 = umul128(x, y.high());
-  g0 += umul128_upper64(x, y.low());
-  return g0.high();
+inline uint128_wrapper umul192_upper128(uint64_t x,
+                                        uint128_wrapper y) FMT_NOEXCEPT {
+  uint128_wrapper r = umul128(x, y.high());
+  r += umul128_upper64(x, y.low());
+  return r;
 }
 
-// Computes upper 32 bits of multiplication of a 32-bit unsigned integer and a
+// Computes upper 64 bits of multiplication of a 32-bit unsigned integer and a
 // 64-bit unsigned integer.
-inline uint32_t umul96_upper32(uint32_t x, uint64_t y) FMT_NOEXCEPT {
-  return static_cast<uint32_t>(umul128_upper64(x, y));
+inline uint64_t umul96_upper64(uint32_t x, uint64_t y) FMT_NOEXCEPT {
+  return umul128_upper64(uint64_t(x) << 32, y);
 }
 
-// Computes middle 64 bits of multiplication of a 64-bit unsigned integer and a
+// Computes lower 128 bits of multiplication of a 64-bit unsigned integer and a
 // 128-bit unsigned integer.
-inline uint64_t umul192_middle64(uint64_t x, uint128_wrapper y) FMT_NOEXCEPT {
-  uint64_t g01 = x * y.high();
-  uint64_t g10 = umul128_upper64(x, y.low());
-  return g01 + g10;
+inline uint64_t umul192_lower128(uint64_t x, uint128_wrapper y) FMT_NOEXCEPT {
+  uint64_t high = x * y.high();
+  uint128_wrapper high_low = umul128(x, y.low());
+  return {high + high_low.high(), high_low.low()};
 }
 
 // Computes lower 64 bits of multiplication of a 32-bit unsigned integer and a
@@ -1071,9 +1072,20 @@ template <> struct cache_accessor<float> {
     return pow10_significands[k - float_info<float>::min_k];
   }
 
-  static carrier_uint compute_mul(carrier_uint u,
-                                  const cache_entry_type& cache) FMT_NOEXCEPT {
-    return umul96_upper32(u, cache);
+  struct compute_mul_result {
+    carrier_uint result;
+    bool is_integer;
+  };
+  struct compute_mul_parity_result {
+    bool parity;
+    bool is_integer;
+  };
+
+  static compute_mul_result compute_mul(
+      carrier_uint u, const cache_entry_type& cache) FMT_NOEXCEPT {
+    auto r = umul96_upper64(u, cache);
+    return {static_cast<carrier_uint>(r >> 32),
+            static_cast<carrier_uint>(r) == 0};
   }
 
   static uint32_t compute_delta(const cache_entry_type& cache,
@@ -1081,13 +1093,15 @@ template <> struct cache_accessor<float> {
     return static_cast<uint32_t>(cache >> (64 - 1 - beta_minus_1));
   }
 
-  static bool compute_mul_parity(carrier_uint two_f,
-                                 const cache_entry_type& cache,
-                                 int beta_minus_1) FMT_NOEXCEPT {
+  static compute_mul_parity_result compute_mul_parity(
+      carrier_uint two_f, const cache_entry_type& cache,
+      int beta_minus_1) FMT_NOEXCEPT {
     FMT_ASSERT(beta_minus_1 >= 1, "");
     FMT_ASSERT(beta_minus_1 < 64, "");
 
-    return ((umul96_lower64(two_f, cache) >> (64 - beta_minus_1)) & 1) != 0;
+    auto r = umul96_lower64(two_f, cache);
+    return {((r >> (64 - beta_minus_1)) & 1) != 0,
+            static_cast<uint32_t>(r >> (32 - beta_minus_1)) == 0};
   }
 
   static carrier_uint compute_left_endpoint_for_shorter_interval_case(
@@ -1838,9 +1852,19 @@ template <> struct cache_accessor<double> {
 #endif
   }
 
-  static carrier_uint compute_mul(carrier_uint u,
-                                  const cache_entry_type& cache) FMT_NOEXCEPT {
-    return umul192_upper64(u, cache);
+  struct compute_mul_result {
+    carrier_uint result;
+    bool is_integer;
+  };
+  struct compute_mul_parity_result {
+    bool parity;
+    bool is_integer;
+  };
+
+  static compute_mul_result compute_mul(
+      carrier_uint u, const cache_entry_type& cache) FMT_NOEXCEPT {
+    auto r = umul192_upper128(u, cache);
+    return {r.high(), r.low() == 0};
   }
 
   static uint32_t compute_delta(cache_entry_type const& cache,
@@ -1848,13 +1872,16 @@ template <> struct cache_accessor<double> {
     return static_cast<uint32_t>(cache.high() >> (64 - 1 - beta_minus_1));
   }
 
-  static bool compute_mul_parity(carrier_uint two_f,
-                                 const cache_entry_type& cache,
-                                 int beta_minus_1) FMT_NOEXCEPT {
+  static compute_mul_parity_result compute_mul_parity(
+      carrier_uint two_f, const cache_entry_type& cache,
+      int beta_minus_1) FMT_NOEXCEPT {
     FMT_ASSERT(beta_minus_1 >= 1, "");
     FMT_ASSERT(beta_minus_1 < 64, "");
 
-    return ((umul192_middle64(two_f, cache) >> (64 - beta_minus_1)) & 1) != 0;
+    auto r = umul192_lower128(two_f, cache);
+    return {
+        ((r.high() >> (64 - beta_minus_1)) & 1) != 0,
+        ((r.high() << beta_minus_1) | (r.low() >> (64 - beta_minus_1))) == 0};
   }
 
   static carrier_uint compute_left_endpoint_for_shorter_interval_case(
@@ -2114,38 +2141,49 @@ template <typename T> decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT {
   // 10^kappa <= deltai < 10^(kappa + 1)
   const uint32_t deltai = cache_accessor<T>::compute_delta(cache, beta_minus_1);
   const carrier_uint two_fc = significand << 1;
-  const carrier_uint two_fr = two_fc | 1;
-  const carrier_uint zi =
-      cache_accessor<T>::compute_mul(two_fr << beta_minus_1, cache);
+  const typename cache_accessor<T>::compute_mul_result z_mul =
+      cache_accessor<T>::compute_mul((two_fc | 1) << beta_minus_1, cache);
 
   // Step 2: Try larger divisor; remove trailing zeros if necessary.
 
   // Using an upper bound on zi, we might be able to optimize the division
   // better than the compiler; we are computing zi / big_divisor here.
   decimal_fp<T> ret_value;
-  ret_value.significand = divide_by_10_to_kappa_plus_1(zi);
-  uint32_t r = static_cast<uint32_t>(zi - float_info<T>::big_divisor *
-                                              ret_value.significand);
+  ret_value.significand = divide_by_10_to_kappa_plus_1(z_mul.result);
+  const uint32_t r = static_cast<uint32_t>(
+      z_mul.result - float_info<T>::big_divisor * ret_value.significand);
 
   if (r > deltai) {
     goto small_divisor_case_label;
   } else if (r < deltai) {
     // Exclude the right endpoint if necessary.
-    if (r == 0 && !include_right_endpoint &&
-        is_endpoint_integer<T>(two_fr, exponent, minus_k)) {
+    if (r == 0 && z_mul.is_integer && !include_right_endpoint) {
       --ret_value.significand;
       r = float_info<T>::big_divisor;
       goto small_divisor_case_label;
     }
   } else {
-    // r == deltai; compare fractional parts
-    // Check conditions in the order different from the paper
-    // to take advantage of short-circuiting.
+    // r == deltai; compare fractional parts.
     const carrier_uint two_fl = two_fc - 1;
-    if ((!include_left_endpoint ||
-         !is_endpoint_integer<T>(two_fl, exponent, minus_k)) &&
-        !cache_accessor<T>::compute_mul_parity(two_fl, cache, beta_minus_1)) {
-      goto small_divisor_case_label;
+
+    if (!include_left_endpoint ||
+        exponent < float_info<T>::case_fc_pm_half_lower_threshold ||
+        exponent > float_info<T>::divisibility_check_by_5_threshold) {
+      // If the left endpoint is not included, the condition for
+      // success is z^(f) < delta^(f) (odd parity).
+      // Otherwise, the inequalities on exponent ensure that
+      // x is not an integer, so if z^(f) >= delta^(f) (even parity), we in fact
+      // have strict inequality.
+      if (!cache_accessor<T>::compute_mul_parity(two_fl, cache, beta_minus_1)
+               .parity) {
+        goto small_divisor_case_label;
+      }
+    } else {
+      const typename cache_accessor<T>::compute_mul_parity_result x_mul = =
+          compute_mul_parity(two_fl, cache, beta_minus_1);
+      if (!x_mul.parity && !x_mul.is_integer) {
+        goto small_divisor_case_label;
+      }
     }
   }
   ret_value.exponent = minus_k + float_info<T>::kappa + 1;
@@ -2160,37 +2198,40 @@ small_divisor_case_label:
   ret_value.significand *= 10;
   ret_value.exponent = minus_k + float_info<T>::kappa;
 
-  auto dist = r - (deltai / 2) + (float_info<T>::small_divisor / 2);
-  bool const approx_y_parity = ((dist ^ (small_divisor / 2)) & 1) != 0;
+  uint32_t dist = r - (deltai / 2) + (float_info<T>::small_divisor / 2);
+  const bool approx_y_parity =
+      ((dist ^ (float_info<T>::small_divisor / 2)) & 1) != 0;
 
   // Is dist divisible by 10^kappa?
-  bool divisible_by_10_to_the_kappa =
+  const bool divisible_by_small_divisor =
       check_divisibility_and_divide_by_pow10<float_info<T>::kappa>(dist);
 
   // Add dist / 10^kappa to the significand.
   ret_value.significand += dist;
 
-  if (divisible_by_10_to_the_kappa) {
+  if (divisible_by_small_divisor) {
     // Check z^(f) >= epsilon^(f).
     // We have either yi == zi - epsiloni or yi == (zi - epsiloni) - 1,
     // where yi == zi - epsiloni if and only if z^(f) >= epsilon^(f)
     // Since there are only 2 possibilities, we only need to care about the
     // parity. Also, zi and r should have the same parity since the divisor
     // is an even number.
-    if (cache_accessor<T>::compute_mul_parity(two_fc, cache, beta_minus_1) !=
-        approx_y_parity) {
+    const typename cache_accessor<T>::compute_mul_parity_result y_mul = =
+        compute_mul_parity(two_fc, cache, beta_minus_1);
+
+    if (y_mul.parity != approx_y_parity) {
       --ret_value.significand;
     } else {
       // If z^(f) >= epsilon^(f), we might have a tie
       // when z^(f) == epsilon^(f), or equivalently, when y is an integer
-      if (is_center_integer<T>(two_fc, exponent, minus_k)) {
+      if (y_mul.is_integer) {
         ret_value.significand = ret_value.significand % 2 == 0
                                     ? ret_value.significand
                                     : ret_value.significand - 1;
       }
+    }
+    return ret_value;
   }
-  return ret_value;
-}
 }  // namespace dragonbox
 
 // Formats a floating-point number using a variation of the Fixed-Precision
