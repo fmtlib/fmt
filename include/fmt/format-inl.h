@@ -881,7 +881,8 @@ inline uint64_t umul96_upper64(uint32_t x, uint64_t y) FMT_NOEXCEPT {
 
 // Computes lower 128 bits of multiplication of a 64-bit unsigned integer and a
 // 128-bit unsigned integer.
-inline uint64_t umul192_lower128(uint64_t x, uint128_wrapper y) FMT_NOEXCEPT {
+inline uint128_wrapper umul192_lower128(uint64_t x,
+                                        uint128_wrapper y) FMT_NOEXCEPT {
   uint64_t high = x * y.high();
   uint128_wrapper high_low = umul128(x, y.low());
   return {high + high_low.high(), high_low.low()};
