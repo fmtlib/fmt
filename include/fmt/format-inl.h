@@ -785,7 +785,7 @@ FMT_INLINE FMT_CONSTEXPR20 digits::result grisu_gen_digits(
   }
 }
 
-// A 128-bit integer type used internally,
+// A 128-bit integer type used internally.
 struct uint128_wrapper {
   uint128_wrapper() = default;
 
@@ -922,74 +922,6 @@ inline int floor_log10_pow2_minus_log10_4_over_3(int e) FMT_NOEXCEPT {
           static_cast<int>(log10_4_over_3_fractional_digits >>
                            (64 - shift_amount))) >>
          shift_amount;
-}
-
-// Returns true iff x is divisible by pow(2, exp).
-inline bool divisible_by_power_of_2(uint32_t x, int exp) FMT_NOEXCEPT {
-  FMT_ASSERT(exp >= 1, "");
-  FMT_ASSERT(x != 0, "");
-#ifdef FMT_BUILTIN_CTZ
-  return FMT_BUILTIN_CTZ(x) >= exp;
-#else
-  return exp < num_bits<uint32_t>() && x == ((x >> exp) << exp);
-#endif
-}
-inline bool divisible_by_power_of_2(uint64_t x, int exp) FMT_NOEXCEPT {
-  FMT_ASSERT(exp >= 1, "");
-  FMT_ASSERT(x != 0, "");
-#ifdef FMT_BUILTIN_CTZLL
-  return FMT_BUILTIN_CTZLL(x) >= exp;
-#else
-  return exp < num_bits<uint64_t>() && x == ((x >> exp) << exp);
-#endif
-}
-
-// Table entry type for divisibility test.
-template <typename T> struct divtest_table_entry {
-  T mod_inv;
-  T max_quotient;
-};
-
-// Returns true iff x is divisible by pow(5, exp).
-inline bool divisible_by_power_of_5(uint32_t x, int exp) FMT_NOEXCEPT {
-  FMT_ASSERT(exp <= 10, "too large exponent");
-  static constexpr const divtest_table_entry<uint32_t> divtest_table[] = {
-      {0x00000001, 0xffffffff}, {0xcccccccd, 0x33333333},
-      {0xc28f5c29, 0x0a3d70a3}, {0x26e978d5, 0x020c49ba},
-      {0x3afb7e91, 0x0068db8b}, {0x0bcbe61d, 0x0014f8b5},
-      {0x68c26139, 0x000431bd}, {0xae8d46a5, 0x0000d6bf},
-      {0x22e90e21, 0x00002af3}, {0x3a2e9c6d, 0x00000897},
-      {0x3ed61f49, 0x000001b7}};
-  return x * divtest_table[exp].mod_inv <= divtest_table[exp].max_quotient;
-}
-inline bool divisible_by_power_of_5(uint64_t x, int exp) FMT_NOEXCEPT {
-  FMT_ASSERT(exp <= 23, "too large exponent");
-  static constexpr const divtest_table_entry<uint64_t> divtest_table[] = {
-      {0x0000000000000001, 0xffffffffffffffff},
-      {0xcccccccccccccccd, 0x3333333333333333},
-      {0x8f5c28f5c28f5c29, 0x0a3d70a3d70a3d70},
-      {0x1cac083126e978d5, 0x020c49ba5e353f7c},
-      {0xd288ce703afb7e91, 0x0068db8bac710cb2},
-      {0x5d4e8fb00bcbe61d, 0x0014f8b588e368f0},
-      {0x790fb65668c26139, 0x000431bde82d7b63},
-      {0xe5032477ae8d46a5, 0x0000d6bf94d5e57a},
-      {0xc767074b22e90e21, 0x00002af31dc46118},
-      {0x8e47ce423a2e9c6d, 0x0000089705f4136b},
-      {0x4fa7f60d3ed61f49, 0x000001b7cdfd9d7b},
-      {0x0fee64690c913975, 0x00000057f5ff85e5},
-      {0x3662e0e1cf503eb1, 0x000000119799812d},
-      {0xa47a2cf9f6433fbd, 0x0000000384b84d09},
-      {0x54186f653140a659, 0x00000000b424dc35},
-      {0x7738164770402145, 0x0000000024075f3d},
-      {0xe4a4d1417cd9a041, 0x000000000734aca5},
-      {0xc75429d9e5c5200d, 0x000000000170ef54},
-      {0xc1773b91fac10669, 0x000000000049c977},
-      {0x26b172506559ce15, 0x00000000000ec1e4},
-      {0xd489e3a9addec2d1, 0x000000000002f394},
-      {0x90e860bb892c8d5d, 0x000000000000971d},
-      {0x502e79bf1b6f4f79, 0x0000000000001e39},
-      {0xdcd618596be30fe5, 0x000000000000060b}};
-  return x * divtest_table[exp].mod_inv <= divtest_table[exp].max_quotient;
 }
 
 // Replaces n by floor(n / pow(10, N)) returning true if and only if n is
@@ -1916,29 +1848,6 @@ bool is_left_endpoint_integer_shorter_interval(int exponent) FMT_NOEXCEPT {
                  T>::case_shorter_interval_left_endpoint_lower_threshold &&
          exponent <=
              float_info<T>::case_shorter_interval_left_endpoint_upper_threshold;
-}
-template <class T>
-bool is_endpoint_integer(typename float_info<T>::carrier_uint two_f,
-                         int exponent, int minus_k) FMT_NOEXCEPT {
-  if (exponent < float_info<T>::case_fc_pm_half_lower_threshold) return false;
-  // For k >= 0.
-  if (exponent <= float_info<T>::case_fc_pm_half_upper_threshold) return true;
-  // For k < 0.
-  if (exponent > float_info<T>::divisibility_check_by_5_threshold) return false;
-  return divisible_by_power_of_5(two_f, minus_k);
-}
-
-template <class T>
-bool is_center_integer(typename float_info<T>::carrier_uint two_f, int exponent,
-                       int minus_k) FMT_NOEXCEPT {
-  // Exponent for 5 is negative.
-  if (exponent > float_info<T>::divisibility_check_by_5_threshold) return false;
-  if (exponent > float_info<T>::case_fc_upper_threshold)
-    return divisible_by_power_of_5(two_f, minus_k);
-  // Both exponents are nonnegative.
-  if (exponent >= float_info<T>::case_fc_lower_threshold) return true;
-  // Exponent for 2 is negative.
-  return divisible_by_power_of_2(two_f, minus_k - exponent + 1);
 }
 
 // Remove trailing zeros from n and return the number of zeros removed (float)
