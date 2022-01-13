@@ -802,13 +802,12 @@ struct uint128_wrapper {
 #if FMT_HAS_BUILTIN(__builtin_addcll)
     unsigned long long carry;
     low_ = __builtin_addcll(low_, n, 0, &carry);
-    high_ = __builtin_addcll(high_, 0, carry, &carry);
+    high_ += carry;
 #elif FMT_HAS_BUILTIN(__builtin_ia32_addcarryx_u64)
     unsigned long long result;
     auto carry = __builtin_ia32_addcarryx_u64(0, low_, n, &result);
     low_ = result;
-    __builtin_ia32_addcarryx_u64(carry, high_, 0, &result);
-    high_ = result;
+    high_ += carry;
 #elif defined(_MSC_VER) && defined(_M_X64)
     auto carry = _addcarry_u64(0, low_, n, &low_);
     _addcarry_u64(carry, high_, 0, &high_);
