@@ -86,7 +86,7 @@ struct fallback_formatter<T, Char, enable_if_t<is_streamable<T, Char>::value>>
   using formatter<basic_string_view<Char>, Char>::parse;
 
   template <typename OutputIt>
-  auto format(const T& value, basic_format_context<OutputIt, Char>& ctx)
+  auto format(const T& value, basic_format_context<OutputIt, Char>& ctx) const
       -> OutputIt {
     auto buffer = basic_memory_buffer<Char>();
     format_value(buffer, value, ctx.locale());
@@ -96,7 +96,7 @@ struct fallback_formatter<T, Char, enable_if_t<is_streamable<T, Char>::value>>
 
   // DEPRECATED!
   template <typename OutputIt>
-  auto format(const T& value, basic_printf_context<OutputIt, Char>& ctx)
+  auto format(const T& value, basic_printf_context<OutputIt, Char>& ctx) const
       -> OutputIt {
     auto buffer = basic_memory_buffer<Char>();
     format_value(buffer, value, ctx.locale());
