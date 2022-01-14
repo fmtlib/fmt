@@ -201,6 +201,11 @@ TEST(compile_test, named) {
 #  endif
 }
 
+TEST(compile_test, join) {
+  unsigned char data[] = {0x1, 0x2, 0xaf};
+  EXPECT_EQ("0102af", fmt::format(FMT_COMPILE("{:02x}"), fmt::join(data, "")));
+}
+
 TEST(compile_test, format_to) {
   char buf[8];
   auto end = fmt::format_to(buf, FMT_COMPILE("{}"), 42);
