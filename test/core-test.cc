@@ -737,6 +737,24 @@ struct convertible_to_pointer {
   operator const int*() const { return nullptr; }
 };
 
+struct convertible_to_pointer_formattable {
+  operator const int*() const { return nullptr; }
+};
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<convertible_to_pointer_formattable> {
+  auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
+
+  auto format(convertible_to_pointer_formattable, format_context& ctx) const
+      -> decltype(ctx.out()) {
+    auto test = string_view("test");
+    return std::copy_n(test.data(), test.size(), ctx.out());
+  }
+};
+FMT_END_NAMESPACE
+
 enum class test_scoped_enum {};
 
 TEST(core_test, is_formattable) {
@@ -770,11 +788,12 @@ TEST(core_test, is_formattable) {
 #endif
 
   static_assert(!fmt::is_formattable<convertible_to_pointer>::value, "");
+  const auto f = convertible_to_pointer_formattable();
+  EXPECT_EQ(fmt::format("{}", f), "test");
 
   static_assert(!fmt::is_formattable<void (*)()>::value, "");
 
   struct s;
-
   static_assert(!fmt::is_formattable<int(s::*)>::value, "");
   static_assert(!fmt::is_formattable<int (s::*)()>::value, "");
   static_assert(!fmt::is_formattable<test_scoped_enum>::value, "");
