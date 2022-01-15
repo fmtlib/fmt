@@ -793,7 +793,8 @@ struct uint128_wrapper {
   uint64_t low_;
 
   constexpr uint128_wrapper(uint64_t high, uint64_t low) FMT_NOEXCEPT
-      : high_{high}, low_{low} {}
+      : high_{high},
+        low_{low} {}
 
   constexpr uint64_t high() const FMT_NOEXCEPT { return high_; }
   constexpr uint64_t low() const FMT_NOEXCEPT { return low_; }
@@ -2008,6 +2009,8 @@ template <typename T> decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT {
     exponent += float_info<T>::exponent_bias - float_info<T>::significand_bits;
 
     // Shorter interval case; proceed like Schubfach.
+    // In fact, when exponent == 1 and significand == 0, the interval is
+    // regular. However, it can be shown that the end-results are anyway same.
     if (significand == 0) return shorter_interval_case<T>(exponent);
 
     significand |=
@@ -2030,6 +2033,13 @@ template <typename T> decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT {
   // 10^kappa <= deltai < 10^(kappa + 1)
   const uint32_t deltai = cache_accessor<T>::compute_delta(cache, beta_minus_1);
   const carrier_uint two_fc = significand << 1;
+
+  // For the case of binary32, the result of integer check is not correct for
+  // 29711844 * 2^-81, and it is the unique counterexample. However, since
+  // 29711844 is even, this does not cause any problem for the endpoints; it can
+  // only cause a problem when we need to perform integer check for the center.
+  // Fortunately, with the input 297184444 * 2^-81, that branch is never
+  // executed, so we are fine.
   const typename cache_accessor<T>::compute_mul_result z_mul =
       cache_accessor<T>::compute_mul((two_fc | 1) << beta_minus_1, cache);
 
@@ -2039,8 +2049,8 @@ template <typename T> decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT {
   // better than the compiler; we are computing zi / big_divisor here.
   decimal_fp<T> ret_value;
   ret_value.significand = divide_by_10_to_kappa_plus_1(z_mul.result);
-  uint32_t r = static_cast<uint32_t>(
-      z_mul.result - float_info<T>::big_divisor * ret_value.significand);
+  uint32_t r = static_cast<uint32_t>(z_mul.result - float_info<T>::big_divisor *
+                                                        ret_value.significand);
 
   if (r > deltai) {
     goto small_divisor_case_label;
