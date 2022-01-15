@@ -1731,15 +1731,6 @@ template <> struct cache_accessor<double> {
         0x0001b1ae4d6e2ef5, 0x000878678326eac9, 0x002a5a058fc295ed,
         0x00d3c21bcecceda1, 0x0422ca8b0a00a425, 0x14adf4b7320334b9};
 
-    static constexpr const uint32_t pow10_recovery_errors[] = {
-        0x01450050, 0x01100010, 0x00500400, 0x00000140, 0x05040004, 0x5a6959a0,
-        0x04956996, 0x51451150, 0x00541551, 0x50551554, 0x04000101, 0x00151014,
-        0x00415000, 0x40000010, 0x01000000, 0x54565900, 0x05554155, 0x54454140,
-        0x55515551, 0x55555555, 0x55555455, 0x00555555, 0x41100001, 0x10001445,
-        0x00000400, 0x05111001, 0x41455440, 0x95555514, 0x01154555, 0x00104100,
-        0x55244004, 0x55656555, 0x01041502, 0x40540014, 0x41500044, 0x00410540,
-        0x00000000, 0x40404540, 0x00040001};
-
     static const int compression_ratio = 27;
 
     // Compute base index.
@@ -1768,18 +1759,8 @@ template <> struct cache_accessor<double> {
     recovered_cache =
         uint128_wrapper{(recovered_cache.low() >> alpha) | high_to_middle,
                         ((middle_low.low() >> alpha) | middle_to_low)};
-
-    // Get error.
-    int error_idx = (k - float_info<double>::min_k) / 16;
-    uint32_t error = (pow10_recovery_errors[error_idx] >>
-                      ((k - float_info<double>::min_k) % 16) * 2) &
-                     0x3;
-
-    // Add the error back.
-    FMT_ASSERT(
-        recovered_cache.low() + 1 >= error && recovered_cache.low() + 1 != 0,
-        "");
-    return {recovered_cache.high(), recovered_cache.low() + 1 - error};
+    FMT_ASSERT(recovered_cache.low() + 1 != 0, "");
+    return {recovered_cache.high(), recovered_cache.low() + 1};
 #endif
   }
 
