@@ -623,6 +623,10 @@ TEST(chrono_test, cpp20_duration_subsecond_support) {
   // fixed precision, and print zeros even if there is no fractional part.
   EXPECT_EQ(fmt::format("{:%S}", std::chrono::microseconds{7000000}),
             "07.000000");
+  EXPECT_EQ(fmt::format("{:%S}", std::chrono::duration<long long, std::ratio<1, 3>>(1)),
+            "00.333333");
+  EXPECT_EQ(fmt::format("{:%S}", std::chrono::duration<long long, std::ratio<1, 7>>(1)),
+            "00.142857");
 }
 
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR
