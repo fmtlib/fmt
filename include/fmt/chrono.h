@@ -1470,14 +1470,23 @@ inline std::chrono::duration<Rep, std::milli> get_milliseconds(
 #endif
 }
 
-// Returns the number of fractional digits in the range [0, 18] according to the
+// Counts the number of fractional digits in the range [0, 18] according to the
 // C++20 spec. If more than 18 fractional digits are required then returns 6 for
 // microseconds precision.
-constexpr int count_fractional_digits(long long num, long long den, int n = 0) {
-  return num % den == 0
-             ? n
-             : (n > 18 ? 6 : count_fractional_digits(num * 10, den, n + 1));
-}
+template <long long Num, long long Den, int N = 0,
+          bool Enabled =
+              (N < 19) && (Num <= std::numeric_limits<long long>::max() / 10)>
+struct count_fractional_digits {
+  static constexpr int value =
+      Num % Den == 0 ? N : count_fractional_digits<Num * 10, Den, N + 1>::value;
+};
+
+// Base case that doesn't instantiate any more templates
+// in order to avoid overflow.
+template <long long Num, long long Den, int N>
+struct count_fractional_digits<Num, Den, N, false> {
+  static constexpr int value = (Num % Den == 0) ? N : 6;
+};
 
 constexpr long long pow10(std::uint32_t n) {
   return n == 0 ? 1 : 10 * pow10(n - 1);
@@ -1666,7 +1675,8 @@ struct chrono_formatter {
   template <typename Duration> void write_fractional_seconds(Duration d) {
     FMT_ASSERT(!std::is_floating_point<typename Duration::rep>::value, "");
     constexpr auto num_fractional_digits =
-        count_fractional_digits(Duration::period::num, Duration::period::den);
+        count_fractional_digits<Duration::period::num,
+                                Duration::period::den>::value;
 
     using subsecond_precision = std::chrono::duration<
         typename std::common_type<typename Duration::rep,
@@ -1769,8 +1779,8 @@ struct chrono_formatter {
 
     if (ns == numeric_system::standard) {
       if (std::is_floating_point<rep>::value) {
-        auto num_fractional_digits =
-            count_fractional_digits(Period::num, Period::den);
+        constexpr auto num_fractional_digits =
+            count_fractional_digits<Period::num, Period::den>::value;
         auto buf = memory_buffer();
         format_to(std::back_inserter(buf), runtime("{:.{}f}"),
                   std::fmod(val * static_cast<rep>(Period::num) /
