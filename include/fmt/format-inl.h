@@ -2035,11 +2035,15 @@ template <typename T> decimal_fp<T> to_decimal(T x) FMT_NOEXCEPT {
   const carrier_uint two_fc = significand << 1;
 
   // For the case of binary32, the result of integer check is not correct for
-  // 29711844 * 2^-81, and it is the unique counterexample. However, since
-  // 29711844 is even, this does not cause any problem for the endpoints; it can
-  // only cause a problem when we need to perform integer check for the center.
-  // Fortunately, with the input 297184444 * 2^-81, that branch is never
-  // executed, so we are fine.
+  // 29711844 * 2^-82
+  // = 6.1442653300000000008655037797566933477355632930994033813476... * 10^-18
+  // and 29711844 * 2^-81
+  // = 1.2288530660000000001731007559513386695471126586198806762695... * 10^-17,
+  // and they are the unique counterexamples. However, since 29711844 is even,
+  // this does not cause any problem for the endpoints calculations; it can only
+  // cause a problem when we need to perform integer check for the center.
+  // Fortunately, with these inputs, that branch is never executed, so we are
+  // fine.
   const typename cache_accessor<T>::compute_mul_result z_mul =
       cache_accessor<T>::compute_mul((two_fc | 1) << beta_minus_1, cache);
 
