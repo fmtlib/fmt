@@ -83,7 +83,7 @@ class output_redirect {
 
  public:
   explicit output_redirect(FILE* file);
-  ~output_redirect() FMT_NOEXCEPT;
+  ~output_redirect() noexcept;
 
   output_redirect(const output_redirect&) = delete;
   void operator=(const output_redirect&) = delete;

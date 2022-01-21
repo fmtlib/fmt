@@ -23,7 +23,7 @@ output_redirect::output_redirect(FILE* f) : file_(f) {
   write_end.dup2(fd);
 }
 
-output_redirect::~output_redirect() FMT_NOEXCEPT {
+output_redirect::~output_redirect() noexcept {
   try {
     restore();
   } catch (const std::exception& e) {

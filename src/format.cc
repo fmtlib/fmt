@@ -70,10 +70,10 @@ int format_float(char* buf, std::size_t size, const char* format, int precision,
                        : snprintf_ptr(buf, size, format, precision, value);
 }
 
-template FMT_API dragonbox::decimal_fp<float> dragonbox::to_decimal(float x)
-    FMT_NOEXCEPT;
-template FMT_API dragonbox::decimal_fp<double> dragonbox::to_decimal(double x)
-    FMT_NOEXCEPT;
+template FMT_API dragonbox::decimal_fp<float> dragonbox::to_decimal(
+    float x) noexcept;
+template FMT_API dragonbox::decimal_fp<double> dragonbox::to_decimal(
+    double x) noexcept;
 }  // namespace detail
 
 // Workaround a bug in MSVC2013 that prevents instantiation of format_float.

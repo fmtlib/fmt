@@ -144,9 +144,6 @@
 #    define FMT_EXCEPTIONS 1
 #  endif
 #endif
-#ifndef FMT_NOEXCEPT
-#  define FMT_NOEXCEPT noexcept
-#endif
 
 // [[noreturn]] is disabled on MSVC and NVCC because of bogus unreachable code
 // warnings.
@@ -333,7 +330,7 @@ FMT_BEGIN_DETAIL_NAMESPACE
 template <typename... T> FMT_CONSTEXPR void ignore_unused(const T&...) {}
 
 constexpr FMT_INLINE auto is_constant_evaluated(bool default_value = false)
-    FMT_NOEXCEPT -> bool {
+    noexcept -> bool {
 #ifdef __cpp_lib_is_constant_evaluated
   ignore_unused(default_value);
   return std::is_constant_evaluated();
@@ -435,10 +432,10 @@ template <typename Char> class basic_string_view {
   using value_type = Char;
   using iterator = const Char*;
 
-  constexpr basic_string_view() FMT_NOEXCEPT : data_(nullptr), size_(0) {}
+  constexpr basic_string_view() noexcept : data_(nullptr), size_(0) {}
 
   /** Constructs a string reference object from a C string and a size. */
-  constexpr basic_string_view(const Char* s, size_t count) FMT_NOEXCEPT
+  constexpr basic_string_view(const Char* s, size_t count) noexcept
       : data_(s),
         size_(count) {}
 
@@ -460,29 +457,29 @@ template <typename Char> class basic_string_view {
   /** Constructs a string reference from a ``std::basic_string`` object. */
   template <typename Traits, typename Alloc>
   FMT_CONSTEXPR basic_string_view(
-      const std::basic_string<Char, Traits, Alloc>& s) FMT_NOEXCEPT
+      const std::basic_string<Char, Traits, Alloc>& s) noexcept
       : data_(s.data()),
         size_(s.size()) {}
 
   template <typename S, FMT_ENABLE_IF(std::is_same<
                                       S, detail::std_string_view<Char>>::value)>
-  FMT_CONSTEXPR basic_string_view(S s) FMT_NOEXCEPT : data_(s.data()),
+  FMT_CONSTEXPR basic_string_view(S s) noexcept : data_(s.data()),
                                                       size_(s.size()) {}
 
   /** Returns a pointer to the string data. */
-  constexpr auto data() const FMT_NOEXCEPT -> const Char* { return data_; }
+  constexpr auto data() const noexcept -> const Char* { return data_; }
 
   /** Returns the string size. */
-  constexpr auto size() const FMT_NOEXCEPT -> size_t { return size_; }
+  constexpr auto size() const noexcept -> size_t { return size_; }
 
-  constexpr auto begin() const FMT_NOEXCEPT -> iterator { return data_; }
-  constexpr auto end() const FMT_NOEXCEPT -> iterator { return data_ + size_; }
+  constexpr auto begin() const noexcept -> iterator { return data_; }
+  constexpr auto end() const noexcept -> iterator { return data_ + size_; }
 
-  constexpr auto operator[](size_t pos) const FMT_NOEXCEPT -> const Char& {
+  constexpr auto operator[](size_t pos) const noexcept -> const Char& {
     return data_[pos];
   }
 
-  FMT_CONSTEXPR void remove_prefix(size_t n) FMT_NOEXCEPT {
+  FMT_CONSTEXPR void remove_prefix(size_t n) noexcept {
     data_ += n;
     size_ -= n;
   }
@@ -629,14 +626,14 @@ class basic_format_parse_context : private ErrorHandler {
     Returns an iterator to the beginning of the format string range being
     parsed.
    */
-  constexpr auto begin() const FMT_NOEXCEPT -> iterator {
+  constexpr auto begin() const noexcept -> iterator {
     return format_str_.begin();
   }
 
   /**
     Returns an iterator past the end of the format string range being parsed.
    */
-  constexpr auto end() const FMT_NOEXCEPT -> iterator {
+  constexpr auto end() const noexcept -> iterator {
     return format_str_.end();
   }
 
@@ -765,10 +762,10 @@ template <typename T> class buffer {
  protected:
   // Don't initialize ptr_ since it is not accessed to save a few cycles.
   FMT_MSC_WARNING(suppress : 26495)
-  buffer(size_t sz) FMT_NOEXCEPT : size_(sz), capacity_(sz) {}
+  buffer(size_t sz) noexcept : size_(sz), capacity_(sz) {}
 
   FMT_CONSTEXPR20 buffer(T* p = nullptr, size_t sz = 0,
-                         size_t cap = 0) FMT_NOEXCEPT : ptr_(p),
+                         size_t cap = 0) noexcept : ptr_(p),
                                                         size_(sz),
                                                         capacity_(cap) {}
 
@@ -776,7 +773,7 @@ template <typename T> class buffer {
   buffer(buffer&&) = default;
 
   /** Sets the buffer data and capacity. */
-  FMT_CONSTEXPR void set(T* buf_data, size_t buf_capacity) FMT_NOEXCEPT {
+  FMT_CONSTEXPR void set(T* buf_data, size_t buf_capacity) noexcept {
     ptr_ = buf_data;
     capacity_ = buf_capacity;
   }
@@ -791,23 +788,23 @@ template <typename T> class buffer {
   buffer(const buffer&) = delete;
   void operator=(const buffer&) = delete;
 
-  auto begin() FMT_NOEXCEPT -> T* { return ptr_; }
-  auto end() FMT_NOEXCEPT -> T* { return ptr_ + size_; }
+  auto begin() noexcept -> T* { return ptr_; }
+  auto end() noexcept -> T* { return ptr_ + size_; }
 
-  auto begin() const FMT_NOEXCEPT -> const T* { return ptr_; }
-  auto end() const FMT_NOEXCEPT -> const T* { return ptr_ + size_; }
+  auto begin() const noexcept -> const T* { return ptr_; }
+  auto end() const noexcept -> const T* { return ptr_ + size_; }
 
   /** Returns the size of this buffer. */
-  constexpr auto size() const FMT_NOEXCEPT -> size_t { return size_; }
+  constexpr auto size() const noexcept -> size_t { return size_; }
 
   /** Returns the capacity of this buffer. */
-  constexpr auto capacity() const FMT_NOEXCEPT -> size_t { return capacity_; }
+  constexpr auto capacity() const noexcept -> size_t { return capacity_; }
 
   /** Returns a pointer to the buffer data. */
-  FMT_CONSTEXPR auto data() FMT_NOEXCEPT -> T* { return ptr_; }
+  FMT_CONSTEXPR auto data() noexcept -> T* { return ptr_; }
 
   /** Returns a pointer to the buffer data. */
-  FMT_CONSTEXPR auto data() const FMT_NOEXCEPT -> const T* { return ptr_; }
+  FMT_CONSTEXPR auto data() const noexcept -> const T* { return ptr_; }
 
   /** Clears this buffer. */
   void clear() { size_ = 0; }
@@ -1495,12 +1492,12 @@ class appender : public std::back_insert_iterator<detail::buffer<char>> {
 
  public:
   using std::back_insert_iterator<detail::buffer<char>>::back_insert_iterator;
-  appender(base it) FMT_NOEXCEPT : base(it) {}
+  appender(base it) noexcept : base(it) {}
   using _Unchecked_type = appender;  // Mark iterator as checked.
 
-  auto operator++() FMT_NOEXCEPT -> appender& { return *this; }
+  auto operator++() noexcept -> appender& { return *this; }
 
-  auto operator++(int) FMT_NOEXCEPT -> appender { return *this; }
+  auto operator++(int) noexcept -> appender { return *this; }
 };
 
 // A formatting argument. It is a trivially copyable/constructible type to
@@ -1546,7 +1543,7 @@ template <typename Context> class basic_format_arg {
 
   constexpr basic_format_arg() : type_(detail::type::none_type) {}
 
-  constexpr explicit operator bool() const FMT_NOEXCEPT {
+  constexpr explicit operator bool() const noexcept {
     return type_ != detail::type::none_type;
   }
 
@@ -1656,7 +1653,7 @@ class locale_ref {
   constexpr locale_ref() : locale_(nullptr) {}
   template <typename Locale> explicit locale_ref(const Locale& loc);
 
-  explicit operator bool() const FMT_NOEXCEPT { return locale_ != nullptr; }
+  explicit operator bool() const noexcept { return locale_ != nullptr; }
 
   template <typename Locale> auto get() const -> Locale;
 };

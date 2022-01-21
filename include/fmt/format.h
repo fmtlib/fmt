@@ -735,8 +735,7 @@ class basic_memory_buffer final : public detail::buffer<T> {
     of the other object to it.
     \endrst
    */
-  FMT_CONSTEXPR20 basic_memory_buffer(basic_memory_buffer&& other)
-      FMT_NOEXCEPT {
+  FMT_CONSTEXPR20 basic_memory_buffer(basic_memory_buffer&& other) noexcept {
     move(other);
   }
 
@@ -745,8 +744,7 @@ class basic_memory_buffer final : public detail::buffer<T> {
     Moves the content of the other ``basic_memory_buffer`` object to this one.
     \endrst
    */
-  auto operator=(basic_memory_buffer&& other) FMT_NOEXCEPT
-      -> basic_memory_buffer& {
+  auto operator=(basic_memory_buffer&& other) noexcept -> basic_memory_buffer& {
     FMT_ASSERT(this != &other, "");
     deallocate();
     move(other);
@@ -820,7 +818,7 @@ class FMT_API format_error : public std::runtime_error {
   format_error& operator=(const format_error&) = default;
   format_error(format_error&&) = default;
   format_error& operator=(format_error&&) = default;
-  ~format_error() FMT_NOEXCEPT override FMT_MSC_DEFAULT;
+  ~format_error() noexcept override FMT_MSC_DEFAULT;
 };
 
 /**
@@ -1039,15 +1037,11 @@ FMT_CONSTEXPR20 inline auto count_digits(uint32_t n) -> int {
   return count_digits_fallback(n);
 }
 
-template <typename Int> constexpr auto digits10() FMT_NOEXCEPT -> int {
+template <typename Int> constexpr auto digits10() noexcept -> int {
   return std::numeric_limits<Int>::digits10;
 }
-template <> constexpr auto digits10<int128_t>() FMT_NOEXCEPT -> int {
-  return 38;
-}
-template <> constexpr auto digits10<uint128_t>() FMT_NOEXCEPT -> int {
-  return 38;
-}
+template <> constexpr auto digits10<int128_t>() noexcept -> int { return 38; }
+template <> constexpr auto digits10<uint128_t>() noexcept -> int { return 38; }
 
 template <typename Char> struct thousands_sep_result {
   std::string grouping;
@@ -1254,8 +1248,7 @@ template <typename T> struct decimal_fp {
   int exponent;
 };
 
-template <typename T>
-FMT_API auto to_decimal(T x) FMT_NOEXCEPT -> decimal_fp<T>;
+template <typename T> FMT_API auto to_decimal(T x) noexcept -> decimal_fp<T>;
 }  // namespace dragonbox
 
 template <typename T>
@@ -2435,10 +2428,10 @@ auto vformat(const Locale& loc, basic_string_view<Char> format_str,
 using format_func = void (*)(detail::buffer<char>&, int, const char*);
 
 FMT_API void format_error_code(buffer<char>& out, int error_code,
-                               string_view message) FMT_NOEXCEPT;
+                               string_view message) noexcept;
 
 FMT_API void report_error(format_func func, int error_code,
-                          const char* message) FMT_NOEXCEPT;
+                          const char* message) noexcept;
 FMT_END_DETAIL_NAMESPACE
 
 FMT_API auto vsystem_error(int error_code, string_view format_str,
@@ -2484,12 +2477,11 @@ auto system_error(int error_code, format_string<T...> fmt, T&&... args)
   \endrst
  */
 FMT_API void format_system_error(detail::buffer<char>& out, int error_code,
-                                 const char* message) FMT_NOEXCEPT;
+                                 const char* message) noexcept;
 
 // Reports a system error without throwing an exception.
 // Can be used to report errors from destructors.
-FMT_API void report_system_error(int error_code,
-                                 const char* message) FMT_NOEXCEPT;
+FMT_API void report_system_error(int error_code, const char* message) noexcept;
 
 /** Fast integer formatter. */
 class format_int {

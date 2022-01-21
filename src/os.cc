@@ -107,7 +107,7 @@ class system_message {
   unsigned long result_;
   wchar_t* message_;
 
-  static bool is_whitespace(wchar_t c) FMT_NOEXCEPT {
+  static bool is_whitespace(wchar_t c) noexcept {
     return c == L' ' || c == L'\n' || c == L'\r' || c == L'\t' || c == L'\0';
   }
 
@@ -126,15 +126,15 @@ class system_message {
     }
   }
   ~system_message() { LocalFree(message_); }
-  explicit operator bool() const FMT_NOEXCEPT { return result_ != 0; }
-  operator basic_string_view<wchar_t>() const FMT_NOEXCEPT {
+  explicit operator bool() const noexcept { return result_ != 0; }
+  operator basic_string_view<wchar_t>() const noexcept {
     return basic_string_view<wchar_t>(message_, result_);
   }
 };
 
 class utf8_system_category final : public std::error_category {
  public:
-  const char* name() const FMT_NOEXCEPT override { return "system"; }
+  const char* name() const noexcept override { return "system"; }
   std::string message(int error_code) const override {
     system_message msg(error_code);
     if (msg) {
@@ -149,7 +149,7 @@ class utf8_system_category final : public std::error_category {
 
 }  // namespace detail
 
-FMT_API const std::error_category& system_category() FMT_NOEXCEPT {
+FMT_API const std::error_category& system_category() noexcept {
   static const detail::utf8_system_category category;
   return category;
 }
@@ -161,7 +161,7 @@ std::system_error vwindows_error(int err_code, string_view format_str,
 }
 
 void detail::format_windows_error(detail::buffer<char>& out, int error_code,
-                                  const char* message) FMT_NOEXCEPT {
+                                  const char* message) noexcept {
   FMT_TRY {
     system_message msg(error_code);
     if (msg) {
@@ -176,12 +176,12 @@ void detail::format_windows_error(detail::buffer<char>& out, int error_code,
   format_error_code(out, error_code, message);
 }
 
-void report_windows_error(int error_code, const char* message) FMT_NOEXCEPT {
+void report_windows_error(int error_code, const char* message) noexcept {
   report_error(detail::format_windows_error, error_code, message);
 }
 #endif  // _WIN32
 
-buffered_file::~buffered_file() FMT_NOEXCEPT {
+buffered_file::~buffered_file() noexcept {
   if (file_ && FMT_SYSTEM(fclose(file_)) != 0)
     report_system_error(errno, "cannot close file");
 }
@@ -225,7 +225,7 @@ file::file(cstring_view path, int oflag) {
     FMT_THROW(system_error(errno, "cannot open file {}", path.c_str()));
 }
 
-file::~file() FMT_NOEXCEPT {
+file::~file() noexcept {
   // Don't retry close in case of EINTR!
   // See http://linux.derkeiler.com/Mailing-Lists/Kernel/2005-09/3000.html
   if (fd_ != -1 && FMT_POSIX_CALL(close(fd_)) != 0)
@@ -299,7 +299,7 @@ void file::dup2(int fd) {
   }
 }
 
-void file::dup2(int fd, std::error_code& ec) FMT_NOEXCEPT {
+void file::dup2(int fd, std::error_code& ec) noexcept {
   int result = 0;
   FMT_RETRY(result, FMT_POSIX_CALL(dup2(fd_, fd)));
   if (result == -1) ec = std::error_code(errno, std::generic_category());
