@@ -10,6 +10,8 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>    // std::isfinite
+#include <cstring>  // std::memcpy
 #include <ctime>
 #include <iterator>
 #include <locale>
@@ -561,10 +563,10 @@ inline void write_digit2_separated(char* buf, unsigned a, unsigned b,
   constexpr const size_t len = 8;
   if (const_check(is_big_endian())) {
     char tmp[len];
-    memcpy(tmp, &digits, len);
+    std::memcpy(tmp, &digits, len);
     std::reverse_copy(tmp, tmp + len, buf);
   } else {
-    memcpy(buf, &digits, len);
+    std::memcpy(buf, &digits, len);
   }
 }
 

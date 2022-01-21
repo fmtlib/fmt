@@ -35,6 +35,7 @@
 
 #include <cmath>         // std::signbit
 #include <cstdint>       // uint32_t
+#include <cstring>       // std::memcpy
 #include <limits>        // std::numeric_limits
 #include <memory>        // std::uninitialized_copy
 #include <stdexcept>     // std::runtime_error
