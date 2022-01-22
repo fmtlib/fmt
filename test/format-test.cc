@@ -1409,8 +1409,14 @@ TEST(format_test, format_pointer) {
   EXPECT_EQ("0x0", fmt::format("{}", nullptr));
 }
 
+enum class color { red, green, blue };
+
+TEST(format_test, format_enum_class) {
+  EXPECT_EQ(fmt::format("{}", fmt::underlying(color::red)), "0");
+}
+
 TEST(format_test, format_string) {
-  EXPECT_EQ("test", fmt::format("{0}", std::string("test")));
+  EXPECT_EQ(fmt::format("{0}", std::string("test")), "test");
   EXPECT_THROW((void)fmt::format(fmt::runtime("{:x}"), std::string("test")),
                fmt::format_error);
 }

@@ -2675,6 +2675,22 @@ template <typename T> auto ptr(const std::shared_ptr<T>& p) -> const void* {
   return p.get();
 }
 
+/**
+  \rst
+  Converts ``e`` to the underlying type.
+
+  **Example**::
+
+    enum class color { red, green, blue };
+    auto s = fmt::format("{}", fmt::underlying(color::red));
+  \endrst
+ */
+template <typename Enum>
+constexpr auto underlying(Enum e) noexcept ->
+    typename std::underlying_type<Enum>::type {
+  return static_cast<typename std::underlying_type<Enum>::type>(e);
+}
+
 class bytes {
  private:
   string_view data_;

@@ -321,6 +321,8 @@ Utilities
 .. doxygenfunction:: fmt::ptr(const std::unique_ptr<T> &p) -> const void*
 .. doxygenfunction:: fmt::ptr(const std::shared_ptr<T> &p) -> const void*
 
+.. doxygenfunction:: fmt::underlying(Enum e) -> typename std::underlying_type<Enum>::type
+
 .. doxygenfunction:: fmt::to_string(const T &value) -> std::string
 
 .. doxygenfunction:: fmt::to_string_view(const Char *s) -> basic_string_view<Char>
