@@ -251,7 +251,7 @@ endif ()
 if (MINGW)
   check_cxx_compiler_flag("-Wa,-mbig-obj" FMT_HAS_MBIG_OBJ)
   if (${FMT_HAS_MBIG_OBJ})
-    target_compile_options(fmt PUBLIC "-Wa,-mbig-obj")
+    target_compile_options(fmt PRIVATE "-Wa,-mbig-obj")
   endif()
 endif ()
 
