@@ -927,13 +927,27 @@ inline int floor_log10_pow2_minus_log10_4_over_3(int e) noexcept {
 // Precondition: n <= pow(10, N + 1).
 template <int N>
 bool check_divisibility_and_divide_by_pow10(uint32_t& n) noexcept {
+  // The numbers below are chosen such that:
+  //   1. floor(n/d) = floor(nm / 2^(k+l)) where d=10 or d=100,
+  //   2. floor(nm/2^k) mod 2^l = 0 if and only if n is divisible by d,
+  // where m is magic_number, k is margin_bits, l is divisibility_check_bits
+  // and d is divisor.
+  //
+  // Item 1 is a common technique of replacing division by a constant with
+  // multiplication, see e.g. "Division by Invariant Integers Using
+  // Multiplication" by Granlund and Montgomery (1994). magic_number (m) is set
+  // to ceil(2^(k+l)/d) for large enough k+l.
+  // The idea for item 2 originates from Schubfach.
   static constexpr struct {
-    uint32_t magic_number;
+    int divisor;
     int margin_bits;
     int divisibility_check_bits;
-  } infos[] = {{0x199a, 8, 8}, {0xa3d71, 10, 16}};
+  } infos[] = {{10, 8, 8}, {100, 10, 16}};
   constexpr auto info = infos[N - 1];
-  n *= info.magic_number;
+  constexpr uint32_t magic_number =
+      (1 << (info.margin_bits + info.divisibility_check_bits)) / info.divisor +
+      1;
+  n *= magic_number;
   n >>= info.margin_bits;
   const uint32_t comparison_mask = (1u << info.divisibility_check_bits) - 1;
   bool result = (n & comparison_mask) == 0;
