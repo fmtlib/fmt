@@ -159,10 +159,12 @@ FMT_END_NAMESPACE
 // __builtin_ctz is broken in Intel Compiler Classic on Windows:
 // https://github.com/fmtlib/fmt/issues/2510.
 #ifndef __ICL
-#  if FMT_HAS_BUILTIN(__builtin_ctz) || FMT_GCC_VERSION || FMT_ICC_VERSION
+#  if FMT_HAS_BUILTIN(__builtin_ctz) || FMT_GCC_VERSION || \
+      FMT_ICC_VERSION || FMT_NVCOMPILER_VERSION
 #    define FMT_BUILTIN_CTZ(n) __builtin_ctz(n)
 #  endif
-#  if FMT_HAS_BUILTIN(__builtin_ctzll) || FMT_GCC_VERSION || FMT_ICC_VERSION
+#  if FMT_HAS_BUILTIN(__builtin_ctzll) || FMT_GCC_VERSION || \
+      FMT_ICC_VERSION || FMT_NVCOMPILER_VERSION
 #    define FMT_BUILTIN_CTZLL(n) __builtin_ctzll(n)
 #  endif
 #endif
@@ -354,7 +356,7 @@ template <> constexpr auto num_bits<fallback_uintptr>() -> int {
 
 FMT_INLINE void assume(bool condition) {
   (void)condition;
-#if FMT_HAS_BUILTIN(__builtin_assume)
+#if FMT_HAS_BUILTIN(__builtin_assume) && !FMT_ICC_VERSION
   __builtin_assume(condition);
 #endif
 }

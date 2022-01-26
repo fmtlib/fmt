@@ -49,6 +49,13 @@
 #  define FMT_ICC_VERSION 0
 #endif
 
+#ifdef __NVCOMPILER
+#  define FMT_NVCOMPILER_VERSION \
+        (__NVCOMPILER_MAJOR__ * 100 + __NVCOMPILER_MINOR__)
+#else
+#  define FMT_NVCOMPILER_VERSION 0
+#endif
+
 #ifdef __NVCC__
 #  define FMT_NVCC __NVCC__
 #else
@@ -287,7 +294,7 @@
 
 // Enable minimal optimizations for more compact code in debug mode.
 FMT_GCC_PRAGMA("GCC push_options")
-#ifndef __OPTIMIZE__
+#if !defined(__OPTIMIZE__) && !FMT_NVCOMPILER_VERSION
 FMT_GCC_PRAGMA("GCC optimize(\"Og\")")
 #endif
 
