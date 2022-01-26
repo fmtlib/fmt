@@ -35,8 +35,14 @@
 #    ifndef S_IRGRP
 #      define S_IRGRP 0
 #    endif
+#    ifndef S_IWGRP
+#      define S_IWGRP 0
+#    endif
 #    ifndef S_IROTH
 #      define S_IROTH 0
+#    endif
+#    ifndef S_IWOTH
+#      define S_IWOTH 0
 #    endif
 #  endif  // _WIN32
 #endif    // FMT_USE_FCNTL
@@ -214,7 +220,8 @@ file::file(cstring_view path, int oflag) {
 #  ifdef _WIN32
   using mode_t = int;
 #  endif
-  mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
+  constexpr mode_t mode =
+      S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
 #  if defined(_WIN32) && !defined(__MINGW32__)
   fd_ = -1;
   FMT_POSIX_CALL(sopen_s(&fd_, path.c_str(), oflag, _SH_DENYNO, mode));
