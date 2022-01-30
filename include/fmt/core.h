@@ -2059,7 +2059,8 @@ enum class presentation_type : unsigned char {
   general_upper,   // 'G'
   chr,             // 'c'
   string,          // 's'
-  pointer          // 'p'
+  pointer,         // 'p'
+  debug            // '?'
 };
 
 // Format specifiers for built-in and string types.
@@ -2475,6 +2476,8 @@ FMT_CONSTEXPR auto parse_presentation_type(Char type) -> presentation_type {
     return presentation_type::string;
   case 'p':
     return presentation_type::pointer;
+  case '?':
+    return presentation_type::debug;
   default:
     return presentation_type::none;
   }
@@ -2704,7 +2707,8 @@ template <typename Char, typename ErrorHandler = error_handler>
 FMT_CONSTEXPR auto check_char_specs(const basic_format_specs<Char>& specs,
                                     ErrorHandler&& eh = {}) -> bool {
   if (specs.type != presentation_type::none &&
-      specs.type != presentation_type::chr) {
+      specs.type != presentation_type::chr &&
+      specs.type != presentation_type::debug) {
     check_int_type_spec(specs.type, eh);
     return false;
   }
@@ -2788,7 +2792,8 @@ FMT_CONSTEXPR auto check_cstring_type_spec(presentation_type type,
 template <typename ErrorHandler = error_handler>
 FMT_CONSTEXPR void check_string_type_spec(presentation_type type,
                                           ErrorHandler&& eh = {}) {
-  if (type != presentation_type::none && type != presentation_type::string)
+  if (type != presentation_type::none && type != presentation_type::string &&
+      type != presentation_type::debug)
     eh.on_error("invalid type specifier");
 }
 

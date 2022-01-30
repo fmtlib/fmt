@@ -1060,7 +1060,7 @@ TEST(format_test, format_short) {
 template <typename T>
 void check_unknown_types(const T& value, const char* types, const char*) {
   char format_str[buffer_size];
-  const char* special = ".0123456789L}";
+  const char* special = ".0123456789L?}";
   for (int i = CHAR_MIN; i <= CHAR_MAX; ++i) {
     char c = static_cast<char>(i);
     if (std::strchr(types, c) || std::strchr(special, c) || !c) continue;
@@ -1363,6 +1363,9 @@ TEST(format_test, format_char) {
         << format_str;
   }
   EXPECT_EQ(fmt::format("{:02X}", n), fmt::format("{:02X}", 'x'));
+
+  EXPECT_EQ("\n", fmt::format("{}", '\n'));
+  EXPECT_EQ("'\\n'", fmt::format("{:?}", '\n'));
 }
 
 TEST(format_test, format_volatile_char) {
@@ -1417,12 +1420,17 @@ TEST(format_test, format_enum_class) {
 
 TEST(format_test, format_string) {
   EXPECT_EQ(fmt::format("{0}", std::string("test")), "test");
+  EXPECT_EQ(fmt::format("{0}", std::string("test")), "test");
+  EXPECT_EQ(fmt::format("{:?}", std::string("test")), "\"test\"");
+  EXPECT_EQ(fmt::format("{:*^10?}", std::string("test")), "**\"test\"**");
+  EXPECT_EQ(fmt::format("{:?}", std::string("\test")), "\"\\test\"");
   EXPECT_THROW((void)fmt::format(fmt::runtime("{:x}"), std::string("test")),
                fmt::format_error);
 }
 
 TEST(format_test, format_string_view) {
   EXPECT_EQ("test", fmt::format("{}", string_view("test")));
+  EXPECT_EQ("\"t\\nst\"", fmt::format("{:?}", string_view("t\nst")));
   EXPECT_EQ("", fmt::format("{}", string_view()));
 }
 

@@ -1367,11 +1367,173 @@ auto write_ptr(OutputIt out, UIntPtr value,
                : base_iterator(out, write(reserve(out, size)));
 }
 
+// Returns true iff the code point cp is printable.
+FMT_API auto is_printable(uint32_t cp) -> bool;
+
+inline auto needs_escape(uint32_t cp) -> bool {
+  return cp < 0x20 || cp == 0x7f || cp == '"' || cp == '\\' ||
+         !is_printable(cp);
+}
+
+template <typename Char> struct find_escape_result {
+  const Char* begin;
+  const Char* end;
+  uint32_t cp;
+};
+
+template <typename Char>
+using make_unsigned_char =
+    typename conditional_t<std::is_integral<Char>::value,
+                           std::make_unsigned<Char>,
+                           type_identity<uint32_t>>::type;
+
+template <typename Char>
+auto find_escape(const Char* begin, const Char* end)
+    -> find_escape_result<Char> {
+  for (; begin != end; ++begin) {
+    uint32_t cp = static_cast<make_unsigned_char<Char>>(*begin);
+    if (sizeof(Char) == 1 && cp >= 0x80) continue;
+    if (needs_escape(cp)) return {begin, begin + 1, cp};
+  }
+  return {begin, nullptr, 0};
+}
+
+inline auto find_escape(const char* begin, const char* end)
+    -> find_escape_result<char> {
+  if (!is_utf8()) return find_escape<char>(begin, end);
+  auto result = find_escape_result<char>{end, nullptr, 0};
+  for_each_codepoint(string_view(begin, to_unsigned(end - begin)),
+                     [&](uint32_t cp, string_view sv) {
+                       if (needs_escape(cp)) {
+                         result = {sv.begin(), sv.end(), cp};
+                         return false;
+                       }
+                       return true;
+                     });
+  return result;
+}
+
+#define FMT_STRING_IMPL(s, base, explicit)                                 \
+  [] {                                                                     \
+    /* Use the hidden visibility as a workaround for a GCC bug (#1973). */ \
+    /* Use a macro-like name to avoid shadowing warnings. */               \
+    struct FMT_GCC_VISIBILITY_HIDDEN FMT_COMPILE_STRING : base {           \
+      using char_type = fmt::remove_cvref_t<decltype(s[0])>;               \
+      FMT_MAYBE_UNUSED FMT_CONSTEXPR explicit                              \
+      operator fmt::basic_string_view<char_type>() const {                 \
+        return fmt::detail_exported::compile_string_to_view<char_type>(s); \
+      }                                                                    \
+    };                                                                     \
+    return FMT_COMPILE_STRING();                                           \
+  }()
+
+/**
+  \rst
+  Constructs a compile-time format string from a string literal *s*.
+
+  **Example**::
+
+    // A compile-time error because 'd' is an invalid specifier for strings.
+    std::string s = fmt::format(FMT_STRING("{:d}"), "foo");
+  \endrst
+ */
+#define FMT_STRING(s) FMT_STRING_IMPL(s, fmt::compile_string, )
+
+template <typename Char, typename OutputIt>
+auto write_escaped_string(OutputIt out, basic_string_view<Char> str)
+    -> OutputIt {
+  return copy_str<Char>(str.data(), str.data() + str.size(), out);
+}
+
+template <typename OutputIt, typename Char>
+auto write_escaped_cp(OutputIt out, const find_escape_result<Char>& escape)
+    -> OutputIt {
+  auto c = static_cast<Char>(escape.cp);
+  switch (escape.cp) {
+  case '\n':
+    *out++ = '\\';
+    c = 'n';
+    break;
+  case '\r':
+    *out++ = '\\';
+    c = 'r';
+    break;
+  case '\t':
+    *out++ = '\\';
+    c = 't';
+    break;
+  case '"':
+    FMT_FALLTHROUGH;
+  case '\'':
+    FMT_FALLTHROUGH;
+  case '\\':
+    *out++ = '\\';
+    break;
+  default:
+    if (is_utf8()) {
+      if (escape.cp < 0x100) {
+        return format_to(out, FMT_STRING("\\x{:02x}"), escape.cp);
+      }
+      if (escape.cp < 0x10000) {
+        return format_to(out, FMT_STRING("\\u{:04x}"), escape.cp);
+      }
+      if (escape.cp < 0x110000) {
+        return format_to(out, FMT_STRING("\\U{:08x}"), escape.cp);
+      }
+    }
+    for (char escape_char : basic_string_view<Char>(
+             escape.begin, to_unsigned(escape.end - escape.begin))) {
+      out = format_to(out, FMT_STRING("\\x{:02x}"),
+                      static_cast<make_unsigned_char<Char>>(escape_char));
+    }
+    return out;
+  }
+  *out++ = c;
+  return out;
+}
+
+template <typename OutputIt>
+auto write_escaped_string(OutputIt out, basic_string_view<char> str)
+    -> OutputIt {
+  *out++ = '"';
+  auto begin = str.begin(), end = str.end();
+  do {
+    auto escape = find_escape(begin, end);
+    out = copy_str<char>(begin, escape.begin, out);
+    begin = escape.end;
+    if (!begin) break;
+    out = write_escaped_cp(out, escape);
+  } while (begin != end);
+  *out++ = '"';
+  return out;
+}
+
+template <typename Char, typename OutputIt>
+auto write_escaped_char(OutputIt out, Char v) -> OutputIt {
+  *out++ = v;
+  return out;
+}
+
+template <typename OutputIt>
+auto write_escaped_char(OutputIt out, char v) -> OutputIt {
+  *out++ = '\'';
+  if ((needs_escape(static_cast<uint32_t>(v)) && v != '"') || v == '\'') {
+    out = write_escaped_cp(
+        out, find_escape_result<char>{&v, &v + 1, static_cast<uint32_t>(v)});
+  } else {
+    *out++ = v;
+  }
+  *out++ = '\'';
+  return out;
+}
+
 template <typename Char, typename OutputIt>
 FMT_CONSTEXPR auto write_char(OutputIt out, Char value,
                               const basic_format_specs<Char>& specs)
     -> OutputIt {
+  bool is_debug = specs.type == presentation_type::debug;
   return write_padded(out, specs, 1, [=](reserve_iterator<OutputIt> it) {
+    if (is_debug) return write_escaped_char(it, value);
     *it++ = value;
     return it;
   });
@@ -1637,6 +1799,45 @@ FMT_CONSTEXPR FMT_INLINE auto write(OutputIt out, T value,
   return write_int(out, make_write_int_arg(value, specs.sign), specs, loc);
 }
 
+// An output iterator that counts the number of objects written to it and
+// discards them.
+class counting_iterator {
+ private:
+  size_t count_;
+
+ public:
+  using iterator_category = std::output_iterator_tag;
+  using difference_type = std::ptrdiff_t;
+  using pointer = void;
+  using reference = void;
+  using _Unchecked_type = counting_iterator;  // Mark iterator as checked.
+
+  struct value_type {
+    template <typename T> void operator=(const T&) {}
+  };
+
+  counting_iterator() : count_(0) {}
+
+  size_t count() const { return count_; }
+
+  counting_iterator& operator++() {
+    ++count_;
+    return *this;
+  }
+  counting_iterator operator++(int) {
+    auto it = *this;
+    ++*this;
+    return it;
+  }
+
+  friend counting_iterator operator+(counting_iterator it, difference_type n) {
+    it.count_ += static_cast<size_t>(n);
+    return it;
+  }
+
+  value_type operator*() const { return {}; }
+};
+
 template <typename Char, typename OutputIt>
 FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
                          const basic_format_specs<Char>& specs) -> OutputIt {
@@ -1644,10 +1845,17 @@ FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
   auto size = s.size();
   if (specs.precision >= 0 && to_unsigned(specs.precision) < size)
     size = code_point_index(s, to_unsigned(specs.precision));
-  auto width =
-      specs.width != 0 ? compute_width(basic_string_view<Char>(data, size)) : 0;
+  bool is_debug = specs.type == presentation_type::debug;
+  size_t width = 0;
+  if (specs.width != 0) {
+    if (is_debug)
+      width = write_escaped_string(counting_iterator{}, s).count();
+    else
+      width = compute_width(basic_string_view<Char>(data, size));
+  }
   return write_padded(out, specs, size, width,
                       [=](reserve_iterator<OutputIt> it) {
+                        if (is_debug) return write_escaped_string(it, s);
                         return copy_str<Char>(data, data + size, it);
                       });
 }
@@ -2345,32 +2553,6 @@ FMT_CONSTEXPR void handle_dynamic_spec(int& value,
     break;
   }
 }
-
-#define FMT_STRING_IMPL(s, base, explicit)                                 \
-  [] {                                                                     \
-    /* Use the hidden visibility as a workaround for a GCC bug (#1973). */ \
-    /* Use a macro-like name to avoid shadowing warnings. */               \
-    struct FMT_GCC_VISIBILITY_HIDDEN FMT_COMPILE_STRING : base {           \
-      using char_type = fmt::remove_cvref_t<decltype(s[0])>;               \
-      FMT_MAYBE_UNUSED FMT_CONSTEXPR explicit                              \
-      operator fmt::basic_string_view<char_type>() const {                 \
-        return fmt::detail_exported::compile_string_to_view<char_type>(s); \
-      }                                                                    \
-    };                                                                     \
-    return FMT_COMPILE_STRING();                                           \
-  }()
-
-/**
-  \rst
-  Constructs a compile-time format string from a string literal *s*.
-
-  **Example**::
-
-    // A compile-time error because 'd' is an invalid specifier for strings.
-    std::string s = fmt::format(FMT_STRING("{:d}"), "foo");
-  \endrst
- */
-#define FMT_STRING(s) FMT_STRING_IMPL(s, fmt::compile_string, )
 
 #if FMT_USE_USER_DEFINED_LITERALS
 template <typename Char> struct udl_formatter {

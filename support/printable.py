@@ -171,7 +171,7 @@ def main():
     normal1 = compress_normal(normal1)
 
     print("""\
-inline auto is_printable(uint32_t cp) -> bool {\
+FMT_FUNC auto is_printable(uint32_t cp) -> bool {\
 """)
     print_singletons(singletons0u, singletons0l, 'singletons0', 'singletons0_lower')
     print_singletons(singletons1u, singletons1l, 'singletons1', 'singletons1_lower')
