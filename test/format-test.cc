@@ -2194,3 +2194,30 @@ TEST(format_int_test, format_int) {
   os << max_value<int64_t>();
   EXPECT_EQ(os.str(), fmt::format_int(max_value<int64_t>()).str());
 }
+
+struct put_on_the_ritz {
+  int i;
+};
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<put_on_the_ritz> {
+  formatter<int> underlying;
+
+  FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+    return underlying.parse(ctx);
+  }
+
+  auto format(put_on_the_ritz r, format_context& ctx) -> decltype(ctx.out()) {
+    ctx.put('{');
+    ctx.put(".i=");
+    ctx.put(underlying, r.i);
+    ctx.put('}');
+    return ctx.out();
+  }
+};
+FMT_END_NAMESPACE
+
+TEST(format_test, format_context_put) {
+  EXPECT_EQ(fmt::format("[{}]", put_on_the_ritz{42}), "[{.i=42}]");
+  EXPECT_EQ(fmt::format("[{:#x}]", put_on_the_ritz{42}), "[{.i=0x2a}]");
+}

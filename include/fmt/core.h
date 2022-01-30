@@ -1778,11 +1778,18 @@ template <typename OutputIt, typename Char> class basic_format_context {
 
   FMT_CONSTEXPR auto put(char_type c) -> iterator {
     *out_++ = c;
-    return out;
+    return out_;
   }
   FMT_CONSTEXPR auto put(basic_string_view<char_type> sv) -> iterator {
-    detail::copy_str<char_type>(sv.data(), sv.data() + sv.size(), out);
-    return out;
+    detail::copy_str<char_type>(sv.data(), sv.data() + sv.size(), out_);
+    return out_;
+  }
+
+  template <typename T, typename U,
+            FMT_ENABLE_IF(std::is_same<T, std::remove_const_t<U>>::value)>
+  FMT_CONSTEXPR auto put(formatter<T>& f, U& object) -> iterator {
+    advance_to(f.format(object, *this));
+    return out_;
   }
 
   FMT_CONSTEXPR auto locale() -> detail::locale_ref { return loc_; }
