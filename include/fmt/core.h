@@ -1786,7 +1786,8 @@ template <typename OutputIt, typename Char> class basic_format_context {
   }
 
   template <typename T, typename U,
-            FMT_ENABLE_IF(std::is_same<T, std::remove_const_t<U>>::value)>
+            FMT_ENABLE_IF(
+                std::is_same<T, typename std::remove_const<U>::type>::value)>
   FMT_CONSTEXPR auto put(formatter<T>& f, U& object) -> iterator {
     advance_to(f.format(object, *this));
     return out_;
