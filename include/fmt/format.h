@@ -1368,7 +1368,7 @@ auto write_ptr(OutputIt out, UIntPtr value,
 }
 
 // Returns true iff the code point cp is printable.
-auto is_printable(uint32_t cp) -> bool;
+FMT_API auto is_printable(uint32_t cp) -> bool;
 
 inline auto needs_escape(uint32_t cp) -> bool {
   return cp < 0x20 || cp == 0x7f || cp == '"' || cp == '\\' ||

@@ -2577,10 +2577,10 @@ struct singleton {
   unsigned char lower_count;
 };
 
-FMT_FUNC auto is_printable(uint16_t x, const singleton* singletons,
-                           size_t singletons_size,
-                           const unsigned char* singleton_lowers,
-                           const unsigned char* normal, size_t normal_size)
+inline auto is_printable(uint16_t x, const singleton* singletons,
+                         size_t singletons_size,
+                         const unsigned char* singleton_lowers,
+                         const unsigned char* normal, size_t normal_size)
     -> bool {
   auto upper = x >> 8;
   auto lower_start = 0;
