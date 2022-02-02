@@ -534,10 +534,11 @@ FMT_INLINE std::basic_string<typename S::char_type> format(const S&,
   constexpr auto compiled = detail::compile<Args...>(S());
   if constexpr (std::is_same<remove_cvref_t<decltype(compiled)>,
                              detail::unknown_format>()) {
-    return ::fmt::format(static_cast<basic_string_view<typename S::char_type>>(S()),
-                  std::forward<Args>(args)...);
+    return fmt::format(
+        static_cast<basic_string_view<typename S::char_type>>(S()),
+        std::forward<Args>(args)...);
   } else {
-    return ::fmt::format(compiled, std::forward<Args>(args)...);
+    return fmt::format(compiled, std::forward<Args>(args)...);
   }
 }
 
@@ -547,11 +548,11 @@ FMT_CONSTEXPR OutputIt format_to(OutputIt out, const S&, Args&&... args) {
   constexpr auto compiled = detail::compile<Args...>(S());
   if constexpr (std::is_same<remove_cvref_t<decltype(compiled)>,
                              detail::unknown_format>()) {
-    return ::fmt::format_to(out,
-                     static_cast<basic_string_view<typename S::char_type>>(S()),
-                     std::forward<Args>(args)...);
+    return fmt::format_to(
+        out, static_cast<basic_string_view<typename S::char_type>>(S()),
+        std::forward<Args>(args)...);
   } else {
-    return ::fmt::format_to(out, compiled, std::forward<Args>(args)...);
+    return fmt::format_to(out, compiled, std::forward<Args>(args)...);
   }
 }
 #endif
@@ -560,22 +561,23 @@ template <typename OutputIt, typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
 format_to_n_result<OutputIt> format_to_n(OutputIt out, size_t n,
                                          const S& format_str, Args&&... args) {
-  auto it = ::fmt::format_to(detail::truncating_iterator<OutputIt>(out, n), format_str,
-                      std::forward<Args>(args)...);
+  auto it = fmt::format_to(detail::truncating_iterator<OutputIt>(out, n),
+                           format_str, std::forward<Args>(args)...);
   return {it.base(), it.count()};
 }
 
 template <typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
 size_t formatted_size(const S& format_str, const Args&... args) {
-  return ::fmt::format_to(detail::counting_iterator(), format_str, args...).count();
+  return fmt::format_to(detail::counting_iterator(), format_str, args...)
+      .count();
 }
 
 template <typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
 void print(std::FILE* f, const S& format_str, const Args&... args) {
   memory_buffer buffer;
-  ::fmt::format_to(std::back_inserter(buffer), format_str, args...);
+  fmt::format_to(std::back_inserter(buffer), format_str, args...);
   detail::print(f, {buffer.data(), buffer.size()});
 }
 
