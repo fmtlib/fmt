@@ -34,6 +34,7 @@
 #define FMT_FORMAT_H_
 
 #include <cmath>         // std::signbit
+#include <cstddef>       // std::byte
 #include <cstdint>       // uint32_t
 #include <cstring>       // std::memcpy
 #include <limits>        // std::numeric_limits
@@ -159,8 +160,8 @@ FMT_END_NAMESPACE
 // __builtin_ctz is broken in Intel Compiler Classic on Windows:
 // https://github.com/fmtlib/fmt/issues/2510.
 #ifndef __ICL
-#  if FMT_HAS_BUILTIN(__builtin_ctz) || FMT_GCC_VERSION || \
-      FMT_ICC_VERSION || FMT_NVCOMPILER_VERSION
+#  if FMT_HAS_BUILTIN(__builtin_ctz) || FMT_GCC_VERSION || FMT_ICC_VERSION || \
+      FMT_NVCOMPILER_VERSION
 #    define FMT_BUILTIN_CTZ(n) __builtin_ctz(n)
 #  endif
 #  if FMT_HAS_BUILTIN(__builtin_ctzll) || FMT_GCC_VERSION || \
@@ -2767,7 +2768,6 @@ FMT_FORMAT_AS(unsigned long, unsigned long long);
 FMT_FORMAT_AS(Char*, const Char*);
 FMT_FORMAT_AS(std::basic_string<Char>, basic_string_view<Char>);
 FMT_FORMAT_AS(std::nullptr_t, const void*);
-FMT_FORMAT_AS(detail::byte, unsigned char);
 FMT_FORMAT_AS(detail::std_string_view<Char>, basic_string_view<Char>);
 
 template <typename Char>
@@ -2874,6 +2874,11 @@ constexpr auto underlying(Enum e) noexcept ->
     typename std::underlying_type<Enum>::type {
   return static_cast<typename std::underlying_type<Enum>::type>(e);
 }
+
+#ifdef __cpp_lib_byte
+inline auto format_as(std::byte b) -> unsigned char { return underlying(b); }
+FMT_FORMAT_AS(std::byte, unsigned char);
+#endif
 
 class bytes {
  private:

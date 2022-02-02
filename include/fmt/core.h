@@ -8,7 +8,6 @@
 #ifndef FMT_CORE_H_
 #define FMT_CORE_H_
 
-#include <cstddef>  // std::byte
 #include <cstdio>   // std::FILE
 #include <cstring>
 #include <iterator>
@@ -365,12 +364,6 @@ FMT_NORETURN FMT_API void assert_fail(const char* file, int line,
            ? (void)0                                                          \
            : ::fmt::detail::assert_fail(__FILE__, __LINE__, (message)))
 #  endif
-#endif
-
-#ifdef __cpp_lib_byte
-using byte = std::byte;
-#else
-enum class byte : unsigned char {};
 #endif
 
 #if defined(FMT_USE_STRING_VIEW)
@@ -1427,10 +1420,6 @@ template <typename Context> struct arg_mapper {
   FMT_CONSTEXPR FMT_INLINE auto map(const T& val)
       -> decltype(std::declval<arg_mapper>().map(U())) {
     return map(format_as(val));
-  }
-
-  FMT_CONSTEXPR FMT_INLINE auto map(detail::byte val) -> unsigned {
-    return map(static_cast<unsigned char>(val));
   }
 
   template <typename T, typename U = remove_cvref_t<T>>
