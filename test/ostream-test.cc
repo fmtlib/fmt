@@ -262,6 +262,21 @@ TEST(ostream_test, format_convertible_to_bool) {
   EXPECT_EQ(fmt::format("{}", streamable_and_convertible_to_bool()), "true");
 }
 
+struct streamable_and_convertible_to_string_view {
+  operator fmt::string_view() const { return "foo"; }
+};
+
+std::ostream& operator<<(std::ostream& os,
+                         streamable_and_convertible_to_string_view) {
+  return os << "bar";
+}
+
+TEST(ostream_test, format_convertible_to_string_vew) {
+  // operator<< is intentionally not used because of potential ODR violations.
+  EXPECT_EQ(fmt::format("{}", streamable_and_convertible_to_string_view()),
+            "foo");
+}
+
 struct copyfmt_test {};
 
 std::ostream& operator<<(std::ostream& os, copyfmt_test) {

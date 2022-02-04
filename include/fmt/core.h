@@ -9,7 +9,7 @@
 #define FMT_CORE_H_
 
 #include <cstdio>   // std::FILE
-#include <cstring>
+#include <cstring>  // std::strlen
 #include <iterator>
 #include <limits>
 #include <string>
