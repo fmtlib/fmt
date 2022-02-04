@@ -890,7 +890,10 @@ struct explicitly_convertible_to_string_view {
 };
 
 TEST(core_test, format_explicitly_convertible_to_string_view) {
-  EXPECT_EQ("foo", fmt::format("{}", explicitly_convertible_to_string_view()));
+  // Types explicitly convertible to string_view are not formattable by
+  // default because it may introduce ODR violations.
+  static_assert(
+      !fmt::is_formattable<explicitly_convertible_to_string_view>::value, "");
 }
 
 #  ifdef FMT_USE_STRING_VIEW
@@ -899,8 +902,11 @@ struct explicitly_convertible_to_std_string_view {
 };
 
 TEST(core_test, format_explicitly_convertible_to_std_string_view) {
-  EXPECT_EQ("foo",
-            fmt::format("{}", explicitly_convertible_to_std_string_view()));
+  // Types explicitly convertible to string_view are not formattable by
+  // default because it may introduce ODR violations.
+  static_assert(
+      !fmt::is_formattable<explicitly_convertible_to_std_string_view>::value,
+      "");
 }
 #  endif
 #endif

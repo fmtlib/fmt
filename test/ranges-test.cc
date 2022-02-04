@@ -133,8 +133,8 @@ TEST(ranges_test, path_like) {
 struct string_like {
   const char* begin();
   const char* end();
-  explicit operator fmt::string_view() const { return "foo"; }
-  explicit operator std::string_view() const { return "foo"; }
+  operator fmt::string_view() const { return "foo"; }
+  operator std::string_view() const { return "foo"; }
 };
 
 TEST(ranges_test, format_string_like) {

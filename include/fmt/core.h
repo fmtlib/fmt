@@ -1337,20 +1337,19 @@ template <typename Context> struct arg_mapper {
   }
   template <typename T,
             FMT_ENABLE_IF(
-                std::is_constructible<basic_string_view<char_type>, T>::value &&
+                std::is_convertible<T, basic_string_view<char_type>>::value &&
                 !is_string<T>::value && !has_formatter<T, Context>::value &&
                 !has_fallback_formatter<T, char_type>::value)>
   FMT_CONSTEXPR FMT_INLINE auto map(const T& val)
       -> basic_string_view<char_type> {
     return basic_string_view<char_type>(val);
   }
-  template <
-      typename T,
-      FMT_ENABLE_IF(
-          std::is_constructible<std_string_view<char_type>, T>::value &&
-          !std::is_constructible<basic_string_view<char_type>, T>::value &&
-          !is_string<T>::value && !has_formatter<T, Context>::value &&
-          !has_fallback_formatter<T, char_type>::value)>
+  template <typename T,
+            FMT_ENABLE_IF(
+                std::is_convertible<T, std_string_view<char_type>>::value &&
+                !std::is_convertible<T, basic_string_view<char_type>>::value &&
+                !is_string<T>::value && !has_formatter<T, Context>::value &&
+                !has_fallback_formatter<T, char_type>::value)>
   FMT_CONSTEXPR FMT_INLINE auto map(const T& val)
       -> basic_string_view<char_type> {
     return std_string_view<char_type>(val);
