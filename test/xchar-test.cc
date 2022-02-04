@@ -220,6 +220,12 @@ std::wostream& operator<<(std::wostream& os, streamable_enum) {
   return os << L"streamable_enum";
 }
 
+namespace fmt {
+template <>
+struct formatter<streamable_enum, wchar_t>
+    : ostream_formatter<streamable_enum, wchar_t> {};
+}  // namespace fmt
+
 enum unstreamable_enum {};
 
 TEST(xchar_test, enum) {

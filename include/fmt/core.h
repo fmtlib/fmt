@@ -1016,7 +1016,11 @@ struct fallback_formatter {
 // Specifies if T has an enabled fallback_formatter specialization.
 template <typename T, typename Char>
 using has_fallback_formatter =
+#ifdef FMT_DEPRECATED_OSTREAM
     std::is_constructible<fallback_formatter<T, Char>>;
+#else
+    std::false_type;
+#endif
 
 struct view {};
 

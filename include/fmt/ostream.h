@@ -105,6 +105,9 @@ struct fallback_formatter<T, Char, enable_if_t<is_streamable<T, Char>::value>>
 };
 }  // namespace detail
 
+template <typename T, typename Char = char>
+using ostream_formatter = detail::fallback_formatter<T, Char>;
+
 FMT_MODULE_EXPORT
 template <typename Char>
 void vprint(std::basic_ostream<Char>& os, basic_string_view<Char> format_str,
