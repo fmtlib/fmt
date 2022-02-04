@@ -507,6 +507,8 @@ user-defined types that have an overloaded insertion operator (``operator<<``)::
     }
   };
 
+  template <> struct fmt::formatter<date> : ostream_formatter<date> {};
+
   std::string s = fmt::format("The date is {}", date(2012, 12, 9));
   // s == "The date is 2012-12-9"
 
