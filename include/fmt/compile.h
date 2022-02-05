@@ -129,7 +129,7 @@ template <typename Char, size_t N,
           fmt::detail_exported::fixed_string<Char, N> Str>
 struct udl_compiled_string : compiled_string {
   using char_type = Char;
-  constexpr operator basic_string_view<char_type>() const {
+  explicit constexpr operator basic_string_view<char_type>() const {
     return {Str.data, N - 1};
   }
 };
