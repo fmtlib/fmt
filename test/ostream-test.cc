@@ -57,11 +57,10 @@ struct empty_test {};
 std::ostream& operator<<(std::ostream& os, empty_test) { return os << ""; }
 
 namespace fmt {
-template <> struct formatter<test_string> : ostream_formatter<test_string> {};
-template <> struct formatter<date> : ostream_formatter<date> {};
-template <>
-struct formatter<streamable_enum> : ostream_formatter<streamable_enum> {};
-template <> struct formatter<empty_test> : ostream_formatter<empty_test> {};
+template <> struct formatter<test_string> : ostream_formatter {};
+template <> struct formatter<date> : ostream_formatter {};
+template <> struct formatter<streamable_enum> : ostream_formatter {};
+template <> struct formatter<empty_test> : ostream_formatter {};
 }  // namespace fmt
 
 TEST(ostream_test, enum) {
@@ -193,8 +192,7 @@ template <typename T> struct formatter<test_template<T>> : formatter<int> {
   }
 };
 
-template <>
-struct formatter<fmt_test::abc> : ostream_formatter<fmt_test::abc> {};
+template <> struct formatter<fmt_test::abc> : ostream_formatter {};
 }  // namespace fmt
 
 TEST(ostream_test, template) {
@@ -262,7 +260,7 @@ std::ostream& operator<<(std::ostream& os, copyfmt_test) {
 }
 
 namespace fmt {
-template <> struct formatter<copyfmt_test> : ostream_formatter<copyfmt_test> {};
+template <> struct formatter<copyfmt_test> : ostream_formatter {};
 }  // namespace fmt
 
 TEST(ostream_test, copyfmt) {
@@ -287,7 +285,7 @@ struct abstract {
 };
 
 namespace fmt {
-template <> struct formatter<abstract> : ostream_formatter<abstract> {};
+template <> struct formatter<abstract> : ostream_formatter {};
 }  // namespace fmt
 
 void format_abstract_compiles(const abstract& a) {

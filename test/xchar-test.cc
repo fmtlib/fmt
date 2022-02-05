@@ -222,8 +222,8 @@ std::wostream& operator<<(std::wostream& os, streamable_enum) {
 
 namespace fmt {
 template <>
-struct formatter<streamable_enum, wchar_t>
-    : ostream_formatter<streamable_enum, wchar_t> {};
+struct formatter<streamable_enum, wchar_t> : basic_ostream_formatter<wchar_t> {
+};
 }  // namespace fmt
 
 enum unstreamable_enum {};
