@@ -9,10 +9,8 @@
 #define FMT_OS_H_
 
 #include <cerrno>
-#include <clocale>  // locale_t
 #include <cstddef>
 #include <cstdio>
-#include <cstdlib>       // strtod_l
 #include <system_error>  // std::system_error
 
 #if defined __APPLE__ || defined(__FreeBSD__)
@@ -477,50 +475,6 @@ inline ostream output_file(cstring_view path, T... params) {
 }
 #endif  // FMT_USE_FCNTL
 
-#ifdef FMT_LOCALE
-// A "C" numeric locale.
-class locale {
- private:
-#  ifdef _WIN32
-  using locale_t = _locale_t;
-
-  static void freelocale(locale_t loc) { _free_locale(loc); }
-
-  static double strtod_l(const char* nptr, char** endptr, _locale_t loc) {
-    return _strtod_l(nptr, endptr, loc);
-  }
-#  endif
-
-  locale_t locale_;
-
- public:
-  using type = locale_t;
-  locale(const locale&) = delete;
-  void operator=(const locale&) = delete;
-
-  locale() {
-#  ifndef _WIN32
-    locale_ = FMT_SYSTEM(newlocale(LC_NUMERIC_MASK, "C", nullptr));
-#  else
-    locale_ = _create_locale(LC_NUMERIC, "C");
-#  endif
-    if (!locale_) FMT_THROW(system_error(errno, "cannot create locale"));
-  }
-  ~locale() { freelocale(locale_); }
-
-  type get() const { return locale_; }
-
-  // Converts string to floating-point number and advances str past the end
-  // of the parsed input.
-  FMT_DEPRECATED double strtod(const char*& str) const {
-    char* end = nullptr;
-    double result = strtod_l(str, &end, locale_);
-    str = end;
-    return result;
-  }
-};
-using Locale FMT_DEPRECATED_ALIAS = locale;
-#endif  // FMT_LOCALE
 FMT_MODULE_EXPORT_END
 FMT_END_NAMESPACE
 
