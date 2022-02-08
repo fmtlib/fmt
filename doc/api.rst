@@ -227,7 +227,7 @@ template and implement ``parse`` and ``format`` methods::
     // Formats the point p using the parsed format specification (presentation)
     // stored in this formatter.
     template <typename FormatContext>
-    auto format(const point& p, FormatContext& ctx) -> decltype(ctx.out()) {
+    auto format(const point& p, FormatContext& ctx) const -> decltype(ctx.out()) {
       // ctx.out() is an output iterator to write to.
       return presentation == 'f'
                 ? format_to(ctx.out(), "({:.1f}, {:.1f})", p.x, p.y)
@@ -249,7 +249,7 @@ example::
   template <> struct fmt::formatter<color>: formatter<string_view> {
     // parse is inherited from formatter<string_view>.
     template <typename FormatContext>
-    auto format(color c, FormatContext& ctx) {
+    auto format(color c, FormatContext& ctx) const {
       string_view name = "unknown";
       switch (c) {
       case color::red:   name = "red"; break;
@@ -287,7 +287,7 @@ You can also write a formatter for a hierarchy of classes::
   struct fmt::formatter<T, std::enable_if_t<std::is_base_of<A, T>::value, char>> :
       fmt::formatter<std::string> {
     template <typename FormatCtx>
-    auto format(const A& a, FormatCtx& ctx) {
+    auto format(const A& a, FormatCtx& ctx) const {
       return fmt::formatter<std::string>::format(a.name(), ctx);
     }
   };
