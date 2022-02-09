@@ -113,8 +113,7 @@ binary footprint, for example (https://godbolt.org/z/oba4Mc):
 
     template <typename S, typename... Args>
     void log(const char* file, int line, const S& format, Args&&... args) {
-      vlog(file, line, format,
-          fmt::make_args_checked<Args...>(format, args...));
+      vlog(file, line, format, fmt::make_format_args(args...));
     }
 
     #define MY_LOG(format, ...) \
@@ -124,8 +123,6 @@ binary footprint, for example (https://godbolt.org/z/oba4Mc):
 
 Note that ``vlog`` is not parameterized on argument types which improves compile
 times and reduces binary code size compared to a fully parameterized version.
-
-.. doxygenfunction:: fmt::make_args_checked(const S&, const remove_reference_t<Args>&...)
 
 .. doxygenfunction:: fmt::make_format_args(const Args&...)
 
