@@ -2561,7 +2561,7 @@ template <typename Char> struct udl_formatter {
 
   template <typename... T>
   auto operator()(T&&... args) const -> std::basic_string<Char> {
-    return vformat(str, fmt::make_args_checked<T...>(str, args...));
+    return vformat(str, fmt::make_format_args<buffer_context<Char>>(args...));
   }
 };
 
