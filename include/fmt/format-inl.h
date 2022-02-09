@@ -327,7 +327,8 @@ FMT_CONSTEXPR inline fp operator*(fp x, fp y) {
 FMT_CONSTEXPR inline fp get_cached_power(int min_exponent,
                                          int& pow10_exponent) {
   const int shift = 32;
-  const auto significand = static_cast<int64_t>(log10_2_significand);
+  // log10(2) = 0x0.4d104d427de7fbcc...
+  const auto significand = static_cast<int64_t>(0x4d104d427de7fbcc);
   int index = static_cast<int>(
       ((min_exponent + fp::num_significand_bits - 1) * (significand >> shift) +
        ((int64_t(1) << shift) - 1))  // ceil
