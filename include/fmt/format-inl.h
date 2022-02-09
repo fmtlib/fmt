@@ -328,7 +328,7 @@ FMT_CONSTEXPR inline fp get_cached_power(int min_exponent,
                                          int& pow10_exponent) {
   const int shift = 32;
   // log10(2) = 0x0.4d104d427de7fbcc...
-  const auto significand = static_cast<int64_t>(0x4d104d427de7fbcc);
+  const int64_t significand = 0x4d104d427de7fbcc;
   int index = static_cast<int>(
       ((min_exponent + fp::num_significand_bits - 1) * (significand >> shift) +
        ((int64_t(1) << shift) - 1))  // ceil
@@ -963,7 +963,7 @@ template <int N> uint32_t small_division_by_pow10(uint32_t n) noexcept {
 // Computes floor(n / 10^(kappa + 1)) (float)
 inline uint32_t divide_by_10_to_kappa_plus_1(uint32_t n) noexcept {
   // 1374389535 = ceil(2^37/100)
-  return (static_cast<uint64_t>(n) * 1374389535) >> 37;
+  return static_cast<uint32_t>((static_cast<uint64_t>(n) * 1374389535) >> 37);
 }
 // Computes floor(n / 10^(kappa + 1)) (double)
 inline uint64_t divide_by_10_to_kappa_plus_1(uint64_t n) noexcept {
