@@ -1896,7 +1896,7 @@ FMT_INLINE int remove_trailing_zeros(uint64_t& n) noexcept {
   }
 
   // If n is not divisible by 10^8, work with n itself.
-  const uint64_t mod_inv_5 = 0xcccccccc'cccccccd;
+  const uint64_t mod_inv_5 = 0xcccccccccccccccd;
   const uint64_t mod_inv_25 = mod_inv_5 * mod_inv_5;
 
   int s = 0;
