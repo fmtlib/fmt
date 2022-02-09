@@ -2049,15 +2049,15 @@ template <typename T> decimal_fp<T> to_decimal(T x) noexcept {
   uint32_t r = static_cast<uint32_t>(z_mul.result - float_info<T>::big_divisor *
                                                         ret_value.significand);
 
-  if (r > deltai) {
-    goto small_divisor_case_label;
-  } else if (r < deltai) {
+  if (r < deltai) {
     // Exclude the right endpoint if necessary.
     if (r == 0 && z_mul.is_integer && !include_right_endpoint) {
       --ret_value.significand;
       r = float_info<T>::big_divisor;
       goto small_divisor_case_label;
     }
+  } else if (r > deltai) {
+    goto small_divisor_case_label;
   } else {
     // r == deltai; compare fractional parts.
     const carrier_uint two_fl = two_fc - 1;
