@@ -816,6 +816,16 @@ struct uint128_wrapper {
   }
 };
 
+// Compilers should be able to optimize this into the ror instruction.
+inline std::uint32_t rotr(uint32_t n, uint32_t r) noexcept {
+  r &= 31;
+  return (n >> r) | (n << (32 - r));
+}
+inline std::uint64_t rotr(uint64_t n, uint32_t r) noexcept {
+  r &= 63;
+  return (n >> r) | (n << (64 - r));
+}
+
 // Implementation of Dragonbox algorithm: https://github.com/jk-jeon/dragonbox.
 namespace dragonbox {
 // Computes 128-bit result of multiplication of two 64-bit unsigned integers.
