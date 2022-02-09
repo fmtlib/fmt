@@ -956,7 +956,7 @@ template <int N> uint32_t small_division_by_pow10(uint32_t n) noexcept {
   constexpr auto info = div_small_pow10_infos[N - 1];
   FMT_ASSERT(n <= info.divisor * 10, "n is too large");
   constexpr uint32_t magic_number =
-      (1u << info.divisibility_check_bits) / info.divisor + 1;
+      (1u << info.shift_amount) / info.divisor + 1;
   return (n * magic_number) >> info.shift_amount;
 }
 
