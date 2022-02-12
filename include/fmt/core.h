@@ -2282,7 +2282,7 @@ FMT_CONSTEXPR auto parse_align(const Char* begin, const Char* end,
   FMT_ASSERT(begin != end, "");
   auto align = align::none;
   auto p = begin + code_point_length(begin);
-  if (p >= end) p = begin;
+  if (end - p <= 0) p = begin;
   for (;;) {
     switch (to_ascii(*p)) {
     case '<':
