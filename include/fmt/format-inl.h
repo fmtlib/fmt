@@ -900,8 +900,8 @@ inline uint64_t umul96_lower64(uint32_t x, uint64_t y) noexcept {
   return x * y;
 }
 
-// Computes floor(log10(pow(2, e))) for e in [-1700, 1700] using the method from
-// https://fmt.dev/papers/Grisu-Exact.pdf#page=5, section 3.4.
+// Computes floor(log10(pow(2, e))) for e in [-2620, 2620] using the method from
+// https://fmt.dev/papers/Dragonbox.pdf#page=28, section 6.1.
 inline int floor_log10_pow2(int e) noexcept {
   FMT_ASSERT(e <= 2620 && e >= -2620, "too large exponent");
   static_assert((-1 >> 1) == -1, "right shift is not arithmetic");
