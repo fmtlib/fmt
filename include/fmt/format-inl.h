@@ -839,7 +839,8 @@ inline uint128_wrapper umul128(uint64_t x, uint64_t y) noexcept {
   result.low_ = _umul128(x, y, &result.high_);
   return result;
 #else
-  const uint64_t mask = (uint64_t(1) << 32) - uint64_t(1);
+  const uint64_t mask =
+      static_cast<uint64_t>(std::numeric_limits<uint32_t>::max());
 
   uint64_t a = x >> 32;
   uint64_t b = x & mask;
@@ -882,7 +883,7 @@ inline uint128_wrapper umul192_upper128(uint64_t x,
 // Computes upper 64 bits of multiplication of a 32-bit unsigned integer and a
 // 64-bit unsigned integer.
 inline uint64_t umul96_upper64(uint32_t x, uint64_t y) noexcept {
-  return umul128_upper64(uint64_t(x) << 32, y);
+  return umul128_upper64(static_cast<uint64_t>(x) << 32, y);
 }
 
 // Computes lower 128 bits of multiplication of a 64-bit unsigned integer and a
@@ -1861,7 +1862,7 @@ FMT_INLINE int remove_trailing_zeros(uint64_t& n) noexcept {
   FMT_ASSERT(n != 0, "");
 
   // This magic number is ceil(2^90 / 10^8).
-  constexpr auto magic_number = uint64_t(12379400392853802749ull);
+  constexpr uint64_t magic_number = 12379400392853802749ull;
   auto nm = umul128(n, magic_number);
 
   // Is n is divisible by 10^8?
