@@ -1431,8 +1431,8 @@ template <typename Context> struct arg_mapper {
                       !std::is_const<remove_reference_t<T>>::value ||
                       has_fallback_formatter<U, char_type>::value> {};
 
-#if FMT_MSC_VER != 0 && FMT_MSC_VER < 1910
-  // Workaround a bug in MSVC.
+#if (FMT_MSC_VER != 0 && FMT_MSC_VER < 1910) || FMT_ICC_VERSION != 0
+  // Workaround a bug in MSVC and Intel (Issue 2746).
   template <typename T> FMT_CONSTEXPR FMT_INLINE auto do_map(T&& val) -> T& {
     return val;
   }
@@ -2282,7 +2282,7 @@ FMT_CONSTEXPR auto parse_align(const Char* begin, const Char* end,
   FMT_ASSERT(begin != end, "");
   auto align = align::none;
   auto p = begin + code_point_length(begin);
-  if (p >= end) p = begin;
+  if (end - p <= 0) p = begin;
   for (;;) {
     switch (to_ascii(*p)) {
     case '<':
