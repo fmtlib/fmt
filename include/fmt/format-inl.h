@@ -1876,12 +1876,9 @@ FMT_INLINE int remove_trailing_zeros(uint64_t& n) noexcept {
     int s = 8;
     while (true) {
       auto q = rotr(n32 * mod_inv_25, 2);
-      if (q <= std::numeric_limits<uint32_t>::max() / 100) {
-        n32 = q;
-        s += 2;
-      } else {
-        break;
-      }
+      if (q > std::numeric_limits<uint32_t>::max() / 100) break;
+      n32 = q;
+      s += 2;
     }
     auto q = rotr(n32 * mod_inv_5, 1);
     if (q <= std::numeric_limits<uint32_t>::max() / 10) {
@@ -1900,12 +1897,9 @@ FMT_INLINE int remove_trailing_zeros(uint64_t& n) noexcept {
   int s = 0;
   while (true) {
     auto q = rotr(n * mod_inv_25, 2);
-    if (q <= std::numeric_limits<uint64_t>::max() / 100) {
-      n = q;
-      s += 2;
-    } else {
-      break;
-    }
+    if (q > std::numeric_limits<uint64_t>::max() / 100) break;
+    n = q;
+    s += 2;
   }
   auto q = rotr(n * mod_inv_5, 1);
   if (q <= std::numeric_limits<uint64_t>::max() / 10) {
