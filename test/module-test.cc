@@ -195,13 +195,6 @@ TEST(module_test, wformat_args) {
   EXPECT_TRUE(args.get(0));
 }
 
-TEST(module_test, checked_format_args) {
-  fmt::basic_format_args args = fmt::make_args_checked<int>("{}", 42);
-  EXPECT_TRUE(args.get(0));
-  fmt::basic_format_args wargs = fmt::make_args_checked<int>(L"{}", 42);
-  EXPECT_TRUE(wargs.get(0));
-}
-
 TEST(module_test, dynamic_format_args) {
   fmt::dynamic_format_arg_store<fmt::format_context> dyn_store;
   dyn_store.push_back(fmt::arg("a42", 42));

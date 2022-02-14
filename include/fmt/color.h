@@ -547,7 +547,7 @@ template <typename S, typename... Args,
 void print(std::FILE* f, const text_style& ts, const S& format_str,
            const Args&... args) {
   vprint(f, ts, format_str,
-         fmt::make_args_checked<Args...>(format_str, args...));
+         fmt::make_format_args<buffer_context<char_t<S>>>(args...));
 }
 
 /**
@@ -592,7 +592,7 @@ template <typename S, typename... Args, typename Char = char_t<S>>
 inline std::basic_string<Char> format(const text_style& ts, const S& format_str,
                                       const Args&... args) {
   return fmt::vformat(ts, to_string_view(format_str),
-                      fmt::make_args_checked<Args...>(format_str, args...));
+                      fmt::make_format_args<buffer_context<Char>>(args...));
 }
 
 /**
@@ -627,7 +627,7 @@ inline auto format_to(OutputIt out, const text_style& ts, const S& format_str,
                       Args&&... args) ->
     typename std::enable_if<enable, OutputIt>::type {
   return vformat_to(out, ts, to_string_view(format_str),
-                    fmt::make_args_checked<Args...>(format_str, args...));
+                    fmt::make_format_args<buffer_context<char_t<S>>>(args...));
 }
 
 FMT_MODULE_EXPORT_END

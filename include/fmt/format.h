@@ -834,8 +834,8 @@ class FMT_API format_error : public std::runtime_error {
   \endrst
  */
 template <typename... Args, typename S, typename Char = char_t<S>>
-FMT_INLINE auto make_args_checked(const S& fmt,
-                                  const remove_reference_t<Args>&... args)
+FMT_DEPRECATED FMT_INLINE auto make_args_checked(
+    const S& fmt, const remove_reference_t<Args>&... args)
     -> format_arg_store<buffer_context<Char>, remove_reference_t<Args>...> {
   static_assert(
       detail::count<(
@@ -2561,7 +2561,7 @@ template <typename Char> struct udl_formatter {
 
   template <typename... T>
   auto operator()(T&&... args) const -> std::basic_string<Char> {
-    return vformat(str, fmt::make_args_checked<T...>(str, args...));
+    return vformat(str, fmt::make_format_args<buffer_context<Char>>(args...));
   }
 };
 
