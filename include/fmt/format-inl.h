@@ -920,7 +920,7 @@ inline int floor_log10_pow2_minus_log10_4_over_3(int e) noexcept {
 }
 
 static constexpr struct {
-  int divisor;
+  uint32_t divisor;
   int shift_amount;
 } div_small_pow10_infos[] = {{10, 16}, {100, 16}};
 
