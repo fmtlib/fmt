@@ -492,7 +492,7 @@ System APIs
 ``fmt/ostream.h`` provides ``std::ostream`` support including formatting of
 user-defined types that have an overloaded insertion operator (``operator<<``).
 In order to make a type formattable via ``std::ostream`` you should provide a
-``formatter`` specialization inherited from ``ostream_formatter``:
+``formatter`` specialization inherited from ``ostream_formatter``::
 
   #include <fmt/ostream.h>
 
