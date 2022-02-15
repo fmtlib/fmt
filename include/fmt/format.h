@@ -991,7 +991,7 @@ FMT_CONSTEXPR20 inline auto count_digits(uint64_t n) -> int {
 template <int BITS, typename UInt>
 FMT_CONSTEXPR auto count_digits(UInt n) -> int {
 #ifdef FMT_BUILTIN_CLZ
-  if (num_bits<UInt>() == 32)
+  if (!is_constant_evaluated() && num_bits<UInt>() == 32)
     return (FMT_BUILTIN_CLZ(static_cast<uint32_t>(n) | 1) ^ 31) / BITS + 1;
 #endif
   // Lambda avoids unreachable code warnings from NVHPC.
