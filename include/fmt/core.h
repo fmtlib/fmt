@@ -1431,7 +1431,7 @@ template <typename Context> struct arg_mapper {
                       !std::is_const<remove_reference_t<T>>::value ||
                       has_fallback_formatter<U, char_type>::value> {};
 
-#if (FMT_MSC_VER != 0 && FMT_MSC_VER < 1910) || FMT_ICC_VERSION != 0
+#if (FMT_MSC_VER != 0 && FMT_MSC_VER < 1910) || FMT_ICC_VERSION != 0 || FMT_NVCC != 0
   // Workaround a bug in MSVC and Intel (Issue 2746).
   template <typename T> FMT_CONSTEXPR FMT_INLINE auto do_map(T&& val) -> T& {
     return val;
