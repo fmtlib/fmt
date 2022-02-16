@@ -570,6 +570,9 @@ TEST(format_test, plus_sign) {
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:+}"), 42ul), format_error,
                    "format specifier requires signed argument");
   EXPECT_EQ("+42", fmt::format("{0:+}", 42ll));
+#if FMT_USE_INT128
+  EXPECT_EQ("+42", fmt::format("{0:+}", __int128_t(42)));
+#endif
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:+}"), 42ull), format_error,
                    "format specifier requires signed argument");
   EXPECT_EQ("+42", fmt::format("{0:+}", 42.0));
