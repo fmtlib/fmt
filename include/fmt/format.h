@@ -2233,7 +2233,8 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value,
       ++precision;
   }
   if (const_check(std::is_same<T, float>())) fspecs.binary32 = true;
-  if (!is_fast_float<T>()) fspecs.fallback = true;
+  if (!std::numeric_limits<T>::is_iec559 || std::numeric_limits<T>::digits > 64)
+    fspecs.fallback = true;
   int exp = format_float(convert_float(value), precision, fspecs, buffer);
   fspecs.precision = precision;
   auto fp = big_decimal_fp{buffer.data(), static_cast<int>(buffer.size()), exp};

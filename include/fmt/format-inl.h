@@ -444,9 +444,6 @@ class bigint {
  public:
   FMT_CONSTEXPR20 bigint() : exp_(0) {}
   explicit bigint(uint64_t n) { assign(n); }
-  FMT_CONSTEXPR20 ~bigint() {
-    FMT_ASSERT(bigits_.capacity() <= bigits_capacity, "");
-  }
 
   bigint(const bigint&) = delete;
   void operator=(const bigint&) = delete;
@@ -684,6 +681,14 @@ struct gen_digits_handler {
   }
 };
 
+inline FMT_CONSTEXPR20 void adjust_precision(int& precision, int exp10) {
+  // Adjust fixed precision by exponent because it is relative to decimal
+  // point.
+  if (exp10 > 0 && precision > max_value<int>() - exp10)
+    FMT_THROW(format_error("number is too big"));
+  precision += exp10;
+}
+
 // Generates output using the Grisu digit-gen algorithm.
 // error: the size of the region (lower, upper) outside of which numbers
 // definitely do not round to value (Delta in Grisu3).
@@ -701,14 +706,7 @@ FMT_INLINE FMT_CONSTEXPR20 digits::result grisu_gen_digits(
   exp = count_digits(integral);  // kappa in Grisu.
   // Non-fixed formats require at least one digit and no precision adjustment.
   if (handler.fixed) {
-    // Adjust fixed precision by exponent because it is relative to decimal
-    // point.
-    int precision_offset = exp + handler.exp10;
-    if (precision_offset > 0 &&
-        handler.precision > max_value<int>() - precision_offset) {
-      FMT_THROW(format_error("number is too big"));
-    }
-    handler.precision += precision_offset;
+    adjust_precision(handler.precision, exp + handler.exp10);
     // Check if precision is satisfied just by leading zeros, e.g.
     // format("{:.2f}", 0.001) gives "0.00" without generating any digits.
     if (handler.precision <= 0) {
@@ -2277,6 +2275,9 @@ FMT_HEADER_ONLY_CONSTEXPR20 int format_float(Float value, int precision,
       exp += handler.size - cached_exp10 - 1;
       precision = handler.precision;
     }
+  } else {
+    exp = static_cast<int>(std::log10(value));
+    if (fixed) adjust_precision(precision, exp + 1);
   }
   if (use_dragon) {
     auto f = fp();
