@@ -259,7 +259,7 @@ struct fp {
     using carrier_uint = typename dragonbox::float_info<Float>::carrier_uint;
     const carrier_uint significand_mask = implicit_bit - 1;
     auto u = bit_cast<carrier_uint>(n);
-    f = u & significand_mask;
+    f = static_cast<uint64_t>(u & significand_mask);
     int biased_e =
         static_cast<int>((u & exponent_mask<Float>()) >>
                          dragonbox::float_info<Float>::significand_bits);

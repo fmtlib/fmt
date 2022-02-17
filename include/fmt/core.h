@@ -390,7 +390,35 @@ template <typename T> inline auto convert_for_visit(T value) -> T {
 #endif
 #if !FMT_USE_INT128
 enum class int128_t {};
-enum class uint128_t {};
+class uint128_t {
+ private:
+  uint64_t lo_, hi_;
+  constexpr uint128_t(uint64_t hi, uint64_t lo) : lo_(lo), hi_(hi) {}
+
+ public:
+  constexpr uint128_t(uint64_t value = 0) : hi_(0), lo_(value) {}
+  explicit operator int() const { return lo_; }
+  explicit operator uint64_t() const { return lo_; }
+  friend auto operator==(const uint128_t& lhs, const uint128_t& rhs) -> bool {
+    return lhs.hi_ == rhs.hi_ && lhs.lo_ == rhs.lo_;
+  }
+  friend auto operator&(const uint128_t& lhs, const uint128_t& rhs)
+      -> uint128_t {
+    return {lhs.hi_ & rhs.hi_, lhs.lo_ & rhs.lo_};
+  }
+  friend auto operator-(const uint128_t& lhs, uint64_t rhs) -> uint128_t {
+    FMT_ASSERT(lhs.lo_ >= rhs, "");
+    return {lhs.hi_, lhs.lo_ - rhs};
+  }
+  auto operator>>(int shift) const -> uint128_t {
+    if (shift == 64) return {0, hi_};
+    return {hi_ >> shift, (hi_ << (64 - shift)) | (lo_ >> shift)};
+  }
+  auto operator<<(int shift) const -> uint128_t {
+    if (shift == 64) return {lo_, 0};
+    return {hi_ << shift | (lo_ >> (64 - shift)), (lo_ << shift)};
+  }
+};
 // Reduce template instantiations.
 template <typename T> inline auto convert_for_visit(T) -> monostate {
   return {};
@@ -1431,7 +1459,8 @@ template <typename Context> struct arg_mapper {
                       !std::is_const<remove_reference_t<T>>::value ||
                       has_fallback_formatter<U, char_type>::value> {};
 
-#if (FMT_MSC_VER != 0 && FMT_MSC_VER < 1910) || FMT_ICC_VERSION != 0 || FMT_NVCC != 0
+#if (FMT_MSC_VER != 0 && FMT_MSC_VER < 1910) || FMT_ICC_VERSION != 0 || \
+    FMT_NVCC != 0
   // Workaround a bug in MSVC and Intel (Issue 2746).
   template <typename T> FMT_CONSTEXPR FMT_INLINE auto do_map(T&& val) -> T& {
     return val;
