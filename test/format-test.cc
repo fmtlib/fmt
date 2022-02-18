@@ -948,6 +948,9 @@ TEST(format_test, precision) {
   EXPECT_THAT(outputs,
               testing::Contains(fmt::format("{:.838A}", -2.14001164E+38)));
 
+  auto ld = 8.43821965335442234493E-4933L;
+  EXPECT_EQ(fmt::format("{:.0}", ld), ld != 0 ? "8e-4933" : "0");
+
   EXPECT_EQ("123.", fmt::format("{:#.0f}", 123.0));
   EXPECT_EQ("1.23", fmt::format("{:.02f}", 1.234));
   EXPECT_EQ("0.001", fmt::format("{:.1g}", 0.001));

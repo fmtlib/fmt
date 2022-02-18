@@ -2256,6 +2256,8 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value,
       throw_format_error("number is too big");
     else
       ++precision;
+  } else if (fspecs.format != float_format::fixed && precision == 0) {
+    precision = 1;
   }
   if (const_check(std::is_same<T, float>())) fspecs.binary32 = true;
   if (!std::numeric_limits<T>::is_iec559 || std::numeric_limits<T>::digits > 64)

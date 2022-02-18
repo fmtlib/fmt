@@ -2246,7 +2246,8 @@ FMT_HEADER_ONLY_CONSTEXPR20 int format_float(Float value, int precision,
       precision = handler.precision;
     }
   } else {
-    exp = static_cast<int>(std::log10(value));
+    // Use floor because 0.9 = 9e-1.
+    exp = static_cast<int>(std::floor(std::log10(value)));
     if (fixed) adjust_precision(precision, exp + 1);
   }
   if (use_dragon) {
