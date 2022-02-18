@@ -315,12 +315,12 @@ inline auto is_big_endian() -> bool {
 }
 
 // A fallback implementation of uintptr_t for systems that lack it.
-struct fallback_uintptr {
+struct uintptr_fallback {
   unsigned char value[sizeof(void*)];
 
-  fallback_uintptr() = default;
-  explicit fallback_uintptr(const void* p) {
-    *this = bit_cast<fallback_uintptr>(p);
+  uintptr_fallback() = default;
+  explicit uintptr_fallback(const void* p) {
+    *this = bit_cast<uintptr_fallback>(p);
     if (const_check(is_big_endian())) {
       for (size_t i = 0, j = sizeof(void*) - 1; i < j; ++i, --j)
         std::swap(value[i], value[j]);
@@ -333,41 +333,45 @@ inline auto to_uintptr(const void* p) -> uintptr_t {
   return bit_cast<uintptr_t>(p);
 }
 #else
-using uintptr_t = fallback_uintptr;
-inline auto to_uintptr(const void* p) -> fallback_uintptr {
-  return fallback_uintptr(p);
+using uintptr_t = uintptr_fallback;
+inline auto to_uintptr(const void* p) -> uintptr_fallback {
+  return uintptr_fallback(p);
 }
 #endif
 
-class uint128_t {
+class uint128_fallback {
  private:
   uint64_t lo_, hi_;
-  constexpr uint128_t(uint64_t hi, uint64_t lo) : lo_(lo), hi_(hi) {}
+  constexpr uint128_fallback(uint64_t hi, uint64_t lo) : lo_(lo), hi_(hi) {}
 
  public:
-  constexpr uint128_t(uint64_t value = 0) : lo_(value), hi_(0) {}
+  constexpr uint128_fallback(uint64_t value = 0) : lo_(value), hi_(0) {}
   explicit operator int() const { return static_cast<int>(lo_); }
   explicit operator uint64_t() const { return lo_; }
-  friend auto operator==(const uint128_t& lhs, const uint128_t& rhs) -> bool {
+  friend auto operator==(const uint128_fallback& lhs,
+                         const uint128_fallback& rhs) -> bool {
     return lhs.hi_ == rhs.hi_ && lhs.lo_ == rhs.lo_;
   }
-  friend auto operator&(const uint128_t& lhs, const uint128_t& rhs)
-      -> uint128_t {
+  friend auto operator&(const uint128_fallback& lhs,
+                        const uint128_fallback& rhs) -> uint128_fallback {
     return {lhs.hi_ & rhs.hi_, lhs.lo_ & rhs.lo_};
   }
-  friend auto operator-(const uint128_t& lhs, uint64_t rhs) -> uint128_t {
+  friend auto operator-(const uint128_fallback& lhs, uint64_t rhs)
+      -> uint128_fallback {
     FMT_ASSERT(lhs.lo_ >= rhs, "");
     return {lhs.hi_, lhs.lo_ - rhs};
   }
-  auto operator>>(int shift) const -> uint128_t {
+  auto operator>>(int shift) const -> uint128_fallback {
     if (shift == 64) return {0, hi_};
     return {hi_ >> shift, (hi_ << (64 - shift)) | (lo_ >> shift)};
   }
-  auto operator<<(int shift) const -> uint128_t {
+  auto operator<<(int shift) const -> uint128_fallback {
     if (shift == 64) return {lo_, 0};
     return {hi_ << shift | (lo_ >> (64 - shift)), (lo_ << shift)};
   }
 };
+
+using uint128_t = conditional_t<FMT_USE_INT128, uint128_opt, uint128_fallback>;
 
 // Returns the largest possible value for type T. Same as
 // std::numeric_limits<T>::max() but shorter and not affected by the max macro.
@@ -380,7 +384,7 @@ template <typename T> constexpr auto num_bits() -> int {
 // std::numeric_limits<T>::digits may return 0 for 128-bit ints.
 template <> constexpr auto num_bits<int128_opt>() -> int { return 128; }
 template <> constexpr auto num_bits<uint128_t>() -> int { return 128; }
-template <> constexpr auto num_bits<fallback_uintptr>() -> int {
+template <> constexpr auto num_bits<uintptr_fallback>() -> int {
   return static_cast<int>(sizeof(void*) *
                           std::numeric_limits<unsigned char>::digits);
 }
@@ -1035,7 +1039,7 @@ FMT_CONSTEXPR auto count_digits(UInt n) -> int {
   }(n);
 }
 
-template <> auto count_digits<4>(detail::fallback_uintptr n) -> int;
+template <> auto count_digits<4>(detail::uintptr_fallback n) -> int;
 
 #ifdef FMT_BUILTIN_CLZ
 // It is a separate function rather than a part of count_digits to workaround
@@ -1179,7 +1183,7 @@ FMT_CONSTEXPR auto format_uint(Char* buffer, UInt value, int num_digits,
 }
 
 template <unsigned BASE_BITS, typename Char>
-auto format_uint(Char* buffer, detail::fallback_uintptr n, int num_digits,
+auto format_uint(Char* buffer, detail::uintptr_fallback n, int num_digits,
                  bool = false) -> Char* {
   auto char_digits = std::numeric_limits<unsigned char>::digits / 4;
   int start = (num_digits + char_digits - 1) / char_digits - 1;

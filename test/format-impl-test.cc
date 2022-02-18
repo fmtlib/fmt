@@ -361,7 +361,7 @@ TEST(format_impl_test, write_fallback_uintptr) {
   std::string s;
   fmt::detail::write_ptr<char>(
       std::back_inserter(s),
-      fmt::detail::fallback_uintptr(reinterpret_cast<void*>(0xface)), nullptr);
+      fmt::detail::uintptr_fallback(reinterpret_cast<void*>(0xface)), nullptr);
   EXPECT_EQ(s, "0xface");
 }
 

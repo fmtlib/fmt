@@ -141,7 +141,7 @@ FMT_FUNC std::system_error vsystem_error(int error_code, string_view format_str,
 
 namespace detail {
 
-template <> FMT_FUNC int count_digits<4>(detail::fallback_uintptr n) {
+template <> FMT_FUNC int count_digits<4>(detail::uintptr_fallback n) {
   // fallback_uintptr is always stored in little endian.
   int i = static_cast<int>(sizeof(void*)) - 1;
   while (i > 0 && n.value[i] == 0) --i;

@@ -40,16 +40,16 @@ using testing::StrictMock;
 enum { buffer_size = 256 };
 
 TEST(uint128_test, ctor) {
-  using fmt::detail::uint128_t;
-  auto n = uint128_t();
+  using fmt::detail::uint128_fallback;
+  auto n = uint128_fallback();
   EXPECT_EQ(n, 0);
-  n = uint128_t(42);
+  n = uint128_fallback(42);
   EXPECT_EQ(n, 42);
   EXPECT_EQ(static_cast<uint64_t>(n), 42);
 }
 
 TEST(uint128_test, shift) {
-  auto n = fmt::detail::uint128_t(42);
+  auto n = fmt::detail::uint128_fallback(42);
   n = n << 64;
   EXPECT_EQ(static_cast<uint64_t>(n), 0);
   n = n >> 64;
@@ -62,7 +62,7 @@ TEST(uint128_test, shift) {
 }
 
 TEST(uint128_test, minus) {
-  auto n = fmt::detail::uint128_t(42);
+  auto n = fmt::detail::uint128_fallback(42);
   EXPECT_EQ(n - 2, 40);
 }
 
