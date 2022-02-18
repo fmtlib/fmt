@@ -392,9 +392,7 @@ template <typename T> inline auto convert_for_visit(T value) -> T {
 enum class int128_opt {};
 enum class uint128_opt {};
 // Reduce template instantiations.
-template <typename T> inline auto convert_for_visit(T) -> monostate {
-  return {};
-}
+template <typename T> auto convert_for_visit(T) -> monostate { return {}; }
 #endif
 
 // Casts a nonnegative integer to unsigned.
