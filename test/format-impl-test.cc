@@ -96,23 +96,6 @@ TEST(bigint_test, multiply) {
   EXPECT_EQ("fffffffffffffffe0000000000000001", fmt::format("{}", bigmax));
 }
 
-TEST(bigint_test, accumulator) {
-  fmt::detail::accumulator acc;
-  EXPECT_EQ(acc.lower, 0);
-  EXPECT_EQ(acc.upper, 0);
-  acc.upper = 12;
-  acc.lower = 34;
-  EXPECT_EQ(static_cast<uint32_t>(acc), 34);
-  acc += 56;
-  EXPECT_EQ(acc.lower, 90);
-  acc += max_value<uint64_t>();
-  EXPECT_EQ(acc.upper, 13);
-  EXPECT_EQ(acc.lower, 89);
-  acc >>= 32;
-  EXPECT_EQ(acc.upper, 0);
-  EXPECT_EQ(acc.lower, 13 * 0x100000000);
-}
-
 TEST(bigint_test, square) {
   bigint n0(0);
   n0.square();

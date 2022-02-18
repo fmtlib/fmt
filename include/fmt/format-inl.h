@@ -142,7 +142,7 @@ FMT_FUNC std::system_error vsystem_error(int error_code, string_view format_str,
 namespace detail {
 
 template <> FMT_FUNC int count_digits<4>(detail::uintptr_fallback n) {
-  // fallback_uintptr is always stored in little endian.
+  // uintptr_fallback is always stored in little endian.
   int i = static_cast<int>(sizeof(void*)) - 1;
   while (i > 0 && n.value[i] == 0) --i;
   auto char_digits = std::numeric_limits<unsigned char>::digits / 4;
@@ -347,29 +347,6 @@ FMT_CONSTEXPR inline fp get_cached_power(int min_exponent,
           impl_data::pow10_exponents[index]};
 }
 
-// A simple accumulator to hold the sums of terms in bigint::square if uint128_t
-// is not available.
-struct accumulator {
-  uint64_t lower;
-  uint64_t upper;
-
-  constexpr accumulator() : lower(0), upper(0) {}
-  constexpr explicit operator uint32_t() const {
-    return static_cast<uint32_t>(lower);
-  }
-
-  FMT_CONSTEXPR void operator+=(uint64_t n) {
-    lower += n;
-    if (lower < n) ++upper;
-  }
-  FMT_CONSTEXPR void operator>>=(int shift) {
-    FMT_ASSERT(shift == 32, "");
-    (void)shift;
-    lower = (upper << 32) | (lower >> 32);
-    upper >>= 32;
-  }
-};
-
 class bigint {
  private:
   // A bigint is stored as an array of bigits (big digits), with bigit at index
@@ -558,9 +535,7 @@ class bigint {
     int num_result_bigits = 2 * num_bigits;
     basic_memory_buffer<bigit, bigits_capacity> n(std::move(bigits_));
     bigits_.resize(to_unsigned(num_result_bigits));
-    using accumulator_t =
-        conditional_t<FMT_USE_INT128, uint128_opt, accumulator>;
-    auto sum = accumulator_t();
+    auto sum = uint128_t();
     for (int bigit_index = 0; bigit_index < num_bigits; ++bigit_index) {
       // Compute bigit at position bigit_index of the result by adding
       // cross-product terms n[i] * n[j] such that i + j == bigit_index.
