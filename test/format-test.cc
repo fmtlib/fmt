@@ -39,6 +39,33 @@ using testing::StrictMock;
 
 enum { buffer_size = 256 };
 
+TEST(uint128_test, ctor) {
+  using fmt::detail::uint128_t;
+  auto n = uint128_t();
+  EXPECT_EQ(n, 0);
+  n = uint128_t(42);
+  EXPECT_EQ(n, 42);
+  EXPECT_EQ(static_cast<uint64_t>(n), 42);
+}
+
+TEST(uint128_test, shift) {
+  auto n = fmt::detail::uint128_t(42);
+  n = n << 64;
+  EXPECT_EQ(static_cast<uint64_t>(n), 0);
+  n = n >> 64;
+  EXPECT_EQ(static_cast<uint64_t>(n), 42);
+  n = n << 62;
+  EXPECT_EQ(static_cast<uint64_t>(n >> 64), 0xa);
+  EXPECT_EQ(static_cast<uint64_t>(n), 0x8000000000000000);
+  n = n >> 62;
+  EXPECT_EQ(static_cast<uint64_t>(n), 42);
+}
+
+TEST(uint128_test, minus) {
+  auto n = fmt::detail::uint128_t(42);
+  EXPECT_EQ(n - 2, 40);
+}
+
 struct uint32_pair {
   uint32_t u[2];
 };

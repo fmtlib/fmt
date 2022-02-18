@@ -558,7 +558,8 @@ class bigint {
     int num_result_bigits = 2 * num_bigits;
     basic_memory_buffer<bigit, bigits_capacity> n(std::move(bigits_));
     bigits_.resize(to_unsigned(num_result_bigits));
-    using accumulator_t = conditional_t<FMT_USE_INT128, uint128_t, accumulator>;
+    using accumulator_t =
+        conditional_t<FMT_USE_INT128, uint128_opt, accumulator>;
     auto sum = accumulator_t();
     for (int bigit_index = 0; bigit_index < num_bigits; ++bigit_index) {
       // Compute bigit at position bigit_index of the result by adding
@@ -833,7 +834,7 @@ namespace dragonbox {
 // Computes 128-bit result of multiplication of two 64-bit unsigned integers.
 inline uint128_wrapper umul128(uint64_t x, uint64_t y) noexcept {
 #if FMT_USE_INT128
-  auto p = static_cast<uint128_t>(x) * static_cast<uint128_t>(y);
+  auto p = static_cast<uint128_opt>(x) * static_cast<uint128_opt>(y);
   return {static_cast<uint64_t>(p >> 64), static_cast<uint64_t>(p)};
 #elif defined(_MSC_VER) && defined(_M_X64)
   uint128_wrapper result;
@@ -863,7 +864,7 @@ inline uint128_wrapper umul128(uint64_t x, uint64_t y) noexcept {
 // Computes upper 64 bits of multiplication of two 64-bit unsigned integers.
 inline uint64_t umul128_upper64(uint64_t x, uint64_t y) noexcept {
 #if FMT_USE_INT128
-  auto p = static_cast<uint128_t>(x) * static_cast<uint128_t>(y);
+  auto p = static_cast<uint128_opt>(x) * static_cast<uint128_opt>(y);
   return static_cast<uint64_t>(p >> 64);
 #elif defined(_MSC_VER) && defined(_M_X64)
   return __umulh(x, y);
