@@ -948,8 +948,10 @@ TEST(format_test, precision) {
   EXPECT_THAT(outputs,
               testing::Contains(fmt::format("{:.838A}", -2.14001164E+38)));
 
-  auto ld = 8.43821965335442234493E-4933L;
-  EXPECT_EQ(fmt::format("{:.0}", ld), ld != 0 ? "8e-4933" : "0");
+  if (std::numeric_limits<long double>::digits == 64) {
+    auto ld = (std::numeric_limits<long double>::min)();
+    EXPECT_EQ(fmt::format("{:.0}", ld), "3e-4932");
+  }
 
   EXPECT_EQ("123.", fmt::format("{:#.0f}", 123.0));
   EXPECT_EQ("1.23", fmt::format("{:.02f}", 1.234));
