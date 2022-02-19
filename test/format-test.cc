@@ -1459,8 +1459,14 @@ TEST(format_test, write_uintptr_fallback) {
 
 enum class color { red, green, blue };
 
+namespace test_ns {
+enum class color { red, green, blue };
+using fmt::enums::format_as;
+}  // namespace test_ns
+
 TEST(format_test, format_enum_class) {
   EXPECT_EQ(fmt::format("{}", fmt::underlying(color::red)), "0");
+  EXPECT_EQ(fmt::format("{}", test_ns::color::red), "0");
 }
 
 TEST(format_test, format_string) {

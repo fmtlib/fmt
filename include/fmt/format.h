@@ -2891,6 +2891,13 @@ constexpr auto underlying(Enum e) noexcept -> underlying_t<Enum> {
   return static_cast<underlying_t<Enum>>(e);
 }
 
+namespace enums {
+template <typename Enum, FMT_ENABLE_IF(std::is_enum<Enum>::value)>
+constexpr auto format_as(Enum e) noexcept -> underlying_t<Enum> {
+  return static_cast<underlying_t<Enum>>(e);
+}
+}
+
 #ifdef __cpp_lib_byte
 inline auto format_as(std::byte b) -> unsigned char { return underlying(b); }
 FMT_FORMAT_AS(std::byte, unsigned char);
