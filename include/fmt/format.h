@@ -288,9 +288,8 @@ template <typename Streambuf> class formatbuf : public Streambuf {
 };
 
 // Implementation of std::bit_cast for pre-C++20.
-template <typename To, typename From>
+template <typename To, typename From, FMT_ENABLE_IF(sizeof(To) == sizeof(From))>
 FMT_CONSTEXPR20 auto bit_cast(const From& from) -> To {
-  static_assert(sizeof(To) == sizeof(From), "size mismatch");
 #ifdef __cpp_lib_bit_cast
   if (is_constant_evaluated()) return std::bit_cast<To>(from);
 #endif
@@ -369,27 +368,9 @@ using uint128_t = conditional_t<FMT_USE_INT128, uint128_opt, uint128_fallback>;
 
 #ifdef UINTPTR_MAX
 using uintptr_t = ::uintptr_t;
-inline auto to_uintptr(const void* p) -> uintptr_t {
-  return bit_cast<uintptr_t>(p);
-}
 #else
 using uintptr_t = uint128_t;
 #endif
-
-// A fallback for systems that lack uintptr_t.
-template <typename T = uint128_t> inline auto to_uintptr(const void* p) -> T {
-  constexpr auto size = static_cast<int>(sizeof(void*));
-  struct data_t {
-    unsigned char value[size];
-  } data = bit_cast<data_t>(p);
-  auto result = T();
-  if (const_check(is_big_endian())) {
-    for (int i = 0; i < size; ++i) result = (result << 8) | data.value[i];
-  } else {
-    for (int i = size - 1; i >= 0; --i) result = (result << 8) | data.value[i];
-  }
-  return result;
-}
 
 // Returns the largest possible value for type T. Same as
 // std::numeric_limits<T>::max() but shorter and not affected by the max macro.
@@ -402,6 +383,25 @@ template <typename T> constexpr auto num_bits() -> int {
 // std::numeric_limits<T>::digits may return 0 for 128-bit ints.
 template <> constexpr auto num_bits<int128_opt>() -> int { return 128; }
 template <> constexpr auto num_bits<uint128_t>() -> int { return 128; }
+
+// A heterogeneous bit_cast used for converting 96-bit long double to uint128_t
+// and 128-bit pointers to uint128_fallback.
+template <typename To, typename From, FMT_ENABLE_IF(sizeof(To) > sizeof(From))>
+inline auto bit_cast(const From& from) -> To {
+  constexpr auto size = static_cast<int>(sizeof(From) / sizeof(unsigned));
+  struct data_t {
+    unsigned value[size];
+  } data = bit_cast<data_t>(from);
+  auto result = To();
+  if (const_check(is_big_endian())) {
+    for (int i = 0; i < size; ++i)
+      result = (result << num_bits<unsigned>()) | data.value[i];
+  } else {
+    for (int i = size - 1; i >= 0; --i)
+      result = (result << num_bits<unsigned>()) | data.value[i];
+  }
+  return result;
+}
 
 FMT_INLINE void assume(bool condition) {
   (void)condition;
@@ -1275,7 +1275,7 @@ template <> struct float_info<double> {
 template <typename T>
 struct float_info<T, enable_if_t<std::is_same<T, long double>::value &&
                                  std::numeric_limits<T>::digits == 64>> {
-  using carrier_uint = detail::uint128_opt;
+  using carrier_uint = detail::uint128_t;
   static const int significand_bits = 64;
   static const int exponent_bits = 15;
 };
@@ -1911,7 +1911,7 @@ FMT_CONSTEXPR auto write(OutputIt out, const Char* s,
     -> OutputIt {
   return check_cstring_type_spec(specs.type)
              ? write(out, basic_string_view<Char>(s), specs, {})
-             : write_ptr<Char>(out, to_uintptr(s), &specs);
+             : write_ptr<Char>(out, bit_cast<uintptr_t>(s), &specs);
 }
 
 template <typename Char, typename OutputIt>
@@ -2394,7 +2394,7 @@ auto write(OutputIt out, const T* value,
            const basic_format_specs<Char>& specs = {}, locale_ref = {})
     -> OutputIt {
   check_pointer_type_spec(specs.type, error_handler());
-  return write_ptr<Char>(out, to_uintptr(value), &specs);
+  return write_ptr<Char>(out, bit_cast<uintptr_t>(value), &specs);
 }
 
 // A write overload that handles implicit conversions.

@@ -340,16 +340,6 @@ TEST(format_impl_test, count_digits) {
   test_count_digits<uint64_t>();
 }
 
-TEST(format_impl_test, write_uintptr_fallback) {
-  std::string s;
-  fmt::detail::write_ptr<char>(
-      std::back_inserter(s),
-      fmt::detail::to_uintptr<fmt::detail::uint128_fallback>(
-          reinterpret_cast<void*>(0xface)),
-      nullptr);
-  EXPECT_EQ(s, "0xface");
-}
-
 #ifdef _WIN32
 #  include <windows.h>
 #endif

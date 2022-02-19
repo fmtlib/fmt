@@ -237,11 +237,7 @@ struct fp {
   template <typename Float> explicit FMT_CONSTEXPR fp(Float n) { assign(n); }
 
   template <typename Float>
-  using is_supported =
-      bool_constant<sizeof(Float) == sizeof(uint32_t) ||
-                    sizeof(Float) == sizeof(uint64_t) ||
-                    (sizeof(Float) == sizeof(uint128_t) &&
-                     std::numeric_limits<Float>::digits == 64)>;
+  using is_supported = bool_constant<std::numeric_limits<Float>::digits <= 64>;
 
   // Assigns d to this and return true iff predecessor is closer than successor.
   template <typename Float, FMT_ENABLE_IF(is_supported<Float>::value)>
