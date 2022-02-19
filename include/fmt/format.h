@@ -41,7 +41,6 @@
 #include <memory>        // std::uninitialized_copy
 #include <stdexcept>     // std::runtime_error
 #include <system_error>  // std::system_error
-#include <utility>       // std::swap
 
 #ifdef __cpp_lib_bit_cast
 #  include <bit>  // std::bitcast
