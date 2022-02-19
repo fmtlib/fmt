@@ -2354,8 +2354,7 @@ template <
             type::custom_type,
     FMT_ENABLE_IF(check)>
 FMT_CONSTEXPR auto write(OutputIt out, T value) -> OutputIt {
-  return write<Char>(
-      out, static_cast<typename std::underlying_type<T>::type>(value));
+  return write<Char>(out, static_cast<underlying_t<T>>(value));
 }
 
 template <typename Char, typename OutputIt, typename T,
@@ -2888,9 +2887,8 @@ template <typename T> auto ptr(const std::shared_ptr<T>& p) -> const void* {
   \endrst
  */
 template <typename Enum>
-constexpr auto underlying(Enum e) noexcept ->
-    typename std::underlying_type<Enum>::type {
-  return static_cast<typename std::underlying_type<Enum>::type>(e);
+constexpr auto underlying(Enum e) noexcept -> underlying_t<Enum> {
+  return static_cast<underlying_t<Enum>>(e);
 }
 
 #ifdef __cpp_lib_byte
