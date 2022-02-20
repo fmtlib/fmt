@@ -314,6 +314,8 @@ template <typename T>
 using remove_cvref_t = typename std::remove_cv<remove_reference_t<T>>::type;
 template <typename T> struct type_identity { using type = T; };
 template <typename T> using type_identity_t = typename type_identity<T>::type;
+template <typename T>
+using underlying_t = typename std::underlying_type<T>::type;
 
 struct monostate {
   constexpr monostate() {}
@@ -1416,8 +1418,8 @@ template <typename Context> struct arg_mapper {
                 !has_fallback_formatter<T, char_type>::value)>
   FMT_CONSTEXPR FMT_INLINE auto map(const T& val)
       -> decltype(std::declval<arg_mapper>().map(
-          static_cast<typename std::underlying_type<T>::type>(val))) {
-    return map(static_cast<typename std::underlying_type<T>::type>(val));
+          static_cast<underlying_t<T>>(val))) {
+    return map(static_cast<underlying_t<T>>(val));
   }
 
   template <typename T, typename U = decltype(format_as(T())),
@@ -2214,13 +2216,12 @@ template <typename Char> constexpr bool is_ascii_letter(Char c) {
 
 // Converts a character to ASCII. Returns a number > 127 on conversion failure.
 template <typename Char, FMT_ENABLE_IF(std::is_integral<Char>::value)>
-constexpr auto to_ascii(Char value) -> Char {
-  return value;
+constexpr auto to_ascii(Char c) -> Char {
+  return c;
 }
 template <typename Char, FMT_ENABLE_IF(std::is_enum<Char>::value)>
-constexpr auto to_ascii(Char value) ->
-    typename std::underlying_type<Char>::type {
-  return value;
+constexpr auto to_ascii(Char c) -> underlying_t<Char> {
+  return c;
 }
 
 template <typename Char>

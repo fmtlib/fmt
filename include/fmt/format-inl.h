@@ -2208,7 +2208,13 @@ FMT_HEADER_ONLY_CONSTEXPR20 int format_float(Float value, int precision,
 
   if (specs.fallback) return snprintf_float(value, precision, specs, buf);
 
-  if (!is_constant_evaluated() && precision < 0) {
+  int exp = 0;
+  bool use_dragon = true;
+  if (!is_fast_float<Float>()) {
+    // Use floor because 0.9 = 9e-1.
+    exp = static_cast<int>(std::floor(std::log10(value)));
+    if (fixed) adjust_precision(precision, exp + 1);
+  } else if (!is_constant_evaluated() && precision < 0) {
     // Use Dragonbox for the shortest format.
     if (specs.binary32) {
       auto dec = dragonbox::to_decimal(static_cast<float>(value));
@@ -2218,11 +2224,7 @@ FMT_HEADER_ONLY_CONSTEXPR20 int format_float(Float value, int precision,
     auto dec = dragonbox::to_decimal(static_cast<double>(value));
     write<char>(buffer_appender<char>(buf), dec.significand);
     return dec.exponent;
-  }
-
-  int exp = 0;
-  bool use_dragon = true;
-  if (is_fast_float<Float>()) {
+  } else {
     // Use Grisu + Dragon4 for the given precision:
     // https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf.
     const int min_exp = -60;  // alpha in Grisu.
@@ -2241,10 +2243,6 @@ FMT_HEADER_ONLY_CONSTEXPR20 int format_float(Float value, int precision,
       exp += handler.size - cached_exp10 - 1;
       precision = handler.precision;
     }
-  } else {
-    // Use floor because 0.9 = 9e-1.
-    exp = static_cast<int>(std::floor(std::log10(value)));
-    if (fixed) adjust_precision(precision, exp + 1);
   }
   if (use_dragon) {
     auto f = fp();

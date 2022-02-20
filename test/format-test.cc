@@ -250,8 +250,9 @@ TEST(memory_buffer_test, move_ctor_dynamic_buffer) {
   buffer.push_back('a');
   basic_memory_buffer<char, 4, std_allocator> buffer2(std::move(buffer));
   // Move should rip the guts of the first buffer.
-  EXPECT_EQ(inline_buffer_ptr, &buffer[0]);
-  EXPECT_EQ("testa", std::string(&buffer2[0], buffer2.size()));
+  EXPECT_EQ(&buffer[0], inline_buffer_ptr);
+  EXPECT_EQ(buffer.size(), 0);
+  EXPECT_EQ(std::string(&buffer2[0], buffer2.size()), "testa");
   EXPECT_GT(buffer2.capacity(), 4u);
 }
 
@@ -948,8 +949,10 @@ TEST(format_test, precision) {
   EXPECT_THAT(outputs,
               testing::Contains(fmt::format("{:.838A}", -2.14001164E+38)));
 
-  auto ld = 8.43821965335442234493E-4933L;
-  EXPECT_EQ(fmt::format("{:.0}", ld), ld != 0 ? "8e-4933" : "0");
+  if (std::numeric_limits<long double>::digits == 64) {
+    auto ld = (std::numeric_limits<long double>::min)();
+    EXPECT_EQ(fmt::format("{:.0}", ld), "3e-4932");
+  }
 
   EXPECT_EQ("123.", fmt::format("{:#.0f}", 123.0));
   EXPECT_EQ("1.23", fmt::format("{:.02f}", 1.234));
@@ -1459,8 +1462,14 @@ TEST(format_test, write_uintptr_fallback) {
 
 enum class color { red, green, blue };
 
+namespace test_ns {
+enum class color { red, green, blue };
+using fmt::enums::format_as;
+}  // namespace test_ns
+
 TEST(format_test, format_enum_class) {
   EXPECT_EQ(fmt::format("{}", fmt::underlying(color::red)), "0");
+  EXPECT_EQ(fmt::format("{}", test_ns::color::red), "0");
 }
 
 TEST(format_test, format_string) {
