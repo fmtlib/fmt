@@ -389,7 +389,7 @@ template <typename To, typename From, FMT_ENABLE_IF(sizeof(To) > sizeof(From))>
 inline auto bit_cast(const From& from) -> To {
   constexpr auto size = static_cast<int>(sizeof(From) / sizeof(unsigned));
   struct data_t {
-    unsigned value[static_cast<size_t>(size)];
+    unsigned value[to_unsigned(size)];
   } data = bit_cast<data_t>(from);
   auto result = To();
   if (const_check(is_big_endian())) {
