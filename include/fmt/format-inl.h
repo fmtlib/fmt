@@ -223,18 +223,20 @@ template <typename Float> constexpr int num_significand_bits() {
 }
 
 // A floating-point number f * pow(2, e).
-struct fp {
-  uint64_t f;
+template <typename F> struct basic_fp {
+  F f;
   int e;
 
-  static constexpr const int num_significand_bits = bits<decltype(f)>::value;
+  static constexpr const int num_significand_bits = bits<F>::value;
 
-  constexpr fp() : f(0), e(0) {}
-  constexpr fp(uint64_t f_val, int e_val) : f(f_val), e(e_val) {}
+  constexpr basic_fp() : f(0), e(0) {}
+  constexpr basic_fp(uint64_t f_val, int e_val) : f(f_val), e(e_val) {}
 
   // Constructs fp from an IEEE754 floating-point number. It is a template to
   // prevent compile errors on systems where n is not IEEE754.
-  template <typename Float> explicit FMT_CONSTEXPR fp(Float n) { assign(n); }
+  template <typename Float> explicit FMT_CONSTEXPR basic_fp(Float n) {
+    assign(n);
+  }
 
   template <typename Float>
   using is_supported = bool_constant<std::numeric_limits<Float>::digits <= 64>;
@@ -272,8 +274,11 @@ struct fp {
   }
 };
 
+using fp = basic_fp<unsigned long long>;
+
 // Normalizes the value converted from double and multiplied by (1 << SHIFT).
-template <int SHIFT = 0> FMT_CONSTEXPR fp normalize(fp value) {
+template <int SHIFT = 0, typename F>
+FMT_CONSTEXPR basic_fp<F> normalize(basic_fp<F> value) {
   // Handle subnormals.
   const uint64_t implicit_bit = 1ULL << num_significand_bits<double>();
   const auto shifted_implicit_bit = implicit_bit << SHIFT;
@@ -289,7 +294,9 @@ template <int SHIFT = 0> FMT_CONSTEXPR fp normalize(fp value) {
   return value;
 }
 
-inline bool operator==(fp x, fp y) { return x.f == y.f && x.e == y.e; }
+template <typename F> inline bool operator==(basic_fp<F> x, basic_fp<F> y) {
+  return x.f == y.f && x.e == y.e;
+}
 
 // Computes lhs * rhs / pow(2, 64) rounded to nearest with half-up tie breaking.
 FMT_CONSTEXPR inline uint64_t multiply(uint64_t lhs, uint64_t rhs) {

@@ -190,14 +190,14 @@ TEST(fp_test, get_cached_power) {
   using limits = std::numeric_limits<double>;
   for (auto exp = limits::min_exponent; exp <= limits::max_exponent; ++exp) {
     int dec_exp = 0;
-    auto fp = fmt::detail::get_cached_power(exp, dec_exp);
-    bigint exact, cache(fp.f);
+    auto power = fmt::detail::get_cached_power(exp, dec_exp);
+    bigint exact, cache(power.f);
     if (dec_exp >= 0) {
       exact.assign_pow10(dec_exp);
-      if (fp.e <= 0)
-        exact <<= -fp.e;
+      if (power.e <= 0)
+        exact <<= -power.e;
       else
-        cache <<= fp.e;
+        cache <<= power.e;
       exact.align(cache);
       cache.align(exact);
       auto exact_str = fmt::format("{}", exact);
@@ -211,9 +211,9 @@ TEST(fp_test, get_cached_power) {
         EXPECT_EQ(diff, 0);
     } else {
       cache.assign_pow10(-dec_exp);
-      cache *= fp.f + 1;  // Inexact check.
+      cache *= power.f + 1;  // Inexact check.
       exact.assign(1);
-      exact <<= -fp.e;
+      exact <<= -power.e;
       exact.align(cache);
       auto exact_str = fmt::format("{}", exact);
       auto cache_str = fmt::format("{}", cache);
