@@ -775,6 +775,7 @@ class basic_memory_buffer final : public detail::buffer<T> {
       // Set pointer to the inline array so that delete is not called
       // when deallocating.
       other.set(other.store_, 0);
+      other.clear();
     }
     this->resize(size);
   }
@@ -2896,7 +2897,7 @@ template <typename Enum, FMT_ENABLE_IF(std::is_enum<Enum>::value)>
 constexpr auto format_as(Enum e) noexcept -> underlying_t<Enum> {
   return static_cast<underlying_t<Enum>>(e);
 }
-}
+}  // namespace enums
 
 #ifdef __cpp_lib_byte
 inline auto format_as(std::byte b) -> unsigned char { return underlying(b); }

@@ -250,8 +250,9 @@ TEST(memory_buffer_test, move_ctor_dynamic_buffer) {
   buffer.push_back('a');
   basic_memory_buffer<char, 4, std_allocator> buffer2(std::move(buffer));
   // Move should rip the guts of the first buffer.
-  EXPECT_EQ(inline_buffer_ptr, &buffer[0]);
-  EXPECT_EQ("testa", std::string(&buffer2[0], buffer2.size()));
+  EXPECT_EQ(&buffer[0], inline_buffer_ptr);
+  EXPECT_EQ(buffer.size(), 0);
+  EXPECT_EQ(std::string(&buffer2[0], buffer2.size()), "testa");
   EXPECT_GT(buffer2.capacity(), 4u);
 }
 
