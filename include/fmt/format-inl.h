@@ -2043,28 +2043,22 @@ small_divisor_case_label:
   // Add dist / 10^kappa to the significand.
   ret_value.significand += dist;
 
-  if (divisible_by_small_divisor) {
-    // Check z^(f) >= epsilon^(f).
-    // We have either yi == zi - epsiloni or yi == (zi - epsiloni) - 1,
-    // where yi == zi - epsiloni if and only if z^(f) >= epsilon^(f)
-    // Since there are only 2 possibilities, we only need to care about the
-    // parity. Also, zi and r should have the same parity since the divisor
-    // is an even number.
-    const typename cache_accessor<T>::compute_mul_parity_result y_mul =
-        cache_accessor<T>::compute_mul_parity(two_fc, cache, beta);
+  if (!divisible_by_small_divisor) return ret_value;
 
-    if (y_mul.parity != approx_y_parity) {
-      --ret_value.significand;
-    } else {
-      // If z^(f) >= epsilon^(f), we might have a tie
-      // when z^(f) == epsilon^(f), or equivalently, when y is an integer
-      if (y_mul.is_integer) {
-        ret_value.significand = ret_value.significand % 2 == 0
-                                    ? ret_value.significand
-                                    : ret_value.significand - 1;
-      }
-    }
-  }
+  // Check z^(f) >= epsilon^(f).
+  // We have either yi == zi - epsiloni or yi == (zi - epsiloni) - 1,
+  // where yi == zi - epsiloni if and only if z^(f) >= epsilon^(f).
+  // Since there are only 2 possibilities, we only need to care about the
+  // parity. Also, zi and r should have the same parity since the divisor
+  // is an even number.
+  const auto y_mul = cache_accessor<T>::compute_mul_parity(two_fc, cache, beta);
+
+  // If z^(f) >= epsilon^(f), we might have a tie when z^(f) == epsilon^(f),
+  // or equivalently, when y is an integer.
+  if (y_mul.parity != approx_y_parity)
+    --ret_value.significand;
+  else if (y_mul.is_integer && ret_value.significand % 2 != 0)
+    --ret_value.significand;
   return ret_value;
 }
 }  // namespace dragonbox
