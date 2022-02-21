@@ -2260,7 +2260,8 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value,
     precision = 1;
   }
   if (const_check(std::is_same<T, float>())) fspecs.binary32 = true;
-  if (const_check(!std::numeric_limits<T>::is_iec559 || std::numeric_limits<T>::digits > 64))
+  using limits = std::numeric_limits<T>;
+  if (const_check(!limits::is_iec559 || limits::digits > 64))
     fspecs.fallback = true;
   int exp = format_float(convert_float(value), precision, fspecs, buffer);
   fspecs.precision = precision;
@@ -2271,9 +2272,8 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value,
 template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(is_fast_float<T>::value)>
 FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
-  if (is_constant_evaluated()) {
+  if (is_constant_evaluated())
     return write(out, value, basic_format_specs<Char>());
-  }
 
   if (const_check(!is_supported_floating_point(value))) return out;
 
