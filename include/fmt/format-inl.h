@@ -239,7 +239,8 @@ template <typename F> struct basic_fp {
   }
 
   template <typename Float>
-  using is_supported = bool_constant<std::numeric_limits<Float>::digits <= 64>;
+  using is_supported = bool_constant<std::numeric_limits<Float>::is_iec559 &&
+                                     std::numeric_limits<Float>::digits <= 64>;
 
   // Assigns d to this and return true iff predecessor is closer than successor.
   template <typename Float, FMT_ENABLE_IF(is_supported<Float>::value)>
@@ -268,10 +269,7 @@ template <typename F> struct basic_fp {
   }
 
   template <typename Float, FMT_ENABLE_IF(!is_supported<Float>::value)>
-  bool assign(Float) {
-    FMT_ASSERT(false, "");
-    return false;
-  }
+  bool assign(Float) = delete;
 };
 
 using fp = basic_fp<unsigned long long>;
@@ -2206,8 +2204,6 @@ FMT_HEADER_ONLY_CONSTEXPR20 int format_float(Float value, int precision,
     fill_n(buf.data(), precision, '0');
     return -precision;
   }
-
-  if (specs.fallback) return snprintf_float(value, precision, specs, buf);
 
   int exp = 0;
   bool use_dragon = true;
