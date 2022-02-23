@@ -2101,8 +2101,9 @@ FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& fp,
       throw std::runtime_error("fuzz mode - avoiding excessive cpu use");
 #endif
     if (fspecs.showpoint) {
+      ++size;
       if (num_zeros <= 0 && fspecs.format != float_format::fixed) num_zeros = 1;
-      if (num_zeros > 0) size += to_unsigned(num_zeros) + 1;
+      if (num_zeros > 0) size += to_unsigned(num_zeros);
     }
     auto grouping = Grouping(loc, fspecs.locale);
     size += to_unsigned(grouping.count_separators(significand_size));
