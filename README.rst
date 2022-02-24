@@ -123,7 +123,7 @@ Output::
     Default format: 42s 100ms
     strftime-like format: 03:15:30
 
-**Print a container** (`run <https://godbolt.org/z/MjsY7c>`_)
+**Print a container** (`run <https://godbolt.org/z/MxM1YqjE7>`_)
 
 .. code:: c++
 
@@ -137,7 +137,7 @@ Output::
 
 Output::
 
-    {1, 2, 3}
+    [1, 2, 3]
 
 **Check a format string at compile time**
 
