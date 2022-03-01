@@ -28,9 +28,8 @@
 **{fmt}** is an open-source formatting library providing a fast and safe
 alternative to C stdio and C++ iostreams.
 
-If you like this project, please consider donating to the BYSOL
-Foundation that helps victims of political repressions in Belarus:
-https://bysol.org/en/bs/general/.
+If you like this project, please consider donating to one of the funds that
+help victims of the war in Ukraine: https://www.stopputin.net/.
 
 `Documentation <https://fmt.dev>`__
 
