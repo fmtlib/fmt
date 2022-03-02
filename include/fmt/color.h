@@ -630,6 +630,118 @@ inline auto format_to(OutputIt out, const text_style& ts, const S& format_str,
                     fmt::make_format_args<buffer_context<char_t<S>>>(args...));
 }
 
+FMT_BEGIN_DETAIL_NAMESPACE
+
+template <typename Arg> struct styled_arg {
+  FMT_CONSTEXPR styled_arg(Arg const& argument, text_style style)
+      : argument(argument), style(style) {}
+
+  const Arg& argument;
+  text_style style;
+};
+
+FMT_END_DETAIL_NAMESPACE
+
+template <typename Arg, typename Char>
+struct formatter<detail::styled_arg<Arg>, Char> {
+ private:
+  using value_type = Arg;
+  using formatter_type =
+      conditional_t<is_formattable<value_type, Char>::value,
+                    formatter<remove_cvref_t<value_type>, Char>,
+                    detail::fallback_formatter<value_type, Char>>;
+
+  formatter_type value_formatter_;
+
+ public:
+  template <typename ParseContext>
+  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+    return value_formatter_.parse(ctx);
+  }
+
+  template <typename FormatContext>
+  auto format(detail::styled_arg<Arg> const& arg, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    auto const& ts = arg.style;
+    auto const& value = arg.argument;
+    auto out = ctx.out();
+
+    using detail::get_buffer;
+    auto&& buf = get_buffer<Char>(out);
+
+    bool has_style = false;
+    if (ts.has_emphasis()) {
+      has_style = true;
+      auto emphasis = detail::make_emphasis<Char>(ts.get_emphasis());
+      buf.append(emphasis.begin(), emphasis.end());
+    }
+    if (ts.has_foreground()) {
+      has_style = true;
+      auto foreground =
+          detail::make_foreground_color<Char>(ts.get_foreground());
+      buf.append(foreground.begin(), foreground.end());
+    }
+    if (ts.has_background()) {
+      has_style = true;
+      auto background =
+          detail::make_background_color<Char>(ts.get_background());
+      buf.append(background.begin(), background.end());
+    }
+    out = value_formatter_.format(value, ctx);
+    if (has_style) detail::reset_color<Char>(buf);
+    return out;
+  }
+};
+
+/**
+  \rst
+  Returns an argument that will be formatted using ANSI escape sequences,
+  to be used in a formatting function.
+
+  **Example**::
+
+    fmt::print("Elapsed time: {s:.2f} seconds",
+               fmt::styled(1.23, fmt::fg(fmt::colors::green) |
+  fmt::bg(fmt::color::blue))); \endrst
+ */
+template <typename Arg>
+FMT_CONSTEXPR auto styled(const Arg& arg, text_style ts = {})
+    -> detail::styled_arg<remove_cvref_t<Arg>> {
+  return detail::styled_arg<remove_cvref_t<Arg>>(arg, ts);
+}
+
+/**
+  \rst
+  Returns an argument surrounded by the ANSI escape sequences of the color,
+  to be used in a formatting function.
+
+  **Example**::
+
+    fmt::print("Elapsed time: {s:.2f} seconds", fmt::styled(1.23,
+  fmt::colors::green)); \endrst
+ */
+template <typename Arg>
+FMT_CONSTEXPR auto styled(const Arg& arg, detail::color_type color)
+    -> detail::styled_arg<remove_cvref_t<Arg>> {
+  return detail::styled_arg<remove_cvref_t<Arg>>(arg, fg(color));
+}
+
+/**
+  \rst
+  Returns an argument associated with an emphasis, to be used
+  in a formatting function.
+
+  **Example**::
+
+    fmt::print("Elapsed time: {s:.2f} seconds", fmt::styled(1.23,
+  fmt::emphasis::italic)); \endrst
+ */
+template <typename Arg>
+FMT_CONSTEXPR auto styled(const Arg& arg, emphasis em)
+    -> detail::styled_arg<remove_cvref_t<Arg>> {
+  return detail::styled_arg<remove_cvref_t<Arg>>(arg, text_style(em));
+}
+
 FMT_MODULE_EXPORT_END
 FMT_END_NAMESPACE
 
