@@ -52,6 +52,7 @@ jobs:
     - name: Create Build Environment
       run: |
         ${{matrix.install}}
+        sudo apt update
         sudo apt install locales-all
         cmake -E make_directory ${{runner.workspace}}/build
 
