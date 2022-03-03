@@ -367,9 +367,9 @@ struct formatter<
 #endif
         >> {
 
-  using const_range = detail::maybe_const_range<R>;
+  using range_type = detail::maybe_const_range<R>;
   using formatter_type =
-      detail::range_formatter_type<Char, detail::uncvref_type<const_range>>;
+      detail::range_formatter_type<Char, detail::uncvref_type<range_type>>;
   formatter_type underlying_;
   bool custom_specs_ = false;
 
@@ -389,7 +389,7 @@ struct formatter<
   }
 
   template <typename FormatContext>
-  auto format(const_range& range, FormatContext& ctx) const
+  auto format(range_type& range, FormatContext& ctx) const
       -> decltype(ctx.out()) {
 #ifdef FMT_DEPRECATED_BRACED_RANGES
     Char prefix = '{';
