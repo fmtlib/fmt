@@ -2029,14 +2029,23 @@ template <typename Context> class basic_format_args {
 // between clang and gcc on ARM (#1919).
 using format_args = basic_format_args<format_context>;
 
-// We cannot use enum classes as bit fields because of a gcc bug
+// We cannot use enum classes as bit fields because of a gcc bug,
+// so we put them in namespaces instead.
 // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=61414.
+// Additionally, if an underlying type is specified, older gcc incorrectly warns
+// that the type is too small for all the enum values.
+// Both these bugs are fixed as of gcc 9.3.
+#if FMT_GCC_VERSION && FMT_GCC_VERSION < 903
+# define FMT_ENUM_UNDERLYING_TYPE(type)
+#else
+# define FMT_ENUM_UNDERLYING_TYPE(type) : type
+#endif
 namespace align {
-enum type { none, left, right, center, numeric };
+enum type FMT_ENUM_UNDERLYING_TYPE(unsigned char) { none, left, right, center, numeric };
 }
 using align_t = align::type;
 namespace sign {
-enum type { none, minus, plus, space };
+enum type FMT_ENUM_UNDERLYING_TYPE(unsigned char) { none, minus, plus, space };
 }
 using sign_t = sign::type;
 
