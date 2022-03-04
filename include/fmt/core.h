@@ -2014,11 +2014,11 @@ using format_args = basic_format_args<format_context>;
 // We cannot use enum classes as bit fields because of a gcc bug
 // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=61414.
 namespace align {
-enum type { none, left, right, center, numeric };
+enum type : unsigned char { none, left, right, center, numeric };
 }
 using align_t = align::type;
 namespace sign {
-enum type { none, minus, plus, space };
+enum type : unsigned char { none, minus, plus, space };
 }
 using sign_t = sign::type;
 
