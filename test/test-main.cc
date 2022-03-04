@@ -15,9 +15,6 @@
 
 #ifdef _MSC_VER
 #  include <crtdbg.h>
-#else
-#  define _CrtSetReportFile(a, b)
-#  define _CrtSetReportMode(a, b)
 #endif
 
 int main(int argc, char** argv) {
@@ -28,11 +25,13 @@ int main(int argc, char** argv) {
   SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX |
                SEM_NOOPENFILEERRORBOX);
 #endif
+#ifdef _MSC_VER
   // Disable message boxes on assertion failures.
   _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG);
   _CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
   _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG);
   _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+#endif
   try {
     testing::InitGoogleTest(&argc, argv);
     testing::FLAGS_gtest_death_test_style = "threadsafe";
