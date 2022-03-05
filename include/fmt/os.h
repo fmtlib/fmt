@@ -282,7 +282,7 @@ class buffered_file {
 // closing the file multiple times will cause a crash on Windows rather
 // than an exception. You can get standard behavior by overriding the
 // invalid parameter handler with _set_invalid_parameter_handler.
-class file {
+class FMT_API file {
  private:
   int fd_;  // File descriptor.
 
@@ -304,7 +304,7 @@ class file {
   file() noexcept : fd_(-1) {}
 
   // Opens a file and constructs a file object representing this file.
-  FMT_API file(cstring_view path, int oflag);
+  file(cstring_view path, int oflag);
 
  public:
   file(const file&) = delete;
@@ -321,43 +321,43 @@ class file {
   }
 
   // Destroys the object closing the file it represents if any.
-  FMT_API ~file() noexcept;
+  ~file() noexcept;
 
   // Returns the file descriptor.
   int descriptor() const noexcept { return fd_; }
 
   // Closes the file.
-  FMT_API void close();
+  void close();
 
   // Returns the file size. The size has signed type for consistency with
   // stat::st_size.
-  FMT_API long long size() const;
+  long long size() const;
 
   // Attempts to read count bytes from the file into the specified buffer.
-  FMT_API size_t read(void* buffer, size_t count);
+  size_t read(void* buffer, size_t count);
 
   // Attempts to write count bytes from the specified buffer to the file.
-  FMT_API size_t write(const void* buffer, size_t count);
+  size_t write(const void* buffer, size_t count);
 
   // Duplicates a file descriptor with the dup function and returns
   // the duplicate as a file object.
-  FMT_API static file dup(int fd);
+  static file dup(int fd);
 
   // Makes fd be the copy of this file descriptor, closing fd first if
   // necessary.
-  FMT_API void dup2(int fd);
+  void dup2(int fd);
 
   // Makes fd be the copy of this file descriptor, closing fd first if
   // necessary.
-  FMT_API void dup2(int fd, std::error_code& ec) noexcept;
+  void dup2(int fd, std::error_code& ec) noexcept;
 
   // Creates a pipe setting up read_end and write_end file objects for reading
   // and writing respectively.
-  FMT_API static void pipe(file& read_end, file& write_end);
+  static void pipe(file& read_end, file& write_end);
 
   // Creates a buffered_file object associated with this file and detaches
   // this file object from the file.
-  FMT_API buffered_file fdopen(const char* mode);
+  buffered_file fdopen(const char* mode);
 };
 
 // Returns the memory page size.
