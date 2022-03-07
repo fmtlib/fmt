@@ -217,6 +217,13 @@
 #  endif
 #endif
 
+#ifdef _MSC_VER
+#  define FMT_UNCHECKED_ITERATOR(It) \
+    using _Unchecked_type = It  // Mark iterator as checked.
+#else
+#  define FMT_UNCHECKED_ITERATOR(It) using DummyTypeName = It
+#endif
+
 #ifndef FMT_BEGIN_NAMESPACE
 #  define FMT_BEGIN_NAMESPACE \
     namespace fmt {           \
@@ -1498,7 +1505,7 @@ class appender : public std::back_insert_iterator<detail::buffer<char>> {
  public:
   using std::back_insert_iterator<detail::buffer<char>>::back_insert_iterator;
   appender(base it) noexcept : base(it) {}
-  using _Unchecked_type = appender;  // Mark iterator as checked.
+  FMT_UNCHECKED_ITERATOR(appender);
 
   auto operator++() noexcept -> appender& { return *this; }
 

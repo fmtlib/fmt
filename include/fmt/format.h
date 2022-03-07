@@ -1968,7 +1968,7 @@ class counting_iterator {
   using difference_type = std::ptrdiff_t;
   using pointer = void;
   using reference = void;
-  using _Unchecked_type = counting_iterator;  // Mark iterator as checked.
+  FMT_UNCHECKED_ITERATOR(counting_iterator);
 
   struct value_type {
     template <typename T> void operator=(const T&) {}
