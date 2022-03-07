@@ -643,22 +643,7 @@ template <typename Arg> struct styled_arg {
 FMT_END_DETAIL_NAMESPACE
 
 template <typename Arg, typename Char>
-struct formatter<detail::styled_arg<Arg>, Char> {
- private:
-  using value_type = Arg;
-  using formatter_type =
-      conditional_t<is_formattable<value_type, Char>::value,
-                    formatter<remove_cvref_t<value_type>, Char>,
-                    detail::fallback_formatter<value_type, Char>>;
-
-  formatter_type value_formatter_;
-
- public:
-  template <typename ParseContext>
-  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
-    return value_formatter_.parse(ctx);
-  }
-
+struct formatter<detail::styled_arg<Arg>, Char> : formatter<Arg, Char> {
   template <typename FormatContext>
   auto format(detail::styled_arg<Arg> const& arg, FormatContext& ctx) const
       -> decltype(ctx.out()) {
@@ -687,7 +672,7 @@ struct formatter<detail::styled_arg<Arg>, Char> {
           detail::make_background_color<Char>(ts.get_background());
       buf.append(background.begin(), background.end());
     }
-    out = value_formatter_.format(value, ctx);
+    out = formatter<Arg, Char>::format(value, ctx);
     if (has_style) detail::reset_color<Char>(buf);
     return out;
   }
