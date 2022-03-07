@@ -493,8 +493,8 @@ template <typename Char> inline void reset_color(buffer<Char>& buffer) {
 }
 
 template <typename Arg> struct styled_arg {
-  FMT_CONSTEXPR styled_arg(Arg const& argument, text_style style)
-      : argument(argument), style(style) {}
+  FMT_CONSTEXPR styled_arg(Arg const& format_argument, text_style format_style)
+      : argument(format_argument), style(format_style) {}
 
   const Arg& argument;
   text_style style;
