@@ -323,7 +323,7 @@ template <typename T, typename Char> struct is_range {
 };
 
 namespace detail {
-template <typename Context, typename Element> struct range_mapper {
+template <typename Context> struct range_mapper {
   using mapper = arg_mapper<Context>;
 
   template <typename T,
@@ -340,29 +340,36 @@ template <typename Context, typename Element> struct range_mapper {
 };
 
 template <typename Char, typename Element>
-using range_formatter_type =
-    conditional_t<is_formattable<Element, Char>::value,
-                  formatter<remove_cvref_t<decltype(
-                                range_mapper<buffer_context<Char>, Element>{}
-                                    .map(std::declval<Element>()))>,
-                            Char>,
-                  fallback_formatter<Element, Char>>;
+using range_formatter_type = conditional_t<
+    is_formattable<Element, Char>::value,
+    formatter<remove_cvref_t<decltype(range_mapper<buffer_context<Char>>{}.map(
+                  std::declval<Element>()))>,
+              Char>,
+    fallback_formatter<Element, Char>>;
+
+template <typename R>
+using maybe_const_range =
+    conditional_t<has_const_begin_end<R>::value, const R, R>;
 }  // namespace detail
 
 template <typename R, typename Char>
 struct formatter<
     R, Char,
-    enable_if_t<fmt::is_range<R, Char>::value
+    enable_if_t<
+        fmt::is_range<R, Char>::value
 // Workaround a bug in MSVC 2019 and earlier.
 #if !FMT_MSC_VER
-                && (is_formattable<detail::uncvref_type<R>, Char>::value ||
-                    detail::has_fallback_formatter<detail::uncvref_type<R>,
-                                                   Char>::value)
+        &&
+        (is_formattable<detail::uncvref_type<detail::maybe_const_range<R>>,
+                        Char>::value ||
+         detail::has_fallback_formatter<
+             detail::uncvref_type<detail::maybe_const_range<R>>, Char>::value)
 #endif
-                >> {
+        >> {
 
+  using range_type = detail::maybe_const_range<R>;
   using formatter_type =
-      detail::range_formatter_type<Char, detail::uncvref_type<R>>;
+      detail::range_formatter_type<Char, detail::uncvref_type<range_type>>;
   formatter_type underlying_;
   bool custom_specs_ = false;
 
@@ -381,12 +388,9 @@ struct formatter<
     return underlying_.parse(ctx);
   }
 
-  template <
-      typename FormatContext, typename U,
-      FMT_ENABLE_IF(
-          std::is_same<U, conditional_t<detail::has_const_begin_end<R>::value,
-                                        const R, R>>::value)>
-  auto format(U& range, FormatContext& ctx) const -> decltype(ctx.out()) {
+  template <typename FormatContext>
+  auto format(range_type& range, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
 #ifdef FMT_DEPRECATED_BRACED_RANGES
     Char prefix = '{';
     Char postfix = '}';
@@ -394,7 +398,7 @@ struct formatter<
     Char prefix = detail::is_set<R>::value ? '{' : '[';
     Char postfix = detail::is_set<R>::value ? '}' : ']';
 #endif
-    detail::range_mapper<buffer_context<Char>, detail::uncvref_type<R>> mapper;
+    detail::range_mapper<buffer_context<Char>> mapper;
     auto out = ctx.out();
     *out++ = prefix;
     int i = 0;

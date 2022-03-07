@@ -450,15 +450,18 @@ The format syntax is described in :ref:`chrono-specs`.
 Format string compilation
 =========================
 
-``fmt/compile.h`` provides format string compilation support when using
-``FMT_COMPILE``. Format strings are parsed, checked and converted into efficient
-formatting code at compile-time. This supports arguments of built-in and string
-types as well as user-defined types with ``constexpr`` ``parse`` functions in
-their ``formatter`` specializations. Format string compilation can generate more
-binary code compared to the default API and is only recommended in places where
-formatting is a performance bottleneck.
+``fmt/compile.h`` provides format string compilation enabled via the
+``FMT_COMPILE`` macro or the ``_cf`` user-defined literal. Format strings
+marked with ``FMT_COMPILE`` or ``_cf`` are parsed, checked and converted into
+efficient formatting code at compile-time. This supports arguments of built-in
+and string types as well as user-defined types with ``constexpr`` ``parse``
+functions in their ``formatter`` specializations. Format string compilation can
+generate more binary code compared to the default API and is only recommended in
+places where formatting is a performance bottleneck.
 
 .. doxygendefine:: FMT_COMPILE
+
+.. doxygenfunction:: operator""_cf()
 
 .. _color-api:
 

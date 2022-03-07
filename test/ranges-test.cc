@@ -364,3 +364,18 @@ TEST(ranges_test, escape_convertible_to_string_view) {
             "[\"foo\"]");
 }
 #endif  // FMT_USE_STRING_VIEW
+
+template <typename R> struct fmt_ref_view {
+  R* r;
+
+  auto begin() const -> decltype(r->begin()) { return r->begin(); }
+  auto end() const -> decltype(r->end()) { return r->end(); }
+};
+
+TEST(ranges_test, range_of_range_of_mixed_const) {
+  std::vector<std::vector<int>> v = {{1, 2, 3}, {4, 5}};
+  EXPECT_EQ(fmt::format("{}", v), "[[1, 2, 3], [4, 5]]");
+
+  fmt_ref_view<decltype(v)> r{&v};
+  EXPECT_EQ(fmt::format("{}", r), "[[1, 2, 3], [4, 5]]");
+}
