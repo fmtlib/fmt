@@ -492,6 +492,14 @@ template <typename Char> inline void reset_color(buffer<Char>& buffer) {
   buffer.append(reset_color.begin(), reset_color.end());
 }
 
+template <typename Arg> struct styled_arg {
+  FMT_CONSTEXPR styled_arg(Arg const& argument, text_style style)
+      : argument(argument), style(style) {}
+
+  const Arg& argument;
+  text_style style;
+};
+
 template <typename Char>
 void vformat_to(buffer<Char>& buf, const text_style& ts,
                 basic_string_view<Char> format_str,
@@ -629,18 +637,6 @@ inline auto format_to(OutputIt out, const text_style& ts, const S& format_str,
   return vformat_to(out, ts, to_string_view(format_str),
                     fmt::make_format_args<buffer_context<char_t<S>>>(args...));
 }
-
-FMT_BEGIN_DETAIL_NAMESPACE
-
-template <typename Arg> struct styled_arg {
-  FMT_CONSTEXPR styled_arg(Arg const& argument, text_style style)
-      : argument(argument), style(style) {}
-
-  const Arg& argument;
-  text_style style;
-};
-
-FMT_END_DETAIL_NAMESPACE
 
 template <typename Arg, typename Char>
 struct formatter<detail::styled_arg<Arg>, Char> : formatter<Arg, Char> {
