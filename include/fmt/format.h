@@ -3150,9 +3150,9 @@ void vformat_to(
     basic_format_parse_context<Char> parse_context;
     buffer_context<Char> context;
 
-    format_handler(buffer_appender<Char> out, basic_string_view<Char> str,
-                   basic_format_args<buffer_context<Char>> args, locale_ref loc)
-        : parse_context(str), context(out, args, loc) {}
+    format_handler(buffer_appender<Char> p_out, basic_string_view<Char> str,
+                   basic_format_args<buffer_context<Char>> p_args, locale_ref p_loc)
+        : parse_context(str), context(p_out, p_args, p_loc) {}
 
     void on_text(const Char* begin, const Char* end) {
       auto text = basic_string_view<Char>(begin, to_unsigned(end - begin));
