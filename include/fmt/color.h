@@ -492,11 +492,8 @@ template <typename Char> inline void reset_color(buffer<Char>& buffer) {
   buffer.append(reset_color.begin(), reset_color.end());
 }
 
-template <typename Arg> struct styled_arg {
-  FMT_CONSTEXPR styled_arg(const Arg& format_argument, text_style format_style)
-      : argument(format_argument), style(format_style) {}
-
-  const Arg& argument;
+template <typename T> struct styled_arg {
+  const T& value;
   text_style style;
 };
 
@@ -638,13 +635,13 @@ inline auto format_to(OutputIt out, const text_style& ts, const S& format_str,
                     fmt::make_format_args<buffer_context<char_t<S>>>(args...));
 }
 
-template <typename Arg, typename Char>
-struct formatter<detail::styled_arg<Arg>, Char> : formatter<Arg, Char> {
+template <typename T, typename Char>
+struct formatter<detail::styled_arg<T>, Char> : formatter<T, Char> {
   template <typename FormatContext>
-  auto format(const detail::styled_arg<Arg>& arg, FormatContext& ctx) const
+  auto format(const detail::styled_arg<T>& arg, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     const auto& ts = arg.style;
-    const auto& value = arg.argument;
+    const auto& value = arg.value;
     auto out = ctx.out();
 
     using detail::get_buffer;
@@ -668,7 +665,7 @@ struct formatter<detail::styled_arg<Arg>, Char> : formatter<Arg, Char> {
           detail::make_background_color<Char>(ts.get_background());
       buf.append(background.begin(), background.end());
     }
-    out = formatter<Arg, Char>::format(value, ctx);
+    out = formatter<T, Char>::format(value, ctx);
     if (has_style) detail::reset_color<Char>(buf);
     return out;
   }
@@ -685,10 +682,10 @@ struct formatter<detail::styled_arg<Arg>, Char> : formatter<Arg, Char> {
                fmt::styled(1.23, fmt::fg(fmt::colors::green) |
   fmt::bg(fmt::color::blue))); \endrst
  */
-template <typename Arg>
-FMT_CONSTEXPR auto styled(const Arg& arg, text_style ts = {})
-    -> detail::styled_arg<remove_cvref_t<Arg>> {
-  return detail::styled_arg<remove_cvref_t<Arg>>(arg, ts);
+template <typename T>
+FMT_CONSTEXPR auto styled(const T& value, text_style ts = {})
+    -> detail::styled_arg<remove_cvref_t<T>> {
+  return detail::styled_arg<remove_cvref_t<T>>{value, ts};
 }
 
 /**
@@ -701,10 +698,10 @@ FMT_CONSTEXPR auto styled(const Arg& arg, text_style ts = {})
     fmt::print("Elapsed time: {s:.2f} seconds", fmt::styled(1.23,
   fmt::colors::green)); \endrst
  */
-template <typename Arg>
-FMT_CONSTEXPR auto styled(const Arg& arg, detail::color_type color)
-    -> detail::styled_arg<remove_cvref_t<Arg>> {
-  return detail::styled_arg<remove_cvref_t<Arg>>(arg, fg(color));
+template <typename T>
+FMT_CONSTEXPR auto styled(const T& value, detail::color_type color)
+    -> detail::styled_arg<remove_cvref_t<T>> {
+  return detail::styled_arg<remove_cvref_t<T>>{value, fg(color)};
 }
 
 /**
@@ -717,10 +714,10 @@ FMT_CONSTEXPR auto styled(const Arg& arg, detail::color_type color)
     fmt::print("Elapsed time: {s:.2f} seconds", fmt::styled(1.23,
   fmt::emphasis::italic)); \endrst
  */
-template <typename Arg>
-FMT_CONSTEXPR auto styled(const Arg& arg, emphasis em)
-    -> detail::styled_arg<remove_cvref_t<Arg>> {
-  return detail::styled_arg<remove_cvref_t<Arg>>(arg, text_style(em));
+template <typename T>
+FMT_CONSTEXPR auto styled(const T& value, emphasis em)
+    -> detail::styled_arg<remove_cvref_t<T>> {
+  return detail::styled_arg<remove_cvref_t<T>>{value, text_style(em)};
 }
 
 FMT_MODULE_EXPORT_END
