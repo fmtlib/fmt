@@ -493,7 +493,7 @@ template <typename Char> inline void reset_color(buffer<Char>& buffer) {
 }
 
 template <typename Arg> struct styled_arg {
-  FMT_CONSTEXPR styled_arg(Arg const& format_argument, text_style format_style)
+  FMT_CONSTEXPR styled_arg(const Arg& format_argument, text_style format_style)
       : argument(format_argument), style(format_style) {}
 
   const Arg& argument;
@@ -641,10 +641,10 @@ inline auto format_to(OutputIt out, const text_style& ts, const S& format_str,
 template <typename Arg, typename Char>
 struct formatter<detail::styled_arg<Arg>, Char> : formatter<Arg, Char> {
   template <typename FormatContext>
-  auto format(detail::styled_arg<Arg> const& arg, FormatContext& ctx) const
+  auto format(const detail::styled_arg<Arg>& arg, FormatContext& ctx) const
       -> decltype(ctx.out()) {
-    auto const& ts = arg.style;
-    auto const& value = arg.argument;
+    const auto& ts = arg.style;
+    const auto& value = arg.argument;
     auto out = ctx.out();
 
     using detail::get_buffer;
