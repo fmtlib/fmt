@@ -36,8 +36,7 @@ template <typename OutputIt> class truncating_iterator_base {
   using difference_type = std::ptrdiff_t;
   using pointer = void;
   using reference = void;
-  using _Unchecked_type =
-      truncating_iterator_base;  // Mark iterator as checked.
+  FMT_UNCHECKED_ITERATOR(truncating_iterator_base);
 
   OutputIt base() const { return out_; }
   size_t count() const { return count_; }
