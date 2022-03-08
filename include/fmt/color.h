@@ -644,29 +644,29 @@ struct formatter<detail::styled_arg<T>, Char> : formatter<T, Char> {
     const auto& value = arg.value;
     auto out = ctx.out();
 
-    using detail::get_buffer;
-    auto&& buf = get_buffer<Char>(out);
-
     bool has_style = false;
     if (ts.has_emphasis()) {
       has_style = true;
       auto emphasis = detail::make_emphasis<Char>(ts.get_emphasis());
-      buf.append(emphasis.begin(), emphasis.end());
+      out = std::copy(emphasis.begin(), emphasis.end(), out);
     }
     if (ts.has_foreground()) {
       has_style = true;
       auto foreground =
           detail::make_foreground_color<Char>(ts.get_foreground());
-      buf.append(foreground.begin(), foreground.end());
+      out = std::copy(foreground.begin(), foreground.end(), out);
     }
     if (ts.has_background()) {
       has_style = true;
       auto background =
           detail::make_background_color<Char>(ts.get_background());
-      buf.append(background.begin(), background.end());
+      out = std::copy(background.begin(), background.end(), out);
     }
     out = formatter<T, Char>::format(value, ctx);
-    if (has_style) detail::reset_color<Char>(buf);
+    if (has_style) {
+      auto reset_color = string_view("\x1b[0m");
+      out = std::copy(reset_color.begin(), reset_color.end(), out);
+    }
     return out;
   }
 };
