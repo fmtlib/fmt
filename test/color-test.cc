@@ -50,7 +50,7 @@ TEST(color_test, format) {
             "\x1b[105mtbmagenta\x1b[0m");
   EXPECT_EQ(fmt::format(fg(fmt::terminal_color::red), "{}", "foo"),
             "\x1b[31mfoo\x1b[0m");
-  EXPECT_EQ(fmt::format("{}{}", fmt::styled("red", fmt::color::red),
+  EXPECT_EQ(fmt::format("{}{}", fmt::styled("red", fg(fmt::color::red)),
                         fmt::styled("bold", fmt::emphasis::bold)),
             "\x1b[38;2;255;000;000mred\x1b[0m\x1b[1mbold\x1b[0m");
   EXPECT_EQ(fmt::format("{}", fmt::styled("bar", fg(fmt::color::blue) |

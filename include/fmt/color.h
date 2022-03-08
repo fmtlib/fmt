@@ -679,45 +679,13 @@ struct formatter<detail::styled_arg<T>, Char> : formatter<T, Char> {
   **Example**::
 
     fmt::print("Elapsed time: {s:.2f} seconds",
-               fmt::styled(1.23, fmt::fg(fmt::colors::green) |
-  fmt::bg(fmt::color::blue))); \endrst
+               fmt::styled(1.23, fmt::fg(fmt::colors::green) | fmt::bg(fmt::color::blue)));
+  \endrst
  */
 template <typename T>
 FMT_CONSTEXPR auto styled(const T& value, text_style ts = {})
     -> detail::styled_arg<remove_cvref_t<T>> {
   return detail::styled_arg<remove_cvref_t<T>>{value, ts};
-}
-
-/**
-  \rst
-  Returns an argument surrounded by the ANSI escape sequences of the color,
-  to be used in a formatting function.
-
-  **Example**::
-
-    fmt::print("Elapsed time: {s:.2f} seconds", fmt::styled(1.23,
-  fmt::colors::green)); \endrst
- */
-template <typename T>
-FMT_CONSTEXPR auto styled(const T& value, detail::color_type color)
-    -> detail::styled_arg<remove_cvref_t<T>> {
-  return detail::styled_arg<remove_cvref_t<T>>{value, fg(color)};
-}
-
-/**
-  \rst
-  Returns an argument associated with an emphasis, to be used
-  in a formatting function.
-
-  **Example**::
-
-    fmt::print("Elapsed time: {s:.2f} seconds", fmt::styled(1.23,
-  fmt::emphasis::italic)); \endrst
- */
-template <typename T>
-FMT_CONSTEXPR auto styled(const T& value, emphasis em)
-    -> detail::styled_arg<remove_cvref_t<T>> {
-  return detail::styled_arg<remove_cvref_t<T>>{value, text_style(em)};
 }
 
 FMT_MODULE_EXPORT_END
