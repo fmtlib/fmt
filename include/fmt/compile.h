@@ -589,12 +589,10 @@ void print(const S& format_str, const Args&... args) {
 
 #if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
 inline namespace literals {
-template <detail_exported::fixed_string Str>
-constexpr detail::udl_compiled_string<
-    remove_cvref_t<decltype(Str.data[0])>,
-    sizeof(Str.data) / sizeof(decltype(Str.data[0])), Str>
-operator""_cf() {
-  return {};
+template <detail_exported::fixed_string Str> constexpr auto operator""_cf() {
+  using char_t = remove_cvref_t<decltype(Str.data[0])>;
+  return detail::udl_compiled_string<char_t, sizeof(Str.data) / sizeof(char_t),
+                                     Str>();
 }
 }  // namespace literals
 #endif

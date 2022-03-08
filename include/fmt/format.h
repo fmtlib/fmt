@@ -894,7 +894,6 @@ FMT_DEPRECATED FMT_INLINE auto make_args_checked(
   return {args...};
 }
 
-// compile-time support
 namespace detail_exported {
 #if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
 template <typename Char, size_t N> struct fixed_string {
@@ -902,7 +901,7 @@ template <typename Char, size_t N> struct fixed_string {
     detail::copy_str<Char, const Char*, Char*>(static_cast<const Char*>(str),
                                                str + N, data);
   }
-  Char data[N]{};
+  Char data[N] = {};
 };
 #endif
 
@@ -3151,7 +3150,8 @@ void vformat_to(
     buffer_context<Char> context;
 
     format_handler(buffer_appender<Char> p_out, basic_string_view<Char> str,
-                   basic_format_args<buffer_context<Char>> p_args, locale_ref p_loc)
+                   basic_format_args<buffer_context<Char>> p_args,
+                   locale_ref p_loc)
         : parse_context(str), context(p_out, p_args, p_loc) {}
 
     void on_text(const Char* begin, const Char* end) {
