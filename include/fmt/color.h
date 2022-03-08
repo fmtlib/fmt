@@ -492,6 +492,11 @@ template <typename Char> inline void reset_color(buffer<Char>& buffer) {
   buffer.append(reset_color.begin(), reset_color.end());
 }
 
+template <typename T> struct styled_arg {
+  const T& value;
+  text_style style;
+};
+
 template <typename Char>
 void vformat_to(buffer<Char>& buf, const text_style& ts,
                 basic_string_view<Char> format_str,
@@ -628,6 +633,59 @@ inline auto format_to(OutputIt out, const text_style& ts, const S& format_str,
     typename std::enable_if<enable, OutputIt>::type {
   return vformat_to(out, ts, to_string_view(format_str),
                     fmt::make_format_args<buffer_context<char_t<S>>>(args...));
+}
+
+template <typename T, typename Char>
+struct formatter<detail::styled_arg<T>, Char> : formatter<T, Char> {
+  template <typename FormatContext>
+  auto format(const detail::styled_arg<T>& arg, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    const auto& ts = arg.style;
+    const auto& value = arg.value;
+    auto out = ctx.out();
+
+    bool has_style = false;
+    if (ts.has_emphasis()) {
+      has_style = true;
+      auto emphasis = detail::make_emphasis<Char>(ts.get_emphasis());
+      out = std::copy(emphasis.begin(), emphasis.end(), out);
+    }
+    if (ts.has_foreground()) {
+      has_style = true;
+      auto foreground =
+          detail::make_foreground_color<Char>(ts.get_foreground());
+      out = std::copy(foreground.begin(), foreground.end(), out);
+    }
+    if (ts.has_background()) {
+      has_style = true;
+      auto background =
+          detail::make_background_color<Char>(ts.get_background());
+      out = std::copy(background.begin(), background.end(), out);
+    }
+    out = formatter<T, Char>::format(value, ctx);
+    if (has_style) {
+      auto reset_color = string_view("\x1b[0m");
+      out = std::copy(reset_color.begin(), reset_color.end(), out);
+    }
+    return out;
+  }
+};
+
+/**
+  \rst
+  Returns an argument that will be formatted using ANSI escape sequences,
+  to be used in a formatting function.
+
+  **Example**::
+
+    fmt::print("Elapsed time: {s:.2f} seconds",
+               fmt::styled(1.23, fmt::fg(fmt::colors::green) | fmt::bg(fmt::color::blue)));
+  \endrst
+ */
+template <typename T>
+FMT_CONSTEXPR auto styled(const T& value, text_style ts)
+    -> detail::styled_arg<remove_cvref_t<T>> {
+  return detail::styled_arg<remove_cvref_t<T>>{value, ts};
 }
 
 FMT_MODULE_EXPORT_END
