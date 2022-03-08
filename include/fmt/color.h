@@ -683,7 +683,7 @@ struct formatter<detail::styled_arg<T>, Char> : formatter<T, Char> {
   \endrst
  */
 template <typename T>
-FMT_CONSTEXPR auto styled(const T& value, text_style ts = {})
+FMT_CONSTEXPR auto styled(const T& value, text_style ts)
     -> detail::styled_arg<remove_cvref_t<T>> {
   return detail::styled_arg<remove_cvref_t<T>>{value, ts};
 }
