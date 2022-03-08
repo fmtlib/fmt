@@ -65,6 +65,7 @@ def build_docs(version='dev', **kwargs):
                           FMT_USE_RVALUE_REFERENCES=1 \
                           FMT_USE_USER_DEFINED_LITERALS=1 \
                           FMT_USE_ALIAS_TEMPLATES=1 \
+                          FMT_USE_NONTYPE_TEMPLATE_PARAMETERS=1 \
                           FMT_API= \
                           "FMT_BEGIN_NAMESPACE=namespace fmt {{" \
                           "FMT_END_NAMESPACE=}}" \
