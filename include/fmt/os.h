@@ -460,7 +460,7 @@ class FMT_API ostream final : private detail::buffer<char> {
 
   * ``<integer>``: Flags passed to `open
     <https://pubs.opengroup.org/onlinepubs/007904875/functions/open.html>`_
-    (``file::WRONLY | file::CREATE`` by default)
+    (``file::WRONLY | file::CREATE | file::TRUNC`` by default)
   * ``buffer_size=<integer>``: Output buffer size
 
   **Example**::
