@@ -476,6 +476,8 @@ Terminal color and text style
 
 .. doxygenfunction:: bg(detail::color_type)
 
+.. doxygenfunction:: styled(const T& value, text_style ts)
+
 .. _os-api:
 
 System APIs
