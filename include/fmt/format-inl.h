@@ -215,11 +215,16 @@ template <typename T> struct bits {
       static_cast<int>(sizeof(T) * std::numeric_limits<unsigned char>::digits);
 };
 
+template <typename Float> constexpr bool has_implicit_bit() {
+  return std::numeric_limits<Float>::digits != 64;
+}
+
 // Returns the number of significand bits in Float excluding the implicit bit.
 template <typename Float> constexpr int num_significand_bits() {
   // Subtract 1 to account for an implicit most significant bit in the
-  // normalized form.
-  return std::numeric_limits<Float>::digits - 1;
+  // normalized form..
+  return std::numeric_limits<Float>::digits -
+         (has_implicit_bit<Float>() ? 1 : 0);
 }
 
 // A floating-point number f * pow(2, e).
@@ -248,8 +253,9 @@ template <typename F> struct basic_fp {
     // Assume float is in the format [sign][exponent][significand].
     const int num_float_significand_bits =
         detail::num_significand_bits<Float>();
-    const uint64_t implicit_bit = 1ULL << num_float_significand_bits;
     using carrier_uint = typename dragonbox::float_info<Float>::carrier_uint;
+    const carrier_uint implicit_bit = carrier_uint(1)
+                                      << num_float_significand_bits;
     const carrier_uint significand_mask = implicit_bit - 1;
     auto u = bit_cast<carrier_uint>(n);
     f = static_cast<uint64_t>(u & significand_mask);
@@ -260,11 +266,11 @@ template <typename F> struct basic_fp {
     // than the smallest normalized number (biased_e > 1).
     bool is_predecessor_closer = f == 0 && biased_e > 1;
     if (biased_e != 0)
-      f += implicit_bit;
+      f += static_cast<uint64_t>(implicit_bit);
     else
       biased_e = 1;  // Subnormals use biased exponent 1 (min exponent).
     const int exponent_bias = std::numeric_limits<Float>::max_exponent - 1;
-    e = biased_e - exponent_bias - num_float_significand_bits;
+    e = biased_e - exponent_bias - std::numeric_limits<Float>::digits + 1;
     return is_predecessor_closer;
   }
 
