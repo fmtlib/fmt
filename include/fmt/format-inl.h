@@ -222,7 +222,7 @@ template <typename Float> constexpr bool has_implicit_bit() {
 // Returns the number of significand bits in Float excluding the implicit bit.
 template <typename Float> constexpr int num_significand_bits() {
   // Subtract 1 to account for an implicit most significant bit in the
-  // normalized form..
+  // normalized form.
   return std::numeric_limits<Float>::digits -
          (has_implicit_bit<Float>() ? 1 : 0);
 }
