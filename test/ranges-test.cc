@@ -70,16 +70,12 @@ struct box {
   int value;
 };
 
-auto begin(box& b) noexcept -> int* { return std::addressof(b.value); }
-
-auto end(box& b) noexcept -> int* { return std::addressof(b.value) + 1; }
-
-auto begin(const box& b) noexcept -> const int* {
-  return std::addressof(b.value);
+auto begin(const box& b) -> const int* {
+  return &b.value;
 }
 
-auto end(const box& b) noexcept -> const int* {
-  return std::addressof(b.value) + 1;
+auto end(const box& b) -> const int* {
+  return &b.value + 1;
 }
 }  // namespace adl
 
