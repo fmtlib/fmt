@@ -65,32 +65,27 @@ TEST(ranges_test, format_set) {
             "{\"one\", \"two\"}");
 }
 
-namespace adl
-{
-    struct box {
-        int value;
-    };
+namespace adl {
+struct box {
+  int value;
+};
 
-    auto begin(box & b) noexcept -> int * {
-        return std::addressof(b.value);
-    }
+auto begin(box& b) noexcept -> int* { return std::addressof(b.value); }
 
-    auto end(box & b) noexcept -> int * {
-        return std::addressof(b.value) + 1;
-    }
+auto end(box& b) noexcept -> int* { return std::addressof(b.value) + 1; }
 
-    auto begin(const box & b) noexcept -> const int * {
-        return std::addressof(b.value);
-    }
+auto begin(const box& b) noexcept -> const int* {
+  return std::addressof(b.value);
+}
 
-    auto end(const box & b) noexcept -> const int * {
-        return std::addressof(b.value) + 1;
-    }
-} // namespace adl
+auto end(const box& b) noexcept -> const int* {
+  return std::addressof(b.value) + 1;
+}
+}  // namespace adl
 
 TEST(ranges_test, format_adl_begin_end) {
-    auto b = adl::box{42};
-    EXPECT_EQ(fmt::format("{}", b), "[42]");
+  auto b = adl::box{42};
+  EXPECT_EQ(fmt::format("{}", b), "[42]");
 }
 
 TEST(ranges_test, format_pair) {
