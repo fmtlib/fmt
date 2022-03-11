@@ -402,8 +402,8 @@ struct formatter<
     auto out = ctx.out();
     *out++ = prefix;
     int i = 0;
-    auto it = std::begin(range);
-    auto end = std::end(range);
+    auto it = detail::range_begin(range);
+    auto end = detail::range_end(range);
     for (; it != end; ++it) {
       if (i > 0) out = detail::write_delimiter(out);
       if (custom_specs_) {

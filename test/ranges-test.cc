@@ -65,6 +65,25 @@ TEST(ranges_test, format_set) {
             "{\"one\", \"two\"}");
 }
 
+namespace adl {
+struct box {
+  int value;
+};
+
+auto begin(const box& b) -> const int* {
+  return &b.value;
+}
+
+auto end(const box& b) -> const int* {
+  return &b.value + 1;
+}
+}  // namespace adl
+
+TEST(ranges_test, format_adl_begin_end) {
+  auto b = adl::box{42};
+  EXPECT_EQ(fmt::format("{}", b), "[42]");
+}
+
 TEST(ranges_test, format_pair) {
   auto p = std::pair<int, float>(42, 1.5f);
   EXPECT_EQ(fmt::format("{}", p), "(42, 1.5)");
