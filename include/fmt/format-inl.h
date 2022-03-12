@@ -815,8 +815,7 @@ inline uint128_wrapper umul128(uint64_t x, uint64_t y) noexcept {
   result.low_ = _umul128(x, y, &result.high_);
   return result;
 #else
-  const uint64_t mask =
-      static_cast<uint64_t>(std::numeric_limits<uint32_t>::max());
+  const uint64_t mask = static_cast<uint64_t>(max_value<uint32_t>());
 
   uint64_t a = x >> 32;
   uint64_t b = x & mask;
@@ -1820,12 +1819,12 @@ FMT_INLINE int remove_trailing_zeros(uint32_t& n) noexcept {
   int s = 0;
   while (true) {
     auto q = rotr(n * mod_inv_25, 2);
-    if (q > std::numeric_limits<uint32_t>::max() / 100) break;
+    if (q > max_value<uint32_t>() / 100) break;
     n = q;
     s += 2;
   }
   auto q = rotr(n * mod_inv_5, 1);
-  if (q <= std::numeric_limits<uint32_t>::max() / 10) {
+  if (q <= max_value<uint32_t>() / 10) {
     n = q;
     s |= 1;
   }
@@ -1852,12 +1851,12 @@ FMT_INLINE int remove_trailing_zeros(uint64_t& n) noexcept {
     int s = 8;
     while (true) {
       auto q = rotr(n32 * mod_inv_25, 2);
-      if (q > std::numeric_limits<uint32_t>::max() / 100) break;
+      if (q > max_value<uint32_t>() / 100) break;
       n32 = q;
       s += 2;
     }
     auto q = rotr(n32 * mod_inv_5, 1);
-    if (q <= std::numeric_limits<uint32_t>::max() / 10) {
+    if (q <= max_value<uint32_t>() / 10) {
       n32 = q;
       s |= 1;
     }
@@ -1873,12 +1872,12 @@ FMT_INLINE int remove_trailing_zeros(uint64_t& n) noexcept {
   int s = 0;
   while (true) {
     auto q = rotr(n * mod_inv_25, 2);
-    if (q > std::numeric_limits<uint64_t>::max() / 100) break;
+    if (q > max_value<uint64_t>() / 100) break;
     n = q;
     s += 2;
   }
   auto q = rotr(n * mod_inv_5, 1);
-  if (q <= std::numeric_limits<uint64_t>::max() / 10) {
+  if (q <= max_value<uint64_t>() / 10) {
     n = q;
     s |= 1;
   }
