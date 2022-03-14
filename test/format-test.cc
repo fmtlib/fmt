@@ -1265,32 +1265,30 @@ TEST(format_test, format_float) {
 }
 
 TEST(format_test, format_double) {
-  EXPECT_EQ("0", fmt::format("{}", 0.0));
+  EXPECT_EQ(fmt::format("{}", 0.0), "0");
   check_unknown_types(1.2, "eEfFgGaAnL%", "double");
-  EXPECT_EQ("0", fmt::format("{:}", 0.0));
-  EXPECT_EQ("0.000000", fmt::format("{:f}", 0.0));
-  EXPECT_EQ("0", fmt::format("{:g}", 0.0));
-  EXPECT_EQ("392.65", fmt::format("{:}", 392.65));
-  EXPECT_EQ("392.65", fmt::format("{:g}", 392.65));
-  EXPECT_EQ("392.65", fmt::format("{:G}", 392.65));
-  EXPECT_EQ("4.9014e+06", fmt::format("{:g}", 4.9014e6));
-  EXPECT_EQ("392.650000", fmt::format("{:f}", 392.65));
-  EXPECT_EQ("392.650000", fmt::format("{:F}", 392.65));
-  EXPECT_EQ("42", fmt::format("{:L}", 42.0));
-  EXPECT_EQ("    0x1.0cccccccccccdp+2", fmt::format("{:24a}", 4.2));
-  EXPECT_EQ("0x1.0cccccccccccdp+2    ", fmt::format("{:<24a}", 4.2));
+  EXPECT_EQ(fmt::format("{:}", 0.0), "0");
+  EXPECT_EQ(fmt::format("{:f}", 0.0), "0.000000");
+  EXPECT_EQ(fmt::format("{:g}", 0.0), "0");
+  EXPECT_EQ(fmt::format("{:}", 392.65), "392.65");
+  EXPECT_EQ(fmt::format("{:g}", 392.65), "392.65");
+  EXPECT_EQ(fmt::format("{:G}", 392.65), "392.65");
+  EXPECT_EQ(fmt::format("{:g}", 4.9014e6), "4.9014e+06");
+  EXPECT_EQ(fmt::format("{:f}", 392.65), "392.650000");
+  EXPECT_EQ(fmt::format("{:F}", 392.65), "392.650000");
+  EXPECT_EQ(fmt::format("{:L}", 42.0), "42");
+  EXPECT_EQ(fmt::format("{:24a}", 4.2), "    0x1.0cccccccccccdp+2");
+  EXPECT_EQ(fmt::format("{:<24a}", 4.2), "0x1.0cccccccccccdp+2    ");
+  EXPECT_EQ(fmt::format("{0:e}", 392.65), "3.926500e+02");
+  EXPECT_EQ(fmt::format("{0:E}", 392.65), "3.926500E+02");
+  EXPECT_EQ(fmt::format("{0:+010.4g}", 392.65), "+0000392.6");
   char buffer[buffer_size];
-  safe_sprintf(buffer, "%e", 392.65);
-  EXPECT_EQ(buffer, fmt::format("{0:e}", 392.65));
-  safe_sprintf(buffer, "%E", 392.65);
-  EXPECT_EQ(buffer, fmt::format("{0:E}", 392.65));
-  EXPECT_EQ("+0000392.6", fmt::format("{0:+010.4g}", 392.65));
   safe_sprintf(buffer, "%a", -42.0);
-  EXPECT_EQ(buffer, fmt::format("{:a}", -42.0));
+  EXPECT_EQ(fmt::format("{:a}", -42.0), buffer);
   safe_sprintf(buffer, "%A", -42.0);
-  EXPECT_EQ(buffer, fmt::format("{:A}", -42.0));
-  EXPECT_EQ("9223372036854775808.000000",
-            fmt::format("{:f}", 9223372036854775807.0));
+  EXPECT_EQ(fmt::format("{:A}", -42.0), buffer);
+  EXPECT_EQ(fmt::format("{:f}", 9223372036854775807.0),
+            "9223372036854775808.000000");
 }
 
 TEST(format_test, precision_rounding) {
