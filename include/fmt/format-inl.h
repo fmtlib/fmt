@@ -233,17 +233,15 @@ template <typename F> struct basic_fp {
 
   template <typename Float>
   using is_supported = bool_constant<std::numeric_limits<Float>::is_iec559 &&
-                                     std::numeric_limits<Float>::digits <= 64>;
+                                     std::numeric_limits<Float>::digits <= 113>;
 
   // Assigns d to this and return true iff predecessor is closer than successor.
   template <typename Float, FMT_ENABLE_IF(is_supported<Float>::value)>
   FMT_CONSTEXPR bool assign(Float n) {
     // Assume float is in the format [sign][exponent][significand].
-    const int num_float_significand_bits =
-        detail::num_significand_bits<Float>();
     using carrier_uint = typename dragonbox::float_info<Float>::carrier_uint;
     const carrier_uint implicit_bit = carrier_uint(1)
-                                      << num_float_significand_bits;
+                                      << detail::num_significand_bits<Float>();
     const carrier_uint significand_mask = implicit_bit - 1;
     auto u = bit_cast<carrier_uint>(n);
     f = static_cast<uint64_t>(u & significand_mask);

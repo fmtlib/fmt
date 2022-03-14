@@ -1252,10 +1252,10 @@ template <> struct float_info<double> {
   static const int shorter_interval_tie_upper_threshold = -77;
 };
 
-// 80-bit extended precision long double.
+// An 80- or 128-bit floating point number.
 template <typename T>
-struct float_info<T, enable_if_t<std::is_same<T, long double>::value &&
-                                 std::numeric_limits<T>::digits == 64>> {
+struct float_info<T, enable_if_t<std::numeric_limits<T>::digits == 64 ||
+                                 std::numeric_limits<T>::digits == 113>> {
   using carrier_uint = detail::uint128_t;
   static const int exponent_bits = 15;
 };
