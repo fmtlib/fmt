@@ -1227,45 +1227,29 @@ template <typename T, typename Enable = void> struct float_info;
 template <> struct float_info<float> {
   using carrier_uint = uint32_t;
   static const int exponent_bits = 8;
-  static const int min_exponent = -126;
-  static const int max_exponent = 127;
-  static const int exponent_bias = -127;
-  static const int decimal_digits = 9;
   static const int kappa = 1;
   static const int big_divisor = 100;
   static const int small_divisor = 10;
   static const int min_k = -31;
   static const int max_k = 46;
-  static const int cache_bits = 64;
   static const int divisibility_check_by_5_threshold = 39;
   static const int case_fc_pm_half_lower_threshold = -1;
-  static const int case_shorter_interval_left_endpoint_lower_threshold = 2;
-  static const int case_shorter_interval_left_endpoint_upper_threshold = 3;
   static const int shorter_interval_tie_lower_threshold = -35;
   static const int shorter_interval_tie_upper_threshold = -35;
-  static const int max_trailing_zeros = 7;
 };
 
 template <> struct float_info<double> {
   using carrier_uint = uint64_t;
   static const int exponent_bits = 11;
-  static const int min_exponent = -1022;
-  static const int max_exponent = 1023;
-  static const int exponent_bias = -1023;
-  static const int decimal_digits = 17;
   static const int kappa = 2;
   static const int big_divisor = 1000;
   static const int small_divisor = 100;
   static const int min_k = -292;
   static const int max_k = 326;
-  static const int cache_bits = 128;
   static const int divisibility_check_by_5_threshold = 86;
   static const int case_fc_pm_half_lower_threshold = -2;
-  static const int case_shorter_interval_left_endpoint_lower_threshold = 2;
-  static const int case_shorter_interval_left_endpoint_upper_threshold = 3;
   static const int shorter_interval_tie_lower_threshold = -77;
   static const int shorter_interval_tie_upper_threshold = -77;
-  static const int max_trailing_zeros = 16;
 };
 
 // 80-bit extended precision long double.

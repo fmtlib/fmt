@@ -1788,11 +1788,10 @@ template <> struct cache_accessor<double> {
 // Various integer checks
 template <class T>
 bool is_left_endpoint_integer_shorter_interval(int exponent) noexcept {
-  return exponent >=
-             float_info<
-                 T>::case_shorter_interval_left_endpoint_lower_threshold &&
-         exponent <=
-             float_info<T>::case_shorter_interval_left_endpoint_upper_threshold;
+  const int case_shorter_interval_left_endpoint_lower_threshold = 2;
+  const int case_shorter_interval_left_endpoint_upper_threshold = 3;
+  return exponent >= case_shorter_interval_left_endpoint_lower_threshold &&
+         exponent <= case_shorter_interval_left_endpoint_upper_threshold;
 }
 
 // Remove trailing zeros from n and return the number of zeros removed (float)
@@ -1933,7 +1932,8 @@ template <typename T> decimal_fp<T> to_decimal(T x) noexcept {
       static_cast<int>((br & exponent_mask<T>()) >> num_significand_bits<T>());
 
   if (exponent != 0) {  // Check if normal.
-    exponent += float_info<T>::exponent_bias - num_significand_bits<T>();
+    const int exponent_bias = std::numeric_limits<T>::max_exponent - 1;
+    exponent -= exponent_bias + num_significand_bits<T>();
 
     // Shorter interval case; proceed like Schubfach.
     // In fact, when exponent == 1 and significand == 0, the interval is
@@ -1944,7 +1944,8 @@ template <typename T> decimal_fp<T> to_decimal(T x) noexcept {
   } else {
     // Subnormal case; the interval is always regular.
     if (significand == 0) return {0, 0};
-    exponent = float_info<T>::min_exponent - num_significand_bits<T>();
+    exponent =
+        std::numeric_limits<T>::min_exponent - num_significand_bits<T>() - 1;
   }
 
   const bool include_left_endpoint = (significand % 2 == 0);
