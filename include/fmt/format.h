@@ -1226,7 +1226,6 @@ template <typename T, typename Enable = void> struct float_info;
 
 template <> struct float_info<float> {
   using carrier_uint = uint32_t;
-  static const int significand_bits = 23;
   static const int exponent_bits = 8;
   static const int min_exponent = -126;
   static const int max_exponent = 127;
@@ -1249,7 +1248,6 @@ template <> struct float_info<float> {
 
 template <> struct float_info<double> {
   using carrier_uint = uint64_t;
-  static const int significand_bits = 52;
   static const int exponent_bits = 11;
   static const int min_exponent = -1022;
   static const int max_exponent = 1023;
@@ -1275,7 +1273,6 @@ template <typename T>
 struct float_info<T, enable_if_t<std::is_same<T, long double>::value &&
                                  std::numeric_limits<T>::digits == 64>> {
   using carrier_uint = detail::uint128_t;
-  static const int significand_bits = 64;
   static const int exponent_bits = 15;
 };
 
@@ -1288,12 +1285,22 @@ template <typename T> struct decimal_fp {
 template <typename T> FMT_API auto to_decimal(T x) noexcept -> decimal_fp<T>;
 }  // namespace dragonbox
 
-template <typename T>
+template <typename Float> constexpr bool has_implicit_bit() {
+  return std::numeric_limits<Float>::digits != 64;
+}
+
+// Returns the number of significand bits in Float excluding the implicit bit.
+template <typename Float> constexpr int num_significand_bits() {
+  return std::numeric_limits<Float>::digits -
+         (has_implicit_bit<Float>() ? 1 : 0);
+}
+
+template <typename Float>
 constexpr auto exponent_mask() ->
-    typename dragonbox::float_info<T>::carrier_uint {
-  using uint = typename dragonbox::float_info<T>::carrier_uint;
-  return ((uint(1) << dragonbox::float_info<T>::exponent_bits) - 1)
-         << dragonbox::float_info<T>::significand_bits;
+    typename dragonbox::float_info<Float>::carrier_uint {
+  using uint = typename dragonbox::float_info<Float>::carrier_uint;
+  return ((uint(1) << dragonbox::float_info<Float>::exponent_bits) - 1)
+         << num_significand_bits<Float>();
 }
 
 // Writes the exponent exp in the form "[+-]d{2,3}" to buffer.
@@ -2178,11 +2185,9 @@ FMT_CONSTEXPR20 bool isinf(T value) {
   if (is_constant_evaluated()) {
 #if defined(__cpp_if_constexpr)
     if constexpr (std::numeric_limits<double>::is_iec559) {
-      auto bits = detail::bit_cast<uint64_t>(static_cast<double>(value));
-      constexpr auto significand_bits =
-          dragonbox::float_info<double>::significand_bits;
+      auto bits = bit_cast<uint64_t>(static_cast<double>(value));
       return (bits & exponent_mask<double>()) &&
-             !(bits & ((uint64_t(1) << significand_bits) - 1));
+             !(bits & ((uint64_t(1) << num_significand_bits<double>()) - 1));
     }
 #endif
   }

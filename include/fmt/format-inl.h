@@ -215,18 +215,6 @@ template <typename T> struct bits {
       static_cast<int>(sizeof(T) * std::numeric_limits<unsigned char>::digits);
 };
 
-template <typename Float> constexpr bool has_implicit_bit() {
-  return std::numeric_limits<Float>::digits != 64;
-}
-
-// Returns the number of significand bits in Float excluding the implicit bit.
-template <typename Float> constexpr int num_significand_bits() {
-  // Subtract 1 to account for an implicit most significant bit in the
-  // normalized form.
-  return std::numeric_limits<Float>::digits -
-         (has_implicit_bit<Float>() ? 1 : 0);
-}
-
 // A floating-point number f * pow(2, e).
 template <typename F> struct basic_fp {
   F f;
@@ -259,9 +247,8 @@ template <typename F> struct basic_fp {
     const carrier_uint significand_mask = implicit_bit - 1;
     auto u = bit_cast<carrier_uint>(n);
     f = static_cast<uint64_t>(u & significand_mask);
-    int biased_e =
-        static_cast<int>((u & exponent_mask<Float>()) >>
-                         dragonbox::float_info<Float>::significand_bits);
+    int biased_e = static_cast<int>((u & exponent_mask<Float>()) >>
+                                    detail::num_significand_bits<Float>());
     // The predecessor is closer if n is a normalized power of 2 (f == 0) other
     // than the smallest normalized number (biased_e > 1).
     bool is_predecessor_closer = f == 0 && biased_e > 1;
@@ -1021,22 +1008,21 @@ template <> struct cache_accessor<float> {
   static carrier_uint compute_left_endpoint_for_shorter_interval_case(
       const cache_entry_type& cache, int beta) noexcept {
     return static_cast<carrier_uint>(
-        (cache - (cache >> (float_info<float>::significand_bits + 2))) >>
-        (64 - float_info<float>::significand_bits - 1 - beta));
+        (cache - (cache >> (num_significand_bits<float>() + 2))) >>
+        (64 - num_significand_bits<float>() - 1 - beta));
   }
 
   static carrier_uint compute_right_endpoint_for_shorter_interval_case(
       const cache_entry_type& cache, int beta) noexcept {
     return static_cast<carrier_uint>(
-        (cache + (cache >> (float_info<float>::significand_bits + 1))) >>
-        (64 - float_info<float>::significand_bits - 1 - beta));
+        (cache + (cache >> (num_significand_bits<float>() + 1))) >>
+        (64 - num_significand_bits<float>() - 1 - beta));
   }
 
   static carrier_uint compute_round_up_for_shorter_interval_case(
       const cache_entry_type& cache, int beta) noexcept {
     return (static_cast<carrier_uint>(
-                cache >>
-                (64 - float_info<float>::significand_bits - 2 - beta)) +
+                cache >> (64 - num_significand_bits<float>() - 2 - beta)) +
             1) /
            2;
   }
@@ -1780,21 +1766,20 @@ template <> struct cache_accessor<double> {
   static carrier_uint compute_left_endpoint_for_shorter_interval_case(
       const cache_entry_type& cache, int beta) noexcept {
     return (cache.high() -
-            (cache.high() >> (float_info<double>::significand_bits + 2))) >>
-           (64 - float_info<double>::significand_bits - 1 - beta);
+            (cache.high() >> (num_significand_bits<double>() + 2))) >>
+           (64 - num_significand_bits<double>() - 1 - beta);
   }
 
   static carrier_uint compute_right_endpoint_for_shorter_interval_case(
       const cache_entry_type& cache, int beta) noexcept {
     return (cache.high() +
-            (cache.high() >> (float_info<double>::significand_bits + 1))) >>
-           (64 - float_info<double>::significand_bits - 1 - beta);
+            (cache.high() >> (num_significand_bits<double>() + 1))) >>
+           (64 - num_significand_bits<double>() - 1 - beta);
   }
 
   static carrier_uint compute_round_up_for_shorter_interval_case(
       const cache_entry_type& cache, int beta) noexcept {
-    return ((cache.high() >>
-             (64 - float_info<double>::significand_bits - 2 - beta)) +
+    return ((cache.high() >> (64 - num_significand_bits<double>() - 2 - beta)) +
             1) /
            2;
   }
@@ -1942,25 +1927,24 @@ template <typename T> decimal_fp<T> to_decimal(T x) noexcept {
 
   // Extract significand bits and exponent bits.
   const carrier_uint significand_mask =
-      (static_cast<carrier_uint>(1) << float_info<T>::significand_bits) - 1;
+      (static_cast<carrier_uint>(1) << num_significand_bits<T>()) - 1;
   carrier_uint significand = (br & significand_mask);
-  int exponent = static_cast<int>((br & exponent_mask<T>()) >>
-                                  float_info<T>::significand_bits);
+  int exponent =
+      static_cast<int>((br & exponent_mask<T>()) >> num_significand_bits<T>());
 
   if (exponent != 0) {  // Check if normal.
-    exponent += float_info<T>::exponent_bias - float_info<T>::significand_bits;
+    exponent += float_info<T>::exponent_bias - num_significand_bits<T>();
 
     // Shorter interval case; proceed like Schubfach.
     // In fact, when exponent == 1 and significand == 0, the interval is
     // regular. However, it can be shown that the end-results are anyway same.
     if (significand == 0) return shorter_interval_case<T>(exponent);
 
-    significand |=
-        (static_cast<carrier_uint>(1) << float_info<T>::significand_bits);
+    significand |= (static_cast<carrier_uint>(1) << num_significand_bits<T>());
   } else {
     // Subnormal case; the interval is always regular.
     if (significand == 0) return {0, 0};
-    exponent = float_info<T>::min_exponent - float_info<T>::significand_bits;
+    exponent = float_info<T>::min_exponent - num_significand_bits<T>();
   }
 
   const bool include_left_endpoint = (significand % 2 == 0);
