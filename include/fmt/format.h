@@ -2164,31 +2164,34 @@ FMT_CONSTEXPR20 auto write_float(OutputIt out, const DecimalFP& fp,
   }
 }
 
-template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
-FMT_CONSTEXPR20 bool isinf(T value) {
-  if (is_constant_evaluated()) {
-#if defined(__cpp_if_constexpr)
-    if constexpr (std::numeric_limits<double>::is_iec559) {
-      auto bits = bit_cast<uint64_t>(static_cast<double>(value));
-      return (bits & exponent_mask<double>()) &&
-             !(bits & ((uint64_t(1) << num_significand_bits<double>()) - 1));
-    }
+#ifdef __SIZEOF_FLOAT128__
+using float128 = __float128;
+#else
+using float128 = void;
 #endif
-  }
-  return std::isinf(value);
+template <typename T> using is_float128 = std::is_same<T, float128>;
+
+template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value &&
+                                    !is_float128<T>::value)>
+FMT_CONSTEXPR20 bool isfinite(T value) {
+  if (is_constant_evaluated()) return value - value == 0;
+  return std::isfinite(value);
+}
+template <typename T, FMT_ENABLE_IF(is_float128<T>::value)>
+constexpr bool isfinite(T value) {
+  return value - value == 0;  // std::isfinite doesn't support __float128.
 }
 
-template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
-FMT_CONSTEXPR20 bool isfinite(T value) {
-  if (is_constant_evaluated()) {
-#if defined(__cpp_if_constexpr)
-    if constexpr (std::numeric_limits<double>::is_iec559) {
-      auto bits = detail::bit_cast<uint64_t>(static_cast<double>(value));
-      return (bits & exponent_mask<double>()) != exponent_mask<double>();
-    }
-#endif
-  }
-  return std::isfinite(value);
+template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value &&
+                                    !is_float128<T>::value)>
+FMT_CONSTEXPR20 bool isinf(T value) {
+  if (is_constant_evaluated()) return !isfinite(value) && value == value;
+  return std::isinf(value);
+}
+template <typename T, FMT_ENABLE_IF(is_float128<T>::value)>
+constexpr bool isinf(T value) {
+  // std::isinf doesn't support __float128.
+  return !isfinite(value) && value == value;
 }
 
 template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
@@ -2201,7 +2204,7 @@ FMT_INLINE FMT_CONSTEXPR bool signbit(T value) {
     }
 #endif
   }
-  return std::signbit(value);
+  return std::signbit(static_cast<double>(value));
 }
 
 template <typename Char, typename OutputIt, typename T,

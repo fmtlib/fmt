@@ -66,6 +66,27 @@ TEST(uint128_test, minus) {
   EXPECT_EQ(n - 2, 40);
 }
 
+template <typename Float> void check_isfinite() {
+  using fmt::detail::isfinite;
+  EXPECT_TRUE(isfinite(Float(0.0)));
+  EXPECT_TRUE(isfinite(Float(42.0)));
+  EXPECT_TRUE(isfinite(Float(-42.0)));
+  EXPECT_TRUE(isfinite(Float(fmt::detail::max_value<double>())));
+  // Use double because std::numeric_limits is broken for __float128.
+  using limits = std::numeric_limits<double>;
+  EXPECT_FALSE(isfinite(Float(limits::infinity())));
+  EXPECT_FALSE(isfinite(Float(-limits::infinity())));
+  EXPECT_FALSE(isfinite(Float(limits::quiet_NaN())));
+  EXPECT_FALSE(isfinite(Float(-limits::quiet_NaN())));
+}
+
+TEST(float_test, isfinite) {
+  check_isfinite<double>();
+#ifdef __SIZEOF_FLOAT128__
+  check_isfinite<fmt::detail::float128>();
+#endif
+}
+
 struct uint32_pair {
   uint32_t u[2];
 };
