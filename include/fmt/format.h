@@ -667,6 +667,17 @@ inline auto code_point_index(basic_string_view<char8_type> s, size_t n)
   return s.size();
 }
 
+#ifdef __SIZEOF_FLOAT128__
+using float128 = __float128;
+#else
+using float128 = void;
+#endif
+template <typename T> using is_float128 = std::is_same<T, float128>;
+
+template <typename T>
+using is_floating_point =
+    bool_constant<std::is_floating_point<T>::value || is_float128<T>::value>;
+
 template <typename T, bool = std::is_floating_point<T>::value>
 struct is_fast_float : bool_constant<std::numeric_limits<T>::is_iec559 &&
                                      sizeof(T) <= sizeof(double)> {};
@@ -935,7 +946,7 @@ FMT_CONSTEXPR auto is_negative(T) -> bool {
   return false;
 }
 
-template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
+template <typename T>
 FMT_CONSTEXPR auto is_supported_floating_point(T) -> uint16_t {
   return (std::is_same<T, float>::value && FMT_USE_FLOAT) ||
          (std::is_same<T, double>::value && FMT_USE_DOUBLE) ||
@@ -2157,13 +2168,6 @@ FMT_CONSTEXPR20 auto write_float(OutputIt out, const DecimalFP& fp,
   }
 }
 
-#ifdef __SIZEOF_FLOAT128__
-using float128 = __float128;
-#else
-using float128 = void;
-#endif
-template <typename T> using is_float128 = std::is_same<T, float128>;
-
 template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value &&
                                     !is_float128<T>::value)>
 FMT_CONSTEXPR20 bool isfinite(T value) {
@@ -2179,7 +2183,7 @@ template <typename T> constexpr bool isnan(T value) {
   return value != value;  // std::isnan doesn't support __float128.
 }
 
-template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
+template <typename T, FMT_ENABLE_IF(is_floating_point<T>::value)>
 FMT_INLINE FMT_CONSTEXPR bool signbit(T value) {
   if (is_constant_evaluated()) {
 #ifdef __cpp_if_constexpr
@@ -2193,7 +2197,7 @@ FMT_INLINE FMT_CONSTEXPR bool signbit(T value) {
 }
 
 template <typename Char, typename OutputIt, typename T,
-          FMT_ENABLE_IF(std::is_floating_point<T>::value)>
+          FMT_ENABLE_IF(is_floating_point<T>::value)>
 FMT_CONSTEXPR20 auto write(OutputIt out, T value,
                            basic_format_specs<Char> specs, locale_ref loc = {})
     -> OutputIt {
@@ -2271,7 +2275,7 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
 }
 
 template <typename Char, typename OutputIt, typename T,
-          FMT_ENABLE_IF(std::is_floating_point<T>::value &&
+          FMT_ENABLE_IF(is_floating_point<T>::value &&
                         !is_fast_float<T>::value)>
 inline auto write(OutputIt out, T value) -> OutputIt {
   return write(out, value, basic_format_specs<Char>());
