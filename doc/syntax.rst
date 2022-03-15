@@ -304,7 +304,8 @@ The available presentation types for pointers are:
 Chrono Format Specifications
 ============================
 
-Format specifications for chrono types have the following syntax:
+Format specifications for chrono types and ``std::tm`` have the following
+syntax:
 
 .. productionlist:: sf
    chrono_format_spec: [[`fill`]`align`][`width`]["." `precision`][`chrono_specs`]
@@ -347,10 +348,6 @@ points are:
 
 Specifiers that have a calendaric component such as `'d'` (the day of month)
 are valid only for ``std::tm`` and not durations or time points.
-
-``std::tm`` uses the system's `strftime
-<https://en.cppreference.com/w/cpp/chrono/c/strftime>`_ so refer to its
-documentation for details on supported conversion specifiers.
 
 .. range-specs:
 
