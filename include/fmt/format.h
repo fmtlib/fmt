@@ -749,9 +749,7 @@ class basic_memory_buffer final : public detail::buffer<T> {
       const Allocator& alloc = Allocator())
       : alloc_(alloc) {
     this->set(store_, SIZE);
-    if (detail::is_constant_evaluated()) {
-      detail::fill_n(store_, SIZE, T{});
-    }
+    if (detail::is_constant_evaluated()) detail::fill_n(store_, SIZE, T());
   }
   FMT_CONSTEXPR20 ~basic_memory_buffer() { deallocate(); }
 
@@ -763,13 +761,8 @@ class basic_memory_buffer final : public detail::buffer<T> {
     size_t size = other.size(), capacity = other.capacity();
     if (data == other.store_) {
       this->set(store_, capacity);
-      if (detail::is_constant_evaluated()) {
-        detail::copy_str<T>(other.store_, other.store_ + size,
-                            detail::make_checked(store_, capacity));
-      } else {
-        std::uninitialized_copy(other.store_, other.store_ + size,
-                                detail::make_checked(store_, capacity));
-      }
+      detail::copy_str<T>(other.store_, other.store_ + size,
+                          detail::make_checked(store_, capacity));
     } else {
       this->set(data, capacity);
       // Set pointer to the inline array so that delete is not called
