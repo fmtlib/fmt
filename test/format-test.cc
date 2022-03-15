@@ -87,6 +87,27 @@ TEST(float_test, isfinite) {
 #endif
 }
 
+template <typename Float> void check_isnan() {
+  using fmt::detail::isnan;
+  EXPECT_FALSE(isnan(Float(0.0)));
+  EXPECT_FALSE(isnan(Float(42.0)));
+  EXPECT_FALSE(isnan(Float(-42.0)));
+  EXPECT_FALSE(isnan(Float(fmt::detail::max_value<double>())));
+  // Use double because std::numeric_limits is broken for __float128.
+  using limits = std::numeric_limits<double>;
+  EXPECT_FALSE(isnan(Float(limits::infinity())));
+  EXPECT_FALSE(isnan(Float(-limits::infinity())));
+  EXPECT_TRUE(isnan(Float(limits::quiet_NaN())));
+  EXPECT_TRUE(isnan(Float(-limits::quiet_NaN())));
+}
+
+TEST(float_test, isnan) {
+  check_isnan<double>();
+#ifdef __SIZEOF_FLOAT128__
+  check_isnan<fmt::detail::float128>();
+#endif
+}
+
 struct uint32_pair {
   uint32_t u[2];
 };

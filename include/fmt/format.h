@@ -1905,11 +1905,11 @@ FMT_CONSTEXPR auto write(OutputIt out, const Char* s,
 }
 
 template <typename Char, typename OutputIt>
-FMT_CONSTEXPR20 auto write_nonfinite(OutputIt out, bool isinf,
+FMT_CONSTEXPR20 auto write_nonfinite(OutputIt out, bool isnan,
                                      basic_format_specs<Char> specs,
                                      const float_specs& fspecs) -> OutputIt {
   auto str =
-      isinf ? (fspecs.upper ? "INF" : "inf") : (fspecs.upper ? "NAN" : "nan");
+      isnan ? (fspecs.upper ? "NAN" : "nan") : (fspecs.upper ? "INF" : "inf");
   constexpr size_t str_size = 3;
   auto sign = fspecs.sign;
   auto size = str_size + (sign ? 1 : 0);
@@ -2182,16 +2182,8 @@ constexpr bool isfinite(T value) {
   return value - value == 0;  // std::isfinite doesn't support __float128.
 }
 
-template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value &&
-                                    !is_float128<T>::value)>
-FMT_CONSTEXPR20 bool isinf(T value) {
-  if (is_constant_evaluated()) return !isfinite(value) && value == value;
-  return std::isinf(value);
-}
-template <typename T, FMT_ENABLE_IF(is_float128<T>::value)>
-constexpr bool isinf(T value) {
-  // std::isinf doesn't support __float128.
-  return !isfinite(value) && value == value;
+template <typename T> constexpr bool isnan(T value) {
+  return value != value;  // std::isnan doesn't support __float128.
 }
 
 template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
@@ -2200,7 +2192,7 @@ FMT_INLINE FMT_CONSTEXPR bool signbit(T value) {
 #ifdef __cpp_if_constexpr
     if constexpr (std::numeric_limits<double>::is_iec559) {
       auto bits = detail::bit_cast<uint64_t>(static_cast<double>(value));
-      return (bits & (uint64_t(1) << (num_bits<uint64_t>() - 1))) != 0;
+      return (bits >> (num_bits<uint64_t>() - 1)) != 0;
     }
 #endif
   }
@@ -2223,7 +2215,7 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value,
   }
 
   if (!detail::isfinite(value))
-    return write_nonfinite(out, detail::isinf(value), specs, fspecs);
+    return write_nonfinite(out, detail::isnan(value), specs, fspecs);
 
   if (specs.align == align::numeric && fspecs.sign) {
     auto it = reserve(out, 1);
@@ -2279,7 +2271,7 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
   constexpr auto specs = basic_format_specs<Char>();
   uint mask = exponent_mask<floaty>();
   if ((bits & mask) == mask)
-    return write_nonfinite(out, std::isinf(value), specs, fspecs);
+    return write_nonfinite(out, std::isnan(value), specs, fspecs);
 
   auto dec = dragonbox::to_decimal(static_cast<floaty>(value));
   return write_float(out, dec, specs, fspecs, {});

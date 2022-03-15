@@ -1389,15 +1389,6 @@ struct chrono_format_checker : null_chrono_spec_handler<chrono_format_checker> {
 };
 
 template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
-inline bool isnan(T) {
-  return false;
-}
-template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
-inline bool isnan(T value) {
-  return std::isnan(value);
-}
-
-template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
 inline bool isfinite(T) {
   return true;
 }
