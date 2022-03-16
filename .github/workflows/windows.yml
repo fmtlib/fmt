@@ -18,6 +18,13 @@ jobs:
             platform: Win32
             build_type: Debug
             shared: -DBUILD_SHARED_LIBS=ON
+        exclude:
+          - os: windows-2019
+            standard: 11
+            platform: Win32
+          - os: windows-2019
+            standard: 20
+            platform: Win32
 
     steps:
     - uses: actions/checkout@v2
