@@ -100,11 +100,6 @@ template FMT_API void detail::vformat_to(
     detail::buffer<char>&, string_view,
     basic_format_args<FMT_BUFFER_CONTEXT(char)>, detail::locale_ref);
 
-template FMT_API int detail::snprintf_float(double, int, detail::float_specs,
-                                            detail::buffer<char>&);
-template FMT_API int detail::snprintf_float(long double, int,
-                                            detail::float_specs,
-                                            detail::buffer<char>&);
 template FMT_API int detail::format_float(double, int, detail::float_specs,
                                           detail::buffer<char>&);
 template FMT_API int detail::format_float(long double, int, detail::float_specs,
