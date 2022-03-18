@@ -2665,13 +2665,14 @@ FMT_CONSTEXPR auto parse_format_specs(ParseContext& ctx)
     -> decltype(ctx.begin()) {
   using char_type = typename ParseContext::char_type;
   using context = buffer_context<char_type>;
+  using stripped_type = typename strip_named_arg<T>::type;
   using mapped_type = conditional_t<
       mapped_type_constant<T, context>::value != type::custom_type,
       decltype(arg_mapper<context>().map(std::declval<const T&>())),
-      typename strip_named_arg<T>::type>;
+      stripped_type>;
   auto f = conditional_t<has_formatter<mapped_type, context>::value,
                          formatter<mapped_type, char_type>,
-                         fallback_formatter<T, char_type>>();
+                         fallback_formatter<stripped_type, char_type>>();
   return f.parse(ctx);
 }
 
