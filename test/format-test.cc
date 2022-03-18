@@ -1816,6 +1816,7 @@ TEST(format_test, compile_time_string) {
                                   "foo"_a = "foo"));
   EXPECT_EQ("", fmt::format(FMT_STRING("")));
   EXPECT_EQ("", fmt::format(FMT_STRING(""), "arg"_a = 42));
+  EXPECT_EQ("42", fmt::format(FMT_STRING("{answer}"), "answer"_a = Answer()));
 #endif
 
   (void)static_with_null;
@@ -1885,6 +1886,8 @@ TEST(format_test, named_arg_udl) {
       fmt::format("{first}{second}{first}{third}", fmt::arg("first", "abra"),
                   fmt::arg("second", "cad"), fmt::arg("third", 99)),
       udl_a);
+
+  EXPECT_EQ("42", fmt::format("{answer}", "answer"_a = Answer()));
 }
 #endif  // FMT_USE_USER_DEFINED_LITERALS
 
