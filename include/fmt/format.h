@@ -667,7 +667,14 @@ inline auto code_point_index(basic_string_view<char8_type> s, size_t n)
   return s.size();
 }
 
-#ifdef __SIZEOF_FLOAT128__
+#ifndef FMT_USE_FLOAT128
+#  ifdef __SIZEOF_FLOAT128__
+#    define FMT_USE_FLOAT128 1
+#  else
+#    define FMT_USE_FLOAT128 0
+#  endif
+#endif
+#if FMT_USE_FLOAT128
 using float128 = __float128;
 #else
 using float128 = void;
