@@ -2647,6 +2647,14 @@ FMT_CONSTEXPR FMT_INLINE void parse_format_string(
   }
 }
 
+template <typename T, bool = is_named_arg<T>::value> struct strip_named_arg {
+  using type = T;
+};
+
+template <typename T> struct strip_named_arg<T, true> {
+  using type = remove_cvref_t<decltype(T::value)>;
+};
+
 template <typename T, typename ParseContext>
 FMT_CONSTEXPR auto parse_format_specs(ParseContext& ctx)
     -> decltype(ctx.begin()) {
@@ -2654,7 +2662,8 @@ FMT_CONSTEXPR auto parse_format_specs(ParseContext& ctx)
   using context = buffer_context<char_type>;
   using mapped_type = conditional_t<
       mapped_type_constant<T, context>::value != type::custom_type,
-      decltype(arg_mapper<context>().map(std::declval<const T&>())), T>;
+      decltype(arg_mapper<context>().map(std::declval<const T&>())),
+      typename strip_named_arg<T>::type>;
   auto f = conditional_t<has_formatter<mapped_type, context>::value,
                          formatter<mapped_type, char_type>,
                          fallback_formatter<T, char_type>>();
