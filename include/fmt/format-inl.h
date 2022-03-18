@@ -2064,7 +2064,7 @@ FMT_CONSTEXPR20 inline void format_dragon(fp value, bool is_predecessor_closer,
     numerator <<= value.e + shift;
     lower.assign(1);
     lower <<= value.e;
-    if (shift != 1) {
+    if (is_predecessor_closer) {
       upper_store.assign(1);
       upper_store <<= value.e + 1;
       upper = &upper_store;
@@ -2074,7 +2074,7 @@ FMT_CONSTEXPR20 inline void format_dragon(fp value, bool is_predecessor_closer,
   } else if (exp10 < 0) {
     numerator.assign_pow10(-exp10);
     lower.assign(numerator);
-    if (shift != 1) {
+    if (is_predecessor_closer) {
       upper_store.assign(numerator);
       upper_store <<= 1;
       upper = &upper_store;
@@ -2089,7 +2089,7 @@ FMT_CONSTEXPR20 inline void format_dragon(fp value, bool is_predecessor_closer,
     denominator.assign_pow10(exp10);
     denominator <<= shift - value.e;
     lower.assign(1);
-    if (shift != 1) {
+    if (is_predecessor_closer) {
       upper_store.assign(1ULL << 1);
       upper = &upper_store;
     }
