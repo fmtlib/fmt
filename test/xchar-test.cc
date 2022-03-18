@@ -330,9 +330,11 @@ TEST(xchar_test, color) {
 }
 
 TEST(xchar_test, ostream) {
+#if !FMT_GCC_VERSION || FMT_GCC_VERSION >= 409
   std::wostringstream wos;
   fmt::print(wos, L"Don't {}!", L"panic");
-  EXPECT_EQ(L"Don't panic!", wos.str());
+  EXPECT_EQ(wos.str(), L"Don't panic!");
+#endif
 }
 
 TEST(xchar_test, to_wstring) { EXPECT_EQ(L"42", fmt::to_wstring(42)); }
