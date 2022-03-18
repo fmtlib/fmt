@@ -761,10 +761,27 @@ namespace test {
 enum class formattable_scoped_enum {};
 auto format_as(formattable_scoped_enum) -> int { return 42; }
 
+enum class formattable_formatter_scoped_enum {};
+auto format_as(formattable_formatter_scoped_enum) -> int { return 24; }
+
 struct convertible_to_enum {
   operator formattable_scoped_enum() const { return {}; }
 };
 }  // namespace test
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<::test::formattable_formatter_scoped_enum> {
+  auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
+
+  auto format(::test::formattable_formatter_scoped_enum, format_context& ctx) const
+      -> decltype(ctx.out()) {
+    auto name = string_view("formattable_formatter_scoped_enum");
+    return std::copy_n(name.data(), name.size(), ctx.out());
+  }
+};
+FMT_END_NAMESPACE
 
 TEST(core_test, is_formattable) {
 #if 0
@@ -820,6 +837,9 @@ TEST(core_test, format_to) {
 
 TEST(core_test, format_as) {
   EXPECT_EQ(fmt::format("{}", test::formattable_scoped_enum()), "42");
+  EXPECT_EQ(fmt::format("{}", test::formattable_formatter_scoped_enum()), "formattable_formatter_scoped_enum");
+  const test::formattable_formatter_scoped_enum x{};
+  EXPECT_EQ(fmt::format("{}", x), "formattable_formatter_scoped_enum");
 }
 
 struct convertible_to_int {

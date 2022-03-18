@@ -1423,7 +1423,9 @@ template <typename Context> struct arg_mapper {
   }
 
   template <typename T, typename U = decltype(format_as(T())),
-            FMT_ENABLE_IF(std::is_enum<T>::value&& std::is_integral<U>::value)>
+            FMT_ENABLE_IF(std::is_enum<T>::value && std::is_integral<U>::value &&
+                !has_formatter<T, Context>::value &&
+                !has_fallback_formatter<T, char_type>::value)>
   FMT_CONSTEXPR FMT_INLINE auto map(const T& val)
       -> decltype(std::declval<arg_mapper>().map(U())) {
     return map(format_as(val));
