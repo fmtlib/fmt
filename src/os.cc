@@ -51,6 +51,10 @@
 #  include <windows.h>
 #endif
 
+#ifdef DJGPP
+#  include <dpmi.h>
+#endif
+
 #ifdef fileno
 #  undef fileno
 #endif
@@ -354,6 +358,11 @@ long getpagesize() {
   SYSTEM_INFO si;
   GetSystemInfo(&si);
   return si.dwPageSize;
+#  elif defined(DJGPP)
+  unsigned long size;
+  if (__dpmi_get_page_size(&size) != 0)
+    FMT_THROW(system_error(ENOSYS, "cannot get memory page size"));
+  return size;
 #  else
   long size = FMT_POSIX_CALL(sysconf(_SC_PAGESIZE));
   if (size < 0) FMT_THROW(system_error(errno, "cannot get memory page size"));
