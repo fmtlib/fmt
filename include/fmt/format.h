@@ -255,6 +255,13 @@ FMT_END_NAMESPACE
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
+FMT_CONSTEXPR inline void abort_fuzzing_if(bool condition) {
+  ignore_unused(condition);
+#ifdef FMT_FUZZ
+  if (condition) throw std::runtime_error("fuzzing limit reached");
+#endif
+}
+
 template <typename Streambuf> class formatbuf : public Streambuf {
  private:
   using char_type = typename Streambuf::char_type;
@@ -837,9 +844,7 @@ class basic_memory_buffer final : public detail::buffer<T> {
 template <typename T, size_t SIZE, typename Allocator>
 FMT_CONSTEXPR20 void basic_memory_buffer<T, SIZE, Allocator>::grow(
     size_t size) {
-#ifdef FMT_FUZZ
-  if (size > 5000) throw std::runtime_error("fuzz mode - won't grow that much");
-#endif
+  detail::abort_fuzzing_if(size > 5000);
   const size_t max_size = std::allocator_traits<Allocator>::max_size(alloc_);
   size_t old_capacity = this->capacity();
   size_t new_capacity = old_capacity + old_capacity / 2;
@@ -1367,10 +1372,7 @@ auto snprintf_float(T value, int precision, float_specs specs,
   for (;;) {
     auto begin = buf.data() + offset;
     auto capacity = buf.capacity() - offset;
-#ifdef FMT_FUZZ
-    if (precision > 100000)
-      throw std::runtime_error("fuzz mode: avoid large allocation in snprintf");
-#endif
+    abort_fuzzing_if(precision > 100000);
     // Suppress the warning about a nonliteral format string.
     // Cannot use auto because of a bug in MinGW (#1532).
     int (*snprintf_ptr)(char*, size_t, const char*, ...) = FMT_SNPRINTF;
@@ -2203,10 +2205,7 @@ FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& fp,
     // 1234e5 -> 123400000[.0+]
     size += to_unsigned(fp.exponent);
     int num_zeros = fspecs.precision - exp;
-#ifdef FMT_FUZZ
-    if (num_zeros > 5000)
-      throw std::runtime_error("fuzz mode - avoiding excessive cpu use");
-#endif
+    abort_fuzzing_if(num_zeros > 5000);
     if (fspecs.showpoint) {
       ++size;
       if (num_zeros <= 0 && fspecs.format != float_format::fixed) num_zeros = 1;
