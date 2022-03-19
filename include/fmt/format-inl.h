@@ -202,7 +202,7 @@ template <typename T> struct bits {
       static_cast<int>(sizeof(T) * std::numeric_limits<unsigned char>::digits);
 };
 
-// A floating-point number f * pow(2, e).
+// A floating-point number f * pow(2, e) where F is an unsigned type.
 template <typename F> struct basic_fp {
   F f;
   int e;
@@ -214,9 +214,7 @@ template <typename F> struct basic_fp {
 
   // Constructs fp from an IEEE754 floating-point number. It is a template to
   // prevent compile errors on systems where n is not IEEE754.
-  template <typename Float> explicit FMT_CONSTEXPR basic_fp(Float n) {
-    assign(n);
-  }
+  template <typename Float> FMT_CONSTEXPR basic_fp(Float n) { assign(n); }
 
   template <typename Float>
   using is_supported = bool_constant<std::numeric_limits<Float>::is_iec559 &&
@@ -2043,10 +2041,17 @@ small_divisor_case_label:
 }
 }  // namespace dragonbox
 
+// format_dragon flags.
+enum dragon {
+  predecessor_closer = 1,
+  fixup = 2,  // Run fixup to correct exp10 which can be off by one.
+  fixed = 4,
+};
+
 // Formats a floating-point number using a variation of the Fixed-Precision
 // Positive Floating-Point Printout ((FPP)^2) algorithm by Steele & White:
 // https://fmt.dev/papers/p372-steele.pdf.
-FMT_CONSTEXPR20 inline void format_dragon(fp value, bool is_predecessor_closer,
+FMT_CONSTEXPR20 inline void format_dragon(fp value, unsigned flags,
                                           int num_digits, buffer<char>& buf,
                                           int& exp10) {
   bigint numerator;    // 2 * R in (FPP)^2.
@@ -2058,6 +2063,7 @@ FMT_CONSTEXPR20 inline void format_dragon(fp value, bool is_predecessor_closer,
   // Shift numerator and denominator by an extra bit or two (if lower boundary
   // is closer) to make lower and upper integers. This eliminates multiplication
   // by 2 during later computations.
+  bool is_predecessor_closer = (flags & dragon::predecessor_closer) != 0;
   int shift = is_predecessor_closer ? 2 : 1;
   if (value.e >= 0) {
     numerator.assign(value.f);
@@ -2094,11 +2100,22 @@ FMT_CONSTEXPR20 inline void format_dragon(fp value, bool is_predecessor_closer,
       upper = &upper_store;
     }
   }
+  bool even = (value.f & 1) == 0;
+  if (!upper) upper = &lower;
+  if ((flags & dragon::fixup) != 0) {
+    if (add_compare(numerator, *upper, denominator) + even <= 0) {
+      --exp10;
+      numerator *= 10;
+      if (num_digits < 0) {
+        lower *= 10;
+        if (upper != &lower) *upper *= 10;
+      }
+    }
+    if ((flags & dragon::fixed) != 0) adjust_precision(num_digits, exp10 + 1);
+  }
   // Invariant: value == (numerator / denominator) * pow(10, exp10).
   if (num_digits < 0) {
     // Generate the shortest representation.
-    if (!upper) upper = &lower;
-    bool even = (value.f & 1) == 0;
     num_digits = 0;
     char* data = buf.data();
     for (;;) {
@@ -2179,6 +2196,7 @@ FMT_HEADER_ONLY_CONSTEXPR20 int format_float(Float value, int precision,
   // float is passed as double to reduce the number of instantiations.
   static_assert(!std::is_same<Float, float>::value, "");
   FMT_ASSERT(value >= 0, "value is negative");
+  auto converted_value = convert_float(value);
 
   const bool fixed = specs.format == float_format::fixed;
   if (value <= 0) {  // <= instead of == to silence a warning.
@@ -2193,10 +2211,21 @@ FMT_HEADER_ONLY_CONSTEXPR20 int format_float(Float value, int precision,
 
   int exp = 0;
   bool use_dragon = true;
+  unsigned dragon_flags = 0;
   if (!is_fast_float<Float>()) {
-    // Use floor because 0.9 = 9e-1.
-    exp = static_cast<int>(std::floor(std::log10(value)));
-    if (fixed) adjust_precision(precision, exp + 1);
+    const auto inv_log2_10 = 0.3010299956639812;  // 1 / log2(10)
+    const auto e = basic_fp<typename dragonbox::float_info<
+        decltype(converted_value)>::carrier_uint>(converted_value)
+                       .e;
+    // Compute exp, an approximate power of 10, such that
+    //   10^(exp - 1) <= value < 10^exp or 10^exp <= value < 10^(exp + 1).
+    // This is based on log10(value) == log2(value) / log2(10) and approximation
+    // of log2(value) by e + num_fraction_bits idea from double-conversion.
+    auto num_fraction_bits =
+        num_significand_bits<Float>() - (has_implicit_bit<Float>() ? 0 : 1);
+    exp = static_cast<int>(
+        std::ceil((e + num_fraction_bits) * inv_log2_10 - 1e-10));
+    dragon_flags = dragon::fixup;
   } else if (!is_constant_evaluated() && precision < 0) {
     // Use Dragonbox for the shortest format.
     if (specs.binary32) {
@@ -2212,7 +2241,7 @@ FMT_HEADER_ONLY_CONSTEXPR20 int format_float(Float value, int precision,
     // https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf.
     const int min_exp = -60;  // alpha in Grisu.
     int cached_exp10 = 0;     // K in Grisu.
-    fp normalized = normalize(fp(convert_float(value)));
+    fp normalized = normalize(fp(converted_value));
     const auto cached_pow = get_cached_power(
         min_exp - (normalized.e + fp::num_significand_bits), cached_exp10);
     normalized = normalized * cached_pow;
@@ -2231,12 +2260,14 @@ FMT_HEADER_ONLY_CONSTEXPR20 int format_float(Float value, int precision,
     auto f = fp();
     bool is_predecessor_closer = specs.binary32
                                      ? f.assign(static_cast<float>(value))
-                                     : f.assign(convert_float(value));
+                                     : f.assign(converted_value);
+    if (is_predecessor_closer) dragon_flags |= dragon::predecessor_closer;
+    if (fixed) dragon_flags |= dragon::fixed;
     // Limit precision to the maximum possible number of significant digits in
     // an IEEE754 double because we don't need to generate zeros.
     const int max_double_digits = 767;
     if (precision > max_double_digits) precision = max_double_digits;
-    format_dragon(f, is_predecessor_closer, precision, buf, exp);
+    format_dragon(f, dragon_flags, precision, buf, exp);
   }
   if (!fixed && !specs.showpoint) {
     // Remove trailing zeros.
