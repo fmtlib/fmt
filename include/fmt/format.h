@@ -1286,14 +1286,19 @@ template <typename T> struct decimal_fp {
 template <typename T> FMT_API auto to_decimal(T x) noexcept -> decimal_fp<T>;
 }  // namespace dragonbox
 
+// Returns true iff Float has the implicit bit which is not stored.
 template <typename Float> constexpr bool has_implicit_bit() {
+  // An 80-bit FP number has a 64-bit significand an no implicit bit.
   return std::numeric_limits<Float>::digits != 64;
 }
 
-// Returns the number of significand bits in Float excluding the implicit bit.
+// Returns the number of significand bits stored in Float. The implicit bit is
+// not counted since it is not stored.
 template <typename Float> constexpr int num_significand_bits() {
-  return std::numeric_limits<Float>::digits -
-         (has_implicit_bit<Float>() ? 1 : 0);
+  // std::numeric_limits may not support __float128.
+  return is_float128<Float>() ? 112
+                              : (std::numeric_limits<Float>::digits -
+                                 (has_implicit_bit<Float>() ? 1 : 0));
 }
 
 template <typename Float>

@@ -217,8 +217,10 @@ template <typename F> struct basic_fp {
   template <typename Float> FMT_CONSTEXPR basic_fp(Float n) { assign(n); }
 
   template <typename Float>
-  using is_supported = bool_constant<std::numeric_limits<Float>::is_iec559 &&
-                                     std::numeric_limits<Float>::digits <= 113>;
+  using is_supported =
+      bool_constant<(std::numeric_limits<Float>::is_iec559 &&
+                     std::numeric_limits<Float>::digits <= 113) ||
+                    is_float128<Float>::value>;
 
   // Assigns d to this and return true iff predecessor is closer than successor.
   template <typename Float, FMT_ENABLE_IF(is_supported<Float>::value)>
@@ -229,7 +231,7 @@ template <typename F> struct basic_fp {
                                       << detail::num_significand_bits<Float>();
     const carrier_uint significand_mask = implicit_bit - 1;
     auto u = bit_cast<carrier_uint>(n);
-    f = static_cast<uint64_t>(u & significand_mask);
+    f = static_cast<F>(u & significand_mask);
     int biased_e = static_cast<int>((u & exponent_mask<Float>()) >>
                                     detail::num_significand_bits<Float>());
     // The predecessor is closer if n is a normalized power of 2 (f == 0) other
