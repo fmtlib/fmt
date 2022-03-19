@@ -1271,7 +1271,8 @@ template <> struct float_info<double> {
 // An 80- or 128-bit floating point number.
 template <typename T>
 struct float_info<T, enable_if_t<std::numeric_limits<T>::digits == 64 ||
-                                 std::numeric_limits<T>::digits == 113>> {
+                                 std::numeric_limits<T>::digits == 113 ||
+                                 is_float128<T>::value>> {
   using carrier_uint = detail::uint128_t;
   static const int exponent_bits = 15;
 };
