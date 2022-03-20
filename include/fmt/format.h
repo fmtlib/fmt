@@ -1232,7 +1232,7 @@ class utf8_to_utf16 {
   operator basic_string_view<wchar_t>() const { return {&buffer_[0], size()}; }
   auto size() const -> size_t { return buffer_.size() - 1; }
   auto c_str() const -> const wchar_t* { return &buffer_[0]; }
-  auto str() const -> std::wstring { return {&buffer_[0], size()}; }
+  auto str() const -> wstring { return {&buffer_[0], size()}; }
 };
 
 namespace dragonbox {

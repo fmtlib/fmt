@@ -227,7 +227,7 @@ template <typename... T> void print(wformat_string<T...> fmt, T&&... args) {
 /**
   Converts *value* to ``std::wstring`` using the default format for type *T*.
  */
-template <typename T> inline auto to_wstring(const T& value) -> std::wstring {
+template <typename T> inline auto to_wstring(const T& value) -> wstring {
   return format(FMT_STRING(L"{}"), value);
 }
 FMT_MODULE_EXPORT_END

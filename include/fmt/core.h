@@ -300,6 +300,9 @@ FMT_GCC_PRAGMA("GCC optimize(\"Og\")")
 FMT_BEGIN_NAMESPACE
 FMT_MODULE_EXPORT_BEGIN
 
+// Alias for older systems where std::wstring isn't defined.
+using wstring = std::basic_string<wchar_t>;
+
 // Implementations of enable_if_t and other metafunctions for older systems.
 template <bool B, typename T = void>
 using enable_if_t = typename std::enable_if<B, T>::type;
