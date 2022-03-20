@@ -48,7 +48,7 @@
 
 #include "core.h"
 
-#if FMT_GCC_VERSION
+#if FMT_GCC_VERSION && !defined(DJGPP)
 #  define FMT_GCC_VISIBILITY_HIDDEN __attribute__((visibility("hidden")))
 #else
 #  define FMT_GCC_VISIBILITY_HIDDEN

@@ -244,7 +244,7 @@
 #else
 #  define FMT_CLASS_API
 #  if defined(FMT_EXPORT) || defined(FMT_SHARED)
-#    if defined(__GNUC__) || defined(__clang__)
+#    if (defined(__GNUC__) || defined(__clang__)) && !defined(DJGPP)
 #      define FMT_API __attribute__((visibility("default")))
 #    endif
 #  endif
