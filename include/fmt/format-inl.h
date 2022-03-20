@@ -212,42 +212,36 @@ template <typename F> struct basic_fp {
   constexpr basic_fp() : f(0), e(0) {}
   constexpr basic_fp(uint64_t f_val, int e_val) : f(f_val), e(e_val) {}
 
-  // Constructs fp from an IEEE754 floating-point number. It is a template to
-  // prevent compile errors on systems where n is not IEEE754.
+  // Constructs fp from an IEEE754 floating-point number.
   template <typename Float> FMT_CONSTEXPR basic_fp(Float n) { assign(n); }
 
-  template <typename Float>
-  using is_supported =
-      bool_constant<(std::numeric_limits<Float>::is_iec559 &&
-                     std::numeric_limits<Float>::digits <= 113) ||
-                    is_float128<Float>::value>;
-
-  // Assigns d to this and return true iff predecessor is closer than successor.
-  template <typename Float, FMT_ENABLE_IF(is_supported<Float>::value)>
-  FMT_CONSTEXPR bool assign(Float n) {
-    // Assume float is in the format [sign][exponent][significand].
+  // Assigns n to this and return true iff predecessor is closer than successor.
+  template <typename Float> FMT_CONSTEXPR bool assign(Float n) {
+    static_assert((std::numeric_limits<Float>::is_iec559 &&
+                   std::numeric_limits<Float>::digits <= 113) ||
+                      is_float128<Float>::value,
+                  "unsupported FP");
+    // Assume Float is in the format [sign][exponent][significand].
     using carrier_uint = typename dragonbox::float_info<Float>::carrier_uint;
-    const carrier_uint implicit_bit = carrier_uint(1)
-                                      << detail::num_significand_bits<Float>();
-    const carrier_uint significand_mask = implicit_bit - 1;
+    constexpr auto num_float_significand_bits =
+        detail::num_significand_bits<Float>();
+    constexpr auto implicit_bit = carrier_uint(1) << num_float_significand_bits;
+    constexpr auto significand_mask = implicit_bit - 1;
     auto u = bit_cast<carrier_uint>(n);
     f = static_cast<F>(u & significand_mask);
-    int biased_e = static_cast<int>((u & exponent_mask<Float>()) >>
-                                    detail::num_significand_bits<Float>());
+    auto biased_e = static_cast<int>((u & exponent_mask<Float>()) >>
+                                     num_float_significand_bits);
     // The predecessor is closer if n is a normalized power of 2 (f == 0) other
     // than the smallest normalized number (biased_e > 1).
-    bool is_predecessor_closer = f == 0 && biased_e > 1;
+    auto is_predecessor_closer = f == 0 && biased_e > 1;
     if (biased_e != 0)
-      f += static_cast<uint64_t>(implicit_bit);
+      f += static_cast<F>(implicit_bit);
     else
       biased_e = 1;  // Subnormals use biased exponent 1 (min exponent).
-    const int exponent_bias = std::numeric_limits<Float>::max_exponent - 1;
-    e = biased_e - exponent_bias - std::numeric_limits<Float>::digits + 1;
+    e = biased_e - exponent_bias<Float>() - num_float_significand_bits;
+    if (!has_implicit_bit<Float>()) ++e;
     return is_predecessor_closer;
   }
-
-  template <typename Float, FMT_ENABLE_IF(!is_supported<Float>::value)>
-  bool assign(Float) = delete;
 };
 
 using fp = basic_fp<unsigned long long>;
@@ -1917,8 +1911,7 @@ template <typename T> decimal_fp<T> to_decimal(T x) noexcept {
       static_cast<int>((br & exponent_mask<T>()) >> num_significand_bits<T>());
 
   if (exponent != 0) {  // Check if normal.
-    const int exponent_bias = std::numeric_limits<T>::max_exponent - 1;
-    exponent -= exponent_bias + num_significand_bits<T>();
+    exponent -= exponent_bias<T>() + num_significand_bits<T>();
 
     // Shorter interval case; proceed like Schubfach.
     // In fact, when exponent == 1 and significand == 0, the interval is

@@ -1308,6 +1308,11 @@ constexpr auto exponent_mask() ->
   return ((uint(1) << dragonbox::float_info<Float>::exponent_bits) - 1)
          << num_significand_bits<Float>();
 }
+template <typename Float> constexpr auto exponent_bias() -> int {
+  // std::numeric_limits may not support __float128.
+  return is_float128<Float>() ? 16383
+                              : std::numeric_limits<Float>::max_exponent - 1;
+}
 
 // Writes the exponent exp in the form "[+-]d{2,3}" to buffer.
 template <typename Char, typename It>
@@ -2370,12 +2375,7 @@ template <typename Char, typename OutputIt, typename T,
 FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
   if (is_constant_evaluated())
     return write(out, value, basic_format_specs<Char>());
-
   if (const_check(!is_supported_floating_point(value))) return out;
-
-  using floaty = conditional_t<std::is_same<T, long double>::value, double, T>;
-  using uint = typename dragonbox::float_info<floaty>::carrier_uint;
-  auto bits = bit_cast<uint>(value);
 
   auto fspecs = float_specs();
   if (detail::signbit(value)) {
@@ -2384,8 +2384,10 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
   }
 
   constexpr auto specs = basic_format_specs<Char>();
+  using floaty = conditional_t<std::is_same<T, long double>::value, double, T>;
+  using uint = typename dragonbox::float_info<floaty>::carrier_uint;
   uint mask = exponent_mask<floaty>();
-  if ((bits & mask) == mask)
+  if ((bit_cast<uint>(value) & mask) == mask)
     return write_nonfinite(out, std::isnan(value), specs, fspecs);
 
   auto dec = dragonbox::to_decimal(static_cast<floaty>(value));
