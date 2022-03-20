@@ -950,19 +950,19 @@ using is_signed =
 // Returns true if value is negative, false otherwise.
 // Same as `value < 0` but doesn't produce warnings if T is an unsigned type.
 template <typename T, FMT_ENABLE_IF(is_signed<T>::value)>
-FMT_CONSTEXPR auto is_negative(T value) -> bool {
+constexpr auto is_negative(T value) -> bool {
   return value < 0;
 }
 template <typename T, FMT_ENABLE_IF(!is_signed<T>::value)>
-FMT_CONSTEXPR auto is_negative(T) -> bool {
+constexpr auto is_negative(T) -> bool {
   return false;
 }
 
-template <typename T>
-FMT_CONSTEXPR auto is_supported_floating_point(T) -> uint16_t {
-  return (std::is_same<T, float>::value && FMT_USE_FLOAT) ||
-         (std::is_same<T, double>::value && FMT_USE_DOUBLE) ||
-         (std::is_same<T, long double>::value && FMT_USE_LONG_DOUBLE);
+template <typename T> constexpr auto is_supported_floating_point(T) -> bool {
+  return (std::is_same<T, float>() && FMT_USE_FLOAT) ||
+         (std::is_same<T, double>() && FMT_USE_DOUBLE) ||
+         (std::is_same<T, long double>() && FMT_USE_LONG_DOUBLE) ||
+         is_float128<T>();
 }
 
 // Smallest of uint32_t, uint64_t, uint128_t that is large enough to
