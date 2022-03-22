@@ -133,8 +133,8 @@ void vprint(std::basic_ostream<Char>& os,
   \endrst
  */
 FMT_MODULE_EXPORT
-template <typename... Args>
-void print(std::ostream& os, format_string<Args...> fmt, Args&&... args) {
+template <typename... T>
+void print(std::ostream& os, format_string<T...> fmt, T&&... args) {
   vprint(os, fmt, fmt::make_format_args(args...));
 }
 

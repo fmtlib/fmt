@@ -309,7 +309,7 @@ The following user-defined literals are defined in ``fmt/format.h``.
 
 .. doxygenfunction:: operator""_format(const char *s, size_t n) -> detail::udl_formatter<char> 
 
-.. doxygenfunction:: operator""_a(const char *s, size_t) -> detail::udl_arg<char>
+.. doxygenfunction:: operator""_a() -> detail::udl_arg<char>
 
 Utilities
 ---------
@@ -516,7 +516,7 @@ In order to make a type formattable via ``std::ostream`` you should provide a
   std::string s = fmt::format("The date is {}", date(2012, 12, 9));
   // s == "The date is 2012-12-9"
 
-.. doxygenfunction:: print(std::basic_ostream<Char> &os, const S &format_str, Args&&... args)
+.. doxygenfunction:: print(std::basic_ostream<Char> &os, format_string<T...> fmt, T&&... args)
 
 .. _printf-api:
 
