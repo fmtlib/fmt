@@ -223,10 +223,10 @@ template <typename F> struct basic_fp {
                   "unsupported FP");
     // Assume Float is in the format [sign][exponent][significand].
     using carrier_uint = typename dragonbox::float_info<Float>::carrier_uint;
-    constexpr auto num_float_significand_bits =
+    const auto num_float_significand_bits =
         detail::num_significand_bits<Float>();
-    constexpr auto implicit_bit = carrier_uint(1) << num_float_significand_bits;
-    constexpr auto significand_mask = implicit_bit - 1;
+    const auto implicit_bit = carrier_uint(1) << num_float_significand_bits;
+    const auto significand_mask = implicit_bit - 1;
     auto u = bit_cast<carrier_uint>(n);
     f = static_cast<F>(u & significand_mask);
     auto biased_e = static_cast<int>((u & exponent_mask<Float>()) >>
