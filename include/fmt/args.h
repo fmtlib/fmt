@@ -33,11 +33,14 @@ class dynamic_arg_list {
   // unit for placing vtable. So storage_node_base is made a fake template.
   template <typename = void> struct node {
     virtual ~node() = default;
+    virtual std::unique_ptr<node<>> clone() const = 0;
     std::unique_ptr<node<>> next;
   };
 
   template <typename T> struct typed_node : node<> {
     T value;
+
+    FMT_CONSTEXPR typed_node(const typed_node<T>& node) : value(node.value) {}
 
     template <typename Arg>
     FMT_CONSTEXPR typed_node(const Arg& arg) : value(arg) {}
@@ -45,11 +48,46 @@ class dynamic_arg_list {
     template <typename Char>
     FMT_CONSTEXPR typed_node(const basic_string_view<Char>& arg)
         : value(arg.data(), arg.size()) {}
+
+    std::unique_ptr<node<>> clone() const override {
+      return std::unique_ptr<typed_node<T>>(new typed_node<T>(*this));
+    }
   };
 
   std::unique_ptr<node<>> head_;
 
  public:
+  constexpr dynamic_arg_list() = default;
+
+  dynamic_arg_list(const dynamic_arg_list& arg_list) {
+    if (arg_list.head_) {
+      head_ = arg_list.head_->clone();
+      auto temp = head_.get();
+      auto arg_list_temp = arg_list.head_.get();
+      while (arg_list_temp->next) {
+        temp->next = arg_list_temp->next->clone();
+        temp = temp->next.get();
+        arg_list_temp = arg_list_temp->next.get();
+      }
+    }
+  }
+
+  dynamic_arg_list& operator=(const dynamic_arg_list& arg_list) {
+    if (this != &arg_list) {
+      if (arg_list.head_) {
+        head_ = arg_list.head_->clone();
+        auto temp = head_.get();
+        auto arg_list_temp = arg_list.head_.get();
+        while (arg_list_temp->next) {
+          temp->next = arg_list_temp->next->clone();
+          temp = temp->next.get();
+          arg_list_temp = arg_list_temp->next.get();
+        }
+      }
+    }
+    return *this;
+  }
+
   template <typename T, typename Arg> const T& push(const Arg& arg) {
     auto new_node = std::unique_ptr<typed_node<T>>(new typed_node<T>(arg));
     auto& value = new_node->value;
@@ -145,6 +183,15 @@ class dynamic_format_arg_store
  public:
   constexpr dynamic_format_arg_store() = default;
 
+  dynamic_format_arg_store(const dynamic_format_arg_store<Context>& store)
+      :
+#if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
+        basic_format_args<Context>(),
+#endif
+        data_(store.data_),
+        named_info_(store.named_info_),
+        dynamic_args_(store.dynamic_args_) {
+  }
   /**
     \rst
     Adds an argument into the dynamic store for later passing to a formatting

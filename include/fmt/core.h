@@ -1204,6 +1204,63 @@ template <typename Context> class value {
     named_arg_value<char_type> named_args;
   };
 
+  FMT_INLINE value(const value<Context>& v, const type& t) {
+    switch (t) {
+    case type::none_type:
+      no_value = monostate();
+      break;
+    case type::int_type:
+      int_value = v.int_value;
+      break;
+    case type::uint_type:
+      uint_value = v.uint_value;
+      break;
+    case type::long_long_type:
+      long_long_value = v.long_long_value;
+      break;
+    case type::ulong_long_type:
+      ulong_long_value = v.ulong_long_value;
+      break;
+    case type::int128_type:
+      int128_value = v.int128_value;
+      break;
+    case type::uint128_type:
+      uint128_value = v.uint128_value;
+      break;
+    case type::bool_type:
+      bool_value = v.bool_value;
+      break;
+    case type::char_type:
+      char_value = v.char_value;
+      break;
+    case type::float_type:
+      float_value = v.float_value;
+      break;
+    case type::double_type:
+      double_value = v.double_value;
+      break;
+    case type::long_double_type:
+      long_double_value = v.long_double_value;
+      break;
+    case type::cstring_type:
+    case type::string_type:
+      string.data = v.string.data;
+      string.size = v.string.size;
+      break;
+    case type::pointer_type:
+      pointer = v.pointer;
+      break;
+    case type::custom_type:
+      custom.value = v.custom.value;
+      custom.format = v.custom.format;
+      break;
+    default:
+      named_args.data = v.named_args.data;
+      named_args.size = v.named_args.size;
+      break;
+    }
+  }
+
   constexpr FMT_INLINE value() : no_value() {}
   constexpr FMT_INLINE value(int val) : int_value(val) {}
   constexpr FMT_INLINE value(unsigned val) : uint_value(val) {}
@@ -1547,6 +1604,9 @@ template <typename Context> class basic_format_arg {
   };
 
   constexpr basic_format_arg() : type_(detail::type::none_type) {}
+
+  basic_format_arg(const basic_format_arg<Context>& arg)
+      : value_(arg.value_, arg.type_), type_(arg.type_) {}
 
   constexpr explicit operator bool() const noexcept {
     return type_ != detail::type::none_type;

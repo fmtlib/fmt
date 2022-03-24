@@ -12,7 +12,7 @@
 #include "gtest/gtest.h"
 
 TEST(args_test, basic) {
-  fmt::dynamic_format_arg_store<fmt::format_context> store;
+  auto store = fmt::dynamic_format_arg_store<fmt::format_context>();
   store.push_back(42);
   store.push_back("abc1");
   store.push_back(1.5f);
@@ -21,7 +21,7 @@ TEST(args_test, basic) {
 
 TEST(args_test, strings_and_refs) {
   // Unfortunately the tests are compiled with old ABI so strings use COW.
-  fmt::dynamic_format_arg_store<fmt::format_context> store;
+  auto store = fmt::dynamic_format_arg_store<fmt::format_context>();
   char str[] = "1234567890";
   store.push_back(str);
   store.push_back(std::cref(str));
@@ -50,7 +50,7 @@ template <> struct formatter<custom_type> {
 FMT_END_NAMESPACE
 
 TEST(args_test, custom_format) {
-  fmt::dynamic_format_arg_store<fmt::format_context> store;
+  auto store = fmt::dynamic_format_arg_store<fmt::format_context>();
   auto c = custom_type();
   store.push_back(c);
   ++c.i;
@@ -79,7 +79,7 @@ template <> struct formatter<to_stringable> {
 FMT_END_NAMESPACE
 
 TEST(args_test, to_string_and_formatter) {
-  fmt::dynamic_format_arg_store<fmt::format_context> store;
+  auto store = fmt::dynamic_format_arg_store<fmt::format_context>();
   auto s = to_stringable();
   store.push_back(s);
   store.push_back(std::cref(s));
@@ -87,13 +87,13 @@ TEST(args_test, to_string_and_formatter) {
 }
 
 TEST(args_test, named_int) {
-  fmt::dynamic_format_arg_store<fmt::format_context> store;
+  auto store = fmt::dynamic_format_arg_store<fmt::format_context>();
   store.push_back(fmt::arg("a1", 42));
   EXPECT_EQ("42", fmt::vformat("{a1}", store));
 }
 
 TEST(args_test, named_strings) {
-  fmt::dynamic_format_arg_store<fmt::format_context> store;
+  auto store = fmt::dynamic_format_arg_store<fmt::format_context>();
   char str[] = "1234567890";
   store.push_back(fmt::arg("a1", str));
   store.push_back(fmt::arg("a2", std::cref(str)));
@@ -102,7 +102,7 @@ TEST(args_test, named_strings) {
 }
 
 TEST(args_test, named_arg_by_ref) {
-  fmt::dynamic_format_arg_store<fmt::format_context> store;
+  auto store = fmt::dynamic_format_arg_store<fmt::format_context>();
   char band[] = "Rolling Stones";
   store.push_back(fmt::arg("band", std::cref(band)));
   band[9] = 'c';  // Changing band affects the output.
@@ -110,7 +110,7 @@ TEST(args_test, named_arg_by_ref) {
 }
 
 TEST(args_test, named_custom_format) {
-  fmt::dynamic_format_arg_store<fmt::format_context> store;
+  auto store = fmt::dynamic_format_arg_store<fmt::format_context>();
   auto c = custom_type();
   store.push_back(fmt::arg("c1", c));
   ++c.i;
@@ -123,7 +123,7 @@ TEST(args_test, named_custom_format) {
 }
 
 TEST(args_test, clear) {
-  fmt::dynamic_format_arg_store<fmt::format_context> store;
+  auto store = fmt::dynamic_format_arg_store<fmt::format_context>();
   store.push_back(42);
 
   auto result = fmt::vformat("{}", store);
@@ -140,7 +140,7 @@ TEST(args_test, clear) {
 }
 
 TEST(args_test, reserve) {
-  fmt::dynamic_format_arg_store<fmt::format_context> store;
+  auto store = fmt::dynamic_format_arg_store<fmt::format_context>();
   store.reserve(2, 1);
   store.push_back(1.5f);
   store.push_back(fmt::arg("a1", 42));
@@ -165,7 +165,7 @@ template <> struct formatter<copy_throwable> {
 FMT_END_NAMESPACE
 
 TEST(args_test, throw_on_copy) {
-  fmt::dynamic_format_arg_store<fmt::format_context> store;
+  auto store = fmt::dynamic_format_arg_store<fmt::format_context>();
   store.push_back(std::string("foo"));
   try {
     store.push_back(copy_throwable());
@@ -183,4 +183,19 @@ TEST(args_test, move_constructor) {
   auto moved_store = std::move(*store);
   store.reset();
   EXPECT_EQ(fmt::vformat("{} {} {a1}", moved_store), "42 foo foo");
+}
+
+TEST(args_test, copy_constructor) {
+  using store_type = fmt::dynamic_format_arg_store<fmt::format_context>;
+  auto store = std::unique_ptr<store_type>(new store_type());
+  store->push_back(fmt::arg("test1", "value1"));
+  store->push_back(fmt::arg("test2", "value2"));
+  store->push_back(fmt::arg("test3", "value3"));
+
+  auto store2 = std::unique_ptr<store_type>(new store_type(*store));
+  store.reset();
+  store2->push_back(fmt::arg("test4", "value4"));
+
+  auto result = fmt::vformat("{test1} {test2} {test3} {test4}", *store2);
+  EXPECT_EQ(result, "value1 value2 value3 value4");
 }
