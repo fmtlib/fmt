@@ -8,6 +8,7 @@
 #ifndef FMT_CORE_H_
 #define FMT_CORE_H_
 
+#include <cstddef>  // std::byte
 #include <cstdio>   // std::FILE
 #include <cstring>  // std::strlen
 #include <iterator>
@@ -1274,6 +1275,12 @@ FMT_CONSTEXPR auto make_arg(T&& value) -> basic_format_arg<Context>;
 enum { long_short = sizeof(long) == sizeof(int) };
 using long_type = conditional_t<long_short, int, long long>;
 using ulong_type = conditional_t<long_short, unsigned, unsigned long long>;
+
+#ifdef __cpp_lib_byte
+inline auto format_as(std::byte b) -> unsigned char {
+  return static_cast<unsigned char>(b);
+}
+#endif
 
 // Maps formatting arguments to core types.
 // arg_mapper reports errors by returning unformattable instead of using
