@@ -28,6 +28,14 @@
 
 #include "format.h"
 
+// In non-header-only mode, functions in this file are compiled by format.cc
+// once and exclusively, so we define functions without `inline`;
+// this triggers a clang-tidy warning (misc-definitions-in-headers).
+// If the user is using clang-tidy 14+, we can suppress it.
+#ifndef FMT_HEADER_ONLY
+// NOLINTBEGIN(misc-definitions-in-headers)
+#endif
+
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
@@ -2589,5 +2597,9 @@ FMT_FUNC auto is_printable(uint32_t cp) -> bool {
 }  // namespace detail
 
 FMT_END_NAMESPACE
+
+#ifndef FMT_HEADER_ONLY
+// NOLINTEND(misc-definitions-in-headers)
+#endif
 
 #endif  // FMT_FORMAT_INL_H_
