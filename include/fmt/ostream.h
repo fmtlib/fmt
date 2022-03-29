@@ -76,7 +76,6 @@ void format_value(buffer<Char>& buf, const T& value,
 #endif
   output << value;
   output.exceptions(std::ios_base::failbit | std::ios_base::badbit);
-  buf.try_resize(buf.size());
 }
 }  // namespace detail
 
