@@ -2554,10 +2554,29 @@ template <typename Char> struct arg_formatter {
   FMT_CONSTEXPR FMT_INLINE auto operator()(T value) -> iterator {
     return detail::write(out, value, specs, locale);
   }
+
+  FMT_CONSTEXPR FMT_INLINE auto operator()(float value) -> iterator {
+    return detail::write(out, prevent_negative_zero(value), specs, locale);
+  }
+  FMT_CONSTEXPR FMT_INLINE auto operator()(double value) -> iterator {
+    return detail::write(out, prevent_negative_zero(value), specs, locale);
+  }
+  FMT_CONSTEXPR FMT_INLINE auto operator()(long double value) -> iterator {
+    return detail::write(out, prevent_negative_zero(value), specs, locale);
+  }
   auto operator()(typename basic_format_arg<context>::handle) -> iterator {
     // User-defined types are handled separately because they require access
     // to the parse context.
     return out;
+  }
+ private:
+  template <typename T>
+  FMT_CONSTEXPR FMT_INLINE auto prevent_negative_zero(T value) -> T {
+    if (this->specs.precision > 0 and
+        (T{1} / static_cast<T>(std::pow(10, this->specs.precision)) > std::fabs(value))) {
+      value = 0;
+    }
+    return value;
   }
 };
 

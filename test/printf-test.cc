@@ -581,3 +581,35 @@ TEST(printf_test, vsprintf_make_wargs_example) {
             fmt::vsprintf(L"[%d] %s happened",
                           {fmt::make_wprintf_args(42, L"something")}));
 }
+
+TEST(printf_test, check_sign_truncation_on_zero) {
+  float fval = 0.0f - 1e-7f;
+  EXPECT_EQ(fmt::vsprintf("%1.7f", {fmt::make_printf_args(fval)}), "-0.0000001");
+  EXPECT_EQ(fmt::format("{:1.7f}", fval), "-0.0000001");
+  fval = std::nexttoward(fval, 1.f);
+  EXPECT_EQ(fmt::vsprintf("%1.7f", {fmt::make_printf_args(fval)}), "0.0000000");
+  EXPECT_EQ(fmt::format("{:1.7f}", fval), "0.0000000");
+  fval = std::nexttoward(fval, -1.f);
+  EXPECT_EQ(fmt::vsprintf("%1.7f", {fmt::make_printf_args(fval)}), "-0.0000001");
+  EXPECT_EQ(fmt::format("{:1.7f}", fval), "-0.0000001");
+
+  double dval = 0.0 - 1e-15;
+  EXPECT_EQ(fmt::vsprintf("%1.15lf", {fmt::make_printf_args(dval)}), "-0.000000000000001");
+  EXPECT_EQ(fmt::format("{:1.15f}", dval), "-0.000000000000001");
+  dval = std::nexttoward(dval, 1.f);
+  EXPECT_EQ(fmt::vsprintf("%1.15lf", {fmt::make_printf_args(dval)}), "0.000000000000000");
+  EXPECT_EQ(fmt::format("{:1.15f}", dval), "0.000000000000000");
+  dval = std::nexttoward(dval, -1.f);
+  EXPECT_EQ(fmt::vsprintf("%1.15lf", {fmt::make_printf_args(dval)}), "-0.000000000000001");
+  EXPECT_EQ(fmt::format("{:1.15f}", dval), "-0.000000000000001");
+
+  long double ldval = 0.0L - 1e-18L;
+  EXPECT_EQ(fmt::vsprintf("%1.18Lf", {fmt::make_printf_args(ldval)}), "-0.000000000000000001");
+  EXPECT_EQ(fmt::format("{:1.18f}", ldval), "-0.000000000000000001");
+  ldval = std::nexttoward(ldval, 1.f);
+  EXPECT_EQ(fmt::vsprintf("%1.18Lf", {fmt::make_printf_args(ldval)}), "0.000000000000000000");
+  EXPECT_EQ(fmt::format("{:1.18f}", ldval), "0.000000000000000000");
+  ldval = std::nexttoward(ldval, -1.f);
+  EXPECT_EQ(fmt::vsprintf("%1.18Lf", {fmt::make_printf_args(ldval)}), "-0.000000000000000001");
+  EXPECT_EQ(fmt::format("{:1.18f}", ldval), "-0.000000000000000001");
+}

@@ -267,6 +267,10 @@ class printf_arg_formatter : public arg_formatter<Char> {
 
   template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
   OutputIt operator()(T value) {
+    if (this->specs.precision > 0 and
+        (T{1} / static_cast<T>(std::pow(10, this->specs.precision)) > std::fabs(value))) {
+      value = 0;
+    }
     return base::operator()(value);
   }
 
