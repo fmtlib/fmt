@@ -2293,19 +2293,19 @@ FMT_CONSTEXPR20 auto write_float(OutputIt out, const DecimalFP& fp,
   }
 }
 
+template <typename T> constexpr bool isnan(T value) {
+  return !(value >= value);  // std::isnan doesn't support __float128.
+}
+
 template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value &&
                                     !is_float128<T>::value)>
 FMT_CONSTEXPR20 bool isfinite(T value) {
-  if (is_constant_evaluated()) return value - value == 0;
+  if (is_constant_evaluated()) return !isnan(value - value);
   return std::isfinite(value);
 }
 template <typename T, FMT_ENABLE_IF(is_float128<T>::value)>
 constexpr bool isfinite(T value) {
   return value - value == 0;  // std::isfinite doesn't support __float128.
-}
-
-template <typename T> constexpr bool isnan(T value) {
-  return value != value;  // std::isnan doesn't support __float128.
 }
 
 template <typename T, FMT_ENABLE_IF(is_floating_point<T>::value)>
