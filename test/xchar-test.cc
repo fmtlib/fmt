@@ -479,9 +479,21 @@ template <class charT> struct formatter<std::complex<double>, charT> {
                             fmt::runtime("{:" + specs + "}"), c.imag());
     auto fill_align_width = std::string();
     if (specs_.width > 0) fill_align_width = fmt::format(">{}", specs_.width);
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
     return format_to(ctx.out(), runtime("{:" + fill_align_width + "}"),
                      c.real() != 0 ? fmt::format("({}+{}i)", real, imag)
                                    : fmt::format("{}i", imag));
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
   }
 };
 FMT_END_NAMESPACE

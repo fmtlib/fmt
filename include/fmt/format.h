@@ -2299,6 +2299,13 @@ FMT_CONSTEXPR20 bool isfinite(T value) {
   if (is_constant_evaluated()) return value - value == 0;
   return std::isfinite(value);
 }
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
 template <typename T, FMT_ENABLE_IF(is_float128<T>::value)>
 constexpr bool isfinite(T value) {
   return value - value == 0;  // std::isfinite doesn't support __float128.
@@ -2307,6 +2314,11 @@ constexpr bool isfinite(T value) {
 template <typename T> constexpr bool isnan(T value) {
   return value != value;  // std::isnan doesn't support __float128.
 }
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
 template <typename T, FMT_ENABLE_IF(is_floating_point<T>::value)>
 FMT_INLINE FMT_CONSTEXPR bool signbit(T value) {
