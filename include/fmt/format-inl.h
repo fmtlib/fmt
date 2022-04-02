@@ -368,21 +368,34 @@ class bigint {
     if (carry != 0) bigits_.push_back(carry);
   }
 
-  FMT_CONSTEXPR20 void multiply(uint64_t value) {
-    const bigit mask = ~bigit(0);
-    const double_bigit lower = value & mask;
-    const double_bigit upper = value >> bigit_bits;
-    double_bigit carry = 0;
+  template <typename UInt, FMT_ENABLE_IF(std::is_same<UInt, uint64_t>::value ||
+                                         std::is_same<UInt, uint128_t>::value)>
+  FMT_CONSTEXPR20 void multiply(UInt value) {
+    const UInt lower = static_cast<bigit>(value);
+    const UInt upper = value >> bigit_bits;
+    UInt carry = 0;
     for (size_t i = 0, n = bigits_.size(); i < n; ++i) {
-      double_bigit result = bigits_[i] * lower + (carry & mask);
+      UInt result = lower * bigits_[i] + static_cast<bigit>(carry);
       carry =
-          bigits_[i] * upper + (result >> bigit_bits) + (carry >> bigit_bits);
+          upper * bigits_[i] + (result >> bigit_bits) + (carry >> bigit_bits);
       bigits_[i] = static_cast<bigit>(result);
     }
     while (carry != 0) {
-      bigits_.push_back(carry & mask);
+      bigits_.push_back(static_cast<bigit>(carry));
       carry >>= bigit_bits;
     }
+  }
+
+  template <typename UInt, FMT_ENABLE_IF(std::is_same<UInt, uint64_t>::value ||
+                                         std::is_same<UInt, uint128_t>::value)>
+  FMT_CONSTEXPR20 void assign(UInt n) {
+    size_t num_bigits = 0;
+    do {
+      bigits_[num_bigits++] = static_cast<bigit>(n);
+      n >>= bigit_bits;
+    } while (n != 0);
+    bigits_.resize(num_bigits);
+    exp_ = 0;
   }
 
  public:
@@ -400,14 +413,9 @@ class bigint {
     exp_ = other.exp_;
   }
 
-  FMT_CONSTEXPR20 void assign(uint64_t n) {
-    size_t num_bigits = 0;
-    do {
-      bigits_[num_bigits++] = n & ~bigit(0);
-      n >>= bigit_bits;
-    } while (n != 0);
-    bigits_.resize(num_bigits);
-    exp_ = 0;
+  template <typename Int> FMT_CONSTEXPR20 void operator=(Int n) {
+    FMT_ASSERT(n > 0, "");
+    assign(uint64_or_128_t<Int>(n));
   }
 
   FMT_CONSTEXPR20 int num_bigits() const {
@@ -478,14 +486,14 @@ class bigint {
   // Assigns pow(10, exp) to this bigint.
   FMT_CONSTEXPR20 void assign_pow10(int exp) {
     FMT_ASSERT(exp >= 0, "");
-    if (exp == 0) return assign(1);
+    if (exp == 0) return *this = 1;
     // Find the top bit.
     int bitmask = 1;
     while (exp >= bitmask) bitmask <<= 1;
     bitmask >>= 1;
     // pow(10, exp) = pow(5, exp) * pow(2, exp). First compute pow(5, exp) by
     // repeated squaring and multiplication.
-    assign(5);
+    *this = 5;
     bitmask >>= 1;
     while (bitmask != 0) {
       square();
@@ -2061,12 +2069,12 @@ FMT_CONSTEXPR20 inline void format_dragon(fp value, unsigned flags,
   bool is_predecessor_closer = (flags & dragon::predecessor_closer) != 0;
   int shift = is_predecessor_closer ? 2 : 1;
   if (value.e >= 0) {
-    numerator.assign(value.f);
+    numerator = value.f;
     numerator <<= value.e + shift;
-    lower.assign(1);
+    lower = 1;
     lower <<= value.e;
     if (is_predecessor_closer) {
-      upper_store.assign(1);
+      upper_store = 1;
       upper_store <<= value.e + 1;
       upper = &upper_store;
     }
@@ -2082,16 +2090,16 @@ FMT_CONSTEXPR20 inline void format_dragon(fp value, unsigned flags,
     }
     numerator *= value.f;
     numerator <<= shift;
-    denominator.assign(1);
+    denominator = 1;
     denominator <<= shift - value.e;
   } else {
-    numerator.assign(value.f);
+    numerator = value.f;
     numerator <<= shift;
     denominator.assign_pow10(exp10);
     denominator <<= shift - value.e;
-    lower.assign(1);
+    lower = 1;
     if (is_predecessor_closer) {
-      upper_store.assign(1ULL << 1);
+      upper_store = 1ULL << 1;
       upper = &upper_store;
     }
   }
@@ -2278,13 +2286,14 @@ FMT_HEADER_ONLY_CONSTEXPR20 int format_float(Float value, int precision,
 }  // namespace detail
 
 template <> struct formatter<detail::bigint> {
-  FMT_CONSTEXPR format_parse_context::iterator parse(
-      format_parse_context& ctx) {
+  FMT_CONSTEXPR auto parse(format_parse_context& ctx)
+      -> format_parse_context::iterator {
     return ctx.begin();
   }
 
-  format_context::iterator format(const detail::bigint& n,
-                                  format_context& ctx) {
+  template <typename FormatContext>
+  auto format(const detail::bigint& n, FormatContext& ctx) const ->
+      typename FormatContext::iterator {
     auto out = ctx.out();
     bool first = true;
     for (auto i = n.bigits_.size(); i > 0; --i) {

@@ -339,6 +339,10 @@ class uint128_fallback {
                          const uint128_fallback& rhs) -> bool {
     return !(lhs == rhs);
   }
+  friend auto operator>(const uint128_fallback& lhs,
+                        const uint128_fallback& rhs) -> bool {
+    return lhs.hi_ != rhs.hi_ ? lhs.hi_ > rhs.hi_ : lhs.lo_ > rhs.lo_;
+  }
   friend auto operator|(const uint128_fallback& lhs,
                         const uint128_fallback& rhs) -> uint128_fallback {
     return {lhs.hi_ | rhs.hi_, lhs.lo_ | rhs.lo_};
@@ -346,6 +350,16 @@ class uint128_fallback {
   friend auto operator&(const uint128_fallback& lhs,
                         const uint128_fallback& rhs) -> uint128_fallback {
     return {lhs.hi_ & rhs.hi_, lhs.lo_ & rhs.lo_};
+  }
+  friend auto operator+(const uint128_fallback& lhs,
+                        const uint128_fallback& rhs) -> uint128_fallback {
+    auto result = uint128_fallback(lhs);
+    result += rhs;
+    return result;
+  }
+  friend auto operator*(const uint128_fallback&, uint32_t) -> uint128_fallback {
+    FMT_ASSERT(false, "");
+    return {};
   }
   friend auto operator-(const uint128_fallback& lhs, uint64_t rhs)
       -> uint128_fallback {
@@ -973,10 +987,9 @@ template <typename T>
 using uint32_or_64_or_128_t =
     conditional_t<num_bits<T>() <= 32 && !FMT_REDUCE_INT_INSTANTIATIONS,
                   uint32_t,
-                  conditional_t<num_bits<T>() <= 64, uint64_t, uint128_opt>>;
+                  conditional_t<num_bits<T>() <= 64, uint64_t, uint128_t>>;
 template <typename T>
-using uint64_or_128_t =
-    conditional_t<num_bits<T>() <= 64, uint64_t, uint128_opt>;
+using uint64_or_128_t = conditional_t<num_bits<T>() <= 64, uint64_t, uint128_t>;
 
 #define FMT_POWERS_OF_10(factor)                                             \
   factor * 10, (factor)*100, (factor)*1000, (factor)*10000, (factor)*100000, \

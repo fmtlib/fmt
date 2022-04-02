@@ -24,9 +24,9 @@ static_assert(!std::is_copy_constructible<bigint>::value, "");
 static_assert(!std::is_copy_assignable<bigint>::value, "");
 
 TEST(bigint_test, construct) {
-  EXPECT_EQ("", fmt::format("{}", bigint()));
-  EXPECT_EQ("42", fmt::format("{}", bigint(0x42)));
-  EXPECT_EQ("123456789abcedf0", fmt::format("{}", bigint(0x123456789abcedf0)));
+  EXPECT_EQ(fmt::to_string(bigint()), "");
+  EXPECT_EQ(fmt::to_string(bigint(0x42)), "42");
+  EXPECT_EQ(fmt::to_string(bigint(0x123456789abcedf0)), "123456789abcedf0");
 }
 
 TEST(bigint_test, compare) {
@@ -72,46 +72,56 @@ TEST(bigint_test, add_compare) {
 TEST(bigint_test, shift_left) {
   bigint n(0x42);
   n <<= 0;
-  EXPECT_EQ("42", fmt::format("{}", n));
+  EXPECT_EQ(fmt::to_string(n), "42");
   n <<= 1;
-  EXPECT_EQ("84", fmt::format("{}", n));
+  EXPECT_EQ(fmt::to_string(n), "84");
   n <<= 25;
-  EXPECT_EQ("108000000", fmt::format("{}", n));
+  EXPECT_EQ(fmt::to_string(n), "108000000");
 }
 
 TEST(bigint_test, multiply) {
   bigint n(0x42);
   EXPECT_THROW(n *= 0, assertion_failure);
   n *= 1;
-  EXPECT_EQ("42", fmt::format("{}", n));
+  EXPECT_EQ(fmt::to_string(n), "42");
+
   n *= 2;
-  EXPECT_EQ("84", fmt::format("{}", n));
+  EXPECT_EQ(fmt::to_string(n), "84");
   n *= 0x12345678;
-  EXPECT_EQ("962fc95e0", fmt::format("{}", n));
+  EXPECT_EQ(fmt::to_string(n), "962fc95e0");
+
   bigint bigmax(max_value<uint32_t>());
   bigmax *= max_value<uint32_t>();
-  EXPECT_EQ("fffffffe00000001", fmt::format("{}", bigmax));
-  bigmax.assign(max_value<uint64_t>());
-  bigmax *= max_value<uint64_t>();
-  EXPECT_EQ("fffffffffffffffe0000000000000001", fmt::format("{}", bigmax));
+  EXPECT_EQ(fmt::to_string(bigmax), "fffffffe00000001");
+
+  const auto max64 = max_value<uint64_t>();
+  bigmax = max64;
+  bigmax *= max64;
+  EXPECT_EQ(fmt::to_string(bigmax), "fffffffffffffffe0000000000000001");
+
+  const auto max128 = (fmt::detail::uint128_t(max64) << 64) | max64;
+  bigmax = max128;
+  // bigmax *= max128;
+  // EXPECT_EQ(fmt::to_string(bigmax),
+  //          "fffffffffffffffffffffffffffffffe00000000000000000000000000000001");
 }
 
 TEST(bigint_test, square) {
   bigint n0(0);
   n0.square();
-  EXPECT_EQ("0", fmt::format("{}", n0));
+  EXPECT_EQ(fmt::to_string(n0), "0");
   bigint n1(0x100);
   n1.square();
-  EXPECT_EQ("10000", fmt::format("{}", n1));
+  EXPECT_EQ(fmt::to_string(n1), "10000");
   bigint n2(0xfffffffff);
   n2.square();
-  EXPECT_EQ("ffffffffe000000001", fmt::format("{}", n2));
+  EXPECT_EQ(fmt::to_string(n2), "ffffffffe000000001");
   bigint n3(max_value<uint64_t>());
   n3.square();
-  EXPECT_EQ("fffffffffffffffe0000000000000001", fmt::format("{}", n3));
+  EXPECT_EQ(fmt::to_string(n3), "fffffffffffffffe0000000000000001");
   bigint n4;
   n4.assign_pow10(10);
-  EXPECT_EQ("2540be400", fmt::format("{}", n4));
+  EXPECT_EQ(fmt::to_string(n4), "2540be400");
 }
 
 TEST(bigint_test, divmod_assign_zero_divisor) {
@@ -133,8 +143,8 @@ TEST(bigint_test, divmod_assign_unaligned) {
   n2.assign_pow10(100);
   int result = n1.divmod_assign(n2);
   EXPECT_EQ(result, 9406);
-  EXPECT_EQ("10f8353019583bfc29ffc8f564e1b9f9d819dbb4cf783e4507eca1539220p96",
-            fmt::format("{}", n1));
+  EXPECT_EQ(fmt::to_string(n1),
+            "10f8353019583bfc29ffc8f564e1b9f9d819dbb4cf783e4507eca1539220p96");
 }
 
 TEST(bigint_test, divmod_assign) {
@@ -142,19 +152,19 @@ TEST(bigint_test, divmod_assign) {
   bigint n1(100);
   int result = n1.divmod_assign(bigint(10));
   EXPECT_EQ(result, 10);
-  EXPECT_EQ("0", fmt::format("{}", n1));
+  EXPECT_EQ(fmt::to_string(n1), "0");
   // pow(10, 100) / (42 << 320):
   n1.assign_pow10(100);
   result = n1.divmod_assign(bigint(42) <<= 320);
   EXPECT_EQ(result, 111);
-  EXPECT_EQ("13ad2594c37ceb0b2784c4ce0bf38ace408e211a7caab24308a82e8f10p96",
-            fmt::format("{}", n1));
+  EXPECT_EQ(fmt::to_string(n1),
+            "13ad2594c37ceb0b2784c4ce0bf38ace408e211a7caab24308a82e8f10p96");
   // 42 / 100:
   bigint n2(42);
   n1.assign_pow10(2);
   result = n2.divmod_assign(n1);
   EXPECT_EQ(result, 0);
-  EXPECT_EQ("2a", fmt::format("{}", n2));
+  EXPECT_EQ(fmt::to_string(n2), "2a");
 }
 
 template <bool is_iec559> void run_double_tests() {
@@ -173,8 +183,8 @@ TEST(fp_test, double_tests) {
 TEST(fp_test, normalize) {
   const auto v = fp(0xbeef, 42);
   auto normalized = normalize(v);
-  EXPECT_EQ(0xbeef000000000000, normalized.f);
-  EXPECT_EQ(-6, normalized.e);
+  EXPECT_EQ(normalized.f, 0xbeef000000000000);
+  EXPECT_EQ(normalized.e, -6);
 }
 
 TEST(fp_test, multiply) {
@@ -200,8 +210,8 @@ TEST(fp_test, get_cached_power) {
         cache <<= power.e;
       exact.align(cache);
       cache.align(exact);
-      auto exact_str = fmt::format("{}", exact);
-      auto cache_str = fmt::format("{}", cache);
+      auto exact_str = fmt::to_string(exact);
+      auto cache_str = fmt::to_string(cache);
       EXPECT_EQ(exact_str.size(), cache_str.size());
       EXPECT_EQ(exact_str.substr(0, 15), cache_str.substr(0, 15));
       int diff = cache_str[15] - exact_str[15];
@@ -212,11 +222,11 @@ TEST(fp_test, get_cached_power) {
     } else {
       cache.assign_pow10(-dec_exp);
       cache *= power.f + 1;  // Inexact check.
-      exact.assign(1);
+      exact = 1;
       exact <<= -power.e;
       exact.align(cache);
-      auto exact_str = fmt::format("{}", exact);
-      auto cache_str = fmt::format("{}", cache);
+      auto exact_str = fmt::to_string(exact);
+      auto cache_str = fmt::to_string(cache);
       EXPECT_EQ(exact_str.size(), cache_str.size());
       EXPECT_EQ(exact_str.substr(0, 16), cache_str.substr(0, 16));
     }
@@ -242,25 +252,25 @@ TEST(fp_test, dragonbox_max_k) {
 TEST(fp_test, get_round_direction) {
   using fmt::detail::get_round_direction;
   using fmt::detail::round_direction;
-  EXPECT_EQ(round_direction::down, get_round_direction(100, 50, 0));
-  EXPECT_EQ(round_direction::up, get_round_direction(100, 51, 0));
-  EXPECT_EQ(round_direction::down, get_round_direction(100, 40, 10));
-  EXPECT_EQ(round_direction::up, get_round_direction(100, 60, 10));
+  EXPECT_EQ(get_round_direction(100, 50, 0), round_direction::down);
+  EXPECT_EQ(get_round_direction(100, 51, 0), round_direction::up);
+  EXPECT_EQ(get_round_direction(100, 40, 10), round_direction::down);
+  EXPECT_EQ(get_round_direction(100, 60, 10), round_direction::up);
   for (size_t i = 41; i < 60; ++i)
-    EXPECT_EQ(round_direction::unknown, get_round_direction(100, i, 10));
+    EXPECT_EQ(get_round_direction(100, i, 10), round_direction::unknown);
   uint64_t max = max_value<uint64_t>();
   EXPECT_THROW(get_round_direction(100, 100, 0), assertion_failure);
   EXPECT_THROW(get_round_direction(100, 0, 100), assertion_failure);
   EXPECT_THROW(get_round_direction(100, 0, 50), assertion_failure);
   // Check that remainder + error doesn't overflow.
-  EXPECT_EQ(round_direction::up, get_round_direction(max, max - 1, 2));
+  EXPECT_EQ(get_round_direction(max, max - 1, 2), round_direction::up);
   // Check that 2 * (remainder + error) doesn't overflow.
-  EXPECT_EQ(round_direction::unknown,
-            get_round_direction(max, max / 2 + 1, max / 2));
+  EXPECT_EQ(get_round_direction(max, max / 2 + 1, max / 2),
+            round_direction::unknown);
   // Check that remainder - error doesn't overflow.
-  EXPECT_EQ(round_direction::unknown, get_round_direction(100, 40, 41));
+  EXPECT_EQ(get_round_direction(100, 40, 41), round_direction::unknown);
   // Check that 2 * (remainder - error) doesn't overflow.
-  EXPECT_EQ(round_direction::up, get_round_direction(max, max - 1, 1));
+  EXPECT_EQ(get_round_direction(max, max - 1, 1), round_direction::up);
 }
 
 TEST(fp_test, fixed_handler) {
@@ -283,20 +293,20 @@ TEST(fp_test, fixed_handler) {
 }
 
 TEST(fp_test, grisu_format_compiles_with_on_ieee_double) {
-  fmt::memory_buffer buf;
+  auto buf = fmt::memory_buffer();
   format_float(0.42, -1, fmt::detail::float_specs(), buf);
 }
 
 TEST(format_impl_test, format_error_code) {
   std::string msg = "error 42", sep = ": ";
   {
-    fmt::memory_buffer buffer;
+    auto buffer = fmt::memory_buffer();
     format_to(fmt::appender(buffer), "garbage");
     fmt::detail::format_error_code(buffer, 42, "test");
-    EXPECT_EQ("test: " + msg, to_string(buffer));
+    EXPECT_EQ(to_string(buffer), "test: " + msg);
   }
   {
-    fmt::memory_buffer buffer;
+    auto buffer = fmt::memory_buffer();
     auto prefix =
         std::string(fmt::inline_buffer_size - msg.size() - sep.size() + 1, 'x');
     fmt::detail::format_error_code(buffer, 42, prefix);
@@ -317,7 +327,7 @@ TEST(format_impl_test, format_error_code) {
     // Test with a message that doesn't fit into the buffer.
     prefix += 'x';
     fmt::detail::format_error_code(buffer, codes[i], prefix);
-    EXPECT_EQ(msg, to_string(buffer));
+    EXPECT_EQ(to_string(buffer), msg);
   }
 }
 
@@ -333,8 +343,8 @@ template <typename Int> void test_count_digits() {
   for (Int i = 0; i < 10; ++i) EXPECT_EQ(1u, fmt::detail::count_digits(i));
   for (Int i = 1, n = 1, end = max_value<Int>() / 10; n <= end; ++i) {
     n *= 10;
-    EXPECT_EQ(i, fmt::detail::count_digits(n - 1));
-    EXPECT_EQ(i + 1, fmt::detail::count_digits(n));
+    EXPECT_EQ(fmt::detail::count_digits(n - 1), i);
+    EXPECT_EQ(fmt::detail::count_digits(n), i + 1);
   }
 }
 
@@ -345,11 +355,9 @@ TEST(format_impl_test, count_digits) {
 
 #ifdef _WIN32
 #  include <windows.h>
-#endif
 
-#ifdef _WIN32
 TEST(format_impl_test, write_console_signature) {
-  decltype(WriteConsoleW)* p = fmt::detail::WriteConsoleW;
+  decltype(::WriteConsoleW)* p = fmt::detail::WriteConsoleW;
   (void)p;
 }
 #endif
