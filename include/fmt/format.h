@@ -321,10 +321,15 @@ inline auto is_big_endian() -> bool {
 class uint128_fallback {
  private:
   uint64_t lo_, hi_;
-  constexpr uint128_fallback(uint64_t hi, uint64_t lo) : lo_(lo), hi_(hi) {}
+
+  friend uint128_fallback umul128(uint64_t x, uint64_t y) noexcept;
 
  public:
+  constexpr uint128_fallback(uint64_t hi, uint64_t lo) : lo_(lo), hi_(hi) {}
   constexpr uint128_fallback(uint64_t value = 0) : lo_(value), hi_(0) {}
+
+  constexpr uint64_t high() const noexcept { return hi_; }
+  constexpr uint64_t low() const noexcept { return lo_; }
 
   template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
   constexpr explicit operator T() const {
@@ -384,6 +389,7 @@ class uint128_fallback {
     lo_ = new_lo;
     hi_ = new_hi;
   }
+  FMT_CONSTEXPR20 uint128_fallback& operator+=(uint64_t n) noexcept;
 };
 
 using uint128_t = conditional_t<FMT_USE_INT128, uint128_opt, uint128_fallback>;

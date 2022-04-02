@@ -390,7 +390,7 @@ template <typename T> struct std_string_view {};
 #elif defined(__SIZEOF_INT128__) && !FMT_NVCC && \
     !(FMT_CLANG_VERSION && FMT_MSC_VER)
 #  define FMT_USE_INT128 1
-using int128_opt = __int128_t;  // An optional 128-bit integer.
+using int128_opt = __int128_t;  // An optional native 128-bit integer.
 using uint128_opt = __uint128_t;
 template <typename T> inline auto convert_for_visit(T value) -> T {
   return value;

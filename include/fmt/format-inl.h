@@ -733,39 +733,31 @@ FMT_INLINE FMT_CONSTEXPR20 digits::result grisu_gen_digits(
   }
 }
 
-// A 128-bit integer type used internally.
-struct uint128_wrapper {
-  uint128_wrapper() = default;
-
-  uint64_t high_;
-  uint64_t low_;
-
-  constexpr uint128_wrapper(uint64_t high, uint64_t low) noexcept
-      : high_{high}, low_{low} {}
-
-  constexpr uint64_t high() const noexcept { return high_; }
-  constexpr uint64_t low() const noexcept { return low_; }
-
-  uint128_wrapper& operator+=(uint64_t n) noexcept {
-#if FMT_HAS_BUILTIN(__builtin_addcll)
-    unsigned long long carry;
-    low_ = __builtin_addcll(low_, n, 0, &carry);
-    high_ += carry;
-#elif FMT_HAS_BUILTIN(__builtin_ia32_addcarryx_u64)
-    unsigned long long result;
-    auto carry = __builtin_ia32_addcarryx_u64(0, low_, n, &result);
-    low_ = result;
-    high_ += carry;
-#elif defined(_MSC_VER) && defined(_M_X64)
-    auto carry = _addcarry_u64(0, low_, n, &low_);
-    _addcarry_u64(carry, high_, 0, &high_);
-#else
-    low_ += n;
-    high_ += (low_ < n ? 1 : 0);
-#endif
+inline FMT_CONSTEXPR20 uint128_fallback& uint128_fallback::operator+=(
+    uint64_t n) noexcept {
+  if (is_constant_evaluated()) {
+    lo_ += n;
+    hi_ += (lo_ < n ? 1 : 0);
     return *this;
   }
-};
+#if FMT_HAS_BUILTIN(__builtin_addcll)
+  unsigned long long carry;
+  lo_ = __builtin_addcll(lo_, n, 0, &carry);
+  hi_ += carry;
+#elif FMT_HAS_BUILTIN(__builtin_ia32_addcarryx_u64)
+  unsigned long long result;
+  auto carry = __builtin_ia32_addcarryx_u64(0, lo_, n, &result);
+  lo_ = result;
+  hi_ += carry;
+#elif defined(_MSC_VER) && defined(_M_X64)
+  auto carry = _addcarry_u64(0, lo_, n, &lo_);
+  _addcarry_u64(carry, hi_, 0, &hi_);
+#else
+  lo_ += n;
+  hi_ += (lo_ < n ? 1 : 0);
+#endif
+  return *this;
+}
 
 // Compilers should be able to optimize this into the ror instruction.
 FMT_CONSTEXPR inline uint32_t rotr(uint32_t n, uint32_t r) noexcept {
@@ -777,16 +769,14 @@ FMT_CONSTEXPR inline uint64_t rotr(uint64_t n, uint32_t r) noexcept {
   return (n >> r) | (n << (64 - r));
 }
 
-// Implementation of Dragonbox algorithm: https://github.com/jk-jeon/dragonbox.
-namespace dragonbox {
 // Computes 128-bit result of multiplication of two 64-bit unsigned integers.
-inline uint128_wrapper umul128(uint64_t x, uint64_t y) noexcept {
+inline uint128_fallback umul128(uint64_t x, uint64_t y) noexcept {
 #if FMT_USE_INT128
   auto p = static_cast<uint128_opt>(x) * static_cast<uint128_opt>(y);
   return {static_cast<uint64_t>(p >> 64), static_cast<uint64_t>(p)};
 #elif defined(_MSC_VER) && defined(_M_X64)
-  uint128_wrapper result;
-  result.low_ = _umul128(x, y, &result.high_);
+  auto result = uint128_fallback();
+  result.lo_ = _umul128(x, y, &result.hi_);
   return result;
 #else
   const uint64_t mask = static_cast<uint64_t>(max_value<uint32_t>());
@@ -808,6 +798,8 @@ inline uint128_wrapper umul128(uint64_t x, uint64_t y) noexcept {
 #endif
 }
 
+// Implementation of Dragonbox algorithm: https://github.com/jk-jeon/dragonbox.
+namespace dragonbox {
 // Computes upper 64 bits of multiplication of two 64-bit unsigned integers.
 inline uint64_t umul128_upper64(uint64_t x, uint64_t y) noexcept {
 #if FMT_USE_INT128
@@ -822,9 +814,9 @@ inline uint64_t umul128_upper64(uint64_t x, uint64_t y) noexcept {
 
 // Computes upper 128 bits of multiplication of a 64-bit unsigned integer and a
 // 128-bit unsigned integer.
-inline uint128_wrapper umul192_upper128(uint64_t x,
-                                        uint128_wrapper y) noexcept {
-  uint128_wrapper r = umul128(x, y.high());
+inline uint128_fallback umul192_upper128(uint64_t x,
+                                         uint128_fallback y) noexcept {
+  uint128_fallback r = umul128(x, y.high());
   r += umul128_upper64(x, y.low());
   return r;
 }
@@ -837,10 +829,10 @@ inline uint64_t umul96_upper64(uint32_t x, uint64_t y) noexcept {
 
 // Computes lower 128 bits of multiplication of a 64-bit unsigned integer and a
 // 128-bit unsigned integer.
-inline uint128_wrapper umul192_lower128(uint64_t x,
-                                        uint128_wrapper y) noexcept {
+inline uint128_fallback umul192_lower128(uint64_t x,
+                                         uint128_fallback y) noexcept {
   uint64_t high = x * y.high();
-  uint128_wrapper high_low = umul128(x, y.low());
+  uint128_fallback high_low = umul128(x, y.low());
   return {high + high_low.high(), high_low.low()};
 }
 
@@ -1017,13 +1009,13 @@ template <> struct cache_accessor<float> {
 
 template <> struct cache_accessor<double> {
   using carrier_uint = float_info<double>::carrier_uint;
-  using cache_entry_type = uint128_wrapper;
+  using cache_entry_type = uint128_fallback;
 
-  static uint128_wrapper get_cached_power(int k) noexcept {
+  static uint128_fallback get_cached_power(int k) noexcept {
     FMT_ASSERT(k >= float_info<double>::min_k && k <= float_info<double>::max_k,
                "k is out of range");
 
-    static constexpr const uint128_wrapper pow10_significands[] = {
+    static constexpr const uint128_fallback pow10_significands[] = {
 #if FMT_USE_FULL_CACHE_DRAGONBOX
       {0xff77b1fcbebcdc4f, 0x25e8e89c13bb0f7b},
       {0x9faacf3df73609b1, 0x77b191618c54e9ad},
@@ -1695,7 +1687,7 @@ template <> struct cache_accessor<double> {
     int offset = k - kb;
 
     // Get base cache.
-    uint128_wrapper base_cache = pow10_significands[cache_index];
+    uint128_fallback base_cache = pow10_significands[cache_index];
     if (offset == 0) return base_cache;
 
     // Compute the required amount of bit-shift.
@@ -1704,8 +1696,8 @@ template <> struct cache_accessor<double> {
 
     // Try to recover the real cache.
     uint64_t pow5 = powers_of_5_64[offset];
-    uint128_wrapper recovered_cache = umul128(base_cache.high(), pow5);
-    uint128_wrapper middle_low = umul128(base_cache.low(), pow5);
+    uint128_fallback recovered_cache = umul128(base_cache.high(), pow5);
+    uint128_fallback middle_low = umul128(base_cache.low(), pow5);
 
     recovered_cache += middle_low.high();
 
@@ -1713,8 +1705,8 @@ template <> struct cache_accessor<double> {
     uint64_t middle_to_low = recovered_cache.low() << (64 - alpha);
 
     recovered_cache =
-        uint128_wrapper{(recovered_cache.low() >> alpha) | high_to_middle,
-                        ((middle_low.low() >> alpha) | middle_to_low)};
+        uint128_fallback{(recovered_cache.low() >> alpha) | high_to_middle,
+                         ((middle_low.low() >> alpha) | middle_to_low)};
     FMT_ASSERT(recovered_cache.low() + 1 != 0, "");
     return {recovered_cache.high(), recovered_cache.low() + 1};
 #endif
