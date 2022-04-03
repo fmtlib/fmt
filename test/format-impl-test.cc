@@ -101,9 +101,9 @@ TEST(bigint_test, multiply) {
 
   const auto max128 = (fmt::detail::uint128_t(max64) << 64) | max64;
   bigmax = max128;
-  // bigmax *= max128;
-  // EXPECT_EQ(fmt::to_string(bigmax),
-  //          "fffffffffffffffffffffffffffffffe00000000000000000000000000000001");
+  bigmax *= max128;
+  EXPECT_EQ(fmt::to_string(bigmax),
+            "fffffffffffffffffffffffffffffffe00000000000000000000000000000001");
 }
 
 TEST(bigint_test, square) {

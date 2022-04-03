@@ -362,9 +362,11 @@ class uint128_fallback {
     result += rhs;
     return result;
   }
-  friend auto operator*(const uint128_fallback&, uint32_t) -> uint128_fallback {
-    FMT_ASSERT(false, "");
-    return {};
+  friend auto operator*(const uint128_fallback& lhs, uint32_t rhs)
+      -> uint128_fallback {
+    FMT_ASSERT(lhs.hi_ == 0, "");
+    uint64_t hi = (lhs.lo_ >> 32) * rhs;
+    return {hi >> 32, (hi << 32) + (lhs.lo_ & ~uint32_t()) * rhs};
   }
   friend auto operator-(const uint128_fallback& lhs, uint64_t rhs)
       -> uint128_fallback {

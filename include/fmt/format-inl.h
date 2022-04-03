@@ -371,13 +371,16 @@ class bigint {
   template <typename UInt, FMT_ENABLE_IF(std::is_same<UInt, uint64_t>::value ||
                                          std::is_same<UInt, uint128_t>::value)>
   FMT_CONSTEXPR20 void multiply(UInt value) {
-    const UInt lower = static_cast<bigit>(value);
-    const UInt upper = value >> bigit_bits;
+    using half_uint =
+        conditional_t<std::is_same<UInt, uint128_t>::value, uint64_t, uint32_t>;
+    const int shift = num_bits<half_uint>() - bigit_bits;
+    const UInt lower = static_cast<half_uint>(value);
+    const UInt upper = value >> num_bits<half_uint>();
     UInt carry = 0;
     for (size_t i = 0, n = bigits_.size(); i < n; ++i) {
       UInt result = lower * bigits_[i] + static_cast<bigit>(carry);
-      carry =
-          upper * bigits_[i] + (result >> bigit_bits) + (carry >> bigit_bits);
+      carry = (upper * bigits_[i] << shift) + (result >> bigit_bits) +
+              (carry >> bigit_bits);
       bigits_[i] = static_cast<bigit>(result);
     }
     while (carry != 0) {
