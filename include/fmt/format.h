@@ -336,24 +336,26 @@ class uint128_fallback {
     return static_cast<T>(lo_);
   }
 
-  friend auto operator==(const uint128_fallback& lhs,
-                         const uint128_fallback& rhs) -> bool {
+  friend constexpr auto operator==(const uint128_fallback& lhs,
+                                   const uint128_fallback& rhs) -> bool {
     return lhs.hi_ == rhs.hi_ && lhs.lo_ == rhs.lo_;
   }
-  friend auto operator!=(const uint128_fallback& lhs,
-                         const uint128_fallback& rhs) -> bool {
+  friend constexpr auto operator!=(const uint128_fallback& lhs,
+                                   const uint128_fallback& rhs) -> bool {
     return !(lhs == rhs);
   }
-  friend auto operator>(const uint128_fallback& lhs,
-                        const uint128_fallback& rhs) -> bool {
+  friend constexpr auto operator>(const uint128_fallback& lhs,
+                                  const uint128_fallback& rhs) -> bool {
     return lhs.hi_ != rhs.hi_ ? lhs.hi_ > rhs.hi_ : lhs.lo_ > rhs.lo_;
   }
-  friend auto operator|(const uint128_fallback& lhs,
-                        const uint128_fallback& rhs) -> uint128_fallback {
+  friend constexpr auto operator|(const uint128_fallback& lhs,
+                                  const uint128_fallback& rhs)
+      -> uint128_fallback {
     return {lhs.hi_ | rhs.hi_, lhs.lo_ | rhs.lo_};
   }
-  friend auto operator&(const uint128_fallback& lhs,
-                        const uint128_fallback& rhs) -> uint128_fallback {
+  friend constexpr auto operator&(const uint128_fallback& lhs,
+                                  const uint128_fallback& rhs)
+      -> uint128_fallback {
     return {lhs.hi_ & rhs.hi_, lhs.lo_ & rhs.lo_};
   }
   friend auto operator+(const uint128_fallback& lhs,
@@ -366,12 +368,13 @@ class uint128_fallback {
       -> uint128_fallback {
     FMT_ASSERT(lhs.hi_ == 0, "");
     uint64_t hi = (lhs.lo_ >> 32) * rhs;
-    return {hi >> 32, (hi << 32) + (lhs.lo_ & ~uint32_t()) * rhs};
+    uint64_t lo = (lhs.lo_ & ~uint32_t()) * rhs;
+    uint64_t new_lo = (hi << 32) + lo;
+    return {(hi >> 32) + (new_lo < lo ? 1 : 0), new_lo};
   }
   friend auto operator-(const uint128_fallback& lhs, uint64_t rhs)
       -> uint128_fallback {
-    FMT_ASSERT(lhs.lo_ >= rhs, "");
-    return {lhs.hi_, lhs.lo_ - rhs};
+    return {lhs.hi_ - (lhs.lo_ < rhs ? 1 : 0), lhs.lo_ - rhs};
   }
   FMT_CONSTEXPR auto operator>>(int shift) const -> uint128_fallback {
     if (shift == 64) return {0, hi_};

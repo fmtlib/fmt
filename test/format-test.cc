@@ -75,6 +75,12 @@ TEST(uint128_test, plus_assign) {
   EXPECT_EQ(n, uint128_fallback(1) << 64);
 }
 
+TEST(uint128_test, multiply) {
+  auto n = uint128_fallback(2251799813685247);
+  n = n * 3611864890;
+  EXPECT_EQ(static_cast<uint64_t>(n >> 64), 440901);
+}
+
 template <typename Float> void check_isfinite() {
   using fmt::detail::isfinite;
   EXPECT_TRUE(isfinite(Float(0.0)));

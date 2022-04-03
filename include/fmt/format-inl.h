@@ -234,10 +234,10 @@ template <typename F> struct basic_fp {
     // The predecessor is closer if n is a normalized power of 2 (f == 0) other
     // than the smallest normalized number (biased_e > 1).
     auto is_predecessor_closer = f == 0 && biased_e > 1;
-    if (biased_e != 0)
-      f += static_cast<F>(implicit_bit);
-    else
+    if (biased_e == 0)
       biased_e = 1;  // Subnormals use biased exponent 1 (min exponent).
+    else if (has_implicit_bit<Float>())
+      f += static_cast<F>(implicit_bit);
     e = biased_e - exponent_bias<Float>() - num_float_significand_bits;
     if (!has_implicit_bit<Float>()) ++e;
     return is_predecessor_closer;
@@ -2049,9 +2049,9 @@ enum dragon {
 // Formats a floating-point number using a variation of the Fixed-Precision
 // Positive Floating-Point Printout ((FPP)^2) algorithm by Steele & White:
 // https://fmt.dev/papers/p372-steele.pdf.
-FMT_CONSTEXPR20 inline void format_dragon(fp value, unsigned flags,
-                                          int num_digits, buffer<char>& buf,
-                                          int& exp10) {
+FMT_CONSTEXPR20 inline void format_dragon(basic_fp<uint128_t> value,
+                                          unsigned flags, int num_digits,
+                                          buffer<char>& buf, int& exp10) {
   bigint numerator;    // 2 * R in (FPP)^2.
   bigint denominator;  // 2 * S in (FPP)^2.
   // lower and upper are differences between value and corresponding boundaries.
@@ -2255,7 +2255,7 @@ FMT_HEADER_ONLY_CONSTEXPR20 int format_float(Float value, int precision,
     }
   }
   if (use_dragon) {
-    auto f = fp();
+    auto f = basic_fp<uint128_t>();
     bool is_predecessor_closer = specs.binary32
                                      ? f.assign(static_cast<float>(value))
                                      : f.assign(converted_value);
