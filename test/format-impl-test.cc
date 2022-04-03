@@ -353,6 +353,14 @@ TEST(format_impl_test, count_digits) {
   test_count_digits<uint64_t>();
 }
 
+#if FMT_USE_FLOAT128
+TEST(format_impl_test, write_float128) {
+  auto s = std::string();
+  fmt::detail::write<char>(std::back_inserter(s), __float128(42));
+  EXPECT_EQ(s, "42");
+}
+#endif
+
 #ifdef _WIN32
 #  include <windows.h>
 
