@@ -6,8 +6,6 @@ target_include_directories(test-main PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
 target_link_libraries(test-main gtest fmt)
 
-include(CheckCXXCompilerFlag)
-
 function(add_fmt_executable name)
   add_executable(${name} ${ARGN})
   if (MINGW)
@@ -145,9 +143,7 @@ if (FMT_PEDANTIC)
     target_include_directories(
       noexception-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
     target_compile_options(noexception-test PRIVATE -fno-exceptions)
-    if (FMT_PEDANTIC)
-      target_compile_options(noexception-test PRIVATE ${PEDANTIC_COMPILE_FLAGS})
-    endif ()
+    target_compile_options(noexception-test PRIVATE ${PEDANTIC_COMPILE_FLAGS})
   endif ()
 
   # Test that the library compiles without locale.
@@ -171,8 +167,8 @@ if (FMT_PEDANTIC AND NOT WIN32)
     "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
     "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}"
     "-DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}"
-    "-DFMT_DIR=${CMAKE_SOURCE_DIR}"
-    "-DSUPPORTS_USER_DEFINED_LITERALS=${SUPPORTS_USER_DEFINED_LITERALS}")
+    "-DCXX_STANDARD_FLAG=${CXX_STANDARD_FLAG}"
+    "-DFMT_DIR=${CMAKE_SOURCE_DIR}")
 
   # Test if the targets are found from the build directory.
   add_test(find-package-test ${CMAKE_CTEST_COMMAND}

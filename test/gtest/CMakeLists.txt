@@ -18,7 +18,7 @@ else ()
 endif ()
 
 # Workaround GTest bug https://github.com/google/googletest/issues/705.
-check_cxx_compiler_flag(
+fmt_check_cxx_compiler_flag(
   -fno-delete-null-pointer-checks HAVE_FNO_DELETE_NULL_POINTER_CHECKS)
 if (HAVE_FNO_DELETE_NULL_POINTER_CHECKS)
   target_compile_options(gtest PUBLIC -fno-delete-null-pointer-checks)
