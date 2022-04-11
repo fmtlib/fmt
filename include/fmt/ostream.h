@@ -55,8 +55,18 @@ template <typename Char> FILE* get_file(std::basic_filebuf<Char>&) {
   return nullptr;
 }
 
-#if FMT_MSC_VER
-FILE* get_file(std::filebuf& buf);
+struct dummy_filebuf {
+  FILE* _Myfile;
+};
+template <typename T, typename U = int> struct ms_filebuf {
+  using type = dummy_filebuf;
+};
+template <typename T> struct ms_filebuf<T, decltype(T::_Myfile, 0)> {
+  using type = T;
+};
+using filebuf_type = ms_filebuf<std::filebuf>::type;
+
+FILE* get_file(filebuf_type& buf);
 
 // Generate a unique explicit instantion in every translation unit using a tag
 // type in an anonymous namespace.
@@ -65,12 +75,11 @@ struct filebuf_access_tag {};
 }  // namespace
 template <typename Tag, typename FileMemberPtr, FileMemberPtr file>
 class filebuf_access {
-  friend FILE* get_file(std::filebuf& buf) { return buf.*file; }
+  friend FILE* get_file(filebuf_type& buf) { return buf.*file; }
 };
 template class filebuf_access<filebuf_access_tag,
-                              decltype(&std::filebuf::_Myfile),
-                              &std::filebuf::_Myfile>;
-#endif
+                              decltype(&filebuf_type::_Myfile),
+                              &filebuf_type::_Myfile>;
 
 inline bool write(std::filebuf& buf, fmt::string_view data) {
   print(get_file(buf), data);
