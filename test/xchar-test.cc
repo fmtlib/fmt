@@ -370,10 +370,11 @@ template <typename Char> struct small_grouping : std::numpunct<Char> {
 
 TEST(locale_test, localized_double) {
   auto loc = std::locale(std::locale(), new numpunct<char>());
-  EXPECT_EQ("1?23", fmt::format(loc, "{:L}", 1.23));
-  EXPECT_EQ("1?230000", fmt::format(loc, "{:Lf}", 1.23));
-  EXPECT_EQ("1~234?5", fmt::format(loc, "{:L}", 1234.5));
-  EXPECT_EQ("12~000", fmt::format(loc, "{:L}", 12000.0));
+  EXPECT_EQ(fmt::format(loc, "{:L}", 1.23), "1?23");
+  EXPECT_EQ(fmt::format(loc, "{:Lf}", 1.23), "1?230000");
+  EXPECT_EQ(fmt::format(loc, "{:L}", 1234.5), "1~234?5");
+  EXPECT_EQ(fmt::format(loc, "{:L}", 12000.0), "12~000");
+  EXPECT_EQ(fmt::format(loc, "{:8L}", 1230.0), "   1~230");
 }
 
 TEST(locale_test, format) {
