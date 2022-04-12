@@ -679,6 +679,7 @@ TEST(format_test, constexpr_parse_format_string) {
 #endif  // FMT_USE_CONSTEXPR
 
 struct enabled_formatter {};
+struct enabled_ptr_formatter {};
 struct disabled_formatter {};
 struct disabled_formatter_convertible {
   operator int() const { return 42; }
@@ -690,6 +691,16 @@ template <> struct formatter<enabled_formatter> {
     return ctx.begin();
   }
   auto format(enabled_formatter, format_context& ctx) -> decltype(ctx.out()) {
+    return ctx.out();
+  }
+};
+
+template <> struct formatter<enabled_ptr_formatter*> {
+  auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
+  auto format(enabled_ptr_formatter*, format_context& ctx)
+      -> decltype(ctx.out()) {
     return ctx.out();
   }
 };
@@ -785,6 +796,7 @@ TEST(core_test, is_formattable) {
   static_assert(!fmt::is_formattable<fmt::basic_string_view<wchar_t>>::value,
                 "");
   static_assert(fmt::is_formattable<enabled_formatter>::value, "");
+  static_assert(!fmt::is_formattable<enabled_ptr_formatter*>::value, "");
   static_assert(!fmt::is_formattable<disabled_formatter>::value, "");
   static_assert(fmt::is_formattable<disabled_formatter_convertible>::value, "");
 

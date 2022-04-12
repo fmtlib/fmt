@@ -1478,6 +1478,7 @@ template <typename Context> struct arg_mapper {
   template <typename T, typename U = remove_cvref_t<T>,
             FMT_ENABLE_IF(!is_string<U>::value && !is_char<U>::value &&
                           !std::is_array<U>::value &&
+                          !std::is_pointer<U>::value &&
                           !has_format_as<U>::value &&
                           (has_formatter<U, Context>::value ||
                            has_fallback_formatter<U, char_type>::value))>
