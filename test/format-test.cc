@@ -1009,6 +1009,8 @@ TEST(format_test, precision) {
   if (std::numeric_limits<long double>::digits == 64) {
     auto ld = (std::numeric_limits<long double>::min)();
     EXPECT_EQ(fmt::format("{:.0}", ld), "3e-4932");
+    EXPECT_EQ(fmt::format("{:0g}", 5.02957084971264961283E-4940L),
+              "5.02957e-4940");
   }
 
   EXPECT_EQ("123.", fmt::format("{:#.0f}", 123.0));

@@ -216,7 +216,7 @@ template <typename F> struct basic_fp {
   template <typename Float> FMT_CONSTEXPR basic_fp(Float n) { assign(n); }
 
   // Assigns n to this and return true iff predecessor is closer than successor.
-  template <typename Float> FMT_CONSTEXPR bool assign(Float n) {
+  template <typename Float> FMT_CONSTEXPR auto assign(Float n) -> bool {
     static_assert((std::numeric_limits<Float>::is_iec559 &&
                    std::numeric_limits<Float>::digits <= 113) ||
                       is_float128<Float>::value,
@@ -250,7 +250,7 @@ using fp = basic_fp<unsigned long long>;
 template <int SHIFT = 0, typename F>
 FMT_CONSTEXPR basic_fp<F> normalize(basic_fp<F> value) {
   // Handle subnormals.
-  const uint64_t implicit_bit = 1ULL << num_significand_bits<double>();
+  const auto implicit_bit = F(1) << num_significand_bits<double>();
   const auto shifted_implicit_bit = implicit_bit << SHIFT;
   while ((value.f & shifted_implicit_bit) == 0) {
     value.f <<= 1;
@@ -2212,17 +2212,14 @@ FMT_HEADER_ONLY_CONSTEXPR20 int format_float(Float value, int precision,
   unsigned dragon_flags = 0;
   if (!is_fast_float<Float>()) {
     const auto inv_log2_10 = 0.3010299956639812;  // 1 / log2(10)
-    const auto e = basic_fp<typename dragonbox::float_info<
-        decltype(converted_value)>::carrier_uint>(converted_value)
-                       .e;
+    using info = dragonbox::float_info<decltype(converted_value)>;
+    const auto f = basic_fp<typename info::carrier_uint>(converted_value);
     // Compute exp, an approximate power of 10, such that
     //   10^(exp - 1) <= value < 10^exp or 10^exp <= value < 10^(exp + 1).
     // This is based on log10(value) == log2(value) / log2(10) and approximation
     // of log2(value) by e + num_fraction_bits idea from double-conversion.
-    auto num_fraction_bits =
-        num_significand_bits<Float>() - (has_implicit_bit<Float>() ? 0 : 1);
     exp = static_cast<int>(
-        std::ceil((e + num_fraction_bits) * inv_log2_10 - 1e-10));
+        std::ceil((f.e + count_digits<1>(f.f) - 1) * inv_log2_10 - 1e-10));
     dragon_flags = dragon::fixup;
   } else if (!is_constant_evaluated() && precision < 0) {
     // Use Dragonbox for the shortest format.
