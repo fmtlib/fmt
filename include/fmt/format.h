@@ -1303,6 +1303,13 @@ struct float_info<T, enable_if_t<std::numeric_limits<T>::digits == 64 ||
   static const int exponent_bits = 15;
 };
 
+// A double-double floating point number.
+template <typename T>
+struct float_info<T, enable_if_t<std::numeric_limits<T>::digits >= 106 &&
+                                 !std::numeric_limits<T>::is_iec559>> {
+  using carrier_uint = detail::uint128_t;
+};
+
 template <typename T> struct decimal_fp {
   using significand_type = typename float_info<T>::carrier_uint;
   significand_type significand;
@@ -2321,13 +2328,20 @@ template <typename T> constexpr bool isnan(T value) {
   return !(value >= value);  // std::isnan doesn't support __float128.
 }
 
-template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value &&
-                                    !is_float128<T>::value)>
+template <typename T, typename Enable = void>
+struct has_isfinite : std::false_type {};
+
+template <typename T>
+struct has_isfinite<T, enable_if_t<sizeof(std::isfinite(T())) != 0>>
+    : std::true_type {};
+
+template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value&&
+                                        has_isfinite<T>::value)>
 FMT_CONSTEXPR20 bool isfinite(T value) {
   if (is_constant_evaluated()) return !isnan(value - value);
   return std::isfinite(value);
 }
-template <typename T, FMT_ENABLE_IF(is_float128<T>::value)>
+template <typename T, FMT_ENABLE_IF(!has_isfinite<T>::value)>
 constexpr bool isfinite(T value) {
   return value - value == 0;  // std::isfinite doesn't support __float128.
 }
@@ -2525,7 +2539,7 @@ template <typename Char, typename OutputIt, typename T,
           typename Context = basic_format_context<OutputIt, Char>>
 FMT_CONSTEXPR auto write(OutputIt out, const T& value) -> enable_if_t<
     std::is_class<T>::value && !is_string<T>::value &&
-        !std::is_same<T, Char>::value &&
+        !is_floating_point<T>::value && !std::is_same<T, Char>::value &&
         !std::is_same<const T&,
                       decltype(arg_mapper<Context>().map(value))>::value,
     OutputIt> {
