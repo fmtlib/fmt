@@ -1,0 +1,21 @@
+{
+  "name": "fmt",
+  "description": "{fmt} is an open-source formatting library providing a fast and safe alternative to C stdio and C++ iostreams.",
+  "keywords": "c-plus-plus, performance, cross-platform, formatting, printf, output, multiplatform, chrono",
+  "version": "8.1.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fmtlib/fmt"
+  },
+  "homepage": "https://fmt.dev",
+  "license": "MIT",
+  "frameworks": "*",
+  "platforms": "*",
+  "build": {
+    "srcFilter": [
+      "+<*>",
+      "-<fmt.cc>",
+      "-<os.cc>"
+    ]
+  }
+}
