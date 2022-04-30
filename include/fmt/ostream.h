@@ -10,6 +10,10 @@
 
 #include <fstream>
 #include <ostream>
+#if __GLIBCXX__
+#  include <ext/stdio_filebuf.h>
+#  include <ext/stdio_sync_filebuf.h>
+#endif
 
 #include "format.h"
 
@@ -81,6 +85,7 @@ template class filebuf_access<filebuf_access_tag,
                               decltype(&filebuf_type::_Myfile),
                               &filebuf_type::_Myfile>;
 
+#if FMT_MSC_VER
 inline bool write(std::filebuf& buf, fmt::string_view data) {
   print(get_file(buf), data);
   return true;
@@ -89,14 +94,40 @@ inline bool write(std::wfilebuf&, fmt::basic_string_view<wchar_t>) {
   return false;
 }
 
+#elif _WIN32 && __GLIBCXX__
+
+inline bool write_ostream_mingw_unicode(std::ostream& os,
+                                        fmt::string_view data) {
+  auto* rdbuf = os.rdbuf();
+  auto* filebuf1 = dynamic_cast<__gnu_cxx::stdio_sync_filebuf<char>*>(rdbuf);
+  if (filebuf1) {
+    print(filebuf1->file(), data);
+    return true;
+  }
+  auto* filebuf2 = dynamic_cast<__gnu_cxx::stdio_filebuf<char>*>(rdbuf);
+  if (filebuf2) {
+    print(filebuf2->file(), data);
+    return true;
+  }
+  return false;
+}
+
+inline bool write_ostream_mingw_unicode(std::wostream&,
+                                        fmt::basic_string_view<wchar_t>) {
+  return false;
+}
+#endif
+
 // Write the content of buf to os.
 // It is a separate function rather than a part of vprint to simplify testing.
 template <typename Char>
 void write_buffer(std::basic_ostream<Char>& os, buffer<Char>& buf) {
-  if (const_check(FMT_MSC_VER)) {
-    auto filebuf = dynamic_cast<std::basic_filebuf<Char>*>(os.rdbuf());
-    if (filebuf && write(*filebuf, {buf.data(), buf.size()})) return;
-  }
+#if FMT_MSC_VER
+  auto filebuf = dynamic_cast<std::basic_filebuf<Char>*>(os.rdbuf());
+  if (filebuf && write(*filebuf, {buf.data(), buf.size()})) return;
+#elif _WIN32 && __GLIBCXX__
+  if (write_ostream_mingw_unicode(os, {buf.data(), buf.size()})) return;
+#endif
   const Char* buf_data = buf.data();
   using unsigned_streamsize = std::make_unsigned<std::streamsize>::type;
   unsigned_streamsize size = buf.size();
