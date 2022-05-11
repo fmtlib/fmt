@@ -89,6 +89,8 @@ template <typename Float> void check_isfinite() {
   EXPECT_TRUE(isfinite(Float(fmt::detail::max_value<double>())));
   // Use double because std::numeric_limits is broken for __float128.
   using limits = std::numeric_limits<double>;
+  FMT_CONSTEXPR20 auto result = isfinite(Float(limits::infinity()));
+  EXPECT_FALSE(result);
   EXPECT_FALSE(isfinite(Float(limits::infinity())));
   EXPECT_FALSE(isfinite(Float(-limits::infinity())));
   EXPECT_FALSE(isfinite(Float(limits::quiet_NaN())));
