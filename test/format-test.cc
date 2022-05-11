@@ -1035,6 +1035,7 @@ TEST(format_test, precision) {
       format_error, "number is too big");
 
   EXPECT_EQ("st", fmt::format("{0:.2}", "str"));
+  EXPECT_EQ("вожык", fmt::format("{0:.5}", "вожыкі"));
 }
 
 TEST(format_test, runtime_precision) {
