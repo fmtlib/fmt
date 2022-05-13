@@ -2203,7 +2203,7 @@ FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& fp,
     -> OutputIt {
   auto significand = fp.significand;
   int significand_size = get_significand_size(fp);
-  constexpr Char zero = static_cast<Char>('0');
+  const Char zero = static_cast<Char>('0');
   auto sign = fspecs.sign;
   size_t size = to_unsigned(significand_size) + (sign ? 1 : 0);
   using iterator = reserve_iterator<OutputIt>;
