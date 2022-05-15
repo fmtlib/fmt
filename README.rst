@@ -33,6 +33,8 @@ help victims of the war in Ukraine: https://www.stopputin.net/.
 
 `Documentation <https://fmt.dev>`__
 
+`Cheat Sheets <https://hackingcpp.com/cpp/libs/fmt.html>`__
+
 Q&A: ask questions on `StackOverflow with the tag fmt
 <https://stackoverflow.com/questions/tagged/fmt>`_.
 
