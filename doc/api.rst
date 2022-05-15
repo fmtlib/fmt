@@ -227,8 +227,8 @@ template and implement ``parse`` and ``format`` methods::
     auto format(const point& p, FormatContext& ctx) const -> decltype(ctx.out()) {
       // ctx.out() is an output iterator to write to.
       return presentation == 'f'
-                ? format_to(ctx.out(), "({:.1f}, {:.1f})", p.x, p.y)
-                : format_to(ctx.out(), "({:.1e}, {:.1e})", p.x, p.y);
+                ? fmt::format_to(ctx.out(), "({:.1f}, {:.1f})", p.x, p.y)
+                : fmt::format_to(ctx.out(), "({:.1e}, {:.1e})", p.x, p.y);
     }
   };
 
