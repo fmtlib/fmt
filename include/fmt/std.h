@@ -8,7 +8,9 @@
 #ifndef FMT_STD_H_
 #define FMT_STD_H_
 
-#include "format.h"
+#include <thread>
+
+#include "ostream.h"
 
 #if FMT_HAS_INCLUDE(<version>)
 #  include <version>
@@ -26,5 +28,9 @@ struct fmt::formatter<std::filesystem::path> : formatter<string_view> {
   }
 };
 #endif
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<std::thread::id> : ostream_formatter {};
+FMT_END_NAMESPACE
 
 #endif  // FMT_STD_H_

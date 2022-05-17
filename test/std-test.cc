@@ -14,3 +14,7 @@ TEST(std_test, path) {
   EXPECT_EQ(fmt::format("{:8}", std::filesystem::path("foo")), "foo     ");
 #endif
 }
+
+TEST(std_test, thread_id) {
+  EXPECT_FALSE(fmt::format("{}", std::this_thread::get_id()).empty());
+}
