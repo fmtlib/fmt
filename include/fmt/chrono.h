@@ -1467,7 +1467,7 @@ inline std::chrono::duration<Rep, std::milli> get_milliseconds(
 // microseconds precision.
 template <long long Num, long long Den, int N = 0,
           bool Enabled =
-              (N < 19) && (Num <= std::numeric_limits<long long>::max() / 10)>
+              (N < 19) && (Num <= max_value<long long>() / 10)>
 struct count_fractional_digits {
   static constexpr int value =
       Num % Den == 0 ? N : count_fractional_digits<Num * 10, Den, N + 1>::value;
