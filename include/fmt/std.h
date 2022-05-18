@@ -19,14 +19,9 @@
 #ifdef __cpp_lib_filesystem
 #  include <filesystem>
 
-template <>
-struct fmt::formatter<std::filesystem::path> : formatter<string_view> {
-  template <typename FormatContext>
-  auto format(const std::filesystem::path& p, FormatContext& ctx) const ->
-      typename FormatContext::iterator {
-    return formatter<string_view>::format(p.string(), ctx);
-  }
-};
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<std::filesystem::path> : ostream_formatter {};
+FMT_END_NAMESPACE
 #endif
 
 FMT_BEGIN_NAMESPACE
