@@ -20,12 +20,15 @@
 #  include <filesystem>
 
 FMT_BEGIN_NAMESPACE
-template <> struct formatter<std::filesystem::path> : ostream_formatter {};
+template <typename Char>
+struct formatter<std::filesystem::path, Char> : basic_ostream_formatter<Char> {
+};
 FMT_END_NAMESPACE
 #endif
 
 FMT_BEGIN_NAMESPACE
-template <> struct formatter<std::thread::id> : ostream_formatter {};
+template <typename Char>
+struct formatter<std::thread::id, Char> : basic_ostream_formatter<Char> {};
 FMT_END_NAMESPACE
 
 #endif  // FMT_STD_H_
