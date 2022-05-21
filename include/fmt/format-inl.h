@@ -216,11 +216,10 @@ template <typename F> struct basic_fp {
   template <typename Float> FMT_CONSTEXPR basic_fp(Float n) { assign(n); }
 
   // Assigns n to this and return true iff predecessor is closer than successor.
-  template <typename Float> FMT_CONSTEXPR auto assign(Float n) -> bool {
-    static_assert((std::numeric_limits<Float>::is_iec559 &&
-                   std::numeric_limits<Float>::digits <= 113) ||
-                      is_float128<Float>::value,
-                  "unsupported FP");
+  template <typename Float,
+            FMT_ENABLE_IF(std::numeric_limits<Float>::is_iec559)>
+  FMT_CONSTEXPR auto assign(Float n) -> bool {
+    static_assert(std::numeric_limits<Float>::digits <= 113, "unsupported FP");
     // Assume Float is in the format [sign][exponent][significand].
     using carrier_uint = typename dragonbox::float_info<Float>::carrier_uint;
     const auto num_float_significand_bits =
@@ -231,8 +230,8 @@ template <typename F> struct basic_fp {
     f = static_cast<F>(u & significand_mask);
     auto biased_e = static_cast<int>((u & exponent_mask<Float>()) >>
                                      num_float_significand_bits);
-    // The predecessor is closer if n is a normalized power of 2 (f == 0) other
-    // than the smallest normalized number (biased_e > 1).
+    // The predecessor is closer if n is a normalized power of 2 (f == 0)
+    // other than the smallest normalized number (biased_e > 1).
     auto is_predecessor_closer = f == 0 && biased_e > 1;
     if (biased_e == 0)
       biased_e = 1;  // Subnormals use biased exponent 1 (min exponent).
@@ -241,6 +240,13 @@ template <typename F> struct basic_fp {
     e = biased_e - exponent_bias<Float>() - num_float_significand_bits;
     if (!has_implicit_bit<Float>()) ++e;
     return is_predecessor_closer;
+  }
+
+  template <typename Float,
+            FMT_ENABLE_IF(!std::numeric_limits<Float>::is_iec559)>
+  FMT_CONSTEXPR auto assign(Float n) -> bool {
+    static_assert(std::numeric_limits<double>::is_iec559, "unsupported FP");
+    return assign(static_cast<double>(n));
   }
 };
 

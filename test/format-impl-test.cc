@@ -361,6 +361,37 @@ TEST(format_impl_test, write_float128) {
 }
 #endif
 
+struct double_double {
+  double a;
+  double b;
+
+  explicit constexpr double_double(double a_val = 0, double b_val = 0)
+      : a(a_val), b(b_val) {}
+
+  operator double() const { return a + b; }
+  auto operator-() const -> double_double { return double_double(-a, -b); }
+};
+
+bool operator>=(const double_double& lhs, const double_double& rhs) {
+  return lhs.a + lhs.b >= rhs.a + rhs.b;
+}
+
+namespace std {
+template <> struct is_floating_point<double_double> : std::true_type {};
+template <> struct numeric_limits<double_double> {
+  static constexpr bool is_iec559 = false;
+  static constexpr int digits = 106;
+};
+}  // namespace std
+
+TEST(format_impl_test, write_double_double) {
+  auto s = std::string();
+  fmt::detail::write<char>(std::back_inserter(s), double_double(42), {});
+#ifndef _MSC_VER  // MSVC has an issue with specializing is_floating_point.
+  EXPECT_EQ(s, "42");
+#endif
+}
+
 #ifdef _WIN32
 #  include <windows.h>
 

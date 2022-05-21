@@ -990,11 +990,12 @@ constexpr auto is_negative(T) -> bool {
   return false;
 }
 
-template <typename T> constexpr auto is_supported_floating_point(T) -> bool {
-  return (std::is_same<T, float>() && FMT_USE_FLOAT) ||
-         (std::is_same<T, double>() && FMT_USE_DOUBLE) ||
-         (std::is_same<T, long double>() && FMT_USE_LONG_DOUBLE) ||
-         is_float128<T>();
+template <typename T>
+FMT_CONSTEXPR auto is_supported_floating_point(T) -> bool {
+  if (std::is_same<T, float>()) return FMT_USE_FLOAT;
+  if (std::is_same<T, double>()) return FMT_USE_DOUBLE;
+  if (std::is_same<T, long double>()) return FMT_USE_LONG_DOUBLE;
+  return true;
 }
 
 // Smallest of uint32_t, uint64_t, uint128_t that is large enough to
@@ -2345,14 +2346,14 @@ template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value&&
 FMT_CONSTEXPR20 bool isfinite(T value) {
   constexpr T inf = T(std::numeric_limits<double>::infinity());
   if (is_constant_evaluated())
-    return !isnan(value) && value != inf && value != -inf;
+    return !detail::isnan(value) && value != inf && value != -inf;
   return std::isfinite(value);
 }
 template <typename T, FMT_ENABLE_IF(!has_isfinite<T>::value)>
 FMT_CONSTEXPR bool isfinite(T value) {
   T inf = T(std::numeric_limits<double>::infinity());
   // std::isfinite doesn't support __float128.
-  return !isnan(value) && value != inf && value != -inf;
+  return !detail::isnan(value) && value != inf && value != -inf;
 }
 
 template <typename T, FMT_ENABLE_IF(is_floating_point<T>::value)>
