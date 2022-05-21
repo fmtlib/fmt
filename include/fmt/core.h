@@ -204,20 +204,6 @@
 #  endif
 #endif
 
-#ifndef FMT_DEPRECATED
-#  if FMT_HAS_CPP14_ATTRIBUTE(deprecated) || FMT_MSC_VER >= 1900
-#    define FMT_DEPRECATED [[deprecated]]
-#  else
-#    if (defined(__GNUC__) && !defined(__LCC__)) || defined(__clang__)
-#      define FMT_DEPRECATED __attribute__((deprecated))
-#    elif FMT_MSC_VER
-#      define FMT_DEPRECATED __declspec(deprecated)
-#    else
-#      define FMT_DEPRECATED /* deprecated */
-#    endif
-#  endif
-#endif
-
 #ifdef _MSC_VER
 #  define FMT_UNCHECKED_ITERATOR(It) \
     using _Unchecked_type = It  // Mark iterator as checked.
@@ -1384,26 +1370,6 @@ template <typename Context> struct arg_mapper {
   FMT_CONSTEXPR FMT_INLINE auto map(const T& val)
       -> basic_string_view<char_type> {
     return std_string_view<char_type>(val);
-  }
-
-  using cstring_result = conditional_t<std::is_same<char_type, char>::value,
-                                       const char*, unformattable_pointer>;
-
-  FMT_DEPRECATED FMT_CONSTEXPR FMT_INLINE auto map(const signed char* val)
-      -> cstring_result {
-    return map(reinterpret_cast<const char*>(val));
-  }
-  FMT_DEPRECATED FMT_CONSTEXPR FMT_INLINE auto map(const unsigned char* val)
-      -> cstring_result {
-    return map(reinterpret_cast<const char*>(val));
-  }
-  FMT_DEPRECATED FMT_CONSTEXPR FMT_INLINE auto map(signed char* val)
-      -> cstring_result {
-    return map(reinterpret_cast<const char*>(val));
-  }
-  FMT_DEPRECATED FMT_CONSTEXPR FMT_INLINE auto map(unsigned char* val)
-      -> cstring_result {
-    return map(reinterpret_cast<const char*>(val));
   }
 
   FMT_CONSTEXPR FMT_INLINE auto map(void* val) -> const void* { return val; }
