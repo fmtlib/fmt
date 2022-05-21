@@ -585,7 +585,9 @@ struct error_handler {
   constexpr error_handler(const error_handler&) = default;
 
   // This function is intentionally not constexpr to give a compile-time error.
-  FMT_NORETURN FMT_API void on_error(const char* message);
+  FMT_NORETURN FMT_API void on_error(const char* message) {
+    throw_format_error(message);
+  }
 };
 FMT_END_DETAIL_NAMESPACE
 

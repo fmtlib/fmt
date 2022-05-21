@@ -132,13 +132,6 @@ FMT_END_NAMESPACE
 #  endif
 #endif
 
-// Workaround broken [[deprecated]] in the Intel, PGI and NVCC compilers.
-#if FMT_ICC_VERSION || defined(__PGI) || FMT_NVCC
-#  define FMT_DEPRECATED_ALIAS
-#else
-#  define FMT_DEPRECATED_ALIAS FMT_DEPRECATED
-#endif
-
 #ifndef FMT_USE_USER_DEFINED_LITERALS
 // EDG based compilers (Intel, NVIDIA, Elbrus, etc), GCC and MSVC support UDLs.
 #  if (FMT_HAS_FEATURE(cxx_user_literals) || FMT_GCC_VERSION >= 407 || \
@@ -934,27 +927,6 @@ class FMT_API format_error : public std::runtime_error {
   format_error& operator=(format_error&&) = default;
   ~format_error() noexcept override FMT_MSC_DEFAULT;
 };
-
-/**
-  \rst
-  Constructs a `~fmt::format_arg_store` object that contains references
-  to arguments and can be implicitly converted to `~fmt::format_args`.
-  If ``fmt`` is a compile-time string then `make_args_checked` checks
-  its validity at compile time.
-  \endrst
- */
-template <typename... Args, typename S, typename Char = char_t<S>>
-FMT_DEPRECATED FMT_INLINE auto make_args_checked(
-    const S& fmt, const remove_reference_t<Args>&... args)
-    -> format_arg_store<buffer_context<Char>, remove_reference_t<Args>...> {
-  static_assert(
-      detail::count<(
-              std::is_base_of<detail::view, remove_reference_t<Args>>::value &&
-              std::is_reference<Args>::value)...>() == 0,
-      "passing views as lvalues is disallowed");
-  detail::check_format_string<Args...>(fmt);
-  return {args...};
-}
 
 namespace detail_exported {
 #if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
@@ -3152,9 +3124,6 @@ struct join_view : detail::view {
 };
 
 template <typename It, typename Sentinel, typename Char>
-using arg_join FMT_DEPRECATED_ALIAS = join_view<It, Sentinel, Char>;
-
-template <typename It, typename Sentinel, typename Char>
 struct formatter<join_view<It, Sentinel, Char>, Char> {
  private:
   using value_type =
@@ -3424,14 +3393,6 @@ inline auto format(const Locale& loc, format_string<T...> fmt, T&&... args)
   return vformat(loc, string_view(fmt), fmt::make_format_args(args...));
 }
 
-template <typename... T, size_t SIZE, typename Allocator>
-FMT_DEPRECATED auto format_to(basic_memory_buffer<char, SIZE, Allocator>& buf,
-                              format_string<T...> fmt, T&&... args)
-    -> appender {
-  detail::vformat_to(buf, string_view(fmt), fmt::make_format_args(args...));
-  return appender(buf);
-}
-
 template <typename OutputIt, typename Locale,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value&&
                             detail::is_locale<Locale>::value)>
@@ -3453,10 +3414,6 @@ FMT_INLINE auto format_to(OutputIt out, const Locale& loc,
 
 FMT_MODULE_EXPORT_END
 FMT_END_NAMESPACE
-
-#ifdef FMT_DEPRECATED_INCLUDE_XCHAR
-#  include "xchar.h"
-#endif
 
 #ifdef FMT_HEADER_ONLY
 #  define FMT_FUNC inline

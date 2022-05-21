@@ -634,23 +634,6 @@ inline auto printf(const S& fmt, const T&... args) -> int {
       fmt::make_format_args<basic_printf_context_t<char_t<S>>>(args...));
 }
 
-template <typename S, typename Char = char_t<S>>
-FMT_DEPRECATED auto vfprintf(
-    std::basic_ostream<Char>& os, const S& fmt,
-    basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args)
-    -> int {
-  basic_memory_buffer<Char> buffer;
-  vprintf(buffer, to_string_view(fmt), args);
-  os.write(buffer.data(), static_cast<std::streamsize>(buffer.size()));
-  return static_cast<int>(buffer.size());
-}
-template <typename S, typename... T, typename Char = char_t<S>>
-FMT_DEPRECATED auto fprintf(std::basic_ostream<Char>& os, const S& fmt,
-                            const T&... args) -> int {
-  return vfprintf(os, to_string_view(fmt),
-                  fmt::make_format_args<basic_printf_context_t<Char>>(args...));
-}
-
 FMT_MODULE_EXPORT_END
 FMT_END_NAMESPACE
 

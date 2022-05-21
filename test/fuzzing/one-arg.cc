@@ -30,8 +30,8 @@ void invoke_fmt(const uint8_t* data, size_t size) {
 #if FMT_FUZZ_FORMAT_TO_STRING
     std::string message = fmt::format(format_str.get(), *value);
 #else
-    fmt::memory_buffer message;
-    fmt::format_to(message, format_str.get(), *value);
+    auto buf = fmt::memory_buffer();
+    fmt::format_to(std::back_inserter(buf), format_str.get(), *value);
 #endif
   } catch (std::exception&) {
   }
