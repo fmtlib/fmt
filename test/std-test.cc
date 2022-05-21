@@ -12,6 +12,8 @@
 TEST(std_test, path) {
 #ifdef __cpp_lib_filesystem
   EXPECT_EQ(fmt::format("{:8}", std::filesystem::path("foo")), "\"foo\"   ");
+  EXPECT_EQ(fmt::format("{}", std::filesystem::path("foo\"bar.txt")),
+            "\"foo\\\"bar.txt\"");
 #endif
 }
 
