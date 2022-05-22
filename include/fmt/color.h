@@ -10,13 +10,6 @@
 
 #include "format.h"
 
-// __declspec(deprecated) is broken in some MSVC versions.
-#if FMT_MSC_VER
-#  define FMT_DEPRECATED_NONMSVC
-#else
-#  define FMT_DEPRECATED_NONMSVC FMT_DEPRECATED
-#endif
-
 FMT_BEGIN_NAMESPACE
 FMT_MODULE_EXPORT_BEGIN
 
@@ -270,16 +263,6 @@ class text_style {
     return lhs |= rhs;
   }
 
-  FMT_DEPRECATED_NONMSVC FMT_CONSTEXPR text_style& operator&=(
-      const text_style& rhs) {
-    return and_assign(rhs);
-  }
-
-  FMT_DEPRECATED_NONMSVC friend FMT_CONSTEXPR text_style
-  operator&(text_style lhs, const text_style& rhs) {
-    return lhs.and_assign(rhs);
-  }
-
   FMT_CONSTEXPR bool has_foreground() const noexcept {
     return set_foreground_color;
   }
@@ -313,31 +296,6 @@ class text_style {
       background_color = text_color;
       set_background_color = true;
     }
-  }
-
-  // DEPRECATED!
-  FMT_CONSTEXPR text_style& and_assign(const text_style& rhs) {
-    if (!set_foreground_color) {
-      set_foreground_color = rhs.set_foreground_color;
-      foreground_color = rhs.foreground_color;
-    } else if (rhs.set_foreground_color) {
-      if (!foreground_color.is_rgb || !rhs.foreground_color.is_rgb)
-        FMT_THROW(format_error("can't AND a terminal color"));
-      foreground_color.value.rgb_color &= rhs.foreground_color.value.rgb_color;
-    }
-
-    if (!set_background_color) {
-      set_background_color = rhs.set_background_color;
-      background_color = rhs.background_color;
-    } else if (rhs.set_background_color) {
-      if (!background_color.is_rgb || !rhs.background_color.is_rgb)
-        FMT_THROW(format_error("can't AND a terminal color"));
-      background_color.value.rgb_color &= rhs.background_color.value.rgb_color;
-    }
-
-    ems = static_cast<emphasis>(static_cast<uint8_t>(ems) &
-                                static_cast<uint8_t>(rhs.ems));
-    return *this;
   }
 
   friend FMT_CONSTEXPR_DECL text_style
@@ -679,8 +637,8 @@ struct formatter<detail::styled_arg<T>, Char> : formatter<T, Char> {
   **Example**::
 
     fmt::print("Elapsed time: {s:.2f} seconds",
-               fmt::styled(1.23, fmt::fg(fmt::color::green) | fmt::bg(fmt::color::blue)));
-  \endrst
+               fmt::styled(1.23, fmt::fg(fmt::color::green) |
+  fmt::bg(fmt::color::blue))); \endrst
  */
 template <typename T>
 FMT_CONSTEXPR auto styled(const T& value, text_style ts)

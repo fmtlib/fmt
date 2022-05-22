@@ -391,13 +391,8 @@ struct formatter<
   template <typename FormatContext>
   auto format(range_type& range, FormatContext& ctx) const
       -> decltype(ctx.out()) {
-#ifdef FMT_DEPRECATED_BRACED_RANGES
-    Char prefix = '{';
-    Char postfix = '}';
-#else
     Char prefix = detail::is_set<R>::value ? '{' : '[';
     Char postfix = detail::is_set<R>::value ? '}' : ']';
-#endif
     detail::range_mapper<buffer_context<Char>> mapper;
     auto out = ctx.out();
     *out++ = prefix;

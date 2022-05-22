@@ -144,15 +144,8 @@ template <typename T, typename Char>
 struct fallback_formatter<T, Char, enable_if_t<is_streamable<T, Char>::value>>
     : basic_ostream_formatter<Char> {
   using basic_ostream_formatter<Char>::format;
-  // DEPRECATED!
-  template <typename OutputIt>
-  auto format(const T& value, basic_printf_context<OutputIt, Char>& ctx) const
-      -> OutputIt {
-    auto buffer = basic_memory_buffer<Char>();
-    format_value(buffer, value, ctx.locale());
-    return std::copy(buffer.begin(), buffer.end(), ctx.out());
-  }
 };
+
 }  // namespace detail
 
 FMT_MODULE_EXPORT
