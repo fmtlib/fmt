@@ -347,7 +347,7 @@ TEST(output_redirect_test, flush_error_in_ctor) {
 
 TEST(output_redirect_test, dup_error_in_ctor) {
   buffered_file f = open_buffered_file();
-  int fd = (f.fileno)();
+  int fd = (f.descriptor)();
   file copy = file::dup(fd);
   FMT_POSIX(close(fd));
   std::unique_ptr<output_redirect> redir{nullptr};

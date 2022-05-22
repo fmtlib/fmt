@@ -51,10 +51,6 @@
 #  include <windows.h>
 #endif
 
-#ifdef fileno
-#  undef fileno
-#endif
-
 namespace {
 #ifdef _WIN32
 // Return type of read and write functions.
@@ -206,11 +202,8 @@ void buffered_file::close() {
   if (result != 0) FMT_THROW(system_error(errno, "cannot close file"));
 }
 
-// A macro used to prevent expansion of fileno on broken versions of MinGW.
-#define FMT_ARGS
-
-int buffered_file::fileno() const {
-  int fd = FMT_POSIX_CALL(fileno FMT_ARGS(file_));
+int buffered_file::descriptor() const {
+  int fd = FMT_POSIX_CALL(fileno(file_));
   if (fd == -1) FMT_THROW(system_error(errno, "cannot get file descriptor"));
   return fd;
 }

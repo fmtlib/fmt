@@ -260,10 +260,7 @@ class buffered_file {
   // Returns the pointer to a FILE object representing this file.
   FILE* get() const noexcept { return file_; }
 
-  // We place parentheses around fileno to workaround a bug in some versions
-  // of MinGW that define fileno as a macro.
-  // DEPRECATED! Rename to descriptor to avoid issues with macros.
-  FMT_API int(fileno)() const;
+  FMT_API int descriptor() const;
 
   void vprint(string_view format_str, format_args args) {
     fmt::vprint(file_, format_str, args);

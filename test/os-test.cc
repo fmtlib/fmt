@@ -14,10 +14,6 @@
 #include "gtest-extra.h"
 #include "util.h"
 
-#ifdef fileno
-#  undef fileno
-#endif
-
 using fmt::buffered_file;
 using testing::HasSubstr;
 using wstring_view = fmt::basic_string_view<wchar_t>;
@@ -205,7 +201,7 @@ TEST(buffered_file_test, move_assignment) {
 TEST(buffered_file_test, move_assignment_closes_file) {
   buffered_file bf = open_buffered_file();
   buffered_file bf2 = open_buffered_file();
-  int old_fd = bf2.fileno();
+  int old_fd = bf2.descriptor();
   bf2 = std::move(bf);
   EXPECT_TRUE(isclosed(old_fd));
 }
@@ -225,7 +221,7 @@ TEST(buffered_file_test, move_from_temporary_in_assignment) {
 
 TEST(buffered_file_test, move_from_temporary_in_assignment_closes_file) {
   buffered_file f = open_buffered_file();
-  int old_fd = f.fileno();
+  int old_fd = f.descriptor();
   f = open_buffered_file();
   EXPECT_TRUE(isclosed(old_fd));
 }
@@ -234,7 +230,7 @@ TEST(buffered_file_test, close_file_in_dtor) {
   int fd = 0;
   {
     buffered_file f = open_buffered_file();
-    fd = f.fileno();
+    fd = f.descriptor();
   }
   EXPECT_TRUE(isclosed(fd));
 }
@@ -249,7 +245,7 @@ TEST(buffered_file_test, close_error_in_dtor) {
         // otherwise the system may recycle closed file descriptor when
         // redirecting the output in EXPECT_STDERR and the second close
         // will break output redirection.
-        FMT_POSIX(close(f->fileno()));
+        FMT_POSIX(close(f->descriptor()));
         SUPPRESS_ASSERT(f.reset(nullptr));
       },
       system_error_message(EBADF, "cannot close file") + "\n");
@@ -257,7 +253,7 @@ TEST(buffered_file_test, close_error_in_dtor) {
 
 TEST(buffered_file_test, close) {
   buffered_file f = open_buffered_file();
-  int fd = f.fileno();
+  int fd = f.descriptor();
   f.close();
   EXPECT_TRUE(f.get() == nullptr);
   EXPECT_TRUE(isclosed(fd));
@@ -265,15 +261,15 @@ TEST(buffered_file_test, close) {
 
 TEST(buffered_file_test, close_error) {
   buffered_file f = open_buffered_file();
-  FMT_POSIX(close(f.fileno()));
+  FMT_POSIX(close(f.descriptor()));
   EXPECT_SYSTEM_ERROR_NOASSERT(f.close(), EBADF, "cannot close file");
   EXPECT_TRUE(f.get() == nullptr);
 }
 
-TEST(buffered_file_test, fileno) {
+TEST(buffered_file_test, descriptor) {
   auto f = open_buffered_file();
-  EXPECT_TRUE(f.fileno() != -1);
-  file copy = file::dup(f.fileno());
+  EXPECT_TRUE(f.descriptor() != -1);
+  file copy = file::dup(f.descriptor());
   EXPECT_READ(copy, file_content);
 }
 
