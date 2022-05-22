@@ -337,6 +337,17 @@ TEST(xchar_test, ostream) {
 #endif
 }
 
+TEST(xchar_test, format_map) {
+  auto m = std::map<std::wstring, int>{{L"one", 1}, {L"t\"wo", 2}};
+  EXPECT_EQ(fmt::format(L"{}", m), L"{\"one\": 1, \"t\\\"wo\": 2}");
+}
+
+TEST(xchar_test, escape_string) {
+  using vec = std::vector<std::wstring>;
+  EXPECT_EQ(fmt::format(L"{}", vec{L"\n\r\t\"\\"}), L"[\"\\n\\r\\t\\\"\\\\\"]");
+  EXPECT_EQ(fmt::format(L"{}", vec{L"понедельник"}), L"[\"понедельник\"]");
+}
+
 TEST(xchar_test, to_wstring) { EXPECT_EQ(L"42", fmt::to_wstring(42)); }
 
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR

@@ -70,13 +70,9 @@ struct box {
   int value;
 };
 
-auto begin(const box& b) -> const int* {
-  return &b.value;
-}
+auto begin(const box& b) -> const int* { return &b.value; }
 
-auto end(const box& b) -> const int* {
-  return &b.value + 1;
-}
+auto end(const box& b) -> const int* { return &b.value + 1; }
 }  // namespace adl
 
 TEST(ranges_test, format_adl_begin_end) {
@@ -370,6 +366,7 @@ TEST(ranges_test, escape_string) {
     EXPECT_EQ(fmt::format("{}", vec{"\xf0\xaa\x9b\x9e"}), "[\"\\U0002a6de\"]");
     EXPECT_EQ(fmt::format("{}", vec{"\xf4\x8f\xbf\xc0"}),
               "[\"\\xf4\\x8f\\xbf\\xc0\"]");
+    EXPECT_EQ(fmt::format("{}", vec{"понедельник"}), "[\"понедельник\"]");
   }
 }
 
