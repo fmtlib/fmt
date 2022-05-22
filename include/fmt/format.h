@@ -1570,10 +1570,14 @@ inline auto find_escape(const char* begin, const char* end)
  */
 #define FMT_STRING(s) FMT_STRING_IMPL(s, fmt::compile_string, )
 
-template <typename Char, typename OutputIt>
-auto write_escaped_string(OutputIt out, basic_string_view<Char> str)
-    -> OutputIt {
-  return copy_str<Char>(str.data(), str.data() + str.size(), out);
+template <size_t width, typename Char, typename OutputIt>
+auto write_codepoint(OutputIt out, char prefix, uint32_t cp) -> OutputIt {
+  *out++ = static_cast<Char>('\\');
+  *out++ = static_cast<Char>(prefix);
+  Char buf[width];
+  fill_n(buf, width, static_cast<Char>('0'));
+  format_uint<4>(buf, cp, width);
+  return copy_str<Char>(buf, buf + width, out);
 }
 
 template <typename OutputIt, typename Char>
@@ -1582,40 +1586,40 @@ auto write_escaped_cp(OutputIt out, const find_escape_result<Char>& escape)
   auto c = static_cast<Char>(escape.cp);
   switch (escape.cp) {
   case '\n':
-    *out++ = '\\';
-    c = 'n';
+    *out++ = static_cast<Char>('\\');
+    c = static_cast<Char>('n');
     break;
   case '\r':
-    *out++ = '\\';
-    c = 'r';
+    *out++ = static_cast<Char>('\\');
+    c = static_cast<Char>('r');
     break;
   case '\t':
-    *out++ = '\\';
-    c = 't';
+    *out++ = static_cast<Char>('\\');
+    c = static_cast<Char>('t');
     break;
   case '"':
     FMT_FALLTHROUGH;
   case '\'':
     FMT_FALLTHROUGH;
   case '\\':
-    *out++ = '\\';
+    *out++ = static_cast<Char>('\\');
     break;
   default:
     if (is_utf8()) {
       if (escape.cp < 0x100) {
-        return format_to(out, FMT_STRING("\\x{:02x}"), escape.cp);
+        return write_codepoint<2, Char>(out, 'x', escape.cp);
       }
       if (escape.cp < 0x10000) {
-        return format_to(out, FMT_STRING("\\u{:04x}"), escape.cp);
+        return write_codepoint<4, Char>(out, 'u', escape.cp);
       }
       if (escape.cp < 0x110000) {
-        return format_to(out, FMT_STRING("\\U{:08x}"), escape.cp);
+        return write_codepoint<8, Char>(out, 'U', escape.cp);
       }
     }
-    for (char escape_char : basic_string_view<Char>(
+    for (Char escape_char : basic_string_view<Char>(
              escape.begin, to_unsigned(escape.end - escape.begin))) {
-      out = format_to(out, FMT_STRING("\\x{:02x}"),
-                      static_cast<make_unsigned_char<Char>>(escape_char));
+      out = write_codepoint<2, Char>(out, 'x',
+                                     static_cast<uint32_t>(escape_char) & 0xFF);
     }
     return out;
   }
@@ -1623,38 +1627,33 @@ auto write_escaped_cp(OutputIt out, const find_escape_result<Char>& escape)
   return out;
 }
 
-template <typename OutputIt>
-auto write_escaped_string(OutputIt out, basic_string_view<char> str)
+template <typename Char, typename OutputIt>
+auto write_escaped_string(OutputIt out, basic_string_view<Char> str)
     -> OutputIt {
-  *out++ = '"';
+  *out++ = static_cast<Char>('"');
   auto begin = str.begin(), end = str.end();
   do {
     auto escape = find_escape(begin, end);
-    out = copy_str<char>(begin, escape.begin, out);
+    out = copy_str<Char>(begin, escape.begin, out);
     begin = escape.end;
     if (!begin) break;
-    out = write_escaped_cp(out, escape);
+    out = write_escaped_cp<OutputIt, Char>(out, escape);
   } while (begin != end);
-  *out++ = '"';
+  *out++ = static_cast<Char>('"');
   return out;
 }
 
 template <typename Char, typename OutputIt>
 auto write_escaped_char(OutputIt out, Char v) -> OutputIt {
-  *out++ = v;
-  return out;
-}
-
-template <typename OutputIt>
-auto write_escaped_char(OutputIt out, char v) -> OutputIt {
-  *out++ = '\'';
-  if ((needs_escape(static_cast<uint32_t>(v)) && v != '"') || v == '\'') {
+  *out++ = static_cast<Char>('\'');
+  if ((needs_escape(static_cast<uint32_t>(v)) && v != static_cast<Char>('"')) ||
+      v == static_cast<Char>('\'')) {
     out = write_escaped_cp(
-        out, find_escape_result<char>{&v, &v + 1, static_cast<uint32_t>(v)});
+        out, find_escape_result<Char>{&v, &v + 1, static_cast<uint32_t>(v)});
   } else {
     *out++ = v;
   }
-  *out++ = '\'';
+  *out++ = static_cast<Char>('\'');
   return out;
 }
 
