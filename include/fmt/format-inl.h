@@ -197,57 +197,6 @@ template <typename T> constexpr int16_t basic_impl_data<T>::pow10_exponents[];
 template <typename T> constexpr uint64_t basic_impl_data<T>::power_of_10_64[];
 #endif
 
-// A floating-point number f * pow(2, e) where F is an unsigned type.
-template <typename F> struct basic_fp {
-  F f;
-  int e;
-
-  static constexpr const int num_significand_bits =
-      static_cast<int>(sizeof(F) * num_bits<unsigned char>());
-
-  constexpr basic_fp() : f(0), e(0) {}
-  constexpr basic_fp(uint64_t f_val, int e_val) : f(f_val), e(e_val) {}
-
-  // Constructs fp from an IEEE754 floating-point number.
-  template <typename Float> FMT_CONSTEXPR basic_fp(Float n) { assign(n); }
-
-  // Assigns n to this and return true iff predecessor is closer than successor.
-  template <typename Float,
-            FMT_ENABLE_IF(std::numeric_limits<Float>::is_iec559)>
-  FMT_CONSTEXPR auto assign(Float n) -> bool {
-    static_assert(std::numeric_limits<Float>::digits <= 113, "unsupported FP");
-    // Assume Float is in the format [sign][exponent][significand].
-    using carrier_uint = typename dragonbox::float_info<Float>::carrier_uint;
-    const auto num_float_significand_bits =
-        detail::num_significand_bits<Float>();
-    const auto implicit_bit = carrier_uint(1) << num_float_significand_bits;
-    const auto significand_mask = implicit_bit - 1;
-    auto u = bit_cast<carrier_uint>(n);
-    f = static_cast<F>(u & significand_mask);
-    auto biased_e = static_cast<int>((u & exponent_mask<Float>()) >>
-                                     num_float_significand_bits);
-    // The predecessor is closer if n is a normalized power of 2 (f == 0)
-    // other than the smallest normalized number (biased_e > 1).
-    auto is_predecessor_closer = f == 0 && biased_e > 1;
-    if (biased_e == 0)
-      biased_e = 1;  // Subnormals use biased exponent 1 (min exponent).
-    else if (has_implicit_bit<Float>())
-      f += static_cast<F>(implicit_bit);
-    e = biased_e - exponent_bias<Float>() - num_float_significand_bits;
-    if (!has_implicit_bit<Float>()) ++e;
-    return is_predecessor_closer;
-  }
-
-  template <typename Float,
-            FMT_ENABLE_IF(!std::numeric_limits<Float>::is_iec559)>
-  FMT_CONSTEXPR auto assign(Float n) -> bool {
-    static_assert(std::numeric_limits<double>::is_iec559, "unsupported FP");
-    return assign(static_cast<double>(n));
-  }
-};
-
-using fp = basic_fp<unsigned long long>;
-
 // Normalizes the value converted from double and multiplied by (1 << SHIFT).
 template <int SHIFT = 0, typename F>
 FMT_CONSTEXPR basic_fp<F> normalize(basic_fp<F> value) {
@@ -259,8 +208,8 @@ FMT_CONSTEXPR basic_fp<F> normalize(basic_fp<F> value) {
     --value.e;
   }
   // Subtract 1 to account for hidden bit.
-  const auto offset =
-      fp::num_significand_bits - num_significand_bits<double>() - SHIFT - 1;
+  const auto offset = basic_fp<F>::num_significand_bits -
+                      num_significand_bits<double>() - SHIFT - 1;
   value.f <<= offset;
   value.e -= offset;
   return value;
@@ -287,6 +236,8 @@ FMT_CONSTEXPR inline uint64_t multiply(uint64_t lhs, uint64_t rhs) {
   return ac + (ad >> 32) + (bc >> 32) + (mid >> 32);
 #endif
 }
+
+using fp = basic_fp<unsigned long long>;
 
 FMT_CONSTEXPR inline fp operator*(fp x, fp y) {
   return {multiply(x.f, y.f), x.e + y.e + 64};

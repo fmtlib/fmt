@@ -1361,6 +1361,55 @@ FMT_CONSTEXPR auto write_exponent(int exp, It it) -> It {
   return it;
 }
 
+// A floating-point number f * pow(2, e) where F is an unsigned type.
+template <typename F> struct basic_fp {
+  F f;
+  int e;
+
+  static constexpr const int num_significand_bits =
+      static_cast<int>(sizeof(F) * num_bits<unsigned char>());
+
+  constexpr basic_fp() : f(0), e(0) {}
+  constexpr basic_fp(uint64_t f_val, int e_val) : f(f_val), e(e_val) {}
+
+  // Constructs fp from an IEEE754 floating-point number.
+  template <typename Float> FMT_CONSTEXPR basic_fp(Float n) { assign(n); }
+
+  // Assigns n to this and return true iff predecessor is closer than successor.
+  template <typename Float,
+            FMT_ENABLE_IF(std::numeric_limits<Float>::is_iec559)>
+  FMT_CONSTEXPR auto assign(Float n) -> bool {
+    static_assert(std::numeric_limits<Float>::digits <= 113, "unsupported FP");
+    // Assume Float is in the format [sign][exponent][significand].
+    using carrier_uint = typename dragonbox::float_info<Float>::carrier_uint;
+    const auto num_float_significand_bits =
+        detail::num_significand_bits<Float>();
+    const auto implicit_bit = carrier_uint(1) << num_float_significand_bits;
+    const auto significand_mask = implicit_bit - 1;
+    auto u = bit_cast<carrier_uint>(n);
+    f = static_cast<F>(u & significand_mask);
+    auto biased_e = static_cast<int>((u & exponent_mask<Float>()) >>
+                                     num_float_significand_bits);
+    // The predecessor is closer if n is a normalized power of 2 (f == 0)
+    // other than the smallest normalized number (biased_e > 1).
+    auto is_predecessor_closer = f == 0 && biased_e > 1;
+    if (biased_e == 0)
+      biased_e = 1;  // Subnormals use biased exponent 1 (min exponent).
+    else if (has_implicit_bit<Float>())
+      f += static_cast<F>(implicit_bit);
+    e = biased_e - exponent_bias<Float>() - num_float_significand_bits;
+    if (!has_implicit_bit<Float>()) ++e;
+    return is_predecessor_closer;
+  }
+
+  template <typename Float,
+            FMT_ENABLE_IF(!std::numeric_limits<Float>::is_iec559)>
+  FMT_CONSTEXPR auto assign(Float n) -> bool {
+    static_assert(std::numeric_limits<double>::is_iec559, "unsupported FP");
+    return assign(static_cast<double>(n));
+  }
+};
+
 template <typename T>
 FMT_HEADER_ONLY_CONSTEXPR20 auto format_float(T value, int precision,
                                               float_specs specs,
