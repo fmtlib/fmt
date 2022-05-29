@@ -35,11 +35,6 @@ template FMT_API void vformat_to(buffer<char>&, string_view,
                                  basic_format_args<FMT_BUFFER_CONTEXT(char)>,
                                  locale_ref);
 
-template FMT_API auto format_float(double, int, float_specs, buffer<char>&)
-    -> int;
-template FMT_API auto format_float(long double, int, detail::float_specs,
-                                   buffer<char>&) -> int;
-
 // Explicit instantiations for wchar_t.
 
 template FMT_API auto thousands_sep_impl(locale_ref)

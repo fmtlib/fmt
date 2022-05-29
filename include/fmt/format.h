@@ -401,7 +401,31 @@ class uint128_fallback {
     lo_ = new_lo;
     hi_ = new_hi;
   }
-  FMT_CONSTEXPR20 uint128_fallback& operator+=(uint64_t n) noexcept;
+
+  FMT_CONSTEXPR20 uint128_fallback& operator+=(uint64_t n) noexcept {
+    if (is_constant_evaluated()) {
+      lo_ += n;
+      hi_ += (lo_ < n ? 1 : 0);
+      return *this;
+    }
+#if FMT_HAS_BUILTIN(__builtin_addcll)
+    unsigned long long carry;
+    lo_ = __builtin_addcll(lo_, n, 0, &carry);
+    hi_ += carry;
+#elif FMT_HAS_BUILTIN(__builtin_ia32_addcarryx_u64)
+    unsigned long long result;
+    auto carry = __builtin_ia32_addcarryx_u64(0, lo_, n, &result);
+    lo_ = result;
+    hi_ += carry;
+#elif defined(_MSC_VER) && defined(_M_X64)
+    auto carry = _addcarry_u64(0, lo_, n, &lo_);
+    _addcarry_u64(carry, hi_, 0, &hi_);
+#else
+    lo_ += n;
+    hi_ += (lo_ < n ? 1 : 0);
+#endif
+    return *this;
+  }
 };
 
 using uint128_t = conditional_t<FMT_USE_INT128, uint128_opt, uint128_fallback>;
@@ -4113,12 +4137,6 @@ extern template FMT_API auto thousands_sep_impl<wchar_t>(locale_ref)
     -> thousands_sep_result<wchar_t>;
 extern template FMT_API auto decimal_point_impl(locale_ref) -> char;
 extern template FMT_API auto decimal_point_impl(locale_ref) -> wchar_t;
-extern template auto format_float<double>(double value, int precision,
-                                          float_specs specs, buffer<char>& buf)
-    -> int;
-extern template auto format_float<long double>(long double value, int precision,
-                                               float_specs specs,
-                                               buffer<char>& buf) -> int;
 #endif  // FMT_HEADER_ONLY
 
 FMT_END_DETAIL_NAMESPACE

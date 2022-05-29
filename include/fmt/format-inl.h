@@ -132,32 +132,6 @@ template <typename F> inline bool operator==(basic_fp<F> x, basic_fp<F> y) {
   return x.f == y.f && x.e == y.e;
 }
 
-inline FMT_CONSTEXPR20 uint128_fallback& uint128_fallback::operator+=(
-    uint64_t n) noexcept {
-  if (is_constant_evaluated()) {
-    lo_ += n;
-    hi_ += (lo_ < n ? 1 : 0);
-    return *this;
-  }
-#if FMT_HAS_BUILTIN(__builtin_addcll)
-  unsigned long long carry;
-  lo_ = __builtin_addcll(lo_, n, 0, &carry);
-  hi_ += carry;
-#elif FMT_HAS_BUILTIN(__builtin_ia32_addcarryx_u64)
-  unsigned long long result;
-  auto carry = __builtin_ia32_addcarryx_u64(0, lo_, n, &result);
-  lo_ = result;
-  hi_ += carry;
-#elif defined(_MSC_VER) && defined(_M_X64)
-  auto carry = _addcarry_u64(0, lo_, n, &lo_);
-  _addcarry_u64(carry, hi_, 0, &hi_);
-#else
-  lo_ += n;
-  hi_ += (lo_ < n ? 1 : 0);
-#endif
-  return *this;
-}
-
 // Compilers should be able to optimize this into the ror instruction.
 FMT_CONSTEXPR inline uint32_t rotr(uint32_t n, uint32_t r) noexcept {
   r &= 31;
