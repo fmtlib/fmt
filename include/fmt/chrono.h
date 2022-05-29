@@ -345,7 +345,7 @@ auto write_encoded_tm_str(OutputIt out, string_view in, const std::locale& loc)
   if (detail::is_utf8() && loc != get_classic_locale()) {
     // char16_t and char32_t codecvts are broken in MSVC (linkage errors) and
     // gcc-4.
-#if FMT_MSC_VER != 0 || \
+#if FMT_MSC_VERSION != 0 || \
     (defined(__GLIBCXX__) && !defined(_GLIBCXX_USE_DUAL_ABI))
     // The _GLIBCXX_USE_DUAL_ABI macro is always defined in libstdc++ from gcc-5
     // and newer.
@@ -469,7 +469,7 @@ inline std::tm localtime(std::time_t time) {
 
     bool fallback(int res) { return res == 0; }
 
-#if !FMT_MSC_VER
+#if !FMT_MSC_VERSION
     bool fallback(detail::null<>) {
       using namespace fmt::detail;
       std::tm* tm = std::localtime(&time_);
@@ -515,7 +515,7 @@ inline std::tm gmtime(std::time_t time) {
 
     bool fallback(int res) { return res == 0; }
 
-#if !FMT_MSC_VER
+#if !FMT_MSC_VERSION
     bool fallback(detail::null<>) {
       std::tm* tm = std::gmtime(&time_);
       if (tm) tm_ = *tm;
@@ -1466,8 +1466,7 @@ inline std::chrono::duration<Rep, std::milli> get_milliseconds(
 // C++20 spec. If more than 18 fractional digits are required then returns 6 for
 // microseconds precision.
 template <long long Num, long long Den, int N = 0,
-          bool Enabled =
-              (N < 19) && (Num <= max_value<long long>() / 10)>
+          bool Enabled = (N < 19) && (Num <= max_value<long long>() / 10)>
 struct count_fractional_digits {
   static constexpr int value =
       Num % Den == 0 ? N : count_fractional_digits<Num * 10, Den, N + 1>::value;

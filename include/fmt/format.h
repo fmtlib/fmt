@@ -71,7 +71,7 @@
 #  define FMT_NOINLINE
 #endif
 
-#if FMT_MSC_VER
+#if FMT_MSC_VERSION
 #  define FMT_MSC_DEFAULT = default
 #else
 #  define FMT_MSC_DEFAULT
@@ -79,7 +79,7 @@
 
 #ifndef FMT_THROW
 #  if FMT_EXCEPTIONS
-#    if FMT_MSC_VER || defined(__NVCC__)
+#    if FMT_MSC_VERSION || defined(__NVCC__)
 FMT_BEGIN_NAMESPACE
 namespace detail {
 template <typename Exception> inline void do_throw(const Exception& x) {
@@ -119,12 +119,12 @@ FMT_END_NAMESPACE
 #endif
 
 #ifndef FMT_DEPRECATED
-#  if FMT_HAS_CPP14_ATTRIBUTE(deprecated) || FMT_MSC_VER >= 1900
+#  if FMT_HAS_CPP14_ATTRIBUTE(deprecated) || FMT_MSC_VERSION >= 1900
 #    define FMT_DEPRECATED [[deprecated]]
 #  else
 #    if (defined(__GNUC__) && !defined(__LCC__)) || defined(__clang__)
 #      define FMT_DEPRECATED __attribute__((deprecated))
-#    elif FMT_MSC_VER
+#    elif FMT_MSC_VERSION
 #      define FMT_DEPRECATED __declspec(deprecated)
 #    else
 #      define FMT_DEPRECATED /* deprecated */
@@ -135,7 +135,7 @@ FMT_END_NAMESPACE
 #ifndef FMT_USE_USER_DEFINED_LITERALS
 // EDG based compilers (Intel, NVIDIA, Elbrus, etc), GCC and MSVC support UDLs.
 #  if (FMT_HAS_FEATURE(cxx_user_literals) || FMT_GCC_VERSION >= 407 || \
-       FMT_MSC_VER >= 1900) &&                                         \
+       FMT_MSC_VERSION >= 1900) &&                                     \
       (!defined(__EDG_VERSION__) || __EDG_VERSION__ >= /* UDL feature */ 480)
 #    define FMT_USE_USER_DEFINED_LITERALS 1
 #  else
@@ -153,7 +153,7 @@ FMT_END_NAMESPACE
 
 // __builtin_clz is broken in clang with Microsoft CodeGen:
 // https://github.com/fmtlib/fmt/issues/519.
-#if !FMT_MSC_VER
+#if !FMT_MSC_VERSION
 #  if FMT_HAS_BUILTIN(__builtin_clz) || FMT_GCC_VERSION || FMT_ICC_VERSION
 #    define FMT_BUILTIN_CLZ(n) __builtin_clz(n)
 #  endif
@@ -175,14 +175,15 @@ FMT_END_NAMESPACE
 #  endif
 #endif
 
-#if FMT_MSC_VER
+#if FMT_MSC_VERSION
 #  include <intrin.h>  // _BitScanReverse[64], _BitScanForward[64], _umul128
 #endif
 
 // Some compilers masquerade as both MSVC and GCC-likes or otherwise support
 // __builtin_clz and __builtin_clzll, so only define FMT_BUILTIN_CLZ using the
 // MSVC intrinsics if the clz and clzll builtins are not available.
-#if FMT_MSC_VER && !defined(FMT_BUILTIN_CLZLL) && !defined(FMT_BUILTIN_CTZLL)
+#if FMT_MSC_VERSION && !defined(FMT_BUILTIN_CLZLL) && \
+    !defined(FMT_BUILTIN_CTZLL)
 FMT_BEGIN_NAMESPACE
 namespace detail {
 // Avoid Clang with Microsoft CodeGen's -Wunknown-pragmas warning.

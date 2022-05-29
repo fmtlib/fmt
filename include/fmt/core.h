@@ -50,10 +50,10 @@
 #endif
 
 #ifdef _MSC_VER
-#  define FMT_MSC_VER _MSC_VER
+#  define FMT_MSC_VERSION _MSC_VER
 #  define FMT_MSC_WARNING(...) __pragma(warning(__VA_ARGS__))
 #else
-#  define FMT_MSC_VER 0
+#  define FMT_MSC_VERSION 0
 #  define FMT_MSC_WARNING(...)
 #endif
 
@@ -70,7 +70,7 @@
 #endif
 
 #if (defined(__has_include) || FMT_ICC_VERSION >= 1600 || \
-     FMT_MSC_VER > 1900) &&                               \
+     FMT_MSC_VERSION > 1900) &&                           \
     !defined(__INTELLISENSE__)
 #  define FMT_HAS_INCLUDE(x) __has_include(x)
 #else
@@ -92,8 +92,8 @@
 // Check if relaxed C++14 constexpr is supported.
 // GCC doesn't allow throw in constexpr until version 6 (bug 67371).
 #ifndef FMT_USE_CONSTEXPR
-#  if (FMT_HAS_FEATURE(cxx_relaxed_constexpr) || FMT_MSC_VER >= 1912 || \
-       (FMT_GCC_VERSION >= 600 && __cplusplus >= 201402L)) &&           \
+#  if (FMT_HAS_FEATURE(cxx_relaxed_constexpr) || FMT_MSC_VERSION >= 1912 || \
+       (FMT_GCC_VERSION >= 600 && __cplusplus >= 201402L)) &&               \
       !FMT_ICC_VERSION && !defined(__NVCC__)
 #    define FMT_USE_CONSTEXPR 1
 #  else
@@ -125,7 +125,7 @@
 #elif defined(_LIBCPP_VERSION) && __cplusplus >= 201703L && \
     _LIBCPP_VERSION >= 4000
 #  define FMT_CONSTEXPR_CHAR_TRAITS constexpr
-#elif FMT_MSC_VER >= 1914 && _MSVC_LANG >= 201703L
+#elif FMT_MSC_VERSION >= 1914 && FMT_CPLUSPLUS >= 201703L
 #  define FMT_CONSTEXPR_CHAR_TRAITS constexpr
 #endif
 #ifndef FMT_CONSTEXPR_CHAR_TRAITS
@@ -135,7 +135,7 @@
 // Check if exceptions are disabled.
 #ifndef FMT_EXCEPTIONS
 #  if (defined(__GNUC__) && !defined(__EXCEPTIONS)) || \
-      FMT_MSC_VER && !_HAS_EXCEPTIONS
+      FMT_MSC_VERSION && !_HAS_EXCEPTIONS
 #    define FMT_EXCEPTIONS 0
 #  else
 #    define FMT_EXCEPTIONS 1
@@ -144,7 +144,7 @@
 
 // [[noreturn]] is disabled on MSVC and NVCC because of bogus unreachable code
 // warnings.
-#if FMT_EXCEPTIONS && FMT_HAS_CPP_ATTRIBUTE(noreturn) && !FMT_MSC_VER && \
+#if FMT_EXCEPTIONS && FMT_HAS_CPP_ATTRIBUTE(noreturn) && !FMT_MSC_VERSION && \
     !defined(__NVCC__)
 #  define FMT_NORETURN [[noreturn]]
 #else
@@ -249,14 +249,14 @@
 #endif
 
 #ifndef FMT_UNICODE
-#  define FMT_UNICODE !FMT_MSC_VER
+#  define FMT_UNICODE !FMT_MSC_VERSION
 #endif
 
 #ifndef FMT_CONSTEVAL
 #  if ((FMT_GCC_VERSION >= 1000 || FMT_CLANG_VERSION >= 1101) &&      \
        __cplusplus > 201703L && !defined(__apple_build_version__)) || \
       (defined(__cpp_consteval) &&                                    \
-       (!FMT_MSC_VER || _MSC_FULL_VER >= 193030704))
+       (!FMT_MSC_VERSION || _MSC_FULL_VER >= 193030704))
 // consteval is broken in MSVC before VS2022 and Apple clang 13.
 #    define FMT_CONSTEVAL consteval
 #    define FMT_HAS_CONSTEVAL
@@ -364,7 +364,7 @@ template <typename T> struct std_string_view {};
 #ifdef FMT_USE_INT128
 // Do nothing.
 #elif defined(__SIZEOF_INT128__) && !defined(__NVCC__) && \
-    !(FMT_CLANG_VERSION && FMT_MSC_VER)
+    !(FMT_CLANG_VERSION && FMT_MSC_VERSION)
 #  define FMT_USE_INT128 1
 using int128_opt = __int128_t;  // An optional native 128-bit integer.
 using uint128_opt = __uint128_t;
@@ -1416,8 +1416,8 @@ template <typename Context> struct arg_mapper {
                       !std::is_const<remove_reference_t<T>>::value ||
                       has_fallback_formatter<U, char_type>::value> {};
 
-#if (FMT_MSC_VER != 0 && FMT_MSC_VER < 1910) || FMT_ICC_VERSION != 0 || \
-    defined(__NVCC__)
+#if (FMT_MSC_VERSION != 0 && FMT_MSC_VERSION < 1910) || \
+    FMT_ICC_VERSION != 0 || defined(__NVCC__)
   // Workaround a bug in MSVC and Intel (Issue 2746).
   template <typename T> FMT_CONSTEXPR FMT_INLINE auto do_map(T&& val) -> T& {
     return val;

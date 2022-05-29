@@ -93,7 +93,7 @@ inline bool write(std::wfilebuf&, fmt::basic_string_view<wchar_t>) {
 // It is a separate function rather than a part of vprint to simplify testing.
 template <typename Char>
 void write_buffer(std::basic_ostream<Char>& os, buffer<Char>& buf) {
-  if (const_check(FMT_MSC_VER)) {
+  if (const_check(FMT_MSC_VERSION)) {
     auto filebuf = dynamic_cast<std::basic_filebuf<Char>*>(os.rdbuf());
     if (filebuf && write(*filebuf, {buf.data(), buf.size()})) return;
   }

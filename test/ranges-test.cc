@@ -21,7 +21,7 @@
 #  define FMT_RANGES_TEST_ENABLE_C_STYLE_ARRAY
 #endif
 
-#if !FMT_MSC_VER || FMT_MSC_VER > 1910
+#if !FMT_MSC_VERSION || FMT_MSC_VERSION > 1910
 #  define FMT_RANGES_TEST_ENABLE_JOIN
 #  define FMT_RANGES_TEST_ENABLE_FORMAT_STRUCT
 #endif
@@ -219,7 +219,7 @@ TEST(ranges_test, enum_range) {
   EXPECT_EQ(fmt::format("{}", v), "[0]");
 }
 
-#if !FMT_MSC_VER
+#if !FMT_MSC_VERSION
 struct unformattable {};
 
 TEST(ranges_test, unformattable_range) {

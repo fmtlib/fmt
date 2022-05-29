@@ -116,7 +116,7 @@ template <typename Char> FMT_FUNC Char decimal_point_impl(locale_ref) {
 #endif
 }  // namespace detail
 
-#if !FMT_MSC_VER
+#if !FMT_MSC_VERSION
 FMT_API FMT_FUNC format_error::~format_error() noexcept = default;
 #endif
 

@@ -94,7 +94,7 @@ template <typename... Ts> struct conditional_helper {};
 
 template <typename T, typename _ = void> struct is_range_ : std::false_type {};
 
-#if !FMT_MSC_VER || FMT_MSC_VER > 1800
+#if !FMT_MSC_VERSION || FMT_MSC_VERSION > 1800
 
 #  define FMT_DECLTYPE_RETURN(val)  \
     ->decltype(val) { return val; } \
@@ -179,7 +179,7 @@ template <typename T> class is_tuple_like_ {
 };
 
 // Check for integer_sequence
-#if defined(__cpp_lib_integer_sequence) || FMT_MSC_VER >= 1900
+#if defined(__cpp_lib_integer_sequence) || FMT_MSC_VERSION >= 1900
 template <typename T, T... N>
 using integer_sequence = std::integer_sequence<T, N...>;
 template <size_t... N> using index_sequence = std::index_sequence<N...>;
@@ -221,7 +221,7 @@ template <class Tuple, class F> void for_each(Tuple&& tup, F&& f) {
   for_each(indexes, std::forward<Tuple>(tup), std::forward<F>(f));
 }
 
-#if FMT_MSC_VER
+#if FMT_MSC_VERSION
 // Older MSVC doesn't get the reference type correctly for arrays.
 template <typename R> struct range_reference_type_impl {
   using type = decltype(*detail::range_begin(std::declval<R&>()));
@@ -358,7 +358,7 @@ struct formatter<
     enable_if_t<
         fmt::is_range<R, Char>::value
 // Workaround a bug in MSVC 2019 and earlier.
-#if !FMT_MSC_VER
+#if !FMT_MSC_VERSION
         &&
         (is_formattable<detail::uncvref_type<detail::maybe_const_range<R>>,
                         Char>::value ||
@@ -419,7 +419,7 @@ struct formatter<
     T, Char,
     enable_if_t<detail::is_map<T>::value
 // Workaround a bug in MSVC 2019 and earlier.
-#if !FMT_MSC_VER
+#if !FMT_MSC_VERSION
                 && (is_formattable<detail::uncvref_type<T>, Char>::value ||
                     detail::has_fallback_formatter<detail::uncvref_type<T>,
                                                    Char>::value)
