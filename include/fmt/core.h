@@ -49,13 +49,6 @@
 #  define FMT_ICC_VERSION 0
 #endif
 
-#ifdef __NVCOMPILER
-#  define FMT_NVCOMPILER_VERSION \
-    (__NVCOMPILER_MAJOR__ * 100 + __NVCOMPILER_MINOR__)
-#else
-#  define FMT_NVCOMPILER_VERSION 0
-#endif
-
 #ifdef __NVCC__
 #  define FMT_NVCC __NVCC__
 #else
@@ -68,6 +61,12 @@
 #else
 #  define FMT_MSC_VER 0
 #  define FMT_MSC_WARNING(...)
+#endif
+
+#ifdef _MSVC_LANG
+#  define FMT_CPLUSPLUS _MSVC_LANG
+#else
+#  define FMT_CPLUSPLUS __cplusplus
 #endif
 
 #ifdef __has_feature
@@ -88,12 +87,6 @@
 #  define FMT_HAS_CPP_ATTRIBUTE(x) __has_cpp_attribute(x)
 #else
 #  define FMT_HAS_CPP_ATTRIBUTE(x) 0
-#endif
-
-#ifdef _MSVC_LANG
-#  define FMT_CPLUSPLUS _MSVC_LANG
-#else
-#  define FMT_CPLUSPLUS __cplusplus
 #endif
 
 #define FMT_HAS_CPP14_ATTRIBUTE(attribute) \
@@ -287,7 +280,7 @@
 
 // Enable minimal optimizations for more compact code in debug mode.
 FMT_GCC_PRAGMA("GCC push_options")
-#if !defined(__OPTIMIZE__) && !FMT_NVCOMPILER_VERSION
+#if !defined(__OPTIMIZE__) && !defined(__NVCOMPILER)
 FMT_GCC_PRAGMA("GCC optimize(\"Og\")")
 #endif
 

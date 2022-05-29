@@ -166,11 +166,11 @@ FMT_END_NAMESPACE
 // https://github.com/fmtlib/fmt/issues/2510.
 #ifndef __ICL
 #  if FMT_HAS_BUILTIN(__builtin_ctz) || FMT_GCC_VERSION || FMT_ICC_VERSION || \
-      FMT_NVCOMPILER_VERSION
+      defined(__NVCOMPILER)
 #    define FMT_BUILTIN_CTZ(n) __builtin_ctz(n)
 #  endif
 #  if FMT_HAS_BUILTIN(__builtin_ctzll) || FMT_GCC_VERSION || \
-      FMT_ICC_VERSION || FMT_NVCOMPILER_VERSION
+      FMT_ICC_VERSION || defined(__NVCOMPILER)
 #    define FMT_BUILTIN_CTZLL(n) __builtin_ctzll(n)
 #  endif
 #endif
