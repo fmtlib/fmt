@@ -102,10 +102,8 @@
 #endif
 #if FMT_USE_CONSTEXPR
 #  define FMT_CONSTEXPR constexpr
-#  define FMT_CONSTEXPR_DECL constexpr
 #else
 #  define FMT_CONSTEXPR
-#  define FMT_CONSTEXPR_DECL
 #endif
 
 #if ((__cplusplus >= 202002L) &&                              \
@@ -116,7 +114,7 @@
 #  define FMT_CONSTEXPR20
 #endif
 
-// Check if constexpr std::char_traits<>::compare,length is supported.
+// Check if constexpr std::char_traits<>::{compare,length} are supported.
 #if defined(__GLIBCXX__)
 #  if __cplusplus >= 201703L && defined(_GLIBCXX_RELEASE) && \
       _GLIBCXX_RELEASE >= 7  // GCC 7+ libstdc++ has _GLIBCXX_RELEASE.
@@ -253,7 +251,7 @@
 
 #ifndef FMT_CONSTEVAL
 #  if ((FMT_GCC_VERSION >= 1000 || FMT_CLANG_VERSION >= 1101) &&      \
-       __cplusplus > 201703L && !defined(__apple_build_version__)) || \
+       __cplusplus >= 202002L && !defined(__apple_build_version__)) || \
       (defined(__cpp_consteval) &&                                    \
        (!FMT_MSC_VERSION || _MSC_FULL_VER >= 193030704))
 // consteval is broken in MSVC before VS2022 and Apple clang 13.

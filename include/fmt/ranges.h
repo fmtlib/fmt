@@ -55,7 +55,7 @@ template <typename T> class is_std_string_like {
   template <typename> static void check(...);
 
  public:
-  static FMT_CONSTEXPR_DECL const bool value =
+  static constexpr const bool value =
       is_string<T>::value ||
       std::is_convertible<T, std_string_view<char>>::value ||
       !std::is_void<decltype(check<T>(nullptr))>::value;
@@ -70,9 +70,9 @@ template <typename T> class is_map {
 
  public:
 #ifdef FMT_FORMAT_MAP_AS_LIST
-  static FMT_CONSTEXPR_DECL const bool value = false;
+  static constexpr const bool value = false;
 #else
-  static FMT_CONSTEXPR_DECL const bool value =
+  static constexpr const bool value =
       !std::is_void<decltype(check<T>(nullptr))>::value;
 #endif
 };
@@ -83,9 +83,9 @@ template <typename T> class is_set {
 
  public:
 #ifdef FMT_FORMAT_SET_AS_LIST
-  static FMT_CONSTEXPR_DECL const bool value = false;
+  static constexpr const bool value = false;
 #else
-  static FMT_CONSTEXPR_DECL const bool value =
+  static constexpr const bool value =
       !std::is_void<decltype(check<T>(nullptr))>::value && !is_map<T>::value;
 #endif
 };
@@ -174,7 +174,7 @@ template <typename T> class is_tuple_like_ {
   template <typename> static void check(...);
 
  public:
-  static FMT_CONSTEXPR_DECL const bool value =
+  static constexpr const bool value =
       !std::is_void<decltype(check<T>(nullptr))>::value;
 };
 
@@ -279,7 +279,7 @@ OutputIt write_range_entry(OutputIt out, const Arg& v) {
 }  // namespace detail
 
 template <typename T> struct is_tuple_like {
-  static FMT_CONSTEXPR_DECL const bool value =
+  static constexpr const bool value =
       detail::is_tuple_like_<T>::value && !detail::is_range_<T>::value;
 };
 
@@ -315,7 +315,7 @@ struct formatter<TupleT, Char, enable_if_t<fmt::is_tuple_like<TupleT>::value>> {
 };
 
 template <typename T, typename Char> struct is_range {
-  static FMT_CONSTEXPR_DECL const bool value =
+  static constexpr const bool value =
       detail::is_range_<T>::value && !detail::is_std_string_like<T>::value &&
       !detail::is_map<T>::value &&
       !std::is_convertible<T, std::basic_string<Char>>::value &&

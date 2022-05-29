@@ -298,11 +298,9 @@ class text_style {
     }
   }
 
-  friend FMT_CONSTEXPR_DECL text_style
-  fg(detail::color_type foreground) noexcept;
+  friend FMT_CONSTEXPR text_style fg(detail::color_type foreground) noexcept;
 
-  friend FMT_CONSTEXPR_DECL text_style
-  bg(detail::color_type background) noexcept;
+  friend FMT_CONSTEXPR text_style bg(detail::color_type background) noexcept;
 
   detail::color_type foreground_color;
   detail::color_type background_color;

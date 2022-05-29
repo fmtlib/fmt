@@ -2710,7 +2710,7 @@ class bigint {
     return bigits_[to_unsigned(index)];
   }
 
-  static FMT_CONSTEXPR_DECL const int bigit_bits = num_bits<bigit>();
+  static constexpr const int bigit_bits = num_bits<bigit>();
 
   friend struct formatter<bigint>;
 
