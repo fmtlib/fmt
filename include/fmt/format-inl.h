@@ -197,17 +197,13 @@ template <typename T> constexpr int16_t basic_impl_data<T>::pow10_exponents[];
 template <typename T> constexpr uint64_t basic_impl_data<T>::power_of_10_64[];
 #endif
 
-template <typename T> struct bits {
-  static FMT_CONSTEXPR_DECL const int value =
-      static_cast<int>(sizeof(T) * std::numeric_limits<unsigned char>::digits);
-};
-
 // A floating-point number f * pow(2, e) where F is an unsigned type.
 template <typename F> struct basic_fp {
   F f;
   int e;
 
-  static constexpr const int num_significand_bits = bits<F>::value;
+  static constexpr const int num_significand_bits =
+      static_cast<int>(sizeof(F) * num_bits<unsigned char>());
 
   constexpr basic_fp() : f(0), e(0) {}
   constexpr basic_fp(uint64_t f_val, int e_val) : f(f_val), e(e_val) {}
@@ -335,7 +331,7 @@ class bigint {
     return bigits_[to_unsigned(index)];
   }
 
-  static FMT_CONSTEXPR_DECL const int bigit_bits = bits<bigit>::value;
+  static FMT_CONSTEXPR_DECL const int bigit_bits = num_bits<bigit>();
 
   friend struct formatter<bigint>;
 
@@ -526,7 +522,7 @@ class bigint {
         sum += static_cast<double_bigit>(n[i]) * n[j];
       }
       (*this)[bigit_index] = static_cast<bigit>(sum);
-      sum >>= bits<bigit>::value;  // Compute the carry.
+      sum >>= num_bits<bigit>();  // Compute the carry.
     }
     // Do the same for the top half.
     for (int bigit_index = num_bigits; bigit_index < num_result_bigits;
@@ -534,7 +530,7 @@ class bigint {
       for (int j = num_bigits - 1, i = bigit_index - j; i < num_bigits;)
         sum += static_cast<double_bigit>(n[i++]) * n[j--];
       (*this)[bigit_index] = static_cast<bigit>(sum);
-      sum >>= bits<bigit>::value;
+      sum >>= num_bits<bigit>();
     }
     remove_leading_zeros();
     exp_ *= 2;
