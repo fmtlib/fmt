@@ -252,12 +252,6 @@ inline auto ctzll(uint64_t x) -> int {
 FMT_END_NAMESPACE
 #endif
 
-#ifdef FMT_HEADER_ONLY
-#  define FMT_HEADER_ONLY_CONSTEXPR20 FMT_CONSTEXPR20
-#else
-#  define FMT_HEADER_ONLY_CONSTEXPR20
-#endif
-
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
