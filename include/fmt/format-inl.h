@@ -128,12 +128,6 @@ FMT_FUNC std::system_error vsystem_error(int error_code, string_view format_str,
 
 namespace detail {
 
-#if __cplusplus < 201703L
-template <typename T> constexpr uint64_t basic_data<T>::pow10_significands[];
-template <typename T> constexpr int16_t basic_data<T>::pow10_exponents[];
-template <typename T> constexpr uint64_t basic_data<T>::power_of_10_64[];
-#endif
-
 template <typename F> inline bool operator==(basic_fp<F> x, basic_fp<F> y) {
   return x.f == y.f && x.e == y.e;
 }

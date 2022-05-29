@@ -1982,6 +1982,10 @@ TEST(format_test, to_string) {
 
   enum foo : unsigned char { zero };
   EXPECT_EQ(fmt::to_string(zero), "0");
+
+#if FMT_USE_FLOAT128
+  EXPECT_EQ(fmt::to_string(__float128(0.42)), "0.42");
+#endif
 }
 
 TEST(format_test, output_iterators) {

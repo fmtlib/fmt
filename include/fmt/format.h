@@ -1511,6 +1511,12 @@ template <typename T = void> struct basic_data {
       10000000000000000000ULL};
 };
 
+#if __cplusplus < 201703L
+template <typename T> constexpr uint64_t basic_data<T>::pow10_significands[];
+template <typename T> constexpr int16_t basic_data<T>::pow10_exponents[];
+template <typename T> constexpr uint64_t basic_data<T>::power_of_10_64[];
+#endif
+
 // This is a struct rather than an alias to avoid shadowing warnings in gcc.
 struct data : basic_data<> {};
 
