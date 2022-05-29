@@ -49,12 +49,6 @@
 #  define FMT_ICC_VERSION 0
 #endif
 
-#ifdef __NVCC__
-#  define FMT_NVCC __NVCC__
-#else
-#  define FMT_NVCC 0
-#endif
-
 #ifdef _MSC_VER
 #  define FMT_MSC_VER _MSC_VER
 #  define FMT_MSC_WARNING(...) __pragma(warning(__VA_ARGS__))
@@ -75,9 +69,9 @@
 #  define FMT_HAS_FEATURE(x) 0
 #endif
 
-#if defined(__has_include) &&                             \
-    (!defined(__INTELLISENSE__) || FMT_MSC_VER > 1900) && \
-    (!FMT_ICC_VERSION || FMT_ICC_VERSION >= 1600)
+#if (defined(__has_include) || FMT_ICC_VERSION >= 1600 || \
+     FMT_MSC_VER > 1900) &&                               \
+    !defined(__INTELLISENSE__)
 #  define FMT_HAS_INCLUDE(x) __has_include(x)
 #else
 #  define FMT_HAS_INCLUDE(x) 0
@@ -98,10 +92,13 @@
 // Check if relaxed C++14 constexpr is supported.
 // GCC doesn't allow throw in constexpr until version 6 (bug 67371).
 #ifndef FMT_USE_CONSTEXPR
-#  define FMT_USE_CONSTEXPR                                           \
-    (FMT_HAS_FEATURE(cxx_relaxed_constexpr) || FMT_MSC_VER >= 1912 || \
-     (FMT_GCC_VERSION >= 600 && __cplusplus >= 201402L)) &&           \
-        !FMT_NVCC && !FMT_ICC_VERSION
+#  if (FMT_HAS_FEATURE(cxx_relaxed_constexpr) || FMT_MSC_VER >= 1912 || \
+       (FMT_GCC_VERSION >= 600 && __cplusplus >= 201402L)) &&           \
+      !FMT_ICC_VERSION && !defined(__NVCC__)
+#    define FMT_USE_CONSTEXPR 1
+#  else
+#    define FMT_USE_CONSTEXPR 0
+#  endif
 #endif
 #if FMT_USE_CONSTEXPR
 #  define FMT_CONSTEXPR constexpr
@@ -148,7 +145,7 @@
 // [[noreturn]] is disabled on MSVC and NVCC because of bogus unreachable code
 // warnings.
 #if FMT_EXCEPTIONS && FMT_HAS_CPP_ATTRIBUTE(noreturn) && !FMT_MSC_VER && \
-    !FMT_NVCC
+    !defined(__NVCC__)
 #  define FMT_NORETURN [[noreturn]]
 #else
 #  define FMT_NORETURN
@@ -366,7 +363,7 @@ template <typename T> struct std_string_view {};
 
 #ifdef FMT_USE_INT128
 // Do nothing.
-#elif defined(__SIZEOF_INT128__) && !FMT_NVCC && \
+#elif defined(__SIZEOF_INT128__) && !defined(__NVCC__) && \
     !(FMT_CLANG_VERSION && FMT_MSC_VER)
 #  define FMT_USE_INT128 1
 using int128_opt = __int128_t;  // An optional native 128-bit integer.
@@ -1420,7 +1417,7 @@ template <typename Context> struct arg_mapper {
                       has_fallback_formatter<U, char_type>::value> {};
 
 #if (FMT_MSC_VER != 0 && FMT_MSC_VER < 1910) || FMT_ICC_VERSION != 0 || \
-    FMT_NVCC != 0
+    defined(__NVCC__)
   // Workaround a bug in MSVC and Intel (Issue 2746).
   template <typename T> FMT_CONSTEXPR FMT_INLINE auto do_map(T&& val) -> T& {
     return val;

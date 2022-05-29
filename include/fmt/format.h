@@ -79,7 +79,7 @@
 
 #ifndef FMT_THROW
 #  if FMT_EXCEPTIONS
-#    if FMT_MSC_VER || FMT_NVCC
+#    if FMT_MSC_VER || defined(__NVCC__)
 FMT_BEGIN_NAMESPACE
 namespace detail {
 template <typename Exception> inline void do_throw(const Exception& x) {
