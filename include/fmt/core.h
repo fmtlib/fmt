@@ -925,6 +925,7 @@ class iterator_buffer<std::back_insert_iterator<Container>,
       : buffer<typename Container::value_type>(c.size()), container_(c) {}
   explicit iterator_buffer(std::back_insert_iterator<Container> out, size_t = 0)
       : iterator_buffer(get_container(out)) {}
+
   auto out() -> std::back_insert_iterator<Container> {
     return std::back_inserter(container_);
   }
@@ -1458,7 +1459,6 @@ class appender : public std::back_insert_iterator<detail::buffer<char>> {
   FMT_UNCHECKED_ITERATOR(appender);
 
   auto operator++() noexcept -> appender& { return *this; }
-
   auto operator++(int) noexcept -> appender { return *this; }
 };
 
@@ -1606,7 +1606,7 @@ struct is_contiguous_back_insert_iterator<std::back_insert_iterator<Container>>
 template <>
 struct is_contiguous_back_insert_iterator<appender> : std::true_type {};
 
-// A type-erased reference to an std::locale to avoid heavy <locale> include.
+// A type-erased reference to an std::locale to avoid a heavy <locale> include.
 class locale_ref {
  private:
   const void* locale_;  // A type-erased pointer to std::locale.
