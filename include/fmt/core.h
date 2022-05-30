@@ -682,10 +682,10 @@ constexpr auto has_const_formatter() -> bool {
 template <typename Container>
 inline auto get_container(std::back_insert_iterator<Container> it)
     -> Container& {
-  using bi_iterator = std::back_insert_iterator<Container>;
-  struct accessor : bi_iterator {
-    accessor(bi_iterator iter) : bi_iterator(iter) {}
-    using bi_iterator::container;
+  using base = std::back_insert_iterator<Container>;
+  struct accessor : base {
+    accessor(base b) : base(b) {}
+    using base::container;
   };
   return *accessor(it).container;
 }
