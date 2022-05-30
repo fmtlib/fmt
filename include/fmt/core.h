@@ -2591,21 +2591,21 @@ FMT_CONSTEXPR FMT_INLINE void parse_format_string(
     return;
   }
   struct writer {
-    FMT_CONSTEXPR void operator()(const Char* pbegin, const Char* pend) {
-      if (pbegin == pend) return;
+    FMT_CONSTEXPR void operator()(const Char* from, const Char* to) {
+      if (from == to) return;
       for (;;) {
         const Char* p = nullptr;
-        if (!find<IS_CONSTEXPR>(pbegin, pend, Char('}'), p))
-          return handler_.on_text(pbegin, pend);
+        if (!find<IS_CONSTEXPR>(from, to, Char('}'), p))
+          return handler_.on_text(from, to);
         ++p;
-        if (p == pend || *p != '}')
+        if (p == to || *p != '}')
           return handler_.on_error("unmatched '}' in format string");
-        handler_.on_text(pbegin, p);
-        pbegin = p + 1;
+        handler_.on_text(from, p);
+        from = p + 1;
       }
     }
     Handler& handler_;
-  } write{handler};
+  } write = {handler};
   while (begin != end) {
     // Doing two passes with memchr (one for '{' and another for '}') is up to
     // 2.5x faster than the naive one-pass implementation on big format strings.
@@ -2620,7 +2620,6 @@ FMT_CONSTEXPR FMT_INLINE void parse_format_string(
 template <typename T, bool = is_named_arg<T>::value> struct strip_named_arg {
   using type = T;
 };
-
 template <typename T> struct strip_named_arg<T, true> {
   using type = remove_cvref_t<decltype(T::value)>;
 };
