@@ -546,18 +546,6 @@ template <typename S> struct char_t_impl<S, enable_if_t<is_string<S>::value>> {
   using type = typename result::value_type;
 };
 
-// Reports a compile-time error if S is not a valid format string.
-template <typename..., typename S, FMT_ENABLE_IF(!is_compile_string<S>::value)>
-FMT_INLINE void check_format_string(const S&) {
-#ifdef FMT_ENFORCE_COMPILE_STRING
-  static_assert(is_compile_string<S>::value,
-                "FMT_ENFORCE_COMPILE_STRING requires all format strings to use "
-                "FMT_STRING.");
-#endif
-}
-template <typename..., typename S, FMT_ENABLE_IF(is_compile_string<S>::value)>
-void check_format_string(S);
-
 FMT_NORETURN FMT_API void throw_format_error(const char* message);
 
 struct error_handler {
@@ -2921,8 +2909,17 @@ class format_string_checker {
   }
 };
 
+// Reports a compile-time error if S is not a valid format string.
+template <typename..., typename S, FMT_ENABLE_IF(!is_compile_string<S>::value)>
+FMT_INLINE void check_format_string(const S&) {
+#ifdef FMT_ENFORCE_COMPILE_STRING
+  static_assert(is_compile_string<S>::value,
+                "FMT_ENFORCE_COMPILE_STRING requires all format strings to use "
+                "FMT_STRING.");
+#endif
+}
 template <typename... Args, typename S,
-          enable_if_t<(is_compile_string<S>::value), int>>
+          FMT_ENABLE_IF(is_compile_string<S>::value)>
 void check_format_string(S format_str) {
   FMT_CONSTEXPR auto s = to_string_view(format_str);
   using checker = format_string_checker<typename S::char_type, error_handler,

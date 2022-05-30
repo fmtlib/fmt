@@ -322,8 +322,6 @@ Utilities
 
 .. doxygenfunction:: fmt::to_string(const T &value) -> std::string
 
-.. doxygenfunction:: fmt::to_string_view(const Char *s) -> basic_string_view<Char>
-
 .. doxygenfunction:: fmt::join(Range &&range, string_view sep) -> join_view<detail::iterator_t<Range>, detail::sentinel_t<Range>>
 
 .. doxygenfunction:: fmt::join(It begin, Sentinel end, string_view sep) -> join_view<It, Sentinel>
