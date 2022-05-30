@@ -222,13 +222,13 @@ if (CMAKE_CXX_STANDARD GREATER_EQUAL 20)
 
   # Compile-time argument name check
   expect_compile(format-string-name "
-    #if defined(FMT_HAS_CONSTEVAL) && FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+    #if defined(FMT_HAS_CONSTEVAL) && FMT_USE_NONTYPE_TEMPLATE_ARGS
       using namespace fmt::literals;
       fmt::print(\"{foo}\", \"foo\"_a=42);
     #endif
   ")
   expect_compile(format-string-name-error "
-    #if defined(FMT_HAS_CONSTEVAL) && FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+    #if defined(FMT_HAS_CONSTEVAL) && FMT_USE_NONTYPE_TEMPLATE_ARGS
       using namespace fmt::literals;
       fmt::print(\"{foo}\", \"bar\"_a=42);
     #else

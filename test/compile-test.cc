@@ -187,7 +187,7 @@ TEST(compile_test, named) {
   EXPECT_THROW(fmt::format(FMT_COMPILE("{invalid}"), fmt::arg("valid", 42)),
                fmt::format_error);
 
-#  if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+#  if FMT_USE_NONTYPE_TEMPLATE_ARGS
   using namespace fmt::literals;
   auto statically_named_field_compiled =
       fmt::detail::compile<decltype("arg"_a = 42)>(FMT_COMPILE("{arg}"));
@@ -285,7 +285,7 @@ TEST(compile_test, print) {
 }
 #endif
 
-#if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+#if FMT_USE_NONTYPE_TEMPLATE_ARGS
 TEST(compile_test, compile_format_string_literal) {
   using namespace fmt::literals;
   EXPECT_EQ("", fmt::format(""_cf));

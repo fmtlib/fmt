@@ -133,7 +133,7 @@
 // Check if exceptions are disabled.
 #ifndef FMT_EXCEPTIONS
 #  if (defined(__GNUC__) && !defined(__EXCEPTIONS)) || \
-      FMT_MSC_VERSION && !_HAS_EXCEPTIONS
+      (FMT_MSC_VERSION && !_HAS_EXCEPTIONS)
 #    define FMT_EXCEPTIONS 0
 #  else
 #    define FMT_EXCEPTIONS 1
@@ -149,19 +149,13 @@
 #  define FMT_NORETURN
 #endif
 
-#if __cplusplus == 201103L || __cplusplus == 201402L
-#  if defined(__INTEL_COMPILER) || defined(__PGI)
-#    define FMT_FALLTHROUGH
-#  elif defined(__clang__)
-#    define FMT_FALLTHROUGH [[clang::fallthrough]]
-#  elif FMT_GCC_VERSION >= 700 && \
-      (!defined(__EDG_VERSION__) || __EDG_VERSION__ >= 520)
-#    define FMT_FALLTHROUGH [[gnu::fallthrough]]
-#  else
-#    define FMT_FALLTHROUGH
-#  endif
-#elif FMT_HAS_CPP17_ATTRIBUTE(fallthrough)
+#if FMT_HAS_CPP17_ATTRIBUTE(fallthrough)
 #  define FMT_FALLTHROUGH [[fallthrough]]
+#elif defined(__clang__)
+#  define FMT_FALLTHROUGH [[clang::fallthrough]]
+#elif FMT_GCC_VERSION >= 700 && \
+    (!defined(__EDG_VERSION__) || __EDG_VERSION__ >= 520)
+#  define FMT_FALLTHROUGH [[gnu::fallthrough]]
 #else
 #  define FMT_FALLTHROUGH
 #endif
@@ -196,7 +190,7 @@
 #  define FMT_UNCHECKED_ITERATOR(It) \
     using _Unchecked_type = It  // Mark iterator as checked.
 #else
-#  define FMT_UNCHECKED_ITERATOR(It) using DummyTypeName = It
+#  define FMT_UNCHECKED_ITERATOR(It) using unchecked_type = It
 #endif
 
 #ifndef FMT_BEGIN_NAMESPACE
@@ -250,9 +244,9 @@
 #endif
 
 #ifndef FMT_CONSTEVAL
-#  if ((FMT_GCC_VERSION >= 1000 || FMT_CLANG_VERSION >= 1101) &&      \
+#  if ((FMT_GCC_VERSION >= 1000 || FMT_CLANG_VERSION >= 1101) &&       \
        __cplusplus >= 202002L && !defined(__apple_build_version__)) || \
-      (defined(__cpp_consteval) &&                                    \
+      (defined(__cpp_consteval) &&                                     \
        (!FMT_MSC_VERSION || _MSC_FULL_VER >= 193030704))
 // consteval is broken in MSVC before VS2022 and Apple clang 13.
 #    define FMT_CONSTEVAL consteval
@@ -262,13 +256,13 @@
 #  endif
 #endif
 
-#ifndef FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+#ifndef FMT_USE_NONTYPE_TEMPLATE_ARGS
 #  if defined(__cpp_nontype_template_args) &&                \
       ((FMT_GCC_VERSION >= 903 && __cplusplus >= 201709L) || \
        __cpp_nontype_template_args >= 201911L)
-#    define FMT_USE_NONTYPE_TEMPLATE_PARAMETERS 1
+#    define FMT_USE_NONTYPE_TEMPLATE_ARGS 1
 #  else
-#    define FMT_USE_NONTYPE_TEMPLATE_PARAMETERS 0
+#    define FMT_USE_NONTYPE_TEMPLATE_ARGS 0
 #  endif
 #endif
 
@@ -313,7 +307,7 @@ struct monostate {
 
 FMT_BEGIN_DETAIL_NAMESPACE
 
-// Suppress "unused variable" warnings with the method described in
+// Suppresses "unused variable" warnings with the method described in
 // https://herbsutter.com/2009/10/18/mailbag-shutting-up-compiler-warnings/.
 // (void)var does not work on many Intel compilers.
 template <typename... T> FMT_CONSTEXPR void ignore_unused(const T&...) {}
@@ -328,7 +322,7 @@ constexpr FMT_INLINE auto is_constant_evaluated(
 #endif
 }
 
-// A function to suppress "conditional expression is constant" warnings.
+// Suppresses "conditional expression is constant" warnings.
 template <typename T> constexpr FMT_INLINE auto const_check(T value) -> T {
   return value;
 }
@@ -338,7 +332,7 @@ FMT_NORETURN FMT_API void assert_fail(const char* file, int line,
 
 #ifndef FMT_ASSERT
 #  ifdef NDEBUG
-// FMT_ASSERT is not empty to avoid -Werror=empty-body.
+// FMT_ASSERT is not empty to avoid -Wempty-body.
 #    define FMT_ASSERT(condition, message) \
       ::fmt::detail::ignore_unused((condition), (message))
 #  else
@@ -389,8 +383,7 @@ FMT_CONSTEXPR auto to_unsigned(Int value) ->
 FMT_MSC_WARNING(suppress : 4566) constexpr unsigned char micro[] = "\u00B5";
 
 constexpr auto is_utf8() -> bool {
-  // Avoid buggy sign extensions in MSVC's constant evaluation mode.
-  // https://developercommunity.visualstudio.com/t/C-difference-in-behavior-for-unsigned/1233612
+  // Avoid buggy sign extensions in MSVC's constant evaluation mode (#2297).
   using uchar = unsigned char;
   return FMT_UNICODE || (sizeof(micro) == 3 && uchar(micro[0]) == 0xC2 &&
                          uchar(micro[1]) == 0xB5);
@@ -2855,7 +2848,7 @@ template <typename Handler> class specs_checker : public Handler {
 
 constexpr int invalid_arg_index = -1;
 
-#if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+#if FMT_USE_NONTYPE_TEMPLATE_ARGS
 template <int N, typename T, typename... Args, typename Char>
 constexpr auto get_arg_index_by_name(basic_string_view<Char> name) -> int {
   if constexpr (detail::is_statically_named_arg<T>()) {
@@ -2870,7 +2863,7 @@ constexpr auto get_arg_index_by_name(basic_string_view<Char> name) -> int {
 
 template <typename... Args, typename Char>
 FMT_CONSTEXPR auto get_arg_index_by_name(basic_string_view<Char> name) -> int {
-#if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+#if FMT_USE_NONTYPE_TEMPLATE_ARGS
   if constexpr (sizeof...(Args) > 0)
     return get_arg_index_by_name<0, Args...>(name);
 #endif
@@ -2903,7 +2896,7 @@ class format_string_checker {
     return context_.check_arg_id(id), id;
   }
   FMT_CONSTEXPR auto on_arg_id(basic_string_view<Char> id) -> int {
-#if FMT_USE_NONTYPE_TEMPLATE_PARAMETERS
+#if FMT_USE_NONTYPE_TEMPLATE_ARGS
     auto index = get_arg_index_by_name<Args...>(id);
     if (index == invalid_arg_index) on_error("named argument is not found");
     return context_.check_arg_id(index), index;
