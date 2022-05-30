@@ -493,14 +493,13 @@ using string_view = basic_string_view<char>;
 template <typename T> struct is_char : std::false_type {};
 template <> struct is_char<char> : std::true_type {};
 
-// A base class for compile-time strings. It is defined in the fmt namespace to
-// make formatting functions visible via ADL, e.g. format(FMT_STRING("{}"), 42).
+FMT_BEGIN_DETAIL_NAMESPACE
+
+// A base class for compile-time strings.
 struct compile_string {};
 
 template <typename S>
 struct is_compile_string : std::is_base_of<compile_string, S> {};
-
-FMT_BEGIN_DETAIL_NAMESPACE
 
 // Returns a string view of `s`.
 template <typename Char, FMT_ENABLE_IF(is_char<Char>::value)>
@@ -519,8 +518,7 @@ constexpr auto to_string_view(basic_string_view<Char> s)
 }
 template <typename Char,
           FMT_ENABLE_IF(!std::is_empty<std_string_view<Char>>::value)>
-inline auto to_string_view(std_string_view<Char> s)
-    -> basic_string_view<Char> {
+inline auto to_string_view(std_string_view<Char> s) -> basic_string_view<Char> {
   return s;
 }
 template <typename S, FMT_ENABLE_IF(is_compile_string<S>::value)>
@@ -533,6 +531,7 @@ void to_string_view(...);
 // Specifies whether S is a string type convertible to fmt::basic_string_view.
 // It should be a constexpr function but MSVC 2017 fails to compile it in
 // enable_if and MSVC 2015 fails to compile it as an alias template.
+// ADL invocation of to_string_view is DEPRECATED!
 template <typename S>
 struct is_string : std::is_class<decltype(to_string_view(std::declval<S>()))> {
 };
@@ -2918,7 +2917,7 @@ FMT_INLINE void check_format_string(const S&) {
 template <typename... Args, typename S,
           FMT_ENABLE_IF(is_compile_string<S>::value)>
 void check_format_string(S format_str) {
-  FMT_CONSTEXPR auto s = to_string_view(format_str);
+  FMT_CONSTEXPR auto s = basic_string_view<typename S::char_type>(format_str);
   using checker = format_string_checker<typename S::char_type, error_handler,
                                         remove_cvref_t<Args>...>;
   FMT_CONSTEXPR bool invalid_format =

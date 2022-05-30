@@ -165,8 +165,9 @@ TEST(ostream_test, join_fallback_formatter) {
 
 #if FMT_USE_CONSTEXPR
 TEST(ostream_test, constexpr_string) {
-  EXPECT_EQ("42", format(FMT_STRING("{}"), std::string("42")));
-  EXPECT_EQ("a string", format(FMT_STRING("{0}"), test_string("a string")));
+  EXPECT_EQ("42", fmt::format(FMT_STRING("{}"), std::string("42")));
+  EXPECT_EQ("a string",
+            fmt::format(FMT_STRING("{0}"), test_string("a string")));
 }
 #endif
 
