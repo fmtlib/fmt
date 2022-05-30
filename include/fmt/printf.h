@@ -10,7 +10,6 @@
 
 #include <algorithm>  // std::max
 #include <limits>     // std::numeric_limits
-#include <ostream>
 
 #include "format.h"
 
