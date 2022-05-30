@@ -493,6 +493,15 @@ using string_view = basic_string_view<char>;
 template <typename T> struct is_char : std::false_type {};
 template <> struct is_char<char> : std::true_type {};
 
+// A base class for compile-time strings. It is defined in the fmt namespace to
+// make formatting functions visible via ADL, e.g. format(FMT_STRING("{}"), 42).
+struct compile_string {};
+
+template <typename S>
+struct is_compile_string : std::is_base_of<compile_string, S> {};
+
+FMT_BEGIN_DETAIL_NAMESPACE
+
 // Returns a string view of `s`.
 template <typename Char, FMT_ENABLE_IF(is_char<Char>::value)>
 FMT_INLINE auto to_string_view(const Char* s) -> basic_string_view<Char> {
@@ -509,29 +518,17 @@ constexpr auto to_string_view(basic_string_view<Char> s)
   return s;
 }
 template <typename Char,
-          FMT_ENABLE_IF(!std::is_empty<detail::std_string_view<Char>>::value)>
-inline auto to_string_view(detail::std_string_view<Char> s)
+          FMT_ENABLE_IF(!std::is_empty<std_string_view<Char>>::value)>
+inline auto to_string_view(std_string_view<Char> s)
     -> basic_string_view<Char> {
   return s;
 }
-
-// A base class for compile-time strings. It is defined in the fmt namespace to
-// make formatting functions visible via ADL, e.g. format(FMT_STRING("{}"), 42).
-struct compile_string {};
-
-template <typename S>
-struct is_compile_string : std::is_base_of<compile_string, S> {};
-
 template <typename S, FMT_ENABLE_IF(is_compile_string<S>::value)>
 constexpr auto to_string_view(const S& s)
     -> basic_string_view<typename S::char_type> {
   return basic_string_view<typename S::char_type>(s);
 }
-
-FMT_BEGIN_DETAIL_NAMESPACE
-
 void to_string_view(...);
-using fmt::to_string_view;
 
 // Specifies whether S is a string type convertible to fmt::basic_string_view.
 // It should be a constexpr function but MSVC 2017 fails to compile it in

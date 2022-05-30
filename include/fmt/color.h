@@ -483,7 +483,7 @@ template <typename S, typename Char = char_t<S>>
 void vprint(std::FILE* f, const text_style& ts, const S& format,
             basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   basic_memory_buffer<Char> buf;
-  detail::vformat_to(buf, ts, to_string_view(format), args);
+  detail::vformat_to(buf, ts, detail::to_string_view(format), args);
   if (detail::is_utf8()) {
     detail::print(f, basic_string_view<Char>(buf.begin(), buf.size()));
   } else {
@@ -533,7 +533,7 @@ inline std::basic_string<Char> vformat(
     const text_style& ts, const S& format_str,
     basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   basic_memory_buffer<Char> buf;
-  detail::vformat_to(buf, ts, to_string_view(format_str), args);
+  detail::vformat_to(buf, ts, detail::to_string_view(format_str), args);
   return fmt::to_string(buf);
 }
 
@@ -552,7 +552,7 @@ inline std::basic_string<Char> vformat(
 template <typename S, typename... Args, typename Char = char_t<S>>
 inline std::basic_string<Char> format(const text_style& ts, const S& format_str,
                                       const Args&... args) {
-  return fmt::vformat(ts, to_string_view(format_str),
+  return fmt::vformat(ts, detail::to_string_view(format_str),
                       fmt::make_format_args<buffer_context<Char>>(args...));
 }
 
@@ -587,7 +587,7 @@ template <typename OutputIt, typename S, typename... Args,
 inline auto format_to(OutputIt out, const text_style& ts, const S& format_str,
                       Args&&... args) ->
     typename std::enable_if<enable, OutputIt>::type {
-  return vformat_to(out, ts, to_string_view(format_str),
+  return vformat_to(out, ts, detail::to_string_view(format_str),
                     fmt::make_format_args<buffer_context<char_t<S>>>(args...));
 }
 

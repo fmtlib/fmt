@@ -240,28 +240,6 @@ TEST(xchar_test, sign_not_truncated) {
   EXPECT_THROW(fmt::format(format_str, 42), fmt::format_error);
 }
 
-namespace fake_qt {
-class QString {
- public:
-  QString(const wchar_t* s) : s_(s) {}
-  const wchar_t* utf16() const noexcept { return s_.data(); }
-  int size() const noexcept { return static_cast<int>(s_.size()); }
-
- private:
-  std::wstring s_;
-};
-
-fmt::basic_string_view<wchar_t> to_string_view(const QString& s) noexcept {
-  return {s.utf16(), static_cast<size_t>(s.size())};
-}
-}  // namespace fake_qt
-
-TEST(format_test, format_foreign_strings) {
-  using fake_qt::QString;
-  EXPECT_EQ(fmt::format(QString(L"{}"), 42), L"42");
-  EXPECT_EQ(fmt::format(QString(L"{}"), QString(L"42")), L"42");
-}
-
 TEST(xchar_test, chrono) {
   auto tm = std::tm();
   tm.tm_year = 116;
