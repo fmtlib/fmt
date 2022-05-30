@@ -1314,10 +1314,13 @@ struct float_info<T, enable_if_t<std::numeric_limits<T>::digits == 64 ||
   static const int exponent_bits = 15;
 };
 
+template <int> constexpr int check_digits();
+
 // A double-double floating point number.
 template <typename T>
-struct float_info<T, enable_if_t<std::numeric_limits<T>::digits >= 106 &&
-                                 !std::numeric_limits<T>::is_iec559>> {
+struct float_info<T, enable_if_t<!std::numeric_limits<T>::is_iec559 &&
+                                 !is_float128<T>::value>> {
+  static constexpr int check = check_digits<std::numeric_limits<T>::digits>();
   using carrier_uint = detail::uint128_t;
 };
 
