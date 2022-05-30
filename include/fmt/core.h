@@ -3080,10 +3080,8 @@ template <typename Char, typename... Args> class basic_format_string {
 
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
 // Workaround broken conversion on older gcc.
-template <typename... Args> using format_string = string_view;
-template <typename S> auto runtime(const S& s) -> basic_string_view<char_t<S>> {
-  return s;
-}
+template <typename...> using format_string = string_view;
+inline auto runtime(string_view s) -> basic_string_view<char> { return s; }
 #else
 template <typename... Args>
 using format_string = basic_format_string<char, type_identity_t<Args>...>;
@@ -3097,9 +3095,7 @@ using format_string = basic_format_string<char, type_identity_t<Args>...>;
     fmt::print(fmt::runtime("{:d}"), "I am not a number");
   \endrst
  */
-template <typename S> auto runtime(const S& s) -> basic_runtime<char_t<S>> {
-  return {{s}};
-}
+inline auto runtime(string_view s) -> basic_runtime<char> { return {{s}}; }
 #endif
 
 FMT_API auto vformat(string_view fmt, format_args args) -> std::string;
