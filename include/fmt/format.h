@@ -1318,8 +1318,10 @@ template <int> constexpr int check_digits();
 
 // A double-double floating point number.
 template <typename T>
-struct float_info<T, enable_if_t<!std::numeric_limits<T>::is_iec559 &&
-                                 !is_float128<T>::value>> {
+struct float_info<T, enable_if_t<!(std::numeric_limits<T>::digits == 64 ||
+                                   std::numeric_limits<T>::digits == 113 ||
+                                   is_float128<T>::value) &&
+                                 std::is_same<T, long double>::value>> {
   static constexpr int check = check_digits<std::numeric_limits<T>::digits>();
   using carrier_uint = detail::uint128_t;
 };
