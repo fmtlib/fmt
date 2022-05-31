@@ -755,6 +755,9 @@ struct is_fast_float : bool_constant<std::numeric_limits<T>::is_iec559 &&
                                      sizeof(T) <= sizeof(double)> {};
 template <typename T> struct is_fast_float<T, false> : std::false_type {};
 
+template <typename T>
+using is_double_double = bool_constant<std::numeric_limits<T>::digits == 106>;
+
 #ifndef FMT_USE_FULL_CACHE_DRAGONBOX
 #  define FMT_USE_FULL_CACHE_DRAGONBOX 0
 #endif
@@ -1314,15 +1317,9 @@ struct float_info<T, enable_if_t<std::numeric_limits<T>::digits == 64 ||
   static const int exponent_bits = 15;
 };
 
-template <int> constexpr int check_digits();
-
 // A double-double floating point number.
 template <typename T>
-struct float_info<T, enable_if_t<!(std::numeric_limits<T>::digits == 64 ||
-                                   std::numeric_limits<T>::digits == 113 ||
-                                   is_float128<T>::value) &&
-                                 std::is_same<T, long double>::value>> {
-  static constexpr int check = check_digits<std::numeric_limits<T>::digits>();
+struct float_info<T, enable_if_t<is_double_double<T>::value>> {
   using carrier_uint = detail::uint128_t;
 };
 
@@ -1400,8 +1397,7 @@ template <typename F> struct basic_fp {
   template <typename Float> FMT_CONSTEXPR basic_fp(Float n) { assign(n); }
 
   // Assigns n to this and return true iff predecessor is closer than successor.
-  template <typename Float,
-            FMT_ENABLE_IF(std::numeric_limits<Float>::is_iec559)>
+  template <typename Float, FMT_ENABLE_IF(!is_double_double<Float>::value)>
   FMT_CONSTEXPR auto assign(Float n) -> bool {
     static_assert(std::numeric_limits<Float>::digits <= 113, "unsupported FP");
     // Assume Float is in the format [sign][exponent][significand].
@@ -1426,8 +1422,7 @@ template <typename F> struct basic_fp {
     return is_predecessor_closer;
   }
 
-  template <typename Float,
-            FMT_ENABLE_IF(!std::numeric_limits<Float>::is_iec559)>
+  template <typename Float, FMT_ENABLE_IF(is_double_double<Float>::value)>
   FMT_CONSTEXPR auto assign(Float n) -> bool {
     static_assert(std::numeric_limits<double>::is_iec559, "unsupported FP");
     return assign(static_cast<double>(n));

@@ -379,17 +379,17 @@ bool operator>=(const double_double& lhs, const double_double& rhs) {
 namespace std {
 template <> struct is_floating_point<double_double> : std::true_type {};
 template <> struct numeric_limits<double_double> {
-  static constexpr bool is_iec559 = false;
+  // is_iec559 is true for double-double in libstdc++.
+  static constexpr bool is_iec559 = true;
   static constexpr int digits = 106;
 };
 }  // namespace std
 
 TEST(format_impl_test, write_double_double) {
-  // TODO: restore
-  // auto s = std::string();
-  // fmt::detail::write<char>(std::back_inserter(s), double_double(42), {});
+  auto s = std::string();
+  fmt::detail::write<char>(std::back_inserter(s), double_double(42), {});
 #ifndef _MSC_VER  // MSVC has an issue with specializing is_floating_point.
-  // EXPECT_EQ(s, "42");
+  EXPECT_EQ(s, "42");
 #endif
 }
 

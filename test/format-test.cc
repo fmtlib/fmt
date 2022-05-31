@@ -1984,7 +1984,7 @@ TEST(format_test, to_string) {
   EXPECT_EQ(fmt::to_string(zero), "0");
 
 #if FMT_USE_FLOAT128
-  EXPECT_EQ(fmt::to_string(__float128(0.42)), "0.42");
+  EXPECT_EQ(fmt::to_string(__float128(0.5)), "0.5");
 #endif
 }
 
