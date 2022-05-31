@@ -14,6 +14,11 @@ TEST(std_test, path) {
   EXPECT_EQ(fmt::format("{:8}", std::filesystem::path("foo")), "\"foo\"   ");
   EXPECT_EQ(fmt::format("{}", std::filesystem::path("foo\"bar.txt")),
             "\"foo\\\"bar.txt\"");
+
+#  ifdef _WIN32
+  EXPECT_EQ(fmt::format("{}", std::filesystem::path(L"Файл.txt")),
+            "\"\xd0\xa4\xd0\xb0\xd0\xb9\xd0\xbb.txt\"");
+#  endif
 #endif
 }
 
