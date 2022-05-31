@@ -28,6 +28,16 @@ void write_escaped_path(basic_memory_buffer<Char>& quoted,
                         const std::filesystem::path& p) {
   write_escaped_string<Char>(std::back_inserter(quoted), p.string<Char>());
 }
+#  ifdef _WIN32
+template <>
+void write_escaped_path<char>(basic_memory_buffer<char>& quoted,
+                              const std::filesystem::path& p) {
+  auto s = p.u8string();
+  write_escaped_string<char>(
+      std::back_inserter(quoted),
+      string_view(reinterpret_cast<const char*>(s.c_str()), s.size()));
+}
+#  endif
 template <>
 void write_escaped_path<std::filesystem::path::value_type>(
     basic_memory_buffer<std::filesystem::path::value_type>& quoted,
