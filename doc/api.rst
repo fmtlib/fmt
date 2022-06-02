@@ -209,6 +209,10 @@ template and implement ``parse`` and ``format`` methods::
       // parse specifiers until '}' or the end of the range. In this example
       // the formatter should parse the 'f' specifier and return an iterator
       // pointing to '}'.
+      
+      // Please also note that this character range may be empty, in case of
+      // the "{}" format string, so therefore you should check ctx.begin()
+      // for equality with ctx.end().
 
       // Parse the presentation format and store it in the formatter:
       auto it = ctx.begin(), end = ctx.end();
