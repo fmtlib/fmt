@@ -542,6 +542,70 @@ template <typename S> struct char_t_impl<S, enable_if_t<is_string<S>::value>> {
   using type = typename result::value_type;
 };
 
+enum class type {
+  none_type,
+  // Integer types should go first,
+  int_type,
+  uint_type,
+  long_long_type,
+  ulong_long_type,
+  int128_type,
+  uint128_type,
+  bool_type,
+  char_type,
+  last_integer_type = char_type,
+  // followed by floating-point types.
+  float_type,
+  double_type,
+  long_double_type,
+  last_numeric_type = long_double_type,
+  cstring_type,
+  string_type,
+  pointer_type,
+  custom_type
+};
+
+// Maps core type T to the corresponding type enum constant.
+template <typename T, typename Char>
+struct type_constant : std::integral_constant<type, type::custom_type> {};
+
+#define FMT_TYPE_CONSTANT(Type, constant) \
+  template <typename Char>                \
+  struct type_constant<Type, Char>        \
+      : std::integral_constant<type, type::constant> {}
+
+FMT_TYPE_CONSTANT(int, int_type);
+FMT_TYPE_CONSTANT(unsigned, uint_type);
+FMT_TYPE_CONSTANT(long long, long_long_type);
+FMT_TYPE_CONSTANT(unsigned long long, ulong_long_type);
+FMT_TYPE_CONSTANT(int128_opt, int128_type);
+FMT_TYPE_CONSTANT(uint128_opt, uint128_type);
+FMT_TYPE_CONSTANT(bool, bool_type);
+FMT_TYPE_CONSTANT(Char, char_type);
+FMT_TYPE_CONSTANT(float, float_type);
+FMT_TYPE_CONSTANT(double, double_type);
+FMT_TYPE_CONSTANT(long double, long_double_type);
+FMT_TYPE_CONSTANT(const Char*, cstring_type);
+FMT_TYPE_CONSTANT(basic_string_view<Char>, string_type);
+FMT_TYPE_CONSTANT(const void*, pointer_type);
+
+constexpr bool is_integral_type(type t) {
+  return t > type::none_type && t <= type::last_integer_type;
+}
+
+constexpr bool is_arithmetic_type(type t) {
+  return t > type::none_type && t <= type::last_numeric_type;
+}
+
+template <size_t NUM_ARGS> struct format_arg_types {
+  type types[NUM_ARGS > 0 ? NUM_ARGS : 1];
+};
+
+template <typename... T>
+constexpr format_arg_types<sizeof...(T)> make_format_arg_types() {
+  return {type_constant<T, char>::value...};
+}
+
 FMT_NORETURN FMT_API void throw_format_error(const char* message);
 
 struct error_handler {
@@ -645,14 +709,17 @@ class compile_parse_context
     : public basic_format_parse_context<Char, ErrorHandler> {
  private:
   int num_args_;
+  const type* types_;
   using base = basic_format_parse_context<Char, ErrorHandler>;
 
  public:
+  template <size_t NUM_ARGS>
   explicit FMT_CONSTEXPR compile_parse_context(
-      basic_string_view<Char> format_str,
-      int num_args = (std::numeric_limits<int>::max)(), ErrorHandler eh = {},
-      int next_arg_id = 0)
-      : base(format_str, eh, next_arg_id), num_args_(num_args) {}
+      basic_string_view<Char> format_str, const format_arg_types<NUM_ARGS>& t,
+      ErrorHandler eh = {}, int next_arg_id = 0)
+      : base(format_str, eh, next_arg_id),
+        num_args_(NUM_ARGS),
+        types_(t.types) {}
 
   constexpr int num_args() const { return num_args_; }
 
@@ -1113,61 +1180,6 @@ template <typename... Args> constexpr auto count_named_args() -> size_t {
 template <typename... Args>
 constexpr auto count_statically_named_args() -> size_t {
   return count<is_statically_named_arg<Args>::value...>();
-}
-
-enum class type {
-  none_type,
-  // Integer types should go first,
-  int_type,
-  uint_type,
-  long_long_type,
-  ulong_long_type,
-  int128_type,
-  uint128_type,
-  bool_type,
-  char_type,
-  last_integer_type = char_type,
-  // followed by floating-point types.
-  float_type,
-  double_type,
-  long_double_type,
-  last_numeric_type = long_double_type,
-  cstring_type,
-  string_type,
-  pointer_type,
-  custom_type
-};
-
-// Maps core type T to the corresponding type enum constant.
-template <typename T, typename Char>
-struct type_constant : std::integral_constant<type, type::custom_type> {};
-
-#define FMT_TYPE_CONSTANT(Type, constant) \
-  template <typename Char>                \
-  struct type_constant<Type, Char>        \
-      : std::integral_constant<type, type::constant> {}
-
-FMT_TYPE_CONSTANT(int, int_type);
-FMT_TYPE_CONSTANT(unsigned, uint_type);
-FMT_TYPE_CONSTANT(long long, long_long_type);
-FMT_TYPE_CONSTANT(unsigned long long, ulong_long_type);
-FMT_TYPE_CONSTANT(int128_opt, int128_type);
-FMT_TYPE_CONSTANT(uint128_opt, uint128_type);
-FMT_TYPE_CONSTANT(bool, bool_type);
-FMT_TYPE_CONSTANT(Char, char_type);
-FMT_TYPE_CONSTANT(float, float_type);
-FMT_TYPE_CONSTANT(double, double_type);
-FMT_TYPE_CONSTANT(long double, long_double_type);
-FMT_TYPE_CONSTANT(const Char*, cstring_type);
-FMT_TYPE_CONSTANT(basic_string_view<Char>, string_type);
-FMT_TYPE_CONSTANT(const void*, pointer_type);
-
-constexpr bool is_integral_type(type t) {
-  return t > type::none_type && t <= type::last_integer_type;
-}
-
-constexpr bool is_arithmetic_type(type t) {
-  return t > type::none_type && t <= type::last_numeric_type;
 }
 
 struct unformattable {};
@@ -2881,7 +2893,7 @@ class format_string_checker {
   // here and will use is_constant_evaluated and downcasting to access the data
   // needed for compile-time checks: https://godbolt.org/z/GvWzcTjh1.
   using parse_context_type = compile_parse_context<Char, ErrorHandler>;
-  enum { num_args = sizeof...(Args) };
+  static constexpr int num_args = sizeof...(Args);
 
   // Format specifier parsing function.
   using parse_func = const Char* (*)(parse_context_type&);
@@ -2892,7 +2904,7 @@ class format_string_checker {
  public:
   explicit FMT_CONSTEXPR format_string_checker(
       basic_string_view<Char> format_str, ErrorHandler eh)
-      : context_(format_str, num_args, eh),
+      : context_(format_str, make_format_arg_types<Args...>(), eh),
         parse_funcs_{&parse_format_specs<Args, parse_context_type>...} {}
 
   FMT_CONSTEXPR void on_text(const Char*, const Char*) {}
