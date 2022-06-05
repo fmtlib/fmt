@@ -571,6 +571,8 @@ class basic_format_parse_context : private ErrorHandler {
   basic_string_view<Char> format_str_;
   int next_arg_id_;
 
+  FMT_CONSTEXPR void do_check_arg_id(int id);
+
  public:
   using char_type = Char;
   using iterator = typename basic_string_view<Char>::iterator;
@@ -603,22 +605,26 @@ class basic_format_parse_context : private ErrorHandler {
     the next argument index and switches to the automatic indexing.
    */
   FMT_CONSTEXPR auto next_arg_id() -> int {
-    // Don't check if the argument id is valid to avoid overhead and because it
-    // will be checked during formatting anyway.
-    if (next_arg_id_ >= 0) return next_arg_id_++;
-    on_error("cannot switch from manual to automatic argument indexing");
-    return 0;
+    if (next_arg_id_ < 0) {
+      on_error("cannot switch from manual to automatic argument indexing");
+      return 0;
+    }
+    int id = next_arg_id_++;
+    do_check_arg_id(id);
+    return id;
   }
 
   /**
     Reports an error if using the automatic argument indexing; otherwise
     switches to the manual indexing.
    */
-  FMT_CONSTEXPR void check_arg_id(int) {
-    if (next_arg_id_ > 0)
+  FMT_CONSTEXPR void check_arg_id(int id) {
+    if (next_arg_id_ > 0) {
       on_error("cannot switch from automatic to manual argument indexing");
-    else
-      next_arg_id_ = -1;
+      return;
+    }
+    next_arg_id_ = -1;
+    do_check_arg_id(id);
   }
 
   FMT_CONSTEXPR void check_arg_id(basic_string_view<Char>) {}
@@ -631,6 +637,50 @@ class basic_format_parse_context : private ErrorHandler {
 };
 
 using format_parse_context = basic_format_parse_context<char>;
+
+FMT_BEGIN_DETAIL_NAMESPACE
+// A parse context with extra data used only in compile-time checks.
+template <typename Char, typename ErrorHandler = detail::error_handler>
+class compile_parse_context
+    : public basic_format_parse_context<Char, ErrorHandler> {
+ private:
+  int num_args_;
+  using base = basic_format_parse_context<Char, ErrorHandler>;
+
+ public:
+  explicit FMT_CONSTEXPR compile_parse_context(
+      basic_string_view<Char> format_str,
+      int num_args = (std::numeric_limits<int>::max)(), ErrorHandler eh = {},
+      int next_arg_id = 0)
+      : base(format_str, eh, next_arg_id), num_args_(num_args) {}
+
+  constexpr int num_args() const { return num_args_; }
+
+  FMT_CONSTEXPR auto next_arg_id() -> int {
+    int id = base::next_arg_id();
+    if (id >= num_args_) this->on_error("argument not found");
+    return id;
+  }
+
+  FMT_CONSTEXPR void check_arg_id(int id) {
+    base::check_arg_id(id);
+    if (id >= num_args_) this->on_error("argument not found");
+  }
+  using base::check_arg_id;
+};
+FMT_END_DETAIL_NAMESPACE
+
+template <typename Char, typename ErrorHandler>
+FMT_CONSTEXPR void
+basic_format_parse_context<Char, ErrorHandler>::do_check_arg_id(int id) {
+  // Argument id is only checked at compile-time during parsing because
+  // formatting has its own validation.
+  if (detail::is_constant_evaluated() && FMT_GCC_VERSION >= 1200) {
+    using context = detail::compile_parse_context<Char, ErrorHandler>;
+    if (id >= static_cast<context*>(this)->num_args())
+      on_error("argument not found");
+  }
+}
 
 template <typename Context> class basic_format_arg;
 template <typename Context> class basic_format_args;
@@ -2640,36 +2690,6 @@ FMT_CONSTEXPR auto parse_format_specs(ParseContext& ctx)
   return f.parse(ctx);
 }
 
-// A parse context with extra argument id checks. It is only used at compile
-// time because adding checks at runtime would introduce substantial overhead
-// and would be redundant since argument ids are checked when arguments are
-// retrieved anyway.
-template <typename Char, typename ErrorHandler = error_handler>
-class compile_parse_context
-    : public basic_format_parse_context<Char, ErrorHandler> {
- private:
-  int num_args_;
-  using base = basic_format_parse_context<Char, ErrorHandler>;
-
- public:
-  explicit FMT_CONSTEXPR compile_parse_context(
-      basic_string_view<Char> format_str,
-      int num_args = (std::numeric_limits<int>::max)(), ErrorHandler eh = {})
-      : base(format_str, eh), num_args_(num_args) {}
-
-  FMT_CONSTEXPR auto next_arg_id() -> int {
-    int id = base::next_arg_id();
-    if (id >= num_args_) this->on_error("argument not found");
-    return id;
-  }
-
-  FMT_CONSTEXPR void check_arg_id(int id) {
-    base::check_arg_id(id);
-    if (id >= num_args_) this->on_error("argument not found");
-  }
-  using base::check_arg_id;
-};
-
 template <typename ErrorHandler>
 FMT_CONSTEXPR void check_int_type_spec(presentation_type type,
                                        ErrorHandler&& eh) {
@@ -2857,6 +2877,9 @@ FMT_CONSTEXPR auto get_arg_index_by_name(basic_string_view<Char> name) -> int {
 template <typename Char, typename ErrorHandler, typename... Args>
 class format_string_checker {
  private:
+  // In the future basic_format_parse_context will replace compile_parse_context
+  // here and will use is_constant_evaluated and downcasting to access the data
+  // needed for compile-time checks: https://godbolt.org/z/GvWzcTjh1.
   using parse_context_type = compile_parse_context<Char, ErrorHandler>;
   enum { num_args = sizeof...(Args) };
 

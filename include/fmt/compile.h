@@ -337,7 +337,8 @@ template <typename T, typename Char>
 constexpr parse_specs_result<T, Char> parse_specs(basic_string_view<Char> str,
                                                   size_t pos, int next_arg_id) {
   str.remove_prefix(pos);
-  auto ctx = basic_format_parse_context<Char>(str, {}, next_arg_id);
+  auto ctx =
+      compile_parse_context<Char>(str, max_value<int>(), {}, next_arg_id);
   auto f = formatter<T, Char>();
   auto end = f.parse(ctx);
   return {f, pos + fmt::detail::to_unsigned(end - str.data()) + 1,
