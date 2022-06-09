@@ -1493,7 +1493,11 @@ TEST(format_test, format_pointer) {
   EXPECT_EQ("0x0", fmt::format("{0}", static_cast<void*>(nullptr)));
   EXPECT_EQ("0x1234", fmt::format("{0}", reinterpret_cast<void*>(0x1234)));
   EXPECT_EQ("0x1234", fmt::format("{0:p}", reinterpret_cast<void*>(0x1234)));
-  EXPECT_EQ("0x" + std::string(sizeof(void*) * CHAR_BIT / 4, 'f'),
+  // On CHERI (or other fat-pointer) systems, the size of a pointer is greater
+  // than the size an integer that can hold a virtual address.  There is no
+  // portable address-as-an-integer type (yet) in C++, so we use `size_t` as
+  // the closest equivalent for now.
+  EXPECT_EQ("0x" + std::string(sizeof(size_t) * CHAR_BIT / 4, 'f'),
             fmt::format("{0}", reinterpret_cast<void*>(~uintptr_t())));
   EXPECT_EQ("0x1234",
             fmt::format("{}", fmt::ptr(reinterpret_cast<int*>(0x1234))));
