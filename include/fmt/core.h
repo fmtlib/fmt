@@ -597,15 +597,6 @@ constexpr bool is_arithmetic_type(type t) {
   return t > type::none_type && t <= type::last_numeric_type;
 }
 
-template <size_t NUM_ARGS> struct format_arg_types {
-  type types[NUM_ARGS > 0 ? NUM_ARGS : 1];
-};
-
-template <typename... T>
-constexpr format_arg_types<sizeof...(T)> make_format_arg_types() {
-  return {type_constant<T, char>::value...};
-}
-
 FMT_NORETURN FMT_API void throw_format_error(const char* message);
 
 struct error_handler {
@@ -713,13 +704,10 @@ class compile_parse_context
   using base = basic_format_parse_context<Char, ErrorHandler>;
 
  public:
-  template <size_t NUM_ARGS>
   explicit FMT_CONSTEXPR compile_parse_context(
-      basic_string_view<Char> format_str, const format_arg_types<NUM_ARGS>& t,
+      basic_string_view<Char> format_str, int num_args, const type* types,
       ErrorHandler eh = {}, int next_arg_id = 0)
-      : base(format_str, eh, next_arg_id),
-        num_args_(NUM_ARGS),
-        types_(t.types) {}
+      : base(format_str, eh, next_arg_id), num_args_(num_args), types_(types) {}
 
   constexpr int num_args() const { return num_args_; }
 
@@ -2900,12 +2888,14 @@ class format_string_checker {
 
   parse_context_type context_;
   parse_func parse_funcs_[num_args > 0 ? num_args : 1];
+  type types_[num_args > 0 ? num_args : 1];
 
  public:
   explicit FMT_CONSTEXPR format_string_checker(
       basic_string_view<Char> format_str, ErrorHandler eh)
-      : context_(format_str, make_format_arg_types<Args...>(), eh),
-        parse_funcs_{&parse_format_specs<Args, parse_context_type>...} {}
+      : context_(format_str, num_args, types_, eh),
+        parse_funcs_{&parse_format_specs<Args, parse_context_type>...},
+        types_{type_constant<Args, char>::value...} {}
 
   FMT_CONSTEXPR void on_text(const Char*, const Char*) {}
 

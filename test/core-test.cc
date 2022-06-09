@@ -385,11 +385,11 @@ VISIT_TYPE(unsigned long, unsigned long long);
 
 template <typename T> class numeric_arg_test : public testing::Test {};
 
-using types =
+using test_types =
     testing::Types<bool, signed char, unsigned char, short, unsigned short, int,
                    unsigned, long, unsigned long, long long, unsigned long long,
                    float, double, long double>;
-TYPED_TEST_SUITE(numeric_arg_test, types);
+TYPED_TEST_SUITE(numeric_arg_test, test_types);
 
 template <typename T, fmt::enable_if_t<std::is_integral<T>::value, int> = 0>
 T test_value() {
