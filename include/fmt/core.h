@@ -710,8 +710,8 @@ class basic_format_parse_context : private ErrorHandler {
     next_arg_id_ = -1;
     do_check_arg_id(id);
   }
-
   FMT_CONSTEXPR void check_arg_id(basic_string_view<Char>) {}
+  FMT_CONSTEXPR void check_dynamic_spec(int arg_id);
 
   FMT_CONSTEXPR void on_error(const char* message) {
     ErrorHandler::on_error(message);
@@ -738,7 +738,8 @@ class compile_parse_context
       ErrorHandler eh = {}, int next_arg_id = 0)
       : base(format_str, eh, next_arg_id), num_args_(num_args), types_(types) {}
 
-  constexpr int num_args() const { return num_args_; }
+  constexpr auto num_args() const -> int { return num_args_; }
+  constexpr auto arg_type(int id) const -> type { return types_[id]; }
 
   FMT_CONSTEXPR auto next_arg_id() -> int {
     int id = base::next_arg_id();
@@ -751,6 +752,11 @@ class compile_parse_context
     if (id >= num_args_) this->on_error("argument not found");
   }
   using base::check_arg_id;
+
+  FMT_CONSTEXPR void check_dynamic_spec(int arg_id) {
+    if (arg_id < num_args_ && types_ && !is_integral_type(types_[arg_id]))
+      this->on_error("width/precision is not integer");
+  }
 };
 FMT_END_DETAIL_NAMESPACE
 
@@ -763,6 +769,15 @@ basic_format_parse_context<Char, ErrorHandler>::do_check_arg_id(int id) {
     using context = detail::compile_parse_context<Char, ErrorHandler>;
     if (id >= static_cast<context*>(this)->num_args())
       on_error("argument not found");
+  }
+}
+
+template <typename Char, typename ErrorHandler>
+FMT_CONSTEXPR void
+basic_format_parse_context<Char, ErrorHandler>::check_dynamic_spec(int arg_id) {
+  if (detail::is_constant_evaluated()) {
+    using context = detail::compile_parse_context<Char, ErrorHandler>;
+    static_cast<context*>(this)->check_dynamic_spec(arg_id);
   }
 }
 
@@ -2243,11 +2258,14 @@ class dynamic_specs_handler
 
   FMT_CONSTEXPR auto make_arg_ref(int arg_id) -> arg_ref_type {
     context_.check_arg_id(arg_id);
+    context_.check_dynamic_spec(arg_id);
     return arg_ref_type(arg_id);
   }
 
   FMT_CONSTEXPR auto make_arg_ref(auto_id) -> arg_ref_type {
-    return arg_ref_type(context_.next_arg_id());
+    int arg_id = context_.next_arg_id();
+    context_.check_dynamic_spec(arg_id);
+    return arg_ref_type(arg_id);
   }
 
   FMT_CONSTEXPR auto make_arg_ref(basic_string_view<char_type> arg_id)

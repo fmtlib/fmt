@@ -584,6 +584,7 @@ struct test_parse_context {
 
   constexpr int next_arg_id() { return 11; }
   template <typename Id> FMT_CONSTEXPR void check_arg_id(Id) {}
+  FMT_CONSTEXPR void check_dynamic_spec(int) {}
 
   constexpr const char* begin() { return nullptr; }
   constexpr const char* end() { return nullptr; }

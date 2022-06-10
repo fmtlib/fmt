@@ -2177,6 +2177,7 @@ TEST(format_test, format_string_errors) {
   EXPECT_ERROR("{: }", "format specifier requires signed argument", unsigned);
   EXPECT_ERROR("{:{}}", "argument not found", int);
   EXPECT_ERROR("{:.{}}", "argument not found", double);
+  EXPECT_ERROR("{:{}}", "width/precision is not integer", int, double);
   EXPECT_ERROR("{:.2}", "precision not allowed for this argument type", int);
   EXPECT_ERROR("{:s}", "invalid type specifier", int);
   EXPECT_ERROR("{:s}", "invalid type specifier", char);
