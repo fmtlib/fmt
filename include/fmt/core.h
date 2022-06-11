@@ -2887,8 +2887,8 @@ class format_string_checker {
   using parse_func = const Char* (*)(parse_context_type&);
 
   parse_context_type context_;
-  parse_func parse_funcs_[num_args > 0 ? num_args : 1];
-  type types_[num_args > 0 ? num_args : 1];
+  parse_func parse_funcs_[num_args > 0 ? static_cast<size_t>(num_args) : 1];
+  type types_[num_args > 0 ? static_cast<size_t>(num_args) : 1];
 
  public:
   explicit FMT_CONSTEXPR format_string_checker(
