@@ -16,8 +16,15 @@ TEST(std_test, path) {
             "\"foo\\\"bar.txt\"");
 
 #  ifdef _WIN32
-  EXPECT_EQ(fmt::format("{}", std::filesystem::path(L"Файл.txt")),
-            "\"\xd0\xa4\xd0\xb0\xd0\xb9\xd0\xbb.txt\"");
+  // File.txt in Russian.
+  const wchar_t unicode_path[] = {0x424, 0x430, 0x439, 0x43b, 0x2e,
+                                  0x74,  0x78,  0x74,  0};
+  const char unicode_u8path[] = {'"',        char(0xd0), char(0xa4), char(0xd0),
+                                 char(0xb0), char(0xd0), char(0xb9), char(0xd0),
+                                 char(0xbb), '.',        't',        'x',
+                                 't',        '"',        '\0'};
+  EXPECT_EQ(fmt::format("{}", std::filesystem::path(unicode_path)),
+            unicode_u8path);
 #  endif
 #endif
 }
