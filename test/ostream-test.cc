@@ -5,6 +5,8 @@
 //
 // For the license information refer to format.h.
 
+#include <fstream>
+
 #include "fmt/format.h"
 
 using fmt::runtime;
@@ -296,4 +298,9 @@ void format_abstract_compiles(const abstract& a) {
 TEST(ostream_test, is_formattable) {
   EXPECT_TRUE(fmt::is_formattable<std::string>());
   EXPECT_TRUE(fmt::is_formattable<fmt::detail::std_string_view<char>>());
+}
+
+TEST(ostream_test, closed_ofstream) {
+  std::ofstream ofs;
+  fmt::print(ofs, "discard");
 }
