@@ -205,20 +205,22 @@ using make_index_sequence = make_integer_sequence<size_t, N>;
 template <typename T>
 using tuple_index_sequence = make_index_sequence<std::tuple_size<T>::value>;
 
-template <typename T, bool = is_tuple_like_<T>::value>
+template <typename T, typename C, bool = is_tuple_like_<T>::value>
 struct is_tuple_formattable_ {
   static constexpr const bool value = false;
 };
-template <typename T> struct is_tuple_formattable_<T, true> {
+template <typename T, typename C> struct is_tuple_formattable_<T, C, true> {
   template <std::size_t... I>
-  static std::true_type
-    check2(index_sequence<I...>,integer_sequence<bool,(I == I)...>);
-  static std::false_type
-    check2(...);
+  static std::true_type check2(index_sequence<I...>,
+                               integer_sequence<bool, (I == I)...>);
+  static std::false_type check2(...);
   template <std::size_t... I>
-  static decltype(check2(index_sequence<I...>{},
-			 integer_sequence<bool,(fmt::is_formattable<typename std::tuple_element<I, T>::type>::value)...>{}))
-    check(index_sequence<I...>);
+  static decltype(check2(
+      index_sequence<I...>{},
+      integer_sequence<
+          bool, (fmt::is_formattable<typename std::tuple_element<I, T>::type,
+                                     C>::value)...>{}))
+      check(index_sequence<I...>);
 
  public:
   static constexpr const bool value =
@@ -306,14 +308,15 @@ template <typename T> struct is_tuple_like {
       detail::is_tuple_like_<T>::value && !detail::is_range_<T>::value;
 };
 
-template <typename T> struct is_tuple_formattable {
-  static constexpr const bool value = detail::is_tuple_formattable_<T>::value;
+template <typename T, typename C> struct is_tuple_formattable {
+  static constexpr const bool value =
+      detail::is_tuple_formattable_<T, C>::value;
 };
 
 template <typename TupleT, typename Char>
 struct formatter<TupleT, Char,
                  enable_if_t<fmt::is_tuple_like<TupleT>::value &&
-                             fmt::is_tuple_formattable<TupleT>::value>> {
+                             fmt::is_tuple_formattable<TupleT, Char>::value>> {
  private:
   // C++11 generic lambda for format().
   template <typename FormatContext> struct format_each {
