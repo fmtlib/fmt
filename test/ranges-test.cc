@@ -90,6 +90,18 @@ TEST(ranges_test, format_tuple) {
       std::tuple<int, float, std::string, char>(42, 1.5f, "this is tuple", 'i');
   EXPECT_EQ(fmt::format("{}", t), "(42, 1.5, \"this is tuple\", 'i')");
   EXPECT_EQ(fmt::format("{}", std::tuple<>()), "()");
+
+  enum class noformatenum{b};
+  struct noformatstruct{};
+  EXPECT_TRUE((fmt::is_formattable<std::tuple<>>::value));
+  EXPECT_FALSE((fmt::is_formattable<noformatenum>::value));
+  EXPECT_FALSE((fmt::is_formattable<noformatstruct>::value));
+  EXPECT_FALSE((fmt::is_formattable<std::tuple<noformatenum>>::value));
+  EXPECT_FALSE((fmt::is_formattable<std::tuple<noformatstruct>>::value));
+  EXPECT_FALSE((fmt::is_formattable<std::tuple<noformatstruct,int>>::value));
+  EXPECT_FALSE((fmt::is_formattable<std::tuple<int,noformatenum>>::value));
+  EXPECT_FALSE((fmt::is_formattable<std::tuple<noformatstruct,noformatenum>>::value));
+  EXPECT_TRUE((fmt::is_formattable<std::tuple<int,float>>::value));
 }
 
 #ifdef FMT_RANGES_TEST_ENABLE_FORMAT_STRUCT

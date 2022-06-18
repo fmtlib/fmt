@@ -315,10 +315,12 @@ TEST(xchar_test, ostream) {
 #endif
 }
 
+#ifdef FMT_XCHAR_TEST_ENABLE_FORMAT_MAP
 TEST(xchar_test, format_map) {
   auto m = std::map<std::wstring, int>{{L"one", 1}, {L"t\"wo", 2}};
   EXPECT_EQ(fmt::format(L"{}", m), L"{\"one\": 1, \"t\\\"wo\": 2}");
 }
+#endif
 
 TEST(xchar_test, escape_string) {
   using vec = std::vector<std::wstring>;
