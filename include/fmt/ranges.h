@@ -203,7 +203,7 @@ using make_index_sequence = make_integer_sequence<size_t, N>;
 #endif
 
 template <typename T>
-using tuple_index_sequence = make_index_sequence<std::tuple_size_v<T>>;
+using tuple_index_sequence = make_index_sequence<std::tuple_size<T>::value>;
 
 template <typename T, bool = is_tuple_like_<T>::value>
 struct is_tuple_formattable_ {
@@ -211,9 +211,14 @@ struct is_tuple_formattable_ {
 };
 template <typename T> struct is_tuple_formattable_<T, true> {
   template <std::size_t... I>
-  static std::integral_constant<
-      bool, (fmt::is_formattable<std::tuple_element_t<I, T>>::value && ...)>
-      check(index_sequence<I...>);
+  static std::true_type
+    check2(index_sequence<I...>,integer_sequence<bool,(I == I)...>);
+  static std::false_type
+    check2(...);
+  template <std::size_t... I>
+  static decltype(check2(index_sequence<I...>{},
+			 integer_sequence<bool,(fmt::is_formattable<typename std::tuple_element<I, T>::type>::value)...>{}))
+    check(index_sequence<I...>);
 
  public:
   static constexpr const bool value =
