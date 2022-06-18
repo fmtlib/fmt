@@ -206,10 +206,11 @@ template <typename T>
 using tuple_index_sequence = make_index_sequence<std::tuple_size<T>::value>;
 
 template <typename T, typename C, bool = is_tuple_like_<T>::value>
-struct is_tuple_formattable_ {
+class is_tuple_formattable_ {
+ public:
   static constexpr const bool value = false;
 };
-template <typename T, typename C> struct is_tuple_formattable_<T, C, true> {
+template <typename T, typename C> class is_tuple_formattable_<T, C, true> {
   template <std::size_t... I>
   static std::true_type check2(index_sequence<I...>,
                                integer_sequence<bool, (I == I)...>);
