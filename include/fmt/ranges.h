@@ -219,9 +219,8 @@ template <typename T, typename C> class is_tuple_formattable_<T, C, true> {
   static decltype(check2(
       index_sequence<I...>{},
       integer_sequence<
-          bool, (fmt::is_formattable<typename std::tuple_element<I, T>::type,
-                                     C>::value)...>{}))
-      check(index_sequence<I...>);
+          bool, (is_formattable<typename std::tuple_element<I, T>::type,
+                                C>::value)...>{})) check(index_sequence<I...>);
 
  public:
   static constexpr const bool value =
