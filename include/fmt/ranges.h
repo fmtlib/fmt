@@ -202,6 +202,31 @@ template <size_t N>
 using make_index_sequence = make_integer_sequence<size_t, N>;
 #endif
 
+template <typename T>
+using tuple_index_sequence = make_index_sequence<std::tuple_size<T>::value>;
+
+template <typename T, typename C, bool = is_tuple_like_<T>::value>
+class is_tuple_formattable_ {
+ public:
+  static constexpr const bool value = false;
+};
+template <typename T, typename C> class is_tuple_formattable_<T, C, true> {
+  template <std::size_t... I>
+  static std::true_type check2(index_sequence<I...>,
+                               integer_sequence<bool, (I == I)...>);
+  static std::false_type check2(...);
+  template <std::size_t... I>
+  static decltype(check2(
+      index_sequence<I...>{},
+      integer_sequence<
+          bool, (is_formattable<typename std::tuple_element<I, T>::type,
+                                C>::value)...>{})) check(index_sequence<I...>);
+
+ public:
+  static constexpr const bool value =
+      decltype(check(tuple_index_sequence<T>{}))::value;
+};
+
 template <class Tuple, class F, size_t... Is>
 void for_each(index_sequence<Is...>, Tuple&& tup, F&& f) noexcept {
   using std::get;
@@ -283,8 +308,15 @@ template <typename T> struct is_tuple_like {
       detail::is_tuple_like_<T>::value && !detail::is_range_<T>::value;
 };
 
+template <typename T, typename C> struct is_tuple_formattable {
+  static constexpr const bool value =
+      detail::is_tuple_formattable_<T, C>::value;
+};
+
 template <typename TupleT, typename Char>
-struct formatter<TupleT, Char, enable_if_t<fmt::is_tuple_like<TupleT>::value>> {
+struct formatter<TupleT, Char,
+                 enable_if_t<fmt::is_tuple_like<TupleT>::value &&
+                             fmt::is_tuple_formattable<TupleT, Char>::value>> {
  private:
   // C++11 generic lambda for format().
   template <typename FormatContext> struct format_each {
