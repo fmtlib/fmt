@@ -269,6 +269,14 @@ using range_reference_type =
 template <typename Range>
 using uncvref_type = remove_cvref_t<range_reference_type<Range>>;
 
+template <typename Range>
+using uncvref_first_type = remove_cvref_t<
+    decltype(std::declval<range_reference_type<Range>>().first)>;
+
+template <typename Range>
+using uncvref_second_type = remove_cvref_t<
+    decltype(std::declval<range_reference_type<Range>>().second)>;
+
 template <typename OutputIt> OutputIt write_delimiter(OutputIt out) {
   *out++ = ',';
   *out++ = ' ';
@@ -452,11 +460,12 @@ struct formatter<
     enable_if_t<detail::is_map<T>::value
 // Workaround a bug in MSVC 2019 and earlier.
 #if !FMT_MSC_VERSION
-                && (is_formattable<detail::uncvref_type<T>, Char>::value ||
-                    detail::has_fallback_formatter<detail::uncvref_type<T>,
-                                                   Char>::value)
+        && (is_formattable<detail::uncvref_first_type<T>, Char>::value ||
+            detail::has_fallback_formatter<detail::uncvref_first_type<T>, Char>::value)
+        && (is_formattable<detail::uncvref_second_type<T>, Char>::value ||
+            detail::has_fallback_formatter<detail::uncvref_second_type<T>, Char>::value)
 #endif
-                >> {
+    >> {
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
     return ctx.begin();
