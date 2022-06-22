@@ -469,7 +469,7 @@ A ``std::variant`` is only formattable if every variant alternative is formattab
   
 **Example**::
 
-  #include <fmt/variant.h>
+  #include <fmt/std.h>
 
   std::variant<char, float> v0{'x'};
   // Prints "<'x'>"
