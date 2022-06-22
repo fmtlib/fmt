@@ -113,48 +113,14 @@ template <typename T, typename C> class is_variant_formattable_ {
       decltype(check(variant_index_sequence<T>{}))::value;
 };
 
-template <typename Char, typename OutputIt>
-auto write_variant_alternative(OutputIt out, basic_string_view<Char> str)
-    -> OutputIt {
-  return write_escaped_string(out, str);
-}
-
-// Returns true if T has a std::string-like interface, like std::string_view.
-template <typename T> class is_std_string_likevv {
-  template <typename U>
-  static auto check(U* p)
-      -> decltype((void)p->find('a'), p->length(), (void)p->data(), int());
-  template <typename> static void check(...);
-
- public:
-  static constexpr const bool value =
-      is_string<T>::value ||
-      std::is_convertible<T, std_string_view<char>>::value ||
-      !std::is_void<decltype(check<T>(nullptr))>::value;
-};
-
-template <typename Char>
-struct is_std_string_likevv<fmt::basic_string_view<Char>> : std::true_type {};
-
-template <typename Char, typename OutputIt, typename T,
-          FMT_ENABLE_IF(std::is_convertible<T, std_string_view<char>>::value)>
-inline auto write_variant_alternative(OutputIt out, const T& str) -> OutputIt {
-  auto sv = std_string_view<Char>(str);
-  return write_variant_alternative<Char>(out, basic_string_view<Char>(sv));
-}
-
-template <typename Char, typename OutputIt, typename Arg,
-          FMT_ENABLE_IF(std::is_same<Arg, Char>::value)>
-OutputIt write_variant_alternative(OutputIt out, const Arg v) {
-  return write_escaped_char(out, v);
-}
-
-template <typename Char, typename OutputIt, typename Arg,
-          FMT_ENABLE_IF(
-              !is_std_string_likevv<typename std::decay<Arg>::type>::value &&
-              !std::is_same<Arg, Char>::value)>
-OutputIt write_variant_alternative(OutputIt out, const Arg& v) {
-  return write<Char>(out, v);
+template <typename Char, typename OutputIt, typename T>
+auto write_variant_alternative(OutputIt out, const T& v) -> OutputIt {
+  if constexpr (is_string<T>::value)
+    return write_escaped_string<Char>(out, detail::to_string_view(v));
+  else if constexpr (std::is_same_v<T, Char>)
+    return write_escaped_char(out, v);
+  else
+    return write<Char>(out, v);
 }
 
 }  // namespace detail
