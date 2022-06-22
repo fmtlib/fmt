@@ -21,11 +21,41 @@
 
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
 
+* Added ``fmt::styled`` that applies a text style to an individual argument
+  (`#2793 <https://github.com/fmtlib/fmt/pull/2793>`_).
+  For example (`godbolt <https://godbolt.org/z/vWGW7v5M6>`__):
+
+  .. code:: c++
+
+     #include <fmt/chrono.h>
+     #include <fmt/color.h>
+
+     int main() {
+       auto now = std::chrono::system_clock::now();
+       fmt::print(
+         "[{}] {}: {}\n",
+         fmt::styled(now, fmt::emphasis::bold),
+         fmt::styled("error", fg(fmt::color::red)),
+         "something went wrong");
+     }
+
+  prints
+
+  .. image:: https://user-images.githubusercontent.com/576385/
+             175071215-12809244-dab0-4005-96d8-7cd911c964d5.png
+
+  Thanks `@rbrugo (Riccardo Brugo) <https://github.com/rbrugo>`_.
+
 * Implemented escaping of wide strings in ranges
   (`#2904 <https://github.com/fmtlib/fmt/pull/2904>`_).
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
 
-* Made compile-time checks with named arguments of custom types and
+* Added support for ranges with ``begin`` / ``end`` found via the
+  argument-dependent lookup
+  (`#2807 <https://github.com/fmtlib/fmt/pull/2807>`_).
+  Thanks `@rbrugo (Riccardo Brugo) <https://github.com/rbrugo>`_.
+
+* Made compile-time checks work with named arguments of custom types and
   ``std::ostream`` ``print`` overloads
   (`#2816 <https://github.com/fmtlib/fmt/issues/2816>`_,
   `#2817 <https://github.com/fmtlib/fmt/issues/2817>`_,
@@ -41,9 +71,15 @@
   Thanks `@davidchisnall (David Chisnall) <https://github.com/davidchisnall>`_.
 
 * Improved documentation
-  (`#2815 <https://github.com/fmtlib/fmt/pull/2815>`_,
+  (`#2789 <https://github.com/fmtlib/fmt/pull/2789>`_,
+  `#2803 <https://github.com/fmtlib/fmt/pull/2803>`_,
+  `#2805 <https://github.com/fmtlib/fmt/pull/2805>`_,
+  `#2815 <https://github.com/fmtlib/fmt/pull/2815>`_,
   `#2924 <https://github.com/fmtlib/fmt/pull/2924>`_).
-  Thanks `@anoonD (cre) <https://github.com/anoonD>`_,
+  Thanks `@setoye (Alta) <https://github.com/setoye>`_,
+  `@rtobar <https://github.com/rtobar>`_,
+  `@rbrugo (Riccardo Brugo) <https://github.com/rbrugo>`_,
+  `@anoonD (cre) <https://github.com/anoonD>`_,
   `@leha-bot (Alex) <https://github.com/leha-bot>`_.
 
 * Improved build configuration
@@ -59,9 +95,12 @@
   `@Vertexwahn <https://github.com/Vertexwahn>`_.
 
 * Fixed various warnings and compilation issues
-  (`@timsong-cpp <https://github.com/timsong-cpp>`_,
+  (`#2796 <https://github.com/fmtlib/fmt/issues/2796>`_,
+  `#2797 <https://github.com/fmtlib/fmt/pull/2797>`_,
+  `#2801 <https://github.com/fmtlib/fmt/pull/2801>`_,
+  `#2802 <https://github.com/fmtlib/fmt/pull/2802>`_,
   `#2818 <https://github.com/fmtlib/fmt/issues/2818>`_,
-  `#2819 <https://github.com/fmtlib/fmt/pull/2819>`_
+  `#2819 <https://github.com/fmtlib/fmt/pull/2819>`_,
   `#2861 <https://github.com/fmtlib/fmt/pull/2861>`_,
   `#2882 <https://github.com/fmtlib/fmt/pull/2882>`_,
   `#2892 <https://github.com/fmtlib/fmt/pull/2892>`_,
@@ -73,7 +112,11 @@
   `#2937 <https://github.com/fmtlib/fmt/pull/2937>`_,
   `#2938 <https://github.com/fmtlib/fmt/pull/2938>`_,
   `#2940 <https://github.com/fmtlib/fmt/pull/2940>`_).
-  Thanks `@seanm (Sean McBride) <https://github.com/seanm>`_,
+  Thanks `@dalboris (Boris Dalstein) <https://github.com/dalboris>`_,
+  `@seanm (Sean McBride) <https://github.com/seanm>`_,
+  `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_,
+  `@timsong-cpp <https://github.com/timsong-cpp>`_,
+  `@seanm (Sean McBride) <https://github.com/seanm>`_,
   `@frithrah <https://github.com/frithrah>`_,
   `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_,
   `@Agga <https://github.com/Agga>`_,
