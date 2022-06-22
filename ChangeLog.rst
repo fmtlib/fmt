@@ -1,6 +1,87 @@
 9.0.0 - TBD
 -----------
 
+* Added experimental ``std::filesystem::path`` formatting support
+  (`#2902 <https://github.com/fmtlib/fmt/pull/2902>`_,
+  `#2918 <https://github.com/fmtlib/fmt/pull/2918>`_).
+  For example (`godbolt <https://godbolt.org/z/o44dMexEb>`__):
+
+  .. code:: c++
+
+     #include <filesystem>
+     #include <fmt/std.h>
+
+     int main() {
+       fmt::print("There is no place like {}.", std::filesystem::path("/home"));
+     }
+
+  prints::
+
+     There is no place like "/home".
+
+  Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
+
+* Implemented escaping of wide strings in ranges
+  (`#2904 <https://github.com/fmtlib/fmt/pull/2904>`_).
+  Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
+
+* Made compile-time checks with named arguments of custom types and
+  ``std::ostream`` ``print`` overloads
+  (`#2816 <https://github.com/fmtlib/fmt/issues/2816>`_,
+  `#2817 <https://github.com/fmtlib/fmt/issues/2817>`_,
+  `#2819 <https://github.com/fmtlib/fmt/pull/2819>`_).
+  Thanks `@timsong-cpp <https://github.com/timsong-cpp>`_.
+
+* Removed a redundant buffer resize when formatting to ``std::ostream``
+  (`#2843 <https://github.com/fmtlib/fmt/pull/2843>`_).
+  Thanks `@jcelerier (Jean-Michaël Celerier) <https://github.com/jcelerier>`_.
+
+* Improved support for systems such as CHERI with extra data stored in pointers
+  (`#2932 <https://github.com/fmtlib/fmt/pull/2932>`_).
+  Thanks `@davidchisnall (David Chisnall) <https://github.com/davidchisnall>`_.
+
+* Improved documentation
+  (`#2815 <https://github.com/fmtlib/fmt/pull/2815>`_,
+  `#2924 <https://github.com/fmtlib/fmt/pull/2924>`_).
+  Thanks `@anoonD (cre) <https://github.com/anoonD>`_,
+  `@leha-bot (Alex) <https://github.com/leha-bot>`_.
+
+* Improved build configuration
+  (`#2836 <https://github.com/fmtlib/fmt/pull/2836>`_,
+  `#2852 <https://github.com/fmtlib/fmt/pull/2852>`_,
+  `#2907 <https://github.com/fmtlib/fmt/pull/2907>`_,
+  `#2913 <https://github.com/fmtlib/fmt/pull/2913>`_,
+  `#2914 <https://github.com/fmtlib/fmt/pull/2914>`_).
+  Thanks `@mattiasljungstrom (Mattias Ljungström)
+  <https://github.com/mattiasljungstrom>`_,
+  `@kieselnb (Nick Kiesel) <https://github.com/kieselnb>`_,
+  `@nathannaveen <https://github.com/nathannaveen>`_,
+  `@Vertexwahn <https://github.com/Vertexwahn>`_.
+
+* Fixed various warnings and compilation issues
+  (`@timsong-cpp <https://github.com/timsong-cpp>`_,
+  `#2818 <https://github.com/fmtlib/fmt/issues/2818>`_,
+  `#2819 <https://github.com/fmtlib/fmt/pull/2819>`_
+  `#2861 <https://github.com/fmtlib/fmt/pull/2861>`_,
+  `#2882 <https://github.com/fmtlib/fmt/pull/2882>`_,
+  `#2892 <https://github.com/fmtlib/fmt/pull/2892>`_,
+  `#2903 <https://github.com/fmtlib/fmt/pull/2903>`_,
+  `#2909 <https://github.com/fmtlib/fmt/pull/2909>`_,
+  `#2922 <https://github.com/fmtlib/fmt/pull/2922>`_,
+  `#2927 <https://github.com/fmtlib/fmt/pull/2927>`_,
+  `#2929 <https://github.com/fmtlib/fmt/pull/2929>`_,
+  `#2937 <https://github.com/fmtlib/fmt/pull/2937>`_,
+  `#2938 <https://github.com/fmtlib/fmt/pull/2938>`_,
+  `#2940 <https://github.com/fmtlib/fmt/pull/2940>`_).
+  Thanks `@seanm (Sean McBride) <https://github.com/seanm>`_,
+  `@frithrah <https://github.com/frithrah>`_,
+  `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_,
+  `@Agga <https://github.com/Agga>`_,
+  `@madmaxoft (Mattes D) <https://github.com/madmaxoft>`_,
+  `@JurajX (Juraj) <https://github.com/JurajX>`_,
+  `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_,
+  `@jehelset <https://github.com/jehelset>`_.
+
 8.1.1 - 2022-01-06
 ------------------
 
