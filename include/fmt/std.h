@@ -80,7 +80,7 @@ template <typename Char> struct formatter<std::monostate, Char> {
     return ctx.begin();
   }
 
-  template <typename FormatContext = format_context>
+  template <typename FormatContext>
   auto format(const std::monostate&, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     auto out = ctx.out();
