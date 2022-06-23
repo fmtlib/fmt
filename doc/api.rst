@@ -472,11 +472,11 @@ A ``std::variant`` is only formattable if every variant alternative is formattab
   #include <fmt/std.h>
 
   std::variant<char, float> v0{'x'};
-  // Prints "<'x'>"
+  // Prints "variant('x')"
   fmt::print("{}", v0);
 
-  std::variant<std::monostate, char> v1{};
-  // Prints "< >"
+  std::variant<std::monostate, char> v1;
+  // Prints "variant(monostate)"
 
 .. _compile-api:
 

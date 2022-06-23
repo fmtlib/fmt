@@ -72,6 +72,7 @@ FMT_END_NAMESPACE
 
 #ifdef __cpp_lib_variant
 #  include <variant>
+
 FMT_BEGIN_NAMESPACE
 template <typename Char> struct formatter<std::monostate, Char> {
   template <typename ParseContext>
@@ -83,7 +84,7 @@ template <typename Char> struct formatter<std::monostate, Char> {
   auto format(const std::monostate&, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     auto out = ctx.out();
-    *out++ = ' ';
+    out = detail::write<Char>(out, "monostate");
     return out;
   }
 };
@@ -134,27 +135,28 @@ template <typename T, typename C> struct is_variant_formattable {
       detail::is_variant_formattable_<T, C>::value;
 };
 
-template <typename VariantT, typename Char>
+template <typename Variant, typename Char>
 struct formatter<
-    VariantT, Char,
+    Variant, Char,
     std::enable_if_t<std::conjunction_v<
-        is_variant_like<VariantT>, is_variant_formattable<VariantT, Char>>>> {
+        is_variant_like<Variant>, is_variant_formattable<Variant, Char>>>> {
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
     return ctx.begin();
   }
 
-  template <typename FormatContext = format_context>
-  auto format(const VariantT& value, FormatContext& ctx) const
+  template <typename FormatContext>
+  auto format(const Variant& value, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     auto out = ctx.out();
-    *out++ = '<';
+
+    out = detail::write<Char>(out, "variant(");
     std::visit(
         [&](const auto& v) {
           out = detail::write_variant_alternative<Char>(out, v);
         },
         value);
-    *out++ = '>';
+    *out++ = ')';
     return out;
   }
 };
