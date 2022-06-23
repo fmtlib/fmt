@@ -46,6 +46,17 @@
 
   Thanks `@rbrugo (Riccardo Brugo) <https://github.com/rbrugo>`_.
 
+* Made ``fmt::print`` overload for text styles correctly handle UTF-8
+  (`#2701 <https://github.com/fmtlib/fmt/pull/2701>`_).
+  Thanks `@AlexGuteniev (Alex Guteniev) <https://github.com/AlexGuteniev>`_.
+
+* Improved the implementation of
+  `Dragonbox <https://github.com/jk-jeon/dragonbox>`_, the algorithm used for
+  the default floating-point formatting
+  (`#2713 <https://github.com/fmtlib/fmt/pull/2713>`_,
+  `#2750 <https://github.com/fmtlib/fmt/pull/2750>`_).
+  Thanks `@jk-jeon (Junekey Jeon) <https://github.com/jk-jeon>`_
+
 * Implemented escaping of wide strings in ranges
   (`#2904 <https://github.com/fmtlib/fmt/pull/2904>`_).
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
@@ -55,12 +66,30 @@
   (`#2807 <https://github.com/fmtlib/fmt/pull/2807>`_).
   Thanks `@rbrugo (Riccardo Brugo) <https://github.com/rbrugo>`_.
 
+* Fixed formatting of certain kinds of ranges of ranges
+  (`#2787 <https://github.com/fmtlib/fmt/pull/2787>`_).
+  Thanks `@BRevzin (Barry Revzin) <https://github.com/BRevzin>`_.
+
+* Made ``fmt::join`` compatible with format string compilation
+  (`#2719 <https://github.com/fmtlib/fmt/issues/2719>`_,
+  `#2720 <https://github.com/fmtlib/fmt/pull/2720>`_).
+  Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
+
 * Made compile-time checks work with named arguments of custom types and
   ``std::ostream`` ``print`` overloads
   (`#2816 <https://github.com/fmtlib/fmt/issues/2816>`_,
   `#2817 <https://github.com/fmtlib/fmt/issues/2817>`_,
   `#2819 <https://github.com/fmtlib/fmt/pull/2819>`_).
   Thanks `@timsong-cpp <https://github.com/timsong-cpp>`_.
+
+* Removed ``make_args_checked`` because it is no longer needed for compile-time
+  checks (`#2760 <https://github.com/fmtlib/fmt/pull/2760>`_).
+  Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
+
+* Made access mode of a created file consistent with ``fopen`` by setting
+  ``S_IWGRP`` and ``S_IWOTH``
+  (`#2733 <https://github.com/fmtlib/fmt/pull/2733>`_).
+  Thanks `@arogge (Andreas Rogge) <https://github.com/arogge>`_.
 
 * Removed a redundant buffer resize when formatting to ``std::ostream``
   (`#2843 <https://github.com/fmtlib/fmt/pull/2843>`_).
@@ -71,31 +100,61 @@
   Thanks `@davidchisnall (David Chisnall) <https://github.com/davidchisnall>`_.
 
 * Improved documentation
-  (`#2789 <https://github.com/fmtlib/fmt/pull/2789>`_,
+  (`#2706 <https://github.com/fmtlib/fmt/pull/2706>`_,
+  `#2712 <https://github.com/fmtlib/fmt/pull/2712>`_,
+  `#2789 <https://github.com/fmtlib/fmt/pull/2789>`_,
   `#2803 <https://github.com/fmtlib/fmt/pull/2803>`_,
   `#2805 <https://github.com/fmtlib/fmt/pull/2805>`_,
   `#2815 <https://github.com/fmtlib/fmt/pull/2815>`_,
   `#2924 <https://github.com/fmtlib/fmt/pull/2924>`_).
-  Thanks `@setoye (Alta) <https://github.com/setoye>`_,
+  Thanks `@BRevzin (Barry Revzin) <https://github.com/BRevzin>`_,
+  `@Pokechu22 <https://github.com/Pokechu22>`_,
+  `@setoye (Alta) <https://github.com/setoye>`_,
   `@rtobar <https://github.com/rtobar>`_,
   `@rbrugo (Riccardo Brugo) <https://github.com/rbrugo>`_,
   `@anoonD (cre) <https://github.com/anoonD>`_,
   `@leha-bot (Alex) <https://github.com/leha-bot>`_.
 
 * Improved build configuration
-  (`#2836 <https://github.com/fmtlib/fmt/pull/2836>`_,
+  (`#2766 <https://github.com/fmtlib/fmt/pull/2766>`_,
+  `#2772 <https://github.com/fmtlib/fmt/pull/2772>`_,
+  `#2836 <https://github.com/fmtlib/fmt/pull/2836>`_,
   `#2852 <https://github.com/fmtlib/fmt/pull/2852>`_,
   `#2907 <https://github.com/fmtlib/fmt/pull/2907>`_,
   `#2913 <https://github.com/fmtlib/fmt/pull/2913>`_,
   `#2914 <https://github.com/fmtlib/fmt/pull/2914>`_).
-  Thanks `@mattiasljungstrom (Mattias Ljungström)
+  Thanks `@kambala-decapitator (Andrey Filipenkov)
+  <https://github.com/kambala-decapitator>`_,
+  `@mattiasljungstrom (Mattias Ljungström)
   <https://github.com/mattiasljungstrom>`_,
   `@kieselnb (Nick Kiesel) <https://github.com/kieselnb>`_,
   `@nathannaveen <https://github.com/nathannaveen>`_,
   `@Vertexwahn <https://github.com/Vertexwahn>`_.
 
 * Fixed various warnings and compilation issues
-  (`#2796 <https://github.com/fmtlib/fmt/issues/2796>`_,
+  (`#2408 <https://github.com/fmtlib/fmt/issues/2408>`_,
+  `#2507 <https://github.com/fmtlib/fmt/issues/2507>`_,
+  `#2715 <https://github.com/fmtlib/fmt/issues/2715>`_,
+  `#2722 <https://github.com/fmtlib/fmt/pull/2722>`_,
+  `#2724 <https://github.com/fmtlib/fmt/pull/2724>`_,
+  `#2725 <https://github.com/fmtlib/fmt/pull/2725>`_,
+  `#2726 <https://github.com/fmtlib/fmt/issues/2726>`_,
+  `#2728 <https://github.com/fmtlib/fmt/pull/2728>`_,
+  `#2732 <https://github.com/fmtlib/fmt/pull/2732>`_,
+  `#2742 <https://github.com/fmtlib/fmt/pull/2742>`_,
+  `#2746 <https://github.com/fmtlib/fmt/issues/2746>`_,
+  `#2754 <https://github.com/fmtlib/fmt/issues/2754>`_,
+  `#2755 <https://github.com/fmtlib/fmt/pull/2755>`_,
+  `#2758 <https://github.com/fmtlib/fmt/pull/2758>`_,
+  `#2761 <https://github.com/fmtlib/fmt/issues/2761>`_,
+  `#2762 <https://github.com/fmtlib/fmt/pull/2762>`_,
+  `#2763 <https://github.com/fmtlib/fmt/issues/2763>`_,
+  `#2765 <https://github.com/fmtlib/fmt/pull/2765>`_,
+  `#2770 <https://github.com/fmtlib/fmt/pull/2770>`_,
+  `#2779 <https://github.com/fmtlib/fmt/pull/2779>`_,
+  `#2782 <https://github.com/fmtlib/fmt/pull/2782>`_,
+  `#2783 <https://github.com/fmtlib/fmt/pull/2783>`_,
+  `#2796 <https://github.com/fmtlib/fmt/issues/2796>`_,
   `#2797 <https://github.com/fmtlib/fmt/pull/2797>`_,
   `#2801 <https://github.com/fmtlib/fmt/pull/2801>`_,
   `#2802 <https://github.com/fmtlib/fmt/pull/2802>`_,
@@ -112,7 +171,16 @@
   `#2937 <https://github.com/fmtlib/fmt/pull/2937>`_,
   `#2938 <https://github.com/fmtlib/fmt/pull/2938>`_,
   `#2940 <https://github.com/fmtlib/fmt/pull/2940>`_).
-  Thanks `@dalboris (Boris Dalstein) <https://github.com/dalboris>`_,
+  Thanks `@matrackif <https://github.com/matrackif>`_
+  `@Tobi823 (Tobias Hellmann) <https://github.com/Tobi823>`_,
+  `@ivan-volnov (Ivan Volnov) <https://github.com/ivan-volnov>`_,
+  `@VasiliPupkin256 <https://github.com/VasiliPupkin256>`_,
+  `@federico-busato (Federico) <https://github.com/federico-busato>`_,
+  `@barcharcraz (Charlie Barto) <https://github.com/barcharcraz>`_,
+  `@jk-jeon (Junekey Jeon) <https://github.com/jk-jeon>`_,
+  `@HazardyKnusperkeks (Björn Schäpers)
+  <https://github.com/HazardyKnusperkeks>`_,
+  `@dalboris (Boris Dalstein) <https://github.com/dalboris>`_,
   `@seanm (Sean McBride) <https://github.com/seanm>`_,
   `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_,
   `@timsong-cpp <https://github.com/timsong-cpp>`_,
@@ -494,7 +562,8 @@
   `@alexezeder (Alexey Ochapov) <https://github.com/alexezeder>`_,
   `@andrewcorrigan (Andrew Corrigan) <https://github.com/andrewcorrigan>`_,
   `@lucpelletier <https://github.com/lucpelletier>`_,
-  `@HazardyKnusperkeks (Björn Schäpers) <https://github.com/HazardyKnusperkeks>`_.
+  `@HazardyKnusperkeks (Björn Schäpers)
+  <https://github.com/HazardyKnusperkeks>`_.
 
 8.0.1 - 2021-07-02
 ------------------
