@@ -122,6 +122,9 @@ void format_value(buffer<Char>& buf, const T& value,
   output << value;
   output.exceptions(std::ios_base::failbit | std::ios_base::badbit);
 }
+
+template <typename T> struct streamed_view { const T& value; };
+
 }  // namespace detail
 
 // Formats an object of type T that has an overloaded ostream operator<<.
@@ -139,6 +142,20 @@ struct basic_ostream_formatter : formatter<basic_string_view<Char>, Char> {
 
 using ostream_formatter = basic_ostream_formatter<char>;
 
+template <typename T>
+struct formatter<detail::streamed_view<T>> : ostream_formatter {
+  template <typename OutputIt>
+  auto format(detail::streamed_view<T> view,
+              basic_format_context<OutputIt, char>& ctx) const -> OutputIt {
+    return ostream_formatter::format(view.value, ctx);
+  }
+};
+
+template <typename T>
+auto streamed(const T& value) -> detail::streamed_view<T> {
+  return {value};
+}
+
 namespace detail {
 
 // Formats an object of type T that has an overloaded ostream operator<<.
@@ -150,8 +167,7 @@ struct fallback_formatter<T, Char, enable_if_t<is_streamable<T, Char>::value>>
 
 }  // namespace detail
 
-FMT_MODULE_EXPORT
-template <typename Char>
+FMT_MODULE_EXPORT template <typename Char>
 void vprint(std::basic_ostream<Char>& os,
             basic_string_view<type_identity_t<Char>> format_str,
             basic_format_args<buffer_context<type_identity_t<Char>>> args) {
@@ -169,8 +185,7 @@ void vprint(std::basic_ostream<Char>& os,
     fmt::print(cerr, "Don't {}!", "panic");
   \endrst
  */
-FMT_MODULE_EXPORT
-template <typename... T>
+FMT_MODULE_EXPORT template <typename... T>
 void print(std::ostream& os, format_string<T...> fmt, T&&... args) {
   vprint(os, fmt, fmt::make_format_args(args...));
 }

@@ -32,12 +32,12 @@ template <> struct formatter<test> : formatter<int> {
 #include "gtest-extra.h"
 #include "util.h"
 
-std::ostream& operator<<(std::ostream& os, const date& d) {
+auto operator<<(std::ostream& os, const date& d) -> std::ostream& {
   os << d.year() << '-' << d.month() << '-' << d.day();
   return os;
 }
 
-std::wostream& operator<<(std::wostream& os, const date& d) {
+auto operator<<(std::wostream& os, const date& d) -> std::wostream& {
   os << d.year() << L'-' << d.month() << L'-' << d.day();
   return os;
 }
@@ -49,14 +49,16 @@ template <typename T> type_with_comma_op operator<<(T&, const date&);
 
 enum streamable_enum {};
 
-std::ostream& operator<<(std::ostream& os, streamable_enum) {
+auto operator<<(std::ostream& os, streamable_enum) -> std::ostream& {
   return os << "streamable_enum";
 }
 
 enum unstreamable_enum {};
 
 struct empty_test {};
-std::ostream& operator<<(std::ostream& os, empty_test) { return os << ""; }
+auto operator<<(std::ostream& os, empty_test) -> std::ostream& {
+  return os << "";
+}
 
 namespace fmt {
 template <> struct formatter<test_string> : ostream_formatter {};
@@ -130,7 +132,7 @@ TEST(ostream_test, write_to_ostream_max_size) {
 
   struct mock_streambuf : std::streambuf {
     MOCK_METHOD2(xsputn, std::streamsize(const void* s, std::streamsize n));
-    std::streamsize xsputn(const char* s, std::streamsize n) override {
+    auto xsputn(const char* s, std::streamsize n) -> std::streamsize override {
       const void* v = s;
       return xsputn(v, n);
     }
@@ -176,7 +178,7 @@ TEST(ostream_test, constexpr_string) {
 namespace fmt_test {
 struct abc {};
 
-template <typename Output> Output& operator<<(Output& out, abc) {
+template <typename Output> auto operator<<(Output& out, abc) -> Output& {
   return out << "abc";
 }
 }  // namespace fmt_test
@@ -184,7 +186,7 @@ template <typename Output> Output& operator<<(Output& out, abc) {
 template <typename T> struct test_template {};
 
 template <typename T>
-std::ostream& operator<<(std::ostream& os, test_template<T>) {
+auto operator<<(std::ostream& os, test_template<T>) -> std::ostream& {
   return os << 1;
 }
 
@@ -282,7 +284,7 @@ TEST(ostream_test, range) {
 struct abstract {
   virtual ~abstract() = default;
   virtual void f() = 0;
-  friend std::ostream& operator<<(std::ostream& os, const abstract&) {
+  friend auto operator<<(std::ostream& os, const abstract&) -> std::ostream& {
     return os;
   }
 };
@@ -298,6 +300,19 @@ void format_abstract_compiles(const abstract& a) {
 TEST(ostream_test, is_formattable) {
   EXPECT_TRUE(fmt::is_formattable<std::string>());
   EXPECT_TRUE(fmt::is_formattable<fmt::detail::std_string_view<char>>());
+}
+
+struct streamable_and_unformattable {};
+
+auto operator<<(std::ostream& os, streamable_and_unformattable)
+    -> std::ostream& {
+  return os << "foo";
+}
+
+TEST(ostream_test, streamed) {
+  EXPECT_FALSE(fmt::is_formattable<streamable_and_unformattable>());
+  EXPECT_EQ(fmt::format("{}", fmt::streamed(streamable_and_unformattable())),
+            "foo");
 }
 
 TEST(ostream_test, closed_ofstream) {
