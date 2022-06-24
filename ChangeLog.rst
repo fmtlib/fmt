@@ -2,7 +2,9 @@
 -----------
 
 * Added experimental ``std::filesystem::path`` formatting support
-  (`#2902 <https://github.com/fmtlib/fmt/pull/2902>`_,
+  (`#2865 <https://github.com/fmtlib/fmt/issues/2865>`_,
+  `#2902 <https://github.com/fmtlib/fmt/pull/2902>`_,
+  `#2917 <https://github.com/fmtlib/fmt/issues/2917>`_,
   `#2918 <https://github.com/fmtlib/fmt/pull/2918>`_).
   For example (`godbolt <https://godbolt.org/z/o44dMexEb>`__):
 
@@ -20,6 +22,18 @@
      There is no place like "/home".
 
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
+
+* Added a ``std::thread::id`` formatter to ``fmt/std.h``.
+  For example (`godbolt <https://godbolt.org/z/j1azbYf3E>`__):
+
+  .. code:: c++
+
+     #include <thread>
+     #include <fmt/std.h>
+
+     int main() {
+       fmt::print("Current thread id: {}\n", std::this_thread::get_id());
+     }
 
 * Added ``fmt::styled`` that applies a text style to an individual argument
   (`#2793 <https://github.com/fmtlib/fmt/pull/2793>`_).
@@ -47,15 +61,20 @@
   Thanks `@rbrugo (Riccardo Brugo) <https://github.com/rbrugo>`_.
 
 * Made ``fmt::print`` overload for text styles correctly handle UTF-8
-  (`#2701 <https://github.com/fmtlib/fmt/pull/2701>`_).
+  (`#2681 <https://github.com/fmtlib/fmt/issues/2681>`_,
+  `#2701 <https://github.com/fmtlib/fmt/pull/2701>`_).
   Thanks `@AlexGuteniev (Alex Guteniev) <https://github.com/AlexGuteniev>`_.
+
+* Switched to an internal floating point formatter for all decimal formats.
+  In particular this results in consistent rounding on all platforms and
+  removing the ``s[n]printf`` fallback for decimal FP formatting.
 
 * Improved the implementation of
   `Dragonbox <https://github.com/jk-jeon/dragonbox>`_, the algorithm used for
   the default floating-point formatting
   (`#2713 <https://github.com/fmtlib/fmt/pull/2713>`_,
   `#2750 <https://github.com/fmtlib/fmt/pull/2750>`_).
-  Thanks `@jk-jeon (Junekey Jeon) <https://github.com/jk-jeon>`_
+  Thanks `@jk-jeon (Junekey Jeon) <https://github.com/jk-jeon>`_.
 
 * Implemented escaping of wide strings in ranges
   (`#2904 <https://github.com/fmtlib/fmt/pull/2904>`_).
@@ -69,6 +88,15 @@
 * Fixed formatting of certain kinds of ranges of ranges
   (`#2787 <https://github.com/fmtlib/fmt/pull/2787>`_).
   Thanks `@BRevzin (Barry Revzin) <https://github.com/BRevzin>`_.
+
+* Fixed handling of maps with element types other than ``std::pair``
+  (`#2944 <https://github.com/fmtlib/fmt/pull/2944>`_).
+  Thanks `@BrukerJWD (Jonathan W) <https://github.com/BrukerJWD>`_.
+
+* Made tuple formatter enabled only if elements are formattable
+  (`#2939 <https://github.com/fmtlib/fmt/issues/2939>`_,
+  `#2940 <https://github.com/fmtlib/fmt/pull/2940>`_).
+  Thanks `@jehelset <https://github.com/jehelset>`_.
 
 * Made ``fmt::join`` compatible with format string compilation
   (`#2719 <https://github.com/fmtlib/fmt/issues/2719>`_,
@@ -92,8 +120,18 @@
   Thanks `@arogge (Andreas Rogge) <https://github.com/arogge>`_.
 
 * Removed a redundant buffer resize when formatting to ``std::ostream``
-  (`#2843 <https://github.com/fmtlib/fmt/pull/2843>`_).
+  (`#2842 <https://github.com/fmtlib/fmt/issues/2842>`_,
+  `#2843 <https://github.com/fmtlib/fmt/pull/2843>`_).
   Thanks `@jcelerier (Jean-Michaël Celerier) <https://github.com/jcelerier>`_.
+
+* Made precision computation for strings consistent with width
+  (`#2888 <https://github.com/fmtlib/fmt/issues/2888>`_).
+
+* Fixed handling of locale separators in floating point formatting
+  (`#2830 <https://github.com/fmtlib/fmt/issues/2830>`_).
+
+* Made sign specifiers work with ``__int128_t``
+  (`#2773 <https://github.com/fmtlib/fmt/issues/2773>`_).
 
 * Improved support for systems such as CHERI with extra data stored in pointers
   (`#2932 <https://github.com/fmtlib/fmt/pull/2932>`_).
@@ -134,43 +172,65 @@
 * Fixed various warnings and compilation issues
   (`#2408 <https://github.com/fmtlib/fmt/issues/2408>`_,
   `#2507 <https://github.com/fmtlib/fmt/issues/2507>`_,
+  `#2697 <https://github.com/fmtlib/fmt/issues/2697>`_,
   `#2715 <https://github.com/fmtlib/fmt/issues/2715>`_,
+  `#2717 <https://github.com/fmtlib/fmt/issues/2717>`_,
   `#2722 <https://github.com/fmtlib/fmt/pull/2722>`_,
   `#2724 <https://github.com/fmtlib/fmt/pull/2724>`_,
   `#2725 <https://github.com/fmtlib/fmt/pull/2725>`_,
   `#2726 <https://github.com/fmtlib/fmt/issues/2726>`_,
   `#2728 <https://github.com/fmtlib/fmt/pull/2728>`_,
   `#2732 <https://github.com/fmtlib/fmt/pull/2732>`_,
+  `#2738 <https://github.com/fmtlib/fmt/issues/2738>`_,
   `#2742 <https://github.com/fmtlib/fmt/pull/2742>`_,
+  `#2744 <https://github.com/fmtlib/fmt/issues/2744>`_,
+  `#2745 <https://github.com/fmtlib/fmt/issues/2745>`_,
   `#2746 <https://github.com/fmtlib/fmt/issues/2746>`_,
   `#2754 <https://github.com/fmtlib/fmt/issues/2754>`_,
   `#2755 <https://github.com/fmtlib/fmt/pull/2755>`_,
+  `#2757 <https://github.com/fmtlib/fmt/issues/2757>`_,
   `#2758 <https://github.com/fmtlib/fmt/pull/2758>`_,
   `#2761 <https://github.com/fmtlib/fmt/issues/2761>`_,
   `#2762 <https://github.com/fmtlib/fmt/pull/2762>`_,
   `#2763 <https://github.com/fmtlib/fmt/issues/2763>`_,
   `#2765 <https://github.com/fmtlib/fmt/pull/2765>`_,
+  `#2769 <https://github.com/fmtlib/fmt/issues/2769>`_,
   `#2770 <https://github.com/fmtlib/fmt/pull/2770>`_,
+  `#2771 <https://github.com/fmtlib/fmt/issues/2771>`_,
+  `#2777 <https://github.com/fmtlib/fmt/issues/2777>`_,
   `#2779 <https://github.com/fmtlib/fmt/pull/2779>`_,
   `#2782 <https://github.com/fmtlib/fmt/pull/2782>`_,
   `#2783 <https://github.com/fmtlib/fmt/pull/2783>`_,
+  `#2794 <https://github.com/fmtlib/fmt/issues/2794>`_,
   `#2796 <https://github.com/fmtlib/fmt/issues/2796>`_,
   `#2797 <https://github.com/fmtlib/fmt/pull/2797>`_,
   `#2801 <https://github.com/fmtlib/fmt/pull/2801>`_,
   `#2802 <https://github.com/fmtlib/fmt/pull/2802>`_,
+  `#2808 <https://github.com/fmtlib/fmt/issues/2808>`_,
   `#2818 <https://github.com/fmtlib/fmt/issues/2818>`_,
   `#2819 <https://github.com/fmtlib/fmt/pull/2819>`_,
+  `#2829 <https://github.com/fmtlib/fmt/issues/2829>`_,
+  `#2835 <https://github.com/fmtlib/fmt/issues/2835>`_,
+  `#2848 <https://github.com/fmtlib/fmt/issues/2848>`_,
+  `#2860 <https://github.com/fmtlib/fmt/issues/2860>`_,
   `#2861 <https://github.com/fmtlib/fmt/pull/2861>`_,
   `#2882 <https://github.com/fmtlib/fmt/pull/2882>`_,
+  `#2886 <https://github.com/fmtlib/fmt/issues/2886>`_,
+  `#2891 <https://github.com/fmtlib/fmt/issues/2891>`_,
   `#2892 <https://github.com/fmtlib/fmt/pull/2892>`_,
+  `#2895 <https://github.com/fmtlib/fmt/issues/2895>`_,
+  `#2896 <https://github.com/fmtlib/fmt/issues/2896>`_,
   `#2903 <https://github.com/fmtlib/fmt/pull/2903>`_,
+  `#2906 <https://github.com/fmtlib/fmt/issues/2906>`_,
+  `#2908 <https://github.com/fmtlib/fmt/issues/2908>`_,
   `#2909 <https://github.com/fmtlib/fmt/pull/2909>`_,
+  `#2920 <https://github.com/fmtlib/fmt/issues/2920>`_,
   `#2922 <https://github.com/fmtlib/fmt/pull/2922>`_,
   `#2927 <https://github.com/fmtlib/fmt/pull/2927>`_,
   `#2929 <https://github.com/fmtlib/fmt/pull/2929>`_,
+  `#2936 <https://github.com/fmtlib/fmt/issues/2936>`_,
   `#2937 <https://github.com/fmtlib/fmt/pull/2937>`_,
-  `#2938 <https://github.com/fmtlib/fmt/pull/2938>`_,
-  `#2940 <https://github.com/fmtlib/fmt/pull/2940>`_).
+  `#2938 <https://github.com/fmtlib/fmt/pull/2938>`_).
   Thanks `@matrackif <https://github.com/matrackif>`_
   `@Tobi823 (Tobias Hellmann) <https://github.com/Tobi823>`_,
   `@ivan-volnov (Ivan Volnov) <https://github.com/ivan-volnov>`_,
@@ -190,8 +250,7 @@
   `@Agga <https://github.com/Agga>`_,
   `@madmaxoft (Mattes D) <https://github.com/madmaxoft>`_,
   `@JurajX (Juraj) <https://github.com/JurajX>`_,
-  `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_,
-  `@jehelset <https://github.com/jehelset>`_.
+  `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
 
 8.1.1 - 2022-01-06
 ------------------
