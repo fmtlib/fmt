@@ -151,6 +151,16 @@ struct formatter<detail::streamed_view<T>> : ostream_formatter {
   }
 };
 
+/**
+  \rst
+  Returns a view that formats `value` via an ostream ``operator<<``.
+
+  **Example**::
+
+    fmt::print("Current thread id: {}\n",
+               fmt::streamed(std::this_thread::get_id()));
+  \endrst
+ */
 template <typename T>
 auto streamed(const T& value) -> detail::streamed_view<T> {
   return {value};

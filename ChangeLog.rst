@@ -1,6 +1,61 @@
 9.0.0 - TBD
 -----------
 
+* Switched to the internal floating point formatter for all decimal formats.
+  In particular this results in consistent rounding on all platforms and
+  removing the ``s[n]printf`` fallback for decimal FP formatting.
+
+* Improved the implementation of
+  `Dragonbox <https://github.com/jk-jeon/dragonbox>`_, the algorithm used for
+  the default floating-point formatting
+  (`#2713 <https://github.com/fmtlib/fmt/pull/2713>`_,
+  `#2750 <https://github.com/fmtlib/fmt/pull/2750>`_).
+  Thanks `@jk-jeon (Junekey Jeon) <https://github.com/jk-jeon>`_.
+
+* Disabled automatic ``std::ostream`` insertion operator (``operator<<``)
+  discovery when ``fmt/ostream.h`` is included to prevent ODR violations.
+  You can get the old behavior by defining ``FMT_DEPRECATED_OSTREAM`` but this
+  will be removed in the next major release. You can use ``fmt::streamed`` or
+  ``fmt::ostream_formatter`` to enable formatting via ``std::ostream``.
+  
+* Added ``ostream_formatter`` that can be used to write ``formatter``
+  specializations that perform formatting via ``std::ostream``.
+  For example (`godbolt <https://godbolt.org/z/5sEc5qMsf>`__):
+
+  .. code:: c++
+
+     #include <fmt/ostream.h>
+
+     struct date {
+       int year, month, day;
+
+       friend std::ostream& operator<<(std::ostream& os, const date& d) {
+         return os << d.year << '-' << d.month << '-' << d.day;
+       }
+     };
+
+     template <> struct fmt::formatter<date> : ostream_formatter {};
+
+     std::string s = fmt::format("The date is {}", date{2012, 12, 9});
+     // s == "The date is 2012-12-9"
+
+* Added the ``fmt::streamed`` function that takes an object and formats it
+  via ``std::ostream``.
+  For example (`godbolt <https://godbolt.org/z/5G3346G1f>`__):
+
+  .. code:: c++
+
+     #include <thread>
+     #include <fmt/ostream.h>
+
+     int main() {
+       fmt::print("Current thread id: {}\n",
+                  fmt::streamed(std::this_thread::get_id()));
+     }
+
+  Note that ``fmt/std.h`` provides a ``formatter`` specialization for
+  ``std::thread::id`` so you don't need to format it via ``std::ostream``.
+
 * Added experimental ``std::filesystem::path`` formatting support
   (`#2865 <https://github.com/fmtlib/fmt/issues/2865>`_,
   `#2902 <https://github.com/fmtlib/fmt/pull/2902>`_,
@@ -64,17 +119,6 @@
   (`#2681 <https://github.com/fmtlib/fmt/issues/2681>`_,
   `#2701 <https://github.com/fmtlib/fmt/pull/2701>`_).
   Thanks `@AlexGuteniev (Alex Guteniev) <https://github.com/AlexGuteniev>`_.
-
-* Switched to an internal floating point formatter for all decimal formats.
-  In particular this results in consistent rounding on all platforms and
-  removing the ``s[n]printf`` fallback for decimal FP formatting.
-
-* Improved the implementation of
-  `Dragonbox <https://github.com/jk-jeon/dragonbox>`_, the algorithm used for
-  the default floating-point formatting
-  (`#2713 <https://github.com/fmtlib/fmt/pull/2713>`_,
-  `#2750 <https://github.com/fmtlib/fmt/pull/2750>`_).
-  Thanks `@jk-jeon (Junekey Jeon) <https://github.com/jk-jeon>`_.
 
 * Implemented escaping of wide strings in ranges
   (`#2904 <https://github.com/fmtlib/fmt/pull/2904>`_).
