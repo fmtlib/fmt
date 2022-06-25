@@ -140,6 +140,9 @@ times and reduces binary code size compared to a fully parameterized version.
 .. doxygenclass:: fmt::basic_format_arg
    :members:
 
+.. doxygenclass:: fmt::basic_format_parse_context
+   :members:
+
 .. doxygenclass:: fmt::basic_format_context
    :members:
 
@@ -302,9 +305,6 @@ You can also write a formatter for a hierarchy of classes::
 If a type provides both a ``formatter`` specialization and an implicit
 conversion to a formattable type, the specialization takes precedence over the
 conversion.
-
-.. doxygenclass:: fmt::basic_format_parse_context
-   :members:
 
 Literal-based API
 -----------------
