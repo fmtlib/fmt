@@ -313,7 +313,7 @@ The following user-defined literals are defined in ``fmt/format.h``.
 
 .. doxygenfunction:: operator""_format(const char *s, size_t n) -> detail::udl_formatter<char> 
 
-.. doxygenfunction:: operator""_a()
+.. doxygenfunction:: operator""_aconst char *s, size_t)
 
 Utilities
 ---------

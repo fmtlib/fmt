@@ -185,11 +185,6 @@ TEST(format_test, wide_format_to_n) {
 }
 
 #if FMT_USE_USER_DEFINED_LITERALS
-TEST(xchar_test, format_udl) {
-  using namespace fmt::literals;
-  EXPECT_EQ(L"{}c{}"_format(L"ab", 1), fmt::format(L"{}c{}", L"ab", 1));
-}
-
 TEST(xchar_test, named_arg_udl) {
   using namespace fmt::literals;
   auto udl_a =
