@@ -311,7 +311,7 @@ Literal-based API
 
 The following user-defined literals are defined in ``fmt/format.h``.
 
-.. doxygenfunction:: operator""_a(const char *s, size_t)
+.. doxygenfunction:: operator""_a()
 
 Utilities
 ---------
