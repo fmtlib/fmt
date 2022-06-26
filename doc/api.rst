@@ -12,6 +12,7 @@ The {fmt} library API consists of the following parts:
   formatting functions and locale support
 * :ref:`fmt/ranges.h <ranges-api>`: formatting of ranges and tuples
 * :ref:`fmt/chrono.h <chrono-api>`: date and time formatting
+* :ref:`fmt/std.h <std-api>`: formatters for standard library types
 * :ref:`fmt/compile.h <compile-api>`: format string compilation
 * :ref:`fmt/color.h <color-api>`: terminal color and text style
 * :ref:`fmt/os.h <os-api>`: system APIs
@@ -184,8 +185,9 @@ Formatting User-defined Types
 
 The {fmt} library provides formatters for many standard C++ types.
 See :ref:`fmt/ranges.h <ranges-api>` for ranges and tuples including standard
-containers such as ``std::vector`` and :ref:`fmt/chrono.h <chrono-api>` for date
-and time formatting.
+containers such as ``std::vector``, :ref:`fmt/chrono.h <chrono-api>` for date
+and time formatting and :ref:`fmt/std.h <std-api>` for filesystem and variant 
+formatting.
 
 To make a user-defined type formattable, specialize the ``formatter<T>`` struct
 template and implement ``parse`` and ``format`` methods::
@@ -444,6 +446,35 @@ The format syntax is described in :ref:`chrono-specs`.
 .. doxygenfunction:: localtime(std::time_t time)
 
 .. doxygenfunction:: gmtime(std::time_t time)
+
+.. _std-api:
+
+Standard Library Types Formatting
+=================================
+
+``fmt/std.h`` provides formatters for:
+
+* `std::filesystem::path <std::filesystem::path>`_
+* `std::thread::id <https://en.cppreference.com/w/cpp/thread/thread/id>`_
+* `std::monostate <https://en.cppreference.com/w/cpp/utility/variant/monostate>`_
+* `std::variant <https://en.cppreference.com/w/cpp/utility/variant/variant>`_
+
+Formatting Variants
+-------------------
+
+A ``std::variant`` is only formattable if every variant alternative is formattable, and requires the
+``__cpp_lib_variant`` `library feature <https://en.cppreference.com/w/cpp/feature_test>`_.
+  
+**Example**::
+
+  #include <fmt/std.h>
+
+  std::variant<char, float> v0{'x'};
+  // Prints "variant('x')"
+  fmt::print("{}", v0);
+
+  std::variant<std::monostate, char> v1;
+  // Prints "variant(monostate)"
 
 .. _compile-api:
 

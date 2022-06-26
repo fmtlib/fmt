@@ -346,7 +346,7 @@ points are:
 |         | command ``%OS`` produces the locale's alternative representation.  |
 +---------+--------------------------------------------------------------------+
 
-Specifiers that have a calendaric component such as `'d'` (the day of month)
+Specifiers that have a calendaric component such as ``'d'`` (the day of month)
 are valid only for ``std::tm`` and not durations or time points.
 
 .. range-specs:
