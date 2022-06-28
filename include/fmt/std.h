@@ -17,10 +17,17 @@
 #if FMT_HAS_INCLUDE(<version>)
 #  include <version>
 #endif
+// Checking FMT_CPLUSPLUS for warning suppression in MSVC.
+#if FMT_CPLUSPLUS >= 201703L
+#  if FMT_HAS_INCLUDE(<filesystem>)
+#    include <filesystem>
+#  endif
+#  if FMT_HAS_INCLUDE(<variant>)
+#    include <variant>
+#  endif
+#endif
 
 #ifdef __cpp_lib_filesystem
-#  include <filesystem>
-
 FMT_BEGIN_NAMESPACE
 
 namespace detail {
@@ -71,8 +78,6 @@ struct formatter<std::thread::id, Char> : basic_ostream_formatter<Char> {};
 FMT_END_NAMESPACE
 
 #ifdef __cpp_lib_variant
-#  include <variant>
-
 FMT_BEGIN_NAMESPACE
 template <typename Char> struct formatter<std::monostate, Char> {
   template <typename ParseContext>
