@@ -62,8 +62,8 @@ FMT_FUNC void format_error_code(detail::buffer<char>& out, int error_code,
   error_code_size += detail::to_unsigned(detail::count_digits(abs_value));
   auto it = buffer_appender<char>(out);
   if (message.size() <= inline_buffer_size - error_code_size)
-    format_to(it, FMT_STRING("{}{}"), message, SEP);
-  format_to(it, FMT_STRING("{}{}"), ERROR_STR, error_code);
+    fmt::format_to(it, FMT_STRING("{}{}"), message, SEP);
+  fmt::format_to(it, FMT_STRING("{}{}"), ERROR_STR, error_code);
   FMT_ASSERT(out.size() <= inline_buffer_size, "");
 }
 
