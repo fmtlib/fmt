@@ -56,6 +56,26 @@
   Note that ``fmt/std.h`` provides a ``formatter`` specialization for
   ``std::thread::id`` so you don't need to format it via ``std::ostream``.
 
+* Added experimental ``std::variant`` formatting support
+  (`#2941 <https://github.com/fmtlib/fmt/pull/2941>`_).
+  For example (`godbolt <https://godbolt.org/z/KG9z6cq68>`__):
+
+  .. code:: c++
+
+     #include <variant>
+     #include <fmt/std.h>
+
+     int main() {
+       auto v = std::variant<int, std::string>(42);
+       fmt::print("{}\n", v);
+     }
+
+  prints::
+
+     variant(42)
+
+  Thanks `@jehelset <https://github.com/jehelset>`_.
+
 * Added experimental ``std::filesystem::path`` formatting support
   (`#2865 <https://github.com/fmtlib/fmt/issues/2865>`_,
   `#2902 <https://github.com/fmtlib/fmt/pull/2902>`_,
