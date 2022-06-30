@@ -23,6 +23,11 @@ jobs:
             std: 14
             install: sudo apt install g++-8
             os: ubuntu-18.04
+          - cxx: g++-8
+            build_type: Debug
+            std: 17
+            install: sudo apt install g++-8
+            os: ubuntu-18.04
           - cxx: g++-10
             build_type: Debug
             std: 17
@@ -32,6 +37,12 @@ jobs:
             std: 20
             os: ubuntu-20.04
             install: sudo apt install g++-11
+          - cxx: clang++-8
+            build_type: Debug
+            std: 17
+            cxxflags: -stdlib=libc++
+            os: ubuntu-18.04
+            install: sudo apt install clang-8 libc++-8-dev libc++abi-8-dev
           - cxx: clang++-9
             build_type: Debug
             fuzz: -DFMT_FUZZ=ON -DFMT_FUZZ_LINKMAIN=ON
