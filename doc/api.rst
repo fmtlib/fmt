@@ -67,7 +67,7 @@ checked at compile time in C++20. To pass a runtime format string wrap it in
 .. doxygenfunction:: print(std::FILE *f, format_string<T...> fmt, T&&... args)
 .. doxygenfunction:: vprint(std::FILE *f, string_view fmt, format_args args)
 
-Compile-time Format String Checks
+Compile-Time Format String Checks
 ---------------------------------
 
 Compile-time checks are enabled when using ``FMT_STRING``. They support built-in
@@ -180,13 +180,13 @@ functions and locale support.
 
 .. _udt:
 
-Formatting User-defined Types
+Formatting User-Defined Types
 -----------------------------
 
 The {fmt} library provides formatters for many standard C++ types.
 See :ref:`fmt/ranges.h <ranges-api>` for ranges and tuples including standard
 containers such as ``std::vector``, :ref:`fmt/chrono.h <chrono-api>` for date
-and time formatting and :ref:`fmt/std.h <std-api>` for filesystem and variant 
+and time formatting and :ref:`fmt/std.h <std-api>` for path and variant 
 formatting.
 
 To make a user-defined type formattable, specialize the ``formatter<T>`` struct
@@ -308,7 +308,27 @@ If a type provides both a ``formatter`` specialization and an implicit
 conversion to a formattable type, the specialization takes precedence over the
 conversion.
 
-Literal-based API
+For scoped enums (enum classes) {fmt} also provides the ``format_as`` extension
+API. To format an enum via this API define ``format_as`` that takes this enum
+and converts it to the underlying type. ``format_as`` should be defined in the
+same namespace as the enum.
+
+Example (https://godbolt.org/z/r7vvGE1v7)::
+
+  #include <fmt/format.h>
+
+  namespace kevin_namespacy {
+  enum class film {
+    house_of_cards, american_beauty, se7en = 7
+  };
+  auto format_as(film f) { return fmt::underlying(f); }
+  }
+
+  int main() {
+    fmt::print("{}\n", kevin_namespacy::film::se7en); // prints "7"
+  }
+
+Literal-Based API
 -----------------
 
 The following user-defined literals are defined in ``fmt/format.h``.
@@ -387,8 +407,8 @@ non-default floating-point formatting that occasionally falls back on
 
 .. _ranges-api:
 
-Ranges and Tuple Formatting
-===========================
+Range and Tuple Formatting
+==========================
 
 The library also supports convenient formatting of ranges and tuples::
 
@@ -478,7 +498,7 @@ A ``std::variant`` is only formattable if every variant alternative is formattab
 
 .. _compile-api:
 
-Format string compilation
+Format String Compilation
 =========================
 
 ``fmt/compile.h`` provides format string compilation enabled via the
@@ -496,7 +516,7 @@ places where formatting is a performance bottleneck.
 
 .. _color-api:
 
-Terminal color and text style
+Terminal Color and Text Style
 =============================
 
 ``fmt/color.h`` provides support for terminal color and text style output.
