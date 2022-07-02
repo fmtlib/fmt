@@ -246,7 +246,7 @@ template <class Tuple, class F> void for_each(Tuple&& tup, F&& f) {
   for_each(indexes, std::forward<Tuple>(tup), std::forward<F>(f));
 }
 
-#if FMT_MSC_VERSION
+#if FMT_MSC_VERSION && FMT_MSC_VERSION < 1920
 // Older MSVC doesn't get the reference type correctly for arrays.
 template <typename R> struct range_reference_type_impl {
   using type = decltype(*detail::range_begin(std::declval<R&>()));
@@ -396,15 +396,18 @@ template <typename R, typename Char>
 struct formatter<
     R, Char,
     enable_if_t<
-        fmt::is_range<R, Char>::value
-// Workaround a bug in MSVC 2019 and earlier.
-#if !FMT_MSC_VERSION
-        &&
-        (is_formattable<detail::uncvref_type<detail::maybe_const_range<R>>,
-                        Char>::value ||
-         detail::has_fallback_formatter<
-             detail::uncvref_type<detail::maybe_const_range<R>>, Char>::value)
+        conjunction<fmt::is_range<R, Char>
+// Workaround a bug in MSVC 2017 and earlier.
+#if !FMT_MSC_VERSION || FMT_MSC_VERSION >= 1920
+        ,
+        disjunction<
+          is_formattable<detail::uncvref_type<detail::maybe_const_range<R>>,
+                         Char>,
+          detail::has_fallback_formatter<
+             detail::uncvref_type<detail::maybe_const_range<R>>, Char>
+        >
 #endif
+        >::value
         >> {
 
   using range_type = detail::maybe_const_range<R>;
@@ -457,14 +460,20 @@ struct formatter<
 template <typename T, typename Char>
 struct formatter<
     T, Char,
-    enable_if_t<detail::is_map<T>::value
-// Workaround a bug in MSVC 2019 and earlier.
-#if !FMT_MSC_VERSION
-        && (is_formattable<detail::uncvref_first_type<T>, Char>::value ||
-            detail::has_fallback_formatter<detail::uncvref_first_type<T>, Char>::value)
-        && (is_formattable<detail::uncvref_second_type<T>, Char>::value ||
-            detail::has_fallback_formatter<detail::uncvref_second_type<T>, Char>::value)
+    enable_if_t<conjunction<detail::is_map<T>
+// Workaround a bug in MSVC 2017 and earlier.
+#if !FMT_MSC_VERSION || FMT_MSC_VERSION >= 1920
+        ,
+        disjunction<
+          is_formattable<detail::uncvref_first_type<T>, Char>,
+          detail::has_fallback_formatter<detail::uncvref_first_type<T>, Char>
+        >,
+        disjunction<
+          is_formattable<detail::uncvref_second_type<T>, Char>,
+          detail::has_fallback_formatter<detail::uncvref_second_type<T>, Char>
+        >
 #endif
+    >::value
     >> {
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
