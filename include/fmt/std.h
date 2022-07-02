@@ -57,6 +57,7 @@ inline void write_escaped_path<std::filesystem::path::value_type>(
 
 }  // namespace detail
 
+#if !FMT_MSC_VERSION || FMT_MSC_VERSION >= 1920
 template <typename Char>
 struct formatter<std::filesystem::path, Char>
     : formatter<basic_string_view<Char>> {
@@ -69,6 +70,33 @@ struct formatter<std::filesystem::path, Char>
         basic_string_view<Char>(quoted.data(), quoted.size()), ctx);
   }
 };
+#else
+// Workaround for MSVC 2017 and earlier.
+template <>
+struct formatter<std::filesystem::path, char>
+    : formatter<basic_string_view<char>> {
+  template <typename FormatContext>
+  auto format(const std::filesystem::path& p, FormatContext& ctx) const ->
+      typename FormatContext::iterator {
+    basic_memory_buffer<char> quoted;
+    detail::write_escaped_path(quoted, p);
+    return formatter<basic_string_view<char>>::format(
+        basic_string_view<char>(quoted.data(), quoted.size()), ctx);
+  }
+};
+template <>
+struct formatter<std::filesystem::path, wchar_t>
+    : formatter<basic_string_view<wchar_t>> {
+  template <typename FormatContext>
+  auto format(const std::filesystem::path& p, FormatContext& ctx) const ->
+      typename FormatContext::iterator {
+    basic_memory_buffer<wchar_t> quoted;
+    detail::write_escaped_path(quoted, p);
+    return formatter<basic_string_view<wchar_t>>::format(
+        basic_string_view<wchar_t>(quoted.data(), quoted.size()), ctx);
+  }
+};
+#endif
 FMT_END_NAMESPACE
 #endif
 
