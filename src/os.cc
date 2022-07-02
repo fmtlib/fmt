@@ -71,7 +71,7 @@ inline std::size_t convert_rwcount(std::size_t count) { return count; }
 
 FMT_BEGIN_NAMESPACE
 
-#ifdef _WIN32
+#if defined(_WIN32) && !FMT_WIN9X
 detail::utf16_to_utf8::utf16_to_utf8(basic_string_view<wchar_t> s) {
   if (int error_code = convert(s)) {
     FMT_THROW(windows_error(error_code,
@@ -205,6 +205,7 @@ void buffered_file::close() {
     FMT_THROW(system_error(errno, FMT_STRING("cannot close file")));
 }
 
+#if !FMT_WIN9X
 int buffered_file::descriptor() const {
 #ifdef fileno  // fileno is a macro on OpenBSD so we cannot use FMT_POSIX_CALL.
   int fd = fileno(file_);
@@ -215,6 +216,7 @@ int buffered_file::descriptor() const {
     FMT_THROW(system_error(errno, FMT_STRING("cannot get file descriptor")));
   return fd;
 }
+#endif // !FMT_WIN9X
 
 #if FMT_USE_FCNTL
 #  ifdef _WIN32
@@ -295,6 +297,7 @@ std::size_t file::write(const void* buffer, std::size_t count) {
   return detail::to_unsigned(result);
 }
 
+#if !FMT_WIN9X
 file file::dup(int fd) {
   // Don't retry as dup doesn't return EINTR.
   // http://pubs.opengroup.org/onlinepubs/009695399/functions/dup.html
@@ -343,6 +346,7 @@ void file::pipe(file& read_end, file& write_end) {
   read_end = file(fds[0]);
   write_end = file(fds[1]);
 }
+#endif
 
 buffered_file file::fdopen(const char* mode) {
 // Don't retry as fdopen doesn't return EINTR.

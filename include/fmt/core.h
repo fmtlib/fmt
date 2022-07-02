@@ -257,6 +257,14 @@
 #  define FMT_UNICODE !FMT_MSC_VERSION
 #endif
 
+#ifndef FMT_WIN9X
+#  if defined(NXDK)
+#    define FMT_WIN9X 1
+#  else
+#    define FMT_WIN9X 0
+#  endif
+#endif
+
 #ifndef FMT_CONSTEVAL
 #  if ((FMT_GCC_VERSION >= 1000 || FMT_CLANG_VERSION >= 1101) && \
        (!defined(__apple_build_version__) ||                     \

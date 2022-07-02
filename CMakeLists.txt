@@ -268,6 +268,11 @@ target_include_directories(fmt-header-only ${FMT_SYSTEM_HEADERS_ATTRIBUTE} INTER
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${FMT_INC_DIR}>)
 
+if (FMT_WIN98X)
+  target_compile_definitions(fmt PUBLIC FMT_WIN98X=1)
+  target_compile_definitions(fmt-header-only INTERFACE FMT_WIN98X=1)
+endif()
+
 # Install targets.
 if (FMT_INSTALL)
   include(CMakePackageConfigHelpers)
