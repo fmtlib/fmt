@@ -229,6 +229,19 @@ TEST(xchar_test, enum) {
   EXPECT_EQ(L"0", fmt::format(L"{}", unstreamable_enum()));
 }
 
+struct streamable_and_unformattable {};
+
+auto operator<<(std::wostream& os, streamable_and_unformattable)
+    -> std::wostream& {
+  return os << L"foo";
+}
+
+TEST(xchar_test, streamed) {
+  EXPECT_FALSE(fmt::is_formattable<streamable_and_unformattable>());
+  EXPECT_EQ(fmt::format(L"{}", fmt::streamed(streamable_and_unformattable())),
+            L"foo");
+}
+
 TEST(xchar_test, sign_not_truncated) {
   wchar_t format_str[] = {
       L'{', L':',
