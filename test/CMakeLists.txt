@@ -78,7 +78,6 @@ add_fmt_test(printf-test)
 add_fmt_test(ranges-test ranges-odr-test.cc)
 add_fmt_test(scan-test)
 add_fmt_test(std-test)
-add_fmt_test(ranges-std-test)
 try_compile(compile_result_unused
             ${CMAKE_CURRENT_BINARY_DIR}
             SOURCES ${CMAKE_CURRENT_LIST_DIR}/detect-stdfs.cc
@@ -86,7 +85,6 @@ try_compile(compile_result_unused
 string(REGEX REPLACE ".*libfound \"([^\"]*)\".*" "\\1" STDLIBFS "${RAWOUTPUT}")
 if (STDLIBFS)
   target_link_libraries(std-test ${STDLIBFS})
-  target_link_libraries(ranges-std-test ${STDLIBFS})
 endif ()
 add_fmt_test(unicode-test HEADER_ONLY)
 if (MSVC)
