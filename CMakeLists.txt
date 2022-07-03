@@ -82,6 +82,7 @@ option(FMT_CUDA_TEST "Generate the cuda-test target." OFF)
 option(FMT_OS "Include core requiring OS (Windows/Posix) " ON)
 option(FMT_MODULE "Build a module instead of a traditional library." OFF)
 option(FMT_SYSTEM_HEADERS "Expose headers with marking them as system." OFF)
+option(FMT_STATIC_THOUSANDS_SEPARATOR "Use a static thousands separator instead of locale." OFF)
 
 set(FMT_CAN_MODULE OFF)
 if (CMAKE_CXX_STANDARD GREATER 17 AND
@@ -278,6 +279,11 @@ add_library(fmt-header-only INTERFACE)
 add_library(fmt::fmt-header-only ALIAS fmt-header-only)
 
 target_compile_definitions(fmt-header-only INTERFACE FMT_HEADER_ONLY=1)
+if (FMT_STATIC_THOUSANDS_SEPARATOR)
+  target_compile_definitions(fmt PUBLIC FMT_STATIC_THOUSANDS_SEPARATOR=1)
+  target_compile_definitions(fmt-header-only INTERFACE FMT_STATIC_THOUSANDS_SEPARATOR=1)
+endif()
+
 target_compile_features(fmt-header-only INTERFACE ${FMT_REQUIRED_FEATURES})
 
 target_include_directories(fmt-header-only ${FMT_SYSTEM_HEADERS_ATTRIBUTE} INTERFACE
