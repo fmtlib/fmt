@@ -6,13 +6,18 @@
 // For the license information refer to format.h.
 
 #include "fmt/std.h"
+#include "fmt/ranges.h"
 
 #include <string>
+#include <vector>
 
 #include "gtest/gtest.h"
 
 TEST(std_test, path) {
-#ifdef __cpp_lib_filesystem
+// Test ambiguity problem described in #2954. We need to exclude compilers
+// where the ambiguity problem cannot be solved for now.
+#if defined(__cpp_lib_filesystem) && \
+    (!FMT_MSC_VERSION || FMT_MSC_VERSION >= 1920)
   EXPECT_EQ(fmt::format("{:8}", std::filesystem::path("foo")), "\"foo\"   ");
   EXPECT_EQ(fmt::format("{}", std::filesystem::path("foo\"bar.txt")),
             "\"foo\\\"bar.txt\"");
@@ -28,6 +33,18 @@ TEST(std_test, path) {
   EXPECT_EQ(fmt::format("{}", std::filesystem::path(unicode_path)),
             unicode_u8path);
 #  endif
+#endif
+}
+
+TEST(ranges_std_test, format_vector_path) {
+// Test ambiguity problem described in #2954. We need to exclude compilers
+// where the ambiguity problem cannot be solved for now.
+#if defined(__cpp_lib_filesystem) && \
+    (!FMT_MSC_VERSION || FMT_MSC_VERSION >= 1920)
+  auto p = std::filesystem::path("foo/bar.txt");
+  auto c = std::vector<std::string>{"abc", "def"};
+  EXPECT_EQ(fmt::format("path={}, range={}", p, c),
+            "path=\"foo/bar.txt\", range=[\"abc\", \"def\"]");
 #endif
 }
 
