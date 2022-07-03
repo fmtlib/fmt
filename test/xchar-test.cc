@@ -222,6 +222,7 @@ struct formatter<streamable_enum, wchar_t> : basic_ostream_formatter<wchar_t> {
 }  // namespace fmt
 
 enum unstreamable_enum {};
+auto format_as(unstreamable_enum e) -> int { return e; }
 
 TEST(xchar_test, enum) {
   EXPECT_EQ(L"streamable_enum", fmt::format(L"{}", streamable_enum()));

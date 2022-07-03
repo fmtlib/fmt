@@ -504,6 +504,7 @@ TEST(printf_test, pointer) {
 }
 
 enum test_enum { answer = 42 };
+auto format_as(test_enum e) -> int { return e; }
 
 TEST(printf_test, enum) {
   EXPECT_PRINTF("42", "%d", answer);

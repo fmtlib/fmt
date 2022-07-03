@@ -224,6 +224,7 @@ TEST(ranges_test, range) {
 }
 
 enum test_enum { foo };
+auto format_as(test_enum e) -> int { return e; }
 
 TEST(ranges_test, enum_range) {
   auto v = std::vector<test_enum>{test_enum::foo};

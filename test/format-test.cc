@@ -1756,6 +1756,7 @@ TEST(format_test, group_digits_view) {
 }
 
 enum test_enum { foo, bar };
+auto format_as(test_enum e) -> int { return e; }
 
 TEST(format_test, join) {
   using fmt::join;
@@ -1902,6 +1903,7 @@ TEST(format_test, formatter_not_specialized) {
 
 #if FMT_HAS_FEATURE(cxx_strong_enums)
 enum big_enum : unsigned long long { big_enum_value = 5000000000ULL };
+auto format_as(big_enum e) -> unsigned long long { return e; }
 
 TEST(format_test, strong_enum) {
   EXPECT_EQ("5000000000", fmt::format("{}", big_enum_value));
@@ -1983,9 +1985,7 @@ TEST(format_test, to_string) {
   EXPECT_EQ(fmt::to_string(reinterpret_cast<void*>(0x1234)), "0x1234");
   EXPECT_EQ(fmt::to_string(adl_test::fmt::detail::foo()), "foo");
   EXPECT_EQ(fmt::to_string(convertible_to_int()), "42");
-
-  enum foo : unsigned char { zero };
-  EXPECT_EQ(fmt::to_string(zero), "0");
+  EXPECT_EQ(fmt::to_string(foo), "0");
 
 #if FMT_USE_FLOAT128
   EXPECT_EQ(fmt::to_string(__float128(0.5)), "0.5");

@@ -54,6 +54,7 @@ auto operator<<(std::ostream& os, streamable_enum) -> std::ostream& {
 }
 
 enum unstreamable_enum {};
+auto format_as(unstreamable_enum e) -> int { return e; }
 
 struct empty_test {};
 auto operator<<(std::ostream& os, empty_test) -> std::ostream& {
