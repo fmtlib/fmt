@@ -293,29 +293,21 @@ template <typename T>
 using underlying_t = typename std::underlying_type<T>::type;
 
 template <typename...>
-struct disjunction;
-template <>
-struct disjunction<> : std::false_type {};
+struct disjunction : std::false_type {};
 template <typename P>
 struct disjunction<P> : P {};
-template <typename P1, typename P2>
-struct disjunction<P1, P2> : std::conditional<P1::value, P1, P2>::type {};
-template <typename P1, typename P2, typename P3, typename... Pn>
-struct disjunction<P1, P2, P3, Pn...> 
-  : std::conditional<P1::value, P1, disjunction<P2, P3, Pn...>>::type {
+template <typename P1, typename... Pn>
+struct disjunction<P1, Pn...> 
+  : conditional_t<bool(P1::value), P1, disjunction<Pn...>> {
 };
 
 template <typename...>
-struct conjunction;
-template <>
-struct conjunction<> : std::true_type {};
+struct conjunction : std::true_type {};
 template <typename P>
 struct conjunction<P> : P {};
-template <typename P1, typename P2>
-struct conjunction<P1, P2> : std::conditional<P1::value, P2, P1>::type {};
-template <typename P1, typename P2, typename P3, typename... Pn>
-struct conjunction<P1, P2, P3, Pn...>
-  : std::conditional<P1::value, conjunction<P2, P3, Pn...>, P1>::type {
+template <typename P1, typename... Pn>
+struct conjunction<P1, Pn...>
+  : conditional_t<bool(P1::value), conjunction<Pn...>, P1> {
 };
 
 struct monostate {
