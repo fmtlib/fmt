@@ -1860,11 +1860,11 @@ TEST(format_test, compile_time_string) {
 
   (void)with_null;
   (void)no_null;
-#if __cplusplus >= 201703L
+#if FMT_CPLUSPLUS >= 201703L
   EXPECT_EQ("42", fmt::format(FMT_STRING(with_null), 42));
   EXPECT_EQ("42", fmt::format(FMT_STRING(no_null), 42));
 #endif
-#if defined(FMT_USE_STRING_VIEW) && __cplusplus >= 201703L
+#if defined(FMT_USE_STRING_VIEW) && FMT_CPLUSPLUS >= 201703L
   EXPECT_EQ("42", fmt::format(FMT_STRING(std::string_view("{}")), 42));
 #endif
 }
@@ -2233,7 +2233,7 @@ TEST(format_test, char_traits_is_not_ambiguous) {
   using namespace std;
   auto c = char_traits<char>::char_type();
   (void)c;
-#if __cplusplus >= 201103L
+#if FMT_CPLUSPLUS >= 201103L
   auto s = std::string();
   auto lval = begin(s);
   (void)lval;

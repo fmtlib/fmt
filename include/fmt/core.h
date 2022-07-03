@@ -93,7 +93,7 @@
 // GCC doesn't allow throw in constexpr until version 6 (bug 67371).
 #ifndef FMT_USE_CONSTEXPR
 #  if (FMT_HAS_FEATURE(cxx_relaxed_constexpr) || FMT_MSC_VERSION >= 1912 || \
-       (FMT_GCC_VERSION >= 600 && __cplusplus >= 201402L)) &&               \
+       (FMT_GCC_VERSION >= 600 && FMT_CPLUSPLUS >= 201402L)) &&             \
       !FMT_ICC_VERSION && !defined(__NVCC__)
 #    define FMT_USE_CONSTEXPR 1
 #  else
@@ -106,9 +106,9 @@
 #  define FMT_CONSTEXPR
 #endif
 
-#if ((__cplusplus >= 202002L) &&                              \
+#if ((FMT_CPLUSPLUS >= 202002L) &&                            \
      (!defined(_GLIBCXX_RELEASE) || _GLIBCXX_RELEASE > 9)) || \
-    (__cplusplus >= 201709L && FMT_GCC_VERSION >= 1002)
+    (FMT_CPLUSPLUS >= 201709L && FMT_GCC_VERSION >= 1002)
 #  define FMT_CONSTEXPR20 constexpr
 #else
 #  define FMT_CONSTEXPR20
@@ -116,11 +116,11 @@
 
 // Check if constexpr std::char_traits<>::{compare,length} are supported.
 #if defined(__GLIBCXX__)
-#  if __cplusplus >= 201703L && defined(_GLIBCXX_RELEASE) && \
+#  if FMT_CPLUSPLUS >= 201703L && defined(_GLIBCXX_RELEASE) && \
       _GLIBCXX_RELEASE >= 7  // GCC 7+ libstdc++ has _GLIBCXX_RELEASE.
 #    define FMT_CONSTEXPR_CHAR_TRAITS constexpr
 #  endif
-#elif defined(_LIBCPP_VERSION) && __cplusplus >= 201703L && \
+#elif defined(_LIBCPP_VERSION) && FMT_CPLUSPLUS >= 201703L && \
     _LIBCPP_VERSION >= 4000
 #  define FMT_CONSTEXPR_CHAR_TRAITS constexpr
 #elif FMT_MSC_VERSION >= 1914 && FMT_CPLUSPLUS >= 201703L
@@ -248,7 +248,7 @@
     (FMT_CPLUSPLUS >= 201703L || defined(_LIBCPP_VERSION))
 #  include <string_view>
 #  define FMT_USE_STRING_VIEW
-#elif FMT_HAS_INCLUDE("experimental/string_view") && __cplusplus >= 201402L
+#elif FMT_HAS_INCLUDE("experimental/string_view") && FMT_CPLUSPLUS >= 201402L
 #  include <experimental/string_view>
 #  define FMT_USE_EXPERIMENTAL_STRING_VIEW
 #endif
@@ -258,9 +258,9 @@
 #endif
 
 #ifndef FMT_CONSTEVAL
-#  if ((FMT_GCC_VERSION >= 1000 || FMT_CLANG_VERSION >= 1101) &&       \
-       __cplusplus >= 202002L && !defined(__apple_build_version__)) || \
-      (defined(__cpp_consteval) &&                                     \
+#  if ((FMT_GCC_VERSION >= 1000 || FMT_CLANG_VERSION >= 1101) &&         \
+       FMT_CPLUSPLUS >= 202002L && !defined(__apple_build_version__)) || \
+      (defined(__cpp_consteval) &&                                       \
        (!FMT_MSC_VERSION || _MSC_FULL_VER >= 193030704))
 // consteval is broken in MSVC before VS2022 and Apple clang 13.
 #    define FMT_CONSTEVAL consteval
@@ -271,8 +271,8 @@
 #endif
 
 #ifndef FMT_USE_NONTYPE_TEMPLATE_ARGS
-#  if defined(__cpp_nontype_template_args) &&                \
-      ((FMT_GCC_VERSION >= 903 && __cplusplus >= 201709L) || \
+#  if defined(__cpp_nontype_template_args) &&                  \
+      ((FMT_GCC_VERSION >= 903 && FMT_CPLUSPLUS >= 201709L) || \
        __cpp_nontype_template_args >= 201911L)
 #    define FMT_USE_NONTYPE_TEMPLATE_ARGS 1
 #  else

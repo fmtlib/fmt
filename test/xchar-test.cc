@@ -98,12 +98,12 @@ TEST(xchar_test, is_formattable) {
 }
 
 TEST(xchar_test, compile_time_string) {
-#if defined(FMT_USE_STRING_VIEW) && __cplusplus >= 201703L
+#if defined(FMT_USE_STRING_VIEW) && FMT_CPLUSPLUS >= 201703L
   EXPECT_EQ(L"42", fmt::format(FMT_STRING(std::wstring_view(L"{}")), 42));
 #endif
 }
 
-#if __cplusplus > 201103L
+#if FMT_CPLUSPLUS > 201103L
 struct custom_char {
   int value;
   custom_char() = default;
