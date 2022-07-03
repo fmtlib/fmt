@@ -306,6 +306,24 @@ template <typename T> using type_identity_t = typename type_identity<T>::type;
 template <typename T>
 using underlying_t = typename std::underlying_type<T>::type;
 
+template <typename...>
+struct disjunction : std::false_type {};
+template <typename P>
+struct disjunction<P> : P {};
+template <typename P1, typename... Pn>
+struct disjunction<P1, Pn...> 
+  : conditional_t<bool(P1::value), P1, disjunction<Pn...>> {
+};
+
+template <typename...>
+struct conjunction : std::true_type {};
+template <typename P>
+struct conjunction<P> : P {};
+template <typename P1, typename... Pn>
+struct conjunction<P1, Pn...>
+  : conditional_t<bool(P1::value), conjunction<Pn...>, P1> {
+};
+
 struct monostate {
   constexpr monostate() {}
 };
