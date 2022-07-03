@@ -142,12 +142,13 @@ struct basic_ostream_formatter : formatter<basic_string_view<Char>, Char> {
 
 using ostream_formatter = basic_ostream_formatter<char>;
 
-template <typename T>
-struct formatter<detail::streamed_view<T>> : ostream_formatter {
+template <typename T, typename Char>
+struct formatter<detail::streamed_view<T>, Char>
+    : basic_ostream_formatter<Char> {
   template <typename OutputIt>
   auto format(detail::streamed_view<T> view,
-              basic_format_context<OutputIt, char>& ctx) const -> OutputIt {
-    return ostream_formatter::format(view.value, ctx);
+              basic_format_context<OutputIt, Char>& ctx) const -> OutputIt {
+    return basic_ostream_formatter<Char>::format(view.value, ctx);
   }
 };
 
