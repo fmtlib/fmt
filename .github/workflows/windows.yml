@@ -13,7 +13,7 @@ jobs:
         # windows-2019 has MSVC 2019 installed;
         # windows-2022 has MSVC 2022 installed:
         # https://github.com/actions/virtual-environments.
-        os: [windows-2019, windows-2022]
+        os: [windows-2019]
         platform: [Win32, x64]
         build_type: [Debug, Release]
         standard: [11, 17, 20]
@@ -22,6 +22,10 @@ jobs:
             platform: Win32
             build_type: Debug
             shared: -DBUILD_SHARED_LIBS=ON
+          - os: windows-2022
+            platform: x64
+            build_type: Debug
+            standard: 20
         exclude:
           - os: windows-2019
             standard: 11
@@ -29,8 +33,6 @@ jobs:
           - os: windows-2019
             standard: 20
             platform: Win32
-          - os: windows-2022
-            standard: 11
 
     steps:
     - uses: actions/checkout@v2
