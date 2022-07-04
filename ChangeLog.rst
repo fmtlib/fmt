@@ -5,8 +5,8 @@
   formats. In particular this results in consistent rounding on all platforms
   and removing the ``s[n]printf`` fallback for decimal FP formatting.
 
-* Compile-time floating point formatting now works without header-only mode.
-  For example (`godbolt <https://godbolt.org/z/G37PTeG3b>`__):
+* Compile-time floating point formatting no longer requires the header-only
+  mode. For example (`godbolt <https://godbolt.org/z/G37PTeG3b>`__):
 
   .. code:: c++
 
@@ -20,6 +20,8 @@
      }
 
      constexpr auto answer = compile_time_itoa(0.42);
+
+  works with the default settings.
 
 * Improved the implementation of
   `Dragonbox <https://github.com/jk-jeon/dragonbox>`_, the algorithm used for
