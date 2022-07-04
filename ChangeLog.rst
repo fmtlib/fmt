@@ -1,9 +1,9 @@
 9.0.0 - TBD
 -----------
 
-* Switched to the internal floating point formatter for all decimal formats.
-  In particular this results in consistent rounding on all platforms and
-  removing the ``s[n]printf`` fallback for decimal FP formatting.
+* Switched to the internal floating point formatter for all decimal presentation
+  formats. In particular this results in consistent rounding on all platforms
+  and removing the ``s[n]printf`` fallback for decimal FP formatting.
 
 * Compile-time floating point formatting now works without header-only mode.
   For example (`godbolt <https://godbolt.org/z/G37PTeG3b>`__):
@@ -75,6 +75,12 @@
 
   Note that ``fmt/std.h`` provides a ``formatter`` specialization for
   ``std::thread::id`` so you don't need to format it via ``std::ostream``.
+
+* Deprecated implicit conversions of unscoped enums to integers for consistency
+  with scoped enums.
+
+* Added an argument-dependent lookup based ``format_as`` extension API to
+  simplify formatting of enums.
 
 * Added experimental ``std::variant`` formatting support
   (`#2941 <https://github.com/fmtlib/fmt/pull/2941>`_).
@@ -161,6 +167,23 @@
   Thanks `@AlexGuteniev (Alex Guteniev) <https://github.com/AlexGuteniev>`_.
 
 * Fixed Unicode handling when writing to an ostream.
+
+* Added support for nested specifiers to range formatting
+  (`#2673 <https://github.com/fmtlib/fmt/pull/2673>`_).
+  For example (`godbolt <https://godbolt.org/z/xd3Gj38cf>`__):
+
+  .. code:: c++
+
+     #include <vector>
+     #include <fmt/ranges.h>
+
+     int main() {
+       fmt::print("{::#x}\n", std::vector{10, 20, 30});
+     }
+
+  prints ``[0xa, 0x14, 0x1e]``.
+
+  Thanks `@BRevzin (Barry Revzin) <https://github.com/BRevzin>`_.
 
 * Implemented escaping of wide strings in ranges
   (`#2904 <https://github.com/fmtlib/fmt/pull/2904>`_).
@@ -331,7 +354,12 @@
   `#2929 <https://github.com/fmtlib/fmt/pull/2929>`_,
   `#2936 <https://github.com/fmtlib/fmt/issues/2936>`_,
   `#2937 <https://github.com/fmtlib/fmt/pull/2937>`_,
-  `#2938 <https://github.com/fmtlib/fmt/pull/2938>`_).
+  `#2938 <https://github.com/fmtlib/fmt/pull/2938>`_,
+  `#2951 <https://github.com/fmtlib/fmt/pull/2951>`_,
+  `#2954 <https://github.com/fmtlib/fmt/issues/2954>`_,
+  `#2957 <https://github.com/fmtlib/fmt/pull/2957>`_,
+  `#2958 <https://github.com/fmtlib/fmt/issues/2958>`_,
+  `#2960 <https://github.com/fmtlib/fmt/pull/2960>`_).
   Thanks `@matrackif <https://github.com/matrackif>`_
   `@Tobi823 (Tobias Hellmann) <https://github.com/Tobi823>`_,
   `@ivan-volnov (Ivan Volnov) <https://github.com/ivan-volnov>`_,
@@ -351,7 +379,8 @@
   `@Agga <https://github.com/Agga>`_,
   `@madmaxoft (Mattes D) <https://github.com/madmaxoft>`_,
   `@JurajX (Juraj) <https://github.com/JurajX>`_,
-  `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
+  `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_,
+  `@Dani-Hub (Daniel Krügler) <https://github.com/Dani-Hub>`_.
 
 8.1.1 - 2022-01-06
 ------------------
@@ -502,6 +531,10 @@
   
     ["
     aan"]
+
+* Added an experimental ``?`` specifier for escaping strings.
+  (`#2674 <https://github.com/fmtlib/fmt/pull/2674>`_).
+  Thanks `@BRevzin (Barry Revzin) <https://github.com/BRevzin>`_.
 
 * Switched to JSON-like representation of maps and sets for consistency with
   Python's ``str.format``.
