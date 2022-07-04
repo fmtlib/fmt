@@ -308,10 +308,10 @@ If a type provides both a ``formatter`` specialization and an implicit
 conversion to a formattable type, the specialization takes precedence over the
 conversion.
 
-For scoped enums (enum classes) {fmt} also provides the ``format_as`` extension
-API. To format an enum via this API define ``format_as`` that takes this enum
-and converts it to the underlying type. ``format_as`` should be defined in the
-same namespace as the enum.
+For enums {fmt} also provides the ``format_as`` extension API. To format an enum
+via this API define ``format_as`` that takes this enum and converts it to the
+underlying type. ``format_as`` should be defined in the same namespace as the
+enum.
 
 Example (https://godbolt.org/z/r7vvGE1v7)::
 
