@@ -19,7 +19,7 @@
        return result;
      }
 
-     constexpr auto answer = compile_time_itoa(0.42);
+     constexpr auto answer = compile_time_dtoa(0.42);
 
   works with the default settings.
 
