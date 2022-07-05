@@ -287,7 +287,8 @@ FMT_CONSTEXPR20 auto bit_cast(const From& from) -> To {
   if (is_constant_evaluated()) return std::bit_cast<To>(from);
 #endif
   auto to = To();
-  std::memcpy(&to, &from, sizeof(to));
+  std::memcpy(static_cast<void*>(&to), static_cast<const void*>(&from),
+              sizeof(to));
   return to;
 }
 
