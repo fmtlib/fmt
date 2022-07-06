@@ -392,7 +392,7 @@ using maybe_const_range =
     conditional_t<has_const_begin_end<R>::value, const R, R>;
 
 template <typename R>
-struct is_not_recursive_range : std::bool_constant<
+struct is_not_recursive_range : bool_constant<
     !std::is_same<detail::uncvref_type<R>, R>::value> {};
 
 template <typename R, typename Char>
