@@ -413,10 +413,13 @@ struct formatter<
     enable_if_t<
         conjunction<fmt::is_range<R, Char>,
           detail::is_not_recursive_range<R>,
+// Workaround a bug in MSVC 2015 and earlier.
+#if !FMT_MSC_VERSION || FMT_MSC_VERSION > 1900
           disjunction<
               detail::is_formattable_delayed<R, Char>,
               detail::has_fallback_formatter_delayed<R, Char>
           >
+#endif
         >::value
         >> {
 
