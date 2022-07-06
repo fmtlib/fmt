@@ -390,23 +390,33 @@ using range_formatter_type = conditional_t<
 template <typename R>
 using maybe_const_range =
     conditional_t<has_const_begin_end<R>::value, const R, R>;
+
+template <typename R>
+struct is_not_recursive_range : std::bool_constant<
+    !std::is_same<detail::uncvref_type<R>, R>::value> {};
+
+template <typename R, typename Char>
+struct is_formattable_delayed : is_formattable<
+    detail::uncvref_type<detail::maybe_const_range<R>>, Char> {
+};
+
+template <typename R, typename Char>
+struct has_fallback_formatter_delayed : detail::has_fallback_formatter<
+    detail::uncvref_type<detail::maybe_const_range<R>>, Char> {
+};
+
 }  // namespace detail
 
 template <typename R, typename Char>
 struct formatter<
     R, Char,
     enable_if_t<
-        conjunction<fmt::is_range<R, Char>
-// Workaround a bug in MSVC 2017 and earlier.
-#if !FMT_MSC_VERSION || FMT_MSC_VERSION >= 1920
-        ,
-        disjunction<
-          is_formattable<detail::uncvref_type<detail::maybe_const_range<R>>,
-                         Char>,
-          detail::has_fallback_formatter<
-             detail::uncvref_type<detail::maybe_const_range<R>>, Char>
-        >
-#endif
+        conjunction<fmt::is_range<R, Char>,
+          detail::is_not_recursive_range<R>,
+          disjunction<
+              detail::is_formattable_delayed<R, Char>,
+              detail::has_fallback_formatter_delayed<R, Char>
+          >
         >::value
         >> {
 
