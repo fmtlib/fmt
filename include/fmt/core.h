@@ -201,7 +201,7 @@
 #endif
 
 // An inline std::forward replacement.
-#define FMT_FORWARD(T, value) static_cast<T&&>(value)
+#define FMT_FORWARD(...) static_cast<decltype(__VA_ARGS__)&&>(__VA_ARGS__)
 
 #ifdef _MSC_VER
 #  define FMT_UNCHECKED_ITERATOR(It) \
@@ -1711,7 +1711,7 @@ constexpr auto encode_types() -> unsigned long long {
 
 template <typename Context, typename T>
 FMT_CONSTEXPR FMT_INLINE auto make_value(T&& val) -> value<Context> {
-  const auto& arg = arg_mapper<Context>().map(FMT_FORWARD(T, val));
+  const auto& arg = arg_mapper<Context>().map(FMT_FORWARD(val));
 
   constexpr bool formattable_char =
       !std::is_same<decltype(arg), const unformattable_char&>::value;
@@ -1878,7 +1878,7 @@ class format_arg_store
         data_{detail::make_arg<
             is_packed, Context,
             detail::mapped_type_constant<remove_cvref_t<T>, Context>::value>(
-            FMT_FORWARD(T, args))...} {
+            FMT_FORWARD(args))...} {
     detail::init_named_args(data_.named_args(), 0, 0, args...);
   }
 };
@@ -1894,7 +1894,7 @@ class format_arg_store
 template <typename Context = format_context, typename... Args>
 constexpr auto make_format_args(Args&&... args)
     -> format_arg_store<Context, remove_cvref_t<Args>...> {
-  return {FMT_FORWARD(Args, args)...};
+  return {FMT_FORWARD(args)...};
 }
 
 /**
