@@ -366,10 +366,12 @@ class uint128_fallback {
   }
   FMT_CONSTEXPR auto operator>>(int shift) const -> uint128_fallback {
     if (shift == 64) return {0, hi_};
+    if (shift > 64) return uint128_fallback(0, hi_) >> (shift - 64);
     return {hi_ >> shift, (hi_ << (64 - shift)) | (lo_ >> shift)};
   }
   FMT_CONSTEXPR auto operator<<(int shift) const -> uint128_fallback {
     if (shift == 64) return {lo_, 0};
+    if (shift > 64) return uint128_fallback(lo_, 0) << (shift - 64);
     return {hi_ << shift | (lo_ >> (64 - shift)), (lo_ << shift)};
   }
   FMT_CONSTEXPR auto operator>>=(int shift) -> uint128_fallback& {
