@@ -129,7 +129,10 @@ template <typename T> struct streamed_view { const T& value; };
 
 // Formats an object of type T that has an overloaded ostream operator<<.
 template <typename Char>
-struct basic_ostream_formatter : formatter<basic_string_view<Char>, Char> {
+struct basic_ostream_formatter
+    : private formatter<basic_string_view<Char>, Char> {
+  using basic_ostream_formatter::formatter::parse;
+
   template <typename T, typename OutputIt>
   auto format(const T& value, basic_format_context<OutputIt, Char>& ctx) const
       -> OutputIt {
