@@ -57,10 +57,6 @@ inline void write_escaped_path<std::filesystem::path::value_type>(
 
 }  // namespace detail
 
-#if !FMT_MSC_VERSION || FMT_MSC_VERSION >= 1920
-// For MSVC 2017 and earlier using the partial specialization
-// would cause an ambiguity error, therefore we provide it only
-// conditionally.
 template <typename Char>
 struct formatter<std::filesystem::path, Char>
     : formatter<basic_string_view<Char>> {
@@ -73,7 +69,6 @@ struct formatter<std::filesystem::path, Char>
         basic_string_view<Char>(quoted.data(), quoted.size()), ctx);
   }
 };
-#endif
 FMT_END_NAMESPACE
 #endif
 

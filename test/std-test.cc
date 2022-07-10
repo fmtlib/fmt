@@ -14,10 +14,7 @@
 #include "gtest/gtest.h"
 
 TEST(std_test, path) {
-// Test ambiguity problem described in #2954. We need to exclude compilers
-// where the ambiguity problem cannot be solved for now.
-#if defined(__cpp_lib_filesystem) && \
-    (!FMT_MSC_VERSION || FMT_MSC_VERSION >= 1920)
+#ifdef __cpp_lib_filesystem
   EXPECT_EQ(fmt::format("{:8}", std::filesystem::path("foo")), "\"foo\"   ");
   EXPECT_EQ(fmt::format("{}", std::filesystem::path("foo\"bar.txt")),
             "\"foo\\\"bar.txt\"");
@@ -37,10 +34,8 @@ TEST(std_test, path) {
 }
 
 TEST(ranges_std_test, format_vector_path) {
-// Test ambiguity problem described in #2954. We need to exclude compilers
-// where the ambiguity problem cannot be solved for now.
-#if defined(__cpp_lib_filesystem) && \
-    (!FMT_MSC_VERSION || FMT_MSC_VERSION >= 1920)
+// Test ambiguity problem described in #2954.
+#ifdef __cpp_lib_filesystem
   auto p = std::filesystem::path("foo/bar.txt");
   auto c = std::vector<std::string>{"abc", "def"};
   EXPECT_EQ(fmt::format("path={}, range={}", p, c),

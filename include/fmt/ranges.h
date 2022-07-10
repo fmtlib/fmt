@@ -390,22 +390,35 @@ using range_formatter_type = conditional_t<
 template <typename R>
 using maybe_const_range =
     conditional_t<has_const_begin_end<R>::value, const R, R>;
+
+// is_nonrecursive_range depends on fmt::is_range<T, Char>::value == true.
+// It exists to ensure short-circuit evaluation in the constraint of the 
+// formatter specialization below. A similar approach is used in 
+// https://wg21.link/p2286.
+template <typename R>
+struct is_nonrecursive_range : bool_constant<
+    !std::is_same<uncvref_type<R>, R>::value> {};
+
+// is_formattable_delayed depends on is_nonrecursive_range<R>::value == true.
+// It exists to ensure short-circuit evaluation in the constraint of the 
+// formatter specialization below.
+template <typename R, typename Char>
+struct is_formattable_delayed : disjunction<
+    is_formattable<uncvref_type<maybe_const_range<R>>, Char>,
+    has_fallback_formatter<uncvref_type<maybe_const_range<R>>, Char>> {};
+
 }  // namespace detail
 
 template <typename R, typename Char>
 struct formatter<
     R, Char,
     enable_if_t<
-        conjunction<fmt::is_range<R, Char>
-// Workaround a bug in MSVC 2017 and earlier.
-#if !FMT_MSC_VERSION || FMT_MSC_VERSION >= 1920
-        ,
-        disjunction<
-          is_formattable<detail::uncvref_type<detail::maybe_const_range<R>>,
-                         Char>,
-          detail::has_fallback_formatter<
-             detail::uncvref_type<detail::maybe_const_range<R>>, Char>
-        >
+        conjunction<fmt::is_range<R, Char>,
+          detail::is_nonrecursive_range<R>
+// Workaround a bug in MSVC 2015 and earlier.
+#if !FMT_MSC_VERSION || FMT_MSC_VERSION > 1900
+          ,
+          detail::is_formattable_delayed<R, Char>
 #endif
         >::value
         >> {
