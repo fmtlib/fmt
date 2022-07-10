@@ -101,7 +101,7 @@ template <typename Float> void check_isfinite() {
 
 TEST(float_test, isfinite) {
   check_isfinite<double>();
-#ifdef __SIZEOF_FLOAT128__
+#if FMT_USE_FLOAT128
   check_isfinite<fmt::detail::float128>();
 #endif
 }
@@ -122,7 +122,7 @@ template <typename Float> void check_isnan() {
 
 TEST(float_test, isnan) {
   check_isnan<double>();
-#ifdef __SIZEOF_FLOAT128__
+#if FMT_USE_FLOAT128
   check_isnan<fmt::detail::float128>();
 #endif
 }
