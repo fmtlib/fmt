@@ -415,7 +415,7 @@ struct formatter<
       detail::range_formatter_type<Char, detail::uncvref_type<range_type>>;
   formatter_type underlying_;
   bool custom_specs_ = false;
-  bool use_brackets_ = true;
+  bool no_brackets_ = false;
 
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
@@ -424,7 +424,7 @@ struct formatter<
     if (it == end || *it == '}') return it;
 
     if (*it == 'n') {
-      use_brackets_ = false;
+      no_brackets_ = true;
       ++it;
     }
 
@@ -444,7 +444,7 @@ struct formatter<
     Char postfix = detail::is_set<R>::value ? '}' : ']';
     detail::range_mapper<buffer_context<Char>> mapper;
     auto out = ctx.out();
-    if (use_brackets_) *out++ = prefix;
+    if (!no_brackets_) *out++ = prefix;
     int i = 0;
     auto it = detail::range_begin(range);
     auto end = detail::range_end(range);
@@ -458,7 +458,7 @@ struct formatter<
       }
       ++i;
     }
-    if (use_brackets_) *out++ = postfix;
+    if (!no_brackets_) *out++ = postfix;
     return out;
   }
 };
