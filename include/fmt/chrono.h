@@ -203,7 +203,7 @@ To safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
     }
     const auto min1 =
         (std::numeric_limits<IntermediateRep>::min)() / Factor::num;
-    if (count < min1) {
+    if (!std::is_unsigned<IntermediateRep>::value && count < min1) {
       ec = 1;
       return {};
     }
@@ -1396,7 +1396,8 @@ inline bool isfinite(T) {
 // Converts value to Int and checks that it's in the range [0, upper).
 template <typename T, typename Int, FMT_ENABLE_IF(std::is_integral<T>::value)>
 inline Int to_nonnegative_int(T value, Int upper) {
-  FMT_ASSERT(value >= 0 && to_unsigned(value) <= to_unsigned(upper),
+  FMT_ASSERT(std::is_unsigned<Int>::value ||
+             (value >= 0 && to_unsigned(value) <= to_unsigned(upper)),
              "invalid value");
   (void)upper;
   return static_cast<Int>(value);

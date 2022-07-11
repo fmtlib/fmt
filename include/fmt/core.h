@@ -405,7 +405,7 @@ template <typename T> auto convert_for_visit(T) -> monostate { return {}; }
 template <typename Int>
 FMT_CONSTEXPR auto to_unsigned(Int value) ->
     typename std::make_unsigned<Int>::type {
-  FMT_ASSERT(value >= 0, "negative value");
+  FMT_ASSERT(std::is_unsigned<Int>::value || value >= 0, "negative value");
   return static_cast<typename std::make_unsigned<Int>::type>(value);
 }
 
