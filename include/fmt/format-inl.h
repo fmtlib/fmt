@@ -1346,26 +1346,11 @@ template <typename T> decimal_fp<T> to_decimal(T x) noexcept {
     goto small_divisor_case_label;
   } else {
     // r == deltai; compare fractional parts.
-    const carrier_uint two_fl = two_fc - 1;
+    const typename cache_accessor<T>::compute_mul_parity_result x_mul =
+        cache_accessor<T>::compute_mul_parity(two_fc - 1, cache, beta);
 
-    if (!include_left_endpoint ||
-        exponent < float_info<T>::case_fc_pm_half_lower_threshold ||
-        exponent > float_info<T>::divisibility_check_by_5_threshold) {
-      // If the left endpoint is not included, the condition for
-      // success is z^(f) < delta^(f) (odd parity).
-      // Otherwise, the inequalities on exponent ensure that
-      // x is not an integer, so if z^(f) >= delta^(f) (even parity), we in fact
-      // have strict inequality.
-      if (!cache_accessor<T>::compute_mul_parity(two_fl, cache, beta).parity) {
-        goto small_divisor_case_label;
-      }
-    } else {
-      const typename cache_accessor<T>::compute_mul_parity_result x_mul =
-          cache_accessor<T>::compute_mul_parity(two_fl, cache, beta);
-      if (!x_mul.parity && !x_mul.is_integer) {
-        goto small_divisor_case_label;
-      }
-    }
+    if (!(x_mul.parity | (x_mul.is_integer & include_left_endpoint)))
+      goto small_divisor_case_label;
   }
   ret_value.exponent = minus_k + float_info<T>::kappa + 1;
 
