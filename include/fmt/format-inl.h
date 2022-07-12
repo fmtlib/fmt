@@ -1337,7 +1337,7 @@ template <typename T> decimal_fp<T> to_decimal(T x) noexcept {
 
   if (r < deltai) {
     // Exclude the right endpoint if necessary.
-    if (r == 0 && z_mul.is_integer && !include_right_endpoint) {
+    if (r == 0 && (z_mul.is_integer & !include_right_endpoint)) {
       --ret_value.significand;
       r = float_info<T>::big_divisor;
       goto small_divisor_case_label;
@@ -1389,7 +1389,7 @@ small_divisor_case_label:
   // or equivalently, when y is an integer.
   if (y_mul.parity != approx_y_parity)
     --ret_value.significand;
-  else if (y_mul.is_integer && ret_value.significand % 2 != 0)
+  else if (y_mul.is_integer & (ret_value.significand % 2 != 0))
     --ret_value.significand;
   return ret_value;
 }
