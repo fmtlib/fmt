@@ -2017,13 +2017,16 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
     return formatter<std::tm, Char>::format(localtime(val), ctx);
   }
 
-  static constexpr const Char default_specs[] = {'%', 'F', ' ', '%', 'T'};
+  // EDG frontend (Intel, NVHPC compilers) can't determine array length.
+  static constexpr const Char default_specs[5] = {'%', 'F', ' ', '%', 'T'};
 };
 
+#if FMT_CPLUSPLUS < 201703L
 template <typename Char, typename Duration>
 constexpr const Char
     formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
               Char>::default_specs[];
+#endif
 
 template <typename Char> struct formatter<std::tm, Char> {
  private:
