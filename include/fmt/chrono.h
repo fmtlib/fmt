@@ -1777,7 +1777,7 @@ struct chrono_formatter {
         format_to(std::back_inserter(buf), runtime("{:.{}f}"),
                   std::fmod(val * static_cast<rep>(Period::num) /
                                 static_cast<rep>(Period::den),
-                            60),
+                            static_cast<rep>(60)),
                   num_fractional_digits);
         if (negative) *out++ = '-';
         if (buf.size() < 2 || buf[1] == '.') *out++ = '0';
