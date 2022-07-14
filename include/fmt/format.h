@@ -391,11 +391,14 @@ class uint128_fallback {
       hi_ += (lo_ < n ? 1 : 0);
       return *this;
     }
-#if FMT_HAS_BUILTIN(__builtin_addcll)
+#if FMT_XLC_VERSION && defined(_ARCH_PWR9) && defined(_ARCH_PPC64)
+    lo_ = __addex(lo_, n, 0, &carry);
+    hi_ += carry;
+#elif FMT_HAS_BUILTIN(__builtin_addcll) && !FMT_XLC_VERSION
     unsigned long long carry;
     lo_ = __builtin_addcll(lo_, n, 0, &carry);
     hi_ += carry;
-#elif FMT_HAS_BUILTIN(__builtin_ia32_addcarryx_u64)
+#elif FMT_HAS_BUILTIN(__builtin_ia32_addcarryx_u64) && !FMT_XLC_VERSION
     unsigned long long result;
     auto carry = __builtin_ia32_addcarryx_u64(0, lo_, n, &result);
     lo_ = result;

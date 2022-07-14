@@ -49,6 +49,18 @@
 #  define FMT_ICC_VERSION 0
 #endif
 
+#ifdef __xlC_ver__
+#  define FMT_XLC_VERSION __xlC_ver__
+#elif defined(__xlC__)
+#  define FMT_XLC_VERSION __xlC__
+#elif defined(__IBMC__)
+#  define FMT_XLC_VERSION __IBMC__
+#elif defined(__IBMCPP__)
+#  define FMT_XLC_VERSION __IBMCPP__
+#else
+#  define FMT_XLC_VERSION 0
+#endif
+
 #ifdef _MSC_VER
 #  define FMT_MSC_VERSION _MSC_VER
 #  define FMT_MSC_WARNING(...) __pragma(warning(__VA_ARGS__))
