@@ -9,7 +9,6 @@
 #define FMT_XCHAR_H_
 
 #include <cwchar>
-#include <tuple>
 
 #include "format.h"
 
