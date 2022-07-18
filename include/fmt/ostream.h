@@ -81,13 +81,14 @@ template class filebuf_access<filebuf_access_tag,
                               decltype(&filebuf_type::_Myfile),
                               &filebuf_type::_Myfile>;
 
-inline bool write(std::filebuf& buf, fmt::string_view data) {
-  FILE* f = get_file(buf);
-  if (!f) return false;
-  print(f, data);
-  return true;
+inline bool write_ostream_msvc_unicode(std::ostream& os,
+                                       fmt::string_view data) {
+  if (auto* buf = dynamic_cast<std::filebuf*>(os.rdbuf()))
+    if (FILE* f = get_file(*buf)) return write_console_on_windows(f, data);
+  return false;
 }
-inline bool write(std::wfilebuf&, fmt::basic_string_view<wchar_t>) {
+inline bool write_ostream_msvc_unicode(std::wostream&,
+                                       fmt::basic_string_view<wchar_t>) {
   return false;
 }
 
@@ -95,10 +96,8 @@ inline bool write(std::wfilebuf&, fmt::basic_string_view<wchar_t>) {
 // It is a separate function rather than a part of vprint to simplify testing.
 template <typename Char>
 void write_buffer(std::basic_ostream<Char>& os, buffer<Char>& buf) {
-  if (const_check(FMT_MSC_VERSION)) {
-    auto filebuf = dynamic_cast<std::basic_filebuf<Char>*>(os.rdbuf());
-    if (filebuf && write(*filebuf, {buf.data(), buf.size()})) return;
-  }
+  if (const_check(FMT_MSC_VERSION))
+    if (write_ostream_msvc_unicode(os, {buf.data(), buf.size()})) return;
   const Char* buf_data = buf.data();
   using unsigned_streamsize = std::make_unsigned<std::streamsize>::type;
   unsigned_streamsize size = buf.size();
