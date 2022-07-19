@@ -391,7 +391,7 @@ class uint128_fallback {
       hi_ += (lo_ < n ? 1 : 0);
       return *this;
     }
-#if FMT_XLC_VERSION && defined(_ARCH_PWR9) && defined(_ARCH_PPC64)
+#if FMT_XLC_VERSION && defined(_ARCH_PWR9)
     lo_ = __addex(lo_, n, 0, &carry);
     hi_ += carry;
 #elif FMT_HAS_BUILTIN(__builtin_addcll) && !FMT_XLC_VERSION
