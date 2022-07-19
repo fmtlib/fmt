@@ -1,4 +1,6 @@
-find_program(DOXYGEN doxygen)
+find_program(DOXYGEN doxygen
+  PATHS "$ENV{ProgramFiles}/doxygen/bin"
+        "$ENV{ProgramFiles\(x86\)}/doxygen/bin")
 if (NOT DOXYGEN)
   message(STATUS "Target 'doc' disabled (requires doxygen)")
   return ()
