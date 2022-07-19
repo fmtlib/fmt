@@ -2989,7 +2989,7 @@ FMT_CONSTEXPR20 inline void format_dragon(basic_fp<uint128_t> value,
       upper = &upper_store;
     }
   }
-  int even = static_cast<int>(value.f & 1);
+  int even = static_cast<int>((value.f & 1) == 0);
   if (!upper) upper = &lower;
   if ((flags & dragon::fixup) != 0) {
     if (add_compare(numerator, *upper, denominator) + even <= 0) {
