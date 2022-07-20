@@ -10,6 +10,10 @@
 
 #include <fstream>
 #include <ostream>
+#if _WIN32 && __GLIBCXX__
+#  include <ext/stdio_filebuf.h>
+#  include <ext/stdio_sync_filebuf.h>
+#endif
 
 #include "format.h"
 
@@ -92,12 +96,36 @@ inline bool write_ostream_msvc_unicode(std::wostream&,
   return false;
 }
 
+#if _WIN32 && __GLIBCXX__
+inline bool write_ostream_gcc_mingw_unicode(std::ostream& os,
+                                            fmt::string_view data) {
+  auto* rdbuf = os.rdbuf();
+  FILE* c_file;
+  if (auto* fbuf = dynamic_cast<__gnu_cxx::stdio_sync_filebuf<char>*>(rdbuf))
+    c_file = fbuf->file();
+  else if (auto* fbuf = dynamic_cast<__gnu_cxx::stdio_filebuf<char>*>(rdbuf))
+    c_file = fbuf->file();
+  else
+    return false;
+  if (c_file) return write_console_on_windows(c_file, data);
+  return false;
+}
+
+inline bool write_ostream_gcc_mingw_unicode(std::wostream&,
+                                            fmt::basic_string_view<wchar_t>) {
+  return false;
+}
+#endif
+
 // Write the content of buf to os.
 // It is a separate function rather than a part of vprint to simplify testing.
 template <typename Char>
 void write_buffer(std::basic_ostream<Char>& os, buffer<Char>& buf) {
-  if (const_check(FMT_MSC_VERSION))
-    if (write_ostream_msvc_unicode(os, {buf.data(), buf.size()})) return;
+#if FMT_MSC_VERSION
+  if (write_ostream_msvc_unicode(os, {buf.data(), buf.size()})) return;
+#elif _WIN32 && __GLIBCXX__
+  if (write_ostream_gcc_mingw_unicode(os, {buf.data(), buf.size()})) return;
+#endif
   const Char* buf_data = buf.data();
   using unsigned_streamsize = std::make_unsigned<std::streamsize>::type;
   unsigned_streamsize size = buf.size();
