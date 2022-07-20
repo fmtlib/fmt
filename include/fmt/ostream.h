@@ -10,7 +10,7 @@
 
 #include <fstream>
 #include <ostream>
-#if _WIN32 && __GLIBCXX__
+#if defined(_WIN32) && defined(__GLIBCXX__)
 #  include <ext/stdio_filebuf.h>
 #  include <ext/stdio_sync_filebuf.h>
 #endif
@@ -96,7 +96,7 @@ inline bool write_ostream_msvc_unicode(std::wostream&,
   return false;
 }
 
-#if _WIN32 && __GLIBCXX__
+#if defined(_WIN32) && defined(__GLIBCXX__)
 inline bool write_ostream_gcc_mingw_unicode(std::ostream& os,
                                             fmt::string_view data) {
   auto* rdbuf = os.rdbuf();
@@ -124,7 +124,7 @@ void write_buffer(std::basic_ostream<Char>& os, buffer<Char>& buf) {
   // TODO: check detail::is_utf8(). Here or bellow in print or in vprint?
 #if FMT_MSC_VERSION
   if (write_ostream_msvc_unicode(os, {buf.data(), buf.size()})) return;
-#elif _WIN32 && __GLIBCXX__
+#elif defined(_WIN32) && defined(__GLIBCXX__)
   if (write_ostream_gcc_mingw_unicode(os, {buf.data(), buf.size()})) return;
 #endif
   const Char* buf_data = buf.data();
