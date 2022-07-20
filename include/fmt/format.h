@@ -921,7 +921,9 @@ struct is_contiguous<basic_memory_buffer<T, SIZE, Allocator>> : std::true_type {
 };
 
 namespace detail {
+#ifdef _WIN32
 bool write_console_on_windows(std::FILE* f, string_view text);
+#endif
 FMT_API void print(std::FILE*, string_view);
 }
 

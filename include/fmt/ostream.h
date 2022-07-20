@@ -87,8 +87,10 @@ template class filebuf_access<filebuf_access_tag,
 
 inline bool write_ostream_msvc_unicode(std::ostream& os,
                                        fmt::string_view data) {
+#ifdef _WIN32
   if (auto* buf = dynamic_cast<std::filebuf*>(os.rdbuf()))
     if (FILE* f = get_file(*buf)) return write_console_on_windows(f, data);
+#endif
   return false;
 }
 inline bool write_ostream_msvc_unicode(std::wostream&,
