@@ -121,6 +121,7 @@ inline bool write_ostream_gcc_mingw_unicode(std::wostream&,
 // It is a separate function rather than a part of vprint to simplify testing.
 template <typename Char>
 void write_buffer(std::basic_ostream<Char>& os, buffer<Char>& buf) {
+  // TODO: check detail::is_utf8(). Here or bellow in print or in vprint?
 #if FMT_MSC_VERSION
   if (write_ostream_msvc_unicode(os, {buf.data(), buf.size()})) return;
 #elif _WIN32 && __GLIBCXX__
