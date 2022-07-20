@@ -8,9 +8,6 @@ target_link_libraries(test-main gtest fmt)
 
 function(add_fmt_executable name)
   add_executable(${name} ${ARGN})
-  if (MINGW)
-    target_link_libraries(${name} -static-libgcc -static-libstdc++)
-  endif ()
   # (Wstringop-overflow) - [meta-bug] bogus/missing -Wstringop-overflow warnings
   #   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=88443
   # Bogus -Wstringop-overflow warning
