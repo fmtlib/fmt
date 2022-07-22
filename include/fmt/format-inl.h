@@ -32,15 +32,22 @@ FMT_BEGIN_NAMESPACE
 namespace detail {
 
 FMT_FUNC void assert_fail(const char* file, int line, const char* message) {
+#if FMT_NO_ALLOCATIONS
+  (void)file;
+  (void)line;
+  (void)message;
+#else
   // Use unchecked std::fprintf to avoid triggering another assertion when
   // writing to stderr fails
   std::fprintf(stderr, "%s:%d: assertion failed: %s", file, line, message);
+#endif
   // Chosen instead of std::abort to satisfy Clang in CUDA mode during device
   // code pass.
   std::terminate();
 }
 
 FMT_FUNC void throw_format_error(const char* message) {
+  (void)message;
   FMT_THROW(format_error(message));
 }
 
@@ -121,11 +128,13 @@ template <typename Char> FMT_FUNC Char decimal_point_impl(locale_ref) {
 FMT_API FMT_FUNC format_error::~format_error() noexcept = default;
 #endif
 
+#if !FMT_NO_ALLOCATIONS
 FMT_FUNC std::system_error vsystem_error(int error_code, string_view format_str,
                                          format_args args) {
   auto ec = std::error_code(error_code, std::generic_category());
   return std::system_error(ec, vformat(format_str, args));
 }
+#endif
 
 namespace detail {
 
@@ -1449,6 +1458,7 @@ FMT_FUNC detail::utf8_to_utf16::utf8_to_utf16(string_view s) {
   buffer_.push_back(0);
 }
 
+#if !FMT_NO_ALLOCATIONS
 FMT_FUNC void format_system_error(detail::buffer<char>& out, int error_code,
                                   const char* message) noexcept {
   FMT_TRY {
@@ -1464,6 +1474,7 @@ FMT_FUNC void report_system_error(int error_code,
                                   const char* message) noexcept {
   report_error(format_system_error, error_code, message);
 }
+#endif  // !FMT_NO_ALLOCATIONS
 
 FMT_FUNC std::string vformat(string_view fmt, format_args args) {
   // Don't optimize the "{}" case to keep the binary size small and because it

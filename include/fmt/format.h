@@ -77,6 +77,8 @@
 #  define FMT_MSC_DEFAULT
 #endif
 
+#define FMT_STRINGIZE(T) #T
+
 #ifndef FMT_THROW
 #  if FMT_EXCEPTIONS
 #    if FMT_MSC_VERSION || defined(__NVCC__)
@@ -94,6 +96,12 @@ FMT_END_NAMESPACE
 #    else
 #      define FMT_THROW(x) throw x
 #    endif
+#  elif FMT_NO_ALLOCATIONS
+#    define FMT_THROW(x)                                                \
+      do {                                                              \
+        FMT_ASSERT(false, "ERROR THROWN AT " FMT_STRINGIZE(             \
+                              __FILE__) " : " FMT_STRINGIZE(__LINE__)); \
+      } while (false)
 #  else
 #    define FMT_THROW(x)               \
       do {                             \
@@ -894,6 +902,10 @@ template <typename T, size_t SIZE, typename Allocator>
 FMT_CONSTEXPR20 void basic_memory_buffer<T, SIZE, Allocator>::grow(
     size_t size) {
   detail::abort_fuzzing_if(size > 5000);
+#if FMT_NO_ALLOCATIONS
+  detail::assert_fail(__FILE__, __LINE__, "dynamic allocations disabled");
+  return;
+#endif
   const size_t max_size = std::allocator_traits<Allocator>::max_size(alloc_);
   size_t old_capacity = this->capacity();
   size_t new_capacity = old_capacity + old_capacity / 2;
@@ -2029,11 +2041,15 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
   switch (specs.type) {
   case presentation_type::none:
   case presentation_type::dec: {
+#if FMT_NO_ALLOCATIONS
+    (void)loc;
+#else
     if (specs.localized &&
         write_int_localized(out, static_cast<uint64_or_128_t<T>>(abs_value),
                             prefix, specs, loc)) {
       return out;
     }
+#endif
     auto num_digits = count_digits(abs_value);
     return write_int(
         out, num_digits, prefix, specs, [=](reserve_iterator<OutputIt> it) {
@@ -3160,6 +3176,12 @@ template <typename Char, typename OutputIt, typename T,
 FMT_CONSTEXPR20 auto write(OutputIt out, T value,
                            basic_format_specs<Char> specs, locale_ref loc = {})
     -> OutputIt {
+#if FMT_NO_ALLOCATIONS
+  (void)value;
+  (void)specs;
+  (void)loc;
+  return out;
+#endif
   if (const_check(!is_supported_floating_point(value))) return out;
   float_specs fspecs = parse_float_type_spec(specs);
   fspecs.sign = specs.sign;
@@ -3209,6 +3231,10 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value,
 template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(is_fast_float<T>::value)>
 FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
+#if FMT_NO_ALLOCATIONS
+  (void)value;
+  return out;
+#endif
   if (is_constant_evaluated())
     return write(out, value, basic_format_specs<Char>());
   if (const_check(!is_supported_floating_point(value))) return out;
@@ -3571,6 +3597,7 @@ FMT_API void report_error(format_func func, int error_code,
                           const char* message) noexcept;
 FMT_END_DETAIL_NAMESPACE
 
+#if !FMT_NO_ALLOCATIONS
 FMT_API auto vsystem_error(int error_code, string_view format_str,
                            format_args args) -> std::system_error;
 
@@ -3619,6 +3646,7 @@ FMT_API void format_system_error(detail::buffer<char>& out, int error_code,
 // Reports a system error without throwing an exception.
 // Can be used to report errors from destructors.
 FMT_API void report_system_error(int error_code, const char* message) noexcept;
+#endif  // !FMT_NO_ALLOCATIONS
 
 /** Fast integer formatter. */
 class format_int {

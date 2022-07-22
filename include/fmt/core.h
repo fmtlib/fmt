@@ -130,6 +130,18 @@
 #  define FMT_CONSTEXPR_CHAR_TRAITS
 #endif
 
+#ifndef FMT_NO_ALLOCATIONS
+#  define FMT_NO_ALLOCATIONS 0
+#endif
+
+#if FMT_NO_ALLOCATIONS
+#  define FMT_EXCEPTIONS 0
+#  define FMT_STATIC_THOUSANDS_SEPARATOR 1
+#  define FMT_USE_FLOAT 0
+#  define FMT_USE_DOUBLE 0
+#  define FMT_USE_LONG_DOUBLE 0
+#endif
+
 // Check if exceptions are disabled.
 #ifndef FMT_EXCEPTIONS
 #  if (defined(__GNUC__) && !defined(__EXCEPTIONS)) || \
