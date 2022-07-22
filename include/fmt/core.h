@@ -49,12 +49,6 @@
 #  define FMT_ICC_VERSION 0
 #endif
 
-#ifdef __ibmxl__
-#  define FMT_XLC_VERSION __ibmxl_vrm__
-#else
-#  define FMT_XLC_VERSION 0
-#endif
-
 #ifdef _MSC_VER
 #  define FMT_MSC_VERSION _MSC_VER
 #  define FMT_MSC_WARNING(...) __pragma(warning(__VA_ARGS__))
