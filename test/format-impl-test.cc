@@ -376,6 +376,14 @@ bool operator>=(const double_double& lhs, const double_double& rhs) {
   return lhs.a + lhs.b >= rhs.a + rhs.b;
 }
 
+struct slow_float {
+  float value;
+
+  explicit constexpr slow_float(float val = 0) : value(val) {}
+  operator float() const { return value; }
+  auto operator-() const -> slow_float { return slow_float(-value); }
+};
+
 namespace std {
 template <> struct is_floating_point<double_double> : std::true_type {};
 template <> struct numeric_limits<double_double> {
@@ -383,14 +391,35 @@ template <> struct numeric_limits<double_double> {
   static constexpr bool is_iec559 = true;
   static constexpr int digits = 106;
 };
+
+template <> struct is_floating_point<slow_float> : std::true_type {};
+template <> struct numeric_limits<slow_float> : numeric_limits<float> {};
 }  // namespace std
+
+FMT_BEGIN_NAMESPACE
+namespace detail {
+template <> struct is_fast_float<slow_float> : std::false_type {};
+namespace dragonbox {
+template <> struct float_info<slow_float> {
+  using carrier_uint = uint32_t;
+  static const int exponent_bits = 8;
+};
+}  // namespace dragonbox
+}  // namespace detail
+FMT_END_NAMESPACE
 
 TEST(format_impl_test, write_double_double) {
   auto s = std::string();
   fmt::detail::write<char>(std::back_inserter(s), double_double(42), {});
-#ifndef _MSC_VER  // MSVC has an issue with specializing is_floating_point.
-  EXPECT_EQ(s, "42");
-#endif
+  // Specializing is_floating_point is broken in MSVC.
+  if (!FMT_MSC_VERSION) EXPECT_EQ(s, "42");
+}
+
+TEST(format_impl_test, write_dragon_even) {
+  auto s = std::string();
+  fmt::detail::write<char>(std::back_inserter(s), slow_float(33554450.0f), {});
+  // Specializing is_floating_point is broken in MSVC.
+  if (!FMT_MSC_VERSION) EXPECT_EQ(s, "33554450");
 }
 
 #ifdef _WIN32
