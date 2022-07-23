@@ -1473,17 +1473,13 @@ FMT_FUNC std::string vformat(string_view fmt, format_args args) {
   return to_string(buffer);
 }
 
-#ifdef _WIN32
 namespace detail {
+#ifdef _WIN32
 using dword = conditional_t<sizeof(long) == 4, unsigned long, unsigned>;
 extern "C" __declspec(dllimport) int __stdcall WriteConsoleW(  //
     void*, const void*, dword, dword*, void*);
-}  // namespace detail
-#endif
 
-namespace detail {
-FMT_FUNC void print(std::FILE* f, string_view text) {
-#ifdef _WIN32
+FMT_FUNC bool write_console(std::FILE* f, string_view text) {
   auto fd = _fileno(f);
   if (_isatty(fd)) {
     detail::utf8_to_utf16 u16(string_view(text.data(), text.size()));
@@ -1491,11 +1487,20 @@ FMT_FUNC void print(std::FILE* f, string_view text) {
     if (detail::WriteConsoleW(reinterpret_cast<void*>(_get_osfhandle(fd)),
                               u16.c_str(), static_cast<uint32_t>(u16.size()),
                               &written, nullptr)) {
-      return;
+      return true;
     }
-    // Fallback to fwrite on failure. It can happen if the output has been
-    // redirected to NUL.
   }
+  // We return false if the file descriptor was not TTY, or it was but
+  // SetConsoleW failed which can happen if the output has been redirected to
+  // NUL. In both cases when we return false, we should attempt to do regular
+  // write via fwrite or std::ostream::write.
+  return false;
+}
+#endif
+
+FMT_FUNC void print(std::FILE* f, string_view text) {
+#ifdef _WIN32
+  if (write_console(f, text)) return;
 #endif
   detail::fwrite_fully(text.data(), 1, text.size(), f);
 }
