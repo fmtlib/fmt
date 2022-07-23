@@ -100,8 +100,8 @@ inline bool write_ostream_unicode(std::ostream& os, fmt::string_view data) {
     return false;
   if (c_file) return write_console(c_file, data);
 #else
-  (void)os;  // suppress warning
-  (void)data;
+  ignore_unused(os);
+  ignore_unused(data);
 #endif
   return false;
 }
