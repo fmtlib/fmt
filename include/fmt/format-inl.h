@@ -1479,7 +1479,7 @@ using dword = conditional_t<sizeof(long) == 4, unsigned long, unsigned>;
 extern "C" __declspec(dllimport) int __stdcall WriteConsoleW(  //
     void*, const void*, dword, dword*, void*);
 
-FMT_FUNC bool write_console_on_windows(std::FILE* f, string_view text) {
+FMT_FUNC bool write_console(std::FILE* f, string_view text) {
   auto fd = _fileno(f);
   if (_isatty(fd)) {
     detail::utf8_to_utf16 u16(string_view(text.data(), text.size()));
@@ -1500,7 +1500,7 @@ FMT_FUNC bool write_console_on_windows(std::FILE* f, string_view text) {
 
 FMT_FUNC void print(std::FILE* f, string_view text) {
 #ifdef _WIN32
-  if (write_console_on_windows(f, text)) return;
+  if (write_console(f, text)) return;
 #endif
   detail::fwrite_fully(text.data(), 1, text.size(), f);
 }

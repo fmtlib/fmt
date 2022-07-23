@@ -85,22 +85,11 @@ template class filebuf_access<filebuf_access_tag,
                               decltype(&filebuf_type::_Myfile),
                               &filebuf_type::_Myfile>;
 
-inline bool write_ostream_msvc_unicode(std::ostream& os,
-                                       fmt::string_view data) {
-#ifdef _WIN32
+inline bool write_ostream_unicode(std::ostream& os, fmt::string_view data) {
+#if FMT_MSC_VERSION
   if (auto* buf = dynamic_cast<std::filebuf*>(os.rdbuf()))
-    if (FILE* f = get_file(*buf)) return write_console_on_windows(f, data);
-#endif
-  return false;
-}
-inline bool write_ostream_msvc_unicode(std::wostream&,
-                                       fmt::basic_string_view<wchar_t>) {
-  return false;
-}
-
-#if defined(_WIN32) && defined(__GLIBCXX__)
-inline bool write_ostream_gcc_mingw_unicode(std::ostream& os,
-                                            fmt::string_view data) {
+    if (FILE* f = get_file(*buf)) return write_console(f, data);
+#elif defined(_WIN32) && defined(__GLIBCXX__)
   auto* rdbuf = os.rdbuf();
   FILE* c_file;
   if (auto* fbuf = dynamic_cast<__gnu_cxx::stdio_sync_filebuf<char>*>(rdbuf))
@@ -109,26 +98,23 @@ inline bool write_ostream_gcc_mingw_unicode(std::ostream& os,
     c_file = fbuf->file();
   else
     return false;
-  if (c_file) return write_console_on_windows(c_file, data);
-  return false;
-}
-
-inline bool write_ostream_gcc_mingw_unicode(std::wostream&,
-                                            fmt::basic_string_view<wchar_t>) {
-  return false;
-}
+  if (c_file) return write_console(c_file, data);
+#else
+  (void)os;  // suppress warning
+  (void)data;
 #endif
+  return false;
+}
+inline bool write_ostream_unicode(std::wostream&,
+                                  fmt::basic_string_view<wchar_t>) {
+  return false;
+}
 
 // Write the content of buf to os.
 // It is a separate function rather than a part of vprint to simplify testing.
 template <typename Char>
 void write_buffer(std::basic_ostream<Char>& os, buffer<Char>& buf) {
-  // TODO: check detail::is_utf8(). Here or bellow in print or in vprint?
-#if FMT_MSC_VERSION
-  if (write_ostream_msvc_unicode(os, {buf.data(), buf.size()})) return;
-#elif defined(_WIN32) && defined(__GLIBCXX__)
-  if (write_ostream_gcc_mingw_unicode(os, {buf.data(), buf.size()})) return;
-#endif
+  if (write_ostream_unicode(os, {buf.data(), buf.size()})) return;
   const Char* buf_data = buf.data();
   using unsigned_streamsize = std::make_unsigned<std::streamsize>::type;
   unsigned_streamsize size = buf.size();
