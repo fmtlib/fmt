@@ -13,6 +13,8 @@
 #if defined(_WIN32) && defined(__GLIBCXX__)
 #  include <ext/stdio_filebuf.h>
 #  include <ext/stdio_sync_filebuf.h>
+#elif defined(_WIN32) && defined(_LIBCPP_VERSION)
+#  include <__std_stream>
 #endif
 
 #include "format.h"
@@ -55,35 +57,25 @@ struct is_streamable<
         (std::is_convertible<T, int>::value && !std::is_enum<T>::value)>>
     : std::false_type {};
 
-template <typename Char> FILE* get_file(std::basic_filebuf<Char>&) {
-  return nullptr;
-}
-
-struct dummy_filebuf {
-  FILE* _Myfile;
-};
-template <typename T, typename U = int> struct ms_filebuf {
-  using type = dummy_filebuf;
-};
-template <typename T> struct ms_filebuf<T, decltype(T::_Myfile, 0)> {
-  using type = T;
-};
-using filebuf_type = ms_filebuf<std::filebuf>::type;
-
-FILE* get_file(filebuf_type& buf);
-
 // Generate a unique explicit instantion in every translation unit using a tag
 // type in an anonymous namespace.
 namespace {
-struct filebuf_access_tag {};
+struct file_access_tag {};
 }  // namespace
-template <typename Tag, typename FileMemberPtr, FileMemberPtr file>
-class filebuf_access {
-  friend FILE* get_file(filebuf_type& buf) { return buf.*file; }
+template <class Tag, class BufType, FILE* BufType::*FileMemberPtr>
+class file_access {
+  friend auto get_file(BufType& obj) -> FILE* { return obj.*FileMemberPtr; }
 };
-template class filebuf_access<filebuf_access_tag,
-                              decltype(&filebuf_type::_Myfile),
-                              &filebuf_type::_Myfile>;
+
+#if FMT_MSC_VERSION
+template class file_access<file_access_tag, std::filebuf,
+                           &std::filebuf::_Myfile>;
+auto get_file(std::filebuf&) -> FILE*;
+#elif defined(_WIN32) && defined(_LIBCPP_VERSION)
+template class file_access<file_access_tag, std::__stdoutbuf<char>,
+                           &std::__stdoutbuf<char>::__file_>;
+auto get_file(std::__stdoutbuf<char>&) -> FILE*;
+#endif
 
 inline bool write_ostream_unicode(std::ostream& os, fmt::string_view data) {
 #if FMT_MSC_VERSION
@@ -99,6 +91,9 @@ inline bool write_ostream_unicode(std::ostream& os, fmt::string_view data) {
   else
     return false;
   if (c_file) return write_console(c_file, data);
+#elif defined(_WIN32) && defined(_LIBCPP_VERSION)
+  if (auto* buf = dynamic_cast<std::__stdoutbuf<char>*>(os.rdbuf()))
+    if (FILE* f = get_file(*buf)) return write_console(f, data);
 #else
   ignore_unused(os);
   ignore_unused(data);
