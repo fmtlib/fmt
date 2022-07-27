@@ -310,14 +310,14 @@ OutputIt write_range_entry(OutputIt out, const Arg& v) {
 }
 
 template <typename CharT, CharT... C> struct string_literal {
-  static constexpr CharT value[] = {C...};
+  static constexpr CharT value[sizeof...(C)] = {C...};
   constexpr operator basic_string_view<CharT>() const {
     return {value, sizeof...(C)};
   }
 };
 
 template <typename CharT, CharT... C>
-constexpr CharT string_literal<CharT, C...>::value[];
+constexpr CharT string_literal<CharT, C...>::value[sizeof...(C)];
 
 }  // namespace detail
 
@@ -447,7 +447,7 @@ struct range_formatter<
   }
 
   template <class U>
-  FMT_CONSTEXPR static void maybe_set_debug_format(U&, long) {}
+  FMT_CONSTEXPR static void maybe_set_debug_format(U&, ...) {}
 
   FMT_CONSTEXPR void maybe_set_debug_format() {
     maybe_set_debug_format(underlying_, 0);
