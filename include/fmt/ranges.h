@@ -309,16 +309,6 @@ OutputIt write_range_entry(OutputIt out, const Arg& v) {
   return write<Char>(out, v);
 }
 
-inline FMT_CONSTEXPR const char* choose_literal(std::true_type,
-                                                const char* literal,
-                                                const wchar_t*) noexcept {
-  return literal;
-}
-inline FMT_CONSTEXPR const wchar_t* choose_literal(
-    std::false_type, const char*, const wchar_t* literal) noexcept {
-  return literal;
-}
-
 template <typename CharT, CharT... C> struct string_literal {
   static constexpr CharT value[] = {C...};
   constexpr operator basic_string_view<CharT>() const {
