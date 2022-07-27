@@ -319,9 +319,13 @@ inline FMT_CONSTEXPR const wchar_t* choose_literal(
   return literal;
 }
 
-#define FMT_STATICALLY_WIDEN(CharT, Literal)                          \
-  ::fmt::detail::choose_literal(std::is_same<char, CharT>(), Literal, \
-                                L##Literal)
+template <typename CharT, CharT... C> struct string_literal {
+  static constexpr CharT value[] = {C...};
+  constexpr operator basic_string_view<CharT>() const {
+    return {value, sizeof...(C)};
+  }
+};
+
 }  // namespace detail
 
 template <typename T> struct is_tuple_like {
@@ -339,9 +343,11 @@ struct formatter<TupleT, Char,
                  enable_if_t<fmt::is_tuple_like<TupleT>::value &&
                              fmt::is_tuple_formattable<TupleT, Char>::value>> {
  private:
-  basic_string_view<Char> separator_ = FMT_STATICALLY_WIDEN(Char, ", ");
-  basic_string_view<Char> opening_bracket_ = FMT_STATICALLY_WIDEN(Char, "(");
-  basic_string_view<Char> closing_bracket_ = FMT_STATICALLY_WIDEN(Char, ")");
+  basic_string_view<Char> separator_ = detail::string_literal<Char, ',', ' '>{};
+  basic_string_view<Char> opening_bracket_ =
+      detail::string_literal<Char, '('>{};
+  basic_string_view<Char> closing_bracket_ =
+      detail::string_literal<Char, ')'>{};
 
   // C++11 generic lambda for format().
   template <typename FormatContext> struct format_each {
@@ -435,9 +441,11 @@ struct range_formatter<
  private:
   detail::range_formatter_type<Char, T> underlying_;
   bool custom_specs_ = false;
-  basic_string_view<Char> separator_ = FMT_STATICALLY_WIDEN(Char, ", ");
-  basic_string_view<Char> opening_bracket_ = FMT_STATICALLY_WIDEN(Char, "[");
-  basic_string_view<Char> closing_bracket_ = FMT_STATICALLY_WIDEN(Char, "]");
+  basic_string_view<Char> separator_ = detail::string_literal<Char, ',', ' '>{};
+  basic_string_view<Char> opening_bracket_ =
+      detail::string_literal<Char, '['>{};
+  basic_string_view<Char> closing_bracket_ =
+      detail::string_literal<Char, ']'>{};
 
   template <class U>
   FMT_CONSTEXPR static auto maybe_set_debug_format(U& u, int)
@@ -545,15 +553,16 @@ struct range_default_formatter<
   FMT_CONSTEXPR range_default_formatter() { init(range_format_constant<K>()); }
 
   FMT_CONSTEXPR void init(range_format_constant<range_format::set>) {
-    underlying_.set_brackets(FMT_STATICALLY_WIDEN(Char, "{"),
-                             FMT_STATICALLY_WIDEN(Char, "}"));
+    underlying_.set_brackets(detail::string_literal<Char, '{'>{},
+                             detail::string_literal<Char, '}'>{});
   }
 
   FMT_CONSTEXPR void init(range_format_constant<range_format::map>) {
-    underlying_.set_brackets(FMT_STATICALLY_WIDEN(Char, "{"),
-                             FMT_STATICALLY_WIDEN(Char, "}"));
+    underlying_.set_brackets(detail::string_literal<Char, '{'>{},
+                             detail::string_literal<Char, '}'>{});
     underlying_.underlying().set_brackets({}, {});
-    underlying_.underlying().set_separator(FMT_STATICALLY_WIDEN(Char, ": "));
+    underlying_.underlying().set_separator(
+        detail::string_literal<Char, ':', ' '>{});
   }
 
   FMT_CONSTEXPR void init(range_format_constant<range_format::sequence>) {}
