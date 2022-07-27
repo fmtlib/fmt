@@ -326,6 +326,9 @@ template <typename CharT, CharT... C> struct string_literal {
   }
 };
 
+template <typename CharT, CharT... C>
+constexpr CharT string_literal<CharT, C...>::value[];
+
 }  // namespace detail
 
 template <typename T> struct is_tuple_like {
