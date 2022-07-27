@@ -352,7 +352,7 @@ struct formatter<TupleT, Char,
   // C++11 generic lambda for format().
   template <typename FormatContext> struct format_each {
     template <typename T> void operator()(const T& v) {
-      if (i > 0) out = detail::copy_str_range<Char>(separator, out);
+      if (i > 0) out = detail::copy_str<Char>(separator, out);
       out = detail::write_range_entry<Char>(out, v);
       ++i;
     }
@@ -383,9 +383,9 @@ struct formatter<TupleT, Char,
   auto format(const TupleT& values, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     auto out = ctx.out();
-    out = detail::copy_str_range<Char>(opening_bracket_, out);
+    out = detail::copy_str<Char>(opening_bracket_, out);
     detail::for_each(values, format_each<FormatContext>{0, out, separator_});
-    out = detail::copy_str_range<Char>(closing_bracket_, out);
+    out = detail::copy_str<Char>(closing_bracket_, out);
     return out;
   }
 };
@@ -509,18 +509,18 @@ struct range_formatter<
   auto format(R&& range, FormatContext& ctx) const -> decltype(ctx.out()) {
     detail::range_mapper<buffer_context<Char>> mapper;
     auto out = ctx.out();
-    out = detail::copy_str_range<Char>(opening_bracket_, out);
+    out = detail::copy_str<Char>(opening_bracket_, out);
     int i = 0;
     auto it = detail::range_begin(range);
     auto end = detail::range_end(range);
     for (; it != end; ++it) {
-      if (i > 0) out = detail::copy_str_range<Char>(separator_, out);
+      if (i > 0) out = detail::copy_str<Char>(separator_, out);
       ;
       ctx.advance_to(out);
       out = underlying_.format(mapper.map(*it), ctx);
       ++i;
     }
-    out = detail::copy_str_range<Char>(closing_bracket_, out);
+    out = detail::copy_str<Char>(closing_bracket_, out);
     return out;
   }
 };

@@ -1653,7 +1653,7 @@ auto copy_str(InputIt begin, InputIt end, appender out) -> appender {
 }
 
 template <typename Char, typename R, typename OutputIt>
-FMT_CONSTEXPR auto copy_str_range(R&& rng, OutputIt out) -> OutputIt {
+FMT_CONSTEXPR auto copy_str(R&& rng, OutputIt out) -> OutputIt {
   return detail::copy_str<Char>(rng.begin(), rng.end(), out);
 }
 
