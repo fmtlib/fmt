@@ -356,7 +356,7 @@ struct formatter<TupleT, Char,
   };
 
  public:
-  FMT_CONSTEXPR formatter() { }
+  FMT_CONSTEXPR formatter() {}
 
   FMT_CONSTEXPR void set_separator(basic_string_view<Char> sep) {
     separator_ = sep;
@@ -453,7 +453,7 @@ struct range_formatter<
   }
 
  public:
-  FMT_CONSTEXPR range_formatter() { }
+  FMT_CONSTEXPR range_formatter() {}
 
   FMT_CONSTEXPR auto underlying() -> detail::range_formatter_type<Char, T>& {
     return underlying_;
