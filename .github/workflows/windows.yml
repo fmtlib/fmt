@@ -15,24 +15,30 @@ jobs:
         # https://github.com/actions/virtual-environments.
         os: [windows-2019]
         platform: [Win32, x64]
+        toolset: [v140, v141, v142]
+        standard: [14, 17, 20]
+        shared: ["", -DBUILD_SHARED_LIBS=ON]
         build_type: [Debug, Release]
-        standard: [11, 17, 20]
+        exclude:
+          - { toolset: v140, standard: 17 }
+          - { toolset: v140, standard: 20 }
+          - { toolset: v141, standard: 14 }
+          - { toolset: v141, standard: 20 }
+          - { toolset: v142, standard: 14 }
+          - { platform: Win32, toolset: v140 }
+          - { platform: Win32, toolset: v141 }
+          - { platform: Win32, standard: 14 }
+          - { platform: Win32, standard: 20 }
+          - { platform: x64, toolset: v140, shared: -DBUILD_SHARED_LIBS=ON }
+          - { platform: x64, toolset: v141, shared: -DBUILD_SHARED_LIBS=ON }
+          - { platform: x64, standard: 14, shared: -DBUILD_SHARED_LIBS=ON }
+          - { platform: x64, standard: 20, shared: -DBUILD_SHARED_LIBS=ON }
         include:
-          - os: windows-2019
-            platform: Win32
-            build_type: Debug
-            shared: -DBUILD_SHARED_LIBS=ON
           - os: windows-2022
             platform: x64
+            toolset: v143
             build_type: Debug
             standard: 20
-        exclude:
-          - os: windows-2019
-            standard: 11
-            platform: Win32
-          - os: windows-2019
-            standard: 20
-            platform: Win32
 
     steps:
     - uses: actions/checkout@v2
@@ -45,9 +51,9 @@ jobs:
       shell: bash
       working-directory: ${{runner.workspace}}/build
       run: |
-        cmake -DCMAKE_BUILD_TYPE=${{matrix.build_type}} ${{matrix.shared}} \
-              -A ${{matrix.platform}} \
+        cmake -A ${{matrix.platform}} -T ${{matrix.toolset}} \
               -DCMAKE_CXX_STANDARD=${{matrix.standard}} \
+              ${{matrix.shared}} -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \
               $GITHUB_WORKSPACE
 
     - name: Build
