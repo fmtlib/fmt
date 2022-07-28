@@ -287,7 +287,8 @@ FMT_CONSTEXPR20 auto bit_cast(const From& from) -> To {
   if (is_constant_evaluated()) return std::bit_cast<To>(from);
 #endif
   auto to = To();
-  std::memcpy(&to, &from, sizeof(to));
+  // The cast suppresses a bogus -Wclass-memaccess on GCC.
+  std::memcpy(static_cast<void*>(&to), &from, sizeof(to));
   return to;
 }
 
@@ -925,7 +926,7 @@ namespace detail {
 FMT_API bool write_console(std::FILE* f, string_view text);
 #endif
 FMT_API void print(std::FILE*, string_view);
-}
+}  // namespace detail
 
 /** A formatting error such as invalid format string. */
 FMT_CLASS_API
