@@ -2006,11 +2006,6 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
                    default_specs + sizeof(default_specs) / sizeof(Char));
   }
 
-  template <typename ParseContext>
-  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
-    return this->do_parse(ctx.begin(), ctx.end());
-  }
-
   template <typename FormatContext>
   auto format(std::chrono::time_point<std::chrono::system_clock> val,
               FormatContext& ctx) const -> decltype(ctx.out()) {
