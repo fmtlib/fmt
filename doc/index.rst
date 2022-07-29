@@ -39,7 +39,7 @@ The ``fmt::format`` function returns a string "The answer is 42.". You can use
 .. code:: c++
 
   auto out = fmt::memory_buffer();
-  format_to(std::back_inserter(out),
+  fmt::format_to(std::back_inserter(out),
             "For a moment, {} happened.", "nothing");
   auto data = out.data(); // pointer to the formatted data
   auto size = out.size(); // size of the formatted data
