@@ -2008,7 +2008,7 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
 
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
-    return this->do_parse(ctx.begin(), ctx.end(), true);
+    return this->do_parse(ctx.begin(), ctx.end());
   }
 
   template <typename FormatContext>
@@ -2039,13 +2039,10 @@ template <typename Char> struct formatter<std::tm, Char> {
   basic_string_view<Char> specs;
 
  protected:
-  template <typename It>
-  FMT_CONSTEXPR auto do_parse(It begin, It end, bool with_default = false)
-      -> It {
+  template <typename It> FMT_CONSTEXPR auto do_parse(It begin, It end) -> It {
     if (begin != end && *begin == ':') ++begin;
     end = detail::parse_chrono_format(begin, end, detail::tm_format_checker());
-    if (!with_default || end != begin)
-      specs = {begin, detail::to_unsigned(end - begin)};
+    if (end != begin) specs = {begin, detail::to_unsigned(end - begin)};
     // basic_string_view<>::compare isn't constexpr before C++17.
     if (specs.size() == 2 && specs[0] == Char('%')) {
       if (specs[1] == Char('F'))
