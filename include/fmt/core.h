@@ -1667,6 +1667,11 @@ auto copy_str(InputIt begin, InputIt end, appender out) -> appender {
   return out;
 }
 
+template <typename Char, typename R, typename OutputIt>
+FMT_CONSTEXPR auto copy_str(R&& rng, OutputIt out) -> OutputIt {
+  return detail::copy_str<Char>(rng.begin(), rng.end(), out);
+}
+
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 500
 // A workaround for gcc 4.8 to make void_t work in a SFINAE context.
 template <typename... Ts> struct void_t_impl { using type = void; };
@@ -2824,7 +2829,8 @@ FMT_CONSTEXPR auto parse_float_type_spec(const basic_format_specs<Char>& specs,
 template <typename ErrorHandler = error_handler>
 FMT_CONSTEXPR auto check_cstring_type_spec(presentation_type type,
                                            ErrorHandler&& eh = {}) -> bool {
-  if (type == presentation_type::none || type == presentation_type::string)
+  if (type == presentation_type::none || type == presentation_type::string ||
+      type == presentation_type::debug)
     return true;
   if (type != presentation_type::pointer) eh.on_error("invalid type specifier");
   return false;
@@ -3084,6 +3090,15 @@ struct formatter<T, Char,
       break;
     }
     return it;
+  }
+
+  template <detail::type U = detail::type_constant<T, Char>::value,
+            enable_if_t<(U == detail::type::string_type ||
+                         U == detail::type::cstring_type ||
+                         U == detail::type::char_type),
+                        int> = 0>
+  FMT_CONSTEXPR void set_debug_format() {
+    specs_.type = presentation_type::debug;
   }
 
   template <typename FormatContext>
