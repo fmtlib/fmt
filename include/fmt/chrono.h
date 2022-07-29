@@ -2049,8 +2049,8 @@ template <typename Char> struct formatter<std::tm, Char> {
   }
 
  public:
-  template <typename ParseContext>
-  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
+      -> decltype(ctx.begin()) {
     return this->do_parse(ctx.begin(), ctx.end());
   }
 
