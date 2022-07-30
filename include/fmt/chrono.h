@@ -2030,6 +2030,13 @@ template <typename Char> struct formatter<std::tm, Char> {
     end = detail::parse_chrono_format(begin, end, detail::tm_format_checker());
     // Replace default spec only if the new spec is not empty.
     if (end != begin) specs = {begin, detail::to_unsigned(end - begin)};
+    return end;
+  }
+
+ public:
+  FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
+      -> decltype(ctx.begin()) {
+    auto end = this->do_parse(ctx.begin(), ctx.end());
     // basic_string_view<>::compare isn't constexpr before C++17.
     if (specs.size() == 2 && specs[0] == Char('%')) {
       if (specs[1] == Char('F'))
@@ -2038,12 +2045,6 @@ template <typename Char> struct formatter<std::tm, Char> {
         spec_ = spec::hh_mm_ss;
     }
     return end;
-  }
-
- public:
-  FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
-      -> decltype(ctx.begin()) {
-    return this->do_parse(ctx.begin(), ctx.end());
   }
 
   template <typename FormatContext>
