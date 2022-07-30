@@ -419,6 +419,15 @@ template <typename R>
 using maybe_const_range =
     conditional_t<has_const_begin_end<R>::value, const R, R>;
 
+// Workaround a bug in MSVC 2015 and earlier.
+#if !FMT_MSC_VERSION || FMT_MSC_VERSION >= 1910
+template <typename R, typename Char>
+struct is_formattable_delayed
+    : disjunction<
+          is_formattable<uncvref_type<maybe_const_range<R>>, Char>,
+          has_fallback_formatter<uncvref_type<maybe_const_range<R>>, Char>> {};
+#endif
+
 }  // namespace detail
 
 template <typename T, typename Char, typename Enable = void>
@@ -582,19 +591,14 @@ struct range_format_kind
 template <typename R, typename Char>
 struct formatter<
     R, Char,
-    enable_if_t<conjunction<
-        bool_constant<range_format_kind<R, Char>::value !=
-                      range_format::disabled>
-// Workaround a bug in MSVC 2017 and earlier.
-#if !FMT_MSC_VERSION || FMT_MSC_VERSION >= 1920
-        ,
-        disjunction<
-            is_formattable<detail::uncvref_type<detail::maybe_const_range<R>>,
-                           Char>,
-            detail::has_fallback_formatter<
-                detail::uncvref_type<detail::maybe_const_range<R>>, Char>>
+    enable_if_t<conjunction<bool_constant<range_format_kind<R, Char>::value !=
+                                          range_format::disabled>
+// Workaround a bug in MSVC 2015 and earlier.
+#if !FMT_MSC_VERSION || FMT_MSC_VERSION >= 1910
+                            ,
+                            detail::is_formattable_delayed<R, Char>
 #endif
-        >::value>>
+                            >::value>>
     : detail::range_default_formatter<range_format_kind<R, Char>::value, R,
                                       Char> {
 };
