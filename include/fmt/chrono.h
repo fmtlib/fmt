@@ -2002,8 +2002,9 @@ template <typename Char, typename Duration>
 struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
                  Char> : formatter<std::tm, Char> {
   FMT_CONSTEXPR formatter() {
-    this->do_parse(default_specs,
-                   default_specs + sizeof(default_specs) / sizeof(Char));
+    basic_string_view<Char> default_specs =
+        detail::string_literal<Char, '%', 'F', ' ', '%', 'T'>{};
+    this->do_parse(default_specs.begin(), default_specs.end());
   }
 
   template <typename FormatContext>
@@ -2011,17 +2012,7 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
               FormatContext& ctx) const -> decltype(ctx.out()) {
     return formatter<std::tm, Char>::format(localtime(val), ctx);
   }
-
-  // EDG frontend (Intel, NVHPC compilers) can't determine array length.
-  static constexpr const Char default_specs[5] = {'%', 'F', ' ', '%', 'T'};
 };
-
-#if FMT_CPLUSPLUS < 201703L
-template <typename Char, typename Duration>
-constexpr const Char
-    formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
-              Char>::default_specs[];
-#endif
 
 template <typename Char> struct formatter<std::tm, Char> {
  private:
