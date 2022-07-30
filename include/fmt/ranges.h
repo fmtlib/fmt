@@ -309,16 +309,6 @@ OutputIt write_range_entry(OutputIt out, const Arg& v) {
   return write<Char>(out, v);
 }
 
-template <typename CharT, CharT... C> struct string_literal {
-  static constexpr CharT value[sizeof...(C)] = {C...};
-  constexpr operator basic_string_view<CharT>() const {
-    return {value, sizeof...(C)};
-  }
-};
-
-template <typename CharT, CharT... C>
-constexpr CharT string_literal<CharT, C...>::value[sizeof...(C)];
-
 }  // namespace detail
 
 template <typename T> struct is_tuple_like {
