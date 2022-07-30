@@ -2028,6 +2028,7 @@ template <typename Char> struct formatter<std::tm, Char> {
   template <typename It> FMT_CONSTEXPR auto do_parse(It begin, It end) -> It {
     if (begin != end && *begin == ':') ++begin;
     end = detail::parse_chrono_format(begin, end, detail::tm_format_checker());
+    // Replace default spec only if the new spec is not empty.
     if (end != begin) specs = {begin, detail::to_unsigned(end - begin)};
     // basic_string_view<>::compare isn't constexpr before C++17.
     if (specs.size() == 2 && specs[0] == Char('%')) {
