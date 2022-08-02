@@ -935,11 +935,11 @@ template <typename T> class buffer {
   /** Appends data to the end of the buffer. */
   template <typename U> void append(const U* begin, const U* end);
 
-  template <typename I> FMT_CONSTEXPR auto operator[](I index) -> T& {
+  template <typename Idx> FMT_CONSTEXPR auto operator[](Idx index) -> T& {
     return ptr_[index];
   }
-  template <typename I>
-  FMT_CONSTEXPR auto operator[](I index) const -> const T& {
+  template <typename Idx>
+  FMT_CONSTEXPR auto operator[](Idx index) const -> const T& {
     return ptr_[index];
   }
 };

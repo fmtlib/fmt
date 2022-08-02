@@ -9,7 +9,9 @@
 #include "test-assert.h"
 // clang-format on
 
+#define I 42  // simulate https://en.cppreference.com/w/c/numeric/complex/I
 #include "fmt/core.h"
+#undef I
 
 #include <algorithm>    // std::copy_n
 #include <climits>      // INT_MAX
