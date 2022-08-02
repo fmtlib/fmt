@@ -12,9 +12,6 @@
 .. image:: https://github.com/fmtlib/fmt/workflows/windows/badge.svg
    :target: https://github.com/fmtlib/fmt/actions?query=workflow%3Awindows
 
-.. image:: https://ci.appveyor.com/api/projects/status/ehjkiefde6gucy1v?svg=true
-   :target: https://ci.appveyor.com/project/vitaut/fmt
-
 .. image:: https://oss-fuzz-build-logs.storage.googleapis.com/badges/fmt.svg
    :alt: fmt is continuously fuzzed at oss-fuzz
    :target: https://bugs.chromium.org/p/oss-fuzz/issues/list?\
