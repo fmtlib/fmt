@@ -95,8 +95,7 @@ inline bool write_ostream_unicode(std::ostream& os, fmt::string_view data) {
   if (auto* buf = dynamic_cast<std::__stdoutbuf<char>*>(os.rdbuf()))
     if (FILE* f = get_file(*buf)) return write_console(f, data);
 #else
-  ignore_unused(os);
-  ignore_unused(data);
+  ignore_unused(os, data);
 #endif
   return false;
 }
@@ -109,7 +108,6 @@ inline bool write_ostream_unicode(std::wostream&,
 // It is a separate function rather than a part of vprint to simplify testing.
 template <typename Char>
 void write_buffer(std::basic_ostream<Char>& os, buffer<Char>& buf) {
-  if (write_ostream_unicode(os, {buf.data(), buf.size()})) return;
   const Char* buf_data = buf.data();
   using unsigned_streamsize = std::make_unsigned<std::streamsize>::type;
   unsigned_streamsize size = buf.size();
@@ -189,6 +187,17 @@ struct fallback_formatter<T, Char, enable_if_t<is_streamable<T, Char>::value>>
   using basic_ostream_formatter<Char>::format;
 };
 
+inline void vprint_directly(std::ostream& os, string_view format_str,
+                            format_args args) {
+#ifdef _WIN32
+  auto buffer = memory_buffer();
+  detail::vformat_to(buffer, format_str, args);
+  detail::write_buffer(os, buffer);
+#else
+  ignore_unused(os, format_str, args);
+#endif
+}
+
 }  // namespace detail
 
 FMT_MODULE_EXPORT template <typename Char>
@@ -197,6 +206,7 @@ void vprint(std::basic_ostream<Char>& os,
             basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   auto buffer = basic_memory_buffer<Char>();
   detail::vformat_to(buffer, format_str, args);
+  if (detail::write_ostream_unicode(os, {buffer.data(), buffer.size()})) return;
   detail::write_buffer(os, buffer);
 }
 
@@ -211,7 +221,11 @@ void vprint(std::basic_ostream<Char>& os,
  */
 FMT_MODULE_EXPORT template <typename... T>
 void print(std::ostream& os, format_string<T...> fmt, T&&... args) {
-  vprint(os, fmt, fmt::make_format_args(args...));
+  const auto& vargs = fmt::make_format_args(args...);
+  if (detail::is_utf8())
+    vprint(os, fmt, vargs);
+  else
+    detail::vprint_directly(os, fmt, vargs);
 }
 
 FMT_MODULE_EXPORT
