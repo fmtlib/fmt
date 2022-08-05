@@ -1738,18 +1738,18 @@ inline auto find_escape(const char* begin, const char* end)
   return result;
 }
 
-#define FMT_STRING_IMPL(s, base, explicit)                                 \
-  [] {                                                                     \
-    /* Use the hidden visibility as a workaround for a GCC bug (#1973). */ \
-    /* Use a macro-like name to avoid shadowing warnings. */               \
-    struct FMT_GCC_VISIBILITY_HIDDEN FMT_COMPILE_STRING : base {           \
-      using char_type = fmt::remove_cvref_t<decltype(s[0])>;               \
-      FMT_MAYBE_UNUSED FMT_CONSTEXPR explicit                              \
-      operator fmt::basic_string_view<char_type>() const {                 \
-        return fmt::detail_exported::compile_string_to_view<char_type>(s); \
-      }                                                                    \
-    };                                                                     \
-    return FMT_COMPILE_STRING();                                           \
+#define FMT_STRING_IMPL(s, base, explicit)                                    \
+  [] {                                                                        \
+    /* Use the hidden visibility as a workaround for a GCC bug (#1973). */    \
+    /* Use a macro-like name to avoid shadowing warnings. */                  \
+    struct FMT_GCC_VISIBILITY_HIDDEN FMT_COMPILE_STRING : base {              \
+      using char_type FMT_MAYBE_UNUSED = fmt::remove_cvref_t<decltype(s[0])>; \
+      FMT_MAYBE_UNUSED FMT_CONSTEXPR explicit                                 \
+      operator fmt::basic_string_view<char_type>() const {                    \
+        return fmt::detail_exported::compile_string_to_view<char_type>(s);    \
+      }                                                                       \
+    };                                                                        \
+    return FMT_COMPILE_STRING();                                              \
   }()
 
 /**
