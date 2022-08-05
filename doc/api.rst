@@ -7,7 +7,7 @@ API Reference
 The {fmt} library API consists of the following parts:
 
 * :ref:`fmt/core.h <core-api>`: the core API providing main formatting functions
-  for ``char``/UTF-8 with compile-time checks and minimal dependencies
+  for ``char``/UTF-8 with C++20 compile-time checks and minimal dependencies
 * :ref:`fmt/format.h <format-api>`: the full format API providing additional
   formatting functions and locale support
 * :ref:`fmt/ranges.h <ranges-api>`: formatting of ranges and tuples
@@ -28,10 +28,10 @@ macros have prefix ``FMT_``.
 Core API
 ========
 
-``fmt/core.h`` defines the core API which provides main formatting functions for
-``char``/UTF-8 with compile-time checks. It has minimal include dependencies for
-better compile times. This header is only beneficial when using {fmt} as a
-library and not in the header-only mode.
+``fmt/core.h`` defines the core API which provides main formatting functions
+for ``char``/UTF-8 with C++20 compile-time checks. It has minimal include
+dependencies for better compile times. This header is only beneficial when
+using {fmt} as a library and not in the header-only mode.
 
 The following functions use :ref:`format string syntax <syntax>`
 similar to that of Python's `str.format
@@ -70,17 +70,16 @@ checked at compile time in C++20. To pass a runtime format string wrap it in
 Compile-Time Format String Checks
 ---------------------------------
 
-Compile-time checks are enabled when using ``FMT_STRING``. They support built-in
-and string types as well as user-defined types with ``constexpr`` ``parse``
-functions in their ``formatter`` specializations.
-Requires C++14 and is a no-op in C++11.
+Compile-time checks are enabled by default on compilers that support C++20
+``consteval``. On older compilers you can use the ``FMT_STRING`` macro defined
+in ``fmt/format.h`` instead. It requires C++14 and is a no-op in C++11.
 
 .. doxygendefine:: FMT_STRING
 
-To force the use of compile-time checks, define the preprocessor variable
+To force the use of legacy compile-time checks, define the preprocessor variable
 ``FMT_ENFORCE_COMPILE_STRING``. When set, functions accepting ``FMT_STRING``
-will fail to compile with regular strings. Runtime-checked
-formatting is still possible using ``fmt::vformat``, ``fmt::vprint``, etc.
+will fail to compile with regular strings. Runtime-checked formatting is still
+possible using ``fmt::vformat``, ``fmt::vprint``, etc.
 
 .. doxygenclass:: fmt::basic_format_string
    :members:
