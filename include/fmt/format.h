@@ -1231,7 +1231,7 @@ FMT_CONSTEXPR20 auto format_decimal(Char* out, UInt value, int size)
 
 template <typename Char, typename UInt, typename Iterator,
           FMT_ENABLE_IF(!std::is_pointer<remove_cvref_t<Iterator>>::value)>
-inline auto format_decimal(Iterator out, UInt value, int size)
+FMT_CONSTEXPR inline auto format_decimal(Iterator out, UInt value, int size)
     -> format_decimal_result<Iterator> {
   // Buffer is large enough to hold all digits (digits10 + 1).
   Char buffer[digits10<UInt>() + 1];
@@ -2137,29 +2137,29 @@ class counting_iterator {
   FMT_UNCHECKED_ITERATOR(counting_iterator);
 
   struct value_type {
-    template <typename T> void operator=(const T&) {}
+    template <typename T> FMT_CONSTEXPR void operator=(const T&) {}
   };
 
-  counting_iterator() : count_(0) {}
+  FMT_CONSTEXPR counting_iterator() : count_(0) {}
 
-  size_t count() const { return count_; }
+  FMT_CONSTEXPR size_t count() const { return count_; }
 
-  counting_iterator& operator++() {
+  FMT_CONSTEXPR counting_iterator& operator++() {
     ++count_;
     return *this;
   }
-  counting_iterator operator++(int) {
+  FMT_CONSTEXPR counting_iterator operator++(int) {
     auto it = *this;
     ++*this;
     return it;
   }
 
-  friend counting_iterator operator+(counting_iterator it, difference_type n) {
+  FMT_CONSTEXPR friend counting_iterator operator+(counting_iterator it, difference_type n) {
     it.count_ += static_cast<size_t>(n);
     return it;
   }
 
-  value_type operator*() const { return {}; }
+  FMT_CONSTEXPR value_type operator*() const { return {}; }
 };
 
 template <typename Char, typename OutputIt>
