@@ -228,8 +228,10 @@ TEST(compile_test, format_to_n) {
 }
 
 TEST(compile_test, formatted_size) {
-  EXPECT_EQ(2, fmt::formatted_size(FMT_COMPILE("{0}"), 42));
-  EXPECT_EQ(5, fmt::formatted_size(FMT_COMPILE("{0:<4.2f}"), 42.0));
+  FMT_CONSTEXPR20 size_t s1 = fmt::formatted_size(FMT_COMPILE("{0}"), 42);
+  EXPECT_EQ(2, s1);
+  FMT_CONSTEXPR20 size_t s2 = fmt::formatted_size(FMT_COMPILE("{0:<4.2f}"), 42.0);
+  EXPECT_EQ(5, s2);
 }
 
 TEST(compile_test, text_and_arg) {
