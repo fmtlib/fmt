@@ -282,7 +282,7 @@ std::wstring system_wcsftime(const std::wstring& format, const std::tm* timeptr,
 #endif
 }
 
-TEST(chrono_test, time_point) {
+TEST(chrono_test_wchar, time_point) {
   auto t1 = std::chrono::system_clock::now();
 
   std::vector<std::wstring> spec_list = {
@@ -292,12 +292,17 @@ TEST(chrono_test, time_point) {
       L"%Oe", L"%a",  L"%A",  L"%w",  L"%Ow", L"%u",  L"%Ou", L"%H",  L"%OH",
       L"%I",  L"%OI", L"%M",  L"%OM", L"%S",  L"%OS", L"%x",  L"%Ex", L"%X",
       L"%EX", L"%D",  L"%F",  L"%R",  L"%T",  L"%p",  L"%z",  L"%Z"};
-  spec_list.push_back(L"%Y-%m-%d %H:%M:%S");
 #ifndef _WIN32
   // Disabled on Windows, because these formats is not consistent among
   // platforms.
   spec_list.insert(spec_list.end(), {L"%c", L"%Ec", L"%r"});
+#elif defined(__MINGW32__) && !defined(_UCRT)
+  // Only C89 conversion specifiers when using MSVCRT instead of UCRT
+  spec_list = {L"%%", L"%Y", L"%y", L"%b", L"%B", L"%m", L"%U",
+               L"%W", L"%j", L"%d", L"%a", L"%A", L"%w", L"%H",
+               L"%I", L"%M", L"%S", L"%x", L"%X", L"%p", L"%Z"};
 #endif
+  spec_list.push_back(L"%Y-%m-%d %H:%M:%S");
 
   for (const auto& spec : spec_list) {
     auto t = std::chrono::system_clock::to_time_t(t1);
