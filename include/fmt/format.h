@@ -297,6 +297,8 @@ template <typename To, typename From, FMT_ENABLE_IF(sizeof(To) == sizeof(From))>
 FMT_CONSTEXPR20 auto bit_cast(const From& from) -> To {
 #ifdef __cpp_lib_bit_cast
   if (is_constant_evaluated()) return std::bit_cast<To>(from);
+#elif FMT_HAS_BUILTIN(__builtin_bit_cast)
+  return __builtin_bit_cast(To, from);
 #endif
   auto to = To();
   // The cast suppresses a bogus -Wclass-memaccess on GCC.
