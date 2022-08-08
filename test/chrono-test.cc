@@ -121,6 +121,13 @@ TEST(chrono_test, format_tm) {
       make_tm(2000, 1, 2, 12, 14, 16),    // W52
       make_tm(2000, 1, 3, 12, 14, 16)     // W1
   };
+
+#if defined(__MINGW32__) && !defined(_UCRT)
+  GTEST_SKIP() << "Skip the rest of this test because it relies on strftime() "
+                  "conforming to C99, but on this platform, MINGW + MSVCRT, "
+                  "the function conforms only to C89.";
+#endif
+
   const std::string iso_week_spec = "%Y-%m-%d: %G %g %V";
   for (auto ctm : tm_list) {
     // Calculate tm_yday, tm_wday, etc.
@@ -261,12 +268,16 @@ TEST(chrono_test, time_point) {
       "%Oe", "%a",  "%A",  "%w",  "%Ow", "%u",  "%Ou", "%H",  "%OH",
       "%I",  "%OI", "%M",  "%OM", "%S",  "%OS", "%x",  "%Ex", "%X",
       "%EX", "%D",  "%F",  "%R",  "%T",  "%p",  "%z",  "%Z"};
-  spec_list.push_back("%Y-%m-%d %H:%M:%S");
 #ifndef _WIN32
   // Disabled on Windows because these formats are not consistent among
   // platforms.
   spec_list.insert(spec_list.end(), {"%c", "%Ec", "%r"});
+#elif defined(__MINGW32__) && !defined(_UCRT)
+  // Only C89 conversion specifiers when using MSVCRT instead of UCRT
+  spec_list = {"%%", "%Y", "%y", "%b", "%B", "%m", "%U", "%W", "%j", "%d", "%a",
+               "%A", "%w", "%H", "%I", "%M", "%S", "%x", "%X", "%p", "%Z"};
 #endif
+  spec_list.push_back("%Y-%m-%d %H:%M:%S");
 
   for (const auto& spec : spec_list) {
     auto t = std::chrono::system_clock::to_time_t(t1);
