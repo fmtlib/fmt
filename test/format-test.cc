@@ -895,6 +895,7 @@ TEST(format_test, runtime_width) {
             fmt::format("{0:{1}}", reinterpret_cast<void*>(0xcafe), 10));
   EXPECT_EQ("x          ", fmt::format("{0:{1}}", 'x', 11));
   EXPECT_EQ("str         ", fmt::format("{0:{1}}", "str", 12));
+  EXPECT_EQ(fmt::format("{:{}}", 42, short(4)), "  42");
 }
 
 TEST(format_test, precision) {
