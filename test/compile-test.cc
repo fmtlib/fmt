@@ -228,9 +228,15 @@ TEST(compile_test, format_to_n) {
 }
 
 TEST(compile_test, formatted_size) {
-  FMT_CONSTEXPR20 size_t s1 = fmt::formatted_size(FMT_COMPILE("{0}"), 42);
+#ifdef __cpp_lib_bit_cast
+  FMT_CONSTEXPR20 
+#endif 
+  size_t s1 = fmt::formatted_size(FMT_COMPILE("{0}"), 42);
   EXPECT_EQ(2, s1);
-  FMT_CONSTEXPR20 size_t s2 = fmt::formatted_size(FMT_COMPILE("{0:<4.2f}"), 42.0);
+#ifdef __cpp_lib_bit_cast
+  FMT_CONSTEXPR20 
+#endif 
+size_t s2 = fmt::formatted_size(FMT_COMPILE("{0:<4.2f}"), 42.0);
   EXPECT_EQ(5, s2);
 }
 
