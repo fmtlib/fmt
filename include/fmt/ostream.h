@@ -189,13 +189,9 @@ struct fallback_formatter<T, Char, enable_if_t<is_streamable<T, Char>::value>>
 
 inline void vprint_directly(std::ostream& os, string_view format_str,
                             format_args args) {
-#ifdef _WIN32
   auto buffer = memory_buffer();
   detail::vformat_to(buffer, format_str, args);
   detail::write_buffer(os, buffer);
-#else
-  ignore_unused(os, format_str, args);
-#endif
 }
 
 }  // namespace detail
