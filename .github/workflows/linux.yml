@@ -28,18 +28,9 @@ jobs:
             std: 17
             install: sudo apt install g++-8
             os: ubuntu-18.04
-          - cxx: g++-9
-            build_type: Debug
-            std: 20
-            install: sudo apt install g++-9
-            os: ubuntu-18.04
           - cxx: g++-10
             build_type: Debug
             std: 17
-            os: ubuntu-18.04
-          - cxx: g++-10
-            build_type: Debug
-            std: 20
             os: ubuntu-18.04
           - cxx: g++-11
             build_type: Debug
