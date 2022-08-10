@@ -14,7 +14,7 @@ FMT_BEGIN_NAMESPACE
 namespace detail {
 
 template <typename Char, typename InputIt>
-inline counting_iterator copy_str(InputIt begin, InputIt end,
+FMT_CONSTEXPR inline counting_iterator copy_str(InputIt begin, InputIt end,
                                   counting_iterator it) {
   return it + (end - begin);
 }
@@ -568,7 +568,7 @@ format_to_n_result<OutputIt> format_to_n(OutputIt out, size_t n,
 
 template <typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
-size_t formatted_size(const S& format_str, const Args&... args) {
+FMT_CONSTEXPR20 size_t formatted_size(const S& format_str, const Args&... args) {
   return fmt::format_to(detail::counting_iterator(), format_str, args...)
       .count();
 }
