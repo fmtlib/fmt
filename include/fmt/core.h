@@ -273,7 +273,7 @@
 #  endif
 #endif
 
-#ifndef FMT_USE_NONTYPE_TEMPLATE_ARGS
+#ifndef FMT_USE_NONTYPE_TEMPLATE_ARGS  && !defined(__INTELLISENSE__)
 #  if defined(__cpp_nontype_template_args) &&                  \
       ((FMT_GCC_VERSION >= 903 && FMT_CPLUSPLUS >= 201709L) || \
        __cpp_nontype_template_args >= 201911L)
@@ -2904,7 +2904,7 @@ template <typename Handler> class specs_checker : public Handler {
 
 constexpr int invalid_arg_index = -1;
 
-#if FMT_USE_NONTYPE_TEMPLATE_ARGS
+#if FMT_USE_NONTYPE_TEMPLATE_ARGS && !defined(__INTELLISENSE__)
 template <int N, typename T, typename... Args, typename Char>
 constexpr auto get_arg_index_by_name(basic_string_view<Char> name) -> int {
   if constexpr (detail::is_statically_named_arg<T>()) {
@@ -2919,7 +2919,7 @@ constexpr auto get_arg_index_by_name(basic_string_view<Char> name) -> int {
 
 template <typename... Args, typename Char>
 FMT_CONSTEXPR auto get_arg_index_by_name(basic_string_view<Char> name) -> int {
-#if FMT_USE_NONTYPE_TEMPLATE_ARGS
+#if FMT_USE_NONTYPE_TEMPLATE_ARGS && !defined(__INTELLISENSE__)
   if constexpr (sizeof...(Args) > 0)
     return get_arg_index_by_name<0, Args...>(name);
 #endif
@@ -2960,7 +2960,7 @@ class format_string_checker {
     return context_.check_arg_id(id), id;
   }
   FMT_CONSTEXPR auto on_arg_id(basic_string_view<Char> id) -> int {
-#if FMT_USE_NONTYPE_TEMPLATE_ARGS
+#if FMT_USE_NONTYPE_TEMPLATE_ARGS && !defined(__INTELLISENSE__)
     auto index = get_arg_index_by_name<Args...>(id);
     if (index == invalid_arg_index) on_error("named argument is not found");
     return context_.check_arg_id(index), index;
