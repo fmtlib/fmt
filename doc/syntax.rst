@@ -356,8 +356,8 @@ Range Format Specifications
 
 Format specifications for range types have the following syntax:
 
-..productionlist:: sf
-  range_format_spec: [":" [`underlying_spec`]]
+.. productionlist:: sf
+   range_format_spec: [":" [`underlying_spec`]]
 
 The `underlying_spec` is parsed based on the formatter of the range's
 reference type.
@@ -366,7 +366,7 @@ By default, a range of characters or strings is printed escaped and quoted. But
 if any `underlying_spec` is provided (even if it is empty), then the characters
 or strings are printed according to the provided specification.
 
-Examples:
+Examples::
 
   fmt::format("{}", std::vector{10, 20, 30});
   // Result: [10, 20, 30]
