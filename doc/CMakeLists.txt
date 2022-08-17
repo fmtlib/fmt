@@ -6,9 +6,9 @@ if (NOT DOXYGEN)
   return ()
 endif ()
 
-# Find the python interpreter, set the PYTHON_EXECUTABLE variable
+# Find the Python interpreter and set the PYTHON_EXECUTABLE variable.
 if (CMAKE_VERSION VERSION_LESS 3.12)
-  # This logic is deprecated in CMake after 3.12
+  # This logic is deprecated in CMake after 3.12.
   find_package(PythonInterp QUIET REQUIRED)
 else ()
   find_package(Python QUIET REQUIRED)
