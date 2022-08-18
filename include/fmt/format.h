@@ -1557,7 +1557,10 @@ FMT_CONSTEXPR inline fp get_cached_power(int min_exponent,
   const int dec_exp_step = 8;
   index = (index - first_dec_exp - 1) / dec_exp_step + 1;
   pow10_exponent = first_dec_exp + index * dec_exp_step;
-  return {data::pow10_significands[index], data::pow10_exponents[index]};
+  // Using *(x + index) instead of x[index] avoids an issue with some compilers
+  // using the EDG frontend (e.g. nvhpc/22.3 in C++17 mode).
+  return {*(data::pow10_significands + index),
+          *(data::pow10_exponents + index)};
 }
 
 #ifndef _MSC_VER
