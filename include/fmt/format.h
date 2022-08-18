@@ -602,6 +602,7 @@ FMT_CONSTEXPR FMT_NOINLINE auto copy_str_noinline(InputIt begin, InputIt end,
  */
 FMT_CONSTEXPR inline auto utf8_decode(const char* s, uint32_t* c, int* e)
     -> const char* {
+  constexpr const int prefix_masks[] = {0x00, 0x80, 0xe0, 0xf0, 0xf8};
   constexpr const int masks[] = {0x00, 0x7f, 0x1f, 0x0f, 0x07};
   constexpr const uint32_t mins[] = {4194304, 0, 128, 2048, 65536};
   constexpr const int shiftc[] = {0, 18, 12, 6, 0};
@@ -628,6 +629,8 @@ FMT_CONSTEXPR inline auto utf8_decode(const char* s, uint32_t* c, int* e)
   *e |= uchar(s[3]) >> 6;
   *e ^= 0x2a;  // top two bits of each tail byte correct?
   *e >>= shifte[len];
+  *e |= ((uchar(s[0]) & prefix_masks[len]) !=
+         uchar((prefix_masks[len] << 1) & 0xFF));  // first byte correct?
 
   return next;
 }
@@ -643,8 +646,8 @@ FMT_CONSTEXPR void for_each_codepoint(string_view s, F f) {
     auto error = 0;
     auto end = utf8_decode(buf_ptr, &cp, &error);
     bool result = f(error ? invalid_code_point : cp,
-                    string_view(ptr, to_unsigned(end - buf_ptr)));
-    return result ? end : nullptr;
+                    string_view(ptr, error ? 1 : to_unsigned(end - buf_ptr)));
+    return result ? (error ? buf_ptr + 1 : end) : nullptr;
   };
   auto p = s.data();
   const size_t block_size = 4;  // utf8_decode always reads blocks of 4 chars.
