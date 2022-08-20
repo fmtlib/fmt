@@ -18,12 +18,12 @@ using testing::Contains;
 TEST(unicode_test, is_utf8) { EXPECT_TRUE(fmt::detail::is_utf8()); }
 
 TEST(unicode_test, legacy_locale) {
-  auto loc = get_locale("ru_RU.CP1251", "Russian_Russia.1251");
+  auto loc = get_locale("be_BY.CP1251", "Belarussian_Belarus.1251");
   if (loc == std::locale::classic()) return;
 
   auto s = std::string();
   try {
-    s = fmt::format(loc, "День недели: {:L}", fmt::weekday(1));
+    s = fmt::format(loc, "Дзень тыдня: {:L}", fmt::weekday(1));
   } catch (const fmt::format_error& e) {
     // Formatting can fail due to an unsupported encoding.
     fmt::print("Format error: {}\n", e.what());
@@ -38,11 +38,11 @@ TEST(unicode_test, legacy_locale) {
   os << std::put_time(&tm, "%a");
   auto wd = os.str();
   if (wd == "??") {
-    EXPECT_EQ(s, "День недели: ??");
+    EXPECT_EQ(s, "Дзень тыдня: ??");
     fmt::print("std::locale gives ?? as a weekday.\n");
     return;
   }
 #endif
-  EXPECT_THAT((std::vector<std::string>{"День недели: пн", "День недели: Пн"}),
+  EXPECT_THAT((std::vector<std::string>{"Дзень тыдня: пн", "Дзень тыдня: Пан"}),
               Contains(s));
 }
