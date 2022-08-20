@@ -513,4 +513,8 @@ TEST(locale_test, chrono_weekday) {
   std::locale::global(loc_old);
 }
 
+TEST(locale_test, sign) {
+  EXPECT_EQ(fmt::format(std::locale(), L"{:L}", -50), L"-50");
+}
+
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR

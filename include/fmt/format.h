@@ -1998,7 +1998,10 @@ auto write_int_localized(OutputIt out, UInt value, unsigned prefix,
                               grouping.count_separators(num_digits));
   return write_padded<align::right>(
       out, specs, size, size, [&](reserve_iterator<OutputIt> it) {
-        if (prefix != 0) *it++ = static_cast<Char>(prefix);
+        if (prefix != 0) {
+          char sign = static_cast<char>(prefix);
+          *it++ = static_cast<Char>(sign);
+        }
         return grouping.apply(it, string_view(digits, to_unsigned(num_digits)));
       });
 }
@@ -2157,7 +2160,8 @@ class counting_iterator {
     return it;
   }
 
-  FMT_CONSTEXPR friend counting_iterator operator+(counting_iterator it, difference_type n) {
+  FMT_CONSTEXPR friend counting_iterator operator+(counting_iterator it,
+                                                   difference_type n) {
     it.count_ += static_cast<size_t>(n);
     return it;
   }
