@@ -19,6 +19,7 @@ TEST(unicode_test, is_utf8) { EXPECT_TRUE(fmt::detail::is_utf8()); }
 
 TEST(unicode_test, legacy_locale) {
   auto loc = get_locale("be_BY.CP1251", "Belarusian_Belarus.1251");
+  EXPECT_NE(loc, std::locale::classic());
   if (loc == std::locale::classic()) return;
 
   auto s = std::string();
