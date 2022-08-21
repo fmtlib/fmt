@@ -2202,7 +2202,7 @@ bool UnitTestOptions::MatchesFilter(const std::string& name_str,
 
     // Check if this pattern matches name_str.
     if (PatternMatchesString(name_str, pattern, pattern_end)) {
-      return true;
+      break;
     }
 
     // Give up on this pattern. However, if we found a pattern separator (:),
