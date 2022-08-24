@@ -380,8 +380,15 @@ TEST(ranges_test, escape_string) {
     EXPECT_EQ(fmt::format("{}", vec{"\xcd\xb8"}), "[\"\\u0378\"]");
     // Unassigned Unicode code points.
     EXPECT_EQ(fmt::format("{}", vec{"\xf0\xaa\x9b\x9e"}), "[\"\\U0002a6de\"]");
+    // Broken utf-8.
     EXPECT_EQ(fmt::format("{}", vec{"\xf4\x8f\xbf\xc0"}),
               "[\"\\xf4\\x8f\\xbf\\xc0\"]");
+    EXPECT_EQ(fmt::format("{}", vec{"\xf0\x28"}), "[\"\\xf0(\"]");
+    EXPECT_EQ(fmt::format("{}", vec{"\xe1\x28"}), "[\"\\xe1(\"]");
+    EXPECT_EQ(fmt::format("{}", vec{std::string("\xf0\x28\0\0anything", 12)}),
+              "[\"\\xf0(\\x00\\x00anything\"]");
+
+    // Correct utf-8.
     EXPECT_EQ(fmt::format("{}", vec{"понедельник"}), "[\"понедельник\"]");
   }
 }
