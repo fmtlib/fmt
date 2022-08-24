@@ -84,7 +84,7 @@ TEST(xchar_test, format) {
   EXPECT_EQ(L"4.2", fmt::format(L"{}", 4.2));
   EXPECT_EQ(L"abc", fmt::format(L"{}", L"abc"));
   EXPECT_EQ(L"z", fmt::format(L"{}", L'z'));
-  EXPECT_THROW(fmt::format(L"{:*\x343E}", 42), fmt::format_error);
+  EXPECT_THROW(fmt::format(fmt::runtime(L"{:*\x343E}"), 42), fmt::format_error);
   EXPECT_EQ(L"true", fmt::format(L"{}", true));
   EXPECT_EQ(L"a", fmt::format(L"{0}", 'a'));
   EXPECT_EQ(L"a", fmt::format(L"{0}", L'a'));
@@ -98,8 +98,9 @@ TEST(xchar_test, is_formattable) {
 }
 
 TEST(xchar_test, compile_time_string) {
+  EXPECT_EQ(fmt::format(fmt::wformat_string<int>(L"{}"), 42), L"42");
 #if defined(FMT_USE_STRING_VIEW) && FMT_CPLUSPLUS >= 201703L
-  EXPECT_EQ(L"42", fmt::format(FMT_STRING(std::wstring_view(L"{}")), 42));
+  EXPECT_EQ(fmt::format(FMT_STRING(std::wstring_view(L"{}")), 42), L"42");
 #endif
 }
 
@@ -246,7 +247,7 @@ TEST(xchar_test, sign_not_truncated) {
   wchar_t format_str[] = {
       L'{', L':',
       '+' | static_cast<wchar_t>(1 << fmt::detail::num_bits<char>()), L'}', 0};
-  EXPECT_THROW(fmt::format(format_str, 42), fmt::format_error);
+  EXPECT_THROW(fmt::format(fmt::runtime(format_str), 42), fmt::format_error);
 }
 
 TEST(xchar_test, chrono) {
@@ -311,8 +312,8 @@ TEST(chrono_test_wchar, time_point) {
     auto sys_output = system_wcsftime(spec, &tm);
 
     auto fmt_spec = fmt::format(L"{{:{}}}", spec);
-    EXPECT_EQ(sys_output, fmt::format(fmt_spec, t1));
-    EXPECT_EQ(sys_output, fmt::format(fmt_spec, tm));
+    EXPECT_EQ(sys_output, fmt::format(fmt::runtime(fmt_spec), t1));
+    EXPECT_EQ(sys_output, fmt::format(fmt::runtime(fmt_spec), tm));
   }
 }
 

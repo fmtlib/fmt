@@ -3167,7 +3167,7 @@ template <typename Char, typename... Args> class basic_format_string {
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
 // Workaround broken conversion on older gcc.
 template <typename...> using format_string = string_view;
-inline auto runtime(string_view s) -> basic_string_view<char> { return s; }
+inline auto runtime(string_view s) -> string_view { return s; }
 #else
 template <typename... Args>
 using format_string = basic_format_string<char, type_identity_t<Args>...>;
