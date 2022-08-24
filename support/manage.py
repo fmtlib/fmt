@@ -183,6 +183,12 @@ def update_site(env):
         with rewrite(index) as b:
             b.data = b.data.replace(
                 'doc/latest/index.html#format-string-syntax', 'syntax.html')
+        # Fix issues in syntax.rst.
+        index = os.path.join(target_doc_dir, 'syntax.rst')
+        with rewrite(index) as b:
+            b.data = b.data.replace(
+                '..productionlist:: sf\n', '.. productionlist:: sf\n ')
+            b.data = b.data.replace('Examples:\n', 'Examples::\n')
         # Build the docs.
         html_dir = os.path.join(env.build_dir, 'html')
         if os.path.exists(html_dir):
