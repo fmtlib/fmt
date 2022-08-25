@@ -277,7 +277,7 @@
 #  if defined(__cpp_nontype_template_args) &&                  \
       ((FMT_GCC_VERSION >= 903 && FMT_CPLUSPLUS >= 201709L) || \
        __cpp_nontype_template_args >= 201911L) &&              \
-      !defined(__NVCOMPILER)
+      !defined(__NVCOMPILER) && !defined(__LCC__)
 #    define FMT_USE_NONTYPE_TEMPLATE_ARGS 1
 #  else
 #    define FMT_USE_NONTYPE_TEMPLATE_ARGS 0
