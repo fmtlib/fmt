@@ -755,8 +755,11 @@ class compile_parse_context
   using base::check_arg_id;
 
   FMT_CONSTEXPR void check_dynamic_spec(int arg_id) {
+    detail::ignore_unused(arg_id);
+#if !defined(__LCC__)
     if (arg_id < num_args_ && types_ && !is_integral_type(types_[arg_id]))
       this->on_error("width/precision is not integer");
+#endif
   }
 };
 FMT_END_DETAIL_NAMESPACE
