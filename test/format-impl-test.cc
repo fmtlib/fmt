@@ -430,3 +430,118 @@ TEST(format_impl_test, write_console_signature) {
   (void)p;
 }
 #endif
+
+// A public domain branchless UTF-8 decoder by Christopher Wellons:
+// https://github.com/skeeto/branchless-utf8
+constexpr bool unicode_is_surrogate(uint32_t c) {
+  return c >= 0xD800U && c <= 0xDFFFU;
+}
+
+FMT_CONSTEXPR char* utf8_encode(char* s, uint32_t c) {
+  if (c >= (1UL << 16)) {
+    s[0] = static_cast<char>(0xf0 | (c >> 18));
+    s[1] = static_cast<char>(0x80 | ((c >> 12) & 0x3f));
+    s[2] = static_cast<char>(0x80 | ((c >> 6) & 0x3f));
+    s[3] = static_cast<char>(0x80 | ((c >> 0) & 0x3f));
+    return s + 4;
+  } else if (c >= (1UL << 11)) {
+    s[0] = static_cast<char>(0xe0 | (c >> 12));
+    s[1] = static_cast<char>(0x80 | ((c >> 6) & 0x3f));
+    s[2] = static_cast<char>(0x80 | ((c >> 0) & 0x3f));
+    return s + 3;
+  } else if (c >= (1UL << 7)) {
+    s[0] = static_cast<char>(0xc0 | (c >> 6));
+    s[1] = static_cast<char>(0x80 | ((c >> 0) & 0x3f));
+    return s + 2;
+  } else {
+    s[0] = static_cast<char>(c);
+    return s + 1;
+  }
+}
+
+// Make sure it can decode every character
+TEST(format_impl_test, utf8_decode_decode_all) {
+  for (uint32_t i = 0; i < 0x10ffff; i++) {
+    if (!unicode_is_surrogate(i)) {
+      int e;
+      uint32_t c;
+      char buf[8] = {0};
+      char* end = utf8_encode(buf, i);
+      const char* res = fmt::detail::utf8_decode(buf, &c, &e);
+      EXPECT_EQ(end, res);
+      EXPECT_EQ(c, i);
+      EXPECT_EQ(e, 0);
+    }
+  }
+}
+
+// Reject everything outside of U+0000..U+10FFFF
+TEST(format_impl_test, utf8_decode_out_of_range) {
+  for (uint32_t i = 0x110000; i < 0x1fffff; i++) {
+    int e;
+    uint32_t c;
+    char buf[8] = {0};
+    utf8_encode(buf, i);
+    const char* end = fmt::detail::utf8_decode(buf, &c, &e);
+    EXPECT_NE(e, 0);
+    EXPECT_EQ(end - buf, 4);
+  }
+}
+
+// Does it reject all surrogate halves?
+TEST(format_impl_test, utf8_decode_surrogate_halves) {
+  for (uint32_t i = 0xd800; i <= 0xdfff; i++) {
+    int e;
+    uint32_t c;
+    char buf[8] = {0};
+    utf8_encode(buf, i);
+    fmt::detail::utf8_decode(buf, &c, &e);
+    EXPECT_NE(e, 0);
+  }
+}
+
+// How about non-canonical encodings?
+TEST(format_impl_test, utf8_decode_non_canonical_encodings) {
+  int e;
+  uint32_t c;
+  const char* end;
+
+  char buf2[8] = {char(0xc0), char(0xA4)};
+  end = fmt::detail::utf8_decode(buf2, &c, &e);
+  EXPECT_NE(e, 0);           // non-canonical len 2
+  EXPECT_EQ(end, buf2 + 2);  // non-canonical recover 2
+
+  char buf3[8] = {char(0xe0), char(0x80), char(0xA4)};
+  end = fmt::detail::utf8_decode(buf3, &c, &e);
+  EXPECT_NE(e, 0);           // non-canonical len 3
+  EXPECT_EQ(end, buf3 + 3);  // non-canonical recover 3
+
+  char buf4[8] = {char(0xf0), char(0x80), char(0x80), char(0xA4)};
+  end = fmt::detail::utf8_decode(buf4, &c, &e);
+  EXPECT_NE(e, 0);           // non-canonical encoding len 4
+  EXPECT_EQ(end, buf4 + 4);  // non-canonical recover 4
+}
+
+// Let's try some bogus byte sequences
+TEST(format_impl_test, utf8_decode_bogus_byte_sequences) {
+  int e;
+  uint32_t c;
+
+  // Invalid first byte
+  char buf0[4] = {char(0xff)};
+  auto len = fmt::detail::utf8_decode(buf0, &c, &e) - buf0;
+  EXPECT_NE(e, 0);    // "bogus [ff] 0x%02x U+%04lx", e, (unsigned long)c);
+  EXPECT_EQ(len, 1);  // "bogus [ff] recovery %d", len);
+
+  // Invalid first byte
+  char buf1[4] = {char(0x80)};
+  len = fmt::detail::utf8_decode(buf1, &c, &e) - buf1;
+  EXPECT_NE(e, 0);    // "bogus [80] 0x%02x U+%04lx", e, (unsigned long)c);
+  EXPECT_EQ(len, 1);  // "bogus [80] recovery %d", len);
+
+  // Looks like a two-byte sequence but second byte is wrong
+  char buf2[4] = {char(0xc0), char(0x0a)};
+  len = fmt::detail::utf8_decode(buf2, &c, &e) - buf2;
+  EXPECT_NE(e, 0);    // "bogus [c0 0a] 0x%02x U+%04lx", e, (unsigned long)c
+  EXPECT_EQ(len, 2);  // "bogus [c0 0a] recovery %d", len);
+}
