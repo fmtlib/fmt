@@ -1,3 +1,20 @@
+9.1.0 - TBD
+-----------
+
+* Fixed handling of invalid UTF-8
+  (`#3044 <https://github.com/fmtlib/fmt/pull/3044>`_,
+  `#3056 <https://github.com/fmtlib/fmt/pull/3056>`_).
+  Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
+
+* Fixed various warnings and compilation issues
+  (`#3043 <https://github.com/fmtlib/fmt/pull/3043>`_,
+  `#3053 <https://github.com/fmtlib/fmt/pull/3053>`_,
+  `#3054 <https://github.com/fmtlib/fmt/pull/3054>`_).
+  Thanks `@olupton (Olli Lupton) <https://github.com/olupton>`_,
+  `@bernhardmgruber (Bernhard Manfred Gruber)
+  <https://github.com/bernhardmgruber>`_,
+  `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
+
 9.0.0 - 2022-07-04
 ------------------
 
