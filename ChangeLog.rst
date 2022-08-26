@@ -1,16 +1,42 @@
 9.1.0 - TBD
 -----------
 
+* ``fmt::formatted_size`` now works at compile time
+  (`godbolt <https://godbolt.org/z/1MW5rMdf8>`__):
+
+  .. code:: c++
+
+     #include <fmt/compile.h>
+
+     int main() {
+       using namespace fmt::literals;
+       constexpr size_t n = fmt::formatted_size("{}"_cf, 42);
+       fmt::print("{}\n", n); // prints 2
+     }
+
+  Thanks `@marksantaniello (Mark Santaniello)
+  <https://github.com/marksantaniello>`_.
+
 * Fixed handling of invalid UTF-8
   (`#3044 <https://github.com/fmtlib/fmt/pull/3044>`_,
   `#3056 <https://github.com/fmtlib/fmt/pull/3056>`_).
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
 
+* Improved documentation
+  (`#2706 <https://github.com/fmtlib/fmt/pull/2706>`_).
+  Thanks `@remiburtin (Rémi Burtin) <https://github.com/remiburtin>`_.
+
+* Improved build configuration
+  (`#3040 <https://github.com/fmtlib/fmt/pull/3040>`_).
+  Thanks `@hwhsu1231 (Haowei Hsu) <https://github.com/hwhsu1231>`_.
+
 * Fixed various warnings and compilation issues
-  (`#3043 <https://github.com/fmtlib/fmt/pull/3043>`_,
+  (`#3029 <https://github.com/fmtlib/fmt/pull/3029>`_,
+  `#3043 <https://github.com/fmtlib/fmt/pull/3043>`_,
   `#3053 <https://github.com/fmtlib/fmt/pull/3053>`_,
   `#3054 <https://github.com/fmtlib/fmt/pull/3054>`_).
-  Thanks `@olupton (Olli Lupton) <https://github.com/olupton>`_,
+  Thanks `@dimztimz (Dimitrij Mijoski) <https://github.com/dimztimz>`_,
+  `@olupton (Olli Lupton) <https://github.com/olupton>`_,
   `@bernhardmgruber (Bernhard Manfred Gruber)
   <https://github.com/bernhardmgruber>`_,
   `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
