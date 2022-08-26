@@ -2297,16 +2297,15 @@ constexpr auto to_ascii(Char c) -> underlying_t<Char> {
   return c;
 }
 
-template <typename Char>
-FMT_CONSTEXPR auto code_point_length_impl(Char begin) -> int {
+FMT_CONSTEXPR inline auto code_point_length_impl(char c) -> int {
   return "\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\0\0\0\0\0\0\0\0\2\2\2\2\3\3\4"
-      [static_cast<unsigned char>(begin) >> 3];
+      [static_cast<unsigned char>(c) >> 3];
 }
 
 template <typename Char>
 FMT_CONSTEXPR auto code_point_length(const Char* begin) -> int {
   if (const_check(sizeof(Char) != 1)) return 1;
-  int len = code_point_length_impl(*begin);
+  int len = code_point_length_impl(static_cast<char>(*begin));
 
   // Compute the pointer to the next character early so that the next
   // iteration can start working on the next character. Neither Clang
