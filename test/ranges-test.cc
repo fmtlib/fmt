@@ -418,3 +418,7 @@ TEST(ranges_test, range_of_range_of_mixed_const) {
   fmt_ref_view<decltype(v)> r{&v};
   EXPECT_EQ(fmt::format("{}", r), "[[1, 2, 3], [4, 5]]");
 }
+
+TEST(ranges_test, vector_char) {
+  EXPECT_EQ(fmt::format("{}", std::vector<char>{'a', 'b'}), "['a', 'b']");
+}

@@ -270,8 +270,8 @@ template <typename Range>
 using uncvref_type = remove_cvref_t<range_reference_type<Range>>;
 
 template <typename Range>
-using uncvref_first_type = remove_cvref_t<
-    decltype(std::declval<range_reference_type<Range>>().first)>;
+using uncvref_first_type =
+    remove_cvref_t<decltype(std::declval<range_reference_type<Range>>().first)>;
 
 template <typename Range>
 using uncvref_second_type = remove_cvref_t<
@@ -377,7 +377,7 @@ template <typename T, typename Char> struct is_range {
   static constexpr const bool value =
       detail::is_range_<T>::value && !detail::is_std_string_like<T>::value &&
       !std::is_convertible<T, std::basic_string<Char>>::value &&
-      !std::is_constructible<detail::std_string_view<Char>, T>::value;
+      !std::is_convertible<T, detail::std_string_view<Char>>::value;
 };
 
 namespace detail {
