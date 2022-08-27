@@ -29,7 +29,7 @@
   (`#2994 <https://github.com/fmtlib/fmt/pull/2994>`_,
   `#3001 <https://github.com/fmtlib/fmt/pull/3001>`_,
   `#3025 <https://github.com/fmtlib/fmt/pull/3025>`_).
-  Thanks `@dimztimz (Dimitrij Mijoski) <https://github.com/dimztimz>`.
+  Thanks `@dimztimz (Dimitrij Mijoski) <https://github.com/dimztimz>`_.
 
 * Fixed handling of the sign specifier in localized formatting on systems with
   32-bit ``wchar_t`` (`#3041 <https://github.com/fmtlib/fmt/issues/3041>`_).
