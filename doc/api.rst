@@ -86,7 +86,7 @@ possible using ``fmt::vformat``, ``fmt::vprint``, etc.
 
 .. doxygentypedef:: fmt::format_string
 
-.. doxygenfunction:: fmt::runtime(string_view)
+.. doxygenfunction:: fmt::runtime(string_view) -> basic_runtime<char>
 
 Named Arguments
 ---------------
