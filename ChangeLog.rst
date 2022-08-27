@@ -71,7 +71,7 @@
 * Improved the implementation of
   `Dragonbox <https://github.com/jk-jeon/dragonbox>`_, the algorithm used for
   the default floating-point formatting
-  
+  (`#2984 <https://github.com/fmtlib/fmt/pull/2984>`_).
   Thanks `@jk-jeon (Junekey Jeon) <https://github.com/jk-jeon>`_.
 
 * Fixed issues with floating-point formatting on exotic platforms.
