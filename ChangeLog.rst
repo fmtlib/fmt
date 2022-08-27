@@ -2,6 +2,7 @@
 -----------
 
 * ``fmt::formatted_size`` now works at compile time
+  (`#3026 <https://github.com/fmtlib/fmt/pull/3026>`_). For example
   (`godbolt <https://godbolt.org/z/1MW5rMdf8>`__):
 
   .. code:: c++
@@ -17,25 +18,70 @@
   Thanks `@marksantaniello (Mark Santaniello)
   <https://github.com/marksantaniello>`_.
 
-* Fixed handling of invalid UTF-8
+* Improved Unicode support in ``ostream`` overloads of ``print``
+  (`#2994 <https://github.com/fmtlib/fmt/pull/2994>`_,
+  `#3001 <https://github.com/fmtlib/fmt/pull/3001>`_,
+  `#3025 <https://github.com/fmtlib/fmt/pull/3025>`_).
+  Thanks `@dimztimz (Dimitrij Mijoski) <https://github.com/dimztimz>`.
+
+* Fixed handling of invalid UTF-8 
   (`#3044 <https://github.com/fmtlib/fmt/pull/3044>`_,
   `#3056 <https://github.com/fmtlib/fmt/pull/3056>`_).
+  Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_ and
+  `@skeeto (Christopher Wellons) <https://github.com/skeeto>`_.
+
+* Added the ``n`` specifier that disables the output of delimiters when
+  formatting ranges (`#2981 <https://github.com/fmtlib/fmt/pull/2981>`_,
+  `#2983 <https://github.com/fmtlib/fmt/pull/2983>`_).
+  For example (`godbolt <https://godbolt.org/z/roKqGdj8c>`__):
+
+  .. code:: c++
+
+     #include <fmt/ranges.h>
+     #include <vector>
+
+     int main() {
+       auto v = std::vector{1, 2, 3};
+       fmt::print("{:n}\n", v); // prints 1, 2, 3
+     }
+
+  Thanks `@BRevzin (Barry Revzin) <https://github.com/BRevzin>`_.
+
+* Improved the implementation of
+  `Dragonbox <https://github.com/jk-jeon/dragonbox>`_, the algorithm used for
+  the default floating-point formatting
+  (`#2984 <https://github.com/fmtlib/fmt/pull/2984>`_).
+  Thanks `@jk-jeon (Junekey Jeon) <https://github.com/jk-jeon>`_.
+
+* Improved the implementation of chrono formatting
+  (`#3010 <https://github.com/fmtlib/fmt/pull/3010>`_).
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
 
 * Improved documentation
-  (`#2706 <https://github.com/fmtlib/fmt/pull/2706>`_).
-  Thanks `@remiburtin (Rémi Burtin) <https://github.com/remiburtin>`_.
+  (`#3009 <https://github.com/fmtlib/fmt/pull/3009>`_,
+  `#3037 <https://github.com/fmtlib/fmt/pull/3037>`_).
+  Thanks `@jcelerier (Jean-Michaël Celerier) <https://github.com/jcelerier>`_
+  and `@remiburtin (Rémi Burtin) <https://github.com/remiburtin>`_.
 
 * Improved build configuration
-  (`#3040 <https://github.com/fmtlib/fmt/pull/3040>`_).
-  Thanks `@hwhsu1231 (Haowei Hsu) <https://github.com/hwhsu1231>`_.
+  (`#2991 <https://github.com/fmtlib/fmt/pull/2991>`_,
+  `#2995 <https://github.com/fmtlib/fmt/pull/2995>`_,
+  `#3007 <https://github.com/fmtlib/fmt/pull/3007>`_,
+  `#3040 <https://github.com/fmtlib/fmt/pull/3040>`_).
+  Thanks `@dimztimz (Dimitrij Mijoski) <https://github.com/dimztimz>`_ and
+  `@hwhsu1231 (Haowei Hsu) <https://github.com/hwhsu1231>`_.
 
 * Fixed various warnings and compilation issues
-  (`#3029 <https://github.com/fmtlib/fmt/pull/3029>`_,
+  (`#2982 <https://github.com/fmtlib/fmt/pull/2982>`_,
+  `#2985 <https://github.com/fmtlib/fmt/pull/2985>`_,
+  `#3021 <https://github.com/fmtlib/fmt/pull/3021>`_,
+  `#3024 <https://github.com/fmtlib/fmt/pull/3024>`_,
+  `#3029 <https://github.com/fmtlib/fmt/pull/3029>`_,
   `#3043 <https://github.com/fmtlib/fmt/pull/3043>`_,
   `#3053 <https://github.com/fmtlib/fmt/pull/3053>`_,
   `#3054 <https://github.com/fmtlib/fmt/pull/3054>`_).
-  Thanks `@dimztimz (Dimitrij Mijoski) <https://github.com/dimztimz>`_,
+  Thanks `@h-friederich (Hannes Friederich) <https://github.com/h-friederich>`_,
+  `@dimztimz (Dimitrij Mijoski) <https://github.com/dimztimz>`_,
   `@olupton (Olli Lupton) <https://github.com/olupton>`_,
   `@bernhardmgruber (Bernhard Manfred Gruber)
   <https://github.com/bernhardmgruber>`_,
