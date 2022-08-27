@@ -1,5 +1,5 @@
-9.1.0 - TBD
------------
+9.1.0 - 2022-08-27
+------------------
 
 * ``fmt::formatted_size`` now works at compile time
   (`#3026 <https://github.com/fmtlib/fmt/pull/3026>`_). For example
