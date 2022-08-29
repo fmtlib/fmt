@@ -1238,7 +1238,7 @@ template <typename Char, typename UInt, typename Iterator,
 FMT_CONSTEXPR inline auto format_decimal(Iterator out, UInt value, int size)
     -> format_decimal_result<Iterator> {
   // Buffer is large enough to hold all digits (digits10 + 1).
-  Char buffer[digits10<UInt>() + 1];
+  Char buffer[digits10<UInt>() + 1] = {};
   auto end = format_decimal(buffer, value, size).end;
   return {out, detail::copy_str_noinline<Char>(buffer, end, out)};
 }
