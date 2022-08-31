@@ -17,6 +17,7 @@
 #include <cstring>  // std::memmove
 #include <cwchar>
 #include <exception>
+#include <sstream>
 
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
 #  include <locale>
@@ -27,8 +28,11 @@
 #endif
 
 #include "format.h"
+#include "locale.h"
 
 FMT_BEGIN_NAMESPACE
+template <typename Char> std::locale::id num_format_facet<Char>::id;
+
 namespace detail {
 
 FMT_FUNC void assert_fail(const char* file, int line, const char* message) {
@@ -115,6 +119,28 @@ template <typename Char> FMT_FUNC Char decimal_point_impl(locale_ref) {
   return '.';
 }
 #endif
+
+template <typename Char>
+FMT_FUNC auto write_int(unsigned long long value, locale_ref loc)
+    -> std::basic_string<Char> {
+#ifndef FMT_STATIC_THOUSANDS_SEPARATOR
+  auto&& ios = std::basic_ios<Char>(nullptr);
+  auto locale = loc.get<std::locale>();
+  ios.imbue(locale);
+  auto&& buf = std::basic_stringbuf<Char>();
+  auto out = std::ostreambuf_iterator<Char>(&buf);
+  // We cannot use the num_put<char> facet because it may produce output in
+  // a wrong encoding.
+  using facet_t = conditional_t<std::is_same<Char, char>::value,
+                                num_format_facet<>, std::num_put<Char>>;
+  if (std::has_facet<facet_t>(locale)) {
+    std::use_facet<facet_t>(locale).put(out, ios, ' ', value);
+    return buf.str();
+  }
+#endif
+  return {};
+}
+
 }  // namespace detail
 
 #if !FMT_MSC_VERSION

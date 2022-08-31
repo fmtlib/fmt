@@ -7,12 +7,14 @@
 
 #include "fmt/xchar.h"
 
+#include <algorithm>
 #include <complex>
 #include <cwchar>
 #include <vector>
 
 #include "fmt/chrono.h"
 #include "fmt/color.h"
+#include "fmt/locale.h"
 #include "fmt/ostream.h"
 #include "fmt/ranges.h"
 #include "gtest-extra.h"  // Contains
@@ -344,6 +346,7 @@ TEST(xchar_test, escape_string) {
 TEST(xchar_test, to_wstring) { EXPECT_EQ(L"42", fmt::to_wstring(42)); }
 
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
+
 template <typename Char> struct numpunct : std::numpunct<Char> {
  protected:
   Char do_decimal_point() const override { return '?'; }
@@ -441,7 +444,7 @@ TEST(locale_test, wformat) {
             fmt::format(small_grouping_loc, L"{:L}", max_value<uint32_t>()));
 }
 
-TEST(locale_test, double_formatter) {
+TEST(locale_test, int_formatter) {
   auto loc = std::locale(std::locale(), new special_grouping<char>());
   auto f = fmt::formatter<int>();
   auto parse_ctx = fmt::format_parse_context("L");
@@ -516,6 +519,24 @@ TEST(locale_test, chrono_weekday) {
 
 TEST(locale_test, sign) {
   EXPECT_EQ(fmt::format(std::locale(), L"{:L}", -50), L"-50");
+}
+
+class num_format : public fmt::num_format_facet<> {
+ protected:
+  using fmt::num_format_facet<>::do_put;
+  iter_type do_put(iter_type out, std::ios_base&, char,
+                   unsigned long long) const override;
+};
+
+num_format::iter_type num_format::do_put(iter_type out, std::ios_base&, char,
+                                         unsigned long long) const {
+  const char s[] = "foo";
+  return std::copy_n(s, sizeof(s) - 1, out);
+}
+
+TEST(locale_test, num_format) {
+  auto loc = std::locale(std::locale(), new num_format());
+  EXPECT_EQ(fmt::format(loc, "{:L}", 42), "foo");
 }
 
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR

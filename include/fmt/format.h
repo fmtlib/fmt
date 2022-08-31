@@ -1992,10 +1992,11 @@ template <typename Char> class digit_grouping {
   }
 };
 
+// Writes a decimal integer with digit grouping.
 template <typename OutputIt, typename UInt, typename Char>
-auto write_int_localized(OutputIt out, UInt value, unsigned prefix,
-                         const basic_format_specs<Char>& specs,
-                         const digit_grouping<Char>& grouping) -> OutputIt {
+auto write_int(OutputIt out, UInt value, unsigned prefix,
+               const basic_format_specs<Char>& specs,
+               const digit_grouping<Char>& grouping) -> OutputIt {
   static_assert(std::is_same<uint64_or_128_t<UInt>, UInt>::value, "");
   int num_digits = count_digits(value);
   char digits[40];
@@ -2012,12 +2013,32 @@ auto write_int_localized(OutputIt out, UInt value, unsigned prefix,
       });
 }
 
+template <typename Char>
+FMT_API auto write_int(unsigned long long value, locale_ref loc)
+    -> std::basic_string<Char>;
+
 template <typename OutputIt, typename UInt, typename Char>
-auto write_int_localized(OutputIt& out, UInt value, unsigned prefix,
-                         const basic_format_specs<Char>& specs, locale_ref loc)
-    -> bool {
-  auto grouping = digit_grouping<Char>(loc);
-  out = write_int_localized(out, value, prefix, specs, grouping);
+auto write_int(OutputIt& out, UInt value, unsigned prefix,
+               const basic_format_specs<Char>& specs, locale_ref loc) -> bool {
+  using char_t =
+      conditional_t<std::is_same<Char, wchar_t>::value, wchar_t, char>;
+  auto str = std::basic_string<char_t>();
+  if (sizeof(value) <= sizeof(unsigned long long))
+    str = write_int<char_t>(static_cast<unsigned long long>(value), loc);
+  if (str.empty()) {
+    auto grouping = digit_grouping<Char>(loc);
+    out = write_int(out, value, prefix, specs, grouping);
+    return true;
+  }
+  size_t size = to_unsigned((prefix != 0 ? 1 : 0) + str.size());
+  out = write_padded<align::right>(
+      out, specs, size, size, [&](reserve_iterator<OutputIt> it) {
+        if (prefix != 0) {
+          char sign = static_cast<char>(prefix);
+          *it++ = static_cast<Char>(sign);
+        }
+        return copy_str<Char>(str.data(), str.data() + str.size(), it);
+      });
   return true;
 }
 
@@ -2058,10 +2079,9 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
   case presentation_type::none:
   case presentation_type::dec: {
     if (specs.localized &&
-        write_int_localized(out, static_cast<uint64_or_128_t<T>>(abs_value),
-                            prefix, specs, loc)) {
+        write_int(out, static_cast<uint64_or_128_t<T>>(abs_value), prefix,
+                  specs, loc))
       return out;
-    }
     auto num_digits = count_digits(abs_value);
     return write_int(
         out, num_digits, prefix, specs, [=](reserve_iterator<OutputIt> it) {
@@ -3914,7 +3934,7 @@ template <typename T> struct formatter<group_digits_view<T>> : formatter<T> {
                                                        specs_.width_ref, ctx);
     detail::handle_dynamic_spec<detail::precision_checker>(
         specs_.precision, specs_.precision_ref, ctx);
-    return detail::write_int_localized(
+    return detail::write_int(
         ctx.out(), static_cast<detail::uint64_or_128_t<T>>(t.value), 0, specs_,
         detail::digit_grouping<char>({"\3", ','}));
   }
