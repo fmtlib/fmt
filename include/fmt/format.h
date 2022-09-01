@@ -1625,7 +1625,9 @@ auto snprintf_float(T value, int precision, float_specs specs,
 
 template <typename T>
 using convert_float_result =
-    conditional_t<std::is_same<T, float>::value || sizeof(T) == sizeof(double),
+    conditional_t<std::is_same<T, float>::value ||
+                      std::numeric_limits<T>::digits ==
+                          std::numeric_limits<double>::digits,
                   double, T>;
 
 template <typename T>
