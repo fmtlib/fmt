@@ -17,7 +17,7 @@
 #include <type_traits>
 
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
-#define FMT_VERSION 90100
+#define FMT_VERSION 90101
 
 #if defined(__clang__) && !defined(__ibmxl__)
 #  define FMT_CLANG_VERSION (__clang_major__ * 100 + __clang_minor__)
@@ -3012,11 +3012,11 @@ void check_format_string(S format_str) {
   ignore_unused(invalid_format);
 }
 
+// Don't use type_identity for args to simplify symbols.
 template <typename Char>
-void vformat_to(
-    buffer<Char>& buf, basic_string_view<Char> fmt,
-    basic_format_args<FMT_BUFFER_CONTEXT(type_identity_t<Char>)> args,
-    locale_ref loc = {});
+void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
+                basic_format_args<FMT_BUFFER_CONTEXT(Char)> args,
+                locale_ref loc = {});
 
 FMT_API void vprint_mojibake(std::FILE*, string_view, format_args);
 #ifndef _WIN32
@@ -3275,7 +3275,8 @@ template <typename... T>
 FMT_NODISCARD FMT_INLINE auto formatted_size(format_string<T...> fmt,
                                              T&&... args) -> size_t {
   auto buf = detail::counting_buffer<>();
-  detail::vformat_to(buf, string_view(fmt), fmt::make_format_args(args...), {});
+  detail::vformat_to(buf, string_view(fmt),
+                     format_args(fmt::make_format_args(args...)), {});
   return buf.count();
 }
 
