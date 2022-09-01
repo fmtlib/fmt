@@ -104,7 +104,8 @@ using variant_index_sequence =
 template <typename T, typename U = void>
 struct is_variant_like_ : std::false_type {};
 template <typename T>
-struct is_variant_like_<T, std::void_t<decltype(std::variant_size<T>::value)>>
+struct is_variant_like_<
+    T, std::void_t<decltype(std::variant_size<std::remove_cv_t<T>>::value)>>
     : std::true_type {};
 
 // formattable element check
