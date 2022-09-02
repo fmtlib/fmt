@@ -17,7 +17,6 @@
 #include <cstring>  // std::memmove
 #include <cwchar>
 #include <exception>
-#include <sstream>
 
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
 #  include <locale>
@@ -119,20 +118,18 @@ template <typename Char> FMT_FUNC Char decimal_point_impl(locale_ref) {
 }
 #endif
 
-FMT_FUNC auto write_int(unsigned long long value, const format_specs& specs,
-                        locale_ref loc) -> std::string {
+FMT_FUNC auto write_int(appender out, unsigned long long value,
+                        const format_specs& specs, locale_ref loc) -> bool {
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
   auto locale = loc.get<std::locale>();
   // We cannot use the num_put<char> facet because it may produce output in
   // a wrong encoding.
   if (!std::has_facet<num_format_facet<std::locale>>(locale)) return {};
-  auto&& buf = std::basic_stringbuf<char>();
-  auto out = std::ostreambuf_iterator<char>(&buf);
   std::use_facet<num_format_facet<std::locale>>(locale).put(out, value, specs,
                                                             locale);
-  return buf.str();
+  return true;
 #endif
-  return {};
+  return false;
 }
 
 }  // namespace detail

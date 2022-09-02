@@ -2014,33 +2014,35 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
       });
 }
 
-FMT_API auto write_int(unsigned long long value, const format_specs& specs,
-                       locale_ref loc) -> std::string;
-template <typename Char>
-inline auto write_int(unsigned long long, const basic_format_specs<Char>&,
-                      locale_ref) -> std::string {
-  return {};
+FMT_API auto write_int(appender out, unsigned long long value,
+                       const format_specs& specs, locale_ref loc) -> bool;
+template <typename OutputIt, typename Char>
+inline auto write_int(OutputIt, unsigned long long,
+                      const basic_format_specs<Char>&, locale_ref) -> bool {
+  return false;
 }
 
 template <typename OutputIt, typename UInt, typename Char>
 auto write_int(OutputIt& out, UInt value, unsigned prefix,
                const basic_format_specs<Char>& specs, locale_ref loc) -> bool {
-  auto str = std::string();
+  auto result = false;
+  auto buf = memory_buffer();
   if (sizeof(value) <= sizeof(unsigned long long))
-    str = write_int(static_cast<unsigned long long>(value), specs, loc);
-  if (str.empty()) {
+    result = write_int(appender(buf), static_cast<unsigned long long>(value),
+                       specs, loc);
+  if (!result) {
     auto grouping = digit_grouping<Char>(loc);
     out = write_int(out, value, prefix, specs, grouping);
     return true;
   }
-  size_t size = to_unsigned((prefix != 0 ? 1 : 0) + str.size());
+  size_t size = to_unsigned((prefix != 0 ? 1 : 0) + buf.size());
   out = write_padded<align::right>(
       out, specs, size, size, [&](reserve_iterator<OutputIt> it) {
         if (prefix != 0) {
           char sign = static_cast<char>(prefix);
           *it++ = static_cast<Char>(sign);
         }
-        return copy_str<Char>(str.data(), str.data() + str.size(), it);
+        return copy_str<Char>(buf.data(), buf.data() + buf.size(), it);
       });
   return true;
 }
@@ -4180,17 +4182,14 @@ template <typename Locale> class num_format_facet : public Locale::facet {
  public:
   static FMT_API typename Locale::id id;
 
-  using iter_type = std::ostreambuf_iterator<char>;
-
-  auto put(iter_type out, unsigned long long val, const format_specs& specs,
-           Locale& loc) const -> iter_type {
-    return do_put(out, val, specs, loc);
+  void put(appender out, unsigned long long val, const format_specs& specs,
+           Locale& loc) const {
+    do_put(out, val, specs, loc);
   }
 
  protected:
-  virtual auto do_put(iter_type out, unsigned long long val,
-                      const format_specs& specs, Locale& loc) const
-      -> iter_type = 0;
+  virtual void do_put(appender out, unsigned long long val,
+                      const format_specs& specs, Locale& loc) const = 0;
 };
 
 #if FMT_USE_USER_DEFINED_LITERALS

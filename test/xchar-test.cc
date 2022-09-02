@@ -522,20 +522,18 @@ TEST(locale_test, sign) {
 
 class num_format : public fmt::num_format_facet<std::locale> {
  protected:
-  iter_type do_put(iter_type out, unsigned long long, const fmt::format_specs&,
-                   std::locale&) const override;
+  void do_put(fmt::appender out, unsigned long long, const fmt::format_specs&,
+              std::locale&) const override;
 };
 
-num_format::iter_type num_format::do_put(iter_type out, unsigned long long,
-                                         const fmt::format_specs&,
-                                         std::locale&) const {
-  const char s[] = "foo";
-  return std::copy_n(s, sizeof(s) - 1, out);
+void num_format::do_put(fmt::appender out, unsigned long long value,
+                        const fmt::format_specs&, std::locale&) const {
+  fmt::format_to(out, "[{}]", value);
 }
 
 TEST(locale_test, num_format) {
   auto loc = std::locale(std::locale(), new num_format());
-  EXPECT_EQ(fmt::format(loc, "{:L}", 42), "foo");
+  EXPECT_EQ(fmt::format(loc, "{:L}", 42), "[42]");
 }
 
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR
