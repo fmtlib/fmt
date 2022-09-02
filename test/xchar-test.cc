@@ -521,9 +521,9 @@ TEST(locale_test, sign) {
   EXPECT_EQ(fmt::format(std::locale(), L"{:L}", -50), L"-50");
 }
 
-class num_format : public fmt::num_format_facet<> {
+class num_format : public fmt::num_format_facet<std::locale> {
  protected:
-  using fmt::num_format_facet<>::do_put;
+  using fmt::num_format_facet<std::locale>::do_put;
   iter_type do_put(iter_type out, std::ios_base&, char,
                    unsigned long long) const override;
 };

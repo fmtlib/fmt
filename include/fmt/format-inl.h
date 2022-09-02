@@ -31,7 +31,7 @@
 #include "locale.h"
 
 FMT_BEGIN_NAMESPACE
-template <typename Char> std::locale::id num_format_facet<Char>::id;
+template <typename Locale> typename Locale::id num_format_facet<Locale>::id;
 
 namespace detail {
 
@@ -131,8 +131,9 @@ FMT_FUNC auto write_int(unsigned long long value, locale_ref loc)
   auto out = std::ostreambuf_iterator<Char>(&buf);
   // We cannot use the num_put<char> facet because it may produce output in
   // a wrong encoding.
-  using facet_t = conditional_t<std::is_same<Char, char>::value,
-                                num_format_facet<>, std::num_put<Char>>;
+  using facet_t =
+      conditional_t<std::is_same<Char, char>::value,
+                    num_format_facet<std::locale>, std::num_put<Char>>;
   if (std::has_facet<facet_t>(locale)) {
     std::use_facet<facet_t>(locale).put(out, ios, ' ', value);
     return buf.str();
