@@ -8,6 +8,7 @@
 #ifndef FMT_STD_H_
 #define FMT_STD_H_
 
+#include <exception>
 #include <thread>
 #include <type_traits>
 #include <utility>
@@ -166,6 +167,20 @@ struct formatter<
   }
 };
 FMT_END_NAMESPACE
-#endif
+#endif  // __cpp_lib_variant
+
+FMT_BEGIN_NAMESPACE
+template <typename T, typename Char>
+struct formatter<
+    T, Char,
+    typename std::enable_if<std::is_base_of<std::exception, T>::value>::type>
+    : formatter<string_view> {
+  template <typename FormatContext>
+  auto format(const std::exception& ex, FormatContext& ctx) const ->
+      typename FormatContext::iterator {
+    return fmt::formatter<string_view>::format(ex.what(), ctx);
+  }
+};
+FMT_END_NAMESPACE
 
 #endif  // FMT_STD_H_
