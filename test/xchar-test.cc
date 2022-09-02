@@ -14,7 +14,6 @@
 
 #include "fmt/chrono.h"
 #include "fmt/color.h"
-#include "fmt/locale.h"
 #include "fmt/ostream.h"
 #include "fmt/ranges.h"
 #include "gtest-extra.h"  // Contains
@@ -523,13 +522,13 @@ TEST(locale_test, sign) {
 
 class num_format : public fmt::num_format_facet<std::locale> {
  protected:
-  using fmt::num_format_facet<std::locale>::do_put;
-  iter_type do_put(iter_type out, std::ios_base&, char,
-                   unsigned long long) const override;
+  iter_type do_put(iter_type out, unsigned long long, const fmt::format_specs&,
+                   std::locale&) const override;
 };
 
-num_format::iter_type num_format::do_put(iter_type out, std::ios_base&, char,
-                                         unsigned long long) const {
+num_format::iter_type num_format::do_put(iter_type out, unsigned long long,
+                                         const fmt::format_specs&,
+                                         std::locale&) const {
   const char s[] = "foo";
   return std::copy_n(s, sizeof(s) - 1, out);
 }

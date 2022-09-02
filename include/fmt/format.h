@@ -706,6 +706,7 @@ FMT_CONSTEXPR inline size_t compute_width(string_view s) {
       return true;
     }
   };
+  // We could avoid branches by using utf8_decode directly.
   for_each_codepoint(s, count_code_points{&num_code_points});
   return num_code_points;
 }
@@ -2013,18 +2014,20 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
       });
 }
 
+FMT_API auto write_int(unsigned long long value, const format_specs& specs,
+                       locale_ref loc) -> std::string;
 template <typename Char>
-FMT_API auto write_int(unsigned long long value, locale_ref loc)
-    -> std::basic_string<Char>;
+inline auto write_int(unsigned long long, const basic_format_specs<Char>&,
+                      locale_ref) -> std::string {
+  return {};
+}
 
 template <typename OutputIt, typename UInt, typename Char>
 auto write_int(OutputIt& out, UInt value, unsigned prefix,
                const basic_format_specs<Char>& specs, locale_ref loc) -> bool {
-  using char_t =
-      conditional_t<std::is_same<Char, wchar_t>::value, wchar_t, char>;
-  auto str = std::basic_string<char_t>();
+  auto str = std::string();
   if (sizeof(value) <= sizeof(unsigned long long))
-    str = write_int<char_t>(static_cast<unsigned long long>(value), loc);
+    str = write_int(static_cast<unsigned long long>(value), specs, loc);
   if (str.empty()) {
     auto grouping = digit_grouping<Char>(loc);
     out = write_int(out, value, prefix, specs, grouping);
@@ -4170,6 +4173,25 @@ extern template FMT_API auto decimal_point_impl(locale_ref) -> wchar_t;
 #endif  // FMT_HEADER_ONLY
 
 FMT_END_DETAIL_NAMESPACE
+
+// A locale facet that formats numeric values in UTF-8.
+// It is parameterized on the locale to avoid heavy <locale> include.
+template <typename Locale> class num_format_facet : public Locale::facet {
+ public:
+  static FMT_API typename Locale::id id;
+
+  using iter_type = std::ostreambuf_iterator<char>;
+
+  auto put(iter_type out, unsigned long long val, const format_specs& specs,
+           Locale& loc) const -> iter_type {
+    return do_put(out, val, specs, loc);
+  }
+
+ protected:
+  virtual auto do_put(iter_type out, unsigned long long val,
+                      const format_specs& specs, Locale& loc) const
+      -> iter_type = 0;
+};
 
 #if FMT_USE_USER_DEFINED_LITERALS
 inline namespace literals {

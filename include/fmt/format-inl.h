@@ -28,7 +28,6 @@
 #endif
 
 #include "format.h"
-#include "locale.h"
 
 FMT_BEGIN_NAMESPACE
 template <typename Locale> typename Locale::id num_format_facet<Locale>::id;
@@ -120,24 +119,18 @@ template <typename Char> FMT_FUNC Char decimal_point_impl(locale_ref) {
 }
 #endif
 
-template <typename Char>
-FMT_FUNC auto write_int(unsigned long long value, locale_ref loc)
-    -> std::basic_string<Char> {
+FMT_FUNC auto write_int(unsigned long long value, const format_specs& specs,
+                        locale_ref loc) -> std::string {
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
-  auto&& ios = std::basic_ios<Char>(nullptr);
   auto locale = loc.get<std::locale>();
-  ios.imbue(locale);
-  auto&& buf = std::basic_stringbuf<Char>();
-  auto out = std::ostreambuf_iterator<Char>(&buf);
   // We cannot use the num_put<char> facet because it may produce output in
   // a wrong encoding.
-  using facet_t =
-      conditional_t<std::is_same<Char, char>::value,
-                    num_format_facet<std::locale>, std::num_put<Char>>;
-  if (std::has_facet<facet_t>(locale)) {
-    std::use_facet<facet_t>(locale).put(out, ios, ' ', value);
-    return buf.str();
-  }
+  if (!std::has_facet<num_format_facet<std::locale>>(locale)) return {};
+  auto&& buf = std::basic_stringbuf<char>();
+  auto out = std::ostreambuf_iterator<char>(&buf);
+  std::use_facet<num_format_facet<std::locale>>(locale).put(out, value, specs,
+                                                            locale);
+  return buf.str();
 #endif
   return {};
 }
