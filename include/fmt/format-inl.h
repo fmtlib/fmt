@@ -118,7 +118,7 @@ template <typename Char> FMT_FUNC Char decimal_point_impl(locale_ref) {
 }
 #endif
 
-FMT_FUNC auto write_int(appender out, unsigned long long value,
+FMT_FUNC auto write_int(appender out, loc_value value,
                         const format_specs& specs, locale_ref loc) -> bool {
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
   auto locale = loc.get<std::locale>();

@@ -520,20 +520,4 @@ TEST(locale_test, sign) {
   EXPECT_EQ(fmt::format(std::locale(), L"{:L}", -50), L"-50");
 }
 
-class num_format : public fmt::num_format_facet<std::locale> {
- protected:
-  void do_put(fmt::appender out, unsigned long long, const fmt::format_specs&,
-              std::locale&) const override;
-};
-
-void num_format::do_put(fmt::appender out, unsigned long long value,
-                        const fmt::format_specs&, std::locale&) const {
-  fmt::format_to(out, "[{}]", value);
-}
-
-TEST(locale_test, num_format) {
-  auto loc = std::locale(std::locale(), new num_format());
-  EXPECT_EQ(fmt::format(loc, "{:L}", 42), "[42]");
-}
-
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR

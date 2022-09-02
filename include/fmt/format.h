@@ -985,6 +985,29 @@ constexpr auto compile_string_to_view(detail::std_string_view<Char> s)
 }
 }  // namespace detail_exported
 
+// A value to localize.
+struct loc_value {
+  union {
+    unsigned long long ulong_long_value;
+  };
+};
+
+// A locale facet that formats numeric values in UTF-8.
+// It is parameterized on the locale to avoid heavy <locale> include.
+template <typename Locale> class num_format_facet : public Locale::facet {
+ public:
+  static FMT_API typename Locale::id id;
+
+  void put(appender out, loc_value val, const format_specs& specs,
+           Locale& loc) const {
+    do_put(out, val, specs, loc);
+  }
+
+ protected:
+  virtual void do_put(appender out, loc_value val, const format_specs& specs,
+                      Locale& loc) const = 0;
+};
+
 FMT_BEGIN_DETAIL_NAMESPACE
 
 template <typename T> struct is_integral : std::is_integral<T> {};
@@ -2014,11 +2037,11 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
       });
 }
 
-FMT_API auto write_int(appender out, unsigned long long value,
-                       const format_specs& specs, locale_ref loc) -> bool;
+FMT_API auto write_int(appender out, loc_value value, const format_specs& specs,
+                       locale_ref loc) -> bool;
 template <typename OutputIt, typename Char>
-inline auto write_int(OutputIt, unsigned long long,
-                      const basic_format_specs<Char>&, locale_ref) -> bool {
+inline auto write_int(OutputIt, loc_value, const basic_format_specs<Char>&,
+                      locale_ref) -> bool {
   return false;
 }
 
@@ -2028,7 +2051,7 @@ auto write_int(OutputIt& out, UInt value, unsigned prefix,
   auto result = false;
   auto buf = memory_buffer();
   if (sizeof(value) <= sizeof(unsigned long long))
-    result = write_int(appender(buf), static_cast<unsigned long long>(value),
+    result = write_int(appender(buf), {static_cast<unsigned long long>(value)},
                        specs, loc);
   if (!result) {
     auto grouping = digit_grouping<Char>(loc);
@@ -4175,22 +4198,6 @@ extern template FMT_API auto decimal_point_impl(locale_ref) -> wchar_t;
 #endif  // FMT_HEADER_ONLY
 
 FMT_END_DETAIL_NAMESPACE
-
-// A locale facet that formats numeric values in UTF-8.
-// It is parameterized on the locale to avoid heavy <locale> include.
-template <typename Locale> class num_format_facet : public Locale::facet {
- public:
-  static FMT_API typename Locale::id id;
-
-  void put(appender out, unsigned long long val, const format_specs& specs,
-           Locale& loc) const {
-    do_put(out, val, specs, loc);
-  }
-
- protected:
-  virtual void do_put(appender out, unsigned long long val,
-                      const format_specs& specs, Locale& loc) const = 0;
-};
 
 #if FMT_USE_USER_DEFINED_LITERALS
 inline namespace literals {

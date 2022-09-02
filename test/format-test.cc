@@ -2311,3 +2311,26 @@ TEST(format_int_test, format_int) {
   os << max_value<int64_t>();
   EXPECT_EQ(os.str(), fmt::format_int(max_value<int64_t>()).str());
 }
+
+#ifdef FMT_STATIC_THOUSANDS_SEPARATOR
+
+#  include <locale>
+
+class num_format : public fmt::num_format_facet<std::locale> {
+ protected:
+  void do_put(fmt::appender out, fmt::loc_value, const fmt::format_specs&,
+              std::locale&) const override;
+};
+
+void num_format::do_put(fmt::appender out, fmt::loc_value value,
+                        const fmt::format_specs&, std::locale&) const {
+  fmt::format_to(out, "[{}]", value.ulong_long_value);
+}
+
+TEST(format_test, num_format) {
+  auto loc = std::locale(std::locale(), new num_format());
+  EXPECT_EQ(fmt::format(loc, "{:L}", 42), "[42]");
+  EXPECT_EQ(fmt::format(loc, "{:L}", -42), "[-42]");
+}
+
+#endif  // FMT_STATIC_THOUSANDS_SEPARATOR
