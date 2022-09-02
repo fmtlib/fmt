@@ -4158,6 +4158,9 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
 }
 
 #ifndef FMT_HEADER_ONLY
+extern template FMT_API void vformat_to(
+    buffer<char>&, string_view, basic_format_args<FMT_BUFFER_CONTEXT(char)>,
+    locale_ref);
 extern template FMT_API auto thousands_sep_impl<char>(locale_ref)
     -> thousands_sep_result<char>;
 extern template FMT_API auto thousands_sep_impl<wchar_t>(locale_ref)
