@@ -101,17 +101,16 @@ template <typename T>
 using variant_index_sequence =
     std::make_index_sequence<std::variant_size<T>::value>;
 
-template <typename>
-struct is_variant_like_ : std::false_type {};
+template <typename> struct is_variant_like_ : std::false_type {};
 template <typename... Types>
 struct is_variant_like_<std::variant<Types...>> : std::true_type {};
 
 // formattable element check.
 template <typename T, typename C> class is_variant_formattable_ {
-  template <std::size_t... I>
+  template <std::size_t... Is>
   static std::conjunction<
-      is_formattable<std::variant_alternative_t<I, T>, C>...>
-      check(std::index_sequence<I...>);
+      is_formattable<std::variant_alternative_t<Is, T>, C>...>
+      check(std::index_sequence<Is...>);
 
  public:
   static constexpr const bool value =

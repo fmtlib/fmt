@@ -211,16 +211,16 @@ class is_tuple_formattable_ {
   static constexpr const bool value = false;
 };
 template <typename T, typename C> class is_tuple_formattable_<T, C, true> {
-  template <std::size_t... I>
-  static std::true_type check2(index_sequence<I...>,
-                               integer_sequence<bool, (I == I)...>);
+  template <std::size_t... Is>
+  static std::true_type check2(index_sequence<Is...>,
+                               integer_sequence<bool, (Is == Is)...>);
   static std::false_type check2(...);
-  template <std::size_t... I>
+  template <std::size_t... Is>
   static decltype(check2(
-      index_sequence<I...>{},
+      index_sequence<Is...>{},
       integer_sequence<
-          bool, (is_formattable<typename std::tuple_element<I, T>::type,
-                                C>::value)...>{})) check(index_sequence<I...>);
+          bool, (is_formattable<typename std::tuple_element<Is, T>::type,
+                                C>::value)...>{})) check(index_sequence<Is...>);
 
  public:
   static constexpr const bool value =
