@@ -332,7 +332,7 @@ struct monostate {
 #ifdef FMT_DOC
 #  define FMT_ENABLE_IF(...)
 #else
-#  define FMT_ENABLE_IF(...) enable_if_t<(__VA_ARGS__), int> = 0
+#  define FMT_ENABLE_IF(...) fmt::enable_if_t<(__VA_ARGS__), int> = 0
 #endif
 
 FMT_BEGIN_DETAIL_NAMESPACE

@@ -985,27 +985,20 @@ constexpr auto compile_string_to_view(detail::std_string_view<Char> s)
 }
 }  // namespace detail_exported
 
-// A value to localize.
-struct loc_value {
-  union {
-    unsigned long long ulong_long_value;
-  };
-};
-
-// A locale facet that formats numeric values in UTF-8.
-// It is parameterized on the locale to avoid heavy <locale> include.
-template <typename Locale> class num_format_facet : public Locale::facet {
+// A locale facet that formats values in UTF-8.
+// It is parameterized on the locale to avoid the heavy <locale> include.
+template <typename Locale> class format_facet : public Locale::facet {
  public:
   static FMT_API typename Locale::id id;
 
-  void put(appender out, loc_value val, const format_specs& specs,
-           Locale& loc) const {
+  void put(appender out, basic_format_arg<format_context> val,
+           const format_specs& specs, Locale& loc) const {
     do_put(out, val, specs, loc);
   }
 
  protected:
-  virtual void do_put(appender out, loc_value val, const format_specs& specs,
-                      Locale& loc) const = 0;
+  virtual void do_put(appender out, basic_format_arg<format_context> val,
+                      const format_specs& specs, Locale& loc) const = 0;
 };
 
 FMT_BEGIN_DETAIL_NAMESPACE
@@ -2037,23 +2030,21 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
       });
 }
 
-FMT_API auto write_int(appender out, loc_value value, const format_specs& specs,
-                       locale_ref loc) -> bool;
+FMT_API auto write_int(appender out, basic_format_arg<format_context> value,
+                       const format_specs& specs, locale_ref loc) -> bool;
 template <typename OutputIt, typename Char>
-inline auto write_int(OutputIt, loc_value, const basic_format_specs<Char>&,
-                      locale_ref) -> bool {
+inline auto write_int(OutputIt, basic_format_arg<buffer_context<Char>>,
+                      const basic_format_specs<Char>&, locale_ref) -> bool {
   return false;
 }
 
 template <typename OutputIt, typename UInt, typename Char>
 auto write_int(OutputIt& out, UInt value, unsigned prefix,
                const basic_format_specs<Char>& specs, locale_ref loc) -> bool {
-  auto result = false;
   auto buf = memory_buffer();
-  if (sizeof(value) <= sizeof(unsigned long long))
-    result = write_int(appender(buf), {static_cast<unsigned long long>(value)},
+  auto written = write_int(appender(buf), make_arg<buffer_context<Char>>(value),
                        specs, loc);
-  if (!result) {
+  if (!written) {
     auto grouping = digit_grouping<Char>(loc);
     out = write_int(out, value, prefix, specs, grouping);
     return true;
