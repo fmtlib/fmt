@@ -75,6 +75,9 @@ TEST(std_test, variant) {
 
   EXPECT_EQ(fmt::format("{}", v4), "variant(monostate)");
   EXPECT_EQ(fmt::format("{}", v5), "variant(\"yes, this is variant\")");
+
+  volatile int i = 42;  // Test compile error before GCC 11 described in #3068.
+  EXPECT_EQ(fmt::format("{}", i), "42");
 #endif
 }
 
