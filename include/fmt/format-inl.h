@@ -29,8 +29,6 @@
 #include "format.h"
 
 FMT_BEGIN_NAMESPACE
-template <typename Locale> typename Locale::id format_facet<Locale>::id;
-
 namespace detail {
 
 FMT_FUNC void assert_fail(const char* file, int line, const char* message) {
@@ -132,7 +130,33 @@ FMT_FUNC auto write_int(appender out, basic_format_arg<format_context> value,
   return false;
 }
 
+struct localize_int {
+  appender out;
+  const format_specs& specs;
+  locale_ref loc;
+
+  template <typename T, FMT_ENABLE_IF(detail::is_integer<T>::value)>
+  void operator()(T value) {
+    auto arg = make_write_int_arg(value, specs.sign);
+    write_int(out, static_cast<uint64_or_128_t<T>>(arg.abs_value), arg.prefix,
+              specs, digit_grouping<char>(loc));
+  }
+  template <typename T, FMT_ENABLE_IF(!detail::is_integer<T>::value)>
+  void operator()(T) {}
+};
 }  // namespace detail
+
+template <typename Locale> typename Locale::id format_facet<Locale>::id;
+
+#ifndef FMT_STATIC_THOUSANDS_SEPARATOR
+template <>
+FMT_API FMT_FUNC void format_facet<std::locale>::do_put(
+    appender out, basic_format_arg<format_context> val,
+    const format_specs& specs, std::locale& loc) const {
+  visit_format_arg(detail::localize_int{out, specs, detail::locale_ref(loc)},
+                   val);
+}
+#endif
 
 #if !FMT_MSC_VERSION
 FMT_API FMT_FUNC format_error::~format_error() noexcept = default;
