@@ -2342,6 +2342,7 @@ void format_facet::do_put(fmt::appender out,
 TEST(format_test, format_facet) {
   auto loc = std::locale(std::locale(), new format_facet());
   EXPECT_EQ(fmt::format(loc, "{:L}", 42), "[42]");
+  EXPECT_EQ(fmt::format(loc, "{:L}", -42), "[-42]");
 }
 
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR

@@ -2041,23 +2041,8 @@ inline auto write_int(OutputIt, basic_format_arg<buffer_context<Char>>,
 template <typename OutputIt, typename UInt, typename Char>
 auto write_int(OutputIt& out, UInt value, unsigned prefix,
                const basic_format_specs<Char>& specs, locale_ref loc) -> bool {
-  auto buf = memory_buffer();
-  auto written = write_int(appender(buf), make_arg<buffer_context<Char>>(value),
-                       specs, loc);
-  if (!written) {
-    auto grouping = digit_grouping<Char>(loc);
-    out = write_int(out, value, prefix, specs, grouping);
-    return true;
-  }
-  size_t size = to_unsigned((prefix != 0 ? 1 : 0) + buf.size());
-  out = write_padded<align::right>(
-      out, specs, size, size, [&](reserve_iterator<OutputIt> it) {
-        if (prefix != 0) {
-          char sign = static_cast<char>(prefix);
-          *it++ = static_cast<Char>(sign);
-        }
-        return copy_str<Char>(buf.data(), buf.data() + buf.size(), it);
-      });
+  auto grouping = digit_grouping<Char>(loc);
+  out = write_int(out, value, prefix, specs, grouping);
   return true;
 }
 
@@ -4168,6 +4153,10 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
       begin = parse_format_specs(begin, end, handler);
       if (begin == end || *begin != '}')
         on_error("missing '}' in format string");
+      if (specs.localized && arg.is_integral() &&
+          write_int(context.out(), arg, specs, context.locale())) {
+        return begin;
+      }
       auto f = arg_formatter<Char>{context.out(), specs, context.locale()};
       context.advance_to(visit_format_arg(f, arg));
       return begin;
