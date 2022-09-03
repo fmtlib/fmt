@@ -123,8 +123,7 @@ FMT_FUNC auto write_int(appender out, basic_format_arg<format_context> value,
   // We cannot use the num_put<char> facet because it may produce output in
   // a wrong encoding.
   if (!std::has_facet<format_facet<std::locale>>(locale)) return {};
-  std::use_facet<format_facet<std::locale>>(locale).put(out, value, specs,
-                                                        locale);
+  std::use_facet<format_facet<std::locale>>(locale).put(out, value, specs);
   return true;
 #endif
   return false;
@@ -133,13 +132,13 @@ FMT_FUNC auto write_int(appender out, basic_format_arg<format_context> value,
 struct localize_int {
   appender out;
   const format_specs& specs;
-  locale_ref loc;
+  std::string sep;
 
   template <typename T, FMT_ENABLE_IF(detail::is_integer<T>::value)>
   void operator()(T value) {
     auto arg = make_write_int_arg(value, specs.sign);
     write_int(out, static_cast<uint64_or_128_t<T>>(arg.abs_value), arg.prefix,
-              specs, digit_grouping<char>(loc));
+              specs, digit_grouping<char>("\3", sep));
   }
   template <typename T, FMT_ENABLE_IF(!detail::is_integer<T>::value)>
   void operator()(T) {}
@@ -152,9 +151,8 @@ template <typename Locale> typename Locale::id format_facet<Locale>::id;
 template <>
 FMT_API FMT_FUNC void format_facet<std::locale>::do_put(
     appender out, basic_format_arg<format_context> val,
-    const format_specs& specs, std::locale& loc) const {
-  visit_format_arg(detail::localize_int{out, specs, detail::locale_ref(loc)},
-                   val);
+    const format_specs& specs) const {
+  visit_format_arg(detail::localize_int{out, specs, separator_}, val);
 }
 #endif
 

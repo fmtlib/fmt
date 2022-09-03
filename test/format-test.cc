@@ -2330,12 +2330,12 @@ class format_facet : public fmt::format_facet<std::locale> {
   };
 
   void do_put(fmt::appender out, fmt::basic_format_arg<fmt::format_context> arg,
-              const fmt::format_specs&, std::locale&) const override;
+              const fmt::format_specs&) const override;
 };
 
 void format_facet::do_put(fmt::appender out,
                           fmt::basic_format_arg<fmt::format_context> arg,
-                          const fmt::format_specs&, std::locale&) const {
+                          const fmt::format_specs&) const {
   visit_format_arg(int_formatter{out}, arg);
 }
 
@@ -2343,6 +2343,16 @@ TEST(format_test, format_facet) {
   auto loc = std::locale(std::locale(), new format_facet());
   EXPECT_EQ(fmt::format(loc, "{:L}", 42), "[42]");
   EXPECT_EQ(fmt::format(loc, "{:L}", -42), "[-42]");
+}
+
+TEST(format_test, format_facet_separator) {
+  // U+2019 RIGHT SINGLE QUOTATION MARK is a digit separator in the de_CH
+  // locale.
+  auto loc = std::locale(std::locale(),
+                         new fmt::format_facet<std::locale>("\xe2\x80\x99"));
+  EXPECT_EQ(fmt::format(loc, "{:L}", 1000),
+            "1\xe2\x80\x99"
+            "000");
 }
 
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR

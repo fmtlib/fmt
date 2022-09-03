@@ -993,7 +993,7 @@ template <typename Locale> class format_facet : public Locale::facet {
 
  protected:
   virtual void do_put(appender out, basic_format_arg<format_context> val,
-                      const format_specs& specs, Locale& loc) const;
+                      const format_specs& specs) const;
 
  public:
   static FMT_API typename Locale::id id;
@@ -1002,8 +1002,8 @@ template <typename Locale> class format_facet : public Locale::facet {
       : separator_(sep.data(), sep.size()) {}
 
   void put(appender out, basic_format_arg<format_context> val,
-           const format_specs& specs, Locale& loc) const {
-    do_put(out, val, specs, loc);
+           const format_specs& specs) const {
+    do_put(out, val, specs);
   }
 };
 
@@ -1981,9 +1981,8 @@ template <typename Char> class digit_grouping {
     grouping_ = sep.grouping;
     if (sep.thousands_sep) thousands_sep_.assign(1, sep.thousands_sep);
   }
-  explicit digit_grouping(thousands_sep_result<Char> sep)
-      : grouping_(sep.grouping),
-        thousands_sep_(sep.thousands_sep ? 1 : 0, sep.thousands_sep) {}
+  digit_grouping(std::string grouping, std::string sep)
+      : grouping_(std::move(grouping)), thousands_sep_(std::move(sep)) {}
 
   bool has_separator() const { return !thousands_sep_.empty(); }
 
@@ -3950,7 +3949,7 @@ template <typename T> struct formatter<group_digits_view<T>> : formatter<T> {
         specs_.precision, specs_.precision_ref, ctx);
     return detail::write_int(
         ctx.out(), static_cast<detail::uint64_or_128_t<T>>(t.value), 0, specs_,
-        detail::digit_grouping<char>({"\3", ','}));
+        detail::digit_grouping<char>("\3", ","));
   }
 };
 
