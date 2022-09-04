@@ -133,12 +133,13 @@ struct localize_int {
   appender out;
   const format_specs& specs;
   std::string sep;
+  std::string grouping;
 
   template <typename T, FMT_ENABLE_IF(detail::is_integer<T>::value)>
   void operator()(T value) {
     auto arg = make_write_int_arg(value, specs.sign);
     write_int(out, static_cast<uint64_or_128_t<T>>(arg.abs_value), arg.prefix,
-              specs, digit_grouping<char>("\3", sep));
+              specs, digit_grouping<char>(grouping, sep));
   }
   template <typename T, FMT_ENABLE_IF(!detail::is_integer<T>::value)>
   void operator()(T) {}
@@ -152,7 +153,8 @@ template <>
 FMT_API FMT_FUNC void format_facet<std::locale>::do_put(
     appender out, basic_format_arg<format_context> val,
     const format_specs& specs) const {
-  visit_format_arg(detail::localize_int{out, specs, separator_}, val);
+  visit_format_arg(detail::localize_int{out, specs, separator_, grouping_},
+                   val);
 }
 #endif
 

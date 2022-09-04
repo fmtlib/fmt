@@ -33,13 +33,14 @@
 #ifndef FMT_FORMAT_H_
 #define FMT_FORMAT_H_
 
-#include <cmath>         // std::signbit
-#include <cstdint>       // uint32_t
-#include <cstring>       // std::memcpy
-#include <limits>        // std::numeric_limits
-#include <memory>        // std::uninitialized_copy
-#include <stdexcept>     // std::runtime_error
-#include <system_error>  // std::system_error
+#include <cmath>             // std::signbit
+#include <cstdint>           // uint32_t
+#include <cstring>           // std::memcpy
+#include <initializer_list>  // std::initializer_list
+#include <limits>            // std::numeric_limits
+#include <memory>            // std::uninitialized_copy
+#include <stdexcept>         // std::runtime_error
+#include <system_error>      // std::system_error
 
 #ifdef __cpp_lib_bit_cast
 #  include <bit>  // std::bitcast
@@ -990,6 +991,7 @@ constexpr auto compile_string_to_view(detail::std_string_view<Char> s)
 template <typename Locale> class format_facet : public Locale::facet {
  private:
   std::string separator_;
+  std::string grouping_;
 
  protected:
   virtual void do_put(appender out, basic_format_arg<format_context> val,
@@ -998,8 +1000,9 @@ template <typename Locale> class format_facet : public Locale::facet {
  public:
   static FMT_API typename Locale::id id;
 
-  explicit format_facet(string_view sep = ",")
-      : separator_(sep.data(), sep.size()) {}
+  explicit format_facet(string_view sep = ",",
+                        std::initializer_list<unsigned char> g = {3})
+      : separator_(sep.data(), sep.size()), grouping_(g.begin(), g.end()) {}
 
   void put(appender out, basic_format_arg<format_context> val,
            const format_specs& specs) const {

@@ -2348,11 +2348,17 @@ TEST(format_test, format_facet) {
 TEST(format_test, format_facet_separator) {
   // U+2019 RIGHT SINGLE QUOTATION MARK is a digit separator in the de_CH
   // locale.
-  auto loc = std::locale(std::locale(),
-                         new fmt::format_facet<std::locale>("\xe2\x80\x99"));
+  auto loc =
+      std::locale({}, new fmt::format_facet<std::locale>("\xe2\x80\x99"));
   EXPECT_EQ(fmt::format(loc, "{:L}", 1000),
             "1\xe2\x80\x99"
             "000");
+}
+
+TEST(format_test, format_facet_grouping) {
+  auto loc =
+      std::locale({}, new fmt::format_facet<std::locale>(",", {1, 2, 3}));
+  EXPECT_EQ(fmt::format(loc, "{:L}", 1234567890), "1,234,567,89,0");
 }
 
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR
