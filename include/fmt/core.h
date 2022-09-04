@@ -486,6 +486,18 @@ template <typename Char> class basic_string_view {
     size_ -= n;
   }
 
+  FMT_CONSTEXPR_CHAR_TRAITS bool starts_with(
+      basic_string_view<Char> sv) const noexcept {
+    return size_ >= sv.size_ &&
+           std::char_traits<Char>::compare(data_, sv.data_, sv.size_) == 0;
+  }
+  FMT_CONSTEXPR_CHAR_TRAITS bool starts_with(Char c) const noexcept {
+    return size_ >= 1 && std::char_traits<Char>::eq(*data_, c);
+  }
+  FMT_CONSTEXPR_CHAR_TRAITS bool starts_with(const Char* s) const {
+    return starts_with(basic_string_view<Char>(s));
+  }
+
   // Lexicographically compare this string reference to other.
   FMT_CONSTEXPR_CHAR_TRAITS auto compare(basic_string_view other) const -> int {
     size_t str_size = size_ < other.size_ ? size_ : other.size_;
