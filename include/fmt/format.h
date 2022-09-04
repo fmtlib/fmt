@@ -992,21 +992,26 @@ template <typename Locale> class format_facet : public Locale::facet {
  private:
   std::string separator_;
   std::string grouping_;
+  std::string decimal_point_;
 
  protected:
-  virtual void do_put(appender out, basic_format_arg<format_context> val,
-                      const format_specs& specs) const;
+  virtual auto do_put(appender out, basic_format_arg<format_context> val,
+                      const format_specs& specs) const -> bool;
 
  public:
   static FMT_API typename Locale::id id;
 
-  explicit format_facet(string_view sep = ",",
-                        std::initializer_list<unsigned char> g = {3})
-      : separator_(sep.data(), sep.size()), grouping_(g.begin(), g.end()) {}
+  explicit format_facet(Locale& loc);
+  explicit format_facet(string_view sep = "",
+                        std::initializer_list<unsigned char> g = {3},
+                        std::string decimal_point = ".")
+      : separator_(sep.data(), sep.size()),
+        grouping_(g.begin(), g.end()),
+        decimal_point_(decimal_point) {}
 
-  void put(appender out, basic_format_arg<format_context> val,
-           const format_specs& specs) const {
-    do_put(out, val, specs);
+  auto put(appender out, basic_format_arg<format_context> val,
+           const format_specs& specs) const -> bool {
+    return do_put(out, val, specs);
   }
 };
 
@@ -2042,10 +2047,11 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
       });
 }
 
-FMT_API auto write_int(appender out, basic_format_arg<format_context> value,
+// Writes value with localization.
+FMT_API auto write_loc(appender out, basic_format_arg<format_context> value,
                        const format_specs& specs, locale_ref loc) -> bool;
 template <typename OutputIt, typename Char>
-inline auto write_int(OutputIt, basic_format_arg<buffer_context<Char>>,
+inline auto write_loc(OutputIt, basic_format_arg<buffer_context<Char>>,
                       const basic_format_specs<Char>&, locale_ref) -> bool {
   return false;
 }
@@ -4165,8 +4171,8 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
       begin = parse_format_specs(begin, end, handler);
       if (begin == end || *begin != '}')
         on_error("missing '}' in format string");
-      if (specs.localized && arg.is_integral() &&
-          write_int(context.out(), arg, specs, context.locale())) {
+      if (specs.localized &&
+          write_loc(context.out(), arg, specs, context.locale())) {
         return begin;
       }
       auto f = arg_formatter<Char>{context.out(), specs, context.locale()};

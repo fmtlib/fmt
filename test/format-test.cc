@@ -2322,21 +2322,25 @@ class format_facet : public fmt::format_facet<std::locale> {
     fmt::appender out;
 
     template <typename T, FMT_ENABLE_IF(fmt::detail::is_integer<T>::value)>
-    void operator()(T value) {
+    auto operator()(T value) -> bool {
       fmt::format_to(out, "[{}]", value);
+      return true;
     }
+
     template <typename T, FMT_ENABLE_IF(!fmt::detail::is_integer<T>::value)>
-    void operator()(T) {}
+    auto operator()(T) -> bool {
+      return false;
+    }
   };
 
-  void do_put(fmt::appender out, fmt::basic_format_arg<fmt::format_context> arg,
-              const fmt::format_specs&) const override;
+  auto do_put(fmt::appender out, fmt::basic_format_arg<fmt::format_context> arg,
+              const fmt::format_specs&) const -> bool override;
 };
 
-void format_facet::do_put(fmt::appender out,
+auto format_facet::do_put(fmt::appender out,
                           fmt::basic_format_arg<fmt::format_context> arg,
-                          const fmt::format_specs&) const {
-  visit_format_arg(int_formatter{out}, arg);
+                          const fmt::format_specs&) const -> bool {
+  return visit_format_arg(int_formatter{out}, arg);
 }
 
 TEST(format_test, format_facet) {
