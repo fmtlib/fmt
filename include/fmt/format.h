@@ -2053,7 +2053,16 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
       });
 }
 
-// Writes localized value.
+template <typename Char, typename T, FMT_ENABLE_IF(!is_float128<T>::value)>
+auto make_loc_value(T value) -> basic_format_arg<buffer_context<Char>> {
+  return make_arg<buffer_context<Char>>(value);
+}
+template <typename Char, typename T, FMT_ENABLE_IF(is_float128<T>::value)>
+auto make_loc_value(T) -> basic_format_arg<buffer_context<Char>> {
+  return {};
+}
+
+// Writes a localized value.
 FMT_API auto write_loc(appender out, basic_format_arg<format_context> value,
                        const format_specs& specs, locale_ref loc) -> bool;
 
@@ -2182,7 +2191,7 @@ FMT_CONSTEXPR FMT_INLINE auto write(OutputIt out, T value,
                                     const basic_format_specs<Char>& specs,
                                     locale_ref loc) -> OutputIt {
   if (specs.localized &&
-      write_loc(out, make_arg<buffer_context<Char>>(value), specs, loc)) {
+      write_loc(out, make_loc_value<Char>(value), specs, loc)) {
     return out;
   }
   return write_int_noinline(out, make_write_int_arg(value, specs.sign), specs,
@@ -2197,7 +2206,7 @@ FMT_CONSTEXPR FMT_INLINE auto write(OutputIt out, T value,
                                     const basic_format_specs<Char>& specs,
                                     locale_ref loc) -> OutputIt {
   if (specs.localized &&
-      write_loc(out, make_arg<buffer_context<Char>>(value), specs, loc)) {
+      write_loc(out, make_loc_value<Char>(value), specs, loc)) {
     return out;
   }
   return write_int(out, make_write_int_arg(value, specs.sign), specs, loc);
@@ -3251,13 +3260,10 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
   }
   return exp;
 }
-
-template <typename Char, typename OutputIt, typename T,
-          FMT_ENABLE_IF(is_floating_point<T>::value)>
-FMT_CONSTEXPR20 auto write(OutputIt out, T value,
-                           basic_format_specs<Char> specs, locale_ref loc = {})
+template <typename Char, typename OutputIt, typename T>
+FMT_CONSTEXPR20 auto write_float(OutputIt out, T value,
+                                 basic_format_specs<Char> specs, locale_ref loc)
     -> OutputIt {
-  if (const_check(!is_supported_floating_point(value))) return out;
   float_specs fspecs = parse_float_type_spec(specs);
   fspecs.sign = specs.sign;
   if (detail::signbit(value)) {  // value < 0 is false for NaN so use signbit.
@@ -3301,6 +3307,19 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value,
   fspecs.precision = precision;
   auto f = big_decimal_fp{buffer.data(), static_cast<int>(buffer.size()), exp};
   return write_float(out, f, specs, fspecs, loc);
+}
+
+template <typename Char, typename OutputIt, typename T,
+          FMT_ENABLE_IF(is_floating_point<T>::value)>
+FMT_CONSTEXPR20 auto write(OutputIt out, T value,
+                           basic_format_specs<Char> specs, locale_ref loc = {})
+    -> OutputIt {
+  if (const_check(!is_supported_floating_point(value))) return out;
+  if (specs.localized &&
+      write_loc(out, make_loc_value<Char>(value), specs, loc)) {
+    return out;
+  }
+  return write_float(out, value, specs, loc);
 }
 
 template <typename Char, typename OutputIt, typename T,
