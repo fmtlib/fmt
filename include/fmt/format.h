@@ -739,6 +739,21 @@ inline auto code_point_index(basic_string_view<char8_type> s, size_t n)
       string_view(reinterpret_cast<const char*>(s.data()), s.size()), n);
 }
 
+template <typename T> struct is_integral : std::is_integral<T> {};
+template <> struct is_integral<int128_opt> : std::true_type {};
+template <> struct is_integral<uint128_t> : std::true_type {};
+
+template <typename T>
+using is_signed =
+    std::integral_constant<bool, std::numeric_limits<T>::is_signed ||
+                                     std::is_same<T, int128_opt>::value>;
+
+template <typename T>
+using is_integer =
+    bool_constant<is_integral<T>::value && !std::is_same<T, bool>::value &&
+                  !std::is_same<T, char>::value &&
+                  !std::is_same<T, wchar_t>::value>;
+
 #ifndef FMT_USE_FLOAT128
 #  ifdef __SIZEOF_FLOAT128__
 #    define FMT_USE_FLOAT128 1
@@ -1016,15 +1031,6 @@ template <typename Locale> class format_facet : public Locale::facet {
 };
 
 FMT_BEGIN_DETAIL_NAMESPACE
-
-template <typename T> struct is_integral : std::is_integral<T> {};
-template <> struct is_integral<int128_opt> : std::true_type {};
-template <> struct is_integral<uint128_t> : std::true_type {};
-
-template <typename T>
-using is_signed =
-    std::integral_constant<bool, std::numeric_limits<T>::is_signed ||
-                                     std::is_same<T, int128_opt>::value>;
 
 // Returns true if value is negative, false otherwise.
 // Same as `value < 0` but doesn't produce warnings if T is an unsigned type.
@@ -1989,7 +1995,7 @@ template <typename Char> class digit_grouping {
     grouping_ = sep.grouping;
     if (sep.thousands_sep) thousands_sep_.assign(1, sep.thousands_sep);
   }
-  digit_grouping(std::string grouping, std::string sep)
+  digit_grouping(std::string grouping, std::basic_string<Char> sep)
       : grouping_(std::move(grouping)), thousands_sep_(std::move(sep)) {}
 
   bool has_separator() const { return !thousands_sep_.empty(); }
@@ -2047,21 +2053,14 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
       });
 }
 
-// Writes value with localization.
+// Writes localized value.
 FMT_API auto write_loc(appender out, basic_format_arg<format_context> value,
                        const format_specs& specs, locale_ref loc) -> bool;
+
 template <typename OutputIt, typename Char>
 inline auto write_loc(OutputIt, basic_format_arg<buffer_context<Char>>,
                       const basic_format_specs<Char>&, locale_ref) -> bool {
   return false;
-}
-
-template <typename OutputIt, typename UInt, typename Char>
-auto write_int(OutputIt& out, UInt value, unsigned prefix,
-               const basic_format_specs<Char>& specs, locale_ref loc) -> bool {
-  auto grouping = digit_grouping<Char>(loc);
-  out = write_int(out, value, prefix, specs, grouping);
-  return true;
 }
 
 FMT_CONSTEXPR inline void prefix_append(unsigned& prefix, unsigned value) {
@@ -2090,20 +2089,39 @@ FMT_CONSTEXPR auto make_write_int_arg(T value, sign_t sign)
   return {abs_value, prefix};
 }
 
+template <typename Char = char> struct loc_writer {
+  buffer_appender<Char> out;
+  const basic_format_specs<Char>& specs;
+  std::basic_string<Char> sep;
+  std::string grouping;
+  std::basic_string<Char> decimal_point;
+
+  template <typename T, FMT_ENABLE_IF(is_integer<T>::value)>
+  auto operator()(T value) -> bool {
+    auto arg = make_write_int_arg(value, specs.sign);
+    write_int(out, static_cast<uint64_or_128_t<T>>(arg.abs_value), arg.prefix,
+              specs, digit_grouping<Char>(grouping, sep));
+    return true;
+  }
+
+  template <typename T, FMT_ENABLE_IF(is_floating_point<T>::value)>
+  auto operator()(T) -> bool {
+    return false;
+  }
+
+  auto operator()(...) -> bool { return false; }
+};
+
 template <typename Char, typename OutputIt, typename T>
 FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
                                         const basic_format_specs<Char>& specs,
-                                        locale_ref loc) -> OutputIt {
+                                        locale_ref) -> OutputIt {
   static_assert(std::is_same<T, uint32_or_64_or_128_t<T>>::value, "");
   auto abs_value = arg.abs_value;
   auto prefix = arg.prefix;
   switch (specs.type) {
   case presentation_type::none:
   case presentation_type::dec: {
-    if (specs.localized &&
-        write_int(out, static_cast<uint64_or_128_t<T>>(abs_value), prefix,
-                  specs, loc))
-      return out;
     auto num_digits = count_digits(abs_value);
     return write_int(
         out, num_digits, prefix, specs, [=](reserve_iterator<OutputIt> it) {
@@ -2163,6 +2181,10 @@ template <typename Char, typename OutputIt, typename T,
 FMT_CONSTEXPR FMT_INLINE auto write(OutputIt out, T value,
                                     const basic_format_specs<Char>& specs,
                                     locale_ref loc) -> OutputIt {
+  if (specs.localized &&
+      write_loc(out, make_arg<buffer_context<Char>>(value), specs, loc)) {
+    return out;
+  }
   return write_int_noinline(out, make_write_int_arg(value, specs.sign), specs,
                             loc);
 }
@@ -2174,6 +2196,10 @@ template <typename Char, typename OutputIt, typename T,
 FMT_CONSTEXPR FMT_INLINE auto write(OutputIt out, T value,
                                     const basic_format_specs<Char>& specs,
                                     locale_ref loc) -> OutputIt {
+  if (specs.localized &&
+      write_loc(out, make_arg<buffer_context<Char>>(value), specs, loc)) {
+    return out;
+  }
   return write_int(out, make_write_int_arg(value, specs.sign), specs, loc);
 }
 
@@ -3455,12 +3481,6 @@ template <typename Char> struct custom_formatter {
   template <typename T> void operator()(T) const {}
 };
 
-template <typename T>
-using is_integer =
-    bool_constant<is_integral<T>::value && !std::is_same<T, bool>::value &&
-                  !std::is_same<T, char>::value &&
-                  !std::is_same<T, wchar_t>::value>;
-
 template <typename ErrorHandler> class width_checker {
  public:
   explicit FMT_CONSTEXPR width_checker(ErrorHandler& eh) : handler_(eh) {}
@@ -4171,10 +4191,6 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
       begin = parse_format_specs(begin, end, handler);
       if (begin == end || *begin != '}')
         on_error("missing '}' in format string");
-      if (specs.localized &&
-          write_loc(context.out(), arg, specs, context.locale())) {
-        return begin;
-      }
       auto f = arg_formatter<Char>{context.out(), specs, context.locale()};
       context.advance_to(visit_format_arg(f, arg));
       return begin;

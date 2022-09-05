@@ -129,29 +129,6 @@ FMT_FUNC auto write_loc(appender out, basic_format_arg<format_context> value,
 #endif
   return false;
 }
-
-struct localizer {
-  appender out;
-  const format_specs& specs;
-  std::string sep;
-  std::string grouping;
-  std::string decimal_point;
-
-  template <typename T, FMT_ENABLE_IF(detail::is_integer<T>::value)>
-  auto operator()(T value) -> bool {
-    auto arg = make_write_int_arg(value, specs.sign);
-    write_int(out, static_cast<uint64_or_128_t<T>>(arg.abs_value), arg.prefix,
-              specs, digit_grouping<char>(grouping, sep));
-    return true;
-  }
-
-  template <typename T, FMT_ENABLE_IF(detail::is_floating_point<T>::value)>
-  auto operator()(T) -> bool {
-    return false;
-  }
-
-  auto operator()(...) -> bool { return false; }
-};
 }  // namespace detail
 
 template <typename Locale> typename Locale::id format_facet<Locale>::id;
@@ -168,7 +145,7 @@ FMT_API FMT_FUNC auto format_facet<std::locale>::do_put(
     appender out, basic_format_arg<format_context> val,
     const format_specs& specs) const -> bool {
   return visit_format_arg(
-      detail::localizer{out, specs, separator_, grouping_, decimal_point_},
+      detail::loc_writer<>{out, specs, separator_, grouping_, decimal_point_},
       val);
 }
 #endif

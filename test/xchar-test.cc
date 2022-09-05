@@ -448,11 +448,11 @@ TEST(locale_test, int_formatter) {
   auto f = fmt::formatter<int>();
   auto parse_ctx = fmt::format_parse_context("L");
   f.parse(parse_ctx);
-  char buf[10] = {};
-  fmt::basic_format_context<char*, char> format_ctx(
-      buf, {}, fmt::detail::locale_ref(loc));
-  *f.format(12345, format_ctx) = 0;
-  EXPECT_STREQ("12,345", buf);
+  auto buf = fmt::memory_buffer();
+  fmt::basic_format_context<fmt::appender, char> format_ctx(
+      fmt::appender(buf), {}, fmt::detail::locale_ref(loc));
+  f.format(12345, format_ctx);
+  EXPECT_EQ(fmt::to_string(buf), "12,345");
 }
 
 FMT_BEGIN_NAMESPACE
