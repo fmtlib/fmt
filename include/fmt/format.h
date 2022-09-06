@@ -2415,8 +2415,7 @@ FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
   auto significand = f.significand;
   int significand_size = get_significand_size(f);
   const Char zero = static_cast<Char>('0');
-  auto sign = fspecs.sign;
-  size_t size = to_unsigned(significand_size) + (sign ? 1 : 0);
+  size_t size = to_unsigned(significand_size) + (fspecs.sign ? 1 : 0);
   using iterator = reserve_iterator<OutputIt>;
 
   Char decimal_point =
@@ -2448,7 +2447,7 @@ FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
     size += to_unsigned((decimal_point ? 1 : 0) + 2 + exp_digits);
     char exp_char = fspecs.upper ? 'E' : 'e';
     auto write = [=](iterator it) {
-      if (sign) *it++ = detail::sign<Char>(sign);
+      if (fspecs.sign) *it++ = detail::sign<Char>(fspecs.sign);
       // Insert a decimal point after the first digit and add an exponent.
       it = write_significand(it, significand, significand_size, 1,
                              decimal_point);
@@ -2474,7 +2473,7 @@ FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
     auto grouping = Grouping(loc, fspecs.locale);
     size += to_unsigned(grouping.count_separators(exp));
     return write_padded<align::right>(out, specs, size, [&](iterator it) {
-      if (sign) *it++ = detail::sign<Char>(sign);
+      if (fspecs.sign) *it++ = detail::sign<Char>(fspecs.sign);
       it = write_significand<Char>(it, significand, significand_size,
                                    f.exponent, grouping);
       if (!fspecs.showpoint) return it;
@@ -2488,7 +2487,7 @@ FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
     auto grouping = Grouping(loc, fspecs.locale);
     size += to_unsigned(grouping.count_separators(significand_size));
     return write_padded<align::right>(out, specs, size, [&](iterator it) {
-      if (sign) *it++ = detail::sign<Char>(sign);
+      if (fspecs.sign) *it++ = detail::sign<Char>(fspecs.sign);
       it = write_significand(it, significand, significand_size, exp,
                              decimal_point, grouping);
       return num_zeros > 0 ? detail::fill_n(it, num_zeros, zero) : it;
@@ -2503,7 +2502,7 @@ FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
   bool pointy = num_zeros != 0 || significand_size != 0 || fspecs.showpoint;
   size += 1 + (pointy ? 1 : 0) + to_unsigned(num_zeros);
   return write_padded<align::right>(out, specs, size, [&](iterator it) {
-    if (sign) *it++ = detail::sign<Char>(sign);
+    if (fspecs.sign) *it++ = detail::sign<Char>(fspecs.sign);
     *it++ = zero;
     if (!pointy) return it;
     *it++ = decimal_point;
