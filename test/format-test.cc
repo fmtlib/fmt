@@ -2312,25 +2312,57 @@ TEST(format_int_test, format_int) {
   EXPECT_EQ(os.str(), fmt::format_int(max_value<int64_t>()).str());
 }
 
-#ifdef FMT_STATIC_THOUSANDS_SEPARATOR
+#ifndef FMT_STATIC_THOUSANDS_SEPARATOR
 
 #  include <locale>
 
-class num_format : public fmt::num_format_facet<std::locale> {
+class format_facet : public fmt::format_facet<std::locale> {
  protected:
-  void do_put(fmt::appender out, fmt::loc_value, const fmt::format_specs&,
-              std::locale&) const override;
+  struct int_formatter {
+    fmt::appender out;
+
+    template <typename T, FMT_ENABLE_IF(fmt::detail::is_integer<T>::value)>
+    auto operator()(T value) -> bool {
+      fmt::format_to(out, "[{}]", value);
+      return true;
+    }
+
+    template <typename T, FMT_ENABLE_IF(!fmt::detail::is_integer<T>::value)>
+    auto operator()(T) -> bool {
+      return false;
+    }
+  };
+
+  auto do_put(fmt::appender out, fmt::basic_format_arg<fmt::format_context> arg,
+              const fmt::format_specs&) const -> bool override;
 };
 
-void num_format::do_put(fmt::appender out, fmt::loc_value value,
-                        const fmt::format_specs&, std::locale&) const {
-  fmt::format_to(out, "[{}]", value.ulong_long_value);
+auto format_facet::do_put(fmt::appender out,
+                          fmt::basic_format_arg<fmt::format_context> arg,
+                          const fmt::format_specs&) const -> bool {
+  return visit_format_arg(int_formatter{out}, arg);
 }
 
-TEST(format_test, num_format) {
-  auto loc = std::locale(std::locale(), new num_format());
+TEST(format_test, format_facet) {
+  auto loc = std::locale(std::locale(), new format_facet());
   EXPECT_EQ(fmt::format(loc, "{:L}", 42), "[42]");
   EXPECT_EQ(fmt::format(loc, "{:L}", -42), "[-42]");
+}
+
+TEST(format_test, format_facet_separator) {
+  // U+2019 RIGHT SINGLE QUOTATION MARK is a digit separator in the de_CH
+  // locale.
+  auto loc =
+      std::locale({}, new fmt::format_facet<std::locale>("\xe2\x80\x99"));
+  EXPECT_EQ(fmt::format(loc, "{:L}", 1000),
+            "1\xe2\x80\x99"
+            "000");
+}
+
+TEST(format_test, format_facet_grouping) {
+  auto loc =
+      std::locale({}, new fmt::format_facet<std::locale>(",", {1, 2, 3}));
+  EXPECT_EQ(fmt::format(loc, "{:L}", 1234567890), "1,234,567,89,0");
 }
 
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR

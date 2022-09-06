@@ -69,9 +69,7 @@
 #  define FMT_HAS_FEATURE(x) 0
 #endif
 
-#if (defined(__has_include) || FMT_ICC_VERSION >= 1600 || \
-     FMT_MSC_VERSION > 1900) &&                           \
-    !defined(__INTELLISENSE__)
+#if defined(__has_include) || FMT_ICC_VERSION >= 1600 || FMT_MSC_VERSION > 1900
 #  define FMT_HAS_INCLUDE(x) __has_include(x)
 #else
 #  define FMT_HAS_INCLUDE(x) 0
@@ -332,7 +330,7 @@ struct monostate {
 #ifdef FMT_DOC
 #  define FMT_ENABLE_IF(...)
 #else
-#  define FMT_ENABLE_IF(...) enable_if_t<(__VA_ARGS__), int> = 0
+#  define FMT_ENABLE_IF(...) fmt::enable_if_t<(__VA_ARGS__), int> = 0
 #endif
 
 FMT_BEGIN_DETAIL_NAMESPACE
@@ -484,6 +482,18 @@ template <typename Char> class basic_string_view {
   FMT_CONSTEXPR void remove_prefix(size_t n) noexcept {
     data_ += n;
     size_ -= n;
+  }
+
+  FMT_CONSTEXPR_CHAR_TRAITS bool starts_with(
+      basic_string_view<Char> sv) const noexcept {
+    return size_ >= sv.size_ &&
+           std::char_traits<Char>::compare(data_, sv.data_, sv.size_) == 0;
+  }
+  FMT_CONSTEXPR_CHAR_TRAITS bool starts_with(Char c) const noexcept {
+    return size_ >= 1 && std::char_traits<Char>::eq(*data_, c);
+  }
+  FMT_CONSTEXPR_CHAR_TRAITS bool starts_with(const Char* s) const {
+    return starts_with(basic_string_view<Char>(s));
   }
 
   // Lexicographically compare this string reference to other.

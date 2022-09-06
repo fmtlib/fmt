@@ -29,8 +29,6 @@
 #include "format.h"
 
 FMT_BEGIN_NAMESPACE
-template <typename Locale> typename Locale::id num_format_facet<Locale>::id;
-
 namespace detail {
 
 FMT_FUNC void assert_fail(const char* file, int line, const char* message) {
@@ -118,21 +116,39 @@ template <typename Char> FMT_FUNC Char decimal_point_impl(locale_ref) {
 }
 #endif
 
-FMT_FUNC auto write_int(appender out, loc_value value,
+FMT_FUNC auto write_loc(appender out, basic_format_arg<format_context> value,
                         const format_specs& specs, locale_ref loc) -> bool {
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
   auto locale = loc.get<std::locale>();
   // We cannot use the num_put<char> facet because it may produce output in
   // a wrong encoding.
-  if (!std::has_facet<num_format_facet<std::locale>>(locale)) return {};
-  std::use_facet<num_format_facet<std::locale>>(locale).put(out, value, specs,
-                                                            locale);
-  return true;
+  using facet = format_facet<std::locale>;
+  if (std::has_facet<facet>(locale))
+    return std::use_facet<facet>(locale).put(out, value, specs);
+  return facet(locale).put(out, value, specs);
 #endif
   return false;
 }
-
 }  // namespace detail
+
+template <typename Locale> typename Locale::id format_facet<Locale>::id;
+
+#ifndef FMT_STATIC_THOUSANDS_SEPARATOR
+template <typename Locale> format_facet<Locale>::format_facet(Locale& loc) {
+  auto& numpunct = std::use_facet<std::numpunct<char>>(loc);
+  grouping_ = numpunct.grouping();
+  if (!grouping_.empty()) separator_ = std::string(1, numpunct.thousands_sep());
+}
+
+template <>
+FMT_API FMT_FUNC auto format_facet<std::locale>::do_put(
+    appender out, basic_format_arg<format_context> val,
+    const format_specs& specs) const -> bool {
+  return visit_format_arg(
+      detail::loc_writer<>{out, specs, separator_, grouping_, decimal_point_},
+      val);
+}
+#endif
 
 #if !FMT_MSC_VERSION
 FMT_API FMT_FUNC format_error::~format_error() noexcept = default;

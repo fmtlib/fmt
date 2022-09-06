@@ -9,9 +9,7 @@
 #include "test-assert.h"
 // clang-format on
 
-#define I 42  // simulate https://en.cppreference.com/w/c/numeric/complex/I
 #include "fmt/core.h"
-#undef I
 
 #include <algorithm>    // std::copy_n
 #include <climits>      // INT_MAX
@@ -72,6 +70,16 @@ TEST(string_view_test, compare) {
   EXPECT_LT(string_view("foo").compare(string_view("fop")), 0);
   EXPECT_GT(string_view("foo").compare(string_view("fo")), 0);
   EXPECT_LT(string_view("fo").compare(string_view("foo")), 0);
+
+  EXPECT_TRUE(string_view("foo").starts_with('f'));
+  EXPECT_FALSE(string_view("foo").starts_with('o'));
+  EXPECT_FALSE(string_view().starts_with('o'));
+
+  EXPECT_TRUE(string_view("foo").starts_with("fo"));
+  EXPECT_TRUE(string_view("foo").starts_with("foo"));
+  EXPECT_FALSE(string_view("foo").starts_with("fooo"));
+  EXPECT_FALSE(string_view().starts_with("fooo"));
+
   check_op<std::equal_to>();
   check_op<std::not_equal_to>();
   check_op<std::less>();

@@ -12,11 +12,32 @@
 
 #include "format.h"
 
+#ifndef FMT_STATIC_THOUSANDS_SEPARATOR
+#  include <locale>
+#endif
+
 FMT_BEGIN_NAMESPACE
 namespace detail {
+
 template <typename T>
 using is_exotic_char = bool_constant<!std::is_same<T, char>::value>;
+
+template <typename OutputIt>
+auto write_loc(OutputIt out, basic_format_arg<buffer_context<wchar_t>> val,
+               const basic_format_specs<wchar_t>& specs, locale_ref loc)
+    -> bool {
+#ifndef FMT_STATIC_THOUSANDS_SEPARATOR
+  auto& numpunct =
+      std::use_facet<std::numpunct<wchar_t>>(loc.get<std::locale>());
+  auto separator = std::wstring();
+  auto grouping = numpunct.grouping();
+  if (!grouping.empty()) separator = std::wstring(1, numpunct.thousands_sep());
+  return visit_format_arg(
+      loc_writer<wchar_t>{out, specs, separator, grouping, {}}, val);
+#endif
+  return false;
 }
+}  // namespace detail
 
 FMT_MODULE_EXPORT_BEGIN
 
