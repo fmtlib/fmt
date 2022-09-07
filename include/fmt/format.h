@@ -4270,6 +4270,18 @@ FMT_INLINE auto format_to(OutputIt out, const Locale& loc,
   return vformat_to(out, loc, fmt, fmt::make_format_args(args...));
 }
 
+template <typename Locale, typename... T,
+          FMT_ENABLE_IF(detail::is_locale<Locale>::value)>
+FMT_NODISCARD FMT_INLINE auto formatted_size(const Locale& loc,
+                                             format_string<T...> fmt,
+                                             T&&... args) -> size_t {
+  auto buf = detail::counting_buffer<>();
+  detail::vformat_to(buf, string_view(fmt),
+                     format_args(fmt::make_format_args(args...)),
+                     detail::locale_ref(loc));
+  return buf.count();
+}
+
 FMT_MODULE_EXPORT_END
 FMT_END_NAMESPACE
 
