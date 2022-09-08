@@ -1205,6 +1205,7 @@ constexpr auto uint128_max = ~static_cast<__uint128_t>(0);
 TEST(format_test, format_dec) {
   EXPECT_EQ("0", fmt::format("{0}", 0));
   EXPECT_EQ("42", fmt::format("{0}", 42));
+  EXPECT_EQ("42>", fmt::format("{:}>", 42));
   EXPECT_EQ("42", fmt::format("{0:d}", 42));
   EXPECT_EQ("42", fmt::format("{0}", 42u));
   EXPECT_EQ("-42", fmt::format("{0}", -42));
