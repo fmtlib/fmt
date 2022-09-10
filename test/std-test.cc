@@ -81,21 +81,39 @@ TEST(std_test, variant) {
 #endif
 }
 
-TEST(std_test, exception) {
-  std::string str("Test Exception");
-  std::string escstr = fmt::format("\"{}\"", str);
-
+template <typename Catch> void exception_test() {
   try {
-    throw std::runtime_error(str);
-  } catch (const std::exception& ex) {
-    EXPECT_EQ(fmt::format("{}", ex), str);
-    EXPECT_EQ(fmt::format("{:?}", ex), escstr);
+    throw std::runtime_error("Test Exception");
+  } catch (const Catch& ex) {
+    EXPECT_EQ("Test Exception", fmt::format("{}", ex));
+    EXPECT_EQ("std::runtime_error: Test Exception", fmt::format("{:t}", ex));
   }
+}
+
+namespace my_ns1 {
+namespace my_ns2 {
+struct my_exception : public std::exception {
+ private:
+  std::string msg;
+
+ public:
+  my_exception(const std::string& s) : msg(s) {}
+  const char* what() const noexcept override;
+};
+const char* my_exception::what() const noexcept { return msg.c_str(); }
+}  // namespace my_ns2
+}  // namespace my_ns1
+
+TEST(std_test, exception) {
+  exception_test<std::exception>();
+  exception_test<std::runtime_error>();
 
   try {
-    throw std::runtime_error(str);
-  } catch (const std::runtime_error& ex) {
-    EXPECT_EQ(fmt::format("{}", ex), str);
-    EXPECT_EQ(fmt::format("{:?}", ex), escstr);
+    using namespace my_ns1::my_ns2;
+    throw my_exception("My Exception");
+  } catch (const std::exception& ex) {
+    EXPECT_EQ("my_ns1::my_ns2::my_exception: My Exception",
+              fmt::format("{:t}", ex));
+    EXPECT_EQ("My Exception", fmt::format("{:}", ex));
   }
 }

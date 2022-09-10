@@ -8,9 +8,12 @@
 #ifndef FMT_STD_H_
 #define FMT_STD_H_
 
+#include <cstdlib>
 #include <exception>
+#include <memory>
 #include <thread>
 #include <type_traits>
+#include <typeinfo>
 #include <utility>
 
 #include "ostream.h"
@@ -25,6 +28,16 @@
 #  endif
 #  if FMT_HAS_INCLUDE(<variant>)
 #    include <variant>
+#  endif
+#endif
+
+// GCC 4 does not support FMT_HAS_INCLUDE.
+#if FMT_HAS_INCLUDE(<cxxabi.h>) || defined(__GLIBCXX__)
+#  include <cxxabi.h>
+// Android NDK with gabi++ library on some archtectures does not implement
+// abi::__cxa_demangle().
+#  ifndef __GABIXX_CXXABI_H__
+#    define FMT_HAS_ABI_CXA_DEMANGLE
 #  endif
 #endif
 
@@ -170,12 +183,56 @@ FMT_BEGIN_NAMESPACE
 template <typename T, typename Char>
 struct formatter<
     T, Char,
-    typename std::enable_if<std::is_base_of<std::exception, T>::value>::type>
-    : formatter<string_view> {
-  template <typename FormatContext>
-  auto format(const std::exception& ex, FormatContext& ctx) const ->
-      typename FormatContext::iterator {
-    return fmt::formatter<string_view>::format(ex.what(), ctx);
+    typename std::enable_if<std::is_base_of<std::exception, T>::value>::type> {
+ private:
+  bool with_typename_ = false;
+
+ public:
+  FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
+      -> decltype(ctx.begin()) {
+    auto it = ctx.begin();
+    auto end = ctx.end();
+    if (it == end || *it == '}') return it;
+    if (*it == 't') {
+      ++it;
+      with_typename_ = true;
+    }
+    return it;
+  }
+
+  template <typename OutputIt>
+  auto format(const std::exception& ex,
+              basic_format_context<OutputIt, Char>& ctx) const -> OutputIt {
+    basic_format_specs<Char> spec;
+    auto out = ctx.out();
+    if (!with_typename_)
+      return detail::write_bytes(out, string_view(ex.what()), spec);
+
+    const std::type_info& ti = typeid(ex);
+#ifdef FMT_HAS_ABI_CXA_DEMANGLE
+    int status = 0;
+    std::size_t size = 0;
+    std::unique_ptr<char, decltype(&std::free)> demangled_name_ptr(
+        abi::__cxa_demangle(ti.name(), nullptr, &size, &status), &std::free);
+    out = detail::write_bytes(
+        out,
+        string_view(demangled_name_ptr ? demangled_name_ptr.get() : ti.name()),
+        spec);
+#elif FMT_MSC_VERSION
+    string_view demangled_name_view(ti.name());
+    if (demangled_name_view.starts_with("class "))
+      demangled_name_view.remove_prefix(6);
+    else if (demangled_name_view.starts_with("struct "))
+      demangled_name_view.remove_prefix(7);
+    out = detail::write_bytes(out, demangled_name_view, spec);
+#else
+    out = detail::write_bytes(out, string_view(ti.name()), spec);
+#endif
+    out = detail::write<Char>(out, Char(':'));
+    out = detail::write<Char>(out, Char(' '));
+    out = detail::write_bytes(out, string_view(ex.what()), spec);
+
+    return out;
   }
 };
 FMT_END_NAMESPACE
