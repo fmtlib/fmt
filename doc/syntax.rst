@@ -347,7 +347,7 @@ points are:
 +---------+--------------------------------------------------------------------+
 
 Specifiers that have a calendaric component such as ``'d'`` (the day of month)
-are valid only for ``std::tm`` and not durations or time points.
+are valid only for ``std::tm`` and time points but not durations.
 
 .. range-specs:
 
