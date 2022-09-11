@@ -84,8 +84,8 @@ inline bool write_ostream_unicode(std::ostream& os, fmt::string_view data) {
 #elif defined(_WIN32) && defined(__GLIBCXX__)
   auto* rdbuf = os.rdbuf();
   FILE* c_file;
-  if (auto* fbuf = dynamic_cast<__gnu_cxx::stdio_sync_filebuf<char>*>(rdbuf))
-    c_file = fbuf->file();
+  if (auto* sfbuf = dynamic_cast<__gnu_cxx::stdio_sync_filebuf<char>*>(rdbuf))
+    c_file = sfbuf->file();
   else if (auto* fbuf = dynamic_cast<__gnu_cxx::stdio_filebuf<char>*>(rdbuf))
     c_file = fbuf->file();
   else
