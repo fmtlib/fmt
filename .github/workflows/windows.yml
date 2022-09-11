@@ -75,7 +75,7 @@ jobs:
         shell: msys2 {0}
     strategy:
       matrix:
-        sys: [ mingw64, mingw32, ucrt64 ]
+        sys: [ mingw64, ucrt64 ]
     steps:
     - uses: msys2/setup-msys2@v2
       with:

@@ -23,7 +23,7 @@ template <typename T>
 using is_exotic_char = bool_constant<!std::is_same<T, char>::value>;
 
 template <typename OutputIt>
-auto write_loc(OutputIt out, basic_format_arg<buffer_context<wchar_t>> val,
+auto write_loc(OutputIt out, basic_format_arg<format_context> val,
                const basic_format_specs<wchar_t>& specs, locale_ref loc)
     -> bool {
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR

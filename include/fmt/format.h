@@ -2053,12 +2053,12 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
       });
 }
 
-template <typename Char, typename T, FMT_ENABLE_IF(!is_float128<T>::value)>
-auto make_loc_value(T value) -> basic_format_arg<buffer_context<Char>> {
-  return make_arg<buffer_context<Char>>(value);
+template <typename T, FMT_ENABLE_IF(!is_float128<T>::value)>
+auto make_loc_value(T value) -> basic_format_arg<format_context> {
+  return make_arg<format_context>(value);
 }
-template <typename Char, typename T, FMT_ENABLE_IF(is_float128<T>::value)>
-auto make_loc_value(T) -> basic_format_arg<buffer_context<Char>> {
+template <typename T, FMT_ENABLE_IF(is_float128<T>::value)>
+auto make_loc_value(T) -> basic_format_arg<format_context> {
   return {};
 }
 
@@ -2067,7 +2067,7 @@ FMT_API auto write_loc(appender out, basic_format_arg<format_context> value,
                        const format_specs& specs, locale_ref loc) -> bool;
 
 template <typename OutputIt, typename Char>
-inline auto write_loc(OutputIt, basic_format_arg<buffer_context<Char>>,
+inline auto write_loc(OutputIt, basic_format_arg<format_context>,
                       const basic_format_specs<Char>&, locale_ref) -> bool {
   return false;
 }
@@ -2190,10 +2190,8 @@ template <typename Char, typename OutputIt, typename T,
 FMT_CONSTEXPR FMT_INLINE auto write(OutputIt out, T value,
                                     const basic_format_specs<Char>& specs,
                                     locale_ref loc) -> OutputIt {
-  if (specs.localized &&
-      write_loc(out, make_loc_value<Char>(value), specs, loc)) {
+  if (specs.localized && write_loc(out, make_loc_value(value), specs, loc))
     return out;
-  }
   return write_int_noinline(out, make_write_int_arg(value, specs.sign), specs,
                             loc);
 }
@@ -2205,10 +2203,8 @@ template <typename Char, typename OutputIt, typename T,
 FMT_CONSTEXPR FMT_INLINE auto write(OutputIt out, T value,
                                     const basic_format_specs<Char>& specs,
                                     locale_ref loc) -> OutputIt {
-  if (specs.localized &&
-      write_loc(out, make_loc_value<Char>(value), specs, loc)) {
+  if (specs.localized && write_loc(out, make_loc_value(value), specs, loc))
     return out;
-  }
   return write_int(out, make_write_int_arg(value, specs.sign), specs, loc);
 }
 
@@ -3315,11 +3311,9 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value,
                            basic_format_specs<Char> specs, locale_ref loc = {})
     -> OutputIt {
   if (const_check(!is_supported_floating_point(value))) return out;
-  if (specs.localized &&
-      write_loc(out, make_loc_value<Char>(value), specs, loc)) {
-    return out;
-  }
-  return write_float(out, value, specs, loc);
+  return specs.localized && write_loc(out, make_loc_value(value), specs, loc)
+             ? out
+             : write_float(out, value, specs, loc);
 }
 
 template <typename Char, typename OutputIt, typename T,
