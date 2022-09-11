@@ -22,10 +22,9 @@ namespace detail {
 template <typename T>
 using is_exotic_char = bool_constant<!std::is_same<T, char>::value>;
 
-template <typename OutputIt>
-auto write_loc(OutputIt out, loc_value value,
-               const basic_format_specs<wchar_t>& specs, locale_ref loc)
-    -> bool {
+inline auto write_loc(std::back_insert_iterator<detail::buffer<wchar_t>> out,
+                      loc_value value, const basic_format_specs<wchar_t>& specs,
+                      locale_ref loc) -> bool {
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
   auto& numpunct =
       std::use_facet<std::numpunct<wchar_t>>(loc.get<std::locale>());
