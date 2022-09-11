@@ -427,7 +427,7 @@ auto write(OutputIt out, const std::tm& time, const std::locale& loc,
            char format, char modifier = 0) -> OutputIt {
   auto&& buf = get_buffer<Char>(out);
   do_write<Char>(buf, time, loc, format, modifier);
-  return buf.out();
+  return get_iterator(buf);
 }
 
 template <typename Char, typename OutputIt,
@@ -1397,7 +1397,7 @@ inline bool isfinite(T) {
 template <typename T, typename Int, FMT_ENABLE_IF(std::is_integral<T>::value)>
 inline Int to_nonnegative_int(T value, Int upper) {
   FMT_ASSERT(std::is_unsigned<Int>::value ||
-             (value >= 0 && to_unsigned(value) <= to_unsigned(upper)),
+                 (value >= 0 && to_unsigned(value) <= to_unsigned(upper)),
              "invalid value");
   (void)upper;
   return static_cast<Int>(value);
