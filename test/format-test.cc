@@ -2335,14 +2335,13 @@ class format_facet : public fmt::format_facet<std::locale> {
     }
   };
 
-  auto do_put(fmt::appender out, fmt::basic_format_arg<fmt::format_context> arg,
+  auto do_put(fmt::appender out, fmt::loc_value val,
               const fmt::format_specs&) const -> bool override;
 };
 
-auto format_facet::do_put(fmt::appender out,
-                          fmt::basic_format_arg<fmt::format_context> arg,
+auto format_facet::do_put(fmt::appender out, fmt::loc_value val,
                           const fmt::format_specs&) const -> bool {
-  return visit_format_arg(int_formatter{out}, arg);
+  return val.visit(int_formatter{out});
 }
 
 TEST(format_test, format_facet) {

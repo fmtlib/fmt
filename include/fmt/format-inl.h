@@ -116,7 +116,7 @@ template <typename Char> FMT_FUNC Char decimal_point_impl(locale_ref) {
 }
 #endif
 
-FMT_FUNC auto write_loc(appender out, basic_format_arg<format_context> value,
+FMT_FUNC auto write_loc(appender out, loc_value value,
                         const format_specs& specs, locale_ref loc) -> bool {
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
   auto locale = loc.get<std::locale>();
@@ -142,11 +142,9 @@ template <typename Locale> format_facet<Locale>::format_facet(Locale& loc) {
 
 template <>
 FMT_API FMT_FUNC auto format_facet<std::locale>::do_put(
-    appender out, basic_format_arg<format_context> val,
-    const format_specs& specs) const -> bool {
-  return visit_format_arg(
-      detail::loc_writer<>{out, specs, separator_, grouping_, decimal_point_},
-      val);
+    appender out, loc_value val, const format_specs& specs) const -> bool {
+  return val.visit(
+      detail::loc_writer<>{out, specs, separator_, grouping_, decimal_point_});
 }
 #endif
 

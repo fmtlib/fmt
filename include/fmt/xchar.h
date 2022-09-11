@@ -23,7 +23,7 @@ template <typename T>
 using is_exotic_char = bool_constant<!std::is_same<T, char>::value>;
 
 template <typename OutputIt>
-auto write_loc(OutputIt out, basic_format_arg<format_context> val,
+auto write_loc(OutputIt out, loc_value value,
                const basic_format_specs<wchar_t>& specs, locale_ref loc)
     -> bool {
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
@@ -32,8 +32,7 @@ auto write_loc(OutputIt out, basic_format_arg<format_context> val,
   auto separator = std::wstring();
   auto grouping = numpunct.grouping();
   if (!grouping.empty()) separator = std::wstring(1, numpunct.thousands_sep());
-  return visit_format_arg(
-      loc_writer<wchar_t>{out, specs, separator, grouping, {}}, val);
+  return value.visit(loc_writer<wchar_t>{out, specs, separator, grouping, {}});
 #endif
   return false;
 }
