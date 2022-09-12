@@ -42,7 +42,7 @@ struct scan_context {
  public:
   using iterator = const char*;
 
-  explicit scan_context(string_view input) : input_(input) {}
+  explicit FMT_CONSTEXPR scan_context(string_view input) : input_(input) {}
 
   iterator begin() const { return input_.data(); }
   iterator end() const { return begin() + input_.size(); }
@@ -83,17 +83,21 @@ class scan_arg {
     // TODO: more types
   };
 
-  scan_arg() : type(scan_type::none_type) {}
-  scan_arg(int& value) : type(scan_type::int_type), int_value(&value) {}
-  scan_arg(unsigned& value) : type(scan_type::uint_type), uint_value(&value) {}
-  scan_arg(long long& value)
+  FMT_CONSTEXPR scan_arg() : type(scan_type::none_type), int_value(nullptr) {}
+  FMT_CONSTEXPR scan_arg(int& value)
+      : type(scan_type::int_type), int_value(&value) {}
+  FMT_CONSTEXPR scan_arg(unsigned& value)
+      : type(scan_type::uint_type), uint_value(&value) {}
+  FMT_CONSTEXPR scan_arg(long long& value)
       : type(scan_type::long_long_type), long_long_value(&value) {}
-  scan_arg(unsigned long long& value)
+  FMT_CONSTEXPR scan_arg(unsigned long long& value)
       : type(scan_type::ulong_long_type), ulong_long_value(&value) {}
-  scan_arg(std::string& value) : type(scan_type::string_type), string(&value) {}
-  scan_arg(fmt::string_view& value)
+  FMT_CONSTEXPR scan_arg(std::string& value)
+      : type(scan_type::string_type), string(&value) {}
+  FMT_CONSTEXPR scan_arg(fmt::string_view& value)
       : type(scan_type::string_view_type), string_view(&value) {}
-  template <typename T> scan_arg(T& value) : type(scan_type::custom_type) {
+  template <typename T>
+  FMT_CONSTEXPR scan_arg(T& value) : type(scan_type::custom_type) {
     custom.value = &value;
     custom.scan = scan_custom_arg<T>;
   }
@@ -114,7 +118,7 @@ struct scan_args {
   const detail::scan_arg* data;
 
   template <size_t N>
-  scan_args(const std::array<detail::scan_arg, N>& store)
+  FMT_CONSTEXPR scan_args(const std::array<detail::scan_arg, N>& store)
       : size(N), data(store.data()) {
     static_assert(N < INT_MAX, "too many arguments");
   }
@@ -154,7 +158,8 @@ struct scan_handler : error_handler {
   }
 
  public:
-  scan_handler(string_view format, string_view input, scan_args args)
+  FMT_CONSTEXPR scan_handler(string_view format, string_view input,
+                             scan_args args)
       : parse_ctx_(format), scan_ctx_(input), args_(args), next_arg_id_(0) {}
 
   const char* pos() const { return scan_ctx_.begin(); }
