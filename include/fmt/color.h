@@ -566,7 +566,7 @@ OutputIt vformat_to(
     basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   auto&& buf = detail::get_buffer<Char>(out);
   detail::vformat_to(buf, ts, format_str, args);
-  return detail::get_iterator(buf);
+  return detail::get_iterator(buf, out);
 }
 
 /**

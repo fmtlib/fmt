@@ -145,7 +145,7 @@ auto vformat_to(OutputIt out, const S& format_str,
     -> OutputIt {
   auto&& buf = detail::get_buffer<Char>(out);
   detail::vformat_to(buf, detail::to_string_view(format_str), args);
-  return detail::get_iterator(buf);
+  return detail::get_iterator(buf, out);
 }
 
 template <typename OutputIt, typename S, typename... Args,

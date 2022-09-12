@@ -427,7 +427,7 @@ auto write(OutputIt out, const std::tm& time, const std::locale& loc,
            char format, char modifier = 0) -> OutputIt {
   auto&& buf = get_buffer<Char>(out);
   do_write<Char>(buf, time, loc, format, modifier);
-  return get_iterator(buf);
+  return get_iterator(buf, out);
 }
 
 template <typename Char, typename OutputIt,

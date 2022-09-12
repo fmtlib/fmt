@@ -1123,13 +1123,19 @@ template <typename T, typename OutputIt>
 auto get_buffer(OutputIt out) -> iterator_buffer<OutputIt, T> {
   return iterator_buffer<OutputIt, T>(out);
 }
+template <typename T, typename Buf,
+          FMT_ENABLE_IF(std::is_base_of<buffer<char>, Buf>::value)>
+auto get_buffer(std::back_insert_iterator<Buf> out) -> buffer<char>& {
+  return get_container(out);
+}
 
-template <typename Buffer>
-FMT_INLINE auto get_iterator(Buffer& buf) -> decltype(buf.out()) {
+template <typename Buf, typename OutputIt>
+FMT_INLINE auto get_iterator(Buf& buf, OutputIt) -> decltype(buf.out()) {
   return buf.out();
 }
-template <typename T> auto get_iterator(buffer<T>& buf) -> buffer_appender<T> {
-  return buffer_appender<T>(buf);
+template <typename T, typename OutputIt>
+auto get_iterator(buffer<T>&, OutputIt out) -> OutputIt {
+  return out;
 }
 
 template <typename T, typename Char = char, typename Enable = void>
@@ -1555,11 +1561,6 @@ FMT_END_DETAIL_NAMESPACE
 // It is used to reduce symbol sizes for the common case.
 class appender : public std::back_insert_iterator<detail::buffer<char>> {
   using base = std::back_insert_iterator<detail::buffer<char>>;
-
-  template <typename T>
-  friend auto get_buffer(appender out) -> detail::buffer<char>& {
-    return detail::get_container(out);
-  }
 
  public:
   using std::back_insert_iterator<detail::buffer<char>>::back_insert_iterator;
@@ -3224,10 +3225,9 @@ FMT_NODISCARD FMT_INLINE auto format(format_string<T...> fmt, T&&... args)
 template <typename OutputIt,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
 auto vformat_to(OutputIt out, string_view fmt, format_args args) -> OutputIt {
-  using detail::get_buffer;
-  auto&& buf = get_buffer<char>(out);
+  auto&& buf = detail::get_buffer<char>(out);
   detail::vformat_to(buf, fmt, args, {});
-  return detail::get_iterator(buf);
+  return detail::get_iterator(buf, out);
 }
 
 /**
