@@ -404,9 +404,9 @@ locale::
   std::locale::global(std::locale("en_US.UTF-8"));
   auto s = fmt::format("{:L}", 1000000);  // s == "1,000,000"
 
-``fmt/format.h`` provides the following overloads of formatting functions
-that take ``std::locale`` as a parameter. The locale is passed as a template
-parameter to avoid the expensive ``<locale>`` include.
+``fmt/format.h`` provides the following overloads of formatting functions that
+take ``std::locale`` as a parameter. The locale type is a template parameter to
+avoid the expensive ``<locale>`` include.
 
 .. doxygenfunction:: format(const Locale& loc, format_string<T...> fmt, T&&... args) -> std::string
 .. doxygenfunction:: format_to(OutputIt out, const Locale& loc, format_string<T...> fmt, T&&... args) -> OutputIt
