@@ -236,6 +236,8 @@ Then you can pass objects of type ``point`` to any formatting function::
 You can also reuse existing formatters via inheritance or composition, for
 example::
 
+  #include <fmt/core.h>
+
   enum class color {red, green, blue};
 
   template <> struct fmt::formatter<color>: formatter<string_view> {
@@ -264,7 +266,7 @@ will return ``"      blue"``.
 You can also write a formatter for a hierarchy of classes::
 
   #include <type_traits>
-  #include <fmt/format.h>
+  #include <fmt/core.h>
 
   struct A {
     virtual ~A() {}
