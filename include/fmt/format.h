@@ -961,13 +961,11 @@ FMT_API bool write_console(std::FILE* f, string_view text);
 FMT_API void print(std::FILE*, string_view);
 }  // namespace detail
 
-/** A formatting error such as invalid format string. */
+/** An error reported from a formatting function. */
 FMT_CLASS_API
 class FMT_API format_error : public std::runtime_error {
  public:
-  explicit format_error(const char* message) : std::runtime_error(message) {}
-  explicit format_error(const std::string& message)
-      : std::runtime_error(message) {}
+  using std::runtime_error::runtime_error;
   format_error(const format_error&) = default;
   format_error& operator=(const format_error&) = default;
   format_error(format_error&&) = default;
