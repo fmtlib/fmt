@@ -31,7 +31,8 @@ Core API
 ``fmt/core.h`` defines the core API which provides main formatting functions
 for ``char``/UTF-8 with C++20 compile-time checks. It has minimal include
 dependencies for better compile times. This header is only beneficial when
-using {fmt} as a library and not in the header-only mode.
+using {fmt} as a library (the default) and not in the header-only mode.
+It also provides ``formatter`` specializations for built-in and string types.
 
 The following functions use :ref:`format string syntax <syntax>`
 similar to that of Python's `str.format
@@ -72,14 +73,7 @@ Compile-Time Format String Checks
 
 Compile-time checks are enabled by default on compilers that support C++20
 ``consteval``. On older compilers you can use the ``FMT_STRING`` macro defined
-in ``fmt/format.h`` instead. It requires C++14 and is a no-op in C++11.
-
-.. doxygendefine:: FMT_STRING
-
-To force the use of legacy compile-time checks, define the preprocessor variable
-``FMT_ENFORCE_COMPILE_STRING``. When set, functions accepting ``FMT_STRING``
-will fail to compile with regular strings. Runtime-checked formatting is still
-possible using ``fmt::vformat``, ``fmt::vprint``, etc.
+in ``fmt/format.h`` instead.
 
 .. doxygenclass:: fmt::basic_format_string
    :members:
@@ -87,84 +81,6 @@ possible using ``fmt::vformat``, ``fmt::vprint``, etc.
 .. doxygentypedef:: fmt::format_string
 
 .. doxygenfunction:: fmt::runtime(string_view) -> basic_runtime<char>
-
-Named Arguments
----------------
-
-.. doxygenfunction:: fmt::arg(const S&, const T&)
-
-Named arguments are not supported in compile-time checks at the moment.
-
-Argument Lists
---------------
-
-You can create your own formatting function with compile-time checks and small
-binary footprint, for example (https://godbolt.org/z/oba4Mc):
-
-.. code:: c++
-
-    #include <fmt/format.h>
-
-    void vlog(const char* file, int line, fmt::string_view format,
-              fmt::format_args args) {
-      fmt::print("{}: {}: ", file, line);
-      fmt::vprint(format, args);
-    }
-
-    template <typename S, typename... Args>
-    void log(const char* file, int line, const S& format, Args&&... args) {
-      vlog(file, line, format, fmt::make_format_args(args...));
-    }
-
-    #define MY_LOG(format, ...) \
-      log(__FILE__, __LINE__, FMT_STRING(format), __VA_ARGS__)
-
-    MY_LOG("invalid squishiness: {}", 42);
-
-Note that ``vlog`` is not parameterized on argument types which improves compile
-times and reduces binary code size compared to a fully parameterized version.
-
-.. doxygenfunction:: fmt::make_format_args(const Args&...)
-
-.. doxygenclass:: fmt::format_arg_store
-   :members:
-
-.. doxygenclass:: fmt::dynamic_format_arg_store
-   :members:
-
-.. doxygenclass:: fmt::basic_format_args
-   :members:
-
-.. doxygentypedef:: fmt::format_args
-
-.. doxygenclass:: fmt::basic_format_arg
-   :members:
-
-.. doxygenclass:: fmt::basic_format_parse_context
-   :members:
-
-.. doxygenclass:: fmt::basic_format_context
-   :members:
-
-.. doxygentypedef:: fmt::format_context
-
-Compatibility
--------------
-
-.. doxygenclass:: fmt::basic_string_view
-   :members:
-
-.. doxygentypedef:: fmt::string_view
-
-.. _format-api:
-
-Format API
-==========
-
-``fmt/format.h`` defines the full format API providing additional formatting
-functions and locale support.
-
-.. _udt:
 
 Formatting User-Defined Types
 -----------------------------
@@ -316,6 +232,84 @@ Example (https://godbolt.org/z/r7vvGE1v7)::
     fmt::print("{}\n", kevin_namespacy::film::se7en); // prints "7"
   }
 
+Named Arguments
+---------------
+
+.. doxygenfunction:: fmt::arg(const S&, const T&)
+
+Named arguments are not supported in compile-time checks at the moment.
+
+Argument Lists
+--------------
+
+You can create your own formatting function with compile-time checks and small
+binary footprint, for example (https://godbolt.org/z/oba4Mc):
+
+.. code:: c++
+
+    #include <fmt/format.h>
+
+    void vlog(const char* file, int line, fmt::string_view format,
+              fmt::format_args args) {
+      fmt::print("{}: {}: ", file, line);
+      fmt::vprint(format, args);
+    }
+
+    template <typename S, typename... Args>
+    void log(const char* file, int line, const S& format, Args&&... args) {
+      vlog(file, line, format, fmt::make_format_args(args...));
+    }
+
+    #define MY_LOG(format, ...) \
+      log(__FILE__, __LINE__, FMT_STRING(format), __VA_ARGS__)
+
+    MY_LOG("invalid squishiness: {}", 42);
+
+Note that ``vlog`` is not parameterized on argument types which improves compile
+times and reduces binary code size compared to a fully parameterized version.
+
+.. doxygenfunction:: fmt::make_format_args(const Args&...)
+
+.. doxygenclass:: fmt::format_arg_store
+   :members:
+
+.. doxygenclass:: fmt::dynamic_format_arg_store
+   :members:
+
+.. doxygenclass:: fmt::basic_format_args
+   :members:
+
+.. doxygentypedef:: fmt::format_args
+
+.. doxygenclass:: fmt::basic_format_arg
+   :members:
+
+.. doxygenclass:: fmt::basic_format_parse_context
+   :members:
+
+.. doxygenclass:: fmt::basic_format_context
+   :members:
+
+.. doxygentypedef:: fmt::format_context
+
+Compatibility
+-------------
+
+.. doxygenclass:: fmt::basic_string_view
+   :members:
+
+.. doxygentypedef:: fmt::string_view
+
+.. _format-api:
+
+Format API
+==========
+
+``fmt/format.h`` defines the full format API providing additional formatting
+functions and locale support.
+
+.. _udt:
+
 Literal-Based API
 -----------------
 
@@ -413,6 +407,20 @@ avoid the expensive ``<locale>`` include.
 .. doxygenfunction:: format(const Locale& loc, format_string<T...> fmt, T&&... args) -> std::string
 .. doxygenfunction:: format_to(OutputIt out, const Locale& loc, format_string<T...> fmt, T&&... args) -> OutputIt
 .. doxygenfunction:: formatted_size(const Locale& loc, format_string<T...> fmt, T&&... args) -> size_t
+
+.. _legacy-checks:
+
+Legacy Compile-Time Format String Checks
+----------------------------------------
+
+``FMT_STRING`` enables compile-time checks on older compilers. It requires C++14
+or later and is a no-op in C++11.
+
+.. doxygendefine:: FMT_STRING
+
+To force the use of legacy compile-time checks, define the preprocessor variable
+``FMT_ENFORCE_COMPILE_STRING``. When set, functions accepting ``FMT_STRING``
+will fail to compile with regular strings.
 
 .. _ranges-api:
 
