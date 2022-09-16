@@ -94,7 +94,7 @@ types.
 To make a user-defined type formattable, specialize the ``formatter<T>`` struct
 template and implement ``parse`` and ``format`` methods::
 
-  #include <fmt/format.h>
+  #include <fmt/core.h>
 
   struct point {
     double x, y;
@@ -126,7 +126,7 @@ template and implement ``parse`` and ``format`` methods::
       if (it != end && (*it == 'f' || *it == 'e')) presentation = *it++;
 
       // Check if reached the end of the range:
-      if (it != end && *it != '}') throw format_error("invalid format");
+      if (it != end && *it != '}') ctx.on_error("invalid format");
 
       // Return an iterator past the end of the parsed range:
       return it;
