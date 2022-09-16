@@ -72,8 +72,8 @@ Compile-Time Format String Checks
 ---------------------------------
 
 Compile-time checks are enabled by default on compilers that support C++20
-``consteval``. On older compilers you can use the ``FMT_STRING`` macro defined
-in ``fmt/format.h`` instead.
+``consteval``. On older compilers you can use the
+:ref:`FMT_STRING <legacy-checks>`: macro defined in ``fmt/format.h`` instead.
 
 .. doxygenclass:: fmt::basic_format_string
    :members:
@@ -88,8 +88,8 @@ Formatting User-Defined Types
 The {fmt} library provides formatters for many standard C++ types.
 See :ref:`fmt/ranges.h <ranges-api>` for ranges and tuples including standard
 containers such as ``std::vector``, :ref:`fmt/chrono.h <chrono-api>` for date
-and time formatting and :ref:`fmt/std.h <std-api>` for path and variant 
-formatting.
+and time formatting and :ref:`fmt/std.h <std-api>` for other standard library
+types.
 
 To make a user-defined type formattable, specialize the ``formatter<T>`` struct
 template and implement ``parse`` and ``format`` methods::
