@@ -255,7 +255,7 @@ Argument Lists
 --------------
 
 You can create your own formatting function with compile-time checks and small
-binary footprint, for example (https://godbolt.org/z/oba4Mc):
+binary footprint, for example (https://godbolt.org/z/Gab1q3jKE):
 
 .. code:: c++
 
