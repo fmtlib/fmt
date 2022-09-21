@@ -259,7 +259,7 @@ binary footprint, for example (https://godbolt.org/z/oba4Mc):
 
 .. code:: c++
 
-    #include <fmt/format.h>
+    #include <fmt/core.h>
 
     void vlog(const char* file, int line, fmt::string_view format,
               fmt::format_args args) {
@@ -267,13 +267,12 @@ binary footprint, for example (https://godbolt.org/z/oba4Mc):
       fmt::vprint(format, args);
     }
 
-    template <typename S, typename... Args>
-    void log(const char* file, int line, const S& format, Args&&... args) {
+    template <typename... T>
+    void log(const char* file, int line, fmt::format_string<T...> format, T&&... args) {
       vlog(file, line, format, fmt::make_format_args(args...));
     }
 
-    #define MY_LOG(format, ...) \
-      log(__FILE__, __LINE__, FMT_STRING(format), __VA_ARGS__)
+    #define MY_LOG(format, ...) log(__FILE__, __LINE__, format, __VA_ARGS__)
 
     MY_LOG("invalid squishiness: {}", 42);
 
