@@ -3180,6 +3180,7 @@ template <typename Char, typename... Args> class basic_format_string {
   basic_format_string(basic_runtime<Char> r) : str_(r.str) {}
 
   FMT_INLINE operator basic_string_view<Char>() const { return str_; }
+  FMT_INLINE basic_string_view<Char> get() const { return str_; }
 };
 
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
