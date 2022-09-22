@@ -3426,8 +3426,8 @@ template <typename Char, typename OutputIt, typename T,
 FMT_CONSTEXPR auto write(OutputIt out, const T& value) -> enable_if_t<
     std::is_class<T>::value && !is_string<T>::value &&
         !is_floating_point<T>::value && !std::is_same<T, Char>::value &&
-        !std::is_same<const T&,
-                      decltype(arg_mapper<Context>().map(value))>::value,
+        !std::is_same<T, remove_cvref_t<decltype(arg_mapper<Context>().map(
+                             value))>>::value,
     OutputIt> {
   return write<Char>(out, arg_mapper<Context>().map(value));
 }
@@ -4106,9 +4106,9 @@ auto join(Range&& range, string_view sep)
  */
 template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value)>
 inline auto to_string(const T& value) -> std::string {
-  auto result = std::string();
-  detail::write<char>(std::back_inserter(result), value);
-  return result;
+  auto buffer = memory_buffer();
+  detail::write<char>(appender(buffer), value);
+  return {buffer.data(), buffer.size()};
 }
 
 template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
