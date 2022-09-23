@@ -641,3 +641,14 @@ TEST(chrono_test, cpp20_duration_subsecond_support) {
 }
 
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR
+
+// Disable the utc_clock test for windows, as the icu.dll used for tzdb
+// (time zone database) is not shipped with many windows versions.
+#if FMT_USE_UTC_TIME && !defined(_WIN32)
+TEST(chrono_test, utc_clock) {
+  auto t1 = std::chrono::system_clock::now();
+  auto t1_utc = std::chrono::utc_clock::from_sys(t1);
+  EXPECT_EQ(fmt::format("{:%Y-%m-%d %H:%M:%S}", t1),
+            fmt::format("{:%Y-%m-%d %H:%M:%S}", t1_utc));
+}
+#endif
