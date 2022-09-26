@@ -285,7 +285,8 @@ std::wstring system_wcsftime(const std::wstring& format, const std::tm* timeptr,
 }
 
 TEST(chrono_test_wchar, time_point) {
-  auto t1 = std::chrono::system_clock::now();
+  auto t1 = std::chrono::time_point_cast<std::chrono::seconds>(
+      std::chrono::system_clock::now());
 
   std::vector<std::wstring> spec_list = {
       L"%%",  L"%n",  L"%t",  L"%Y",  L"%EY", L"%y",  L"%Oy", L"%Ey", L"%C",
