@@ -214,10 +214,34 @@ struct formatter<
     std::size_t size = 0;
     std::unique_ptr<char, decltype(&std::free)> demangled_name_ptr(
         abi::__cxa_demangle(ti.name(), nullptr, &size, &status), &std::free);
-    out = detail::write_bytes(
-        out,
-        string_view(demangled_name_ptr ? demangled_name_ptr.get() : ti.name()),
-        spec);
+    string_view demangled_name_view(
+        demangled_name_ptr ? demangled_name_ptr.get() : ti.name());
+
+    // Normalization of stdlib inline namespace names.
+    if (demangled_name_view.starts_with("std::")) {
+      // Separation of user's and system exception classes.
+      demangled_name_view.remove_prefix(5);
+      out = detail::write_bytes(out, string_view("std::"), spec);
+
+      // libc++ inline namespaces.
+      // std::__1::*       -> std::*
+      // std::__1::__fs::* -> std::*
+      if (demangled_name_view.starts_with("__1::")) {
+        demangled_name_view.remove_prefix(5);
+        if (demangled_name_view.starts_with("__fs::"))
+          demangled_name_view.remove_prefix(6);
+      }
+      // libstdc++ inline namespaces.
+      // std::__cxx11::*             -> std::*
+      // std::filesystem::__cxx11::* -> std::filesystem::*
+      else if (demangled_name_view.starts_with("__cxx11::")) {
+        demangled_name_view.remove_prefix(9);
+      } else if (demangled_name_view.starts_with("filesystem::__cxx11::")) {
+        demangled_name_view.remove_prefix(21);
+        out = detail::write_bytes(out, string_view("filesystem::"), spec);
+      }
+    }
+    out = detail::write_bytes(out, demangled_name_view, spec);
 #elif FMT_MSC_VERSION
     string_view demangled_name_view(ti.name());
     if (demangled_name_view.starts_with("class "))
