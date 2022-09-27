@@ -7,71 +7,71 @@ permissions:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         cxx: [g++-4.8, g++-10, clang++-9]
         build_type: [Debug, Release]
         std: [11]
-        os: [ubuntu-18.04]
         include:
           - cxx: g++-4.8
             install: sudo apt install g++-4.8
-            os: ubuntu-18.04
           - cxx: g++-8
             build_type: Debug
             std: 14
             install: sudo apt install g++-8
-            os: ubuntu-18.04
           - cxx: g++-8
             build_type: Debug
             std: 17
             install: sudo apt install g++-8
-            os: ubuntu-18.04
           - cxx: g++-9
             build_type: Debug
             std: 17
-            install: sudo apt install g++-9
-            os: ubuntu-18.04
           - cxx: g++-10
             build_type: Debug
             std: 17
-            os: ubuntu-18.04
           - cxx: g++-11
             build_type: Debug
             std: 20
-            os: ubuntu-20.04
             install: sudo apt install g++-11
           - cxx: clang++-8
             build_type: Debug
             std: 17
             cxxflags: -stdlib=libc++
-            os: ubuntu-18.04
             install: sudo apt install clang-8 libc++-8-dev libc++abi-8-dev
+          - cxx: clang++-9
+            install: sudo apt install clang-9
           - cxx: clang++-9
             build_type: Debug
             fuzz: -DFMT_FUZZ=ON -DFMT_FUZZ_LINKMAIN=ON
             std: 17
-            os: ubuntu-18.04
+            install: sudo apt install clang-9
           - cxx: clang++-11
             build_type: Debug
             std: 20
-            os: ubuntu-20.04
           - cxx: clang++-11
             build_type: Debug
             std: 20
             cxxflags: -stdlib=libc++
-            os: ubuntu-20.04
             install: sudo apt install libc++-11-dev libc++abi-11-dev
           - shared: -DBUILD_SHARED_LIBS=ON
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
+
+    - name: Add repositories for older GCC
+      run: |
+        # Bellow two repos provide GCC 4.8, 5.5 and 6.4
+        sudo apt-add-repository 'deb http://azure.archive.ubuntu.com/ubuntu/ bionic main'
+        sudo apt-add-repository 'deb http://azure.archive.ubuntu.com/ubuntu/ bionic universe'
+        # Bellow two repos additionally update GCC 6 to 6.5
+        # sudo apt-add-repository 'deb http://azure.archive.ubuntu.com/ubuntu/ bionic-updates main'
+        # sudo apt-add-repository 'deb http://azure.archive.ubuntu.com/ubuntu/ bionic-updates universe'
+      if: ${{ matrix.cxx == 'g++-4.8' }}
 
     - name: Create Build Environment
       run: |
         ${{matrix.install}}
-        sudo apt update
         sudo apt install locales-all
         cmake -E make_directory ${{runner.workspace}}/build
 
