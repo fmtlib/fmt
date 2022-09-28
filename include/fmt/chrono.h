@@ -593,6 +593,27 @@ template <typename Period> FMT_CONSTEXPR inline const char* get_units() {
   return nullptr;
 }
 
+template <typename Char>
+struct non_dynamic_precision_handler {
+  int precision = -1;
+
+  void on_error(const char* msg) { FMT_THROW(format_error(msg)); }
+  FMT_CONSTEXPR void on_precision(int _precision) {
+    precision = _precision;
+  }
+  template <typename Id> FMT_CONSTEXPR void on_dynamic_precision(Id  /*_precision*/) {
+    on_error("dynamic precision is not allowed here");
+  }
+  FMT_CONSTEXPR void end_precision() {}
+};
+
+template <size_t N>
+FMT_CONSTEXPR void check_allowed_precision(int precision, const int (&allowed_precisions)[N]) {
+  if (std::find(std::begin(allowed_precisions), std::end(allowed_precisions), precision) == std::end(allowed_precisions)) {
+    FMT_THROW(format_error("invalid precision"));
+  }
+}
+
 enum class numeric_system {
   standard,
   // Alternative numeric system, e.g. 十二 instead of 12 in ja_JP locale.
@@ -628,6 +649,17 @@ FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
     case 't': {
       const Char tab[] = {'\t'};
       handler.on_text(tab, tab + 1);
+      break;
+    }
+    case '.': {
+      non_dynamic_precision_handler<Char> prec_handler;
+      ptr = detail::parse_precision(ptr-1, end, prec_handler);
+      c = *ptr++;
+      if (c == 'S') {
+        handler.on_second_with_fractions(numeric_system::standard, prec_handler.precision);
+      } else {
+        FMT_THROW(format_error("specifier doesn't have precision modifier"));
+      }
       break;
     }
     // Year:
@@ -853,6 +885,7 @@ template <typename Derived> struct null_chrono_spec_handler {
   FMT_CONSTEXPR void on_12_hour(numeric_system) { unsupported(); }
   FMT_CONSTEXPR void on_minute(numeric_system) { unsupported(); }
   FMT_CONSTEXPR void on_second(numeric_system) { unsupported(); }
+  FMT_CONSTEXPR void on_second_with_fractions(numeric_system, int) { unsupported(); }
   FMT_CONSTEXPR void on_datetime(numeric_system) { unsupported(); }
   FMT_CONSTEXPR void on_loc_date(numeric_system) { unsupported(); }
   FMT_CONSTEXPR void on_loc_time(numeric_system) { unsupported(); }
@@ -1369,6 +1402,7 @@ template <typename OutputIt, typename Char> class tm_writer {
   // These apply to chrono durations but not tm.
   void on_duration_value() {}
   void on_duration_unit() {}
+  void on_second_with_fractions(numeric_system, int) {}
 };
 
 struct chrono_format_checker : null_chrono_spec_handler<chrono_format_checker> {
@@ -1380,6 +1414,9 @@ struct chrono_format_checker : null_chrono_spec_handler<chrono_format_checker> {
   FMT_CONSTEXPR void on_12_hour(numeric_system) {}
   FMT_CONSTEXPR void on_minute(numeric_system) {}
   FMT_CONSTEXPR void on_second(numeric_system) {}
+  FMT_CONSTEXPR void on_second_with_fractions(numeric_system, int precision) {
+    check_allowed_precision(precision, {3, 6, 9, 12, 15, 18});
+  }
   FMT_CONSTEXPR void on_12_hour_time() {}
   FMT_CONSTEXPR void on_24_hour_time() {}
   FMT_CONSTEXPR void on_iso_time() {}
@@ -1791,6 +1828,55 @@ struct chrono_formatter {
     auto time = tm();
     time.tm_sec = to_nonnegative_int(second(), 60);
     format_tm(time, &tm_writer_type::on_second, ns);
+  }
+
+  template <typename Ratio>
+  void write_seconds_with_fractions(numeric_system ns) {
+    if (handle_nan_inf()) return;
+      
+    if (ns == numeric_system::standard) {
+      if (std::is_floating_point<rep>::value) {
+        constexpr auto num_fractional_digits =
+            count_fractional_digits<Ratio::num, Ratio::den>::value;
+        auto buf = memory_buffer();
+        format_to(std::back_inserter(buf), runtime("{:.{}f}"),
+                  std::fmod(val * static_cast<rep>(Period::num) /
+                                static_cast<rep>(Period::den),
+                            static_cast<rep>(60)),
+                  num_fractional_digits);
+        if (negative) *out++ = '-';
+        if (buf.size() < 2 || buf[1] == '.') *out++ = '0';
+        out = std::copy(buf.begin(), buf.end(), out);
+      } else {
+        write(second(), 2);
+        const auto dur = std::chrono::duration<rep, Period>{val};
+        std::chrono::seconds const sec = std::chrono::duration_cast<std::chrono::seconds>(dur);
+        write_fractional_seconds(std::chrono::duration_cast<std::chrono::duration<rep, Ratio>>(dur - sec));
+      }
+      return;
+    }
+    auto time = tm();
+    time.tm_sec = to_nonnegative_int(second(), 60);
+    format_tm(time, &tm_writer_type::on_second, ns);
+  }
+
+  void on_second_with_fractions(numeric_system ns, int fractional_digits) {
+    switch (fractional_digits) {
+      case 3:
+        return this->write_seconds_with_fractions<std::milli>(ns);
+      case 6:
+        return this->write_seconds_with_fractions<std::micro>(ns);
+      case 9:
+        return this->write_seconds_with_fractions<std::nano>(ns);
+      case 12:
+        return this->write_seconds_with_fractions<std::pico>(ns);
+      case 15:
+        return this->write_seconds_with_fractions<std::femto>(ns);
+      case 18:
+        return this->write_seconds_with_fractions<std::atto>(ns);
+      default:
+        return;
+    }
   }
 
   void on_12_hour_time() {
