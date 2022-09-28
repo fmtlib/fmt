@@ -1056,6 +1056,43 @@ void write_fractional_seconds(OutputIt& out, Duration d) {
   }
 }
 
+template <typename Char, typename OutputIt, typename Duration>
+void write_fractional_seconds(OutputIt& out, Duration d, int precision) {
+  constexpr auto num_fractional_digits =
+      count_fractional_digits<Duration::period::num,
+                              Duration::period::den>::value;
+
+  using subsecond_precision = std::chrono::duration<
+      typename std::common_type<typename Duration::rep,
+                                std::chrono::seconds::rep>::type,
+      std::ratio<1, detail::pow10(num_fractional_digits)>>;
+  if (precision > 0) {
+    *out++ = '.';
+    auto fractional =
+        detail::abs(d) - std::chrono::duration_cast<std::chrono::seconds>(d);
+    auto subseconds =
+        std::chrono::treat_as_floating_point<
+            typename subsecond_precision::rep>::value
+            ? fractional.count()
+            : std::chrono::duration_cast<subsecond_precision>(fractional)
+                  .count();
+    uint32_or_64_or_128_t<long long> n =
+        to_unsigned(to_nonnegative_int(subseconds, max_value<long long>()));
+    int num_digits = detail::count_digits(n);
+    int zeroes = std::min(num_fractional_digits - num_digits, precision);
+    if (num_fractional_digits > num_digits) out = std::fill_n(out, zeroes, '0');
+    int remaining = precision - (zeroes > 0 ? zeroes : 0);
+    if (remaining < num_digits) {
+      n /= to_unsigned(detail::pow10(to_unsigned(num_digits - remaining)));
+      out = format_decimal<Char>(out, n, remaining).end;
+      return;
+    }
+    out = format_decimal<Char>(out, n, num_digits).end;
+    remaining -= num_digits;
+    out = std::fill_n(out, remaining, '0');
+  }
+}
+
 // Format subseconds which are given as a floating point type with an appropiate
 // number of digits. We cannot pass the Duration here, as we explicitly need to
 // pass the Rep value in the chrono_formatter.
@@ -1079,6 +1116,25 @@ void write_floating_seconds(memory_buffer& buf, Duration duration) {
                     static_cast<typename Duration::rep>(Duration::period::den),
                 static_cast<typename Duration::rep>(60)),
       num_fractional_digits);
+}
+
+template <typename Duration>
+void write_floating_seconds(memory_buffer& buf, Duration duration, int precision) {
+  if (precision < 0) {
+    write_floating_seconds(buf, duration);
+    return;
+  }
+
+  FMT_ASSERT(std::is_floating_point<typename Duration::rep>::value, "");
+  auto val = duration.count();
+
+  format_to(
+      std::back_inserter(buf), runtime("{:.{}f}"),
+      std::fmod(val *
+                    static_cast<typename Duration::rep>(Duration::period::num) /
+                    static_cast<typename Duration::rep>(Duration::period::den),
+                static_cast<typename Duration::rep>(60)),
+      precision);
 }
 
 template <typename OutputIt, typename Char,
@@ -1518,6 +1574,9 @@ class tm_writer {
 };
 
 struct chrono_format_checker : null_chrono_spec_handler<chrono_format_checker> {
+  bool is_floating_point = false;
+  bool has_precision = false;
+
   FMT_NORETURN void unsupported() { FMT_THROW(format_error("no date")); }
 
   template <typename Char>
@@ -1530,7 +1589,11 @@ struct chrono_format_checker : null_chrono_spec_handler<chrono_format_checker> {
   FMT_CONSTEXPR void on_24_hour_time() {}
   FMT_CONSTEXPR void on_iso_time() {}
   FMT_CONSTEXPR void on_am_pm() {}
-  FMT_CONSTEXPR void on_duration_value() {}
+  FMT_CONSTEXPR void on_duration_value() const {
+    if (has_precision && !is_floating_point) {
+      FMT_THROW(format_error("precision not allowed for this argument type"));
+    }
+  }
   FMT_CONSTEXPR void on_duration_unit() {}
 };
 
@@ -1831,14 +1894,17 @@ struct chrono_formatter {
     if (ns == numeric_system::standard) {
       if (std::is_floating_point<rep>::value) {
         auto buf = memory_buffer();
-        write_floating_seconds(buf, std::chrono::duration<rep, Period>(val));
+        write_floating_seconds(buf, std::chrono::duration<rep, Period>(val), precision);
         if (negative) *out++ = '-';
         if (buf.size() < 2 || buf[1] == '.') *out++ = '0';
         out = std::copy(buf.begin(), buf.end(), out);
       } else {
         write(second(), 2);
-        write_fractional_seconds<char_type>(
-            out, std::chrono::duration<rep, Period>(val));
+        if (precision >= 0) {
+          write_fractional_seconds<char_type>(out, std::chrono::duration<rep, Period>(val), precision);
+        } else {
+          write_fractional_seconds<char_type>(out, std::chrono::duration<rep, Period>(val));
+        }
       }
       return;
     }
@@ -1999,18 +2065,17 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     if (begin == end) return {begin, begin};
     begin = detail::parse_width(begin, end, handler);
     if (begin == end) return {begin, begin};
+    auto checker = detail::chrono_format_checker();
+    checker.is_floating_point = std::is_floating_point<Rep>::value;
     if (*begin == '.') {
-      if (std::is_floating_point<Rep>::value)
-        begin = detail::parse_precision(begin, end, handler);
-      else
-        handler.on_error("precision not allowed for this argument type");
+      checker.has_precision = true;
+      begin = detail::parse_precision(begin, end, handler);
     }
     if (begin != end && *begin == 'L') {
       ++begin;
       localized = true;
     }
-    end = detail::parse_chrono_format(begin, end,
-                                      detail::chrono_format_checker());
+    end = detail::parse_chrono_format(begin, end, checker);
     return {begin, end};
   }
 
