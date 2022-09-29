@@ -1415,7 +1415,7 @@ struct chrono_format_checker : null_chrono_spec_handler<chrono_format_checker> {
   FMT_CONSTEXPR void on_minute(numeric_system) {}
   FMT_CONSTEXPR void on_second(numeric_system) {}
   FMT_CONSTEXPR void on_second_with_fractions(numeric_system, int precision) {
-    static constexpr int allowed_precisions[6] = {3, 6, 9, 12, 15, 18};
+    constexpr int allowed_precisions[6] = {3, 6, 9, 12, 15, 18};
     check_allowed_precision(precision, allowed_precisions);
   }
   FMT_CONSTEXPR void on_12_hour_time() {}
