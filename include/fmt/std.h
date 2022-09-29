@@ -214,10 +214,40 @@ struct formatter<
     std::size_t size = 0;
     std::unique_ptr<char, decltype(&std::free)> demangled_name_ptr(
         abi::__cxa_demangle(ti.name(), nullptr, &size, &status), &std::free);
-    out = detail::write_bytes(
-        out,
-        string_view(demangled_name_ptr ? demangled_name_ptr.get() : ti.name()),
-        spec);
+
+    string_view demangled_name_view;
+    if (demangled_name_ptr) {
+      demangled_name_view = demangled_name_ptr.get();
+
+      // Normalization of stdlib inline namespace names.
+      // libc++ inline namespaces.
+      //  std::__1::*       -> std::*
+      //  std::__1::__fs::* -> std::*
+      // libstdc++ inline namespaces.
+      //  std::__cxx11::*             -> std::*
+      //  std::filesystem::__cxx11::* -> std::filesystem::*
+      if (demangled_name_view.starts_with("std::")) {
+        char* begin = demangled_name_ptr.get();
+        char* to = begin + 5;  // std::
+        for (char *from = to, *end = begin + demangled_name_view.size();
+             from < end;) {
+          // This is safe, because demangled_name is NUL-terminated.
+          if (from[0] == '_' && from[1] == '_') {
+            char* next = from + 1;
+            while (next < end && *next != ':') next++;
+            if (next[0] == ':' && next[1] == ':') {
+              from = next + 2;
+              continue;
+            }
+          }
+          *to++ = *from++;
+        }
+        demangled_name_view = {begin, detail::to_unsigned(to - begin)};
+      }
+    } else {
+      demangled_name_view = string_view(ti.name());
+    }
+    out = detail::write_bytes(out, demangled_name_view, spec);
 #elif FMT_MSC_VERSION
     string_view demangled_name_view(ti.name());
     if (demangled_name_view.starts_with("class "))

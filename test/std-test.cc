@@ -11,7 +11,9 @@
 #include <vector>
 
 #include "fmt/ranges.h"
-#include "gtest/gtest.h"
+#include "gtest-extra.h"  // StartsWith
+
+using testing::StartsWith;
 
 TEST(std_test, path) {
 #ifdef __cpp_lib_filesystem
@@ -116,4 +118,19 @@ TEST(std_test, exception) {
               fmt::format("{:t}", ex));
     EXPECT_EQ("My Exception", fmt::format("{:}", ex));
   }
+
+  try {
+    throw std::system_error(std::error_code(), "message");
+  } catch (const std::system_error& ex) {
+    EXPECT_THAT(fmt::format("{:t}", ex), StartsWith("std::system_error: "));
+  }
+
+#ifdef __cpp_lib_filesystem
+  try {
+    throw std::filesystem::filesystem_error("message", std::error_code());
+  } catch (const std::filesystem::filesystem_error& ex) {
+    EXPECT_THAT(fmt::format("{:t}", ex),
+                StartsWith("std::filesystem::filesystem_error: "));
+  }
+#endif
 }
