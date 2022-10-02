@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "fmt/os.h"  // fmt::system_category
 #include "fmt/ranges.h"
 #include "gtest-extra.h"  // StartsWith
 
@@ -81,6 +82,18 @@ TEST(std_test, variant) {
   volatile int i = 42;  // Test compile error before GCC 11 described in #3068.
   EXPECT_EQ(fmt::format("{}", i), "42");
 #endif
+}
+
+TEST(std_test, error_code) {
+  EXPECT_EQ("generic:42",
+            fmt::format(FMT_STRING("{0}"),
+                        std::error_code(42, std::generic_category())));
+  EXPECT_EQ("system:42",
+            fmt::format(FMT_STRING("{0}"),
+                        std::error_code(42, fmt::system_category())));
+  EXPECT_EQ("system:-42",
+            fmt::format(FMT_STRING("{0}"),
+                        std::error_code(-42, fmt::system_category())));
 }
 
 template <typename Catch> void exception_test() {
