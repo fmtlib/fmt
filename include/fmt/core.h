@@ -779,7 +779,8 @@ FMT_CONSTEXPR void
 basic_format_parse_context<Char, ErrorHandler>::do_check_arg_id(int id) {
   // Argument id is only checked at compile-time during parsing because
   // formatting has its own validation.
-  if (detail::is_constant_evaluated() && FMT_GCC_VERSION >= 1200) {
+  if (detail::is_constant_evaluated() &&
+      (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 1200)) {
     using context = detail::compile_parse_context<Char, ErrorHandler>;
     if (id >= static_cast<context*>(this)->num_args())
       on_error("argument not found");
@@ -789,7 +790,8 @@ basic_format_parse_context<Char, ErrorHandler>::do_check_arg_id(int id) {
 template <typename Char, typename ErrorHandler>
 FMT_CONSTEXPR void
 basic_format_parse_context<Char, ErrorHandler>::check_dynamic_spec(int arg_id) {
-  if (detail::is_constant_evaluated() && FMT_GCC_VERSION >= 1200) {
+  if (detail::is_constant_evaluated() &&
+      (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 1200)) {
     using context = detail::compile_parse_context<Char, ErrorHandler>;
     static_cast<context*>(this)->check_dynamic_spec(arg_id);
   }
