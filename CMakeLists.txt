@@ -84,10 +84,8 @@ option(FMT_MODULE "Build a module instead of a traditional library." OFF)
 option(FMT_SYSTEM_HEADERS "Expose headers with marking them as system." OFF)
 
 set(FMT_CAN_MODULE OFF)
-if (CMAKE_CXX_STANDARD GREATER 17 AND
-    # msvc 16.10-pre4
-    MSVC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 19.29.30035)
-  set(FMT_CAN_MODULE OFF)
+if (CMAKE_CXX_STANDARD GREATER 17 AND NOT MSVC)
+  set(FMT_CAN_MODULE ON)
 endif ()
 if (NOT FMT_CAN_MODULE)
   set(FMT_MODULE OFF)
