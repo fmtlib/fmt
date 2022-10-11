@@ -960,6 +960,14 @@ template <typename T> class buffer {
   }
 };
 
+#if defined(FMT_MSC_VERSION)
+#  ifdef FMT_EXPORT
+extern template class buffer<char>;
+#  else
+template class FMT_API buffer<char>;
+#  endif
+#endif
+
 struct buffer_traits {
   explicit buffer_traits(size_t) {}
   auto count() const -> size_t { return 0; }
