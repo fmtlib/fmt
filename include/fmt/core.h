@@ -960,7 +960,7 @@ template <typename T> class buffer {
   }
 };
 
-#if defined(FMT_MSC_VERSION)
+#if FMT_MSC_VERSION
 #  ifdef FMT_EXPORT
 extern template class buffer<char>;
 #  else
