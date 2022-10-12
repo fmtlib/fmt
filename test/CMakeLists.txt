@@ -94,7 +94,7 @@ add_fmt_test(enforce-checks-test)
 target_compile_definitions(enforce-checks-test PRIVATE
                            -DFMT_ENFORCE_COMPILE_STRING)
 
-if (FMT_CAN_MODULE)
+if (FMT_MODULE)
   # The tests need {fmt} to be compiled as traditional library
   # because of visibility of implementation details.
   # If module support is present the module tests require a
