@@ -23,9 +23,9 @@ template FMT_API auto locale_ref::get<std::locale>() const -> std::locale;
 // Explicit instantiations for char.
 
 #if FMT_MSC_VERSION
-// ostream does it implicitly, so we need make it explicitly
-// otherwise we get ODR violation when {fmt} is built as a shared library
-// and fmt/os.h is not included by the user
+// fmt::ostream does it implicitly, so we need make it explicitly.
+// Otherwise we get ODR violation when {fmt} is built as a shared library
+// and fmt/os.h is not included by the user.
 template class FMT_API buffer<char>;
 #endif
 
