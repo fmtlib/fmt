@@ -645,6 +645,8 @@ TEST(chrono_test, cpp20_duration_subsecond_support) {
   // Check that floating point seconds with ratio<1,1> are printed.
   EXPECT_EQ(fmt::format("{:%S}", std::chrono::duration<double>{1.5}),
             "01.500000");
+  EXPECT_EQ(fmt::format("{:%M:%S}", std::chrono::duration<double>{-61.25}),
+            "-01:01.250000");
 }
 
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR

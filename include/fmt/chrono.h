@@ -1023,9 +1023,10 @@ struct count_fractional_digits<Num, Den, N, false> {
   static constexpr int value = (Num % Den == 0) ? N : 6;
 };
 
-// Format non-fractional subseconds with an appriate number of digits.
-template <typename OutputIt, typename Duration, typename char_type>
-void write_sub_sec(OutputIt& out, Duration d) {
+// Format subseconds which are given as an integer type with an appropriate
+// number of digits.
+template <typename char_type, typename OutputIt, typename Duration>
+void write_fractional_seconds(OutputIt& out, Duration d) {
   FMT_ASSERT(!std::is_floating_point<typename Duration::rep>::value, "");
   constexpr auto num_fractional_digits =
       count_fractional_digits<Duration::period::num,
@@ -1055,24 +1056,26 @@ void write_sub_sec(OutputIt& out, Duration d) {
   }
 }
 
-// Format fractional seconds with an appropiate number of digits.
+// Format subseconds which are given as a floating point type with an appropiate
+// number of digits. We cannot pass the Duration here, as we explicitly need to
+// pass the Rep value in the chrono_formatter.
 template <typename Rep, long long Num, long long Den>
-void format_sec_fractional(basic_memory_buffer<char>& buf, Rep val) {
+void format_floating_seconds(memory_buffer& buf, Rep val) {
   FMT_ASSERT(std::is_floating_point<Rep>::value, "");
   auto num_fractional_digits = count_fractional_digits<Num, Den>::value;
   // For non-integer values, we ensure at least 6 digits to get microsecond
   // precision.
-  if (num_fractional_digits < 6 && static_cast<Rep>(std::round(val)) != val) {
+  if (num_fractional_digits < 6 && static_cast<Rep>(std::round(val)) != val)
     num_fractional_digits = 6;
-  }
+
   format_to(std::back_inserter(buf), runtime("{:.{}f}"),
             std::fmod(val * static_cast<Rep>(Num) / static_cast<Rep>(Den),
                       static_cast<Rep>(60)),
             num_fractional_digits);
 }
 
-template <typename OutputIt, typename Char, typename Rep = int,
-          typename Period = std::ratio<1, 1>>
+template <typename OutputIt, typename Char,
+          typename Duration = std::chrono::seconds>
 class tm_writer {
  private:
   static constexpr int days_per_week = 7;
@@ -1080,8 +1083,7 @@ class tm_writer {
   const std::locale& loc_;
   const bool is_classic_;
   OutputIt out_;
-  std::chrono::duration<Rep, Period> subsecs_;
-  bool has_subsecs_;
+  const Duration* subsecs_;
   const std::tm& tm_;
 
   auto tm_sec() const noexcept -> int {
@@ -1245,19 +1247,11 @@ class tm_writer {
 
  public:
   tm_writer(const std::locale& loc, OutputIt out, const std::tm& tm,
-            std::chrono::duration<Rep, Period> subsecs)
+            const Duration* subsecs = nullptr)
       : loc_(loc),
         is_classic_(loc_ == get_classic_locale()),
         out_(out),
         subsecs_(subsecs),
-        has_subsecs_(true),
-        tm_(tm) {}
-
-  tm_writer(const std::locale& loc, OutputIt out, const std::tm& tm)
-      : loc_(loc),
-        is_classic_(loc_ == get_classic_locale()),
-        out_(out),
-        has_subsecs_(false),
         tm_(tm) {}
 
   OutputIt out() const { return out_; }
@@ -1460,18 +1454,18 @@ class tm_writer {
   void on_second(numeric_system ns) {
     if (is_classic_ || ns == numeric_system::standard) {
       write2(tm_sec());
-      if (has_subsecs_) {
-        if (std::is_floating_point<Rep>::value) {
+      if (subsecs_) {
+        if (std::is_floating_point<typename Duration::rep>::value) {
           auto buf = memory_buffer();
-          format_sec_fractional<Rep, Period::num, Period::den>(
-              buf, subsecs_.count());
+          format_floating_seconds<typename Duration::rep, Duration::period::num,
+                                  Duration::period::den>(buf,
+                                                         subsecs_->count());
           if (buf.size() > 1) {
             // Remove the leading "0", write something like ".123".
             out_ = std::copy(buf.begin() + 1, buf.end(), out_);
           }
         } else {
-          write_sub_sec<OutputIt, std::chrono::duration<Rep, Period>, Char>(
-              out_, subsecs_);
+          write_fractional_seconds<Char>(out_, *subsecs_);
         }
       }
     } else {
@@ -1832,13 +1826,13 @@ struct chrono_formatter {
     if (ns == numeric_system::standard) {
       if (std::is_floating_point<rep>::value) {
         auto buf = memory_buffer();
-        format_sec_fractional<rep, Period::num, Period::den>(buf, val);
+        format_floating_seconds<rep, Period::num, Period::den>(buf, val);
         if (negative) *out++ = '-';
         if (buf.size() < 2 || buf[1] == '.') *out++ = '0';
         out = std::copy(buf.begin(), buf.end(), out);
       } else {
         write(second(), 2);
-        write_sub_sec<OutputIt, std::chrono::duration<Rep, Period>, char_type>(
+        write_fractional_seconds<char_type>(
             out, std::chrono::duration<Rep, Period>(val));
       }
       return;
@@ -2077,12 +2071,11 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
       return formatter<std::tm, Char>::format(
           localtime(std::chrono::time_point_cast<std::chrono::seconds>(val)),
           ctx, subsecs);
-
-    } else {
-      return formatter<std::tm, Char>::format(
-          localtime(std::chrono::time_point_cast<std::chrono::seconds>(val)),
-          ctx);
     }
+
+    return formatter<std::tm, Char>::format(
+        localtime(std::chrono::time_point_cast<std::chrono::seconds>(val)),
+        ctx);
   }
 };
 
@@ -2150,14 +2143,13 @@ template <typename Char> struct formatter<std::tm, Char> {
     return w.out();
   }
 
-  template <typename FormatContext, typename Rep, typename Period>
+  template <typename FormatContext, typename Duration>
   auto format(const std::tm& tm, FormatContext& ctx,
-              const std::chrono::duration<Rep, Period>& subsecs) const
-      -> decltype(ctx.out()) {
+              const Duration& subsecs) const -> decltype(ctx.out()) {
     const auto loc_ref = ctx.locale();
     detail::get_locale loc(static_cast<bool>(loc_ref), loc_ref);
-    auto w = detail::tm_writer<decltype(ctx.out()), Char, Rep, Period>(
-        loc, ctx.out(), tm, subsecs);
+    auto w = detail::tm_writer<decltype(ctx.out()), Char, Duration>(
+        loc, ctx.out(), tm, &subsecs);
     if (spec_ == spec::year_month_day)
       w.on_iso_date();
     else if (spec_ == spec::hh_mm_ss)
