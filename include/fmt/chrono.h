@@ -982,7 +982,7 @@ inline Int to_nonnegative_int(T value, Int upper) {
   return static_cast<Int>(value);
 }
 
-template <class Rep, class Period,
+template <typename Rep, typename Period,
           FMT_ENABLE_IF(std::numeric_limits<Rep>::is_signed)>
 constexpr std::chrono::duration<Rep, Period> abs(
     std::chrono::duration<Rep, Period> d) {
@@ -995,7 +995,7 @@ constexpr std::chrono::duration<Rep, Period> abs(
   return d.count() >= d.zero().count() ? d : -d;
 }
 
-template <class Rep, class Period,
+template <typename Rep, typename Period,
           FMT_ENABLE_IF(!std::numeric_limits<Rep>::is_signed)>
 constexpr std::chrono::duration<Rep, Period> abs(
     std::chrono::duration<Rep, Period> d) {
@@ -1025,7 +1025,7 @@ struct count_fractional_digits<Num, Den, N, false> {
 
 // Format subseconds which are given as an integer type with an appropriate
 // number of digits.
-template <typename char_type, typename OutputIt, typename Duration>
+template <typename Char, typename OutputIt, typename Duration>
 void write_fractional_seconds(OutputIt& out, Duration d) {
   FMT_ASSERT(!std::is_floating_point<typename Duration::rep>::value, "");
   constexpr auto num_fractional_digits =
@@ -1052,26 +1052,33 @@ void write_fractional_seconds(OutputIt& out, Duration d) {
     int num_digits = detail::count_digits(n);
     if (num_fractional_digits > num_digits)
       out = std::fill_n(out, num_fractional_digits - num_digits, '0');
-    out = format_decimal<char_type>(out, n, num_digits).end;
+    out = format_decimal<Char>(out, n, num_digits).end;
   }
 }
 
 // Format subseconds which are given as a floating point type with an appropiate
 // number of digits. We cannot pass the Duration here, as we explicitly need to
 // pass the Rep value in the chrono_formatter.
-template <typename Rep, long long Num, long long Den>
-void format_floating_seconds(memory_buffer& buf, Rep val) {
-  FMT_ASSERT(std::is_floating_point<Rep>::value, "");
-  auto num_fractional_digits = count_fractional_digits<Num, Den>::value;
+template <typename Duration>
+void write_floating_seconds(memory_buffer& buf, Duration duration) {
+  FMT_ASSERT(std::is_floating_point<typename Duration::rep>::value, "");
+  auto num_fractional_digits =
+      count_fractional_digits<Duration::period::num,
+                              Duration::period::den>::value;
   // For non-integer values, we ensure at least 6 digits to get microsecond
   // precision.
-  if (num_fractional_digits < 6 && static_cast<Rep>(std::round(val)) != val)
+  auto val = duration.count();
+  if (num_fractional_digits < 6 &&
+      static_cast<typename Duration::rep>(std::round(val)) != val)
     num_fractional_digits = 6;
 
-  format_to(std::back_inserter(buf), runtime("{:.{}f}"),
-            std::fmod(val * static_cast<Rep>(Num) / static_cast<Rep>(Den),
-                      static_cast<Rep>(60)),
-            num_fractional_digits);
+  format_to(
+      std::back_inserter(buf), runtime("{:.{}f}"),
+      std::fmod(val *
+                    static_cast<typename Duration::rep>(Duration::period::num) /
+                    static_cast<typename Duration::rep>(Duration::period::den),
+                static_cast<typename Duration::rep>(60)),
+      num_fractional_digits);
 }
 
 template <typename OutputIt, typename Char,
@@ -1457,9 +1464,7 @@ class tm_writer {
       if (subsecs_) {
         if (std::is_floating_point<typename Duration::rep>::value) {
           auto buf = memory_buffer();
-          format_floating_seconds<typename Duration::rep, Duration::period::num,
-                                  Duration::period::den>(buf,
-                                                         subsecs_->count());
+          write_floating_seconds(buf, *subsecs_);
           if (buf.size() > 1) {
             // Remove the leading "0", write something like ".123".
             out_ = std::copy(buf.begin() + 1, buf.end(), out_);
@@ -1826,7 +1831,7 @@ struct chrono_formatter {
     if (ns == numeric_system::standard) {
       if (std::is_floating_point<rep>::value) {
         auto buf = memory_buffer();
-        format_floating_seconds<rep, Period::num, Period::den>(buf, val);
+        write_floating_seconds(buf, std::chrono::duration<rep, Period>(val));
         if (negative) *out++ = '-';
         if (buf.size() < 2 || buf[1] == '.') *out++ = '0';
         out = std::copy(buf.begin(), buf.end(), out);
