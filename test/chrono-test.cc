@@ -253,7 +253,8 @@ template <typename TimePoint> auto strftime_full(TimePoint tp) -> std::string {
 }
 
 TEST(chrono_test, time_point) {
-  auto t1 = std::chrono::system_clock::now();
+  auto t1 = std::chrono::time_point_cast<std::chrono::seconds>(
+      std::chrono::system_clock::now());
   EXPECT_EQ(strftime_full(t1), fmt::format("{:%Y-%m-%d %H:%M:%S}", t1));
   EXPECT_EQ(strftime_full(t1), fmt::format("{}", t1));
   using time_point =
@@ -634,10 +635,18 @@ TEST(chrono_test, cpp20_duration_subsecond_support) {
   // fixed precision, and print zeros even if there is no fractional part.
   EXPECT_EQ(fmt::format("{:%S}", std::chrono::microseconds{7000000}),
             "07.000000");
-  EXPECT_EQ(fmt::format("{:%S}", std::chrono::duration<long long, std::ratio<1, 3>>(1)),
+  EXPECT_EQ(fmt::format("{:%S}",
+                        std::chrono::duration<long long, std::ratio<1, 3>>(1)),
             "00.333333");
-  EXPECT_EQ(fmt::format("{:%S}", std::chrono::duration<long long, std::ratio<1, 7>>(1)),
+  EXPECT_EQ(fmt::format("{:%S}",
+                        std::chrono::duration<long long, std::ratio<1, 7>>(1)),
             "00.142857");
+
+  // Check that floating point seconds with ratio<1,1> are printed.
+  EXPECT_EQ(fmt::format("{:%S}", std::chrono::duration<double>{1.5}),
+            "01.500000");
+  EXPECT_EQ(fmt::format("{:%M:%S}", std::chrono::duration<double>{-61.25}),
+            "-01:01.250000");
 }
 
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR
@@ -652,3 +661,66 @@ TEST(chrono_test, utc_clock) {
             fmt::format("{:%Y-%m-%d %H:%M:%S}", t1_utc));
 }
 #endif
+
+TEST(chrono_test, timestamps_sub_seconds) {
+  std::chrono::time_point<std::chrono::system_clock,
+                          std::chrono::duration<long long, std::ratio<1, 3>>>
+      t1(std::chrono::duration<long long, std::ratio<1, 3>>(4));
+
+  EXPECT_EQ(fmt::format("{:%S}", t1), "01.333333");
+
+  std::chrono::time_point<std::chrono::system_clock,
+                          std::chrono::duration<double, std::ratio<1, 3>>>
+      t2(std::chrono::duration<double, std::ratio<1, 3>>(4));
+
+  EXPECT_EQ(fmt::format("{:%S}", t2), "01.333333");
+
+  const std::chrono::time_point<std::chrono::system_clock, std::chrono::seconds>
+      t3(std::chrono::seconds(2));
+
+  EXPECT_EQ(fmt::format("{:%S}", t3), "02");
+
+  const std::chrono::time_point<std::chrono::system_clock,
+                                std::chrono::duration<double>>
+      t4(std::chrono::duration<double, std::ratio<1, 1>>(9.5));
+
+  EXPECT_EQ(fmt::format("{:%S}", t4), "09.500000");
+
+  const std::chrono::time_point<std::chrono::system_clock,
+                                std::chrono::duration<double>>
+      t5(std::chrono::duration<double, std::ratio<1, 1>>(9));
+
+  EXPECT_EQ(fmt::format("{:%S}", t5), "09");
+
+  const std::chrono::time_point<std::chrono::system_clock,
+                                std::chrono::milliseconds>
+      t6(std::chrono::seconds(1) + std::chrono::milliseconds(120));
+
+  EXPECT_EQ(fmt::format("{:%S}", t6), "01.120");
+
+  const std::chrono::time_point<std::chrono::system_clock,
+                                std::chrono::microseconds>
+      t7(std::chrono::microseconds(1234567));
+
+  EXPECT_EQ(fmt::format("{:%S}", t7), "01.234567");
+
+  const std::chrono::time_point<std::chrono::system_clock,
+                                std::chrono::nanoseconds>
+      t8(std::chrono::nanoseconds(123456789));
+
+  EXPECT_EQ(fmt::format("{:%S}", t8), "00.123456789");
+
+  const auto t9 = std::chrono::time_point_cast<std::chrono::nanoseconds>(
+      std::chrono::system_clock::now());
+  const auto t9_sec = std::chrono::time_point_cast<std::chrono::seconds>(t9);
+  auto t9_sub_sec_part = fmt::format("{0:09}", (t9 - t9_sec).count());
+
+  EXPECT_EQ(fmt::format("{}.{}", strftime_full(t9_sec), t9_sub_sec_part),
+            fmt::format("{:%Y-%m-%d %H:%M:%S}", t9));
+
+  const std::chrono::time_point<std::chrono::system_clock,
+                                std::chrono::milliseconds>
+      t10(std::chrono::milliseconds(2000));
+
+  EXPECT_EQ(fmt::format("{:%S}", t10), "02.000");
+}
