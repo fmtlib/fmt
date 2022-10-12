@@ -1405,8 +1405,8 @@ template <typename Float> constexpr int num_significand_bits() {
 template <typename Float>
 constexpr auto exponent_mask() ->
     typename dragonbox::float_info<Float>::carrier_uint {
-  using uint = typename dragonbox::float_info<Float>::carrier_uint;
-  return ((uint(1) << dragonbox::float_info<Float>::exponent_bits) - 1)
+  using float_uint = typename dragonbox::float_info<Float>::carrier_uint;
+  return ((float_uint(1) << dragonbox::float_info<Float>::exponent_bits) - 1)
          << num_significand_bits<Float>();
 }
 template <typename Float> constexpr auto exponent_bias() -> int {
@@ -3333,9 +3333,9 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
 
   constexpr auto specs = basic_format_specs<Char>();
   using floaty = conditional_t<std::is_same<T, long double>::value, double, T>;
-  using uint = typename dragonbox::float_info<floaty>::carrier_uint;
-  uint mask = exponent_mask<floaty>();
-  if ((bit_cast<uint>(value) & mask) == mask)
+  using floaty_uint = typename dragonbox::float_info<floaty>::carrier_uint;
+  floaty_uint mask = exponent_mask<floaty>();
+  if ((bit_cast<floaty_uint>(value) & mask) == mask)
     return write_nonfinite(out, std::isnan(value), specs, fspecs);
 
   auto dec = dragonbox::to_decimal(static_cast<floaty>(value));
