@@ -379,32 +379,23 @@ struct ostream_params {
 #  endif
 };
 
-FMT_END_DETAIL_NAMESPACE
-
-// Added {} below to work around default constructor error known to
-// occur in Xcode versions 7.2.1 and 8.2.1.
-constexpr detail::buffer_size buffer_size{};
-
-/** A fast output stream which is not thread-safe. */
-class FMT_API ostream final : private detail::buffer<char> {
- private:
+class ostream_buffer final : public detail::buffer<char> {
   file file_;
 
-  void grow(size_t) override;
+  FMT_API void grow(size_t) override;
 
-  ostream(cstring_view path, const detail::ostream_params& params)
+ public:
+  ostream_buffer(cstring_view path, const detail::ostream_params& params)
       : file_(path, params.oflag) {
     set(new char[params.buffer_size], params.buffer_size);
   }
-
- public:
-  ostream(ostream&& other)
+  ostream_buffer(ostream_buffer&& other)
       : detail::buffer<char>(other.data(), other.size(), other.capacity()),
         file_(std::move(other.file_)) {
     other.clear();
     other.set(nullptr, 0);
   }
-  ~ostream() {
+  ~ostream_buffer() {
     flush();
     delete[] data();
   }
@@ -415,20 +406,45 @@ class FMT_API ostream final : private detail::buffer<char> {
     clear();
   }
 
-  template <typename... T>
-  friend ostream output_file(cstring_view path, T... params);
-
   void close() {
     flush();
     file_.close();
   }
+};
+
+FMT_END_DETAIL_NAMESPACE
+
+// Added {} below to work around default constructor error known to
+// occur in Xcode versions 7.2.1 and 8.2.1.
+constexpr detail::buffer_size buffer_size{};
+
+/** A fast output stream which is not thread-safe. */
+class FMT_API ostream final {
+ private:
+  FMT_MSC_WARNING(suppress : 4251)
+  detail::ostream_buffer buffer_;
+
+  ostream(cstring_view path, const detail::ostream_params& params)
+      : buffer_(path, params) {}
+
+ public:
+  ostream(ostream&& other) : buffer_(std::move(other.buffer_)) {}
+
+  ~ostream();
+
+  void flush() { buffer_.flush(); }
+
+  template <typename... T>
+  friend ostream output_file(cstring_view path, T... params);
+
+  void close() { buffer_.close(); }
 
   /**
     Formats ``args`` according to specifications in ``fmt`` and writes the
     output to the file.
    */
   template <typename... T> void print(format_string<T...> fmt, T&&... args) {
-    vformat_to(detail::buffer_appender<char>(*this), fmt,
+    vformat_to(detail::buffer_appender<char>(buffer_), fmt,
                fmt::make_format_args(args...));
   }
 };

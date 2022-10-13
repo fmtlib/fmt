@@ -366,8 +366,10 @@ long getpagesize() {
 #  endif
 }
 
-FMT_API void ostream::grow(size_t) {
+FMT_API void detail::ostream_buffer::grow(size_t) {
   if (this->size() == this->capacity()) flush();
 }
+
+ostream::~ostream() = default;
 #endif  // FMT_USE_FCNTL
 FMT_END_NAMESPACE
