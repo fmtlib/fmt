@@ -382,7 +382,9 @@ struct ostream_params {
 class ostream_buffer final : public detail::buffer<char> {
   file file_;
 
-  FMT_API void grow(size_t) override;
+  void grow(size_t) override {
+    if (this->size() == this->capacity()) flush();
+  }
 
  public:
   ostream_buffer(cstring_view path, const detail::ostream_params& params)
