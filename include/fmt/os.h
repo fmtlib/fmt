@@ -379,7 +379,7 @@ struct ostream_params {
 #  endif
 };
 
-class ostream_buffer final : public detail::buffer<char> {
+template <typename Char> class file_buffer final : public detail::buffer<Char> {
   file file_;
 
   void grow(size_t) override {
@@ -387,25 +387,27 @@ class ostream_buffer final : public detail::buffer<char> {
   }
 
  public:
-  ostream_buffer(cstring_view path, const detail::ostream_params& params)
+  file_buffer(cstring_view path, const detail::ostream_params& params)
       : file_(path, params.oflag) {
-    set(new char[params.buffer_size], params.buffer_size);
+    detail::buffer<Char>::set(new Char[params.buffer_size], params.buffer_size);
   }
-  ostream_buffer(ostream_buffer&& other)
-      : detail::buffer<char>(other.data(), other.size(), other.capacity()),
+  file_buffer(file_buffer&& other)
+      : detail::buffer<Char>(other.data(), other.size(), other.capacity()),
         file_(std::move(other.file_)) {
     other.clear();
     other.set(nullptr, 0);
   }
-  ~ostream_buffer() {
+  ~file_buffer() {
     flush();
-    delete[] data();
+    delete[] detail::buffer<Char>::data();
   }
 
   void flush() {
-    if (size() == 0) return;
-    file_.write(data(), size());
-    clear();
+    if (detail::buffer<Char>::size() == 0) return;
+    file_.write(
+        detail::buffer<Char>::data(),
+        detail::buffer<Char>::size() * sizeof(detail::buffer<Char>::data()[0]));
+    detail::buffer<Char>::clear();
   }
 
   void close() {
@@ -424,7 +426,7 @@ constexpr detail::buffer_size buffer_size{};
 class FMT_API ostream final {
  private:
   FMT_MSC_WARNING(suppress : 4251)
-  detail::ostream_buffer buffer_;
+  detail::file_buffer<char> buffer_;
 
   ostream(cstring_view path, const detail::ostream_params& params)
       : buffer_(path, params) {}
