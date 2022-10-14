@@ -2061,17 +2061,15 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
     this->do_parse(default_specs.begin(), default_specs.end());
   }
 
-  template <typename FormatContext, typename Rep, typename Period>
-  auto format(std::chrono::time_point<std::chrono::system_clock,
-                                      std::chrono::duration<Rep, Period>>
-                  val,
+  template <typename FormatContext>
+  auto format(std::chrono::time_point<std::chrono::system_clock, Duration> val,
               FormatContext& ctx) const -> decltype(ctx.out()) {
-    if (Period::num != 1 || Period::den != 1 ||
-        std::is_floating_point<Rep>::value) {
+    using period = typename Duration::period;
+    if (period::num != 1 || period::den != 1 ||
+        std::is_floating_point<typename Duration::rep>::value) {
       const auto epoch = val.time_since_epoch();
-      const auto subsecs =
-          std::chrono::duration_cast<std::chrono::duration<Rep, Period>>(
-              epoch - std::chrono::duration_cast<std::chrono::seconds>(epoch));
+      const auto subsecs = std::chrono::duration_cast<Duration>(
+          epoch - std::chrono::duration_cast<std::chrono::seconds>(epoch));
 
       return formatter<std::tm, Char>::format(
           localtime(std::chrono::time_point_cast<std::chrono::seconds>(val)),
@@ -2090,7 +2088,7 @@ struct formatter<std::chrono::time_point<std::chrono::utc_clock, Duration>,
                  Char>
     : formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
                 Char> {
-  template <typename FormatContext, typename Duration>
+  template <typename FormatContext>
   auto format(std::chrono::time_point<std::chrono::utc_clock, Duration> val,
               FormatContext& ctx) const -> decltype(ctx.out()) {
     return formatter<
