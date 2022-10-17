@@ -360,6 +360,8 @@ Projects using this library
 
 * `Knuth <https://kth.cash/>`_: high-performance Bitcoin full-node
 
+* `MariaDB <https://mariadb.org/>`_: relational database management system
+
 * `Microsoft Verona <https://github.com/microsoft/verona>`_:
   research programming language for concurrent ownership
 
