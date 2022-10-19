@@ -1701,7 +1701,7 @@ struct chrono_formatter {
     }
   }
 
-  template <typename Duration> void write_fractional_seconds(Duration d, int precision) {
+  template <typename Duration> void write_fractional_seconds_p(Duration d) {
     constexpr auto num_fractional_digits =
         count_fractional_digits<Duration::period::num,
                                 Duration::period::den>::value;
@@ -1728,7 +1728,7 @@ struct chrono_formatter {
         out = std::fill_n(out, zeroes, '0');
       int remaining = precision - (zeroes > 0 ? zeroes : 0);
       if (remaining < num_digits) {
-        n /= detail::pow10(num_digits - remaining);
+        n /= to_unsigned(detail::pow10(to_unsigned(num_digits - remaining)));
         out = format_decimal<char_type>(out, n, remaining).end;
         return;
       }
@@ -1831,7 +1831,7 @@ struct chrono_formatter {
       } else {
         write(second(), 2);
         if (precision >= 0) {
-          write_fractional_seconds(std::chrono::duration<rep, Period>(val), precision);
+          write_fractional_seconds_p(std::chrono::duration<rep, Period>(val));
         } else {
           write_fractional_seconds(std::chrono::duration<rep, Period>(val));
         }
