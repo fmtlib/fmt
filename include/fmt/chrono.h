@@ -1263,7 +1263,7 @@ class tm_writer {
 
   OutputIt out() const { return out_; }
 
-  const std::locale & locale() const { return loc_; }
+  const std::locale& locale() const { return loc_; }
 
   FMT_CONSTEXPR void on_text(const Char* begin, const Char* end) {
     out_ = copy_str<Char>(begin, end, out_);
