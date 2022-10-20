@@ -212,7 +212,8 @@ To safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
     }
     const auto min1 =
         (std::numeric_limits<IntermediateRep>::min)() / Factor::num;
-    if (!std::is_unsigned<IntermediateRep>::value && count < min1) {
+    if (detail::const_check(!std::is_unsigned<IntermediateRep>::value) &&
+        count < min1) {
       ec = 1;
       return {};
     }
