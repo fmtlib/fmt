@@ -612,11 +612,16 @@ TEST(chrono_test, cpp20_duration_subsecond_support) {
             "-13.420148734");
   EXPECT_EQ(fmt::format("{:%S}", std::chrono::milliseconds{1234}), "01.234");
   // Check subsecond presision modifier.
-  EXPECT_EQ(fmt::format("{:.6%S}", std::chrono::nanoseconds{1234}), "00.000001");
-  EXPECT_EQ(fmt::format("{:.18%S}", std::chrono::nanoseconds{1234}), "00.000001234000000000");
-  EXPECT_EQ(fmt::format("{:.{}%S}", std::chrono::nanoseconds{1234}, 6), "00.000001");
-  EXPECT_EQ(fmt::format("{:.6%S}", std::chrono::milliseconds{1234}), "01.234000");
-  EXPECT_EQ(fmt::format("{:.6%S}", std::chrono::milliseconds{-1234}), "-01.234000");
+  EXPECT_EQ(fmt::format("{:.6%S}", std::chrono::nanoseconds{1234}),
+            "00.000001");
+  EXPECT_EQ(fmt::format("{:.18%S}", std::chrono::nanoseconds{1234}),
+            "00.000001234000000000");
+  EXPECT_EQ(fmt::format("{:.{}%S}", std::chrono::nanoseconds{1234}, 6),
+            "00.000001");
+  EXPECT_EQ(fmt::format("{:.6%S}", std::chrono::milliseconds{1234}),
+            "01.234000");
+  EXPECT_EQ(fmt::format("{:.6%S}", std::chrono::milliseconds{-1234}),
+            "-01.234000");
   EXPECT_EQ(fmt::format("{:.3%S}", std::chrono::seconds{1234}), "34.000");
   EXPECT_EQ(fmt::format("{:.3%S}", std::chrono::hours{1234}), "00.000");
   EXPECT_EQ(fmt::format("{:.5%S}", dms(1.234)), "00.00123");

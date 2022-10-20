@@ -1119,7 +1119,8 @@ void write_floating_seconds(memory_buffer& buf, Duration duration) {
 }
 
 template <typename Duration>
-void write_floating_seconds(memory_buffer& buf, Duration duration, int precision) {
+void write_floating_seconds(memory_buffer& buf, Duration duration,
+                            int precision) {
   if (precision < 0) {
     write_floating_seconds(buf, duration);
     return;
@@ -1894,16 +1895,19 @@ struct chrono_formatter {
     if (ns == numeric_system::standard) {
       if (std::is_floating_point<rep>::value) {
         auto buf = memory_buffer();
-        write_floating_seconds(buf, std::chrono::duration<rep, Period>(val), precision);
+        write_floating_seconds(buf, std::chrono::duration<rep, Period>(val),
+                               precision);
         if (negative) *out++ = '-';
         if (buf.size() < 2 || buf[1] == '.') *out++ = '0';
         out = std::copy(buf.begin(), buf.end(), out);
       } else {
         write(second(), 2);
         if (precision >= 0) {
-          write_fractional_seconds<char_type>(out, std::chrono::duration<rep, Period>(val), precision);
+          write_fractional_seconds<char_type>(
+              out, std::chrono::duration<rep, Period>(val), precision);
         } else {
-          write_fractional_seconds<char_type>(out, std::chrono::duration<rep, Period>(val));
+          write_fractional_seconds<char_type>(
+              out, std::chrono::duration<rep, Period>(val));
         }
       }
       return;
