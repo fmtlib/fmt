@@ -108,7 +108,7 @@ TEST(xchar_test, compile_time_string) {
 #if FMT_CPLUSPLUS > 201103L
 struct custom_char {
   int value;
-  custom_char() = default;
+  constexpr custom_char() : value(0) {}
 
   template <typename T>
   constexpr custom_char(T val) : value(static_cast<int>(val)) {}
