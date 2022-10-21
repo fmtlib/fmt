@@ -1079,9 +1079,10 @@ void write_fractional_seconds(OutputIt& out, Duration d, int precision) {
     uint32_or_64_or_128_t<long long> n =
         to_unsigned(to_nonnegative_int(subseconds, max_value<long long>()));
     int num_digits = detail::count_digits(n);
-    int zeroes = std::min(num_fractional_digits - num_digits, precision);
+    int zeroes =
+        std::min(std::max(0, num_fractional_digits - num_digits), precision);
     if (num_fractional_digits > num_digits) out = std::fill_n(out, zeroes, '0');
-    int remaining = precision - (zeroes > 0 ? zeroes : 0);
+    int remaining = precision - zeroes;
     if (remaining < num_digits) {
       n /= to_unsigned(detail::pow10(to_unsigned(num_digits - remaining)));
       out = format_decimal<Char>(out, n, remaining).end;
