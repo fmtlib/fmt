@@ -385,7 +385,7 @@ class file_buffer final : public detail::buffer<char> {
   FMT_API void grow(size_t) override;
 
  public:
-  FMT_API file_buffer(cstring_view path, const detail::ostream_params& params);
+  FMT_API file_buffer(cstring_view path, const ostream_params& params);
   FMT_API file_buffer(file_buffer&& other);
   FMT_API ~file_buffer();
 
@@ -408,7 +408,7 @@ FMT_END_DETAIL_NAMESPACE
 constexpr detail::buffer_size buffer_size{};
 
 /** A fast output stream which is not thread-safe. */
-class FMT_API ostream final {
+class FMT_API ostream {
  private:
   FMT_MSC_WARNING(suppress : 4251)
   detail::file_buffer buffer_;
