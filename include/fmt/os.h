@@ -379,7 +379,7 @@ struct ostream_params {
 #  endif
 };
 
-class file_buffer final : public detail::buffer<char> {
+class file_buffer final : public buffer<char> {
   file file_;
 
   FMT_API void grow(size_t) override;
