@@ -366,8 +366,32 @@ long getpagesize() {
 #  endif
 }
 
-FMT_API void ostream::grow(size_t) {
+FMT_BEGIN_DETAIL_NAMESPACE
+
+void file_buffer::grow(size_t) {
   if (this->size() == this->capacity()) flush();
 }
+
+file_buffer::file_buffer(cstring_view path,
+                         const detail::ostream_params& params)
+    : file_(path, params.oflag) {
+  set(new char[params.buffer_size], params.buffer_size);
+}
+
+file_buffer::file_buffer(file_buffer&& other)
+    : detail::buffer<char>(other.data(), other.size(), other.capacity()),
+      file_(std::move(other.file_)) {
+  other.clear();
+  other.set(nullptr, 0);
+}
+
+file_buffer::~file_buffer() {
+  flush();
+  delete[] data();
+}
+
+FMT_END_DETAIL_NAMESPACE
+
+ostream::~ostream() = default;
 #endif  // FMT_USE_FCNTL
 FMT_END_NAMESPACE
