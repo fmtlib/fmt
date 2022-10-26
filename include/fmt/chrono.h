@@ -1099,7 +1099,8 @@ void write_fractional_seconds(OutputIt& out, Duration d, int precision) {
 // pass the Rep value in the chrono_formatter.
 template <typename Duration>
 void write_floating_seconds(memory_buffer& buf, Duration duration) {
-  FMT_ASSERT(std::is_floating_point<typename Duration::rep>::value, "");
+  using Rep =  typename Duration::rep;
+  FMT_ASSERT(std::is_floating_point<Rep>::value, "");
   auto num_fractional_digits =
       count_fractional_digits<Duration::period::num,
                               Duration::period::den>::value;
@@ -1107,35 +1108,36 @@ void write_floating_seconds(memory_buffer& buf, Duration duration) {
   // precision.
   auto val = duration.count();
   if (num_fractional_digits < 6 &&
-      static_cast<typename Duration::rep>(std::round(val)) != val)
+      static_cast<Rep>(std::round(val)) != val)
     num_fractional_digits = 6;
 
   format_to(
       std::back_inserter(buf), runtime("{:.{}f}"),
       std::fmod(val *
-                    static_cast<typename Duration::rep>(Duration::period::num) /
-                    static_cast<typename Duration::rep>(Duration::period::den),
-                static_cast<typename Duration::rep>(60)),
+                    static_cast<Rep>(Duration::period::num) /
+                    static_cast<Rep>(Duration::period::den),
+                static_cast<Rep>(60)),
       num_fractional_digits);
 }
 
 template <typename Duration>
 void write_floating_seconds(memory_buffer& buf, Duration duration,
                             int precision) {
+  using Rep =  typename Duration::rep;
   if (precision < 0) {
     write_floating_seconds(buf, duration);
     return;
   }
 
-  FMT_ASSERT(std::is_floating_point<typename Duration::rep>::value, "");
+  FMT_ASSERT(std::is_floating_point<Rep>::value, "");
   auto val = duration.count();
 
   format_to(
       std::back_inserter(buf), runtime("{:.{}f}"),
       std::fmod(val *
-                    static_cast<typename Duration::rep>(Duration::period::num) /
-                    static_cast<typename Duration::rep>(Duration::period::den),
-                static_cast<typename Duration::rep>(60)),
+                    static_cast<Rep>(Duration::period::num) /
+                    static_cast<Rep>(Duration::period::den),
+                static_cast<Rep>(60)),
       precision);
 }
 
