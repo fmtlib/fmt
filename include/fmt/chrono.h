@@ -1038,7 +1038,7 @@ void write_fractional_seconds(OutputIt& out, Duration d, int precision = -1) {
 
   const auto fractional =
       detail::abs(d) - std::chrono::duration_cast<std::chrono::seconds>(d);
-  const auto& subseconds =
+  const auto subseconds =
       std::chrono::treat_as_floating_point<
           typename subsecond_precision::rep>::value
           ? fractional.count()
@@ -1860,13 +1860,8 @@ struct chrono_formatter {
         out = std::copy(buf.begin(), buf.end(), out);
       } else {
         write(second(), 2);
-        if (precision >= 0) {
-          write_fractional_seconds<char_type>(
-              out, std::chrono::duration<rep, Period>(val), precision);
-        } else {
-          write_fractional_seconds<char_type>(
-              out, std::chrono::duration<rep, Period>(val));
-        }
+        write_fractional_seconds<char_type>(
+            out, std::chrono::duration<rep, Period>(val), precision);
       }
       return;
     }
