@@ -1091,7 +1091,7 @@ void write_floating_seconds(memory_buffer& buf, Duration duration,
       num_fractional_digits = 6;
   }
 
-  format_to(std::back_inserter(buf), runtime("{:.{}f}"),
+  format_to(std::back_inserter(buf), FMT_STRING("{:.{}f}"),
             std::fmod(val * static_cast<rep>(Duration::period::num) /
                           static_cast<rep>(Duration::period::den),
                       static_cast<rep>(60)),
