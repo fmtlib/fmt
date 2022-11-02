@@ -1026,8 +1026,7 @@ struct count_fractional_digits<Num, Den, N, false> {
 // Format subseconds which are given as an integer type with an appropriate
 // number of digits.
 template <typename Char, typename OutputIt, typename Duration>
-void write_fractional_seconds(OutputIt& out, Duration d) {
-  FMT_ASSERT(!std::is_floating_point<typename Duration::rep>::value, "");
+void write_fractional_seconds(OutputIt& out, Duration d, int precision = -1) {
   constexpr auto num_fractional_digits =
       count_fractional_digits<Duration::period::num,
                               Duration::period::den>::value;
@@ -1036,59 +1035,37 @@ void write_fractional_seconds(OutputIt& out, Duration d) {
       typename std::common_type<typename Duration::rep,
                                 std::chrono::seconds::rep>::type,
       std::ratio<1, detail::pow10(num_fractional_digits)>>;
-  if (std::ratio_less<typename subsecond_precision::period,
-                      std::chrono::seconds::period>::value) {
-    *out++ = '.';
-    auto fractional =
-        detail::abs(d) - std::chrono::duration_cast<std::chrono::seconds>(d);
-    auto subseconds =
-        std::chrono::treat_as_floating_point<
-            typename subsecond_precision::rep>::value
-            ? fractional.count()
-            : std::chrono::duration_cast<subsecond_precision>(fractional)
-                  .count();
-    uint32_or_64_or_128_t<long long> n =
-        to_unsigned(to_nonnegative_int(subseconds, max_value<long long>()));
-    int num_digits = detail::count_digits(n);
-    if (num_fractional_digits > num_digits)
-      out = std::fill_n(out, num_fractional_digits - num_digits, '0');
-    out = format_decimal<Char>(out, n, num_digits).end;
-  }
-}
 
-template <typename Char, typename OutputIt, typename Duration>
-void write_fractional_seconds(OutputIt& out, Duration d, int precision) {
-  constexpr auto num_fractional_digits =
-      count_fractional_digits<Duration::period::num,
-                              Duration::period::den>::value;
+  const auto fractional =
+      detail::abs(d) - std::chrono::duration_cast<std::chrono::seconds>(d);
+  uint32_or_64_or_128_t<long long> subseconds =
+      std::chrono::treat_as_floating_point<
+          typename subsecond_precision::rep>::value
+          ? fractional.count()
+          : std::chrono::duration_cast<subsecond_precision>(fractional).count();
+  const int num_digits = detail::count_digits(subseconds);
 
-  using subsecond_precision = std::chrono::duration<
-      typename std::common_type<typename Duration::rep,
-                                std::chrono::seconds::rep>::type,
-      std::ratio<1, detail::pow10(num_fractional_digits)>>;
-  if (precision > 0) {
+  int leading_zeroes = std::max(0, num_fractional_digits - num_digits);
+  if (precision < 0) {
+    FMT_ASSERT(!std::is_floating_point<typename Duration::rep>::value, "");
+    if (std::ratio_less<typename subsecond_precision::period,
+                        std::chrono::seconds::period>::value) {
+      *out++ = '.';
+      out = std::fill_n(out, leading_zeroes, '0');
+      out = format_decimal<Char>(out, subseconds, num_digits).end;
+    }
+  } else {
     *out++ = '.';
-    auto fractional =
-        detail::abs(d) - std::chrono::duration_cast<std::chrono::seconds>(d);
-    auto subseconds =
-        std::chrono::treat_as_floating_point<
-            typename subsecond_precision::rep>::value
-            ? fractional.count()
-            : std::chrono::duration_cast<subsecond_precision>(fractional)
-                  .count();
-    uint32_or_64_or_128_t<long long> n =
-        to_unsigned(to_nonnegative_int(subseconds, max_value<long long>()));
-    int num_digits = detail::count_digits(n);
-    int zeroes =
-        std::min(std::max(0, num_fractional_digits - num_digits), precision);
-    if (num_fractional_digits > num_digits) out = std::fill_n(out, zeroes, '0');
-    int remaining = precision - zeroes;
+    leading_zeroes = std::min(leading_zeroes, precision);
+    out = std::fill_n(out, leading_zeroes, '0');
+    int remaining = precision - leading_zeroes;
     if (remaining < num_digits) {
-      n /= to_unsigned(detail::pow10(to_unsigned(num_digits - remaining)));
-      out = format_decimal<Char>(out, n, remaining).end;
+      subseconds /=
+          to_unsigned(detail::pow10(to_unsigned(num_digits - remaining)));
+      out = format_decimal<Char>(out, subseconds, remaining).end;
       return;
     }
-    out = format_decimal<Char>(out, n, num_digits).end;
+    out = format_decimal<Char>(out, subseconds, num_digits).end;
     remaining -= num_digits;
     out = std::fill_n(out, remaining, '0');
   }
@@ -1098,47 +1075,26 @@ void write_fractional_seconds(OutputIt& out, Duration d, int precision) {
 // number of digits. We cannot pass the Duration here, as we explicitly need to
 // pass the Rep value in the chrono_formatter.
 template <typename Duration>
-void write_floating_seconds(memory_buffer& buf, Duration duration) {
-  using Rep =  typename Duration::rep;
-  FMT_ASSERT(std::is_floating_point<Rep>::value, "");
-  auto num_fractional_digits =
-      count_fractional_digits<Duration::period::num,
-                              Duration::period::den>::value;
-  // For non-integer values, we ensure at least 6 digits to get microsecond
-  // precision.
-  auto val = duration.count();
-  if (num_fractional_digits < 6 &&
-      static_cast<Rep>(std::round(val)) != val)
-    num_fractional_digits = 6;
-
-  format_to(
-      std::back_inserter(buf), runtime("{:.{}f}"),
-      std::fmod(val *
-                    static_cast<Rep>(Duration::period::num) /
-                    static_cast<Rep>(Duration::period::den),
-                static_cast<Rep>(60)),
-      num_fractional_digits);
-}
-
-template <typename Duration>
 void write_floating_seconds(memory_buffer& buf, Duration duration,
-                            int precision) {
-  using Rep =  typename Duration::rep;
-  if (precision < 0) {
-    write_floating_seconds(buf, duration);
-    return;
+                            int num_fractional_digits = -1) {
+  using rep = typename Duration::rep;
+  FMT_ASSERT(std::is_floating_point<rep>::value, "");
+
+  auto val = duration.count();
+
+  if (num_fractional_digits < 0) {
+    num_fractional_digits =
+        count_fractional_digits<Duration::period::num,
+                                Duration::period::den>::value;
+    if (num_fractional_digits < 6 && static_cast<rep>(std::round(val)) != val)
+      num_fractional_digits = 6;
   }
 
-  FMT_ASSERT(std::is_floating_point<Rep>::value, "");
-  auto val = duration.count();
-
-  format_to(
-      std::back_inserter(buf), runtime("{:.{}f}"),
-      std::fmod(val *
-                    static_cast<Rep>(Duration::period::num) /
-                    static_cast<Rep>(Duration::period::den),
-                static_cast<Rep>(60)),
-      precision);
+  format_to(std::back_inserter(buf), runtime("{:.{}f}"),
+            std::fmod(val * static_cast<rep>(Duration::period::num) /
+                          static_cast<rep>(Duration::period::den),
+                      static_cast<rep>(60)),
+            num_fractional_digits);
 }
 
 template <typename OutputIt, typename Char,
@@ -1578,8 +1534,7 @@ class tm_writer {
 };
 
 struct chrono_format_checker : null_chrono_spec_handler<chrono_format_checker> {
-  bool is_floating_point = false;
-  bool has_precision = false;
+  bool has_precision_integral = false;
 
   FMT_NORETURN void unsupported() { FMT_THROW(format_error("no date")); }
 
@@ -1594,7 +1549,7 @@ struct chrono_format_checker : null_chrono_spec_handler<chrono_format_checker> {
   FMT_CONSTEXPR void on_iso_time() {}
   FMT_CONSTEXPR void on_am_pm() {}
   FMT_CONSTEXPR void on_duration_value() const {
-    if (has_precision && !is_floating_point) {
+    if (has_precision_integral) {
       FMT_THROW(format_error("precision not allowed for this argument type"));
     }
   }
@@ -2073,9 +2028,8 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     begin = detail::parse_width(begin, end, handler);
     if (begin == end) return {begin, begin};
     auto checker = detail::chrono_format_checker();
-    checker.is_floating_point = std::is_floating_point<Rep>::value;
     if (*begin == '.') {
-      checker.has_precision = true;
+      checker.has_precision_integral = !std::is_floating_point<Rep>::value;
       begin = detail::parse_precision(begin, end, handler);
     }
     if (begin != end && *begin == 'L') {
