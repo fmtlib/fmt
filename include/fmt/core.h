@@ -408,13 +408,13 @@ FMT_CONSTEXPR auto to_unsigned(Int value) ->
   return static_cast<typename std::make_unsigned<Int>::type>(value);
 }
 
-FMT_MSC_WARNING(suppress : 4566) constexpr unsigned char micro[] = "\u00B5";
+FMT_MSC_WARNING(suppress : 4566) constexpr unsigned char section[] = "\u00A7";
 
 constexpr auto is_utf8() -> bool {
   // Avoid buggy sign extensions in MSVC's constant evaluation mode (#2297).
   using uchar = unsigned char;
-  return FMT_UNICODE || (sizeof(micro) == 3 && uchar(micro[0]) == 0xC2 &&
-                         uchar(micro[1]) == 0xB5);
+  return FMT_UNICODE || (sizeof(section) == 3 && uchar(section[0]) == 0xC2 &&
+                         uchar(section[1]) == 0xA7);
 }
 FMT_END_DETAIL_NAMESPACE
 
