@@ -466,7 +466,7 @@ TEST(chrono_test, format_default_fp) {
 
 TEST(chrono_test, format_precision) {
   EXPECT_THROW_MSG(
-      (void)fmt::format(runtime("{:.2}"), std::chrono::seconds(42)),
+      (void)fmt::format(runtime("{:.2%Q}"), std::chrono::seconds(42)),
       fmt::format_error, "precision not allowed for this argument type");
   EXPECT_EQ("1ms", fmt::format("{:.0}", dms(1.234)));
   EXPECT_EQ("1.2ms", fmt::format("{:.1}", dms(1.234)));
@@ -611,12 +611,28 @@ TEST(chrono_test, cpp20_duration_subsecond_support) {
   EXPECT_EQ(fmt::format("{:%S}", std::chrono::nanoseconds{-13420148734}),
             "-13.420148734");
   EXPECT_EQ(fmt::format("{:%S}", std::chrono::milliseconds{1234}), "01.234");
+  // Check subsecond presision modifier.
+  EXPECT_EQ(fmt::format("{:.6%S}", std::chrono::nanoseconds{1234}),
+            "00.000001");
+  EXPECT_EQ(fmt::format("{:.18%S}", std::chrono::nanoseconds{1234}),
+            "00.000001234000000000");
+  EXPECT_EQ(fmt::format("{:.{}%S}", std::chrono::nanoseconds{1234}, 6),
+            "00.000001");
+  EXPECT_EQ(fmt::format("{:.6%S}", std::chrono::milliseconds{1234}),
+            "01.234000");
+  EXPECT_EQ(fmt::format("{:.6%S}", std::chrono::milliseconds{-1234}),
+            "-01.234000");
+  EXPECT_EQ(fmt::format("{:.3%S}", std::chrono::seconds{1234}), "34.000");
+  EXPECT_EQ(fmt::format("{:.3%S}", std::chrono::hours{1234}), "00.000");
+  EXPECT_EQ(fmt::format("{:.5%S}", dms(1.234)), "00.00123");
+  EXPECT_EQ(fmt::format("{:.8%S}", dms(1.234)), "00.00123400");
   {
     // Check that {:%H:%M:%S} is equivalent to {:%T}.
     auto dur = std::chrono::milliseconds{3601234};
     auto formatted_dur = fmt::format("{:%T}", dur);
     EXPECT_EQ(formatted_dur, "01:00:01.234");
     EXPECT_EQ(fmt::format("{:%H:%M:%S}", dur), formatted_dur);
+    EXPECT_EQ(fmt::format("{:.6%H:%M:%S}", dur), "01:00:01.234000");
   }
   using nanoseconds_dbl = std::chrono::duration<double, std::nano>;
   EXPECT_EQ(fmt::format("{:%S}", nanoseconds_dbl{-123456789}), "-00.123456789");
@@ -630,6 +646,7 @@ TEST(chrono_test, cpp20_duration_subsecond_support) {
     auto formatted_dur = fmt::format("{:%T}", dur);
     EXPECT_EQ(formatted_dur, "-00:01:39.123456789");
     EXPECT_EQ(fmt::format("{:%H:%M:%S}", dur), formatted_dur);
+    EXPECT_EQ(fmt::format("{:.3%H:%M:%S}", dur), "-00:01:39.123");
   }
   // Check that durations with precision greater than std::chrono::seconds have
   // fixed precision, and print zeros even if there is no fractional part.
