@@ -1038,12 +1038,13 @@ void write_fractional_seconds(OutputIt& out, Duration d, int precision = -1) {
 
   const auto fractional =
       detail::abs(d) - std::chrono::duration_cast<std::chrono::seconds>(d);
-  uint32_or_64_or_128_t<long long> subseconds =
+  const auto& subseconds =
       std::chrono::treat_as_floating_point<
           typename subsecond_precision::rep>::value
           ? fractional.count()
           : std::chrono::duration_cast<subsecond_precision>(fractional).count();
-  const int num_digits = detail::count_digits(subseconds);
+  auto n = static_cast<uint32_or_64_or_128_t<long long>>(subseconds);
+  const int num_digits = detail::count_digits(n);
 
   int leading_zeroes = std::max(0, num_fractional_digits - num_digits);
   if (precision < 0) {
@@ -1052,7 +1053,7 @@ void write_fractional_seconds(OutputIt& out, Duration d, int precision = -1) {
                         std::chrono::seconds::period>::value) {
       *out++ = '.';
       out = std::fill_n(out, leading_zeroes, '0');
-      out = format_decimal<Char>(out, subseconds, num_digits).end;
+      out = format_decimal<Char>(out, n, num_digits).end;
     }
   } else {
     *out++ = '.';
@@ -1060,12 +1061,11 @@ void write_fractional_seconds(OutputIt& out, Duration d, int precision = -1) {
     out = std::fill_n(out, leading_zeroes, '0');
     int remaining = precision - leading_zeroes;
     if (remaining < num_digits) {
-      subseconds /=
-          to_unsigned(detail::pow10(to_unsigned(num_digits - remaining)));
-      out = format_decimal<Char>(out, subseconds, remaining).end;
+      n /= to_unsigned(detail::pow10(to_unsigned(num_digits - remaining)));
+      out = format_decimal<Char>(out, n, remaining).end;
       return;
     }
-    out = format_decimal<Char>(out, subseconds, num_digits).end;
+    out = format_decimal<Char>(out, n, num_digits).end;
     remaining -= num_digits;
     out = std::fill_n(out, remaining, '0');
   }
