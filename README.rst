@@ -322,8 +322,10 @@ Projects using this library
 
 * `ccache <https://ccache.dev/>`_: a compiler cache
 
-* `ClickHouse <https://github.com/ClickHouse/ClickHouse>`_: analytical database
+* `ClickHouse <https://github.com/ClickHouse/ClickHouse>`_: an analytical database
   management system
+  
+* `Contour <https://github.com/contour-terminal/contour/>`_: a modern terminal emulator
 
 * `CUAUV <https://cuauv.org/>`_: Cornell University's autonomous underwater
   vehicle
@@ -359,6 +361,8 @@ Projects using this library
 * `Kodi <https://kodi.tv/>`_ (formerly xbmc): home theater software
 
 * `Knuth <https://kth.cash/>`_: high-performance Bitcoin full-node
+
+* `libunicode <https://github.com/contour-terminal/libunicode/>`_: a modern C++17 Unicode library
 
 * `MariaDB <https://mariadb.org/>`_: relational database management system
 
