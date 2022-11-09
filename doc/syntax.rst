@@ -327,6 +327,36 @@ points are:
 +---------+--------------------------------------------------------------------+
 | Type    | Meaning                                                            |
 +=========+====================================================================+
+| ``'a'`` | The abbreviated weekday name e.g. "Sat". If the value does not     |
+|         | contain a valid weekday, an exception of type ``format_error`` is  |
+|         | thrown.                                                            |
++---------+--------------------------------------------------------------------+
+| ``'A'`` | The full weekday name e.g. "Saturday". If the value does not       |
+|         | contain a valid weekday, an exception of type ``format_error`` is  |
+|         | thrown.                                                            |
++---------+--------------------------------------------------------------------+
+| ``'b'`` | The abbreviated month name e.g. "Nov". If the value does not       |
+|         | contain a valid month, an exception of type ``format_error`` is    |
+|         | thrown.                                                            |
++---------+--------------------------------------------------------------------+
+| ``'B'`` | The full month name e.g. "November". If the value does not contain |
+|         | a valid month, an exception of type ``format_error`` is thrown.    |
++---------+--------------------------------------------------------------------+
+| ``'c'`` | The date and time representation e.g. "Sat Nov 12 22:04:00 1955".  |
+|         | The modified command ``%Ec`` produces the locale's alternate date  |
+|         | and time representation.                                           |
++---------+--------------------------------------------------------------------+
+| ``'C'`` | The year divided by 100 using floored division e.g. "55". If the   |
+|         | result is a single decimal digit, it is prefixed with 0.           |
+|         | The modified command ``%EC`` produces the locale's alternative     |
+|         | representation of the century.                                     |
++---------+--------------------------------------------------------------------+
+| ``'d'`` | The day of month as a decimal number e.g. "12". If the result is a |
+|         | single decimal digit, it is prefixed with 0. The modified command  |
+|         | ``%Od`` produces the locale's alternative representation.          |
++---------+--------------------------------------------------------------------+
+| ``'D'`` | Equivalent to ``%m/%d/%y``.                                        |
++---------+--------------------------------------------------------------------+
 | ``'H'`` | The hour (24-hour clock) as a decimal number. If the result is a   |
 |         | single digit, it is prefixed with 0. The modified command ``%OH``  |
 |         | produces the locale's alternative representation.                  |
