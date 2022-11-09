@@ -304,8 +304,8 @@ The available presentation types for pointers are:
 Chrono Format Specifications
 ============================
 
-Format specifications for chrono types and ``std::tm`` have the following
-syntax:
+Format specifications for chrono duration and time point types as well as
+``std::tm`` have the following syntax:
 
 .. productionlist:: sf
    chrono_format_spec: [[`fill`]`align`][`width`]["." `precision`][`chrono_specs`]
@@ -321,8 +321,7 @@ syntax:
 Literal chars are copied unchanged to the output. Precision is valid only for
 ``std::chrono::duration`` types with a floating-point representation type.
 
-The available presentation types (*chrono_type*) for chrono durations and time
-points are:
+The available presentation types (*chrono_type*) are:
 
 +---------+--------------------------------------------------------------------+
 | Type    | Meaning                                                            |
@@ -351,19 +350,54 @@ points are:
 |         | The modified command ``%EC`` produces the locale's alternative     |
 |         | representation of the century.                                     |
 +---------+--------------------------------------------------------------------+
-| ``'d'`` | The day of month as a decimal number e.g. "12". If the result is a |
-|         | single decimal digit, it is prefixed with 0. The modified command  |
-|         | ``%Od`` produces the locale's alternative representation.          |
+| ``'d'`` | The day of month as a decimal number. If the result is a single    |
+|         | decimal digit, it is prefixed with 0. The modified command ``%Od`` |
+|         | produces the locale's alternative representation.                  |
 +---------+--------------------------------------------------------------------+
-| ``'D'`` | Equivalent to ``%m/%d/%y``.                                        |
+| ``'D'`` | Equivalent to ``%m/%d/%y`` e.g. "11/12/55".                        |
++---------+--------------------------------------------------------------------+
+| ``'e'`` | The day of month as a decimal number. If the result is a single    |
+|         | decimal digit, it is prefixed with a space. The modified command   |
+|         | ``%Oe`` produces the locale's alternative representation.          |
++---------+--------------------------------------------------------------------+
+| ``'F'`` | Equivalent to ``%Y-%m-%d`` e.g. "1955-11-12".                      |
++---------+--------------------------------------------------------------------+
+| ``'g'`` | The last two decimal digits of the ISO week-based year. If the     |
+|         | result is a single digit it is prefixed by 0.                      |
++---------+--------------------------------------------------------------------+
+| ``'G'`` | The ISO week-based year as a decimal number. If the result is less |
+|         | than four digits it is left-padded with 0 to four digits.          |
++---------+--------------------------------------------------------------------+
+| ``'h'`` | Equivalent to ``%b`` e.g. "Nov".                                   |
 +---------+--------------------------------------------------------------------+
 | ``'H'`` | The hour (24-hour clock) as a decimal number. If the result is a   |
 |         | single digit, it is prefixed with 0. The modified command ``%OH``  |
 |         | produces the locale's alternative representation.                  |
 +---------+--------------------------------------------------------------------+
+| ``'I'`` | The hour (12-hour clock) as a decimal number. If the result is a   |
+|         | single digit, it is prefixed with 0. The modified command ``%OI``  |
+|         | produces the locale's alternative representation.                  |
++---------+--------------------------------------------------------------------+
+| ``'j'`` | If the type being formatted is a specialization of duration, the   |
+|         | decimal number of days without padding. Otherwise, the day of the  |
+|         | year as a decimal number. Jan 1 is 001. If the result is less than |
+|         | three digits, it is left-padded with 0 to three digits.            |
++---------+--------------------------------------------------------------------+
+| ``'m'`` | The month as a decimal number. Jan is 01. If the result is a       |
+|         | single digit, it is prefixed with 0. The modified command ``%Om``  |
+|         | produces the locale's alternative representation.                  |
++---------+--------------------------------------------------------------------+
 | ``'M'`` | The minute as a decimal number. If the result is a single digit,   |
 |         | it is prefixed with 0. The modified command ``%OM`` produces the   |
 |         | locale's alternative representation.                               |
++---------+--------------------------------------------------------------------+
+| ``'n'`` | A new-line character.                                              |
++---------+--------------------------------------------------------------------+
+| ``'p'`` | The AM/PM designations associated with a 12-hour clock.            |
++---------+--------------------------------------------------------------------+
+| ``'q'`` | The duration's unit suffix.                                        |
++---------+--------------------------------------------------------------------+
+| ``'Q'`` | The duration's numeric value (as if extracted via ``.count()``).   |
 +---------+--------------------------------------------------------------------+
 | ``'S'`` | Seconds as a decimal number. If the number of seconds is less than |
 |         | 10, the result is prefixed with 0. If the precision of the input   |
