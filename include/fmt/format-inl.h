@@ -1040,8 +1040,7 @@ template <> struct cache_accessor<double> {
       {0xfcf62c1dee382c42, 0x46729e03dd9ed7b6},
       {0x9e19db92b4e31ba9, 0x6c07a2c26a8346d2},
       {0xc5a05277621be293, 0xc7098b7305241886},
-      { 0xf70867153aa2db38,
-        0xb8cbee4fc66d1ea8 }
+      {0xf70867153aa2db38, 0xb8cbee4fc66d1ea8}
 #else
       {0xff77b1fcbebcdc4f, 0x25e8e89c13bb0f7b},
       {0xce5d73ff402d98e3, 0xfb0a3d212dc81290},
@@ -1425,17 +1424,6 @@ small_divisor_case_label:
   return ret_value;
 }
 }  // namespace dragonbox
-
-#ifdef _MSC_VER
-FMT_FUNC auto fmt_snprintf(char* buf, size_t size, const char* fmt, ...)
-    -> int {
-  auto args = va_list();
-  va_start(args, fmt);
-  int result = vsnprintf_s(buf, size, _TRUNCATE, fmt, args);
-  va_end(args);
-  return result;
-}
-#endif
 }  // namespace detail
 
 template <> struct formatter<detail::bigint> {
