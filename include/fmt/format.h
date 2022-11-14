@@ -360,6 +360,10 @@ class uint128_fallback {
       -> uint128_fallback {
     return {lhs.hi_ & rhs.hi_, lhs.lo_ & rhs.lo_};
   }
+  friend constexpr auto operator~(const uint128_fallback& n)
+      -> uint128_fallback {
+    return {~n.hi_, ~n.lo_};
+  }
   friend auto operator+(const uint128_fallback& lhs,
                         const uint128_fallback& rhs) -> uint128_fallback {
     auto result = uint128_fallback(lhs);
@@ -397,6 +401,10 @@ class uint128_fallback {
     FMT_ASSERT(new_hi >= hi_, "");
     lo_ = new_lo;
     hi_ = new_hi;
+  }
+  FMT_CONSTEXPR void operator&=(uint128_fallback n) {
+    lo_ &= n.lo_;
+    hi_ &= n.hi_;
   }
 
   FMT_CONSTEXPR20 uint128_fallback& operator+=(uint64_t n) noexcept {
