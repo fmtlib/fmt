@@ -1508,6 +1508,12 @@ TEST(format_test, format_pointer) {
   std::unique_ptr<int> up(new int(1));
   EXPECT_EQ(fmt::format("{}", fmt::ptr(up.get())),
             fmt::format("{}", fmt::ptr(up)));
+  struct custom_deleter {
+    void operator()(int* p) const { delete p; }
+  };
+  std::unique_ptr<int, custom_deleter> upcd(new int(1));
+  EXPECT_EQ(fmt::format("{}", fmt::ptr(upcd.get())),
+            fmt::format("{}", fmt::ptr(upcd)));
   std::shared_ptr<int> sp(new int(1));
   EXPECT_EQ(fmt::format("{}", fmt::ptr(sp.get())),
             fmt::format("{}", fmt::ptr(sp)));

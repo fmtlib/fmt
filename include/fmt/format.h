@@ -3888,7 +3888,8 @@ template <typename T> auto ptr(T p) -> const void* {
   static_assert(std::is_pointer<T>::value, "");
   return detail::bit_cast<const void*>(p);
 }
-template <typename T> auto ptr(const std::unique_ptr<T>& p) -> const void* {
+template <typename T, typename Deleter>
+auto ptr(const std::unique_ptr<T, Deleter>& p) -> const void* {
   return p.get();
 }
 template <typename T> auto ptr(const std::shared_ptr<T>& p) -> const void* {
