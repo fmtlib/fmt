@@ -1,5 +1,7 @@
 add_subdirectory(gtest)
 
+include(CheckSymbolExists)
+
 set(TEST_MAIN_SRC test-main.cc gtest-extra.cc gtest-extra.h util.cc)
 add_library(test-main STATIC ${TEST_MAIN_SRC})
 target_include_directories(test-main PUBLIC
@@ -75,7 +77,14 @@ if (MSVC)
 endif()
 add_fmt_test(printf-test)
 add_fmt_test(ranges-test ranges-odr-test.cc)
-add_fmt_test(scan-test)
+
+check_symbol_exists(strptime "time.h" HAVE_STRPTIME)
+if (HAVE_STRPTIME)
+  add_fmt_test(scan-test)
+else()
+  message(WARNING "Skipping scan-test due to missing strptime dependency.")
+endif ()
+
 add_fmt_test(std-test)
 try_compile(compile_result_unused
             ${CMAKE_CURRENT_BINARY_DIR}
