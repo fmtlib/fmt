@@ -13778,7 +13778,7 @@ UntypedActionResultHolderBase* UntypedFunctionMockerBase::UntypedInvokeWith(
 
   UntypedActionResultHolderBase* result = nullptr;
 
-  auto perform_action = [&] {
+  auto perform_action = [&, this] {
     return untyped_action == nullptr
                ? this->UntypedPerformDefaultAction(untyped_args, ss.str())
                : this->UntypedPerformAction(untyped_action, untyped_args);
