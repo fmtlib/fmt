@@ -24,17 +24,6 @@ function(join result_var)
   set(${result_var} "${result}" PARENT_SCOPE)
 endfunction()
 
-function(enable_module target)
-  if (MSVC)
-    set(BMI ${CMAKE_CURRENT_BINARY_DIR}/${target}.ifc)
-    target_compile_options(${target}
-      PRIVATE /interface /ifcOutput ${BMI}
-      INTERFACE /reference fmt=${BMI})
-  endif ()
-  set_target_properties(${target} PROPERTIES ADDITIONAL_CLEAN_FILES ${BMI})
-  set_source_files_properties(${BMI} PROPERTIES GENERATED ON)
-endfunction()
-
 include(CMakeParseArguments)
 
 # Sets a cache variable with a docstring joined from multiple arguments:
@@ -84,7 +73,9 @@ option(FMT_MODULE "Build a module instead of a traditional library." OFF)
 option(FMT_SYSTEM_HEADERS "Expose headers with marking them as system." OFF)
 
 set(FMT_CAN_MODULE OFF)
-if (CMAKE_CXX_STANDARD GREATER 17 AND NOT MSVC)
+if (CMAKE_CXX_STANDARD GREATER 17 AND
+    # msvc 16.10-pre4
+    MSVC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 19.29.30035)
   set(FMT_CAN_MODULE ON)
 endif ()
 if (NOT FMT_CAN_MODULE)
@@ -236,7 +227,9 @@ if (FMT_PEDANTIC)
   target_compile_options(fmt PRIVATE ${PEDANTIC_COMPILE_FLAGS})
 endif ()
 if (FMT_MODULE)
-  enable_module(fmt)
+  if (MSVC)
+    target_compile_options(fmt PRIVATE "/interface")
+  endif ()
 endif ()
 
 target_compile_features(fmt INTERFACE ${FMT_REQUIRED_FEATURES})
