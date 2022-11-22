@@ -123,11 +123,11 @@ template <typename T, typename C> class is_variant_formattable_ {
   template <std::size_t... Is>
   static std::conjunction<
       is_formattable<std::variant_alternative_t<Is, T>, C>...>
-      check(std::index_sequence<Is...>);
+      fmt_check(std::index_sequence<Is...>);
 
  public:
   static constexpr const bool value =
-      decltype(check(variant_index_sequence<T>{}))::value;
+      decltype(fmt_check(variant_index_sequence<T>{}))::value;
 };
 
 template <typename Char, typename OutputIt, typename T>

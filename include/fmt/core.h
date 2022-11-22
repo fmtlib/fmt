@@ -1354,10 +1354,10 @@ inline auto format_as(std::byte b) -> unsigned char {
 template <typename T> struct has_format_as {
   template <typename U, typename V = decltype(format_as(U())),
             FMT_ENABLE_IF(std::is_enum<U>::value&& std::is_integral<V>::value)>
-  static auto check(U*) -> std::true_type;
-  static auto check(...) -> std::false_type;
+  static auto fmt_check(U*) -> std::true_type;
+  static auto fmt_check(...) -> std::false_type;
 
-  enum { value = decltype(check(static_cast<T*>(nullptr)))::value };
+  enum { value = decltype(fmt_check(static_cast<T*>(nullptr)))::value };
 };
 
 // Maps formatting arguments to core types.

@@ -50,43 +50,43 @@ OutputIterator copy(wchar_t ch, OutputIterator out) {
 // Returns true if T has a std::string-like interface, like std::string_view.
 template <typename T> class is_std_string_like {
   template <typename U>
-  static auto check(U* p)
+  static auto fmt_check(U* p)
       -> decltype((void)p->find('a'), p->length(), (void)p->data(), int());
-  template <typename> static void check(...);
+  template <typename> static void fmt_check(...);
 
  public:
   static constexpr const bool value =
       is_string<T>::value ||
       std::is_convertible<T, std_string_view<char>>::value ||
-      !std::is_void<decltype(check<T>(nullptr))>::value;
+      !std::is_void<decltype(fmt_check<T>(nullptr))>::value;
 };
 
 template <typename Char>
 struct is_std_string_like<fmt::basic_string_view<Char>> : std::true_type {};
 
 template <typename T> class is_map {
-  template <typename U> static auto check(U*) -> typename U::mapped_type;
-  template <typename> static void check(...);
+  template <typename U> static auto fmt_check(U*) -> typename U::mapped_type;
+  template <typename> static void fmt_check(...);
 
  public:
 #ifdef FMT_FORMAT_MAP_AS_LIST
   static constexpr const bool value = false;
 #else
   static constexpr const bool value =
-      !std::is_void<decltype(check<T>(nullptr))>::value;
+      !std::is_void<decltype(fmt_check<T>(nullptr))>::value;
 #endif
 };
 
 template <typename T> class is_set {
-  template <typename U> static auto check(U*) -> typename U::key_type;
-  template <typename> static void check(...);
+  template <typename U> static auto fmt_check(U*) -> typename U::key_type;
+  template <typename> static void fmt_check(...);
 
  public:
 #ifdef FMT_FORMAT_SET_AS_LIST
   static constexpr const bool value = false;
 #else
   static constexpr const bool value =
-      !std::is_void<decltype(check<T>(nullptr))>::value && !is_map<T>::value;
+      !std::is_void<decltype(fmt_check<T>(nullptr))>::value && !is_map<T>::value;
 #endif
 };
 
@@ -170,12 +170,12 @@ struct is_range_<T, void>
 // tuple_size and tuple_element check.
 template <typename T> class is_tuple_like_ {
   template <typename U>
-  static auto check(U* p) -> decltype(std::tuple_size<U>::value, int());
-  template <typename> static void check(...);
+  static auto fmt_check(U* p) -> decltype(std::tuple_size<U>::value, int());
+  template <typename> static void fmt_check(...);
 
  public:
   static constexpr const bool value =
-      !std::is_void<decltype(check<T>(nullptr))>::value;
+      !std::is_void<decltype(fmt_check<T>(nullptr))>::value;
 };
 
 // Check for integer_sequence
@@ -220,11 +220,11 @@ template <typename T, typename C> class is_tuple_formattable_<T, C, true> {
       index_sequence<Is...>{},
       integer_sequence<
           bool, (is_formattable<typename std::tuple_element<Is, T>::type,
-                                C>::value)...>{})) check(index_sequence<Is...>);
+                                C>::value)...>{})) fmt_check(index_sequence<Is...>);
 
  public:
   static constexpr const bool value =
-      decltype(check(tuple_index_sequence<T>{}))::value;
+      decltype(fmt_check(tuple_index_sequence<T>{}))::value;
 };
 
 template <class Tuple, class F, size_t... Is>
