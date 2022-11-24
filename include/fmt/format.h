@@ -3147,9 +3147,9 @@ FMT_CONSTEXPR20 void format_hexfloat(Float value, int precision,
 
   constexpr auto leading_shift = ((num_xdigits - 1) * 4);
   const auto leading_mask = carrier_uint(0xF) << leading_shift;
-  const auto leading_v =
+  const auto leading_xdigit =
       static_cast<uint32_t>((f.f & leading_mask) >> leading_shift);
-  if (leading_v > 1) f.e -= (32 - FMT_BUILTIN_CLZ(leading_v) - 1);
+  if (leading_xdigit > 1) f.e -= (32 - FMT_BUILTIN_CLZ(leading_xdigit) - 1);
 
   int print_xdigits = num_xdigits - 1;
   if (precision >= 0 && print_xdigits > precision) {
