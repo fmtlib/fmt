@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1...3.18)
+cmake_minimum_required(VERSION 3.8...3.18)
 
 project(fmt-link CXX)
 

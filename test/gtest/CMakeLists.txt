@@ -9,6 +9,7 @@ add_library(gtest STATIC
   gmock-gtest-all.cc gmock/gmock.h gtest/gtest.h gtest/gtest-spi.h)
 target_compile_definitions(gtest PUBLIC GTEST_HAS_STD_WSTRING=1)
 target_include_directories(gtest SYSTEM PUBLIC .)
+target_compile_features(gtest PUBLIC cxx_std_11)
 
 find_package(Threads)
 if (Threads_FOUND)
@@ -17,9 +18,10 @@ else ()
   target_compile_definitions(gtest PUBLIC GTEST_HAS_PTHREAD=0)
 endif ()
 
-# Workaround GTest bug https://github.com/google/googletest/issues/705.
-fmt_check_cxx_compiler_flag(
-  -fno-delete-null-pointer-checks HAVE_FNO_DELETE_NULL_POINTER_CHECKS)
+# Workaround GTest bug https://github.com/google/googletest/issues/705
+if (NOT MSVC)
+  check_cxx_compiler_flag(-fno-delete-null-pointer-checks HAVE_FNO_DELETE_NULL_POINTER_CHECKS)
+endif ()
 if (HAVE_FNO_DELETE_NULL_POINTER_CHECKS)
   target_compile_options(gtest PUBLIC -fno-delete-null-pointer-checks)
 endif ()
