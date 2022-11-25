@@ -1,6 +1,6 @@
 # Test if compile errors are produced where necessary.
 
-cmake_minimum_required(VERSION 3.1...3.18)
+cmake_minimum_required(VERSION 3.8...3.18)
 project(compile-error-test CXX)
 
 set(fmt_headers "
@@ -64,7 +64,7 @@ function (run_tests)
   ")
 
   file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/test/CMakeLists.txt" "
-    cmake_minimum_required(VERSION 3.1...3.18)
+    cmake_minimum_required(VERSION 3.8...3.18)
     project(tests CXX)
     add_subdirectory(${FMT_DIR} fmt)
     ${cmake_targets}

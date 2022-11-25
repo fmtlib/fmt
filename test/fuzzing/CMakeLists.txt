@@ -22,7 +22,7 @@ function(add_fuzzer source)
   if (FMT_FUZZ_LDFLAGS)
     target_link_libraries(${name} PRIVATE ${FMT_FUZZ_LDFLAGS})
   endif ()
-  target_compile_features(${name} PRIVATE cxx_generic_lambdas)
+  target_compile_features(${name} PRIVATE cxx_std_14)
 endfunction()
 
 foreach (source chrono-duration.cc chrono-timepoint.cc float.cc named-arg.cc one-arg.cc two-args.cc)

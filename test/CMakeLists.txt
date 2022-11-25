@@ -109,7 +109,7 @@ if (FMT_MODULE)
   # If module support is present the module tests require a
   # test-only module to be built from {fmt}
   add_library(test-module OBJECT ${CMAKE_SOURCE_DIR}/src/fmt.cc)
-  target_compile_features(test-module PUBLIC ${FMT_REQUIRED_FEATURES})
+  target_compile_features(test-module PUBLIC cxx_std_11)
   target_include_directories(test-module PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
   enable_module(test-module)
