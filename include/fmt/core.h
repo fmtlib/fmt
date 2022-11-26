@@ -3121,8 +3121,8 @@ struct formatter<T, Char,
                          U == detail::type::cstring_type ||
                          U == detail::type::char_type),
                         int> = 0>
-  FMT_CONSTEXPR void set_debug_format() {
-    specs_.type = presentation_type::debug;
+  FMT_CONSTEXPR void set_debug_format(bool set = true) {
+    specs_.type = set ? presentation_type::debug : presentation_type::none;
   }
 
   template <typename FormatContext>

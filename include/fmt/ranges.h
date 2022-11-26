@@ -440,20 +440,20 @@ struct range_formatter<
       detail::string_literal<Char, ']'>{};
 
   template <class U>
-  FMT_CONSTEXPR static auto maybe_set_debug_format(U& u, int)
-      -> decltype(u.set_debug_format()) {
-    u.set_debug_format();
+  FMT_CONSTEXPR static auto maybe_set_debug_format(U& u, bool set)
+      -> decltype(u.set_debug_format(set)) {
+    u.set_debug_format(set);
   }
 
   template <class U>
   FMT_CONSTEXPR static void maybe_set_debug_format(U&, ...) {}
 
-  FMT_CONSTEXPR void maybe_set_debug_format() {
-    maybe_set_debug_format(underlying_, 0);
+  FMT_CONSTEXPR void maybe_set_debug_format(bool set) {
+    maybe_set_debug_format(underlying_, set);
   }
 
  public:
-  FMT_CONSTEXPR range_formatter() {}
+  FMT_CONSTEXPR range_formatter() { maybe_set_debug_format(true); }
 
   FMT_CONSTEXPR auto underlying() -> detail::range_formatter_type<Char, T>& {
     return underlying_;
@@ -473,25 +473,18 @@ struct range_formatter<
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
     auto it = ctx.begin();
     auto end = ctx.end();
-    if (it == end || *it == '}') {
-      maybe_set_debug_format();
-      return underlying_.parse(ctx);
-    }
 
-    if (*it == 'n') {
+    if (it != end && *it == 'n') {
       set_brackets({}, {});
       ++it;
     }
 
-    if (*it == '}') {
-      maybe_set_debug_format();
-      ctx.advance_to(it);
-      return underlying_.parse(ctx);
-    }
+    if (it == end || *it == '}') return it;
 
     if (*it != ':')
       FMT_THROW(format_error("no other top-level range formatters supported"));
 
+    maybe_set_debug_format(false);
     custom_specs_ = true;
     ++it;
     ctx.advance_to(it);
