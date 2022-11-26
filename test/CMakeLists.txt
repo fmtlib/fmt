@@ -78,11 +78,10 @@ endif()
 add_fmt_test(printf-test)
 add_fmt_test(ranges-test ranges-odr-test.cc)
 
+add_fmt_test(scan-test)
 check_symbol_exists(strptime "time.h" HAVE_STRPTIME)
 if (HAVE_STRPTIME)
-  add_fmt_test(scan-test)
-else()
-  message(WARNING "Skipping scan-test due to missing strptime dependency.")
+  target_compile_definitions(scan-test PRIVATE FMT_HAVE_STRPTIME)
 endif ()
 
 add_fmt_test(std-test)
