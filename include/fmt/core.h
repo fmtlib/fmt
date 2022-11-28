@@ -2695,8 +2695,10 @@ FMT_CONSTEXPR FMT_INLINE void parse_format_string(
         handler.on_text(begin, p - 1);
         begin = p = parse_replacement_field(p - 1, end, handler);
       } else if (c == '}') {
-        if (p == end || *p != '}')
-          return handler.on_error("unmatched '}' in format string");
+        if (p == end || *p != '}') {
+          handler.on_error("unmatched '}' in format string");
+          return;
+        }
         handler.on_text(begin, p);
         begin = ++p;
       }
@@ -2709,11 +2711,15 @@ FMT_CONSTEXPR FMT_INLINE void parse_format_string(
       if (from == to) return;
       for (;;) {
         const Char* p = nullptr;
-        if (!find<IS_CONSTEXPR>(from, to, Char('}'), p))
-          return handler_.on_text(from, to);
+        if (!find<IS_CONSTEXPR>(from, to, Char('}'), p)) {
+          handler_.on_text(from, to);
+          return;
+        }
         ++p;
-        if (p == to || *p != '}')
-          return handler_.on_error("unmatched '}' in format string");
+        if (p == to || *p != '}') {
+          handler_.on_error("unmatched '}' in format string");
+          return;
+        }
         handler_.on_text(from, p);
         from = p + 1;
       }
@@ -2724,8 +2730,10 @@ FMT_CONSTEXPR FMT_INLINE void parse_format_string(
     // Doing two passes with memchr (one for '{' and another for '}') is up to
     // 2.5x faster than the naive one-pass implementation on big format strings.
     const Char* p = begin;
-    if (*begin != '{' && !find<IS_CONSTEXPR>(begin + 1, end, Char('{'), p))
-      return write(begin, end);
+    if (*begin != '{' && !find<IS_CONSTEXPR>(begin + 1, end, Char('{'), p)) {
+      write(begin, end);
+      return;
+    }
     write(begin, p);
     begin = parse_replacement_field(p, end, handler);
   }
