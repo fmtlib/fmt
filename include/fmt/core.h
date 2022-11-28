@@ -641,7 +641,6 @@ FMT_NORETURN FMT_API void throw_format_error(const char* message);
 
 struct error_handler {
   constexpr error_handler() = default;
-  constexpr error_handler(const error_handler&) = default;
 
   // This function is intentionally not constexpr to give a compile-time error.
   FMT_NORETURN void on_error(const char* message) {
@@ -2218,9 +2217,6 @@ template <typename Char> class specs_setter {
   explicit FMT_CONSTEXPR specs_setter(basic_format_specs<Char>& specs)
       : specs_(specs) {}
 
-  FMT_CONSTEXPR specs_setter(const specs_setter& other)
-      : specs_(other.specs_) {}
-
   FMT_CONSTEXPR void on_align(align_t align) { specs_.align = align; }
   FMT_CONSTEXPR void on_fill(basic_string_view<Char> fill) {
     specs_.fill = fill;
@@ -2254,11 +2250,6 @@ class dynamic_specs_handler
   FMT_CONSTEXPR dynamic_specs_handler(dynamic_format_specs<char_type>& specs,
                                       ParseContext& ctx)
       : specs_setter<char_type>(specs), specs_(specs), context_(ctx) {}
-
-  FMT_CONSTEXPR dynamic_specs_handler(const dynamic_specs_handler& other)
-      : specs_setter<char_type>(other),
-        specs_(other.specs_),
-        context_(other.context_) {}
 
   template <typename Id> FMT_CONSTEXPR void on_dynamic_width(Id arg_id) {
     specs_.width_ref = make_arg_ref(arg_id);
