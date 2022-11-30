@@ -353,6 +353,16 @@ TEST(format_impl_test, count_digits) {
   test_count_digits<uint64_t>();
 }
 
+TEST(format_impl_test, countl_zero) {
+  constexpr auto num_bits = fmt::detail::num_bits<uint32_t>();
+  uint32_t n = 1u;
+  for (int i = 1; i < num_bits - 1; i++) {
+    n <<= 1;
+    EXPECT_EQ(fmt::detail::countl_zero(n - 1), num_bits - i);
+    EXPECT_EQ(fmt::detail::countl_zero(n), num_bits - i - 1);
+  }
+}
+
 #if FMT_USE_FLOAT128
 TEST(format_impl_test, write_float128) {
   auto s = std::string();
