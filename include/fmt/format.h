@@ -472,6 +472,16 @@ inline auto bit_cast(const From& from) -> To {
   return result;
 }
 
+FMT_CONSTEXPR20 inline auto countl_zero(uint32_t n) -> int {
+#ifdef FMT_BUILTIN_CLZ
+  if (!is_constant_evaluated()) return FMT_BUILTIN_CLZ(n);
+#endif
+  int lz = 0;
+  constexpr uint32_t msb_mask = 1u << (num_bits<uint32_t>() - 1);
+  for (; (n & msb_mask) == 0; n <<= 1) lz++;
+  return lz;
+}
+
 FMT_INLINE void assume(bool condition) {
   (void)condition;
 #if FMT_HAS_BUILTIN(__builtin_assume) && !FMT_ICC_VERSION
@@ -3149,7 +3159,7 @@ FMT_CONSTEXPR20 void format_hexfloat(Float value, int precision,
   const auto leading_mask = carrier_uint(0xF) << leading_shift;
   const auto leading_xdigit =
       static_cast<uint32_t>((f.f & leading_mask) >> leading_shift);
-  if (leading_xdigit > 1) f.e -= (32 - FMT_BUILTIN_CLZ(leading_xdigit) - 1);
+  if (leading_xdigit > 1) f.e -= (32 - countl_zero(leading_xdigit) - 1);
 
   int print_xdigits = num_xdigits - 1;
   if (precision >= 0 && print_xdigits > precision) {
