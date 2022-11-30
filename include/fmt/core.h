@@ -2975,7 +2975,7 @@ class format_string_checker {
 #if FMT_USE_NONTYPE_TEMPLATE_ARGS
     auto index = get_arg_index_by_name<Args...>(id);
     if (index == invalid_arg_index) on_error("named argument is not found");
-    return context_.check_arg_id(index), index;
+    return index;
 #else
     (void)id;
     on_error("compile-time checks for named arguments require C++20 support");

@@ -1907,6 +1907,7 @@ TEST(format_test, compile_time_string) {
   EXPECT_EQ("", fmt::format(FMT_STRING("")));
   EXPECT_EQ("", fmt::format(FMT_STRING(""), "arg"_a = 42));
   EXPECT_EQ("42", fmt::format(FMT_STRING("{answer}"), "answer"_a = Answer()));
+  EXPECT_EQ("1 2", fmt::format(FMT_STRING("{} {two}"), 1, "two"_a = 2));
 #endif
 
   (void)static_with_null;
