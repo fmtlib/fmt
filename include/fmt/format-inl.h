@@ -1040,7 +1040,8 @@ template <> struct cache_accessor<double> {
       {0xfcf62c1dee382c42, 0x46729e03dd9ed7b6},
       {0x9e19db92b4e31ba9, 0x6c07a2c26a8346d2},
       {0xc5a05277621be293, 0xc7098b7305241886},
-      {0xf70867153aa2db38, 0xb8cbee4fc66d1ea8}
+      { 0xf70867153aa2db38,
+        0xb8cbee4fc66d1ea8 }
 #else
       {0xff77b1fcbebcdc4f, 0x25e8e89c13bb0f7b},
       {0xce5d73ff402d98e3, 0xfb0a3d212dc81290},
@@ -1180,6 +1181,8 @@ bool is_left_endpoint_integer_shorter_interval(int exponent) noexcept {
 // Remove trailing zeros from n and return the number of zeros removed (float)
 FMT_INLINE int remove_trailing_zeros(uint32_t& n) noexcept {
   FMT_ASSERT(n != 0, "");
+  // Modular inverse of 5 (mod 2^32): (mod_inv_5 * 5) mod 2^32 = 1.
+  // See https://github.com/fmtlib/fmt/issues/3163 for more details.
   const uint32_t mod_inv_5 = 0xcccccccd;
   const uint32_t mod_inv_25 = mod_inv_5 * mod_inv_5;
 
@@ -1195,7 +1198,6 @@ FMT_INLINE int remove_trailing_zeros(uint32_t& n) noexcept {
     n = q;
     s |= 1;
   }
-
   return s;
 }
 
