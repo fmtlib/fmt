@@ -208,7 +208,7 @@ further details refer to the `source
 <https://github.com/fmtlib/format-benchmark/blob/master/src/tinyformat-test.cc>`_.
 
 {fmt} is up to 20-30x faster than ``std::ostringstream`` and ``sprintf`` on
-IEEE754 `float` and `double` formatting (`dtoa-benchmark <https://github.com/fmtlib/dtoa-benchmark>`_)
+IEEE754 ``float`` and ``double`` formatting (`dtoa-benchmark <https://github.com/fmtlib/dtoa-benchmark>`_)
 and faster than `double-conversion <https://github.com/google/double-conversion>`_ and
 `ryu <https://github.com/ulfjack/ryu>`_:
 
