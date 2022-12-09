@@ -427,14 +427,33 @@ inline void do_write(buffer<Char>& buf, const std::tm& time,
   os.imbue(loc);
   using iterator = std::ostreambuf_iterator<Char>;
   const auto& facet = std::use_facet<std::time_put<Char, iterator>>(loc);
+  // std::time_put may not support  '%Ez', '%Oz'.
+  bool modified_z = false;
+  if (format == 'z' && modifier != '\0') {
+    modified_z = true;
+    modifier = '\0';
+  }
   auto end = facet.put(os, os, Char(' '), &time, format, modifier);
   if (end.failed()) FMT_THROW(format_error("failed to format time"));
+  if (modified_z) {
+    // Insert ':' into ISO 8601 formatted timezone
+    auto size = buf.size();
+    buf.push_back(*(buf.end() - 1));
+    Char* p = buf.data();
+    p[size - 1] = p[size - 2];
+    p[size - 2] = Char(':');
+  }
 }
 
 template <typename Char, typename OutputIt,
           FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
 auto write(OutputIt out, const std::tm& time, const std::locale& loc,
            char format, char modifier = 0) -> OutputIt {
+  if (format == 'z' && modifier != '\0') {
+    auto&& buf = basic_memory_buffer<Char>();
+    do_write<Char>(buf, time, loc, format, modifier);
+    return copy_str<Char>(buf.begin(), buf.end(), out);
+  }
   auto&& buf = get_buffer<Char>(out);
   do_write<Char>(buf, time, loc, format, modifier);
   return get_iterator(buf, out);
@@ -747,7 +766,7 @@ FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
       handler.on_duration_unit();
       break;
     case 'z':
-      handler.on_utc_offset();
+      handler.on_utc_offset(numeric_system::standard);
       break;
     case 'Z':
       handler.on_tz_name();
@@ -774,6 +793,9 @@ FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
         break;
       case 'X':
         handler.on_loc_time(numeric_system::alternative);
+        break;
+      case 'z':
+        handler.on_utc_offset(numeric_system::alternative);
         break;
       default:
         FMT_THROW(format_error("invalid format"));
@@ -822,6 +844,9 @@ FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
         break;
       case 'S':
         handler.on_second(numeric_system::alternative);
+        break;
+      case 'z':
+        handler.on_utc_offset(numeric_system::alternative);
         break;
       default:
         FMT_THROW(format_error("invalid format"));
@@ -874,7 +899,7 @@ template <typename Derived> struct null_chrono_spec_handler {
   FMT_CONSTEXPR void on_am_pm() { unsupported(); }
   FMT_CONSTEXPR void on_duration_value() { unsupported(); }
   FMT_CONSTEXPR void on_duration_unit() { unsupported(); }
-  FMT_CONSTEXPR void on_utc_offset() { unsupported(); }
+  FMT_CONSTEXPR void on_utc_offset(numeric_system) { unsupported(); }
   FMT_CONSTEXPR void on_tz_name() { unsupported(); }
 };
 
@@ -915,7 +940,7 @@ struct tm_format_checker : null_chrono_spec_handler<tm_format_checker> {
   FMT_CONSTEXPR void on_24_hour_time() {}
   FMT_CONSTEXPR void on_iso_time() {}
   FMT_CONSTEXPR void on_am_pm() {}
-  FMT_CONSTEXPR void on_utc_offset() {}
+  FMT_CONSTEXPR void on_utc_offset(numeric_system) {}
   FMT_CONSTEXPR void on_tz_name() {}
 };
 
@@ -1218,7 +1243,7 @@ class tm_writer {
     }
   }
 
-  void write_utc_offset(long offset) {
+  void write_utc_offset(long offset, numeric_system ns) {
     if (offset < 0) {
       *out_++ = '-';
       offset = -offset;
@@ -1227,14 +1252,15 @@ class tm_writer {
     }
     offset /= 60;
     write2(static_cast<int>(offset / 60));
+    if (ns != numeric_system::standard) *out_++ = ':';
     write2(static_cast<int>(offset % 60));
   }
   template <typename T, FMT_ENABLE_IF(has_member_data_tm_gmtoff<T>::value)>
-  void format_utc_offset_impl(const T& tm) {
-    write_utc_offset(tm.tm_gmtoff);
+  void format_utc_offset_impl(const T& tm, numeric_system ns) {
+    write_utc_offset(tm.tm_gmtoff, ns);
   }
   template <typename T, FMT_ENABLE_IF(!has_member_data_tm_gmtoff<T>::value)>
-  void format_utc_offset_impl(const T& tm) {
+  void format_utc_offset_impl(const T& tm, numeric_system ns) {
 #if defined(_WIN32) && defined(_UCRT)
 #  if FMT_USE_TZSET
     tzset_once();
@@ -1246,10 +1272,10 @@ class tm_writer {
       _get_dstbias(&dstbias);
       offset += dstbias;
     }
-    write_utc_offset(-offset);
+    write_utc_offset(-offset, ns);
 #else
     ignore_unused(tm);
-    format_localized('z');
+    format_localized('z', ns == numeric_system::standard ? '\0' : 'E');
 #endif
   }
 
@@ -1375,7 +1401,7 @@ class tm_writer {
     out_ = copy_str<Char>(std::begin(buf) + offset, std::end(buf), out_);
   }
 
-  void on_utc_offset() { format_utc_offset_impl(tm_); }
+  void on_utc_offset(numeric_system ns) { format_utc_offset_impl(tm_, ns); }
   void on_tz_name() { format_tz_name_impl(tm_); }
 
   void on_year(numeric_system ns) {
@@ -1807,7 +1833,7 @@ struct chrono_formatter {
   void on_loc_time(numeric_system) {}
   void on_us_date() {}
   void on_iso_date() {}
-  void on_utc_offset() {}
+  void on_utc_offset(numeric_system) {}
   void on_tz_name() {}
   void on_year(numeric_system) {}
   void on_short_year(numeric_system) {}
