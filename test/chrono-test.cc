@@ -7,6 +7,7 @@
 
 #include "fmt/chrono.h"
 
+#include <algorithm>
 #include <ctime>
 #include <vector>
 
@@ -289,6 +290,21 @@ TEST(chrono_test, time_point) {
     auto fmt_spec = fmt::format("{{:{}}}", spec);
     EXPECT_EQ(sys_output, fmt::format(fmt::runtime(fmt_spec), t1));
     EXPECT_EQ(sys_output, fmt::format(fmt::runtime(fmt_spec), tm));
+  }
+
+  if (std::find(spec_list.cbegin(), spec_list.cend(), "%z") !=
+      spec_list.cend()) {
+    auto t = std::chrono::system_clock::to_time_t(t1);
+    auto tm = *std::localtime(&t);
+
+    auto sys_output = system_strftime("%z", &tm);
+    sys_output.insert(sys_output.end() - 2, 1, ':');
+
+    EXPECT_EQ(sys_output, fmt::format("{:%Ez}", t1));
+    EXPECT_EQ(sys_output, fmt::format("{:%Ez}", tm));
+
+    EXPECT_EQ(sys_output, fmt::format("{:%Oz}", t1));
+    EXPECT_EQ(sys_output, fmt::format("{:%Oz}", tm));
   }
 }
 
