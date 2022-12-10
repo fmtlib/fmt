@@ -427,33 +427,14 @@ inline void do_write(buffer<Char>& buf, const std::tm& time,
   os.imbue(loc);
   using iterator = std::ostreambuf_iterator<Char>;
   const auto& facet = std::use_facet<std::time_put<Char, iterator>>(loc);
-  // std::time_put may not support  '%Ez', '%Oz'.
-  bool modified_z = false;
-  if (format == 'z' && modifier != '\0') {
-    modified_z = true;
-    modifier = '\0';
-  }
   auto end = facet.put(os, os, Char(' '), &time, format, modifier);
   if (end.failed()) FMT_THROW(format_error("failed to format time"));
-  if (modified_z) {
-    // Insert ':' into ISO 8601 formatted timezone
-    auto size = buf.size();
-    buf.push_back(*(buf.end() - 1));
-    Char* p = buf.data();
-    p[size - 1] = p[size - 2];
-    p[size - 2] = Char(':');
-  }
 }
 
 template <typename Char, typename OutputIt,
           FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
 auto write(OutputIt out, const std::tm& time, const std::locale& loc,
            char format, char modifier = 0) -> OutputIt {
-  if (format == 'z' && modifier != '\0') {
-    auto&& buf = basic_memory_buffer<Char>();
-    do_write<Char>(buf, time, loc, format, modifier);
-    return copy_str<Char>(buf.begin(), buf.end(), out);
-  }
   auto&& buf = get_buffer<Char>(out);
   do_write<Char>(buf, time, loc, format, modifier);
   return get_iterator(buf, out);
@@ -1274,8 +1255,15 @@ class tm_writer {
     }
     write_utc_offset(-offset, ns);
 #else
-    ignore_unused(tm);
-    format_localized('z', ns == numeric_system::standard ? '\0' : 'E');
+    if (ns == numeric_system::standard) return format_localized('z');
+
+    // Extract timezone offset from timezone conversion functions.
+    std::tm gtm = tm;
+    std::time_t gt = std::mktime(&gtm);
+    std::tm ltm = gmtime(gt);
+    std::time_t lt = std::mktime(&ltm);
+    long offset = gt - lt;
+    write_utc_offset(offset, ns);
 #endif
   }
 
