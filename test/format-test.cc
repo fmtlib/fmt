@@ -1679,7 +1679,8 @@ template <> struct formatter<date> {
   }
 
   auto format(const date& d, format_context& ctx) -> decltype(ctx.out()) {
-    format_to(ctx.out(), "{}-{}-{}", d.year(), d.month(), d.day());
+    // Namespace-qualify to avoid ambiguity with std::format_to.
+    fmt::format_to(ctx.out(), "{}-{}-{}", d.year(), d.month(), d.day());
     return ctx.out();
   }
 };
