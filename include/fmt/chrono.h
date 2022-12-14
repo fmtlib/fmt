@@ -1053,7 +1053,7 @@ void write_fractional_seconds(OutputIt& out, Duration d, int precision = -1) {
   auto n = static_cast<uint32_or_64_or_128_t<long long>>(subseconds);
   const int num_digits = detail::count_digits(n);
 
-  int leading_zeroes = std::max(0, num_fractional_digits - num_digits);
+  int leading_zeroes = (std::max)(0, num_fractional_digits - num_digits);
   if (precision < 0) {
     FMT_ASSERT(!std::is_floating_point<typename Duration::rep>::value, "");
     if (std::ratio_less<typename subsecond_precision::period,
@@ -1064,7 +1064,7 @@ void write_fractional_seconds(OutputIt& out, Duration d, int precision = -1) {
     }
   } else {
     *out++ = '.';
-    leading_zeroes = std::min(leading_zeroes, precision);
+    leading_zeroes = (std::min)(leading_zeroes, precision);
     out = std::fill_n(out, leading_zeroes, '0');
     int remaining = precision - leading_zeroes;
     if (remaining != 0 && remaining < num_digits) {
