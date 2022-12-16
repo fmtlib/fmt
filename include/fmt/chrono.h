@@ -22,6 +22,15 @@
 
 FMT_BEGIN_NAMESPACE
 
+// Check if std::chrono::local_t is available.
+#ifndef FMT_USE_LOCAL_TIME
+#  ifdef __cpp_lib_chrono
+#    define FMT_USE_LOCAL_TIME (__cpp_lib_chrono >= 201907L)
+#  else
+#    define FMT_USE_LOCAL_TIME 0
+#  endif
+#endif
+
 // Check if std::chrono::utc_timestamp is available.
 #ifndef FMT_USE_UTC_TIME
 #  ifdef __cpp_lib_chrono
@@ -453,6 +462,7 @@ auto write(OutputIt out, const std::tm& time, const std::locale& loc,
 
 FMT_MODULE_EXPORT_BEGIN
 
+#if FMT_USE_LOCAL_TIME
 /**
   Converts given time since epoch as ``std::time_t`` value into calendar time,
   expressed in local time. Unlike ``std::localtime``, this function is
@@ -494,10 +504,12 @@ inline std::tm localtime(std::time_t time) {
   return lt.tm_;
 }
 
+template<class Duration>
 inline std::tm localtime(
-    std::chrono::time_point<std::chrono::system_clock> time_point) {
-  return localtime(std::chrono::system_clock::to_time_t(time_point));
+    std::chrono::local_time<Duration> time_point) {
+  return localtime(std::chrono::system_clock::to_time_t(std::chrono::current_zone()->to_sys(time_point)));
 }
+#endif
 
 /**
   Converts given time since epoch as ``std::time_t`` value into calendar time,
@@ -2110,6 +2122,37 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
           epoch - std::chrono::duration_cast<std::chrono::seconds>(epoch));
 
       return formatter<std::tm, Char>::do_format(
+          gmtime(std::chrono::time_point_cast<std::chrono::seconds>(val)),
+          ctx, &subsecs);
+    }
+
+    return formatter<std::tm, Char>::format(
+        gmtime(std::chrono::time_point_cast<std::chrono::seconds>(val)),
+        ctx);
+  }
+};
+
+#if FMT_USE_LOCAL_TIME
+template <typename Char, typename Duration>
+struct formatter<std::chrono::local_time<Duration>,
+                 Char> : formatter<std::tm, Char> {
+  FMT_CONSTEXPR formatter() {
+    basic_string_view<Char> default_specs =
+        detail::string_literal<Char, '%', 'F', ' ', '%', 'T'>{};
+    this->do_parse(default_specs.begin(), default_specs.end());
+  }
+
+  template <typename FormatContext>
+  auto format(std::chrono::local_time<Duration> val,
+              FormatContext& ctx) const -> decltype(ctx.out()) {
+    using period = typename Duration::period;
+    if (period::num != 1 || period::den != 1 ||
+        std::is_floating_point<typename Duration::rep>::value) {
+      const auto epoch = val.time_since_epoch();
+      const auto subsecs = std::chrono::duration_cast<Duration>(
+          epoch - std::chrono::duration_cast<std::chrono::seconds>(epoch));
+
+      return formatter<std::tm, Char>::do_format(
           localtime(std::chrono::time_point_cast<std::chrono::seconds>(val)),
           ctx, &subsecs);
     }
@@ -2119,6 +2162,7 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
         ctx);
   }
 };
+#endif
 
 #if FMT_USE_UTC_TIME
 template <typename Char, typename Duration>
