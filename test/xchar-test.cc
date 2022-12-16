@@ -309,7 +309,7 @@ TEST(chrono_test_wchar, time_point) {
 
   for (const auto& spec : spec_list) {
     auto t = std::chrono::system_clock::to_time_t(t1);
-    auto tm = *std::localtime(&t);
+    auto tm = *std::gmtime(&t);
 
     auto sys_output = system_wcsftime(spec, &tm);
 
