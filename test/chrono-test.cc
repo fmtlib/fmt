@@ -507,6 +507,10 @@ TEST(chrono_test, invalid_specs) {
                    "invalid format");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{:%Oq}"), sec), fmt::format_error,
                    "invalid format");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:abc}"), sec), fmt::format_error,
+                   "invalid format");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:.2f}"), sec), fmt::format_error,
+                   "invalid format");
 }
 
 auto format_tm(const std::tm& time, fmt::string_view spec,
