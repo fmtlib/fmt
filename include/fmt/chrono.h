@@ -1551,8 +1551,6 @@ class tm_writer {
 };
 
 struct chrono_format_checker : null_chrono_spec_handler<chrono_format_checker> {
-  bool has_precision_integral = false;
-
   FMT_NORETURN void unsupported() { FMT_THROW(format_error("no date")); }
 
   template <typename Char>
@@ -1565,11 +1563,7 @@ struct chrono_format_checker : null_chrono_spec_handler<chrono_format_checker> {
   FMT_CONSTEXPR void on_24_hour_time() {}
   FMT_CONSTEXPR void on_iso_time() {}
   FMT_CONSTEXPR void on_am_pm() {}
-  FMT_CONSTEXPR void on_duration_value() const {
-    if (has_precision_integral) {
-      FMT_THROW(format_error("precision not allowed for this argument type"));
-    }
-  }
+  FMT_CONSTEXPR void on_duration_value() {}
   FMT_CONSTEXPR void on_duration_unit() {}
 };
 
@@ -2041,7 +2035,8 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     if (begin == end) return {begin, begin};
     auto checker = detail::chrono_format_checker();
     if (*begin == '.') {
-      checker.has_precision_integral = !std::is_floating_point<Rep>::value;
+      if (!std::is_floating_point<Rep>::value)
+        handler.on_error("precision not allowed for this argument type");
       begin = detail::parse_precision(begin, end, handler);
     }
     if (begin != end && *begin == 'L') {
