@@ -304,11 +304,11 @@ The available presentation types for pointers are:
 Chrono Format Specifications
 ============================
 
-Format specifications for chrono duration and time point types as well as
-``std::tm`` have the following syntax:
+Format specifications for chrono time points as well as ``std::tm`` have the
+following syntax:
 
 .. productionlist:: sf
-   chrono_format_spec: [[`fill`]`align`][`width`]["." `precision`][`chrono_specs`]
+   chrono_format_spec: [`chrono_specs`]
    chrono_specs: [`chrono_specs`] `conversion_spec` | `chrono_specs` `literal_char`
    conversion_spec: "%" [`modifier`] `chrono_type`
    literal_char: <a character other than '{', '}' or '%'>
@@ -318,8 +318,14 @@ Format specifications for chrono duration and time point types as well as
               : "q" | "Q" | "r" | "R" | "S" | "t" | "T" | "u" | "U" | "V" |
               : "w" | "W" | "x" | "X" | "y" | "Y" | "z" | "Z" | "%"
 
-Literal chars are copied unchanged to the output. Precision is valid only for
-``std::chrono::duration`` types with a floating-point representation type.
+Literal chars are copied unchanged to the output. For durations, the syntax is:
+
+.. productionlist:: sf
+   chrono_format_spec: [[`fill`]`align`][`width`]["." `precision`][`chrono_specs`]
+   chrono_specs: [`chrono_specs`] `literal_char`
+
+Precision is valid only for ``std::chrono::duration`` types with a
+floating-point representation type.
 
 The available presentation types (*chrono_type*) are:
 
