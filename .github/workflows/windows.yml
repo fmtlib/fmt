@@ -43,6 +43,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Set timezone
+      run: tzutil /s "Ekaterinburg Standard Time"
+
     - name: Create Build Environment
       run: cmake -E make_directory ${{runner.workspace}}/build
 
@@ -77,6 +80,9 @@ jobs:
       matrix:
         sys: [ mingw64, ucrt64 ]
     steps:
+    - name: Set timezone
+      run: tzutil /s "Ekaterinburg Standard Time"
+      shell: cmd
     - uses: msys2/setup-msys2@v2
       with:
         release: false

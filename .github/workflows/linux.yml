@@ -59,6 +59,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Set timezone
+      run: sudo timedatectl set-timezone 'Asia/Yekaterinburg'
+
     - name: Add repositories for older GCC
       run: |
         # Bellow two repos provide GCC 4.8, 5.5 and 6.4
