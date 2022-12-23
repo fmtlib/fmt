@@ -497,7 +497,7 @@ Examples::
   fmt::format("{}", std::vector{10, 20, 30});
   // Result: [10, 20, 30]
   fmt::format("{::#x}", std::vector{10, 20, 30});
-  // Result: [0xa, 0x14, 0x13]
+  // Result: [0xa, 0x14, 0x1e]
   fmt::format("{}", vector{'h', 'e', 'l', 'l', 'o'});
   // Result: ['h', 'e', 'l', 'l', 'o']
   fmt::format("{::}", vector{'h', 'e', 'l', 'l', 'o'});
