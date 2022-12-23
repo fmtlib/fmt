@@ -586,7 +586,6 @@ TEST(core_test, constexpr_parse_format_specs) {
   static_assert(parse_test_specs(".42").precision == 42, "");
   static_assert(parse_test_specs(".{42}").precision_ref.val.index == 42, "");
   static_assert(parse_test_specs("d").type == fmt::presentation_type::dec, "");
-  static_assert(parse_test_specs("{<").res == handler::error, "");
 }
 
 struct test_parse_context {
@@ -652,7 +651,6 @@ TEST(format_test, constexpr_specs_checker) {
   static_assert(check_specs(".42").precision == 42, "");
   static_assert(check_specs(".{42}").precision_ref.val.index == 42, "");
   static_assert(check_specs("d").type == fmt::presentation_type::dec, "");
-  static_assert(check_specs("{<").res == handler::error, "");
 }
 
 struct test_format_string_handler {

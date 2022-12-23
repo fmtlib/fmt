@@ -2020,10 +2020,6 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     }
 
     void on_error(const char* msg) { FMT_THROW(format_error(msg)); }
-    FMT_CONSTEXPR void on_fill(basic_string_view<Char> fill) {
-      f.specs.fill = fill;
-    }
-    FMT_CONSTEXPR void on_align(align_t align) { f.specs.align = align; }
     FMT_CONSTEXPR void on_width(int width) { f.specs.width = width; }
     FMT_CONSTEXPR void on_precision(int _precision) {
       f.precision = _precision;
@@ -2048,8 +2044,11 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
   FMT_CONSTEXPR parse_range do_parse(basic_format_parse_context<Char>& ctx) {
     auto begin = ctx.begin(), end = ctx.end();
     if (begin == end || *begin == '}') return {begin, begin};
-    spec_handler handler{*this, ctx, format_str};
-    begin = detail::parse_align(begin, end, handler);
+    auto handler = spec_handler{*this, ctx, format_str};
+    auto result = detail::parse_align(begin, end);
+    begin = result.end;
+    specs.align = result.align;
+    if (result.fill.size() != 0) specs.fill = result.fill;
     if (begin == end) return {begin, begin};
     begin = detail::parse_width(begin, end, handler);
     if (begin == end) return {begin, begin};

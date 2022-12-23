@@ -2362,11 +2362,18 @@ FMT_CONSTEXPR auto parse_nonnegative_int(const Char*& begin, const Char* end,
              : error_value;
 }
 
-// Parses fill and alignment.
-template <typename Char, typename Handler>
-FMT_CONSTEXPR auto parse_align(const Char* begin, const Char* end,
-                               Handler&& handler) -> const Char* {
+template <typename Char> struct parse_align_result {
+  const Char* end;
+  basic_string_view<Char> fill;
+  align_t align;
+};
+
+// Parses [[fill]align].
+template <typename Char>
+FMT_CONSTEXPR auto parse_align(const Char* begin, const Char* end)
+    -> parse_align_result<Char> {
   FMT_ASSERT(begin != end, "");
+  auto fill = basic_string_view<Char>();
   auto align = align::none;
   auto p = begin + code_point_length(begin);
   if (end - p <= 0) p = begin;
@@ -2381,27 +2388,27 @@ FMT_CONSTEXPR auto parse_align(const Char* begin, const Char* end,
     case '^':
       align = align::center;
       break;
-    default:
-      break;
     }
     if (align != align::none) {
       if (p != begin) {
         auto c = *begin;
-        if (c == '{')
-          return handler.on_error("invalid fill character '{'"), begin;
-        if (c == '}') return begin;
-        handler.on_fill(basic_string_view<Char>(begin, to_unsigned(p - begin)));
+        if (c == '}') return {begin, {}, align::none};
+        if (c == '{') {
+          throw_format_error("invalid fill character '{'");
+          return {begin, {}, align::none};
+        }
+        fill = {begin, to_unsigned(p - begin)};
         begin = p + 1;
-      } else
+      } else {
         ++begin;
-      handler.on_align(align);
+      }
       break;
     } else if (p == begin) {
       break;
     }
     p = begin;
   }
-  return begin;
+  return {begin, fill, align};
 }
 
 template <typename Char> FMT_CONSTEXPR bool is_name_start(Char c) {
@@ -2581,7 +2588,12 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(const Char* begin,
 
   if (begin == end) return begin;
 
-  begin = parse_align(begin, end, handler);
+  auto result = parse_align(begin, end);
+  begin = result.end;
+  if (result.align != align::none) {
+    if (result.fill.size() != 0) handler.on_fill(result.fill);
+    handler.on_align(result.align);
+  }
   if (begin == end) return begin;
 
   // Parse sign.
