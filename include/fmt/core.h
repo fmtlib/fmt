@@ -863,7 +863,7 @@ template <typename Char, typename T, typename U,
 FMT_CONSTEXPR auto copy_str(T* begin, T* end, U* out) -> U* {
   if (is_constant_evaluated()) return copy_str<Char, T*, U*>(begin, end, out);
   auto size = to_unsigned(end - begin);
-  memcpy(out, begin, size * sizeof(U));
+  if (size > 0) memcpy(out, begin, size * sizeof(U));
   return out + size;
 }
 
