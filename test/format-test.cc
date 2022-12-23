@@ -2047,6 +2047,10 @@ TEST(format_test, to_string) {
 #if FMT_USE_FLOAT128
   EXPECT_EQ(fmt::to_string(__float128(0.5)), "0.5");
 #endif
+
+#if defined(FMT_USE_STRING_VIEW) && FMT_CPLUSPLUS >= 201703L
+  EXPECT_EQ(fmt::to_string(std::string_view()), "");
+#endif
 }
 
 TEST(format_test, output_iterators) {
