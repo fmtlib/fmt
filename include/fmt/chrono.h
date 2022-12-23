@@ -2046,9 +2046,10 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     if (begin == end || *begin == '}') return {begin, begin};
     auto handler = spec_handler{*this, ctx, format_str};
     auto result = detail::parse_align(begin, end);
-    begin = result.end;
     specs.align = result.align;
-    if (result.fill.size() != 0) specs.fill = result.fill;
+    auto fill_size = result.end - begin - 1;
+    if (fill_size > 0) specs.fill = {begin, detail::to_unsigned(fill_size)};
+    begin = result.end;
     if (begin == end) return {begin, begin};
     begin = detail::parse_width(begin, end, handler);
     if (begin == end) return {begin, begin};

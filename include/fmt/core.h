@@ -2364,7 +2364,6 @@ FMT_CONSTEXPR auto parse_nonnegative_int(const Char*& begin, const Char* end,
 
 template <typename Char> struct parse_align_result {
   const Char* end;
-  basic_string_view<Char> fill;
   align_t align;
 };
 
@@ -2373,7 +2372,6 @@ template <typename Char>
 FMT_CONSTEXPR auto parse_align(const Char* begin, const Char* end)
     -> parse_align_result<Char> {
   FMT_ASSERT(begin != end, "");
-  auto fill = basic_string_view<Char>();
   auto align = align::none;
   auto p = begin + code_point_length(begin);
   if (end - p <= 0) p = begin;
@@ -2392,12 +2390,11 @@ FMT_CONSTEXPR auto parse_align(const Char* begin, const Char* end)
     if (align != align::none) {
       if (p != begin) {
         auto c = *begin;
-        if (c == '}') return {begin, {}, align::none};
+        if (c == '}') return {begin, align::none};
         if (c == '{') {
           throw_format_error("invalid fill character '{'");
-          return {begin, {}, align::none};
+          return {begin, align::none};
         }
-        fill = {begin, to_unsigned(p - begin)};
         begin = p + 1;
       } else {
         ++begin;
@@ -2408,7 +2405,7 @@ FMT_CONSTEXPR auto parse_align(const Char* begin, const Char* end)
     }
     p = begin;
   }
-  return {begin, fill, align};
+  return {begin, align};
 }
 
 template <typename Char> FMT_CONSTEXPR bool is_name_start(Char c) {
@@ -2589,11 +2586,12 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(const Char* begin,
   if (begin == end) return begin;
 
   auto result = parse_align(begin, end);
-  begin = result.end;
   if (result.align != align::none) {
-    if (result.fill.size() != 0) handler.on_fill(result.fill);
+    auto fill_size = result.end - begin - 1;
+    if (fill_size > 0) handler.on_fill({begin, to_unsigned(fill_size)});
     handler.on_align(result.align);
   }
+  begin = result.end;
   if (begin == end) return begin;
 
   // Parse sign.
