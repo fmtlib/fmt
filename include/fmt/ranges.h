@@ -501,7 +501,6 @@ struct range_formatter<
     auto end = detail::range_end(range);
     for (; it != end; ++it) {
       if (i > 0) out = detail::copy_str<Char>(separator_, out);
-      ;
       ctx.advance_to(out);
       out = underlying_.format(mapper.map(*it), ctx);
       ++i;
