@@ -3603,20 +3603,6 @@ template <typename Char> class specs_handler : public specs_setter<Char> {
   // This is only needed for compatibility with gcc 4.4.
   using format_arg = basic_format_arg<buffer_context<Char>>;
 
-  FMT_CONSTEXPR auto get_arg(auto_id) -> format_arg {
-    return detail::get_arg(context_, parse_context_.next_arg_id());
-  }
-
-  FMT_CONSTEXPR auto get_arg(int arg_id) -> format_arg {
-    parse_context_.check_arg_id(arg_id);
-    return detail::get_arg(context_, arg_id);
-  }
-
-  FMT_CONSTEXPR auto get_arg(basic_string_view<Char> arg_id) -> format_arg {
-    parse_context_.check_arg_id(arg_id);
-    return detail::get_arg(context_, arg_id);
-  }
-
  public:
   FMT_CONSTEXPR specs_handler(basic_format_specs<Char>& specs,
                               basic_format_parse_context<Char>& parse_ctx,

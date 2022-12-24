@@ -2217,8 +2217,6 @@ template <typename Char> struct dynamic_spec {
   };
 };
 
-struct auto_id {};
-
 // A format specifier handler that sets fields in basic_format_specs.
 template <typename Char> class specs_setter {
  protected:
