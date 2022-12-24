@@ -3627,7 +3627,7 @@ template <typename Char> class specs_handler : public specs_setter<Char> {
     return parse_context_;
   }
 
-  FMT_CONSTEXPR void on_dynamic_width(const dynamic_spec<Char>& width) {
+  FMT_CONSTEXPR void on_width(const dynamic_spec<Char>& width) {
     auto arg = format_arg();
     switch (width.kind) {
     case dynamic_spec_kind::none:

@@ -2241,7 +2241,6 @@ template <typename Char> class specs_setter {
     specs_.fill[0] = Char('0');
   }
 
-  FMT_CONSTEXPR void on_width(int width) { specs_.width = width; }
   FMT_CONSTEXPR void on_precision(int precision) {
     specs_.precision = precision;
   }
@@ -2264,7 +2263,7 @@ class dynamic_specs_handler
 
   FMT_CONSTEXPR auto parse_context() -> ParseContext& { return context_; }
 
-  FMT_CONSTEXPR void on_dynamic_width(const dynamic_spec<char_type>& width) {
+  FMT_CONSTEXPR void on_width(const dynamic_spec<char_type>& width) {
     switch (width.kind) {
     case dynamic_spec_kind::none:
       break;
@@ -2666,7 +2665,7 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(const Char* begin,
   }
 
   auto width_result = parse_width(begin, end, handler.parse_context());
-  handler.on_dynamic_width(width_result.width);
+  handler.on_width(width_result.width);
   begin = width_result.end;
   if (begin == end) return begin;
 

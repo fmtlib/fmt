@@ -2020,7 +2020,6 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     }
 
     void on_error(const char* msg) { FMT_THROW(format_error(msg)); }
-    FMT_CONSTEXPR void on_width(int width) { f.specs.width = width; }
     FMT_CONSTEXPR void on_precision(int _precision) {
       f.precision = _precision;
     }

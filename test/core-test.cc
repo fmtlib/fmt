@@ -553,8 +553,7 @@ struct test_format_specs_handler {
   constexpr void on_zero() { res = zero; }
   constexpr void on_localized() { res = loc; }
 
-  constexpr void on_width(int w) { width = w; }
-  constexpr void on_dynamic_width(const fmt::detail::dynamic_spec<char>& spec) {
+  constexpr void on_width(const fmt::detail::dynamic_spec<char>& spec) {
     switch (spec.kind) {
     case fmt::detail::dynamic_spec_kind::none:
       break;
