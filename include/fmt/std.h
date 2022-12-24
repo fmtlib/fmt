@@ -191,8 +191,7 @@ template <typename Char> struct formatter<std::error_code, Char> {
   FMT_CONSTEXPR auto format(const std::error_code& ec, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     auto out = ctx.out();
-    out = detail::write_bytes(out, ec.category().name(),
-                              basic_format_specs<Char>());
+    out = detail::write_bytes(out, ec.category().name(), format_specs<Char>());
     out = detail::write<Char>(out, Char(':'));
     out = detail::write<Char>(out, ec.value());
     return out;
@@ -222,7 +221,7 @@ struct formatter<
   template <typename OutputIt>
   auto format(const std::exception& ex,
               basic_format_context<OutputIt, Char>& ctx) const -> OutputIt {
-    basic_format_specs<Char> spec;
+    format_specs<Char> spec;
     auto out = ctx.out();
     if (!with_typename_)
       return detail::write_bytes(out, string_view(ex.what()), spec);

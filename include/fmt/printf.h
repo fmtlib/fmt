@@ -194,12 +194,10 @@ template <typename Char> struct get_cstring {
 // left alignment if it is negative.
 template <typename Char> class printf_width_handler {
  private:
-  using format_specs = basic_format_specs<Char>;
-
-  format_specs& specs_;
+  format_specs<Char>& specs_;
 
  public:
-  explicit printf_width_handler(format_specs& specs) : specs_(specs) {}
+  explicit printf_width_handler(format_specs<Char>& specs) : specs_(specs) {}
 
   template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
   unsigned operator()(T value) {
@@ -226,7 +224,6 @@ class printf_arg_formatter : public arg_formatter<Char> {
  private:
   using base = arg_formatter<Char>;
   using context_type = basic_printf_context<OutputIt, Char>;
-  using format_specs = basic_format_specs<Char>;
 
   context_type& context_;
 
@@ -237,7 +234,7 @@ class printf_arg_formatter : public arg_formatter<Char> {
   }
 
  public:
-  printf_arg_formatter(OutputIt iter, format_specs& s, context_type& ctx)
+  printf_arg_formatter(OutputIt iter, format_specs<Char>& s, context_type& ctx)
       : base{iter, s, locale_ref()}, context_(ctx) {}
 
   OutputIt operator()(monostate value) { return base::operator()(value); }
@@ -247,7 +244,7 @@ class printf_arg_formatter : public arg_formatter<Char> {
     // MSVC2013 fails to compile separate overloads for bool and Char so use
     // std::is_same instead.
     if (std::is_same<T, Char>::value) {
-      format_specs fmt_specs = this->specs;
+      format_specs<Char> fmt_specs = this->specs;
       if (fmt_specs.type != presentation_type::none &&
           fmt_specs.type != presentation_type::chr) {
         return (*this)(static_cast<int>(value));
@@ -300,8 +297,7 @@ class printf_arg_formatter : public arg_formatter<Char> {
 };
 
 template <typename Char>
-void parse_flags(basic_format_specs<Char>& specs, const Char*& it,
-                 const Char* end) {
+void parse_flags(format_specs<Char>& specs, const Char*& it, const Char* end) {
   for (; it != end; ++it) {
     switch (*it) {
     case '-':
@@ -328,8 +324,8 @@ void parse_flags(basic_format_specs<Char>& specs, const Char*& it,
 }
 
 template <typename Char, typename GetArg>
-int parse_header(const Char*& it, const Char* end,
-                 basic_format_specs<Char>& specs, GetArg get_arg) {
+int parse_header(const Char*& it, const Char* end, format_specs<Char>& specs,
+                 GetArg get_arg) {
   int arg_index = -1;
   Char c = *it;
   if (c >= '0' && c <= '9') {
@@ -401,7 +397,7 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
     out = detail::write(out, basic_string_view<Char>(
                                  start, detail::to_unsigned(it - 1 - start)));
 
-    basic_format_specs<Char> specs;
+    auto specs = format_specs<Char>();
     specs.align = align::right;
 
     // Parse argument index, flags and width.

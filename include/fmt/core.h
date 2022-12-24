@@ -2146,7 +2146,7 @@ enum class presentation_type : unsigned char {
 };
 
 // Format specifiers for built-in and string types.
-template <typename Char> struct basic_format_specs {
+template <typename Char = char> struct format_specs {
   int width;
   int precision;
   presentation_type type;
@@ -2156,7 +2156,7 @@ template <typename Char> struct basic_format_specs {
   bool localized : 1;
   detail::fill_t<Char> fill;
 
-  constexpr basic_format_specs()
+  constexpr format_specs()
       : width(0),
         precision(-1),
         type(presentation_type::none),
@@ -2165,8 +2165,6 @@ template <typename Char> struct basic_format_specs {
         alt(false),
         localized(false) {}
 };
-
-using format_specs = basic_format_specs<char>;
 
 FMT_BEGIN_DETAIL_NAMESPACE
 
@@ -2200,8 +2198,7 @@ template <typename Char> struct arg_ref {
 // Format specifiers with width and precision resolved at formatting rather
 // than parsing time to allow re-using the same parsed specifiers with
 // different sets of arguments (precompilation of format strings).
-template <typename Char>
-struct dynamic_format_specs : basic_format_specs<Char> {
+template <typename Char> struct dynamic_format_specs : format_specs<Char> {
   arg_ref<Char> width_ref;
   arg_ref<Char> precision_ref;
 };
@@ -2217,13 +2214,13 @@ template <typename Char> struct dynamic_spec {
   };
 };
 
-// A format specifier handler that sets fields in basic_format_specs.
+// A format specifier handler that sets fields in format_specs.
 template <typename Char> class specs_setter {
  protected:
-  basic_format_specs<Char>& specs_;
+  format_specs<Char>& specs_;
 
  public:
-  explicit FMT_CONSTEXPR specs_setter(basic_format_specs<Char>& specs)
+  explicit FMT_CONSTEXPR specs_setter(format_specs<Char>& specs)
       : specs_(specs) {}
 
   FMT_CONSTEXPR void on_align(align_t align) { specs_.align = align; }
@@ -2783,7 +2780,7 @@ FMT_CONSTEXPR void check_int_type_spec(presentation_type type,
 
 // Checks char specs and returns true if the type spec is char (and not int).
 template <typename Char, typename ErrorHandler = error_handler>
-FMT_CONSTEXPR auto check_char_specs(const basic_format_specs<Char>& specs,
+FMT_CONSTEXPR auto check_char_specs(const format_specs<Char>& specs,
                                     ErrorHandler&& eh = {}) -> bool {
   if (specs.type != presentation_type::none &&
       specs.type != presentation_type::chr &&
@@ -2815,7 +2812,7 @@ struct float_specs {
 };
 
 template <typename ErrorHandler = error_handler, typename Char>
-FMT_CONSTEXPR auto parse_float_type_spec(const basic_format_specs<Char>& specs,
+FMT_CONSTEXPR auto parse_float_type_spec(const format_specs<Char>& specs,
                                          ErrorHandler&& eh = {})
     -> float_specs {
   auto result = float_specs();
