@@ -799,6 +799,16 @@ TEST(format_test, zero_flag) {
       format_error, "format specifier requires numeric argument");
 }
 
+TEST(format_test, zero_flag_and_align) {
+  // If the 0 character and an align option both appear, the 0 character is ignored.
+  EXPECT_EQ("42   ", fmt::format("{0:<05}", 42));
+  EXPECT_EQ("-42  ", fmt::format("{0:<05}", -42));
+  EXPECT_EQ(" 42  ", fmt::format("{0:^05}", 42));
+  EXPECT_EQ(" -42 ", fmt::format("{0:^05}", -42));
+  EXPECT_EQ("   42", fmt::format("{0:>05}", 42));
+  EXPECT_EQ("  -42", fmt::format("{0:>05}", -42));
+}
+
 TEST(format_test, width) {
   char format_str[buffer_size];
   safe_sprintf(format_str, "{0:%u", UINT_MAX);
@@ -833,7 +843,7 @@ TEST(format_test, width) {
   EXPECT_EQ(fmt::format("{:*^8}", "你好"), "**你好**");
   EXPECT_EQ(fmt::format("{:#6}", 42.0), "  42.0");
   EXPECT_EQ(fmt::format("{:6c}", static_cast<int>('x')), "x     ");
-  EXPECT_EQ(fmt::format("{:>06.0f}", 0.00884311), "000000");
+  EXPECT_EQ(fmt::format("{:>06.0f}", 0.00884311), "     0");
 }
 
 TEST(format_test, runtime_width) {

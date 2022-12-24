@@ -2237,7 +2237,9 @@ template <typename Char> class specs_setter {
   FMT_CONSTEXPR void on_localized() { specs_.localized = true; }
 
   FMT_CONSTEXPR void on_zero() {
-    if (specs_.align == align::none) specs_.align = align::numeric;
+    // If the 0 character and an align option both appear, the 0 character is ignored.
+    if (specs_.align != align::none) return;
+    specs_.align = align::numeric;
     specs_.fill[0] = Char('0');
   }
 
