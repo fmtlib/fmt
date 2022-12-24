@@ -2948,8 +2948,7 @@ FMT_CONSTEXPR auto get_arg_index_by_name(basic_string_view<Char> name) -> int {
   return invalid_arg_index;
 }
 
-template <typename Char, typename ErrorHandler, typename... Args>
-class format_string_checker {
+template <typename Char, typename... Args> class format_string_checker {
  private:
   using parse_context_type = compile_parse_context<Char>;
   static constexpr int num_args = sizeof...(Args);
@@ -3019,8 +3018,8 @@ template <typename... Args, typename S,
           FMT_ENABLE_IF(is_compile_string<S>::value)>
 void check_format_string(S format_str) {
   FMT_CONSTEXPR auto s = basic_string_view<typename S::char_type>(format_str);
-  using checker = format_string_checker<typename S::char_type, error_handler,
-                                        remove_cvref_t<Args>...>;
+  using checker =
+      format_string_checker<typename S::char_type, remove_cvref_t<Args>...>;
   FMT_CONSTEXPR bool invalid_format =
       (parse_format_string<true>(s, checker(s)), true);
   ignore_unused(invalid_format);
@@ -3171,8 +3170,8 @@ template <typename Char, typename... Args> class basic_format_string {
 #ifdef FMT_HAS_CONSTEVAL
     if constexpr (detail::count_named_args<Args...>() ==
                   detail::count_statically_named_args<Args...>()) {
-      using checker = detail::format_string_checker<Char, detail::error_handler,
-                                                    remove_cvref_t<Args>...>;
+      using checker =
+          detail::format_string_checker<Char, remove_cvref_t<Args>...>;
       detail::parse_format_string<true>(str_, checker(s));
     }
 #else
