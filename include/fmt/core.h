@@ -2206,6 +2206,17 @@ struct dynamic_format_specs : basic_format_specs<Char> {
   arg_ref<Char> precision_ref;
 };
 
+enum class dynamic_spec_kind { none, value, index, name };
+
+// A format specifier that can be specified dynamically such as width.
+template <typename Char> struct dynamic_spec {
+  dynamic_spec_kind kind;
+  union {
+    int value;
+    basic_string_view<Char> name;
+  };
+};
+
 struct auto_id {};
 
 // A format specifier handler that sets fields in basic_format_specs.
@@ -2251,8 +2262,22 @@ class dynamic_specs_handler
                                       ParseContext& ctx)
       : specs_setter<char_type>(specs), specs_(specs), context_(ctx) {}
 
-  template <typename Id> FMT_CONSTEXPR void on_dynamic_width(Id arg_id) {
-    specs_.width_ref = make_arg_ref(arg_id);
+  FMT_CONSTEXPR auto parse_context() -> ParseContext& { return context_; }
+
+  FMT_CONSTEXPR void on_dynamic_width(const dynamic_spec<char_type>& width) {
+    switch (width.kind) {
+    case dynamic_spec_kind::none:
+      break;
+    case dynamic_spec_kind::value:
+      specs_.width = width.value;
+      break;
+    case dynamic_spec_kind::index:
+      specs_.width_ref = arg_ref_type(width.value);
+      break;
+    case dynamic_spec_kind::name:
+      specs_.width_ref = arg_ref_type(width.name);
+      break;
+    }
   }
 
   template <typename Id> FMT_CONSTEXPR void on_dynamic_precision(Id arg_id) {
@@ -2284,8 +2309,6 @@ class dynamic_specs_handler
   FMT_CONSTEXPR auto make_arg_ref(basic_string_view<char_type> arg_id)
       -> arg_ref_type {
     context_.check_arg_id(arg_id);
-    basic_string_view<char_type> format_str(
-        context_.begin(), to_unsigned(context_.end() - context_.begin()));
     return arg_ref_type(arg_id);
   }
 };
@@ -2451,38 +2474,56 @@ FMT_CONSTEXPR FMT_INLINE auto parse_arg_id(const Char* begin, const Char* end,
   return begin;
 }
 
-template <typename Char, typename Handler>
-FMT_CONSTEXPR auto parse_width(const Char* begin, const Char* end,
-                               Handler&& handler) -> const Char* {
-  using detail::auto_id;
-  struct width_adapter {
-    Handler& handler;
+template <typename Char> struct parse_width_result {
+  const Char* end;
+  dynamic_spec<Char> width;
+};
 
-    FMT_CONSTEXPR void operator()() { handler.on_dynamic_width(auto_id()); }
-    FMT_CONSTEXPR void operator()(int id) { handler.on_dynamic_width(id); }
+template <typename Char>
+FMT_CONSTEXPR auto parse_width(const Char* begin, const Char* end,
+                               basic_format_parse_context<Char>& ctx)
+    -> parse_width_result<Char> {
+  struct id_handler {
+    basic_format_parse_context<Char>& ctx;
+    dynamic_spec<Char> spec;
+
+    FMT_CONSTEXPR void operator()() {
+      spec.kind = dynamic_spec_kind::index;
+      spec.value = ctx.next_arg_id();
+      ctx.check_dynamic_spec(spec.value);
+    }
+    FMT_CONSTEXPR void operator()(int id) {
+      spec.kind = dynamic_spec_kind::index;
+      spec.value = id;
+      ctx.check_arg_id(id);
+      ctx.check_dynamic_spec(id);
+    }
     FMT_CONSTEXPR void operator()(basic_string_view<Char> id) {
-      handler.on_dynamic_width(id);
+      spec.kind = dynamic_spec_kind::name;
+      spec.name = id;
+      ctx.check_arg_id(id);
     }
     FMT_CONSTEXPR void on_error(const char* message) {
-      if (message) handler.on_error(message);
+      if (message) throw_format_error("invalid format string");
     }
   };
 
   FMT_ASSERT(begin != end, "");
   if ('0' <= *begin && *begin <= '9') {
-    int width = parse_nonnegative_int(begin, end, -1);
-    if (width != -1)
-      handler.on_width(width);
-    else
-      handler.on_error("number is too big");
+    int value = parse_nonnegative_int(begin, end, -1);
+    if (value != -1) return {begin, {dynamic_spec_kind::value, {value}}};
+    throw_format_error("number is too big");
   } else if (*begin == '{') {
     ++begin;
-    if (begin != end) begin = parse_arg_id(begin, end, width_adapter{handler});
-    if (begin == end || *begin != '}')
-      return handler.on_error("invalid format string"), begin;
-    ++begin;
+    auto handler = id_handler{ctx, {dynamic_spec_kind::none, {}}};
+    if (begin != end) begin = parse_arg_id(begin, end, handler);
+    if (begin != end && *begin == '}') {
+      ++begin;
+      return {begin, handler.spec};
+    }
+    throw_format_error("invalid format string");
   }
-  return begin;
+  return {begin, {dynamic_spec_kind::none, {}}};
 }
 
 template <typename Char, typename Handler>
@@ -2585,13 +2626,13 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(const Char* begin,
 
   if (begin == end) return begin;
 
-  auto result = parse_align(begin, end);
-  if (result.align != align::none) {
-    auto fill_size = result.end - begin - 1;
+  auto align_result = parse_align(begin, end);
+  if (align_result.align != align::none) {
+    auto fill_size = align_result.end - begin - 1;
     if (fill_size > 0) handler.on_fill({begin, to_unsigned(fill_size)});
-    handler.on_align(result.align);
+    handler.on_align(align_result.align);
   }
-  begin = result.end;
+  begin = align_result.end;
   if (begin == end) return begin;
 
   // Parse sign.
@@ -2624,7 +2665,9 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(const Char* begin,
     if (++begin == end) return begin;
   }
 
-  begin = parse_width(begin, end, handler);
+  auto width_result = parse_width(begin, end, handler.parse_context());
+  handler.on_dynamic_width(width_result.width);
+  begin = width_result.end;
   if (begin == end) return begin;
 
   // Parse precision.

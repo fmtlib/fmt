@@ -3623,9 +3623,27 @@ template <typename Char> class specs_handler : public specs_setter<Char> {
                               buffer_context<Char>& ctx)
       : specs_setter<Char>(specs), parse_context_(parse_ctx), context_(ctx) {}
 
-  template <typename Id> FMT_CONSTEXPR void on_dynamic_width(Id arg_id) {
-    this->specs_.width = get_dynamic_spec<width_checker>(
-        get_arg(arg_id), context_.error_handler());
+  FMT_CONSTEXPR auto parse_context() -> basic_format_parse_context<Char>& {
+    return parse_context_;
+  }
+
+  FMT_CONSTEXPR void on_dynamic_width(const dynamic_spec<Char>& width) {
+    auto arg = format_arg();
+    switch (width.kind) {
+    case dynamic_spec_kind::none:
+      return;
+    case dynamic_spec_kind::value:
+      this->specs_.width = width.value;
+      return;
+    case dynamic_spec_kind::index:
+      arg = detail::get_arg(context_, width.value);
+      break;
+    case dynamic_spec_kind::name:
+      arg = detail::get_arg(context_, width.name);
+      break;
+    }
+    this->specs_.width =
+        get_dynamic_spec<width_checker>(arg, context_.error_handler());
   }
 
   template <typename Id> FMT_CONSTEXPR void on_dynamic_precision(Id arg_id) {

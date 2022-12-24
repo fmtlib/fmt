@@ -524,6 +524,8 @@ TEST(format_test, constexpr_parse_arg_id) {
 }
 
 struct test_format_specs_handler {
+  fmt::detail::compile_parse_context<char> ctx =
+      fmt::detail::compile_parse_context<char>({}, 43, nullptr);
   enum result { none, hash, zero, loc, error };
   result res = none;
 
@@ -542,6 +544,8 @@ struct test_format_specs_handler {
   constexpr test_format_specs_handler(const test_format_specs_handler& other) =
       default;
 
+  constexpr auto parse_context() -> fmt::format_parse_context& { return ctx; }
+
   constexpr void on_align(fmt::align_t a) { alignment = a; }
   constexpr void on_fill(fmt::string_view f) { fill = f[0]; }
   constexpr void on_sign(fmt::sign_t s) { sign = s; }
@@ -550,9 +554,20 @@ struct test_format_specs_handler {
   constexpr void on_localized() { res = loc; }
 
   constexpr void on_width(int w) { width = w; }
-  constexpr void on_dynamic_width(fmt::detail::auto_id) {}
-  constexpr void on_dynamic_width(int index) { width_ref = index; }
-  constexpr void on_dynamic_width(string_view) {}
+  constexpr void on_dynamic_width(const fmt::detail::dynamic_spec<char>& spec) {
+    switch (spec.kind) {
+    case fmt::detail::dynamic_spec_kind::none:
+      break;
+    case fmt::detail::dynamic_spec_kind::value:
+      width = spec.value;
+      break;
+    case fmt::detail::dynamic_spec_kind::index:
+      width_ref = spec.value;
+      break;
+    case fmt::detail::dynamic_spec_kind::name:
+      break;
+    }
+  }
 
   constexpr void on_precision(int p) { precision = p; }
   constexpr void on_dynamic_precision(fmt::detail::auto_id) {}
@@ -588,25 +603,13 @@ TEST(core_test, constexpr_parse_format_specs) {
   static_assert(parse_test_specs("d").type == fmt::presentation_type::dec, "");
 }
 
-struct test_parse_context {
-  using char_type = char;
-
-  constexpr int next_arg_id() { return 11; }
-  template <typename Id> FMT_CONSTEXPR void check_arg_id(Id) {}
-  FMT_CONSTEXPR void check_dynamic_spec(int) {}
-
-  constexpr const char* begin() { return nullptr; }
-  constexpr const char* end() { return nullptr; }
-
-  void on_error(const char*) {}
-};
-
 template <size_t N>
 constexpr fmt::detail::dynamic_format_specs<char> parse_dynamic_specs(
     const char (&s)[N]) {
   auto specs = fmt::detail::dynamic_format_specs<char>();
-  auto ctx = test_parse_context();
-  auto h = fmt::detail::dynamic_specs_handler<test_parse_context>(specs, ctx);
+  auto ctx = fmt::detail::compile_parse_context<char>({}, 43, nullptr);
+  auto h =
+      fmt::detail::dynamic_specs_handler<fmt::format_parse_context>(specs, ctx);
   parse_format_specs(s, s + N - 1, h);
   return specs;
 }
@@ -620,10 +623,10 @@ TEST(format_test, constexpr_dynamic_specs_handler) {
   static_assert(parse_dynamic_specs("#").alt, "");
   static_assert(parse_dynamic_specs("0").align == fmt::align::numeric, "");
   static_assert(parse_dynamic_specs("42").width == 42, "");
-  static_assert(parse_dynamic_specs("{}").width_ref.val.index == 11, "");
+  static_assert(parse_dynamic_specs("{}").width_ref.val.index == 0, "");
   static_assert(parse_dynamic_specs("{42}").width_ref.val.index == 42, "");
   static_assert(parse_dynamic_specs(".42").precision == 42, "");
-  static_assert(parse_dynamic_specs(".{}").precision_ref.val.index == 11, "");
+  static_assert(parse_dynamic_specs(".{}").precision_ref.val.index == 0, "");
   static_assert(parse_dynamic_specs(".{42}").precision_ref.val.index == 42, "");
   static_assert(parse_dynamic_specs("d").type == fmt::presentation_type::dec,
                 "");

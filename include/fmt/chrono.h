@@ -2026,10 +2026,6 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     }
     FMT_CONSTEXPR void end_precision() {}
 
-    template <typename Id> FMT_CONSTEXPR void on_dynamic_width(Id arg_id) {
-      f.width_ref = make_arg_ref(arg_id);
-    }
-
     template <typename Id> FMT_CONSTEXPR void on_dynamic_precision(Id arg_id) {
       f.precision_ref = make_arg_ref(arg_id);
     }
@@ -2045,14 +2041,32 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     auto begin = ctx.begin(), end = ctx.end();
     if (begin == end || *begin == '}') return {begin, begin};
     auto handler = spec_handler{*this, ctx, format_str};
-    auto result = detail::parse_align(begin, end);
-    specs.align = result.align;
-    auto fill_size = result.end - begin - 1;
+
+    auto align_result = detail::parse_align(begin, end);
+    specs.align = align_result.align;
+    auto fill_size = align_result.end - begin - 1;
     if (fill_size > 0) specs.fill = {begin, detail::to_unsigned(fill_size)};
-    begin = result.end;
+    begin = align_result.end;
     if (begin == end) return {begin, begin};
-    begin = detail::parse_width(begin, end, handler);
+
+    auto width_result = detail::parse_width(begin, end, ctx);
+    auto width = width_result.width;
+    switch (width.kind) {
+    case detail::dynamic_spec_kind::none:
+      break;
+    case detail::dynamic_spec_kind::value:
+      specs.width = width.value;
+      break;
+    case detail::dynamic_spec_kind::index:
+      width_ref = arg_ref_type(width.value);
+      break;
+    case detail::dynamic_spec_kind::name:
+      width_ref = arg_ref_type(width.name);
+      break;
+    }
+    begin = width_result.end;
     if (begin == end) return {begin, begin};
+
     auto checker = detail::chrono_format_checker();
     if (*begin == '.') {
       checker.has_precision_integral = !std::is_floating_point<Rep>::value;
