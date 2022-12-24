@@ -469,7 +469,7 @@ template <class charT> struct formatter<std::complex<double>, charT> {
     detail::specs_checker<handler_type> handler(handler_type(specs_, ctx),
                                                 detail::type::string_type);
     auto it = parse_format_specs(ctx.begin(), ctx.end(), handler);
-    detail::parse_float_type_spec(specs_, ctx.error_handler());
+    detail::parse_float_type_spec(specs_, detail::error_handler());
     return it;
   }
 

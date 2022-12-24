@@ -659,8 +659,7 @@ template <typename S> using char_t = typename detail::char_t_impl<S>::type;
   You can use the ``format_parse_context`` type alias for ``char`` instead.
   \endrst
  */
-template <typename Char, typename ErrorHandler = detail::error_handler>
-class basic_format_parse_context : private ErrorHandler {
+template <typename Char> class basic_format_parse_context {
  private:
   basic_string_view<Char> format_str_;
   int next_arg_id_;
@@ -672,9 +671,8 @@ class basic_format_parse_context : private ErrorHandler {
   using iterator = typename basic_string_view<Char>::iterator;
 
   explicit constexpr basic_format_parse_context(
-      basic_string_view<Char> format_str, ErrorHandler eh = {},
-      int next_arg_id = 0)
-      : ErrorHandler(eh), format_str_(format_str), next_arg_id_(next_arg_id) {}
+      basic_string_view<Char> format_str, int next_arg_id = 0)
+      : format_str_(format_str), next_arg_id_(next_arg_id) {}
 
   /**
     Returns an iterator to the beginning of the format string range being
@@ -700,7 +698,8 @@ class basic_format_parse_context : private ErrorHandler {
    */
   FMT_CONSTEXPR auto next_arg_id() -> int {
     if (next_arg_id_ < 0) {
-      on_error("cannot switch from manual to automatic argument indexing");
+      detail::throw_format_error(
+          "cannot switch from manual to automatic argument indexing");
       return 0;
     }
     int id = next_arg_id_++;
@@ -714,7 +713,8 @@ class basic_format_parse_context : private ErrorHandler {
    */
   FMT_CONSTEXPR void check_arg_id(int id) {
     if (next_arg_id_ > 0) {
-      on_error("cannot switch from automatic to manual argument indexing");
+      detail::throw_format_error(
+          "cannot switch from automatic to manual argument indexing");
       return;
     }
     next_arg_id_ = -1;
@@ -722,44 +722,37 @@ class basic_format_parse_context : private ErrorHandler {
   }
   FMT_CONSTEXPR void check_arg_id(basic_string_view<Char>) {}
   FMT_CONSTEXPR void check_dynamic_spec(int arg_id);
-
-  FMT_CONSTEXPR void on_error(const char* message) {
-    ErrorHandler::on_error(message);
-  }
-
-  constexpr auto error_handler() const -> ErrorHandler { return *this; }
 };
 
 using format_parse_context = basic_format_parse_context<char>;
 
 FMT_BEGIN_DETAIL_NAMESPACE
 // A parse context with extra data used only in compile-time checks.
-template <typename Char, typename ErrorHandler = detail::error_handler>
-class compile_parse_context
-    : public basic_format_parse_context<Char, ErrorHandler> {
+template <typename Char>
+class compile_parse_context : public basic_format_parse_context<Char> {
  private:
   int num_args_;
   const type* types_;
-  using base = basic_format_parse_context<Char, ErrorHandler>;
+  using base = basic_format_parse_context<Char>;
 
  public:
   explicit FMT_CONSTEXPR compile_parse_context(
       basic_string_view<Char> format_str, int num_args, const type* types,
-      ErrorHandler eh = {}, int next_arg_id = 0)
-      : base(format_str, eh, next_arg_id), num_args_(num_args), types_(types) {}
+      int next_arg_id = 0)
+      : base(format_str, next_arg_id), num_args_(num_args), types_(types) {}
 
   constexpr auto num_args() const -> int { return num_args_; }
   constexpr auto arg_type(int id) const -> type { return types_[id]; }
 
   FMT_CONSTEXPR auto next_arg_id() -> int {
     int id = base::next_arg_id();
-    if (id >= num_args_) this->on_error("argument not found");
+    if (id >= num_args_) throw_format_error("argument not found");
     return id;
   }
 
   FMT_CONSTEXPR void check_arg_id(int id) {
     base::check_arg_id(id);
-    if (id >= num_args_) this->on_error("argument not found");
+    if (id >= num_args_) throw_format_error("argument not found");
   }
   using base::check_arg_id;
 
@@ -767,31 +760,30 @@ class compile_parse_context
     detail::ignore_unused(arg_id);
 #if !defined(__LCC__)
     if (arg_id < num_args_ && types_ && !is_integral_type(types_[arg_id]))
-      this->on_error("width/precision is not integer");
+      throw_format_error("width/precision is not integer");
 #endif
   }
 };
 FMT_END_DETAIL_NAMESPACE
 
-template <typename Char, typename ErrorHandler>
-FMT_CONSTEXPR void
-basic_format_parse_context<Char, ErrorHandler>::do_check_arg_id(int id) {
+template <typename Char>
+FMT_CONSTEXPR void basic_format_parse_context<Char>::do_check_arg_id(int id) {
   // Argument id is only checked at compile-time during parsing because
   // formatting has its own validation.
   if (detail::is_constant_evaluated() &&
       (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 1200)) {
-    using context = detail::compile_parse_context<Char, ErrorHandler>;
+    using context = detail::compile_parse_context<Char>;
     if (id >= static_cast<context*>(this)->num_args())
-      on_error("argument not found");
+      detail::throw_format_error("argument not found");
   }
 }
 
-template <typename Char, typename ErrorHandler>
-FMT_CONSTEXPR void
-basic_format_parse_context<Char, ErrorHandler>::check_dynamic_spec(int arg_id) {
+template <typename Char>
+FMT_CONSTEXPR void basic_format_parse_context<Char>::check_dynamic_spec(
+    int arg_id) {
   if (detail::is_constant_evaluated() &&
       (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 1200)) {
-    using context = detail::compile_parse_context<Char, ErrorHandler>;
+    using context = detail::compile_parse_context<Char>;
     static_cast<context*>(this)->check_dynamic_spec(arg_id);
   }
 }
@@ -2290,7 +2282,7 @@ class dynamic_specs_handler
   }
 
   FMT_CONSTEXPR void on_error(const char* message) {
-    context_.on_error(message);
+    throw_format_error(message);
   }
 
  private:
@@ -2959,13 +2951,13 @@ FMT_CONSTEXPR auto get_arg_index_by_name(basic_string_view<Char> name) -> int {
 template <typename Char, typename ErrorHandler, typename... Args>
 class format_string_checker {
  private:
-  // In the future basic_format_parse_context will replace compile_parse_context
-  // here and will use is_constant_evaluated and downcasting to access the data
-  // needed for compile-time checks: https://godbolt.org/z/GvWzcTjh1.
-  using parse_context_type = compile_parse_context<Char, ErrorHandler>;
+  using parse_context_type = compile_parse_context<Char>;
   static constexpr int num_args = sizeof...(Args);
 
   // Format specifier parsing function.
+  // In the future basic_format_parse_context will replace compile_parse_context
+  // here and will use is_constant_evaluated and downcasting to access the data
+  // needed for compile-time checks: https://godbolt.org/z/GvWzcTjh1.
   using parse_func = const Char* (*)(parse_context_type&);
 
   parse_context_type context_;
@@ -2974,8 +2966,8 @@ class format_string_checker {
 
  public:
   explicit FMT_CONSTEXPR format_string_checker(
-      basic_string_view<Char> format_str, ErrorHandler eh)
-      : context_(format_str, num_args, types_, eh),
+      basic_string_view<Char> format_str)
+      : context_(format_str, num_args, types_),
         parse_funcs_{&parse_format_specs<Args, parse_context_type>...},
         types_{
             mapped_type_constant<Args,
@@ -3010,7 +3002,7 @@ class format_string_checker {
   }
 
   FMT_CONSTEXPR void on_error(const char* message) {
-    context_.on_error(message);
+    throw_format_error(message);
   }
 };
 
@@ -3030,7 +3022,7 @@ void check_format_string(S format_str) {
   using checker = format_string_checker<typename S::char_type, error_handler,
                                         remove_cvref_t<Args>...>;
   FMT_CONSTEXPR bool invalid_format =
-      (parse_format_string<true>(s, checker(s, {})), true);
+      (parse_format_string<true>(s, checker(s)), true);
   ignore_unused(invalid_format);
 }
 
@@ -3067,7 +3059,7 @@ struct formatter<T, Char,
     auto checker =
         detail::specs_checker<handler_type>(handler_type(specs_, ctx), type);
     auto it = detail::parse_format_specs(begin, end, checker);
-    auto eh = ctx.error_handler();
+    auto eh = detail::error_handler();
     switch (type) {
     case detail::type::none_type:
       FMT_ASSERT(false, "invalid argument type");
@@ -3181,7 +3173,7 @@ template <typename Char, typename... Args> class basic_format_string {
                   detail::count_statically_named_args<Args...>()) {
       using checker = detail::format_string_checker<Char, detail::error_handler,
                                                     remove_cvref_t<Args>...>;
-      detail::parse_format_string<true>(str_, checker(s, {}));
+      detail::parse_format_string<true>(str_, checker(s));
     }
 #else
     detail::check_format_string<Args...>(s);

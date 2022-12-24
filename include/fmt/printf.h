@@ -402,7 +402,7 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
 
     // Parse argument index, flags and width.
     int arg_index = parse_header(it, end, specs, get_arg);
-    if (arg_index == 0) parse_ctx.on_error("argument not found");
+    if (arg_index == 0) throw_format_error("argument not found");
 
     // Parse precision.
     if (it != end && *it == '.') {
@@ -504,7 +504,7 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
     }
     specs.type = parse_presentation_type(type);
     if (specs.type == presentation_type::none)
-      parse_ctx.on_error("invalid type specifier");
+      throw_format_error("invalid type specifier");
 
     start = it;
 

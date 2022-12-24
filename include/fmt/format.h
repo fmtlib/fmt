@@ -3992,7 +3992,7 @@ template <> struct formatter<bytes> {
     detail::specs_checker<handler_type> handler(handler_type(specs_, ctx),
                                                 detail::type::string_type);
     auto it = parse_format_specs(ctx.begin(), ctx.end(), handler);
-    detail::check_string_type_spec(specs_.type, ctx.error_handler());
+    detail::check_string_type_spec(specs_.type, detail::error_handler());
     return it;
   }
 
@@ -4035,7 +4035,7 @@ template <typename T> struct formatter<group_digits_view<T>> : formatter<T> {
     detail::specs_checker<handler_type> handler(handler_type(specs_, ctx),
                                                 detail::type::int_type);
     auto it = parse_format_specs(ctx.begin(), ctx.end(), handler);
-    detail::check_string_type_spec(specs_.type, ctx.error_handler());
+    detail::check_string_type_spec(specs_.type, detail::error_handler());
     return it;
   }
 
