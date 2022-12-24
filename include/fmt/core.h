@@ -2107,7 +2107,7 @@ template <typename Char> struct fill_t {
  public:
   FMT_CONSTEXPR void operator=(basic_string_view<Char> s) {
     auto size = s.size();
-    if (size > max_size) return throw_format_error("invalid fill");
+    FMT_ASSERT(size <= max_size, "invalid fill");
     for (size_t i = 0; i < size; ++i) data_[i] = s[i];
     size_ = static_cast<unsigned char>(size);
   }
@@ -2237,7 +2237,7 @@ template <typename Char> class specs_setter {
   FMT_CONSTEXPR void on_localized() { specs_.localized = true; }
 
   FMT_CONSTEXPR void on_zero() {
-    // If the 0 character and an align option both appear, the 0 character is ignored.
+    // Ignore 0 if align is specified for compatibility with std::format.
     if (specs_.align != align::none) return;
     specs_.align = align::numeric;
     specs_.fill[0] = Char('0');
