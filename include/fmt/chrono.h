@@ -2000,36 +2000,6 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
   basic_string_view<Char> format_str;
   using duration = std::chrono::duration<Rep, Period>;
 
-  struct spec_handler {
-    formatter& f;
-    basic_format_parse_context<Char>& context;
-    basic_string_view<Char> format_str;
-
-    template <typename Id> FMT_CONSTEXPR arg_ref_type make_arg_ref(Id arg_id) {
-      context.check_arg_id(arg_id);
-      return arg_ref_type(arg_id);
-    }
-
-    FMT_CONSTEXPR arg_ref_type make_arg_ref(basic_string_view<Char> arg_id) {
-      context.check_arg_id(arg_id);
-      return arg_ref_type(arg_id);
-    }
-
-    FMT_CONSTEXPR arg_ref_type make_arg_ref(detail::auto_id) {
-      return arg_ref_type(context.next_arg_id());
-    }
-
-    void on_error(const char* msg) { FMT_THROW(format_error(msg)); }
-    FMT_CONSTEXPR void on_precision(int _precision) {
-      f.precision = _precision;
-    }
-    FMT_CONSTEXPR void end_precision() {}
-
-    template <typename Id> FMT_CONSTEXPR void on_dynamic_precision(Id arg_id) {
-      f.precision_ref = make_arg_ref(arg_id);
-    }
-  };
-
   using iterator = typename basic_format_parse_context<Char>::iterator;
   struct parse_range {
     iterator begin;
@@ -2039,7 +2009,6 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
   FMT_CONSTEXPR parse_range do_parse(basic_format_parse_context<Char>& ctx) {
     auto begin = ctx.begin(), end = ctx.end();
     if (begin == end || *begin == '}') return {begin, begin};
-    auto handler = spec_handler{*this, ctx, format_str};
 
     auto align_result = detail::parse_align(begin, end);
     specs.align = align_result.align;
@@ -2048,28 +2017,41 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     begin = align_result.end;
     if (begin == end) return {begin, begin};
 
-    auto width_result = detail::parse_width(begin, end, ctx);
-    auto width = width_result.width;
-    switch (width.kind) {
+    auto width = detail::parse_dynamic_spec(begin, end, ctx);
+    switch (width.spec.kind) {
     case detail::dynamic_spec_kind::none:
       break;
     case detail::dynamic_spec_kind::value:
-      specs.width = width.value;
+      specs.width = width.spec.value;
       break;
     case detail::dynamic_spec_kind::index:
-      width_ref = arg_ref_type(width.value);
+      width_ref = arg_ref_type(width.spec.value);
       break;
     case detail::dynamic_spec_kind::name:
-      width_ref = arg_ref_type(width.name);
+      width_ref = arg_ref_type(width.spec.name);
       break;
     }
-    begin = width_result.end;
+    begin = width.end;
     if (begin == end) return {begin, begin};
 
     auto checker = detail::chrono_format_checker();
     if (*begin == '.') {
       checker.has_precision_integral = !std::is_floating_point<Rep>::value;
-      begin = detail::parse_precision(begin, end, handler);
+      auto prec = detail::parse_precision(begin, end, ctx);
+      switch (prec.spec.kind) {
+      case detail::dynamic_spec_kind::none:
+        break;
+      case detail::dynamic_spec_kind::value:
+        precision = prec.spec.value;
+        break;
+      case detail::dynamic_spec_kind::index:
+        precision_ref = arg_ref_type(prec.spec.value);
+        break;
+      case detail::dynamic_spec_kind::name:
+        precision_ref = arg_ref_type(prec.spec.name);
+        break;
+      }
+      begin = prec.end;
     }
     if (begin != end && *begin == 'L') {
       ++begin;

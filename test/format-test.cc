@@ -929,9 +929,9 @@ TEST(format_test, precision) {
                    "number is too big");
 
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:."), 0), format_error,
-                   "missing precision specifier");
+                   "missing precision");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.}"), 0), format_error,
-                   "missing precision specifier");
+                   "missing precision");
 
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.2"), 0), format_error,
                    "precision not allowed for this argument type");

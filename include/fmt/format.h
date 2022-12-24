@@ -3627,28 +3627,42 @@ template <typename Char> class specs_handler : public specs_setter<Char> {
     return parse_context_;
   }
 
-  FMT_CONSTEXPR void on_width(const dynamic_spec<Char>& width) {
+  FMT_CONSTEXPR void on_width(const dynamic_spec<Char>& spec) {
     auto arg = format_arg();
-    switch (width.kind) {
+    switch (spec.kind) {
     case dynamic_spec_kind::none:
       return;
     case dynamic_spec_kind::value:
-      this->specs_.width = width.value;
+      this->specs_.width = spec.value;
       return;
     case dynamic_spec_kind::index:
-      arg = detail::get_arg(context_, width.value);
+      arg = detail::get_arg(context_, spec.value);
       break;
     case dynamic_spec_kind::name:
-      arg = detail::get_arg(context_, width.name);
+      arg = detail::get_arg(context_, spec.name);
       break;
     }
     this->specs_.width =
         get_dynamic_spec<width_checker>(arg, context_.error_handler());
   }
 
-  template <typename Id> FMT_CONSTEXPR void on_dynamic_precision(Id arg_id) {
-    this->specs_.precision = get_dynamic_spec<precision_checker>(
-        get_arg(arg_id), context_.error_handler());
+  FMT_CONSTEXPR void on_precision(const dynamic_spec<Char>& spec) {
+    auto arg = format_arg();
+    switch (spec.kind) {
+    case dynamic_spec_kind::none:
+      return;
+    case dynamic_spec_kind::value:
+      this->specs_.precision = spec.value;
+      return;
+    case dynamic_spec_kind::index:
+      arg = detail::get_arg(context_, spec.value);
+      break;
+    case dynamic_spec_kind::name:
+      arg = detail::get_arg(context_, spec.name);
+      break;
+    }
+    this->specs_.precision =
+        get_dynamic_spec<precision_checker>(arg, context_.error_handler());
   }
 
   void on_error(const char* message) { context_.on_error(message); }

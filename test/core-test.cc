@@ -568,10 +568,20 @@ struct test_format_specs_handler {
     }
   }
 
-  constexpr void on_precision(int p) { precision = p; }
-  constexpr void on_dynamic_precision(fmt::detail::auto_id) {}
-  constexpr void on_dynamic_precision(int index) { precision_ref = index; }
-  constexpr void on_dynamic_precision(string_view) {}
+  constexpr void on_precision(const fmt::detail::dynamic_spec<char>& spec) {
+    switch (spec.kind) {
+    case fmt::detail::dynamic_spec_kind::none:
+      break;
+    case fmt::detail::dynamic_spec_kind::value:
+      precision = spec.value;
+      break;
+    case fmt::detail::dynamic_spec_kind::index:
+      precision_ref = spec.value;
+      break;
+    case fmt::detail::dynamic_spec_kind::name:
+      break;
+    }
+  }
 
   constexpr void end_precision() {}
   constexpr void on_type(fmt::presentation_type t) { type = t; }
