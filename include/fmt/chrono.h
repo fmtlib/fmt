@@ -2017,41 +2017,14 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     begin = align_result.end;
     if (begin == end) return {begin, begin};
 
-    auto width = detail::parse_dynamic_spec(begin, end, ctx);
-    switch (width.spec.kind) {
-    case detail::dynamic_spec_kind::none:
-      break;
-    case detail::dynamic_spec_kind::value:
-      specs.width = width.spec.value;
-      break;
-    case detail::dynamic_spec_kind::index:
-      width_ref = arg_ref_type(width.spec.value);
-      break;
-    case detail::dynamic_spec_kind::name:
-      width_ref = arg_ref_type(width.spec.name);
-      break;
-    }
-    begin = width.end;
+    begin = detail::parse_dynamic_spec(begin, end, specs.width, width_ref, ctx);
     if (begin == end) return {begin, begin};
 
     auto checker = detail::chrono_format_checker();
     if (*begin == '.') {
       checker.has_precision_integral = !std::is_floating_point<Rep>::value;
-      auto prec = detail::parse_precision(begin, end, ctx);
-      switch (prec.spec.kind) {
-      case detail::dynamic_spec_kind::none:
-        break;
-      case detail::dynamic_spec_kind::value:
-        precision = prec.spec.value;
-        break;
-      case detail::dynamic_spec_kind::index:
-        precision_ref = arg_ref_type(prec.spec.value);
-        break;
-      case detail::dynamic_spec_kind::name:
-        precision_ref = arg_ref_type(prec.spec.name);
-        break;
-      }
-      begin = prec.end;
+      begin =
+          detail::parse_precision(begin, end, precision, precision_ref, ctx);
     }
     if (begin != end && *begin == 'L') {
       ++begin;

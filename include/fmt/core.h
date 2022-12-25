@@ -2179,7 +2179,7 @@ template <typename Char> struct arg_ref {
 
   arg_id_kind kind;
   union value {
-    FMT_CONSTEXPR value(int id = 0) : index{id} {}
+    FMT_CONSTEXPR value(int idx = 0) : index(idx) {}
     FMT_CONSTEXPR value(basic_string_view<Char> n) : name(n) {}
 
     int index;
@@ -2188,22 +2188,11 @@ template <typename Char> struct arg_ref {
 };
 
 // Format specifiers with width and precision resolved at formatting rather
-// than parsing time to allow re-using the same parsed specifiers with
+// than parsing time to allow reusing the same parsed specifiers with
 // different sets of arguments (precompilation of format strings).
 template <typename Char> struct dynamic_format_specs : format_specs<Char> {
   arg_ref<Char> width_ref;
   arg_ref<Char> precision_ref;
-};
-
-enum class dynamic_spec_kind { none, value, index, name };
-
-// A format specifier that can be specified dynamically such as width.
-template <typename Char> struct dynamic_spec {
-  dynamic_spec_kind kind;
-  union {
-    int value;
-    basic_string_view<Char> name;
-  };
 };
 
 template <typename Char> constexpr bool is_ascii_letter(Char c) {
@@ -2328,16 +2317,15 @@ template <typename Char> FMT_CONSTEXPR bool is_name_start(Char c) {
   return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || '_' == c;
 }
 
-template <typename Char, typename IDHandler>
+template <typename Char, typename Handler>
 FMT_CONSTEXPR auto do_parse_arg_id(const Char* begin, const Char* end,
-                                   IDHandler&& handler) -> const Char* {
-  FMT_ASSERT(begin != end, "");
+                                   Handler&& handler) -> const Char* {
   Char c = *begin;
   if (c >= '0' && c <= '9') {
     int index = 0;
+    constexpr int max = (std::numeric_limits<int>::max)();
     if (c != '0')
-      index =
-          parse_nonnegative_int(begin, end, (std::numeric_limits<int>::max)());
+      index = parse_nonnegative_int(begin, end, max);
     else
       ++begin;
     if (begin == end || (*begin != '}' && *begin != ':'))
@@ -2358,9 +2346,10 @@ FMT_CONSTEXPR auto do_parse_arg_id(const Char* begin, const Char* end,
   return it;
 }
 
-template <typename Char, typename IDHandler>
+template <typename Char, typename Handler>
 FMT_CONSTEXPR FMT_INLINE auto parse_arg_id(const Char* begin, const Char* end,
-                                           IDHandler&& handler) -> const Char* {
+                                           Handler&& handler) -> const Char* {
+  FMT_ASSERT(begin != end, "");
   Char c = *begin;
   if (c != '}' && c != ':') return do_parse_arg_id(begin, end, handler);
   handler.on_auto();
@@ -2369,65 +2358,58 @@ FMT_CONSTEXPR FMT_INLINE auto parse_arg_id(const Char* begin, const Char* end,
 
 template <typename Char> struct dynamic_spec_id_handler {
   basic_format_parse_context<Char>& ctx;
-  dynamic_spec<Char> spec;
+  arg_ref<Char>& ref;
 
   FMT_CONSTEXPR void on_auto() {
-    spec.kind = dynamic_spec_kind::index;
-    spec.value = ctx.next_arg_id();
-    ctx.check_dynamic_spec(spec.value);
+    int id = ctx.next_arg_id();
+    ref = arg_ref<Char>(id);
+    ctx.check_dynamic_spec(id);
   }
   FMT_CONSTEXPR void on_index(int id) {
-    spec.kind = dynamic_spec_kind::index;
-    spec.value = id;
+    ref = arg_ref<Char>(id);
     ctx.check_arg_id(id);
     ctx.check_dynamic_spec(id);
   }
   FMT_CONSTEXPR void on_name(basic_string_view<Char> id) {
-    spec.kind = dynamic_spec_kind::name;
-    spec.name = id;
+    ref = arg_ref<Char>(id);
     ctx.check_arg_id(id);
   }
-};
-
-template <typename Char> struct parse_dynamic_spec_result {
-  const Char* end;
-  dynamic_spec<Char> spec;
 };
 
 // Parses [integer | "{" [arg_id] "}"].
 template <typename Char>
 FMT_CONSTEXPR auto parse_dynamic_spec(const Char* begin, const Char* end,
+                                      int& value, arg_ref<Char>& ref,
                                       basic_format_parse_context<Char>& ctx)
-    -> parse_dynamic_spec_result<Char> {
+    -> const Char* {
   FMT_ASSERT(begin != end, "");
   if ('0' <= *begin && *begin <= '9') {
-    int value = parse_nonnegative_int(begin, end, -1);
-    if (value != -1) return {begin, {dynamic_spec_kind::value, {value}}};
-    throw_format_error("number is too big");
+    int val = parse_nonnegative_int(begin, end, -1);
+    if (val != -1)
+      value = val;
+    else
+      throw_format_error("number is too big");
   } else if (*begin == '{') {
     ++begin;
-    auto handler =
-        dynamic_spec_id_handler<Char>{ctx, {dynamic_spec_kind::none, {}}};
+    auto handler = dynamic_spec_id_handler<Char>{ctx, ref};
     if (begin != end) begin = parse_arg_id(begin, end, handler);
-    if (begin != end && *begin == '}') {
-      ++begin;
-      return {begin, handler.spec};
-    }
+    if (begin != end && *begin == '}') return ++begin;
     throw_format_error("invalid format string");
   }
-  return {begin, {dynamic_spec_kind::none, {}}};
+  return begin;
 }
 
 template <typename Char>
 FMT_CONSTEXPR auto parse_precision(const Char* begin, const Char* end,
+                                   int& value, arg_ref<Char>& ref,
                                    basic_format_parse_context<Char>& ctx)
-    -> parse_dynamic_spec_result<Char> {
+    -> const Char* {
   ++begin;
   if (begin == end || *begin == '}') {
     throw_format_error("missing precision");
-    return {begin, {dynamic_spec_kind::none, {}}};
+    return begin;
   }
-  return parse_dynamic_spec(begin, end, ctx);
+  return parse_dynamic_spec(begin, end, value, ref, ctx);
 }
 
 template <typename Char>
@@ -2552,42 +2534,15 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
     if (++begin == end) return {begin, specs};
   }
 
-  auto width = parse_dynamic_spec(begin, end, ctx);
-  switch (width.spec.kind) {
-  case dynamic_spec_kind::none:
-    break;
-  case dynamic_spec_kind::value:
-    specs.width = width.spec.value;
-    break;
-  case dynamic_spec_kind::index:
-    specs.width_ref = arg_ref<Char>(width.spec.value);
-    break;
-  case dynamic_spec_kind::name:
-    specs.width_ref = arg_ref<Char>(width.spec.name);
-    break;
-  }
-  begin = width.end;
+  begin = parse_dynamic_spec(begin, end, specs.width, specs.width_ref, ctx);
   if (begin == end) return {begin, specs};
 
   // Parse precision.
   if (*begin == '.') {
-    auto precision = parse_precision(begin, end, ctx);
-    switch (precision.spec.kind) {
-    case dynamic_spec_kind::none:
-      break;
-    case dynamic_spec_kind::value:
-      specs.precision = precision.spec.value;
-      break;
-    case dynamic_spec_kind::index:
-      specs.precision_ref = arg_ref<Char>(precision.spec.value);
-      break;
-    case dynamic_spec_kind::name:
-      specs.precision_ref = arg_ref<Char>(precision.spec.name);
-      break;
-    }
+    begin =
+        parse_precision(begin, end, specs.precision, specs.precision_ref, ctx);
     if (is_integral_type(arg_type) || arg_type == type::pointer_type)
       throw_format_error("precision not allowed for this argument type");
-    begin = precision.end;
     if (begin == end) return {begin, specs};
   }
 
@@ -2833,7 +2788,7 @@ constexpr int invalid_arg_index = -1;
 #if FMT_USE_NONTYPE_TEMPLATE_ARGS
 template <int N, typename T, typename... Args, typename Char>
 constexpr auto get_arg_index_by_name(basic_string_view<Char> name) -> int {
-  if constexpr (detail::is_statically_named_arg<T>()) {
+  if constexpr (is_statically_named_arg<T>()) {
     if (name == T::name) return N;
   }
   if constexpr (sizeof...(Args) > 0)
