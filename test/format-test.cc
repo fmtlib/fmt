@@ -1058,50 +1058,50 @@ TEST(format_test, runtime_precision) {
   char format_str[buffer_size];
   safe_sprintf(format_str, "{0:.{%u", UINT_MAX);
   increment(format_str + 5);
-  EXPECT_THROW_MSG((void)fmt::format(runtime(format_str), 0), format_error,
+  EXPECT_THROW_MSG((void)fmt::format(runtime(format_str), 0.0), format_error,
                    "invalid format string");
   size_t size = std::strlen(format_str);
   format_str[size] = '}';
   format_str[size + 1] = 0;
-  EXPECT_THROW_MSG((void)fmt::format(runtime(format_str), 0), format_error,
+  EXPECT_THROW_MSG((void)fmt::format(runtime(format_str), 0.0), format_error,
                    "argument not found");
   format_str[size + 1] = '}';
   format_str[size + 2] = 0;
-  EXPECT_THROW_MSG((void)fmt::format(runtime(format_str), 0), format_error,
+  EXPECT_THROW_MSG((void)fmt::format(runtime(format_str), 0.0), format_error,
                    "argument not found");
 
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{"), 0), format_error,
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{"), 0.0), format_error,
                    "invalid format string");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{}"), 0), format_error,
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{}"), 0.0), format_error,
                    "cannot switch from manual to automatic argument indexing");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{?}}"), 0), format_error,
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{?}}"), 0.0), format_error,
                    "invalid format string");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}"), 0, 0), format_error,
                    "precision not allowed for this argument type");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0), format_error,
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0), format_error,
                    "argument not found");
 
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{0:}}"), 0), format_error,
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{0:}}"), 0.0), format_error,
                    "invalid format string");
 
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0, -1), format_error,
-                   "negative precision");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0, (INT_MAX + 1u)),
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0, -1),
+                   format_error, "negative precision");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0, (INT_MAX + 1u)),
                    format_error, "number is too big");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0, -1l), format_error,
-                   "negative precision");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0, -1l),
+                   format_error, "negative precision");
   if (fmt::detail::const_check(sizeof(long) > sizeof(int))) {
     long value = INT_MAX;
-    EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0, (value + 1)),
+    EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0, (value + 1)),
                      format_error, "number is too big");
   }
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0, (INT_MAX + 1ul)),
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0, (INT_MAX + 1ul)),
                    format_error, "number is too big");
 
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0, '0'), format_error,
-                   "precision is not integer");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0, 0.0), format_error,
-                   "precision is not integer");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0, '0'),
+                   format_error, "precision is not integer");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0, 0.0),
+                   format_error, "precision is not integer");
 
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 42, 2), format_error,
                    "precision not allowed for this argument type");
@@ -1983,46 +1983,6 @@ TEST(format_test, strong_enum) {
 
 TEST(format_test, non_null_terminated_format_string) {
   EXPECT_EQ("42", fmt::format(string_view("{}foo", 2), 42));
-}
-
-struct variant {
-  enum { int_type, string_type } type;
-  explicit variant(int) : type(int_type) {}
-  explicit variant(const char*) : type(string_type) {}
-};
-
-FMT_BEGIN_NAMESPACE
-template <> struct formatter<variant> : dynamic_formatter<> {
-  auto format(variant value, format_context& ctx) -> decltype(ctx.out()) {
-    if (value.type == variant::int_type)
-      return dynamic_formatter<>::format(42, ctx);
-    return dynamic_formatter<>::format("foo", ctx);
-  }
-};
-FMT_END_NAMESPACE
-
-TEST(format_test, dynamic_formatter) {
-  auto num = variant(42);
-  auto str = variant("foo");
-  EXPECT_EQ("42", fmt::format("{:d}", num));
-  EXPECT_EQ("foo", fmt::format("{:s}", str));
-  EXPECT_EQ(" 42 foo ", fmt::format("{:{}} {:{}}", num, 3, str, 4));
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:{}}"), num), format_error,
-                   "cannot switch from manual to automatic argument indexing");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{:{0}}"), num), format_error,
-                   "cannot switch from automatic to manual argument indexing");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{:+}"), str), format_error,
-                   "format specifier requires numeric argument");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{:-}"), str), format_error,
-                   "format specifier requires numeric argument");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{: }"), str), format_error,
-                   "format specifier requires numeric argument");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{:#}"), str), format_error,
-                   "format specifier requires numeric argument");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{:0}"), str), format_error,
-                   "format specifier requires numeric argument");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{:.2}"), num), format_error,
-                   "precision not allowed for this argument type");
 }
 
 namespace adl_test {

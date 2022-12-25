@@ -83,8 +83,7 @@ def build_docs(version='dev', **kwargs):
   internal_symbols = [
     'fmt::detail::.*',
     'basic_data<>',
-    'fmt::type_identity',
-    'fmt::dynamic_formatter'
+    'fmt::type_identity'
   ]
   noisy_warnings = [
     'warning: (Compound|Member .* of class) (' + '|'.join(internal_symbols) + \

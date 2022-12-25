@@ -520,146 +520,28 @@ TEST(format_test, constexpr_parse_arg_id) {
   static_assert(parse_arg_id("foo:").name.size() == 3, "");
 }
 
-struct test_format_specs_handler {
-  fmt::detail::compile_parse_context<char> ctx =
-      fmt::detail::compile_parse_context<char>({}, 43, nullptr);
-  enum result { none, hash, zero, loc, error };
-  result res = none;
-
-  fmt::align_t alignment = fmt::align::none;
-  fmt::sign_t sign = fmt::sign::none;
-  char fill = 0;
-  int width = 0;
-  fmt::detail::arg_ref<char> width_ref;
-  int precision = 0;
-  fmt::detail::arg_ref<char> precision_ref;
-  fmt::presentation_type type = fmt::presentation_type::none;
-
-  // Workaround for MSVC2017 bug that results in "expression did not evaluate
-  // to a constant" with compiler-generated copy ctor.
-  constexpr test_format_specs_handler() {}
-  constexpr test_format_specs_handler(const test_format_specs_handler& other) =
-      default;
-
-  constexpr auto parse_context() -> fmt::format_parse_context& { return ctx; }
-
-  constexpr void on_align(fmt::align_t a) { alignment = a; }
-  constexpr void on_fill(fmt::string_view f) { fill = f[0]; }
-  constexpr void on_sign(fmt::sign_t s) { sign = s; }
-  constexpr void on_hash() { res = hash; }
-  constexpr void on_zero() { res = zero; }
-  constexpr void on_localized() { res = loc; }
-
-  constexpr void on_width(const fmt::detail::dynamic_spec<char>& spec) {
-    switch (spec.kind) {
-    case fmt::detail::dynamic_spec_kind::none:
-      break;
-    case fmt::detail::dynamic_spec_kind::value:
-      width = spec.value;
-      break;
-    case fmt::detail::dynamic_spec_kind::index:
-      width_ref = spec.value;
-      break;
-    case fmt::detail::dynamic_spec_kind::name:
-      break;
-    }
-  }
-
-  constexpr void on_precision(const fmt::detail::dynamic_spec<char>& spec) {
-    switch (spec.kind) {
-    case fmt::detail::dynamic_spec_kind::none:
-      break;
-    case fmt::detail::dynamic_spec_kind::value:
-      precision = spec.value;
-      break;
-    case fmt::detail::dynamic_spec_kind::index:
-      precision_ref = spec.value;
-      break;
-    case fmt::detail::dynamic_spec_kind::name:
-      break;
-    }
-  }
-
-  constexpr void end_precision() {}
-  constexpr void on_type(fmt::presentation_type t) { type = t; }
-  constexpr void on_error(const char*) { res = error; }
-};
-
-template <size_t N>
-constexpr test_format_specs_handler parse_test_specs(const char (&s)[N]) {
-  auto h = test_format_specs_handler();
-  fmt::detail::parse_format_specs(s, s + N - 1, h);
-  return h;
+template <size_t N> constexpr auto parse_test_specs(const char (&s)[N]) {
+  auto ctx = fmt::detail::compile_parse_context<char>(fmt::string_view(s, N),
+                                                      43, nullptr);
+  auto result = fmt::detail::parse_format_specs(s, s + N - 1, ctx,
+                                                fmt::detail::type::float_type);
+  return result.specs;
 }
 
 TEST(core_test, constexpr_parse_format_specs) {
-  using handler = test_format_specs_handler;
-  static_assert(parse_test_specs("<").alignment == fmt::align::left, "");
-  static_assert(parse_test_specs("*^").fill == '*', "");
+  static_assert(parse_test_specs("<").align == fmt::align::left, "");
+  static_assert(parse_test_specs("*^").fill[0] == '*', "");
   static_assert(parse_test_specs("+").sign == fmt::sign::plus, "");
   static_assert(parse_test_specs("-").sign == fmt::sign::minus, "");
   static_assert(parse_test_specs(" ").sign == fmt::sign::space, "");
-  static_assert(parse_test_specs("#").res == handler::hash, "");
-  static_assert(parse_test_specs("0").res == handler::zero, "");
-  static_assert(parse_test_specs("L").res == handler::loc, "");
+  static_assert(parse_test_specs("#").alt, "");
+  static_assert(parse_test_specs("0").align == fmt::align::numeric, "");
+  static_assert(parse_test_specs("L").localized, "");
   static_assert(parse_test_specs("42").width == 42, "");
   static_assert(parse_test_specs("{42}").width_ref.val.index == 42, "");
   static_assert(parse_test_specs(".42").precision == 42, "");
   static_assert(parse_test_specs(".{42}").precision_ref.val.index == 42, "");
   static_assert(parse_test_specs("d").type == fmt::presentation_type::dec, "");
-}
-
-template <size_t N>
-constexpr fmt::detail::dynamic_format_specs<char> parse_dynamic_specs(
-    const char (&s)[N]) {
-  auto specs = fmt::detail::dynamic_format_specs<char>();
-  auto ctx = fmt::detail::compile_parse_context<char>({}, 43, nullptr);
-  auto h =
-      fmt::detail::dynamic_specs_handler<fmt::format_parse_context>(specs, ctx);
-  parse_format_specs(s, s + N - 1, h);
-  return specs;
-}
-
-TEST(format_test, constexpr_dynamic_specs_handler) {
-  static_assert(parse_dynamic_specs("<").align == fmt::align::left, "");
-  static_assert(parse_dynamic_specs("*^").fill[0] == '*', "");
-  static_assert(parse_dynamic_specs("+").sign == fmt::sign::plus, "");
-  static_assert(parse_dynamic_specs("-").sign == fmt::sign::minus, "");
-  static_assert(parse_dynamic_specs(" ").sign == fmt::sign::space, "");
-  static_assert(parse_dynamic_specs("#").alt, "");
-  static_assert(parse_dynamic_specs("0").align == fmt::align::numeric, "");
-  static_assert(parse_dynamic_specs("42").width == 42, "");
-  static_assert(parse_dynamic_specs("{}").width_ref.val.index == 0, "");
-  static_assert(parse_dynamic_specs("{42}").width_ref.val.index == 42, "");
-  static_assert(parse_dynamic_specs(".42").precision == 42, "");
-  static_assert(parse_dynamic_specs(".{}").precision_ref.val.index == 0, "");
-  static_assert(parse_dynamic_specs(".{42}").precision_ref.val.index == 42, "");
-  static_assert(parse_dynamic_specs("d").type == fmt::presentation_type::dec,
-                "");
-}
-
-template <size_t N>
-constexpr test_format_specs_handler check_specs(const char (&s)[N]) {
-  fmt::detail::specs_checker<test_format_specs_handler> checker(
-      test_format_specs_handler(), fmt::detail::type::double_type);
-  parse_format_specs(s, s + N - 1, checker);
-  return checker;
-}
-
-TEST(format_test, constexpr_specs_checker) {
-  using handler = test_format_specs_handler;
-  static_assert(check_specs("<").alignment == fmt::align::left, "");
-  static_assert(check_specs("*^").fill == '*', "");
-  static_assert(check_specs("+").sign == fmt::sign::plus, "");
-  static_assert(check_specs("-").sign == fmt::sign::minus, "");
-  static_assert(check_specs(" ").sign == fmt::sign::space, "");
-  static_assert(check_specs("#").res == handler::hash, "");
-  static_assert(check_specs("0").res == handler::zero, "");
-  static_assert(check_specs("42").width == 42, "");
-  static_assert(check_specs("{42}").width_ref.val.index == 42, "");
-  static_assert(check_specs(".42").precision == 42, "");
-  static_assert(check_specs(".{42}").precision_ref.val.index == 42, "");
-  static_assert(check_specs("d").type == fmt::presentation_type::dec, "");
 }
 
 struct test_format_string_handler {

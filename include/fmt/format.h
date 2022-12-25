@@ -3588,66 +3588,6 @@ FMT_CONSTEXPR auto get_arg(Context& ctx, ID id) ->
   return arg;
 }
 
-// The standard format specifier handler with checking.
-template <typename Char> class specs_handler : public specs_setter<Char> {
- private:
-  basic_format_parse_context<Char>& parse_context_;
-  buffer_context<Char>& context_;
-
-  // This is only needed for compatibility with gcc 4.4.
-  using format_arg = basic_format_arg<buffer_context<Char>>;
-
- public:
-  FMT_CONSTEXPR specs_handler(format_specs<Char>& specs,
-                              basic_format_parse_context<Char>& parse_ctx,
-                              buffer_context<Char>& ctx)
-      : specs_setter<Char>(specs), parse_context_(parse_ctx), context_(ctx) {}
-
-  FMT_CONSTEXPR auto parse_context() -> basic_format_parse_context<Char>& {
-    return parse_context_;
-  }
-
-  FMT_CONSTEXPR void on_width(const dynamic_spec<Char>& spec) {
-    auto arg = format_arg();
-    switch (spec.kind) {
-    case dynamic_spec_kind::none:
-      return;
-    case dynamic_spec_kind::value:
-      this->specs_.width = spec.value;
-      return;
-    case dynamic_spec_kind::index:
-      arg = detail::get_arg(context_, spec.value);
-      break;
-    case dynamic_spec_kind::name:
-      arg = detail::get_arg(context_, spec.name);
-      break;
-    }
-    this->specs_.width =
-        get_dynamic_spec<width_checker>(arg, context_.error_handler());
-  }
-
-  FMT_CONSTEXPR void on_precision(const dynamic_spec<Char>& spec) {
-    auto arg = format_arg();
-    switch (spec.kind) {
-    case dynamic_spec_kind::none:
-      return;
-    case dynamic_spec_kind::value:
-      this->specs_.precision = spec.value;
-      return;
-    case dynamic_spec_kind::index:
-      arg = detail::get_arg(context_, spec.value);
-      break;
-    case dynamic_spec_kind::name:
-      arg = detail::get_arg(context_, spec.name);
-      break;
-    }
-    this->specs_.precision =
-        get_dynamic_spec<precision_checker>(arg, context_.error_handler());
-  }
-
-  void on_error(const char* message) { context_.on_error(message); }
-};
-
 template <template <typename> class Handler, typename Context>
 FMT_CONSTEXPR void handle_dynamic_spec(int& value,
                                        arg_ref<typename Context::char_type> ref,
@@ -3656,11 +3596,11 @@ FMT_CONSTEXPR void handle_dynamic_spec(int& value,
   case arg_id_kind::none:
     break;
   case arg_id_kind::index:
-    value = detail::get_dynamic_spec<Handler>(ctx.arg(ref.val.index),
+    value = detail::get_dynamic_spec<Handler>(get_arg(ctx, ref.val.index),
                                               ctx.error_handler());
     break;
   case arg_id_kind::name:
-    value = detail::get_dynamic_spec<Handler>(ctx.arg(ref.val.name),
+    value = detail::get_dynamic_spec<Handler>(get_arg(ctx, ref.val.name),
                                               ctx.error_handler());
     break;
   }
@@ -3877,58 +3817,6 @@ struct formatter<Char[N], Char> : formatter<basic_string_view<Char>, Char> {
   }
 };
 
-// A formatter for types known only at run time such as variant alternatives.
-//
-// Usage:
-//   using variant = std::variant<int, std::string>;
-//   template <>
-//   struct formatter<variant>: dynamic_formatter<> {
-//     auto format(const variant& v, format_context& ctx) {
-//       return visit([&](const auto& val) {
-//           return dynamic_formatter<>::format(val, ctx);
-//       }, v);
-//     }
-//   };
-template <typename Char = char> class dynamic_formatter {
- private:
-  detail::dynamic_format_specs<Char> specs_;
-  const Char* format_str_;
-
-  struct null_handler : detail::error_handler {
-    void on_align(align_t) {}
-    void on_sign(sign_t) {}
-    void on_hash() {}
-  };
-
-  template <typename Context> void handle_specs(Context& ctx) {
-    detail::handle_dynamic_spec<detail::width_checker>(specs_.width,
-                                                       specs_.width_ref, ctx);
-    detail::handle_dynamic_spec<detail::precision_checker>(
-        specs_.precision, specs_.precision_ref, ctx);
-  }
-
- public:
-  template <typename ParseContext>
-  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
-    format_str_ = ctx.begin();
-    // Checks are deferred to formatting time when the argument type is known.
-    detail::dynamic_specs_handler<ParseContext> handler(specs_, ctx);
-    return detail::parse_format_specs(ctx.begin(), ctx.end(), handler);
-  }
-
-  template <typename T, typename FormatContext>
-  auto format(const T& val, FormatContext& ctx) -> decltype(ctx.out()) {
-    handle_specs(ctx);
-    detail::specs_checker<null_handler> checker(
-        null_handler(), detail::mapped_type_constant<T, FormatContext>::value);
-    checker.on_align(specs_.align);
-    if (specs_.sign != sign::none) checker.on_sign(specs_.sign);
-    if (specs_.alt) checker.on_hash();
-    if (specs_.precision >= 0) checker.end_precision();
-    return detail::write<Char>(ctx.out(), val, specs_, ctx.locale());
-  }
-};
-
 /**
   \rst
   Converts ``p`` to ``const void*`` for pointer formatting.
@@ -3988,12 +3876,11 @@ template <> struct formatter<bytes> {
  public:
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
-    using handler_type = detail::dynamic_specs_handler<ParseContext>;
-    detail::specs_checker<handler_type> handler(handler_type(specs_, ctx),
-                                                detail::type::string_type);
-    auto it = parse_format_specs(ctx.begin(), ctx.end(), handler);
+    auto result = parse_format_specs(ctx.begin(), ctx.end(), ctx,
+                                     detail::type::string_type);
+    specs_ = result.specs;
     detail::check_string_type_spec(specs_.type, detail::error_handler());
-    return it;
+    return result.end;
   }
 
   template <typename FormatContext>
@@ -4031,12 +3918,11 @@ template <typename T> struct formatter<group_digits_view<T>> : formatter<T> {
  public:
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
-    using handler_type = detail::dynamic_specs_handler<ParseContext>;
-    detail::specs_checker<handler_type> handler(handler_type(specs_, ctx),
-                                                detail::type::int_type);
-    auto it = parse_format_specs(ctx.begin(), ctx.end(), handler);
+    auto result =
+        parse_format_specs(ctx.begin(), ctx.end(), ctx, detail::type::int_type);
+    specs_ = result.specs;
     detail::check_string_type_spec(specs_.type, detail::error_handler());
-    return it;
+    return result.end;
   }
 
   template <typename FormatContext>
@@ -4199,8 +4085,6 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
   using detail::get_arg;
   using detail::locale_ref;
   using detail::parse_format_specs;
-  using detail::specs_checker;
-  using detail::specs_handler;
   using detail::to_unsigned;
   using detail::type;
   using detail::write;
@@ -4255,13 +4139,16 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
         visit_format_arg(custom_formatter<Char>{parse_context, context}, arg);
         return parse_context.begin();
       }
-      auto specs = format_specs<Char>();
-      specs_checker<specs_handler<Char>> handler(
-          specs_handler<Char>(specs, parse_context, context), arg.type());
-      begin = parse_format_specs(begin, end, handler);
+      auto result = parse_format_specs(begin, end, parse_context, arg.type());
+      detail::handle_dynamic_spec<detail::width_checker>(
+          result.specs.width, result.specs.width_ref, context);
+      detail::handle_dynamic_spec<detail::precision_checker>(
+          result.specs.precision, result.specs.precision_ref, context);
+      begin = result.end;
       if (begin == end || *begin != '}')
         on_error("missing '}' in format string");
-      auto f = arg_formatter<Char>{context.out(), specs, context.locale()};
+      auto f =
+          arg_formatter<Char>{context.out(), result.specs, context.locale()};
       context.advance_to(visit_format_arg(f, arg));
       return begin;
     }
