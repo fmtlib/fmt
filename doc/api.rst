@@ -332,7 +332,7 @@ Utilities
 ---------
 
 .. doxygenfunction:: fmt::ptr(T p) -> const void*
-.. doxygenfunction:: fmt::ptr(const std::unique_ptr<T> &p) -> const void*
+.. doxygenfunction:: fmt::ptr(const std::unique_ptr<T, Deleter> &p) -> const void*
 .. doxygenfunction:: fmt::ptr(const std::shared_ptr<T> &p) -> const void*
 
 .. doxygenfunction:: fmt::underlying(Enum e) -> typename std::underlying_type<Enum>::type
