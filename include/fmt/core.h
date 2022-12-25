@@ -2190,7 +2190,8 @@ template <typename Char> struct arg_ref {
 // Format specifiers with width and precision resolved at formatting rather
 // than parsing time to allow reusing the same parsed specifiers with
 // different sets of arguments (precompilation of format strings).
-template <typename Char> struct dynamic_format_specs : format_specs<Char> {
+template <typename Char = char>
+struct dynamic_format_specs : format_specs<Char> {
   arg_ref<Char> width_ref;
   arg_ref<Char> precision_ref;
 };
@@ -2461,25 +2462,19 @@ FMT_CONSTEXPR inline void require_numeric_argument(type arg_type) {
     throw_format_error("format specifier requires numeric argument");
 }
 
-template <typename Char> struct parse_format_specs_result {
-  const Char* end;
-  dynamic_format_specs<Char> specs;
-};
-
 // Parses standard format specifiers.
 template <typename Char>
 FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
-    const Char* begin, const Char* end, basic_format_parse_context<Char>& ctx,
-    type arg_type) -> parse_format_specs_result<Char> {
-  auto specs = dynamic_format_specs<Char>();
+    const Char* begin, const Char* end, dynamic_format_specs<Char>& specs,
+    basic_format_parse_context<Char>& ctx, type arg_type) -> const Char* {
   if (1 < end - begin && begin[1] == '}' && is_ascii_letter(*begin) &&
       *begin != 'L') {
     specs.type = parse_presentation_type(*begin++);
     if (specs.type == presentation_type::none)
       throw_format_error("invalid type specifier");
-    return {begin, specs};
+    return begin;
   }
-  if (begin == end) return {begin, specs};
+  if (begin == end) return begin;
 
   auto align = parse_align(begin, end);
   if (align.align != align::none) {
@@ -2488,7 +2483,7 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
     if (fill_size > 0) specs.fill = {begin, to_unsigned(fill_size)};
   }
   begin = align.end;
-  if (begin == end) return {begin, specs};
+  if (begin == end) return begin;
 
   // Parse sign.
   switch (to_ascii(*begin)) {
@@ -2515,12 +2510,12 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
       throw_format_error("format specifier requires signed argument");
     }
   }
-  if (begin == end) return {begin, specs};
+  if (begin == end) return begin;
 
   if (*begin == '#') {
     require_numeric_argument(arg_type);
     specs.alt = true;
-    if (++begin == end) return {begin, specs};
+    if (++begin == end) return begin;
   }
 
   // Parse zero flag.
@@ -2531,11 +2526,11 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
       specs.align = align::numeric;
       specs.fill[0] = Char('0');
     }
-    if (++begin == end) return {begin, specs};
+    if (++begin == end) return begin;
   }
 
   begin = parse_dynamic_spec(begin, end, specs.width, specs.width_ref, ctx);
-  if (begin == end) return {begin, specs};
+  if (begin == end) return begin;
 
   // Parse precision.
   if (*begin == '.') {
@@ -2543,7 +2538,7 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
         parse_precision(begin, end, specs.precision, specs.precision_ref, ctx);
     if (is_integral_type(arg_type) || arg_type == type::pointer_type)
       throw_format_error("precision not allowed for this argument type");
-    if (begin == end) return {begin, specs};
+    if (begin == end) return begin;
   }
 
   if (*begin == 'L') {
@@ -2558,7 +2553,7 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
     if (specs.type == presentation_type::none)
       throw_format_error("invalid type specifier");
   }
-  return {begin, specs};
+  return begin;
 }
 
 template <typename Char, typename Handler>
@@ -2911,8 +2906,7 @@ struct formatter<T, Char,
     auto begin = ctx.begin(), end = ctx.end();
     if (begin == end) return begin;
     auto type = detail::type_constant<T, Char>::value;
-    auto result = detail::parse_format_specs(begin, end, ctx, type);
-    specs_ = result.specs;
+    begin = detail::parse_format_specs(begin, end, specs_, ctx, type);
     auto eh = detail::error_handler();
     switch (type) {
     case detail::type::none_type:
@@ -2937,19 +2931,19 @@ struct formatter<T, Char,
       break;
     case detail::type::float_type:
       if (detail::const_check(FMT_USE_FLOAT))
-        detail::parse_float_type_spec(result.specs, eh);
+        detail::parse_float_type_spec(specs_, eh);
       else
         FMT_ASSERT(false, "float support disabled");
       break;
     case detail::type::double_type:
       if (detail::const_check(FMT_USE_DOUBLE))
-        detail::parse_float_type_spec(result.specs, eh);
+        detail::parse_float_type_spec(specs_, eh);
       else
         FMT_ASSERT(false, "double support disabled");
       break;
     case detail::type::long_double_type:
       if (detail::const_check(FMT_USE_LONG_DOUBLE))
-        detail::parse_float_type_spec(result.specs, eh);
+        detail::parse_float_type_spec(specs_, eh);
       else
         FMT_ASSERT(false, "long double support disabled");
       break;
@@ -2967,7 +2961,7 @@ struct formatter<T, Char,
       // formatter specializations.
       break;
     }
-    return result.end;
+    return begin;
   }
 
   template <detail::type U = detail::type_constant<T, Char>::value,

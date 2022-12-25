@@ -518,11 +518,10 @@ template <class charT> struct formatter<std::complex<double>, charT> {
  public:
   FMT_CONSTEXPR typename basic_format_parse_context<charT>::iterator parse(
       basic_format_parse_context<charT>& ctx) {
-    auto result = parse_format_specs(ctx.begin(), ctx.end(), ctx,
-                                     detail::type::string_type);
-    specs_ = result.specs;
+    auto end = parse_format_specs(ctx.begin(), ctx.end(), specs_, ctx,
+                                  detail::type::string_type);
     detail::parse_float_type_spec(specs_, detail::error_handler());
-    return result.end;
+    return end;
   }
 
   template <class FormatContext>

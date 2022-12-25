@@ -3871,16 +3871,15 @@ class bytes {
 
 template <> struct formatter<bytes> {
  private:
-  detail::dynamic_format_specs<char> specs_;
+  detail::dynamic_format_specs<> specs_;
 
  public:
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
-    auto result = parse_format_specs(ctx.begin(), ctx.end(), ctx,
-                                     detail::type::string_type);
-    specs_ = result.specs;
+    auto end = parse_format_specs(ctx.begin(), ctx.end(), specs_, ctx,
+                                  detail::type::string_type);
     detail::check_string_type_spec(specs_.type, detail::error_handler());
-    return result.end;
+    return end;
   }
 
   template <typename FormatContext>
@@ -3913,16 +3912,15 @@ template <typename T> auto group_digits(T value) -> group_digits_view<T> {
 
 template <typename T> struct formatter<group_digits_view<T>> : formatter<T> {
  private:
-  detail::dynamic_format_specs<char> specs_;
+  detail::dynamic_format_specs<> specs_;
 
  public:
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
-    auto result =
-        parse_format_specs(ctx.begin(), ctx.end(), ctx, detail::type::int_type);
-    specs_ = result.specs;
+    auto end = parse_format_specs(ctx.begin(), ctx.end(), specs_, ctx,
+                                  detail::type::int_type);
     detail::check_string_type_spec(specs_.type, detail::error_handler());
-    return result.end;
+    return end;
   }
 
   template <typename FormatContext>
@@ -4139,16 +4137,15 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
         visit_format_arg(custom_formatter<Char>{parse_context, context}, arg);
         return parse_context.begin();
       }
-      auto result = parse_format_specs(begin, end, parse_context, arg.type());
+      auto specs = detail::dynamic_format_specs<Char>();
+      begin = parse_format_specs(begin, end, specs, parse_context, arg.type());
       detail::handle_dynamic_spec<detail::width_checker>(
-          result.specs.width, result.specs.width_ref, context);
+          specs.width, specs.width_ref, context);
       detail::handle_dynamic_spec<detail::precision_checker>(
-          result.specs.precision, result.specs.precision_ref, context);
-      begin = result.end;
+          specs.precision, specs.precision_ref, context);
       if (begin == end || *begin != '}')
         on_error("missing '}' in format string");
-      auto f =
-          arg_formatter<Char>{context.out(), result.specs, context.locale()};
+      auto f = arg_formatter<Char>{context.out(), specs, context.locale()};
       context.advance_to(visit_format_arg(f, arg));
       return begin;
     }

@@ -523,9 +523,10 @@ TEST(format_test, constexpr_parse_arg_id) {
 template <size_t N> constexpr auto parse_test_specs(const char (&s)[N]) {
   auto ctx = fmt::detail::compile_parse_context<char>(fmt::string_view(s, N),
                                                       43, nullptr);
-  auto result = fmt::detail::parse_format_specs(s, s + N - 1, ctx,
-                                                fmt::detail::type::float_type);
-  return result.specs;
+  auto specs = fmt::detail::dynamic_format_specs<>();
+  fmt::detail::parse_format_specs(s, s + N - 1, specs, ctx,
+                                  fmt::detail::type::float_type);
+  return specs;
 }
 
 TEST(core_test, constexpr_parse_format_specs) {
