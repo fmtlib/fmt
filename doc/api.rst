@@ -80,7 +80,7 @@ Compile-time checks are enabled by default on compilers that support C++20
 
 .. doxygentypedef:: fmt::format_string
 
-.. doxygenfunction:: fmt::runtime(string_view) -> basic_runtime<char>
+.. doxygenfunction:: fmt::runtime(string_view) -> runtime_format_string<>
 
 Formatting User-Defined Types
 -----------------------------
