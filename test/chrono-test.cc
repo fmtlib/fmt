@@ -15,8 +15,14 @@
 #include "util.h"         // get_locale
 
 using fmt::runtime;
-
 using testing::Contains;
+
+#if defined(__MINGW32__) && !defined(_UCRT)
+// Only C89 conversion specifiers when using MSVCRT instead of UCRT
+#  define FMT_HAS_C99_STRFTIME 0
+#else
+#  define FMT_HAS_C99_STRFTIME 1
+#endif
 
 auto make_tm() -> std::tm {
   auto time = std::tm();
@@ -123,7 +129,7 @@ TEST(chrono_test, format_tm) {
       make_tm(2000, 1, 3, 12, 14, 16)     // W1
   };
 
-#if defined(__MINGW32__) && !defined(_UCRT)
+#if !FMT_HAS_C99_STRFTIME
   GTEST_SKIP() << "Skip the rest of this test because it relies on strftime() "
                   "conforming to C99, but on this platform, MINGW + MSVCRT, "
                   "the function conforms only to C89.";
@@ -269,7 +275,7 @@ TEST(chrono_test, system_clock_time_point) {
   // Disabled on Windows because these formats are not consistent among
   // platforms.
   spec_list.insert(spec_list.end(), {"%c", "%Ec", "%r"});
-#elif defined(__MINGW32__) && !defined(_UCRT)
+#elif !FMT_HAS_C99_STRFTIME
   // Only C89 conversion specifiers when using MSVCRT instead of UCRT
   spec_list = {"%%", "%Y", "%y", "%b", "%B", "%m", "%U", "%W", "%j", "%d",
                "%a", "%A", "%w", "%H", "%I", "%M", "%S", "%x", "%X", "%p"};
@@ -288,10 +294,10 @@ TEST(chrono_test, system_clock_time_point) {
   }
 
   // Timezone formatters tests makes sense for localtime.
-#if defined(__MINGW32__) && !defined(_UCRT)
-  spec_list = {"%Z"};
-#else
+#if FMT_HAS_C99_STRFTIME
   spec_list = {"%z", "%Z"};
+#else
+  spec_list = {"%Z"};
 #endif
   for (const auto& spec : spec_list) {
     auto t = std::chrono::system_clock::to_time_t(t1);
@@ -374,7 +380,7 @@ TEST(chrono_test, local_system_clock_time_point) {
   // Disabled on Windows because these formats are not consistent among
   // platforms.
   spec_list.insert(spec_list.end(), {"%c", "%Ec", "%r"});
-#  elif defined(__MINGW32__) && !defined(_UCRT)
+#  elif !FMT_HAS_C99_STRFTIME
   // Only C89 conversion specifiers when using MSVCRT instead of UCRT
   spec_list = {"%%", "%Y", "%y", "%b", "%B", "%m", "%U", "%W", "%j", "%d", "%a",
                "%A", "%w", "%H", "%I", "%M", "%S", "%x", "%X", "%p", "%Z"};

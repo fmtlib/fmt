@@ -22,6 +22,13 @@
 using fmt::detail::max_value;
 using testing::Contains;
 
+#if defined(__MINGW32__) && !defined(_UCRT)
+// Only C89 conversion specifiers when using MSVCRT instead of UCRT
+#  define FMT_HAS_C99_STRFTIME 0
+#else
+#  define FMT_HAS_C99_STRFTIME 1
+#endif
+
 namespace test_ns {
 template <typename Char> class test_string {
  private:
@@ -299,7 +306,7 @@ TEST(chrono_test_wchar, time_point) {
   // Disabled on Windows, because these formats is not consistent among
   // platforms.
   spec_list.insert(spec_list.end(), {L"%c", L"%Ec", L"%r"});
-#elif defined(__MINGW32__) && !defined(_UCRT)
+#elif !FMT_HAS_C99_STRFTIME
   // Only C89 conversion specifiers when using MSVCRT instead of UCRT
   spec_list = {L"%%", L"%Y", L"%y", L"%b", L"%B", L"%m", L"%U",
                L"%W", L"%j", L"%d", L"%a", L"%A", L"%w", L"%H",
@@ -319,10 +326,10 @@ TEST(chrono_test_wchar, time_point) {
   }
 
   // Timezone formatters tests makes sense for localtime.
-#if defined(__MINGW32__) && !defined(_UCRT)
-  spec_list = {L"%Z"};
-#else
+#if FMT_HAS_C99_STRFTIME
   spec_list = {L"%z", L"%Z"};
+#else
+  spec_list = {L"%Z"};
 #endif
   for (const auto& spec : spec_list) {
     auto t = std::chrono::system_clock::to_time_t(t1);
