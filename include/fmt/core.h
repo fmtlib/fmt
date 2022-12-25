@@ -2922,9 +2922,9 @@ FMT_INLINE void check_format_string(const S&) {
 template <typename... Args, typename S,
           FMT_ENABLE_IF(is_compile_string<S>::value)>
 void check_format_string(S format_str) {
-  FMT_CONSTEXPR auto s = basic_string_view<typename S::char_type>(format_str);
-  using checker =
-      format_string_checker<typename S::char_type, remove_cvref_t<Args>...>;
+  using char_t = typename S::char_type;
+  FMT_CONSTEXPR auto s = basic_string_view<char_t>(format_str);
+  using checker = format_string_checker<char_t, remove_cvref_t<Args>...>;
   FMT_CONSTEXPR bool invalid_format =
       (parse_format_string<true>(s, checker(s)), true);
   ignore_unused(invalid_format);
