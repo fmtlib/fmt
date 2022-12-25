@@ -82,6 +82,8 @@ Compile-time checks are enabled by default on compilers that support C++20
 
 .. doxygenfunction:: fmt::runtime(string_view) -> runtime_format_string<>
 
+.. _udt:
+
 Formatting User-Defined Types
 -----------------------------
 
@@ -318,8 +320,6 @@ Format API
 
 ``fmt/format.h`` defines the full format API providing additional formatting
 functions and locale support.
-
-.. _udt:
 
 Literal-Based API
 -----------------
