@@ -348,21 +348,17 @@ constexpr parse_specs_result<T, Char> parse_specs(basic_string_view<Char> str,
 template <typename Char> struct arg_id_handler {
   arg_ref<Char> arg_id;
 
-  constexpr int operator()() {
+  constexpr int on_auto() {
     FMT_ASSERT(false, "handler cannot be used with automatic indexing");
     return 0;
   }
-  constexpr int operator()(int id) {
+  constexpr int on_index(int id) {
     arg_id = arg_ref<Char>(id);
     return 0;
   }
-  constexpr int operator()(basic_string_view<Char> id) {
+  constexpr int on_name(basic_string_view<Char> id) {
     arg_id = arg_ref<Char>(id);
     return 0;
-  }
-
-  constexpr void on_error(const char* message) {
-    FMT_THROW(format_error(message));
   }
 };
 

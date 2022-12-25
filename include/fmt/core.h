@@ -2425,20 +2425,20 @@ FMT_CONSTEXPR auto do_parse_arg_id(const Char* begin, const Char* end,
     else
       ++begin;
     if (begin == end || (*begin != '}' && *begin != ':'))
-      handler.on_error("invalid format string");
+      throw_format_error("invalid format string");
     else
-      handler(index);
+      handler.on_index(index);
     return begin;
   }
   if (!is_name_start(c)) {
-    handler.on_error("invalid format string");
+    throw_format_error("invalid format string");
     return begin;
   }
   auto it = begin;
   do {
     ++it;
-  } while (it != end && (is_name_start(c = *it) || ('0' <= c && c <= '9')));
-  handler(basic_string_view<Char>(begin, to_unsigned(it - begin)));
+  } while (it != end && (is_name_start(*it) || ('0' <= *it && *it <= '9')));
+  handler.on_name({begin, to_unsigned(it - begin)});
   return it;
 }
 
@@ -2447,7 +2447,7 @@ FMT_CONSTEXPR FMT_INLINE auto parse_arg_id(const Char* begin, const Char* end,
                                            IDHandler&& handler) -> const Char* {
   Char c = *begin;
   if (c != '}' && c != ':') return do_parse_arg_id(begin, end, handler);
-  handler();
+  handler.on_auto();
   return begin;
 }
 
@@ -2455,24 +2455,21 @@ template <typename Char> struct dynamic_spec_id_handler {
   basic_format_parse_context<Char>& ctx;
   dynamic_spec<Char> spec;
 
-  FMT_CONSTEXPR void operator()() {
+  FMT_CONSTEXPR void on_auto() {
     spec.kind = dynamic_spec_kind::index;
     spec.value = ctx.next_arg_id();
     ctx.check_dynamic_spec(spec.value);
   }
-  FMT_CONSTEXPR void operator()(int id) {
+  FMT_CONSTEXPR void on_index(int id) {
     spec.kind = dynamic_spec_kind::index;
     spec.value = id;
     ctx.check_arg_id(id);
     ctx.check_dynamic_spec(id);
   }
-  FMT_CONSTEXPR void operator()(basic_string_view<Char> id) {
+  FMT_CONSTEXPR void on_name(basic_string_view<Char> id) {
     spec.kind = dynamic_spec_kind::name;
     spec.name = id;
     ctx.check_arg_id(id);
-  }
-  FMT_CONSTEXPR void on_error(const char* message) {
-    if (message) throw_format_error("invalid format string");
   }
 };
 
@@ -2654,13 +2651,10 @@ FMT_CONSTEXPR auto parse_replacement_field(const Char* begin, const Char* end,
     Handler& handler;
     int arg_id;
 
-    FMT_CONSTEXPR void operator()() { arg_id = handler.on_arg_id(); }
-    FMT_CONSTEXPR void operator()(int id) { arg_id = handler.on_arg_id(id); }
-    FMT_CONSTEXPR void operator()(basic_string_view<Char> id) {
+    FMT_CONSTEXPR void on_auto() { arg_id = handler.on_arg_id(); }
+    FMT_CONSTEXPR void on_index(int id) { arg_id = handler.on_arg_id(id); }
+    FMT_CONSTEXPR void on_name(basic_string_view<Char> id) {
       arg_id = handler.on_arg_id(id);
-    }
-    FMT_CONSTEXPR void on_error(const char* message) {
-      if (message) handler.on_error(message);
     }
   };
 
