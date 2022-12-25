@@ -52,7 +52,9 @@ inline auto runtime(wstring_view s) -> wstring_view { return s; }
 #else
 template <typename... Args>
 using wformat_string = basic_format_string<wchar_t, type_identity_t<Args>...>;
-inline auto runtime(wstring_view s) -> basic_runtime<wchar_t> { return {{s}}; }
+inline auto runtime(wstring_view s) -> runtime_format_string<wchar_t> {
+  return {{s}};
+}
 #endif
 
 template <> struct is_char<wchar_t> : std::true_type {};

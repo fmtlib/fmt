@@ -2942,8 +2942,7 @@ inline void vprint_mojibake(std::FILE*, string_view, format_args) {}
 #endif
 FMT_END_DETAIL_NAMESPACE
 
-// A formatter specialization for the core types corresponding to detail::type
-// constants.
+// A formatter specialization for natively supported types.
 template <typename T, typename Char>
 struct formatter<T, Char,
                  enable_if_t<detail::type_constant<T, Char>::value !=
@@ -2952,8 +2951,6 @@ struct formatter<T, Char,
   detail::dynamic_format_specs<Char> specs_;
 
  public:
-  // Parses format specifiers stopping either at the end of the range or at the
-  // terminating '}'.
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
     auto begin = ctx.begin(), end = ctx.end();
@@ -3019,10 +3016,9 @@ struct formatter<T, Char,
   }
 
   template <detail::type U = detail::type_constant<T, Char>::value,
-            enable_if_t<(U == detail::type::string_type ||
-                         U == detail::type::cstring_type ||
-                         U == detail::type::char_type),
-                        int> = 0>
+            FMT_ENABLE_IF(U == detail::type::string_type ||
+                          U == detail::type::cstring_type ||
+                          U == detail::type::char_type)>
   FMT_CONSTEXPR void set_debug_format(bool set = true) {
     specs_.type = set ? presentation_type::debug : presentation_type::none;
   }
@@ -3036,7 +3032,7 @@ struct formatter<T, Char,
   template <typename Char>                                               \
   struct formatter<Type, Char> : formatter<Base, Char> {                 \
     template <typename FormatContext>                                    \
-    auto format(Type const& val, FormatContext& ctx) const               \
+    auto format(const Type& val, FormatContext& ctx) const               \
         -> decltype(ctx.out()) {                                         \
       return formatter<Base, Char>::format(static_cast<Base>(val), ctx); \
     }                                                                    \
@@ -3053,7 +3049,9 @@ FMT_FORMAT_AS(std::basic_string<Char>, basic_string_view<Char>);
 FMT_FORMAT_AS(std::nullptr_t, const void*);
 FMT_FORMAT_AS(detail::std_string_view<Char>, basic_string_view<Char>);
 
-template <typename Char> struct basic_runtime { basic_string_view<Char> str; };
+template <typename Char = char> struct runtime_format_string {
+  basic_string_view<Char> str;
+};
 
 /** A compile-time format string. */
 template <typename Char, typename... Args> class basic_format_string {
@@ -3081,7 +3079,7 @@ template <typename Char, typename... Args> class basic_format_string {
     detail::check_format_string<Args...>(s);
 #endif
   }
-  basic_format_string(basic_runtime<Char> r) : str_(r.str) {}
+  basic_format_string(runtime_format_string<Char> fmt) : str_(fmt.str) {}
 
   FMT_INLINE operator basic_string_view<Char>() const { return str_; }
   FMT_INLINE basic_string_view<Char> get() const { return str_; }
@@ -3104,7 +3102,7 @@ using format_string = basic_format_string<char, type_identity_t<Args>...>;
     fmt::print(fmt::runtime("{:d}"), "I am not a number");
   \endrst
  */
-inline auto runtime(string_view s) -> basic_runtime<char> { return {{s}}; }
+inline auto runtime(string_view s) -> runtime_format_string<> { return {{s}}; }
 #endif
 
 FMT_API auto vformat(string_view fmt, format_args args) -> std::string;
