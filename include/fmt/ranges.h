@@ -230,7 +230,7 @@ void for_each(index_sequence<Is...>, Tuple&& tup, F&& f) noexcept {
   using std::get;
   // Using free function get<I>(T) now.
   const int unused[] = {0, ((void)f(get<Is>(tup)), 0)...};
-  (void)unused;
+  ignore_unused(unused);
 }
 
 template <class T>
