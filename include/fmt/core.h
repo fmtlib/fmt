@@ -655,7 +655,7 @@ template <typename Char> class basic_format_parse_context {
 
  public:
   using char_type = Char;
-  using iterator = typename basic_string_view<Char>::iterator;
+  using iterator = const Char*;
 
   explicit constexpr basic_format_parse_context(
       basic_string_view<Char> format_str, int next_arg_id = 0)
@@ -1785,6 +1785,7 @@ template <typename OutputIt, typename Char> class basic_format_context {
  public:
   using iterator = OutputIt;
   using format_arg = basic_format_arg<basic_format_context>;
+  using format_args = basic_format_args<basic_format_context>;
   using parse_context_type = basic_format_parse_context<Char>;
   template <typename T> using formatter_type = formatter<T, Char>;
 
@@ -1795,12 +1796,11 @@ template <typename OutputIt, typename Char> class basic_format_context {
   basic_format_context(const basic_format_context&) = delete;
   void operator=(const basic_format_context&) = delete;
   /**
-   Constructs a ``basic_format_context`` object. References to the arguments are
-   stored in the object so make sure they have appropriate lifetimes.
+    Constructs a ``basic_format_context`` object. References to the arguments
+    are stored in the object so make sure they have appropriate lifetimes.
    */
-  constexpr basic_format_context(
-      OutputIt out, basic_format_args<basic_format_context> ctx_args,
-      detail::locale_ref loc = detail::locale_ref())
+  constexpr basic_format_context(OutputIt out, format_args ctx_args,
+                                 detail::locale_ref loc = {})
       : out_(out), args_(ctx_args), loc_(loc) {}
 
   constexpr auto arg(int id) const -> format_arg { return args_.get(id); }
@@ -1810,9 +1810,7 @@ template <typename OutputIt, typename Char> class basic_format_context {
   FMT_CONSTEXPR auto arg_id(basic_string_view<Char> name) -> int {
     return args_.get_id(name);
   }
-  auto args() const -> const basic_format_args<basic_format_context>& {
-    return args_;
-  }
+  auto args() const -> const format_args& { return args_; }
 
   FMT_CONSTEXPR auto error_handler() -> detail::error_handler { return {}; }
   void on_error(const char* message) { error_handler().on_error(message); }
@@ -2833,7 +2831,7 @@ template <typename Char, typename... Args> class format_string_checker {
 
   FMT_CONSTEXPR auto on_format_specs(int id, const Char* begin, const Char*)
       -> const Char* {
-    context_.advance_to(context_.begin() + (begin - &*context_.begin()));
+    context_.advance_to(begin);
     // id >= 0 check is a workaround for gcc 10 bug (#2065).
     return id >= 0 && id < num_args ? parse_funcs_[id](context_) : begin;
   }
@@ -2858,9 +2856,8 @@ void check_format_string(S format_str) {
   using char_t = typename S::char_type;
   FMT_CONSTEXPR auto s = basic_string_view<char_t>(format_str);
   using checker = format_string_checker<char_t, remove_cvref_t<Args>...>;
-  FMT_CONSTEXPR bool invalid_format =
-      (parse_format_string<true>(s, checker(s)), true);
-  ignore_unused(invalid_format);
+  FMT_CONSTEXPR bool error = (parse_format_string<true>(s, checker(s)), true);
+  ignore_unused(error);
 }
 
 // Don't use type_identity for args to simplify symbols.
@@ -2885,7 +2882,7 @@ struct formatter<T, Char,
 
  public:
   template <typename ParseContext>
-  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> const Char* {
     auto begin = ctx.begin(), end = ctx.end();
     if (begin == end) return begin;
     auto type = detail::type_constant<T, Char>::value;
@@ -2893,6 +2890,8 @@ struct formatter<T, Char,
     auto eh = detail::error_handler();
     switch (type) {
     case detail::type::none_type:
+      FMT_FALLTHROUGH;
+    case detail::type::custom_type:
       FMT_ASSERT(false, "invalid argument type");
       break;
     case detail::type::bool_type:
@@ -2938,10 +2937,6 @@ struct formatter<T, Char,
       break;
     case detail::type::pointer_type:
       detail::check_pointer_type_spec(specs_.type, eh);
-      break;
-    case detail::type::custom_type:
-      // Custom format specifiers are checked in parse functions of
-      // formatter specializations.
       break;
     }
     return begin;
@@ -3014,7 +3009,7 @@ template <typename Char, typename... Args> class basic_format_string {
   basic_format_string(runtime_format_string<Char> fmt) : str_(fmt.str) {}
 
   FMT_INLINE operator basic_string_view<Char>() const { return str_; }
-  FMT_INLINE basic_string_view<Char> get() const { return str_; }
+  FMT_INLINE auto get() const -> basic_string_view<Char> { return str_; }
 };
 
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
