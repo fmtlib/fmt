@@ -22,27 +22,25 @@ FMT_BEGIN_NAMESPACE
 
 namespace detail {
 
-template <typename RangeT, typename OutputIterator>
-OutputIterator copy(const RangeT& range, OutputIterator out) {
+template <typename Range, typename OutputIt>
+auto copy(const Range& range, OutputIt out) -> OutputIt {
   for (auto it = range.begin(), end = range.end(); it != end; ++it)
     *out++ = *it;
   return out;
 }
 
-template <typename OutputIterator>
-OutputIterator copy(const char* str, OutputIterator out) {
+template <typename OutputIt>
+auto copy(const char* str, OutputIt out) -> OutputIt {
   while (*str) *out++ = *str++;
   return out;
 }
 
-template <typename OutputIterator>
-OutputIterator copy(char ch, OutputIterator out) {
+template <typename OutputIt> auto copy(char ch, OutputIt out) -> OutputIt {
   *out++ = ch;
   return out;
 }
 
-template <typename OutputIterator>
-OutputIterator copy(wchar_t ch, OutputIterator out) {
+template <typename OutputIt> auto copy(wchar_t ch, OutputIt out) -> OutputIt {
   *out++ = ch;
   return out;
 }
@@ -69,7 +67,7 @@ template <typename T> class is_map {
   template <typename> static void check(...);
 
  public:
-#ifdef FMT_FORMAT_MAP_AS_LIST
+#ifdef FMT_FORMAT_MAP_AS_LIST  // DEPRECATED!
   static constexpr const bool value = false;
 #else
   static constexpr const bool value =
@@ -82,7 +80,7 @@ template <typename T> class is_set {
   template <typename> static void check(...);
 
  public:
-#ifdef FMT_FORMAT_SET_AS_LIST
+#ifdef FMT_FORMAT_SET_AS_LIST  // DEPRECATED!
   static constexpr const bool value = false;
 #else
   static constexpr const bool value =
@@ -230,14 +228,14 @@ template <typename T, typename C> class is_tuple_formattable_<T, C, true> {
 template <class Tuple, class F, size_t... Is>
 void for_each(index_sequence<Is...>, Tuple&& tup, F&& f) noexcept {
   using std::get;
-  // using free function get<I>(T) now.
-  const int _[] = {0, ((void)f(get<Is>(tup)), 0)...};
-  (void)_;  // blocks warnings
+  // Using free function get<I>(T) now.
+  const int unused[] = {0, ((void)f(get<Is>(tup)), 0)...};
+  (void)unused;
 }
 
 template <class T>
-FMT_CONSTEXPR make_index_sequence<std::tuple_size<T>::value> get_indexes(
-    T const&) {
+FMT_CONSTEXPR auto get_indexes(T const&)
+    -> make_index_sequence<std::tuple_size<T>::value> {
   return {};
 }
 
@@ -295,18 +293,18 @@ inline auto write_range_entry(OutputIt out, const T& str) -> OutputIt {
   return write_range_entry<Char>(out, basic_string_view<Char>(sv));
 }
 
-template <typename Char, typename OutputIt, typename Arg,
-          FMT_ENABLE_IF(std::is_same<Arg, Char>::value)>
-OutputIt write_range_entry(OutputIt out, const Arg v) {
-  return write_escaped_char(out, v);
+template <typename Char, typename OutputIt, typename T,
+          FMT_ENABLE_IF(std::is_same<T, Char>::value)>
+auto write_range_entry(OutputIt out, T value) -> OutputIt {
+  return write_escaped_char(out, value);
 }
 
 template <
-    typename Char, typename OutputIt, typename Arg,
-    FMT_ENABLE_IF(!is_std_string_like<typename std::decay<Arg>::type>::value &&
-                  !std::is_same<Arg, Char>::value)>
-OutputIt write_range_entry(OutputIt out, const Arg& v) {
-  return write<Char>(out, v);
+    typename Char, typename OutputIt, typename T,
+    FMT_ENABLE_IF(!is_std_string_like<typename std::decay<T>::type>::value &&
+                  !std::is_same<T, Char>::value)>
+auto write_range_entry(OutputIt out, const T& value) -> OutputIt {
+  return write<Char>(out, value);
 }
 
 }  // namespace detail
@@ -321,10 +319,10 @@ template <typename T, typename C> struct is_tuple_formattable {
       detail::is_tuple_formattable_<T, C>::value;
 };
 
-template <typename TupleT, typename Char>
-struct formatter<TupleT, Char,
-                 enable_if_t<fmt::is_tuple_like<TupleT>::value &&
-                             fmt::is_tuple_formattable<TupleT, Char>::value>> {
+template <typename Tuple, typename Char>
+struct formatter<Tuple, Char,
+                 enable_if_t<fmt::is_tuple_like<Tuple>::value &&
+                             fmt::is_tuple_formattable<Tuple, Char>::value>> {
  private:
   basic_string_view<Char> separator_ = detail::string_literal<Char, ',', ' '>{};
   basic_string_view<Char> opening_bracket_ =
@@ -363,11 +361,10 @@ struct formatter<TupleT, Char,
   }
 
   template <typename FormatContext = format_context>
-  auto format(const TupleT& values, FormatContext& ctx) const
+  auto format(const Tuple& value, FormatContext& ctx) const
       -> decltype(ctx.out()) {
-    auto out = ctx.out();
-    out = detail::copy_str<Char>(opening_bracket_, out);
-    detail::for_each(values, format_each<FormatContext>{0, out, separator_});
+    auto out = detail::copy_str<Char>(opening_bracket_, ctx.out());
+    detail::for_each(value, format_each<FormatContext>{0, out, separator_});
     out = detail::copy_str<Char>(closing_bracket_, out);
     return out;
   }
@@ -593,9 +590,6 @@ template <typename Char, typename... T> struct tuple_join_view : detail::view {
   tuple_join_view(const std::tuple<T...>& t, basic_string_view<Char> s)
       : tuple(t), sep{s} {}
 };
-
-template <typename Char, typename... T>
-using tuple_arg_join = tuple_join_view<Char, T...>;
 
 // Define FMT_TUPLE_JOIN_SPECIFIERS to enable experimental format specifiers
 // support in tuple_join. It is disabled by default because of issues with
