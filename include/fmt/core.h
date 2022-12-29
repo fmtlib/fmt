@@ -395,7 +395,7 @@ FMT_CONSTEXPR auto to_unsigned(Int value) ->
   return static_cast<typename std::make_unsigned<Int>::type>(value);
 }
 
-FMT_CONSTEXPR auto is_utf8() -> bool {
+FMT_CONSTEXPR inline auto is_utf8() -> bool {
   FMT_MSC_WARNING(suppress : 4566) constexpr unsigned char section[] = "\u00A7";
 
   // Avoid buggy sign extensions in MSVC's constant evaluation mode (#2297).
