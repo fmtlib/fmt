@@ -2485,8 +2485,7 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
   if (specs.sign != sign::none) {
     require_numeric_argument(arg_type);
     if (is_integral_type(arg_type) && arg_type != type::int_type &&
-        arg_type != type::long_long_type && arg_type != type::int128_type &&
-        arg_type != type::char_type) {
+        arg_type != type::long_long_type && arg_type != type::int128_type) {
       throw_format_error("format specifier requires signed argument");
     }
   }

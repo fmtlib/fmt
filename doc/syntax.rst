@@ -109,8 +109,8 @@ Note that unless a minimum field width is defined, the field width will always
 be the same size as the data to fill it, so that the alignment option has no
 meaning in this case.
 
-The *sign* option is only valid for number types, and can be one of the
-following:
+The *sign* option is only valid for floating point and signed integer types,
+and can be one of the following:
 
 +---------+------------------------------------------------------------+
 | Option  | Meaning                                                    |

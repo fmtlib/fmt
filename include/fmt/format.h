@@ -1898,9 +1898,12 @@ template <typename Char, typename OutputIt>
 FMT_CONSTEXPR auto write(OutputIt out, Char value,
                          const format_specs<Char>& specs, locale_ref loc = {})
     -> OutputIt {
+  // char is formatted as unsigned char for consistency across platforms.
+  using unsigned_type =
+      conditional_t<std::is_same<Char, char>::value, unsigned char, unsigned>;
   return check_char_specs(specs)
              ? write_char(out, value, specs)
-             : write(out, static_cast<int>(value), specs, loc);
+             : write(out, static_cast<unsigned_type>(value), specs, loc);
 }
 
 // Data for write_int that doesn't depend on output iterator type. It is used to

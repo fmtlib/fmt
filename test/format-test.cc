@@ -666,10 +666,8 @@ TEST(format_test, plus_sign) {
                    "format specifier requires signed argument");
   EXPECT_EQ("+42", fmt::format("{0:+}", 42.0));
   EXPECT_EQ("+42", fmt::format("{0:+}", 42.0l));
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:+"), 'c'), format_error,
-                   "missing '}' in format string");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:+}"), 'c'), format_error,
-                   "invalid format specifier for char");
+                   "format specifier requires signed argument");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:+}"), "abc"), format_error,
                    "format specifier requires numeric argument");
   EXPECT_THROW_MSG(
@@ -691,10 +689,8 @@ TEST(format_test, minus_sign) {
                    "format specifier requires signed argument");
   EXPECT_EQ("42", fmt::format("{0:-}", 42.0));
   EXPECT_EQ("42", fmt::format("{0:-}", 42.0l));
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0:-"), 'c'), format_error,
-                   "missing '}' in format string");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:-}"), 'c'), format_error,
-                   "invalid format specifier for char");
+                   "format specifier requires signed argument");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:-}"), "abc"), format_error,
                    "format specifier requires numeric argument");
   EXPECT_THROW_MSG(
@@ -716,10 +712,8 @@ TEST(format_test, space_sign) {
                    "format specifier requires signed argument");
   EXPECT_EQ(" 42", fmt::format("{0: }", 42.0));
   EXPECT_EQ(" 42", fmt::format("{0: }", 42.0l));
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{0: "), 'c'), format_error,
-                   "missing '}' in format string");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0: }"), 'c'), format_error,
-                   "invalid format specifier for char");
+                   "format specifier requires signed argument");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0: }"), "abc"), format_error,
                    "format specifier requires numeric argument");
   EXPECT_THROW_MSG(
@@ -1526,6 +1520,7 @@ TEST(format_test, format_char) {
 
   EXPECT_EQ("\n", fmt::format("{}", '\n'));
   EXPECT_EQ("'\\n'", fmt::format("{:?}", '\n'));
+  EXPECT_EQ("ff", fmt::format("{:x}", '\xff'));
 }
 
 TEST(format_test, format_volatile_char) {
