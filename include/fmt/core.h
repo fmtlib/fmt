@@ -2860,10 +2860,9 @@ struct formatter<T, Char,
  public:
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> const Char* {
-    auto begin = ctx.begin(), end = ctx.end();
-    if (begin == end) return begin;
     auto type = detail::type_constant<T, Char>::value;
-    begin = detail::parse_format_specs(begin, end, specs_, ctx, type);
+    auto end =
+        detail::parse_format_specs(ctx.begin(), ctx.end(), specs_, ctx, type);
     auto eh = detail::error_handler();
     switch (type) {
     case detail::type::none_type:
@@ -2916,7 +2915,7 @@ struct formatter<T, Char,
       detail::check_pointer_type_spec(specs_.type, eh);
       break;
     }
-    return begin;
+    return end;
   }
 
   template <detail::type U = detail::type_constant<T, Char>::value,
