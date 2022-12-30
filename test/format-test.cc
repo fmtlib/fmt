@@ -646,7 +646,7 @@ TEST(format_test, fill) {
             fmt::format(string_view("{:\0>4}", 6), '*'));
   EXPECT_EQ("жж42", fmt::format("{0:ж>4}", 42));
   EXPECT_THROW_MSG((void)fmt::format(runtime("{:\x80\x80\x80\x80\x80>}"), 0),
-                   format_error, "invalid type specifier");
+                   format_error, "invalid format specifier");
 }
 
 TEST(format_test, plus_sign) {
@@ -654,25 +654,25 @@ TEST(format_test, plus_sign) {
   EXPECT_EQ("-42", fmt::format("{0:+}", -42));
   EXPECT_EQ("+42", fmt::format("{0:+}", 42));
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:+}"), 42u), format_error,
-                   "format specifier requires signed argument");
+                   "invalid format specifier");
   EXPECT_EQ("+42", fmt::format("{0:+}", 42l));
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:+}"), 42ul), format_error,
-                   "format specifier requires signed argument");
+                   "invalid format specifier");
   EXPECT_EQ("+42", fmt::format("{0:+}", 42ll));
 #if FMT_USE_INT128
   EXPECT_EQ("+42", fmt::format("{0:+}", __int128_t(42)));
 #endif
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:+}"), 42ull), format_error,
-                   "format specifier requires signed argument");
+                   "invalid format specifier");
   EXPECT_EQ("+42", fmt::format("{0:+}", 42.0));
   EXPECT_EQ("+42", fmt::format("{0:+}", 42.0l));
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:+}"), 'c'), format_error,
-                   "format specifier requires signed argument");
+                   "invalid format specifier");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:+}"), "abc"), format_error,
-                   "format specifier requires numeric argument");
+                   "invalid format specifier");
   EXPECT_THROW_MSG(
       (void)fmt::format(runtime("{0:+}"), reinterpret_cast<void*>(0x42)),
-      format_error, "format specifier requires numeric argument");
+      format_error, "invalid format specifier");
 }
 
 TEST(format_test, minus_sign) {
@@ -680,22 +680,22 @@ TEST(format_test, minus_sign) {
   EXPECT_EQ("-42", fmt::format("{0:-}", -42));
   EXPECT_EQ("42", fmt::format("{0:-}", 42));
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:-}"), 42u), format_error,
-                   "format specifier requires signed argument");
+                   "invalid format specifier");
   EXPECT_EQ("42", fmt::format("{0:-}", 42l));
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:-}"), 42ul), format_error,
-                   "format specifier requires signed argument");
+                   "invalid format specifier");
   EXPECT_EQ("42", fmt::format("{0:-}", 42ll));
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:-}"), 42ull), format_error,
-                   "format specifier requires signed argument");
+                   "invalid format specifier");
   EXPECT_EQ("42", fmt::format("{0:-}", 42.0));
   EXPECT_EQ("42", fmt::format("{0:-}", 42.0l));
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:-}"), 'c'), format_error,
-                   "format specifier requires signed argument");
+                   "invalid format specifier");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:-}"), "abc"), format_error,
-                   "format specifier requires numeric argument");
+                   "invalid format specifier");
   EXPECT_THROW_MSG(
       (void)fmt::format(runtime("{0:-}"), reinterpret_cast<void*>(0x42)),
-      format_error, "format specifier requires numeric argument");
+      format_error, "invalid format specifier");
 }
 
 TEST(format_test, space_sign) {
@@ -703,22 +703,22 @@ TEST(format_test, space_sign) {
   EXPECT_EQ("-42", fmt::format("{0: }", -42));
   EXPECT_EQ(" 42", fmt::format("{0: }", 42));
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0: }"), 42u), format_error,
-                   "format specifier requires signed argument");
+                   "invalid format specifier");
   EXPECT_EQ(" 42", fmt::format("{0: }", 42l));
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0: }"), 42ul), format_error,
-                   "format specifier requires signed argument");
+                   "invalid format specifier");
   EXPECT_EQ(" 42", fmt::format("{0: }", 42ll));
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0: }"), 42ull), format_error,
-                   "format specifier requires signed argument");
+                   "invalid format specifier");
   EXPECT_EQ(" 42", fmt::format("{0: }", 42.0));
   EXPECT_EQ(" 42", fmt::format("{0: }", 42.0l));
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0: }"), 'c'), format_error,
-                   "format specifier requires signed argument");
+                   "invalid format specifier");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0: }"), "abc"), format_error,
-                   "format specifier requires numeric argument");
+                   "invalid format specifier");
   EXPECT_THROW_MSG(
       (void)fmt::format(runtime("{0: }"), reinterpret_cast<void*>(0x42)),
-      format_error, "format specifier requires numeric argument");
+      format_error, "invalid format specifier");
 }
 
 TEST(format_test, hash_flag) {
@@ -1172,7 +1172,7 @@ void check_unknown_types(const T& value, const char* types, const char*) {
     char c = static_cast<char>(i);
     if (std::strchr(types, c) || std::strchr(special, c) || !c) continue;
     safe_sprintf(format_str, "{0:10%c}", c);
-    const char* message = "invalid type specifier";
+    const char* message = "invalid format specifier";
     EXPECT_THROW_MSG((void)fmt::format(runtime(format_str), value),
                      format_error, message)
         << format_str << " " << message;
@@ -1181,7 +1181,7 @@ void check_unknown_types(const T& value, const char* types, const char*) {
 
 TEST(format_test, format_int) {
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:v"), 42), format_error,
-                   "invalid type specifier");
+                   "invalid format specifier");
   check_unknown_types(42, "bBdoxXnLc", "integer");
   EXPECT_EQ("x", fmt::format("{:c}", static_cast<int>('x')));
 }
@@ -1779,7 +1779,7 @@ TEST(format_test, format_examples) {
   EXPECT_EQ("The answer is 42", fmt::format("The answer is {}", 42));
   EXPECT_THROW_MSG(
       (void)fmt::format(runtime("The answer is {:d}"), "forty-two"),
-      format_error, "invalid type specifier");
+      format_error, "invalid format specifier");
 
   EXPECT_WRITE(
       stdout, fmt::print("{}", std::numeric_limits<double>::infinity()), "inf");

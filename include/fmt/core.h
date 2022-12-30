@@ -592,6 +592,10 @@ enum class type {
   custom_type
 };
 
+constexpr auto has_sign(type t) -> bool {
+  return ((0xe2a >> static_cast<int>(t)) & 1) != 0;
+}
+
 // Maps core type T to the corresponding type enum constant.
 template <typename T, typename Char>
 struct type_constant : std::integral_constant<type, type::custom_type> {};
@@ -2434,7 +2438,7 @@ FMT_CONSTEXPR inline auto parse_presentation_type(char type)
   case '?':
     return presentation_type::debug;
   default:
-    throw_format_error("invalid type specifier");
+    throw_format_error("invalid format specifier");
     return presentation_type::none;
   }
 }
@@ -2465,31 +2469,25 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
   begin = align.end;
   if (begin == end) return begin;
 
-  // Parse sign.
-  switch (to_ascii(*begin)) {
-  case '+':
-    specs.sign = sign::plus;
-    ++begin;
-    break;
-  case '-':
-    specs.sign = sign::minus;
-    ++begin;
-    break;
-  case ' ':
-    specs.sign = sign::space;
-    ++begin;
-    break;
-  default:
-    break;
-  }
-  if (specs.sign != sign::none) {
-    require_numeric_argument(arg_type);
-    if (is_integral_type(arg_type) && arg_type != type::int_type &&
-        arg_type != type::long_long_type && arg_type != type::int128_type) {
-      throw_format_error("format specifier requires signed argument");
+  if (has_sign(arg_type)) {  // Parse sign.
+    switch (to_ascii(*begin)) {
+    case '+':
+      specs.sign = sign::plus;
+      ++begin;
+      break;
+    case '-':
+      specs.sign = sign::minus;
+      ++begin;
+      break;
+    case ' ':
+      specs.sign = sign::space;
+      ++begin;
+      break;
+    default:
+      break;
     }
+    if (begin == end) return begin;
   }
-  if (begin == end) return begin;
 
   if (*begin == '#') {
     require_numeric_argument(arg_type);
@@ -2649,7 +2647,7 @@ template <typename ErrorHandler>
 FMT_CONSTEXPR void check_int_type_spec(presentation_type type,
                                        ErrorHandler&& eh) {
   if (type > presentation_type::bin_upper && type != presentation_type::chr)
-    eh.on_error("invalid type specifier");
+    eh.on_error("invalid format specifier");
 }
 
 // Checks char specs and returns true if the type spec is char (and not int).
@@ -2723,7 +2721,7 @@ FMT_CONSTEXPR auto parse_float_type_spec(const format_specs<Char>& specs,
     result.format = float_format::hex;
     break;
   default:
-    eh.on_error("invalid type specifier");
+    eh.on_error("invalid format specifier");
     break;
   }
   return result;
@@ -2735,7 +2733,8 @@ FMT_CONSTEXPR auto check_cstring_type_spec(presentation_type type,
   if (type == presentation_type::none || type == presentation_type::string ||
       type == presentation_type::debug)
     return true;
-  if (type != presentation_type::pointer) eh.on_error("invalid type specifier");
+  if (type != presentation_type::pointer)
+    eh.on_error("invalid format specifier");
   return false;
 }
 
@@ -2744,14 +2743,14 @@ FMT_CONSTEXPR void check_string_type_spec(presentation_type type,
                                           ErrorHandler&& eh = {}) {
   if (type != presentation_type::none && type != presentation_type::string &&
       type != presentation_type::debug)
-    eh.on_error("invalid type specifier");
+    eh.on_error("invalid format specifier");
 }
 
 template <typename ErrorHandler>
 FMT_CONSTEXPR void check_pointer_type_spec(presentation_type type,
                                            ErrorHandler&& eh) {
   if (type != presentation_type::none && type != presentation_type::pointer)
-    eh.on_error("invalid type specifier");
+    eh.on_error("invalid format specifier");
 }
 
 constexpr int invalid_arg_index = -1;

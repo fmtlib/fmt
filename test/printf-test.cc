@@ -237,7 +237,7 @@ TEST(printf_test, width) {
 
   // Width cannot be specified twice.
   EXPECT_THROW_MSG(test_sprintf("%5-5d", 42), format_error,
-                   "invalid type specifier");
+                   "invalid format specifier");
 
   EXPECT_THROW_MSG(test_sprintf(format("%{}d", big_num), 42), format_error,
                    "number is too big");

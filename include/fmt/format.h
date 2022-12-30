@@ -2150,7 +2150,7 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
   case presentation_type::chr:
     return write_char(out, static_cast<Char>(abs_value), specs);
   default:
-    throw_format_error("invalid type specifier");
+    throw_format_error("invalid format specifier");
   }
   return out;
 }
