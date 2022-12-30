@@ -619,18 +619,30 @@ FMT_TYPE_CONSTANT(const void*, pointer_type);
 constexpr bool is_integral_type(type t) {
   return t > type::none_type && t <= type::last_integer_type;
 }
-
 constexpr bool is_arithmetic_type(type t) {
   return t > type::none_type && t <= type::last_numeric_type;
 }
 
-constexpr auto has_sign(type t) -> bool {
-  return ((0xe2a >> static_cast<int>(t)) & 1) != 0;
+constexpr auto set(type rhs) -> int { return 1 << static_cast<int>(rhs); }
+constexpr auto in(type t, int set) -> bool {
+  return ((set >> static_cast<int>(t)) & 1) != 0;
 }
 
-constexpr auto has_precision(type t) -> bool {
-  return ((0x3e00 >> static_cast<int>(t)) & 1) != 0;
-}
+// Bitsets of types.
+enum {
+  sint_set =
+      set(type::int_type) | set(type::long_long_type) | set(type::int128_type),
+  uint_set = set(type::uint_type) | set(type::ulong_long_type) |
+             set(type::uint128_type),
+  all_int_set = sint_set | uint_set,
+  bool_set = set(type::bool_type),
+  char_set = set(type::char_type),
+  float_set = set(type::float_type) | set(type::double_type) |
+              set(type::long_double_type),
+  string_set = set(type::string_type),
+  cstring_set = set(type::cstring_type),
+  pointer_set = set(type::pointer_type)
+};
 
 FMT_NORETURN FMT_API void throw_format_error(const char* message);
 
@@ -2399,49 +2411,58 @@ FMT_CONSTEXPR auto parse_precision(const Char* begin, const Char* end,
   return parse_dynamic_spec(begin, end, value, ref, ctx);
 }
 
-FMT_CONSTEXPR inline auto parse_presentation_type(char type)
+FMT_CONSTEXPR inline auto do_parse_presentation_type(char c, type t)
     -> presentation_type {
-  switch (type) {
+  using pt = presentation_type;
+  constexpr auto integral_set = all_int_set | bool_set | char_set;
+  switch (c) {
   case 'd':
-    return presentation_type::dec;
+    return in(t, integral_set) ? pt::dec : pt::none;
   case 'o':
-    return presentation_type::oct;
+    return in(t, integral_set) ? pt::oct : pt::none;
   case 'x':
-    return presentation_type::hex_lower;
+    return in(t, integral_set) ? pt::hex_lower : pt::none;
   case 'X':
-    return presentation_type::hex_upper;
+    return in(t, integral_set) ? pt::hex_upper : pt::none;
   case 'b':
-    return presentation_type::bin_lower;
+    return in(t, integral_set) ? pt::bin_lower : pt::none;
   case 'B':
-    return presentation_type::bin_upper;
+    return in(t, integral_set) ? pt::bin_upper : pt::none;
   case 'a':
-    return presentation_type::hexfloat_lower;
+    return in(t, float_set) ? pt::hexfloat_lower : pt::none;
   case 'A':
-    return presentation_type::hexfloat_upper;
+    return in(t, float_set) ? pt::hexfloat_upper : pt::none;
   case 'e':
-    return presentation_type::exp_lower;
+    return in(t, float_set) ? pt::exp_lower : pt::none;
   case 'E':
-    return presentation_type::exp_upper;
+    return in(t, float_set) ? pt::exp_upper : pt::none;
   case 'f':
-    return presentation_type::fixed_lower;
+    return in(t, float_set) ? pt::fixed_lower : pt::none;
   case 'F':
-    return presentation_type::fixed_upper;
+    return in(t, float_set) ? pt::fixed_upper : pt::none;
   case 'g':
-    return presentation_type::general_lower;
+    return in(t, float_set) ? pt::general_lower : pt::none;
   case 'G':
-    return presentation_type::general_upper;
+    return in(t, float_set) ? pt::general_upper : pt::none;
   case 'c':
-    return presentation_type::chr;
+    return in(t, integral_set) ? pt::chr : pt::none;
   case 's':
-    return presentation_type::string;
+    return in(t, bool_set | string_set | cstring_set) ? pt::string : pt::none;
   case 'p':
-    return presentation_type::pointer;
+    return in(t, pointer_set | cstring_set) ? pt::pointer : pt::none;
   case '?':
-    return presentation_type::debug;
+    return in(t, char_set | string_set | cstring_set) ? pt::debug : pt::none;
   default:
-    throw_format_error("invalid format specifier");
-    return presentation_type::none;
+    return pt::none;
   }
+}
+
+FMT_CONSTEXPR inline auto parse_presentation_type(char c, type t)
+    -> presentation_type {
+  auto pt = do_parse_presentation_type(c, t);
+  if (pt == presentation_type::none)
+    throw_format_error("invalid format specifier");
+  return pt;
 }
 
 // Parses standard format specifiers.
@@ -2451,7 +2472,7 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
     basic_format_parse_context<Char>& ctx, type arg_type) -> const Char* {
   if (1 < end - begin && begin[1] == '}' && is_ascii_letter(*begin) &&
       *begin != 'L') {
-    specs.type = parse_presentation_type(to_ascii(*begin++));
+    specs.type = parse_presentation_type(to_ascii(*begin++), arg_type);
     return begin;
   }
   if (begin == end) return begin;
@@ -2459,7 +2480,7 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
   begin = parse_align(begin, end, specs);
   if (begin == end) return begin;
 
-  if (has_sign(arg_type)) {
+  if (in(arg_type, sint_set | float_set)) {
     switch (to_ascii(*begin)) {
     case '+':
       specs.sign = sign::plus;
@@ -2498,7 +2519,7 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
   begin = parse_dynamic_spec(begin, end, specs.width, specs.width_ref, ctx);
   if (begin == end) return begin;
 
-  if (*begin == '.' && has_precision(arg_type)) {
+  if (*begin == '.' && in(arg_type, float_set | string_set | cstring_set)) {
     begin =
         parse_precision(begin, end, specs.precision, specs.precision_ref, ctx);
     if (begin == end) return begin;
@@ -2509,7 +2530,8 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
     if (++begin == end) return begin;
   }
 
-  if (*begin != '}') specs.type = parse_presentation_type(to_ascii(*begin++));
+  if (*begin != '}')
+    specs.type = parse_presentation_type(to_ascii(*begin++), arg_type);
   return begin;
 }
 
@@ -2626,114 +2648,17 @@ FMT_CONSTEXPR auto parse_format_specs(ParseContext& ctx)
   return f.parse(ctx);
 }
 
-template <typename ErrorHandler>
-FMT_CONSTEXPR void check_int_type_spec(presentation_type type,
-                                       ErrorHandler&& eh) {
-  if (type > presentation_type::bin_upper && type != presentation_type::chr)
-    eh.on_error("invalid format specifier");
-}
-
 // Checks char specs and returns true if the type spec is char (and not int).
-template <typename Char, typename ErrorHandler = error_handler>
-FMT_CONSTEXPR auto check_char_specs(const format_specs<Char>& specs,
-                                    ErrorHandler&& eh = {}) -> bool {
+template <typename Char>
+FMT_CONSTEXPR auto check_char_specs(const format_specs<Char>& specs) -> bool {
   if (specs.type != presentation_type::none &&
       specs.type != presentation_type::chr &&
       specs.type != presentation_type::debug) {
-    check_int_type_spec(specs.type, eh);
     return false;
   }
   if (specs.align == align::numeric || specs.sign != sign::none || specs.alt)
-    eh.on_error("invalid format specifier for char");
+    throw_format_error("invalid format specifier for char");
   return true;
-}
-
-// A floating-point presentation format.
-enum class float_format : unsigned char {
-  general,  // General: exponent notation or fixed point based on magnitude.
-  exp,      // Exponent notation with the default precision of 6, e.g. 1.2e-3.
-  fixed,    // Fixed point with the default precision of 6, e.g. 0.0012.
-  hex
-};
-
-struct float_specs {
-  int precision;
-  float_format format : 8;
-  sign_t sign : 8;
-  bool upper : 1;
-  bool locale : 1;
-  bool binary32 : 1;
-  bool showpoint : 1;
-};
-
-template <typename ErrorHandler = error_handler, typename Char>
-FMT_CONSTEXPR auto parse_float_type_spec(const format_specs<Char>& specs,
-                                         ErrorHandler&& eh = {})
-    -> float_specs {
-  auto result = float_specs();
-  result.showpoint = specs.alt;
-  result.locale = specs.localized;
-  switch (specs.type) {
-  case presentation_type::none:
-    result.format = float_format::general;
-    break;
-  case presentation_type::general_upper:
-    result.upper = true;
-    FMT_FALLTHROUGH;
-  case presentation_type::general_lower:
-    result.format = float_format::general;
-    break;
-  case presentation_type::exp_upper:
-    result.upper = true;
-    FMT_FALLTHROUGH;
-  case presentation_type::exp_lower:
-    result.format = float_format::exp;
-    result.showpoint |= specs.precision != 0;
-    break;
-  case presentation_type::fixed_upper:
-    result.upper = true;
-    FMT_FALLTHROUGH;
-  case presentation_type::fixed_lower:
-    result.format = float_format::fixed;
-    result.showpoint |= specs.precision != 0;
-    break;
-  case presentation_type::hexfloat_upper:
-    result.upper = true;
-    FMT_FALLTHROUGH;
-  case presentation_type::hexfloat_lower:
-    result.format = float_format::hex;
-    break;
-  default:
-    eh.on_error("invalid format specifier");
-    break;
-  }
-  return result;
-}
-
-template <typename ErrorHandler = error_handler>
-FMT_CONSTEXPR auto check_cstring_type_spec(presentation_type type,
-                                           ErrorHandler&& eh = {}) -> bool {
-  if (type == presentation_type::none || type == presentation_type::string ||
-      type == presentation_type::debug)
-    return true;
-  if (type != presentation_type::pointer)
-    eh.on_error("invalid format specifier");
-  return false;
-}
-
-template <typename ErrorHandler = error_handler>
-FMT_CONSTEXPR void check_string_type_spec(presentation_type type,
-                                          ErrorHandler&& eh = {}) {
-  if (type != presentation_type::none && type != presentation_type::string &&
-      type != presentation_type::debug)
-    eh.on_error("invalid format specifier");
-}
-
-template <typename ErrorHandler>
-FMT_CONSTEXPR void check_pointer_type_spec(presentation_type type,
-                                           ErrorHandler&& eh) {
-  if (type != presentation_type::none && type != presentation_type::pointer)
-    eh.on_error("invalid format specifier");
 }
 
 constexpr int invalid_arg_index = -1;
@@ -2863,58 +2788,7 @@ struct formatter<T, Char,
     auto type = detail::type_constant<T, Char>::value;
     auto end =
         detail::parse_format_specs(ctx.begin(), ctx.end(), specs_, ctx, type);
-    auto eh = detail::error_handler();
-    switch (type) {
-    case detail::type::none_type:
-      FMT_FALLTHROUGH;
-    case detail::type::custom_type:
-      FMT_ASSERT(false, "invalid argument type");
-      break;
-    case detail::type::bool_type:
-      if (specs_.type == presentation_type::none ||
-          specs_.type == presentation_type::string) {
-        break;
-      }
-      FMT_FALLTHROUGH;
-    case detail::type::int_type:
-    case detail::type::uint_type:
-    case detail::type::long_long_type:
-    case detail::type::ulong_long_type:
-    case detail::type::int128_type:
-    case detail::type::uint128_type:
-      detail::check_int_type_spec(specs_.type, eh);
-      break;
-    case detail::type::char_type:
-      detail::check_char_specs(specs_, eh);
-      break;
-    case detail::type::float_type:
-      if (detail::const_check(FMT_USE_FLOAT))
-        detail::parse_float_type_spec(specs_, eh);
-      else
-        FMT_ASSERT(false, "float support disabled");
-      break;
-    case detail::type::double_type:
-      if (detail::const_check(FMT_USE_DOUBLE))
-        detail::parse_float_type_spec(specs_, eh);
-      else
-        FMT_ASSERT(false, "double support disabled");
-      break;
-    case detail::type::long_double_type:
-      if (detail::const_check(FMT_USE_LONG_DOUBLE))
-        detail::parse_float_type_spec(specs_, eh);
-      else
-        FMT_ASSERT(false, "long double support disabled");
-      break;
-    case detail::type::cstring_type:
-      detail::check_cstring_type_spec(specs_.type, eh);
-      break;
-    case detail::type::string_type:
-      detail::check_string_type_spec(specs_.type, eh);
-      break;
-    case detail::type::pointer_type:
-      detail::check_pointer_type_spec(specs_.type, eh);
-      break;
-    }
+    if (type == detail::type::char_type) detail::check_char_specs(specs_);
     return end;
   }
 

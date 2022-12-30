@@ -483,35 +483,6 @@ TEST(arg_test, visit_invalid_arg) {
   fmt::visit_format_arg(visitor, arg);
 }
 
-TEST(core_test, has_sign) {
-  using fmt::detail::type;
-  type types_with_sign[] = {type::int_type,    type::long_long_type,
-                            type::int128_type, type::float_type,
-                            type::double_type, type::long_double_type};
-  for (auto t : types_with_sign) EXPECT_TRUE(fmt::detail::has_sign(t));
-  type types_without_sign[] = {
-      type::none_type,    type::uint_type,    type::ulong_long_type,
-      type::uint128_type, type::bool_type,    type::char_type,
-      type::string_type,  type::cstring_type, type::custom_type};
-  for (auto t : types_without_sign) EXPECT_FALSE(fmt::detail::has_sign(t));
-}
-
-TEST(core_test, has_precision) {
-  using fmt::detail::type;
-  type types_with_precision[] = {type::float_type, type::double_type,
-                                 type::long_double_type, type::string_type,
-                                 type::cstring_type};
-  for (auto t : types_with_precision)
-    EXPECT_TRUE(fmt::detail::has_precision(t));
-  type types_without_precision[] = {type::none_type,       type::int_type,
-                                    type::uint_type,       type::long_long_type,
-                                    type::ulong_long_type, type::int128_type,
-                                    type::uint128_type,    type::bool_type,
-                                    type::char_type,       type::custom_type};
-  for (auto t : types_without_precision)
-    EXPECT_FALSE(fmt::detail::has_precision(t));
-}
-
 #if FMT_USE_CONSTEXPR
 
 enum class arg_id_result { none, empty, index, name };
@@ -571,7 +542,8 @@ TEST(core_test, constexpr_parse_format_specs) {
   static_assert(parse_test_specs("{42}").width_ref.val.index == 42, "");
   static_assert(parse_test_specs(".42").precision == 42, "");
   static_assert(parse_test_specs(".{42}").precision_ref.val.index == 42, "");
-  static_assert(parse_test_specs("d").type == fmt::presentation_type::dec, "");
+  static_assert(
+      parse_test_specs("f").type == fmt::presentation_type::fixed_lower, "");
 }
 
 struct test_format_string_handler {
