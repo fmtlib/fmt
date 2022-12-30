@@ -2010,11 +2010,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     auto begin = ctx.begin(), end = ctx.end();
     if (begin == end || *begin == '}') return {begin, begin};
 
-    auto align_result = detail::parse_align(begin, end);
-    specs.align = align_result.align;
-    auto fill_size = align_result.end - begin - 1;
-    if (fill_size > 0) specs.fill = {begin, detail::to_unsigned(fill_size)};
-    begin = align_result.end;
+    begin = detail::parse_align(begin, end, specs);
     if (begin == end) return {begin, begin};
 
     begin = detail::parse_dynamic_spec(begin, end, specs.width, width_ref, ctx);

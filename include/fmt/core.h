@@ -592,10 +592,6 @@ enum class type {
   custom_type
 };
 
-constexpr auto has_sign(type t) -> bool {
-  return ((0xe2a >> static_cast<int>(t)) & 1) != 0;
-}
-
 // Maps core type T to the corresponding type enum constant.
 template <typename T, typename Char>
 struct type_constant : std::integral_constant<type, type::custom_type> {};
@@ -626,6 +622,14 @@ constexpr bool is_integral_type(type t) {
 
 constexpr bool is_arithmetic_type(type t) {
   return t > type::none_type && t <= type::last_numeric_type;
+}
+
+constexpr auto has_sign(type t) -> bool {
+  return ((0xe2a >> static_cast<int>(t)) & 1) != 0;
+}
+
+constexpr auto has_precision(type t) -> bool {
+  return ((0x3e00 >> static_cast<int>(t)) & 1) != 0;
 }
 
 FMT_NORETURN FMT_API void throw_format_error(const char* message);
@@ -2253,15 +2257,10 @@ FMT_CONSTEXPR auto parse_nonnegative_int(const Char*& begin, const Char* end,
              : error_value;
 }
 
-template <typename Char> struct parse_align_result {
-  const Char* end;
-  align_t align;
-};
-
 // Parses [[fill]align].
 template <typename Char>
-FMT_CONSTEXPR auto parse_align(const Char* begin, const Char* end)
-    -> parse_align_result<Char> {
+FMT_CONSTEXPR auto parse_align(const Char* begin, const Char* end,
+                               format_specs<Char>& specs) -> const Char* {
   FMT_ASSERT(begin != end, "");
   auto align = align::none;
   auto p = begin + code_point_length(begin);
@@ -2281,11 +2280,12 @@ FMT_CONSTEXPR auto parse_align(const Char* begin, const Char* end)
     if (align != align::none) {
       if (p != begin) {
         auto c = *begin;
-        if (c == '}') return {begin, align::none};
+        if (c == '}') return begin;
         if (c == '{') {
           throw_format_error("invalid fill character '{'");
-          return {begin, align::none};
+          return begin;
         }
+        specs.fill = {begin, to_unsigned(p - begin)};
         begin = p + 1;
       } else {
         ++begin;
@@ -2296,7 +2296,8 @@ FMT_CONSTEXPR auto parse_align(const Char* begin, const Char* end)
     }
     p = begin;
   }
-  return {begin, align};
+  specs.align = align;
+  return begin;
 }
 
 template <typename Char> constexpr auto is_name_start(Char c) -> bool {
@@ -2392,7 +2393,7 @@ FMT_CONSTEXPR auto parse_precision(const Char* begin, const Char* end,
     -> const Char* {
   ++begin;
   if (begin == end || *begin == '}') {
-    throw_format_error("missing precision");
+    throw_format_error("invalid precision");
     return begin;
   }
   return parse_dynamic_spec(begin, end, value, ref, ctx);
@@ -2443,11 +2444,6 @@ FMT_CONSTEXPR inline auto parse_presentation_type(char type)
   }
 }
 
-FMT_CONSTEXPR inline void require_numeric_argument(type arg_type) {
-  if (!is_arithmetic_type(arg_type))
-    throw_format_error("format specifier requires numeric argument");
-}
-
 // Parses standard format specifiers.
 template <typename Char>
 FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
@@ -2460,16 +2456,10 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
   }
   if (begin == end) return begin;
 
-  auto align = parse_align(begin, end);
-  if (align.align != align::none) {
-    specs.align = align.align;
-    auto fill_size = align.end - begin - 1;
-    if (fill_size > 0) specs.fill = {begin, to_unsigned(fill_size)};
-  }
-  begin = align.end;
+  begin = parse_align(begin, end, specs);
   if (begin == end) return begin;
 
-  if (has_sign(arg_type)) {  // Parse sign.
+  if (has_sign(arg_type)) {
     switch (to_ascii(*begin)) {
     case '+':
       specs.sign = sign::plus;
@@ -2489,15 +2479,14 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
     if (begin == end) return begin;
   }
 
-  if (*begin == '#') {
-    require_numeric_argument(arg_type);
+  if (*begin == '#' && is_arithmetic_type(arg_type)) {
     specs.alt = true;
     if (++begin == end) return begin;
   }
 
-  // Parse zero flag.
-  if (*begin == '0') {
-    require_numeric_argument(arg_type);
+  if (*begin == '0') {  // Parse zero flag.
+    if (!is_arithmetic_type(arg_type))
+      throw_format_error("format specifier requires numeric argument");
     if (specs.align == align::none) {
       // Ignore 0 if align is specified for compatibility with std::format.
       specs.align = align::numeric;
@@ -2509,24 +2498,18 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
   begin = parse_dynamic_spec(begin, end, specs.width, specs.width_ref, ctx);
   if (begin == end) return begin;
 
-  // Parse precision.
-  if (*begin == '.') {
+  if (*begin == '.' && has_precision(arg_type)) {
     begin =
         parse_precision(begin, end, specs.precision, specs.precision_ref, ctx);
-    if (is_integral_type(arg_type) || arg_type == type::pointer_type)
-      throw_format_error("precision not allowed for this argument type");
     if (begin == end) return begin;
   }
 
-  if (*begin == 'L') {
-    require_numeric_argument(arg_type);
+  if (*begin == 'L' && is_arithmetic_type(arg_type)) {
     specs.localized = true;
-    ++begin;
+    if (++begin == end) return begin;
   }
 
-  // Parse type.
-  if (begin != end && *begin != '}')
-    specs.type = parse_presentation_type(to_ascii(*begin++));
+  if (*begin != '}') specs.type = parse_presentation_type(to_ascii(*begin++));
   return begin;
 }
 
