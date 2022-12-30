@@ -4148,8 +4148,7 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
         -> const Char* {
       auto arg = get_arg(context, id);
       if (arg.type() == type::custom_type) {
-        parse_context.advance_to(parse_context.begin() +
-                                 (begin - &*parse_context.begin()));
+        parse_context.advance_to(begin);
         visit_format_arg(custom_formatter<Char>{parse_context, context}, arg);
         return parse_context.begin();
       }
