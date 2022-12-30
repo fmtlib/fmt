@@ -2181,14 +2181,14 @@ template <typename Char> constexpr bool is_ascii_letter(Char c) {
   return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
 
-// Converts a character to ASCII. Returns a number > 127 on conversion failure.
+// Converts a character to ASCII. Returns '\0' on conversion failure.
 template <typename Char, FMT_ENABLE_IF(std::is_integral<Char>::value)>
-constexpr auto to_ascii(Char c) -> Char {
-  return c;
+constexpr auto to_ascii(Char c) -> char {
+  return c <= 0xff ? static_cast<char>(c) : '\0';
 }
 template <typename Char, FMT_ENABLE_IF(std::is_enum<Char>::value)>
-constexpr auto to_ascii(Char c) -> underlying_t<Char> {
-  return c;
+constexpr auto to_ascii(Char c) -> char {
+  return c <= 0xff ? static_cast<char>(c) : '\0';
 }
 
 FMT_CONSTEXPR inline auto code_point_length_impl(char c) -> int {
@@ -2295,8 +2295,8 @@ FMT_CONSTEXPR auto parse_align(const Char* begin, const Char* end)
   return {begin, align};
 }
 
-template <typename Char> FMT_CONSTEXPR bool is_name_start(Char c) {
-  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || '_' == c;
+template <typename Char> constexpr auto is_name_start(Char c) -> bool {
+  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == '_';
 }
 
 template <typename Char, typename Handler>
@@ -2394,9 +2394,9 @@ FMT_CONSTEXPR auto parse_precision(const Char* begin, const Char* end,
   return parse_dynamic_spec(begin, end, value, ref, ctx);
 }
 
-template <typename Char>
-FMT_CONSTEXPR auto parse_presentation_type(Char type) -> presentation_type {
-  switch (to_ascii(type)) {
+FMT_CONSTEXPR inline auto parse_presentation_type(char type)
+    -> presentation_type {
+  switch (type) {
   case 'd':
     return presentation_type::dec;
   case 'o':
@@ -2434,6 +2434,7 @@ FMT_CONSTEXPR auto parse_presentation_type(Char type) -> presentation_type {
   case '?':
     return presentation_type::debug;
   default:
+    throw_format_error("invalid type specifier");
     return presentation_type::none;
   }
 }
@@ -2450,9 +2451,7 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
     basic_format_parse_context<Char>& ctx, type arg_type) -> const Char* {
   if (1 < end - begin && begin[1] == '}' && is_ascii_letter(*begin) &&
       *begin != 'L') {
-    specs.type = parse_presentation_type(*begin++);
-    if (specs.type == presentation_type::none)
-      throw_format_error("invalid type specifier");
+    specs.type = parse_presentation_type(to_ascii(*begin++));
     return begin;
   }
   if (begin == end) return begin;
@@ -2529,11 +2528,8 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
   }
 
   // Parse type.
-  if (begin != end && *begin != '}') {
-    specs.type = parse_presentation_type(*begin++);
-    if (specs.type == presentation_type::none)
-      throw_format_error("invalid type specifier");
-  }
+  if (begin != end && *begin != '}')
+    specs.type = parse_presentation_type(to_ascii(*begin++));
   return begin;
 }
 

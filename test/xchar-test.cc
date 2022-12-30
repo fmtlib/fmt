@@ -120,10 +120,12 @@ struct custom_char {
   template <typename T>
   constexpr custom_char(T val) : value(static_cast<int>(val)) {}
 
-  operator int() const { return value; }
+  operator char() const {
+    return value <= 0xff ? static_cast<char>(value) : '\0';
+  }
 };
 
-int to_ascii(custom_char c) { return c; }
+auto to_ascii(custom_char c) -> char { return c; }
 
 FMT_BEGIN_NAMESPACE
 template <> struct is_char<custom_char> : std::true_type {};
