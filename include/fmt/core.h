@@ -1850,10 +1850,6 @@ using buffer_context =
     basic_format_context<detail::buffer_appender<Char>, Char>;
 using format_context = buffer_context<char>;
 
-// Workaround an alias issue: https://stackoverflow.com/q/62767544/471164.
-#define FMT_BUFFER_CONTEXT(Char) \
-  basic_format_context<detail::buffer_appender<Char>, Char>
-
 template <typename T, typename Char = char>
 using is_formattable = bool_constant<
     !std::is_base_of<detail::unformattable,
@@ -2757,11 +2753,16 @@ void check_format_string(S format_str) {
   ignore_unused(error);
 }
 
-// Don't use type_identity for args to simplify symbols.
+template <typename Char = char> struct vformat_args {
+  using type = basic_format_args<
+      basic_format_context<std::back_insert_iterator<buffer<Char>>, Char>>;
+};
+template <> struct vformat_args<char> { using type = format_args; };
+
+// Use vformat_args and avoid type_identity to keep symbols short.
 template <typename Char>
 void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
-                basic_format_args<FMT_BUFFER_CONTEXT(Char)> args,
-                locale_ref loc = {});
+                typename vformat_args<Char>::type args, locale_ref loc = {});
 
 FMT_API void vprint_mojibake(std::FILE*, string_view, format_args);
 #ifndef _WIN32

@@ -29,8 +29,7 @@ template FMT_API auto decimal_point_impl(locale_ref) -> char;
 template FMT_API void buffer<char>::append(const char*, const char*);
 
 template FMT_API void vformat_to(buffer<char>&, string_view,
-                                 basic_format_args<FMT_BUFFER_CONTEXT(char)>,
-                                 locale_ref);
+                                 typename vformat_args<>::type, locale_ref);
 
 // Explicit instantiations for wchar_t.
 

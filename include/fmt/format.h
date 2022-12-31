@@ -4142,8 +4142,7 @@ FMT_BEGIN_DETAIL_NAMESPACE
 
 template <typename Char>
 void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
-                basic_format_args<FMT_BUFFER_CONTEXT(Char)> args,
-                locale_ref loc) {
+                typename vformat_args<Char>::type args, locale_ref loc) {
   // workaround for msvc bug regarding name-lookup in module
   // link names into function scope
   using detail::arg_formatter;
@@ -4223,9 +4222,9 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
 }
 
 #ifndef FMT_HEADER_ONLY
-extern template FMT_API void vformat_to(
-    buffer<char>&, string_view, basic_format_args<FMT_BUFFER_CONTEXT(char)>,
-    locale_ref);
+extern template FMT_API void vformat_to(buffer<char>&, string_view,
+                                        typename vformat_args<>::type,
+                                        locale_ref);
 extern template FMT_API auto thousands_sep_impl<char>(locale_ref)
     -> thousands_sep_result<char>;
 extern template FMT_API auto thousands_sep_impl<wchar_t>(locale_ref)
