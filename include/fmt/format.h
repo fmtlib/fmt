@@ -3727,12 +3727,12 @@ template <typename Char> struct udl_arg {
 #endif  // FMT_USE_USER_DEFINED_LITERALS
 
 template <typename Locale, typename Char>
-auto vformat(const Locale& loc, basic_string_view<Char> format_str,
+auto vformat(const Locale& loc, basic_string_view<Char> fmt,
              basic_format_args<buffer_context<type_identity_t<Char>>> args)
     -> std::basic_string<Char> {
-  basic_memory_buffer<Char> buffer;
-  detail::vformat_to(buffer, format_str, args, detail::locale_ref(loc));
-  return {buffer.data(), buffer.size()};
+  auto buf = basic_memory_buffer<Char>();
+  detail::vformat_to(buf, fmt, args, detail::locale_ref(loc));
+  return {buf.data(), buf.size()};
 }
 
 using format_func = void (*)(detail::buffer<char>&, int, const char*);
@@ -4299,9 +4299,8 @@ FMT_NODISCARD FMT_INLINE auto formatted_size(const Locale& loc,
                                              format_string<T...> fmt,
                                              T&&... args) -> size_t {
   auto buf = detail::counting_buffer<>();
-  detail::vformat_to(buf, string_view(fmt),
-                     format_args(fmt::make_format_args(args...)),
-                     detail::locale_ref(loc));
+  detail::vformat_to<char>(buf, fmt, fmt::make_format_args(args...),
+                           detail::locale_ref(loc));
   return buf.count();
 }
 

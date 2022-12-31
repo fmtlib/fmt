@@ -2701,14 +2701,10 @@ template <typename Char, typename... Args> class format_string_checker {
   type types_[num_args > 0 ? static_cast<size_t>(num_args) : 1];
 
  public:
-  explicit FMT_CONSTEXPR format_string_checker(
-      basic_string_view<Char> format_str)
-      : context_(format_str, num_args, types_),
+  explicit FMT_CONSTEXPR format_string_checker(basic_string_view<Char> fmt)
+      : context_(fmt, num_args, types_),
         parse_funcs_{&parse_format_specs<Args, parse_context_type>...},
-        types_{
-            mapped_type_constant<Args,
-                                 basic_format_context<Char*, Char>>::value...} {
-  }
+        types_{mapped_type_constant<Args, buffer_context<Char>>::value...} {}
 
   FMT_CONSTEXPR void on_text(const Char*, const Char*) {}
 
@@ -2965,8 +2961,7 @@ template <typename... T>
 FMT_NODISCARD FMT_INLINE auto formatted_size(format_string<T...> fmt,
                                              T&&... args) -> size_t {
   auto buf = detail::counting_buffer<>();
-  detail::vformat_to(buf, string_view(fmt),
-                     format_args(fmt::make_format_args(args...)), {});
+  detail::vformat_to<char>(buf, fmt, fmt::make_format_args(args...), {});
   return buf.count();
 }
 
