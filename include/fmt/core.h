@@ -634,7 +634,6 @@ enum {
       set(type::int_type) | set(type::long_long_type) | set(type::int128_type),
   uint_set = set(type::uint_type) | set(type::ulong_long_type) |
              set(type::uint128_type),
-  all_int_set = sint_set | uint_set,
   bool_set = set(type::bool_type),
   char_set = set(type::char_type),
   float_set = set(type::float_type) | set(type::double_type) |
@@ -2414,7 +2413,7 @@ FMT_CONSTEXPR auto parse_precision(const Char* begin, const Char* end,
 FMT_CONSTEXPR inline auto do_parse_presentation_type(char c, type t)
     -> presentation_type {
   using pt = presentation_type;
-  constexpr auto integral_set = all_int_set | bool_set | char_set;
+  constexpr auto integral_set = sint_set | uint_set | bool_set | char_set;
   switch (c) {
   case 'd':
     return in(t, integral_set) ? pt::dec : pt::none;
@@ -2648,7 +2647,7 @@ FMT_CONSTEXPR auto parse_format_specs(ParseContext& ctx)
   return f.parse(ctx);
 }
 
-// Checks char specs and returns true if the type spec is char (and not int).
+// Checks char specs and returns true iff the presentation type is char-like.
 template <typename Char>
 FMT_CONSTEXPR auto check_char_specs(const format_specs<Char>& specs) -> bool {
   if (specs.type != presentation_type::none &&
