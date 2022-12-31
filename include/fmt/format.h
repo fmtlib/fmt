@@ -3948,10 +3948,9 @@ template <> struct formatter<bytes> {
 
  public:
   template <typename ParseContext>
-  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
-    auto end = parse_format_specs(ctx.begin(), ctx.end(), specs_, ctx,
-                                  detail::type::string_type);
-    return end;
+  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> const char* {
+    return parse_format_specs(ctx.begin(), ctx.end(), specs_, ctx,
+                              detail::type::string_type);
   }
 
   template <typename FormatContext>
@@ -3988,10 +3987,9 @@ template <typename T> struct formatter<group_digits_view<T>> : formatter<T> {
 
  public:
   template <typename ParseContext>
-  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
-    auto end = parse_format_specs(ctx.begin(), ctx.end(), specs_, ctx,
-                                  detail::type::int_type);
-    return end;
+  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> const char* {
+    return parse_format_specs(ctx.begin(), ctx.end(), specs_, ctx,
+                              detail::type::int_type);
   }
 
   template <typename FormatContext>
@@ -4007,6 +4005,7 @@ template <typename T> struct formatter<group_digits_view<T>> : formatter<T> {
   }
 };
 
+// DEPRECATED! join_view will be moved to ranges.h.
 template <typename It, typename Sentinel, typename Char = char>
 struct join_view : detail::view {
   It begin;
@@ -4049,7 +4048,7 @@ struct formatter<join_view<It, Sentinel, Char>, Char> {
 
  public:
   template <typename ParseContext>
-  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> const Char* {
     return value_formatter_.parse(ctx);
   }
 
