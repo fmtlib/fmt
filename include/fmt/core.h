@@ -2439,7 +2439,7 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
   auto c = '\0';
   if (end - begin > 1) {
     auto next = to_ascii(begin[1]);
-    c = next == '<' || next == '>' || next == '^' ? '\0' : to_ascii(*begin);
+    c = parse_align(next) == align::none ? to_ascii(*begin) : '\0';
   } else {
     if (begin == end) return begin;
     c = to_ascii(*begin);
