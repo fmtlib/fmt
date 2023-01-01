@@ -2264,47 +2264,16 @@ FMT_CONSTEXPR auto parse_nonnegative_int(const Char*& begin, const Char* end,
              : error_value;
 }
 
-// Parses [[fill]align].
-template <typename Char>
-FMT_CONSTEXPR auto parse_align(const Char* begin, const Char* end,
-                               format_specs<Char>& specs) -> const Char* {
-  FMT_ASSERT(begin != end, "");
-  auto align = align::none;
-  auto p = begin + code_point_length(begin);
-  if (end - p <= 0) p = begin;
-  for (;;) {
-    switch (to_ascii(*p)) {
-    case '<':
-      align = align::left;
-      break;
-    case '>':
-      align = align::right;
-      break;
-    case '^':
-      align = align::center;
-      break;
-    }
-    if (align != align::none) {
-      if (p != begin) {
-        auto c = *begin;
-        if (c == '}') return begin;
-        if (c == '{') {
-          throw_format_error("invalid fill character '{'");
-          return begin;
-        }
-        specs.fill = {begin, to_unsigned(p - begin)};
-        begin = p + 1;
-      } else {
-        ++begin;
-      }
-      break;
-    } else if (p == begin) {
-      break;
-    }
-    p = begin;
+FMT_CONSTEXPR inline auto parse_align(char c) -> align_t {
+  switch (c) {
+  case '<':
+    return align::left;
+  case '>':
+    return align::right;
+  case '^':
+    return align::center;
   }
-  specs.align = align;
-  return begin;
+  return align::none;
 }
 
 template <typename Char> constexpr auto is_name_start(Char c) -> bool {
@@ -2460,74 +2429,123 @@ FMT_CONSTEXPR inline auto parse_presentation_type(char c, type t)
   return pt;
 }
 
+enum class state { start, align, sign, hash, zero, width, precision, locale };
+
 // Parses standard format specifiers.
 template <typename Char>
 FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
     const Char* begin, const Char* end, dynamic_format_specs<Char>& specs,
     basic_format_parse_context<Char>& ctx, type arg_type) -> const Char* {
-  if (1 < end - begin && begin[1] == '}' && is_ascii_letter(*begin) &&
-      *begin != 'L') {
-    specs.type = parse_presentation_type(to_ascii(*begin++), arg_type);
-    return begin;
+  auto c = '\0';
+  if (end - begin > 1) {
+    auto next = to_ascii(begin[1]);
+    c = next == '<' || next == '>' || next == '^' ? '\0' : to_ascii(*begin);
+  } else {
+    if (begin == end) return begin;
+    c = to_ascii(*begin);
   }
-  if (begin == end) return begin;
-
-  begin = parse_align(begin, end, specs);
-  if (begin == end) return begin;
-
-  if (in(arg_type, sint_set | float_set)) {
-    switch (to_ascii(*begin)) {
+  struct {
+    state current_state = state::start;
+    FMT_CONSTEXPR void operator()(state s, bool valid = true) {
+      if (current_state >= s || !valid)
+        throw_format_error("invalid format specifier");
+      current_state = s;
+    }
+  } enter_state;
+  for (;;) {
+    switch (c) {
+    case '<':
+    case '>':
+    case '^':
+      enter_state(state::align);
+      specs.align = parse_align(c);
+      ++begin;
+      break;
     case '+':
-      specs.sign = sign::plus;
-      ++begin;
-      break;
     case '-':
-      specs.sign = sign::minus;
-      ++begin;
-      break;
     case ' ':
-      specs.sign = sign::space;
+      enter_state(state::sign, in(arg_type, sint_set | float_set));
+      switch (c) {
+      case '+':
+        specs.sign = sign::plus;
+        break;
+      case '-':
+        specs.sign = sign::minus;
+        break;
+      case ' ':
+        specs.sign = sign::space;
+        break;
+      }
       ++begin;
       break;
-    default:
+    case '#':
+      enter_state(state::hash, is_arithmetic_type(arg_type));
+      specs.alt = true;
+      ++begin;
       break;
+    case '0':
+      enter_state(state::zero);
+      if (!is_arithmetic_type(arg_type))
+        throw_format_error("format specifier requires numeric argument");
+      if (specs.align == align::none) {
+        // Ignore 0 if align is specified for compatibility with std::format.
+        specs.align = align::numeric;
+        specs.fill[0] = Char('0');
+      }
+      ++begin;
+      break;
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+    case '{':
+      enter_state(state::width);
+      begin = parse_dynamic_spec(begin, end, specs.width, specs.width_ref, ctx);
+      break;
+    case '.':
+      enter_state(state::precision,
+                  in(arg_type, float_set | string_set | cstring_set));
+      begin = parse_precision(begin, end, specs.precision, specs.precision_ref,
+                              ctx);
+      break;
+    case 'L':
+      enter_state(state::locale, is_arithmetic_type(arg_type));
+      specs.localized = true;
+      ++begin;
+      break;
+    case '}':
+      return begin;
+    default: {
+      if (is_ascii_letter(c) || c == '?') {
+        specs.type = parse_presentation_type(c, arg_type);
+        return begin + 1;
+      }
+      if (*begin == '}') return begin;
+      // Parse fill and alignment.
+      auto fill_end = begin + code_point_length(begin);
+      if (end - fill_end <= 0) {
+        throw_format_error("invalid format specifier");
+        return begin;
+      }
+      if (*begin == '{') {
+        throw_format_error("invalid fill character '{'");
+        return begin;
+      }
+      auto align = parse_align(to_ascii(*fill_end));
+      enter_state(state::align, align != align::none);
+      specs.fill = {begin, to_unsigned(fill_end - begin)};
+      specs.align = align;
+      begin = fill_end + 1;
+    }
     }
     if (begin == end) return begin;
+    c = to_ascii(*begin);
   }
-
-  if (*begin == '#' && is_arithmetic_type(arg_type)) {
-    specs.alt = true;
-    if (++begin == end) return begin;
-  }
-
-  if (*begin == '0') {  // Parse zero flag.
-    if (!is_arithmetic_type(arg_type))
-      throw_format_error("format specifier requires numeric argument");
-    if (specs.align == align::none) {
-      // Ignore 0 if align is specified for compatibility with std::format.
-      specs.align = align::numeric;
-      specs.fill[0] = Char('0');
-    }
-    if (++begin == end) return begin;
-  }
-
-  begin = parse_dynamic_spec(begin, end, specs.width, specs.width_ref, ctx);
-  if (begin == end) return begin;
-
-  if (*begin == '.' && in(arg_type, float_set | string_set | cstring_set)) {
-    begin =
-        parse_precision(begin, end, specs.precision, specs.precision_ref, ctx);
-    if (begin == end) return begin;
-  }
-
-  if (*begin == 'L' && is_arithmetic_type(arg_type)) {
-    specs.localized = true;
-    if (++begin == end) return begin;
-  }
-
-  if (*begin != '}')
-    specs.type = parse_presentation_type(to_ascii(*begin++), arg_type);
-  return begin;
 }
 
 template <typename Char, typename Handler>
