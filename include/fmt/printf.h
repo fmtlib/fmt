@@ -504,7 +504,7 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
     }
     specs.type = parse_presentation_type(type, arg.type());
     if (specs.type == presentation_type::none)
-      throw_format_error("invalid type specifier");
+      throw_format_error("invalid format specifier");
 
     start = it;
 

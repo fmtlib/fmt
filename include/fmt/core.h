@@ -2375,7 +2375,7 @@ FMT_CONSTEXPR auto parse_precision(const Char* begin, const Char* end,
   return parse_dynamic_spec(begin, end, value, ref, ctx);
 }
 
-FMT_CONSTEXPR inline auto do_parse_presentation_type(char c, type t)
+FMT_CONSTEXPR inline auto parse_presentation_type(char c, type t)
     -> presentation_type {
   using pt = presentation_type;
   constexpr auto integral_set = sint_set | uint_set | bool_set | char_set;
@@ -2419,14 +2419,6 @@ FMT_CONSTEXPR inline auto do_parse_presentation_type(char c, type t)
   default:
     return pt::none;
   }
-}
-
-FMT_CONSTEXPR inline auto parse_presentation_type(char c, type t)
-    -> presentation_type {
-  auto pt = do_parse_presentation_type(c, t);
-  if (pt == presentation_type::none)
-    throw_format_error("invalid format specifier");
-  return pt;
 }
 
 enum class state { start, align, sign, hash, zero, width, precision, locale };
@@ -2522,7 +2514,10 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
       return begin;
     default: {
       if (is_ascii_letter(c) || c == '?') {
-        specs.type = parse_presentation_type(c, arg_type);
+        auto type = parse_presentation_type(c, arg_type);
+        if (type == presentation_type::none)
+          throw_format_error("invalid format specifier");
+        specs.type = type;
         return begin + 1;
       }
       if (*begin == '}') return begin;
