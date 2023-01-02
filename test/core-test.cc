@@ -680,6 +680,9 @@ auto format_as(scoped_enum_as_int) -> int { return 42; }
 enum class scoped_enum_as_string {};
 auto format_as(scoped_enum_as_string) -> fmt::string_view { return "foo"; }
 
+struct struct_as_int {};
+auto format_as(struct_as_int) -> int { return 42; }
+
 struct convertible_to_enum {
   operator scoped_enum_as_int() const { return {}; }
 };
@@ -724,7 +727,7 @@ TEST(core_test, is_formattable) {
   static_assert(!fmt::is_formattable<int (s::*)()>::value, "");
   static_assert(!fmt::is_formattable<unformattable_scoped_enum>::value, "");
   static_assert(fmt::is_formattable<test::scoped_enum_as_int>::value, "");
-  static_assert(!fmt::is_formattable<test::convertible_to_enum>::value, "");
+  static_assert(!fmt::is_formattable<unformattable_scoped_enum>::value, "");
 }
 
 TEST(core_test, format) { EXPECT_EQ(fmt::format("{}", 42), "42"); }
@@ -738,6 +741,7 @@ TEST(core_test, format_to) {
 TEST(core_test, format_as) {
   EXPECT_EQ(fmt::format("{}", test::scoped_enum_as_int()), "42");
   EXPECT_EQ(fmt::format("{}", test::scoped_enum_as_string()), "foo");
+  EXPECT_EQ(fmt::format("{}", test::struct_as_int()), "42");
 }
 
 #ifdef __cpp_lib_byte

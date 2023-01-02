@@ -1348,9 +1348,15 @@ inline auto format_as(std::byte b) -> unsigned char {
 }
 #endif
 
+template <typename T> struct convertible_to { operator const T&() const; };
+
 template <typename T> struct has_format_as {
   template <typename U, typename V = decltype(format_as(U())),
             FMT_ENABLE_IF(std::is_enum<U>::value)>
+  static auto check(U*) -> std::true_type;
+  // Use convertible_to to avoid implicit conversions.
+  template <typename U, typename V = decltype(format_as(convertible_to<U>())),
+            FMT_ENABLE_IF(std::is_class<U>::value)>
   static auto check(U*) -> std::true_type;
   static auto check(...) -> std::false_type;
 
