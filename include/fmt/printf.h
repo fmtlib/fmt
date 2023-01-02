@@ -81,13 +81,13 @@ class printf_precision_handler {
   template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
   int operator()(T value) {
     if (!int_checker<std::numeric_limits<T>::is_signed>::fits_in_int(value))
-      FMT_THROW(format_error("number is too big"));
+      throw_format_error("number is too big");
     return (std::max)(static_cast<int>(value), 0);
   }
 
   template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value)>
   int operator()(T) {
-    FMT_THROW(format_error("precision is not integer"));
+    throw_format_error("precision is not integer");
     return 0;
   }
 };
@@ -207,13 +207,13 @@ template <typename Char> class printf_width_handler {
       width = 0 - width;
     }
     unsigned int_max = max_value<int>();
-    if (width > int_max) FMT_THROW(format_error("number is too big"));
+    if (width > int_max) throw_format_error("number is too big");
     return static_cast<unsigned>(width);
   }
 
   template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value)>
   unsigned operator()(T) {
-    FMT_THROW(format_error("width is not integer"));
+    throw_format_error("width is not integer");
     return 0;
   }
 };
@@ -340,7 +340,7 @@ int parse_header(const Char*& it, const Char* end, format_specs<Char>& specs,
       if (value != 0) {
         // Nonzero value means that we parsed width and don't need to
         // parse it or flags again, so return now.
-        if (value == -1) FMT_THROW(format_error("number is too big"));
+        if (value == -1) throw_format_error("number is too big");
         specs.width = value;
         return arg_index;
       }
@@ -351,7 +351,7 @@ int parse_header(const Char*& it, const Char* end, format_specs<Char>& specs,
   if (it != end) {
     if (*it >= '0' && *it <= '9') {
       specs.width = parse_nonnegative_int(it, end, -1);
-      if (specs.width == -1) FMT_THROW(format_error("number is too big"));
+      if (specs.width == -1) throw_format_error("number is too big");
     } else if (*it == '*') {
       ++it;
       specs.width = static_cast<int>(visit_format_arg(
@@ -361,12 +361,52 @@ int parse_header(const Char*& it, const Char* end, format_specs<Char>& specs,
   return arg_index;
 }
 
+inline auto parse_printf_presentation_type(char c, type t)
+    -> presentation_type {
+  using pt = presentation_type;
+  constexpr auto integral_set = sint_set | uint_set | bool_set | char_set;
+  switch (c) {
+  case 'd':
+    return in(t, integral_set) ? pt::dec : pt::none;
+  case 'o':
+    return in(t, integral_set) ? pt::oct : pt::none;
+  case 'x':
+    return in(t, integral_set) ? pt::hex_lower : pt::none;
+  case 'X':
+    return in(t, integral_set) ? pt::hex_upper : pt::none;
+  case 'a':
+    return in(t, float_set) ? pt::hexfloat_lower : pt::none;
+  case 'A':
+    return in(t, float_set) ? pt::hexfloat_upper : pt::none;
+  case 'e':
+    return in(t, float_set) ? pt::exp_lower : pt::none;
+  case 'E':
+    return in(t, float_set) ? pt::exp_upper : pt::none;
+  case 'f':
+    return in(t, float_set) ? pt::fixed_lower : pt::none;
+  case 'F':
+    return in(t, float_set) ? pt::fixed_upper : pt::none;
+  case 'g':
+    return in(t, float_set) ? pt::general_lower : pt::none;
+  case 'G':
+    return in(t, float_set) ? pt::general_upper : pt::none;
+  case 'c':
+    return in(t, integral_set) ? pt::chr : pt::none;
+  case 's':
+    return in(t, string_set | cstring_set) ? pt::string : pt::none;
+  case 'p':
+    return in(t, pointer_set | cstring_set) ? pt::pointer : pt::none;
+  default:
+    return pt::none;
+  }
+}
+
 template <typename Char, typename Context>
 void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
              basic_format_args<Context> args) {
-  using OutputIt = buffer_appender<Char>;
-  auto out = OutputIt(buf);
-  auto context = basic_printf_context<OutputIt, Char>(out, args);
+  using iterator = buffer_appender<Char>;
+  auto out = iterator(buf);
+  auto context = basic_printf_context<iterator, Char>(out, args);
   auto parse_ctx = basic_printf_parse_context<Char>(format);
 
   // Returns the argument with specified index or, if arg_index is -1, the next
@@ -383,19 +423,18 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
   const Char* end = parse_ctx.end();
   auto it = start;
   while (it != end) {
-    if (!detail::find<false, Char>(it, end, '%', it)) {
-      it = end;  // detail::find leaves it == nullptr if it doesn't find '%'
+    if (!find<false, Char>(it, end, '%', it)) {
+      it = end;  // find leaves it == nullptr if it doesn't find '%'.
       break;
     }
     Char c = *it++;
     if (it != end && *it == c) {
-      out = detail::write(
-          out, basic_string_view<Char>(start, detail::to_unsigned(it - start)));
+      out = write(out, basic_string_view<Char>(start, to_unsigned(it - start)));
       start = ++it;
       continue;
     }
-    out = detail::write(out, basic_string_view<Char>(
-                                 start, detail::to_unsigned(it - 1 - start)));
+    out =
+        write(out, basic_string_view<Char>(start, to_unsigned(it - 1 - start)));
 
     auto specs = format_specs<Char>();
     specs.align = align::right;
@@ -413,7 +452,7 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
       } else if (c == '*') {
         ++it;
         specs.precision = static_cast<int>(
-            visit_format_arg(detail::printf_precision_handler(), get_arg(-1)));
+            visit_format_arg(printf_precision_handler(), get_arg(-1)));
       } else {
         specs.precision = 0;
       }
@@ -425,17 +464,15 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
     if (specs.precision >= 0 && arg.is_integral())
       specs.fill[0] =
           ' ';  // Ignore '0' flag for non-numeric types or if '-' present.
-    if (specs.precision >= 0 && arg.type() == detail::type::cstring_type) {
-      auto str = visit_format_arg(detail::get_cstring<Char>(), arg);
+    if (specs.precision >= 0 && arg.type() == type::cstring_type) {
+      auto str = visit_format_arg(get_cstring<Char>(), arg);
       auto str_end = str + specs.precision;
       auto nul = std::find(str, str_end, Char());
-      arg = detail::make_arg<basic_printf_context<OutputIt, Char>>(
+      arg = make_arg<basic_printf_context<iterator, Char>>(
           basic_string_view<Char>(
-              str, detail::to_unsigned(nul != str_end ? nul - str
-                                                      : specs.precision)));
+              str, to_unsigned(nul != str_end ? nul - str : specs.precision)));
     }
-    if (specs.alt && visit_format_arg(detail::is_zero_int(), arg))
-      specs.alt = false;
+    if (specs.alt && visit_format_arg(is_zero_int(), arg)) specs.alt = false;
     if (specs.fill[0] == '0') {
       if (arg.is_arithmetic() && specs.align != align::left)
         specs.align = align::numeric;
@@ -447,7 +484,6 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
     // Parse length and convert the argument to the required type.
     c = it != end ? *it++ : 0;
     Char t = it != end ? *it : 0;
-    using detail::convert_arg;
     switch (c) {
     case 'h':
       if (t == 'h') {
@@ -486,7 +522,7 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
     }
 
     // Parse type.
-    if (it == end) FMT_THROW(format_error("invalid format string"));
+    if (it == end) throw_format_error("invalid format string");
     char type = static_cast<char>(*it++);
     if (arg.is_integral()) {
       // Normalize type.
@@ -497,12 +533,11 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
         break;
       case 'c':
         visit_format_arg(
-            detail::char_converter<basic_printf_context<OutputIt, Char>>(arg),
-            arg);
+            char_converter<basic_printf_context<iterator, Char>>(arg), arg);
         break;
       }
     }
-    specs.type = parse_presentation_type(type, arg.type());
+    specs.type = parse_printf_presentation_type(type, arg.type());
     if (specs.type == presentation_type::none)
       throw_format_error("invalid format specifier");
 
@@ -510,9 +545,9 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
 
     // Format argument.
     out = visit_format_arg(
-        detail::printf_arg_formatter<OutputIt, Char>(out, specs, context), arg);
+        printf_arg_formatter<iterator, Char>(out, specs, context), arg);
   }
-  detail::write(out, basic_string_view<Char>(start, to_unsigned(it - start)));
+  write(out, basic_string_view<Char>(start, to_unsigned(it - start)));
 }
 FMT_END_DETAIL_NAMESPACE
 
@@ -555,9 +590,9 @@ inline auto vsprintf(
     const S& fmt,
     basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args)
     -> std::basic_string<Char> {
-  basic_memory_buffer<Char> buffer;
-  vprintf(buffer, detail::to_string_view(fmt), args);
-  return to_string(buffer);
+  auto buf = basic_memory_buffer<Char>();
+  vprintf(buf, detail::to_string_view(fmt), args);
+  return to_string(buf);
 }
 
 /**
@@ -582,10 +617,10 @@ inline auto vfprintf(
     std::FILE* f, const S& fmt,
     basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args)
     -> int {
-  basic_memory_buffer<Char> buffer;
-  vprintf(buffer, detail::to_string_view(fmt), args);
-  size_t size = buffer.size();
-  return std::fwrite(buffer.data(), sizeof(Char), size, f) < size
+  auto buf = basic_memory_buffer<Char>();
+  vprintf(buf, detail::to_string_view(fmt), args);
+  size_t size = buf.size();
+  return std::fwrite(buf.data(), sizeof(Char), size, f) < size
              ? -1
              : static_cast<int>(size);
 }

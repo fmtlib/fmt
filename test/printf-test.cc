@@ -405,10 +405,7 @@ TEST(printf_test, length) {
   EXPECT_PRINTF(fmt::format("{:.6}", max), "%Lg", max);
 }
 
-TEST(printf_test, bool) {
-  EXPECT_PRINTF("1", "%d", true);
-  EXPECT_PRINTF("true", "%s", true);
-}
+TEST(printf_test, bool) { EXPECT_PRINTF("1", "%d", true); }
 
 TEST(printf_test, int) {
   EXPECT_PRINTF("-42", "%d", -42);
