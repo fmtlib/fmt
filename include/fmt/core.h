@@ -1350,7 +1350,7 @@ inline auto format_as(std::byte b) -> unsigned char {
 
 template <typename T> struct has_format_as {
   template <typename U, typename V = decltype(format_as(U())),
-            FMT_ENABLE_IF(std::is_enum<U>::value&& std::is_integral<V>::value)>
+            FMT_ENABLE_IF(std::is_enum<U>::value)>
   static auto check(U*) -> std::true_type;
   static auto check(...) -> std::false_type;
 

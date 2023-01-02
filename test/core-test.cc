@@ -677,6 +677,9 @@ namespace test {
 enum class scoped_enum_as_int {};
 auto format_as(scoped_enum_as_int) -> int { return 42; }
 
+enum class scoped_enum_as_string {};
+auto format_as(scoped_enum_as_string) -> fmt::string_view { return "foo"; }
+
 struct convertible_to_enum {
   operator scoped_enum_as_int() const { return {}; }
 };
@@ -734,6 +737,7 @@ TEST(core_test, format_to) {
 
 TEST(core_test, format_as) {
   EXPECT_EQ(fmt::format("{}", test::scoped_enum_as_int()), "42");
+  EXPECT_EQ(fmt::format("{}", test::scoped_enum_as_string()), "foo");
 }
 
 #ifdef __cpp_lib_byte
