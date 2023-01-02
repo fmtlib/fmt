@@ -2192,10 +2192,6 @@ struct dynamic_format_specs : format_specs<Char> {
   arg_ref<Char> precision_ref;
 };
 
-template <typename Char> constexpr bool is_ascii_letter(Char c) {
-  return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
-}
-
 // Converts a character to ASCII. Returns '\0' on conversion failure.
 template <typename Char, FMT_ENABLE_IF(std::is_integral<Char>::value)>
 constexpr auto to_ascii(Char c) -> char {
@@ -2375,52 +2371,6 @@ FMT_CONSTEXPR auto parse_precision(const Char* begin, const Char* end,
   return parse_dynamic_spec(begin, end, value, ref, ctx);
 }
 
-FMT_CONSTEXPR inline auto parse_presentation_type(char c, type t)
-    -> presentation_type {
-  using pt = presentation_type;
-  constexpr auto integral_set = sint_set | uint_set | bool_set | char_set;
-  switch (c) {
-  case 'd':
-    return in(t, integral_set) ? pt::dec : pt::none;
-  case 'o':
-    return in(t, integral_set) ? pt::oct : pt::none;
-  case 'x':
-    return in(t, integral_set) ? pt::hex_lower : pt::none;
-  case 'X':
-    return in(t, integral_set) ? pt::hex_upper : pt::none;
-  case 'b':
-    return in(t, integral_set) ? pt::bin_lower : pt::none;
-  case 'B':
-    return in(t, integral_set) ? pt::bin_upper : pt::none;
-  case 'a':
-    return in(t, float_set) ? pt::hexfloat_lower : pt::none;
-  case 'A':
-    return in(t, float_set) ? pt::hexfloat_upper : pt::none;
-  case 'e':
-    return in(t, float_set) ? pt::exp_lower : pt::none;
-  case 'E':
-    return in(t, float_set) ? pt::exp_upper : pt::none;
-  case 'f':
-    return in(t, float_set) ? pt::fixed_lower : pt::none;
-  case 'F':
-    return in(t, float_set) ? pt::fixed_upper : pt::none;
-  case 'g':
-    return in(t, float_set) ? pt::general_lower : pt::none;
-  case 'G':
-    return in(t, float_set) ? pt::general_upper : pt::none;
-  case 'c':
-    return in(t, integral_set) ? pt::chr : pt::none;
-  case 's':
-    return in(t, bool_set | string_set | cstring_set) ? pt::string : pt::none;
-  case 'p':
-    return in(t, pointer_set | cstring_set) ? pt::pointer : pt::none;
-  case '?':
-    return in(t, char_set | string_set | cstring_set) ? pt::debug : pt::none;
-  default:
-    return pt::none;
-  }
-}
-
 enum class state { start, align, sign, hash, zero, width, precision, locale };
 
 // Parses standard format specifiers.
@@ -2436,6 +2386,7 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
     if (begin == end) return begin;
     c = to_ascii(*begin);
   }
+
   struct {
     state current_state = state::start;
     FMT_CONSTEXPR void operator()(state s, bool valid = true) {
@@ -2444,6 +2395,21 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
       current_state = s;
     }
   } enter_state;
+
+  using pres = presentation_type;
+  constexpr auto integral_set = sint_set | uint_set | bool_set | char_set;
+  struct {
+    const Char*& begin;
+    dynamic_format_specs<Char>& specs;
+    type arg_type;
+
+    FMT_CONSTEXPR auto operator()(pres type, int set) -> const Char* {
+      if (!in(arg_type, set)) throw_format_error("invalid format specifier");
+      specs.type = type;
+      return begin + 1;
+    }
+  } parse_presentation_type{begin, specs, arg_type};
+
   for (;;) {
     switch (c) {
     case '<':
@@ -2510,16 +2476,47 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
       specs.localized = true;
       ++begin;
       break;
+    case 'd':
+      return parse_presentation_type(pres::dec, integral_set);
+    case 'o':
+      return parse_presentation_type(pres::oct, integral_set);
+    case 'x':
+      return parse_presentation_type(pres::hex_lower, integral_set);
+    case 'X':
+      return parse_presentation_type(pres::hex_upper, integral_set);
+    case 'b':
+      return parse_presentation_type(pres::bin_lower, integral_set);
+    case 'B':
+      return parse_presentation_type(pres::bin_upper, integral_set);
+    case 'a':
+      return parse_presentation_type(pres::hexfloat_lower, float_set);
+    case 'A':
+      return parse_presentation_type(pres::hexfloat_upper, float_set);
+    case 'e':
+      return parse_presentation_type(pres::exp_lower, float_set);
+    case 'E':
+      return parse_presentation_type(pres::exp_upper, float_set);
+    case 'f':
+      return parse_presentation_type(pres::fixed_lower, float_set);
+    case 'F':
+      return parse_presentation_type(pres::fixed_upper, float_set);
+    case 'g':
+      return parse_presentation_type(pres::general_lower, float_set);
+    case 'G':
+      return parse_presentation_type(pres::general_upper, float_set);
+    case 'c':
+      return parse_presentation_type(pres::chr, integral_set);
+    case 's':
+      return parse_presentation_type(pres::string,
+                                     bool_set | string_set | cstring_set);
+    case 'p':
+      return parse_presentation_type(pres::pointer, pointer_set | cstring_set);
+    case '?':
+      return parse_presentation_type(pres::debug,
+                                     char_set | string_set | cstring_set);
     case '}':
       return begin;
     default: {
-      if (is_ascii_letter(c) || c == '?') {
-        auto type = parse_presentation_type(c, arg_type);
-        if (type == presentation_type::none)
-          throw_format_error("invalid format specifier");
-        specs.type = type;
-        return begin + 1;
-      }
       if (*begin == '}') return begin;
       // Parse fill and alignment.
       auto fill_end = begin + code_point_length(begin);
