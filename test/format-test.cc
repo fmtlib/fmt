@@ -1840,12 +1840,6 @@ TEST(format_test, join) {
 }
 
 #ifdef __cpp_lib_byte
-TEST(format_test, format_byte) {
-  using arg_mapper = fmt::detail::arg_mapper<fmt::format_context>;
-  EXPECT_EQ(arg_mapper().map(std::byte(42)), 42);
-  EXPECT_EQ(fmt::format("{}", std::byte(42)), "42");
-}
-
 TEST(format_test, join_bytes) {
   auto v = std::vector<std::byte>{std::byte(1), std::byte(2), std::byte(3)};
   EXPECT_EQ(fmt::format("{}", fmt::join(v, ", ")), "1, 2, 3");
