@@ -168,19 +168,6 @@ TEST(ranges_test, path_like) {
   EXPECT_FALSE((fmt::is_range<path_like, char>::value));
 }
 
-#ifdef FMT_USE_STRING_VIEW
-struct string_like {
-  const char* begin();
-  const char* end();
-  operator fmt::string_view() const { return "foo"; }
-  operator std::string_view() const { return "foo"; }
-};
-
-TEST(ranges_test, format_string_like) {
-  EXPECT_EQ(fmt::format("{}", string_like()), "foo");
-}
-#endif  // FMT_USE_STRING_VIEW
-
 // A range that provides non-const only begin()/end() to test fmt::join handles
 // that.
 //
@@ -400,17 +387,6 @@ TEST(ranges_test, escape_string) {
     EXPECT_EQ(fmt::format("{}", vec{"понедельник"}), "[\"понедельник\"]");
   }
 }
-
-#ifdef FMT_USE_STRING_VIEW
-struct convertible_to_string_view {
-  operator std::string_view() const { return "foo"; }
-};
-
-TEST(ranges_test, escape_convertible_to_string_view) {
-  EXPECT_EQ(fmt::format("{}", std::vector<convertible_to_string_view>(1)),
-            "[\"foo\"]");
-}
-#endif  // FMT_USE_STRING_VIEW
 
 template <typename R> struct fmt_ref_view {
   R* r;

@@ -800,17 +800,25 @@ TEST(core_test, to_string_view_foreign_strings) {
   EXPECT_EQ(type, fmt::detail::type::string_type);
 }
 
-struct implicitly_convertible_to_string {
-  operator std::string() const { return "foo"; }
-};
-
 struct implicitly_convertible_to_string_view {
   operator fmt::string_view() const { return "foo"; }
 };
 
-TEST(core_test, format_implicitly_convertible_to_string_view) {
-  EXPECT_EQ("foo", fmt::format("{}", implicitly_convertible_to_string_view()));
+TEST(core_test, no_implicit_conversion_to_string_view) {
+  EXPECT_FALSE(
+      fmt::is_formattable<implicitly_convertible_to_string_view>::value);
 }
+
+#ifdef FMT_USE_STRING_VIEW
+struct implicitly_convertible_to_std_string_view {
+  operator std::string_view() const { return "foo"; }
+};
+
+TEST(core_test, no_implicit_conversion_to_std_string_view) {
+  EXPECT_FALSE(
+      fmt::is_formattable<implicitly_convertible_to_std_string_view>::value);
+}
+#endif
 
 // std::is_constructible is broken in MSVC until version 2015.
 #if !FMT_MSC_VERSION || FMT_MSC_VERSION >= 1900

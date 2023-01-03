@@ -1438,25 +1438,6 @@ template <typename Context> struct arg_mapper {
   FMT_CONSTEXPR FMT_INLINE auto map(const T&) -> unformattable_char {
     return {};
   }
-  template <typename T,
-            FMT_ENABLE_IF(
-                std::is_convertible<T, basic_string_view<char_type>>::value &&
-                !is_string<T>::value && !has_formatter<T, Context>::value &&
-                !has_fallback_formatter<T, char_type>::value)>
-  FMT_CONSTEXPR FMT_INLINE auto map(const T& val)
-      -> basic_string_view<char_type> {
-    return basic_string_view<char_type>(val);
-  }
-  template <typename T,
-            FMT_ENABLE_IF(
-                std::is_convertible<T, std_string_view<char_type>>::value &&
-                !std::is_convertible<T, basic_string_view<char_type>>::value &&
-                !is_string<T>::value && !has_formatter<T, Context>::value &&
-                !has_fallback_formatter<T, char_type>::value)>
-  FMT_CONSTEXPR FMT_INLINE auto map(const T& val)
-      -> basic_string_view<char_type> {
-    return std_string_view<char_type>(val);
-  }
 
   FMT_CONSTEXPR FMT_INLINE auto map(void* val) -> const void* { return val; }
   FMT_CONSTEXPR FMT_INLINE auto map(const void* val) -> const void* {
@@ -1466,8 +1447,8 @@ template <typename Context> struct arg_mapper {
     return val;
   }
 
-  // We use SFINAE instead of a const T* parameter to avoid conflicting with
-  // the C array overload.
+  // Use SFINAE instead of a const T* parameter to avoid a conflict with the
+  // array overload.
   template <
       typename T,
       FMT_ENABLE_IF(
