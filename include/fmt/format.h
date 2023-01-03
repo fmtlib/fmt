@@ -3583,9 +3583,12 @@ template <typename Char> struct arg_formatter {
   const format_specs<Char>& specs;
   locale_ref locale;
 
+  arg_formatter(buffer_appender<Char> it, const format_specs<Char>& s)
+      : out(it), specs(s) {}
+
   arg_formatter(buffer_appender<Char> it, const format_specs<Char>& s,
                 locale_ref l)
-      : out{it}, specs{s}, locale{l} {}
+      : out(it), specs(s), locale(l) {}
 
   template <typename T>
   FMT_CONSTEXPR FMT_INLINE auto operator()(T value) -> iterator {
