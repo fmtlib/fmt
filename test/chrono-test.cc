@@ -883,10 +883,10 @@ TEST(chrono_test, timestamps_sub_seconds) {
   const auto tp11 = std::chrono::time_point_cast<std::chrono::milliseconds>(
       std::chrono::system_clock::from_time_t(0) +
       std::chrono::milliseconds(250));
-  EXPECT_EQ(fmt::format("{:%S}", tp11), "00.250000");
+  EXPECT_EQ(fmt::format("{:%S}", tp11), "00.250");
 
   const auto tp12 = std::chrono::time_point_cast<std::chrono::milliseconds>(
       std::chrono::system_clock::from_time_t(0) -
       std::chrono::milliseconds(250));
-  EXPECT_EQ(fmt::format("{:%S}", tp12), "59.750000");
+  EXPECT_EQ(fmt::format("{:%S}", tp12), "59.750");
 }
