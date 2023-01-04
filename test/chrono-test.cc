@@ -879,4 +879,12 @@ TEST(chrono_test, timestamps_sub_seconds) {
       t10(std::chrono::milliseconds(2000));
 
   EXPECT_EQ(fmt::format("{:%S}", t10), "02.000");
+
+  const auto tp11 = std::chrono::system_clock::from_time_t(0) +
+                    std::chrono::milliseconds(250);
+  EXPECT_EQ(fmt::format("{:%S}", tp11), "00.250000");
+
+  const auto tp12 = std::chrono::system_clock::from_time_t(0) -
+                    std::chrono::milliseconds(250);
+  EXPECT_EQ(fmt::format("{:%S}", tp12), "59.750000");
 }
