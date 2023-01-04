@@ -880,13 +880,19 @@ TEST(chrono_test, timestamps_sub_seconds) {
 
   EXPECT_EQ(fmt::format("{:%S}", t10), "02.000");
 
-  const auto tp11 = std::chrono::time_point_cast<std::chrono::milliseconds>(
-      std::chrono::system_clock::from_time_t(0) +
-      std::chrono::milliseconds(250));
-  EXPECT_EQ(fmt::format("{:%S}", tp11), "00.250");
+  {
+    const auto epoch = std::chrono::time_point<std::chrono::system_clock,
+                                               std::chrono::milliseconds>();
+    const auto d = std::chrono::milliseconds(250);
 
-  const auto tp12 = std::chrono::time_point_cast<std::chrono::milliseconds>(
-      std::chrono::system_clock::from_time_t(0) -
-      std::chrono::milliseconds(250));
-  EXPECT_EQ(fmt::format("{:%S}", tp12), "59.750");
+    EXPECT_EQ("59.000", fmt::format("{:%S}", epoch - 4 * d));
+    EXPECT_EQ("59.250", fmt::format("{:%S}", epoch - 3 * d));
+    EXPECT_EQ("59.500", fmt::format("{:%S}", epoch - 2 * d));
+    EXPECT_EQ("59.750", fmt::format("{:%S}", epoch - 1 * d));
+    EXPECT_EQ("00.000", fmt::format("{:%S}", epoch));
+    EXPECT_EQ("00.250", fmt::format("{:%S}", epoch + 1 * d));
+    EXPECT_EQ("00.500", fmt::format("{:%S}", epoch + 2 * d));
+    EXPECT_EQ("00.750", fmt::format("{:%S}", epoch + 3 * d));
+    EXPECT_EQ("01.000", fmt::format("{:%S}", epoch + 4 * d));
+  }
 }
