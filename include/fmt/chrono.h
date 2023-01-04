@@ -2204,7 +2204,7 @@ template <typename Char> struct formatter<std::tm, Char> {
     if (begin == end) return end;
 
     end = detail::parse_chrono_format(begin, end, detail::tm_format_checker());
-    // Replace default spec only if the new spec is not empty.
+    // Replace default format_str only if the new spec is not empty.
     if (end != begin) format_str = {begin, detail::to_unsigned(end - begin)};
     return end;
   }
