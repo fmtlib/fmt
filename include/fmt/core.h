@@ -1474,8 +1474,7 @@ template <typename Context> struct arg_mapper {
                 !has_format_as<T>::value && !has_formatter<T, Context>::value &&
                 !has_fallback_formatter<T, char_type>::value)>
   FMT_DEPRECATED FMT_CONSTEXPR FMT_INLINE auto map(const T& val)
-      -> decltype(std::declval<arg_mapper>().map(
-          static_cast<underlying_t<T>>(val))) {
+      -> decltype(this->map(static_cast<underlying_t<T>>(val))) {
     return map(static_cast<underlying_t<T>>(val));
   }
 #endif
@@ -1483,7 +1482,7 @@ template <typename Context> struct arg_mapper {
   template <typename T, FMT_ENABLE_IF(has_format_as<T>::value &&
                                       !has_formatter<T, Context>::value)>
   FMT_CONSTEXPR FMT_INLINE auto map(const T& val)
-      -> decltype(std::declval<arg_mapper>().map(format_as(T()))) {
+      -> decltype(this->map(format_as(T()))) {
     return map(format_as(val));
   }
 
@@ -1524,7 +1523,7 @@ template <typename Context> struct arg_mapper {
 
   template <typename T, FMT_ENABLE_IF(is_named_arg<T>::value)>
   FMT_CONSTEXPR FMT_INLINE auto map(const T& named_arg)
-      -> decltype(std::declval<arg_mapper>().map(named_arg.value)) {
+      -> decltype(this->map(named_arg.value)) {
     return map(named_arg.value);
   }
 
