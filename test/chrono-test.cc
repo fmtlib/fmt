@@ -492,6 +492,20 @@ TEST(chrono_test, tm_align) {
   EXPECT_EQ("***********1975-12-29 12:14:16", fmt::format("{:*>30%F %T}", t));
 }
 
+TEST(chrono_test, tp_align) {
+  auto tp = std::chrono::system_clock::from_time_t(0);
+  EXPECT_EQ("00:00.000000", fmt::format("{:%M:%S}", tp));
+  EXPECT_EQ("00:00.000000   ", fmt::format("{:15%M:%S}", tp));
+  EXPECT_EQ("00:00.000000   ", fmt::format("{:{}%M:%S}", tp, 15));
+  EXPECT_EQ("00:00.000000   ", fmt::format("{:<15%M:%S}", tp));
+  EXPECT_EQ(" 00:00.000000  ", fmt::format("{:^15%M:%S}", tp));
+  EXPECT_EQ("   00:00.000000", fmt::format("{:>15%M:%S}", tp));
+
+  EXPECT_EQ("00:00.000000***", fmt::format("{:*<15%M:%S}", tp));
+  EXPECT_EQ("*00:00.000000**", fmt::format("{:*^15%M:%S}", tp));
+  EXPECT_EQ("***00:00.000000", fmt::format("{:*>15%M:%S}", tp));
+}
+
 TEST(chrono_test, format_specs) {
   EXPECT_EQ("%", fmt::format("{:%%}", std::chrono::seconds(0)));
   EXPECT_EQ("\n", fmt::format("{:%n}", std::chrono::seconds(0)));
