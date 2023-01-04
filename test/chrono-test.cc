@@ -462,7 +462,7 @@ TEST(chrono_test, format_default) {
       fmt::format("{}", std::chrono::duration<int, std::ratio<15, 4>>(42)));
 }
 
-TEST(chrono_test, align) {
+TEST(chrono_test, duration_align) {
   auto s = std::chrono::seconds(42);
   EXPECT_EQ("42s  ", fmt::format("{:5}", s));
   EXPECT_EQ("42s  ", fmt::format("{:{}}", s, 5));
@@ -476,6 +476,20 @@ TEST(chrono_test, align) {
             fmt::format("{:~^12%H:%M:%S}", std::chrono::seconds(12345)));
   EXPECT_EQ("03:25:45    ",
             fmt::format("{:{}%H:%M:%S}", std::chrono::seconds(12345), 12));
+}
+
+TEST(chrono_test, tm_align) {
+  auto t = make_tm(1975, 12, 29, 12, 14, 16);
+  EXPECT_EQ("1975-12-29 12:14:16", fmt::format("{:%F %T}", t));
+  EXPECT_EQ("1975-12-29 12:14:16           ", fmt::format("{:30%F %T}", t));
+  EXPECT_EQ("1975-12-29 12:14:16           ", fmt::format("{:{}%F %T}", t, 30));
+  EXPECT_EQ("1975-12-29 12:14:16           ", fmt::format("{:<30%F %T}", t));
+  EXPECT_EQ("     1975-12-29 12:14:16      ", fmt::format("{:^30%F %T}", t));
+  EXPECT_EQ("           1975-12-29 12:14:16", fmt::format("{:>30%F %T}", t));
+
+  EXPECT_EQ("1975-12-29 12:14:16***********", fmt::format("{:*<30%F %T}", t));
+  EXPECT_EQ("*****1975-12-29 12:14:16******", fmt::format("{:*^30%F %T}", t));
+  EXPECT_EQ("***********1975-12-29 12:14:16", fmt::format("{:*>30%F %T}", t));
 }
 
 TEST(chrono_test, format_specs) {
