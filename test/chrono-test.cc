@@ -493,7 +493,8 @@ TEST(chrono_test, tm_align) {
 }
 
 TEST(chrono_test, tp_align) {
-  auto tp = std::chrono::system_clock::from_time_t(0);
+  auto tp = std::chrono::time_point_cast<std::chrono::microseconds>(
+      std::chrono::system_clock::from_time_t(0));
   EXPECT_EQ("00:00.000000", fmt::format("{:%M:%S}", tp));
   EXPECT_EQ("00:00.000000   ", fmt::format("{:15%M:%S}", tp));
   EXPECT_EQ("00:00.000000   ", fmt::format("{:{}%M:%S}", tp, 15));
