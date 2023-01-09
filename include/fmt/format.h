@@ -3580,19 +3580,19 @@ template <typename Char> struct arg_formatter {
   using context = buffer_context<Char>;
 
   iterator out;
-  const format_specs<Char>& specs;
+  const format_specs<Char>* specs;
   locale_ref locale;
 
-  arg_formatter(buffer_appender<Char> it, const format_specs<Char>& s)
+  arg_formatter(buffer_appender<Char> it, const format_specs<Char>* s)
       : out(it), specs(s) {}
 
-  arg_formatter(buffer_appender<Char> it, const format_specs<Char>& s,
+  arg_formatter(buffer_appender<Char> it, const format_specs<Char>* s,
                 locale_ref l)
       : out(it), specs(s), locale(l) {}
 
   template <typename T>
   FMT_CONSTEXPR FMT_INLINE auto operator()(T value) -> iterator {
-    return detail::write(out, value, specs, locale);
+    return detail::write(out, value, *specs, locale);
   }
   auto operator()(typename basic_format_arg<context>::handle) -> iterator {
     // User-defined types are handled separately because they require access
@@ -4220,7 +4220,7 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
           specs.precision, specs.precision_ref, context);
       if (begin == end || *begin != '}')
         on_error("missing '}' in format string");
-      auto f = arg_formatter<Char>{context.out(), specs, context.locale()};
+      auto f = arg_formatter<Char>{context.out(), &specs, context.locale()};
       context.advance_to(visit_format_arg(f, arg));
       return begin;
     }
