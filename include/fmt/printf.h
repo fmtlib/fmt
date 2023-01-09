@@ -235,7 +235,13 @@ class printf_arg_formatter : public arg_formatter<Char> {
 
  public:
   printf_arg_formatter(OutputIt iter, format_specs<Char>* s, context_type& ctx)
-      : base{iter, s}, context_(ctx) {}
+      : base{iter, s, locale_ref()}, context_(ctx) {
+#if defined(__ibmxl__)
+    // Bugfix: XL compiler optimizes out initializer for base
+    this->out = iter;
+    this->specs = s;
+#endif
+  }
 
   OutputIt operator()(monostate value) { return base::operator()(value); }
 
