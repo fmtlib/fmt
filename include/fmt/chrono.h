@@ -2115,9 +2115,7 @@ template <typename Char, typename Duration>
 struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
                  Char> : formatter<std::tm, Char> {
   FMT_CONSTEXPR formatter() {
-    basic_string_view<Char> default_specs =
-        detail::string_literal<Char, '%', 'F', ' ', '%', 'T'>{};
-    this->do_parse(default_specs.begin(), default_specs.end());
+    this->format_str = detail::string_literal<Char, '%', 'F', ' ', '%', 'T'>{};
   }
 
   template <typename FormatContext>
@@ -2145,9 +2143,7 @@ template <typename Char, typename Duration>
 struct formatter<std::chrono::local_time<Duration>, Char>
     : formatter<std::tm, Char> {
   FMT_CONSTEXPR formatter() {
-    basic_string_view<Char> default_specs =
-        detail::string_literal<Char, '%', 'F', ' ', '%', 'T'>{};
-    this->do_parse(default_specs.begin(), default_specs.end());
+    this->format_str = detail::string_literal<Char, '%', 'F', ' ', '%', 'T'>{};
   }
 
   template <typename FormatContext>
@@ -2190,51 +2186,51 @@ struct formatter<std::chrono::time_point<std::chrono::utc_clock, Duration>,
 
 template <typename Char> struct formatter<std::tm, Char> {
  private:
-  enum class spec {
-    unknown,
-    year_month_day,
-    hh_mm_ss,
-  };
-  spec spec_ = spec::unknown;
-  basic_string_view<Char> specs;
+  format_specs<Char> specs;
+  detail::arg_ref<Char> width_ref;
 
  protected:
-  template <typename It> FMT_CONSTEXPR auto do_parse(It begin, It end) -> It {
-    if (begin != end && *begin == ':') ++begin;
+  basic_string_view<Char> format_str;
+
+  FMT_CONSTEXPR auto do_parse(basic_format_parse_context<Char>& ctx)
+      -> decltype(ctx.begin()) {
+    auto begin = ctx.begin(), end = ctx.end();
+    if (begin == end || *begin == '}') return end;
+
+    begin = detail::parse_align(begin, end, specs);
+    if (begin == end) return end;
+
+    begin = detail::parse_dynamic_spec(begin, end, specs.width, width_ref, ctx);
+    if (begin == end) return end;
+
     end = detail::parse_chrono_format(begin, end, detail::tm_format_checker());
-    // Replace default spec only if the new spec is not empty.
-    if (end != begin) specs = {begin, detail::to_unsigned(end - begin)};
+    // Replace default format_str only if the new spec is not empty.
+    if (end != begin) format_str = {begin, detail::to_unsigned(end - begin)};
     return end;
   }
 
   template <typename FormatContext, typename Duration>
   auto do_format(const std::tm& tm, FormatContext& ctx,
                  const Duration* subsecs) const -> decltype(ctx.out()) {
+    auto specs_copy = specs;
+    basic_memory_buffer<Char> buf;
+    auto out = std::back_inserter(buf);
+    detail::handle_dynamic_spec<detail::width_checker>(specs_copy.width,
+                                                       width_ref, ctx);
+
     const auto loc_ref = ctx.locale();
     detail::get_locale loc(static_cast<bool>(loc_ref), loc_ref);
-    auto w = detail::tm_writer<decltype(ctx.out()), Char, Duration>(
-        loc, ctx.out(), tm, subsecs);
-    if (spec_ == spec::year_month_day)
-      w.on_iso_date();
-    else if (spec_ == spec::hh_mm_ss)
-      w.on_iso_time();
-    else
-      detail::parse_chrono_format(specs.begin(), specs.end(), w);
-    return w.out();
+    auto w =
+        detail::tm_writer<decltype(out), Char, Duration>(loc, out, tm, subsecs);
+    detail::parse_chrono_format(format_str.begin(), format_str.end(), w);
+    return detail::write(
+        ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs_copy);
   }
 
  public:
   FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
       -> decltype(ctx.begin()) {
-    auto end = this->do_parse(ctx.begin(), ctx.end());
-    // basic_string_view<>::compare isn't constexpr before C++17.
-    if (specs.size() == 2 && specs[0] == Char('%')) {
-      if (specs[1] == Char('F'))
-        spec_ = spec::year_month_day;
-      else if (specs[1] == Char('T'))
-        spec_ = spec::hh_mm_ss;
-    }
-    return end;
+    return this->do_parse(ctx);
   }
 
   template <typename FormatContext>
