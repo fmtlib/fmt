@@ -2115,7 +2115,6 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
         val -= std::chrono::seconds(1);
       }
 
-
       return formatter<std::tm, Char>::do_format(
           gmtime(std::chrono::time_point_cast<std::chrono::seconds>(val)), ctx,
           &subsecs);
