@@ -908,4 +908,14 @@ TEST(chrono_test, timestamps_sub_seconds) {
       t10(std::chrono::milliseconds(2000));
 
   EXPECT_EQ(fmt::format("{:%S}", t10), "02.000");
+
+  {
+    const auto epoch = std::chrono::time_point<std::chrono::system_clock,
+                                               std::chrono::milliseconds>();
+    const auto d = std::chrono::milliseconds(250);
+
+    EXPECT_EQ("59.750", fmt::format("{:%S}", epoch - d));
+    EXPECT_EQ("00.000", fmt::format("{:%S}", epoch));
+    EXPECT_EQ("00.250", fmt::format("{:%S}", epoch + d));
+  }
 }

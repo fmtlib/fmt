@@ -1046,26 +1046,6 @@ inline Int to_nonnegative_int(T value, Int upper) {
   return static_cast<Int>(value);
 }
 
-template <typename Rep, typename Period,
-          FMT_ENABLE_IF(std::numeric_limits<Rep>::is_signed)>
-constexpr std::chrono::duration<Rep, Period> abs(
-    std::chrono::duration<Rep, Period> d) {
-  // We need to compare the duration using the count() method directly
-  // due to a compiler bug in clang-11 regarding the spaceship operator,
-  // when -Wzero-as-null-pointer-constant is enabled.
-  // In clang-12 the bug has been fixed. See
-  // https://bugs.llvm.org/show_bug.cgi?id=46235 and the reproducible example:
-  // https://www.godbolt.org/z/Knbb5joYx.
-  return d.count() >= d.zero().count() ? d : -d;
-}
-
-template <typename Rep, typename Period,
-          FMT_ENABLE_IF(!std::numeric_limits<Rep>::is_signed)>
-constexpr std::chrono::duration<Rep, Period> abs(
-    std::chrono::duration<Rep, Period> d) {
-  return d;
-}
-
 constexpr long long pow10(std::uint32_t n) {
   return n == 0 ? 1 : 10 * pow10(n - 1);
 }
@@ -1101,7 +1081,7 @@ void write_fractional_seconds(OutputIt& out, Duration d, int precision = -1) {
       std::ratio<1, detail::pow10(num_fractional_digits)>>;
 
   const auto fractional =
-      detail::abs(d) - std::chrono::duration_cast<std::chrono::seconds>(d);
+      d - std::chrono::duration_cast<std::chrono::seconds>(d);
   const auto subseconds =
       std::chrono::treat_as_floating_point<
           typename subsecond_precision::rep>::value
@@ -2125,8 +2105,13 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
     if (period::num != 1 || period::den != 1 ||
         std::is_floating_point<typename Duration::rep>::value) {
       const auto epoch = val.time_since_epoch();
-      const auto subsecs = std::chrono::duration_cast<Duration>(
+      auto subsecs = std::chrono::duration_cast<Duration>(
           epoch - std::chrono::duration_cast<std::chrono::seconds>(epoch));
+
+      if (subsecs.count() < 0) {
+        subsecs += std::chrono::seconds(1);
+        val -= std::chrono::seconds(1);
+      }
 
       return formatter<std::tm, Char>::do_format(
           gmtime(std::chrono::time_point_cast<std::chrono::seconds>(val)), ctx,
