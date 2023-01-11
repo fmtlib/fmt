@@ -228,20 +228,14 @@ class printf_arg_formatter : public arg_formatter<Char> {
   context_type& context_;
 
   OutputIt write_null_pointer(bool is_string = false) {
-    auto s = *this->specs;
+    auto s = this->specs;
     s.type = presentation_type::none;
     return write_bytes(this->out, is_string ? "(null)" : "(nil)", s);
   }
 
  public:
-  printf_arg_formatter(OutputIt iter, format_specs<Char>* s, context_type& ctx)
-      : base{iter, s, locale_ref()}, context_(ctx) {
-#if defined(__ibmxl__)
-    // Bugfix: XL compiler optimizes out initializer for base
-    this->out = iter;
-    this->specs = s;
-#endif
-  }
+  printf_arg_formatter(OutputIt iter, format_specs<Char>& s, context_type& ctx)
+      : base(base::make_arg_formatter(iter, s)), context_(ctx) {}
 
   OutputIt operator()(monostate value) { return base::operator()(value); }
 
@@ -250,7 +244,7 @@ class printf_arg_formatter : public arg_formatter<Char> {
     // MSVC2013 fails to compile separate overloads for bool and Char so use
     // std::is_same instead.
     if (std::is_same<T, Char>::value) {
-      format_specs<Char> fmt_specs = *this->specs;
+      format_specs<Char> fmt_specs = this->specs;
       if (fmt_specs.type != presentation_type::none &&
           fmt_specs.type != presentation_type::chr) {
         return (*this)(static_cast<int>(value));
@@ -275,13 +269,13 @@ class printf_arg_formatter : public arg_formatter<Char> {
   /** Formats a null-terminated C string. */
   OutputIt operator()(const char* value) {
     if (value) return base::operator()(value);
-    return write_null_pointer(this->specs->type != presentation_type::pointer);
+    return write_null_pointer(this->specs.type != presentation_type::pointer);
   }
 
   /** Formats a null-terminated wide C string. */
   OutputIt operator()(const wchar_t* value) {
     if (value) return base::operator()(value);
-    return write_null_pointer(this->specs->type != presentation_type::pointer);
+    return write_null_pointer(this->specs.type != presentation_type::pointer);
   }
 
   OutputIt operator()(basic_string_view<Char> value) {
@@ -551,7 +545,7 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
 
     // Format argument.
     out = visit_format_arg(
-        printf_arg_formatter<iterator, Char>(out, &specs, context), arg);
+        printf_arg_formatter<iterator, Char>(out, specs, context), arg);
   }
   write(out, basic_string_view<Char>(start, to_unsigned(it - start)));
 }
