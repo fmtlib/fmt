@@ -106,9 +106,17 @@ TEST(ostream_test, empty_custom_output) {
 }
 
 TEST(ostream_test, print) {
-  std::ostringstream os;
-  fmt::print(os, "Don't {}!", "panic");
-  EXPECT_EQ("Don't panic!", os.str());
+  {
+    std::ostringstream os;
+    fmt::print(os, "Don't {}!", "panic");
+    EXPECT_EQ("Don't panic!", os.str());
+  }
+
+  {
+    std::ostringstream os;
+    fmt::println(os, "Don't {}!", "panic");
+    EXPECT_EQ("Don't panic!\n", os.str());
+  }
 }
 
 TEST(ostream_test, write_to_ostream) {
