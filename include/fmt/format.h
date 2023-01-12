@@ -3671,7 +3671,7 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
               ++exp;
           }
         }
-        buf.try_resize(precision);
+        buf.try_resize(to_unsigned(precision));
       }
     }  // if (digits_in_the_first_segment > precision)
     else {
