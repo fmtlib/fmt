@@ -1708,6 +1708,8 @@ template <typename T = void> struct basic_data {
 template <typename T> constexpr uint64_t basic_data<T>::pow10_significands[];
 template <typename T> constexpr int16_t basic_data<T>::pow10_exponents[];
 template <typename T> constexpr uint64_t basic_data<T>::power_of_10_64[];
+template <typename T>
+constexpr uint32_t basic_data<T>::fractional_part_rounding_thresholds[];
 #endif
 
 // This is a struct rather than an alias to avoid shadowing warnings in gcc.
