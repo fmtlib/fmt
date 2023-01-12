@@ -246,7 +246,7 @@ TEST(fp_test, dragonbox_max_k) {
       fmt::detail::const_check(double_info::max_k),
       double_info::kappa -
           floor_log10_pow2(std::numeric_limits<double>::min_exponent -
-                           fmt::detail::num_significand_bits<double>() - 1));
+                           2 * fmt::detail::num_significand_bits<double>() - 1));
 }
 
 TEST(fp_test, get_round_direction) {
