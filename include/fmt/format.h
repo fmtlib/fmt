@@ -3510,7 +3510,7 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
         // For checking rounding thresholds.
         // The kth entry is chosen to be the smallest integer such that the
         // upper 32-bits of 10^(k+1) times it is strictly bigger than 5 * 10^k.
-        static constexpr uint32_t fractional_part_rounding_thresholds[8] = {
+        static const uint32_t fractional_part_rounding_thresholds[8] = {
             2576980378,  // ceil(2^31 + 2^32/10^1)
             2190433321,  // ceil(2^31 + 2^32/10^2)
             2151778616,  // ceil(2^31 + 2^32/10^3)
