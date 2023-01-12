@@ -1439,7 +1439,7 @@ inline uint128_fallback umul192_upper128(uint64_t x,
   return r;
 }
 
-extern uint128_fallback get_cached_power(int k) noexcept;
+FMT_API uint128_fallback get_cached_power(int k) noexcept;
 
 // Type-specific information that Dragonbox uses.
 template <typename T, typename Enable = void> struct float_info;
@@ -1688,6 +1688,20 @@ template <typename T = void> struct basic_data {
   static constexpr uint64_t power_of_10_64[20] = {
       1, FMT_POWERS_OF_10(1ULL), FMT_POWERS_OF_10(1000000000ULL),
       10000000000000000000ULL};
+
+  // For checking rounding thresholds.
+  // The kth entry is chosen to be the smallest integer such that the
+  // upper 32-bits of 10^(k+1) times it is strictly bigger than 5 * 10^k.
+  static constexpr uint32_t fractional_part_rounding_thresholds[8] = {
+      2576980378,  // ceil(2^31 + 2^32/10^1)
+      2190433321,  // ceil(2^31 + 2^32/10^2)
+      2151778616,  // ceil(2^31 + 2^32/10^3)
+      2147913145,  // ceil(2^31 + 2^32/10^4)
+      2147526598,  // ceil(2^31 + 2^32/10^5)
+      2147487943,  // ceil(2^31 + 2^32/10^6)
+      2147484078,  // ceil(2^31 + 2^32/10^7)
+      2147483691   // ceil(2^31 + 2^32/10^8)
+  };
 };
 
 #if FMT_CPLUSPLUS < 201703L
@@ -3507,20 +3521,6 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
       else {
         exp += digits_in_the_first_segment - precision;
 
-        // For checking rounding thresholds.
-        // The kth entry is chosen to be the smallest integer such that the
-        // upper 32-bits of 10^(k+1) times it is strictly bigger than 5 * 10^k.
-        static const uint32_t fractional_part_rounding_thresholds[8] = {
-            2576980378,  // ceil(2^31 + 2^32/10^1)
-            2190433321,  // ceil(2^31 + 2^32/10^2)
-            2151778616,  // ceil(2^31 + 2^32/10^3)
-            2147913145,  // ceil(2^31 + 2^32/10^4)
-            2147526598,  // ceil(2^31 + 2^32/10^5)
-            2147487943,  // ceil(2^31 + 2^32/10^6)
-            2147484078,  // ceil(2^31 + 2^32/10^7)
-            2147483691   // ceil(2^31 + 2^32/10^8)
-        };
-
         // When precision > 0, we divide the first segment into three
         // subsegments, each with 9, 9, and 0 ~ 1 digits so that each fits
         // in 32-bits which usually allows faster calculation than in
@@ -3600,7 +3600,7 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
           if (precision < 9) {
             uint32_t fractional_part = static_cast<uint32_t>(prod);
             should_round_up = fractional_part >=
-                                  fractional_part_rounding_thresholds
+                                  data::fractional_part_rounding_thresholds
                                       [8 - number_of_digits_to_print] ||
                               ((fractional_part >> 31) &
                                ((digits & 1) | (second_third_subsegments != 0) |
@@ -3640,7 +3640,7 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
             // consisting of a genuine digit from the input.
             uint32_t fractional_part = static_cast<uint32_t>(prod);
             should_round_up = fractional_part >=
-                                  fractional_part_rounding_thresholds
+                                  data::fractional_part_rounding_thresholds
                                       [8 - number_of_digits_to_print] ||
                               ((fractional_part >> 31) &
                                ((digits & 1) | (third_subsegment != 0) |
