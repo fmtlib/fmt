@@ -1125,7 +1125,7 @@ template <> struct cache_accessor<double> {
   }
 };
 
-inline uint128_fallback get_cached_power(int k) noexcept {
+FMT_FUNC uint128_fallback get_cached_power(int k) noexcept {
   return cache_accessor<double>::get_cached_power(k);
 }
 
