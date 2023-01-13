@@ -664,10 +664,15 @@ enum class numeric_system {
   alternative
 };
 
+// Glibc extensions for formatting numeric values.
 enum class pad_type {
   unspecified,
+  // Do not pad a numeric result string.
   none,
+  // Pad a numeric result string with zeros even if the conversion specifier
+  // character uses space-padding by default.
   zero,
+  // Pad a numeric result string with spaces.
   space,
 };
 
