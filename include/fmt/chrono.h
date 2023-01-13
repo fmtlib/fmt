@@ -677,16 +677,15 @@ enum class pad_type {
 };
 
 template <typename OutputIt>
-auto write_padding(OutputIt out, int width, pad_type pad) {
-  switch (pad) {
-  case pad_type::zero:
-  case pad_type::unspecified:
-    return std::fill_n(out, width, '0');
-  case pad_type::space:
-    return std::fill_n(out, width, ' ');
-  case pad_type::none:
-    return out;
-  }
+auto write_padding(OutputIt out, pad_type pad, int width) -> OutputIt {
+  if (pad == pad_type::none) return out;
+  return std::fill_n(out, width, pad == pad_type::space ? ' ' : '0');
+}
+
+template <typename OutputIt>
+auto write_padding(OutputIt out, pad_type pad) -> OutputIt {
+  if (pad != pad_type::none) *out++ = pad == pad_type::space ? ' ' : '0';
+  return out;
 }
 
 // Parses a put_time-like format string and invokes handler actions.
@@ -1279,26 +1278,14 @@ class tm_writer {
     *out_++ = *d;
   }
   void write2(int value, pad_type pad) {
-    switch (pad) {
-    case pad_type::unspecified:
-    case pad_type::zero:
-      write2(value);
-      break;
-    case pad_type::space:
-      if (value < 10) {
-        *out_++ = ' ';
-        write1(value);
-      } else {
-        write2(value);
-      }
-      break;
-    case pad_type::none:
-      if (value < 10) {
-        write1(value);
-      } else {
-        write2(value);
-      }
-      break;
+    unsigned int v = to_unsigned(value) % 100;
+    if (v >= 10) {
+      const char* d = digits2(v);
+      *out_++ = *d++;
+      *out_++ = *d;
+    } else {
+      out_ = detail::write_padding(out_, pad);
+      *out_++ = static_cast<char>('0' + v);
     }
   }
 
@@ -1891,7 +1878,7 @@ struct chrono_formatter {
         to_unsigned(to_nonnegative_int(value, max_value<int>()));
     int num_digits = detail::count_digits(n);
     if (width > num_digits) {
-      out = detail::write_padding(out, width - num_digits, pad);
+      out = detail::write_padding(out, pad, width - num_digits);
     }
     out = format_decimal<char_type>(out, n, num_digits).end;
   }
@@ -1978,7 +1965,7 @@ struct chrono_formatter {
                                precision);
         if (negative) *out++ = '-';
         if (buf.size() < 2 || buf[1] == '.') {
-          out =  detail::write_padding(out, 1, pad);
+          out = detail::write_padding(out, pad);
         }
         out = std::copy(buf.begin(), buf.end(), out);
       } else {
