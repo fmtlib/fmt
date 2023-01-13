@@ -3592,11 +3592,6 @@ template <typename Char> struct arg_formatter {
     // to the parse context.
     return out;
   }
-
-  static auto make_arg_formatter(iterator iter, format_specs<Char>& s)
-      -> arg_formatter {
-    return {iter, s, locale_ref()};
-  }
 };
 
 template <typename Char> struct custom_formatter {
