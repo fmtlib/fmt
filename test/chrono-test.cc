@@ -949,4 +949,19 @@ TEST(chrono_test, glibc_extensions) {
     EXPECT_EQ(fmt::format("{:%-OI,%-OH,%-OM,%-OS}", tm), "1,1,2,3");
   }
 
+  {
+    const auto d = std::chrono::seconds(3) + std::chrono::milliseconds(140);
+    EXPECT_EQ(fmt::format("{:%S}", d), "03.140");
+    EXPECT_EQ(fmt::format("{:%0S}", d), "03.140");
+    EXPECT_EQ(fmt::format("{:%_S}", d), " 3.140");
+    EXPECT_EQ(fmt::format("{:%-S}", d), "3.140");
+  }
+
+  {
+    const auto d = std::chrono::duration<double>(3.14);
+    EXPECT_EQ(fmt::format("{:%S}", d), "03.140000");
+    EXPECT_EQ(fmt::format("{:%0S}", d), "03.140000");
+    EXPECT_EQ(fmt::format("{:%_S}", d), " 3.140000");
+    EXPECT_EQ(fmt::format("{:%-S}", d), "3.140000");
+  }
 }

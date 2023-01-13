@@ -676,6 +676,19 @@ enum class pad_type {
   space,
 };
 
+template <typename OutputIt>
+auto write_padding(OutputIt out, int width, pad_type pad) {
+  switch (pad) {
+  case pad_type::zero:
+  case pad_type::unspecified:
+    return std::fill_n(out, width, '0');
+  case pad_type::space:
+    return std::fill_n(out, width, ' ');
+  case pad_type::none:
+    return out;
+  }
+}
+
 // Parses a put_time-like format string and invokes handler actions.
 template <typename Char, typename Handler>
 FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
@@ -1878,17 +1891,7 @@ struct chrono_formatter {
         to_unsigned(to_nonnegative_int(value, max_value<int>()));
     int num_digits = detail::count_digits(n);
     if (width > num_digits) {
-      switch (pad) {
-      case pad_type::zero:
-      case pad_type::unspecified:
-        out = std::fill_n(out, width - num_digits, '0');
-        break;
-      case pad_type::space:
-        out = std::fill_n(out, width - num_digits, ' ');
-        break;
-      case pad_type::none:
-        break;
-      }
+      out = detail::write_padding(out, width - num_digits, pad);
     }
     out = format_decimal<char_type>(out, n, num_digits).end;
   }
@@ -1974,7 +1977,9 @@ struct chrono_formatter {
         write_floating_seconds(buf, std::chrono::duration<rep, Period>(val),
                                precision);
         if (negative) *out++ = '-';
-        if (buf.size() < 2 || buf[1] == '.') *out++ = '0';
+        if (buf.size() < 2 || buf[1] == '.') {
+          out =  detail::write_padding(out, 1, pad);
+        }
         out = std::copy(buf.begin(), buf.end(), out);
       } else {
         write(second(), 2, pad);
