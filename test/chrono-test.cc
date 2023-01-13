@@ -921,6 +921,13 @@ TEST(chrono_test, timestamps_sub_seconds) {
 }
 
 TEST(chrono_test, glibc_extensions) {
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:%0}"), std::chrono::seconds()),
+                   fmt::format_error, "invalid format");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:%_}"), std::chrono::seconds()),
+                   fmt::format_error, "invalid format");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:%-}"), std::chrono::seconds()),
+                   fmt::format_error, "invalid format");
+
   {
     const auto d = std::chrono::hours(1) + std::chrono::minutes(2) +
                    std::chrono::seconds(3);
