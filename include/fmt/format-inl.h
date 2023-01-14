@@ -174,58 +174,10 @@ FMT_CONSTEXPR inline uint64_t rotr(uint64_t n, uint32_t r) noexcept {
   return (n >> r) | (n << (64 - r));
 }
 
-// Computes 128-bit result of multiplication of two 64-bit unsigned integers.
-inline uint128_fallback umul128(uint64_t x, uint64_t y) noexcept {
-#if FMT_USE_INT128
-  auto p = static_cast<uint128_opt>(x) * static_cast<uint128_opt>(y);
-  return {static_cast<uint64_t>(p >> 64), static_cast<uint64_t>(p)};
-#elif defined(_MSC_VER) && defined(_M_X64)
-  auto result = uint128_fallback();
-  result.lo_ = _umul128(x, y, &result.hi_);
-  return result;
-#else
-  const uint64_t mask = static_cast<uint64_t>(max_value<uint32_t>());
 
-  uint64_t a = x >> 32;
-  uint64_t b = x & mask;
-  uint64_t c = y >> 32;
-  uint64_t d = y & mask;
-
-  uint64_t ac = a * c;
-  uint64_t bc = b * c;
-  uint64_t ad = a * d;
-  uint64_t bd = b * d;
-
-  uint64_t intermediate = (bd >> 32) + (ad & mask) + (bc & mask);
-
-  return {ac + (intermediate >> 32) + (ad >> 32) + (bc >> 32),
-          (intermediate << 32) + (bd & mask)};
-#endif
-}
 
 // Implementation of Dragonbox algorithm: https://github.com/jk-jeon/dragonbox.
 namespace dragonbox {
-// Computes upper 64 bits of multiplication of two 64-bit unsigned integers.
-inline uint64_t umul128_upper64(uint64_t x, uint64_t y) noexcept {
-#if FMT_USE_INT128
-  auto p = static_cast<uint128_opt>(x) * static_cast<uint128_opt>(y);
-  return static_cast<uint64_t>(p >> 64);
-#elif defined(_MSC_VER) && defined(_M_X64)
-  return __umulh(x, y);
-#else
-  return umul128(x, y).high();
-#endif
-}
-
-// Computes upper 128 bits of multiplication of a 64-bit unsigned integer and a
-// 128-bit unsigned integer.
-inline uint128_fallback umul192_upper128(uint64_t x,
-                                         uint128_fallback y) noexcept {
-  uint128_fallback r = umul128(x, y.high());
-  r += umul128_upper64(x, y.low());
-  return r;
-}
-
 // Computes upper 64 bits of multiplication of a 32-bit unsigned integer and a
 // 64-bit unsigned integer.
 inline uint64_t umul96_upper64(uint32_t x, uint64_t y) noexcept {
@@ -247,19 +199,7 @@ inline uint64_t umul96_lower64(uint32_t x, uint64_t y) noexcept {
   return x * y;
 }
 
-// Computes floor(log10(pow(2, e))) for e in [-2620, 2620] using the method from
-// https://fmt.dev/papers/Dragonbox.pdf#page=28, section 6.1.
-inline int floor_log10_pow2(int e) noexcept {
-  FMT_ASSERT(e <= 2620 && e >= -2620, "too large exponent");
-  static_assert((-1 >> 1) == -1, "right shift is not arithmetic");
-  return (e * 315653) >> 20;
-}
-
 // Various fast log computations.
-inline int floor_log2_pow10(int e) noexcept {
-  FMT_ASSERT(e <= 1233 && e >= -1233, "too large exponent");
-  return (e * 1741647) >> 19;
-}
 inline int floor_log10_pow2_minus_log10_4_over_3(int e) noexcept {
   FMT_ASSERT(e <= 2936 && e >= -2985, "too large exponent");
   return (e * 631305 - 261663) >> 21;
@@ -1040,8 +980,23 @@ template <> struct cache_accessor<double> {
       {0xfcf62c1dee382c42, 0x46729e03dd9ed7b6},
       {0x9e19db92b4e31ba9, 0x6c07a2c26a8346d2},
       {0xc5a05277621be293, 0xc7098b7305241886},
-      { 0xf70867153aa2db38,
-        0xb8cbee4fc66d1ea8 }
+      {0xf70867153aa2db38, 0xb8cbee4fc66d1ea8},
+      {0x9a65406d44a5c903, 0x737f74f1dc043329},
+      {0xc0fe908895cf3b44, 0x505f522e53053ff3},
+      {0xf13e34aabb430a15, 0x647726b9e7c68ff0},
+      {0x96c6e0eab509e64d, 0x5eca783430dc19f6},
+      {0xbc789925624c5fe0, 0xb67d16413d132073},
+      {0xeb96bf6ebadf77d8, 0xe41c5bd18c57e890},
+      {0x933e37a534cbaae7, 0x8e91b962f7b6f15a},
+      {0xb80dc58e81fe95a1, 0x723627bbb5a4adb1},
+      {0xe61136f2227e3b09, 0xcec3b1aaa30dd91d},
+      {0x8fcac257558ee4e6, 0x213a4f0aa5e8a7b2},
+      {0xb3bd72ed2af29e1f, 0xa988e2cd4f62d19e},
+      {0xe0accfa875af45a7, 0x93eb1b80a33b8606},
+      {0x8c6c01c9498d8b88, 0xbc72f130660533c4},
+      {0xaf87023b9bf0ee6a, 0xeb8fad7c7f8680b5},
+      { 0xdb68c2ca82ed2a05,
+        0xa67398db9f6820e2 }
 #else
       {0xff77b1fcbebcdc4f, 0x25e8e89c13bb0f7b},
       {0xce5d73ff402d98e3, 0xfb0a3d212dc81290},
@@ -1065,8 +1020,9 @@ template <> struct cache_accessor<double> {
       {0x8da471a9de737e24, 0x5ceaecfed289e5d3},
       {0xe4d5e82392a40515, 0x0fabaf3feaa5334b},
       {0xb8da1662e7b00a17, 0x3d6a751f3b936244},
-      { 0x95527a5202df0ccb,
-        0x0f37801e0c43ebc9 }
+      {0x95527a5202df0ccb, 0x0f37801e0c43ebc9},
+      { 0xf13e34aabb430a15,
+        0x647726b9e7c68ff0 }
 #endif
     };
 
@@ -1168,6 +1124,10 @@ template <> struct cache_accessor<double> {
            2;
   }
 };
+
+FMT_FUNC uint128_fallback get_cached_power(int k) noexcept {
+  return cache_accessor<double>::get_cached_power(k);
+}
 
 // Various integer checks
 template <class T>
