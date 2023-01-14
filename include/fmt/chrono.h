@@ -705,8 +705,9 @@ FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
       continue;
     }
     if (begin != ptr) handler.on_text(begin, ptr);
-    c = *++ptr;  // consume '%'
+    ++ptr;  // consume '%'
     if (ptr == end) FMT_THROW(format_error("invalid format"));
+    c = *ptr;
     switch (c) {
     case '_':
       pad = pad_type::space;
