@@ -2180,7 +2180,7 @@ template <typename Char> struct formatter<std::tm, Char> {
   FMT_CONSTEXPR auto do_parse(basic_format_parse_context<Char>& ctx)
       -> decltype(ctx.begin()) {
     auto begin = ctx.begin(), end = ctx.end();
-    if (begin == end || *begin == '}') return end;
+    if (begin == end || *begin == '}') return begin;
 
     begin = detail::parse_align(begin, end, specs);
     if (begin == end) return end;
