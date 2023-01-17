@@ -485,24 +485,26 @@ inline auto bit_cast(const From& from) -> To {
   return result;
 }
 
+template <class UInt>
+FMT_CONSTEXPR20 inline auto countl_zero_fallback(UInt n) -> int {
+  int lz = 0;
+  constexpr UInt msb_mask = static_cast<UInt>(1) << (num_bits<UInt>() - 1);
+  for (; (n & msb_mask) == 0; n <<= 1) lz++;
+  return lz;
+}
+
 FMT_CONSTEXPR20 inline auto countl_zero(uint32_t n) -> int {
 #ifdef FMT_BUILTIN_CLZ
   if (!is_constant_evaluated()) return FMT_BUILTIN_CLZ(n);
 #endif
-  int lz = 0;
-  constexpr uint32_t msb_mask = 1u << (num_bits<uint32_t>() - 1);
-  for (; (n & msb_mask) == 0; n <<= 1) lz++;
-  return lz;
+  return countl_zero_fallback(n);
 }
 
 FMT_CONSTEXPR20 inline auto countl_zero(uint64_t n) -> int {
 #ifdef FMT_BUILTIN_CLZLL
   if (!is_constant_evaluated()) return FMT_BUILTIN_CLZLL(n);
 #endif
-  int lz = 0;
-  constexpr uint64_t msb_mask = 1ull << (num_bits<uint64_t>() - 1);
-  for (; (n & msb_mask) == 0; n <<= 1) lz++;
-  return lz;
+  return countl_zero_fallback(n);
 }
 
 FMT_INLINE void assume(bool condition) {
@@ -3493,7 +3495,7 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
       }
     }
 
-    // Compute the actual number of decimal digits to print
+    // Compute the actual number of decimal digits to print.
     if (fixed) {
       adjust_precision(precision, exp + digits_in_the_first_segment);
     }
