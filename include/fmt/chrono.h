@@ -2109,8 +2109,11 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
           epoch - std::chrono::duration_cast<std::chrono::seconds>(epoch));
 
       if (subsecs.count() < 0) {
-        subsecs += std::chrono::seconds(1);
-        val -= std::chrono::seconds(1);
+        auto second = std::chrono::seconds(1);
+        if (epoch.count() < (Duration::min() + second).count())
+          FMT_THROW(format_error("duration is too small"));
+        subsecs += second;
+        val -= second;
       }
 
       return formatter<std::tm, Char>::do_format(
