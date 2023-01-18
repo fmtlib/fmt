@@ -427,13 +427,6 @@ TEST(ranges_test, container_adaptor) {
   }
 
   {
-    std::stack<int, std::vector<int>> s;
-    s.push(1);
-    s.push(2);
-    EXPECT_EQ(fmt::format("{}", s), "[1, 2]");
-  }
-
-  {
     std::queue<int> q;
     q.push(1);
     q.push(2);
@@ -447,6 +440,16 @@ TEST(ranges_test, container_adaptor) {
     q.push(2);
     q.push(4);
     EXPECT_EQ(fmt::format("{}", q), "[4, 3, 2, 1]");
+  }
+
+  {
+    std::stack<char, std::string> s;
+    s.push('a');
+    s.push('b');
+    // Note: The output is formatted as a string because the underlying
+    // container is a string. This behavior is conforming to the standard
+    // [container.adaptors.format].
+    EXPECT_EQ(fmt::format("{}", s), "ab");
   }
 
   {
