@@ -14,6 +14,8 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <stack>
+#include <queue>
 
 #include "gtest/gtest.h"
 
@@ -405,4 +407,61 @@ TEST(ranges_test, range_of_range_of_mixed_const) {
 
 TEST(ranges_test, vector_char) {
   EXPECT_EQ(fmt::format("{}", std::vector<char>{'a', 'b'}), "['a', 'b']");
+}
+
+TEST(ranges_test, container_adaptor) {
+  {
+    using fmt::detail::is_container_adaptor_like;
+    using T = std::nullptr_t;
+    static_assert(is_container_adaptor_like<std::stack<T>>::value, "");
+    static_assert(is_container_adaptor_like<std::queue<T>>::value, "");
+    static_assert(is_container_adaptor_like<std::priority_queue<T>>::value, "");
+    static_assert(!is_container_adaptor_like<std::vector<T>>::value, "");
+  }
+
+  {
+    std::stack<int> s;
+    s.push(1);
+    s.push(2);
+    EXPECT_EQ(fmt::format("{}", s), "[1, 2]");
+  }
+
+  {
+    std::stack<int, std::vector<int>> s;
+    s.push(1);
+    s.push(2);
+    EXPECT_EQ(fmt::format("{}", s), "[1, 2]");
+  }
+
+  {
+    std::queue<int> q;
+    q.push(1);
+    q.push(2);
+    EXPECT_EQ(fmt::format("{}", q), "[1, 2]");
+  }
+
+  {
+    std::priority_queue<int> q;
+    q.push(3);
+    q.push(1);
+    q.push(2);
+    q.push(4);
+    EXPECT_EQ(fmt::format("{}", q), "[4, 3, 2, 1]");
+  }
+
+  {
+    struct my_container_adaptor {
+      using value_type = int;
+      using container_type = std::vector<value_type>;
+      void push(const value_type& v) { c.push_back(v); }
+
+     protected:
+      container_type c;
+    };
+
+    my_container_adaptor m;
+    m.push(1);
+    m.push(2);
+    EXPECT_EQ(fmt::format("{}", m), "[1, 2]");
+  }
 }
