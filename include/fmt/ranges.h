@@ -686,10 +686,10 @@ struct formatter<T, Char,
   }
 
   template <typename FormatContext>
-  auto format(const T& t, FormatContext& ctx) const ->
+  auto format(T& t, FormatContext& ctx) const ->
       typename FormatContext::iterator {
     struct getter : T {
-      static auto get(const T& t) -> decltype(t.*(&getter::c)) {
+      static auto get(T& t) -> typename T::container_type& {
         return t.*(&getter::c);  // Access c through the derived class.
       }
     };
