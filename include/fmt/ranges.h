@@ -671,36 +671,29 @@ template <typename T> class is_container_adaptor_like {
   static constexpr const bool value =
       !std::is_void<decltype(check<T>(nullptr))>::value;
 };
-
-template <class T>
-auto get_container(T& t) ->
-    typename std::add_const<typename T::container_type>::type& {
-  struct getter : T {
-    static auto get(const T& t) ->
-        typename std::add_const<typename T::container_type>::type& {
-      return t.*(&getter::c); // Access c through the derived class.
-    }
-  };
-  return getter::get(t);
-}
-
 }  // namespace detail
 
 template <typename T, typename Char>
 struct formatter<T, Char,
                  enable_if_t<detail::is_container_adaptor_like<T>::value>> {
-  struct formatter<decltype(detail::get_container(std::declval<T&>())), Char>
-      container_formatter;
+ private:
+    struct formatter<typename T::container_type, Char> container_formatter;
 
+ public:
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
     return container_formatter.parse(ctx);
   }
 
   template <typename FormatContext>
-  auto format(const T& value, FormatContext& ctx) const ->
+  auto format(const T& t, FormatContext& ctx) const ->
       typename FormatContext::iterator {
-    return container_formatter.format(detail::get_container(value), ctx);
+    struct getter : T {
+      static auto get(const T& t) -> decltype(t.*(&getter::c)) {
+        return t.*(&getter::c);  // Access c through the derived class.
+      }
+    };
+    return container_formatter.format(getter::get(t), ctx);
   }
 };
 
