@@ -329,7 +329,15 @@ template <typename... T> FMT_CONSTEXPR void ignore_unused(const T&...) {}
 
 constexpr FMT_INLINE auto is_constant_evaluated(
     bool default_value = false) noexcept -> bool {
-#ifdef __cpp_lib_is_constant_evaluated
+// Workaround for incompatibility between libstdc++ consteval-based
+// std::is_constant_evaluated() implementation and clang-14.
+// https://github.com/fmtlib/fmt/issues/3247
+#if FMT_CPLUSPLUS >= 202002L && defined(_GLIBCXX_RELEASE) && \
+    _GLIBCXX_RELEASE >= 12 &&                                \
+    (FMT_CLANG_VERSION >= 1400 && FMT_CLANG_VERSION < 1500)
+  ignore_unused(default_value);
+  return __builtin_is_constant_evaluated();
+#elif defined(__cpp_lib_is_constant_evaluated)
   ignore_unused(default_value);
   return std::is_constant_evaluated();
 #else
