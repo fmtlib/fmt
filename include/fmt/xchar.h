@@ -238,6 +238,15 @@ template <typename... T> void print(wformat_string<T...> fmt, T&&... args) {
   return vprint(wstring_view(fmt), fmt::make_wformat_args(args...));
 }
 
+template <typename... T>
+void println(std::FILE* f, wformat_string<T...> fmt, T&&... args) {
+  return print(f, L"{}\n", fmt::format(fmt, std::forward<T>(args)...));
+}
+
+template <typename... T> void println(wformat_string<T...> fmt, T&&... args) {
+  return print(L"{}\n", fmt::format(fmt, std::forward<T>(args)...));
+}
+
 /**
   Converts *value* to ``std::wstring`` using the default format for type *T*.
  */

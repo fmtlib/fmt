@@ -210,7 +210,10 @@ TEST(xchar_test, named_arg_udl) {
 
 TEST(xchar_test, print) {
   // Check that the wide print overload compiles.
-  if (fmt::detail::const_check(false)) fmt::print(L"test");
+  if (fmt::detail::const_check(false)) {
+    fmt::print(L"test");
+    fmt::println(L"test");
+  }
 }
 
 TEST(xchar_test, join) {
@@ -382,9 +385,17 @@ TEST(xchar_test, color) {
 
 TEST(xchar_test, ostream) {
 #if !FMT_GCC_VERSION || FMT_GCC_VERSION >= 409
-  std::wostringstream wos;
-  fmt::print(wos, L"Don't {}!", L"panic");
-  EXPECT_EQ(wos.str(), L"Don't panic!");
+  {
+    std::wostringstream wos;
+    fmt::print(wos, L"Don't {}!", L"panic");
+    EXPECT_EQ(wos.str(), L"Don't panic!");
+  }
+
+  {
+    std::wostringstream wos;
+    fmt::println(wos, L"Don't {}!", L"panic");
+    EXPECT_EQ(wos.str(), L"Don't panic!\n");
+  }
 #endif
 }
 
