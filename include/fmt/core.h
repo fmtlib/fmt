@@ -3010,14 +3010,8 @@ FMT_INLINE void print(std::FILE* f, format_string<T...> fmt, T&&... args) {
 }
 
 /**
-  \rst
   Formats ``args`` according to specifications in ``fmt`` and writes the
   output to the file ``f`` followed by a newline.
-
-  **Example**::
-
-       fmt::println(stderr, "Don't {}!", "panic");
-  \endrst
  */
 template <typename... T>
 FMT_INLINE void println(std::FILE* f, format_string<T...> fmt, T&&... args) {
@@ -3025,14 +3019,8 @@ FMT_INLINE void println(std::FILE* f, format_string<T...> fmt, T&&... args) {
 }
 
 /**
-  \rst
   Formats ``args`` according to specifications in ``fmt`` and writes the output
   to ``stdout`` followed by a newline.
-
-  **Example**::
-
-       fmt::println("Elapsed time: {0:.2f} seconds", 1.23);
-  \endrst
  */
 template <typename... T>
 FMT_INLINE void println(format_string<T...> fmt, T&&... args) {
