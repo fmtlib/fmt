@@ -406,3 +406,16 @@ TEST(ranges_test, range_of_range_of_mixed_const) {
 TEST(ranges_test, vector_char) {
   EXPECT_EQ(fmt::format("{}", std::vector<char>{'a', 'b'}), "['a', 'b']");
 }
+
+TEST(ranges_test, range_of_noncopyable) {
+  struct V {
+    int i;
+    V(int v) : i(v) { }
+    V(V&&) = default;
+    auto operator=(V&&) -> V& = default;
+
+    auto begin() -> int* { return &i; }
+    auto end() -> int* { return &i + 1; }
+  };
+  EXPECT_EQ(fmt::format("{}", V(1)), "[1]");
+}
