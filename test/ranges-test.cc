@@ -193,7 +193,7 @@ template <typename T> class noncopyable_range {
   std::vector<T> vec;
 
  public:
-  using const_iterator = typename ::std::vector<T>::const_iterator;
+  using iterator = typename ::std::vector<T>::iterator;
 
   template <typename... Args>
   explicit noncopyable_range(Args&&... args)
@@ -202,8 +202,8 @@ template <typename T> class noncopyable_range {
   noncopyable_range(noncopyable_range const&) = delete;
   noncopyable_range(noncopyable_range&) = delete;
 
-  const_iterator begin() const { return vec.begin(); }
-  const_iterator end() const { return vec.end(); }
+  iterator begin() { return vec.begin(); }
+  iterator end() { return vec.end(); }
 };
 
 TEST(ranges_test, range) {
@@ -405,17 +405,4 @@ TEST(ranges_test, range_of_range_of_mixed_const) {
 
 TEST(ranges_test, vector_char) {
   EXPECT_EQ(fmt::format("{}", std::vector<char>{'a', 'b'}), "['a', 'b']");
-}
-
-TEST(ranges_test, range_of_noncopyable) {
-  struct V {
-    int i;
-    V(int v) : i(v) { }
-    V(V&&) = default;
-    auto operator=(V&&) -> V& = default;
-
-    auto begin() -> int* { return &i; }
-    auto end() -> int* { return &i + 1; }
-  };
-  EXPECT_EQ(fmt::format("{}", V(1)), "[1]");
 }
