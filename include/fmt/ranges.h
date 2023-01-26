@@ -154,7 +154,8 @@ struct has_const_begin_end<
 template <typename T>
 struct has_mutable_begin_end<
     T, void_t<decltype(detail::range_begin(std::declval<T>())),
-              decltype(detail::range_end(std::declval<T>()))>>
+              decltype(detail::range_end(std::declval<T>())),
+              int>>
     : std::true_type {};
 
 template <typename T>
