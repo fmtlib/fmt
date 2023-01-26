@@ -1142,7 +1142,7 @@ FMT_INLINE int remove_trailing_zeros(uint32_t& n) noexcept {
   // See https://github.com/fmtlib/fmt/issues/3163 for more details.
   const uint32_t mod_inv_5 = 0xcccccccd;
   // Casts are needed to workaround a bug in MSVC 19.22 and older.
-  const uint32_t mod_inv_25 = uint32_t(uint64_t(mod_inv_5) * mod_inv_5);
+  const uint32_t mod_inv_25 = static_cast<uint32_t>(uint64_t(mod_inv_5) * mod_inv_5);
 
   int s = 0;
   while (true) {
