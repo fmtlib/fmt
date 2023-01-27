@@ -193,7 +193,7 @@ template <typename T> class noncopyable_range {
   std::vector<T> vec;
 
  public:
-  using const_iterator = typename ::std::vector<T>::const_iterator;
+  using iterator = typename ::std::vector<T>::iterator;
 
   template <typename... Args>
   explicit noncopyable_range(Args&&... args)
@@ -202,8 +202,8 @@ template <typename T> class noncopyable_range {
   noncopyable_range(noncopyable_range const&) = delete;
   noncopyable_range(noncopyable_range&) = delete;
 
-  const_iterator begin() const { return vec.begin(); }
-  const_iterator end() const { return vec.end(); }
+  iterator begin() { return vec.begin(); }
+  iterator end() { return vec.end(); }
 };
 
 TEST(ranges_test, range) {
