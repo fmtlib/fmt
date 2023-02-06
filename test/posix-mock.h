@@ -39,6 +39,8 @@ typedef unsigned size_t;
 typedef int ssize_t;
 errno_t sopen_s(int* pfh, const char* filename, int oflag, int shflag,
                 int pmode);
+errno_t wsopen_s(int* pfh, const wchar_t* filename, int oflag, int shflag,
+                int pmode);
 #endif
 
 #ifndef _WIN32

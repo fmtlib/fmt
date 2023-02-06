@@ -78,6 +78,11 @@ errno_t test::sopen_s(int* pfh, const char* filename, int oflag, int shflag,
   EMULATE_EINTR(open, EINTR);
   return _sopen_s(pfh, filename, oflag, shflag, pmode);
 }
+errno_t test::wsopen_s(int* pfh, const wchar_t* filename, int oflag, int shflag,
+                       int pmode) {
+  EMULATE_EINTR(open, EINTR);
+  return _wsopen_s(pfh, filename, oflag, shflag, pmode);
+}
 #endif
 
 #ifndef _WIN32

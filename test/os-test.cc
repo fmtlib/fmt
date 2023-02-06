@@ -127,6 +127,17 @@ TEST(os_test, report_windows_error) {
                fmt::to_string(out));
 }
 
+#  if FMT_USE_FCNTL && !defined(__MINGW32__)
+TEST(file_test, open_windows_file) {
+  using fmt::file;
+  file out = file::open_windows_file(L"test-file",
+                                     file::WRONLY | file::CREATE | file::TRUNC);
+  out.write("x", 1);
+  file in = file::open_windows_file(L"test-file", file::RDONLY);
+  EXPECT_READ(in, "x");
+}
+#  endif  // FMT_USE_FCNTL && !defined(__MINGW32__)
+
 #endif  // _WIN32
 
 #if FMT_USE_FCNTL
