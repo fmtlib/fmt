@@ -155,6 +155,8 @@ TEST(xchar_test, format_utf8_precision) {
   EXPECT_EQ(fmt::detail::compute_width(result), 4);
   EXPECT_EQ(result.size(), 5);
   EXPECT_EQ(from_u8str(result), from_u8str(str.substr(0, 5)));
+
+  EXPECT_EQ(fmt::format("{:.0}", "\xad").size(), 0);
 }
 
 TEST(xchar_test, format_to) {

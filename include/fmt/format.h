@@ -773,7 +773,8 @@ inline auto code_point_index(string_view s, size_t n) -> size_t {
   for (size_t i = 0, size = s.size(); i != size; ++i) {
     if ((data[i] & 0xc0) != 0x80 && ++num_code_points > n) return i;
   }
-  return s.size();
+  size_t size = s.size();
+  return n < size ? n : size;
 }
 
 inline auto code_point_index(basic_string_view<char8_type> s, size_t n)
