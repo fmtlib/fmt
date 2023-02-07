@@ -424,6 +424,7 @@ TEST(ranges_test, container_adaptor) {
     s.push(1);
     s.push(2);
     EXPECT_EQ(fmt::format("{}", s), "[1, 2]");
+    EXPECT_EQ(fmt::format("{}", const_cast<const decltype(s)&>(s)), "[1, 2]");
   }
 
   {

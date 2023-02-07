@@ -678,9 +678,9 @@ struct formatter<T, Char,
                  enable_if_t<detail::is_container_adaptor_like<T>::value>>
     : formatter<typename T::container_type, Char> {
   template <typename FormatContext>
-  auto format(T& t, FormatContext& ctx) const -> decltype(ctx.out()) {
+  auto format(const T& t, FormatContext& ctx) const -> decltype(ctx.out()) {
     struct getter : T {
-      static auto get(T& t) -> typename T::container_type& {
+      static auto get(const T& t) -> const typename T::container_type& {
         return t.*(&getter::c);  // Access c through the derived class.
       }
     };
