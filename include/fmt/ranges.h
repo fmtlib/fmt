@@ -675,25 +675,16 @@ template <typename T> class is_container_adaptor_like {
 
 template <typename T, typename Char>
 struct formatter<T, Char,
-                 enable_if_t<detail::is_container_adaptor_like<T>::value>> {
- private:
-    struct formatter<typename T::container_type, Char> container_formatter;
-
- public:
-  template <typename ParseContext>
-  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
-    return container_formatter.parse(ctx);
-  }
-
+                 enable_if_t<detail::is_container_adaptor_like<T>::value>>
+    : formatter<typename T::container_type, Char> {
   template <typename FormatContext>
-  auto format(T& t, FormatContext& ctx) const ->
-      typename FormatContext::iterator {
+  auto format(T& t, FormatContext& ctx) const -> decltype(ctx.out()) {
     struct getter : T {
       static auto get(T& t) -> typename T::container_type& {
         return t.*(&getter::c);  // Access c through the derived class.
       }
     };
-    return container_formatter.format(getter::get(t), ctx);
+    return formatter<typename T::container_type>::format(getter::get(t), ctx);
   }
 };
 
