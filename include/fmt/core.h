@@ -281,6 +281,12 @@
 #  endif
 #endif
 
+#if defined __cpp_inline_variables && __cpp_inline_variables >= 201606L
+#  define FMT_INLINE_VARIABLE inline
+#else
+#  define FMT_INLINE_VARIABLE
+#endif
+
 // Enable minimal optimizations for more compact code in debug mode.
 FMT_GCC_PRAGMA("GCC push_options")
 #if !defined(__OPTIMIZE__) && !defined(__NVCOMPILER) && !defined(__LCC__)
@@ -2662,7 +2668,7 @@ FMT_CONSTEXPR auto check_char_specs(const format_specs<Char>& specs) -> bool {
   return true;
 }
 
-constexpr int invalid_arg_index = -1;
+constexpr FMT_INLINE_VARIABLE int invalid_arg_index = -1;
 
 #if FMT_USE_NONTYPE_TEMPLATE_ARGS
 template <int N, typename T, typename... Args, typename Char>
