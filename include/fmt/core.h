@@ -281,7 +281,7 @@
 #  endif
 #endif
 
-#if defined __cpp_inline_variables && __cpp_inline_variables >=  201606L
+#if defined __cpp_inline_variables && __cpp_inline_variables >= 201606L
 #    define FMT_INLINE_VARIABLE inline
 #else
 #    define FMT_INLINE_VARIABLE
