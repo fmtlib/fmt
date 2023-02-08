@@ -921,3 +921,56 @@ TEST(chrono_test, timestamps_sub_seconds) {
     EXPECT_EQ("00.250", fmt::format("{:%S}", epoch + d));
   }
 }
+
+TEST(chrono_test, glibc_extensions) {
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:%0}"), std::chrono::seconds()),
+                   fmt::format_error, "invalid format");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:%_}"), std::chrono::seconds()),
+                   fmt::format_error, "invalid format");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:%-}"), std::chrono::seconds()),
+                   fmt::format_error, "invalid format");
+
+  {
+    const auto d = std::chrono::hours(1) + std::chrono::minutes(2) +
+                   std::chrono::seconds(3);
+
+    EXPECT_EQ(fmt::format("{:%I,%H,%M,%S}", d), "01,01,02,03");
+    EXPECT_EQ(fmt::format("{:%0I,%0H,%0M,%0S}", d), "01,01,02,03");
+    EXPECT_EQ(fmt::format("{:%_I,%_H,%_M,%_S}", d), " 1, 1, 2, 3");
+    EXPECT_EQ(fmt::format("{:%-I,%-H,%-M,%-S}", d), "1,1,2,3");
+
+    EXPECT_EQ(fmt::format("{:%OI,%OH,%OM,%OS}", d), "01,01,02,03");
+    EXPECT_EQ(fmt::format("{:%0OI,%0OH,%0OM,%0OS}", d), "01,01,02,03");
+    EXPECT_EQ(fmt::format("{:%_OI,%_OH,%_OM,%_OS}", d), " 1, 1, 2, 3");
+    EXPECT_EQ(fmt::format("{:%-OI,%-OH,%-OM,%-OS}", d), "1,1,2,3");
+  }
+
+  {
+    const auto tm = make_tm(1970, 1, 1, 1, 2, 3);
+    EXPECT_EQ(fmt::format("{:%I,%H,%M,%S}", tm), "01,01,02,03");
+    EXPECT_EQ(fmt::format("{:%0I,%0H,%0M,%0S}", tm), "01,01,02,03");
+    EXPECT_EQ(fmt::format("{:%_I,%_H,%_M,%_S}", tm), " 1, 1, 2, 3");
+    EXPECT_EQ(fmt::format("{:%-I,%-H,%-M,%-S}", tm), "1,1,2,3");
+
+    EXPECT_EQ(fmt::format("{:%OI,%OH,%OM,%OS}", tm), "01,01,02,03");
+    EXPECT_EQ(fmt::format("{:%0OI,%0OH,%0OM,%0OS}", tm), "01,01,02,03");
+    EXPECT_EQ(fmt::format("{:%_OI,%_OH,%_OM,%_OS}", tm), " 1, 1, 2, 3");
+    EXPECT_EQ(fmt::format("{:%-OI,%-OH,%-OM,%-OS}", tm), "1,1,2,3");
+  }
+
+  {
+    const auto d = std::chrono::seconds(3) + std::chrono::milliseconds(140);
+    EXPECT_EQ(fmt::format("{:%S}", d), "03.140");
+    EXPECT_EQ(fmt::format("{:%0S}", d), "03.140");
+    EXPECT_EQ(fmt::format("{:%_S}", d), " 3.140");
+    EXPECT_EQ(fmt::format("{:%-S}", d), "3.140");
+  }
+
+  {
+    const auto d = std::chrono::duration<double>(3.14);
+    EXPECT_EQ(fmt::format("{:%S}", d), "03.140000");
+    EXPECT_EQ(fmt::format("{:%0S}", d), "03.140000");
+    EXPECT_EQ(fmt::format("{:%_S}", d), " 3.140000");
+    EXPECT_EQ(fmt::format("{:%-S}", d), "3.140000");
+  }
+}
