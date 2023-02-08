@@ -61,12 +61,30 @@ add_fmt_test(chrono-test)
 add_fmt_test(color-test)
 add_fmt_test(core-test)
 add_fmt_test(gtest-extra-test)
-add_fmt_test(format-test mock-allocator.h)
+
+# Workaround of https://github.com/llvm/llvm-project/issues/56694
+# Remove this when the issue is solved!
+if(${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD"
+    AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+  message(WARNING "Skipping format-test due a issue of clang on OpenBSD: "
+    "https://github.com/llvm/llvm-project/issues/56694")
+else()
+  add_fmt_test(format-test mock-allocator.h)
+endif()
+
 if (MSVC)
   target_compile_options(format-test PRIVATE /bigobj)
 endif ()
 if (NOT (MSVC AND BUILD_SHARED_LIBS))
-  add_fmt_test(format-impl-test HEADER_ONLY header-only-test.cc)
+  # Workaround of https://github.com/llvm/llvm-project/issues/56694
+  # Remove this when the issue is solved!
+  if(${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD"
+      AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    message(WARNING "Skipping format-impl-test due a issue of clang on OpenBSD: "
+      "https://github.com/llvm/llvm-project/issues/56694")
+  else()
+    add_fmt_test(format-impl-test HEADER_ONLY header-only-test.cc)
+  endif()
 endif ()
 add_fmt_test(ostream-test)
 add_fmt_test(compile-test)
