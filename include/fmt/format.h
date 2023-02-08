@@ -798,12 +798,24 @@ using is_integer =
                   !std::is_same<T, wchar_t>::value>;
 
 #ifndef FMT_USE_FLOAT128
-#  ifdef __SIZEOF_FLOAT128__
-#    define FMT_USE_FLOAT128 1
-#  else
+#  ifdef __clang__
+// Clang C++ emulates GCC, so it has to appear early.
+#    if defined(__has_include)
+#      if __has_include(<quadmath.h>)
+#        define FMT_USE_FLOAT128 1
+#      endif
+#    endif
+#  elif defined(__GNUC__)
+// GNU C++:
+#    if defined(_GLIBCXX_USE_FLOAT128) && !defined(__STRICT_ANSI__)
+#      define FMT_USE_FLOAT128 1
+#    endif
+#  endif
+#  ifndef FMT_USE_FLOAT128
 #    define FMT_USE_FLOAT128 0
 #  endif
 #endif
+
 #if FMT_USE_FLOAT128
 using float128 = __float128;
 #else
