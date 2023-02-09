@@ -662,6 +662,34 @@ struct formatter<tuple_join_view<Char, T...>, Char> {
   }
 };
 
+namespace detail {
+// Check if T has an interface like container adapter (e.g. std::stack,
+// std::queue, std::priority_queue).
+template <typename T> class is_container_adaptor_like {
+  template <typename U> static auto check(U* p) -> typename U::container_type;
+  template <typename> static void check(...);
+
+ public:
+  static constexpr const bool value =
+      !std::is_void<decltype(check<T>(nullptr))>::value;
+};
+}  // namespace detail
+
+template <typename T, typename Char>
+struct formatter<T, Char,
+                 enable_if_t<detail::is_container_adaptor_like<T>::value>>
+    : formatter<typename T::container_type, Char> {
+  template <typename FormatContext>
+  auto format(const T& t, FormatContext& ctx) const -> decltype(ctx.out()) {
+    struct getter : T {
+      static auto get(const T& t) -> const typename T::container_type& {
+        return t.*(&getter::c);  // Access c through the derived class.
+      }
+    };
+    return formatter<typename T::container_type>::format(getter::get(t), ctx);
+  }
+};
+
 FMT_MODULE_EXPORT_BEGIN
 
 /**
