@@ -157,8 +157,7 @@ struct has_mutable_begin_end<
               decltype(detail::range_end(std::declval<T>())),
               // the extra int here is because older versions of MSVC don't
               // SFINAE properly unless there are distinct types
-              int>>
-    : std::true_type {};
+              int>> : std::true_type {};
 
 template <typename T>
 struct is_range_<T, void>
@@ -663,7 +662,7 @@ struct formatter<tuple_join_view<Char, T...>, Char> {
 };
 
 namespace detail {
-// Check if T has an interface like container adapter (e.g. std::stack,
+// Check if T has an interface like a container adaptor (e.g. std::stack,
 // std::queue, std::priority_queue).
 template <typename T> class is_container_adaptor_like {
   template <typename U> static auto check(U* p) -> typename U::container_type;
@@ -673,20 +672,27 @@ template <typename T> class is_container_adaptor_like {
   static constexpr const bool value =
       !std::is_void<decltype(check<T>(nullptr))>::value;
 };
+
+template <typename Container> struct all {
+  const Container& c;
+  auto begin() const -> typename Container::const_iterator { return c.begin(); }
+  auto end() const -> typename Container::const_iterator { return c.end(); };
+};
 }  // namespace detail
 
 template <typename T, typename Char>
 struct formatter<T, Char,
                  enable_if_t<detail::is_container_adaptor_like<T>::value>>
-    : formatter<typename T::container_type, Char> {
+    : formatter<detail::all<typename T::container_type>, Char> {
+  using all = detail::all<typename T::container_type>;
   template <typename FormatContext>
   auto format(const T& t, FormatContext& ctx) const -> decltype(ctx.out()) {
     struct getter : T {
-      static auto get(const T& t) -> const typename T::container_type& {
-        return t.*(&getter::c);  // Access c through the derived class.
+      static auto get(const T& t) -> all {
+        return {t.*(&getter::c)};  // Access c through the derived class.
       }
     };
-    return formatter<typename T::container_type>::format(getter::get(t), ctx);
+    return formatter<all>::format(getter::get(t), ctx);
   }
 };
 

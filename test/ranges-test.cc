@@ -12,10 +12,10 @@
 #include "fmt/ranges.h"
 
 #include <map>
+#include <queue>
+#include <stack>
 #include <string>
 #include <vector>
-#include <stack>
-#include <queue>
 
 #include "gtest/gtest.h"
 
@@ -447,10 +447,8 @@ TEST(ranges_test, container_adaptor) {
     std::stack<char, std::string> s;
     s.push('a');
     s.push('b');
-    // Note: The output is formatted as a string because the underlying
-    // container is a string. This behavior is conforming to the standard
-    // [container.adaptors.format].
-    EXPECT_EQ(fmt::format("{}", s), "ab");
+    // See https://cplusplus.github.io/LWG/issue3881.
+    EXPECT_EQ(fmt::format("{}", s), "['a', 'b']");
   }
 
   {
