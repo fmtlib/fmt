@@ -72,8 +72,17 @@ jobs:
         # sudo apt-add-repository 'deb http://azure.archive.ubuntu.com/ubuntu/ bionic-updates universe'
       if: ${{ matrix.cxx == 'g++-4.8' }}
 
+    - name: Add ubuntu mirrors
+      run: |
+        # Github Actions caching proxy is at times unreliable
+        # see https://github.com/actions/runner-images/issues/7048
+        printf 'http://azure.archive.ubuntu.com/ubuntu\tpriority:1\n' | sudo tee /etc/apt/mirrors.txt
+        curl http://mirrors.ubuntu.com/mirrors.txt | sudo tee --append /etc/apt/mirrors.txt
+        sudo sed -i 's~http://azure.archive.ubuntu.com/ubuntu/~mirror+file:/etc/apt/mirrors.txt~' /etc/apt/sources.list
+
     - name: Create Build Environment
       run: |
+        sudo apt update
         ${{matrix.install}}
         sudo apt install locales-all
         cmake -E make_directory ${{runner.workspace}}/build
