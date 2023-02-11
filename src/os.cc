@@ -206,7 +206,11 @@ void buffered_file::close() {
 }
 
 int buffered_file::descriptor() const {
+#ifdef fileno // fileno is a macro on OpenBSD so we cannot use FMT_POSIX_CALL.
+  int fd = fileno(file_);
+#else
   int fd = FMT_POSIX_CALL(fileno(file_));
+#endif
   if (fd == -1)
     FMT_THROW(system_error(errno, FMT_STRING("cannot get file descriptor")));
   return fd;
