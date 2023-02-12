@@ -13,6 +13,14 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Add ubuntu mirrors
+      run: |
+        # Github Actions caching proxy is at times unreliable
+        # see https://github.com/actions/runner-images/issues/7048
+        printf 'http://azure.archive.ubuntu.com/ubuntu\tpriority:1\n' | sudo tee /etc/apt/mirrors.txt
+        curl http://mirrors.ubuntu.com/mirrors.txt | sudo tee --append /etc/apt/mirrors.txt
+        sudo sed -i 's~http://azure.archive.ubuntu.com/ubuntu/~mirror+file:/etc/apt/mirrors.txt~' /etc/apt/sources.list
+
     - name: Create Build Environment
       run: |
         sudo apt update
