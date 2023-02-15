@@ -223,15 +223,13 @@ file::file(cstring_view path, int oflag) {
 #  if defined(_WIN32) && !defined(__MINGW32__)
   fd_ = -1;
   auto converted = detail::utf8_to_utf16(string_view(path.c_str()));
-  auto err =
-      _wsopen_s(&fd_, converted.c_str(), oflag, _SH_DENYNO, default_open_mode);
+  *this = file::open_windows_file(converted.c_str(), oflag);
 #  else
   FMT_RETRY(fd_, FMT_POSIX_CALL(open(path.c_str(), oflag, default_open_mode)));
-  auto err = errno;
-#  endif
   if (fd_ == -1)
     FMT_THROW(
-        system_error(err, FMT_STRING("cannot open file {}"), path.c_str()));
+        system_error(errno, FMT_STRING("cannot open file {}"), path.c_str()));
+#  endif
 }
 
 file::~file() noexcept {
