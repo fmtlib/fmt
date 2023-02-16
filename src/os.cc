@@ -206,7 +206,7 @@ void buffered_file::close() {
 }
 
 int buffered_file::descriptor() const {
-#ifdef fileno // fileno is a macro on OpenBSD so we cannot use FMT_POSIX_CALL.
+#ifdef fileno  // fileno is a macro on OpenBSD so we cannot use FMT_POSIX_CALL.
   int fd = fileno(file_);
 #else
   int fd = FMT_POSIX_CALL(fileno(file_));
@@ -351,9 +351,10 @@ buffered_file file::fdopen(const char* mode) {
 #  else
   FILE* f = FMT_POSIX_CALL(fdopen(fd_, mode));
 #  endif
-  if (!f)
+  if (!f) {
     FMT_THROW(system_error(
         errno, FMT_STRING("cannot associate stream with file descriptor")));
+  }
   buffered_file bf(f);
   fd_ = -1;
   return bf;
@@ -361,13 +362,13 @@ buffered_file file::fdopen(const char* mode) {
 
 #  if defined(_WIN32) && !defined(__MINGW32__)
 file file::open_windows_file(wcstring_view path, int oflag) {
-  int fd_ = -1;
-  auto err =
-      _wsopen_s(&fd_, path.c_str(), oflag, _SH_DENYNO, default_open_mode);
-  if (fd_ == -1)
+  int fd = -1;
+  auto err = _wsopen_s(&fd, path.c_str(), oflag, _SH_DENYNO, default_open_mode);
+  if (fd == -1) {
     FMT_THROW(system_error(err, FMT_STRING("cannot open file {}"),
                            detail::utf16_to_utf8(path.c_str()).c_str()));
-  return file(fd_);
+  }
+  return file(fd);
 }
 #  endif
 
