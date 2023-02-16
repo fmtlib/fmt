@@ -72,12 +72,6 @@ int test::open(const char* path, int oflag, int mode) {
   EMULATE_EINTR(open, -1);
   return ::open(path, oflag, mode);
 }
-#else
-errno_t test::sopen_s(int* pfh, const char* filename, int oflag, int shflag,
-                      int pmode) {
-  EMULATE_EINTR(open, EINTR);
-  return _sopen_s(pfh, filename, oflag, shflag, pmode);
-}
 #endif
 
 #ifndef _WIN32
@@ -220,11 +214,11 @@ TEST(os_test, getpagesize) {
 }
 
 TEST(file_test, open_retry) {
+#  ifndef _WIN32
   write_file("temp", "there must be something here");
   std::unique_ptr<file> f{nullptr};
   EXPECT_RETRY(f.reset(new file("temp", file::RDONLY)), open,
                "cannot open file temp");
-#  ifndef _WIN32
   char c = 0;
   f->read(&c, 1);
 #  endif

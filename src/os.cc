@@ -217,21 +217,23 @@ int buffered_file::descriptor() const {
 }
 
 #if FMT_USE_FCNTL
-file::file(cstring_view path, int oflag) {
 #  ifdef _WIN32
-  using mode_t = int;
+using mode_t = int;
 #  endif
-  constexpr mode_t mode =
-      S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+constexpr mode_t default_open_mode =
+    S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+
+file::file(cstring_view path, int oflag) {
 #  if defined(_WIN32) && !defined(__MINGW32__)
   fd_ = -1;
-  FMT_POSIX_CALL(sopen_s(&fd_, path.c_str(), oflag, _SH_DENYNO, mode));
+  auto converted = detail::utf8_to_utf16(string_view(path.c_str()));
+  *this = file::open_windows_file(converted.c_str(), oflag);
 #  else
-  FMT_RETRY(fd_, FMT_POSIX_CALL(open(path.c_str(), oflag, mode)));
-#  endif
+  FMT_RETRY(fd_, FMT_POSIX_CALL(open(path.c_str(), oflag, default_open_mode)));
   if (fd_ == -1)
     FMT_THROW(
         system_error(errno, FMT_STRING("cannot open file {}"), path.c_str()));
+#  endif
 }
 
 file::~file() noexcept {
@@ -356,6 +358,18 @@ buffered_file file::fdopen(const char* mode) {
   fd_ = -1;
   return bf;
 }
+
+#  if defined(_WIN32) && !defined(__MINGW32__)
+file file::open_windows_file(wcstring_view path, int oflag) {
+  int fd_ = -1;
+  auto err =
+      _wsopen_s(&fd_, path.c_str(), oflag, _SH_DENYNO, default_open_mode);
+  if (fd_ == -1)
+    FMT_THROW(system_error(err, FMT_STRING("cannot open file {}"),
+                           detail::utf16_to_utf8(path.c_str()).c_str()));
+  return file(fd_);
+}
+#  endif
 
 long getpagesize() {
 #  ifdef _WIN32

@@ -337,6 +337,11 @@ class FMT_API file {
   // Creates a buffered_file object associated with this file and detaches
   // this file object from the file.
   buffered_file fdopen(const char* mode);
+
+  # if defined(_WIN32) && !defined(__MINGW32__)
+  // Opens a file and constructs a file object representing this file by wcstring_view filename. Windows only.
+  static file open_windows_file(wcstring_view path, int oflag);
+  #endif
 };
 
 // Returns the memory page size.

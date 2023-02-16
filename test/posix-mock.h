@@ -37,8 +37,6 @@ int fstat(int fd, struct stat* buf);
 #else
 typedef unsigned size_t;
 typedef int ssize_t;
-errno_t sopen_s(int* pfh, const char* filename, int oflag, int shflag,
-                int pmode);
 #endif
 
 #ifndef _WIN32
