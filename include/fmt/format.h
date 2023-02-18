@@ -485,7 +485,7 @@ inline auto bit_cast(const From& from) -> To {
   return result;
 }
 
-template <class UInt>
+template <typename UInt>
 FMT_CONSTEXPR20 inline auto countl_zero_fallback(UInt n) -> int {
   int lz = 0;
   constexpr UInt msb_mask = static_cast<UInt>(1) << (num_bits<UInt>() - 1);

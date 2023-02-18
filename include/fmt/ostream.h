@@ -62,7 +62,7 @@ struct is_streamable<
 namespace {
 struct file_access_tag {};
 }  // namespace
-template <class Tag, class BufType, FILE* BufType::*FileMemberPtr>
+template <typename Tag, typename BufType, FILE* BufType::*FileMemberPtr>
 class file_access {
   friend auto get_file(BufType& obj) -> FILE* { return obj.*FileMemberPtr; }
 };

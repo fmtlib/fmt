@@ -257,7 +257,7 @@ inline uint64_t divide_by_10_to_kappa_plus_1(uint64_t n) noexcept {
 }
 
 // Various subroutines using pow10 cache
-template <class T> struct cache_accessor;
+template <typename T> struct cache_accessor;
 
 template <> struct cache_accessor<float> {
   using carrier_uint = float_info<float>::carrier_uint;
@@ -1127,7 +1127,7 @@ FMT_FUNC uint128_fallback get_cached_power(int k) noexcept {
 }
 
 // Various integer checks
-template <class T>
+template <typename T>
 bool is_left_endpoint_integer_shorter_interval(int exponent) noexcept {
   const int case_shorter_interval_left_endpoint_lower_threshold = 2;
   const int case_shorter_interval_left_endpoint_upper_threshold = 3;
@@ -1142,7 +1142,8 @@ FMT_INLINE int remove_trailing_zeros(uint32_t& n) noexcept {
   // See https://github.com/fmtlib/fmt/issues/3163 for more details.
   const uint32_t mod_inv_5 = 0xcccccccd;
   // Casts are needed to workaround a bug in MSVC 19.22 and older.
-  const uint32_t mod_inv_25 = static_cast<uint32_t>(uint64_t(mod_inv_5) * mod_inv_5);
+  const uint32_t mod_inv_25 =
+      static_cast<uint32_t>(uint64_t(mod_inv_5) * mod_inv_5);
 
   int s = 0;
   while (true) {
@@ -1213,7 +1214,7 @@ FMT_INLINE int remove_trailing_zeros(uint64_t& n) noexcept {
 }
 
 // The main algorithm for shorter interval case
-template <class T>
+template <typename T>
 FMT_INLINE decimal_fp<T> shorter_interval_case(int exponent) noexcept {
   decimal_fp<T> ret_value;
   // Compute k and beta

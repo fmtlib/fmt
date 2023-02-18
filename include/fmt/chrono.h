@@ -504,7 +504,7 @@ inline std::tm localtime(std::time_t time) {
 }
 
 #if FMT_USE_LOCAL_TIME
-template <class Duration>
+template <typename Duration>
 inline auto localtime(std::chrono::local_time<Duration> time) -> std::tm {
   return localtime(std::chrono::system_clock::to_time_t(
       std::chrono::current_zone()->to_sys(time)));

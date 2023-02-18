@@ -226,7 +226,7 @@ template <typename T, typename C> class is_tuple_formattable_<T, C, true> {
       decltype(check(tuple_index_sequence<T>{}))::value;
 };
 
-template <class Tuple, class F, size_t... Is>
+template <typename Tuple, typename F, size_t... Is>
 void for_each(index_sequence<Is...>, Tuple&& tup, F&& f) noexcept {
   using std::get;
   // Using free function get<I>(T) now.
@@ -234,13 +234,13 @@ void for_each(index_sequence<Is...>, Tuple&& tup, F&& f) noexcept {
   ignore_unused(unused);
 }
 
-template <class T>
+template <typename T>
 FMT_CONSTEXPR auto get_indexes(const T&)
     -> make_index_sequence<std::tuple_size<T>::value> {
   return {};
 }
 
-template <class Tuple, class F> void for_each(Tuple&& tup, F&& f) {
+template <typename Tuple, typename F> void for_each(Tuple&& tup, F&& f) {
   const auto indexes = get_indexes(tup);
   for_each(indexes, std::forward<Tuple>(tup), std::forward<F>(f));
 }
@@ -489,7 +489,7 @@ struct range_formatter<
     return underlying_.parse(ctx);
   }
 
-  template <typename R, class FormatContext>
+  template <typename R, typename FormatContext>
   auto format(R&& range, FormatContext& ctx) const -> decltype(ctx.out()) {
     detail::range_mapper<buffer_context<Char>> mapper;
     auto out = ctx.out();
