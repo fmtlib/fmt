@@ -235,7 +235,7 @@ void for_each(index_sequence<Is...>, Tuple&& tup, F&& f) noexcept {
 }
 
 template <class T>
-FMT_CONSTEXPR auto get_indexes(T const&)
+FMT_CONSTEXPR auto get_indexes(const T&)
     -> make_index_sequence<std::tuple_size<T>::value> {
   return {};
 }
@@ -361,7 +361,7 @@ struct formatter<Tuple, Char,
     return ctx.begin();
   }
 
-  template <typename FormatContext = format_context>
+  template <typename FormatContext>
   auto format(const Tuple& value, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     auto out = detail::copy_str<Char>(opening_bracket_, ctx.out());
@@ -437,13 +437,13 @@ struct range_formatter<
   basic_string_view<Char> closing_bracket_ =
       detail::string_literal<Char, ']'>{};
 
-  template <class U>
+  template <typename U>
   FMT_CONSTEXPR static auto maybe_set_debug_format(U& u, bool set)
       -> decltype(u.set_debug_format(set)) {
     u.set_debug_format(set);
   }
 
-  template <class U>
+  template <typename U>
   FMT_CONSTEXPR static void maybe_set_debug_format(U&, ...) {}
 
   FMT_CONSTEXPR void maybe_set_debug_format(bool set) {
@@ -451,7 +451,7 @@ struct range_formatter<
   }
 
  public:
-  FMT_CONSTEXPR range_formatter() { maybe_set_debug_format(true); }
+  FMT_CONSTEXPR range_formatter() {}
 
   FMT_CONSTEXPR auto underlying() -> detail::range_formatter_type<Char, T>& {
     return underlying_;
@@ -477,14 +477,14 @@ struct range_formatter<
       ++it;
     }
 
-    if (it == end || *it == '}') return it;
+    if (it != end && *it != '}') {
+      if (*it != ':') FMT_THROW(format_error("invalid format specifier"));
+      custom_specs_ = true;
+      ++it;
+    } else {
+      maybe_set_debug_format(true);
+    }
 
-    if (*it != ':')
-      FMT_THROW(format_error("no other top-level range formatters supported"));
-
-    maybe_set_debug_format(false);
-    custom_specs_ = true;
-    ++it;
     ctx.advance_to(it);
     return underlying_.parse(ctx);
   }

@@ -366,7 +366,7 @@ TEST(ranges_test, is_printable) {
   EXPECT_FALSE(is_printable(0x110000));
 }
 
-TEST(ranges_test, escape_string) {
+TEST(ranges_test, escape) {
   using vec = std::vector<std::string>;
   EXPECT_EQ(fmt::format("{}", vec{"\n\r\t\"\\"}), "[\"\\n\\r\\t\\\"\\\\\"]");
   EXPECT_EQ(fmt::format("{}", vec{"\x07"}), "[\"\\x07\"]");
@@ -386,8 +386,11 @@ TEST(ranges_test, escape_string) {
               "[\"\\xf0(\\x00\\x00anything\"]");
 
     // Correct utf-8.
-    EXPECT_EQ(fmt::format("{}", vec{"понедельник"}), "[\"понедельник\"]");
+    EXPECT_EQ(fmt::format("{}", vec{"🦄"}), "[\"🦄\"]");
   }
+
+  EXPECT_EQ(fmt::format("{}", std::vector<std::vector<char>>{{'x'}}),
+            "[['x']]");
 }
 
 template <typename R> struct fmt_ref_view {
@@ -420,7 +423,7 @@ TEST(ranges_test, container_adaptor) {
   }
 
   {
-    std::stack<int> s;
+    auto s = std::stack<int>();
     s.push(1);
     s.push(2);
     EXPECT_EQ(fmt::format("{}", s), "[1, 2]");
@@ -428,14 +431,14 @@ TEST(ranges_test, container_adaptor) {
   }
 
   {
-    std::queue<int> q;
+    auto q = std::queue<int>();
     q.push(1);
     q.push(2);
     EXPECT_EQ(fmt::format("{}", q), "[1, 2]");
   }
 
   {
-    std::priority_queue<int> q;
+    auto q = std::priority_queue<int>();
     q.push(3);
     q.push(1);
     q.push(2);
@@ -444,7 +447,7 @@ TEST(ranges_test, container_adaptor) {
   }
 
   {
-    std::stack<char, std::string> s;
+    auto s = std::stack<char, std::string>();
     s.push('a');
     s.push('b');
     // See https://cplusplus.github.io/LWG/issue3881.
@@ -461,7 +464,7 @@ TEST(ranges_test, container_adaptor) {
       container_type c;
     };
 
-    my_container_adaptor m;
+    auto m = my_container_adaptor();
     m.push(1);
     m.push(2);
     EXPECT_EQ(fmt::format("{}", m), "[1, 2]");
