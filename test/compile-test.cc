@@ -284,8 +284,12 @@ TEST(compile_test, to_string_and_formatter) {
 TEST(compile_test, print) {
   EXPECT_WRITE(stdout, fmt::print(FMT_COMPILE("Don't {}!"), "panic"),
                "Don't panic!");
+  EXPECT_WRITE(stdout, fmt::print(FMT_COMPILE("Don't {}!\n"), "panic"),
+               "Don't panic!\n");
   EXPECT_WRITE(stderr, fmt::print(stderr, FMT_COMPILE("Don't {}!"), "panic"),
                "Don't panic!");
+  EXPECT_WRITE(stderr, fmt::print(stderr, FMT_COMPILE("Don't {}!\n"), "panic"),
+               "Don't panic!\n");
 }
 #endif
 

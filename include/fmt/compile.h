@@ -587,8 +587,25 @@ void print(std::FILE* f, const S& format_str, const Args&... args) {
 
 template <typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
+void println(std::FILE* f, const S& format_str, const Args&... args) {
+  memory_buffer buffer;
+  using Char = typename S::char_type;
+  Char suffix[] = {Char('\n'), 0};
+  fmt::format_to(std::back_inserter(buffer), format_str, args...);
+  buffer.append(suffix, suffix + 1);
+  detail::print(f, {buffer.data(), buffer.size()});
+}
+
+template <typename S, typename... Args,
+          FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
 void print(const S& format_str, const Args&... args) {
   print(stdout, format_str, args...);
+}
+
+template <typename S, typename... Args,
+          FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
+void println(const S& format_str, const Args&... args) {
+  println(stdout, format_str, args...);
 }
 
 #if FMT_USE_NONTYPE_TEMPLATE_ARGS
