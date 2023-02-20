@@ -1482,22 +1482,34 @@ FMT_FUNC void print(std::FILE* f, string_view text) {
 #endif
   detail::fwrite_fully(text.data(), 1, text.size(), f);
 }
+
+FMT_FUNC void vprint(std::FILE* f, string_view format_str, format_args args,
+                     string_view suffix) {
+  memory_buffer buffer;
+  detail::vformat_to(buffer, format_str, args);
+  buffer.append(suffix);
+  detail::print(f, {buffer.data(), buffer.size()});
+}
+
 }  // namespace detail
 
 FMT_FUNC void vprint(std::FILE* f, string_view format_str, format_args args) {
-  memory_buffer buffer;
-  detail::vformat_to(buffer, format_str, args);
-  detail::print(f, {buffer.data(), buffer.size()});
+  detail::vprint(f, format_str, args, {});
 }
 
 #ifdef _WIN32
 // Print assuming legacy (non-Unicode) encoding.
 FMT_FUNC void detail::vprint_mojibake(std::FILE* f, string_view format_str,
-                                      format_args args) {
+                                      format_args args, string_view suffix) {
   memory_buffer buffer;
   detail::vformat_to(buffer, format_str,
                      basic_format_args<buffer_context<char>>(args));
+  buffer.append(suffix);
   fwrite_fully(buffer.data(), 1, buffer.size(), f);
+}
+FMT_FUNC void detail::vprint_mojibake(std::FILE* f, string_view format_str,
+                                      format_args args) {
+  vprint_mojibake(f, format_str, args, {});
 }
 #endif
 

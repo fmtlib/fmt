@@ -188,9 +188,22 @@ struct fallback_formatter<T, Char, enable_if_t<is_streamable<T, Char>::value>>
 };
 
 inline void vprint_directly(std::ostream& os, string_view format_str,
-                            format_args args) {
+                            format_args args, string_view suffix) {
   auto buffer = memory_buffer();
   detail::vformat_to(buffer, format_str, args);
+  buffer.append(suffix);
+  detail::write_buffer(os, buffer);
+}
+
+template <typename Char>
+void vprint(std::basic_ostream<Char>& os,
+            basic_string_view<type_identity_t<Char>> format_str,
+            basic_format_args<buffer_context<type_identity_t<Char>>> args,
+            basic_string_view<type_identity_t<Char>> suffix) {
+  auto buffer = basic_memory_buffer<Char>();
+  detail::vformat_to(buffer, format_str, args);
+  buffer.append(suffix);
+  if (detail::write_ostream_unicode(os, {buffer.data(), buffer.size()})) return;
   detail::write_buffer(os, buffer);
 }
 
@@ -200,10 +213,7 @@ FMT_MODULE_EXPORT template <typename Char>
 void vprint(std::basic_ostream<Char>& os,
             basic_string_view<type_identity_t<Char>> format_str,
             basic_format_args<buffer_context<type_identity_t<Char>>> args) {
-  auto buffer = basic_memory_buffer<Char>();
-  detail::vformat_to(buffer, format_str, args);
-  if (detail::write_ostream_unicode(os, {buffer.data(), buffer.size()})) return;
-  detail::write_buffer(os, buffer);
+  detail::vprint(os, format_str, args, {});
 }
 
 /**
@@ -221,7 +231,7 @@ void print(std::ostream& os, format_string<T...> fmt, T&&... args) {
   if (detail::is_utf8())
     vprint(os, fmt, vargs);
   else
-    detail::vprint_directly(os, fmt, vargs);
+    detail::vprint_directly(os, fmt, vargs, {});
 }
 
 FMT_MODULE_EXPORT
@@ -234,7 +244,11 @@ void print(std::wostream& os,
 
 FMT_MODULE_EXPORT template <typename... T>
 void println(std::ostream& os, format_string<T...> fmt, T&&... args) {
-  print(os, "{}\n", fmt::format(fmt, std::forward<T>(args)...));
+  const auto& vargs = fmt::make_format_args(args...);
+  if (detail::is_utf8())
+    detail::vprint(os, fmt, vargs, {"\n", 1});
+  else
+    detail::vprint_directly(os, fmt, vargs, {"\n", 1});
 }
 
 FMT_MODULE_EXPORT
@@ -242,7 +256,9 @@ template <typename... Args>
 void println(std::wostream& os,
              basic_format_string<wchar_t, type_identity_t<Args>...> fmt,
              Args&&... args) {
-  print(os, L"{}\n", fmt::format(fmt, std::forward<Args>(args)...));
+  detail::vprint(os, fmt,
+                 fmt::make_format_args<buffer_context<wchar_t>>(args...),
+                 {L"\n", 1});
 }
 
 FMT_END_NAMESPACE

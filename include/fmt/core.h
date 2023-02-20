@@ -2776,8 +2776,13 @@ template <typename Char>
 void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
                 typename vformat_args<Char>::type args, locale_ref loc = {});
 
+FMT_API void vprint(std::FILE* f, string_view format_str, format_args args,
+                    string_view suffix);
+FMT_API void vprint_mojibake(std::FILE*, string_view, format_args, string_view);
 FMT_API void vprint_mojibake(std::FILE*, string_view, format_args);
 #ifndef _WIN32
+inline void vprint_mojibake(std::FILE*, string_view, format_args, string_view) {
+}
 inline void vprint_mojibake(std::FILE*, string_view, format_args) {}
 #endif
 FMT_END_DETAIL_NAMESPACE
@@ -3021,7 +3026,9 @@ FMT_INLINE void print(std::FILE* f, format_string<T...> fmt, T&&... args) {
  */
 template <typename... T>
 FMT_INLINE void println(std::FILE* f, format_string<T...> fmt, T&&... args) {
-  return fmt::print(f, "{}\n", fmt::format(fmt, std::forward<T>(args)...));
+  const auto& vargs = fmt::make_format_args(args...);
+  return detail::is_utf8() ? detail::vprint(f, fmt, vargs, {"\n", 1})
+                           : detail::vprint_mojibake(f, fmt, vargs, {"\n", 1});
 }
 
 /**
