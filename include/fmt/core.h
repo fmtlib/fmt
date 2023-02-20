@@ -2778,12 +2778,11 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
 
 FMT_API void vprint(std::FILE* f, string_view format_str, format_args args,
                     string_view suffix);
-FMT_API void vprint_mojibake(std::FILE*, string_view, format_args, string_view);
-FMT_API void vprint_mojibake(std::FILE*, string_view, format_args);
+FMT_API void vprint_mojibake(std::FILE*, string_view, format_args,
+                             string_view = {});
 #ifndef _WIN32
 inline void vprint_mojibake(std::FILE*, string_view, format_args, string_view) {
 }
-inline void vprint_mojibake(std::FILE*, string_view, format_args) {}
 #endif
 FMT_END_DETAIL_NAMESPACE
 
@@ -2983,8 +2982,12 @@ FMT_NODISCARD FMT_INLINE auto formatted_size(format_string<T...> fmt,
   return buf.count();
 }
 
-FMT_API void vprint(string_view fmt, format_args args);
-FMT_API void vprint(std::FILE* f, string_view fmt, format_args args);
+inline void vprint(std::FILE* f, string_view fmt, format_args args) {
+  detail::vprint(f, fmt, args, {});
+}
+inline void vprint(string_view fmt, format_args args) {
+  vprint(stdout, fmt, args);
+}
 
 /**
   \rst
