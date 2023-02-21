@@ -2260,7 +2260,7 @@
   <https://github.com/kwesolowski>`_.
 
 * Replaced ``FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION`` with the ``FMT_FUZZ``
-  macro to prevent interferring with fuzzing of projects using {fmt}
+  macro to prevent interfering with fuzzing of projects using {fmt}
   (`#1650 <https://github.com/fmtlib/fmt/pull/1650>`_).
   Thanks `@asraa (Asra Ali) <https://github.com/asraa>`_.
 
