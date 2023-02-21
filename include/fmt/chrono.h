@@ -1156,7 +1156,7 @@ void write_fractional_seconds(OutputIt& out, Duration d, int precision = -1) {
   }
 }
 
-// Format subseconds which are given as a floating point type with an appropiate
+// Format subseconds which are given as a floating point type with an appropriate
 // number of digits. We cannot pass the Duration here, as we explicitly need to
 // pass the Rep value in the chrono_formatter.
 template <typename Duration>
