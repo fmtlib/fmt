@@ -59,8 +59,7 @@ TEST(std_test, optional) {
                                           std::optional{3}}),
             "[optional(1), optional(2), optional(3)]");
   EXPECT_EQ(
-      fmt::format("{}", std::optional<std::optional<const char*>>{std::optional{
-                            "nested"}}),
+      fmt::format("{}", std::optional<std::optional<const char*>>{{"nested"}}),
       "optional(optional(\"nested\"))");
   EXPECT_EQ(
       fmt::format("{:<{}}", std::optional{std::string{"left aligned"}}, 30),
