@@ -98,7 +98,7 @@ FMT_END_NAMESPACE
 FMT_BEGIN_NAMESPACE
 template <typename T, typename Char>
 struct formatter<std::optional<T>, Char,
-                 std::enable_if_t<is_formattable<T>::value>> {
+                 std::enable_if_t<is_formattable<T, Char>::value>> {
  private:
   formatter<T, Char> underlying_;
   static constexpr basic_string_view<Char> optional =

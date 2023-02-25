@@ -16,6 +16,7 @@
 #include "fmt/color.h"
 #include "fmt/ostream.h"
 #include "fmt/ranges.h"
+#include "fmt/std.h"
 #include "gtest-extra.h"  // Contains
 #include "util.h"         // get_locale
 
@@ -586,6 +587,14 @@ TEST(locale_test, chrono_weekday) {
 
 TEST(locale_test, sign) {
   EXPECT_EQ(fmt::format(std::locale(), L"{:L}", -50), L"-50");
+}
+
+TEST(std_test_xchar, optional) {
+#  ifdef __cpp_lib_optional
+  EXPECT_EQ(fmt::format(L"{}", std::optional{L'C'}), L"optional(\'C\')");
+  EXPECT_EQ(fmt::format(L"{}", std::optional{std::wstring{L"wide string"}}),
+            L"optional(\"wide string\")");
+#  endif
 }
 
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR

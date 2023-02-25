@@ -12,7 +12,6 @@
 
 #include "fmt/os.h"  // fmt::system_category
 #include "fmt/ranges.h"
-#include "fmt/xchar.h"
 #include "gtest-extra.h"  // StartsWith
 
 using testing::StartsWith;
@@ -53,7 +52,7 @@ TEST(std_test, thread_id) {
 
 TEST(std_test, optional) {
 #ifdef __cpp_lib_optional
-  EXPECT_EQ(fmt::format(L"{}", std::optional<int>{}), L"none");
+  EXPECT_EQ(fmt::format("{}", std::optional<int>{}), "none");
   EXPECT_EQ(fmt::format("{}", std::pair{1, "second"}), "(1, \"second\")");
   EXPECT_EQ(fmt::format("{}", std::vector{std::optional{1}, std::optional{2},
                                           std::optional{3}}),
