@@ -77,6 +77,11 @@ inline void write_escaped_path<std::filesystem::path::value_type>(
 template <typename Char>
 struct formatter<std::filesystem::path, Char>
     : formatter<basic_string_view<Char>> {
+  template <typename ParseContext> FMT_CONSTEXPR auto parse(ParseContext& ctx) {
+    auto out = formatter<basic_string_view<Char>>::parse(ctx);
+    this->set_debug_format(false);
+    return out;
+  }
   template <typename FormatContext>
   auto format(const std::filesystem::path& p, FormatContext& ctx) const ->
       typename FormatContext::iterator {
