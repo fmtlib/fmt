@@ -50,6 +50,34 @@ TEST(std_test, thread_id) {
   EXPECT_FALSE(fmt::format("{}", std::this_thread::get_id()).empty());
 }
 
+TEST(std_test, optional) {
+#ifdef __cpp_lib_optional
+  EXPECT_EQ(fmt::format("{}", std::optional<int>{}), "none");
+  EXPECT_EQ(fmt::format("{}", std::pair{1, "second"}), "(1, \"second\")");
+  EXPECT_EQ(fmt::format("{}", std::vector{std::optional{1}, std::optional{2},
+                                          std::optional{3}}),
+            "[optional(1), optional(2), optional(3)]");
+  EXPECT_EQ(
+      fmt::format("{}", std::optional<std::optional<const char*>>{{"nested"}}),
+      "optional(optional(\"nested\"))");
+  EXPECT_EQ(
+      fmt::format("{:<{}}", std::optional{std::string{"left aligned"}}, 30),
+      "optional(\"left aligned\"                )");
+  EXPECT_EQ(
+      fmt::format("{::d}", std::optional{std::vector{'h', 'e', 'l', 'l', 'o'}}),
+      "optional([104, 101, 108, 108, 111])");
+  EXPECT_EQ(fmt::format("{}", std::optional{std::string{"string"}}),
+            "optional(\"string\")");
+  EXPECT_EQ(fmt::format("{}", std::optional{'C'}), "optional(\'C\')");
+  EXPECT_EQ(fmt::format("{:.{}f}", std::optional{3.14}, 1), "optional(3.1)");
+
+  struct unformattable {};
+  EXPECT_FALSE((fmt::is_formattable<unformattable>::value));
+  EXPECT_FALSE((fmt::is_formattable<std::optional<unformattable>>::value));
+  EXPECT_TRUE((fmt::is_formattable<std::optional<int>>::value));
+#endif
+}
+
 TEST(std_test, variant) {
 #ifdef __cpp_lib_variant
   EXPECT_EQ(fmt::format("{}", std::monostate{}), "monostate");

@@ -508,6 +508,7 @@ Standard Library Types Formatting
 * `std::thread::id <https://en.cppreference.com/w/cpp/thread/thread/id>`_
 * `std::monostate <https://en.cppreference.com/w/cpp/utility/variant/monostate>`_
 * `std::variant <https://en.cppreference.com/w/cpp/utility/variant/variant>`_
+* `std::optional <https://en.cppreference.com/w/cpp/utility/optional>`_
 
 Formatting Variants
 -------------------
