@@ -420,6 +420,9 @@ Projects using this library
 * `TrinityCore <https://github.com/TrinityCore/TrinityCore>`_: open-source
   MMORPG framework
 
+* `🐙 userver framework <https://userver.tech/>`_: open-source asynchronous
+  framework with a rich set of abstractions and database drivers
+
 * `Windows Terminal <https://github.com/microsoft/terminal>`_: the new Windows
   terminal
 
