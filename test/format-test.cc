@@ -755,8 +755,8 @@ TEST(format_test, hash_flag) {
   EXPECT_EQ("0x42", fmt::format("{0:#x}", 0x42ull));
   EXPECT_EQ("042", fmt::format("{0:#o}", 042ull));
 
-  EXPECT_EQ("-42.0", fmt::format("{0:#}", -42.0));
-  EXPECT_EQ("-42.0", fmt::format("{0:#}", -42.0l));
+  EXPECT_EQ("-42.", fmt::format("{0:#}", -42.0));
+  EXPECT_EQ("-42.", fmt::format("{0:#}", -42.0l));
   EXPECT_EQ("4.e+01", fmt::format("{:#.0e}", 42.0));
   EXPECT_EQ("0.", fmt::format("{:#.0f}", 0.01));
   EXPECT_EQ("0.50", fmt::format("{:#.2g}", 0.5));
@@ -836,7 +836,7 @@ TEST(format_test, width) {
   EXPECT_EQ("str         ", fmt::format("{0:12}", "str"));
   EXPECT_EQ(fmt::format("{:*^6}", "🤡"), "**🤡**");
   EXPECT_EQ(fmt::format("{:*^8}", "你好"), "**你好**");
-  EXPECT_EQ(fmt::format("{:#6}", 42.0), "  42.0");
+  EXPECT_EQ(fmt::format("{:#6}", 42.0), "   42.");
   EXPECT_EQ(fmt::format("{:6c}", static_cast<int>('x')), "x     ");
   EXPECT_EQ(fmt::format("{:>06.0f}", 0.00884311), "     0");
 }
