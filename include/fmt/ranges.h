@@ -59,6 +59,17 @@ template <typename T> class is_std_string_like {
       !std::is_void<decltype(check<T>(nullptr))>::value;
 };
 
+// Returns true if T has a std::filesystem::path-like interface.
+template <typename T> class is_std_filesystem_path_like {
+  template <typename U>
+  static auto check(U* p) -> decltype((void)U::preferred_separator, int());
+  template <typename> static void check(...);
+
+ public:
+  static constexpr const bool value =
+      !std::is_void<decltype(check<T>(nullptr))>::value;
+};
+
 template <typename Char>
 struct is_std_string_like<fmt::basic_string_view<Char>> : std::true_type {};
 
@@ -383,7 +394,8 @@ template <typename T, typename Char> struct is_range {
   static constexpr const bool value =
       detail::is_range_<T>::value && !detail::is_std_string_like<T>::value &&
       !std::is_convertible<T, std::basic_string<Char>>::value &&
-      !std::is_convertible<T, detail::std_string_view<Char>>::value;
+      !std::is_convertible<T, detail::std_string_view<Char>>::value &&
+      !detail::is_std_filesystem_path_like<T>::value;
 };
 
 namespace detail {

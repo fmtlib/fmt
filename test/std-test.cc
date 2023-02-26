@@ -46,6 +46,12 @@ TEST(ranges_std_test, format_vector_path) {
 #endif
 }
 
+TEST(ranges_std_test, path) {
+#ifdef __cpp_lib_filesystem
+  EXPECT_FALSE((fmt::is_range<std::filesystem::path, char>::value));
+#endif
+}
+
 TEST(std_test, thread_id) {
   EXPECT_FALSE(fmt::format("{}", std::this_thread::get_id()).empty());
 }

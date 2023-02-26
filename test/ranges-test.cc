@@ -179,15 +179,18 @@ TEST(ranges_test, format_to) {
   EXPECT_STREQ(buf, "[1, 2, 3]");
 }
 
-struct path_like {
+template <typename Char> struct path_like {
   const path_like* begin() const;
   const path_like* end() const;
 
-  operator std::string() const;
+  operator std::basic_string<Char>() const;
+
+  static constexpr const Char preferred_separator = Char();
 };
 
 TEST(ranges_test, path_like) {
-  EXPECT_FALSE((fmt::is_range<path_like, char>::value));
+  EXPECT_FALSE((fmt::is_range<path_like<char>, char>::value));
+  EXPECT_FALSE((fmt::is_range<path_like<wchar_t>, char>::value));
 }
 
 // A range that provides non-const only begin()/end() to test fmt::join
