@@ -651,7 +651,8 @@ FMT_CONSTEXPR inline auto utf8_decode(const char* s, uint32_t* c, int* e)
   constexpr const int shiftc[] = {0, 18, 12, 6, 0};
   constexpr const int shifte[] = {0, 6, 4, 2, 0};
 
-  int len = code_point_length_impl(*s);
+  int len = "\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\0\0\0\0\0\0\0\0\2\2\2\2\3\3\4"
+      [static_cast<unsigned char>(*s) >> 3];
   // Compute the pointer to the next character early so that the next
   // iteration can start working on the next character. Neither Clang
   // nor GCC figure out this reordering on their own.
