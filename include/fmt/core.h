@@ -2204,20 +2204,32 @@ constexpr auto to_ascii(Char c) -> char {
   return c <= 0xff ? static_cast<char>(c) : '\0';
 }
 
+// Returns the length of a codepoint. Returns 0 for invalid codepoints.
 FMT_CONSTEXPR inline auto code_point_length_impl(char c) -> int {
   return "\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\0\0\0\0\0\0\0\0\2\2\2\2\3\3\4"
       [static_cast<unsigned char>(c) >> 3];
+}
+// Returns the length of a codepoint. Returns 1 for invalid codepoints.
+// This is equivalent to
+//
+// int len = code_point_length_impl(c);
+// return len + !len;
+//
+// This is useful because it allows the compiler to check that the
+// length is within the range [1, 4]
+FMT_CONSTEXPR inline auto code_point_length_impl_2(char c) -> int {
+  return ((0x3a55000000000000ull >> (2 * (static_cast<unsigned char>(c) >> 3))) & 0x3) + 1;
 }
 
 template <typename Char>
 FMT_CONSTEXPR auto code_point_length(const Char* begin) -> int {
   if (const_check(sizeof(Char) != 1)) return 1;
-  int len = code_point_length_impl(static_cast<char>(*begin));
+  int len = code_point_length_impl_2(static_cast<char>(*begin));
 
   // Compute the pointer to the next character early so that the next
   // iteration can start working on the next character. Neither Clang
   // nor GCC figure out this reordering on their own.
-  return len + !len;
+  return len;
 }
 
 // Return the result via the out param to workaround gcc bug 77539.

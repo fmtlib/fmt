@@ -898,3 +898,18 @@ TEST(core_test, has_const_formatter) {
 TEST(core_test, format_nonconst) {
   EXPECT_EQ(fmt::format("{}", nonconst_formattable()), "test");
 }
+
+TEST(core_test, code_point_length_impl) {
+  // code_point_length_impl_2 is a bit-shifted version of code_point_length_impl
+  // that returns 1 for invalid codepoints, so that length is always in [1..4]
+  int min = CHAR_MIN;
+  int max = CHAR_MAX;
+
+  for(int ch = min; ch <= max; ch++) {
+    char c = static_cast<char>(ch);
+    int len1 = fmt::detail::code_point_length_impl(c);
+    int len2 = fmt::detail::code_point_length_impl_2(c);
+
+    ASSERT_EQ(len1 + !len1, len2);
+  }
+}
