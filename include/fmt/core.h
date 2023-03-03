@@ -2218,7 +2218,7 @@ FMT_CONSTEXPR inline auto code_point_length_impl(char c) -> int {
 // This is useful because it allows the compiler to check that the
 // length is within the range [1, 4]
 FMT_CONSTEXPR inline auto code_point_length_impl_2(char c) -> int {
-  return ((0x3a55000000000000ull >> (2 * (static_cast<unsigned char>(c) >> 3))) & 0x3) + 1;
+  return static_cast<int>((0x3a55000000000000ull >> (2 * (static_cast<unsigned char>(c) >> 3))) & 0x3) + 1;
 }
 
 template <typename Char>
