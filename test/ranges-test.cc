@@ -179,15 +179,20 @@ TEST(ranges_test, format_to) {
   EXPECT_STREQ(buf, "[1, 2, 3]");
 }
 
-struct path_like {
+template <typename Char> struct path_like {
   const path_like* begin() const;
   const path_like* end() const;
 
-  operator std::string() const;
+  operator std::basic_string<Char>() const;
 };
 
-TEST(ranges_test, path_like) {
-  EXPECT_FALSE((fmt::is_range<path_like, char>::value));
+TEST(ranges_test, disabled_range_formatting_of_path) {
+  // Range formatting of path is disabled because of infinite recursion
+  // (path element is itself a path).
+  EXPECT_EQ((fmt::range_format_kind<path_like<char>, char>::value),
+            fmt::range_format::disabled);
+  EXPECT_EQ((fmt::range_format_kind<path_like<wchar_t>, char>::value),
+            fmt::range_format::disabled);
 }
 
 // A range that provides non-const only begin()/end() to test fmt::join

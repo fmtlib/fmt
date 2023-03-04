@@ -505,13 +505,14 @@ struct range_formatter<
 enum class range_format { disabled, map, set, sequence, string, debug_string };
 
 namespace detail {
-template <typename T> struct range_format_kind_ {
-  static constexpr auto value = std::is_same<range_reference_type<T>, T>::value
-                                    ? range_format::disabled
-                                : is_map<T>::value ? range_format::map
-                                : is_set<T>::value ? range_format::set
-                                                   : range_format::sequence;
-};
+template <typename T>
+struct range_format_kind_
+    : std::integral_constant<range_format,
+                             std::is_same<uncvref_type<T>, T>::value
+                                 ? range_format::disabled
+                             : is_map<T>::value ? range_format::map
+                             : is_set<T>::value ? range_format::set
+                                                : range_format::sequence> {};
 
 template <range_format K, typename R, typename Char, typename Enable = void>
 struct range_default_formatter;
