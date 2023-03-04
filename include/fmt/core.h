@@ -258,11 +258,13 @@
 #endif
 
 #ifndef FMT_CONSTEVAL
-#  if ((FMT_GCC_VERSION >= 1000 || FMT_CLANG_VERSION >= 1101) &&         \
-       FMT_CPLUSPLUS >= 202002L && !defined(__apple_build_version__)) || \
-      (defined(__cpp_consteval) &&                                       \
+#  if ((FMT_GCC_VERSION >= 1000 || FMT_CLANG_VERSION >= 1101) && \
+       (!defined(__apple_build_version__) ||                     \
+        __apple_build_version__ >= 14000029L) &&                 \
+       FMT_CPLUSPLUS >= 202002L) ||                              \
+      (defined(__cpp_consteval) &&                               \
        (!FMT_MSC_VERSION || _MSC_FULL_VER >= 193030704))
-// consteval is broken in MSVC before VS2022 and Apple clang 13.
+// consteval is broken in MSVC before VS2022 and Apple clang before 14.
 #    define FMT_CONSTEVAL consteval
 #    define FMT_HAS_CONSTEVAL
 #  else
