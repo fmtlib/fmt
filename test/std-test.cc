@@ -21,6 +21,8 @@ TEST(std_test, path) {
   EXPECT_EQ(fmt::format("{:8}", std::filesystem::path("foo")), "\"foo\"   ");
   EXPECT_EQ(fmt::format("{}", std::filesystem::path("foo\"bar.txt")),
             "\"foo\\\"bar.txt\"");
+  EXPECT_EQ(fmt::format("{:?}", std::filesystem::path("foo\"bar.txt")),
+            "\"foo\\\"bar.txt\"");
 
 #  ifdef _WIN32
   // File.txt in Russian.
@@ -43,6 +45,21 @@ TEST(ranges_std_test, format_vector_path) {
   auto c = std::vector<std::string>{"abc", "def"};
   EXPECT_EQ(fmt::format("path={}, range={}", p, c),
             "path=\"foo/bar.txt\", range=[\"abc\", \"def\"]");
+#endif
+}
+
+TEST(ranges_std_test, format_quote_path) {
+  // Test that path is not escaped twice in the debug mode.
+#ifdef __cpp_lib_filesystem
+  auto vec =
+      std::vector<std::filesystem::path>{"path1/file1.txt", "path2/file2.txt"};
+  EXPECT_EQ(fmt::format("{}", vec),
+            "[\"path1/file1.txt\", \"path2/file2.txt\"]");
+#  ifdef __cpp_lib_optional
+  auto o = std::optional<std::filesystem::path>("path/file.txt");
+  EXPECT_EQ(fmt::format("{}", o), "optional(\"path/file.txt\")");
+  EXPECT_EQ(fmt::format("{:?}", o), "optional(\"path/file.txt\")");
+#  endif
 #endif
 }
 
