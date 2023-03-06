@@ -838,6 +838,9 @@ FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
     case 'p':
       handler.on_am_pm();
       break;
+    case 'P':
+      handler.on_am_pm_lower();
+      break;
     case 'Q':
       handler.on_duration_value();
       break;
@@ -976,6 +979,7 @@ template <typename Derived> struct null_chrono_spec_handler {
   FMT_CONSTEXPR void on_24_hour_time() { unsupported(); }
   FMT_CONSTEXPR void on_iso_time() { unsupported(); }
   FMT_CONSTEXPR void on_am_pm() { unsupported(); }
+  FMT_CONSTEXPR void on_am_pm_lower() { unsupported(); }
   FMT_CONSTEXPR void on_duration_value() { unsupported(); }
   FMT_CONSTEXPR void on_duration_unit() { unsupported(); }
   FMT_CONSTEXPR void on_utc_offset(numeric_system) { unsupported(); }
@@ -1019,6 +1023,7 @@ struct tm_format_checker : null_chrono_spec_handler<tm_format_checker> {
   FMT_CONSTEXPR void on_24_hour_time() {}
   FMT_CONSTEXPR void on_iso_time() {}
   FMT_CONSTEXPR void on_am_pm() {}
+  FMT_CONSTEXPR void on_am_pm_lower() {}
   FMT_CONSTEXPR void on_utc_offset(numeric_system) {}
   FMT_CONSTEXPR void on_tz_name() {}
 };
@@ -1636,6 +1641,15 @@ class tm_writer {
     }
   }
 
+  void on_am_pm_lower() {
+    if (is_classic_) {
+      *out_++ = tm_hour() < 12 ? 'a' : 'p';
+      *out_++ = 'm';
+    } else {
+      format_localized('P');
+    }
+  }
+
   // These apply to chrono durations but not tm.
   void on_duration_value() {}
   void on_duration_unit() {}
@@ -1656,6 +1670,7 @@ struct chrono_format_checker : null_chrono_spec_handler<chrono_format_checker> {
   FMT_CONSTEXPR void on_24_hour_time() {}
   FMT_CONSTEXPR void on_iso_time() {}
   FMT_CONSTEXPR void on_am_pm() {}
+  FMT_CONSTEXPR void on_am_pm_lower() {}
   FMT_CONSTEXPR void on_duration_value() const {
     if (has_precision_integral) {
       FMT_THROW(format_error("precision not allowed for this argument type"));
@@ -2009,6 +2024,11 @@ struct chrono_formatter {
   void on_am_pm() {
     if (handle_nan_inf()) return;
     format_tm(time(), &tm_writer_type::on_am_pm);
+  }
+
+  void on_am_pm_lower() {
+    if (handle_nan_inf()) return;
+    format_tm(time(), &tm_writer_type::on_am_pm_lower);
   }
 
   void on_duration_value() {

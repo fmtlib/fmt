@@ -315,8 +315,8 @@ Format specifications for chrono duration and time point types as well as
    modifier: "E" | "O"
    chrono_type: "a" | "A" | "b" | "B" | "c" | "C" | "d" | "D" | "e" | "F" |
               : "g" | "G" | "h" | "H" | "I" | "j" | "m" | "M" | "n" | "p" |
-              : "q" | "Q" | "r" | "R" | "S" | "t" | "T" | "u" | "U" | "V" |
-              : "w" | "W" | "x" | "X" | "y" | "Y" | "z" | "Z" | "%"
+              : "P" | "q" | "Q" | "r" | "R" | "S" | "t" | "T" | "u" | "U" |
+              : "V" | "w" | "W" | "x" | "X" | "y" | "Y" | "z" | "Z" | "%"
 
 Literal chars are copied unchanged to the output. Precision is valid only for
 ``std::chrono::duration`` types with a floating-point representation type.
@@ -395,6 +395,8 @@ The available presentation types (*chrono_type*) are:
 | ``'n'`` | A new-line character.                                              |
 +---------+--------------------------------------------------------------------+
 | ``'p'`` | The AM/PM designations associated with a 12-hour clock.            |
++---------+--------------------------------------------------------------------+
+| ``'P'`` | ``%p``, but lowercase (am/pm). (GNU/glibc extension.)              |
 +---------+--------------------------------------------------------------------+
 | ``'q'`` | The duration's unit suffix.                                        |
 +---------+--------------------------------------------------------------------+

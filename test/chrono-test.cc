@@ -973,4 +973,12 @@ TEST(chrono_test, glibc_extensions) {
     EXPECT_EQ(fmt::format("{:%_S}", d), " 3.140000");
     EXPECT_EQ(fmt::format("{:%-S}", d), "3.140000");
   }
+
+  {
+    // %p is standard, %P is glibc
+    const auto tm_am = make_tm(1970, 1, 1, 0, 0, 0);
+    const auto tm_pm = make_tm(1970, 1, 1, 12, 0, 0);
+    EXPECT_EQ(fmt::format("{:%p,%P}", tm_am), "AM,am");
+    EXPECT_EQ(fmt::format("{:%p,%P}", tm_pm), "PM,pm");
+  }
 }
