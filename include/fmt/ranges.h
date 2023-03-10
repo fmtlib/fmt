@@ -437,7 +437,6 @@ struct range_formatter<
                     detail::has_fallback_formatter<T, Char>>>::value>> {
  private:
   detail::range_formatter_type<Char, T> underlying_;
-  bool custom_specs_ = false;
   basic_string_view<Char> separator_ = detail::string_literal<Char, ',', ' '>{};
   basic_string_view<Char> opening_bracket_ =
       detail::string_literal<Char, '['>{};
@@ -473,7 +472,6 @@ struct range_formatter<
 
     if (it != end && *it != '}') {
       if (*it != ':') FMT_THROW(format_error("invalid format specifier"));
-      custom_specs_ = true;
       ++it;
     } else {
       detail::maybe_set_debug_format(underlying_, true);
