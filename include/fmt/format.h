@@ -1107,7 +1107,7 @@ FMT_CONSTEXPR auto count_digits(UInt n) -> int {
     return (FMT_BUILTIN_CLZ(static_cast<uint32_t>(n) | 1) ^ 31) / BITS + 1;
 #endif
   // Lambda avoids unreachable code warnings from NVHPC.
-  return [](UInt m) {
+  return [](UInt m) -> int {
     int num_digits = 0;
     do {
       ++num_digits;
