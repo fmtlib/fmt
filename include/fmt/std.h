@@ -218,11 +218,15 @@ struct formatter<
     auto out = ctx.out();
 
     out = detail::write<Char>(out, "variant(");
-    std::visit(
-        [&](const auto& v) {
-          out = detail::write_variant_alternative<Char>(out, v);
-        },
-        value);
+    try {
+      std::visit(
+          [&](const auto& v) {
+            out = detail::write_variant_alternative<Char>(out, v);
+          },
+          value);
+    } catch (const std::bad_variant_access&) {
+      detail::write<Char>(out, "valueless by exception");
+    }
     *out++ = ')';
     return out;
   }
