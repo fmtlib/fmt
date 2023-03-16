@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.8...3.25)
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS YES)
-
 # Fallback for using newer policies on CMake <3.12.
 if(${CMAKE_VERSION} VERSION_LESS 3.12)
   cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
