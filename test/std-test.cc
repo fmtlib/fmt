@@ -106,13 +106,15 @@ struct throws_on_move {
   throws_on_move(const throws_on_move&) = default;
 };
 
-template <> struct fmt::formatter<throws_on_move> : formatter<string_view> {
+namespace fmt {
+template <> struct formatter<throws_on_move> : formatter<string_view> {
   auto format(const throws_on_move&, format_context& ctx) const
       -> decltype(ctx.out()) {
     string_view str("<throws_on_move>");
     return formatter<string_view>::format(str, ctx);
   }
 };
+}  // namespace fmt
 
 TEST(std_test, variant) {
 #ifdef __cpp_lib_variant
