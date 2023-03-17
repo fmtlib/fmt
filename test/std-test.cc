@@ -100,7 +100,7 @@ struct throws_on_move {
   throws_on_move() = default;
 
   [[noreturn]] throws_on_move(throws_on_move&&) {
-    throw std::runtime_error("Thrown by throws_on_move_t");
+    throw std::runtime_error("Thrown by throws_on_move");
   }
 
   throws_on_move(const throws_on_move&) = default;
@@ -108,7 +108,7 @@ struct throws_on_move {
 
 template <> struct fmt::formatter<throws_on_move> : formatter<string_view> {
   auto format(const throws_on_move&, format_context& ctx) const {
-    string_view str("<throws_on_move_t>");
+    string_view str("<throws_on_move>");
     return formatter<string_view>::format(str, ctx);
   }
 };
