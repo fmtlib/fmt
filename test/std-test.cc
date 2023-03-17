@@ -96,24 +96,19 @@ TEST(std_test, optional) {
 #endif
 }
 
-// this struct exists only to force a variant to be
-// valueless by exception
-// NOLINTNEXTLINE
-struct throws_on_move_t {
-  throws_on_move_t() = default;
+struct throws_on_move {
+  throws_on_move() = default;
 
-  // NOLINTNEXTLINE
-  [[noreturn]] throws_on_move_t(throws_on_move_t&&) {
-    throw std::runtime_error{"Thrown by throws_on_move_t"};
+  [[noreturn]] throws_on_move(throws_on_move&&) {
+    throw std::runtime_error("Thrown by throws_on_move_t");
   }
 
-  throws_on_move_t(const throws_on_move_t&) = default;
+  throws_on_move(const throws_on_move&) = default;
 };
 
-template <> struct fmt::formatter<throws_on_move_t> : formatter<string_view> {
-  template <typename FormatContext>
-  auto format(const throws_on_move_t&, FormatContext& ctx) const {
-    string_view str{"<throws_on_move_t>"};
+template <> struct fmt::formatter<throws_on_move> : formatter<string_view> {
+  auto format(const throws_on_move&, format_context& ctx) const {
+    string_view str("<throws_on_move_t>");
     return formatter<string_view>::format(str, ctx);
   }
 };
@@ -150,13 +145,11 @@ TEST(std_test, variant) {
   volatile int i = 42;  // Test compile error before GCC 11 described in #3068.
   EXPECT_EQ(fmt::format("{}", i), "42");
 
-  using V2 = std::variant<std::monostate, throws_on_move_t>;
-
-  V2 v6{};
+  std::variant<std::monostate, throws_on_move> v6;
 
   try {
-    throws_on_move_t thrower{};
-    v6.emplace<throws_on_move_t>(std::move(thrower));
+    throws_on_move thrower;
+    v6.emplace<throws_on_move>(std::move(thrower));
   } catch (const std::runtime_error&) {
   }
   // v6 is now valueless by exception
