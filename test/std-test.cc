@@ -107,7 +107,8 @@ struct throws_on_move {
 };
 
 template <> struct fmt::formatter<throws_on_move> : formatter<string_view> {
-  auto format(const throws_on_move&, format_context& ctx) const {
+  auto format(const throws_on_move&, format_context& ctx) const
+      -> decltype(ctx.out()) {
     string_view str("<throws_on_move>");
     return formatter<string_view>::format(str, ctx);
   }
