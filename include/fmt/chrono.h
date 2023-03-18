@@ -1624,10 +1624,9 @@ class tm_writer {
     write2(tm_min());
   }
   void on_iso_time() {
-    char buf[8];
-    write_digit2_separated(buf, to_unsigned(tm_hour()), to_unsigned(tm_min()),
-                           to_unsigned(tm_sec()), ':');
-    out_ = copy_str<Char>(std::begin(buf), std::end(buf), out_);
+    on_24_hour_time();
+    *out_++ = ':';
+    on_second(numeric_system::standard, pad_type::unspecified);
   }
 
   void on_am_pm() {

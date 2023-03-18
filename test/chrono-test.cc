@@ -904,6 +904,8 @@ TEST(chrono_test, timestamps_sub_seconds) {
 
   EXPECT_EQ(fmt::format("{}.{}", strftime_full_utc(t9_sec), t9_sub_sec_part),
             fmt::format("{:%Y-%m-%d %H:%M:%S}", t9));
+  EXPECT_EQ(fmt::format("{}.{}", strftime_full_utc(t9_sec), t9_sub_sec_part),
+            fmt::format("{:%Y-%m-%d %T}", t9));
 
   const std::chrono::time_point<std::chrono::system_clock,
                                 std::chrono::milliseconds>
