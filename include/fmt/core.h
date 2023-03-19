@@ -291,7 +291,8 @@
 
 // Enable minimal optimizations for more compact code in debug mode.
 FMT_GCC_PRAGMA("GCC push_options")
-#if !defined(__OPTIMIZE__) && !defined(__NVCOMPILER) && !defined(__LCC__) && !defined(__CUDACC__)
+#if !defined(__OPTIMIZE__) && !defined(__NVCOMPILER) && !defined(__LCC__) && \
+    !defined(__CUDACC__)
 FMT_GCC_PRAGMA("GCC optimize(\"Og\")")
 #endif
 
@@ -1364,20 +1365,19 @@ inline auto format_as(std::byte b) -> unsigned char {
 }
 #endif
 
-template <typename T> struct convertible_to { operator const T&() const; };
+template <typename T> struct format_as_result {
+  template <typename U,
+            FMT_ENABLE_IF(std::is_enum<U>::value || std::is_class<U>::value)>
+  static auto map(U*) -> decltype(format_as(std::declval<U>()));
+  static auto map(...) -> void;
 
-template <typename T> struct has_format_as {
-  template <typename U, typename V = decltype(format_as(U())),
-            FMT_ENABLE_IF(std::is_enum<U>::value)>
-  static auto check(U*) -> std::true_type;
-  // Use convertible_to to avoid implicit conversions.
-  template <typename U, typename V = decltype(format_as(convertible_to<U>())),
-            FMT_ENABLE_IF(std::is_class<U>::value)>
-  static auto check(U*) -> std::true_type;
-  static auto check(...) -> std::false_type;
-
-  enum { value = decltype(check(static_cast<T*>(nullptr)))::value };
+  using type = decltype(map(static_cast<T*>(nullptr)));
 };
+template <typename T> using format_as_t = typename format_as_result<T>::type;
+
+template <typename T>
+struct has_format_as
+    : bool_constant<!std::is_same<format_as_t<T>, void>::value> {};
 
 // Maps formatting arguments to core types.
 // arg_mapper reports errors by returning unformattable instead of using
@@ -1495,10 +1495,10 @@ template <typename Context> struct arg_mapper {
   }
 #endif
 
-  template <typename T, FMT_ENABLE_IF(has_format_as<T>::value &&
-                                      !has_formatter<T, Context>::value)>
-  FMT_CONSTEXPR FMT_INLINE auto map(const T& val)
-      -> decltype(this->map(format_as(T()))) {
+  // Only map owning types because mapping views can be unsafe.
+  template <typename T, typename U = format_as_t<T>,
+            FMT_ENABLE_IF(std::is_arithmetic<U>::value)>
+  FMT_CONSTEXPR FMT_INLINE auto map(const T& val) -> decltype(this->map(U())) {
     return map(format_as(val));
   }
 
@@ -1529,7 +1529,7 @@ template <typename Context> struct arg_mapper {
             FMT_ENABLE_IF(!is_string<U>::value && !is_char<U>::value &&
                           !std::is_array<U>::value &&
                           !std::is_pointer<U>::value &&
-                          !has_format_as<U>::value &&
+                          !std::is_arithmetic<format_as_t<U>>::value &&
                           (has_formatter<U, Context>::value ||
                            has_fallback_formatter<U, char_type>::value))>
   FMT_CONSTEXPR FMT_INLINE auto map(T&& val)
