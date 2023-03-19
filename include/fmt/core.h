@@ -1483,18 +1483,6 @@ template <typename Context> struct arg_mapper {
     return values;
   }
 
-#ifdef FMT_DEPRECATED_IMPLICIT_ENUMS
-  template <typename T,
-            FMT_ENABLE_IF(
-                std::is_enum<T>::value&& std::is_convertible<T, int>::value &&
-                !has_format_as<T>::value && !has_formatter<T, Context>::value &&
-                !has_fallback_formatter<T, char_type>::value)>
-  FMT_DEPRECATED FMT_CONSTEXPR FMT_INLINE auto map(const T& val)
-      -> decltype(this->map(static_cast<underlying_t<T>>(val))) {
-    return map(static_cast<underlying_t<T>>(val));
-  }
-#endif
-
   // Only map owning types because mapping views can be unsafe.
   template <typename T, typename U = format_as_t<T>,
             FMT_ENABLE_IF(std::is_arithmetic<U>::value)>
