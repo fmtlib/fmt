@@ -2145,6 +2145,27 @@ TEST(format_test, back_insert_slicing) {
   EXPECT_EQ(fmt::format("{}", check_back_appender{}), "y");
 }
 
+namespace test {
+enum class scoped_enum_as_int {};
+auto format_as(scoped_enum_as_int) -> int { return 42; }
+
+enum class scoped_enum_as_string_view {};
+auto format_as(scoped_enum_as_string_view) -> fmt::string_view { return "foo"; }
+
+enum class scoped_enum_as_string {};
+auto format_as(scoped_enum_as_string) -> std::string { return "foo"; }
+
+struct struct_as_int {};
+auto format_as(struct_as_int) -> int { return 42; }
+}  // namespace test
+
+TEST(format_test, format_as) {
+  EXPECT_EQ(fmt::format("{}", test::scoped_enum_as_int()), "42");
+  EXPECT_EQ(fmt::format("{}", test::scoped_enum_as_string_view()), "foo");
+  EXPECT_EQ(fmt::format("{}", test::scoped_enum_as_string()), "foo");
+  EXPECT_EQ(fmt::format("{}", test::struct_as_int()), "42");
+}
+
 template <typename Char, typename T> bool check_enabled_formatter() {
   static_assert(std::is_default_constructible<fmt::formatter<T, Char>>::value,
                 "");

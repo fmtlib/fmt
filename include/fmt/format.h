@@ -4218,6 +4218,18 @@ formatter<T, Char,
   return detail::write<Char>(ctx.out(), val, specs_, ctx.locale());
 }
 
+template <typename T, typename Char>
+struct formatter<T, Char, enable_if_t<detail::has_format_as<T>::value>>
+    : private formatter<detail::format_as_t<T>> {
+  using base = formatter<detail::format_as_t<T>>;
+  using base::parse;
+
+  template <typename FormatContext>
+  auto format(const T& value, FormatContext& ctx) const -> decltype(ctx.out()) {
+    return base::format(format_as(value), ctx);
+  }
+};
+
 template <typename Char>
 struct formatter<void*, Char> : formatter<const void*, Char> {
   template <typename FormatContext>
@@ -4370,23 +4382,9 @@ struct formatter<join_view<It, Sentinel, Char>, Char> {
 #else
       typename std::iterator_traits<It>::value_type;
 #endif
-  using context = buffer_context<Char>;
-  using mapper = detail::arg_mapper<context>;
-
-  template <typename T, FMT_ENABLE_IF(has_formatter<T, context>::value)>
-  static auto map(const T& value) -> const T& {
-    return value;
-  }
-  template <typename T, FMT_ENABLE_IF(!has_formatter<T, context>::value)>
-  static auto map(const T& value) -> decltype(mapper().map(value)) {
-    return mapper().map(value);
-  }
-
   using formatter_type =
       conditional_t<is_formattable<value_type, Char>::value,
-                    formatter<remove_cvref_t<decltype(map(
-                                  std::declval<const value_type&>()))>,
-                              Char>,
+                    formatter<remove_cvref_t<value_type>, Char>,
                     detail::fallback_formatter<value_type, Char>>;
 
   formatter_type value_formatter_;
@@ -4403,12 +4401,12 @@ struct formatter<join_view<It, Sentinel, Char>, Char> {
     auto it = value.begin;
     auto out = ctx.out();
     if (it != value.end) {
-      out = value_formatter_.format(map(*it), ctx);
+      out = value_formatter_.format(*it, ctx);
       ++it;
       while (it != value.end) {
         out = detail::copy_str<Char>(value.sep.begin(), value.sep.end(), out);
         ctx.advance_to(out);
-        out = value_formatter_.format(map(*it), ctx);
+        out = value_formatter_.format(*it, ctx);
         ++it;
       }
     }

@@ -329,6 +329,12 @@ struct monostate {
 #  define FMT_ENABLE_IF(...) fmt::enable_if_t<(__VA_ARGS__), int> = 0
 #endif
 
+#ifdef __cpp_lib_byte
+inline auto format_as(std::byte b) -> unsigned char {
+  return static_cast<unsigned char>(b);
+}
+#endif
+
 FMT_BEGIN_DETAIL_NAMESPACE
 
 // Suppresses "unused variable" warnings with the method described in
@@ -1358,12 +1364,6 @@ FMT_CONSTEXPR auto make_arg(T&& value) -> basic_format_arg<Context>;
 enum { long_short = sizeof(long) == sizeof(int) };
 using long_type = conditional_t<long_short, int, long long>;
 using ulong_type = conditional_t<long_short, unsigned, unsigned long long>;
-
-#ifdef __cpp_lib_byte
-inline auto format_as(std::byte b) -> unsigned char {
-  return static_cast<unsigned char>(b);
-}
-#endif
 
 template <typename T> struct format_as_result {
   template <typename U,
