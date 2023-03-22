@@ -820,9 +820,10 @@ TEST(chrono_test, cpp20_duration_subsecond_support) {
                         std::chrono::duration<long long, std::ratio<1, 7>>(1)),
             "00.142857");
 
-  EXPECT_EQ(fmt::format("{:%S}",
-                        std::chrono::duration<char, std::ratio<1, 100>>(0x80)),
-            "-01.28");
+  EXPECT_EQ(
+      fmt::format("{:%S}",
+                  std::chrono::duration<signed char, std::ratio<1, 100>>(0x80)),
+      "-01.28");
 
   EXPECT_EQ(
       fmt::format("{:%M:%S}",
