@@ -1160,20 +1160,6 @@ auto get_iterator(buffer<T>&, OutputIt out) -> OutputIt {
   return out;
 }
 
-template <typename T, typename Char = char, typename Enable = void>
-struct fallback_formatter {
-  fallback_formatter() = delete;
-};
-
-// Specifies if T has an enabled fallback_formatter specialization.
-template <typename T, typename Char>
-using has_fallback_formatter =
-#ifdef FMT_DEPRECATED_OSTREAM
-    std::is_constructible<fallback_formatter<T, Char>>;
-#else
-    std::false_type;
-#endif
-
 struct view {};
 
 template <typename Char, typename T> struct named_arg : view {
@@ -1332,10 +1318,7 @@ template <typename Context> class value {
     // have different extension points, e.g. `formatter<T>` for `format` and
     // `printf_formatter<T>` for `printf`.
     custom.format = format_custom_arg<
-        value_type,
-        conditional_t<has_formatter<value_type, Context>::value,
-                      typename Context::template formatter_type<value_type>,
-                      fallback_formatter<value_type, char_type>>>;
+        value_type, typename Context::template formatter_type<value_type>>;
   }
   value(unformattable);
   value(unformattable_char);
@@ -1493,8 +1476,7 @@ template <typename Context> struct arg_mapper {
   template <typename T, typename U = remove_cvref_t<T>>
   struct formattable
       : bool_constant<has_const_formatter<U, Context>() ||
-                      !std::is_const<remove_reference_t<T>>::value ||
-                      has_fallback_formatter<U, char_type>::value> {};
+                      !std::is_const<remove_reference_t<T>>::value> {};
 
 #if (FMT_MSC_VERSION != 0 && FMT_MSC_VERSION < 1910) || \
     FMT_ICC_VERSION != 0 || defined(__NVCC__)
@@ -1518,8 +1500,7 @@ template <typename Context> struct arg_mapper {
                           !std::is_array<U>::value &&
                           !std::is_pointer<U>::value &&
                           !std::is_arithmetic<format_as_t<U>>::value &&
-                          (has_formatter<U, Context>::value ||
-                           has_fallback_formatter<U, char_type>::value))>
+                          has_formatter<U, Context>::value)>
   FMT_CONSTEXPR FMT_INLINE auto map(T&& val)
       -> decltype(this->do_map(std::forward<T>(val))) {
     return do_map(std::forward<T>(val));
@@ -1770,9 +1751,9 @@ FMT_CONSTEXPR auto make_arg(T&& value) -> basic_format_arg<Context> {
   return arg;
 }
 
-// The type template parameter is there to avoid an ODR violation when using
-// a fallback formatter in one translation unit and an implicit conversion in
-// another (not recommended).
+// The DEPRECATED type template parameter is there to avoid an ODR violation
+// when using a fallback formatter in one translation unit and an implicit
+// conversion in another (not recommended).
 template <bool IS_PACKED, typename Context, type, typename T,
           FMT_ENABLE_IF(IS_PACKED)>
 FMT_CONSTEXPR FMT_INLINE auto make_arg(T&& val) -> value<Context> {
@@ -1843,11 +1824,9 @@ using buffer_context =
 using format_context = buffer_context<char>;
 
 template <typename T, typename Char = char>
-using is_formattable = bool_constant<
-    !std::is_base_of<detail::unformattable,
-                     decltype(detail::arg_mapper<buffer_context<Char>>().map(
-                         std::declval<T>()))>::value &&
-    !detail::has_fallback_formatter<T, Char>::value>;
+using is_formattable = bool_constant<!std::is_base_of<
+    detail::unformattable, decltype(detail::arg_mapper<buffer_context<Char>>()
+                                        .map(std::declval<T>()))>::value>;
 
 /**
   \rst
@@ -2631,10 +2610,7 @@ FMT_CONSTEXPR auto parse_format_specs(ParseContext& ctx)
       mapped_type_constant<T, context>::value != type::custom_type,
       decltype(arg_mapper<context>().map(std::declval<const T&>())),
       stripped_type>;
-  auto f = conditional_t<has_formatter<mapped_type, context>::value,
-                         formatter<mapped_type, char_type>,
-                         fallback_formatter<stripped_type, char_type>>();
-  return f.parse(ctx);
+  return formatter<mapped_type, char_type>().parse(ctx);
 }
 
 // Checks char specs and returns true iff the presentation type is char-like.

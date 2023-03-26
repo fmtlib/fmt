@@ -3891,12 +3891,8 @@ template <typename Char, typename OutputIt, typename T,
 FMT_CONSTEXPR auto write(OutputIt out, const T& value)
     -> enable_if_t<mapped_type_constant<T, Context>::value == type::custom_type,
                    OutputIt> {
-  using formatter_type =
-      conditional_t<has_formatter<T, Context>::value,
-                    typename Context::template formatter_type<T>,
-                    fallback_formatter<T, Char>>;
   auto ctx = Context(out, {}, {});
-  return formatter_type().format(value, ctx);
+  return typename Context::template formatter_type<T>().format(value, ctx);
 }
 
 // An argument visitor that formats the argument and writes it via the output
@@ -4382,12 +4378,7 @@ struct formatter<join_view<It, Sentinel, Char>, Char> {
 #else
       typename std::iterator_traits<It>::value_type;
 #endif
-  using formatter_type =
-      conditional_t<is_formattable<value_type, Char>::value,
-                    formatter<remove_cvref_t<value_type>, Char>,
-                    detail::fallback_formatter<value_type, Char>>;
-
-  formatter_type value_formatter_;
+  formatter<remove_cvref_t<value_type>, Char> value_formatter_;
 
  public:
   template <typename ParseContext>
