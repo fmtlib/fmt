@@ -1489,8 +1489,15 @@ TEST(format_test, format_long_double) {
   safe_sprintf(buffer, "%Le", 392.65l);
   EXPECT_EQ(buffer, fmt::format("{0:e}", 392.65l));
   EXPECT_EQ("+0000392.6", fmt::format("{0:+010.4g}", 392.64l));
-  safe_sprintf(buffer, "%La", 3.31l);
-  EXPECT_EQ(buffer, fmt::format("{:a}", 3.31l));
+
+  auto ld = 3.31l;
+  if (fmt::detail::is_double_double<decltype(ld)>::value) {
+    safe_sprintf(buffer, "%a", static_cast<double>(ld));
+    EXPECT_EQ(buffer, fmt::format("{:a}", ld));
+  } else {
+    safe_sprintf(buffer, "%La", ld);
+    EXPECT_EQ(buffer, fmt::format("{:a}", ld));
+  }
 }
 
 TEST(format_test, format_char) {
