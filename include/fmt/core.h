@@ -2048,7 +2048,6 @@ FMT_END_DETAIL_NAMESPACE
 
 enum class presentation_type : unsigned char {
   none,
-  // Integer types should go first,
   dec,             // 'd'
   oct,             // 'o'
   hex_lower,       // 'x'
