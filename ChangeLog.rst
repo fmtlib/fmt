@@ -1,3 +1,9 @@
+10.0.0 - TBD
+------------
+
+* Fixed formatting of volatile variables
+  (`#3068 <https://github.com/fmtlib/fmt/pull/3068>`_).
+
 9.1.0 - 2022-08-27
 ------------------
 
