@@ -3344,7 +3344,7 @@ FMT_CONSTEXPR20 inline void format_dragon(basic_fp<uint128_t> value,
 }
 
 // Formats a floating-point number using the hexfloat format.
-template <typename Float>
+template <typename Float, FMT_ENABLE_IF(!is_double_double<Float>::value)>
 FMT_CONSTEXPR20 void format_hexfloat(Float value, int precision,
                                      float_specs specs, buffer<char>& buf) {
   // float is passed as double to reduce the number of instantiations and to
@@ -3423,6 +3423,12 @@ FMT_CONSTEXPR20 void format_hexfloat(Float value, int precision,
     abs_e = static_cast<uint32_t>(f.e);
   }
   format_decimal<char>(appender(buf), abs_e, detail::count_digits(abs_e));
+}
+
+template <typename Float, FMT_ENABLE_IF(is_double_double<Float>::value)>
+FMT_CONSTEXPR20 void format_hexfloat(Float value, int precision,
+                                     float_specs specs, buffer<char>& buf) {
+  format_hexfloat(static_cast<double>(value), precision, specs, buf);
 }
 
 template <typename Float>
