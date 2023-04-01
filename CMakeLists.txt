@@ -99,6 +99,10 @@ set(FMT_SYSTEM_HEADERS_ATTRIBUTE "")
 if (FMT_SYSTEM_HEADERS)
   set(FMT_SYSTEM_HEADERS_ATTRIBUTE SYSTEM)
 endif ()
+if(CMAKE_SYSTEM_NAME STREQUAL "MSDOS")
+  set(FMT_TEST OFF)
+  message(STATUS "MSDOS is incompatible with gtest")
+endif()
 
 # Get version from core.h
 file(READ include/fmt/core.h core_h)
