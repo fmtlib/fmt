@@ -1,8 +1,98 @@
 10.0.0 - TBD
 ------------
 
+* Made ``format_as`` work with any user-defined type and not just enums.
+  For example (`godbolt <https://godbolt.org/z/b7rqhq5Kh>`__):
+
+  .. code:: c++
+
+     #include <fmt/format.h>
+
+     struct floaty_mc_floatface {
+       double value;
+     };
+
+     auto format_as(floaty_mc_floatface f) { return f.value; }
+
+     int main() {
+       fmt::print("{:8}\n", floaty_mc_floatface{0.42}); // prints "    0.42"
+     }
+
+* Implemented formatting of subseconds
+  (`#3117 <https://github.com/fmtlib/fmt/issues/3117>`_,
+  `#3115 <https://github.com/fmtlib/fmt/pull/3115>`_).
+  For example (`godbolt <https://godbolt.org/z/45738oGEo>`__):
+
+  .. code:: c++
+
+     #include <fmt/chrono.h>
+
+     int main() {
+       // prints 01.234567
+       fmt::print("{:%S}\n", std::chrono::microseconds(1234567));
+     }
+
+  Thanks `@patrickroocks (Patrick Roocks) <https://github.com/patrickroocks>`_.
+
+* Added support for ``std::utc_time``
+  (`#3098 <https://github.com/fmtlib/fmt/issues/3098>`_,
+  `#3110 <https://github.com/fmtlib/fmt/pull/3110>`_).
+  Thanks `@patrickroocks (Patrick Roocks) <https://github.com/patrickroocks>`_.
+
+* Switched formatting of ``std::chrono::system_clock`` from local time to UTC
+  for compatiblity with the standard
+  (`#3199 <https://github.com/fmtlib/fmt/issues/3199>`_,
+  `#3230 <https://github.com/fmtlib/fmt/pull/3230>`_).
+  Thanks `@ned14 (Niall Douglas) <https://github.com/ned14>`_.
+
+* Fixed formatting of time points before the epoch
+  (`#3117 <https://github.com/fmtlib/fmt/issues/3117>`_,
+  `#3261 <https://github.com/fmtlib/fmt/pull/3261>`_).
+  For example (`godbolt <https://godbolt.org/z/f7bcznb3W>`__):
+
+  .. code:: c++
+
+     #include <fmt/chrono.h>
+
+     int main() {
+       auto t = std::chrono::system_clock::from_time_t(0) -
+                std::chrono::milliseconds(250);
+       fmt::print("{:%S}\n", t); // prints 59.750000000
+     }
+
+  Thanks `@ShawnZhong (Shawn Zhong) <https://github.com/ShawnZhong>`_.
+
+* Improved compile-time checks of named arguments
+  (`#3105 <https://github.com/fmtlib/fmt/issues/3105>`_,
+  `#3214 <https://github.com/fmtlib/fmt/pull/3214>`_).
+  Thanks `@rbrich (Radek Brich) <https://github.com/rbrich>`_.
+
+* Removed the deprecated ``FMT_DEPRECATED_OSTREAM``.
+
+* Improved documentation
+  (`#3108 <https://github.com/fmtlib/fmt/issues/3108>`_,
+  `#3169 <https://github.com/fmtlib/fmt/issues/3169>`_).
+
+* Improved build configuration
+  (`#3189 <https://github.com/fmtlib/fmt/issues/3189>`_).
+
+* Fixed a regression in handling empty format specifiers after a colon (`{:}`)
+  (`#3086 <https://github.com/fmtlib/fmt/pull/3086>`_).
+
 * Fixed formatting of volatile variables
   (`#3068 <https://github.com/fmtlib/fmt/pull/3068>`_).
+
+* Fixed various warnings and compilation issues
+  (`#3092 <https://github.com/fmtlib/fmt/issues/3092>`_,
+  `#3096 <https://github.com/fmtlib/fmt/issues/3096>`_,
+  `#3128 <https://github.com/fmtlib/fmt/issues/3128>`_,
+  `#3140 <https://github.com/fmtlib/fmt/issues/3140>`_,
+  `#3149 <https://github.com/fmtlib/fmt/issues/3149>`_,
+  `#3154 <https://github.com/fmtlib/fmt/issues/3154>`_,
+  `#3163 <https://github.com/fmtlib/fmt/issues/3163>`_,
+  `#3178 <https://github.com/fmtlib/fmt/issues/3178>`_).
+  Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_,
+  `@sergiud (Sergiu Deitsch) <https://github.com/sergiud>`_.
 
 9.1.0 - 2022-08-27
 ------------------
