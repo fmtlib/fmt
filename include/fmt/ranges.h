@@ -663,7 +663,7 @@ template <typename T> class is_container_adaptor_like {
 template <typename Container> struct all {
   const Container& c;
   auto begin() const -> typename Container::const_iterator { return c.begin(); }
-  auto end() const -> typename Container::const_iterator { return c.end(); };
+  auto end() const -> typename Container::const_iterator { return c.end(); }
 };
 }  // namespace detail
 
