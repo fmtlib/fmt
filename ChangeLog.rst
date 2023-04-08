@@ -18,6 +18,22 @@
        fmt::print("{:8}\n", floaty_mc_floatface{0.42}); // prints "    0.42"
      }
 
+* Added support for fill, align and width to the time point formatter
+  (`#3237 <https://github.com/fmtlib/fmt/issues/3237>`_,
+  `#3260 <https://github.com/fmtlib/fmt/pull/3260>`_).
+  For example (`godbolt <https://godbolt.org/z/rKP6MGz6c>`__):
+
+  .. code:: c++
+
+     #include <fmt/chrono.h>
+
+     int main() {
+       // prints "    2023"
+       fmt::print("{:>8%Y}\n", std::chrono::system_clock::now());
+     }
+
+  Thanks `@ShawnZhong (Shawn Zhong) <https://github.com/ShawnZhong>`_.
+
 * Implemented formatting of subseconds
   (`#3117 <https://github.com/fmtlib/fmt/issues/3117>`_,
   `#3115 <https://github.com/fmtlib/fmt/pull/3115>`_).
@@ -45,6 +61,36 @@
   `#3230 <https://github.com/fmtlib/fmt/pull/3230>`_).
   Thanks `@ned14 (Niall Douglas) <https://github.com/ned14>`_.
 
+* Added support for ``%Ez`` and ``%Oz`` to chrono formatters.
+  (`#3220 <https://github.com/fmtlib/fmt/issues/3220>`_,
+  `#3222 <https://github.com/fmtlib/fmt/pull/3222>`_).
+  Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
+
+* Improved validation of format specifiers for `std::chrono::duration`
+  (`#3219 <https://github.com/fmtlib/fmt/issues/3219>`_,
+  `#3232 <https://github.com/fmtlib/fmt/pull/3232>`_).
+  Thanks `@ShawnZhong (Shawn Zhong) <https://github.com/ShawnZhong>`_.
+
+* Added formatters for standard container adapters: ``std::priority_queue``,
+  ``std::queue`` and ``std::stack``
+  (`#3215 <https://github.com/fmtlib/fmt/issues/3215>`_,
+  `#3279 <https://github.com/fmtlib/fmt/pull/3279>`_).
+  For example (`godbolt <https://godbolt.org/z/74h1xY9qK>`__):
+
+  .. code:: c++
+
+     #include <fmt/ranges.h>
+     #include <stack>
+     #include <vector>
+
+     int main() {
+       auto s = std::stack<bool, std::vector<bool>>();
+       for (auto b: {true, false, true}) s.push(b);
+       fmt::print("{}\n", s); // prints [true, false, true]
+     }
+
+  Thanks `@ShawnZhong (Shawn Zhong) <https://github.com/ShawnZhong>`_.
+
 * Fixed formatting of time points before the epoch
   (`#3117 <https://github.com/fmtlib/fmt/issues/3117>`_,
   `#3261 <https://github.com/fmtlib/fmt/pull/3261>`_).
@@ -67,7 +113,23 @@
   `#3214 <https://github.com/fmtlib/fmt/pull/3214>`_).
   Thanks `@rbrich (Radek Brich) <https://github.com/rbrich>`_.
 
+* Fixed formatting when both alignment and ``0`` are given
+  (`#3236 <https://github.com/fmtlib/fmt/issues/3236>`_,
+  `#3248 <https://github.com/fmtlib/fmt/pull/3248>`_).
+  Thanks `@ShawnZhong (Shawn Zhong) <https://github.com/ShawnZhong>`_.
+
+* Improved Unicode support in the experimental file API on Windows
+  (`#3234 <https://github.com/fmtlib/fmt/issues/3234>`_,
+  `#3293 <https://github.com/fmtlib/fmt/pull/3293>`_).
+  Thanks `@Fros1er (Froster) <https://github.com/Fros1er>`_.
+
 * Removed the deprecated ``FMT_DEPRECATED_OSTREAM``.
+
+* Fixed a UB when using a null ``std::string_view`` with ``fmt::to_string``
+  or format string compilation
+  (`#3241 <https://github.com/fmtlib/fmt/issues/3241>`_,
+  `#3244 <https://github.com/fmtlib/fmt/pull/3244>`_).
+  Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
 
 * Improved documentation
   (`#3108 <https://github.com/fmtlib/fmt/issues/3108>`_,
@@ -78,6 +140,12 @@
 
 * Fixed a regression in handling empty format specifiers after a colon (`{:}`)
   (`#3086 <https://github.com/fmtlib/fmt/pull/3086>`_).
+
+* Worked around a broken implementation of ``std::is_constant_evaluated`` in
+  some versions of libstdc++
+  (`#3247 <https://github.com/fmtlib/fmt/issues/3247>`_,
+  `#3281 <https://github.com/fmtlib/fmt/pull/3281>`_).
+  Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
 
 * Fixed formatting of volatile variables
   (`#3068 <https://github.com/fmtlib/fmt/pull/3068>`_).
@@ -90,9 +158,17 @@
   `#3149 <https://github.com/fmtlib/fmt/issues/3149>`_,
   `#3154 <https://github.com/fmtlib/fmt/issues/3154>`_,
   `#3163 <https://github.com/fmtlib/fmt/issues/3163>`_,
-  `#3178 <https://github.com/fmtlib/fmt/issues/3178>`_).
+  `#3178 <https://github.com/fmtlib/fmt/issues/3178>`_,
+  `#3204 <https://github.com/fmtlib/fmt/issues/3204>`_,
+  `#3208 <https://github.com/fmtlib/fmt/pull/3208>`_,
+  `#3213 <https://github.com/fmtlib/fmt/issues/3213>`_,
+  `#3224 <https://github.com/fmtlib/fmt/issues/3224>`_,
+  `#3226 <https://github.com/fmtlib/fmt/issues/3226>`_,
+  `#3228 <https://github.com/fmtlib/fmt/issues/3228>`_,
+  `#3229 <https://github.com/fmtlib/fmt/pull/3229>`_).
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_,
-  `@sergiud (Sergiu Deitsch) <https://github.com/sergiud>`_.
+  `@sergiud (Sergiu Deitsch) <https://github.com/sergiud>`_,
+  `@czudziakm (Maksymilian Czudziak) <https://github.com/czudziakm>`_.
 
 9.1.0 - 2022-08-27
 ------------------
