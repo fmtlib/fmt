@@ -1443,13 +1443,6 @@ template <typename Context> struct arg_mapper {
       : bool_constant<has_const_formatter<U, Context>() ||
                       !std::is_const<remove_reference_t<T>>::value> {};
 
-#if (FMT_MSC_VERSION != 0 && FMT_MSC_VERSION < 1910) || \
-    FMT_ICC_VERSION != 0 || defined(__NVCC__)
-  // Workaround a bug in MSVC and Intel (Issue 2746).
-  template <typename T> FMT_CONSTEXPR FMT_INLINE auto do_map(T&& val) -> T& {
-    return val;
-  }
-#else
   template <typename T, FMT_ENABLE_IF(formattable<T>::value)>
   FMT_CONSTEXPR FMT_INLINE auto do_map(T&& val) -> T& {
     return val;
@@ -1458,7 +1451,6 @@ template <typename Context> struct arg_mapper {
   FMT_CONSTEXPR FMT_INLINE auto do_map(T&&) -> unformattable_const {
     return {};
   }
-#endif
 
   template <typename T, typename U = remove_cvref_t<T>,
             FMT_ENABLE_IF(!is_string<U>::value && !is_char<U>::value &&
