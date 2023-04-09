@@ -30,25 +30,7 @@ using testing::Contains;
 #  define FMT_HAS_C99_STRFTIME 1
 #endif
 
-namespace test_ns {
-template <typename Char> class test_string {
- private:
-  std::basic_string<Char> s_;
-
- public:
-  test_string(const Char* s) : s_(s) {}
-  const Char* data() const { return s_.data(); }
-  size_t length() const { return s_.size(); }
-  operator const Char*() const { return s_.c_str(); }
-};
-
-template <typename Char>
-fmt::basic_string_view<Char> to_string_view(const test_string<Char>& s) {
-  return {s.data(), s.length()};
-}
-
 struct non_string {};
-}  // namespace test_ns
 
 template <typename T> class is_string_test : public testing::Test {};
 
@@ -70,8 +52,7 @@ TYPED_TEST(is_string_test, is_string) {
   using fmt_string_view = fmt::detail::std_string_view<TypeParam>;
   EXPECT_TRUE(std::is_empty<fmt_string_view>::value !=
               fmt::detail::is_string<fmt_string_view>::value);
-  EXPECT_TRUE(fmt::detail::is_string<test_ns::test_string<TypeParam>>::value);
-  EXPECT_FALSE(fmt::detail::is_string<test_ns::non_string>::value);
+  EXPECT_FALSE(fmt::detail::is_string<non_string>::value);
 }
 
 // std::is_constructible is broken in MSVC until version 2015.

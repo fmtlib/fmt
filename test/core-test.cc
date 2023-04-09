@@ -88,25 +88,6 @@ TEST(string_view_test, compare) {
   check_op<std::greater_equal>();
 }
 
-namespace test_ns {
-template <typename Char> class test_string {
- private:
-  std::basic_string<Char> s_;
-
- public:
-  test_string(const Char* s) : s_(s) {}
-  auto data() const -> const Char* { return s_.data(); }
-  auto length() const -> size_t { return s_.size(); }
-  operator const Char*() const { return s_.c_str(); }
-};
-
-template <typename Char>
-auto to_string_view(const test_string<Char>& s)
-    -> fmt::basic_string_view<Char> {
-  return {s.data(), s.length()};
-}
-}  // namespace test_ns
-
 TEST(core_test, is_output_iterator) {
   EXPECT_TRUE((fmt::detail::is_output_iterator<char*, char>::value));
   EXPECT_FALSE((fmt::detail::is_output_iterator<const char*, char>::value));
@@ -767,15 +748,6 @@ TEST(core_test, formatter_overrides_implicit_conversion) {
 template <typename T> void check(T);
 TEST(core_test, adl_check) {
   EXPECT_EQ(fmt::format("{}", test_struct()), "test");
-}
-
-TEST(core_test, to_string_view_foreign_strings) {
-  using namespace test_ns;
-  EXPECT_EQ(to_string_view(test_string<char>("42")), "42");
-  fmt::detail::type type =
-      fmt::detail::mapped_type_constant<test_string<char>,
-                                        fmt::format_context>::value;
-  EXPECT_EQ(type, fmt::detail::type::string_type);
 }
 
 struct implicitly_convertible_to_string_view {
