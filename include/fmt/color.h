@@ -460,11 +460,10 @@ void vformat_to(buffer<Char>& buf, const text_style& ts,
 FMT_END_DETAIL_NAMESPACE
 
 inline void vprint(std::FILE* f, const text_style& ts, string_view fmt,
-                   bool new_line, format_args args) {
+                   format_args args) {
   // Legacy wide streams are not supported.
   auto buf = memory_buffer();
   detail::vformat_to(buf, ts, fmt, args);
-  if (new_line) buf.push_back('\n');
   if (detail::is_utf8()) {
     detail::print(f, string_view(buf.begin(), buf.size()));
     return;
@@ -490,7 +489,7 @@ template <typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_string<S>::value)>
 void print(std::FILE* f, const text_style& ts, const S& format_str,
            const Args&... args) {
-  vprint(f, ts, format_str, false,
+  vprint(f, ts, format_str,
          fmt::make_format_args<buffer_context<char_t<S>>>(args...));
 }
 
@@ -509,8 +508,7 @@ template <typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_string<S>::value)>
 void println(std::FILE* f, const text_style& ts, const S& format_str,
              const Args&... args) {
-  vprint(f, ts, format_str, true,
-         fmt::make_format_args<buffer_context<char_t<S>>>(args...));
+  print(f, ts, "{}\n", fmt::format(format_str, std::forward<Args>(args)...));
 }
 
 /**

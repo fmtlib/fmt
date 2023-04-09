@@ -70,5 +70,5 @@ TEST(color_test, print) {
   EXPECT_WRITE(stdout, fmt::print(fg(fmt::rgb(255, 20, 30)), "rgb(255,20,30)"),
                "\x1b[38;2;255;020;030mrgb(255,20,30)\x1b[0m");
   EXPECT_WRITE(stdout, fmt::println(fg(fmt::rgb(255, 20, 30)), "rgb(255,20,30)"),
-               "\x1b[38;2;255;020;030mrgb(255,20,30)\x1b[0m\n");
+               "\x1b[38;2;255;020;030mrgb(255,20,30)\n\x1b[0m");
 }
