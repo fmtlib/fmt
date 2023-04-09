@@ -1,6 +1,27 @@
 10.0.0 - TBD
 ------------
 
+* Replaced Grisu with a new floating-point formatting algorithm for given
+  precision (`#3262 <https://github.com/fmtlib/fmt/issues/3262>`_,
+  `#2750 <https://github.com/fmtlib/fmt/issues/2750>`_,
+  `#3269 <https://github.com/fmtlib/fmt/pull/3269>`_).
+  The new algorithm is based on Dragonbox already used for the
+  shortest representation and gives substantial performance improvement:
+
+  .. image:: https://user-images.githubusercontent.com/33922675/
+             211956670-84891a09-6867-47d9-82fc-3230da7abe0f.png
+
+  * Red: new algorithm
+  * Green: new algorithm with ``FMT_USE_FULL_CACHE_DRAGONBOX`` defined to 1
+  * Blue: old algorithm
+
+  Thanks `@jk-jeon (Junekey Jeon) <https://github.com/jk-jeon>`_.
+
+* Fixed alignment of floating-point numbers with localization
+  (`#3263 <https://github.com/fmtlib/fmt/issues/3263>`_,
+  `#3272 <https://github.com/fmtlib/fmt/pull/3272>`_).
+  Thanks `@ShawnZhong (Shawn Zhong) <https://github.com/ShawnZhong>`_.
+
 * Made ``format_as`` work with any user-defined type and not just enums.
   For example (`godbolt <https://godbolt.org/z/b7rqhq5Kh>`__):
 
@@ -91,6 +112,11 @@
 
   Thanks `@ShawnZhong (Shawn Zhong) <https://github.com/ShawnZhong>`_.
 
+* Fixed formatting of noncopyable ranges
+  (`#3286 <https://github.com/fmtlib/fmt/issues/3286>`_,
+  `#3290 <https://github.com/fmtlib/fmt/pull/3290>`_).
+  Thanks `@BRevzin (Barry Revzin) <https://github.com/BRevzin>`_.
+
 * Fixed formatting of time points before the epoch
   (`#3117 <https://github.com/fmtlib/fmt/issues/3117>`_,
   `#3261 <https://github.com/fmtlib/fmt/pull/3261>`_).
@@ -136,13 +162,20 @@
   `#3169 <https://github.com/fmtlib/fmt/issues/3169>`_).
 
 * Improved build configuration
-  (`#3189 <https://github.com/fmtlib/fmt/issues/3189>`_).
+  (`#3189 <https://github.com/fmtlib/fmt/issues/3189>`_,
+  `#3299 <https://github.com/fmtlib/fmt/issues/3299>`_,
+  `#3302 <https://github.com/fmtlib/fmt/pull/3302>`_,
+  `#3317 <https://github.com/fmtlib/fmt/issues/3317>`_,
+  `#3328 <https://github.com/fmtlib/fmt/pull/3328>`_).
+  Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_,
+  `@joycebrum (Joyce) <https://github.com/joycebrum>`_.
 
 * Fixed a regression in handling empty format specifiers after a colon (`{:}`)
   (`#3086 <https://github.com/fmtlib/fmt/pull/3086>`_).
+  Thanks `@oxidase (Michael Krasnyk) <https://github.com/oxidase>`_.
 
 * Worked around a broken implementation of ``std::is_constant_evaluated`` in
-  some versions of libstdc++
+  some versions of libstdc++ on clang
   (`#3247 <https://github.com/fmtlib/fmt/issues/3247>`_,
   `#3281 <https://github.com/fmtlib/fmt/pull/3281>`_).
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
@@ -165,10 +198,18 @@
   `#3224 <https://github.com/fmtlib/fmt/issues/3224>`_,
   `#3226 <https://github.com/fmtlib/fmt/issues/3226>`_,
   `#3228 <https://github.com/fmtlib/fmt/issues/3228>`_,
-  `#3229 <https://github.com/fmtlib/fmt/pull/3229>`_).
+  `#3229 <https://github.com/fmtlib/fmt/pull/3229>`_,
+  `#3274 <https://github.com/fmtlib/fmt/issues/3274>`_,
+  `#3287 <https://github.com/fmtlib/fmt/issues/3287>`_,
+  `#3288 <https://github.com/fmtlib/fmt/pull/3288>`_,
+  `#3292 <https://github.com/fmtlib/fmt/issues/3292>`_,
+  `#3295 <https://github.com/fmtlib/fmt/pull/3295>`_,
+  `#3298 <https://github.com/fmtlib/fmt/issues/3298>`_).
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_,
   `@sergiud (Sergiu Deitsch) <https://github.com/sergiud>`_,
-  `@czudziakm (Maksymilian Czudziak) <https://github.com/czudziakm>`_.
+  `@czudziakm (Maksymilian Czudziak) <https://github.com/czudziakm>`_,
+  `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_,
+  `@ShawnZhong (Shawn Zhong) <https://github.com/ShawnZhong>`_.
 
 9.1.0 - 2022-08-27
 ------------------
