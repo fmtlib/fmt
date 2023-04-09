@@ -516,7 +516,6 @@ struct compile_string {};
 template <typename S>
 struct is_compile_string : std::is_base_of<compile_string, S> {};
 
-// Returns a string view of `s`.
 template <typename Char, FMT_ENABLE_IF(is_char<Char>::value)>
 FMT_INLINE auto to_string_view(const Char* s) -> basic_string_view<Char> {
   return s;
@@ -1209,7 +1208,6 @@ constexpr auto count_statically_named_args() -> size_t {
 
 struct unformattable {};
 struct unformattable_char : unformattable {};
-struct unformattable_const : unformattable {};
 struct unformattable_pointer : unformattable {};
 
 template <typename Char> struct string_value {
@@ -1287,7 +1285,6 @@ template <typename Context> class value {
   }
   value(unformattable);
   value(unformattable_char);
-  value(unformattable_const);
   value(unformattable_pointer);
 
  private:
@@ -1449,7 +1446,7 @@ template <typename Context> struct arg_mapper {
     return val;
   }
   template <typename T, FMT_ENABLE_IF(!formattable<T>::value)>
-  FMT_CONSTEXPR FMT_INLINE auto do_map(T&&) -> unformattable_const {
+  FMT_CONSTEXPR FMT_INLINE auto do_map(T&&) -> unformattable {
     return {};
   }
 
@@ -1679,10 +1676,6 @@ FMT_CONSTEXPR FMT_INLINE auto make_value(T&& val) -> value<Context> {
   constexpr bool formattable_char =
       !std::is_same<decltype(arg), const unformattable_char&>::value;
   static_assert(formattable_char, "Mixing character types is disallowed.");
-
-  constexpr bool formattable_const =
-      !std::is_same<decltype(arg), const unformattable_const&>::value;
-  static_assert(formattable_const, "Cannot format a const argument.");
 
   // Formatting of arbitrary pointers is disallowed. If you want to format a
   // pointer cast it to `void*` or `const void*`. In particular, this forbids
