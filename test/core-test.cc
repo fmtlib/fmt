@@ -672,7 +672,8 @@ TEST(core_test, is_formattable) {
   static_assert(fmt::is_formattable<enabled_formatter>::value, "");
   static_assert(!fmt::is_formattable<enabled_ptr_formatter*>::value, "");
   static_assert(!fmt::is_formattable<disabled_formatter>::value, "");
-  static_assert(fmt::is_formattable<disabled_formatter_convertible>::value, "");
+  static_assert(!fmt::is_formattable<disabled_formatter_convertible>::value,
+                "");
 
   static_assert(fmt::is_formattable<const_formattable&>::value, "");
   static_assert(fmt::is_formattable<const const_formattable&>::value, "");
@@ -797,25 +798,6 @@ TEST(core_test, format_explicitly_convertible_to_std_string_view) {
 }
 #  endif
 #endif
-
-struct convertible_to_long_long {
-  operator long long() const { return 1LL << 32; }
-};
-
-TEST(core_test, format_convertible_to_long_long) {
-  EXPECT_EQ("100000000", fmt::format("{:x}", convertible_to_long_long()));
-}
-
-struct disabled_rvalue_conversion {
-  operator const char*() const& { return "foo"; }
-  operator const char*() & { return "foo"; }
-  operator const char*() const&& = delete;
-  operator const char*() && = delete;
-};
-
-TEST(core_test, disabled_rvalue_conversion) {
-  EXPECT_EQ("foo", fmt::format("{}", disabled_rvalue_conversion()));
-}
 
 namespace adl_test {
 template <typename... T> void make_format_args(const T&...) = delete;

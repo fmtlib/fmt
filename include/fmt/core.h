@@ -1441,7 +1441,8 @@ template <typename Context> struct arg_mapper {
   template <typename T, typename U = remove_cvref_t<T>>
   struct formattable
       : bool_constant<has_const_formatter<U, Context>() ||
-                      !std::is_const<remove_reference_t<T>>::value> {};
+                      (has_formatter<U, Context>::value &&
+                       !std::is_const<remove_reference_t<T>>::value)> {};
 
   template <typename T, FMT_ENABLE_IF(formattable<T>::value)>
   FMT_CONSTEXPR FMT_INLINE auto do_map(T&& val) -> T& {
@@ -1453,11 +1454,11 @@ template <typename Context> struct arg_mapper {
   }
 
   template <typename T, typename U = remove_cvref_t<T>,
-            FMT_ENABLE_IF(!is_string<U>::value && !is_char<U>::value &&
-                          !std::is_array<U>::value &&
-                          !std::is_pointer<U>::value &&
-                          !std::is_arithmetic<format_as_t<U>>::value &&
-                          has_formatter<U, Context>::value)>
+            FMT_ENABLE_IF((std::is_class<U>::value || std::is_enum<U>::value ||
+                           std::is_union<U>::value) &&
+                          !is_string<U>::value && !is_char<U>::value &&
+                          !is_named_arg<U>::value &&
+                          !std::is_arithmetic<format_as_t<U>>::value)>
   FMT_CONSTEXPR FMT_INLINE auto map(T&& val)
       -> decltype(this->do_map(std::forward<T>(val))) {
     return do_map(std::forward<T>(val));

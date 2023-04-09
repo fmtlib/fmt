@@ -242,11 +242,11 @@ TEST(fp_test, dragonbox_max_k) {
           floor_log10_pow2(std::numeric_limits<float>::min_exponent -
                            fmt::detail::num_significand_bits<float>() - 1));
   using double_info = fmt::detail::dragonbox::float_info<double>;
-  EXPECT_EQ(
-      fmt::detail::const_check(double_info::max_k),
-      double_info::kappa -
-          floor_log10_pow2(std::numeric_limits<double>::min_exponent -
-                           2 * fmt::detail::num_significand_bits<double>() - 1));
+  EXPECT_EQ(fmt::detail::const_check(double_info::max_k),
+            double_info::kappa -
+                floor_log10_pow2(
+                    std::numeric_limits<double>::min_exponent -
+                    2 * fmt::detail::num_significand_bits<double>() - 1));
 }
 
 TEST(fp_test, get_round_direction) {
@@ -382,6 +382,8 @@ struct double_double {
   auto operator-() const -> double_double { return double_double(-a, -b); }
 };
 
+auto format_as(double_double d) -> double { return d; }
+
 bool operator>=(const double_double& lhs, const double_double& rhs) {
   return lhs.a + lhs.b >= rhs.a + rhs.b;
 }
@@ -393,6 +395,8 @@ struct slow_float {
   operator float() const { return value; }
   auto operator-() const -> slow_float { return slow_float(-value); }
 };
+
+auto format_as(slow_float f) -> float { return f; }
 
 namespace std {
 template <> struct is_floating_point<double_double> : std::true_type {};

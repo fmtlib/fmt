@@ -1967,15 +1967,10 @@ struct formatter<adl_test::fmt::detail::foo> : formatter<std::string> {
 };
 FMT_END_NAMESPACE
 
-struct convertible_to_int {
-  operator int() const { return 42; }
-};
-
 TEST(format_test, to_string) {
   EXPECT_EQ(fmt::to_string(42), "42");
   EXPECT_EQ(fmt::to_string(reinterpret_cast<void*>(0x1234)), "0x1234");
   EXPECT_EQ(fmt::to_string(adl_test::fmt::detail::foo()), "foo");
-  EXPECT_EQ(fmt::to_string(convertible_to_int()), "42");
   EXPECT_EQ(fmt::to_string(foo), "0");
 
 #if FMT_USE_FLOAT128
