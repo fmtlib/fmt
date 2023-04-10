@@ -1,9 +1,5 @@
 module;
 
-#if !(defined(__cpp_modules) || FMT_CLANG_VERSION >= 1600)
-#  error module not supported
-#endif
-
 #if !defined(WIN32_LEAN_AND_MEAN) && defined(_WIN32)
 #  define WIN32_LEAN_AND_MEAN
 #endif
@@ -82,6 +78,10 @@ export module fmt;
 #include "fmt/os.h"
 #include "fmt/printf.h"
 #include "fmt/xchar.h"
+
+#if !(defined(__cpp_modules) || FMT_CLANG_VERSION >= 1600)
+#  error modules not supported
+#endif
 
 // gcc doesn't yet implement private module fragments
 #if !FMT_GCC_VERSION
