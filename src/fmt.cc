@@ -1,10 +1,9 @@
 module;
-#ifndef __cpp_modules
-#  error Module not supported.
+
+#if !(defined(__cpp_modules) || FMT_CLANG_VERSION >= 1600)
+#  error module not supported
 #endif
 
-// put all implementation-provided headers into the global module fragment
-// to prevent attachment to this module
 #if !defined(_CRT_SECURE_NO_WARNINGS) && defined(_MSC_VER)
 #  define _CRT_SECURE_NO_WARNINGS
 #endif
@@ -12,6 +11,8 @@ module;
 #  define WIN32_LEAN_AND_MEAN
 #endif
 
+// Put all implementation-provided headers into the global module fragment
+// to prevent attachment to this module.
 #include <algorithm>
 #include <cctype>
 #include <cerrno>
