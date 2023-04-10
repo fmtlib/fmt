@@ -256,7 +256,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif ()
 
 if (BUILD_SHARED_LIBS)
-  target_compile_definitions(fmt PRIVATE FMT_EXPORT INTERFACE FMT_SHARED)
+  target_compile_definitions(fmt PRIVATE FMT_LIB_EXPORT INTERFACE FMT_SHARED)
 endif ()
 if (FMT_SAFE_DURATION_CAST)
   target_compile_definitions(fmt PUBLIC FMT_SAFE_DURATION_CAST)

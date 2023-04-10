@@ -191,14 +191,14 @@
 
 #if !defined(FMT_HEADER_ONLY) && defined(_WIN32)
 #  define FMT_CLASS_API FMT_MSC_WARNING(suppress : 4275)
-#  ifdef FMT_EXPORT
+#  ifdef FMT_LIB_EXPORT
 #    define FMT_API __declspec(dllexport)
 #  elif defined(FMT_SHARED)
 #    define FMT_API __declspec(dllimport)
 #  endif
 #else
 #  define FMT_CLASS_API
-#  if defined(FMT_EXPORT) || defined(FMT_SHARED)
+#  if defined(FMT_LIB_EXPORT) || defined(FMT_SHARED)
 #    if defined(__GNUC__) || defined(__clang__)
 #      define FMT_API __attribute__((visibility("default")))
 #    endif
