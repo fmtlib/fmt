@@ -183,8 +183,8 @@
 
 #ifndef FMT_MODULE_EXPORT
 #  define FMT_MODULE_EXPORT
-#  define FMT_MODULE_EXPORT_BEGIN
-#  define FMT_MODULE_EXPORT_END
+#  define FMT_EXPORT_BEGIN
+#  define FMT_EXPORT_END
 #  define FMT_BEGIN_DETAIL_NAMESPACE namespace detail {
 #  define FMT_END_DETAIL_NAMESPACE }
 #endif
@@ -262,7 +262,7 @@ FMT_GCC_PRAGMA("GCC optimize(\"Og\")")
 #endif
 
 FMT_BEGIN_NAMESPACE
-FMT_MODULE_EXPORT_BEGIN
+FMT_EXPORT_BEGIN
 
 // Implementations of enable_if_t and other metafunctions for older systems.
 template <bool B, typename T = void>
@@ -2940,7 +2940,7 @@ FMT_INLINE void println(format_string<T...> fmt, T&&... args) {
   return fmt::println(stdout, fmt, std::forward<T>(args)...);
 }
 
-FMT_MODULE_EXPORT_END
+FMT_EXPORT_END
 FMT_GCC_PRAGMA("GCC pop_options")
 FMT_END_NAMESPACE
 

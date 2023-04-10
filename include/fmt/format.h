@@ -893,7 +893,7 @@ template <typename T>
 struct is_locale<T, void_t<decltype(T::classic())>> : std::true_type {};
 }  // namespace detail
 
-FMT_MODULE_EXPORT_BEGIN
+FMT_EXPORT_BEGIN
 
 // The number of characters to store in the basic_memory_buffer object itself
 // to avoid dynamic memory allocation.
@@ -4678,7 +4678,7 @@ FMT_NODISCARD FMT_INLINE auto formatted_size(const Locale& loc,
   return buf.count();
 }
 
-FMT_MODULE_EXPORT_END
+FMT_EXPORT_END
 FMT_END_NAMESPACE
 
 #ifdef FMT_HEADER_ONLY

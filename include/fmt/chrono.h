@@ -460,7 +460,7 @@ auto write(OutputIt out, const std::tm& time, const std::locale& loc,
 
 }  // namespace detail
 
-FMT_MODULE_EXPORT_BEGIN
+FMT_EXPORT_BEGIN
 
 /**
   Converts given time since epoch as ``std::time_t`` value into calendar time,
@@ -1156,9 +1156,9 @@ void write_fractional_seconds(OutputIt& out, Duration d, int precision = -1) {
   }
 }
 
-// Format subseconds which are given as a floating point type with an appropriate
-// number of digits. We cannot pass the Duration here, as we explicitly need to
-// pass the Rep value in the chrono_formatter.
+// Format subseconds which are given as a floating point type with an
+// appropriate number of digits. We cannot pass the Duration here, as we
+// explicitly need to pass the Rep value in the chrono_formatter.
 template <typename Duration>
 void write_floating_seconds(memory_buffer& buf, Duration duration,
                             int num_fractional_digits = -1) {
@@ -2288,7 +2288,7 @@ template <typename Char> struct formatter<std::tm, Char> {
   }
 };
 
-FMT_MODULE_EXPORT_END
+FMT_EXPORT_END
 FMT_END_NAMESPACE
 
 #endif  // FMT_CHRONO_H_
