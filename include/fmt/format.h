@@ -48,6 +48,11 @@
 
 #include "core.h"
 
+#ifndef FMT_BEGIN_DETAIL_NAMESPACE
+#  define FMT_BEGIN_DETAIL_NAMESPACE namespace detail {
+#  define FMT_END_DETAIL_NAMESPACE }
+#endif
+
 #if FMT_HAS_CPP17_ATTRIBUTE(fallthrough)
 #  define FMT_FALLTHROUGH [[fallthrough]]
 #elif defined(__clang__)
@@ -95,12 +100,6 @@
 #  define FMT_NOINLINE __attribute__((noinline))
 #else
 #  define FMT_NOINLINE
-#endif
-
-#if FMT_MSC_VERSION
-#  define FMT_MSC_DEFAULT = default
-#else
-#  define FMT_MSC_DEFAULT
 #endif
 
 #ifndef FMT_THROW
@@ -893,7 +892,7 @@ template <typename T>
 struct is_locale<T, void_t<decltype(T::classic())>> : std::true_type {};
 }  // namespace detail
 
-FMT_EXPORT_BEGIN
+FMT_BEGIN_EXPORT
 
 // The number of characters to store in the basic_memory_buffer object itself
 // to avoid dynamic memory allocation.
@@ -936,7 +935,27 @@ class basic_memory_buffer final : public detail::buffer<T> {
   }
 
  protected:
-  FMT_CONSTEXPR20 void grow(size_t size) override;
+  FMT_CONSTEXPR20 void grow(size_t size) override {
+    detail::abort_fuzzing_if(size > 5000);
+    const size_t max_size = std::allocator_traits<Allocator>::max_size(alloc_);
+    size_t old_capacity = this->capacity();
+    size_t new_capacity = old_capacity + old_capacity / 2;
+    if (size > new_capacity)
+      new_capacity = size;
+    else if (new_capacity > max_size)
+      new_capacity = size > max_size ? size : max_size;
+    T* old_data = this->data();
+    T* new_data =
+        std::allocator_traits<Allocator>::allocate(alloc_, new_capacity);
+    // The following code doesn't throw, so the raw pointer above doesn't leak.
+    std::uninitialized_copy(old_data, old_data + this->size(),
+                            detail::make_checked(new_data, new_capacity));
+    this->set(new_data, new_capacity);
+    // deallocate must not throw according to the standard, but even if it does,
+    // the buffer already uses the new storage and will deallocate it in
+    // destructor.
+    if (old_data != store_) alloc_.deallocate(old_data, old_capacity);
+  }
 
  public:
   using value_type = T;
@@ -1013,30 +1032,6 @@ class basic_memory_buffer final : public detail::buffer<T> {
   }
 };
 
-template <typename T, size_t SIZE, typename Allocator>
-FMT_CONSTEXPR20 void basic_memory_buffer<T, SIZE, Allocator>::grow(
-    size_t size) {
-  detail::abort_fuzzing_if(size > 5000);
-  const size_t max_size = std::allocator_traits<Allocator>::max_size(alloc_);
-  size_t old_capacity = this->capacity();
-  size_t new_capacity = old_capacity + old_capacity / 2;
-  if (size > new_capacity)
-    new_capacity = size;
-  else if (new_capacity > max_size)
-    new_capacity = size > max_size ? size : max_size;
-  T* old_data = this->data();
-  T* new_data =
-      std::allocator_traits<Allocator>::allocate(alloc_, new_capacity);
-  // The following code doesn't throw, so the raw pointer above doesn't leak.
-  std::uninitialized_copy(old_data, old_data + this->size(),
-                          detail::make_checked(new_data, new_capacity));
-  this->set(new_data, new_capacity);
-  // deallocate must not throw according to the standard, but even if it does,
-  // the buffer already uses the new storage and will deallocate it in
-  // destructor.
-  if (old_data != store_) alloc_.deallocate(old_data, old_capacity);
-}
-
 using memory_buffer = basic_memory_buffer<char>;
 
 template <typename T, size_t SIZE, typename Allocator>
@@ -1050,16 +1045,15 @@ FMT_API bool write_console(std::FILE* f, string_view text);
 FMT_API void print(std::FILE*, string_view);
 }  // namespace detail
 
+// Suppress a misleading warning in older versions of clang.
+#if FMT_CLANG_VERSION
+#  pragma clang diagnostic ignored "-Wweak-vtables"
+#endif
+
 /** An error reported from a formatting function. */
-FMT_CLASS_API
 class FMT_API format_error : public std::runtime_error {
  public:
   using std::runtime_error::runtime_error;
-  format_error(const format_error&) = default;
-  format_error& operator=(const format_error&) = default;
-  format_error(format_error&&) = default;
-  format_error& operator=(format_error&&) = default;
-  ~format_error() noexcept override FMT_MSC_DEFAULT;
 };
 
 namespace detail_exported {
@@ -4236,26 +4230,6 @@ class format_int {
 };
 
 template <typename T, typename Char>
-template <typename FormatContext>
-FMT_CONSTEXPR FMT_INLINE auto
-formatter<T, Char,
-          enable_if_t<detail::type_constant<T, Char>::value !=
-                      detail::type::custom_type>>::format(const T& val,
-                                                          FormatContext& ctx)
-    const -> decltype(ctx.out()) {
-  if (specs_.width_ref.kind != detail::arg_id_kind::none ||
-      specs_.precision_ref.kind != detail::arg_id_kind::none) {
-    auto specs = specs_;
-    detail::handle_dynamic_spec<detail::width_checker>(specs.width,
-                                                       specs.width_ref, ctx);
-    detail::handle_dynamic_spec<detail::precision_checker>(
-        specs.precision, specs.precision_ref, ctx);
-    return detail::write<Char>(ctx.out(), val, specs, ctx.locale());
-  }
-  return detail::write<Char>(ctx.out(), val, specs_, ctx.locale());
-}
-
-template <typename T, typename Char>
 struct formatter<T, Char, enable_if_t<detail::has_format_as<T>::value>>
     : private formatter<detail::format_as_t<T>> {
   using base = formatter<detail::format_as_t<T>>;
@@ -4678,7 +4652,28 @@ FMT_NODISCARD FMT_INLINE auto formatted_size(const Locale& loc,
   return buf.count();
 }
 
-FMT_EXPORT_END
+FMT_END_EXPORT
+
+template <typename T, typename Char>
+template <typename FormatContext>
+FMT_CONSTEXPR FMT_INLINE auto
+formatter<T, Char,
+          enable_if_t<detail::type_constant<T, Char>::value !=
+                      detail::type::custom_type>>::format(const T& val,
+                                                          FormatContext& ctx)
+    const -> decltype(ctx.out()) {
+  if (specs_.width_ref.kind != detail::arg_id_kind::none ||
+      specs_.precision_ref.kind != detail::arg_id_kind::none) {
+    auto specs = specs_;
+    detail::handle_dynamic_spec<detail::width_checker>(specs.width,
+                                                       specs.width_ref, ctx);
+    detail::handle_dynamic_spec<detail::precision_checker>(
+        specs.precision, specs.precision_ref, ctx);
+    return detail::write<Char>(ctx.out(), val, specs, ctx.locale());
+  }
+  return detail::write<Char>(ctx.out(), val, specs_, ctx.locale());
+}
+
 FMT_END_NAMESPACE
 
 #ifdef FMT_HEADER_ONLY

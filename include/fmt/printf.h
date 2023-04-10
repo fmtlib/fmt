@@ -14,7 +14,7 @@
 #include "format.h"
 
 FMT_BEGIN_NAMESPACE
-FMT_EXPORT_BEGIN
+FMT_BEGIN_EXPORT
 
 template <typename T> struct printf_formatter { printf_formatter() = delete; };
 
@@ -673,7 +673,7 @@ inline auto printf(const S& fmt, const T&... args) -> int {
       fmt::make_format_args<basic_printf_context_t<char_t<S>>>(args...));
 }
 
-FMT_EXPORT_END
+FMT_END_EXPORT
 FMT_END_NAMESPACE
 
 #endif  // FMT_PRINTF_H_

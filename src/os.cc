@@ -372,22 +372,22 @@ file file::open_windows_file(wcstring_view path, int oflag) {
 }
 #  endif
 
-#if !defined(__MSDOS__)
+#  if !defined(__MSDOS__)
 long getpagesize() {
-#  ifdef _WIN32
+#    ifdef _WIN32
   SYSTEM_INFO si;
   GetSystemInfo(&si);
   return si.dwPageSize;
-#  else
+#    else
   long size = FMT_POSIX_CALL(sysconf(_SC_PAGESIZE));
   if (size < 0)
     FMT_THROW(system_error(errno, FMT_STRING("cannot get memory page size")));
   return size;
-#  endif
+#    endif
 }
-#endif
+#  endif
 
-FMT_BEGIN_DETAIL_NAMESPACE
+namespace detail {
 
 void file_buffer::grow(size_t) {
   if (this->size() == this->capacity()) flush();
@@ -410,8 +410,7 @@ file_buffer::~file_buffer() {
   flush();
   delete[] data();
 }
-
-FMT_END_DETAIL_NAMESPACE
+}  // namespace detail
 
 ostream::~ostream() = default;
 #endif  // FMT_USE_FCNTL

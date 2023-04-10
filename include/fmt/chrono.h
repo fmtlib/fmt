@@ -460,7 +460,7 @@ auto write(OutputIt out, const std::tm& time, const std::locale& loc,
 
 }  // namespace detail
 
-FMT_EXPORT_BEGIN
+FMT_BEGIN_EXPORT
 
 /**
   Converts given time since epoch as ``std::time_t`` value into calendar time,
@@ -2288,7 +2288,7 @@ template <typename Char> struct formatter<std::tm, Char> {
   }
 };
 
-FMT_EXPORT_END
+FMT_END_EXPORT
 FMT_END_NAMESPACE
 
 #endif  // FMT_CHRONO_H_

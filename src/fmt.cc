@@ -1,9 +1,5 @@
 module;
 
-#if !defined(WIN32_LEAN_AND_MEAN) && defined(_WIN32)
-#  define WIN32_LEAN_AND_MEAN
-#endif
-
 // Put all implementation-provided headers into the global module fragment
 // to prevent attachment to this module.
 #include <algorithm>
@@ -54,22 +50,23 @@ module;
 #  endif
 #endif
 #ifdef _WIN32
+#  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
 #endif
 
 export module fmt;
 
 #define FMT_MODULE_EXPORT export
-#define FMT_EXPORT_BEGIN export {
-#define FMT_EXPORT_END }
+#define FMT_BEGIN_EXPORT export {
+#define FMT_END_EXPORT }
 #define FMT_BEGIN_DETAIL_NAMESPACE \
   }                                \
   namespace detail {
 #define FMT_END_DETAIL_NAMESPACE \
   }                              \
   export {
-// all library-provided declarations and definitions
-// must be in the module purview to be exported
+// All library-provided declarations and definitions must be in the module
+// purview to be exported.
 #include "fmt/args.h"
 #include "fmt/chrono.h"
 #include "fmt/color.h"

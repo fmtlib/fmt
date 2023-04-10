@@ -497,7 +497,7 @@ constexpr auto compile(S format_str) {
 #endif  // defined(__cpp_if_constexpr) && defined(__cpp_return_type_deduction)
 }  // namespace detail
 
-FMT_EXPORT_BEGIN
+FMT_BEGIN_EXPORT
 
 #if defined(__cpp_if_constexpr) && defined(__cpp_return_type_deduction)
 
@@ -601,7 +601,7 @@ template <detail_exported::fixed_string Str> constexpr auto operator""_cf() {
 }  // namespace literals
 #endif
 
-FMT_EXPORT_END
+FMT_END_EXPORT
 FMT_END_NAMESPACE
 
 #endif  // FMT_COMPILE_H_

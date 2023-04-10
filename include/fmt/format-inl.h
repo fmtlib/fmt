@@ -144,10 +144,6 @@ FMT_API FMT_FUNC auto format_facet<std::locale>::do_put(
 }
 #endif
 
-#if !FMT_MSC_VERSION
-FMT_API FMT_FUNC format_error::~format_error() noexcept = default;
-#endif
-
 FMT_FUNC std::system_error vsystem_error(int error_code, string_view format_str,
                                          format_args args) {
   auto ec = std::error_code(error_code, std::generic_category());
