@@ -9,13 +9,9 @@
 #define FMT_FORMAT_INL_H_
 
 #include <algorithm>
-#include <cctype>
 #include <cerrno>  // errno
 #include <climits>
 #include <cmath>
-#include <cstdarg>
-#include <cstring>  // std::memmove
-#include <cwchar>
 #include <exception>
 
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR

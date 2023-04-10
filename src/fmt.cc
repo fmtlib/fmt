@@ -4,9 +4,6 @@ module;
 #  error module not supported
 #endif
 
-#if !defined(_CRT_SECURE_NO_WARNINGS) && defined(_MSC_VER)
-#  define _CRT_SECURE_NO_WARNINGS
-#endif
 #if !defined(WIN32_LEAN_AND_MEAN) && defined(_WIN32)
 #  define WIN32_LEAN_AND_MEAN
 #endif
@@ -14,20 +11,16 @@ module;
 // Put all implementation-provided headers into the global module fragment
 // to prevent attachment to this module.
 #include <algorithm>
-#include <cctype>
 #include <cerrno>
 #include <chrono>
 #include <climits>
-#include <clocale>
 #include <cmath>
-#include <cstdarg>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
-#include <cwchar>
 #include <exception>
 #include <functional>
 #include <iterator>
@@ -35,7 +28,6 @@ module;
 #include <locale>
 #include <memory>
 #include <ostream>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
