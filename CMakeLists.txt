@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8...3.25)
+cmake_minimum_required(VERSION 3.8...3.26)
 
 # Fallback for using newer policies on CMake <3.12.
 if(${CMAKE_VERSION} VERSION_LESS 3.12)
@@ -30,9 +30,9 @@ function(enable_module target)
     target_compile_options(${target}
       PRIVATE /interface /ifcOutput ${BMI}
       INTERFACE /reference fmt=${BMI})
+    set_target_properties(${target} PROPERTIES ADDITIONAL_CLEAN_FILES ${BMI})
+    set_source_files_properties(${BMI} PROPERTIES GENERATED ON)
   endif ()
-  set_target_properties(${target} PROPERTIES ADDITIONAL_CLEAN_FILES ${BMI})
-  set_source_files_properties(${BMI} PROPERTIES GENERATED ON)
 endfunction()
 
 include(CMakeParseArguments)
@@ -231,8 +231,20 @@ endif ()
 if (FMT_PEDANTIC)
   target_compile_options(fmt PRIVATE ${PEDANTIC_COMPILE_FLAGS})
 endif ()
+
 if (FMT_MODULE)
+  if (CMAKE_VERSION VERSION_LESS 3.26)
+    message(FATAL_ERROR "Modules require CMake 3.26+.")
+  endif ()
+  set(CMAKE_EXPERIMENTAL_CXX_MODULE_CMAKE_API
+      "2182bf5c-ef0d-489a-91da-49dbc3090d2a")
+  set(CMAKE_EXPERIMENTAL_CXX_MODULE_DYNDEP 1)
   enable_module(fmt)
+  target_sources(fmt PUBLIC
+                 FILE_SET cxx_modules TYPE CXX_MODULES FILES src/fmt.cc)
+  # Workaround a bug in clang-scan-deps.
+  target_include_directories(
+    fmt PUBLIC /usr/lib/gcc/x86_64-linux-gnu/12/include)
 endif ()
 
 target_compile_features(fmt PUBLIC cxx_std_11)
@@ -318,6 +330,7 @@ if (FMT_INSTALL)
           LIBRARY DESTINATION ${FMT_LIB_DIR}
           ARCHIVE DESTINATION ${FMT_LIB_DIR}
           PUBLIC_HEADER DESTINATION "${FMT_INC_DIR}/fmt"
+          FILE_SET cxx_modules DESTINATION ${FMT_LIB_DIR}
           FRAMEWORK DESTINATION "."
           RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
@@ -340,7 +353,7 @@ if (FMT_DOC)
   add_subdirectory(doc)
 endif ()
 
-if (FMT_TEST)
+if (FMT_TEST AND NOT FMT_MODULE)
   enable_testing()
   add_subdirectory(test)
 endif ()
