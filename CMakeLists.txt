@@ -242,6 +242,10 @@ if (FMT_MODULE)
   enable_module(fmt)
   target_sources(fmt PUBLIC
                  FILE_SET cxx_modules TYPE CXX_MODULES FILES src/fmt.cc)
+  # Workaround a CMake issue when using fmt as a subdirectory.
+  target_compile_options(
+    fmt PUBLIC
+    -fprebuilt-module-path=${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/fmt.dir)
   # Workaround a bug in clang-scan-deps.
   target_include_directories(
     fmt PUBLIC /usr/lib/gcc/x86_64-linux-gnu/12/include)
