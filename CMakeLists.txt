@@ -157,6 +157,16 @@ option(FMT_OS "Include core requiring OS (Windows/Posix) " ON)
 option(FMT_MODULE "Build a module instead of a traditional library." OFF)
 option(FMT_SYSTEM_HEADERS "Expose headers with marking them as system." OFF)
 
+#  Set the highest supported standard if it has not been externally defined
+if(NOT DEFINED CMAKE_CXX_STANDARD)
+  foreach(std_ver 23 20 17 14 11)
+    if(CMAKE_CXX_COMPILE_FEATURES MATCHES "cxx_std_${std_ver}")
+      set(CMAKE_CXX_STANDARD ${std_ver})
+      break()
+    endif()
+  endforeach()
+endif()
+
 set(FMT_CAN_MODULE OFF)
 if (CMAKE_CXX_STANDARD GREATER 17 AND NOT MSVC)
   set(FMT_CAN_MODULE ON)
