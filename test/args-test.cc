@@ -44,7 +44,7 @@ template <> struct formatter<custom_type> {
 
   template <typename FormatContext>
   auto format(const custom_type& p, FormatContext& ctx) -> decltype(ctx.out()) {
-    return format_to(ctx.out(), "cust={}", p.i);
+    return fmt::format_to(ctx.out(), "cust={}", p.i);
   }
 };
 FMT_END_NAMESPACE

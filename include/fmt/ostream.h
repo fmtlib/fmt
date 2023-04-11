@@ -193,7 +193,7 @@ void print(std::wostream& os,
 
 FMT_MODULE_EXPORT template <typename... T>
 void println(std::ostream& os, format_string<T...> fmt, T&&... args) {
-  print(os, "{}\n", fmt::format(fmt, std::forward<T>(args)...));
+  fmt::print(os, "{}\n", fmt::format(fmt, std::forward<T>(args)...));
 }
 
 FMT_MODULE_EXPORT

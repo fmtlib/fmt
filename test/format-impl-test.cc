@@ -301,7 +301,7 @@ TEST(format_impl_test, format_error_code) {
   std::string msg = "error 42", sep = ": ";
   {
     auto buffer = fmt::memory_buffer();
-    format_to(fmt::appender(buffer), "garbage");
+    fmt::format_to(fmt::appender(buffer), "garbage");
     fmt::detail::format_error_code(buffer, 42, "test");
     EXPECT_EQ(to_string(buffer), "test: " + msg);
   }
