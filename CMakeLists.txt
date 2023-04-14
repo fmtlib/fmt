@@ -401,7 +401,7 @@ if (FMT_DOC)
   add_subdirectory(doc)
 endif ()
 
-if (FMT_TEST AND NOT FMT_MODULE)
+if (FMT_TEST)
   enable_testing()
   add_subdirectory(test)
 endif ()

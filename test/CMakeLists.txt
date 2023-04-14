@@ -55,6 +55,10 @@ function(add_fmt_test name)
   add_test(NAME ${name} COMMAND ${name})
 endfunction()
 
+if (FMT_MODULE)
+  return ()
+endif ()
+
 add_fmt_test(args-test)
 add_fmt_test(assert-test)
 add_fmt_test(chrono-test)
