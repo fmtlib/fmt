@@ -56,57 +56,53 @@ function(add_module_library name)
     return()
   endif ()
 
-  # Check if modules are supported.
-  set(have_modules FALSE)
-  if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND
-      CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 16.0)
-    set(have_modules TRUE)
-  endif ()
-  if (NOT have_modules)
-    message(FATAL_ERROR "Modules not supported.")
-  endif ()
-
   # Modules require C++20.
   target_compile_features(${name} PUBLIC cxx_std_20)
+  if (CMAKE_COMPILER_IS_GNUCXX)
+    target_compile_options(${name} PUBLIC -fmodules-ts)
+  endif ()
 
   # `std` is affected by CMake options and may be higher than C++20.
   get_target_property(std ${name} CXX_STANDARD)
 
-  set(pcms)
-  foreach (src ${sources})
-    get_filename_component(pcm ${src} NAME_WE)
-    set(pcm ${pcm}.pcm)
+  if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(pcms)
+    foreach (src ${sources})
+      get_filename_component(pcm ${src} NAME_WE)
+      set(pcm ${pcm}.pcm)
 
-    # Propagate -fmodule-file=*.pcm to targets that link with this library.
-    target_compile_options(${name} PUBLIC -fmodule-file=${pcm})
+      # Propagate -fmodule-file=*.pcm to targets that link with this library.
+      target_compile_options(${name} PUBLIC -fmodule-file=${pcm})
 
-    # Use an absolute path to prevent target_link_libraries prepending -l to it.
-    set(pcms ${pcms} ${CMAKE_CURRENT_BINARY_DIR}/${pcm})
-    add_custom_command(
-      OUTPUT ${pcm}
-      COMMAND ${CMAKE_CXX_COMPILER}
-              -std=c++${std} -x c++-module --precompile -c
-              -o ${pcm} ${CMAKE_CURRENT_SOURCE_DIR}/${src}
-              "-I$<JOIN:$<TARGET_PROPERTY:${name},INCLUDE_DIRECTORIES>,;-I>"
-      # Required by the -I generator expression above.
-      COMMAND_EXPAND_LISTS
-      DEPENDS ${src})
-  endforeach ()
+      # Use an absolute path to prevent target_link_libraries prepending -l
+      # to it.
+      set(pcms ${pcms} ${CMAKE_CURRENT_BINARY_DIR}/${pcm})
+      add_custom_command(
+        OUTPUT ${pcm}
+        COMMAND ${CMAKE_CXX_COMPILER}
+                -std=c++${std} -x c++-module --precompile -c
+                -o ${pcm} ${CMAKE_CURRENT_SOURCE_DIR}/${src}
+                "-I$<JOIN:$<TARGET_PROPERTY:${name},INCLUDE_DIRECTORIES>,;-I>"
+        # Required by the -I generator expression above.
+        COMMAND_EXPAND_LISTS
+        DEPENDS ${src})
+    endforeach ()
 
-  # Add .pcm files as sources to make sure they are built before the library.
-  set(files)
-  foreach (pcm ${pcms})
-    get_filename_component(pcm_we ${pcm} NAME_WE)
-    set(obj ${pcm_we}.o)
-    # Use an absolute path to prevent target_link_libraries prepending -l.
-    set(files ${files} ${pcm} ${CMAKE_CURRENT_BINARY_DIR}/${obj})
-    add_custom_command(
-      OUTPUT ${obj}
-      COMMAND ${CMAKE_CXX_COMPILER} $<TARGET_PROPERTY:${name},COMPILE_OPTIONS>
-              -c -o ${obj} ${pcm}
-      DEPENDS ${pcm})
-  endforeach ()
-  target_sources(${name} PRIVATE ${files})  
+    # Add .pcm files as sources to make sure they are built before the library.
+    set(sources)
+    foreach (pcm ${pcms})
+      get_filename_component(pcm_we ${pcm} NAME_WE)
+      set(obj ${pcm_we}.o)
+      # Use an absolute path to prevent target_link_libraries prepending -l.
+      set(sources ${sources} ${pcm} ${CMAKE_CURRENT_BINARY_DIR}/${obj})
+      add_custom_command(
+        OUTPUT ${obj}
+        COMMAND ${CMAKE_CXX_COMPILER} $<TARGET_PROPERTY:${name},COMPILE_OPTIONS>
+                -c -o ${obj} ${pcm}
+        DEPENDS ${pcm})
+    endforeach ()
+  endif ()
+  target_sources(${name} PRIVATE ${sources})
 endfunction()
 
 include(CMakeParseArguments)

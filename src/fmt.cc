@@ -76,10 +76,6 @@ export module fmt;
 #include "fmt/printf.h"
 #include "fmt/xchar.h"
 
-#if !(defined(__cpp_modules) || FMT_CLANG_VERSION >= 1600)
-#  error modules not supported
-#endif
-
 // gcc doesn't yet implement private module fragments
 #if !FMT_GCC_VERSION
 module : private;
