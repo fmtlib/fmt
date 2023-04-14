@@ -331,7 +331,7 @@ template <typename T, typename Char> struct parse_specs_result {
   int next_arg_id;
 };
 
-constexpr int manual_indexing_id = -1;
+enum { manual_indexing_id = -1 };
 
 template <typename T, typename Char>
 constexpr parse_specs_result<T, Char> parse_specs(basic_string_view<Char> str,
