@@ -71,6 +71,15 @@ export module fmt;
 #define FMT_END_DETAIL_NAMESPACE \
   }                              \
   export {
+// If you define FMT_ATTACH_TO_GLOBAL_MODULE
+//  - all declarations are detached from module 'fmt'
+//  - the module behaves like a traditional static library, too
+//  - all library symbols are mangled traditionally
+//  - you can mix TUs with either importing or #including the {fmt} API
+#ifdef FMT_ATTACH_TO_GLOBAL_MODULE
+extern "C++" {
+#endif
+
 // All library-provided declarations and definitions must be in the module
 // purview to be exported.
 #include "fmt/args.h"
@@ -80,12 +89,17 @@ export module fmt;
 #include "fmt/format.h"
 #include "fmt/os.h"
 #include "fmt/printf.h"
-#include "fmt/xchar.h"
 #include "fmt/std.h"
+#include "fmt/xchar.h"
+
+
+#ifdef FMT_ATTACH_TO_GLOBAL_MODULE
+}
+#endif
 
 // gcc doesn't yet implement private module fragments
 #if !FMT_GCC_VERSION
-module : private;
+module :private;
 #endif
 
 #include "format.cc"
