@@ -394,6 +394,7 @@ FMT_CONSTEXPR inline auto is_utf8() -> bool {
   compiled with a different ``-std`` option than the client code (which is not
   recommended).
  */
+FMT_MODULE_EXPORT
 template <typename Char> class basic_string_view {
  private:
   const Char* data_;
@@ -496,9 +497,11 @@ template <typename Char> class basic_string_view {
   }
 };
 
+FMT_MODULE_EXPORT
 using string_view = basic_string_view<char>;
 
 /** Specifies if ``T`` is a character type. Can be specialized by users. */
+FMT_MODULE_EXPORT
 template <typename T> struct is_char : std::false_type {};
 template <> struct is_char<char> : std::true_type {};
 
@@ -646,6 +649,7 @@ template <typename S> using char_t = typename detail::char_t_impl<S>::type;
   You can use the ``format_parse_context`` type alias for ``char`` instead.
   \endrst
  */
+FMT_MODULE_EXPORT
 template <typename Char> class basic_format_parse_context {
  private:
   basic_string_view<Char> format_str_;
@@ -711,6 +715,7 @@ template <typename Char> class basic_format_parse_context {
   FMT_CONSTEXPR void check_dynamic_spec(int arg_id);
 };
 
+FMT_MODULE_EXPORT
 using format_parse_context = basic_format_parse_context<char>;
 
 namespace detail {
@@ -775,11 +780,12 @@ FMT_CONSTEXPR void basic_format_parse_context<Char>::check_dynamic_spec(
   }
 }
 
-template <typename Context> class basic_format_arg;
-template <typename Context> class basic_format_args;
-template <typename Context> class dynamic_format_arg_store;
+FMT_MODULE_EXPORT template <typename Context> class basic_format_arg;
+FMT_MODULE_EXPORT template <typename Context> class basic_format_args;
+FMT_MODULE_EXPORT template <typename Context> class dynamic_format_arg_store;
 
 // A formatter for objects of type T.
+FMT_MODULE_EXPORT 
 template <typename T, typename Char = char, typename Enable = void>
 struct formatter {
   // A deleted default constructor indicates a disabled formatter.
@@ -1476,6 +1482,7 @@ enum { max_packed_args = 62 / packed_arg_bits };
 enum : unsigned long long { is_unpacked_bit = 1ULL << 63 };
 enum : unsigned long long { has_named_args_bit = 1ULL << 62 };
 }  // namespace detail
+FMT_BEGIN_EXPORT
 
 // An output iterator that appends to a buffer.
 // It is used to reduce symbol sizes for the common case.
@@ -1594,6 +1601,7 @@ FMT_CONSTEXPR FMT_INLINE auto visit_format_arg(
   return vis(monostate());
 }
 
+FMT_END_EXPORT
 namespace detail {
 
 template <typename Char, typename InputIt>
@@ -1710,6 +1718,7 @@ FMT_CONSTEXPR inline auto make_arg(T&& value) -> basic_format_arg<Context> {
   return make_arg<Context>(value);
 }
 }  // namespace detail
+FMT_BEGIN_EXPORT
 
 // Formatting context.
 template <typename OutputIt, typename Char> class basic_format_context {
@@ -1998,6 +2007,7 @@ enum type FMT_ENUM_UNDERLYING_TYPE(unsigned char){none, minus, plus, space};
 }
 using sign_t = sign::type;
 
+FMT_END_EXPORT
 namespace detail {
 
 // Workaround an array initialization issue in gcc 4.8.

@@ -74,6 +74,7 @@ inline void write_escaped_path<std::filesystem::path::value_type>(
 
 }  // namespace detail
 
+FMT_MODULE_EXPORT
 template <typename Char>
 struct formatter<std::filesystem::path, Char>
     : formatter<basic_string_view<Char>> {
@@ -95,12 +96,14 @@ FMT_END_NAMESPACE
 #endif
 
 FMT_BEGIN_NAMESPACE
+FMT_MODULE_EXPORT
 template <typename Char>
 struct formatter<std::thread::id, Char> : basic_ostream_formatter<Char> {};
 FMT_END_NAMESPACE
 
 #ifdef __cpp_lib_optional
 FMT_BEGIN_NAMESPACE
+FMT_MODULE_EXPORT
 template <typename T, typename Char>
 struct formatter<std::optional<T>, Char,
                  std::enable_if_t<is_formattable<T, Char>::value>> {
@@ -144,6 +147,7 @@ FMT_END_NAMESPACE
 
 #ifdef __cpp_lib_variant
 FMT_BEGIN_NAMESPACE
+FMT_MODULE_EXPORT
 template <typename Char> struct formatter<std::monostate, Char> {
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
@@ -192,7 +196,6 @@ auto write_variant_alternative(OutputIt out, const T& v) -> OutputIt {
 }
 
 }  // namespace detail
-
 template <typename T> struct is_variant_like {
   static constexpr const bool value = detail::is_variant_like_<T>::value;
 };
@@ -202,6 +205,7 @@ template <typename T, typename C> struct is_variant_formattable {
       detail::is_variant_formattable_<T, C>::value;
 };
 
+FMT_MODULE_EXPORT
 template <typename Variant, typename Char>
 struct formatter<
     Variant, Char,
@@ -235,7 +239,7 @@ FMT_END_NAMESPACE
 #endif  // __cpp_lib_variant
 
 FMT_BEGIN_NAMESPACE
-
+FMT_MODULE_EXPORT
 template <typename Char> struct formatter<std::error_code, Char> {
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
@@ -253,6 +257,7 @@ template <typename Char> struct formatter<std::error_code, Char> {
   }
 };
 
+FMT_MODULE_EXPORT
 template <typename T, typename Char>
 struct formatter<
     T, Char,
