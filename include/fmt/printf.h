@@ -599,7 +599,7 @@ inline auto vsprintf(
     basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args)
     -> std::basic_string<Char> {
   auto buf = basic_memory_buffer<Char>();
-  vprintf(buf, detail::to_string_view(fmt), args);
+  detail::vprintf(buf, detail::to_string_view(fmt), args);
   return to_string(buf);
 }
 
@@ -626,7 +626,7 @@ inline auto vfprintf(
     basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args)
     -> int {
   auto buf = basic_memory_buffer<Char>();
-  vprintf(buf, detail::to_string_view(fmt), args);
+  detail::vprintf(buf, detail::to_string_view(fmt), args);
   size_t size = buf.size();
   return std::fwrite(buf.data(), sizeof(Char), size, f) < size
              ? -1
