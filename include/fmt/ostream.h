@@ -111,7 +111,7 @@ struct basic_ostream_formatter : formatter<basic_string_view<Char>, Char> {
   auto format(const T& value, basic_format_context<OutputIt, Char>& ctx) const
       -> OutputIt {
     auto buffer = basic_memory_buffer<Char>();
-    format_value(buffer, value, ctx.locale());
+    detail::format_value(buffer, value, ctx.locale());
     return formatter<basic_string_view<Char>, Char>::format(
         {buffer.data(), buffer.size()}, ctx);
   }
