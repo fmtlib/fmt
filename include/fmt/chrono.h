@@ -1666,7 +1666,7 @@ struct chrono_format_checker : null_chrono_spec_handler<chrono_format_checker> {
   FMT_CONSTEXPR void on_duration_unit() {}
 };
 
-template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
+template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value && has_isfinite<T>::value)>
 inline bool isfinite(T) {
   return true;
 }
