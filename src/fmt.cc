@@ -29,12 +29,16 @@ module;
 #include <system_error>
 #include <thread>
 #include <type_traits>
+#include <typeinfo>
 #include <utility>
 #include <variant>
 #include <vector>
 #include <version>
 
-#if _MSC_VER
+#if __has_include(<cxxabi.h>)
+#  include <cxxabi.h>
+#endif
+#if defined(_MSC_VER) || defined(__MINGW32__)
 #  include <intrin.h>
 #endif
 #if defined __APPLE__ || defined(__FreeBSD__)
@@ -56,6 +60,12 @@ module;
 #  endif
 #endif
 #ifdef _WIN32
+#  if defined(__GLIBCXX__)
+#    include <ext/stdio_filebuf.h>
+#    include <ext/stdio_sync_filebuf.h>
+#  elif defined(_LIBCPP_VERSION)
+#    include <__std_stream>
+#  endif
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
 #endif
