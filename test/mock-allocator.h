@@ -20,8 +20,8 @@ template <typename T> class mock_allocator {
   mock_allocator() {}
   mock_allocator(const mock_allocator&) {}
   using value_type = T;
-  MOCK_METHOD1_T(allocate, T*(size_t n));
-  MOCK_METHOD2_T(deallocate, void(T* p, size_t n));
+  MOCK_METHOD(T*, allocate, (size_t));
+  MOCK_METHOD(void, deallocate, (T*, size_t));
 };
 
 template <typename Allocator> class allocator_ref {
