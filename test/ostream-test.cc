@@ -140,7 +140,7 @@ TEST(ostream_test, write_to_ostream_max_size) {
   } buffer(max_size);
 
   struct mock_streambuf : std::streambuf {
-    MOCK_METHOD2(xsputn, std::streamsize(const void* s, std::streamsize n));
+    MOCK_METHOD(std::streamsize, xsputn, (const void*, std::streamsize));
     auto xsputn(const char* s, std::streamsize n) -> std::streamsize override {
       const void* v = s;
       return xsputn(v, n);

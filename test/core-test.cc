@@ -141,7 +141,7 @@ TEST(buffer_test, indestructible) {
 }
 
 template <typename T> struct mock_buffer final : buffer<T> {
-  MOCK_METHOD1(do_grow, size_t(size_t capacity));
+  MOCK_METHOD(size_t, do_grow, (size_t));
 
   void grow(size_t capacity) override {
     this->set(this->data(), do_grow(capacity));
@@ -327,8 +327,8 @@ template <typename T> struct mock_visitor {
     ON_CALL(*this, visit(_)).WillByDefault(Return(test_result()));
   }
 
-  MOCK_METHOD1_T(visit, test_result(T value));
-  MOCK_METHOD0_T(unexpected, void());
+  MOCK_METHOD(test_result, visit, (T));
+  MOCK_METHOD(void, unexpected, ());
 
   auto operator()(T value) -> test_result { return visit(value); }
 
