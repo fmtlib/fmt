@@ -117,6 +117,11 @@
   `#3290 <https://github.com/fmtlib/fmt/pull/3290>`_).
   Thanks `@BRevzin (Barry Revzin) <https://github.com/BRevzin>`_.
 
+* Fixed issues with formatting of paths and ranges of paths
+  (`#3319 <https://github.com/fmtlib/fmt/issues/3319>`_,
+  `#3322 <https://github.com/fmtlib/fmt/issues/3322>`_).
+  Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
+
 * Fixed formatting of time points before the epoch
   (`#3117 <https://github.com/fmtlib/fmt/issues/3117>`_,
   `#3261 <https://github.com/fmtlib/fmt/pull/3261>`_).
@@ -166,7 +171,8 @@
   `#3299 <https://github.com/fmtlib/fmt/issues/3299>`_,
   `#3302 <https://github.com/fmtlib/fmt/pull/3302>`_,
   `#3317 <https://github.com/fmtlib/fmt/issues/3317>`_,
-  `#3328 <https://github.com/fmtlib/fmt/pull/3328>`_).
+  `#3328 <https://github.com/fmtlib/fmt/pull/3328>`_,
+  `#3373 <https://github.com/fmtlib/fmt/issues/3373>`_).
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_,
   `@joycebrum (Joyce) <https://github.com/joycebrum>`_.
 
@@ -204,12 +210,23 @@
   `#3288 <https://github.com/fmtlib/fmt/pull/3288>`_,
   `#3292 <https://github.com/fmtlib/fmt/issues/3292>`_,
   `#3295 <https://github.com/fmtlib/fmt/pull/3295>`_,
-  `#3298 <https://github.com/fmtlib/fmt/issues/3298>`_).
+  `#3298 <https://github.com/fmtlib/fmt/issues/3298>`_,
+  `#3325 <https://github.com/fmtlib/fmt/issues/3325>`_,
+  `#3326 <https://github.com/fmtlib/fmt/pull/3326>`_,
+  `#3334 <https://github.com/fmtlib/fmt/issues/3334>`_,
+  `#3342 <https://github.com/fmtlib/fmt/issues/3342>`_,
+  `#3343 <https://github.com/fmtlib/fmt/pull/3343>`_,
+  `#3351 <https://github.com/fmtlib/fmt/issues/3351>`_,
+  `#3352 <https://github.com/fmtlib/fmt/pull/3352>`_,
+  `#3365 <https://github.com/fmtlib/fmt/issues/3365>`_,
+  `#3366 <https://github.com/fmtlib/fmt/pull/3366>`_).
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_,
   `@sergiud (Sergiu Deitsch) <https://github.com/sergiud>`_,
   `@czudziakm (Maksymilian Czudziak) <https://github.com/czudziakm>`_,
   `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_,
-  `@ShawnZhong (Shawn Zhong) <https://github.com/ShawnZhong>`_.
+  `@ShawnZhong (Shawn Zhong) <https://github.com/ShawnZhong>`_,
+  `@glebm (Gleb Mazovetskiy) <https://github.com/glebm>`_,
+  `@tmartin-gh <https://github.com/tmartin-gh>`_.
 
 9.1.0 - 2022-08-27
 ------------------
