@@ -1482,7 +1482,6 @@ enum { max_packed_args = 62 / packed_arg_bits };
 enum : unsigned long long { is_unpacked_bit = 1ULL << 63 };
 enum : unsigned long long { has_named_args_bit = 1ULL << 62 };
 }  // namespace detail
-FMT_BEGIN_EXPORT
 
 // An output iterator that appends to a buffer.
 // It is used to reduce symbol sizes for the common case.
@@ -1560,6 +1559,7 @@ template <typename Context> class basic_format_arg {
   ``vis(value)`` will be called with the value of type ``double``.
   \endrst
  */
+FMT_MODULE_EXPORT
 template <typename Visitor, typename Context>
 FMT_CONSTEXPR FMT_INLINE auto visit_format_arg(
     Visitor&& vis, const basic_format_arg<Context>& arg) -> decltype(vis(0)) {
@@ -1601,7 +1601,6 @@ FMT_CONSTEXPR FMT_INLINE auto visit_format_arg(
   return vis(monostate());
 }
 
-FMT_END_EXPORT
 namespace detail {
 
 template <typename Char, typename InputIt>
@@ -1861,6 +1860,7 @@ inline auto arg(const Char* name, const T& arg) -> detail::named_arg<Char, T> {
   static_assert(!detail::is_named_arg<T>(), "nested named arguments");
   return {name, arg};
 }
+FMT_END_EXPORT
 
 /**
   \rst
@@ -1986,7 +1986,7 @@ template <typename Context> class basic_format_args {
 /** An alias to ``basic_format_args<format_context>``. */
 // A separate type would result in shorter symbols but break ABI compatibility
 // between clang and gcc on ARM (#1919).
-using format_args = basic_format_args<format_context>;
+FMT_MODULE_EXPORT using format_args = basic_format_args<format_context>;
 
 // We cannot use enum classes as bit fields because of a gcc bug, so we put them
 // in namespaces instead (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=61414).
@@ -2007,7 +2007,6 @@ enum type FMT_ENUM_UNDERLYING_TYPE(unsigned char){none, minus, plus, space};
 }
 using sign_t = sign::type;
 
-FMT_END_EXPORT
 namespace detail {
 
 // Workaround an array initialization issue in gcc 4.8.

@@ -59,7 +59,6 @@ class dynamic_arg_list {
   }
 };
 }  // namespace detail
-FMT_BEGIN_EXPORT
 
 /**
   \rst
@@ -230,7 +229,6 @@ class dynamic_format_arg_store
   }
 };
 
-FMT_END_EXPORT
 FMT_END_NAMESPACE
 
 #endif  // FMT_ARGS_H_
