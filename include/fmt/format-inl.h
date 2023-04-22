@@ -144,10 +144,10 @@ FMT_API FMT_FUNC auto format_facet<std::locale>::do_put(
 }
 #endif
 
-FMT_FUNC std::system_error vsystem_error(int error_code, string_view format_str,
+FMT_FUNC std::system_error vsystem_error(int error_code, string_view fmt,
                                          format_args args) {
   auto ec = std::error_code(error_code, std::generic_category());
-  return std::system_error(ec, vformat(format_str, args));
+  return std::system_error(ec, vformat(fmt, args));
 }
 
 namespace detail {
@@ -1445,57 +1445,44 @@ FMT_FUNC std::string vformat(string_view fmt, format_args args) {
 }
 
 namespace detail {
-#ifdef _WIN32
+#ifndef _WIN32
+FMT_FUNC bool write_console(std::FILE*, string_view) { return false; }
+#else
 using dword = conditional_t<sizeof(long) == 4, unsigned long, unsigned>;
 extern "C" __declspec(dllimport) int __stdcall WriteConsoleW(  //
     void*, const void*, dword, dword*, void*);
 
 FMT_FUNC bool write_console(std::FILE* f, string_view text) {
   auto fd = _fileno(f);
-  if (_isatty(fd)) {
-    detail::utf8_to_utf16 u16(string_view(text.data(), text.size()));
-    auto written = detail::dword();
-    if (detail::WriteConsoleW(reinterpret_cast<void*>(_get_osfhandle(fd)),
-                              u16.c_str(), static_cast<uint32_t>(u16.size()),
-                              &written, nullptr)) {
-      return true;
-    }
-  }
-  // We return false if the file descriptor was not TTY, or it was but
-  // SetConsoleW failed which can happen if the output has been redirected to
-  // NUL. In both cases when we return false, we should attempt to do regular
-  // write via fwrite or std::ostream::write.
-  return false;
-}
-#endif
-
-FMT_FUNC void print(std::FILE* f, string_view text) {
-#ifdef _WIN32
-  if (write_console(f, text)) return;
-#endif
-  detail::fwrite_fully(text.data(), 1, text.size(), f);
-}
-}  // namespace detail
-
-FMT_FUNC void vprint(std::FILE* f, string_view format_str, format_args args) {
-  memory_buffer buffer;
-  detail::vformat_to(buffer, format_str, args);
-  detail::print(f, {buffer.data(), buffer.size()});
+  if (!_isatty(fd)) return false;
+  auto u16 = utf8_to_utf16(text);
+  auto written = dword();
+  return WriteConsoleW(reinterpret_cast<void*>(_get_osfhandle(fd)), u16.c_str(),
+                       static_cast<uint32_t>(u16.size()), &written, nullptr);
 }
 
-#ifdef _WIN32
 // Print assuming legacy (non-Unicode) encoding.
-FMT_FUNC void detail::vprint_mojibake(std::FILE* f, string_view format_str,
-                                      format_args args) {
-  memory_buffer buffer;
-  detail::vformat_to(buffer, format_str,
+FMT_FUNC void vprint_mojibake(std::FILE* f, string_view fmt, format_args args) {
+  auto buffer = memory_buffer();
+  detail::vformat_to(buffer, fmt,
                      basic_format_args<buffer_context<char>>(args));
   fwrite_fully(buffer.data(), 1, buffer.size(), f);
 }
 #endif
 
-FMT_FUNC void vprint(string_view format_str, format_args args) {
-  vprint(stdout, format_str, args);
+FMT_FUNC void print(std::FILE* f, string_view text) {
+  if (!write_console(f, text)) fwrite_fully(text.data(), 1, text.size(), f);
+}
+}  // namespace detail
+
+FMT_FUNC void vprint(std::FILE* f, string_view fmt, format_args args) {
+  auto buffer = memory_buffer();
+  detail::vformat_to(buffer, fmt, args);
+  detail::print(f, {buffer.data(), buffer.size()});
+}
+
+FMT_FUNC void vprint(string_view fmt, format_args args) {
+  vprint(stdout, fmt, args);
 }
 
 namespace detail {

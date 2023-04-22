@@ -225,7 +225,8 @@ inline auto clzll(uint64_t x) -> int {
   _BitScanReverse64(&r, x);
 #  else
   // Scan the high 32 bits.
-  if (_BitScanReverse(&r, static_cast<uint32_t>(x >> 32))) return 63 ^ static_cast<int>(r + 32);
+  if (_BitScanReverse(&r, static_cast<uint32_t>(x >> 32)))
+    return 63 ^ static_cast<int>(r + 32);
   // Scan the low 32 bits.
   _BitScanReverse(&r, static_cast<uint32_t>(x));
 #  endif
@@ -1039,9 +1040,7 @@ struct is_contiguous<basic_memory_buffer<T, SIZE, Allocator>> : std::true_type {
 };
 
 namespace detail {
-#ifdef _WIN32
 FMT_API bool write_console(std::FILE* f, string_view text);
-#endif
 FMT_API void print(std::FILE*, string_view);
 }  // namespace detail
 
