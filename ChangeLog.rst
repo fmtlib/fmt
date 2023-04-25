@@ -77,7 +77,7 @@
   Thanks `@patrickroocks (Patrick Roocks) <https://github.com/patrickroocks>`_.
 
 * Switched formatting of ``std::chrono::system_clock`` from local time to UTC
-  for compatiblity with the standard
+  for compatibility with the standard
   (`#3199 <https://github.com/fmtlib/fmt/issues/3199>`_,
   `#3230 <https://github.com/fmtlib/fmt/pull/3230>`_).
   Thanks `@ned14 (Niall Douglas) <https://github.com/ned14>`_.
