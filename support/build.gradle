@@ -11,7 +11,7 @@ buildscript {
         // https://developer.android.com/studio/releases/gradle-plugin#updating-gradle
         //
         // Notice that 4.0.0 here is the version of [Android Gradle Plugin]
-        // Accroding to URL above you will need Gradle 6.1 or higher
+        // According to URL above you will need Gradle 6.1 or higher
         //
         classpath "com.android.tools.build:gradle:4.1.1"
     }
