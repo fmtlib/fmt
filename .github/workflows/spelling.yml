@@ -1,0 +1,19 @@
+name: Codespell
+
+on:
+  pull_request: {}
+  push: {}
+
+jobs:
+  codespell_ubuntu22:
+    name: Codespell {fmt}
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: codespell-project/actions-codespell@v1
+        with:
+          ignore_words_file: .github/workflows/.codespellignore
+          path: third_party/fmt
+  
