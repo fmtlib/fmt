@@ -41,8 +41,8 @@ div.sphinxsidebar {
   text-align: center;
 }
 
-// Indent descriptions of classes, functions and macros.
-.class dd, .function dd, .macro dd {
+// Indent descriptions of classes, functions, macros, and structs.
+.class dd, .function dd, .macro dd, .struct dd {
   margin-left: 20px;
 }
 
@@ -54,6 +54,11 @@ div.sphinxsidebar {
 // Remove Bootstrap padding for Sphinx code elements in API signatures.
 .descclassname, .descname {
   padding: 0;
+}
+
+// Avoid the font size of API signatures being unnecessarily large.
+code.descname {
+  font-size: 1em;
 }
 
 // Override center alignment in tables.

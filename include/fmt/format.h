@@ -4126,7 +4126,7 @@ FMT_API auto vsystem_error(int error_code, string_view format_str,
  \rst
  Constructs :class:`std::system_error` with a message formatted with
  ``fmt::format(fmt, args...)``.
-  *error_code* is a system error code as given by ``errno``.
+ *error_code* is a system error code as given by ``errno``.
 
  **Example**::
 

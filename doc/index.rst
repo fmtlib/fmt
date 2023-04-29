@@ -131,7 +131,7 @@ The library produces compact per-call compiled code. For example
 
 compiles to just
 
-.. code:: asm
+.. code:: nasm
 
    main: # @main
      sub rsp, 24

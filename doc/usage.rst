@@ -21,13 +21,13 @@ __ https://github.com/fmtlib/fmt/blob/master/CMakeLists.txt
 
 CMake works by generating native makefiles or project files that can
 be used in the compiler environment of your choice. The typical
-workflow starts with::
+workflow starts with
 
-  mkdir build          # Create a directory to hold the build output.
+.. code:: sh
+
+  mkdir build    # Create a directory to hold the build output.
   cd build
-  cmake ..  # Generate native build scripts.
-
-where :file:`{<path/to/fmt>}` is a path to the ``fmt`` repository.
+  cmake ..       # Generate native build scripts.
 
 If you are on a \*nix system, you should now see a Makefile in the
 current directory. Now you can build the library by running :command:`make`.
@@ -146,7 +146,7 @@ system:
   Ubuntu doesn't package the ``clean-css`` plugin so you should use ``npm``
   instead of ``apt`` to install both ``less`` and the plugin::
 
-    sudo npm install -g less less-plugin-clean-css.
+    sudo npm install -g less less-plugin-clean-css
 
 First generate makefiles or project files using CMake as described in
 the previous section. Then compile the ``doc`` target/project, for example::

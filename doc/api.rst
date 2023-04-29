@@ -39,14 +39,14 @@ similar to that of Python's `str.format
 <https://docs.python.org/3/library/stdtypes.html#str.format>`_.
 They take *fmt* and *args* as arguments.
 
-*fmt* is a format string that contains literal text and replacement fields
-surrounded by braces ``{}``. The fields are replaced with formatted arguments
-in the resulting string. `~fmt::format_string` is a format string which can be
-implicitly constructed from a string literal or a ``constexpr`` string and is
-checked at compile time in C++20. To pass a runtime format string wrap it in
-`fmt::runtime`.
+*  *fmt* is a format string that contains literal text and replacement fields
+   surrounded by braces ``{}``. The fields are replaced with formatted arguments
+   in the resulting string. `~fmt::format_string` is a format string which can be
+   implicitly constructed from a string literal or a ``constexpr`` string and is
+   checked at compile time in C++20. To pass a runtime format string wrap it in
+   `fmt::runtime`.
 
-*args* is an argument list representing objects to be formatted.
+* *args* is an argument list representing objects to be formatted.
 
 .. _format:
 
@@ -75,7 +75,8 @@ Compile-time format string checks are enabled by default on compilers
 that support C++20 ``consteval``. On older compilers you can use the
 :ref:`FMT_STRING <legacy-checks>`: macro defined in ``fmt/format.h`` instead.
 
-Unused arguments are allowed as in Python's `str.format` and ordinary functions.
+Unused arguments are allowed as in Python's `str.format
+<https://docs.python.org/3/library/stdtypes.html#str.format>`_ and ordinary functions.
 
 .. doxygenclass:: fmt::basic_format_string
    :members:
@@ -347,13 +348,6 @@ Utilities
 
 .. doxygenfunction:: fmt::group_digits(T value) -> group_digits_view<T>
 
-.. doxygenclass:: fmt::detail::buffer
-   :members:
-
-.. doxygenclass:: fmt::basic_memory_buffer
-   :protected-members:
-   :members:
-
 System Errors
 -------------
 
@@ -399,6 +393,13 @@ The allocator will be used for the output container only. Formatting functions
 normally don't do any allocations for built-in and string types except for
 non-default floating-point formatting that occasionally falls back on
 ``sprintf``.
+
+.. doxygenclass:: fmt::detail::buffer
+   :members:
+
+.. doxygenclass:: fmt::basic_memory_buffer
+   :protected-members:
+   :members:
 
 Locale
 ------
@@ -509,6 +510,8 @@ Standard Library Types Formatting
 * `std::monostate <https://en.cppreference.com/w/cpp/utility/variant/monostate>`_
 * `std::variant <https://en.cppreference.com/w/cpp/utility/variant/variant>`_
 * `std::optional <https://en.cppreference.com/w/cpp/utility/optional>`_
+* `std::error_code <https://en.cppreference.com/w/cpp/error/error_code>`_
+* `std::exception <https://en.cppreference.com/w/cpp/error/exception>`_
 
 Formatting Variants
 -------------------
@@ -569,7 +572,6 @@ System APIs
    :members:
 
 .. doxygenfunction:: fmt::windows_error
-   :members:
 
 .. _ostream-api:
 
