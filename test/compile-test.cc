@@ -327,6 +327,10 @@ TEST(compile_time_formatting_test, bool) {
   EXPECT_EQ("false", test_format<6>(FMT_COMPILE("{}"), false));
   EXPECT_EQ("true ", test_format<6>(FMT_COMPILE("{:5}"), true));
   EXPECT_EQ("1", test_format<2>(FMT_COMPILE("{:d}"), true));
+  static_assert(fmt::format(FMT_COMPILE("{}"), true) == "true");
+  static_assert(fmt::format(FMT_COMPILE("{}"), false) == "false");
+  static_assert(fmt::format(FMT_COMPILE("{:5}"), true) == "true ");
+  static_assert(fmt::format(FMT_COMPILE("{:d}"), true) == "1");
 }
 
 TEST(compile_time_formatting_test, integer) {

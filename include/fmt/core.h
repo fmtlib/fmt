@@ -825,11 +825,11 @@ constexpr auto has_const_formatter() -> bool {
 
 // Extracts a reference to the container from back_insert_iterator.
 template <typename Container>
-inline auto get_container(std::back_insert_iterator<Container> it)
+FMT_CONSTEXPR inline auto get_container(std::back_insert_iterator<Container> it)
     -> Container& {
   using base = std::back_insert_iterator<Container>;
   struct accessor : base {
-    accessor(base b) : base(b) {}
+    FMT_CONSTEXPR accessor(base b) : base(b) {}
     using base::container;
   };
   return *accessor(it).container;
@@ -933,7 +933,8 @@ template <typename T> class buffer {
   }
 
   /** Appends data to the end of the buffer. */
-  template <typename U> void append(const U* begin, const U* end);
+  template <typename U>
+  void FMT_CONSTEXPR append(const U* begin, const U* end);
 
   template <typename Idx> FMT_CONSTEXPR auto operator[](Idx index) -> T& {
     return ptr_[index];
@@ -1493,8 +1494,8 @@ class appender : public std::back_insert_iterator<detail::buffer<char>> {
   appender(base it) noexcept : base(it) {}
   FMT_UNCHECKED_ITERATOR(appender);
 
-  auto operator++() noexcept -> appender& { return *this; }
-  auto operator++(int) noexcept -> appender { return *this; }
+  FMT_CONSTEXPR20 auto operator++() noexcept -> appender& { return *this; }
+  FMT_CONSTEXPR20 auto operator++(int) noexcept -> appender { return *this; }
 };
 
 // A formatting argument. It is a trivially copyable/constructible type to
@@ -1604,7 +1605,8 @@ FMT_CONSTEXPR FMT_INLINE auto visit_format_arg(
 namespace detail {
 
 template <typename Char, typename InputIt>
-auto copy_str(InputIt begin, InputIt end, appender out) -> appender {
+FMT_CONSTEXPR20 auto copy_str(InputIt begin, InputIt end, appender out)
+    -> appender {
   get_container(out).append(begin, end);
   return out;
 }

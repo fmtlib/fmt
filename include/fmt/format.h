@@ -546,11 +546,12 @@ template <typename T> using sentinel_t = decltype(std::end(std::declval<T&>()));
 
 // A workaround for std::string not having mutable data() until C++17.
 template <typename Char>
-inline auto get_data(std::basic_string<Char>& s) -> Char* {
+inline FMT_CONSTEXPR auto get_data(std::basic_string<Char>& s) -> Char* {
   return &s[0];
 }
 template <typename Container>
-inline auto get_data(Container& c) -> typename Container::value_type* {
+inline FMT_CONSTEXPR auto get_data(Container& c) ->
+    typename Container::value_type* {
   return c.data();
 }
 
@@ -574,7 +575,7 @@ template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
 #if FMT_CLANG_VERSION >= 307 && !FMT_ICC_VERSION
 __attribute__((no_sanitize("undefined")))
 #endif
-inline auto
+inline FMT_CONSTEXPR auto
 reserve(std::back_insert_iterator<Container> it, size_t n)
     -> checked_ptr<typename Container::value_type> {
   Container& c = get_container(it);
@@ -612,8 +613,9 @@ template <typename T> auto to_pointer(buffer_appender<T> it, size_t n) -> T* {
 }
 
 template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
-inline auto base_iterator(std::back_insert_iterator<Container>& it,
-                          checked_ptr<typename Container::value_type>)
+inline FMT_CONSTEXPR auto base_iterator(
+    std::back_insert_iterator<Container>& it,
+    checked_ptr<typename Container::value_type>)
     -> std::back_insert_iterator<Container> {
   return it;
 }
@@ -875,13 +877,14 @@ using is_double_double = bool_constant<std::numeric_limits<T>::digits == 106>;
 
 template <typename T>
 template <typename U>
-void buffer<T>::append(const U* begin, const U* end) {
+FMT_CONSTEXPR void buffer<T>::append(const U* begin, const U* end) {
   while (begin != end) {
     auto count = to_unsigned(end - begin);
     try_reserve(size_ + count);
     auto free_cap = capacity_ - size_;
     if (free_cap < count) count = free_cap;
-    std::uninitialized_copy_n(begin, count, make_checked(ptr_ + size_, count));
+    auto out = make_checked(ptr_ + size_, count);
+    for (size_t i = 0; i < count; ++i) *out++ = begin[i];
     size_ += count;
     begin += count;
   }
@@ -4462,14 +4465,15 @@ auto join(Range&& range, string_view sep)
   \endrst
  */
 template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value)>
-inline auto to_string(const T& value) -> std::string {
+FMT_NODISCARD FMT_CONSTEXPR20 inline auto to_string(const T& value)
+    -> std::string {
   auto buffer = memory_buffer();
   detail::write<char>(appender(buffer), value);
   return {buffer.data(), buffer.size()};
 }
 
 template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
-FMT_NODISCARD inline auto to_string(T value) -> std::string {
+FMT_NODISCARD FMT_CONSTEXPR20 inline auto to_string(T value) -> std::string {
   // The buffer should be large enough to store the number including the sign
   // or "false" for bool.
   constexpr int max_size = detail::digits10<T>() + 2;

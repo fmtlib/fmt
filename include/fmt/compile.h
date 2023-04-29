@@ -135,7 +135,7 @@ struct udl_compiled_string : compiled_string {
 #endif
 
 template <typename T, typename... Tail>
-const T& first(const T& value, const Tail&...) {
+FMT_CONSTEXPR const T& first(const T& value, const Tail&...) {
   return value;
 }
 
@@ -504,8 +504,8 @@ FMT_BEGIN_EXPORT
 template <typename CompiledFormat, typename... Args,
           typename Char = typename CompiledFormat::char_type,
           FMT_ENABLE_IF(detail::is_compiled_format<CompiledFormat>::value)>
-FMT_INLINE std::basic_string<Char> format(const CompiledFormat& cf,
-                                          const Args&... args) {
+FMT_CONSTEXPR20 FMT_INLINE std::basic_string<Char> format(
+    const CompiledFormat& cf, const Args&... args) {
   auto s = std::basic_string<Char>();
   cf.format(std::back_inserter(s), args...);
   return s;
@@ -520,8 +520,8 @@ constexpr FMT_INLINE OutputIt format_to(OutputIt out, const CompiledFormat& cf,
 
 template <typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
-FMT_INLINE std::basic_string<typename S::char_type> format(const S&,
-                                                           Args&&... args) {
+FMT_INLINE FMT_CONSTEXPR20 std::basic_string<typename S::char_type> format(
+    const S&, Args&&... args) {
   if constexpr (std::is_same<typename S::char_type, char>::value) {
     constexpr auto str = basic_string_view<typename S::char_type>(S());
     if constexpr (str.size() == 2 && str[0] == '{' && str[1] == '}') {
