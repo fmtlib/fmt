@@ -317,7 +317,7 @@ template <size_t max_string_length, typename Char = char> struct test_string {
 };
 
 template <size_t max_string_length, typename Char = char, typename... Args>
-consteval inline auto test_format(auto format, const Args&... args) {
+consteval auto test_format(auto format, const Args&... args) {
   test_string<max_string_length, Char> string{};
   fmt::format_to(string.buffer, format, args...);
   return string;
