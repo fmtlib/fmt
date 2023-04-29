@@ -835,11 +835,11 @@ constexpr auto has_const_formatter() -> bool {
 
 // Extracts a reference to the container from back_insert_iterator.
 template <typename Container>
-FMT_CONSTEXPR inline auto get_container(std::back_insert_iterator<Container> it)
-    -> Container& {
+FMT_CONSTEXPR_LIB inline auto get_container(
+    std::back_insert_iterator<Container> it) -> Container& {
   using base = std::back_insert_iterator<Container>;
   struct accessor : base {
-    FMT_CONSTEXPR accessor(base b) : base(b) {}
+    FMT_CONSTEXPR_LIB accessor(base b) : base(b) {}
     using base::container;
   };
   return *accessor(it).container;
