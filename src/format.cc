@@ -26,7 +26,9 @@ template FMT_API auto thousands_sep_impl(locale_ref)
     -> thousands_sep_result<char>;
 template FMT_API auto decimal_point_impl(locale_ref) -> char;
 
+#if !FMT_USE_CONSTEXPR
 template FMT_API void buffer<char>::append(const char*, const char*);
+#endif
 
 template FMT_API void vformat_to(buffer<char>&, string_view,
                                  typename vformat_args<>::type, locale_ref);
