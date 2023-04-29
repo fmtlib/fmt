@@ -331,8 +331,8 @@ consteval auto test_format(auto format, const Args&... args) {
         static_assert(fmt::format(FMT_COMPILE(str), __VA_ARGS__) == expected); \
       } while (false)
 #  else
-#    define TEST_FORMAT(expected, len, str, ...) \
-      EXPECT_EQ(expected,                        \
+#    define TEST_FORMAT(expected, str, ...) \
+      EXPECT_EQ(expected,                   \
                 test_format<sizeof(expected)>(FMT_COMPILE(str), __VA_ARGS__))
 #  endif
 
