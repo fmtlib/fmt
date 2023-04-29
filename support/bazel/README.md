@@ -1,6 +1,6 @@
 # Bazel support
 
-To get [Bazel](https://bazel.build/) working with {fmt} you can copy the files `BUILD.bazel`, `WORKSPACE.bazel`, `.bazelrc`, and `.bazelversion` from this folder (`support/bazel`) to the root folder of this project. This way {fmt} gets bazelized and can be used with Bazel (e.g. doing a `bazel build //...` on {fmt}). 
+To get [Bazel](https://bazel.build/) working with {fmt} you can copy the files `BUILD.bazel`, `WORKSPACE.bazel`, and `.bazelversion` from this folder (`support/bazel`) to the root folder of this project. This way {fmt} gets bazelized and can be used with Bazel (e.g. doing a `bazel build //...` on {fmt}). 
 
 ## Using {fmt} as a dependency
 
@@ -37,7 +37,6 @@ git_repository(
     branch = "master",
     remote = "https://github.com/fmtlib/fmt",
     patch_cmds = [
-        "mv support/bazel/.bazelrc .bazelrc",
         "mv support/bazel/.bazelversion .bazelversion",
         "mv support/bazel/BUILD.bazel BUILD.bazel",
         "mv support/bazel/WORKSPACE.bazel WORKSPACE.bazel",
@@ -47,7 +46,6 @@ git_repository(
     # https://docs.bazel.build/versions/main/install-windows.html#installing-compilers-and-language-runtimes
     # Even if MSYS2 is installed the Windows related patch commands can still be used.
     patch_cmds_win = [
-        "Move-Item -Path support/bazel/.bazelrc -Destination .bazelrc",
         "Move-Item -Path support/bazel/.bazelversion -Destination .bazelversion",
         "Move-Item -Path support/bazel/BUILD.bazel -Destination BUILD.bazel",
         "Move-Item -Path support/bazel/WORKSPACE.bazel -Destination WORKSPACE.bazel",
@@ -55,7 +53,7 @@ git_repository(
 )
 ```
 
-In the *WORKSPACE* file, the {fmt} GitHub repository is fetched. Using the attribute `patch_cmds` the  files `BUILD.bazel`, `WORKSPACE.bazel`, `.bazelrc`, and `.bazelversion` are moved to the root of the {fmt} repository. This way the {fmt} repository is recognized as a bazelized workspace. 
+In the *WORKSPACE* file, the {fmt} GitHub repository is fetched. Using the attribute `patch_cmds` the  files `BUILD.bazel`, `WORKSPACE.bazel`, and `.bazelversion` are moved to the root of the {fmt} repository. This way the {fmt} repository is recognized as a bazelized workspace. 
 
 *BUILD.bazel*:
 
