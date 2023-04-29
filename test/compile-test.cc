@@ -324,79 +324,81 @@ consteval auto test_format(auto format, const Args&... args) {
 }
 
 #  if FMT_USE_CONSTEXPR_STR
-#    define TEST_FORMAT(expected, len, str, ...)                               \
+#    define TEST_FORMAT(expected, str, ...)                                    \
       do {                                                                     \
-        EXPECT_EQ(expected, test_format<len>(FMT_COMPILE(str), __VA_ARGS__));  \
+        EXPECT_EQ(expected, test_format<sizeof(expected)>(FMT_COMPILE(str),    \
+                                                          __VA_ARGS__));       \
         static_assert(fmt::format(FMT_COMPILE(str), __VA_ARGS__) == expected); \
       } while (false)
 #  else
 #    define TEST_FORMAT(expected, len, str, ...) \
-      EXPECT_EQ(expected, test_format<len>(FMT_COMPILE(str), __VA_ARGS__))
+      EXPECT_EQ(expected,                        \
+                test_format<sizeof(expected)>(FMT_COMPILE(str), __VA_ARGS__))
 #  endif
 
 TEST(compile_time_formatting_test, bool) {
-  TEST_FORMAT("true", 5, "{}", true);
-  TEST_FORMAT("false", 6, "{}", false);
-  TEST_FORMAT("true ", 6, "{:5}", true);
-  TEST_FORMAT("1", 2, "{:d}", true);
+  TEST_FORMAT("true", "{}", true);
+  TEST_FORMAT("false", "{}", false);
+  TEST_FORMAT("true ", "{:5}", true);
+  TEST_FORMAT("1", "{:d}", true);
 }
 
 TEST(compile_time_formatting_test, integer) {
-  TEST_FORMAT("42", 3, "{}", 42);
-  TEST_FORMAT("420", 4, "{}", 420);
-  TEST_FORMAT("42 42", 6, "{} {}", 42, 42);
-  TEST_FORMAT("42 42", 6, "{} {}", uint32_t{42}, uint64_t{42});
+  TEST_FORMAT("42", "{}", 42);
+  TEST_FORMAT("420", "{}", 420);
+  TEST_FORMAT("42 42", "{} {}", 42, 42);
+  TEST_FORMAT("42 42", "{} {}", uint32_t{42}, uint64_t{42});
 
-  TEST_FORMAT("+42", 4, "{:+}", 42);
-  TEST_FORMAT("42", 3, "{:-}", 42);
-  TEST_FORMAT(" 42", 4, "{: }", 42);
+  TEST_FORMAT("+42", "{:+}", 42);
+  TEST_FORMAT("42", "{:-}", 42);
+  TEST_FORMAT(" 42", "{: }", 42);
 
-  TEST_FORMAT("-0042", 6, "{:05}", -42);
+  TEST_FORMAT("-0042", "{:05}", -42);
 
-  TEST_FORMAT("101010", 7, "{:b}", 42);
-  TEST_FORMAT("0b101010", 9, "{:#b}", 42);
-  TEST_FORMAT("0B101010", 9, "{:#B}", 42);
-  TEST_FORMAT("042", 4, "{:#o}", 042);
-  TEST_FORMAT("0x4a", 5, "{:#x}", 0x4a);
-  TEST_FORMAT("0X4A", 5, "{:#X}", 0x4a);
+  TEST_FORMAT("101010", "{:b}", 42);
+  TEST_FORMAT("0b101010", "{:#b}", 42);
+  TEST_FORMAT("0B101010", "{:#B}", 42);
+  TEST_FORMAT("042", "{:#o}", 042);
+  TEST_FORMAT("0x4a", "{:#x}", 0x4a);
+  TEST_FORMAT("0X4A", "{:#X}", 0x4a);
 
-  TEST_FORMAT("   42", 6, "{:5}", 42);
-  TEST_FORMAT("   42", 6, "{:5}", 42ll);
-  TEST_FORMAT("   42", 6, "{:5}", 42ull);
+  TEST_FORMAT("   42", "{:5}", 42);
+  TEST_FORMAT("   42", "{:5}", 42ll);
+  TEST_FORMAT("   42", "{:5}", 42ull);
 
-  TEST_FORMAT("42  ", 5, "{:<4}", 42);
-  TEST_FORMAT("  42", 5, "{:>4}", 42);
-  TEST_FORMAT(" 42 ", 5, "{:^4}", 42);
-  TEST_FORMAT("**-42", 6, "{:*>5}", -42);
+  TEST_FORMAT("42  ", "{:<4}", 42);
+  TEST_FORMAT("  42", "{:>4}", 42);
+  TEST_FORMAT(" 42 ", "{:^4}", 42);
+  TEST_FORMAT("**-42", "{:*>5}", -42);
 }
 
 TEST(compile_time_formatting_test, char) {
-  TEST_FORMAT("c", 2, "{}", 'c');
+  TEST_FORMAT("c", "{}", 'c');
 
-  TEST_FORMAT("c  ", 4, "{:3}", 'c');
-  TEST_FORMAT("99", 3, "{:d}", 'c');
+  TEST_FORMAT("c  ", "{:3}", 'c');
+  TEST_FORMAT("99", "{:d}", 'c');
 }
 
 TEST(compile_time_formatting_test, string) {
-  TEST_FORMAT("42", 3, "{}", "42");
-  TEST_FORMAT("The answer is 42", 17, "{} is {}", "The answer", "42");
+  TEST_FORMAT("42", "{}", "42");
+  TEST_FORMAT("The answer is 42", "{} is {}", "The answer", "42");
 
-  TEST_FORMAT("abc**", 6, "{:*<5}", "abc");
-  TEST_FORMAT("**🤡**", 9, "{:*^6}", "🤡");
+  TEST_FORMAT("abc**", "{:*<5}", "abc");
+  TEST_FORMAT("**🤡**", "{:*^6}", "🤡");
 }
 
 TEST(compile_time_formatting_test, combination) {
-  TEST_FORMAT("420, true, answer", 18, "{}, {}, {}", 420, true, "answer");
+  TEST_FORMAT("420, true, answer", "{}, {}, {}", 420, true, "answer");
 
-  TEST_FORMAT(" -42", 5, "{:{}}", -42, 4);
+  TEST_FORMAT(" -42", "{:{}}", -42, 4);
 }
 
 TEST(compile_time_formatting_test, custom_type) {
-  TEST_FORMAT("foo", 4, "{}", test_formattable());
-  TEST_FORMAT("bar", 4, "{:b}", test_formattable());
+  TEST_FORMAT("foo", "{}", test_formattable());
+  TEST_FORMAT("bar", "{:b}", test_formattable());
 }
 
 TEST(compile_time_formatting_test, multibyte_fill) {
-  TEST_FORMAT("жж42", 7, "{:ж>4}", 42);
+  TEST_FORMAT("жж42", "{:ж>4}", 42);
 }
 #endif
