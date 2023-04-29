@@ -71,3 +71,6 @@ The *BUILD* file defines a binary named `Demo` that has a dependency to {fmt}.
 
 To execute the binary you can run `bazel run //:Demo`.
 
+# Using Bzlmod
+
+The [Bazel Central Registry](https://github.com/bazelbuild/bazel-central-registry/tree/main/modules/fmt) also provides support for {fmt}.
