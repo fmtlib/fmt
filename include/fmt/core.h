@@ -967,9 +967,8 @@ template <typename T> class buffer {
       auto free_cap = capacity_ - size_;
       if (free_cap < count) count = free_cap;
       auto out = make_checked(ptr_ + size_, count);
-      for (size_t i = 0; i < count; ++i) *out++ = begin[i];
+      for (size_t i = 0; i < count; ++i) *out++ = *begin++;
       size_ += count;
-      begin += count;
     }
   }
 
