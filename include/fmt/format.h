@@ -875,21 +875,6 @@ using is_double_double = bool_constant<std::numeric_limits<T>::digits == 106>;
 #  define FMT_USE_FULL_CACHE_DRAGONBOX 0
 #endif
 
-template <typename T>
-template <typename U>
-FMT_CONSTEXPR void buffer<T>::append(const U* begin, const U* end) {
-  while (begin != end) {
-    auto count = to_unsigned(end - begin);
-    try_reserve(size_ + count);
-    auto free_cap = capacity_ - size_;
-    if (free_cap < count) count = free_cap;
-    auto out = make_checked(ptr_ + size_, count);
-    for (size_t i = 0; i < count; ++i) *out++ = begin[i];
-    size_ += count;
-    begin += count;
-  }
-}
-
 template <typename T, typename Enable = void>
 struct is_locale : std::false_type {};
 template <typename T>

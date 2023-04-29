@@ -792,7 +792,7 @@ FMT_MODULE_EXPORT template <typename Context> class basic_format_args;
 FMT_MODULE_EXPORT template <typename Context> class dynamic_format_arg_store;
 
 // A formatter for objects of type T.
-FMT_MODULE_EXPORT 
+FMT_MODULE_EXPORT
 template <typename T, typename Char = char, typename Enable = void>
 struct formatter {
   // A deleted default constructor indicates a disabled formatter.
@@ -941,7 +941,18 @@ template <typename T> class buffer {
 
   /** Appends data to the end of the buffer. */
   template <typename U>
-  void FMT_CONSTEXPR append(const U* begin, const U* end);
+  FMT_CONSTEXPR void append(const U* begin, const U* end) {
+    while (begin != end) {
+      auto count = to_unsigned(end - begin);
+      try_reserve(size_ + count);
+      auto free_cap = capacity_ - size_;
+      if (free_cap < count) count = free_cap;
+      auto out = make_checked(ptr_ + size_, count);
+      for (size_t i = 0; i < count; ++i) *out++ = begin[i];
+      size_ += count;
+      begin += count;
+    }
+  }
 
   template <typename Idx> FMT_CONSTEXPR auto operator[](Idx index) -> T& {
     return ptr_[index];
