@@ -227,14 +227,15 @@ TEST(compile_test, format_to_n) {
   EXPECT_STREQ("2a", buffer);
 }
 
-#ifdef __cpp_lib_bit_cast
+#  ifdef __cpp_lib_bit_cast
 TEST(compile_test, constexpr_formatted_size) {
   FMT_CONSTEXPR20 size_t s1 = fmt::formatted_size(FMT_COMPILE("{0}"), 42);
   EXPECT_EQ(2, s1);
-  FMT_CONSTEXPR20 size_t s2 = fmt::formatted_size(FMT_COMPILE("{0:<4.2f}"), 42.0);
+  FMT_CONSTEXPR20 size_t s2 =
+      fmt::formatted_size(FMT_COMPILE("{0:<4.2f}"), 42.0);
   EXPECT_EQ(5, s2);
 }
-#endif
+#  endif
 
 TEST(compile_test, text_and_arg) {
   EXPECT_EQ(">>>42<<<", fmt::format(FMT_COMPILE(">>>{}<<<"), 42));
@@ -316,82 +317,90 @@ template <size_t max_string_length, typename Char = char> struct test_string {
 };
 
 template <size_t max_string_length, typename Char = char, typename... Args>
-consteval auto test_format(auto format, const Args&... args) {
+consteval inline auto test_format(auto format, const Args&... args) {
   test_string<max_string_length, Char> string{};
   fmt::format_to(string.buffer, format, args...);
   return string;
 }
 
+#  if defined(__cpp_lib_constexpr_string) &&   \
+      __cpp_lib_constexpr_string >= 201907L && \
+      defined(__cpp_lib_constexpr_iterator) && \
+      __cpp_lib_constexpr_iterator >= 201811L
+#    define TEST_FORMAT(expected, len, str, ...)                            \
+      EXPECT_EQ(expected, test_format<len>(FMT_COMPILE(str), __VA_ARGS__)); \
+      static_assert(fmt::format(FMT_COMPILE(str), __VA_ARGS__).size() ==    \
+                    len - 1);
+#  else
+#    define TEST_FORMAT(expected, len, str, ...) \
+      EXPECT_EQ(expected, test_format<len>(FMT_COMPILE(str), __VA_ARGS__));
+#  endif
+
 TEST(compile_time_formatting_test, bool) {
-  EXPECT_EQ("true", test_format<5>(FMT_COMPILE("{}"), true));
-  EXPECT_EQ("false", test_format<6>(FMT_COMPILE("{}"), false));
-  EXPECT_EQ("true ", test_format<6>(FMT_COMPILE("{:5}"), true));
-  EXPECT_EQ("1", test_format<2>(FMT_COMPILE("{:d}"), true));
-  static_assert(fmt::format(FMT_COMPILE("{}"), true) == "true");
-  static_assert(fmt::format(FMT_COMPILE("{}"), false) == "false");
-  static_assert(fmt::format(FMT_COMPILE("{:5}"), true) == "true ");
-  static_assert(fmt::format(FMT_COMPILE("{:d}"), true) == "1");
+  TEST_FORMAT("true", 5, "{}", true);
+  TEST_FORMAT("true", 5, "{}", true);
+  TEST_FORMAT("true", 5, "{}", true);
+  TEST_FORMAT("false", 6, "{}", false);
+  TEST_FORMAT("true ", 6, "{:5}", true);
+  TEST_FORMAT("1", 2, "{:d}", true);
 }
 
 TEST(compile_time_formatting_test, integer) {
-  EXPECT_EQ("42", test_format<3>(FMT_COMPILE("{}"), 42));
-  EXPECT_EQ("420", test_format<4>(FMT_COMPILE("{}"), 420));
-  EXPECT_EQ("42 42", test_format<6>(FMT_COMPILE("{} {}"), 42, 42));
-  EXPECT_EQ("42 42",
-            test_format<6>(FMT_COMPILE("{} {}"), uint32_t{42}, uint64_t{42}));
+  TEST_FORMAT("42", 3, "{}", 42);
+  TEST_FORMAT("420", 4, "{}", 420);
+  TEST_FORMAT("42 42", 6, "{} {}", 42, 42);
+  TEST_FORMAT("42 42", 6, "{} {}", uint32_t{42}, uint64_t{42});
 
-  EXPECT_EQ("+42", test_format<4>(FMT_COMPILE("{:+}"), 42));
-  EXPECT_EQ("42", test_format<3>(FMT_COMPILE("{:-}"), 42));
-  EXPECT_EQ(" 42", test_format<4>(FMT_COMPILE("{: }"), 42));
+  TEST_FORMAT("+42", 4, "{:+}", 42);
+  TEST_FORMAT("42", 3, "{:-}", 42);
+  TEST_FORMAT(" 42", 4, "{: }", 42);
 
-  EXPECT_EQ("-0042", test_format<6>(FMT_COMPILE("{:05}"), -42));
+  TEST_FORMAT("-0042", 6, "{:05}", -42);
 
-  EXPECT_EQ("101010", test_format<7>(FMT_COMPILE("{:b}"), 42));
-  EXPECT_EQ("0b101010", test_format<9>(FMT_COMPILE("{:#b}"), 42));
-  EXPECT_EQ("0B101010", test_format<9>(FMT_COMPILE("{:#B}"), 42));
-  EXPECT_EQ("042", test_format<4>(FMT_COMPILE("{:#o}"), 042));
-  EXPECT_EQ("0x4a", test_format<5>(FMT_COMPILE("{:#x}"), 0x4a));
-  EXPECT_EQ("0X4A", test_format<5>(FMT_COMPILE("{:#X}"), 0x4a));
+  TEST_FORMAT("101010", 7, "{:b}", 42);
+  TEST_FORMAT("0b101010", 9, "{:#b}", 42);
+  TEST_FORMAT("0B101010", 9, "{:#B}", 42);
+  TEST_FORMAT("042", 4, "{:#o}", 042);
+  TEST_FORMAT("0x4a", 5, "{:#x}", 0x4a);
+  TEST_FORMAT("0X4A", 5, "{:#X}", 0x4a);
 
-  EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42));
-  EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42ll));
-  EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42ull));
+  TEST_FORMAT("   42", 6, "{:5}", 42);
+  TEST_FORMAT("   42", 6, "{:5}", 42ll);
+  TEST_FORMAT("   42", 6, "{:5}", 42ull);
 
-  EXPECT_EQ("42  ", test_format<5>(FMT_COMPILE("{:<4}"), 42));
-  EXPECT_EQ("  42", test_format<5>(FMT_COMPILE("{:>4}"), 42));
-  EXPECT_EQ(" 42 ", test_format<5>(FMT_COMPILE("{:^4}"), 42));
-  EXPECT_EQ("**-42", test_format<6>(FMT_COMPILE("{:*>5}"), -42));
+  TEST_FORMAT("42  ", 5, "{:<4}", 42);
+  TEST_FORMAT("  42", 5, "{:>4}", 42);
+  TEST_FORMAT(" 42 ", 5, "{:^4}", 42);
+  TEST_FORMAT("**-42", 6, "{:*>5}", -42);
 }
 
 TEST(compile_time_formatting_test, char) {
-  EXPECT_EQ("c", test_format<2>(FMT_COMPILE("{}"), 'c'));
+  TEST_FORMAT("c", 2, "{}", 'c');
 
-  EXPECT_EQ("c  ", test_format<4>(FMT_COMPILE("{:3}"), 'c'));
-  EXPECT_EQ("99", test_format<3>(FMT_COMPILE("{:d}"), 'c'));
+  TEST_FORMAT("c  ", 4, "{:3}", 'c');
+  TEST_FORMAT("99", 3, "{:d}", 'c');
 }
 
 TEST(compile_time_formatting_test, string) {
-  EXPECT_EQ("42", test_format<3>(FMT_COMPILE("{}"), "42"));
-  EXPECT_EQ("The answer is 42",
-            test_format<17>(FMT_COMPILE("{} is {}"), "The answer", "42"));
+  TEST_FORMAT("42", 3, "{}", "42");
+  TEST_FORMAT("The answer is 42", 17, "{} is {}", "The answer", "42");
 
-  EXPECT_EQ("abc**", test_format<6>(FMT_COMPILE("{:*<5}"), "abc"));
-  EXPECT_EQ("**🤡**", test_format<9>(FMT_COMPILE("{:*^6}"), "🤡"));
+  TEST_FORMAT("abc**", 6, "{:*<5}", "abc");
+  TEST_FORMAT("**🤡**", 9, "{:*^6}", "🤡");
 }
 
 TEST(compile_time_formatting_test, combination) {
-  EXPECT_EQ("420, true, answer",
-            test_format<18>(FMT_COMPILE("{}, {}, {}"), 420, true, "answer"));
+  TEST_FORMAT("420, true, answer", 18, "{}, {}, {}", 420, true, "answer");
 
-  EXPECT_EQ(" -42", test_format<5>(FMT_COMPILE("{:{}}"), -42, 4));
+  TEST_FORMAT(" -42", 5, "{:{}}", -42, 4);
 }
 
 TEST(compile_time_formatting_test, custom_type) {
-  EXPECT_EQ("foo", test_format<4>(FMT_COMPILE("{}"), test_formattable()));
-  EXPECT_EQ("bar", test_format<4>(FMT_COMPILE("{:b}"), test_formattable()));
+  TEST_FORMAT("foo", 4, "{}", test_formattable());
+  TEST_FORMAT("bar", 4, "{:b}", test_formattable());
 }
 
 TEST(compile_time_formatting_test, multibyte_fill) {
-  EXPECT_EQ("жж42", test_format<8>(FMT_COMPILE("{:ж>4}"), 42));
+  TEST_FORMAT("жж42", 7, "{:ж>4}", 42);
 }
 #endif

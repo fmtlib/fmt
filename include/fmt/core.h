@@ -112,8 +112,11 @@
 #  define FMT_CONSTEXPR20
 #endif
 
-#if defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L && \
-    defined(__cpp_lib_constexpr_iterator) && __cpp_lib_constexpr_iterator >= 201811L
+// Check if constexpr <string>, <iterator> are supported.
+#if defined(__cpp_lib_constexpr_string) &&   \
+    __cpp_lib_constexpr_string >= 201907L && \
+    defined(__cpp_lib_constexpr_iterator) && \
+    __cpp_lib_constexpr_iterator >= 201811L
 #  define FMT_CONSTEXPR_LIB constexpr
 #else
 #  define FMT_CONSTEXPR_LIB
