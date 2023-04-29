@@ -112,6 +112,13 @@
 #  define FMT_CONSTEXPR20
 #endif
 
+#if defined(__cpp_lib_constexpr_string) && __cpp_lib_constexpr_string >= 201907L && \
+    defined(__cpp_lib_constexpr_iterator) && __cpp_lib_constexpr_iterator >= 201811L
+#  define FMT_CONSTEXPR_LIB constexpr
+#else
+#  define FMT_CONSTEXPR_LIB
+#endif
+
 // Check if constexpr std::char_traits<>::{compare,length} are supported.
 #if defined(__GLIBCXX__)
 #  if FMT_CPLUSPLUS >= 201703L && defined(_GLIBCXX_RELEASE) && \
@@ -1494,8 +1501,8 @@ class appender : public std::back_insert_iterator<detail::buffer<char>> {
   appender(base it) noexcept : base(it) {}
   FMT_UNCHECKED_ITERATOR(appender);
 
-  FMT_CONSTEXPR20 auto operator++() noexcept -> appender& { return *this; }
-  FMT_CONSTEXPR20 auto operator++(int) noexcept -> appender { return *this; }
+  FMT_CONSTEXPR_LIB auto operator++() noexcept -> appender& { return *this; }
+  FMT_CONSTEXPR_LIB auto operator++(int) noexcept -> appender { return *this; }
 };
 
 // A formatting argument. It is a trivially copyable/constructible type to
@@ -1605,7 +1612,7 @@ FMT_CONSTEXPR FMT_INLINE auto visit_format_arg(
 namespace detail {
 
 template <typename Char, typename InputIt>
-FMT_CONSTEXPR20 auto copy_str(InputIt begin, InputIt end, appender out)
+FMT_CONSTEXPR_LIB auto copy_str(InputIt begin, InputIt end, appender out)
     -> appender {
   get_container(out).append(begin, end);
   return out;
