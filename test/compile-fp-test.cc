@@ -26,37 +26,47 @@ consteval auto test_format(auto format, const Args&... args) {
   return string;
 }
 
+#  if FMT_USE_CONSTEXPR_STR
+#    define TEST_FORMAT(expected, len, str, ...)                               \
+      do {                                                                     \
+        EXPECT_EQ(expected, test_format<len>(FMT_COMPILE(str), __VA_ARGS__));  \
+        static_assert(fmt::format(FMT_COMPILE(str), __VA_ARGS__) == expected); \
+      } while (false)
+#  else
+#    define TEST_FORMAT(expected, len, str, ...) \
+      EXPECT_EQ(expected, test_format<len>(FMT_COMPILE(str), __VA_ARGS__))
+#  endif
+
 TEST(compile_time_formatting_test, floating_point) {
-  EXPECT_EQ("0", test_format<2>(FMT_COMPILE("{}"), 0.0f));
-  EXPECT_EQ("392.500000", test_format<11>(FMT_COMPILE("{0:f}"), 392.5f));
+  TEST_FORMAT("0", 2, "{}", 0.0f);
+  TEST_FORMAT("392.500000", 11, "{0:f}", 392.5f);
 
-  EXPECT_EQ("0", test_format<2>(FMT_COMPILE("{:}"), 0.0));
-  EXPECT_EQ("0.000000", test_format<9>(FMT_COMPILE("{:f}"), 0.0));
-  EXPECT_EQ("0", test_format<2>(FMT_COMPILE("{:g}"), 0.0));
-  EXPECT_EQ("392.65", test_format<7>(FMT_COMPILE("{:}"), 392.65));
-  EXPECT_EQ("392.65", test_format<7>(FMT_COMPILE("{:g}"), 392.65));
-  EXPECT_EQ("392.65", test_format<7>(FMT_COMPILE("{:G}"), 392.65));
-  EXPECT_EQ("4.9014e+06", test_format<11>(FMT_COMPILE("{:g}"), 4.9014e6));
-  EXPECT_EQ("-392.650000", test_format<12>(FMT_COMPILE("{:f}"), -392.65));
-  EXPECT_EQ("-392.650000", test_format<12>(FMT_COMPILE("{:F}"), -392.65));
+  TEST_FORMAT("0", 2, "{:}", 0.0);
+  TEST_FORMAT("0.000000", 9, "{:f}", 0.0);
+  TEST_FORMAT("0", 2, "{:g}", 0.0);
+  TEST_FORMAT("392.65", 7, "{:}", 392.65);
+  TEST_FORMAT("392.65", 7, "{:g}", 392.65);
+  TEST_FORMAT("392.65", 7, "{:G}", 392.65);
+  TEST_FORMAT("4.9014e+06", 11, "{:g}", 4.9014e6);
+  TEST_FORMAT("-392.650000", 12, "{:f}", -392.65);
+  TEST_FORMAT("-392.650000", 12, "{:F}", -392.65);
 
-  EXPECT_EQ("3.926500e+02", test_format<13>(FMT_COMPILE("{0:e}"), 392.65));
-  EXPECT_EQ("3.926500E+02", test_format<13>(FMT_COMPILE("{0:E}"), 392.65));
-  EXPECT_EQ("+0000392.6", test_format<11>(FMT_COMPILE("{0:+010.4g}"), 392.65));
-  EXPECT_EQ("9223372036854775808.000000",
-            test_format<27>(FMT_COMPILE("{:f}"), 9223372036854775807.0));
+  TEST_FORMAT("3.926500e+02", 13, "{0:e}", 392.65);
+  TEST_FORMAT("3.926500E+02", 13, "{0:E}", 392.65);
+  TEST_FORMAT("+0000392.6", 11, "{0:+010.4g}", 392.65);
+  TEST_FORMAT("9223372036854775808.000000", 27, "{:f}", 9223372036854775807.0);
 
   constexpr double nan = std::numeric_limits<double>::quiet_NaN();
-  EXPECT_EQ("nan", test_format<4>(FMT_COMPILE("{}"), nan));
-  EXPECT_EQ("+nan", test_format<5>(FMT_COMPILE("{:+}"), nan));
+  TEST_FORMAT("nan", 4, "{}", nan);
+  TEST_FORMAT("+nan", 5, "{:+}", nan);
   if (std::signbit(-nan))
-    EXPECT_EQ("-nan", test_format<5>(FMT_COMPILE("{}"), -nan));
+    TEST_FORMAT("-nan", 5, "{}", -nan);
   else
     fmt::print("Warning: compiler doesn't handle negative NaN correctly");
 
   constexpr double inf = std::numeric_limits<double>::infinity();
-  EXPECT_EQ("inf", test_format<4>(FMT_COMPILE("{}"), inf));
-  EXPECT_EQ("+inf", test_format<5>(FMT_COMPILE("{:+}"), inf));
-  EXPECT_EQ("-inf", test_format<5>(FMT_COMPILE("{}"), -inf));
+  TEST_FORMAT("inf", 4, "{}", inf);
+  TEST_FORMAT("+inf", 5, "{:+}", inf);
+  TEST_FORMAT("-inf", 5, "{}", -inf);
 }
 #endif

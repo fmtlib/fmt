@@ -323,22 +323,18 @@ consteval inline auto test_format(auto format, const Args&... args) {
   return string;
 }
 
-#  if defined(__cpp_lib_constexpr_string) &&   \
-      __cpp_lib_constexpr_string >= 201907L && \
-      defined(__cpp_lib_constexpr_iterator) && \
-      __cpp_lib_constexpr_iterator >= 201811L
-#    define TEST_FORMAT(expected, len, str, ...)                            \
-      EXPECT_EQ(expected, test_format<len>(FMT_COMPILE(str), __VA_ARGS__)); \
-      static_assert(fmt::format(FMT_COMPILE(str), __VA_ARGS__).size() ==    \
-                    len - 1);
+#  if FMT_USE_CONSTEXPR_STR
+#    define TEST_FORMAT(expected, len, str, ...)                               \
+      do {                                                                     \
+        EXPECT_EQ(expected, test_format<len>(FMT_COMPILE(str), __VA_ARGS__));  \
+        static_assert(fmt::format(FMT_COMPILE(str), __VA_ARGS__) == expected); \
+      } while (false)
 #  else
 #    define TEST_FORMAT(expected, len, str, ...) \
-      EXPECT_EQ(expected, test_format<len>(FMT_COMPILE(str), __VA_ARGS__));
+      EXPECT_EQ(expected, test_format<len>(FMT_COMPILE(str), __VA_ARGS__))
 #  endif
 
 TEST(compile_time_formatting_test, bool) {
-  TEST_FORMAT("true", 5, "{}", true);
-  TEST_FORMAT("true", 5, "{}", true);
   TEST_FORMAT("true", 5, "{}", true);
   TEST_FORMAT("false", 6, "{}", false);
   TEST_FORMAT("true ", 6, "{:5}", true);

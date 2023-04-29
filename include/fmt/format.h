@@ -4436,7 +4436,7 @@ auto join(Range&& range, string_view sep)
   \endrst
  */
 template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value)>
-FMT_NODISCARD FMT_CONSTEXPR_LIB inline auto to_string(const T& value)
+FMT_NODISCARD FMT_CONSTEXPR_STR inline auto to_string(const T& value)
     -> std::string {
   auto buffer = memory_buffer();
   detail::write<char>(appender(buffer), value);
@@ -4444,7 +4444,7 @@ FMT_NODISCARD FMT_CONSTEXPR_LIB inline auto to_string(const T& value)
 }
 
 template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
-FMT_NODISCARD FMT_CONSTEXPR_LIB inline auto to_string(T value) -> std::string {
+FMT_NODISCARD FMT_CONSTEXPR_STR inline auto to_string(T value) -> std::string {
   // The buffer should be large enough to store the number including the sign
   // or "false" for bool.
   constexpr int max_size = detail::digits10<T>() + 2;

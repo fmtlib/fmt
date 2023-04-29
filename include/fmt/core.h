@@ -117,9 +117,11 @@
     __cpp_lib_constexpr_string >= 201907L && \
     defined(__cpp_lib_constexpr_iterator) && \
     __cpp_lib_constexpr_iterator >= 201811L
-#  define FMT_CONSTEXPR_LIB constexpr
+#  define FMT_USE_CONSTEXPR_STR 1
+#  define FMT_CONSTEXPR_STR constexpr
 #else
-#  define FMT_CONSTEXPR_LIB
+#  define FMT_USE_CONSTEXPR_STR 0
+#  define FMT_CONSTEXPR_STR
 #endif
 
 // Check if constexpr std::char_traits<>::{compare,length} are supported.
@@ -835,11 +837,11 @@ constexpr auto has_const_formatter() -> bool {
 
 // Extracts a reference to the container from back_insert_iterator.
 template <typename Container>
-FMT_CONSTEXPR_LIB inline auto get_container(
+FMT_CONSTEXPR_STR inline auto get_container(
     std::back_insert_iterator<Container> it) -> Container& {
   using base = std::back_insert_iterator<Container>;
   struct accessor : base {
-    FMT_CONSTEXPR_LIB accessor(base b) : base(b) {}
+    FMT_CONSTEXPR_STR accessor(base b) : base(b) {}
     using base::container;
   };
   return *accessor(it).container;
@@ -1529,8 +1531,8 @@ class appender : public std::back_insert_iterator<detail::buffer<char>> {
   appender(base it) noexcept : base(it) {}
   FMT_UNCHECKED_ITERATOR(appender);
 
-  FMT_CONSTEXPR_LIB auto operator++() noexcept -> appender& { return *this; }
-  FMT_CONSTEXPR_LIB auto operator++(int) noexcept -> appender { return *this; }
+  FMT_CONSTEXPR_STR auto operator++() noexcept -> appender& { return *this; }
+  FMT_CONSTEXPR_STR auto operator++(int) noexcept -> appender { return *this; }
 };
 
 // A formatting argument. It is a trivially copyable/constructible type to
@@ -1640,7 +1642,7 @@ FMT_CONSTEXPR FMT_INLINE auto visit_format_arg(
 namespace detail {
 
 template <typename Char, typename InputIt>
-FMT_CONSTEXPR_LIB auto copy_str(InputIt begin, InputIt end, appender out)
+FMT_CONSTEXPR_STR auto copy_str(InputIt begin, InputIt end, appender out)
     -> appender {
   get_container(out).append(begin, end);
   return out;
