@@ -169,8 +169,8 @@ void detail::format_windows_error(detail::buffer<char>& out, int error_code,
     if (msg) {
       auto utf8_message = utf16_to_utf8();
       if (utf8_message.convert(msg) == ERROR_SUCCESS) {
-        fmt::format_to(buffer_appender<char>(out), "{}: {}", message,
-                       string_view(utf8_message));
+        fmt::format_to(buffer_appender<char>(out), FMT_STRING("{}: {}"),
+                       message, string_view(utf8_message));
         return;
       }
     }
