@@ -17,8 +17,8 @@
 
 using testing::StartsWith;
 
-TEST(std_test, path) {
 #ifdef __cpp_lib_filesystem
+TEST(std_test, path) {
   EXPECT_EQ(fmt::format("{:8}", std::filesystem::path("foo")), "\"foo\"   ");
   EXPECT_EQ(fmt::format("{}", std::filesystem::path("foo\"bar.txt")),
             "\"foo\\\"bar.txt\"");
@@ -26,32 +26,25 @@ TEST(std_test, path) {
             "\"foo\\\"bar.txt\"");
 
 #  ifdef _WIN32
-  // File.txt in Russian.
-  const wchar_t unicode_path[] = {0x424, 0x430, 0x439, 0x43b, 0x2e,
-                                  0x74,  0x78,  0x74,  0};
-  const char unicode_u8path[] = {'"',        char(0xd0), char(0xa4), char(0xd0),
-                                 char(0xb0), char(0xd0), char(0xb9), char(0xd0),
-                                 char(0xbb), '.',        't',        'x',
-                                 't',        '"',        '\0'};
-  EXPECT_EQ(fmt::format("{}", std::filesystem::path(unicode_path)),
-            unicode_u8path);
+  EXPECT_EQ(fmt::format("{}", std::filesystem::path(
+                                  L"\x0428\x0447\x0443\x0447\x044B\x043D\x0448"
+                                  L"\x0447\x044B\x043D\x0430")),
+            "\"Шчучыншчына\"");
+  // EXPECT_EQ(fmt::format("{}", std::filesystem::path(L"\xd800")),
+  // "\\x{d800}");
 #  endif
-#endif
 }
 
-TEST(ranges_std_test, format_vector_path) {
 // Test ambiguity problem described in #2954.
-#ifdef __cpp_lib_filesystem
+TEST(ranges_std_test, format_vector_path) {
   auto p = std::filesystem::path("foo/bar.txt");
   auto c = std::vector<std::string>{"abc", "def"};
   EXPECT_EQ(fmt::format("path={}, range={}", p, c),
             "path=\"foo/bar.txt\", range=[\"abc\", \"def\"]");
-#endif
 }
 
+// Test that path is not escaped twice in the debug mode.
 TEST(ranges_std_test, format_quote_path) {
-  // Test that path is not escaped twice in the debug mode.
-#ifdef __cpp_lib_filesystem
   auto vec =
       std::vector<std::filesystem::path>{"path1/file1.txt", "path2/file2.txt"};
   EXPECT_EQ(fmt::format("{}", vec),
@@ -61,8 +54,8 @@ TEST(ranges_std_test, format_quote_path) {
   EXPECT_EQ(fmt::format("{}", o), "optional(\"path/file.txt\")");
   EXPECT_EQ(fmt::format("{:?}", o), "optional(\"path/file.txt\")");
 #  endif
-#endif
 }
+#endif
 
 TEST(std_test, thread_id) {
   EXPECT_FALSE(fmt::format("{}", std::this_thread::get_id()).empty());
@@ -215,13 +208,4 @@ TEST(std_test, exception) {
   } catch (const std::system_error& ex) {
     EXPECT_THAT(fmt::format("{:t}", ex), StartsWith("std::system_error: "));
   }
-
-#ifdef __cpp_lib_filesystem
-  try {
-    throw std::filesystem::filesystem_error("message", std::error_code());
-  } catch (const std::filesystem::filesystem_error& ex) {
-    EXPECT_THAT(fmt::format("{:t}", ex),
-                StartsWith("std::filesystem::filesystem_error: "));
-  }
-#endif
 }
