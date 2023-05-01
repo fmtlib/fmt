@@ -1671,7 +1671,14 @@ constexpr auto encode_types() -> unsigned long long {
 
 template <typename Context, typename T>
 FMT_CONSTEXPR FMT_INLINE auto make_value(T&& val) -> value<Context> {
+#if FMT_GCC_VERSION && FMT_GCC_VERSION >= 1300
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wdangling-reference"
   const auto& arg = arg_mapper<Context>().map(FMT_FORWARD(val));
+#  pragma GCC diagnostic pop
+#else
+  const auto& arg = arg_mapper<Context>().map(FMT_FORWARD(val));
+#endif
 
   constexpr bool formattable_char =
       !std::is_same<decltype(arg), const unformattable_char&>::value;
