@@ -22,48 +22,6 @@ using wstring_view = fmt::basic_string_view<wchar_t>;
 
 #  include <windows.h>
 
-TEST(util_test, utf16_to_utf8) {
-  auto s = std::string("ёжик");
-  fmt::detail::utf16_to_utf8 u(L"\x0451\x0436\x0438\x043A");
-  EXPECT_EQ(s, u.str());
-  EXPECT_EQ(s.size(), u.size());
-}
-
-TEST(util_test, utf16_to_utf8_empty_string) {
-  std::string s = "";
-  fmt::detail::utf16_to_utf8 u(L"");
-  EXPECT_EQ(s, u.str());
-  EXPECT_EQ(s.size(), u.size());
-}
-
-template <typename Converter, typename Char>
-void check_utf_conversion_error(const char* message,
-                                fmt::basic_string_view<Char> str =
-                                    fmt::basic_string_view<Char>(nullptr, 1)) {
-  fmt::memory_buffer out;
-  fmt::detail::format_windows_error(out, ERROR_INVALID_PARAMETER, message);
-  auto error = std::system_error(std::error_code());
-  try {
-    (Converter)(str);
-  } catch (const std::system_error& e) {
-    error = e;
-  }
-  EXPECT_EQ(ERROR_INVALID_PARAMETER, error.code().value());
-  EXPECT_THAT(error.what(), HasSubstr(fmt::to_string(out)));
-}
-
-TEST(util_test, utf16_to_utf8_error) {
-  check_utf_conversion_error<fmt::detail::utf16_to_utf8, wchar_t>(
-      "cannot convert string from UTF-16 to UTF-8");
-}
-
-TEST(util_test, utf16_to_utf8_convert) {
-  fmt::detail::utf16_to_utf8 u;
-  EXPECT_EQ(ERROR_INVALID_PARAMETER, u.convert(wstring_view(nullptr, 1)));
-  EXPECT_EQ(ERROR_INVALID_PARAMETER,
-            u.convert(wstring_view(L"foo", INT_MAX + 1u)));
-}
-
 TEST(os_test, format_windows_error) {
   LPWSTR message = nullptr;
   auto result = FormatMessageW(
@@ -71,7 +29,8 @@ TEST(os_test, format_windows_error) {
           FORMAT_MESSAGE_IGNORE_INSERTS,
       nullptr, ERROR_FILE_EXISTS, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
       reinterpret_cast<LPWSTR>(&message), 0, nullptr);
-  fmt::detail::utf16_to_utf8 utf8_message(wstring_view(message, result - 2));
+  fmt::detail::unicode_to_utf8<wchar_t> utf8_message(
+      wstring_view(message, result - 2));
   LocalFree(message);
   fmt::memory_buffer actual_message;
   fmt::detail::format_windows_error(actual_message, ERROR_FILE_EXISTS, "test");
@@ -96,7 +55,8 @@ TEST(os_test, format_long_windows_error) {
     LocalFree(message);
     return;
   }
-  fmt::detail::utf16_to_utf8 utf8_message(wstring_view(message, result - 2));
+  fmt::detail::unicode_to_utf8<wchar_t> utf8_message(
+      wstring_view(message, result - 2));
   LocalFree(message);
   fmt::memory_buffer actual_message;
   fmt::detail::format_windows_error(actual_message, provisioning_not_allowed,
