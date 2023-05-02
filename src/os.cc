@@ -72,34 +72,6 @@ inline std::size_t convert_rwcount(std::size_t count) { return count; }
 FMT_BEGIN_NAMESPACE
 
 #ifdef _WIN32
-detail::utf16_to_utf8::utf16_to_utf8(basic_string_view<wchar_t> s) {
-  if (int error_code = convert(s)) {
-    FMT_THROW(windows_error(error_code,
-                            "cannot convert string from UTF-16 to UTF-8"));
-  }
-}
-
-int detail::utf16_to_utf8::convert(basic_string_view<wchar_t> s) {
-  if (s.size() > INT_MAX) return ERROR_INVALID_PARAMETER;
-  int s_size = static_cast<int>(s.size());
-  if (s_size == 0) {
-    // WideCharToMultiByte does not support zero length, handle separately.
-    buffer_.resize(1);
-    buffer_[0] = 0;
-    return 0;
-  }
-
-  int length = WideCharToMultiByte(CP_UTF8, 0, s.data(), s_size, nullptr, 0,
-                                   nullptr, nullptr);
-  if (length == 0) return GetLastError();
-  buffer_.resize(length + 1);
-  length = WideCharToMultiByte(CP_UTF8, 0, s.data(), s_size, &buffer_[0],
-                               length, nullptr, nullptr);
-  if (length == 0) return GetLastError();
-  buffer_[length] = 0;
-  return 0;
-}
-
 namespace detail {
 
 class system_message {
@@ -140,8 +112,8 @@ class utf8_system_category final : public std::error_category {
   std::string message(int error_code) const override {
     system_message msg(error_code);
     if (msg) {
-      utf16_to_utf8 utf8_message;
-      if (utf8_message.convert(msg) == ERROR_SUCCESS) {
+      unicode_to_utf8<wchar_t> utf8_message;
+      if (utf8_message.convert(msg)) {
         return utf8_message.str();
       }
     }
@@ -167,8 +139,8 @@ void detail::format_windows_error(detail::buffer<char>& out, int error_code,
   FMT_TRY {
     system_message msg(error_code);
     if (msg) {
-      auto utf8_message = utf16_to_utf8();
-      if (utf8_message.convert(msg) == ERROR_SUCCESS) {
+      unicode_to_utf8<wchar_t> utf8_message;
+      if (utf8_message.convert(msg)) {
         fmt::format_to(buffer_appender<char>(out), FMT_STRING("{}: {}"),
                        message, string_view(utf8_message));
         return;
@@ -365,8 +337,9 @@ file file::open_windows_file(wcstring_view path, int oflag) {
   int fd = -1;
   auto err = _wsopen_s(&fd, path.c_str(), oflag, _SH_DENYNO, default_open_mode);
   if (fd == -1) {
-    FMT_THROW(system_error(err, FMT_STRING("cannot open file {}"),
-                           detail::utf16_to_utf8(path.c_str()).c_str()));
+    FMT_THROW(
+        system_error(err, FMT_STRING("cannot open file {}"),
+                     detail::unicode_to_utf8<wchar_t>(path.c_str()).c_str()));
   }
   return file(fd);
 }

@@ -377,37 +377,11 @@ auto write_encoded_tm_str(OutputIt out, string_view in, const std::locale& loc)
     unit_t unit;
     write_codecvt(unit, in, loc);
     // In UTF-8 is used one to four one-byte code units.
-    auto&& buf = basic_memory_buffer<char, unit_t::max_size * 4>();
-    for (code_unit* p = unit.buf; p != unit.end; ++p) {
-      uint32_t c = static_cast<uint32_t>(*p);
-      if (sizeof(code_unit) == 2 && c >= 0xd800 && c <= 0xdfff) {
-        // surrogate pair
-        ++p;
-        if (p == unit.end || (c & 0xfc00) != 0xd800 ||
-            (*p & 0xfc00) != 0xdc00) {
-          FMT_THROW(format_error("failed to format time"));
-        }
-        c = (c << 10) + static_cast<uint32_t>(*p) - 0x35fdc00;
-      }
-      if (c < 0x80) {
-        buf.push_back(static_cast<char>(c));
-      } else if (c < 0x800) {
-        buf.push_back(static_cast<char>(0xc0 | (c >> 6)));
-        buf.push_back(static_cast<char>(0x80 | (c & 0x3f)));
-      } else if ((c >= 0x800 && c <= 0xd7ff) || (c >= 0xe000 && c <= 0xffff)) {
-        buf.push_back(static_cast<char>(0xe0 | (c >> 12)));
-        buf.push_back(static_cast<char>(0x80 | ((c & 0xfff) >> 6)));
-        buf.push_back(static_cast<char>(0x80 | (c & 0x3f)));
-      } else if (c >= 0x10000 && c <= 0x10ffff) {
-        buf.push_back(static_cast<char>(0xf0 | (c >> 18)));
-        buf.push_back(static_cast<char>(0x80 | ((c & 0x3ffff) >> 12)));
-        buf.push_back(static_cast<char>(0x80 | ((c & 0xfff) >> 6)));
-        buf.push_back(static_cast<char>(0x80 | (c & 0x3f)));
-      } else {
-        FMT_THROW(format_error("failed to format time"));
-      }
-    }
-    return copy_str<char>(buf.data(), buf.data() + buf.size(), out);
+    unicode_to_utf8<code_unit, basic_memory_buffer<char, unit_t::max_size * 4>>
+        u;
+    if (!u.convert({unit.buf, to_unsigned(unit.end - unit.buf)}))
+      FMT_THROW(format_error("failed to format time"));
+    return copy_str<char>(u.c_str(), u.c_str() + u.size(), out);
   }
   return copy_str<char>(in.data(), in.data() + in.size(), out);
 }
