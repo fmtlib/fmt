@@ -1039,10 +1039,12 @@ template <typename T, size_t SIZE, typename Allocator>
 struct is_contiguous<basic_memory_buffer<T, SIZE, Allocator>> : std::true_type {
 };
 
+FMT_END_EXPORT
 namespace detail {
 FMT_API bool write_console(std::FILE* f, string_view text);
 FMT_API void print(std::FILE*, string_view);
 }  // namespace detail
+FMT_BEGIN_EXPORT
 
 // Suppress a misleading warning in older versions of clang.
 #if FMT_CLANG_VERSION
