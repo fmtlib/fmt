@@ -785,7 +785,7 @@ FMT_MODULE_EXPORT template <typename Context> class basic_format_args;
 FMT_MODULE_EXPORT template <typename Context> class dynamic_format_arg_store;
 
 // A formatter for objects of type T.
-FMT_MODULE_EXPORT 
+FMT_MODULE_EXPORT
 template <typename T, typename Char = char, typename Enable = void>
 struct formatter {
   // A deleted default constructor indicates a disabled formatter.
@@ -1671,22 +1671,22 @@ constexpr auto encode_types() -> unsigned long long {
 
 template <typename Context, typename T>
 FMT_CONSTEXPR FMT_INLINE auto make_value(T&& val) -> value<Context> {
-  const auto& arg = arg_mapper<Context>().map(FMT_FORWARD(val));
+  auto&& arg = arg_mapper<Context>().map(FMT_FORWARD(val));
+  using arg_type = remove_cvref_t<decltype(arg)>;
 
   constexpr bool formattable_char =
-      !std::is_same<decltype(arg), const unformattable_char&>::value;
+      !std::is_same<arg_type, unformattable_char>::value;
   static_assert(formattable_char, "Mixing character types is disallowed.");
 
   // Formatting of arbitrary pointers is disallowed. If you want to format a
   // pointer cast it to `void*` or `const void*`. In particular, this forbids
   // formatting of `[const] volatile char*` printed as bool by iostreams.
   constexpr bool formattable_pointer =
-      !std::is_same<decltype(arg), const unformattable_pointer&>::value;
+      !std::is_same<arg_type, unformattable_pointer>::value;
   static_assert(formattable_pointer,
                 "Formatting of non-void pointers is disallowed.");
 
-  constexpr bool formattable =
-      !std::is_same<decltype(arg), const unformattable&>::value;
+  constexpr bool formattable = !std::is_same<arg_type, unformattable>::value;
   static_assert(
       formattable,
       "Cannot format an argument. To make type T formattable provide a "
