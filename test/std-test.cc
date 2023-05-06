@@ -208,4 +208,15 @@ TEST(std_test, exception) {
   } catch (const std::system_error& ex) {
     EXPECT_THAT(fmt::format("{:t}", ex), StartsWith("std::system_error: "));
   }
+
+#ifdef __cpp_lib_filesystem
+  // Tests that the inline namespace is stripped out, e.g.
+  // std::filesystem::__cxx11::* -> std::filesystem::*.
+  try {
+    throw std::filesystem::filesystem_error("message", std::error_code());
+  } catch (const std::filesystem::filesystem_error& ex) {
+    EXPECT_THAT(fmt::format("{:t}", ex),
+                StartsWith("std::filesystem::filesystem_error: "));
+  }
+#endif
 }
