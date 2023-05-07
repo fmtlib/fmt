@@ -30,8 +30,7 @@ TEST(std_test, path) {
                                   L"\x0428\x0447\x0443\x0447\x044B\x043D\x0448"
                                   L"\x0447\x044B\x043D\x0430")),
             "\"Шчучыншчына\"");
-  // EXPECT_EQ(fmt::format("{}", std::filesystem::path(L"\xd800")),
-  // "\\x{d800}");
+  EXPECT_EQ(fmt::format("{}", std::filesystem::path(L"\xd800")), "\"\\ud800\"");
 #  endif
 }
 
