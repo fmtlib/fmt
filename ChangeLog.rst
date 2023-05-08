@@ -17,6 +17,11 @@
 
   Thanks `@jk-jeon (Junekey Jeon) <https://github.com/jk-jeon>`_.
 
+* Replaced ``snprintf``-based hex float formatter with an internal
+  implementation (`#3179 <https://github.com/fmtlib/fmt/pull/3179>`_,
+  `#3203 <https://github.com/fmtlib/fmt/pull/3203>`_).
+  Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
+
 * Fixed alignment of floating-point numbers with localization
   (`#3263 <https://github.com/fmtlib/fmt/issues/3263>`_,
   `#3272 <https://github.com/fmtlib/fmt/pull/3272>`_).
@@ -24,6 +29,7 @@
 
 * Improved C++20 module support
   (`#3134 <https://github.com/fmtlib/fmt/pull/3134>`_,
+  `#3254 <https://github.com/fmtlib/fmt/pull/3254>`_,
   `#3386 <https://github.com/fmtlib/fmt/pull/3386>`_,
   `#3387 <https://github.com/fmtlib/fmt/pull/3387>`_,
   `#3388 <https://github.com/fmtlib/fmt/pull/3388>`_,
@@ -31,7 +37,8 @@
   `#3397 <https://github.com/fmtlib/fmt/pull/3397>`_,
   `#3399 <https://github.com/fmtlib/fmt/pull/3399>`_,
   `#3400 <https://github.com/fmtlib/fmt/pull/3400>`_).
-  Thanks `@laitingsheng (Tinson Lai) <https://github.com/laitingsheng>`_ and
+  Thanks `@laitingsheng (Tinson Lai) <https://github.com/laitingsheng>`_,
+  `@Orvid (Orvid King) <https://github.com/Orvid>`_,
   `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_.
   Switched to the `modules CMake library <https://github.com/vitaut/modules>`_
   which allows building {fmt} as a C++20 module with clang::
@@ -97,6 +104,10 @@
   Thanks `@patrickroocks (Patrick Roocks) <https://github.com/patrickroocks>`_
   `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_,
   `@BRevzin (Barry Revzin) <https://github.com/BRevzin>`_.
+
+* Add precision support to ``%S``
+  (`#3148 <https://github.com/fmtlib/fmt/pull/3148>`_).
+  Thanks `@SappyJoy (Stepan Ponomaryov) <https://github.com/SappyJoy>`_
 
 * Added support for ``std::utc_time``
   (`#3098 <https://github.com/fmtlib/fmt/issues/3098>`_,
@@ -176,8 +187,13 @@
   (`#3347 <https://github.com/fmtlib/fmt/pull/3347>`_).
   Thanks `@TheOmegaCarrot <https://github.com/TheOmegaCarrot>`_.
 
-* Fixed formatting of noncopyable ranges
-  (`#3286 <https://github.com/fmtlib/fmt/issues/3286>`_,
+* Made ``fmt::ptr`` accept ``unique_ptr`` with a custom deleter
+  (`#3177 <https://github.com/fmtlib/fmt/pull/3177>`_).
+  Thanks `@hmbj (Hans-Martin B. Jensen) <https://github.com/hmbj>`_.
+
+* Fixed formatting of noncopyable ranges and nested ranges of chars
+  (`#3158 <https://github.com/fmtlib/fmt/pull/3158>`_
+  `#3286 <https://github.com/fmtlib/fmt/issues/3286>`_,
   `#3290 <https://github.com/fmtlib/fmt/pull/3290>`_).
   Thanks `@BRevzin (Barry Revzin) <https://github.com/BRevzin>`_.
 
@@ -261,13 +277,21 @@
 * Improved documentation
   (`#3108 <https://github.com/fmtlib/fmt/issues/3108>`_,
   `#3169 <https://github.com/fmtlib/fmt/issues/3169>`_,
+  `#3243 <https://github.com/fmtlib/fmt/pull/3243>`_).
   `#3404 <https://github.com/fmtlib/fmt/pull/3404>`_).
-  Thanks `@Vertexwahn <https://github.com/Vertexwahn>`_.
+  Thanks `@Cleroth <https://github.com/Cleroth>`_ and
+  `@Vertexwahn <https://github.com/Vertexwahn>`_.
 
 * Improved build configuration and tests
   (`#3118 <https://github.com/fmtlib/fmt/pull/3118>`_,
   `#3120 <https://github.com/fmtlib/fmt/pull/3120>`_,
+  `#3188 <https://github.com/fmtlib/fmt/pull/3188>`_,
   `#3189 <https://github.com/fmtlib/fmt/issues/3189>`_,
+  `#3198 <https://github.com/fmtlib/fmt/pull/3198>`_,
+  `#3205 <https://github.com/fmtlib/fmt/pull/3205>`_,
+  `#3207 <https://github.com/fmtlib/fmt/pull/3207>`_,
+  `#3210 <https://github.com/fmtlib/fmt/pull/3210>`_,
+  `#3240 <https://github.com/fmtlib/fmt/pull/3240>`_,
   `#3299 <https://github.com/fmtlib/fmt/issues/3299>`_,
   `#3302 <https://github.com/fmtlib/fmt/pull/3302>`_,
   `#3317 <https://github.com/fmtlib/fmt/issues/3317>`_,
@@ -278,6 +302,8 @@
   `#3411 <https://github.com/fmtlib/fmt/pull/3411>`_).
   Thanks `@dimztimz (Dimitrij Mijoski) <https://github.com/dimztimz>`_,
   `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_,
+  `@DavidKorczynski <https://github.com/DavidKorczynski>`_,
+  `@ChrisThrasher (Chris Thrasher) <https://github.com/ChrisThrasher>`_,
   `@joycebrum (Joyce) <https://github.com/joycebrum>`_,
   `@kevinhwang (Kevin Hwang) <https://github.com/kevinhwang>`_,
   `@Vertexwahn <https://github.com/Vertexwahn>`_.
@@ -309,6 +335,7 @@
   `#3128 <https://github.com/fmtlib/fmt/issues/3128>`_,
   `#3129 <https://github.com/fmtlib/fmt/pull/3129>`_,
   `#3137 <https://github.com/fmtlib/fmt/pull/3137>`_,
+  `#3139 <https://github.com/fmtlib/fmt/pull/3139>`_,
   `#3140 <https://github.com/fmtlib/fmt/issues/3140>`_,
   `#3142 <https://github.com/fmtlib/fmt/pull/3142>`_,
   `#3149 <https://github.com/fmtlib/fmt/issues/3149>`_,
@@ -316,9 +343,13 @@
   `#3154 <https://github.com/fmtlib/fmt/issues/3154>`_,
   `#3163 <https://github.com/fmtlib/fmt/issues/3163>`_,
   `#3178 <https://github.com/fmtlib/fmt/issues/3178>`_,
+  `#3184 <https://github.com/fmtlib/fmt/pull/3184>`_,
+  `#3196 <https://github.com/fmtlib/fmt/pull/3196>`_,
   `#3204 <https://github.com/fmtlib/fmt/issues/3204>`_,
+  `#3206 <https://github.com/fmtlib/fmt/pull/3206>`_,
   `#3208 <https://github.com/fmtlib/fmt/pull/3208>`_,
   `#3213 <https://github.com/fmtlib/fmt/issues/3213>`_,
+  `#3216 <https://github.com/fmtlib/fmt/pull/3216>`_,
   `#3224 <https://github.com/fmtlib/fmt/issues/3224>`_,
   `#3226 <https://github.com/fmtlib/fmt/issues/3226>`_,
   `#3228 <https://github.com/fmtlib/fmt/issues/3228>`_,
@@ -354,6 +385,7 @@
   <https://github.com/HazardyKnusperkeks>`_,
   `@sergiud (Sergiu Deitsch) <https://github.com/sergiud>`_,
   `@Youw (Ihor Dutchak) <https://github.com/Youw>`_,
+  `@thesmurph <https://github.com/thesmurph>`_,
   `@czudziakm (Maksymilian Czudziak) <https://github.com/czudziakm>`_,
   `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_,
   `@ShawnZhong (Shawn Zhong) <https://github.com/ShawnZhong>`_,
