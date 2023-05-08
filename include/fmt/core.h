@@ -1698,7 +1698,7 @@ template <typename Context, typename T>
 FMT_CONSTEXPR auto make_arg(T&& value) -> basic_format_arg<Context> {
   auto arg = basic_format_arg<Context>();
   arg.type_ = mapped_type_constant<T, Context>::value;
-  arg.value_ = make_value<Context>(value);
+  arg.value_ = make_value<Context>(FMT_FORWARD(value));
   return arg;
 }
 
@@ -1708,13 +1708,13 @@ FMT_CONSTEXPR auto make_arg(T&& value) -> basic_format_arg<Context> {
 template <bool IS_PACKED, typename Context, type, typename T,
           FMT_ENABLE_IF(IS_PACKED)>
 FMT_CONSTEXPR FMT_INLINE auto make_arg(T&& val) -> value<Context> {
-  return make_value<Context>(val);
+  return make_value<Context>(FMT_FORWARD(val));
 }
 
 template <bool IS_PACKED, typename Context, type, typename T,
           FMT_ENABLE_IF(!IS_PACKED)>
 FMT_CONSTEXPR inline auto make_arg(T&& value) -> basic_format_arg<Context> {
-  return make_arg<Context>(value);
+  return make_arg<Context>(FMT_FORWARD(value));
 }
 }  // namespace detail
 FMT_BEGIN_EXPORT
@@ -2814,7 +2814,7 @@ FMT_API auto vformat(string_view fmt, format_args args) -> std::string;
 template <typename... T>
 FMT_NODISCARD FMT_INLINE auto format(format_string<T...> fmt, T&&... args)
     -> std::string {
-  return vformat(fmt, fmt::make_format_args(args...));
+  return vformat(fmt, fmt::make_format_args(FMT_FORWARD(args)...));
 }
 
 /** Formats a string and writes the output to ``out``. */
@@ -2842,7 +2842,7 @@ template <typename OutputIt, typename... T,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
 FMT_INLINE auto format_to(OutputIt out, format_string<T...> fmt, T&&... args)
     -> OutputIt {
-  return vformat_to(out, fmt, fmt::make_format_args(args...));
+  return vformat_to(out, fmt, fmt::make_format_args(FMT_FORWARD(args)...));
 }
 
 template <typename OutputIt> struct format_to_n_result {
@@ -2882,7 +2882,7 @@ template <typename... T>
 FMT_NODISCARD FMT_INLINE auto formatted_size(format_string<T...> fmt,
                                              T&&... args) -> size_t {
   auto buf = detail::counting_buffer<>();
-  detail::vformat_to<char>(buf, fmt, fmt::make_format_args(args...), {});
+  detail::vformat_to<char>(buf, fmt, fmt::make_format_args(FMT_FORWARD(args)...), {});
   return buf.count();
 }
 
@@ -2901,7 +2901,7 @@ FMT_API void vprint(std::FILE* f, string_view fmt, format_args args);
  */
 template <typename... T>
 FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
-  const auto& vargs = fmt::make_format_args(args...);
+  const auto& vargs = fmt::make_format_args(FMT_FORWARD(args)...);
   return detail::is_utf8() ? vprint(fmt, vargs)
                            : detail::vprint_mojibake(stdout, fmt, vargs);
 }
@@ -2918,7 +2918,7 @@ FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
  */
 template <typename... T>
 FMT_INLINE void print(std::FILE* f, format_string<T...> fmt, T&&... args) {
-  const auto& vargs = fmt::make_format_args(args...);
+  const auto& vargs = fmt::make_format_args(FMT_FORWARD(args)...);
   return detail::is_utf8() ? vprint(f, fmt, vargs)
                            : detail::vprint_mojibake(f, fmt, vargs);
 }
