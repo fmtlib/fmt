@@ -1,6 +1,8 @@
 10.0.0 - TBD
 ------------
 
+TODO: https://github.com/fmtlib/fmt/commits/master?after=9b7829e264af100fca98625579d2a766a5e80f57+244&branch=master&qualified_name=refs%2Fheads%2Fmaster
+
 * Replaced Grisu with a new floating-point formatting algorithm for given
   precision (`#3262 <https://github.com/fmtlib/fmt/issues/3262>`_,
   `#2750 <https://github.com/fmtlib/fmt/issues/2750>`_,
@@ -57,6 +59,13 @@
 * Removed deprecated implicit conversions for enums and conversions to primitive
   types for compatibility with ``std::format`` and to prevent potential ODR
   violations. Use ``format_as`` instead.
+
+* Reintroduced build speed optimization via extern templates to
+  ``fmt/format.h``. It was previously disabled because of incompatibility
+  between clang and gcc.
+
+  viz@viz-mbp fmt % time c++ -c test.cc -I include -std=c++17 -O2
+c++ -c test.cc -I include -std=c++17 -O2  0.49s user 0.13s system 98% cpu 0.632 total
 
 * Added support for fill, align and width to the time point formatter
   (`#3237 <https://github.com/fmtlib/fmt/issues/3237>`_,
@@ -230,7 +239,9 @@
   (`#3068 <https://github.com/fmtlib/fmt/pull/3068>`_).
 
 * Fixed various warnings and compilation issues
-  (`#3092 <https://github.com/fmtlib/fmt/issues/3092>`_,
+  (`#3057 <https://github.com/fmtlib/fmt/pull/3057>`_,
+  `#3066 <https://github.com/fmtlib/fmt/pull/3066>`_,
+  `#3092 <https://github.com/fmtlib/fmt/issues/3092>`_,
   `#3096 <https://github.com/fmtlib/fmt/issues/3096>`_,
   `#3128 <https://github.com/fmtlib/fmt/issues/3128>`_,
   `#3140 <https://github.com/fmtlib/fmt/issues/3140>`_,
@@ -268,6 +279,7 @@
   `#3413 <https://github.com/fmtlib/fmt/pull/3413>`_,
   `#3415 <https://github.com/fmtlib/fmt/issues/3415>`_).
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_,
+  `@gsjaardema (Greg Sjaardema) <https://github.com/gsjaardema>`_,
   `@sergiud (Sergiu Deitsch) <https://github.com/sergiud>`_,
   `@czudziakm (Maksymilian Czudziak) <https://github.com/czudziakm>`_,
   `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_,
