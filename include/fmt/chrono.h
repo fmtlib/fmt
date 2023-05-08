@@ -1360,8 +1360,6 @@ class tm_writer {
 
   OutputIt out() const { return out_; }
 
-  const std::locale& locale() const { return loc_; }
-
   FMT_CONSTEXPR void on_text(const Char* begin, const Char* end) {
     out_ = copy_str<Char>(begin, end, out_);
   }
@@ -1640,7 +1638,8 @@ struct chrono_format_checker : null_chrono_spec_handler<chrono_format_checker> {
   FMT_CONSTEXPR void on_duration_unit() {}
 };
 
-template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value && has_isfinite<T>::value)>
+template <typename T,
+          FMT_ENABLE_IF(std::is_integral<T>::value&& has_isfinite<T>::value)>
 inline bool isfinite(T) {
   return true;
 }
