@@ -2802,7 +2802,7 @@ template <typename T, typename Enable = void>
 struct has_isfinite : std::false_type {};
 
 template <typename T>
-struct has_isfinite<T, enable_if_t<sizeof(std::isfinite(T())) != 0>>
+struct has_isfinite<T, void_t<decltype(std::isfinite(T()))>>
     : std::true_type {};
 
 template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value&&
