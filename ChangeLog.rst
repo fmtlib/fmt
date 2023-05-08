@@ -22,6 +22,21 @@
   `#3272 <https://github.com/fmtlib/fmt/pull/3272>`_).
   Thanks `@ShawnZhong (Shawn Zhong) <https://github.com/ShawnZhong>`_.
 
+* Improved C++20 module support
+  (`#3386 <https://github.com/fmtlib/fmt/pull/3386>`_,
+  `#3387 <https://github.com/fmtlib/fmt/pull/3387>`_,
+  `#3388 <https://github.com/fmtlib/fmt/pull/3388>`_,
+  `#3392 <https://github.com/fmtlib/fmt/pull/3392>`_,
+  `#3397 <https://github.com/fmtlib/fmt/pull/3397>`_,
+  `#3399 <https://github.com/fmtlib/fmt/pull/3399>`_,
+  `#3400 <https://github.com/fmtlib/fmt/pull/3400>`_).
+  Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_.
+  Switched to the [modules CMake library](https://github.com/vitaut/modules)
+  which allows building {fmt} as a C++20 module with clang::
+
+    CXX=clang++ cmake -DFMT_MODULE=ON .
+    make
+
 * Made ``format_as`` work with any user-defined type and not just enums.
   For example (`godbolt <https://godbolt.org/z/b7rqhq5Kh>`__):
 
@@ -56,7 +71,8 @@
   Thanks `@ShawnZhong (Shawn Zhong) <https://github.com/ShawnZhong>`_.
 
 * Implemented formatting of subseconds
-  (`#3117 <https://github.com/fmtlib/fmt/issues/3117>`_,
+  (`#2207 <https://github.com/fmtlib/fmt/issues/2207>`_,
+  `#3117 <https://github.com/fmtlib/fmt/issues/3117>`_,
   `#3115 <https://github.com/fmtlib/fmt/pull/3115>`_).
   For example (`godbolt <https://godbolt.org/z/45738oGEo>`__):
 
@@ -154,6 +170,10 @@
   `#3293 <https://github.com/fmtlib/fmt/pull/3293>`_).
   Thanks `@Fros1er (Froster) <https://github.com/Fros1er>`_.
 
+* Unified UTF transcoding
+  (`#3416 <https://github.com/fmtlib/fmt/pull/3416>`_).
+  Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
+
 * Removed the deprecated ``FMT_DEPRECATED_OSTREAM``.
 
 * Fixed a UB when using a null ``std::string_view`` with ``fmt::to_string``
@@ -164,17 +184,24 @@
 
 * Improved documentation
   (`#3108 <https://github.com/fmtlib/fmt/issues/3108>`_,
-  `#3169 <https://github.com/fmtlib/fmt/issues/3169>`_).
+  `#3169 <https://github.com/fmtlib/fmt/issues/3169>`_,
+  `#3404 <https://github.com/fmtlib/fmt/pull/3404>`_).
+  Thanks `@Vertexwahn <https://github.com/Vertexwahn>`_.
 
-* Improved build configuration
+* Improved build configuration and tests
   (`#3189 <https://github.com/fmtlib/fmt/issues/3189>`_,
   `#3299 <https://github.com/fmtlib/fmt/issues/3299>`_,
   `#3302 <https://github.com/fmtlib/fmt/pull/3302>`_,
   `#3317 <https://github.com/fmtlib/fmt/issues/3317>`_,
   `#3328 <https://github.com/fmtlib/fmt/pull/3328>`_,
-  `#3373 <https://github.com/fmtlib/fmt/issues/3373>`_).
+  `#3373 <https://github.com/fmtlib/fmt/issues/3373>`_,
+  `#3395 <https://github.com/fmtlib/fmt/pull/3395>`_,
+  `#3406 <https://github.com/fmtlib/fmt/pull/3406>`_,
+  `#3411 <https://github.com/fmtlib/fmt/pull/3411>`_).
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_,
-  `@joycebrum (Joyce) <https://github.com/joycebrum>`_.
+  `@joycebrum (Joyce) <https://github.com/joycebrum>`_,
+  `@kevinhwang (Kevin Hwang) <https://github.com/kevinhwang>`_,
+  `@Vertexwahn <https://github.com/Vertexwahn>`_.
 
 * Fixed a regression in handling empty format specifiers after a colon (`{:}`)
   (`#3086 <https://github.com/fmtlib/fmt/pull/3086>`_).
@@ -219,14 +246,23 @@
   `#3351 <https://github.com/fmtlib/fmt/issues/3351>`_,
   `#3352 <https://github.com/fmtlib/fmt/pull/3352>`_,
   `#3365 <https://github.com/fmtlib/fmt/issues/3365>`_,
-  `#3366 <https://github.com/fmtlib/fmt/pull/3366>`_).
+  `#3366 <https://github.com/fmtlib/fmt/pull/3366>`_,
+  `#3377 <https://github.com/fmtlib/fmt/issues/3377>`_,
+  `#3378 <https://github.com/fmtlib/fmt/pull/3378>`_,
+  `#3381 <https://github.com/fmtlib/fmt/issues/3381>`_,
+  `#3398 <https://github.com/fmtlib/fmt/pull/3398>`_,
+  `#3413 <https://github.com/fmtlib/fmt/pull/3413>`_,
+  `#3415 <https://github.com/fmtlib/fmt/issues/3415>`_).
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_,
   `@sergiud (Sergiu Deitsch) <https://github.com/sergiud>`_,
   `@czudziakm (Maksymilian Czudziak) <https://github.com/czudziakm>`_,
   `@chronoxor (Ivan Shynkarenka) <https://github.com/chronoxor>`_,
   `@ShawnZhong (Shawn Zhong) <https://github.com/ShawnZhong>`_,
   `@glebm (Gleb Mazovetskiy) <https://github.com/glebm>`_,
-  `@tmartin-gh <https://github.com/tmartin-gh>`_.
+  `@tmartin-gh <https://github.com/tmartin-gh>`_,
+  `@Zhaojun-Liu (June Liu) <https://github.com/Zhaojun-Liu>`_,
+  `@louiswins (Louis Wilson) <https://github.com/louiswins>`_,
+  `@mogemimi <https://github.com/mogemimi>`_.
 
 9.1.0 - 2022-08-27
 ------------------
@@ -335,6 +371,7 @@
   `#2982 <https://github.com/fmtlib/fmt/pull/2982>`_,
   `#2985 <https://github.com/fmtlib/fmt/pull/2985>`_,
   `#2988 <https://github.com/fmtlib/fmt/issues/2988>`_,
+  `#2989 <https://github.com/fmtlib/fmt/issues/2989>`_,
   `#3000 <https://github.com/fmtlib/fmt/issues/3000>`_,
   `#3006 <https://github.com/fmtlib/fmt/issues/3006>`_,
   `#3014 <https://github.com/fmtlib/fmt/issues/3014>`_,
