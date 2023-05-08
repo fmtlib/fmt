@@ -31,7 +31,7 @@
   `#3399 <https://github.com/fmtlib/fmt/pull/3399>`_,
   `#3400 <https://github.com/fmtlib/fmt/pull/3400>`_).
   Thanks `@DanielaE (Daniela Engert) <https://github.com/DanielaE>`_.
-  Switched to the [modules CMake library](https://github.com/vitaut/modules)
+  Switched to the `modules CMake library <https://github.com/vitaut/modules>`_
   which allows building {fmt} as a C++20 module with clang::
 
     CXX=clang++ cmake -DFMT_MODULE=ON .
