@@ -54,6 +54,10 @@
        fmt::print("{:8}\n", floaty_mc_floatface{0.42}); // prints "    0.42"
      }
 
+* Removed deprecated implicit conversions for enums and conversions to primitive
+  types for compatibility with ``std::format`` and to prevent potential ODR
+  violations. Use ``format_as`` instead.
+
 * Added support for fill, align and width to the time point formatter
   (`#3237 <https://github.com/fmtlib/fmt/issues/3237>`_,
   `#3260 <https://github.com/fmtlib/fmt/pull/3260>`_).
@@ -73,7 +77,8 @@
 * Implemented formatting of subseconds
   (`#2207 <https://github.com/fmtlib/fmt/issues/2207>`_,
   `#3117 <https://github.com/fmtlib/fmt/issues/3117>`_,
-  `#3115 <https://github.com/fmtlib/fmt/pull/3115>`_).
+  `#3115 <https://github.com/fmtlib/fmt/pull/3115>`_,
+  `#3349 <https://github.com/fmtlib/fmt/pull/3349>`_).
   For example (`godbolt <https://godbolt.org/z/45738oGEo>`__):
 
   .. code:: c++
@@ -85,7 +90,8 @@
        fmt::print("{:%S}\n", std::chrono::microseconds(1234567));
      }
 
-  Thanks `@patrickroocks (Patrick Roocks) <https://github.com/patrickroocks>`_.
+  Thanks `@patrickroocks (Patrick Roocks) <https://github.com/patrickroocks>`_
+  and `@BRevzin (Barry Revzin) <https://github.com/BRevzin>`_.
 
 * Added support for ``std::utc_time``
   (`#3098 <https://github.com/fmtlib/fmt/issues/3098>`_,
@@ -128,6 +134,10 @@
 
   Thanks `@ShawnZhong (Shawn Zhong) <https://github.com/ShawnZhong>`_.
 
+* Fixed formatting of valueless by exception variants
+  (`#3347 <https://github.com/fmtlib/fmt/pull/3347>`_).
+  Thanks `@TheOmegaCarrot <https://github.com/TheOmegaCarrot>`_.
+
 * Fixed formatting of noncopyable ranges
   (`#3286 <https://github.com/fmtlib/fmt/issues/3286>`_,
   `#3290 <https://github.com/fmtlib/fmt/pull/3290>`_).
@@ -135,8 +145,11 @@
 
 * Fixed issues with formatting of paths and ranges of paths
   (`#3319 <https://github.com/fmtlib/fmt/issues/3319>`_,
+  `#3321 <https://github.com/fmtlib/fmt/pull/3321>`_
   `#3322 <https://github.com/fmtlib/fmt/issues/3322>`_).
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
+
+* Improved handling of invalid Unicode in paths.
 
 * Fixed formatting of time points before the epoch
   (`#3117 <https://github.com/fmtlib/fmt/issues/3117>`_,
@@ -245,6 +258,7 @@
   `#3343 <https://github.com/fmtlib/fmt/pull/3343>`_,
   `#3351 <https://github.com/fmtlib/fmt/issues/3351>`_,
   `#3352 <https://github.com/fmtlib/fmt/pull/3352>`_,
+  `#3362 <https://github.com/fmtlib/fmt/pull/3362>`_,
   `#3365 <https://github.com/fmtlib/fmt/issues/3365>`_,
   `#3366 <https://github.com/fmtlib/fmt/pull/3366>`_,
   `#3377 <https://github.com/fmtlib/fmt/issues/3377>`_,
