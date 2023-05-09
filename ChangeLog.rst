@@ -1,5 +1,5 @@
-10.0.0 - TBD
-------------
+10.0.0 - 2023-05-09
+-------------------
 
 * Replaced Grisu with a new floating-point formatting algorithm for given
   precision (`#3262 <https://github.com/fmtlib/fmt/issues/3262>`_,
