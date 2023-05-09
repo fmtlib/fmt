@@ -128,7 +128,7 @@
   `#3222 <https://github.com/fmtlib/fmt/pull/3222>`_).
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
 
-* Improved validation of format specifiers for `std::chrono::duration`
+* Improved validation of format specifiers for ``std::chrono::duration``
   (`#3219 <https://github.com/fmtlib/fmt/issues/3219>`_,
   `#3232 <https://github.com/fmtlib/fmt/pull/3232>`_).
   Thanks `@ShawnZhong (Shawn Zhong) <https://github.com/ShawnZhong>`_.
