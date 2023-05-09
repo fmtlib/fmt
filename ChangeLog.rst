@@ -337,7 +337,7 @@
   `@kevinhwang (Kevin Hwang) <https://github.com/kevinhwang>`_,
   `@Vertexwahn <https://github.com/Vertexwahn>`_.
 
-* Fixed a regression in handling empty format specifiers after a colon (`{:}`)
+* Fixed a regression in handling empty format specifiers after a colon (``{:}``)
   (`#3086 <https://github.com/fmtlib/fmt/pull/3086>`_).
   Thanks `@oxidase (Michael Krasnyk) <https://github.com/oxidase>`_.
 
