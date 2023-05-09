@@ -133,7 +133,24 @@
   `#3232 <https://github.com/fmtlib/fmt/pull/3232>`_).
   Thanks `@ShawnZhong (Shawn Zhong) <https://github.com/ShawnZhong>`_.
 
-* [Experimental: implemented glibc extension for padding seconds, minutes and
+* Fixed formatting of time points before the epoch
+  (`#3117 <https://github.com/fmtlib/fmt/issues/3117>`_,
+  `#3261 <https://github.com/fmtlib/fmt/pull/3261>`_).
+  For example (`godbolt <https://godbolt.org/z/f7bcznb3W>`__):
+
+  .. code:: c++
+
+     #include <fmt/chrono.h>
+
+     int main() {
+       auto t = std::chrono::system_clock::from_time_t(0) -
+                std::chrono::milliseconds(250);
+       fmt::print("{:%S}\n", t); // prints 59.750000000
+     }
+
+  Thanks `@ShawnZhong (Shawn Zhong) <https://github.com/ShawnZhong>`_.
+
+* Experimental: implemented glibc extension for padding seconds, minutes and
   hours (`#2959 <https://github.com/fmtlib/fmt/issues/2959>`_,
   `#3271 <https://github.com/fmtlib/fmt/pull/3271>`_).
   Thanks `@ShawnZhong (Shawn Zhong) <https://github.com/ShawnZhong>`_.
@@ -215,23 +232,6 @@
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
 
 * Improved handling of invalid Unicode in paths.
-
-* Fixed formatting of time points before the epoch
-  (`#3117 <https://github.com/fmtlib/fmt/issues/3117>`_,
-  `#3261 <https://github.com/fmtlib/fmt/pull/3261>`_).
-  For example (`godbolt <https://godbolt.org/z/f7bcznb3W>`__):
-
-  .. code:: c++
-
-     #include <fmt/chrono.h>
-
-     int main() {
-       auto t = std::chrono::system_clock::from_time_t(0) -
-                std::chrono::milliseconds(250);
-       fmt::print("{:%S}\n", t); // prints 59.750000000
-     }
-
-  Thanks `@ShawnZhong (Shawn Zhong) <https://github.com/ShawnZhong>`_.
 
 * Enabled compile-time checks on Apple clang 14 and later
   (`#3331 <https://github.com/fmtlib/fmt/pull/3331>`_).
