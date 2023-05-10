@@ -84,12 +84,6 @@
 #  define FMT_GCC_VISIBILITY_HIDDEN
 #endif
 
-#ifdef __NVCC__
-#  define FMT_CUDA_VERSION (__CUDACC_VER_MAJOR__ * 100 + __CUDACC_VER_MINOR__)
-#else
-#  define FMT_CUDA_VERSION 0
-#endif
-
 #ifdef __has_builtin
 #  define FMT_HAS_BUILTIN(x) __has_builtin(x)
 #else
