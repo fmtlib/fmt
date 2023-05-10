@@ -293,7 +293,7 @@
   (`#3267 <https://github.com/fmtlib/fmt/pull/3267>`_).
   Thanks `@ShawnZhong (Shawn Zhong) <https://github.com/ShawnZhong>`_.
 
-* The ``FMT_EXPORT`` macro for shared library usage has been renamed to
+* Renamed the ``FMT_EXPORT`` macro for shared library usage to
   ``FMT_LIB_EXPORT``.
 
 * Improved documentation
