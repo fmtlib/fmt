@@ -1413,8 +1413,7 @@ class utf8_to_utf16 {
 };
 
 // A converter from UTF-16/UTF-32 (host endian) to UTF-8.
-template <typename WChar, typename Buffer = memory_buffer>
-class to_utf8 {
+template <typename WChar, typename Buffer = memory_buffer> class to_utf8 {
  private:
   Buffer buffer_;
 
@@ -4179,22 +4178,22 @@ FMT_API auto vsystem_error(int error_code, string_view format_str,
                            format_args args) -> std::system_error;
 
 /**
- \rst
- Constructs :class:`std::system_error` with a message formatted with
- ``fmt::format(fmt, args...)``.
+  \rst
+  Constructs :class:`std::system_error` with a message formatted with
+  ``fmt::format(fmt, args...)``.
   *error_code* is a system error code as given by ``errno``.
 
- **Example**::
+  **Example**::
 
-   // This throws std::system_error with the description
-   //   cannot open file 'madeup': No such file or directory
-   // or similar (system message may vary).
-   const char* filename = "madeup";
-   std::FILE* file = std::fopen(filename, "r");
-   if (!file)
-     throw fmt::system_error(errno, "cannot open file '{}'", filename);
- \endrst
-*/
+    // This throws std::system_error with the description
+    //   cannot open file 'madeup': No such file or directory
+    // or similar (system message may vary).
+    const char* filename = "madeup";
+    std::FILE* file = std::fopen(filename, "r");
+    if (!file)
+      throw fmt::system_error(errno, "cannot open file '{}'", filename);
+  \endrst
+ */
 template <typename... T>
 auto system_error(int error_code, format_string<T...> fmt, T&&... args)
     -> std::system_error {
