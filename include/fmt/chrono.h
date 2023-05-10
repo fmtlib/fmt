@@ -377,8 +377,8 @@ auto write_encoded_tm_str(OutputIt out, string_view in, const std::locale& loc)
     unit_t unit;
     write_codecvt(unit, in, loc);
     // In UTF-8 is used one to four one-byte code units.
-    unicode_to_utf8<code_unit, basic_memory_buffer<char, unit_t::max_size * 4>>
-        u;
+    auto u =
+        to_utf8<code_unit, basic_memory_buffer<char, unit_t::max_size * 4>>();
     if (!u.convert({unit.buf, to_unsigned(unit.end - unit.buf)}))
       FMT_THROW(format_error("failed to format time"));
     return copy_str<char>(u.c_str(), u.c_str() + u.size(), out);

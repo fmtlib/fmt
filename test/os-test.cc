@@ -29,8 +29,8 @@ TEST(os_test, format_windows_error) {
           FORMAT_MESSAGE_IGNORE_INSERTS,
       nullptr, ERROR_FILE_EXISTS, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
       reinterpret_cast<LPWSTR>(&message), 0, nullptr);
-  fmt::detail::unicode_to_utf8<wchar_t> utf8_message(
-      wstring_view(message, result - 2));
+  auto utf8_message =
+      fmt::detail::to_utf8<wchar_t>(wstring_view(message, result - 2));
   LocalFree(message);
   fmt::memory_buffer actual_message;
   fmt::detail::format_windows_error(actual_message, ERROR_FILE_EXISTS, "test");
@@ -55,8 +55,8 @@ TEST(os_test, format_long_windows_error) {
     LocalFree(message);
     return;
   }
-  fmt::detail::unicode_to_utf8<wchar_t> utf8_message(
-      wstring_view(message, result - 2));
+  auto utf8_message =
+      fmt::detail::to_utf8<wchar_t>(wstring_view(message, result - 2));
   LocalFree(message);
   fmt::memory_buffer actual_message;
   fmt::detail::format_windows_error(actual_message, provisioning_not_allowed,

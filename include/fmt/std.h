@@ -61,7 +61,7 @@ inline void write_escaped_path<char>(memory_buffer& quoted,
   auto buf = basic_memory_buffer<wchar_t>();
   write_escaped_string<wchar_t>(std::back_inserter(buf), p.native());
   // Convert UTF-16 to UTF-8.
-  if (!unicode_to_utf8<wchar_t>::convert(quoted, {buf.data(), buf.size()}))
+  if (!to_utf8<wchar_t>::convert(quoted, {buf.data(), buf.size()}))
     FMT_THROW(std::runtime_error("invalid utf16"));
 }
 #  endif

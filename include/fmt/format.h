@@ -1420,13 +1420,13 @@ class utf8_to_utf16 {
 
 // A converter from UTF-16/UTF-32 (host endian) to UTF-8.
 template <typename WChar, typename Buffer = memory_buffer>
-class unicode_to_utf8 {
+class to_utf8 {
  private:
   Buffer buffer_;
 
  public:
-  unicode_to_utf8() {}
-  explicit unicode_to_utf8(basic_string_view<WChar> s) {
+  to_utf8() {}
+  explicit to_utf8(basic_string_view<WChar> s) {
     static_assert(sizeof(WChar) == 2 || sizeof(WChar) == 4,
                   "Expect utf16 or utf32");
 

@@ -560,9 +560,9 @@ TEST(format_impl_test, utf8_decode_bogus_byte_sequences) {
   EXPECT_EQ(len, 2);  // "bogus [c0 0a] recovery %d", len);
 }
 
-TEST(format_impl_test, unicode_to_utf8) {
+TEST(format_impl_test, to_utf8) {
   auto s = std::string("ёжик");
-  fmt::detail::unicode_to_utf8<wchar_t> u(L"\x0451\x0436\x0438\x043A");
+  auto u = fmt::detail::to_utf8<wchar_t>(L"\x0451\x0436\x0438\x043A");
   EXPECT_EQ(s, u.str());
   EXPECT_EQ(s.size(), u.size());
 }
