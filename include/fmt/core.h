@@ -1869,7 +1869,7 @@ FMT_END_EXPORT
   ``vformat``::
 
     void vlog(string_view format_str, format_args args);  // OK
-    format_args args = make_format_args(42);  // Error: dangling reference
+    format_args args = make_format_args();  // Error: dangling reference
   \endrst
  */
 template <typename Context> class basic_format_args {
