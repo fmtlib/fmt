@@ -1839,9 +1839,9 @@ class format_arg_store
   \endrst
  */
 template <typename Context = format_context, typename... T>
-constexpr auto make_format_args(T&&... args)
+constexpr auto make_format_args(T&... args)
     -> format_arg_store<Context, remove_cvref_t<T>...> {
-  return {FMT_FORWARD(args)...};
+  return {args...};
 }
 
 /**
