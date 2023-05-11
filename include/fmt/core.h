@@ -1817,15 +1817,14 @@ class format_arg_store
 
  public:
   template <typename... T>
-  FMT_CONSTEXPR FMT_INLINE format_arg_store(T&&... args)
+  FMT_CONSTEXPR FMT_INLINE format_arg_store(T&... args)
       :
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
         basic_format_args<Context>(*this),
 #endif
         data_{detail::make_arg<
             is_packed, Context,
-            detail::mapped_type_constant<remove_cvref_t<T>, Context>::value>(
-            FMT_FORWARD(args))...} {
+            detail::mapped_type_constant<Args, Context>::value>(args)...} {
     detail::init_named_args(data_.named_args(), 0, 0, args...);
   }
 };
