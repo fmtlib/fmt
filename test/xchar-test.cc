@@ -476,7 +476,6 @@ TEST(locale_test, wformat) {
   auto loc = std::locale(std::locale(), new numpunct<wchar_t>());
   EXPECT_EQ(L"1234567", fmt::format(std::locale(), L"{:L}", 1234567));
   EXPECT_EQ(L"1~234~567", fmt::format(loc, L"{:L}", 1234567));
-  using wcontext = fmt::buffer_context<wchar_t>;
   int n = 1234567;
   EXPECT_EQ(L"1~234~567",
             fmt::vformat(loc, L"{:L}", fmt::make_wformat_args(n)));
