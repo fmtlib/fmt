@@ -1301,9 +1301,6 @@ template <typename Context> class value {
   }
 };
 
-template <typename Context, typename T>
-FMT_CONSTEXPR auto make_arg(T&& value) -> basic_format_arg<Context>;
-
 // To minimize the number of types we need to deal with, long is translated
 // either to int or to long long depending on its size.
 enum { long_short = sizeof(long) == sizeof(int) };
@@ -1497,110 +1494,6 @@ class appender : public std::back_insert_iterator<detail::buffer<char>> {
   auto operator++(int) noexcept -> appender { return *this; }
 };
 
-// A formatting argument. It is a trivially copyable/constructible type to
-// allow storage in basic_memory_buffer.
-template <typename Context> class basic_format_arg {
- private:
-  detail::value<Context> value_;
-  detail::type type_;
-
-  template <typename ContextType, typename T>
-  friend FMT_CONSTEXPR auto detail::make_arg(T&& value)
-      -> basic_format_arg<ContextType>;
-
-  template <typename Visitor, typename Ctx>
-  friend FMT_CONSTEXPR auto visit_format_arg(Visitor&& vis,
-                                             const basic_format_arg<Ctx>& arg)
-      -> decltype(vis(0));
-
-  friend class basic_format_args<Context>;
-  friend class dynamic_format_arg_store<Context>;
-
-  using char_type = typename Context::char_type;
-
-  template <typename T, typename Char, size_t NUM_ARGS, size_t NUM_NAMED_ARGS>
-  friend struct detail::arg_data;
-
-  basic_format_arg(const detail::named_arg_info<char_type>* args, size_t size)
-      : value_(args, size) {}
-
- public:
-  class handle {
-   public:
-    explicit handle(detail::custom_value<Context> custom) : custom_(custom) {}
-
-    void format(typename Context::parse_context_type& parse_ctx,
-                Context& ctx) const {
-      custom_.format(custom_.value, parse_ctx, ctx);
-    }
-
-   private:
-    detail::custom_value<Context> custom_;
-  };
-
-  constexpr basic_format_arg() : type_(detail::type::none_type) {}
-
-  constexpr explicit operator bool() const noexcept {
-    return type_ != detail::type::none_type;
-  }
-
-  auto type() const -> detail::type { return type_; }
-
-  auto is_integral() const -> bool { return detail::is_integral_type(type_); }
-  auto is_arithmetic() const -> bool {
-    return detail::is_arithmetic_type(type_);
-  }
-};
-
-/**
-  \rst
-  Visits an argument dispatching to the appropriate visit method based on
-  the argument type. For example, if the argument type is ``double`` then
-  ``vis(value)`` will be called with the value of type ``double``.
-  \endrst
- */
-FMT_MODULE_EXPORT
-template <typename Visitor, typename Context>
-FMT_CONSTEXPR FMT_INLINE auto visit_format_arg(
-    Visitor&& vis, const basic_format_arg<Context>& arg) -> decltype(vis(0)) {
-  switch (arg.type_) {
-  case detail::type::none_type:
-    break;
-  case detail::type::int_type:
-    return vis(arg.value_.int_value);
-  case detail::type::uint_type:
-    return vis(arg.value_.uint_value);
-  case detail::type::long_long_type:
-    return vis(arg.value_.long_long_value);
-  case detail::type::ulong_long_type:
-    return vis(arg.value_.ulong_long_value);
-  case detail::type::int128_type:
-    return vis(detail::convert_for_visit(arg.value_.int128_value));
-  case detail::type::uint128_type:
-    return vis(detail::convert_for_visit(arg.value_.uint128_value));
-  case detail::type::bool_type:
-    return vis(arg.value_.bool_value);
-  case detail::type::char_type:
-    return vis(arg.value_.char_value);
-  case detail::type::float_type:
-    return vis(arg.value_.float_value);
-  case detail::type::double_type:
-    return vis(arg.value_.double_value);
-  case detail::type::long_double_type:
-    return vis(arg.value_.long_double_value);
-  case detail::type::cstring_type:
-    return vis(arg.value_.string.data);
-  case detail::type::string_type:
-    using sv = basic_string_view<typename Context::char_type>;
-    return vis(sv(arg.value_.string.data, arg.value_.string.size));
-  case detail::type::pointer_type:
-    return vis(arg.value_.pointer);
-  case detail::type::custom_type:
-    return vis(typename basic_format_arg<Context>::handle(arg.value_.custom));
-  }
-  return vis(monostate());
-}
-
 namespace detail {
 
 template <typename Char, typename InputIt>
@@ -1695,29 +1588,127 @@ FMT_CONSTEXPR FMT_INLINE auto make_value(T&& val) -> value<Context> {
 }
 
 template <typename Context, typename T>
-FMT_CONSTEXPR auto make_arg(T&& value) -> basic_format_arg<Context> {
+FMT_CONSTEXPR auto make_arg(T& val) -> basic_format_arg<Context> {
   auto arg = basic_format_arg<Context>();
   arg.type_ = mapped_type_constant<T, Context>::value;
-  arg.value_ = make_value<Context>(value);
+  arg.value_ = make_value<Context>(val);
   return arg;
 }
 
-// The DEPRECATED type template parameter is there to avoid an ODR violation
-// when using a fallback formatter in one translation unit and an implicit
-// conversion in another (not recommended).
-template <bool IS_PACKED, typename Context, type, typename T,
-          FMT_ENABLE_IF(IS_PACKED)>
-FMT_CONSTEXPR FMT_INLINE auto make_arg(T&& val) -> value<Context> {
+template <bool PACKED, typename Context, typename T, FMT_ENABLE_IF(PACKED)>
+FMT_CONSTEXPR FMT_INLINE auto make_arg(T& val) -> value<Context> {
   return make_value<Context>(val);
 }
-
-template <bool IS_PACKED, typename Context, type, typename T,
-          FMT_ENABLE_IF(!IS_PACKED)>
-FMT_CONSTEXPR inline auto make_arg(T&& value) -> basic_format_arg<Context> {
-  return make_arg<Context>(value);
+template <bool PACKED, typename Context, typename T, FMT_ENABLE_IF(!PACKED)>
+FMT_CONSTEXPR inline auto make_arg(T& val) -> basic_format_arg<Context> {
+  return make_arg<Context>(val);
 }
 }  // namespace detail
 FMT_BEGIN_EXPORT
+
+// A formatting argument. It is a trivially copyable/constructible type to
+// allow storage in basic_memory_buffer.
+template <typename Context> class basic_format_arg {
+ private:
+  detail::value<Context> value_;
+  detail::type type_;
+
+  template <typename ContextType, typename T>
+  friend FMT_CONSTEXPR auto detail::make_arg(T& value)
+      -> basic_format_arg<ContextType>;
+
+  template <typename Visitor, typename Ctx>
+  friend FMT_CONSTEXPR auto visit_format_arg(Visitor&& vis,
+                                             const basic_format_arg<Ctx>& arg)
+      -> decltype(vis(0));
+
+  friend class basic_format_args<Context>;
+  friend class dynamic_format_arg_store<Context>;
+
+  using char_type = typename Context::char_type;
+
+  template <typename T, typename Char, size_t NUM_ARGS, size_t NUM_NAMED_ARGS>
+  friend struct detail::arg_data;
+
+  basic_format_arg(const detail::named_arg_info<char_type>* args, size_t size)
+      : value_(args, size) {}
+
+ public:
+  class handle {
+   public:
+    explicit handle(detail::custom_value<Context> custom) : custom_(custom) {}
+
+    void format(typename Context::parse_context_type& parse_ctx,
+                Context& ctx) const {
+      custom_.format(custom_.value, parse_ctx, ctx);
+    }
+
+   private:
+    detail::custom_value<Context> custom_;
+  };
+
+  constexpr basic_format_arg() : type_(detail::type::none_type) {}
+
+  constexpr explicit operator bool() const noexcept {
+    return type_ != detail::type::none_type;
+  }
+
+  auto type() const -> detail::type { return type_; }
+
+  auto is_integral() const -> bool { return detail::is_integral_type(type_); }
+  auto is_arithmetic() const -> bool {
+    return detail::is_arithmetic_type(type_);
+  }
+};
+
+/**
+  \rst
+  Visits an argument dispatching to the appropriate visit method based on
+  the argument type. For example, if the argument type is ``double`` then
+  ``vis(value)`` will be called with the value of type ``double``.
+  \endrst
+ */
+FMT_MODULE_EXPORT
+template <typename Visitor, typename Context>
+FMT_CONSTEXPR FMT_INLINE auto visit_format_arg(
+    Visitor&& vis, const basic_format_arg<Context>& arg) -> decltype(vis(0)) {
+  switch (arg.type_) {
+  case detail::type::none_type:
+    break;
+  case detail::type::int_type:
+    return vis(arg.value_.int_value);
+  case detail::type::uint_type:
+    return vis(arg.value_.uint_value);
+  case detail::type::long_long_type:
+    return vis(arg.value_.long_long_value);
+  case detail::type::ulong_long_type:
+    return vis(arg.value_.ulong_long_value);
+  case detail::type::int128_type:
+    return vis(detail::convert_for_visit(arg.value_.int128_value));
+  case detail::type::uint128_type:
+    return vis(detail::convert_for_visit(arg.value_.uint128_value));
+  case detail::type::bool_type:
+    return vis(arg.value_.bool_value);
+  case detail::type::char_type:
+    return vis(arg.value_.char_value);
+  case detail::type::float_type:
+    return vis(arg.value_.float_value);
+  case detail::type::double_type:
+    return vis(arg.value_.double_value);
+  case detail::type::long_double_type:
+    return vis(arg.value_.long_double_value);
+  case detail::type::cstring_type:
+    return vis(arg.value_.string.data);
+  case detail::type::string_type:
+    using sv = basic_string_view<typename Context::char_type>;
+    return vis(sv(arg.value_.string.data, arg.value_.string.size));
+  case detail::type::pointer_type:
+    return vis(arg.value_.pointer);
+  case detail::type::custom_type:
+    return vis(typename basic_format_arg<Context>::handle(arg.value_.custom));
+  }
+  return vis(monostate());
+}
 
 // Formatting context.
 template <typename OutputIt, typename Char> class basic_format_context {
@@ -1822,9 +1813,7 @@ class format_arg_store
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
         basic_format_args<Context>(*this),
 #endif
-        data_{detail::make_arg<
-            is_packed, Context,
-            detail::mapped_type_constant<Args, Context>::value>(args)...} {
+        data_{detail::make_arg<is_packed, Context>(args)...} {
     detail::init_named_args(data_.named_args(), 0, 0, args...);
   }
 };

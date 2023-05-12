@@ -132,22 +132,23 @@ template <typename T, typename Context> class arg_converter {
     if (const_check(sizeof(target_type) <= sizeof(int))) {
       // Extra casts are used to silence warnings.
       if (is_signed) {
-        arg_ = detail::make_arg<Context>(
-            static_cast<int>(static_cast<target_type>(value)));
+        auto n = static_cast<int>(static_cast<target_type>(value));
+        arg_ = detail::make_arg<Context>(n);
       } else {
         using unsigned_type = typename make_unsigned_or_bool<target_type>::type;
-        arg_ = detail::make_arg<Context>(
-            static_cast<unsigned>(static_cast<unsigned_type>(value)));
+        auto n = static_cast<unsigned>(static_cast<unsigned_type>(value));
+        arg_ = detail::make_arg<Context>(n);
       }
     } else {
       if (is_signed) {
         // glibc's printf doesn't sign extend arguments of smaller types:
         //   std::printf("%lld", -42);  // prints "4294967254"
         // but we don't have to do the same because it's a UB.
-        arg_ = detail::make_arg<Context>(static_cast<long long>(value));
+        auto n = static_cast<long long>(value);
+        arg_ = detail::make_arg<Context>(n);
       } else {
-        arg_ = detail::make_arg<Context>(
-            static_cast<typename make_unsigned_or_bool<U>::type>(value));
+        auto n = static_cast<typename make_unsigned_or_bool<U>::type>(value);
+        arg_ = detail::make_arg<Context>(n);
       }
     }
   }
@@ -175,8 +176,8 @@ template <typename Context> class char_converter {
 
   template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
   void operator()(T value) {
-    arg_ = detail::make_arg<Context>(
-        static_cast<typename Context::char_type>(value));
+    auto c = static_cast<typename Context::char_type>(value);
+    arg_ = detail::make_arg<Context>(c);
   }
 
   template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value)>
@@ -476,9 +477,9 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
       auto str = visit_format_arg(get_cstring<Char>(), arg);
       auto str_end = str + specs.precision;
       auto nul = std::find(str, str_end, Char());
-      arg = make_arg<basic_printf_context<iterator, Char>>(
-          basic_string_view<Char>(
-              str, to_unsigned(nul != str_end ? nul - str : specs.precision)));
+      auto sv = basic_string_view<Char>(
+          str, to_unsigned(nul != str_end ? nul - str : specs.precision));
+      arg = make_arg<basic_printf_context<iterator, Char>>(sv);
     }
     if (specs.alt && visit_format_arg(is_zero_int(), arg)) specs.alt = false;
     if (specs.fill[0] == '0') {

@@ -1773,20 +1773,6 @@ TEST(format_test, variadic) {
   EXPECT_EQ("abc1", fmt::format("{}c{}", "ab", 1));
 }
 
-TEST(format_test, dynamic) {
-  using ctx = fmt::format_context;
-  auto args = std::vector<fmt::basic_format_arg<ctx>>();
-  args.emplace_back(fmt::detail::make_arg<ctx>(42));
-  args.emplace_back(fmt::detail::make_arg<ctx>("abc1"));
-  args.emplace_back(fmt::detail::make_arg<ctx>(1.5f));
-
-  std::string result = fmt::vformat(
-      "{} and {} and {}",
-      fmt::format_args(args.data(), static_cast<int>(args.size())));
-
-  EXPECT_EQ("42 and abc1 and 1.5", result);
-}
-
 TEST(format_test, bytes) {
   auto s = fmt::format("{:10}", fmt::bytes("ёжик"));
   EXPECT_EQ("ёжик  ", s);
@@ -2098,8 +2084,8 @@ TEST(format_test, format_to_n_output_iterator) {
 
 TEST(format_test, vformat_to) {
   using context = fmt::format_context;
-  fmt::basic_format_arg<context> arg = fmt::detail::make_arg<context>(42);
-  auto args = fmt::basic_format_args<context>(&arg, 1);
+  int n = 42;
+  auto args = fmt::make_format_args<context>(n);
   auto s = std::string();
   fmt::vformat_to(std::back_inserter(s), "{}", args);
   EXPECT_EQ("42", s);
