@@ -162,9 +162,6 @@
 #  endif
 #endif
 
-// An inline std::forward replacement.
-#define FMT_FORWARD(...) static_cast<decltype(__VA_ARGS__)&&>(__VA_ARGS__)
-
 #ifdef _MSC_VER
 #  define FMT_UNCHECKED_ITERATOR(It) \
     using _Unchecked_type = It  // Mark iterator as checked.
@@ -1444,30 +1441,28 @@ template <typename Context> struct arg_mapper {
     return map(format_as(val));
   }
 
-  template <typename T, typename U = remove_cvref_t<T>>
-  struct formattable
-      : bool_constant<has_const_formatter<U, Context>() ||
-                      (has_formatter<U, Context>::value &&
-                       !std::is_const<remove_reference_t<T>>::value)> {};
+  template <typename T, typename U = remove_const_t<T>>
+  struct formattable : bool_constant<has_const_formatter<U, Context>() ||
+                                     (has_formatter<U, Context>::value &&
+                                      !std::is_const<T>::value)> {};
 
   template <typename T, FMT_ENABLE_IF(formattable<T>::value)>
-  FMT_CONSTEXPR FMT_INLINE auto do_map(T&& val) -> T& {
+  FMT_CONSTEXPR FMT_INLINE auto do_map(T& val) -> T& {
     return val;
   }
   template <typename T, FMT_ENABLE_IF(!formattable<T>::value)>
-  FMT_CONSTEXPR FMT_INLINE auto do_map(T&&) -> unformattable {
+  FMT_CONSTEXPR FMT_INLINE auto do_map(T&) -> unformattable {
     return {};
   }
 
-  template <typename T, typename U = remove_cvref_t<T>,
+  template <typename T, typename U = remove_const_t<T>,
             FMT_ENABLE_IF((std::is_class<U>::value || std::is_enum<U>::value ||
                            std::is_union<U>::value) &&
                           !is_string<U>::value && !is_char<U>::value &&
                           !is_named_arg<U>::value &&
                           !std::is_arithmetic<format_as_t<U>>::value)>
-  FMT_CONSTEXPR FMT_INLINE auto map(T&& val)
-      -> decltype(this->do_map(std::forward<T>(val))) {
-    return do_map(std::forward<T>(val));
+  FMT_CONSTEXPR FMT_INLINE auto map(T& val) -> decltype(this->do_map(val)) {
+    return do_map(val);
   }
 
   template <typename T, FMT_ENABLE_IF(is_named_arg<T>::value)>
@@ -1752,7 +1747,7 @@ using format_context = buffer_context<char>;
 template <typename T, typename Char = char>
 using is_formattable = bool_constant<!std::is_base_of<
     detail::unformattable, decltype(detail::arg_mapper<buffer_context<Char>>()
-                                        .map(std::declval<T>()))>::value>;
+                                        .map(std::declval<T&>()))>::value>;
 
 /**
   \rst
