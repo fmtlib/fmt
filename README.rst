@@ -49,6 +49,7 @@ Features
 * Fast IEEE 754 floating-point formatter with correct rounding, shortness and
   round-trip guarantees using the `Dragonbox <https://github.com/jk-jeon/dragonbox>`_
   algorithm
+* Portable Unicode support
 * Safe `printf implementation
   <https://fmt.dev/latest/api.html#printf-formatting>`_ including the POSIX
   extension for positional arguments
