@@ -1287,7 +1287,7 @@ template <typename Context> class value {
       : named_args{args, size} {}
 
   template <typename T> FMT_CONSTEXPR FMT_INLINE value(T& val) {
-    using value_type = remove_cvref_t<T>;
+    using value_type = remove_const_t<T>;
     custom.value = const_cast<value_type*>(&val);
     // Get the formatter type through the context to allow different contexts
     // have different extension points, e.g. `formatter<T>` for `format` and
@@ -1549,9 +1549,9 @@ constexpr auto encode_types() -> unsigned long long {
          (encode_types<Context, Args...>() << packed_arg_bits);
 }
 
-template <typename Context, typename T>
-FMT_CONSTEXPR FMT_INLINE auto make_value(T&& val) -> value<Context> {
-  auto&& arg = arg_mapper<Context>().map(FMT_FORWARD(val));
+template <bool PACKED, typename Context, typename T, FMT_ENABLE_IF(PACKED)>
+FMT_CONSTEXPR FMT_INLINE auto make_arg(T& val) -> value<Context> {
+  auto&& arg = arg_mapper<Context>().map(val);
   using arg_type = remove_cvref_t<decltype(arg)>;
 
   constexpr bool formattable_char =
@@ -1578,14 +1578,10 @@ template <typename Context, typename T>
 FMT_CONSTEXPR auto make_arg(T& val) -> basic_format_arg<Context> {
   auto arg = basic_format_arg<Context>();
   arg.type_ = mapped_type_constant<T, Context>::value;
-  arg.value_ = make_value<Context>(val);
+  arg.value_ = make_arg<true, Context>(val);
   return arg;
 }
 
-template <bool PACKED, typename Context, typename T, FMT_ENABLE_IF(PACKED)>
-FMT_CONSTEXPR FMT_INLINE auto make_arg(T& val) -> value<Context> {
-  return make_value<Context>(val);
-}
 template <bool PACKED, typename Context, typename T, FMT_ENABLE_IF(!PACKED)>
 FMT_CONSTEXPR inline auto make_arg(T& val) -> basic_format_arg<Context> {
   return make_arg<Context>(val);
