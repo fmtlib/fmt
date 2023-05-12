@@ -118,7 +118,7 @@ Example (https://godbolt.org/z/r7vvGE1v7)::
     fmt::print("{}\n", kevin_namespacy::film::se7en); // prints "7"
   }
 
-Using the specialization API is more comlex but gives you full control over
+Using the specialization API is more complex but gives you full control over
 parsing and formatting. To use this method specialize the ``formatter`` struct
 template for your type and implement ``parse`` and ``format`` methods.
 For example::
