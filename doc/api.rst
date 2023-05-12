@@ -249,9 +249,8 @@ You can also write a formatter for a hierarchy of classes::
     fmt::print("{}", a); // prints "B"
   }
 
-If a type provides both a ``formatter`` specialization and an implicit
-conversion to a formattable type, the specialization takes precedence over the
-conversion.
+Providing both a ``formatter`` specialization and a ``format_as`` overload is
+disallowed.
 
 Named Arguments
 ---------------
