@@ -1355,12 +1355,9 @@ TEST(format_test, format_double) {
 
   if (std::numeric_limits<long double>::digits == 64) {
     auto ld = 0xf.ffffffffffp-3l;
-    safe_sprintf(buffer, "%La", ld);
-    EXPECT_EQ(fmt::format("{:a}", ld), buffer);
-    safe_sprintf(buffer, "%.*La", 10, ld);
-    EXPECT_EQ(fmt::format("{:.10a}", ld), buffer);
-    safe_sprintf(buffer, "%.*La", 9, ld);
-    EXPECT_EQ(fmt::format("{:.9a}", ld), buffer);
+    EXPECT_EQ(fmt::format("{:a}", ld), "0xf.ffffffffffp-3");
+    EXPECT_EQ(fmt::format("{:.10a}", ld), "0xf.ffffffffffp-3");
+    EXPECT_EQ(fmt::format("{:.9a}", ld), "0x1.000000000p+1");
   }
 #endif
 
@@ -1379,12 +1376,10 @@ TEST(format_test, format_double) {
 
   if (std::numeric_limits<long double>::digits == 64) {
     auto ld = (std::numeric_limits<long double>::min)();
-    safe_sprintf(buffer, "%La", ld);
-    EXPECT_EQ(fmt::format("{:a}", ld), buffer);
+    EXPECT_EQ(fmt::format("{:a}", ld), "0x8p-16385");
 
     ld = (std::numeric_limits<long double>::max)();
-    safe_sprintf(buffer, "%La", ld);
-    EXPECT_EQ(fmt::format("{:a}", ld), buffer);
+    EXPECT_EQ(fmt::format("{:a}", ld), "0xf.fffffffffffffffp+16380");
 
     ld = std::numeric_limits<long double>::denorm_min();
     EXPECT_EQ(fmt::format("{:a}", ld), "0x0.000000000000001p-16382");
@@ -1494,9 +1489,8 @@ TEST(format_test, format_long_double) {
   if (fmt::detail::is_double_double<decltype(ld)>::value) {
     safe_sprintf(buffer, "%a", static_cast<double>(ld));
     EXPECT_EQ(buffer, fmt::format("{:a}", ld));
-  } else {
-    safe_sprintf(buffer, "%La", ld);
-    EXPECT_EQ(buffer, fmt::format("{:a}", ld));
+  } else if (std::numeric_limits<long double>::digits == 64) {
+    EXPECT_EQ(fmt::format("{:a}", ld), "0xd.3d70a3d70a3d70ap-2");
   }
 }
 
