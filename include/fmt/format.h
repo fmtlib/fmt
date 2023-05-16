@@ -78,10 +78,10 @@
 #  endif
 #endif
 
-#if FMT_GCC_VERSION
-#  define FMT_GCC_VISIBILITY_HIDDEN __attribute__((visibility("hidden")))
+#if FMT_GCC_VERSION || defined(__clang__)
+#  define FMT_VISIBILITY(value) __attribute__((visibility(value)))
 #else
-#  define FMT_GCC_VISIBILITY_HIDDEN
+#  define FMT_VISIBILITY(value)
 #endif
 
 #ifdef __has_builtin
@@ -1046,7 +1046,7 @@ FMT_BEGIN_EXPORT
 #endif
 
 /** An error reported from a formatting function. */
-class FMT_API format_error : public std::runtime_error {
+class FMT_VISIBILITY("default") format_error : public std::runtime_error {
  public:
   using std::runtime_error::runtime_error;
 };
@@ -1963,7 +1963,7 @@ inline auto find_escape(const char* begin, const char* end)
   [] {                                                                        \
     /* Use the hidden visibility as a workaround for a GCC bug (#1973). */    \
     /* Use a macro-like name to avoid shadowing warnings. */                  \
-    struct FMT_GCC_VISIBILITY_HIDDEN FMT_COMPILE_STRING : base {              \
+    struct FMT_VISIBILITY("hidden") FMT_COMPILE_STRING : base {               \
       using char_type FMT_MAYBE_UNUSED = fmt::remove_cvref_t<decltype(s[0])>; \
       FMT_MAYBE_UNUSED FMT_CONSTEXPR explicit                                 \
       operator fmt::basic_string_view<char_type>() const {                    \
