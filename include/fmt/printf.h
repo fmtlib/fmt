@@ -318,9 +318,7 @@ void parse_flags(format_specs<Char>& specs, const Char*& it, const Char* end) {
       specs.fill[0] = '0';
       break;
     case ' ':
-      if (specs.sign != sign::plus) {
-        specs.sign = sign::space;
-      }
+      if (specs.sign != sign::plus) specs.sign = sign::space;
       break;
     case '#':
       specs.alt = true;
@@ -437,12 +435,11 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
     }
     Char c = *it++;
     if (it != end && *it == c) {
-      out = write(out, basic_string_view<Char>(start, to_unsigned(it - start)));
+      write(out, basic_string_view<Char>(start, to_unsigned(it - start)));
       start = ++it;
       continue;
     }
-    out =
-        write(out, basic_string_view<Char>(start, to_unsigned(it - 1 - start)));
+    write(out, basic_string_view<Char>(start, to_unsigned(it - 1 - start)));
 
     auto specs = format_specs<Char>();
     specs.align = align::right;
@@ -469,9 +466,10 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
     auto arg = get_arg(arg_index);
     // For d, i, o, u, x, and X conversion specifiers, if a precision is
     // specified, the '0' flag is ignored
-    if (specs.precision >= 0 && arg.is_integral())
-      specs.fill[0] =
-          ' ';  // Ignore '0' flag for non-numeric types or if '-' present.
+    if (specs.precision >= 0 && arg.is_integral()) {
+      // Ignore '0' for non-numeric types or if '-' present.
+      specs.fill[0] = ' ';
+    }
     if (specs.precision >= 0 && arg.type() == type::cstring_type) {
       auto str = visit_format_arg(get_cstring<Char>(), arg);
       auto str_end = str + specs.precision;
