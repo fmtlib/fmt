@@ -2159,12 +2159,12 @@ TEST(format_test, test_formatters_enabled) {
   check_enabled_formatters<char, bool, char, signed char, unsigned char, short,
                            unsigned short, int, unsigned, long, unsigned long,
                            long long, unsigned long long, float, double,
-                           long double, void*, const void*, const char*,
+                           long double, void*, const void*, char*, const char*,
                            std::string, std::nullptr_t>();
   check_enabled_formatters<wchar_t, bool, wchar_t, signed char, unsigned char,
                            short, unsigned short, int, unsigned, long,
                            unsigned long, long long, unsigned long long, float,
-                           double, long double, void*, const void*,
+                           double, long double, void*, const void*, wchar_t*,
                            const wchar_t*, std::wstring, std::nullptr_t>();
 }
 
