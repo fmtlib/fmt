@@ -1458,7 +1458,7 @@ FMT_FUNC bool write_console(std::FILE* f, string_view text) {
   auto u16 = utf8_to_utf16(text);
   auto written = dword();
   return WriteConsoleW(reinterpret_cast<void*>(_get_osfhandle(fd)), u16.c_str(),
-                       static_cast<uint32_t>(u16.size()), &written, nullptr);
+                       static_cast<uint32_t>(u16.size()), &written, nullptr) != 0;
 }
 
 // Print assuming legacy (non-Unicode) encoding.
