@@ -25,7 +25,6 @@ template <typename OutputIt, typename Char> class basic_printf_context {
 
  public:
   using char_type = Char;
-  using format_arg = basic_format_arg<basic_printf_context>;
   using parse_context_type = basic_format_parse_context<Char>;
   template <typename T> using formatter_type = printf_formatter<T>;
 
@@ -39,12 +38,14 @@ template <typename OutputIt, typename Char> class basic_printf_context {
                        basic_format_args<basic_printf_context> args)
       : out_(out), args_(args) {}
 
-  OutputIt out() { return out_; }
+  auto out() -> OutputIt { return out_; }
   void advance_to(OutputIt it) { out_ = it; }
 
-  detail::locale_ref locale() { return {}; }
+  auto locale() -> detail::locale_ref { return {}; }
 
-  format_arg arg(int id) const { return args_.get(id); }
+  auto arg(int id) const -> basic_format_arg<basic_printf_context> {
+    return args_.get(id);
+  }
 
   FMT_CONSTEXPR void on_error(const char* message) {
     detail::error_handler().on_error(message);

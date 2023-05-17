@@ -4082,8 +4082,7 @@ FMT_CONSTEXPR auto get_dynamic_spec(FormatArg arg, ErrorHandler eh) -> int {
 }
 
 template <typename Context, typename ID>
-FMT_CONSTEXPR auto get_arg(Context& ctx, ID id) ->
-    typename Context::format_arg {
+FMT_CONSTEXPR auto get_arg(Context& ctx, ID id) -> decltype(ctx.arg(id)) {
   auto arg = ctx.arg(id);
   if (!arg) ctx.on_error("argument not found");
   return arg;
