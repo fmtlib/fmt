@@ -1162,25 +1162,10 @@ FMT_INLINE int remove_trailing_zeros(uint64_t& n) noexcept {
 
   // Is n is divisible by 10^8?
   if ((nm.high() & ((1ull << (90 - 64)) - 1)) == 0 && nm.low() < magic_number) {
-    // If yes, work with the quotient.
+    // If yes, work with the quotient...
     auto n32 = static_cast<uint32_t>(nm.high() >> (90 - 64));
-
-    const uint32_t mod_inv_5 = 0xcccccccd;
-    const uint32_t mod_inv_25 = mod_inv_5 * mod_inv_5;
-
-    int s = 8;
-    while (true) {
-      auto q = rotr(n32 * mod_inv_25, 2);
-      if (q > max_value<uint32_t>() / 100) break;
-      n32 = q;
-      s += 2;
-    }
-    auto q = rotr(n32 * mod_inv_5, 1);
-    if (q <= max_value<uint32_t>() / 10) {
-      n32 = q;
-      s |= 1;
-    }
-
+    // ... and use the 32 bit variant of the function
+    auto s = remove_trailing_zeros(n32);
     n = n32;
     return s;
   }
