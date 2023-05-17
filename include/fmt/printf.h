@@ -222,7 +222,7 @@ auto make_arg_formatter(buffer_appender<Char> iter, format_specs<Char>& s)
 }
 
 // The ``printf`` argument formatter.
-template <typename OutputIt, typename Char>
+template <typename Char>
 class printf_arg_formatter : public arg_formatter<Char> {
  private:
   using base = arg_formatter<Char>;
@@ -230,75 +230,77 @@ class printf_arg_formatter : public arg_formatter<Char> {
 
   context_type& context_;
 
-  auto write_null_pointer(bool is_string = false) -> OutputIt {
+  void write_null_pointer(bool is_string = false) {
     auto s = this->specs;
     s.type = presentation_type::none;
-    return write_bytes(this->out, is_string ? "(null)" : "(nil)", s);
+    write_bytes(this->out, is_string ? "(null)" : "(nil)", s);
   }
 
  public:
-  printf_arg_formatter(OutputIt iter, format_specs<Char>& s, context_type& ctx)
+  printf_arg_formatter(buffer_appender<Char> iter, format_specs<Char>& s,
+                       context_type& ctx)
       : base(make_arg_formatter(iter, s)), context_(ctx) {}
 
-  auto operator()(monostate value) -> OutputIt {
-    return base::operator()(value);
-  }
+  void operator()(monostate value) { base::operator()(value); }
 
   template <typename T, FMT_ENABLE_IF(detail::is_integral<T>::value)>
-  auto operator()(T value) -> OutputIt {
+  void operator()(T value) {
     // MSVC2013 fails to compile separate overloads for bool and Char so use
     // std::is_same instead.
-    if (std::is_same<T, Char>::value) {
-      format_specs<Char> fmt_specs = this->specs;
-      if (fmt_specs.type != presentation_type::none &&
-          fmt_specs.type != presentation_type::chr) {
-        return (*this)(static_cast<int>(value));
-      }
-      fmt_specs.sign = sign::none;
-      fmt_specs.alt = false;
-      fmt_specs.fill[0] = ' ';  // Ignore '0' flag for char types.
-      // align::numeric needs to be overwritten here since the '0' flag is
-      // ignored for non-numeric types
-      if (fmt_specs.align == align::none || fmt_specs.align == align::numeric)
-        fmt_specs.align = align::right;
-      return write<Char>(this->out, static_cast<Char>(value), fmt_specs);
+    if (!std::is_same<T, Char>::value) {
+      base::operator()(value);
+      return;
     }
-    return base::operator()(value);
+    format_specs<Char> fmt_specs = this->specs;
+    if (fmt_specs.type != presentation_type::none &&
+        fmt_specs.type != presentation_type::chr) {
+      return (*this)(static_cast<int>(value));
+    }
+    fmt_specs.sign = sign::none;
+    fmt_specs.alt = false;
+    fmt_specs.fill[0] = ' ';  // Ignore '0' flag for char types.
+    // align::numeric needs to be overwritten here since the '0' flag is
+    // ignored for non-numeric types
+    if (fmt_specs.align == align::none || fmt_specs.align == align::numeric)
+      fmt_specs.align = align::right;
+    write<Char>(this->out, static_cast<Char>(value), fmt_specs);
   }
 
   template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
-  auto operator()(T value) -> OutputIt {
-    return base::operator()(value);
+  void operator()(T value) {
+    base::operator()(value);
   }
 
   /** Formats a null-terminated C string. */
-  auto operator()(const char* value) -> OutputIt {
-    if (value) return base::operator()(value);
-    return write_null_pointer(this->specs.type != presentation_type::pointer);
+  void operator()(const char* value) {
+    if (value)
+      base::operator()(value);
+    else
+      write_null_pointer(this->specs.type != presentation_type::pointer);
   }
 
   /** Formats a null-terminated wide C string. */
-  auto operator()(const wchar_t* value) -> OutputIt {
-    if (value) return base::operator()(value);
-    return write_null_pointer(this->specs.type != presentation_type::pointer);
+  void operator()(const wchar_t* value) {
+    if (value)
+      base::operator()(value);
+    else
+      write_null_pointer(this->specs.type != presentation_type::pointer);
   }
 
-  auto operator()(basic_string_view<Char> value) -> OutputIt {
-    return base::operator()(value);
-  }
+  void operator()(basic_string_view<Char> value) { base::operator()(value); }
 
   /** Formats a pointer. */
-  auto operator()(const void* value) -> OutputIt {
-    return value ? base::operator()(value) : write_null_pointer();
+  void operator()(const void* value) {
+    if (value)
+      base::operator()(value);
+    else
+      write_null_pointer();
   }
 
   /** Formats an argument of a custom (user-defined) type. */
-  auto operator()(typename basic_format_arg<context_type>::handle handle)
-      -> OutputIt {
-    auto parse_ctx =
-        basic_format_parse_context<Char>(basic_string_view<Char>());
+  void operator()(typename basic_format_arg<context_type>::handle handle) {
+    auto parse_ctx = basic_format_parse_context<Char>({});
     handle.format(parse_ctx, context_);
-    return this->out;
   }
 };
 
@@ -549,8 +551,7 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
     start = it;
 
     // Format argument.
-    out = visit_format_arg(
-        printf_arg_formatter<iterator, Char>(out, specs, context), arg);
+    visit_format_arg(printf_arg_formatter<Char>(out, specs, context), arg);
   }
   write(out, basic_string_view<Char>(start, to_unsigned(it - start)));
 }
