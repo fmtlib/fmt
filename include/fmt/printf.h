@@ -585,6 +585,7 @@ inline auto make_printf_args(const T&... args)
   arguments and can be implicitly converted to `~fmt::wprintf_args`.
   \endrst
  */
+// DEPRECATED!
 template <typename... T>
 inline auto make_wprintf_args(const T&... args)
     -> format_arg_store<wprintf_context, T...> {
@@ -647,12 +648,12 @@ inline auto fprintf(std::FILE* f, const S& fmt, const T&... args) -> int {
                   fmt::make_format_args<context>(args...));
 }
 
-template <typename S, typename Char = char_t<S>>
-inline auto vprintf(
-    const S& fmt,
+template <typename Char>
+FMT_DEPRECATED inline auto vprintf(
+    basic_string_view<Char> fmt,
     basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args)
     -> int {
-  return vfprintf(stdout, detail::to_string_view(fmt), args);
+  return vfprintf(stdout, fmt, args);
 }
 
 /**
@@ -664,11 +665,14 @@ inline auto vprintf(
     fmt::printf("Elapsed time: %.2f seconds", 1.23);
   \endrst
  */
-template <typename S, typename... T, FMT_ENABLE_IF(detail::is_string<S>::value)>
-inline auto printf(const S& fmt, const T&... args) -> int {
-  return vprintf(
-      detail::to_string_view(fmt),
-      fmt::make_format_args<basic_printf_context_t<char_t<S>>>(args...));
+template <typename... T>
+inline auto printf(string_view fmt, const T&... args) -> int {
+  return vfprintf(stdout, fmt, make_printf_args(args...));
+}
+template <typename... T>
+FMT_DEPRECATED inline auto printf(basic_string_view<wchar_t> fmt,
+                                  const T&... args) -> int {
+  return vfprintf(stdout, fmt, make_wprintf_args(args...));
 }
 
 FMT_END_EXPORT
