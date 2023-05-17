@@ -18,11 +18,6 @@ FMT_BEGIN_EXPORT
 
 template <typename T> struct printf_formatter { printf_formatter() = delete; };
 
-template <typename Char>
-class basic_printf_parse_context : public basic_format_parse_context<Char> {
-  using basic_format_parse_context<Char>::basic_format_parse_context;
-};
-
 template <typename OutputIt, typename Char> class basic_printf_context {
  private:
   OutputIt out_;
@@ -31,7 +26,7 @@ template <typename OutputIt, typename Char> class basic_printf_context {
  public:
   using char_type = Char;
   using format_arg = basic_format_arg<basic_printf_context>;
-  using parse_context_type = basic_printf_parse_context<Char>;
+  using parse_context_type = basic_format_parse_context<Char>;
   template <typename T> using formatter_type = printf_formatter<T>;
 
   /**
@@ -299,7 +294,7 @@ class printf_arg_formatter : public arg_formatter<Char> {
   /** Formats an argument of a custom (user-defined) type. */
   OutputIt operator()(typename basic_format_arg<context_type>::handle handle) {
     auto parse_ctx =
-        basic_printf_parse_context<Char>(basic_string_view<Char>());
+        basic_format_parse_context<Char>(basic_string_view<Char>());
     handle.format(parse_ctx, context_);
     return this->out;
   }
@@ -416,7 +411,7 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
   using iterator = buffer_appender<Char>;
   auto out = iterator(buf);
   auto context = basic_printf_context<iterator, Char>(out, args);
-  auto parse_ctx = basic_printf_parse_context<Char>(format);
+  auto parse_ctx = basic_format_parse_context<Char>(format);
 
   // Returns the argument with specified index or, if arg_index is -1, the next
   // argument.
