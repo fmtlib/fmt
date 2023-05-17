@@ -57,47 +57,45 @@ FMT_BEGIN_DETAIL_NAMESPACE
 // Checks if a value fits in int - used to avoid warnings about comparing
 // signed and unsigned integers.
 template <bool IsSigned> struct int_checker {
-  template <typename T> static bool fits_in_int(T value) {
+  template <typename T> static auto fits_in_int(T value) -> bool {
     unsigned max = max_value<int>();
     return value <= max;
   }
-  static bool fits_in_int(bool) { return true; }
+  static auto fits_in_int(bool) -> bool { return true; }
 };
 
 template <> struct int_checker<true> {
-  template <typename T> static bool fits_in_int(T value) {
+  template <typename T> static auto fits_in_int(T value) -> bool {
     return value >= (std::numeric_limits<int>::min)() &&
            value <= max_value<int>();
   }
-  static bool fits_in_int(int) { return true; }
+  static auto fits_in_int(int) -> bool { return true; }
 };
 
-class printf_precision_handler {
- public:
+struct printf_precision_handler {
   template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
-  int operator()(T value) {
+  auto operator()(T value) -> int {
     if (!int_checker<std::numeric_limits<T>::is_signed>::fits_in_int(value))
       throw_format_error("number is too big");
     return (std::max)(static_cast<int>(value), 0);
   }
 
   template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value)>
-  int operator()(T) {
+  auto operator()(T) -> int {
     throw_format_error("precision is not integer");
     return 0;
   }
 };
 
 // An argument visitor that returns true iff arg is a zero integer.
-class is_zero_int {
- public:
+struct is_zero_int {
   template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
-  bool operator()(T value) {
+  auto operator()(T value) -> bool {
     return value == 0;
   }
 
   template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value)>
-  bool operator()(T) {
+  auto operator()(T) -> bool {
     return false;
   }
 };
@@ -183,8 +181,8 @@ template <typename Context> class char_converter {
 // An argument visitor that return a pointer to a C string if argument is a
 // string or null otherwise.
 template <typename Char> struct get_cstring {
-  template <typename T> const Char* operator()(T) { return nullptr; }
-  const Char* operator()(const Char* s) { return s; }
+  template <typename T> auto operator()(T) -> const Char* { return nullptr; }
+  auto operator()(const Char* s) -> const Char* { return s; }
 };
 
 // Checks if an argument is a valid printf width specifier and sets
@@ -197,7 +195,7 @@ template <typename Char> class printf_width_handler {
   explicit printf_width_handler(format_specs<Char>& specs) : specs_(specs) {}
 
   template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
-  unsigned operator()(T value) {
+  auto operator()(T value) -> unsigned {
     auto width = static_cast<uint32_or_64_or_128_t<T>>(value);
     if (detail::is_negative(value)) {
       specs_.align = align::left;
@@ -209,7 +207,7 @@ template <typename Char> class printf_width_handler {
   }
 
   template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value)>
-  unsigned operator()(T) {
+  auto operator()(T) -> unsigned {
     throw_format_error("width is not integer");
     return 0;
   }
@@ -232,7 +230,7 @@ class printf_arg_formatter : public arg_formatter<Char> {
 
   context_type& context_;
 
-  OutputIt write_null_pointer(bool is_string = false) {
+  auto write_null_pointer(bool is_string = false) -> OutputIt {
     auto s = this->specs;
     s.type = presentation_type::none;
     return write_bytes(this->out, is_string ? "(null)" : "(nil)", s);
@@ -242,10 +240,12 @@ class printf_arg_formatter : public arg_formatter<Char> {
   printf_arg_formatter(OutputIt iter, format_specs<Char>& s, context_type& ctx)
       : base(make_arg_formatter(iter, s)), context_(ctx) {}
 
-  OutputIt operator()(monostate value) { return base::operator()(value); }
+  auto operator()(monostate value) -> OutputIt {
+    return base::operator()(value);
+  }
 
   template <typename T, FMT_ENABLE_IF(detail::is_integral<T>::value)>
-  OutputIt operator()(T value) {
+  auto operator()(T value) -> OutputIt {
     // MSVC2013 fails to compile separate overloads for bool and Char so use
     // std::is_same instead.
     if (std::is_same<T, Char>::value) {
@@ -267,33 +267,34 @@ class printf_arg_formatter : public arg_formatter<Char> {
   }
 
   template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
-  OutputIt operator()(T value) {
+  auto operator()(T value) -> OutputIt {
     return base::operator()(value);
   }
 
   /** Formats a null-terminated C string. */
-  OutputIt operator()(const char* value) {
+  auto operator()(const char* value) -> OutputIt {
     if (value) return base::operator()(value);
     return write_null_pointer(this->specs.type != presentation_type::pointer);
   }
 
   /** Formats a null-terminated wide C string. */
-  OutputIt operator()(const wchar_t* value) {
+  auto operator()(const wchar_t* value) -> OutputIt {
     if (value) return base::operator()(value);
     return write_null_pointer(this->specs.type != presentation_type::pointer);
   }
 
-  OutputIt operator()(basic_string_view<Char> value) {
+  auto operator()(basic_string_view<Char> value) -> OutputIt {
     return base::operator()(value);
   }
 
   /** Formats a pointer. */
-  OutputIt operator()(const void* value) {
+  auto operator()(const void* value) -> OutputIt {
     return value ? base::operator()(value) : write_null_pointer();
   }
 
   /** Formats an argument of a custom (user-defined) type. */
-  OutputIt operator()(typename basic_format_arg<context_type>::handle handle) {
+  auto operator()(typename basic_format_arg<context_type>::handle handle)
+      -> OutputIt {
     auto parse_ctx =
         basic_format_parse_context<Char>(basic_string_view<Char>());
     handle.format(parse_ctx, context_);
@@ -329,8 +330,8 @@ void parse_flags(format_specs<Char>& specs, const Char*& it, const Char* end) {
 }
 
 template <typename Char, typename GetArg>
-int parse_header(const Char*& it, const Char* end, format_specs<Char>& specs,
-                 GetArg get_arg) {
+auto parse_header(const Char*& it, const Char* end, format_specs<Char>& specs,
+                  GetArg get_arg) -> int {
   int arg_index = -1;
   Char c = *it;
   if (c >= '0' && c <= '9') {
