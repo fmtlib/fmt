@@ -532,8 +532,9 @@ TEST(printf_test, vprintf) {
   int n = 42;
   auto store = fmt::format_arg_store<fmt::printf_context, int>(n);
   auto args = fmt::basic_format_args<fmt::printf_context>(store);
-  EXPECT_EQ(fmt::vsprintf("%d", args), "42");
-  EXPECT_WRITE(stdout, fmt::vfprintf(stdout, "%d", args), "42");
+  EXPECT_EQ(fmt::vsprintf(fmt::string_view("%d"), args), "42");
+  EXPECT_WRITE(stdout, fmt::vfprintf(stdout, fmt::string_view("%d"), args),
+               "42");
 }
 
 template <typename... Args>
@@ -551,9 +552,9 @@ TEST(printf_test, fixed_large_exponent) {
 
 TEST(printf_test, make_printf_args) {
   EXPECT_EQ("[42] something happened",
-            fmt::vsprintf("[%d] %s happened",
+            fmt::vsprintf(fmt::string_view("[%d] %s happened"),
                           {fmt::make_printf_args(42, "something")}));
   EXPECT_EQ(L"[42] something happened",
-            fmt::vsprintf(L"[%d] %s happened",
+            fmt::vsprintf(fmt::basic_string_view<wchar_t>(L"[%d] %s happened"),
                           {fmt::make_wprintf_args(42, L"something")}));
 }

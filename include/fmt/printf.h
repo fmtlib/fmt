@@ -573,12 +573,6 @@ inline auto make_printf_args(const T&... args)
   return {args...};
 }
 
-/**
-  \rst
-  Constructs an `~fmt::format_arg_store` object that contains references to
-  arguments and can be implicitly converted to `~fmt::wprintf_args`.
-  \endrst
- */
 // DEPRECATED!
 template <typename... T>
 inline auto make_wprintf_args(const T&... args)
@@ -586,13 +580,13 @@ inline auto make_wprintf_args(const T&... args)
   return {args...};
 }
 
-template <typename S, typename Char = char_t<S>>
+template <typename Char>
 inline auto vsprintf(
-    const S& fmt,
+    basic_string_view<Char> fmt,
     basic_format_args<basic_printf_context<type_identity_t<Char>>> args)
     -> std::basic_string<Char> {
   auto buf = basic_memory_buffer<Char>();
-  detail::vprintf(buf, detail::to_string_view(fmt), args);
+  detail::vprintf(buf, fmt, args);
   return to_string(buf);
 }
 
@@ -612,13 +606,13 @@ inline auto sprintf(const S& fmt, const T&... args) -> std::basic_string<Char> {
                   fmt::make_format_args<basic_printf_context<Char>>(args...));
 }
 
-template <typename S, typename Char = char_t<S>>
+template <typename Char>
 inline auto vfprintf(
-    std::FILE* f, const S& fmt,
+    std::FILE* f, basic_string_view<Char> fmt,
     basic_format_args<basic_printf_context<type_identity_t<Char>>> args)
     -> int {
   auto buf = basic_memory_buffer<Char>();
-  detail::vprintf(buf, detail::to_string_view(fmt), args);
+  detail::vprintf(buf, fmt, args);
   size_t size = buf.size();
   return std::fwrite(buf.data(), sizeof(Char), size, f) < size
              ? -1
@@ -636,9 +630,8 @@ inline auto vfprintf(
  */
 template <typename S, typename... T, typename Char = char_t<S>>
 inline auto fprintf(std::FILE* f, const S& fmt, const T&... args) -> int {
-  using context = basic_printf_context<Char>;
   return vfprintf(f, detail::to_string_view(fmt),
-                  fmt::make_format_args<context>(args...));
+                  fmt::make_format_args<basic_printf_context<Char>>(args...));
 }
 
 template <typename Char>
