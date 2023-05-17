@@ -18,9 +18,9 @@ FMT_BEGIN_EXPORT
 
 template <typename T> struct printf_formatter { printf_formatter() = delete; };
 
-template <typename OutputIt, typename Char> class basic_printf_context {
+template <typename Char> class basic_printf_context {
  private:
-  OutputIt out_;
+  detail::buffer_appender<Char> out_;
   basic_format_args<basic_printf_context> args_;
 
  public:
@@ -34,12 +34,12 @@ template <typename OutputIt, typename Char> class basic_printf_context {
     stored in the context object so make sure they have appropriate lifetimes.
     \endrst
    */
-  basic_printf_context(OutputIt out,
+  basic_printf_context(detail::buffer_appender<Char> out,
                        basic_format_args<basic_printf_context> args)
       : out_(out), args_(args) {}
 
-  auto out() -> OutputIt { return out_; }
-  void advance_to(OutputIt it) { out_ = it; }
+  auto out() -> detail::buffer_appender<Char> { return out_; }
+  void advance_to(detail::buffer_appender<Char>) {}
 
   auto locale() -> detail::locale_ref { return {}; }
 
@@ -226,7 +226,7 @@ template <typename OutputIt, typename Char>
 class printf_arg_formatter : public arg_formatter<Char> {
  private:
   using base = arg_formatter<Char>;
-  using context_type = basic_printf_context<OutputIt, Char>;
+  using context_type = basic_printf_context<Char>;
 
   context_type& context_;
 
@@ -412,7 +412,7 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
              basic_format_args<Context> args) {
   using iterator = buffer_appender<Char>;
   auto out = iterator(buf);
-  auto context = basic_printf_context<iterator, Char>(out, args);
+  auto context = basic_printf_context<Char>(out, args);
   auto parse_ctx = basic_format_parse_context<Char>(format);
 
   // Returns the argument with specified index or, if arg_index is -1, the next
@@ -476,7 +476,7 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
       auto nul = std::find(str, str_end, Char());
       auto sv = basic_string_view<Char>(
           str, to_unsigned(nul != str_end ? nul - str : specs.precision));
-      arg = make_arg<basic_printf_context<iterator, Char>>(sv);
+      arg = make_arg<basic_printf_context<Char>>(sv);
     }
     if (specs.alt && visit_format_arg(is_zero_int(), arg)) specs.alt = false;
     if (specs.fill[0] == '0') {
@@ -538,8 +538,7 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
         type = 'd';
         break;
       case 'c':
-        visit_format_arg(
-            char_converter<basic_printf_context<iterator, Char>>(arg), arg);
+        visit_format_arg(char_converter<basic_printf_context<Char>>(arg), arg);
         break;
       }
     }
@@ -557,12 +556,8 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
 }
 FMT_END_DETAIL_NAMESPACE
 
-template <typename Char>
-using basic_printf_context_t =
-    basic_printf_context<detail::buffer_appender<Char>, Char>;
-
-using printf_context = basic_printf_context_t<char>;
-using wprintf_context = basic_printf_context_t<wchar_t>;
+using printf_context = basic_printf_context<char>;
+using wprintf_context = basic_printf_context<wchar_t>;
 
 using printf_args = basic_format_args<printf_context>;
 using wprintf_args = basic_format_args<wprintf_context>;
@@ -595,7 +590,7 @@ inline auto make_wprintf_args(const T&... args)
 template <typename S, typename Char = char_t<S>>
 inline auto vsprintf(
     const S& fmt,
-    basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args)
+    basic_format_args<basic_printf_context<type_identity_t<Char>>> args)
     -> std::basic_string<Char> {
   auto buf = basic_memory_buffer<Char>();
   detail::vprintf(buf, detail::to_string_view(fmt), args);
@@ -614,15 +609,14 @@ inline auto vsprintf(
 template <typename S, typename... T,
           typename Char = enable_if_t<detail::is_string<S>::value, char_t<S>>>
 inline auto sprintf(const S& fmt, const T&... args) -> std::basic_string<Char> {
-  using context = basic_printf_context_t<Char>;
   return vsprintf(detail::to_string_view(fmt),
-                  fmt::make_format_args<context>(args...));
+                  fmt::make_format_args<basic_printf_context<Char>>(args...));
 }
 
 template <typename S, typename Char = char_t<S>>
 inline auto vfprintf(
     std::FILE* f, const S& fmt,
-    basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args)
+    basic_format_args<basic_printf_context<type_identity_t<Char>>> args)
     -> int {
   auto buf = basic_memory_buffer<Char>();
   detail::vprintf(buf, detail::to_string_view(fmt), args);
@@ -643,7 +637,7 @@ inline auto vfprintf(
  */
 template <typename S, typename... T, typename Char = char_t<S>>
 inline auto fprintf(std::FILE* f, const S& fmt, const T&... args) -> int {
-  using context = basic_printf_context_t<Char>;
+  using context = basic_printf_context<Char>;
   return vfprintf(f, detail::to_string_view(fmt),
                   fmt::make_format_args<context>(args...));
 }
@@ -651,7 +645,7 @@ inline auto fprintf(std::FILE* f, const S& fmt, const T&... args) -> int {
 template <typename Char>
 FMT_DEPRECATED inline auto vprintf(
     basic_string_view<Char> fmt,
-    basic_format_args<basic_printf_context_t<type_identity_t<Char>>> args)
+    basic_format_args<basic_printf_context<type_identity_t<Char>>> args)
     -> int {
   return vfprintf(stdout, fmt, args);
 }

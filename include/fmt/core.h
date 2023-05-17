@@ -1698,7 +1698,7 @@ template <typename OutputIt, typename Char> class basic_format_context {
 
  public:
   using iterator = OutputIt;
-  using format_arg = basic_format_arg<basic_format_context>;  // DEPRECATED!
+  using format_arg = basic_format_arg<basic_format_context>;
   using format_args = basic_format_args<basic_format_context>;
   using parse_context_type = basic_format_parse_context<Char>;
   template <typename T> using formatter_type = formatter<T, Char>;
