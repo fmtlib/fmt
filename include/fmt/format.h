@@ -114,10 +114,8 @@ FMT_END_NAMESPACE
 #      define FMT_THROW(x) throw x
 #    endif
 #  else
-#    define FMT_THROW(x)               \
-      do {                             \
-        FMT_ASSERT(false, (x).what()); \
-      } while (false)
+#    define FMT_THROW(x) \
+      ::fmt::detail::assert_fail(__FILE__, __LINE__, (x).what())
 #  endif
 #endif
 
