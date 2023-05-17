@@ -72,7 +72,7 @@ module;
 
 export module fmt;
 
-#define FMT_MODULE_EXPORT export
+#define FMT_EXPORT export
 #define FMT_BEGIN_EXPORT export {
 #define FMT_END_EXPORT }
 #define FMT_BEGIN_DETAIL_NAMESPACE \
@@ -102,14 +102,13 @@ extern "C++" {
 #include "fmt/std.h"
 #include "fmt/xchar.h"
 
-
 #ifdef FMT_ATTACH_TO_GLOBAL_MODULE
 }
 #endif
 
 // gcc doesn't yet implement private module fragments
 #if !FMT_GCC_VERSION
-module :private;
+module : private;
 #endif
 
 #include "format.cc"
