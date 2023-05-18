@@ -1128,7 +1128,7 @@ bool is_left_endpoint_integer_shorter_interval(int exponent) noexcept {
 }
 
 // Remove trailing zeros from n and return the number of zeros removed (float)
-FMT_INLINE int remove_trailing_zeros(uint32_t& n) noexcept {
+FMT_INLINE int remove_trailing_zeros(uint32_t& n, int s = 0) noexcept {
   FMT_ASSERT(n != 0, "");
   // Modular inverse of 5 (mod 2^32): (mod_inv_5 * 5) mod 2^32 = 1.
   // See https://github.com/fmtlib/fmt/issues/3163 for more details.
@@ -1137,7 +1137,6 @@ FMT_INLINE int remove_trailing_zeros(uint32_t& n) noexcept {
   const uint32_t mod_inv_25 =
       static_cast<uint32_t>(uint64_t(mod_inv_5) * mod_inv_5);
 
-  int s = 0;
   while (true) {
     auto q = rotr(n * mod_inv_25, 2);
     if (q > max_value<uint32_t>() / 100) break;
@@ -1165,7 +1164,7 @@ FMT_INLINE int remove_trailing_zeros(uint64_t& n) noexcept {
     // If yes, work with the quotient...
     auto n32 = static_cast<uint32_t>(nm.high() >> (90 - 64));
     // ... and use the 32 bit variant of the function
-    auto s = remove_trailing_zeros(n32);
+    int s = remove_trailing_zeros(n32, 8);
     n = n32;
     return s;
   }
