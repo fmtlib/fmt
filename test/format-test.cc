@@ -2245,3 +2245,19 @@ TEST(format_test, format_named_arg_with_locale) {
 }
 
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR
+
+struct convertible_to_nonconst_cstring {
+    operator char*() const {
+        static char c[]="bar";
+        return c;
+    }
+};
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<convertible_to_nonconst_cstring> : formatter<char*> {
+};
+FMT_END_NAMESPACE
+
+TEST(format_test, formatter_nonconst_char) {
+  EXPECT_EQ(fmt::format("{}", convertible_to_nonconst_cstring()), "bar");
+}
