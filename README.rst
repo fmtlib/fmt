@@ -66,7 +66,7 @@ Features
   <https://github.com/fmtlib/fmt/tree/master/test>`_ and is `continuously fuzzed
   <https://bugs.chromium.org/p/oss-fuzz/issues/list?colspec=ID%20Type%20
   Component%20Status%20Proj%20Reported%20Owner%20Summary&q=proj%3Dfmt&can=1>`_
-* Safety: the library is fully type safe, errors in format strings can be
+* Safety: the library is fully type-safe, errors in format strings can be
   reported at compile time, automatic memory management prevents buffer overflow
   errors
 * Ease of use: small self-contained code base, no external dependencies,
@@ -76,7 +76,7 @@ Features
   consistent output across platforms and support for older compilers
 * Clean warning-free codebase even on high warning levels such as
   ``-Wall -Wextra -pedantic``
-* Locale-independence by default
+* Locale independence by default
 * Optional header-only configuration enabled with the ``FMT_HEADER_ONLY`` macro
 
 See the `documentation <https://fmt.dev>`_ for more details.
@@ -226,7 +226,7 @@ The script `bloat-test.py
 from `format-benchmark <https://github.com/fmtlib/format-benchmark>`_
 tests compile time and code bloat for nontrivial projects.
 It generates 100 translation units and uses ``printf()`` or its alternative
-five times in each to simulate a medium sized project.  The resulting
+five times in each to simulate a medium-sized project.  The resulting
 executable size and compile time (Apple LLVM version 8.1.0 (clang-802.0.42),
 macOS Sierra, best of three) is shown in the following tables.
 
@@ -247,7 +247,7 @@ As you can see, {fmt} has 60% less overhead in terms of resulting binary code
 size compared to iostreams and comes pretty close to ``printf``. Boost Format
 and Folly Format have the largest overheads.
 
-``printf+string`` is the same as ``printf`` but with extra ``<string>``
+``printf+string`` is the same as ``printf`` but with an extra ``<string>``
 include to measure the overhead of the latter.
 
 **Non-optimized build**
@@ -263,14 +263,14 @@ Boost Format             54.1                  365                303
 Folly Format             79.9                  445                430
 ============= =============== ==================== ==================
 
-``libc``, ``lib(std)c++`` and ``libfmt`` are all linked as shared libraries to
+``libc``, ``lib(std)c++``, and ``libfmt`` are all linked as shared libraries to
 compare formatting function overhead only. Boost Format is a
 header-only library so it doesn't provide any linkage options.
 
 Running the tests
 ~~~~~~~~~~~~~~~~~
 
-Please refer to `Building the library`__ for the instructions on how to build
+Please refer to `Building the library`__ for instructions on how to build
 the library and run the unit tests.
 
 __ https://fmt.dev/latest/usage.html#building-the-library
@@ -397,7 +397,7 @@ Projects using this library
   proxy
 
 * `redpanda <https://vectorized.io/redpanda>`_: a 10x faster Kafka® replacement
-  for mission critical systems written in C++
+  for mission-critical systems written in C++
 
 * `rpclib <http://rpclib.net/>`_: a modern C++ msgpack-RPC server and client
   library
@@ -481,7 +481,7 @@ error handling is awkward.
 Boost Format
 ~~~~~~~~~~~~
 
-This is a very powerful library which supports both ``printf``-like format
+This is a very powerful library that supports both ``printf``-like format
 strings and positional arguments. Its main drawback is performance. According to
 various benchmarks, it is much slower than other methods considered here. Boost
 Format also has excessive build times and severe code bloat issues (see
@@ -490,7 +490,7 @@ Format also has excessive build times and severe code bloat issues (see
 FastFormat
 ~~~~~~~~~~
 
-This is an interesting library which is fast, safe and has positional arguments.
+This is an interesting library that is fast, safe, and has positional arguments.
 However, it has significant limitations, citing its author:
 
     Three features that have no hope of being accommodated within the
@@ -506,7 +506,7 @@ restrictive for using it in some projects.
 Boost Spirit.Karma
 ~~~~~~~~~~~~~~~~~~
 
-This is not really a formatting library but I decided to include it here for
+This is not a formatting library but I decided to include it here for
 completeness. As iostreams, it suffers from the problem of mixing verbatim text
 with arguments. The library is pretty fast, but slower on integer formatting
 than ``fmt::format_to`` with format string compilation on Karma's own benchmark,
@@ -525,7 +525,7 @@ Documentation License
 The `Format String Syntax <https://fmt.dev/latest/syntax.html>`_
 section in the documentation is based on the one from Python `string module
 documentation <https://docs.python.org/3/library/string.html#module-string>`_.
-For this reason the documentation is distributed under the Python Software
+For this reason, the documentation is distributed under the Python Software
 Foundation license available in `doc/python-license.txt
 <https://raw.github.com/fmtlib/fmt/master/doc/python-license.txt>`_.
 It only applies if you distribute the documentation of {fmt}.
