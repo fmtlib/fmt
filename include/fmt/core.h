@@ -2690,15 +2690,9 @@ struct formatter<T, Char,
       -> decltype(ctx.out());
 };
 
-#define FMT_FORMAT_AS(Type, Base)                                        \
-  template <typename Char>                                               \
-  struct formatter<Type, Char> : formatter<Base, Char> {                 \
-    template <typename FormatContext>                                    \
-    auto format(Type const& val, FormatContext& ctx) const               \
-        -> decltype(ctx.out()) {                                         \
-      return formatter<Base, Char>::format(static_cast<Base>(val), ctx); \
-    }                                                                    \
-  }
+#define FMT_FORMAT_AS(Type, Base) \
+  template <typename Char>        \
+  struct formatter<Type, Char> : formatter<Base, Char> {}
 
 FMT_FORMAT_AS(signed char, int);
 FMT_FORMAT_AS(unsigned char, unsigned);
