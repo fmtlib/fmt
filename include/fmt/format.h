@@ -53,6 +53,12 @@
 #  define FMT_END_DETAIL_NAMESPACE }
 #endif
 
+#if defined __cpp_inline_variables && __cpp_inline_variables >= 201606L
+#  define FMT_INLINE_VARIABLE inline
+#else
+#  define FMT_INLINE_VARIABLE
+#endif
+
 #if FMT_HAS_CPP17_ATTRIBUTE(fallthrough)
 #  define FMT_FALLTHROUGH [[fallthrough]]
 #elif defined(__clang__)

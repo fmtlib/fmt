@@ -241,12 +241,6 @@
 #  endif
 #endif
 
-#if defined __cpp_inline_variables && __cpp_inline_variables >= 201606L
-#  define FMT_INLINE_VARIABLE inline
-#else
-#  define FMT_INLINE_VARIABLE
-#endif
-
 // Enable minimal optimizations for more compact code in debug mode.
 FMT_GCC_PRAGMA("GCC push_options")
 #if !defined(__OPTIMIZE__) && !defined(__NVCOMPILER) && !defined(__LCC__) && \
@@ -2543,8 +2537,6 @@ FMT_CONSTEXPR auto check_char_specs(const format_specs<Char>& specs) -> bool {
   return true;
 }
 
-constexpr FMT_INLINE_VARIABLE int invalid_arg_index = -1;
-
 #if FMT_USE_NONTYPE_TEMPLATE_ARGS
 template <int N, typename T, typename... Args, typename Char>
 constexpr auto get_arg_index_by_name(basic_string_view<Char> name) -> int {
@@ -2554,7 +2546,7 @@ constexpr auto get_arg_index_by_name(basic_string_view<Char> name) -> int {
   if constexpr (sizeof...(Args) > 0)
     return get_arg_index_by_name<N + 1, Args...>(name);
   (void)name;  // Workaround an MSVC bug about "unused" parameter.
-  return invalid_arg_index;
+  return -1;
 }
 #endif
 
@@ -2565,7 +2557,7 @@ FMT_CONSTEXPR auto get_arg_index_by_name(basic_string_view<Char> name) -> int {
     return get_arg_index_by_name<0, Args...>(name);
 #endif
   (void)name;
-  return invalid_arg_index;
+  return -1;
 }
 
 template <typename Char, typename... Args> class format_string_checker {
@@ -2598,7 +2590,7 @@ template <typename Char, typename... Args> class format_string_checker {
   FMT_CONSTEXPR auto on_arg_id(basic_string_view<Char> id) -> int {
 #if FMT_USE_NONTYPE_TEMPLATE_ARGS
     auto index = get_arg_index_by_name<Args...>(id);
-    if (index == invalid_arg_index) on_error("named argument is not found");
+    if (index < 0) on_error("named argument is not found");
     return index;
 #else
     (void)id;
