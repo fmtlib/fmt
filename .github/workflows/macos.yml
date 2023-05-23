@@ -7,19 +7,29 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-11
     strategy:
       matrix:
+        os: [macos-11, macos-13]
         build_type: [Debug, Release]
-        std: [11, 17]
+        std: [11, 17, 20]
+        exclude:
+          - { os: macos-11, std: 20 }
+          - { os: macos-13, std: 11 }
+          - { os: macos-13, std: 17 }
         include:
           - shared: -DBUILD_SHARED_LIBS=ON
+
+    runs-on: '${{ matrix.os }}'
 
     steps:
     - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
 
     - name: Set timezone
       run: sudo systemsetup -settimezone 'Asia/Yekaterinburg'
+
+    - name: Select Xcode 14.3 (macOS 13)
+      run: sudo xcode-select -s "/Applications/Xcode_14.3.app"
+      if: ${{ matrix.os == 'macos-13' }}
 
     - name: Create Build Environment
       run: cmake -E make_directory ${{runner.workspace}}/build
