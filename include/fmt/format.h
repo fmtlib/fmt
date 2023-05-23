@@ -1817,6 +1817,7 @@ constexpr uint32_t basic_data<T>::fractional_part_rounding_thresholds[];
 // This is a struct rather than an alias to avoid shadowing warnings in gcc.
 struct data : basic_data<> {};
 
+// DEPRECATED!
 // Returns a cached power of 10 `c_k = c_k.f * pow(2, c_k.e)` such that its
 // (binary) exponent satisfies `min_exponent <= c_k.e <= min_exponent + 28`.
 FMT_CONSTEXPR inline fp get_cached_power(int min_exponent,
@@ -2830,179 +2831,12 @@ FMT_INLINE FMT_CONSTEXPR bool signbit(T value) {
   return std::signbit(static_cast<double>(value));
 }
 
-enum class round_direction { unknown, up, down };
-
-// Given the divisor (normally a power of 10), the remainder = v % divisor for
-// some number v and the error, returns whether v should be rounded up, down, or
-// whether the rounding direction can't be determined due to error.
-// error should be less than divisor / 2.
-FMT_CONSTEXPR inline round_direction get_round_direction(uint64_t divisor,
-                                                         uint64_t remainder,
-                                                         uint64_t error) {
-  FMT_ASSERT(remainder < divisor, "");  // divisor - remainder won't overflow.
-  FMT_ASSERT(error < divisor, "");      // divisor - error won't overflow.
-  FMT_ASSERT(error < divisor - error, "");  // error * 2 won't overflow.
-  // Round down if (remainder + error) * 2 <= divisor.
-  if (remainder <= divisor - remainder && error * 2 <= divisor - remainder * 2)
-    return round_direction::down;
-  // Round up if (remainder - error) * 2 >= divisor.
-  if (remainder >= error &&
-      remainder - error >= divisor - (remainder - error)) {
-    return round_direction::up;
-  }
-  return round_direction::unknown;
-}
-
-namespace digits {
-enum result {
-  more,  // Generate more digits.
-  done,  // Done generating digits.
-  error  // Digit generation cancelled due to an error.
-};
-}
-
-struct gen_digits_handler {
-  char* buf;
-  int size;
-  int precision;
-  int exp10;
-  bool fixed;
-
-  FMT_CONSTEXPR digits::result on_digit(char digit, uint64_t divisor,
-                                        uint64_t remainder, uint64_t error,
-                                        bool integral) {
-    FMT_ASSERT(remainder < divisor, "");
-    buf[size++] = digit;
-    if (!integral && error >= remainder) return digits::error;
-    if (size < precision) return digits::more;
-    if (!integral) {
-      // Check if error * 2 < divisor with overflow prevention.
-      // The check is not needed for the integral part because error = 1
-      // and divisor > (1 << 32) there.
-      if (error >= divisor || error >= divisor - error) return digits::error;
-    } else {
-      FMT_ASSERT(error == 1 && divisor > 2, "");
-    }
-    auto dir = get_round_direction(divisor, remainder, error);
-    if (dir != round_direction::up)
-      return dir == round_direction::down ? digits::done : digits::error;
-    ++buf[size - 1];
-    for (int i = size - 1; i > 0 && buf[i] > '9'; --i) {
-      buf[i] = '0';
-      ++buf[i - 1];
-    }
-    if (buf[0] > '9') {
-      buf[0] = '1';
-      if (fixed)
-        buf[size++] = '0';
-      else
-        ++exp10;
-    }
-    return digits::done;
-  }
-};
-
 inline FMT_CONSTEXPR20 void adjust_precision(int& precision, int exp10) {
   // Adjust fixed precision by exponent because it is relative to decimal
   // point.
   if (exp10 > 0 && precision > max_value<int>() - exp10)
     FMT_THROW(format_error("number is too big"));
   precision += exp10;
-}
-
-// Generates output using the Grisu digit-gen algorithm.
-// error: the size of the region (lower, upper) outside of which numbers
-// definitely do not round to value (Delta in Grisu3).
-FMT_INLINE FMT_CONSTEXPR20 auto grisu_gen_digits(fp value, uint64_t error,
-                                                 int& exp,
-                                                 gen_digits_handler& handler)
-    -> digits::result {
-  const fp one(1ULL << -value.e, value.e);
-  // The integral part of scaled value (p1 in Grisu) = value / one. It cannot be
-  // zero because it contains a product of two 64-bit numbers with MSB set (due
-  // to normalization) - 1, shifted right by at most 60 bits.
-  auto integral = static_cast<uint32_t>(value.f >> -one.e);
-  FMT_ASSERT(integral != 0, "");
-  FMT_ASSERT(integral == value.f >> -one.e, "");
-  // The fractional part of scaled value (p2 in Grisu) c = value % one.
-  uint64_t fractional = value.f & (one.f - 1);
-  exp = count_digits(integral);  // kappa in Grisu.
-  // Non-fixed formats require at least one digit and no precision adjustment.
-  if (handler.fixed) {
-    adjust_precision(handler.precision, exp + handler.exp10);
-    // Check if precision is satisfied just by leading zeros, e.g.
-    // format("{:.2f}", 0.001) gives "0.00" without generating any digits.
-    if (handler.precision <= 0) {
-      if (handler.precision < 0) return digits::done;
-      // Divide by 10 to prevent overflow.
-      uint64_t divisor = data::power_of_10_64[exp - 1] << -one.e;
-      auto dir = get_round_direction(divisor, value.f / 10, error * 10);
-      if (dir == round_direction::unknown) return digits::error;
-      handler.buf[handler.size++] = dir == round_direction::up ? '1' : '0';
-      return digits::done;
-    }
-  }
-  // Generate digits for the integral part. This can produce up to 10 digits.
-  do {
-    uint32_t digit = 0;
-    auto divmod_integral = [&](uint32_t divisor) {
-      digit = integral / divisor;
-      integral %= divisor;
-    };
-    // This optimization by Milo Yip reduces the number of integer divisions by
-    // one per iteration.
-    switch (exp) {
-    case 10:
-      divmod_integral(1000000000);
-      break;
-    case 9:
-      divmod_integral(100000000);
-      break;
-    case 8:
-      divmod_integral(10000000);
-      break;
-    case 7:
-      divmod_integral(1000000);
-      break;
-    case 6:
-      divmod_integral(100000);
-      break;
-    case 5:
-      divmod_integral(10000);
-      break;
-    case 4:
-      divmod_integral(1000);
-      break;
-    case 3:
-      divmod_integral(100);
-      break;
-    case 2:
-      divmod_integral(10);
-      break;
-    case 1:
-      digit = integral;
-      integral = 0;
-      break;
-    default:
-      FMT_ASSERT(false, "invalid number of digits");
-    }
-    --exp;
-    auto remainder = (static_cast<uint64_t>(integral) << -one.e) + fractional;
-    auto result = handler.on_digit(static_cast<char>('0' + digit),
-                                   data::power_of_10_64[exp] << -one.e,
-                                   remainder, error, true);
-    if (result != digits::more) return result;
-  } while (exp > 0);
-  // Generate digits for the fractional part.
-  for (;;) {
-    fractional *= 10;
-    error *= 10;
-    char digit = static_cast<char>('0' + (fractional >> -one.e));
-    fractional &= one.f - 1;
-    --exp;
-    auto result = handler.on_digit(digit, one.f, fractional, error, false);
-    if (result != digits::more) return result;
-  }
 }
 
 class bigint {
@@ -3505,7 +3339,7 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
   int exp = 0;
   bool use_dragon = true;
   unsigned dragon_flags = 0;
-  if (!is_fast_float<Float>()) {
+  if (!is_fast_float<Float>() || is_constant_evaluated()) {
     const auto inv_log2_10 = 0.3010299956639812;  // 1 / log2(10)
     using info = dragonbox::float_info<decltype(converted_value)>;
     const auto f = basic_fp<typename info::carrier_uint>(converted_value);
@@ -3516,7 +3350,7 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
     exp = static_cast<int>(
         std::ceil((f.e + count_digits<1>(f.f) - 1) * inv_log2_10 - 1e-10));
     dragon_flags = dragon::fixup;
-  } else if (!is_constant_evaluated() && precision < 0) {
+  } else if (precision < 0) {
     // Use Dragonbox for the shortest format.
     if (specs.binary32) {
       auto dec = dragonbox::to_decimal(static_cast<float>(value));
@@ -3526,25 +3360,6 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
     auto dec = dragonbox::to_decimal(static_cast<double>(value));
     write<char>(buffer_appender<char>(buf), dec.significand);
     return dec.exponent;
-  } else if (is_constant_evaluated()) {
-    // Use Grisu + Dragon4 for the given precision:
-    // https://www.cs.tufts.edu/~nr/cs257/archive/florian-loitsch/printf.pdf.
-    const int min_exp = -60;  // alpha in Grisu.
-    int cached_exp10 = 0;     // K in Grisu.
-    fp normalized = normalize(fp(converted_value));
-    const auto cached_pow = get_cached_power(
-        min_exp - (normalized.e + fp::num_significand_bits), cached_exp10);
-    normalized = normalized * cached_pow;
-    gen_digits_handler handler{buf.data(), 0, precision, -cached_exp10, fixed};
-    if (grisu_gen_digits(normalized, 1, exp, handler) != digits::error &&
-        !is_constant_evaluated()) {
-      exp += handler.exp10;
-      buf.try_resize(to_unsigned(handler.size));
-      use_dragon = false;
-    } else {
-      exp += handler.size - cached_exp10 - 1;
-      precision = handler.precision;
-    }
   } else {
     // Extract significand bits and exponent bits.
     using info = dragonbox::float_info<double>;

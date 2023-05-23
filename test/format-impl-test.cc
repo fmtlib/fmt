@@ -249,49 +249,6 @@ TEST(fp_test, dragonbox_max_k) {
                     2 * fmt::detail::num_significand_bits<double>() - 1));
 }
 
-TEST(fp_test, get_round_direction) {
-  using fmt::detail::get_round_direction;
-  using fmt::detail::round_direction;
-  EXPECT_EQ(get_round_direction(100, 50, 0), round_direction::down);
-  EXPECT_EQ(get_round_direction(100, 51, 0), round_direction::up);
-  EXPECT_EQ(get_round_direction(100, 40, 10), round_direction::down);
-  EXPECT_EQ(get_round_direction(100, 60, 10), round_direction::up);
-  for (size_t i = 41; i < 60; ++i)
-    EXPECT_EQ(get_round_direction(100, i, 10), round_direction::unknown);
-  uint64_t max = max_value<uint64_t>();
-  EXPECT_THROW(get_round_direction(100, 100, 0), assertion_failure);
-  EXPECT_THROW(get_round_direction(100, 0, 100), assertion_failure);
-  EXPECT_THROW(get_round_direction(100, 0, 50), assertion_failure);
-  // Check that remainder + error doesn't overflow.
-  EXPECT_EQ(get_round_direction(max, max - 1, 2), round_direction::up);
-  // Check that 2 * (remainder + error) doesn't overflow.
-  EXPECT_EQ(get_round_direction(max, max / 2 + 1, max / 2),
-            round_direction::unknown);
-  // Check that remainder - error doesn't overflow.
-  EXPECT_EQ(get_round_direction(100, 40, 41), round_direction::unknown);
-  // Check that 2 * (remainder - error) doesn't overflow.
-  EXPECT_EQ(get_round_direction(max, max - 1, 1), round_direction::up);
-}
-
-TEST(fp_test, fixed_handler) {
-  struct handler : fmt::detail::gen_digits_handler {
-    char buffer[10];
-    handler(int prec = 0) : fmt::detail::gen_digits_handler() {
-      buf = buffer;
-      precision = prec;
-    }
-  };
-  handler().on_digit('0', 100, 99, 0, false);
-  EXPECT_THROW(handler().on_digit('0', 100, 100, 0, false), assertion_failure);
-  namespace digits = fmt::detail::digits;
-  EXPECT_EQ(handler(1).on_digit('0', 100, 10, 10, false), digits::error);
-  // Check that divisor - error doesn't overflow.
-  EXPECT_EQ(handler(1).on_digit('0', 100, 10, 101, false), digits::error);
-  // Check that 2 * error doesn't overflow.
-  uint64_t max = max_value<uint64_t>();
-  EXPECT_EQ(handler(1).on_digit('0', max, 10, max - 1, false), digits::error);
-}
-
 TEST(fp_test, grisu_format_compiles_with_on_ieee_double) {
   auto buf = fmt::memory_buffer();
   format_float(0.42, -1, fmt::detail::float_specs(), buf);
