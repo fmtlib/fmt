@@ -29,6 +29,8 @@
   `#3272 <https://github.com/fmtlib/fmt/pull/3272>`_).
   Thanks `@ShawnZhong (Shawn Zhong) <https://github.com/ShawnZhong>`_.
 
+* Made handling of ``#`` consistent with ``std::format``.
+
 * Improved C++20 module support
   (`#3134 <https://github.com/fmtlib/fmt/pull/3134>`_,
   `#3254 <https://github.com/fmtlib/fmt/pull/3254>`_,
