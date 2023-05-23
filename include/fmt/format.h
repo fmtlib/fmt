@@ -3317,6 +3317,26 @@ FMT_CONSTEXPR20 void format_hexfloat(Float value, int precision,
   format_hexfloat(static_cast<double>(value), precision, specs, buf);
 }
 
+template <typename Float> FMT_CONSTEXPR auto iceil(Float value) -> int {
+  auto min = (std::numeric_limits<int>::min)();
+  auto max = (std::numeric_limits<int>::max)();
+  ignore_unused(min, max);
+  FMT_ASSERT(value >= min && value <= max, "value not in int range");
+  if (is_constant_evaluated()) {
+    do {
+      auto mid = min + static_cast<int>((static_cast<unsigned>(max) -
+                                         static_cast<unsigned>(min)) /
+                                        2);
+      if (mid < value)
+        min = mid;
+      else
+        max = mid;
+    } while (min + 1 != max);
+    return max;
+  }
+  return static_cast<int>(std::ceil(value));
+}
+
 template <typename Float>
 FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
                                   buffer<char>& buf) -> int {
@@ -3347,8 +3367,7 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
     //   10^(exp - 1) <= value < 10^exp or 10^exp <= value < 10^(exp + 1).
     // This is based on log10(value) == log2(value) / log2(10) and approximation
     // of log2(value) by e + num_fraction_bits idea from double-conversion.
-    exp = static_cast<int>(
-        std::ceil((f.e + count_digits<1>(f.f) - 1) * inv_log2_10 - 1e-10));
+    exp = iceil((f.e + count_digits<1>(f.f) - 1) * inv_log2_10 - 1e-10);
     dragon_flags = dragon::fixup;
   } else if (precision < 0) {
     // Use Dragonbox for the shortest format.
