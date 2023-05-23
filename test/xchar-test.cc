@@ -152,6 +152,15 @@ TEST(xchar_test, vformat_to) {
   EXPECT_EQ(L"42", w);
 }
 
+namespace test {
+struct struct_as_wstring_view {};
+auto format_as(struct_as_wstring_view) -> fmt::wstring_view { return L"foo"; }
+}  // namespace test
+
+TEST(xchar_test, format_as) {
+  EXPECT_EQ(fmt::format(L"{}", test::struct_as_wstring_view()), L"foo");
+}
+
 TEST(format_test, wide_format_to_n) {
   wchar_t buffer[4];
   buffer[3] = L'x';
