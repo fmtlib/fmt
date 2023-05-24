@@ -524,22 +524,6 @@ TEST(format_impl_test, to_utf8) {
   EXPECT_EQ(s.size(), u.size());
 }
 
-FMT_CONSTEXPR20 bool constexpr_iceil() {
-  for (double v : std::initializer_list<double>{
-           ((std::numeric_limits<int>::min)() + 0.5),
-           -1.2,
-           -0.2,
-           0.0,
-           0.2,
-           1.2,
-           4.0,
-           ((std::numeric_limits<int>::max)() - 0.5),
-       }) {
-    auto r = fmt::detail::iceil(v);
-    fmt::detail::ignore_unused(r);
-  }
-  return true;
-}
 TEST(format_impl_test, iceil) {
   for (double v : std::initializer_list<double>{
            ((std::numeric_limits<int>::min)() + 0.5),
@@ -553,7 +537,4 @@ TEST(format_impl_test, iceil) {
        }) {
     EXPECT_EQ(fmt::detail::iceil(v), static_cast<int>(std::ceil(v)));
   }
-
-  FMT_CONSTEXPR20 auto result = constexpr_iceil();
-  EXPECT_TRUE(result);
 }

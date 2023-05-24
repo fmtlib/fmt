@@ -3322,19 +3322,16 @@ template <typename Float> FMT_CONSTEXPR auto iceil(Float value) -> int {
   auto max = (std::numeric_limits<int>::max)();
   ignore_unused(min, max);
   FMT_ASSERT(value >= min && value <= max, "value not in int range");
-  if (is_constant_evaluated()) {
-    do {
-      auto mid = min + static_cast<int>((static_cast<unsigned>(max) -
-                                         static_cast<unsigned>(min)) /
-                                        2);
-      if (mid < value)
-        min = mid;
-      else
-        max = mid;
-    } while (min + 1 != max);
-    return max;
-  }
-  return static_cast<int>(std::ceil(value));
+  do {
+    auto mid = min + static_cast<int>((static_cast<unsigned>(max) -
+                                       static_cast<unsigned>(min)) /
+                                      2);
+    if (mid < value)
+      min = mid;
+    else
+      max = mid;
+  } while (min + 1 != max);
+  return max;
 }
 
 template <typename Float>
