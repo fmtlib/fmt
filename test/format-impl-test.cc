@@ -523,18 +523,3 @@ TEST(format_impl_test, to_utf8) {
   EXPECT_EQ(s, u.str());
   EXPECT_EQ(s.size(), u.size());
 }
-
-TEST(format_impl_test, iceil) {
-  for (double v : std::initializer_list<double>{
-           ((std::numeric_limits<int>::min)() + 0.5),
-           -1.2,
-           -0.2,
-           0.0,
-           0.2,
-           1.2,
-           4.0,
-           ((std::numeric_limits<int>::max)() - 0.5),
-       }) {
-    EXPECT_EQ(fmt::detail::iceil(v), static_cast<int>(std::ceil(v)));
-  }
-}
