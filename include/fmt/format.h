@@ -4104,8 +4104,8 @@ class format_int {
 
 template <typename T, typename Char>
 struct formatter<T, Char, enable_if_t<detail::has_format_as<T>::value>>
-    : private formatter<detail::format_as_t<T>> {
-  using base = formatter<detail::format_as_t<T>>;
+    : private formatter<detail::format_as_t<T>, Char> {
+  using base = formatter<detail::format_as_t<T>, Char>;
   using base::parse;
 
   template <typename FormatContext>
