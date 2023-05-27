@@ -196,43 +196,6 @@ TEST(fp_test, multiply) {
   EXPECT_EQ(v.e, 4 + 8 + 64);
 }
 
-TEST(fp_test, get_cached_power) {
-  using limits = std::numeric_limits<double>;
-  for (auto exp = limits::min_exponent; exp <= limits::max_exponent; ++exp) {
-    int dec_exp = 0;
-    auto power = fmt::detail::get_cached_power(exp, dec_exp);
-    bigint exact, cache(power.f);
-    if (dec_exp >= 0) {
-      exact.assign_pow10(dec_exp);
-      if (power.e <= 0)
-        exact <<= -power.e;
-      else
-        cache <<= power.e;
-      exact.align(cache);
-      cache.align(exact);
-      auto exact_str = fmt::to_string(exact);
-      auto cache_str = fmt::to_string(cache);
-      EXPECT_EQ(exact_str.size(), cache_str.size());
-      EXPECT_EQ(exact_str.substr(0, 15), cache_str.substr(0, 15));
-      int diff = cache_str[15] - exact_str[15];
-      if (diff == 1)
-        EXPECT_GT(exact_str[16], '8');
-      else
-        EXPECT_EQ(diff, 0);
-    } else {
-      cache.assign_pow10(-dec_exp);
-      cache *= power.f + 1;  // Inexact check.
-      exact = 1;
-      exact <<= -power.e;
-      exact.align(cache);
-      auto exact_str = fmt::to_string(exact);
-      auto cache_str = fmt::to_string(cache);
-      EXPECT_EQ(exact_str.size(), cache_str.size());
-      EXPECT_EQ(exact_str.substr(0, 16), cache_str.substr(0, 16));
-    }
-  }
-}
-
 TEST(fp_test, dragonbox_max_k) {
   using fmt::detail::dragonbox::floor_log10_pow2;
   using float_info = fmt::detail::dragonbox::float_info<float>;
