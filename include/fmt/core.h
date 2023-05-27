@@ -2681,21 +2681,6 @@ struct formatter<T, Char,
       -> decltype(ctx.out());
 };
 
-#define FMT_FORMAT_AS(Type, Base) \
-  template <typename Char>        \
-  struct formatter<Type, Char> : formatter<Base, Char> {}
-
-FMT_FORMAT_AS(signed char, int);
-FMT_FORMAT_AS(unsigned char, unsigned);
-FMT_FORMAT_AS(short, int);
-FMT_FORMAT_AS(unsigned short, unsigned);
-FMT_FORMAT_AS(long, detail::long_type);
-FMT_FORMAT_AS(unsigned long, detail::ulong_type);
-FMT_FORMAT_AS(Char*, const Char*);
-FMT_FORMAT_AS(std::basic_string<Char>, basic_string_view<Char>);
-FMT_FORMAT_AS(std::nullptr_t, const void*);
-FMT_FORMAT_AS(detail::std_string_view<Char>, basic_string_view<Char>);
-
 template <typename Char = char> struct runtime_format_string {
   basic_string_view<Char> str;
 };
