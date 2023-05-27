@@ -4088,22 +4088,10 @@ struct formatter<T, Char, enable_if_t<detail::has_format_as<T>::value>>
   }
 };
 
-template <typename Char>
-struct formatter<void*, Char> : formatter<const void*, Char> {
-  template <typename FormatContext>
-  auto format(void* val, FormatContext& ctx) const -> decltype(ctx.out()) {
-    return formatter<const void*, Char>::format(val, ctx);
-  }
-};
+FMT_FORMAT_AS(void*, const void*);
 
 template <typename Char, size_t N>
-struct formatter<Char[N], Char> : formatter<basic_string_view<Char>, Char> {
-  template <typename FormatContext>
-  FMT_CONSTEXPR auto format(const Char* val, FormatContext& ctx) const
-      -> decltype(ctx.out()) {
-    return formatter<basic_string_view<Char>, Char>::format(val, ctx);
-  }
-};
+struct formatter<Char[N], Char> : formatter<basic_string_view<Char>, Char> {};
 
 /**
   \rst
