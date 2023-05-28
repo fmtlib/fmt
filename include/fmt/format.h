@@ -3840,15 +3840,6 @@ FMT_CONSTEXPR void handle_dynamic_spec(int& value,
 }
 
 #if FMT_USE_USER_DEFINED_LITERALS
-template <typename Char> struct udl_formatter {
-  basic_string_view<Char> str;
-
-  template <typename... T>
-  auto operator()(T&&... args) const -> std::basic_string<Char> {
-    return vformat(str, fmt::make_format_args<buffer_context<Char>>(args...));
-  }
-};
-
 #  if FMT_USE_NONTYPE_TEMPLATE_ARGS
 template <typename T, typename Char, size_t N,
           fmt::detail_exported::fixed_string<Char, N> Str>
