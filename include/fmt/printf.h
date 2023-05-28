@@ -52,7 +52,7 @@ template <typename Char> class basic_printf_context {
   }
 };
 
-FMT_BEGIN_DETAIL_NAMESPACE
+namespace detail {
 
 // Checks if a value fits in int - used to avoid warnings about comparing
 // signed and unsigned integers.
@@ -553,7 +553,7 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
   }
   write(out, basic_string_view<Char>(start, to_unsigned(it - start)));
 }
-FMT_END_DETAIL_NAMESPACE
+}  // namespace detail
 
 using printf_context = basic_printf_context<char>;
 using wprintf_context = basic_printf_context<wchar_t>;

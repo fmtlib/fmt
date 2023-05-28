@@ -48,11 +48,6 @@
 
 #include "core.h"
 
-#ifndef FMT_BEGIN_DETAIL_NAMESPACE
-#  define FMT_BEGIN_DETAIL_NAMESPACE namespace detail {
-#  define FMT_END_DETAIL_NAMESPACE }
-#endif
-
 #if defined __cpp_inline_variables && __cpp_inline_variables >= 201606L
 #  define FMT_INLINE_VARIABLE inline
 #else
@@ -1126,7 +1121,7 @@ template <typename Locale> class format_facet : public Locale::facet {
   }
 };
 
-FMT_BEGIN_DETAIL_NAMESPACE
+namespace detail {
 
 // Returns true if value is negative, false otherwise.
 // Same as `value < 0` but doesn't produce warnings if T is an unsigned type.
@@ -3893,7 +3888,7 @@ FMT_API void format_error_code(buffer<char>& out, int error_code,
 
 FMT_API void report_error(format_func func, int error_code,
                           const char* message) noexcept;
-FMT_END_DETAIL_NAMESPACE
+}  // namespace detail
 
 FMT_API auto vsystem_error(int error_code, string_view format_str,
                            format_args args) -> std::system_error;
@@ -4264,7 +4259,7 @@ FMT_NODISCARD auto to_string(const basic_memory_buffer<Char, SIZE>& buf)
   return std::basic_string<Char>(buf.data(), size);
 }
 
-FMT_BEGIN_DETAIL_NAMESPACE
+namespace detail {
 
 template <typename Char>
 void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
@@ -4347,7 +4342,7 @@ extern template FMT_API auto decimal_point_impl(locale_ref) -> char;
 extern template FMT_API auto decimal_point_impl(locale_ref) -> wchar_t;
 #endif  // FMT_HEADER_ONLY
 
-FMT_END_DETAIL_NAMESPACE
+}  // namespace detail
 
 #if FMT_USE_USER_DEFINED_LITERALS
 inline namespace literals {
