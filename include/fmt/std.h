@@ -46,16 +46,9 @@
 
 // Check if typeid is available.
 #ifndef FMT_USE_TYPEID
-// In MSVC, typeid() is available with or without RTTI.
-#  if defined(_MSC_VER)
-#    define FMT_USE_TYPEID 1
-#  elif defined(__RTTI)  // EDG compilers.
-#    define FMT_USE_TYPEID 1
-#  elif defined(__INTEL_RTTI__)  // Intel compiler.
-#    define FMT_USE_TYPEID 1
-#  elif defined(__GXX_RTTI)  // G++.
-#    define FMT_USE_TYPEID 1
-#  elif FMT_HAS_FEATURE(cxx_rtti)  // Clang.
+// __RTTI is for EDG compilers. In MSVC typeid is available without RTTI.
+#  if defined(__GXX_RTTI) || FMT_HAS_FEATURE(cxx_rtti) || FMT_MSC_VERSION || \
+      defined(__INTEL_RTTI__) || defined(__RTTI)
 #    define FMT_USE_TYPEID 1
 #  else
 #    define FMT_USE_TYPEID 0
