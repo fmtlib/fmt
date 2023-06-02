@@ -38,12 +38,23 @@ struct custom_type {
 
 FMT_BEGIN_NAMESPACE
 template <> struct formatter<custom_type> {
-  auto parse(format_parse_context& ctx) const -> decltype(ctx.begin()) {
+ private:
+  bool hex = false;
+
+ public:
+  auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+    if (ctx.starts_with("hex")) {
+      hex = true;
+      return ctx.begin() + 3;
+    }
     return ctx.begin();
   }
 
   template <typename FormatContext>
   auto format(const custom_type& p, FormatContext& ctx) -> decltype(ctx.out()) {
+    if (hex) {
+      return fmt::format_to(ctx.out(), "cust={:x}", p.i);
+    }
     return fmt::format_to(ctx.out(), "cust={}", p.i);
   }
 };
@@ -57,9 +68,9 @@ TEST(args_test, custom_format) {
   store.push_back(c);
   ++c.i;
   store.push_back(std::cref(c));
-  ++c.i;
-  auto result = fmt::vformat("{} and {} and {}", store);
-  EXPECT_EQ("cust=0 and cust=1 and cust=3", result);
+  c.i = 15;
+  auto result = fmt::vformat("{} and {} and {:hex}", store);
+  EXPECT_EQ("cust=0 and cust=1 and cust=f", result);
 }
 
 struct to_stringable {

@@ -675,6 +675,20 @@ template <typename Char> class basic_format_parse_context {
    */
   constexpr auto end() const noexcept -> iterator { return format_str_.end(); }
 
+  /**
+   * Checks whether the format string starts with the given prefix
+   */
+  constexpr bool starts_with(iterator prefix) const noexcept {
+    auto first = begin();
+    auto last = end();
+    while (first != last && *prefix != '\0') {
+      if (*prefix++ != *first++) {
+        return false;
+      }
+    }
+    return *prefix == '\0';
+  }
+
   /** Advances the begin iterator to ``it``. */
   FMT_CONSTEXPR void advance_to(iterator it) {
     format_str_.remove_prefix(detail::to_unsigned(it - begin()));
