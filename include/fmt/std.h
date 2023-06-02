@@ -89,9 +89,9 @@ inline void write_escaped_path<std::filesystem::path::value_type>(
 FMT_EXPORT
 template <typename Char>
 struct formatter<std::filesystem::path, Char>
-    : formatter<basic_string_view<Char>> {
+    : formatter<basic_string_view<Char>, Char> {
   template <typename ParseContext> FMT_CONSTEXPR auto parse(ParseContext& ctx) {
-    auto out = formatter<basic_string_view<Char>>::parse(ctx);
+    auto out = formatter<basic_string_view<Char>, Char>::parse(ctx);
     this->set_debug_format(false);
     return out;
   }
@@ -100,7 +100,7 @@ struct formatter<std::filesystem::path, Char>
       typename FormatContext::iterator {
     auto quoted = basic_memory_buffer<Char>();
     detail::write_escaped_path(quoted, p);
-    return formatter<basic_string_view<Char>>::format(
+    return formatter<basic_string_view<Char>, Char>::format(
         basic_string_view<Char>(quoted.data(), quoted.size()), ctx);
   }
 };
