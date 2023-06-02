@@ -681,12 +681,14 @@ template <typename Char> class basic_format_parse_context {
   constexpr bool starts_with(iterator prefix) const noexcept {
     auto first = begin();
     auto last = end();
+    bool mismatch_found = false;
     while (first != last && *prefix != '\0') {
       if (*prefix++ != *first++) {
-        return false;
+        mismatch_found = true;
+        break;
       }
     }
-    return *prefix == '\0';
+    return !mismatch_found && *prefix == '\0';
   }
 
   /** Advances the begin iterator to ``it``. */
