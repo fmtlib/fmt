@@ -679,11 +679,10 @@ template <typename Char> class basic_format_parse_context {
    * Checks whether the format string starts with the given prefix
    */
   constexpr bool starts_with(iterator prefix) const noexcept {
-    auto first = begin();
-    auto last = end();
+    std::ptrdiff_t i = 0;
     bool mismatch_found = false;
-    while (first != last && *prefix != '\0') {
-      if (*prefix++ != *first++) {
+    while (begin() + i != end() && *prefix != '\0') {
+      if (*prefix++ != *(begin() + i++)) {
         mismatch_found = true;
         break;
       }
