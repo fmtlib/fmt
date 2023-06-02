@@ -2135,8 +2135,9 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
   auto format(std::chrono::time_point<std::chrono::system_clock, Duration> val,
               FormatContext& ctx) const -> decltype(ctx.out()) {
     using period = typename Duration::period;
-    if (period::num != 1 || period::den != 1 ||
-        std::is_floating_point<typename Duration::rep>::value) {
+    if (detail::const_check(
+            period::num != 1 || period::den != 1 ||
+            std::is_floating_point<typename Duration::rep>::value)) {
       const auto epoch = val.time_since_epoch();
       auto subsecs = std::chrono::duration_cast<Duration>(
           epoch - std::chrono::duration_cast<std::chrono::seconds>(epoch));
