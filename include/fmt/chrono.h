@@ -2154,10 +2154,10 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
       return formatter<std::tm, Char>::do_format(
           gmtime(std::chrono::time_point_cast<std::chrono::seconds>(val)), ctx,
           &subsecs);
-    } else {
-      return formatter<std::tm, Char>::format(
-          gmtime(std::chrono::time_point_cast<std::chrono::seconds>(val)), ctx);
     }
+
+    return formatter<std::tm, Char>::format(
+        gmtime(std::chrono::time_point_cast<std::chrono::seconds>(val)), ctx);
   }
 };
 
