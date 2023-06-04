@@ -75,12 +75,7 @@ export module fmt;
 #define FMT_EXPORT export
 #define FMT_BEGIN_EXPORT export {
 #define FMT_END_EXPORT }
-#define FMT_BEGIN_DETAIL_NAMESPACE \
-  }                                \
-  namespace detail {
-#define FMT_END_DETAIL_NAMESPACE \
-  }                              \
-  export {
+
 // If you define FMT_ATTACH_TO_GLOBAL_MODULE
 //  - all declarations are detached from module 'fmt'
 //  - the module behaves like a traditional static library, too
