@@ -49,9 +49,9 @@ def build_docs(version='dev', **kwargs):
       GENERATE_MAN      = NO
       GENERATE_RTF      = NO
       CASE_SENSE_NAMES  = NO
-      INPUT             = {0}/chrono.h {0}/color.h {0}/core.h {0}/compile.h \
-                          {0}/format.h {0}/os.h {0}/ostream.h {0}/printf.h \
-                          {0}/xchar.h
+      INPUT             = {0}/args.h {0}/chrono.h {0}/color.h {0}/core.h \
+                          {0}/compile.h  {0}/format.h {0}/os.h {0}/ostream.h \
+                          {0}/printf.h {0}/xchar.h
       QUIET             = YES
       JAVADOC_AUTOBRIEF = YES
       AUTOLINK_SUPPORT  = NO

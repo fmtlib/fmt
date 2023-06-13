@@ -293,9 +293,6 @@ times and reduces binary code size compared to a fully parameterized version.
 .. doxygenclass:: fmt::format_arg_store
    :members:
 
-.. doxygenclass:: fmt::dynamic_format_arg_store
-   :members:
-
 .. doxygenclass:: fmt::basic_format_args
    :members:
 
