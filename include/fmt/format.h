@@ -83,7 +83,7 @@
 #  if FMT_CPLUSPLUS >= 202002L
 #    if FMT_HAS_CPP_ATTRIBUTE(no_unique_address)
 #      define FMT_NO_UNIQUE_ADDRESS [[no_unique_address]]
-#    elif FMT_MSC_VERSION >= 1929 // VS2019 v16.10 and later
+#    elif FMT_MSC_VERSION >= 1929  // VS2019 v16.10 and later
 #      define FMT_NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
 #    endif
 #  else
@@ -953,6 +953,8 @@ class basic_memory_buffer final : public detail::buffer<T> {
     T* old_data = this->data();
     T* new_data =
         std::allocator_traits<Allocator>::allocate(alloc_, new_capacity);
+    // Suppress a bogus -Wstringop-overflow in gcc 13.1 (#3481).
+    FMT_ASSERT(this->size() <= new_capacity, "");
     // The following code doesn't throw, so the raw pointer above doesn't leak.
     std::uninitialized_copy(old_data, old_data + this->size(),
                             detail::make_checked(new_data, new_capacity));
