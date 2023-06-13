@@ -17,7 +17,7 @@ The {fmt} library API consists of the following parts:
 * :ref:`fmt/color.h <color-api>`: terminal color and text style
 * :ref:`fmt/os.h <os-api>`: system APIs
 * :ref:`fmt/ostream.h <ostream-api>`: ``std::ostream`` support
-* :ref:`fmt/args.h <args-api>`: dynamic format arguments
+* :ref:`fmt/args.h <args-api>`: dynamic argument lists
 * :ref:`fmt/printf.h <printf-api>`: ``printf`` formatting
 * :ref:`fmt/xchar.h <xchar-api>`: optional ``wchar_t`` support 
 
@@ -308,6 +308,17 @@ times and reduces binary code size compared to a fully parameterized version.
    :members:
 
 .. doxygentypedef:: fmt::format_context
+
+.. _args-api:
+
+Dynamic Argument Lists
+======================
+
+The header ``fmt/args.h`` provides ``dynamic_format_arg_store``, a builder-like
+API that can be used to construct format argument lists dynamically.
+
+.. doxygenclass:: fmt::dynamic_format_arg_store
+   :members:
 
 Compatibility
 -------------
@@ -601,17 +612,6 @@ In order to make a type formattable via ``std::ostream`` you should provide a
 .. doxygenfunction:: streamed(const T &)
 
 .. doxygenfunction:: print(std::ostream &os, format_string<T...> fmt, T&&... args)
-
-.. _args-api:
-
-Dynamic Format Arguments
-========================
-
-The header ``fmt/args.h`` provides ``dynamic_format_arg_store``, a builder-like
-API that can be used to construct format argument lists dynamically.
-
-.. doxygenclass:: fmt::dynamic_format_arg_store
-   :members:
 
 .. _printf-api:
 
