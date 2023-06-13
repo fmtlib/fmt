@@ -312,7 +312,7 @@ times and reduces binary code size compared to a fully parameterized version.
 .. _args-api:
 
 Dynamic Argument Lists
-======================
+----------------------
 
 The header ``fmt/args.h`` provides ``dynamic_format_arg_store``, a builder-like
 API that can be used to construct format argument lists dynamically.
