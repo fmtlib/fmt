@@ -79,6 +79,18 @@
 #  endif
 #endif
 
+#ifndef FMT_NO_UNIQUE_ADDRESS
+#  if FMT_CPLUSPLUS >= 202002L
+#    if FMT_HAS_CPP_ATTRIBUTE(no_unique_address)
+#      define FMT_NO_UNIQUE_ADDRESS [[no_unique_address]]
+#    elif FMT_MSC_VERSION >= 1929 // VS2019 v16.10 and later
+#      define FMT_NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
+#    endif
+#  else
+#    define FMT_NO_UNIQUE_ADDRESS
+#  endif
+#endif
+
 #if FMT_GCC_VERSION || defined(__clang__)
 #  define FMT_VISIBILITY(value) __attribute__((visibility(value)))
 #else
@@ -920,7 +932,7 @@ class basic_memory_buffer final : public detail::buffer<T> {
   T store_[SIZE];
 
   // Don't inherit from Allocator avoid generating type_info for it.
-  Allocator alloc_;
+  FMT_NO_UNIQUE_ADDRESS Allocator alloc_;
 
   // Deallocate memory allocated by the buffer.
   FMT_CONSTEXPR20 void deallocate() {
