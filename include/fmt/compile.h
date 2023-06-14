@@ -196,7 +196,8 @@ template <typename Char> struct code_unit {
 
   template <typename OutputIt, typename... Args>
   constexpr OutputIt format(OutputIt out, const Args&...) const {
-    return write<Char>(out, value);
+    *out++ = value;
+    return out;
   }
 };
 
