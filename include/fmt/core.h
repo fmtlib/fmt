@@ -1486,6 +1486,13 @@ auto copy_str(InputIt begin, InputIt end, appender out) -> appender {
   get_container(out).append(begin, end);
   return out;
 }
+template <typename Char, typename InputIt>
+auto copy_str(InputIt begin, InputIt end,
+              std::back_insert_iterator<std::string> out)
+    -> std::back_insert_iterator<std::string> {
+  get_container(out).append(begin, end);
+  return out;
+}
 
 template <typename Char, typename R, typename OutputIt>
 FMT_CONSTEXPR auto copy_str(R&& rng, OutputIt out) -> OutputIt {
