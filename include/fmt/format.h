@@ -86,9 +86,10 @@
 #    elif FMT_MSC_VERSION >= 1929  // VS2019 v16.10 and later
 #      define FMT_NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
 #    endif
-#  else
-#    define FMT_NO_UNIQUE_ADDRESS
 #  endif
+#endif
+#ifndef FMT_NO_UNIQUE_ADDRESS
+#  define FMT_NO_UNIQUE_ADDRESS
 #endif
 
 #if FMT_GCC_VERSION || defined(__clang__)
