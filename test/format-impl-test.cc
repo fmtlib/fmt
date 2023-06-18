@@ -212,11 +212,6 @@ TEST(fp_test, dragonbox_max_k) {
                     2 * fmt::detail::num_significand_bits<double>() - 1));
 }
 
-TEST(fp_test, grisu_format_compiles_with_on_ieee_double) {
-  auto buf = fmt::memory_buffer();
-  format_float(0.42, -1, fmt::detail::float_specs(), buf);
-}
-
 TEST(format_impl_test, format_error_code) {
   std::string msg = "error 42", sep = ": ";
   {

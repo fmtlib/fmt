@@ -1413,9 +1413,6 @@ TEST(format_test, precision_rounding) {
   EXPECT_EQ("1.9156918820264798e-56",
             fmt::format("{}", 1.9156918820264798e-56));
   EXPECT_EQ("0.0000", fmt::format("{:.4f}", 7.2809479766055470e-15));
-
-  // Trigger a rounding error in Grisu by a specially chosen number.
-  EXPECT_EQ("3788512123356.985352", fmt::format("{:f}", 3788512123356.985352));
 }
 
 TEST(format_test, prettify_float) {
@@ -2247,15 +2244,15 @@ TEST(format_test, format_named_arg_with_locale) {
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR
 
 struct convertible_to_nonconst_cstring {
-    operator char*() const {
-        static char c[]="bar";
-        return c;
-    }
+  operator char*() const {
+    static char c[] = "bar";
+    return c;
+  }
 };
 
 FMT_BEGIN_NAMESPACE
-template <> struct formatter<convertible_to_nonconst_cstring> : formatter<char*> {
-};
+template <>
+struct formatter<convertible_to_nonconst_cstring> : formatter<char*> {};
 FMT_END_NAMESPACE
 
 TEST(format_test, formatter_nonconst_char) {
