@@ -1551,7 +1551,7 @@ FMT_CONSTEXPR FMT_INLINE auto make_arg(T& val) -> value<Context> {
   constexpr bool formattable_char =
       !std::is_same<arg_type, unformattable_char>::value;
 #if defined(__cpp_if_constexpr)
-  if constexpr (not formattable_char) {
+  if constexpr (!formattable_char) {
     type_is_unformattable_for<T, typename Context::char_type> _;
   }
 #endif
