@@ -1550,11 +1550,6 @@ FMT_CONSTEXPR FMT_INLINE auto make_arg(T& val) -> value<Context> {
 
   constexpr bool formattable_char =
       !std::is_same<arg_type, unformattable_char>::value;
-#if defined(__cpp_if_constexpr)
-  if constexpr (!formattable_char) {
-    type_is_unformattable_for<T, typename Context::char_type> _;
-  }
-#endif
   static_assert(formattable_char, "Mixing character types is disallowed.");
 
   // Formatting of arbitrary pointers is disallowed. If you want to format a
@@ -1562,11 +1557,6 @@ FMT_CONSTEXPR FMT_INLINE auto make_arg(T& val) -> value<Context> {
   // formatting of `[const] volatile char*` printed as bool by iostreams.
   constexpr bool formattable_pointer =
       !std::is_same<arg_type, unformattable_pointer>::value;
-#if defined(__cpp_if_constexpr)
-  if constexpr (!formattable_pointer) {
-    type_is_unformattable_for<T, typename Context::char_type> _;
-  }
-#endif
   static_assert(formattable_pointer,
                 "Formatting of non-void pointers is disallowed.");
 
