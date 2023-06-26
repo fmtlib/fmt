@@ -286,8 +286,10 @@ struct monostate {
 #endif
 
 // This is defined in core.h instead of format.h to avoid injecting in std.
+// It is a template to avoid undesirable implicit conversions to std::byte.
 #ifdef __cpp_lib_byte
-inline auto format_as(std::byte b) -> unsigned char {
+template <typename T, FMT_ENABLE_IF(std::is_same<T, std::byte>::value)>
+inline auto format_as(T b) -> unsigned char {
   return static_cast<unsigned char>(b);
 }
 #endif
