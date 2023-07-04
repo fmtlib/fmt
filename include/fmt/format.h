@@ -2821,7 +2821,7 @@ class bigint {
   FMT_CONSTEXPR20 void multiply(UInt value) {
     using half_uint =
         conditional_t<std::is_same<UInt, uint128_t>::value, uint64_t, uint32_t>;
-    const int shift = num_bits<half_uint>() - bigit_bits;
+    constexpr int shift = num_bits<half_uint>() - bigit_bits;
     const UInt lower = static_cast<half_uint>(value);
     const UInt upper = value >> num_bits<half_uint>();
     UInt carry = 0;
