@@ -311,6 +311,7 @@ set(FMT_DEBUG_POSTFIX d CACHE STRING "Debug library postfix.")
 
 set_target_properties(fmt PROPERTIES
   VERSION ${FMT_VERSION} SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR}
+  PUBLIC_HEADER "${FMT_HEADERS}"
   DEBUG_POSTFIX "${FMT_DEBUG_POSTFIX}")
 
 # Set FMT_LIB_NAME for pkg-config fmt.pc. We cannot use the OUTPUT_NAME target
