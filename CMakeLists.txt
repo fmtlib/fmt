@@ -338,6 +338,13 @@ target_include_directories(fmt-header-only ${FMT_SYSTEM_HEADERS_ATTRIBUTE} INTER
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${FMT_INC_DIR}>)
 
+option(FMT_FILE_DESCRIPTORS "Disable this if your system does not provide numeric file descriptors" ON)
+mark_as_advanced(FMT_FILE_DESCRIPTORS)
+if (NOT FMT_FILE_DESCRIPTORS)
+  target_compile_definitions(fmt PUBLIC FMT_HAS_FILE_DESCRIPTORS=0)
+  target_compile_definitions(fmt-header-only INTERFACE FMT_HAS_FILE_DESCRIPTORS=0)
+endif ()
+
 # Install targets.
 if (FMT_INSTALL)
   include(CMakePackageConfigHelpers)

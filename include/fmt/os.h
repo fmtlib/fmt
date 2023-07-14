@@ -19,6 +19,17 @@
 
 #include "format.h"
 
+// Some operating systems do not implement numeric file descriptors.
+// If set to 0, functions that rely on file descriptors will not be defined.
+#ifndef FMT_HAS_FILE_DESCRIPTORS
+#  define FMT_HAS_FILE_DESCRIPTORS 1
+#endif
+
+// FCNTL requires file descriptors.
+#if FMT_HAS_FILE_DESCRIPTORS == 0
+#  define FMT_USE_FCNTL 0
+#endif
+
 #ifndef FMT_USE_FCNTL
 // UWP doesn't provide _pipe.
 #  if FMT_HAS_INCLUDE("winapifamily.h")
@@ -222,7 +233,9 @@ class buffered_file {
   // Returns the pointer to a FILE object representing this file.
   FILE* get() const noexcept { return file_; }
 
+#if FMT_HAS_FILE_DESCRIPTORS
   FMT_API int descriptor() const;
+#endif
 
   void vprint(string_view format_str, format_args args) {
     fmt::vprint(file_, format_str, args);

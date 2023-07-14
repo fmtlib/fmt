@@ -181,6 +181,7 @@ void buffered_file::close() {
     FMT_THROW(system_error(errno, FMT_STRING("cannot close file")));
 }
 
+#if FMT_HAS_FILE_DESCRIPTORS
 int buffered_file::descriptor() const {
 #ifdef fileno  // fileno is a macro on OpenBSD so we cannot use FMT_POSIX_CALL.
   int fd = fileno(file_);
@@ -191,6 +192,7 @@ int buffered_file::descriptor() const {
     FMT_THROW(system_error(errno, FMT_STRING("cannot get file descriptor")));
   return fd;
 }
+#endif  // FMT_HAS_FILE_DESCRIPTORS
 
 #if FMT_USE_FCNTL
 #  ifdef _WIN32
