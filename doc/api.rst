@@ -124,7 +124,7 @@ parsing and formatting. To use this method specialize the ``formatter`` struct
 template for your type and implement ``parse`` and ``format`` methods.
 For example::
 
-  #include <fmt/core.h>
+  #include <fmt/format.h>
 
   struct point {
     double x, y;
