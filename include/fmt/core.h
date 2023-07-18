@@ -538,8 +538,7 @@ constexpr auto to_string_view(const S& s)
 }
 // Catch basic_format_string for any char type.
 template <typename S, FMT_ENABLE_IF(!is_compile_string<S>::value)>
-constexpr auto to_string_view(const S& s)
-    -> decltype(s.get()) {
+constexpr auto to_string_view(const S& s) -> decltype(s.get()) {
   return s.get();
 }
 void to_string_view(...);
