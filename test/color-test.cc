@@ -58,6 +58,13 @@ TEST(color_test, format) {
             "\x1b[4m\x1b[38;2;000;000;255mbar\x1b[0m");
 }
 
+TEST(color_test, format_forwarding) {
+  const fmt::format_string<int,int,int> format_str_int = "rgb(255,20,30){}{}{}";
+  auto sv = fmt::detail::to_string_view(format_str_int);
+  EXPECT_EQ(fmt::format(fg(fmt::rgb(255, 20, 30)), format_str_int, 1, 2, 3),
+            "\x1b[38;2;255;020;030mrgb(255,20,30)123\x1b[0m");
+}
+
 TEST(color_test, format_to) {
   auto out = std::string();
   fmt::format_to(std::back_inserter(out), fg(fmt::rgb(255, 20, 30)),
@@ -66,7 +73,24 @@ TEST(color_test, format_to) {
             "\x1b[38;2;255;020;030mrgb(255,20,30)123\x1b[0m");
 }
 
+TEST(color_test, format_to_forwarding) {
+  auto out = std::string();
+  const fmt::format_string<int,int,int> format_str_int = "rgb(255,20,30){}{}{}";
+  fmt::format_to(std::back_inserter(out), fg(fmt::rgb(255, 20, 30)),
+                 format_str_int, 1, 2, 3);
+  EXPECT_EQ(fmt::to_string(out),
+            "\x1b[38;2;255;020;030mrgb(255,20,30)123\x1b[0m");
+}
+
 TEST(color_test, print) {
   EXPECT_WRITE(stdout, fmt::print(fg(fmt::rgb(255, 20, 30)), "rgb(255,20,30)"),
                "\x1b[38;2;255;020;030mrgb(255,20,30)\x1b[0m");
+}
+
+TEST(color_test, print_forwarding) {
+  const fmt::format_string<int,int,int> format_str_int = "rgb(255,20,30){}{}{}";
+  EXPECT_WRITE(stdout, fmt::print(fg(fmt::rgb(255, 20, 30)), format_str_int, 1, 2, 3),
+               "\x1b[38;2;255;020;030mrgb(255,20,30)123\x1b[0m");
+  EXPECT_WRITE(stdout, fmt::print(stdout, fg(fmt::rgb(255, 20, 30)), format_str_int, 1, 2, 3),
+               "\x1b[38;2;255;020;030mrgb(255,20,30)123\x1b[0m");
 }
