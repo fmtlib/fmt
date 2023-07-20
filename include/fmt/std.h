@@ -173,22 +173,6 @@ FMT_END_NAMESPACE
 
 #ifdef __cpp_lib_variant
 FMT_BEGIN_NAMESPACE
-FMT_EXPORT
-template <typename Char> struct formatter<std::monostate, Char> {
-  template <typename ParseContext>
-  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
-    return ctx.begin();
-  }
-
-  template <typename FormatContext>
-  auto format(const std::monostate&, FormatContext& ctx) const
-      -> decltype(ctx.out()) {
-    auto out = ctx.out();
-    out = detail::write<Char>(out, "monostate");
-    return out;
-  }
-};
-
 namespace detail {
 
 template <typename T>
@@ -222,6 +206,7 @@ auto write_variant_alternative(OutputIt out, const T& v) -> OutputIt {
 }
 
 }  // namespace detail
+
 template <typename T> struct is_variant_like {
   static constexpr const bool value = detail::is_variant_like_<T>::value;
 };
@@ -229,6 +214,20 @@ template <typename T> struct is_variant_like {
 template <typename T, typename C> struct is_variant_formattable {
   static constexpr const bool value =
       detail::is_variant_formattable_<T, C>::value;
+};
+
+FMT_EXPORT
+template <typename Char> struct formatter<std::monostate, Char> {
+  template <typename ParseContext>
+  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
+
+  template <typename FormatContext>
+  auto format(const std::monostate&, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    return detail::write<Char>(ctx.out(), "monostate");
+  }
 };
 
 FMT_EXPORT
@@ -364,11 +363,9 @@ struct formatter<
 #  else
     out = detail::write_bytes(out, string_view(ti.name()), spec);
 #  endif
-    out = detail::write<Char>(out, Char(':'));
-    out = detail::write<Char>(out, Char(' '));
-    out = detail::write_bytes(out, string_view(ex.what()), spec);
-
-    return out;
+    *out++ = ':';
+    *out++ = ' ';
+    return detail::write_bytes(out, string_view(ex.what()), spec);
 #endif
   }
 };
