@@ -3060,6 +3060,7 @@ FMT_CONSTEXPR20 inline void format_dragon(basic_fp<uint128_t> value,
   }
   int even = static_cast<int>((value.f & 1) == 0);
   if (!upper) upper = &lower;
+  bool shortest = num_digits < 0;
   if ((flags & dragon::fixup) != 0) {
     if (add_compare(numerator, *upper, denominator) + even <= 0) {
       --exp10;
@@ -3072,7 +3073,7 @@ FMT_CONSTEXPR20 inline void format_dragon(basic_fp<uint128_t> value,
     if ((flags & dragon::fixed) != 0) adjust_precision(num_digits, exp10 + 1);
   }
   // Invariant: value == (numerator / denominator) * pow(10, exp10).
-  if (num_digits < 0) {
+  if (shortest) {
     // Generate the shortest representation.
     num_digits = 0;
     char* data = buf.data();
@@ -3102,7 +3103,7 @@ FMT_CONSTEXPR20 inline void format_dragon(basic_fp<uint128_t> value,
   }
   // Generate the given number of digits.
   exp10 -= num_digits - 1;
-  if (num_digits == 0) {
+  if (num_digits <= 0) {
     denominator *= 10;
     auto digit = add_compare(numerator, numerator, denominator) > 0 ? '1' : '0';
     buf.push_back(digit);
@@ -3323,9 +3324,7 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
     }
 
     // Compute the actual number of decimal digits to print.
-    if (fixed) {
-      adjust_precision(precision, exp + digits_in_the_first_segment);
-    }
+    if (fixed) adjust_precision(precision, exp + digits_in_the_first_segment);
 
     // Use Dragon4 only when there might be not enough digits in the first
     // segment.
