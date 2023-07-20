@@ -542,6 +542,8 @@ FMT_INLINE void assume(bool condition) {
   (void)condition;
 #if FMT_HAS_BUILTIN(__builtin_assume) && !FMT_ICC_VERSION
   __builtin_assume(condition);
+#elif FMT_GCC_VERSION
+  if (!condition) __builtin_unreachable();
 #endif
 }
 
@@ -941,9 +943,9 @@ class basic_memory_buffer final : public detail::buffer<T> {
     T* new_data =
         std::allocator_traits<Allocator>::allocate(alloc_, new_capacity);
     // Suppress a bogus -Wstringop-overflow in gcc 13.1 (#3481).
-    FMT_ASSERT(this->size() <= new_capacity, "");
+    detail::assume(this->size() <= new_capacity);
     // The following code doesn't throw, so the raw pointer above doesn't leak.
-    std::uninitialized_copy(old_data, old_data + this->size(), new_data);
+    std::uninitialized_copy_n(old_data, this->size(), new_data);
     this->set(new_data, new_capacity);
     // deallocate must not throw according to the standard, but even if it does,
     // the buffer already uses the new storage and will deallocate it in
