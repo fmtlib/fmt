@@ -2047,40 +2047,40 @@ template <typename Char> struct formatter<weekday, Char> {
 template <typename Rep, typename Period, typename Char>
 struct formatter<std::chrono::duration<Rep, Period>, Char> {
  private:
-  format_specs<Char> specs;
-  int precision = -1;
+  format_specs<Char> specs_;
   using arg_ref_type = detail::arg_ref<Char>;
-  arg_ref_type width_ref;
-  arg_ref_type precision_ref;
-  bool localized = false;
-  basic_string_view<Char> format_str;
+  arg_ref_type width_ref_;
+  arg_ref_type precision_ref_;
+  bool localized_ = false;
+  basic_string_view<Char> format_str_;
+
   using duration = std::chrono::duration<Rep, Period>;
 
-  using iterator = typename basic_format_parse_context<Char>::iterator;
   struct parse_range {
-    iterator begin;
-    iterator end;
+    const Char* begin;
+    const Char* end;
   };
 
   FMT_CONSTEXPR parse_range do_parse(basic_format_parse_context<Char>& ctx) {
     auto begin = ctx.begin(), end = ctx.end();
     if (begin == end || *begin == '}') return {begin, begin};
 
-    begin = detail::parse_align(begin, end, specs);
+    begin = detail::parse_align(begin, end, specs_);
     if (begin == end) return {begin, begin};
 
-    begin = detail::parse_dynamic_spec(begin, end, specs.width, width_ref, ctx);
+    begin =
+        detail::parse_dynamic_spec(begin, end, specs_.width, width_ref_, ctx);
     if (begin == end) return {begin, begin};
 
     auto checker = detail::chrono_format_checker();
     if (*begin == '.') {
       checker.has_precision_integral = !std::is_floating_point<Rep>::value;
-      begin =
-          detail::parse_precision(begin, end, precision, precision_ref, ctx);
+      begin = detail::parse_precision(begin, end, specs_.precision,
+                                      precision_ref_, ctx);
     }
     if (begin != end && *begin == 'L') {
       ++begin;
-      localized = true;
+      localized_ = true;
     }
     end = detail::parse_chrono_format(begin, end, checker);
     return {begin, end};
@@ -2090,7 +2090,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
   FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
       -> decltype(ctx.begin()) {
     auto range = do_parse(ctx);
-    format_str = basic_string_view<Char>(
+    format_str_ = basic_string_view<Char>(
         &*range.begin, detail::to_unsigned(range.end - range.begin));
     return range.end;
   }
@@ -2098,29 +2098,31 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
   template <typename FormatContext>
   auto format(const duration& d, FormatContext& ctx) const
       -> decltype(ctx.out()) {
-    auto specs_copy = specs;
-    auto precision_copy = precision;
-    auto begin = format_str.begin(), end = format_str.end();
+    auto specs = specs_;
+    auto precision = specs.precision;
+    specs.precision = -1;
+    auto begin = format_str_.begin(), end = format_str_.end();
     // As a possible future optimization, we could avoid extra copying if width
     // is not specified.
-    basic_memory_buffer<Char> buf;
+    auto buf = basic_memory_buffer<Char>();
     auto out = std::back_inserter(buf);
-    detail::handle_dynamic_spec<detail::width_checker>(specs_copy.width,
-                                                       width_ref, ctx);
-    detail::handle_dynamic_spec<detail::precision_checker>(precision_copy,
-                                                           precision_ref, ctx);
+    detail::handle_dynamic_spec<detail::width_checker>(specs.width, width_ref_,
+                                                       ctx);
+    detail::handle_dynamic_spec<detail::precision_checker>(precision,
+                                                           precision_ref_, ctx);
     if (begin == end || *begin == '}') {
-      out = detail::format_duration_value<Char>(out, d.count(), precision_copy);
+      out = detail::format_duration_value<Char>(out, d.count(), precision);
       detail::format_duration_unit<Char, Period>(out);
     } else {
-      detail::chrono_formatter<FormatContext, decltype(out), Rep, Period> f(
-          ctx, out, d);
-      f.precision = precision_copy;
-      f.localized = localized;
+      using chrono_formatter =
+          detail::chrono_formatter<FormatContext, decltype(out), Rep, Period>;
+      auto f = chrono_formatter(ctx, out, d);
+      f.precision = precision;
+      f.localized = localized_;
       detail::parse_chrono_format(begin, end, f);
     }
     return detail::write(
-        ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs_copy);
+        ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
   }
 };
 
