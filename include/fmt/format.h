@@ -560,20 +560,6 @@ inline auto get_data(Container& c) -> typename Container::value_type* {
   return c.data();
 }
 
-#if defined(_SECURE_SCL) && _SECURE_SCL
-// Make a checked iterator to avoid MSVC warnings.
-template <typename T> using checked_ptr = stdext::checked_array_iterator<T*>;
-template <typename T>
-constexpr auto make_checked(T* p, size_t size) -> checked_ptr<T> {
-  return {p, size};
-}
-#else
-template <typename T> using checked_ptr = T*;
-template <typename T> constexpr auto make_checked(T* p, size_t) -> T* {
-  return p;
-}
-#endif
-
 // Attempts to reserve space for n extra characters in the output range.
 // Returns a pointer to the reserved range or a reference to it.
 template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
@@ -582,11 +568,11 @@ __attribute__((no_sanitize("undefined")))
 #endif
 inline auto
 reserve(std::back_insert_iterator<Container> it, size_t n)
-    -> checked_ptr<typename Container::value_type> {
+    -> typename Container::value_type* {
   Container& c = get_container(it);
   size_t size = c.size();
   c.resize(size + n);
-  return make_checked(get_data(c) + size, n);
+  return get_data(c) + size;
 }
 
 template <typename T>
@@ -618,8 +604,8 @@ template <typename T> auto to_pointer(buffer_appender<T> it, size_t n) -> T* {
 }
 
 template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
-inline auto base_iterator(std::back_insert_iterator<Container>& it,
-                          checked_ptr<typename Container::value_type>)
+inline auto base_iterator(std::back_insert_iterator<Container> it,
+                          typename Container::value_type*)
     -> std::back_insert_iterator<Container> {
   return it;
 }
@@ -887,7 +873,7 @@ void buffer<T>::append(const U* begin, const U* end) {
     try_reserve(size_ + count);
     auto free_cap = capacity_ - size_;
     if (free_cap < count) count = free_cap;
-    std::uninitialized_copy_n(begin, count, make_checked(ptr_ + size_, count));
+    std::uninitialized_copy_n(begin, count, ptr_ + size_);
     size_ += count;
     begin += count;
   }
@@ -957,8 +943,7 @@ class basic_memory_buffer final : public detail::buffer<T> {
     // Suppress a bogus -Wstringop-overflow in gcc 13.1 (#3481).
     FMT_ASSERT(this->size() <= new_capacity, "");
     // The following code doesn't throw, so the raw pointer above doesn't leak.
-    std::uninitialized_copy(old_data, old_data + this->size(),
-                            detail::make_checked(new_data, new_capacity));
+    std::uninitialized_copy(old_data, old_data + this->size(), new_data);
     this->set(new_data, new_capacity);
     // deallocate must not throw according to the standard, but even if it does,
     // the buffer already uses the new storage and will deallocate it in
@@ -986,8 +971,7 @@ class basic_memory_buffer final : public detail::buffer<T> {
     size_t size = other.size(), capacity = other.capacity();
     if (data == other.store_) {
       this->set(store_, capacity);
-      detail::copy_str<T>(other.store_, other.store_ + size,
-                          detail::make_checked(store_, capacity));
+      detail::copy_str<T>(other.store_, other.store_ + size, store_);
     } else {
       this->set(data, capacity);
       // Set pointer to the inline array so that delete is not called
@@ -2860,7 +2844,7 @@ class bigint {
     auto size = other.bigits_.size();
     bigits_.resize(size);
     auto data = other.bigits_.data();
-    std::copy(data, data + size, make_checked(bigits_.data(), size));
+    std::copy(data, data + size, bigits_.data());
     exp_ = other.exp_;
   }
 
