@@ -89,20 +89,33 @@ inline void write_escaped_path<std::filesystem::path::value_type>(
 
 FMT_EXPORT
 template <typename Char>
-struct formatter<std::filesystem::path, Char>
-    : formatter<basic_string_view<Char>, Char> {
+struct formatter<std::filesystem::path, Char> {
+ private:
+  format_specs<Char> specs_;
+  detail::arg_ref<Char> width_ref_;
+
+ public:
   template <typename ParseContext> FMT_CONSTEXPR auto parse(ParseContext& ctx) {
-    auto out = formatter<basic_string_view<Char>, Char>::parse(ctx);
-    this->set_debug_format(false);
-    return out;
+    auto it = ctx.begin(), end = ctx.end();
+    if (it == end) return it;
+
+    it = detail::parse_align(it, end, specs_);
+    if (it == end) return it;
+
+    it = detail::parse_dynamic_spec(it, end, specs_.width, width_ref_, ctx);
+    if (it != end && *it == '?') ++it;
+    return it;
   }
+
   template <typename FormatContext>
-  auto format(const std::filesystem::path& p, FormatContext& ctx) const ->
-      typename FormatContext::iterator {
+  auto format(const std::filesystem::path& p, FormatContext& ctx) const {
+    auto specs = specs_;
+    detail::handle_dynamic_spec<detail::width_checker>(specs.width, width_ref_,
+                                                       ctx);
     auto quoted = basic_memory_buffer<Char>();
     detail::write_escaped_path(quoted, p);
-    return formatter<basic_string_view<Char>, Char>::format(
-        basic_string_view<Char>(quoted.data(), quoted.size()), ctx);
+    return detail::write(
+        ctx.out(), basic_string_view<Char>(quoted.data(), quoted.size()), specs);
   }
 };
 FMT_END_NAMESPACE
