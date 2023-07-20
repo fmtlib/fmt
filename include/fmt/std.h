@@ -88,8 +88,7 @@ inline void write_escaped_path<std::filesystem::path::value_type>(
 }  // namespace detail
 
 FMT_EXPORT
-template <typename Char>
-struct formatter<std::filesystem::path, Char> {
+template <typename Char> struct formatter<std::filesystem::path, Char> {
  private:
   format_specs<Char> specs_;
   detail::arg_ref<Char> width_ref_;
@@ -114,8 +113,9 @@ struct formatter<std::filesystem::path, Char> {
                                                        ctx);
     auto quoted = basic_memory_buffer<Char>();
     detail::write_escaped_path(quoted, p);
-    return detail::write(
-        ctx.out(), basic_string_view<Char>(quoted.data(), quoted.size()), specs);
+    return detail::write(ctx.out(),
+                         basic_string_view<Char>(quoted.data(), quoted.size()),
+                         specs);
   }
 };
 FMT_END_NAMESPACE

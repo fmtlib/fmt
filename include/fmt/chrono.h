@@ -519,7 +519,7 @@ inline std::tm gmtime(std::time_t time) {
     }
 #endif
   };
-  dispatcher gt(time);
+  auto gt = dispatcher(time);
   // Too big time values may be unsupported.
   if (!gt.run()) FMT_THROW(format_error("time_t value out of range"));
   return gt.tm_;
@@ -2005,55 +2005,40 @@ template <typename Rep, typename Period, typename Char>
 struct formatter<std::chrono::duration<Rep, Period>, Char> {
  private:
   format_specs<Char> specs_;
-  using arg_ref_type = detail::arg_ref<Char>;
-  arg_ref_type width_ref_;
-  arg_ref_type precision_ref_;
+  detail::arg_ref<Char> width_ref_;
+  detail::arg_ref<Char> precision_ref_;
   bool localized_ = false;
   basic_string_view<Char> format_str_;
-
-  using duration = std::chrono::duration<Rep, Period>;
-
-  struct parse_range {
-    const Char* begin;
-    const Char* end;
-  };
-
-  FMT_CONSTEXPR parse_range do_parse(basic_format_parse_context<Char>& ctx) {
-    auto begin = ctx.begin(), end = ctx.end();
-    if (begin == end || *begin == '}') return {begin, begin};
-
-    begin = detail::parse_align(begin, end, specs_);
-    if (begin == end) return {begin, begin};
-
-    begin =
-        detail::parse_dynamic_spec(begin, end, specs_.width, width_ref_, ctx);
-    if (begin == end) return {begin, begin};
-
-    auto checker = detail::chrono_format_checker();
-    if (*begin == '.') {
-      checker.has_precision_integral = !std::is_floating_point<Rep>::value;
-      begin = detail::parse_precision(begin, end, specs_.precision,
-                                      precision_ref_, ctx);
-    }
-    if (begin != end && *begin == 'L') {
-      ++begin;
-      localized_ = true;
-    }
-    end = detail::parse_chrono_format(begin, end, checker);
-    return {begin, end};
-  }
 
  public:
   FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
       -> decltype(ctx.begin()) {
-    auto range = do_parse(ctx);
-    format_str_ = basic_string_view<Char>(
-        &*range.begin, detail::to_unsigned(range.end - range.begin));
-    return range.end;
+    auto it = ctx.begin(), end = ctx.end();
+    if (it == end || *it == '}') return it;
+
+    it = detail::parse_align(it, end, specs_);
+    if (it == end) return it;
+
+    it = detail::parse_dynamic_spec(it, end, specs_.width, width_ref_, ctx);
+    if (it == end) return it;
+
+    auto checker = detail::chrono_format_checker();
+    if (*it == '.') {
+      checker.has_precision_integral = !std::is_floating_point<Rep>::value;
+      it = detail::parse_precision(it, end, specs_.precision, precision_ref_,
+                                   ctx);
+    }
+    if (it != end && *it == 'L') {
+      localized_ = true;
+      ++it;
+    }
+    end = detail::parse_chrono_format(it, end, checker);
+    format_str_ = {it, detail::to_unsigned(end - it)};
+    return end;
   }
 
   template <typename FormatContext>
-  auto format(const duration& d, FormatContext& ctx) const
+  auto format(std::chrono::duration<Rep, Period> d, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     auto specs = specs_;
     auto precision = specs.precision;
@@ -2087,7 +2072,7 @@ template <typename Char, typename Duration>
 struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
                  Char> : formatter<std::tm, Char> {
   FMT_CONSTEXPR formatter() {
-    this->format_str = detail::string_literal<Char, '%', 'F', ' ', '%', 'T'>{};
+    this->format_str_ = detail::string_literal<Char, '%', 'F', ' ', '%', 'T'>{};
   }
 
   template <typename FormatContext>
@@ -2125,7 +2110,7 @@ template <typename Char, typename Duration>
 struct formatter<std::chrono::local_time<Duration>, Char>
     : formatter<std::tm, Char> {
   FMT_CONSTEXPR formatter() {
-    this->format_str = detail::string_literal<Char, '%', 'F', ' ', '%', 'T'>{};
+    this->format_str_ = detail::string_literal<Char, '%', 'F', ' ', '%', 'T'>{};
   }
 
   template <typename FormatContext>
@@ -2168,51 +2153,46 @@ struct formatter<std::chrono::time_point<std::chrono::utc_clock, Duration>,
 
 template <typename Char> struct formatter<std::tm, Char> {
  private:
-  format_specs<Char> specs;
-  detail::arg_ref<Char> width_ref;
+  format_specs<Char> specs_;
+  detail::arg_ref<Char> width_ref_;
 
  protected:
-  basic_string_view<Char> format_str;
-
-  FMT_CONSTEXPR auto do_parse(basic_format_parse_context<Char>& ctx)
-      -> decltype(ctx.begin()) {
-    auto begin = ctx.begin(), end = ctx.end();
-    if (begin == end || *begin == '}') return begin;
-
-    begin = detail::parse_align(begin, end, specs);
-    if (begin == end) return end;
-
-    begin = detail::parse_dynamic_spec(begin, end, specs.width, width_ref, ctx);
-    if (begin == end) return end;
-
-    end = detail::parse_chrono_format(begin, end, detail::tm_format_checker());
-    // Replace default format_str only if the new spec is not empty.
-    if (end != begin) format_str = {begin, detail::to_unsigned(end - begin)};
-    return end;
-  }
+  basic_string_view<Char> format_str_;
 
   template <typename FormatContext, typename Duration>
   auto do_format(const std::tm& tm, FormatContext& ctx,
                  const Duration* subsecs) const -> decltype(ctx.out()) {
-    auto specs_copy = specs;
-    basic_memory_buffer<Char> buf;
+    auto specs = specs_;
+    auto buf = basic_memory_buffer<Char>();
     auto out = std::back_inserter(buf);
-    detail::handle_dynamic_spec<detail::width_checker>(specs_copy.width,
-                                                       width_ref, ctx);
+    detail::handle_dynamic_spec<detail::width_checker>(specs.width, width_ref_,
+                                                       ctx);
 
-    const auto loc_ref = ctx.locale();
+    auto loc_ref = ctx.locale();
     detail::get_locale loc(static_cast<bool>(loc_ref), loc_ref);
     auto w =
         detail::tm_writer<decltype(out), Char, Duration>(loc, out, tm, subsecs);
-    detail::parse_chrono_format(format_str.begin(), format_str.end(), w);
+    detail::parse_chrono_format(format_str_.begin(), format_str_.end(), w);
     return detail::write(
-        ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs_copy);
+        ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
   }
 
  public:
   FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
       -> decltype(ctx.begin()) {
-    return this->do_parse(ctx);
+    auto it = ctx.begin(), end = ctx.end();
+    if (it == end || *it == '}') return it;
+
+    it = detail::parse_align(it, end, specs_);
+    if (it == end) return it;
+
+    it = detail::parse_dynamic_spec(it, end, specs_.width, width_ref_, ctx);
+    if (it == end) return it;
+
+    end = detail::parse_chrono_format(it, end, detail::tm_format_checker());
+    // Replace the default format_str only if the new spec is not empty.
+    if (end != it) format_str_ = {it, detail::to_unsigned(end - it)};
+    return end;
   }
 
   template <typename FormatContext>
