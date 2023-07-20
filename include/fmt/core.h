@@ -2599,15 +2599,15 @@ template <typename Char, typename... Args> class format_string_checker {
   // needed for compile-time checks: https://godbolt.org/z/GvWzcTjh1.
   using parse_func = const Char* (*)(parse_context_type&);
 
+  type types_[num_args > 0 ? static_cast<size_t>(num_args) : 1];
   parse_context_type context_;
   parse_func parse_funcs_[num_args > 0 ? static_cast<size_t>(num_args) : 1];
-  type types_[num_args > 0 ? static_cast<size_t>(num_args) : 1];
 
  public:
   explicit FMT_CONSTEXPR format_string_checker(basic_string_view<Char> fmt)
-      : context_(fmt, num_args, types_),
-        parse_funcs_{&parse_format_specs<Args, parse_context_type>...},
-        types_{mapped_type_constant<Args, buffer_context<Char>>::value...} {}
+      : types_{mapped_type_constant<Args, buffer_context<Char>>::value...},
+        context_(fmt, num_args, types_),
+        parse_funcs_{&parse_format_specs<Args, parse_context_type>...} {}
 
   FMT_CONSTEXPR void on_text(const Char*, const Char*) {}
 
