@@ -549,10 +549,20 @@ Format String Compilation
 ``FMT_COMPILE`` macro or the ``_cf`` user-defined literal. Format strings
 marked with ``FMT_COMPILE`` or ``_cf`` are parsed, checked and converted into
 efficient formatting code at compile-time. This supports arguments of built-in
-and string types as well as user-defined types with ``constexpr`` ``parse``
-functions in their ``formatter`` specializations. Format string compilation can
-generate more binary code compared to the default API and is only recommended in
-places where formatting is a performance bottleneck.
+and string types as well as user-defined types with ``format`` functions taking
+the format context type as a template parameter in their ``formatter``
+specializations. For example::
+
+  template <> struct fmt::formatter<point> {
+    constexpr auto parse(format_parse_context& ctx);
+
+    template <typename FormatContext>
+    auto format(const point& p, FormatContext& ctx) const;
+  };
+
+Format string compilation can generate more binary code compared to the default
+API and is only recommended in places where formatting is a performance
+bottleneck.
 
 .. doxygendefine:: FMT_COMPILE
 
