@@ -21,38 +21,6 @@ TEST(iterator_test, counting_iterator) {
   EXPECT_EQ((it + 41).count(), 42);
 }
 
-TEST(iterator_test, truncating_iterator) {
-  char* p = nullptr;
-  auto it = fmt::detail::truncating_iterator<char*>(p, 3);
-  auto prev = it++;
-  EXPECT_EQ(prev.base(), p);
-  EXPECT_EQ(it.base(), p + 1);
-}
-
-TEST(iterator_test, truncating_iterator_default_construct) {
-  auto it = fmt::detail::truncating_iterator<char*>();
-  EXPECT_EQ(nullptr, it.base());
-  EXPECT_EQ(std::size_t{0}, it.count());
-}
-
-#ifdef __cpp_lib_ranges
-TEST(iterator_test, truncating_iterator_is_output_iterator) {
-  static_assert(
-      std::output_iterator<fmt::detail::truncating_iterator<char*>, char>);
-}
-#endif
-
-TEST(iterator_test, truncating_back_inserter) {
-  auto buffer = std::string();
-  auto bi = std::back_inserter(buffer);
-  auto it = fmt::detail::truncating_iterator<decltype(bi)>(bi, 2);
-  *it++ = '4';
-  *it++ = '2';
-  *it++ = '1';
-  EXPECT_EQ(buffer.size(), 2);
-  EXPECT_EQ(buffer, "42");
-}
-
 TEST(compile_test, compile_fallback) {
   // FMT_COMPILE should fallback on runtime formatting when `if constexpr` is
   // not available.
