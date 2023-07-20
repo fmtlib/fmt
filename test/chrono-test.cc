@@ -730,9 +730,9 @@ TEST(chrono_test, special_durations) {
             "03:33");
   EXPECT_EQ(fmt::format("{:%T}", std::chrono::duration<char, std::mega>{2}),
             "03:33:20");
-  EXPECT_EQ("44.000000000000",
-            fmt::format("{:%S}", std::chrono::duration<float, std::pico>(
-                                     1.54213895E+26)));
+  EXPECT_EQ("01.234",
+            fmt::format("{:.3%S}", std::chrono::duration<float, std::pico>(
+                                     1.234e12)));
 }
 
 TEST(chrono_test, unsigned_duration) {

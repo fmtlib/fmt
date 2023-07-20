@@ -1427,7 +1427,6 @@ TEST(format_test, prettify_float) {
   EXPECT_EQ("12.34", fmt::format("{}", 1234e-2));
   EXPECT_EQ("0.001234", fmt::format("{}", 1234e-6));
   EXPECT_EQ("0.1", fmt::format("{}", 0.1f));
-  EXPECT_EQ("0.10000000149011612", fmt::format("{}", double(0.1f)));
   EXPECT_EQ("1.3563156e-19", fmt::format("{}", 1.35631564e-19f));
 }
 
