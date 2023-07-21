@@ -19,9 +19,9 @@ using testing::StartsWith;
 
 #ifdef __cpp_lib_filesystem
 TEST(std_test, path) {
-  EXPECT_EQ(fmt::format("{:8}", std::filesystem::path("foo")), "\"foo\"   ");
+  EXPECT_EQ(fmt::format("{:8}", std::filesystem::path("foo")), "foo     ");
   EXPECT_EQ(fmt::format("{}", std::filesystem::path("foo\"bar.txt")),
-            "\"foo\\\"bar.txt\"");
+            "foo\"bar.txt");
   EXPECT_EQ(fmt::format("{:?}", std::filesystem::path("foo\"bar.txt")),
             "\"foo\\\"bar.txt\"");
 
@@ -29,8 +29,9 @@ TEST(std_test, path) {
   EXPECT_EQ(fmt::format("{}", std::filesystem::path(
                                   L"\x0428\x0447\x0443\x0447\x044B\x043D\x0448"
                                   L"\x0447\x044B\x043D\x0430")),
-            "\"Шчучыншчына\"");
-  EXPECT_EQ(fmt::format("{}", std::filesystem::path(L"\xd800")), "\"\\ud800\"");
+            "Шчучыншчына");
+  EXPECT_EQ(fmt::format("{:?}", std::filesystem::path(L"\xd800")),
+            "\"\\ud800\"");
 #  endif
 }
 
@@ -39,7 +40,7 @@ TEST(ranges_std_test, format_vector_path) {
   auto p = std::filesystem::path("foo/bar.txt");
   auto c = std::vector<std::string>{"abc", "def"};
   EXPECT_EQ(fmt::format("path={}, range={}", p, c),
-            "path=\"foo/bar.txt\", range=[\"abc\", \"def\"]");
+            "path=foo/bar.txt, range=[\"abc\", \"def\"]");
 }
 
 // Test that path is not escaped twice in the debug mode.

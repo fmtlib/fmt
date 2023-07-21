@@ -569,8 +569,8 @@ template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
 __attribute__((no_sanitize("undefined")))
 #endif
 inline auto
-reserve(std::back_insert_iterator<Container> it, size_t n)
-    -> typename Container::value_type* {
+reserve(std::back_insert_iterator<Container> it, size_t n) ->
+    typename Container::value_type* {
   Container& c = get_container(it);
   size_t size = c.size();
   c.resize(size + n);
@@ -1251,7 +1251,7 @@ FMT_CONSTEXPR auto count_digits(UInt n) -> int {
 FMT_INLINE auto do_count_digits(uint32_t n) -> int {
 // An optimization by Kendall Willets from https://bit.ly/3uOIQrB.
 // This increments the upper 32 bits (log10(T) - 1) when >= T is added.
-#  define FMT_INC(T) (((sizeof(#  T) - 1ull) << 32) - T)
+#  define FMT_INC(T) (((sizeof(#T) - 1ull) << 32) - T)
   static constexpr uint64_t table[] = {
       FMT_INC(0),          FMT_INC(0),          FMT_INC(0),           // 8
       FMT_INC(10),         FMT_INC(10),         FMT_INC(10),          // 64
@@ -1412,6 +1412,8 @@ class utf8_to_utf16 {
   auto str() const -> std::wstring { return {&buffer_[0], size()}; }
 };
 
+enum class to_utf8_error_policy { abort, replace };
+
 // A converter from UTF-16/UTF-32 (host endian) to UTF-8.
 template <typename WChar, typename Buffer = memory_buffer> class to_utf8 {
  private:
@@ -1440,16 +1442,20 @@ template <typename WChar, typename Buffer = memory_buffer> class to_utf8 {
     buffer_.push_back(0);
     return true;
   }
-  static bool convert(Buffer& buf, basic_string_view<WChar> s) {
+  static bool convert(
+      Buffer& buf, basic_string_view<WChar> s,
+      to_utf8_error_policy policy = to_utf8_error_policy::abort) {
     for (auto p = s.begin(); p != s.end(); ++p) {
       uint32_t c = static_cast<uint32_t>(*p);
       if (sizeof(WChar) == 2 && c >= 0xd800 && c <= 0xdfff) {
-        // surrogate pair
+        // Handle a surrogate pair.
         ++p;
         if (p == s.end() || (c & 0xfc00) != 0xd800 || (*p & 0xfc00) != 0xdc00) {
-          return false;
+          if (policy == to_utf8_error_policy::abort) return false;
+          buf.append(string_view("�"));
+        } else {
+          c = (c << 10) + static_cast<uint32_t>(*p) - 0x35fdc00;
         }
-        c = (c << 10) + static_cast<uint32_t>(*p) - 0x35fdc00;
       }
       if (c < 0x80) {
         buf.push_back(static_cast<char>(c));
@@ -4147,7 +4153,9 @@ template <> struct formatter<bytes> {
 };
 
 // group_digits_view is not derived from view because it copies the argument.
-template <typename T> struct group_digits_view { T value; };
+template <typename T> struct group_digits_view {
+  T value;
+};
 
 /**
   \rst

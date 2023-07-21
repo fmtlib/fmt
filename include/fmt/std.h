@@ -61,22 +61,32 @@ FMT_BEGIN_NAMESPACE
 
 namespace detail {
 
+template <typename Char> auto get_path_string(const std::filesystem::path& p) {
+  return p.string<Char>();
+}
+
 template <typename Char>
 void write_escaped_path(basic_memory_buffer<Char>& quoted,
                         const std::filesystem::path& p) {
   write_escaped_string<Char>(std::back_inserter(quoted), p.string<Char>());
 }
+
 #  ifdef _WIN32
+template <>
+auto get_path_string<char>(const std::filesystem::path& p) {
+  return to_utf8<wchar_t>(p.native());
+}
+
 template <>
 inline void write_escaped_path<char>(memory_buffer& quoted,
                                      const std::filesystem::path& p) {
   auto buf = basic_memory_buffer<wchar_t>();
   write_escaped_string<wchar_t>(std::back_inserter(buf), p.native());
-  // Convert UTF-16 to UTF-8.
-  if (!to_utf8<wchar_t>::convert(quoted, {buf.data(), buf.size()}))
-    FMT_THROW(std::runtime_error("invalid utf16"));
+  bool valid = to_utf8<wchar_t>::convert(quoted, {buf.data(), buf.size()});
+  FMT_ASSERT(valid, "invalid utf16");
 }
-#  endif
+#  endif  // _WIN32
+
 template <>
 inline void write_escaped_path<std::filesystem::path::value_type>(
     basic_memory_buffer<std::filesystem::path::value_type>& quoted,
@@ -92,8 +102,11 @@ template <typename Char> struct formatter<std::filesystem::path, Char> {
  private:
   format_specs<Char> specs_;
   detail::arg_ref<Char> width_ref_;
+  bool debug_ = false;
 
  public:
+  FMT_CONSTEXPR void set_debug_format(bool set = true) { debug_ = set; }
+
   template <typename ParseContext> FMT_CONSTEXPR auto parse(ParseContext& ctx) {
     auto it = ctx.begin(), end = ctx.end();
     if (it == end) return it;
@@ -102,7 +115,10 @@ template <typename Char> struct formatter<std::filesystem::path, Char> {
     if (it == end) return it;
 
     it = detail::parse_dynamic_spec(it, end, specs_.width, width_ref_, ctx);
-    if (it != end && *it == '?') ++it;
+    if (it != end && *it == '?') {
+      debug_ = true;
+      ++it;
+    }
     return it;
   }
 
@@ -111,6 +127,10 @@ template <typename Char> struct formatter<std::filesystem::path, Char> {
     auto specs = specs_;
     detail::handle_dynamic_spec<detail::width_checker>(specs.width, width_ref_,
                                                        ctx);
+    if (!debug_) {
+      auto s = detail::get_path_string<Char>(p);
+      return detail::write(ctx.out(), basic_string_view<Char>(s), specs);
+    }
     auto quoted = basic_memory_buffer<Char>();
     detail::write_escaped_path(quoted, p);
     return detail::write(ctx.out(),
