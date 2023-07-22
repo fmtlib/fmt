@@ -15,23 +15,23 @@
 #include "fmt/ranges.h"
 #include "gtest-extra.h"  // StartsWith
 
-using testing::StartsWith;
-
 #ifdef __cpp_lib_filesystem
 TEST(std_test, path) {
-  EXPECT_EQ(fmt::format("{:8}", std::filesystem::path("foo")), "foo     ");
-  EXPECT_EQ(fmt::format("{}", std::filesystem::path("foo\"bar.txt")),
-            "foo\"bar.txt");
-  EXPECT_EQ(fmt::format("{:?}", std::filesystem::path("foo\"bar.txt")),
-            "\"foo\\\"bar.txt\"");
+  using std::filesystem::path;
+  EXPECT_EQ(fmt::format("{}", path("/usr/bin")), "/usr/bin");
+  EXPECT_EQ(fmt::format("{:?}", path("/usr/bin")), "\"/usr/bin\"");
+  EXPECT_EQ(fmt::format("{:8}", path("foo")), "foo     ");
+
+  EXPECT_EQ(fmt::format("{}", path("foo\"bar")), "foo\"bar");
+  EXPECT_EQ(fmt::format("{:?}", path("foo\"bar")), "\"foo\\\"bar\"");
 
 #  ifdef _WIN32
-  EXPECT_EQ(fmt::format("{}", std::filesystem::path(
+  EXPECT_EQ(fmt::format("{}", path(
                                   L"\x0428\x0447\x0443\x0447\x044B\x043D\x0448"
                                   L"\x0447\x044B\x043D\x0430")),
             "Шчучыншчына");
-  EXPECT_EQ(fmt::format("{:?}", std::filesystem::path(L"\xd800")),
-            "\"\\ud800\"");
+  EXPECT_EQ(fmt::format("{}", path(L"\xd800")), "�");
+  EXPECT_EQ(fmt::format("{:?}", path(L"\xd800")), "\"\\ud800\"");
 #  endif
 }
 
@@ -191,6 +191,7 @@ const char* my_exception::what() const noexcept { return msg.c_str(); }
 }  // namespace my_ns1
 
 TEST(std_test, exception) {
+  using testing::StartsWith;
   exception_test<std::exception>();
   exception_test<std::runtime_error>();
 

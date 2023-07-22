@@ -1421,11 +1421,11 @@ template <typename WChar, typename Buffer = memory_buffer> class to_utf8 {
 
  public:
   to_utf8() {}
-  explicit to_utf8(basic_string_view<WChar> s) {
+  explicit to_utf8(basic_string_view<WChar> s,
+                   to_utf8_error_policy policy = to_utf8_error_policy::abort) {
     static_assert(sizeof(WChar) == 2 || sizeof(WChar) == 4,
                   "Expect utf16 or utf32");
-
-    if (!convert(s))
+    if (!convert(s, policy))
       FMT_THROW(std::runtime_error(sizeof(WChar) == 2 ? "invalid utf16"
                                                       : "invalid utf32"));
   }
@@ -1437,8 +1437,9 @@ template <typename WChar, typename Buffer = memory_buffer> class to_utf8 {
   // Performs conversion returning a bool instead of throwing exception on
   // conversion error. This method may still throw in case of memory allocation
   // error.
-  bool convert(basic_string_view<WChar> s) {
-    if (!convert(buffer_, s)) return false;
+  bool convert(basic_string_view<WChar> s,
+               to_utf8_error_policy policy = to_utf8_error_policy::abort) {
+    if (!convert(buffer_, s, policy)) return false;
     buffer_.push_back(0);
     return true;
   }
@@ -1453,11 +1454,11 @@ template <typename WChar, typename Buffer = memory_buffer> class to_utf8 {
         if (p == s.end() || (c & 0xfc00) != 0xd800 || (*p & 0xfc00) != 0xdc00) {
           if (policy == to_utf8_error_policy::abort) return false;
           buf.append(string_view("�"));
+          --p;
         } else {
           c = (c << 10) + static_cast<uint32_t>(*p) - 0x35fdc00;
         }
-      }
-      if (c < 0x80) {
+      } else if (c < 0x80) {
         buf.push_back(static_cast<char>(c));
       } else if (c < 0x800) {
         buf.push_back(static_cast<char>(0xc0 | (c >> 6)));
