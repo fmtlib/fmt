@@ -1741,14 +1741,14 @@ template <typename T = void> struct basic_data {
   // The kth entry is chosen to be the smallest integer such that the
   // upper 32-bits of 10^(k+1) times it is strictly bigger than 5 * 10^k.
   static constexpr uint32_t fractional_part_rounding_thresholds[8] = {
-      2576980378,  // ceil(2^31 + 2^32/10^1)
-      2190433321,  // ceil(2^31 + 2^32/10^2)
-      2151778616,  // ceil(2^31 + 2^32/10^3)
-      2147913145,  // ceil(2^31 + 2^32/10^4)
-      2147526598,  // ceil(2^31 + 2^32/10^5)
-      2147487943,  // ceil(2^31 + 2^32/10^6)
-      2147484078,  // ceil(2^31 + 2^32/10^7)
-      2147483691   // ceil(2^31 + 2^32/10^8)
+      2576980378U,  // ceil(2^31 + 2^32/10^1)
+      2190433321U,  // ceil(2^31 + 2^32/10^2)
+      2151778616U,  // ceil(2^31 + 2^32/10^3)
+      2147913145U,  // ceil(2^31 + 2^32/10^4)
+      2147526598U,  // ceil(2^31 + 2^32/10^5)
+      2147487943U,  // ceil(2^31 + 2^32/10^6)
+      2147484078U,  // ceil(2^31 + 2^32/10^7)
+      2147483691U   // ceil(2^31 + 2^32/10^8)
   };
 };
 // This is a struct rather than an alias to avoid shadowing warnings in gcc.
