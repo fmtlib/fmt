@@ -638,6 +638,9 @@ struct error_handler {
 };
 }  // namespace detail
 
+/** Helper function to throw an error from a custom formatter. */
+using detail::throw_format_error;
+
 /** String's character type. */
 template <typename S> using char_t = typename detail::char_t_impl<S>::type;
 
