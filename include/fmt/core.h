@@ -638,7 +638,7 @@ struct error_handler {
 };
 }  // namespace detail
 
-/** Helper function to throw an error from a custom formatter. */
+/** Throws ``format_error`` with a given message. */
 using detail::throw_format_error;
 
 /** String's character type. */
