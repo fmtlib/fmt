@@ -3700,7 +3700,8 @@ template <
     bool check =
         std::is_enum<T>::value && !std::is_same<T, Char>::value &&
         mapped_type_constant<T, basic_format_context<OutputIt, Char>>::value !=
-            type::custom_type,
+            type::custom_type &&
+        !detail::has_format_as<T>::value,
     FMT_ENABLE_IF(check)>
 FMT_CONSTEXPR auto write(OutputIt out, T value) -> OutputIt {
   return write<Char>(out, static_cast<underlying_t<T>>(value));
@@ -3745,6 +3746,7 @@ template <typename Char, typename OutputIt, typename T,
 FMT_CONSTEXPR auto write(OutputIt out, const T& value) -> enable_if_t<
     std::is_class<T>::value && !is_string<T>::value &&
         !is_floating_point<T>::value && !std::is_same<T, Char>::value &&
+        !detail::has_format_as<T>::value &&
         !std::is_same<T, remove_cvref_t<decltype(arg_mapper<Context>().map(
                              value))>>::value,
     OutputIt> {
@@ -3754,10 +3756,18 @@ FMT_CONSTEXPR auto write(OutputIt out, const T& value) -> enable_if_t<
 template <typename Char, typename OutputIt, typename T,
           typename Context = basic_format_context<OutputIt, Char>>
 FMT_CONSTEXPR auto write(OutputIt out, const T& value)
-    -> enable_if_t<mapped_type_constant<T, Context>::value == type::custom_type,
+    -> enable_if_t<mapped_type_constant<T, Context>::value == type::custom_type &&
+                   !detail::has_format_as<T>::value,
                    OutputIt> {
   auto ctx = Context(out, {}, {});
   return typename Context::template formatter_type<T>().format(value, ctx);
+}
+
+template <typename Char, typename OutputIt, typename T>
+FMT_CONSTEXPR auto write(OutputIt out, const T& value)
+    -> enable_if_t<detail::has_format_as<T>::value,
+                   OutputIt> {
+  return write<Char>(out, format_as(value));
 }
 
 // An argument visitor that formats the argument and writes it via the output
