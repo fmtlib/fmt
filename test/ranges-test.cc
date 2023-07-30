@@ -15,6 +15,7 @@
 #include <queue>
 #include <stack>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -77,6 +78,32 @@ TEST(ranges_test, format_map) {
 
 TEST(ranges_test, format_set) {
   EXPECT_EQ(fmt::format("{}", std::set<std::string>{"one", "two"}),
+            "{\"one\", \"two\"}");
+}
+
+// Models std::flat_set close enough to test if no ambiguous lookup of a
+// formatter happens due to the flat_set type matching is_set and
+// is_container_adaptor_like
+template <typename T> class flat_set {
+ public:
+  using key_type = T;
+  using container_type = std::vector<T>;
+
+  template <typename... Ts>
+  explicit flat_set(Ts&&... args) : c{std::forward<Ts>(args)...} {}
+
+  auto begin() -> decltype(auto) { return c.begin(); }
+  auto begin() const -> decltype(auto) { return c.begin(); }
+
+  auto end() -> decltype(auto) { return c.end(); }
+  auto end() const -> decltype(auto) { return c.end(); }
+
+ private:
+  std::vector<T> c;
+};
+
+TEST(ranges_test, format_flat_set) {
+  EXPECT_EQ(fmt::format("{}", flat_set<std::string>{"one", "two"}),
             "{\"one\", \"two\"}");
 }
 
