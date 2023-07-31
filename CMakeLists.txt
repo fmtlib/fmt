@@ -363,7 +363,7 @@ if (FMT_INSTALL)
   write_basic_package_version_file(
     ${version_config}
     VERSION ${FMT_VERSION}
-    COMPATIBILITY AnyNewerVersion)
+    COMPATIBILITY SameMajorVersion)
 
   join_paths(libdir_for_pc_file "\${exec_prefix}" "${FMT_LIB_DIR}")
   join_paths(includedir_for_pc_file "\${prefix}" "${FMT_INC_DIR}")
