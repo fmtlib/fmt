@@ -89,14 +89,17 @@ template <typename T> class flat_set {
   using key_type = T;
   using container_type = std::vector<T>;
 
+  using iterator = typename std::vector<T>::iterator;
+  using const_iterator = typename std::vector<T>::const_iterator;
+
   template <typename... Ts>
   explicit flat_set(Ts&&... args) : c{std::forward<Ts>(args)...} {}
 
-  auto begin() -> decltype(auto) { return c.begin(); }
-  auto begin() const -> decltype(auto) { return c.begin(); }
+  iterator begin() { return c.begin(); }
+  const_iterator begin() const { return c.begin(); }
 
-  auto end() -> decltype(auto) { return c.end(); }
-  auto end() const -> decltype(auto) { return c.end(); }
+  iterator end() { return c.end(); }
+  const_iterator end() const { return c.end(); }
 
  private:
   std::vector<T> c;
