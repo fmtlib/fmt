@@ -2915,9 +2915,7 @@ FMT_INLINE void println(format_string<T...> fmt, T&&... args) {
 /**
   Writes a newline to ``stdout``.
  */
-FMT_INLINE void println() {
-  return fmt::println(stdout, "");
-}
+FMT_INLINE void println() { return fmt::println(""); }
 
 FMT_END_EXPORT
 FMT_GCC_PRAGMA("GCC pop_options")
