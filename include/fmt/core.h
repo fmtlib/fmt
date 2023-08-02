@@ -2912,6 +2912,13 @@ FMT_INLINE void println(format_string<T...> fmt, T&&... args) {
   return fmt::println(stdout, fmt, std::forward<T>(args)...);
 }
 
+/**
+  Writes a newline to ``stdout``.
+ */
+FMT_INLINE void println() {
+  return fmt::println(stdout, "");
+}
+
 FMT_END_EXPORT
 FMT_GCC_PRAGMA("GCC pop_options")
 FMT_END_NAMESPACE
