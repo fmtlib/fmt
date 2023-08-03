@@ -15,6 +15,7 @@
 #include <type_traits>
 #include <typeinfo>
 #include <utility>
+#include <vector>
 
 #include "format.h"
 #include "ostream.h"
@@ -390,5 +391,13 @@ struct formatter<
   }
 };
 FMT_END_NAMESPACE
+
+namespace std
+{
+template <typename T, FMT_ENABLE_IF(std::is_same<T, std::vector<bool>::reference>::value)>
+inline auto format_as(T b) -> bool {
+  return static_cast<bool>(b);
+}
+}
 
 #endif  // FMT_STD_H_

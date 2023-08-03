@@ -221,3 +221,8 @@ TEST(std_test, exception) {
   }
 #endif
 }
+
+TEST(std_test, format_vector_bool_specialization) {
+  std::vector<bool> v = {true, false};
+  EXPECT_EQ(fmt::format("{} {}", v[0], v[1]), "true false");
+}
