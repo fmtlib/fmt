@@ -22,6 +22,9 @@
    :alt: Ask questions at StackOverflow with the tag fmt
    :target: https://stackoverflow.com/questions/tagged/fmt
 
+.. image:: https://api.securityscorecards.dev/projects/github.com/fmtlib/fmt/badge
+   :target: https://securityscorecards.dev/viewer/?uri=github.com/fmtlib/fmt
+
 **{fmt}** is an open-source formatting library providing a fast and safe
 alternative to C stdio and C++ iostreams.
 
