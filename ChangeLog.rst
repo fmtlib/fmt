@@ -1,3 +1,15 @@
+10.1.0 - TBD
+------------
+
+* Fixed ambiguous formatter specialization for containers that look like
+  container adaptors (`#3556 <https://github.com/fmtlib/fmt/issues/3556>`_,
+  `#3561 <https://github.com/fmtlib/fmt/pull/3561>`_).
+  Thanks `@5chmidti <https://github.com/5chmidti>`_.
+
+* Improved build configuration
+  (`#3563 <https://github.com/fmtlib/fmt/pull/3563>`_).
+  Thanks `@abouvier (Alexandre Bouvier) <https://github.com/abouvier>`_.
+
 10.0.0 - 2023-05-09
 -------------------
 
