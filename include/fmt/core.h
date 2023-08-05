@@ -13,6 +13,7 @@
 #include <cstring>  // std::strlen
 #include <iterator>
 #include <limits>
+#include <memory>  // std::addressof
 #include <string>
 #include <type_traits>
 
@@ -1281,9 +1282,9 @@ template <typename Context> class value {
   FMT_INLINE value(const named_arg_info<char_type>* args, size_t size)
       : named_args{args, size} {}
 
-  template <typename T> FMT_CONSTEXPR FMT_INLINE value(T& val) {
+  template <typename T> FMT_CONSTEXPR20 FMT_INLINE value(T& val) {
     using value_type = remove_const_t<T>;
-    custom.value = const_cast<value_type*>(&val);
+    custom.value = const_cast<value_type*>(std::addressof(val));
     // Get the formatter type through the context to allow different contexts
     // have different extension points, e.g. `formatter<T>` for `format` and
     // `printf_formatter<T>` for `printf`.
