@@ -229,3 +229,10 @@ TEST(std_test, format_bit_reference) {
   std::vector<bool> v = {true, false};
   EXPECT_EQ(fmt::format("{} {}", v[0], v[1]), "true false");
 }
+
+TEST(std_test, format_const_bit_reference) {
+  const std::bitset<2> bs(1);
+  EXPECT_EQ(fmt::format("{} {}", bs[0], bs[1]), "true false");
+  const std::vector<bool> v = {true, false};
+  EXPECT_EQ(fmt::format("{} {}", v[0], v[1]), "true false");
+}
