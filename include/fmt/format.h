@@ -3178,7 +3178,8 @@ FMT_CONSTEXPR20 inline void format_dragon(basic_fp<uint128_t> value,
       }
       if (buf[0] == overflow) {
         buf[0] = '1';
-        ++exp10;
+        if ((flags & dragon::fixed) != 0) buf.push_back('0');
+        else ++exp10;
       }
       return;
     }
