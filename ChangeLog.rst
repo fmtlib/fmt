@@ -1,15 +1,30 @@
 10.1.0 - TBD
 ------------
 
-* Fixed ambiguous formatter specialization for containers that look like
-  container adaptors such as ``boost::flat_set``
-  (`#3556 <https://github.com/fmtlib/fmt/issues/3556>`_,
-  `#3561 <https://github.com/fmtlib/fmt/pull/3561>`_).
-  Thanks `@5chmidti <https://github.com/5chmidti>`_.
+* Optimized format string compilation resulting in up to 40% speed up in
+  ``format_to`` and ~4x speed up in ``format_to_n`` on a concatenation
+  benchmarks (`#3133 <https://github.com/fmtlib/fmt/issues/3133>`_,
+  `#3484 <https://github.com/fmtlib/fmt/issues/3484>`_).
 
-* Fixed compilation when formatting durations not convertible from
-  ``std::chrono::seconds`` (`#3430 <https://github.com/fmtlib/fmt/pull/3430>`_).
-  Thanks `@patlkli (Patrick Geltinger) <https://github.com/patlkli>`_.
+  {fmt} 10.0::
+
+    ---------------------------------------------------------
+    Benchmark               Time             CPU   Iterations
+    ---------------------------------------------------------
+    BM_format_to         78.9 ns         78.9 ns      8881746
+    BM_format_to_n        568 ns          568 ns      1232089
+
+  {fmt} 10.1::
+
+    ---------------------------------------------------------
+    Benchmark               Time             CPU   Iterations
+    ---------------------------------------------------------
+    BM_format_to         54.9 ns         54.9 ns     12727944
+    BM_format_to_n        133 ns          133 ns      5257795
+
+* Optimized storage of an empty allocator in ``basic_memory_buffer``
+  (`#3485 <https://github.com/fmtlib/fmt/pull/3485>`_).
+  Thanks `@Minty-Meeo <https://github.com/Minty-Meeo>`_.
 
 * Added formatters for proxy references to elements of ``std::vector<bool>`` and
   ``std::bitset<N>``. (`#3567 <https://github.com/fmtlib/fmt/issues/3567>`_,
@@ -29,6 +44,16 @@
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_ and
   `@felix642 (Félix-Antoine Constantin) <https://github.com/felix642>`_.
 
+* Fixed ambiguous formatter specialization for containers that look like
+  container adaptors such as ``boost::flat_set``
+  (`#3556 <https://github.com/fmtlib/fmt/issues/3556>`_,
+  `#3561 <https://github.com/fmtlib/fmt/pull/3561>`_).
+  Thanks `@5chmidti <https://github.com/5chmidti>`_.
+
+* Fixed compilation when formatting durations not convertible from
+  ``std::chrono::seconds`` (`#3430 <https://github.com/fmtlib/fmt/pull/3430>`_).
+  Thanks `@patlkli (Patrick Geltinger) <https://github.com/patlkli>`_.
+
 * Made the ``formatter`` specialization for ``char*`` const-correct
   (`#3432 <https://github.com/fmtlib/fmt/pull/3432>`_).
   Thanks `@timsong-cpp <https://github.com/timsong-cpp>`_.
@@ -39,11 +64,9 @@
 * Disallowed passing temporaries to ``make_format_args`` to improve API safety
   by preventing dangling references.
 
-* Made floating-point and chrono tests less platform-dependent
-  (`#3337 <https://github.com/fmtlib/fmt/issues/3337>`_,
-  `#3433 <https://github.com/fmtlib/fmt/issues/3433>`_,
-  `#3434 <https://github.com/fmtlib/fmt/pull/3434>`_).
-  Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
+* Improved the compile-time error for unformattable types
+  (`#3478 <https://github.com/fmtlib/fmt/pull/3478>`_).
+  Thanks `@BRevzin (Barry Revzin) <https://github.com/BRevzin>`_.
 
 * Improved the floating-point formatter
   (`#3448 <https://github.com/fmtlib/fmt/pull/3448>`_,
@@ -55,37 +78,14 @@
   (`#3539 <https://github.com/fmtlib/fmt/issues/3539>`_,
   `#3564 <https://github.com/fmtlib/fmt/issues/3564>`_).
 
+* Made floating-point and chrono tests less platform-dependent
+  (`#3337 <https://github.com/fmtlib/fmt/issues/3337>`_,
+  `#3433 <https://github.com/fmtlib/fmt/issues/3433>`_,
+  `#3434 <https://github.com/fmtlib/fmt/pull/3434>`_).
+  Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
+
 * Removed remnants of the Grisu floating-point formatter that has been replaced
   by Dragonbox in earlier versions.
-
-* Improved the compile-time error for unformattable types
-  (`#3478 <https://github.com/fmtlib/fmt/pull/3478>`_).
-  Thanks `@BRevzin (Barry Revzin) <https://github.com/BRevzin>`_.
-
-* Optimized storage of an empty allocator in ``basic_memory_buffer``
-  (`#3485 <https://github.com/fmtlib/fmt/pull/3485>`_).
-  Thanks `@Minty-Meeo <https://github.com/Minty-Meeo>`_.
-
-* Optimized format string compilation resulting in up to 40% speed up in
-  ``format_to`` and ~4x speed up in ``format_to_n`` on concatenation-like
-  benchmarks (`#3133 <https://github.com/fmtlib/fmt/issues/3133>`_,
-  `#3484 <https://github.com/fmtlib/fmt/issues/3484>`_).
-
-  {fmt} 10.0::
-
-    ---------------------------------------------------------
-    Benchmark               Time             CPU   Iterations
-    ---------------------------------------------------------
-    BM_format_to         78.9 ns         78.9 ns      8881746
-    BM_format_to_n        568 ns          568 ns      1232089
-
-  {fmt} 10.1::
-
-    ---------------------------------------------------------
-    Benchmark               Time             CPU   Iterations
-    ---------------------------------------------------------
-    BM_format_to         54.9 ns         54.9 ns     12727944
-    BM_format_to_n        133 ns          133 ns      5257795
 
 * Added ``throw_format_error`` to the public API
   (`#3551 <https://github.com/fmtlib/fmt/pull/3551>`_).
