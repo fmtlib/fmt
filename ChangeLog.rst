@@ -51,8 +51,9 @@
   Thanks `@florimond-collette (Florimond Collette)
   <https://github.com/florimond-collette>`_.
 
-* Fixed handling of precision for 128-bit ``long double``
-  (`#3539 <https://github.com/fmtlib/fmt/issues/3539>`_).
+* Fixed handling of precision for ``long double`` larger than 64 bits.
+  (`#3539 <https://github.com/fmtlib/fmt/issues/3539>`_,
+  `#3564 <https://github.com/fmtlib/fmt/issues/3564>`_).
 
 * Removed remnants of the Grisu floating-point formatter that has been replaced
   by Dragonbox in earlier versions.
