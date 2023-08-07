@@ -6,9 +6,37 @@
   `#3561 <https://github.com/fmtlib/fmt/pull/3561>`_).
   Thanks `@5chmidti <https://github.com/5chmidti>`_.
 
+* Fixed compilation when formatting durations not convertible from
+  ``std::chrono::seconds`` (`#3430 <https://github.com/fmtlib/fmt/pull/3430>`_).
+  Thanks `@patlkli (Patrick Geltinger) <https://github.com/patlkli>`_.
+
+* Disallowed passing temporaries to ``make_format_args`` to improve API safety
+  by preventing dangling references.
+
+* Made floating-point formatting tests more platform-independent
+  (`#3433 <https://github.com/fmtlib/fmt/issues/3433>`_,
+  `#3434 <https://github.com/fmtlib/fmt/pull/3434>`_).
+  Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
+
+* Made ``FMT_THROW`` assert even if assertions are disabled when compiling with
+  exceptions disabled (`#3418 <https://github.com/fmtlib/fmt/issues/3418>`_,
+  `#3439 <https://github.com/fmtlib/fmt/pull/3439>`_).
+  `@BRevzin (Barry Revzin) <https://github.com/BRevzin>`_.
+
+* Deprecated the wide stream overload of ``printf``.
+
+* Removed unused ``basic_printf_parse_context``.
+
+* Improved documentation.
+
 * Improved build configuration
   (`#3563 <https://github.com/fmtlib/fmt/pull/3563>`_).
   Thanks `@abouvier (Alexandre Bouvier) <https://github.com/abouvier>`_.
+
+* Fixed various warnings and compilation issues
+  (`#3444 <https://github.com/fmtlib/fmt/issues/3444>`_,
+  `#3446 <https://github.com/fmtlib/fmt/pull/3446>`_).
+  Thanks `@adesitter (Arnaud Desitter) <https://github.com/adesitter>`_.
 
 10.0.0 - 2023-05-09
 -------------------
