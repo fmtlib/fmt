@@ -920,7 +920,7 @@ class basic_memory_buffer final : public detail::buffer<T> {
  private:
   T store_[SIZE];
 
-  // Don't inherit from Allocator avoid generating type_info for it.
+  // Don't inherit from Allocator to avoid generating type_info for it.
   FMT_NO_UNIQUE_ADDRESS Allocator alloc_;
 
   // Deallocate memory allocated by the buffer.
