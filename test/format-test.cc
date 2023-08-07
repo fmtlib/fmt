@@ -2141,6 +2141,13 @@ TEST(format_test, format_as) {
   EXPECT_EQ(fmt::format("{}", test::struct_as_int()), "42");
 }
 
+TEST(format_test, format_as_to_string) {
+  EXPECT_EQ(fmt::to_string(test::scoped_enum_as_int()), "42");
+  EXPECT_EQ(fmt::to_string(test::scoped_enum_as_string_view()), "foo");
+  EXPECT_EQ(fmt::to_string(test::scoped_enum_as_string()), "foo");
+  EXPECT_EQ(fmt::to_string(test::struct_as_int()), "42");
+}
+
 template <typename Char, typename T> bool check_enabled_formatter() {
   static_assert(std::is_default_constructible<fmt::formatter<T, Char>>::value,
                 "");
