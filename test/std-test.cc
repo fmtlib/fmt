@@ -7,6 +7,7 @@
 
 #include "fmt/std.h"
 
+#include <bitset>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -220,4 +221,18 @@ TEST(std_test, exception) {
                 StartsWith("std::filesystem::filesystem_error: "));
   }
 #endif
+}
+
+TEST(std_test, format_bit_reference) {
+  std::bitset<2> bs(1);
+  EXPECT_EQ(fmt::format("{} {}", bs[0], bs[1]), "true false");
+  std::vector<bool> v = {true, false};
+  EXPECT_EQ(fmt::format("{} {}", v[0], v[1]), "true false");
+}
+
+TEST(std_test, format_const_bit_reference) {
+  const std::bitset<2> bs(1);
+  EXPECT_EQ(fmt::format("{} {}", bs[0], bs[1]), "true false");
+  const std::vector<bool> v = {true, false};
+  EXPECT_EQ(fmt::format("{} {}", v[0], v[1]), "true false");
 }
