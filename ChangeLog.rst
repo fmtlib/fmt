@@ -2,7 +2,8 @@
 ------------
 
 * Fixed ambiguous formatter specialization for containers that look like
-  container adaptors (`#3556 <https://github.com/fmtlib/fmt/issues/3556>`_,
+  container adaptors such as ``boost::flat_set``
+  (`#3556 <https://github.com/fmtlib/fmt/issues/3556>`_,
   `#3561 <https://github.com/fmtlib/fmt/pull/3561>`_).
   Thanks `@5chmidti <https://github.com/5chmidti>`_.
 
@@ -10,9 +11,21 @@
   ``std::chrono::seconds`` (`#3430 <https://github.com/fmtlib/fmt/pull/3430>`_).
   Thanks `@patlkli (Patrick Geltinger) <https://github.com/patlkli>`_.
 
-* Added formatter for ``std::vector<bool>::reference`` and
-  ``std::bitset<N>::reference``.
-  (`#3570 <https://github.com/fmtlib/fmt/pull/3570>`_).
+* Added formatters for proxy references to elements of ``std::vector<bool>`` and
+  ``std::bitset<N>``. (`#3567 <https://github.com/fmtlib/fmt/issues/3567>`_,
+  `#3570 <https://github.com/fmtlib/fmt/pull/3570>`_).
+  For example (`godbolt <https://godbolt.org/z/zYb79Pvn8>`__):
+
+  .. code:: c++
+
+     #include <vector>
+     #include <fmt/std.h>
+
+     int main() {
+       auto v = std::vector<bool>{true};
+       fmt::print("{}", v[0]);
+     }
+
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_ and
   `@felix642 (Félix-Antoine Constantin) <https://github.com/felix642>`_.
 
@@ -20,19 +33,26 @@
   (`#3432 <https://github.com/fmtlib/fmt/pull/3432>`_).
   Thanks `@timsong-cpp <https://github.com/timsong-cpp>`_.
 
+* Made ``{}`` and ``{:}`` handled consistently during compile-time checks
+  (`#3526 <https://github.com/fmtlib/fmt/issues/3526>`_).
+
 * Disallowed passing temporaries to ``make_format_args`` to improve API safety
   by preventing dangling references.
 
-* Made floating-point formatting tests more platform-independent
-  (`#3433 <https://github.com/fmtlib/fmt/issues/3433>`_,
+* Made floating-point and chrono tests less platform-dependent
+  (`#3337 <https://github.com/fmtlib/fmt/issues/3337>`_,
+  `#3433 <https://github.com/fmtlib/fmt/issues/3433>`_,
   `#3434 <https://github.com/fmtlib/fmt/pull/3434>`_).
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
 
-* Improved and fixed warnings in the floating-point formatter
+* Improved the floating-point formatter
   (`#3448 <https://github.com/fmtlib/fmt/pull/3448>`_,
   `#3450 <https://github.com/fmtlib/fmt/pull/3450>`_).
   Thanks `@florimond-collette (Florimond Collette)
   <https://github.com/florimond-collette>`_.
+
+* Fixed handling of precision for 128-bit ``long double``
+  (`#3539 <https://github.com/fmtlib/fmt/issues/3539>`_).
 
 * Removed remnants of the Grisu floating-point formatter that has been replaced
   by Dragonbox in earlier versions.
@@ -45,7 +65,26 @@
   (`#3485 <https://github.com/fmtlib/fmt/pull/3485>`_).
   Thanks `@Minty-Meeo <https://github.com/Minty-Meeo>`_.
 
-* Optimized format string compilation.
+* Optimized format string compilation resulting in up to 40% speed up in
+  ``format_to`` and ~4x speed up in ``format_to_n`` on concatenation-like
+  benchmarks (`#3133 <https://github.com/fmtlib/fmt/issues/3133>`_,
+  `#3484 <https://github.com/fmtlib/fmt/issues/3484>`_).
+
+  {fmt} 10.0::
+
+    ---------------------------------------------------------
+    Benchmark               Time             CPU   Iterations
+    ---------------------------------------------------------
+    BM_format_to         78.9 ns         78.9 ns      8881746
+    BM_format_to_n        568 ns          568 ns      1232089
+
+  {fmt} 10.1::
+
+    ---------------------------------------------------------
+    Benchmark               Time             CPU   Iterations
+    ---------------------------------------------------------
+    BM_format_to         54.9 ns         54.9 ns     12727944
+    BM_format_to_n        133 ns          133 ns      5257795
 
 * Added ``throw_format_error`` to the public API
   (`#3551 <https://github.com/fmtlib/fmt/pull/3551>`_).
@@ -75,40 +114,55 @@
   (`#3467 <https://github.com/fmtlib/fmt/pull/3467>`_).
   Thanks `@wenshan1 (Bin Lan) <https://github.com/wenshan1>`_.
 
-* Improved documentation (`#3454 <https://github.com/fmtlib/fmt/pull/3454>`_,
+* Improved documentation
+  (`#3174 <https://github.com/fmtlib/fmt/issues/3174>`_,
+  `#3423 <https://github.com/fmtlib/fmt/issues/3423>`_,
+  `#3454 <https://github.com/fmtlib/fmt/pull/3454>`_,
   `#3458 <https://github.com/fmtlib/fmt/issues/3458>`_,
   `#3461 <https://github.com/fmtlib/fmt/pull/3461>`_,
+  `#3487 <https://github.com/fmtlib/fmt/issues/3487>`_,
   `#3515 <https://github.com/fmtlib/fmt/pull/3515>`_).
   Thanks `@zencatalyst (Kasra Hashemi) <https://github.com/zencatalyst>`_,
   `@rlalik <https://github.com/rlalik>`_,
   `@mikecrowe (Mike Crowe) <https://github.com/mikecrowe>`_.
 
 * Improved build and CI configurations
-  (`#3451 <https://github.com/fmtlib/fmt/pull/3451>`_,
+  (`#3449 <https://github.com/fmtlib/fmt/issues/3449>`_,
+  `#3451 <https://github.com/fmtlib/fmt/pull/3451>`_,
   `#3452 <https://github.com/fmtlib/fmt/pull/3452>`_,
   `#3453 <https://github.com/fmtlib/fmt/pull/3453>`_,
   `#3459 <https://github.com/fmtlib/fmt/pull/3459>`_,
+  `#3481 <https://github.com/fmtlib/fmt/issues/3481>`_,
   `#3486 <https://github.com/fmtlib/fmt/pull/3486>`_,
+  `#3489 <https://github.com/fmtlib/fmt/issues/3489>`_,
+  `#3496 <https://github.com/fmtlib/fmt/pull/3496>`_,
   `#3517 <https://github.com/fmtlib/fmt/issues/3517>`_,
   `#3523 <https://github.com/fmtlib/fmt/pull/3523>`_,
   `#3563 <https://github.com/fmtlib/fmt/pull/3563>`_).
   Thanks `@joycebrum (Joyce) <https://github.com/joycebrum>`_,
   `@glebm (Gleb Mazovetskiy) <https://github.com/glebm>`_,
   `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_,
+  `@petrmanek (Petr Mánek) <https://github.com/petrmanek>`_,
   `@setoye (Alta) <https://github.com/setoye>`_,
   `@abouvier (Alexandre Bouvier) <https://github.com/abouvier>`_.
 
 * Fixed various warnings and compilation issues
-  (`#3444 <https://github.com/fmtlib/fmt/issues/3444>`_,
+  (`#3408 <https://github.com/fmtlib/fmt/issues/3408>`_,
+  `#3424 <https://github.com/fmtlib/fmt/issues/3424>`_,
+  `#3444 <https://github.com/fmtlib/fmt/issues/3444>`_,
   `#3446 <https://github.com/fmtlib/fmt/pull/3446>`_,
   `#3475 <https://github.com/fmtlib/fmt/pull/3475>`_,
   `#3482 <https://github.com/fmtlib/fmt/pull/3482>`_,
   `#3492 <https://github.com/fmtlib/fmt/issues/3492>`_,
   `#3493 <https://github.com/fmtlib/fmt/pull/3493>`_,
-  `#3496 <https://github.com/fmtlib/fmt/pull/3496>`_,
   `#3508 <https://github.com/fmtlib/fmt/pull/3508>`_,
+  `#3509 <https://github.com/fmtlib/fmt/issues/3509>`_,
+  `#3533 <https://github.com/fmtlib/fmt/issues/3533>`_,
   `#3542 <https://github.com/fmtlib/fmt/pull/3542>`_,
+  `#3543 <https://github.com/fmtlib/fmt/issues/3543>`_,
+  `#3540 <https://github.com/fmtlib/fmt/issues/3540>`_,
   `#3544 <https://github.com/fmtlib/fmt/pull/3544>`_,
+  `#3548 <https://github.com/fmtlib/fmt/issues/3548>`_,
   `#3549 <https://github.com/fmtlib/fmt/pull/3549>`_,
   `#3550 <https://github.com/fmtlib/fmt/pull/3550>`_,
   `#3552 <https://github.com/fmtlib/fmt/pull/3552>`_).
@@ -116,7 +170,6 @@
   `@hmbj (Hans-Martin B. Jensen) <https://github.com/hmbj>`_,
   `@Minty-Meeo <https://github.com/Minty-Meeo>`_,
   `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_,
-  `@petrmanek (Petr Mánek) <https://github.com/petrmanek>`_,
   `@TobiSchluter (Tobias Schlüter) <https://github.com/TobiSchluter>`_,
   `@kieranclancy (Kieran Clancy) <https://github.com/kieranclancy>`_,
   `@alexeedm (Dmitry Alexeev) <https://github.com/alexeedm>`_,
