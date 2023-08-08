@@ -1828,6 +1828,23 @@ TEST(format_test, join) {
   EXPECT_EQ("0 1 0", fmt::format("{}", join(v4, " ")));
 }
 
+TEST(format_test, join_c_str) {
+  // {
+  //   const char* argv[] = { "zero", "one", "two" };
+  //   EXPECT_EQ("(zero, one, two)", fmt::format("({})", fmt::join(argv, argv + 3, ", ")));
+  // }
+
+  // {
+     char* argv[] = { "zero", "one", "two" };
+     EXPECT_EQ("(zero, one, two)", fmt::format("({})", fmt::join(argv, argv + 3, ", ")));
+  // }
+
+  {
+    // const char* const argv[] = { "zero", "one", "two" };
+    // EXPECT_EQ("(zero, one, two)", fmt::format("({})", fmt::join(argv, argv + 3, ", ")));
+  }
+}
+
 #ifdef __cpp_lib_byte
 TEST(format_test, join_bytes) {
   auto v = std::vector<std::byte>{std::byte(1), std::byte(2), std::byte(3)};
