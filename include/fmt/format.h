@@ -1038,6 +1038,7 @@ namespace detail {
 FMT_API bool write_console(std::FILE* f, string_view text);
 FMT_API void print(std::FILE*, string_view);
 }  // namespace detail
+
 FMT_BEGIN_EXPORT
 
 // Suppress a misleading warning in older versions of clang.
@@ -4319,6 +4320,8 @@ inline auto to_string(const T& value) -> std::string {
   return to_string(format_as(value));
 }
 
+FMT_END_EXPORT
+
 namespace detail {
 
 template <typename Char>
@@ -4389,6 +4392,8 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
   };
   detail::parse_format_string<false>(fmt, format_handler(out, fmt, args, loc));
 }
+
+FMT_BEGIN_EXPORT
 
 #ifndef FMT_HEADER_ONLY
 extern template FMT_API void vformat_to(buffer<char>&, string_view,
