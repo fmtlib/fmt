@@ -273,6 +273,17 @@ template <typename T> struct is_contiguous : std::false_type {};
 template <typename Char>
 struct is_contiguous<std::basic_string<Char>> : std::true_type {};
 
+template<typename E, typename = void>
+struct is_scoped_enum : std::false_type {};
+template<typename E>
+struct is_scoped_enum<E, std::enable_if_t<
+    std::is_enum<E>::value && 
+    !std::is_convertible<E, typename std::underlying_type<E>::type>::value 
+# ifdef __cpp_lib_byte
+    && !std::is_same<E, std::byte>::value
+# endif
+>> : std::true_type {};
+
 struct monostate {
   constexpr monostate() {}
 };
