@@ -4290,8 +4290,13 @@ auto join(Range&& range, string_view sep)
 template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value)>
 inline auto to_string(const T& value) -> std::string {
   auto buffer = memory_buffer();
-  detail::write<char>(appender(buffer), value);
-  return {buffer.data(), buffer.size()};
+  if constexpr (is_scoped_enum<T>::value){
+    detail::write<char>(appender(buffer), static_cast<typename std::underlying_type<T>::type>(value));
+    return {buffer.data(), buffer.size()};
+  }else{
+    detail::write<char>(appender(buffer), value);
+    return {buffer.data(), buffer.size()};
+  }
 }
 
 template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
