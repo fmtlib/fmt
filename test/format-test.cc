@@ -1944,11 +1944,15 @@ struct formatter<adl_test::fmt::detail::foo> : formatter<std::string> {
 };
 FMT_END_NAMESPACE
 
+enum class test_enum_class : char { one='1', two='2' };
+auto format_as(test_enum_class e) -> char { return static_cast<char>(e); }
+
 TEST(format_test, to_string) {
   EXPECT_EQ(fmt::to_string(42), "42");
   EXPECT_EQ(fmt::to_string(reinterpret_cast<void*>(0x1234)), "0x1234");
   EXPECT_EQ(fmt::to_string(adl_test::fmt::detail::foo()), "foo");
   EXPECT_EQ(fmt::to_string(foo), "0");
+  EXPECT_EQ(fmt::to_string(test_enum_class::one),"1");
 
 #if FMT_USE_FLOAT128
   EXPECT_EQ(fmt::to_string(__float128(0.5)), "0.5");
