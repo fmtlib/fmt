@@ -2,8 +2,8 @@
 ------------
 
 * Optimized format string compilation resulting in up to 40% speed up in
-  ``format_to`` and ~4x speed up in ``format_to_n`` on a concatenation
-  benchmarks (`#3133 <https://github.com/fmtlib/fmt/issues/3133>`_,
+  compiled ``format_to`` and ~4x speed up in compiled ``format_to_n`` on a
+  concatenation benchmark (`#3133 <https://github.com/fmtlib/fmt/issues/3133>`_,
   `#3484 <https://github.com/fmtlib/fmt/issues/3484>`_).
 
   {fmt} 10.0::
@@ -27,7 +27,7 @@
   Thanks `@Minty-Meeo <https://github.com/Minty-Meeo>`_.
 
 * Added formatters for proxy references to elements of ``std::vector<bool>`` and
-  ``std::bitset<N>``. (`#3567 <https://github.com/fmtlib/fmt/issues/3567>`_,
+  ``std::bitset<N>`` (`#3567 <https://github.com/fmtlib/fmt/issues/3567>`_,
   `#3570 <https://github.com/fmtlib/fmt/pull/3570>`_).
   For example (`godbolt <https://godbolt.org/z/zYb79Pvn8>`__):
 
@@ -44,7 +44,7 @@
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_ and
   `@felix642 (Félix-Antoine Constantin) <https://github.com/felix642>`_.
 
-* Fixed ambiguous formatter specialization for containers that look like
+* Fixed an ambiguous formatter specialization for containers that look like
   container adaptors such as ``boost::flat_set``
   (`#3556 <https://github.com/fmtlib/fmt/issues/3556>`_,
   `#3561 <https://github.com/fmtlib/fmt/pull/3561>`_).
@@ -84,8 +84,8 @@
   `#3434 <https://github.com/fmtlib/fmt/pull/3434>`_).
   Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
 
-* Removed remnants of the Grisu floating-point formatter that has been replaced
-  by Dragonbox in earlier versions.
+* Removed the remnants of the Grisu floating-point formatter that has been
+  replaced by Dragonbox in earlier versions.
 
 * Added ``throw_format_error`` to the public API
   (`#3551 <https://github.com/fmtlib/fmt/pull/3551>`_).
