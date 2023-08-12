@@ -1,5 +1,5 @@
-10.1.0 - TBD
-------------
+10.1.0 - 2023-08-12
+-------------------
 
 * Optimized format string compilation resulting in up to 40% speed up in
   compiled ``format_to`` and ~4x speed up in compiled ``format_to_n`` on a
