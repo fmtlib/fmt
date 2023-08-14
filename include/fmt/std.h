@@ -8,6 +8,7 @@
 #ifndef FMT_STD_H_
 #define FMT_STD_H_
 
+#include <atomic>
 #include <bitset>
 #include <cstdlib>
 #include <exception>
@@ -435,6 +436,17 @@ struct formatter<BitRef, Char,
   }
 };
 
-FMT_END_NAMESPACE
+FMT_EXPORT
+template <typename T, typename Char>
+struct formatter<std::atomic<T>, Char,
+                 enable_if_t<is_formattable<T, Char>::value>>
+    : formatter<T, Char> {
+  template <typename FormatContext>
+  auto format(const std::atomic<T>& v, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    return formatter<T, Char>::format(v.load(), ctx);
+  }
+};
 
+FMT_END_NAMESPACE
 #endif  // FMT_STD_H_
