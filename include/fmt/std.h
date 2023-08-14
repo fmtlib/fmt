@@ -451,8 +451,7 @@ struct formatter<std::atomic<T>, Char,
 #if defined(__cpp_lib_atomic_flag_test) && __cpp_lib_atomic_flag_test >= 201907L
 FMT_EXPORT
 template <typename Char>
-struct formatter<std::atomic_flag, Char,
-                 enable_if_t<is_formattable<bool, Char>::value>>
+struct formatter<std::atomic_flag, Char>
     : formatter<bool, Char> {
   template <typename FormatContext>
   auto format(const std::atomic_flag& v, FormatContext& ctx) const
