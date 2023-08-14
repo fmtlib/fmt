@@ -236,3 +236,11 @@ TEST(std_test, format_const_bit_reference) {
   const std::vector<bool> v = {true, false};
   EXPECT_EQ(fmt::format("{} {}", v[0], v[1]), "true false");
 }
+
+TEST(std_test, format_atomic) {
+  std::atomic<bool> b(false);
+  EXPECT_EQ(fmt::format("{}", b), "false");
+
+  const std::atomic<bool> cb(true);
+  EXPECT_EQ(fmt::format("{}", cb), "true");
+}
