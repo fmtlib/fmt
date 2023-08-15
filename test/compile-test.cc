@@ -199,6 +199,21 @@ TEST(compile_test, format_to_n) {
 TEST(compile_test, constexpr_formatted_size) {
   FMT_CONSTEXPR20 size_t size = fmt::formatted_size(FMT_COMPILE("{}"), 42);
   EXPECT_EQ(size, 2);
+  FMT_CONSTEXPR20 size_t hex_size =
+      fmt::formatted_size(FMT_COMPILE("{:x}"), 15);
+  EXPECT_EQ(hex_size, 1);
+  FMT_CONSTEXPR20 size_t binary_size =
+      fmt::formatted_size(FMT_COMPILE("{:b}"), 15);
+  EXPECT_EQ(binary_size, 4);
+  FMT_CONSTEXPR20 size_t padded_size =
+      fmt::formatted_size(FMT_COMPILE("{:*^6}"), 42);
+  EXPECT_EQ(padded_size, 6);
+  FMT_CONSTEXPR20 size_t float_size =
+      fmt::formatted_size(FMT_COMPILE("{:.3}"), 12.345);
+  EXPECT_EQ(float_size, 4);
+  FMT_CONSTEXPR20 size_t str_size =
+      fmt::formatted_size(FMT_COMPILE("{:s}"), "abc");
+  EXPECT_EQ(str_size, 3);
 }
 #  endif
 
