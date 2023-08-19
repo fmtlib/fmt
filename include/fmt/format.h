@@ -1453,7 +1453,7 @@ template <typename WChar, typename Buffer = memory_buffer> class to_utf8 {
         ++p;
         if (p == s.end() || (c & 0xfc00) != 0xd800 || (*p & 0xfc00) != 0xdc00) {
           if (policy == to_utf8_error_policy::abort) return false;
-          buf.append(string_view("�"));
+          buf.append(string_view("\xEF\xBF\xBD"));
           --p;
         } else {
           c = (c << 10) + static_cast<uint32_t>(*p) - 0x35fdc00;
