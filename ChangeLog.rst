@@ -1,3 +1,10 @@
+10.1.1 - TBD
+------------
+
+* Fixed an error about partial specialization of ``formatter<string>``
+  after instantiation when compiled with gcc and C++20
+  (`#3584 <https://github.com/fmtlib/fmt/issues/3584>`_).
+
 10.1.0 - 2023-08-12
 -------------------
 
