@@ -103,6 +103,9 @@
   Thanks `@gix (Nico Rieck) <https://github.com/gix>`_,
   `@hmbj (Hans-Martin B. Jensen) <https://github.com/hmbj>`_.
 
+* Added support for the ``?`` format specifier to ``std::filesystem::path`` and
+  made the default unescaped for consistency with strings.
+
 * Deprecated the wide stream overload of ``printf``.
 
 * Removed unused ``basic_printf_parse_context``.
