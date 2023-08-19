@@ -1420,9 +1420,8 @@ template <typename Context> struct arg_mapper {
       FMT_ENABLE_IF(
           std::is_pointer<T>::value || std::is_member_pointer<T>::value ||
           std::is_function<typename std::remove_pointer<T>::type>::value ||
-          (std::is_convertible<const T&, const void*>::value &&
-           !std::is_convertible<const T&, const char_type*>::value &&
-           !has_formatter<T, Context>::value))>
+          (std::is_array<T>::value &&
+           !std::is_convertible<T, const char_type*>::value))>
   FMT_CONSTEXPR auto map(const T&) -> unformattable_pointer {
     return {};
   }
