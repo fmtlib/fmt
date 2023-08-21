@@ -477,11 +477,14 @@ inline std::tm localtime(std::time_t time) {
   return lt.tm_;
 }
 
+inline std::tm localtime(std::chrono::system_clock::time_point time_point) {
+  return localtime(std::chrono::system_clock::to_time_t(time_point));
+}
+
 #if FMT_USE_LOCAL_TIME
 template <typename Duration>
 inline auto localtime(std::chrono::local_time<Duration> time) -> std::tm {
-  return localtime(std::chrono::system_clock::to_time_t(
-      std::chrono::current_zone()->to_sys(time)));
+  return localtime(std::chrono::current_zone()->to_sys(time));
 }
 #endif
 
