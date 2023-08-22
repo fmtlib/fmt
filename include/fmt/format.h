@@ -369,6 +369,10 @@ class uint128_fallback {
  private:
   uint64_t lo_, hi_;
 
+#ifdef _WIN32
+  friend uint128_fallback umul128(uint64_t x, uint64_t y) noexcept;
+#endif
+
  public:
   constexpr uint128_fallback(uint64_t hi, uint64_t lo) : lo_(lo), hi_(hi) {}
   constexpr uint128_fallback(uint64_t value = 0) : lo_(value), hi_(0) {}
