@@ -369,8 +369,6 @@ class uint128_fallback {
  private:
   uint64_t lo_, hi_;
 
-  friend uint128_fallback umul128(uint64_t x, uint64_t y) noexcept;
-
  public:
   constexpr uint128_fallback(uint64_t hi, uint64_t lo) : lo_(lo), hi_(hi) {}
   constexpr uint128_fallback(uint64_t value = 0) : lo_(value), hi_(0) {}
@@ -1488,9 +1486,9 @@ inline uint128_fallback umul128(uint64_t x, uint64_t y) noexcept {
   auto p = static_cast<uint128_opt>(x) * static_cast<uint128_opt>(y);
   return {static_cast<uint64_t>(p >> 64), static_cast<uint64_t>(p)};
 #elif defined(_MSC_VER) && defined(_M_X64)
-  auto result = uint128_fallback();
-  result.lo_ = _umul128(x, y, &result.hi_);
-  return result;
+  auto hi = uint64_t{};
+  auto lo = _umul128(x, y, &hi);
+  return {hi, lo};
 #else
   const uint64_t mask = static_cast<uint64_t>(max_value<uint32_t>());
 
