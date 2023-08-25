@@ -245,7 +245,7 @@ TEST(std_test, format_atomic) {
   EXPECT_EQ(fmt::format("{}", cb), "true");
 }
 
-#if defined(__cpp_lib_atomic_flag_test) && __cpp_lib_atomic_flag_test >= 201907L
+#ifdef __cpp_lib_atomic_flag_test
 TEST(std_test, format_atomic_flag) {
   std::atomic_flag f = ATOMIC_FLAG_INIT;
   (void) f.test_and_set();
@@ -254,4 +254,4 @@ TEST(std_test, format_atomic_flag) {
   const std::atomic_flag cf = ATOMIC_FLAG_INIT;
   EXPECT_EQ(fmt::format("{}", cf), "false");
 }
-#endif // defined(__cpp_lib_atomic_flag_test) && __cpp_lib_atomic_flag_test >= 201907L
+#endif // __cpp_lib_atomic_flag_test
