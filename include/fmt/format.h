@@ -376,9 +376,6 @@ class uint128_fallback {
   constexpr uint64_t high() const noexcept { return hi_; }
   constexpr uint64_t low() const noexcept { return lo_; }
 
-  uint64_t& high() { return hi_; }
-  uint64_t& low() { return lo_; }
-
   template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
   constexpr explicit operator T() const {
     return static_cast<T>(lo_);
@@ -1489,9 +1486,9 @@ inline uint128_fallback umul128(uint64_t x, uint64_t y) noexcept {
   auto p = static_cast<uint128_opt>(x) * static_cast<uint128_opt>(y);
   return {static_cast<uint64_t>(p >> 64), static_cast<uint64_t>(p)};
 #elif defined(_MSC_VER) && defined(_M_X64)
-  auto result = uint128_fallback();
-  result.low() = _umul128(x, y, &result.high());
-  return result;
+  auto hi = uint64_t{};
+  auto lo = _umul128(x, y, &hi);
+  return {hi, lo};
 #else
   const uint64_t mask = static_cast<uint64_t>(max_value<uint32_t>());
 
