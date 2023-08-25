@@ -448,7 +448,7 @@ struct formatter<std::atomic<T>, Char,
   }
 };
 
-#if defined(__cpp_lib_atomic_flag_test) && __cpp_lib_atomic_flag_test >= 201907L
+#ifdef __cpp_lib_atomic_flag_test
 FMT_EXPORT
 template <typename Char>
 struct formatter<std::atomic_flag, Char>
@@ -459,7 +459,7 @@ struct formatter<std::atomic_flag, Char>
     return formatter<bool, Char>::format(v.test(), ctx);
   }
 };
-#endif // defined(__cpp_lib_atomic_flag_test) && __cpp_lib_atomic_flag_test >= 201907L
+#endif // __cpp_lib_atomic_flag_test
 
 FMT_END_NAMESPACE
 #endif  // FMT_STD_H_
