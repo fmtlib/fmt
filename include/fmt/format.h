@@ -155,18 +155,12 @@ FMT_END_NAMESPACE
 //
 // GCC before 4.9 requires a space in `operator"" _a` which is invalid in later
 // compiler versions.
-#  if (FMT_HAS_FEATURE(cxx_user_literals) || FMT_GCC_VERSION >= 407 || \
+#  if (FMT_HAS_FEATURE(cxx_user_literals) || FMT_GCC_VERSION >= 409 || \
        FMT_MSC_VERSION >= 1900) &&                                     \
       (!defined(__EDG_VERSION__) || __EDG_VERSION__ >= /* UDL feature */ 480)
 #    define FMT_USE_USER_DEFINED_LITERALS 1
-#    if FMT_GCC_VERSION > 0 && FMT_GCC_VERSION < 409
-#      define FMT_WHITESPACE_IN_USER_DEFINED_LITERALS 1
-#    else
-#      define FMT_WHITESPACE_IN_USER_DEFINED_LITERALS 0
-#    endif
 #  else
 #    define FMT_USE_USER_DEFINED_LITERALS 0
-#    define FMT_WHITESPACE_IN_USER_DEFINED_LITERALS 0
 #  endif
 #endif
 
@@ -4435,10 +4429,6 @@ inline namespace literals {
 template <detail_exported::fixed_string Str> constexpr auto operator""_a() {
   using char_t = remove_cvref_t<decltype(Str.data[0])>;
   return detail::udl_arg<char_t, sizeof(Str.data) / sizeof(char_t), Str>();
-}
-#  elif FMT_WHITESPACE_IN_USER_DEFINED_LITERALS
-constexpr auto operator"" _a(const char* s, size_t) -> detail::udl_arg<char> {
-  return {s};
 }
 #  else
 constexpr auto operator""_a(const char* s, size_t) -> detail::udl_arg<char> {
