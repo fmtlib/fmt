@@ -1,9 +1,49 @@
 10.1.1 - TBD
 ------------
 
+* Added formatters for ``std::atomic`` and ``atomic_flag``
+  (`#3574 <https://github.com/fmtlib/fmt/pull/3574>`_,
+  `#3594 <https://github.com/fmtlib/fmt/pull/3594>`_).
+  Thanks `@wangzw (Zhanwei Wang) <https://github.com/wangzw>`_ and
+  `@AlexGuteniev (Alex Guteniev) <https://github.com/AlexGuteniev>`_.
+
 * Fixed an error about partial specialization of ``formatter<string>``
   after instantiation when compiled with gcc and C++20
   (`#3584 <https://github.com/fmtlib/fmt/issues/3584>`_).
+
+* Fixed compilation as a C++20 module with gcc and clang
+  (`#3587 <https://github.com/fmtlib/fmt/issues/3587>`_,
+  `#3597 <https://github.com/fmtlib/fmt/pull/3597>`_,
+  `#3605 <https://github.com/fmtlib/fmt/pull/3605>`_). Thanks
+  `@MathewBensonCode (Mathew Benson) <https://github.com/MathewBensonCode>`_.
+
+* Made ``fmt::to_string`` work with types that have ``format_as`` overloads
+  (`#3575 <https://github.com/fmtlib/fmt/pull/3575>`_).
+  Thanks `@phprus (Vladislav Shchapov) <https://github.com/phprus>`_.
+
+* Made ``formatted_size`` work with integral format specifiers at compile time
+  (`#3591 <https://github.com/fmtlib/fmt/pull/3591>`_).
+  Thanks `@elbeno (Ben Deane) <https://github.com/elbeno>`_.
+
+* Fixed a warning about the ``no_unique_address`` attribute on clang-cl
+  (`#3599 <https://github.com/fmtlib/fmt/pull/3599>`_).
+  Thanks `@lukester1975 <https://github.com/lukester1975>`_.
+
+* Improved compatibility with the legacy GBK encoding
+  (`#3598 <https://github.com/fmtlib/fmt/issues/3598>`_,
+  `#3599 <https://github.com/fmtlib/fmt/pull/3599>`_).
+  Thanks `@YuHuanTin <https://github.com/YuHuanTin>`_.
+
+* Added OpenSSF Scorecard analysis
+  (`#3530 <https://github.com/fmtlib/fmt/issues/3530>`_,
+  `#3571 <https://github.com/fmtlib/fmt/pull/3571>`_).
+  Thanks `@joycebrum (Joyce) <https://github.com/joycebrum>`_.
+
+* Updated CI dependencies
+  (`#3591 <https://github.com/fmtlib/fmt/pull/3591>`_,
+  `#3592 <https://github.com/fmtlib/fmt/pull/3592>`_,
+  `#3593 <https://github.com/fmtlib/fmt/pull/3593>`_,
+  `#3602 <https://github.com/fmtlib/fmt/pull/3602>`_).
 
 10.1.0 - 2023-08-12
 -------------------
