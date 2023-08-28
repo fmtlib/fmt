@@ -1,5 +1,5 @@
-10.1.1 - TBD
-------------
+10.1.1 - 2023-08-28
+-------------------
 
 * Added formatters for ``std::atomic`` and ``atomic_flag``
   (`#3574 <https://github.com/fmtlib/fmt/pull/3574>`_,
