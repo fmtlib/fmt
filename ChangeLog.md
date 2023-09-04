@@ -2,35 +2,30 @@
 
 -   Added formatters for `std::atomic` and `atomic_flag`
     ([#3574](https://github.com/fmtlib/fmt/pull/3574),
-    [#3594](https://github.com/fmtlib/fmt/pull/3594)). Thanks [\@wangzw
-    (Zhanwei Wang)](https://github.com/wangzw) and [\@AlexGuteniev (Alex
-    Guteniev)](https://github.com/AlexGuteniev).
+    [#3594](https://github.com/fmtlib/fmt/pull/3594)).
+    Thanks @wangzw and @AlexGuteniev.
 -   Fixed an error about partial specialization of `formatter<string>`
     after instantiation when compiled with gcc and C++20
     ([#3584](https://github.com/fmtlib/fmt/issues/3584)).
 -   Fixed compilation as a C++20 module with gcc and clang
     ([#3587](https://github.com/fmtlib/fmt/issues/3587),
     [#3597](https://github.com/fmtlib/fmt/pull/3597),
-    [#3605](https://github.com/fmtlib/fmt/pull/3605)). Thanks
-    [\@MathewBensonCode (Mathew
-    Benson)](https://github.com/MathewBensonCode).
+    [#3605](https://github.com/fmtlib/fmt/pull/3605)).
+    Thanks @MathewBensonCode.
 -   Made `fmt::to_string` work with types that have `format_as`
-    overloads ([#3575](https://github.com/fmtlib/fmt/pull/3575)). Thanks
-    [\@phprus (Vladislav Shchapov)](https://github.com/phprus).
+    overloads ([#3575](https://github.com/fmtlib/fmt/pull/3575)).
+    Thanks @phprus.
 -   Made `formatted_size` work with integral format specifiers at
     compile time ([#3591](https://github.com/fmtlib/fmt/pull/3591)).
-    Thanks [\@elbeno (Ben Deane)](https://github.com/elbeno).
+    Thanks @elbeno.
 -   Fixed a warning about the `no_unique_address` attribute on clang-cl
-    ([#3599](https://github.com/fmtlib/fmt/pull/3599)). Thanks
-    [\@lukester1975](https://github.com/lukester1975).
+    ([#3599](https://github.com/fmtlib/fmt/pull/3599)). Thanks @lukester1975.
 -   Improved compatibility with the legacy GBK encoding
     ([#3598](https://github.com/fmtlib/fmt/issues/3598),
-    [#3599](https://github.com/fmtlib/fmt/pull/3599)). Thanks
-    [\@YuHuanTin](https://github.com/YuHuanTin).
+    [#3599](https://github.com/fmtlib/fmt/pull/3599)). Thanks @YuHuanTin.
 -   Added OpenSSF Scorecard analysis
     ([#3530](https://github.com/fmtlib/fmt/issues/3530),
-    [#3571](https://github.com/fmtlib/fmt/pull/3571)). Thanks
-    [\@joycebrum (Joyce)](https://github.com/joycebrum).
+    [#3571](https://github.com/fmtlib/fmt/pull/3571)). Thanks @joycebrum.
 -   Updated CI dependencies
     ([#3591](https://github.com/fmtlib/fmt/pull/3591),
     [#3592](https://github.com/fmtlib/fmt/pull/3592),
@@ -62,8 +57,7 @@
         BM_format_to_n        133 ns          133 ns      5257795
 
 -   Optimized storage of an empty allocator in `basic_memory_buffer`
-    ([#3485](https://github.com/fmtlib/fmt/pull/3485)). Thanks
-    [\@Minty-Meeo](https://github.com/Minty-Meeo).
+    ([#3485](https://github.com/fmtlib/fmt/pull/3485)). Thanks @Minty-Meeo.
 
 -   Added formatters for proxy references to elements of
     `std::vector<bool>` and `std::bitset<N>`
@@ -81,24 +75,19 @@
     }
     ```
 
-    Thanks [\@phprus (Vladislav Shchapov)](https://github.com/phprus)
-    and [\@felix642 (Félix-Antoine
-    Constantin)](https://github.com/felix642).
+    Thanks @phprus and @felix642.
 
 -   Fixed an ambiguous formatter specialization for containers that look
     like container adaptors such as `boost::flat_set`
     ([#3556](https://github.com/fmtlib/fmt/issues/3556),
-    [#3561](https://github.com/fmtlib/fmt/pull/3561)). Thanks
-    [\@5chmidti](https://github.com/5chmidti).
+    [#3561](https://github.com/fmtlib/fmt/pull/3561)). Thanks @5chmidti.
 
 -   Fixed compilation when formatting durations not convertible from
     `std::chrono::seconds`
-    ([#3430](https://github.com/fmtlib/fmt/pull/3430)). Thanks
-    [\@patlkli (Patrick Geltinger)](https://github.com/patlkli).
+    ([#3430](https://github.com/fmtlib/fmt/pull/3430)). Thanks @patlkli.
 
 -   Made the `formatter` specialization for `char*` const-correct
-    ([#3432](https://github.com/fmtlib/fmt/pull/3432)). Thanks
-    [\@timsong-cpp](https://github.com/timsong-cpp).
+    ([#3432](https://github.com/fmtlib/fmt/pull/3432)). Thanks @timsong-cpp.
 
 -   Made `{}` and `{:}` handled consistently during compile-time checks
     ([#3526](https://github.com/fmtlib/fmt/issues/3526)).
@@ -107,14 +96,12 @@
     safety by preventing dangling references.
 
 -   Improved the compile-time error for unformattable types
-    ([#3478](https://github.com/fmtlib/fmt/pull/3478)). Thanks
-    [\@BRevzin (Barry Revzin)](https://github.com/BRevzin).
+    ([#3478](https://github.com/fmtlib/fmt/pull/3478)). Thanks @BRevzin.
 
 -   Improved the floating-point formatter
     ([#3448](https://github.com/fmtlib/fmt/pull/3448),
-    [#3450](https://github.com/fmtlib/fmt/pull/3450)). Thanks
-    [\@florimond-collette (Florimond
-    Collette)](https://github.com/florimond-collette).
+    [#3450](https://github.com/fmtlib/fmt/pull/3450)).
+    Thanks @florimond-collette.
 
 -   Fixed handling of precision for `long double` larger than 64 bits.
     ([#3539](https://github.com/fmtlib/fmt/issues/3539),
@@ -123,28 +110,23 @@
 -   Made floating-point and chrono tests less platform-dependent
     ([#3337](https://github.com/fmtlib/fmt/issues/3337),
     [#3433](https://github.com/fmtlib/fmt/issues/3433),
-    [#3434](https://github.com/fmtlib/fmt/pull/3434)). Thanks [\@phprus
-    (Vladislav Shchapov)](https://github.com/phprus).
+    [#3434](https://github.com/fmtlib/fmt/pull/3434)). Thanks @phprus.
 
 -   Removed the remnants of the Grisu floating-point formatter that has
     been replaced by Dragonbox in earlier versions.
 
 -   Added `throw_format_error` to the public API
-    ([#3551](https://github.com/fmtlib/fmt/pull/3551)). Thanks
-    [\@mjerabek (Martin Jeřábek)](https://github.com/mjerabek).
+    ([#3551](https://github.com/fmtlib/fmt/pull/3551)). Thanks @mjerabek.
 
 -   Made `FMT_THROW` assert even if assertions are disabled when
     compiling with exceptions disabled
     ([#3418](https://github.com/fmtlib/fmt/issues/3418),
-    [#3439](https://github.com/fmtlib/fmt/pull/3439)). Thanks [\@BRevzin
-    (Barry Revzin)](https://github.com/BRevzin).
+    [#3439](https://github.com/fmtlib/fmt/pull/3439)). Thanks @BRevzin.
 
 -   Made `format_as` and `std::filesystem::path` formatter work with
     exotic code unit types.
     ([#3457](https://github.com/fmtlib/fmt/pull/3457),
-    [#3476](https://github.com/fmtlib/fmt/pull/3476)). Thanks [\@gix
-    (Nico Rieck)](https://github.com/gix), [\@hmbj (Hans-Martin B.
-    Jensen)](https://github.com/hmbj).
+    [#3476](https://github.com/fmtlib/fmt/pull/3476)). Thanks @gix and @hmbj.
 
 -   Added support for the `?` format specifier to
     `std::filesystem::path` and made the default unescaped for
@@ -155,12 +137,10 @@
 -   Removed unused `basic_printf_parse_context`.
 
 -   Improved RTTI detection used when formatting exceptions
-    ([#3468](https://github.com/fmtlib/fmt/pull/3468)). Thanks [\@danakj
-    (Dana Jansens)](https://github.com/danakj).
+    ([#3468](https://github.com/fmtlib/fmt/pull/3468)). Thanks @danakj.
 
 -   Improved compatibility with VxWorks7
-    ([#3467](https://github.com/fmtlib/fmt/pull/3467)). Thanks
-    [\@wenshan1 (Bin Lan)](https://github.com/wenshan1).
+    ([#3467](https://github.com/fmtlib/fmt/pull/3467)). Thanks @wenshan1.
 
 -   Improved documentation
     ([#3174](https://github.com/fmtlib/fmt/issues/3174),
@@ -169,10 +149,8 @@
     [#3458](https://github.com/fmtlib/fmt/issues/3458),
     [#3461](https://github.com/fmtlib/fmt/pull/3461),
     [#3487](https://github.com/fmtlib/fmt/issues/3487),
-    [#3515](https://github.com/fmtlib/fmt/pull/3515)). Thanks
-    [\@zencatalyst (Kasra Hashemi)](https://github.com/zencatalyst),
-    [\@rlalik](https://github.com/rlalik), [\@mikecrowe (Mike
-    Crowe)](https://github.com/mikecrowe).
+    [#3515](https://github.com/fmtlib/fmt/pull/3515)).
+    Thanks @zencatalyst, @rlalik and @mikecrowe.
 
 -   Improved build and CI configurations
     ([#3449](https://github.com/fmtlib/fmt/issues/3449),
@@ -186,13 +164,8 @@
     [#3496](https://github.com/fmtlib/fmt/pull/3496),
     [#3517](https://github.com/fmtlib/fmt/issues/3517),
     [#3523](https://github.com/fmtlib/fmt/pull/3523),
-    [#3563](https://github.com/fmtlib/fmt/pull/3563)). Thanks
-    [\@joycebrum (Joyce)](https://github.com/joycebrum), [\@glebm (Gleb
-    Mazovetskiy)](https://github.com/glebm), [\@phprus (Vladislav
-    Shchapov)](https://github.com/phprus), [\@petrmanek (Petr
-    Mánek)](https://github.com/petrmanek), [\@setoye
-    (Alta)](https://github.com/setoye), [\@abouvier (Alexandre
-    Bouvier)](https://github.com/abouvier).
+    [#3563](https://github.com/fmtlib/fmt/pull/3563)).
+    Thanks @joycebrum, @glebm, @phprus, @petrmanek, @setoye and @abouvier.
 
 -   Fixed various warnings and compilation issues
     ([#3408](https://github.com/fmtlib/fmt/issues/3408),
@@ -213,17 +186,9 @@
     [#3548](https://github.com/fmtlib/fmt/issues/3548),
     [#3549](https://github.com/fmtlib/fmt/pull/3549),
     [#3550](https://github.com/fmtlib/fmt/pull/3550),
-    [#3552](https://github.com/fmtlib/fmt/pull/3552)). Thanks
-    [\@adesitter (Arnaud Desitter)](https://github.com/adesitter),
-    [\@hmbj (Hans-Martin B. Jensen)](https://github.com/hmbj),
-    [\@Minty-Meeo](https://github.com/Minty-Meeo), [\@phprus (Vladislav
-    Shchapov)](https://github.com/phprus), [\@TobiSchluter (Tobias
-    Schlüter)](https://github.com/TobiSchluter), [\@kieranclancy (Kieran
-    Clancy)](https://github.com/kieranclancy), [\@alexeedm (Dmitry
-    Alexeev)](https://github.com/alexeedm), [\@jurihock (Jürgen
-    Hock)](https://github.com/jurihock),
-    [\@Ozomahtli](https://github.com/Ozomahtli),
-    [\@razaqq](https://github.com/razaqq).
+    [#3552](https://github.com/fmtlib/fmt/pull/3552)).
+    Thanks @adesitter, @hmbj, @Minty-Meeo, @phprus, @TobiSchluter,
+    @kieranclancy, @alexeedm, @jurihock, @Ozomahtli and @razaqq.
 
 # 10.0.0 - 2023-05-09
 
@@ -242,18 +207,16 @@
         to 1
     -   Blue: old algorithm
 
-    Thanks [\@jk-jeon (Junekey Jeon)](https://github.com/jk-jeon).
+    Thanks @jk-jeon.
 
 -   Replaced `snprintf`-based hex float formatter with an internal
     implementation ([#3179](https://github.com/fmtlib/fmt/pull/3179),
     [#3203](https://github.com/fmtlib/fmt/pull/3203)). This removes the
-    last usage of `s(n)printf` in {fmt}. Thanks [\@phprus (Vladislav
-    Shchapov)](https://github.com/phprus).
+    last usage of `s(n)printf` in {fmt}. Thanks @phprus.
 
 -   Fixed alignment of floating-point numbers with localization
     ([#3263](https://github.com/fmtlib/fmt/issues/3263),
-    [#3272](https://github.com/fmtlib/fmt/pull/3272)). Thanks
-    [\@ShawnZhong (Shawn Zhong)](https://github.com/ShawnZhong).
+    [#3272](https://github.com/fmtlib/fmt/pull/3272)). Thanks @ShawnZhong.
 
 -   Made handling of `#` consistent with `std::format`.
 
@@ -266,12 +229,11 @@
     [#3392](https://github.com/fmtlib/fmt/pull/3392),
     [#3397](https://github.com/fmtlib/fmt/pull/3397),
     [#3399](https://github.com/fmtlib/fmt/pull/3399),
-    [#3400](https://github.com/fmtlib/fmt/pull/3400)). Thanks
-    [\@laitingsheng (Tinson Lai)](https://github.com/laitingsheng),
-    [\@Orvid (Orvid King)](https://github.com/Orvid), [\@DanielaE
-    (Daniela Engert)](https://github.com/DanielaE). Switched to the
-    [modules CMake library](https://github.com/vitaut/modules) which
-    allows building {fmt} as a C++20 module with clang:
+    [#3400](https://github.com/fmtlib/fmt/pull/3400)).
+    Thanks @laitingsheng, @Orvid and @DanielaE.
+    
+-   Switched to the [modules CMake library](https://github.com/vitaut/modules)
+    which allows building {fmt} as a C++20 module with clang:
 
         CXX=clang++ cmake -DFMT_MODULE=ON .
         make
@@ -312,7 +274,7 @@
     }
     ```
 
-    Thanks [\@ShawnZhong (Shawn Zhong)](https://github.com/ShawnZhong).
+    Thanks @ShawnZhong.
 
 -   Implemented formatting of subseconds
     ([#2207](https://github.com/fmtlib/fmt/issues/2207),
@@ -332,36 +294,27 @@
     }
     ```
 
-    Thanks [\@patrickroocks (Patrick
-    Roocks)](https://github.com/patrickroocks) [\@phprus (Vladislav
-    Shchapov)](https://github.com/phprus), [\@BRevzin (Barry
-    Revzin)](https://github.com/BRevzin).
+    Thanks @patrickroocks @phprus and @BRevzin.
 
 -   Added precision support to `%S`
-    ([#3148](https://github.com/fmtlib/fmt/pull/3148)). Thanks
-    [\@SappyJoy (Stepan Ponomaryov)](https://github.com/SappyJoy)
+    ([#3148](https://github.com/fmtlib/fmt/pull/3148)). Thanks @SappyJoy
 
 -   Added support for `std::utc_time`
     ([#3098](https://github.com/fmtlib/fmt/issues/3098),
-    [#3110](https://github.com/fmtlib/fmt/pull/3110)). Thanks
-    [\@patrickroocks (Patrick
-    Roocks)](https://github.com/patrickroocks).
+    [#3110](https://github.com/fmtlib/fmt/pull/3110)). Thanks @patrickroocks.
 
 -   Switched formatting of `std::chrono::system_clock` from local time
     to UTC for compatibility with the standard
     ([#3199](https://github.com/fmtlib/fmt/issues/3199),
-    [#3230](https://github.com/fmtlib/fmt/pull/3230)). Thanks [\@ned14
-    (Niall Douglas)](https://github.com/ned14).
+    [#3230](https://github.com/fmtlib/fmt/pull/3230)). Thanks @ned14.
 
 -   Added support for `%Ez` and `%Oz` to chrono formatters.
     ([#3220](https://github.com/fmtlib/fmt/issues/3220),
-    [#3222](https://github.com/fmtlib/fmt/pull/3222)). Thanks [\@phprus
-    (Vladislav Shchapov)](https://github.com/phprus).
+    [#3222](https://github.com/fmtlib/fmt/pull/3222)). Thanks @phprus.
 
 -   Improved validation of format specifiers for `std::chrono::duration`
     ([#3219](https://github.com/fmtlib/fmt/issues/3219),
-    [#3232](https://github.com/fmtlib/fmt/pull/3232)). Thanks
-    [\@ShawnZhong (Shawn Zhong)](https://github.com/ShawnZhong).
+    [#3232](https://github.com/fmtlib/fmt/pull/3232)). Thanks @ShawnZhong.
 
 -   Fixed formatting of time points before the epoch
     ([#3117](https://github.com/fmtlib/fmt/issues/3117),
@@ -378,13 +331,12 @@
     }
     ```
 
-    Thanks [\@ShawnZhong (Shawn Zhong)](https://github.com/ShawnZhong).
+    Thanks @ShawnZhong.
 
 -   Experimental: implemented glibc extension for padding seconds,
     minutes and hours
     ([#2959](https://github.com/fmtlib/fmt/issues/2959),
-    [#3271](https://github.com/fmtlib/fmt/pull/3271)). Thanks
-    [\@ShawnZhong (Shawn Zhong)](https://github.com/ShawnZhong).
+    [#3271](https://github.com/fmtlib/fmt/pull/3271)). Thanks @ShawnZhong.
 
 -   Added a formatter for `std::exception`
     ([#2977](https://github.com/fmtlib/fmt/issues/2977),
@@ -411,13 +363,10 @@
 
         vector<bool>::_M_range_check: __n (which is 0) >= this->size() (which is 0)
 
-    on libstdc++. Thanks [\@zach2good (Zach
-    Toogood)](https://github.com/zach2good) and [\@phprus (Vladislav
-    Shchapov)](https://github.com/phprus).
+    on libstdc++. Thanks @zach2good and @phprus.
 
 -   Moved `std::error_code` formatter from `fmt/os.h` to `fmt/std.h`.
-    ([#3125](https://github.com/fmtlib/fmt/pull/3125)). Thanks [\@phprus
-    (Vladislav Shchapov)](https://github.com/phprus).
+    ([#3125](https://github.com/fmtlib/fmt/pull/3125)). Thanks @phprus.
 
 -   Added formatters for standard container adapters:
     `std::priority_queue`, `std::queue` and `std::stack`
@@ -437,55 +386,46 @@
     }
     ```
 
-    Thanks [\@ShawnZhong (Shawn Zhong)](https://github.com/ShawnZhong).
+    Thanks @ShawnZhong.
 
--   Added a formatter for `std::optional` to `fmt/std.h`. Thanks
-    [\@tom-huntington](https://github.com/tom-huntington).
+-   Added a formatter for `std::optional` to `fmt/std.h`.
+    Thanks @tom-huntington.
 
 -   Fixed formatting of valueless by exception variants
-    ([#3347](https://github.com/fmtlib/fmt/pull/3347)). Thanks
-    [\@TheOmegaCarrot](https://github.com/TheOmegaCarrot).
+    ([#3347](https://github.com/fmtlib/fmt/pull/3347)). Thanks @TheOmegaCarrot.
 
 -   Made `fmt::ptr` accept `unique_ptr` with a custom deleter
-    ([#3177](https://github.com/fmtlib/fmt/pull/3177)). Thanks [\@hmbj
-    (Hans-Martin B. Jensen)](https://github.com/hmbj).
+    ([#3177](https://github.com/fmtlib/fmt/pull/3177)). Thanks @hmbj.
 
 -   Fixed formatting of noncopyable ranges and nested ranges of chars
     ([#3158](https://github.com/fmtlib/fmt/pull/3158)
     [#3286](https://github.com/fmtlib/fmt/issues/3286),
-    [#3290](https://github.com/fmtlib/fmt/pull/3290)). Thanks [\@BRevzin
-    (Barry Revzin)](https://github.com/BRevzin).
+    [#3290](https://github.com/fmtlib/fmt/pull/3290)). Thanks @BRevzin.
 
 -   Fixed issues with formatting of paths and ranges of paths
     ([#3319](https://github.com/fmtlib/fmt/issues/3319),
     [#3321](https://github.com/fmtlib/fmt/pull/3321)
-    [#3322](https://github.com/fmtlib/fmt/issues/3322)). Thanks
-    [\@phprus (Vladislav Shchapov)](https://github.com/phprus).
+    [#3322](https://github.com/fmtlib/fmt/issues/3322)). Thanks @phprus.
 
 -   Improved handling of invalid Unicode in paths.
 
 -   Enabled compile-time checks on Apple clang 14 and later
-    ([#3331](https://github.com/fmtlib/fmt/pull/3331)). Thanks [\@cloyce
-    (Cloyce D. Spradling)](https://github.com/cloyce).
+    ([#3331](https://github.com/fmtlib/fmt/pull/3331)). Thanks @cloyce.
 
 -   Improved compile-time checks of named arguments
     ([#3105](https://github.com/fmtlib/fmt/issues/3105),
-    [#3214](https://github.com/fmtlib/fmt/pull/3214)). Thanks [\@rbrich
-    (Radek Brich)](https://github.com/rbrich).
+    [#3214](https://github.com/fmtlib/fmt/pull/3214)). Thanks @rbrich.
 
 -   Fixed formatting when both alignment and `0` are given
     ([#3236](https://github.com/fmtlib/fmt/issues/3236),
-    [#3248](https://github.com/fmtlib/fmt/pull/3248)). Thanks
-    [\@ShawnZhong (Shawn Zhong)](https://github.com/ShawnZhong).
+    [#3248](https://github.com/fmtlib/fmt/pull/3248)). Thanks @ShawnZhong.
 
 -   Improved Unicode support in the experimental file API on Windows
     ([#3234](https://github.com/fmtlib/fmt/issues/3234),
-    [#3293](https://github.com/fmtlib/fmt/pull/3293)). Thanks [\@Fros1er
-    (Froster)](https://github.com/Fros1er).
+    [#3293](https://github.com/fmtlib/fmt/pull/3293)). Thanks @Fros1er.
 
 -   Unified UTF transcoding
-    ([#3416](https://github.com/fmtlib/fmt/pull/3416)). Thanks [\@phprus
-    (Vladislav Shchapov)](https://github.com/phprus).
+    ([#3416](https://github.com/fmtlib/fmt/pull/3416)). Thanks @phprus.
 
 -   Added support for UTF-8 digit separators via an experimental locale
     facet ([#1861](https://github.com/fmtlib/fmt/issues/1861)). For
@@ -501,29 +441,24 @@
 
 -   Added an overload of `formatted_size` that takes a locale
     ([#3084](https://github.com/fmtlib/fmt/issues/3084),
-    [#3087](https://github.com/fmtlib/fmt/pull/3087)). Thanks
-    [\@gerboengels](https://github.com/gerboengels).
+    [#3087](https://github.com/fmtlib/fmt/pull/3087)). Thanks @gerboengels.
 
 -   Removed the deprecated `FMT_DEPRECATED_OSTREAM`.
 
 -   Fixed a UB when using a null `std::string_view` with
     `fmt::to_string` or format string compilation
     ([#3241](https://github.com/fmtlib/fmt/issues/3241),
-    [#3244](https://github.com/fmtlib/fmt/pull/3244)). Thanks [\@phprus
-    (Vladislav Shchapov)](https://github.com/phprus).
+    [#3244](https://github.com/fmtlib/fmt/pull/3244)). Thanks @phprus.
 
 -   Added `starts_with` to the fallback `string_view` implementation
-    ([#3080](https://github.com/fmtlib/fmt/pull/3080)). Thanks [\@phprus
-    (Vladislav Shchapov)](https://github.com/phprus).
+    ([#3080](https://github.com/fmtlib/fmt/pull/3080)). Thanks @phprus.
 
 -   Added `fmt::basic_format_string::get()` for compatibility with
     `basic_format_string`
-    ([#3111](https://github.com/fmtlib/fmt/pull/3111)). Thanks
-    [\@huangqinjin](https://github.com/huangqinjin).
+    ([#3111](https://github.com/fmtlib/fmt/pull/3111)). Thanks @huangqinjin.
 
 -   Added `println` for compatibility with C++23
-    ([#3267](https://github.com/fmtlib/fmt/pull/3267)). Thanks
-    [\@ShawnZhong (Shawn Zhong)](https://github.com/ShawnZhong).
+    ([#3267](https://github.com/fmtlib/fmt/pull/3267)). Thanks @ShawnZhong.
 
 -   Renamed the `FMT_EXPORT` macro for shared library usage to
     `FMT_LIB_EXPORT`.
@@ -532,9 +467,8 @@
     ([#3108](https://github.com/fmtlib/fmt/issues/3108),
     [#3169](https://github.com/fmtlib/fmt/issues/3169),
     [#3243](https://github.com/fmtlib/fmt/pull/3243)).
-    [#3404](https://github.com/fmtlib/fmt/pull/3404)). Thanks
-    [\@Cleroth](https://github.com/Cleroth) and
-    [\@Vertexwahn](https://github.com/Vertexwahn).
+    [#3404](https://github.com/fmtlib/fmt/pull/3404)).
+    Thanks @Cleroth and @Vertexwahn.
 
 -   Improved build configuration and tests
     ([#3118](https://github.com/fmtlib/fmt/pull/3118),
@@ -558,30 +492,18 @@
     [#3373](https://github.com/fmtlib/fmt/issues/3373),
     [#3395](https://github.com/fmtlib/fmt/pull/3395),
     [#3406](https://github.com/fmtlib/fmt/pull/3406),
-    [#3411](https://github.com/fmtlib/fmt/pull/3411)). Thanks
-    [\@dimztimz (Dimitrij Mijoski)](https://github.com/dimztimz),
-    [\@phprus (Vladislav Shchapov)](https://github.com/phprus),
-    [\@DavidKorczynski](https://github.com/DavidKorczynski),
-    [\@ChrisThrasher (Chris
-    Thrasher)](https://github.com/ChrisThrasher), [\@FrancoisCarouge
-    (François Carouge)](https://github.com/FrancoisCarouge),
-    [\@kennyweiss (Kenny Weiss)](https://github.com/kennyweiss),
-    [\@luzpaz](https://github.com/luzpaz), [\@codeinred (Alecto Irene
-    Perez)](https://github.com/codeinred), [\@Mixaill (Mikhail
-    Paulyshka)](https://github.com/Mixaill), [\@joycebrum
-    (Joyce)](https://github.com/joycebrum), [\@kevinhwang (Kevin
-    Hwang)](https://github.com/kevinhwang),
-    [\@Vertexwahn](https://github.com/Vertexwahn).
+    [#3411](https://github.com/fmtlib/fmt/pull/3411)).
+    Thanks @dimztimz, @phprus, @DavidKorczynski, @ChrisThrasher,
+    @FrancoisCarouge, @kennyweiss, @luzpaz, @codeinred, @Mixaill, @joycebrum,
+    @kevinhwang and @Vertexwahn.
 
 -   Fixed a regression in handling empty format specifiers after a colon
-    (`{:}`) ([#3086](https://github.com/fmtlib/fmt/pull/3086)). Thanks
-    [\@oxidase (Michael Krasnyk)](https://github.com/oxidase).
+    (`{:}`) ([#3086](https://github.com/fmtlib/fmt/pull/3086)). Thanks @oxidase.
 
 -   Worked around a broken implementation of
     `std::is_constant_evaluated` in some versions of libstdc++ on clang
     ([#3247](https://github.com/fmtlib/fmt/issues/3247),
-    [#3281](https://github.com/fmtlib/fmt/pull/3281)). Thanks [\@phprus
-    (Vladislav Shchapov)](https://github.com/phprus).
+    [#3281](https://github.com/fmtlib/fmt/pull/3281)). Thanks @phprus.
 
 -   Fixed formatting of volatile variables
     ([#3068](https://github.com/fmtlib/fmt/pull/3068)).
@@ -643,26 +565,11 @@
     [#3381](https://github.com/fmtlib/fmt/issues/3381),
     [#3398](https://github.com/fmtlib/fmt/pull/3398),
     [#3413](https://github.com/fmtlib/fmt/pull/3413),
-    [#3415](https://github.com/fmtlib/fmt/issues/3415)). Thanks
-    [\@phprus (Vladislav Shchapov)](https://github.com/phprus),
-    [\@gsjaardema (Greg Sjaardema)](https://github.com/gsjaardema),
-    [\@NewbieOrange](https://github.com/NewbieOrange), [\@EngineLessCC
-    (VivyaCC)](https://github.com/EngineLessCC), [\@asmaloney (Andy
-    Maloney)](https://github.com/asmaloney), [\@HazardyKnusperkeks
-    (Björn Schäpers)](https://github.com/HazardyKnusperkeks), [\@sergiud
-    (Sergiu Deitsch)](https://github.com/sergiud), [\@Youw (Ihor
-    Dutchak)](https://github.com/Youw),
-    [\@thesmurph](https://github.com/thesmurph), [\@czudziakm
-    (Maksymilian Czudziak)](https://github.com/czudziakm),
-    [\@Roman-Koshelev](https://github.com/Roman-Koshelev), [\@chronoxor
-    (Ivan Shynkarenka)](https://github.com/chronoxor), [\@ShawnZhong
-    (Shawn Zhong)](https://github.com/ShawnZhong), [\@russelltg (Russell
-    Greene)](https://github.com/russelltg), [\@glebm (Gleb
-    Mazovetskiy)](https://github.com/glebm),
-    [\@tmartin-gh](https://github.com/tmartin-gh), [\@Zhaojun-Liu (June
-    Liu)](https://github.com/Zhaojun-Liu), [\@louiswins (Louis
-    Wilson)](https://github.com/louiswins),
-    [\@mogemimi](https://github.com/mogemimi).
+    [#3415](https://github.com/fmtlib/fmt/issues/3415)).
+    Thanks @phprus, @gsjaardema, @NewbieOrange, @EngineLessCC, @asmaloney,
+    @HazardyKnusperkeks, @sergiud, @Youw, @thesmurph, @czudziakm,
+    @Roman-Koshelev, @chronoxor, @ShawnZhong, @russelltg, @glebm, @tmartin-gh,
+    @Zhaojun-Liu, @louiswins and @mogemimi.
 
 # 9.1.0 - 2022-08-27
 
@@ -680,29 +587,25 @@
     }
     ```
 
-    Thanks [\@marksantaniello (Mark
-    Santaniello)](https://github.com/marksantaniello).
+    Thanks @marksantaniello.
 
 -   Fixed handling of invalid UTF-8
     ([#3038](https://github.com/fmtlib/fmt/pull/3038),
     [#3044](https://github.com/fmtlib/fmt/pull/3044),
-    [#3056](https://github.com/fmtlib/fmt/pull/3056)). Thanks [\@phprus
-    (Vladislav Shchapov)](https://github.com/phprus) and [\@skeeto
-    (Christopher Wellons)](https://github.com/skeeto).
+    [#3056](https://github.com/fmtlib/fmt/pull/3056)).
+    Thanks @phprus and @skeeto.
 
 -   Improved Unicode support in `ostream` overloads of `print`
     ([#2994](https://github.com/fmtlib/fmt/pull/2994),
     [#3001](https://github.com/fmtlib/fmt/pull/3001),
-    [#3025](https://github.com/fmtlib/fmt/pull/3025)). Thanks
-    [\@dimztimz (Dimitrij Mijoski)](https://github.com/dimztimz).
+    [#3025](https://github.com/fmtlib/fmt/pull/3025)). Thanks @dimztimz.
 
 -   Fixed handling of the sign specifier in localized formatting on
     systems with 32-bit `wchar_t`
     ([#3041](https://github.com/fmtlib/fmt/issues/3041)).
 
 -   Added support for wide streams to `fmt::streamed`
-    ([#2994](https://github.com/fmtlib/fmt/pull/2994)). Thanks [\@phprus
-    (Vladislav Shchapov)](https://github.com/phprus).
+    ([#2994](https://github.com/fmtlib/fmt/pull/2994)). Thanks @phprus.
 
 -   Added the `n` specifier that disables the output of delimiters when
     formatting ranges ([#2981](https://github.com/fmtlib/fmt/pull/2981),
@@ -719,18 +622,15 @@
     }
     ```
 
-    Thanks [\@BRevzin (Barry Revzin)](https://github.com/BRevzin).
+    Thanks @BRevzin.
 
 -   Worked around problematic `std::string_view` constructors introduced
     in C++23 ([#3030](https://github.com/fmtlib/fmt/issues/3030),
-    [#3050](https://github.com/fmtlib/fmt/issues/3050)). Thanks
-    [\@strega-nil-ms (nicole
-    mazzuca)](https://github.com/strega-nil-ms).
+    [#3050](https://github.com/fmtlib/fmt/issues/3050)). Thanks @strega-nil-ms.
 
 -   Improve handling (exclusion) of recursive ranges
     ([#2968](https://github.com/fmtlib/fmt/issues/2968),
-    [#2974](https://github.com/fmtlib/fmt/pull/2974)). Thanks
-    [\@Dani-Hub (Daniel Krügler)](https://github.com/Dani-Hub).
+    [#2974](https://github.com/fmtlib/fmt/pull/2974)). Thanks @Dani-Hub.
 
 -   Improved error reporting in format string compilation
     ([#3055](https://github.com/fmtlib/fmt/issues/3055)).
@@ -738,32 +638,27 @@
 -   Improved the implementation of
     [Dragonbox](https://github.com/jk-jeon/dragonbox), the algorithm
     used for the default floating-point formatting
-    ([#2984](https://github.com/fmtlib/fmt/pull/2984)). Thanks
-    [\@jk-jeon (Junekey Jeon)](https://github.com/jk-jeon).
+    ([#2984](https://github.com/fmtlib/fmt/pull/2984)). Thanks @jk-jeon.
 
 -   Fixed issues with floating-point formatting on exotic platforms.
 
 -   Improved the implementation of chrono formatting
-    ([#3010](https://github.com/fmtlib/fmt/pull/3010)). Thanks [\@phprus
-    (Vladislav Shchapov)](https://github.com/phprus).
+    ([#3010](https://github.com/fmtlib/fmt/pull/3010)). Thanks @phprus.
 
 -   Improved documentation
     ([#2966](https://github.com/fmtlib/fmt/pull/2966),
     [#3009](https://github.com/fmtlib/fmt/pull/3009),
     [#3020](https://github.com/fmtlib/fmt/issues/3020),
-    [#3037](https://github.com/fmtlib/fmt/pull/3037)). Thanks
-    [\@mwinterb](https://github.com/mwinterb), [\@jcelerier
-    (Jean-Michaël Celerier)](https://github.com/jcelerier) and
-    [\@remiburtin (Rémi Burtin)](https://github.com/remiburtin).
+    [#3037](https://github.com/fmtlib/fmt/pull/3037)).
+    Thanks @mwinterb, @jcelerier and @remiburtin.
 
 -   Improved build configuration
     ([#2991](https://github.com/fmtlib/fmt/pull/2991),
     [#2995](https://github.com/fmtlib/fmt/pull/2995),
     [#3004](https://github.com/fmtlib/fmt/issues/3004),
     [#3007](https://github.com/fmtlib/fmt/pull/3007),
-    [#3040](https://github.com/fmtlib/fmt/pull/3040)). Thanks
-    [\@dimztimz (Dimitrij Mijoski)](https://github.com/dimztimz) and
-    [\@hwhsu1231 (Haowei Hsu)](https://github.com/hwhsu1231).
+    [#3040](https://github.com/fmtlib/fmt/pull/3040)).
+    Thanks @dimztimz and @hwhsu1231.
 
 -   Fixed various warnings and compilation issues
     ([#2969](https://github.com/fmtlib/fmt/issues/2969),
@@ -784,13 +679,8 @@
     [#3043](https://github.com/fmtlib/fmt/pull/3043),
     [#3052](https://github.com/fmtlib/fmt/issues/3052),
     [#3053](https://github.com/fmtlib/fmt/pull/3053),
-    [#3054](https://github.com/fmtlib/fmt/pull/3054)). Thanks
-    [\@h-friederich (Hannes
-    Friederich)](https://github.com/h-friederich), [\@dimztimz (Dimitrij
-    Mijoski)](https://github.com/dimztimz), [\@olupton (Olli
-    Lupton)](https://github.com/olupton), [\@bernhardmgruber (Bernhard
-    Manfred Gruber)](https://github.com/bernhardmgruber), [\@phprus
-    (Vladislav Shchapov)](https://github.com/phprus).
+    [#3054](https://github.com/fmtlib/fmt/pull/3054)).
+    Thanks @h-friederich, @dimztimz, @olupton, @bernhardmgruber and @phprus.
 
 # 9.0.0 - 2022-07-04
 
@@ -822,8 +712,7 @@
     [Dragonbox](https://github.com/jk-jeon/dragonbox), the algorithm
     used for the default floating-point formatting
     ([#2713](https://github.com/fmtlib/fmt/pull/2713),
-    [#2750](https://github.com/fmtlib/fmt/pull/2750)). Thanks [\@jk-jeon
-    (Junekey Jeon)](https://github.com/jk-jeon).
+    [#2750](https://github.com/fmtlib/fmt/pull/2750)). Thanks @jk-jeon.
 
 -   Made `fmt::to_string` work with `__float128`. This uses the internal
     FP formatter and works even on system without `__float128` support
@@ -899,7 +788,7 @@
 
         variant(42)
 
-    Thanks [\@jehelset](https://github.com/jehelset).
+    Thanks @jehelset.
 
 -   Added experimental `std::filesystem::path` formatting support
     ([#2865](https://github.com/fmtlib/fmt/issues/2865),
@@ -921,7 +810,7 @@
 
         There is no place like "/home".
 
-    Thanks [\@phprus (Vladislav Shchapov)](https://github.com/phprus).
+    Thanks @phprus.
 
 -   Added a `std::thread::id` formatter to `fmt/std.h`. For example
     ([godbolt](https://godbolt.org/z/j1azbYf3E)):
@@ -957,12 +846,11 @@
 
     ![image](https://user-images.githubusercontent.com/576385/175071215-12809244-dab0-4005-96d8-7cd911c964d5.png)
 
-    Thanks [\@rbrugo (Riccardo Brugo)](https://github.com/rbrugo).
+    Thanks @rbrugo.
 
 -   Made `fmt::print` overload for text styles correctly handle UTF-8
     ([#2681](https://github.com/fmtlib/fmt/issues/2681),
-    [#2701](https://github.com/fmtlib/fmt/pull/2701)). Thanks
-    [\@AlexGuteniev (Alex Guteniev)](https://github.com/AlexGuteniev).
+    [#2701](https://github.com/fmtlib/fmt/pull/2701)). Thanks @AlexGuteniev.
 
 -   Fixed Unicode handling when writing to an ostream.
 
@@ -981,46 +869,38 @@
 
     prints `[0xa, 0x14, 0x1e]`.
 
-    Thanks [\@BRevzin (Barry Revzin)](https://github.com/BRevzin).
+    Thanks @BRevzin.
 
 -   Implemented escaping of wide strings in ranges
-    ([#2904](https://github.com/fmtlib/fmt/pull/2904)). Thanks [\@phprus
-    (Vladislav Shchapov)](https://github.com/phprus).
+    ([#2904](https://github.com/fmtlib/fmt/pull/2904)). Thanks @phprus.
 
 -   Added support for ranges with `begin` / `end` found via the
     argument-dependent lookup
-    ([#2807](https://github.com/fmtlib/fmt/pull/2807)). Thanks [\@rbrugo
-    (Riccardo Brugo)](https://github.com/rbrugo).
+    ([#2807](https://github.com/fmtlib/fmt/pull/2807)). Thanks @rbrugo.
 
 -   Fixed formatting of certain kinds of ranges of ranges
-    ([#2787](https://github.com/fmtlib/fmt/pull/2787)). Thanks
-    [\@BRevzin (Barry Revzin)](https://github.com/BRevzin).
+    ([#2787](https://github.com/fmtlib/fmt/pull/2787)). Thanks @BRevzin.
 
 -   Fixed handling of maps with element types other than `std::pair`
-    ([#2944](https://github.com/fmtlib/fmt/pull/2944)). Thanks
-    [\@BrukerJWD (Jonathan W)](https://github.com/BrukerJWD).
+    ([#2944](https://github.com/fmtlib/fmt/pull/2944)). Thanks @BrukerJWD.
 
 -   Made tuple formatter enabled only if elements are formattable
     ([#2939](https://github.com/fmtlib/fmt/issues/2939),
-    [#2940](https://github.com/fmtlib/fmt/pull/2940)). Thanks
-    [\@jehelset](https://github.com/jehelset).
+    [#2940](https://github.com/fmtlib/fmt/pull/2940)). Thanks @jehelset.
 
 -   Made `fmt::join` compatible with format string compilation
     ([#2719](https://github.com/fmtlib/fmt/issues/2719),
-    [#2720](https://github.com/fmtlib/fmt/pull/2720)). Thanks [\@phprus
-    (Vladislav Shchapov)](https://github.com/phprus).
+    [#2720](https://github.com/fmtlib/fmt/pull/2720)). Thanks @phprus.
 
 -   Made compile-time checks work with named arguments of custom types
     and `std::ostream` `print` overloads
     ([#2816](https://github.com/fmtlib/fmt/issues/2816),
     [#2817](https://github.com/fmtlib/fmt/issues/2817),
-    [#2819](https://github.com/fmtlib/fmt/pull/2819)). Thanks
-    [\@timsong-cpp](https://github.com/timsong-cpp).
+    [#2819](https://github.com/fmtlib/fmt/pull/2819)). Thanks @timsong-cpp.
 
 -   Removed `make_args_checked` because it is no longer needed for
     compile-time checks
-    ([#2760](https://github.com/fmtlib/fmt/pull/2760)). Thanks [\@phprus
-    (Vladislav Shchapov)](https://github.com/phprus).
+    ([#2760](https://github.com/fmtlib/fmt/pull/2760)). Thanks @phprus.
 
 -   Removed the following deprecated APIs: `_format`, `arg_join`, the
     `format_to` overload that takes a memory buffer, `[v]fprintf` that
@@ -1039,13 +919,11 @@
 
 -   Made access mode of a created file consistent with `fopen` by
     setting `S_IWGRP` and `S_IWOTH`
-    ([#2733](https://github.com/fmtlib/fmt/pull/2733)). Thanks [\@arogge
-    (Andreas Rogge)](https://github.com/arogge).
+    ([#2733](https://github.com/fmtlib/fmt/pull/2733)). Thanks @arogge.
 
 -   Removed a redundant buffer resize when formatting to `std::ostream`
     ([#2842](https://github.com/fmtlib/fmt/issues/2842),
-    [#2843](https://github.com/fmtlib/fmt/pull/2843)). Thanks
-    [\@jcelerier (Jean-Michaël Celerier)](https://github.com/jcelerier).
+    [#2843](https://github.com/fmtlib/fmt/pull/2843)). Thanks @jcelerier.
 
 -   Made precision computation for strings consistent with width
     ([#2888](https://github.com/fmtlib/fmt/issues/2888)).
@@ -1057,9 +935,8 @@
     ([#2773](https://github.com/fmtlib/fmt/issues/2773)).
 
 -   Improved support for systems such as CHERI with extra data stored in
-    pointers ([#2932](https://github.com/fmtlib/fmt/pull/2932)). Thanks
-    [\@davidchisnall (David
-    Chisnall)](https://github.com/davidchisnall).
+    pointers ([#2932](https://github.com/fmtlib/fmt/pull/2932)).
+    Thanks @davidchisnall.
 
 -   Improved documentation
     ([#2706](https://github.com/fmtlib/fmt/pull/2706),
@@ -1068,14 +945,9 @@
     [#2803](https://github.com/fmtlib/fmt/pull/2803),
     [#2805](https://github.com/fmtlib/fmt/pull/2805),
     [#2815](https://github.com/fmtlib/fmt/pull/2815),
-    [#2924](https://github.com/fmtlib/fmt/pull/2924)). Thanks [\@BRevzin
-    (Barry Revzin)](https://github.com/BRevzin),
-    [\@Pokechu22](https://github.com/Pokechu22), [\@setoye
-    (Alta)](https://github.com/setoye),
-    [\@rtobar](https://github.com/rtobar), [\@rbrugo (Riccardo
-    Brugo)](https://github.com/rbrugo), [\@anoonD
-    (cre)](https://github.com/anoonD), [\@leha-bot
-    (Alex)](https://github.com/leha-bot).
+    [#2924](https://github.com/fmtlib/fmt/pull/2924)).
+    Thanks @BRevzin, @Pokechu22, @setoye, @rtobar, @rbrugo, @anoonD and
+    @leha-bot.
 
 -   Improved build configuration
     ([#2766](https://github.com/fmtlib/fmt/pull/2766),
@@ -1084,14 +956,9 @@
     [#2852](https://github.com/fmtlib/fmt/pull/2852),
     [#2907](https://github.com/fmtlib/fmt/pull/2907),
     [#2913](https://github.com/fmtlib/fmt/pull/2913),
-    [#2914](https://github.com/fmtlib/fmt/pull/2914)). Thanks
-    [\@kambala-decapitator (Andrey
-    Filipenkov)](https://github.com/kambala-decapitator),
-    [\@mattiasljungstrom (Mattias
-    Ljungström)](https://github.com/mattiasljungstrom), [\@kieselnb
-    (Nick Kiesel)](https://github.com/kieselnb),
-    [\@nathannaveen](https://github.com/nathannaveen),
-    [\@Vertexwahn](https://github.com/Vertexwahn).
+    [#2914](https://github.com/fmtlib/fmt/pull/2914)).
+    Thanks @kambala-decapitator, @mattiasljungstrom, @kieselnb, @nathannaveen
+    and @Vertexwahn.
 
 -   Fixed various warnings and compilation issues
     ([#2408](https://github.com/fmtlib/fmt/issues/2408),
@@ -1159,44 +1026,24 @@
     [#2954](https://github.com/fmtlib/fmt/issues/2954),
     [#2957](https://github.com/fmtlib/fmt/pull/2957),
     [#2958](https://github.com/fmtlib/fmt/issues/2958),
-    [#2960](https://github.com/fmtlib/fmt/pull/2960)). Thanks
-    [\@matrackif](https://github.com/matrackif) [\@Tobi823 (Tobias
-    Hellmann)](https://github.com/Tobi823), [\@ivan-volnov (Ivan
-    Volnov)](https://github.com/ivan-volnov),
-    [\@VasiliPupkin256](https://github.com/VasiliPupkin256),
-    [\@federico-busato (Federico)](https://github.com/federico-busato),
-    [\@barcharcraz (Charlie Barto)](https://github.com/barcharcraz),
-    [\@jk-jeon (Junekey Jeon)](https://github.com/jk-jeon),
-    [\@HazardyKnusperkeks (Björn
-    Schäpers)](https://github.com/HazardyKnusperkeks), [\@dalboris
-    (Boris Dalstein)](https://github.com/dalboris), [\@seanm (Sean
-    McBride)](https://github.com/seanm), [\@gsjaardema (Greg
-    Sjaardema)](https://github.com/gsjaardema),
-    [\@timsong-cpp](https://github.com/timsong-cpp), [\@seanm (Sean
-    McBride)](https://github.com/seanm),
-    [\@frithrah](https://github.com/frithrah), [\@chronoxor (Ivan
-    Shynkarenka)](https://github.com/chronoxor),
-    [\@Agga](https://github.com/Agga), [\@madmaxoft (Mattes
-    D)](https://github.com/madmaxoft), [\@JurajX
-    (Juraj)](https://github.com/JurajX), [\@phprus (Vladislav
-    Shchapov)](https://github.com/phprus), [\@Dani-Hub (Daniel
-    Krügler)](https://github.com/Dani-Hub).
+    [#2960](https://github.com/fmtlib/fmt/pull/2960)).
+    Thanks @matrackif @Tobi823, @ivan-volnov, @VasiliPupkin256,
+    @federico-busato, @barcharcraz, @jk-jeon, @HazardyKnusperkeks, @dalboris,
+    @seanm, @gsjaardema, @timsong-cpp, @seanm, @frithrah, @chronoxor, @Agga,
+    @madmaxoft, @JurajX, @phprus and @Dani-Hub.
 
 # 8.1.1 - 2022-01-06
 
 -   Restored ABI compatibility with version 8.0.x
     ([#2695](https://github.com/fmtlib/fmt/issues/2695),
-    [#2696](https://github.com/fmtlib/fmt/pull/2696)). Thanks
-    [\@saraedum (Julian Rüth)](https://github.com/saraedum).
+    [#2696](https://github.com/fmtlib/fmt/pull/2696)). Thanks @saraedum.
 -   Fixed chrono formatting on big endian systems
     ([#2698](https://github.com/fmtlib/fmt/issues/2698),
-    [#2699](https://github.com/fmtlib/fmt/pull/2699)). Thanks [\@phprus
-    (Vladislav Shchapov)](https://github.com/phprus) and [\@xvitaly
-    (Vitaly Zaitsev)](https://github.com/xvitaly).
+    [#2699](https://github.com/fmtlib/fmt/pull/2699)).
+    Thanks @phprus and @xvitaly.
 -   Fixed a linkage error with mingw
     ([#2691](https://github.com/fmtlib/fmt/issues/2691),
-    [#2692](https://github.com/fmtlib/fmt/pull/2692)). Thanks
-    [\@rbberger (Richard Berger)](https://github.com/rbberger).
+    [#2692](https://github.com/fmtlib/fmt/pull/2692)). Thanks @rbberger.
 
 # 8.1.0 - 2022-01-02
 
@@ -1231,9 +1078,7 @@
         FMTFormatterCompile_Y                      244 ns             10.5 ns
         ----------------------------------------------------------------------------
 
-    Thanks [\@phprus (Vladislav Shchapov)](https://github.com/phprus)
-    and [\@toughengineer (Pavel
-    Novikov)](https://github.com/toughengineer).
+    Thanks @phprus and @toughengineer.
 
 -   Implemented subsecond formatting for chrono durations
     ([#2623](https://github.com/fmtlib/fmt/pull/2623)). For example
@@ -1249,16 +1094,14 @@
 
     prints \"01.234\".
 
-    Thanks [\@matrackif](https://github.com/matrackif).
+    Thanks @matrackif.
 
 -   Fixed handling of precision 0 when formatting chrono durations
     ([#2587](https://github.com/fmtlib/fmt/issues/2587),
-    [#2588](https://github.com/fmtlib/fmt/pull/2588)). Thanks
-    [\@lukester1975](https://github.com/lukester1975).
+    [#2588](https://github.com/fmtlib/fmt/pull/2588)). Thanks @lukester1975.
 
 -   Fixed an overflow on invalid inputs in the `tm` formatter
-    ([#2564](https://github.com/fmtlib/fmt/pull/2564)). Thanks [\@phprus
-    (Vladislav Shchapov)](https://github.com/phprus).
+    ([#2564](https://github.com/fmtlib/fmt/pull/2564)). Thanks @phprus.
 
 -   Added `fmt::group_digits` that formats integers with a non-localized
     digit separator (comma) for groups of three digits. For example
@@ -1279,14 +1122,12 @@
 
     <https://user-images.githubusercontent.com/576385/147710227-c68f5317-f8fa-42c3-9123-7c4ba3c398cb.mp4>
 
-    Thanks [\@benit8 (Benoît Lormeau)](https://github.com/benit8) and
-    [\@data-man (Dmitry Atamanov)](https://github.com/data-man).
+    Thanks @benit8 and @data-man.
 
 -   Added experimental support for compile-time floating point
     formatting ([#2426](https://github.com/fmtlib/fmt/pull/2426),
     [#2470](https://github.com/fmtlib/fmt/pull/2470)). It is currently
-    limited to the header-only mode. Thanks [\@alexezeder (Alexey
-    Ochapov)](https://github.com/alexezeder).
+    limited to the header-only mode. Thanks @alexezeder.
 
 -   Added UDL-based named argument support to compile-time format string
     checks ([#2640](https://github.com/fmtlib/fmt/issues/2640),
@@ -1306,8 +1147,7 @@
     non-type template parameter support (gcc 10+) because `s` is not a
     valid format specifier for an integer.
 
-    Thanks [\@alexezeder (Alexey
-    Ochapov)](https://github.com/alexezeder).
+    Thanks @alexezeder.
 
 -   Implemented escaping of string range elements. For example
     ([godbolt](https://godbolt.org/z/rKvM1vKf3)):
@@ -1331,8 +1171,7 @@
         aan"]
 
 -   Added an experimental `?` specifier for escaping strings.
-    ([#2674](https://github.com/fmtlib/fmt/pull/2674)). Thanks
-    [\@BRevzin (Barry Revzin)](https://github.com/BRevzin).
+    ([#2674](https://github.com/fmtlib/fmt/pull/2674)). Thanks @BRevzin.
 
 -   Switched to JSON-like representation of maps and sets for
     consistency with Python\'s `str.format`. For example
@@ -1352,8 +1191,7 @@
         {"answer": 42}
 
 -   Extended `fmt::join` to support C++20-only ranges
-    ([#2549](https://github.com/fmtlib/fmt/pull/2549)). Thanks
-    [\@BRevzin (Barry Revzin)](https://github.com/BRevzin).
+    ([#2549](https://github.com/fmtlib/fmt/pull/2549)). Thanks @BRevzin.
 
 -   Optimized handling of non-const-iterable ranges and implemented
     initial support for non-const-formattable types.
@@ -1366,57 +1204,47 @@
     `[const] unsigned char*` to C strings.
 
 -   Deprecated `_format`, a legacy UDL-based format API
-    ([#2646](https://github.com/fmtlib/fmt/pull/2646)). Thanks
-    [\@alexezeder (Alexey Ochapov)](https://github.com/alexezeder).
+    ([#2646](https://github.com/fmtlib/fmt/pull/2646)). Thanks @alexezeder.
 
 -   Marked `format`, `formatted_size` and `to_string` as `[[nodiscard]]`
-    ([#2612](https://github.com/fmtlib/fmt/pull/2612)). [\@0x8000-0000
-    (Florin Iucha)](https://github.com/0x8000-0000).
+    ([#2612](https://github.com/fmtlib/fmt/pull/2612)). @0x8000-0000.
 
 -   Added missing diagnostic when trying to format function and member
     pointers as well as objects convertible to pointers which is
     explicitly disallowed
     ([#2598](https://github.com/fmtlib/fmt/issues/2598),
     [#2609](https://github.com/fmtlib/fmt/pull/2609),
-    [#2610](https://github.com/fmtlib/fmt/pull/2610)). Thanks
-    [\@AlexGuteniev (Alex Guteniev)](https://github.com/AlexGuteniev).
+    [#2610](https://github.com/fmtlib/fmt/pull/2610)). Thanks @AlexGuteniev.
 
 -   Optimized writing to a contiguous buffer with `format_to_n`
-    ([#2489](https://github.com/fmtlib/fmt/pull/2489)). Thanks
-    [\@Roman-Koshelev](https://github.com/Roman-Koshelev).
+    ([#2489](https://github.com/fmtlib/fmt/pull/2489)). Thanks @Roman-Koshelev.
 
 -   Optimized writing to non-`char` buffers
-    ([#2477](https://github.com/fmtlib/fmt/pull/2477)). Thanks
-    [\@Roman-Koshelev](https://github.com/Roman-Koshelev).
+    ([#2477](https://github.com/fmtlib/fmt/pull/2477)). Thanks @Roman-Koshelev.
 
 -   Decimal point is now localized when using the `L` specifier.
 
 -   Improved floating point formatter implementation
     ([#2498](https://github.com/fmtlib/fmt/pull/2498),
-    [#2499](https://github.com/fmtlib/fmt/pull/2499)). Thanks
-    [\@Roman-Koshelev](https://github.com/Roman-Koshelev).
+    [#2499](https://github.com/fmtlib/fmt/pull/2499)). Thanks @Roman-Koshelev.
 
 -   Fixed handling of very large precision in fixed format
     ([#2616](https://github.com/fmtlib/fmt/pull/2616)).
 
 -   Made a table of cached powers used in FP formatting static
-    ([#2509](https://github.com/fmtlib/fmt/pull/2509)). Thanks
-    [\@jk-jeon (Junekey Jeon)](https://github.com/jk-jeon).
+    ([#2509](https://github.com/fmtlib/fmt/pull/2509)). Thanks @jk-jeon.
 
 -   Resolved a lookup ambiguity with C++20 format-related functions due
     to ADL ([#2639](https://github.com/fmtlib/fmt/issues/2639),
-    [#2641](https://github.com/fmtlib/fmt/pull/2641)). Thanks [\@mkurdej
-    (Marek Kurdej)](https://github.com/mkurdej).
+    [#2641](https://github.com/fmtlib/fmt/pull/2641)). Thanks @mkurdej.
 
 -   Removed unnecessary inline namespace qualification
     ([#2642](https://github.com/fmtlib/fmt/issues/2642),
-    [#2643](https://github.com/fmtlib/fmt/pull/2643)). Thanks [\@mkurdej
-    (Marek Kurdej)](https://github.com/mkurdej).
+    [#2643](https://github.com/fmtlib/fmt/pull/2643)). Thanks @mkurdej.
 
 -   Implemented argument forwarding in `format_to_n`
     ([#2462](https://github.com/fmtlib/fmt/issues/2462),
-    [#2463](https://github.com/fmtlib/fmt/pull/2463)). Thanks [\@owent
-    (WenTao Ou)](https://github.com/owent).
+    [#2463](https://github.com/fmtlib/fmt/pull/2463)). Thanks @owent.
 
 -   Fixed handling of implicit conversions in `fmt::to_string` and
     format string compilation
@@ -1430,12 +1258,10 @@
     ([#2435](https://github.com/fmtlib/fmt/issues/2435)).
 
 -   Improved C++14/17 attribute detection
-    ([#2615](https://github.com/fmtlib/fmt/pull/2615)). Thanks
-    [\@AlexGuteniev (Alex Guteniev)](https://github.com/AlexGuteniev).
+    ([#2615](https://github.com/fmtlib/fmt/pull/2615)). Thanks @AlexGuteniev.
 
 -   Improved `consteval` detection for MSVC
-    ([#2559](https://github.com/fmtlib/fmt/pull/2559)). Thanks
-    [\@DanielaE (Daniela Engert)](https://github.com/DanielaE).
+    ([#2559](https://github.com/fmtlib/fmt/pull/2559)). Thanks @DanielaE.
 
 -   Improved documentation
     ([#2406](https://github.com/fmtlib/fmt/issues/2406),
@@ -1448,29 +1274,21 @@
     [#2575](https://github.com/fmtlib/fmt/pull/2575),
     [#2606](https://github.com/fmtlib/fmt/pull/2606),
     [#2620](https://github.com/fmtlib/fmt/pull/2620),
-    [#2676](https://github.com/fmtlib/fmt/issues/2676)). Thanks
-    [\@sobolevn (Nikita Sobolev)](https://github.com/sobolevn),
-    [\@UnePierre (Max FERGER)](https://github.com/UnePierre),
-    [\@zhsj](https://github.com/zhsj), [\@phprus (Vladislav
-    Shchapov)](https://github.com/phprus), [\@ericcurtin (Eric
-    Curtin)](https://github.com/ericcurtin),
-    [\@Lounarok](https://github.com/Lounarok).
+    [#2676](https://github.com/fmtlib/fmt/issues/2676)).
+    Thanks @sobolevn, @UnePierre, @zhsj, @phprus, @ericcurtin and @Lounarok.
 
 -   Improved fuzzers and added a fuzzer for chrono timepoint formatting
     ([#2461](https://github.com/fmtlib/fmt/pull/2461),
-    [#2469](https://github.com/fmtlib/fmt/pull/2469)). [\@pauldreik
-    (Paul Dreik)](https://github.com/pauldreik),
+    [#2469](https://github.com/fmtlib/fmt/pull/2469)). @pauldreik,
 
 -   Added the `FMT_SYSTEM_HEADERS` CMake option setting which marks
     {fmt}\'s headers as system. It can be used to suppress warnings
     ([#2644](https://github.com/fmtlib/fmt/issues/2644),
-    [#2651](https://github.com/fmtlib/fmt/pull/2651)). Thanks
-    [\@alexezeder (Alexey Ochapov)](https://github.com/alexezeder).
+    [#2651](https://github.com/fmtlib/fmt/pull/2651)). Thanks @alexezeder.
 
 -   Added the Bazel build system support
     ([#2505](https://github.com/fmtlib/fmt/pull/2505),
-    [#2516](https://github.com/fmtlib/fmt/pull/2516)). Thanks
-    [\@Vertexwahn](https://github.com/Vertexwahn).
+    [#2516](https://github.com/fmtlib/fmt/pull/2516)). Thanks @Vertexwahn.
 
 -   Improved build configuration and tests
     ([#2437](https://github.com/fmtlib/fmt/issues/2437),
@@ -1478,10 +1296,8 @@
     [#2648](https://github.com/fmtlib/fmt/pull/2648),
     [#2650](https://github.com/fmtlib/fmt/pull/2650),
     [#2663](https://github.com/fmtlib/fmt/pull/2663),
-    [#2677](https://github.com/fmtlib/fmt/pull/2677)). Thanks
-    [\@DanielaE (Daniela Engert)](https://github.com/DanielaE),
-    [\@alexezeder (Alexey Ochapov)](https://github.com/alexezeder),
-    [\@phprus (Vladislav Shchapov)](https://github.com/phprus).
+    [#2677](https://github.com/fmtlib/fmt/pull/2677)).
+    Thanks @DanielaE, @alexezeder and @phprus.
 
 -   Fixed various warnings and compilation issues
     ([#2353](https://github.com/fmtlib/fmt/pull/2353),
@@ -1531,32 +1347,12 @@
     [#2654](https://github.com/fmtlib/fmt/issues/2654),
     [#2661](https://github.com/fmtlib/fmt/issues/2661),
     [#2664](https://github.com/fmtlib/fmt/pull/2664),
-    [#2684](https://github.com/fmtlib/fmt/pull/2684)). Thanks
-    [\@DanielaE (Daniela Engert)](https://github.com/DanielaE),
-    [\@mwinterb](https://github.com/mwinterb), [\@cdacamar (Cameron
-    DaCamara)](https://github.com/cdacamar), [\@TrebledJ
-    (Johnathan)](https://github.com/TrebledJ), [\@bodomartin
-    (brm)](https://github.com/bodomartin), [\@cquammen (Cory
-    Quammen)](https://github.com/cquammen), [\@white238 (Chris
-    White)](https://github.com/white238), [\@mmarkeloff
-    (Max)](https://github.com/mmarkeloff), [\@palacaze (Pierre-Antoine
-    Lacaze)](https://github.com/palacaze), [\@jcelerier (Jean-Michaël
-    Celerier)](https://github.com/jcelerier), [\@mborn-adi (Mathias
-    Born)](https://github.com/mborn-adi), [\@BrukerJWD (Jonathan
-    W)](https://github.com/BrukerJWD), [\@spyridon97 (Spiros
-    Tsalikis)](https://github.com/spyridon97), [\@phprus (Vladislav
-    Shchapov)](https://github.com/phprus), [\@oliverlee (Oliver
-    Lee)](https://github.com/oliverlee), [\@joshessman-llnl (Josh
-    Essman)](https://github.com/joshessman-llnl), [\@akohlmey (Axel
-    Kohlmeyer)](https://github.com/akohlmey),
-    [\@timkalu](https://github.com/timkalu), [\@olupton (Olli
-    Lupton)](https://github.com/olupton),
-    [\@Acretock](https://github.com/Acretock), [\@alexezeder (Alexey
-    Ochapov)](https://github.com/alexezeder), [\@andrewcorrigan (Andrew
-    Corrigan)](https://github.com/andrewcorrigan),
-    [\@lucpelletier](https://github.com/lucpelletier),
-    [\@HazardyKnusperkeks (Björn
-    Schäpers)](https://github.com/HazardyKnusperkeks).
+    [#2684](https://github.com/fmtlib/fmt/pull/2684)).
+    Thanks @DanielaE, @mwinterb, @cdacamar, @TrebledJ, @bodomartin, @cquammen,
+    @white238, @mmarkeloff, @palacaze, @jcelerier, @mborn-adi, @BrukerJWD,
+    @spyridon97, @phprus, @oliverlee, @joshessman-llnl, @akohlmey, @timkalu,
+    @olupton, @Acretock, @alexezeder, @andrewcorrigan, @lucpelletier and
+    @HazardyKnusperkeks.
 
 # 8.0.1 - 2021-07-02
 
@@ -1569,12 +1365,9 @@
 -   Fixed documentation issues
     ([#2396](https://github.com/fmtlib/fmt/pull/2396),
     [#2403](https://github.com/fmtlib/fmt/issues/2403),
-    [#2406](https://github.com/fmtlib/fmt/issues/2406)). Thanks
-    [\@mkurdej (Marek Kurdej)](https://github.com/mkurdej).
+    [#2406](https://github.com/fmtlib/fmt/issues/2406)). Thanks @mkurdej.
 -   Removed dead code in FP formatter (
-    [#2398](https://github.com/fmtlib/fmt/pull/2398)). Thanks
-    [\@javierhonduco (Javier Honduvilla
-    Coto)](https://github.com/javierhonduco).
+    [#2398](https://github.com/fmtlib/fmt/pull/2398)). Thanks @javierhonduco.
 -   Fixed various warnings and compilation issues
     ([#2351](https://github.com/fmtlib/fmt/issues/2351),
     [#2359](https://github.com/fmtlib/fmt/issues/2359),
@@ -1590,15 +1383,9 @@
     [#2397](https://github.com/fmtlib/fmt/pull/2397),
     [#2400](https://github.com/fmtlib/fmt/issues/2400),
     [#2401](https://github.com/fmtlib/fmt/issues/2401),
-    [#2407](https://github.com/fmtlib/fmt/pull/2407)). Thanks [\@zx2c4
-    (Jason A. Donenfeld)](https://github.com/zx2c4), [\@AidanSun05
-    (Aidan Sun)](https://github.com/AidanSun05), [\@mattiasljungstrom
-    (Mattias Ljungström)](https://github.com/mattiasljungstrom),
-    [\@joemmett (Jonathan Emmett)](https://github.com/joemmett),
-    [\@erengy (Eren Okka)](https://github.com/erengy), [\@patlkli
-    (Patrick Geltinger)](https://github.com/patlkli), [\@gsjaardema
-    (Greg Sjaardema)](https://github.com/gsjaardema), [\@phprus
-    (Vladislav Shchapov)](https://github.com/phprus).
+    [#2407](https://github.com/fmtlib/fmt/pull/2407)).
+    Thanks @zx2c4, @AidanSun05, @mattiasljungstrom, @joemmett, @erengy,
+    @patlkli, @gsjaardema and @phprus.
 
 # 8.0.0 - 2021-06-21
 
@@ -1648,8 +1435,7 @@
 
     Most of the formatting functionality is available at compile time
     with a notable exception of floating-point numbers and pointers.
-    Thanks [\@alexezeder (Alexey
-    Ochapov)](https://github.com/alexezeder).
+    Thanks @alexezeder.
 
 -   Optimized handling of format specifiers during format string
     compilation. For example, hexadecimal formatting (`"{:x}"`) is now
@@ -1709,8 +1495,8 @@
     ```
 
     It requires compiler support for class types in non-type template
-    parameters (a C++20 feature) which is available in GCC 9.3+. Thanks
-    [\@alexezeder (Alexey Ochapov)](https://github.com/alexezeder).
+    parameters (a C++20 feature) which is available in GCC 9.3+.
+    Thanks @alexezeder.
 
 -   Format string compilation now requires `format` functions of
     `formatter` specializations for user-defined types to be `const`:
@@ -1736,13 +1522,11 @@
     ```
 
     Here the argument named \"answer\" is resolved at compile time with
-    no runtime overhead. Thanks [\@alexezeder (Alexey
-    Ochapov)](https://github.com/alexezeder).
+    no runtime overhead. Thanks @alexezeder.
 
 -   Added format string compilation support to `fmt::print`
     ([#2280](https://github.com/fmtlib/fmt/issues/2280),
-    [#2304](https://github.com/fmtlib/fmt/pull/2304)). Thanks
-    [\@alexezeder (Alexey Ochapov)](https://github.com/alexezeder).
+    [#2304](https://github.com/fmtlib/fmt/pull/2304)). Thanks @alexezeder.
 
 -   Added initial support for compiling {fmt} as a C++20 module
     ([#2235](https://github.com/fmtlib/fmt/pull/2235),
@@ -1758,21 +1542,18 @@
     [#2318](https://github.com/fmtlib/fmt/pull/2318),
     [#2324](https://github.com/fmtlib/fmt/pull/2324),
     [#2332](https://github.com/fmtlib/fmt/pull/2332),
-    [#2340](https://github.com/fmtlib/fmt/pull/2340)). Thanks
-    [\@DanielaE (Daniela Engert)](https://github.com/DanielaE).
+    [#2340](https://github.com/fmtlib/fmt/pull/2340)). Thanks @DanielaE.
 
 -   Made symbols private by default reducing shared library size
     ([#2301](https://github.com/fmtlib/fmt/pull/2301)). For example
-    there was a \~15% reported reduction on one platform. Thanks
-    [\@sergiud (Sergiu Deitsch)](https://github.com/sergiud).
+    there was a \~15% reported reduction on one platform. Thanks @sergiud.
 
 -   Optimized includes making the result of preprocessing `fmt/format.h`
     \~20% smaller with libstdc++/C++20 and slightly improving build
     times ([#1998](https://github.com/fmtlib/fmt/issues/1998)).
 
 -   Added support of ranges with non-const `begin` / `end`
-    ([#1953](https://github.com/fmtlib/fmt/pull/1953)). Thanks [\@kitegi
-    (sarah)](https://github.com/kitegi).
+    ([#1953](https://github.com/fmtlib/fmt/pull/1953)). Thanks @kitegi.
 
 -   Added support of `std::byte` and other formattable types to
     `fmt::join` ([#1981](https://github.com/fmtlib/fmt/issues/1981),
@@ -1793,7 +1574,7 @@
 
     prints \"42\".
 
-    Thanks [\@kamibo (Camille Bordignon)](https://github.com/kamibo).
+    Thanks @kamibo.
 
 -   Implemented the default format for `std::chrono::system_clock`
     ([#2319](https://github.com/fmtlib/fmt/issues/2319),
@@ -1808,7 +1589,7 @@
     ```
 
     prints \"2021-06-18 15:22:00\" (the output depends on the current
-    date and time). Thanks [\@sunmy2019](https://github.com/sunmy2019).
+    date and time). Thanks @sunmy2019.
 
 -   Made more chrono specifiers locale independent by default. Use the
     `'L'` specifier to get localized formatting. For example:
@@ -1827,8 +1608,7 @@
 -   Improved locale handling in chrono formatting
     ([#2337](https://github.com/fmtlib/fmt/issues/2337),
     [#2349](https://github.com/fmtlib/fmt/pull/2349),
-    [#2350](https://github.com/fmtlib/fmt/pull/2350)). Thanks [\@phprus
-    (Vladislav Shchapov)](https://github.com/phprus).
+    [#2350](https://github.com/fmtlib/fmt/pull/2350)). Thanks @phprus.
 
 -   Deprecated `fmt/locale.h` moving the formatting functions that take
     a locale to `fmt/format.h` (`char`) and `fmt/xchar` (other
@@ -1891,13 +1671,11 @@
 
 -   Made the `0` specifier ignored for infinity and NaN
     ([#2305](https://github.com/fmtlib/fmt/issues/2305),
-    [#2310](https://github.com/fmtlib/fmt/pull/2310)). Thanks [\@Liedtke
-    (Matthias Liedtke)](https://github.com/Liedtke).
+    [#2310](https://github.com/fmtlib/fmt/pull/2310)). Thanks @Liedtke.
 
 -   Made the hexfloat formatting use the right alignment by default
     ([#2308](https://github.com/fmtlib/fmt/issues/2308),
-    [#2317](https://github.com/fmtlib/fmt/pull/2317)). Thanks [\@Liedtke
-    (Matthias Liedtke)](https://github.com/Liedtke).
+    [#2317](https://github.com/fmtlib/fmt/pull/2317)). Thanks @Liedtke.
 
 -   Removed the deprecated numeric alignment (`'='`). Use the `'0'`
     specifier instead.
@@ -1931,8 +1709,7 @@
     }
     ```
 
-    prints \"true\". Thanks [\@powercoderlol (Ivan
-    Polyakov)](https://github.com/powercoderlol).
+    prints \"true\". Thanks @powercoderlol.
 
 -   Made `fmt::ptr` work with function pointers
     ([#2131](https://github.com/fmtlib/fmt/pull/2131)). For example:
@@ -1945,15 +1722,14 @@
     }
     ```
 
-    Thanks [\@mikecrowe (Mike Crowe)](https://github.com/mikecrowe).
+    Thanks @mikecrowe.
 
 -   The undocumented support for specializing `formatter` for pointer
     types has been removed.
 
 -   Fixed `fmt::formatted_size` with format string compilation
     ([#2141](https://github.com/fmtlib/fmt/pull/2141),
-    [#2161](https://github.com/fmtlib/fmt/pull/2161)). Thanks
-    [\@alexezeder (Alexey Ochapov)](https://github.com/alexezeder).
+    [#2161](https://github.com/fmtlib/fmt/pull/2161)). Thanks @alexezeder.
 
 -   Fixed handling of empty format strings during format string
     compilation ([#2042](https://github.com/fmtlib/fmt/issues/2042)):
@@ -1962,8 +1738,7 @@
     auto s = fmt::format(FMT_COMPILE(""));
     ```
 
-    Thanks [\@alexezeder (Alexey
-    Ochapov)](https://github.com/alexezeder).
+    Thanks @alexezeder.
 
 -   Fixed handling of enums in `fmt::to_string`
     ([#2036](https://github.com/fmtlib/fmt/issues/2036)).
@@ -2009,8 +1784,7 @@
 
 -   Fixed moving of `fmt::ostream` that holds buffered data
     ([#2197](https://github.com/fmtlib/fmt/issues/2197),
-    [#2198](https://github.com/fmtlib/fmt/pull/2198)). Thanks
-    [\@vtta](https://github.com/vtta).
+    [#2198](https://github.com/fmtlib/fmt/pull/2198)). Thanks @vtta.
 
 -   Replaced the `fmt::system_error` exception with a function of the
     same name that constructs `std::system_error`
@@ -2021,50 +1795,44 @@
     returned by `fmt::system_category()`
     ([#2274](https://github.com/fmtlib/fmt/issues/2274),
     [#2275](https://github.com/fmtlib/fmt/pull/2275)). The latter is
-    similar to `std::sytem_category` but correctly handles UTF-8. Thanks
-    [\@phprus (Vladislav Shchapov)](https://github.com/phprus).
+    similar to `std::sytem_category` but correctly handles UTF-8.
+    Thanks @phprus.
 
 -   Replaced `fmt::error_code` with `std::error_code` and made it
     formattable ([#2269](https://github.com/fmtlib/fmt/issues/2269),
     [#2270](https://github.com/fmtlib/fmt/pull/2270),
-    [#2273](https://github.com/fmtlib/fmt/pull/2273)). Thanks [\@phprus
-    (Vladislav Shchapov)](https://github.com/phprus).
+    [#2273](https://github.com/fmtlib/fmt/pull/2273)). Thanks @phprus.
 
 -   Added speech synthesis support
     ([#2206](https://github.com/fmtlib/fmt/pull/2206)).
 
 -   Made `format_to` work with a memory buffer that has a custom
-    allocator ([#2300](https://github.com/fmtlib/fmt/pull/2300)). Thanks
-    [\@voxmea](https://github.com/voxmea).
+    allocator ([#2300](https://github.com/fmtlib/fmt/pull/2300)).
+    Thanks @voxmea.
 
 -   Added `Allocator::max_size` support to `basic_memory_buffer`.
-    ([#1960](https://github.com/fmtlib/fmt/pull/1960)). Thanks [\@phprus
-    (Vladislav Shchapov)](https://github.com/phprus).
+    ([#1960](https://github.com/fmtlib/fmt/pull/1960)). Thanks @phprus.
 
 -   Added wide string support to `fmt::join`
-    ([#2236](https://github.com/fmtlib/fmt/pull/2236)). Thanks
-    [\@crbrz](https://github.com/crbrz).
+    ([#2236](https://github.com/fmtlib/fmt/pull/2236)). Thanks @crbrz.
 
 -   Made iterators passed to `formatter` specializations via a format
     context satisfy C++20 `std::output_iterator` requirements
     ([#2156](https://github.com/fmtlib/fmt/issues/2156),
     [#2158](https://github.com/fmtlib/fmt/pull/2158),
     [#2195](https://github.com/fmtlib/fmt/issues/2195),
-    [#2204](https://github.com/fmtlib/fmt/pull/2204)). Thanks
-    [\@randomnetcat (Jason Cobb)](https://github.com/randomnetcat).
+    [#2204](https://github.com/fmtlib/fmt/pull/2204)). Thanks @randomnetcat.
 
 -   Optimized the `printf` implementation
     ([#1982](https://github.com/fmtlib/fmt/pull/1982),
     [#1984](https://github.com/fmtlib/fmt/pull/1984),
     [#2016](https://github.com/fmtlib/fmt/pull/2016),
-    [#2164](https://github.com/fmtlib/fmt/pull/2164)). Thanks
-    [\@rimathia](https://github.com/rimathia) and
-    [\@moiwi](https://github.com/moiwi).
+    [#2164](https://github.com/fmtlib/fmt/pull/2164)).
+    Thanks @rimathia and @moiwi.
 
 -   Improved detection of `constexpr` `char_traits`
     ([#2246](https://github.com/fmtlib/fmt/pull/2246),
-    [#2257](https://github.com/fmtlib/fmt/pull/2257)). Thanks [\@phprus
-    (Vladislav Shchapov)](https://github.com/phprus).
+    [#2257](https://github.com/fmtlib/fmt/pull/2257)). Thanks @phprus.
 
 -   Fixed writing to `stdout` when it is redirected to `NUL` on Windows
     ([#2080](https://github.com/fmtlib/fmt/issues/2080)).
@@ -2074,8 +1842,7 @@
 
 -   Improved `strftime` error handling
     ([#2238](https://github.com/fmtlib/fmt/issues/2238),
-    [#2244](https://github.com/fmtlib/fmt/pull/2244)). Thanks
-    [\@yumeyao](https://github.com/yumeyao).
+    [#2244](https://github.com/fmtlib/fmt/pull/2244)). Thanks @yumeyao.
 
 -   Stopped using deprecated GCC UDL template extension.
 
@@ -2083,20 +1850,18 @@
     ([#2096](https://github.com/fmtlib/fmt/issues/2096)).
 
 -   Error messages are now passed to assert when exceptions are disabled
-    ([#2145](https://github.com/fmtlib/fmt/pull/2145)). Thanks
-    [\@NobodyXu (Jiahao XU)](https://github.com/NobodyXu).
+    ([#2145](https://github.com/fmtlib/fmt/pull/2145)). Thanks @NobodyXu.
 
 -   Added the `FMT_MASTER_PROJECT` CMake option to control build and
     install targets when {fmt} is included via `add_subdirectory`
     ([#2098](https://github.com/fmtlib/fmt/issues/2098),
-    [#2100](https://github.com/fmtlib/fmt/pull/2100)). Thanks
-    [\@randomizedthinking](https://github.com/randomizedthinking).
+    [#2100](https://github.com/fmtlib/fmt/pull/2100)).
+    Thanks @randomizedthinking.
 
 -   Improved build configuration
     ([#2026](https://github.com/fmtlib/fmt/pull/2026),
-    [#2122](https://github.com/fmtlib/fmt/pull/2122)). Thanks
-    [\@luncliff (Park DongHa)](https://github.com/luncliff) and
-    [\@ibaned (Dan Ibanez)](https://github.com/ibaned).
+    [#2122](https://github.com/fmtlib/fmt/pull/2122)).
+    Thanks @luncliff and @ibaned.
 
 -   Fixed various warnings and compilation issues
     ([#1947](https://github.com/fmtlib/fmt/issues/1947),
@@ -2194,42 +1959,13 @@
     [#2329](https://github.com/fmtlib/fmt/pull/2329),
     [#2333](https://github.com/fmtlib/fmt/pull/2333),
     [#2338](https://github.com/fmtlib/fmt/pull/2338),
-    [#2341](https://github.com/fmtlib/fmt/pull/2341)). Thanks
-    [\@darklukee](https://github.com/darklukee), [\@fagg (Ashton
-    Fagg)](https://github.com/fagg), [\@killerbot242 (Lieven de
-    Cock)](https://github.com/killerbot242), [\@jgopel (Jonathan
-    Gopel)](https://github.com/jgopel), [\@yeswalrus (Walter
-    Gray)](https://github.com/yeswalrus),
-    [\@Finkman](https://github.com/Finkman), [\@HazardyKnusperkeks
-    (Björn Schäpers)](https://github.com/HazardyKnusperkeks),
-    [\@dkavolis (Daumantas Kavolis)](https://github.com/dkavolis),
-    [\@concatime (Issam Maghni)](https://github.com/concatime),
-    [\@chronoxor (Ivan Shynkarenka)](https://github.com/chronoxor),
-    [\@summivox (Yin Zhong)](https://github.com/summivox),
-    [\@yNeo](https://github.com/yNeo), [\@Apache-HB
-    (Elliot)](https://github.com/Apache-HB), [\@alexezeder (Alexey
-    Ochapov)](https://github.com/alexezeder), [\@toojays (John Steele
-    Scott)](https://github.com/toojays),
-    [\@Brainy0207](https://github.com/Brainy0207), [\@vadz
-    (VZ)](https://github.com/vadz), [\@imsherlock (Ryan
-    Sherlock)](https://github.com/imsherlock), [\@phprus (Vladislav
-    Shchapov)](https://github.com/phprus), [\@white238 (Chris
-    White)](https://github.com/white238), [\@yafshar (Yaser
-    Afshar)](https://github.com/yafshar), [\@BillyDonahue (Billy
-    Donahue)](https://github.com/BillyDonahue),
-    [\@jstaahl](https://github.com/jstaahl),
-    [\@denchat](https://github.com/denchat), [\@DanielaE (Daniela
-    Engert)](https://github.com/DanielaE), [\@ilyakurdyukov (Ilya
-    Kurdyukov)](https://github.com/ilyakurdyukov),
-    [\@ilmai](https://github.com/ilmai), [\@JessyDL (Jessy De
-    Lannoit)](https://github.com/JessyDL), [\@sergiud (Sergiu
-    Deitsch)](https://github.com/sergiud),
-    [\@mwinterb](https://github.com/mwinterb),
-    [\@sven-herrmann](https://github.com/sven-herrmann), [\@jmelas (John
-    Melas)](https://github.com/jmelas), [\@twoixter (Jose Miguel
-    Pérez)](https://github.com/twoixter),
-    [\@crbrz](https://github.com/crbrz), [\@upsj (Tobias
-    Ribizel)](https://github.com/upsj).
+    [#2341](https://github.com/fmtlib/fmt/pull/2341)).
+    Thanks @darklukee, @fagg, @killerbot242, @jgopel, @yeswalrus, @Finkman,
+    @HazardyKnusperkeks, @dkavolis, @concatime, @chronoxor, @summivox, @yNeo,
+    @Apache-HB, @alexezeder, @toojays, @Brainy0207, @vadz, @imsherlock, @phprus,
+    @white238, @yafshar, @BillyDonahue, @jstaahl, @denchat, @DanielaE,
+    @ilyakurdyukov, @ilmai, @JessyDL, @sergiud, @mwinterb, @sven-herrmann,
+    @jmelas, @twoixter, @crbrz and @upsj.
 
 -   Improved documentation
     ([#1986](https://github.com/fmtlib/fmt/issues/1986),
@@ -2237,10 +1973,8 @@
     [#2057](https://github.com/fmtlib/fmt/issues/2057),
     [#2081](https://github.com/fmtlib/fmt/pull/2081),
     [#2084](https://github.com/fmtlib/fmt/issues/2084),
-    [#2312](https://github.com/fmtlib/fmt/pull/2312)). Thanks
-    [\@imba-tjd (谭九鼎)](https://github.com/imba-tjd), [\@0x416c69
-    (AlιAѕѕaѕѕιN)](https://github.com/0x416c69),
-    [\@mordante](https://github.com/mordante).
+    [#2312](https://github.com/fmtlib/fmt/pull/2312)).
+    Thanks @imba-tjd, @0x416c69 and @mordante.
 
 -   Continuous integration and test improvements
     ([#1969](https://github.com/fmtlib/fmt/issues/1969),
@@ -2253,10 +1987,8 @@
     [#2247](https://github.com/fmtlib/fmt/pull/2247),
     [#2256](https://github.com/fmtlib/fmt/pull/2256),
     [#2336](https://github.com/fmtlib/fmt/pull/2336),
-    [#2346](https://github.com/fmtlib/fmt/pull/2346)). Thanks [\@jgopel
-    (Jonathan Gopel)](https://github.com/jgopel), [\@alexezeder (Alexey
-    Ochapov)](https://github.com/alexezeder) and [\@DanielaE (Daniela
-    Engert)](https://github.com/DanielaE).
+    [#2346](https://github.com/fmtlib/fmt/pull/2346)).
+    Thanks @jgopel, @alexezeder and @DanielaE.
 
 # 7.1.3 - 2020-11-24
 
@@ -2288,10 +2020,9 @@
     ([#1955](https://github.com/fmtlib/fmt/issues/1955)).
 -   Fixed a compilation error when building without `__builtin_clz` or
     equivalent ([#1968](https://github.com/fmtlib/fmt/pull/1968)).
-    Thanks [\@tohammer (Tobias Hammer)](https://github.com/tohammer).
+    Thanks @tohammer.
 -   Fixed a sign conversion warning
-    ([#1964](https://github.com/fmtlib/fmt/pull/1964)). Thanks
-    [\@OptoCloud](https://github.com/OptoCloud).
+    ([#1964](https://github.com/fmtlib/fmt/pull/1964)). Thanks @OptoCloud.
 
 # 7.1.0 - 2020-10-25
 
@@ -2314,7 +2045,7 @@
     binary size by compiling with the `FMT_USE_FULL_CACHE_DRAGONBOX`
     macro set to 1.
 
-    Thanks [\@jk-jeon (Junekey Jeon)](https://github.com/jk-jeon).
+    Thanks @jk-jeon.
 
 -   Added an experimental unsynchronized file output API which, together
     with [format string
@@ -2346,8 +2077,7 @@
     }
     ```
 
-    Thanks [\@adamburgess (Adam
-    Burgess)](https://github.com/adamburgess).
+    Thanks @adamburgess.
 
 -   Added support for ranges with non-const `begin`/`end` to `fmt::join`
     ([#1784](https://github.com/fmtlib/fmt/issues/1784),
@@ -2370,11 +2100,10 @@
 
     prints \"accc\".
 
-    Thanks [\@tonyelewis (Tony E Lewis)](https://github.com/tonyelewis).
+    Thanks @tonyelewis.
 
 -   Added a `memory_buffer::append` overload that takes a range
-    ([#1806](https://github.com/fmtlib/fmt/pull/1806)). Thanks
-    [\@BRevzin (Barry Revzin)](https://github.com/BRevzin).
+    ([#1806](https://github.com/fmtlib/fmt/pull/1806)). Thanks @BRevzin.
 
 -   Improved handling of single code units in `FMT_COMPILE`. For
     example:
@@ -2496,8 +2225,7 @@
     }
     ```
 
-    Thanks [\@Kurkin (Dmitry Kurkin)](https://github.com/Kurkin),
-    [\@alexezeder (Alexey Ochapov)](https://github.com/alexezeder).
+    Thanks @Kurkin and @alexezeder.
 
 -   Added `fmt::format_to` overload that take `text_style`
     ([#1593](https://github.com/fmtlib/fmt/issues/1593),
@@ -2516,7 +2244,7 @@
     }
     ```
 
-    Thanks [\@Naios (Denis Blank)](https://github.com/Naios).
+    Thanks @Naios.
 
 -   Made the `'#'` specifier emit trailing zeros in addition to the
     decimal point ([#1797](https://github.com/fmtlib/fmt/issues/1797)).
@@ -2547,22 +2275,19 @@
 -   Made `fmt::to_string` fallback on `ostream` insertion operator if
     the `formatter` specialization is not provided
     ([#1815](https://github.com/fmtlib/fmt/issues/1815),
-    [#1829](https://github.com/fmtlib/fmt/pull/1829)). Thanks
-    [\@alexezeder (Alexey Ochapov)](https://github.com/alexezeder).
+    [#1829](https://github.com/fmtlib/fmt/pull/1829)). Thanks @alexezeder.
 
 -   Added support for the append mode to the experimental file API and
     improved `fcntl.h` detection.
     ([#1847](https://github.com/fmtlib/fmt/pull/1847),
-    [#1848](https://github.com/fmtlib/fmt/pull/1848)). Thanks
-    [\@t-wiser](https://github.com/t-wiser).
+    [#1848](https://github.com/fmtlib/fmt/pull/1848)). Thanks @t-wiser.
 
 -   Fixed handling of types that have both an implicit conversion
     operator and an overloaded `ostream` insertion operator
     ([#1766](https://github.com/fmtlib/fmt/issues/1766)).
 
 -   Fixed a slicing issue in an internal iterator type
-    ([#1822](https://github.com/fmtlib/fmt/pull/1822)). Thanks
-    [\@BRevzin (Barry Revzin)](https://github.com/BRevzin).
+    ([#1822](https://github.com/fmtlib/fmt/pull/1822)). Thanks @BRevzin.
 
 -   Fixed an issue in locale-specific integer formatting
     ([#1927](https://github.com/fmtlib/fmt/issues/1927)).
@@ -2572,16 +2297,13 @@
     [#1932](https://github.com/fmtlib/fmt/issues/1932)).
 
 -   Improved `FMT_ALWAYS_INLINE`
-    ([#1878](https://github.com/fmtlib/fmt/pull/1878)). Thanks
-    [\@jk-jeon (Junekey Jeon)](https://github.com/jk-jeon).
+    ([#1878](https://github.com/fmtlib/fmt/pull/1878)). Thanks @jk-jeon.
 
 -   Removed dependency on `windows.h`
-    ([#1900](https://github.com/fmtlib/fmt/pull/1900)). Thanks [\@bernd5
-    (Bernd Baumanns)](https://github.com/bernd5).
+    ([#1900](https://github.com/fmtlib/fmt/pull/1900)). Thanks @bernd5.
 
 -   Optimized counting of decimal digits on MSVC
-    ([#1890](https://github.com/fmtlib/fmt/pull/1890)). Thanks
-    [\@mwinterb](https://github.com/mwinterb).
+    ([#1890](https://github.com/fmtlib/fmt/pull/1890)). Thanks @mwinterb.
 
 -   Improved documentation
     ([#1772](https://github.com/fmtlib/fmt/issues/1772),
@@ -2590,38 +2312,27 @@
     [#1838](https://github.com/fmtlib/fmt/pull/1838),
     [#1888](https://github.com/fmtlib/fmt/pull/1888),
     [#1918](https://github.com/fmtlib/fmt/pull/1918),
-    [#1939](https://github.com/fmtlib/fmt/pull/1939)). Thanks
-    [\@leolchat (Léonard Gérard)](https://github.com/leolchat),
-    [\@pepsiman (Malcolm Parsons)](https://github.com/pepsiman),
-    [\@Klaim (Joël Lamotte)](https://github.com/Klaim), [\@ravijanjam
-    (Ravi J)](https://github.com/ravijanjam),
-    [\@francesco-st](https://github.com/francesco-st), [\@udnaan
-    (Adnan)](https://github.com/udnaan).
+    [#1939](https://github.com/fmtlib/fmt/pull/1939)).
+    Thanks @leolchat, @pepsiman, @Klaim, @ravijanjam, @francesco-st and @udnaan.
 
 -   Added the `FMT_REDUCE_INT_INSTANTIATIONS` CMake option that reduces
     the binary code size at the cost of some integer formatting
     performance. This can be useful for extremely memory-constrained
     embedded systems
     ([#1778](https://github.com/fmtlib/fmt/issues/1778),
-    [#1781](https://github.com/fmtlib/fmt/pull/1781)). Thanks [\@kammce
-    (Khalil Estell)](https://github.com/kammce).
+    [#1781](https://github.com/fmtlib/fmt/pull/1781)). Thanks @kammce.
 
 -   Added the `FMT_USE_INLINE_NAMESPACES` macro to control usage of
     inline namespaces
-    ([#1945](https://github.com/fmtlib/fmt/pull/1945)). Thanks
-    [\@darklukee](https://github.com/darklukee).
+    ([#1945](https://github.com/fmtlib/fmt/pull/1945)). Thanks @darklukee.
 
 -   Improved build configuration
     ([#1760](https://github.com/fmtlib/fmt/pull/1760),
     [#1770](https://github.com/fmtlib/fmt/pull/1770),
     [#1779](https://github.com/fmtlib/fmt/issues/1779),
     [#1783](https://github.com/fmtlib/fmt/pull/1783),
-    [#1823](https://github.com/fmtlib/fmt/pull/1823)). Thanks
-    [\@dvetutnev (Dmitriy Vetutnev)](https://github.com/dvetutnev),
-    [\@xvitaly (Vitaly Zaitsev)](https://github.com/xvitaly), [\@tambry
-    (Raul Tambre)](https://github.com/tambry),
-    [\@medithe](https://github.com/medithe), [\@martinwuehrer (Martin
-    Wührer)](https://github.com/martinwuehrer).
+    [#1823](https://github.com/fmtlib/fmt/pull/1823)).
+    Thanks @dvetutnev, @xvitaly, @tambry, @medithe and @martinwuehrer.
 
 -   Fixed various warnings and compilation issues
     ([#1790](https://github.com/fmtlib/fmt/pull/1790),
@@ -2654,26 +2365,11 @@
     [#1935](https://github.com/fmtlib/fmt/issues/1935),
     [#1937](https://github.com/fmtlib/fmt/pull/1937),
     [#1942](https://github.com/fmtlib/fmt/pull/1942),
-    [#1949](https://github.com/fmtlib/fmt/issues/1949)). Thanks
-    [\@TheQwertiest](https://github.com/TheQwertiest),
-    [\@medithe](https://github.com/medithe), [\@martinwuehrer (Martin
-    Wührer)](https://github.com/martinwuehrer),
-    [\@n16h7hunt3r](https://github.com/n16h7hunt3r), [\@Othereum
-    (Seokjin Lee)](https://github.com/Othereum), [\@gsjaardema (Greg
-    Sjaardema)](https://github.com/gsjaardema), [\@AlexanderLanin
-    (Alexander Lanin)](https://github.com/AlexanderLanin), [\@gcerretani
-    (Giovanni Cerretani)](https://github.com/gcerretani), [\@chronoxor
-    (Ivan Shynkarenka)](https://github.com/chronoxor), [\@noizefloor
-    (Jan Schwers)](https://github.com/noizefloor), [\@akohlmey (Axel
-    Kohlmeyer)](https://github.com/akohlmey), [\@jk-jeon (Junekey
-    Jeon)](https://github.com/jk-jeon),
-    [\@rimathia](https://github.com/rimathia), [\@rglarix (Riccardo
-    Ghetta (larix))](https://github.com/rglarix),
-    [\@moiwi](https://github.com/moiwi), [\@heckad (Kazantcev
-    Andrey)](https://github.com/heckad),
-    [\@MarcDirven](https://github.com/MarcDirven). [\@BartSiwek (Bart
-    Siwek)](https://github.com/BartSiwek),
-    [\@darklukee](https://github.com/darklukee).
+    [#1949](https://github.com/fmtlib/fmt/issues/1949)).
+    Thanks @TheQwertiest, @medithe, @martinwuehrer, @n16h7hunt3r, @Othereum,
+    @gsjaardema, @AlexanderLanin, @gcerretani, @chronoxor, @noizefloor,
+    @akohlmey, @jk-jeon, @rimathia, @rglarix, @moiwi, @heckad, @MarcDirven.
+    @BartSiwek and @darklukee.
 
 # 7.0.3 - 2020-08-06
 
@@ -2682,8 +2378,7 @@
 -   Added error reporting on missing named arguments
     ([#1796](https://github.com/fmtlib/fmt/issues/1796)).
 -   Stopped using 128-bit integers with clang-cl
-    ([#1800](https://github.com/fmtlib/fmt/pull/1800)). Thanks
-    [\@Kingcom](https://github.com/Kingcom).
+    ([#1800](https://github.com/fmtlib/fmt/pull/1800)). Thanks @Kingcom.
 -   Fixed issues in locale-specific integer formatting
     ([#1782](https://github.com/fmtlib/fmt/issues/1782),
     [#1801](https://github.com/fmtlib/fmt/issues/1801)).
@@ -2703,8 +2398,7 @@
 -   Worked around a gcc bug in mangling of alias templates
     ([#1753](https://github.com/fmtlib/fmt/issues/1753)).
 -   Fixed a linkage error on Windows
-    ([#1757](https://github.com/fmtlib/fmt/issues/1757)). Thanks
-    [\@Kurkin (Dmitry Kurkin)](https://github.com/Kurkin).
+    ([#1757](https://github.com/fmtlib/fmt/issues/1757)). Thanks @Kurkin.
 -   Fixed minor issues with the documentation.
 
 # 7.0.0 - 2020-07-05
@@ -2769,7 +2463,7 @@
 
     It is still recommended to use `fmt/core.h` instead of
     `fmt/format.h` but the compile time difference is now smaller.
-    Thanks [\@alex3d](https://github.com/alex3d) for the suggestion.
+    Thanks @alex3d for the suggestion.
 
 -   Named arguments are now stored on stack (no dynamic memory
     allocations) and the compiled code is more compact and efficient.
@@ -2854,16 +2548,14 @@
     // s == "h_e_l_l_o"
     ```
 
-    Thanks [\@BRevzin (Barry Revzin)](https://github.com/BRevzin).
+    Thanks @BRevzin.
 
 -   Added support for named arguments, `clear` and `reserve` to
     `dynamic_format_arg_store`
     ([#1655](https://github.com/fmtlib/fmt/issues/1655),
     [#1663](https://github.com/fmtlib/fmt/pull/1663),
     [#1674](https://github.com/fmtlib/fmt/pull/1674),
-    [#1677](https://github.com/fmtlib/fmt/pull/1677)). Thanks
-    [\@vsolontsov-ll (Vladimir
-    Solontsov)](https://github.com/vsolontsov-ll).
+    [#1677](https://github.com/fmtlib/fmt/pull/1677)). Thanks @vsolontsov-ll.
 
 -   Added support for the `'c'` format specifier to integral types for
     compatibility with `std::format`
@@ -2900,8 +2592,7 @@
     [#1682](https://github.com/fmtlib/fmt/pull/1682),
     [#1683](https://github.com/fmtlib/fmt/pull/1683),
     [#1687](https://github.com/fmtlib/fmt/pull/1687),
-    [#1699](https://github.com/fmtlib/fmt/pull/1699)). Thanks
-    [\@rimathia](https://github.com/rimathia).
+    [#1699](https://github.com/fmtlib/fmt/pull/1699)). Thanks @rimathia.
 
 -   Fixed handling of `operator<<` overloads that use `copyfmt`
     ([#1666](https://github.com/fmtlib/fmt/issues/1666)).
@@ -2909,20 +2600,16 @@
 -   Added the `FMT_OS` CMake option to control inclusion of OS-specific
     APIs in the fmt target. This can be useful for embedded platforms
     ([#1654](https://github.com/fmtlib/fmt/issues/1654),
-    [#1656](https://github.com/fmtlib/fmt/pull/1656)). Thanks
-    [\@kwesolowski (Krzysztof
-    Wesolowski)](https://github.com/kwesolowski).
+    [#1656](https://github.com/fmtlib/fmt/pull/1656)). Thanks @kwesolowski.
 
 -   Replaced `FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION` with the
     `FMT_FUZZ` macro to prevent interfering with fuzzing of projects
     using {fmt} ([#1650](https://github.com/fmtlib/fmt/pull/1650)).
-    Thanks [\@asraa (Asra Ali)](https://github.com/asraa).
+    Thanks @asraa.
 
 -   Fixed compatibility with emscripten
     ([#1636](https://github.com/fmtlib/fmt/issues/1636),
-    [#1637](https://github.com/fmtlib/fmt/pull/1637)). Thanks
-    [\@ArthurSonzogni (Arthur
-    Sonzogni)](https://github.com/ArthurSonzogni).
+    [#1637](https://github.com/fmtlib/fmt/pull/1637)). Thanks @ArthurSonzogni.
 
 -   Improved documentation
     ([#704](https://github.com/fmtlib/fmt/issues/704),
@@ -2936,26 +2623,16 @@
     [#1739](https://github.com/fmtlib/fmt/pull/1739),
     [#1740](https://github.com/fmtlib/fmt/pull/1740),
     [#1741](https://github.com/fmtlib/fmt/pull/1741),
-    [#1751](https://github.com/fmtlib/fmt/pull/1751)). Thanks
-    [\@senior7515 (Alexander Gallego)](https://github.com/senior7515),
-    [\@lsr0 (Lindsay Roberts)](https://github.com/lsr0), [\@puetzk
-    (Kevin Puetz)](https://github.com/puetzk), [\@fpelliccioni (Fernando
-    Pelliccioni)](https://github.com/fpelliccioni), Alexey Kuzmenko,
-    [\@jelly (jelle van der Waa)](https://github.com/jelly),
-    [\@claremacrae (Clare Macrae)](https://github.com/claremacrae),
-    [\@jiapengwen (文佳鹏)](https://github.com/jiapengwen),
-    [\@gsjaardema (Greg Sjaardema)](https://github.com/gsjaardema),
-    [\@alexey-milovidov](https://github.com/alexey-milovidov).
+    [#1751](https://github.com/fmtlib/fmt/pull/1751)).
+    Thanks @senior7515, @lsr0, @puetzk, @fpelliccioni, Alexey Kuzmenko, @jelly,
+    @claremacrae, @jiapengwen, @gsjaardema and @alexey-milovidov.
 
 -   Implemented various build configuration fixes and improvements
     ([#1603](https://github.com/fmtlib/fmt/pull/1603),
     [#1657](https://github.com/fmtlib/fmt/pull/1657),
     [#1702](https://github.com/fmtlib/fmt/pull/1702),
-    [#1728](https://github.com/fmtlib/fmt/pull/1728)). Thanks
-    [\@scramsby (Scott Ramsby)](https://github.com/scramsby), [\@jtojnar
-    (Jan Tojnar)](https://github.com/jtojnar), [\@orivej (Orivej
-    Desh)](https://github.com/orivej),
-    [\@flagarde](https://github.com/flagarde).
+    [#1728](https://github.com/fmtlib/fmt/pull/1728)).
+    Thanks @scramsby, @jtojnar, @orivej and @flagarde.
 
 -   Fixed various warnings and compilation issues
     ([#1616](https://github.com/fmtlib/fmt/pull/1616),
@@ -2987,21 +2664,10 @@
     [#1743](https://github.com/fmtlib/fmt/issues/1743),
     [#1744](https://github.com/fmtlib/fmt/pull/1744),
     [#1747](https://github.com/fmtlib/fmt/issues/1747),
-    [#1750](https://github.com/fmtlib/fmt/pull/1750)). Thanks
-    [\@gsjaardema (Greg Sjaardema)](https://github.com/gsjaardema),
-    [\@gabime (Gabi Melman)](https://github.com/gabime), [\@johnor
-    (Johan)](https://github.com/johnor), [\@Kurkin (Dmitry
-    Kurkin)](https://github.com/Kurkin), [\@invexed (James
-    Beach)](https://github.com/invexed),
-    [\@peterbell10](https://github.com/peterbell10), [\@daixtrose
-    (Markus Werle)](https://github.com/daixtrose), [\@petrutlucian94
-    (Lucian Petrut)](https://github.com/petrutlucian94), [\@Neargye
-    (Daniil Goncharov)](https://github.com/Neargye), [\@ambitslix
-    (Attila M. Szilagyi)](https://github.com/ambitslix), [\@gabime (Gabi
-    Melman)](https://github.com/gabime), [\@erthink (Leonid
-    Yuriev)](https://github.com/erthink), [\@tohammer (Tobias
-    Hammer)](https://github.com/tohammer), [\@0x8000-0000 (Florin
-    Iucha)](https://github.com/0x8000-0000).
+    [#1750](https://github.com/fmtlib/fmt/pull/1750)).
+    Thanks @gsjaardema, @gabime, @johnor, @Kurkin, @invexed, @peterbell10,
+    @daixtrose, @petrutlucian94, @Neargye, @ambitslix, @gabime, @erthink,
+    @tohammer and @0x8000-0000.
 
 # 6.2.1 - 2020-05-09
 
@@ -3097,12 +2763,10 @@
 
         The answer is 42.
 
-    Thanks [\@vsolontsov-ll (Vladimir
-    Solontsov)](https://github.com/vsolontsov-ll).
+    Thanks @vsolontsov-ll.
 
 -   Made `fmt::join` accept `initializer_list`
-    ([#1591](https://github.com/fmtlib/fmt/pull/1591)). Thanks
-    [\@Rapotkinnik (Nikolay Rapotkin)](https://github.com/Rapotkinnik).
+    ([#1591](https://github.com/fmtlib/fmt/pull/1591)). Thanks @Rapotkinnik.
 
 -   Fixed handling of empty tuples
     ([#1588](https://github.com/fmtlib/fmt/issues/1588)).
@@ -3111,45 +2775,36 @@
     ([#1506](https://github.com/fmtlib/fmt/issues/1506)).
 
 -   Fixed formatting of `std::chrono::duration` types to wide output
-    ([#1533](https://github.com/fmtlib/fmt/pull/1533)). Thanks [\@zeffy
-    (pilao)](https://github.com/zeffy).
+    ([#1533](https://github.com/fmtlib/fmt/pull/1533)). Thanks @zeffy.
 
 -   Added const `begin` and `end` overload to buffers
-    ([#1553](https://github.com/fmtlib/fmt/pull/1553)). Thanks
-    [\@dominicpoeschko](https://github.com/dominicpoeschko).
+    ([#1553](https://github.com/fmtlib/fmt/pull/1553)). Thanks @dominicpoeschko.
 
 -   Added the ability to disable floating-point formatting via
     `FMT_USE_FLOAT`, `FMT_USE_DOUBLE` and `FMT_USE_LONG_DOUBLE` macros
     for extremely memory-constrained embedded system
-    ([#1590](https://github.com/fmtlib/fmt/pull/1590)). Thanks
-    [\@albaguirre (Alberto Aguirre)](https://github.com/albaguirre).
+    ([#1590](https://github.com/fmtlib/fmt/pull/1590)). Thanks @albaguirre.
 
 -   Made `FMT_STRING` work with `constexpr` `string_view`
-    ([#1589](https://github.com/fmtlib/fmt/pull/1589)). Thanks
-    [\@scramsby (Scott Ramsby)](https://github.com/scramsby).
+    ([#1589](https://github.com/fmtlib/fmt/pull/1589)). Thanks @scramsby.
 
 -   Implemented a minor optimization in the format string parser
-    ([#1560](https://github.com/fmtlib/fmt/pull/1560)). Thanks
-    [\@IkarusDeveloper](https://github.com/IkarusDeveloper).
+    ([#1560](https://github.com/fmtlib/fmt/pull/1560)). Thanks @IkarusDeveloper.
 
 -   Improved attribute detection
     ([#1469](https://github.com/fmtlib/fmt/pull/1469),
     [#1475](https://github.com/fmtlib/fmt/pull/1475),
-    [#1576](https://github.com/fmtlib/fmt/pull/1576)). Thanks
-    [\@federico-busato (Federico)](https://github.com/federico-busato),
-    [\@chronoxor (Ivan Shynkarenka)](https://github.com/chronoxor),
-    [\@refnum](https://github.com/refnum).
+    [#1576](https://github.com/fmtlib/fmt/pull/1576)).
+    Thanks @federico-busato, @chronoxor and @refnum.
 
 -   Improved documentation
     ([#1481](https://github.com/fmtlib/fmt/pull/1481),
-    [#1523](https://github.com/fmtlib/fmt/pull/1523)). Thanks
-    [\@JackBoosY (Jack·Boos·Yu)](https://github.com/JackBoosY),
-    [\@imba-tjd (谭九鼎)](https://github.com/imba-tjd).
+    [#1523](https://github.com/fmtlib/fmt/pull/1523)).
+    Thanks @JackBoosY and @imba-tjd.
 
 -   Fixed symbol visibility on Linux when compiling with
     `-fvisibility=hidden`
-    ([#1535](https://github.com/fmtlib/fmt/pull/1535)). Thanks
-    [\@milianw (Milian Wolff)](https://github.com/milianw).
+    ([#1535](https://github.com/fmtlib/fmt/pull/1535)). Thanks @milianw.
 
 -   Implemented various build configuration fixes and improvements
     ([#1264](https://github.com/fmtlib/fmt/issues/1264),
@@ -3161,10 +2816,8 @@
     [#1566](https://github.com/fmtlib/fmt/issues/1566),
     [#1582](https://github.com/fmtlib/fmt/pull/1582),
     [#1597](https://github.com/fmtlib/fmt/issues/1597),
-    [#1598](https://github.com/fmtlib/fmt/pull/1598)). Thanks
-    [\@ambitslix (Attila M. Szilagyi)](https://github.com/ambitslix),
-    [\@jwillikers (Jordan Williams)](https://github.com/jwillikers),
-    [\@stac47 (Laurent Stacul)](https://github.com/stac47).
+    [#1598](https://github.com/fmtlib/fmt/pull/1598)).
+    Thanks @ambitslix, @jwillikers and @stac47.
 
 -   Fixed various warnings and compilation issues
     ([#1433](https://github.com/fmtlib/fmt/pull/1433),
@@ -3207,36 +2860,21 @@
     [#1604](https://github.com/fmtlib/fmt/issues/1604),
     [#1606](https://github.com/fmtlib/fmt/pull/1606),
     [#1607](https://github.com/fmtlib/fmt/issues/1607),
-    [#1609](https://github.com/fmtlib/fmt/issues/1609)). Thanks
-    [\@marti4d (Chris Martin)](https://github.com/marti4d),
-    [\@iPherian](https://github.com/iPherian),
-    [\@parkertomatoes](https://github.com/parkertomatoes), [\@gsjaardema
-    (Greg Sjaardema)](https://github.com/gsjaardema), [\@chronoxor (Ivan
-    Shynkarenka)](https://github.com/chronoxor), [\@DanielaE (Daniela
-    Engert)](https://github.com/DanielaE),
-    [\@torsten48](https://github.com/torsten48), [\@tohammer (Tobias
-    Hammer)](https://github.com/tohammer), [\@lefticus (Jason
-    Turner)](https://github.com/lefticus), [\@ryusakki
-    (Haise)](https://github.com/ryusakki), [\@adnsv (Alex
-    Denisov)](https://github.com/adnsv),
-    [\@fghzxm](https://github.com/fghzxm),
-    [\@refnum](https://github.com/refnum), [\@pramodk (Pramod
-    Kumbhar)](https://github.com/pramodk),
-    [\@Spirrwell](https://github.com/Spirrwell), [\@scramsby (Scott
-    Ramsby)](https://github.com/scramsby).
+    [#1609](https://github.com/fmtlib/fmt/issues/1609)).
+    Thanks @marti4d, @iPherian, @parkertomatoes, @gsjaardema, @chronoxor,
+    @DanielaE, @torsten48, @tohammer, @lefticus, @ryusakki, @adnsv, @fghzxm,
+    @refnum, @pramodk, @Spirrwell and @scramsby.
 
 # 6.1.2 - 2019-12-11
 
 -   Fixed ABI compatibility with `libfmt.so.6.0.0`
     ([#1471](https://github.com/fmtlib/fmt/issues/1471)).
 -   Fixed handling types convertible to `std::string_view`
-    ([#1451](https://github.com/fmtlib/fmt/pull/1451)). Thanks
-    [\@denizevrenci (Deniz Evrenci)](https://github.com/denizevrenci).
+    ([#1451](https://github.com/fmtlib/fmt/pull/1451)). Thanks @denizevrenci.
 -   Made CUDA test an opt-in enabled via the `FMT_CUDA_TEST` CMake
     option.
 -   Fixed sign conversion warnings
-    ([#1440](https://github.com/fmtlib/fmt/pull/1440)). Thanks
-    [\@0x8000-0000 (Florin Iucha)](https://github.com/0x8000-0000).
+    ([#1440](https://github.com/fmtlib/fmt/pull/1440)). Thanks @0x8000-0000.
 
 # 6.1.1 - 2019-12-04
 
@@ -3244,9 +2882,8 @@
     ([#1443](https://github.com/fmtlib/fmt/pull/1443),
     [#1445](https://github.com/fmtlib/fmt/issues/1445),
     [#1446](https://github.com/fmtlib/fmt/pull/1446),
-    [#1450](https://github.com/fmtlib/fmt/issues/1450)). Thanks
-    [\@egorpugin (Egor Pugin)](https://github.com/egorpugin), [\@bbolli
-    (Beat Bolli)](https://github.com/bbolli).
+    [#1450](https://github.com/fmtlib/fmt/issues/1450)).
+    Thanks @egorpugin and @bbolli.
 -   Added a missing decimal point in exponent notation with trailing
     zeros.
 -   Removed deprecated `format_arg_store::TYPES`.
@@ -3297,7 +2934,7 @@
 
     prints `0.1` instead of `0.10000000149011612`.
 
-    Thanks [\@orivej (Orivej Desh)](https://github.com/orivej).
+    Thanks @orivej.
 
 -   Made floating-point formatting output consistent with
     `printf`/iostreams
@@ -3313,13 +2950,11 @@
 
     prints `170141183460469231731687303715884105727`.
 
-    Thanks [\@denizevrenci (Deniz
-    Evrenci)](https://github.com/denizevrenci).
+    Thanks @denizevrenci.
 
 -   The overload of `print` that takes `text_style` is now atomic, i.e.
     the output from different threads doesn\'t interleave
-    ([#1351](https://github.com/fmtlib/fmt/pull/1351)). Thanks
-    [\@tankiJong (Tanki Zhang)](https://github.com/tankiJong).
+    ([#1351](https://github.com/fmtlib/fmt/pull/1351)). Thanks @tankiJong.
 
 -   Made compile time in the header-only mode \~20% faster by reducing
     the number of template instantiations. `wchar_t` overload of
@@ -3341,7 +2976,7 @@
 
     prints `('a', 1, 2.0)`.
 
-    Thanks [\@jeremyong (Jeremy Ong)](https://github.com/jeremyong).
+    Thanks @jeremyong.
 
 -   Changed formatting of octal zero with prefix from \"00\" to \"0\":
 
@@ -3372,12 +3007,11 @@
     }
     ```
 
-    Thanks [\@dlaugt (Daniel Laügt)](https://github.com/dlaugt).
+    Thanks @dlaugt.
 
 -   Locale-specific number formatting now uses grouping
     ([#1393](https://github.com/fmtlib/fmt/issues/1393)
-    [#1394](https://github.com/fmtlib/fmt/pull/1394)). Thanks
-    [\@skrdaniel](https://github.com/skrdaniel).
+    [#1394](https://github.com/fmtlib/fmt/pull/1394)). Thanks @skrdaniel.
 
 -   Fixed handling of types with deleted implicit rvalue conversion to
     `const char**` ([#1421](https://github.com/fmtlib/fmt/issues/1421)):
@@ -3394,8 +3028,7 @@
     ```
 
 -   Enums are now mapped to correct underlying types instead of `int`
-    ([#1286](https://github.com/fmtlib/fmt/pull/1286)). Thanks [\@agmt
-    (Egor Seredin)](https://github.com/agmt).
+    ([#1286](https://github.com/fmtlib/fmt/pull/1286)). Thanks @agmt.
 
 -   Enum classes are no longer implicitly converted to `int`
     ([#1424](https://github.com/fmtlib/fmt/issues/1424)).
@@ -3405,8 +3038,7 @@
 
 -   Fixed handling of UTF-8 in precision
     ([#1389](https://github.com/fmtlib/fmt/issues/1389),
-    [#1390](https://github.com/fmtlib/fmt/pull/1390)). Thanks
-    [\@tajtiattila (Attila Tajti)](https://github.com/tajtiattila).
+    [#1390](https://github.com/fmtlib/fmt/pull/1390)). Thanks @tajtiattila.
 
 -   {fmt} can now be installed on Linux, macOS and Windows with
     [Conda](https://docs.conda.io/en/latest/) using its
@@ -3416,12 +3048,11 @@
 
         conda install -c conda-forge fmt
 
-    Thanks [\@tdegeus (Tom de Geus)](https://github.com/tdegeus).
+    Thanks @tdegeus.
 
 -   Added a CUDA test ([#1285](https://github.com/fmtlib/fmt/pull/1285),
-    [#1317](https://github.com/fmtlib/fmt/pull/1317)). Thanks
-    [\@luncliff (Park DongHa)](https://github.com/luncliff) and
-    [\@risa2000](https://github.com/risa2000).
+    [#1317](https://github.com/fmtlib/fmt/pull/1317)).
+    Thanks @luncliff and @risa2000.
 
 -   Improved documentation
     ([#1276](https://github.com/fmtlib/fmt/pull/1276),
@@ -3431,17 +3062,13 @@
     [#1332](https://github.com/fmtlib/fmt/pull/1332),
     [#1337](https://github.com/fmtlib/fmt/pull/1337),
     [#1395](https://github.com/fmtlib/fmt/issues/1395)
-    [#1418](https://github.com/fmtlib/fmt/pull/1418)). Thanks
-    [\@waywardmonkeys (Bruce
-    Mitchener)](https://github.com/waywardmonkeys), [\@pauldreik (Paul
-    Dreik)](https://github.com/pauldreik), [\@jackoalan (Jack
-    Andersen)](https://github.com/jackoalan).
+    [#1418](https://github.com/fmtlib/fmt/pull/1418)).
+    Thanks @waywardmonkeys, @pauldreik and @jackoalan.
 
 -   Various code improvements
     ([#1358](https://github.com/fmtlib/fmt/pull/1358),
-    [#1407](https://github.com/fmtlib/fmt/pull/1407)). Thanks [\@orivej
-    (Orivej Desh)](https://github.com/orivej), [\@dpacbach (David P.
-    Sicilia)](https://github.com/dpacbach),
+    [#1407](https://github.com/fmtlib/fmt/pull/1407)).
+    Thanks @orivej and @dpacbach.
 
 -   Fixed compile-time format string checks for user-defined types
     ([#1292](https://github.com/fmtlib/fmt/issues/1292)).
@@ -3485,21 +3112,10 @@
     [#1422](https://github.com/fmtlib/fmt/issues/1422)
     [#1427](https://github.com/fmtlib/fmt/pull/1427),
     [#1431](https://github.com/fmtlib/fmt/issues/1431),
-    [#1433](https://github.com/fmtlib/fmt/pull/1433)). Thanks
-    [\@hhb](https://github.com/hhb), [\@gsjaardema (Greg
-    Sjaardema)](https://github.com/gsjaardema), [\@gabime (Gabi
-    Melman)](https://github.com/gabime), [\@neheb (Rosen
-    Penev)](https://github.com/neheb), [\@vedranmiletic (Vedran
-    Miletić)](https://github.com/vedranmiletic), [\@dkavolis (Daumantas
-    Kavolis)](https://github.com/dkavolis),
-    [\@mwinterb](https://github.com/mwinterb), [\@orivej (Orivej
-    Desh)](https://github.com/orivej), [\@denizevrenci (Deniz
-    Evrenci)](https://github.com/denizevrenci)
-    [\@leonklingele](https://github.com/leonklingele), [\@chronoxor
-    (Ivan Shynkarenka)](https://github.com/chronoxor),
-    [\@kent-tri](https://github.com/kent-tri), [\@0x8000-0000 (Florin
-    Iucha)](https://github.com/0x8000-0000), [\@marti4d (Chris
-    Martin)](https://github.com/marti4d).
+    [#1433](https://github.com/fmtlib/fmt/pull/1433)).
+    Thanks @hhb, @gsjaardema, @gabime, @neheb, @vedranmiletic, @dkavolis,
+    @mwinterb, @orivej, @denizevrenci, @leonklingele, @chronoxor, @kent-tri,
+    @0x8000-0000 and @marti4d.
 
 # 6.0.0 - 2019-08-26
 
@@ -3554,8 +3170,7 @@
     undocumented `basic_format_context::parse_context()` function.
 
 -   Added [oss-fuzz](https://github.com/google/oss-fuzz) support
-    ([#1199](https://github.com/fmtlib/fmt/pull/1199)). Thanks
-    [\@pauldreik (Paul Dreik)](https://github.com/pauldreik).
+    ([#1199](https://github.com/fmtlib/fmt/pull/1199)). Thanks @pauldreik.
 
 -   `formatter` specializations now always take precedence over
     `operator<<` ([#952](https://github.com/fmtlib/fmt/issues/952)):
@@ -3600,8 +3215,7 @@
 
     It moves the cost of parsing a format string outside of the format
     function which can be beneficial when identically formatting many
-    objects of the same types. Thanks [\@stryku (Mateusz
-    Janek)](https://github.com/stryku).
+    objects of the same types. Thanks @stryku.
 
 -   Added experimental `%` format specifier that formats floating-point
     values as percentages
@@ -3613,8 +3227,7 @@
     auto s = fmt::format("{:.1%}", 0.42); // s == "42.0%"
     ```
 
-    Thanks [\@gawain-bolton (Gawain
-    Bolton)](https://github.com/gawain-bolton).
+    Thanks @gawain-bolton.
 
 -   Implemented precision for floating-point durations
     ([#1004](https://github.com/fmtlib/fmt/issues/1004),
@@ -3625,7 +3238,7 @@
     // s == 1.2s
     ```
 
-    Thanks [\@DanielaE (Daniela Engert)](https://github.com/DanielaE).
+    Thanks @DanielaE.
 
 -   Implemented `chrono` format specifiers `%Q` and `%q` that give the
     value and the unit respectively
@@ -3636,7 +3249,7 @@
     auto unit  = fmt::format("{:%q}", 42s); // unit == "s"
     ```
 
-    Thanks [\@DanielaE (Daniela Engert)](https://github.com/DanielaE).
+    Thanks @DanielaE.
 
 -   Fixed handling of dynamic width in chrono formatter:
 
@@ -3661,7 +3274,7 @@
                                       "The answer is {}.", 42);
     ```
 
-    Thanks [\@Naios (Denis Blank)](https://github.com/Naios).
+    Thanks @Naios.
 
 -   Removed the deprecated color API (`print_colored`). Use the new API,
     namely `print` overloads that take `text_style` instead.
@@ -3674,17 +3287,15 @@
     fmt::print("{}", fmt::ptr(p)); // prints p as a pointer
     ```
 
-    Thanks [\@sighingnow (Tao He)](https://github.com/sighingnow).
+    Thanks @sighingnow.
 
 -   Made `print` and `vprint` report I/O errors
     ([#1098](https://github.com/fmtlib/fmt/issues/1098),
-    [#1099](https://github.com/fmtlib/fmt/pull/1099)). Thanks
-    [\@BillyDonahue (Billy Donahue)](https://github.com/BillyDonahue).
+    [#1099](https://github.com/fmtlib/fmt/pull/1099)). Thanks @BillyDonahue.
 
 -   Marked deprecated APIs with the `[[deprecated]]` attribute and
     removed internal uses of deprecated APIs
-    ([#1022](https://github.com/fmtlib/fmt/pull/1022)). Thanks
-    [\@eliaskosunen (Elias Kosunen)](https://github.com/eliaskosunen).
+    ([#1022](https://github.com/fmtlib/fmt/pull/1022)). Thanks @eliaskosunen.
 
 -   Modernized the codebase using more C++11 features and removing
     workarounds. Most importantly, `buffer_context` is now an alias
@@ -3712,12 +3323,10 @@
 -   Switched to `fputws` for writing wide strings so that it\'s no
     longer required to call `_setmode` on Windows
     ([#1229](https://github.com/fmtlib/fmt/issues/1229),
-    [#1243](https://github.com/fmtlib/fmt/pull/1243)). Thanks
-    [\@jackoalan (Jack Andersen)](https://github.com/jackoalan).
+    [#1243](https://github.com/fmtlib/fmt/pull/1243)). Thanks @jackoalan.
 
 -   Improved literal-based API
-    ([#1254](https://github.com/fmtlib/fmt/pull/1254)). Thanks
-    [\@sylveon (Charles Milette)](https://github.com/sylveon).
+    ([#1254](https://github.com/fmtlib/fmt/pull/1254)). Thanks @sylveon.
 
 -   Added support for exotic platforms without `uintptr_t` such as IBM i
     (AS/400) which has 128-bit pointers and only 64-bit integers
@@ -3725,13 +3334,11 @@
 
 -   Added [Sublime Text syntax highlighting
     config](https://github.com/fmtlib/fmt/blob/master/support/C%2B%2B.sublime-syntax)
-    ([#1037](https://github.com/fmtlib/fmt/issues/1037)). Thanks
-    [\@Kronuz (Germán Méndez Bravo)](https://github.com/Kronuz).
+    ([#1037](https://github.com/fmtlib/fmt/issues/1037)). Thanks @Kronuz.
 
 -   Added the `FMT_ENFORCE_COMPILE_STRING` macro to enforce the use of
     compile-time format strings
-    ([#1231](https://github.com/fmtlib/fmt/pull/1231)). Thanks
-    [\@jackoalan (Jack Andersen)](https://github.com/jackoalan).
+    ([#1231](https://github.com/fmtlib/fmt/pull/1231)). Thanks @jackoalan.
 
 -   Stopped setting `CMAKE_BUILD_TYPE` if {fmt} is a subproject
     ([#1081](https://github.com/fmtlib/fmt/issues/1081)).
@@ -3741,12 +3348,8 @@
     [#1078](https://github.com/fmtlib/fmt/pull/1078),
     [#1091](https://github.com/fmtlib/fmt/pull/1091),
     [#1103](https://github.com/fmtlib/fmt/pull/1103),
-    [#1177](https://github.com/fmtlib/fmt/pull/1177)). Thanks
-    [\@luncliff (Park DongHa)](https://github.com/luncliff),
-    [\@jasonszang (Jason Shuo Zang)](https://github.com/jasonszang),
-    [\@olafhering (Olaf Hering)](https://github.com/olafhering),
-    [\@Lecetem](https://github.com/Lectem), [\@pauldreik (Paul
-    Dreik)](https://github.com/pauldreik).
+    [#1177](https://github.com/fmtlib/fmt/pull/1177)).
+    Thanks @luncliff, @jasonszang, @olafhering, @Lecetem and @pauldreik.
 
 -   Improved documentation
     ([#1049](https://github.com/fmtlib/fmt/issues/1049),
@@ -3758,13 +3361,9 @@
     [#1180](https://github.com/fmtlib/fmt/issues/1180),
     [#1250](https://github.com/fmtlib/fmt/pull/1250),
     [#1252](https://github.com/fmtlib/fmt/pull/1252),
-    [#1265](https://github.com/fmtlib/fmt/pull/1265)). Thanks [\@mikelui
-    (Michael Lui)](https://github.com/mikelui), [\@foonathan (Jonathan
-    Müller)](https://github.com/foonathan), [\@BillyDonahue (Billy
-    Donahue)](https://github.com/BillyDonahue), [\@jwakely (Jonathan
-    Wakely)](https://github.com/jwakely), [\@kaisbe (Kais Ben
-    Salah)](https://github.com/kaisbe), [\@sdebionne (Samuel
-    Debionne)](https://github.com/sdebionne).
+    [#1265](https://github.com/fmtlib/fmt/pull/1265)).
+    Thanks @mikelui, @foonathan, @BillyDonahue, @jwakely, @kaisbe and
+    @sdebionne.
 
 -   Fixed ambiguous formatter specialization in `fmt/ranges.h`
     ([#1123](https://github.com/fmtlib/fmt/issues/1123)).
@@ -3775,8 +3374,7 @@
 
 -   Fixed handling of general output iterators when formatting
     characters ([#1056](https://github.com/fmtlib/fmt/issues/1056),
-    [#1058](https://github.com/fmtlib/fmt/pull/1058)). Thanks [\@abolz
-    (Alexander Bolz)](https://github.com/abolz).
+    [#1058](https://github.com/fmtlib/fmt/pull/1058)). Thanks @abolz.
 
 -   Fixed handling of output iterators in `formatter` specialization for
     ranges ([#1064](https://github.com/fmtlib/fmt/issues/1064)).
@@ -3789,8 +3387,7 @@
 
 -   Fixed DLL visibility issues
     ([#1134](https://github.com/fmtlib/fmt/pull/1134),
-    [#1147](https://github.com/fmtlib/fmt/pull/1147)). Thanks
-    [\@denchat](https://github.com/denchat).
+    [#1147](https://github.com/fmtlib/fmt/pull/1147)). Thanks @denchat.
 
 -   Disabled the use of UDL template extension on GCC 9
     ([#1148](https://github.com/fmtlib/fmt/issues/1148)).
@@ -3804,8 +3401,7 @@
     [#1153](https://github.com/fmtlib/fmt/issues/1153),
     [#1155](https://github.com/fmtlib/fmt/pull/1155),
     [#1210](https://github.com/fmtlib/fmt/issues/1210),
-    [#1222](https://github.com/fmtlib/fmt/issues/1222)). Thanks
-    [\@alabuzhev (Alex Alabuzhev)](https://github.com/alabuzhev).
+    [#1222](https://github.com/fmtlib/fmt/issues/1222)). Thanks @alabuzhev.
 
 -   Fixed bugs discovered by fuzzing or during fuzzing integration
     ([#1124](https://github.com/fmtlib/fmt/issues/1124),
@@ -3817,12 +3413,10 @@
     [#1142](https://github.com/fmtlib/fmt/issues/1142),
     [#1178](https://github.com/fmtlib/fmt/issues/1178),
     [#1179](https://github.com/fmtlib/fmt/issues/1179),
-    [#1194](https://github.com/fmtlib/fmt/issues/1194)). Thanks
-    [\@pauldreik (Paul Dreik)](https://github.com/pauldreik).
+    [#1194](https://github.com/fmtlib/fmt/issues/1194)). Thanks @pauldreik.
 
 -   Fixed building tests on FreeBSD and Hurd
-    ([#1043](https://github.com/fmtlib/fmt/issues/1043)). Thanks
-    [\@jackyf (Eugene V. Lyubimkin)](https://github.com/jackyf).
+    ([#1043](https://github.com/fmtlib/fmt/issues/1043)). Thanks @jackyf.
 
 -   Fixed various warnings and compilation issues
     ([#998](https://github.com/fmtlib/fmt/pull/998),
@@ -3882,26 +3476,11 @@
     [#1232](https://github.com/fmtlib/fmt/issues/1232),
     [#1235](https://github.com/fmtlib/fmt/pull/1235),
     [#1236](https://github.com/fmtlib/fmt/pull/1236),
-    [#1240](https://github.com/fmtlib/fmt/issues/1240)). Thanks
-    [\@DanielaE (Daniela Engert)](https://github.com/DanielaE),
-    [\@mwinterb](https://github.com/mwinterb), [\@eliaskosunen (Elias
-    Kosunen)](https://github.com/eliaskosunen),
-    [\@morinmorin](https://github.com/morinmorin), [\@ricco19 (Brian
-    Ricciardelli)](https://github.com/ricco19), [\@waywardmonkeys (Bruce
-    Mitchener)](https://github.com/waywardmonkeys), [\@chronoxor (Ivan
-    Shynkarenka)](https://github.com/chronoxor),
-    [\@remyabel](https://github.com/remyabel), [\@pauldreik (Paul
-    Dreik)](https://github.com/pauldreik), [\@gsjaardema (Greg
-    Sjaardema)](https://github.com/gsjaardema), [\@rcane (Ronny
-    Krüger)](https://github.com/rcane),
-    [\@mocabe](https://github.com/mocabe),
-    [\@denchat](https://github.com/denchat), [\@cjdb (Christopher Di
-    Bella)](https://github.com/cjdb), [\@HazardyKnusperkeks (Björn
-    Schäpers)](https://github.com/HazardyKnusperkeks), [\@vedranmiletic
-    (Vedran Miletić)](https://github.com/vedranmiletic), [\@jackoalan
-    (Jack Andersen)](https://github.com/jackoalan), [\@DaanDeMeyer (Daan
-    De Meyer)](https://github.com/DaanDeMeyer), [\@starkmapper (Mark
-    Stapper)](https://github.com/starkmapper).
+    [#1240](https://github.com/fmtlib/fmt/issues/1240)).
+    Thanks @DanielaE, @mwinterb, @eliaskosunen, @morinmorin, @ricco19,
+    @waywardmonkeys, @chronoxor, @remyabel, @pauldreik, @gsjaardema, @rcane,
+    @mocabe, @denchat, @cjdb, @HazardyKnusperkeks, @vedranmiletic, @jackoalan,
+    @DaanDeMeyer and @starkmapper.
 
 # 5.3.0 - 2018-12-28
 
@@ -3946,7 +3525,7 @@
 
     ![image](https://user-images.githubusercontent.com/576385/50405788-b66e7500-076e-11e9-9592-7324d1f951d8.png)
 
-    Thanks [\@Rakete1111 (Nicolas)](https://github.com/Rakete1111).
+    Thanks @Rakete1111.
 
 -   Added support for 4-bit terminal colors
     ([#968](https://github.com/fmtlib/fmt/issues/968),
@@ -3964,7 +3543,7 @@
 
     ![image](https://user-images.githubusercontent.com/576385/50405925-dbfc7e00-0770-11e9-9b85-333fab0af9ac.png)
 
-    Thanks [\@Rakete1111 (Nicolas)](https://github.com/Rakete1111).
+    Thanks @Rakete1111.
 
 -   Parameterized formatting functions on the type of the format string
     ([#880](https://github.com/fmtlib/fmt/issues/880),
@@ -3986,7 +3565,7 @@
     std::string message = fmt::format(my_string("The answer is {}."), 42);
     ```
 
-    Thanks [\@DanielaE (Daniela Engert)](https://github.com/DanielaE).
+    Thanks @DanielaE.
 
 -   Made `std::string_view` work as a format string
     ([#898](https://github.com/fmtlib/fmt/pull/898)):
@@ -3995,7 +3574,7 @@
     auto message = fmt::format(std::string_view("The answer is {}."), 42);
     ```
 
-    Thanks [\@DanielaE (Daniela Engert)](https://github.com/DanielaE).
+    Thanks @DanielaE.
 
 -   Added wide string support to compile-time format string checks
     ([#924](https://github.com/fmtlib/fmt/pull/924)):
@@ -4004,7 +3583,7 @@
     print(fmt(L"{:f}"), 42); // compile-time error: invalid type specifier
     ```
 
-    Thanks [\@XZiar](https://github.com/XZiar).
+    Thanks @XZiar.
 
 -   Made colored print functions work with wide strings
     ([#867](https://github.com/fmtlib/fmt/pull/867)):
@@ -4017,7 +3596,7 @@
     }
     ```
 
-    Thanks [\@DanielaE (Daniela Engert)](https://github.com/DanielaE).
+    Thanks @DanielaE.
 
 -   Introduced experimental Unicode support
     ([#628](https://github.com/fmtlib/fmt/issues/628),
@@ -4044,12 +3623,10 @@
     ```
 
 -   Constrained formatting functions on proper iterator types
-    ([#921](https://github.com/fmtlib/fmt/pull/921)). Thanks [\@DanielaE
-    (Daniela Engert)](https://github.com/DanielaE).
+    ([#921](https://github.com/fmtlib/fmt/pull/921)). Thanks @DanielaE.
 
 -   Added `make_printf_args` and `make_wprintf_args` functions
-    ([#934](https://github.com/fmtlib/fmt/pull/934)). Thanks
-    [\@tnovotny](https://github.com/tnovotny).
+    ([#934](https://github.com/fmtlib/fmt/pull/934)). Thanks @tnovotny.
 
 -   Deprecated `fmt::visit`, `parse_context`, and `wparse_context`. Use
     `fmt::visit_format_arg`, `format_parse_context`, and
@@ -4058,8 +3635,7 @@
 -   Removed undocumented `basic_fixed_buffer` which has been superseded
     by the iterator-based API
     ([#873](https://github.com/fmtlib/fmt/issues/873),
-    [#902](https://github.com/fmtlib/fmt/pull/902)). Thanks [\@superfunc
-    (hollywood programmer)](https://github.com/superfunc).
+    [#902](https://github.com/fmtlib/fmt/pull/902)). Thanks @superfunc.
 
 -   Disallowed repeated leading zeros in an argument ID:
 
@@ -4077,39 +3653,29 @@
     [#877](https://github.com/fmtlib/fmt/issues/877),
     [#901](https://github.com/fmtlib/fmt/pull/901),
     [#906](https://github.com/fmtlib/fmt/pull/906),
-    [#979](https://github.com/fmtlib/fmt/pull/979)). Thanks [\@kookjr
-    (Mathew Cucuzella)](https://github.com/kookjr), [\@DarkDimius
-    (Dmitry Petrashko)](https://github.com/DarkDimius),
-    [\@HecticSerenity](https://github.com/HecticSerenity).
+    [#979](https://github.com/fmtlib/fmt/pull/979)).
+    Thanks @kookjr, @DarkDimius and @HecticSerenity.
 
 -   Added pkgconfig support which makes it easier to consume the library
     from meson and other build systems
-    ([#916](https://github.com/fmtlib/fmt/pull/916)). Thanks
-    [\@colemickens (Cole Mickens)](https://github.com/colemickens).
+    ([#916](https://github.com/fmtlib/fmt/pull/916)). Thanks @colemickens.
 
 -   Various build improvements
     ([#909](https://github.com/fmtlib/fmt/pull/909),
     [#926](https://github.com/fmtlib/fmt/pull/926),
     [#937](https://github.com/fmtlib/fmt/pull/937),
     [#953](https://github.com/fmtlib/fmt/pull/953),
-    [#959](https://github.com/fmtlib/fmt/pull/959)). Thanks [\@tchaikov
-    (Kefu Chai)](https://github.com/tchaikov), [\@luncliff (Park
-    DongHa)](https://github.com/luncliff), [\@AndreasSchoenle (Andreas
-    Schönle)](https://github.com/AndreasSchoenle),
-    [\@hotwatermorning](https://github.com/hotwatermorning), [\@Zefz
-    (JohanJansen)](https://github.com/Zefz).
+    [#959](https://github.com/fmtlib/fmt/pull/959)).
+    Thanks @tchaikov, @luncliff, @AndreasSchoenle, @hotwatermorning and @Zefz.
 
 -   Improved `string_view` construction performance
-    ([#914](https://github.com/fmtlib/fmt/pull/914)). Thanks [\@gabime
-    (Gabi Melman)](https://github.com/gabime).
+    ([#914](https://github.com/fmtlib/fmt/pull/914)). Thanks @gabime.
 
 -   Fixed non-matching char types
-    ([#895](https://github.com/fmtlib/fmt/pull/895)). Thanks [\@DanielaE
-    (Daniela Engert)](https://github.com/DanielaE).
+    ([#895](https://github.com/fmtlib/fmt/pull/895)). Thanks @DanielaE.
 
 -   Fixed `format_to_n` with `std::back_insert_iterator`
-    ([#913](https://github.com/fmtlib/fmt/pull/913)). Thanks [\@DanielaE
-    (Daniela Engert)](https://github.com/DanielaE).
+    ([#913](https://github.com/fmtlib/fmt/pull/913)). Thanks @DanielaE.
 
 -   Fixed locale-dependent formatting
     ([#905](https://github.com/fmtlib/fmt/issues/905)).
@@ -4127,31 +3693,22 @@
     [#965](https://github.com/fmtlib/fmt/issues/965),
     [#977](https://github.com/fmtlib/fmt/issues/977),
     [#983](https://github.com/fmtlib/fmt/pull/983),
-    [#989](https://github.com/fmtlib/fmt/pull/989)). Thanks [\@Luthaf
-    (Guillaume Fraux)](https://github.com/Luthaf), [\@stevenhoving
-    (Steven Hoving)](https://github.com/stevenhoving), [\@christinaa
-    (Kristina Brooks)](https://github.com/christinaa), [\@lgritz (Larry
-    Gritz)](https://github.com/lgritz), [\@DanielaE (Daniela
-    Engert)](https://github.com/DanielaE), [\@0x8000-0000 (Sign
-    Bit)](https://github.com/0x8000-0000),
-    [\@liuping1997](https://github.com/liuping1997).
+    [#989](https://github.com/fmtlib/fmt/pull/989)).
+    Thanks @Luthaf, @stevenhoving, @christinaa, @lgritz, @DanielaE,
+    @0x8000-0000 and @liuping1997.
 
 # 5.2.1 - 2018-09-21
 
 -   Fixed `visit` lookup issues on gcc 7 & 8
-    ([#870](https://github.com/fmtlib/fmt/pull/870)). Thanks
-    [\@medithe](https://github.com/medithe).
+    ([#870](https://github.com/fmtlib/fmt/pull/870)). Thanks @medithe.
 -   Fixed linkage errors on older gcc.
 -   Prevented `fmt/range.h` from specializing `fmt::basic_string_view`
     ([#865](https://github.com/fmtlib/fmt/issues/865),
-    [#868](https://github.com/fmtlib/fmt/pull/868)). Thanks [\@hhggit
-    (dual)](https://github.com/hhggit).
+    [#868](https://github.com/fmtlib/fmt/pull/868)). Thanks @hhggit.
 -   Improved error message when formatting unknown types
-    ([#872](https://github.com/fmtlib/fmt/pull/872)). Thanks
-    [\@foonathan (Jonathan Müller)](https://github.com/foonathan),
+    ([#872](https://github.com/fmtlib/fmt/pull/872)). Thanks @foonathan.
 -   Disabled templated user-defined literals when compiled under nvcc
-    ([#875](https://github.com/fmtlib/fmt/pull/875)). Thanks
-    [\@CandyGumdrop (Candy Gumdrop)](https://github.com/CandyGumdrop),
+    ([#875](https://github.com/fmtlib/fmt/pull/875)). Thanks @CandyGumdrop.
 -   Fixed `format_to` formatting to `wmemory_buffer`
     ([#874](https://github.com/fmtlib/fmt/issues/874)).
 
@@ -4216,23 +3773,19 @@
 
 -   Added support for dynamic argument lists
     ([#814](https://github.com/fmtlib/fmt/issues/814),
-    [#819](https://github.com/fmtlib/fmt/pull/819)). Thanks
-    [\@MikePopoloski (Michael
-    Popoloski)](https://github.com/MikePopoloski).
+    [#819](https://github.com/fmtlib/fmt/pull/819)). Thanks @MikePopoloski.
 
 -   Reduced executable size overhead for embedded targets using newlib
     nano by making locale dependency optional
-    ([#839](https://github.com/fmtlib/fmt/pull/839)). Thanks
-    [\@teajay-fr (Thomas Benard)](https://github.com/teajay-fr).
+    ([#839](https://github.com/fmtlib/fmt/pull/839)). Thanks @teajay-fr.
 
 -   Keep `noexcept` specifier when exceptions are disabled
     ([#801](https://github.com/fmtlib/fmt/issues/801),
-    [#810](https://github.com/fmtlib/fmt/pull/810)). Thanks [\@qis
-    (Alexej Harm)](https://github.com/qis).
+    [#810](https://github.com/fmtlib/fmt/pull/810)). Thanks @qis.
 
 -   Fixed formatting of user-defined types providing `operator<<` with
     `format_to_n` ([#806](https://github.com/fmtlib/fmt/pull/806)).
-    Thanks [\@mkurdej (Marek Kurdej)](https://github.com/mkurdej).
+    Thanks @mkurdej.
 
 -   Fixed dynamic linkage of new symbols
     ([#808](https://github.com/fmtlib/fmt/issues/808)).
@@ -4257,10 +3810,8 @@
     [#844](https://github.com/fmtlib/fmt/pull/844),
     [#851](https://github.com/fmtlib/fmt/issues/851),
     [#852](https://github.com/fmtlib/fmt/pull/852),
-    [#854](https://github.com/fmtlib/fmt/pull/854)). Thanks [\@henryiii
-    (Henry Schreiner)](https://github.com/henryiii),
-    [\@medithe](https://github.com/medithe), and [\@eliasdaler (Elias
-    Daler)](https://github.com/eliasdaler).
+    [#854](https://github.com/fmtlib/fmt/pull/854)).
+    Thanks @henryiii, @medithe, and @eliasdaler.
 
 # 5.1.0 - 2018-07-05
 
@@ -4278,12 +3829,10 @@
     The old API (the `print_colored` and `vprint_colored` functions and
     the `color` enum) is now deprecated.
     ([#762](https://github.com/fmtlib/fmt/issues/762)
-    [#767](https://github.com/fmtlib/fmt/pull/767)). thanks [\@Remotion
-    (Remo)](https://github.com/Remotion).
+    [#767](https://github.com/fmtlib/fmt/pull/767)). thanks @Remotion.
 
 -   Added quotes to strings in ranges and tuples
-    ([#766](https://github.com/fmtlib/fmt/pull/766)). Thanks [\@Remotion
-    (Remo)](https://github.com/Remotion).
+    ([#766](https://github.com/fmtlib/fmt/pull/766)). Thanks @Remotion.
 
 -   Made `format_to` work with `basic_memory_buffer`
     ([#776](https://github.com/fmtlib/fmt/issues/776)).
@@ -4295,13 +3844,11 @@
 -   Made `is_range` and `is_tuple_like` part of public (experimental)
     API to allow specialization for user-defined types
     ([#751](https://github.com/fmtlib/fmt/issues/751),
-    [#759](https://github.com/fmtlib/fmt/pull/759)). Thanks [\@drrlvn
-    (Dror Levin)](https://github.com/drrlvn).
+    [#759](https://github.com/fmtlib/fmt/pull/759)). Thanks @drrlvn.
 
 -   Added more compilers to continuous integration and increased
     `FMT_PEDANTIC` warning levels
-    ([#736](https://github.com/fmtlib/fmt/pull/736)). Thanks
-    [\@eliaskosunen (Elias Kosunen)](https://github.com/eliaskosunen).
+    ([#736](https://github.com/fmtlib/fmt/pull/736)). Thanks @eliaskosunen.
 
 -   Fixed compilation with MSVC 2013.
 
@@ -4337,12 +3884,8 @@
     [#780](https://github.com/fmtlib/fmt/pull/780),
     [#790](https://github.com/fmtlib/fmt/pull/790),
     [#792](https://github.com/fmtlib/fmt/pull/792),
-    [#800](https://github.com/fmtlib/fmt/pull/800)). Thanks [\@Remotion
-    (Remo)](https://github.com/Remotion), [\@gabime (Gabi
-    Melman)](https://github.com/gabime), [\@foonathan (Jonathan
-    Müller)](https://github.com/foonathan), [\@Dark-Passenger (Dhruv
-    Paranjape)](https://github.com/Dark-Passenger), and [\@0x8000-0000
-    (Sign Bit)](https://github.com/0x8000-0000).
+    [#800](https://github.com/fmtlib/fmt/pull/800)).
+    Thanks @Remotion, @gabime, @foonathan, @Dark-Passenger and @0x8000-0000.
 
 # 5.0.0 - 2018-05-21
 
@@ -4483,8 +4026,7 @@
 
 -   Added the `make_printf_args` function for capturing `printf`
     arguments ([#687](https://github.com/fmtlib/fmt/issues/687),
-    [#694](https://github.com/fmtlib/fmt/pull/694)). Thanks [\@Kronuz
-    (Germán Méndez Bravo)](https://github.com/Kronuz).
+    [#694](https://github.com/fmtlib/fmt/pull/694)). Thanks @Kronuz.
 
 -   Added prefix `v` to non-variadic functions taking `format_args` to
     distinguish them from variadic ones:
@@ -4507,7 +4049,7 @@
     fmt::print("{}", v); // prints {1, 2, 3}
     ```
 
-    Thanks [\@Remotion (Remo)](https://github.com/Remotion).
+    Thanks @Remotion.
 
 -   Implemented `wchar_t` date and time formatting
     ([#712](https://github.com/fmtlib/fmt/pull/712)):
@@ -4519,11 +4061,10 @@
     auto s = fmt::format(L"The date is {:%Y-%m-%d}.", *std::localtime(&t));
     ```
 
-    Thanks [\@DanielaE (Daniela Engert)](https://github.com/DanielaE).
+    Thanks @DanielaE.
 
 -   Provided more wide string overloads
-    ([#724](https://github.com/fmtlib/fmt/pull/724)). Thanks [\@DanielaE
-    (Daniela Engert)](https://github.com/DanielaE).
+    ([#724](https://github.com/fmtlib/fmt/pull/724)). Thanks @DanielaE.
 
 -   Switched from a custom null-terminated string view class to
     `string_view` in the format API and provided `fmt::string_view`
@@ -4540,8 +4081,7 @@
     fmt::print("{}", std::experimental::string_view("foo"));
     ```
 
-    Thanks [\@virgiliofornazin (Virgilio Alexandre
-    Fornazin)](https://github.com/virgiliofornazin).
+    Thanks @virgiliofornazin.
 
 -   Allowed mixing named and automatic arguments:
 
@@ -4561,10 +4101,8 @@
     [#614](https://github.com/fmtlib/fmt/issues/614),
     [#617](https://github.com/fmtlib/fmt/pull/617),
     [#661](https://github.com/fmtlib/fmt/pull/661),
-    [#680](https://github.com/fmtlib/fmt/pull/680)). Thanks [\@ibell
-    (Ian Bell)](https://github.com/ibell), [\@mihaitodor (Mihai
-    Todor)](https://github.com/mihaitodor), and
-    [\@johnthagen](https://github.com/johnthagen).
+    [#680](https://github.com/fmtlib/fmt/pull/680)).
+    Thanks @ibell, @mihaitodor and @johnthagen.
 
 -   Implemented more efficient handling of large number of format
     arguments.
@@ -4575,37 +4113,31 @@
     ([#636](https://github.com/fmtlib/fmt/issues/636)).
 
 -   Removed unnecessary `fmt/` prefix in includes
-    ([#397](https://github.com/fmtlib/fmt/pull/397)). Thanks
-    [\@chronoxor (Ivan Shynkarenka)](https://github.com/chronoxor).
+    ([#397](https://github.com/fmtlib/fmt/pull/397)). Thanks @chronoxor.
 
 -   Moved `fmt/*.h` to `include/fmt/*.h` to prevent irrelevant files and
     directories appearing on the include search paths when fmt is used
     as a subproject and moved source files to the `src` directory.
 
 -   Added qmake project file `support/fmt.pro`
-    ([#641](https://github.com/fmtlib/fmt/pull/641)). Thanks [\@cowo78
-    (Giuseppe Corbelli)](https://github.com/cowo78).
+    ([#641](https://github.com/fmtlib/fmt/pull/641)). Thanks @cowo78.
 
 -   Added Gradle build file `support/build.gradle`
-    ([#649](https://github.com/fmtlib/fmt/pull/649)). Thanks [\@luncliff
-    (Park DongHa)](https://github.com/luncliff).
+    ([#649](https://github.com/fmtlib/fmt/pull/649)). Thanks @luncliff.
 
 -   Removed `FMT_CPPFORMAT` CMake option.
 
 -   Fixed a name conflict with the macro `CHAR_WIDTH` in glibc
-    ([#616](https://github.com/fmtlib/fmt/pull/616)). Thanks [\@aroig
-    (Abdó Roig-Maranges)](https://github.com/aroig).
+    ([#616](https://github.com/fmtlib/fmt/pull/616)). Thanks @aroig.
 
 -   Fixed handling of nested braces in `fmt::join`
     ([#638](https://github.com/fmtlib/fmt/issues/638)).
 
 -   Added `SOURCELINK_SUFFIX` for compatibility with Sphinx 1.5
-    ([#497](https://github.com/fmtlib/fmt/pull/497)). Thanks [\@ginggs
-    (Graham Inggs)](https://github.com/ginggs).
+    ([#497](https://github.com/fmtlib/fmt/pull/497)). Thanks @ginggs.
 
 -   Added a missing `inline` in the header-only mode
-    ([#626](https://github.com/fmtlib/fmt/pull/626)). Thanks [\@aroig
-    (Abdó Roig-Maranges)](https://github.com/aroig).
+    ([#626](https://github.com/fmtlib/fmt/pull/626)). Thanks @aroig.
 
 -   Fixed various compiler warnings
     ([#640](https://github.com/fmtlib/fmt/pull/640),
@@ -4619,27 +4151,18 @@
     [#723](https://github.com/fmtlib/fmt/pull/723),
     [#726](https://github.com/fmtlib/fmt/pull/726),
     [#730](https://github.com/fmtlib/fmt/pull/730),
-    [#739](https://github.com/fmtlib/fmt/pull/739)). Thanks
-    [\@peterbell10](https://github.com/peterbell10),
-    [\@LarsGullik](https://github.com/LarsGullik), [\@foonathan
-    (Jonathan Müller)](https://github.com/foonathan), [\@eliaskosunen
-    (Elias Kosunen)](https://github.com/eliaskosunen),
-    [\@christianparpart (Christian
-    Parpart)](https://github.com/christianparpart), [\@DanielaE (Daniela
-    Engert)](https://github.com/DanielaE), and
-    [\@mwinterb](https://github.com/mwinterb).
+    [#739](https://github.com/fmtlib/fmt/pull/739)).
+    Thanks @peterbell10, @LarsGullik, @foonathan, @eliaskosunen,
+    @christianparpart, @DanielaE and @mwinterb.
 
 -   Worked around an MSVC bug and fixed several warnings
-    ([#653](https://github.com/fmtlib/fmt/pull/653)). Thanks
-    [\@alabuzhev (Alex Alabuzhev)](https://github.com/alabuzhev).
+    ([#653](https://github.com/fmtlib/fmt/pull/653)). Thanks @alabuzhev.
 
 -   Worked around GCC bug 67371
     ([#682](https://github.com/fmtlib/fmt/issues/682)).
 
 -   Fixed compilation with `-fno-exceptions`
-    ([#655](https://github.com/fmtlib/fmt/pull/655)). Thanks
-    [\@chenxiaolong (Andrew
-    Gunnerson)](https://github.com/chenxiaolong).
+    ([#655](https://github.com/fmtlib/fmt/pull/655)). Thanks @chenxiaolong.
 
 -   Made `constexpr remove_prefix` gcc version check tighter
     ([#648](https://github.com/fmtlib/fmt/issues/648)).
@@ -4652,12 +4175,10 @@
     ([#650](https://github.com/fmtlib/fmt/issues/650)).
 
 -   Fixed compilation on OpenBSD
-    ([#660](https://github.com/fmtlib/fmt/pull/660)). Thanks
-    [\@hubslave](https://github.com/hubslave).
+    ([#660](https://github.com/fmtlib/fmt/pull/660)). Thanks @hubslave.
 
 -   Fixed compilation on FreeBSD 12
-    ([#732](https://github.com/fmtlib/fmt/pull/732)). Thanks
-    [\@dankm](https://github.com/dankm).
+    ([#732](https://github.com/fmtlib/fmt/pull/732)). Thanks @dankm.
 
 -   Fixed compilation when there is a mismatch between `-std` options
     between the library and user code
@@ -4673,8 +4194,7 @@
     ([#675](https://github.com/fmtlib/fmt/issues/675)).
 
 -   Fixed handling of empty strings in UTF8/16 converters
-    ([#676](https://github.com/fmtlib/fmt/pull/676)). Thanks
-    [\@vgalka-sl (Vasili Galka)](https://github.com/vgalka-sl).
+    ([#676](https://github.com/fmtlib/fmt/pull/676)). Thanks @vgalka-sl.
 
 -   Fixed formatting of an empty `string_view`
     ([#689](https://github.com/fmtlib/fmt/issues/689)).
@@ -4683,7 +4203,7 @@
     ([#686](https://github.com/fmtlib/fmt/issues/686)).
 
 -   Fixed DLL issues ([#696](https://github.com/fmtlib/fmt/pull/696)).
-    Thanks [\@sebkoenig](https://github.com/sebkoenig).
+    Thanks @sebkoenig.
 
 -   Fixed compile checks for mixing narrow and wide strings
     ([#690](https://github.com/fmtlib/fmt/issues/690)).
@@ -4692,46 +4212,36 @@
     ([#729](https://github.com/fmtlib/fmt/issues/729)).
 
 -   Fixed handling of reused format specs (as in `fmt::join`) for
-    pointers ([#725](https://github.com/fmtlib/fmt/pull/725)). Thanks
-    [\@mwinterb](https://github.com/mwinterb).
+    pointers ([#725](https://github.com/fmtlib/fmt/pull/725)). Thanks @mwinterb.
 
 -   Fixed installation of `fmt/ranges.h`
-    ([#738](https://github.com/fmtlib/fmt/pull/738)). Thanks
-    [\@sv1990](https://github.com/sv1990).
+    ([#738](https://github.com/fmtlib/fmt/pull/738)). Thanks @sv1990.
 
 # 4.1.0 - 2017-12-20
 
 -   Added `fmt::to_wstring()` in addition to `fmt::to_string()`
-    ([#559](https://github.com/fmtlib/fmt/pull/559)). Thanks
-    [\@alabuzhev (Alex Alabuzhev)](https://github.com/alabuzhev).
+    ([#559](https://github.com/fmtlib/fmt/pull/559)). Thanks @alabuzhev.
 -   Added support for C++17 `std::string_view`
     ([#571](https://github.com/fmtlib/fmt/pull/571) and
-    [#578](https://github.com/fmtlib/fmt/pull/578)). Thanks [\@thelostt
-    (Mário Feroldi)](https://github.com/thelostt) and
-    [\@mwinterb](https://github.com/mwinterb).
+    [#578](https://github.com/fmtlib/fmt/pull/578)).
+    Thanks @thelostt and @mwinterb.
 -   Enabled stream exceptions to catch errors
-    ([#581](https://github.com/fmtlib/fmt/issues/581)). Thanks
-    [\@crusader-mike](https://github.com/crusader-mike).
+    ([#581](https://github.com/fmtlib/fmt/issues/581)). Thanks @crusader-mike.
 -   Allowed formatting of class hierarchies with `fmt::format_arg()`
-    ([#547](https://github.com/fmtlib/fmt/pull/547)). Thanks [\@rollbear
-    (Björn Fahller)](https://github.com/rollbear).
+    ([#547](https://github.com/fmtlib/fmt/pull/547)). Thanks @rollbear.
 -   Removed limitations on character types
-    ([#563](https://github.com/fmtlib/fmt/pull/563)). Thanks
-    [\@Yelnats321 (Elnar Dakeshov)](https://github.com/Yelnats321).
+    ([#563](https://github.com/fmtlib/fmt/pull/563)). Thanks @Yelnats321.
 -   Conditionally enabled use of `std::allocator_traits`
-    ([#583](https://github.com/fmtlib/fmt/pull/583)). Thanks
-    [\@mwinterb](https://github.com/mwinterb).
+    ([#583](https://github.com/fmtlib/fmt/pull/583)). Thanks @mwinterb.
 -   Added support for `const` variadic member function emulation with
     `FMT_VARIADIC_CONST`
-    ([#591](https://github.com/fmtlib/fmt/pull/591)). Thanks
-    [\@ludekvodicka (Ludek Vodicka)](https://github.com/ludekvodicka).
+    ([#591](https://github.com/fmtlib/fmt/pull/591)). Thanks @ludekvodicka.
 -   Various bugfixes: bad overflow check, unsupported implicit type
     conversion when determining formatting function, test segfaults
     ([#551](https://github.com/fmtlib/fmt/issues/551)), ill-formed
     macros ([#542](https://github.com/fmtlib/fmt/pull/542)) and
     ambiguous overloads
-    ([#580](https://github.com/fmtlib/fmt/issues/580)). Thanks
-    [\@xylosper (Byoung-young Lee)](https://github.com/xylosper).
+    ([#580](https://github.com/fmtlib/fmt/issues/580)). Thanks @xylosper.
 -   Prevented warnings on MSVC
     ([#605](https://github.com/fmtlib/fmt/pull/605),
     [#602](https://github.com/fmtlib/fmt/pull/602), and
@@ -4744,29 +4254,19 @@
     [#553](https://github.com/fmtlib/fmt/pull/553)), and added
     `override` and `[[noreturn]]`
     ([#549](https://github.com/fmtlib/fmt/pull/549) and
-    [#555](https://github.com/fmtlib/fmt/issues/555)). Thanks
-    [\@alabuzhev (Alex Alabuzhev)](https://github.com/alabuzhev),
-    [\@virgiliofornazin (Virgilio Alexandre
-    Fornazin)](https://gihtub.com/virgiliofornazin), [\@alexanderbock
-    (Alexander Bock)](https://github.com/alexanderbock),
-    [\@yumetodo](https://github.com/yumetodo), [\@VaderY (Császár
-    Mátyás)](https://github.com/VaderY), [\@jpcima (JP
-    Cimalando)](https://github.com/jpcima), [\@thelostt (Mário
-    Feroldi)](https://github.com/thelostt), and [\@Manu343726 (Manu
-    Sánchez)](https://github.com/Manu343726).
+    [#555](https://github.com/fmtlib/fmt/issues/555)).
+    Thanks @alabuzhev, @virgiliofornazin, @alexanderbock, @yumetodo, @VaderY,
+    @jpcima, @thelostt and @Manu343726.
 -   Improved CMake: Used `GNUInstallDirs` to set installation location
     ([#610](https://github.com/fmtlib/fmt/pull/610)) and fixed warnings
     ([#536](https://github.com/fmtlib/fmt/pull/536) and
-    [#556](https://github.com/fmtlib/fmt/pull/556)). Thanks [\@mikecrowe
-    (Mike Crowe)](https://github.com/mikecrowe),
-    [\@evgen231](https://github.com/evgen231) and [\@henryiii (Henry
-    Schreiner)](https://github.com/henryiii).
+    [#556](https://github.com/fmtlib/fmt/pull/556)).
+    Thanks @mikecrowe, @evgen231 and @henryiii.
 
 # 4.0.0 - 2017-06-27
 
 -   Removed old compatibility headers `cppformat/*.h` and CMake options
-    ([#527](https://github.com/fmtlib/fmt/pull/527)). Thanks
-    [\@maddinat0r (Alex Martin)](https://github.com/maddinat0r).
+    ([#527](https://github.com/fmtlib/fmt/pull/527)). Thanks @maddinat0r.
 
 -   Added `string.h` containing `fmt::to_string()` as alternative to
     `std::to_string()` as well as other string writer functionality
@@ -4779,8 +4279,7 @@
     std::string answer = fmt::to_string(42);
     ```
 
-    Thanks to [\@glebov-andrey (Andrey
-    Glebov)](https://github.com/glebov-andrey).
+    Thanks @glebov-andrey.
 
 -   Moved `fmt::printf()` to new `printf.h` header and allowed `%s` as
     generic specifier ([#453](https://github.com/fmtlib/fmt/pull/453)),
@@ -4798,18 +4297,14 @@
     fmt::printf("%s", 42);
     ```
 
-    Thanks [\@mojoBrendan](https://github.com/mojoBrendan),
-    [\@manylegged (Arthur Danskin)](https://github.com/manylegged) and
-    [\@spacemoose (Glen Stark)](https://github.com/spacemoose). See also
-    [#360](https://github.com/fmtlib/fmt/issues/360),
+    Thanks @mojoBrendan, @manylegged and @spacemoose.
+    See also [#360](https://github.com/fmtlib/fmt/issues/360),
     [#335](https://github.com/fmtlib/fmt/issues/335) and
     [#331](https://github.com/fmtlib/fmt/issues/331).
 
 -   Added `container.h` containing a `BasicContainerWriter` to write to
     containers like `std::vector`
-    ([#450](https://github.com/fmtlib/fmt/pull/450)). Thanks
-    [\@polyvertex (Jean-Charles
-    Lefebvre)](https://github.com/polyvertex).
+    ([#450](https://github.com/fmtlib/fmt/pull/450)). Thanks @polyvertex.
 
 -   Added `fmt::join()` function that takes a range and formats its
     elements separated by a given string
@@ -4823,33 +4318,27 @@
     fmt::print("({:+06.2f})", fmt::join(v.begin(), v.end(), ", "));
     ```
 
-    Thanks [\@olivier80](https://github.com/olivier80).
+    Thanks @olivier80.
 
 -   Added support for custom formatting specifications to simplify
     customization of built-in formatting
-    ([#444](https://github.com/fmtlib/fmt/pull/444)). Thanks
-    [\@polyvertex (Jean-Charles
-    Lefebvre)](https://github.com/polyvertex). See also
-    [#439](https://github.com/fmtlib/fmt/issues/439).
+    ([#444](https://github.com/fmtlib/fmt/pull/444)). Thanks @polyvertex.
+    See also [#439](https://github.com/fmtlib/fmt/issues/439).
 
 -   Added `fmt::format_system_error()` for error code formatting
     ([#323](https://github.com/fmtlib/fmt/issues/323) and
-    [#526](https://github.com/fmtlib/fmt/pull/526)). Thanks
-    [\@maddinat0r (Alex Martin)](https://github.com/maddinat0r).
+    [#526](https://github.com/fmtlib/fmt/pull/526)). Thanks @maddinat0r.
 
 -   Added thread-safe `fmt::localtime()` and `fmt::gmtime()` as
     replacement for the standard version to `time.h`
-    ([#396](https://github.com/fmtlib/fmt/pull/396)). Thanks
-    [\@codicodi](https://github.com/codicodi).
+    ([#396](https://github.com/fmtlib/fmt/pull/396)). Thanks @codicodi.
 
 -   Internal improvements to `NamedArg` and `ArgLists`
     ([#389](https://github.com/fmtlib/fmt/pull/389) and
-    [#390](https://github.com/fmtlib/fmt/pull/390)). Thanks
-    [\@chronoxor](https://github.com/chronoxor).
+    [#390](https://github.com/fmtlib/fmt/pull/390)). Thanks @chronoxor.
 
 -   Fixed crash due to bug in `FormatBuf`
-    ([#493](https://github.com/fmtlib/fmt/pull/493)). Thanks
-    [\@effzeh](https://github.com/effzeh). See also
+    ([#493](https://github.com/fmtlib/fmt/pull/493)). Thanks @effzeh. See also
     [#480](https://github.com/fmtlib/fmt/issues/480) and
     [#491](https://github.com/fmtlib/fmt/issues/491).
 
@@ -4866,12 +4355,8 @@
     [#482](https://github.com/fmtlib/fmt/pull/482),
     [#475](https://github.com/fmtlib/fmt/pull/475),
     [#473](https://github.com/fmtlib/fmt/pull/473) and
-    [#414](https://github.com/fmtlib/fmt/pull/414)). Thanks
-    [\@chronoxor](https://github.com/chronoxor),
-    [\@zhaohuaxishi](https://github.com/zhaohuaxishi), [\@pkestene
-    (Pierre Kestener)](https://github.com/pkestene), [\@dschmidt
-    (Dominik Schmidt)](https://github.com/dschmidt) and [\@0x414c
-    (Alexey Gorishny)](https://github.com/0x414c) .
+    [#414](https://github.com/fmtlib/fmt/pull/414)).
+    Thanks @chronoxor, @zhaohuaxishi, @pkestene, @dschmidt and @0x414c.
 
 -   Improved CMake: targets are now namespaced
     ([#511](https://github.com/fmtlib/fmt/pull/511) and
@@ -4881,23 +4366,18 @@
     minimal supported library subset
     ([#418](https://github.com/fmtlib/fmt/issues/418),
     [#419](https://github.com/fmtlib/fmt/pull/419) and
-    [#420](https://github.com/fmtlib/fmt/pull/420)). Thanks
-    [\@bjoernthiel (Bjoern Thiel)](https://github.com/bjoernthiel),
-    [\@niosHD (Mario Werner)](https://github.com/niosHD),
-    [\@LogicalKnight (Sean LK)](https://github.com/LogicalKnight) and
-    [\@alabuzhev (Alex Alabuzhev)](https://github.com/alabuzhev).
+    [#420](https://github.com/fmtlib/fmt/pull/420)).
+    Thanks @bjoernthiel, @niosHD, @LogicalKnight and @alabuzhev.
 
--   Improved documentation. Thanks to [\@pwm1234
-    (Phil)](https://github.com/pwm1234) for
-    [#393](https://github.com/fmtlib/fmt/pull/393).
+-   Improved documentation ([#393](https://github.com/fmtlib/fmt/pull/393)).
+    Thanks @pwm1234.
 
 # 3.0.2 - 2017-06-14
 
 -   Added `FMT_VERSION` macro
     ([#411](https://github.com/fmtlib/fmt/issues/411)).
 -   Used `FMT_NULL` instead of literal `0`
-    ([#409](https://github.com/fmtlib/fmt/pull/409)). Thanks
-    [\@alabuzhev (Alex Alabuzhev)](https://github.com/alabuzhev).
+    ([#409](https://github.com/fmtlib/fmt/pull/409)). Thanks @alabuzhev.
 -   Added extern templates for `format_float`
     ([#413](https://github.com/fmtlib/fmt/issues/413)).
 -   Fixed implicit conversion issue
@@ -4907,33 +4387,25 @@
 -   Fixed naming collision
     ([#425](https://github.com/fmtlib/fmt/issues/425)).
 -   Fixed missing intrinsic for C++/CLI
-    ([#457](https://github.com/fmtlib/fmt/pull/457)). Thanks [\@calumr
-    (Calum Robinson)](https://github.com/calumr)
+    ([#457](https://github.com/fmtlib/fmt/pull/457)). Thanks @calumr.
 -   Fixed Android detection
-    ([#458](https://github.com/fmtlib/fmt/pull/458)). Thanks [\@Gachapen
-    (Magnus Bjerke Vik)](https://github.com/Gachapen).
+    ([#458](https://github.com/fmtlib/fmt/pull/458)). Thanks @Gachapen.
 -   Use lean `windows.h` if not in header-only mode
-    ([#503](https://github.com/fmtlib/fmt/pull/503)). Thanks
-    [\@Quentin01 (Quentin Buathier)](https://github.com/Quentin01).
+    ([#503](https://github.com/fmtlib/fmt/pull/503)). Thanks @Quentin01.
 -   Fixed issue with CMake exporting C++11 flag
-    ([#445](https://github.com/fmtlib/fmt/pull/455)). Thanks [\@EricWF
-    (Eric)](https://github.com/EricWF).
+    ([#445](https://github.com/fmtlib/fmt/pull/455)). Thanks @EricWF.
 -   Fixed issue with nvcc and MSVC compiler bug and MinGW
     ([#505](https://github.com/fmtlib/fmt/issues/505)).
 -   Fixed DLL issues ([#469](https://github.com/fmtlib/fmt/pull/469) and
-    [#502](https://github.com/fmtlib/fmt/pull/502)). Thanks
-    [\@richardeakin (Richard Eakin)](https://github.com/richardeakin)
-    and [\@AndreasSchoenle (Andreas
-    Schönle)](https://github.com/AndreasSchoenle).
+    [#502](https://github.com/fmtlib/fmt/pull/502)).
+    Thanks @richardeakin and @AndreasSchoenle.
 -   Fixed test compilation under FreeBSD
     ([#433](https://github.com/fmtlib/fmt/issues/433)).
 -   Fixed various warnings
     ([#403](https://github.com/fmtlib/fmt/pull/403),
     [#410](https://github.com/fmtlib/fmt/pull/410) and
-    [#510](https://github.com/fmtlib/fmt/pull/510)). Thanks
-    [\@Lecetem](https://github.com/Lectem), [\@chenhayat (Chen
-    Hayat)](https://github.com/chenhayat) and
-    [\@trozen](https://github.com/trozen).
+    [#510](https://github.com/fmtlib/fmt/pull/510)).
+    Thanks @Lecetem, @chenhayat and @trozen.
 -   Worked around a broken `__builtin_clz` in clang with MS codegen
     ([#519](https://github.com/fmtlib/fmt/issues/519)).
 -   Removed redundant include
@@ -4952,9 +4424,8 @@
     ([#318](https://github.com/fmtlib/fmt/issues/318),
     [#250](https://github.com/fmtlib/fmt/issues/250), also merged
     [#385](https://github.com/fmtlib/fmt/pull/385) and
-    [#361](https://github.com/fmtlib/fmt/pull/361)). Thanks [\@jcelerier
-    (Jean-Michaël Celerier)](https://github.com/jcelerier) and
-    [\@nmoehrle (Nils Moehrle)](https://github.com/nmoehrle).
+    [#361](https://github.com/fmtlib/fmt/pull/361)).
+    Thanks @jcelerier and @nmoehrle.
 -   Fixed compilation issues under Android
     ([#327](https://github.com/fmtlib/fmt/pull/327),
     [#345](https://github.com/fmtlib/fmt/issues/345) and
@@ -4966,18 +4437,13 @@
     [#366](https://github.com/fmtlib/fmt/issues/355),
     [#348](https://github.com/fmtlib/fmt/pull/348),
     [#402](https://github.com/fmtlib/fmt/pull/402),
-    [#405](https://github.com/fmtlib/fmt/pull/405)). Thanks to
-    [\@dpantele (Dmitry)](https://github.com/dpantele), [\@hghwng (Hugh
-    Wang)](https://github.com/hghwng), [\@arvedarved (Tilman
-    Keskinöz)](https://github.com/arvedarved), [\@LogicalKnight
-    (Sean)](https://github.com/LogicalKnight) and [\@JanHellwig (Jan
-    Hellwig)](https://github.com/janhellwig).
+    [#405](https://github.com/fmtlib/fmt/pull/405)).
+    Thanks @dpantele, @hghwng, @arvedarved, @LogicalKnight and @JanHellwig.
 -   Fixed some documentation issues and extended specification
     ([#320](https://github.com/fmtlib/fmt/issues/320),
     [#333](https://github.com/fmtlib/fmt/pull/333),
     [#347](https://github.com/fmtlib/fmt/issues/347),
-    [#362](https://github.com/fmtlib/fmt/pull/362)). Thanks to
-    [\@smellman (Taro Matsuzawa aka. btm)](https://github.com/smellman).
+    [#362](https://github.com/fmtlib/fmt/pull/362)). Thanks @smellman.
 
 # 3.0.0 - 2016-05-07
 
@@ -5068,9 +4534,8 @@
 
 -   Fixed detection of user-defined literal support on Intel C++
     compiler ([#311](https://github.com/fmtlib/fmt/issues/311),
-    [#312](https://github.com/fmtlib/fmt/pull/312)). Thanks to
-    [\@dean0x7d (Dean Moldovan)](https://github.com/dean0x7d) and
-    [\@speth (Ray Speth)](https://github.com/speth).
+    [#312](https://github.com/fmtlib/fmt/pull/312)).
+    Thanks @dean0x7d and @speth.
 
 -   Reduced compile time
     ([#243](https://github.com/fmtlib/fmt/pull/243),
@@ -5081,10 +4546,10 @@
 
     ![image](https://cloud.githubusercontent.com/assets/4831417/11614080/6ac903cc-9c37-11e5-8165-26df6efae364.png)
 
-    Thanks to [\@dean0x7d (Dean Moldovan)](https://github.com/dean0x7d).
+    Thanks @dean0x7d.
 
 -   Compile test fixes ([#313](https://github.com/fmtlib/fmt/pull/313)).
-    Thanks to [\@dean0x7d (Dean Moldovan)](https://github.com/dean0x7d).
+    Thanks @dean0x7d.
 
 -   Documentation fixes ([#239](https://github.com/fmtlib/fmt/pull/239),
     [#248](https://github.com/fmtlib/fmt/issues/248),
@@ -5092,10 +4557,8 @@
     [#258](https://github.com/fmtlib/fmt/pull/258),
     [#260](https://github.com/fmtlib/fmt/issues/260),
     [#301](https://github.com/fmtlib/fmt/issues/301),
-    [#309](https://github.com/fmtlib/fmt/pull/309)). Thanks to
-    [\@ReadmeCritic](https://github.com/ReadmeCritic) [\@Gachapen
-    (Magnus Bjerke Vik)](https://github.com/Gachapen) and [\@jwilk
-    (Jakub Wilk)](https://github.com/jwilk).
+    [#309](https://github.com/fmtlib/fmt/pull/309)).
+    Thanks @ReadmeCritic @Gachapen and @jwilk.
 
 -   Fixed compiler and sanitizer warnings
     ([#244](https://github.com/fmtlib/fmt/issues/244),
@@ -5107,37 +4570,30 @@
     [#286](https://github.com/fmtlib/fmt/pull/286),
     [#291](https://github.com/fmtlib/fmt/issues/291),
     [#296](https://github.com/fmtlib/fmt/issues/296),
-    [#308](https://github.com/fmtlib/fmt/issues/308)) Thanks to
-    [\@mwinterb](https://github.com/mwinterb), [\@pweiskircher (Patrik
-    Weiskircher)](https://github.com/pweiskircher),
-    [\@Naios](https://github.com/Naios).
+    [#308](https://github.com/fmtlib/fmt/issues/308)).
+    Thanks @mwinterb, @pweiskircher and @Naios.
 
 -   Improved compatibility with Windows Store apps
     ([#280](https://github.com/fmtlib/fmt/issues/280),
-    [#285](https://github.com/fmtlib/fmt/pull/285)) Thanks to
-    [\@mwinterb](https://github.com/mwinterb).
+    [#285](https://github.com/fmtlib/fmt/pull/285)) Thanks @mwinterb.
 
 -   Added tests of compatibility with older C++ standards
-    ([#273](https://github.com/fmtlib/fmt/pull/273)). Thanks to
-    [\@niosHD](https://github.com/niosHD).
+    ([#273](https://github.com/fmtlib/fmt/pull/273)). Thanks @niosHD.
 
 -   Fixed Android build
-    ([#271](https://github.com/fmtlib/fmt/pull/271)). Thanks to
-    [\@newnon](https://github.com/newnon).
+    ([#271](https://github.com/fmtlib/fmt/pull/271)). Thanks @newnon.
 
 -   Changed `ArgMap` to be backed by a vector instead of a map.
     ([#261](https://github.com/fmtlib/fmt/issues/261),
-    [#262](https://github.com/fmtlib/fmt/pull/262)). Thanks to
-    [\@mwinterb](https://github.com/mwinterb).
+    [#262](https://github.com/fmtlib/fmt/pull/262)). Thanks @mwinterb.
 
 -   Added `fprintf` overload that writes to a `std::ostream`
-    ([#251](https://github.com/fmtlib/fmt/pull/251)). Thanks to
-    [nickhutchinson (Nicholas
-    Hutchinson)](https://github.com/nickhutchinson).
+    ([#251](https://github.com/fmtlib/fmt/pull/251)).
+    Thanks @nickhutchinson.
 
 -   Export symbols when building a Windows DLL
-    ([#245](https://github.com/fmtlib/fmt/pull/245)). Thanks to [macdems
-    (Maciek Dems)](https://github.com/macdems).
+    ([#245](https://github.com/fmtlib/fmt/pull/245)).
+    Thanks @macdems.
 
 -   Fixed compilation on Cygwin
     ([#304](https://github.com/fmtlib/fmt/issues/304)).
@@ -5147,8 +4603,7 @@
 
 -   Implemented a workaround for Google Test bug
     [#705](https://github.com/google/googletest/issues/705) on gcc 6
-    ([#268](https://github.com/fmtlib/fmt/issues/268)). Thanks to
-    [octoploid](https://github.com/octoploid).
+    ([#268](https://github.com/fmtlib/fmt/issues/268)). Thanks @octoploid.
 
 -   Removed Biicode support because the latter has been discontinued.
 
@@ -5156,8 +4611,7 @@
 
 -   The install location for generated CMake files is now configurable
     via the `FMT_CMAKE_DIR` CMake variable
-    ([#299](https://github.com/fmtlib/fmt/pull/299)). Thanks to
-    [\@niosHD](https://github.com/niosHD).
+    ([#299](https://github.com/fmtlib/fmt/pull/299)). Thanks @niosHD.
 -   Documentation fixes
     ([#252](https://github.com/fmtlib/fmt/issues/252)).
 
@@ -5178,16 +4632,14 @@
         setting `FMT_DOC`, `FMT_INSTALL`, and `FMT_TEST` in the parent
         project.
 
-    Thanks to [\@niosHD](https://github.com/niosHD).
+    Thanks @niosHD.
 
 # 2.0.1 - 2016-03-13
 
 -   Improved CMake find and package support
-    ([#264](https://github.com/fmtlib/fmt/issues/264)). Thanks to
-    [\@niosHD](https://github.com/niosHD).
+    ([#264](https://github.com/fmtlib/fmt/issues/264)). Thanks @niosHD.
 -   Fix compile error with Android NDK and mingw32
-    ([#241](https://github.com/fmtlib/fmt/issues/241)). Thanks to
-    [\@Gachapen (Magnus Bjerke Vik)](https://github.com/Gachapen).
+    ([#241](https://github.com/fmtlib/fmt/issues/241)). Thanks @Gachapen.
 -   Documentation fixes
     ([#248](https://github.com/fmtlib/fmt/issues/248),
     [#260](https://github.com/fmtlib/fmt/issues/260)).
@@ -5205,7 +4657,7 @@
     fmt::print("The answer is {answer}.", fmt::arg("answer", 42));
     ```
 
-    Thanks to [\@jamboree](https://github.com/jamboree).
+    Thanks @jamboree.
 
 -   \[Experimental\] User-defined literals for format and named
     arguments ([#204](https://github.com/fmtlib/fmt/pull/204),
@@ -5217,12 +4669,11 @@
     fmt::print("The answer is {answer}.", "answer"_a=42);
     ```
 
-    Thanks to [\@dean0x7d (Dean Moldovan)](https://github.com/dean0x7d).
+    Thanks @dean0x7d.
 
 -   \[Breaking\] Formatting of more than 16 arguments is now supported
     when using variadic templates
-    ([#141](https://github.com/fmtlib/fmt/issues/141)). Thanks to
-    [\@Shauren](https://github.com/Shauren).
+    ([#141](https://github.com/fmtlib/fmt/issues/141)). Thanks @Shauren.
 
 -   Runtime width specification
     ([#168](https://github.com/fmtlib/fmt/pull/168)):
@@ -5231,7 +4682,7 @@
     fmt::format("{0:{1}}", 42, 5); // gives "   42"
     ```
 
-    Thanks to [\@jamboree](https://github.com/jamboree).
+    Thanks @jamboree.
 
 -   \[Breaking\] Enums are now formatted with an overloaded
     `std::ostream` insertion operator (`operator<<`) if available
@@ -5259,7 +4710,7 @@
     fmt::printf("%s", true); // prints "true"
     ```
 
-    Thanks to [\@LarsGullik](https://github.com/LarsGullik).
+    Thanks @LarsGullik.
 
 -   \[Breaking\] `signed char` and `unsigned char` are now formatted as
     integers by default
@@ -5272,12 +4723,12 @@
     fmt::print("{:p}", "test"); // prints pointer value
     ```
 
-    Thanks to [\@LarsGullik](https://github.com/LarsGullik).
+    Thanks @LarsGullik.
 
 -   \[Breaking\] `fmt::printf` and `fmt::sprintf` now print null
     pointers as `(nil)` and null strings as `(null)` for consistency
-    with glibc ([#226](https://github.com/fmtlib/fmt/pull/226)). Thanks
-    to [\@LarsGullik](https://github.com/LarsGullik).
+    with glibc ([#226](https://github.com/fmtlib/fmt/pull/226)).
+    Thanks @LarsGullik.
 
 -   \[Breaking\] `fmt::(s)printf` now supports formatting of objects of
     user-defined types that provide an overloaded `std::ostream`
@@ -5290,9 +4741,7 @@
 
 -   \[Breaking\] The `Buffer` template is now part of the public API and
     can be used to implement custom memory buffers
-    ([#140](https://github.com/fmtlib/fmt/issues/140)). Thanks to
-    [\@polyvertex (Jean-Charles
-    Lefebvre)](https://github.com/polyvertex).
+    ([#140](https://github.com/fmtlib/fmt/issues/140)). Thanks @polyvertex.
 
 -   \[Breaking\] Improved compatibility between `BasicStringRef` and
     [std::experimental::basic_string_view](http://en.cppreference.com/w/cpp/experimental/basic_string_view)
@@ -5314,35 +4763,29 @@
     generation of `doc`, `install` and `test` targets respectively, on
     by default ([#197](https://github.com/fmtlib/fmt/issues/197),
     [#198](https://github.com/fmtlib/fmt/issues/198),
-    [#200](https://github.com/fmtlib/fmt/issues/200)). Thanks to
-    [\@maddinat0r (Alex Martin)](https://github.com/maddinat0r).
+    [#200](https://github.com/fmtlib/fmt/issues/200)). Thanks @maddinat0r.
 
 -   `noexcept` is now used when compiling with MSVC2015
-    ([#215](https://github.com/fmtlib/fmt/pull/215)). Thanks to
-    [\@dmkrepo (Dmitriy)](https://github.com/dmkrepo).
+    ([#215](https://github.com/fmtlib/fmt/pull/215)). Thanks @dmkrepo.
 
 -   Added an option to disable use of `windows.h` when
     `FMT_USE_WINDOWS_H` is defined as 0 before including `format.h`
-    ([#171](https://github.com/fmtlib/fmt/issues/171)). Thanks to
-    [\@alfps (Alf P. Steinbach)](https://github.com/alfps).
+    ([#171](https://github.com/fmtlib/fmt/issues/171)). Thanks @alfps.
 
 -   \[Breaking\] `windows.h` is now included with `NOMINMAX` unless
     `FMT_WIN_MINMAX` is defined. This is done to prevent breaking code
     using `std::min` and `std::max` and only affects the header-only
     configuration ([#152](https://github.com/fmtlib/fmt/issues/152),
     [#153](https://github.com/fmtlib/fmt/pull/153),
-    [#154](https://github.com/fmtlib/fmt/pull/154)). Thanks to
-    [\@DevO2012](https://github.com/DevO2012).
+    [#154](https://github.com/fmtlib/fmt/pull/154)). Thanks @DevO2012.
 
 -   Improved support for custom character types
-    ([#171](https://github.com/fmtlib/fmt/issues/171)). Thanks to
-    [\@alfps (Alf P. Steinbach)](https://github.com/alfps).
+    ([#171](https://github.com/fmtlib/fmt/issues/171)). Thanks @alfps.
 
 -   Added an option to disable use of IOStreams when `FMT_USE_IOSTREAMS`
     is defined as 0 before including `format.h`
     ([#205](https://github.com/fmtlib/fmt/issues/205),
-    [#208](https://github.com/fmtlib/fmt/pull/208)). Thanks to
-    [\@JodiTheTigger](https://github.com/JodiTheTigger).
+    [#208](https://github.com/fmtlib/fmt/pull/208)). Thanks @JodiTheTigger.
 
 -   Improved detection of `isnan`, `isinf` and `signbit`.
 
@@ -5350,8 +4793,7 @@
 
 -   Made formatting of user-defined types more efficient with a custom
     stream buffer ([#92](https://github.com/fmtlib/fmt/issues/92),
-    [#230](https://github.com/fmtlib/fmt/pull/230)). Thanks to
-    [\@NotImplemented](https://github.com/NotImplemented).
+    [#230](https://github.com/fmtlib/fmt/pull/230)). Thanks @NotImplemented.
 -   Further improved performance of `fmt::Writer` on integer formatting
     and fixed a minor regression. Now it is \~7% faster than
     `karma::generate` on Karma\'s benchmark
@@ -5365,13 +4807,12 @@
 
 -   \[Breaking\] Headers are now installed in
     `${CMAKE_INSTALL_PREFIX}/include/cppformat`
-    ([#178](https://github.com/fmtlib/fmt/issues/178)). Thanks to
-    [\@jackyf (Eugene V. Lyubimkin)](https://github.com/jackyf).
+    ([#178](https://github.com/fmtlib/fmt/issues/178)). Thanks @jackyf.
 
 -   \[Breaking\] Changed the library name from `format` to `cppformat`
     for consistency with the project name and to avoid potential
-    conflicts ([#178](https://github.com/fmtlib/fmt/issues/178)). Thanks
-    to [\@jackyf (Eugene V. Lyubimkin)](https://github.com/jackyf).
+    conflicts ([#178](https://github.com/fmtlib/fmt/issues/178)).
+    Thanks @jackyf.
 
 -   C++ Format is now available in [Debian](https://www.debian.org/)
     GNU/Linux
@@ -5383,19 +4824,18 @@
 
         $ sudo apt-get install libcppformat1-dev
 
-    Thanks to [\@jackyf (Eugene V.
-    Lyubimkin)](https://github.com/jackyf).
+    Thanks @jackyf.
 
 -   [Packages for Fedora and
     RHEL](https://admin.fedoraproject.org/pkgdb/package/cppformat/) are
-    now available. Thanks to Dave Johansen.
+    now available. Thanks Dave Johansen.
 
 -   C++ Format can now be installed via [Homebrew](http://brew.sh/) on
     OS X ([#157](https://github.com/fmtlib/fmt/issues/157)):
 
         $ brew install cppformat
 
-    Thanks to [\@ortho](https://github.com/ortho), Anatoliy Bulukin.
+    Thanks @ortho and Anatoliy Bulukin.
 
 ## Documentation
 
@@ -5407,9 +4847,8 @@
     section to the documentation.
 -   Documentation build script is now compatible with Python 3 and newer
     pip versions. ([#189](https://github.com/fmtlib/fmt/pull/189),
-    [#209](https://github.com/fmtlib/fmt/issues/209)). Thanks to
-    [\@JodiTheTigger](https://github.com/JodiTheTigger) and
-    [\@xentec](https://github.com/xentec).
+    [#209](https://github.com/fmtlib/fmt/issues/209)).
+    Thanks @JodiTheTigger and @xentec.
 -   Documentation fixes and improvements
     ([#36](https://github.com/fmtlib/fmt/issues/36),
     [#75](https://github.com/fmtlib/fmt/issues/75),
@@ -5418,18 +4857,15 @@
     [#161](https://github.com/fmtlib/fmt/pull/161),
     [#162](https://github.com/fmtlib/fmt/issues/162),
     [#165](https://github.com/fmtlib/fmt/issues/165),
-    [#210](https://github.com/fmtlib/fmt/issues/210)). Thanks to
-    [\@syohex (Syohei YOSHIDA)](https://github.com/syohex) and bug
-    reporters.
+    [#210](https://github.com/fmtlib/fmt/issues/210)). 
+    Thanks @syohex.
 -   Fixed out-of-tree documentation build
-    ([#177](https://github.com/fmtlib/fmt/issues/177)). Thanks to
-    [\@jackyf (Eugene V. Lyubimkin)](https://github.com/jackyf).
+    ([#177](https://github.com/fmtlib/fmt/issues/177)). Thanks @jackyf.
 
 ## Fixes
 
 -   Fixed `initializer_list` detection
-    ([#136](https://github.com/fmtlib/fmt/issues/136)). Thanks to
-    [\@Gachapen (Magnus Bjerke Vik)](https://github.com/Gachapen).
+    ([#136](https://github.com/fmtlib/fmt/issues/136)). Thanks @Gachapen.
 
 -   \[Breaking\] Fixed formatting of enums with numeric format
     specifiers in `fmt::(s)printf`
@@ -5441,13 +4877,12 @@
     fmt::printf("%d", ANSWER);
     ```
 
-    Thanks to [\@Naios](https://github.com/Naios).
+    Thanks @Naios.
 
 -   Improved compatibility with old versions of MinGW
     ([#129](https://github.com/fmtlib/fmt/issues/129),
     [#130](https://github.com/fmtlib/fmt/pull/130),
-    [#132](https://github.com/fmtlib/fmt/issues/132)). Thanks to
-    [\@cstamford (Christopher Stamford)](https://github.com/cstamford).
+    [#132](https://github.com/fmtlib/fmt/issues/132)). Thanks @cstamford.
 
 -   Fixed a compile error on MSVC with disabled exceptions
     ([#144](https://github.com/fmtlib/fmt/issues/144)).
@@ -5457,8 +4892,7 @@
 
 -   Placed the anonymous namespace within `fmt` namespace for the
     header-only configuration
-    ([#171](https://github.com/fmtlib/fmt/issues/171)). Thanks to
-    [\@alfps (Alf P. Steinbach)](https://github.com/alfps).
+    ([#171](https://github.com/fmtlib/fmt/issues/171)). Thanks @alfps.
 
 -   Fixed issues reported by Coverity Scan
     ([#187](https://github.com/fmtlib/fmt/issues/187),
@@ -5490,21 +4924,10 @@
     [#234](https://github.com/fmtlib/fmt/issues/234),
     [#236](https://github.com/fmtlib/fmt/pull/236),
     [#281](https://github.com/fmtlib/fmt/issues/281),
-    [#289](https://github.com/fmtlib/fmt/issues/289)). Thanks to
-    [\@seanmiddleditch (Sean
-    Middleditch)](https://github.com/seanmiddleditch), [\@dixlorenz (Dix
-    Lorenz)](https://github.com/dixlorenz), [\@CarterLi
-    (李通洲)](https://github.com/CarterLi),
-    [\@Naios](https://github.com/Naios), [\@fmatthew5876 (Matthew
-    Fioravante)](https://github.com/fmatthew5876), [\@LevskiWeng (Levski
-    Weng)](https://github.com/LevskiWeng),
-    [\@rpopescu](https://github.com/rpopescu), [\@gabime (Gabi
-    Melman)](https://github.com/gabime), [\@cubicool (Jeremy
-    Moles)](https://github.com/cubicool), [\@jkflying (Julian
-    Kent)](https://github.com/jkflying), [\@LogicalKnight (Sean
-    L)](https://github.com/LogicalKnight), [\@inguin (Ingo van
-    Lil)](https://github.com/inguin) and [\@Jopie64
-    (Johan)](https://github.com/Jopie64).
+    [#289](https://github.com/fmtlib/fmt/issues/289)).
+    Thanks @seanmiddleditch, @dixlorenz, @CarterLi, @Naios, @fmatthew5876,
+    @LevskiWeng, @rpopescu, @gabime, @cubicool, @jkflying, @LogicalKnight,
+    @inguin and @Jopie64.
 
 -   Fixed portability issues (mostly causing test failures) on ARM,
     ppc64, ppc64le, s390x and SunOS 5.11 i386
@@ -5514,32 +4937,27 @@
     [#202](https://github.com/fmtlib/fmt/issues/202),
     [#225](https://github.com/fmtlib/fmt/issues/225), [Red Hat Bugzilla
     Bug 1260297](https://bugzilla.redhat.com/show_bug.cgi?id=1260297)).
-    Thanks to [\@Naios](https://github.com/Naios), [\@jackyf (Eugene V.
-    Lyubimkin)](https://github.com/jackyf) and Dave Johansen.
+    Thanks @Naios, @jackyf and Dave Johansen.
 
 -   Fixed a name conflict with macro `free` defined in `crtdbg.h` when
     `_CRTDBG_MAP_ALLOC` is set
     ([#211](https://github.com/fmtlib/fmt/issues/211)).
 
 -   Fixed shared library build on OS X
-    ([#212](https://github.com/fmtlib/fmt/pull/212)). Thanks to
-    [\@dean0x7d (Dean Moldovan)](https://github.com/dean0x7d).
+    ([#212](https://github.com/fmtlib/fmt/pull/212)). Thanks @dean0x7d.
 
 -   Fixed an overload conflict on MSVC when `/Zc:wchar_t-` option is
-    specified ([#214](https://github.com/fmtlib/fmt/pull/214)). Thanks
-    to [\@slavanap (Vyacheslav
-    Napadovsky)](https://github.com/slavanap).
+    specified ([#214](https://github.com/fmtlib/fmt/pull/214)).
+    Thanks @slavanap.
 
 -   Improved compatibility with MSVC 2008
-    ([#236](https://github.com/fmtlib/fmt/pull/236)). Thanks to
-    [\@Jopie64 (Johan)](https://github.com/Jopie64).
+    ([#236](https://github.com/fmtlib/fmt/pull/236)). Thanks @Jopie64.
 
 -   Improved compatibility with bcc32
     ([#227](https://github.com/fmtlib/fmt/issues/227)).
 
 -   Fixed `static_assert` detection on Clang
-    ([#228](https://github.com/fmtlib/fmt/pull/228)). Thanks to
-    [\@dean0x7d (Dean Moldovan)](https://github.com/dean0x7d).
+    ([#228](https://github.com/fmtlib/fmt/pull/228)). Thanks @dean0x7d.
 
 # 1.1.0 - 2015-03-06
 
@@ -5563,31 +4981,25 @@
     [#116](https://github.com/fmtlib/fmt/pull/116),
     [#118](https://github.com/fmtlib/fmt/pull/118) and
     [#121](https://github.com/fmtlib/fmt/pull/121)). Previously these
-    optimizations where only used on GCC and Clang. Thanks to
-    [\@CarterLi](https://github.com/CarterLi) and
-    [\@objectx](https://github.com/objectx).
+    optimizations where only used on GCC and Clang.
+    Thanks @CarterLi and @objectx.
 
 -   CMake install target
-    ([#119](https://github.com/fmtlib/fmt/pull/119)). Thanks to
-    [\@TrentHouliston](https://github.com/TrentHouliston).
+    ([#119](https://github.com/fmtlib/fmt/pull/119)). Thanks @TrentHouliston.
 
     You can now install C++ Format with `make install` command.
 
 -   Improved [Biicode](http://www.biicode.com/) support
     ([#98](https://github.com/fmtlib/fmt/pull/98) and
-    [#104](https://github.com/fmtlib/fmt/pull/104)). Thanks to
-    [\@MariadeAnton](https://github.com/MariadeAnton) and
-    [\@franramirez688](https://github.com/franramirez688).
+    [#104](https://github.com/fmtlib/fmt/pull/104)).
+    Thanks @MariadeAnton and @franramirez688.
 
 -   Improved support for building with [Android
     NDK](https://developer.android.com/tools/sdk/ndk/index.html)
-    ([#107](https://github.com/fmtlib/fmt/pull/107)). Thanks to
-    [\@newnon](https://github.com/newnon).
+    ([#107](https://github.com/fmtlib/fmt/pull/107)). Thanks @newnon.
 
-    The
-    [android-ndk-example](https://github.com/fmtlib/android-ndk-example)
-    repository provides and example of using C++ Format with Android
-    NDK:
+    The [android-ndk-example](https://github.com/fmtlib/android-ndk-example)
+    repository provides and example of using C++ Format with Android NDK:
 
     ![image](https://raw.githubusercontent.com/fmtlib/android-ndk-example/master/screenshot.png)
 
@@ -5597,8 +5009,7 @@
 -   Various code improvements
     ([#110](https://github.com/fmtlib/fmt/pull/110),
     [#111](https://github.com/fmtlib/fmt/pull/111)
-    [#112](https://github.com/fmtlib/fmt/pull/112)). Thanks to
-    [\@CarterLi](https://github.com/CarterLi).
+    [#112](https://github.com/fmtlib/fmt/pull/112)). Thanks @CarterLi.
 
 -   Improved compile-time errors when formatting wide into narrow
     strings ([#117](https://github.com/fmtlib/fmt/issues/117)).
