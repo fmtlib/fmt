@@ -283,7 +283,7 @@ if (FMT_OS)
 endif ()
 
 add_module_library(fmt src/fmt.cc FALLBACK
-                   ${FMT_SOURCES} ${FMT_HEADERS} README.rst ChangeLog.rst
+                   ${FMT_SOURCES} ${FMT_HEADERS} README.rst ChangeLog.md
                    IF FMT_MODULE)
 add_library(fmt::fmt ALIAS fmt)
 if (FMT_MODULE)
