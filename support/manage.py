@@ -231,7 +231,7 @@ def release(args):
 
     # Convert changelog from RST to GitHub-flavored Markdown and get the
     # version.
-    changelog = 'ChangeLog.rst'
+    changelog = 'ChangeLog.md'
     changelog_path = os.path.join(fmt_repo.dir, changelog)
     import rst2md
     changes, version = rst2md.convert(changelog_path)
