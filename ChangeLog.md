@@ -3273,19 +3273,13 @@
     than `printf` and 10% faster than double-conversion on
     [dtoa-benchmark](https://github.com/fmtlib/dtoa-benchmark):
 
-    +---------------+------------+----------+
-    | Function      | Time (ns)  | Speedup  |
-    +===============+============+==========+
-    | ostringstream | > 1,346.30 | > 1.00x  |
-    +---------------+------------+----------+
-    | ostrstream    | > 1,195.74 | > 1.13x  |
-    +---------------+------------+----------+
-    | sprintf       | > 995.08   | > 1.35x  |
-    +---------------+------------+----------+
-    | doubleconv    | > 99.10    | > 13.59x |
-    +---------------+------------+----------+
-    | fmt           | > 88.34    | > 15.24x |
-    +---------------+------------+----------+
+    | Function      | Time (ns) | Speedup |
+    | ------------- | --------: | ------: |
+    | ostringstream | 1,346.30  | 1.00x   |
+    | ostrstream    | 1,195.74  | 1.13x   |
+    | sprintf       | 995.08    | 1.35x   |
+    | doubleconv    | 99.10     | 13.59x  |
+    | fmt           | 88.34     | 15.24x  |
 
     ![image](https://user-images.githubusercontent.com/576385/69767160-cdaca400-112f-11ea-9fc5-347c9f83caad.png)
 
