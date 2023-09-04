@@ -260,7 +260,7 @@ template <typename T> class noncopyable_range {
 };
 
 TEST(ranges_test, range) {
-  auto w = noncopyable_range<int>(3u, 0);
+  auto&& w = noncopyable_range<int>(3u, 0);
   EXPECT_EQ(fmt::format("{}", w), "[0, 0, 0]");
   EXPECT_EQ(fmt::format("{}", noncopyable_range<int>(3u, 0)), "[0, 0, 0]");
 
@@ -383,7 +383,7 @@ TEST(ranges_test, join_sentinel) {
 }
 
 TEST(ranges_test, join_range) {
-  auto w = noncopyable_range<int>(3u, 0);
+  auto&& w = noncopyable_range<int>(3u, 0);
   EXPECT_EQ(fmt::format("{}", fmt::join(w, ",")), "0,0,0");
   EXPECT_EQ(fmt::format("{}", fmt::join(noncopyable_range<int>(3u, 0), ",")),
             "0,0,0");
