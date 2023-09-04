@@ -4169,18 +4169,15 @@
     2.22x faster than 5.1 on decimal integer formatting with `format_to`
     (macOS, clang-902.0.39.2):
 
-    +----------------------------+-----------------------+---------+
-    | Method                     | Time, s               | Speedup |
-    +============================+=======================+=========+
-    | fmt::format 5.1            | > 0.58                |         |
-    +----------------------------+-----------------------+---------+
-    | fmt::format 5.2            | > 0.35 0.51           | > 1.66x |
-    | fmt::format_to 5.1         |                       |         |
-    +----------------------------+-----------------------+---------+
-    | fmt::format_to 5.2 sprintf | > 0.23 0.71 1.01 1.73 | > 2.22x |
-    | std::to_string             |                       |         |
-    | std::stringstream          |                       |         |
-    +----------------------------+-----------------------+---------+
+    | Method                     | Time, s         | Speedup |
+    | -------------------------- | --------------: | ------: |
+    | fmt::format 5.1            | 0.58            |         |
+    | fmt::format 5.2            | 0.35            |   1.66x |
+    | fmt::format_to 5.1         | 0.51            |         |
+    | fmt::format_to 5.2         | 0.23            |   2.22x |
+    | sprintf                    | 0.71            |         |
+    | std::to_string             | 1.01            |         |
+    | std::stringstream          | 1.73            |         |
 
 -   Changed the `fmt` macro from opt-out to opt-in to prevent name
     collisions. To enable it define the `FMT_STRING_ALIAS` macro to 1
