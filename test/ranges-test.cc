@@ -79,7 +79,7 @@ TEST(ranges_test, format_set) {
 
 // Models std::flat_set close enough to test if no ambiguous lookup of a
 // formatter happens due to the flat_set type matching is_set and
-// is_container_adaptor_like
+// is_container_adaptor_like.
 template <typename T> class flat_set {
  public:
   using key_type = T;
@@ -91,11 +91,11 @@ template <typename T> class flat_set {
   template <typename... Ts>
   explicit flat_set(Ts&&... args) : c{std::forward<Ts>(args)...} {}
 
-  iterator begin() { return c.begin(); }
-  const_iterator begin() const { return c.begin(); }
+  auto begin() -> iterator { return c.begin(); }
+  auto end() -> iterator { return c.end(); }
 
-  iterator end() { return c.end(); }
-  const_iterator end() const { return c.end(); }
+  auto begin() const -> const_iterator { return c.begin(); }
+  auto end() const -> const_iterator { return c.end(); }
 
  private:
   std::vector<T> c;
@@ -112,7 +112,6 @@ struct box {
 };
 
 auto begin(const box& b) -> const int* { return &b.value; }
-
 auto end(const box& b) -> const int* { return &b.value + 1; }
 }  // namespace adl
 
@@ -169,11 +168,12 @@ struct tuple_like {
   int i;
   std::string str;
 
-  template <size_t N> fmt::enable_if_t<N == 0, int> get() const noexcept {
+  template <size_t N>
+  auto get() const noexcept -> fmt::enable_if_t<N == 0, int> {
     return i;
   }
   template <size_t N>
-  fmt::enable_if_t<N == 1, fmt::string_view> get() const noexcept {
+  auto get() const noexcept -> fmt::enable_if_t<N == 1, fmt::string_view> {
     return str;
   }
 };
@@ -206,8 +206,8 @@ TEST(ranges_test, format_to) {
 }
 
 template <typename Char> struct path_like {
-  const path_like* begin() const;
-  const path_like* end() const;
+  auto begin() const -> const path_like*;
+  auto end() const -> const path_like*;
 
   operator std::basic_string<Char>() const;
 };
@@ -237,8 +237,8 @@ template <typename T> class non_const_only_range {
   explicit non_const_only_range(Args&&... args)
       : vec(std::forward<Args>(args)...) {}
 
-  const_iterator begin() { return vec.begin(); }
-  const_iterator end() { return vec.end(); }
+  auto begin() -> const_iterator{ return vec.begin(); }
+  auto end() -> const_iterator { return vec.end(); }
 };
 
 template <typename T> class noncopyable_range {
@@ -255,16 +255,16 @@ template <typename T> class noncopyable_range {
   noncopyable_range(noncopyable_range const&) = delete;
   noncopyable_range(noncopyable_range&) = delete;
 
-  iterator begin() { return vec.begin(); }
-  iterator end() { return vec.end(); }
+  auto begin() -> iterator { return vec.begin(); }
+  auto end() -> iterator { return vec.end(); }
 };
 
 TEST(ranges_test, range) {
-  noncopyable_range<int> w(3u, 0);
+  auto w = noncopyable_range<int>(3u, 0);
   EXPECT_EQ(fmt::format("{}", w), "[0, 0, 0]");
   EXPECT_EQ(fmt::format("{}", noncopyable_range<int>(3u, 0)), "[0, 0, 0]");
 
-  non_const_only_range<int> x(3u, 0);
+  auto x = non_const_only_range<int>(3u, 0);
   EXPECT_EQ(fmt::format("{}", x), "[0, 0, 0]");
   EXPECT_EQ(fmt::format("{}", non_const_only_range<int>(3u, 0)), "[0, 0, 0]");
 
@@ -339,8 +339,8 @@ bool operator!=(const char* p, zstring_sentinel) { return *p != '\0'; }
 
 struct zstring {
   const char* p;
-  const char* begin() const { return p; }
-  zstring_sentinel end() const { return {}; }
+  auto begin() const -> const char* { return p; }
+  auto end() const -> zstring_sentinel { return {}; }
 };
 
 #  ifdef __cpp_lib_ranges
@@ -354,20 +354,22 @@ struct cpp20_only_range {
 
     iterator() = default;
     iterator(int i) : val(i) {}
-    int operator*() const { return val; }
-    iterator& operator++() {
+    auto operator*() const -> int { return val; }
+    auto operator++() -> iterator&{
       ++val;
       return *this;
     }
     void operator++(int) { ++*this; }
-    bool operator==(const iterator& rhs) const { return val == rhs.val; }
+    auto operator==(const iterator& rhs) const -> bool {
+      return val == rhs.val;
+    }
   };
 
   int lo;
   int hi;
 
-  iterator begin() const { return iterator(lo); }
-  iterator end() const { return iterator(hi); }
+  auto begin() const -> iterator { return iterator(lo); }
+  auto end() const -> iterator { return iterator(hi); }
 };
 
 static_assert(std::input_iterator<cpp20_only_range::iterator>);
@@ -381,12 +383,12 @@ TEST(ranges_test, join_sentinel) {
 }
 
 TEST(ranges_test, join_range) {
-  noncopyable_range<int> w(3u, 0);
+  auto w = noncopyable_range<int>(3u, 0);
   EXPECT_EQ(fmt::format("{}", fmt::join(w, ",")), "0,0,0");
   EXPECT_EQ(fmt::format("{}", fmt::join(noncopyable_range<int>(3u, 0), ",")),
             "0,0,0");
 
-  non_const_only_range<int> x(3u, 0);
+  auto x = non_const_only_range<int>(3u, 0);
   EXPECT_EQ(fmt::format("{}", fmt::join(x, ",")), "0,0,0");
   EXPECT_EQ(fmt::format("{}", fmt::join(non_const_only_range<int>(3u, 0), ",")),
             "0,0,0");
@@ -452,10 +454,10 @@ template <typename R> struct fmt_ref_view {
 };
 
 TEST(ranges_test, range_of_range_of_mixed_const) {
-  std::vector<std::vector<int>> v = {{1, 2, 3}, {4, 5}};
+  auto v = std::vector<std::vector<int>>{{1, 2, 3}, {4, 5}};
   EXPECT_EQ(fmt::format("{}", v), "[[1, 2, 3], [4, 5]]");
 
-  fmt_ref_view<decltype(v)> r{&v};
+  auto r = fmt_ref_view<decltype(v)>{&v};
   EXPECT_EQ(fmt::format("{}", r), "[[1, 2, 3], [4, 5]]");
 }
 
