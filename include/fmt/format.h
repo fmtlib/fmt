@@ -1394,7 +1394,7 @@ FMT_CONSTEXPR inline auto format_uint(It out, UInt value, int num_digits,
     return out;
   }
   // Buffer should be large enough to hold all digits (digits / BASE_BITS + 1).
-  char buffer[num_bits<UInt>() / BASE_BITS + 1];
+  char buffer[num_bits<UInt>() / BASE_BITS + 1] = {};
   format_uint<BASE_BITS>(buffer, value, num_digits, upper);
   return detail::copy_str_noinline<Char>(buffer, buffer + num_digits, out);
 }
