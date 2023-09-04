@@ -235,7 +235,7 @@
     is based on Dragonbox already used for the shortest representation
     and gives substantial performance improvement:
 
-    ![image](https://user-images.githubusercontent.com/33922675/%0A211956670-84891a09-6867-47d9-82fc-3230da7abe0f.png)
+    ![image](https://user-images.githubusercontent.com/33922675/211956670-84891a09-6867-47d9-82fc-3230da7abe0f.png)
 
     -   Red: new algorithm
     -   Green: new algorithm with `FMT_USE_FULL_CACHE_DRAGONBOX` defined
@@ -955,7 +955,7 @@
 
     prints
 
-    ![image](https://user-images.githubusercontent.com/576385/%0A175071215-12809244-dab0-4005-96d8-7cd911c964d5.png)
+    ![image](https://user-images.githubusercontent.com/576385/175071215-12809244-dab0-4005-96d8-7cd911c964d5.png)
 
     Thanks [\@rbrugo (Riccardo Brugo)](https://github.com/rbrugo).
 
@@ -1983,7 +1983,7 @@
 
     prints
 
-    ![image](https://user-images.githubusercontent.com/576385/%0A119840373-cea3ca80-beb9-11eb-91e0-54266c48e181.png)
+    ![image](https://user-images.githubusercontent.com/576385/119840373-cea3ca80-beb9-11eb-91e0-54266c48e181.png)
 
     on a modern terminal.
 
@@ -2308,7 +2308,7 @@
     [dtoa-benchmark](https://github.com/fmtlib/dtoa-benchmark) and
     faster than double-conversion and Ryū:
 
-    ![image](https://user-images.githubusercontent.com/576385/%0A95684665-11719600-0ba8-11eb-8e5b-972ff4e49428.png)
+    ![image](https://user-images.githubusercontent.com/576385/95684665-11719600-0ba8-11eb-8e5b-972ff4e49428.png)
 
     It is possible to get even better performance at the cost of larger
     binary size by compiling with the `FMT_USE_FULL_CACHE_DRAGONBOX`
@@ -3287,7 +3287,7 @@
     | fmt           | > 88.34    | > 15.24x |
     +---------------+------------+----------+
 
-    ![image](https://user-images.githubusercontent.com/576385/%0A69767160-cdaca400-112f-11ea-9fc5-347c9f83caad.png)
+    ![image](https://user-images.githubusercontent.com/576385/69767160-cdaca400-112f-11ea-9fc5-347c9f83caad.png)
 
 -   {fmt} no longer converts `float` arguments to `double`. In
     particular this improves the default (shortest) representation of
@@ -3553,7 +3553,7 @@
     [dtoa-benchmark](https://github.com/fmtlib/dtoa-benchmark) ([full
     results](https://fmt.dev/unknown_mac64_clang10.0.html)):
 
-    ![image](https://user-images.githubusercontent.com/576385/%0A54883977-9fe8c000-4e28-11e9-8bde-272d122e7c52.jpg)
+    ![image](https://user-images.githubusercontent.com/576385/54883977-9fe8c000-4e28-11e9-8bde-272d122e7c52.jpg)
 
 -   Separated formatting and parsing contexts for consistency with
     [C++20 std::format](http://eel.is/c++draft/format), removing the
@@ -3950,7 +3950,7 @@
 
     prints the following on modern terminals with RGB color support:
 
-    ![image](https://user-images.githubusercontent.com/576385/%0A50405788-b66e7500-076e-11e9-9592-7324d1f951d8.png)
+    ![image](https://user-images.githubusercontent.com/576385/50405788-b66e7500-076e-11e9-9592-7324d1f951d8.png)
 
     Thanks [\@Rakete1111 (Nicolas)](https://github.com/Rakete1111).
 
@@ -3968,7 +3968,7 @@
 
     Note that these colors vary by terminal:
 
-    ![image](https://user-images.githubusercontent.com/576385/%0A50405925-dbfc7e00-0770-11e9-9b85-333fab0af9ac.png)
+    ![image](https://user-images.githubusercontent.com/576385/50405925-dbfc7e00-0770-11e9-9b85-333fab0af9ac.png)
 
     Thanks [\@Rakete1111 (Nicolas)](https://github.com/Rakete1111).
 
@@ -5086,9 +5086,9 @@
     [#249](https://github.com/fmtlib/fmt/pull/249),
     [#317](https://github.com/fmtlib/fmt/issues/317)):
 
-    ![image](https://cloud.githubusercontent.com/assets/4831417/11614060/%0Ab9e826d2-9c36-11e5-8666-d4131bf503ef.png)
+    ![image](https://cloud.githubusercontent.com/assets/4831417/11614060/b9e826d2-9c36-11e5-8666-d4131bf503ef.png)
 
-    ![image](https://cloud.githubusercontent.com/assets/4831417/11614080/%0A6ac903cc-9c37-11e5-8165-26df6efae364.png)
+    ![image](https://cloud.githubusercontent.com/assets/4831417/11614080/6ac903cc-9c37-11e5-8165-26df6efae364.png)
 
     Thanks to [\@dean0x7d (Dean Moldovan)](https://github.com/dean0x7d).
 
@@ -5598,7 +5598,7 @@
     repository provides and example of using C++ Format with Android
     NDK:
 
-    ![image](https://raw.githubusercontent.com/fmtlib/android-ndk-example/%0Amaster/screenshot.png)
+    ![image](https://raw.githubusercontent.com/fmtlib/android-ndk-example/master/screenshot.png)
 
 -   Improved documentation of `SystemError` and `WindowsError`
     ([#54](https://github.com/fmtlib/fmt/issues/54)).
@@ -5720,11 +5720,9 @@
     [Sphinx Bootstrap
     theme](http://ryan-roemer.github.io/sphinx-bootstrap-theme/):
 
-    +-------+-------+
-    | > Old | > New |
-    +-------+-------+
-    |       |       |
-    +-------+-------+
+    | Old | New |
+    | --- | --- |
+    | ![](https://cloud.githubusercontent.com/assets/576385/4792130/cd256436-5de3-11e4-9a62-c077d0c2b003.png) | ![](https://cloud.githubusercontent.com/assets/576385/4792131/cd29896c-5de3-11e4-8f59-cac952942bf0.png) |
 
 # 0.11.0 - 2014-08-21
 
