@@ -1,13 +1,9 @@
-// Formatting library for C++ - the core API
+// Formatting library for C++ - ranges tests
 //
-// Copyright (c) 2012 - present, Victor Zverovich
+// Copyright (c) 2012 - present, Victor Zverovich and {fmt} contributors
 // All rights reserved.
 //
 // For the license information refer to format.h.
-//
-// Copyright (c) 2018 - present, Remotion (Igor Schulz)
-// All Rights Reserved
-// {fmt} support for ranges, containers and types tuple interface.
 
 #include "fmt/ranges.h"
 
