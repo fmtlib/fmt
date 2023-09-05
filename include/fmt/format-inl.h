@@ -1446,7 +1446,7 @@ FMT_FUNC bool write_console(std::FILE* f, string_view text) {
 FMT_FUNC void vprint_mojibake(std::FILE* f, string_view fmt, format_args args) {
   auto buffer = memory_buffer();
   detail::vformat_to(buffer, fmt,
-                     basic_format_args<buffer_context<char>>(args));
+                     args);
   fwrite_fully(buffer.data(), 1, buffer.size(), f);
 }
 #endif
