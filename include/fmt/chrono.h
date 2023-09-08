@@ -336,8 +336,6 @@ template <typename CodeUnit> struct codecvt_result {
   CodeUnit buf[max_size];
   CodeUnit* end;
 };
-template <typename CodeUnit>
-constexpr const size_t codecvt_result<CodeUnit>::max_size;
 
 template <typename CodeUnit>
 void write_codecvt(codecvt_result<CodeUnit>& out, string_view in_buf,
