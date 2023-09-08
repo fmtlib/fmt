@@ -443,6 +443,10 @@ TEST(memory_buffer_test, max_size_allocator_overflow) {
   EXPECT_THROW(buffer.resize(161), std::exception);
 }
 
+TEST(format_test, exception_from_lib) {
+  EXPECT_THROW_MSG(fmt::throw_format_error("test"), format_error, "test");
+}
+
 TEST(format_test, escape) {
   EXPECT_EQ("{", fmt::format("{{"));
   EXPECT_EQ("before {", fmt::format("before {{"));
