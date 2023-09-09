@@ -427,9 +427,10 @@ template <typename Char> inline void reset_color(buffer<Char>& buffer) {
   buffer.append(reset_color.begin(), reset_color.end());
 }
 
-template <typename T> struct styled_arg {
+template <typename T> struct styled_arg : detail::view {
   const T& value;
   text_style style;
+  styled_arg(const T& v, text_style s) : value(v), style(s) {}
 };
 
 template <typename Char>
