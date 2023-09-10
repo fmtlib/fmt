@@ -1775,6 +1775,23 @@ TEST(format_test, group_digits_view) {
   EXPECT_EQ(fmt::format("{:8}", fmt::group_digits(1000)), "   1,000");
 }
 
+struct point {
+  double x, y;
+};
+
+FMT_BEGIN_NAMESPACE
+template <>
+struct formatter<point> : nested_formatter<double> {
+  auto format(point p, format_context& ctx) const -> decltype(ctx.out()) {
+    return format_to(ctx.out(), "({}, {})", nested(p.x), nested(p.y));
+  }
+};
+FMT_END_NAMESPACE
+
+TEST(format_test, nested_formatter) {
+  EXPECT_EQ(fmt::format("{:.2f}", point{1, 2}), "(1.00, 2.00)");
+}
+
 enum test_enum { foo, bar };
 auto format_as(test_enum e) -> int { return e; }
 

@@ -4198,6 +4198,38 @@ template <typename T> struct formatter<group_digits_view<T>> : formatter<T> {
   }
 };
 
+template <typename T>
+struct nested_view {
+  const formatter<T>* fmt;
+  const T* value;
+};
+
+template <typename T>
+struct formatter<nested_view<T>> {
+  FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> const char* {
+    return ctx.begin();
+  }
+  auto format(nested_view<T> view, format_context& ctx) const
+      -> decltype(ctx.out()) {
+    return view.fmt->format(*view.value, ctx);
+  }
+};
+
+template <typename T>
+struct nested_formatter {
+ private:
+  formatter<T> formatter_;
+ 
+ public:
+  FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> const char* {
+    return formatter_.parse(ctx);
+  }
+
+  auto nested(const T& value) const -> nested_view<T> {
+    return nested_view<T>{&formatter_, &value};
+  }
+};
+
 // DEPRECATED! join_view will be moved to ranges.h.
 template <typename It, typename Sentinel, typename Char = char>
 struct join_view : detail::view {
