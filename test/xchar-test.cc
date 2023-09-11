@@ -102,10 +102,70 @@ struct custom_char {
   template <typename T>
   constexpr custom_char(T val) : value(static_cast<int>(val)) {}
 
-  operator char() const {
+  constexpr operator char() const {
     return value <= 0xff ? static_cast<char>(value) : '\0';
   }
+  constexpr bool operator<(custom_char c) const { return value < c.value; }
 };
+
+namespace std {
+
+template <> struct char_traits<custom_char> {
+  using char_type = custom_char;
+  using int_type = int;
+  using off_type = streamoff;
+  using pos_type = streampos;
+  using state_type = mbstate_t;
+
+  static constexpr void assign(char_type& r, const char_type& a) { r = a; }
+  static constexpr bool eq(char_type a, char_type b) { return a == b; }
+  static constexpr bool lt(char_type a, char_type b) { return a < b; }
+  static FMT_CONSTEXPR int compare(const char_type* s1, const char_type* s2,
+                                   size_t count) {
+    for (; count; count--, s1++, s2++) {
+      if (lt(*s1, *s2)) return -1;
+      if (lt(*s2, *s1)) return 1;
+    }
+    return 0;
+  }
+  static FMT_CONSTEXPR size_t length(const char_type* s) {
+    size_t count = 0;
+    while (!eq(*s++, custom_char(0))) count++;
+    return count;
+  }
+  static const char_type* find(const char_type*, size_t, const char_type&);
+  static FMT_CONSTEXPR char_type* move(char_type* dest, const char_type* src,
+                                       size_t count) {
+    if (count == 0) return dest;
+    char_type* ret = dest;
+    if (src < dest) {
+      dest += count;
+      src += count;
+      for (; count; count--) assign(*--dest, *--src);
+    } else if (src > dest)
+      copy(dest, src, count);
+    return ret;
+  }
+  static FMT_CONSTEXPR char_type* copy(char_type* dest, const char_type* src,
+                                       size_t count) {
+    char_type* ret = dest;
+    for (; count; count--) assign(*dest++, *src++);
+    return ret;
+  }
+  static FMT_CONSTEXPR char_type* assign(char_type* dest, std::size_t count,
+                                         char_type a) {
+    char_type* ret = dest;
+    for (; count; count--) assign(*dest++, a);
+    return ret;
+  }
+  static int_type not_eof(int_type);
+  static char_type to_char_type(int_type);
+  static int_type to_int_type(char_type);
+  static bool eq_int_type(int_type, int_type);
+  static int_type eof();
+};
+
+}  // namespace std
 
 auto to_ascii(custom_char c) -> char { return c; }
 
