@@ -351,7 +351,7 @@ TEST(format_impl_test, write_dragon_even) {
   if (!FMT_MSC_VERSION) EXPECT_EQ(s, "33554450");
 }
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(FMT_WINDOWS_NO_WCHAR)
 #  include <windows.h>
 
 TEST(format_impl_test, write_console_signature) {
