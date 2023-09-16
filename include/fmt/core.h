@@ -185,14 +185,14 @@
 #  define FMT_END_EXPORT
 #endif
 
-#if FMT_GCC_VERSION || defined(__clang__)
+#if FMT_GCC_VERSION || FMT_CLANG_VERSION
 #  define FMT_VISIBILITY(value) __attribute__((visibility(value)))
 #else
 #  define FMT_VISIBILITY(value)
 #endif
 
 #if !defined(FMT_HEADER_ONLY) && defined(_WIN32)
-#  ifdef FMT_LIB_EXPORT
+#  if defined(FMT_LIB_EXPORT)
 #    define FMT_API __declspec(dllexport)
 #  elif defined(FMT_SHARED)
 #    define FMT_API __declspec(dllimport)
