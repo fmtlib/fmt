@@ -99,6 +99,13 @@
 #  define FMT_VISIBILITY(value)
 #endif
 
+#if !defined(FMT_HEADER_ONLY) && !defined(_WIN32) && \
+    (defined(FMT_LIB_EXPORT) || defined(FMT_SHARED))
+#  define FMT_INLINE_API FMT_VISIBILITY("default")
+#else
+#  define FMT_INLINE_API
+#endif
+
 #ifdef __has_builtin
 #  define FMT_HAS_BUILTIN(x) __has_builtin(x)
 #else
@@ -1046,7 +1053,7 @@ FMT_BEGIN_EXPORT
 #endif
 
 /** An error reported from a formatting function. */
-class FMT_VISIBILITY("default") format_error : public std::runtime_error {
+class FMT_INLINE_API format_error : public std::runtime_error {
  public:
   using std::runtime_error::runtime_error;
 };
