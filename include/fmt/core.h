@@ -2543,8 +2543,8 @@ FMT_CONSTEXPR auto parse_format_specs(ParseContext& ctx)
       decltype(arg_mapper<context>().map(std::declval<const T&>())),
       typename strip_named_arg<T>::type>;
 #if defined(__cpp_if_constexpr)
-  if constexpr (std::is_default_constructible_v<
-                    formatter<mapped_type, char_type>>) {
+  if constexpr (std::is_default_constructible<
+                    formatter<mapped_type, char_type>>::value) {
     return formatter<mapped_type, char_type>().parse(ctx);
   } else {
     type_is_unformattable_for<T, char_type> _;
