@@ -49,6 +49,10 @@ checked at compile time in C++20. To pass a runtime format string wrap it in
 
 *args* is an argument list representing objects to be formatted.
 
+I/O errors are reported as `std::system_error
+<https://en.cppreference.com/w/cpp/error/system_error>`_ exceptions unless
+specified otherwise.
+
 .. _format:
 
 .. doxygenfunction:: format(format_string<T...> fmt, T&&... args) -> std::string
