@@ -18,7 +18,7 @@
 #  include <locale>
 #endif
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(FMT_WINDOWS_NO_WCHAR)
 #  include <io.h>  // _isatty
 #endif
 
@@ -1426,7 +1426,7 @@ FMT_FUNC std::string vformat(string_view fmt, format_args args) {
 }
 
 namespace detail {
-#ifndef _WIN32
+#if !defined(_WIN32) || defined(FMT_WINDOWS_NO_WCHAR)
 FMT_FUNC bool write_console(std::FILE*, string_view) { return false; }
 #else
 using dword = conditional_t<sizeof(long) == 4, unsigned long, unsigned>;
@@ -1441,7 +1441,9 @@ FMT_FUNC bool write_console(std::FILE* f, string_view text) {
   return WriteConsoleW(reinterpret_cast<void*>(_get_osfhandle(fd)), u16.c_str(),
                        static_cast<uint32_t>(u16.size()), &written, nullptr) != 0;
 }
+#endif
 
+#ifdef _WIN32
 // Print assuming legacy (non-Unicode) encoding.
 FMT_FUNC void vprint_mojibake(std::FILE* f, string_view fmt, format_args args) {
   auto buffer = memory_buffer();
