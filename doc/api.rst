@@ -108,7 +108,7 @@ with the same format specifiers. The ``format_as`` function should take an
 object of your type and return an object of a formattable type. It should be
 defined in the same namespace as your type.
 
-Example (https://godbolt.org/z/r7vvGE1v7)::
+Example (https://godbolt.org/z/nvME4arz8)::
 
   #include <fmt/format.h>
 
@@ -123,67 +123,13 @@ Example (https://godbolt.org/z/r7vvGE1v7)::
     fmt::print("{}\n", kevin_namespacy::film::se7en); // prints "7"
   }
 
-Using the specialization API is more complex but gives you full control over
-parsing and formatting. To use this method specialize the ``formatter`` struct
-template for your type and implement ``parse`` and ``format`` methods.
-For example::
+Using specialization is more complex but gives you full control over parsing and
+formatting. To use this method specialize the ``formatter`` struct template for
+your type and implement ``parse`` and ``format`` methods.
 
-  #include <fmt/core.h>
-
-  struct point {
-    double x, y;
-  };
-
-  template <> struct fmt::formatter<point> {
-    // Presentation format: 'f' - fixed, 'e' - exponential.
-    char presentation = 'f';
-
-    // Parses format specifications of the form ['f' | 'e'].
-    constexpr auto parse(format_parse_context& ctx) -> format_parse_context::iterator {
-      // [ctx.begin(), ctx.end()) is a character range that contains a part of
-      // the format string starting from the format specifications to be parsed,
-      // e.g. in
-      //
-      //   fmt::format("{:f} - point of interest", point{1, 2});
-      //
-      // the range will contain "f} - point of interest". The formatter should
-      // parse specifiers until '}' or the end of the range. In this example
-      // the formatter should parse the 'f' specifier and return an iterator
-      // pointing to '}'.
-      
-      // Please also note that this character range may be empty, in case of
-      // the "{}" format string, so therefore you should check ctx.begin()
-      // for equality with ctx.end().
-
-      // Parse the presentation format and store it in the formatter:
-      auto it = ctx.begin(), end = ctx.end();
-      if (it != end && (*it == 'f' || *it == 'e')) presentation = *it++;
-
-      // Check if reached the end of the range:
-      if (it != end && *it != '}') throw_format_error("invalid format");
-
-      // Return an iterator past the end of the parsed range:
-      return it;
-    }
-
-    // Formats the point p using the parsed format specification (presentation)
-    // stored in this formatter.
-    auto format(const point& p, format_context& ctx) const -> format_context::iterator {
-      // ctx.out() is an output iterator to write to.
-      return presentation == 'f'
-                ? fmt::format_to(ctx.out(), "({:.1f}, {:.1f})", p.x, p.y)
-                : fmt::format_to(ctx.out(), "({:.1e}, {:.1e})", p.x, p.y);
-    }
-  };
-
-Then you can pass objects of type ``point`` to any formatting function::
-
-  point p = {1, 2};
-  std::string s = fmt::format("{:f}", p);
-  // s == "(1.0, 2.0)"
-
-You can also reuse existing formatters via inheritance or composition, for
-example::
+The recommended way of defining a formatter is by reusing an existing one via
+inheritance or composition. This way you can support standard format specifiers
+without implementing them yourself. For example::
 
   // color.h:
   #include <fmt/core.h>
@@ -211,15 +157,73 @@ example::
   }
 
 Note that ``formatter<string_view>::format`` is defined in ``fmt/format.h`` so
-it has to be included in the source file.
-Since ``parse`` is inherited from ``formatter<string_view>`` it will recognize
-all string format specifications, for example
+it has to be included in the source file. Since ``parse`` is inherited from
+``formatter<string_view>`` it will recognize all string format specifications,
+for example
 
 .. code-block:: c++
 
    fmt::format("{:>10}", color::blue)
 
 will return ``"      blue"``.
+
+The experimental ``nested_formatter`` provides an easy way applying a formatter
+to one or more subobjects.
+
+For example::
+
+  #include <fmt/format.h>
+
+  struct point {
+    double x, y;
+  };
+
+  template <>
+  struct fmt::formatter<point> : nested_formatter<double> {
+    auto format(point p, format_context& ctx) const {
+      return write_padded(ctx, [=](auto out) {
+        return format_to(out, "({}, {})", nested(p.x), nested(p.y));
+      });
+    }
+  };
+
+  int main() {
+    fmt::print("[{:>20.2f}]", point{1, 2});
+  }
+
+prints::
+
+  [          (1.00, 2.00)]
+
+Notice that fill, align and width are applied to the whole object which is the
+recommended behavior while the remaining specifiers apply to elements.
+
+In general the formatter has the following form::
+
+  template <> struct fmt::formatter<T> {
+    // Parses format specifiers and stores them in the formatter.
+    //
+    // [ctx.begin(), ctx.end()) is a, possibly empty, character range that
+    // contains a part of the format string starting from the format
+    // specifications to be parsed, e.g. in
+    //
+    //   fmt::format("{:f} continued", ...);
+    //
+    // the range will contain "f} continued". The formatter should parse
+    // specifiers until '}' or the end of the range. In this example the
+    // formatter should parse the 'f' specifier and return an iterator
+    // pointing to '}'.
+    constexpr auto parse(format_parse_context& ctx)
+      -> format_parse_context::iterator;
+
+    // Formats value using the parsed format specification stored in this
+    // formatter and writes the output to ctx.out().
+    auto format(const T& value, format_context& ctx) const
+      -> format_context::iterator;
+  };
+
+It is recommended to at least support fill, align and width that apply to the
+whole object and have the same semantics as in standard formatters.
 
 You can also write a formatter for a hierarchy of classes::
 
