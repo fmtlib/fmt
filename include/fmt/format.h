@@ -153,7 +153,10 @@ FMT_END_NAMESPACE
 
 #ifndef FMT_USE_USER_DEFINED_LITERALS
 // EDG based compilers (Intel, NVIDIA, Elbrus, etc), GCC and MSVC support UDLs.
-#  if (FMT_HAS_FEATURE(cxx_user_literals) || FMT_GCC_VERSION >= 407 || \
+//
+// GCC before 4.9 requires a space in `operator"" _a` which is invalid in later
+// compiler versions.
+#  if (FMT_HAS_FEATURE(cxx_user_literals) || FMT_GCC_VERSION >= 409 || \
        FMT_MSC_VERSION >= 1900) &&                                     \
       (!defined(__EDG_VERSION__) || __EDG_VERSION__ >= /* UDL feature */ 480)
 #    define FMT_USE_USER_DEFINED_LITERALS 1
@@ -4459,7 +4462,7 @@ template <detail_exported::fixed_string Str> constexpr auto operator""_a() {
   return detail::udl_arg<char_t, sizeof(Str.data) / sizeof(char_t), Str>();
 }
 #  else
-constexpr auto operator"" _a(const char* s, size_t) -> detail::udl_arg<char> {
+constexpr auto operator""_a(const char* s, size_t) -> detail::udl_arg<char> {
   return {s};
 }
 #  endif

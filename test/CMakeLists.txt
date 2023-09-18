@@ -175,7 +175,12 @@ if (FMT_PEDANTIC)
 endif ()
 
 # These tests are disabled on Windows because they take too long.
-if (FMT_PEDANTIC AND NOT WIN32)
+# They are disabled on GCC < 4.9 because it can not parse UDLs without
+# a space after `operator""` but that is an incorrect syntax for any more
+# modern compiler.
+if (FMT_PEDANTIC AND NOT WIN32 AND NOT (
+    CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND
+    CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9))
   # Test if incorrect API usages produce compilation error.
   add_test(compile-error-test ${CMAKE_CTEST_COMMAND}
     --build-and-test
