@@ -181,7 +181,7 @@ if (SUPPORTS_USER_DEFINED_LITERALS AND CMAKE_COMPILER_IS_GNUCXX)
   # GCC before 4.9 is not supported for user-defined literals as it requires an
   # invalid syntax in their definition.
   set (SUPPORTS_USER_DEFINED_LITERALS
-    $<IF:$<$<VERSION_LESS:$<CXX_COMPILER_VERSION>,4.9.0>,OFF,ON>)
+    $<IF:$<$<VERSION_LESS:$<CXX_COMPILER_VERSION>,4.9.0>,OFF,ON>
 endif()
 
 # Make sure that compiler features detected in the header
