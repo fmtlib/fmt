@@ -3033,7 +3033,7 @@ class bigint {
     bigits_.resize(to_unsigned(num_bigits + exp_difference));
     for (int i = num_bigits - 1, j = i + exp_difference; i >= 0; --i, --j)
       bigits_[j] = bigits_[i];
-    std::uninitialized_fill_n(bigits_.data(), exp_difference, 0);
+    std::uninitialized_fill_n(bigits_.data(), exp_difference, 0u);
     exp_ -= exp_difference;
   }
 
