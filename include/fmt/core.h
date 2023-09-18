@@ -2302,9 +2302,12 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
     dynamic_format_specs<Char>& specs;
     type arg_type;
 
-    FMT_CONSTEXPR auto operator()(pres type, int set) -> const Char* {
-      if (!in(arg_type, set)) throw_format_error("invalid format specifier");
-      specs.type = type;
+    FMT_CONSTEXPR auto operator()(pres pres_type, int set) -> const Char* {
+      if (!in(arg_type, set)) {
+        if (arg_type == type::none_type) return begin;
+        throw_format_error("invalid format specifier");
+      }
+      specs.type = pres_type;
       return begin + 1;
     }
   } parse_presentation_type{begin, specs, arg_type};
@@ -2321,6 +2324,7 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
     case '+':
     case '-':
     case ' ':
+      if (arg_type == type::none_type) return begin;
       enter_state(state::sign, in(arg_type, sint_set | float_set));
       switch (c) {
       case '+':
@@ -2336,14 +2340,17 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
       ++begin;
       break;
     case '#':
+      if (arg_type == type::none_type) return begin;
       enter_state(state::hash, is_arithmetic_type(arg_type));
       specs.alt = true;
       ++begin;
       break;
     case '0':
       enter_state(state::zero);
-      if (!is_arithmetic_type(arg_type))
+      if (!is_arithmetic_type(arg_type)) {
+        if (arg_type == type::none_type) return begin;
         throw_format_error("format specifier requires numeric argument");
+      }
       if (specs.align == align::none) {
         // Ignore 0 if align is specified for compatibility with std::format.
         specs.align = align::numeric;
@@ -2365,12 +2372,14 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
       begin = parse_dynamic_spec(begin, end, specs.width, specs.width_ref, ctx);
       break;
     case '.':
+      if (arg_type == type::none_type) return begin;
       enter_state(state::precision,
                   in(arg_type, float_set | string_set | cstring_set));
       begin = parse_precision(begin, end, specs.precision, specs.precision_ref,
                               ctx);
       break;
     case 'L':
+      if (arg_type == type::none_type) return begin;
       enter_state(state::locale, is_arithmetic_type(arg_type));
       specs.localized = true;
       ++begin;

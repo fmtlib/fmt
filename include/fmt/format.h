@@ -4222,11 +4222,33 @@ struct formatter<nested_view<T>> {
 template <typename T>
 struct nested_formatter {
  private:
+  int width_;
+  detail::fill_t<char> fill_;
+  align_t align_ : 4;
   formatter<T> formatter_;
- 
+
  public:
   FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> const char* {
+    auto specs = detail::dynamic_format_specs<char>();
+    auto it = parse_format_specs(
+      ctx.begin(), ctx.end(), specs, ctx, detail::type::none_type);
+    width_ = specs.width;
+    fill_ = specs.fill;
+    align_ = specs.align;
+    ctx.advance_to(it);
     return formatter_.parse(ctx);
+  }
+
+  template <typename F>
+  auto write_padded(format_context& ctx, F write) const -> decltype(ctx.out()) {
+    if (width_ == 0) return write(ctx.out());
+    auto buf = memory_buffer();
+    write(std::back_inserter(buf));
+    auto specs = format_specs<>();
+    specs.width = width_;
+    specs.fill = fill_;
+    specs.align = align_;
+    return detail::write(ctx.out(), string_view(buf.data(), buf.size()), specs);
   }
 
   auto nested(const T& value) const -> nested_view<T> {
