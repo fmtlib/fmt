@@ -140,7 +140,7 @@ struct formatter<detail::streamed_view<T>, Char>
   \endrst
  */
 template <typename T>
-auto streamed(const T& value) -> detail::streamed_view<T> {
+constexpr auto streamed(const T& value) -> detail::streamed_view<T> {
   return {value};
 }
 
