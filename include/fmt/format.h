@@ -3258,7 +3258,7 @@ FMT_CONSTEXPR20 void format_hexfloat(Float value, int precision,
   format_hexfloat(static_cast<double>(value), precision, specs, buf);
 }
 
-FMT_CONSTEXPR uint32_t fractional_part_rounding_thresholds(int index) {
+FMT_CONSTEXPR inline uint32_t fractional_part_rounding_thresholds(int index) {
   // For checking rounding thresholds.
   // The kth entry is chosen to be the smallest integer such that the
   // upper 32-bits of 10^(k+1) times it is strictly bigger than 5 * 10^k.
