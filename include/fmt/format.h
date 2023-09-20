@@ -3258,14 +3258,11 @@ FMT_CONSTEXPR20 void format_hexfloat(Float value, int precision,
   format_hexfloat(static_cast<double>(value), precision, specs, buf);
 }
 
-template <typename Float>
-FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
-                                  buffer<char>& buf) -> int {
-  
+FMT_CONSTEXPR uint32_t fractional_part_rounding_threshold(int index) {
   // For checking rounding thresholds.
   // The kth entry is chosen to be the smallest integer such that the
   // upper 32-bits of 10^(k+1) times it is strictly bigger than 5 * 10^k.
-  static constexpr uint32_t fractional_part_rounding_thresholds[8] = {
+  constexpr uint32_t thresholds[8] = {
       2576980378U,  // ceil(2^31 + 2^32/10^1)
       2190433321U,  // ceil(2^31 + 2^32/10^2)
       2151778616U,  // ceil(2^31 + 2^32/10^3)
@@ -3275,7 +3272,13 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
       2147484078U,  // ceil(2^31 + 2^32/10^7)
       2147483691U   // ceil(2^31 + 2^32/10^8)
   };
+  return thresholds[index];
+}
 
+template <typename Float>
+FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
+                                  buffer<char>& buf) -> int {
+  
   // float is passed as double to reduce the number of instantiations.
   static_assert(!std::is_same<Float, float>::value, "");
   FMT_ASSERT(value >= 0, "value is negative");
@@ -3479,7 +3482,7 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
             uint32_t fractional_part = static_cast<uint32_t>(prod);
             should_round_up = fractional_part >=
                                   fractional_part_rounding_thresholds
-                                      [8 - number_of_digits_to_print] ||
+                                      (8 - number_of_digits_to_print) ||
                               ((fractional_part >> 31) &
                                ((digits & 1) | (second_third_subsegments != 0) |
                                 has_more_segments)) != 0;
@@ -3519,7 +3522,7 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
             uint32_t fractional_part = static_cast<uint32_t>(prod);
             should_round_up = fractional_part >=
                                   fractional_part_rounding_thresholds
-                                      [8 - number_of_digits_to_print] ||
+                                      (8 - number_of_digits_to_print) ||
                               ((fractional_part >> 31) &
                                ((digits & 1) | (third_subsegment != 0) |
                                 has_more_segments)) != 0;
