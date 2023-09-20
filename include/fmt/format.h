@@ -3478,7 +3478,7 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
           if (precision < 9) {
             uint32_t fractional_part = static_cast<uint32_t>(prod);
             should_round_up = fractional_part >=
-                                  data::fractional_part_rounding_thresholds
+                                  fractional_part_rounding_thresholds
                                       [8 - number_of_digits_to_print] ||
                               ((fractional_part >> 31) &
                                ((digits & 1) | (second_third_subsegments != 0) |
@@ -3518,7 +3518,7 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
             // consisting of a genuine digit from the input.
             uint32_t fractional_part = static_cast<uint32_t>(prod);
             should_round_up = fractional_part >=
-                                  data::fractional_part_rounding_thresholds
+                                  fractional_part_rounding_thresholds
                                       [8 - number_of_digits_to_print] ||
                               ((fractional_part >> 31) &
                                ((digits & 1) | (third_subsegment != 0) |
