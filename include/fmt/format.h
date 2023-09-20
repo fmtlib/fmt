@@ -1740,28 +1740,6 @@ FMT_CONSTEXPR inline fp operator*(fp x, fp y) {
   return {multiply(x.f, y.f), x.e + y.e + 64};
 }
 
-template <typename T = void> struct basic_data {
-  // For checking rounding thresholds.
-  // The kth entry is chosen to be the smallest integer such that the
-  // upper 32-bits of 10^(k+1) times it is strictly bigger than 5 * 10^k.
-  static constexpr uint32_t fractional_part_rounding_thresholds[8] = {
-      2576980378U,  // ceil(2^31 + 2^32/10^1)
-      2190433321U,  // ceil(2^31 + 2^32/10^2)
-      2151778616U,  // ceil(2^31 + 2^32/10^3)
-      2147913145U,  // ceil(2^31 + 2^32/10^4)
-      2147526598U,  // ceil(2^31 + 2^32/10^5)
-      2147487943U,  // ceil(2^31 + 2^32/10^6)
-      2147484078U,  // ceil(2^31 + 2^32/10^7)
-      2147483691U   // ceil(2^31 + 2^32/10^8)
-  };
-};
-// This is a struct rather than an alias to avoid shadowing warnings in gcc.
-struct data : basic_data<> {};
-
-#if FMT_CPLUSPLUS < 201703L
-template <typename T>
-constexpr uint32_t basic_data<T>::fractional_part_rounding_thresholds[];
-#endif
 
 template <typename T, bool doublish = num_bits<T>() == num_bits<double>()>
 using convert_float_result =
@@ -3283,6 +3261,21 @@ FMT_CONSTEXPR20 void format_hexfloat(Float value, int precision,
 template <typename Float>
 FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
                                   buffer<char>& buf) -> int {
+  
+  // For checking rounding thresholds.
+  // The kth entry is chosen to be the smallest integer such that the
+  // upper 32-bits of 10^(k+1) times it is strictly bigger than 5 * 10^k.
+  static constexpr uint32_t fractional_part_rounding_thresholds[8] = {
+      2576980378U,  // ceil(2^31 + 2^32/10^1)
+      2190433321U,  // ceil(2^31 + 2^32/10^2)
+      2151778616U,  // ceil(2^31 + 2^32/10^3)
+      2147913145U,  // ceil(2^31 + 2^32/10^4)
+      2147526598U,  // ceil(2^31 + 2^32/10^5)
+      2147487943U,  // ceil(2^31 + 2^32/10^6)
+      2147484078U,  // ceil(2^31 + 2^32/10^7)
+      2147483691U   // ceil(2^31 + 2^32/10^8)
+  };
+
   // float is passed as double to reduce the number of instantiations.
   static_assert(!std::is_same<Float, float>::value, "");
   FMT_ASSERT(value >= 0, "value is negative");
