@@ -3259,21 +3259,15 @@ FMT_CONSTEXPR20 void format_hexfloat(Float value, int precision,
   format_hexfloat(static_cast<double>(value), precision, specs, buf);
 }
 
-FMT_CONSTEXPR inline uint32_t fractional_part_rounding_thresholds(int index) {
+constexpr uint32_t fractional_part_rounding_thresholds(int index) {
   // For checking rounding thresholds.
   // The kth entry is chosen to be the smallest integer such that the
   // upper 32-bits of 10^(k+1) times it is strictly bigger than 5 * 10^k.
-  constexpr uint32_t thresholds[8] = {
-      2576980378U,  // ceil(2^31 + 2^32/10^1)
-      2190433321U,  // ceil(2^31 + 2^32/10^2)
-      2151778616U,  // ceil(2^31 + 2^32/10^3)
-      2147913145U,  // ceil(2^31 + 2^32/10^4)
-      2147526598U,  // ceil(2^31 + 2^32/10^5)
-      2147487943U,  // ceil(2^31 + 2^32/10^6)
-      2147484078U,  // ceil(2^31 + 2^32/10^7)
-      2147483691U   // ceil(2^31 + 2^32/10^8)
-  };
-  return thresholds[index];
+  // It is equal to ceil(2^31 + 2^32/10^(k + 1)).
+  // These are stored in a string literal because we cannot have static arrays
+  // in constexpr functions and non-static ones are poorly optimized.
+  return U"\x9999999a\x828f5c29\x80418938\x80068db9\x8000a7c6\x800010c7"
+         U"\x800001ae\x8000002b"[index];
 }
 
 template <typename Float>
