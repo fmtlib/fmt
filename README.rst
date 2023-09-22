@@ -521,7 +521,7 @@ License
 -------
 
 {fmt} is distributed under the MIT `license
-<https://github.com/fmtlib/fmt/blob/master/LICENSE.rst>`_.
+<https://github.com/fmtlib/fmt/blob/master/LICENSE>`_.
 
 Documentation License
 ---------------------
