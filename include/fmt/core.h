@@ -1690,7 +1690,11 @@ FMT_CONSTEXPR FMT_INLINE auto visit_format_arg(
   case detail::type::double_type:
     return vis(arg.value_.double_value);
   case detail::type::long_double_type:
+#if FMT_USE_FLOAT128
     return vis(arg.value_.long_double_value);
+#else
+    break;
+#endif
   case detail::type::cstring_type:
     return vis(arg.value_.string.data);
   case detail::type::string_type:
