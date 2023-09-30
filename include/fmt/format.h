@@ -4224,6 +4224,8 @@ struct nested_formatter {
   formatter<T> formatter_;
 
  public:
+  constexpr nested_formatter() : width_(0), align_(align_t::none) {}
+
   FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> const char* {
     auto specs = detail::dynamic_format_specs<char>();
     auto it = parse_format_specs(
