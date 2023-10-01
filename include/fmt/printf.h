@@ -23,6 +23,10 @@ template <typename Char> class basic_printf_context {
   detail::buffer_appender<Char> out_;
   basic_format_args<basic_printf_context> args_;
 
+  static_assert(
+    std::is_same<Char, char>::value || std::is_same<Char, wchar_t>::value,
+    "Unsupported code unit type.");
+
  public:
   using char_type = Char;
   using parse_context_type = basic_format_parse_context<Char>;
