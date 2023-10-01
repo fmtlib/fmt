@@ -41,7 +41,7 @@ jobs:
             standard: 20
 
     steps:
-    - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
+    - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
 
     - name: Set timezone
       run: tzutil /s "Ekaterinburg Standard Time"
@@ -88,7 +88,7 @@ jobs:
         release: false
         msystem: ${{matrix.sys}}
         pacboy: cc:p cmake:p ninja:p lld:p
-    - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
+    - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
     - name: Configure
       run: cmake -B ../build -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=Debug
       env: { LDFLAGS: -fuse-ld=lld }
