@@ -13,7 +13,7 @@
 #include <cstdio>
 #include <system_error>  // std::system_error
 
-#if defined __APPLE__ || defined(__FreeBSD__)
+#if (defined __APPLE__ || defined(__FreeBSD__)) && __has_include(<xlocale.h>)
 #  include <xlocale.h>  // for LC_NUMERIC_MASK on OS X
 #endif
 
