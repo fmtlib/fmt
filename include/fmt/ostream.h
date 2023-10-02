@@ -38,24 +38,25 @@ auto get_file(std::filebuf&) -> FILE*;
 #endif
 
 inline bool write_ostream_unicode(std::ostream& os, fmt::string_view data) {
+  FILE* c_file = nullptr;
 #if FMT_MSC_VERSION
   if (auto* buf = dynamic_cast<std::filebuf*>(os.rdbuf()))
-    if (FILE* f = get_file(*buf)) return write_console(f, data);
+    c_file = get_file(*buf);
 #elif defined(_WIN32) && defined(__GLIBCXX__)
   auto* rdbuf = os.rdbuf();
-  FILE* c_file;
   if (auto* sfbuf = dynamic_cast<__gnu_cxx::stdio_sync_filebuf<char>*>(rdbuf))
     c_file = sfbuf->file();
   else if (auto* fbuf = dynamic_cast<__gnu_cxx::stdio_filebuf<char>*>(rdbuf))
     c_file = fbuf->file();
   else
     return false;
-  if (c_file) return write_console(c_file, data);
 #else
-  ignore_unused(os, data);
+  ignore_unused(os);
 #endif
-  return false;
+  if (!c_file) return false;
+  return write_console(c_file, data);
 }
+
 inline bool write_ostream_unicode(std::wostream&,
                                   fmt::basic_string_view<wchar_t>) {
   return false;
