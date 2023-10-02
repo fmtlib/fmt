@@ -73,9 +73,8 @@ FMT_FUNC void report_error(format_func func, int error_code,
 }
 
 // A wrapper around fwrite that throws on error.
-inline void fwrite_fully(const void* ptr, size_t size, size_t count,
-                         FILE* stream) {
-  size_t written = std::fwrite(ptr, size, count, stream);
+inline void fwrite_fully(const void* ptr, size_t count, FILE* stream) {
+  size_t written = std::fwrite(ptr, 1, count, stream);
   if (written < count)
     FMT_THROW(system_error(errno, FMT_STRING("cannot write to file")));
 }
@@ -1433,13 +1432,12 @@ extern "C" __declspec(dllimport) int __stdcall WriteConsoleW(  //
     void*, const void*, dword, dword*, void*);
 
 FMT_FUNC bool write_console(std::FILE* f, string_view text) {
-  auto fd = _fileno(f);
+  int fd = _fileno(f);
   if (!_isatty(fd)) return false;
+  std::fflush(f);
   auto u16 = utf8_to_utf16(text);
-  auto written = dword();
   return WriteConsoleW(reinterpret_cast<void*>(_get_osfhandle(fd)), u16.c_str(),
-                       static_cast<uint32_t>(u16.size()), &written,
-                       nullptr) != 0;
+                       static_cast<dword>(u16.size()), nullptr, nullptr) != 0;
 }
 #endif
 
@@ -1448,12 +1446,12 @@ FMT_FUNC bool write_console(std::FILE* f, string_view text) {
 FMT_FUNC void vprint_mojibake(std::FILE* f, string_view fmt, format_args args) {
   auto buffer = memory_buffer();
   detail::vformat_to(buffer, fmt, args);
-  fwrite_fully(buffer.data(), 1, buffer.size(), f);
+  fwrite_fully(buffer.data(), buffer.size(), f);
 }
 #endif
 
 FMT_FUNC void print(std::FILE* f, string_view text) {
-  if (!write_console(f, text)) fwrite_fully(text.data(), 1, text.size(), f);
+  if (!write_console(f, text)) fwrite_fully(text.data(), text.size(), f);
 }
 }  // namespace detail
 
