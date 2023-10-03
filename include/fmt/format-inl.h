@@ -1434,6 +1434,7 @@ extern "C" __declspec(dllimport) int __stdcall WriteConsoleW(  //
 FMT_FUNC bool write_console(std::FILE* f, string_view text) {
   int fd = _fileno(f);
   if (!_isatty(fd)) return false;
+  std::fflush(f);
   auto u16 = utf8_to_utf16(text);
   return WriteConsoleW(reinterpret_cast<void*>(_get_osfhandle(fd)), u16.c_str(),
                        static_cast<dword>(u16.size()), nullptr, nullptr) != 0;
