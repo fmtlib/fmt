@@ -237,6 +237,14 @@ TEST(std_test, format_const_bit_reference) {
   EXPECT_EQ(fmt::format("{} {}", v[0], v[1]), "true false");
 }
 
+TEST(std_test, format_bitset) {
+  const std::bitset<6> bs(42);
+  EXPECT_EQ(fmt::format("{}", bs), "101010");
+  EXPECT_EQ(fmt::format("{:.4}", bs), "101010");
+  EXPECT_EQ(fmt::format("{:0>8}", bs), "00101010");
+  EXPECT_EQ(fmt::format("{:-^12}", bs), "---101010---");
+}
+
 TEST(std_test, format_atomic) {
   std::atomic<bool> b(false);
   EXPECT_EQ(fmt::format("{}", b), "false");
