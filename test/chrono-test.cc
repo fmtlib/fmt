@@ -454,8 +454,11 @@ TEST(chrono_test, format_default) {
             fmt::format("{}", std::chrono::duration<int, std::peta>(42)));
   EXPECT_EQ("42Es",
             fmt::format("{}", std::chrono::duration<int, std::exa>(42)));
-  EXPECT_EQ("42m", fmt::format("{}", std::chrono::minutes(42)));
+  EXPECT_EQ("42min", fmt::format("{}", std::chrono::minutes(42)));
   EXPECT_EQ("42h", fmt::format("{}", std::chrono::hours(42)));
+#  if defined(__cpp_lib_chrono) && __cpp_lib_chrono >= 201907L
+  EXPECT_EQ("42d", fmt::format("{}", std::chrono::days(42)));
+#  endif
   EXPECT_EQ(
       "42[15]s",
       fmt::format("{}", std::chrono::duration<int, std::ratio<15, 1>>(42)));

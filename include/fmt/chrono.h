@@ -582,8 +582,9 @@ template <typename Period> FMT_CONSTEXPR inline const char* get_units() {
   if (std::is_same<Period, std::tera>::value) return "Ts";
   if (std::is_same<Period, std::peta>::value) return "Ps";
   if (std::is_same<Period, std::exa>::value) return "Es";
-  if (std::is_same<Period, std::ratio<60>>::value) return "m";
+  if (std::is_same<Period, std::ratio<60>>::value) return "min";
   if (std::is_same<Period, std::ratio<3600>>::value) return "h";
+  if (std::is_same<Period, std::ratio<86400>>::value) return "d";
   return nullptr;
 }
 
