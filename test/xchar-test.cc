@@ -614,17 +614,14 @@ TEST(locale_test, complex) {
 }
 
 TEST(locale_test, chrono_weekday) {
-  auto loc = get_locale("ru_RU.UTF-8", "Russian_Russia.1251");
+  auto loc = get_locale("es_ES.UTF-8", "Spanish_Spain.1252");
   auto loc_old = std::locale::global(loc);
-  auto mon = fmt::weekday(1);
-  EXPECT_EQ(fmt::format(L"{}", mon), L"Mon");
+  auto sat = fmt::weekday(6);
+  EXPECT_EQ(fmt::format(L"{}", sat), L"Sat");
   if (loc != std::locale::classic()) {
-    // {L"\x43F\x43D", L"\x41F\x43D", L"\x43F\x43D\x434", L"\x41F\x43D\x434"}
-    // {L"пн", L"Пн", L"пнд", L"Пнд"}
-    EXPECT_THAT(
-        (std::vector<std::wstring>{L"\x43F\x43D", L"\x41F\x43D",
-                                   L"\x43F\x43D\x434", L"\x41F\x43D\x434"}),
-        Contains(fmt::format(loc, L"{:L}", mon)));
+    // L'\xE1' is 'á'.
+    auto saturdays = std::vector<std::wstring>{L"s\xE1""b", L"s\xE1."};
+    EXPECT_THAT(saturdays, Contains(fmt::format(loc, L"{:L}", sat)));
   }
   std::locale::global(loc_old);
 }
