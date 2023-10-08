@@ -743,21 +743,20 @@ TEST(chrono_test, unsigned_duration) {
 }
 
 TEST(chrono_test, weekday) {
-  auto loc = get_locale("ru_RU.UTF-8");
+  auto loc = get_locale("es_ES.UTF-8");
   std::locale::global(loc);
-  auto mon = fmt::weekday(1);
+  auto sat = fmt::weekday(6);
 
   auto tm = std::tm();
-  tm.tm_wday = static_cast<int>(mon.c_encoding());
+  tm.tm_wday = static_cast<int>(sat.c_encoding());
 
-  EXPECT_EQ(fmt::format("{}", mon), "Mon");
-  EXPECT_EQ(fmt::format("{:%a}", tm), "Mon");
+  EXPECT_EQ(fmt::format("{}", sat), "Sat");
+  EXPECT_EQ(fmt::format("{:%a}", tm), "Sat");
 
   if (loc != std::locale::classic()) {
-    EXPECT_THAT((std::vector<std::string>{"пн", "Пн", "пнд", "Пнд"}),
-                Contains(fmt::format(loc, "{:L}", mon)));
-    EXPECT_THAT((std::vector<std::string>{"пн", "Пн", "пнд", "Пнд"}),
-                Contains(fmt::format(loc, "{:%a}", tm)));
+    auto saturdays = std::vector<std::string>{"sáb", "sá."};
+    EXPECT_THAT(saturdays, Contains(fmt::format(loc, "{:L}", sat)));
+    EXPECT_THAT(saturdays, Contains(fmt::format(loc, "{:%a}", tm)));
   }
 }
 
