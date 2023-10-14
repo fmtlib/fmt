@@ -75,8 +75,7 @@ void write_escaped_path(basic_memory_buffer<Char>& quoted,
 }
 
 #  ifdef _WIN32
-template <>
-inline auto get_path_string<char>(const std::filesystem::path& p) {
+template <> inline auto get_path_string<char>(const std::filesystem::path& p) {
   return to_utf8<wchar_t>(p.native(), to_utf8_error_policy::replace);
 }
 
@@ -477,15 +476,14 @@ struct formatter<std::atomic<T>, Char,
 #ifdef __cpp_lib_atomic_flag_test
 FMT_EXPORT
 template <typename Char>
-struct formatter<std::atomic_flag, Char>
-    : formatter<bool, Char> {
+struct formatter<std::atomic_flag, Char> : formatter<bool, Char> {
   template <typename FormatContext>
   auto format(const std::atomic_flag& v, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     return formatter<bool, Char>::format(v.test(), ctx);
   }
 };
-#endif // __cpp_lib_atomic_flag_test
+#endif  // __cpp_lib_atomic_flag_test
 
 FMT_END_NAMESPACE
 #endif  // FMT_STD_H_

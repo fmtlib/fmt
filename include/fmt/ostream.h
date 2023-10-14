@@ -89,7 +89,9 @@ void format_value(buffer<Char>& buf, const T& value,
   output.exceptions(std::ios_base::failbit | std::ios_base::badbit);
 }
 
-template <typename T> struct streamed_view { const T& value; };
+template <typename T> struct streamed_view {
+  const T& value;
+};
 
 }  // namespace detail
 

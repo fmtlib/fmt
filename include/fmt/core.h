@@ -265,7 +265,9 @@ template <typename T>
 using remove_const_t = typename std::remove_const<T>::type;
 template <typename T>
 using remove_cvref_t = typename std::remove_cv<remove_reference_t<T>>::type;
-template <typename T> struct type_identity { using type = T; };
+template <typename T> struct type_identity {
+  using type = T;
+};
 template <typename T> using type_identity_t = typename type_identity<T>::type;
 template <typename T>
 using underlying_t = typename std::underlying_type<T>::type;
@@ -1506,7 +1508,9 @@ FMT_CONSTEXPR auto copy_str(R&& rng, OutputIt out) -> OutputIt {
 
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 500
 // A workaround for gcc 4.8 to make void_t work in a SFINAE context.
-template <typename...> struct void_t_impl { using type = void; };
+template <typename...> struct void_t_impl {
+  using type = void;
+};
 template <typename... T> using void_t = typename void_t_impl<T...>::type;
 #else
 template <typename...> using void_t = void;
@@ -2678,7 +2682,9 @@ template <typename Char = char> struct vformat_args {
   using type = basic_format_args<
       basic_format_context<std::back_insert_iterator<buffer<Char>>, Char>>;
 };
-template <> struct vformat_args<char> { using type = format_args; };
+template <> struct vformat_args<char> {
+  using type = format_args;
+};
 
 // Use vformat_args and avoid type_identity to keep symbols short.
 template <typename Char>
