@@ -178,7 +178,7 @@ This can be `5 to 9 times faster than fprintf
       fmt::print(fg(fmt::color::crimson) | fmt::emphasis::bold,
                  "Hello, {}!\n", "world");
       fmt::print(fg(fmt::color::floral_white) | bg(fmt::color::slate_gray) |
-                 fmt::emphasis::underline, "¡Olá, {}!\n", "Mundo");
+                 fmt::emphasis::underline, "Olá, {}!\n", "Mundo");
       fmt::print(fg(fmt::color::steel_blue) | fmt::emphasis::italic,
                  "你好{}！\n", "世界");
     }
@@ -186,7 +186,7 @@ This can be `5 to 9 times faster than fprintf
 Output on a modern terminal with Unicode support:
 
 .. image:: https://github.com/fmtlib/fmt/assets/
-           576385/355172ac-6b6f-4aee-88aa-30f082e58e01
+           576385/2a93c904-d6fa-4aa6-b453-2618e1c327d7
 
 Benchmarks
 ----------
