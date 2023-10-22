@@ -46,7 +46,8 @@ Features
 * Simple `format API <https://fmt.dev/latest/api.html>`_ with positional arguments
   for localization
 * Implementation of `C++20 std::format
-  <https://en.cppreference.com/w/cpp/utility/format>`__
+  <https://en.cppreference.com/w/cpp/utility/format>`__ and `C++23 std::print
+  <https://en.cppreference.com/w/cpp/io/print>`__
 * `Format string syntax <https://fmt.dev/latest/syntax.html>`_ similar to Python's
   `format <https://docs.python.org/3/library/stdtypes.html#str.format>`_
 * Fast IEEE 754 floating-point formatter with correct rounding, shortness and
@@ -177,15 +178,15 @@ This can be `5 to 9 times faster than fprintf
       fmt::print(fg(fmt::color::crimson) | fmt::emphasis::bold,
                  "Hello, {}!\n", "world");
       fmt::print(fg(fmt::color::floral_white) | bg(fmt::color::slate_gray) |
-                 fmt::emphasis::underline, "Hello, {}!\n", "мир");
+                 fmt::emphasis::underline, "¡Olá {}!\n", "Mundo");
       fmt::print(fg(fmt::color::steel_blue) | fmt::emphasis::italic,
-                 "Hello, {}!\n", "世界");
+                 "你好{}！\n", "世界");
     }
 
-Output on a modern terminal:
+Output on a modern terminal with Unicode support:
 
-.. image:: https://user-images.githubusercontent.com/
-           576385/88485597-d312f600-cf2b-11ea-9cbe-61f535a86e28.png
+.. image:: https://github.com/fmtlib/fmt/assets/
+           576385/073817d5-e3d0-4666-ad90-bb94a7d68af2
 
 Benchmarks
 ----------
