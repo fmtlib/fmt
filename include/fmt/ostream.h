@@ -10,9 +10,12 @@
 
 #include <fstream>  // std::filebuf
 
-#if defined(_WIN32) && defined(__GLIBCXX__)
-#  include <ext/stdio_filebuf.h>
-#  include <ext/stdio_sync_filebuf.h>
+#ifdef _WIN32
+#  ifdef __GLIBCXX__
+#    include <ext/stdio_filebuf.h>
+#    include <ext/stdio_sync_filebuf.h>
+#  endif
+#  include <io.h>
 #endif
 
 #include "format.h"
@@ -38,21 +41,31 @@ auto get_file(std::filebuf&) -> FILE*;
 #endif
 
 inline bool write_ostream_unicode(std::ostream& os, fmt::string_view data) {
+  FILE* f = nullptr;
 #if FMT_MSC_VERSION
   if (auto* buf = dynamic_cast<std::filebuf*>(os.rdbuf()))
-    if (FILE* f = get_file(*buf)) return write_console(f, data);
-#elif defined(_WIN32) && defined(__GLIBCXX__)
-  auto* rdbuf = os.rdbuf();
-  FILE* c_file;
-  if (auto* sfbuf = dynamic_cast<__gnu_cxx::stdio_sync_filebuf<char>*>(rdbuf))
-    c_file = sfbuf->file();
-  else if (auto* fbuf = dynamic_cast<__gnu_cxx::stdio_filebuf<char>*>(rdbuf))
-    c_file = fbuf->file();
+    f = get_file(*buf);
   else
     return false;
-  if (c_file) return write_console(c_file, data);
+#elif defined(_WIN32) && defined(__GLIBCXX__)
+  auto* rdbuf = os.rdbuf();
+  if (auto* sfbuf = dynamic_cast<__gnu_cxx::stdio_sync_filebuf<char>*>(rdbuf))
+    f = sfbuf->file();
+  else if (auto* fbuf = dynamic_cast<__gnu_cxx::stdio_filebuf<char>*>(rdbuf))
+    f = fbuf->file();
+  else
+    return false;
 #else
-  ignore_unused(os, data);
+  ignore_unused(os, data, f);
+#endif
+#ifdef _WIN32
+  if (f) {
+    int fd = _fileno(f);
+    if (_isatty(fd)) {
+      os.flush();
+      return write_console(fd, data);
+    }
+  }
 #endif
   return false;
 }
