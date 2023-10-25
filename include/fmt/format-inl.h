@@ -1425,16 +1425,13 @@ FMT_FUNC std::string vformat(string_view fmt, format_args args) {
 
 namespace detail {
 #if !defined(_WIN32) || defined(FMT_WINDOWS_NO_WCHAR)
-FMT_FUNC bool write_console(std::FILE*, string_view) { return false; }
+FMT_FUNC bool write_console(int, string_view) { return false; }
 #else
 using dword = conditional_t<sizeof(long) == 4, unsigned long, unsigned>;
 extern "C" __declspec(dllimport) int __stdcall WriteConsoleW(  //
     void*, const void*, dword, dword*, void*);
 
-FMT_FUNC bool write_console(std::FILE* f, string_view text) {
-  int fd = _fileno(f);
-  if (!_isatty(fd)) return false;
-  std::fflush(f);
+FMT_FUNC bool write_console(int fd, string_view text) {
   auto u16 = utf8_to_utf16(text);
   return WriteConsoleW(reinterpret_cast<void*>(_get_osfhandle(fd)), u16.c_str(),
                        static_cast<dword>(u16.size()), nullptr, nullptr) != 0;
@@ -1451,7 +1448,14 @@ FMT_FUNC void vprint_mojibake(std::FILE* f, string_view fmt, format_args args) {
 #endif
 
 FMT_FUNC void print(std::FILE* f, string_view text) {
-  if (!write_console(f, text)) fwrite_fully(text.data(), text.size(), f);
+#ifdef _WIN32
+  int fd = _fileno(f);
+  if (_isatty(fd)) {
+    std::fflush(f);
+    if (write_console(fd, text)) return;
+  }
+#endif
+  fwrite_fully(text.data(), text.size(), f);
 }
 }  // namespace detail
 
