@@ -1958,11 +1958,12 @@ auto write_escaped_string(OutputIt out, basic_string_view<Char> str)
 
 template <typename Char, typename OutputIt>
 auto write_escaped_char(OutputIt out, Char v) -> OutputIt {
+  Char v_array[1] = {v};
   *out++ = static_cast<Char>('\'');
   if ((needs_escape(static_cast<uint32_t>(v)) && v != static_cast<Char>('"')) ||
       v == static_cast<Char>('\'')) {
     out = write_escaped_cp(
-        out, find_escape_result<Char>{&v, &v + 1, static_cast<uint32_t>(v)});
+        out, find_escape_result<Char>{v_array, v_array + 1, static_cast<uint32_t>(v)});
   } else {
     *out++ = v;
   }
