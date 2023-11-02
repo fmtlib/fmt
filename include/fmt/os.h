@@ -13,13 +13,13 @@
 #include <cstdio>
 #include <system_error>  // std::system_error
 
+#include "format.h"
+
 #if defined __APPLE__ || defined(__FreeBSD__)
-#  if (__cplusplus < 201703L) || __has_include(<xlocale.h>)
+#  if FMT_HAS_INCLUDE(<xlocale.h>)
 #    include <xlocale.h>  // for LC_NUMERIC_MASK on OS X
 #  endif
 #endif
-
-#include "format.h"
 
 #ifndef FMT_USE_FCNTL
 // UWP doesn't provide _pipe.
