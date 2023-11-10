@@ -1535,7 +1535,9 @@ inline int floor_log2_pow10(int e) noexcept {
 
 // Computes upper 64 bits of multiplication of two 64-bit unsigned integers.
 inline uint64_t umul128_upper64(uint64_t x, uint64_t y) noexcept {
-#if FMT_USE_INT128
+#if __x86_64__ && (__GNUC__ || __clang__)
+  return umul128(x, y).high();
+#elif FMT_USE_INT128
   auto p = static_cast<uint128_opt>(x) * static_cast<uint128_opt>(y);
   return static_cast<uint64_t>(p >> 64);
 #elif defined(_MSC_VER) && defined(_M_X64)
