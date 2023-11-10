@@ -1486,7 +1486,7 @@ template <typename WChar, typename Buffer = memory_buffer> class to_utf8 {
 
 // Computes 128-bit result of multiplication of two 64-bit unsigned integers.
 inline uint128_fallback umul128(uint64_t x, uint64_t y) noexcept {
-#if __x86_64__
+#if __x86_64__ && (__GNUC__ || __clang__)
   uint64_t hi, lo;
   __asm__(  "mulq %[y] \n" 
           : "=a"(lo), "=d"(hi)                
