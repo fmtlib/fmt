@@ -2342,9 +2342,10 @@ template <typename Char, typename OutputIt>
 FMT_CONSTEXPR auto write(OutputIt out, const Char* s,
                          const format_specs<Char>& specs, locale_ref)
     -> OutputIt {
-  return specs.type != presentation_type::pointer
-             ? write(out, basic_string_view<Char>(s), specs, {})
-             : write_ptr<Char>(out, bit_cast<uintptr_t>(s), &specs);
+  if (specs.type == presentation_type::pointer)
+    return write_ptr<Char>(out, bit_cast<uintptr_t>(s), &specs);
+  if (!s) throw_format_error("string pointer is null");
+  return write(out, basic_string_view<Char>(s), specs, {});
 }
 
 template <typename Char, typename OutputIt, typename T,

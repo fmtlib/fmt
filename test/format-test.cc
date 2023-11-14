@@ -1531,8 +1531,12 @@ TEST(format_test, format_cstring) {
   EXPECT_EQ("test", fmt::format("{0:s}", "test"));
   char nonconst[] = "nonconst";
   EXPECT_EQ("nonconst", fmt::format("{0}", nonconst));
+  auto nullstr = static_cast<const char*>(nullptr);
   EXPECT_THROW_MSG(
-      (void)fmt::format(runtime("{0}"), static_cast<const char*>(nullptr)),
+      (void)fmt::format("{}", nullstr),
+      format_error, "string pointer is null");
+  EXPECT_THROW_MSG(
+      (void)fmt::format("{:s}", nullstr),
       format_error, "string pointer is null");
 }
 
