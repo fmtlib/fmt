@@ -59,7 +59,7 @@
 #  endif
 #endif
 
-#ifdef __cpp_lib_filesystem
+#if !defined(FMT_DISABLE_STD_FILESYSTEM) && defined(__cpp_lib_filesystem)
 FMT_BEGIN_NAMESPACE
 
 namespace detail {
@@ -211,7 +211,7 @@ struct formatter<std::optional<T>, Char,
 FMT_END_NAMESPACE
 #endif  // __cpp_lib_optional
 
-#ifdef __cpp_lib_variant
+#if !defined(FMT_DISABLE_STD_VARIANT) && defined(__cpp_lib_variant)
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
