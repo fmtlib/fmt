@@ -90,6 +90,36 @@ TEST(std_test, optional) {
 #endif
 }
 
+namespace my_nso {
+enum class my_number {
+  one,
+  two,
+};
+auto format_as(my_number number) -> fmt::string_view {
+  return number == my_number::one ? "first" : "second";
+}
+
+class my_class {
+ public:
+  int av;
+
+ private:
+  friend auto format_as(const my_class& elm) -> std::string {
+    return fmt::to_string(elm.av);
+  }
+};
+}  // namespace my_nso
+TEST(std_test, optional_format_as) {
+#ifdef __cpp_lib_optional
+  EXPECT_EQ(fmt::format("{}", std::optional<my_nso::my_number>{}), "none");
+  EXPECT_EQ(fmt::format("{}", std::optional{my_nso::my_number::one}),
+            "optional(\"first\")");
+  EXPECT_EQ(fmt::format("{}", std::optional<my_nso::my_class>{}), "none");
+  EXPECT_EQ(fmt::format("{}", std::optional{my_nso::my_class{7}}),
+            "optional(\"7\")");
+#endif
+}
+
 struct throws_on_move {
   throws_on_move() = default;
 
