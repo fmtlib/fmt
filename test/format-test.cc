@@ -1050,6 +1050,7 @@ TEST(format_test, precision) {
 
   EXPECT_EQ("st", fmt::format("{0:.2}", "str"));
   EXPECT_EQ("вожык", fmt::format("{0:.5}", "вожыкі"));
+  EXPECT_EQ("123456", fmt::format("{0:.6}", "123456\xad"));
 }
 
 TEST(format_test, runtime_precision) {

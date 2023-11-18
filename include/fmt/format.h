@@ -791,12 +791,18 @@ inline auto code_point_index(basic_string_view<Char> s, size_t n) -> size_t {
 
 // Calculates the index of the nth code point in a UTF-8 string.
 inline auto code_point_index(string_view s, size_t n) -> size_t {
-  const char* data = s.data();
-  size_t num_code_points = 0;
-  for (size_t i = 0, size = s.size(); i != size; ++i) {
-    if ((data[i] & 0xc0) != 0x80 && ++num_code_points > n) return i;
-  }
-  return s.size();
+  size_t result = s.size();
+  const char* begin = s.begin();
+  for_each_codepoint(
+      s, [begin, &n, &result](uint32_t, string_view sv) {
+        if (n != 0) {
+          --n;
+          return true;
+        }
+        result = to_unsigned(sv.begin() - begin);
+        return false;
+      });
+  return result;
 }
 
 inline auto code_point_index(basic_string_view<char8_type> s, size_t n)
@@ -1962,8 +1968,9 @@ auto write_escaped_char(OutputIt out, Char v) -> OutputIt {
   *out++ = static_cast<Char>('\'');
   if ((needs_escape(static_cast<uint32_t>(v)) && v != static_cast<Char>('"')) ||
       v == static_cast<Char>('\'')) {
-    out = write_escaped_cp(
-        out, find_escape_result<Char>{v_array, v_array + 1, static_cast<uint32_t>(v)});
+    out = write_escaped_cp(out,
+                           find_escape_result<Char>{v_array, v_array + 1,
+                                                    static_cast<uint32_t>(v)});
   } else {
     *out++ = v;
   }
