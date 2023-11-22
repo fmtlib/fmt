@@ -22,3 +22,4 @@ cmake_install.cmake
 fmt-*.cmake
 fmt.pc
 virtualenv
+.swiftpm/xcode
