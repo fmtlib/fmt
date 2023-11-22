@@ -244,6 +244,15 @@
 #  endif
 #endif
 
+// GCC < 5 requires this-> in decltype
+#ifndef FMT_DECLTYPE_THIS
+#  if FMT_GCC_VERSION && FMT_GCC_VERSION < 500
+#    define FMT_DECLTYPE_THIS this->
+#  else
+#    define FMT_DECLTYPE_THIS
+#  endif
+#endif
+
 // Enable minimal optimizations for more compact code in debug mode.
 FMT_GCC_PRAGMA("GCC push_options")
 #if !defined(__OPTIMIZE__) && !defined(__NVCOMPILER) && !defined(__LCC__) && \
@@ -1439,7 +1448,7 @@ template <typename Context> struct arg_mapper {
   // Only map owning types because mapping views can be unsafe.
   template <typename T, typename U = format_as_t<T>,
             FMT_ENABLE_IF(std::is_arithmetic<U>::value)>
-  FMT_CONSTEXPR FMT_INLINE auto map(const T& val) -> decltype(this->map(U())) {
+  FMT_CONSTEXPR FMT_INLINE auto map(const T& val) -> decltype(FMT_DECLTYPE_THIS map(U())) {
     return map(format_as(val));
   }
 
@@ -1463,13 +1472,13 @@ template <typename Context> struct arg_mapper {
                           !is_string<U>::value && !is_char<U>::value &&
                           !is_named_arg<U>::value &&
                           !std::is_arithmetic<format_as_t<U>>::value)>
-  FMT_CONSTEXPR FMT_INLINE auto map(T& val) -> decltype(this->do_map(val)) {
+  FMT_CONSTEXPR FMT_INLINE auto map(T& val) -> decltype(FMT_DECLTYPE_THIS do_map(val)) {
     return do_map(val);
   }
 
   template <typename T, FMT_ENABLE_IF(is_named_arg<T>::value)>
   FMT_CONSTEXPR FMT_INLINE auto map(const T& named_arg)
-      -> decltype(this->map(named_arg.value)) {
+      -> decltype(FMT_DECLTYPE_THIS map(named_arg.value)) {
     return map(named_arg.value);
   }
 
