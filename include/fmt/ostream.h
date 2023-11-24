@@ -91,12 +91,11 @@ void write_buffer(std::basic_ostream<Char>& os, buffer<Char>& buf) {
 }
 
 template <typename Char, typename T>
-void format_value(buffer<Char>& buf, const T& value,
-                  locale_ref loc = locale_ref()) {
+void format_value(buffer<Char>& buf, const T& value) {
   auto&& format_buf = formatbuf<std::basic_streambuf<Char>>(buf);
   auto&& output = std::basic_ostream<Char>(&format_buf);
 #if !defined(FMT_STATIC_THOUSANDS_SEPARATOR)
-  if (loc) output.imbue(loc.get<std::locale>());
+  output.imbue(std::locale::classic()); // The default is always unlocalized.
 #endif
   output << value;
   output.exceptions(std::ios_base::failbit | std::ios_base::badbit);
@@ -117,7 +116,7 @@ struct basic_ostream_formatter : formatter<basic_string_view<Char>, Char> {
   auto format(const T& value, basic_format_context<OutputIt, Char>& ctx) const
       -> OutputIt {
     auto buffer = basic_memory_buffer<Char>();
-    detail::format_value(buffer, value, ctx.locale());
+    detail::format_value(buffer, value);
     return formatter<basic_string_view<Char>, Char>::format(
         {buffer.data(), buffer.size()}, ctx);
   }
