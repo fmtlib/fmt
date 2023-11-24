@@ -1318,6 +1318,7 @@ template <typename Context> class value {
     parse_ctx.advance_to(f.parse(parse_ctx));
     using qualified_type =
         conditional_t<has_const_formatter<T, Context>(), const T, T>;
+    // Calling format through a mutable reference is deprecated.
     ctx.advance_to(f.format(*static_cast<qualified_type*>(arg), ctx));
   }
 };
