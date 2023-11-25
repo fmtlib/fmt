@@ -9,7 +9,7 @@
 #include <cassert>
 #include <climits>
 
-#include "fmt/format.h"
+#include "fmt/core.h"
 
 FMT_BEGIN_NAMESPACE
 template <typename T, typename Char = char> struct scanner {
