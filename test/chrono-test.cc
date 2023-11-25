@@ -874,6 +874,20 @@ TEST(chrono_test, timestamps_ratios) {
       t4(std::chrono::duration<int, std::ratio<63>>(1));
 
   EXPECT_EQ(fmt::format("{:%M:%S}", t4), "01:03");
+
+  std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>
+      t5(std::chrono::seconds(32503680000));
+
+  EXPECT_EQ(fmt::format("{:%Y-%m-%d}", t5), "3000-01-01");
+
+#if FMT_SAFE_DURATION_CAST
+  using years = std::chrono::duration<std::int64_t, std::ratio<31556952>>;
+  std::chrono::time_point<std::chrono::system_clock, years> t6(
+      (years(std::numeric_limits<std::int64_t>::max())));
+
+  EXPECT_THROW_MSG((void)fmt::format("{:%Y-%m-%d}", t6), fmt::format_error,
+                   "cannot format duration");
+#endif
 }
 
 TEST(chrono_test, timestamps_sub_seconds) {
