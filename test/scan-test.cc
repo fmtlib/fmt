@@ -70,7 +70,7 @@ namespace fmt {
 template <> struct scanner<tm> {
   std::string format;
 
-  scan_parse_context::iterator parse(scan_parse_context& ctx) {
+  auto parse(scan_parse_context& ctx) -> scan_parse_context::iterator {
     auto it = ctx.begin();
     if (it != ctx.end() && *it == ':') ++it;
     auto end = it;
@@ -82,7 +82,7 @@ template <> struct scanner<tm> {
   }
 
   template <class ScanContext>
-  typename ScanContext::iterator scan(tm& t, ScanContext& ctx) {
+  auto scan(tm& t, ScanContext& ctx) const -> typename ScanContext::iterator {
     auto result = strptime(ctx.begin(), format.c_str(), &t);
     if (!result) throw format_error("failed to parse time");
     return result;
