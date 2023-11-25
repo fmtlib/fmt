@@ -430,41 +430,47 @@ auto write(OutputIt out, const std::tm& time, const std::locale& loc,
   return write_encoded_tm_str(out, string_view(buf.data(), buf.size()), loc);
 }
 
-#if FMT_SAFE_DURATION_CAST
-// throwing version of safe_duration_cast
-// only available for integer<->integer or float<->float casts
-template <typename To, typename FromRep, typename FromPeriod,
-          FMT_ENABLE_IF((std::is_integral<FromRep>::value &&
-                         std::is_integral<typename To::rep>::value) ||
-                        (std::is_floating_point<FromRep>::value &&
-                         std::is_floating_point<typename To::rep>::value))>
+template <typename Rep1, typename Rep2>
+struct is_same_arithmetic_type
+    : public std::integral_constant<bool,
+                                    (std::is_integral<Rep1>::value &&
+                                     std::is_integral<Rep2>::value) ||
+                                        (std::is_floating_point<Rep1>::value &&
+                                         std::is_floating_point<Rep2>::value)> {
+};
+
+template <
+    typename To, typename FromRep, typename FromPeriod,
+    FMT_ENABLE_IF(is_same_arithmetic_type<FromRep, typename To::rep>::value)>
 To fmt_duration_cast(std::chrono::duration<FromRep, FromPeriod> from) {
+#if FMT_SAFE_DURATION_CAST
+  // throwing version of safe_duration_cast
+  // only available for integer<->integer or float<->float casts
   int ec;
   To to = safe_duration_cast::safe_duration_cast<To>(from, ec);
   if (ec) FMT_THROW(format_error("cannot format duration"));
   return to;
-}
-// mixed integer<->float cast is not supported with safe_duration_cast
-// fallback to standard duration cast in this case
-template <typename To, typename FromRep, typename FromPeriod,
-          FMT_ENABLE_IF((std::is_integral<FromRep>::value !=
-                         std::is_integral<typename To::rep>::value) &&
-                        (std::is_floating_point<FromRep>::value !=
-                         std::is_floating_point<typename To::rep>::value))>
-To fmt_duration_cast(std::chrono::duration<FromRep, FromPeriod> from) {
-  return std::chrono::duration_cast<To>(from);
-}
 #else
-// standard duration cast, may overflow and invoke undefined behavior
-template <typename To, typename FromRep, typename FromPeriod>
+  // standard duration cast, may overflow and invoke undefined behavior
+  return std::chrono::duration_cast<To>(from);
+#endif
+}
+
+template <
+    typename To, typename FromRep, typename FromPeriod,
+    FMT_ENABLE_IF(!is_same_arithmetic_type<FromRep, typename To::rep>::value)>
 To fmt_duration_cast(std::chrono::duration<FromRep, FromPeriod> from) {
+  // mixed integer<->float cast is not supported with safe_duration_cast
+  // fallback to standard duration cast in this case
   return std::chrono::duration_cast<To>(from);
 }
-#endif
 
 template <typename Duration>
 std::time_t to_time_t(
     std::chrono::time_point<std::chrono::system_clock, Duration> time_point) {
+  // cannot use std::chrono::system_clock::to_time_t() since this would first
+  // require a cast to std::chrono::system_clock::time_point, which could
+  // overflow.
   return fmt_duration_cast<std::chrono::duration<std::time_t>>(
              time_point.time_since_epoch())
       .count();
