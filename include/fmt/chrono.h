@@ -2144,8 +2144,8 @@ struct formatter<std::chrono::local_time<Duration>, Char>
     if (period::num != 1 || period::den != 1 ||
         std::is_floating_point<typename Duration::rep>::value) {
       const auto epoch = val.time_since_epoch();
-      const auto subsecs = fmt_duration_cast<Duration>(
-          epoch - fmt_duration_cast<std::chrono::seconds>(epoch));
+      const auto subsecs = detail::fmt_duration_cast<Duration>(
+          epoch - detail::fmt_duration_cast<std::chrono::seconds>(epoch));
 
       return formatter<std::tm, Char>::do_format(localtime(val), ctx, &subsecs);
     }
