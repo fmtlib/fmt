@@ -9,7 +9,7 @@
 #include <cassert>
 #include <climits>
 
-#include "fmt/format.h"
+#include "fmt/core.h"
 
 FMT_BEGIN_NAMESPACE
 template <typename T, typename Char = char> struct scanner {
@@ -27,8 +27,8 @@ class scan_parse_context {
   explicit FMT_CONSTEXPR scan_parse_context(string_view format)
       : format_(format) {}
 
-  FMT_CONSTEXPR iterator begin() const { return format_.begin(); }
-  FMT_CONSTEXPR iterator end() const { return format_.end(); }
+  FMT_CONSTEXPR auto begin() const -> iterator { return format_.begin(); }
+  FMT_CONSTEXPR auto end() const -> iterator { return format_.end(); }
 
   void advance_to(iterator it) {
     format_.remove_prefix(detail::to_unsigned(it - begin()));
@@ -44,8 +44,8 @@ struct scan_context {
 
   explicit FMT_CONSTEXPR scan_context(string_view input) : input_(input) {}
 
-  iterator begin() const { return input_.data(); }
-  iterator end() const { return begin() + input_.size(); }
+  auto begin() const -> iterator { return input_.data(); }
+  auto end() const -> iterator { return begin() + input_.size(); }
 
   void advance_to(iterator it) {
     input_.remove_prefix(detail::to_unsigned(it - begin()));
@@ -106,7 +106,7 @@ class scan_arg {
   template <typename T>
   static void scan_custom_arg(void* arg, scan_parse_context& parse_ctx,
                               scan_context& ctx) {
-    scanner<T> s;
+    auto s = scanner<T>();
     parse_ctx.advance_to(s.parse(parse_ctx));
     ctx.advance_to(s.scan(*static_cast<T*>(arg), ctx));
   }
@@ -134,7 +134,7 @@ struct scan_handler : error_handler {
   int next_arg_id_;
   scan_arg arg_;
 
-  template <typename T = unsigned> T read_uint() {
+  template <typename T = unsigned> auto read_uint() -> T {
     T value = 0;
     auto it = scan_ctx_.begin(), end = scan_ctx_.end();
     while (it != end) {
@@ -147,7 +147,7 @@ struct scan_handler : error_handler {
     return value;
   }
 
-  template <typename T = int> T read_int() {
+  template <typename T = int> auto read_int() -> T {
     auto it = scan_ctx_.begin(), end = scan_ctx_.end();
     bool negative = it != end && *it == '-';
     if (negative) ++it;
@@ -162,7 +162,7 @@ struct scan_handler : error_handler {
                              scan_args args)
       : parse_ctx_(format), scan_ctx_(input), args_(args), next_arg_id_(0) {}
 
-  const char* pos() const { return scan_ctx_.begin(); }
+  auto pos() const -> const char* { return scan_ctx_.begin(); }
 
   void on_text(const char* begin, const char* end) {
     auto size = to_unsigned(end - begin);
@@ -172,13 +172,13 @@ struct scan_handler : error_handler {
     scan_ctx_.advance_to(it + size);
   }
 
-  FMT_CONSTEXPR int on_arg_id() { return on_arg_id(next_arg_id_++); }
-  FMT_CONSTEXPR int on_arg_id(int id) {
+  FMT_CONSTEXPR auto on_arg_id() -> int { return on_arg_id(next_arg_id_++); }
+  FMT_CONSTEXPR auto on_arg_id(int id) -> int {
     if (id >= args_.size) on_error("argument index out of range");
     arg_ = args_.data[id];
     return id;
   }
-  FMT_CONSTEXPR int on_arg_id(string_view id) {
+  FMT_CONSTEXPR auto on_arg_id(string_view id) -> int {
     if (id.data()) on_error("invalid format");
     return 0;
   }
@@ -215,7 +215,7 @@ struct scan_handler : error_handler {
     }
   }
 
-  const char* on_format_specs(int, const char* begin, const char*) {
+  auto on_format_specs(int, const char* begin, const char*) -> const char* {
     if (arg_.type != scan_type::custom_type) return begin;
     parse_ctx_.advance_to(begin);
     arg_.custom.scan(arg_.custom.value, parse_ctx_, scan_ctx_);
@@ -224,21 +224,21 @@ struct scan_handler : error_handler {
 };
 }  // namespace detail
 
-template <typename... Args>
-std::array<detail::scan_arg, sizeof...(Args)> make_scan_args(Args&... args) {
+template <typename... T>
+auto make_scan_args(T&... args) -> std::array<detail::scan_arg, sizeof...(T)> {
   return {{args...}};
 }
 
-string_view::iterator vscan(string_view input, string_view format_str,
-                            scan_args args) {
-  detail::scan_handler h(format_str, input, args);
-  detail::parse_format_string<false>(format_str, h);
+auto vscan(string_view input, string_view fmt, scan_args args)
+    -> string_view::iterator {
+  auto h = detail::scan_handler(fmt, input, args);
+  detail::parse_format_string<false>(fmt, h);
   return input.begin() + (h.pos() - &*input.begin());
 }
 
-template <typename... Args>
-string_view::iterator scan(string_view input, string_view format_str,
-                           Args&... args) {
-  return vscan(input, format_str, make_scan_args(args...));
+template <typename... T>
+auto scan(string_view input, string_view fmt, T&... args)
+    -> string_view::iterator {
+  return vscan(input, fmt, make_scan_args(args...));
 }
 FMT_END_NAMESPACE

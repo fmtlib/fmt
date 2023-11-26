@@ -354,7 +354,7 @@ TEST(output_redirect_test, dup_error_in_ctor) {
   FMT_POSIX(close(fd));
   std::unique_ptr<output_redirect> redir{nullptr};
   EXPECT_SYSTEM_ERROR_NOASSERT(
-      redir.reset(new output_redirect(f.get())), EBADF,
+      redir.reset(new output_redirect(f.get(), false)), EBADF,
       fmt::format("cannot duplicate file descriptor {}", fd));
   copy.dup2(fd);  // "undo" close or dtor will fail
 }

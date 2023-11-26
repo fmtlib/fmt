@@ -187,18 +187,6 @@ template <typename S> std::string from_u8str(const S& str) {
   return std::string(str.begin(), str.end());
 }
 
-TEST(xchar_test, format_utf8_precision) {
-  using str_type = std::basic_string<fmt::detail::char8_type>;
-  auto format =
-      str_type(reinterpret_cast<const fmt::detail::char8_type*>(u8"{:.4}"));
-  auto str = str_type(reinterpret_cast<const fmt::detail::char8_type*>(
-      u8"caf\u00e9s"));  // cafés
-  auto result = fmt::format(format, str);
-  EXPECT_EQ(fmt::detail::compute_width(result), 4);
-  EXPECT_EQ(result.size(), 5);
-  EXPECT_EQ(from_u8str(result), from_u8str(str.substr(0, 5)));
-}
-
 TEST(xchar_test, format_to) {
   auto buf = std::vector<wchar_t>();
   fmt::format_to(std::back_inserter(buf), L"{}{}", 42, L'\0');

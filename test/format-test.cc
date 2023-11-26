@@ -173,6 +173,10 @@ TEST(util_test, parse_nonnegative_int) {
   EXPECT_EQ(fmt::detail::parse_nonnegative_int(begin, end, -1), -1);
 }
 
+TEST(format_impl_test, compute_width) {
+  EXPECT_EQ(fmt::detail::compute_width("вожык"), 5);
+}
+
 TEST(util_test, utf8_to_utf16) {
   auto u = fmt::detail::utf8_to_utf16("лошадка");
   EXPECT_EQ(L"\x043B\x043E\x0448\x0430\x0434\x043A\x0430", u.str());
@@ -1051,6 +1055,12 @@ TEST(format_test, precision) {
   EXPECT_EQ("st", fmt::format("{0:.2}", "str"));
   EXPECT_EQ("вожык", fmt::format("{0:.5}", "вожыкі"));
   EXPECT_EQ("123456", fmt::format("{0:.6}", "123456\xad"));
+}
+
+TEST(xchar_test, utf8_precision) {
+  auto result = fmt::format("{:.4}", "caf\u00e9s");  // cafés
+  EXPECT_EQ(fmt::detail::compute_width(result), 4);
+  EXPECT_EQ(result, "caf\u00e9");
 }
 
 TEST(format_test, runtime_precision) {
