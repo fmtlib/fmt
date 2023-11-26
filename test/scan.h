@@ -9,9 +9,92 @@
 #include <cassert>
 #include <climits>
 
-#include "fmt/core.h"
+#include "fmt/format.h"
 
 FMT_BEGIN_NAMESPACE
+namespace detail {
+
+class scan_buffer {
+ private:
+  const char* ptr_;
+  size_t size_;
+
+ protected:
+  scan_buffer(const char* ptr, size_t size) : ptr_(ptr), size_(size) {}
+  ~scan_buffer() = default;
+
+  void set(const char* data, size_t size) noexcept {
+    ptr_ = data;
+    size_ = size;
+  }
+
+  // Fills the buffer with more input.
+  virtual void fill() = 0;
+
+ public:
+  scan_buffer(const scan_buffer&) = delete;
+  void operator=(const scan_buffer&) = delete;
+
+  auto begin() noexcept -> const char* { return ptr_; }
+  auto end() noexcept -> const char* { return ptr_ + size_; }
+
+  auto size() const -> size_t { return size_; }
+
+  // Consume n code units from the buffer.
+  void consume(size_t n) {
+    FMT_ASSERT(n <= size_, "");
+    ptr_ += n;
+    size_ -= n;
+  }
+};
+
+class string_scan_buffer : public scan_buffer {
+ private:
+  void fill() override {}
+
+ public:
+  explicit string_scan_buffer(string_view s) : scan_buffer(s.data(), s.size()) {
+  }
+};
+
+class file_scan_buffer : public scan_buffer {
+ private:
+  FILE* file_;
+  char next_;
+
+  template <typename F, FMT_ENABLE_IF(sizeof(F::_p) != 0)>
+  void set_buffer(int, F* f) {
+    this->set(reinterpret_cast<const char*>(f->_p), detail::to_unsigned(f->_r));
+  }
+  void set_buffer(int c, ...) {
+    if (c == EOF) return;
+    next_ = static_cast<char>(c);
+    this->set(&next_, 1);
+  }
+
+  void fill() override {
+    int result = getc(file_);
+    if (result == EOF) {
+      if (ferror(file_) != 0)
+        FMT_THROW(system_error(errno, FMT_STRING("I/O error")));
+      return;
+    }
+    // Put the character back since we are only filling the buffer.
+    if (ungetc(result, file_) == EOF)
+      FMT_THROW(system_error(errno, FMT_STRING("I/O error")));
+    set_buffer(result, file_);
+  }
+
+ public:
+  explicit file_scan_buffer(FILE* f)
+    : scan_buffer(nullptr, 0), file_(f) {
+    // TODO: lock file?
+    set_buffer(EOF, f);
+    if (size() == 0) fill();
+  }
+};
+}  // namespace detail
+
 template <typename T, typename Char = char> struct scanner {
   // A deleted default constructor indicates a disabled scanner.
   scanner() = delete;
@@ -37,18 +120,19 @@ class scan_parse_context {
 
 struct scan_context {
  private:
-  string_view input_;
+  detail::scan_buffer& buf_;
 
  public:
   using iterator = const char*;
 
-  explicit FMT_CONSTEXPR scan_context(string_view input) : input_(input) {}
+  explicit FMT_CONSTEXPR scan_context(detail::scan_buffer& buf) : buf_(buf) {}
 
-  auto begin() const -> iterator { return input_.data(); }
-  auto end() const -> iterator { return begin() + input_.size(); }
+  // TODO: an iterator that automatically calls read on end of buffer
+  auto begin() const -> iterator { return buf_.begin(); }
+  auto end() const -> iterator { return buf_.end(); }
 
   void advance_to(iterator it) {
-    input_.remove_prefix(detail::to_unsigned(it - begin()));
+    buf_.consume(detail::to_unsigned(it - begin()));
   }
 };
 
@@ -158,9 +242,8 @@ struct scan_handler : error_handler {
   }
 
  public:
-  FMT_CONSTEXPR scan_handler(string_view format, string_view input,
-                             scan_args args)
-      : parse_ctx_(format), scan_ctx_(input), args_(args), next_arg_id_(0) {}
+  FMT_CONSTEXPR scan_handler(string_view format, scan_buffer& buf, scan_args args)
+      : parse_ctx_(format), scan_ctx_(buf), args_(args), next_arg_id_(0) {}
 
   auto pos() const -> const char* { return scan_ctx_.begin(); }
 
@@ -229,16 +312,23 @@ auto make_scan_args(T&... args) -> std::array<detail::scan_arg, sizeof...(T)> {
   return {{args...}};
 }
 
-auto vscan(string_view input, string_view fmt, scan_args args)
-    -> string_view::iterator {
-  auto h = detail::scan_handler(fmt, input, args);
+void vscan(detail::scan_buffer& buf, string_view fmt, scan_args args) {
+  auto h = detail::scan_handler(fmt, buf, args);
   detail::parse_format_string<false>(fmt, h);
-  return input.begin() + (h.pos() - &*input.begin());
 }
 
 template <typename... T>
 auto scan(string_view input, string_view fmt, T&... args)
     -> string_view::iterator {
-  return vscan(input, fmt, make_scan_args(args...));
+  auto&& buf = detail::string_scan_buffer(input);
+  vscan(buf, fmt, make_scan_args(args...));
+  return input.begin() + (buf.begin() - input.data());
 }
+
+template <typename... T>
+void scan(std::FILE* f, string_view fmt, T&... args) {
+  auto&& buf = detail::file_scan_buffer(f);
+  vscan(buf, fmt, make_scan_args(args...));
+}
+
 FMT_END_NAMESPACE

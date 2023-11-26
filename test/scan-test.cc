@@ -6,6 +6,7 @@
 // For the license information refer to format.h.
 
 #include "scan.h"
+#include "fmt/os.h"
 
 #include <time.h>
 
@@ -114,3 +115,16 @@ TEST(scan_test, example) {
   EXPECT_EQ(key, "answer");
   EXPECT_EQ(value, 42);
 }
+
+#if FMT_USE_FCNTL
+TEST(scan_test, file) {
+  fmt::file read_end, write_end;
+  fmt::file::pipe(read_end, write_end);
+  fmt::string_view input = "4";
+  write_end.write(input.data(), input.size());
+  write_end.close();
+  int value = 0;
+  fmt::scan(read_end.fdopen("r").get(), "{}", value);
+  EXPECT_EQ(value, 4);
+}
+#endif  // FMT_USE_FCNTL
