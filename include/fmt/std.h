@@ -141,7 +141,12 @@ template <typename Char> struct formatter<std::filesystem::path, Char> {
   auto format(const std::filesystem::path& p, FormatContext& ctx) const {
     auto specs = specs_;
     auto path_type = path_type_;
+  # ifdef _WIN32 
+    auto path_string = (path_type == 'n') ? p.native() : p.generic_wstring();    
+  # else 
     auto path_string = (path_type == 'n') ? p.native() : p.generic_string();
+  # endif
+
     detail::handle_dynamic_spec<detail::width_checker>(specs.width, width_ref_,
                                                        ctx);
     if (!debug_) {
