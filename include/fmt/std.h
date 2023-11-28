@@ -38,6 +38,10 @@
 #  endif
 #endif
 
+#if FMT_CPLUSPLUS > 201703L && FMT_HAS_INCLUDE(<source_location>)
+#  include <source_location>
+#endif
+
 // GCC 4 does not support FMT_HAS_INCLUDE.
 #if FMT_HAS_INCLUDE(<cxxabi.h>) || defined(__GLIBCXX__)
 #  include <cxxabi.h>
@@ -227,6 +231,33 @@ struct formatter<std::optional<T>, Char,
 };
 FMT_END_NAMESPACE
 #endif  // __cpp_lib_optional
+
+#ifdef __cpp_lib_source_location
+FMT_BEGIN_NAMESPACE
+FMT_EXPORT
+template <typename Char>
+struct formatter<std::source_location, Char,
+                 std::enable_if_t<is_formattable<Char>::value>> {
+  template <typename ParseContext> FMT_CONSTEXPR auto parse(ParseContext& ctx) {
+    return ctx.begin();
+  }
+
+  template <typename FormatContext>
+  auto format(const std::source_location& loc, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    auto out = ctx.out();
+    out = detail::write_bytes(out, loc.file_name(), format_specs<Char>());
+    out = detail::write<Char>(out, Char(':'));
+    out = detail::write<Char>(out, loc.line());
+    out = detail::write<Char>(out, Char(':'));
+    out = detail::write<Char>(out, loc.column());
+    out = detail::write<Char>(out, ": ");
+    out = detail::write<Char>(out, loc.function_name());
+    return out;
+  }
+};
+FMT_END_NAMESPACE
+#endif
 
 #if FMT_CPP_LIB_VARIANT
 FMT_BEGIN_NAMESPACE
