@@ -78,7 +78,7 @@
 
 #if FMT_CPP_LIB_FILESYSTEM
 FMT_BEGIN_NAMESPACE
- 
+
 namespace detail {
 
 template <typename Char, typename PathChar> auto get_path_string(
@@ -142,9 +142,9 @@ template <typename Char> struct formatter<std::filesystem::path, Char> {
     auto specs = specs_;
     auto path_type = path_type_;
   # ifdef _WIN32 
-    auto path_string = (path_type == 'n') ? p.native() : p.generic_wstring();    
+    auto path_string = path_type == 'n' ? p.native() : p.generic_wstring();    
   # else 
-    auto path_string = (path_type == 'n') ? p.native() : p.generic_string();
+    auto path_string = path_type == 'n' ? p.native() : p.generic_string();
   # endif
 
     detail::handle_dynamic_spec<detail::width_checker>(specs.width, width_ref_,
