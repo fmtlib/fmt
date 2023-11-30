@@ -354,7 +354,7 @@ template <typename Char> struct formatter<std::error_code, Char> {
 FMT_EXPORT
 template <typename T, typename Char>
 struct formatter<
-    T, Char,
+    T, Char, // DEPRECATED! Mixing code unit types.
     typename std::enable_if<std::is_base_of<std::exception, T>::value>::type> {
  private:
   bool with_typename_ = false;
