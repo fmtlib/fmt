@@ -245,7 +245,7 @@ struct formatter<std::source_location> {
   auto format(const std::source_location& loc, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     auto out = ctx.out();
-    out = detail::write_bytes(out, loc.file_name(), format_specs<char>());
+    out = detail::write(out, loc.file_name());
     out = detail::write(out, ':');
     out = detail::write<char>(out, loc.line());
     out = detail::write(out, ':');
