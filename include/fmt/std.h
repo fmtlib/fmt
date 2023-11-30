@@ -235,9 +235,8 @@ FMT_END_NAMESPACE
 #ifdef __cpp_lib_source_location
 FMT_BEGIN_NAMESPACE
 FMT_EXPORT
-template <typename Char>
-struct formatter<std::source_location, Char,
-                 std::enable_if_t<is_formattable<Char>::value>> {
+template<>
+struct formatter<std::source_location> {
   template <typename ParseContext> FMT_CONSTEXPR auto parse(ParseContext& ctx) {
     return ctx.begin();
   }
@@ -246,13 +245,13 @@ struct formatter<std::source_location, Char,
   auto format(const std::source_location& loc, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     auto out = ctx.out();
-    out = detail::write_bytes(out, loc.file_name(), format_specs<Char>());
-    out = detail::write<Char>(out, Char(':'));
-    out = detail::write<Char>(out, loc.line());
-    out = detail::write<Char>(out, Char(':'));
-    out = detail::write<Char>(out, loc.column());
-    out = detail::write<Char>(out, ": ");
-    out = detail::write<Char>(out, loc.function_name());
+    out = detail::write_bytes(out, loc.file_name(), format_specs<char>());
+    out = detail::write(out, ':');
+    out = detail::write<char>(out, loc.line());
+    out = detail::write(out, ':');
+    out = detail::write<char>(out, loc.column());
+    out = detail::write(out, ": ");
+    out = detail::write(out, loc.function_name());
     return out;
   }
 };
