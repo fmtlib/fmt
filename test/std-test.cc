@@ -66,6 +66,16 @@ TEST(std_test, thread_id) {
   EXPECT_FALSE(fmt::format("{}", std::this_thread::get_id()).empty());
 }
 
+#ifdef __cpp_lib_source_location
+TEST(std_test, source_location) {
+  std::source_location loc = std::source_location::current();
+  EXPECT_EQ(fmt::format("{}", loc), std::string(loc.file_name()) + ":" +
+                                        std::to_string(loc.line()) + ":" +
+                                        std::to_string(loc.column()) + ": " +
+                                        loc.function_name());
+}
+#endif
+
 TEST(std_test, optional) {
 #ifdef __cpp_lib_optional
   EXPECT_EQ(fmt::format("{}", std::optional<int>{}), "none");
