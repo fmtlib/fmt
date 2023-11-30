@@ -25,20 +25,19 @@ TEST(std_test, path) {
 
   EXPECT_EQ(fmt::format("{}", path("foo\"bar")), "foo\"bar");
   EXPECT_EQ(fmt::format("{:?}", path("foo\"bar")), "\"foo\\\"bar\"");
-  
+
   EXPECT_EQ(fmt::format("{:n}", path("/usr/bin")), "/usr/bin");
   EXPECT_EQ(fmt::format("{:g}", path("/usr/bin")), "/usr/bin");
-# ifdef _WIN32
+#  ifdef _WIN32
   EXPECT_EQ(fmt::format("{:n}", path("C:\\foo")), "C:\\foo");
   EXPECT_EQ(fmt::format("{:g}", path("C:\\foo")), "C:/foo");
 
-  EXPECT_EQ(fmt::format("{}", path(
-                                  L"\x0428\x0447\x0443\x0447\x044B\x043D\x0448"
-                                  L"\x0447\x044B\x043D\x0430")),
+  EXPECT_EQ(fmt::format("{}", path(L"\x0428\x0447\x0443\x0447\x044B\x043D\x0448"
+                                   L"\x0447\x044B\x043D\x0430")),
             "Шчучыншчына");
   EXPECT_EQ(fmt::format("{}", path(L"\xd800")), "�");
   EXPECT_EQ(fmt::format("{:?}", path(L"\xd800")), "\"\\ud800\"");
-# endif
+#  endif
 }
 
 // Test ambiguity problem described in #2954.
@@ -290,10 +289,10 @@ TEST(std_test, format_atomic) {
 #ifdef __cpp_lib_atomic_flag_test
 TEST(std_test, format_atomic_flag) {
   std::atomic_flag f = ATOMIC_FLAG_INIT;
-  (void) f.test_and_set();
+  (void)f.test_and_set();
   EXPECT_EQ(fmt::format("{}", f), "true");
 
   const std::atomic_flag cf = ATOMIC_FLAG_INIT;
   EXPECT_EQ(fmt::format("{}", cf), "false");
 }
-#endif // __cpp_lib_atomic_flag_test
+#endif  // __cpp_lib_atomic_flag_test

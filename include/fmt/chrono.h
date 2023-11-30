@@ -444,14 +444,14 @@ template <
     FMT_ENABLE_IF(is_same_arithmetic_type<FromRep, typename To::rep>::value)>
 To fmt_duration_cast(std::chrono::duration<FromRep, FromPeriod> from) {
 #if FMT_SAFE_DURATION_CAST
-  // throwing version of safe_duration_cast
-  // only available for integer<->integer or float<->float casts
+  // Throwing version of safe_duration_cast is only available for
+  // integer to integer or float to float casts.
   int ec;
   To to = safe_duration_cast::safe_duration_cast<To>(from, ec);
   if (ec) FMT_THROW(format_error("cannot format duration"));
   return to;
 #else
-  // standard duration cast, may overflow and invoke undefined behavior
+  // Standard duration cast, may overflow.
   return std::chrono::duration_cast<To>(from);
 #endif
 }
@@ -460,15 +460,14 @@ template <
     typename To, typename FromRep, typename FromPeriod,
     FMT_ENABLE_IF(!is_same_arithmetic_type<FromRep, typename To::rep>::value)>
 To fmt_duration_cast(std::chrono::duration<FromRep, FromPeriod> from) {
-  // mixed integer<->float cast is not supported with safe_duration_cast
-  // fallback to standard duration cast in this case
+  // Mixed integer <-> float cast is not supported by safe_duration_cast.
   return std::chrono::duration_cast<To>(from);
 }
 
 template <typename Duration>
 std::time_t to_time_t(
     std::chrono::time_point<std::chrono::system_clock, Duration> time_point) {
-  // cannot use std::chrono::system_clock::to_time_t() since this would first
+  // Cannot use std::chrono::system_clock::to_time_t since this would first
   // require a cast to std::chrono::system_clock::time_point, which could
   // overflow.
   return fmt_duration_cast<std::chrono::duration<std::time_t>>(

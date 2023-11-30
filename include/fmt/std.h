@@ -65,7 +65,7 @@
 #    define FMT_CPP_LIB_FILESYSTEM __cpp_lib_filesystem
 #  else
 #    define FMT_CPP_LIB_FILESYSTEM 0
-# endif
+#  endif
 #endif
 
 #ifndef FMT_CPP_LIB_VARIANT
@@ -81,8 +81,9 @@ FMT_BEGIN_NAMESPACE
 
 namespace detail {
 
-template <typename Char, typename PathChar> auto get_path_string(
-  const std::filesystem::path& p, const std::basic_string<PathChar>& native) {
+template <typename Char, typename PathChar>
+auto get_path_string(const std::filesystem::path& p,
+                     const std::basic_string<PathChar>& native) {
   if constexpr (std::is_same_v<Char, char> && std::is_same_v<PathChar, wchar_t>)
     return to_utf8<wchar_t>(native, to_utf8_error_policy::replace);
   else
@@ -93,7 +94,8 @@ template <typename Char, typename PathChar>
 void write_escaped_path(basic_memory_buffer<Char>& quoted,
                         const std::filesystem::path& p,
                         const std::basic_string<PathChar>& native) {
-  if constexpr (std::is_same_v<Char, char> && std::is_same_v<PathChar, wchar_t>) {
+  if constexpr (std::is_same_v<Char, char> &&
+                std::is_same_v<PathChar, wchar_t>) {
     auto buf = basic_memory_buffer<wchar_t>();
     write_escaped_string<wchar_t>(std::back_inserter(buf), native);
     bool valid = to_utf8<wchar_t>::convert(quoted, {buf.data(), buf.size()});
@@ -131,21 +133,19 @@ template <typename Char> struct formatter<std::filesystem::path, Char> {
       debug_ = true;
       ++it;
     }
-    if (it != end && (*it == 'g' || *it == 'n')) { 
+    if (it != end && (*it == 'g' || *it == 'n'))
       path_type_ = *it++;
-    }
     return it;
   }
 
   template <typename FormatContext>
   auto format(const std::filesystem::path& p, FormatContext& ctx) const {
     auto specs = specs_;
-    auto path_type = path_type_;
-  # ifdef _WIN32 
-    auto path_string = path_type == 'n' ? p.native() : p.generic_wstring();    
-  # else 
-    auto path_string = path_type == 'n' ? p.native() : p.generic_string();
-  # endif
+#  ifdef _WIN32
+    auto path_string = path_type_ == 'n' ? p.native() : p.generic_wstring();
+#  else
+    auto path_string = path_type_ == 'n' ? p.native() : p.generic_string();
+#  endif
 
     detail::handle_dynamic_spec<detail::width_checker>(specs.width, width_ref_,
                                                        ctx);
@@ -161,7 +161,7 @@ template <typename Char> struct formatter<std::filesystem::path, Char> {
   }
 };
 FMT_END_NAMESPACE
-#endif // FMT_CPP_LIB_FILESYSTEM
+#endif  // FMT_CPP_LIB_FILESYSTEM
 
 FMT_BEGIN_NAMESPACE
 FMT_EXPORT
