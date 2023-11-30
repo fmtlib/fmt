@@ -225,7 +225,7 @@ struct formatter<std::optional<T>, Char,
   }
 
   template <typename FormatContext>
-  auto format(std::optional<T> const& opt, FormatContext& ctx) const
+  auto format(const std::optional<T>& opt, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     if (!opt) return detail::write<Char>(ctx.out(), none);
 

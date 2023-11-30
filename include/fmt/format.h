@@ -793,15 +793,14 @@ inline auto code_point_index(basic_string_view<Char> s, size_t n) -> size_t {
 inline auto code_point_index(string_view s, size_t n) -> size_t {
   size_t result = s.size();
   const char* begin = s.begin();
-  for_each_codepoint(
-      s, [begin, &n, &result](uint32_t, string_view sv) {
-        if (n != 0) {
-          --n;
-          return true;
-        }
-        result = to_unsigned(sv.begin() - begin);
-        return false;
-      });
+  for_each_codepoint(s, [begin, &n, &result](uint32_t, string_view sv) {
+    if (n != 0) {
+      --n;
+      return true;
+    }
+    result = to_unsigned(sv.begin() - begin);
+    return false;
+  });
   return result;
 }
 
@@ -1162,10 +1161,10 @@ using uint32_or_64_or_128_t =
 template <typename T>
 using uint64_or_128_t = conditional_t<num_bits<T>() <= 64, uint64_t, uint128_t>;
 
-#define FMT_POWERS_OF_10(factor)                                             \
-  factor * 10, (factor)*100, (factor)*1000, (factor)*10000, (factor)*100000, \
-      (factor)*1000000, (factor)*10000000, (factor)*100000000,               \
-      (factor)*1000000000
+#define FMT_POWERS_OF_10(factor)                                  \
+  factor * 10, (factor) * 100, (factor) * 1000, (factor) * 10000, \
+      (factor) * 100000, (factor) * 1000000, (factor) * 10000000, \
+      (factor) * 100000000, (factor) * 1000000000
 
 // Converts value in the range [0, 100) to a string.
 constexpr const char* digits2(size_t value) {

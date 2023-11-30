@@ -1449,7 +1449,8 @@ template <typename Context> struct arg_mapper {
   // Only map owning types because mapping views can be unsafe.
   template <typename T, typename U = format_as_t<T>,
             FMT_ENABLE_IF(std::is_arithmetic<U>::value)>
-  FMT_CONSTEXPR FMT_INLINE auto map(const T& val) -> decltype(FMT_DECLTYPE_THIS map(U())) {
+  FMT_CONSTEXPR FMT_INLINE auto map(const T& val)
+      -> decltype(FMT_DECLTYPE_THIS map(U())) {
     return map(format_as(val));
   }
 
@@ -1473,7 +1474,8 @@ template <typename Context> struct arg_mapper {
                           !is_string<U>::value && !is_char<U>::value &&
                           !is_named_arg<U>::value &&
                           !std::is_arithmetic<format_as_t<U>>::value)>
-  FMT_CONSTEXPR FMT_INLINE auto map(T& val) -> decltype(FMT_DECLTYPE_THIS do_map(val)) {
+  FMT_CONSTEXPR FMT_INLINE auto map(T& val)
+      -> decltype(FMT_DECLTYPE_THIS do_map(val)) {
     return do_map(val);
   }
 
