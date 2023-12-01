@@ -69,10 +69,9 @@ TEST(std_test, thread_id) {
 #ifdef __cpp_lib_source_location
 TEST(std_test, source_location) {
   std::source_location loc = std::source_location::current();
-  EXPECT_EQ(fmt::format("{}", loc), std::string(loc.file_name()) + ":" +
-                                        std::to_string(loc.line()) + ":" +
-                                        std::to_string(loc.column()) + ": " +
-                                        loc.function_name());
+  EXPECT_EQ(fmt::format("{}", loc),
+            fmt::format("{}:{}:{}: {}", loc.file_name(), loc.line(),
+                        loc.column(), loc.function_name()));
 }
 #endif
 
