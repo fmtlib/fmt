@@ -24,6 +24,12 @@ using testing::Contains;
 #  define FMT_HAS_C99_STRFTIME 1
 #endif
 
+#if defined(__cpp_lib_chrono) && __cpp_lib_chrono >= 201907L
+using days = std::chrono::days;
+#else
+using days = std::chrono::duration<std::chrono::hours::rep, std::ratio<86400>>;
+#endif
+
 auto make_tm() -> std::tm {
   auto time = std::tm();
   time.tm_mday = 1;
