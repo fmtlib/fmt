@@ -537,6 +537,8 @@ TEST(chrono_test, format_specs) {
   EXPECT_EQ("12", fmt::format("{:%I}", std::chrono::hours(24)));
   EXPECT_EQ("04", fmt::format("{:%I}", std::chrono::hours(4)));
   EXPECT_EQ("02", fmt::format("{:%I}", std::chrono::hours(14)));
+  EXPECT_EQ("12345", fmt::format("{:%j}", days(12345)));
+  EXPECT_EQ("12345", fmt::format("{:%j}", std::chrono::hours(12345 * 24 + 12)));
   EXPECT_EQ("03:25:45",
             fmt::format("{:%H:%M:%S}", std::chrono::seconds(12345)));
   EXPECT_EQ("03:25", fmt::format("{:%R}", std::chrono::seconds(12345)));
