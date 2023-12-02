@@ -14,37 +14,118 @@
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
+struct maybe_contiguous_range {
+  const char* begin;
+  const char* end;
+
+  explicit operator bool() const { return begin != nullptr; }
+};
+
 class scan_buffer {
  private:
   const char* ptr_;
-  size_t size_;
+  const char* end_;
+  bool contiguous_;
 
  protected:
-  scan_buffer(const char* ptr, size_t size) : ptr_(ptr), size_(size) {}
+  scan_buffer(const char* ptr, const char* end, bool contiguous)
+      : ptr_(ptr), end_(end), contiguous_(contiguous) {}
   ~scan_buffer() = default;
 
-  void set(const char* data, size_t size) noexcept {
-    ptr_ = data;
-    size_ = size;
+  auto is_empty() const -> bool { return ptr_ == end_; }
+
+  void set(const char* ptr, const char* end) noexcept {
+    ptr_ = ptr;
+    end_ = end;
   }
 
-  // Fills the buffer with more input.
+  auto peek() -> int {
+    if (ptr_ == end_) {
+      // TODO: refill buffer
+      return EOF;
+    }
+    return *ptr_;
+  }
+
+  // Fills the buffer with more input if available.
   virtual void fill() = 0;
 
  public:
   scan_buffer(const scan_buffer&) = delete;
   void operator=(const scan_buffer&) = delete;
 
-  auto begin() noexcept -> const char* { return ptr_; }
-  auto end() noexcept -> const char* { return ptr_ + size_; }
+  class iterator {
+   private:
+    const char** ptr_;
+    scan_buffer* buf_;  // This could be merged with ptr_.
+    char value_;
 
-  auto size() const -> size_t { return size_; }
+    static auto sentinel() -> const char** {
+      static const char* ptr = nullptr;
+      return &ptr;
+    }
 
-  // Consume n code units from the buffer.
-  void consume(size_t n) {
-    FMT_ASSERT(n <= size_, "");
-    ptr_ += n;
-    size_ -= n;
+    friend class scan_buffer;
+
+    friend auto operator==(iterator lhs, iterator rhs) -> bool {
+      return *lhs.ptr_ == *rhs.ptr_;
+    }
+    friend auto operator!=(iterator lhs, iterator rhs) -> bool {
+      return *lhs.ptr_ != *rhs.ptr_;
+    }
+
+    iterator(scan_buffer* buf)
+        : ptr_(&buf->ptr_), buf_(buf), value_(static_cast<char>(buf->peek())) {
+      if (value_ == EOF) ptr_ = sentinel();
+    }
+
+   public:
+    iterator() : ptr_(sentinel()), buf_(nullptr) {}
+
+    auto operator++() -> iterator& {
+      if (!buf_->try_consume()) ptr_ = sentinel();
+      value_ = *buf_->ptr_;
+      return *this;
+    }
+    auto operator++(int) -> iterator {
+      iterator copy = *this;
+      ++*this;
+      return copy;
+    }
+    auto operator*() const -> char { return value_; }
+
+    auto base() const -> const char* { return buf_->ptr_; }
+
+    friend auto to_contiguous(iterator it) -> maybe_contiguous_range;
+    friend void advance(iterator& it, size_t n);
+  };
+
+  friend auto to_contiguous(iterator it) -> maybe_contiguous_range {
+    if (it.buf_->is_contiguous()) return {it.buf_->ptr_, it.buf_->end_};
+    return {nullptr, nullptr};
+  }
+  friend void advance(iterator& it, size_t n) {
+    FMT_ASSERT(it.buf_->is_contiguous(), "");
+    const char*& ptr = it.buf_->ptr_;
+    ptr += n;
+    it.value_ = *ptr;
+    if (ptr == it.buf_->end_) it.ptr_ = iterator::sentinel();
+  }
+
+  auto begin() noexcept -> iterator { return this; }
+  auto end() noexcept -> iterator { return {}; }
+
+  auto is_contiguous() const -> bool { return contiguous_; }
+
+  // Tries consuming a single code unit.
+  auto try_consume() -> bool {
+    FMT_ASSERT(ptr_ != end_, "");
+    ++ptr_;
+    if (ptr_ == end_) {
+      // TODO: refill buffer
+      return false;
+    }
+    return true;
   }
 };
 
@@ -53,8 +134,8 @@ class string_scan_buffer : public scan_buffer {
   void fill() override {}
 
  public:
-  explicit string_scan_buffer(string_view s) : scan_buffer(s.data(), s.size()) {
-  }
+  explicit string_scan_buffer(string_view s)
+      : scan_buffer(s.begin(), s.end(), true) {}
 };
 
 class file_scan_buffer : public scan_buffer {
@@ -64,12 +145,13 @@ class file_scan_buffer : public scan_buffer {
 
   template <typename F, FMT_ENABLE_IF(sizeof(F::_p) != 0)>
   void set_buffer(int, F* f) {
-    this->set(reinterpret_cast<const char*>(f->_p), detail::to_unsigned(f->_r));
+    const char* ptr = reinterpret_cast<const char*>(f->_p);
+    this->set(ptr, ptr + f->_r);
   }
   void set_buffer(int c, ...) {
     if (c == EOF) return;
     next_ = static_cast<char>(c);
-    this->set(&next_, 1);
+    this->set(&next_, &next_ + 1);
   }
 
   void fill() override {
@@ -87,10 +169,10 @@ class file_scan_buffer : public scan_buffer {
 
  public:
   explicit file_scan_buffer(FILE* f)
-    : scan_buffer(nullptr, 0), file_(f) {
+      : scan_buffer(nullptr, nullptr, false), file_(f) {
     // TODO: lock file?
     set_buffer(EOF, f);
-    if (size() == 0) fill();
+    if (is_empty()) fill();
   }
 };
 }  // namespace detail
@@ -123,16 +205,16 @@ struct scan_context {
   detail::scan_buffer& buf_;
 
  public:
-  using iterator = const char*;
+  using iterator = detail::scan_buffer::iterator;
 
   explicit FMT_CONSTEXPR scan_context(detail::scan_buffer& buf) : buf_(buf) {}
 
-  // TODO: an iterator that automatically calls read on end of buffer
   auto begin() const -> iterator { return buf_.begin(); }
   auto end() const -> iterator { return buf_.end(); }
 
-  void advance_to(iterator it) {
-    buf_.consume(detail::to_unsigned(it - begin()));
+  void advance_to(iterator) {
+    // The scan_buffer iterator automatically updates the buffer position when
+    // incremented.
   }
 };
 
@@ -242,17 +324,18 @@ struct scan_handler : error_handler {
   }
 
  public:
-  FMT_CONSTEXPR scan_handler(string_view format, scan_buffer& buf, scan_args args)
+  FMT_CONSTEXPR scan_handler(string_view format, scan_buffer& buf,
+                             scan_args args)
       : parse_ctx_(format), scan_ctx_(buf), args_(args), next_arg_id_(0) {}
 
-  auto pos() const -> const char* { return scan_ctx_.begin(); }
+  auto pos() const -> scan_buffer::iterator { return scan_ctx_.begin(); }
 
   void on_text(const char* begin, const char* end) {
-    auto size = to_unsigned(end - begin);
-    auto it = scan_ctx_.begin();
-    if (it + size > scan_ctx_.end() || !std::equal(begin, end, it))
-      on_error("invalid input");
-    scan_ctx_.advance_to(it + size);
+    auto it = scan_ctx_.begin(), scan_end = scan_ctx_.end();
+    for (; begin != end; ++begin, ++it) {
+      if (it == scan_end || *begin != *it) on_error("invalid input");
+    }
+    scan_ctx_.advance_to(it);
   }
 
   FMT_CONSTEXPR auto on_arg_id() -> int { return on_arg_id(next_arg_id_++); }
@@ -286,9 +369,14 @@ struct scan_handler : error_handler {
       scan_ctx_.advance_to(it);
       break;
     case scan_type::string_view_type: {
-      auto s = it;
-      while (it != end && *it != ' ') ++it;
-      *arg_.string_view = fmt::string_view(s, to_unsigned(it - s));
+      auto range = to_contiguous(it);
+      // This could also be checked at compile time in scan.
+      if (!range) on_error("string_view requires contiguous input");
+      auto p = range.begin;
+      while (p != range.end && *p != ' ') ++p;
+      size_t size = to_unsigned(p - range.begin);
+      *arg_.string_view = {range.begin, size};
+      advance(it, size);
       scan_ctx_.advance_to(it);
       break;
     }
@@ -322,11 +410,10 @@ auto scan(string_view input, string_view fmt, T&... args)
     -> string_view::iterator {
   auto&& buf = detail::string_scan_buffer(input);
   vscan(buf, fmt, make_scan_args(args...));
-  return input.begin() + (buf.begin() - input.data());
+  return input.begin() + (buf.begin().base() - input.data());
 }
 
-template <typename... T>
-void scan(std::FILE* f, string_view fmt, T&... args) {
+template <typename... T> void scan(std::FILE* f, string_view fmt, T&... args) {
   auto&& buf = detail::file_scan_buffer(f);
   vscan(buf, fmt, make_scan_args(args...));
 }
