@@ -2429,6 +2429,7 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
     case 'G':
       return parse_presentation_type(pres::general_upper, float_set);
     case 'c':
+      if (arg_type == type::bool_type) throw_format_error("invalid format specifier");
       return parse_presentation_type(pres::chr, integral_set);
     case 's':
       return parse_presentation_type(pres::string,

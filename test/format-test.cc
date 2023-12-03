@@ -1159,6 +1159,8 @@ TEST(format_test, format_bool) {
   EXPECT_EQ("true", fmt::format("{:s}", true));
   EXPECT_EQ("false", fmt::format("{:s}", false));
   EXPECT_EQ("false ", fmt::format("{:6s}", false));
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:c}"), false), format_error,
+                   "invalid format specifier");
 }
 
 TEST(format_test, format_short) {
