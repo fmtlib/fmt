@@ -24,6 +24,12 @@ using testing::Contains;
 #  define FMT_HAS_C99_STRFTIME 1
 #endif
 
+#if defined(__cpp_lib_chrono) && __cpp_lib_chrono >= 201907L
+using days = std::chrono::days;
+#else
+using days = std::chrono::duration<std::chrono::hours::rep, std::ratio<86400>>;
+#endif
+
 auto make_tm() -> std::tm {
   auto time = std::tm();
   time.tm_mday = 1;
@@ -456,9 +462,7 @@ TEST(chrono_test, format_default) {
             fmt::format("{}", std::chrono::duration<int, std::exa>(42)));
   EXPECT_EQ("42min", fmt::format("{}", std::chrono::minutes(42)));
   EXPECT_EQ("42h", fmt::format("{}", std::chrono::hours(42)));
-#  if defined(__cpp_lib_chrono) && __cpp_lib_chrono >= 201907L
-  EXPECT_EQ("42d", fmt::format("{}", std::chrono::days(42)));
-#  endif
+  EXPECT_EQ("42d", fmt::format("{}", days(42)));
   EXPECT_EQ(
       "42[15]s",
       fmt::format("{}", std::chrono::duration<int, std::ratio<15, 1>>(42)));
@@ -533,6 +537,8 @@ TEST(chrono_test, format_specs) {
   EXPECT_EQ("12", fmt::format("{:%I}", std::chrono::hours(24)));
   EXPECT_EQ("04", fmt::format("{:%I}", std::chrono::hours(4)));
   EXPECT_EQ("02", fmt::format("{:%I}", std::chrono::hours(14)));
+  EXPECT_EQ("12345", fmt::format("{:%j}", days(12345)));
+  EXPECT_EQ("12345", fmt::format("{:%j}", std::chrono::hours(12345 * 24 + 12)));
   EXPECT_EQ("03:25:45",
             fmt::format("{:%H:%M:%S}", std::chrono::seconds(12345)));
   EXPECT_EQ("03:25", fmt::format("{:%R}", std::chrono::seconds(12345)));

@@ -1622,6 +1622,7 @@ struct chrono_format_checker : null_chrono_spec_handler<chrono_format_checker> {
 
   template <typename Char>
   FMT_CONSTEXPR void on_text(const Char*, const Char*) {}
+  FMT_CONSTEXPR void on_day_of_year() {}
   FMT_CONSTEXPR void on_24_hour(numeric_system, pad_type) {}
   FMT_CONSTEXPR void on_12_hour(numeric_system, pad_type) {}
   FMT_CONSTEXPR void on_minute(numeric_system, pad_type) {}
@@ -1806,6 +1807,7 @@ struct chrono_formatter {
     return true;
   }
 
+  Rep days() const { return static_cast<Rep>(s.count() / 86400); }
   Rep hour() const { return static_cast<Rep>(mod((s.count() / 3600), 24)); }
 
   Rep hour12() const {
@@ -1884,9 +1886,13 @@ struct chrono_formatter {
   void on_dec0_week_of_year(numeric_system) {}
   void on_dec1_week_of_year(numeric_system) {}
   void on_iso_week_of_year(numeric_system) {}
-  void on_day_of_year() {}
   void on_day_of_month(numeric_system) {}
   void on_day_of_month_space(numeric_system) {}
+
+  void on_day_of_year() {
+    if (handle_nan_inf()) return;
+    write(days(), 0);
+  }
 
   void on_24_hour(numeric_system ns, pad_type pad) {
     if (handle_nan_inf()) return;
