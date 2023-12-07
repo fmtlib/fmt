@@ -323,7 +323,7 @@ Projects using this library
 
 * `Blizzard Battle.net <https://battle.net/>`_: an online gaming platform
 
-* `Celestia <https://celestia.space/>`_: real-time 3D visualization of space
+* `Celestia <https://celestiaproject.space/>`_: real-time 3D visualization of space
 
 * `Ceph <https://ceph.com/>`_: a scalable distributed storage system
 
