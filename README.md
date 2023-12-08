@@ -177,11 +177,11 @@ Output on a modern terminal with Unicode support:
 
 | Library           | Method        | Run Time, s |
 |-------------------|---------------|-------------|
-| libc              | printf        | > 0.91      |
-| libc++            | std::ostream  | > 2.49      |
-| {fmt} 9.1         | fmt::print    | > 0.74      |
-| Boost Format 1.80 | boost::format | > 6.26      |
-| Folly Format      | folly::format | > 1.87      |
+| libc              | printf        |   0.91      |
+| libc++            | std::ostream  |   2.49      |
+| {fmt} 9.1         | fmt::print    |   0.74      |
+| Boost Format 1.80 | boost::format |   6.26      |
+| Folly Format      | folly::format |   1.87      |
 
 {fmt} is the fastest of the benchmarked methods, \~20% faster than
 `printf`.
@@ -216,12 +216,12 @@ Sierra, best of three) is shown in the following tables.
 
 | Method        | Compile Time, s | Executable size, KiB | Stripped size, KiB |
 |---------------|-----------------|----------------------|--------------------|
-| printf        | > 2.6           | > 29                 | > 26               |
-| printf+string | > 16.4          | > 29                 | > 26               |
-| iostreams     | > 31.1          | > 59                 | > 55               |
-| {fmt}         | > 19.0          | > 37                 | > 34               |
-| Boost Format  | > 91.9          | > 226                | > 203              |
-| Folly Format  | > 115.7         | > 101                | > 88               |
+| printf        |   2.6           |   29                 |   26               |
+| printf+string |   16.4          |   29                 |   26               |
+| iostreams     |   31.1          |   59                 |   55               |
+| {fmt}         |   19.0          |   37                 |   34               |
+| Boost Format  |   91.9          |   226                |   203              |
+| Folly Format  |   115.7         |   101                |   88               |
 
 As you can see, {fmt} has 60% less overhead in terms of resulting binary
 code size compared to iostreams and comes pretty close to `printf`.
@@ -234,12 +234,12 @@ include to measure the overhead of the latter.
 
 | Method        | Compile Time, s | Executable size, KiB | Stripped size, KiB |
 |---------------|-----------------|----------------------|--------------------|
-| printf        | > 2.2           | > 33                 | > 30               |
-| printf+string | > 16.0          | > 33                 | > 30               |
-| iostreams     | > 28.3          | > 56                 | > 52               |
-| {fmt}         | > 18.2          | > 59                 | > 50               |
-| Boost Format  | > 54.1          | > 365                | > 303              |
-| Folly Format  | > 79.9          | > 445                | > 430              |
+| printf        |   2.2           |   33                 |   30               |
+| printf+string |   16.0          |   33                 |   30               |
+| iostreams     |   28.3          |   56                 |   52               |
+| {fmt}         |   18.2          |   59                 |   50               |
+| Boost Format  |   54.1          |   365                |   303              |
+| Folly Format  |   79.9          |   445                |   430              |
 
 `libc`, `lib(std)c++`, and `libfmt` are all linked as shared libraries
 to compare formatting function overhead only. Boost Format is a
