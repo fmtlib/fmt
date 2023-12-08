@@ -24,48 +24,48 @@ Try {fmt} in [Compiler Explorer](https://godbolt.org/z/Eq5763).
 
 # Features
 
--   Simple [format API](https://fmt.dev/latest/api.html) with positional
-    arguments for localization
--   Implementation of [C++20
-    std::format](https://en.cppreference.com/w/cpp/utility/format) and
-    [C++23 std::print](https://en.cppreference.com/w/cpp/io/print)
--   [Format string syntax](https://fmt.dev/latest/syntax.html) similar
-    to Python\'s
-    [format](https://docs.python.org/3/library/stdtypes.html#str.format)
--   Fast IEEE 754 floating-point formatter with correct rounding,
-    shortness and round-trip guarantees using the
-    [Dragonbox](https://github.com/jk-jeon/dragonbox) algorithm
--   Portable Unicode support
--   Safe [printf
-    implementation](https://fmt.dev/latest/api.html#printf-formatting)
-    including the POSIX extension for positional arguments
--   Extensibility: [support for user-defined
-    types](https://fmt.dev/latest/api.html#formatting-user-defined-types)
--   High performance: faster than common standard library
-    implementations of `(s)printf`, iostreams, `to_string` and
-    `to_chars`, see [Speed tests](#speed-tests) and [Converting a
-    hundred million integers to strings per
-    second](http://www.zverovich.net/2020/06/13/fast-int-to-string-revisited.html)
--   Small code size both in terms of source code with the minimum
-    configuration consisting of just three files, `core.h`, `format.h`
-    and `format-inl.h`, and compiled code; see [Compile time and code
-    bloat](#compile-time-and-code-bloat)
--   Reliability: the library has an extensive set of
-    [tests](https://github.com/fmtlib/fmt/tree/master/test) and is
-    [continuously fuzzed](https://bugs.chromium.org/p/oss-fuzz/issues/list?colspec=ID%20Type%20Component%20Status%20Proj%20Reported%20Owner%20Summary&q=proj%3Dfmt&can=1)
--   Safety: the library is fully type-safe, errors in format strings can
-    be reported at compile time, automatic memory management prevents
-    buffer overflow errors
--   Ease of use: small self-contained code base, no external
-    dependencies, permissive MIT
-    [license](https://github.com/fmtlib/fmt/blob/master/LICENSE.rst)
--   [Portability](https://fmt.dev/latest/index.html#portability) with
-    consistent output across platforms and support for older compilers
--   Clean warning-free codebase even on high warning levels such as
-    `-Wall -Wextra -pedantic`
--   Locale independence by default
--   Optional header-only configuration enabled with the
-    `FMT_HEADER_ONLY` macro
+- Simple [format API](https://fmt.dev/latest/api.html) with positional
+  arguments for localization
+- Implementation of [C++20
+  std::format](https://en.cppreference.com/w/cpp/utility/format) and
+  [C++23 std::print](https://en.cppreference.com/w/cpp/io/print)
+- [Format string syntax](https://fmt.dev/latest/syntax.html) similar
+  to Python\'s
+  [format](https://docs.python.org/3/library/stdtypes.html#str.format)
+- Fast IEEE 754 floating-point formatter with correct rounding,
+  shortness and round-trip guarantees using the
+  [Dragonbox](https://github.com/jk-jeon/dragonbox) algorithm
+- Portable Unicode support
+- Safe [printf
+  implementation](https://fmt.dev/latest/api.html#printf-formatting)
+  including the POSIX extension for positional arguments
+- Extensibility: [support for user-defined
+  types](https://fmt.dev/latest/api.html#formatting-user-defined-types)
+- High performance: faster than common standard library
+  implementations of `(s)printf`, iostreams, `to_string` and
+  `to_chars`, see [Speed tests](#speed-tests) and [Converting a
+  hundred million integers to strings per
+  second](http://www.zverovich.net/2020/06/13/fast-int-to-string-revisited.html)
+- Small code size both in terms of source code with the minimum
+  configuration consisting of just three files, `core.h`, `format.h`
+  and `format-inl.h`, and compiled code; see [Compile time and code
+  bloat](#compile-time-and-code-bloat)
+- Reliability: the library has an extensive set of
+  [tests](https://github.com/fmtlib/fmt/tree/master/test) and is
+  [continuously fuzzed](https://bugs.chromium.org/p/oss-fuzz/issues/list?colspec=ID%20Type%20Component%20Status%20Proj%20Reported%20Owner%20Summary&q=proj%3Dfmt&can=1)
+- Safety: the library is fully type-safe, errors in format strings can
+  be reported at compile time, automatic memory management prevents
+  buffer overflow errors
+- Ease of use: small self-contained code base, no external
+  dependencies, permissive MIT
+  [license](https://github.com/fmtlib/fmt/blob/master/LICENSE.rst)
+- [Portability](https://fmt.dev/latest/index.html#portability) with
+  consistent output across platforms and support for older compilers
+- Clean warning-free codebase even on high warning levels such as
+  `-Wall -Wextra -pedantic`
+- Locale independence by default
+- Optional header-only configuration enabled with the
+  `FMT_HEADER_ONLY` macro
 
 See the [documentation](https://fmt.dev) for more details.
 
@@ -175,19 +175,13 @@ Output on a modern terminal with Unicode support:
 
 ## Speed tests
 
-+-------------------+---------------+-------------+
 | Library           | Method        | Run Time, s |
-+===================+===============+=============+
+|-------------------|---------------|-------------|
 | libc              | printf        | > 0.91      |
-+-------------------+---------------+-------------+
 | libc++            | std::ostream  | > 2.49      |
-+-------------------+---------------+-------------+
 | {fmt} 9.1         | fmt::print    | > 0.74      |
-+-------------------+---------------+-------------+
 | Boost Format 1.80 | boost::format | > 6.26      |
-+-------------------+---------------+-------------+
 | Folly Format      | folly::format | > 1.87      |
-+-------------------+---------------+-------------+
 
 {fmt} is the fastest of the benchmarked methods, \~20% faster than
 `printf`.
@@ -221,7 +215,7 @@ Sierra, best of three) is shown in the following tables.
 **Optimized build (-O3)**
 
 | Method        | Compile Time, s | Executable size, KiB | Stripped size, KiB |
-| ------------- | --------------- | -------------------- | ------------------ |
+|---------------|-----------------|----------------------|--------------------|
 | printf        | > 2.6           | > 29                 | > 26               |
 | printf+string | > 16.4          | > 29                 | > 26               |
 | iostreams     | > 31.1          | > 59                 | > 55               |
@@ -239,7 +233,7 @@ include to measure the overhead of the latter.
 **Non-optimized build**
 
 | Method        | Compile Time, s | Executable size, KiB | Stripped size, KiB |
-| ------------- | --------------- | -------------------- | ------------------ |
+|---------------|-----------------|----------------------|--------------------|
 | printf        | > 2.2           | > 33                 | > 30               |
 | printf+string | > 16.0          | > 33                 | > 30               |
 | iostreams     | > 28.3          | > 56                 | > 52               |
@@ -285,96 +279,96 @@ converts to `std::print`.)
 
 # Projects using this library
 
--   [0 A.D.](https://play0ad.com/): a free, open-source, cross-platform
-    real-time strategy game
--   [AMPL/MP](https://github.com/ampl/mp): an open-source library for
-    mathematical programming
--   [Aseprite](https://github.com/aseprite/aseprite): animated sprite
-    editor & pixel art tool
--   [AvioBook](https://www.aviobook.aero/en): a comprehensive aircraft
-    operations suite
--   [Blizzard Battle.net](https://battle.net/): an online gaming
-    platform
--   [Celestia](https://celestia.space/): real-time 3D visualization of
-    space
--   [Ceph](https://ceph.com/): a scalable distributed storage system
--   [ccache](https://ccache.dev/): a compiler cache
--   [ClickHouse](https://github.com/ClickHouse/ClickHouse): an
-    analytical database management system
--   [Contour](https://github.com/contour-terminal/contour/): a modern
-    terminal emulator
--   [CUAUV](https://cuauv.org/): Cornell University\'s autonomous
-    underwater vehicle
--   [Drake](https://drake.mit.edu/): a planning, control, and analysis
-    toolbox for nonlinear dynamical systems (MIT)
--   [Envoy](https://lyft.github.io/envoy/): C++ L7 proxy and
-    communication bus (Lyft)
--   [FiveM](https://fivem.net/): a modification framework for GTA V
--   [fmtlog](https://github.com/MengRao/fmtlog): a performant
-    fmtlib-style logging library with latency in nanoseconds
--   [Folly](https://github.com/facebook/folly): Facebook open-source
-    library
--   [GemRB](https://gemrb.org/): a portable open-source implementation
-    of Bioware's Infinity Engine
--   [Grand Mountain
-    Adventure](https://store.steampowered.com/app/1247360/Grand_Mountain_Adventure/):
-    a beautiful open-world ski & snowboarding game
--   [HarpyWar/pvpgn](https://github.com/pvpgn/pvpgn-server): Player vs
-    Player Gaming Network with tweaks
--   [KBEngine](https://github.com/kbengine/kbengine): an open-source
-    MMOG server engine
--   [Keypirinha](https://keypirinha.com/): a semantic launcher for
-    Windows
--   [Kodi](https://kodi.tv/) (formerly xbmc): home theater software
--   [Knuth](https://kth.cash/): high-performance Bitcoin full-node
--   [libunicode](https://github.com/contour-terminal/libunicode/): a
-    modern C++17 Unicode library
--   [MariaDB](https://mariadb.org/): relational database management
-    system
--   [Microsoft Verona](https://github.com/microsoft/verona): research
-    programming language for concurrent ownership
--   [MongoDB](https://mongodb.com/): distributed document database
--   [MongoDB Smasher](https://github.com/duckie/mongo_smasher): a small
-    tool to generate randomized datasets
--   [OpenSpace](https://openspaceproject.com/): an open-source
-    astrovisualization framework
--   [PenUltima Online (POL)](https://www.polserver.com/): an MMO server,
-    compatible with most Ultima Online clients
--   [PyTorch](https://github.com/pytorch/pytorch): an open-source
-    machine learning library
--   [quasardb](https://www.quasardb.net/): a distributed,
-    high-performance, associative database
--   [Quill](https://github.com/odygrd/quill): asynchronous low-latency
-    logging library
--   [QKW](https://github.com/ravijanjam/qkw): generalizing aliasing to
-    simplify navigation, and executing complex multi-line terminal
-    command sequences
--   [redis-cerberus](https://github.com/HunanTV/redis-cerberus): a Redis
-    cluster proxy
--   [redpanda](https://vectorized.io/redpanda): a 10x faster Kafka®
-    replacement for mission-critical systems written in C++
--   [rpclib](http://rpclib.net/): a modern C++ msgpack-RPC server and
-    client library
--   [Salesforce Analytics
-    Cloud](https://www.salesforce.com/analytics-cloud/overview/):
-    business intelligence software
--   [Scylla](https://www.scylladb.com/): a Cassandra-compatible NoSQL
-    data store that can handle 1 million transactions per second on a
-    single server
--   [Seastar](http://www.seastar-project.org/): an advanced, open-source
-    C++ framework for high-performance server applications on modern
-    hardware
--   [spdlog](https://github.com/gabime/spdlog): super fast C++ logging
-    library
--   [Stellar](https://www.stellar.org/): financial platform
--   [Touch Surgery](https://www.touchsurgery.com/): surgery simulator
--   [TrinityCore](https://github.com/TrinityCore/TrinityCore):
-    open-source MMORPG framework
--   [🐙 userver framework](https://userver.tech/): open-source
-    asynchronous framework with a rich set of abstractions and database
-    drivers
--   [Windows Terminal](https://github.com/microsoft/terminal): the new
-    Windows terminal
+- [0 A.D.](https://play0ad.com/): a free, open-source, cross-platform
+  real-time strategy game
+- [AMPL/MP](https://github.com/ampl/mp): an open-source library for
+  mathematical programming
+- [Aseprite](https://github.com/aseprite/aseprite): animated sprite
+  editor & pixel art tool
+- [AvioBook](https://www.aviobook.aero/en): a comprehensive aircraft
+  operations suite
+- [Blizzard Battle.net](https://battle.net/): an online gaming
+  platform
+- [Celestia](https://celestia.space/): real-time 3D visualization of
+  space
+- [Ceph](https://ceph.com/): a scalable distributed storage system
+- [ccache](https://ccache.dev/): a compiler cache
+- [ClickHouse](https://github.com/ClickHouse/ClickHouse): an
+  analytical database management system
+- [Contour](https://github.com/contour-terminal/contour/): a modern
+  terminal emulator
+- [CUAUV](https://cuauv.org/): Cornell University\'s autonomous
+  underwater vehicle
+- [Drake](https://drake.mit.edu/): a planning, control, and analysis
+  toolbox for nonlinear dynamical systems (MIT)
+- [Envoy](https://lyft.github.io/envoy/): C++ L7 proxy and
+  communication bus (Lyft)
+- [FiveM](https://fivem.net/): a modification framework for GTA V
+- [fmtlog](https://github.com/MengRao/fmtlog): a performant
+  fmtlib-style logging library with latency in nanoseconds
+- [Folly](https://github.com/facebook/folly): Facebook open-source
+  library
+- [GemRB](https://gemrb.org/): a portable open-source implementation
+  of Bioware's Infinity Engine
+- [Grand Mountain
+  Adventure](https://store.steampowered.com/app/1247360/Grand_Mountain_Adventure/):
+  a beautiful open-world ski & snowboarding game
+- [HarpyWar/pvpgn](https://github.com/pvpgn/pvpgn-server): Player vs
+  Player Gaming Network with tweaks
+- [KBEngine](https://github.com/kbengine/kbengine): an open-source
+  MMOG server engine
+- [Keypirinha](https://keypirinha.com/): a semantic launcher for
+  Windows
+- [Kodi](https://kodi.tv/) (formerly xbmc): home theater software
+- [Knuth](https://kth.cash/): high-performance Bitcoin full-node
+- [libunicode](https://github.com/contour-terminal/libunicode/): a
+  modern C++17 Unicode library
+- [MariaDB](https://mariadb.org/): relational database management
+  system
+- [Microsoft Verona](https://github.com/microsoft/verona): research
+  programming language for concurrent ownership
+- [MongoDB](https://mongodb.com/): distributed document database
+- [MongoDB Smasher](https://github.com/duckie/mongo_smasher): a small
+  tool to generate randomized datasets
+- [OpenSpace](https://openspaceproject.com/): an open-source
+  astrovisualization framework
+- [PenUltima Online (POL)](https://www.polserver.com/): an MMO server,
+  compatible with most Ultima Online clients
+- [PyTorch](https://github.com/pytorch/pytorch): an open-source
+  machine learning library
+- [quasardb](https://www.quasardb.net/): a distributed,
+  high-performance, associative database
+- [Quill](https://github.com/odygrd/quill): asynchronous low-latency
+  logging library
+- [QKW](https://github.com/ravijanjam/qkw): generalizing aliasing to
+  simplify navigation, and executing complex multi-line terminal
+  command sequences
+- [redis-cerberus](https://github.com/HunanTV/redis-cerberus): a Redis
+  cluster proxy
+- [redpanda](https://vectorized.io/redpanda): a 10x faster Kafka®
+  replacement for mission-critical systems written in C++
+- [rpclib](http://rpclib.net/): a modern C++ msgpack-RPC server and
+  client library
+- [Salesforce Analytics
+  Cloud](https://www.salesforce.com/analytics-cloud/overview/):
+  business intelligence software
+- [Scylla](https://www.scylladb.com/): a Cassandra-compatible NoSQL
+  data store that can handle 1 million transactions per second on a
+  single server
+- [Seastar](http://www.seastar-project.org/): an advanced, open-source
+  C++ framework for high-performance server applications on modern
+  hardware
+- [spdlog](https://github.com/gabime/spdlog): super fast C++ logging
+  library
+- [Stellar](https://www.stellar.org/): financial platform
+- [Touch Surgery](https://www.touchsurgery.com/): surgery simulator
+- [TrinityCore](https://github.com/TrinityCore/TrinityCore):
+  open-source MMORPG framework
+- [🐙 userver framework](https://userver.tech/): open-source
+  asynchronous framework with a rich set of abstractions and database
+  drivers
+- [Windows Terminal](https://github.com/microsoft/terminal): the new
+  Windows terminal
 
 [More\...](https://github.com/search?q=fmtlib&type=Code)
 
@@ -442,9 +436,9 @@ arguments. However, it has significant limitations, citing its author:
 > Three features that have no hope of being accommodated within the
 > current design are:
 >
-> -   Leading zeros (or any other non-space padding)
-> -   Octal/hexadecimal encoding
-> -   Runtime width/alignment specification
+> - Leading zeros (or any other non-space padding)
+> - Octal/hexadecimal encoding
+> - Runtime width/alignment specification
 
 It is also quite big and has a heavy dependency, STLSoft, which might be
 too restrictive for using it in some projects.
