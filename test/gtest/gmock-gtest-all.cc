@@ -1912,7 +1912,7 @@ void AssertHelper::operator=(const Message& message) const {
 namespace {
 
 // When TEST_P is found without a matching INSTANTIATE_TEST_SUITE_P
-// to creates test cases for it, a syntetic test case is
+// to creates test cases for it, a synthetic test case is
 // inserted to report ether an error or a log message.
 //
 // This configuration bit will likely be removed at some point.
