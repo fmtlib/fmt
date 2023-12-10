@@ -199,7 +199,7 @@ IEEE754 `float` and `double` formatting
 than [double-conversion](https://github.com/google/double-conversion)
 and [ryu](https://github.com/ulfjack/ryu):
 
-[![image](https://user-images.githubusercontent.com/576385/%0A95684665-11719600-0ba8-11eb-8e5b-972ff4e49428.png)](https://fmt.dev/unknown_mac64_clang12.0.html)
+[![image](https://user-images.githubusercontent.com/576385/95684665-11719600-0ba8-11eb-8e5b-972ff4e49428.png)](https://fmt.dev/unknown_mac64_clang12.0.html)
 
 ## Compile time and code bloat
 
