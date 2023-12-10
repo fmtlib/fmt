@@ -740,8 +740,8 @@ TEST(chrono_test, special_durations) {
   EXPECT_EQ(fmt::format("{:%T}", std::chrono::duration<char, std::mega>{2}),
             "03:33:20");
   EXPECT_EQ("01.234",
-            fmt::format("{:.3%S}", std::chrono::duration<float, std::pico>(
-                                     1.234e12)));
+            fmt::format("{:.3%S}",
+                        std::chrono::duration<float, std::pico>(1.234e12)));
 }
 
 TEST(chrono_test, unsigned_duration) {
@@ -864,18 +864,18 @@ TEST(chrono_test, timestamps_ratios) {
 
   EXPECT_EQ(fmt::format("{:%M:%S}", t1), "01:07.890");
 
-  std::chrono::time_point<std::chrono::system_clock, std::chrono::minutes>
-      t2(std::chrono::minutes(7));
+  std::chrono::time_point<std::chrono::system_clock, std::chrono::minutes> t2(
+      std::chrono::minutes(7));
 
   EXPECT_EQ(fmt::format("{:%M:%S}", t2), "07:00");
 
-  std::chrono::time_point<std::chrono::system_clock, 
+  std::chrono::time_point<std::chrono::system_clock,
                           std::chrono::duration<int, std::ratio<9>>>
       t3(std::chrono::duration<int, std::ratio<9>>(7));
 
   EXPECT_EQ(fmt::format("{:%M:%S}", t3), "01:03");
 
-  std::chrono::time_point<std::chrono::system_clock, 
+  std::chrono::time_point<std::chrono::system_clock,
                           std::chrono::duration<int, std::ratio<63>>>
       t4(std::chrono::duration<int, std::ratio<63>>(1));
 
@@ -1022,4 +1022,9 @@ TEST(chrono_test, glibc_extensions) {
     EXPECT_EQ(fmt::format("{:%_S}", d), " 3.140000");
     EXPECT_EQ(fmt::format("{:%-S}", d), "3.140000");
   }
+}
+
+TEST(chrono_test, out_of_range) {
+  auto d = std::chrono::duration<unsigned long, std::giga>(538976288);
+  EXPECT_THROW((void)fmt::format("{:%j}", d), fmt::format_error);
 }
