@@ -2167,8 +2167,8 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
     throw_format_error("invalid format specifier");
   }
 
-  unsigned size = to_unsigned((prefix != 0 ? prefix >> 24 : 0) + num_digits +
-                              grouping.count_separators(num_digits));
+  unsigned size = (prefix != 0 ? prefix >> 24 : 0) + to_unsigned(num_digits) +
+                              to_unsigned(grouping.count_separators(num_digits));
   return write_padded<align::right>(
       out, specs, size, size, [&](reserve_iterator<OutputIt> it) {
         for (unsigned p = prefix & 0xffffff; p  != 0; p >>= 8)
