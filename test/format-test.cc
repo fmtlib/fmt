@@ -1335,9 +1335,6 @@ TEST(format_test, format_oct) {
 
 TEST(format_test, format_int_locale) {
   EXPECT_EQ("1234", fmt::format("{:L}", 1234));
-  EXPECT_EQ("7,5bc,d15", fmt::format(std::locale("en_US.UTF-8"), "{:Lx}", 123456789));
-  EXPECT_EQ("-0b111,010,110,111,100,110,100,010,101", fmt::format(std::locale("en_US.UTF-8"), "{:#Lb}", -123456789));
-  EXPECT_EQ("    30,071", fmt::format(std::locale("en_US.UTF-8"), "{:10Lo}", 12345));
 }
 
 TEST(format_test, format_float) {
@@ -2298,6 +2295,14 @@ TEST(format_test, format_facet_grouping) {
 TEST(format_test, format_named_arg_with_locale) {
   EXPECT_EQ(fmt::format(std::locale(), "{answer}", fmt::arg("answer", 42)),
             "42");
+}
+
+TEST(format_test, format_locale) {
+  auto loc =
+      std::locale({}, new fmt::format_facet<std::locale>(","));
+  EXPECT_EQ("7,5bc,d15", fmt::format(loc, "{:Lx}", 123456789));
+  EXPECT_EQ("-0b111,010,110,111,100,110,100,010,101", fmt::format(loc, "{:#Lb}", -123456789));
+  EXPECT_EQ("    30,071", fmt::format(loc, "{:10Lo}", 12345));
 }
 
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR

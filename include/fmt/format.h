@@ -2130,7 +2130,7 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
   switch (specs.type) {
   case presentation_type::none:
   case presentation_type::dec: {
-    num_digits = count_digits(value);
+    num_digits = std::min(count_digits(value), 40);
     format_decimal(digits, value, num_digits);
     break;
   }
@@ -2139,7 +2139,7 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
     bool upper = specs.type == presentation_type::hex_upper;
     if (specs.alt)
       prefix_append(prefix, unsigned(upper ? 'X' : 'x') << 8 | '0');
-    num_digits = count_digits<4>(value);
+    num_digits = std::min(count_digits<4>(value), 40);
     format_uint<4>(digits, value, num_digits, upper);
     break;
   }
@@ -2148,12 +2148,12 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
     bool upper = specs.type == presentation_type::bin_upper;
     if (specs.alt)
       prefix_append(prefix, unsigned(upper ? 'B' : 'b') << 8 | '0');
-    num_digits = count_digits<1>(value);
+    num_digits = std::min(count_digits<1>(value), 40);
     format_uint<1>(digits, value, num_digits);
     break;
   }
   case presentation_type::oct: {
-    num_digits = count_digits<3>(value);
+    num_digits = std::min(count_digits<3>(value), 40);
     // Octal prefix '0' is counted as a digit, so only add it if precision
     // is not greater than the number of digits.
     if (specs.alt && specs.precision <= num_digits && value != 0)
