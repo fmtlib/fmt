@@ -415,7 +415,7 @@ struct formatter<
 #  ifdef FMT_HAS_ABI_CXA_DEMANGLE
     int status = 0;
     std::size_t size = 0;
-    std::unique_ptr<char, decltype(&std::free)> demangled_name_ptr(
+    std::unique_ptr<char, void(*)(void*)> demangled_name_ptr(
         abi::__cxa_demangle(ti.name(), nullptr, &size, &status), &std::free);
 
     string_view demangled_name_view;
