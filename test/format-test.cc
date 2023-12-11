@@ -1337,7 +1337,7 @@ TEST(format_test, format_int_locale) {
   EXPECT_EQ("1234", fmt::format("{:L}", 1234));
   EXPECT_EQ("7,5bc,d15", fmt::format(std::locale("en_US.UTF-8"), "{:Lx}", 123456789));
   EXPECT_EQ("-0b111,010,110,111,100,110,100,010,101", fmt::format(std::locale("en_US.UTF-8"), "{:#Lb}", -123456789));
-  EXPECT_EQ("        24", fmt::format(std::locale("en_US.UTF-8"), "{:10Lo}", 20));
+  EXPECT_EQ("    30,071", fmt::format(std::locale("en_US.UTF-8"), "{:10Lo}", 12345));
 }
 
 TEST(format_test, format_float) {
