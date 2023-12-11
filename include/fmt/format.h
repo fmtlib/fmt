@@ -794,13 +794,13 @@ inline auto code_point_index(string_view s, size_t n) -> size_t {
   size_t result = s.size();
   const char* begin = s.begin();
   for_each_codepoint(s, [begin, &n, &result](uint32_t, string_view sv) {
-        if (n != 0) {
-          --n;
-          return true;
-        }
-        result = to_unsigned(sv.begin() - begin);
-        return false;
-      });
+    if (n != 0) {
+      --n;
+      return true;
+    }
+    result = to_unsigned(sv.begin() - begin);
+    return false;
+  });
   return result;
 }
 
@@ -2124,8 +2124,8 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
                const format_specs<Char>& specs,
                const digit_grouping<Char>& grouping) -> OutputIt {
   static_assert(std::is_same<uint64_or_128_t<UInt>, UInt>::value, "");
-  char digits[40];
   int num_digits;
+  char digits[40];
 
   switch (specs.type) {
   case presentation_type::none:
