@@ -2124,7 +2124,7 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
                const format_specs<Char>& specs,
                const digit_grouping<Char>& grouping) -> OutputIt {
   static_assert(std::is_same<uint64_or_128_t<UInt>, UInt>::value, "");
-  int num_digits;
+  int num_digits = 0;
   char digits[40];
 
   switch (specs.type) {
