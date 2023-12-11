@@ -283,7 +283,7 @@ if (FMT_OS)
 endif ()
 
 add_module_library(fmt src/fmt.cc FALLBACK
-                   ${FMT_SOURCES} ${FMT_HEADERS} README.rst ChangeLog.md
+                   ${FMT_SOURCES} ${FMT_HEADERS} README.md ChangeLog.md
                    IF FMT_MODULE)
 add_library(fmt::fmt ALIAS fmt)
 if (FMT_MODULE)
@@ -448,6 +448,6 @@ if (FMT_MASTER_PROJECT AND EXISTS ${gitignore})
   set(CPACK_SOURCE_IGNORE_FILES ${ignored_files})
   set(CPACK_SOURCE_PACKAGE_FILE_NAME fmt-${FMT_VERSION})
   set(CPACK_PACKAGE_NAME fmt)
-  set(CPACK_RESOURCE_FILE_README ${PROJECT_SOURCE_DIR}/README.rst)
+  set(CPACK_RESOURCE_FILE_README ${PROJECT_SOURCE_DIR}/README.md)
   include(CPack)
 endif ()

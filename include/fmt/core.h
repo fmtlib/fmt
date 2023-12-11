@@ -817,7 +817,7 @@ template <typename T> class buffer {
  protected:
   // Don't initialize ptr_ since it is not accessed to save a few cycles.
   FMT_MSC_WARNING(suppress : 26495)
-  buffer(size_t sz) noexcept : size_(sz), capacity_(sz) {}
+  FMT_CONSTEXPR buffer(size_t sz) noexcept : size_(sz), capacity_(sz) {}
 
   FMT_CONSTEXPR20 buffer(T* p = nullptr, size_t sz = 0, size_t cap = 0) noexcept
       : ptr_(p), size_(sz), capacity_(cap) {}
@@ -1332,7 +1332,7 @@ using ulong_type = conditional_t<long_short, unsigned, unsigned long long>;
 template <typename T> struct format_as_result {
   template <typename U,
             FMT_ENABLE_IF(std::is_enum<U>::value || std::is_class<U>::value)>
-  static auto map(U*) -> decltype(format_as(std::declval<U>()));
+  static auto map(U*) -> remove_cvref_t<decltype(format_as(std::declval<U>()))>;
   static auto map(...) -> void;
 
   using type = decltype(map(static_cast<T*>(nullptr)));
@@ -2429,6 +2429,7 @@ FMT_CONSTEXPR FMT_INLINE auto parse_format_specs(
     case 'G':
       return parse_presentation_type(pres::general_upper, float_set);
     case 'c':
+      if (arg_type == type::bool_type) throw_format_error("invalid format specifier");
       return parse_presentation_type(pres::chr, integral_set);
     case 's':
       return parse_presentation_type(pres::string,

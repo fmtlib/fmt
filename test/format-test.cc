@@ -1159,6 +1159,8 @@ TEST(format_test, format_bool) {
   EXPECT_EQ("true", fmt::format("{:s}", true));
   EXPECT_EQ("false", fmt::format("{:s}", false));
   EXPECT_EQ("false ", fmt::format("{:6s}", false));
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:c}"), false), format_error,
+                   "invalid format specifier");
 }
 
 TEST(format_test, format_short) {
@@ -2174,6 +2176,13 @@ auto format_as(scoped_enum_as_string) -> std::string { return "foo"; }
 
 struct struct_as_int {};
 auto format_as(struct_as_int) -> int { return 42; }
+
+struct struct_as_const_reference {
+  const std::string name = "foo";
+};
+auto format_as(const struct_as_const_reference& s) -> const std::string& {
+  return s.name;
+}
 }  // namespace test
 
 TEST(format_test, format_as) {
@@ -2181,6 +2190,7 @@ TEST(format_test, format_as) {
   EXPECT_EQ(fmt::format("{}", test::scoped_enum_as_string_view()), "foo");
   EXPECT_EQ(fmt::format("{}", test::scoped_enum_as_string()), "foo");
   EXPECT_EQ(fmt::format("{}", test::struct_as_int()), "42");
+  EXPECT_EQ(fmt::format("{}", test::struct_as_const_reference()), "foo");
 }
 
 TEST(format_test, format_as_to_string) {
