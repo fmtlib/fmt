@@ -233,7 +233,13 @@
 #endif
 
 #ifndef FMT_UNICODE
-#  define FMT_UNICODE !FMT_MSC_VERSION
+#  if FMT_CLANG_VERSION
+#    define FMT_UNICODE 1
+#  elif defined(_MSVC_EXECUTION_CHARACTER_SET) && (_MSVC_EXECUTION_CHARACTER_SET == 65001)
+#    define FMT_UNICODE 1
+#  else
+#    define FMT_UNICODE !FMT_MSC_VERSION
+#  endif
 #endif
 
 #ifndef FMT_CONSTEVAL
