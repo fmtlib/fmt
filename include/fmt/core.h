@@ -129,6 +129,24 @@
 #  define FMT_CONSTEXPR_CHAR_TRAITS
 #endif
 
+// MSVC goofs up the range checking under a specific version
+#ifndef FMT_RANGE_CHECKS
+#  if (!FMT_MSC_VERSION || FMT_MSC_VERSION > 1800)
+#    define FMT_RANGE_CHECKS 1
+#  else
+#    define FMT_RANGE_CHECKS 0
+#  endif
+#endif
+
+// Only on if we know we can do the begin/end range checking properly
+#ifndef FMT_OUTPUT_RANGES
+#  if FMT_RANGE_CHECKS
+#    define FMT_OUTPUT_RANGES 1
+#  else
+#    define FMT_OUTPUT_RANGES 0
+#  endif
+#endif
+
 // Check if exceptions are disabled.
 #ifndef FMT_EXCEPTIONS
 #  if (defined(__GNUC__) && !defined(__EXCEPTIONS)) || \
@@ -1528,6 +1546,82 @@ template <typename... T> using void_t = typename void_t_impl<T...>::type;
 template <typename...> using void_t = void;
 #endif
 
+template <typename T, typename _ = void> struct is_range_ : std::false_type {};
+
+#if FMT_RANGE_CHECKS
+
+#  define FMT_DECLTYPE_RETURN(val)  \
+    ->decltype(val) { return val; } \
+    static_assert(                  \
+        true, "")  // This makes it so that a semicolon is required after the
+                   // macro, which helps clang-format handle the formatting.
+
+// C array overload
+template <typename T, std::size_t N>
+auto range_begin(const T (&arr)[N]) -> const T* {
+  return arr;
+}
+template <typename T, std::size_t N>
+auto range_end(const T (&arr)[N]) -> const T* {
+  return arr + N;
+}
+
+template <typename T, typename Enable = void>
+struct has_member_fn_begin_end_t : std::false_type {};
+
+template <typename T>
+struct has_member_fn_begin_end_t<T, void_t<decltype(std::declval<T>().begin()),
+                                           decltype(std::declval<T>().end())>>
+    : std::true_type {};
+
+// Member function overload
+template <typename T>
+auto range_begin(T&& rng) FMT_DECLTYPE_RETURN(static_cast<T&&>(rng).begin());
+template <typename T>
+auto range_end(T&& rng) FMT_DECLTYPE_RETURN(static_cast<T&&>(rng).end());
+
+// ADL overload. Only participates in overload resolution if member functions
+// are not found.
+template <typename T>
+auto range_begin(T&& rng)
+    -> enable_if_t<!has_member_fn_begin_end_t<T&&>::value,
+                   decltype(begin(static_cast<T&&>(rng)))> {
+  return begin(static_cast<T&&>(rng));
+}
+template <typename T>
+auto range_end(T&& rng) -> enable_if_t<!has_member_fn_begin_end_t<T&&>::value,
+                                       decltype(end(static_cast<T&&>(rng)))> {
+  return end(static_cast<T&&>(rng));
+}
+
+template <typename T, typename Enable = void>
+struct has_const_begin_end : std::false_type {};
+template <typename T, typename Enable = void>
+struct has_mutable_begin_end : std::false_type {};
+
+template <typename T>
+struct has_const_begin_end<
+    T,
+    void_t<
+        decltype(detail::range_begin(std::declval<const remove_cvref_t<T>&>())),
+        decltype(detail::range_end(std::declval<const remove_cvref_t<T>&>()))>>
+    : std::true_type {};
+
+template <typename T>
+struct has_mutable_begin_end<
+    T, void_t<decltype(detail::range_begin(std::declval<T>())),
+              decltype(detail::range_end(std::declval<T>())),
+              // the extra int here is because older versions of MSVC don't
+              // SFINAE properly unless there are distinct types
+              int>> : std::true_type {};
+
+template <typename T>
+struct is_range_<T, void>
+    : std::integral_constant<bool, (has_const_begin_end<T>::value ||
+                                    has_mutable_begin_end<T>::value)> {};
+#  undef FMT_DECLTYPE_RETURN
+#endif
+
 template <typename It, typename T, typename Enable = void>
 struct is_output_iterator : std::false_type {};
 
@@ -1613,6 +1707,17 @@ template <bool PACKED, typename Context, typename T, FMT_ENABLE_IF(!PACKED)>
 FMT_CONSTEXPR inline auto make_arg(T& val) -> basic_format_arg<Context> {
   return make_arg<Context>(val);
 }
+
+template <typename Out, bool IsRange = is_range_<Out>::value>
+struct out_storage {
+  Out out_;
+};
+
+template <typename OutRange>
+struct out_storage<OutRange, true> {
+  decltype(range_begin(std::declval<OutRange>())) out_;
+  decltype(range_end(std::declval<OutRange>())) out_last_;
+};
 }  // namespace detail
 FMT_BEGIN_EXPORT
 

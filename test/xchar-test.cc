@@ -5,6 +5,11 @@
 //
 // For the license information refer to format.h.
 
+// Disable bogus MSVC warnings.
+#if !defined(_CRT_SECURE_NO_WARNINGS) && defined(_MSC_VER)
+#  define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include "fmt/xchar.h"
 
 #include <algorithm>
