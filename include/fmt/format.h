@@ -2124,13 +2124,14 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
                const format_specs<Char>& specs,
                const digit_grouping<Char>& grouping) -> OutputIt {
   static_assert(std::is_same<uint64_or_128_t<UInt>, UInt>::value, "");
+  auto minimum = [](int a, int b) { return a < b ? a : b; };
   int num_digits = 0;
-  char digits[40];
+  char digits[40]; 
 
   switch (specs.type) {
   case presentation_type::none:
   case presentation_type::dec: {
-    num_digits = std::min(count_digits(value), 40);
+    num_digits = minimum(count_digits(value), 40);
     format_decimal(digits, value, num_digits);
     break;
   }
@@ -2139,7 +2140,7 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
     bool upper = specs.type == presentation_type::hex_upper;
     if (specs.alt)
       prefix_append(prefix, unsigned(upper ? 'X' : 'x') << 8 | '0');
-    num_digits = std::min(count_digits<4>(value), 40);
+    num_digits = minimum(count_digits<4>(value), 40);
     format_uint<4>(digits, value, num_digits, upper);
     break;
   }
@@ -2148,12 +2149,12 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
     bool upper = specs.type == presentation_type::bin_upper;
     if (specs.alt)
       prefix_append(prefix, unsigned(upper ? 'B' : 'b') << 8 | '0');
-    num_digits = std::min(count_digits<1>(value), 40);
+    num_digits = minimum(count_digits<1>(value), 40);
     format_uint<1>(digits, value, num_digits);
     break;
   }
   case presentation_type::oct: {
-    num_digits = std::min(count_digits<3>(value), 40);
+    num_digits = minimum(count_digits<3>(value), 40);
     // Octal prefix '0' is counted as a digit, so only add it if precision
     // is not greater than the number of digits.
     if (specs.alt && specs.precision <= num_digits && value != 0)
@@ -2170,9 +2171,9 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
   unsigned size = (prefix != 0 ? prefix >> 24 : 0) + to_unsigned(num_digits) +
                               to_unsigned(grouping.count_separators(num_digits));
   return write_padded<align::right>(
-      out, specs, size, size, [&](reserve_iterator<OutputIt> it) {
+      out, specs, size, size, [=](reserve_iterator<OutputIt> it) {
         for (unsigned p = prefix & 0xffffff; p  != 0; p >>= 8)
-          *it++ = static_cast<Char>(p & 0xff);
+          *it++ = static_cast<Char>(p & 0xff); 
         return grouping.apply(it, string_view(digits, to_unsigned(num_digits)));
       });
 }
