@@ -277,12 +277,14 @@ check that is capable of converting occurrences of `printf` and
 `fprintf` to `fmt::print` if configured to do so. (By default it
 converts to `std::print`.)
 
-# Projects using this library
+# Notable projects using this library
 
 - [0 A.D.](https://play0ad.com/): a free, open-source, cross-platform
   real-time strategy game
 - [AMPL/MP](https://github.com/ampl/mp): an open-source library for
   mathematical programming
+- [Apple's FoundationDB](https://github.com/apple/foundationdb): an open-source,
+  distributed, transactional key-value store
 - [Aseprite](https://github.com/aseprite/aseprite): animated sprite
   editor & pixel art tool
 - [AvioBook](https://www.aviobook.aero/en): a comprehensive aircraft
