@@ -95,7 +95,7 @@ void format_value(buffer<Char>& buf, const T& value) {
   auto&& format_buf = formatbuf<std::basic_streambuf<Char>>(buf);
   auto&& output = std::basic_ostream<Char>(&format_buf);
 #if !defined(FMT_STATIC_THOUSANDS_SEPARATOR)
-  output.imbue(std::locale::classic()); // The default is always unlocalized.
+  output.imbue(std::locale::classic());  // The default is always unlocalized.
 #endif
   output << value;
   output.exceptions(std::ios_base::failbit | std::ios_base::badbit);
