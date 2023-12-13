@@ -1,0 +1,26 @@
+name: lint
+
+on:
+  pull_request:
+    paths:
+      - '**.h'
+      - '**.cc'
+
+permissions:
+  contents: read
+
+jobs:
+  format_code:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install clang-format
+      uses: aminya/setup-cpp@v1
+      with:
+        clangformat: 17.0.5
+
+    - name: Run clang-format
+      run: |
+        find include src -name '*.h' -o -name '*.cc' |  xargs clang-format -i -style=file -fallback-style=none
+        git diff --exit-code
