@@ -137,8 +137,7 @@ template <typename Char> struct formatter<std::filesystem::path, Char> {
       debug_ = true;
       ++it;
     }
-    if (it != end && (*it == 'g' || *it == 'n'))
-      path_type_ = *it++;
+    if (it != end && (*it == 'g' || *it == 'n')) path_type_ = *it++;
     return it;
   }
 
@@ -246,8 +245,7 @@ FMT_END_NAMESPACE
 #ifdef __cpp_lib_source_location
 FMT_BEGIN_NAMESPACE
 FMT_EXPORT
-template<>
-struct formatter<std::source_location> {
+template <> struct formatter<std::source_location> {
   template <typename ParseContext> FMT_CONSTEXPR auto parse(ParseContext& ctx) {
     return ctx.begin();
   }
@@ -384,7 +382,7 @@ template <typename Char> struct formatter<std::error_code, Char> {
 FMT_EXPORT
 template <typename T, typename Char>
 struct formatter<
-    T, Char, // DEPRECATED! Mixing code unit types.
+    T, Char,  // DEPRECATED! Mixing code unit types.
     typename std::enable_if<std::is_base_of<std::exception, T>::value>::type> {
  private:
   bool with_typename_ = false;
@@ -415,7 +413,7 @@ struct formatter<
 #  ifdef FMT_HAS_ABI_CXA_DEMANGLE
     int status = 0;
     std::size_t size = 0;
-    std::unique_ptr<char, void(*)(void*)> demangled_name_ptr(
+    std::unique_ptr<char, void (*)(void*)> demangled_name_ptr(
         abi::__cxa_demangle(ti.name(), nullptr, &size, &status), &std::free);
 
     string_view demangled_name_view;
