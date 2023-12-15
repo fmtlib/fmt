@@ -1696,8 +1696,13 @@ TEST(format_test, format_custom) {
 
 TEST(format_test, format_to_custom) {
   char buf[10] = {};
+#if FMT_OUTPUT_RANGES
   auto result_range = fmt::format_to(buf, "{}", Answer());
   EXPECT_EQ(result_range.begin(), buf + 2);
+#else
+  auto end = fmt::format_to(buf, "{}", Answer());
+  EXPECT_EQ(end, buf + 2);
+#endif
   EXPECT_STREQ(buf, "42");
 }
 

@@ -205,8 +205,13 @@ TEST(ranges_test, format_struct) {
 
 TEST(ranges_test, format_to) {
   char buf[10];
+#if FMT_OUTPUT_RANGES
   auto result_range = fmt::format_to(buf, "{}", std::vector<int>{1, 2, 3});
   *result_range.begin() = '\0';
+#else
+  auto end = fmt::format_to(buf, "{}", std::vector<int>{1, 2, 3});
+  *end = '\0';
+#endif
   EXPECT_STREQ(buf, "[1, 2, 3]");
 }
 
