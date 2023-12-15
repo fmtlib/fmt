@@ -543,10 +543,11 @@ inline std::basic_string<Char> format(const text_style& ts, const S& format_str,
   Formats a string with the given text_style and writes the output to ``out``.
  */
 template <typename Output, typename Char,
-          FMT_ENABLE_IF(std::ranges::output_range<Output, Char> || std::output_iterator<remove_cvref_t<Output>, Char>)>
-auto vformat_to(
-    Output&& out, const text_style& ts, basic_string_view<Char> format_str,
-    basic_format_args<buffer_context<type_identity_t<Char>>> args) {
+          FMT_ENABLE_IF(std::ranges::output_range<Output, Char> ||
+                        std::output_iterator<remove_cvref_t<Output>, Char>)>
+auto vformat_to(Output&& out, const text_style& ts,
+                basic_string_view<Char> format_str,
+                basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   auto&& buf = detail::get_appendable_buffer<Char>(std::forward<Output>(out));
   detail::vformat_to(buf, ts, format_str, args);
   return detail::get_iterator(buf, out);
@@ -555,7 +556,8 @@ auto vformat_to(
 /**
   \rst
   Formats arguments with the given text_style, writes the result to the output
-  iterator or range ``out`` and returns the iterator past the end of the output range.
+  iterator or range ``out`` and returns the iterator past the end of the output
+  range.
 
   **Example**::
 
@@ -565,13 +567,15 @@ auto vformat_to(
   \endrst
 */
 template <typename Output, typename S, typename... Args,
-          bool enable = (std::ranges::output_range<Output, char_t<S>>
-              || std::output_iterator<remove_cvref_t<Output>, char_t<S>>)
-            && detail::is_string<S>::value,
-            FMT_ENABLE_IF(enable)>
+          bool enable =
+              (std::ranges::output_range<Output, char_t<S>> ||
+               std::output_iterator<remove_cvref_t<Output>,
+                                    char_t<S>>)&&detail::is_string<S>::value,
+          FMT_ENABLE_IF(enable)>
 inline auto format_to(Output&& out, const text_style& ts, const S& format_str,
                       Args&&... args) {
-  return vformat_to(std::forward<Output>(out), ts, detail::to_string_view(format_str),
+  return vformat_to(std::forward<Output>(out), ts,
+                    detail::to_string_view(format_str),
                     fmt::make_format_args<buffer_context<char_t<S>>>(args...));
 }
 
@@ -579,8 +583,8 @@ inline auto format_to(Output&& out, const text_style& ts, const S& format_str,
   Formats a string with the given text_style and writes the output to ``out``.
  */
 template <typename Output, typename Char,
-          FMT_ENABLE_IF(std::ranges::output_range<Output, Char>
-            || std::output_iterator<remove_cvref_t<Output>, Char>)>
+          FMT_ENABLE_IF(std::ranges::output_range<Output, Char> ||
+                        std::output_iterator<remove_cvref_t<Output>, Char>)>
 auto vformat_into(
     Output&& out, const text_style& ts, basic_string_view<Char> format_str,
     basic_format_args<buffer_context<type_identity_t<Char>>> args) {
@@ -602,14 +606,16 @@ auto vformat_into(
   \endrst
 */
 template <typename Output, typename S, typename... Args,
-          bool enable = (std::ranges::output_range<Output, char_t<S>>
-              || std::output_iterator<remove_cvref_t<Output>, char_t<S>>)
-            && detail::is_string<S>::value,
-            FMT_ENABLE_IF(enable)>
+          bool enable =
+              (std::ranges::output_range<Output, char_t<S>> ||
+               std::output_iterator<remove_cvref_t<Output>,
+                                    char_t<S>>)&&detail::is_string<S>::value,
+          FMT_ENABLE_IF(enable)>
 inline auto format_into(Output&& out, const text_style& ts, const S& format_str,
-                      Args&&... args) {
-  return vformat_into(std::forward<Output>(out), ts, detail::to_string_view(format_str),
-                    fmt::make_format_args<buffer_context<char_t<S>>>(args...));
+                        Args&&... args) {
+  return vformat_into(
+      std::forward<Output>(out), ts, detail::to_string_view(format_str),
+      fmt::make_format_args<buffer_context<char_t<S>>>(args...));
 }
 #else
 /**
@@ -637,10 +643,9 @@ OutputIt vformat_to(
                    fmt::emphasis::bold | fg(fmt::color::red), "{}", 42);
   \endrst
 */
-template <
-    typename OutputIt, typename S, typename... Args,
-    bool enable = detail::is_output_iterator<OutputIt, char_t<S>>::value &&
-                  detail::is_string<S>::value>
+template <typename OutputIt, typename S, typename... Args,
+          bool enable = detail::is_output_iterator<OutputIt, char_t<S>>::value&&
+              detail::is_string<S>::value>
 inline auto format_to(OutputIt out, const text_style& ts, const S& format_str,
                       Args&&... args) ->
     typename std::enable_if<enable, OutputIt>::type {

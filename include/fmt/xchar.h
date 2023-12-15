@@ -140,55 +140,57 @@ inline auto format(const Locale& loc, const S& format_str, T&&... args)
 
 #if FMT_OUTPUT_RANGES
 template <typename Output, typename S, typename Char = char_t<S>,
-          FMT_ENABLE_IF((std::ranges::output_range<Output, Char>
-              || std::output_iterator<remove_cvref_t<Output>, Char>)
-            && detail::is_exotic_char<Char>::value)>
+          FMT_ENABLE_IF((
+              std::ranges::output_range<Output, Char> ||
+              std::output_iterator<remove_cvref_t<Output>,
+                                   Char>)&&detail::is_exotic_char<Char>::value)>
 auto vformat_to(Output&& out, const S& format_str,
-                basic_format_args<buffer_context<type_identity_t<Char>>> args)
-{
+                basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   auto&& buf = detail::get_appendable_buffer<Char>(std::forward<Output>(out));
   detail::vformat_to(buf, detail::to_string_view(format_str), args);
   return detail::get_iterator(buf, out);
 }
 
 template <typename Output, typename S, typename Char = char_t<S>,
-          FMT_ENABLE_IF((std::ranges::output_range<Output, Char>
-              || std::output_iterator<remove_cvref_t<Output>, Char>)
-            && detail::is_exotic_char<Char>::value)>
-auto vformat_into(Output&& out, const S& format_str,
-                basic_format_args<buffer_context<type_identity_t<Char>>> args)
-{
+          FMT_ENABLE_IF((
+              std::ranges::output_range<Output, Char> ||
+              std::output_iterator<remove_cvref_t<Output>,
+                                   Char>)&&detail::is_exotic_char<Char>::value)>
+auto vformat_into(
+    Output&& out, const S& format_str,
+    basic_format_args<buffer_context<type_identity_t<Char>>> args) {
   auto&& buf = detail::get_buffer<Char>(std::forward<Output>(out));
   detail::vformat_to(buf, detail::to_string_view(format_str), args);
   return detail::get_iterator(buf, out);
 }
 
-template <typename Output, typename S, typename... T,
-          typename Char = char_t<S>,
-          FMT_ENABLE_IF((std::ranges::output_range<Output, Char>
-              || std::output_iterator<remove_cvref_t<Output>, Char>)
-          && detail::is_exotic_char<Char>::value)>
+template <typename Output, typename S, typename... T, typename Char = char_t<S>,
+          FMT_ENABLE_IF((
+              std::ranges::output_range<Output, Char> ||
+              std::output_iterator<remove_cvref_t<Output>,
+                                   Char>)&&detail::is_exotic_char<Char>::value)>
 inline auto format_to(Output&& out, const S& fmt, T&&... args) {
   return vformat_to(std::forward<Output>(out), detail::to_string_view(fmt),
                     fmt::make_format_args<buffer_context<Char>>(args...));
 }
 
-template <typename Output, typename S, typename... T,
-          typename Char = char_t<S>,
-          FMT_ENABLE_IF((std::ranges::output_range<Output, Char>
-              || std::output_iterator<remove_cvref_t<Output>, Char>)
-          && detail::is_exotic_char<Char>::value)>
+template <typename Output, typename S, typename... T, typename Char = char_t<S>,
+          FMT_ENABLE_IF((
+              std::ranges::output_range<Output, Char> ||
+              std::output_iterator<remove_cvref_t<Output>,
+                                   Char>)&&detail::is_exotic_char<Char>::value)>
 inline auto format_into(Output&& out, const S& fmt, T&&... args) {
   return vformat_into(std::forward<Output>(out), detail::to_string_view(fmt),
-                    fmt::make_format_args<buffer_context<Char>>(args...));
+                      fmt::make_format_args<buffer_context<Char>>(args...));
 }
 
 template <typename Locale, typename S, typename Output, typename... Args,
           typename Char = char_t<S>,
-          FMT_ENABLE_IF((std::ranges::output_range<Output, Char>
-              || std::output_iterator<remove_cvref_t<Output>, Char>)
-            && detail::is_locale<Locale>::value 
-            && detail::is_exotic_char<Char>::value)>
+          FMT_ENABLE_IF(
+              (std::ranges::output_range<Output, Char> ||
+               std::output_iterator<remove_cvref_t<Output>,
+                                    Char>)&&detail::is_locale<Locale>::value&&
+                  detail::is_exotic_char<Char>::value)>
 inline auto vformat_to(
     Output&& out, const Locale& loc, const S& format_str,
     basic_format_args<buffer_context<type_identity_t<Char>>> args) {
@@ -200,10 +202,11 @@ inline auto vformat_to(
 
 template <typename Locale, typename S, typename Output, typename... Args,
           typename Char = char_t<S>,
-          FMT_ENABLE_IF((std::ranges::output_range<Output, Char>
-              || std::output_iterator<remove_cvref_t<Output>, Char>)
-            && detail::is_locale<Locale>::value 
-            && detail::is_exotic_char<Char>::value)>
+          FMT_ENABLE_IF(
+              (std::ranges::output_range<Output, Char> ||
+               std::output_iterator<remove_cvref_t<Output>,
+                                    Char>)&&detail::is_locale<Locale>::value&&
+                  detail::is_exotic_char<Char>::value)>
 inline auto vformat_into(
     Output&& out, const Locale& loc, const S& format_str,
     basic_format_args<buffer_context<type_identity_t<Char>>> args) {
@@ -216,29 +219,29 @@ inline auto vformat_into(
 template <
     typename Output, typename Locale, typename S, typename... T,
     typename Char = char_t<S>,
-    bool enable = (std::ranges::output_range<Output, Char>
-        || std::output_iterator<remove_cvref_t<Output>, Char>)
-    && detail::is_locale<Locale>::value
-    && detail::is_exotic_char<Char>::value,
+    bool enable = (std::ranges::output_range<Output, Char> ||
+                   std::output_iterator<remove_cvref_t<Output>, Char>)&&detail::
+        is_locale<Locale>::value&& detail::is_exotic_char<Char>::value,
     FMT_ENABLE_IF(enable)>
 inline auto format_to(Output&& out, const Locale& loc, const S& format_str,
                       T&&... args) {
-  return vformat_to(std::forward<Output>(out), loc, detail::to_string_view(format_str),
+  return vformat_to(std::forward<Output>(out), loc,
+                    detail::to_string_view(format_str),
                     fmt::make_format_args<buffer_context<Char>>(args...));
 }
 
 template <
     typename Output, typename Locale, typename S, typename... T,
     typename Char = char_t<S>,
-    bool enable = (std::ranges::output_range<Output, Char>
-        || std::output_iterator<remove_cvref_t<Output>, Char>)
-    && detail::is_locale<Locale>::value
-    && detail::is_exotic_char<Char>::value,
+    bool enable = (std::ranges::output_range<Output, Char> ||
+                   std::output_iterator<remove_cvref_t<Output>, Char>)&&detail::
+        is_locale<Locale>::value&& detail::is_exotic_char<Char>::value,
     FMT_ENABLE_IF(enable)>
 inline auto format_into(Output&& out, const Locale& loc, const S& format_str,
-                      T&&... args) {
-  return vformat_into(std::forward<Output>(out), loc, detail::to_string_view(format_str),
-                    fmt::make_format_args<buffer_context<Char>>(args...));
+                        T&&... args) {
+  return vformat_into(std::forward<Output>(out), loc,
+                      detail::to_string_view(format_str),
+                      fmt::make_format_args<buffer_context<Char>>(args...));
 }
 #else
 template <typename OutputIt, typename S, typename Char = char_t<S>,
@@ -275,11 +278,11 @@ inline auto vformat_to(
   return detail::get_iterator(buf, out);
 }
 
-template <typename OutputIt, typename Locale, typename S, typename... T,
-          typename Char = char_t<S>,
-          bool enable = detail::is_output_iterator<OutputIt, Char>::value &&
-                        detail::is_locale<Locale>::value &&
-                        detail::is_exotic_char<Char>::value>
+template <
+    typename OutputIt, typename Locale, typename S, typename... T,
+    typename Char = char_t<S>,
+    bool enable = detail::is_output_iterator<OutputIt, Char>::value&&
+        detail::is_locale<Locale>::value&& detail::is_exotic_char<Char>::value>
 inline auto format_to(OutputIt out, const Locale& loc, const S& format_str,
                       T&&... args) ->
     typename std::enable_if<enable, OutputIt>::type {

@@ -1063,8 +1063,8 @@ namespace detail_exported {
 #if FMT_USE_NONTYPE_TEMPLATE_ARGS
 template <typename Char, size_t N> struct fixed_string {
   constexpr fixed_string(const Char (&str)[N]) {
-    detail::copy_str<Char, const Char*, const Char*, Char*>(static_cast<const Char*>(str),
-                                               static_cast<const Char*>(str + N), data);
+    detail::copy_str<Char, const Char*, const Char*, Char*>(
+        static_cast<const Char*>(str), static_cast<const Char*>(str + N), data);
   }
   Char data[N] = {};
 };
@@ -1161,10 +1161,10 @@ using uint32_or_64_or_128_t =
 template <typename T>
 using uint64_or_128_t = conditional_t<num_bits<T>() <= 64, uint64_t, uint128_t>;
 
-#define FMT_POWERS_OF_10(factor)                                  \
-  factor * 10, (factor) * 100, (factor) * 1000, (factor) * 10000, \
-      (factor) * 100000, (factor) * 1000000, (factor) * 10000000, \
-      (factor) * 100000000, (factor) * 1000000000
+#define FMT_POWERS_OF_10(factor)                                             \
+  factor * 10, (factor)*100, (factor)*1000, (factor)*10000, (factor)*100000, \
+      (factor)*1000000, (factor)*10000000, (factor)*100000000,               \
+      (factor)*1000000000
 
 // Converts value in the range [0, 100) to a string.
 constexpr const char* digits2(size_t value) {
@@ -4543,10 +4543,9 @@ inline auto format(const Locale& loc, format_string<T...> fmt, T&&... args)
 
 #if FMT_OUTPUT_RANGES
 template <typename Output, typename Locale,
-          FMT_ENABLE_IF(
-            (std::ranges::output_range<Output, char>
-            || std::output_iterator<Output, char>)
-            && detail::is_locale<Locale>::value)>
+          FMT_ENABLE_IF((std::ranges::output_range<Output, char> ||
+                         std::output_iterator<
+                             Output, char>)&&detail::is_locale<Locale>::value)>
 auto vformat_to(Output&& out, const Locale& loc, string_view fmt,
                 format_args args) {
   auto&& buf = detail::get_appendable_buffer<char>(std::forward<Output>(out));
@@ -4555,12 +4554,11 @@ auto vformat_to(Output&& out, const Locale& loc, string_view fmt,
 }
 
 template <typename Output, typename Locale,
-          FMT_ENABLE_IF(
-            (std::ranges::output_range<Output, char>
-            || std::output_iterator<Output, char>)
-            && detail::is_locale<Locale>::value)>
+          FMT_ENABLE_IF((std::ranges::output_range<Output, char> ||
+                         std::output_iterator<
+                             Output, char>)&&detail::is_locale<Locale>::value)>
 auto vformat_into(Output&& out, const Locale& loc, string_view fmt,
-                format_args args) {
+                  format_args args) {
   auto&& buf = detail::get_buffer<char>(std::forward<Output>(out));
   detail::vformat_to(buf, fmt, args, detail::locale_ref(loc));
   return detail::get_iterator(buf, out);
@@ -4568,22 +4566,24 @@ auto vformat_into(Output&& out, const Locale& loc, string_view fmt,
 
 template <typename Output, typename Locale, typename... T,
           FMT_ENABLE_IF(
-            (std::ranges::output_range<Output, char>
-            || std::output_iterator<remove_cvref_t<Output>, char>)
-            && detail::is_locale<Locale>::value)>
+              (std::ranges::output_range<Output, char> ||
+               std::output_iterator<remove_cvref_t<Output>,
+                                    char>)&&detail::is_locale<Locale>::value)>
 FMT_INLINE auto format_to(Output&& out, const Locale& loc,
                           format_string<T...> fmt, T&&... args) {
-  return vformat_to(std::forward<Output>(out), loc, fmt, fmt::make_format_args(args...));
+  return vformat_to(std::forward<Output>(out), loc, fmt,
+                    fmt::make_format_args(args...));
 }
 
 template <typename Output, typename Locale, typename... T,
           FMT_ENABLE_IF(
-            (std::ranges::output_range<Output, char>
-            || std::output_iterator<remove_cvref_t<Output>, char>)
-            && detail::is_locale<Locale>::value)>
+              (std::ranges::output_range<Output, char> ||
+               std::output_iterator<remove_cvref_t<Output>,
+                                    char>)&&detail::is_locale<Locale>::value)>
 FMT_INLINE auto format_into(Output&& out, const Locale& loc,
-                          format_string<T...> fmt, T&&... args) {
-  return vformat_into(std::forward<Output>(out), loc, fmt, fmt::make_format_args(args...));
+                            format_string<T...> fmt, T&&... args) {
+  return vformat_into(std::forward<Output>(out), loc, fmt,
+                      fmt::make_format_args(args...));
 }
 #else
 template <typename OutputIt, typename Locale,
