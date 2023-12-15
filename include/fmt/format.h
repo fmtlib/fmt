@@ -2113,24 +2113,66 @@ template <typename Char> class digit_grouping {
   }
 };
 
+FMT_CONSTEXPR inline void prefix_append(unsigned& prefix, unsigned value) {
+  prefix |= prefix != 0 ? value << 8 : value;
+  prefix += (1u + (value > 0xff ? 1 : 0)) << 24;
+}
+
 // Writes a decimal integer with digit grouping.
 template <typename OutputIt, typename UInt, typename Char>
 auto write_int(OutputIt out, UInt value, unsigned prefix,
                const format_specs<Char>& specs,
                const digit_grouping<Char>& grouping) -> OutputIt {
-  static_assert(std::is_same<uint64_or_128_t<UInt>, UInt>::value, "");
-  int num_digits = count_digits(value);
-  char digits[40];
-  format_decimal(digits, value, num_digits);
-  unsigned size = to_unsigned((prefix != 0 ? 1 : 0) + num_digits +
-                              grouping.count_separators(num_digits));
+  static_assert(std::is_same<uint64_or_128_t<UInt>, UInt>::value, ""); 
+  int num_digits = 0;
+  auto buffer = memory_buffer();
+  switch (specs.type) {
+  case presentation_type::none:
+  case presentation_type::dec: {
+    num_digits = count_digits(value);
+    format_decimal<Char>(appender(buffer), value, num_digits);
+    break;
+  }
+  case presentation_type::hex_lower:
+  case presentation_type::hex_upper: {
+    bool upper = specs.type == presentation_type::hex_upper;
+    if (specs.alt)
+      prefix_append(prefix, unsigned(upper ? 'X' : 'x') << 8 | '0');
+    num_digits = count_digits<4>(value);
+    format_uint<4,Char>(appender(buffer), value, num_digits, upper);
+    break;
+  }
+  case presentation_type::bin_lower:
+  case presentation_type::bin_upper: {
+    bool upper = specs.type == presentation_type::bin_upper;
+    if (specs.alt)
+      prefix_append(prefix, unsigned(upper ? 'B' : 'b') << 8 | '0');
+    num_digits = count_digits<1>(value);
+    format_uint<1,Char>(appender(buffer), value, num_digits);
+    break;
+  }
+  case presentation_type::oct: {
+    num_digits = count_digits<3>(value);
+    // Octal prefix '0' is counted as a digit, so only add it if precision
+    // is not greater than the number of digits.
+    if (specs.alt && specs.precision <= num_digits && value != 0)
+      prefix_append(prefix, '0');
+    format_uint<3,Char>(appender(buffer), value, num_digits);
+    break;
+  }
+  case presentation_type::chr:
+    return write_char(out, static_cast<Char>(value), specs);
+  default:
+    throw_format_error("invalid format specifier");
+  }
+
+  unsigned size = (prefix != 0 ? prefix >> 24 : 0) + to_unsigned(num_digits) +
+                              to_unsigned(grouping.count_separators(num_digits));
   return write_padded<align::right>(
       out, specs, size, size, [&](reserve_iterator<OutputIt> it) {
-        if (prefix != 0) {
-          char sign = static_cast<char>(prefix);
-          *it++ = static_cast<Char>(sign);
-        }
-        return grouping.apply(it, string_view(digits, to_unsigned(num_digits)));
+        for (unsigned p = prefix & 0xffffff; p  != 0; p >>= 8)
+          *it++ = static_cast<Char>(p & 0xff); 
+        return grouping.apply(it, string_view(buffer.data(), buffer.size()));
       });
 }
 
@@ -2141,11 +2183,6 @@ template <typename OutputIt, typename Char>
 inline auto write_loc(OutputIt, loc_value, const format_specs<Char>&,
                       locale_ref) -> bool {
   return false;
-}
-
-FMT_CONSTEXPR inline void prefix_append(unsigned& prefix, unsigned value) {
-  prefix |= prefix != 0 ? value << 8 : value;
-  prefix += (1u + (value > 0xff ? 1 : 0)) << 24;
 }
 
 template <typename UInt> struct write_int_arg {
