@@ -471,6 +471,39 @@ FMT_INLINE std::basic_string<typename S::char_type> format(const S&,
   }
 }
 
+#if FMT_OUTPUT_RANGES
+template <typename Output, typename S, typename... Args,
+          FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
+FMT_CONSTEXPR auto format_to(Output&& out, const S&, Args&&... args) {
+  constexpr auto compiled = detail::compile<Args...>(S());
+  if constexpr (std::is_same<remove_cvref_t<decltype(compiled)>,
+                             detail::unknown_format>()) {
+    return fmt::format_to(
+      std::forward<Output>(out),
+      static_cast<basic_string_view<typename S::char_type>>(S()),
+      std::forward<Args>(args)...);
+  } else {
+    return fmt::format_to(std::forward<Output>(out),
+      compiled, std::forward<Args>(args)...);
+  }
+}
+
+template <typename Output, typename S, typename... Args,
+          FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
+FMT_CONSTEXPR auto format_into(Output&& out, const S&, Args&&... args) {
+  constexpr auto compiled = detail::compile<Args...>(S());
+  if constexpr (std::is_same<remove_cvref_t<decltype(compiled)>,
+                             detail::unknown_format>()) {
+    return fmt::format_into(
+      std::forward<Output>(out),
+      static_cast<basic_string_view<typename S::char_type>>(S()),
+      std::forward<Args>(args)...);
+  } else {
+    return fmt::format_into(std::forward<Output>(out),
+      compiled, std::forward<Args>(args)...);
+  }
+}
+#else
 template <typename OutputIt, typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
 FMT_CONSTEXPR OutputIt format_to(OutputIt out, const S&, Args&&... args) {
@@ -484,6 +517,7 @@ FMT_CONSTEXPR OutputIt format_to(OutputIt out, const S&, Args&&... args) {
     return fmt::format_to(out, compiled, std::forward<Args>(args)...);
   }
 }
+#endif
 #endif
 
 template <typename OutputIt, typename S, typename... Args,

@@ -16,6 +16,9 @@
 #include <memory>  // std::addressof
 #include <string>
 #include <type_traits>
+#if defined(__cpp_lib_ranges) && defined(__cpp_if_constexpr)
+#  include <ranges>
+#endif
 
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
 #define FMT_VERSION 100102
@@ -138,9 +141,10 @@
 #  endif
 #endif
 
-// Only on if we know we can do the begin/end range checking properly
+// Only on if we know we can do the begin/end range checking properly,
+// that we have `if constexpr`, and that we have a std::ranges::subrange type
 #ifndef FMT_OUTPUT_RANGES
-#  if FMT_RANGE_CHECKS
+#  if FMT_RANGE_CHECKS && defined(__cpp_if_constexpr) && defined( __cpp_lib_ranges)
 #    define FMT_OUTPUT_RANGES 1
 #  else
 #    define FMT_OUTPUT_RANGES 0
@@ -809,8 +813,8 @@ inline auto get_container(std::back_insert_iterator<Container> it)
   return *accessor(it).container;
 }
 
-template <typename Char, typename InputIt, typename OutputIt>
-FMT_CONSTEXPR auto copy_str(InputIt begin, InputIt end, OutputIt out)
+template <typename Char, typename InputIt, typename InputSen, typename OutputIt>
+FMT_CONSTEXPR auto copy_str(InputIt begin, InputSen end, OutputIt out)
     -> OutputIt {
   while (begin != end) *out++ = static_cast<Char>(*begin++);
   return out;
@@ -818,13 +822,43 @@ FMT_CONSTEXPR auto copy_str(InputIt begin, InputIt end, OutputIt out)
 
 template <typename Char, typename T, typename U,
           FMT_ENABLE_IF(
-              std::is_same<remove_const_t<T>, U>::value&& is_char<U>::value)>
+              std::is_same<remove_const_t<T>, U>::value && is_char<U>::value)>
 FMT_CONSTEXPR auto copy_str(T* begin, T* end, U* out) -> U* {
-  if (is_constant_evaluated()) return copy_str<Char, T*, U*>(begin, end, out);
+  if (is_constant_evaluated()) return copy_str<Char, T*, T*, U*>(begin, end, out);
   auto size = to_unsigned(end - begin);
   if (size > 0) memcpy(out, begin, size * sizeof(U));
   return out + size;
 }
+
+#if FMT_OUTPUT_RANGES
+
+template <typename Char, typename InputIt, typename InputSen, typename OutputIt, typename OutputSen>
+FMT_CONSTEXPR auto copy_str(InputIt begin, InputSen end, OutputIt out, OutputSen out_end)
+    -> std::ranges::subrange<OutputIt, OutputSen> {
+  if constexpr (std::is_same<OutputSen, std::unreachable_sentinel_t>::value) {
+    // minor speed optimization
+    auto out_current = copy_str<Char>(std::move(begin), std::move(end), std::move(out));
+    return { std::move(out_current), std::move(out_end) };
+  }
+  else {
+    while (begin != end && out != out_end) *out++ = static_cast<Char>(*begin++);
+    return { std::move(out), std::move(out_end) };
+  }
+}
+
+template <typename Char, typename T, typename U,
+          FMT_ENABLE_IF(
+              std::is_same<remove_const_t<T>, U>::value && is_char<U>::value)>
+FMT_CONSTEXPR auto copy_str(T* begin, T* end, U* out, U* out_end) -> std::ranges::subrange<U*, U*> {
+  if (is_constant_evaluated()) return copy_str<Char, T*, U*>(begin, end, out, out_end);
+  auto size = to_unsigned(end - begin);
+  auto out_size = to_unsigned(out_end - out);
+  if (size > out_size) size = out_size;
+  if (size > 0) memcpy(out, begin, size * sizeof(U));
+  return {  out + size, out_end };
+}
+
+#endif
 
 /**
   \rst
@@ -970,6 +1004,114 @@ class iterator_buffer final : public Traits, public buffer<T> {
   auto count() const -> size_t { return Traits::count() + this->size(); }
 };
 
+#if FMT_OUTPUT_RANGES
+// A buffer that writes to an output range when flushed.
+template <typename Output, typename T, typename Traits = buffer_traits>
+class range_buffer final : public Traits, public buffer<T> {
+ private:
+  using Subrange_ = std::ranges::subrange<std::ranges::iterator_t<Output>, std::ranges::sentinel_t<Output>>;
+  Subrange_ out_;
+  enum { buffer_size = 256 };
+  T data_[buffer_size];
+
+ protected:
+  FMT_CONSTEXPR20 void grow(size_t) override {
+    if (this->size() == buffer_size) flush();
+  }
+
+  void flush() {
+    if (std::ranges::empty(out_))
+      return;
+    auto size = this->size();
+    this->clear();
+    auto it_end = copy_str<T>(data_, data_ + this->limit(size),
+                              std::ranges::begin(out_), std::ranges::end(out_));
+    out_ = Subrange_(std::move(it_end).begin(), std::move(it_end).end());
+  }
+
+ public:
+  template <typename Out>
+  explicit range_buffer(Out&& out, size_t n = buffer_size)
+      : Traits(n), buffer<T>(data_, 0, buffer_size), out_(std::forward<Out>(out)) {}
+  range_buffer(range_buffer&& other)
+      : Traits(other), buffer<T>(data_, 0, buffer_size), out_(std::move(other.out_)) {}
+  ~range_buffer() { flush(); }
+
+  auto out() -> Subrange_ {
+    flush();
+    return out_;
+  }
+  auto count() const -> size_t { return Traits::count() + this->size(); }
+};
+
+template <typename Output, typename T, typename Traits>
+class range_buffer<std::back_insert_iterator<Output>, T, Traits> final : public Traits, public buffer<T> {
+ private:
+  using Subrange_ = std::ranges::subrange<std::ranges::iterator_t<Output>, std::ranges::sentinel_t<Output>>;
+  Output& out_;
+  enum { buffer_size = 256 };
+  T data_[buffer_size];
+
+ protected:
+  FMT_CONSTEXPR20 void grow(size_t) override {
+    if (this->size() == buffer_size) flush();
+  }
+
+  void flush() {
+    auto size = this->size();
+    this->clear();
+    copy_str<T>(data_, data_ + this->limit(size), std::back_inserter(out_));
+  }
+
+ public:
+  explicit range_buffer(Output& out, size_t n = buffer_size)
+      : Traits(n), buffer<T>(data_, 0, buffer_size), out_(out) {}
+  range_buffer(range_buffer&& other)
+      : Traits(other), buffer<T>(data_, 0, buffer_size), out_(std::move(other.out_)) {}
+  ~range_buffer() { flush(); }
+
+  auto out() -> Subrange_ {
+    flush();
+    return Subrange_(out_.end(), out_.end());
+  }
+  auto count() const -> size_t { return Traits::count() + this->size(); }
+};
+
+template <typename Output, typename T, typename Traits>
+class range_buffer<std::insert_iterator<Output>, T, Traits> final : public Traits, public buffer<T> {
+ private:
+  using Subrange_ = std::ranges::subrange<std::ranges::iterator_t<Output>, std::ranges::sentinel_t<Output>>;
+  Output& out_;
+  enum { buffer_size = 256 };
+  T data_[buffer_size];
+
+ protected:
+  FMT_CONSTEXPR20 void grow(size_t) override {
+    if (this->size() == buffer_size) flush();
+  }
+
+  void flush() {
+    auto size = this->size();
+    this->clear();
+    copy_str<T>(data_, data_ + this->limit(size), std::inserter(out_, out_.end()));
+  }
+
+ public:
+  explicit range_buffer(Output& out, size_t n = buffer_size)
+      : Traits(n), buffer<T>(data_, 0, buffer_size), out_(out) {}
+  range_buffer(range_buffer&& other)
+      : Traits(other), buffer<T>(data_, 0, buffer_size), out_(std::move(other.out_)) {}
+  ~range_buffer() { flush(); }
+
+  auto out() -> Subrange_ {
+    flush();
+    return Subrange_(out_.end(), out_.end());
+  }
+  auto count() const -> size_t { return Traits::count() + this->size(); }
+};
+#endif
+
+// A buffer that writes to an output iterator when flushed.
 template <typename T>
 class iterator_buffer<T*, T, fixed_buffer_traits> final
     : public fixed_buffer_traits,
@@ -1148,26 +1290,6 @@ constexpr auto has_const_formatter() -> bool {
 template <typename T>
 using buffer_appender = conditional_t<std::is_same<T, char>::value, appender,
                                       std::back_insert_iterator<buffer<T>>>;
-
-// Maps an output iterator to a buffer.
-template <typename T, typename OutputIt>
-auto get_buffer(OutputIt out) -> iterator_buffer<OutputIt, T> {
-  return iterator_buffer<OutputIt, T>(out);
-}
-template <typename T, typename Buf,
-          FMT_ENABLE_IF(std::is_base_of<buffer<char>, Buf>::value)>
-auto get_buffer(std::back_insert_iterator<Buf> out) -> buffer<char>& {
-  return get_container(out);
-}
-
-template <typename Buf, typename OutputIt>
-FMT_INLINE auto get_iterator(Buf& buf, OutputIt) -> decltype(buf.out()) {
-  return buf.out();
-}
-template <typename T, typename OutputIt>
-auto get_iterator(buffer<T>&, OutputIt out) -> OutputIt {
-  return out;
-}
 
 struct view {};
 
@@ -1643,6 +1765,95 @@ template <typename Container>
 struct is_back_insert_iterator<std::back_insert_iterator<Container>>
     : std::true_type {};
 
+#if FMT_OUTPUT_RANGES
+template <typename Container, typename T, typename Enable = void>
+struct is_container_push_backable : std::false_type {};
+
+template <typename Container, typename T>
+struct is_container_push_backable<
+  Container, T,
+  void_t<decltype(std::declval<Container>().push_back(std::declval<T>()))>
+> : std::true_type {};
+
+template <typename Container, typename T, typename Enable = void>
+struct is_container_insertable : std::false_type {};
+
+template <typename Container, typename T>
+struct is_container_insertable<
+  Container, T,
+  void_t<decltype(std::declval<Container>().insert(
+      std::declval<std::ranges::iterator_t<Container>>(),
+      std::declval<T>()
+  ))>
+> : std::integral_constant<bool,
+  std::is_lvalue_reference<Container>::value
+> {};
+#endif
+
+// Maps an output iterator to a buffer.
+#if FMT_OUTPUT_RANGES
+template <typename T, typename Output>
+decltype(auto) get_buffer(Output&& out) {
+  if constexpr (std::ranges::output_range<Output, T&>) {
+    return range_buffer<remove_cvref_t<Output>, T>(std::forward<Output>(out));
+  }
+  else if constexpr (is_back_insert_iterator<remove_cvref_t<Output>>::value) {
+    using Container_ = typename remove_cvref_t<Output>::container_type;
+    if constexpr (std::is_base_of<buffer<char>, Container_>::value) {
+      return get_container(out);
+    }
+    else {
+      return iterator_buffer<remove_cvref_t<Output>, T>(std::forward<Output>(out));
+    }
+  }
+  else {
+    return iterator_buffer<remove_cvref_t<Output>, T>(std::forward<Output>(out));
+  }
+}
+
+template <typename T, typename Output>
+decltype(auto) get_appendable_buffer(Output&& out) {
+  if constexpr (std::ranges::output_range<Output, T&>) {
+    if constexpr (is_container_insertable<Output, T>::value) {
+      // appendable container: give a back_inserter-based buffer
+      if constexpr (is_container_push_backable<Output, T>::value) {
+        using Iterator_ = std::back_insert_iterator<remove_cvref_t<Output>>;
+        return range_buffer<Iterator_, T>(std::forward<Output>(out));
+      }
+      else {
+        using Iterator_ = std::insert_iterator<remove_cvref_t<Output>>;
+        return range_buffer<Iterator_, T>(std::forward<Output>(out));
+      }
+    }
+    else {
+      return range_buffer<remove_cvref_t<Output>, T>(std::forward<Output>(out));
+    }
+  }
+  else {
+    return get_buffer<T>(std::forward<Output>(out));
+  }
+}
+#else
+template <typename T, typename OutputIt>
+auto get_buffer(OutputIt out) -> iterator_buffer<OutputIt, T> {
+  return iterator_buffer<OutputIt, T>(out);
+}
+template <typename T, typename Buf,
+          FMT_ENABLE_IF(std::is_base_of<buffer<char>, Buf>::value)>
+auto get_buffer(std::back_insert_iterator<Buf> out) -> buffer<char>& {
+  return get_container(out);
+}
+#endif
+
+template <typename Buf, typename Output>
+FMT_INLINE auto get_iterator(Buf& buf, Output&&) -> decltype(buf.out()) {
+  return buf.out();
+}
+template <typename T, typename Output>
+auto get_iterator(buffer<T>&, Output&& out) {
+  return out;
+}
+
 // A type-erased reference to an std::locale to avoid a heavy <locale> include.
 class locale_ref {
  private:
@@ -1716,14 +1927,38 @@ FMT_CONSTEXPR inline auto make_arg(T& val) -> basic_format_arg<Context> {
 
 template <typename Out, bool IsRange = is_range_<Out>::value>
 struct out_storage {
+  using iterator = remove_cvref_t<Out>;
+  using range = void;
   Out out_;
+
+  template <typename Value,
+    FMT_ENABLE_IF(!std::is_same<remove_cvref_t<Value>, out_storage>::value)> 
+  FMT_CONSTEXPR out_storage(Value&& value) : out_(std::forward<Value>(value)) {}
+
+  out_storage(out_storage&&) = default;
+  out_storage(const out_storage&) = default;
+  out_storage& operator=(out_storage&&) = default;
+  out_storage& operator=(const out_storage&) = default;
 };
 
+#if FMT_OUTPUT_RANGES
 template <typename OutRange>
 struct out_storage<OutRange, true> {
-  decltype(range_begin(std::declval<OutRange>())) out_;
-  decltype(range_end(std::declval<OutRange>())) out_last_;
+  using iterator = std::ranges::iterator_t<OutRange>;
+  using sentinel = std::ranges::sentinel_t<OutRange>;
+  using range = std::ranges::subrange<iterator, sentinel>;
+  range out_;
+
+  template <typename Value,
+    FMT_ENABLE_IF(!std::is_same<remove_cvref_t<Value>, out_storage>::value)> 
+  FMT_CONSTEXPR out_storage(Value&& value) : out_(std::forward<Value>(value)) {}
+
+  out_storage(out_storage&&) = default;
+  out_storage(const out_storage&) = default;
+  out_storage& operator=(out_storage&&) = default;
+  out_storage& operator=(const out_storage&) = default;
 };
+#endif
 }  // namespace detail
 FMT_BEGIN_EXPORT
 
@@ -1834,12 +2069,18 @@ FMT_CONSTEXPR FMT_INLINE auto visit_format_arg(
 // Formatting context.
 template <typename OutputIt, typename Char> class basic_format_context {
  private:
-  OutputIt out_;
+  using Storage_ = detail::out_storage<OutputIt>;
+  Storage_ out_storage_;
   basic_format_args<basic_format_context> args_;
   detail::locale_ref loc_;
+  using ItOrRange_ = conditional_t<
+    std::is_void<typename Storage_::range>::value,
+    typename Storage_::iterator,
+    typename Storage_::range>;
 
  public:
-  using iterator = OutputIt;
+  using iterator = typename Storage_::iterator;
+  using range = typename Storage_::range;
   using format_arg = basic_format_arg<basic_format_context>;
   using format_args = basic_format_args<basic_format_context>;
   using parse_context_type = basic_format_parse_context<Char>;
@@ -1857,7 +2098,7 @@ template <typename OutputIt, typename Char> class basic_format_context {
    */
   constexpr basic_format_context(OutputIt out, format_args ctx_args,
                                  detail::locale_ref loc = {})
-      : out_(out), args_(ctx_args), loc_(loc) {}
+      : out_storage_(out), args_(ctx_args), loc_(loc) {}
 
   constexpr auto arg(int id) const -> format_arg { return args_.get(id); }
   FMT_CONSTEXPR auto arg(basic_string_view<Char> name) -> format_arg {
@@ -1871,12 +2112,17 @@ template <typename OutputIt, typename Char> class basic_format_context {
   FMT_CONSTEXPR auto error_handler() -> detail::error_handler { return {}; }
   void on_error(const char* message) { error_handler().on_error(message); }
 
-  // Returns an iterator to the beginning of the output range.
-  FMT_CONSTEXPR auto out() -> iterator { return out_; }
+  // Returns an iterator to the beginning of the
+  // output range, or the whole output range.
+  FMT_CONSTEXPR auto out() -> ItOrRange_ { return out_storage_.out_; }
 
   // Advances the begin iterator to ``it``.
-  void advance_to(iterator it) {
-    if (!detail::is_back_insert_iterator<iterator>()) out_ = it;
+  void advance_to(ItOrRange_ it_or_range) {
+#if FMT_OUTPUT_RANGES
+    if (!detail::is_back_insert_iterator<iterator>()) out_storage_.out_ = std::move(it_or_range);
+#else
+    if (!detail::is_back_insert_iterator<iterator>()) out_storage_.out_ = it_or_range;
+#endif
   }
 
   FMT_CONSTEXPR auto locale() -> detail::locale_ref { return loc_; }
@@ -2930,6 +3176,30 @@ FMT_NODISCARD FMT_INLINE auto format(format_string<T...> fmt, T&&... args)
   return vformat(fmt, fmt::make_format_args(args...));
 }
 
+#if FMT_OUTPUT_RANGES
+/** Formats a string and writes the output to ``out``, appending
+    rather than directly writing if it is a typical insertable
+    contianer type. */
+template <typename Output,
+          FMT_ENABLE_IF(std::ranges::output_range<Output, char>
+            || std::output_iterator<remove_cvref_t<Output>, char>)>
+auto vformat_to(Output&& out, string_view fmt, format_args args) {
+  auto&& buf = detail::get_appendable_buffer<char>(std::forward<Output>(out));
+  detail::vformat_to(buf, fmt, args, {});
+  return detail::get_iterator(buf, out);
+}
+
+/** Formats a string and writes the output to ``out``, writing
+    directly into the range [begin, end). */
+template <typename Output,
+          FMT_ENABLE_IF(std::ranges::output_range<Output, char>
+            || std::output_iterator<remove_cvref_t<Output>, char>)>
+auto vformat_into(Output&& out, string_view fmt, format_args args) {
+  auto&& buf = detail::get_buffer<char>(std::forward<Output>(out));
+  detail::vformat_to(buf, fmt, args, {});
+  return detail::get_iterator(buf, out);
+}
+#else
 /** Formats a string and writes the output to ``out``. */
 template <typename OutputIt,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
@@ -2938,7 +3208,54 @@ auto vformat_to(OutputIt out, string_view fmt, format_args args) -> OutputIt {
   detail::vformat_to(buf, fmt, args, {});
   return detail::get_iterator(buf, out);
 }
+#endif
 
+#if FMT_OUTPUT_RANGES
+/**
+ \rst
+ Formats ``args`` according to specifications in ``fmt``, writes the result to
+ the output range or iterator ``out`` and returns the subrange past the end of
+ the output range. `format_to` will write to the end of a container (if it is an
+ insertable container). `format_to` does not append a terminating null character.
+
+ **Example**::
+
+   auto out = std::vector<char>();
+   fmt::format_to(out, "{}", 42);
+
+ **Example**::
+
+   auto out = std::vector<char>();
+   fmt::format_to(std::back_inserter(out), "{}", 42);
+ \endrst
+ */
+template <typename Output, typename... T,
+          FMT_ENABLE_IF(std::ranges::output_range<Output, char>
+            || std::output_iterator<remove_cvref_t<Output>, char>)>
+FMT_INLINE auto format_to(Output&& out, format_string<T...> fmt, T&&... args) {
+  return vformat_to(std::forward<Output>(out), fmt, fmt::make_format_args(args...));
+}
+
+/**
+ \rst
+ Formats ``args`` according to specifications in ``fmt``, writes the result into
+ the output range or iterator ``out`` and returns the subrange past the end of
+ the output range. `format_into` does not append into a contianer and only writes
+ into it. `format_into` does not append or write a terminating null character.
+
+ **Example**::
+
+   auto out = std::vector<char>(2, '\0');
+   fmt::format_into(out, "{}", 42);
+ \endrst
+ */
+template <typename Output, typename... T,
+          FMT_ENABLE_IF(std::ranges::output_range<Output, char>
+            || std::output_iterator<remove_cvref_t<Output>, char>)>
+FMT_INLINE auto format_into(Output&& out, format_string<T...> fmt, T&&... args) {
+  return vformat_into(std::forward<Output>(out), fmt, fmt::make_format_args(args...));
+}
+#else
 /**
  \rst
  Formats ``args`` according to specifications in ``fmt``, writes the result to
@@ -2957,6 +3274,7 @@ FMT_INLINE auto format_to(OutputIt out, format_string<T...> fmt, T&&... args)
     -> OutputIt {
   return vformat_to(out, fmt, fmt::make_format_args(args...));
 }
+#endif
 
 template <typename OutputIt> struct format_to_n_result {
   /** Iterator past the end of the output range. */

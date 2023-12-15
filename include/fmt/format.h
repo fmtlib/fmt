@@ -2326,7 +2326,7 @@ class counting_iterator {
   FMT_UNCHECKED_ITERATOR(counting_iterator);
 
   struct value_type {
-    template <typename T> FMT_CONSTEXPR void operator=(const T&) {}
+    template <typename T> FMT_CONSTEXPR void operator=(const T&) const {}
   };
 
   FMT_CONSTEXPR counting_iterator() : count_(0) {}
@@ -4541,6 +4541,51 @@ inline auto format(const Locale& loc, format_string<T...> fmt, T&&... args)
   return fmt::vformat(loc, string_view(fmt), fmt::make_format_args(args...));
 }
 
+#if FMT_OUTPUT_RANGES
+template <typename Output, typename Locale,
+          FMT_ENABLE_IF(
+            (std::ranges::output_range<Output, char>
+            || std::output_iterator<Output, char>)
+            && detail::is_locale<Locale>::value)>
+auto vformat_to(Output&& out, const Locale& loc, string_view fmt,
+                format_args args) {
+  auto&& buf = detail::get_appendable_buffer<char>(std::forward<Output>(out));
+  detail::vformat_to(buf, fmt, args, detail::locale_ref(loc));
+  return detail::get_iterator(buf, out);
+}
+
+template <typename Output, typename Locale,
+          FMT_ENABLE_IF(
+            (std::ranges::output_range<Output, char>
+            || std::output_iterator<Output, char>)
+            && detail::is_locale<Locale>::value)>
+auto vformat_into(Output&& out, const Locale& loc, string_view fmt,
+                format_args args) {
+  auto&& buf = detail::get_buffer<char>(std::forward<Output>(out));
+  detail::vformat_to(buf, fmt, args, detail::locale_ref(loc));
+  return detail::get_iterator(buf, out);
+}
+
+template <typename Output, typename Locale, typename... T,
+          FMT_ENABLE_IF(
+            (std::ranges::output_range<Output, char>
+            || std::output_iterator<remove_cvref_t<Output>, char>)
+            && detail::is_locale<Locale>::value)>
+FMT_INLINE auto format_to(Output&& out, const Locale& loc,
+                          format_string<T...> fmt, T&&... args) {
+  return vformat_to(std::forward<Output>(out), loc, fmt, fmt::make_format_args(args...));
+}
+
+template <typename Output, typename Locale, typename... T,
+          FMT_ENABLE_IF(
+            (std::ranges::output_range<Output, char>
+            || std::output_iterator<remove_cvref_t<Output>, char>)
+            && detail::is_locale<Locale>::value)>
+FMT_INLINE auto format_into(Output&& out, const Locale& loc,
+                          format_string<T...> fmt, T&&... args) {
+  return vformat_into(std::forward<Output>(out), loc, fmt, fmt::make_format_args(args...));
+}
+#else
 template <typename OutputIt, typename Locale,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value&&
                             detail::is_locale<Locale>::value)>
@@ -4559,6 +4604,7 @@ FMT_INLINE auto format_to(OutputIt out, const Locale& loc,
                           format_string<T...> fmt, T&&... args) -> OutputIt {
   return vformat_to(out, loc, fmt, fmt::make_format_args(args...));
 }
+#endif
 
 template <typename Locale, typename... T,
           FMT_ENABLE_IF(detail::is_locale<Locale>::value)>
