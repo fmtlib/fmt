@@ -144,7 +144,7 @@ TEST(output_range_vector_char_test, format_to) {
   EXPECT_EQ("abc", fmt::string_view(buffer.data(), 3));
   result = fmt::format_to(buffer, "x{}y", "abc");
   EXPECT_EQ(buffer.begin() + 8, result.begin());
-  EXPECT_EQ(buffer.begin() + buffer.size(), result.begin());
+  EXPECT_EQ(buffer.begin() + (std::ptrdiff_t)buffer.size(), result.begin());
   EXPECT_EQ(buffer.end(), result.begin());
   EXPECT_EQ("abcxabcy", fmt::string_view(buffer.data(), 8));
 }
@@ -156,7 +156,7 @@ TEST(output_range_basic_string_char_test, format_to) {
   EXPECT_EQ("abc", buffer);
   result = fmt::format_to(buffer, "x{}y", "abc");
   EXPECT_EQ(buffer.begin() + 8, result.begin());
-  EXPECT_EQ(buffer.begin() + buffer.size(), result.begin());
+  EXPECT_EQ(buffer.begin() + (std::ptrdiff_t)buffer.size(), result.begin());
   EXPECT_EQ(buffer.end(), result.begin());
   EXPECT_EQ("abcxabcy", buffer);
 }
@@ -166,12 +166,12 @@ TEST(output_range_list_char_test, format_to) {
   auto result = fmt::format_to(buffer, "{}", "abc");
   EXPECT_EQ(buffer.end(), result.begin());
   EXPECT_EQ(std::ranges::next(buffer.begin(), 3), result.begin());
-  EXPECT_EQ(std::ranges::next(buffer.begin(), buffer.size()), result.begin());
+  EXPECT_EQ(std::ranges::next(buffer.begin(), (std::ptrdiff_t)buffer.size()), result.begin());
   EXPECT_TRUE(std::ranges::equal(fmt::string_view("abc"), buffer));
   result = fmt::format_to(buffer, "x{}y", "abc");
   EXPECT_EQ(buffer.end(), result.begin());
   EXPECT_EQ(std::ranges::next(buffer.begin(), 8), result.begin());
-  EXPECT_EQ(std::ranges::next(buffer.begin(), buffer.size()), result.begin());
+  EXPECT_EQ(std::ranges::next(buffer.begin(), (std::ptrdiff_t)buffer.size()), result.begin());
   EXPECT_TRUE(std::ranges::equal(fmt::string_view("abcxabcy"), buffer));
 }
 
@@ -180,12 +180,12 @@ TEST(output_range_deque_char_test, format_to) {
   auto result = fmt::format_to(buffer, "{}", "abc");
   EXPECT_EQ(buffer.end(), result.begin());
   EXPECT_EQ(std::ranges::next(buffer.begin(), 3), result.begin());
-  EXPECT_EQ(std::ranges::next(buffer.begin(), buffer.size()), result.begin());
+  EXPECT_EQ(std::ranges::next(buffer.begin(), (std::ptrdiff_t)buffer.size()), result.begin());
   EXPECT_TRUE(std::ranges::equal(fmt::string_view("abc"), buffer));
   result = fmt::format_to(buffer, "x{}y", "abc");
   EXPECT_EQ(buffer.end(), result.begin());
   EXPECT_EQ(std::ranges::next(buffer.begin(), 8), result.begin());
-  EXPECT_EQ(std::ranges::next(buffer.begin(), buffer.size()), result.begin());
+  EXPECT_EQ(std::ranges::next(buffer.begin(), (std::ptrdiff_t)buffer.size()), result.begin());
   EXPECT_TRUE(std::ranges::equal(fmt::string_view("abcxabcy"), buffer));
 }
 
