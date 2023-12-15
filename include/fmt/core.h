@@ -144,7 +144,11 @@
 // Only on if we know we can do the begin/end range checking properly,
 // that we have `if constexpr`, and that we have a std::ranges::subrange type
 #ifndef FMT_OUTPUT_RANGES
-#  if FMT_RANGE_CHECKS && defined(__cpp_if_constexpr) && defined( __cpp_lib_ranges)
+#  if FMT_RANGE_CHECKS \
+      && defined(__cpp_if_constexpr) && (__cpp_if_constexpr >= 201606L)\
+      && defined(__cpp_lib_ranges) && (__cpp_lib_ranges >=  201911L )\
+      && defined(__cpp_concepts) && (__cpp_concepts >= 202002L) \
+      && defined(__cpp_lib_concepts) && (__cpp_lib_concepts >= 201907L)
 #    define FMT_OUTPUT_RANGES 1
 #  else
 #    define FMT_OUTPUT_RANGES 0
