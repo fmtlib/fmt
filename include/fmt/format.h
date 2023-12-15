@@ -1063,7 +1063,7 @@ namespace detail_exported {
 #if FMT_USE_NONTYPE_TEMPLATE_ARGS
 template <typename Char, size_t N> struct fixed_string {
   constexpr fixed_string(const Char (&str)[N]) {
-    detail::copy_str<Char, const Char*, Char*>(static_cast<const Char*>(str),
+    detail::copy_str<Char, const Char*, const Char*, Char*>(static_cast<const Char*>(str),
                                                str + N, data);
   }
   Char data[N] = {};
