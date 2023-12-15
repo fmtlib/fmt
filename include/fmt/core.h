@@ -854,7 +854,7 @@ template <typename Char, typename T, typename U,
           FMT_ENABLE_IF(
               std::is_same<remove_const_t<T>, U>::value && is_char<U>::value)>
 FMT_CONSTEXPR auto copy_str(T* begin, T* end, U* out, U* out_end) -> std::ranges::subrange<U*, U*> {
-  if (is_constant_evaluated()) return copy_str<Char, T*, U*>(begin, end, out, out_end);
+  if (is_constant_evaluated()) return copy_str<Char, T*,T*, U*, U*>(begin, end, out, out_end);
   auto size = to_unsigned(end - begin);
   auto out_size = to_unsigned(out_end - out);
   if (size > out_size) size = out_size;
