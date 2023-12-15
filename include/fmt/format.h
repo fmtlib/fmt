@@ -1064,7 +1064,7 @@ namespace detail_exported {
 template <typename Char, size_t N> struct fixed_string {
   constexpr fixed_string(const Char (&str)[N]) {
     detail::copy_str<Char, const Char*, const Char*, Char*>(static_cast<const Char*>(str),
-                                               str + N, data);
+                                               static_cast<const Char*>(str + N), data);
   }
   Char data[N] = {};
 };
