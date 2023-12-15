@@ -1833,6 +1833,15 @@ decltype(auto) get_appendable_buffer(Output&& out) {
     return get_buffer<T>(std::forward<Output>(out));
   }
 }
+
+template <typename Buf, typename Output>
+FMT_INLINE auto get_iterator(Buf& buf, Output&&) -> decltype(buf.out()) {
+  return buf.out();
+}
+template <typename T, typename Output>
+auto get_iterator(buffer<T>&, Output&& out) {
+  return out;
+}
 #else
 template <typename T, typename OutputIt>
 auto get_buffer(OutputIt out) -> iterator_buffer<OutputIt, T> {
@@ -1843,16 +1852,16 @@ template <typename T, typename Buf,
 auto get_buffer(std::back_insert_iterator<Buf> out) -> buffer<char>& {
   return get_container(out);
 }
-#endif
 
-template <typename Buf, typename Output>
-FMT_INLINE auto get_iterator(Buf& buf, Output&&) -> decltype(buf.out()) {
+template <typename Buf, typename OutputIt>
+FMT_INLINE auto get_iterator(Buf& buf, OutputIt) -> decltype(buf.out()) {
   return buf.out();
 }
-template <typename T, typename Output>
-auto get_iterator(buffer<T>&, Output&& out) {
+template <typename T, typename OutputIt>
+auto get_iterator(buffer<T>&, OutputIt out) -> OutputIt {
   return out;
 }
+#endif
 
 // A type-erased reference to an std::locale to avoid a heavy <locale> include.
 class locale_ref {
