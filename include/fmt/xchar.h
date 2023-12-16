@@ -216,13 +216,14 @@ inline auto vformat_into(
   return detail::get_iterator(buf, out);
 }
 
-template <
-    typename Output, typename Locale, typename S, typename... T,
-    typename Char = char_t<S>,
-    bool enable = (std::ranges::output_range<Output, Char> ||
-                   std::output_iterator<remove_cvref_t<Output>, Char>)&&detail::
-        is_locale<Locale>::value&& detail::is_exotic_char<Char>::value,
-    FMT_ENABLE_IF(enable)>
+template <typename Output, typename Locale, typename S, typename... T,
+          typename Char = char_t<S>,
+          bool enable =
+              (std::ranges::output_range<Output, Char> ||
+               std::output_iterator<remove_cvref_t<Output>,
+                                    Char>)&&detail::is_locale<Locale>::value &&
+              detail::is_exotic_char<Char>::value,
+          FMT_ENABLE_IF(enable)>
 inline auto format_to(Output&& out, const Locale& loc, const S& format_str,
                       T&&... args) {
   return vformat_to(std::forward<Output>(out), loc,
@@ -230,13 +231,14 @@ inline auto format_to(Output&& out, const Locale& loc, const S& format_str,
                     fmt::make_format_args<buffer_context<Char>>(args...));
 }
 
-template <
-    typename Output, typename Locale, typename S, typename... T,
-    typename Char = char_t<S>,
-    bool enable = (std::ranges::output_range<Output, Char> ||
-                   std::output_iterator<remove_cvref_t<Output>, Char>)&&detail::
-        is_locale<Locale>::value&& detail::is_exotic_char<Char>::value,
-    FMT_ENABLE_IF(enable)>
+template <typename Output, typename Locale, typename S, typename... T,
+          typename Char = char_t<S>,
+          bool enable =
+              (std::ranges::output_range<Output, Char> ||
+               std::output_iterator<remove_cvref_t<Output>,
+                                    Char>)&&detail::is_locale<Locale>::value &&
+              detail::is_exotic_char<Char>::value,
+          FMT_ENABLE_IF(enable)>
 inline auto format_into(Output&& out, const Locale& loc, const S& format_str,
                         T&&... args) {
   return vformat_into(std::forward<Output>(out), loc,
@@ -278,11 +280,11 @@ inline auto vformat_to(
   return detail::get_iterator(buf, out);
 }
 
-template <
-    typename OutputIt, typename Locale, typename S, typename... T,
-    typename Char = char_t<S>,
-    bool enable = detail::is_output_iterator<OutputIt, Char>::value&&
-        detail::is_locale<Locale>::value&& detail::is_exotic_char<Char>::value>
+template <typename OutputIt, typename Locale, typename S, typename... T,
+          typename Char = char_t<S>,
+          bool enable = detail::is_output_iterator<OutputIt, Char>::value &&
+                        detail::is_locale<Locale>::value &&
+                        detail::is_exotic_char<Char>::value>
 inline auto format_to(OutputIt out, const Locale& loc, const S& format_str,
                       T&&... args) ->
     typename std::enable_if<enable, OutputIt>::type {
