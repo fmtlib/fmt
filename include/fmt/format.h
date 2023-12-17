@@ -2123,7 +2123,7 @@ template <typename OutputIt, typename UInt, typename Char>
 auto write_int(OutputIt out, UInt value, unsigned prefix,
                const format_specs<Char>& specs,
                const digit_grouping<Char>& grouping) -> OutputIt {
-  static_assert(std::is_same<uint64_or_128_t<UInt>, UInt>::value, ""); 
+  static_assert(std::is_same<uint64_or_128_t<UInt>, UInt>::value, "");
   int num_digits = 0;
   auto buffer = memory_buffer();
   switch (specs.type) {
@@ -2139,7 +2139,7 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
     if (specs.alt)
       prefix_append(prefix, unsigned(upper ? 'X' : 'x') << 8 | '0');
     num_digits = count_digits<4>(value);
-    format_uint<4,Char>(appender(buffer), value, num_digits, upper);
+    format_uint<4, Char>(appender(buffer), value, num_digits, upper);
     break;
   }
   case presentation_type::bin_lower:
@@ -2148,7 +2148,7 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
     if (specs.alt)
       prefix_append(prefix, unsigned(upper ? 'B' : 'b') << 8 | '0');
     num_digits = count_digits<1>(value);
-    format_uint<1,Char>(appender(buffer), value, num_digits);
+    format_uint<1, Char>(appender(buffer), value, num_digits);
     break;
   }
   case presentation_type::oct: {
@@ -2157,7 +2157,7 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
     // is not greater than the number of digits.
     if (specs.alt && specs.precision <= num_digits && value != 0)
       prefix_append(prefix, '0');
-    format_uint<3,Char>(appender(buffer), value, num_digits);
+    format_uint<3, Char>(appender(buffer), value, num_digits);
     break;
   }
   case presentation_type::chr:
@@ -2167,11 +2167,11 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
   }
 
   unsigned size = (prefix != 0 ? prefix >> 24 : 0) + to_unsigned(num_digits) +
-                              to_unsigned(grouping.count_separators(num_digits));
+                  to_unsigned(grouping.count_separators(num_digits));
   return write_padded<align::right>(
       out, specs, size, size, [&](reserve_iterator<OutputIt> it) {
-        for (unsigned p = prefix & 0xffffff; p  != 0; p >>= 8)
-          *it++ = static_cast<Char>(p & 0xff); 
+        for (unsigned p = prefix & 0xffffff; p != 0; p >>= 8)
+          *it++ = static_cast<Char>(p & 0xff);
         return grouping.apply(it, string_view(buffer.data(), buffer.size()));
       });
 }
