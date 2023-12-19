@@ -499,20 +499,17 @@ TEST(format_test, arg_errors) {
   EXPECT_THROW_MSG((void)fmt::format(runtime("{00}"), 42), format_error,
                    "invalid format string");
 
-  char format_str[buffer_size];
-  safe_sprintf(format_str, "{%u", INT_MAX);
-  EXPECT_THROW_MSG((void)fmt::format(runtime(format_str)), format_error,
+  auto int_max = std::to_string(INT_MAX);
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{" + int_max)), format_error,
                    "invalid format string");
-  safe_sprintf(format_str, "{%u}", INT_MAX);
-  EXPECT_THROW_MSG((void)fmt::format(runtime(format_str)), format_error,
-                   "argument not found");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{" + int_max + "}")),
+                   format_error, "argument not found");
 
-  safe_sprintf(format_str, "{%u", INT_MAX + 1u);
-  EXPECT_THROW_MSG((void)fmt::format(runtime(format_str)), format_error,
+  auto int_maxer = std::to_string(INT_MAX + 1u);
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{" + int_maxer)), format_error,
                    "invalid format string");
-  safe_sprintf(format_str, "{%u}", INT_MAX + 1u);
-  EXPECT_THROW_MSG((void)fmt::format(runtime(format_str)), format_error,
-                   "argument not found");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{" + int_maxer + "}")),
+                   format_error, "argument not found");
 }
 
 template <int N> struct test_format {
