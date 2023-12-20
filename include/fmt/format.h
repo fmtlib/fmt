@@ -377,8 +377,8 @@ class uint128_fallback {
   constexpr uint128_fallback(uint64_t hi, uint64_t lo) : lo_(lo), hi_(hi) {}
   constexpr uint128_fallback(uint64_t value = 0) : lo_(value), hi_(0) {}
 
-  constexpr uint64_t high() const noexcept { return hi_; }
-  constexpr uint64_t low() const noexcept { return lo_; }
+  constexpr auto high() const noexcept -> uint64_t { return hi_; }
+  constexpr auto low() const noexcept -> uint64_t { return lo_; }
 
   template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
   constexpr explicit operator T() const {
@@ -454,7 +454,7 @@ class uint128_fallback {
     hi_ &= n.hi_;
   }
 
-  FMT_CONSTEXPR20 uint128_fallback& operator+=(uint64_t n) noexcept {
+  FMT_CONSTEXPR20 auto operator+=(uint64_t n) noexcept -> uint128_fallback& {
     if (is_constant_evaluated()) {
       lo_ += n;
       hi_ += (lo_ < n ? 1 : 0);
@@ -744,7 +744,7 @@ inline auto compute_width(basic_string_view<Char> s) -> size_t {
 }
 
 // Computes approximate display width of a UTF-8 string.
-FMT_CONSTEXPR inline size_t compute_width(string_view s) {
+FMT_CONSTEXPR inline auto compute_width(string_view s) -> size_t {
   size_t num_code_points = 0;
   // It is not a lambda for compatibility with C++14.
   struct count_code_points {
@@ -1042,7 +1042,7 @@ struct is_contiguous<basic_memory_buffer<T, SIZE, Allocator>> : std::true_type {
 
 FMT_END_EXPORT
 namespace detail {
-FMT_API bool write_console(int fd, string_view text);
+FMT_API auto write_console(int fd, string_view text) -> bool;
 FMT_API void print(std::FILE*, string_view);
 }  // namespace detail
 
@@ -1167,7 +1167,7 @@ using uint64_or_128_t = conditional_t<num_bits<T>() <= 64, uint64_t, uint128_t>;
       (factor) * 100000000, (factor) * 1000000000
 
 // Converts value in the range [0, 100) to a string.
-constexpr const char* digits2(size_t value) {
+constexpr auto digits2(size_t value) -> const char* {
   // GCC generates slightly better code when value is pointer-size.
   return &"0001020304050607080910111213141516171819"
          "2021222324252627282930313233343536373839"
@@ -1177,7 +1177,7 @@ constexpr const char* digits2(size_t value) {
 }
 
 // Sign is a template parameter to workaround a bug in gcc 4.8.
-template <typename Char, typename Sign> constexpr Char sign(Sign s) {
+template <typename Char, typename Sign> constexpr auto sign(Sign s) -> Char {
 #if !FMT_GCC_VERSION || FMT_GCC_VERSION >= 604
   static_assert(std::is_same<Sign, sign_t>::value, "");
 #endif
@@ -1438,22 +1438,23 @@ template <typename WChar, typename Buffer = memory_buffer> class to_utf8 {
                                                       : "invalid utf32"));
   }
   operator string_view() const { return string_view(&buffer_[0], size()); }
-  size_t size() const { return buffer_.size() - 1; }
-  const char* c_str() const { return &buffer_[0]; }
-  std::string str() const { return std::string(&buffer_[0], size()); }
+  auto size() const -> size_t { return buffer_.size() - 1; }
+  auto c_str() const -> const char* { return &buffer_[0]; }
+  auto str() const -> std::string { return std::string(&buffer_[0], size()); }
 
   // Performs conversion returning a bool instead of throwing exception on
   // conversion error. This method may still throw in case of memory allocation
   // error.
-  bool convert(basic_string_view<WChar> s,
-               to_utf8_error_policy policy = to_utf8_error_policy::abort) {
+  auto convert(basic_string_view<WChar> s,
+               to_utf8_error_policy policy = to_utf8_error_policy::abort)
+      -> bool {
     if (!convert(buffer_, s, policy)) return false;
     buffer_.push_back(0);
     return true;
   }
-  static bool convert(
-      Buffer& buf, basic_string_view<WChar> s,
-      to_utf8_error_policy policy = to_utf8_error_policy::abort) {
+  static auto convert(Buffer& buf, basic_string_view<WChar> s,
+                      to_utf8_error_policy policy = to_utf8_error_policy::abort)
+      -> bool {
     for (auto p = s.begin(); p != s.end(); ++p) {
       uint32_t c = static_cast<uint32_t>(*p);
       if (sizeof(WChar) == 2 && c >= 0xd800 && c <= 0xdfff) {
@@ -1489,7 +1490,7 @@ template <typename WChar, typename Buffer = memory_buffer> class to_utf8 {
 };
 
 // Computes 128-bit result of multiplication of two 64-bit unsigned integers.
-inline uint128_fallback umul128(uint64_t x, uint64_t y) noexcept {
+inline auto umul128(uint64_t x, uint64_t y) noexcept -> uint128_fallback {
 #if FMT_USE_INT128
   auto p = static_cast<uint128_opt>(x) * static_cast<uint128_opt>(y);
   return {static_cast<uint64_t>(p >> 64), static_cast<uint64_t>(p)};
@@ -1520,19 +1521,19 @@ inline uint128_fallback umul128(uint64_t x, uint64_t y) noexcept {
 namespace dragonbox {
 // Computes floor(log10(pow(2, e))) for e in [-2620, 2620] using the method from
 // https://fmt.dev/papers/Dragonbox.pdf#page=28, section 6.1.
-inline int floor_log10_pow2(int e) noexcept {
+inline auto floor_log10_pow2(int e) noexcept -> int {
   FMT_ASSERT(e <= 2620 && e >= -2620, "too large exponent");
   static_assert((-1 >> 1) == -1, "right shift is not arithmetic");
   return (e * 315653) >> 20;
 }
 
-inline int floor_log2_pow10(int e) noexcept {
+inline auto floor_log2_pow10(int e) noexcept -> int {
   FMT_ASSERT(e <= 1233 && e >= -1233, "too large exponent");
   return (e * 1741647) >> 19;
 }
 
 // Computes upper 64 bits of multiplication of two 64-bit unsigned integers.
-inline uint64_t umul128_upper64(uint64_t x, uint64_t y) noexcept {
+inline auto umul128_upper64(uint64_t x, uint64_t y) noexcept -> uint64_t {
 #if FMT_USE_INT128
   auto p = static_cast<uint128_opt>(x) * static_cast<uint128_opt>(y);
   return static_cast<uint64_t>(p >> 64);
@@ -1545,14 +1546,14 @@ inline uint64_t umul128_upper64(uint64_t x, uint64_t y) noexcept {
 
 // Computes upper 128 bits of multiplication of a 64-bit unsigned integer and a
 // 128-bit unsigned integer.
-inline uint128_fallback umul192_upper128(uint64_t x,
-                                         uint128_fallback y) noexcept {
+inline auto umul192_upper128(uint64_t x, uint128_fallback y) noexcept
+    -> uint128_fallback {
   uint128_fallback r = umul128(x, y.high());
   r += umul128_upper64(x, y.low());
   return r;
 }
 
-FMT_API uint128_fallback get_cached_power(int k) noexcept;
+FMT_API auto get_cached_power(int k) noexcept -> uint128_fallback;
 
 // Type-specific information that Dragonbox uses.
 template <typename T, typename Enable = void> struct float_info;
@@ -1606,14 +1607,14 @@ template <typename T> FMT_API auto to_decimal(T x) noexcept -> decimal_fp<T>;
 }  // namespace dragonbox
 
 // Returns true iff Float has the implicit bit which is not stored.
-template <typename Float> constexpr bool has_implicit_bit() {
+template <typename Float> constexpr auto has_implicit_bit() -> bool {
   // An 80-bit FP number has a 64-bit significand an no implicit bit.
   return std::numeric_limits<Float>::digits != 64;
 }
 
 // Returns the number of significand bits stored in Float. The implicit bit is
 // not counted since it is not stored.
-template <typename Float> constexpr int num_significand_bits() {
+template <typename Float> constexpr auto num_significand_bits() -> int {
   // std::numeric_limits may not support __float128.
   return is_float128<Float>() ? 112
                               : (std::numeric_limits<Float>::digits -
@@ -1706,7 +1707,7 @@ using fp = basic_fp<unsigned long long>;
 
 // Normalizes the value converted from double and multiplied by (1 << SHIFT).
 template <int SHIFT = 0, typename F>
-FMT_CONSTEXPR basic_fp<F> normalize(basic_fp<F> value) {
+FMT_CONSTEXPR auto normalize(basic_fp<F> value) -> basic_fp<F> {
   // Handle subnormals.
   const auto implicit_bit = F(1) << num_significand_bits<double>();
   const auto shifted_implicit_bit = implicit_bit << SHIFT;
@@ -1723,7 +1724,7 @@ FMT_CONSTEXPR basic_fp<F> normalize(basic_fp<F> value) {
 }
 
 // Computes lhs * rhs / pow(2, 64) rounded to nearest with half-up tie breaking.
-FMT_CONSTEXPR inline uint64_t multiply(uint64_t lhs, uint64_t rhs) {
+FMT_CONSTEXPR inline auto multiply(uint64_t lhs, uint64_t rhs) -> uint64_t {
 #if FMT_USE_INT128
   auto product = static_cast<__uint128_t>(lhs) * rhs;
   auto f = static_cast<uint64_t>(product >> 64);
@@ -1740,7 +1741,7 @@ FMT_CONSTEXPR inline uint64_t multiply(uint64_t lhs, uint64_t rhs) {
 #endif
 }
 
-FMT_CONSTEXPR inline fp operator*(fp x, fp y) {
+FMT_CONSTEXPR inline auto operator*(fp x, fp y) -> fp {
   return {multiply(x.f, y.f), x.e + y.e + 64};
 }
 
@@ -2057,10 +2058,10 @@ template <typename Char> class digit_grouping {
     std::string::const_iterator group;
     int pos;
   };
-  next_state initial_state() const { return {grouping_.begin(), 0}; }
+  auto initial_state() const -> next_state { return {grouping_.begin(), 0}; }
 
   // Returns the next digit group separator position.
-  int next(next_state& state) const {
+  auto next(next_state& state) const -> int {
     if (thousands_sep_.empty()) return max_value<int>();
     if (state.group == grouping_.end()) return state.pos += grouping_.back();
     if (*state.group <= 0 || *state.group == max_value<char>())
@@ -2079,9 +2080,9 @@ template <typename Char> class digit_grouping {
   digit_grouping(std::string grouping, std::basic_string<Char> sep)
       : grouping_(std::move(grouping)), thousands_sep_(std::move(sep)) {}
 
-  bool has_separator() const { return !thousands_sep_.empty(); }
+  auto has_separator() const -> bool { return !thousands_sep_.empty(); }
 
-  int count_separators(int num_digits) const {
+  auto count_separators(int num_digits) const -> int {
     int count = 0;
     auto state = initial_state();
     while (num_digits > next(state)) ++count;
@@ -2090,7 +2091,7 @@ template <typename Char> class digit_grouping {
 
   // Applies grouping to digits and write the output to out.
   template <typename Out, typename C>
-  Out apply(Out out, basic_string_view<C> digits) const {
+  auto apply(Out out, basic_string_view<C> digits) const -> Out {
     auto num_digits = static_cast<int>(digits.size());
     auto separators = basic_memory_buffer<int>();
     separators.push_back(0);
@@ -2331,25 +2332,25 @@ class counting_iterator {
 
   FMT_CONSTEXPR counting_iterator() : count_(0) {}
 
-  FMT_CONSTEXPR size_t count() const { return count_; }
+  FMT_CONSTEXPR auto count() const -> size_t { return count_; }
 
-  FMT_CONSTEXPR counting_iterator& operator++() {
+  FMT_CONSTEXPR auto operator++() -> counting_iterator& {
     ++count_;
     return *this;
   }
-  FMT_CONSTEXPR counting_iterator operator++(int) {
+  FMT_CONSTEXPR auto operator++(int) -> counting_iterator {
     auto it = *this;
     ++*this;
     return it;
   }
 
-  FMT_CONSTEXPR friend counting_iterator operator+(counting_iterator it,
-                                                   difference_type n) {
+  FMT_CONSTEXPR friend auto operator+(counting_iterator it, difference_type n)
+      -> counting_iterator {
     it.count_ += static_cast<size_t>(n);
     return it;
   }
 
-  FMT_CONSTEXPR value_type operator*() const { return {}; }
+  FMT_CONSTEXPR auto operator*() const -> value_type { return {}; }
 };
 
 template <typename Char, typename OutputIt>
@@ -2750,12 +2751,12 @@ template <typename Char> class fallback_digit_grouping {
  public:
   constexpr fallback_digit_grouping(locale_ref, bool) {}
 
-  constexpr bool has_separator() const { return false; }
+  constexpr auto has_separator() const -> bool { return false; }
 
-  constexpr int count_separators(int) const { return 0; }
+  constexpr auto count_separators(int) const -> int { return 0; }
 
   template <typename Out, typename C>
-  constexpr Out apply(Out out, basic_string_view<C>) const {
+  constexpr auto apply(Out out, basic_string_view<C>) const -> Out {
     return out;
   }
 };
@@ -2774,7 +2775,7 @@ FMT_CONSTEXPR20 auto write_float(OutputIt out, const DecimalFP& f,
   }
 }
 
-template <typename T> constexpr bool isnan(T value) {
+template <typename T> constexpr auto isnan(T value) -> bool {
   return !(value >= value);  // std::isnan doesn't support __float128.
 }
 
@@ -2787,14 +2788,14 @@ struct has_isfinite<T, enable_if_t<sizeof(std::isfinite(T())) != 0>>
 
 template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value&&
                                         has_isfinite<T>::value)>
-FMT_CONSTEXPR20 bool isfinite(T value) {
+FMT_CONSTEXPR20 auto isfinite(T value) -> bool {
   constexpr T inf = T(std::numeric_limits<double>::infinity());
   if (is_constant_evaluated())
     return !detail::isnan(value) && value < inf && value > -inf;
   return std::isfinite(value);
 }
 template <typename T, FMT_ENABLE_IF(!has_isfinite<T>::value)>
-FMT_CONSTEXPR bool isfinite(T value) {
+FMT_CONSTEXPR auto isfinite(T value) -> bool {
   T inf = T(std::numeric_limits<double>::infinity());
   // std::isfinite doesn't support __float128.
   return !detail::isnan(value) && value < inf && value > -inf;
@@ -2831,10 +2832,10 @@ class bigint {
   basic_memory_buffer<bigit, bigits_capacity> bigits_;
   int exp_;
 
-  FMT_CONSTEXPR20 bigit operator[](int index) const {
+  FMT_CONSTEXPR20 auto operator[](int index) const -> bigit {
     return bigits_[to_unsigned(index)];
   }
-  FMT_CONSTEXPR20 bigit& operator[](int index) {
+  FMT_CONSTEXPR20 auto operator[](int index) -> bigit& {
     return bigits_[to_unsigned(index)];
   }
 
@@ -2930,11 +2931,11 @@ class bigint {
     assign(uint64_or_128_t<Int>(n));
   }
 
-  FMT_CONSTEXPR20 int num_bigits() const {
+  FMT_CONSTEXPR20 auto num_bigits() const -> int {
     return static_cast<int>(bigits_.size()) + exp_;
   }
 
-  FMT_NOINLINE FMT_CONSTEXPR20 bigint& operator<<=(int shift) {
+  FMT_NOINLINE FMT_CONSTEXPR20 auto operator<<=(int shift) -> bigint& {
     FMT_ASSERT(shift >= 0, "");
     exp_ += shift / bigit_bits;
     shift %= bigit_bits;
@@ -2949,13 +2950,15 @@ class bigint {
     return *this;
   }
 
-  template <typename Int> FMT_CONSTEXPR20 bigint& operator*=(Int value) {
+  template <typename Int>
+  FMT_CONSTEXPR20 auto operator*=(Int value) -> bigint& {
     FMT_ASSERT(value > 0, "");
     multiply(uint32_or_64_or_128_t<Int>(value));
     return *this;
   }
 
-  friend FMT_CONSTEXPR20 int compare(const bigint& lhs, const bigint& rhs) {
+  friend FMT_CONSTEXPR20 auto compare(const bigint& lhs, const bigint& rhs)
+      -> int {
     int num_lhs_bigits = lhs.num_bigits(), num_rhs_bigits = rhs.num_bigits();
     if (num_lhs_bigits != num_rhs_bigits)
       return num_lhs_bigits > num_rhs_bigits ? 1 : -1;
@@ -2972,8 +2975,9 @@ class bigint {
   }
 
   // Returns compare(lhs1 + lhs2, rhs).
-  friend FMT_CONSTEXPR20 int add_compare(const bigint& lhs1, const bigint& lhs2,
-                                         const bigint& rhs) {
+  friend FMT_CONSTEXPR20 auto add_compare(const bigint& lhs1,
+                                          const bigint& lhs2, const bigint& rhs)
+      -> int {
     auto minimum = [](int a, int b) { return a < b ? a : b; };
     auto maximum = [](int a, int b) { return a > b ? a : b; };
     int max_lhs_bigits = maximum(lhs1.num_bigits(), lhs2.num_bigits());
@@ -3060,7 +3064,7 @@ class bigint {
 
   // Divides this bignum by divisor, assigning the remainder to this and
   // returning the quotient.
-  FMT_CONSTEXPR20 int divmod_assign(const bigint& divisor) {
+  FMT_CONSTEXPR20 auto divmod_assign(const bigint& divisor) -> int {
     FMT_ASSERT(this != &divisor, "");
     if (compare(*this, divisor) < 0) return 0;
     FMT_ASSERT(divisor.bigits_[divisor.bigits_.size() - 1u] != 0, "");
@@ -3303,7 +3307,7 @@ FMT_CONSTEXPR20 void format_hexfloat(Float value, int precision,
   format_hexfloat(static_cast<double>(value), precision, specs, buf);
 }
 
-constexpr uint32_t fractional_part_rounding_thresholds(int index) {
+constexpr auto fractional_part_rounding_thresholds(int index) -> uint32_t {
   // For checking rounding thresholds.
   // The kth entry is chosen to be the smallest integer such that the
   // upper 32-bits of 10^(k+1) times it is strictly bigger than 5 * 10^k.

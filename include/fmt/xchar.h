@@ -63,14 +63,15 @@ template <> struct is_char<char16_t> : std::true_type {};
 template <> struct is_char<char32_t> : std::true_type {};
 
 template <typename... T>
-constexpr format_arg_store<wformat_context, T...> make_wformat_args(
-    const T&... args) {
+constexpr auto make_wformat_args(const T&... args)
+    -> format_arg_store<wformat_context, T...> {
   return {args...};
 }
 
 inline namespace literals {
 #if FMT_USE_USER_DEFINED_LITERALS && !FMT_USE_NONTYPE_TEMPLATE_ARGS
-constexpr detail::udl_arg<wchar_t> operator""_a(const wchar_t* s, size_t) {
+constexpr auto operator""_a(const wchar_t* s, size_t)
+    -> detail::udl_arg<wchar_t> {
   return {s};
 }
 #endif

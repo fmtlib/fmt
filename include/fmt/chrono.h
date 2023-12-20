@@ -72,7 +72,8 @@ template <typename To, typename From,
           FMT_ENABLE_IF(!std::is_same<From, To>::value &&
                         std::numeric_limits<From>::is_signed ==
                             std::numeric_limits<To>::is_signed)>
-FMT_CONSTEXPR To lossless_integral_conversion(const From from, int& ec) {
+FMT_CONSTEXPR auto lossless_integral_conversion(const From from, int& ec)
+    -> To {
   ec = 0;
   using F = std::numeric_limits<From>;
   using T = std::numeric_limits<To>;
@@ -101,7 +102,8 @@ template <typename To, typename From,
           FMT_ENABLE_IF(!std::is_same<From, To>::value &&
                         std::numeric_limits<From>::is_signed !=
                             std::numeric_limits<To>::is_signed)>
-FMT_CONSTEXPR To lossless_integral_conversion(const From from, int& ec) {
+FMT_CONSTEXPR auto lossless_integral_conversion(const From from, int& ec)
+    -> To {
   ec = 0;
   using F = std::numeric_limits<From>;
   using T = std::numeric_limits<To>;
@@ -133,7 +135,8 @@ FMT_CONSTEXPR To lossless_integral_conversion(const From from, int& ec) {
 
 template <typename To, typename From,
           FMT_ENABLE_IF(std::is_same<From, To>::value)>
-FMT_CONSTEXPR To lossless_integral_conversion(const From from, int& ec) {
+FMT_CONSTEXPR auto lossless_integral_conversion(const From from, int& ec)
+    -> To {
   ec = 0;
   return from;
 }  // function
@@ -154,7 +157,7 @@ FMT_CONSTEXPR To lossless_integral_conversion(const From from, int& ec) {
 // clang-format on
 template <typename To, typename From,
           FMT_ENABLE_IF(!std::is_same<From, To>::value)>
-FMT_CONSTEXPR To safe_float_conversion(const From from, int& ec) {
+FMT_CONSTEXPR auto safe_float_conversion(const From from, int& ec) -> To {
   ec = 0;
   using T = std::numeric_limits<To>;
   static_assert(std::is_floating_point<From>::value, "From must be floating");
@@ -176,7 +179,7 @@ FMT_CONSTEXPR To safe_float_conversion(const From from, int& ec) {
 
 template <typename To, typename From,
           FMT_ENABLE_IF(std::is_same<From, To>::value)>
-FMT_CONSTEXPR To safe_float_conversion(const From from, int& ec) {
+FMT_CONSTEXPR auto safe_float_conversion(const From from, int& ec) -> To {
   ec = 0;
   static_assert(std::is_floating_point<From>::value, "From must be floating");
   return from;
@@ -188,8 +191,8 @@ FMT_CONSTEXPR To safe_float_conversion(const From from, int& ec) {
 template <typename To, typename FromRep, typename FromPeriod,
           FMT_ENABLE_IF(std::is_integral<FromRep>::value),
           FMT_ENABLE_IF(std::is_integral<typename To::rep>::value)>
-To safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
-                      int& ec) {
+auto safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
+                        int& ec) -> To {
   using From = std::chrono::duration<FromRep, FromPeriod>;
   ec = 0;
   // the basic idea is that we need to convert from count() in the from type
@@ -240,8 +243,8 @@ To safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
 template <typename To, typename FromRep, typename FromPeriod,
           FMT_ENABLE_IF(std::is_floating_point<FromRep>::value),
           FMT_ENABLE_IF(std::is_floating_point<typename To::rep>::value)>
-To safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
-                      int& ec) {
+auto safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
+                        int& ec) -> To {
   using From = std::chrono::duration<FromRep, FromPeriod>;
   ec = 0;
   if (std::isnan(from.count())) {
@@ -321,12 +324,12 @@ To safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
 
 namespace detail {
 template <typename T = void> struct null {};
-inline null<> localtime_r FMT_NOMACRO(...) { return null<>(); }
-inline null<> localtime_s(...) { return null<>(); }
-inline null<> gmtime_r(...) { return null<>(); }
-inline null<> gmtime_s(...) { return null<>(); }
+inline auto localtime_r FMT_NOMACRO(...) -> null<> { return null<>(); }
+inline auto localtime_s(...) -> null<> { return null<>(); }
+inline auto gmtime_r(...) -> null<> { return null<>(); }
+inline auto gmtime_s(...) -> null<> { return null<>(); }
 
-inline const std::locale& get_classic_locale() {
+inline auto get_classic_locale() -> const std::locale& {
   static const auto& locale = std::locale::classic();
   return locale;
 }
@@ -442,7 +445,7 @@ struct is_same_arithmetic_type
 template <
     typename To, typename FromRep, typename FromPeriod,
     FMT_ENABLE_IF(is_same_arithmetic_type<FromRep, typename To::rep>::value)>
-To fmt_duration_cast(std::chrono::duration<FromRep, FromPeriod> from) {
+auto fmt_duration_cast(std::chrono::duration<FromRep, FromPeriod> from) -> To {
 #if FMT_SAFE_DURATION_CAST
   // Throwing version of safe_duration_cast is only available for
   // integer to integer or float to float casts.
@@ -459,14 +462,15 @@ To fmt_duration_cast(std::chrono::duration<FromRep, FromPeriod> from) {
 template <
     typename To, typename FromRep, typename FromPeriod,
     FMT_ENABLE_IF(!is_same_arithmetic_type<FromRep, typename To::rep>::value)>
-To fmt_duration_cast(std::chrono::duration<FromRep, FromPeriod> from) {
+auto fmt_duration_cast(std::chrono::duration<FromRep, FromPeriod> from) -> To {
   // Mixed integer <-> float cast is not supported by safe_duration_cast.
   return std::chrono::duration_cast<To>(from);
 }
 
 template <typename Duration>
-std::time_t to_time_t(
-    std::chrono::time_point<std::chrono::system_clock, Duration> time_point) {
+auto to_time_t(
+    std::chrono::time_point<std::chrono::system_clock, Duration> time_point)
+    -> std::time_t {
   // Cannot use std::chrono::system_clock::to_time_t since this would first
   // require a cast to std::chrono::system_clock::time_point, which could
   // overflow.
@@ -483,29 +487,29 @@ FMT_BEGIN_EXPORT
   expressed in local time. Unlike ``std::localtime``, this function is
   thread-safe on most platforms.
  */
-inline std::tm localtime(std::time_t time) {
+inline auto localtime(std::time_t time) -> std::tm {
   struct dispatcher {
     std::time_t time_;
     std::tm tm_;
 
     dispatcher(std::time_t t) : time_(t) {}
 
-    bool run() {
+    auto run() -> bool {
       using namespace fmt::detail;
       return handle(localtime_r(&time_, &tm_));
     }
 
-    bool handle(std::tm* tm) { return tm != nullptr; }
+    auto handle(std::tm* tm) -> bool { return tm != nullptr; }
 
-    bool handle(detail::null<>) {
+    auto handle(detail::null<>) -> bool {
       using namespace fmt::detail;
       return fallback(localtime_s(&tm_, &time_));
     }
 
-    bool fallback(int res) { return res == 0; }
+    auto fallback(int res) -> bool { return res == 0; }
 
 #if !FMT_MSC_VERSION
-    bool fallback(detail::null<>) {
+    auto fallback(detail::null<>) -> bool {
       using namespace fmt::detail;
       std::tm* tm = std::localtime(&time_);
       if (tm) tm_ = *tm;
@@ -532,29 +536,29 @@ inline auto localtime(std::chrono::local_time<Duration> time) -> std::tm {
   expressed in Coordinated Universal Time (UTC). Unlike ``std::gmtime``, this
   function is thread-safe on most platforms.
  */
-inline std::tm gmtime(std::time_t time) {
+inline auto gmtime(std::time_t time) -> std::tm {
   struct dispatcher {
     std::time_t time_;
     std::tm tm_;
 
     dispatcher(std::time_t t) : time_(t) {}
 
-    bool run() {
+    auto run() -> bool {
       using namespace fmt::detail;
       return handle(gmtime_r(&time_, &tm_));
     }
 
-    bool handle(std::tm* tm) { return tm != nullptr; }
+    auto handle(std::tm* tm) -> bool { return tm != nullptr; }
 
-    bool handle(detail::null<>) {
+    auto handle(detail::null<>) -> bool {
       using namespace fmt::detail;
       return fallback(gmtime_s(&tm_, &time_));
     }
 
-    bool fallback(int res) { return res == 0; }
+    auto fallback(int res) -> bool { return res == 0; }
 
 #if !FMT_MSC_VERSION
-    bool fallback(detail::null<>) {
+    auto fallback(detail::null<>) -> bool {
       std::tm* tm = std::gmtime(&time_);
       if (tm) tm_ = *tm;
       return tm != nullptr;
@@ -568,8 +572,9 @@ inline std::tm gmtime(std::time_t time) {
 }
 
 template <typename Duration>
-inline std::tm gmtime(
-    std::chrono::time_point<std::chrono::system_clock, Duration> time_point) {
+inline auto gmtime(
+    std::chrono::time_point<std::chrono::system_clock, Duration> time_point)
+    -> std::tm {
   return gmtime(detail::to_time_t(time_point));
 }
 
@@ -609,7 +614,8 @@ inline void write_digit2_separated(char* buf, unsigned a, unsigned b,
   }
 }
 
-template <typename Period> FMT_CONSTEXPR inline const char* get_units() {
+template <typename Period>
+FMT_CONSTEXPR inline auto get_units() -> const char* {
   if (std::is_same<Period, std::atto>::value) return "as";
   if (std::is_same<Period, std::femto>::value) return "fs";
   if (std::is_same<Period, std::pico>::value) return "ps";
@@ -665,9 +671,8 @@ auto write_padding(OutputIt out, pad_type pad) -> OutputIt {
 
 // Parses a put_time-like format string and invokes handler actions.
 template <typename Char, typename Handler>
-FMT_CONSTEXPR const Char* parse_chrono_format(const Char* begin,
-                                              const Char* end,
-                                              Handler&& handler) {
+FMT_CONSTEXPR auto parse_chrono_format(const Char* begin, const Char* end,
+                                       Handler&& handler) -> const Char* {
   if (begin == end || *begin == '}') return begin;
   if (*begin != '%') FMT_THROW(format_error("invalid format"));
   auto ptr = begin;
@@ -998,25 +1003,25 @@ struct tm_format_checker : null_chrono_spec_handler<tm_format_checker> {
   FMT_CONSTEXPR void on_tz_name() {}
 };
 
-inline const char* tm_wday_full_name(int wday) {
+inline auto tm_wday_full_name(int wday) -> const char* {
   static constexpr const char* full_name_list[] = {
       "Sunday",   "Monday", "Tuesday", "Wednesday",
       "Thursday", "Friday", "Saturday"};
   return wday >= 0 && wday <= 6 ? full_name_list[wday] : "?";
 }
-inline const char* tm_wday_short_name(int wday) {
+inline auto tm_wday_short_name(int wday) -> const char* {
   static constexpr const char* short_name_list[] = {"Sun", "Mon", "Tue", "Wed",
                                                     "Thu", "Fri", "Sat"};
   return wday >= 0 && wday <= 6 ? short_name_list[wday] : "???";
 }
 
-inline const char* tm_mon_full_name(int mon) {
+inline auto tm_mon_full_name(int mon) -> const char* {
   static constexpr const char* full_name_list[] = {
       "January", "February", "March",     "April",   "May",      "June",
       "July",    "August",   "September", "October", "November", "December"};
   return mon >= 0 && mon <= 11 ? full_name_list[mon] : "?";
 }
-inline const char* tm_mon_short_name(int mon) {
+inline auto tm_mon_short_name(int mon) -> const char* {
   static constexpr const char* short_name_list[] = {
       "Jan", "Feb", "Mar", "Apr", "May", "Jun",
       "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
@@ -1048,7 +1053,7 @@ inline void tzset_once() {
 
 // Converts value to Int and checks that it's in the range [0, upper).
 template <typename T, typename Int, FMT_ENABLE_IF(std::is_integral<T>::value)>
-inline Int to_nonnegative_int(T value, Int upper) {
+inline auto to_nonnegative_int(T value, Int upper) -> Int {
   if (!std::is_unsigned<Int>::value &&
       (value < 0 || to_unsigned(value) > to_unsigned(upper))) {
     FMT_THROW(fmt::format_error("chrono value is out of range"));
@@ -1056,13 +1061,13 @@ inline Int to_nonnegative_int(T value, Int upper) {
   return static_cast<Int>(value);
 }
 template <typename T, typename Int, FMT_ENABLE_IF(!std::is_integral<T>::value)>
-inline Int to_nonnegative_int(T value, Int upper) {
+inline auto to_nonnegative_int(T value, Int upper) -> Int {
   if (value < 0 || value > static_cast<T>(upper))
     FMT_THROW(format_error("invalid value"));
   return static_cast<Int>(value);
 }
 
-constexpr long long pow10(std::uint32_t n) {
+constexpr auto pow10(std::uint32_t n) -> long long {
   return n == 0 ? 1 : 10 * pow10(n - 1);
 }
 
@@ -1358,7 +1363,7 @@ class tm_writer {
         subsecs_(subsecs),
         tm_(tm) {}
 
-  OutputIt out() const { return out_; }
+  auto out() const -> OutputIt { return out_; }
 
   FMT_CONSTEXPR void on_text(const Char* begin, const Char* end) {
     out_ = copy_str<Char>(begin, end, out_);
@@ -1641,16 +1646,16 @@ struct chrono_format_checker : null_chrono_spec_handler<chrono_format_checker> {
 
 template <typename T,
           FMT_ENABLE_IF(std::is_integral<T>::value&& has_isfinite<T>::value)>
-inline bool isfinite(T) {
+inline auto isfinite(T) -> bool {
   return true;
 }
 
 template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
-inline T mod(T x, int y) {
+inline auto mod(T x, int y) -> T {
   return x % static_cast<T>(y);
 }
 template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
-inline T mod(T x, int y) {
+inline auto mod(T x, int y) -> T {
   return std::fmod(x, static_cast<T>(y));
 }
 
@@ -1667,8 +1672,8 @@ template <typename T> struct make_unsigned_or_unchanged<T, true> {
 
 template <typename Rep, typename Period,
           FMT_ENABLE_IF(std::is_integral<Rep>::value)>
-inline std::chrono::duration<Rep, std::milli> get_milliseconds(
-    std::chrono::duration<Rep, Period> d) {
+inline auto get_milliseconds(std::chrono::duration<Rep, Period> d)
+    -> std::chrono::duration<Rep, std::milli> {
   // this may overflow and/or the result may not fit in the
   // target type.
 #if FMT_SAFE_DURATION_CAST
@@ -1690,13 +1695,13 @@ inline std::chrono::duration<Rep, std::milli> get_milliseconds(
 
 template <typename Char, typename Rep, typename OutputIt,
           FMT_ENABLE_IF(std::is_integral<Rep>::value)>
-OutputIt format_duration_value(OutputIt out, Rep val, int) {
+auto format_duration_value(OutputIt out, Rep val, int) -> OutputIt {
   return write<Char>(out, val);
 }
 
 template <typename Char, typename Rep, typename OutputIt,
           FMT_ENABLE_IF(std::is_floating_point<Rep>::value)>
-OutputIt format_duration_value(OutputIt out, Rep val, int precision) {
+auto format_duration_value(OutputIt out, Rep val, int precision) -> OutputIt {
   auto specs = format_specs<Char>();
   specs.precision = precision;
   specs.type = precision >= 0 ? presentation_type::fixed_lower
@@ -1705,12 +1710,12 @@ OutputIt format_duration_value(OutputIt out, Rep val, int precision) {
 }
 
 template <typename Char, typename OutputIt>
-OutputIt copy_unit(string_view unit, OutputIt out, Char) {
+auto copy_unit(string_view unit, OutputIt out, Char) -> OutputIt {
   return std::copy(unit.begin(), unit.end(), out);
 }
 
 template <typename OutputIt>
-OutputIt copy_unit(string_view unit, OutputIt out, wchar_t) {
+auto copy_unit(string_view unit, OutputIt out, wchar_t) -> OutputIt {
   // This works when wchar_t is UTF-32 because units only contain characters
   // that have the same representation in UTF-16 and UTF-32.
   utf8_to_utf16 u(unit);
@@ -1718,7 +1723,7 @@ OutputIt copy_unit(string_view unit, OutputIt out, wchar_t) {
 }
 
 template <typename Char, typename Period, typename OutputIt>
-OutputIt format_duration_unit(OutputIt out) {
+auto format_duration_unit(OutputIt out) -> OutputIt {
   if (const char* unit = get_units<Period>())
     return copy_unit(string_view(unit), out, Char());
   *out++ = '[';
@@ -1790,7 +1795,7 @@ struct chrono_formatter {
   }
 
   // returns true if nan or inf, writes to out.
-  bool handle_nan_inf() {
+  auto handle_nan_inf() -> bool {
     if (isfinite(val)) {
       return false;
     }
@@ -1807,18 +1812,22 @@ struct chrono_formatter {
     return true;
   }
 
-  Rep days() const { return static_cast<Rep>(s.count() / 86400); }
-  Rep hour() const { return static_cast<Rep>(mod((s.count() / 3600), 24)); }
+  auto days() const -> Rep { return static_cast<Rep>(s.count() / 86400); }
+  auto hour() const -> Rep {
+    return static_cast<Rep>(mod((s.count() / 3600), 24));
+  }
 
-  Rep hour12() const {
+  auto hour12() const -> Rep {
     Rep hour = static_cast<Rep>(mod((s.count() / 3600), 12));
     return hour <= 0 ? 12 : hour;
   }
 
-  Rep minute() const { return static_cast<Rep>(mod((s.count() / 60), 60)); }
-  Rep second() const { return static_cast<Rep>(mod(s.count(), 60)); }
+  auto minute() const -> Rep {
+    return static_cast<Rep>(mod((s.count() / 60), 60));
+  }
+  auto second() const -> Rep { return static_cast<Rep>(mod(s.count(), 60)); }
 
-  std::tm time() const {
+  auto time() const -> std::tm {
     auto time = std::tm();
     time.tm_hour = to_nonnegative_int(hour(), 24);
     time.tm_min = to_nonnegative_int(minute(), 60);
@@ -2000,7 +2009,7 @@ class weekday {
   weekday() = default;
   explicit constexpr weekday(unsigned wd) noexcept
       : value(static_cast<unsigned char>(wd != 7 ? wd : 0)) {}
-  constexpr unsigned c_encoding() const noexcept { return value; }
+  constexpr auto c_encoding() const noexcept -> unsigned { return value; }
 };
 
 class year_month_day {};

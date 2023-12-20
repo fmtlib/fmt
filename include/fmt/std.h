@@ -176,7 +176,7 @@ struct formatter<std::bitset<N>, Char> : nested_formatter<string_view> {
     const std::bitset<N>& bs;
 
     template <typename OutputIt>
-    FMT_CONSTEXPR OutputIt operator()(OutputIt out) {
+    FMT_CONSTEXPR auto operator()(OutputIt out) -> OutputIt {
       for (auto pos = N; pos > 0; --pos) {
         out = detail::write<Char>(out, bs[pos - 1] ? Char('1') : Char('0'));
       }

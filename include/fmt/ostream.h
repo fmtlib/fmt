@@ -40,7 +40,8 @@ template class file_access<file_access_tag, std::filebuf,
 auto get_file(std::filebuf&) -> FILE*;
 #endif
 
-inline bool write_ostream_unicode(std::ostream& os, fmt::string_view data) {
+inline auto write_ostream_unicode(std::ostream& os, fmt::string_view data)
+    -> bool {
   FILE* f = nullptr;
 #if FMT_MSC_VERSION
   if (auto* buf = dynamic_cast<std::filebuf*>(os.rdbuf()))
@@ -69,8 +70,8 @@ inline bool write_ostream_unicode(std::ostream& os, fmt::string_view data) {
 #endif
   return false;
 }
-inline bool write_ostream_unicode(std::wostream&,
-                                  fmt::basic_string_view<wchar_t>) {
+inline auto write_ostream_unicode(std::wostream&,
+                                  fmt::basic_string_view<wchar_t>) -> bool {
   return false;
 }
 
