@@ -2131,7 +2131,7 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
   case presentation_type::none:
   case presentation_type::dec: {
     num_digits = count_digits(value);
-    format_decimal<Char>(appender(buffer), value, num_digits);
+    format_decimal<char>(appender(buffer), value, num_digits);
     break;
   }
   case presentation_type::hex_lower:
@@ -2140,7 +2140,7 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
     if (specs.alt)
       prefix_append(prefix, unsigned(upper ? 'X' : 'x') << 8 | '0');
     num_digits = count_digits<4>(value);
-    format_uint<4, Char>(appender(buffer), value, num_digits, upper);
+    format_uint<4, char>(appender(buffer), value, num_digits, upper);
     break;
   }
   case presentation_type::bin_lower:
@@ -2149,7 +2149,7 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
     if (specs.alt)
       prefix_append(prefix, unsigned(upper ? 'B' : 'b') << 8 | '0');
     num_digits = count_digits<1>(value);
-    format_uint<1, Char>(appender(buffer), value, num_digits);
+    format_uint<1, char>(appender(buffer), value, num_digits);
     break;
   }
   case presentation_type::oct: {
@@ -2158,7 +2158,7 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
     // is not greater than the number of digits.
     if (specs.alt && specs.precision <= num_digits && value != 0)
       prefix_append(prefix, '0');
-    format_uint<3, Char>(appender(buffer), value, num_digits);
+    format_uint<3, char>(appender(buffer), value, num_digits);
     break;
   }
   case presentation_type::chr:
