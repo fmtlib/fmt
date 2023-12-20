@@ -13,6 +13,11 @@ jobs:
   format_code:
     runs-on: ubuntu-latest
     steps:
+    - name: Harden Runner
+      uses: step-security/harden-runner@v2
+      with:
+        egress-policy: audit
+
     - uses: actions/checkout@v4
 
     - name: Install clang-format
