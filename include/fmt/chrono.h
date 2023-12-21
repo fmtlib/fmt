@@ -2079,6 +2079,33 @@ template <typename Char> struct formatter<weekday, Char> {
   }
 };
 
+template <typename Char> struct formatter<std::chrono::day, Char> {
+  FMT_CONSTEXPR auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
+  template <typename FormatContext>
+  auto format(const std::chrono::day& value, FormatContext& ctx) {
+    return fmt::format_to(ctx.out(), "{}", static_cast<unsigned int>(value));
+  }
+};
+
+template <typename Char> struct formatter<std::chrono::month, Char> {
+  FMT_CONSTEXPR auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
+  template <typename FormatContext>
+  auto format(const std::chrono::month& value, FormatContext& ctx) {
+    return fmt::format_to(ctx.out(), "{}", static_cast<unsigned int>(value));
+  }
+};
+
+template <typename Char> struct formatter<std::chrono::year, Char> {
+  FMT_CONSTEXPR auto parse(format_parse_context& ctx) { return ctx.begin(); }
+
+  template <typename FormatContext>
+  auto format(const std::chrono::year& value, FormatContext& ctx) {
+    return fmt::format_to(ctx.out(), "{}", static_cast<int>(value));
+  }
+};
+
 template <typename Rep, typename Period, typename Char>
 struct formatter<std::chrono::duration<Rep, Period>, Char> {
  private:
