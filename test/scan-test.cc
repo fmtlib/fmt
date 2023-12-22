@@ -28,6 +28,8 @@ TEST(scan_test, read_int) {
   EXPECT_EQ(n, 42);
   fmt::scan("-42", "{}", n);
   EXPECT_EQ(n, -42);
+  EXPECT_THROW_MSG(fmt::scan(std::to_string(INT_MAX + 1u), "{}", n),
+                   fmt::format_error, "number is too big");
 }
 
 TEST(scan_test, read_longlong) {
