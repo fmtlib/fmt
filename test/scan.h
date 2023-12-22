@@ -48,7 +48,7 @@ class scan_buffer {
   }
 
   // Fills the buffer with more input if available.
-  virtual void fill() = 0;
+  virtual void consume() = 0;
 
  public:
   scan_buffer(const scan_buffer&) = delete;
@@ -121,17 +121,15 @@ class scan_buffer {
   auto try_consume() -> bool {
     FMT_ASSERT(ptr_ != end_, "");
     ++ptr_;
-    if (ptr_ == end_) {
-      // TODO: refill buffer
-      return false;
-    }
-    return true;
+    if (ptr_ != end_) return true;
+    consume();
+    return ptr_ != end_;
   }
 };
 
 class string_scan_buffer : public scan_buffer {
  private:
-  void fill() override {}
+  void consume() override {}
 
  public:
   explicit string_scan_buffer(string_view s)
@@ -142,37 +140,55 @@ class file_scan_buffer : public scan_buffer {
  private:
   FILE* file_;
   char next_;
+  bool filled_ = false;
 
+  // Returns the file's read buffer as a string_view.
   template <typename F, FMT_ENABLE_IF(sizeof(F::_p) != 0)>
-  void set_buffer(int, F* f) {
-    const char* ptr = reinterpret_cast<const char*>(f->_p);
-    this->set(ptr, ptr + f->_r);
+  auto get_buffer(F* file) -> string_view {  // Apple libc
+    char* ptr = reinterpret_cast<char*>(file->_p);
+    return {ptr, to_unsigned(file->_r)};
   }
-  void set_buffer(int c, ...) {
-    if (c == EOF) return;
-    next_ = static_cast<char>(c);
-    this->set(&next_, &next_ + 1);
+  auto get_buffer(...) -> string_view {
+    return {&next_, (filled_ ? 1u : 0u)};
   }
 
-  void fill() override {
-    int result = getc(file_);
-    if (result == EOF) {
-      if (ferror(file_) != 0)
-        FMT_THROW(system_error(errno, FMT_STRING("I/O error")));
-      return;
+  void do_fill() {
+    string_view buf = get_buffer(file_);
+    if (buf.size() == 0) {
+      int result = getc(file_);
+      if (result != EOF) {
+        // Put the character back since we are only filling the buffer.
+        if (ungetc(result, file_) == EOF)
+          FMT_THROW(system_error(errno, FMT_STRING("I/O error")));
+        next_ = static_cast<char>(result);
+        filled_ = true;
+      } else {
+        if (ferror(file_) != 0)
+          FMT_THROW(system_error(errno, FMT_STRING("I/O error")));
+        filled_ = false;
+      } 
+      buf = get_buffer(file_);
     }
-    // Put the character back since we are only filling the buffer.
-    if (ungetc(result, file_) == EOF)
-      FMT_THROW(system_error(errno, FMT_STRING("I/O error")));
-    set_buffer(result, file_);
+    this->set(buf.begin(), buf.end());
+  }
+
+  void consume() override {
+    // Consume the current buffer content.
+    string_view buf = get_buffer(file_);
+    for (size_t i = 0, n = buf.size(); i != n; ++i) {
+      int result = getc(file_);
+      if (result == EOF && ferror(file_) != 0)
+        FMT_THROW(system_error(errno, FMT_STRING("I/O error")));
+    }
+    filled_ = false;
+    do_fill();
   }
 
  public:
   explicit file_scan_buffer(FILE* f)
       : scan_buffer(nullptr, nullptr, false), file_(f) {
     // TODO: lock file?
-    set_buffer(EOF, f);
-    if (is_empty()) fill();
+    do_fill();
   }
 };
 }  // namespace detail
@@ -303,12 +319,14 @@ struct scan_handler : error_handler {
   template <typename T = unsigned> auto read_uint() -> T {
     T value = 0;
     auto it = scan_ctx_.begin(), end = scan_ctx_.end();
-    while (it != end) {
-      char c = *it++;
-      if (c < '0' || c > '9') on_error("invalid input");
-      // TODO: check overflow
+    char c = it != end ? *it : '\0';
+    if (c < '0' || c > '9') on_error("invalid input");
+    do {
       value = value * 10 + static_cast<unsigned>(c - '0');
-    }
+      c = *++it;
+      if (c < '0' || c > '9') break;
+      // TODO: check overflow
+    } while (it != end);
     scan_ctx_.advance_to(it);
     return value;
   }
@@ -316,11 +334,13 @@ struct scan_handler : error_handler {
   template <typename T = int> auto read_int() -> T {
     auto it = scan_ctx_.begin(), end = scan_ctx_.end();
     bool negative = it != end && *it == '-';
-    if (negative) ++it;
-    scan_ctx_.advance_to(it);
-    const auto value = read_uint<typename std::make_unsigned<T>::type>();
-    if (negative) return -static_cast<T>(value);
-    return static_cast<T>(value);
+    if (negative) {
+      ++it;
+      scan_ctx_.advance_to(it);
+    }
+    auto abs_value = read_uint<typename std::make_unsigned<T>::type>();
+    auto value = static_cast<T>(abs_value);
+    return negative ? -value : value;
   }
 
  public:
