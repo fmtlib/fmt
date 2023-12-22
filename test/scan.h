@@ -161,6 +161,17 @@ template <typename F> class file_base {
   }
 };
 
+// A FILE wrapper for glibc.
+template <typename F> class glibc_file : public file_base<F> {
+ public:
+  using file_base<F>::file_base;
+
+  auto buffer() const -> string_view {
+    return {this->file_->_IO_read_ptr,
+            to_unsigned(this->file_->_IO_read_end - this->file_->_IO_read_ptr)};
+  }
+};
+
 // A FILE wrapper for Apple's libc.
 template <typename F> class apple_file : public file_base<F> {
  public:
@@ -196,6 +207,10 @@ template <typename F> class fallback_file : public file_base<F> {
   }
 };
 
+template <typename F, FMT_ENABLE_IF(sizeof(F::_IO_read_ptr) != 0)>
+auto get_file(F* file, int) -> glibc_file<F> {
+  return file;
+}
 template <typename F, FMT_ENABLE_IF(sizeof(F::_p) != 0)>
 auto get_file(F* file, int) -> apple_file<F> {
   return file;
@@ -206,7 +221,7 @@ class file_scan_buffer : public scan_buffer {
  private:
   decltype(get_file(static_cast<FILE*>(nullptr), 0)) file_;
 
-  void do_fill() {
+  void fill() {
     string_view buf = file_.buffer();
     if (buf.size() == 0) {
       int c = file_.get();
@@ -220,14 +235,14 @@ class file_scan_buffer : public scan_buffer {
   void consume() override {
     // Consume the current buffer content.
     for (size_t i = 0, n = file_.buffer().size(); i != n; ++i) file_.get();
-    do_fill();
+    fill();
   }
 
  public:
   explicit file_scan_buffer(FILE* f)
       : scan_buffer(nullptr, nullptr, false), file_(f) {
     // TODO: lock file?
-    do_fill();
+    fill();
   }
 };
 }  // namespace detail
