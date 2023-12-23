@@ -1,7 +1,18 @@
 # 10.2.0 - TBD
 
+-   Only export `format_error` when {fmt} is built as a shared library
+    (https://github.com/fmtlib/fmt/issues/3626,
+    https://github.com/fmtlib/fmt/pull/3627). Thanks @phprus.
+
+-   Added an option to build without `wchar_t` support on Windows
+    (https://github.com/fmtlib/fmt/pull/3636). Thanks @glebm.
+
 -   Fixed various warnings and compilation issues
-    (https://github.com/fmtlib/fmt/pull/3624). Thanks @vinayyadav3016.
+    (https://github.com/fmtlib/fmt/pull/3610,
+    https://github.com/fmtlib/fmt/pull/3624,
+    https://github.com/fmtlib/fmt/pull/3630,
+    https://github.com/fmtlib/fmt/pull/3634).
+    Thanks @danakj, @vinayyadav3016, @cyyever, @phprus.
 
 -   Updated CI dependencies
     (https://github.com/fmtlib/fmt/pull/3615,
@@ -23,8 +34,7 @@
     https://github.com/fmtlib/fmt/pull/3605).
     Thanks @MathewBensonCode.
 -   Made `fmt::to_string` work with types that have `format_as`
-    overloads (https://github.com/fmtlib/fmt/pull/3575).
-    Thanks @phprus.
+    overloads (https://github.com/fmtlib/fmt/pull/3575). Thanks @phprus.
 -   Made `formatted_size` work with integral format specifiers at
     compile time (https://github.com/fmtlib/fmt/pull/3591).
     Thanks @elbeno.
