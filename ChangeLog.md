@@ -1,8 +1,23 @@
 # 10.2.0 - TBD
 
+-   Added support for the chrono suffix for days and changed
+    the suffix for minutes from "m" to the correct "min"
+    (https://github.com/fmtlib/fmt/pull/3664).
+    For example ([godbolt](https://godbolt.org/z/9KhMnq9ba)):
+
+    ```c++
+    #include <fmt/chrono.h>
+
+    int main() {
+      fmt::print("{}\n", std::chrono::days(42)); // prints "42d"
+    }
+    ```
+
+    Thanks @Richardk2n.
+
 -   Added a formatter for `std::bitset`
-    (https://github.com/fmtlib/fmt/pull/3660). For example
-    ([godbolt](https://godbolt.org/z/bdEaGeYxe)):
+    (https://github.com/fmtlib/fmt/pull/3660).
+    For example ([godbolt](https://godbolt.org/z/bdEaGeYxe)):
 
     ```c++
     #include <bitset>
@@ -14,6 +29,13 @@
     ```
 
     Thanks @muggenhor.
+
+-   Added synchronization with the underlying output stream when writing to
+    the Windows console
+    (https://github.com/fmtlib/fmt/pull/3668,
+    https://github.com/fmtlib/fmt/issues/3688,
+    https://github.com/fmtlib/fmt/pull/3689).
+    Thanks @Roman-Koshelev and @dimztimz.
 
 -   Only export `format_error` when {fmt} is built as a shared library
     (https://github.com/fmtlib/fmt/issues/3626,
@@ -33,21 +55,29 @@
     https://github.com/fmtlib/fmt/pull/3638,
     https://github.com/fmtlib/fmt/issues/3645,
     https://github.com/fmtlib/fmt/pull/3647,
-    https://github.com/fmtlib/fmt/pull/3652).
+    https://github.com/fmtlib/fmt/pull/3652,
+    https://github.com/fmtlib/fmt/issues/3654,
+    https://github.com/fmtlib/fmt/pull/3663,
+    https://github.com/fmtlib/fmt/pull/3680,
+    https://github.com/fmtlib/fmt/pull/3695).
     Thanks @danakj, @vinayyadav3016, @cyyever, @phprus, @qimiko, @saschasc,
-    @gsjaardema.
+    @gsjaardema, @lazka, @Zhaojun-Liu, @carlsmedstad.
 
 -   Improved documentation and README
     (https://github.com/fmtlib/fmt/pull/3642,
     https://github.com/fmtlib/fmt/pull/3653,
     https://github.com/fmtlib/fmt/pull/3655,
-    https://github.com/fmtlib/fmt/pull/3661).
-    Thanks @idzm, @perlun, @joycebrum.
+    https://github.com/fmtlib/fmt/pull/3661,
+    https://github.com/fmtlib/fmt/pull/3677).
+    Thanks @idzm, @perlun, @joycebrum, @fennewald.
 
 -   Updated CI dependencies
     (https://github.com/fmtlib/fmt/pull/3615,
     https://github.com/fmtlib/fmt/pull/3622,
-    https://github.com/fmtlib/fmt/pull/3623).
+    https://github.com/fmtlib/fmt/pull/3623,
+    https://github.com/fmtlib/fmt/pull/3666,
+    https://github.com/fmtlib/fmt/pull/3696,
+    https://github.com/fmtlib/fmt/pull/3697).
 
 # 10.1.1 - 2023-08-28
 
