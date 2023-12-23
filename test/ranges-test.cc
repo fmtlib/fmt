@@ -7,12 +7,18 @@
 
 #include "fmt/ranges.h"
 
+#include <list>
 #include <map>
+#include <numeric>
 #include <queue>
 #include <stack>
 #include <string>
 #include <utility>
 #include <vector>
+
+#if FMT_HAS_INCLUDE(<ranges>)
+#  include <ranges>
+#endif
 
 #include "gtest/gtest.h"
 
@@ -242,7 +248,7 @@ template <typename T> class non_const_only_range {
   explicit non_const_only_range(Args&&... args)
       : vec(std::forward<Args>(args)...) {}
 
-  auto begin() -> const_iterator{ return vec.begin(); }
+  auto begin() -> const_iterator { return vec.begin(); }
   auto end() -> const_iterator { return vec.end(); }
 };
 
@@ -360,7 +366,7 @@ struct cpp20_only_range {
     iterator() = default;
     iterator(int i) : val(i) {}
     auto operator*() const -> int { return val; }
-    auto operator++() -> iterator&{
+    auto operator++() -> iterator& {
       ++val;
       return *this;
     }
@@ -378,6 +384,17 @@ struct cpp20_only_range {
 };
 
 static_assert(std::input_iterator<cpp20_only_range::iterator>);
+
+#    ifdef __cpp_lib_ranges_iota
+TEST(ranges_test, nested_ranges) {
+  auto l = std::list{1, 2, 3};
+  auto r = std::views::iota(0, 3) | std::views::transform([&l](auto i) {
+             return std::views::take(std::ranges::subrange(l), i);
+           }) |
+           std::views::transform(std::views::reverse);
+  EXPECT_EQ(fmt::format("{}", r), "[[], [1], [2, 1]]");
+}
+#    endif
 #  endif
 
 TEST(ranges_test, join_sentinel) {
