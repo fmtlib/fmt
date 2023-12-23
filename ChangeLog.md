@@ -1,3 +1,13 @@
+# 10.2.0 - TBD
+
+-   Fixed various warnings and compilation issues
+    (https://github.com/fmtlib/fmt/pull/3624). Thanks @vinayyadav3016.
+
+-   Updated CI dependencies
+    (https://github.com/fmtlib/fmt/pull/3615,
+    https://github.com/fmtlib/fmt/pull/3622,
+    https://github.com/fmtlib/fmt/pull/3623).
+
 # 10.1.1 - 2023-08-28
 
 -   Added formatters for `std::atomic` and `atomic_flag`
