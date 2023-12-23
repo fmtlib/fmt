@@ -278,12 +278,6 @@ FMT_END_NAMESPACE
 
 FMT_BEGIN_NAMESPACE
 
-template <typename...> struct disjunction : std::false_type {};
-template <typename P> struct disjunction<P> : P {};
-template <typename P1, typename... Pn>
-struct disjunction<P1, Pn...>
-    : conditional_t<bool(P1::value), P1, disjunction<Pn...>> {};
-
 template <typename...> struct conjunction : std::true_type {};
 template <typename P> struct conjunction<P> : P {};
 template <typename P1, typename... Pn>
