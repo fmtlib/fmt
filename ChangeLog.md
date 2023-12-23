@@ -1,8 +1,26 @@
 # 10.2.0 - TBD
 
+-   Added a formatter for `std::bitset`
+    (https://github.com/fmtlib/fmt/pull/3660). For example
+    ([godbolt](https://godbolt.org/z/bdEaGeYxe)):
+
+    ```c++
+    #include <bitset>
+    #include <fmt/std.h>
+
+    int main() {
+      fmt::print("{}\n", std::bitset<6>(42)); // prints "101010"
+    }
+    ```
+
+    Thanks @muggenhor.
+
 -   Only export `format_error` when {fmt} is built as a shared library
     (https://github.com/fmtlib/fmt/issues/3626,
     https://github.com/fmtlib/fmt/pull/3627). Thanks @phprus.
+
+-   Made `fmt::streamed` `constexpr`.
+    (https://github.com/fmtlib/fmt/pull/3650). Thanks @muggenhor.
 
 -   Added an option to build without `wchar_t` support on Windows
     (https://github.com/fmtlib/fmt/pull/3636). Thanks @glebm.
@@ -11,8 +29,20 @@
     (https://github.com/fmtlib/fmt/pull/3610,
     https://github.com/fmtlib/fmt/pull/3624,
     https://github.com/fmtlib/fmt/pull/3630,
-    https://github.com/fmtlib/fmt/pull/3634).
-    Thanks @danakj, @vinayyadav3016, @cyyever, @phprus.
+    https://github.com/fmtlib/fmt/pull/3634,
+    https://github.com/fmtlib/fmt/pull/3638,
+    https://github.com/fmtlib/fmt/issues/3645,
+    https://github.com/fmtlib/fmt/pull/3647,
+    https://github.com/fmtlib/fmt/pull/3652).
+    Thanks @danakj, @vinayyadav3016, @cyyever, @phprus, @qimiko, @saschasc,
+    @gsjaardema.
+
+-   Improved documentation and README
+    (https://github.com/fmtlib/fmt/pull/3642,
+    https://github.com/fmtlib/fmt/pull/3653,
+    https://github.com/fmtlib/fmt/pull/3655,
+    https://github.com/fmtlib/fmt/pull/3661).
+    Thanks @idzm, @perlun, @joycebrum.
 
 -   Updated CI dependencies
     (https://github.com/fmtlib/fmt/pull/3615,
