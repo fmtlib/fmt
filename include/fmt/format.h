@@ -43,7 +43,7 @@
 #include <system_error>      // std::system_error
 
 #ifdef __cpp_lib_bit_cast
-#  include <bit>  // std::bitcast
+#  include <bit>  // std::bit_cast
 #endif
 
 #include "core.h"
