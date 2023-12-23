@@ -18,7 +18,7 @@
 #include <ostream>
 #include <type_traits>
 
-#include "format.h"
+#include "ostream.h"  // formatbuf
 
 FMT_BEGIN_NAMESPACE
 
