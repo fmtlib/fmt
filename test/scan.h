@@ -234,6 +234,7 @@ class file_scan_buffer : public scan_buffer {
 
   void consume() override {
     // Consume the current buffer content.
+    // TODO: do it more efficiently
     for (size_t i = 0, n = file_.buffer().size(); i != n; ++i) file_.get();
     fill();
   }

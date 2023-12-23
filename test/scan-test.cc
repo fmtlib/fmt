@@ -68,40 +68,43 @@ TEST(scan_test, read_string_view) {
   EXPECT_EQ(s, "foo");
 }
 
+TEST(scan_test, separator) {
+  int n1 = 0, n2 = 0;
+  fmt::scan("10 20", "{} {}", n1, n2);
+  EXPECT_EQ(n1, 10);
+  EXPECT_EQ(n2, 20);
+}
+
 #ifdef FMT_HAVE_STRPTIME
+struct num {
+  int value;
+};
+
 namespace fmt {
-template <> struct scanner<tm> {
-  std::string format;
+template <> struct scanner<num> {
+  bool hex = false;
 
   auto parse(scan_parse_context& ctx) -> scan_parse_context::iterator {
-    auto it = ctx.begin();
-    if (it != ctx.end() && *it == ':') ++it;
-    auto end = it;
-    while (end != ctx.end() && *end != '}') ++end;
-    format.reserve(detail::to_unsigned(end - it + 1));
-    format.append(it, end);
-    format.push_back('\0');
-    return end;
+    auto it = ctx.begin(), end = ctx.end();
+    if (it != end && *it == 'x') hex = true;
+    if (it != end && *it != '}') throw_format_error("invalid format");
+    return it;
   }
 
   template <class ScanContext>
-  auto scan(tm&, ScanContext& ctx) const -> typename ScanContext::iterator {
-    // TODO: replace strptime with get_time
-    // auto result = strptime(ctx.begin(), format.c_str(), &t);
-    // if (!result) throw format_error("failed to parse time");
-    // return result;
+  auto scan(num&, ScanContext& ctx) const -> typename ScanContext::iterator {
+    // TODO
+    //return fmt::scan({ctx.begin(), ctx.end()}, "{}", n.value);
     return ctx.begin();
   }
 };
 }  // namespace fmt
 
 TEST(scan_test, read_custom) {
-  /*auto input = "Date: 1985-10-25";
-  auto t = tm();
-  fmt::scan(input, "Date: {0:%Y-%m-%d}", t);
-  EXPECT_EQ(t.tm_year, 85);
-  EXPECT_EQ(t.tm_mon, 9);
-  EXPECT_EQ(t.tm_mday, 25);*/
+  auto input = "42";
+  auto n = num();
+  fmt::scan(input, "{:}", n);
+  //EXPECT_EQ(n, 42);
 }
 #endif
 
@@ -113,8 +116,8 @@ TEST(scan_test, invalid_format) {
 }
 
 TEST(scan_test, example) {
-  auto key = std::string();
-  auto value = int();
+  std::string key;
+  int value = 0;
   fmt::scan("answer = 42", "{} = {}", key, value);
   EXPECT_EQ(key, "answer");
   EXPECT_EQ(value, 42);
