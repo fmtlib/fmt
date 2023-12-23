@@ -4097,13 +4097,10 @@ class format_int {
 
 template <typename T, typename Char>
 struct formatter<T, Char, enable_if_t<detail::has_format_as<T>::value>>
-    : private formatter<detail::format_as_t<T>, Char> {
-  using base = formatter<detail::format_as_t<T>, Char>;
-  using base::parse;
-  using base::set_debug_format;
-
+    : formatter<detail::format_as_t<T>, Char> {
   template <typename FormatContext>
   auto format(const T& value, FormatContext& ctx) const -> decltype(ctx.out()) {
+    using base = formatter<detail::format_as_t<T>, Char>;
     return base::format(format_as(value), ctx);
   }
 };

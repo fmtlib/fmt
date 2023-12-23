@@ -528,3 +528,16 @@ TEST(ranges_test, container_adaptor) {
     EXPECT_EQ(fmt::format("{}", m), "[1, 2]");
   }
 }
+
+struct tieable {
+  int a = 3;
+  double b = 0.42;
+};
+
+auto format_as(const tieable& t) -> std::tuple<int, double> {
+  return std::tie(t.a, t.b);
+}
+
+TEST(ranges_test, format_as_tie) {
+  EXPECT_EQ(fmt::format("{}", tieable()), "(3, 0.42)");
+}
