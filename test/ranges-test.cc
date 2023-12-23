@@ -384,17 +384,6 @@ struct cpp20_only_range {
 };
 
 static_assert(std::input_iterator<cpp20_only_range::iterator>);
-
-#    ifdef __cpp_lib_ranges_iota
-TEST(ranges_test, nested_ranges) {
-  auto l = std::list{1, 2, 3};
-  auto r = std::views::iota(0, 3) | std::views::transform([&l](auto i) {
-             return std::views::take(std::ranges::subrange(l), i);
-           }) |
-           std::views::transform(std::views::reverse);
-  EXPECT_EQ(fmt::format("{}", r), "[[], [1], [2, 1]]");
-}
-#    endif
 #  endif
 
 TEST(ranges_test, join_sentinel) {
@@ -432,6 +421,17 @@ TEST(ranges_test, join_range) {
 #  endif
 }
 #endif  // FMT_RANGES_TEST_ENABLE_JOIN
+
+#if defined(__cpp_lib_ranges) && __cpp_lib_ranges >= 202302L
+TEST(ranges_test, nested_ranges) {
+  auto l = std::list{1, 2, 3};
+  auto r = std::views::iota(0, 3) | std::views::transform([&l](auto i) {
+             return std::views::take(std::ranges::subrange(l), i);
+           }) |
+           std::views::transform(std::views::reverse);
+  EXPECT_EQ(fmt::format("{}", r), "[[], [1], [2, 1]]");
+}
+#endif
 
 TEST(ranges_test, is_printable) {
   using fmt::detail::is_printable;
