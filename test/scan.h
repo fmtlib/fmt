@@ -14,6 +14,10 @@
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
+inline bool is_whitespace(char c) {
+  return c == ' ' || c == '\n';
+}
+
 struct maybe_contiguous_range {
   const char* begin;
   const char* end;
@@ -39,20 +43,18 @@ class scan_buffer {
     end_ = end;
   }
 
-  auto peek() -> int {
-    if (ptr_ == end_) {
-      // TODO: refill buffer
-      return EOF;
-    }
-    return *ptr_;
-  }
+  const char* ptr() const { return ptr_; }
 
-  // Fills the buffer with more input if available.
-  virtual void consume() = 0;
+  auto peek() -> int {
+    return ptr_ != end_ ? *ptr_ : EOF;
+  }
 
  public:
   scan_buffer(const scan_buffer&) = delete;
   void operator=(const scan_buffer&) = delete;
+
+  // Fills the buffer with more input if available.
+  virtual void consume() = 0;
 
   class iterator {
    private:
@@ -76,6 +78,7 @@ class scan_buffer {
 
     iterator(scan_buffer* buf)
         : ptr_(&buf->ptr_), buf_(buf), value_(static_cast<char>(buf->peek())) {
+      // TODO: fix check
       if (value_ == EOF) ptr_ = sentinel();
     }
 
@@ -235,7 +238,8 @@ class file_scan_buffer : public scan_buffer {
   void consume() override {
     // Consume the current buffer content.
     // TODO: do it more efficiently
-    for (size_t i = 0, n = file_.buffer().size(); i != n; ++i) file_.get();
+    size_t n = to_unsigned(ptr() - file_.buffer().begin());
+    for (size_t i = 0; i != n; ++i) file_.get();
     fill();
   }
 
@@ -284,8 +288,7 @@ struct scan_context {
   auto end() const -> iterator { return buf_.end(); }
 
   void advance_to(iterator) {
-    // The scan_buffer iterator automatically updates the buffer position when
-    // incremented.
+    buf_.consume();
   }
 };
 
@@ -418,6 +421,7 @@ struct scan_handler : error_handler {
   auto pos() const -> scan_buffer::iterator { return scan_ctx_.begin(); }
 
   void on_text(const char* begin, const char* end) {
+    if (begin == end) return;
     auto it = scan_ctx_.begin(), scan_end = scan_ctx_.end();
     for (; begin != end; ++begin, ++it) {
       if (it == scan_end || *begin != *it) on_error("invalid input");
@@ -438,6 +442,8 @@ struct scan_handler : error_handler {
 
   void on_replacement_field(int, const char*) {
     auto it = scan_ctx_.begin(), end = scan_ctx_.end();
+    while (it != end && is_whitespace(*it)) ++it;
+    scan_ctx_.advance_to(it);
     switch (arg_.type) {
     case scan_type::int_type:
       *arg_.int_value = read_int();

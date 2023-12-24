@@ -127,11 +127,15 @@ TEST(scan_test, example) {
 TEST(scan_test, file) {
   fmt::file read_end, write_end;
   fmt::file::pipe(read_end, write_end);
-  fmt::string_view input = "42";
+
+  fmt::string_view input = "10 20";
   write_end.write(input.data(), input.size());
   write_end.close();
-  int value = 0;
-  fmt::scan(read_end.fdopen("r").get(), "{}", value);
-  EXPECT_EQ(value, 42);
+
+  int n1 = 0, n2 = 0;
+  fmt::buffered_file f = read_end.fdopen("r");
+  fmt::scan(f.get(), "{} {}", n1, n2);
+  EXPECT_EQ(n1, 10);
+  EXPECT_EQ(n2, 20);
 }
 #endif  // FMT_USE_FCNTL
