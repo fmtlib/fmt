@@ -51,11 +51,9 @@ class scan_buffer {
       : ptr_(ptr), end_(end), contiguous_(contiguous) {}
   ~scan_buffer() = default;
 
-  auto is_empty() const -> bool { return ptr_ == end_; }
-
-  void set(const char* ptr, const char* end) noexcept {
-    ptr_ = ptr;
-    end_ = end;
+  void set(string_view buf) {
+    ptr_ = buf.begin();
+    end_ = buf.end();
   }
 
   auto ptr() const -> const char* { return ptr_; }
@@ -128,12 +126,12 @@ class scan_buffer {
     if (ptr == it.buf_->end_) it.ptr_ = iterator::sentinel();
   }
 
-  auto begin() noexcept -> iterator { return this; }
-  auto end() noexcept -> iterator { return {}; }
+  auto begin() -> iterator { return this; }
+  auto end() -> iterator { return {}; }
 
   auto is_contiguous() const -> bool { return contiguous_; }
 
-  // Tries consuming a single code unit.
+  // Tries consuming a single code unit. Returns true iff there is more input.
   auto try_consume() -> bool {
     FMT_ASSERT(ptr_ != end_, "");
     ++ptr_;
@@ -252,7 +250,7 @@ class file_scan_buffer : public scan_buffer {
       if (c != EOF) file_.unget(static_cast<char>(c));
       buf = file_.buffer();
     }
-    set(buf.begin(), buf.end());
+    set(buf);
   }
 
   void consume() override {
