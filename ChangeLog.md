@@ -47,6 +47,10 @@
 -   Added an option to build without `wchar_t` support on Windows
     (https://github.com/fmtlib/fmt/pull/3636). Thanks @glebm.
 
+-   Improved build configuration
+    (https://github.com/fmtlib/fmt/issues/3701,
+    https://github.com/fmtlib/fmt/pull/3702). Thanks @pklima.
+
 -   Fixed various warnings and compilation issues
     (https://github.com/fmtlib/fmt/pull/3610,
     https://github.com/fmtlib/fmt/pull/3624,
@@ -59,9 +63,14 @@
     https://github.com/fmtlib/fmt/issues/3654,
     https://github.com/fmtlib/fmt/pull/3663,
     https://github.com/fmtlib/fmt/pull/3680,
-    https://github.com/fmtlib/fmt/pull/3695).
+    https://github.com/fmtlib/fmt/pull/3695,
+    https://github.com/fmtlib/fmt/pull/369,
+    https://github.com/fmtlib/fmt/issues/3712,
+    https://github.com/fmtlib/fmt/pull/3713,
+    https://github.com/fmtlib/fmt/pull/3716).
     Thanks @danakj, @vinayyadav3016, @cyyever, @phprus, @qimiko, @saschasc,
-    @gsjaardema, @lazka, @Zhaojun-Liu, @carlsmedstad.
+    @gsjaardema, @lazka, @Zhaojun-Liu, @carlsmedstad, @hotwatermorning,
+    @cptFracassa, @kuguma.
 
 -   Improved documentation and README
     (https://github.com/fmtlib/fmt/pull/3642,
