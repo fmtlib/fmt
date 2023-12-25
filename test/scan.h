@@ -27,7 +27,7 @@ template <typename T> class optional {
 
   explicit operator bool() const { return has_value_; }
 
-  const T& operator*() const {
+  auto operator*() const -> const T& {
     if (!has_value_) throw std::runtime_error("bad optional access");
     return value_;
   }
@@ -58,7 +58,7 @@ class scan_buffer {
     end_ = end;
   }
 
-  const char* ptr() const { return ptr_; }
+  auto ptr() const -> const char* { return ptr_; }
 
   auto peek() -> int { return ptr_ != end_ ? *ptr_ : EOF; }
 
@@ -252,7 +252,7 @@ class file_scan_buffer : public scan_buffer {
       if (c != EOF) file_.unget(static_cast<char>(c));
       buf = file_.buffer();
     }
-    this->set(buf.begin(), buf.end());
+    set(buf.begin(), buf.end());
   }
 
   void consume() override {
