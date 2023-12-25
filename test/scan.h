@@ -14,12 +14,9 @@
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
-inline bool is_whitespace(char c) {
-  return c == ' ' || c == '\n';
-}
+inline bool is_whitespace(char c) { return c == ' ' || c == '\n'; }
 
-template <typename T>
-class optional {
+template <typename T> class optional {
  private:
   T value_;
   bool has_value_ = false;
@@ -28,9 +25,7 @@ class optional {
   optional() = default;
   optional(T value) : value_(std::move(value)), has_value_(true) {}
 
-  explicit operator bool() const {
-    return has_value_;
-  }
+  explicit operator bool() const { return has_value_; }
 
   const T& operator*() const {
     if (!has_value_) throw std::runtime_error("bad optional access");
@@ -65,9 +60,7 @@ class scan_buffer {
 
   const char* ptr() const { return ptr_; }
 
-  auto peek() -> int {
-    return ptr_ != end_ ? *ptr_ : EOF;
-  }
+  auto peek() -> int { return ptr_ != end_ ? *ptr_ : EOF; }
 
  public:
   scan_buffer(const scan_buffer&) = delete;
@@ -245,14 +238,11 @@ class file_scan_buffer : public scan_buffer {
   decltype(get_file(static_cast<FILE*>(nullptr), 0)) file_;
 
 #ifdef _WIN32
-  static void flockfile(FILE* f) {
-    _lock_file(f);
-  }
-  static void funlockfile(FILE* f) {
-    _unlock_file(file_);
-  }
+  static void flockfile(FILE* f) { _lock_file(f); }
+  static void funlockfile(FILE* f) { _unlock_file(f); }
 #endif
 
+  // Fills the buffer if it is empty.
   void fill() {
     string_view buf = file_.buffer();
     if (buf.size() == 0) {
@@ -266,7 +256,6 @@ class file_scan_buffer : public scan_buffer {
 
   void consume() override {
     // Consume the current buffer content.
-    // TODO: do it more efficiently
     size_t n = to_unsigned(ptr() - file_.buffer().begin());
     for (size_t i = 0; i != n; ++i) file_.get();
     fill();
@@ -278,9 +267,7 @@ class file_scan_buffer : public scan_buffer {
     flockfile(f);
     fill();
   }
-  ~file_scan_buffer() {
-    funlockfile(file_);
-  }
+  ~file_scan_buffer() { funlockfile(file_); }
 };
 }  // namespace detail
 
@@ -319,9 +306,7 @@ struct scan_context {
   auto begin() const -> iterator { return buf_.begin(); }
   auto end() const -> iterator { return buf_.end(); }
 
-  void advance_to(iterator) {
-    buf_.consume();
-  }
+  void advance_to(iterator) { buf_.consume(); }
 };
 
 namespace detail {
@@ -424,7 +409,7 @@ struct scan_handler : error_handler {
       if (c < '0' || c > '9') break;
     } while (it != end);
     scan_ctx_.advance_to(it);
-    
+
     // Check overflow.
     if (num_digits <= std::numeric_limits<int>::digits10) return value;
     const unsigned max = to_unsigned((std::numeric_limits<int>::max)());

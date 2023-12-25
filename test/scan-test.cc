@@ -95,7 +95,7 @@ template <> struct scanner<num> {
   template <class ScanContext>
   auto scan(num&, ScanContext& ctx) const -> typename ScanContext::iterator {
     // TODO
-    //return fmt::scan({ctx.begin(), ctx.end()}, "{}", n.value);
+    // return fmt::scan({ctx.begin(), ctx.end()}, "{}", n.value);
     return ctx.begin();
   }
 };
@@ -105,7 +105,7 @@ TEST(scan_test, read_custom) {
   auto input = "42";
   auto n = num();
   fmt::scan(input, "{:}", n);
-  //EXPECT_EQ(n, 42);
+  // EXPECT_EQ(n, 42);
 }
 #endif
 
@@ -151,8 +151,7 @@ TEST(scan_test, lock) {
 
   std::thread producer([&]() {
     fmt::string_view input = "42 ";
-    for (int i = 0; i < 1000; ++i)
-      write_end.write(input.data(), input.size());
+    for (int i = 0; i < 1000; ++i) write_end.write(input.data(), input.size());
     write_end.close();
   });
 
