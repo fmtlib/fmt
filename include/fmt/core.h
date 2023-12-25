@@ -836,6 +836,7 @@ template <typename T> class buffer {
   }
 
   /** Increases the buffer capacity to hold at least *capacity* elements. */
+  // DEPRECATED!
   virtual FMT_CONSTEXPR20 void grow(size_t capacity) = 0;
 
  public:
