@@ -58,8 +58,6 @@ class scan_buffer {
 
   auto ptr() const -> const char* { return ptr_; }
 
-  auto peek() -> int { return ptr_ != end_ ? *ptr_ : EOF; }
-
  public:
   scan_buffer(const scan_buffer&) = delete;
   void operator=(const scan_buffer&) = delete;
@@ -87,10 +85,13 @@ class scan_buffer {
       return *lhs.ptr_ != *rhs.ptr_;
     }
 
-    iterator(scan_buffer* buf)
-        : ptr_(&buf->ptr_), buf_(buf), value_(static_cast<char>(buf->peek())) {
-      // TODO: fix check
-      if (value_ == EOF) ptr_ = sentinel();
+    iterator(scan_buffer* buf) : buf_(buf) {
+      if (buf->ptr_ == buf->end_) {
+        ptr_ = sentinel();
+        return;
+      }
+      ptr_ = &buf->ptr_;
+      value_ = *buf->ptr_;
     }
 
    public:
