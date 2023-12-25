@@ -266,8 +266,19 @@ class file_scan_buffer : public scan_buffer {
  public:
   explicit file_scan_buffer(FILE* f)
       : scan_buffer(nullptr, nullptr, false), file_(f) {
-    // TODO: lock file?
+#ifndef _WIN32
+    flockfile(f);
+#else
+    _lock_file(f);
+#endif
     fill();
+  }
+  ~file_scan_buffer() {
+#ifndef _WIN32
+    funlockfile(file_);
+#else
+    _unlock_file(file_);
+#endif
   }
 };
 }  // namespace detail
@@ -472,7 +483,6 @@ struct scan_handler : error_handler {
     switch (arg_.type) {
     case scan_type::int_type:
       if (auto value = read_int()) *arg_.int_value = *value;
-      // TODO: stop on end of input
       break;
     case scan_type::uint_type:
       if (auto value = read_uint()) *arg_.uint_value = *value;
@@ -512,6 +522,11 @@ struct scan_handler : error_handler {
     arg_.custom.scan(arg_.custom.value, parse_ctx_, scan_ctx_);
     return parse_ctx_.begin();
   }
+
+  void on_error(const char* message) {
+    scan_ctx_.advance_to(scan_ctx_.end());
+    error_handler::on_error(message);
+  }
 };
 }  // namespace detail
 
@@ -533,9 +548,10 @@ auto scan(string_view input, string_view fmt, T&... args)
   return input.begin() + (buf.begin().base() - input.data());
 }
 
-template <typename... T> void scan(std::FILE* f, string_view fmt, T&... args) {
+template <typename... T> bool scan(std::FILE* f, string_view fmt, T&... args) {
   auto&& buf = detail::file_scan_buffer(f);
   vscan(buf, fmt, make_scan_args(args...));
+  return buf.begin() != buf.end();
 }
 
 FMT_END_NAMESPACE

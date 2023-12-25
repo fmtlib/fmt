@@ -144,4 +144,33 @@ TEST(scan_test, file) {
   EXPECT_EQ(n1, 10);
   EXPECT_EQ(n2, 20);
 }
+
+TEST(scan_test, lock) {
+  fmt::file read_end, write_end;
+  fmt::file::pipe(read_end, write_end);
+
+  std::thread producer([&]() {
+    fmt::string_view input = "42 ";
+    for (int i = 0; i < 1000; ++i)
+      write_end.write(input.data(), input.size());
+    write_end.close();
+  });
+
+  fmt::buffered_file f = read_end.fdopen("r");
+  auto fun = [&]() {
+    int value = 0;
+    while (fmt::scan(f.get(), "{}", value)) {
+      if (value != 42) {
+        read_end.close();
+        EXPECT_EQ(value, 42);
+        break;
+      }
+    }
+  };
+  std::thread consumer1(fun);
+  std::thread consumer2(fun);
+  producer.join();
+  consumer1.join();
+  consumer2.join();
+}
 #endif  // FMT_USE_FCNTL
