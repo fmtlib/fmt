@@ -10,6 +10,7 @@
 #include <time.h>
 
 #include <climits>
+#include <thread>
 
 #include "fmt/os.h"
 #include "gmock/gmock.h"
@@ -121,6 +122,11 @@ TEST(scan_test, example) {
   fmt::scan("answer = 42", "{} = {}", key, value);
   EXPECT_EQ(key, "answer");
   EXPECT_EQ(value, 42);
+}
+
+TEST(scan_test, end_of_input) {
+  int value = 0;
+  fmt::scan("", "{}", value);
 }
 
 #if FMT_USE_FCNTL

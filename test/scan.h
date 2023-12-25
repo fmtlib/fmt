@@ -18,6 +18,26 @@ inline bool is_whitespace(char c) {
   return c == ' ' || c == '\n';
 }
 
+template <typename T>
+class optional {
+ private:
+  T value_;
+  bool has_value_ = false;
+
+ public:
+  optional() = default;
+  optional(T value) : value_(std::move(value)), has_value_(true) {}
+
+  explicit operator bool() const {
+    return has_value_;
+  }
+
+  const T& operator*() const {
+    if (!has_value_) throw std::runtime_error("bad optional access");
+    return value_;
+  }
+};
+
 struct maybe_contiguous_range {
   const char* begin;
   const char* end;
@@ -374,13 +394,15 @@ struct scan_handler : error_handler {
   int next_arg_id_;
   scan_arg arg_;
 
-  template <typename T = unsigned> auto read_uint() -> T {
+  template <typename T = unsigned> auto read_uint() -> optional<T> {
     auto it = scan_ctx_.begin(), end = scan_ctx_.end();
-    char c = it != end ? *it : '\0', prev_digit;
+    if (it == end) return {};
+    char c = *it;
     if (c < '0' || c > '9') on_error("invalid input");
 
     int num_digits = 0;
     T value = 0, prev = 0;
+    char prev_digit = c;
     do {
       prev = value;
       value = value * 10 + static_cast<unsigned>(c - '0');
@@ -401,16 +423,19 @@ struct scan_handler : error_handler {
     throw format_error("number is too big");
   }
 
-  template <typename T = int> auto read_int() -> T {
+  template <typename T = int> auto read_int() -> optional<T> {
     auto it = scan_ctx_.begin(), end = scan_ctx_.end();
     bool negative = it != end && *it == '-';
     if (negative) {
       ++it;
       scan_ctx_.advance_to(it);
     }
-    auto abs_value = read_uint<typename std::make_unsigned<T>::type>();
-    auto value = static_cast<T>(abs_value);
-    return negative ? -value : value;
+    if (auto abs_value = read_uint<typename std::make_unsigned<T>::type>()) {
+      auto value = static_cast<T>(*abs_value);
+      return negative ? -value : value;
+    }
+    if (negative) on_error("invalid input");
+    return {};
   }
 
  public:
@@ -446,16 +471,18 @@ struct scan_handler : error_handler {
     scan_ctx_.advance_to(it);
     switch (arg_.type) {
     case scan_type::int_type:
-      *arg_.int_value = read_int();
+      if (auto value = read_int()) *arg_.int_value = *value;
+      // TODO: stop on end of input
       break;
     case scan_type::uint_type:
-      *arg_.uint_value = read_uint();
+      if (auto value = read_uint()) *arg_.uint_value = *value;
       break;
     case scan_type::long_long_type:
-      *arg_.long_long_value = read_int<long long>();
+      if (auto value = read_int<long long>()) *arg_.long_long_value = *value;
       break;
     case scan_type::ulong_long_type:
-      *arg_.ulong_long_value = read_uint<unsigned long long>();
+      if (auto value = read_uint<unsigned long long>())
+        *arg_.ulong_long_value = *value;
       break;
     case scan_type::string_type:
       while (it != end && *it != ' ') arg_.string->push_back(*it++);
