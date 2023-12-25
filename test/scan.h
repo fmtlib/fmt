@@ -244,6 +244,15 @@ class file_scan_buffer : public scan_buffer {
  private:
   decltype(get_file(static_cast<FILE*>(nullptr), 0)) file_;
 
+#ifdef _WIN32
+  static void flockfile(FILE* f) {
+    _lock_file(f);
+  }
+  static void funlockfile(FILE* f) {
+    _unlock_file(file_);
+  }
+#endif
+
   void fill() {
     string_view buf = file_.buffer();
     if (buf.size() == 0) {
@@ -266,19 +275,11 @@ class file_scan_buffer : public scan_buffer {
  public:
   explicit file_scan_buffer(FILE* f)
       : scan_buffer(nullptr, nullptr, false), file_(f) {
-#ifndef _WIN32
     flockfile(f);
-#else
-    _lock_file(f);
-#endif
     fill();
   }
   ~file_scan_buffer() {
-#ifndef _WIN32
     funlockfile(file_);
-#else
-    _unlock_file(file_);
-#endif
   }
 };
 }  // namespace detail
