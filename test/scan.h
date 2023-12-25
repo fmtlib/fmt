@@ -152,6 +152,12 @@ class string_scan_buffer : public scan_buffer {
       : scan_buffer(s.begin(), s.end(), true) {}
 };
 
+#ifdef _WIN32
+void flockfile(FILE* f) { _lock_file(f); }
+void funlockfile(FILE* f) { _unlock_file(f); }
+int getc_unlocked(FILE *f) { return _fgetc_nolock(f); }
+#endif
+
 // A FILE wrapper. F is FILE defined as a template parameter to make
 // system-specific API detection work.
 template <typename F> class file_base {
@@ -164,7 +170,7 @@ template <typename F> class file_base {
 
   // Reads a code unit from the stream.
   auto get() -> int {
-    int result = getc(file_);
+    int result = getc_unlocked(file_);
     if (result == EOF && ferror(file_) != 0)
       FMT_THROW(system_error(errno, FMT_STRING("getc failed")));
     return result;
@@ -182,6 +188,7 @@ template <typename F> class glibc_file : public file_base<F> {
  public:
   using file_base<F>::file_base;
 
+  // Returns the file's read buffer as a string_view.
   auto buffer() const -> string_view {
     return {this->file_->_IO_read_ptr,
             to_unsigned(this->file_->_IO_read_end - this->file_->_IO_read_ptr)};
@@ -193,7 +200,6 @@ template <typename F> class apple_file : public file_base<F> {
  public:
   using file_base<F>::file_base;
 
-  // Returns the file's read buffer as a string_view.
   auto buffer() const -> string_view {
     return {reinterpret_cast<char*>(this->file_->_p),
             to_unsigned(this->file_->_r)};
@@ -223,24 +229,19 @@ template <typename F> class fallback_file : public file_base<F> {
   }
 };
 
-template <typename F, FMT_ENABLE_IF(sizeof(F::_IO_read_ptr) != 0)>
-auto get_file(F* file, int) -> glibc_file<F> {
-  return file;
-}
-template <typename F, FMT_ENABLE_IF(sizeof(F::_p) != 0)>
-auto get_file(F* file, int) -> apple_file<F> {
-  return file;
-}
-auto get_file(FILE* file, ...) -> fallback_file<FILE> { return file; }
-
 class file_scan_buffer : public scan_buffer {
  private:
-  decltype(get_file(static_cast<FILE*>(nullptr), 0)) file_;
+  template <typename F, FMT_ENABLE_IF(sizeof(F::_IO_read_ptr) != 0)>
+  static auto get_file(F* f, int) -> glibc_file<F> {
+    return f;
+  }
+  template <typename F, FMT_ENABLE_IF(sizeof(F::_p) != 0)>
+  static auto get_file(F* f, int) -> apple_file<F> {
+    return f;
+  }
+  static auto get_file(FILE* f, ...) -> fallback_file<FILE> { return f; }
 
-#ifdef _WIN32
-  static void flockfile(FILE* f) { _lock_file(f); }
-  static void funlockfile(FILE* f) { _unlock_file(f); }
-#endif
+  decltype(get_file(static_cast<FILE*>(nullptr), 0)) file_;
 
   // Fills the buffer if it is empty.
   void fill() {
