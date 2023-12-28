@@ -120,7 +120,7 @@ template <typename Char> struct formatter<std::filesystem::path, Char> {
   format_specs<Char> specs_;
   detail::arg_ref<Char> width_ref_;
   bool debug_ = false;
-  char path_type_ = 'n';
+  char path_type_ = 0;
 
  public:
   FMT_CONSTEXPR void set_debug_format(bool set = true) { debug_ = set; }
@@ -137,7 +137,7 @@ template <typename Char> struct formatter<std::filesystem::path, Char> {
       debug_ = true;
       ++it;
     }
-    if (it != end && (*it == 'g' || *it == 'n')) path_type_ = *it++;
+    if (it != end && (*it == 'g')) path_type_ = *it++;
     return it;
   }
 
@@ -145,9 +145,9 @@ template <typename Char> struct formatter<std::filesystem::path, Char> {
   auto format(const std::filesystem::path& p, FormatContext& ctx) const {
     auto specs = specs_;
 #  ifdef _WIN32
-    auto path_string = path_type_ == 'n' ? p.native() : p.generic_wstring();
+    auto path_string = !path_type_ ? p.native() : p.generic_wstring();
 #  else
-    auto path_string = path_type_ == 'n' ? p.native() : p.generic_string();
+    auto path_string = !path_type_ ? p.native() : p.generic_string();
 #  endif
 
     detail::handle_dynamic_spec<detail::width_checker>(specs.width, width_ref_,
