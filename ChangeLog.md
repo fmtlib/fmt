@@ -15,6 +15,10 @@
 
     Thanks @Richardk2n.
 
+-   Fixed an overflow in `std::chrono::time_point` formatting with large dates
+    (https://github.com/fmtlib/fmt/issues/3725,
+    https://github.com/fmtlib/fmt/pull/3727). Thanks @cschreib.
+
 -   Added a formatter for `std::bitset`
     (https://github.com/fmtlib/fmt/pull/3660).
     For example ([godbolt](https://godbolt.org/z/bdEaGeYxe)):
@@ -37,8 +41,8 @@
     https://github.com/fmtlib/fmt/pull/3689).
     Thanks @Roman-Koshelev and @dimztimz.
 
--   Only export `format_error` when {fmt} is built as a shared library
-    (https://github.com/fmtlib/fmt/issues/3626,
+-   Changed to only export `format_error` when {fmt} is built as a shared
+    library (https://github.com/fmtlib/fmt/issues/3626,
     https://github.com/fmtlib/fmt/pull/3627). Thanks @phprus.
 
 -   Made `fmt::streamed` `constexpr`.
@@ -67,16 +71,18 @@
     https://github.com/fmtlib/fmt/pull/369,
     https://github.com/fmtlib/fmt/issues/3712,
     https://github.com/fmtlib/fmt/pull/3713,
-    https://github.com/fmtlib/fmt/pull/3716).
+    https://github.com/fmtlib/fmt/pull/3716,
+    https://github.com/fmtlib/fmt/pull/3723).
     Thanks @danakj, @vinayyadav3016, @cyyever, @phprus, @qimiko, @saschasc,
     @gsjaardema, @lazka, @Zhaojun-Liu, @carlsmedstad, @hotwatermorning,
-    @cptFracassa, @kuguma.
+    @cptFracassa, @kuguma, @PeterJohnson .
 
 -   Improved documentation and README
     (https://github.com/fmtlib/fmt/pull/3642,
     https://github.com/fmtlib/fmt/pull/3653,
     https://github.com/fmtlib/fmt/pull/3655,
     https://github.com/fmtlib/fmt/pull/3661,
+    https://github.com/fmtlib/fmt/issues/3673,
     https://github.com/fmtlib/fmt/pull/3677).
     Thanks @idzm, @perlun, @joycebrum, @fennewald.
 
