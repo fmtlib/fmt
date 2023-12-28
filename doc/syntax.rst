@@ -82,7 +82,7 @@ The general form of a *standard format specifier* is:
    width: `integer` | "{" [`arg_id`] "}"
    precision: `integer` | "{" [`arg_id`] "}"
    type: "a" | "A" | "b" | "B" | "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" |
-       : "o" | "p" | "s" | "x" | "X"
+       : "o" | "p" | "s" | "x" | "X" | "?"
 
 The *fill* character can be any Unicode code point other than ``'{'`` or
 ``'}'``. The presence of a fill character is signaled by the character following
@@ -177,6 +177,9 @@ The available string presentation types are:
 | ``'s'`` | String format. This is the default type for strings and  |
 |         | may be omitted.                                          |
 +---------+----------------------------------------------------------+
+| ``'?'`` | Debug format. The string is quoted and special           |
+|         | characters escaped.                                      |
++---------+----------------------------------------------------------+
 | none    | The same as ``'s'``.                                     |
 +---------+----------------------------------------------------------+
 
@@ -187,6 +190,9 @@ The available character presentation types are:
 +=========+==========================================================+
 | ``'c'`` | Character format. This is the default type for           |
 |         | characters and may be omitted.                           |
++---------+----------------------------------------------------------+
+| ``'?'`` | Debug format. The character is quoted and special        |
+|         | characters escaped.                                      |
 +---------+----------------------------------------------------------+
 | none    | The same as ``'c'``.                                     |
 +---------+----------------------------------------------------------+
