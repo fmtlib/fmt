@@ -395,8 +395,10 @@ struct scan_handler : error_handler {
   int next_arg_id_;
   scan_arg arg_;
 
-  template <typename T = unsigned> auto read_uint() -> optional<T> {
-    auto it = scan_ctx_.begin(), end = scan_ctx_.end();
+  using iterator = scan_buffer::iterator;
+
+  template <typename T = unsigned> auto read_uint(iterator& it) -> optional<T> {
+    auto end = scan_ctx_.end();
     if (it == end) return {};
     char c = *it;
     if (c < '0' || c > '9') on_error("invalid input");
@@ -412,7 +414,6 @@ struct scan_handler : error_handler {
       ++num_digits;
       if (c < '0' || c > '9') break;
     } while (it != end);
-    scan_ctx_.advance_to(it);
 
     // Check overflow.
     if (num_digits <= std::numeric_limits<int>::digits10) return value;
@@ -424,14 +425,11 @@ struct scan_handler : error_handler {
     throw format_error("number is too big");
   }
 
-  template <typename T = int> auto read_int() -> optional<T> {
-    auto it = scan_ctx_.begin(), end = scan_ctx_.end();
+  template <typename T = int> auto read_int(iterator& it) -> optional<T> {
+    auto end = scan_ctx_.end();
     bool negative = it != end && *it == '-';
-    if (negative) {
-      ++it;
-      scan_ctx_.advance_to(it);
-    }
-    if (auto abs_value = read_uint<typename std::make_unsigned<T>::type>()) {
+    if (negative) ++it;
+    if (auto abs_value = read_uint<typename std::make_unsigned<T>::type>(it)) {
       auto value = static_cast<T>(*abs_value);
       return negative ? -value : value;
     }
@@ -469,24 +467,22 @@ struct scan_handler : error_handler {
   void on_replacement_field(int, const char*) {
     auto it = scan_ctx_.begin(), end = scan_ctx_.end();
     while (it != end && is_whitespace(*it)) ++it;
-    scan_ctx_.advance_to(it);
     switch (arg_.type) {
     case scan_type::int_type:
-      if (auto value = read_int()) *arg_.int_value = *value;
+      if (auto value = read_int(it)) *arg_.int_value = *value;
       break;
     case scan_type::uint_type:
-      if (auto value = read_uint()) *arg_.uint_value = *value;
+      if (auto value = read_uint(it)) *arg_.uint_value = *value;
       break;
     case scan_type::long_long_type:
-      if (auto value = read_int<long long>()) *arg_.long_long_value = *value;
+      if (auto value = read_int<long long>(it)) *arg_.long_long_value = *value;
       break;
     case scan_type::ulong_long_type:
-      if (auto value = read_uint<unsigned long long>())
+      if (auto value = read_uint<unsigned long long>(it))
         *arg_.ulong_long_value = *value;
       break;
     case scan_type::string_type:
       while (it != end && *it != ' ') arg_.string->push_back(*it++);
-      scan_ctx_.advance_to(it);
       break;
     case scan_type::string_view_type: {
       auto range = to_contiguous(it);
@@ -497,13 +493,13 @@ struct scan_handler : error_handler {
       size_t size = to_unsigned(p - range.begin);
       *arg_.string_view = {range.begin, size};
       advance(it, size);
-      scan_ctx_.advance_to(it);
       break;
     }
     case scan_type::none_type:
     case scan_type::custom_type:
       assert(false);
     }
+    scan_ctx_.advance_to(it);
   }
 
   auto on_format_specs(int, const char* begin, const char*) -> const char* {
