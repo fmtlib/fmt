@@ -1221,8 +1221,7 @@ class tm_writer {
     return static_cast<int>(l);
   }
 
-  // Algorithm:
-  // https://en.wikipedia.org/wiki/ISO_week_date#Calculating_the_week_number_from_a_month_and_day_of_the_month_or_ordinal_date
+  // Algorithm: https://en.wikipedia.org/wiki/ISO_week_date.
   auto iso_year_weeks(long long curr_year) const noexcept -> int {
     const auto prev_year = curr_year - 1;
     const auto curr_p =
