@@ -409,8 +409,7 @@ inline void do_write(buffer<Char>& buf, const std::tm& time,
   auto&& format_buf = formatbuf<std::basic_streambuf<Char>>(buf);
   auto&& os = std::basic_ostream<Char>(&format_buf);
   os.imbue(loc);
-  using iterator = std::ostreambuf_iterator<Char>;
-  const auto& facet = std::use_facet<std::time_put<Char, iterator>>(loc);
+  const auto& facet = std::use_facet<std::time_put<Char>>(loc);
   auto end = facet.put(os, os, Char(' '), &time, format, modifier);
   if (end.failed()) FMT_THROW(format_error("failed to format time"));
 }
