@@ -60,9 +60,9 @@
 
     Thanks @muggenhor.
 
--   Added an experimental `nested_formatter` that provides an easy way applying
-    a formatter to one or more subobjects while automatically handling width,
-    fill and alignment. For example:
+-   Added an experimental `nested_formatter` that provides an easy way of
+    applying a formatter to one or more subobjects while automatically handling
+    width, fill and alignment. For example:
 
     ```c++
     #include <fmt/format.h>

@@ -167,8 +167,8 @@ for example
 
 will return ``"      blue"``.
 
-The experimental ``nested_formatter`` provides an easy way applying a formatter
-to one or more subobjects.
+The experimental ``nested_formatter`` provides an easy way of applying a
+formatter to one or more subobjects.
 
 For example::
 
