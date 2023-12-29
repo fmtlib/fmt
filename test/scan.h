@@ -94,6 +94,10 @@ class scan_buffer {
       value_ = *buf->ptr_;
     }
 
+    friend scan_buffer& get_buffer(iterator it) {
+      return *it.buf_;
+    }
+
    public:
     iterator() : ptr_(sentinel()), buf_(nullptr) {}
 
@@ -154,7 +158,7 @@ class string_scan_buffer : public scan_buffer {
 #ifdef _WIN32
 void flockfile(FILE* f) { _lock_file(f); }
 void funlockfile(FILE* f) { _unlock_file(f); }
-int getc_unlocked(FILE *f) { return _fgetc_nolock(f); }
+int getc_unlocked(FILE* f) { return _fgetc_nolock(f); }
 #endif
 
 // A FILE wrapper. F is FILE defined as a template parameter to make
@@ -532,6 +536,15 @@ auto scan(string_view input, string_view fmt, T&... args)
   auto&& buf = detail::string_scan_buffer(input);
   vscan(buf, fmt, make_scan_args(args...));
   return input.begin() + (buf.begin().base() - input.data());
+}
+
+template <typename InputRange, typename... T,
+          FMT_ENABLE_IF(!std::is_convertible<InputRange, string_view>::value)>
+auto scan(InputRange&& input, string_view fmt, T&... args)
+    -> decltype(std::begin(input)) {
+  auto it = std::begin(input);
+  vscan(get_buffer(it), fmt, make_scan_args(args...));
+  return it;
 }
 
 template <typename... T> bool scan(std::FILE* f, string_view fmt, T&... args) {

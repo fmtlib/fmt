@@ -76,7 +76,6 @@ TEST(scan_test, separator) {
   EXPECT_EQ(n2, 20);
 }
 
-#ifdef FMT_HAVE_STRPTIME
 struct num {
   int value;
 };
@@ -93,10 +92,9 @@ template <> struct scanner<num> {
   }
 
   template <class ScanContext>
-  auto scan(num&, ScanContext& ctx) const -> typename ScanContext::iterator {
-    // TODO
-    // return fmt::scan({ctx.begin(), ctx.end()}, "{}", n.value);
-    return ctx.begin();
+  auto scan(num& n, ScanContext& ctx) const -> typename ScanContext::iterator {
+    // TODO: handle specifier
+    return fmt::scan(ctx, "{}", n.value);
   }
 };
 }  // namespace fmt
@@ -105,9 +103,8 @@ TEST(scan_test, read_custom) {
   auto input = "42";
   auto n = num();
   fmt::scan(input, "{:}", n);
-  // EXPECT_EQ(n, 42);
+  EXPECT_EQ(n.value, 42);
 }
-#endif
 
 TEST(scan_test, invalid_format) {
   EXPECT_THROW_MSG(fmt::scan("", "{}"), fmt::format_error,
