@@ -152,6 +152,7 @@ TEST(scan_test, lock) {
     write_end.close();
   });
 
+  std::atomic<int> count(0);
   fmt::buffered_file f = read_end.fdopen("r");
   auto fun = [&]() {
     int value = 0;
@@ -161,12 +162,16 @@ TEST(scan_test, lock) {
         EXPECT_EQ(value, 42);
         break;
       }
+      ++count;
     }
   };
   std::thread consumer1(fun);
   std::thread consumer2(fun);
+  
   producer.join();
   consumer1.join();
   consumer2.join();
+  EXPECT_EQ(count, 1000);
+
 }
 #endif  // FMT_USE_FCNTL
