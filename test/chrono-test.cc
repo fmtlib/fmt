@@ -17,6 +17,9 @@
 using fmt::runtime;
 using testing::Contains;
 
+template <typename Duration>
+using sys_time = std::chrono::time_point<std::chrono::system_clock, Duration>;
+
 #if defined(__MINGW32__) && !defined(_UCRT)
 // Only C89 conversion specifiers when using MSVCRT instead of UCRT
 #  define FMT_HAS_C99_STRFTIME 0
@@ -858,42 +861,33 @@ TEST(chrono_test, utc_clock) {
 }
 #endif
 
-TEST(chrono_test, timestamps_ratios) {
-  std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>
-      t1(std::chrono::milliseconds(67890));
-
+TEST(chrono_test, timestamp_ratios) {
+  auto t1 = sys_time<std::chrono::milliseconds>(std::chrono::milliseconds(67890));
   EXPECT_EQ(fmt::format("{:%M:%S}", t1), "01:07.890");
 
-  std::chrono::time_point<std::chrono::system_clock, std::chrono::minutes> t2(
-      std::chrono::minutes(7));
-
+  auto t2 = sys_time<std::chrono::minutes>(std::chrono::minutes(7));
   EXPECT_EQ(fmt::format("{:%M:%S}", t2), "07:00");
 
-  std::chrono::time_point<std::chrono::system_clock,
-                          std::chrono::duration<int, std::ratio<9>>>
-      t3(std::chrono::duration<int, std::ratio<9>>(7));
-
+  auto t3 = sys_time<std::chrono::duration<int, std::ratio<9>>>(
+      std::chrono::duration<int, std::ratio<9>>(7));
   EXPECT_EQ(fmt::format("{:%M:%S}", t3), "01:03");
 
-  std::chrono::time_point<std::chrono::system_clock,
-                          std::chrono::duration<int, std::ratio<63>>>
-      t4(std::chrono::duration<int, std::ratio<63>>(1));
-
+  auto t4 = sys_time<std::chrono::duration<int, std::ratio<63>>>(
+      std::chrono::duration<int, std::ratio<63>>(1));
   EXPECT_EQ(fmt::format("{:%M:%S}", t4), "01:03");
 
-  std::chrono::time_point<std::chrono::system_clock, std::chrono::milliseconds>
-      t5(std::chrono::seconds(32503680000));
+  if (sizeof(time_t) > 4) {
+    auto tp = sys_time<std::chrono::milliseconds>(
+        std::chrono::seconds(32503680000));
+    EXPECT_EQ(fmt::format("{:%Y-%m-%d}", tp), "3000-01-01");
+  }
 
-  EXPECT_EQ(fmt::format("{:%Y-%m-%d}", t5), "3000-01-01");
-
-#if FMT_SAFE_DURATION_CAST
-  using years = std::chrono::duration<std::int64_t, std::ratio<31556952>>;
-  std::chrono::time_point<std::chrono::system_clock, years> t6(
-      (years(std::numeric_limits<std::int64_t>::max())));
-
-  EXPECT_THROW_MSG((void)fmt::format("{:%Y-%m-%d}", t6), fmt::format_error,
-                   "cannot format duration");
-#endif
+  if (FMT_SAFE_DURATION_CAST) {
+    using years = std::chrono::duration<std::int64_t, std::ratio<31556952>>;
+    auto tp = sys_time<years>(years(std::numeric_limits<std::int64_t>::max()));
+    EXPECT_THROW_MSG((void)fmt::format("{:%Y-%m-%d}", tp), fmt::format_error,
+                     "cannot format duration");
+  }
 }
 
 TEST(chrono_test, timestamps_sub_seconds) {
