@@ -315,6 +315,7 @@ class FMT_API file {
 
   // Creates a pipe setting up read_end and write_end file objects for reading
   // and writing respectively.
+  // DEPRECATED! Taking files as out parameters is deprecated.
   static void pipe(file& read_end, file& write_end);
 
   // Creates a buffered_file object associated with this file and detaches
