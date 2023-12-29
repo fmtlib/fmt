@@ -6,7 +6,8 @@
 
 -   Added support for the chrono suffix for days and changed
     the suffix for minutes from "m" to the correct "min"
-    (https://github.com/fmtlib/fmt/pull/3664).
+    (https://github.com/fmtlib/fmt/issues/3662,
+    https://github.com/fmtlib/fmt/pull/3664).
     For example ([godbolt](https://godbolt.org/z/9KhMnq9ba)):
 
     ```c++
@@ -78,10 +79,24 @@
 -   Made `format_as` work with references
     (https://github.com/fmtlib/fmt/pull/3739). Thanks @tchaikov.
 
--   Disallowed the `c` specifier for `bool`.
+-   Disallowed unsafe uses of `fmt::styled`
+    (https://github.com/fmtlib/fmt/issues/3625):
+
+    ```c++
+    auto s = fmt::styled(std::string("dangler"), fmt::emphasis::bold);
+    fmt::print("{}\n", s); // compile error
+    ```
+
+    Pass `fmt::styled(...)` as a parameter instead.
+
+-   Disallowed the `c` specifier for `bool`
+    (https://github.com/fmtlib/fmt/pull/3734). Thanks @js324.
 
 -   Fixed localized formatting in bases other than decimal
     (https://github.com/fmtlib/fmt/pull/3750). Thanks @js324.
+
+-   Fixed a performance regression in experimental `fmt::ostream::print`
+    (https://github.com/fmtlib/fmt/issues/3674).
 
 -   Added synchronization with the underlying output stream when writing to
     the Windows console
@@ -101,7 +116,8 @@
     (https://github.com/fmtlib/fmt/pull/3757). Thanks @phprus.
 
 -   Added an option to build without `wchar_t` support on Windows
-    (https://github.com/fmtlib/fmt/pull/3636). Thanks @glebm.
+    (https://github.com/fmtlib/fmt/issues/3631,
+    https://github.com/fmtlib/fmt/pull/3636). Thanks @glebm.
 
 -   Improved build and CI configuration
     (https://github.com/fmtlib/fmt/issues/3701,
@@ -109,12 +125,14 @@
     https://github.com/fmtlib/fmt/pull/3749). Thanks @pklima and @tchaikov.
 
 -   Fixed various warnings and compilation issues
-    (https://github.com/fmtlib/fmt/pull/3610,
+    (https://github.com/fmtlib/fmt/issues/3607,
+    https://github.com/fmtlib/fmt/pull/3610,
     https://github.com/fmtlib/fmt/pull/3624,
     https://github.com/fmtlib/fmt/pull/3630,
     https://github.com/fmtlib/fmt/pull/3634,
     https://github.com/fmtlib/fmt/pull/3638,
     https://github.com/fmtlib/fmt/issues/3645,
+    https://github.com/fmtlib/fmt/issues/3646,
     https://github.com/fmtlib/fmt/pull/3647,
     https://github.com/fmtlib/fmt/pull/3652,
     https://github.com/fmtlib/fmt/issues/3654,
@@ -145,7 +163,9 @@
     @msimberg, @tchaikov.
 
 -   Improved documentation and README
-    (https://github.com/fmtlib/fmt/pull/3642,
+    (https://github.com/fmtlib/fmt/issues/2086,
+    https://github.com/fmtlib/fmt/issues/3637,
+    https://github.com/fmtlib/fmt/pull/3642,
     https://github.com/fmtlib/fmt/pull/3653,
     https://github.com/fmtlib/fmt/pull/3655,
     https://github.com/fmtlib/fmt/pull/3661,
@@ -553,7 +573,9 @@
 
     Thanks @ShawnZhong.
 
--   Added a formatter for `std::optional` to `fmt/std.h`.
+-   Added a formatter for `std::optional` to `fmt/std.h`
+    (https://github.com/fmtlib/fmt/issues/1367,
+    https://github.com/fmtlib/fmt/pull/3303).
     Thanks @tom-huntington.
 
 -   Fixed formatting of valueless by exception variants
