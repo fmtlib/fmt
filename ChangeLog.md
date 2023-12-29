@@ -121,13 +121,13 @@
     (https://github.com/fmtlib/fmt/issues/3625):
 
     ```c++
-    auto s = fmt::styled(std::string("dangler"), fmt::emphasis::bold);
+    auto s = fmt::styled(std::string("dangle"), fmt::emphasis::bold);
     fmt::print("{}\n", s); // compile error
     ```
 
     Pass `fmt::styled(...)` as a parameter instead.
 
--   Added a null check when formatting C strings with the `s` specifier
+-   Added a null check when formatting a C string with the `s` specifier
     (https://github.com/fmtlib/fmt/issues/3706).
 
 -   Disallowed the `c` specifier for `bool`
