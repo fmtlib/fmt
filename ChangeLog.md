@@ -60,6 +60,37 @@
 
     Thanks @muggenhor.
 
+-   Added an experimental `nested_formatter` that provides an easy way applying
+    a formatter to one or more subobjects while automatically handling width,
+    fill and alignment. For example:
+
+    ```c++
+    #include <fmt/format.h>
+
+    struct point {
+      double x, y;
+    };
+
+    template <>
+    struct fmt::formatter<point> : nested_formatter<double> {
+      auto format(point p, format_context& ctx) const {
+        return write_padded(ctx, [=](auto out) {
+          return format_to(out, "({}, {})", nested(p.x), nested(p.y));
+        });
+      }
+    };
+
+    int main() {
+      fmt::print("[{:>20.2f}]", point{1, 2});
+    }
+    ```
+
+    prints
+
+    ```
+    [          (1.00, 2.00)]
+    ```
+
 -   Added the generic representation (`g`) to `std::filesystem::path`
     (https://github.com/fmtlib/fmt/issues/3715,
     https://github.com/fmtlib/fmt/pull/3729). For example:
@@ -136,9 +167,11 @@
     https://github.com/fmtlib/fmt/pull/3636). Thanks @glebm.
 
 -   Improved build and CI configuration
-    (https://github.com/fmtlib/fmt/issues/3701,
+    (https://github.com/fmtlib/fmt/pull/3679,
+    https://github.com/fmtlib/fmt/issues/3701,
     https://github.com/fmtlib/fmt/pull/3702,
-    https://github.com/fmtlib/fmt/pull/3749). Thanks @pklima and @tchaikov.
+    https://github.com/fmtlib/fmt/pull/3749).
+    Thanks @jcar87, @pklima and @tchaikov.
 
 -   Fixed various warnings, compilation and test issues
     (https://github.com/fmtlib/fmt/issues/3607,
