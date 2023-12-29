@@ -387,6 +387,34 @@ struct scan_args {
 
 namespace detail {
 
+const char* parse_scan_specs(
+  const char* begin, const char* end, format_specs<>& specs, scan_type) {
+  while (begin != end) {
+    switch (to_ascii(*begin)) {
+      // TODO: parse scan format specifiers
+      case 'x':
+        specs.type = presentation_type::hex_lower;
+        break;
+      case '}':
+        return begin;
+    }
+  }
+  return begin;
+}
+
+struct arg_scanner {
+  using iterator = scan_buffer::iterator;
+
+  iterator begin;
+  iterator end;
+  const format_specs<>& specs;
+
+  template <typename T>
+  auto operator()(T) -> iterator {
+    return begin;
+  }
+};
+
 struct scan_handler : error_handler {
  private:
   scan_parse_context parse_ctx_;
@@ -502,11 +530,21 @@ struct scan_handler : error_handler {
     scan_ctx_.advance_to(it);
   }
 
-  auto on_format_specs(int, const char* begin, const char*) -> const char* {
-    if (arg_.type != scan_type::custom_type) return begin;
-    parse_ctx_.advance_to(begin);
-    arg_.custom.scan(arg_.custom.value, parse_ctx_, scan_ctx_);
-    return parse_ctx_.begin();
+  auto on_format_specs(int, const char* begin, const char* end) -> const char* {
+    if (arg_.type == scan_type::custom_type) {
+      parse_ctx_.advance_to(begin);
+      arg_.custom.scan(arg_.custom.value, parse_ctx_, scan_ctx_);
+      return parse_ctx_.begin();
+    }
+    auto specs = format_specs<>();
+    begin = parse_scan_specs(begin, end, specs, arg_.type);
+    if (begin == end || *begin != '}')
+      on_error("missing '}' in format string");
+    auto s = arg_scanner{scan_ctx_.begin(), scan_ctx_.end(), specs};
+    // TODO: scan argument according to specs
+    (void)s;
+    //context.advance_to(visit_format_arg(s, arg));
+    return begin;
   }
 
   void on_error(const char* message) {
