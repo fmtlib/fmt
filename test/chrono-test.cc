@@ -269,9 +269,8 @@ TEST(chrono_test, system_clock_time_point) {
   EXPECT_EQ(strftime_full_utc(t1), fmt::format("{:%Y-%m-%d %H:%M:%S}", t1));
   EXPECT_EQ(strftime_full_utc(t1), fmt::format("{}", t1));
   EXPECT_EQ(strftime_full_utc(t1), fmt::format("{:}", t1));
-  using time_point =
-      std::chrono::time_point<std::chrono::system_clock, std::chrono::seconds>;
-  auto t2 = time_point(std::chrono::seconds(42));
+
+  auto t2 = sys_time<std::chrono::seconds>(std::chrono::seconds(42));
   EXPECT_EQ(strftime_full_utc(t2), fmt::format("{:%Y-%m-%d %H:%M:%S}", t2));
 
   std::vector<std::string> spec_list = {
@@ -713,27 +712,26 @@ TEST(chrono_test, invalid_colons) {
 }
 
 TEST(chrono_test, negative_durations) {
-  EXPECT_EQ("-12345", fmt::format("{:%Q}", std::chrono::seconds(-12345)));
-  EXPECT_EQ("-03:25:45",
-            fmt::format("{:%H:%M:%S}", std::chrono::seconds(-12345)));
-  EXPECT_EQ("-00:01",
-            fmt::format("{:%M:%S}", std::chrono::duration<double>(-1)));
-  EXPECT_EQ("s", fmt::format("{:%q}", std::chrono::seconds(-12345)));
-  EXPECT_EQ("-00.127",
-            fmt::format("{:%S}",
-                        std::chrono::duration<signed char, std::milli>{-127}));
+  EXPECT_EQ(fmt::format("{:%Q}", std::chrono::seconds(-12345)), "-12345");
+  EXPECT_EQ(fmt::format("{:%H:%M:%S}", std::chrono::seconds(-12345)),
+            "-03:25:45");
+  EXPECT_EQ(fmt::format("{:%M:%S}", std::chrono::duration<double>(-1)),
+            "-00:01");
+  EXPECT_EQ(fmt::format("{:%q}", std::chrono::seconds(-12345)), "s");
+  EXPECT_EQ(fmt::format("{:%S}",
+                        std::chrono::duration<signed char, std::milli>(-127)),
+            "-00.127");
   auto min = std::numeric_limits<int>::min();
   EXPECT_EQ(fmt::format("{}", min),
             fmt::format("{:%Q}", std::chrono::duration<int>(min)));
 }
 
 TEST(chrono_test, special_durations) {
-  auto value = fmt::format("{:%S}", std::chrono::duration<double>(1e20));
-  EXPECT_EQ(value, "40");
+  EXPECT_EQ(fmt::format("{:%S}", std::chrono::duration<double>(1e20)), "40");
   auto nan = std::numeric_limits<double>::quiet_NaN();
   EXPECT_EQ(
-      "nan nan nan nan nan:nan nan",
-      fmt::format("{:%I %H %M %S %R %r}", std::chrono::duration<double>(nan)));
+      fmt::format("{:%I %H %M %S %R %r}", std::chrono::duration<double>(nan)),
+      "nan nan nan nan nan:nan nan");
   EXPECT_EQ(fmt::format("{}", std::chrono::duration<float, std::exa>(1)),
             "1Es");
   EXPECT_EQ(fmt::format("{}", std::chrono::duration<float, std::atto>(1)),
@@ -742,13 +740,13 @@ TEST(chrono_test, special_durations) {
             "03:33");
   EXPECT_EQ(fmt::format("{:%T}", std::chrono::duration<char, std::mega>{2}),
             "03:33:20");
-  EXPECT_EQ("01.234",
-            fmt::format("{:.3%S}",
-                        std::chrono::duration<float, std::pico>(1.234e12)));
+  EXPECT_EQ(
+      fmt::format("{:.3%S}", std::chrono::duration<float, std::pico>(1.234e12)),
+      "01.234");
 }
 
 TEST(chrono_test, unsigned_duration) {
-  EXPECT_EQ("42s", fmt::format("{}", std::chrono::duration<unsigned>(42)));
+  EXPECT_EQ(fmt::format("{}", std::chrono::duration<unsigned>(42)), "42s");
 }
 
 TEST(chrono_test, weekday) {
@@ -862,7 +860,8 @@ TEST(chrono_test, utc_clock) {
 #endif
 
 TEST(chrono_test, timestamp_ratios) {
-  auto t1 = sys_time<std::chrono::milliseconds>(std::chrono::milliseconds(67890));
+  auto t1 =
+      sys_time<std::chrono::milliseconds>(std::chrono::milliseconds(67890));
   EXPECT_EQ(fmt::format("{:%M:%S}", t1), "01:07.890");
 
   auto t2 = sys_time<std::chrono::minutes>(std::chrono::minutes(7));
@@ -877,8 +876,8 @@ TEST(chrono_test, timestamp_ratios) {
   EXPECT_EQ(fmt::format("{:%M:%S}", t4), "01:03");
 
   if (sizeof(time_t) > 4) {
-    auto tp = sys_time<std::chrono::milliseconds>(
-        std::chrono::seconds(32503680000));
+    auto tp =
+        sys_time<std::chrono::milliseconds>(std::chrono::seconds(32503680000));
     EXPECT_EQ(fmt::format("{:%Y-%m-%d}", tp), "3000-01-01");
   }
 
@@ -890,79 +889,56 @@ TEST(chrono_test, timestamp_ratios) {
   }
 }
 
-TEST(chrono_test, timestamps_sub_seconds) {
-  std::chrono::time_point<std::chrono::system_clock,
-                          std::chrono::duration<long long, std::ratio<1, 3>>>
-      t1(std::chrono::duration<long long, std::ratio<1, 3>>(4));
-
+TEST(chrono_test, timestamp_sub_seconds) {
+  auto t1 = sys_time<std::chrono::duration<long long, std::ratio<1, 3>>>(
+      std::chrono::duration<long long, std::ratio<1, 3>>(4));
   EXPECT_EQ(fmt::format("{:%S}", t1), "01.333333");
 
-  std::chrono::time_point<std::chrono::system_clock,
-                          std::chrono::duration<double, std::ratio<1, 3>>>
-      t2(std::chrono::duration<double, std::ratio<1, 3>>(4));
-
+  auto t2 = sys_time<std::chrono::duration<double, std::ratio<1, 3>>>(
+      std::chrono::duration<double, std::ratio<1, 3>>(4));
   EXPECT_EQ(fmt::format("{:%S}", t2), "01.333333");
 
-  const std::chrono::time_point<std::chrono::system_clock, std::chrono::seconds>
-      t3(std::chrono::seconds(2));
-
+  auto t3 = sys_time<std::chrono::seconds>(std::chrono::seconds(2));
   EXPECT_EQ(fmt::format("{:%S}", t3), "02");
 
-  const std::chrono::time_point<std::chrono::system_clock,
-                                std::chrono::duration<double>>
-      t4(std::chrono::duration<double, std::ratio<1, 1>>(9.5));
-
+  auto t4 = sys_time<std::chrono::duration<double>>(
+      std::chrono::duration<double, std::ratio<1, 1>>(9.5));
   EXPECT_EQ(fmt::format("{:%S}", t4), "09.500000");
 
-  const std::chrono::time_point<std::chrono::system_clock,
-                                std::chrono::duration<double>>
-      t5(std::chrono::duration<double, std::ratio<1, 1>>(9));
-
+  auto t5 = sys_time<std::chrono::duration<double>>(
+      std::chrono::duration<double, std::ratio<1, 1>>(9));
   EXPECT_EQ(fmt::format("{:%S}", t5), "09");
 
-  const std::chrono::time_point<std::chrono::system_clock,
-                                std::chrono::milliseconds>
-      t6(std::chrono::seconds(1) + std::chrono::milliseconds(120));
-
+  auto t6 = sys_time<std::chrono::milliseconds>(std::chrono::seconds(1) +
+                                                std::chrono::milliseconds(120));
   EXPECT_EQ(fmt::format("{:%S}", t6), "01.120");
 
-  const std::chrono::time_point<std::chrono::system_clock,
-                                std::chrono::microseconds>
-      t7(std::chrono::microseconds(1234567));
-
+  auto t7 =
+      sys_time<std::chrono::microseconds>(std::chrono::microseconds(1234567));
   EXPECT_EQ(fmt::format("{:%S}", t7), "01.234567");
 
-  const std::chrono::time_point<std::chrono::system_clock,
-                                std::chrono::nanoseconds>
-      t8(std::chrono::nanoseconds(123456789));
-
+  auto t8 =
+      sys_time<std::chrono::nanoseconds>(std::chrono::nanoseconds(123456789));
   EXPECT_EQ(fmt::format("{:%S}", t8), "00.123456789");
 
-  const auto t9 = std::chrono::time_point_cast<std::chrono::nanoseconds>(
+  auto t9 = std::chrono::time_point_cast<std::chrono::nanoseconds>(
       std::chrono::system_clock::now());
-  const auto t9_sec = std::chrono::time_point_cast<std::chrono::seconds>(t9);
+  auto t9_sec = std::chrono::time_point_cast<std::chrono::seconds>(t9);
   auto t9_sub_sec_part = fmt::format("{0:09}", (t9 - t9_sec).count());
-
   EXPECT_EQ(fmt::format("{}.{}", strftime_full_utc(t9_sec), t9_sub_sec_part),
             fmt::format("{:%Y-%m-%d %H:%M:%S}", t9));
   EXPECT_EQ(fmt::format("{}.{}", strftime_full_utc(t9_sec), t9_sub_sec_part),
             fmt::format("{:%Y-%m-%d %T}", t9));
 
-  const std::chrono::time_point<std::chrono::system_clock,
-                                std::chrono::milliseconds>
-      t10(std::chrono::milliseconds(2000));
-
+  auto t10 =
+      sys_time<std::chrono::milliseconds>(std::chrono::milliseconds(2000));
   EXPECT_EQ(fmt::format("{:%S}", t10), "02.000");
 
-  {
-    const auto epoch = std::chrono::time_point<std::chrono::system_clock,
-                                               std::chrono::milliseconds>();
-    const auto d = std::chrono::milliseconds(250);
-
-    EXPECT_EQ("59.750", fmt::format("{:%S}", epoch - d));
-    EXPECT_EQ("00.000", fmt::format("{:%S}", epoch));
-    EXPECT_EQ("00.250", fmt::format("{:%S}", epoch + d));
-  }
+  auto epoch = sys_time<std::chrono::milliseconds>();
+  auto d = std::chrono::milliseconds(250);
+  EXPECT_EQ("59.750", fmt::format("{:%S}", epoch - d));
+  EXPECT_EQ("00.000", fmt::format("{:%S}", epoch));
+  EXPECT_EQ("00.250", fmt::format("{:%S}", epoch + d));
 }
 
 TEST(chrono_test, glibc_extensions) {
