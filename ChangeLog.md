@@ -24,8 +24,8 @@
     https://github.com/fmtlib/fmt/pull/3727). Thanks @cschreib.
 
 -   Added a formatter for `std::source_location`
-    (https://github.com/fmtlib/fmt/pull/3730). For example
-    ([godbolt](https://godbolt.org/z/YajfKjhhr)):
+    (https://github.com/fmtlib/fmt/pull/3730).
+    For example ([godbolt](https://godbolt.org/z/YajfKjhhr)):
 
     ```c++
     #include <fmt/chrono.h>
@@ -75,6 +75,14 @@
 
     Thanks @js324.
 
+-   Made `format_as` work with references
+    (https://github.com/fmtlib/fmt/pull/3739). Thanks @tchaikov.
+
+-   Disallowed the `c` specifier for `bool`.
+
+-   Fixed localized formatting in bases other than decimal
+    (https://github.com/fmtlib/fmt/pull/3750). Thanks @js324.
+
 -   Added synchronization with the underlying output stream when writing to
     the Windows console
     (https://github.com/fmtlib/fmt/pull/3668,
@@ -89,12 +97,16 @@
 -   Made `fmt::streamed` `constexpr`.
     (https://github.com/fmtlib/fmt/pull/3650). Thanks @muggenhor.
 
+-   Enabled `consteval` on older versions of MSVC
+    (https://github.com/fmtlib/fmt/pull/3757). Thanks @phprus.
+
 -   Added an option to build without `wchar_t` support on Windows
     (https://github.com/fmtlib/fmt/pull/3636). Thanks @glebm.
 
--   Improved build configuration
+-   Improved build and CI configuration
     (https://github.com/fmtlib/fmt/issues/3701,
-    https://github.com/fmtlib/fmt/pull/3702). Thanks @pklima.
+    https://github.com/fmtlib/fmt/pull/3702,
+    https://github.com/fmtlib/fmt/pull/3749). Thanks @pklima and @tchaikov.
 
 -   Fixed various warnings and compilation issues
     (https://github.com/fmtlib/fmt/pull/3610,
@@ -113,10 +125,24 @@
     https://github.com/fmtlib/fmt/issues/3712,
     https://github.com/fmtlib/fmt/pull/3713,
     https://github.com/fmtlib/fmt/pull/3716,
-    https://github.com/fmtlib/fmt/pull/3723).
+    https://github.com/fmtlib/fmt/pull/3723,
+    https://github.com/fmtlib/fmt/issues/3738,
+    https://github.com/fmtlib/fmt/issues/3740,
+    https://github.com/fmtlib/fmt/pull/3741,
+    https://github.com/fmtlib/fmt/pull/3743,
+    https://github.com/fmtlib/fmt/issues/3745,
+    https://github.com/fmtlib/fmt/pull/3747,
+    https://github.com/fmtlib/fmt/pull/3748,
+    https://github.com/fmtlib/fmt/pull/3751,
+    https://github.com/fmtlib/fmt/pull/3754,
+    https://github.com/fmtlib/fmt/pull/3755,
+    https://github.com/fmtlib/fmt/issues/3760,
+    https://github.com/fmtlib/fmt/pull/3762,
+    https://github.com/fmtlib/fmt/pull/3764).
     Thanks @danakj, @vinayyadav3016, @cyyever, @phprus, @qimiko, @saschasc,
     @gsjaardema, @lazka, @Zhaojun-Liu, @carlsmedstad, @hotwatermorning,
-    @cptFracassa, @kuguma, @PeterJohnson .
+    @cptFracassa, @kuguma, @PeterJohnson, @H1X4Dev, @asantoni, @eltociear,
+    @msimberg, @tchaikov.
 
 -   Improved documentation and README
     (https://github.com/fmtlib/fmt/pull/3642,
@@ -124,8 +150,10 @@
     https://github.com/fmtlib/fmt/pull/3655,
     https://github.com/fmtlib/fmt/pull/3661,
     https://github.com/fmtlib/fmt/issues/3673,
-    https://github.com/fmtlib/fmt/pull/3677).
-    Thanks @idzm, @perlun, @joycebrum, @fennewald.
+    https://github.com/fmtlib/fmt/pull/3677,
+    https://github.com/fmtlib/fmt/pull/3737,
+    https://github.com/fmtlib/fmt/pull/3744).
+    Thanks @idzm, @perlun, @joycebrum, @fennewald, @reinhardt1053, @GeorgeLS.
 
 -   Updated CI dependencies
     (https://github.com/fmtlib/fmt/pull/3615,
@@ -133,7 +161,8 @@
     https://github.com/fmtlib/fmt/pull/3623,
     https://github.com/fmtlib/fmt/pull/3666,
     https://github.com/fmtlib/fmt/pull/3696,
-    https://github.com/fmtlib/fmt/pull/3697).
+    https://github.com/fmtlib/fmt/pull/3697,
+    https://github.com/fmtlib/fmt/pull/3759).
 
 # 10.1.1 - 2023-08-28
 
