@@ -229,27 +229,48 @@ def release(args):
     if not fmt_repo.update('-b', branch, fmt_repo_url):
         clean_checkout(fmt_repo, branch)
 
-    # Update the date in the changelog.
+    # Update the date in the changelog and extract the version and the first
+    # section content.
     changelog = 'ChangeLog.md'
     changelog_path = os.path.join(fmt_repo.dir, changelog)
-    first_section = True
-    code_block = False
-    changes = ''
-    for line in fileinput.input(changelog_path, inplace=True):
-        m = re.match(r'# (.*) - TBD', line)
-        if m:
-            version = m.group(1)
+    is_first_section = True
+    first_section = []
+    for i, line in enumerate(fileinput.input(changelog_path, inplace=True)):
+        if i == 0:
+            version = re.match(r'# (.*) - TBD', line).group(1)
             line = version + ' - ' + datetime.date.today().isoformat() + '\n'
+        elif not is_first_section:
+            pass
         elif line.startswith('#'):
-            first_section = False
-        elif first_section:
-            changes_line = line
-            if re.match(r'^\s*```', line):
-                code_block = not code_block
-            elif not code_block and line != '\n':
-                changes_line = line.rstrip() + ' '
-            changes += changes_line
+            is_first_section = False
+        else:
+            first_section.append(line)
         sys.stdout.write(line)
+    if first_section[0] == '\n':
+        first_section.pop(0)
+
+    changes = ''
+    code_block = False
+    stripped = False
+    for line in first_section:
+        if re.match(r'^\s*```', line):
+            code_block = not code_block
+            changes += line
+            stripped = False
+            continue
+        if code_block:
+            changes += line
+            continue
+        if line == '\n':
+            changes += line
+            if stripped:
+                changes += line
+                stripped = False
+            continue
+        if stripped:
+            line = ' ' + line.lstrip()
+        changes += line.rstrip()
+        stripped = True
 
     cmakelists = 'CMakeLists.txt'
     for line in fileinput.input(os.path.join(fmt_repo.dir, cmakelists),
