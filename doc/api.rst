@@ -600,7 +600,6 @@ System APIs
    :members:
 
 .. doxygenfunction:: fmt::windows_error
-   :members:
 
 .. _ostream-api:
 
