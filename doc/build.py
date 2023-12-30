@@ -31,7 +31,7 @@ def create_build_env(venv_dir='virtualenv'):
   # Jinja2 >= 3.1 incompatible with sphinx 3.3.0
   # See: https://github.com/sphinx-doc/sphinx/issues/10291
   pip.install('Jinja2<3.1')
-  pip.install('sphinx-doc/sphinx', 'v3.3.0')
+  pip.install('sphinx==3.3.0')
   pip.install('michaeljones/breathe', 'v4.25.0')
 
 def build_docs(version='dev', **kwargs):

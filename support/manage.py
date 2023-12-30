@@ -243,11 +243,12 @@ def release(args):
         elif line.startswith('#'):
             first_section = False
         elif first_section:
-            changes += line
+            changes_line = line
             if re.match(r'^\s*```', line):
                 code_block = not code_block
             elif not code_block and line != '\n':
-                changes = changes.rstrip() + ' '
+                changes_line = line.rstrip() + ' '
+            changes += changes_line
         sys.stdout.write(line)
 
     cmakelists = 'CMakeLists.txt'
