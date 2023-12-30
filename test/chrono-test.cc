@@ -339,14 +339,14 @@ TEST(chrono_test, system_clock_time_point) {
     auto t = std::chrono::system_clock::to_time_t(t1);
     auto tm = *std::gmtime(&t);
 
-    EXPECT_EQ("+0000", fmt::format("{:%z}", t1));
-    EXPECT_EQ("+0000", fmt::format("{:%z}", tm));
+    EXPECT_EQ(fmt::format("{:%z}", t1), "+0000");
+    EXPECT_EQ(fmt::format("{:%z}", tm), "+0000");
 
-    EXPECT_EQ("+00:00", fmt::format("{:%Ez}", t1));
-    EXPECT_EQ("+00:00", fmt::format("{:%Ez}", tm));
+    EXPECT_EQ(fmt::format("{:%Ez}", t1), "+00:00");
+    EXPECT_EQ(fmt::format("{:%Ez}", tm), "+00:00");
 
-    EXPECT_EQ("+00:00", fmt::format("{:%Oz}", t1));
-    EXPECT_EQ("+00:00", fmt::format("{:%Oz}", tm));
+    EXPECT_EQ(fmt::format("{:%Oz}", t1), "+00:00");
+    EXPECT_EQ(fmt::format("{:%Oz}", tm), "+00:00");
   }
 }
 
@@ -431,122 +431,122 @@ TEST(chrono_test, local_system_clock_time_point) {
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
 
 TEST(chrono_test, format_default) {
-  EXPECT_EQ("42s", fmt::format("{}", std::chrono::seconds(42)));
-  EXPECT_EQ("42as",
-            fmt::format("{}", std::chrono::duration<int, std::atto>(42)));
-  EXPECT_EQ("42fs",
-            fmt::format("{}", std::chrono::duration<int, std::femto>(42)));
-  EXPECT_EQ("42ps",
-            fmt::format("{}", std::chrono::duration<int, std::pico>(42)));
-  EXPECT_EQ("42ns", fmt::format("{}", std::chrono::nanoseconds(42)));
-  EXPECT_EQ("42µs", fmt::format("{}", std::chrono::microseconds(42)));
-  EXPECT_EQ("42ms", fmt::format("{}", std::chrono::milliseconds(42)));
-  EXPECT_EQ("42cs",
-            fmt::format("{}", std::chrono::duration<int, std::centi>(42)));
-  EXPECT_EQ("42ds",
-            fmt::format("{}", std::chrono::duration<int, std::deci>(42)));
-  EXPECT_EQ("42s", fmt::format("{}", std::chrono::seconds(42)));
-  EXPECT_EQ("42das",
-            fmt::format("{}", std::chrono::duration<int, std::deca>(42)));
-  EXPECT_EQ("42hs",
-            fmt::format("{}", std::chrono::duration<int, std::hecto>(42)));
-  EXPECT_EQ("42ks",
-            fmt::format("{}", std::chrono::duration<int, std::kilo>(42)));
-  EXPECT_EQ("42Ms",
-            fmt::format("{}", std::chrono::duration<int, std::mega>(42)));
-  EXPECT_EQ("42Gs",
-            fmt::format("{}", std::chrono::duration<int, std::giga>(42)));
-  EXPECT_EQ("42Ts",
-            fmt::format("{}", std::chrono::duration<int, std::tera>(42)));
-  EXPECT_EQ("42Ps",
-            fmt::format("{}", std::chrono::duration<int, std::peta>(42)));
-  EXPECT_EQ("42Es",
-            fmt::format("{}", std::chrono::duration<int, std::exa>(42)));
-  EXPECT_EQ("42min", fmt::format("{}", std::chrono::minutes(42)));
-  EXPECT_EQ("42h", fmt::format("{}", std::chrono::hours(42)));
-  EXPECT_EQ("42d", fmt::format("{}", days(42)));
+  EXPECT_EQ(fmt::format("{}", std::chrono::seconds(42)), "42s");
+  EXPECT_EQ(fmt::format("{}", std::chrono::duration<int, std::atto>(42)),
+            "42as");
+  EXPECT_EQ(fmt::format("{}", std::chrono::duration<int, std::femto>(42)),
+            "42fs");
+  EXPECT_EQ(fmt::format("{}", std::chrono::duration<int, std::pico>(42)),
+            "42ps");
+  EXPECT_EQ(fmt::format("{}", std::chrono::nanoseconds(42)), "42ns");
+  EXPECT_EQ(fmt::format("{}", std::chrono::microseconds(42)), "42µs");
+  EXPECT_EQ(fmt::format("{}", std::chrono::milliseconds(42)), "42ms");
+  EXPECT_EQ(fmt::format("{}", std::chrono::duration<int, std::centi>(42)),
+            "42cs");
+  EXPECT_EQ(fmt::format("{}", std::chrono::duration<int, std::deci>(42)),
+            "42ds");
+  EXPECT_EQ(fmt::format("{}", std::chrono::seconds(42)), "42s");
+  EXPECT_EQ(fmt::format("{}", std::chrono::duration<int, std::deca>(42)),
+            "42das");
+  EXPECT_EQ(fmt::format("{}", std::chrono::duration<int, std::hecto>(42)),
+            "42hs");
+  EXPECT_EQ(fmt::format("{}", std::chrono::duration<int, std::kilo>(42)),
+            "42ks");
+  EXPECT_EQ(fmt::format("{}", std::chrono::duration<int, std::mega>(42)),
+            "42Ms");
+  EXPECT_EQ(fmt::format("{}", std::chrono::duration<int, std::giga>(42)),
+            "42Gs");
+  EXPECT_EQ(fmt::format("{}", std::chrono::duration<int, std::tera>(42)),
+            "42Ts");
+  EXPECT_EQ(fmt::format("{}", std::chrono::duration<int, std::peta>(42)),
+            "42Ps");
+  EXPECT_EQ(fmt::format("{}", std::chrono::duration<int, std::exa>(42)),
+            "42Es");
+  EXPECT_EQ(fmt::format("{}", std::chrono::minutes(42)), "42min");
+  EXPECT_EQ(fmt::format("{}", std::chrono::hours(42)), "42h");
+  EXPECT_EQ(fmt::format("{}", days(42)), "42d");
   EXPECT_EQ(
-      "42[15]s",
-      fmt::format("{}", std::chrono::duration<int, std::ratio<15, 1>>(42)));
+      fmt::format("{}", std::chrono::duration<int, std::ratio<15, 1>>(42)),
+      "42[15]s");
   EXPECT_EQ(
-      "42[15/4]s",
-      fmt::format("{}", std::chrono::duration<int, std::ratio<15, 4>>(42)));
+      fmt::format("{}", std::chrono::duration<int, std::ratio<15, 4>>(42)),
+      "42[15/4]s");
 }
 
 TEST(chrono_test, duration_align) {
   auto s = std::chrono::seconds(42);
-  EXPECT_EQ("42s  ", fmt::format("{:5}", s));
-  EXPECT_EQ("42s  ", fmt::format("{:{}}", s, 5));
-  EXPECT_EQ("  42s", fmt::format("{:>5}", s));
-  EXPECT_EQ("**42s**", fmt::format("{:*^7}", s));
-  EXPECT_EQ("03:25:45    ",
-            fmt::format("{:12%H:%M:%S}", std::chrono::seconds(12345)));
-  EXPECT_EQ("    03:25:45",
-            fmt::format("{:>12%H:%M:%S}", std::chrono::seconds(12345)));
-  EXPECT_EQ("~~03:25:45~~",
-            fmt::format("{:~^12%H:%M:%S}", std::chrono::seconds(12345)));
-  EXPECT_EQ("03:25:45    ",
-            fmt::format("{:{}%H:%M:%S}", std::chrono::seconds(12345), 12));
+  EXPECT_EQ(fmt::format("{:5}", s), "42s  ");
+  EXPECT_EQ(fmt::format("{:{}}", s, 5), "42s  ");
+  EXPECT_EQ(fmt::format("{:>5}", s), "  42s");
+  EXPECT_EQ(fmt::format("{:*^7}", s), "**42s**");
+  EXPECT_EQ(fmt::format("{:12%H:%M:%S}", std::chrono::seconds(12345)),
+            "03:25:45    ");
+  EXPECT_EQ(fmt::format("{:>12%H:%M:%S}", std::chrono::seconds(12345)),
+            "    03:25:45");
+  EXPECT_EQ(fmt::format("{:~^12%H:%M:%S}", std::chrono::seconds(12345)),
+            "~~03:25:45~~");
+  EXPECT_EQ(fmt::format("{:{}%H:%M:%S}", std::chrono::seconds(12345), 12),
+            "03:25:45    ");
 }
 
 TEST(chrono_test, tm_align) {
   auto t = make_tm(1975, 12, 29, 12, 14, 16);
-  EXPECT_EQ("1975-12-29 12:14:16", fmt::format("{:%F %T}", t));
-  EXPECT_EQ("1975-12-29 12:14:16           ", fmt::format("{:30%F %T}", t));
-  EXPECT_EQ("1975-12-29 12:14:16           ", fmt::format("{:{}%F %T}", t, 30));
-  EXPECT_EQ("1975-12-29 12:14:16           ", fmt::format("{:<30%F %T}", t));
-  EXPECT_EQ("     1975-12-29 12:14:16      ", fmt::format("{:^30%F %T}", t));
-  EXPECT_EQ("           1975-12-29 12:14:16", fmt::format("{:>30%F %T}", t));
+  EXPECT_EQ(fmt::format("{:%F %T}", t), "1975-12-29 12:14:16");
+  EXPECT_EQ(fmt::format("{:30%F %T}", t), "1975-12-29 12:14:16           ");
+  EXPECT_EQ(fmt::format("{:{}%F %T}", t, 30), "1975-12-29 12:14:16           ");
+  EXPECT_EQ(fmt::format("{:<30%F %T}", t), "1975-12-29 12:14:16           ");
+  EXPECT_EQ(fmt::format("{:^30%F %T}", t), "     1975-12-29 12:14:16      ");
+  EXPECT_EQ(fmt::format("{:>30%F %T}", t), "           1975-12-29 12:14:16");
 
-  EXPECT_EQ("1975-12-29 12:14:16***********", fmt::format("{:*<30%F %T}", t));
-  EXPECT_EQ("*****1975-12-29 12:14:16******", fmt::format("{:*^30%F %T}", t));
-  EXPECT_EQ("***********1975-12-29 12:14:16", fmt::format("{:*>30%F %T}", t));
+  EXPECT_EQ(fmt::format("{:*<30%F %T}", t), "1975-12-29 12:14:16***********");
+  EXPECT_EQ(fmt::format("{:*^30%F %T}", t), "*****1975-12-29 12:14:16******");
+  EXPECT_EQ(fmt::format("{:*>30%F %T}", t), "***********1975-12-29 12:14:16");
 }
 
 TEST(chrono_test, tp_align) {
   auto tp = std::chrono::time_point_cast<std::chrono::microseconds>(
       std::chrono::system_clock::from_time_t(0));
-  EXPECT_EQ("00:00.000000", fmt::format("{:%M:%S}", tp));
-  EXPECT_EQ("00:00.000000   ", fmt::format("{:15%M:%S}", tp));
-  EXPECT_EQ("00:00.000000   ", fmt::format("{:{}%M:%S}", tp, 15));
-  EXPECT_EQ("00:00.000000   ", fmt::format("{:<15%M:%S}", tp));
-  EXPECT_EQ(" 00:00.000000  ", fmt::format("{:^15%M:%S}", tp));
-  EXPECT_EQ("   00:00.000000", fmt::format("{:>15%M:%S}", tp));
+  EXPECT_EQ(fmt::format("{:%M:%S}", tp), "00:00.000000");
+  EXPECT_EQ(fmt::format("{:15%M:%S}", tp), "00:00.000000   ");
+  EXPECT_EQ(fmt::format("{:{}%M:%S}", tp, 15), "00:00.000000   ");
+  EXPECT_EQ(fmt::format("{:<15%M:%S}", tp), "00:00.000000   ");
+  EXPECT_EQ(fmt::format("{:^15%M:%S}", tp), " 00:00.000000  ");
+  EXPECT_EQ(fmt::format("{:>15%M:%S}", tp), "   00:00.000000");
 
-  EXPECT_EQ("00:00.000000***", fmt::format("{:*<15%M:%S}", tp));
-  EXPECT_EQ("*00:00.000000**", fmt::format("{:*^15%M:%S}", tp));
-  EXPECT_EQ("***00:00.000000", fmt::format("{:*>15%M:%S}", tp));
+  EXPECT_EQ(fmt::format("{:*<15%M:%S}", tp), "00:00.000000***");
+  EXPECT_EQ(fmt::format("{:*^15%M:%S}", tp), "*00:00.000000**");
+  EXPECT_EQ(fmt::format("{:*>15%M:%S}", tp), "***00:00.000000");
 }
 
 TEST(chrono_test, format_specs) {
-  EXPECT_EQ("%", fmt::format("{:%%}", std::chrono::seconds(0)));
-  EXPECT_EQ("\n", fmt::format("{:%n}", std::chrono::seconds(0)));
-  EXPECT_EQ("\t", fmt::format("{:%t}", std::chrono::seconds(0)));
-  EXPECT_EQ("00", fmt::format("{:%S}", std::chrono::seconds(0)));
-  EXPECT_EQ("00", fmt::format("{:%S}", std::chrono::seconds(60)));
-  EXPECT_EQ("42", fmt::format("{:%S}", std::chrono::seconds(42)));
-  EXPECT_EQ("01.234", fmt::format("{:%S}", std::chrono::milliseconds(1234)));
-  EXPECT_EQ("00", fmt::format("{:%M}", std::chrono::minutes(0)));
-  EXPECT_EQ("00", fmt::format("{:%M}", std::chrono::minutes(60)));
-  EXPECT_EQ("42", fmt::format("{:%M}", std::chrono::minutes(42)));
-  EXPECT_EQ("01", fmt::format("{:%M}", std::chrono::seconds(61)));
-  EXPECT_EQ("00", fmt::format("{:%H}", std::chrono::hours(0)));
-  EXPECT_EQ("00", fmt::format("{:%H}", std::chrono::hours(24)));
-  EXPECT_EQ("14", fmt::format("{:%H}", std::chrono::hours(14)));
-  EXPECT_EQ("01", fmt::format("{:%H}", std::chrono::minutes(61)));
-  EXPECT_EQ("12", fmt::format("{:%I}", std::chrono::hours(0)));
-  EXPECT_EQ("12", fmt::format("{:%I}", std::chrono::hours(12)));
-  EXPECT_EQ("12", fmt::format("{:%I}", std::chrono::hours(24)));
-  EXPECT_EQ("04", fmt::format("{:%I}", std::chrono::hours(4)));
-  EXPECT_EQ("02", fmt::format("{:%I}", std::chrono::hours(14)));
-  EXPECT_EQ("12345", fmt::format("{:%j}", days(12345)));
-  EXPECT_EQ("12345", fmt::format("{:%j}", std::chrono::hours(12345 * 24 + 12)));
-  EXPECT_EQ("03:25:45",
-            fmt::format("{:%H:%M:%S}", std::chrono::seconds(12345)));
-  EXPECT_EQ("03:25", fmt::format("{:%R}", std::chrono::seconds(12345)));
-  EXPECT_EQ("03:25:45", fmt::format("{:%T}", std::chrono::seconds(12345)));
-  EXPECT_EQ("12345", fmt::format("{:%Q}", std::chrono::seconds(12345)));
-  EXPECT_EQ("s", fmt::format("{:%q}", std::chrono::seconds(12345)));
+  EXPECT_EQ(fmt::format("{:%%}", std::chrono::seconds(0)), "%");
+  EXPECT_EQ(fmt::format("{:%n}", std::chrono::seconds(0)), "\n");
+  EXPECT_EQ(fmt::format("{:%t}", std::chrono::seconds(0)), "\t");
+  EXPECT_EQ(fmt::format("{:%S}", std::chrono::seconds(0)), "00");
+  EXPECT_EQ(fmt::format("{:%S}", std::chrono::seconds(60)), "00");
+  EXPECT_EQ(fmt::format("{:%S}", std::chrono::seconds(42)), "42");
+  EXPECT_EQ(fmt::format("{:%S}", std::chrono::milliseconds(1234)), "01.234");
+  EXPECT_EQ(fmt::format("{:%M}", std::chrono::minutes(0)), "00");
+  EXPECT_EQ(fmt::format("{:%M}", std::chrono::minutes(60)), "00");
+  EXPECT_EQ(fmt::format("{:%M}", std::chrono::minutes(42)), "42");
+  EXPECT_EQ(fmt::format("{:%M}", std::chrono::seconds(61)), "01");
+  EXPECT_EQ(fmt::format("{:%H}", std::chrono::hours(0)), "00");
+  EXPECT_EQ(fmt::format("{:%H}", std::chrono::hours(24)), "00");
+  EXPECT_EQ(fmt::format("{:%H}", std::chrono::hours(14)), "14");
+  EXPECT_EQ(fmt::format("{:%H}", std::chrono::minutes(61)), "01");
+  EXPECT_EQ(fmt::format("{:%I}", std::chrono::hours(0)), "12");
+  EXPECT_EQ(fmt::format("{:%I}", std::chrono::hours(12)), "12");
+  EXPECT_EQ(fmt::format("{:%I}", std::chrono::hours(24)), "12");
+  EXPECT_EQ(fmt::format("{:%I}", std::chrono::hours(4)), "04");
+  EXPECT_EQ(fmt::format("{:%I}", std::chrono::hours(14)), "02");
+  EXPECT_EQ(fmt::format("{:%j}", days(12345)), "12345");
+  EXPECT_EQ(fmt::format("{:%j}", std::chrono::hours(12345 * 24 + 12)), "12345");
+  EXPECT_EQ(fmt::format("{:%H:%M:%S}", std::chrono::seconds(12345)),
+            "03:25:45");
+  EXPECT_EQ(fmt::format("{:%R}", std::chrono::seconds(12345)), "03:25");
+  EXPECT_EQ(fmt::format("{:%T}", std::chrono::seconds(12345)), "03:25:45");
+  EXPECT_EQ(fmt::format("{:%Q}", std::chrono::seconds(12345)), "12345");
+  EXPECT_EQ(fmt::format("{:%q}", std::chrono::seconds(12345)), "s");
 }
 
 TEST(chrono_test, invalid_specs) {
@@ -628,77 +628,77 @@ using dms = std::chrono::duration<double, std::milli>;
 
 TEST(chrono_test, format_default_fp) {
   typedef std::chrono::duration<float> fs;
-  EXPECT_EQ("1.234s", fmt::format("{}", fs(1.234)));
+  EXPECT_EQ(fmt::format("{}", fs(1.234)), "1.234s");
   typedef std::chrono::duration<float, std::milli> fms;
-  EXPECT_EQ("1.234ms", fmt::format("{}", fms(1.234)));
+  EXPECT_EQ(fmt::format("{}", fms(1.234)), "1.234ms");
   typedef std::chrono::duration<double> ds;
-  EXPECT_EQ("1.234s", fmt::format("{}", ds(1.234)));
-  EXPECT_EQ("1.234ms", fmt::format("{}", dms(1.234)));
+  EXPECT_EQ(fmt::format("{}", ds(1.234)), "1.234s");
+  EXPECT_EQ(fmt::format("{}", dms(1.234)), "1.234ms");
 }
 
 TEST(chrono_test, format_precision) {
   EXPECT_THROW_MSG(
       (void)fmt::format(runtime("{:.2%Q}"), std::chrono::seconds(42)),
       fmt::format_error, "precision not allowed for this argument type");
-  EXPECT_EQ("1ms", fmt::format("{:.0}", dms(1.234)));
-  EXPECT_EQ("1.2ms", fmt::format("{:.1}", dms(1.234)));
-  EXPECT_EQ("1.23ms", fmt::format("{:.{}}", dms(1.234), 2));
+  EXPECT_EQ(fmt::format("{:.0}", dms(1.234)), "1ms");
+  EXPECT_EQ(fmt::format("{:.1}", dms(1.234)), "1.2ms");
+  EXPECT_EQ(fmt::format("{:.{}}", dms(1.234), 2), "1.23ms");
 
-  EXPECT_EQ("13ms", fmt::format("{:.0}", dms(12.56)));
-  EXPECT_EQ("12.6ms", fmt::format("{:.1}", dms(12.56)));
-  EXPECT_EQ("12.56ms", fmt::format("{:.2}", dms(12.56)));
+  EXPECT_EQ(fmt::format("{:.0}", dms(12.56)), "13ms");
+  EXPECT_EQ(fmt::format("{:.1}", dms(12.56)), "12.6ms");
+  EXPECT_EQ(fmt::format("{:.2}", dms(12.56)), "12.56ms");
 }
 
 TEST(chrono_test, format_full_specs) {
-  EXPECT_EQ("1ms   ", fmt::format("{:6.0}", dms(1.234)));
-  EXPECT_EQ("1.2ms ", fmt::format("{:6.1}", dms(1.234)));
-  EXPECT_EQ("  1.23ms", fmt::format("{:>8.{}}", dms(1.234), 2));
-  EXPECT_EQ(" 1.2ms ", fmt::format("{:^{}.{}}", dms(1.234), 7, 1));
-  EXPECT_EQ(" 1.23ms ", fmt::format("{0:^{2}.{1}}", dms(1.234), 2, 8));
-  EXPECT_EQ("=1.234ms=", fmt::format("{:=^{}.{}}", dms(1.234), 9, 3));
-  EXPECT_EQ("*1.2340ms*", fmt::format("{:*^10.4}", dms(1.234)));
+  EXPECT_EQ(fmt::format("{:6.0}", dms(1.234)), "1ms   ");
+  EXPECT_EQ(fmt::format("{:6.1}", dms(1.234)), "1.2ms ");
+  EXPECT_EQ(fmt::format("{:>8.{}}", dms(1.234), 2), "  1.23ms");
+  EXPECT_EQ(fmt::format("{:^{}.{}}", dms(1.234), 7, 1), " 1.2ms ");
+  EXPECT_EQ(fmt::format("{0:^{2}.{1}}", dms(1.234), 2, 8), " 1.23ms ");
+  EXPECT_EQ(fmt::format("{:=^{}.{}}", dms(1.234), 9, 3), "=1.234ms=");
+  EXPECT_EQ(fmt::format("{:*^10.4}", dms(1.234)), "*1.2340ms*");
 
-  EXPECT_EQ("13ms  ", fmt::format("{:6.0}", dms(12.56)));
-  EXPECT_EQ("    13ms", fmt::format("{:>8.{}}", dms(12.56), 0));
-  EXPECT_EQ(" 13ms ", fmt::format("{:^{}.{}}", dms(12.56), 6, 0));
-  EXPECT_EQ("  13ms  ", fmt::format("{0:^{2}.{1}}", dms(12.56), 0, 8));
-  EXPECT_EQ("==13ms===", fmt::format("{:=^{}.{}}", dms(12.56), 9, 0));
-  EXPECT_EQ("***13ms***", fmt::format("{:*^10.0}", dms(12.56)));
+  EXPECT_EQ(fmt::format("{:6.0}", dms(12.56)), "13ms  ");
+  EXPECT_EQ(fmt::format("{:>8.{}}", dms(12.56), 0), "    13ms");
+  EXPECT_EQ(fmt::format("{:^{}.{}}", dms(12.56), 6, 0), " 13ms ");
+  EXPECT_EQ(fmt::format("{0:^{2}.{1}}", dms(12.56), 0, 8), "  13ms  ");
+  EXPECT_EQ(fmt::format("{:=^{}.{}}", dms(12.56), 9, 0), "==13ms===");
+  EXPECT_EQ(fmt::format("{:*^10.0}", dms(12.56)), "***13ms***");
 }
 
 TEST(chrono_test, format_simple_q) {
   typedef std::chrono::duration<float> fs;
-  EXPECT_EQ("1.234 s", fmt::format("{:%Q %q}", fs(1.234)));
+  EXPECT_EQ(fmt::format("{:%Q %q}", fs(1.234)), "1.234 s");
   typedef std::chrono::duration<float, std::milli> fms;
-  EXPECT_EQ("1.234 ms", fmt::format("{:%Q %q}", fms(1.234)));
+  EXPECT_EQ(fmt::format("{:%Q %q}", fms(1.234)), "1.234 ms");
   typedef std::chrono::duration<double> ds;
-  EXPECT_EQ("1.234 s", fmt::format("{:%Q %q}", ds(1.234)));
-  EXPECT_EQ("1.234 ms", fmt::format("{:%Q %q}", dms(1.234)));
+  EXPECT_EQ(fmt::format("{:%Q %q}", ds(1.234)), "1.234 s");
+  EXPECT_EQ(fmt::format("{:%Q %q}", dms(1.234)), "1.234 ms");
 }
 
 TEST(chrono_test, format_precision_q) {
   EXPECT_THROW_MSG(
       (void)fmt::format(runtime("{:.2%Q %q}"), std::chrono::seconds(42)),
       fmt::format_error, "precision not allowed for this argument type");
-  EXPECT_EQ("1.2 ms", fmt::format("{:.1%Q %q}", dms(1.234)));
-  EXPECT_EQ("1.23 ms", fmt::format("{:.{}%Q %q}", dms(1.234), 2));
+  EXPECT_EQ(fmt::format("{:.1%Q %q}", dms(1.234)), "1.2 ms");
+  EXPECT_EQ(fmt::format("{:.{}%Q %q}", dms(1.234), 2), "1.23 ms");
 }
 
 TEST(chrono_test, format_full_specs_q) {
-  EXPECT_EQ("1 ms   ", fmt::format("{:7.0%Q %q}", dms(1.234)));
-  EXPECT_EQ("1.2 ms ", fmt::format("{:7.1%Q %q}", dms(1.234)));
-  EXPECT_EQ(" 1.23 ms", fmt::format("{:>8.{}%Q %q}", dms(1.234), 2));
-  EXPECT_EQ(" 1.2 ms ", fmt::format("{:^{}.{}%Q %q}", dms(1.234), 8, 1));
-  EXPECT_EQ(" 1.23 ms ", fmt::format("{0:^{2}.{1}%Q %q}", dms(1.234), 2, 9));
-  EXPECT_EQ("=1.234 ms=", fmt::format("{:=^{}.{}%Q %q}", dms(1.234), 10, 3));
-  EXPECT_EQ("*1.2340 ms*", fmt::format("{:*^11.4%Q %q}", dms(1.234)));
+  EXPECT_EQ(fmt::format("{:7.0%Q %q}", dms(1.234)), "1 ms   ");
+  EXPECT_EQ(fmt::format("{:7.1%Q %q}", dms(1.234)), "1.2 ms ");
+  EXPECT_EQ(fmt::format("{:>8.{}%Q %q}", dms(1.234), 2), " 1.23 ms");
+  EXPECT_EQ(fmt::format("{:^{}.{}%Q %q}", dms(1.234), 8, 1), " 1.2 ms ");
+  EXPECT_EQ(fmt::format("{0:^{2}.{1}%Q %q}", dms(1.234), 2, 9), " 1.23 ms ");
+  EXPECT_EQ(fmt::format("{:=^{}.{}%Q %q}", dms(1.234), 10, 3), "=1.234 ms=");
+  EXPECT_EQ(fmt::format("{:*^11.4%Q %q}", dms(1.234)), "*1.2340 ms*");
 
-  EXPECT_EQ("13 ms  ", fmt::format("{:7.0%Q %q}", dms(12.56)));
-  EXPECT_EQ("   13 ms", fmt::format("{:>8.{}%Q %q}", dms(12.56), 0));
-  EXPECT_EQ(" 13 ms  ", fmt::format("{:^{}.{}%Q %q}", dms(12.56), 8, 0));
-  EXPECT_EQ("  13 ms  ", fmt::format("{0:^{2}.{1}%Q %q}", dms(12.56), 0, 9));
-  EXPECT_EQ("==13 ms==", fmt::format("{:=^{}.{}%Q %q}", dms(12.56), 9, 0));
-  EXPECT_EQ("***13 ms***", fmt::format("{:*^11.0%Q %q}", dms(12.56)));
+  EXPECT_EQ(fmt::format("{:7.0%Q %q}", dms(12.56)), "13 ms  ");
+  EXPECT_EQ(fmt::format("{:>8.{}%Q %q}", dms(12.56), 0), "   13 ms");
+  EXPECT_EQ(fmt::format("{:^{}.{}%Q %q}", dms(12.56), 8, 0), " 13 ms  ");
+  EXPECT_EQ(fmt::format("{0:^{2}.{1}%Q %q}", dms(12.56), 0, 9), "  13 ms  ");
+  EXPECT_EQ(fmt::format("{:=^{}.{}%Q %q}", dms(12.56), 9, 0), "==13 ms==");
+  EXPECT_EQ(fmt::format("{:*^11.0%Q %q}", dms(12.56)), "***13 ms***");
 }
 
 TEST(chrono_test, invalid_width_id) {
@@ -936,9 +936,9 @@ TEST(chrono_test, timestamp_sub_seconds) {
 
   auto epoch = sys_time<std::chrono::milliseconds>();
   auto d = std::chrono::milliseconds(250);
-  EXPECT_EQ("59.750", fmt::format("{:%S}", epoch - d));
-  EXPECT_EQ("00.000", fmt::format("{:%S}", epoch));
-  EXPECT_EQ("00.250", fmt::format("{:%S}", epoch + d));
+  EXPECT_EQ(fmt::format("{:%S}", epoch - d), "59.750");
+  EXPECT_EQ(fmt::format("{:%S}", epoch), "00.000");
+  EXPECT_EQ(fmt::format("{:%S}", epoch + d), "00.250");
 }
 
 TEST(chrono_test, glibc_extensions) {
