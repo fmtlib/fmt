@@ -229,30 +229,23 @@ def release(args):
     if not fmt_repo.update('-b', branch, fmt_repo_url):
         clean_checkout(fmt_repo, branch)
 
-    # Convert changelog from RST to GitHub-flavored Markdown and get the
-    # version.
+    # Update the date in the changelog.
     changelog = 'ChangeLog.md'
     changelog_path = os.path.join(fmt_repo.dir, changelog)
-    import rst2md
-    changes, version = rst2md.convert(changelog_path)
+    title_len = 0
+    for line in fileinput.input(changelog_path, inplace=True):
+        m = re.match(r'# (.*) - TBD', line)
+        if m:
+            version = m.group(1)
+            line = version + ' - ' + datetime.date.today().isoformat() + '\n'
+        sys.stdout.write(line)
+
     cmakelists = 'CMakeLists.txt'
     for line in fileinput.input(os.path.join(fmt_repo.dir, cmakelists),
                                 inplace=True):
         prefix = 'set(FMT_VERSION '
         if line.startswith(prefix):
             line = prefix + version + ')\n'
-        sys.stdout.write(line)
-
-    # Update the version in the changelog.
-    title_len = 0
-    for line in fileinput.input(changelog_path, inplace=True):
-        if line.startswith(version + ' - TBD'):
-            line = version + ' - ' + datetime.date.today().isoformat()
-            title_len = len(line)
-            line += '\n'
-        elif title_len:
-            line = '-' * title_len + '\n'
-            title_len = 0
         sys.stdout.write(line)
 
     # Add the version to the build script.
