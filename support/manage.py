@@ -12,7 +12,7 @@ obtained from https://github.com/settings/tokens.
 
 from __future__ import print_function
 import datetime, docopt, errno, fileinput, json, os
-import re, requests, shutil, sys, tempfile
+import re, requests, shutil, sys
 from contextlib import contextmanager
 from distutils.version import LooseVersion
 from subprocess import check_call
