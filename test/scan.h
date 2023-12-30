@@ -363,6 +363,30 @@ class scan_arg {
     custom.scan = scan_custom_arg<T>;
   }
 
+  template <typename Visitor>
+  auto visit(Visitor&& vis) -> decltype(vis(std::declval<int>())) {
+    switch (type) {
+    case scan_type::none_type:
+      break;
+    case scan_type::int_type:
+      return vis(int_value);
+    case scan_type::uint_type:
+      return vis(uint_value);
+    case scan_type::long_long_type:
+      return vis(long_long_value);
+    case scan_type::ulong_long_type:
+      return vis(ulong_long_value);
+    case scan_type::string_type:
+      return vis(string);
+    case scan_type::string_view_type:
+      return vis(string_view);
+    case scan_type::custom_type:
+      // TODO: implement
+      break;
+    }
+    return vis(monostate());
+  }
+
  private:
   template <typename T>
   static void scan_custom_arg(void* arg, scan_parse_context& parse_ctx,
