@@ -1675,6 +1675,15 @@ template <typename Context> class basic_format_arg {
   auto is_arithmetic() const -> bool {
     return detail::is_arithmetic_type(type_);
   }
+
+  FMT_INLINE auto format_custom(const char_type* parse_begin,
+                                typename Context::parse_context_type& parse_ctx,
+                                Context& ctx) -> bool {
+    if (type_ != detail::type::custom_type) return false;
+    parse_ctx.advance_to(parse_begin);
+    value_.custom.format(value_.custom.value, parse_ctx, ctx);
+    return true;
+  }
 };
 
 /**
