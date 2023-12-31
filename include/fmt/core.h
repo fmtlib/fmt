@@ -1622,8 +1622,8 @@ FMT_CONSTEXPR inline auto make_arg(T& val) -> basic_format_arg<Context> {
 }  // namespace detail
 FMT_BEGIN_EXPORT
 
-// A formatting argument. It is a trivially copyable/constructible type to
-// allow storage in basic_memory_buffer.
+// A formatting argument. Context is a template parameter for the compiled API
+// where output can be unbuffered.
 template <typename Context> class basic_format_arg {
  private:
   detail::value<Context> value_;
