@@ -867,7 +867,7 @@ enum { inline_buffer_size = 500 };
   **Example**::
 
      auto out = fmt::memory_buffer();
-     format_to(std::back_inserter(out), "The answer is {}.", 42);
+     fmt::format_to(std::back_inserter(out), "The answer is {}.", 42);
 
   This will append the following output to the ``out`` object:
 
