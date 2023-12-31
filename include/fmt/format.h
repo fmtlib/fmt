@@ -2430,9 +2430,8 @@ struct float_specs {
   bool showpoint : 1;
 };
 
-template <typename ErrorHandler = error_handler, typename Char>
-FMT_CONSTEXPR auto parse_float_type_spec(const format_specs<Char>& specs,
-                                         ErrorHandler&& eh = {})
+template <typename Char>
+FMT_CONSTEXPR auto parse_float_type_spec(const format_specs<Char>& specs)
     -> float_specs {
   auto result = float_specs();
   result.showpoint = specs.alt;
@@ -2468,7 +2467,7 @@ FMT_CONSTEXPR auto parse_float_type_spec(const format_specs<Char>& specs,
     result.format = float_format::hex;
     break;
   default:
-    eh.on_error("invalid format specifier");
+    throw_format_error("invalid format specifier");
     break;
   }
   return result;
@@ -3813,51 +3812,39 @@ template <typename Char> struct custom_formatter {
   template <typename T> void operator()(T) const {}
 };
 
-template <typename ErrorHandler> class width_checker {
- public:
-  explicit FMT_CONSTEXPR width_checker(ErrorHandler& eh) : handler_(eh) {}
-
+struct width_checker {
   template <typename T, FMT_ENABLE_IF(is_integer<T>::value)>
   FMT_CONSTEXPR auto operator()(T value) -> unsigned long long {
-    if (is_negative(value)) handler_.on_error("negative width");
+    if (is_negative(value)) throw_format_error("negative width");
     return static_cast<unsigned long long>(value);
   }
 
   template <typename T, FMT_ENABLE_IF(!is_integer<T>::value)>
   FMT_CONSTEXPR auto operator()(T) -> unsigned long long {
-    handler_.on_error("width is not integer");
+    throw_format_error("width is not integer");
     return 0;
   }
-
- private:
-  ErrorHandler& handler_;
 };
 
-template <typename ErrorHandler> class precision_checker {
- public:
-  explicit FMT_CONSTEXPR precision_checker(ErrorHandler& eh) : handler_(eh) {}
-
+struct precision_checker {
   template <typename T, FMT_ENABLE_IF(is_integer<T>::value)>
   FMT_CONSTEXPR auto operator()(T value) -> unsigned long long {
-    if (is_negative(value)) handler_.on_error("negative precision");
+    if (is_negative(value)) throw_format_error("negative precision");
     return static_cast<unsigned long long>(value);
   }
 
   template <typename T, FMT_ENABLE_IF(!is_integer<T>::value)>
   FMT_CONSTEXPR auto operator()(T) -> unsigned long long {
-    handler_.on_error("precision is not integer");
+    throw_format_error("precision is not integer");
     return 0;
   }
-
- private:
-  ErrorHandler& handler_;
 };
 
-template <template <typename> class Handler, typename FormatArg,
-          typename ErrorHandler>
-FMT_CONSTEXPR auto get_dynamic_spec(FormatArg arg, ErrorHandler eh) -> int {
-  unsigned long long value = visit_format_arg(Handler<ErrorHandler>(eh), arg);
-  if (value > to_unsigned(max_value<int>())) eh.on_error("number is too big");
+template <typename Handler, typename FormatArg>
+FMT_CONSTEXPR auto get_dynamic_spec(FormatArg arg) -> int {
+  unsigned long long value = visit_format_arg(Handler(), arg);
+  if (value > to_unsigned(max_value<int>()))
+    throw_format_error("number is too big");
   return static_cast<int>(value);
 }
 
@@ -3868,7 +3855,7 @@ FMT_CONSTEXPR auto get_arg(Context& ctx, ID id) -> decltype(ctx.arg(id)) {
   return arg;
 }
 
-template <template <typename> class Handler, typename Context>
+template <typename Handler, typename Context>
 FMT_CONSTEXPR void handle_dynamic_spec(int& value,
                                        arg_ref<typename Context::char_type> ref,
                                        Context& ctx) {
@@ -3876,12 +3863,10 @@ FMT_CONSTEXPR void handle_dynamic_spec(int& value,
   case arg_id_kind::none:
     break;
   case arg_id_kind::index:
-    value = detail::get_dynamic_spec<Handler>(get_arg(ctx, ref.val.index),
-                                              ctx.error_handler());
+    value = detail::get_dynamic_spec<Handler>(get_arg(ctx, ref.val.index));
     break;
   case arg_id_kind::name:
-    value = detail::get_dynamic_spec<Handler>(get_arg(ctx, ref.val.name),
-                                              ctx.error_handler());
+    value = detail::get_dynamic_spec<Handler>(get_arg(ctx, ref.val.name));
     break;
   }
 }
@@ -4381,7 +4366,7 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
   auto out = buffer_appender<Char>(buf);
   if (fmt.size() == 2 && equal2(fmt.data(), "{}")) {
     auto arg = args.get(0);
-    if (!arg) error_handler().on_error("argument not found");
+    if (!arg) throw_format_error("argument not found");
     visit_format_arg(default_arg_formatter<Char>{out, args, loc}, arg);
     return;
   }
@@ -4408,7 +4393,7 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
     }
     FMT_CONSTEXPR auto on_arg_id(basic_string_view<Char> id) -> int {
       int arg_id = context.arg_id(id);
-      if (arg_id < 0) on_error("argument not found");
+      if (arg_id < 0) throw_format_error("argument not found");
       return arg_id;
     }
 
@@ -4435,7 +4420,7 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
       detail::handle_dynamic_spec<detail::precision_checker>(
           specs.precision, specs.precision_ref, context);
       if (begin == end || *begin != '}')
-        on_error("missing '}' in format string");
+        throw_format_error("missing '}' in format string");
       auto f = arg_formatter<Char>{context.out(), specs, context.locale()};
       context.advance_to(visit_format_arg(f, arg));
       return begin;
@@ -4538,16 +4523,16 @@ formatter<T, Char,
                       detail::type::custom_type>>::format(const T& val,
                                                           FormatContext& ctx)
     const -> decltype(ctx.out()) {
-  if (specs_.width_ref.kind != detail::arg_id_kind::none ||
-      specs_.precision_ref.kind != detail::arg_id_kind::none) {
-    auto specs = specs_;
-    detail::handle_dynamic_spec<detail::width_checker>(specs.width,
-                                                       specs.width_ref, ctx);
-    detail::handle_dynamic_spec<detail::precision_checker>(
-        specs.precision, specs.precision_ref, ctx);
-    return detail::write<Char>(ctx.out(), val, specs, ctx.locale());
+  if (specs_.width_ref.kind == detail::arg_id_kind::none &&
+      specs_.precision_ref.kind == detail::arg_id_kind::none) {
+    return detail::write<Char>(ctx.out(), val, specs_, ctx.locale());
   }
-  return detail::write<Char>(ctx.out(), val, specs_, ctx.locale());
+  auto specs = specs_;
+  detail::handle_dynamic_spec<detail::width_checker>(specs.width,
+                                                      specs.width_ref, ctx);
+  detail::handle_dynamic_spec<detail::precision_checker>(
+      specs.precision, specs.precision_ref, ctx);
+  return detail::write<Char>(ctx.out(), val, specs, ctx.locale());
 }
 
 FMT_END_NAMESPACE

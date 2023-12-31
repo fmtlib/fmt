@@ -644,6 +644,7 @@ enum {
   pointer_set = set(type::pointer_type)
 };
 
+// DEPRECATED!
 FMT_NORETURN FMT_API void throw_format_error(const char* message);
 
 struct error_handler {
@@ -1762,6 +1763,7 @@ template <typename OutputIt, typename Char> class basic_format_context {
   }
   auto args() const -> const format_args& { return args_; }
 
+  // DEPRECATED!
   FMT_CONSTEXPR auto error_handler() -> detail::error_handler { return {}; }
   void on_error(const char* message) { error_handler().on_error(message); }
 
