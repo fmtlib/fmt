@@ -4529,7 +4529,7 @@ formatter<T, Char,
   }
   auto specs = specs_;
   detail::handle_dynamic_spec<detail::width_checker>(specs.width,
-                                                      specs.width_ref, ctx);
+                                                     specs.width_ref, ctx);
   detail::handle_dynamic_spec<detail::precision_checker>(
       specs.precision, specs.precision_ref, ctx);
   return detail::write<Char>(ctx.out(), val, specs, ctx.locale());
