@@ -30,13 +30,13 @@ namespace test {
 
 #ifndef _MSC_VER
 // Size type for read and write.
-typedef size_t size_t;
-typedef ssize_t ssize_t;
+using size_t = size_t;
+using ssize_t = ssize_t;
 int open(const char* path, int oflag, int mode);
 int fstat(int fd, struct stat* buf);
 #else
-typedef unsigned size_t;
-typedef int ssize_t;
+using size_t = unsigned;
+using ssize_t = int;
 #endif
 
 #ifndef _WIN32

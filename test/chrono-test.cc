@@ -627,12 +627,10 @@ TEST(chrono_test, locale) {
 using dms = std::chrono::duration<double, std::milli>;
 
 TEST(chrono_test, format_default_fp) {
-  typedef std::chrono::duration<float> fs;
-  EXPECT_EQ(fmt::format("{}", fs(1.234)), "1.234s");
-  typedef std::chrono::duration<float, std::milli> fms;
-  EXPECT_EQ(fmt::format("{}", fms(1.234)), "1.234ms");
-  typedef std::chrono::duration<double> ds;
-  EXPECT_EQ(fmt::format("{}", ds(1.234)), "1.234s");
+  EXPECT_EQ(fmt::format("{}", std::chrono::duration<float>(1.234)), "1.234s");
+  EXPECT_EQ(fmt::format("{}", std::chrono::duration<float, std::milli>(1.234)),
+            "1.234ms");
+  EXPECT_EQ(fmt::format("{}", std::chrono::duration<double>(1.234)), "1.234s");
   EXPECT_EQ(fmt::format("{}", dms(1.234)), "1.234ms");
 }
 
@@ -667,12 +665,13 @@ TEST(chrono_test, format_full_specs) {
 }
 
 TEST(chrono_test, format_simple_q) {
-  typedef std::chrono::duration<float> fs;
-  EXPECT_EQ(fmt::format("{:%Q %q}", fs(1.234)), "1.234 s");
-  typedef std::chrono::duration<float, std::milli> fms;
-  EXPECT_EQ(fmt::format("{:%Q %q}", fms(1.234)), "1.234 ms");
-  typedef std::chrono::duration<double> ds;
-  EXPECT_EQ(fmt::format("{:%Q %q}", ds(1.234)), "1.234 s");
+  EXPECT_EQ(fmt::format("{:%Q %q}", std::chrono::duration<float>(1.234)),
+            "1.234 s");
+  EXPECT_EQ(
+      fmt::format("{:%Q %q}", std::chrono::duration<float, std::milli>(1.234)),
+      "1.234 ms");
+  EXPECT_EQ(fmt::format("{:%Q %q}", std::chrono::duration<double>(1.234)),
+            "1.234 s");
   EXPECT_EQ(fmt::format("{:%Q %q}", dms(1.234)), "1.234 ms");
 }
 

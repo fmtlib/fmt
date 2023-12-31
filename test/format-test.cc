@@ -353,9 +353,9 @@ TEST(memory_buffer_test, move_assignment) {
 }
 
 TEST(memory_buffer_test, grow) {
-  typedef allocator_ref<mock_allocator<int>> Allocator;
+  using allocator = allocator_ref<mock_allocator<int>>;
   mock_allocator<int> alloc;
-  basic_memory_buffer<int, 10, Allocator> buffer((Allocator(&alloc)));
+  basic_memory_buffer<int, 10, allocator> buffer((allocator(&alloc)));
   buffer.resize(7);
   using fmt::detail::to_unsigned;
   for (int i = 0; i < 7; ++i) buffer[to_unsigned(i)] = i * i;
