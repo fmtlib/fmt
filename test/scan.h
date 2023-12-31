@@ -322,38 +322,44 @@ template <typename Context> class basic_scan_arg {
  private:
   using scan_type = detail::scan_type;
   scan_type type_;
-
- public:
-  // TODO: make private
   union {
-    int* int_value;
-    unsigned* uint_value;
-    long long* long_long_value;
-    unsigned long long* ulong_long_value;
-    std::string* string;
-    fmt::string_view* string_view;
-    detail::custom_scan_arg<Context> custom;
+    int* int_value_;
+    unsigned* uint_value_;
+    long long* long_long_value_;
+    unsigned long long* ulong_long_value_;
+    std::string* string_;
+    fmt::string_view* string_view_;
+    detail::custom_scan_arg<Context> custom_;
     // TODO: more types
   };
 
+  template <typename T>
+  static void scan_custom_arg(void* arg, scan_parse_context& parse_ctx,
+                              Context& ctx) {
+    auto s = scanner<T>();
+    parse_ctx.advance_to(s.parse(parse_ctx));
+    ctx.advance_to(s.scan(*static_cast<T*>(arg), ctx));
+  }
+
+ public:
   FMT_CONSTEXPR basic_scan_arg()
-      : type_(scan_type::none_type), int_value(nullptr) {}
+      : type_(scan_type::none_type), int_value_(nullptr) {}
   FMT_CONSTEXPR basic_scan_arg(int& value)
-      : type_(scan_type::int_type), int_value(&value) {}
+      : type_(scan_type::int_type), int_value_(&value) {}
   FMT_CONSTEXPR basic_scan_arg(unsigned& value)
-      : type_(scan_type::uint_type), uint_value(&value) {}
+      : type_(scan_type::uint_type), uint_value_(&value) {}
   FMT_CONSTEXPR basic_scan_arg(long long& value)
-      : type_(scan_type::long_long_type), long_long_value(&value) {}
+      : type_(scan_type::long_long_type), long_long_value_(&value) {}
   FMT_CONSTEXPR basic_scan_arg(unsigned long long& value)
-      : type_(scan_type::ulong_long_type), ulong_long_value(&value) {}
+      : type_(scan_type::ulong_long_type), ulong_long_value_(&value) {}
   FMT_CONSTEXPR basic_scan_arg(std::string& value)
-      : type_(scan_type::string_type), string(&value) {}
+      : type_(scan_type::string_type), string_(&value) {}
   FMT_CONSTEXPR basic_scan_arg(fmt::string_view& value)
-      : type_(scan_type::string_view_type), string_view(&value) {}
+      : type_(scan_type::string_view_type), string_view_(&value) {}
   template <typename T>
   FMT_CONSTEXPR basic_scan_arg(T& value) : type_(scan_type::custom_type) {
-    custom.value = &value;
-    custom.scan = scan_custom_arg<T>;
+    custom_.value = &value;
+    custom_.scan = scan_custom_arg<T>;
   }
 
   constexpr explicit operator bool() const noexcept {
@@ -368,31 +374,30 @@ template <typename Context> class basic_scan_arg {
     case scan_type::none_type:
       break;
     case scan_type::int_type:
-      return vis(*int_value);
+      return vis(*int_value_);
     case scan_type::uint_type:
-      return vis(*uint_value);
+      return vis(*uint_value_);
     case scan_type::long_long_type:
-      return vis(*long_long_value);
+      return vis(*long_long_value_);
     case scan_type::ulong_long_type:
-      return vis(*ulong_long_value);
+      return vis(*ulong_long_value_);
     case scan_type::string_type:
-      return vis(*string);
+      return vis(*string_);
     case scan_type::string_view_type:
-      return vis(*string_view);
+      return vis(*string_view_);
     case scan_type::custom_type:
-      // TODO: implement
       break;
     }
     return vis(monostate());
   }
 
- private:
-  template <typename T>
-  static void scan_custom_arg(void* arg, scan_parse_context& parse_ctx,
-                              Context& ctx) {
-    auto s = scanner<T>();
-    parse_ctx.advance_to(s.parse(parse_ctx));
-    ctx.advance_to(s.scan(*static_cast<T*>(arg), ctx));
+  auto scan_custom(const char* parse_begin,
+                   scan_parse_context& parse_ctx,
+                   Context& ctx) const -> bool {
+    if (type_ != scan_type::custom_type) return false;
+    parse_ctx.advance_to(parse_begin);
+    custom_.scan(custom_.value, parse_ctx, ctx);
+    return true;
   }
 };
 
@@ -449,6 +454,7 @@ const char* parse_scan_specs(const char* begin, const char* end,
 }
 
 struct default_arg_scanner {
+  // TODO: storing a range can be more efficient
   using iterator = scan_buffer::iterator;
   iterator begin;
   iterator end;
@@ -590,11 +596,8 @@ struct scan_handler : error_handler {
   auto on_format_specs(int arg_id, const char* begin, const char* end) -> const
       char* {
     scan_arg arg = scan_ctx_.arg(arg_id);
-    if (arg.type() == scan_type::custom_type) {
-      parse_ctx_.advance_to(begin);
-      arg.custom.scan(arg.custom.value, parse_ctx_, scan_ctx_);
+    if (arg.scan_custom(begin, parse_ctx_, scan_ctx_))
       return parse_ctx_.begin();
-    }
     auto specs = format_specs<>();
     begin = parse_scan_specs(begin, end, specs, arg.type());
     if (begin == end || *begin != '}') on_error("missing '}' in format string");
