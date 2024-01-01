@@ -1,4 +1,4 @@
-# 10.2.0 - TBD
+# 10.2.0 - 2024-01-01
 
 -   Added support for the `%j` specifier (the number of days) for
     `std::chrono::duration` (https://github.com/fmtlib/fmt/issues/3643,
