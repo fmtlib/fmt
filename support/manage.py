@@ -238,7 +238,8 @@ def release(args):
     for i, line in enumerate(fileinput.input(changelog_path, inplace=True)):
         if i == 0:
             version = re.match(r'# (.*) - TBD', line).group(1)
-            line = version + ' - ' + datetime.date.today().isoformat() + '\n'
+            line = '# {} - {}\n'.format(
+                version, datetime.date.today().isoformat())
         elif not is_first_section:
             pass
         elif line.startswith('#'):
