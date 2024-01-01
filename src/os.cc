@@ -200,6 +200,7 @@ int buffered_file::descriptor() const {
 #  ifdef _WIN32
 using mode_t = int;
 #  endif
+
 constexpr mode_t default_open_mode =
     S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
 
@@ -301,29 +302,6 @@ void file::dup2(int fd, std::error_code& ec) noexcept {
   if (result == -1) ec = std::error_code(errno, std::generic_category());
 }
 
-void file::pipe(file& read_end, file& write_end) {
-  // Close the descriptors first to make sure that assignments don't throw
-  // and there are no leaks.
-  read_end.close();
-  write_end.close();
-  int fds[2] = {};
-#  ifdef _WIN32
-  // Make the default pipe capacity same as on Linux 2.6.11+.
-  enum { DEFAULT_CAPACITY = 65536 };
-  int result = FMT_POSIX_CALL(pipe(fds, DEFAULT_CAPACITY, _O_BINARY));
-#  else
-  // Don't retry as the pipe function doesn't return EINTR.
-  // http://pubs.opengroup.org/onlinepubs/009696799/functions/pipe.html
-  int result = FMT_POSIX_CALL(pipe(fds));
-#  endif
-  if (result != 0)
-    FMT_THROW(system_error(errno, FMT_STRING("cannot create pipe")));
-  // The following assignments don't throw because read_fd and write_fd
-  // are closed.
-  read_end = file(fds[0]);
-  write_end = file(fds[1]);
-}
-
 buffered_file file::fdopen(const char* mode) {
 // Don't retry as fdopen doesn't return EINTR.
 #  if defined(__MINGW32__) && defined(_POSIX_)
@@ -351,6 +329,24 @@ file file::open_windows_file(wcstring_view path, int oflag) {
   return file(fd);
 }
 #  endif
+
+pipe::pipe() {
+  int fds[2] = {};
+#  ifdef _WIN32
+  // Make the default pipe capacity same as on Linux 2.6.11+.
+  enum { DEFAULT_CAPACITY = 65536 };
+  int result = FMT_POSIX_CALL(pipe(fds, DEFAULT_CAPACITY, _O_BINARY));
+#  else
+  // Don't retry as the pipe function doesn't return EINTR.
+  // http://pubs.opengroup.org/onlinepubs/009696799/functions/pipe.html
+  int result = FMT_POSIX_CALL(pipe(fds));
+#  endif
+  if (result != 0)
+    FMT_THROW(system_error(errno, FMT_STRING("cannot create pipe")));
+  // The following assignments don't throw.
+  read_end = file(fds[0]);
+  write_end = file(fds[1]);
+}
 
 #  if !defined(__MSDOS__)
 long getpagesize() {

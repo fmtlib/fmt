@@ -139,37 +139,36 @@ TEST(scan_test, end_of_input) {
 
 #if FMT_USE_FCNTL
 TEST(scan_test, file) {
-  fmt::file read_end, write_end;
-  fmt::file::pipe(read_end, write_end);
+  auto pipe = fmt::pipe();
 
   fmt::string_view input = "10 20";
-  write_end.write(input.data(), input.size());
-  write_end.close();
+  pipe.write_end.write(input.data(), input.size());
+  pipe.write_end.close();
 
   int n1 = 0, n2 = 0;
-  fmt::buffered_file f = read_end.fdopen("r");
+  fmt::buffered_file f = pipe.read_end.fdopen("r");
   fmt::scan(f.get(), "{} {}", n1, n2);
   EXPECT_EQ(n1, 10);
   EXPECT_EQ(n2, 20);
 }
 
 TEST(scan_test, lock) {
-  fmt::file read_end, write_end;
-  fmt::file::pipe(read_end, write_end);
+  auto pipe = fmt::pipe();
 
   std::thread producer([&]() {
     fmt::string_view input = "42 ";
-    for (int i = 0; i < 1000; ++i) write_end.write(input.data(), input.size());
-    write_end.close();
+    for (int i = 0; i < 1000; ++i)
+      pipe.write_end.write(input.data(), input.size());
+    pipe.write_end.close();
   });
 
   std::atomic<int> count(0);
-  fmt::buffered_file f = read_end.fdopen("r");
+  fmt::buffered_file f = pipe.read_end.fdopen("r");
   auto fun = [&]() {
     int value = 0;
     while (fmt::scan(f.get(), "{}", value)) {
       if (value != 42) {
-        read_end.close();
+        pipe.read_end.close();
         EXPECT_EQ(value, 42);
         break;
       }

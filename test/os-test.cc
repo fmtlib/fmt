@@ -104,7 +104,7 @@ TEST(file_test, open_windows_file) {
 
 using fmt::file;
 
-bool isclosed(int fd) {
+auto isclosed(int fd) -> bool {
   char buffer;
   auto result = std::streamsize();
   SUPPRESS_ASSERT(result = FMT_POSIX(read(fd, &buffer, 1)));
@@ -112,12 +112,11 @@ bool isclosed(int fd) {
 }
 
 // Opens a file for reading.
-file open_file() {
-  file read_end, write_end;
-  file::pipe(read_end, write_end);
-  write_end.write(file_content, std::strlen(file_content));
-  write_end.close();
-  return read_end;
+auto open_file() -> file {
+  auto pipe = fmt::pipe();
+  pipe.write_end.write(file_content, std::strlen(file_content));
+  pipe.write_end.close();
+  return std::move(pipe.read_end);
 }
 
 // Attempts to write a string to a file.
@@ -427,11 +426,10 @@ TEST(file_test, read_error) {
 }
 
 TEST(file_test, write) {
-  file read_end, write_end;
-  file::pipe(read_end, write_end);
-  write(write_end, "test");
-  write_end.close();
-  EXPECT_READ(read_end, "test");
+  auto pipe = fmt::pipe();
+  write(pipe.write_end, "test");
+  pipe.write_end.close();
+  EXPECT_READ(pipe.read_end, "test");
 }
 
 TEST(file_test, write_error) {
@@ -489,18 +487,16 @@ TEST(file_test, dup2_noexcept_error) {
 }
 
 TEST(file_test, pipe) {
-  file read_end, write_end;
-  file::pipe(read_end, write_end);
-  EXPECT_NE(-1, read_end.descriptor());
-  EXPECT_NE(-1, write_end.descriptor());
-  write(write_end, "test");
-  EXPECT_READ(read_end, "test");
+  auto pipe = fmt::pipe();
+  EXPECT_NE(-1, pipe.read_end.descriptor());
+  EXPECT_NE(-1, pipe.write_end.descriptor());
+  write(pipe.write_end, "test");
+  EXPECT_READ(pipe.read_end, "test");
 }
 
 TEST(file_test, fdopen) {
-  file read_end, write_end;
-  file::pipe(read_end, write_end);
-  int read_fd = read_end.descriptor();
-  EXPECT_EQ(read_fd, FMT_POSIX(fileno(read_end.fdopen("r").get())));
+  auto pipe = fmt::pipe();
+  int read_fd = pipe.read_end.descriptor();
+  EXPECT_EQ(read_fd, FMT_POSIX(fileno(pipe.read_end.fdopen("r").get())));
 }
 #endif  // FMT_USE_FCNTL

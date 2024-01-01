@@ -238,6 +238,7 @@ class buffered_file {
 };
 
 #if FMT_USE_FCNTL
+
 // A file. Closed file is represented by a file object with descriptor -1.
 // Methods that are not declared with noexcept may throw
 // fmt::system_error in case of failure. Note that some errors such as
@@ -250,6 +251,8 @@ class FMT_API file {
 
   // Constructs a file object with a given descriptor.
   explicit file(int fd) : fd_(fd) {}
+
+  friend struct pipe;
 
  public:
   // Possible values for the oflag argument to the constructor.
@@ -313,11 +316,6 @@ class FMT_API file {
   // necessary.
   void dup2(int fd, std::error_code& ec) noexcept;
 
-  // Creates a pipe setting up read_end and write_end file objects for reading
-  // and writing respectively.
-  // DEPRECATED! Taking files as out parameters is deprecated.
-  static void pipe(file& read_end, file& write_end);
-
   // Creates a buffered_file object associated with this file and detaches
   // this file object from the file.
   auto fdopen(const char* mode) -> buffered_file;
@@ -327,6 +325,15 @@ class FMT_API file {
   // wcstring_view filename. Windows only.
   static file open_windows_file(wcstring_view path, int oflag);
 #  endif
+};
+
+struct FMT_API pipe {
+  file read_end;
+  file write_end;
+
+  // Creates a pipe setting up read_end and write_end file objects for reading
+  // and writing respectively.
+  pipe();
 };
 
 // Returns the memory page size.
