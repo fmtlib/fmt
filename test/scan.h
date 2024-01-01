@@ -546,9 +546,9 @@ struct arg_scanner {
   iterator end;
   const format_specs<>& specs;
 
-  template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
-  auto operator()(T) -> iterator {
-    // TODO
+  template <typename T>
+  auto operator()(T&&) -> iterator {
+    // TODO: implement
     return begin;
   }
 };
@@ -589,8 +589,7 @@ struct scan_handler : error_handler {
     scan_arg arg = scan_ctx_.arg(arg_id);
     auto it = scan_ctx_.begin(), end = scan_ctx_.end();
     while (it != end && is_whitespace(*it)) ++it;
-    arg.visit(default_arg_scanner{it, end});
-    scan_ctx_.advance_to(it);
+    scan_ctx_.advance_to(arg.visit(default_arg_scanner{it, end}));
   }
 
   auto on_format_specs(int arg_id, const char* begin, const char* end) -> const
@@ -602,9 +601,7 @@ struct scan_handler : error_handler {
     begin = parse_scan_specs(begin, end, specs, arg.type());
     if (begin == end || *begin != '}') on_error("missing '}' in format string");
     auto s = arg_scanner{scan_ctx_.begin(), scan_ctx_.end(), specs};
-    // TODO: scan argument according to specs
-    (void)s;
-    // context.advance_to(visit_format_arg(s, arg));
+    scan_ctx_.advance_to(arg.visit(s));
     return begin;
   }
 
