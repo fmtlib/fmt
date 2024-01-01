@@ -298,7 +298,6 @@ def release(args):
     run = Runner(fmt_repo.dir)
     run('cmake', '.')
     run('make', 'doc', 'package_source')
-    update_site(env)
 
     # Create a release on GitHub.
     fmt_repo.push('origin', 'release')
@@ -320,6 +319,7 @@ def release(args):
     if r.status_code != 201:
         raise Exception('Failed to upload an asset ' + str(r))
 
+    update_site(env)
 
 if __name__ == '__main__':
     args = docopt.docopt(__doc__)
