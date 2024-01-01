@@ -499,18 +499,19 @@ auto read_hex(scan_iterator it, T& value)
     if (digit < 0) break;
   } while (it != scan_sentinel());
 
-  // TODO: Check overflow.
-  (void)num_digits;
-  value = n;
+  // Check overflow.
+  if (num_digits <= (std::numeric_limits<T>::digits >> 2))
+    value = n;
+  else
+    throw_format_error("number is too big");
   return it;
 }
 
 template <typename T, FMT_ENABLE_IF(std::is_unsigned<T>::value)>
 auto read(scan_iterator it, T& value, const format_specs<>& specs)
     -> scan_iterator {
-  if (specs.type == presentation_type::hex_lower) {
+  if (specs.type == presentation_type::hex_lower)
     return read_hex(it, value);
-  }
   return read(it, value);
 }
 
