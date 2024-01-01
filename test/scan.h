@@ -14,7 +14,15 @@
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
-inline bool is_whitespace(char c) { return c == ' ' || c == '\n'; }
+inline auto is_whitespace(char c) -> bool { return c == ' ' || c == '\n'; }
+
+// If c is a hex digit returns its numeric value, othewise -1.
+inline auto to_hex_digit(char c) -> int {
+  if (c >= '0' && c <= '9') return c - '0';
+  if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+  if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+  return -1;
+}
 
 struct maybe_contiguous_range {
   const char* begin;
@@ -297,8 +305,7 @@ enum class scan_type {
   custom_type
 };
 
-template <typename Context>
-struct custom_scan_arg {
+template <typename Context> struct custom_scan_arg {
   void* value;
   void (*scan)(void* arg, scan_parse_context& parse_ctx, Context& ctx);
 };
@@ -379,8 +386,7 @@ template <typename Context> class basic_scan_arg {
     return vis(monostate());
   }
 
-  auto scan_custom(const char* parse_begin,
-                   scan_parse_context& parse_ctx,
+  auto scan_custom(const char* parse_begin, scan_parse_context& parse_ctx,
                    Context& ctx) const -> bool {
     if (type_ != scan_type::custom_type) return false;
     parse_ctx.advance_to(parse_begin);
@@ -434,6 +440,7 @@ const char* parse_scan_specs(const char* begin, const char* end,
     // TODO: parse more scan format specifiers
     case 'x':
       specs.type = presentation_type::hex_lower;
+      ++begin;
       break;
     case '}':
       return begin;
@@ -443,7 +450,8 @@ const char* parse_scan_specs(const char* begin, const char* end,
 }
 
 template <typename T, FMT_ENABLE_IF(std::is_unsigned<T>::value)>
-auto read(scan_iterator it, T& value) -> scan_iterator {
+auto read(scan_iterator it, T& value)
+    -> scan_iterator {
   if (it == scan_sentinel()) return it;
   char c = *it;
   if (c < '0' || c > '9') throw_format_error("invalid input");
@@ -475,8 +483,40 @@ auto read(scan_iterator it, T& value) -> scan_iterator {
   return it;
 }
 
+template <typename T, FMT_ENABLE_IF(std::is_unsigned<T>::value)>
+auto read_hex(scan_iterator it, T& value)
+    -> scan_iterator {
+  if (it == scan_sentinel()) return it;
+  int digit = to_hex_digit(*it);
+  if (digit < 0) throw_format_error("invalid input");
+
+  int num_digits = 0;
+  T n = 0;
+  do {
+    n = (n << 4) + static_cast<unsigned>(digit);
+    ++num_digits;
+    digit = to_hex_digit(*++it);
+    if (digit < 0) break;
+  } while (it != scan_sentinel());
+
+  // TODO: Check overflow.
+  (void)num_digits;
+  value = n;
+  return it;
+}
+
+template <typename T, FMT_ENABLE_IF(std::is_unsigned<T>::value)>
+auto read(scan_iterator it, T& value, const format_specs<>& specs)
+    -> scan_iterator {
+  if (specs.type == presentation_type::hex_lower) {
+    return read_hex(it, value);
+  }
+  return read(it, value);
+}
+
 template <typename T, FMT_ENABLE_IF(std::is_signed<T>::value)>
-auto read(scan_iterator it, T& value) -> scan_iterator {
+auto read(scan_iterator it, T& value, const format_specs<>& = {})
+    -> scan_iterator {
   bool negative = it != scan_sentinel() && *it == '-';
   if (negative) {
     ++it;
@@ -490,12 +530,14 @@ auto read(scan_iterator it, T& value) -> scan_iterator {
   return it;
 }
 
-auto read(scan_iterator it, std::string& value) -> scan_iterator {
+auto read(scan_iterator it, std::string& value, const format_specs<>& = {})
+    -> scan_iterator {
   while (it != scan_sentinel() && *it != ' ') value.push_back(*it++);
   return it;
 }
 
-auto read(scan_iterator it, string_view& value) -> scan_iterator {
+auto read(scan_iterator it, string_view& value, const format_specs<>& = {})
+    -> scan_iterator {
   auto range = to_contiguous(it);
   // This could also be checked at compile time in scan.
   if (!range) throw_format_error("string_view requires contiguous input");
@@ -506,7 +548,8 @@ auto read(scan_iterator it, string_view& value) -> scan_iterator {
   return advance(it, size);
 }
 
-auto read(scan_iterator it, monostate) -> scan_iterator {
+auto read(scan_iterator it, monostate, const format_specs<>& = {})
+    -> scan_iterator {
   return it;
 }
 
@@ -514,8 +557,7 @@ auto read(scan_iterator it, monostate) -> scan_iterator {
 struct default_arg_scanner {
   scan_iterator it;
 
-  template <typename T>
-  FMT_INLINE auto operator()(T&& value) -> scan_iterator {
+  template <typename T> FMT_INLINE auto operator()(T&& value) -> scan_iterator {
     return read(it, value);
   }
 };
@@ -525,10 +567,8 @@ struct arg_scanner {
   scan_iterator it;
   const format_specs<>& specs;
 
-  template <typename T>
-  auto operator()(T&& value) -> scan_iterator {
-    // TODO: handle specs
-    return read(it, value);
+  template <typename T> auto operator()(T&& value) -> scan_iterator {
+    return read(it, value, specs);
   }
 };
 
@@ -585,9 +625,7 @@ struct scan_handler : error_handler {
     return begin;
   }
 
-  void on_error(const char* message) {
-    error_handler::on_error(message);
-  }
+  void on_error(const char* message) { error_handler::on_error(message); }
 };
 }  // namespace detail
 

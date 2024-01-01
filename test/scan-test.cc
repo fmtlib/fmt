@@ -59,6 +59,12 @@ TEST(scan_test, read_ulonglong) {
                    "invalid input");
 }
 
+TEST(scan_test, read_hex) {
+  unsigned n = 0;
+  fmt::scan("2a", "{:x}", n);
+  EXPECT_EQ(n, 42);
+}
+
 TEST(scan_test, read_string) {
   std::string s;
   fmt::scan("foo", "{}", s);
