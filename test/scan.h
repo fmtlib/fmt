@@ -16,23 +16,6 @@ namespace detail {
 
 inline bool is_whitespace(char c) { return c == ' ' || c == '\n'; }
 
-template <typename T> class optional {
- private:
-  T value_;
-  bool has_value_ = false;
-
- public:
-  optional() = default;
-  optional(T value) : value_(std::move(value)), has_value_(true) {}
-
-  explicit operator bool() const { return has_value_; }
-
-  auto operator*() const -> const T& {
-    if (!has_value_) throw std::runtime_error("bad optional access");
-    return value_;
-  }
-};
-
 struct maybe_contiguous_range {
   const char* begin;
   const char* end;
