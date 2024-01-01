@@ -150,7 +150,7 @@ option(FMT_INSTALL "Generate the install target." ON)
 option(FMT_TEST "Generate the test target." ${FMT_MASTER_PROJECT})
 option(FMT_FUZZ "Generate the fuzz target." OFF)
 option(FMT_CUDA_TEST "Generate the cuda-test target." OFF)
-option(FMT_OS "Include core requiring OS (Windows/Posix) " ON)
+option(FMT_OS "Include OS-specific APIs." ON)
 option(FMT_MODULE "Build a module instead of a traditional library." OFF)
 option(FMT_SYSTEM_HEADERS "Expose headers with marking them as system." OFF)
 
@@ -278,9 +278,6 @@ add_headers(FMT_HEADERS args.h chrono.h color.h compile.h core.h format.h
                         format-inl.h os.h ostream.h printf.h ranges.h std.h
                         xchar.h)
 set(FMT_SOURCES src/format.cc)
-if (FMT_OS)
-  set(FMT_SOURCES ${FMT_SOURCES} src/os.cc)
-endif ()
 
 add_module_library(fmt src/fmt.cc FALLBACK
                    ${FMT_SOURCES} ${FMT_HEADERS} README.md ChangeLog.md
@@ -288,6 +285,10 @@ add_module_library(fmt src/fmt.cc FALLBACK
 add_library(fmt::fmt ALIAS fmt)
 if (FMT_MODULE)
   enable_module(fmt)
+endif ()
+if (FMT_OS)
+  target_sources(fmt PRIVATE src/os.cc)
+  target_compile_definitions(fmt PRIVATE FMT_OS=0)
 endif ()
 
 if (FMT_WERROR)

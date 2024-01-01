@@ -90,7 +90,9 @@ extern "C++" {
 #include "fmt/color.h"
 #include "fmt/compile.h"
 #include "fmt/format.h"
-#include "fmt/os.h"
+#if !defined(FMT_OS) || FMT_OS
+# include "fmt/os.h"
+#endif
 #include "fmt/printf.h"
 #include "fmt/std.h"
 #include "fmt/xchar.h"
