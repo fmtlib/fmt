@@ -212,11 +212,12 @@
     https://github.com/fmtlib/fmt/pull/3762,
     https://github.com/fmtlib/fmt/issues/3763,
     https://github.com/fmtlib/fmt/pull/3764,
-    https://github.com/fmtlib/fmt/issues/3774).
+    https://github.com/fmtlib/fmt/issues/3774,
+    https://github.com/fmtlib/fmt/pull/3779).
     Thanks @danakj, @vinayyadav3016, @cyyever, @phprus, @qimiko, @saschasc,
     @gsjaardema, @lazka, @Zhaojun-Liu, @carlsmedstad, @hotwatermorning,
     @cptFracassa, @kuguma, @PeterJohnson, @H1X4Dev, @asantoni, @eltociear,
-    @msimberg, @tchaikov.
+    @msimberg, @tchaikov, @waywardmonkeys.
 
 -   Improved documentation and README
     (https://github.com/fmtlib/fmt/issues/2086,
