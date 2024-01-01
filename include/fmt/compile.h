@@ -492,7 +492,8 @@ auto format_to_n(OutputIt out, size_t n, const S& format_str, Args&&... args)
     -> format_to_n_result<OutputIt> {
   using traits = detail::fixed_buffer_traits;
   auto buf = detail::iterator_buffer<OutputIt, char, traits>(out, n);
-  format_to(std::back_inserter(buf), format_str, std::forward<Args>(args)...);
+  fmt::format_to(std::back_inserter(buf), format_str,
+                 std::forward<Args>(args)...);
   return {buf.out(), buf.count()};
 }
 
