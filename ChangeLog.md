@@ -240,7 +240,8 @@
     https://github.com/fmtlib/fmt/pull/3666,
     https://github.com/fmtlib/fmt/pull/3696,
     https://github.com/fmtlib/fmt/pull/3697,
-    https://github.com/fmtlib/fmt/pull/3759).
+    https://github.com/fmtlib/fmt/pull/3759,
+    https://github.com/fmtlib/fmt/pull/3782).
 
 # 10.1.1 - 2023-08-28
 
