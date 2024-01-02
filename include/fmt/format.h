@@ -69,7 +69,7 @@
 #  if FMT_CPLUSPLUS >= 202002L
 #    if FMT_HAS_CPP_ATTRIBUTE(no_unique_address)
 #      define FMT_NO_UNIQUE_ADDRESS [[no_unique_address]]
-// VS2019 v16.10 and later except clang-cl (https://reviews.llvm.org/D110485)
+// VS2019 v16.10 and later except clang-cl (https://reviews.llvm.org/D110485).
 #    elif (FMT_MSC_VERSION >= 1929) && !FMT_CLANG_VERSION
 #      define FMT_NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
 #    endif
@@ -1867,15 +1867,11 @@ auto write_escaped_cp(OutputIt out, const find_escape_result<Char>& escape)
     *out++ = static_cast<Char>('\\');
     break;
   default:
-    if (escape.cp < 0x100) {
-      return write_codepoint<2, Char>(out, 'x', escape.cp);
-    }
-    if (escape.cp < 0x10000) {
+    if (escape.cp < 0x100) return write_codepoint<2, Char>(out, 'x', escape.cp);
+    if (escape.cp < 0x10000)
       return write_codepoint<4, Char>(out, 'u', escape.cp);
-    }
-    if (escape.cp < 0x110000) {
+    if (escape.cp < 0x110000)
       return write_codepoint<8, Char>(out, 'U', escape.cp);
-    }
     for (Char escape_char : basic_string_view<Char>(
              escape.begin, to_unsigned(escape.end - escape.begin))) {
       out = write_codepoint<2, Char>(out, 'x',
