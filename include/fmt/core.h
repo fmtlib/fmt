@@ -1856,7 +1856,7 @@ class format_arg_store
 // Arguments are taken by lvalue references to avoid some lifetime issues.
 template <typename Context = format_context, typename... T>
 constexpr auto make_format_args(T&... args)
-    -> format_arg_store<Context, remove_cvref_t<T>...> {
+    -> format_arg_store<Context, remove_const_t<T>...> {
   return {args...};
 }
 
