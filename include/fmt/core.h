@@ -657,13 +657,10 @@ enum {
   cstring_set = set(type::cstring_type),
   pointer_set = set(type::pointer_type)
 };
-
-// DEPRECATED!
-FMT_NORETURN FMT_API void throw_format_error(const char* message);
 }  // namespace detail
 
 /** Throws ``format_error`` with a given message. */
-using detail::throw_format_error;
+FMT_NORETURN FMT_API void throw_format_error(const char* message);
 
 /** String's character type. */
 template <typename S> using char_t = typename detail::char_t_impl<S>::type;
@@ -715,7 +712,7 @@ template <typename Char> class basic_format_parse_context {
    */
   FMT_CONSTEXPR auto next_arg_id() -> int {
     if (next_arg_id_ < 0) {
-      detail::throw_format_error(
+      throw_format_error(
           "cannot switch from manual to automatic argument indexing");
       return 0;
     }
@@ -730,7 +727,7 @@ template <typename Char> class basic_format_parse_context {
    */
   FMT_CONSTEXPR void check_arg_id(int id) {
     if (next_arg_id_ > 0) {
-      detail::throw_format_error(
+      throw_format_error(
           "cannot switch from automatic to manual argument indexing");
       return;
     }
@@ -1068,7 +1065,7 @@ FMT_CONSTEXPR void basic_format_parse_context<Char>::do_check_arg_id(int id) {
       (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 1200)) {
     using context = detail::compile_parse_context<Char>;
     if (id >= static_cast<context*>(this)->num_args())
-      detail::throw_format_error("argument not found");
+      throw_format_error("argument not found");
   }
 }
 

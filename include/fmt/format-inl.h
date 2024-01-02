@@ -36,10 +36,6 @@ FMT_FUNC void assert_fail(const char* file, int line, const char* message) {
   std::terminate();
 }
 
-FMT_FUNC void throw_format_error(const char* message) {
-  FMT_THROW(format_error(message));
-}
-
 FMT_FUNC void format_error_code(detail::buffer<char>& out, int error_code,
                                 string_view message) noexcept {
   // Report error code making sure that the output fits into
@@ -126,6 +122,10 @@ FMT_FUNC auto write_loc(appender out, loc_value value,
   return false;
 }
 }  // namespace detail
+
+FMT_FUNC void throw_format_error(const char* message) {
+  FMT_THROW(format_error(message));
+}
 
 template <typename Locale> typename Locale::id format_facet<Locale>::id;
 
