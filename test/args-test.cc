@@ -38,12 +38,13 @@ struct custom_type {
 
 FMT_BEGIN_NAMESPACE
 template <> struct formatter<custom_type> {
-  auto parse(format_parse_context& ctx) const -> decltype(ctx.begin()) {
+  auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
     return ctx.begin();
   }
 
   template <typename FormatContext>
-  auto format(const custom_type& p, FormatContext& ctx) -> decltype(ctx.out()) {
+  auto format(const custom_type& p, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
     return fmt::format_to(ctx.out(), "cust={}", p.i);
   }
 };
@@ -68,11 +69,11 @@ struct to_stringable {
 
 FMT_BEGIN_NAMESPACE
 template <> struct formatter<to_stringable> {
-  auto parse(format_parse_context& ctx) const -> decltype(ctx.begin()) {
+  auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
     return ctx.begin();
   }
 
-  auto format(to_stringable, format_context& ctx) -> decltype(ctx.out()) {
+  auto format(to_stringable, format_context& ctx) const -> decltype(ctx.out()) {
     return ctx.out();
   }
 };
@@ -155,10 +156,11 @@ struct copy_throwable {
 
 FMT_BEGIN_NAMESPACE
 template <> struct formatter<copy_throwable> {
-  auto parse(format_parse_context& ctx) const -> decltype(ctx.begin()) {
+  auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
     return ctx.begin();
   }
-  auto format(copy_throwable, format_context& ctx) -> decltype(ctx.out()) {
+  auto format(copy_throwable, format_context& ctx) const
+      -> decltype(ctx.out()) {
     return ctx.out();
   }
 };
