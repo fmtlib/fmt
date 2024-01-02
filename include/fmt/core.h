@@ -646,15 +646,6 @@ enum {
 
 // DEPRECATED!
 FMT_NORETURN FMT_API void throw_format_error(const char* message);
-
-struct error_handler {
-  constexpr error_handler() = default;
-
-  // This function is intentionally not constexpr to give a compile-time error.
-  FMT_NORETURN void on_error(const char* message) {
-    throw_format_error(message);
-  }
-};
 }  // namespace detail
 
 /** Throws ``format_error`` with a given message. */
@@ -1772,9 +1763,8 @@ template <typename OutputIt, typename Char> class basic_format_context {
   }
   auto args() const -> const format_args& { return args_; }
 
-  // DEPRECATED!
-  FMT_CONSTEXPR auto error_handler() -> detail::error_handler { return {}; }
-  void on_error(const char* message) { error_handler().on_error(message); }
+  // This function is intentionally not constexpr to give a compile-time error.
+  void on_error(const char* message) { throw_format_error(message); }
 
   // Returns an iterator to the beginning of the output range.
   FMT_CONSTEXPR auto out() -> iterator { return out_; }

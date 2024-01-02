@@ -53,9 +53,7 @@ template <typename Char> class basic_printf_context {
     return args_.get(id);
   }
 
-  FMT_CONSTEXPR void on_error(const char* message) {
-    detail::error_handler().on_error(message);
-  }
+  void on_error(const char* message) { throw_format_error(message); }
 };
 
 namespace detail {

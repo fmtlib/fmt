@@ -573,7 +573,7 @@ struct arg_scanner {
   }
 };
 
-struct scan_handler : error_handler {
+struct scan_handler {
  private:
   scan_parse_context parse_ctx_;
   scan_context scan_ctx_;
@@ -626,7 +626,7 @@ struct scan_handler : error_handler {
     return begin;
   }
 
-  void on_error(const char* message) { error_handler::on_error(message); }
+  void on_error(const char* message) { throw_format_error(message); }
 };
 }  // namespace detail
 

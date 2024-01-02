@@ -4360,7 +4360,7 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
     return;
   }
 
-  struct format_handler : error_handler {
+  struct format_handler {
     basic_format_parse_context<Char> parse_context;
     buffer_context<Char> context;
 
@@ -4412,6 +4412,8 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
       context.advance_to(visit_format_arg(f, arg));
       return begin;
     }
+
+    void on_error(const char* message) { throw_format_error(message); }
   };
   detail::parse_format_string<false>(fmt, format_handler(out, fmt, args, loc));
 }
