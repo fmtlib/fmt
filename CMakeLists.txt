@@ -288,6 +288,7 @@ if (FMT_MODULE)
 endif ()
 if (FMT_OS)
   target_sources(fmt PRIVATE src/os.cc)
+else()
   target_compile_definitions(fmt PRIVATE FMT_OS=0)
 endif ()
 
