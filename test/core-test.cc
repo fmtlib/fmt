@@ -273,7 +273,8 @@ struct custom_context {
   bool called = false;
 
   template <typename T> struct formatter_type {
-    FMT_CONSTEXPR auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin()) {
+    FMT_CONSTEXPR auto parse(fmt::format_parse_context& ctx)
+        -> decltype(ctx.begin()) {
       return ctx.begin();
     }
 
@@ -321,7 +322,9 @@ TEST(arg_test, make_value_with_custom_context) {
 struct test_result {};
 
 template <typename T> struct mock_visitor {
-  template <typename U> struct result { using type = test_result; };
+  template <typename U> struct result {
+    using type = test_result;
+  };
 
   mock_visitor() {
     ON_CALL(*this, visit(_)).WillByDefault(Return(test_result()));
@@ -338,10 +341,14 @@ template <typename T> struct mock_visitor {
   }
 };
 
-template <typename T> struct visit_type { using type = T; };
+template <typename T> struct visit_type {
+  using type = T;
+};
 
-#define VISIT_TYPE(type_, visit_type_) \
-  template <> struct visit_type<type_> { using type = visit_type_; }
+#define VISIT_TYPE(type_, visit_type_)   \
+  template <> struct visit_type<type_> { \
+    using type = visit_type_;            \
+  }
 
 VISIT_TYPE(signed char, int);
 VISIT_TYPE(unsigned char, unsigned);
@@ -362,10 +369,8 @@ VISIT_TYPE(unsigned long, unsigned long long);
     EXPECT_CALL(visitor, visit(expected));                                \
     using iterator = std::back_insert_iterator<buffer<Char>>;             \
     auto var = value;                                                     \
-    fmt::visit_format_arg(                                                \
-        visitor,                                                          \
-        fmt::detail::make_arg<fmt::basic_format_context<iterator, Char>>( \
-            var));                                                        \
+    fmt::detail::make_arg<fmt::basic_format_context<iterator, Char>>(var) \
+        .visit(visitor);                                                  \
   }
 
 #define CHECK_ARG_SIMPLE(value)                             \
@@ -456,14 +461,13 @@ TEST(arg_test, custom_arg) {
       mock_visitor<fmt::basic_format_arg<fmt::format_context>::handle>;
   auto&& v = testing::StrictMock<visitor>();
   EXPECT_CALL(v, visit(_)).WillOnce(Invoke(check_custom()));
-  fmt::visit_format_arg(v, fmt::detail::make_arg<fmt::format_context>(test));
+  fmt::detail::make_arg<fmt::format_context>(test).visit(v);
 }
 
 TEST(arg_test, visit_invalid_arg) {
   auto&& visitor = testing::StrictMock<mock_visitor<fmt::monostate>>();
   EXPECT_CALL(visitor, visit(_));
-  auto arg = fmt::basic_format_arg<fmt::format_context>();
-  fmt::visit_format_arg(visitor, arg);
+  fmt::basic_format_arg<fmt::format_context>().visit(visitor);
 }
 
 #if FMT_USE_CONSTEXPR

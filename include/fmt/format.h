@@ -65,20 +65,6 @@
 #  define FMT_FALLTHROUGH
 #endif
 
-#ifndef FMT_DEPRECATED
-#  if FMT_HAS_CPP14_ATTRIBUTE(deprecated) || FMT_MSC_VERSION >= 1900
-#    define FMT_DEPRECATED [[deprecated]]
-#  else
-#    if (defined(__GNUC__) && !defined(__LCC__)) || defined(__clang__)
-#      define FMT_DEPRECATED __attribute__((deprecated))
-#    elif FMT_MSC_VERSION
-#      define FMT_DEPRECATED __declspec(deprecated)
-#    else
-#      define FMT_DEPRECATED /* deprecated */
-#    endif
-#  endif
-#endif
-
 #ifndef FMT_NO_UNIQUE_ADDRESS
 #  if FMT_CPLUSPLUS >= 202002L
 #    if FMT_HAS_CPP_ATTRIBUTE(no_unique_address)
@@ -1053,7 +1039,7 @@ class loc_value {
   loc_value(T) {}
 
   template <typename Visitor> auto visit(Visitor&& vis) -> decltype(vis(0)) {
-    return visit_format_arg(vis, value_);
+    return value_.visit(vis);
   }
 };
 
@@ -3831,7 +3817,7 @@ struct precision_checker {
 
 template <typename Handler, typename FormatArg>
 FMT_CONSTEXPR auto get_dynamic_spec(FormatArg arg) -> int {
-  unsigned long long value = visit_format_arg(Handler(), arg);
+  unsigned long long value = arg.visit(Handler());
   if (value > to_unsigned(max_value<int>()))
     throw_format_error("number is too big");
   return static_cast<int>(value);
@@ -4278,7 +4264,7 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
   if (fmt.size() == 2 && equal2(fmt.data(), "{}")) {
     auto arg = args.get(0);
     if (!arg) throw_format_error("argument not found");
-    visit_format_arg(default_arg_formatter<Char>{out, args, loc}, arg);
+    arg.visit(default_arg_formatter<Char>{out, args, loc});
     return;
   }
 
@@ -4310,10 +4296,8 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
 
     FMT_INLINE void on_replacement_field(int id, const Char*) {
       auto arg = get_arg(context, id);
-      context.advance_to(visit_format_arg(
-          default_arg_formatter<Char>{context.out(), context.args(),
-                                      context.locale()},
-          arg));
+      context.advance_to(arg.visit(default_arg_formatter<Char>{
+          context.out(), context.args(), context.locale()}));
     }
 
     auto on_format_specs(int id, const Char* begin, const Char* end)
@@ -4330,8 +4314,8 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
           specs.precision, specs.precision_ref, context);
       if (begin == end || *begin != '}')
         throw_format_error("missing '}' in format string");
-      auto f = arg_formatter<Char>{context.out(), specs, context.locale()};
-      context.advance_to(visit_format_arg(f, arg));
+      context.advance_to(arg.visit(
+          arg_formatter<Char>{context.out(), specs, context.locale()}));
       return begin;
     }
 

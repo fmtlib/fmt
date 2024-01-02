@@ -163,7 +163,7 @@ template <typename T, typename Context> class arg_converter {
 // unsigned).
 template <typename T, typename Context, typename Char>
 void convert_arg(basic_format_arg<Context>& arg, Char type) {
-  visit_format_arg(arg_converter<T, Context>(arg, type), arg);
+  arg.visit(arg_converter<T, Context>(arg, type));
 }
 
 // Converts an integer argument to char for printf.
@@ -366,8 +366,8 @@ auto parse_header(const Char*& it, const Char* end, format_specs<Char>& specs,
       if (specs.width == -1) throw_format_error("number is too big");
     } else if (*it == '*') {
       ++it;
-      specs.width = static_cast<int>(visit_format_arg(
-          detail::printf_width_handler<Char>(specs), get_arg(-1)));
+      specs.width = static_cast<int>(
+          get_arg(-1).visit(detail::printf_width_handler<Char>(specs)));
     }
   }
   return arg_index;
@@ -462,8 +462,8 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
         specs.precision = parse_nonnegative_int(it, end, 0);
       } else if (c == '*') {
         ++it;
-        specs.precision = static_cast<int>(
-            visit_format_arg(printf_precision_handler(), get_arg(-1)));
+        specs.precision =
+            static_cast<int>(get_arg(-1).visit(printf_precision_handler()));
       } else {
         specs.precision = 0;
       }
@@ -477,14 +477,14 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
       specs.fill[0] = ' ';
     }
     if (specs.precision >= 0 && arg.type() == type::cstring_type) {
-      auto str = visit_format_arg(get_cstring<Char>(), arg);
+      auto str = arg.visit(get_cstring<Char>());
       auto str_end = str + specs.precision;
       auto nul = std::find(str, str_end, Char());
       auto sv = basic_string_view<Char>(
           str, to_unsigned(nul != str_end ? nul - str : specs.precision));
       arg = make_arg<basic_printf_context<Char>>(sv);
     }
-    if (specs.alt && visit_format_arg(is_zero_int(), arg)) specs.alt = false;
+    if (specs.alt && arg.visit(is_zero_int())) specs.alt = false;
     if (specs.fill[0] == '0') {
       if (arg.is_arithmetic() && specs.align != align::left)
         specs.align = align::numeric;
@@ -544,7 +544,7 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
         type = 'd';
         break;
       case 'c':
-        visit_format_arg(char_converter<basic_printf_context<Char>>(arg), arg);
+        arg.visit(char_converter<basic_printf_context<Char>>(arg));
         break;
       }
     }
@@ -555,7 +555,7 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
     start = it;
 
     // Format argument.
-    visit_format_arg(printf_arg_formatter<Char>(out, specs, context), arg);
+    arg.visit(printf_arg_formatter<Char>(out, specs, context));
   }
   write(out, basic_string_view<Char>(start, to_unsigned(it - start)));
 }
