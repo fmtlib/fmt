@@ -135,8 +135,8 @@ TEST(ostream_test, write_to_ostream_max_size) {
 
   struct test_buffer final : fmt::detail::buffer<char> {
     explicit test_buffer(size_t size)
-        : fmt::detail::buffer<char>(nullptr, size, size) {}
-    void grow(size_t) override {}
+        : fmt::detail::buffer<char>([](buffer<char>&, size_t) {}, nullptr, size,
+                                    size) {}
   } buffer(max_size);
 
   struct mock_streambuf : std::streambuf {
@@ -292,8 +292,7 @@ TEST(ostream_test, closed_ofstream) {
 
 struct unlocalized {};
 
-auto operator<<(std::ostream& os, unlocalized)
-    -> std::ostream& {
+auto operator<<(std::ostream& os, unlocalized) -> std::ostream& {
   return os << 12345;
 }
 

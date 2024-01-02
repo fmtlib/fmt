@@ -370,18 +370,17 @@ long getpagesize() {
 
 namespace detail {
 
-void file_buffer::grow(size_t) {
-  if (this->size() == this->capacity()) flush();
+void file_buffer::grow(buffer<char>& buf, size_t) {
+  if (buf.size() == buf.capacity()) static_cast<file_buffer&>(buf).flush();
 }
 
-file_buffer::file_buffer(cstring_view path,
-                         const detail::ostream_params& params)
-    : file_(path, params.oflag) {
+file_buffer::file_buffer(cstring_view path, const ostream_params& params)
+    : buffer<char>(grow), file_(path, params.oflag) {
   set(new char[params.buffer_size], params.buffer_size);
 }
 
 file_buffer::file_buffer(file_buffer&& other)
-    : detail::buffer<char>(other.data(), other.size(), other.capacity()),
+    : buffer<char>(grow, other.data(), other.size(), other.capacity()),
       file_(std::move(other.file_)) {
   other.clear();
   other.set(nullptr, 0);

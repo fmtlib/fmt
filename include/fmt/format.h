@@ -880,27 +880,29 @@ class basic_memory_buffer final : public detail::buffer<T> {
   }
 
  protected:
-  FMT_CONSTEXPR20 void grow(size_t size) override {
+  static FMT_CONSTEXPR20 void grow(detail::buffer<T>& buf, size_t size) {
     detail::abort_fuzzing_if(size > 5000);
-    const size_t max_size = std::allocator_traits<Allocator>::max_size(alloc_);
-    size_t old_capacity = this->capacity();
+    auto& self = static_cast<basic_memory_buffer&>(buf);
+    const size_t max_size =
+        std::allocator_traits<Allocator>::max_size(self.alloc_);
+    size_t old_capacity = buf.capacity();
     size_t new_capacity = old_capacity + old_capacity / 2;
     if (size > new_capacity)
       new_capacity = size;
     else if (new_capacity > max_size)
       new_capacity = size > max_size ? size : max_size;
-    T* old_data = this->data();
+    T* old_data = buf.data();
     T* new_data =
-        std::allocator_traits<Allocator>::allocate(alloc_, new_capacity);
+        std::allocator_traits<Allocator>::allocate(self.alloc_, new_capacity);
     // Suppress a bogus -Wstringop-overflow in gcc 13.1 (#3481).
-    detail::assume(this->size() <= new_capacity);
+    detail::assume(buf.size() <= new_capacity);
     // The following code doesn't throw, so the raw pointer above doesn't leak.
-    std::uninitialized_copy_n(old_data, this->size(), new_data);
-    this->set(new_data, new_capacity);
+    std::uninitialized_copy_n(old_data, buf.size(), new_data);
+    self.set(new_data, new_capacity);
     // deallocate must not throw according to the standard, but even if it does,
     // the buffer already uses the new storage and will deallocate it in
     // destructor.
-    if (old_data != store_) alloc_.deallocate(old_data, old_capacity);
+    if (old_data != self.store_) self.alloc_.deallocate(old_data, old_capacity);
   }
 
  public:
@@ -909,7 +911,7 @@ class basic_memory_buffer final : public detail::buffer<T> {
 
   FMT_CONSTEXPR20 explicit basic_memory_buffer(
       const Allocator& alloc = Allocator())
-      : alloc_(alloc) {
+      : detail::buffer<T>(grow), alloc_(alloc) {
     this->set(store_, SIZE);
     if (detail::is_constant_evaluated()) detail::fill_n(store_, SIZE, T());
   }
@@ -941,7 +943,8 @@ class basic_memory_buffer final : public detail::buffer<T> {
     of the other object to it.
     \endrst
    */
-  FMT_CONSTEXPR20 basic_memory_buffer(basic_memory_buffer&& other) noexcept {
+  FMT_CONSTEXPR20 basic_memory_buffer(basic_memory_buffer&& other) noexcept
+      : detail::buffer<T>(grow) {
     move(other);
   }
 
