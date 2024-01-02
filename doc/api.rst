@@ -516,7 +516,7 @@ The format syntax is described in :ref:`chrono-specs`.
 
 .. doxygenfunction:: localtime(std::time_t time)
 
-.. doxygenfunction:: gmtime(std::time_t time)
+.. doxygenfunction:: gmtime(std::time_t time) -> std::tm
 
 .. _std-api:
 
