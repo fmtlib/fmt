@@ -362,10 +362,6 @@ Utilities
 
 .. doxygenfunction:: fmt::to_string(const T &value) -> std::string
 
-.. doxygenfunction:: fmt::join(Range &&range, string_view sep) -> join_view<detail::iterator_t<Range>, detail::sentinel_t<Range>>
-
-.. doxygenfunction:: fmt::join(It begin, Sentinel end, string_view sep) -> join_view<It, Sentinel>
-
 .. doxygenfunction:: fmt::group_digits(T value) -> group_digits_view<T>
 
 .. doxygenclass:: fmt::detail::buffer
@@ -469,10 +465,6 @@ The library also supports convenient formatting of ranges and tuples::
   // Prints "('a', 1, 2.0)"
   fmt::print("{}", t);
 
-
-NOTE: currently, the overload of ``fmt::join`` for iterables exists in the main
-``format.h`` header, but expect this to change in the future.
-
 Using ``fmt::join``, you can separate tuple elements with a custom separator::
 
   #include <fmt/ranges.h>
@@ -480,6 +472,9 @@ Using ``fmt::join``, you can separate tuple elements with a custom separator::
   std::tuple<int, char> t = {1, 'a'};
   // Prints "1, a"
   fmt::print("{}", fmt::join(t, ", "));
+
+.. doxygenfunction:: fmt::join(Range &&range, string_view sep) -> join_view<detail::iterator_t<Range>, detail::sentinel_t<Range>>
+.. doxygenfunction:: fmt::join(It begin, Sentinel end, string_view sep) -> join_view<It, Sentinel>
 
 .. _chrono-api:
 
