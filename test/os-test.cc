@@ -252,8 +252,7 @@ TEST(ostream_test, move_while_holding_data) {
 
 TEST(ostream_test, print) {
   fmt::ostream out = fmt::output_file("test-file");
-  out.print("The answer is {}.\n",
-            fmt::join(std::initializer_list<int>{42}, ", "));
+  out.print("The answer is {}.\n", 42);
   out.close();
   file in("test-file", file::RDONLY);
   EXPECT_READ(in, "The answer is 42.\n");

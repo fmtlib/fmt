@@ -287,7 +287,7 @@ TEST(ranges_test, range) {
   EXPECT_EQ(fmt::format("{}", z), "[0, 0, 0]");
 }
 
-enum test_enum { foo };
+enum test_enum { foo, bar };
 auto format_as(test_enum e) -> int { return e; }
 
 TEST(ranges_test, enum_range) {
@@ -299,6 +299,40 @@ TEST(ranges_test, enum_range) {
 TEST(ranges_test, unformattable_range) {
   EXPECT_FALSE((fmt::has_formatter<std::vector<unformattable>,
                                    fmt::format_context>::value));
+}
+#endif
+
+TEST(ranges_test, join) {
+  using fmt::join;
+  int v1[3] = {1, 2, 3};
+  auto v2 = std::vector<float>();
+  v2.push_back(1.2f);
+  v2.push_back(3.4f);
+  void* v3[2] = {&v1[0], &v1[1]};
+
+  EXPECT_EQ(fmt::format("({})", join(v1, v1 + 3, ", ")), "(1, 2, 3)");
+  EXPECT_EQ(fmt::format("({})", join(v1, v1 + 1, ", ")), "(1)");
+  EXPECT_EQ(fmt::format("({})", join(v1, v1, ", ")), "()");
+  EXPECT_EQ(fmt::format("({:03})", join(v1, v1 + 3, ", ")), "(001, 002, 003)");
+  EXPECT_EQ("(+01.20, +03.40)",
+            fmt::format("({:+06.2f})", join(v2.begin(), v2.end(), ", ")));
+
+  EXPECT_EQ(fmt::format("{0:{1}}", join(v1, v1 + 3, ", "), 1), "1, 2, 3");
+
+  EXPECT_EQ(fmt::format("{}, {}", v3[0], v3[1]),
+            fmt::format("{}", join(v3, v3 + 2, ", ")));
+
+  EXPECT_EQ(fmt::format("({})", join(v1, ", ")), "(1, 2, 3)");
+  EXPECT_EQ(fmt::format("({:+06.2f})", join(v2, ", ")), "(+01.20, +03.40)");
+
+  auto v4 = std::vector<test_enum>{foo, bar, foo};
+  EXPECT_EQ(fmt::format("{}", join(v4, " ")), "0 1 0");
+}
+
+#ifdef __cpp_lib_byte
+TEST(ranges_test, join_bytes) {
+  auto v = std::vector<std::byte>{std::byte(1), std::byte(2), std::byte(3)};
+  EXPECT_EQ(fmt::format("{}", fmt::join(v, ", ")), "1, 2, 3");
 }
 #endif
 

@@ -10,6 +10,7 @@
 #include <type_traits>
 
 #include "fmt/chrono.h"
+#include "fmt/ranges.h"
 #include "gmock/gmock.h"
 #include "gtest-extra.h"
 

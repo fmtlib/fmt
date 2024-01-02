@@ -11,6 +11,7 @@
 #include <cwchar>
 
 #include "format.h"
+#include "ranges.h"
 
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
 #  include <locale>
@@ -94,6 +95,12 @@ template <typename T>
 auto join(std::initializer_list<T> list, wstring_view sep)
     -> join_view<const T*, const T*, wchar_t> {
   return join(std::begin(list), std::end(list), sep);
+}
+
+template <typename... T>
+auto join(const std::tuple<T...>& tuple, basic_string_view<wchar_t> sep)
+    -> tuple_join_view<wchar_t, T...> {
+  return {tuple, sep};
 }
 
 template <typename Char, FMT_ENABLE_IF(!std::is_same<Char, char>::value)>

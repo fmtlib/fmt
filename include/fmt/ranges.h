@@ -574,6 +574,83 @@ struct formatter<
                                       Char> {
 };
 
+template <typename It, typename Sentinel, typename Char = char>
+struct join_view : detail::view {
+  It begin;
+  Sentinel end;
+  basic_string_view<Char> sep;
+
+  join_view(It b, Sentinel e, basic_string_view<Char> s)
+      : begin(b), end(e), sep(s) {}
+};
+
+template <typename It, typename Sentinel, typename Char>
+struct formatter<join_view<It, Sentinel, Char>, Char> {
+ private:
+  using value_type =
+#ifdef __cpp_lib_ranges
+      std::iter_value_t<It>;
+#else
+      typename std::iterator_traits<It>::value_type;
+#endif
+  formatter<remove_cvref_t<value_type>, Char> value_formatter_;
+
+ public:
+  template <typename ParseContext>
+  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> const Char* {
+    return value_formatter_.parse(ctx);
+  }
+
+  template <typename FormatContext>
+  auto format(const join_view<It, Sentinel, Char>& value,
+              FormatContext& ctx) const -> decltype(ctx.out()) {
+    auto it = value.begin;
+    auto out = ctx.out();
+    if (it != value.end) {
+      out = value_formatter_.format(*it, ctx);
+      ++it;
+      while (it != value.end) {
+        out = detail::copy_str<Char>(value.sep.begin(), value.sep.end(), out);
+        ctx.advance_to(out);
+        out = value_formatter_.format(*it, ctx);
+        ++it;
+      }
+    }
+    return out;
+  }
+};
+
+/**
+  Returns a view that formats the iterator range `[begin, end)` with elements
+  separated by `sep`.
+ */
+template <typename It, typename Sentinel>
+auto join(It begin, Sentinel end, string_view sep) -> join_view<It, Sentinel> {
+  return {begin, end, sep};
+}
+
+/**
+  \rst
+  Returns a view that formats `range` with elements separated by `sep`.
+
+  **Example**::
+
+    std::vector<int> v = {1, 2, 3};
+    fmt::print("{}", fmt::join(v, ", "));
+    // Output: "1, 2, 3"
+
+  ``fmt::join`` applies passed format specifiers to the range elements::
+
+    fmt::print("{:02}", fmt::join(v, ", "));
+    // Output: "01, 02, 03"
+  \endrst
+ */
+template <typename Range>
+auto join(Range&& range, string_view sep)
+    -> join_view<detail::iterator_t<Range>, detail::sentinel_t<Range>> {
+  return join(std::begin(range), std::end(range), sep);
+}
+
 template <typename Char, typename... T> struct tuple_join_view : detail::view {
   const std::tuple<T...>& tuple;
   basic_string_view<Char> sep;
@@ -705,13 +782,6 @@ FMT_BEGIN_EXPORT
 template <typename... T>
 FMT_CONSTEXPR auto join(const std::tuple<T...>& tuple, string_view sep)
     -> tuple_join_view<char, T...> {
-  return {tuple, sep};
-}
-
-template <typename... T>
-FMT_CONSTEXPR auto join(const std::tuple<T...>& tuple,
-                        basic_string_view<wchar_t> sep)
-    -> tuple_join_view<wchar_t, T...> {
   return {tuple, sep};
 }
 
