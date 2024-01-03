@@ -1434,6 +1434,7 @@ FMT_FUNC auto vformat(string_view fmt, format_args args) -> std::string {
 namespace detail {
 #if !defined(_WIN32) || defined(FMT_WINDOWS_NO_WCHAR)
 FMT_FUNC auto write_console(int, string_view) -> bool { return false; }
+FMT_FUNC auto write_console(std::FILE*, string_view) -> bool { return false; }
 #else
 using dword = conditional_t<sizeof(long) == 4, unsigned long, unsigned>;
 extern "C" __declspec(dllimport) int __stdcall WriteConsoleW(  //
@@ -1443,6 +1444,10 @@ FMT_FUNC bool write_console(int fd, string_view text) {
   auto u16 = utf8_to_utf16(text);
   return WriteConsoleW(reinterpret_cast<void*>(_get_osfhandle(fd)), u16.c_str(),
                        static_cast<dword>(u16.size()), nullptr, nullptr) != 0;
+}
+
+FMT_FUNC auto write_console(std::FILE* f, string_view text) -> bool {
+  return write_console(_fileno(f), text);
 }
 #endif
 
