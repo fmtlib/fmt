@@ -288,7 +288,7 @@ TEST(compile_test, compile_format_string_literal) {
 //  line 8635)
 #if (FMT_CPLUSPLUS >= 202002L ||                                \
      (FMT_CPLUSPLUS >= 201709L && FMT_GCC_VERSION >= 1002)) &&  \
-    ((!defined(_GLIBCXX_RELEASE) || _GLIBCXX_RELEASE >= 10) &&  \
+    ((!FMT_GLIBCXX_RELEASE || FMT_GLIBCXX_RELEASE >= 10) &&  \
      (!defined(_LIBCPP_VERSION) || _LIBCPP_VERSION >= 10000) && \
      (!FMT_MSC_VERSION ||                                       \
       (FMT_MSC_VERSION >= 1928 && FMT_MSC_VERSION < 1930))) &&  \

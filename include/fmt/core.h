@@ -58,6 +58,12 @@
 #  define FMT_MSC_WARNING(...)
 #endif
 
+#ifdef _GLIBCXX_RELEASE
+#  define FMT_GLIBCXX_RELEASE _GLIBCXX_RELEASE
+#else
+#  define FMT_GLIBCXX_RELEASE 0
+#endif
+
 #ifdef _MSVC_LANG
 #  define FMT_CPLUSPLUS _MSVC_LANG
 #else
@@ -121,7 +127,7 @@
 
 #if (FMT_CPLUSPLUS >= 202002L ||                                \
      (FMT_CPLUSPLUS >= 201709L && FMT_GCC_VERSION >= 1002)) &&  \
-    ((!defined(_GLIBCXX_RELEASE) || _GLIBCXX_RELEASE >= 10) &&  \
+    ((!FMT_GLIBCXX_RELEASE || FMT_GLIBCXX_RELEASE >= 10) &&     \
      (!defined(_LIBCPP_VERSION) || _LIBCPP_VERSION >= 10000) && \
      (!FMT_MSC_VERSION || FMT_MSC_VERSION >= 1928)) &&          \
     defined(__cpp_lib_is_constant_evaluated)
@@ -131,15 +137,11 @@
 #endif
 
 // Check if constexpr std::char_traits<>::{compare,length} are supported.
-#if defined(__GLIBCXX__)
-#  if FMT_CPLUSPLUS >= 201703L && defined(_GLIBCXX_RELEASE) && \
-      _GLIBCXX_RELEASE >= 7  // GCC 7+ libstdc++ has _GLIBCXX_RELEASE.
-#    define FMT_CONSTEXPR_CHAR_TRAITS constexpr
-#  endif
-#elif defined(_LIBCPP_VERSION) && FMT_CPLUSPLUS >= 201703L && \
-    _LIBCPP_VERSION >= 4000
-#  define FMT_CONSTEXPR_CHAR_TRAITS constexpr
-#elif FMT_MSC_VERSION >= 1914 && FMT_CPLUSPLUS >= 201703L
+#if FMT_CPLUSPLUS < 201703L
+// Not supported.
+#elif FMT_GLIBCXX_RELEASE >= 7 ||                            \
+    (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION >= 4000) || \
+    FMT_MSC_VERSION >= 1914
 #  define FMT_CONSTEXPR_CHAR_TRAITS constexpr
 #endif
 #ifndef FMT_CONSTEXPR_CHAR_TRAITS
@@ -262,7 +264,7 @@
 #  endif
 #endif
 
-// GCC < 5 requires this-> in decltype
+// GCC < 5 requires this-> in decltype.
 #ifndef FMT_DECLTYPE_THIS
 #  if FMT_GCC_VERSION && FMT_GCC_VERSION < 500
 #    define FMT_DECLTYPE_THIS this->
@@ -337,8 +339,7 @@ constexpr FMT_INLINE auto is_constant_evaluated(
 // Workaround for incompatibility between libstdc++ consteval-based
 // std::is_constant_evaluated() implementation and clang-14:
 // https://github.com/fmtlib/fmt/issues/3247.
-#if FMT_CPLUSPLUS >= 202002L && defined(_GLIBCXX_RELEASE) && \
-    _GLIBCXX_RELEASE >= 12 &&                                \
+#if FMT_CPLUSPLUS >= 202002L && FMT_GLIBCXX_RELEASE >= 12 && \
     (FMT_CLANG_VERSION >= 1400 && FMT_CLANG_VERSION < 1500)
   ignore_unused(default_value);
   return __builtin_is_constant_evaluated();
