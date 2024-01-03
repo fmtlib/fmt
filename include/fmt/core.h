@@ -809,23 +809,6 @@ class compile_parse_context : public basic_format_parse_context<Char> {
   }
 };
 
-template <typename Char, typename InputIt, typename OutputIt>
-FMT_CONSTEXPR auto copy_str(InputIt begin, InputIt end, OutputIt out)
-    -> OutputIt {
-  while (begin != end) *out++ = static_cast<Char>(*begin++);
-  return out;
-}
-
-template <typename Char, typename T, typename U,
-          FMT_ENABLE_IF(
-              std::is_same<remove_const_t<T>, U>::value&& is_char<U>::value)>
-FMT_CONSTEXPR auto copy_str(T* begin, T* end, U* out) -> U* {
-  if (is_constant_evaluated()) return copy_str<Char, T*, U*>(begin, end, out);
-  auto size = to_unsigned(end - begin);
-  if (size > 0) memcpy(out, begin, size * sizeof(U));
-  return out + size;
-}
-
 /**
   \rst
   A contiguous memory buffer with an optional growing ability. It is an internal
@@ -954,7 +937,9 @@ class iterator_buffer final : public Traits, public buffer<T> {
   void flush() {
     auto size = this->size();
     this->clear();
-    out_ = copy_str<T>(data_, data_ + this->limit(size), out_);
+    const T* begin = data_;
+    const T* end = begin + this->limit(size);
+    while (begin != end) *out_++ = *begin++;
   }
 
  public:
@@ -1541,23 +1526,6 @@ enum { packed_arg_bits = 4 };
 enum { max_packed_args = 62 / packed_arg_bits };
 enum : unsigned long long { is_unpacked_bit = 1ULL << 63 };
 enum : unsigned long long { has_named_args_bit = 1ULL << 62 };
-
-template <typename Char, typename InputIt>
-auto copy_str(InputIt begin, InputIt end, appender out) -> appender {
-  get_container(out).append(begin, end);
-  return out;
-}
-template <typename Char, typename InputIt>
-auto copy_str(InputIt begin, InputIt end, back_insert_iterator<std::string> out)
-    -> back_insert_iterator<std::string> {
-  get_container(out).append(begin, end);
-  return out;
-}
-
-template <typename Char, typename R, typename OutputIt>
-FMT_CONSTEXPR auto copy_str(R&& rng, OutputIt out) -> OutputIt {
-  return detail::copy_str<Char>(rng.begin(), rng.end(), out);
-}
 
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 500
 // A workaround for gcc 4.8 to make void_t work in a SFINAE context.

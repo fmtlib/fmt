@@ -517,6 +517,40 @@ inline auto get_container(std::back_insert_iterator<Container> it)
   return *accessor(it).container;
 }
 
+template <typename Char, typename InputIt, typename OutputIt>
+FMT_CONSTEXPR auto copy_str(InputIt begin, InputIt end, OutputIt out)
+    -> OutputIt {
+  while (begin != end) *out++ = static_cast<Char>(*begin++);
+  return out;
+}
+
+template <typename Char, typename T, typename U,
+          FMT_ENABLE_IF(
+              std::is_same<remove_const_t<T>, U>::value&& is_char<U>::value)>
+FMT_CONSTEXPR auto copy_str(T* begin, T* end, U* out) -> U* {
+  if (is_constant_evaluated()) return copy_str<Char, T*, U*>(begin, end, out);
+  auto size = to_unsigned(end - begin);
+  if (size > 0) memcpy(out, begin, size * sizeof(U));
+  return out + size;
+}
+
+template <typename Char, typename InputIt>
+auto copy_str(InputIt begin, InputIt end, appender out) -> appender {
+  get_container(out).append(begin, end);
+  return out;
+}
+template <typename Char, typename InputIt>
+auto copy_str(InputIt begin, InputIt end, back_insert_iterator<std::string> out)
+    -> back_insert_iterator<std::string> {
+  get_container(out).append(begin, end);
+  return out;
+}
+
+template <typename Char, typename R, typename OutputIt>
+FMT_CONSTEXPR auto copy_str(R&& rng, OutputIt out) -> OutputIt {
+  return detail::copy_str<Char>(rng.begin(), rng.end(), out);
+}
+
 // An approximation of iterator_t for pre-C++20 systems.
 template <typename T>
 using iterator_t = decltype(std::begin(std::declval<T&>()));
