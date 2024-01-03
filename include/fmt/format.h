@@ -3767,8 +3767,7 @@ FMT_CONSTEXPR auto write(OutputIt out, Char value) -> OutputIt {
 }
 
 template <typename Char, typename OutputIt>
-FMT_CONSTEXPR_CHAR_TRAITS auto write(OutputIt out, const Char* value)
-    -> OutputIt {
+FMT_CONSTEXPR20 auto write(OutputIt out, const Char* value) -> OutputIt {
   if (value) return write(out, basic_string_view<Char>(value));
   throw_format_error("string pointer is null");
   return out;

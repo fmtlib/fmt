@@ -134,18 +134,6 @@
 #  define FMT_CONSTEXPR20
 #endif
 
-// Check if constexpr std::char_traits<>::{compare,length} are supported.
-#if FMT_CPLUSPLUS < 201703L
-// Not supported.
-#elif FMT_GLIBCXX_RELEASE >= 7 ||                            \
-    (defined(_LIBCPP_VERSION) && _LIBCPP_VERSION >= 4000) || \
-    FMT_MSC_VERSION >= 1914
-#  define FMT_CONSTEXPR_CHAR_TRAITS constexpr
-#endif
-#ifndef FMT_CONSTEXPR_CHAR_TRAITS
-#  define FMT_CONSTEXPR_CHAR_TRAITS
-#endif
-
 // Check if exceptions are disabled.
 #ifndef FMT_EXCEPTIONS
 #  if (defined(__GNUC__) && !defined(__EXCEPTIONS)) || \
@@ -451,6 +439,16 @@ template <typename Char> FMT_CONSTEXPR auto length(const Char* s) -> size_t {
   while (*s++) ++len;
   return len;
 }
+
+template <typename Char>
+FMT_CONSTEXPR auto compare(const Char* s1, const Char* s2, std::size_t n)
+    -> int {
+  for (; n != 0; ++s1, ++s2, --n) {
+    if (*s1 < *s2) return -1;
+    if (*s1 > *s2) return 1;
+  }
+  return 0;
+}
 }  // namespace detail
 
 /**
@@ -477,10 +475,7 @@ template <typename Char> class basic_string_view {
       : data_(s), size_(count) {}
 
   /**
-    \rst
-    Constructs a string reference object from a C string computing
-    the size with ``std::char_traits<Char>::length``.
-    \endrst
+    Constructs a string reference object from a C string.
    */
   FMT_CONSTEXPR20
   FMT_INLINE
@@ -520,30 +515,28 @@ template <typename Char> class basic_string_view {
     size_ -= n;
   }
 
-  FMT_CONSTEXPR_CHAR_TRAITS auto starts_with(
-      basic_string_view<Char> sv) const noexcept -> bool {
-    return size_ >= sv.size_ &&
-           std::char_traits<Char>::compare(data_, sv.data_, sv.size_) == 0;
+  FMT_CONSTEXPR auto starts_with(basic_string_view<Char> sv) const noexcept
+      -> bool {
+    return size_ >= sv.size_ && detail::compare(data_, sv.data_, sv.size_) == 0;
   }
   FMT_CONSTEXPR auto starts_with(Char c) const noexcept -> bool {
     return size_ >= 1 && *data_ == c;
   }
-  FMT_CONSTEXPR_CHAR_TRAITS auto starts_with(const Char* s) const -> bool {
+  FMT_CONSTEXPR auto starts_with(const Char* s) const -> bool {
     return starts_with(basic_string_view<Char>(s));
   }
 
   // Lexicographically compare this string reference to other.
-  FMT_CONSTEXPR_CHAR_TRAITS auto compare(basic_string_view other) const -> int {
+  FMT_CONSTEXPR auto compare(basic_string_view other) const -> int {
     size_t str_size = size_ < other.size_ ? size_ : other.size_;
-    int result = std::char_traits<Char>::compare(data_, other.data_, str_size);
+    int result = detail::compare(data_, other.data_, str_size);
     if (result == 0)
       result = size_ == other.size_ ? 0 : (size_ < other.size_ ? -1 : 1);
     return result;
   }
 
-  FMT_CONSTEXPR_CHAR_TRAITS friend auto operator==(basic_string_view lhs,
-                                                   basic_string_view rhs)
-      -> bool {
+  FMT_CONSTEXPR friend auto operator==(basic_string_view lhs,
+                                       basic_string_view rhs) -> bool {
     return lhs.compare(rhs) == 0;
   }
   friend auto operator!=(basic_string_view lhs, basic_string_view rhs) -> bool {
