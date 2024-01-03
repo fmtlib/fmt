@@ -343,7 +343,7 @@ converts to `std::print`.)
 - [Quill](https://github.com/odygrd/quill): asynchronous low-latency
   logging library
 - [QKW](https://github.com/ravijanjam/qkw): generalizing aliasing to
-  simplify navigation, and executing complex multi-line terminal
+  simplify navigation, and execute complex multi-line terminal
   command sequences
 - [redis-cerberus](https://github.com/HunanTV/redis-cerberus): a Redis
   cluster proxy
@@ -432,7 +432,7 @@ code bloat issues (see [Benchmarks](#benchmarks)).
 
 ## FastFormat
 
-This is an interesting library that is fast, safe, and has positional
+This is an interesting library that is fast, safe and has positional
 arguments. However, it has significant limitations, citing its author:
 
 > Three features that have no hope of being accommodated within the
@@ -442,8 +442,8 @@ arguments. However, it has significant limitations, citing its author:
 > - Octal/hexadecimal encoding
 > - Runtime width/alignment specification
 
-It is also quite big and has a heavy dependency, STLSoft, which might be
-too restrictive for using it in some projects.
+It is also quite big and has a heavy dependency, on STLSoft, which might be
+too restrictive for use in some projects.
 
 ## Boost Spirit.Karma
 
@@ -486,5 +486,5 @@ To report a security issue, please disclose it at [security
 advisory](https://github.com/fmtlib/fmt/security/advisories/new).
 
 This project is maintained by a team of volunteers on a
-reasonable-effort basis. As such, please give us at least 90 days to
+reasonable-effort basis. As such, please give us at least *90* days to
 work on a fix before public exposure.
