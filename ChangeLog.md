@@ -1,3 +1,8 @@
+# 10.2.1 - TBD
+
+-   Fixed ABI compatibility with earlier 10.x versions
+    (https://github.com/fmtlib/fmt/pull/3786). Thanks @saraedum.
+
 # 10.2.0 - 2024-01-01
 
 -   Added support for the `%j` specifier (the number of days) for
