@@ -1305,6 +1305,7 @@ template <typename Context> class value {
 
   template <typename T> FMT_CONSTEXPR20 FMT_INLINE value(T& val) {
     using value_type = remove_const_t<T>;
+    // T may overload operator& e.g. std::vector<bool>::reference in libc++.
 #ifdef __cpp_if_constexpr
     if constexpr (std::is_same<decltype(&val), T*>::value)
       custom.value = const_cast<value_type*>(&val);
