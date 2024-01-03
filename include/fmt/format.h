@@ -38,10 +38,10 @@
 #include <cstring>           // std::memcpy
 #include <initializer_list>  // std::initializer_list
 #include <iterator>
-#include <limits>            // std::numeric_limits
-#include <memory>            // std::uninitialized_copy
-#include <stdexcept>         // std::runtime_error
-#include <system_error>      // std::system_error
+#include <limits>        // std::numeric_limits
+#include <memory>        // std::uninitialized_copy
+#include <stdexcept>     // std::runtime_error
+#include <system_error>  // std::system_error
 
 #ifdef __cpp_lib_bit_cast
 #  include <bit>  // std::bit_cast

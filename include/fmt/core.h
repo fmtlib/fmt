@@ -8,10 +8,10 @@
 #ifndef FMT_CORE_H_
 #define FMT_CORE_H_
 
-#include <cstddef>   // std::byte
-#include <cstdio>    // std::FILE
-#include <cstring>   // std::strlen
-#include <limits>    // std::numeric_limits
+#include <cstddef>  // std::byte
+#include <cstdio>   // std::FILE
+#include <cstring>  // std::strlen
+#include <limits>   // std::numeric_limits
 #include <string>
 #include <type_traits>
 
@@ -445,6 +445,12 @@ FMT_CONSTEXPR inline auto is_utf8() -> bool {
   return FMT_UNICODE || (sizeof(section) == 3 && uchar(section[0]) == 0xC2 &&
                          uchar(section[1]) == 0xA7);
 }
+
+template <typename Char> FMT_CONSTEXPR auto length(const Char* s) -> size_t {
+  size_t len = 0;
+  while (*s++) ++len;
+  return len;
+}
 }  // namespace detail
 
 /**
@@ -476,14 +482,14 @@ template <typename Char> class basic_string_view {
     the size with ``std::char_traits<Char>::length``.
     \endrst
    */
-  FMT_CONSTEXPR_CHAR_TRAITS
+  FMT_CONSTEXPR20
   FMT_INLINE
   basic_string_view(const Char* s)
       : data_(s),
         size_(detail::const_check(std::is_same<Char, char>::value &&
-                                  !detail::is_constant_evaluated(true))
+                                  !detail::is_constant_evaluated(false))
                   ? std::strlen(reinterpret_cast<const char*>(s))
-                  : std::char_traits<Char>::length(s)) {}
+                  : detail::length(s)) {}
 
   /** Constructs a string reference from a ``std::basic_string`` object. */
   template <typename Traits, typename Alloc>
@@ -519,8 +525,8 @@ template <typename Char> class basic_string_view {
     return size_ >= sv.size_ &&
            std::char_traits<Char>::compare(data_, sv.data_, sv.size_) == 0;
   }
-  FMT_CONSTEXPR_CHAR_TRAITS auto starts_with(Char c) const noexcept -> bool {
-    return size_ >= 1 && std::char_traits<Char>::eq(*data_, c);
+  FMT_CONSTEXPR auto starts_with(Char c) const noexcept -> bool {
+    return size_ >= 1 && *data_ == c;
   }
   FMT_CONSTEXPR_CHAR_TRAITS auto starts_with(const Char* s) const -> bool {
     return starts_with(basic_string_view<Char>(s));
@@ -1544,8 +1550,7 @@ template <> struct is_output_iterator<appender, char> : std::true_type {};
 
 template <typename It, typename T>
 struct is_output_iterator<
-    It, T,
-    void_t<decltype(*std::declval<It&>()++ = std::declval<T>())>>
+    It, T, void_t<decltype(*std::declval<It&>()++ = std::declval<T>())>>
     : std::true_type {};
 
 template <typename It> struct is_back_insert_iterator : std::false_type {};
