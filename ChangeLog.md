@@ -1,4 +1,4 @@
-# 10.2.1 - TBD
+# 10.2.1 - 2024-01-03
 
 -   Fixed ABI compatibility with earlier 10.x versions
     (https://github.com/fmtlib/fmt/pull/3786). Thanks @saraedum.
