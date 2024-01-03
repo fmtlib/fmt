@@ -11,7 +11,6 @@
 
 #include "fmt/core.h"
 
-#include <algorithm>    // std::copy_n
 #include <climits>      // INT_MAX
 #include <cstring>      // std::strlen
 #include <functional>   // std::equal_to
@@ -32,6 +31,11 @@ using testing::Return;
 #ifdef FMT_FORMAT_H_
 #  error core-test includes format.h
 #endif
+
+fmt::appender copy(fmt::string_view s, fmt::appender out) {
+  for (char c : s) *out++ = c;
+  return out;
+}
 
 TEST(string_view_test, value_type) {
   static_assert(std::is_same<string_view::value_type, char>::value, "");
@@ -102,16 +106,6 @@ TEST(core_test, is_output_iterator) {
 }
 
 TEST(core_test, buffer_appender) {
-  // back_insert_iterator is not default-constructible before C++20, so
-  // buffer_appender can only be default-constructible when back_insert_iterator
-  // is.
-  static_assert(
-      std::is_default_constructible<
-          std::back_insert_iterator<fmt::detail::buffer<char>>>::value ==
-          std::is_default_constructible<
-              fmt::detail::buffer_appender<char>>::value,
-      "");
-
 #ifdef __cpp_lib_ranges
   static_assert(std::output_iterator<fmt::detail::buffer_appender<char>, char>);
 #endif
@@ -297,8 +291,7 @@ template <typename Char> struct formatter<test_struct, Char> {
   }
 
   auto format(test_struct, format_context& ctx) const -> decltype(ctx.out()) {
-    auto test = string_view("test");
-    return std::copy_n(test.data(), test.size(), ctx.out());
+    return copy("test", ctx.out());
   }
 };
 FMT_END_NAMESPACE
@@ -619,8 +612,7 @@ template <> struct formatter<const_formattable> {
 
   auto format(const const_formattable&, format_context& ctx)
       -> decltype(ctx.out()) {
-    auto test = string_view("test");
-    return std::copy_n(test.data(), test.size(), ctx.out());
+    return copy("test", ctx.out());
   }
 };
 
@@ -631,8 +623,7 @@ template <> struct formatter<nonconst_formattable> {
 
   auto format(nonconst_formattable&, format_context& ctx)
       -> decltype(ctx.out()) {
-    auto test = string_view("test");
-    return std::copy_n(test.data(), test.size(), ctx.out());
+    return copy("test", ctx.out());
   }
 };
 FMT_END_NAMESPACE
@@ -653,8 +644,7 @@ template <> struct formatter<convertible_to_pointer_formattable> {
 
   auto format(convertible_to_pointer_formattable, format_context& ctx) const
       -> decltype(ctx.out()) {
-    auto test = string_view("test");
-    return std::copy_n(test.data(), test.size(), ctx.out());
+    return copy("test", ctx.out());
   }
 };
 FMT_END_NAMESPACE
@@ -732,7 +722,7 @@ template <> struct formatter<convertible_to_int> {
   }
   auto format(convertible_to_int, format_context& ctx) const
       -> decltype(ctx.out()) {
-    return std::copy_n("foo", 3, ctx.out());
+    return copy("foo", ctx.out());
   }
 };
 
@@ -742,7 +732,7 @@ template <> struct formatter<convertible_to_cstring> {
   }
   auto format(convertible_to_cstring, format_context& ctx) const
       -> decltype(ctx.out()) {
-    return std::copy_n("bar", 3, ctx.out());
+    return copy("bar", ctx.out());
   }
 };
 FMT_END_NAMESPACE
@@ -853,8 +843,7 @@ template <> struct formatter<its_a_trap> {
   }
 
   auto format(its_a_trap, format_context& ctx) const -> decltype(ctx.out()) {
-    auto s = string_view("42");
-    return std::copy(s.begin(), s.end(), ctx.out());
+    return copy("42", ctx.out());
   }
 };
 FMT_END_NAMESPACE

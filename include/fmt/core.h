@@ -11,7 +11,7 @@
 #include <cstddef>   // std::byte
 #include <cstdio>    // std::FILE
 #include <cstring>   // std::strlen
-#include <iterator>  // std::back_insert_iterator
+#include <iterator>  // DEPRECATED!
 #include <limits>    // std::numeric_limits
 #include <string>
 #include <type_traits>
@@ -1099,16 +1099,27 @@ using has_formatter =
 
 // An output iterator that appends to a buffer.
 // It is used to reduce symbol sizes for the common case.
-class appender : public std::back_insert_iterator<detail::buffer<char>> {
-  using base = std::back_insert_iterator<detail::buffer<char>>;
+class appender {
+ private:
+  detail::buffer<char>* buffer_;
+
+  friend auto get_container(appender app) -> detail::buffer<char>& {
+    return *app.buffer_;
+  }
 
  public:
-  using std::back_insert_iterator<detail::buffer<char>>::back_insert_iterator;
-  appender(base it) noexcept : base(it) {}
+  using difference_type = ptrdiff_t;
   FMT_UNCHECKED_ITERATOR(appender);
 
-  auto operator++() noexcept -> appender& { return *this; }
-  auto operator++(int) noexcept -> appender { return *this; }
+  appender(detail::buffer<char>& buf) : buffer_(&buf) {}
+
+  auto operator=(char c) -> appender& {
+    buffer_->push_back(c);
+    return *this;
+  }
+  auto operator*() -> appender& {return *this;}
+  auto operator++() -> appender& { return *this; }
+  auto operator++(int) -> appender { return *this; }
 };
 
 namespace detail {
@@ -1544,6 +1555,8 @@ template <typename...> using void_t = void;
 
 template <typename It, typename T, typename Enable = void>
 struct is_output_iterator : std::false_type {};
+
+template <> struct is_output_iterator<appender, char> : std::true_type {};
 
 template <typename It, typename T>
 struct is_output_iterator<

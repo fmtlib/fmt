@@ -262,6 +262,14 @@ inline auto ctzll(uint64_t x) -> int {
 FMT_END_NAMESPACE
 #endif
 
+namespace std {
+template <>
+struct iterator_traits<fmt::appender> {
+  using value_type = void;
+  using iterator_category	= std::output_iterator_tag;
+};
+}
+
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
