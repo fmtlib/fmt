@@ -263,12 +263,16 @@ FMT_END_NAMESPACE
 #endif
 
 namespace std {
-template <>
-struct iterator_traits<fmt::appender> {
+template <> struct iterator_traits<fmt::appender> {
   using value_type = void;
-  using iterator_category	= std::output_iterator_tag;
+  using iterator_category = std::output_iterator_tag;
 };
-}
+template <typename Container>
+struct iterator_traits<fmt::back_insert_iterator<Container>> {
+  using value_type = void;
+  using iterator_category = std::output_iterator_tag;
+};
+}  // namespace std
 
 FMT_BEGIN_NAMESPACE
 namespace detail {
@@ -498,6 +502,18 @@ FMT_INLINE void assume(bool condition) {
 #elif FMT_GCC_VERSION
   if (!condition) __builtin_unreachable();
 #endif
+}
+
+// Extracts a reference to the container from back_insert_iterator.
+template <typename Container>
+inline auto get_container(std::back_insert_iterator<Container> it)
+    -> Container& {
+  using base = std::back_insert_iterator<Container>;
+  struct accessor : base {
+    accessor(base b) : base(b) {}
+    using base::container;
+  };
+  return *accessor(it).container;
 }
 
 // An approximation of iterator_t for pre-C++20 systems.

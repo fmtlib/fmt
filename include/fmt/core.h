@@ -309,6 +309,36 @@ struct monostate {
   constexpr monostate() {}
 };
 
+// An implementation of back_insert_iterator to avoid dependency on <iterator>.
+template <typename Container> class back_insert_iterator {
+ private:
+  Container* container_;
+
+  friend auto get_container(back_insert_iterator it) -> Container& {
+    return *it.container_;
+  }
+
+ public:
+  using difference_type = ptrdiff_t;
+  FMT_UNCHECKED_ITERATOR(back_insert_iterator);
+
+  explicit back_insert_iterator(Container& c) : container_(&c) {}
+
+  auto operator=(const typename Container::value_type& value)
+      -> back_insert_iterator& {
+    container_->push_back(value);
+    return *this;
+  }
+  auto operator*() -> back_insert_iterator& { return *this; }
+  auto operator++() -> back_insert_iterator& { return *this; }
+  auto operator++(int) -> back_insert_iterator { return *this; }
+};
+
+template <typename Container>
+auto back_inserter(Container& c) -> back_insert_iterator<Container> {
+  return {c};
+}
+
 // An enable_if helper to be used in template parameters which results in much
 // shorter symbols: https://godbolt.org/z/sWw4vP. Extra parentheses are needed
 // to workaround a bug in MSVC 2019 (see #1140 and #1186).
@@ -780,18 +810,6 @@ class compile_parse_context : public basic_format_parse_context<Char> {
   }
 };
 
-// Extracts a reference to the container from back_insert_iterator.
-template <typename Container>
-inline auto get_container(std::back_insert_iterator<Container> it)
-    -> Container& {
-  using base = std::back_insert_iterator<Container>;
-  struct accessor : base {
-    accessor(base b) : base(b) {}
-    using base::container;
-  };
-  return *accessor(it).container;
-}
-
 template <typename Char, typename InputIt, typename OutputIt>
 FMT_CONSTEXPR auto copy_str(InputIt begin, InputIt end, OutputIt out)
     -> OutputIt {
@@ -1012,7 +1030,7 @@ template <typename T> class iterator_buffer<T*, T> final : public buffer<T> {
 
 // A buffer that writes to a container with the contiguous storage.
 template <typename Container>
-class iterator_buffer<std::back_insert_iterator<Container>,
+class iterator_buffer<back_insert_iterator<Container>,
                       enable_if_t<is_contiguous<Container>::value,
                                   typename Container::value_type>>
     final : public buffer<typename Container::value_type> {
@@ -1029,11 +1047,11 @@ class iterator_buffer<std::back_insert_iterator<Container>,
  public:
   explicit iterator_buffer(Container& c)
       : buffer<value_type>(grow, c.size()), container_(c) {}
-  explicit iterator_buffer(std::back_insert_iterator<Container> out, size_t = 0)
+  explicit iterator_buffer(back_insert_iterator<Container> out, size_t = 0)
       : iterator_buffer(get_container(out)) {}
 
-  auto out() -> std::back_insert_iterator<Container> {
-    return std::back_inserter(container_);
+  auto out() -> back_insert_iterator<Container> {
+    return fmt::back_inserter(container_);
   }
 };
 
@@ -1097,8 +1115,8 @@ template <typename T, typename Context>
 using has_formatter =
     std::is_constructible<typename Context::template formatter_type<T>>;
 
-// An output iterator that appends to a buffer.
-// It is used to reduce symbol sizes for the common case.
+// An output iterator that appends to a buffer. It is used instead of
+// back_insert_iterator to reduce symbol sizes for the common case.
 class appender {
  private:
   detail::buffer<char>* buffer_;
@@ -1117,7 +1135,7 @@ class appender {
     buffer_->push_back(c);
     return *this;
   }
-  auto operator*() -> appender& {return *this;}
+  auto operator*() -> appender& { return *this; }
   auto operator++() -> appender& { return *this; }
   auto operator++(int) -> appender { return *this; }
 };
@@ -1142,7 +1160,7 @@ constexpr auto has_const_formatter() -> bool {
 
 template <typename T>
 using buffer_appender = conditional_t<std::is_same<T, char>::value, appender,
-                                      std::back_insert_iterator<buffer<T>>>;
+                                      back_insert_iterator<buffer<T>>>;
 
 // Maps an output iterator to a buffer.
 template <typename T, typename OutputIt>
@@ -1151,7 +1169,7 @@ auto get_buffer(OutputIt out) -> iterator_buffer<OutputIt, T> {
 }
 template <typename T, typename Buf,
           FMT_ENABLE_IF(std::is_base_of<buffer<char>, Buf>::value)>
-auto get_buffer(std::back_insert_iterator<Buf> out) -> buffer<char>& {
+auto get_buffer(back_insert_iterator<Buf> out) -> buffer<char>& {
   return get_container(out);
 }
 
@@ -1531,9 +1549,8 @@ auto copy_str(InputIt begin, InputIt end, appender out) -> appender {
   return out;
 }
 template <typename Char, typename InputIt>
-auto copy_str(InputIt begin, InputIt end,
-              std::back_insert_iterator<std::string> out)
-    -> std::back_insert_iterator<std::string> {
+auto copy_str(InputIt begin, InputIt end, back_insert_iterator<std::string> out)
+    -> back_insert_iterator<std::string> {
   get_container(out).append(begin, end);
   return out;
 }
@@ -1567,7 +1584,7 @@ struct is_output_iterator<
 
 template <typename It> struct is_back_insert_iterator : std::false_type {};
 template <typename Container>
-struct is_back_insert_iterator<std::back_insert_iterator<Container>>
+struct is_back_insert_iterator<back_insert_iterator<Container>>
     : std::true_type {};
 
 // A type-erased reference to an std::locale to avoid a heavy <locale> include.
@@ -2726,7 +2743,7 @@ void check_format_string(S format_str) {
 
 template <typename Char = char> struct vformat_args {
   using type = basic_format_args<
-      basic_format_context<std::back_insert_iterator<buffer<Char>>, Char>>;
+      basic_format_context<back_insert_iterator<buffer<Char>>, Char>>;
 };
 template <> struct vformat_args<char> {
   using type = format_args;
@@ -2869,7 +2886,7 @@ auto vformat_to(OutputIt out, string_view fmt, format_args args) -> OutputIt {
  **Example**::
 
    auto out = std::vector<char>();
-   fmt::format_to(std::back_inserter(out), "{}", 42);
+   fmt::format_to(fmt::back_inserter(out), "{}", 42);
  \endrst
  */
 template <typename OutputIt, typename... T,
