@@ -37,6 +37,7 @@
 #include <cstdint>           // uint32_t
 #include <cstring>           // std::memcpy
 #include <initializer_list>  // std::initializer_list
+#include <iterator>
 #include <limits>            // std::numeric_limits
 #include <memory>            // std::uninitialized_copy
 #include <stdexcept>         // std::runtime_error

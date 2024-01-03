@@ -11,7 +11,6 @@
 #include <cstddef>   // std::byte
 #include <cstdio>    // std::FILE
 #include <cstring>   // std::strlen
-#include <iterator>  // DEPRECATED!
 #include <limits>    // std::numeric_limits
 #include <string>
 #include <type_traits>
@@ -1578,8 +1577,7 @@ template <> struct is_output_iterator<appender, char> : std::true_type {};
 template <typename It, typename T>
 struct is_output_iterator<
     It, T,
-    void_t<typename std::iterator_traits<It>::iterator_category,
-           decltype(*std::declval<It>() = std::declval<T>())>>
+    void_t<decltype(*std::declval<It&>()++ = std::declval<T>())>>
     : std::true_type {};
 
 template <typename It> struct is_back_insert_iterator : std::false_type {};
