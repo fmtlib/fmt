@@ -8,10 +8,11 @@
 #ifndef FMT_CORE_H_
 #define FMT_CORE_H_
 
+#include <limits.h>  // CHAR_BIT
+#include <stdio.h>   // FILE
+#include <string.h>  // strlen
+
 #include <cstddef>      // std::byte
-#include <cstdio>       // std::FILE
-#include <cstring>      // std::strlen
-#include <limits.h>     // CHAR_BIT
 #include <string>       // std::string
 #include <type_traits>  // std::enable_if
 
@@ -487,7 +488,7 @@ template <typename Char> class basic_string_view {
       : data_(s),
         size_(detail::const_check(std::is_same<Char, char>::value &&
                                   !detail::is_constant_evaluated(false))
-                  ? std::strlen(reinterpret_cast<const char*>(s))
+                  ? strlen(reinterpret_cast<const char*>(s))
                   : detail::length(s)) {}
 
   /**
@@ -1721,7 +1722,7 @@ template <typename Context> class basic_format_arg {
 template <typename Visitor, typename Context>
 FMT_DEPRECATED FMT_CONSTEXPR FMT_INLINE auto visit_format_arg(
     Visitor&& vis, const basic_format_arg<Context>& arg) -> decltype(vis(0)) {
-  return arg.visit(std::forward<Visitor>(vis));
+  return arg.visit(static_cast<Visitor&&>(vis));
 }
 
 // Formatting context.
@@ -2146,8 +2147,8 @@ FMT_CONSTEXPR auto find(Ptr first, Ptr last, T value, Ptr& out) -> bool {
 template <>
 inline auto find<false, char>(const char* first, const char* last, char value,
                               const char*& out) -> bool {
-  out = static_cast<const char*>(
-      std::memchr(first, value, to_unsigned(last - first)));
+  out =
+      static_cast<const char*>(memchr(first, value, to_unsigned(last - first)));
   return out != nullptr;
 }
 
@@ -2705,9 +2706,9 @@ template <typename Char>
 void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
                 typename vformat_args<Char>::type args, locale_ref loc = {});
 
-FMT_API void vprint_mojibake(std::FILE*, string_view, format_args);
+FMT_API void vprint_mojibake(FILE*, string_view, format_args);
 #ifndef _WIN32
-inline void vprint_mojibake(std::FILE*, string_view, format_args) {}
+inline void vprint_mojibake(FILE*, string_view, format_args) {}
 #endif
 }  // namespace detail
 
@@ -2889,7 +2890,7 @@ FMT_NODISCARD FMT_INLINE auto formatted_size(format_string<T...> fmt,
 }
 
 FMT_API void vprint(string_view fmt, format_args args);
-FMT_API void vprint(std::FILE* f, string_view fmt, format_args args);
+FMT_API void vprint(FILE* f, string_view fmt, format_args args);
 
 /**
   \rst
@@ -2919,7 +2920,7 @@ FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
   \endrst
  */
 template <typename... T>
-FMT_INLINE void print(std::FILE* f, format_string<T...> fmt, T&&... args) {
+FMT_INLINE void print(FILE* f, format_string<T...> fmt, T&&... args) {
   const auto& vargs = fmt::make_format_args(args...);
   return detail::is_utf8() ? vprint(f, fmt, vargs)
                            : detail::vprint_mojibake(f, fmt, vargs);
@@ -2930,8 +2931,8 @@ FMT_INLINE void print(std::FILE* f, format_string<T...> fmt, T&&... args) {
   output to the file ``f`` followed by a newline.
  */
 template <typename... T>
-FMT_INLINE void println(std::FILE* f, format_string<T...> fmt, T&&... args) {
-  return fmt::print(f, "{}\n", fmt::format(fmt, std::forward<T>(args)...));
+FMT_INLINE void println(FILE* f, format_string<T...> fmt, T&&... args) {
+  return fmt::print(f, "{}\n", fmt::format(fmt, static_cast<T&&>(args)...));
 }
 
 /**
@@ -2940,7 +2941,7 @@ FMT_INLINE void println(std::FILE* f, format_string<T...> fmt, T&&... args) {
  */
 template <typename... T>
 FMT_INLINE void println(format_string<T...> fmt, T&&... args) {
-  return fmt::println(stdout, fmt, std::forward<T>(args)...);
+  return fmt::println(stdout, fmt, static_cast<T&&>(args)...);
 }
 
 FMT_END_EXPORT
