@@ -2121,8 +2121,7 @@ struct dynamic_format_specs : format_specs<Char> {
 };
 
 // Converts a character to ASCII. Returns '\0' on conversion failure.
-template <typename Char, FMT_ENABLE_IF(std::is_integral<Char>::value ||
-                                       std::is_enum<Char>::value)>
+template <typename Char, FMT_ENABLE_IF(std::is_integral<Char>::value)>
 constexpr auto to_ascii(Char c) -> char {
   return c <= 0xff ? static_cast<char>(c) : '\0';
 }
