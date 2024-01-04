@@ -798,11 +798,6 @@ FMT_CONSTEXPR inline auto compute_width(string_view s) -> size_t {
   return num_code_points;
 }
 
-inline auto compute_width(basic_string_view<char8_type> s) -> size_t {
-  return compute_width(
-      string_view(reinterpret_cast<const char*>(s.data()), s.size()));
-}
-
 template <typename Char>
 inline auto code_point_index(basic_string_view<Char> s, size_t n) -> size_t {
   size_t size = s.size();
