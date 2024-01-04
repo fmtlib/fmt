@@ -11,7 +11,7 @@
 #include <cstddef>      // std::byte
 #include <cstdio>       // std::FILE
 #include <cstring>      // std::strlen
-#include <limits>       // std::numeric_limits
+#include <limits.h>     // CHAR_BIT
 #include <string>       // std::string
 #include <type_traits>  // std::enable_if
 
@@ -2166,11 +2166,11 @@ FMT_CONSTEXPR auto parse_nonnegative_int(const Char*& begin, const Char* end,
   } while (p != end && '0' <= *p && *p <= '9');
   auto num_digits = p - begin;
   begin = p;
-  if (num_digits <= std::numeric_limits<int>::digits10)
-    return static_cast<int>(value);
+  int digits10 = static_cast<int>(sizeof(int) * CHAR_BIT * 3 / 10);
+  if (num_digits <= digits10) return static_cast<int>(value);
   // Check for overflow.
-  const unsigned max = to_unsigned((std::numeric_limits<int>::max)());
-  return num_digits == std::numeric_limits<int>::digits10 + 1 &&
+  unsigned max = INT_MAX;
+  return num_digits == digits10 + 1 &&
                  prev * 10ull + unsigned(p[-1] - '0') <= max
              ? static_cast<int>(value)
              : error_value;
@@ -2198,9 +2198,8 @@ FMT_CONSTEXPR auto do_parse_arg_id(const Char* begin, const Char* end,
   Char c = *begin;
   if (c >= '0' && c <= '9') {
     int index = 0;
-    constexpr int max = (std::numeric_limits<int>::max)();
     if (c != '0')
-      index = parse_nonnegative_int(begin, end, max);
+      index = parse_nonnegative_int(begin, end, INT_MAX);
     else
       ++begin;
     if (begin == end || (*begin != '}' && *begin != ':'))
