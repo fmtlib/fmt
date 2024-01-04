@@ -153,7 +153,8 @@ Preceding the *width* field by a zero (``'0'``) character enables sign-aware
 zero-padding for numeric types. It forces the padding to be placed after the
 sign or base (if any) but before the digits. This is used for printing fields in
 the form '+000000120'. This option is only valid for numeric types and it has no
-effect on formatting of infinity and NaN.
+effect on formatting of infinity and NaN. This option is ignored when any
+alignment specifier is present.
 
 The *precision* is a decimal number indicating how many digits should be
 displayed after the decimal point for a floating-point value formatted with
