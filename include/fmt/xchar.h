@@ -20,6 +20,12 @@
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
+#ifdef __cpp_char8_t
+using char8_type = char8_t;
+#else
+enum char8_type : unsigned char {};
+#endif
+
 template <typename T>
 using is_exotic_char = bool_constant<!std::is_same<T, char>::value>;
 
