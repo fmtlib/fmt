@@ -492,12 +492,10 @@ inline void vprint(std::FILE* f, const text_style& ts, string_view fmt,
                "Elapsed time: {0:.2f} seconds", 1.23);
   \endrst
  */
-template <typename S, typename... Args,
-          FMT_ENABLE_IF(detail::is_string<S>::value)>
-void print(std::FILE* f, const text_style& ts, const S& format_str,
-           const Args&... args) {
-  vprint(f, ts, format_str,
-         fmt::make_format_args<buffer_context<char_t<S>>>(args...));
+template <typename... T>
+void print(std::FILE* f, const text_style& ts, format_string<T...> fmt,
+           T&&... args) {
+  vprint(f, ts, fmt, fmt::make_format_args(args...));
 }
 
 /**
@@ -511,19 +509,15 @@ void print(std::FILE* f, const text_style& ts, const S& format_str,
                "Elapsed time: {0:.2f} seconds", 1.23);
   \endrst
  */
-template <typename S, typename... Args,
-          FMT_ENABLE_IF(detail::is_string<S>::value)>
-void print(const text_style& ts, const S& format_str, const Args&... args) {
-  return print(stdout, ts, format_str, args...);
+template <typename... T>
+void print(const text_style& ts, format_string<T...> fmt, T&&... args) {
+  return print(stdout, ts, fmt, std::forward<T>(args)...);
 }
 
-template <typename S, typename Char = char_t<S>>
-inline auto vformat(
-    const text_style& ts, const S& format_str,
-    basic_format_args<buffer_context<type_identity_t<Char>>> args)
-    -> std::basic_string<Char> {
-  basic_memory_buffer<Char> buf;
-  detail::vformat_to(buf, ts, detail::to_string_view(format_str), args);
+inline auto vformat(const text_style& ts, string_view fmt, format_args args)
+    -> std::string {
+  auto buf = memory_buffer();
+  detail::vformat_to(buf, ts, fmt, args);
   return fmt::to_string(buf);
 }
 
@@ -539,24 +533,21 @@ inline auto vformat(
                                       "The answer is {}", 42);
   \endrst
 */
-template <typename S, typename... Args, typename Char = char_t<S>>
-inline auto format(const text_style& ts, const S& format_str,
-                   const Args&... args) -> std::basic_string<Char> {
-  return fmt::vformat(ts, detail::to_string_view(format_str),
-                      fmt::make_format_args<buffer_context<Char>>(args...));
+template <typename... T>
+inline auto format(const text_style& ts, format_string<T...> fmt, T&&... args)
+    -> std::string {
+  return fmt::vformat(ts, fmt, fmt::make_format_args(args...));
 }
 
 /**
   Formats a string with the given text_style and writes the output to ``out``.
  */
-template <typename OutputIt, typename Char,
-          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value)>
-auto vformat_to(OutputIt out, const text_style& ts,
-                basic_string_view<Char> format_str,
-                basic_format_args<buffer_context<type_identity_t<Char>>> args)
-    -> OutputIt {
-  auto&& buf = detail::get_buffer<Char>(out);
-  detail::vformat_to(buf, ts, format_str, args);
+template <typename OutputIt,
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
+auto vformat_to(OutputIt out, const text_style& ts, string_view fmt,
+                format_args args) -> OutputIt {
+  auto&& buf = detail::get_buffer<char>(out);
+  detail::vformat_to(buf, ts, fmt, args);
   return detail::get_iterator(buf, out);
 }
 
@@ -572,15 +563,11 @@ auto vformat_to(OutputIt out, const text_style& ts,
                    fmt::emphasis::bold | fg(fmt::color::red), "{}", 42);
   \endrst
 */
-template <
-    typename OutputIt, typename S, typename... Args,
-    bool enable = detail::is_output_iterator<OutputIt, char_t<S>>::value &&
-                  detail::is_string<S>::value>
-inline auto format_to(OutputIt out, const text_style& ts, const S& format_str,
-                      Args&&... args) ->
-    typename std::enable_if<enable, OutputIt>::type {
-  return vformat_to(out, ts, detail::to_string_view(format_str),
-                    fmt::make_format_args<buffer_context<char_t<S>>>(args...));
+template <typename OutputIt, typename... T,
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
+inline auto format_to(OutputIt out, const text_style& ts,
+                      format_string<T...> fmt, T&&... args) -> OutputIt {
+  return vformat_to(out, ts, fmt, fmt::make_format_args(args...));
 }
 
 template <typename T, typename Char>

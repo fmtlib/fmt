@@ -570,12 +570,9 @@ template <> struct is_char<char> : std::true_type {};
 
 namespace detail {
 
-// A base class for compile-time strings.
-struct compile_string {};
-
-template <typename S>
-struct is_compile_string : std::is_base_of<compile_string, S> {};
-
+// Constructs fmt::basic_string_view<Char> from types **implicitly** convertible
+// to it, deducing Char. Explicitly convertible types such as compile-time
+// strings are intentionally excluded.
 template <typename Char, FMT_ENABLE_IF(is_char<Char>::value)>
 FMT_INLINE auto to_string_view(const Char* s) -> basic_string_view<Char> {
   return s;
@@ -583,17 +580,12 @@ FMT_INLINE auto to_string_view(const Char* s) -> basic_string_view<Char> {
 template <typename S, FMT_ENABLE_IF(is_string_like<S>::value)>
 inline auto to_string_view(const S& s)
     -> basic_string_view<typename S::value_type> {
-  return s;  // std::basic_string[_view]
+  return s;
 }
 template <typename Char>
 constexpr auto to_string_view(basic_string_view<Char> s)
     -> basic_string_view<Char> {
   return s;
-}
-template <typename S, FMT_ENABLE_IF(is_compile_string<S>::value)>
-constexpr auto to_string_view(const S& s)
-    -> basic_string_view<typename S::char_type> {
-  return basic_string_view<typename S::char_type>(s);
 }
 void to_string_view(...);
 
@@ -601,7 +593,7 @@ void to_string_view(...);
 // It should be a constexpr function but MSVC 2017 fails to compile it in
 // enable_if and MSVC 2015 fails to compile it as an alias template.
 // ADL is intentionally disabled as to_string_view is not an extension point.
-template <typename S>
+template <typename S, typename = void>
 struct is_string
     : std::is_class<decltype(detail::to_string_view(std::declval<S>()))> {};
 
@@ -2673,6 +2665,12 @@ template <typename Char, typename... Args> class format_string_checker {
   }
 };
 
+// A base class for compile-time strings.
+struct compile_string {};
+
+template <typename S>
+using is_compile_string = std::is_base_of<compile_string, S>;
+
 // Reports a compile-time error if S is not a valid format string.
 template <typename..., typename S, FMT_ENABLE_IF(!is_compile_string<S>::value)>
 FMT_INLINE void check_format_string(const S&) {
@@ -2754,9 +2752,12 @@ template <typename Char, typename... Args> class basic_format_string {
   basic_string_view<Char> str_;
 
  public:
-  template <typename S,
-            FMT_ENABLE_IF(
-                std::is_convertible<const S&, basic_string_view<Char>>::value)>
+  template <
+      typename S,
+      FMT_ENABLE_IF(
+          std::is_convertible<const S&, basic_string_view<Char>>::value ||
+          (detail::is_compile_string<S>::value &&
+           std::is_constructible<basic_string_view<Char>, const S&>::value))>
   FMT_CONSTEVAL FMT_INLINE basic_format_string(const S& s) : str_(s) {
     static_assert(
         detail::count<
