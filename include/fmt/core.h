@@ -412,10 +412,9 @@ FMT_CONSTEXPR auto to_unsigned(Int value) ->
   return static_cast<typename std::make_unsigned<Int>::type>(value);
 }
 
+// A heuristic to detect std::string and std::[experimental::]string_view.
 template <typename T, typename Enable = void>
 struct is_string_like : std::false_type {};
-
-// A heuristic to detect std::string and std::string_view.
 template <typename T>
 struct is_string_like<T, void_t<decltype(std::declval<T>().find_first_of(
                              typename T::value_type(), 0))>> : std::true_type {
@@ -570,9 +569,9 @@ template <> struct is_char<char> : std::true_type {};
 
 namespace detail {
 
-// Constructs fmt::basic_string_view<Char> from types **implicitly** convertible
-// to it, deducing Char. Explicitly convertible types such as compile-time
-// strings are intentionally excluded.
+// Constructs fmt::basic_string_view<Char> from types implicitly convertible
+// to it, deducing Char. Explicitly convertible types such as the ones returned
+// from FMT_STRING are intentionally excluded.
 template <typename Char, FMT_ENABLE_IF(is_char<Char>::value)>
 FMT_INLINE auto to_string_view(const Char* s) -> basic_string_view<Char> {
   return s;
@@ -596,12 +595,6 @@ void to_string_view(...);
 template <typename S, typename = void>
 struct is_string
     : std::is_class<decltype(detail::to_string_view(std::declval<S>()))> {};
-
-template <typename S, typename = void> struct char_t_impl {};
-template <typename S> struct char_t_impl<S, enable_if_t<is_string<S>::value>> {
-  using result = decltype(to_string_view(std::declval<S>()));
-  using type = typename result::value_type;
-};
 
 enum class type {
   none_type,
@@ -681,8 +674,10 @@ enum {
 /** Throws ``format_error`` with a given message. */
 FMT_NORETURN FMT_API void throw_format_error(const char* message);
 
-/** String's character type. */
-template <typename S> using char_t = typename detail::char_t_impl<S>::type;
+/** String's character (code unit) type. */
+template <typename S,
+          typename V = decltype(detail::to_string_view(std::declval<S>()))>
+using char_t = typename V::value_type;
 
 /**
   \rst
@@ -1422,16 +1417,15 @@ template <typename Context> struct arg_mapper {
   FMT_CONSTEXPR FMT_INLINE auto map(const char_type* val) -> const char_type* {
     return val;
   }
-  template <typename T,
-            FMT_ENABLE_IF(is_string<T>::value && !std::is_pointer<T>::value &&
-                          std::is_same<char_type, char_t<T>>::value)>
-  FMT_CONSTEXPR FMT_INLINE auto map(const T& val)
-      -> basic_string_view<char_type> {
+  template <typename T, typename Char = char_t<T>,
+            FMT_ENABLE_IF(std::is_same<Char, char_type>::value &&
+                          !std::is_pointer<T>::value)>
+  FMT_CONSTEXPR FMT_INLINE auto map(const T& val) -> basic_string_view<Char> {
     return to_string_view(val);
   }
-  template <typename T,
-            FMT_ENABLE_IF(is_string<T>::value && !std::is_pointer<T>::value &&
-                          !std::is_same<char_type, char_t<T>>::value)>
+  template <typename T, typename Char = char_t<T>,
+            FMT_ENABLE_IF(!std::is_same<Char, char_type>::value &&
+                          !std::is_pointer<T>::value)>
   FMT_CONSTEXPR FMT_INLINE auto map(const T&) -> unformattable_char {
     return {};
   }

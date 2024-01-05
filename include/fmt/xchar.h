@@ -30,8 +30,13 @@ enum char8_type : unsigned char {};
 template <typename T>
 using is_exotic_char = bool_constant<!std::is_same<T, char>::value>;
 
-template <typename S, typename = void>
-struct format_string_char : char_t_impl<S> {};
+template <typename S, typename = void> struct format_string_char {};
+
+template <typename S>
+struct format_string_char<
+    S, void_t<decltype(sizeof(detail::to_string_view(std::declval<S>())))>> {
+  using type = char_t<S>;
+};
 
 template <typename S>
 struct format_string_char<S, enable_if_t<is_compile_string<S>::value>> {
