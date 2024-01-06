@@ -33,6 +33,11 @@
 #ifndef FMT_FORMAT_H_
 #define FMT_FORMAT_H_
 
+#ifndef _LIBCPP_REMOVE_TRANSITIVE_INCLUDES
+#  define _LIBCPP_REMOVE_TRANSITIVE_INCLUDES
+#  define FMT_REMOVE_TRANSITIVE_INCLUDES
+#endif
+
 #include <cmath>             // std::signbit
 #include <cstdint>           // uint32_t
 #include <cstring>           // std::memcpy
@@ -4496,6 +4501,11 @@ FMT_END_NAMESPACE
 #  include "format-inl.h"
 #else
 #  define FMT_FUNC
+#endif
+
+// Restore _LIBCPP_REMOVE_TRANSITIVE_INCLUDES.
+#ifdef FMT_REMOVE_TRANSITIVE_INCLUDES
+#  undef _LIBCPP_REMOVE_TRANSITIVE_INCLUDES
 #endif
 
 #endif  // FMT_FORMAT_H_
