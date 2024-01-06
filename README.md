@@ -203,43 +203,39 @@ and [ryu](https://github.com/ulfjack/ryu):
 
 ## Compile time and code bloat
 
-The script
-[bloat-test.py](https://github.com/fmtlib/format-benchmark/blob/master/bloat-test.py)
-from [format-benchmark](https://github.com/fmtlib/format-benchmark)
-tests compile time and code bloat for nontrivial projects. It generates
-100 translation units and uses `printf()` or its alternative five times
-in each to simulate a medium-sized project. The resulting executable
-size and compile time (Apple LLVM version 8.1.0 (clang-802.0.42), macOS
-Sierra, best of three) is shown in the following tables.
+The script [bloat-test.py][test] from [format-benchmark][bench] tests compile
+time and code bloat for nontrivial projects. It generates 100 translation units
+and uses `printf()` or its alternative five times in each to simulate a
+medium-sized project. The resulting executable size and compile time (Apple
+clang version 15.0.0 (clang-1500.1.0.2.5), macOS Sonoma, best of three) is shown
+in the following tables.
+
+[test]: https://github.com/fmtlib/format-benchmark/blob/master/bloat-test.py
+[bench]: https://github.com/fmtlib/format-benchmark
 
 **Optimized build (-O3)**
 
 | Method        | Compile Time, s | Executable size, KiB | Stripped size, KiB |
 |---------------|-----------------|----------------------|--------------------|
-| printf        |   2.6           |   29                 |   26               |
-| printf+string |   16.4          |   29                 |   26               |
-| iostreams     |   31.1          |   59                 |   55               |
-| {fmt}         |   19.0          |   37                 |   34               |
-| Boost Format  |   91.9          |   226                |   203              |
-| Folly Format  |   115.7         |   101                |   88               |
+| printf        |             1.6 |                   54 |                 50 |
+| IOStreams     |            25.6 |                   98 |                 84 |
+| {fmt}         |             4.8 |                   54 |                 50 |
+| tinyformat    |            30.5 |                  161 |                136 |
+| Boost Format  |            56.7 |                  530 |                317 |
 
-As you can see, {fmt} has 60% less overhead in terms of resulting binary
-code size compared to iostreams and comes pretty close to `printf`.
-Boost Format and Folly Format have the largest overheads.
-
-`printf+string` is the same as `printf` but with an extra `<string>`
-include to measure the overhead of the latter.
+As you can see, {fmt} has ~70% less overhead in terms of resulting binary code
+size compared to iostreams and comes pretty close to `printf`. Boost Format and
+Folly Format have the largest overheads.
 
 **Non-optimized build**
 
 | Method        | Compile Time, s | Executable size, KiB | Stripped size, KiB |
 |---------------|-----------------|----------------------|--------------------|
-| printf        |   2.2           |   33                 |   30               |
-| printf+string |   16.0          |   33                 |   30               |
-| iostreams     |   28.3          |   56                 |   52               |
-| {fmt}         |   18.2          |   59                 |   50               |
-| Boost Format  |   54.1          |   365                |   303              |
-| Folly Format  |   79.9          |   445                |   430              |
+| printf        |             1.4 |                   54 |                 50 |
+| IOStreams     |            24.2 |                   92 |                 68 |
+| {fmt}         |             4.7 |                  217 |                214 |
+| tinyformat    |            25.7 |                  204 |                161 |
+| Boost Format  |            37.5 |                  831 |                462 |
 
 `libc`, `lib(std)c++`, and `libfmt` are all linked as shared libraries
 to compare formatting function overhead only. Boost Format is a
