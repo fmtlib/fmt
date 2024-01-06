@@ -13,8 +13,40 @@
 #include <string.h>  // strlen
 
 #include <cstddef>      // std::byte
-#include <string>       // std::string
 #include <type_traits>  // std::enable_if
+
+#if defined(_LIBCPP_VERSION)
+#  define FMT_BEGIN_NAMESPACE_STD _LIBCPP_BEGIN_NAMESPACE_STD
+#  define FMT_END_NAMESPACE_STD _LIBCPP_END_NAMESPACE_STD
+#  define FMT_STD_TEMPLATE_VIS _LIBCPP_TEMPLATE_VIS
+#  define FMT_BEGIN_NAMESPACE_CXX11
+#  define FMT_END_NAMESPACE_CXX11
+#elif defined(_GLIBCXX_RELEASE)
+#  define FMT_BEGIN_NAMESPACE_STD \
+    namespace std _GLIBCXX_VISIBILITY(default) { \
+    _GLIBCXX_BEGIN_NAMESPACE_VERSION
+#  define FMT_END_NAMESPACE_STD _GLIBCXX_END_NAMESPACE_VERSION }
+#  define FMT_STD_TEMPLATE_VIS
+#  if defined(_GLIBCXX_USE_CXX11_ABI)
+#    define FMT_BEGIN_NAMESPACE_CXX11 inline _GLIBCXX_BEGIN_NAMESPACE_CXX11
+#    define FMT_END_NAMESPACE_CXX11 _GLIBCXX_END_NAMESPACE_CXX11
+#  endif
+#else
+#  include <string>
+#endif
+
+#ifdef FMT_BEGIN_NAMESPACE_STD
+FMT_BEGIN_NAMESPACE_STD
+template <typename Char>
+struct FMT_STD_TEMPLATE_VIS char_traits;
+template <typename T>
+class FMT_STD_TEMPLATE_VIS allocator;
+FMT_BEGIN_NAMESPACE_CXX11
+template <typename Char, typename Traits, typename Allocator>
+class FMT_STD_TEMPLATE_VIS basic_string;
+FMT_END_NAMESPACE_CXX11
+FMT_END_NAMESPACE_STD
+#endif  // FMT_BEGIN_NAMESPACE_STD
 
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
 #define FMT_VERSION 100202
@@ -2807,9 +2839,9 @@ FMT_API auto vformat(string_view fmt, format_args args) -> basic_string<char>;
     std::string message = fmt::format("The answer is {}.", 42);
   \endrst
 */
-template <typename... T>
+template <typename... T, typename Char = char>
 FMT_NODISCARD FMT_INLINE auto format(format_string<T...> fmt, T&&... args)
-    -> basic_string<char> {
+    -> basic_string<Char> {
   return vformat(fmt, fmt::make_format_args(args...));
 }
 
