@@ -41,23 +41,6 @@ template <typename OutputIt> auto copy(wchar_t ch, OutputIt out) -> OutputIt {
   return out;
 }
 
-// Returns true if T has a std::string-like interface, like std::string_view.
-template <typename T> class is_std_string_like {
-  template <typename U>
-  static auto check(U* p)
-      -> decltype((void)p->find('a'), p->length(), (void)p->data(), int());
-  template <typename> static void check(...);
-
- public:
-  static constexpr const bool value =
-      is_string<T>::value ||
-      std::is_convertible<T, std_string_view<char>>::value ||
-      !std::is_void<decltype(check<T>(nullptr))>::value;
-};
-
-template <typename Char>
-struct is_std_string_like<fmt::basic_string_view<Char>> : std::true_type {};
-
 template <typename T> class is_map {
   template <typename U> static auto check(U*) -> typename U::mapped_type;
   template <typename> static void check(...);
@@ -377,7 +360,8 @@ struct formatter<Tuple, Char,
 
 template <typename T, typename Char> struct is_range {
   static constexpr const bool value =
-      detail::is_range_<T>::value && !detail::is_std_string_like<T>::value &&
+      detail::is_range_<T>::value &&
+      !detail::has_to_string_view<T>::value &&
       !std::is_convertible<T, std::basic_string<Char>>::value &&
       !std::is_convertible<T, detail::std_string_view<Char>>::value;
 };

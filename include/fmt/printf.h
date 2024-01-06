@@ -605,8 +605,7 @@ inline auto vsprintf(
     std::string message = fmt::sprintf("The answer is %d", 42);
   \endrst
 */
-template <typename S, typename... T,
-          typename Char = enable_if_t<detail::is_string<S>::value, char_t<S>>>
+template <typename S, typename... T, typename Char = char_t<S>>
 inline auto sprintf(const S& fmt, const T&... args) -> std::basic_string<Char> {
   return vsprintf(detail::to_string_view(fmt),
                   fmt::make_format_args<basic_printf_context<Char>>(args...));

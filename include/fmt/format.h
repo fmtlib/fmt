@@ -3733,7 +3733,7 @@ FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> value)
 }
 
 template <typename Char, typename OutputIt, typename T,
-          FMT_ENABLE_IF(is_string<T>::value)>
+          FMT_ENABLE_IF(has_to_string_view<T>::value)>
 constexpr auto write(OutputIt out, const T& value) -> OutputIt {
   return write<Char>(out, to_string_view(value));
 }
@@ -3786,7 +3786,7 @@ auto write(OutputIt out, const T* value, const format_specs<Char>& specs = {},
 template <typename Char, typename OutputIt, typename T,
           typename Context = basic_format_context<OutputIt, Char>>
 FMT_CONSTEXPR auto write(OutputIt out, const T& value) -> enable_if_t<
-    std::is_class<T>::value && !is_string<T>::value &&
+    std::is_class<T>::value && !has_to_string_view<T>::value &&
         !is_floating_point<T>::value && !std::is_same<T, Char>::value &&
         !std::is_same<T, remove_cvref_t<decltype(arg_mapper<Context>().map(
                              value))>>::value,

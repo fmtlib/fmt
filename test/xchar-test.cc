@@ -32,27 +32,27 @@ using testing::Contains;
 
 struct non_string {};
 
-template <typename T> class is_string_test : public testing::Test {};
+template <typename T> class has_to_string_view_test : public testing::Test {};
 
 using string_char_types = testing::Types<char, wchar_t, char16_t, char32_t>;
-TYPED_TEST_SUITE(is_string_test, string_char_types);
+TYPED_TEST_SUITE(has_to_string_view_test, string_char_types);
 
 template <typename Char>
 struct derived_from_string_view : fmt::basic_string_view<Char> {};
 
-TYPED_TEST(is_string_test, is_string) {
-  EXPECT_TRUE(fmt::detail::is_string<TypeParam*>::value);
-  EXPECT_TRUE(fmt::detail::is_string<const TypeParam*>::value);
-  EXPECT_TRUE(fmt::detail::is_string<TypeParam[2]>::value);
-  EXPECT_TRUE(fmt::detail::is_string<const TypeParam[2]>::value);
-  EXPECT_TRUE(fmt::detail::is_string<std::basic_string<TypeParam>>::value);
-  EXPECT_TRUE(fmt::detail::is_string<fmt::basic_string_view<TypeParam>>::value);
+TYPED_TEST(has_to_string_view_test, has_to_string_view) {
+  EXPECT_TRUE(fmt::detail::has_to_string_view<TypeParam*>::value);
+  EXPECT_TRUE(fmt::detail::has_to_string_view<const TypeParam*>::value);
+  EXPECT_TRUE(fmt::detail::has_to_string_view<TypeParam[2]>::value);
+  EXPECT_TRUE(fmt::detail::has_to_string_view<const TypeParam[2]>::value);
+  EXPECT_TRUE(fmt::detail::has_to_string_view<std::basic_string<TypeParam>>::value);
+  EXPECT_TRUE(fmt::detail::has_to_string_view<fmt::basic_string_view<TypeParam>>::value);
   EXPECT_TRUE(
-      fmt::detail::is_string<derived_from_string_view<TypeParam>>::value);
+      fmt::detail::has_to_string_view<derived_from_string_view<TypeParam>>::value);
   using fmt_string_view = fmt::detail::std_string_view<TypeParam>;
   EXPECT_TRUE(std::is_empty<fmt_string_view>::value !=
-              fmt::detail::is_string<fmt_string_view>::value);
-  EXPECT_FALSE(fmt::detail::is_string<non_string>::value);
+              fmt::detail::has_to_string_view<fmt_string_view>::value);
+  EXPECT_FALSE(fmt::detail::has_to_string_view<non_string>::value);
 }
 
 // std::is_constructible is broken in MSVC until version 2015.
