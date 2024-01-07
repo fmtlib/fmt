@@ -973,10 +973,9 @@ class iterator_buffer : public Traits, public buffer<T> {
         buffer<T>(grow, data_, 0, buffer_size),
         out_(other.out_) {}
   ~iterator_buffer() {
+    // Don't crash if flush fails during unwinding.
     FMT_TRY { flush(); }
-    FMT_CATCH(...) {
-      // Don't crash if flush fails during unwinding.
-    }
+    FMT_CATCH(...) {}
   }
 
   auto out() -> OutputIt {
