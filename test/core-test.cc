@@ -851,3 +851,26 @@ FMT_END_NAMESPACE
 TEST(core_test, trappy_conversion) {
   EXPECT_EQ(fmt::format("{}", its_a_trap()), "42");
 }
+
+TEST(core_test, throw_in_buffer_dtor) {
+  enum { buffer_size = 256 };
+
+  struct throwing_iterator {
+    int& count;
+
+    auto operator=(char) -> throwing_iterator& {
+      if (++count > buffer_size) throw std::exception();
+      return *this;
+    }
+    auto operator*() -> throwing_iterator& { return *this; }
+    auto operator++() -> throwing_iterator& { return *this; }
+    auto operator++(int) -> throwing_iterator { return *this; }
+  };
+
+  try {
+    int count = 0;
+    fmt::format_to(throwing_iterator{count}, fmt::runtime("{:{}}{"), "",
+                   buffer_size + 1);
+  } catch (const std::exception&) {
+  }
+}

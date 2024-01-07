@@ -176,6 +176,13 @@ FMT_END_NAMESPACE_STD
 #    define FMT_EXCEPTIONS 1
 #  endif
 #endif
+#if FMT_EXCEPTIONS
+#  define FMT_TRY try
+#  define FMT_CATCH(x) catch (x)
+#else
+#  define FMT_TRY if (true)
+#  define FMT_CATCH(x) if (false)
+#endif
 
 // Disable [[noreturn]] on MSVC/NVCC because of bogus unreachable code warnings.
 #if FMT_EXCEPTIONS && FMT_HAS_CPP_ATTRIBUTE(noreturn) && !FMT_MSC_VERSION && \
@@ -965,7 +972,12 @@ class iterator_buffer : public Traits, public buffer<T> {
       : Traits(other),
         buffer<T>(grow, data_, 0, buffer_size),
         out_(other.out_) {}
-  ~iterator_buffer() { flush(); }
+  ~iterator_buffer() {
+    FMT_TRY { flush(); }
+    FMT_CATCH(...) {
+      // Don't crash if flush fails during unwinding.
+    }
+  }
 
   auto out() -> OutputIt {
     flush();
