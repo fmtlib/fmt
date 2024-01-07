@@ -342,7 +342,7 @@ struct formatter<Tuple, Char,
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
     auto it = ctx.begin();
     if (it != ctx.end() && *it != '}')
-      FMT_THROW(format_error("invalid format specifier"));
+      throw_format_error("invalid format specifier");
     detail::for_each(formatters_, detail::parse_empty_specs<ParseContext>{ctx});
     return it;
   }
@@ -451,7 +451,7 @@ struct range_formatter<
     }
 
     if (it != end && *it != '}') {
-      if (*it != ':') FMT_THROW(format_error("invalid format specifier"));
+      if (*it != ':') throw_format_error("invalid format specifier");
       ++it;
     } else {
       detail::maybe_set_debug_format(underlying_, true);
@@ -631,7 +631,7 @@ auto join(It begin, Sentinel end, string_view sep) -> join_view<It, Sentinel> {
  */
 template <typename Range>
 auto join(Range&& range, string_view sep)
-    -> join_view<detail::iterator_t<Range>, detail::sentinel_t<Range>> {
+    -> join_view<decltype(std::begin(range)), decltype(std::end(range))> {
   return join(std::begin(range), std::end(range), sep);
 }
 
@@ -684,7 +684,7 @@ struct formatter<tuple_join_view<Char, T...>, Char> {
     if (N > 1) {
       auto end1 = do_parse(ctx, std::integral_constant<size_t, N - 1>());
       if (end != end1)
-        FMT_THROW(format_error("incompatible format specs for tuple elements"));
+        throw_format_error("incompatible format specs for tuple elements");
     }
 #endif
     return end;
