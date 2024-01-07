@@ -932,7 +932,7 @@ enum { inline_buffer_size = 500 };
  */
 template <typename T, size_t SIZE = inline_buffer_size,
           typename Allocator = std::allocator<T>>
-class basic_memory_buffer final : public detail::buffer<T> {
+class basic_memory_buffer : public detail::buffer<T> {
  private:
   T store_[SIZE];
 
@@ -945,7 +945,6 @@ class basic_memory_buffer final : public detail::buffer<T> {
     if (data != store_) alloc_.deallocate(data, this->capacity());
   }
 
- protected:
   static FMT_CONSTEXPR20 void grow(detail::buffer<T>& buf, size_t size) {
     detail::abort_fuzzing_if(size > 5000);
     auto& self = static_cast<basic_memory_buffer&>(buf);

@@ -22,10 +22,12 @@
 #  define FMT_BEGIN_NAMESPACE_CXX11
 #  define FMT_END_NAMESPACE_CXX11
 #elif defined(_GLIBCXX_RELEASE)
-#  define FMT_BEGIN_NAMESPACE_STD \
+#  define FMT_BEGIN_NAMESPACE_STD                \
     namespace std _GLIBCXX_VISIBILITY(default) { \
     _GLIBCXX_BEGIN_NAMESPACE_VERSION
-#  define FMT_END_NAMESPACE_STD _GLIBCXX_END_NAMESPACE_VERSION }
+#  define FMT_END_NAMESPACE_STD    \
+    _GLIBCXX_END_NAMESPACE_VERSION \
+    }
 #  define FMT_STD_TEMPLATE_VIS
 #  if defined(_GLIBCXX_USE_CXX11_ABI)
 #    define FMT_BEGIN_NAMESPACE_CXX11 inline _GLIBCXX_BEGIN_NAMESPACE_CXX11
@@ -37,10 +39,8 @@
 
 #ifdef FMT_BEGIN_NAMESPACE_STD
 FMT_BEGIN_NAMESPACE_STD
-template <typename Char>
-struct FMT_STD_TEMPLATE_VIS char_traits;
-template <typename T>
-class FMT_STD_TEMPLATE_VIS allocator;
+template <typename Char> struct FMT_STD_TEMPLATE_VIS char_traits;
+template <typename T> class FMT_STD_TEMPLATE_VIS allocator;
 FMT_BEGIN_NAMESPACE_CXX11
 template <typename Char, typename Traits, typename Allocator>
 class FMT_STD_TEMPLATE_VIS basic_string;
@@ -940,7 +940,7 @@ class fixed_buffer_traits {
 
 // A buffer that writes to an output iterator when flushed.
 template <typename OutputIt, typename T, typename Traits = buffer_traits>
-class iterator_buffer final : public Traits, public buffer<T> {
+class iterator_buffer : public Traits, public buffer<T> {
  private:
   OutputIt out_;
   enum { buffer_size = 256 };
@@ -975,9 +975,8 @@ class iterator_buffer final : public Traits, public buffer<T> {
 };
 
 template <typename T>
-class iterator_buffer<T*, T, fixed_buffer_traits> final
-    : public fixed_buffer_traits,
-      public buffer<T> {
+class iterator_buffer<T*, T, fixed_buffer_traits> : public fixed_buffer_traits,
+                                                    public buffer<T> {
  private:
   T* out_;
   enum { buffer_size = 256 };
@@ -1020,7 +1019,7 @@ class iterator_buffer<T*, T, fixed_buffer_traits> final
   }
 };
 
-template <typename T> class iterator_buffer<T*, T> final : public buffer<T> {
+template <typename T> class iterator_buffer<T*, T> : public buffer<T> {
  public:
   explicit iterator_buffer(T* out, size_t = 0)
       : buffer<T>([](buffer<T>&, size_t) {}, out, 0, ~size_t()) {}
@@ -1033,7 +1032,7 @@ template <typename Container>
 class iterator_buffer<back_insert_iterator<Container>,
                       enable_if_t<is_contiguous<Container>::value,
                                   typename Container::value_type>>
-    final : public buffer<typename Container::value_type> {
+    : public buffer<typename Container::value_type> {
  private:
   using value_type = typename Container::value_type;
   Container& container_;
@@ -1056,7 +1055,7 @@ class iterator_buffer<back_insert_iterator<Container>,
 };
 
 // A buffer that counts the number of code units written discarding the output.
-template <typename T = char> class counting_buffer final : public buffer<T> {
+template <typename T = char> class counting_buffer : public buffer<T> {
  private:
   enum { buffer_size = 256 };
   T data_[buffer_size];
