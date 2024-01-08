@@ -331,31 +331,6 @@ struct monostate {
   constexpr monostate() {}
 };
 
-// An implementation of back_insert_iterator to avoid dependency on <iterator>.
-template <typename Container> class back_insert_iterator {
- private:
-  Container* container_;
-
-  friend auto get_container(back_insert_iterator it) -> Container& {
-    return *it.container_;
-  }
-
- public:
-  using difference_type = ptrdiff_t;
-  FMT_UNCHECKED_ITERATOR(back_insert_iterator);
-
-  explicit back_insert_iterator(Container& c) : container_(&c) {}
-
-  auto operator=(const typename Container::value_type& value)
-      -> back_insert_iterator& {
-    container_->push_back(value);
-    return *this;
-  }
-  auto operator*() -> back_insert_iterator& { return *this; }
-  auto operator++() -> back_insert_iterator& { return *this; }
-  auto operator++(int) -> back_insert_iterator { return *this; }
-};
-
 // An enable_if helper to be used in template parameters which results in much
 // shorter symbols: https://godbolt.org/z/sWw4vP. Extra parentheses are needed
 // to workaround a bug in MSVC 2019 (see #1140 and #1186).
@@ -1141,29 +1116,31 @@ using has_formatter =
     std::is_constructible<typename Context::template formatter_type<T>>;
 
 // An output iterator that appends to a buffer. It is used instead of
-// back_insert_iterator to reduce symbol sizes for the common case.
-class appender {
+// back_insert_iterator to reduce symbol sizes and avoid <iterator> dependency.
+template <typename T> class basic_appender {
  private:
-  detail::buffer<char>* buffer_;
+  detail::buffer<T>* buffer_;
 
-  friend auto get_container(appender app) -> detail::buffer<char>& {
+  friend auto get_container(basic_appender app) -> detail::buffer<T>& {
     return *app.buffer_;
   }
 
  public:
   using difference_type = ptrdiff_t;
-  FMT_UNCHECKED_ITERATOR(appender);
+  FMT_UNCHECKED_ITERATOR(basic_appender);
 
-  appender(detail::buffer<char>& buf) : buffer_(&buf) {}
+  basic_appender(detail::buffer<T>& buf) : buffer_(&buf) {}
 
-  auto operator=(char c) -> appender& {
+  auto operator=(T c) -> basic_appender& {
     buffer_->push_back(c);
     return *this;
   }
-  auto operator*() -> appender& { return *this; }
-  auto operator++() -> appender& { return *this; }
-  auto operator++(int) -> appender { return *this; }
+  auto operator*() -> basic_appender& { return *this; }
+  auto operator++() -> basic_appender& { return *this; }
+  auto operator++(int) -> basic_appender { return *this; }
 };
+
+using appender = basic_appender<char>;
 
 namespace detail {
 
@@ -1183,18 +1160,14 @@ constexpr auto has_const_formatter() -> bool {
   return has_const_formatter_impl<Context>(static_cast<T*>(nullptr));
 }
 
-template <typename T>
-using buffer_appender = conditional_t<std::is_same<T, char>::value, appender,
-                                      back_insert_iterator<buffer<T>>>;
+template <typename T> using buffer_appender = basic_appender<T>;
 
 // Maps an output iterator to a buffer.
 template <typename T, typename OutputIt>
 auto get_buffer(OutputIt out) -> iterator_buffer<OutputIt, T> {
   return iterator_buffer<OutputIt, T>(out);
 }
-template <typename T, typename Buf,
-          FMT_ENABLE_IF(std::is_base_of<buffer<char>, Buf>::value)>
-auto get_buffer(back_insert_iterator<Buf> out) -> buffer<char>& {
+template <typename T> auto get_buffer(basic_appender<T> out) -> buffer<T>& {
   return get_container(out);
 }
 
@@ -1816,7 +1789,7 @@ template <typename OutputIt, typename Char> class basic_format_context {
 template <typename Char>
 using buffer_context =
     basic_format_context<detail::buffer_appender<Char>, Char>;
-using format_context = buffer_context<char>;
+using format_context = basic_format_context<appender, char>;
 
 template <typename T, typename Char = char>
 using is_formattable = bool_constant<!std::is_base_of<
@@ -2736,8 +2709,8 @@ void check_format_string(S format_str) {
 }
 
 template <typename Char = char> struct vformat_args {
-  using type = basic_format_args<
-      basic_format_context<back_insert_iterator<buffer<Char>>, Char>>;
+  using type =
+      basic_format_args<basic_format_context<basic_appender<Char>, Char>>;
 };
 template <> struct vformat_args<char> {
   using type = format_args;

@@ -271,12 +271,7 @@ FMT_END_NAMESPACE
 #endif
 
 namespace std {
-template <> struct iterator_traits<fmt::appender> {
-  using value_type = void;
-  using iterator_category = std::output_iterator_tag;
-};
-template <typename Container>
-struct iterator_traits<fmt::back_insert_iterator<Container>> {
+template <typename T> struct iterator_traits<fmt::basic_appender<T>> {
   using value_type = void;
   using iterator_category = std::output_iterator_tag;
 };
@@ -556,8 +551,9 @@ auto copy_str(InputIt begin, InputIt end, appender out) -> appender {
   return out;
 }
 template <typename Char, typename InputIt>
-auto copy_str(InputIt begin, InputIt end, back_insert_iterator<std::string> out)
-    -> back_insert_iterator<std::string> {
+auto copy_str(InputIt begin, InputIt end,
+              std::back_insert_iterator<std::string> out)
+    -> std::back_insert_iterator<std::string> {
   get_container(out).append(begin, end);
   return out;
 }
