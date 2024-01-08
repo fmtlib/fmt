@@ -114,7 +114,7 @@ TEST(core_test, is_back_insert_iterator) {
 
 TEST(core_test, buffer_appender) {
 #ifdef __cpp_lib_ranges
-  static_assert(std::output_iterator<fmt::detail::buffer_appender<char>, char>);
+  static_assert(std::output_iterator<fmt::appender, char>);
 #endif
 }
 
@@ -449,8 +449,7 @@ struct check_custom {
                                       10) {}
     } buffer;
     auto parse_ctx = fmt::format_parse_context("");
-    auto ctx = fmt::format_context(fmt::detail::buffer_appender<char>(buffer),
-                                   fmt::format_args());
+    auto ctx = fmt::format_context(fmt::appender(buffer), fmt::format_args());
     h.format(parse_ctx, ctx);
     EXPECT_EQ("test", std::string(buffer.data, buffer.size()));
     return test_result();

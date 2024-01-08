@@ -1160,8 +1160,6 @@ constexpr auto has_const_formatter() -> bool {
   return has_const_formatter_impl<Context>(static_cast<T*>(nullptr));
 }
 
-template <typename T> using buffer_appender = basic_appender<T>;
-
 // Maps an output iterator to a buffer.
 template <typename T, typename OutputIt>
 auto get_buffer(OutputIt out) -> iterator_buffer<OutputIt, T> {
@@ -1787,8 +1785,7 @@ template <typename OutputIt, typename Char> class basic_format_context {
 };
 
 template <typename Char>
-using buffer_context =
-    basic_format_context<detail::buffer_appender<Char>, Char>;
+using buffer_context = basic_format_context<basic_appender<Char>, Char>;
 using format_context = basic_format_context<appender, char>;
 
 template <typename T, typename Char = char>

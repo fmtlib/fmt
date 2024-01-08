@@ -582,7 +582,7 @@ reserve(std::back_insert_iterator<Container> it, size_t n) ->
 }
 
 template <typename T>
-inline auto reserve(buffer_appender<T> it, size_t n) -> buffer_appender<T> {
+inline auto reserve(basic_appender<T> it, size_t n) -> basic_appender<T> {
   buffer<T>& buf = get_container(it);
   buf.try_reserve(buf.size() + n);
   return it;
@@ -601,7 +601,7 @@ template <typename T, typename OutputIt>
 constexpr auto to_pointer(OutputIt, size_t) -> T* {
   return nullptr;
 }
-template <typename T> auto to_pointer(buffer_appender<T> it, size_t n) -> T* {
+template <typename T> auto to_pointer(basic_appender<T> it, size_t n) -> T* {
   buffer<T>& buf = get_container(it);
   auto size = buf.size();
   if (buf.capacity() < size + n) return nullptr;
@@ -2190,7 +2190,7 @@ FMT_CONSTEXPR auto make_write_int_arg(T value, sign_t sign)
 }
 
 template <typename Char = char> struct loc_writer {
-  buffer_appender<Char> out;
+  basic_appender<Char> out;
   const format_specs<Char>& specs;
   std::basic_string<Char> sep;
   std::string grouping;
@@ -2275,7 +2275,7 @@ FMT_CONSTEXPR FMT_NOINLINE auto write_int_noinline(
 template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(is_integral<T>::value &&
                         !std::is_same<T, bool>::value &&
-                        std::is_same<OutputIt, buffer_appender<Char>>::value)>
+                        std::is_same<OutputIt, basic_appender<Char>>::value)>
 FMT_CONSTEXPR FMT_INLINE auto write(OutputIt out, T value,
                                     const format_specs<Char>& specs,
                                     locale_ref loc) -> OutputIt {
@@ -2287,7 +2287,7 @@ FMT_CONSTEXPR FMT_INLINE auto write(OutputIt out, T value,
 template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(is_integral<T>::value &&
                         !std::is_same<T, bool>::value &&
-                        !std::is_same<OutputIt, buffer_appender<Char>>::value)>
+                        !std::is_same<OutputIt, basic_appender<Char>>::value)>
 FMT_CONSTEXPR FMT_INLINE auto write(OutputIt out, T value,
                                     const format_specs<Char>& specs,
                                     locale_ref loc) -> OutputIt {
@@ -2614,8 +2614,8 @@ FMT_CONSTEXPR20 auto write_significand(OutputIt out, T significand,
                              decimal_point);
   }
   auto buffer = basic_memory_buffer<Char>();
-  write_significand(buffer_appender<Char>(buffer), significand,
-                    significand_size, integral_size, decimal_point);
+  write_significand(basic_appender<Char>(buffer), significand, significand_size,
+                    integral_size, decimal_point);
   grouping.apply(
       out, basic_string_view<Char>(buffer.data(), to_unsigned(integral_size)));
   return detail::copy_str_noinline<Char>(buffer.data() + integral_size,
@@ -3337,11 +3337,11 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
     // Use Dragonbox for the shortest format.
     if (specs.binary32) {
       auto dec = dragonbox::to_decimal(static_cast<float>(value));
-      write<char>(buffer_appender<char>(buf), dec.significand);
+      write<char>(appender(buf), dec.significand);
       return dec.exponent;
     }
     auto dec = dragonbox::to_decimal(static_cast<double>(value));
-    write<char>(buffer_appender<char>(buf), dec.significand);
+    write<char>(appender(buf), dec.significand);
     return dec.exponent;
   } else {
     // Extract significand bits and exponent bits.
@@ -3789,7 +3789,7 @@ FMT_CONSTEXPR auto write(OutputIt out, const T& value)
 // An argument visitor that formats the argument and writes it via the output
 // iterator. It's a class and not a generic lambda for compatibility with C++11.
 template <typename Char> struct default_arg_formatter {
-  using iterator = buffer_appender<Char>;
+  using iterator = basic_appender<Char>;
   using context = buffer_context<Char>;
 
   iterator out;
@@ -3808,7 +3808,7 @@ template <typename Char> struct default_arg_formatter {
 };
 
 template <typename Char> struct arg_formatter {
-  using iterator = buffer_appender<Char>;
+  using iterator = basic_appender<Char>;
   using context = buffer_context<Char>;
 
   iterator out;
@@ -4299,7 +4299,7 @@ namespace detail {
 template <typename Char>
 void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
                 typename vformat_args<Char>::type args, locale_ref loc) {
-  auto out = buffer_appender<Char>(buf);
+  auto out = basic_appender<Char>(buf);
   if (fmt.size() == 2 && equal2(fmt.data(), "{}")) {
     auto arg = args.get(0);
     if (!arg) throw_format_error("argument not found");
@@ -4311,7 +4311,7 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
     basic_format_parse_context<Char> parse_context;
     buffer_context<Char> context;
 
-    format_handler(buffer_appender<Char> p_out, basic_string_view<Char> str,
+    format_handler(basic_appender<Char> p_out, basic_string_view<Char> str,
                    basic_format_args<buffer_context<Char>> p_args,
                    locale_ref p_loc)
         : parse_context(str), context(p_out, p_args, p_loc) {}

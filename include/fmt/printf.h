@@ -22,7 +22,7 @@ template <typename T> struct printf_formatter {
 
 template <typename Char> class basic_printf_context {
  private:
-  detail::buffer_appender<Char> out_;
+  basic_appender<Char> out_;
   basic_format_args<basic_printf_context> args_;
 
   static_assert(std::is_same<Char, char>::value ||
@@ -40,12 +40,12 @@ template <typename Char> class basic_printf_context {
     stored in the context object so make sure they have appropriate lifetimes.
     \endrst
    */
-  basic_printf_context(detail::buffer_appender<Char> out,
+  basic_printf_context(basic_appender<Char> out,
                        basic_format_args<basic_printf_context> args)
       : out_(out), args_(args) {}
 
-  auto out() -> detail::buffer_appender<Char> { return out_; }
-  void advance_to(detail::buffer_appender<Char>) {}
+  auto out() -> basic_appender<Char> { return out_; }
+  void advance_to(basic_appender<Char>) {}
 
   auto locale() -> detail::locale_ref { return {}; }
 
@@ -222,7 +222,7 @@ template <typename Char> class printf_width_handler {
 // Workaround for a bug with the XL compiler when initializing
 // printf_arg_formatter's base class.
 template <typename Char>
-auto make_arg_formatter(buffer_appender<Char> iter, format_specs<Char>& s)
+auto make_arg_formatter(basic_appender<Char> iter, format_specs<Char>& s)
     -> arg_formatter<Char> {
   return {iter, s, locale_ref()};
 }
@@ -243,7 +243,7 @@ class printf_arg_formatter : public arg_formatter<Char> {
   }
 
  public:
-  printf_arg_formatter(buffer_appender<Char> iter, format_specs<Char>& s,
+  printf_arg_formatter(basic_appender<Char> iter, format_specs<Char>& s,
                        context_type& ctx)
       : base(make_arg_formatter(iter, s)), context_(ctx) {}
 
@@ -416,7 +416,7 @@ inline auto parse_printf_presentation_type(char c, type t)
 template <typename Char, typename Context>
 void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
              basic_format_args<Context> args) {
-  using iterator = buffer_appender<Char>;
+  using iterator = basic_appender<Char>;
   auto out = iterator(buf);
   auto context = basic_printf_context<Char>(out, args);
   auto parse_ctx = basic_format_parse_context<Char>(format);
