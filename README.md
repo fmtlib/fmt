@@ -20,7 +20,7 @@ that help victims of the war in Ukraine: <https://www.stopputin.net/>.
 Q&A: ask questions on [StackOverflow with the tag
 fmt](https://stackoverflow.com/questions/tagged/fmt).
 
-Try {fmt} in [Compiler Explorer](https://godbolt.org/z/Eq5763).
+Try {fmt} in [Compiler Explorer](https://godbolt.org/z/8Mx1EW73v).
 
 # Features
 
