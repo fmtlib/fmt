@@ -478,6 +478,25 @@ FMT_CONSTEXPR auto compare(const Char* s1, const Char* s2, std::size_t n)
   }
   return 0;
 }
+
+template <typename It, typename Enable = std::true_type>
+struct is_back_insert_iterator : std::false_type {};
+template <typename It>
+struct is_back_insert_iterator<
+    It,
+    bool_constant<std::is_same<
+        decltype(back_inserter(std::declval<typename It::container_type&>())),
+        It>::value>> : std::true_type {};
+
+// Extracts a reference to the container from *insert_iterator.
+template <typename OutputIt>
+inline auto get_container(OutputIt it) -> typename OutputIt::container_type& {
+  struct accessor : OutputIt {
+    accessor(OutputIt base) : OutputIt(base) {}
+    using OutputIt::container;
+  };
+  return *accessor(it).container;
+}
 }  // namespace detail
 
 template <typename Char>
@@ -1034,14 +1053,17 @@ template <typename T> class iterator_buffer<T*, T> : public buffer<T> {
 };
 
 // A buffer that writes to a container with the contiguous storage.
-template <typename Container>
-class iterator_buffer<back_insert_iterator<Container>,
-                      enable_if_t<is_contiguous<Container>::value,
-                                  typename Container::value_type>>
-    : public buffer<typename Container::value_type> {
+template <typename OutputIt>
+class iterator_buffer<
+    OutputIt,
+    enable_if_t<detail::is_back_insert_iterator<OutputIt>::value &&
+                    is_contiguous<typename OutputIt::container_type>::value,
+                typename OutputIt::container_type::value_type>>
+    : public buffer<typename OutputIt::container_type::value_type> {
  private:
-  using value_type = typename Container::value_type;
-  Container& container_;
+  using container_type = typename OutputIt::container_type;
+  using value_type = typename container_type::value_type;
+  container_type& container_;
 
   static FMT_CONSTEXPR20 void grow(buffer<value_type>& buf, size_t capacity) {
     auto& self = static_cast<iterator_buffer&>(buf);
@@ -1050,14 +1072,12 @@ class iterator_buffer<back_insert_iterator<Container>,
   }
 
  public:
-  explicit iterator_buffer(Container& c)
+  explicit iterator_buffer(container_type& c)
       : buffer<value_type>(grow, c.size()), container_(c) {}
-  explicit iterator_buffer(back_insert_iterator<Container> out, size_t = 0)
+  explicit iterator_buffer(OutputIt out, size_t = 0)
       : iterator_buffer(get_container(out)) {}
 
-  auto out() -> back_insert_iterator<Container> {
-    return back_inserter(container_);
-  }
+  auto out() -> OutputIt { return back_inserter(container_); }
 };
 
 // A buffer that counts the number of code units written discarding the output.
@@ -1556,15 +1576,6 @@ template <typename It, typename T>
 struct is_output_iterator<
     It, T, void_t<decltype(*std::declval<It&>()++ = std::declval<T>())>>
     : std::true_type {};
-
-template <typename It, typename Enable = std::true_type>
-struct is_back_insert_iterator : std::false_type {};
-template <typename It>
-struct is_back_insert_iterator<
-    It, bool_constant<std::is_same<
-                  decltype(back_inserter(
-                      std::declval<typename It::container_type&>())),
-                  It>::value>> : std::true_type {};
 
 // A type-erased reference to an std::locale to avoid a heavy <locale> include.
 class locale_ref {
