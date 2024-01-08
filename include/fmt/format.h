@@ -516,18 +516,6 @@ FMT_INLINE void assume(bool condition) {
 #endif
 }
 
-// Extracts a reference to the container from back_insert_iterator.
-template <typename Container>
-inline auto get_container(std::back_insert_iterator<Container> it)
-    -> Container& {
-  using base = std::back_insert_iterator<Container>;
-  struct accessor : base {
-    accessor(base b) : base(b) {}
-    using base::container;
-  };
-  return *accessor(it).container;
-}
-
 template <typename Char, typename InputIt, typename OutputIt>
 FMT_CONSTEXPR auto copy_str(InputIt begin, InputIt end, OutputIt out)
     -> OutputIt {
