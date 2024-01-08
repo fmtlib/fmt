@@ -1099,6 +1099,7 @@ FMT_CONSTEXPR void basic_format_parse_context<Char>::check_dynamic_spec(
 
 FMT_EXPORT template <typename Context> class basic_format_arg;
 FMT_EXPORT template <typename Context> class basic_format_args;
+FMT_EXPORT template <typename Context, typename... Args> class format_arg_store;
 FMT_EXPORT template <typename Context> class dynamic_format_arg_store;
 
 // A formatter for objects of type T.
@@ -1129,7 +1130,7 @@ template <typename T> class basic_appender {
   using difference_type = ptrdiff_t;
   FMT_UNCHECKED_ITERATOR(basic_appender);
 
-  basic_appender(detail::buffer<T>& buf) : buffer_(&buf) {}
+  FMT_CONSTEXPR basic_appender(detail::buffer<T>& buf) : buffer_(&buf) {}
 
   auto operator=(T c) -> basic_appender& {
     buffer_->push_back(c);
@@ -1733,39 +1734,158 @@ FMT_DEPRECATED FMT_CONSTEXPR FMT_INLINE auto visit_format_arg(
   return arg.visit(static_cast<Visitor&&>(vis));
 }
 
-// Formatting context.
-template <typename OutputIt, typename Char> class basic_format_context {
+/**
+  \rst
+  A view of a collection of formatting arguments. To avoid lifetime issues it
+  should only be used as a parameter type in type-erased functions such as
+  ``vformat``::
+
+    void vlog(string_view format_str, format_args args);  // OK
+    format_args args = make_format_args();  // Error: dangling reference
+  \endrst
+ */
+template <typename Context> class basic_format_args {
+ public:
+  using size_type = int;
+  using format_arg = basic_format_arg<Context>;
+
  private:
-  OutputIt out_;
-  basic_format_args<basic_format_context> args_;
+  // A descriptor that contains information about formatting arguments.
+  // If the number of arguments is less or equal to max_packed_args then
+  // argument types are passed in the descriptor. This reduces binary code size
+  // per formatting function call.
+  unsigned long long desc_;
+  union {
+    // If is_packed() returns true then argument values are stored in values_;
+    // otherwise they are stored in args_. This is done to improve cache
+    // locality and reduce compiled code size since storing larger objects
+    // may require more code (at least on x86-64) even if the same amount of
+    // data is actually copied to stack. It saves ~10% on the bloat test.
+    const detail::value<Context>* values_;
+    const format_arg* args_;
+  };
+
+  constexpr auto is_packed() const -> bool {
+    return (desc_ & detail::is_unpacked_bit) == 0;
+  }
+  constexpr auto has_named_args() const -> bool {
+    return (desc_ & detail::has_named_args_bit) != 0;
+  }
+
+  FMT_CONSTEXPR auto type(int index) const -> detail::type {
+    int shift = index * detail::packed_arg_bits;
+    unsigned int mask = (1 << detail::packed_arg_bits) - 1;
+    return static_cast<detail::type>((desc_ >> shift) & mask);
+  }
+
+  constexpr FMT_INLINE basic_format_args(unsigned long long desc,
+                                         const detail::value<Context>* values)
+      : desc_(desc), values_(values) {}
+  constexpr basic_format_args(unsigned long long desc, const format_arg* args)
+      : desc_(desc), args_(args) {}
+
+ public:
+  constexpr basic_format_args() : desc_(0), args_(nullptr) {}
+
+  /**
+   \rst
+   Constructs a `basic_format_args` object from `~fmt::format_arg_store`.
+   \endrst
+   */
+  template <typename... Args>
+  constexpr FMT_INLINE basic_format_args(
+      const format_arg_store<Context, Args...>& store)
+      : basic_format_args(format_arg_store<Context, Args...>::desc,
+                          store.data_.args()) {}
+
+  /**
+   \rst
+   Constructs a `basic_format_args` object from
+   `~fmt::dynamic_format_arg_store`.
+   \endrst
+   */
+  constexpr FMT_INLINE basic_format_args(
+      const dynamic_format_arg_store<Context>& store)
+      : basic_format_args(store.get_types(), store.data()) {}
+
+  /**
+   \rst
+   Constructs a `basic_format_args` object from a dynamic set of arguments.
+   \endrst
+   */
+  constexpr basic_format_args(const format_arg* args, int count)
+      : basic_format_args(detail::is_unpacked_bit | detail::to_unsigned(count),
+                          args) {}
+
+  /** Returns the argument with the specified id. */
+  FMT_CONSTEXPR auto get(int id) const -> format_arg {
+    format_arg arg;
+    if (!is_packed()) {
+      if (id < max_size()) arg = args_[id];
+      return arg;
+    }
+    if (id >= detail::max_packed_args) return arg;
+    arg.type_ = type(id);
+    if (arg.type_ == detail::type::none_type) return arg;
+    arg.value_ = values_[id];
+    return arg;
+  }
+
+  template <typename Char>
+  auto get(basic_string_view<Char> name) const -> format_arg {
+    int id = get_id(name);
+    return id >= 0 ? get(id) : format_arg();
+  }
+
+  template <typename Char>
+  FMT_CONSTEXPR auto get_id(basic_string_view<Char> name) const -> int {
+    if (!has_named_args()) return -1;
+    const auto& named_args =
+        (is_packed() ? values_[-1] : args_[-1].value_).named_args;
+    for (size_t i = 0; i < named_args.size; ++i) {
+      if (named_args.data[i].name == name) return named_args.data[i].id;
+    }
+    return -1;
+  }
+
+  auto max_size() const -> int {
+    unsigned long long max_packed = detail::max_packed_args;
+    return static_cast<int>(is_packed() ? max_packed
+                                        : desc_ & ~detail::is_unpacked_bit);
+  }
+};
+
+// A formatting context.
+class context {
+ private:
+  appender out_;
+  basic_format_args<context> args_;
   detail::locale_ref loc_;
 
  public:
-  using iterator = OutputIt;
-  using format_arg = basic_format_arg<basic_format_context>;
-  using format_args = basic_format_args<basic_format_context>;
-  using parse_context_type = basic_format_parse_context<Char>;
-  template <typename T> using formatter_type = formatter<T, Char>;
-
   /** The character type for the output. */
-  using char_type = Char;
+  using char_type = char;
 
-  basic_format_context(basic_format_context&&) = default;
-  basic_format_context(const basic_format_context&) = delete;
-  void operator=(const basic_format_context&) = delete;
+  using iterator = appender;
+  using format_arg = basic_format_arg<context>;
+  using format_args = basic_format_args<context>;
+  using parse_context_type = basic_format_parse_context<char>;
+  template <typename T> using formatter_type = formatter<T, char>;
+
   /**
     Constructs a ``basic_format_context`` object. References to the arguments
     are stored in the object so make sure they have appropriate lifetimes.
    */
-  constexpr basic_format_context(OutputIt out, format_args ctx_args,
-                                 detail::locale_ref loc = {})
+  FMT_CONSTEXPR context(iterator out, format_args ctx_args,
+                        detail::locale_ref loc = {})
       : out_(out), args_(ctx_args), loc_(loc) {}
+  context(context&&) = default;
+  context(const context&) = delete;
+  void operator=(const context&) = delete;
 
-  constexpr auto arg(int id) const -> format_arg { return args_.get(id); }
-  FMT_CONSTEXPR auto arg(basic_string_view<Char> name) -> format_arg {
-    return args_.get(name);
-  }
-  FMT_CONSTEXPR auto arg_id(basic_string_view<Char> name) -> int {
+  FMT_CONSTEXPR auto arg(int id) const -> format_arg { return args_.get(id); }
+  auto arg(string_view name) -> format_arg { return args_.get(name); }
+  FMT_CONSTEXPR auto arg_id(string_view name) -> int {
     return args_.get_id(name);
   }
   auto args() const -> const format_args& { return args_; }
@@ -1777,16 +1897,22 @@ template <typename OutputIt, typename Char> class basic_format_context {
   FMT_CONSTEXPR auto out() -> iterator { return out_; }
 
   // Advances the begin iterator to ``it``.
-  void advance_to(iterator it) {
-    if (!detail::is_back_insert_iterator<iterator>()) out_ = it;
-  }
+  void advance_to(iterator) {}
 
   FMT_CONSTEXPR auto locale() -> detail::locale_ref { return loc_; }
 };
 
+template <typename OutputIt, typename Char> class generic_context;
+
+// Longer aliases for C++20 compatibility.
+template <typename OutputIt, typename Char>
+using basic_format_context =
+    conditional_t<std::is_same<OutputIt, appender>::value, context,
+                  generic_context<OutputIt, Char>>;
+using format_context = context;
+
 template <typename Char>
 using buffer_context = basic_format_context<basic_appender<Char>, Char>;
-using format_context = basic_format_context<appender, char>;
 
 template <typename T, typename Char = char>
 using is_formattable = bool_constant<!std::is_base_of<
@@ -1873,127 +1999,6 @@ inline auto arg(const Char* name, const T& arg) -> detail::named_arg<Char, T> {
   return {name, arg};
 }
 FMT_END_EXPORT
-
-/**
-  \rst
-  A view of a collection of formatting arguments. To avoid lifetime issues it
-  should only be used as a parameter type in type-erased functions such as
-  ``vformat``::
-
-    void vlog(string_view format_str, format_args args);  // OK
-    format_args args = make_format_args();  // Error: dangling reference
-  \endrst
- */
-template <typename Context> class basic_format_args {
- public:
-  using size_type = int;
-  using format_arg = basic_format_arg<Context>;
-
- private:
-  // A descriptor that contains information about formatting arguments.
-  // If the number of arguments is less or equal to max_packed_args then
-  // argument types are passed in the descriptor. This reduces binary code size
-  // per formatting function call.
-  unsigned long long desc_;
-  union {
-    // If is_packed() returns true then argument values are stored in values_;
-    // otherwise they are stored in args_. This is done to improve cache
-    // locality and reduce compiled code size since storing larger objects
-    // may require more code (at least on x86-64) even if the same amount of
-    // data is actually copied to stack. It saves ~10% on the bloat test.
-    const detail::value<Context>* values_;
-    const format_arg* args_;
-  };
-
-  constexpr auto is_packed() const -> bool {
-    return (desc_ & detail::is_unpacked_bit) == 0;
-  }
-  auto has_named_args() const -> bool {
-    return (desc_ & detail::has_named_args_bit) != 0;
-  }
-
-  FMT_CONSTEXPR auto type(int index) const -> detail::type {
-    int shift = index * detail::packed_arg_bits;
-    unsigned int mask = (1 << detail::packed_arg_bits) - 1;
-    return static_cast<detail::type>((desc_ >> shift) & mask);
-  }
-
-  constexpr FMT_INLINE basic_format_args(unsigned long long desc,
-                                         const detail::value<Context>* values)
-      : desc_(desc), values_(values) {}
-  constexpr basic_format_args(unsigned long long desc, const format_arg* args)
-      : desc_(desc), args_(args) {}
-
- public:
-  constexpr basic_format_args() : desc_(0), args_(nullptr) {}
-
-  /**
-   \rst
-   Constructs a `basic_format_args` object from `~fmt::format_arg_store`.
-   \endrst
-   */
-  template <typename... Args>
-  constexpr FMT_INLINE basic_format_args(
-      const format_arg_store<Context, Args...>& store)
-      : basic_format_args(format_arg_store<Context, Args...>::desc,
-                          store.data_.args()) {}
-
-  /**
-   \rst
-   Constructs a `basic_format_args` object from
-   `~fmt::dynamic_format_arg_store`.
-   \endrst
-   */
-  constexpr FMT_INLINE basic_format_args(
-      const dynamic_format_arg_store<Context>& store)
-      : basic_format_args(store.get_types(), store.data()) {}
-
-  /**
-   \rst
-   Constructs a `basic_format_args` object from a dynamic set of arguments.
-   \endrst
-   */
-  constexpr basic_format_args(const format_arg* args, int count)
-      : basic_format_args(detail::is_unpacked_bit | detail::to_unsigned(count),
-                          args) {}
-
-  /** Returns the argument with the specified id. */
-  FMT_CONSTEXPR auto get(int id) const -> format_arg {
-    format_arg arg;
-    if (!is_packed()) {
-      if (id < max_size()) arg = args_[id];
-      return arg;
-    }
-    if (id >= detail::max_packed_args) return arg;
-    arg.type_ = type(id);
-    if (arg.type_ == detail::type::none_type) return arg;
-    arg.value_ = values_[id];
-    return arg;
-  }
-
-  template <typename Char>
-  auto get(basic_string_view<Char> name) const -> format_arg {
-    int id = get_id(name);
-    return id >= 0 ? get(id) : format_arg();
-  }
-
-  template <typename Char>
-  auto get_id(basic_string_view<Char> name) const -> int {
-    if (!has_named_args()) return -1;
-    const auto& named_args =
-        (is_packed() ? values_[-1] : args_[-1].value_).named_args;
-    for (size_t i = 0; i < named_args.size; ++i) {
-      if (named_args.data[i].name == name) return named_args.data[i].id;
-    }
-    return -1;
-  }
-
-  auto max_size() const -> int {
-    unsigned long long max_packed = detail::max_packed_args;
-    return static_cast<int>(is_packed() ? max_packed
-                                        : desc_ & ~detail::is_unpacked_bit);
-  }
-};
 
 /** An alias to ``basic_format_args<format_context>``. */
 // A separate type would result in shorter symbols but break ABI compatibility

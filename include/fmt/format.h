@@ -1071,6 +1071,50 @@ constexpr auto compile_string_to_view(detail::std_string_view<Char> s)
 }
 }  // namespace detail_exported
 
+// A generic formatting context with custom output iterator and character
+// (code unit) support.
+template <typename OutputIt, typename Char> class generic_context {
+ private:
+  OutputIt out_;
+  basic_format_args<generic_context> args_;
+  detail::locale_ref loc_;
+
+ public:
+  using char_type = Char;
+  using iterator = OutputIt;
+  using format_args = basic_format_args<generic_context>;
+  using parse_context_type = basic_format_parse_context<Char>;
+  template <typename T> using formatter_type = formatter<T, Char>;
+
+  constexpr generic_context(OutputIt out, format_args ctx_args,
+                            detail::locale_ref loc = {})
+      : out_(out), args_(ctx_args), loc_(loc) {}
+  generic_context(generic_context&&) = default;
+  generic_context(const generic_context&) = delete;
+  void operator=(const generic_context&) = delete;
+
+  constexpr auto arg(int id) const -> basic_format_arg<generic_context> {
+    return args_.get(id);
+  }
+  auto arg(basic_string_view<Char> name) -> basic_format_arg<generic_context> {
+    return args_.get(name);
+  }
+  FMT_CONSTEXPR auto arg_id(basic_string_view<Char> name) -> int {
+    return args_.get_id(name);
+  }
+  auto args() const -> const format_args& { return args_; }
+
+  void on_error(const char* message) { throw_format_error(message); }
+
+  FMT_CONSTEXPR auto out() -> iterator { return out_; }
+
+  void advance_to(iterator it) {
+    if (!detail::is_back_insert_iterator<iterator>()) out_ = it;
+  }
+
+  FMT_CONSTEXPR auto locale() -> detail::locale_ref { return loc_; }
+};
+
 class loc_value {
  private:
   basic_format_arg<format_context> value_;

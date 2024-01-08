@@ -400,9 +400,9 @@ struct formatter<
     return it;
   }
 
-  template <typename OutputIt>
-  auto format(const std::exception& ex,
-              basic_format_context<OutputIt, Char>& ctx) const -> OutputIt {
+  template <typename Context>
+  auto format(const std::exception& ex, Context& ctx) const
+      -> decltype(ctx.out()) {
     format_specs<Char> spec;
     auto out = ctx.out();
     if (!with_typename_)

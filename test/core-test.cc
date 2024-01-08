@@ -368,7 +368,7 @@ VISIT_TYPE(unsigned long, unsigned long long);
   {                                                                       \
     testing::StrictMock<mock_visitor<decltype(expected)>> visitor;        \
     EXPECT_CALL(visitor, visit(expected));                                \
-    using iterator = std::back_insert_iterator<buffer<Char>>;             \
+    using iterator = fmt::basic_appender<Char>;                           \
     auto var = value;                                                     \
     fmt::detail::make_arg<fmt::basic_format_context<iterator, Char>>(var) \
         .visit(visitor);                                                  \
@@ -379,7 +379,6 @@ VISIT_TYPE(unsigned long, unsigned long long);
     using value_type = decltype(value);                     \
     typename visit_type<value_type>::type expected = value; \
     CHECK_ARG(char, expected, value)                        \
-    CHECK_ARG(wchar_t, expected, value)                     \
   }
 
 template <typename T> class numeric_arg_test : public testing::Test {};
@@ -419,23 +418,10 @@ TEST(arg_test, string_arg) {
   CHECK_ARG(char, sv, std::string(str));
 }
 
-TEST(arg_test, wstring_arg) {
-  wchar_t str_data[] = L"test";
-  wchar_t* str = str_data;
-  const wchar_t* cstr = str;
-
-  auto sv = fmt::basic_string_view<wchar_t>(str);
-  CHECK_ARG(wchar_t, cstr, str);
-  CHECK_ARG(wchar_t, cstr, cstr);
-  CHECK_ARG(wchar_t, sv, std::wstring(str));
-  CHECK_ARG(wchar_t, sv, fmt::basic_string_view<wchar_t>(str));
-}
-
 TEST(arg_test, pointer_arg) {
   void* p = nullptr;
   const void* cp = nullptr;
   CHECK_ARG(char, cp, p);
-  CHECK_ARG(wchar_t, cp, p);
   CHECK_ARG_SIMPLE(cp);
 }
 

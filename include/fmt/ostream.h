@@ -143,9 +143,8 @@ template <typename Char>
 struct basic_ostream_formatter : formatter<basic_string_view<Char>, Char> {
   void set_debug_format() = delete;
 
-  template <typename T, typename OutputIt>
-  auto format(const T& value, basic_format_context<OutputIt, Char>& ctx) const
-      -> OutputIt {
+  template <typename T, typename Context>
+  auto format(const T& value, Context& ctx) const -> decltype(ctx.out()) {
     auto buffer = basic_memory_buffer<Char>();
     detail::format_value(buffer, value);
     return formatter<basic_string_view<Char>, Char>::format(
@@ -158,9 +157,9 @@ using ostream_formatter = basic_ostream_formatter<char>;
 template <typename T, typename Char>
 struct formatter<detail::streamed_view<T>, Char>
     : basic_ostream_formatter<Char> {
-  template <typename OutputIt>
-  auto format(detail::streamed_view<T> view,
-              basic_format_context<OutputIt, Char>& ctx) const -> OutputIt {
+  template <typename Context>
+  auto format(detail::streamed_view<T> view, Context& ctx) const
+      -> decltype(ctx.out()) {
     return basic_ostream_formatter<Char>::format(view.value, ctx);
   }
 };
