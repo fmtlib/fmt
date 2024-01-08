@@ -356,11 +356,6 @@ template <typename Container> class back_insert_iterator {
   auto operator++(int) -> back_insert_iterator { return *this; }
 };
 
-template <typename Container>
-auto back_inserter(Container& c) -> back_insert_iterator<Container> {
-  return {c};
-}
-
 // An enable_if helper to be used in template parameters which results in much
 // shorter symbols: https://godbolt.org/z/sWw4vP. Extra parentheses are needed
 // to workaround a bug in MSVC 2019 (see #1140 and #1186).
@@ -1061,7 +1056,7 @@ class iterator_buffer<back_insert_iterator<Container>,
       : iterator_buffer(get_container(out)) {}
 
   auto out() -> back_insert_iterator<Container> {
-    return fmt::back_inserter(container_);
+    return back_inserter(container_);
   }
 };
 
@@ -1562,10 +1557,14 @@ struct is_output_iterator<
     It, T, void_t<decltype(*std::declval<It&>()++ = std::declval<T>())>>
     : std::true_type {};
 
-template <typename It> struct is_back_insert_iterator : std::false_type {};
-template <typename Container>
-struct is_back_insert_iterator<back_insert_iterator<Container>>
-    : std::true_type {};
+template <typename It, typename Enable = std::true_type>
+struct is_back_insert_iterator : std::false_type {};
+template <typename It>
+struct is_back_insert_iterator<
+    It, bool_constant<std::is_same<
+                  decltype(back_inserter(
+                      std::declval<typename It::container_type&>())),
+                  It>::value>> : std::true_type {};
 
 // A type-erased reference to an std::locale to avoid a heavy <locale> include.
 class locale_ref {
@@ -2873,7 +2872,7 @@ auto vformat_to(OutputIt out, string_view fmt, format_args args) -> OutputIt {
  **Example**::
 
    auto out = std::vector<char>();
-   fmt::format_to(fmt::back_inserter(out), "{}", 42);
+   fmt::format_to(std::back_inserter(out), "{}", 42);
  \endrst
  */
 template <typename OutputIt, typename... T,

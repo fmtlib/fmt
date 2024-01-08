@@ -105,6 +105,13 @@ TEST(core_test, is_output_iterator) {
                                                 char>::value));
 }
 
+TEST(core_test, is_back_insert_iterator) {
+  EXPECT_TRUE(fmt::detail::is_back_insert_iterator<
+              std::back_insert_iterator<std::string>>::value);
+  EXPECT_FALSE(fmt::detail::is_back_insert_iterator<
+               std::front_insert_iterator<std::string>>::value);
+}
+
 TEST(core_test, buffer_appender) {
 #ifdef __cpp_lib_ranges
   static_assert(std::output_iterator<fmt::detail::buffer_appender<char>, char>);
