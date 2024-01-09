@@ -1901,12 +1901,7 @@ using is_formattable = bool_constant<!std::is_base_of<
   \endrst
  */
 template <typename Context, size_t NUM_NAMED_ARGS, typename... Args>
-class format_arg_store_impl
-#if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
-    // Workaround a GCC template argument substitution bug.
-    : public basic_format_args<Context>
-#endif
-{
+class format_arg_store_impl {
  private:
   static const size_t num_args = sizeof...(Args);
   static const bool is_packed = num_args <= detail::max_packed_args;
@@ -1923,11 +1918,7 @@ class format_arg_store_impl
  public:
   template <typename... T>
   FMT_CONSTEXPR FMT_INLINE format_arg_store_impl(T&... args)
-      :
-#if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
-        basic_format_args<Context>(*this),
-#endif
-        args_{value_type(named_args_, NUM_NAMED_ARGS),
+      : args_{value_type(named_args_, NUM_NAMED_ARGS),
               detail::make_arg<is_packed, Context>(args)...} {
     detail::init_named_args(named_args_, 0, 0, args...);
   }
@@ -1944,13 +1935,9 @@ class format_arg_store_impl
   }
 };
 
+// A specialization of format_arg_store_impl without named arguments.
 template <typename Context, typename... Args>
-class format_arg_store_impl<Context, 0, Args...>
-#if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
-    // Workaround a GCC template argument substitution bug.
-    : public basic_format_args<Context>
-#endif
-{
+class format_arg_store_impl<Context, 0, Args...> {
  private:
   static const size_t num_args = sizeof...(Args);
   static const bool is_packed = num_args <= detail::max_packed_args;
@@ -1964,12 +1951,7 @@ class format_arg_store_impl<Context, 0, Args...>
  public:
   template <typename... T>
   FMT_CONSTEXPR FMT_INLINE format_arg_store_impl(T&... args)
-      :
-#if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
-        basic_format_args<Context>(*this),
-#endif
-        args_{detail::make_arg<is_packed, Context>(args)...} {
-  }
+      : args_{detail::make_arg<is_packed, Context>(args)...} {}
 
   static constexpr unsigned long long desc =
       (is_packed ? detail::encode_types<Context, Args...>()
@@ -1986,10 +1968,10 @@ using format_arg_store =
 
 /**
   \rst
-  Constructs a `~fmt::format_arg_store` object that contains references to
-  arguments and can be implicitly converted to `~fmt::format_args`. `Context`
-  can be omitted in which case it defaults to `~fmt::format_context`.
-  See `~fmt::arg` for lifetime considerations.
+  Constructs an object that stores references to arguments and can be implicitly
+  converted to `~fmt::format_args`. `Context` can be omitted in which case it
+  defaults to `~fmt::format_context`. See `~fmt::arg` for lifetime
+  considerations.
   \endrst
  */
 // Take arguments by lvalue references to avoid some lifetime issues, e.g.
@@ -2739,7 +2721,8 @@ template <> struct vformat_args<char> {
   using type = format_args;
 };
 
-// Use vformat_args and avoid type_identity to keep symbols short.
+// Use vformat_args and avoid type_identity, keep symbols short and workaround
+// a GCC <= 4.8 bug.
 template <typename Char>
 void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
                 typename vformat_args<Char>::type args, locale_ref loc = {});

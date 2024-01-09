@@ -193,7 +193,7 @@ inline void vprint_directly(std::ostream& os, string_view format_str,
 FMT_EXPORT template <typename Char>
 void vprint(std::basic_ostream<Char>& os,
             basic_string_view<type_identity_t<Char>> format_str,
-            basic_format_args<buffer_context<type_identity_t<Char>>> args) {
+            typename detail::vformat_args<Char>::type args) {
   auto buffer = basic_memory_buffer<Char>();
   detail::vformat_to(buffer, format_str, args);
   if (detail::write_ostream_unicode(os, {buffer.data(), buffer.size()})) return;

@@ -3969,7 +3969,7 @@ template <typename Char> struct udl_arg {
 
 template <typename Locale, typename Char>
 auto vformat(const Locale& loc, basic_string_view<Char> fmt,
-             basic_format_args<buffer_context<type_identity_t<Char>>> args)
+             typename detail::vformat_args<Char>::type args)
     -> std::basic_string<Char> {
   auto buf = basic_memory_buffer<Char>();
   detail::vformat_to(buf, fmt, args, detail::locale_ref(loc));
