@@ -16,7 +16,7 @@ namespace detail {
 
 inline auto is_whitespace(char c) -> bool { return c == ' ' || c == '\n'; }
 
-// If c is a hex digit returns its numeric value, othewise -1.
+// If c is a hex digit returns its numeric value, otherwise -1.
 inline auto to_hex_digit(char c) -> int {
   if (c >= '0' && c <= '9') return c - '0';
   if (c >= 'a' && c <= 'f') return c - 'a' + 10;
