@@ -525,6 +525,11 @@ Standard Library Types Formatting
 * `std::monostate <https://en.cppreference.com/w/cpp/utility/variant/monostate>`_
 * `std::variant <https://en.cppreference.com/w/cpp/utility/variant/variant>`_
 * `std::optional <https://en.cppreference.com/w/cpp/utility/optional>`_
+* `std::source_location <https://en.cppreference.com/w/cpp/utility/source_location>`_
+* `std::bitset <https://en.cppreference.com/w/cpp/utility/bitset>`_
+* `std::error_code <https://en.cppreference.com/w/cpp/error/error_code>`_
+* `std::atomic <https://en.cppreference.com/w/cpp/atomic/atomic>`_
+* `std::atomic_flag <https://en.cppreference.com/w/cpp/atomic/atomic_flag>`_
 
 Formatting Variants
 -------------------
