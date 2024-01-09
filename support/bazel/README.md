@@ -1,10 +1,35 @@
 # Bazel support
 
-To get [Bazel](https://bazel.build/) working with {fmt} you can copy the files `BUILD.bazel`, `WORKSPACE.bazel`, and `.bazelversion` from this folder (`support/bazel`) to the root folder of this project. This way {fmt} gets bazelized and can be used with Bazel (e.g. doing a `bazel build //...` on {fmt}). 
+To get [Bazel](https://bazel.build/) working with {fmt} you can copy the files `BUILD.bazel`, 
+`MODULE.bazel`, `WORKSPACE.bazel`, and `.bazelversion` from this folder (`support/bazel`) to the root folder of this project. 
+This way {fmt} gets bazelized and can be used with Bazel (e.g. doing a `bazel build //...` on {fmt}). 
 
 ## Using {fmt} as a dependency
 
-The following minimal example shows how to use {fmt} as a dependency within a Bazel project.
+### Using Bzlmod
+
+The [Bazel Central Registry](https://github.com/bazelbuild/bazel-central-registry/tree/main/modules/fmt) provides support for {fmt}.
+
+For instance, to use {fmt} add to your `MODULE.bazel` file:
+
+```
+bazel_dep(name = "fmt", version = "10.2.1")
+```
+
+For a live-at-head approach, you can copy the contents of this repository and move the Bazel-related build files to the root folder of this project as described above and make use of `local_path_override`, e.g.:
+
+```
+local_path_override(
+    module_name = "fmt",
+    path = "../third_party/fmt",
+)
+```
+
+### WORKSPACE system
+
+The following minimal example shows how to use {fmt} as a dependency within a Bazel project,
+that uses the traditional, repository-focused WORKSPACE system.
+Note that in the long term Bazel will only support Bzlmod.
 
 The following file structure is assumed:
 
@@ -68,7 +93,3 @@ cc_binary(
 The *BUILD* file defines a binary named `Demo` that has a dependency to {fmt}.
 
 To execute the binary you can run `bazel run //:Demo`.
-
-# Using Bzlmod
-
-The [Bazel Central Registry](https://github.com/bazelbuild/bazel-central-registry/tree/main/modules/fmt) also provides support for {fmt}.
