@@ -1701,7 +1701,7 @@ template <typename Context> class basic_format_arg {
 };
 
 template <typename Visitor, typename Context>
-FMT_DEPRECATED FMT_CONSTEXPR FMT_INLINE auto visit_format_arg(
+FMT_DEPRECATED FMT_CONSTEXPR auto visit_format_arg(
     Visitor&& vis, const basic_format_arg<Context>& arg) -> decltype(vis(0)) {
   return arg.visit(static_cast<Visitor&&>(vis));
 }
@@ -1750,12 +1750,6 @@ template <typename Context> class basic_format_args {
     return static_cast<detail::type>((desc_ >> shift) & mask);
   }
 
-  constexpr FMT_INLINE basic_format_args(unsigned long long desc,
-                                         const detail::value<Context>* values)
-      : desc_(desc), values_(values) {}
-  constexpr basic_format_args(unsigned long long desc, const format_arg* args)
-      : desc_(desc), args_(args) {}
-
  public:
   constexpr basic_format_args() : desc_(0), args_(nullptr) {}
 
@@ -1764,11 +1758,19 @@ template <typename Context> class basic_format_args {
    Constructs a `basic_format_args` object from `~fmt::format_arg_store`.
    \endrst
    */
-  template <size_t N, typename... Args>
-  constexpr FMT_INLINE basic_format_args(
-      const format_arg_store_impl<Context, N, Args...>& store)
-      : basic_format_args(format_arg_store_impl<Context, N, Args...>::desc,
-                          store.args()) {}
+  template <size_t N, typename... T,
+            FMT_ENABLE_IF(sizeof...(T) <= detail::max_packed_args)>
+  constexpr basic_format_args(
+      const format_arg_store_impl<Context, N, T...>& store)
+      : desc_(format_arg_store_impl<Context, N, T...>::desc),
+        values_(store.args()) {}
+
+  template <size_t N, typename... T,
+            FMT_ENABLE_IF(sizeof...(T) > detail::max_packed_args)>
+  constexpr basic_format_args(
+      const format_arg_store_impl<Context, N, T...>& store)
+      : desc_(format_arg_store_impl<Context, N, T...>::desc),
+        args_(store.args()) {}
 
   /**
    \rst
@@ -1778,16 +1780,16 @@ template <typename Context> class basic_format_args {
    */
   constexpr FMT_INLINE basic_format_args(
       const dynamic_format_arg_store<Context>& store)
-      : basic_format_args(store.get_types(), store.data()) {}
+      : desc_(store.get_types()), args_(store.data()) {}
 
   /**
    \rst
-   Constructs a `basic_format_args` object from a dynamic set of arguments.
+   Constructs a `basic_format_args` object from a dynamic list of arguments.
    \endrst
    */
   constexpr basic_format_args(const format_arg* args, int count)
-      : basic_format_args(detail::is_unpacked_bit | detail::to_unsigned(count),
-                          args) {}
+      : desc_(detail::is_unpacked_bit | detail::to_unsigned(count)),
+        args_(args) {}
 
   /** Returns the argument with the specified id. */
   FMT_CONSTEXPR auto get(int id) const -> format_arg {
@@ -1990,7 +1992,9 @@ using format_arg_store =
   See `~fmt::arg` for lifetime considerations.
   \endrst
  */
-// Arguments are taken by lvalue references to avoid some lifetime issues.
+// Take arguments by lvalue references to avoid some lifetime issues, e.g.
+//   auto args = make_format_args(std::string());
+// Use format_arg_store_impl instead of format_arg_store for shorter symbols.
 template <typename Context = format_context, typename... T,
           size_t N = detail::count_named_args<T...>()>
 constexpr auto make_format_args(T&... args)
