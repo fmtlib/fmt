@@ -1529,26 +1529,28 @@ template <typename T, typename Char> struct type_is_unformattable_for;
 #endif
 
 template <bool PACKED, typename Context, typename T, FMT_ENABLE_IF(PACKED)>
-FMT_CONSTEXPR FMT_INLINE auto make_arg(T& val) -> value<Context> {
+FMT_CONSTEXPR auto make_arg(T& val) -> value<Context> {
   using arg_type = remove_cvref_t<decltype(arg_mapper<Context>().map(val))>;
 
-  constexpr bool formattable_char =
-      !std::is_same<arg_type, unformattable_char>::value;
+  // Use enum instead of constexpr because the latter may generate code.
+  enum {
+    formattable_char = !std::is_same<arg_type, unformattable_char>::value
+  };
   static_assert(formattable_char, "Mixing character types is disallowed.");
 
   // Formatting of arbitrary pointers is disallowed. If you want to format a
   // pointer cast it to `void*` or `const void*`. In particular, this forbids
   // formatting of `[const] volatile char*` printed as bool by iostreams.
-  constexpr bool formattable_pointer =
-      !std::is_same<arg_type, unformattable_pointer>::value;
+  enum {
+    formattable_pointer = !std::is_same<arg_type, unformattable_pointer>::value
+  };
   static_assert(formattable_pointer,
                 "Formatting of non-void pointers is disallowed.");
 
-  constexpr bool formattable = !std::is_same<arg_type, unformattable>::value;
+  enum { formattable = !std::is_same<arg_type, unformattable>::value };
 #if defined(__cpp_if_constexpr)
-  if constexpr (!formattable) {
+  if constexpr (!formattable)
     type_is_unformattable_for<T, typename Context::char_type> _;
-  }
 #endif
   static_assert(
       formattable,
