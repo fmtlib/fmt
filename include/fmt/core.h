@@ -1099,7 +1099,8 @@ FMT_CONSTEXPR void basic_format_parse_context<Char>::check_dynamic_spec(
 
 FMT_EXPORT template <typename Context> class basic_format_arg;
 FMT_EXPORT template <typename Context> class basic_format_args;
-FMT_EXPORT template <typename, size_t, typename...> class format_arg_store_impl;
+FMT_EXPORT template <typename, size_t, size_t, unsigned long long>
+struct format_arg_store_impl;
 FMT_EXPORT template <typename Context> class dynamic_format_arg_store;
 
 // A formatter for objects of type T.
@@ -1611,7 +1612,8 @@ template <typename Context> class basic_format_arg {
 
   using char_type = typename Context::char_type;
 
-  template <typename, size_t, typename...> friend class format_arg_store_impl;
+  template <typename, size_t, size_t, unsigned long long>
+  friend struct format_arg_store_impl;
 
   basic_format_arg(const detail::named_arg_info<char_type>* args, size_t size)
       : value_(args, size) {}
@@ -1758,19 +1760,19 @@ template <typename Context> class basic_format_args {
    Constructs a `basic_format_args` object from `~fmt::format_arg_store`.
    \endrst
    */
-  template <size_t N, typename... T,
-            FMT_ENABLE_IF(sizeof...(T) <= detail::max_packed_args)>
+  template <size_t NUM_ARGS, size_t NUM_NAMED_ARGS, unsigned long long DESC,
+            FMT_ENABLE_IF(NUM_ARGS <= detail::max_packed_args)>
   constexpr basic_format_args(
-      const format_arg_store_impl<Context, N, T...>& store)
-      : desc_(format_arg_store_impl<Context, N, T...>::desc),
-        values_(store.args()) {}
+      const format_arg_store_impl<Context, NUM_ARGS, NUM_NAMED_ARGS, DESC>&
+          store)
+      : desc_(DESC), values_(store.args()) {}
 
-  template <size_t N, typename... T,
-            FMT_ENABLE_IF(sizeof...(T) > detail::max_packed_args)>
+  template <size_t NUM_ARGS, size_t NUM_NAMED_ARGS, unsigned long long DESC,
+            FMT_ENABLE_IF(NUM_ARGS > detail::max_packed_args)>
   constexpr basic_format_args(
-      const format_arg_store_impl<Context, N, T...>& store)
-      : desc_(format_arg_store_impl<Context, N, T...>::desc),
-        args_(store.args()) {}
+      const format_arg_store_impl<Context, NUM_ARGS, NUM_NAMED_ARGS, DESC>&
+          store)
+      : desc_(DESC), args_(store.args()) {}
 
   /**
    \rst
@@ -1900,35 +1902,26 @@ using is_formattable = bool_constant<!std::is_base_of<
   such as `~fmt::vformat`.
   \endrst
  */
-template <typename Context, size_t NUM_NAMED_ARGS, typename... Args>
-class format_arg_store_impl {
- private:
-  static const size_t num_args = sizeof...(Args);
-  static const bool is_packed = num_args <= detail::max_packed_args;
+template <typename Context, size_t NUM_ARGS, size_t NUM_NAMED_ARGS,
+          unsigned long long DESC>
+struct format_arg_store_impl {
+  static const bool is_packed = NUM_ARGS <= detail::max_packed_args;
 
   using char_type = typename Context::char_type;
   using value_type = conditional_t<is_packed, detail::value<Context>,
                                    basic_format_arg<Context>>;
 
-  // args_[0].named_args points to named_args_ to avoid bloating format_args.
+  // args_[0].named_args points to named_args to avoid bloating format_args.
   // +1 to workaround a bug in gcc 7.5 that causes duplicated-branches warning.
-  value_type args_[1 + (num_args != 0 ? num_args : +1)];
-  detail::named_arg_info<char_type> named_args_[NUM_NAMED_ARGS];
+  value_type args_[1 + (NUM_ARGS != 0 ? NUM_ARGS : +1)];
+  detail::named_arg_info<char_type> named_args[NUM_NAMED_ARGS];
 
- public:
   template <typename... T>
   FMT_CONSTEXPR FMT_INLINE format_arg_store_impl(T&... args)
-      : args_{value_type(named_args_, NUM_NAMED_ARGS),
+      : args_{value_type(named_args, NUM_NAMED_ARGS),
               detail::make_arg<is_packed, Context>(args)...} {
-    detail::init_named_args(named_args_, 0, 0, args...);
+    detail::init_named_args(named_args, 0, 0, args...);
   }
-
-  static constexpr unsigned long long desc =
-      (is_packed ? detail::encode_types<Context, Args...>()
-                 : detail::is_unpacked_bit | num_args) |
-      (NUM_NAMED_ARGS != 0
-           ? static_cast<unsigned long long>(detail::has_named_args_bit)
-           : 0);
 
   FMT_CONSTEXPR FMT_INLINE auto args() const -> const value_type* {
     return args_ + 1;
@@ -1936,35 +1929,20 @@ class format_arg_store_impl {
 };
 
 // A specialization of format_arg_store_impl without named arguments.
-template <typename Context, typename... Args>
-class format_arg_store_impl<Context, 0, Args...> {
- private:
-  static const size_t num_args = sizeof...(Args);
-  static const bool is_packed = num_args <= detail::max_packed_args;
+template <typename Context, size_t NUM_ARGS, unsigned long long DESC>
+struct format_arg_store_impl<Context, NUM_ARGS, 0, DESC> {
+  static const bool is_packed = NUM_ARGS <= detail::max_packed_args;
 
   using value_type = conditional_t<is_packed, detail::value<Context>,
                                    basic_format_arg<Context>>;
 
   // +1 to workaround a bug in gcc 7.5 that causes duplicated-branches warning.
-  value_type args_[num_args != 0 ? num_args : +1];
-
- public:
-  template <typename... T>
-  FMT_CONSTEXPR FMT_INLINE format_arg_store_impl(T&... args)
-      : args_{detail::make_arg<is_packed, Context>(args)...} {}
-
-  static constexpr unsigned long long desc =
-      (is_packed ? detail::encode_types<Context, Args...>()
-                 : detail::is_unpacked_bit | num_args);
+  value_type args_[NUM_ARGS != 0 ? NUM_ARGS : +1];
 
   FMT_CONSTEXPR FMT_INLINE auto args() const -> const value_type* {
     return args_;
   }
 };
-
-template <typename Context, typename... T>
-using format_arg_store =
-    format_arg_store_impl<Context, detail::count_named_args<T...>(), T...>;
 
 /**
   \rst
@@ -1978,11 +1956,37 @@ using format_arg_store =
 //   auto args = make_format_args(std::string());
 // Use format_arg_store_impl instead of format_arg_store for shorter symbols.
 template <typename Context = format_context, typename... T,
-          size_t N = detail::count_named_args<T...>()>
+          size_t NUM_ARGS = sizeof...(T),
+          size_t NUM_NAMED_ARGS = detail::count_named_args<T...>(),
+          unsigned long long DESC = NUM_ARGS <= detail::max_packed_args
+                                         ? detail::encode_types<Context, T...>()
+                                         : detail::is_unpacked_bit | NUM_ARGS,
+          FMT_ENABLE_IF(NUM_NAMED_ARGS == 0)>
 constexpr auto make_format_args(T&... args)
-    -> format_arg_store_impl<Context, N, remove_const_t<T>...> {
+    -> format_arg_store_impl<Context, NUM_ARGS, NUM_NAMED_ARGS, DESC> {
+  return {{detail::make_arg<NUM_ARGS <= detail::max_packed_args, Context>(
+      args)...}};
+}
+
+template <typename Context = format_context, typename... T,
+          size_t NUM_ARGS = sizeof...(T),
+          size_t NUM_NAMED_ARGS = detail::count_named_args<T...>(),
+          unsigned long long DESC =
+              (NUM_ARGS <= detail::max_packed_args
+                   ? detail::encode_types<Context, T...>()
+                   : detail::is_unpacked_bit | NUM_ARGS) |
+              (NUM_NAMED_ARGS != 0
+                   ? static_cast<unsigned long long>(detail::has_named_args_bit)
+                   : 0),
+          FMT_ENABLE_IF(NUM_NAMED_ARGS != 0)>
+constexpr auto make_format_args(T&... args)
+    -> format_arg_store_impl<Context, NUM_ARGS, NUM_NAMED_ARGS, DESC> {
   return {args...};
 }
+
+template <typename Context, typename... T>
+using format_arg_store =
+    decltype(make_format_args<Context>(std::declval<T&>()...));
 
 /**
   \rst

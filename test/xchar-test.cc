@@ -194,7 +194,8 @@ TEST(xchar_test, format_to) {
 }
 
 TEST(xchar_test, vformat_to) {
-  auto args = fmt::make_wformat_args(42);
+  int n = 42;
+  auto args = fmt::make_wformat_args(n);
   auto w = std::wstring();
   fmt::vformat_to(std::back_inserter(w), L"{}", args);
   EXPECT_EQ(L"42", w);

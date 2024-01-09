@@ -529,7 +529,7 @@ TEST(printf_test, wide_string) {
 
 TEST(printf_test, vprintf) {
   int n = 42;
-  auto store = fmt::format_arg_store<fmt::printf_context, int>(n);
+  auto store = fmt::make_format_args<fmt::printf_context>(n);
   auto args = fmt::basic_format_args<fmt::printf_context>(store);
   EXPECT_EQ(fmt::vsprintf(fmt::string_view("%d"), args), "42");
   EXPECT_WRITE(stdout, fmt::vfprintf(stdout, fmt::string_view("%d"), args),
