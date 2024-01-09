@@ -1,0 +1,4 @@
+module(
+   name = "fmt",
+   compatibility_level = 10,
+)
