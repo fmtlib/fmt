@@ -52,7 +52,7 @@
 #  include <bit>  // std::bit_cast
 #endif
 
-#include "core.h"
+#include "base.h"
 
 // libc++ supports string_view in pre-c++17.
 #if FMT_HAS_INCLUDE(<string_view>) && \
