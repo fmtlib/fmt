@@ -464,7 +464,7 @@ template <typename T> constexpr auto num_bits() -> int {
 }
 // std::numeric_limits<T>::digits may return 0 for 128-bit ints.
 template <> constexpr auto num_bits<int128_opt>() -> int { return 128; }
-template <> constexpr auto num_bits<uint128_t>() -> int { return 128; }
+template <> constexpr auto num_bits<uint128_fallback>() -> int { return 128; }
 
 // A heterogeneous bit_cast used for converting 96-bit long double to uint128_t
 // and 128-bit pointers to uint128_fallback.

@@ -1561,14 +1561,13 @@ TEST(format_test, format_pointer) {
 TEST(format_test, write_uintptr_fallback) {
   // Test that formatting a pointer by converting it to uint128_fallback works.
   // This is needed to support systems without uintptr_t.
-  // TODO
-  /*auto s = std::string();
+  auto s = std::string();
   fmt::detail::write_ptr<char>(
       std::back_inserter(s),
       fmt::detail::bit_cast<fmt::detail::uint128_fallback>(
           reinterpret_cast<void*>(0xface)),
       nullptr);
-  EXPECT_EQ(s, "0xface");*/
+  EXPECT_EQ(s, "0xface");
 }
 
 enum class color { red, green, blue };
