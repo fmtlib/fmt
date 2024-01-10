@@ -3843,7 +3843,7 @@ FMT_CONSTEXPR auto write(OutputIt out, const T& value)
 // iterator. It's a class and not a generic lambda for compatibility with C++11.
 template <typename Char> struct default_arg_formatter {
   using iterator = basic_appender<Char>;
-  using context = buffer_context<Char>;
+  using context = buffered_context<Char>;
 
   iterator out;
   basic_format_args<context> args;
@@ -3862,7 +3862,7 @@ template <typename Char> struct default_arg_formatter {
 
 template <typename Char> struct arg_formatter {
   using iterator = basic_appender<Char>;
-  using context = buffer_context<Char>;
+  using context = buffered_context<Char>;
 
   iterator out;
   const format_specs<Char>& specs;
@@ -4362,10 +4362,10 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
 
   struct format_handler {
     basic_format_parse_context<Char> parse_context;
-    buffer_context<Char> context;
+    buffered_context<Char> context;
 
     format_handler(basic_appender<Char> p_out, basic_string_view<Char> str,
-                   basic_format_args<buffer_context<Char>> p_args,
+                   basic_format_args<buffered_context<Char>> p_args,
                    locale_ref p_loc)
         : parse_context(str), context(p_out, p_args, p_loc) {}
 

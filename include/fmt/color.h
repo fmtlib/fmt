@@ -441,9 +441,9 @@ template <typename T> struct styled_arg : detail::view {
 };
 
 template <typename Char>
-void vformat_to(buffer<Char>& buf, const text_style& ts,
-                basic_string_view<Char> format_str,
-                basic_format_args<buffer_context<type_identity_t<Char>>> args) {
+void vformat_to(
+    buffer<Char>& buf, const text_style& ts, basic_string_view<Char> format_str,
+    basic_format_args<buffered_context<type_identity_t<Char>>> args) {
   bool has_style = false;
   if (ts.has_emphasis()) {
     has_style = true;

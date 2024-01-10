@@ -223,7 +223,7 @@ template <typename... Args>
 void print(std::wostream& os,
            basic_format_string<wchar_t, type_identity_t<Args>...> fmt,
            Args&&... args) {
-  vprint(os, fmt, fmt::make_format_args<buffer_context<wchar_t>>(args...));
+  vprint(os, fmt, fmt::make_format_args<buffered_context<wchar_t>>(args...));
 }
 
 FMT_EXPORT template <typename... T>
