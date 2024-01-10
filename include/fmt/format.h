@@ -2388,9 +2388,12 @@ FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
     size = code_point_index(s, to_unsigned(specs.precision));
   bool is_debug = specs.type == presentation_type::debug;
   size_t width = 0;
+
+  if (is_debug) size = write_escaped_string(counting_iterator{}, s).count();
+
   if (specs.width != 0) {
     if (is_debug)
-      width = write_escaped_string(counting_iterator{}, s).count();
+      width = size;
     else
       width = compute_width(basic_string_view<Char>(data, size));
   }
