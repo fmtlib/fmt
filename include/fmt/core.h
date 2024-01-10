@@ -200,12 +200,12 @@ FMT_END_NAMESPACE_STD
 #  endif
 #endif
 
-#ifndef FMT_INLINE
-#  if FMT_GCC_VERSION || FMT_CLANG_VERSION
-#    define FMT_INLINE inline __attribute__((always_inline))
-#  else
-#    define FMT_INLINE inline
-#  endif
+#ifdef FMT_INLINE
+// Use the provided definition.
+#elif FMT_GCC_VERSION || FMT_CLANG_VERSION
+#  define FMT_INLINE inline __attribute__((always_inline))
+#else
+#  define FMT_INLINE inline
 #endif
 
 #ifdef _MSC_VER
@@ -1523,6 +1523,12 @@ constexpr auto encode_types() -> unsigned long long {
          (encode_types<Context, Args...>() << packed_arg_bits);
 }
 
+template <typename Context, typename... T, size_t NUM_ARGS = sizeof...(T)>
+constexpr unsigned long long make_descriptor() {
+  return NUM_ARGS <= max_packed_args ? encode_types<Context, T...>()
+                                     : is_unpacked_bit | NUM_ARGS;
+}
+
 #if defined(__cpp_if_constexpr)
 // This type is intentionally undefined, only used for errors
 template <typename T, typename Char> struct type_is_unformattable_for;
@@ -1932,29 +1938,21 @@ using is_formattable = bool_constant<!std::is_base_of<
 template <typename Context = format_context, typename... T,
           size_t NUM_ARGS = sizeof...(T),
           size_t NUM_NAMED_ARGS = detail::count_named_args<T...>(),
-          unsigned long long DESC = NUM_ARGS <= detail::max_packed_args
-                                        ? detail::encode_types<Context, T...>()
-                                        : detail::is_unpacked_bit | NUM_ARGS,
+          unsigned long long DESC = detail::make_descriptor<Context, T...>(),
           FMT_ENABLE_IF(NUM_NAMED_ARGS == 0)>
 constexpr auto make_format_args(T&... args)
-    -> detail::format_arg_store<Context, NUM_ARGS, NUM_NAMED_ARGS, DESC> {
+    -> detail::format_arg_store<Context, NUM_ARGS, 0, DESC> {
   return {{detail::make_arg<NUM_ARGS <= detail::max_packed_args, Context>(
       args)...}};
 }
 
 template <typename Context = format_context, typename... T,
-          size_t NUM_ARGS = sizeof...(T),
           size_t NUM_NAMED_ARGS = detail::count_named_args<T...>(),
-          unsigned long long DESC =
-              (NUM_ARGS <= detail::max_packed_args
-                   ? detail::encode_types<Context, T...>()
-                   : detail::is_unpacked_bit | NUM_ARGS) |
-              (NUM_NAMED_ARGS != 0
-                   ? static_cast<unsigned long long>(detail::has_named_args_bit)
-                   : 0),
+          unsigned long long DESC = detail::make_descriptor<Context, T...>() |
+                   static_cast<unsigned long long>(detail::has_named_args_bit),
           FMT_ENABLE_IF(NUM_NAMED_ARGS != 0)>
 constexpr auto make_format_args(T&... args)
-    -> detail::format_arg_store<Context, NUM_ARGS, NUM_NAMED_ARGS, DESC> {
+    -> detail::format_arg_store<Context, sizeof...(T), NUM_NAMED_ARGS, DESC> {
   return {args...};
 }
 
