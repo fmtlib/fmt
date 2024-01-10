@@ -85,6 +85,16 @@ TEST(compile_test, format_default) {
 #  endif
 }
 
+TEST(compile_test, format_escape) {
+  EXPECT_EQ("\"string\"", fmt::format(FMT_COMPILE("{:?}"), "string"));
+  EXPECT_EQ("prefix \"string\"",
+            fmt::format(FMT_COMPILE("prefix {:?}"), "string"));
+  EXPECT_EQ("\"string\" suffix",
+            fmt::format(FMT_COMPILE("{:?} suffix"), "string"));
+  EXPECT_EQ("\"abc\"", fmt::format(FMT_COMPILE("{0:<5?}"), "abc"));
+  EXPECT_EQ("\"abc\"  ", fmt::format(FMT_COMPILE("{0:<7?}"), "abc"));
+}
+
 TEST(compile_test, format_wide_string) {
   EXPECT_EQ(L"42", fmt::format(FMT_COMPILE(L"{}"), 42));
 }
@@ -288,7 +298,7 @@ TEST(compile_test, compile_format_string_literal) {
 //  line 8635)
 #if (FMT_CPLUSPLUS >= 202002L ||                                \
      (FMT_CPLUSPLUS >= 201709L && FMT_GCC_VERSION >= 1002)) &&  \
-    ((!FMT_GLIBCXX_RELEASE || FMT_GLIBCXX_RELEASE >= 10) &&  \
+    ((!FMT_GLIBCXX_RELEASE || FMT_GLIBCXX_RELEASE >= 10) &&     \
      (!defined(_LIBCPP_VERSION) || _LIBCPP_VERSION >= 10000) && \
      (!FMT_MSC_VERSION ||                                       \
       (FMT_MSC_VERSION >= 1928 && FMT_MSC_VERSION < 1930))) &&  \
