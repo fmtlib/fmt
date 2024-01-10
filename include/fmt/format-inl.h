@@ -1448,9 +1448,11 @@ FMT_FUNC bool write_console(int fd, string_view text) {
 
 #ifdef _WIN32
 // Print assuming legacy (non-Unicode) encoding.
-FMT_FUNC void vprint_mojibake(std::FILE* f, string_view fmt, format_args args) {
+FMT_FUNC void vprint_mojibake(std::FILE* f, string_view fmt, format_args args,
+                              bool newline) {
   auto buffer = memory_buffer();
   detail::vformat_to(buffer, fmt, args);
+  if (newline) buffer.push_back('\n');
   fwrite_fully(buffer.data(), buffer.size(), f);
 }
 #endif
@@ -1470,6 +1472,13 @@ FMT_FUNC void print(std::FILE* f, string_view text) {
 FMT_FUNC void vprint(std::FILE* f, string_view fmt, format_args args) {
   auto buffer = memory_buffer();
   detail::vformat_to(buffer, fmt, args);
+  detail::print(f, {buffer.data(), buffer.size()});
+}
+
+FMT_FUNC void vprintln(std::FILE* f, string_view fmt, format_args args) {
+  auto buffer = memory_buffer();
+  detail::vformat_to(buffer, fmt, args);
+  buffer.push_back('\n');
   detail::print(f, {buffer.data(), buffer.size()});
 }
 

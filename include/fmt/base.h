@@ -1948,8 +1948,9 @@ constexpr auto make_format_args(T&... args)
 
 template <typename Context = format_context, typename... T,
           size_t NUM_NAMED_ARGS = detail::count_named_args<T...>(),
-          unsigned long long DESC = detail::make_descriptor<Context, T...>() |
-                   static_cast<unsigned long long>(detail::has_named_args_bit),
+          unsigned long long DESC =
+              detail::make_descriptor<Context, T...>() |
+              static_cast<unsigned long long>(detail::has_named_args_bit),
           FMT_ENABLE_IF(NUM_NAMED_ARGS != 0)>
 constexpr auto make_format_args(T&... args)
     -> detail::format_arg_store<Context, sizeof...(T), NUM_NAMED_ARGS, DESC> {
@@ -2703,9 +2704,9 @@ template <typename Char>
 void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
                 typename vformat_args<Char>::type args, locale_ref loc = {});
 
-FMT_API void vprint_mojibake(FILE*, string_view, format_args);
+FMT_API void vprint_mojibake(FILE*, string_view, format_args, bool = false);
 #ifndef _WIN32
-inline void vprint_mojibake(FILE*, string_view, format_args) {}
+inline void vprint_mojibake(FILE*, string_view, format_args, bool) {}
 #endif
 }  // namespace detail
 
@@ -2892,6 +2893,7 @@ FMT_NODISCARD FMT_INLINE auto formatted_size(format_string<T...> fmt,
 
 FMT_API void vprint(string_view fmt, format_args args);
 FMT_API void vprint(FILE* f, string_view fmt, format_args args);
+FMT_API void vprintln(FILE* f, string_view fmt, format_args args);
 
 /**
   \rst
@@ -2933,7 +2935,9 @@ FMT_INLINE void print(FILE* f, format_string<T...> fmt, T&&... args) {
  */
 template <typename... T>
 FMT_INLINE void println(FILE* f, format_string<T...> fmt, T&&... args) {
-  return fmt::print(f, "{}\n", fmt::format(fmt, static_cast<T&&>(args)...));
+  const auto& vargs = fmt::make_format_args(args...);
+  return detail::is_utf8() ? vprintln(f, fmt, vargs)
+                           : detail::vprint_mojibake(f, fmt, vargs, true);
 }
 
 /**
