@@ -1,12 +1,12 @@
-// Formatting library for C++ - the core API for char/UTF-8
+// Formatting library for C++ - the base API for char/UTF-8
 //
 // Copyright (c) 2012 - present, Victor Zverovich
 // All rights reserved.
 //
 // For the license information refer to format.h.
 
-#ifndef FMT_CORE_H_
-#define FMT_CORE_H_
+#ifndef FMT_BASE_H_
+#define FMT_BASE_H_
 
 #include <limits.h>  // CHAR_BIT
 #include <stdio.h>   // FILE
@@ -340,7 +340,7 @@ struct monostate {
 #  define FMT_ENABLE_IF(...) fmt::enable_if_t<(__VA_ARGS__), int> = 0
 #endif
 
-// This is defined in core.h instead of format.h to avoid injecting in std.
+// This is defined in base.h instead of format.h to avoid injecting in std.
 // It is a template to avoid undesirable implicit conversions to std::byte.
 #ifdef __cpp_lib_byte
 template <typename T, FMT_ENABLE_IF(std::is_same<T, std::byte>::value)>
@@ -2952,4 +2952,4 @@ FMT_END_NAMESPACE
 #ifdef FMT_HEADER_ONLY
 #  include "format.h"
 #endif
-#endif  // FMT_CORE_H_
+#endif  // FMT_BASE_H_
