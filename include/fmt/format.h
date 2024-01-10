@@ -46,6 +46,7 @@
 #include <limits>        // std::numeric_limits
 #include <memory>        // std::uninitialized_copy
 #include <stdexcept>     // std::runtime_error
+#include <string>        // std::basic_string
 #include <system_error>  // std::system_error
 
 #ifdef __cpp_lib_bit_cast
@@ -278,6 +279,11 @@ template <typename T> struct iterator_traits<fmt::basic_appender<T>> {
 }  // namespace std
 
 FMT_BEGIN_NAMESPACE
+
+template <typename Char, typename Traits, typename Allocator>
+struct is_contiguous<std::basic_string<Char, Traits, Allocator>>
+    : std::true_type {};
+
 namespace detail {
 
 FMT_CONSTEXPR inline void abort_fuzzing_if(bool condition) {
