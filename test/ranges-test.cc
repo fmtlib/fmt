@@ -592,3 +592,14 @@ auto format_as(const tieable& t) -> std::tuple<int, double> {
 TEST(ranges_test, format_as_tie) {
   EXPECT_EQ(fmt::format("{}", tieable()), "(3, 0.42)");
 }
+
+struct lvalue_qualified_begin_end {
+  int arr[5] = {1, 2, 3, 4, 5};
+
+  int const* begin() & { return arr; }
+  int const* end() & { return arr + 5; }
+};
+
+TEST(ranges_test, lvalue_qualified_begin_end) {
+  EXPECT_EQ(fmt::format("{}", lvalue_qualified_begin_end{}), "[1, 2, 3, 4, 5]");
+}
