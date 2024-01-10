@@ -4448,6 +4448,25 @@ constexpr auto operator""_a(const char* s, size_t) -> detail::udl_arg<char> {
 }  // namespace literals
 #endif  // FMT_USE_USER_DEFINED_LITERALS
 
+FMT_API auto vformat(string_view fmt, format_args args) -> std::string;
+
+/**
+  \rst
+  Formats ``args`` according to specifications in ``fmt`` and returns the result
+  as a string.
+
+  **Example**::
+
+    #include <fmt/core.h>
+    std::string message = fmt::format("The answer is {}.", 42);
+  \endrst
+*/
+template <typename... T>
+FMT_NODISCARD FMT_INLINE auto format(format_string<T...> fmt, T&&... args)
+    -> std::string {
+  return vformat(fmt, fmt::make_format_args(args...));
+}
+
 template <typename Locale, FMT_ENABLE_IF(detail::is_locale<Locale>::value)>
 inline auto vformat(const Locale& loc, string_view fmt, format_args args)
     -> std::string {

@@ -674,7 +674,9 @@ TEST(core_test, is_formattable) {
 
   static_assert(!fmt::is_formattable<convertible_to_pointer>::value, "");
   const auto f = convertible_to_pointer_formattable();
-  EXPECT_EQ(fmt::format("{}", f), "test");
+  auto str = std::string();
+  fmt::format_to(std::back_inserter(str), "{}", f);
+  EXPECT_EQ(str, "test");
 
   static_assert(!fmt::is_formattable<void (*)()>::value, "");
 
@@ -685,8 +687,6 @@ TEST(core_test, is_formattable) {
   static_assert(!fmt::is_formattable<unformattable_scoped_enum>::value, "");
 }
 
-TEST(core_test, format) { EXPECT_EQ(fmt::format("{}", 42), "42"); }
-
 TEST(core_test, format_to) {
   auto s = std::string();
   fmt::format_to(std::back_inserter(s), "{}", 42);
@@ -695,49 +695,18 @@ TEST(core_test, format_to) {
 
 #ifdef __cpp_lib_byte
 TEST(core_test, format_byte) {
-  EXPECT_EQ(fmt::format("{}", std::byte(42)), "42");
+  auto s = std::string();
+  fmt::format_to(std::back_inserter(s), "{}", std::byte(42));
+  EXPECT_EQ(s, "42");
 }
 #endif
-
-struct convertible_to_int {
-  operator int() const { return 42; }
-};
-
-struct convertible_to_cstring {
-  operator const char*() const { return "foo"; }
-};
-
-FMT_BEGIN_NAMESPACE
-template <> struct formatter<convertible_to_int> {
-  FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
-    return ctx.begin();
-  }
-  auto format(convertible_to_int, format_context& ctx) const
-      -> decltype(ctx.out()) {
-    return copy("foo", ctx.out());
-  }
-};
-
-template <> struct formatter<convertible_to_cstring> {
-  FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
-    return ctx.begin();
-  }
-  auto format(convertible_to_cstring, format_context& ctx) const
-      -> decltype(ctx.out()) {
-    return copy("bar", ctx.out());
-  }
-};
-FMT_END_NAMESPACE
-
-TEST(core_test, formatter_overrides_implicit_conversion) {
-  EXPECT_EQ(fmt::format("{}", convertible_to_int()), "foo");
-  EXPECT_EQ(fmt::format("{}", convertible_to_cstring()), "bar");
-}
 
 // Test that check is not found by ADL.
 template <typename T> void check(T);
 TEST(core_test, adl_check) {
-  EXPECT_EQ(fmt::format("{}", test_struct()), "test");
+  auto s = std::string();
+  fmt::format_to(std::back_inserter(s), "{}", test_struct());
+  EXPECT_EQ(s, "test");
 }
 
 struct implicitly_convertible_to_string_view {
@@ -788,27 +757,6 @@ TEST(core_test, format_explicitly_convertible_to_std_string_view) {
 #  endif
 #endif
 
-namespace adl_test {
-template <typename... T> void make_format_args(const T&...) = delete;
-
-struct string : std::string {};
-}  // namespace adl_test
-
-// Test that formatting functions compile when make_format_args is found by ADL.
-TEST(core_test, adl) {
-  // Only check compilation and don't run the code to avoid polluting the output
-  // and since the output is tested elsewhere.
-  if (fmt::detail::const_check(true)) return;
-  auto s = adl_test::string();
-  char buf[10];
-  (void)fmt::format("{}", s);
-  fmt::format_to(buf, "{}", s);
-  fmt::format_to_n(buf, 10, "{}", s);
-  (void)fmt::formatted_size("{}", s);
-  fmt::print("{}", s);
-  fmt::print(stdout, "{}", s);
-}
-
 TEST(core_test, has_const_formatter) {
   EXPECT_TRUE((fmt::detail::has_const_formatter<const_formattable,
                                                 fmt::format_context>()));
@@ -817,31 +765,9 @@ TEST(core_test, has_const_formatter) {
 }
 
 TEST(core_test, format_nonconst) {
-  EXPECT_EQ(fmt::format("{}", nonconst_formattable()), "test");
-}
-
-struct its_a_trap {
-  template <typename T> operator T() const {
-    auto v = T();
-    v.x = 42;
-    return v;
-  }
-};
-
-FMT_BEGIN_NAMESPACE
-template <> struct formatter<its_a_trap> {
-  FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
-    return ctx.begin();
-  }
-
-  auto format(its_a_trap, format_context& ctx) const -> decltype(ctx.out()) {
-    return copy("42", ctx.out());
-  }
-};
-FMT_END_NAMESPACE
-
-TEST(core_test, trappy_conversion) {
-  EXPECT_EQ(fmt::format("{}", its_a_trap()), "42");
+  auto s = std::string();
+  fmt::format_to(std::back_inserter(s), "{}", nonconst_formattable());
+  EXPECT_EQ(s, "test");
 }
 
 TEST(core_test, throw_in_buffer_dtor) {
@@ -865,4 +791,32 @@ TEST(core_test, throw_in_buffer_dtor) {
                    buffer_size + 1);
   } catch (const std::exception&) {
   }
+}
+
+struct its_a_trap {
+  template <typename T> operator T() const {
+    auto v = T();
+    v.x = 42;
+    return v;
+  }
+};
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<its_a_trap> {
+  FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
+
+  auto format(its_a_trap, format_context& ctx) const -> decltype(ctx.out()) {
+    auto out = ctx.out();
+    *out++ = 'x';
+    return out;
+  }
+};
+FMT_END_NAMESPACE
+
+TEST(format_test, trappy_conversion) {
+  auto s = std::string();
+  fmt::format_to(std::back_inserter(s), "{}", its_a_trap());
+  EXPECT_EQ(s, "x");
 }
