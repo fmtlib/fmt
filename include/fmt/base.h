@@ -1087,7 +1087,11 @@ template <typename T> class basic_appender {
   }
 
  public:
+  using iterator_category = int;
+  using value_type = T;
   using difference_type = ptrdiff_t;
+  using pointer = T*;
+  using reference = T&;
   FMT_UNCHECKED_ITERATOR(basic_appender);
 
   FMT_CONSTEXPR basic_appender(detail::buffer<T>& buf) : buffer_(&buf) {}
