@@ -304,3 +304,21 @@ TEST(std_test, format_atomic_flag) {
   EXPECT_EQ(fmt::format("{}", cf), "false");
 }
 #endif  // __cpp_lib_atomic_flag_test
+
+TEST(std_test, format_unique_ptr) {
+  std::unique_ptr<int> up(new int(1));
+  EXPECT_EQ(fmt::format("{}", fmt::ptr(up.get())),
+            fmt::format("{}", fmt::ptr(up)));
+  struct custom_deleter {
+    void operator()(int* p) const { delete p; }
+  };
+  std::unique_ptr<int, custom_deleter> upcd(new int(1));
+  EXPECT_EQ(fmt::format("{}", fmt::ptr(upcd.get())),
+            fmt::format("{}", fmt::ptr(upcd)));
+}
+
+TEST(std_test, format_shared_ptr) {
+  std::shared_ptr<int> sp(new int(1));
+  EXPECT_EQ(fmt::format("{}", fmt::ptr(sp.get())),
+            fmt::format("{}", fmt::ptr(sp)));
+}

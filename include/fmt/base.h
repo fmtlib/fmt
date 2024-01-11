@@ -863,7 +863,22 @@ template <typename T> class buffer {
   }
 
   /** Appends data to the end of the buffer. */
-  template <typename U> void append(const U* begin, const U* end);
+  template <typename U> void append(const U* begin, const U* end) {
+    while (begin != end) {
+      auto count = to_unsigned(end - begin);
+      try_reserve(size_ + count);
+      auto free_cap = capacity_ - size_;
+      if (free_cap < count) count = free_cap;
+      if (std::is_same<T, U>::value) {
+        memcpy(ptr_ + size_, begin, count * sizeof(T));
+      } else {
+        T* out = ptr_ + size_;
+        for (size_t i = 0; i < count; ++i) out[i] = begin[i];
+      }
+      size_ += count;
+      begin += count;
+    }
+  }
 
   template <typename Idx> FMT_CONSTEXPR auto operator[](Idx index) -> T& {
     return ptr_[index];

@@ -20,7 +20,6 @@
 #include <cstring>      // std::strlen
 #include <iterator>     // std::back_inserter
 #include <list>         // std::list
-#include <memory>       // std::unique_ptr
 #include <type_traits>  // std::is_default_constructible
 
 #include "gtest-extra.h"
@@ -1540,18 +1539,6 @@ TEST(format_test, format_pointer) {
             fmt::format("{0}", reinterpret_cast<void*>(~uintptr_t())));
   EXPECT_EQ("0x1234",
             fmt::format("{}", fmt::ptr(reinterpret_cast<int*>(0x1234))));
-  std::unique_ptr<int> up(new int(1));
-  EXPECT_EQ(fmt::format("{}", fmt::ptr(up.get())),
-            fmt::format("{}", fmt::ptr(up)));
-  struct custom_deleter {
-    void operator()(int* p) const { delete p; }
-  };
-  std::unique_ptr<int, custom_deleter> upcd(new int(1));
-  EXPECT_EQ(fmt::format("{}", fmt::ptr(upcd.get())),
-            fmt::format("{}", fmt::ptr(upcd)));
-  std::shared_ptr<int> sp(new int(1));
-  EXPECT_EQ(fmt::format("{}", fmt::ptr(sp.get())),
-            fmt::format("{}", fmt::ptr(sp)));
   EXPECT_EQ(fmt::format("{}", fmt::detail::bit_cast<const void*>(
                                   &function_pointer_test)),
             fmt::format("{}", fmt::ptr(function_pointer_test)));

@@ -43,16 +43,16 @@
 #include <cstring>           // std::memcpy
 #include <initializer_list>  // std::initializer_list
 #include <limits>            // std::numeric_limits
-#include <memory>            // std::uninitialized_copy_n
+#include <memory>            // std::allocator_traits
 #include <stdexcept>         // std::runtime_error
-#include <string>            // std::basic_string
+#include <string>            // std::string
 #include <system_error>      // std::system_error
 
-#ifdef __cpp_lib_bit_cast
+#include "base.h"
+
+#if FMT_HAS_INCLUDE(<bit>)
 #  include <bit>  // std::bit_cast
 #endif
-
-#include "base.h"
 
 // libc++ supports string_view in pre-c++17.
 #if FMT_HAS_INCLUDE(<string_view>) && \
@@ -861,20 +861,6 @@ using is_double_double = bool_constant<std::numeric_limits<T>::digits == 106>;
 #  define FMT_USE_FULL_CACHE_DRAGONBOX 0
 #endif
 
-template <typename T>
-template <typename U>
-void buffer<T>::append(const U* begin, const U* end) {
-  while (begin != end) {
-    auto count = to_unsigned(end - begin);
-    try_reserve(size_ + count);
-    auto free_cap = capacity_ - size_;
-    if (free_cap < count) count = free_cap;
-    std::uninitialized_copy_n(begin, count, ptr_ + size_);
-    size_ += count;
-    begin += count;
-  }
-}
-
 template <typename T, typename Enable = void>
 struct is_locale : std::false_type {};
 template <typename T>
@@ -940,7 +926,7 @@ class basic_memory_buffer : public detail::buffer<T> {
     // Suppress a bogus -Wstringop-overflow in gcc 13.1 (#3481).
     detail::assume(buf.size() <= new_capacity);
     // The following code doesn't throw, so the raw pointer above doesn't leak.
-    std::uninitialized_copy_n(old_data, buf.size(), new_data);
+    memcpy(new_data, old_data, buf.size() * sizeof(T));
     self.set(new_data, new_capacity);
     // deallocate must not throw according to the standard, but even if it does,
     // the buffer already uses the new storage and will deallocate it in
@@ -3088,7 +3074,7 @@ class bigint {
     bigits_.resize(to_unsigned(num_bigits + exp_difference));
     for (int i = num_bigits - 1, j = i + exp_difference; i >= 0; --i, --j)
       bigits_[j] = bigits_[i];
-    std::uninitialized_fill_n(bigits_.data(), exp_difference, 0u);
+    memset(bigits_.data(), 0, to_unsigned(exp_difference) * sizeof(bigit));
     exp_ -= exp_difference;
   }
 
@@ -4140,13 +4126,6 @@ struct formatter<Char[N], Char> : formatter<basic_string_view<Char>, Char> {};
 template <typename T> auto ptr(T p) -> const void* {
   static_assert(std::is_pointer<T>::value, "");
   return detail::bit_cast<const void*>(p);
-}
-template <typename T, typename Deleter>
-auto ptr(const std::unique_ptr<T, Deleter>& p) -> const void* {
-  return p.get();
-}
-template <typename T> auto ptr(const std::shared_ptr<T>& p) -> const void* {
-  return p.get();
 }
 
 /**

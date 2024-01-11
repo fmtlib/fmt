@@ -509,6 +509,14 @@ struct formatter<BitRef, Char,
   }
 };
 
+template <typename T, typename Deleter>
+auto ptr(const std::unique_ptr<T, Deleter>& p) -> const void* {
+  return p.get();
+}
+template <typename T> auto ptr(const std::shared_ptr<T>& p) -> const void* {
+  return p.get();
+}
+
 FMT_EXPORT
 template <typename T, typename Char>
 struct formatter<std::atomic<T>, Char,
