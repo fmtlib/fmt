@@ -596,8 +596,8 @@ TEST(ranges_test, format_as_tie) {
 struct lvalue_qualified_begin_end {
   int arr[5] = {1, 2, 3, 4, 5};
 
-  int const* begin() & { return arr; }
-  int const* end() & { return arr + 5; }
+  auto begin() & -> const int* { return arr; }
+  auto end() & -> const int* { return arr + 5; }
 };
 
 TEST(ranges_test, lvalue_qualified_begin_end) {

@@ -1490,10 +1490,8 @@ constexpr unsigned long long make_descriptor() {
                                      : is_unpacked_bit | NUM_ARGS;
 }
 
-#if defined(__cpp_if_constexpr)
 // This type is intentionally undefined, only used for errors
 template <typename T, typename Char> struct type_is_unformattable_for;
-#endif
 
 template <bool PACKED, typename Context, typename T, FMT_ENABLE_IF(PACKED)>
 FMT_CONSTEXPR auto make_arg(T& val) -> value<Context> {
@@ -1917,11 +1915,6 @@ constexpr auto make_format_args(T&... args)
     -> detail::format_arg_store<Context, sizeof...(T), NUM_NAMED_ARGS, DESC> {
   return {args...};
 }
-
-// DEPRECATED!
-template <typename Context, typename... T>
-using format_arg_store =
-    decltype(make_format_args<Context>(std::declval<T&>()...));
 
 /**
   \rst

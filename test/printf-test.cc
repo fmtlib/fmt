@@ -550,10 +550,11 @@ TEST(printf_test, fixed_large_exponent) {
 }
 
 TEST(printf_test, make_printf_args) {
+  int n = 42;
   EXPECT_EQ("[42] something happened",
             fmt::vsprintf(fmt::string_view("[%d] %s happened"),
-                          {fmt::make_printf_args(42, "something")}));
+                          {fmt::make_printf_args(n, "something")}));
   EXPECT_EQ(L"[42] something happened",
             fmt::vsprintf(fmt::basic_string_view<wchar_t>(L"[%d] %s happened"),
-                          {fmt::make_wprintf_args(42, L"something")}));
+                          {fmt::make_printf_args<wchar_t>(n, L"something")}));
 }

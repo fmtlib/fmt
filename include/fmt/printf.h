@@ -573,17 +573,10 @@ using wprintf_args = basic_format_args<wprintf_context>;
   arguments and can be implicitly converted to `~fmt::printf_args`.
   \endrst
  */
-template <typename... T>
-inline auto make_printf_args(const T&... args)
-    -> format_arg_store<printf_context, T...> {
-  return {args...};
-}
-
-// DEPRECATED!
-template <typename... T>
-inline auto make_wprintf_args(const T&... args)
-    -> format_arg_store<wprintf_context, T...> {
-  return {args...};
+template <typename Char = char, typename... T>
+inline auto make_printf_args(T&... args)
+    -> decltype(make_format_args<basic_printf_context<Char>>(args...)) {
+  return make_format_args<basic_printf_context<Char>>(args...);
 }
 
 template <typename Char> struct vprintf_args {
@@ -637,7 +630,7 @@ inline auto vfprintf(std::FILE* f, basic_string_view<Char> fmt,
 template <typename S, typename... T, typename Char = char_t<S>>
 inline auto fprintf(std::FILE* f, const S& fmt, const T&... args) -> int {
   return vfprintf(f, detail::to_string_view(fmt),
-                  fmt::make_format_args<basic_printf_context<Char>>(args...));
+                  make_printf_args<Char>(args...));
 }
 
 template <typename Char>
@@ -663,7 +656,7 @@ inline auto printf(string_view fmt, const T&... args) -> int {
 template <typename... T>
 FMT_DEPRECATED inline auto printf(basic_string_view<wchar_t> fmt,
                                   const T&... args) -> int {
-  return vfprintf(stdout, fmt, make_wprintf_args(args...));
+  return vfprintf(stdout, fmt, make_printf_args<wchar_t>(args...));
 }
 
 FMT_END_EXPORT

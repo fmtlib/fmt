@@ -88,7 +88,7 @@ template <> struct is_char<char32_t> : std::true_type {};
 
 template <typename... T>
 constexpr auto make_wformat_args(T&... args)
-    -> format_arg_store<wformat_context, T...> {
+    -> decltype(make_format_args<wformat_context>(args...)) {
   return make_format_args<wformat_context>(args...);
 }
 
@@ -167,8 +167,9 @@ template <typename Locale, typename S, typename... T,
                             detail::is_exotic_char<Char>::value)>
 inline auto format(const Locale& loc, const S& format_str, T&&... args)
     -> std::basic_string<Char> {
-  return detail::vformat(loc, detail::to_string_view(format_str),
-                         fmt::make_format_args<buffered_context<Char>>(args...));
+  return detail::vformat(
+      loc, detail::to_string_view(format_str),
+      fmt::make_format_args<buffered_context<Char>>(args...));
 }
 
 template <typename OutputIt, typename S,
