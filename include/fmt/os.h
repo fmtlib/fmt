@@ -431,8 +431,7 @@ class FMT_API ostream {
     output to the file.
    */
   template <typename... T> void print(format_string<T...> fmt, T&&... args) {
-    vformat_to(std::back_inserter(buffer_), fmt,
-               fmt::make_format_args(args...));
+    vformat_to(appender(buffer_), fmt, fmt::make_format_args(args...));
   }
 };
 

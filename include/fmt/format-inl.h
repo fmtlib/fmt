@@ -1411,7 +1411,7 @@ FMT_FUNC void format_system_error(detail::buffer<char>& out, int error_code,
                                   const char* message) noexcept {
   FMT_TRY {
     auto ec = std::error_code(error_code, std::generic_category());
-    write(std::back_inserter(out), std::system_error(ec, message).what());
+    detail::write(appender(out), std::system_error(ec, message).what());
     return;
   }
   FMT_CATCH(...) {}

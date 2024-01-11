@@ -42,12 +42,11 @@
 #include <cstdint>           // uint32_t
 #include <cstring>           // std::memcpy
 #include <initializer_list>  // std::initializer_list
-#include <iterator>
-#include <limits>        // std::numeric_limits
-#include <memory>        // std::uninitialized_copy
-#include <stdexcept>     // std::runtime_error
-#include <string>        // std::basic_string
-#include <system_error>  // std::system_error
+#include <limits>            // std::numeric_limits
+#include <memory>            // std::uninitialized_copy_n
+#include <stdexcept>         // std::runtime_error
+#include <string>            // std::basic_string
+#include <system_error>      // std::system_error
 
 #ifdef __cpp_lib_bit_cast
 #  include <bit>  // std::bit_cast
@@ -515,7 +514,21 @@ FMT_INLINE void assume(bool condition) {
 #endif
 }
 
-template <typename Char, typename InputIt, typename OutputIt>
+template <typename Char, typename InputIt>
+auto copy_str(InputIt begin, InputIt end, appender out) -> appender {
+  get_container(out).append(begin, end);
+  return out;
+}
+
+template <typename Char, typename InputIt, typename OutputIt,
+          FMT_ENABLE_IF(is_back_insert_iterator<OutputIt>::value)>
+auto copy_str(InputIt begin, InputIt end, OutputIt out) -> OutputIt {
+  get_container(out).append(begin, end);
+  return out;
+}
+
+template <typename Char, typename InputIt, typename OutputIt,
+          FMT_ENABLE_IF(!is_back_insert_iterator<OutputIt>::value)>
 FMT_CONSTEXPR auto copy_str(InputIt begin, InputIt end, OutputIt out)
     -> OutputIt {
   while (begin != end) *out++ = static_cast<Char>(*begin++);
@@ -530,19 +543,6 @@ FMT_CONSTEXPR auto copy_str(T* begin, T* end, U* out) -> U* {
   auto size = to_unsigned(end - begin);
   if (size > 0) memcpy(out, begin, size * sizeof(U));
   return out + size;
-}
-
-template <typename Char, typename InputIt>
-auto copy_str(InputIt begin, InputIt end, appender out) -> appender {
-  get_container(out).append(begin, end);
-  return out;
-}
-template <typename Char, typename InputIt>
-auto copy_str(InputIt begin, InputIt end,
-              std::back_insert_iterator<std::string> out)
-    -> std::back_insert_iterator<std::string> {
-  get_container(out).append(begin, end);
-  return out;
 }
 
 template <typename Char, typename R, typename OutputIt>
@@ -567,14 +567,15 @@ inline auto get_data(Container& c) -> typename Container::value_type* {
 
 // Attempts to reserve space for n extra characters in the output range.
 // Returns a pointer to the reserved range or a reference to it.
-template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
+template <typename OutputIt,
+          FMT_ENABLE_IF(is_back_insert_iterator<OutputIt>::value&&
+                            is_contiguous<typename OutputIt::container>::value)>
 #if FMT_CLANG_VERSION >= 307 && !FMT_ICC_VERSION
 __attribute__((no_sanitize("undefined")))
 #endif
 inline auto
-reserve(std::back_insert_iterator<Container> it, size_t n) ->
-    typename Container::value_type* {
-  Container& c = get_container(it);
+reserve(OutputIt it, size_t n) -> typename OutputIt::value_type* {
+  auto& c = get_container(it);
   size_t size = c.size();
   c.resize(size + n);
   return get_data(c) + size;
@@ -608,10 +609,12 @@ template <typename T> auto to_pointer(basic_appender<T> it, size_t n) -> T* {
   return buf.data() + size;
 }
 
-template <typename Container, FMT_ENABLE_IF(is_contiguous<Container>::value)>
-inline auto base_iterator(std::back_insert_iterator<Container> it,
-                          typename Container::value_type*)
-    -> std::back_insert_iterator<Container> {
+template <typename OutputIt,
+          FMT_ENABLE_IF(is_back_insert_iterator<OutputIt>::value&&
+                            is_contiguous<typename OutputIt::container>::value)>
+inline auto base_iterator(OutputIt it,
+                          typename OutputIt::containter_type::value_type*)
+    -> OutputIt {
   return it;
 }
 
@@ -4282,7 +4285,7 @@ template <typename T> struct nested_formatter {
   auto write_padded(format_context& ctx, F write) const -> decltype(ctx.out()) {
     if (width_ == 0) return write(ctx.out());
     auto buf = memory_buffer();
-    write(std::back_inserter(buf));
+    write(appender(buf));
     auto specs = format_specs<>();
     specs.width = width_;
     specs.fill = fill_;
