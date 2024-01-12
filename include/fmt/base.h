@@ -1491,7 +1491,8 @@ constexpr unsigned long long make_descriptor() {
 template <typename T, typename Char>
 #if FMT_CLANG_VERSION && FMT_CLANG_VERSION <= 1500
 // https://github.com/fmtlib/fmt/issues/3796
-struct type_is_unformattable_for {};
+struct type_is_unformattable_for {
+};
 #else
 struct type_is_unformattable_for;
 #endif
