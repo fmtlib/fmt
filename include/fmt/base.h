@@ -810,11 +810,11 @@ template <typename T> class buffer {
  protected:
   // Don't initialize ptr_ since it is not accessed to save a few cycles.
   FMT_MSC_WARNING(suppress : 26495)
-  FMT_CONSTEXPR buffer(grow_fun grow, size_t sz) noexcept
+  FMT_CONSTEXPR20 buffer(grow_fun grow, size_t sz) noexcept
       : size_(sz), capacity_(sz), grow_(grow) {}
 
-  FMT_CONSTEXPR20 buffer(grow_fun grow, T* p = nullptr, size_t sz = 0,
-                         size_t cap = 0) noexcept
+  constexpr buffer(grow_fun grow, T* p = nullptr, size_t sz = 0,
+                   size_t cap = 0) noexcept
       : ptr_(p), size_(sz), capacity_(cap), grow_(grow) {}
 
   FMT_CONSTEXPR20 ~buffer() = default;
@@ -854,7 +854,7 @@ template <typename T> class buffer {
 
   // Tries resizing the buffer to contain *count* elements. If T is a POD type
   // the new elements may not be initialized.
-  FMT_CONSTEXPR20 void try_resize(size_t count) {
+  FMT_CONSTEXPR void try_resize(size_t count) {
     try_reserve(count);
     size_ = count <= capacity_ ? count : capacity_;
   }
@@ -863,11 +863,11 @@ template <typename T> class buffer {
   // capacity by a smaller amount than requested but guarantees there is space
   // for at least one additional element either by increasing the capacity or by
   // flushing the buffer if it is full.
-  FMT_CONSTEXPR20 void try_reserve(size_t new_capacity) {
+  FMT_CONSTEXPR void try_reserve(size_t new_capacity) {
     if (new_capacity > capacity_) grow_(*this, new_capacity);
   }
 
-  FMT_CONSTEXPR20 void push_back(const T& value) {
+  FMT_CONSTEXPR void push_back(const T& value) {
     try_reserve(size_ + 1);
     ptr_[size_++] = value;
   }
@@ -928,7 +928,7 @@ class iterator_buffer : public Traits, public buffer<T> {
   enum { buffer_size = 256 };
   T data_[buffer_size];
 
-  static FMT_CONSTEXPR20 void grow(buffer<T>& buf, size_t) {
+  static FMT_CONSTEXPR void grow(buffer<T>& buf, size_t) {
     if (buf.size() == buffer_size) static_cast<iterator_buffer&>(buf).flush();
   }
 
@@ -968,7 +968,7 @@ class iterator_buffer<T*, T, fixed_buffer_traits> : public fixed_buffer_traits,
   enum { buffer_size = 256 };
   T data_[buffer_size];
 
-  static FMT_CONSTEXPR20 void grow(buffer<T>& buf, size_t) {
+  static FMT_CONSTEXPR void grow(buffer<T>& buf, size_t) {
     if (buf.size() == buf.capacity())
       static_cast<iterator_buffer&>(buf).flush();
   }
@@ -1026,7 +1026,7 @@ class iterator_buffer<
   using value_type = typename container_type::value_type;
   container_type& container_;
 
-  static FMT_CONSTEXPR20 void grow(buffer<value_type>& buf, size_t capacity) {
+  static FMT_CONSTEXPR void grow(buffer<value_type>& buf, size_t capacity) {
     auto& self = static_cast<iterator_buffer&>(buf);
     self.container_.resize(capacity);
     self.set(&self.container_[0], capacity);
@@ -1048,7 +1048,7 @@ template <typename T = char> class counting_buffer : public buffer<T> {
   T data_[buffer_size];
   size_t count_ = 0;
 
-  static FMT_CONSTEXPR20 void grow(buffer<T>& buf, size_t) {
+  static FMT_CONSTEXPR void grow(buffer<T>& buf, size_t) {
     if (buf.size() != buffer_size) return;
     static_cast<counting_buffer&>(buf).count_ += buf.size();
     buf.clear();
