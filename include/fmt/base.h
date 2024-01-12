@@ -18,48 +18,40 @@
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
 #define FMT_VERSION 100202
 
+// Detect compiler versions.
 #if defined(__clang__) && !defined(__ibmxl__)
 #  define FMT_CLANG_VERSION (__clang_major__ * 100 + __clang_minor__)
 #else
 #  define FMT_CLANG_VERSION 0
 #endif
-
-#if defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER) && \
-    !defined(__NVCOMPILER)
+#if defined(__GNUC__) && !defined(__clang__) && !defined(__INTEL_COMPILER)
 #  define FMT_GCC_VERSION (__GNUC__ * 100 + __GNUC_MINOR__)
 #else
 #  define FMT_GCC_VERSION 0
 #endif
-
-#ifndef FMT_GCC_PRAGMA
-// Workaround _Pragma bug https://gcc.gnu.org/bugzilla/show_bug.cgi?id=59884.
-#  if FMT_GCC_VERSION >= 504
-#    define FMT_GCC_PRAGMA(arg) _Pragma(arg)
-#  else
-#    define FMT_GCC_PRAGMA(arg)
-#  endif
-#endif
-
-#ifdef __ICL
+#if defined(__ICL)
 #  define FMT_ICC_VERSION __ICL
 #elif defined(__INTEL_COMPILER)
 #  define FMT_ICC_VERSION __INTEL_COMPILER
 #else
 #  define FMT_ICC_VERSION 0
 #endif
-
-#ifdef _MSC_VER
+#if defined(_MSC_VER)
 #  define FMT_MSC_VERSION _MSC_VER
-#  define FMT_MSC_WARNING(...) __pragma(warning(__VA_ARGS__))
 #else
 #  define FMT_MSC_VERSION 0
-#  define FMT_MSC_WARNING(...)
 #endif
 
+// Detect standard library versions.
 #ifdef _GLIBCXX_RELEASE
 #  define FMT_GLIBCXX_RELEASE _GLIBCXX_RELEASE
 #else
 #  define FMT_GLIBCXX_RELEASE 0
+#endif
+#ifdef _LIBCPP_VERSION
+#  define FMT_LIBCPP_VERSION _LIBCPP_VERSION
+#else
+#  define FMT_LIBCPP_VERSION 0
 #endif
 
 #ifdef _MSVC_LANG
@@ -68,18 +60,17 @@
 #  define FMT_CPLUSPLUS __cplusplus
 #endif
 
+// Detect __has_*.
 #ifdef __has_feature
 #  define FMT_HAS_FEATURE(x) __has_feature(x)
 #else
 #  define FMT_HAS_FEATURE(x) 0
 #endif
-
-#if defined(__has_include) || FMT_ICC_VERSION >= 1600 || FMT_MSC_VERSION > 1900
+#ifdef __has_include
 #  define FMT_HAS_INCLUDE(x) __has_include(x)
 #else
 #  define FMT_HAS_INCLUDE(x) 0
 #endif
-
 #ifdef __has_cpp_attribute
 #  define FMT_HAS_CPP_ATTRIBUTE(x) __has_cpp_attribute(x)
 #else
@@ -92,18 +83,12 @@
 #define FMT_HAS_CPP17_ATTRIBUTE(attribute) \
   (FMT_CPLUSPLUS >= 201703L && FMT_HAS_CPP_ATTRIBUTE(attribute))
 
-#ifndef FMT_DEPRECATED
-#  if FMT_HAS_CPP14_ATTRIBUTE(deprecated) || FMT_MSC_VERSION >= 1900
-#    define FMT_DEPRECATED [[deprecated]]
-#  else
-#    if (defined(__GNUC__) && !defined(__LCC__)) || defined(__clang__)
-#      define FMT_DEPRECATED __attribute__((deprecated))
-#    elif FMT_MSC_VERSION
-#      define FMT_DEPRECATED __declspec(deprecated)
-#    else
-#      define FMT_DEPRECATED /* deprecated */
-#    endif
-#  endif
+#ifdef FMT_DEPRECATED
+// Use the provided definition.
+#elif FMT_HAS_CPP14_ATTRIBUTE(deprecated)
+#  define FMT_DEPRECATED [[deprecated]]
+#else
+#  define FMT_DEPRECATED /* deprecated */
 #endif
 
 // Check if relaxed C++14 constexpr is supported.
@@ -126,7 +111,7 @@
 #if (FMT_CPLUSPLUS >= 202002L ||                                \
      (FMT_CPLUSPLUS >= 201709L && FMT_GCC_VERSION >= 1002)) &&  \
     ((!FMT_GLIBCXX_RELEASE || FMT_GLIBCXX_RELEASE >= 10) &&     \
-     (!defined(_LIBCPP_VERSION) || _LIBCPP_VERSION >= 10000) && \
+     (!FMT_LIBCPP_VERSION || FMT_LIBCPP_VERSION >= 10000) && \
      (!FMT_MSC_VERSION || FMT_MSC_VERSION >= 1928)) &&          \
     defined(__cpp_lib_is_constant_evaluated)
 #  define FMT_CONSTEXPR20 constexpr
@@ -173,6 +158,21 @@
 #  define FMT_INLINE inline __attribute__((always_inline))
 #else
 #  define FMT_INLINE inline
+#endif
+
+#ifndef FMT_GCC_PRAGMA
+// Workaround a _Pragma bug https://gcc.gnu.org/bugzilla/show_bug.cgi?id=59884
+// and an nvhpc warning: https://github.com/fmtlib/fmt/pull/2582.
+#  if FMT_GCC_VERSION >= 504 && !defined(__NVCOMPILER)
+#    define FMT_GCC_PRAGMA(arg) _Pragma(arg)
+#  else
+#    define FMT_GCC_PRAGMA(arg)
+#  endif
+#endif
+#if FMT_MSC_VERSION
+#  define FMT_MSC_WARNING(...) __pragma(warning(__VA_ARGS__))
+#else
+#  define FMT_MSC_WARNING(...)
 #endif
 
 #ifdef _MSC_VER
