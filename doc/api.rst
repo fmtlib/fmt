@@ -6,7 +6,7 @@ API Reference
 
 The {fmt} library API consists of the following parts:
 
-* :ref:`fmt/core.h <core-api>`: the core API providing main formatting functions
+* :ref:`fmt/base.h <base-api>`: the base API providing main formatting functions
   for ``char``/UTF-8 with C++20 compile-time checks and minimal dependencies
 * :ref:`fmt/format.h <format-api>`: the full format API providing additional
   formatting functions and locale support
@@ -26,10 +26,10 @@ macros have prefix ``FMT_``.
 
 .. _core-api:
 
-Core API
+Base API
 ========
 
-``fmt/core.h`` defines the core API which provides main formatting functions
+``fmt/base.h`` defines the core API which provides main formatting functions
 for ``char``/UTF-8 with C++20 compile-time checks. It has minimal include
 dependencies for better compile times. This header is only beneficial when
 using {fmt} as a library (the default) and not in the header-only mode.
@@ -54,9 +54,6 @@ I/O errors are reported as `std::system_error
 specified otherwise.
 
 .. _format:
-
-.. doxygenfunction:: format(format_string<T...> fmt, T&&... args) -> std::string
-.. doxygenfunction:: vformat(string_view fmt, format_args args) -> std::string
 
 .. doxygenfunction:: format_to(OutputIt out, format_string<T...> fmt, T&&... args) -> OutputIt
 .. doxygenfunction:: format_to_n(OutputIt out, size_t n, format_string<T...> fmt, T&&... args) -> format_to_n_result<OutputIt>
@@ -343,6 +340,9 @@ Format API
 
 ``fmt/format.h`` defines the full format API providing additional formatting
 functions and locale support.
+
+.. doxygenfunction:: format(format_string<T...> fmt, T&&... args) -> std::string
+.. doxygenfunction:: vformat(string_view fmt, format_args args) -> std::string
 
 Literal-Based API
 -----------------
