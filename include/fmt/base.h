@@ -101,14 +101,6 @@
 #define FMT_HAS_CPP17_ATTRIBUTE(attribute) \
   (FMT_CPLUSPLUS >= 201703L && FMT_HAS_CPP_ATTRIBUTE(attribute))
 
-#ifdef FMT_DEPRECATED
-// Use the provided definition.
-#elif FMT_HAS_CPP14_ATTRIBUTE(deprecated)
-#  define FMT_DEPRECATED [[deprecated]]
-#else
-#  define FMT_DEPRECATED /* deprecated */
-#endif
-
 // Detect C++14 relaxed constexpr.
 #ifdef FMT_USE_CONSTEXPR
 // Use the provided definition.
@@ -129,12 +121,18 @@
 #  define FMT_CONSTEXPR
 #endif
 
-#if (FMT_CPLUSPLUS >= 202002L ||                               \
-     (FMT_CPLUSPLUS >= 201709L && FMT_GCC_VERSION >= 1002)) && \
-    ((!FMT_GLIBCXX_RELEASE || FMT_GLIBCXX_RELEASE >= 10) &&    \
-     (!FMT_LIBCPP_VERSION || FMT_LIBCPP_VERSION >= 10000) &&   \
-     (!FMT_MSC_VERSION || FMT_MSC_VERSION >= 1928)) &&         \
-    defined(__cpp_lib_is_constant_evaluated)
+// Detect C++20 extensions to constexpr and std::is_constant_evaluated.
+#ifndef __cpp_lib_is_constant_evaluated
+#  define FMT_CONSTEXPR20
+#elif FMT_GLIBCXX_RELEASE && FMT_GLIBCXX_RELEASE < 10
+#  define FMT_CONSTEXPR20
+#elif FMT_LIBCPP_VERSION && FMT_LIBCPP_VERSION < 10000
+#  define FMT_CONSTEXPR20
+#elif FMT_MSC_VERSION && FMT_MSC_VERSION < 1928
+#  define FMT_CONSTEXPR20
+#elif FMT_CPLUSPLUS >= 202002L
+#  define FMT_CONSTEXPR20 constexpr
+#elif FMT_CPLUSPLUS >= 201709L && FMT_GCC_VERSION >= 1002
 #  define FMT_CONSTEXPR20 constexpr
 #else
 #  define FMT_CONSTEXPR20
@@ -154,6 +152,14 @@
 #  else
 #    define FMT_CONSTEVAL
 #  endif
+#endif
+
+#ifdef FMT_DEPRECATED
+// Use the provided definition.
+#elif FMT_HAS_CPP14_ATTRIBUTE(deprecated)
+#  define FMT_DEPRECATED [[deprecated]]
+#else
+#  define FMT_DEPRECATED /* deprecated */
 #endif
 
 // Disable [[noreturn]] on MSVC/NVCC because of bogus unreachable code warnings.
