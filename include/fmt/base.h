@@ -54,24 +54,6 @@
 #  define FMT_LIBCPP_VERSION 0
 #endif
 
-// Check if exceptions are disabled.
-#ifdef FMT_EXCEPTIONS
-// Use the provided definition.
-#elif defined(__GNUC__) && !defined(__EXCEPTIONS)
-#  define FMT_EXCEPTIONS 0
-#elif FMT_MSC_VERSION && !_HAS_EXCEPTIONS
-#  define FMT_EXCEPTIONS 0
-#else
-#  define FMT_EXCEPTIONS 1
-#endif
-#if FMT_EXCEPTIONS
-#  define FMT_TRY try
-#  define FMT_CATCH(x) catch (x)
-#else
-#  define FMT_TRY if (true)
-#  define FMT_CATCH(x) if (false)
-#endif
-
 #ifdef _MSVC_LANG
 #  define FMT_CPLUSPLUS _MSVC_LANG
 #else
@@ -121,49 +103,54 @@
 #  define FMT_CONSTEXPR
 #endif
 
-// Detect C++20 extensions to constexpr and std::is_constant_evaluated.
-#ifndef __cpp_lib_is_constant_evaluated
-#  define FMT_CONSTEXPR20
+// Detect consteval, C++20 constexpr extensions and std::is_constant_evaluated.
+#if !defined(__cpp_lib_is_constant_evaluated)
+#  define FMT_USE_CONSTEVAL 0
+#elif FMT_CPLUSPLUS < 201709L
+#  define FMT_USE_CONSTEVAL 0
 #elif FMT_GLIBCXX_RELEASE && FMT_GLIBCXX_RELEASE < 10
-#  define FMT_CONSTEXPR20
+#  define FMT_USE_CONSTEVAL 0
 #elif FMT_LIBCPP_VERSION && FMT_LIBCPP_VERSION < 10000
-#  define FMT_CONSTEXPR20
-#elif FMT_MSC_VERSION && FMT_MSC_VERSION < 1928
-#  define FMT_CONSTEXPR20
-#elif FMT_CPLUSPLUS >= 202002L
-#  define FMT_CONSTEXPR20 constexpr
-#elif FMT_CPLUSPLUS >= 201709L && FMT_GCC_VERSION >= 1002
+#  define FMT_USE_CONSTEVAL 0
+#elif defined(__apple_build_version__) && __apple_build_version__ < 14000029L
+#  define FMT_USE_CONSTEVAL 0  // consteval is broken in Apple clang < 14.
+#elif FMT_MSC_VERSION && FMT_MSC_VERSION < 1929
+#  define FMT_USE_CONSTEVAL 0  // consteval is broken in MSVC VS2019 < 16.10.
+#elif defined(__cpp_consteval)
+#  define FMT_USE_CONSTEVAL 1
+#elif FMT_GCC_VERSION >= 1002 || FMT_CLANG_VERSION >= 1101
+#  define FMT_USE_CONSTEVAL 1
+#else
+#  define FMT_USE_CONSTEVAL 0
+#endif
+#if FMT_USE_CONSTEVAL
+#  define FMT_CONSTEVAL consteval
 #  define FMT_CONSTEXPR20 constexpr
 #else
+#  define FMT_CONSTEVAL
 #  define FMT_CONSTEXPR20
 #endif
 
-#ifndef FMT_CONSTEVAL
-#  if ((FMT_GCC_VERSION >= 1000 || FMT_CLANG_VERSION >= 1101) && \
-       (!defined(__apple_build_version__) ||                     \
-        __apple_build_version__ >= 14000029L) &&                 \
-       FMT_CPLUSPLUS >= 202002L) ||                              \
-      (defined(__cpp_consteval) &&                               \
-       (!FMT_MSC_VERSION || FMT_MSC_VERSION >= 1929))
-// consteval is broken in MSVC before VS2019 version 16.10 and Apple clang
-// before 14.
-#    define FMT_CONSTEVAL consteval
-#    define FMT_HAS_CONSTEVAL
-#  else
-#    define FMT_CONSTEVAL
-#  endif
-#endif
-
-#ifdef FMT_DEPRECATED
+// Check if exceptions are disabled.
+#ifdef FMT_EXCEPTIONS
 // Use the provided definition.
-#elif FMT_HAS_CPP14_ATTRIBUTE(deprecated)
-#  define FMT_DEPRECATED [[deprecated]]
+#elif defined(__GNUC__) && !defined(__EXCEPTIONS)
+#  define FMT_EXCEPTIONS 0
+#elif FMT_MSC_VERSION && !_HAS_EXCEPTIONS
+#  define FMT_EXCEPTIONS 0
 #else
-#  define FMT_DEPRECATED /* deprecated */
+#  define FMT_EXCEPTIONS 1
+#endif
+#if FMT_EXCEPTIONS
+#  define FMT_TRY try
+#  define FMT_CATCH(x) catch (x)
+#else
+#  define FMT_TRY if (true)
+#  define FMT_CATCH(x) if (false)
 #endif
 
 // Disable [[noreturn]] on MSVC/NVCC because of bogus unreachable code warnings.
-#if FMT_EXCEPTIONS && FMT_HAS_CPP_ATTRIBUTE(noreturn) && !FMT_MSC_VERSION && \
+#if FMT_HAS_CPP_ATTRIBUTE(noreturn) && FMT_EXCEPTIONS && !FMT_MSC_VERSION && \
     !defined(__NVCC__)
 #  define FMT_NORETURN [[noreturn]]
 #else
@@ -178,12 +165,26 @@
 #  endif
 #endif
 
+#ifdef FMT_DEPRECATED
+// Use the provided definition.
+#elif FMT_HAS_CPP14_ATTRIBUTE(deprecated)
+#  define FMT_DEPRECATED [[deprecated]]
+#else
+#  define FMT_DEPRECATED /* deprecated */
+#endif
+
 #ifdef FMT_INLINE
 // Use the provided definition.
 #elif FMT_GCC_VERSION || FMT_CLANG_VERSION
 #  define FMT_INLINE inline __attribute__((always_inline))
 #else
 #  define FMT_INLINE inline
+#endif
+
+#if FMT_GCC_VERSION || FMT_CLANG_VERSION
+#  define FMT_VISIBILITY(value) __attribute__((visibility(value)))
+#else
+#  define FMT_VISIBILITY(value)
 #endif
 
 #ifndef FMT_GCC_PRAGMA
@@ -195,16 +196,13 @@
 #    define FMT_GCC_PRAGMA(arg)
 #  endif
 #endif
+
 #if FMT_MSC_VERSION
 #  define FMT_MSC_WARNING(...) __pragma(warning(__VA_ARGS__))
-#else
-#  define FMT_MSC_WARNING(...)
-#endif
-
-#ifdef _MSC_VER
 #  define FMT_UNCHECKED_ITERATOR(It) \
     using _Unchecked_type = It  // Mark iterator as checked.
 #else
+#  define FMT_MSC_WARNING(...)
 #  define FMT_UNCHECKED_ITERATOR(It) using unchecked_type = It
 #endif
 
@@ -221,12 +219,6 @@
 #  define FMT_EXPORT
 #  define FMT_BEGIN_EXPORT
 #  define FMT_END_EXPORT
-#endif
-
-#if FMT_GCC_VERSION || FMT_CLANG_VERSION
-#  define FMT_VISIBILITY(value) __attribute__((visibility(value)))
-#else
-#  define FMT_VISIBILITY(value)
 #endif
 
 #if !defined(FMT_HEADER_ONLY) && defined(_WIN32)
@@ -1272,7 +1264,7 @@ template <typename Context> class value {
   template <typename T> FMT_CONSTEXPR20 FMT_INLINE value(T& val) {
     using value_type = remove_const_t<T>;
     // T may overload operator& e.g. std::vector<bool>::reference in libc++.
-#ifdef __cpp_if_constexpr
+#if defined(__cpp_if_constexpr)
     if constexpr (std::is_same<decltype(&val), T*>::value)
       custom.value = const_cast<value_type*>(&val);
 #endif
@@ -2749,7 +2741,7 @@ template <typename Char, typename... Args> class basic_format_string {
             (std::is_base_of<detail::view, remove_reference_t<Args>>::value &&
              std::is_reference<Args>::value)...>() == 0,
         "passing views as lvalues is disallowed");
-#ifdef FMT_HAS_CONSTEVAL
+#if FMT_USE_CONSTEVAL
     if constexpr (detail::count_named_args<Args...>() ==
                   detail::count_statically_named_args<Args...>()) {
       using checker =
