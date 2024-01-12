@@ -49,7 +49,8 @@
 
 #include "base.h"
 
-#if FMT_HAS_INCLUDE(<bit>)
+// Checking FMT_CPLUSPLUS for warning suppression in MSVC.
+#if FMT_HAS_INCLUDE(<bit>) && FMT_CPLUSPLUS >= 201703L
 #  include <bit>  // std::bit_cast
 #endif
 
