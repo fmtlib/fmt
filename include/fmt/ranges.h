@@ -360,9 +360,7 @@ struct formatter<Tuple, Char,
 
 template <typename T, typename Char> struct is_range {
   static constexpr const bool value =
-      detail::is_range_<T>::value && !detail::has_to_string_view<T>::value &&
-      !std::is_convertible<T, std::basic_string<Char>>::value &&
-      !std::is_convertible<T, detail::std_string_view<Char>>::value;
+      detail::is_range_<T>::value && !detail::has_to_string_view<T>::value;
 };
 
 namespace detail {

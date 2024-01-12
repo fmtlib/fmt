@@ -17,9 +17,12 @@
 
 template <typename T> class mock_allocator {
  public:
+  using value_type = T;
+  using size_type = size_t;
+
   mock_allocator() {}
   mock_allocator(const mock_allocator&) {}
-  using value_type = T;
+
   MOCK_METHOD(T*, allocate, (size_t));
   MOCK_METHOD(void, deallocate, (T*, size_t));
 };

@@ -43,7 +43,6 @@
 #include <cstring>           // std::memcpy
 #include <initializer_list>  // std::initializer_list
 #include <limits>            // std::numeric_limits
-#include <memory>            // std::allocator_traits
 #include <stdexcept>         // std::runtime_error
 #include <string>            // std::string
 #include <system_error>      // std::system_error
@@ -509,6 +508,14 @@ FMT_INLINE void assume(bool condition) {
 #endif
 }
 
+template <typename Allocator, typename Enable = void> struct allocator_size {
+  using type = size_t;
+};
+template <typename Allocator>
+struct allocator_size<Allocator, void_t<typename Allocator::size_type>> {
+  using type = typename Allocator::size_type;
+};
+
 template <typename Char, typename InputIt>
 auto copy_str(InputIt begin, InputIt end, appender out) -> appender {
   get_container(out).append(begin, end);
@@ -907,8 +914,9 @@ class basic_memory_buffer : public detail::buffer<T> {
   static FMT_CONSTEXPR20 void grow(detail::buffer<T>& buf, size_t size) {
     detail::abort_fuzzing_if(size > 5000);
     auto& self = static_cast<basic_memory_buffer&>(buf);
-    const size_t max_size =
-        std::allocator_traits<Allocator>::max_size(self.alloc_);
+    constexpr size_t max_size =
+        detail::max_value<typename detail::allocator_size<Allocator>::type>() /
+        sizeof(T);
     size_t old_capacity = buf.capacity();
     size_t new_capacity = old_capacity + old_capacity / 2;
     if (size > new_capacity)
@@ -916,8 +924,7 @@ class basic_memory_buffer : public detail::buffer<T> {
     else if (new_capacity > max_size)
       new_capacity = size > max_size ? size : max_size;
     T* old_data = buf.data();
-    T* new_data =
-        std::allocator_traits<Allocator>::allocate(self.alloc_, new_capacity);
+    T* new_data = self.alloc_.allocate(new_capacity);
     // Suppress a bogus -Wstringop-overflow in gcc 13.1 (#3481).
     detail::assume(buf.size() <= new_capacity);
     // The following code doesn't throw, so the raw pointer above doesn't leak.

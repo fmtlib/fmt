@@ -413,37 +413,30 @@ TEST(memory_buffer_test, exception_in_deallocate) {
   EXPECT_CALL(alloc, deallocate(&mem2[0], 2 * size));
 }
 
-template <typename Allocator, size_t MaxSize>
-class max_size_allocator : public Allocator {
+class smol_allocator : public std::allocator<char> {
  public:
-  using typename Allocator::value_type;
-  size_t max_size() const noexcept { return MaxSize; }
-  value_type* allocate(size_t n) {
-    if (n > max_size()) {
+  using size_type = unsigned char;
+
+  auto allocate(size_t n) -> value_type* {
+    if (n > fmt::detail::max_value<size_type>())
       throw std::length_error("size > max_size");
-    }
-    return std::allocator_traits<Allocator>::allocate(
-        *static_cast<Allocator*>(this), n);
+    return std::allocator<char>::allocate(n);
   }
   void deallocate(value_type* p, size_t n) {
-    std::allocator_traits<Allocator>::deallocate(*static_cast<Allocator*>(this),
-                                                 p, n);
+    std::allocator<char>::deallocate(p, n);
   }
 };
 
 TEST(memory_buffer_test, max_size_allocator) {
-  // 160 = 128 + 32
-  using test_allocator = max_size_allocator<std::allocator<char>, 160>;
-  basic_memory_buffer<char, 10, test_allocator> buffer;
-  buffer.resize(128);
-  // new_capacity = 128 + 128/2 = 192 > 160
-  buffer.resize(160);  // Shouldn't throw.
+  basic_memory_buffer<char, 10, smol_allocator> buffer;
+  buffer.resize(200);
+  // new_capacity = 200 + 200/2 = 300 > 256
+  buffer.resize(255);  // Shouldn't throw.
 }
 
 TEST(memory_buffer_test, max_size_allocator_overflow) {
-  using test_allocator = max_size_allocator<std::allocator<char>, 160>;
-  basic_memory_buffer<char, 10, test_allocator> buffer;
-  EXPECT_THROW(buffer.resize(161), std::exception);
+  basic_memory_buffer<char, 10, smol_allocator> buffer;
+  EXPECT_THROW(buffer.resize(256), std::exception);
 }
 
 TEST(format_test, exception_from_lib) {
