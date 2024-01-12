@@ -131,6 +131,19 @@
 #  define FMT_CONSTEXPR20
 #endif
 
+#if defined(FMT_USE_NONTYPE_TEMPLATE_ARGS)
+// Use the provided definition.
+#elif defined(__NVCOMPILER)
+#  define FMT_USE_NONTYPE_TEMPLATE_ARGS 0
+#elif FMT_GCC_VERSION >= 903 && FMT_CPLUSPLUS >= 201709L
+#  define FMT_USE_NONTYPE_TEMPLATE_ARGS 0
+#elif defined(__cpp_nontype_template_args) && \
+    __cpp_nontype_template_args >= 201911L
+#  define FMT_USE_NONTYPE_TEMPLATE_ARGS 1
+#else
+#  define FMT_USE_NONTYPE_TEMPLATE_ARGS 0
+#endif
+
 // Check if exceptions are disabled.
 #ifdef FMT_EXCEPTIONS
 // Use the provided definition.
@@ -197,6 +210,13 @@
 #  endif
 #endif
 
+// GCC < 5 requires this-> in decltype.
+#if FMT_GCC_VERSION && FMT_GCC_VERSION < 500
+#  define FMT_DECLTYPE_THIS this->
+#else
+#  define FMT_DECLTYPE_THIS
+#endif
+
 #if FMT_MSC_VERSION
 #  define FMT_MSC_WARNING(...) __pragma(warning(__VA_ARGS__))
 #  define FMT_UNCHECKED_ITERATOR(It) \
@@ -238,30 +258,9 @@
 #  define FMT_UNICODE !FMT_MSC_VERSION
 #endif
 
-#ifndef FMT_USE_NONTYPE_TEMPLATE_ARGS
-#  if defined(__cpp_nontype_template_args) &&                  \
-      ((FMT_GCC_VERSION >= 903 && FMT_CPLUSPLUS >= 201709L) || \
-       __cpp_nontype_template_args >= 201911L) &&              \
-      !defined(__NVCOMPILER) && !defined(__LCC__)
-#    define FMT_USE_NONTYPE_TEMPLATE_ARGS 1
-#  else
-#    define FMT_USE_NONTYPE_TEMPLATE_ARGS 0
-#  endif
-#endif
-
-// GCC < 5 requires this-> in decltype.
-#ifndef FMT_DECLTYPE_THIS
-#  if FMT_GCC_VERSION && FMT_GCC_VERSION < 500
-#    define FMT_DECLTYPE_THIS this->
-#  else
-#    define FMT_DECLTYPE_THIS
-#  endif
-#endif
-
 // Enable minimal optimizations for more compact code in debug mode.
 FMT_GCC_PRAGMA("GCC push_options")
-#if !defined(__OPTIMIZE__) && !defined(__NVCOMPILER) && !defined(__LCC__) && \
-    !defined(__CUDACC__)
+#if !defined(__OPTIMIZE__) && !defined(__CUDACC__)
 FMT_GCC_PRAGMA("GCC optimize(\"Og\")")
 #endif
 
@@ -777,10 +776,8 @@ class compile_parse_context : public basic_format_parse_context<Char> {
 
   FMT_CONSTEXPR void check_dynamic_spec(int arg_id) {
     detail::ignore_unused(arg_id);
-#if !defined(__LCC__)
     if (arg_id < num_args_ && types_ && !is_integral_type(types_[arg_id]))
       throw_format_error("width/precision is not integer");
-#endif
   }
 };
 
@@ -1315,42 +1312,33 @@ template <typename T>
 struct has_format_as
     : bool_constant<!std::is_same<format_as_t<T>, void>::value> {};
 
+#define FMT_MAP_API FMT_CONSTEXPR FMT_INLINE
+
 // Maps formatting arguments to core types.
 // arg_mapper reports errors by returning unformattable instead of using
 // static_assert because it's used in the is_formattable trait.
 template <typename Context> struct arg_mapper {
   using char_type = typename Context::char_type;
 
-  FMT_CONSTEXPR FMT_INLINE auto map(signed char val) -> int { return val; }
-  FMT_CONSTEXPR FMT_INLINE auto map(unsigned char val) -> unsigned {
+  FMT_MAP_API auto map(signed char val) -> int { return val; }
+  FMT_MAP_API auto map(unsigned char val) -> unsigned { return val; }
+  FMT_MAP_API auto map(short val) -> int { return val; }
+  FMT_MAP_API auto map(unsigned short val) -> unsigned { return val; }
+  FMT_MAP_API auto map(int val) -> int { return val; }
+  FMT_MAP_API auto map(unsigned val) -> unsigned { return val; }
+  FMT_MAP_API auto map(long val) -> long_type { return val; }
+  FMT_MAP_API auto map(unsigned long val) -> ulong_type { return val; }
+  FMT_MAP_API auto map(long long val) -> long long { return val; }
+  FMT_MAP_API auto map(unsigned long long val) -> unsigned long long {
     return val;
   }
-  FMT_CONSTEXPR FMT_INLINE auto map(short val) -> int { return val; }
-  FMT_CONSTEXPR FMT_INLINE auto map(unsigned short val) -> unsigned {
-    return val;
-  }
-  FMT_CONSTEXPR FMT_INLINE auto map(int val) -> int { return val; }
-  FMT_CONSTEXPR FMT_INLINE auto map(unsigned val) -> unsigned { return val; }
-  FMT_CONSTEXPR FMT_INLINE auto map(long val) -> long_type { return val; }
-  FMT_CONSTEXPR FMT_INLINE auto map(unsigned long val) -> ulong_type {
-    return val;
-  }
-  FMT_CONSTEXPR FMT_INLINE auto map(long long val) -> long long { return val; }
-  FMT_CONSTEXPR FMT_INLINE auto map(unsigned long long val)
-      -> unsigned long long {
-    return val;
-  }
-  FMT_CONSTEXPR FMT_INLINE auto map(int128_opt val) -> int128_opt {
-    return val;
-  }
-  FMT_CONSTEXPR FMT_INLINE auto map(uint128_opt val) -> uint128_opt {
-    return val;
-  }
-  FMT_CONSTEXPR FMT_INLINE auto map(bool val) -> bool { return val; }
+  FMT_MAP_API auto map(int128_opt val) -> int128_opt { return val; }
+  FMT_MAP_API auto map(uint128_opt val) -> uint128_opt { return val; }
+  FMT_MAP_API auto map(bool val) -> bool { return val; }
 
   template <typename T, FMT_ENABLE_IF(std::is_same<T, char>::value ||
                                       std::is_same<T, char_type>::value)>
-  FMT_CONSTEXPR FMT_INLINE auto map(T val) -> char_type {
+  FMT_MAP_API auto map(T val) -> char_type {
     return val;
   }
   template <typename T, enable_if_t<(std::is_same<T, wchar_t>::value ||
@@ -1361,42 +1349,32 @@ template <typename Context> struct arg_mapper {
                                      std::is_same<T, char32_t>::value) &&
                                         !std::is_same<T, char_type>::value,
                                     int> = 0>
-  FMT_CONSTEXPR FMT_INLINE auto map(T) -> unformattable_char {
+  FMT_MAP_API auto map(T) -> unformattable_char {
     return {};
   }
 
-  FMT_CONSTEXPR FMT_INLINE auto map(float val) -> float { return val; }
-  FMT_CONSTEXPR FMT_INLINE auto map(double val) -> double { return val; }
-  FMT_CONSTEXPR FMT_INLINE auto map(long double val) -> long double {
-    return val;
-  }
+  FMT_MAP_API auto map(float val) -> float { return val; }
+  FMT_MAP_API auto map(double val) -> double { return val; }
+  FMT_MAP_API auto map(long double val) -> long double { return val; }
 
-  FMT_CONSTEXPR FMT_INLINE auto map(char_type* val) -> const char_type* {
-    return val;
-  }
-  FMT_CONSTEXPR FMT_INLINE auto map(const char_type* val) -> const char_type* {
-    return val;
-  }
+  FMT_MAP_API auto map(char_type* val) -> const char_type* { return val; }
+  FMT_MAP_API auto map(const char_type* val) -> const char_type* { return val; }
   template <typename T, typename Char = char_t<T>,
             FMT_ENABLE_IF(std::is_same<Char, char_type>::value &&
                           !std::is_pointer<T>::value)>
-  FMT_CONSTEXPR FMT_INLINE auto map(const T& val) -> basic_string_view<Char> {
+  FMT_MAP_API auto map(const T& val) -> basic_string_view<Char> {
     return to_string_view(val);
   }
   template <typename T, typename Char = char_t<T>,
             FMT_ENABLE_IF(!std::is_same<Char, char_type>::value &&
                           !std::is_pointer<T>::value)>
-  FMT_CONSTEXPR FMT_INLINE auto map(const T&) -> unformattable_char {
+  FMT_MAP_API auto map(const T&) -> unformattable_char {
     return {};
   }
 
-  FMT_CONSTEXPR FMT_INLINE auto map(void* val) -> const void* { return val; }
-  FMT_CONSTEXPR FMT_INLINE auto map(const void* val) -> const void* {
-    return val;
-  }
-  FMT_CONSTEXPR FMT_INLINE auto map(std::nullptr_t val) -> const void* {
-    return val;
-  }
+  FMT_MAP_API auto map(void* val) -> const void* { return val; }
+  FMT_MAP_API auto map(const void* val) -> const void* { return val; }
+  FMT_MAP_API auto map(std::nullptr_t val) -> const void* { return val; }
 
   // Use SFINAE instead of a const T* parameter to avoid a conflict with the
   // array overload.
@@ -1413,15 +1391,14 @@ template <typename Context> struct arg_mapper {
 
   template <typename T, std::size_t N,
             FMT_ENABLE_IF(!std::is_same<T, wchar_t>::value)>
-  FMT_CONSTEXPR FMT_INLINE auto map(const T (&values)[N]) -> const T (&)[N] {
+  FMT_MAP_API auto map(const T (&values)[N]) -> const T (&)[N] {
     return values;
   }
 
   // Only map owning types because mapping views can be unsafe.
   template <typename T, typename U = format_as_t<T>,
             FMT_ENABLE_IF(std::is_arithmetic<U>::value)>
-  FMT_CONSTEXPR FMT_INLINE auto map(const T& val)
-      -> decltype(FMT_DECLTYPE_THIS map(U())) {
+  FMT_MAP_API auto map(const T& val) -> decltype(FMT_DECLTYPE_THIS map(U())) {
     return map(format_as(val));
   }
 
@@ -1431,11 +1408,11 @@ template <typename Context> struct arg_mapper {
                                       !std::is_const<T>::value)> {};
 
   template <typename T, FMT_ENABLE_IF(formattable<T>::value)>
-  FMT_CONSTEXPR FMT_INLINE auto do_map(T& val) -> T& {
+  FMT_MAP_API auto do_map(T& val) -> T& {
     return val;
   }
   template <typename T, FMT_ENABLE_IF(!formattable<T>::value)>
-  FMT_CONSTEXPR FMT_INLINE auto do_map(T&) -> unformattable {
+  FMT_MAP_API auto do_map(T&) -> unformattable {
     return {};
   }
 
@@ -1445,13 +1422,12 @@ template <typename Context> struct arg_mapper {
                           !has_to_string_view<U>::value && !is_char<U>::value &&
                           !is_named_arg<U>::value &&
                           !std::is_arithmetic<format_as_t<U>>::value)>
-  FMT_CONSTEXPR FMT_INLINE auto map(T& val)
-      -> decltype(FMT_DECLTYPE_THIS do_map(val)) {
+  FMT_MAP_API auto map(T& val) -> decltype(FMT_DECLTYPE_THIS do_map(val)) {
     return do_map(val);
   }
 
   template <typename T, FMT_ENABLE_IF(is_named_arg<T>::value)>
-  FMT_CONSTEXPR FMT_INLINE auto map(const T& named_arg)
+  FMT_MAP_API auto map(const T& named_arg)
       -> decltype(FMT_DECLTYPE_THIS map(named_arg.value)) {
     return map(named_arg.value);
   }
@@ -1584,7 +1560,7 @@ struct format_arg_store {
   named_arg_info<typename Context::char_type> named_args[NUM_NAMED_ARGS];
 
   template <typename... T>
-  FMT_CONSTEXPR FMT_INLINE format_arg_store(T&... values)
+  FMT_MAP_API format_arg_store(T&... values)
       : args{{named_args, NUM_NAMED_ARGS},
              make_arg<NUM_ARGS <= max_packed_args, Context>(values)...} {
     using dummy = int[];
