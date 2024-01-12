@@ -59,9 +59,6 @@
     (FMT_CPLUSPLUS >= 201703L || defined(_LIBCPP_VERSION))
 #  include <string_view>
 #  define FMT_USE_STRING_VIEW
-#elif FMT_HAS_INCLUDE("experimental/string_view") && FMT_CPLUSPLUS >= 201402L
-#  include <experimental/string_view>
-#  define FMT_USE_EXPERIMENTAL_STRING_VIEW
 #endif
 
 #if defined __cpp_inline_variables && __cpp_inline_variables >= 201606L
@@ -287,9 +284,6 @@ FMT_CONSTEXPR inline void abort_fuzzing_if(bool condition) {
 
 #if defined(FMT_USE_STRING_VIEW)
 template <typename Char> using std_string_view = std::basic_string_view<Char>;
-#elif defined(FMT_USE_EXPERIMENTAL_STRING_VIEW)
-template <typename Char>
-using std_string_view = std::experimental::basic_string_view<Char>;
 #else
 template <typename T> struct std_string_view {};
 #endif
@@ -1054,9 +1048,9 @@ constexpr auto compile_string_to_view(const Char (&s)[N])
   return {s, N - (std::char_traits<Char>::to_int_type(s[N - 1]) == 0 ? 1 : 0)};
 }
 template <typename Char>
-constexpr auto compile_string_to_view(detail::std_string_view<Char> s)
+constexpr auto compile_string_to_view(basic_string_view<Char> s)
     -> basic_string_view<Char> {
-  return {s.data(), s.size()};
+  return s;
 }
 }  // namespace detail_exported
 
