@@ -1487,8 +1487,14 @@ constexpr unsigned long long make_descriptor() {
                                      : is_unpacked_bit | NUM_ARGS;
 }
 
-// This type is intentionally undefined, only used for errors
-template <typename T, typename Char> struct type_is_unformattable_for;
+// This type is intentionally undefined, only used for errors.
+template <typename T, typename Char>
+#if FMT_CLANG_VERSION && FMT_CLANG_VERSION <= 1500
+// https://github.com/fmtlib/fmt/issues/3796
+struct type_is_unformattable_for {};
+#else
+struct type_is_unformattable_for;
+#endif
 
 template <bool PACKED, typename Context, typename T, FMT_ENABLE_IF(PACKED)>
 FMT_CONSTEXPR auto make_arg(T& val) -> value<Context> {
