@@ -54,6 +54,24 @@
 #  define FMT_LIBCPP_VERSION 0
 #endif
 
+// Check if exceptions are disabled.
+#ifdef FMT_EXCEPTIONS
+// Use the provided definition.
+#elif defined(__GNUC__) && !defined(__EXCEPTIONS)
+#  define FMT_EXCEPTIONS 0
+#elif FMT_MSC_VERSION && !_HAS_EXCEPTIONS
+#  define FMT_EXCEPTIONS 0
+#else
+#  define FMT_EXCEPTIONS 1
+#endif
+#if FMT_EXCEPTIONS
+#  define FMT_TRY try
+#  define FMT_CATCH(x) catch (x)
+#else
+#  define FMT_TRY if (true)
+#  define FMT_CATCH(x) if (false)
+#endif
+
 #ifdef _MSVC_LANG
 #  define FMT_CPLUSPLUS _MSVC_LANG
 #else
@@ -117,23 +135,6 @@
 #  define FMT_CONSTEXPR20 constexpr
 #else
 #  define FMT_CONSTEXPR20
-#endif
-
-// Check if exceptions are disabled.
-#ifndef FMT_EXCEPTIONS
-#  if (defined(__GNUC__) && !defined(__EXCEPTIONS)) || \
-      (FMT_MSC_VERSION && !_HAS_EXCEPTIONS)
-#    define FMT_EXCEPTIONS 0
-#  else
-#    define FMT_EXCEPTIONS 1
-#  endif
-#endif
-#if FMT_EXCEPTIONS
-#  define FMT_TRY try
-#  define FMT_CATCH(x) catch (x)
-#else
-#  define FMT_TRY if (true)
-#  define FMT_CATCH(x) if (false)
 #endif
 
 // Disable [[noreturn]] on MSVC/NVCC because of bogus unreachable code warnings.
