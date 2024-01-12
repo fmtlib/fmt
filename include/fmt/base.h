@@ -109,16 +109,19 @@
 #  define FMT_DEPRECATED /* deprecated */
 #endif
 
-// Check if relaxed C++14 constexpr is supported.
-// GCC doesn't allow throw in constexpr until version 6 (bug 67371).
-#ifndef FMT_USE_CONSTEXPR
-#  if (FMT_HAS_FEATURE(cxx_relaxed_constexpr) || FMT_MSC_VERSION >= 1912 || \
-       (FMT_GCC_VERSION >= 600 && FMT_CPLUSPLUS >= 201402L)) &&             \
-      !FMT_ICC_VERSION && (!defined(__NVCC__) || FMT_CPLUSPLUS >= 202002L)
-#    define FMT_USE_CONSTEXPR 1
-#  else
-#    define FMT_USE_CONSTEXPR 0
-#  endif
+// Detect C++14 relaxed constexpr.
+#ifdef FMT_USE_CONSTEXPR
+// Use the provided definition.
+#elif FMT_GCC_VERSION >= 600 && FMT_CPLUSPLUS >= 201402L
+// GCC only allows throw in constexpr since version 6:
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67371.
+#  define FMT_USE_CONSTEXPR 1
+#elif FMT_ICC_VERSION
+#  define FMT_USE_CONSTEXPR 0  // https://github.com/fmtlib/fmt/issues/1628
+#elif FMT_HAS_FEATURE(cxx_relaxed_constexpr) || FMT_MSC_VERSION >= 1912
+#  define FMT_USE_CONSTEXPR 1
+#else
+#  define FMT_USE_CONSTEXPR 0
 #endif
 #if FMT_USE_CONSTEXPR
 #  define FMT_CONSTEXPR constexpr
@@ -126,15 +129,31 @@
 #  define FMT_CONSTEXPR
 #endif
 
-#if (FMT_CPLUSPLUS >= 202002L ||                                \
-     (FMT_CPLUSPLUS >= 201709L && FMT_GCC_VERSION >= 1002)) &&  \
-    ((!FMT_GLIBCXX_RELEASE || FMT_GLIBCXX_RELEASE >= 10) &&     \
-     (!FMT_LIBCPP_VERSION || FMT_LIBCPP_VERSION >= 10000) && \
-     (!FMT_MSC_VERSION || FMT_MSC_VERSION >= 1928)) &&          \
+#if (FMT_CPLUSPLUS >= 202002L ||                               \
+     (FMT_CPLUSPLUS >= 201709L && FMT_GCC_VERSION >= 1002)) && \
+    ((!FMT_GLIBCXX_RELEASE || FMT_GLIBCXX_RELEASE >= 10) &&    \
+     (!FMT_LIBCPP_VERSION || FMT_LIBCPP_VERSION >= 10000) &&   \
+     (!FMT_MSC_VERSION || FMT_MSC_VERSION >= 1928)) &&         \
     defined(__cpp_lib_is_constant_evaluated)
 #  define FMT_CONSTEXPR20 constexpr
 #else
 #  define FMT_CONSTEXPR20
+#endif
+
+#ifndef FMT_CONSTEVAL
+#  if ((FMT_GCC_VERSION >= 1000 || FMT_CLANG_VERSION >= 1101) && \
+       (!defined(__apple_build_version__) ||                     \
+        __apple_build_version__ >= 14000029L) &&                 \
+       FMT_CPLUSPLUS >= 202002L) ||                              \
+      (defined(__cpp_consteval) &&                               \
+       (!FMT_MSC_VERSION || FMT_MSC_VERSION >= 1929))
+// consteval is broken in MSVC before VS2019 version 16.10 and Apple clang
+// before 14.
+#    define FMT_CONSTEVAL consteval
+#    define FMT_HAS_CONSTEVAL
+#  else
+#    define FMT_CONSTEVAL
+#  endif
 #endif
 
 // Disable [[noreturn]] on MSVC/NVCC because of bogus unreachable code warnings.
@@ -219,22 +238,6 @@
 
 #ifndef FMT_UNICODE
 #  define FMT_UNICODE !FMT_MSC_VERSION
-#endif
-
-#ifndef FMT_CONSTEVAL
-#  if ((FMT_GCC_VERSION >= 1000 || FMT_CLANG_VERSION >= 1101) && \
-       (!defined(__apple_build_version__) ||                     \
-        __apple_build_version__ >= 14000029L) &&                 \
-       FMT_CPLUSPLUS >= 202002L) ||                              \
-      (defined(__cpp_consteval) &&                               \
-       (!FMT_MSC_VERSION || FMT_MSC_VERSION >= 1929))
-// consteval is broken in MSVC before VS2019 version 16.10 and Apple clang
-// before 14.
-#    define FMT_CONSTEVAL consteval
-#    define FMT_HAS_CONSTEVAL
-#  else
-#    define FMT_CONSTEVAL
-#  endif
 #endif
 
 #ifndef FMT_USE_NONTYPE_TEMPLATE_ARGS
