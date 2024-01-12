@@ -53,6 +53,14 @@ I/O errors are reported as `std::system_error
 <https://en.cppreference.com/w/cpp/error/system_error>`_ exceptions unless
 specified otherwise.
 
+.. _print:
+
+.. doxygenfunction:: fmt::print(format_string<T...> fmt, T&&... args)
+.. doxygenfunction:: fmt::vprint(string_view fmt, format_args args)
+
+.. doxygenfunction:: print(FILE *f, format_string<T...> fmt, T&&... args)
+.. doxygenfunction:: vprint(FILE *f, string_view fmt, format_args args)
+
 .. _format:
 
 .. doxygenfunction:: format_to(OutputIt out, format_string<T...> fmt, T&&... args) -> OutputIt
@@ -61,14 +69,6 @@ specified otherwise.
 
 .. doxygenstruct:: fmt::format_to_n_result
    :members:
-
-.. _print:
-
-.. doxygenfunction:: fmt::print(format_string<T...> fmt, T&&... args)
-.. doxygenfunction:: fmt::vprint(string_view fmt, format_args args)
-
-.. doxygenfunction:: print(std::FILE *f, format_string<T...> fmt, T&&... args)
-.. doxygenfunction:: vprint(std::FILE *f, string_view fmt, format_args args)
 
 Compile-Time Format String Checks
 ---------------------------------
@@ -309,7 +309,7 @@ times and reduces binary code size compared to a fully parameterized version.
 .. doxygenclass:: fmt::basic_format_parse_context
    :members:
 
-.. doxygenclass:: fmt::basic_format_context
+.. doxygenclass:: fmt::context
    :members:
 
 .. doxygentypedef:: fmt::format_context
