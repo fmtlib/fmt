@@ -120,7 +120,7 @@ template <typename Char> struct formatter<std::filesystem::path, Char> {
   format_specs<Char> specs_;
   detail::arg_ref<Char> width_ref_;
   bool debug_ = false;
-  char path_type_ = 0;
+  Char path_type_ = 0;
 
  public:
   FMT_CONSTEXPR void set_debug_format(bool set = true) { debug_ = set; }
