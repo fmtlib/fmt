@@ -20,6 +20,7 @@
 #  include <ranges>
 #endif
 
+#include "fmt/format.h"
 #include "gtest/gtest.h"
 
 #if !FMT_GCC_VERSION || FMT_GCC_VERSION >= 601

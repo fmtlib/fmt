@@ -9,10 +9,11 @@
 #define FMT_RANGES_H_
 
 #include <initializer_list>
+#include <iterator>
 #include <tuple>
 #include <type_traits>
 
-#include "format.h"
+#include "base.h"
 
 FMT_BEGIN_NAMESPACE
 
@@ -676,12 +677,10 @@ struct formatter<tuple_join_view<Char, T...>, Char> {
       typename FormatContext::iterator {
     auto out = std::get<sizeof...(T) - N>(formatters_)
                    .format(std::get<sizeof...(T) - N>(value.tuple), ctx);
-    if (N > 1) {
-      out = std::copy(value.sep.begin(), value.sep.end(), out);
-      ctx.advance_to(out);
-      return do_format(value, ctx, std::integral_constant<size_t, N - 1>());
-    }
-    return out;
+    if (N <= 1) return out;
+    out = detail::copy<Char>(value.sep, out);
+    ctx.advance_to(out);
+    return do_format(value, ctx, std::integral_constant<size_t, N - 1>());
   }
 };
 
