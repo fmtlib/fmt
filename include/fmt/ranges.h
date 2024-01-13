@@ -18,29 +18,6 @@ FMT_BEGIN_NAMESPACE
 
 namespace detail {
 
-template <typename Range, typename OutputIt>
-auto copy(const Range& range, OutputIt out) -> OutputIt {
-  for (auto it = range.begin(), end = range.end(); it != end; ++it)
-    *out++ = *it;
-  return out;
-}
-
-template <typename OutputIt>
-auto copy(const char* str, OutputIt out) -> OutputIt {
-  while (*str) *out++ = *str++;
-  return out;
-}
-
-template <typename OutputIt> auto copy(char ch, OutputIt out) -> OutputIt {
-  *out++ = ch;
-  return out;
-}
-
-template <typename OutputIt> auto copy(wchar_t ch, OutputIt out) -> OutputIt {
-  *out++ = ch;
-  return out;
-}
-
 template <typename T> class is_map {
   template <typename U> static auto check(U*) -> typename U::mapped_type;
   template <typename> static void check(...);
