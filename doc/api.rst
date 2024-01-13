@@ -24,12 +24,12 @@ The {fmt} library API consists of the following parts:
 All functions and types provided by the library reside in namespace ``fmt`` and
 macros have prefix ``FMT_``.
 
-.. _core-api:
+.. _base-api:
 
 Base API
 ========
 
-``fmt/base.h`` defines the core API which provides main formatting functions
+``fmt/base.h`` defines the base API which provides main formatting functions
 for ``char``/UTF-8 with C++20 compile-time checks. It has minimal include
 dependencies for better compile times. This header is only beneficial when
 using {fmt} as a library (the default) and not in the header-only mode.
@@ -129,7 +129,7 @@ inheritance or composition. This way you can support standard format specifiers
 without implementing them yourself. For example::
 
   // color.h:
-  #include <fmt/core.h>
+  #include <fmt/base.h>
 
   enum class color {red, green, blue};
 
@@ -273,7 +273,7 @@ binary footprint, for example (https://godbolt.org/z/vajfWEG4b):
 
 .. code:: c++
 
-    #include <fmt/core.h>
+    #include <fmt/base.h>
 
     void vlog(const char* file, int line, fmt::string_view format,
               fmt::format_args args) {
@@ -293,7 +293,7 @@ binary footprint, for example (https://godbolt.org/z/vajfWEG4b):
 Note that ``vlog`` is not parameterized on argument types which improves compile
 times and reduces binary code size compared to a fully parameterized version.
 
-.. doxygenfunction:: fmt::make_format_args(const Args&...)
+.. doxygenfunction:: fmt::make_format_args(T&... args) -> detail::format_arg_store<Context, NUM_ARGS, 0, DESC>
 
 .. doxygenclass:: fmt::format_arg_store
    :members:
@@ -473,7 +473,7 @@ Using ``fmt::join``, you can separate tuple elements with a custom separator::
   // Prints "1, a"
   fmt::print("{}", fmt::join(t, ", "));
 
-.. doxygenfunction:: fmt::join(Range &&range, string_view sep) -> join_view<detail::iterator_t<Range>, detail::sentinel_t<Range>>
+.. doxygenfunction:: fmt::join(Range &&range, string_view sep) -> join_view<decltype(std::begin(range)), decltype(std::end(range))>
 .. doxygenfunction:: fmt::join(It begin, Sentinel end, string_view sep) -> join_view<It, Sentinel>
 
 .. _chrono-api:
