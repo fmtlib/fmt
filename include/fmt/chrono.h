@@ -382,9 +382,9 @@ auto write_encoded_tm_str(OutputIt out, string_view in, const std::locale& loc)
         to_utf8<code_unit, basic_memory_buffer<char, unit_t::max_size * 4>>();
     if (!u.convert({unit.buf, to_unsigned(unit.end - unit.buf)}))
       FMT_THROW(format_error("failed to format time"));
-    return copy_str<char>(u.c_str(), u.c_str() + u.size(), out);
+    return copy<char>(u.c_str(), u.c_str() + u.size(), out);
   }
-  return copy_str<char>(in.data(), in.data() + in.size(), out);
+  return copy<char>(in.data(), in.data() + in.size(), out);
 }
 
 template <typename Char, typename OutputIt,
@@ -393,7 +393,7 @@ auto write_tm_str(OutputIt out, string_view sv, const std::locale& loc)
     -> OutputIt {
   codecvt_result<Char> unit;
   write_codecvt(unit, sv, loc);
-  return copy_str<Char>(unit.buf, unit.end, out);
+  return copy<Char>(unit.buf, unit.end, out);
 }
 
 template <typename Char, typename OutputIt,
@@ -1364,7 +1364,7 @@ class tm_writer {
   auto out() const -> OutputIt { return out_; }
 
   FMT_CONSTEXPR void on_text(const Char* begin, const Char* end) {
-    out_ = copy_str<Char>(begin, end, out_);
+    out_ = copy<Char>(begin, end, out_);
   }
 
   void on_abbr_weekday() {
@@ -1437,7 +1437,7 @@ class tm_writer {
     write_digit2_separated(buf, to_unsigned(tm_mon() + 1),
                            to_unsigned(tm_mday()),
                            to_unsigned(split_year_lower(tm_year())), '/');
-    out_ = copy_str<Char>(std::begin(buf), std::end(buf), out_);
+    out_ = copy<Char>(std::begin(buf), std::end(buf), out_);
   }
   void on_iso_date() {
     auto year = tm_year();
@@ -1453,7 +1453,7 @@ class tm_writer {
     write_digit2_separated(buf + 2, static_cast<unsigned>(year % 100),
                            to_unsigned(tm_mon() + 1), to_unsigned(tm_mday()),
                            '-');
-    out_ = copy_str<Char>(std::begin(buf) + offset, std::end(buf), out_);
+    out_ = copy<Char>(std::begin(buf) + offset, std::end(buf), out_);
   }
 
   void on_utc_offset(numeric_system ns) { format_utc_offset_impl(tm_, ns); }
@@ -1586,7 +1586,7 @@ class tm_writer {
       char buf[8];
       write_digit2_separated(buf, to_unsigned(tm_hour12()),
                              to_unsigned(tm_min()), to_unsigned(tm_sec()), ':');
-      out_ = copy_str<Char>(std::begin(buf), std::end(buf), out_);
+      out_ = copy<Char>(std::begin(buf), std::end(buf), out_);
       *out_++ = ' ';
       on_am_pm();
     } else {

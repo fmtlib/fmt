@@ -513,42 +513,6 @@ FMT_INLINE void assume(bool condition) {
 #endif
 }
 
-template <typename Char, typename InputIt>
-auto copy_str(InputIt begin, InputIt end, appender out) -> appender {
-  get_container(out).append(begin, end);
-  return out;
-}
-
-template <typename Char, typename InputIt, typename OutputIt,
-          FMT_ENABLE_IF(is_back_insert_iterator<OutputIt>::value)>
-auto copy_str(InputIt begin, InputIt end, OutputIt out) -> OutputIt {
-  get_container(out).append(begin, end);
-  return out;
-}
-
-template <typename Char, typename InputIt, typename OutputIt,
-          FMT_ENABLE_IF(!is_back_insert_iterator<OutputIt>::value)>
-FMT_CONSTEXPR auto copy_str(InputIt begin, InputIt end, OutputIt out)
-    -> OutputIt {
-  while (begin != end) *out++ = static_cast<Char>(*begin++);
-  return out;
-}
-
-template <typename Char, typename T, typename U,
-          FMT_ENABLE_IF(
-              std::is_same<remove_const_t<T>, U>::value&& is_char<U>::value)>
-FMT_CONSTEXPR auto copy_str(T* begin, T* end, U* out) -> U* {
-  if (is_constant_evaluated()) return copy_str<Char, T*, U*>(begin, end, out);
-  auto size = to_unsigned(end - begin);
-  if (size > 0) memcpy(out, begin, size * sizeof(U));
-  return out + size;
-}
-
-template <typename Char, typename R, typename OutputIt>
-FMT_CONSTEXPR auto copy_str(R&& rng, OutputIt out) -> OutputIt {
-  return detail::copy_str<Char>(rng.begin(), rng.end(), out);
-}
-
 // An approximation of iterator_t for pre-C++20 systems.
 template <typename T>
 using iterator_t = decltype(std::begin(std::declval<T&>()));
@@ -640,9 +604,9 @@ FMT_CONSTEXPR20 auto fill_n(T* out, Size count, char value) -> T* {
 }
 
 template <typename OutChar, typename InputIt, typename OutputIt>
-FMT_CONSTEXPR FMT_NOINLINE auto copy_str_noinline(InputIt begin, InputIt end,
-                                                  OutputIt out) -> OutputIt {
-  return copy_str<OutChar>(begin, end, out);
+FMT_CONSTEXPR FMT_NOINLINE auto copy_noinline(InputIt begin, InputIt end,
+                                              OutputIt out) -> OutputIt {
+  return copy<OutChar>(begin, end, out);
 }
 
 // A public domain branchless UTF-8 decoder by Christopher Wellons:
@@ -723,7 +687,7 @@ FMT_CONSTEXPR void for_each_codepoint(string_view s, F f) {
   }
   if (auto num_chars_left = s.data() + s.size() - p) {
     char buf[2 * block_size - 1] = {};
-    copy_str<char>(p, p + num_chars_left, buf);
+    copy<char>(p, p + num_chars_left, buf);
     const char* buf_ptr = buf;
     do {
       auto end = decode(buf_ptr, p);
@@ -952,7 +916,7 @@ class basic_memory_buffer : public detail::buffer<T> {
     size_t size = other.size(), capacity = other.capacity();
     if (data == other.store_) {
       this->set(store_, capacity);
-      detail::copy_str<T>(other.store_, other.store_ + size, store_);
+      detail::copy<T>(other.store_, other.store_ + size, store_);
     } else {
       this->set(data, capacity);
       // Set pointer to the inline array so that delete is not called
@@ -1035,8 +999,8 @@ namespace detail_exported {
 #if FMT_USE_NONTYPE_TEMPLATE_ARGS
 template <typename Char, size_t N> struct fixed_string {
   constexpr fixed_string(const Char (&str)[N]) {
-    detail::copy_str<Char, const Char*, Char*>(static_cast<const Char*>(str),
-                                               str + N, data);
+    detail::copy<Char, const Char*, Char*>(static_cast<const Char*>(str),
+                                           str + N, data);
   }
   Char data[N] = {};
 };
@@ -1393,7 +1357,7 @@ FMT_CONSTEXPR inline auto format_decimal(Iterator out, UInt value, int size)
   // Buffer is large enough to hold all digits (digits10 + 1).
   Char buffer[digits10<UInt>() + 1] = {};
   auto end = format_decimal(buffer, value, size).end;
-  return {out, detail::copy_str_noinline<Char>(buffer, end, out)};
+  return {out, detail::copy_noinline<Char>(buffer, end, out)};
 }
 
 template <unsigned BASE_BITS, typename Char, typename UInt>
@@ -1420,7 +1384,7 @@ FMT_CONSTEXPR inline auto format_uint(It out, UInt value, int num_digits,
   // Buffer should be large enough to hold all digits (digits / BASE_BITS + 1).
   char buffer[num_bits<UInt>() / BASE_BITS + 1] = {};
   format_uint<BASE_BITS>(buffer, value, num_digits, upper);
-  return detail::copy_str_noinline<Char>(buffer, buffer + num_digits, out);
+  return detail::copy_noinline<Char>(buffer, buffer + num_digits, out);
 }
 
 // A converter from UTF-8 to UTF-16.
@@ -1776,8 +1740,7 @@ FMT_NOINLINE FMT_CONSTEXPR auto fill(OutputIt it, size_t n,
   auto fill_size = fill.size();
   if (fill_size == 1) return detail::fill_n(it, n, fill[0]);
   auto data = fill.data();
-  for (size_t i = 0; i < n; ++i)
-    it = copy_str<Char>(data, data + fill_size, it);
+  for (size_t i = 0; i < n; ++i) it = copy<Char>(data, data + fill_size, it);
   return it;
 }
 
@@ -1813,11 +1776,11 @@ constexpr auto write_padded(OutputIt out, const format_specs<Char>& specs,
 template <align::type align = align::left, typename Char, typename OutputIt>
 FMT_CONSTEXPR auto write_bytes(OutputIt out, string_view bytes,
                                const format_specs<Char>& specs) -> OutputIt {
-  return write_padded<align>(
-      out, specs, bytes.size(), [bytes](reserve_iterator<OutputIt> it) {
-        const char* data = bytes.data();
-        return copy_str<Char>(data, data + bytes.size(), it);
-      });
+  return write_padded<align>(out, specs, bytes.size(),
+                             [bytes](reserve_iterator<OutputIt> it) {
+                               const char* data = bytes.data();
+                               return copy<Char>(data, data + bytes.size(), it);
+                             });
 }
 
 template <typename Char, typename OutputIt, typename UIntPtr>
@@ -1913,7 +1876,7 @@ auto write_codepoint(OutputIt out, char prefix, uint32_t cp) -> OutputIt {
   Char buf[width];
   fill_n(buf, width, static_cast<Char>('0'));
   format_uint<4>(buf, cp, width);
-  return copy_str<Char>(buf, buf + width, out);
+  return copy<Char>(buf, buf + width, out);
 }
 
 template <typename OutputIt, typename Char>
@@ -1964,7 +1927,7 @@ auto write_escaped_string(OutputIt out, basic_string_view<Char> str)
   auto begin = str.begin(), end = str.end();
   do {
     auto escape = find_escape(begin, end);
-    out = copy_str<Char>(begin, escape.begin, out);
+    out = copy<Char>(begin, escape.begin, out);
     begin = escape.end;
     if (!begin) break;
     out = write_escaped_cp<OutputIt, Char>(out, escape);
@@ -2115,9 +2078,8 @@ template <typename Char> class digit_grouping {
     for (int i = 0, sep_index = static_cast<int>(separators.size() - 1);
          i < num_digits; ++i) {
       if (num_digits - i == separators[sep_index]) {
-        out =
-            copy_str<Char>(thousands_sep_.data(),
-                           thousands_sep_.data() + thousands_sep_.size(), out);
+        out = copy<Char>(thousands_sep_.data(),
+                         thousands_sep_.data() + thousands_sep_.size(), out);
         --sep_index;
       }
       *out++ = static_cast<Char>(digits[to_unsigned(i)]);
@@ -2386,7 +2348,7 @@ FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
   return write_padded(out, specs, size, width,
                       [=](reserve_iterator<OutputIt> it) {
                         if (is_debug) return write_escaped_string(it, s);
-                        return copy_str<Char>(data, data + size, it);
+                        return copy<Char>(data, data + size, it);
                       });
 }
 template <typename Char, typename OutputIt>
@@ -2547,7 +2509,7 @@ FMT_CONSTEXPR20 auto write_nonfinite(OutputIt out, bool isnan,
   if (is_zero_fill) specs.fill[0] = static_cast<Char>(' ');
   return write_padded(out, specs, size, [=](reserve_iterator<OutputIt> it) {
     if (sign) *it++ = detail::sign<Char>(sign);
-    return copy_str<Char>(str, str + str_size, it);
+    return copy<Char>(str, str + str_size, it);
   });
 }
 
@@ -2569,7 +2531,7 @@ inline auto get_significand_size(const dragonbox::decimal_fp<T>& f) -> int {
 template <typename Char, typename OutputIt>
 constexpr auto write_significand(OutputIt out, const char* significand,
                                  int significand_size) -> OutputIt {
-  return copy_str<Char>(significand, significand + significand_size, out);
+  return copy<Char>(significand, significand + significand_size, out);
 }
 template <typename Char, typename OutputIt, typename UInt>
 inline auto write_significand(OutputIt out, UInt significand,
@@ -2622,19 +2584,19 @@ inline auto write_significand(OutputIt out, UInt significand,
   Char buffer[digits10<UInt>() + 2];
   auto end = write_significand(buffer, significand, significand_size,
                                integral_size, decimal_point);
-  return detail::copy_str_noinline<Char>(buffer, end, out);
+  return detail::copy_noinline<Char>(buffer, end, out);
 }
 
 template <typename OutputIt, typename Char>
 FMT_CONSTEXPR auto write_significand(OutputIt out, const char* significand,
                                      int significand_size, int integral_size,
                                      Char decimal_point) -> OutputIt {
-  out = detail::copy_str_noinline<Char>(significand,
-                                        significand + integral_size, out);
+  out = detail::copy_noinline<Char>(significand, significand + integral_size,
+                                    out);
   if (!decimal_point) return out;
   *out++ = decimal_point;
-  return detail::copy_str_noinline<Char>(significand + integral_size,
-                                         significand + significand_size, out);
+  return detail::copy_noinline<Char>(significand + integral_size,
+                                     significand + significand_size, out);
 }
 
 template <typename OutputIt, typename Char, typename T, typename Grouping>
@@ -2651,8 +2613,8 @@ FMT_CONSTEXPR20 auto write_significand(OutputIt out, T significand,
                     integral_size, decimal_point);
   grouping.apply(
       out, basic_string_view<Char>(buffer.data(), to_unsigned(integral_size)));
-  return detail::copy_str_noinline<Char>(buffer.data() + integral_size,
-                                         buffer.end(), out);
+  return detail::copy_noinline<Char>(buffer.data() + integral_size,
+                                     buffer.end(), out);
 }
 
 template <typename OutputIt, typename DecimalFP, typename Char,
@@ -2936,7 +2898,7 @@ class bigint {
     auto size = other.bigits_.size();
     bigits_.resize(size);
     auto data = other.bigits_.data();
-    copy_str<bigit>(data, data + size, bigits_.data());
+    copy<bigit>(data, data + size, bigits_.data());
     exp_ = other.exp_;
   }
 
@@ -3741,7 +3703,7 @@ template <typename Char, typename OutputIt>
 FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> value)
     -> OutputIt {
   auto it = reserve(out, value.size());
-  it = copy_str_noinline<Char>(value.begin(), value.end(), it);
+  it = copy_noinline<Char>(value.begin(), value.end(), it);
   return base_iterator(out, it);
 }
 
