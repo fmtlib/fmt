@@ -1882,7 +1882,6 @@ class context {
 
   using iterator = appender;
   using format_arg = basic_format_arg<context>;
-  using format_args = basic_format_args<context>;
   using parse_context_type = basic_format_parse_context<char>;
   template <typename T> using formatter_type = formatter<T, char>;
 
@@ -1890,7 +1889,7 @@ class context {
     Constructs a ``basic_format_context`` object. References to the arguments
     are stored in the object so make sure they have appropriate lifetimes.
    */
-  FMT_CONSTEXPR context(iterator out, format_args ctx_args,
+  FMT_CONSTEXPR context(iterator out, basic_format_args<context> ctx_args,
                         detail::locale_ref loc = {})
       : out_(out), args_(ctx_args), loc_(loc) {}
   context(context&&) = default;
@@ -1902,7 +1901,7 @@ class context {
   FMT_CONSTEXPR auto arg_id(string_view name) -> int {
     return args_.get_id(name);
   }
-  auto args() const -> const format_args& { return args_; }
+  auto args() const -> const basic_format_args<context>& { return args_; }
 
   // This function is intentionally not constexpr to give a compile-time error.
   void on_error(const char* message) { throw_format_error(message); }
