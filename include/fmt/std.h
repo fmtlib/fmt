@@ -137,7 +137,7 @@ template <typename Char> struct formatter<std::filesystem::path, Char> {
       debug_ = true;
       ++it;
     }
-    if (it != end && (*it == 'g')) path_type_ = *it++;
+    if (it != end && (*it == 'g')) path_type_ = detail::to_ascii(*it++);
     return it;
   }
 
