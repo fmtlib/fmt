@@ -393,7 +393,8 @@ TEST(buffered_file_test, open_retry) {
 
 TEST(buffered_file_test, close_no_retry_in_dtor) {
   auto pipe = fmt::pipe();
-  std::unique_ptr<buffered_file> f(new buffered_file(pipe.read_end.fdopen("r")));
+  std::unique_ptr<buffered_file> f(
+      new buffered_file(pipe.read_end.fdopen("r")));
   int saved_fclose_count = 0;
   EXPECT_WRITE(
       stderr,
@@ -428,7 +429,7 @@ TEST(buffered_file_test, fileno_no_retry) {
 
 struct test_mock {
   static test_mock* instance;
-} * test_mock::instance;
+}* test_mock::instance;
 
 TEST(scoped_mock, scope) {
   {

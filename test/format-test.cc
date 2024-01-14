@@ -1590,7 +1590,8 @@ struct string_viewable {};
 
 FMT_BEGIN_NAMESPACE
 template <> struct formatter<string_viewable> : formatter<std::string_view> {
-  auto format(string_viewable, format_context& ctx) -> decltype(ctx.out()) {
+  auto format(string_viewable, format_context& ctx) const
+      -> decltype(ctx.out()) {
     return formatter<std::string_view>::format("foo", ctx);
   }
 };
@@ -1608,8 +1609,8 @@ struct explicitly_convertible_to_std_string_view {
 template <>
 struct fmt::formatter<explicitly_convertible_to_std_string_view>
     : formatter<std::string_view> {
-  auto format(explicitly_convertible_to_std_string_view v, format_context& ctx)
-      -> decltype(ctx.out()) {
+  auto format(explicitly_convertible_to_std_string_view v,
+              format_context& ctx) const -> decltype(ctx.out()) {
     return fmt::format_to(ctx.out(), "'{}'", std::string_view(v));
   }
 };
@@ -1631,7 +1632,7 @@ template <> struct formatter<date> {
     return it;
   }
 
-  auto format(const date& d, format_context& ctx) -> decltype(ctx.out()) {
+  auto format(const date& d, format_context& ctx) const -> decltype(ctx.out()) {
     // Namespace-qualify to avoid ambiguity with std::format_to.
     fmt::format_to(ctx.out(), "{}-{}-{}", d.year(), d.month(), d.day());
     return ctx.out();
@@ -1640,7 +1641,7 @@ template <> struct formatter<date> {
 
 template <> struct formatter<Answer> : formatter<int> {
   template <typename FormatContext>
-  auto format(Answer, FormatContext& ctx) -> decltype(ctx.out()) {
+  auto format(Answer, FormatContext& ctx) const -> decltype(ctx.out()) {
     return formatter<int>::format(42, ctx);
   }
 };
@@ -1903,7 +1904,7 @@ template <typename, typename OutputIt> void write(OutputIt, foo) = delete;
 FMT_BEGIN_NAMESPACE
 template <>
 struct formatter<adl_test::fmt::detail::foo> : formatter<std::string> {
-  auto format(adl_test::fmt::detail::foo, format_context& ctx)
+  auto format(adl_test::fmt::detail::foo, format_context& ctx) const
       -> decltype(ctx.out()) {
     return formatter<std::string>::format("foo", ctx);
   }
@@ -2072,7 +2073,7 @@ template <> struct formatter<check_back_appender> {
   }
 
   template <typename Context>
-  auto format(check_back_appender, Context& ctx) -> decltype(ctx.out()) {
+  auto format(check_back_appender, Context& ctx) const -> decltype(ctx.out()) {
     auto out = ctx.out();
     static_assert(std::is_same<decltype(++out), decltype(out)&>::value,
                   "needs to satisfy weakly_incrementable");

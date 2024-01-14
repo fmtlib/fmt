@@ -35,7 +35,7 @@ struct type_with_get {
 FMT_BEGIN_NAMESPACE
 template <> struct formatter<type_with_get> : formatter<int> {
   template <typename FormatContext>
-  auto format(type_with_get, FormatContext& ctx) -> decltype(ctx.out()) {
+  auto format(type_with_get, FormatContext& ctx) const -> decltype(ctx.out()) {
     return formatter<int>::format(42, ctx);
   }
 };
@@ -296,8 +296,8 @@ TEST(compile_test, compile_format_string_literal) {
 //  (compiler file
 //  'D:\a\_work\1\s\src\vctools\Compiler\CxxFE\sl\p1\c\constexpr\constexpr.cpp',
 //  line 8635)
-#if FMT_USE_CONSTEVAL &&                                      \
-    (!FMT_MSC_VERSION ||                                      \
+#if FMT_USE_CONSTEVAL &&                                     \
+    (!FMT_MSC_VERSION ||                                     \
      (FMT_MSC_VERSION >= 1928 && FMT_MSC_VERSION < 1930)) && \
     defined(__cpp_lib_is_constant_evaluated)
 template <size_t max_string_length, typename Char = char> struct test_string {

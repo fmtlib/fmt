@@ -201,7 +201,8 @@ auto operator<<(std::ostream& os, test_template<T>) -> std::ostream& {
 
 namespace fmt {
 template <typename T> struct formatter<test_template<T>> : formatter<int> {
-  auto format(test_template<T>, format_context& ctx) -> decltype(ctx.out()) {
+  auto format(test_template<T>, format_context& ctx) const
+      -> decltype(ctx.out()) {
     return formatter<int>::format(2, ctx);
   }
 };

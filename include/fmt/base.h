@@ -12,6 +12,7 @@
 #include <stdio.h>   // FILE
 #include <string.h>  // strlen
 
+// <cstddef> is also included transitively from <type_traits>.
 #include <cstddef>      // std::byte
 #include <type_traits>  // std::enable_if
 
@@ -1332,8 +1333,9 @@ template <typename Context> class value {
     parse_ctx.advance_to(f.parse(parse_ctx));
     using qualified_type =
         conditional_t<has_const_formatter<T, Context>(), const T, T>;
-    // Calling format through a mutable reference is deprecated.
-    ctx.advance_to(f.format(*static_cast<qualified_type*>(arg), ctx));
+    // format must be const for compatibility with std::format and compilation.
+    const auto& cf = f;
+    ctx.advance_to(cf.format(*static_cast<qualified_type*>(arg), ctx));
   }
 };
 

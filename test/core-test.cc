@@ -9,8 +9,6 @@
 #include "test-assert.h"
 // clang-format on
 
-#include "fmt/base.h"
-
 #include <climits>      // INT_MAX
 #include <cstring>      // std::strlen
 #include <functional>   // std::equal_to
@@ -19,6 +17,7 @@
 #include <string>       // std::string
 #include <type_traits>  // std::is_same
 
+#include "fmt/base.h"
 #include "gmock/gmock.h"
 
 using fmt::string_view;
@@ -280,7 +279,7 @@ struct custom_context {
       return ctx.begin();
     }
 
-    const char* format(const T&, custom_context& ctx) {
+    const char* format(const T&, custom_context& ctx) const {
       ctx.called = true;
       return nullptr;
     }
@@ -602,7 +601,7 @@ template <> struct formatter<const_formattable> {
     return ctx.begin();
   }
 
-  auto format(const const_formattable&, format_context& ctx)
+  auto format(const const_formattable&, format_context& ctx) const
       -> decltype(ctx.out()) {
     return copy("test", ctx.out());
   }
@@ -613,7 +612,7 @@ template <> struct formatter<nonconst_formattable> {
     return ctx.begin();
   }
 
-  auto format(nonconst_formattable&, format_context& ctx)
+  auto format(nonconst_formattable&, format_context& ctx) const
       -> decltype(ctx.out()) {
     return copy("test", ctx.out());
   }
@@ -807,7 +806,8 @@ template <> struct formatter<its_a_trap> {
     return ctx.begin();
   }
 
-  auto format(its_a_trap, format_context& ctx) const -> decltype(ctx.out()) {
+  auto format(its_a_trap, format_context& ctx) const
+      -> decltype(ctx.out()) const {
     auto out = ctx.out();
     *out++ = 'x';
     return out;

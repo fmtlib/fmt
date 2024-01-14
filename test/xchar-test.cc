@@ -45,10 +45,12 @@ TYPED_TEST(has_to_string_view_test, has_to_string_view) {
   EXPECT_TRUE(fmt::detail::has_to_string_view<const TypeParam*>::value);
   EXPECT_TRUE(fmt::detail::has_to_string_view<TypeParam[2]>::value);
   EXPECT_TRUE(fmt::detail::has_to_string_view<const TypeParam[2]>::value);
-  EXPECT_TRUE(fmt::detail::has_to_string_view<std::basic_string<TypeParam>>::value);
-  EXPECT_TRUE(fmt::detail::has_to_string_view<fmt::basic_string_view<TypeParam>>::value);
   EXPECT_TRUE(
-      fmt::detail::has_to_string_view<derived_from_string_view<TypeParam>>::value);
+      fmt::detail::has_to_string_view<std::basic_string<TypeParam>>::value);
+  EXPECT_TRUE(fmt::detail::has_to_string_view<
+              fmt::basic_string_view<TypeParam>>::value);
+  EXPECT_TRUE(fmt::detail::has_to_string_view<
+              derived_from_string_view<TypeParam>>::value);
   using fmt_string_view = fmt::detail::std_string_view<TypeParam>;
   EXPECT_TRUE(std::is_empty<fmt_string_view>::value !=
               fmt::detail::has_to_string_view<fmt_string_view>::value);
@@ -576,18 +578,19 @@ template <class charT> struct formatter<std::complex<double>, charT> {
 
   template <class FormatContext>
   typename FormatContext::iterator format(const std::complex<double>& c,
-                                          FormatContext& ctx) {
+                                          FormatContext& ctx) const {
+    auto specs = specs_;
     detail::handle_dynamic_spec<detail::precision_checker>(
-        specs_.precision, specs_.precision_ref, ctx);
-    auto specs = std::string();
-    if (specs_.precision > 0) specs = fmt::format(".{}", specs_.precision);
-    if (specs_.type == presentation_type::fixed_lower) specs += 'f';
+        specs.precision, specs.precision_ref, ctx);
+    auto fspecs = std::string();
+    if (specs.precision > 0) fspecs = fmt::format(".{}", specs.precision);
+    if (specs.type == presentation_type::fixed_lower) fspecs += 'f';
     auto real = fmt::format(ctx.locale().template get<std::locale>(),
-                            fmt::runtime("{:" + specs + "}"), c.real());
+                            fmt::runtime("{:" + fspecs + "}"), c.real());
     auto imag = fmt::format(ctx.locale().template get<std::locale>(),
-                            fmt::runtime("{:" + specs + "}"), c.imag());
+                            fmt::runtime("{:" + fspecs + "}"), c.imag());
     auto fill_align_width = std::string();
-    if (specs_.width > 0) fill_align_width = fmt::format(">{}", specs_.width);
+    if (specs.width > 0) fill_align_width = fmt::format(">{}", specs.width);
     return fmt::format_to(ctx.out(), runtime("{:" + fill_align_width + "}"),
                           c.real() != 0 ? fmt::format("({}+{}i)", real, imag)
                                         : fmt::format("{}i", imag));
@@ -609,7 +612,10 @@ TEST(locale_test, chrono_weekday) {
   EXPECT_EQ(fmt::format(L"{}", sat), L"Sat");
   if (loc != std::locale::classic()) {
     // L'\xE1' is 'á'.
-    auto saturdays = std::vector<std::wstring>{L"s\xE1""b", L"s\xE1."};
+    auto saturdays = std::vector<std::wstring>{
+        L"s\xE1"
+        "b",
+        L"s\xE1."};
     EXPECT_THAT(saturdays, Contains(fmt::format(loc, L"{:L}", sat)));
   }
   std::locale::global(loc_old);

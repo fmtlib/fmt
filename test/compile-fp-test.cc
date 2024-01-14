@@ -58,4 +58,4 @@ TEST(compile_time_formatting_test, floating_point) {
   EXPECT_EQ("-inf", test_format<5>(FMT_COMPILE("{}"), -inf));
 }
 
-#endif // FMT_USE_CONSTEVAL
+#endif  // FMT_USE_CONSTEVAL

@@ -310,10 +310,14 @@ TEST(printf_test, dynamic_precision) {
   }
 }
 
-template <typename T> struct make_signed { using type = T; };
+template <typename T> struct make_signed {
+  using type = T;
+};
 
-#define SPECIALIZE_MAKE_SIGNED(T, S) \
-  template <> struct make_signed<T> { using type = S; }
+#define SPECIALIZE_MAKE_SIGNED(T, S)  \
+  template <> struct make_signed<T> { \
+    using type = S;                   \
+  }
 
 SPECIALIZE_MAKE_SIGNED(char, signed char);
 SPECIALIZE_MAKE_SIGNED(unsigned char, signed char);

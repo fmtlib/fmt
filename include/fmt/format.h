@@ -4121,12 +4121,13 @@ template <> struct formatter<bytes> {
   }
 
   template <typename FormatContext>
-  auto format(bytes b, FormatContext& ctx) -> decltype(ctx.out()) {
-    detail::handle_dynamic_spec<detail::width_checker>(specs_.width,
-                                                       specs_.width_ref, ctx);
+  auto format(bytes b, FormatContext& ctx) const -> decltype(ctx.out()) {
+    auto specs = specs_;
+    detail::handle_dynamic_spec<detail::width_checker>(specs.width,
+                                                       specs.width_ref, ctx);
     detail::handle_dynamic_spec<detail::precision_checker>(
-        specs_.precision, specs_.precision_ref, ctx);
-    return detail::write_bytes(ctx.out(), b.data_, specs_);
+        specs.precision, specs.precision_ref, ctx);
+    return detail::write_bytes(ctx.out(), b.data_, specs);
   }
 };
 
@@ -4162,15 +4163,16 @@ template <typename T> struct formatter<group_digits_view<T>> : formatter<T> {
   }
 
   template <typename FormatContext>
-  auto format(group_digits_view<T> t, FormatContext& ctx)
+  auto format(group_digits_view<T> t, FormatContext& ctx) const
       -> decltype(ctx.out()) {
-    detail::handle_dynamic_spec<detail::width_checker>(specs_.width,
-                                                       specs_.width_ref, ctx);
+    auto specs = specs_;
+    detail::handle_dynamic_spec<detail::width_checker>(specs.width,
+                                                       specs.width_ref, ctx);
     detail::handle_dynamic_spec<detail::precision_checker>(
-        specs_.precision, specs_.precision_ref, ctx);
-    return detail::write_int(
-        ctx.out(), static_cast<detail::uint64_or_128_t<T>>(t.value), 0, specs_,
-        detail::digit_grouping<char>("\3", ","));
+        specs.precision, specs.precision_ref, ctx);
+    return detail::write_int(ctx.out(),
+                             static_cast<detail::uint64_or_128_t<T>>(t.value),
+                             0, specs, detail::digit_grouping<char>("\3", ","));
   }
 };
 

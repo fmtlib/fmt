@@ -177,11 +177,10 @@ TEST(scan_test, lock) {
   };
   std::thread consumer1(fun);
   std::thread consumer2(fun);
-  
+
   producer.join();
   consumer1.join();
   consumer2.join();
   EXPECT_EQ(count, 1000);
-
 }
 #endif  // FMT_USE_FCNTL
