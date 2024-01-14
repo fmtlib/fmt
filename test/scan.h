@@ -650,6 +650,40 @@ auto scan_to(string_view input, string_view fmt, T&... args)
   return input.begin() + (buf.begin().base() - input.data());
 }
 
+template <typename T>
+class scan_value {
+ private:
+  T value_;
+
+ public:
+  scan_value(T value) : value_(std::move(value)) {}
+
+  const T& value() const {
+    return value_;
+  }
+};
+
+// A rudimentary version of std::expected for testing the API shape.
+template <typename T>
+class expected {
+ private:
+  T value_;
+
+ public:
+  expected(T value) : value_(std::move(value)) {}
+};
+
+template <typename T>
+using scan_result = expected<scan_value<T>>;
+
+template <typename T>
+auto scan(string_view input, string_view fmt) -> scan_result<T> {
+  static_assert(std::is_same<remove_cvref_t<T>, T>::value, "");
+  auto value = T();
+  scan_to(input, fmt, value);
+  return scan_value<T>(std::move(value));
+}
+
 template <typename InputRange, typename... T,
           FMT_ENABLE_IF(!std::is_convertible<InputRange, string_view>::value)>
 auto scan(InputRange&& input, string_view fmt, T&... args)

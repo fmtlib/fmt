@@ -18,71 +18,73 @@
 
 TEST(scan_test, read_text) {
   fmt::string_view s = "foo";
-  auto end = fmt::scan(s, "foo");
+  auto end = fmt::scan_to(s, "foo");
   EXPECT_EQ(end, s.end());
-  EXPECT_THROW_MSG(fmt::scan("fob", "foo"), fmt::format_error, "invalid input");
+  EXPECT_THROW_MSG(fmt::scan_to("fob", "foo"), fmt::format_error,
+                   "invalid input");
 }
 
 TEST(scan_test, read_int) {
   int n = 0;
-  fmt::scan("42", "{}", n);
+  fmt::scan_to("42", "{}", n);
   EXPECT_EQ(n, 42);
-  fmt::scan("-42", "{}", n);
+  fmt::scan_to("-42", "{}", n);
   EXPECT_EQ(n, -42);
-  fmt::scan("42", "{:}", n);
+  fmt::scan_to("42", "{:}", n);
   EXPECT_EQ(n, 42);
-  EXPECT_THROW_MSG(fmt::scan(std::to_string(INT_MAX + 1u), "{}", n),
+  EXPECT_THROW_MSG(fmt::scan_to(std::to_string(INT_MAX + 1u), "{}", n),
                    fmt::format_error, "number is too big");
 }
 
 TEST(scan_test, read_longlong) {
   long long n = 0;
-  fmt::scan("42", "{}", n);
+  fmt::scan_to("42", "{}", n);
   EXPECT_EQ(n, 42);
-  fmt::scan("-42", "{}", n);
+  fmt::scan_to("-42", "{}", n);
   EXPECT_EQ(n, -42);
 }
 
 TEST(scan_test, read_uint) {
   unsigned n = 0;
-  fmt::scan("42", "{}", n);
+  fmt::scan_to("42", "{}", n);
   EXPECT_EQ(n, 42);
-  EXPECT_THROW_MSG(fmt::scan("-42", "{}", n), fmt::format_error,
+  EXPECT_THROW_MSG(fmt::scan_to("-42", "{}", n), fmt::format_error,
                    "invalid input");
 }
 
 TEST(scan_test, read_ulonglong) {
   unsigned long long n = 0;
-  fmt::scan("42", "{}", n);
+  fmt::scan_to("42", "{}", n);
   EXPECT_EQ(n, 42);
-  EXPECT_THROW_MSG(fmt::scan("-42", "{}", n), fmt::format_error,
+  EXPECT_THROW_MSG(fmt::scan_to("-42", "{}", n), fmt::format_error,
                    "invalid input");
 }
 
 TEST(scan_test, read_hex) {
   unsigned n = 0;
-  fmt::scan("2a", "{:x}", n);
+  fmt::scan_to("2a", "{:x}", n);
   EXPECT_EQ(n, 42);
   auto num_digits = std::numeric_limits<unsigned>::digits / 4;
-  EXPECT_THROW_MSG(fmt::scan(fmt::format("1{:0{}}", 0, num_digits), "{:x}", n),
-                   fmt::format_error, "number is too big");
+  EXPECT_THROW_MSG(
+      fmt::scan_to(fmt::format("1{:0{}}", 0, num_digits), "{:x}", n),
+      fmt::format_error, "number is too big");
 }
 
 TEST(scan_test, read_string) {
   std::string s;
-  fmt::scan("foo", "{}", s);
+  fmt::scan_to("foo", "{}", s);
   EXPECT_EQ(s, "foo");
 }
 
 TEST(scan_test, read_string_view) {
   fmt::string_view s;
-  fmt::scan("foo", "{}", s);
+  fmt::scan_to("foo", "{}", s);
   EXPECT_EQ(s, "foo");
 }
 
 TEST(scan_test, separator) {
   int n1 = 0, n2 = 0;
-  fmt::scan("10 20", "{} {}", n1, n2);
+  fmt::scan_to("10 20", "{} {}", n1, n2);
   EXPECT_EQ(n1, 10);
   EXPECT_EQ(n2, 20);
 }
@@ -115,28 +117,28 @@ template <> struct scanner<num> {
 
 TEST(scan_test, read_custom) {
   auto n = num();
-  fmt::scan("42", "{}", n);
+  fmt::scan_to("42", "{}", n);
   EXPECT_EQ(n.value, 42);
 }
 
 TEST(scan_test, invalid_format) {
-  EXPECT_THROW_MSG(fmt::scan("", "{}"), fmt::format_error,
+  EXPECT_THROW_MSG(fmt::scan_to("", "{}"), fmt::format_error,
                    "argument index out of range");
-  EXPECT_THROW_MSG(fmt::scan("", "{"), fmt::format_error,
+  EXPECT_THROW_MSG(fmt::scan_to("", "{"), fmt::format_error,
                    "invalid format string");
 }
 
 TEST(scan_test, example) {
   std::string key;
   int value = 0;
-  fmt::scan("answer = 42", "{} = {}", key, value);
+  fmt::scan_to("answer = 42", "{} = {}", key, value);
   EXPECT_EQ(key, "answer");
   EXPECT_EQ(value, 42);
 }
 
 TEST(scan_test, end_of_input) {
   int value = 0;
-  fmt::scan("", "{}", value);
+  fmt::scan_to("", "{}", value);
 }
 
 #if FMT_USE_FCNTL
