@@ -2811,8 +2811,6 @@ using format_string = basic_format_string<char, type_identity_t<Args>...>;
 inline auto runtime(string_view s) -> runtime_format_string<> { return {{s}}; }
 #endif
 
-template <typename... Args>
-using format_string = basic_format_string<char, type_identity_t<Args>...>;
 /** Formats a string and writes the output to ``out``. */
 template <typename OutputIt,
           FMT_ENABLE_IF(detail::is_output_iterator<remove_cvref_t<OutputIt>,
