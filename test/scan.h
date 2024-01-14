@@ -641,8 +641,9 @@ void vscan(detail::scan_buffer& buf, string_view fmt, scan_args args) {
   detail::parse_format_string<false>(fmt, h);
 }
 
+// Scans the input and stores the results (in)to args.
 template <typename... T>
-auto scan(string_view input, string_view fmt, T&... args)
+auto scan_to(string_view input, string_view fmt, T&... args)
     -> string_view::iterator {
   auto&& buf = detail::string_scan_buffer(input);
   vscan(buf, fmt, make_scan_args(args...));
