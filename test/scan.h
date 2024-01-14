@@ -450,8 +450,7 @@ const char* parse_scan_specs(const char* begin, const char* end,
 }
 
 template <typename T, FMT_ENABLE_IF(std::is_unsigned<T>::value)>
-auto read(scan_iterator it, T& value)
-    -> scan_iterator {
+auto read(scan_iterator it, T& value) -> scan_iterator {
   if (it == scan_sentinel()) return it;
   char c = *it;
   if (c < '0' || c > '9') throw_format_error("invalid input");
@@ -484,8 +483,7 @@ auto read(scan_iterator it, T& value)
 }
 
 template <typename T, FMT_ENABLE_IF(std::is_unsigned<T>::value)>
-auto read_hex(scan_iterator it, T& value)
-    -> scan_iterator {
+auto read_hex(scan_iterator it, T& value) -> scan_iterator {
   if (it == scan_sentinel()) return it;
   int digit = to_hex_digit(*it);
   if (digit < 0) throw_format_error("invalid input");
@@ -510,13 +508,12 @@ auto read_hex(scan_iterator it, T& value)
 template <typename T, FMT_ENABLE_IF(std::is_unsigned<T>::value)>
 auto read(scan_iterator it, T& value, const format_specs<>& specs)
     -> scan_iterator {
-  if (specs.type == presentation_type::hex_lower)
-    return read_hex(it, value);
+  if (specs.type == presentation_type::hex_lower) return read_hex(it, value);
   return read(it, value);
 }
 
 template <typename T, FMT_ENABLE_IF(std::is_signed<T>::value)>
-auto read(scan_iterator it, T& value, const format_specs<>& = {})
+auto read(scan_iterator it, T& value, const format_specs<>& specs = {})
     -> scan_iterator {
   bool negative = it != scan_sentinel() && *it == '-';
   if (negative) {
@@ -525,7 +522,7 @@ auto read(scan_iterator it, T& value, const format_specs<>& = {})
   }
   using unsigned_type = typename std::make_unsigned<T>::type;
   unsigned_type abs_value = 0;
-  it = read(it, abs_value);
+  it = read(it, abs_value, specs);
   auto n = static_cast<T>(abs_value);
   value = negative ? -n : n;
   return it;
@@ -636,6 +633,29 @@ auto make_scan_args(T&... args) -> std::array<scan_arg, sizeof...(T)> {
   return {{args...}};
 }
 
+template <typename T> class scan_value {
+ private:
+  T value_;
+
+ public:
+  scan_value(T value) : value_(std::move(value)) {}
+
+  const T& value() const { return value_; }
+};
+
+// A rudimentary version of std::expected for testing the API shape.
+template <typename T> class expected {
+ private:
+  T value_;
+
+ public:
+  expected(T value) : value_(std::move(value)) {}
+
+  const T* operator->() const { return &value_; }
+};
+
+template <typename T> using scan_result = expected<scan_value<T>>;
+
 void vscan(detail::scan_buffer& buf, string_view fmt, scan_args args) {
   auto h = detail::scan_handler(fmt, buf, args);
   detail::parse_format_string<false>(fmt, h);
@@ -651,32 +671,6 @@ auto scan_to(string_view input, string_view fmt, T&... args)
 }
 
 template <typename T>
-class scan_value {
- private:
-  T value_;
-
- public:
-  scan_value(T value) : value_(std::move(value)) {}
-
-  const T& value() const {
-    return value_;
-  }
-};
-
-// A rudimentary version of std::expected for testing the API shape.
-template <typename T>
-class expected {
- private:
-  T value_;
-
- public:
-  expected(T value) : value_(std::move(value)) {}
-};
-
-template <typename T>
-using scan_result = expected<scan_value<T>>;
-
-template <typename T>
 auto scan(string_view input, string_view fmt) -> scan_result<T> {
   static_assert(std::is_same<remove_cvref_t<T>, T>::value, "");
   auto value = T();
@@ -686,14 +680,15 @@ auto scan(string_view input, string_view fmt) -> scan_result<T> {
 
 template <typename InputRange, typename... T,
           FMT_ENABLE_IF(!std::is_convertible<InputRange, string_view>::value)>
-auto scan(InputRange&& input, string_view fmt, T&... args)
+auto scan_to(InputRange&& input, string_view fmt, T&... args)
     -> decltype(std::begin(input)) {
   auto it = std::begin(input);
   vscan(get_buffer(it), fmt, make_scan_args(args...));
   return it;
 }
 
-template <typename... T> bool scan(std::FILE* f, string_view fmt, T&... args) {
+template <typename... T>
+bool scan_to(FILE* f, string_view fmt, T&... args) {
   auto&& buf = detail::file_scan_buffer(f);
   vscan(buf, fmt, make_scan_args(args...));
   return buf.begin() != buf.end();

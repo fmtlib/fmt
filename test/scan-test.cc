@@ -20,66 +20,50 @@ TEST(scan_test, read_text) {
   fmt::string_view s = "foo";
   auto end = fmt::scan_to(s, "foo");
   EXPECT_EQ(end, s.end());
-  EXPECT_THROW_MSG(fmt::scan_to("fob", "foo"), fmt::format_error,
+  EXPECT_THROW_MSG(fmt::scan<int>("fob", "foo"), fmt::format_error,
                    "invalid input");
 }
 
 TEST(scan_test, read_int) {
-  int n = 0;
-  fmt::scan_to("42", "{}", n);
-  EXPECT_EQ(n, 42);
-  fmt::scan_to("-42", "{}", n);
-  EXPECT_EQ(n, -42);
-  fmt::scan_to("42", "{:}", n);
-  EXPECT_EQ(n, 42);
-  EXPECT_THROW_MSG(fmt::scan_to(std::to_string(INT_MAX + 1u), "{}", n),
+  EXPECT_EQ(fmt::scan<int>("42", "{}")->value(), 42);
+  EXPECT_EQ(fmt::scan<int>("-42", "{}")->value(), -42);
+  EXPECT_EQ(fmt::scan<int>("42", "{:}")->value(), 42);
+  EXPECT_THROW_MSG(fmt::scan<int>(std::to_string(INT_MAX + 1u), "{}"),
                    fmt::format_error, "number is too big");
 }
 
-TEST(scan_test, read_longlong) {
-  long long n = 0;
-  fmt::scan_to("42", "{}", n);
-  EXPECT_EQ(n, 42);
-  fmt::scan_to("-42", "{}", n);
-  EXPECT_EQ(n, -42);
+TEST(scan_test, read_long_long) {
+  EXPECT_EQ(fmt::scan<long long>("42", "{}")->value(), 42);
+  EXPECT_EQ(fmt::scan<long long>("-42", "{}")->value(), -42);
 }
 
 TEST(scan_test, read_uint) {
-  unsigned n = 0;
-  fmt::scan_to("42", "{}", n);
-  EXPECT_EQ(n, 42);
-  EXPECT_THROW_MSG(fmt::scan_to("-42", "{}", n), fmt::format_error,
+  EXPECT_EQ(fmt::scan<unsigned>("42", "{}")->value(), 42);
+  EXPECT_THROW_MSG(fmt::scan<unsigned>("-42", "{}"), fmt::format_error,
                    "invalid input");
 }
 
-TEST(scan_test, read_ulonglong) {
-  unsigned long long n = 0;
-  fmt::scan_to("42", "{}", n);
-  EXPECT_EQ(n, 42);
-  EXPECT_THROW_MSG(fmt::scan_to("-42", "{}", n), fmt::format_error,
-                   "invalid input");
+TEST(scan_test, read_ulong_long) {
+  EXPECT_EQ(fmt::scan<unsigned long long>("42", "{}")->value(), 42);
+  EXPECT_THROW_MSG(fmt::scan<unsigned long long>("-42", "{}")->value(),
+                   fmt::format_error, "invalid input");
 }
 
 TEST(scan_test, read_hex) {
-  unsigned n = 0;
-  fmt::scan_to("2a", "{:x}", n);
-  EXPECT_EQ(n, 42);
+  EXPECT_EQ(fmt::scan<unsigned>("2a", "{:x}")->value(), 42);
   auto num_digits = std::numeric_limits<unsigned>::digits / 4;
   EXPECT_THROW_MSG(
-      fmt::scan_to(fmt::format("1{:0{}}", 0, num_digits), "{:x}", n),
+      fmt::scan<unsigned>(fmt::format("1{:0{}}", 0, num_digits), "{:x}")
+          ->value(),
       fmt::format_error, "number is too big");
 }
 
 TEST(scan_test, read_string) {
-  std::string s;
-  fmt::scan_to("foo", "{}", s);
-  EXPECT_EQ(s, "foo");
+  EXPECT_EQ(fmt::scan<std::string>("foo", "{}")->value(), "foo");
 }
 
 TEST(scan_test, read_string_view) {
-  fmt::string_view s;
-  fmt::scan_to("foo", "{}", s);
-  EXPECT_EQ(s, "foo");
+  EXPECT_EQ(fmt::scan<fmt::string_view>("foo", "{}")->value(), "foo");
 }
 
 TEST(scan_test, separator) {
@@ -109,16 +93,14 @@ template <> struct scanner<num> {
 
   template <class ScanContext>
   auto scan(num& n, ScanContext& ctx) const -> typename ScanContext::iterator {
-    // TODO: handle specifier
-    return fmt::scan(ctx, "{}", n.value);
+    return hex ? scan_to(ctx, "{:x}", n.value) : scan_to(ctx, "{}", n.value);
   }
 };
 }  // namespace fmt
 
 TEST(scan_test, read_custom) {
-  auto n = num();
-  fmt::scan_to("42", "{}", n);
-  EXPECT_EQ(n.value, 42);
+  EXPECT_EQ(fmt::scan<num>("42", "{}")->value().value, 42);
+  EXPECT_EQ(fmt::scan<num>("2a", "{:x}")->value().value, 42);
 }
 
 TEST(scan_test, invalid_format) {
@@ -136,10 +118,7 @@ TEST(scan_test, example) {
   EXPECT_EQ(value, 42);
 }
 
-TEST(scan_test, end_of_input) {
-  int value = 0;
-  fmt::scan_to("", "{}", value);
-}
+TEST(scan_test, end_of_input) { fmt::scan<int>("", "{}"); }
 
 #if FMT_USE_FCNTL
 TEST(scan_test, file) {
@@ -151,7 +130,7 @@ TEST(scan_test, file) {
 
   int n1 = 0, n2 = 0;
   fmt::buffered_file f = pipe.read_end.fdopen("r");
-  fmt::scan(f.get(), "{} {}", n1, n2);
+  fmt::scan_to(f.get(), "{} {}", n1, n2);
   EXPECT_EQ(n1, 10);
   EXPECT_EQ(n2, 20);
 }
@@ -170,7 +149,7 @@ TEST(scan_test, lock) {
   fmt::buffered_file f = pipe.read_end.fdopen("r");
   auto fun = [&]() {
     int value = 0;
-    while (fmt::scan(f.get(), "{}", value)) {
+    while (fmt::scan_to(f.get(), "{}", value)) {
       if (value != 42) {
         pipe.read_end.close();
         EXPECT_EQ(value, 42);
