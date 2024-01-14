@@ -293,10 +293,7 @@ binary footprint, for example (https://godbolt.org/z/vajfWEG4b):
 Note that ``vlog`` is not parameterized on argument types which improves compile
 times and reduces binary code size compared to a fully parameterized version.
 
-.. doxygenfunction:: fmt::make_format_args(T&... args) -> detail::format_arg_store<Context, NUM_ARGS, 0, DESC>
-
-.. doxygenclass:: fmt::format_arg_store
-   :members:
+.. doxygenfunction:: make_format_args(T&... args)
 
 .. doxygenclass:: fmt::basic_format_args
    :members:
@@ -583,7 +580,7 @@ Terminal Color and Text Style
 
 ``fmt/color.h`` provides support for terminal color and text style output.
 
-.. doxygenfunction:: print(const text_style &ts, const S &format_str, const Args&... args)
+.. doxygenfunction:: print(const text_style &ts, format_string<T...> fmt, T&&... args)
 
 .. doxygenfunction:: fg(detail::color_type)
 

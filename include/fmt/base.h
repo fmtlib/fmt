@@ -1953,6 +1953,7 @@ constexpr auto make_format_args(T&... args)
       args)...}};
 }
 
+#ifndef FMT_DOC
 template <typename Context = format_context, typename... T,
           size_t NUM_NAMED_ARGS = detail::count_named_args<T...>(),
           unsigned long long DESC =
@@ -1963,6 +1964,7 @@ constexpr auto make_format_args(T&... args)
     -> detail::format_arg_store<Context, sizeof...(T), NUM_NAMED_ARGS, DESC> {
   return {args...};
 }
+#endif
 
 /**
   \rst
