@@ -607,8 +607,9 @@ struct scan_handler {
     return 0;
   }
 
-  void on_replacement_field(int arg_id, const char*) {
+  void on_replacement_field(int arg_id, const char* begin) {
     scan_arg arg = scan_ctx_.arg(arg_id);
+    if (arg.scan_custom(begin, parse_ctx_, scan_ctx_)) return;
     auto it = scan_ctx_.begin();
     while (it != sentinel() && is_whitespace(*it)) ++it;
     scan_ctx_.advance_to(arg.visit(default_arg_scanner{it}));

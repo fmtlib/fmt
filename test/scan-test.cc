@@ -97,7 +97,10 @@ template <> struct scanner<num> {
 
   auto parse(scan_parse_context& ctx) -> scan_parse_context::iterator {
     auto it = ctx.begin(), end = ctx.end();
-    if (it != end && *it == 'x') hex = true;
+    if (it != end && *it == 'x') {
+      hex = true;
+      ++it;
+    }
     if (it != end && *it != '}') throw_format_error("invalid format");
     return it;
   }
@@ -111,9 +114,8 @@ template <> struct scanner<num> {
 }  // namespace fmt
 
 TEST(scan_test, read_custom) {
-  auto input = "42";
   auto n = num();
-  fmt::scan(input, "{:}", n);
+  fmt::scan("42", "{}", n);
   EXPECT_EQ(n.value, 42);
 }
 
