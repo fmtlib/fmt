@@ -504,7 +504,7 @@ template <size_t N> constexpr auto parse_test_specs(const char (&s)[N]) {
 
 TEST(core_test, constexpr_parse_format_specs) {
   static_assert(parse_test_specs("<").align == fmt::align::left, "");
-  static_assert(parse_test_specs("*^").fill[0] == '*', "");
+  static_assert(parse_test_specs("*^").fill.get<char>() == '*', "");
   static_assert(parse_test_specs("+").sign == fmt::sign::plus, "");
   static_assert(parse_test_specs("-").sign == fmt::sign::minus, "");
   static_assert(parse_test_specs(" ").sign == fmt::sign::space, "");

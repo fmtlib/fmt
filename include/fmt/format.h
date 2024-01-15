@@ -1711,13 +1711,14 @@ constexpr auto convert_float(T value) -> convert_float_result<T> {
   return static_cast<convert_float_result<T>>(value);
 }
 
-template <typename OutputIt, typename Char>
-FMT_NOINLINE FMT_CONSTEXPR auto fill(OutputIt it, size_t n,
-                                     const fill_t<Char>& fill) -> OutputIt {
+template <typename Char, typename OutputIt>
+FMT_NOINLINE FMT_CONSTEXPR auto fill(OutputIt it, size_t n, const fill_t& fill)
+    -> OutputIt {
   auto fill_size = fill.size();
-  if (fill_size == 1) return detail::fill_n(it, n, fill[0]);
-  auto data = fill.data();
-  for (size_t i = 0; i < n; ++i) it = copy<Char>(data, data + fill_size, it);
+  if (fill_size == 1) return detail::fill_n(it, n, fill.template get<Char>());
+  if (const Char* data = fill.template data<Char>()) {
+    for (size_t i = 0; i < n; ++i) it = copy<Char>(data, data + fill_size, it);
+  }
   return it;
 }
 
@@ -1737,9 +1738,9 @@ FMT_CONSTEXPR auto write_padded(OutputIt out, const format_specs<Char>& specs,
   size_t left_padding = padding >> shifts[specs.align];
   size_t right_padding = padding - left_padding;
   auto it = reserve(out, size + padding * specs.fill.size());
-  if (left_padding != 0) it = fill(it, left_padding, specs.fill);
+  if (left_padding != 0) it = fill<Char>(it, left_padding, specs.fill);
   it = f(it);
-  if (right_padding != 0) it = fill(it, right_padding, specs.fill);
+  if (right_padding != 0) it = fill<Char>(it, right_padding, specs.fill);
   return base_iterator(out, it);
 }
 
@@ -1789,16 +1790,10 @@ template <typename Char> struct find_escape_result {
 };
 
 template <typename Char>
-using make_unsigned_char =
-    typename conditional_t<std::is_integral<Char>::value,
-                           std::make_unsigned<Char>,
-                           type_identity<uint32_t>>::type;
-
-template <typename Char>
 auto find_escape(const Char* begin, const Char* end)
     -> find_escape_result<Char> {
   for (; begin != end; ++begin) {
-    uint32_t cp = static_cast<make_unsigned_char<Char>>(*begin);
+    uint32_t cp = static_cast<unsigned_char<Char>>(*begin);
     if (const_check(sizeof(Char) == 1) && cp >= 0x80) continue;
     if (needs_escape(cp)) return {begin, begin + 1, cp};
   }
@@ -2385,7 +2380,7 @@ FMT_CONSTEXPR auto parse_align(const Char* begin, const Char* end,
           report_error("invalid fill character '{'");
           return begin;
         }
-        specs.fill = {begin, to_unsigned(p - begin)};
+        specs.fill = basic_string_view<Char>(begin, to_unsigned(p - begin));
         begin = p + 1;
       } else {
         ++begin;
@@ -2464,8 +2459,8 @@ FMT_CONSTEXPR20 auto write_nonfinite(OutputIt out, bool isnan,
   auto size = str_size + (sign ? 1 : 0);
   // Replace '0'-padding with space for non-finite values.
   const bool is_zero_fill =
-      specs.fill.size() == 1 && *specs.fill.data() == static_cast<Char>('0');
-  if (is_zero_fill) specs.fill[0] = static_cast<Char>(' ');
+      specs.fill.size() == 1 && specs.fill.template get<Char>() == '0';
+  if (is_zero_fill) specs.fill = ' ';
   return write_padded(out, specs, size, [=](reserve_iterator<OutputIt> it) {
     if (sign) *it++ = detail::sign<Char>(sign);
     return copy<Char>(str, str + str_size, it);
@@ -4163,7 +4158,7 @@ template <typename T> struct formatter<nested_view<T>> {
 template <typename T> struct nested_formatter {
  private:
   int width_;
-  detail::fill_t<char> fill_;
+  detail::fill_t fill_;
   align_t align_ : 4;
   formatter<T> formatter_;
 

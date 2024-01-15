@@ -301,6 +301,8 @@ template <typename T> struct type_identity {
 };
 template <typename T> using type_identity_t = typename type_identity<T>::type;
 template <typename T>
+using make_unsigned_t = typename std::make_unsigned<T>::type;
+template <typename T>
 using underlying_t = typename std::underlying_type<T>::type;
 
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 500
@@ -399,10 +401,9 @@ template <typename T> auto convert_for_visit(T) -> monostate { return {}; }
 
 // Casts a nonnegative integer to unsigned.
 template <typename Int>
-FMT_CONSTEXPR auto to_unsigned(Int value) ->
-    typename std::make_unsigned<Int>::type {
+FMT_CONSTEXPR auto to_unsigned(Int value) -> make_unsigned_t<Int> {
   FMT_ASSERT(std::is_unsigned<Int>::value || value >= 0, "negative value");
-  return static_cast<typename std::make_unsigned<Int>::type>(value);
+  return static_cast<make_unsigned_t<Int>>(value);
 }
 
 // A heuristic to detect std::string and std::[experimental::]string_view.
@@ -2029,27 +2030,52 @@ using sign_t = sign::type;
 
 namespace detail {
 
-// Workaround an array initialization issue in gcc 4.8.
-template <typename Char> struct fill_t {
+template <typename Char>
+using unsigned_char = typename conditional_t<std::is_integral<Char>::value,
+                                             std::make_unsigned<Char>,
+                                             type_identity<unsigned>>::type;
+
+struct fill_t {
  private:
   enum { max_size = 4 };
-  Char data_[max_size] = {Char(' '), Char(0), Char(0), Char(0)};
+  char data_[max_size] = {' '};
   unsigned char size_ = 1;
 
  public:
+  template <typename Char>
   FMT_CONSTEXPR void operator=(basic_string_view<Char> s) {
     auto size = s.size();
-    FMT_ASSERT(size <= max_size, "invalid fill");
-    for (size_t i = 0; i < size; ++i) data_[i] = s[i];
     size_ = static_cast<unsigned char>(size);
+    if (size == 1) {
+      unsigned uchar = static_cast<unsigned_char<Char>>(s[0]);
+      data_[0] = static_cast<char>(uchar);
+      data_[1] = static_cast<char>(uchar >> 8);
+      return;
+    }
+    FMT_ASSERT(size <= max_size, "invalid fill");
+    for (size_t i = 0; i < size; ++i) data_[i] = static_cast<char>(s[i]);
+  }
+
+  FMT_CONSTEXPR void operator=(char c) {
+    data_[0] = c;
+    size_ = 1;
   }
 
   constexpr auto size() const -> size_t { return size_; }
-  constexpr auto data() const -> const Char* { return data_; }
 
-  FMT_CONSTEXPR auto operator[](size_t index) -> Char& { return data_[index]; }
-  FMT_CONSTEXPR auto operator[](size_t index) const -> const Char& {
-    return data_[index];
+  template <typename Char> constexpr auto get() const -> Char {
+    using uchar = unsigned char;
+    return static_cast<Char>(static_cast<uchar>(data_[0]) |
+                             (static_cast<uchar>(data_[1]) << 8));
+  }
+
+  template <typename Char, FMT_ENABLE_IF(std::is_same<Char, char>::value)>
+  constexpr auto data() const -> const Char* {
+    return data_;
+  }
+  template <typename Char, FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
+  constexpr auto data() const -> const Char* {
+    return nullptr;
   }
 };
 }  // namespace detail
@@ -2087,7 +2113,7 @@ template <typename Char = char> struct format_specs {
   bool upper : 1;  // An uppercase version e.g. 'X' for 'x'.
   bool alt : 1;    // Alternate form ('#').
   bool localized : 1;
-  detail::fill_t<Char> fill;
+  detail::fill_t fill;
 
   constexpr format_specs()
       : width(0),
@@ -2389,7 +2415,7 @@ FMT_CONSTEXPR auto parse_format_specs(const Char* begin, const Char* end,
       if (specs.align == align::none) {
         // Ignore 0 if align is specified for compatibility with std::format.
         specs.align = align::numeric;
-        specs.fill[0] = Char('0');
+        specs.fill = '0';
       }
       ++begin;
       break;
@@ -2480,7 +2506,8 @@ FMT_CONSTEXPR auto parse_format_specs(const Char* begin, const Char* end,
       }
       auto align = parse_align(to_ascii(*fill_end));
       enter_state(state::align, align != align::none);
-      specs.fill = {begin, to_unsigned(fill_end - begin)};
+      specs.fill =
+          basic_string_view<Char>(begin, to_unsigned(fill_end - begin));
       specs.align = align;
       begin = fill_end + 1;
     }
