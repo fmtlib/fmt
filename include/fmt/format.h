@@ -2092,6 +2092,9 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
   int num_digits = 0;
   auto buffer = memory_buffer();
   switch (specs.type) {
+  default:
+    FMT_ASSERT(false, "");
+    FMT_FALLTHROUGH;
   case presentation_type::none:
   case presentation_type::dec: {
     num_digits = count_digits(value);
@@ -2127,8 +2130,6 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
   }
   case presentation_type::chr:
     return write_char(out, static_cast<Char>(value), specs);
-  default:
-    throw_format_error("invalid format specifier");
   }
 
   unsigned size = (prefix != 0 ? prefix >> 24 : 0) + to_unsigned(num_digits) +
@@ -2200,6 +2201,9 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
   auto abs_value = arg.abs_value;
   auto prefix = arg.prefix;
   switch (specs.type) {
+  default:
+    FMT_ASSERT(false, "");
+    FMT_FALLTHROUGH;
   case presentation_type::none:
   case presentation_type::dec: {
     auto num_digits = count_digits(abs_value);
@@ -2243,8 +2247,6 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
   }
   case presentation_type::chr:
     return write_char(out, static_cast<Char>(abs_value), specs);
-  default:
-    throw_format_error("invalid format specifier");
   }
   return out;
 }
@@ -2448,6 +2450,9 @@ FMT_CONSTEXPR auto parse_float_type_spec(const format_specs<Char>& specs)
   result.showpoint = specs.alt;
   result.locale = specs.localized;
   switch (specs.type) {
+  default:
+    FMT_ASSERT(false, "");
+    FMT_FALLTHROUGH;
   case presentation_type::none:
     result.format = float_format::general;
     break;
@@ -2476,9 +2481,6 @@ FMT_CONSTEXPR auto parse_float_type_spec(const format_specs<Char>& specs)
     FMT_FALLTHROUGH;
   case presentation_type::hexfloat_lower:
     result.format = float_format::hex;
-    break;
-  default:
-    throw_format_error("invalid format specifier");
     break;
   }
   return result;
