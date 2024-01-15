@@ -233,7 +233,7 @@ Folly Format have the largest overheads.
 |---------------|-----------------|----------------------|--------------------|
 | printf        |             1.4 |                   54 |                 50 |
 | IOStreams     |            24.2 |                   92 |                 68 |
-| {fmt} 1b7d9db |             4.7 |                  217 |                214 |
+| {fmt} 3647fea |             4.3 |                  187 |                182 |
 | tinyformat    |            25.7 |                  204 |                161 |
 | Boost Format  |            37.5 |                  831 |                462 |
 
