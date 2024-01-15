@@ -218,24 +218,23 @@ in the following tables.
 | Method        | Compile Time, s | Executable size, KiB | Stripped size, KiB |
 |---------------|-----------------|----------------------|--------------------|
 | printf        |             1.6 |                   54 |                 50 |
-| IOStreams     |            25.6 |                   98 |                 84 |
-| {fmt} 1b7d9db |             4.8 |                   54 |                 50 |
-| tinyformat    |            30.5 |                  161 |                136 |
-| Boost Format  |            56.7 |                  530 |                317 |
+| IOStreams     |            25.9 |                   98 |                 84 |
+| fmt 83652df   |             4.8 |                   54 |                 50 |
+| tinyformat    |            29.1 |                  161 |                136 |
+| Boost Format  |            55.0 |                  530 |                317 |
 
-As you can see, {fmt} has ~70% less overhead in terms of resulting binary code
-size compared to iostreams and comes pretty close to `printf`. Boost Format and
-Folly Format have the largest overheads.
+{fmt} is fast to compile and is comparable to `printf` in terms of per-call
+binary size (within a rounding error on this system).
 
 **Non-optimized build**
 
 | Method        | Compile Time, s | Executable size, KiB | Stripped size, KiB |
 |---------------|-----------------|----------------------|--------------------|
 | printf        |             1.4 |                   54 |                 50 |
-| IOStreams     |            24.2 |                   92 |                 68 |
-| {fmt} 3647fea |             4.3 |                  187 |                182 |
-| tinyformat    |            25.7 |                  204 |                161 |
-| Boost Format  |            37.5 |                  831 |                462 |
+| IOStreams     |            23.4 |                   92 |                 68 |
+| {fmt} 83652df |             4.4 |                   89 |                 85 |
+| tinyformat    |            24.5 |                  204 |                161 |
+| Boost Format  |            36.4 |                  831 |                462 |
 
 `libc`, `lib(std)c++`, and `libfmt` are all linked as shared libraries
 to compare formatting function overhead only. Boost Format is a
