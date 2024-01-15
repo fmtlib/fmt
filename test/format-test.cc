@@ -1765,7 +1765,8 @@ FMT_BEGIN_NAMESPACE
 template <> struct formatter<point> : nested_formatter<double> {
   auto format(point p, format_context& ctx) const -> decltype(ctx.out()) {
     return write_padded(ctx, [this, p](auto out) -> decltype(out) {
-      return fmt::format_to(out, "({}, {})", nested(p.x), nested(p.y));
+      return fmt::format_to(out, "({}, {})", this->nested(p.x),
+                            this->nested(p.y));
     });
   }
 };

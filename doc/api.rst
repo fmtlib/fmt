@@ -179,7 +179,8 @@ For example::
   struct fmt::formatter<point> : nested_formatter<double> {
     auto format(point p, format_context& ctx) const {
       return write_padded(ctx, [=](auto out) {
-        return format_to(out, "({}, {})", nested(p.x), nested(p.y));
+        return format_to(out, "({}, {})", this->nested(p.x),
+                         this->nested(p.y));
       });
     }
   };
