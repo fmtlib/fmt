@@ -962,7 +962,7 @@ class iterator_buffer : public Traits, public buffer<T> {
  public:
   explicit iterator_buffer(OutputIt out, size_t n = buffer_size)
       : Traits(n), buffer<T>(grow, data_, 0, buffer_size), out_(out) {}
-  iterator_buffer(iterator_buffer&& other)
+  iterator_buffer(iterator_buffer&& other) noexcept
       : Traits(other),
         buffer<T>(grow, data_, 0, buffer_size),
         out_(other.out_) {}
@@ -1004,7 +1004,7 @@ class iterator_buffer<T*, T, fixed_buffer_traits> : public fixed_buffer_traits,
  public:
   explicit iterator_buffer(T* out, size_t n = buffer_size)
       : fixed_buffer_traits(n), buffer<T>(grow, out, 0, n), out_(out) {}
-  iterator_buffer(iterator_buffer&& other)
+  iterator_buffer(iterator_buffer&& other) noexcept
       : fixed_buffer_traits(other),
         buffer<T>(static_cast<iterator_buffer&&>(other)),
         out_(other.out_) {
