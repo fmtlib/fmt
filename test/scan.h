@@ -453,7 +453,7 @@ template <typename T, FMT_ENABLE_IF(std::is_unsigned<T>::value)>
 auto read(scan_iterator it, T& value) -> scan_iterator {
   if (it == scan_sentinel()) return it;
   char c = *it;
-  if (c < '0' || c > '9') throw_format_error("invalid input");
+  if (c < '0' || c > '9') report_error("invalid input");
 
   int num_digits = 0;
   T n = 0, prev = 0;
@@ -477,7 +477,7 @@ auto read(scan_iterator it, T& value) -> scan_iterator {
       prev * 10ull + unsigned(prev_digit - '0') <= max) {
     value = n;
   } else {
-    throw_format_error("number is too big");
+    report_error("number is too big");
   }
   return it;
 }
@@ -486,7 +486,7 @@ template <typename T, FMT_ENABLE_IF(std::is_unsigned<T>::value)>
 auto read_hex(scan_iterator it, T& value) -> scan_iterator {
   if (it == scan_sentinel()) return it;
   int digit = to_hex_digit(*it);
-  if (digit < 0) throw_format_error("invalid input");
+  if (digit < 0) report_error("invalid input");
 
   int num_digits = 0;
   T n = 0;
@@ -501,7 +501,7 @@ auto read_hex(scan_iterator it, T& value) -> scan_iterator {
   if (num_digits <= (std::numeric_limits<T>::digits >> 2))
     value = n;
   else
-    throw_format_error("number is too big");
+    report_error("number is too big");
   return it;
 }
 
@@ -518,7 +518,7 @@ auto read(scan_iterator it, T& value, const format_specs<>& specs = {})
   bool negative = it != scan_sentinel() && *it == '-';
   if (negative) {
     ++it;
-    if (it == scan_sentinel()) throw_format_error("invalid input");
+    if (it == scan_sentinel()) report_error("invalid input");
   }
   using unsigned_type = typename std::make_unsigned<T>::type;
   unsigned_type abs_value = 0;
@@ -538,7 +538,7 @@ auto read(scan_iterator it, string_view& value, const format_specs<>& = {})
     -> scan_iterator {
   auto range = to_contiguous(it);
   // This could also be checked at compile time in scan.
-  if (!range) throw_format_error("string_view requires contiguous input");
+  if (!range) report_error("string_view requires contiguous input");
   auto p = range.begin;
   while (p != range.end && *p != ' ') ++p;
   size_t size = to_unsigned(p - range.begin);
@@ -624,7 +624,7 @@ struct scan_handler {
     return begin;
   }
 
-  void on_error(const char* message) { throw_format_error(message); }
+  void on_error(const char* message) { report_error(message); }
 };
 }  // namespace detail
 
@@ -640,7 +640,7 @@ template <typename T> class scan_value {
  public:
   scan_value(T value) : value_(std::move(value)) {}
 
-  const T& value() const { return value_; }
+  auto value() const -> const T& { return value_; }
 };
 
 // A rudimentary version of std::expected for testing the API shape.
@@ -651,7 +651,7 @@ template <typename T> class expected {
  public:
   expected(T value) : value_(std::move(value)) {}
 
-  const T* operator->() const { return &value_; }
+  auto operator->() const -> const T* { return &value_; }
 };
 
 template <typename T> using scan_result = expected<scan_value<T>>;
@@ -688,7 +688,7 @@ auto scan_to(InputRange&& input, string_view fmt, T&... args)
 }
 
 template <typename... T>
-bool scan_to(FILE* f, string_view fmt, T&... args) {
+auto scan_to(FILE* f, string_view fmt, T&... args) -> bool {
   auto&& buf = detail::file_scan_buffer(f);
   vscan(buf, fmt, make_scan_args(args...));
   return buf.begin() != buf.end();

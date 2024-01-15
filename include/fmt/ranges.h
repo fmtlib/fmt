@@ -310,8 +310,7 @@ struct formatter<Tuple, Char,
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
     auto it = ctx.begin();
-    if (it != ctx.end() && *it != '}')
-      throw_format_error("invalid format specifier");
+    if (it != ctx.end() && *it != '}') report_error("invalid format specifier");
     detail::for_each(formatters_, detail::parse_empty_specs<ParseContext>{ctx});
     return it;
   }
@@ -417,7 +416,7 @@ struct range_formatter<
     }
 
     if (it != end && *it != '}') {
-      if (*it != ':') throw_format_error("invalid format specifier");
+      if (*it != ':') report_error("invalid format specifier");
       ++it;
     } else {
       detail::maybe_set_debug_format(underlying_, true);
@@ -650,7 +649,7 @@ struct formatter<tuple_join_view<Char, T...>, Char> {
     if (N > 1) {
       auto end1 = do_parse(ctx, std::integral_constant<size_t, N - 1>());
       if (end != end1)
-        throw_format_error("incompatible format specs for tuple elements");
+        report_error("incompatible format specs for tuple elements");
     }
 #endif
     return end;

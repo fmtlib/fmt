@@ -447,7 +447,7 @@ TEST(memory_buffer_test, max_size_allocator_overflow) {
 }
 
 TEST(format_test, exception_from_lib) {
-  EXPECT_THROW_MSG(fmt::throw_format_error("test"), format_error, "test");
+  EXPECT_THROW_MSG(fmt::report_error("test"), format_error, "test");
 }
 
 TEST(format_test, escape) {

@@ -52,8 +52,6 @@ template <typename Char> class basic_printf_context {
   auto arg(int id) const -> basic_format_arg<basic_printf_context> {
     return args_.get(id);
   }
-
-  void on_error(const char* message) { throw_format_error(message); }
 };
 
 namespace detail {
@@ -80,13 +78,13 @@ struct printf_precision_handler {
   template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
   auto operator()(T value) -> int {
     if (!int_checker<std::numeric_limits<T>::is_signed>::fits_in_int(value))
-      throw_format_error("number is too big");
+      report_error("number is too big");
     return (std::max)(static_cast<int>(value), 0);
   }
 
   template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value)>
   auto operator()(T) -> int {
-    throw_format_error("precision is not integer");
+    report_error("precision is not integer");
     return 0;
   }
 };
@@ -208,13 +206,13 @@ template <typename Char> class printf_width_handler {
       width = 0 - width;
     }
     unsigned int_max = max_value<int>();
-    if (width > int_max) throw_format_error("number is too big");
+    if (width > int_max) report_error("number is too big");
     return static_cast<unsigned>(width);
   }
 
   template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value)>
   auto operator()(T) -> unsigned {
-    throw_format_error("width is not integer");
+    report_error("width is not integer");
     return 0;
   }
 };
@@ -352,7 +350,7 @@ auto parse_header(const Char*& it, const Char* end, format_specs<Char>& specs,
       if (value != 0) {
         // Nonzero value means that we parsed width and don't need to
         // parse it or flags again, so return now.
-        if (value == -1) throw_format_error("number is too big");
+        if (value == -1) report_error("number is too big");
         specs.width = value;
         return arg_index;
       }
@@ -363,7 +361,7 @@ auto parse_header(const Char*& it, const Char* end, format_specs<Char>& specs,
   if (it != end) {
     if (*it >= '0' && *it <= '9') {
       specs.width = parse_nonnegative_int(it, end, -1);
-      if (specs.width == -1) throw_format_error("number is too big");
+      if (specs.width == -1) report_error("number is too big");
     } else if (*it == '*') {
       ++it;
       specs.width = static_cast<int>(
@@ -457,7 +455,7 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
 
     // Parse argument index, flags and width.
     int arg_index = parse_header(it, end, specs, get_arg);
-    if (arg_index == 0) throw_format_error("argument not found");
+    if (arg_index == 0) report_error("argument not found");
 
     // Parse precision.
     if (it != end && *it == '.') {
@@ -539,7 +537,7 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
     }
 
     // Parse type.
-    if (it == end) throw_format_error("invalid format string");
+    if (it == end) report_error("invalid format string");
     char type = static_cast<char>(*it++);
     if (arg.is_integral()) {
       // Normalize type.
@@ -556,7 +554,7 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
     bool upper = false;
     specs.type = parse_printf_presentation_type(type, arg.type(), upper);
     if (specs.type == presentation_type::none)
-      throw_format_error("invalid format specifier");
+      report_error("invalid format specifier");
     specs.upper = upper;
 
     start = it;

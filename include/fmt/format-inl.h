@@ -123,7 +123,7 @@ FMT_FUNC auto write_loc(appender out, loc_value value,
 }
 }  // namespace detail
 
-FMT_FUNC void throw_format_error(const char* message) {
+FMT_FUNC void report_error(const char* message) {
   FMT_THROW(format_error(message));
 }
 

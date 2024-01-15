@@ -87,7 +87,7 @@ template <> struct scanner<num> {
       hex = true;
       ++it;
     }
-    if (it != end && *it != '}') throw_format_error("invalid format");
+    if (it != end && *it != '}') report_error("invalid format");
     return it;
   }
 
