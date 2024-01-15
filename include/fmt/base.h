@@ -163,6 +163,17 @@
 #  define FMT_CATCH(x) if (false)
 #endif
 
+#if FMT_HAS_CPP17_ATTRIBUTE(fallthrough)
+#  define FMT_FALLTHROUGH [[fallthrough]]
+#elif defined(__clang__)
+#  define FMT_FALLTHROUGH [[clang::fallthrough]]
+#elif FMT_GCC_VERSION >= 700 && \
+    (!defined(__EDG_VERSION__) || __EDG_VERSION__ >= 520)
+#  define FMT_FALLTHROUGH [[gnu::fallthrough]]
+#else
+#  define FMT_FALLTHROUGH
+#endif
+
 // Disable [[noreturn]] on MSVC/NVCC because of bogus unreachable code warnings.
 #if FMT_HAS_CPP_ATTRIBUTE(noreturn) && FMT_EXCEPTIONS && !FMT_MSC_VERSION && \
     !defined(__NVCC__)
@@ -2038,25 +2049,26 @@ template <typename Char> struct fill_t {
 }  // namespace detail
 
 enum class presentation_type : unsigned char {
-  none,
-  dec,             // 'd'
-  oct,             // 'o'
-  hex_lower,       // 'x'
-  hex_upper,       // 'X'
-  bin_lower,       // 'b'
-  bin_upper,       // 'B'
-  hexfloat_lower,  // 'a'
-  hexfloat_upper,  // 'A'
-  exp_lower,       // 'e'
-  exp_upper,       // 'E'
-  fixed_lower,     // 'f'
-  fixed_upper,     // 'F'
-  general_lower,   // 'g'
-  general_upper,   // 'G'
-  chr,             // 'c'
-  string,          // 's'
-  pointer,         // 'p'
-  debug            // '?'
+  // Common specifiers:
+  none = 0,
+  debug = 1,   // '?'
+  string = 2,  // 's' (string, bool)
+
+  // Integral, bool and character specifiers:
+  dec = 3,  // 'd'
+  hex,      // 'x' or 'X'
+  oct,      // 'o'
+  bin,      // 'b' or 'B'
+  chr,      // 'c'
+
+  // String and pointer specifiers:
+  pointer = 3,  // 'p'
+
+  // Floating-point specifiers:
+  exp = 1,  // 'e' or 'E' (1 since there is no FP debug presentation)
+  fixed,    // 'f' or 'F'
+  general,  // 'g' or 'G'
+  hexfloat  // 'a' or 'A'
 };
 
 // Format specifiers for built-in and string types.
@@ -2066,7 +2078,8 @@ template <typename Char = char> struct format_specs {
   presentation_type type;
   align_t align : 4;
   sign_t sign : 3;
-  bool alt : 1;  // Alternate form ('#').
+  bool upper : 1;  // An uppercase version e.g. 'X' for 'x'.
+  bool alt : 1;    // Alternate form ('#').
   bool localized : 1;
   detail::fill_t<Char> fill;
 
@@ -2076,6 +2089,7 @@ template <typename Char = char> struct format_specs {
         type(presentation_type::none),
         align(align::none),
         sign(sign::none),
+        upper(false),
         alt(false),
         localized(false) {}
 };
@@ -2401,32 +2415,38 @@ FMT_CONSTEXPR auto parse_format_specs(const Char* begin, const Char* end,
       break;
     case 'd':
       return parse_presentation_type(pres::dec, integral_set);
+    case 'X':
+      specs.upper = true;
+      FMT_FALLTHROUGH;
+    case 'x':
+      return parse_presentation_type(pres::hex, integral_set);
     case 'o':
       return parse_presentation_type(pres::oct, integral_set);
-    case 'x':
-      return parse_presentation_type(pres::hex_lower, integral_set);
-    case 'X':
-      return parse_presentation_type(pres::hex_upper, integral_set);
-    case 'b':
-      return parse_presentation_type(pres::bin_lower, integral_set);
     case 'B':
-      return parse_presentation_type(pres::bin_upper, integral_set);
-    case 'a':
-      return parse_presentation_type(pres::hexfloat_lower, float_set);
-    case 'A':
-      return parse_presentation_type(pres::hexfloat_upper, float_set);
-    case 'e':
-      return parse_presentation_type(pres::exp_lower, float_set);
+      specs.upper = true;
+      FMT_FALLTHROUGH;
+    case 'b':
+      return parse_presentation_type(pres::bin, integral_set);
     case 'E':
-      return parse_presentation_type(pres::exp_upper, float_set);
-    case 'f':
-      return parse_presentation_type(pres::fixed_lower, float_set);
+      specs.upper = true;
+      FMT_FALLTHROUGH;
+    case 'e':
+      return parse_presentation_type(pres::exp, float_set);
     case 'F':
-      return parse_presentation_type(pres::fixed_upper, float_set);
-    case 'g':
-      return parse_presentation_type(pres::general_lower, float_set);
+      specs.upper = true;
+      FMT_FALLTHROUGH;
+    case 'f':
+      return parse_presentation_type(pres::fixed, float_set);
     case 'G':
-      return parse_presentation_type(pres::general_upper, float_set);
+      specs.upper = true;
+      FMT_FALLTHROUGH;
+    case 'g':
+      return parse_presentation_type(pres::general, float_set);
+    case 'A':
+      specs.upper = true;
+      FMT_FALLTHROUGH;
+    case 'a':
+      return parse_presentation_type(pres::hexfloat, float_set);
     case 'c':
       if (arg_type == type::bool_type)
         throw_format_error("invalid format specifier");

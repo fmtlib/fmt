@@ -373,7 +373,7 @@ auto parse_header(const Char*& it, const Char* end, format_specs<Char>& specs,
   return arg_index;
 }
 
-inline auto parse_printf_presentation_type(char c, type t)
+inline auto parse_printf_presentation_type(char c, type t, bool& upper)
     -> presentation_type {
   using pt = presentation_type;
   constexpr auto integral_set = sint_set | uint_set | bool_set | char_set;
@@ -382,26 +382,31 @@ inline auto parse_printf_presentation_type(char c, type t)
     return in(t, integral_set) ? pt::dec : pt::none;
   case 'o':
     return in(t, integral_set) ? pt::oct : pt::none;
-  case 'x':
-    return in(t, integral_set) ? pt::hex_lower : pt::none;
   case 'X':
-    return in(t, integral_set) ? pt::hex_upper : pt::none;
-  case 'a':
-    return in(t, float_set) ? pt::hexfloat_lower : pt::none;
-  case 'A':
-    return in(t, float_set) ? pt::hexfloat_upper : pt::none;
-  case 'e':
-    return in(t, float_set) ? pt::exp_lower : pt::none;
+    upper = true;
+    FMT_FALLTHROUGH;
+  case 'x':
+    return in(t, integral_set) ? pt::hex : pt::none;
   case 'E':
-    return in(t, float_set) ? pt::exp_upper : pt::none;
-  case 'f':
-    return in(t, float_set) ? pt::fixed_lower : pt::none;
+    upper = true;
+    FMT_FALLTHROUGH;
+  case 'e':
+    return in(t, float_set) ? pt::exp : pt::none;
   case 'F':
-    return in(t, float_set) ? pt::fixed_upper : pt::none;
-  case 'g':
-    return in(t, float_set) ? pt::general_lower : pt::none;
+    upper = true;
+    FMT_FALLTHROUGH;
+  case 'f':
+    return in(t, float_set) ? pt::fixed : pt::none;
   case 'G':
-    return in(t, float_set) ? pt::general_upper : pt::none;
+    upper = true;
+    FMT_FALLTHROUGH;
+  case 'g':
+    return in(t, float_set) ? pt::general : pt::none;
+  case 'A':
+    upper = true;
+    FMT_FALLTHROUGH;
+  case 'a':
+    return in(t, float_set) ? pt::hexfloat : pt::none;
   case 'c':
     return in(t, integral_set) ? pt::chr : pt::none;
   case 's':
@@ -548,9 +553,11 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
         break;
       }
     }
-    specs.type = parse_printf_presentation_type(type, arg.type());
+    bool upper = false;
+    specs.type = parse_printf_presentation_type(type, arg.type(), upper);
     if (specs.type == presentation_type::none)
       throw_format_error("invalid format specifier");
+    specs.upper = upper;
 
     start = it;
 

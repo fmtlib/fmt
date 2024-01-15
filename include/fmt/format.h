@@ -71,17 +71,6 @@
 #  define FMT_INLINE_VARIABLE
 #endif
 
-#if FMT_HAS_CPP17_ATTRIBUTE(fallthrough)
-#  define FMT_FALLTHROUGH [[fallthrough]]
-#elif defined(__clang__)
-#  define FMT_FALLTHROUGH [[clang::fallthrough]]
-#elif FMT_GCC_VERSION >= 700 && \
-    (!defined(__EDG_VERSION__) || __EDG_VERSION__ >= 520)
-#  define FMT_FALLTHROUGH [[gnu::fallthrough]]
-#else
-#  define FMT_FALLTHROUGH
-#endif
-
 #ifndef FMT_NO_UNIQUE_ADDRESS
 #  if FMT_CPLUSPLUS >= 202002L
 #    if FMT_HAS_CPP_ATTRIBUTE(no_unique_address)
@@ -2096,30 +2085,17 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
     FMT_ASSERT(false, "");
     FMT_FALLTHROUGH;
   case presentation_type::none:
-  case presentation_type::dec: {
+  case presentation_type::dec:
     num_digits = count_digits(value);
     format_decimal<char>(appender(buffer), value, num_digits);
     break;
-  }
-  case presentation_type::hex_lower:
-  case presentation_type::hex_upper: {
-    bool upper = specs.type == presentation_type::hex_upper;
+  case presentation_type::hex:
     if (specs.alt)
-      prefix_append(prefix, unsigned(upper ? 'X' : 'x') << 8 | '0');
+      prefix_append(prefix, unsigned(specs.upper ? 'X' : 'x') << 8 | '0');
     num_digits = count_digits<4>(value);
-    format_uint<4, char>(appender(buffer), value, num_digits, upper);
+    format_uint<4, char>(appender(buffer), value, num_digits, specs.upper);
     break;
-  }
-  case presentation_type::bin_lower:
-  case presentation_type::bin_upper: {
-    bool upper = specs.type == presentation_type::bin_upper;
-    if (specs.alt)
-      prefix_append(prefix, unsigned(upper ? 'B' : 'b') << 8 | '0');
-    num_digits = count_digits<1>(value);
-    format_uint<1, char>(appender(buffer), value, num_digits);
-    break;
-  }
-  case presentation_type::oct: {
+  case presentation_type::oct:
     num_digits = count_digits<3>(value);
     // Octal prefix '0' is counted as a digit, so only add it if precision
     // is not greater than the number of digits.
@@ -2127,7 +2103,12 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
       prefix_append(prefix, '0');
     format_uint<3, char>(appender(buffer), value, num_digits);
     break;
-  }
+  case presentation_type::bin:
+    if (specs.alt)
+      prefix_append(prefix, unsigned(specs.upper ? 'B' : 'b') << 8 | '0');
+    num_digits = count_digits<1>(value);
+    format_uint<1, char>(appender(buffer), value, num_digits);
+    break;
   case presentation_type::chr:
     return write_char(out, static_cast<Char>(value), specs);
   }
@@ -2206,33 +2187,20 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
     FMT_FALLTHROUGH;
   case presentation_type::none:
   case presentation_type::dec: {
-    auto num_digits = count_digits(abs_value);
+    int num_digits = count_digits(abs_value);
     return write_int(
         out, num_digits, prefix, specs, [=](reserve_iterator<OutputIt> it) {
           return format_decimal<Char>(it, abs_value, num_digits).end;
         });
   }
-  case presentation_type::hex_lower:
-  case presentation_type::hex_upper: {
-    bool upper = specs.type == presentation_type::hex_upper;
+  case presentation_type::hex: {
     if (specs.alt)
-      prefix_append(prefix, unsigned(upper ? 'X' : 'x') << 8 | '0');
+      prefix_append(prefix, unsigned(specs.upper ? 'X' : 'x') << 8 | '0');
     int num_digits = count_digits<4>(abs_value);
     return write_int(
         out, num_digits, prefix, specs, [=](reserve_iterator<OutputIt> it) {
-          return format_uint<4, Char>(it, abs_value, num_digits, upper);
+          return format_uint<4, Char>(it, abs_value, num_digits, specs.upper);
         });
-  }
-  case presentation_type::bin_lower:
-  case presentation_type::bin_upper: {
-    bool upper = specs.type == presentation_type::bin_upper;
-    if (specs.alt)
-      prefix_append(prefix, unsigned(upper ? 'B' : 'b') << 8 | '0');
-    int num_digits = count_digits<1>(abs_value);
-    return write_int(out, num_digits, prefix, specs,
-                     [=](reserve_iterator<OutputIt> it) {
-                       return format_uint<1, Char>(it, abs_value, num_digits);
-                     });
   }
   case presentation_type::oct: {
     int num_digits = count_digits<3>(abs_value);
@@ -2243,6 +2211,15 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
     return write_int(out, num_digits, prefix, specs,
                      [=](reserve_iterator<OutputIt> it) {
                        return format_uint<3, Char>(it, abs_value, num_digits);
+                     });
+  }
+  case presentation_type::bin: {
+    if (specs.alt)
+      prefix_append(prefix, unsigned(specs.upper ? 'B' : 'b') << 8 | '0');
+    int num_digits = count_digits<1>(abs_value);
+    return write_int(out, num_digits, prefix, specs,
+                     [=](reserve_iterator<OutputIt> it) {
+                       return format_uint<1, Char>(it, abs_value, num_digits);
                      });
   }
   case presentation_type::chr:
@@ -2456,31 +2433,23 @@ FMT_CONSTEXPR auto parse_float_type_spec(const format_specs<Char>& specs)
   case presentation_type::none:
     result.format = float_format::general;
     break;
-  case presentation_type::general_upper:
-    result.upper = true;
-    FMT_FALLTHROUGH;
-  case presentation_type::general_lower:
+  case presentation_type::exp:
+    result.format = float_format::exp;
+    result.upper = specs.upper;
+    result.showpoint |= specs.precision != 0;
+    break;
+  case presentation_type::fixed:
+    result.format = float_format::fixed;
+    result.upper = specs.upper;
+    result.showpoint |= specs.precision != 0;
+    break;
+  case presentation_type::general:
+    result.upper = specs.upper;
     result.format = float_format::general;
     break;
-  case presentation_type::exp_upper:
-    result.upper = true;
-    FMT_FALLTHROUGH;
-  case presentation_type::exp_lower:
-    result.format = float_format::exp;
-    result.showpoint |= specs.precision != 0;
-    break;
-  case presentation_type::fixed_upper:
-    result.upper = true;
-    FMT_FALLTHROUGH;
-  case presentation_type::fixed_lower:
-    result.format = float_format::fixed;
-    result.showpoint |= specs.precision != 0;
-    break;
-  case presentation_type::hexfloat_upper:
-    result.upper = true;
-    FMT_FALLTHROUGH;
-  case presentation_type::hexfloat_lower:
+  case presentation_type::hexfloat:
     result.format = float_format::hex;
+    result.upper = specs.upper;
     break;
   }
   return result;

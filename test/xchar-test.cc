@@ -584,7 +584,7 @@ template <class charT> struct formatter<std::complex<double>, charT> {
         specs.precision, specs.precision_ref, ctx);
     auto fspecs = std::string();
     if (specs.precision > 0) fspecs = fmt::format(".{}", specs.precision);
-    if (specs.type == presentation_type::fixed_lower) fspecs += 'f';
+    if (specs.type == presentation_type::fixed) fspecs += 'f';
     auto real = fmt::format(ctx.locale().template get<std::locale>(),
                             fmt::runtime("{:" + fspecs + "}"), c.real());
     auto imag = fmt::format(ctx.locale().template get<std::locale>(),

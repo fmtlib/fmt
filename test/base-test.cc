@@ -516,7 +516,7 @@ TEST(core_test, constexpr_parse_format_specs) {
   static_assert(parse_test_specs(".42").precision == 42, "");
   static_assert(parse_test_specs(".{42}").precision_ref.val.index == 42, "");
   static_assert(
-      parse_test_specs("f").type == fmt::presentation_type::fixed_lower, "");
+      parse_test_specs("f").type == fmt::presentation_type::fixed, "");
 }
 
 struct test_format_string_handler {
