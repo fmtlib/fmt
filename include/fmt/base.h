@@ -2876,7 +2876,7 @@ FMT_INLINE auto format_to_n(OutputIt out, size_t n, format_string<T...> fmt,
 
 template <typename OutputIt, typename OutputSen = OutputIt>
 struct format_to_result {
-  /** Iterator past the end of the last write. */
+  /** Iterator pointing to just after the last succesful write in the range. */
   OutputIt out;
   /** Sentinel indicating the end of the output range. */
   OutputSen out_last;

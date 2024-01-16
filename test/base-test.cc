@@ -9,6 +9,8 @@
 #include "test-assert.h"
 // clang-format on
 
+#include "fmt/base.h"
+
 #include <climits>      // INT_MAX
 #include <cstring>      // std::strlen
 #include <functional>   // std::equal_to
@@ -17,7 +19,6 @@
 #include <string>       // std::string
 #include <type_traits>  // std::is_same
 
-#include "fmt/base.h"
 #include "gmock/gmock.h"
 
 using fmt::string_view;
