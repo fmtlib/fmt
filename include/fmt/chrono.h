@@ -1154,15 +1154,38 @@ void write_fractional_seconds(OutputIt& out, Duration d, int precision = -1) {
   } else {
     *out++ = '.';
     leading_zeroes = (std::min)(leading_zeroes, precision);
-    out = std::fill_n(out, leading_zeroes, '0');
     int remaining = precision - leading_zeroes;
-    if (remaining != 0 && remaining < num_digits) {
-      n /= to_unsigned(detail::pow10(to_unsigned(num_digits - remaining)));
-      out = format_decimal<Char>(out, n, remaining).end;
+    if (remaining < num_digits) { 
+      int num_truncated_digits = num_digits - remaining;
+      n /= to_unsigned(detail::pow10(to_unsigned(num_truncated_digits)-1)); //002999
+      const int old_num_digits = detail::count_digits(n);
+      int roundingDigit = n % 10;
+      n /= 10;
+      if (roundingDigit > 5 || (roundingDigit == 5 && n % 10 % 2 != 0)) {
+        n += 1;
+      } 
+      if (old_num_digits == detail::count_digits(n)) {
+        if (leading_zeroes) {
+          out = std::fill_n(out, leading_zeroes-1, '0');
+          *out++ = '1';
+          out = std::fill_n(out, remaining, '0');
+        }
+        else {
+          n -= 1;
+          out = format_decimal<Char>(out, n, remaining).end;
+        }
+      }
+      else {
+        out = std::fill_n(out, leading_zeroes, '0');
+        out = format_decimal<Char>(out, n, remaining).end;
+      }
       return;
     }
-    out = format_decimal<Char>(out, n, num_digits).end;
-    remaining -= num_digits;
+    out = std::fill_n(out, leading_zeroes, '0');
+    if (n) {
+      out = format_decimal<Char>(out, n, num_digits).end;
+      remaining -= num_digits;
+    }
     out = std::fill_n(out, remaining, '0');
   }
 }

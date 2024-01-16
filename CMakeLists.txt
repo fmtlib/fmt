@@ -140,7 +140,7 @@ set_verbose(FMT_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR} CACHE STRING
             "Installation directory for include files, a relative path that "
             "will be joined with ${CMAKE_INSTALL_PREFIX} or an absolute path.")
 
-option(FMT_PEDANTIC "Enable extra warnings and expensive tests." OFF)
+option(FMT_PEDANTIC "Enable extra warnings and expensive tests." ON)
 option(FMT_WERROR "Halt the compilation with an error on compiler warnings."
        OFF)
 

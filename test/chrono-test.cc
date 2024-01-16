@@ -791,6 +791,18 @@ TEST(chrono_test, cpp20_duration_subsecond_support) {
             "01.234000");
   EXPECT_EQ(fmt::format("{:.6%S}", std::chrono::milliseconds{-1234}),
             "-01.234000");
+  EXPECT_EQ(fmt::format("{:.2%S}", std::chrono::milliseconds{12345}),
+            "12.34");
+  EXPECT_EQ(fmt::format("{:.2%S}", std::chrono::milliseconds{12375}),
+            "12.38");
+  EXPECT_EQ(fmt::format("{:.2%S}", std::chrono::milliseconds{-12375}),
+            "-12.38");
+  EXPECT_EQ(fmt::format("{:.2%S}", std::chrono::milliseconds{12054}),
+            "12.05");
+  EXPECT_EQ(fmt::format("{:.1%S}", std::chrono::milliseconds{12054}),
+            "12.1");
+  EXPECT_EQ(fmt::format("{:.2%S}", std::chrono::milliseconds{99999}),
+            "39.99");
   EXPECT_EQ(fmt::format("{:.3%S}", std::chrono::seconds{1234}), "34.000");
   EXPECT_EQ(fmt::format("{:.3%S}", std::chrono::hours{1234}), "00.000");
   EXPECT_EQ(fmt::format("{:.5%S}", dms(1.234)), "00.00123");
