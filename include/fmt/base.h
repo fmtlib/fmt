@@ -276,6 +276,8 @@
 #  define FMT_UNICODE !FMT_MSC_VERSION
 #endif
 
+#define FMT_FWD(...) static_cast<decltype(__VA_ARGS__)&&>(__VA_ARGS__)
+
 // Enable minimal optimizations for more compact code in debug mode.
 FMT_GCC_PRAGMA("GCC push_options")
 #if !defined(__OPTIMIZE__) && !defined(__CUDACC__)
@@ -2861,8 +2863,10 @@ inline auto runtime(string_view s) -> runtime_format_string<> { return {{s}}; }
 
 /** Formats a string and writes the output to ``out``. */
 template <typename OutputIt,
-          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
-auto vformat_to(OutputIt out, string_view fmt, format_args args) -> OutputIt {
+          FMT_ENABLE_IF(detail::is_output_iterator<remove_cvref_t<OutputIt>,
+                                                   char>::value)>
+auto vformat_to(OutputIt&& out, string_view fmt, format_args args)
+    -> remove_cvref_t<OutputIt> {
   auto&& buf = detail::get_buffer<char>(out);
   detail::vformat_to(buf, fmt, args, {});
   return detail::get_iterator(buf, out);
@@ -2881,10 +2885,11 @@ auto vformat_to(OutputIt out, string_view fmt, format_args args) -> OutputIt {
  \endrst
  */
 template <typename OutputIt, typename... T,
-          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
-FMT_INLINE auto format_to(OutputIt out, format_string<T...> fmt, T&&... args)
-    -> OutputIt {
-  return vformat_to(out, fmt, fmt::make_format_args(args...));
+          FMT_ENABLE_IF(detail::is_output_iterator<remove_cvref_t<OutputIt>,
+                                                   char>::value)>
+FMT_INLINE auto format_to(OutputIt&& out, format_string<T...> fmt, T&&... args)
+    -> remove_cvref_t<OutputIt> {
+  return vformat_to(FMT_FWD(out), fmt, fmt::make_format_args(args...));
 }
 
 template <typename OutputIt> struct format_to_n_result {
@@ -2917,6 +2922,33 @@ template <typename OutputIt, typename... T,
 FMT_INLINE auto format_to_n(OutputIt out, size_t n, format_string<T...> fmt,
                             T&&... args) -> format_to_n_result<OutputIt> {
   return vformat_to_n(out, n, fmt, fmt::make_format_args(args...));
+}
+
+template <typename OutputIt, typename OutputSen = OutputIt>
+struct format_to_result {
+  /** Iterator pointing to just after the last succesful write in the range. */
+  OutputIt out;
+  /** Sentinel indicating the end of the output range. */
+  OutputSen out_last;
+
+  FMT_CONSTEXPR operator OutputIt&() & noexcept { return out; }
+  FMT_CONSTEXPR operator const OutputIt&() const& noexcept { return out; }
+  FMT_CONSTEXPR operator OutputIt&&() && noexcept {
+    return static_cast<OutputIt&&>(out);
+  }
+};
+
+template <size_t Size>
+auto vformat_to(char (&out)[Size], string_view fmt, format_args args)
+    -> format_to_result<char*> {
+  format_to_n_result<char*> result = vformat_to_n(out, Size, fmt, args);
+  return {result.out, out + Size};
+}
+
+template <size_t Size, typename... T>
+FMT_INLINE auto format_to(char (&out)[Size], format_string<T...> fmt,
+                          T&&... args) -> format_to_result<char*> {
+  return vformat_to(out, fmt, fmt::make_format_args(args...));
 }
 
 /** Returns the number of chars in the output of ``format(fmt, args...)``. */

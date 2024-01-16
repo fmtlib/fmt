@@ -9,15 +9,16 @@
 #include "test-assert.h"
 // clang-format on
 
+#include "fmt/base.h"
+
 #include <climits>      // INT_MAX
 #include <cstring>      // std::strlen
 #include <functional>   // std::equal_to
-#include <iterator>     // std::back_insert_iterator
+#include <iterator>     // std::back_insert_iterator, std::distance
 #include <limits>       // std::numeric_limits
 #include <string>       // std::string
 #include <type_traits>  // std::is_same
 
-#include "fmt/base.h"
 #include "gmock/gmock.h"
 
 using fmt::string_view;
@@ -690,6 +691,47 @@ TEST(core_test, format_to) {
   auto s = std::string();
   fmt::format_to(std::back_inserter(s), "{}", 42);
   EXPECT_EQ(s, "42");
+}
+
+TEST(core_test, format_to_c_array) {
+  char buffer[4];
+  auto result = fmt::format_to(buffer, "{}", 12345);
+  EXPECT_EQ(4, std::distance(&buffer[0], result.out));
+  EXPECT_EQ(0, std::distance(result.out, result.out_last));
+  EXPECT_EQ(buffer + 4, result.out);
+  EXPECT_EQ("1234", fmt::string_view(buffer, 4));
+
+  result = fmt::format_to(buffer, "{:s}", "foobar");
+  EXPECT_EQ(4, std::distance(&buffer[0], result.out));
+  EXPECT_EQ(0, std::distance(result.out, result.out_last));
+  EXPECT_EQ(buffer + 4, result.out);
+  EXPECT_EQ("foob", fmt::string_view(buffer, 4));
+
+  buffer[0] = 'x';
+  buffer[1] = 'x';
+  buffer[2] = 'x';
+  buffer[3] = 'x';
+  result = fmt::format_to(buffer, "{}", 'A');
+  EXPECT_EQ(1, std::distance(&buffer[0], result.out));
+  EXPECT_EQ(3, std::distance(result.out, result.out_last));
+  EXPECT_EQ(buffer + 1, result.out);
+  EXPECT_EQ("Axxx", fmt::string_view(buffer, 4));
+
+  result = fmt::format_to(buffer, "{}{} ", 'B', 'C');
+  EXPECT_EQ(3, std::distance(&buffer[0], result.out));
+  EXPECT_EQ(1, std::distance(result.out, result.out_last));
+  EXPECT_EQ(buffer + 3, result.out);
+  EXPECT_EQ("BC x", fmt::string_view(buffer, 4));
+
+  result = fmt::format_to(buffer, "{}", "ABCDE");
+  EXPECT_EQ(4, std::distance(&buffer[0], result.out));
+  EXPECT_EQ(0, std::distance(result.out, result.out_last));
+  EXPECT_EQ("ABCD", fmt::string_view(buffer, 4));
+
+  result = fmt::format_to(buffer, "{}", std::string(1000, '*'));
+  EXPECT_EQ(4, std::distance(&buffer[0], result.out));
+  EXPECT_EQ(0, std::distance(result.out, result.out_last));
+  EXPECT_EQ("****", fmt::string_view(buffer, 4));
 }
 
 #ifdef __cpp_lib_byte
