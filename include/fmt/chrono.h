@@ -708,8 +708,8 @@ FMT_CONSTEXPR auto parse_chrono_format(const Char* begin, const Char* end,
   if (begin == end || *begin == '}') return begin;
   if (*begin != '%') FMT_THROW(format_error("invalid format"));
   auto ptr = begin;
-  pad_type pad = pad_type::unspecified;
   while (ptr != end) {
+    pad_type pad = pad_type::unspecified;
     auto c = *ptr;
     if (c == '}') break;
     if (c != '%') {
