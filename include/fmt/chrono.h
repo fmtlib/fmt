@@ -1159,7 +1159,7 @@ void write_fractional_seconds(OutputIt& out, Duration d, int precision = -1) {
       int num_truncated_digits = num_digits - remaining;
       n /= to_unsigned(detail::pow10(to_unsigned(num_truncated_digits)-1)); //002999
       const int old_num_digits = detail::count_digits(n);
-      int roundingDigit = n % 10;
+      auto roundingDigit = n % 10;
       n /= 10;
       if (roundingDigit > 5 || (roundingDigit == 5 && n % 10 % 2 != 0)) {
         n += 1;
