@@ -999,7 +999,8 @@ constexpr auto compile_string_to_view(basic_string_view<Char> s)
 }  // namespace detail_exported
 
 // A generic formatting context with custom output iterator and character
-// (code unit) support.
+// (code unit) support. Char is the format string code unit type which can be
+// different from OutputIt::value_type.
 template <typename OutputIt, typename Char> class generic_context {
  private:
   OutputIt out_;
@@ -1068,7 +1069,7 @@ template <typename Locale> class format_facet : public Locale::facet {
 
  protected:
   virtual auto do_put(appender out, loc_value val,
-                      const format_specs<>& specs) const -> bool;
+                      const format_specs& specs) const -> bool;
 
  public:
   static FMT_API typename Locale::id id;
@@ -1081,7 +1082,7 @@ template <typename Locale> class format_facet : public Locale::facet {
         grouping_(g.begin(), g.end()),
         decimal_point_(decimal_point) {}
 
-  auto put(appender out, loc_value val, const format_specs<>& specs) const
+  auto put(appender out, loc_value val, const format_specs& specs) const
       -> bool {
     return do_put(out, val, specs);
   }
@@ -1727,7 +1728,7 @@ FMT_NOINLINE FMT_CONSTEXPR auto fill(OutputIt it, size_t n, const fill_t& fill)
 // width: output display width in (terminal) column positions.
 template <typename Char, align::type align = align::left, typename OutputIt,
           typename F>
-FMT_CONSTEXPR auto write_padded(OutputIt out, const format_specs<Char>& specs,
+FMT_CONSTEXPR auto write_padded(OutputIt out, const format_specs& specs,
                                 size_t size, size_t width, F&& f) -> OutputIt {
   static_assert(align == align::left || align == align::right, "");
   unsigned spec_width = to_unsigned(specs.width);
@@ -1746,14 +1747,14 @@ FMT_CONSTEXPR auto write_padded(OutputIt out, const format_specs<Char>& specs,
 
 template <typename Char, align::type align = align::left, typename OutputIt,
           typename F>
-constexpr auto write_padded(OutputIt out, const format_specs<Char>& specs,
+constexpr auto write_padded(OutputIt out, const format_specs& specs,
                             size_t size, F&& f) -> OutputIt {
   return write_padded<Char, align>(out, specs, size, size, f);
 }
 
 template <typename Char, align::type align = align::left, typename OutputIt>
 FMT_CONSTEXPR auto write_bytes(OutputIt out, string_view bytes,
-                               const format_specs<Char>& specs) -> OutputIt {
+                               const format_specs& specs = {}) -> OutputIt {
   return write_padded<Char, align>(
       out, specs, bytes.size(), [bytes](reserve_iterator<OutputIt> it) {
         const char* data = bytes.data();
@@ -1762,7 +1763,7 @@ FMT_CONSTEXPR auto write_bytes(OutputIt out, string_view bytes,
 }
 
 template <typename Char, typename OutputIt, typename UIntPtr>
-auto write_ptr(OutputIt out, UIntPtr value, const format_specs<Char>* specs)
+auto write_ptr(OutputIt out, UIntPtr value, const format_specs* specs)
     -> OutputIt {
   int num_digits = count_digits<4>(value);
   auto size = to_unsigned(num_digits) + size_t(2);
@@ -1926,7 +1927,7 @@ auto write_escaped_char(OutputIt out, Char v) -> OutputIt {
 
 template <typename Char, typename OutputIt>
 FMT_CONSTEXPR auto write_char(OutputIt out, Char value,
-                              const format_specs<Char>& specs) -> OutputIt {
+                              const format_specs& specs) -> OutputIt {
   bool is_debug = specs.type == presentation_type::debug;
   return write_padded<Char>(out, specs, 1, [=](reserve_iterator<OutputIt> it) {
     if (is_debug) return write_escaped_char(it, value);
@@ -1935,15 +1936,14 @@ FMT_CONSTEXPR auto write_char(OutputIt out, Char value,
   });
 }
 template <typename Char, typename OutputIt>
-FMT_CONSTEXPR auto write(OutputIt out, Char value,
-                         const format_specs<Char>& specs, locale_ref loc = {})
-    -> OutputIt {
+FMT_CONSTEXPR auto write(OutputIt out, Char value, const format_specs& specs,
+                         locale_ref loc = {}) -> OutputIt {
   // char is formatted as unsigned char for consistency across platforms.
   using unsigned_type =
       conditional_t<std::is_same<Char, char>::value, unsigned char, unsigned>;
   return check_char_specs(specs)
              ? write_char<Char>(out, value, specs)
-             : write(out, static_cast<unsigned_type>(value), specs, loc);
+             : write<Char>(out, static_cast<unsigned_type>(value), specs, loc);
 }
 
 // Data for write_int that doesn't depend on output iterator type. It is used to
@@ -1953,7 +1953,7 @@ template <typename Char> struct write_int_data {
   size_t padding;
 
   FMT_CONSTEXPR write_int_data(int num_digits, unsigned prefix,
-                               const format_specs<Char>& specs)
+                               const format_specs& specs)
       : size((prefix >> 24) + to_unsigned(num_digits)), padding(0) {
     if (specs.align == align::numeric) {
       auto width = to_unsigned(specs.width);
@@ -1975,7 +1975,7 @@ template <typename Char> struct write_int_data {
 template <typename Char, typename OutputIt, typename W>
 FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, int num_digits,
                                         unsigned prefix,
-                                        const format_specs<Char>& specs,
+                                        const format_specs& specs,
                                         W write_digits) -> OutputIt {
   // Slightly faster check for specs.width == 0 && specs.precision == -1.
   if ((specs.width | (specs.precision + 1)) == 0) {
@@ -2068,8 +2068,8 @@ FMT_CONSTEXPR inline void prefix_append(unsigned& prefix, unsigned value) {
 // Writes a decimal integer with digit grouping.
 template <typename OutputIt, typename UInt, typename Char>
 auto write_int(OutputIt out, UInt value, unsigned prefix,
-               const format_specs<Char>& specs,
-               const digit_grouping<Char>& grouping) -> OutputIt {
+               const format_specs& specs, const digit_grouping<Char>& grouping)
+    -> OutputIt {
   static_assert(std::is_same<uint64_or_128_t<UInt>, UInt>::value, "");
   int num_digits = 0;
   auto buffer = memory_buffer();
@@ -2117,11 +2117,11 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
 }
 
 // Writes a localized value.
-FMT_API auto write_loc(appender out, loc_value value,
-                       const format_specs<>& specs, locale_ref loc) -> bool;
-template <typename OutputIt, typename Char>
-inline auto write_loc(OutputIt, loc_value, const format_specs<Char>&,
-                      locale_ref) -> bool {
+FMT_API auto write_loc(appender out, loc_value value, const format_specs& specs,
+                       locale_ref loc) -> bool;
+template <typename OutputIt>
+inline auto write_loc(OutputIt, loc_value, const format_specs&, locale_ref)
+    -> bool {
   return false;
 }
 
@@ -2148,7 +2148,7 @@ FMT_CONSTEXPR auto make_write_int_arg(T value, sign_t sign)
 
 template <typename Char = char> struct loc_writer {
   basic_appender<Char> out;
-  const format_specs<Char>& specs;
+  const format_specs& specs;
   std::basic_string<Char> sep;
   std::string grouping;
   std::basic_string<Char> decimal_point;
@@ -2169,8 +2169,8 @@ template <typename Char = char> struct loc_writer {
 
 template <typename Char, typename OutputIt, typename T>
 FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
-                                        const format_specs<Char>& specs,
-                                        locale_ref) -> OutputIt {
+                                        const format_specs& specs, locale_ref)
+    -> OutputIt {
   static_assert(std::is_same<T, uint32_or_64_or_128_t<T>>::value, "");
   auto abs_value = arg.abs_value;
   auto prefix = arg.prefix;
@@ -2221,18 +2221,19 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
   return out;
 }
 template <typename Char, typename OutputIt, typename T>
-FMT_CONSTEXPR FMT_NOINLINE auto write_int_noinline(
-    OutputIt out, write_int_arg<T> arg, const format_specs<Char>& specs,
-    locale_ref loc) -> OutputIt {
+FMT_CONSTEXPR FMT_NOINLINE auto write_int_noinline(OutputIt out,
+                                                   write_int_arg<T> arg,
+                                                   const format_specs& specs,
+                                                   locale_ref loc) -> OutputIt {
   return write_int<Char>(out, arg, specs, loc);
 }
-template <typename Char, typename OutputIt, typename T,
+template <typename Char, typename T,
           FMT_ENABLE_IF(is_integral<T>::value &&
                         !std::is_same<T, bool>::value &&
-                        std::is_same<OutputIt, basic_appender<Char>>::value)>
-FMT_CONSTEXPR FMT_INLINE auto write(OutputIt out, T value,
-                                    const format_specs<Char>& specs,
-                                    locale_ref loc) -> OutputIt {
+                        !std::is_same<T, Char>::value)>
+FMT_CONSTEXPR FMT_INLINE auto write(basic_appender<Char> out, T value,
+                                    const format_specs& specs, locale_ref loc)
+    -> basic_appender<Char> {
   if (specs.localized && write_loc(out, value, specs, loc)) return out;
   return write_int_noinline<Char>(out, make_write_int_arg(value, specs.sign),
                                   specs, loc);
@@ -2241,10 +2242,11 @@ FMT_CONSTEXPR FMT_INLINE auto write(OutputIt out, T value,
 template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(is_integral<T>::value &&
                         !std::is_same<T, bool>::value &&
+                        !std::is_same<T, Char>::value &&
                         !std::is_same<OutputIt, basic_appender<Char>>::value)>
 FMT_CONSTEXPR FMT_INLINE auto write(OutputIt out, T value,
-                                    const format_specs<Char>& specs,
-                                    locale_ref loc) -> OutputIt {
+                                    const format_specs& specs, locale_ref loc)
+    -> OutputIt {
   if (specs.localized && write_loc(out, value, specs, loc)) return out;
   return write_int<Char>(out, make_write_int_arg(value, specs.sign), specs,
                          loc);
@@ -2292,7 +2294,7 @@ class counting_iterator {
 
 template <typename Char, typename OutputIt>
 FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
-                         const format_specs<Char>& specs) -> OutputIt {
+                         const format_specs& specs) -> OutputIt {
   auto data = s.data();
   auto size = s.size();
   if (specs.precision >= 0 && to_unsigned(specs.precision) < size)
@@ -2317,14 +2319,12 @@ FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
 template <typename Char, typename OutputIt>
 FMT_CONSTEXPR auto write(OutputIt out,
                          basic_string_view<type_identity_t<Char>> s,
-                         const format_specs<Char>& specs, locale_ref)
-    -> OutputIt {
+                         const format_specs& specs, locale_ref) -> OutputIt {
   return write<Char>(out, s, specs);
 }
 template <typename Char, typename OutputIt>
-FMT_CONSTEXPR auto write(OutputIt out, const Char* s,
-                         const format_specs<Char>& specs, locale_ref)
-    -> OutputIt {
+FMT_CONSTEXPR auto write(OutputIt out, const Char* s, const format_specs& specs,
+                         locale_ref) -> OutputIt {
   if (specs.type == presentation_type::pointer)
     return write_ptr<Char>(out, bit_cast<uintptr_t>(s), &specs);
   if (!s) report_error("string pointer is null");
@@ -2356,7 +2356,7 @@ FMT_CONSTEXPR auto write(OutputIt out, T value) -> OutputIt {
 // DEPRECATED!
 template <typename Char>
 FMT_CONSTEXPR auto parse_align(const Char* begin, const Char* end,
-                               format_specs<Char>& specs) -> const Char* {
+                               format_specs& specs) -> const Char* {
   FMT_ASSERT(begin != end, "");
   auto align = align::none;
   auto p = begin + code_point_length(begin);
@@ -2414,15 +2414,14 @@ struct float_specs {
   bool showpoint : 1;
 };
 
-template <typename Char>
-FMT_CONSTEXPR auto parse_float_type_spec(const format_specs<Char>& specs)
+// DEPRECATED!
+FMT_CONSTEXPR inline auto parse_float_type_spec(const format_specs& specs)
     -> float_specs {
   auto result = float_specs();
   result.showpoint = specs.alt;
   result.locale = specs.localized;
   switch (specs.type) {
   default:
-    FMT_ASSERT(false, "");
     FMT_FALLTHROUGH;
   case presentation_type::none:
     result.format = float_format::general;
@@ -2451,7 +2450,7 @@ FMT_CONSTEXPR auto parse_float_type_spec(const format_specs<Char>& specs)
 
 template <typename Char, typename OutputIt>
 FMT_CONSTEXPR20 auto write_nonfinite(OutputIt out, bool isnan,
-                                     format_specs<Char> specs,
+                                     format_specs specs,
                                      const float_specs& fspecs) -> OutputIt {
   auto str =
       isnan ? (fspecs.upper ? "NAN" : "nan") : (fspecs.upper ? "INF" : "inf");
@@ -2573,10 +2572,10 @@ FMT_CONSTEXPR20 auto write_significand(OutputIt out, T significand,
                                      buffer.end(), out);
 }
 
-template <typename OutputIt, typename DecimalFP, typename Char,
+template <typename Char, typename OutputIt, typename DecimalFP,
           typename Grouping = digit_grouping<Char>>
 FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
-                                    const format_specs<Char>& specs,
+                                    const format_specs& specs,
                                     float_specs fspecs, locale_ref loc)
     -> OutputIt {
   auto significand = f.significand;
@@ -2694,17 +2693,16 @@ template <typename Char> class fallback_digit_grouping {
   }
 };
 
-template <typename OutputIt, typename DecimalFP, typename Char>
+template <typename Char, typename OutputIt, typename DecimalFP>
 FMT_CONSTEXPR20 auto write_float(OutputIt out, const DecimalFP& f,
-                                 const format_specs<Char>& specs,
-                                 float_specs fspecs, locale_ref loc)
-    -> OutputIt {
+                                 const format_specs& specs, float_specs fspecs,
+                                 locale_ref loc) -> OutputIt {
   if (is_constant_evaluated()) {
-    return do_write_float<OutputIt, DecimalFP, Char,
+    return do_write_float<Char, OutputIt, DecimalFP,
                           fallback_digit_grouping<Char>>(out, f, specs, fspecs,
                                                          loc);
   } else {
-    return do_write_float(out, f, specs, fspecs, loc);
+    return do_write_float<Char>(out, f, specs, fspecs, loc);
   }
 }
 
@@ -3561,9 +3559,8 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
   return exp;
 }
 template <typename Char, typename OutputIt, typename T>
-FMT_CONSTEXPR20 auto write_float(OutputIt out, T value,
-                                 format_specs<Char> specs, locale_ref loc)
-    -> OutputIt {
+FMT_CONSTEXPR20 auto write_float(OutputIt out, T value, format_specs specs,
+                                 locale_ref loc) -> OutputIt {
   float_specs fspecs = parse_float_type_spec(specs);
   fspecs.sign = specs.sign;
   if (detail::signbit(value)) {  // value < 0 is false for NaN so use signbit.
@@ -3574,7 +3571,7 @@ FMT_CONSTEXPR20 auto write_float(OutputIt out, T value,
   }
 
   if (!detail::isfinite(value))
-    return write_nonfinite(out, detail::isnan(value), specs, fspecs);
+    return write_nonfinite<Char>(out, detail::isnan(value), specs, fspecs);
 
   if (specs.align == align::numeric && fspecs.sign) {
     auto it = reserve(out, 1);
@@ -3606,23 +3603,23 @@ FMT_CONSTEXPR20 auto write_float(OutputIt out, T value,
   int exp = format_float(convert_float(value), precision, fspecs, buffer);
   fspecs.precision = precision;
   auto f = big_decimal_fp{buffer.data(), static_cast<int>(buffer.size()), exp};
-  return write_float(out, f, specs, fspecs, loc);
+  return write_float<Char>(out, f, specs, fspecs, loc);
 }
 
 template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(is_floating_point<T>::value)>
-FMT_CONSTEXPR20 auto write(OutputIt out, T value, format_specs<Char> specs,
+FMT_CONSTEXPR20 auto write(OutputIt out, T value, format_specs specs,
                            locale_ref loc = {}) -> OutputIt {
   if (const_check(!is_supported_floating_point(value))) return out;
   return specs.localized && write_loc(out, value, specs, loc)
              ? out
-             : write_float(out, value, specs, loc);
+             : write_float<Char>(out, value, specs, loc);
 }
 
 template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(is_fast_float<T>::value)>
 FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
-  if (is_constant_evaluated()) return write(out, value, format_specs<Char>());
+  if (is_constant_evaluated()) return write<Char>(out, value, format_specs());
   if (const_check(!is_supported_floating_point(value))) return out;
 
   auto fspecs = float_specs();
@@ -3631,26 +3628,26 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
     value = -value;
   }
 
-  constexpr auto specs = format_specs<Char>();
+  constexpr auto specs = format_specs();
   using floaty = conditional_t<std::is_same<T, long double>::value, double, T>;
   using floaty_uint = typename dragonbox::float_info<floaty>::carrier_uint;
   floaty_uint mask = exponent_mask<floaty>();
   if ((bit_cast<floaty_uint>(value) & mask) == mask)
-    return write_nonfinite(out, std::isnan(value), specs, fspecs);
+    return write_nonfinite<Char>(out, std::isnan(value), specs, fspecs);
 
   auto dec = dragonbox::to_decimal(static_cast<floaty>(value));
-  return write_float(out, dec, specs, fspecs, {});
+  return write_float<Char>(out, dec, specs, fspecs, {});
 }
 
 template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(is_floating_point<T>::value &&
                         !is_fast_float<T>::value)>
 inline auto write(OutputIt out, T value) -> OutputIt {
-  return write(out, value, format_specs<Char>());
+  return write<Char>(out, value, format_specs());
 }
 
 template <typename Char, typename OutputIt>
-auto write(OutputIt out, monostate, format_specs<Char> = {}, locale_ref = {})
+auto write(OutputIt out, monostate, format_specs = {}, locale_ref = {})
     -> OutputIt {
   FMT_ASSERT(false, "");
   return out;
@@ -3684,9 +3681,8 @@ FMT_CONSTEXPR auto write(OutputIt out, T value) -> OutputIt {
 
 template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(std::is_same<T, bool>::value)>
-FMT_CONSTEXPR auto write(OutputIt out, T value,
-                         const format_specs<Char>& specs = {}, locale_ref = {})
-    -> OutputIt {
+FMT_CONSTEXPR auto write(OutputIt out, T value, const format_specs& specs = {},
+                         locale_ref = {}) -> OutputIt {
   return specs.type != presentation_type::none &&
                  specs.type != presentation_type::string
              ? write<Char>(out, value ? 1 : 0, specs, {})
@@ -3709,7 +3705,7 @@ FMT_CONSTEXPR20 auto write(OutputIt out, const Char* value) -> OutputIt {
 
 template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(std::is_same<T, void>::value)>
-auto write(OutputIt out, const T* value, const format_specs<Char>& specs = {},
+auto write(OutputIt out, const T* value, const format_specs& specs = {},
            locale_ref = {}) -> OutputIt {
   return write_ptr<Char>(out, bit_cast<uintptr_t>(value), &specs);
 }
@@ -3764,7 +3760,7 @@ template <typename Char> struct arg_formatter {
   using context = buffered_context<Char>;
 
   iterator out;
-  const format_specs<Char>& specs;
+  const format_specs& specs;
   locale_ref locale;
 
   template <typename T>
@@ -4094,7 +4090,7 @@ template <> struct formatter<bytes> {
                                                        specs.width_ref, ctx);
     detail::handle_dynamic_spec<detail::precision_checker>(
         specs.precision, specs.precision_ref, ctx);
-    return detail::write_bytes(ctx.out(), b.data_, specs);
+    return detail::write_bytes<char>(ctx.out(), b.data_, specs);
   }
 };
 
@@ -4184,7 +4180,7 @@ template <typename T> struct nested_formatter {
     if (width_ == 0) return write(ctx.out());
     auto buf = memory_buffer();
     write(appender(buf));
-    auto specs = format_specs<>();
+    auto specs = format_specs();
     specs.width = width_;
     specs.fill = fill_;
     specs.align = align_;

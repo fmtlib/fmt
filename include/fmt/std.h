@@ -117,7 +117,7 @@ void write_escaped_path(basic_memory_buffer<Char>& quoted,
 FMT_EXPORT
 template <typename Char> struct formatter<std::filesystem::path, Char> {
  private:
-  format_specs<Char> specs_;
+  format_specs specs_;
   detail::arg_ref<Char> width_ref_;
   bool debug_ = false;
   char path_type_ = 0;
@@ -372,7 +372,7 @@ template <typename Char> struct formatter<std::error_code, Char> {
   FMT_CONSTEXPR auto format(const std::error_code& ec, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     auto out = ctx.out();
-    out = detail::write_bytes(out, ec.category().name(), format_specs<Char>());
+    out = detail::write_bytes<Char>(out, ec.category().name(), format_specs());
     out = detail::write<Char>(out, Char(':'));
     out = detail::write<Char>(out, ec.value());
     return out;
@@ -403,10 +403,9 @@ struct formatter<
   template <typename Context>
   auto format(const std::exception& ex, Context& ctx) const
       -> decltype(ctx.out()) {
-    format_specs<Char> spec;
     auto out = ctx.out();
     if (!with_typename_)
-      return detail::write_bytes(out, string_view(ex.what()), spec);
+      return detail::write_bytes<Char>(out, string_view(ex.what()));
 
 #if FMT_USE_TYPEID
     const std::type_info& ti = typeid(ex);
@@ -448,20 +447,21 @@ struct formatter<
     } else {
       demangled_name_view = string_view(ti.name());
     }
-    out = detail::write_bytes(out, demangled_name_view, spec);
+    out = detail::write_bytes<Char>(out, demangled_name_view);
 #  elif FMT_MSC_VERSION
     string_view demangled_name_view(ti.name());
     if (demangled_name_view.starts_with("class "))
       demangled_name_view.remove_prefix(6);
     else if (demangled_name_view.starts_with("struct "))
       demangled_name_view.remove_prefix(7);
-    out = detail::write_bytes(out, demangled_name_view, spec);
+    out = detail::write_bytes<Char>(out, demangled_name_view);
 #  else
-    out = detail::write_bytes(out, string_view(ti.name()), spec);
+    out = detail::write_bytes<Char>(out, string_view(ti.name())
+  });
 #  endif
     *out++ = ':';
     *out++ = ' ';
-    return detail::write_bytes(out, string_view(ex.what()), spec);
+    return detail::write_bytes<Char>(out, string_view(ex.what()));
 #endif
   }
 };

@@ -434,7 +434,7 @@ class scan_context {
 namespace detail {
 
 const char* parse_scan_specs(const char* begin, const char* end,
-                             format_specs<>& specs, scan_type) {
+                             format_specs& specs, scan_type) {
   while (begin != end) {
     switch (to_ascii(*begin)) {
     // TODO: parse more scan format specifiers
@@ -506,14 +506,14 @@ auto read_hex(scan_iterator it, T& value) -> scan_iterator {
 }
 
 template <typename T, FMT_ENABLE_IF(std::is_unsigned<T>::value)>
-auto read(scan_iterator it, T& value, const format_specs<>& specs)
+auto read(scan_iterator it, T& value, const format_specs& specs)
     -> scan_iterator {
   if (specs.type == presentation_type::hex) return read_hex(it, value);
   return read(it, value);
 }
 
 template <typename T, FMT_ENABLE_IF(std::is_signed<T>::value)>
-auto read(scan_iterator it, T& value, const format_specs<>& specs = {})
+auto read(scan_iterator it, T& value, const format_specs& specs = {})
     -> scan_iterator {
   bool negative = it != scan_sentinel() && *it == '-';
   if (negative) {
@@ -528,13 +528,13 @@ auto read(scan_iterator it, T& value, const format_specs<>& specs = {})
   return it;
 }
 
-auto read(scan_iterator it, std::string& value, const format_specs<>& = {})
+auto read(scan_iterator it, std::string& value, const format_specs& = {})
     -> scan_iterator {
   while (it != scan_sentinel() && *it != ' ') value.push_back(*it++);
   return it;
 }
 
-auto read(scan_iterator it, string_view& value, const format_specs<>& = {})
+auto read(scan_iterator it, string_view& value, const format_specs& = {})
     -> scan_iterator {
   auto range = to_contiguous(it);
   // This could also be checked at compile time in scan.
@@ -546,7 +546,7 @@ auto read(scan_iterator it, string_view& value, const format_specs<>& = {})
   return advance(it, size);
 }
 
-auto read(scan_iterator it, monostate, const format_specs<>& = {})
+auto read(scan_iterator it, monostate, const format_specs& = {})
     -> scan_iterator {
   return it;
 }
@@ -563,7 +563,7 @@ struct default_arg_scanner {
 // An argument scanner with format specifiers.
 struct arg_scanner {
   scan_iterator it;
-  const format_specs<>& specs;
+  const format_specs& specs;
 
   template <typename T> auto operator()(T&& value) -> scan_iterator {
     return read(it, value, specs);
@@ -617,7 +617,7 @@ struct scan_handler {
     scan_arg arg = scan_ctx_.arg(arg_id);
     if (arg.scan_custom(begin, parse_ctx_, scan_ctx_))
       return parse_ctx_.begin();
-    auto specs = format_specs<>();
+    auto specs = format_specs();
     begin = parse_scan_specs(begin, end, specs, arg.type());
     if (begin == end || *begin != '}') on_error("missing '}' in format string");
     scan_ctx_.advance_to(arg.visit(arg_scanner{scan_ctx_.begin(), specs}));

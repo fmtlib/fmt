@@ -2037,6 +2037,7 @@ using unsigned_char = typename conditional_t<std::is_integral<Char>::value,
                                              std::make_unsigned<Char>,
                                              type_identity<unsigned>>::type;
 
+// Character (code unit) type is erased to prevent template bloat.
 struct fill_t {
  private:
   enum { max_size = 4 };
@@ -2106,7 +2107,7 @@ enum class presentation_type : unsigned char {
 };
 
 // Format specifiers for built-in and string types.
-template <typename Char = char> struct format_specs {
+struct format_specs {
   int width;
   int precision;
   presentation_type type;
@@ -2160,8 +2161,7 @@ template <typename Char> struct arg_ref {
 // Format specifiers with width and precision resolved at formatting rather
 // than parsing time to allow reusing the same parsed specifiers with
 // different sets of arguments (precompilation of format strings).
-template <typename Char = char>
-struct dynamic_format_specs : format_specs<Char> {
+template <typename Char = char> struct dynamic_format_specs : format_specs {
   arg_ref<Char> width_ref;
   arg_ref<Char> precision_ref;
 };
@@ -2636,8 +2636,7 @@ FMT_CONSTEXPR auto parse_format_specs(ParseContext& ctx)
 }
 
 // Checks char specs and returns true iff the presentation type is char-like.
-template <typename Char>
-FMT_CONSTEXPR auto check_char_specs(const format_specs<Char>& specs) -> bool {
+FMT_CONSTEXPR inline auto check_char_specs(const format_specs& specs) -> bool {
   if (specs.type != presentation_type::none &&
       specs.type != presentation_type::chr &&
       specs.type != presentation_type::debug) {

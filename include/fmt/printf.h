@@ -191,12 +191,12 @@ template <typename Char> struct get_cstring {
 
 // Checks if an argument is a valid printf width specifier and sets
 // left alignment if it is negative.
-template <typename Char> class printf_width_handler {
+class printf_width_handler {
  private:
-  format_specs<Char>& specs_;
+  format_specs& specs_;
 
  public:
-  explicit printf_width_handler(format_specs<Char>& specs) : specs_(specs) {}
+  explicit printf_width_handler(format_specs& specs) : specs_(specs) {}
 
   template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
   auto operator()(T value) -> unsigned {
@@ -220,7 +220,7 @@ template <typename Char> class printf_width_handler {
 // Workaround for a bug with the XL compiler when initializing
 // printf_arg_formatter's base class.
 template <typename Char>
-auto make_arg_formatter(basic_appender<Char> iter, format_specs<Char>& s)
+auto make_arg_formatter(basic_appender<Char> iter, format_specs& s)
     -> arg_formatter<Char> {
   return {iter, s, locale_ref()};
 }
@@ -237,11 +237,11 @@ class printf_arg_formatter : public arg_formatter<Char> {
   void write_null_pointer(bool is_string = false) {
     auto s = this->specs;
     s.type = presentation_type::none;
-    write_bytes(this->out, is_string ? "(null)" : "(nil)", s);
+    write_bytes<Char>(this->out, is_string ? "(null)" : "(nil)", s);
   }
 
  public:
-  printf_arg_formatter(basic_appender<Char> iter, format_specs<Char>& s,
+  printf_arg_formatter(basic_appender<Char> iter, format_specs& s,
                        context_type& ctx)
       : base(make_arg_formatter(iter, s)), context_(ctx) {}
 
@@ -255,19 +255,18 @@ class printf_arg_formatter : public arg_formatter<Char> {
       base::operator()(value);
       return;
     }
-    format_specs<Char> fmt_specs = this->specs;
-    if (fmt_specs.type != presentation_type::none &&
-        fmt_specs.type != presentation_type::chr) {
+    format_specs s = this->specs;
+    if (s.type != presentation_type::none && s.type != presentation_type::chr) {
       return (*this)(static_cast<int>(value));
     }
-    fmt_specs.sign = sign::none;
-    fmt_specs.alt = false;
-    fmt_specs.fill = ' ';  // Ignore '0' flag for char types.
+    s.sign = sign::none;
+    s.alt = false;
+    s.fill = ' ';  // Ignore '0' flag for char types.
     // align::numeric needs to be overwritten here since the '0' flag is
     // ignored for non-numeric types
-    if (fmt_specs.align == align::none || fmt_specs.align == align::numeric)
-      fmt_specs.align = align::right;
-    write<Char>(this->out, static_cast<Char>(value), fmt_specs);
+    if (s.align == align::none || s.align == align::numeric)
+      s.align = align::right;
+    write<Char>(this->out, static_cast<Char>(value), s);
   }
 
   template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
@@ -309,7 +308,7 @@ class printf_arg_formatter : public arg_formatter<Char> {
 };
 
 template <typename Char>
-void parse_flags(format_specs<Char>& specs, const Char*& it, const Char* end) {
+void parse_flags(format_specs& specs, const Char*& it, const Char* end) {
   for (; it != end; ++it) {
     switch (*it) {
     case '-':
@@ -334,7 +333,7 @@ void parse_flags(format_specs<Char>& specs, const Char*& it, const Char* end) {
 }
 
 template <typename Char, typename GetArg>
-auto parse_header(const Char*& it, const Char* end, format_specs<Char>& specs,
+auto parse_header(const Char*& it, const Char* end, format_specs& specs,
                   GetArg get_arg) -> int {
   int arg_index = -1;
   Char c = *it;
@@ -365,7 +364,7 @@ auto parse_header(const Char*& it, const Char* end, format_specs<Char>& specs,
     } else if (*it == '*') {
       ++it;
       specs.width = static_cast<int>(
-          get_arg(-1).visit(detail::printf_width_handler<Char>(specs)));
+          get_arg(-1).visit(detail::printf_width_handler(specs)));
     }
   }
   return arg_index;
@@ -450,7 +449,7 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
     }
     write(out, basic_string_view<Char>(start, to_unsigned(it - 1 - start)));
 
-    auto specs = format_specs<Char>();
+    auto specs = format_specs();
     specs.align = align::right;
 
     // Parse argument index, flags and width.

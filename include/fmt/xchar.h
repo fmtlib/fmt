@@ -47,8 +47,7 @@ template <typename S>
 using format_string_char_t = typename format_string_char<S>::type;
 
 inline auto write_loc(basic_appender<wchar_t> out, loc_value value,
-                      const format_specs<wchar_t>& specs, locale_ref loc)
-    -> bool {
+                      const format_specs& specs, locale_ref loc) -> bool {
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
   auto& numpunct =
       std::use_facet<std::numpunct<wchar_t>>(loc.get<std::locale>());
