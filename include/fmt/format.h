@@ -2400,15 +2400,13 @@ FMT_CONSTEXPR auto parse_align(const Char* begin, const Char* end,
 enum class float_format : unsigned char {
   general,  // General: exponent notation or fixed point based on magnitude.
   exp,      // Exponent notation with the default precision of 6, e.g. 1.2e-3.
-  fixed,    // Fixed point with the default precision of 6, e.g. 0.0012.
-  hex
+  fixed     // Fixed point with the default precision of 6, e.g. 0.0012.
 };
 
 struct float_specs {
   int precision;
   float_format format : 8;
   sign_t sign : 8;
-  bool upper : 1;
   bool locale : 1;
   bool binary32 : 1;
   bool showpoint : 1;
@@ -2428,21 +2426,14 @@ FMT_CONSTEXPR inline auto parse_float_type_spec(const format_specs& specs)
     break;
   case presentation_type::exp:
     result.format = float_format::exp;
-    result.upper = specs.upper;
     result.showpoint |= specs.precision != 0;
     break;
   case presentation_type::fixed:
     result.format = float_format::fixed;
-    result.upper = specs.upper;
     result.showpoint |= specs.precision != 0;
     break;
   case presentation_type::general:
-    result.upper = specs.upper;
     result.format = float_format::general;
-    break;
-  case presentation_type::hexfloat:
-    result.format = float_format::hex;
-    result.upper = specs.upper;
     break;
   }
   return result;
@@ -2450,12 +2441,11 @@ FMT_CONSTEXPR inline auto parse_float_type_spec(const format_specs& specs)
 
 template <typename Char, typename OutputIt>
 FMT_CONSTEXPR20 auto write_nonfinite(OutputIt out, bool isnan,
-                                     format_specs specs,
-                                     const float_specs& fspecs) -> OutputIt {
+                                     format_specs specs, sign_t sign)
+    -> OutputIt {
   auto str =
-      isnan ? (fspecs.upper ? "NAN" : "nan") : (fspecs.upper ? "INF" : "inf");
+      isnan ? (specs.upper ? "NAN" : "nan") : (specs.upper ? "INF" : "inf");
   constexpr size_t str_size = 3;
-  auto sign = fspecs.sign;
   auto size = str_size + (sign ? 1 : 0);
   // Replace '0'-padding with space for non-finite values.
   const bool is_zero_fill =
@@ -2612,7 +2602,7 @@ FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
     if (abs_output_exp >= 100) exp_digits = abs_output_exp >= 1000 ? 4 : 3;
 
     size += to_unsigned((decimal_point ? 1 : 0) + 2 + exp_digits);
-    char exp_char = fspecs.upper ? 'E' : 'e';
+    char exp_char = specs.upper ? 'E' : 'e';
     auto write = [=](iterator it) {
       if (sign) *it++ = detail::sign<Char>(sign);
       // Insert a decimal point after the first digit and add an exponent.
@@ -3152,8 +3142,8 @@ FMT_CONSTEXPR20 inline void format_dragon(basic_fp<uint128_t> value,
 
 // Formats a floating-point number using the hexfloat format.
 template <typename Float, FMT_ENABLE_IF(!is_double_double<Float>::value)>
-FMT_CONSTEXPR20 void format_hexfloat(Float value, int precision,
-                                     float_specs specs, buffer<char>& buf) {
+FMT_CONSTEXPR20 void format_hexfloat(Float value, format_specs specs,
+                                     buffer<char>& buf) {
   // float is passed as double to reduce the number of instantiations and to
   // simplify implementation.
   static_assert(!std::is_same<Float, float>::value, "");
@@ -3181,8 +3171,8 @@ FMT_CONSTEXPR20 void format_hexfloat(Float value, int precision,
   if (leading_xdigit > 1) f.e -= (32 - countl_zero(leading_xdigit) - 1);
 
   int print_xdigits = num_xdigits - 1;
-  if (precision >= 0 && print_xdigits > precision) {
-    const int shift = ((print_xdigits - precision - 1) * 4);
+  if (specs.precision >= 0 && print_xdigits > specs.precision) {
+    const int shift = ((print_xdigits - specs.precision - 1) * 4);
     const auto mask = carrier_uint(0xF) << shift;
     const auto v = static_cast<uint32_t>((f.f & mask) >> shift);
 
@@ -3201,7 +3191,7 @@ FMT_CONSTEXPR20 void format_hexfloat(Float value, int precision,
       }
     }
 
-    print_xdigits = precision;
+    print_xdigits = specs.precision;
   }
 
   char xdigits[num_bits<carrier_uint>() / 4];
@@ -3214,10 +3204,10 @@ FMT_CONSTEXPR20 void format_hexfloat(Float value, int precision,
   buf.push_back('0');
   buf.push_back(specs.upper ? 'X' : 'x');
   buf.push_back(xdigits[0]);
-  if (specs.showpoint || print_xdigits > 0 || print_xdigits < precision)
+  if (specs.alt || print_xdigits > 0 || print_xdigits < specs.precision)
     buf.push_back('.');
   buf.append(xdigits + 1, xdigits + 1 + print_xdigits);
-  for (; print_xdigits < precision; ++print_xdigits) buf.push_back('0');
+  for (; print_xdigits < specs.precision; ++print_xdigits) buf.push_back('0');
 
   buf.push_back(specs.upper ? 'P' : 'p');
 
@@ -3233,9 +3223,9 @@ FMT_CONSTEXPR20 void format_hexfloat(Float value, int precision,
 }
 
 template <typename Float, FMT_ENABLE_IF(is_double_double<Float>::value)>
-FMT_CONSTEXPR20 void format_hexfloat(Float value, int precision,
-                                     float_specs specs, buffer<char>& buf) {
-  format_hexfloat(static_cast<double>(value), precision, specs, buf);
+FMT_CONSTEXPR20 void format_hexfloat(Float value, format_specs specs,
+                                     buffer<char>& buf) {
+  format_hexfloat(static_cast<double>(value), specs, buf);
 }
 
 constexpr auto fractional_part_rounding_thresholds(int index) -> uint32_t {
@@ -3558,47 +3548,50 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
   }
   return exp;
 }
+
 template <typename Char, typename OutputIt, typename T>
 FMT_CONSTEXPR20 auto write_float(OutputIt out, T value, format_specs specs,
                                  locale_ref loc) -> OutputIt {
-  float_specs fspecs = parse_float_type_spec(specs);
-  fspecs.sign = specs.sign;
+  sign_t sign = specs.sign;
   if (detail::signbit(value)) {  // value < 0 is false for NaN so use signbit.
-    fspecs.sign = sign::minus;
+    sign = sign::minus;
     value = -value;
-  } else if (fspecs.sign == sign::minus) {
-    fspecs.sign = sign::none;
+  } else if (sign == sign::minus) {
+    sign = sign::none;
   }
 
   if (!detail::isfinite(value))
-    return write_nonfinite<Char>(out, detail::isnan(value), specs, fspecs);
+    return write_nonfinite<Char>(out, detail::isnan(value), specs, sign);
 
-  if (specs.align == align::numeric && fspecs.sign) {
+  if (specs.align == align::numeric && sign) {
     auto it = reserve(out, 1);
-    *it++ = detail::sign<Char>(fspecs.sign);
+    *it++ = detail::sign<Char>(sign);
     out = base_iterator(out, it);
-    fspecs.sign = sign::none;
+    sign = sign::none;
     if (specs.width != 0) --specs.width;
   }
 
   memory_buffer buffer;
-  if (fspecs.format == float_format::hex) {
-    if (fspecs.sign) buffer.push_back(detail::sign<char>(fspecs.sign));
-    format_hexfloat(convert_float(value), specs.precision, fspecs, buffer);
+  if (specs.type == presentation_type::hexfloat) {
+    if (sign) buffer.push_back(detail::sign<char>(sign));
+    format_hexfloat(convert_float(value), specs, buffer);
     return write_bytes<Char, align::right>(out, {buffer.data(), buffer.size()},
                                            specs);
   }
+
   int precision = specs.precision >= 0 || specs.type == presentation_type::none
                       ? specs.precision
                       : 6;
-  if (fspecs.format == float_format::exp) {
+  if (specs.type == presentation_type::exp) {
     if (precision == max_value<int>())
       report_error("number is too big");
     else
       ++precision;
-  } else if (fspecs.format != float_format::fixed && precision == 0) {
+  } else if (specs.type != presentation_type::fixed && precision == 0) {
     precision = 1;
   }
+  float_specs fspecs = parse_float_type_spec(specs);
+  fspecs.sign = sign;
   if (const_check(std::is_same<T, float>())) fspecs.binary32 = true;
   int exp = format_float(convert_float(value), precision, fspecs, buffer);
   fspecs.precision = precision;
@@ -3622,9 +3615,9 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
   if (is_constant_evaluated()) return write<Char>(out, value, format_specs());
   if (const_check(!is_supported_floating_point(value))) return out;
 
-  auto fspecs = float_specs();
+  auto sign = sign_t::none;
   if (detail::signbit(value)) {
-    fspecs.sign = sign::minus;
+    sign = sign::minus;
     value = -value;
   }
 
@@ -3633,8 +3626,10 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
   using floaty_uint = typename dragonbox::float_info<floaty>::carrier_uint;
   floaty_uint mask = exponent_mask<floaty>();
   if ((bit_cast<floaty_uint>(value) & mask) == mask)
-    return write_nonfinite<Char>(out, std::isnan(value), specs, fspecs);
+    return write_nonfinite<Char>(out, std::isnan(value), specs, sign);
 
+  auto fspecs = float_specs();
+  fspecs.sign = sign;
   auto dec = dragonbox::to_decimal(static_cast<floaty>(value));
   return write_float<Char>(out, dec, specs, fspecs, {});
 }
