@@ -1741,6 +1741,14 @@ TEST(format_test, print) {
                "Don't panic!\n");
 }
 
+TEST(format_test, big_print) {
+  enum {count = 5000};
+  auto big_print = []() {
+    for (int i = 0; i < count / 5; ++i) fmt::print("xxxxx");
+  };
+  EXPECT_WRITE(stdout, big_print(), std::string(count, 'x'));
+}
+
 TEST(format_test, variadic) {
   EXPECT_EQ(fmt::format("{}c{}", "ab", 1), "abc1");
 }

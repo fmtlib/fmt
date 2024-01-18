@@ -1432,6 +1432,158 @@ FMT_FUNC auto vformat(string_view fmt, format_args args) -> std::string {
 }
 
 namespace detail {
+
+template <typename T> struct span {
+  T* data;
+  size_t size;
+};
+
+#ifdef _WIN32
+inline void flockfile(FILE* f) { _lock_file(f); }
+inline void funlockfile(FILE* f) { _unlock_file(f); }
+inline int getc_unlocked(FILE* f) { return _fgetc_nolock(f); }
+#endif
+
+// A FILE wrapper. F is FILE defined as a template parameter to make system API
+// detection work.
+template <typename F> class file_base {
+ public:
+  F* file_;
+
+ public:
+  file_base(F* file) : file_(file) {}
+  operator F*() const { return file_; }
+
+  // Reads a code unit from the stream.
+  auto get() -> int {
+    int result = getc_unlocked(file_);
+    if (result == EOF && ferror(file_) != 0)
+      FMT_THROW(system_error(errno, FMT_STRING("getc failed")));
+    return result;
+  }
+
+  // Puts the code unit back into the stream buffer.
+  void unget(char c) {
+    if (ungetc(c, file_) == EOF)
+      FMT_THROW(system_error(errno, FMT_STRING("ungetc failed")));
+  }
+};
+
+// A FILE wrapper for glibc.
+template <typename F> class glibc_file : public file_base<F> {
+ public:
+  using file_base<F>::file_base;
+
+  // Returns the file's read buffer as a string_view.
+  auto get_read_buffer() const -> span<const char> {
+    return {this->file_->_IO_read_ptr,
+            to_unsigned(this->file_->_IO_read_end - this->file_->_IO_read_ptr)};
+  }
+};
+
+// A FILE wrapper for Apple's libc.
+template <typename F> class apple_file : public file_base<F> {
+ private:
+  auto offset() const -> ptrdiff_t {
+    return this->file_->_p - this->file_->_bf._base;
+  }
+
+ public:
+  using file_base<F>::file_base;
+
+  auto is_buffered() const -> bool {
+    return (this->file_->_flags & 2) == 0;  // 2 is __SNBF.
+  }
+
+  auto get_read_buffer() const -> span<const char> {
+    return {reinterpret_cast<char*>(this->file_->_p),
+            to_unsigned(this->file_->_r)};
+  }
+
+  auto get_write_buffer() const -> span<char> {
+    if (!this->file_->_p || offset() == this->file_->_bf._size) {
+      // Force buffer initialization by placing and removing a char in a buffer.
+      fputc(0, this->file_);
+      --this->file_->_p;
+      ++this->file_->_w;
+    }
+    auto size = this->file_->_bf._size;
+    FMT_ASSERT(offset() < size, "");
+    return {reinterpret_cast<char*>(this->file_->_p),
+            static_cast<size_t>(size - offset())};
+  }
+
+  void advance_write_buffer(size_t size) {
+    this->file_->_p += size;
+    this->file_->_w -= size;
+  }
+};
+
+// A fallback FILE wrapper.
+template <typename F> class fallback_file : public file_base<F> {
+ private:
+  char next_;  // The next unconsumed character in the buffer.
+  bool has_next_ = false;
+
+ public:
+  using file_base<F>::file_base;
+
+  auto is_buffered() const -> bool { return false; }
+
+  auto get_read_buffer() const -> span<const char> {
+    return {&next_, has_next_ ? 1u : 0u};
+  }
+
+  auto get_write_buffer() const -> span<char> { return {nullptr, 0}; }
+
+  auto get() -> int {
+    has_next_ = false;
+    return file_base<F>::get();
+  }
+
+  void unget(char c) {
+    file_base<F>::unget(c);
+    next_ = c;
+    has_next_ = true;
+  }
+
+  void advance_write_buffer(size_t) {}
+};
+
+template <typename F, FMT_ENABLE_IF(sizeof(F::_p) != 0)>
+auto get_file(F* f, int) -> apple_file<F> {
+  return f;
+}
+inline auto get_file(FILE* f, ...) -> fallback_file<FILE> { return f; }
+
+using file_ref = decltype(get_file(static_cast<FILE*>(nullptr), 0));
+
+class file_print_buffer : public buffer<char> {
+ private:
+  file_ref file_;
+
+  void set_buffer() {
+    file_.advance_write_buffer(size());
+    auto buf = file_.get_write_buffer();
+    this->set(buf.data, buf.size);
+  }
+
+  static void grow(buffer<char>& buf, size_t) {
+    auto& self = static_cast<file_print_buffer&>(buf);
+    self.set_buffer();
+  }
+
+ public:
+  explicit file_print_buffer(FILE* f) : buffer(grow, size_t()), file_(f) {
+    flockfile(f);
+    set_buffer();
+  }
+  ~file_print_buffer() {
+    file_.advance_write_buffer(size());
+    funlockfile(file_);
+  }
+};
+
 #if !defined(_WIN32) || defined(FMT_WINDOWS_NO_WCHAR)
 FMT_FUNC auto write_console(int, string_view) -> bool { return false; }
 #else
@@ -1470,6 +1622,10 @@ FMT_FUNC void print(std::FILE* f, string_view text) {
 }  // namespace detail
 
 FMT_FUNC void vprint(std::FILE* f, string_view fmt, format_args args) {
+  if (detail::file_ref(f).is_buffered()) {
+    auto&& buffer = detail::file_print_buffer(f);
+    return detail::vformat_to(buffer, fmt, args);
+  }
   auto buffer = memory_buffer();
   detail::vformat_to(buffer, fmt, args);
   detail::print(f, {buffer.data(), buffer.size()});

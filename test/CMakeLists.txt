@@ -82,7 +82,7 @@ endif()
 add_fmt_test(printf-test)
 add_fmt_test(ranges-test ranges-odr-test.cc)
 
-add_fmt_test(scan-test)
+add_fmt_test(scan-test HEADER_ONLY)
 check_symbol_exists(strptime "time.h" HAVE_STRPTIME)
 if (HAVE_STRPTIME)
   target_compile_definitions(scan-test PRIVATE FMT_HAVE_STRPTIME)

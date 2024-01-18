@@ -42,9 +42,9 @@ class scan_buffer {
       : ptr_(ptr), end_(end), contiguous_(contiguous) {}
   ~scan_buffer() = default;
 
-  void set(string_view buf) {
-    ptr_ = buf.begin();
-    end_ = buf.end();
+  void set(span<const char> buf) {
+    ptr_ = buf.data;
+    end_ = buf.data + buf.size;
   }
 
   auto ptr() const -> const char* { return ptr_; }
@@ -150,83 +150,6 @@ class string_scan_buffer : public scan_buffer {
       : scan_buffer(s.begin(), s.end(), true) {}
 };
 
-#ifdef _WIN32
-void flockfile(FILE* f) { _lock_file(f); }
-void funlockfile(FILE* f) { _unlock_file(f); }
-int getc_unlocked(FILE* f) { return _fgetc_nolock(f); }
-#endif
-
-// A FILE wrapper. F is FILE defined as a template parameter to make
-// system-specific API detection work.
-template <typename F> class file_base {
- protected:
-  F* file_;
-
- public:
-  file_base(F* file) : file_(file) {}
-  operator F*() const { return file_; }
-
-  // Reads a code unit from the stream.
-  auto get() -> int {
-    int result = getc_unlocked(file_);
-    if (result == EOF && ferror(file_) != 0)
-      FMT_THROW(system_error(errno, FMT_STRING("getc failed")));
-    return result;
-  }
-
-  // Puts the code unit back into the stream buffer.
-  void unget(char c) {
-    if (ungetc(c, file_) == EOF)
-      FMT_THROW(system_error(errno, FMT_STRING("ungetc failed")));
-  }
-};
-
-// A FILE wrapper for glibc.
-template <typename F> class glibc_file : public file_base<F> {
- public:
-  using file_base<F>::file_base;
-
-  // Returns the file's read buffer as a string_view.
-  auto buffer() const -> string_view {
-    return {this->file_->_IO_read_ptr,
-            to_unsigned(this->file_->_IO_read_end - this->file_->_IO_read_ptr)};
-  }
-};
-
-// A FILE wrapper for Apple's libc.
-template <typename F> class apple_file : public file_base<F> {
- public:
-  using file_base<F>::file_base;
-
-  auto buffer() const -> string_view {
-    return {reinterpret_cast<char*>(this->file_->_p),
-            to_unsigned(this->file_->_r)};
-  }
-};
-
-// A fallback FILE wrapper.
-template <typename F> class fallback_file : public file_base<F> {
- private:
-  char next_;  // The next unconsumed character in the buffer.
-  bool has_next_ = false;
-
- public:
-  using file_base<F>::file_base;
-
-  auto buffer() const -> string_view { return {&next_, has_next_ ? 1u : 0u}; }
-
-  auto get() -> int {
-    has_next_ = false;
-    return file_base<F>::get();
-  }
-
-  void unget(char c) {
-    file_base<F>::unget(c);
-    next_ = c;
-    has_next_ = true;
-  }
-};
-
 class file_scan_buffer : public scan_buffer {
  private:
   template <typename F, FMT_ENABLE_IF(sizeof(F::_IO_read_ptr) != 0)>
@@ -243,19 +166,19 @@ class file_scan_buffer : public scan_buffer {
 
   // Fills the buffer if it is empty.
   void fill() {
-    string_view buf = file_.buffer();
-    if (buf.size() == 0) {
+    span<const char> buf = file_.get_read_buffer();
+    if (buf.size == 0) {
       int c = file_.get();
       // Put the character back since we are only filling the buffer.
       if (c != EOF) file_.unget(static_cast<char>(c));
-      buf = file_.buffer();
+      buf = file_.get_read_buffer();
     }
     set(buf);
   }
 
   void consume() override {
     // Consume the current buffer content.
-    size_t n = to_unsigned(ptr() - file_.buffer().begin());
+    size_t n = to_unsigned(ptr() - file_.get_read_buffer().data);
     for (size_t i = 0; i != n; ++i) file_.get();
     fill();
   }
