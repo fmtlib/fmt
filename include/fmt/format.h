@@ -4269,6 +4269,7 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
     FMT_CONSTEXPR auto on_arg_id(basic_string_view<Char> id) -> int {
       int arg_id = context.arg_id(id);
       if (arg_id < 0) report_error("argument not found");
+      parse_context.increment_next_id_if_match(arg_id);
       return arg_id;
     }
 

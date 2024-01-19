@@ -773,6 +773,12 @@ template <typename Char> class basic_format_parse_context {
     do_check_arg_id(id);
   }
   FMT_CONSTEXPR void check_arg_id(basic_string_view<Char>) {}
+  FMT_CONSTEXPR void increment_next_id_if_match(int id) {
+    if (next_arg_id_ == id) {
+      // Skip named args.
+      next_arg_id_++;
+    }
+  }
   FMT_CONSTEXPR void check_dynamic_spec(int arg_id);
 };
 
