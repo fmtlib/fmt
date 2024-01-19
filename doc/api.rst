@@ -61,6 +61,9 @@ specified otherwise.
 .. doxygenfunction:: print(FILE *f, format_string<T...> fmt, T&&... args)
 .. doxygenfunction:: vprint(FILE *f, string_view fmt, format_args args)
 
+.. doxygenfunction:: println(format_string<T...> fmt, T&&... args)
+.. doxygenfunction:: println(FILE *f, format_string<T...> fmt, T&&... args)
+
 .. _format:
 
 .. doxygenfunction:: format_to(OutputIt out, format_string<T...> fmt, T&&... args) -> OutputIt
