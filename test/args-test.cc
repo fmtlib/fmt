@@ -110,13 +110,22 @@ TEST(args_test, named_arg_by_ref) {
   EXPECT_EQ(fmt::vformat("{band}", store), "Rolling Scones");
 }
 
-TEST(args_test, named_with_unnamed) {
+TEST(args_test, named_with_automatic_index) {
   fmt::dynamic_format_arg_store<fmt::format_context> store;
   store.push_back(1);
   store.push_back(fmt::arg("a1", 2));
   store.push_back(fmt::arg("a2", 3));
   store.push_back(4);
   EXPECT_EQ("1 2 3 4", fmt::vformat("{} {a1} {a2} {}", store));
+}
+
+TEST(args_test, named_with_manual_index) {
+  fmt::dynamic_format_arg_store<fmt::format_context> store;
+  store.push_back(1);
+  store.push_back(fmt::arg("a1", 2));
+  store.push_back(fmt::arg("a2", 3));
+  store.push_back(4);
+  EXPECT_EQ("1 2 3 4 1", fmt::vformat("{0} {a1} {a2} {3} {0}", store));
 }
 
 TEST(args_test, named_custom_format) {
