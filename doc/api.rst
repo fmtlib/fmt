@@ -139,14 +139,16 @@ without implementing them yourself. For example::
   template <> struct fmt::formatter<color>: formatter<string_view> {
     // parse is inherited from formatter<string_view>.
 
-    auto format(color c, format_context& ctx) const;
+    auto format(color c, format_context& ctx) const
+      -> format_parse_context::iterator;
   };
 
   // color.cc:
   #include "color.h"
   #include <fmt/format.h>
 
-  auto fmt::formatter<color>::format(color c, format_context& ctx) const {
+  auto fmt::formatter<color>::format(color c, format_context& ctx) const
+      -> format_parse_context::iterator {
     string_view name = "unknown";
     switch (c) {
     case color::red:   name = "red"; break;
