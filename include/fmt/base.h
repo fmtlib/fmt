@@ -772,7 +772,9 @@ template <typename Char> class basic_format_parse_context {
     next_arg_id_ = -1;
     do_check_arg_id(id);
   }
-  FMT_CONSTEXPR void check_arg_id(basic_string_view<Char>) {}
+  FMT_CONSTEXPR void check_arg_id(basic_string_view<Char>) {
+    next_arg_id_ = -1;
+  }
   FMT_CONSTEXPR void check_dynamic_spec(int arg_id);
 };
 

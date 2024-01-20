@@ -144,9 +144,9 @@ TEST(args_test, reserve) {
   fmt::dynamic_format_arg_store<fmt::format_context> store;
   store.reserve(2, 1);
   store.push_back(1.5f);
-  store.push_back(fmt::arg("a1", 42));
-  auto result = fmt::vformat("{a1} and {}", store);
-  EXPECT_EQ("42 and 1.5", result);
+  store.push_back(fmt::arg("a", 42));
+  auto result = fmt::vformat("{} and {a}", store);
+  EXPECT_EQ("1.5 and 42", result);
 }
 
 struct copy_throwable {

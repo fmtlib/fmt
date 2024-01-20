@@ -555,6 +555,9 @@ TEST(format_test, named_arg) {
                    "argument not found");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{a}"), 42), format_error,
                    "argument not found");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{a} {}"), fmt::arg("a", 2), 42),
+                   format_error,
+                   "cannot switch from manual to automatic argument indexing");
 }
 
 TEST(format_test, auto_arg_index) {
@@ -1742,7 +1745,7 @@ TEST(format_test, print) {
 }
 
 TEST(format_test, big_print) {
-  enum {count = 5000};
+  enum { count = 5000 };
   auto big_print = []() {
     for (int i = 0; i < count / 5; ++i) fmt::print("xxxxx");
   };
