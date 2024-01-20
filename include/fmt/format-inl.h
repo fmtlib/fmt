@@ -1503,7 +1503,7 @@ template <typename F> class apple_file : public file_base<F> {
   auto get_write_buffer() const -> span<char> {
     if (!this->file_->_p || offset() == this->file_->_bf._size) {
       // Force buffer initialization by placing and removing a char in a buffer.
-      fputc(0, this->file_);
+      putc_unlocked(0, this->file_);
       --this->file_->_p;
       ++this->file_->_w;
     }
@@ -1571,6 +1571,7 @@ class file_print_buffer : public buffer<char> {
   static void grow(buffer<char>& buf, size_t) {
     auto& self = static_cast<file_print_buffer&>(buf);
     self.set_buffer();
+    self.clear();
   }
 
  public:
