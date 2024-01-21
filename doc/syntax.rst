@@ -354,7 +354,7 @@ The available presentation types (*chrono_type*) are:
 |         | The modified command ``%Ec`` produces the locale's alternate date  |
 |         | and time representation.                                           |
 +---------+--------------------------------------------------------------------+
-| ``'C'`` | The year divided by 100 using floored division, e.g. "55". If the  |
+| ``'C'`` | The year divided by 100 using floored division, e.g. "19". If the  |
 |         | result is a single decimal digit, it is prefixed with 0.           |
 |         | The modified command ``%EC`` produces the locale's alternative     |
 |         | representation of the century.                                     |
