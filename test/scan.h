@@ -10,7 +10,7 @@
 #include <climits>
 #include <tuple>
 
-#include "fmt/format.h"
+#include "fmt/format-inl.h"
 
 FMT_BEGIN_NAMESPACE
 namespace detail {
@@ -555,24 +555,44 @@ void vscan(detail::scan_buffer& buf, string_view fmt, scan_args args) {
   auto h = detail::scan_handler(fmt, buf, args);
   detail::parse_format_string<false>(fmt, h);
 }
-}  // namespace detail
 
-template <typename... T>
-auto make_scan_args(T&... args) -> std::array<scan_arg, sizeof...(T)> {
-  return {{args...}};
+template <size_t I, typename... T, FMT_ENABLE_IF(I == sizeof...(T))>
+void make_args(std::array<scan_arg, sizeof...(T)>&, std::tuple<T...>&) {}
+
+template <size_t I, typename... T, FMT_ENABLE_IF(I < sizeof...(T))>
+void make_args(std::array<scan_arg, sizeof...(T)>& args,
+               std::tuple<T...>& values) {
+  using element_type = typename std::tuple_element<I, std::tuple<T...>>::type;
+  static_assert(std::is_same<remove_cvref_t<element_type>, element_type>::value,
+                "");
+  args[I] = std::get<I>(values);
+  make_args<I + 1>(args, values);
 }
+}  // namespace detail
 
 template <typename... T> class scan_data {
  private:
   std::tuple<T...> values_;
 
  public:
+  scan_data() = default;
   scan_data(T... values) : values_(std::move(values)...) {}
 
   auto value() const -> decltype(std::get<0>(values_)) {
     return std::get<0>(values_);
   }
+
+  auto make_args() -> std::array<scan_arg, sizeof...(T)> {
+    auto args = std::array<scan_arg, sizeof...(T)>();
+    detail::make_args<0>(args, values_);
+    return args;
+  }
 };
+
+template <typename... T>
+auto make_scan_args(T&... args) -> std::array<scan_arg, sizeof...(T)> {
+  return {{args...}};
+}
 
 class scan_error {};
 
@@ -606,10 +626,9 @@ auto scan_to(string_view input, string_view fmt, T&... args)
 
 template <typename T>
 auto scan(string_view input, string_view fmt) -> scan_result<T> {
-  static_assert(std::is_same<remove_cvref_t<T>, T>::value, "");
-  auto value = T();
-  scan_to(input, fmt, value);
-  return scan_data<T>(std::move(value));
+  auto data = scan_data<T>();
+  vscan(input, fmt, data.make_args());
+  return data;
 }
 
 template <typename Range, typename... T,
