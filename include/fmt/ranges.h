@@ -578,6 +578,22 @@ auto join(It begin, Sentinel end, string_view sep) -> join_view<It, Sentinel> {
   return {begin, end, sep};
 }
 
+namespace detail {
+// ADL helpers for fmt::join()
+namespace adl {
+using std::begin;
+using std::end;
+
+template <typename Range> auto adlbegin(Range& r) -> decltype(begin(r)) {
+  return begin(r);
+}
+
+template <typename Range> auto adlend(Range& r) -> decltype(end(r)) {
+  return end(r);
+}
+}  // namespace adl
+}  // namespace detail
+
 /**
   \rst
   Returns a view that formats `range` with elements separated by `sep`.
@@ -596,8 +612,9 @@ auto join(It begin, Sentinel end, string_view sep) -> join_view<It, Sentinel> {
  */
 template <typename Range>
 auto join(Range&& range, string_view sep)
-    -> join_view<decltype(std::begin(range)), decltype(std::end(range))> {
-  return join(std::begin(range), std::end(range), sep);
+    -> join_view<decltype(detail::adl::adlbegin(range)),
+                 decltype(detail::adl::adlend(range))> {
+  return join(detail::adl::adlbegin(range), detail::adl::adlend(range), sep);
 }
 
 template <typename Char, typename... T> struct tuple_join_view : detail::view {
