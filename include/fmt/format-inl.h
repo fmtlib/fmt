@@ -1517,6 +1517,12 @@ template <typename F> class apple_file : public file_base<F> {
     this->file_->_p += size;
     this->file_->_w -= size;
   }
+
+  bool needs_flush() const {
+    if ((this->file_->_flags & 1) == 0) return false;  // 1 is __SLBF.
+    return memchr(this->file_->_p + this->file_->_w, '\n',
+                  to_unsigned(-this->file_->_w));
+  }
 };
 
 // A fallback FILE wrapper.
@@ -1529,6 +1535,7 @@ template <typename F> class fallback_file : public file_base<F> {
   using file_base<F>::file_base;
 
   auto is_buffered() const -> bool { return false; }
+  auto needs_flush() const -> bool { return false; }
 
   auto get_read_buffer() const -> span<const char> {
     return {&next_, has_next_ ? 1u : 0u};
@@ -1581,7 +1588,9 @@ class file_print_buffer : public buffer<char> {
   }
   ~file_print_buffer() {
     file_.advance_write_buffer(size());
+    bool flush = file_.needs_flush();
     funlockfile(file_);
+    if (flush) fflush(file_);
   }
 };
 
