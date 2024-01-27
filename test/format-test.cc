@@ -15,12 +15,15 @@
 
 #include <stdint.h>  // uint32_t
 
-#include <climits>      // INT_MAX
-#include <cmath>        // std::signbit
-#include <cstring>      // std::strlen
-#include <iterator>     // std::back_inserter
-#include <list>         // std::list
-#include <type_traits>  // std::is_default_constructible
+#include <climits>             // INT_MAX
+#include <cmath>               // std::signbit
+#include <condition_variable>  // std::condition_variable
+#include <cstring>             // std::strlen
+#include <iterator>            // std::back_inserter
+#include <list>                // std::list
+#include <mutex>               // std::mutex
+#include <thread>              // std::thread
+#include <type_traits>         // std::is_default_constructible
 
 #include "gtest-extra.h"
 #include "mock-allocator.h"
@@ -1756,14 +1759,26 @@ TEST(format_test, big_print) {
 #if FMT_USE_FCNTL && !defined(_WIN32)
 TEST(format_test, line_buffering) {
   auto pipe = fmt::pipe();
-  auto read_end = pipe.read_end.fdopen("r");
+
   auto write_end = pipe.write_end.fdopen("w");
   setvbuf(write_end.get(), nullptr, _IOLBF, 4096);
   write_end.print("42\n");
-  int n = 0;
-  int result = fscanf(read_end.get(), "%d", &n);
-  (void)result;
-  EXPECT_EQ(n, 42);
+
+  std::mutex mutex;
+  std::condition_variable cv;
+  auto read_end = pipe.read_end.fdopen("r");
+  std::thread reader([&]() {
+    int n = 0;
+    int result = fscanf(read_end.get(), "%d", &n);
+    (void)result;
+    EXPECT_EQ(n, 42);
+    cv.notify_one();
+  });
+
+  std::unique_lock<std::mutex> lock(mutex);
+  ASSERT_EQ(cv.wait_for(lock, std::chrono::seconds(1)),
+            std::cv_status::no_timeout);
+  reader.join();
 }
 #endif
 
