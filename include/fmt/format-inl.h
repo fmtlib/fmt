@@ -1471,13 +1471,43 @@ template <typename F> class file_base {
 
 // A FILE wrapper for glibc.
 template <typename F> class glibc_file : public file_base<F> {
+ private:
+  enum {
+    line_buffered = 0x200,  // _IO_LINE_BUF
+    unbuffered = 2          // _IO_UNBUFFERED
+  };
+
  public:
   using file_base<F>::file_base;
+
+  auto is_buffered() const -> bool {
+    return (this->file_->_flags & unbuffered) == 0;
+  }
 
   // Returns the file's read buffer as a string_view.
   auto get_read_buffer() const -> span<const char> {
     return {this->file_->_IO_read_ptr,
             to_unsigned(this->file_->_IO_read_end - this->file_->_IO_read_ptr)};
+  }
+
+  auto get_write_buffer() const -> span<char> {
+    char*& ptr = this->file_->_IO_write_ptr;
+    char*& end = this->file_->_IO_buf_end;
+    if (!ptr || ptr == end) {
+      // Force buffer initialization by placing and removing a char in a buffer.
+      putc_unlocked(0, this->file_);
+      --ptr;
+    }
+    FMT_ASSERT(ptr < end, "");
+    return {ptr, static_cast<size_t>(end - ptr)};
+  }
+
+  void advance_write_buffer(size_t size) { this->file_->_IO_write_ptr += size; }
+
+  bool needs_flush() const {
+    if ((this->file_->_flags & line_buffered) == 0) return false;
+    char* end = this->file_->_IO_write_end;
+    return memchr(end, '\n', to_unsigned(this->file_->_IO_write_ptr - end));
   }
 };
 
@@ -1488,11 +1518,16 @@ template <typename F> class apple_file : public file_base<F> {
     return this->file_->_p - this->file_->_bf._base;
   }
 
+  enum {
+    line_buffered = 1,  // __SNBF
+    unbuffered = 2      // __SLBF
+  };
+
  public:
   using file_base<F>::file_base;
 
   auto is_buffered() const -> bool {
-    return (this->file_->_flags & 2) == 0;  // 2 is __SNBF.
+    return (this->file_->_flags & unbuffered) == 0;
   }
 
   auto get_read_buffer() const -> span<const char> {
@@ -1519,7 +1554,7 @@ template <typename F> class apple_file : public file_base<F> {
   }
 
   bool needs_flush() const {
-    if ((this->file_->_flags & 1) == 0) return false;  // 1 is __SLBF.
+    if ((this->file_->_flags & line_buffered) == 0) return false;
     return memchr(this->file_->_p + this->file_->_w, '\n',
                   to_unsigned(-this->file_->_w));
   }
@@ -1559,6 +1594,10 @@ template <typename F> class fallback_file : public file_base<F> {
 
 template <typename F, FMT_ENABLE_IF(sizeof(F::_p) != 0)>
 auto get_file(F* f, int) -> apple_file<F> {
+  return f;
+}
+template <typename F, FMT_ENABLE_IF(sizeof(F::_IO_read_ptr) != 0)>
+inline auto get_file(F* f, int) -> glibc_file<F> {
   return f;
 }
 inline auto get_file(FILE* f, ...) -> fallback_file<FILE> { return f; }
