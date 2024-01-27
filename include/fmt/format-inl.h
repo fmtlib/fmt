@@ -1477,11 +1477,22 @@ template <typename F> class glibc_file : public file_base<F> {
     unbuffered = 2          // _IO_UNBUFFERED
   };
 
+  auto available_space() const -> ptrdiff_t {
+    return this->file_->_IO_buf_end - this->file_->_IO_write_ptr;
+  }
+
  public:
   using file_base<F>::file_base;
 
   auto is_buffered() const -> bool {
     return (this->file_->_flags & unbuffered) == 0;
+  }
+
+  void init_buffer() {
+    if (this->file_->_IO_write_ptr) return;
+    // Force buffer initialization by placing and removing a char in a buffer.
+    putc_unlocked(0, this->file_);
+    --this->file_->_IO_write_ptr;
   }
 
   // Returns the file's read buffer as a string_view.
@@ -1491,15 +1502,9 @@ template <typename F> class glibc_file : public file_base<F> {
   }
 
   auto get_write_buffer() const -> span<char> {
-    char*& ptr = this->file_->_IO_write_ptr;
-    char*& end = this->file_->_IO_buf_end;
-    if (!ptr || ptr == end) {
-      // Force buffer initialization by placing and removing a char in a buffer.
-      putc_unlocked(0, this->file_);
-      --ptr;
-    }
-    FMT_ASSERT(ptr < end, "");
-    return {ptr, static_cast<size_t>(end - ptr)};
+    if (available_space() == 0) fflush_unlocked(this->file_);
+    FMT_ASSERT(available_space() > 0, "");
+    return {this->file_->_IO_write_ptr, static_cast<size_t>(available_space())};
   }
 
   void advance_write_buffer(size_t size) { this->file_->_IO_write_ptr += size; }
@@ -1514,14 +1519,14 @@ template <typename F> class glibc_file : public file_base<F> {
 // A FILE wrapper for Apple's libc.
 template <typename F> class apple_file : public file_base<F> {
  private:
-  auto offset() const -> ptrdiff_t {
-    return this->file_->_p - this->file_->_bf._base;
-  }
-
   enum {
     line_buffered = 1,  // __SNBF
     unbuffered = 2      // __SLBF
   };
+
+  auto available_space() const -> ptrdiff_t {
+    return this->file_->_bf._base + this->file_->_bf._size - this->file_->_p;
+  }
 
  public:
   using file_base<F>::file_base;
@@ -1530,22 +1535,24 @@ template <typename F> class apple_file : public file_base<F> {
     return (this->file_->_flags & unbuffered) == 0;
   }
 
+  void init_buffer() {
+    if (this->file_->_p) return;
+    // Force buffer initialization by placing and removing a char in a buffer.
+    putc_unlocked(0, this->file_);
+    --this->file_->_p;
+    ++this->file_->_w;
+  }
+
   auto get_read_buffer() const -> span<const char> {
     return {reinterpret_cast<char*>(this->file_->_p),
             to_unsigned(this->file_->_r)};
   }
 
   auto get_write_buffer() const -> span<char> {
-    if (!this->file_->_p || offset() == this->file_->_bf._size) {
-      // Force buffer initialization by placing and removing a char in a buffer.
-      putc_unlocked(0, this->file_);
-      --this->file_->_p;
-      ++this->file_->_w;
-    }
-    auto size = this->file_->_bf._size;
-    FMT_ASSERT(offset() < size, "");
+    if (available_space() == 0) fflush(this->file_);
+    FMT_ASSERT(available_space() > 0, "");
     return {reinterpret_cast<char*>(this->file_->_p),
-            static_cast<size_t>(size - offset())};
+            static_cast<size_t>(available_space())};
   }
 
   void advance_write_buffer(size_t size) {
@@ -1571,6 +1578,7 @@ template <typename F> class fallback_file : public file_base<F> {
 
   auto is_buffered() const -> bool { return false; }
   auto needs_flush() const -> bool { return false; }
+  void init_buffer() {}
 
   auto get_read_buffer() const -> span<const char> {
     return {&next_, has_next_ ? 1u : 0u};
@@ -1609,13 +1617,13 @@ class file_print_buffer : public buffer<char> {
   file_ref file_;
 
   void set_buffer() {
-    file_.advance_write_buffer(size());
     auto buf = file_.get_write_buffer();
     this->set(buf.data, buf.size);
   }
 
   static void grow(buffer<char>& buf, size_t) {
     auto& self = static_cast<file_print_buffer&>(buf);
+    self.file_.advance_write_buffer(self.size());
     self.set_buffer();
     self.clear();
   }
@@ -1623,6 +1631,7 @@ class file_print_buffer : public buffer<char> {
  public:
   explicit file_print_buffer(FILE* f) : buffer(grow, size_t()), file_(f) {
     flockfile(f);
+    file_.init_buffer();
     set_buffer();
   }
   ~file_print_buffer() {
