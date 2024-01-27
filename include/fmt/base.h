@@ -2925,12 +2925,12 @@ FMT_INLINE auto format_to_n(OutputIt out, size_t n, format_string<T...> fmt,
   return vformat_to_n(out, n, fmt, fmt::make_format_args(args...));
 }
 
-template <typename OutputIt, typename OutputSen = OutputIt>
+template <typename OutputIt, typename Sentinel = OutputIt>
 struct format_to_result {
   /** Iterator pointing to just after the last succesful write in the range. */
   OutputIt out;
   /** Sentinel indicating the end of the output range. */
-  OutputSen out_last;
+  Sentinel out_last;
 
   FMT_CONSTEXPR operator OutputIt&() & noexcept { return out; }
   FMT_CONSTEXPR operator const OutputIt&() const& noexcept { return out; }
@@ -2939,16 +2939,15 @@ struct format_to_result {
   }
 };
 
-template <size_t Size>
-auto vformat_to(char (&out)[Size], string_view fmt, format_args args)
+template <size_t N>
+auto vformat_to(char (&out)[N], string_view fmt, format_args args)
     -> format_to_result<char*> {
-  format_to_n_result<char*> result = vformat_to_n(out, Size, fmt, args);
-  return {result.out, out + Size};
+  return {vformat_to_n(out, N, fmt, args).out, out + N};
 }
 
-template <size_t Size, typename... T>
-FMT_INLINE auto format_to(char (&out)[Size], format_string<T...> fmt,
-                          T&&... args) -> format_to_result<char*> {
+template <size_t N, typename... T>
+FMT_INLINE auto format_to(char (&out)[N], format_string<T...> fmt, T&&... args)
+    -> format_to_result<char*> {
   return vformat_to(out, fmt, fmt::make_format_args(args...));
 }
 
