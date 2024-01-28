@@ -1467,6 +1467,8 @@ template <typename F> class file_base {
     if (ungetc(c, file_) == EOF)
       FMT_THROW(system_error(errno, FMT_STRING("ungetc failed")));
   }
+
+  void flush() { fflush(this->file_); }
 };
 
 // A FILE wrapper for glibc.
@@ -1476,10 +1478,6 @@ template <typename F> class glibc_file : public file_base<F> {
     line_buffered = 0x200,  // _IO_LINE_BUF
     unbuffered = 2          // _IO_UNBUFFERED
   };
-
-  auto available_space() const -> ptrdiff_t {
-    return this->file_->_IO_buf_end - this->file_->_IO_write_ptr;
-  }
 
  public:
   using file_base<F>::file_base;
@@ -1495,16 +1493,16 @@ template <typename F> class glibc_file : public file_base<F> {
     --this->file_->_IO_write_ptr;
   }
 
-  // Returns the file's read buffer as a string_view.
+  // Returns the file's read buffer.
   auto get_read_buffer() const -> span<const char> {
-    return {this->file_->_IO_read_ptr,
-            to_unsigned(this->file_->_IO_read_end - this->file_->_IO_read_ptr)};
+    auto ptr = this->file_->_IO_read_ptr;
+    return {ptr, to_unsigned(this->file_->_IO_read_end - ptr)};
   }
 
+  // Returns the file's write buffer.
   auto get_write_buffer() const -> span<char> {
-    if (available_space() == 0) fflush_unlocked(this->file_);
-    FMT_ASSERT(available_space() > 0, "");
-    return {this->file_->_IO_write_ptr, static_cast<size_t>(available_space())};
+    auto ptr = this->file_->_IO_write_ptr;
+    return {ptr, to_unsigned(this->file_->_IO_buf_end - ptr)};
   }
 
   void advance_write_buffer(size_t size) { this->file_->_IO_write_ptr += size; }
@@ -1514,6 +1512,8 @@ template <typename F> class glibc_file : public file_base<F> {
     char* end = this->file_->_IO_write_end;
     return memchr(end, '\n', to_unsigned(this->file_->_IO_write_ptr - end));
   }
+
+  void flush() { fflush_unlocked(this->file_); }
 };
 
 // A FILE wrapper for Apple's libc.
@@ -1523,10 +1523,6 @@ template <typename F> class apple_file : public file_base<F> {
     line_buffered = 1,  // __SNBF
     unbuffered = 2      // __SLBF
   };
-
-  auto available_space() const -> ptrdiff_t {
-    return this->file_->_bf._base + this->file_->_bf._size - this->file_->_p;
-  }
 
  public:
   using file_base<F>::file_base;
@@ -1549,10 +1545,9 @@ template <typename F> class apple_file : public file_base<F> {
   }
 
   auto get_write_buffer() const -> span<char> {
-    if (available_space() == 0) fflush(this->file_);
-    FMT_ASSERT(available_space() > 0, "");
     return {reinterpret_cast<char*>(this->file_->_p),
-            static_cast<size_t>(available_space())};
+            to_unsigned(this->file_->_bf._base + this->file_->_bf._size -
+                        this->file_->_p)};
   }
 
   void advance_write_buffer(size_t size) {
@@ -1586,6 +1581,8 @@ template <typename F> class fallback_file : public file_base<F> {
 
   auto get_write_buffer() const -> span<char> { return {nullptr, 0}; }
 
+  void advance_write_buffer(size_t) {}
+
   auto get() -> int {
     has_next_ = false;
     return file_base<F>::get();
@@ -1596,8 +1593,6 @@ template <typename F> class fallback_file : public file_base<F> {
     next_ = c;
     has_next_ = true;
   }
-
-  void advance_write_buffer(size_t) {}
 };
 
 template <typename F, FMT_ENABLE_IF(sizeof(F::_p) != 0)>
@@ -1616,15 +1611,13 @@ class file_print_buffer : public buffer<char> {
  private:
   file_ref file_;
 
-  void set_buffer() {
-    auto buf = file_.get_write_buffer();
-    this->set(buf.data, buf.size);
-  }
-
-  static void grow(buffer<char>& buf, size_t) {
-    auto& self = static_cast<file_print_buffer&>(buf);
+  static void grow(buffer<char>& base, size_t) {
+    auto& self = static_cast<file_print_buffer&>(base);
     self.file_.advance_write_buffer(self.size());
-    self.set_buffer();
+    if (self.file_.get_write_buffer().size == 0) self.file_.flush();
+    auto buf = self.file_.get_write_buffer();
+    FMT_ASSERT(buf.size > 0, "");
+    self.set(buf.data, buf.size);
     self.clear();
   }
 
@@ -1632,7 +1625,8 @@ class file_print_buffer : public buffer<char> {
   explicit file_print_buffer(FILE* f) : buffer(grow, size_t()), file_(f) {
     flockfile(f);
     file_.init_buffer();
-    set_buffer();
+    auto buf = file_.get_write_buffer();
+    set(buf.data, buf.size);
   }
   ~file_print_buffer() {
     file_.advance_write_buffer(size());
