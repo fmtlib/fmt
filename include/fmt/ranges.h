@@ -159,12 +159,13 @@ class is_tuple_formattable_ {
   static constexpr const bool value = false;
 };
 template <typename T, typename C> class is_tuple_formattable_<T, C, true> {
-  template <std::size_t... Is>
-  static auto check2(index_sequence<Is...>,
-                     integer_sequence<bool, (Is == Is)...>) -> std::true_type;
-  static auto check2(...) -> std::false_type;
-  template <std::size_t... Is>
-  static auto check(index_sequence<Is...>) -> decltype(check2(
+  template <size_t... Is>
+  static auto all_true(index_sequence<Is...>,
+                       integer_sequence<bool, (Is >= 0)...>) -> std::true_type;
+  static auto all_true(...) -> std::false_type;
+
+  template <size_t... Is>
+  static auto check(index_sequence<Is...>) -> decltype(all_true(
       index_sequence<Is...>{},
       integer_sequence<bool,
                        (is_formattable<typename std::tuple_element<Is, T>::type,
