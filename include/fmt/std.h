@@ -36,9 +36,10 @@
 #  if FMT_HAS_INCLUDE(<optional>)
 #    include <optional>
 #  endif
-#  if FMT_HAS_INCLUDE(<expected>)
-#    include <expected>
-#  endif
+#endif
+
+#if FMT_HAS_INCLUDE(<expected>) && FMT_CPLUSPLUS > 202002L
+#  include <expected>
 #endif
 
 #if FMT_CPLUSPLUS > 201703L && FMT_HAS_INCLUDE(<source_location>)
