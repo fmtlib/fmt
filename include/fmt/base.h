@@ -1636,7 +1636,9 @@ template <typename Context, size_t NUM_ARGS, size_t NUM_NAMED_ARGS,
 struct format_arg_store {
   // args_[0].named_args points to named_args to avoid bloating format_args.
   // +1 to workaround a bug in gcc 7.5 that causes duplicated-branches warning.
-  arg_t<Context, NUM_ARGS> args[1 + (NUM_ARGS != 0 ? NUM_ARGS : +1)];
+  static constexpr size_t ARGS_ARR_SIZE = 1 + (NUM_ARGS != 0 ? NUM_ARGS : +1);
+
+  arg_t<Context, NUM_ARGS> args[ARGS_ARR_SIZE];
   named_arg_info<typename Context::char_type> named_args[NUM_NAMED_ARGS];
 
   template <typename... T>
@@ -1649,6 +1651,17 @@ struct format_arg_store {
         0,
         (init_named_arg(named_args, arg_index, named_arg_index, values), 0)...};
   }
+
+  format_arg_store(format_arg_store&& rhs) {
+    args[0] = {named_args, NUM_NAMED_ARGS};
+    for (size_t i = 1; i < ARGS_ARR_SIZE; ++i) args[i] = rhs.args[i];
+    for (size_t i = 0; i < NUM_NAMED_ARGS; ++i)
+      named_args[i] = rhs.named_args[i];
+  }
+
+  format_arg_store(const format_arg_store& rhs) = delete;
+  format_arg_store& operator=(const format_arg_store& rhs) = delete;
+  format_arg_store& operator=(format_arg_store&& rhs) = delete;
 };
 
 // A specialization of format_arg_store without named arguments.
