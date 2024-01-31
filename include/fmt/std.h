@@ -246,12 +246,13 @@ struct formatter<std::optional<T>, Char,
 FMT_END_NAMESPACE
 #endif  // __cpp_lib_optional
 
-#ifdef __cpp_lib_expected
+#if defined(__cpp_lib_expected) || FMT_CPP_LIB_VARIANT
+
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
 template <typename Char, typename OutputIt, typename T>
-auto write_expected_alternative(OutputIt out, const T& v) -> OutputIt {
+auto write_escaped_alternative(OutputIt out, const T& v) -> OutputIt {
   if constexpr (has_to_string_view<T>::value)
     return write_escaped_string<Char>(out, detail::to_string_view(v));
   else if constexpr (std::is_same_v<T, Char>)
@@ -262,11 +263,17 @@ auto write_expected_alternative(OutputIt out, const T& v) -> OutputIt {
 
 }  // namespace detail
 
+FMT_END_NAMESPACE
+#endif
+
+#ifdef __cpp_lib_expected
+FMT_BEGIN_NAMESPACE
+
 FMT_EXPORT
 template <typename T, typename E, typename Char>
-struct formatter<std::expected<T, E>, Char,
-                 std::enable_if_t<std::conjunction_v<
-                     is_formattable<T, Char>, is_formattable<E, Char>>>> {
+struct formatter<
+    std::expected<T, E>, Char,
+    std::enable_if_t<is_formattable<T, Char> && is_formattable<E, Char>>> {
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
     return ctx.begin();
@@ -279,10 +286,10 @@ struct formatter<std::expected<T, E>, Char,
 
     if (value.has_value()) {
       out = detail::write<Char>(out, "expected(");
-      out = detail::write_expected_alternative<Char>(out, value.value());
+      out = detail::write_escaped_alternative<Char>(out, value.value());
     } else {
       out = detail::write<Char>(out, "unexpected(");
-      out = detail::write_expected_alternative<Char>(out, value.error());
+      out = detail::write_escaped_alternative<Char>(out, value.error());
     }
     *out++ = ')';
     return out;
@@ -340,16 +347,6 @@ template <typename T, typename C> class is_variant_formattable_ {
       decltype(check(variant_index_sequence<T>{}))::value;
 };
 
-template <typename Char, typename OutputIt, typename T>
-auto write_variant_alternative(OutputIt out, const T& v) -> OutputIt {
-  if constexpr (has_to_string_view<T>::value)
-    return write_escaped_string<Char>(out, detail::to_string_view(v));
-  else if constexpr (std::is_same_v<T, Char>)
-    return write_escaped_char(out, v);
-  else
-    return write<Char>(out, v);
-}
-
 }  // namespace detail
 
 template <typename T> struct is_variant_like {
@@ -395,7 +392,7 @@ struct formatter<
     FMT_TRY {
       std::visit(
           [&](const auto& v) {
-            out = detail::write_variant_alternative<Char>(out, v);
+            out = detail::write_escaped_alternative<Char>(out, v);
           },
           value);
     }
