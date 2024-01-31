@@ -255,10 +255,8 @@ template <typename Char, typename OutputIt, typename T>
 auto write_escaped_alternative(OutputIt out, const T& v) -> OutputIt {
   if constexpr (has_to_string_view<T>::value)
     return write_escaped_string<Char>(out, detail::to_string_view(v));
-  else if constexpr (std::is_same_v<T, Char>)
-    return write_escaped_char(out, v);
-  else
-    return write<Char>(out, v);
+  if constexpr (std::is_same_v<T, Char>) return write_escaped_char(out, v);
+  return write<Char>(out, v);
 }
 
 }  // namespace detail
