@@ -263,10 +263,9 @@ auto write_expected_alternative(OutputIt out, const T& v) -> OutputIt {
 
 FMT_EXPORT
 template <typename T, typename E, typename Char>
-struct formatter<
-    std::expected<T, E>, Char,
-    std::enable_if_t<std::conjunction_v<
-        is_formattable<T, Char>, is_formattable<E, Char>>>> {
+struct formatter<std::expected<T, E>, Char,
+                 std::enable_if_t<std::conjunction_v<
+                     is_formattable<T, Char>, is_formattable<E, Char>>>> {
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
     return ctx.begin();
@@ -277,12 +276,12 @@ struct formatter<
       -> decltype(ctx.out()) {
     auto out = ctx.out();
 
-    if(value.has_value()) {
+    if (value.has_value()) {
       out = detail::write<Char>(out, "expected(");
-      out =  detail::write_expected_alternative<Char>(out, value.value());
+      out = detail::write_expected_alternative<Char>(out, value.value());
     } else {
       out = detail::write<Char>(out, "unexpected(");
-      out =  detail::write_expected_alternative<Char>(out, value.error());
+      out = detail::write_expected_alternative<Char>(out, value.error());
     }
     *out++ = ')';
     return out;
