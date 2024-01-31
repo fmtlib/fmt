@@ -102,6 +102,26 @@ TEST(std_test, optional) {
 #endif
 }
 
+TEST(std_test, expected) {
+#ifdef __cpp_lib_expected
+  EXPECT_EQ(fmt::format("{}", std::expected<int, int>{1}), "expected(1)");
+  EXPECT_EQ(fmt::format("{}", std::expected<int, int>{std::unexpected(1)}), "unexpected(1)");
+  EXPECT_EQ(fmt::format("{}", std::expected<std::string, int>{"test"}), "expected(\"test\")");
+  EXPECT_EQ(fmt::format("{}", std::expected<int, std::string>{std::unexpected("test")}), "unexpected(\"test\")");
+  EXPECT_EQ(fmt::format("{}", std::expected<char, int>{'a'}), "expected('a')");
+  EXPECT_EQ(fmt::format("{}", std::expected<int, char>{std::unexpected('a')}), "unexpected('a')");
+
+  struct unformattable1 {};
+  struct unformattable2 {};
+  EXPECT_FALSE((fmt::is_formattable<unformattable1>::value));
+  EXPECT_FALSE((fmt::is_formattable<unformattable2>::value));
+  EXPECT_FALSE((fmt::is_formattable<std::expected<unformattable1, unformattable2>>::value));
+  EXPECT_FALSE((fmt::is_formattable<std::expected<unformattable1, int>>::value));
+  EXPECT_FALSE((fmt::is_formattable<std::expected<int, unformattable2>>::value));
+  EXPECT_TRUE((fmt::is_formattable<std::expected<int, int>>::value));
+#endif
+}
+
 namespace my_nso {
 enum class my_number {
   one,

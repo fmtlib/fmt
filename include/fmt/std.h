@@ -36,6 +36,9 @@
 #  if FMT_HAS_INCLUDE(<optional>)
 #    include <optional>
 #  endif
+#  if FMT_HAS_INCLUDE(<expected>)
+#    include <expected>
+#  endif
 #endif
 
 #if FMT_CPLUSPLUS > 201703L && FMT_HAS_INCLUDE(<source_location>)
@@ -241,6 +244,52 @@ struct formatter<std::optional<T>, Char,
 };
 FMT_END_NAMESPACE
 #endif  // __cpp_lib_optional
+
+#ifdef __cpp_lib_expected
+FMT_BEGIN_NAMESPACE
+namespace detail {
+
+template <typename Char, typename OutputIt, typename T>
+auto write_expected_alternative(OutputIt out, const T& v) -> OutputIt {
+  if constexpr (has_to_string_view<T>::value)
+    return write_escaped_string<Char>(out, detail::to_string_view(v));
+  else if constexpr (std::is_same_v<T, Char>)
+    return write_escaped_char(out, v);
+  else
+    return write<Char>(out, v);
+}
+
+}  // namespace detail
+
+FMT_EXPORT
+template <typename T, typename E, typename Char>
+struct formatter<
+    std::expected<T, E>, Char,
+    std::enable_if_t<std::conjunction_v<
+        is_formattable<T, Char>, is_formattable<E, Char>>>> {
+  template <typename ParseContext>
+  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
+
+  template <typename FormatContext>
+  auto format(const std::expected<T, E>& value, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    auto out = ctx.out();
+
+    if(value.has_value()) {
+      out = detail::write<Char>(out, "expected(");
+      out =  detail::write_expected_alternative<Char>(out, value.value());
+    } else {
+      out = detail::write<Char>(out, "unexpected(");
+      out =  detail::write_expected_alternative<Char>(out, value.error());
+    }
+    *out++ = ')';
+    return out;
+  }
+};
+FMT_END_NAMESPACE
+#endif  // __cpp_lib_expected
 
 #ifdef __cpp_lib_source_location
 FMT_BEGIN_NAMESPACE
