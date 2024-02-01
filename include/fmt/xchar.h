@@ -294,13 +294,14 @@ inline auto format(const text_style& ts, wformat_string<T...> fmt, T&&... args)
 }
 
 template <typename... T>
-void print(std::FILE* f, const text_style& ts, wformat_string<T...> fmt,
-           const T&... args) {
+FMT_DEPRECATED void print(std::FILE* f, const text_style& ts,
+                          wformat_string<T...> fmt, const T&... args) {
   vprint(f, ts, fmt, fmt::make_wformat_args(args...));
 }
 
 template <typename... T>
-void print(const text_style& ts, wformat_string<T...> fmt, const T&... args) {
+FMT_DEPRECATED void print(const text_style& ts, wformat_string<T...> fmt,
+                          const T&... args) {
   return print(stdout, ts, fmt, args...);
 }
 
