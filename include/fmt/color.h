@@ -239,7 +239,7 @@ class text_style {
       foreground_color = rhs.foreground_color;
     } else if (rhs.set_foreground_color) {
       if (!foreground_color.is_rgb || !rhs.foreground_color.is_rgb)
-        FMT_THROW(format_error("can't OR a terminal color"));
+        report_error("can't OR a terminal color");
       foreground_color.value.rgb_color |= rhs.foreground_color.value.rgb_color;
     }
 
@@ -248,7 +248,7 @@ class text_style {
       background_color = rhs.background_color;
     } else if (rhs.set_background_color) {
       if (!background_color.is_rgb || !rhs.background_color.is_rgb)
-        FMT_THROW(format_error("can't OR a terminal color"));
+        report_error("can't OR a terminal color");
       background_color.value.rgb_color |= rhs.background_color.value.rgb_color;
     }
 
@@ -391,7 +391,7 @@ template <typename Char> struct ansi_color_escape {
 
   FMT_CONSTEXPR auto begin() const noexcept -> const Char* { return buffer; }
   FMT_CONSTEXPR20 auto end() const noexcept -> const Char* {
-    return buffer + std::char_traits<Char>::length(buffer);
+    return buffer + basic_string_view<Char>(buffer).size();
   }
 
  private:
@@ -466,19 +466,11 @@ void vformat_to(
 
 }  // namespace detail
 
-inline void vprint(std::FILE* f, const text_style& ts, string_view fmt,
+inline void vprint(FILE* f, const text_style& ts, string_view fmt,
                    format_args args) {
-  // Legacy wide streams are not supported.
   auto buf = memory_buffer();
   detail::vformat_to(buf, ts, fmt, args);
-  if (detail::is_utf8()) {
-    detail::print(f, string_view(buf.begin(), buf.size()));
-    return;
-  }
-  buf.push_back('\0');
-  int result = std::fputs(buf.data(), f);
-  if (result < 0)
-    FMT_THROW(system_error(errno, FMT_STRING("cannot write to file")));
+  print(f, FMT_STRING("{}"), string_view(buf.begin(), buf.size()));
 }
 
 /**
@@ -493,7 +485,7 @@ inline void vprint(std::FILE* f, const text_style& ts, string_view fmt,
   \endrst
  */
 template <typename... T>
-void print(std::FILE* f, const text_style& ts, format_string<T...> fmt,
+void print(FILE* f, const text_style& ts, format_string<T...> fmt,
            T&&... args) {
   vprint(f, ts, fmt, fmt::make_format_args(args...));
 }
