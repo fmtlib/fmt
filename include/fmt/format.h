@@ -3104,8 +3104,11 @@ FMT_CONSTEXPR20 inline void format_dragon(basic_fp<uint128_t> value,
   // Generate the given number of digits.
   exp10 -= num_digits - 1;
   if (num_digits <= 0) {
-    denominator *= 10;
-    auto digit = add_compare(numerator, numerator, denominator) > 0 ? '1' : '0';
+    auto digit = '0';
+    if (num_digits == 0) {
+      denominator *= 10;
+      digit = add_compare(numerator, numerator, denominator) > 0 ? '1' : '0';
+    }
     buf.push_back(digit);
     return;
   }
