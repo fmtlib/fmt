@@ -582,6 +582,8 @@ template <typename... T> class scan_data {
     return std::get<0>(values_);
   }
 
+  auto values() const -> const std::tuple<T...>& { return values_; }
+
   auto make_args() -> std::array<scan_arg, sizeof...(T)> {
     auto args = std::array<scan_arg, sizeof...(T)>();
     detail::make_args<0>(args, values_);
@@ -600,9 +602,12 @@ class scan_error {};
 template <typename T, typename E> class expected {
  private:
   T value_;
+  bool has_value_ = true;
 
  public:
   expected(T value) : value_(std::move(value)) {}
+
+  explicit operator bool() const { return has_value_; }
 
   auto operator->() const -> const T* { return &value_; }
 };
@@ -624,9 +629,9 @@ auto scan_to(string_view input, string_view fmt, T&... args)
   return vscan(input, fmt, make_scan_args(args...));
 }
 
-template <typename T>
-auto scan(string_view input, string_view fmt) -> scan_result<T> {
-  auto data = scan_data<T>();
+template <typename... T>
+auto scan(string_view input, string_view fmt) -> scan_result<T...> {
+  auto data = scan_data<T...>();
   vscan(input, fmt, data.make_args());
   return data;
 }
