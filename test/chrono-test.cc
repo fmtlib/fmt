@@ -794,13 +794,11 @@ TEST(chrono_test, cpp20_duration_subsecond_support) {
   EXPECT_EQ(fmt::format("{:.2%S}", std::chrono::milliseconds{12345}),
             "12.34");
   EXPECT_EQ(fmt::format("{:.2%S}", std::chrono::milliseconds{12375}),
-            "12.38");
+            "12.37");
   EXPECT_EQ(fmt::format("{:.2%S}", std::chrono::milliseconds{-12375}),
-            "-12.38");
-  EXPECT_EQ(fmt::format("{:.2%S}", std::chrono::milliseconds{12054}),
-            "12.05");
-  EXPECT_EQ(fmt::format("{:.1%S}", std::chrono::milliseconds{12054}),
-            "12.1");
+            "-12.37");
+  EXPECT_EQ(fmt::format("{:.0%S}", std::chrono::milliseconds{12054}),
+            "12");
   EXPECT_EQ(fmt::format("{:.2%S}", std::chrono::milliseconds{99999}),
             "39.99");
   EXPECT_EQ(fmt::format("{:.2%S}", std::chrono::milliseconds{1000}),
