@@ -517,7 +517,7 @@ TEST(locale_test, format) {
             fmt::format(small_grouping_loc, "{:L}", max_value<uint32_t>()));
 }
 
-TEST(locale_test, format_detault_align) {
+TEST(locale_test, format_default_align) {
   auto loc = std::locale({}, new special_grouping<char>());
   EXPECT_EQ("  12,345", fmt::format(loc, "{:8L}", 12345));
 }

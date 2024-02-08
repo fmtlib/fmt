@@ -2041,7 +2041,7 @@
     returned by `fmt::system_category()`
     (https://github.com/fmtlib/fmt/issues/2274,
     https://github.com/fmtlib/fmt/pull/2275). The latter is
-    similar to `std::sytem_category` but correctly handles UTF-8.
+    similar to `std::system_category` but correctly handles UTF-8.
     Thanks @phprus.
 
 -   Replaced `fmt::error_code` with `std::error_code` and made it
