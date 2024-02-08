@@ -553,7 +553,7 @@ template <typename OutputIt,
           FMT_ENABLE_IF(is_back_insert_iterator<OutputIt>::value&&
                             is_contiguous<typename OutputIt::container>::value)>
 inline auto base_iterator(OutputIt it,
-                          typename OutputIt::containter_type::value_type*)
+                          typename OutputIt::container_type::value_type*)
     -> OutputIt {
   return it;
 }
