@@ -110,7 +110,11 @@ template <typename Char> FMT_FUNC Char decimal_point_impl(locale_ref) {
 
 FMT_FUNC auto write_loc(appender out, loc_value value,
                         const format_specs& specs, locale_ref loc) -> bool {
-#ifndef FMT_STATIC_THOUSANDS_SEPARATOR
+#ifdef FMT_STATIC_THOUSANDS_SEPARATOR
+  value.visit(loc_writer<>{
+      out, specs, std::string(1, FMT_STATIC_THOUSANDS_SEPARATOR), "\3", "."});
+  return true;
+#else
   auto locale = loc.get<std::locale>();
   // We cannot use the num_put<char> facet because it may produce output in
   // a wrong encoding.
@@ -119,7 +123,6 @@ FMT_FUNC auto write_loc(appender out, loc_value value,
     return std::use_facet<facet>(locale).put(out, value, specs);
   return facet(locale).put(out, value, specs);
 #endif
-  return false;
 }
 }  // namespace detail
 
