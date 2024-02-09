@@ -487,6 +487,8 @@ template <typename Char> class basic_string_view {
   constexpr basic_string_view(const Char* s, size_t count) noexcept
       : data_(s), size_(count) {}
 
+  constexpr basic_string_view(std::nullptr_t) = delete;
+
   /**
     Constructs a string reference object from a C string.
    */
