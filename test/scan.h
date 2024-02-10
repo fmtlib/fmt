@@ -570,9 +570,10 @@ void make_args(std::array<scan_arg, sizeof...(T)>& args,
 }
 }  // namespace detail
 
-template <typename... T> class scan_data {
+template <typename Range, typename... T> class scan_data {
  private:
   std::tuple<T...> values_;
+  Range range_;
 
  public:
   scan_data() = default;
@@ -589,6 +590,11 @@ template <typename... T> class scan_data {
     detail::make_args<0>(args, values_);
     return args;
   }
+
+  auto range() const -> Range { return range_; }
+
+  auto begin() const -> decltype(range_.begin()) { return range_.begin(); }
+  auto end() const -> decltype(range_.end()) { return range_.end(); }
 };
 
 template <typename... T>
@@ -610,10 +616,12 @@ template <typename T, typename E> class expected {
   explicit operator bool() const { return has_value_; }
 
   auto operator->() const -> const T* { return &value_; }
+
+  auto error() -> E const { return E(); }
 };
 
-template <typename... T>
-using scan_result = expected<scan_data<T...>, scan_error>;
+template <typename Range, typename... T>
+using scan_result = expected<scan_data<Range, T...>, scan_error>;
 
 auto vscan(string_view input, string_view fmt, scan_args args)
     -> string_view::iterator {
@@ -630,8 +638,9 @@ auto scan_to(string_view input, string_view fmt, T&... args)
 }
 
 template <typename... T>
-auto scan(string_view input, string_view fmt) -> scan_result<T...> {
-  auto data = scan_data<T...>();
+auto scan(string_view input, string_view fmt)
+    -> scan_result<string_view, T...> {
+  auto data = scan_data<string_view, T...>();
   vscan(input, fmt, data.make_args());
   return data;
 }
