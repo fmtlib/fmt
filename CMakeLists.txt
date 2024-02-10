@@ -168,8 +168,8 @@ if (CMAKE_SYSTEM_NAME STREQUAL "MSDOS")
 endif ()
 
 # Get version from base.h
-file(READ include/fmt/base.h core_h)
-if (NOT core_h MATCHES "FMT_VERSION ([0-9]+)([0-9][0-9])([0-9][0-9])")
+file(READ include/fmt/base.h base_h)
+if (NOT base_h MATCHES "FMT_VERSION ([0-9]+)([0-9][0-9])([0-9][0-9])")
   message(FATAL_ERROR "Cannot get FMT_VERSION from base.h.")
 endif ()
 # Use math to skip leading zeros if any.
@@ -274,7 +274,7 @@ function(add_headers VAR)
 endfunction()
 
 # Define the fmt library, its includes and the needed defines.
-add_headers(FMT_HEADERS args.h chrono.h color.h compile.h base.h format.h
+add_headers(FMT_HEADERS args.h base.h chrono.h color.h compile.h core.h format.h
                         format-inl.h os.h ostream.h printf.h ranges.h std.h
                         xchar.h)
 set(FMT_SOURCES src/format.cc)
