@@ -2155,27 +2155,26 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
   template <typename FormatContext>
   auto format(std::chrono::time_point<std::chrono::system_clock, Duration> val,
               FormatContext& ctx) const -> decltype(ctx.out()) {
+    std::tm tm = gmtime(val);
     using period = typename Duration::period;
     if (detail::const_check(
-            period::num != 1 || period::den != 1 ||
-            std::is_floating_point<typename Duration::rep>::value)) {
-      const auto epoch = val.time_since_epoch();
-      auto subsecs = detail::fmt_duration_cast<Duration>(
-          epoch - detail::fmt_duration_cast<std::chrono::seconds>(epoch));
-
-      if (subsecs.count() < 0) {
-        auto second =
-            detail::fmt_duration_cast<Duration>(std::chrono::seconds(1));
-        if (epoch.count() < ((Duration::min)() + second).count())
-          FMT_THROW(format_error("duration is too small"));
-        subsecs += second;
-        val -= second;
-      }
-
-      return formatter<std::tm, Char>::do_format(gmtime(val), ctx, &subsecs);
+            period::num == 1 && period::den == 1 &&
+            !std::is_floating_point<typename Duration::rep>::value)) {
+      return formatter<std::tm, Char>::format(tm, ctx);
     }
-
-    return formatter<std::tm, Char>::format(gmtime(val), ctx);
+    Duration epoch = val.time_since_epoch();
+    Duration subsecs = detail::fmt_duration_cast<Duration>(
+        epoch - detail::fmt_duration_cast<std::chrono::seconds>(epoch));
+    if (subsecs.count() < 0) {
+      auto second =
+          detail::fmt_duration_cast<Duration>(std::chrono::seconds(1));
+      if (tm.tm_sec != 0)
+        --tm.tm_sec;
+      else
+        tm = gmtime(val - second);
+      subsecs += detail::fmt_duration_cast<Duration>(std::chrono::seconds(1));
+    }
+    return formatter<std::tm, Char>::do_format(tm, ctx, &subsecs);
   }
 };
 
