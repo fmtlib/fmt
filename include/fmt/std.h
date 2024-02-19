@@ -269,9 +269,9 @@ FMT_BEGIN_NAMESPACE
 
 FMT_EXPORT
 template <typename T, typename E, typename Char>
-struct formatter<
-    std::expected<T, E>, Char,
-    std::enable_if_t<is_formattable<T, Char> && is_formattable<E, Char>>> {
+struct formatter<std::expected<T, E>, Char,
+                 std::enable_if_t<is_formattable<T, Char>::value &&
+                                  is_formattable<E, Char>::value>> {
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
     return ctx.begin();
