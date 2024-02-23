@@ -14,6 +14,7 @@
 #include <type_traits>
 
 #include "base.h"
+#include "format.h"
 
 FMT_BEGIN_NAMESPACE
 
@@ -388,7 +389,8 @@ struct range_formatter<
       detail::string_literal<Char, '['>{};
   basic_string_view<Char> closing_bracket_ =
       detail::string_literal<Char, ']'>{};
-
+  bool is_string_format = false;
+  bool is_debug = false;
  public:
   FMT_CONSTEXPR range_formatter() {}
 
@@ -415,19 +417,85 @@ struct range_formatter<
       set_brackets({}, {});
       ++it;
     }
+    else {
+      bool check_for_s = false;
+      if (it != end && *it == '?') {
+        ++it;
+        detail::maybe_set_debug_format(underlying_, true);
+        set_brackets({}, {});
+        check_for_s = true;
+        is_debug = true;
+      }
+      if (it != end && *it == 's') {
+        if (!std::is_same<T,Char>::value) {
+          report_error("invalid format specifier");
+        }
+        if (!is_debug) {
+          set_brackets(detail::string_literal<Char, '"'>{}, detail::string_literal<Char, '"'>{});
+        }
+        check_for_s = false;
+        is_string_format = true;
+        ++it;  
+        
+      }
+      if (check_for_s) { 
+        report_error("invalid format specifier");
+      } 
+    }
 
-    if (it != end && *it != '}') {
-      if (*it != ':') report_error("invalid format specifier");
+    if (it != end && *it != '}') { 
+      if (is_string_format || *it != ':') report_error("invalid format specifier");
       ++it;
     } else {
-      detail::maybe_set_debug_format(underlying_, true);
+      if (!is_string_format)
+        detail::maybe_set_debug_format(underlying_, true);
     }
 
     ctx.advance_to(it);
     return underlying_.parse(ctx);
   }
 
-  template <typename R, typename FormatContext>
+  template <typename R, typename FormatContext, typename U = T, enable_if_t<std::is_same<U,Char>::value, bool> = true>
+  auto format(R&& range, FormatContext& ctx) const -> decltype(ctx.out()) {
+    detail::range_mapper<buffered_context<Char>> mapper;
+    auto out = ctx.out();
+    out = detail::copy<Char>(opening_bracket_, out);
+    int i = 0;
+    auto it = detail::range_begin(range);
+    auto end = detail::range_end(range);
+    if (is_string_format) {
+      if (is_debug) {
+        auto buf = basic_memory_buffer<Char>();
+        for (; it != end; ++it) {
+          auto&& item = *it;
+          buf.push_back(item);
+        }
+        format_specs spec_str{};
+        spec_str.type = presentation_type::debug;
+        detail::write<Char>(out, basic_string_view(buf.data(),buf.size()), spec_str);
+      }
+      else {
+        for (; it != end; ++it) {
+          ctx.advance_to(out);
+          auto&& item = *it;
+          out = underlying_.format(mapper.map(item), ctx); 
+        }
+      }
+    }
+    else {
+      for (; it != end; ++it) {
+        if (i > 0) out = detail::copy<Char>(separator_, out);
+        ctx.advance_to(out);
+        auto&& item = *it;
+        out = underlying_.format(mapper.map(item), ctx); 
+        ++i;
+      }
+    }
+    out = detail::copy<Char>(closing_bracket_, out);
+    return out;
+  }
+
+  template <typename R, typename FormatContext, typename U = T, enable_if_t<!(std::is_same<U,Char>::value), bool> = true>
   auto format(R&& range, FormatContext& ctx) const -> decltype(ctx.out()) {
     detail::range_mapper<buffered_context<Char>> mapper;
     auto out = ctx.out();
@@ -439,7 +507,7 @@ struct range_formatter<
       if (i > 0) out = detail::copy<Char>(separator_, out);
       ctx.advance_to(out);
       auto&& item = *it;
-      out = underlying_.format(mapper.map(item), ctx);
+      out = underlying_.format(mapper.map(item), ctx); 
       ++i;
     }
     out = detail::copy<Char>(closing_bracket_, out);
