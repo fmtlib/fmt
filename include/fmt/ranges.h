@@ -473,8 +473,8 @@ struct range_formatter<
         }
         format_specs spec_str{};
         spec_str.type = presentation_type::debug;
-        detail::write<Char>(out, basic_string_view<Char>(buf.data(), buf.size()),
-                            spec_str);
+        detail::write<Char>(
+            out, basic_string_view<Char>(buf.data(), buf.size()), spec_str);
       } else {
         for (; it != end; ++it) {
           ctx.advance_to(out);
