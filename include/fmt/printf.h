@@ -60,7 +60,7 @@ namespace detail {
 // signed and unsigned integers.
 template <bool IsSigned> struct int_checker {
   template <typename T> static auto fits_in_int(T value) -> bool {
-    unsigned max = max_value<int>();
+    unsigned max = to_unsigned(max_value<int>());
     return value <= max;
   }
   static auto fits_in_int(bool) -> bool { return true; }
@@ -205,7 +205,7 @@ class printf_width_handler {
       specs_.align = align::left;
       width = 0 - width;
     }
-    unsigned int_max = max_value<int>();
+    unsigned int_max = to_unsigned(max_value<int>());
     if (width > int_max) report_error("number is too big");
     return static_cast<unsigned>(width);
   }
