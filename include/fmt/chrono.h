@@ -398,8 +398,9 @@ auto write_encoded_tm_str(OutputIt out, string_view in, const std::locale& loc)
   if (detail::is_utf8() && loc != get_classic_locale()) {
     // char16_t and char32_t codecvts are broken in MSVC (linkage errors) and
     // gcc-4.
-#if FMT_MSC_VERSION != 0 || \
-    (defined(__GLIBCXX__) && !defined(_GLIBCXX_USE_DUAL_ABI))
+#if FMT_MSC_VERSION != 0 ||  \
+    (defined(__GLIBCXX__) && \
+     (!defined(_GLIBCXX_USE_DUAL_ABI) || _GLIBCXX_USE_DUAL_ABI == 0))
     // The _GLIBCXX_USE_DUAL_ABI macro is always defined in libstdc++ from gcc-5
     // and newer.
     using code_unit = wchar_t;
