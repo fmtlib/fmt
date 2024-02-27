@@ -464,8 +464,8 @@ struct range_formatter<
     }
     format_specs spec_str{};
     spec_str.type = presentation_type::debug;
-    return detail::write<Char>(out, basic_string_view<Char>(buf.data(), buf.size()),
-                        spec_str);
+    return detail::write<Char>(
+        out, basic_string_view<Char>(buf.data(), buf.size()), spec_str);
   }
   template <typename Output, typename Iter, typename IterEnd, typename U = T,
             enable_if_t<!(std::is_same<U, Char>::value), bool> = true>
