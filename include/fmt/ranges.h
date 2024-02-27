@@ -456,7 +456,7 @@ struct range_formatter<
 
   template <typename Output, typename Iter, typename IterEnd, typename U = T,
             enable_if_t<std::is_same<U, Char>::value, bool> = true>
-  auto write_debug_string(Output& out, Iter& it, IterEnd& end) const {
+  auto write_debug_string(Output& out, Iter& it, IterEnd& end) const -> Output {
     auto buf = basic_memory_buffer<Char>();
     for (; it != end; ++it) {
       auto&& item = *it;
@@ -464,15 +464,15 @@ struct range_formatter<
     }
     format_specs spec_str{};
     spec_str.type = presentation_type::debug;
-    detail::write<Char>(out, basic_string_view<Char>(buf.data(), buf.size()),
+    return detail::write<Char>(out, basic_string_view<Char>(buf.data(), buf.size()),
                         spec_str);
   }
   template <typename Output, typename Iter, typename IterEnd, typename U = T,
             enable_if_t<!(std::is_same<U, Char>::value), bool> = true>
-  auto write_debug_string(Output& out, Iter& it, IterEnd& end) const {
-    detail::ignore_unused(out);
+  auto write_debug_string(Output& out, Iter& it, IterEnd& end) const -> Output {
     detail::ignore_unused(it);
     detail::ignore_unused(end);
+    return out;
   }
 
   template <typename R, typename FormatContext>
@@ -482,8 +482,7 @@ struct range_formatter<
     auto it = detail::range_begin(range);
     auto end = detail::range_end(range);
     if (is_string_format && is_debug) {
-      write_debug_string(out, it, end);
-      return out;
+      return write_debug_string(out, it, end);
     }
 
     out = detail::copy<Char>(opening_bracket_, out);
