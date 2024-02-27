@@ -13,7 +13,6 @@
 #include <tuple>
 #include <type_traits>
 
-#include "base.h"
 #include "format.h"
 
 FMT_BEGIN_NAMESPACE
@@ -455,17 +454,14 @@ struct range_formatter<
     return underlying_.parse(ctx);
   }
 
-  template <typename R, typename FormatContext, typename U = T,
-            enable_if_t<std::is_same<U, Char>::value, bool> = true>
+  template <typename R, typename FormatContext>
   auto format(R&& range, FormatContext& ctx) const -> decltype(ctx.out()) {
     detail::range_mapper<buffered_context<Char>> mapper;
     auto out = ctx.out();
-    out = detail::copy<Char>(opening_bracket_, out);
-    int i = 0;
     auto it = detail::range_begin(range);
     auto end = detail::range_end(range);
-    if (is_string_format) {
-      if (is_debug) {
+    if constexpr (std::is_same<T, Char>::value) {
+      if (is_string_format && is_debug) {
         auto buf = basic_memory_buffer<Char>();
         for (; it != end; ++it) {
           auto&& item = *it;
@@ -473,39 +469,15 @@ struct range_formatter<
         }
         format_specs spec_str{};
         spec_str.type = presentation_type::debug;
-        detail::write<Char>(
+        return detail::write<Char>(
             out, basic_string_view<Char>(buf.data(), buf.size()), spec_str);
-      } else {
-        for (; it != end; ++it) {
-          ctx.advance_to(out);
-          auto&& item = *it;
-          out = underlying_.format(mapper.map(item), ctx);
-        }
-      }
-    } else {
-      for (; it != end; ++it) {
-        if (i > 0) out = detail::copy<Char>(separator_, out);
-        ctx.advance_to(out);
-        auto&& item = *it;
-        out = underlying_.format(mapper.map(item), ctx);
-        ++i;
       }
     }
-    out = detail::copy<Char>(closing_bracket_, out);
-    return out;
-  }
 
-  template <typename R, typename FormatContext, typename U = T,
-            enable_if_t<!(std::is_same<U, Char>::value), bool> = true>
-  auto format(R&& range, FormatContext& ctx) const -> decltype(ctx.out()) {
-    detail::range_mapper<buffered_context<Char>> mapper;
-    auto out = ctx.out();
     out = detail::copy<Char>(opening_bracket_, out);
     int i = 0;
-    auto it = detail::range_begin(range);
-    auto end = detail::range_end(range);
     for (; it != end; ++it) {
-      if (i > 0) out = detail::copy<Char>(separator_, out);
+      if (i > 0 && !is_string_format) out = detail::copy<Char>(separator_, out);
       ctx.advance_to(out);
       auto&& item = *it;
       out = underlying_.format(mapper.map(item), ctx);
