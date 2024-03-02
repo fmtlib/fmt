@@ -242,7 +242,7 @@ TEST(util_test, format_system_error) {
     throws_on_alloc = true;
   }
   if (!throws_on_alloc) {
-    fmt::print("warning: std::allocator allocates {} chars\n", max_size);
+    fmt::print(stderr, "warning: std::allocator allocates {} chars\n", max_size);
     return;
   }
 }
@@ -1784,6 +1784,45 @@ TEST(format_test, line_buffering) {
   reader.join();
 }
 #endif
+
+struct deadlockable {
+  int value = 0;
+  mutable std::mutex mutex;
+};
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<deadlockable> {
+  FMT_CONSTEXPR auto parse(fmt::format_parse_context& ctx)
+      -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
+
+  auto format(const deadlockable& d, fmt::format_context& ctx) const
+      -> decltype(ctx.out()) {
+    std::lock_guard<std::mutex> lock(d.mutex);
+    return fmt::format_to(ctx.out(), "{}", d.value);
+  }
+};
+FMT_END_NAMESPACE
+
+TEST(format_test, locking_formatter) {
+  auto f = fmt::buffered_file();
+  try {
+    f = fmt::buffered_file("/dev/null", "w");
+  } catch (const std::system_error&) {
+    fmt::print(stderr, "warning: /dev/null is not supported\n");
+    return;
+  }
+  deadlockable d;
+  auto t = std::thread([&]() {
+    fmt::print(f.get(), "start t\n");
+    std::lock_guard<std::mutex> lock(d.mutex);
+    for (int i = 0; i < 1000000; ++i) d.value += 10;
+    fmt::print(f.get(), "done\n");
+  });
+  for (int i = 0; i < 100; ++i) fmt::print(f.get(), "{}", d);
+  t.join();
+}
 
 TEST(format_test, variadic) {
   EXPECT_EQ(fmt::format("{}c{}", "ab", 1), "abc1");

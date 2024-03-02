@@ -1162,6 +1162,20 @@ using appender = basic_appender<char>;
 
 namespace detail {
 
+template <typename T, typename Enable = void>
+struct locking : std::true_type {};
+template <typename T>
+struct locking<T, void_t<typename formatter<remove_cvref_t<T>>::nonlocking>>
+    : std::false_type {};
+
+template <typename T = int> FMT_CONSTEXPR inline auto is_locking() -> bool {
+  return locking<T>::value;
+}
+template <typename T1, typename T2, typename... Tail>
+FMT_CONSTEXPR inline auto is_locking() -> bool {
+  return locking<T1>::value || is_locking<T2, Tail...>();
+}
+
 // An optimized version of std::copy with the output value type (T).
 template <typename T, typename InputIt>
 auto copy(InputIt begin, InputIt end, appender out) -> appender {
@@ -2796,6 +2810,8 @@ struct formatter<T, Char,
   detail::dynamic_format_specs<Char> specs_;
 
  public:
+  using nonlocking = void;
+
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> const Char* {
     if (ctx.begin() == ctx.end() || *ctx.begin() == '}') return ctx.begin();
@@ -2978,6 +2994,7 @@ FMT_NODISCARD FMT_INLINE auto formatted_size(format_string<T...> fmt,
 
 FMT_API void vprint(string_view fmt, format_args args);
 FMT_API void vprint(FILE* f, string_view fmt, format_args args);
+FMT_API void vprint_locked(FILE* f, string_view fmt, format_args args);
 FMT_API void vprintln(FILE* f, string_view fmt, format_args args);
 
 /**
@@ -2993,8 +3010,9 @@ FMT_API void vprintln(FILE* f, string_view fmt, format_args args);
 template <typename... T>
 FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
   const auto& vargs = fmt::make_format_args(args...);
-  return detail::is_utf8() ? vprint(fmt, vargs)
-                           : detail::vprint_mojibake(stdout, fmt, vargs);
+  if (!detail::is_utf8()) return detail::vprint_mojibake(stdout, fmt, vargs);
+  return detail::is_locking<T...>() ? vprint(fmt, vargs)
+                                    : vprint_locked(stdout, fmt, vargs);
 }
 
 /**
@@ -3010,8 +3028,9 @@ FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
 template <typename... T>
 FMT_INLINE void print(FILE* f, format_string<T...> fmt, T&&... args) {
   const auto& vargs = fmt::make_format_args(args...);
-  return detail::is_utf8() ? vprint(f, fmt, vargs)
-                           : detail::vprint_mojibake(f, fmt, vargs);
+  if (!detail::is_utf8()) return detail::vprint_mojibake(f, fmt, vargs);
+  return detail::is_locking<T...>() ? vprint(f, fmt, vargs)
+                                    : vprint_locked(f, fmt, vargs);
 }
 
 /**
