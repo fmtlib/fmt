@@ -491,7 +491,25 @@ Range Format Specifications
 Format specifications for range types have the following syntax:
 
 .. productionlist:: sf
-   range_format_spec: [":" [`underlying_spec`]]
+   range_format_spec: [":" [`n`][`range_type`][`range_underlying_spec`]]
+
+The `n` option causes the range to be formatted without the opening and closing brackets. 
+
+The available presentation types for `range_type` are:
+
++---------+----------------------------------------------------------+
+| Type    | Meaning                                                  |
++=========+==========================================================+
+| ``'s'`` | String format. The range is formatted as a string.       |                                                     
++---------+----------------------------------------------------------+
+| ``'?s'``| Debug format. The range is formatted as an escaped       |        
+|         | string.                                                  |
++---------+----------------------------------------------------------+
+| none    | Default format. The range is formatted with a separator  |
+|         |                                                          |
++---------+----------------------------------------------------------+
+
+If `range_type` is `s` or `?s`, the underlying type of the range must be a char type.
 
 The `underlying_spec` is parsed based on the formatter of the range's
 reference type.
