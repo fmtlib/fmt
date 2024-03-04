@@ -1665,7 +1665,7 @@ FMT_FUNC void vprint_mojibake(std::FILE* f, string_view fmt, format_args args,
 #endif
 
 FMT_FUNC void print(std::FILE* f, string_view text) {
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(FMT_WINDOWS_NO_WCHAR)
   int fd = _fileno(f);
   if (_isatty(fd)) {
     std::fflush(f);
