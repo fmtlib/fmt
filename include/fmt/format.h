@@ -4272,7 +4272,14 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
     FMT_CONSTEXPR auto on_arg_id(basic_string_view<Char> id) -> int {
       parse_context.check_arg_id(id);
       int arg_id = context.arg_id(id);
-      if (arg_id < 0) report_error("argument not found");
+      if (arg_id < 0) {
+          if constexpr (std::is_same_v<Char, char>) {
+            std::string errmsg = "argument not found: " + std::string(id.data(), id.size());
+            report_error(errmsg.c_str());
+          } else {
+            report_error("argument not found");
+          }
+      }
       return arg_id;
     }
 
