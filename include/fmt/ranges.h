@@ -426,9 +426,12 @@ struct range_formatter<
       is_debug = true;
       set_brackets({}, {});
       ++it;
+      if (it == end || *it != 's') {
+        report_error("invalid format specifier");
+      }
       FMT_FALLTHROUGH;
     case 's':
-      if (it == end || *it != 's' || !std::is_same<T, Char>::value) {
+      if (!std::is_same<T, Char>::value) {
         report_error("invalid format specifier");
       }
       if (!is_debug) {
