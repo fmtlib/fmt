@@ -697,13 +697,13 @@ TEST(core_test, format_to_c_array) {
   char buffer[4];
   auto result = fmt::format_to(buffer, "{}", 12345);
   EXPECT_EQ(4, std::distance(&buffer[0], result.out));
-  EXPECT_EQ(0, std::distance(result.out, result.out_last));
+  EXPECT_TRUE(result.truncated);
   EXPECT_EQ(buffer + 4, result.out);
   EXPECT_EQ("1234", fmt::string_view(buffer, 4));
 
   result = fmt::format_to(buffer, "{:s}", "foobar");
   EXPECT_EQ(4, std::distance(&buffer[0], result.out));
-  EXPECT_EQ(0, std::distance(result.out, result.out_last));
+  EXPECT_TRUE(result.truncated);
   EXPECT_EQ(buffer + 4, result.out);
   EXPECT_EQ("foob", fmt::string_view(buffer, 4));
 
@@ -713,24 +713,24 @@ TEST(core_test, format_to_c_array) {
   buffer[3] = 'x';
   result = fmt::format_to(buffer, "{}", 'A');
   EXPECT_EQ(1, std::distance(&buffer[0], result.out));
-  EXPECT_EQ(3, std::distance(result.out, result.out_last));
+  EXPECT_FALSE(result.truncated);
   EXPECT_EQ(buffer + 1, result.out);
   EXPECT_EQ("Axxx", fmt::string_view(buffer, 4));
 
   result = fmt::format_to(buffer, "{}{} ", 'B', 'C');
   EXPECT_EQ(3, std::distance(&buffer[0], result.out));
-  EXPECT_EQ(1, std::distance(result.out, result.out_last));
+  EXPECT_FALSE(result.truncated);
   EXPECT_EQ(buffer + 3, result.out);
   EXPECT_EQ("BC x", fmt::string_view(buffer, 4));
 
   result = fmt::format_to(buffer, "{}", "ABCDE");
   EXPECT_EQ(4, std::distance(&buffer[0], result.out));
-  EXPECT_EQ(0, std::distance(result.out, result.out_last));
+  EXPECT_TRUE(result.truncated);
   EXPECT_EQ("ABCD", fmt::string_view(buffer, 4));
 
   result = fmt::format_to(buffer, "{}", std::string(1000, '*'));
   EXPECT_EQ(4, std::distance(&buffer[0], result.out));
-  EXPECT_EQ(0, std::distance(result.out, result.out_last));
+  EXPECT_TRUE(result.truncated);
   EXPECT_EQ("****", fmt::string_view(buffer, 4));
 }
 

@@ -2961,8 +2961,8 @@ template <typename OutputIt, typename Sentinel = OutputIt>
 struct format_to_result {
   /** Iterator pointing to just after the last successful write in the range. */
   OutputIt out;
-  /** Sentinel indicating the end of the output range. */
-  Sentinel out_last;
+  /** Specifies if the output was truncated. */
+  bool truncated;
 
   FMT_CONSTEXPR operator OutputIt&() & noexcept { return out; }
   FMT_CONSTEXPR operator const OutputIt&() const& noexcept { return out; }
@@ -2974,13 +2974,15 @@ struct format_to_result {
 template <size_t N>
 auto vformat_to(char (&out)[N], string_view fmt, format_args args)
     -> format_to_result<char*> {
-  return {vformat_to_n(out, N, fmt, args).out, out + N};
+  auto result = vformat_to_n(out, N, fmt, args);
+  return {result.out, result.size > N};
 }
 
 template <size_t N, typename... T>
 FMT_INLINE auto format_to(char (&out)[N], format_string<T...> fmt, T&&... args)
     -> format_to_result<char*> {
-  return vformat_to(out, fmt, fmt::make_format_args(args...));
+  auto result = fmt::format_to_n(out, N, fmt, static_cast<T&&>(args)...);
+  return {result.out, result.size > N};
 }
 
 /** Returns the number of chars in the output of ``format(fmt, args...)``. */
