@@ -65,6 +65,12 @@ TEST(std_test, thread_id) {
   EXPECT_FALSE(fmt::format("{}", std::this_thread::get_id()).empty());
 }
 
+TEST(std_test, complex) {
+  EXPECT_EQ(fmt::format("{}", std::complex<double>(1, 2.2)), "(1,2.2)");
+  EXPECT_EQ(fmt::format("{:>20.2f}", std::complex<double>(1, 2.2)),
+            "         (1.00,2.20)");
+}
+
 #ifdef __cpp_lib_source_location
 TEST(std_test, source_location) {
   std::source_location loc = std::source_location::current();
