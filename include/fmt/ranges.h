@@ -388,7 +388,6 @@ struct range_formatter<
       detail::string_literal<Char, '['>{};
   basic_string_view<Char> closing_bracket_ =
       detail::string_literal<Char, ']'>{};
-  bool is_string_format = false;
   bool is_debug = false;
 
  public:
@@ -413,9 +412,7 @@ struct range_formatter<
     auto it = ctx.begin();
     auto end = ctx.end();
     detail::maybe_set_debug_format(underlying_, true);
-    if (it == end) {
-      return underlying_.parse(ctx);
-    }
+    if (it == end) return underlying_.parse(ctx);
 
     switch (detail::to_ascii(*it)) {
     case 'n':
@@ -426,21 +423,17 @@ struct range_formatter<
       is_debug = true;
       set_brackets({}, {});
       ++it;
-      if (it == end || *it != 's') {
-        report_error("invalid format specifier");
-      }
+      if (it == end || *it != 's') report_error("invalid format specifier");
       FMT_FALLTHROUGH;
     case 's':
-      if (!std::is_same<T, Char>::value) {
+      if (!std::is_same<T, Char>::value)
         report_error("invalid format specifier");
-      }
       if (!is_debug) {
         set_brackets(detail::string_literal<Char, '"'>{},
                      detail::string_literal<Char, '"'>{});
         set_separator({});
         detail::maybe_set_debug_format(underlying_, false);
       }
-      is_string_format = true;
       ++it;
       return it;
     }
@@ -455,21 +448,19 @@ struct range_formatter<
     return underlying_.parse(ctx);
   }
 
-  template <typename Output, typename Iter, typename IterEnd, typename U = T,
+  template <typename Output, typename It, typename Sentinel, typename U = T,
             FMT_ENABLE_IF(std::is_same<U, Char>::value)>
-  auto write_debug_string(Output& out, Iter& it, IterEnd& end) const -> Output {
+  auto write_debug_string(Output& out, It it, Sentinel end) const -> Output {
     auto buf = basic_memory_buffer<Char>();
-    for (; it != end; ++it) {
-      buf.push_back(*it);
-    }
-    format_specs spec_str;
-    spec_str.type = presentation_type::debug;
+    for (; it != end; ++it) buf.push_back(*it);
+    auto specs = format_specs();
+    specs.type = presentation_type::debug;
     return detail::write<Char>(
-        out, basic_string_view<Char>(buf.data(), buf.size()), spec_str);
+        out, basic_string_view<Char>(buf.data(), buf.size()), specs);
   }
-  template <typename Output, typename Iter, typename IterEnd, typename U = T,
+  template <typename Output, typename It, typename Sentinel, typename U = T,
             FMT_ENABLE_IF(!std::is_same<U, Char>::value)>
-  auto write_debug_string(Output& out, Iter&, IterEnd&) const -> Output {
+  auto write_debug_string(Output& out, It, Sentinel) const -> Output {
     return out;
   }
 
@@ -479,17 +470,14 @@ struct range_formatter<
     auto out = ctx.out();
     auto it = detail::range_begin(range);
     auto end = detail::range_end(range);
-    if (is_debug) {
-      return write_debug_string(out, it, end);
-    }
+    if (is_debug) return write_debug_string(out, it, end);
 
     out = detail::copy<Char>(opening_bracket_, out);
     int i = 0;
     for (; it != end; ++it) {
       if (i > 0) out = detail::copy<Char>(separator_, out);
       ctx.advance_to(out);
-      auto&& item = *it;
-      out = underlying_.format(mapper.map(item), ctx);
+      out = underlying_.format(mapper.map(*it), ctx);
       ++i;
     }
     out = detail::copy<Char>(closing_bracket_, out);
