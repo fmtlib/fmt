@@ -562,49 +562,6 @@ TEST(locale_test, int_formatter) {
   EXPECT_EQ(fmt::to_string(buf), "12,345");
 }
 
-FMT_BEGIN_NAMESPACE
-template <class charT> struct formatter<std::complex<double>, charT> {
- private:
-  detail::dynamic_format_specs<char> specs_;
-
- public:
-  FMT_CONSTEXPR typename basic_format_parse_context<charT>::iterator parse(
-      basic_format_parse_context<charT>& ctx) {
-    auto end = parse_format_specs(ctx.begin(), ctx.end(), specs_, ctx,
-                                  detail::type::float_type);
-    detail::parse_float_type_spec(specs_);
-    return end;
-  }
-
-  template <class FormatContext>
-  typename FormatContext::iterator format(const std::complex<double>& c,
-                                          FormatContext& ctx) const {
-    auto specs = specs_;
-    detail::handle_dynamic_spec<detail::precision_checker>(
-        specs.precision, specs.precision_ref, ctx);
-    auto fspecs = std::string();
-    if (specs.precision > 0) fspecs = fmt::format(".{}", specs.precision);
-    if (specs.type == presentation_type::fixed) fspecs += 'f';
-    auto real = fmt::format(ctx.locale().template get<std::locale>(),
-                            fmt::runtime("{:" + fspecs + "}"), c.real());
-    auto imag = fmt::format(ctx.locale().template get<std::locale>(),
-                            fmt::runtime("{:" + fspecs + "}"), c.imag());
-    auto fill_align_width = std::string();
-    if (specs.width > 0) fill_align_width = fmt::format(">{}", specs.width);
-    return fmt::format_to(ctx.out(), runtime("{:" + fill_align_width + "}"),
-                          c.real() != 0 ? fmt::format("({}+{}i)", real, imag)
-                                        : fmt::format("{}i", imag));
-  }
-};
-FMT_END_NAMESPACE
-
-TEST(locale_test, complex) {
-  std::string s = fmt::format("{}", std::complex<double>(1, 2));
-  EXPECT_EQ(s, "(1+2i)");
-  EXPECT_EQ(fmt::format("{:.2f}", std::complex<double>(1, 2)), "(1.00+2.00i)");
-  EXPECT_EQ(fmt::format("{:8}", std::complex<double>(1, 2)), "  (1+2i)");
-}
-
 TEST(locale_test, chrono_weekday) {
   auto loc = get_locale("es_ES.UTF-8", "Spanish_Spain.1252");
   auto loc_old = std::locale::global(loc);
@@ -623,6 +580,13 @@ TEST(locale_test, chrono_weekday) {
 
 TEST(locale_test, sign) {
   EXPECT_EQ(fmt::format(std::locale(), L"{:L}", -50), L"-50");
+}
+
+TEST(std_test_xchar, complex) {
+  auto s = fmt::format(L"{}", std::complex<double>(1, 2));
+  EXPECT_EQ(s, L"(1,2)");
+  EXPECT_EQ(fmt::format(L"{:.2f}", std::complex<double>(1, 2)), L"(1.00,2.00)");
+  EXPECT_EQ(fmt::format(L"{:8}", std::complex<double>(1, 2)), L"(1,2)   ");
 }
 
 TEST(std_test_xchar, optional) {
