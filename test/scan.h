@@ -142,7 +142,7 @@ class scan_buffer {
 using scan_iterator = scan_buffer::iterator;
 using scan_sentinel = scan_buffer::sentinel;
 
-class string_scan_buffer : public scan_buffer {
+class string_scan_buffer final : public scan_buffer {
  private:
   void consume() override {}
 
@@ -151,7 +151,7 @@ class string_scan_buffer : public scan_buffer {
       : scan_buffer(s.begin(), s.end(), true) {}
 };
 
-class file_scan_buffer : public scan_buffer {
+class file_scan_buffer final : public scan_buffer {
  private:
   template <typename F, FMT_ENABLE_IF(sizeof(F::_IO_read_ptr) != 0)>
   static auto get_file(F* f, int) -> glibc_file<F> {
