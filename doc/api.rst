@@ -140,7 +140,7 @@ without implementing them yourself. For example::
     // parse is inherited from formatter<string_view>.
 
     auto format(color c, format_context& ctx) const
-      -> format_parse_context::iterator;
+      -> format_context::iterator;
   };
 
   // color.cc:
@@ -148,7 +148,7 @@ without implementing them yourself. For example::
   #include <fmt/format.h>
 
   auto fmt::formatter<color>::format(color c, format_context& ctx) const
-      -> format_parse_context::iterator {
+      -> format_context::iterator {
     string_view name = "unknown";
     switch (c) {
     case color::red:   name = "red"; break;
