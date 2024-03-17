@@ -87,8 +87,8 @@ template <> struct is_char<char32_t> : std::true_type {};
 
 template <typename... T>
 constexpr auto make_wformat_args(T&... args)
-    -> decltype(make_format_args<wformat_context>(args...)) {
-  return make_format_args<wformat_context>(args...);
+    -> decltype(fmt::make_format_args<wformat_context>(args...)) {
+  return fmt::make_format_args<wformat_context>(args...);
 }
 
 inline namespace literals {
