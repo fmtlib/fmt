@@ -584,9 +584,9 @@ TEST(locale_test, sign) {
 
 TEST(std_test_xchar, complex) {
   auto s = fmt::format(L"{}", std::complex<double>(1, 2));
-  EXPECT_EQ(s, L"(1,2)");
-  EXPECT_EQ(fmt::format(L"{:.2f}", std::complex<double>(1, 2)), L"(1.00,2.00)");
-  EXPECT_EQ(fmt::format(L"{:8}", std::complex<double>(1, 2)), L"(1,2)   ");
+  EXPECT_EQ(s, L"(1+2i)");
+  EXPECT_EQ(fmt::format(L"{:.2f}", std::complex<double>(1, 2)), L"(1.00+2.00i)");
+  EXPECT_EQ(fmt::format(L"{:8}", std::complex<double>(1, 2)), L"(1+2i)  ");
 }
 
 TEST(std_test_xchar, optional) {
