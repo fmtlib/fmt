@@ -182,12 +182,12 @@ void buffered_file::close() {
 }
 
 int buffered_file::descriptor() const {
-#if !defined(fileno)
+#ifdef FMT_HAS_SYSTEM
+  // fileno is a macro on OpenBSD.
+#  ifdef fileno
+#    undef fileno
+#  endif
   int fd = FMT_POSIX_CALL(fileno(file_));
-#elif defined(FMT_HAS_SYSTEM)
-  // fileno is a macro on OpenBSD so we cannot use FMT_POSIX_CALL.
-#  define FMT_DISABLE_MACRO
-  int fd = FMT_SYSTEM(fileno FMT_DISABLE_MACRO(file_));
 #else
   int fd = fileno(file_);
 #endif
