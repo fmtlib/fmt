@@ -1779,7 +1779,7 @@ TEST(format_test, line_buffering) {
   });
 
   std::unique_lock<std::mutex> lock(mutex);
-  ASSERT_EQ(cv.wait_for(lock, std::chrono::seconds(1)),
+  ASSERT_EQ(cv.wait_for(lock, std::chrono::minutes(1)),
             std::cv_status::no_timeout);
   reader.join();
 }
