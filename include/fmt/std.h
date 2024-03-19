@@ -595,10 +595,15 @@ struct formatter<std::complex<F>, Char> : nested_formatter<F, Char> {
 
     template <typename OutputIt>
     FMT_CONSTEXPR auto operator()(OutputIt out) -> OutputIt {
-      auto format = detail::string_literal<Char, '(', '{', '}', '+', '{', '}',
-                                           'i', ')'>{};
-      return fmt::format_to(out, basic_string_view<Char>(format),
-                            f->nested(c.real()), f->nested(c.imag()));
+      if (c.real() != 0) {
+        auto format_full = detail::string_literal<Char, '(', '{', '}', '+', '{',
+                                                  '}', 'i', ')'>{};
+        return fmt::format_to(out, basic_string_view<Char>(format_full),
+                              f->nested(c.real()), f->nested(c.imag()));
+      }
+      auto format_imag = detail::string_literal<Char, '{', '}', 'i'>{};
+      return fmt::format_to(out, basic_string_view<Char>(format_imag),
+                            f->nested(c.imag()));
     }
   };
 
