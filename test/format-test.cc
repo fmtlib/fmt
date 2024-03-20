@@ -242,7 +242,8 @@ TEST(util_test, format_system_error) {
     throws_on_alloc = true;
   }
   if (!throws_on_alloc) {
-    fmt::print(stderr, "warning: std::allocator allocates {} chars\n", max_size);
+    fmt::print(stderr, "warning: std::allocator allocates {} chars\n",
+               max_size);
     return;
   }
 }
@@ -1763,24 +1764,24 @@ TEST(format_test, big_print) {
 TEST(format_test, line_buffering) {
   auto pipe = fmt::pipe();
 
+  int write_fd = pipe.write_end.descriptor();
   auto write_end = pipe.write_end.fdopen("w");
   setvbuf(write_end.get(), nullptr, _IOLBF, 4096);
   write_end.print("42\n");
+  close(write_fd);
+  try {
+    write_end.close();
+  } catch (const std::system_error&) {
+  }
 
-  std::mutex mutex;
-  std::condition_variable cv;
   auto read_end = pipe.read_end.fdopen("r");
   std::thread reader([&]() {
     int n = 0;
     int result = fscanf(read_end.get(), "%d", &n);
     (void)result;
     EXPECT_EQ(n, 42);
-    cv.notify_one();
   });
 
-  std::unique_lock<std::mutex> lock(mutex);
-  ASSERT_EQ(cv.wait_for(lock, std::chrono::minutes(1)),
-            std::cv_status::no_timeout);
   reader.join();
 }
 #endif
