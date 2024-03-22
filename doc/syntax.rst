@@ -493,7 +493,7 @@ Format specifications for range types have the following syntax:
 .. productionlist:: sf
    range_format_spec: [":" [`n`][`range_type`][`range_underlying_spec`]]
 
-The `n` option causes the range to be formatted without the opening and closing brackets. 
+The `n` option formats the range without the opening and closing brackets. 
 
 The available presentation types for `range_type` are:
 
@@ -509,7 +509,8 @@ The available presentation types for `range_type` are:
 |         |                                                          |
 +---------+----------------------------------------------------------+
 
-If `range_type` is `s` or `?s`, the underlying type of the range must be a char type.
+If `range_type` is `s` or `?s`, the underlying type of the range must be a character type. The 
+`n` option and `range_underlying_spec` are mutually exclusive with `s` and `?s`. 
 
 The `underlying_spec` is parsed based on the formatter of the range's
 reference type.
@@ -526,6 +527,12 @@ Examples::
   // Result: [0xa, 0x14, 0x1e]
   fmt::format("{}", vector{'h', 'e', 'l', 'l', 'o'});
   // Result: ['h', 'e', 'l', 'l', 'o']
+  fmt::format("{:n}", vector{'h', 'e', 'l', 'l', 'o'});
+  // Result: 'h', 'e', 'l', 'l', 'o'
+  fmt::format("{:s}", vector{'h', 'e', 'l', 'l', 'o'});
+  // Result: "hello"
+  fmt::format("{:?s}", vector{'h', 'e', 'l', 'l', 'o', '\n'});
+  // Result: "hello\n"
   fmt::format("{::}", vector{'h', 'e', 'l', 'l', 'o'});
   // Result: [h, e, l, l, o]
   fmt::format("{::d}", vector{'h', 'e', 'l', 'l', 'o'});
