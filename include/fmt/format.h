@@ -3716,7 +3716,9 @@ FMT_CONSTEXPR auto write(OutputIt out, const T& value) -> enable_if_t<
 template <typename Char, typename OutputIt, typename T,
           typename Context = basic_format_context<OutputIt, Char>>
 FMT_CONSTEXPR auto write(OutputIt out, const T& value)
-    -> enable_if_t<mapped_type_constant<T, Context>::value == type::custom_type,
+    -> enable_if_t<mapped_type_constant<T, Context>::value ==
+                           type::custom_type &&
+                       !std::is_fundamental<T>::value,
                    OutputIt> {
   auto formatter = typename Context::template formatter_type<T>();
   auto parse_ctx = typename Context::parse_context_type({});

@@ -1505,12 +1505,14 @@ template <typename Context> struct arg_mapper {
     return {};
   }
 
+  // is_fundamental is used to allow formatters for extended FP types.
   template <typename T, typename U = remove_const_t<T>,
-            FMT_ENABLE_IF((std::is_class<U>::value || std::is_enum<U>::value ||
-                           std::is_union<U>::value) &&
-                          !has_to_string_view<U>::value && !is_char<U>::value &&
-                          !is_named_arg<U>::value &&
-                          !std::is_arithmetic<format_as_t<U>>::value)>
+            FMT_ENABLE_IF(
+                (std::is_class<U>::value || std::is_enum<U>::value ||
+                 std::is_union<U>::value || std::is_fundamental<U>::value) &&
+                !has_to_string_view<U>::value && !is_char<U>::value &&
+                !is_named_arg<U>::value && !std::is_integral<U>::value &&
+                !std::is_arithmetic<format_as_t<U>>::value)>
   FMT_MAP_API auto map(T& val) -> decltype(FMT_DECLTYPE_THIS do_map(val)) {
     return do_map(val);
   }
