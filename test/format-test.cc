@@ -1793,15 +1793,14 @@ struct deadlockable {
 
 FMT_BEGIN_NAMESPACE
 template <> struct formatter<deadlockable> {
-  FMT_CONSTEXPR auto parse(fmt::format_parse_context& ctx)
-      -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
     return ctx.begin();
   }
 
-  auto format(const deadlockable& d, fmt::format_context& ctx) const
+  auto format(const deadlockable& d, format_context& ctx) const
       -> decltype(ctx.out()) {
     std::lock_guard<std::mutex> lock(d.mutex);
-    return fmt::format_to(ctx.out(), "{}", d.value);
+    return format_to(ctx.out(), "{}", d.value);
   }
 };
 FMT_END_NAMESPACE
