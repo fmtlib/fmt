@@ -4321,7 +4321,26 @@ extern template FMT_API auto decimal_point_impl(locale_ref) -> char;
 extern template FMT_API auto decimal_point_impl(locale_ref) -> wchar_t;
 #endif  // FMT_HEADER_ONLY
 
+template <typename T, typename Char, type TYPE>
+template <typename FormatContext>
+FMT_CONSTEXPR FMT_INLINE auto native_formatter<T, Char, TYPE>::format(
+    const T& val, FormatContext& ctx) const -> decltype(ctx.out()) {
+  if (specs_.width_ref.kind == arg_id_kind::none &&
+      specs_.precision_ref.kind == arg_id_kind::none) {
+    return write<Char>(ctx.out(), val, specs_, ctx.locale());
+  }
+  auto specs = specs_;
+  handle_dynamic_spec<width_checker>(specs.width, specs.width_ref, ctx);
+  handle_dynamic_spec<precision_checker>(specs.precision, specs.precision_ref,
+                                         ctx);
+  return write<Char>(ctx.out(), val, specs, ctx.locale());
+}
 }  // namespace detail
+
+template <typename Char>
+struct formatter<detail::float128, Char>
+    : detail::native_formatter<detail::float128, Char,
+                               detail::type::float_type> {};
 
 #if FMT_USE_USER_DEFINED_LITERALS
 inline namespace literals {
@@ -4411,26 +4430,6 @@ FMT_NODISCARD FMT_INLINE auto formatted_size(const Locale& loc,
 }
 
 FMT_END_EXPORT
-
-template <typename T, typename Char>
-template <typename FormatContext>
-FMT_CONSTEXPR FMT_INLINE auto
-formatter<T, Char,
-          enable_if_t<detail::type_constant<T, Char>::value !=
-                      detail::type::custom_type>>::format(const T& val,
-                                                          FormatContext& ctx)
-    const -> decltype(ctx.out()) {
-  if (specs_.width_ref.kind == detail::arg_id_kind::none &&
-      specs_.precision_ref.kind == detail::arg_id_kind::none) {
-    return detail::write<Char>(ctx.out(), val, specs_, ctx.locale());
-  }
-  auto specs = specs_;
-  detail::handle_dynamic_spec<detail::width_checker>(specs.width,
-                                                     specs.width_ref, ctx);
-  detail::handle_dynamic_spec<detail::precision_checker>(
-      specs.precision, specs.precision_ref, ctx);
-  return detail::write<Char>(ctx.out(), val, specs, ctx.locale());
-}
 
 FMT_END_NAMESPACE
 
