@@ -506,10 +506,9 @@ The available presentation types for `range_type` are:
 |         | string.                                                  |
 +---------+----------------------------------------------------------+
 | none    | Default format. The range is formatted with a separator. |
-|         |                                                          |
 +---------+----------------------------------------------------------+
 
-If `range_type` is ``'s'`` or ``'?s'``, the underlying type of the range must be a character type. The 
+If `range_type` is ``'s'`` or ``'?s'``, the range element type must be a character type. The 
 ``'n'`` option and `range_underlying_spec` are mutually exclusive with ``'s'`` and ``'?s'``. 
 
 The `range_underlying_spec` is parsed based on the formatter of the range's
