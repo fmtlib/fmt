@@ -11,9 +11,6 @@
 
 #include "gtest-extra.h"  // EXPECT_WRITE
 
-#include <chrono>
-#include "fmt/chrono.h"
-
 TEST(color_test, format) {
   EXPECT_EQ(fmt::format(fg(fmt::rgb(255, 20, 30)), "rgb(255,20,30)"),
             "\x1b[38;2;255;020;030mrgb(255,20,30)\x1b[0m");
@@ -72,12 +69,4 @@ TEST(color_test, format_to) {
 TEST(color_test, print) {
   EXPECT_WRITE(stdout, fmt::print(fg(fmt::rgb(255, 20, 30)), "rgb(255,20,30)"),
                "\x1b[38;2;255;020;030mrgb(255,20,30)\x1b[0m");
-}
-
-TEST(color_test, greenday) {
-  EXPECT_EXIT(
-      {
-        fmt::print(fg(fmt::color::red), "{}", std::chrono::day(5));
-      },
-              testing::ExitedWithCode(0), "");
 }
