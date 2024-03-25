@@ -1999,18 +1999,27 @@ struct chrono_formatter {
 
 #if defined(__cpp_lib_chrono) && __cpp_lib_chrono >= 201907
 using weekday = std::chrono::weekday;
+using day = std::chrono::day;
+using month = std::chrono::month;
+using year = std::chrono::year;
 #else
-// A fallback version of weekday.
-class weekday {
- private:
-  unsigned char value;
+// A fallback version.
+#define DECLARE_CALENDAR_ELEMENT(CalendarElement, DataType, Init)               \
+ class CalendarElement {                                                        \
+  private:                                                                      \
+   DataType value;                                                              \
+                                                                                \
+  public:                                                                       \
+   CalendarElement() = default;                                                 \
+   explicit constexpr CalendarElement(DataType v) noexcept                      \
+          : value(Init) {}                                                      \
+   constexpr auto c_encoding() const noexcept -> DataType { return value; }     \
+  }                                                                             \
 
- public:
-  weekday() = default;
-  explicit constexpr weekday(unsigned wd) noexcept
-      : value(static_cast<unsigned char>(wd != 7 ? wd : 0)) {}
-  constexpr auto c_encoding() const noexcept -> unsigned { return value; }
-};
+DECLARE_CALENDAR_ELEMENT(weekday, unsigned char, v != 7 ? v : 0);
+DECLARE_CALENDAR_ELEMENT(day, unsigned char, v);
+DECLARE_CALENDAR_ELEMENT(month, unsigned char, v);
+DECLARE_CALENDAR_ELEMENT(year, int, v - 1900);
 
 class year_month_day {};
 #endif
@@ -2042,30 +2051,63 @@ template <typename Char> struct formatter<weekday, Char> {
   }
 };
 
-template <typename Char> struct formatter<std::chrono::day, Char> {
-  FMT_CONSTEXPR auto parse(format_parse_context& ctx) { return ctx.begin(); }
+template <typename Char> struct formatter<day, Char> {
+  FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
+      -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
 
   template <typename FormatContext>
-  auto format(const std::chrono::day& value, FormatContext& ctx) {
-    return fmt::format_to(ctx.out(), "{}", static_cast<unsigned int>(value));
+  auto format(day d, FormatContext& ctx) const -> decltype(ctx.out()) {
+    auto time = std::tm();
+    time.tm_mday = static_cast<int>(d.c_encoding());
+    detail::get_locale loc(false, ctx.locale());
+    auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
+    w.on_day_of_month(detail::numeric_system::standard);
+    return w.out();
   }
 };
 
-template <typename Char> struct formatter<std::chrono::month, Char> {
-  FMT_CONSTEXPR auto parse(format_parse_context& ctx) { return ctx.begin(); }
+template <typename Char> struct formatter<month, Char> {
+ private:
+  bool localized = false;
+
+ public:
+  FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
+      -> decltype(ctx.begin()) {
+    auto begin = ctx.begin(), end = ctx.end();
+    if (begin != end && *begin == 'L') {
+      ++begin;
+      localized = true;
+    }
+    return begin;
+  }
 
   template <typename FormatContext>
-  auto format(const std::chrono::month& value, FormatContext& ctx) {
-    return fmt::format_to(ctx.out(), "{}", static_cast<unsigned int>(value));
+  auto format(month m, FormatContext& ctx) const -> decltype(ctx.out()) {
+    auto time = std::tm();
+    time.tm_mon = static_cast<int>(m.c_encoding());
+    detail::get_locale loc(localized, ctx.locale());
+    auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
+    w.on_abbr_month();
+    return w.out();
   }
 };
 
-template <typename Char> struct formatter<std::chrono::year, Char> {
-  FMT_CONSTEXPR auto parse(format_parse_context& ctx) { return ctx.begin(); }
+template <typename Char> struct formatter<year, Char> {
+  FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
+      -> decltype(ctx.begin()) {
+    return ctx.begin();
+  }
 
   template <typename FormatContext>
-  auto format(const std::chrono::year& value, FormatContext& ctx) {
-    return fmt::format_to(ctx.out(), "{}", static_cast<int>(value));
+  auto format(year y, FormatContext& ctx) const -> decltype(ctx.out()) {
+    auto time = std::tm();
+    time.tm_year = y.c_encoding();
+    detail::get_locale loc(true, ctx.locale());
+    auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
+    w.on_year(detail::numeric_system::standard);
+    return w.out();
   }
 };
 

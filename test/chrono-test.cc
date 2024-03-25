@@ -26,6 +26,9 @@ using testing::Contains;
 
 #if defined(__cpp_lib_chrono) && __cpp_lib_chrono >= 201907L
 using days = std::chrono::days;
+using day = std::chrono::day;
+using month = std::chrono::month;
+using year = std::chrono::year;
 #else
 using days = std::chrono::duration<std::chrono::hours::rep, std::ratio<86400>>;
 #endif
@@ -1027,4 +1030,24 @@ TEST(chrono_test, glibc_extensions) {
 TEST(chrono_test, out_of_range) {
   auto d = std::chrono::duration<unsigned long, std::giga>(538976288);
   EXPECT_THROW((void)fmt::format("{:%j}", d), fmt::format_error);
+}
+
+TEST(chrono_test, year_month_day) {
+  auto loc = get_locale("es_ES.UTF-8");
+  std::locale::global(loc);  
+  auto year = fmt::year(2024);
+  auto month = fmt::month(0);
+  auto day = fmt::day(1);
+
+  EXPECT_EQ(fmt::format("{}", year), "2024");
+  EXPECT_EQ(fmt::format("{}", month), "Jan");
+  EXPECT_EQ(fmt::format("{}", day), "01");
+
+  auto tm = std::tm();
+  tm.tm_mday = static_cast<int>(day.c_encoding());
+  tm.tm_mon = static_cast<int>(month.c_encoding());
+  tm.tm_year = year.c_encoding();
+
+  EXPECT_EQ(fmt::format("{:%Y-%m-%d}", tm), "2024-01-01");
+  EXPECT_EQ(fmt::format("{:%Y-%b-%d}", tm), "2024-Jan-01");
 }
