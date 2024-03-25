@@ -1016,7 +1016,7 @@ TEST(chrono_test, out_of_range) {
 TEST(chrono_test, year_month_day) {
   auto loc = get_locale("es_ES.UTF-8");
   std::locale::global(loc);  
-  auto year = fmt::year(2024);
+  auto year = fmt::year(2024 - 1900);
   auto month = fmt::month(0);
   auto day = fmt::day(1);
 
@@ -1025,9 +1025,9 @@ TEST(chrono_test, year_month_day) {
   EXPECT_EQ(fmt::format("{}", day), "01");
 
   auto tm = std::tm();
-  tm.tm_mday = static_cast<int>(day.c_encoding());
-  tm.tm_mon = static_cast<int>(month.c_encoding());
-  tm.tm_year = year.c_encoding();
+  tm.tm_mday = static_cast<int>(static_cast<unsigned int>(day));
+  tm.tm_mon = static_cast<int>(static_cast<unsigned int>(month));
+  tm.tm_year = static_cast<int>(year);
 
   EXPECT_EQ(fmt::format("{:%Y-%m-%d}", tm), "2024-01-01");
   EXPECT_EQ(fmt::format("{:%Y-%b-%d}", tm), "2024-Jan-01");

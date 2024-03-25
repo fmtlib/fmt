@@ -2040,23 +2040,48 @@ using day = std::chrono::day;
 using month = std::chrono::month;
 using year = std::chrono::year;
 #else
-// A fallback version.
-#define DECLARE_CALENDAR_ELEMENT(CalendarElement, DataType, Init)               \
- class CalendarElement {                                                        \
-  private:                                                                      \
-   DataType value;                                                              \
-                                                                                \
-  public:                                                                       \
-   CalendarElement() = default;                                                 \
-   explicit constexpr CalendarElement(DataType v) noexcept                      \
-          : value(Init) {}                                                      \
-   constexpr auto c_encoding() const noexcept -> DataType { return value; }     \
-  }                                                                             \
+// A fallback version of weekday.
+class weekday {
+ private:
+  unsigned char value;
 
-DECLARE_CALENDAR_ELEMENT(weekday, unsigned char, v != 7 ? v : 0);
-DECLARE_CALENDAR_ELEMENT(day, unsigned char, v);
-DECLARE_CALENDAR_ELEMENT(month, unsigned char, v);
-DECLARE_CALENDAR_ELEMENT(year, int, v - 1900);
+ public:
+  weekday() = default;
+  explicit constexpr weekday(unsigned char wd) noexcept
+      : value(wd != 7 ? wd : 0) {}
+  constexpr auto c_encoding() const noexcept -> unsigned char { return value; }
+};
+
+class day {
+ private:
+  unsigned char value;
+
+ public:
+  day() = default;
+  explicit constexpr day(unsigned char d) noexcept
+      : value(d) {}
+  constexpr explicit operator unsigned int () const noexcept { return value; }
+};
+
+class month {
+ private:
+  unsigned char value;
+
+ public:
+  month() = default;
+  explicit constexpr month(unsigned char m) noexcept : value(m - 1) {}
+  constexpr explicit operator unsigned int() const noexcept { return value; }
+};
+
+class year {
+ private:
+  int value;
+
+ public:
+  year() = default;
+  explicit constexpr year(int y) noexcept : value(y) {}
+  constexpr explicit operator int() const noexcept { return value; }
+};
 
 class year_month_day {};
 #endif
@@ -2097,7 +2122,7 @@ template <typename Char> struct formatter<day, Char> {
   template <typename FormatContext>
   auto format(day d, FormatContext& ctx) const -> decltype(ctx.out()) {
     auto time = std::tm();
-    time.tm_mday = static_cast<int>(d.c_encoding());
+    time.tm_mday = static_cast<int>(static_cast<unsigned int>(d));
     detail::get_locale loc(false, ctx.locale());
     auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
     w.on_day_of_month(detail::numeric_system::standard);
@@ -2123,7 +2148,7 @@ template <typename Char> struct formatter<month, Char> {
   template <typename FormatContext>
   auto format(month m, FormatContext& ctx) const -> decltype(ctx.out()) {
     auto time = std::tm();
-    time.tm_mon = static_cast<int>(m.c_encoding());
+    time.tm_mon = static_cast<int>(static_cast<unsigned int>(m));
     detail::get_locale loc(localized, ctx.locale());
     auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
     w.on_abbr_month();
@@ -2140,7 +2165,7 @@ template <typename Char> struct formatter<year, Char> {
   template <typename FormatContext>
   auto format(year y, FormatContext& ctx) const -> decltype(ctx.out()) {
     auto time = std::tm();
-    time.tm_year = y.c_encoding();
+    time.tm_year = static_cast<int>(y);
     detail::get_locale loc(true, ctx.locale());
     auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
     w.on_year(detail::numeric_system::standard);
