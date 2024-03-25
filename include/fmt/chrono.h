@@ -2047,8 +2047,8 @@ class weekday {
 
  public:
   weekday() = default;
-  explicit constexpr weekday(unsigned char wd) noexcept
-      : value(wd != 7 ? wd : 0) {}
+  explicit constexpr weekday(unsigned int wd) noexcept
+      : value(static_cast<unsigned char>(wd != 7 ? wd : 0)) {}
   constexpr auto c_encoding() const noexcept -> unsigned char { return value; }
 };
 
@@ -2058,8 +2058,8 @@ class day {
 
  public:
   day() = default;
-  explicit constexpr day(unsigned char d) noexcept
-      : value(d) {}
+  explicit constexpr day(unsigned int d) noexcept
+      : value(static_cast<unsigned char>(d)) {}
   constexpr explicit operator unsigned int () const noexcept { return value; }
 };
 
@@ -2069,7 +2069,8 @@ class month {
 
  public:
   month() = default;
-  explicit constexpr month(unsigned char m) noexcept : value(m - 1) {}
+  explicit constexpr month(unsigned int m) noexcept
+      : value(static_cast<unsigned char>(m)) {}
   constexpr explicit operator unsigned int() const noexcept { return value; }
 };
 
