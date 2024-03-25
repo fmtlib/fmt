@@ -2049,7 +2049,7 @@ class weekday {
   weekday() = default;
   explicit constexpr weekday(unsigned int wd) noexcept
       : value(static_cast<unsigned char>(wd != 7 ? wd : 0)) {}
-  constexpr auto c_encoding() const noexcept -> unsigned char { return value; }
+  constexpr auto c_encoding() const noexcept -> unsigned int { return value; }
 };
 
 class day {
