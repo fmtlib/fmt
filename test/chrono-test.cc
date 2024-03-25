@@ -29,9 +29,6 @@ using sys_time = std::chrono::time_point<std::chrono::system_clock, Duration>;
 
 #if defined(__cpp_lib_chrono) && __cpp_lib_chrono >= 201907L
 using days = std::chrono::days;
-using day = std::chrono::day;
-using month = std::chrono::month;
-using year = std::chrono::year;
 #else
 using days = std::chrono::duration<std::chrono::hours::rep, std::ratio<86400>>;
 #endif
