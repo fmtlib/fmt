@@ -2149,7 +2149,8 @@ template <typename Char> struct formatter<month, Char> {
   template <typename FormatContext>
   auto format(month m, FormatContext& ctx) const -> decltype(ctx.out()) {
     auto time = std::tm();
-    time.tm_mon = static_cast<int>(static_cast<unsigned int>(m));
+    // std::chrono::month has a range of 1-12, fmt requires 0-11
+    time.tm_mon = static_cast<int>(static_cast<unsigned int>(m)) - 1;
     detail::get_locale loc(localized, ctx.locale());
     auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
     w.on_abbr_month();
