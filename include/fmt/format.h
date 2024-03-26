@@ -52,7 +52,6 @@
 #include <system_error>  // std::system_error
 
 #include "base.h"
-#include <chrono>
 
 // Checking FMT_CPLUSPLUS for warning suppression in MSVC.
 #if FMT_HAS_INCLUDE(<bit>) && FMT_CPLUSPLUS > 201703L
