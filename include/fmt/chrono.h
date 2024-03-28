@@ -693,7 +693,7 @@ enum class pad_type {
 template <typename OutputIt>
 auto write_padding(OutputIt out, pad_type pad, int width) -> OutputIt {
   if (pad == pad_type::none) return out;
-  return std::fill_n(out, width, pad == pad_type::space ? ' ' : '0');
+  return detail::fill_n(out, width, pad == pad_type::space ? ' ' : '0');
 }
 
 template <typename OutputIt>
@@ -1149,14 +1149,14 @@ void write_fractional_seconds(OutputIt& out, Duration d, int precision = -1) {
     if (std::ratio_less<typename subsecond_precision::period,
                         std::chrono::seconds::period>::value) {
       *out++ = '.';
-      out = std::fill_n(out, leading_zeroes, '0');
+      out = detail::fill_n(out, leading_zeroes, '0');
       out = format_decimal<Char>(out, n, num_digits).end;
     }
   } else if (precision > 0) {
     *out++ = '.';
     leading_zeroes = (std::min)(leading_zeroes, precision);
     int remaining = precision - leading_zeroes;
-    out = std::fill_n(out, leading_zeroes, '0');
+    out = detail::fill_n(out, leading_zeroes, '0');
     if (remaining < num_digits) {
       int num_truncated_digits = num_digits - remaining;
       n /= to_unsigned(detail::pow10(to_unsigned(num_truncated_digits)));
@@ -1169,7 +1169,7 @@ void write_fractional_seconds(OutputIt& out, Duration d, int precision = -1) {
       out = format_decimal<Char>(out, n, num_digits).end;
       remaining -= num_digits;
     }
-    out = std::fill_n(out, remaining, '0');
+    out = detail::fill_n(out, remaining, '0');
   }
 }
 
@@ -1320,7 +1320,8 @@ class tm_writer {
     }
     uint32_or_64_or_128_t<long long> n = to_unsigned(year);
     const int num_digits = count_digits(n);
-    if (width > num_digits) out_ = std::fill_n(out_, width - num_digits, '0');
+    if (width > num_digits)
+      out_ = detail::fill_n(out_, width - num_digits, '0');
     out_ = format_decimal<Char>(out_, n, num_digits).end;
   }
   void write_year(long long year) {
