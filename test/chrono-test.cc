@@ -749,15 +749,14 @@ TEST(chrono_test, unsigned_duration) {
 }
 
 TEST(chrono_test, weekday) {
-  auto loc = get_locale("en_US.UTF-8");
-  std::locale::global(loc);
+  std::locale::global(std::locale::classic());
   auto sat = fmt::weekday(6);
 
   EXPECT_EQ(fmt::format("{}", sat), "Sat");
   EXPECT_EQ(fmt::format("{:%a}", sat), "Sat");
   EXPECT_EQ(fmt::format("{:%A}", sat), "Saturday");
 
-  loc = get_locale("es_ES.UTF-8");
+  auto loc = get_locale("es_ES.UTF-8");
   std::locale::global(loc);
   if (loc != std::locale::classic()) {
     auto saturdays = std::vector<std::string>{"sáb", "sá."};
@@ -1013,8 +1012,7 @@ TEST(chrono_test, out_of_range) {
 }
 
 TEST(chrono_test, year_month_day) {
-  auto loc = get_locale("en_US.UTF-8");
-  std::locale::global(loc);
+  std::locale::global(std::locale::classic());
 
   auto year = fmt::year(2024);
   auto month = fmt::month(1);
@@ -1038,7 +1036,7 @@ TEST(chrono_test, year_month_day) {
   EXPECT_EQ(fmt::format("{:%Y-%b-%d}", ymd), "2024-Jan-01");
   EXPECT_EQ(fmt::format("{:%Y-%B-%d}", ymd), "2024-January-01");
 
-  loc = get_locale("es_ES.UTF-8");
+  auto loc = get_locale("es_ES.UTF-8");
   std::locale::global(loc);
   if (loc != std::locale::classic()) {
     EXPECT_EQ(fmt::format(loc, "{:%b}", month), "ene.");

@@ -2088,17 +2088,17 @@ class year {
 
 class year_month_day {
  private:
-  year year_;
-  month month_;
-  day day_;
+  fmt::year year_;
+  fmt::month month_;
+  fmt::day day_;
 
  public:
   year_month_day() = default;
   constexpr year_month_day(const year& y, const month& m, const day& d) noexcept
       : year_(y), month_(m), day_(d) {}
-  constexpr year year() const noexcept { return year_; }
-  constexpr month month() const noexcept { return month_; }
-  constexpr day day() const noexcept { return day_; }
+  constexpr fmt::year year() const noexcept { return year_; }
+  constexpr fmt::month month() const noexcept { return month_; }
+  constexpr fmt::day day() const noexcept { return day_; }
 };
 #endif
 
