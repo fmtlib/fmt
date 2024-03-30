@@ -2131,10 +2131,10 @@ struct formatter<weekday, Char> : formatter<calendar_base, Char> {
   auto format(weekday wd, FormatContext& ctx) const -> decltype(ctx.out()) {
     auto time = std::tm();
     time.tm_wday = static_cast<int>(wd.c_encoding());
-    if (this->use_tm_formatter_) {
+    if (use_tm_formatter_) {
       return formatter<std::tm, Char>::format(time, ctx);
     }
-    detail::get_locale loc(this->localized_, ctx.locale());
+    detail::get_locale loc(localized_, ctx.locale());
     auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
     w.on_abbr_weekday();
     return w.out();
@@ -2148,10 +2148,10 @@ struct formatter<day, Char> : formatter<calendar_base, Char> {
   auto format(day d, FormatContext& ctx) const -> decltype(ctx.out()) {
     auto time = std::tm();
     time.tm_mday = static_cast<int>(static_cast<unsigned>(d));
-    if (this->use_tm_formatter_) {
+    if (use_tm_formatter_) {
       return formatter<std::tm, Char>::format(time, ctx);
     }
-    detail::get_locale loc(this->localized_, ctx.locale());
+    detail::get_locale loc(localized_, ctx.locale());
     auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
     w.on_day_of_month(detail::numeric_system::standard);
     return w.out();
@@ -2165,10 +2165,10 @@ struct formatter<month, Char> : formatter<calendar_base, Char> {
   auto format(month m, FormatContext& ctx) const -> decltype(ctx.out()) {
     auto time = std::tm();
     time.tm_mon = static_cast<int>(static_cast<unsigned>(m)) - 1;
-    if (this->use_tm_formatter_) {
+    if (use_tm_formatter_) {
       return formatter<std::tm, Char>::format(time, ctx);
     }
-    detail::get_locale loc(this->localized_, ctx.locale());
+    detail::get_locale loc(localized_, ctx.locale());
     auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
     w.on_abbr_month();
     return w.out();
@@ -2182,10 +2182,10 @@ struct formatter<year, Char> : formatter<calendar_base, Char> {
   auto format(year y, FormatContext& ctx) const -> decltype(ctx.out()) {
     auto time = std::tm();
     time.tm_year = static_cast<int>(y) - 1900;
-    if (this->use_tm_formatter_) {
+    if (use_tm_formatter_) {
       return formatter<std::tm, Char>::format(time, ctx);
     }
-    detail::get_locale loc(this->localized_, ctx.locale());
+    detail::get_locale loc(localized_, ctx.locale());
     auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
     w.on_year(detail::numeric_system::standard);
     return w.out();
@@ -2202,10 +2202,10 @@ struct formatter<year_month_day, Char> : formatter<calendar_base, Char> {
     time.tm_year = static_cast<int>(val.year()) - 1900;
     time.tm_mon = static_cast<int>(static_cast<unsigned>(val.month())) - 1;
     time.tm_mday = static_cast<int>(static_cast<unsigned>(val.day()));
-    if (this->use_tm_formatter_) {
+    if (use_tm_formatter_) {
       return formatter<std::tm, Char>::format(time, ctx);
     }
-    detail::get_locale loc(this->localized_, ctx.locale());
+    detail::get_locale loc(localized_, ctx.locale());
     auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
     w.on_iso_date();
     return w.out();
