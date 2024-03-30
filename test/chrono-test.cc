@@ -1038,7 +1038,8 @@ TEST(chrono_test, year_month_day) {
   auto loc = get_locale("es_ES.UTF-8");
   std::locale::global(loc);
   if (loc != std::locale::classic()) {
-    EXPECT_EQ(fmt::format(loc, "{:L}", month), "ene.");
-    EXPECT_EQ(fmt::format(loc, "{:%b}", month), "ene.");
+    auto months = std::vector<std::string>{"ene.", "ene"};
+    EXPECT_THAT(months, Contains(fmt::format(loc, "{:L}", month)));
+    EXPECT_THAT(months, Contains(fmt::format(loc, "{:%b}", month)));
   }
 }
