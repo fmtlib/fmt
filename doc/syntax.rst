@@ -491,7 +491,7 @@ Range Format Specifications
 Format specifications for range types have the following syntax:
 
 .. productionlist:: sf
-   range_format_spec: [":" ["n"][`range_type`][`range_underlying_spec`]]
+   range_format_spec: ["n"][`range_type`][`range_underlying_spec`]
 
 The ``'n'`` option formats the range without the opening and closing brackets. 
 
@@ -500,23 +500,24 @@ The available presentation types for `range_type` are:
 +---------+----------------------------------------------------------+
 | Type    | Meaning                                                  |
 +=========+==========================================================+
+| none    | Default format.              |
++---------+----------------------------------------------------------+
 | ``'s'`` | String format. The range is formatted as a string.       |                                                     
 +---------+----------------------------------------------------------+
 | ``'?s'``| Debug format. The range is formatted as an escaped       |        
 |         | string.                                                  |
 +---------+----------------------------------------------------------+
-| none    | Default format. The range is formatted with a separator. |
-+---------+----------------------------------------------------------+
 
-If `range_type` is ``'s'`` or ``'?s'``, the range element type must be a character type. The 
-``'n'`` option and `range_underlying_spec` are mutually exclusive with ``'s'`` and ``'?s'``. 
+If `range_type` is ``'s'`` or ``'?s'``, the range element type must be a
+character type. The ``'n'`` option and `range_underlying_spec` are mutually
+exclusive with ``'s'`` and ``'?s'``. 
 
 The `range_underlying_spec` is parsed based on the formatter of the range's
-reference type.
+element type.
 
-By default, a range of characters or strings is printed escaped and quoted. But
-if any `range_underlying_spec` is provided (even if it is empty), then the characters
-or strings are printed according to the provided specification.
+By default, a range of characters or strings is printed escaped and quoted.
+But if any `range_underlying_spec` is provided (even if it is empty), then
+the characters or strings are printed according to the provided specification.
 
 Examples::
 
