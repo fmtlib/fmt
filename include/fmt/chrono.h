@@ -2105,19 +2105,20 @@ class year_month_day {
 template <typename Char>
 struct formatter<weekday, Char> : formatter<std::tm, Char> {
  private:
-  bool localized{false};
+  bool localized_{false};
   bool use_tm_formatter_{false};
 
  public:
   FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
       -> decltype(ctx.begin()) {
-    auto begin = ctx.begin(), end = ctx.end();
-    if (begin != end && *begin == 'L') {
-      ++begin;
-      localized = true;
+    auto it = ctx.begin(), end = ctx.end();
+    if (it != end && *it == 'L') {
+      ++it;
+      localized_ = true;
     }
-    use_tm_formatter_ = !localized && (begin != nullptr);
-    return use_tm_formatter_ ? formatter<std::tm, Char>::parse(ctx) : begin;
+    auto empty = (it == end || *it == '}');
+    use_tm_formatter_ = !empty && !localized_;
+    return use_tm_formatter_ ? formatter<std::tm, Char>::parse(ctx) : it;
   }
 
   template <typename FormatContext>
@@ -2127,7 +2128,7 @@ struct formatter<weekday, Char> : formatter<std::tm, Char> {
     if (use_tm_formatter_) {
       return formatter<std::tm, Char>::format(time, ctx);
     }
-    detail::get_locale loc(localized, ctx.locale());
+    detail::get_locale loc(localized_, ctx.locale());
     auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
     w.on_abbr_weekday();
     return w.out();
@@ -2142,8 +2143,9 @@ struct formatter<day, Char> : formatter<std::tm, Char> {
  public:
   FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
       -> decltype(ctx.begin()) {
-    use_tm_formatter_ = ctx.begin() != nullptr;
-    return formatter<std::tm, Char>::parse(ctx);
+    auto it = ctx.begin(), end = ctx.end();
+    use_tm_formatter_ = !(it == end || *it == '}');
+    return use_tm_formatter_ ? formatter<std::tm, Char>::parse(ctx) : it;
   }
 
   template <typename FormatContext>
@@ -2163,19 +2165,20 @@ struct formatter<day, Char> : formatter<std::tm, Char> {
 template <typename Char>
 struct formatter<month, Char> : formatter<std::tm, Char> {
  private:
-  bool localized{false};
+  bool localized_{false};
   bool use_tm_formatter_{false};
 
  public:
   FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
       -> decltype(ctx.begin()) {
-    auto begin = ctx.begin(), end = ctx.end();
-    if (begin != end && *begin == 'L') {
-      ++begin;
-      localized = true;
+    auto it = ctx.begin(), end = ctx.end();
+    if (it != end && *it == 'L') {
+      ++it;
+      localized_ = true;
     }
-    use_tm_formatter_ = !localized && (begin != nullptr);
-    return use_tm_formatter_ ? formatter<std::tm, Char>::parse(ctx) : begin;
+    auto empty = (it == end || *it == '}');
+    use_tm_formatter_ = !empty && !localized_;
+    return use_tm_formatter_ ? formatter<std::tm, Char>::parse(ctx) : it;
   }
 
   template <typename FormatContext>
@@ -2185,7 +2188,7 @@ struct formatter<month, Char> : formatter<std::tm, Char> {
     if (use_tm_formatter_) {
       return formatter<std::tm, Char>::format(time, ctx);
     }
-    detail::get_locale loc(localized, ctx.locale());
+    detail::get_locale loc(localized_, ctx.locale());
     auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
     w.on_abbr_month();
     return w.out();
@@ -2200,8 +2203,9 @@ struct formatter<year, Char> : formatter<std::tm, Char> {
  public:
   FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
       -> decltype(ctx.begin()) {
-    use_tm_formatter_ = ctx.begin() != nullptr;
-    return formatter<std::tm, Char>::parse(ctx);
+    auto it = ctx.begin(), end = ctx.end();
+    use_tm_formatter_ = !(it == end || *it == '}');
+    return use_tm_formatter_ ? formatter<std::tm, Char>::parse(ctx) : it;
   }
 
   template <typename FormatContext>
@@ -2226,8 +2230,9 @@ struct formatter<year_month_day, Char> : formatter<std::tm, Char> {
  public:
   FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
       -> decltype(ctx.begin()) {
-    use_tm_formatter_ = ctx.begin() != nullptr;
-    return formatter<std::tm, Char>::parse(ctx);
+    auto it = ctx.begin(), end = ctx.end();
+    use_tm_formatter_ = !(it == end || *it == '}');
+    return use_tm_formatter_ ? formatter<std::tm, Char>::parse(ctx) : it;
   }
 
   template <typename FormatContext>
