@@ -749,17 +749,18 @@ TEST(chrono_test, unsigned_duration) {
 }
 
 TEST(chrono_test, weekday) {
-  std::locale::global(std::locale::classic());
+  auto loc = get_locale("es_ES.UTF-8");
+  std::locale::global(loc);
+
   auto sat = fmt::weekday(6);
 
   EXPECT_EQ(fmt::format("{}", sat), "Sat");
   EXPECT_EQ(fmt::format("{:%a}", sat), "Sat");
   EXPECT_EQ(fmt::format("{:%A}", sat), "Saturday");
 
-  auto loc = get_locale("es_ES.UTF-8");
-  std::locale::global(loc);
   if (loc != std::locale::classic()) {
     auto saturdays = std::vector<std::string>{"sáb", "sá."};
+    EXPECT_THAT(saturdays, Contains(fmt::format(loc, "{:L}", sat)));
     EXPECT_THAT(saturdays, Contains(fmt::format(loc, "{:%a}", sat)));
   }
 }
@@ -1012,8 +1013,6 @@ TEST(chrono_test, out_of_range) {
 }
 
 TEST(chrono_test, year_month_day) {
-  std::locale::global(std::locale::classic());
-
   auto year = fmt::year(2024);
   auto month = fmt::month(1);
   auto day = fmt::day(1);
