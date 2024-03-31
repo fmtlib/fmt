@@ -2103,7 +2103,7 @@ class year_month_day {
 #endif
 
 template <typename Char>
-struct formatter<weekday, Char> : formatter<std::tm, Char> {
+struct formatter<weekday, Char> : private formatter<std::tm, Char> {
  private:
   bool localized_{false};
   bool use_tm_formatter_{false};
@@ -2136,7 +2136,7 @@ struct formatter<weekday, Char> : formatter<std::tm, Char> {
 };
 
 template <typename Char>
-struct formatter<day, Char> : formatter<std::tm, Char> {
+struct formatter<day, Char> : private formatter<std::tm, Char> {
  private:
   bool use_tm_formatter_{false};
 
@@ -2144,7 +2144,7 @@ struct formatter<day, Char> : formatter<std::tm, Char> {
   FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
       -> decltype(ctx.begin()) {
     auto it = ctx.begin(), end = ctx.end();
-    use_tm_formatter_ = !(it == end || *it == '}');
+    use_tm_formatter_ = (it != end && *it != '}');
     return use_tm_formatter_ ? formatter<std::tm, Char>::parse(ctx) : it;
   }
 
@@ -2163,7 +2163,7 @@ struct formatter<day, Char> : formatter<std::tm, Char> {
 };
 
 template <typename Char>
-struct formatter<month, Char> : formatter<std::tm, Char> {
+struct formatter<month, Char> : private formatter<std::tm, Char> {
  private:
   bool localized_{false};
   bool use_tm_formatter_{false};
@@ -2196,7 +2196,7 @@ struct formatter<month, Char> : formatter<std::tm, Char> {
 };
 
 template <typename Char>
-struct formatter<year, Char> : formatter<std::tm, Char> {
+struct formatter<year, Char> : private formatter<std::tm, Char> {
  private:
   bool use_tm_formatter_{false};
 
@@ -2204,7 +2204,7 @@ struct formatter<year, Char> : formatter<std::tm, Char> {
   FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
       -> decltype(ctx.begin()) {
     auto it = ctx.begin(), end = ctx.end();
-    use_tm_formatter_ = !(it == end || *it == '}');
+    use_tm_formatter_ = (it != end && *it != '}');
     return use_tm_formatter_ ? formatter<std::tm, Char>::parse(ctx) : it;
   }
 
@@ -2223,7 +2223,7 @@ struct formatter<year, Char> : formatter<std::tm, Char> {
 };
 
 template <typename Char>
-struct formatter<year_month_day, Char> : formatter<std::tm, Char> {
+struct formatter<year_month_day, Char> : private formatter<std::tm, Char> {
  private:
   bool use_tm_formatter_{false};
 
@@ -2231,7 +2231,7 @@ struct formatter<year_month_day, Char> : formatter<std::tm, Char> {
   FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
       -> decltype(ctx.begin()) {
     auto it = ctx.begin(), end = ctx.end();
-    use_tm_formatter_ = !(it == end || *it == '}');
+    use_tm_formatter_ = (it != end && *it != '}');
     return use_tm_formatter_ ? formatter<std::tm, Char>::parse(ctx) : it;
   }
 
