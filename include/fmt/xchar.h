@@ -280,6 +280,15 @@ template <typename... T> void println(wformat_string<T...> fmt, T&&... args) {
   return print(L"{}\n", fmt::format(fmt, std::forward<T>(args)...));
 }
 
+template <typename... T>
+void println(const text_style &ts, wformat_string<T...> fmt, T&&... args) {
+  return print(ts, L"{}\n", fmt::format(fmt, std::forward<T>(args)...));
+}
+
+template <typename... T> void println(std::FILE* f, const text_style &ts, wformat_string<T...> fmt, T&&... args) {
+  return print(f, ts, L"{}\n", fmt::format(fmt, std::forward<T>(args)...));
+}
+
 inline auto vformat(const text_style& ts, wstring_view fmt, wformat_args args)
     -> std::wstring {
   auto buf = wmemory_buffer();
