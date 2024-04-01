@@ -2114,10 +2114,10 @@ struct formatter<weekday, Char> : private formatter<std::tm, Char> {
     auto it = ctx.begin(), end = ctx.end();
     if (it != end && *it == 'L') {
       ++it;
-      localized_ = true;
+      use_tm_formatter_ = localized_ = true;
+      return it;
     }
-    auto empty = (it == end || *it == '}');
-    use_tm_formatter_ = !empty && !localized_;
+    use_tm_formatter_ = it != end && *it != '}';
     return use_tm_formatter_ ? formatter<std::tm, Char>::parse(ctx) : it;
   }
 
@@ -2144,7 +2144,7 @@ struct formatter<day, Char> : private formatter<std::tm, Char> {
   FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
       -> decltype(ctx.begin()) {
     auto it = ctx.begin(), end = ctx.end();
-    use_tm_formatter_ = (it != end && *it != '}');
+    use_tm_formatter_ = it != end && *it != '}';
     return use_tm_formatter_ ? formatter<std::tm, Char>::parse(ctx) : it;
   }
 
@@ -2174,10 +2174,10 @@ struct formatter<month, Char> : private formatter<std::tm, Char> {
     auto it = ctx.begin(), end = ctx.end();
     if (it != end && *it == 'L') {
       ++it;
-      localized_ = true;
+      use_tm_formatter_ = localized_ = true;
+      return it;
     }
-    auto empty = (it == end || *it == '}');
-    use_tm_formatter_ = !empty && !localized_;
+    use_tm_formatter_ = it != end && *it != '}';
     return use_tm_formatter_ ? formatter<std::tm, Char>::parse(ctx) : it;
   }
 
@@ -2204,7 +2204,7 @@ struct formatter<year, Char> : private formatter<std::tm, Char> {
   FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
       -> decltype(ctx.begin()) {
     auto it = ctx.begin(), end = ctx.end();
-    use_tm_formatter_ = (it != end && *it != '}');
+    use_tm_formatter_ = it != end && *it != '}';
     return use_tm_formatter_ ? formatter<std::tm, Char>::parse(ctx) : it;
   }
 
@@ -2231,7 +2231,7 @@ struct formatter<year_month_day, Char> : private formatter<std::tm, Char> {
   FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
       -> decltype(ctx.begin()) {
     auto it = ctx.begin(), end = ctx.end();
-    use_tm_formatter_ = (it != end && *it != '}');
+    use_tm_formatter_ = it != end && *it != '}';
     return use_tm_formatter_ ? formatter<std::tm, Char>::parse(ctx) : it;
   }
 
