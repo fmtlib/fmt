@@ -2114,7 +2114,7 @@ struct formatter<weekday, Char> : private formatter<std::tm, Char> {
     auto it = ctx.begin(), end = ctx.end();
     if (it != end && *it == 'L') {
       ++it;
-      use_tm_formatter_ = localized_ = true;
+      localized_ = true;
       return it;
     }
     use_tm_formatter_ = it != end && *it != '}';
@@ -2174,7 +2174,7 @@ struct formatter<month, Char> : private formatter<std::tm, Char> {
     auto it = ctx.begin(), end = ctx.end();
     if (it != end && *it == 'L') {
       ++it;
-      use_tm_formatter_ = localized_ = true;
+      localized_ = true;
       return it;
     }
     use_tm_formatter_ = it != end && *it != '}';
