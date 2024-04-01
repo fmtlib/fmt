@@ -539,7 +539,7 @@ void println(FILE* f, const text_style& ts, format_string<T...> fmt,
  */
 template <typename... T>
 void println(const text_style& ts, format_string<T...> fmt, T&&... args) {
-  print(stdout, ts, fmt + "\n", std::forward<T>(args)...);
+  print(stdout, ts, fmt, std::forward<T>(args)...);
 
   // The newline you asked for..
   print("\n");
