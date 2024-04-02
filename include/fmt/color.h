@@ -523,7 +523,7 @@ void println(FILE* f, const text_style& ts, format_string<T...> fmt,
   print(f, ts, fmt, std::forward<T>(args)...);
 
   // The newline you asked for..
-  print("\n");
+  print(f, text_style(), "\n");
 }
 
 /**
@@ -542,7 +542,7 @@ void println(const text_style& ts, format_string<T...> fmt, T&&... args) {
   print(stdout, ts, fmt, std::forward<T>(args)...);
 
   // The newline you asked for..
-  print("\n");
+  print(f, text_style(), "\n");
 }
 
 inline auto vformat(const text_style& ts, string_view fmt, format_args args)
