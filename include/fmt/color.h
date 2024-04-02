@@ -513,7 +513,7 @@ void print(const text_style& ts, format_string<T...> fmt, T&&... args) {
 
   **Example**::
 
-    fmt::print(fmt::emphasis::bold | fg(fmt::color::red),
+    fmt::println(fmt::emphasis::bold | fg(fmt::color::red),
                "Elapsed time: {0:.2f} seconds", 1.23);
   \endrst
  */
@@ -542,7 +542,7 @@ void println(const text_style& ts, format_string<T...> fmt, T&&... args) {
   print(stdout, ts, fmt, std::forward<T>(args)...);
 
   // The newline you asked for..
-  print(f, text_style(), "\n");
+  print(stdout, text_style(), "\n");
 }
 
 inline auto vformat(const text_style& ts, string_view fmt, format_args args)
