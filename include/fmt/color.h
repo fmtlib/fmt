@@ -187,7 +187,7 @@ enum class emphasis : uint8_t {
   strikethrough = 1 << 7,
 };
 
-FMT_INLINE bool disable_colors = false;
+inline bool disable_colors;
 
 // rgb is a struct for red, green and blue colors.
 // Using the name "rgb" makes some editors show the color in a tooltip.
