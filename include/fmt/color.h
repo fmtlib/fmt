@@ -446,6 +446,10 @@ template <typename Char>
 void vformat_to(
     buffer<Char>& buf, const text_style& ts, basic_string_view<Char> format_str,
     basic_format_args<buffered_context<type_identity_t<Char>>> args) {
+  if (disable_colors) {
+    detail::vformat_to(buf, format_str, args, {});
+    return;
+  }
   bool has_style = false;
   if (ts.has_emphasis()) {
     has_style = true;
@@ -471,7 +475,7 @@ void vformat_to(
 inline void vprint(FILE* f, const text_style& ts, string_view fmt,
                    format_args args) {
   auto buf = memory_buffer();
-  detail::vformat_to(buf, disable_colors ? fmt::text_style() : ts, fmt, args);
+  detail::vformat_to(buf, ts, fmt, args);
   print(f, FMT_STRING("{}"), string_view(buf.begin(), buf.size()));
 }
 
@@ -511,7 +515,7 @@ void print(const text_style& ts, format_string<T...> fmt, T&&... args) {
 inline auto vformat(const text_style& ts, string_view fmt, format_args args)
     -> std::string {
   auto buf = memory_buffer();
-  detail::vformat_to(buf, disable_colors ? fmt::text_style() : ts, fmt, args);
+  detail::vformat_to(buf, ts, fmt, args);
   return fmt::to_string(buf);
 }
 
@@ -541,7 +545,7 @@ template <typename OutputIt,
 auto vformat_to(OutputIt out, const text_style& ts, string_view fmt,
                 format_args args) -> OutputIt {
   auto&& buf = detail::get_buffer<char>(out);
-  detail::vformat_to(buf, disable_colors ? fmt::text_style() : ts, fmt, args);
+  detail::vformat_to(buf, ts, fmt, args);
   return detail::get_iterator(buf, out);
 }
 
@@ -561,7 +565,7 @@ template <typename OutputIt, typename... T,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
 inline auto format_to(OutputIt out, const text_style& ts,
                       format_string<T...> fmt, T&&... args) -> OutputIt {
-  return vformat_to(out, disable_colors ? fmt::text_style() : ts, fmt, fmt::make_format_args(args...));
+  return vformat_to(out, ts, fmt, fmt::make_format_args(args...));
 }
 
 template <typename T, typename Char>
