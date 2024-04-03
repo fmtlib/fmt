@@ -2040,6 +2040,7 @@ using weekday = std::chrono::weekday;
 using day = std::chrono::day;
 using month = std::chrono::month;
 using year = std::chrono::year;
+using year_month_day = std::chrono::year_month_day;
 #else
 // A fallback version of weekday.
 class weekday {
@@ -2085,46 +2086,75 @@ class year {
   constexpr explicit operator int() const noexcept { return value_; }
 };
 
-class year_month_day {};
+class year_month_day {
+ private:
+  fmt::year year_;
+  fmt::month month_;
+  fmt::day day_;
+
+ public:
+  year_month_day() = default;
+  constexpr year_month_day(const year& y, const month& m, const day& d) noexcept
+      : year_(y), month_(m), day_(d) {}
+  constexpr fmt::year year() const noexcept { return year_; }
+  constexpr fmt::month month() const noexcept { return month_; }
+  constexpr fmt::day day() const noexcept { return day_; }
+};
 #endif
 
-// A rudimentary weekday formatter.
-template <typename Char> struct formatter<weekday, Char> {
+template <typename Char>
+struct formatter<weekday, Char> : private formatter<std::tm, Char> {
  private:
-  bool localized = false;
+  bool localized_{false};
+  bool use_tm_formatter_{false};
 
  public:
   FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
       -> decltype(ctx.begin()) {
-    auto begin = ctx.begin(), end = ctx.end();
-    if (begin != end && *begin == 'L') {
-      ++begin;
-      localized = true;
+    auto it = ctx.begin(), end = ctx.end();
+    if (it != end && *it == 'L') {
+      ++it;
+      localized_ = true;
+      return it;
     }
-    return begin;
+    use_tm_formatter_ = it != end && *it != '}';
+    return use_tm_formatter_ ? formatter<std::tm, Char>::parse(ctx) : it;
   }
 
   template <typename FormatContext>
   auto format(weekday wd, FormatContext& ctx) const -> decltype(ctx.out()) {
     auto time = std::tm();
     time.tm_wday = static_cast<int>(wd.c_encoding());
-    detail::get_locale loc(localized, ctx.locale());
+    if (use_tm_formatter_) {
+      return formatter<std::tm, Char>::format(time, ctx);
+    }
+    detail::get_locale loc(localized_, ctx.locale());
     auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
     w.on_abbr_weekday();
     return w.out();
   }
 };
 
-template <typename Char> struct formatter<day, Char> {
+template <typename Char>
+struct formatter<day, Char> : private formatter<std::tm, Char> {
+ private:
+  bool use_tm_formatter_{false};
+
+ public:
   FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
       -> decltype(ctx.begin()) {
-    return ctx.begin();
+    auto it = ctx.begin(), end = ctx.end();
+    use_tm_formatter_ = it != end && *it != '}';
+    return use_tm_formatter_ ? formatter<std::tm, Char>::parse(ctx) : it;
   }
 
   template <typename FormatContext>
   auto format(day d, FormatContext& ctx) const -> decltype(ctx.out()) {
     auto time = std::tm();
     time.tm_mday = static_cast<int>(static_cast<unsigned>(d));
+    if (use_tm_formatter_) {
+      return formatter<std::tm, Char>::format(time, ctx);
+    }
     detail::get_locale loc(false, ctx.locale());
     auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
     w.on_day_of_month(detail::numeric_system::standard);
@@ -2132,47 +2162,92 @@ template <typename Char> struct formatter<day, Char> {
   }
 };
 
-template <typename Char> struct formatter<month, Char> {
+template <typename Char>
+struct formatter<month, Char> : private formatter<std::tm, Char> {
  private:
-  bool localized = false;
+  bool localized_{false};
+  bool use_tm_formatter_{false};
 
  public:
   FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
       -> decltype(ctx.begin()) {
-    auto begin = ctx.begin(), end = ctx.end();
-    if (begin != end && *begin == 'L') {
-      ++begin;
-      localized = true;
+    auto it = ctx.begin(), end = ctx.end();
+    if (it != end && *it == 'L') {
+      ++it;
+      localized_ = true;
+      return it;
     }
-    return begin;
+    use_tm_formatter_ = it != end && *it != '}';
+    return use_tm_formatter_ ? formatter<std::tm, Char>::parse(ctx) : it;
   }
 
   template <typename FormatContext>
   auto format(month m, FormatContext& ctx) const -> decltype(ctx.out()) {
     auto time = std::tm();
-    // std::chrono::month has a range of 1-12, std::tm requires 0-11
     time.tm_mon = static_cast<int>(static_cast<unsigned>(m)) - 1;
-    detail::get_locale loc(localized, ctx.locale());
+    if (use_tm_formatter_) {
+      return formatter<std::tm, Char>::format(time, ctx);
+    }
+    detail::get_locale loc(localized_, ctx.locale());
     auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
     w.on_abbr_month();
     return w.out();
   }
 };
 
-template <typename Char> struct formatter<year, Char> {
+template <typename Char>
+struct formatter<year, Char> : private formatter<std::tm, Char> {
+ private:
+  bool use_tm_formatter_{false};
+
+ public:
   FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
       -> decltype(ctx.begin()) {
-    return ctx.begin();
+    auto it = ctx.begin(), end = ctx.end();
+    use_tm_formatter_ = it != end && *it != '}';
+    return use_tm_formatter_ ? formatter<std::tm, Char>::parse(ctx) : it;
   }
 
   template <typename FormatContext>
   auto format(year y, FormatContext& ctx) const -> decltype(ctx.out()) {
     auto time = std::tm();
-    // std::tm::tm_year is years since 1900
     time.tm_year = static_cast<int>(y) - 1900;
-    detail::get_locale loc(true, ctx.locale());
+    if (use_tm_formatter_) {
+      return formatter<std::tm, Char>::format(time, ctx);
+    }
+    detail::get_locale loc(false, ctx.locale());
     auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
     w.on_year(detail::numeric_system::standard);
+    return w.out();
+  }
+};
+
+template <typename Char>
+struct formatter<year_month_day, Char> : private formatter<std::tm, Char> {
+ private:
+  bool use_tm_formatter_{false};
+
+ public:
+  FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
+      -> decltype(ctx.begin()) {
+    auto it = ctx.begin(), end = ctx.end();
+    use_tm_formatter_ = it != end && *it != '}';
+    return use_tm_formatter_ ? formatter<std::tm, Char>::parse(ctx) : it;
+  }
+
+  template <typename FormatContext>
+  auto format(year_month_day val, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    auto time = std::tm();
+    time.tm_year = static_cast<int>(val.year()) - 1900;
+    time.tm_mon = static_cast<int>(static_cast<unsigned>(val.month())) - 1;
+    time.tm_mday = static_cast<int>(static_cast<unsigned>(val.day()));
+    if (use_tm_formatter_) {
+      return formatter<std::tm, Char>::format(time, ctx);
+    }
+    detail::get_locale loc(true, ctx.locale());
+    auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
+    w.on_iso_date();
     return w.out();
   }
 };
