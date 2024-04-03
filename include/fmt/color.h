@@ -471,7 +471,7 @@ void vformat_to(
 inline void vprint(FILE* f, const text_style& ts, string_view fmt,
                    format_args args) {
   auto buf = memory_buffer();
-  detail::vformat_to(buf, ts, fmt, args);
+  detail::vformat_to(buf, disable_colors ? fmt::text_style() : ts, fmt, args);
   print(f, FMT_STRING("{}"), string_view(buf.begin(), buf.size()));
 }
 
@@ -489,7 +489,7 @@ inline void vprint(FILE* f, const text_style& ts, string_view fmt,
 template <typename... T>
 void print(FILE* f, const text_style& ts, format_string<T...> fmt,
            T&&... args) {
-  vprint(f, disable_colors ? fmt::text_style() : ts, fmt, fmt::make_format_args(args...));
+  vprint(f, ts, fmt, fmt::make_format_args(args...));
 }
 
 /**
@@ -505,13 +505,13 @@ void print(FILE* f, const text_style& ts, format_string<T...> fmt,
  */
 template <typename... T>
 void print(const text_style& ts, format_string<T...> fmt, T&&... args) {
-  return print(stdout, disable_colors ? fmt::text_style() : ts, fmt, std::forward<T>(args)...);
+  return print(stdout, ts, fmt, std::forward<T>(args)...);
 }
 
 inline auto vformat(const text_style& ts, string_view fmt, format_args args)
     -> std::string {
   auto buf = memory_buffer();
-  detail::vformat_to(buf, ts, fmt, args);
+  detail::vformat_to(buf, disable_colors ? fmt::text_style() : ts, fmt, args);
   return fmt::to_string(buf);
 }
 
@@ -530,7 +530,7 @@ inline auto vformat(const text_style& ts, string_view fmt, format_args args)
 template <typename... T>
 inline auto format(const text_style& ts, format_string<T...> fmt, T&&... args)
     -> std::string {
-  return fmt::vformat(disable_colors ? fmt::text_style() : ts, fmt, fmt::make_format_args(args...));
+  return fmt::vformat(ts, fmt, fmt::make_format_args(args...));
 }
 
 /**
@@ -541,7 +541,7 @@ template <typename OutputIt,
 auto vformat_to(OutputIt out, const text_style& ts, string_view fmt,
                 format_args args) -> OutputIt {
   auto&& buf = detail::get_buffer<char>(out);
-  detail::vformat_to(buf, ts, fmt, args);
+  detail::vformat_to(buf, disable_colors ? fmt::text_style() : ts, fmt, args);
   return detail::get_iterator(buf, out);
 }
 
@@ -561,7 +561,7 @@ template <typename OutputIt, typename... T,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
 inline auto format_to(OutputIt out, const text_style& ts,
                       format_string<T...> fmt, T&&... args) -> OutputIt {
-  return vformat_to(out, ts, fmt, fmt::make_format_args(args...));
+  return vformat_to(out, disable_colors ? fmt::text_style() : ts, fmt, fmt::make_format_args(args...));
 }
 
 template <typename T, typename Char>
