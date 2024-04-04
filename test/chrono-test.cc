@@ -753,15 +753,20 @@ TEST(chrono_test, weekday) {
   std::locale::global(loc);
 
   auto sat = fmt::weekday(6);
+  
+  auto tm = std::tm();
+  tm.tm_wday = static_cast<int>(sat.c_encoding());
 
   EXPECT_EQ(fmt::format("{}", sat), "Sat");
   EXPECT_EQ(fmt::format("{:%a}", sat), "Sat");
   EXPECT_EQ(fmt::format("{:%A}", sat), "Saturday");
+  EXPECT_EQ(fmt::format("{:%a}", tm), "Sat");
 
   if (loc != std::locale::classic()) {
     auto saturdays = std::vector<std::string>{"sáb", "sá."};
     EXPECT_THAT(saturdays, Contains(fmt::format(loc, "{:L}", sat)));
     EXPECT_THAT(saturdays, Contains(fmt::format(loc, "{:%a}", sat)));
+    EXPECT_THAT(saturdays, Contains(fmt::format(loc, "{:%a}", tm)));
   }
 }
 
@@ -1013,6 +1018,9 @@ TEST(chrono_test, out_of_range) {
 }
 
 TEST(chrono_test, year_month_day) {
+  auto loc = get_locale("es_ES.UTF-8");
+  std::locale::global(loc);
+  
   auto year = fmt::year(2024);
   auto month = fmt::month(1);
   auto day = fmt::day(1);
@@ -1035,8 +1043,6 @@ TEST(chrono_test, year_month_day) {
   EXPECT_EQ(fmt::format("{:%Y-%b-%d}", ymd), "2024-Jan-01");
   EXPECT_EQ(fmt::format("{:%Y-%B-%d}", ymd), "2024-January-01");
 
-  auto loc = get_locale("es_ES.UTF-8");
-  std::locale::global(loc);
   if (loc != std::locale::classic()) {
     auto months = std::vector<std::string>{"ene.", "ene"};
     EXPECT_THAT(months, Contains(fmt::format(loc, "{:L}", month)));
