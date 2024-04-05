@@ -147,12 +147,6 @@ FMT_API FMT_FUNC auto format_facet<std::locale>::do_put(
 }
 #endif
 
-FMT_FUNC auto vsystem_error(int error_code, string_view fmt, format_args args)
-    -> std::system_error {
-  auto ec = std::error_code(error_code, std::generic_category());
-  return std::system_error(ec, vformat(fmt, args));
-}
-
 namespace detail {
 
 template <typename F>
@@ -1432,6 +1426,12 @@ FMT_FUNC auto vformat(string_view fmt, format_args args) -> std::string {
   auto buffer = memory_buffer();
   detail::vformat_to(buffer, fmt, args);
   return to_string(buffer);
+}
+
+FMT_FUNC auto vsystem_error(int error_code, string_view fmt, format_args args)
+    -> std::system_error {
+  auto ec = std::error_code(error_code, std::generic_category());
+  return std::system_error(ec, vformat(fmt, args));
 }
 
 namespace detail {
