@@ -2812,7 +2812,7 @@ template <typename T, typename Char, type TYPE> struct native_formatter {
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> const Char* {
     if (ctx.begin() == ctx.end() || *ctx.begin() == '}') return ctx.begin();
     auto end = parse_format_specs(ctx.begin(), ctx.end(), specs_, ctx, TYPE);
-    if (TYPE == type::char_type) check_char_specs(specs_);
+    if (const_check(TYPE == type::char_type)) check_char_specs(specs_);
     return end;
   }
 
