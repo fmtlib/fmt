@@ -4335,7 +4335,11 @@ FMT_CONSTEXPR FMT_INLINE auto native_formatter<T, Char, TYPE>::format(
                                          ctx);
   return write<Char>(ctx.out(), val, specs, ctx.locale());
 }
+
+FMT_END_EXPORT
 }  // namespace detail
+
+FMT_BEGIN_EXPORT
 
 template <typename Char>
 struct formatter<detail::float128, Char>
