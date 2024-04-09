@@ -8,9 +8,11 @@
 #ifndef FMT_ARGS_H_
 #define FMT_ARGS_H_
 
-#include <functional>  // std::reference_wrapper
-#include <memory>      // std::unique_ptr
-#include <vector>
+#ifndef FMT_IMPORT_STD
+#  include <functional>  // std::reference_wrapper
+#  include <memory>      // std::unique_ptr
+#  include <vector>
+#endif
 
 #include "format.h"  // std_string_view
 

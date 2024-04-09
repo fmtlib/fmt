@@ -8,10 +8,12 @@
 #ifndef FMT_RANGES_H_
 #define FMT_RANGES_H_
 
-#include <initializer_list>
-#include <iterator>
-#include <tuple>
-#include <type_traits>
+#ifndef FMT_IMPORT_STD
+#  include <initializer_list>
+#  include <iterator>
+#  include <tuple>
+#  include <type_traits>
+#endif
 
 #include "format.h"
 

@@ -2,37 +2,44 @@ module;
 
 // Put all implementation-provided headers into the global module fragment
 // to prevent attachment to this module.
-#include <algorithm>
+#ifndef FMT_IMPORT_STD
+#  include <algorithm>
+#  include <chrono>
+#  include <cmath>
+#  include <cstddef>
+#  include <cstdint>
+#  include <cstdio>
+#  include <cstdlib>
+#  include <cstring>
+#  include <ctime>
+#  include <exception>
+#  include <filesystem>
+#  include <fstream>
+#  include <functional>
+#  include <iterator>
+#  include <limits>
+#  include <locale>
+#  include <memory>
+#  include <optional>
+#  include <ostream>
+#  include <stdexcept>
+#  include <string>
+#  include <string_view>
+#  include <system_error>
+#  include <thread>
+#  include <type_traits>
+#  include <typeinfo>
+#  include <utility>
+#  include <variant>
+#  include <vector>
+#else
+#  include <limits.h>
+#  include <stdint.h>
+#  include <stdio.h>
+#  include <time.h>
+#endif
 #include <cerrno>
-#include <chrono>
 #include <climits>
-#include <cmath>
-#include <cstddef>
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <ctime>
-#include <exception>
-#include <filesystem>
-#include <fstream>
-#include <functional>
-#include <iterator>
-#include <limits>
-#include <locale>
-#include <memory>
-#include <optional>
-#include <ostream>
-#include <stdexcept>
-#include <string>
-#include <string_view>
-#include <system_error>
-#include <thread>
-#include <type_traits>
-#include <typeinfo>
-#include <utility>
-#include <variant>
-#include <vector>
 #include <version>
 
 #if __has_include(<cxxabi.h>)

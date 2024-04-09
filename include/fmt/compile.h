@@ -8,7 +8,9 @@
 #ifndef FMT_COMPILE_H_
 #define FMT_COMPILE_H_
 
-#include <iterator>  // std::back_inserter
+#ifndef FMT_IMPORT_STD
+#  include <iterator>  // std::back_inserter
+#endif
 
 #include "format.h"
 
