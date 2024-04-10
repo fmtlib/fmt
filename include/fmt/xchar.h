@@ -8,13 +8,15 @@
 #ifndef FMT_XCHAR_H_
 #define FMT_XCHAR_H_
 
-#include <cwchar>
+#ifndef FMT_IMPORT_STD
+#  include <cwchar>
+#endif
 
 #include "color.h"
 #include "format.h"
 #include "ranges.h"
 
-#ifndef FMT_STATIC_THOUSANDS_SEPARATOR
+#if !defined(FMT_STATIC_THOUSANDS_SEPARATOR) && !defined(FMT_IMPORT_STD)
 #  include <locale>
 #endif
 

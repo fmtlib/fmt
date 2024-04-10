@@ -8,17 +8,19 @@
 #ifndef FMT_STD_H_
 #define FMT_STD_H_
 
-#include <atomic>
-#include <bitset>
-#include <complex>
-#include <cstdlib>
-#include <exception>
-#include <memory>
-#include <thread>
-#include <type_traits>
-#include <typeinfo>
-#include <utility>
-#include <vector>
+#ifndef FMT_IMPORT_STD
+#  include <atomic>
+#  include <bitset>
+#  include <complex>
+#  include <cstdlib>
+#  include <exception>
+#  include <memory>
+#  include <thread>
+#  include <type_traits>
+#  include <typeinfo>
+#  include <utility>
+#  include <vector>
+#endif
 
 #include "format.h"
 #include "ostream.h"
@@ -26,25 +28,28 @@
 #if FMT_HAS_INCLUDE(<version>)
 #  include <version>
 #endif
+
+#ifndef FMT_IMPORT_STD
 // Checking FMT_CPLUSPLUS for warning suppression in MSVC.
-#if FMT_CPLUSPLUS >= 201703L
-#  if FMT_HAS_INCLUDE(<filesystem>)
-#    include <filesystem>
+#  if FMT_CPLUSPLUS >= 201703L
+#    if FMT_HAS_INCLUDE(<filesystem>)
+#      include <filesystem>
+#    endif
+#    if FMT_HAS_INCLUDE(<variant>)
+#      include <variant>
+#    endif
+#    if FMT_HAS_INCLUDE(<optional>)
+#      include <optional>
+#    endif
 #  endif
-#  if FMT_HAS_INCLUDE(<variant>)
-#    include <variant>
-#  endif
-#  if FMT_HAS_INCLUDE(<optional>)
-#    include <optional>
-#  endif
-#endif
 
-#if FMT_HAS_INCLUDE(<expected>) && FMT_CPLUSPLUS > 202002L
-#  include <expected>
-#endif
+#  if FMT_HAS_INCLUDE(<expected>) && FMT_CPLUSPLUS > 202002L
+#    include <expected>
+#  endif
 
-#if FMT_CPLUSPLUS > 201703L && FMT_HAS_INCLUDE(<source_location>)
-#  include <source_location>
+#  if FMT_CPLUSPLUS > 201703L && FMT_HAS_INCLUDE(<source_location>)
+#    include <source_location>
+#  endif
 #endif
 
 // GCC 4 does not support FMT_HAS_INCLUDE.

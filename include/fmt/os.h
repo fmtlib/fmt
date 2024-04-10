@@ -9,9 +9,11 @@
 #define FMT_OS_H_
 
 #include <cerrno>
-#include <cstddef>
-#include <cstdio>
-#include <system_error>  // std::system_error
+#ifndef FMT_IMPORT_STD
+#  include <cstddef>
+#  include <cstdio>
+#  include <system_error>  // std::system_error
+#endif
 
 #include "format.h"
 

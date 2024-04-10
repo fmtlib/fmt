@@ -8,13 +8,15 @@
 #ifndef FMT_FORMAT_INL_H_
 #define FMT_FORMAT_INL_H_
 
-#include <algorithm>
+#ifndef FMT_IMPORT_STD
+#  include <algorithm>
+#  include <cmath>
+#  include <exception>
+#endif
 #include <cerrno>  // errno
 #include <climits>
-#include <cmath>
-#include <exception>
 
-#ifndef FMT_STATIC_THOUSANDS_SEPARATOR
+#if !defined(FMT_STATIC_THOUSANDS_SEPARATOR) && !defined(FMT_IMPORT_STD)
 #  include <locale>
 #endif
 

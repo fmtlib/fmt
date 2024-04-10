@@ -12,9 +12,13 @@
 #include <stdio.h>   // FILE
 #include <string.h>  // strlen
 
+#ifndef FMT_IMPORT_STD
 // <cstddef> is also included transitively from <type_traits>.
-#include <cstddef>      // std::byte
-#include <type_traits>  // std::enable_if
+#  include <cstddef>      // std::byte
+#  include <type_traits>  // std::enable_if
+#else
+import std;
+#endif
 
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
 #define FMT_VERSION 100202

@@ -38,30 +38,35 @@
 #  define FMT_REMOVE_TRANSITIVE_INCLUDES
 #endif
 
-#include <cmath>             // std::signbit
-#include <cstdint>           // uint32_t
-#include <cstring>           // std::memcpy
-#include <initializer_list>  // std::initializer_list
-#include <limits>            // std::numeric_limits
-#if defined(__GLIBCXX__) && !defined(_GLIBCXX_USE_DUAL_ABI)
+#ifndef FMT_IMPORT_STD
+#  include <cmath>             // std::signbit
+#  include <cstdint>           // uint32_t
+#  include <cstring>           // std::memcpy
+#  include <initializer_list>  // std::initializer_list
+#  include <limits>            // std::numeric_limits
+#  if defined(__GLIBCXX__) && !defined(_GLIBCXX_USE_DUAL_ABI)
 // Workaround for pre gcc 5 libstdc++.
-#  include <memory>  // std::allocator_traits
+#    include <memory>  // std::allocator_traits
+#  endif
+#  include <stdexcept>     // std::runtime_error
+#  include <string>        // std::string
+#  include <system_error>  // std::system_error
 #endif
-#include <stdexcept>     // std::runtime_error
-#include <string>        // std::string
-#include <system_error>  // std::system_error
 
 #include "base.h"
 
 // Checking FMT_CPLUSPLUS for warning suppression in MSVC.
-#if FMT_HAS_INCLUDE(<bit>) && FMT_CPLUSPLUS > 201703L
+#if FMT_HAS_INCLUDE(<bit>) && FMT_CPLUSPLUS > 201703L && \
+    !defined(FMT_IMPORT_STD)
 #  include <bit>  // std::bit_cast
 #endif
 
 // libc++ supports string_view in pre-c++17.
 #if FMT_HAS_INCLUDE(<string_view>) && \
     (FMT_CPLUSPLUS >= 201703L || defined(_LIBCPP_VERSION))
-#  include <string_view>
+#  ifndef FMT_IMPORT_STD
+#    include <string_view>
+#  endif
 #  define FMT_USE_STRING_VIEW
 #endif
 
