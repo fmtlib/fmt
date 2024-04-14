@@ -127,6 +127,18 @@ auto join(const std::tuple<T...>& tuple, basic_string_view<wchar_t> sep)
   return {tuple, sep};
 }
 
+template <typename... T>
+auto format(wformat_string<T...> fmt, T&&... args) -> std::wstring {
+  return vformat(fmt::wstring_view(fmt), fmt::make_wformat_args(args...));
+}
+
+template <typename OutputIt, typename... T>
+auto format_to(OutputIt out, wformat_string<T...> fmt, T&&... args)
+    -> OutputIt {
+  return vformat_to(out, fmt::wstring_view(fmt),
+                    fmt::make_wformat_args(args...));
+}
+
 template <typename Char, FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
 auto vformat(basic_string_view<Char> format_str,
              typename detail::vformat_args<Char>::type args)
@@ -134,11 +146,6 @@ auto vformat(basic_string_view<Char> format_str,
   auto buf = basic_memory_buffer<Char>();
   detail::vformat_to(buf, format_str, args);
   return to_string(buf);
-}
-
-template <typename... T>
-auto format(wformat_string<T...> fmt, T&&... args) -> std::wstring {
-  return vformat(fmt::wstring_view(fmt), fmt::make_wformat_args(args...));
 }
 
 // Pass char_t as a default template parameter instead of using
@@ -186,8 +193,9 @@ auto vformat_to(OutputIt out, const S& format_str,
 
 template <typename OutputIt, typename S, typename... T,
           typename Char = detail::format_string_char_t<S>,
-          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value&&
-                            detail::is_exotic_char<Char>::value)>
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value &&
+                        !std::is_same<Char, char>::value &&
+                        !std::is_same<Char, wchar_t>::value)>
 inline auto format_to(OutputIt out, const S& fmt, T&&... args) -> OutputIt {
   return vformat_to(out, detail::to_string_view(fmt),
                     fmt::make_format_args<buffered_context<Char>>(args...));
