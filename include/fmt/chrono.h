@@ -527,7 +527,7 @@ inline auto localtime(std::time_t time) -> std::tm {
     std::time_t time_;
     std::tm tm_;
 
-    dispatcher(std::time_t t) : time_(t) {}
+    dispatcher(std::time_t t) : time_(t), tm_() {}
 
     auto run() -> bool {
       using namespace fmt::detail;
@@ -576,7 +576,7 @@ inline auto gmtime(std::time_t time) -> std::tm {
     std::time_t time_;
     std::tm tm_;
 
-    dispatcher(std::time_t t) : time_(t) {}
+    dispatcher(std::time_t t) : time_(t), tm_() {}
 
     auto run() -> bool {
       using namespace fmt::detail;
@@ -1785,7 +1785,8 @@ class get_locale {
   bool has_locale_ = false;
 
  public:
-  get_locale(bool localized, locale_ref loc) : has_locale_(localized) {
+  get_locale(bool localized, locale_ref loc)
+      : locale_(), has_locale_(localized) {
     if (localized)
       ::new (&locale_) std::locale(loc.template get<std::locale>());
   }
