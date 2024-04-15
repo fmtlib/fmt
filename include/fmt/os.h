@@ -390,7 +390,7 @@ class file_buffer final : public buffer<char> {
 
  public:
   FMT_API file_buffer(cstring_view path, const ostream_params& params);
-  FMT_API file_buffer(file_buffer&& other);
+  FMT_API file_buffer(file_buffer&& other) noexcept;
   FMT_API ~file_buffer();
 
   void flush() {
