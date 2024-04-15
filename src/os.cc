@@ -381,7 +381,7 @@ file_buffer::file_buffer(cstring_view path, const ostream_params& params)
   set(new char[params.buffer_size], params.buffer_size);
 }
 
-file_buffer::file_buffer(file_buffer&& other)
+file_buffer::file_buffer(file_buffer&& other) noexcept
     : buffer<char>(grow, other.data(), other.size(), other.capacity()),
       file_(std::move(other.file_)) {
   other.clear();
