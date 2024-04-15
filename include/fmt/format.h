@@ -1633,10 +1633,10 @@ template <typename F> struct basic_fp {
     static_assert(std::numeric_limits<Float>::digits <= 113, "unsupported FP");
     // Assume Float is in the format [sign][exponent][significand].
     using carrier_uint = typename dragonbox::float_info<Float>::carrier_uint;
-    const auto num_float_significand_bits =
+    constexpr auto num_float_significand_bits =
         detail::num_significand_bits<Float>();
-    const auto implicit_bit = carrier_uint(1) << num_float_significand_bits;
-    const auto significand_mask = implicit_bit - 1;
+    constexpr auto implicit_bit = carrier_uint(1) << num_float_significand_bits;
+    constexpr auto significand_mask = implicit_bit - 1;
     auto u = bit_cast<carrier_uint>(n);
     f = static_cast<F>(u & significand_mask);
     auto biased_e = static_cast<int>((u & exponent_mask<Float>()) >>
@@ -2802,7 +2802,7 @@ class bigint {
   FMT_CONSTEXPR20 void multiply(UInt value) {
     using half_uint =
         conditional_t<std::is_same<UInt, uint128_t>::value, uint64_t, uint32_t>;
-    const int shift = num_bits<half_uint>() - bigit_bits;
+    constexpr int shift = num_bits<half_uint>() - bigit_bits;
     const UInt lower = static_cast<half_uint>(value);
     const UInt upper = value >> num_bits<half_uint>();
     UInt carry = 0;
@@ -3289,7 +3289,7 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
     using info = dragonbox::float_info<double>;
     auto br = bit_cast<uint64_t>(static_cast<double>(value));
 
-    const uint64_t significand_mask =
+    constexpr uint64_t significand_mask =
         (static_cast<uint64_t>(1) << num_significand_bits<double>()) - 1;
     uint64_t significand = (br & significand_mask);
     int exponent = static_cast<int>((br & exponent_mask<double>()) >>
@@ -3625,7 +3625,7 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
   constexpr auto specs = format_specs();
   using floaty = conditional_t<std::is_same<T, long double>::value, double, T>;
   using floaty_uint = typename dragonbox::float_info<floaty>::carrier_uint;
-  floaty_uint mask = exponent_mask<floaty>();
+  constexpr floaty_uint mask = exponent_mask<floaty>();
   if ((bit_cast<floaty_uint>(value) & mask) == mask)
     return write_nonfinite<Char>(out, std::isnan(value), specs, sign);
 
