@@ -141,7 +141,7 @@ import std;
 #elif defined(__NVCOMPILER)
 #  define FMT_USE_NONTYPE_TEMPLATE_ARGS 0
 #elif FMT_GCC_VERSION >= 903 && FMT_CPLUSPLUS >= 201709L
-#  define FMT_USE_NONTYPE_TEMPLATE_ARGS 0
+#  define FMT_USE_NONTYPE_TEMPLATE_ARGS 1
 #elif defined(__cpp_nontype_template_args) && \
     __cpp_nontype_template_args >= 201911L
 #  define FMT_USE_NONTYPE_TEMPLATE_ARGS 1
