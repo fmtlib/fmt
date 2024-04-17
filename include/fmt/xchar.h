@@ -127,6 +127,15 @@ auto join(const std::tuple<T...>& tuple, basic_string_view<wchar_t> sep)
   return {tuple, sep};
 }
 
+template <typename Char, FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
+auto vformat(basic_string_view<Char> format_str,
+             typename detail::vformat_args<Char>::type args)
+    -> std::basic_string<Char> {
+  auto buf = basic_memory_buffer<Char>();
+  detail::vformat_to(buf, format_str, args);
+  return to_string(buf);
+}
+
 template <typename... T>
 auto format(wformat_string<T...> fmt, T&&... args) -> std::wstring {
   return vformat(fmt::wstring_view(fmt), fmt::make_wformat_args(args...));
@@ -137,15 +146,6 @@ auto format_to(OutputIt out, wformat_string<T...> fmt, T&&... args)
     -> OutputIt {
   return vformat_to(out, fmt::wstring_view(fmt),
                     fmt::make_wformat_args(args...));
-}
-
-template <typename Char, FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
-auto vformat(basic_string_view<Char> format_str,
-             typename detail::vformat_args<Char>::type args)
-    -> std::basic_string<Char> {
-  auto buf = basic_memory_buffer<Char>();
-  detail::vformat_to(buf, format_str, args);
-  return to_string(buf);
 }
 
 // Pass char_t as a default template parameter instead of using
