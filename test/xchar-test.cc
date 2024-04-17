@@ -195,6 +195,12 @@ TEST(xchar_test, format_to) {
   EXPECT_STREQ(buf.data(), L"42");
 }
 
+TEST(xchar_test, compile_time_string_format_to) {
+  std::wstring ws;
+  fmt::format_to(std::back_inserter(ws), FMT_STRING(L"{}"), 42);
+  EXPECT_EQ(L"42", ws);
+}
+
 TEST(xchar_test, vformat_to) {
   int n = 42;
   auto args = fmt::make_wformat_args(n);
