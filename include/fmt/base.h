@@ -371,17 +371,17 @@ template <typename T> constexpr auto const_check(T value) -> T { return value; }
 FMT_NORETURN FMT_API void assert_fail(const char* file, int line,
                                       const char* message);
 
-#ifndef FMT_ASSERT
-#  ifdef NDEBUG
+#if defined(FMT_ASSERT)
+// Use the provided definition.
+#elif defined(NDEBUG)
 // FMT_ASSERT is not empty to avoid -Wempty-body.
-#    define FMT_ASSERT(condition, message) \
-      fmt::detail::ignore_unused((condition), (message))
-#  else
-#    define FMT_ASSERT(condition, message)                                    \
-      ((condition) /* void() fails with -Winvalid-constexpr on clang 4.0.1 */ \
-           ? (void)0                                                          \
-           : fmt::detail::assert_fail(__FILE__, __LINE__, (message)))
-#  endif
+#  define FMT_ASSERT(condition, message) \
+    fmt::detail::ignore_unused((condition), (message))
+#else
+#  define FMT_ASSERT(condition, message)                                    \
+    ((condition) /* void() fails with -Winvalid-constexpr on clang 4.0.1 */ \
+         ? (void)0                                                          \
+         : fmt::detail::assert_fail(__FILE__, __LINE__, (message)))
 #endif
 
 #ifdef FMT_USE_INT128
