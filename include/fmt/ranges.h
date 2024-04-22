@@ -69,13 +69,13 @@ struct has_member_fn_begin_end_t<T, void_t<decltype(std::declval<T>().begin()),
                                            decltype(std::declval<T>().end())>>
     : std::true_type {};
 
-// Member function overload
+// Member function overloads.
 template <typename T>
 auto range_begin(T&& rng) FMT_DECLTYPE_RETURN(static_cast<T&&>(rng).begin());
 template <typename T>
 auto range_end(T&& rng) FMT_DECLTYPE_RETURN(static_cast<T&&>(rng).end());
 
-// ADL overload. Only participates in overload resolution if member functions
+// ADL overloads. Only participate in overload resolution if member functions
 // are not found.
 template <typename T>
 auto range_begin(T&& rng)
@@ -619,22 +619,6 @@ auto join(It begin, Sentinel end, string_view sep) -> join_view<It, Sentinel> {
   return {begin, end, sep};
 }
 
-namespace detail {
-// ADL helpers for fmt::join()
-namespace adl {
-using std::begin;
-using std::end;
-
-template <typename Range> auto adlbegin(Range& r) -> decltype(begin(r)) {
-  return begin(r);
-}
-
-template <typename Range> auto adlend(Range& r) -> decltype(end(r)) {
-  return end(r);
-}
-}  // namespace adl
-}  // namespace detail
-
 /**
   \rst
   Returns a view that formats `range` with elements separated by `sep`.
@@ -652,10 +636,10 @@ template <typename Range> auto adlend(Range& r) -> decltype(end(r)) {
   \endrst
  */
 template <typename Range>
-auto join(Range&& range, string_view sep)
-    -> join_view<decltype(detail::adl::adlbegin(range)),
-                 decltype(detail::adl::adlend(range))> {
-  return join(detail::adl::adlbegin(range), detail::adl::adlend(range), sep);
+auto join(Range&& r, string_view sep)
+    -> join_view<decltype(detail::range_begin(r)),
+                 decltype(detail::range_end(r))> {
+  return {detail::range_begin(r), detail::range_end(r), sep};
 }
 
 template <typename Char, typename... T> struct tuple_join_view : detail::view {
