@@ -33,7 +33,15 @@ Base API
 for ``char``/UTF-8 with C++20 compile-time checks. It has minimal include
 dependencies for better compile times. This header is only beneficial when
 using {fmt} as a library (the default) and not in the header-only mode.
-It also provides ``formatter`` specializations for built-in and string types.
+It also provides ``formatter`` specializations for the following fundamental
+and string types:
+
+* ``int``, ``unsigned``, ``long long``, ``unsigned long long``
+* ``float``, ``double``, ``long double``
+* ``bool``
+* ``char``
+* ``const char*``, ``fmt::string_view``
+* ``const void*``
 
 The following functions use :ref:`format string syntax <syntax>`
 similar to that of Python's `str.format
