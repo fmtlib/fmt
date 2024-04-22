@@ -73,7 +73,7 @@ specified otherwise.
 
 .. _format:
 
-.. doxygenfunction:: format_to(OutputIt out, format_string<T...> fmt, T&&... args) -> OutputIt
+.. doxygenfunction:: format_to(OutputIt&& out, format_string<T...> fmt, T&&... args) -> remove_cvref_t<OutputIt>
 .. doxygenfunction:: format_to_n(OutputIt out, size_t n, format_string<T...> fmt, T&&... args) -> format_to_n_result<OutputIt>
 .. doxygenfunction:: formatted_size(format_string<T...> fmt, T&&... args) -> size_t
 
