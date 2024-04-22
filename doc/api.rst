@@ -33,8 +33,7 @@ Base API
 for ``char``/UTF-8 with C++20 compile-time checks. It has minimal include
 dependencies for better compile times. This header is only beneficial when
 using {fmt} as a library (the default) and not in the header-only mode.
-It also provides ``formatter`` specializations for the following fundamental
-and string types:
+It also provides ``formatter`` specializations for the following types:
 
 * ``int``, ``unsigned``, ``long long``, ``unsigned long long``
 * ``float``, ``double``, ``long double``
