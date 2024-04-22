@@ -22,6 +22,7 @@
 #include <iterator>            // std::back_inserter
 #include <list>                // std::list
 #include <mutex>               // std::mutex
+#include <string>              // std::string
 #include <thread>              // std::thread
 #include <type_traits>         // std::is_default_constructible
 
@@ -2222,16 +2223,21 @@ template <typename Char, typename... T> void check_enabled_formatters() {
 }
 
 TEST(format_test, test_formatters_enabled) {
+  using custom_string =
+      std::basic_string<char, std::char_traits<char>, mock_allocator<char>>;
+  using custom_wstring = std::basic_string<wchar_t, std::char_traits<wchar_t>,
+                                           mock_allocator<wchar_t>>;
+
   check_enabled_formatters<char, bool, char, signed char, unsigned char, short,
                            unsigned short, int, unsigned, long, unsigned long,
                            long long, unsigned long long, float, double,
                            long double, void*, const void*, char*, const char*,
-                           std::string, std::nullptr_t>();
-  check_enabled_formatters<wchar_t, bool, wchar_t, signed char, unsigned char,
-                           short, unsigned short, int, unsigned, long,
-                           unsigned long, long long, unsigned long long, float,
-                           double, long double, void*, const void*, wchar_t*,
-                           const wchar_t*, std::wstring, std::nullptr_t>();
+                           std::string, custom_string, std::nullptr_t>();
+  check_enabled_formatters<
+      wchar_t, bool, wchar_t, signed char, unsigned char, short, unsigned short,
+      int, unsigned, long, unsigned long, long long, unsigned long long, float,
+      double, long double, void*, const void*, wchar_t*, const wchar_t*,
+      std::wstring, custom_wstring, std::nullptr_t>();
 }
 
 TEST(format_int_test, data) {
