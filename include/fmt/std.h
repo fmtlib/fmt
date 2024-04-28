@@ -593,30 +593,50 @@ FMT_EXPORT
 template <typename F, typename Char>
 struct formatter<std::complex<F>, Char> : nested_formatter<F, Char> {
  private:
+  bool compat_iostreams_ = false;
   // Functor because C++11 doesn't support generic lambdas.
   struct writer {
     const formatter<std::complex<F>, Char>* f;
     const std::complex<F>& c;
+    const bool compat_iostreams;
 
     template <typename OutputIt>
     FMT_CONSTEXPR auto operator()(OutputIt out) -> OutputIt {
-      if (c.real() != 0) {
-        auto format_full = detail::string_literal<Char, '(', '{', '}', '+', '{',
-                                                  '}', 'i', ')'>{};
-        return fmt::format_to(out, basic_string_view<Char>(format_full),
-                              f->nested(c.real()), f->nested(c.imag()));
+      if (c.real() != 0 || compat_iostreams) {
+        auto format_full_ = detail::string_literal<Char, '(', '{', '}', '+', '{',
+                                                   '}', 'i', ')'>{};
+        auto pformat_full_ = detail::string_literal<Char, '(', '{', '}', ',', '{',
+                                                    '}', ')'>{};
+        if (compat_iostreams)
+          return fmt::format_to(out, basic_string_view<Char>(pformat_full_),
+                                f->nested(c.real()), f->nested(c.imag()));
+        else
+          return fmt::format_to(out, basic_string_view<Char>(format_full_),
+                                f->nested(c.real()), f->nested(c.imag()));
       }
-      auto format_imag = detail::string_literal<Char, '{', '}', 'i'>{};
-      return fmt::format_to(out, basic_string_view<Char>(format_imag),
+      auto format_imag_ = detail::string_literal<Char, '{', '}', 'i'>{};
+      return fmt::format_to(out, basic_string_view<Char>(format_imag_),
                             f->nested(c.imag()));
     }
   };
 
  public:
+  FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
+      -> decltype(ctx.begin()) {
+    auto it = ctx.begin();
+    auto end = ctx.end();
+    if (it != end && *it == 'p') {
+      ++it;
+      compat_iostreams_ = 1;
+      ctx.advance_to(it);
+    }
+    return nested_formatter<F, Char>::parse(ctx);
+  }
+
   template <typename FormatContext>
   auto format(const std::complex<F>& c, FormatContext& ctx) const
       -> decltype(ctx.out()) {
-    return this->write_padded(ctx, writer{this, c});
+    return this->write_padded(ctx, writer{this, c, compat_iostreams_});
   }
 };
 

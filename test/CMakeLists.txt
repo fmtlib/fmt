@@ -160,6 +160,7 @@ if (FMT_PEDANTIC)
   endif ()
   if (HAVE_FNO_EXCEPTIONS_FLAG)
     add_library(noexception-test ../src/format.cc noexception-test.cc)
+    target_compile_features(noexception-test PUBLIC cxx_std_11)
     target_include_directories(
       noexception-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
     target_compile_options(noexception-test PRIVATE -fno-exceptions)
@@ -168,6 +169,7 @@ if (FMT_PEDANTIC)
 
   # Test that the library compiles without locale.
   add_library(nolocale-test ../src/format.cc)
+  target_compile_features(nolocale-test PUBLIC cxx_std_11)
   target_include_directories(
     nolocale-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
   target_compile_definitions(
