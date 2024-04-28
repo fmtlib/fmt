@@ -147,6 +147,7 @@ option(FMT_WERROR "Halt the compilation with an error on compiler warnings."
 # Options that control generation of various targets.
 option(FMT_DOC "Generate the doc target." ${FMT_MASTER_PROJECT})
 option(FMT_INSTALL "Generate the install target." ON)
+option(FMT_MINIMAL_INSTALL "Generate only minimal install target." OFF)
 option(FMT_TEST "Generate the test target." ${FMT_MASTER_PROJECT})
 option(FMT_FUZZ "Generate the fuzz target." OFF)
 option(FMT_CUDA_TEST "Generate the cuda-test target." OFF)
@@ -324,6 +325,11 @@ set_target_properties(fmt PROPERTIES
   COMPILE_PDB_NAME "fmt"
   COMPILE_PDB_NAME_DEBUG "fmt${FMT_DEBUG_POSTFIX}")
 
+if(FMT_MINIMAL_INSTALL)
+# avoids installing headers to target as part of minimal install
+set_target_properties(fmt PROPERTIES
+  PUBLIC_HEADER "")
+endif()
 # Set FMT_LIB_NAME for pkg-config fmt.pc. We cannot use the OUTPUT_NAME target
 # property because it's not set by default.
 set(FMT_LIB_NAME fmt)
@@ -390,18 +396,21 @@ if (FMT_INSTALL)
 
   set(INSTALL_TARGETS fmt fmt-header-only)
 
+  if(BUILD_SHARED_LIBS OR NOT FMT_MINIMAL_INSTALL)
   # Install the library and headers.
   install(TARGETS ${INSTALL_TARGETS} EXPORT ${targets_export_name}
           LIBRARY DESTINATION ${FMT_LIB_DIR}
           ARCHIVE DESTINATION ${FMT_LIB_DIR}
           PUBLIC_HEADER DESTINATION "${FMT_INC_DIR}/fmt"
           RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+  endif()
 
   # Use a namespace because CMake provides better diagnostics for namespaced
   # imported targets.
   export(TARGETS ${INSTALL_TARGETS} NAMESPACE fmt::
          FILE ${PROJECT_BINARY_DIR}/${targets_export_name}.cmake)
 
+  if(NOT FMT_MINIMAL_INSTALL)
   # Install version, config and target files.
   install(
     FILES ${project_config} ${version_config}
@@ -410,6 +419,7 @@ if (FMT_INSTALL)
           NAMESPACE fmt::)
 
   install(FILES "${pkgconfig}" DESTINATION "${FMT_PKGCONFIG_DIR}")
+  endif()
 endif ()
 
 if (FMT_DOC)
