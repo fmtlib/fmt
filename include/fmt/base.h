@@ -1899,12 +1899,10 @@ template <typename Context> class basic_format_args {
       if (id < max_size()) arg = args_[id];
       return arg;
     }
-    if (id >= detail::max_packed_args) return arg;
+    if (static_cast<unsigned>(id) >= detail::max_packed_args) return arg;
     arg.type_ = type(id);
     if (arg.type_ == detail::type::none_type) return arg;
-    if (id >= 0) {
-      arg.value_ = values_[id];
-    }
+    arg.value_ = values_[id];
     return arg;
   }
 
