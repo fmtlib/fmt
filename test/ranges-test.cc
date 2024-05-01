@@ -652,3 +652,56 @@ struct lvalue_qualified_begin_end {
 TEST(ranges_test, lvalue_qualified_begin_end) {
   EXPECT_EQ(fmt::format("{}", lvalue_qualified_begin_end{}), "[1, 2, 3, 4, 5]");
 }
+
+#if !defined(__cpp_lib_ranges) || __cpp_lib_ranges <= 202106L
+#  define ENABLE_INPUT_RANGE_JOIN_TEST 0
+#elif FMT_CLANG_VERSION
+#  if FMT_CLANG_VERSION > 1500
+#    define ENABLE_INPUT_RANGE_JOIN_TEST 1
+#  else
+#    define ENABLE_INPUT_RANGE_JOIN_TEST 0
+#  endif
+#else
+#  define ENABLE_INPUT_RANGE_JOIN_TEST 1
+#endif
+
+#if ENABLE_INPUT_RANGE_JOIN_TEST
+TEST(ranges_test, input_range_join) {
+  std::istringstream iss("1 2 3 4 5");
+  auto view = std::views::istream<std::string>(iss);
+  auto joined_view = fmt::join(view.begin(), view.end(), ", ");
+  EXPECT_EQ("1, 2, 3, 4, 5", fmt::format("{}", std::move(joined_view)));
+}
+
+TEST(ranges_test, input_range_join_overload) {
+  std::istringstream iss("1 2 3 4 5");
+  EXPECT_EQ(
+      "1.2.3.4.5",
+      fmt::format("{}", fmt::join(std::views::istream<std::string>(iss), ".")));
+}
+#endif
+
+TEST(ranges_test, std_istream_iterator_join) {
+  std::istringstream iss("1 2 3 4 5");
+  std::istream_iterator<int> first{iss};
+  std::istream_iterator<int> last{};
+  auto joined_view = fmt::join(first, last, ", ");
+  EXPECT_EQ("1, 2, 3, 4, 5", fmt::format("{}", std::move(joined_view)));
+}
+
+TEST(ranges_test, movable_only_istream_iter_join) {
+  // Mirrors c++20 std::ranges::basic_istream_view::iterator
+  struct UncopyableIstreamIter : std::istream_iterator<int> {
+    explicit UncopyableIstreamIter(std::istringstream& iss)
+        : std::istream_iterator<int>{iss} {}
+    UncopyableIstreamIter(const UncopyableIstreamIter&) = delete;
+    UncopyableIstreamIter(UncopyableIstreamIter&&) = default;
+  };
+  static_assert(!std::is_copy_constructible<UncopyableIstreamIter>::value, "");
+
+  std::istringstream iss("1 2 3 4 5");
+  UncopyableIstreamIter first{iss};
+  std::istream_iterator<int> last{};
+  auto joined_view = fmt::join(std::move(first), last, ", ");
+  EXPECT_EQ("1, 2, 3, 4, 5", fmt::format("{}", std::move(joined_view)));
+}

@@ -13,6 +13,7 @@
 #  include <iterator>
 #  include <tuple>
 #  include <type_traits>
+#  include <utility>
 #endif
 
 #include "format.h"
@@ -611,7 +612,7 @@ struct join_view : detail::view {
   basic_string_view<Char> sep;
 
   join_view(It b, Sentinel e, basic_string_view<Char> s)
-      : begin(b), end(e), sep(s) {}
+      : begin(std::move(b)), end(e), sep(s) {}
 };
 
 template <typename It, typename Sentinel, typename Char>
@@ -631,10 +632,25 @@ struct formatter<join_view<It, Sentinel, Char>, Char> {
     return value_formatter_.parse(ctx);
   }
 
-  template <typename FormatContext>
-  auto format(const join_view<It, Sentinel, Char>& value,
+  template <typename FormatContext, typename Iter,
+            FMT_ENABLE_IF(std::is_copy_constructible<Iter>::value)>
+  auto format(const join_view<Iter, Sentinel, Char>& value,
               FormatContext& ctx) const -> decltype(ctx.out()) {
     auto it = value.begin;
+    return do_format(value, ctx, it);
+  }
+
+  template <typename FormatContext, typename Iter,
+            FMT_ENABLE_IF(!std::is_copy_constructible<Iter>::value)>
+  auto format(join_view<Iter, Sentinel, Char>& value, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    return do_format(value, ctx, value.begin);
+  }
+
+ private:
+  template <typename FormatContext>
+  auto do_format(const join_view<It, Sentinel, Char>& value, FormatContext& ctx,
+                 It& it) const -> decltype(ctx.out()) {
     auto out = ctx.out();
     if (it != value.end) {
       out = value_formatter_.format(*it, ctx);
@@ -656,7 +672,7 @@ struct formatter<join_view<It, Sentinel, Char>, Char> {
  */
 template <typename It, typename Sentinel>
 auto join(It begin, Sentinel end, string_view sep) -> join_view<It, Sentinel> {
-  return {begin, end, sep};
+  return {std::move(begin), end, sep};
 }
 
 /**
