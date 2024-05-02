@@ -15,6 +15,7 @@
 
 #include <stdint.h>  // uint32_t
 
+#include <cfenv>               // fegetexceptflag and FE_ALL_EXCEPT
 #include <climits>             // INT_MAX
 #include <cmath>               // std::signbit
 #include <condition_variable>  // std::condition_variable
@@ -109,6 +110,14 @@ TEST(float_test, isfinite) {
 #endif
 }
 
+void check_no_fp_exception() {
+  fexcept_t fe;
+  fegetexceptflag(&fe, FE_ALL_EXCEPT);
+
+  // No exception flags should have been set
+  EXPECT_TRUE(fe == 0);
+}
+
 template <typename Float> void check_isnan() {
   using fmt::detail::isnan;
   EXPECT_FALSE(isnan(Float(0.0)));
@@ -121,6 +130,17 @@ template <typename Float> void check_isnan() {
   EXPECT_FALSE(isnan(Float(-limits::infinity())));
   EXPECT_TRUE(isnan(Float(limits::quiet_NaN())));
   EXPECT_TRUE(isnan(Float(-limits::quiet_NaN())));
+
+  // Sanity check: make sure no error has occurred before we start
+  check_no_fp_exception();
+
+  // Check that no exception is raised for the non-NaN case
+  isnan(Float(42.0));
+  check_no_fp_exception();
+
+  // Check that no exception is raised for the NaN case
+  isnan(Float(limits::quiet_NaN()));
+  check_no_fp_exception();
 }
 
 TEST(float_test, isnan) {
