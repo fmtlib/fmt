@@ -2695,7 +2695,7 @@ FMT_CONSTEXPR20 auto write_float(OutputIt out, const DecimalFP& f,
 }
 
 template <typename T> constexpr auto isnan(T value) -> bool {
-  return !(value >= value);  // std::isnan doesn't support __float128.
+  return value != value;  // std::isnan doesn't support __float128.
 }
 
 template <typename T, typename Enable = void>
