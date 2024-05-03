@@ -25,7 +25,8 @@ jobs:
       run: |
         sudo apt update
         sudo apt install doxygen python3-virtualenv
-        sudo npm install -g less clean-css
+        sudo npm install -g less \
+             git://github.com/clean-css/clean-css#1f0692ee48a68404e9c7f2764d95b863a891f17b # v5.3.3
         cmake -E make_directory ${{runner.workspace}}/build
 
     - name: Build
