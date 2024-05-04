@@ -582,19 +582,16 @@ struct formatter<
 
   template <typename FormatContext>
   auto format(map_type& map, FormatContext& ctx) const -> decltype(ctx.out()) {
-    auto mapper = detail::range_mapper<buffered_context<Char>>();
     auto out = ctx.out();
-    auto it = detail::range_begin(map);
-    auto end = detail::range_end(map);
-
     basic_string_view<Char> open = detail::string_literal<Char, '{'>{};
     if (!no_delimiters_) out = detail::copy<Char>(open, out);
     int i = 0;
+    auto mapper = detail::range_mapper<buffered_context<Char>>();
     basic_string_view<Char> sep = detail::string_literal<Char, ',', ' '>{};
-    for (; it != end; ++it) {
+    for (auto&& value : map) {
       if (i > 0) out = detail::copy<Char>(sep, out);
       ctx.advance_to(out);
-      detail::for_each2(formatters_, mapper.map(*it),
+      detail::for_each2(formatters_, mapper.map(value),
                         detail::format_tuple_element<FormatContext>{
                             0, ctx, detail::string_literal<Char, ':', ' '>{}});
       ++i;
