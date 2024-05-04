@@ -511,37 +511,25 @@ struct range_format_kind
 template <typename R, typename Char>
 struct formatter<
     R, Char,
-    enable_if_t<conjunction<bool_constant<range_format_kind<R, Char>::value !=
-                                          range_format::disabled>
+    enable_if_t<conjunction<
+        bool_constant<range_format_kind<R, Char>::value !=
+                          range_format::disabled &&
+                      range_format_kind<R, Char>::value != range_format::map>
 // Workaround a bug in MSVC 2015 and earlier.
 #if !FMT_MSC_VERSION || FMT_MSC_VERSION >= 1910
-                            ,
-                            detail::is_formattable_delayed<R, Char>
+        ,
+        detail::is_formattable_delayed<R, Char>
 #endif
-                            >::value>> {
+        >::value>> {
  private:
   using range_type = detail::maybe_const_range<R>;
   range_formatter<detail::uncvref_type<range_type>, Char> range_formatter_;
 
-  FMT_CONSTEXPR void init(detail::range_format_constant<range_format::set>) {
-    range_formatter_.set_brackets(detail::string_literal<Char, '{'>{},
-                                  detail::string_literal<Char, '}'>{});
-  }
-
-  FMT_CONSTEXPR void init(detail::range_format_constant<range_format::map>) {
-    range_formatter_.set_brackets(detail::string_literal<Char, '{'>{},
-                                  detail::string_literal<Char, '}'>{});
-    range_formatter_.underlying().set_brackets({}, {});
-    range_formatter_.underlying().set_separator(
-        detail::string_literal<Char, ':', ' '>{});
-  }
-
-  FMT_CONSTEXPR void init(
-      detail::range_format_constant<range_format::sequence>) {}
-
  public:
   FMT_CONSTEXPR formatter() {
-    init(detail::range_format_constant<range_format_kind<R, Char>::value>());
+    if (range_format_kind<R, Char>::value != range_format::set) return;
+    range_formatter_.set_brackets(detail::string_literal<Char, '{'>{},
+                                  detail::string_literal<Char, '}'>{});
   }
 
   template <typename ParseContext>
@@ -553,6 +541,65 @@ struct formatter<
   auto format(range_type& range, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     return range_formatter_.format(range, ctx);
+  }
+};
+
+template <typename R, typename Char>
+struct formatter<
+    R, Char,
+    enable_if_t<range_format_kind<R, Char>::value == range_format::map>> {
+ private:
+  using map_type = detail::maybe_const_range<R>;
+  detail::range_formatter_type<Char, detail::uncvref_type<map_type>>
+      underlying_;
+  bool no_delimiters_ = false;
+
+ public:
+  FMT_CONSTEXPR formatter() {
+    underlying_.set_brackets({}, {});
+    underlying_.set_separator(detail::string_literal<Char, ':', ' '>{});
+  }
+
+  template <typename ParseContext>
+  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+    auto it = ctx.begin();
+    auto end = ctx.end();
+    detail::maybe_set_debug_format(underlying_, true);
+    if (it == end) return underlying_.parse(ctx);
+
+    if (detail::to_ascii(*it) == 'n') {
+      no_delimiters_ = true;
+      ++it;
+    }
+    if (it != end && *it != '}') {
+      if (*it != ':') report_error("invalid format specifier");
+      detail::maybe_set_debug_format(underlying_, false);
+      ++it;
+    }
+    ctx.advance_to(it);
+    return underlying_.parse(ctx);
+  }
+
+  template <typename FormatContext>
+  auto format(map_type& map, FormatContext& ctx) const -> decltype(ctx.out()) {
+    auto mapper = detail::range_mapper<buffered_context<Char>>();
+    auto out = ctx.out();
+    auto it = detail::range_begin(map);
+    auto end = detail::range_end(map);
+
+    basic_string_view<Char> open = detail::string_literal<Char, '{'>{};
+    if (!no_delimiters_) out = detail::copy<Char>(open, out);
+    int i = 0;
+    basic_string_view<Char> sep = detail::string_literal<Char, ',', ' '>{};
+    for (; it != end; ++it) {
+      if (i > 0) out = detail::copy<Char>(sep, out);
+      ctx.advance_to(out);
+      out = underlying_.format(mapper.map(*it), ctx);
+      ++i;
+    }
+    basic_string_view<Char> close = detail::string_literal<Char, '}'>{};
+    if (!no_delimiters_) out = detail::copy<Char>(close, out);
+    return out;
   }
 };
 
