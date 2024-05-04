@@ -89,6 +89,35 @@ TEST(ranges_test, format_map) {
   EXPECT_EQ(fmt::format("{:n}", m), "\"one\": 1, \"two\": 2");
 }
 
+struct test_map_value {};
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<test_map_value> : formatter<string_view> {
+  auto format(test_map_value, format_context& ctx) const
+      -> format_context::iterator {
+    return formatter<string_view>::format("foo", ctx);
+  }
+};
+
+template <typename K>
+struct formatter<std::pair<K, test_map_value>> : formatter<string_view> {
+  auto format(std::pair<K, test_map_value>, format_context& ctx) const
+      -> format_context::iterator {
+    return ctx.out();
+  }
+};
+
+template <typename K>
+struct is_tuple_formattable<std::pair<K, test_map_value>, char>
+    : std::false_type {};
+
+FMT_END_NAMESPACE
+
+TEST(ranges_test, format_map_custom_pair) {
+  EXPECT_EQ(fmt::format("{}", std::map<int, test_map_value>{{42, {}}}),
+            "{42: \"foo\"}");
+}
+
 TEST(ranges_test, format_set) {
   EXPECT_EQ(fmt::format("{}", std::set<std::string>{"one", "two"}),
             "{\"one\", \"two\"}");
@@ -468,7 +497,7 @@ struct vec {
 
 auto begin(const vec& v) -> const int* { return v.n; }
 auto end(const vec& v) -> const int* { return v.n + 2; }
-}
+}  // namespace adl
 
 TEST(ranges_test, format_join_adl_begin_end) {
   EXPECT_EQ(fmt::format("{}", fmt::join(adl::vec(), "/")), "42/43");

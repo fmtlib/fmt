@@ -483,7 +483,7 @@ struct range_formatter<
 
   template <typename R, typename FormatContext>
   auto format(R&& range, FormatContext& ctx) const -> decltype(ctx.out()) {
-    detail::range_mapper<buffered_context<Char>> mapper;
+    auto mapper = detail::range_mapper<buffered_context<Char>>();
     auto out = ctx.out();
     auto it = detail::range_begin(range);
     auto end = detail::range_end(range);
@@ -544,40 +544,39 @@ struct formatter<
   }
 };
 
+// A map formatter.
 template <typename R, typename Char>
 struct formatter<
     R, Char,
     enable_if_t<range_format_kind<R, Char>::value == range_format::map>> {
  private:
   using map_type = detail::maybe_const_range<R>;
-  detail::range_formatter_type<Char, detail::uncvref_type<map_type>>
-      underlying_;
+  using element_type = detail::uncvref_type<map_type>;
+
+  decltype(detail::tuple::get_formatters<element_type, Char>(
+      detail::tuple_index_sequence<element_type>())) formatters_;
   bool no_delimiters_ = false;
 
  public:
-  FMT_CONSTEXPR formatter() {
-    underlying_.set_brackets({}, {});
-    underlying_.set_separator(detail::string_literal<Char, ':', ' '>{});
-  }
+  FMT_CONSTEXPR formatter() {}
 
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
     auto it = ctx.begin();
     auto end = ctx.end();
-    detail::maybe_set_debug_format(underlying_, true);
-    if (it == end) return underlying_.parse(ctx);
-
-    if (detail::to_ascii(*it) == 'n') {
-      no_delimiters_ = true;
-      ++it;
+    if (it != end) {
+      if (detail::to_ascii(*it) == 'n') {
+        no_delimiters_ = true;
+        ++it;
+      }
+      if (it != end && *it != '}') {
+        if (*it != ':') report_error("invalid format specifier");
+        ++it;
+      }
+      ctx.advance_to(it);
     }
-    if (it != end && *it != '}') {
-      if (*it != ':') report_error("invalid format specifier");
-      detail::maybe_set_debug_format(underlying_, false);
-      ++it;
-    }
-    ctx.advance_to(it);
-    return underlying_.parse(ctx);
+    detail::for_each(formatters_, detail::parse_empty_specs<ParseContext>{ctx});
+    return it;
   }
 
   template <typename FormatContext>
@@ -594,7 +593,9 @@ struct formatter<
     for (; it != end; ++it) {
       if (i > 0) out = detail::copy<Char>(sep, out);
       ctx.advance_to(out);
-      out = underlying_.format(mapper.map(*it), ctx);
+      detail::for_each2(formatters_, mapper.map(*it),
+                        detail::format_tuple_element<FormatContext>{
+                            0, ctx, detail::string_literal<Char, ':', ' '>{}});
       ++i;
     }
     basic_string_view<Char> close = detail::string_literal<Char, '}'>{};
