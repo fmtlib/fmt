@@ -406,6 +406,23 @@ struct range_formatter<
       detail::string_literal<Char, ']'>{};
   bool is_debug = false;
 
+  template <typename Output, typename It, typename Sentinel, typename U = T,
+            FMT_ENABLE_IF(std::is_same<U, Char>::value)>
+  auto write_debug_string(Output& out, It it, Sentinel end) const -> Output {
+    auto buf = basic_memory_buffer<Char>();
+    for (; it != end; ++it) buf.push_back(*it);
+    auto specs = format_specs();
+    specs.type = presentation_type::debug;
+    return detail::write<Char>(
+        out, basic_string_view<Char>(buf.data(), buf.size()), specs);
+  }
+
+  template <typename Output, typename It, typename Sentinel, typename U = T,
+            FMT_ENABLE_IF(!std::is_same<U, Char>::value)>
+  auto write_debug_string(Output& out, It, Sentinel) const -> Output {
+    return out;
+  }
+
  public:
   FMT_CONSTEXPR range_formatter() {}
 
@@ -462,22 +479,6 @@ struct range_formatter<
 
     ctx.advance_to(it);
     return underlying_.parse(ctx);
-  }
-
-  template <typename Output, typename It, typename Sentinel, typename U = T,
-            FMT_ENABLE_IF(std::is_same<U, Char>::value)>
-  auto write_debug_string(Output& out, It it, Sentinel end) const -> Output {
-    auto buf = basic_memory_buffer<Char>();
-    for (; it != end; ++it) buf.push_back(*it);
-    auto specs = format_specs();
-    specs.type = presentation_type::debug;
-    return detail::write<Char>(
-        out, basic_string_view<Char>(buf.data(), buf.size()), specs);
-  }
-  template <typename Output, typename It, typename Sentinel, typename U = T,
-            FMT_ENABLE_IF(!std::is_same<U, Char>::value)>
-  auto write_debug_string(Output& out, It, Sentinel) const -> Output {
-    return out;
   }
 
   template <typename R, typename FormatContext>
