@@ -19,6 +19,8 @@
 
 FMT_BEGIN_NAMESPACE
 
+enum class range_format { disabled, map, set, sequence, string, debug_string };
+
 namespace detail {
 
 template <typename T> class is_map {
@@ -247,6 +249,18 @@ FMT_CONSTEXPR auto maybe_set_debug_format(Formatter& f, bool set)
 }
 template <typename Formatter>
 FMT_CONSTEXPR void maybe_set_debug_format(Formatter&, ...) {}
+
+template <typename T>
+struct range_format_kind_
+    : std::integral_constant<range_format,
+                             std::is_same<uncvref_type<T>, T>::value
+                                 ? range_format::disabled
+                             : is_map<T>::value ? range_format::map
+                             : is_set<T>::value ? range_format::set
+                                                : range_format::sequence> {};
+
+template <range_format K>
+using range_format_constant = std::integral_constant<range_format, K>;
 
 // These are not generic lambdas for compatibility with C++11.
 template <typename ParseContext> struct parse_empty_specs {
@@ -487,62 +501,6 @@ struct range_formatter<
   }
 };
 
-enum class range_format { disabled, map, set, sequence, string, debug_string };
-
-namespace detail {
-template <typename T>
-struct range_format_kind_
-    : std::integral_constant<range_format,
-                             std::is_same<uncvref_type<T>, T>::value
-                                 ? range_format::disabled
-                             : is_map<T>::value ? range_format::map
-                             : is_set<T>::value ? range_format::set
-                                                : range_format::sequence> {};
-
-template <range_format K, typename R, typename Char, typename Enable = void>
-struct range_default_formatter;
-
-template <range_format K>
-using range_format_constant = std::integral_constant<range_format, K>;
-
-template <range_format K, typename R, typename Char>
-struct range_default_formatter<
-    K, R, Char,
-    enable_if_t<(K == range_format::sequence || K == range_format::map ||
-                 K == range_format::set)>> {
-  using range_type = detail::maybe_const_range<R>;
-  range_formatter<detail::uncvref_type<range_type>, Char> underlying_;
-
-  FMT_CONSTEXPR range_default_formatter() { init(range_format_constant<K>()); }
-
-  FMT_CONSTEXPR void init(range_format_constant<range_format::set>) {
-    underlying_.set_brackets(detail::string_literal<Char, '{'>{},
-                             detail::string_literal<Char, '}'>{});
-  }
-
-  FMT_CONSTEXPR void init(range_format_constant<range_format::map>) {
-    underlying_.set_brackets(detail::string_literal<Char, '{'>{},
-                             detail::string_literal<Char, '}'>{});
-    underlying_.underlying().set_brackets({}, {});
-    underlying_.underlying().set_separator(
-        detail::string_literal<Char, ':', ' '>{});
-  }
-
-  FMT_CONSTEXPR void init(range_format_constant<range_format::sequence>) {}
-
-  template <typename ParseContext>
-  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
-    return underlying_.parse(ctx);
-  }
-
-  template <typename FormatContext>
-  auto format(range_type& range, FormatContext& ctx) const
-      -> decltype(ctx.out()) {
-    return underlying_.format(range, ctx);
-  }
-};
-}  // namespace detail
-
 template <typename T, typename Char, typename Enable = void>
 struct range_format_kind
     : conditional_t<
@@ -559,9 +517,42 @@ struct formatter<
                             ,
                             detail::is_formattable_delayed<R, Char>
 #endif
-                            >::value>>
-    : detail::range_default_formatter<range_format_kind<R, Char>::value, R,
-                                      Char> {
+                            >::value>> {
+ private:
+  using range_type = detail::maybe_const_range<R>;
+  range_formatter<detail::uncvref_type<range_type>, Char> range_formatter_;
+
+  FMT_CONSTEXPR void init(detail::range_format_constant<range_format::set>) {
+    range_formatter_.set_brackets(detail::string_literal<Char, '{'>{},
+                                  detail::string_literal<Char, '}'>{});
+  }
+
+  FMT_CONSTEXPR void init(detail::range_format_constant<range_format::map>) {
+    range_formatter_.set_brackets(detail::string_literal<Char, '{'>{},
+                                  detail::string_literal<Char, '}'>{});
+    range_formatter_.underlying().set_brackets({}, {});
+    range_formatter_.underlying().set_separator(
+        detail::string_literal<Char, ':', ' '>{});
+  }
+
+  FMT_CONSTEXPR void init(
+      detail::range_format_constant<range_format::sequence>) {}
+
+ public:
+  FMT_CONSTEXPR formatter() {
+    init(detail::range_format_constant<range_format_kind<R, Char>::value>());
+  }
+
+  template <typename ParseContext>
+  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+    return range_formatter_.parse(ctx);
+  }
+
+  template <typename FormatContext>
+  auto format(range_type& range, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    return range_formatter_.format(range, ctx);
+  }
 };
 
 template <typename It, typename Sentinel, typename Char = char>
