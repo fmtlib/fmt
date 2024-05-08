@@ -667,14 +667,14 @@ TEST(ranges_test, lvalue_qualified_begin_end) {
 
 #if ENABLE_INPUT_RANGE_JOIN_TEST
 TEST(ranges_test, input_range_join) {
-  std::istringstream iss("1 2 3 4 5");
+  auto iss = std::istringstream("1 2 3 4 5");
   auto view = std::views::istream<std::string>(iss);
-  auto joined_view = fmt::join(view.begin(), view.end(), ", ");
-  EXPECT_EQ("1, 2, 3, 4, 5", fmt::format("{}", std::move(joined_view)));
+  EXPECT_EQ("1, 2, 3, 4, 5",
+            fmt::format("{}", fmt::join(view.begin(), view.end(), ", ")));
 }
 
 TEST(ranges_test, input_range_join_overload) {
-  std::istringstream iss("1 2 3 4 5");
+  auto iss = std::istringstream("1 2 3 4 5");
   EXPECT_EQ(
       "1.2.3.4.5",
       fmt::format("{}", fmt::join(std::views::istream<std::string>(iss), ".")));
@@ -682,26 +682,26 @@ TEST(ranges_test, input_range_join_overload) {
 #endif
 
 TEST(ranges_test, std_istream_iterator_join) {
-  std::istringstream iss("1 2 3 4 5");
-  std::istream_iterator<int> first{iss};
-  std::istream_iterator<int> last{};
-  auto joined_view = fmt::join(first, last, ", ");
-  EXPECT_EQ("1, 2, 3, 4, 5", fmt::format("{}", std::move(joined_view)));
+  auto&& iss = std::istringstream("1 2 3 4 5");
+  auto first = std::istream_iterator<int>(iss);
+  auto last = std::istream_iterator<int>();
+  EXPECT_EQ("1, 2, 3, 4, 5", fmt::format("{}", fmt::join(first, last, ", ")));
 }
 
 TEST(ranges_test, movable_only_istream_iter_join) {
-  // Mirrors c++20 std::ranges::basic_istream_view::iterator
-  struct UncopyableIstreamIter : std::istream_iterator<int> {
-    explicit UncopyableIstreamIter(std::istringstream& iss)
+  // Mirrors C++20 std::ranges::basic_istream_view::iterator.
+  struct noncopyable_istream_iterator : std::istream_iterator<int> {
+    explicit noncopyable_istream_iterator(std::istringstream& iss)
         : std::istream_iterator<int>{iss} {}
-    UncopyableIstreamIter(const UncopyableIstreamIter&) = delete;
-    UncopyableIstreamIter(UncopyableIstreamIter&&) = default;
+    noncopyable_istream_iterator(const noncopyable_istream_iterator&) = delete;
+    noncopyable_istream_iterator(noncopyable_istream_iterator&&) = default;
   };
-  static_assert(!std::is_copy_constructible<UncopyableIstreamIter>::value, "");
+  static_assert(
+      !std::is_copy_constructible<noncopyable_istream_iterator>::value, "");
 
-  std::istringstream iss("1 2 3 4 5");
-  UncopyableIstreamIter first{iss};
-  std::istream_iterator<int> last{};
-  auto joined_view = fmt::join(std::move(first), last, ", ");
-  EXPECT_EQ("1, 2, 3, 4, 5", fmt::format("{}", std::move(joined_view)));
+  auto&& iss = std::istringstream("1 2 3 4 5");
+  auto first = noncopyable_istream_iterator(iss);
+  auto last = std::istream_iterator<int>();
+  EXPECT_EQ("1, 2, 3, 4, 5",
+            fmt::format("{}", fmt::join(std::move(first), last, ", ")));
 }

@@ -623,41 +623,29 @@ struct formatter<join_view<It, Sentinel, Char>, Char> {
 #endif
   formatter<remove_cvref_t<value_type>, Char> value_formatter_;
 
+  using view_ref = conditional_t<std::is_copy_constructible<It>::value,
+                                 const join_view<It, Sentinel, Char>&,
+                                 join_view<It, Sentinel, Char>&&>;
+
  public:
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> const Char* {
     return value_formatter_.parse(ctx);
   }
 
-  template <typename FormatContext, typename Iter,
-            FMT_ENABLE_IF(std::is_copy_constructible<Iter>::value)>
-  auto format(const join_view<Iter, Sentinel, Char>& value,
-              FormatContext& ctx) const -> decltype(ctx.out()) {
-    auto it = value.begin;
-    return do_format(value, ctx, it);
-  }
-
-  template <typename FormatContext, typename Iter,
-            FMT_ENABLE_IF(!std::is_copy_constructible<Iter>::value)>
-  auto format(join_view<Iter, Sentinel, Char>& value, FormatContext& ctx) const
-      -> decltype(ctx.out()) {
-    return do_format(value, ctx, value.begin);
-  }
-
- private:
   template <typename FormatContext>
-  auto do_format(const join_view<It, Sentinel, Char>& value, FormatContext& ctx,
-                 It& it) const -> decltype(ctx.out()) {
+  auto format(view_ref& value, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    auto it = std::forward<view_ref>(value).begin;
     auto out = ctx.out();
-    if (it != value.end) {
+    if (it == value.end) return out;
+    out = value_formatter_.format(*it, ctx);
+    ++it;
+    while (it != value.end) {
+      out = detail::copy<Char>(value.sep.begin(), value.sep.end(), out);
+      ctx.advance_to(out);
       out = value_formatter_.format(*it, ctx);
       ++it;
-      while (it != value.end) {
-        out = detail::copy<Char>(value.sep.begin(), value.sep.end(), out);
-        ctx.advance_to(out);
-        out = value_formatter_.format(*it, ctx);
-        ++it;
-      }
     }
     return out;
   }
