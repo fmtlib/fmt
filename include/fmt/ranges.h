@@ -628,6 +628,8 @@ struct formatter<join_view<It, Sentinel, Char>, Char> {
                                  join_view<It, Sentinel, Char>&&>;
 
  public:
+  using nonlocking = void;
+
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> const Char* {
     return value_formatter_.parse(ctx);
