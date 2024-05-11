@@ -276,7 +276,7 @@ import std;
 #endif
 
 #ifndef FMT_UNICODE
-#  define FMT_UNICODE !FMT_MSC_VERSION
+#  define FMT_UNICODE 1
 #endif
 
 #define FMT_FWD(...) static_cast<decltype(__VA_ARGS__)&&>(__VA_ARGS__)
