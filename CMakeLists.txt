@@ -341,6 +341,12 @@ endif ()
 add_library(fmt-header-only INTERFACE)
 add_library(fmt::fmt-header-only ALIAS fmt-header-only)
 
+if (MSVC)
+  # Unicode support requires compiling with /utf-8.
+  target_compile_options(fmt PUBLIC /utf-8)
+  target_compile_options(fmt-header-only INTERFACE /utf-8)
+endif ()
+
 target_compile_definitions(fmt-header-only INTERFACE FMT_HEADER_ONLY=1)
 target_compile_features(fmt-header-only INTERFACE cxx_std_11)
 

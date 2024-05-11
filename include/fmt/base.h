@@ -424,8 +424,11 @@ FMT_CONSTEXPR inline auto is_utf8() -> bool {
   FMT_MSC_WARNING(suppress : 4566) constexpr unsigned char section[] = "\u00A7";
   // Avoid an MSVC sign extension bug: https://github.com/fmtlib/fmt/pull/2297.
   using uchar = unsigned char;
-  return FMT_UNICODE || (sizeof(section) == 3 && uchar(section[0]) == 0xC2 &&
-                         uchar(section[1]) == 0xA7);
+  constexpr bool utf8 = sizeof(section) == 3 && uchar(section[0]) == 0xC2 &&
+                        uchar(section[1]) == 0xA7;
+  static_assert(utf8 || !FMT_MSC_VERSION,
+                "Unicode support requires compiling with /utf-8");
+  return FMT_UNICODE || utf8;
 }
 
 template <typename Char> FMT_CONSTEXPR auto length(const Char* s) -> size_t {
