@@ -23,12 +23,6 @@
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
-#ifdef __cpp_char8_t
-using char8_type = char8_t;
-#else
-enum char8_type : unsigned char {};
-#endif
-
 template <typename T>
 using is_exotic_char = bool_constant<!std::is_same<T, char>::value>;
 
@@ -83,9 +77,13 @@ inline auto runtime(wstring_view s) -> runtime_format_string<wchar_t> {
 #endif
 
 template <> struct is_char<wchar_t> : std::true_type {};
-template <> struct is_char<detail::char8_type> : std::true_type {};
 template <> struct is_char<char16_t> : std::true_type {};
 template <> struct is_char<char32_t> : std::true_type {};
+
+#ifdef __cpp_char8_t
+template <>
+struct is_char<char8_t> : bool_constant<detail::is_utf8_enabled()> {};
+#endif
 
 template <typename... T>
 constexpr auto make_wformat_args(T&... args)
