@@ -229,17 +229,11 @@ class buffered_file {
 
   FMT_API auto descriptor() const -> int;
 
-  void vprint(string_view fmt, format_args args) {
-    fmt::vprint(file_, fmt, args);
-  }
-  void vprint_locked(string_view fmt, format_args args) {
-    fmt::vprint_locked(file_, fmt, args);
-  }
-
   template <typename... T>
   inline void print(string_view fmt, const T&... args) {
     const auto& vargs = fmt::make_format_args(args...);
-    detail::is_locking<T...>() ? vprint(fmt, vargs) : vprint_locked(fmt, vargs);
+    detail::is_locking<T...>() ? fmt::vprint_buffered(file_, fmt, vargs)
+                               : fmt::vprint(file_, fmt, vargs);
   }
 };
 

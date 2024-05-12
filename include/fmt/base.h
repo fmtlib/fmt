@@ -3010,7 +3010,7 @@ FMT_NODISCARD FMT_INLINE auto formatted_size(format_string<T...> fmt,
 
 FMT_API void vprint(string_view fmt, format_args args);
 FMT_API void vprint(FILE* f, string_view fmt, format_args args);
-FMT_API void vprint_locked(FILE* f, string_view fmt, format_args args);
+FMT_API void vprint_buffered(FILE* f, string_view fmt, format_args args);
 FMT_API void vprintln(FILE* f, string_view fmt, format_args args);
 
 /**
@@ -3027,8 +3027,8 @@ template <typename... T>
 FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
   const auto& vargs = fmt::make_format_args(args...);
   if (!detail::use_utf8()) return detail::vprint_mojibake(stdout, fmt, vargs);
-  return detail::is_locking<T...>() ? vprint(fmt, vargs)
-                                    : vprint_locked(stdout, fmt, vargs);
+  return detail::is_locking<T...>() ? vprint_buffered(stdout, fmt, vargs)
+                                    : vprint(fmt, vargs);
 }
 
 /**
@@ -3045,8 +3045,8 @@ template <typename... T>
 FMT_INLINE void print(FILE* f, format_string<T...> fmt, T&&... args) {
   const auto& vargs = fmt::make_format_args(args...);
   if (!detail::use_utf8()) return detail::vprint_mojibake(f, fmt, vargs);
-  return detail::is_locking<T...>() ? vprint(f, fmt, vargs)
-                                    : vprint_locked(f, fmt, vargs);
+  return detail::is_locking<T...>() ? vprint_buffered(f, fmt, vargs)
+                                    : vprint(f, fmt, vargs);
 }
 
 /**

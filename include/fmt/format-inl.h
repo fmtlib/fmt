@@ -1678,14 +1678,14 @@ FMT_FUNC void print(std::FILE* f, string_view text) {
 }
 }  // namespace detail
 
-FMT_FUNC void vprint(std::FILE* f, string_view fmt, format_args args) {
+FMT_FUNC void vprint_buffered(std::FILE* f, string_view fmt, format_args args) {
   auto buffer = memory_buffer();
   detail::vformat_to(buffer, fmt, args);
   detail::print(f, {buffer.data(), buffer.size()});
 }
 
-FMT_FUNC void vprint_locked(std::FILE* f, string_view fmt, format_args args) {
-  if (!detail::file_ref(f).is_buffered()) return vprint(f, fmt, args);
+FMT_FUNC void vprint(std::FILE* f, string_view fmt, format_args args) {
+  if (!detail::file_ref(f).is_buffered()) return vprint_buffered(f, fmt, args);
   auto&& buffer = detail::file_print_buffer(f);
   return detail::vformat_to(buffer, fmt, args);
 }
