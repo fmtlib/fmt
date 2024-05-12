@@ -427,9 +427,11 @@ constexpr auto is_utf8_enabled() -> bool {
   return sizeof("\u00A7") == 3 && uchar("\u00A7"[0]) == 0xC2 &&
          uchar("\u00A7"[1]) == 0xA7;
 }
-constexpr auto use_utf8() -> bool { return FMT_UNICODE || is_utf8_enabled(); }
+constexpr auto use_utf8() -> bool {
+  return !FMT_MSC_VERSION || is_utf8_enabled();
+}
 
-static_assert(!(FMT_UNICODE && FMT_MSC_VERSION && !is_utf8_enabled()),
+static_assert(!FMT_UNICODE || use_utf8(),
               "Unicode support requires compiling with /utf-8");
 
 template <typename Char> FMT_CONSTEXPR auto length(const Char* s) -> size_t {
