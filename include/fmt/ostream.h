@@ -183,7 +183,7 @@ void vprint(std::basic_ostream<Char>& os,
 FMT_EXPORT template <typename... T>
 void print(std::ostream& os, format_string<T...> fmt, T&&... args) {
   const auto& vargs = fmt::make_format_args(args...);
-  if (detail::is_utf8())
+  if (detail::use_utf8())
     vprint(os, fmt, vargs);
   else
     detail::vprint_directly(os, fmt, vargs);

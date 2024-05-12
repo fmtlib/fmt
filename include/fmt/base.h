@@ -420,20 +420,17 @@ struct is_std_string_like<T, void_t<decltype(std::declval<T>().find_first_of(
                                  typename T::value_type(), 0))>>
     : std::true_type {};
 
-FMT_CONSTEXPR inline auto is_utf8_enabled() -> bool {
-  FMT_MSC_WARNING(suppress : 4566) constexpr unsigned char section[] = "\u00A7";
+// Returns true iff the literal encoding is UTF-8.
+constexpr auto is_utf8_enabled() -> bool {
   // Avoid an MSVC sign extension bug: https://github.com/fmtlib/fmt/pull/2297.
   using uchar = unsigned char;
-  constexpr bool utf8 = sizeof(section) == 3 && uchar(section[0]) == 0xC2 &&
-                        uchar(section[1]) == 0xA7;
-  static_assert(utf8 || !FMT_MSC_VERSION,
-                "Unicode support requires compiling with /utf-8");
-  return utf8;
+  return sizeof("\u00A7") == 3 && uchar("\u00A7"[0]) == 0xC2 &&
+         uchar("\u00A7"[1]) == 0xA7;
 }
+constexpr auto use_utf8() -> bool { return FMT_UNICODE || is_utf8_enabled(); }
 
-FMT_CONSTEXPR inline auto is_utf8() -> bool {
-  return FMT_UNICODE || is_utf8_enabled();
-}
+static_assert(!(FMT_UNICODE && FMT_MSC_VERSION && !is_utf8_enabled()),
+              "Unicode support requires compiling with /utf-8");
 
 template <typename Char> FMT_CONSTEXPR auto length(const Char* s) -> size_t {
   size_t len = 0;
@@ -3027,7 +3024,7 @@ FMT_API void vprintln(FILE* f, string_view fmt, format_args args);
 template <typename... T>
 FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
   const auto& vargs = fmt::make_format_args(args...);
-  if (!detail::is_utf8()) return detail::vprint_mojibake(stdout, fmt, vargs);
+  if (!detail::use_utf8()) return detail::vprint_mojibake(stdout, fmt, vargs);
   return detail::is_locking<T...>() ? vprint(fmt, vargs)
                                     : vprint_locked(stdout, fmt, vargs);
 }
@@ -3045,7 +3042,7 @@ FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
 template <typename... T>
 FMT_INLINE void print(FILE* f, format_string<T...> fmt, T&&... args) {
   const auto& vargs = fmt::make_format_args(args...);
-  if (!detail::is_utf8()) return detail::vprint_mojibake(f, fmt, vargs);
+  if (!detail::use_utf8()) return detail::vprint_mojibake(f, fmt, vargs);
   return detail::is_locking<T...>() ? vprint(f, fmt, vargs)
                                     : vprint_locked(f, fmt, vargs);
 }
@@ -3057,8 +3054,8 @@ FMT_INLINE void print(FILE* f, format_string<T...> fmt, T&&... args) {
 template <typename... T>
 FMT_INLINE void println(FILE* f, format_string<T...> fmt, T&&... args) {
   const auto& vargs = fmt::make_format_args(args...);
-  return detail::is_utf8() ? vprintln(f, fmt, vargs)
-                           : detail::vprint_mojibake(f, fmt, vargs, true);
+  return detail::use_utf8() ? vprintln(f, fmt, vargs)
+                            : detail::vprint_mojibake(f, fmt, vargs, true);
 }
 
 /**
