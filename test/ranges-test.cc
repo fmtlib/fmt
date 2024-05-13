@@ -7,6 +7,7 @@
 
 #include "fmt/ranges.h"
 
+#include <array>
 #include <list>
 #include <map>
 #include <numeric>
@@ -654,18 +655,18 @@ TEST(ranges_test, lvalue_qualified_begin_end) {
 }
 
 #if !defined(__cpp_lib_ranges) || __cpp_lib_ranges <= 202106L
-#  define ENABLE_INPUT_RANGE_JOIN_TEST 0
+#  define ENABLE_STD_VIEWS_TESTS 0
 #elif FMT_CLANG_VERSION
 #  if FMT_CLANG_VERSION > 1500
-#    define ENABLE_INPUT_RANGE_JOIN_TEST 1
+#    define ENABLE_STD_VIEWS_TESTS 1
 #  else
-#    define ENABLE_INPUT_RANGE_JOIN_TEST 0
+#    define ENABLE_STD_VIEWS_TESTS 0
 #  endif
 #else
-#  define ENABLE_INPUT_RANGE_JOIN_TEST 1
+#  define ENABLE_STD_VIEWS_TESTS 1
 #endif
 
-#if ENABLE_INPUT_RANGE_JOIN_TEST
+#if ENABLE_STD_VIEWS_TESTS
 TEST(ranges_test, input_range_join) {
   auto iss = std::istringstream("1 2 3 4 5");
   auto view = std::views::istream<std::string>(iss);
@@ -679,6 +680,42 @@ TEST(ranges_test, input_range_join_overload) {
       "1.2.3.4.5",
       fmt::format("{}", fmt::join(std::views::istream<std::string>(iss), ".")));
 }
+
+namespace views_filter_view_test {
+struct codec_mask {
+  static constexpr auto kCodecs = std::array{0, 1, 2, 3};
+  int except{};
+};
+
+auto format_as(codec_mask mask) {
+  // Careful not to capture param by reference here, it will dangle
+  return codec_mask::kCodecs |
+         std::views::filter([mask](auto c) { return c != mask.except; });
+}
+}  // namespace views_filter_view_test
+
+TEST(ranges_test, format_as_with_ranges_mutable_begin_end) {
+  using namespace views_filter_view_test;
+  {
+    auto make_filter_view = []() {
+      return codec_mask::kCodecs |
+             std::views::filter([](auto c) { return c != 2; });
+    };
+    auto r = make_filter_view();
+    EXPECT_EQ("[0, 1, 3]", fmt::format("{}", r));
+    EXPECT_EQ("[0, 1, 3]", fmt::format("{}", make_filter_view()));
+  }
+
+  {
+    const codec_mask const_mask{2};
+    codec_mask mask{2};
+
+    EXPECT_EQ("[0, 1, 3]", fmt::format("{}", const_mask));
+    EXPECT_EQ("[0, 1, 3]", fmt::format("{}", mask));
+    EXPECT_EQ("[0, 1, 3]", fmt::format("{}", codec_mask{2}));
+  }
+}
+
 #endif
 
 TEST(ranges_test, std_istream_iterator_join) {

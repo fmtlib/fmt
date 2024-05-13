@@ -4000,7 +4000,9 @@ struct formatter<T, Char, enable_if_t<detail::has_format_as<T>::value>>
   template <typename FormatContext>
   auto format(const T& value, FormatContext& ctx) const -> decltype(ctx.out()) {
     using base = formatter<detail::format_as_t<T>, Char>;
-    return base::format(format_as(value), ctx);
+    // format functions expect lvalue refs, not rvalues
+    auto&& val = format_as(value);
+    return base::format(val, ctx);
   }
 };
 
