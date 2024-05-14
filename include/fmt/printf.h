@@ -26,6 +26,7 @@ template <typename Char> class basic_printf_context {
  private:
   basic_appender<Char> out_;
   basic_format_args<basic_printf_context> args_;
+  detail::locale_ref loc_;
 
   static_assert(std::is_same<Char, char>::value ||
                     std::is_same<Char, wchar_t>::value,
@@ -43,13 +44,14 @@ template <typename Char> class basic_printf_context {
     \endrst
    */
   basic_printf_context(basic_appender<Char> out,
-                       basic_format_args<basic_printf_context> args)
-      : out_(out), args_(args) {}
+                       basic_format_args<basic_printf_context> args,
+                       detail::locale_ref loc = {})
+      : out_(out), args_(args), loc_(loc) {}
 
   auto out() -> basic_appender<Char> { return out_; }
   void advance_to(basic_appender<Char>) {}
 
-  auto locale() -> detail::locale_ref { return {}; }
+  auto locale() -> detail::locale_ref { return loc_; }
 
   auto arg(int id) const -> basic_format_arg<basic_printf_context> {
     return args_.get(id);
@@ -222,9 +224,9 @@ class printf_width_handler {
 // Workaround for a bug with the XL compiler when initializing
 // printf_arg_formatter's base class.
 template <typename Char>
-auto make_arg_formatter(basic_appender<Char> iter, format_specs& s)
-    -> arg_formatter<Char> {
-  return {iter, s, locale_ref()};
+auto make_arg_formatter(basic_appender<Char> iter, format_specs& s,
+                        locale_ref loc) -> arg_formatter<Char> {
+  return {iter, s, loc};
 }
 
 // The ``printf`` argument formatter.
@@ -245,7 +247,7 @@ class printf_arg_formatter : public arg_formatter<Char> {
  public:
   printf_arg_formatter(basic_appender<Char> iter, format_specs& s,
                        context_type& ctx)
-      : base(make_arg_formatter(iter, s)), context_(ctx) {}
+      : base(make_arg_formatter(iter, s, ctx.locale())), context_(ctx) {}
 
   void operator()(monostate value) { base::operator()(value); }
 
@@ -419,10 +421,10 @@ inline auto parse_printf_presentation_type(char c, type t, bool& upper)
 
 template <typename Char, typename Context>
 void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
-             basic_format_args<Context> args) {
+             basic_format_args<Context> args, locale_ref loc = {}) {
   using iterator = basic_appender<Char>;
   auto out = iterator(buf);
-  auto context = basic_printf_context<Char>(out, args);
+  auto context = basic_printf_context<Char>(out, args, loc);
   auto parse_ctx = basic_format_parse_context<Char>(format);
 
   // Returns the argument with specified index or, if arg_index is -1, the next
@@ -453,6 +455,8 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
 
     auto specs = format_specs();
     specs.align = align::right;
+    if (loc)
+      specs.localized = true; // all arguments are localized if locale is passed
 
     // Parse argument index, flags and width.
     int arg_index = parse_header(it, end, specs, get_arg);
@@ -598,6 +602,16 @@ inline auto vsprintf(basic_string_view<Char> fmt,
   return to_string(buf);
 }
 
+template <typename Locale, typename Char,
+          FMT_ENABLE_IF(detail::is_locale<Locale>::value)>
+inline auto vsprintf(const Locale& loc, basic_string_view<Char> fmt,
+                     typename vprintf_args<Char>::type args)
+    -> std::basic_string<Char> {
+  auto buf = basic_memory_buffer<Char>();
+  detail::vprintf(buf, fmt, args, detail::locale_ref(loc));
+  return to_string(buf);
+}
+
 /**
   \rst
   Formats arguments and returns the result as a string.
@@ -613,11 +627,31 @@ inline auto sprintf(const S& fmt, const T&... args) -> std::basic_string<Char> {
                   fmt::make_format_args<basic_printf_context<Char>>(args...));
 }
 
+template <typename Locale, typename S, typename... T, typename Char = char_t<S>,
+          FMT_ENABLE_IF(detail::is_locale<Locale>::value)>
+inline auto sprintf(const Locale& loc, const S& fmt, const T&... args)
+    -> std::basic_string<Char> {
+  return vsprintf(loc, detail::to_string_view(fmt),
+                  fmt::make_format_args<basic_printf_context<Char>>(args...));
+}
+
 template <typename Char>
 inline auto vfprintf(std::FILE* f, basic_string_view<Char> fmt,
                      typename vprintf_args<Char>::type args) -> int {
   auto buf = basic_memory_buffer<Char>();
   detail::vprintf(buf, fmt, args);
+  size_t size = buf.size();
+  return std::fwrite(buf.data(), sizeof(Char), size, f) < size
+             ? -1
+             : static_cast<int>(size);
+}
+
+template <typename Locale, typename Char,
+          FMT_ENABLE_IF(detail::is_locale<Locale>::value)>
+inline auto vfprintf(std::FILE* f, const Locale& loc, basic_string_view<Char> fmt,
+                     typename vprintf_args<Char>::type args) -> int {
+  auto buf = basic_memory_buffer<Char>();
+  detail::vprintf(buf, fmt, args, detail::locale_ref(loc));
   size_t size = buf.size();
   return std::fwrite(buf.data(), sizeof(Char), size, f) < size
              ? -1
@@ -636,6 +670,14 @@ inline auto vfprintf(std::FILE* f, basic_string_view<Char> fmt,
 template <typename S, typename... T, typename Char = char_t<S>>
 inline auto fprintf(std::FILE* f, const S& fmt, const T&... args) -> int {
   return vfprintf(f, detail::to_string_view(fmt),
+                  make_printf_args<Char>(args...));
+}
+
+template <typename Locale, typename S, typename... T, typename Char = char_t<S>,
+          FMT_ENABLE_IF(detail::is_locale<Locale>::value)>
+inline auto fprintf(std::FILE* f, const Locale& loc, const S& fmt,
+                    const T&... args) -> int {
+  return vfprintf(f, loc, detail::to_string_view(fmt),
                   make_printf_args<Char>(args...));
 }
 
