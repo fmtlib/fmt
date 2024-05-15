@@ -7,6 +7,7 @@
 
 #include "fmt/ranges.h"
 
+#include <algorithm>
 #include <array>
 #include <list>
 #include <map>
@@ -741,4 +742,65 @@ TEST(ranges_test, movable_only_istream_iter_join) {
   auto last = std::istream_iterator<int>();
   EXPECT_EQ("1, 2, 3, 4, 5",
             fmt::format("{}", fmt::join(std::move(first), last, ", ")));
+}
+
+namespace ranges_format_as {
+struct RangeLike {
+  std::array<char, 3> arr = {{'h', 'e', 'y'}};
+  using iter = decltype(arr)::const_iterator;
+  iter begin() const { return arr.begin(); }
+  iter end() const { return arr.end(); }
+};
+
+struct RangeLikeWithFormatAs : RangeLike {
+  friend std::string format_as(const RangeLikeWithFormatAs& r) {
+    std::string s{r.begin(), r.end()};
+    s += '!';
+    return s;
+  }
+};
+
+struct RangeLikeSpecialized : RangeLike {};
+}  // namespace ranges_format_as
+
+FMT_BEGIN_NAMESPACE
+template <>
+struct formatter<ranges_format_as::RangeLikeSpecialized>
+    : formatter<std::string> {
+  auto format(const ranges_format_as::RangeLikeSpecialized& r,
+              format_context& ctx) const -> format_context::iterator {
+    std::string s{r.begin(), r.end()};
+    std::reverse(s.begin(), s.end());
+    return formatter<std::string>::format(s, ctx);
+  }
+};
+FMT_END_NAMESPACE
+
+TEST(ranges_test, prefer_user_formatter_to_range_like) {
+  using namespace ranges_format_as;
+  {
+    EXPECT_EQ(fmt::format("{}", RangeLike{}), "['h', 'e', 'y']");
+    using T = RangeLike;
+    constexpr std::array<RangeLike, 3> arr{T{}, T{}, T{}};
+    EXPECT_EQ(fmt::format("{}", arr),
+              "[['h', 'e', 'y'], ['h', 'e', 'y'], ['h', 'e', 'y']]");
+    EXPECT_EQ(fmt::format("{}", fmt::join(arr, " - ")),
+              "['h', 'e', 'y'] - ['h', 'e', 'y'] - ['h', 'e', 'y']");
+  }
+
+  {
+    EXPECT_EQ(fmt::format("{}", RangeLikeWithFormatAs{}), "hey!");
+    using T = RangeLikeWithFormatAs;
+    constexpr std::array<RangeLikeWithFormatAs, 3> arr{T{}, T{}, T{}};
+    EXPECT_EQ(fmt::format("{}", arr), "[\"hey!\", \"hey!\", \"hey!\"]");
+    EXPECT_EQ(fmt::format("{}", fmt::join(arr, " - ")), "hey! - hey! - hey!");
+  }
+
+  {
+    EXPECT_EQ(fmt::format("{}", RangeLikeSpecialized{}), "yeh");
+    using T = RangeLikeSpecialized;
+    constexpr std::array<RangeLikeSpecialized, 3> arr{T{}, T{}, T{}};
+    EXPECT_EQ(fmt::format("{}", arr), "[\"yeh\", \"yeh\", \"yeh\"]");
+    EXPECT_EQ(fmt::format("{}", fmt::join(arr, " - ")), "yeh - yeh - yeh");
+  }
 }

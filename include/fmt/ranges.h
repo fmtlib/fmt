@@ -513,6 +513,7 @@ template <typename R, typename Char>
 struct formatter<
     R, Char,
     enable_if_t<conjunction<
+        bool_constant<!detail::has_format_as<R>{}>,
         bool_constant<range_format_kind<R, Char>::value !=
                           range_format::disabled &&
                       range_format_kind<R, Char>::value != range_format::map>
