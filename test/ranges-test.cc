@@ -683,13 +683,13 @@ TEST(ranges_test, input_range_join_overload) {
 
 namespace views_filter_view_test {
 struct codec_mask {
-  static constexpr auto kCodecs = std::array{0, 1, 2, 3};
-  int except{};
+  static constexpr auto codecs = std::array{0, 1, 2, 3};
+  int except = 0;
 };
 
 auto format_as(codec_mask mask) {
-  // Careful not to capture param by reference here, it will dangle
-  return codec_mask::kCodecs |
+  // Careful not to capture param by reference here, it will dangle.
+  return codec_mask::codecs |
          std::views::filter([mask](auto c) { return c != mask.except; });
 }
 }  // namespace views_filter_view_test
@@ -698,7 +698,7 @@ TEST(ranges_test, format_as_with_ranges_mutable_begin_end) {
   using namespace views_filter_view_test;
   {
     auto make_filter_view = []() {
-      return codec_mask::kCodecs |
+      return codec_mask::codecs |
              std::views::filter([](auto c) { return c != 2; });
     };
     auto r = make_filter_view();
@@ -707,11 +707,11 @@ TEST(ranges_test, format_as_with_ranges_mutable_begin_end) {
   }
 
   {
-    const codec_mask const_mask{2};
-    codec_mask mask{2};
+    auto mask = codec_mask{2};
+    const auto const_mask = codec_mask{2};
 
-    EXPECT_EQ("[0, 1, 3]", fmt::format("{}", const_mask));
     EXPECT_EQ("[0, 1, 3]", fmt::format("{}", mask));
+    EXPECT_EQ("[0, 1, 3]", fmt::format("{}", const_mask));
     EXPECT_EQ("[0, 1, 3]", fmt::format("{}", codec_mask{2}));
   }
 }
