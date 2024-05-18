@@ -280,13 +280,13 @@ import std;
 #endif
 
 // Check if rtti is available.
-#ifndef FMT_HAS_RTTI
+#ifndef FMT_USE_RTTI
 // __RTTI is for EDG compilers. _CPPRTTI is for MSVC.
 #  if defined(__GXX_RTTI) || FMT_HAS_FEATURE(cxx_rtti) || defined(_CPPRTTI) || \
       defined(__INTEL_RTTI__) || defined(__RTTI)
-#    define FMT_HAS_RTTI 1
+#    define FMT_USE_RTTI 1
 #  else
-#    define FMT_HAS_RTTI 0
+#    define FMT_USE_RTTI 0
 #  endif
 #endif
 

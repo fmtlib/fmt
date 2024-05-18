@@ -432,7 +432,7 @@ struct formatter<
     if (it == end || *it == '}') return it;
     if (*it == 't') {
       ++it;
-      with_typename_ = FMT_HAS_RTTI != 0;
+      with_typename_ = FMT_USE_RTTI != 0;
     }
     return it;
   }
@@ -444,7 +444,7 @@ struct formatter<
     if (!with_typename_)
       return detail::write_bytes<Char>(out, string_view(ex.what()));
 
-#if FMT_HAS_RTTI
+#if FMT_USE_RTTI
     const std::type_info& ti = typeid(ex);
 #  ifdef FMT_HAS_ABI_CXA_DEMANGLE
     int status = 0;
