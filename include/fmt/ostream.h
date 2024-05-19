@@ -44,12 +44,12 @@ auto get_file(std::filebuf&) -> FILE*;
 inline auto write_ostream_unicode(std::ostream& os, fmt::string_view data)
     -> bool {
   FILE* f = nullptr;
-#if FMT_MSC_VERSION
+#if FMT_MSC_VERSION && FMT_USE_RTTI
   if (auto* buf = dynamic_cast<std::filebuf*>(os.rdbuf()))
     f = get_file(*buf);
   else
     return false;
-#elif defined(_WIN32) && defined(__GLIBCXX__)
+#elif defined(_WIN32) && defined(__GLIBCXX__) && FMT_USE_RTTI
   auto* rdbuf = os.rdbuf();
   if (auto* sfbuf = dynamic_cast<__gnu_cxx::stdio_sync_filebuf<char>*>(rdbuf))
     f = sfbuf->file();
