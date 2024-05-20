@@ -742,3 +742,9 @@ TEST(ranges_test, movable_only_istream_iter_join) {
   EXPECT_EQ("1, 2, 3, 4, 5",
             fmt::format("{}", fmt::join(std::move(first), last, ", ")));
 }
+
+struct not_range {
+  void begin() const {}
+  void end() const {}
+};
+static_assert(!fmt::is_formattable<not_range>{}, "");

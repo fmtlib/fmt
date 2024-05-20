@@ -68,7 +68,7 @@ template <typename T, typename Enable = void>
 struct has_member_fn_begin_end_t : std::false_type {};
 
 template <typename T>
-struct has_member_fn_begin_end_t<T, void_t<decltype(std::declval<T>().begin()),
+struct has_member_fn_begin_end_t<T, void_t<decltype(*std::declval<T>().begin()),
                                            decltype(std::declval<T>().end())>>
     : std::true_type {};
 
@@ -99,15 +99,15 @@ struct has_mutable_begin_end : std::false_type {};
 
 template <typename T>
 struct has_const_begin_end<
-    T,
-    void_t<
-        decltype(detail::range_begin(std::declval<const remove_cvref_t<T>&>())),
-        decltype(detail::range_end(std::declval<const remove_cvref_t<T>&>()))>>
+    T, void_t<decltype(*detail::range_begin(
+                  std::declval<const remove_cvref_t<T>&>())),
+              decltype(detail::range_end(
+                  std::declval<const remove_cvref_t<T>&>()))>>
     : std::true_type {};
 
 template <typename T>
 struct has_mutable_begin_end<
-    T, void_t<decltype(detail::range_begin(std::declval<T&>())),
+    T, void_t<decltype(*detail::range_begin(std::declval<T&>())),
               decltype(detail::range_end(std::declval<T&>())),
               // the extra int here is because older versions of MSVC don't
               // SFINAE properly unless there are distinct types
