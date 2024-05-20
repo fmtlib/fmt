@@ -528,7 +528,9 @@ struct formatter<
 
  public:
   FMT_CONSTEXPR formatter() {
-    if (range_format_kind<R, Char>::value != range_format::set) return;
+    if (detail::const_check(range_format_kind<R, Char>::value !=
+                            range_format::set))
+      return;
     range_formatter_.set_brackets(detail::string_literal<Char, '{'>{},
                                   detail::string_literal<Char, '}'>{});
   }
