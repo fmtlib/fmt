@@ -495,7 +495,8 @@ struct range_formatter<
     for (; it != end; ++it) {
       if (i > 0) out = detail::copy<Char>(separator_, out);
       ctx.advance_to(out);
-      out = underlying_.format(mapper.map(*it), ctx);
+      auto&& item = *it;  // Need an lvalue
+      out = underlying_.format(mapper.map(item), ctx);
       ++i;
     }
     out = detail::copy<Char>(closing_bracket_, out);
