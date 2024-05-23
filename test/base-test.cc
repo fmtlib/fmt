@@ -687,6 +687,64 @@ TEST(core_test, is_formattable) {
   static_assert(!fmt::is_formattable<unformattable_scoped_enum>::value, "");
 }
 
+#if FMT_USE_CONCEPTS
+TEST(core_test, formattable) {
+  static_assert(fmt::formattable<char>);
+  static_assert(fmt::formattable<char&>);
+  static_assert(fmt::formattable<char&&>);
+  static_assert(fmt::formattable<const char>);
+  static_assert(fmt::formattable<const char&>);
+  static_assert(fmt::formattable<const char&&>);
+
+  static_assert(fmt::formattable<fmt::basic_string_view<char>>);
+  static_assert(fmt::formattable<fmt::basic_string_view<char>&>);
+  static_assert(fmt::formattable<fmt::basic_string_view<char>&&>);
+  static_assert(fmt::formattable<const fmt::basic_string_view<char>>);
+  static_assert(fmt::formattable<const fmt::basic_string_view<char>&>);
+  static_assert(fmt::formattable<const fmt::basic_string_view<char>&&>);
+
+  static_assert(!fmt::formattable<wchar_t>);
+#  ifdef __cpp_char8_t
+  static_assert(!fmt::formattable<char8_t>);
+#  endif
+  static_assert(!fmt::formattable<char16_t>);
+  static_assert(!fmt::formattable<char32_t>);
+  static_assert(!fmt::formattable<signed char*>);
+  static_assert(!fmt::formattable<unsigned char*>);
+  static_assert(!fmt::formattable<const signed char*>);
+  static_assert(!fmt::formattable<const unsigned char*>);
+  static_assert(!fmt::formattable<const wchar_t*>);
+  static_assert(!fmt::formattable<const wchar_t[3]>);
+  static_assert(!fmt::formattable<fmt::basic_string_view<wchar_t>>);
+  static_assert(fmt::formattable<enabled_formatter>);
+  static_assert(!fmt::formattable<enabled_ptr_formatter*>);
+  static_assert(!fmt::formattable<disabled_formatter>);
+  static_assert(!fmt::formattable<disabled_formatter_convertible>);
+
+  static_assert(fmt::formattable<const_formattable&>);
+  static_assert(fmt::formattable<const const_formattable&>);
+
+  static_assert(fmt::formattable<nonconst_formattable&>);
+#  if !FMT_MSC_VERSION || FMT_MSC_VERSION >= 1910
+  static_assert(!fmt::formattable<const nonconst_formattable&>);
+#  endif
+
+  static_assert(!fmt::formattable<convertible_to_pointer>);
+  const auto f = convertible_to_pointer_formattable();
+  auto str = std::string();
+  fmt::format_to(std::back_inserter(str), "{}", f);
+  EXPECT_EQ(str, "test");
+
+  static_assert(!fmt::formattable<void (*)()>);
+
+  struct s;
+  static_assert(!fmt::formattable<int(s::*)>);
+  static_assert(!fmt::formattable<int (s::*)()>);
+  static_assert(!fmt::formattable<unformattable_scoped_enum>);
+  static_assert(!fmt::formattable<unformattable_scoped_enum>);
+}
+#endif
+
 TEST(core_test, format_to) {
   auto s = std::string();
   fmt::format_to(std::back_inserter(s), "{}", 42);
@@ -757,6 +815,9 @@ struct implicitly_convertible_to_string_view {
 TEST(core_test, no_implicit_conversion_to_string_view) {
   EXPECT_FALSE(
       fmt::is_formattable<implicitly_convertible_to_string_view>::value);
+#if FMT_USE_CONCEPTS
+  static_assert(!fmt::formattable<implicitly_convertible_to_string_view>);
+#endif
 }
 
 #ifdef FMT_USE_STRING_VIEW
@@ -767,6 +828,9 @@ struct implicitly_convertible_to_std_string_view {
 TEST(core_test, no_implicit_conversion_to_std_string_view) {
   EXPECT_FALSE(
       fmt::is_formattable<implicitly_convertible_to_std_string_view>::value);
+#  if FMT_USE_CONCEPTS
+  static_assert(!fmt::formattable<implicitly_convertible_to_std_string_view>);
+#  endif
 }
 #endif
 
@@ -781,6 +845,9 @@ TEST(core_test, format_explicitly_convertible_to_string_view) {
   // default because it may introduce ODR violations.
   static_assert(
       !fmt::is_formattable<explicitly_convertible_to_string_view>::value, "");
+#  if FMT_USE_CONCEPTS
+  static_assert(!fmt::formattable<explicitly_convertible_to_string_view>);
+#  endif
 }
 
 #  ifdef FMT_USE_STRING_VIEW
@@ -794,6 +861,9 @@ TEST(core_test, format_explicitly_convertible_to_std_string_view) {
   static_assert(
       !fmt::is_formattable<explicitly_convertible_to_std_string_view>::value,
       "");
+#    if FMT_USE_CONCEPTS
+  static_assert(!fmt::formattable<explicitly_convertible_to_std_string_view>);
+#    endif
 }
 #  endif
 #endif
