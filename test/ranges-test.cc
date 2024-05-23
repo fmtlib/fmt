@@ -506,7 +506,7 @@ TEST(ranges_test, format_join_adl_begin_end) {
 
 #endif  // FMT_RANGES_TEST_ENABLE_JOIN
 
-#if defined(__cpp_lib_ranges) && __cpp_lib_ranges >= 202302L
+#if defined(__cpp_lib_ranges) && __cpp_lib_ranges >= 202207L
 TEST(ranges_test, nested_ranges) {
   auto l = std::list{1, 2, 3};
   auto r = std::views::iota(0, 3) | std::views::transform([&l](auto i) {
