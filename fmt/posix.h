@@ -10,11 +10,6 @@
 #ifndef FMT_POSIX_H_
 #define FMT_POSIX_H_
 
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-// Workaround MinGW bug https://sourceforge.net/p/mingw/bugs/2024/.
-# undef __STRICT_ANSI__
-#endif
-
 #include <errno.h>
 #include <fcntl.h>   // for O_RDONLY
 #include <locale.h>  // for locale_t
