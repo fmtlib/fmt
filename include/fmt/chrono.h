@@ -819,6 +819,12 @@ FMT_CONSTEXPR auto parse_chrono_format(const Char* begin, const Char* end,
     case 'I':
       handler.on_12_hour(numeric_system::standard, pad);
       break;
+    case 'k':
+      handler.on_24_hour(numeric_system::standard, pad_type::space);
+      break;
+    case 'l':
+      handler.on_12_hour(numeric_system::standard, pad_type::space);
+      break;
     case 'M':
       handler.on_minute(numeric_system::standard, pad);
       break;
@@ -935,6 +941,12 @@ FMT_CONSTEXPR auto parse_chrono_format(const Char* begin, const Char* end,
         break;
       case 'M':
         handler.on_minute(numeric_system::alternative, pad);
+        break;
+      case 'k':
+        handler.on_24_hour(numeric_system::alternative, pad_type::space);
+        break;
+      case 'l':
+        handler.on_12_hour(numeric_system::alternative, pad_type::space);
         break;
       case 'S':
         handler.on_second(numeric_system::alternative, pad);
