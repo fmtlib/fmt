@@ -980,6 +980,8 @@ TEST(chrono_test, glibc_extensions) {
     EXPECT_EQ(fmt::format("{:%0OI,%0OH,%0OM,%0OS}", d), "01,01,02,03");
     EXPECT_EQ(fmt::format("{:%_OI,%_OH,%_OM,%_OS}", d), " 1, 1, 2, 3");
     EXPECT_EQ(fmt::format("{:%-OI,%-OH,%-OM,%-OS}", d), "1,1,2,3");
+
+    EXPECT_EQ(fmt::format("{:%k,%l}", d), " 1, 1");
   }
 
   {
@@ -993,6 +995,8 @@ TEST(chrono_test, glibc_extensions) {
     EXPECT_EQ(fmt::format("{:%0OI,%0OH,%0OM,%0OS}", tm), "01,01,02,03");
     EXPECT_EQ(fmt::format("{:%_OI,%_OH,%_OM,%_OS}", tm), " 1, 1, 2, 3");
     EXPECT_EQ(fmt::format("{:%-OI,%-OH,%-OM,%-OS}", tm), "1,1,2,3");
+
+    EXPECT_EQ(fmt::format("{:%k,%l}", tm), " 1, 1");
   }
 
   {
