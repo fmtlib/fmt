@@ -74,8 +74,8 @@ template <typename To, typename From,
           FMT_ENABLE_IF(!std::is_same<From, To>::value &&
                         std::numeric_limits<From>::is_signed ==
                             std::numeric_limits<To>::is_signed)>
-FMT_CONSTEXPR auto lossless_integral_conversion(const From from, int& ec)
-    -> To {
+FMT_CONSTEXPR auto lossless_integral_conversion(const From from,
+                                                int& ec) -> To {
   ec = 0;
   using F = std::numeric_limits<From>;
   using T = std::numeric_limits<To>;
@@ -104,8 +104,8 @@ template <typename To, typename From,
           FMT_ENABLE_IF(!std::is_same<From, To>::value &&
                         std::numeric_limits<From>::is_signed !=
                             std::numeric_limits<To>::is_signed)>
-FMT_CONSTEXPR auto lossless_integral_conversion(const From from, int& ec)
-    -> To {
+FMT_CONSTEXPR auto lossless_integral_conversion(const From from,
+                                                int& ec) -> To {
   ec = 0;
   using F = std::numeric_limits<From>;
   using T = std::numeric_limits<To>;
@@ -137,8 +137,8 @@ FMT_CONSTEXPR auto lossless_integral_conversion(const From from, int& ec)
 
 template <typename To, typename From,
           FMT_ENABLE_IF(std::is_same<From, To>::value)>
-FMT_CONSTEXPR auto lossless_integral_conversion(const From from, int& ec)
-    -> To {
+FMT_CONSTEXPR auto lossless_integral_conversion(const From from,
+                                                int& ec) -> To {
   ec = 0;
   return from;
 }  // function
@@ -395,8 +395,8 @@ void write_codecvt(codecvt_result<CodeUnit>& out, string_view in_buf,
 }
 
 template <typename OutputIt>
-auto write_encoded_tm_str(OutputIt out, string_view in, const std::locale& loc)
-    -> OutputIt {
+auto write_encoded_tm_str(OutputIt out, string_view in,
+                          const std::locale& loc) -> OutputIt {
   if (detail::use_utf8() && loc != get_classic_locale()) {
     // char16_t and char32_t codecvts are broken in MSVC (linkage errors) and
     // gcc-4.
@@ -425,8 +425,8 @@ auto write_encoded_tm_str(OutputIt out, string_view in, const std::locale& loc)
 
 template <typename Char, typename OutputIt,
           FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
-auto write_tm_str(OutputIt out, string_view sv, const std::locale& loc)
-    -> OutputIt {
+auto write_tm_str(OutputIt out, string_view sv,
+                  const std::locale& loc) -> OutputIt {
   codecvt_result<Char> unit;
   write_codecvt(unit, sv, loc);
   return copy<Char>(unit.buf, unit.end, out);
@@ -434,8 +434,8 @@ auto write_tm_str(OutputIt out, string_view sv, const std::locale& loc)
 
 template <typename Char, typename OutputIt,
           FMT_ENABLE_IF(std::is_same<Char, char>::value)>
-auto write_tm_str(OutputIt out, string_view sv, const std::locale& loc)
-    -> OutputIt {
+auto write_tm_str(OutputIt out, string_view sv,
+                  const std::locale& loc) -> OutputIt {
   return write_encoded_tm_str(out, sv, loc);
 }
 
@@ -503,9 +503,8 @@ auto fmt_duration_cast(std::chrono::duration<FromRep, FromPeriod> from) -> To {
 }
 
 template <typename Duration>
-auto to_time_t(
-    std::chrono::time_point<std::chrono::system_clock, Duration> time_point)
-    -> std::time_t {
+auto to_time_t(std::chrono::time_point<std::chrono::system_clock, Duration>
+                   time_point) -> std::time_t {
   // Cannot use std::chrono::system_clock::to_time_t since this would first
   // require a cast to std::chrono::system_clock::time_point, which could
   // overflow.
@@ -607,9 +606,8 @@ inline auto gmtime(std::time_t time) -> std::tm {
 }
 
 template <typename Duration>
-inline auto gmtime(
-    std::chrono::time_point<std::chrono::system_clock, Duration> time_point)
-    -> std::tm {
+inline auto gmtime(std::chrono::time_point<std::chrono::system_clock, Duration>
+                       time_point) -> std::tm {
   return gmtime(detail::to_time_t(time_point));
 }
 
@@ -984,11 +982,19 @@ template <typename Derived> struct null_chrono_spec_handler {
   FMT_CONSTEXPR void on_abbr_month() { unsupported(); }
   FMT_CONSTEXPR void on_full_month() { unsupported(); }
   FMT_CONSTEXPR void on_dec_month(numeric_system) { unsupported(); }
-  FMT_CONSTEXPR void on_dec0_week_of_year(numeric_system, pad_type pad) { unsupported(); }
-  FMT_CONSTEXPR void on_dec1_week_of_year(numeric_system, pad_type pad) { unsupported(); }
-  FMT_CONSTEXPR void on_iso_week_of_year(numeric_system, pad_type pad) { unsupported(); }
+  FMT_CONSTEXPR void on_dec0_week_of_year(numeric_system, pad_type) {
+    unsupported();
+  }
+  FMT_CONSTEXPR void on_dec1_week_of_year(numeric_system, pad_type) {
+    unsupported();
+  }
+  FMT_CONSTEXPR void on_iso_week_of_year(numeric_system, pad_type) {
+    unsupported();
+  }
   FMT_CONSTEXPR void on_day_of_year() { unsupported(); }
-  FMT_CONSTEXPR void on_day_of_month(numeric_system, pad_type pad) { unsupported(); }
+  FMT_CONSTEXPR void on_day_of_month(numeric_system, pad_type) {
+    unsupported();
+  }
   FMT_CONSTEXPR void on_24_hour(numeric_system) { unsupported(); }
   FMT_CONSTEXPR void on_12_hour(numeric_system) { unsupported(); }
   FMT_CONSTEXPR void on_minute(numeric_system) { unsupported(); }
@@ -1553,7 +1559,8 @@ class tm_writer {
 
   void on_dec0_week_of_year(numeric_system ns, pad_type pad) {
     if (is_classic_ || ns == numeric_system::standard)
-      return write2((tm_yday() + days_per_week - tm_wday()) / days_per_week, pad);
+      return write2((tm_yday() + days_per_week - tm_wday()) / days_per_week,
+                    pad);
     format_localized('U', 'O');
   }
   void on_dec1_week_of_year(numeric_system ns, pad_type pad) {
@@ -1561,7 +1568,8 @@ class tm_writer {
       auto wday = tm_wday();
       write2((tm_yday() + days_per_week -
               (wday == 0 ? (days_per_week - 1) : (wday - 1))) /
-             days_per_week, pad);
+                 days_per_week,
+             pad);
     } else {
       format_localized('W', 'O');
     }
@@ -1583,7 +1591,8 @@ class tm_writer {
     write2(yday % 100);
   }
   void on_day_of_month(numeric_system ns, pad_type pad) {
-    if (is_classic_ || ns == numeric_system::standard) return write2(tm_mday(), pad);
+    if (is_classic_ || ns == numeric_system::standard)
+      return write2(tm_mday(), pad);
     format_localized('d', 'O');
   }
 
@@ -1933,10 +1942,10 @@ struct chrono_formatter {
   void on_iso_week_based_year() {}
   void on_iso_week_based_short_year() {}
   void on_dec_month(numeric_system) {}
-  void on_dec0_week_of_year(numeric_system, pad_type pad) {}
-  void on_dec1_week_of_year(numeric_system, pad_type pad) {}
-  void on_iso_week_of_year(numeric_system, pad_type pad) {}
-  void on_day_of_month(numeric_system, pad_type pad) {}
+  void on_dec0_week_of_year(numeric_system, pad_type) {}
+  void on_dec1_week_of_year(numeric_system, pad_type) {}
+  void on_iso_week_of_year(numeric_system, pad_type) {}
+  void on_day_of_month(numeric_system, pad_type) {}
 
   void on_day_of_year() {
     if (handle_nan_inf()) return;
@@ -2155,7 +2164,8 @@ struct formatter<day, Char> : private formatter<std::tm, Char> {
     if (use_tm_formatter_) return formatter<std::tm, Char>::format(time, ctx);
     detail::get_locale loc(false, ctx.locale());
     auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
-    w.on_day_of_month(detail::numeric_system::standard, detail::pad_type::unspecified);
+    w.on_day_of_month(detail::numeric_system::standard,
+                      detail::pad_type::unspecified);
     return w.out();
   }
 };
@@ -2230,8 +2240,8 @@ struct formatter<year_month_day, Char> : private formatter<std::tm, Char> {
   }
 
   template <typename FormatContext>
-  auto format(year_month_day val, FormatContext& ctx) const
-      -> decltype(ctx.out()) {
+  auto format(year_month_day val,
+              FormatContext& ctx) const -> decltype(ctx.out()) {
     auto time = std::tm();
     time.tm_year = static_cast<int>(val.year()) - 1900;
     time.tm_mon = static_cast<int>(static_cast<unsigned>(val.month())) - 1;
@@ -2281,8 +2291,8 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
   }
 
   template <typename FormatContext>
-  auto format(std::chrono::duration<Rep, Period> d, FormatContext& ctx) const
-      -> decltype(ctx.out()) {
+  auto format(std::chrono::duration<Rep, Period> d,
+              FormatContext& ctx) const -> decltype(ctx.out()) {
     auto specs = specs_;
     auto precision = specs.precision;
     specs.precision = -1;
@@ -2353,8 +2363,8 @@ struct formatter<std::chrono::local_time<Duration>, Char>
   }
 
   template <typename FormatContext>
-  auto format(std::chrono::local_time<Duration> val, FormatContext& ctx) const
-      -> decltype(ctx.out()) {
+  auto format(std::chrono::local_time<Duration> val,
+              FormatContext& ctx) const -> decltype(ctx.out()) {
     using period = typename Duration::period;
     if (period::num != 1 || period::den != 1 ||
         std::is_floating_point<typename Duration::rep>::value) {
@@ -2431,8 +2441,8 @@ template <typename Char> struct formatter<std::tm, Char> {
   }
 
   template <typename FormatContext>
-  auto format(const std::tm& tm, FormatContext& ctx) const
-      -> decltype(ctx.out()) {
+  auto format(const std::tm& tm,
+              FormatContext& ctx) const -> decltype(ctx.out()) {
     return do_format<FormatContext, std::chrono::seconds>(tm, ctx, nullptr);
   }
 };
