@@ -33,51 +33,47 @@
 {%- endmacro %}
 
 {% block header %}
-<nav class="navbar navbar-expand-lg" data-bs-theme="dark">
-  <div class="tb-container">
-    <div class="row">
-      <div class="navbar-content">
-        {# Brand and toggle get grouped for better mobile display #}
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle collapsed"
-                  data-toggle="collapse" data-target=".navbar-collapse">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <a class="navbar-brand" href="index.html">{fmt}</a>
-        </div>
-
-        {# Collect the nav links, forms, and other content for toggling #}
-        <div class="collapse navbar-collapse">
-          <ul class="nav navbar-nav">
-            <li class="dropdown">
-              <a href="#" class="dropdown-toggle" data-toggle="dropdown"
-                 role="button" aria-expanded="false">{{ version }}
-                <span class="caret"></span></a>
-              <ul class="dropdown-menu" role="menu">
-                {% for v in versions.split(',') %}
-                <li><a href="https://fmt.dev/{{v}}">{{v}}</a></li>
-                {% endfor %}
-              </ul>
+<nav class="navbar navbar-expand-md bg-body-tertiary" data-bs-theme="dark">
+  <div class="container">
+    <a class="navbar-brand" href="index.html">{fmt}</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+            data-bs-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false"
+            aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button"
+             data-bs-toggle="dropdown" aria-expanded="false">
+            {{ version }}
+          </a>
+          <ul class="dropdown-menu">
+            {% for v in versions.split(',') %}
+            <li>
+              <a class="dropdown-item" href="https://fmt.dev/{{v}}">{{v}}</a>
             </li>
-            {% for name in ['Contents', 'Usage', 'API', 'Syntax'] %}
-              {% if pagename == name.lower() %}
-              <li class="active"><a href="{{name.lower()}}.html">{{name}}
-                <span class="sr-only">(current)</span></a></li>
-              {%else%}
-              <li><a href="{{name.lower()}}.html">{{name}}</a></li>
-              {%endif%}
             {% endfor %}
           </ul>
-          {% if pagename != 'search' %}
-            {{ searchform('navbar-form navbar-right', False) }}
+        </li>
+        {% for name in ['Contents', 'Usage', 'API', 'Syntax'] %}
+          <li class="nav-item">
+          {% if pagename == name.lower() %}
+            <a class="nav-link active" aria-current="page"
+               href="{{name.lower()}}.html">{{name}}
+            </a>
+          {%else%}
+            <a class="nav-link" href="{{name.lower()}}.html">{{name}}</a>
           {%endif%}
-        </div> {# /.navbar-collapse #}
-      </div> {# /.col-md-offset-2 #}
-    </div> {# /.row #}
-  </div> {# /.tb-container #}
+          </li>
+        {% endfor %}
+      </ul>
+      {% if pagename != 'search' %}
+        {{ searchform('navbar-form navbar-right', False) }}
+      {%endif%}
+    </div>
+  </div>
 </nav>
 {% if pagename == "index" %}
 {% set download_url = 'https://github.com/fmtlib/fmt/releases/download' %}
