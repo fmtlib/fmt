@@ -5,6 +5,7 @@ if (${CMAKE_VERSION} VERSION_LESS 3.12)
   cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
 endif ()
 
+set(CMAKE_POSITION_INDEPENDENT_CODE on)
 # Determine if fmt is built as a subproject (using add_subdirectory)
 # or if it is the master project.
 if (NOT DEFINED FMT_MASTER_PROJECT)
