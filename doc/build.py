@@ -33,11 +33,9 @@ def create_build_env(venv_dir='virtualenv'):
   pip.install('six')
   # See: https://github.com/sphinx-doc/sphinx/issues/9777
   pip.install('docutils==0.17.1')
-  # Jinja2 >= 3.1 incompatible with sphinx 3.3.0
-  # See: https://github.com/sphinx-doc/sphinx/issues/10291
-  pip.install('Jinja2<3.1')
-  pip.install('sphinx==3.3.0')
-  pip.install('michaeljones/breathe', 'v4.25.0')
+  pip.install('Jinja2')
+  pip.install('sphinx==5.0.2')
+  pip.install('michaeljones/breathe', 'v4.35.0')
 
 def build_docs(version='dev', **kwargs):
   doc_dir = kwargs.get('doc_dir', os.path.dirname(os.path.realpath(__file__)))
