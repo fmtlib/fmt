@@ -34,7 +34,9 @@
 
 {% block header %}
 <nav class="navbar navbar-expand-md" data-bs-theme="dark">
-  <div class="container">
+  {# Bootstrap's container has been renamed to tb-container to avoid a
+     conflict with Sphinx. #}
+  <div class="tb-container">
     <a class="navbar-brand" href="index.html">{fmt}</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
             data-bs-target="#navbarSupportedContent"
