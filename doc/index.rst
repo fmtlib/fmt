@@ -191,8 +191,3 @@ using the library both in open-source and commercial projects.
 .. raw:: html
 
   <a class="btn btn-success" href="https://github.com/fmtlib/fmt">GitHub Repository</a>
-
-  <div class="section footer">
-    <iframe src="https://ghbtns.com/github-btn.html?user=fmtlib&amp;repo=fmt&amp;type=watch&amp;count=true"
-            class="github-btn" width="100" height="20"></iframe>
-  </div>
