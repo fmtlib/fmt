@@ -32,7 +32,7 @@
 {%- endmacro %}
 
 {% block header %}
-<nav class="navbar navbar-expand-md" data-bs-theme="dark">
+<nav class="navbar navbar-expand-md">
   {# Bootstrap's container has been renamed to tb-container to avoid a
      conflict with Sphinx. #}
   <div class="tb-container">
@@ -78,26 +78,24 @@
 </nav>
 {% if pagename == "index" %}
 {% set download_url = 'https://github.com/fmtlib/fmt/releases/download' %}
-<div class="jumbotron">
-  <div class="tb-container">
-    <h1>{fmt}</h1>
-    <p class="lead">A modern formatting library</p>
-    <div class="btn-group">
-      {% set name = 'fmt' if version.split('.')[0]|int >= 3 else 'cppformat' %}
-      <a class="btn btn-success"
-         href="{{download_url}}/{{version}}/{{name}}-{{version}}.zip">
-           <span class="glyphicon glyphicon-download"></span> Download
-      </a>
-      <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
-        <span class="visually-hidden">Toggle Dropdown</span>
-      </button>
-      <ul class="dropdown-menu">
-        {% for v in versions.split(',') %}
-        {% set name = 'fmt' if v.split('.')[0]|int >= 3 else 'cppformat' %}
-          <li><a class="dropdown-item" href="{{download_url}}/{{v}}/{{name}}-{{v}}.zip">Version {{v}}</a></li>
-        {% endfor %}
-      </ul>
-    </div>
+<div class="tb-container jumbotron p-5">
+  <h1>{fmt}</h1>
+  <p class="lead">A modern formatting library</p>
+  <div class="btn-group">
+    {% set name = 'fmt' if version.split('.')[0]|int >= 3 else 'cppformat' %}
+    <a class="btn btn-success"
+        href="{{download_url}}/{{version}}/{{name}}-{{version}}.zip">
+          <span class="glyphicon glyphicon-download"></span> Download
+    </a>
+    <button type="button" class="btn btn-success dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+      <span class="visually-hidden">Toggle Dropdown</span>
+    </button>
+    <ul class="dropdown-menu">
+      {% for v in versions.split(',') %}
+      {% set name = 'fmt' if v.split('.')[0]|int >= 3 else 'cppformat' %}
+        <li><a class="dropdown-item" href="{{download_url}}/{{v}}/{{name}}-{{v}}.zip">Version {{v}}</a></li>
+      {% endfor %}
+    </ul>
   </div>
 </div>
 {% endif %}
