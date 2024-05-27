@@ -9,11 +9,10 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [macos-11, macos-13]
+        os: [macos-13, macos-14]
         build_type: [Debug, Release]
         std: [11, 17, 20]
         exclude:
-          - { os: macos-11, std: 20 }
           - { os: macos-13, std: 11 }
           - { os: macos-13, std: 17 }
         include:
