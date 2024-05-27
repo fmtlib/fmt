@@ -322,9 +322,10 @@ Format specifications for chrono duration and time point types as well as
    literal_char: <a character other than '{', '}' or '%'>
    modifier: "E" | "O"
    chrono_type: "a" | "A" | "b" | "B" | "c" | "C" | "d" | "D" | "e" | "F" |
-              : "g" | "G" | "h" | "H" | "I" | "j" | "m" | "M" | "n" | "p" |
-              : "q" | "Q" | "r" | "R" | "S" | "t" | "T" | "u" | "U" | "V" |
-              : "w" | "W" | "x" | "X" | "y" | "Y" | "z" | "Z" | "%"
+              : "g" | "G" | "h" | "H" | "I" | "j" | "k" | "l" | "m" | "M" |
+              : "n" | "p" | "q" | "Q" | "r" | "R" | "S" | "t" | "T" | "u" | 
+              : "U" | "V" | "w" | "W" | "x" | "X" | "y" | "Y" | "z" | "Z" |
+              : "%"
 
 Literal chars are copied unchanged to the output. Precision is valid only for
 ``std::chrono::duration`` types with a floating-point representation type.
@@ -391,6 +392,14 @@ The available presentation types (*chrono_type*) are:
 |         | decimal number of days without padding. Otherwise, the day of the  |
 |         | year as a decimal number. Jan 1 is 001. If the result is less than |
 |         | three digits, it is left-padded with 0 to three digits.            |
++---------+--------------------------------------------------------------------+
+| ``'k'`` | The hour (24-hour clock) as a decimal number. If the result is a   |
+|         | single digit, it is prefixed with a space. The modified command    |
+|         | ``%Ok`` produces the locale's alternative representation.          |
++---------+--------------------------------------------------------------------+
+| ``'l'`` | The hour (12-hour clock) as a decimal number. If the result is a   |
+|         | single digit, it is prefixed with a space. The modified command    |
+|         | ``%Ol`` produces the locale's alternative representation.          |
 +---------+--------------------------------------------------------------------+
 | ``'m'`` | The month as a decimal number. Jan is 01. If the result is a       |
 |         | single digit, it is prefixed with 0. The modified command ``%Om``  |
