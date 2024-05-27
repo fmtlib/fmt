@@ -489,11 +489,11 @@ The available padding modifiers (*padding_modifier*) are:
 +---------+--------------------------------------------------------------------+
 | Type    | Meaning                                                            |
 +=========+====================================================================+
-| ``'-'`` | Do not pad the field                                               |
+| ``'-'`` | Pad a numeric result with spaces.                                  |
 +---------+--------------------------------------------------------------------+
-| ``'_'`` | Pad with spaces                                                    |
+| ``'_'`` | Do not pad a numeric result string.                                |
 +---------+--------------------------------------------------------------------+
-| ``'0'`` | Pad wish zeros                                                     |
+| ``'0'`` | Pad a numeric result string with zeros.                            |
 +---------+--------------------------------------------------------------------+
 
 Currently, these modifiers are only supported for the ``'H', 'I', 'M', 'S', 'U', 'V'``
