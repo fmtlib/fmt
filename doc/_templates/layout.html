@@ -4,7 +4,6 @@
     <meta name="description" content="A modern formatting library">
     <meta name="keywords" content="C++, formatting, printf, string, library">
     <meta name="author" content="Victor Zverovich">
-    <link rel="stylesheet" href="_static/bootstrap.min.css">
     <link rel="stylesheet" href="_static/fmt.css">
     {# Google Analytics #}
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-20116650-4"></script>
@@ -33,9 +32,7 @@
 
 {% block header %}
 <nav class="navbar navbar-expand-md">
-  {# Bootstrap's container has been renamed to tb-container to avoid a
-     conflict with Sphinx. #}
-  <div class="tb-container">
+  <div class="container">
     <a class="navbar-brand" href="index.html">{fmt}</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
             data-bs-target="#navbarSupportedContent"
@@ -78,7 +75,7 @@
 </nav>
 {% if pagename == "index" %}
 {% set download_url = 'https://github.com/fmtlib/fmt/releases/download' %}
-<div class="tb-container fmt-banner p-5">
+<div class="container-fluid fmt-banner p-5">
   <h1>{fmt}</h1>
   <p class="lead">A modern formatting library</p>
   <div class="btn-group">
