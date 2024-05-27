@@ -1,6 +1,6 @@
 $header-bg: #094d75;
 
-.jumbotron {
+.fmt-banner {
   background-image:
     linear-gradient(to bottom, $header-bg 50%, darken($header-bg, 2%) 50%);
   background-size: 100% 4px;
@@ -8,6 +8,13 @@ $header-bg: #094d75;
   background-repeat: repeat-y;
   color: white;
   text-align: center;
+}
+
+.content, .fmt-navbar-content {
+  @extend .col-md-10;
+  @extend .offset-md-1;
+  @extend .col-lg-8;
+  @extend .offset-lg-2;
 }
 
 @import 'bootstrap/scss/bootstrap';
@@ -29,12 +36,12 @@ div.sphinxsidebar {
 }
 
 // Keep content not too wide for better readability.
-//.navbar-content, .content {
-//  @include make-md-column-offset(1);
-//  @include make-md-column(10);
-//  @include make-lg-column-offset(2);
-//  @include make-lg-column(8);
-//}
+.navbar-content, .content {
+  @include make-md-column-offset(1);
+  @include make-md-column(10);
+  @include make-lg-column-offset(2);
+  @include make-lg-column(8);
+}
 
 .footer {
   padding-top: 20px;
