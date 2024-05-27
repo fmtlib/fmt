@@ -318,9 +318,10 @@ Format specifications for chrono duration and time point types as well as
 .. productionlist:: sf
    chrono_format_spec: [[`fill`]`align`][`width`]["." `precision`][`chrono_specs`]
    chrono_specs: [`chrono_specs`] `conversion_spec` | `chrono_specs` `literal_char`
-   conversion_spec: "%" [`modifier`] `chrono_type`
+   conversion_spec: "%" [`padding_modifier`] [`locale_modifier`] `chrono_type`
    literal_char: <a character other than '{', '}' or '%'>
-   modifier: "E" | "O"
+   locale_modifier: "E" | "O"
+   padding_modifier: "E" | "O"
    chrono_type: "a" | "A" | "b" | "B" | "c" | "C" | "d" | "D" | "e" | "F" |
               : "g" | "G" | "h" | "H" | "I" | "j" | "m" | "M" | "n" | "p" |
               : "q" | "Q" | "r" | "R" | "S" | "t" | "T" | "u" | "U" | "V" |
@@ -482,6 +483,21 @@ The available presentation types (*chrono_type*) are:
 
 Specifiers that have a calendaric component such as ``'d'`` (the day of month)
 are valid only for ``std::tm`` and time points but not durations.
+
+The available padding modifiers (*padding_modifier*) are:
+
++---------+--------------------------------------------------------------------+
+| Type    | Meaning                                                            |
++=========+====================================================================+
+| ``'-'`` | Do not pad the field                                               |
++---------+--------------------------------------------------------------------+
+| ``'_'`` | Pad with spaces                                                    |
++---------+--------------------------------------------------------------------+
+| ``'0'`` | Pad wish zeros                                                     |
++---------+--------------------------------------------------------------------+
+
+Currently, these modifiers are only supported for the ``'H', 'I', 'M', 'S', 'U', 'V'``
+and ``'W'`` presentation types.
 
 .. range-specs:
 
