@@ -33,11 +33,9 @@ def create_build_env(venv_dir='virtualenv'):
   pip.install('six')
   # See: https://github.com/sphinx-doc/sphinx/issues/9777
   pip.install('docutils==0.17.1')
-  # Jinja2 >= 3.1 incompatible with sphinx 3.3.0
-  # See: https://github.com/sphinx-doc/sphinx/issues/10291
-  pip.install('Jinja2<3.1')
-  pip.install('sphinx==3.3.0')
-  pip.install('michaeljones/breathe', 'v4.25.0')
+  pip.install('Jinja2')
+  pip.install('sphinx==5.0.2')
+  pip.install('michaeljones/breathe', 'v4.35.0')
 
 def build_docs(version='dev', **kwargs):
   doc_dir = kwargs.get('doc_dir', os.path.dirname(os.path.realpath(__file__)))
@@ -109,14 +107,13 @@ def build_docs(version='dev', **kwargs):
               '-Aversion=' + version, '-Aversions=' + ','.join(main_versions),
               '-b', 'html', doc_dir, html_dir])
   try:
-    check_call(['lessc', '--verbose', '--clean-css',
-                '--include-path=' + os.path.join(doc_dir, 'bootstrap'),
-                os.path.join(doc_dir, 'fmt.less'),
+    check_call(['sass',
+                os.path.join(doc_dir, 'fmt.scss'),
                 os.path.join(html_dir, '_static', 'fmt.css')])
   except OSError as e:
     if e.errno != errno.ENOENT:
       raise
-    print('lessc not found; make sure that Less (http://lesscss.org/) ' +
+    print('sass not found; make sure that sass (https://sass-lang.com/) ' +
           'is installed')
     sys.exit(1)
   return html_dir

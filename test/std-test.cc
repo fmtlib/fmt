@@ -300,6 +300,13 @@ TEST(std_test, exception) {
 #endif
 }
 
+#if FMT_USE_RTTI
+TEST(std_test, type_info) {
+  EXPECT_EQ(fmt::format("{}", typeid(std::runtime_error)),
+            "std::runtime_error");
+}
+#endif
+
 TEST(std_test, format_bit_reference) {
   std::bitset<2> bs(1);
   EXPECT_EQ(fmt::format("{} {}", bs[0], bs[1]), "true false");

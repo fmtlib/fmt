@@ -8,7 +8,7 @@
     :license: BSD, see LICENSE for details.
 #}
 {%- block doctype -%}
-<!DOCTYPE html>
+<!doctype html>
 {%- endblock %}
 {%- set reldelim1 = reldelim1 is not defined and ' &raquo;' or reldelim1 %}
 {%- set reldelim2 = reldelim2 is not defined and ' |' or reldelim2 %}
@@ -99,28 +99,21 @@
     {%- for scriptfile in script_files %}
     {{ js_tag(scriptfile) }}
     {%- endfor %}
-{%- endmacro %}
-
-{%- macro css() %}
-    <link rel="stylesheet" href="{{ pathto('_static/' + style, 1) }}" type="text/css" />
-    <link rel="stylesheet" href="{{ pathto('_static/pygments.css', 1) }}" type="text/css" />
-    {%- for cssfile in css_files %}
-    <link rel="stylesheet" href="{{ pathto(cssfile, 1) }}" type="text/css" />
-    {%- endfor %}
-{%- endmacro %}
+{%- endmacro -%}
 
 <html lang="en">
   <head>
-    <meta charset="{{ encoding }}">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    {# The above 3 meta tags *must* come first in the head; any other head content
-       must come *after* these tags. #}
+    {# The above meta tags *must* come first in the head; any other head content
+       must come *after* these tags. -#}
     {{ metatags }}
     {%- block htmltitle %}
     <title>{{ title|striptags|e }}{{ titlesuffix }}</title>
     {%- endblock %}
-    {{ css() }}
+    {% for cssfile in css_files %}
+    <link rel="stylesheet" href="{{ pathto(cssfile, 1) }}" />
+    {%- endfor %}
     {%- if not embedded %}
     {{ script() }}
     {%- if use_opensearch %}
@@ -132,7 +125,7 @@
     <link rel="shortcut icon" href="{{ pathto('_static/' + favicon, 1) }}"/>
     {%- endif %}
     {%- endif %}
-{%- block linktags %}
+{% block linktags %}
     {%- if hasdoc('about') %}
     <link rel="author" title="{{ _('About these documents') }}" href="{{ pathto('about') }}" />
     {%- endif %}
@@ -154,7 +147,7 @@
     {%- if prev %}
     <link rel="prev" title="{{ prev.title|striptags|e }}" href="{{ prev.link|e }}" />
     {%- endif %}
-{%- endblock %}
+{% endblock %}
 {%- block extrahead %} {% endblock %}
   </head>
   <body role="document">

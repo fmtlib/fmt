@@ -30,6 +30,10 @@ jobs:
           - cxx: g++-10
             build_type: Debug
             std: 17
+          - cxx: g++-11
+            build_type: Debug
+            std: 20
+            install: sudo apt install g++-11
           - cxx: clang++-8
             build_type: Debug
             std: 17
@@ -67,6 +71,11 @@ jobs:
         # sudo apt-add-repository 'deb http://azure.archive.ubuntu.com/ubuntu/ bionic-updates main'
         # sudo apt-add-repository 'deb http://azure.archive.ubuntu.com/ubuntu/ bionic-updates universe'
       if: ${{ matrix.cxx == 'g++-4.8' }}
+
+    - name: Add repositories for newer GCC
+      run: |
+        sudo apt-add-repository ppa:ubuntu-toolchain-r/test
+      if: ${{ matrix.cxx == 'g++-11' }}
 
     - name: Add ubuntu mirrors
       run: |

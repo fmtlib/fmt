@@ -20,6 +20,7 @@
 
 FMT_BEGIN_NAMESPACE
 
+FMT_EXPORT
 enum class range_format { disabled, map, set, sequence, string, debug_string };
 
 namespace detail {
@@ -504,6 +505,7 @@ struct range_formatter<
   }
 };
 
+FMT_EXPORT
 template <typename T, typename Char, typename Enable = void>
 struct range_format_kind
     : conditional_t<
