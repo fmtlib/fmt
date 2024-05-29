@@ -320,8 +320,8 @@ Format specifications for chrono duration and time point types as well as
    chrono_specs: [`chrono_specs`] `conversion_spec` | `chrono_specs` `literal_char`
    conversion_spec: "%" [`padding_modifier`] [`locale_modifier`] `chrono_type`
    literal_char: <a character other than '{', '}' or '%'>
+   padding_modifier: "-" | "_"  | "0"
    locale_modifier: "E" | "O"
-   padding_modifier: "E" | "O"
    chrono_type: "a" | "A" | "b" | "B" | "c" | "C" | "d" | "D" | "e" | "F" |
               : "g" | "G" | "h" | "H" | "I" | "j" | "m" | "M" | "n" | "p" |
               : "q" | "Q" | "r" | "R" | "S" | "t" | "T" | "u" | "U" | "V" |
