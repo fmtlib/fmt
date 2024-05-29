@@ -30,15 +30,18 @@ auto unwrap(const std::reference_wrapper<T>& v) -> const T& {
   return static_cast<const T&>(v);
 }
 
-class dynamic_arg_list {
-  // Workaround for clang's -Wweak-vtables. Unlike for regular classes, for
-  // templates it doesn't complain about inability to deduce single translation
-  // unit for placing vtable. So storage_node_base is made a fake template.
-  template <typename = void> struct node {
-    virtual ~node() = default;
-    std::unique_ptr<node<>> next;
-  };
+// node is defined outside dynamic_arg_list to workaround a C2504 bug in MSVC
+// 2022 (v17.10.0).
+//
+// Workaround for clang's -Wweak-vtables. Unlike for regular classes, for
+// templates it doesn't complain about inability to deduce single translation
+// unit for placing vtable. So node is made a fake template.
+template <typename = void> struct node {
+  virtual ~node() = default;
+  std::unique_ptr<node<>> next;
+};
 
+class dynamic_arg_list {
   template <typename T> struct typed_node : node<> {
     T value;
 

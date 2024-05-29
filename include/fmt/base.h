@@ -149,6 +149,15 @@ import std;
 #  define FMT_USE_NONTYPE_TEMPLATE_ARGS 0
 #endif
 
+// Detect C++20 concepts
+#ifdef FMT_USE_CONCEPTS
+// Use the provided definition.
+#elif defined(__cpp_concepts)
+#  define FMT_USE_CONCEPTS 1
+#else
+#  define FMT_USE_CONCEPTS 0
+#endif
+
 // Check if exceptions are disabled.
 #ifdef FMT_EXCEPTIONS
 // Use the provided definition.
@@ -2006,6 +2015,11 @@ template <typename T, typename Char = char>
 using is_formattable = bool_constant<!std::is_base_of<
     detail::unformattable, decltype(detail::arg_mapper<buffered_context<Char>>()
                                         .map(std::declval<T&>()))>::value>;
+
+#if FMT_USE_CONCEPTS
+template <typename T, typename Char = char>
+concept formattable = is_formattable<remove_reference_t<T>, Char>::value;
+#endif
 
 /**
   \rst
