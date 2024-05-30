@@ -1,6 +1,6 @@
 # Format String Syntax {#syntax}
 
-[Formatting functions](api) such as `fmt::format` and `fmt::print` use the same
+[Formatting functions](api.md) such as `fmt::format` and `fmt::print` use the same
 format string syntax described in this section.
 
 Format strings contain "replacement fields" surrounded by curly braces `{}`.
@@ -11,15 +11,15 @@ literal text, it can be escaped by doubling: `{{` and `}}`.
 The grammar for a replacement field is as follows:
 
 <a id="replacement-field"></a>
-<code class="grammar">
-replacement_field ::= "{" [arg_id] [":" ([format_spec](#format-spec) | [chrono_format_spec](#chrono-format-spec))] "}"
+<pre>
+replacement_field ::= "{" [arg_id] [":" (<a href="#format-spec">format_spec</a> | <a href="#chrono-format-spec">chrono_format_spec</a>)] "}"
 arg_id            ::= integer | identifier
 integer           ::= digit+
 digit             ::= "0"..."9"
 identifier        ::= id_start id_continue*
 id_start          ::= "a"..."z" | "A"..."Z" | "_"
 id_continue       ::= id_start | digit
-</code>
+</pre>
 
 In less formal terms, the replacement field can start with an *arg_id* that
 specifies the argument whose value is to be formatted and inserted into the
@@ -70,7 +70,7 @@ The general form of a *standard format specifier* is:
 
 <a id="format-spec"></a>
 <code class="grammar">
-format_spec ::= [[fill]align][sign]["#"]["0"][width]["." precision]["L"][type]
+format_spec ::= [[fill]align]\[sign]["#"]\["0"][width]["." precision]["L"]\[type]
 fill        ::= <a character other than '{' or '}'\>
 align       ::= "<" | ">" | "^"
 sign        ::= "+" | "-" | " "
@@ -330,7 +330,7 @@ month) are valid only for `std::tm` and time points but not durations.
 Format specifications for range types have the following syntax:
 
 <code class="grammar">
-range_format_spec ::= ["n"][range_type][range_underlying_spec]
+range_format_spec ::= ["n"]\[range_type][range_underlying_spec]
 </code>
 
 The `'n'` option formats the range without the opening and closing
