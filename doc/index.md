@@ -9,7 +9,7 @@ What users say:
 > I’ve used both `boost::format` and `loki::SPrintf`, and neither felt like the
 > right answer. This does.
 
-## Format API {#format-api-intro}
+## Format API
 
 The format API is similar in spirit to the C `printf` family of function
 but is safer, simpler and several times
@@ -171,5 +171,5 @@ permissive MIT [license](https://github.com/fmtlib/fmt#license) allows
 using the library both in open-source and commercial projects.
 
 <a class="btn btn-success" href="https://github.com/fmtlib/fmt">
-  GitHubRepository
+  GitHub Repository
 </a>
