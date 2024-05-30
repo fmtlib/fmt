@@ -27,8 +27,8 @@ output instead of the replacement field. The *arg_id* is optionally followed
 by a *format_spec*, which is preceded by a colon `':'`. These specify a
 non-default format for the replacement value.
 
-See also the [Format Specification Mini-Language](#format-specification-mini-
-language) section.
+See also the [Format Specification Mini-Language
+](#format-specification-mini-language) section.
 
 If the numerical arg_ids in a format string are 0, 1, 2, \... in
 sequence, they can all be omitted (not just some) and the numbers 0, 1,
