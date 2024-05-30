@@ -1,4 +1,4 @@
-# Format String Syntax {#syntax}
+# Format String Syntax
 
 [Formatting functions](api.md) such as `fmt::format` and `fmt::print` use the same
 format string syntax described in this section.
@@ -38,9 +38,11 @@ Named arguments can be referred to by their names or indices.
 
 Some simple format string examples:
 
-    "First, thou shalt count to {0}" // References the first argument
-    "Bring me a {}"                  // Implicitly references the first argument
-    "From {} to {}"                  // Same as "From {0} to {1}"
+```c++
+"First, thou shalt count to {0}" // References the first argument
+"Bring me a {}"                  // Implicitly references the first argument
+"From {} to {}"                  // Same as "From {0} to {1}"
+```
 
 The *format_spec* field contains a specification of how the value should
 be presented, including such details as field width, alignment, padding,
@@ -55,7 +57,7 @@ certain positions within it. These nested replacement fields can contain
 only an argument id; format specifications are not allowed. This allows
 the formatting of a value to be dynamically specified.
 
-See the [Format Examples](#formatexamples) section for some examples.
+See the [Format Examples](#format-examples) section for some examples.
 
 ## Format Specification Mini-Language
 
@@ -81,12 +83,11 @@ type        ::= "a" | "A" | "b" | "B" | "c" | "d" | "e" | "E" | "f" | "F" |
                 "g" | "G" | "o" | "p" | "s" | "x" | "X" | "?"
 </pre>
 
-The *fill* character can be any Unicode code point other than `'{'` or
-`'}'`. The presence of a fill character is signaled by the character
-following it, which must be one of the alignment options. If the second
-character of *format_spec* is not a valid alignment option, then it is
-assumed that both the fill character and the alignment option are
-absent.
+The *fill* character can be any Unicode code point other than `'{'` or `'}'`.
+The presence of a fill character is signaled by the character following it,
+which must be one of the alignment options. If the second character of
+*format_spec* is not a valid alignment option, then it is assumed that both
+the fill character and the alignment option are absent.
 
 The meaning of the various alignment options is as follows:
 
@@ -257,14 +258,14 @@ The available presentation types for pointers are:
 | `'p'` | Pointer format. This is the default type for pointers and may be omitted. |
 | none  | The same as `'p'`.                                                        |
 
-## Chrono Format Specifications {#chrono-specs}
+## Chrono Format Specifications
 
 Format specifications for chrono duration and time point types as well
 as `std::tm` have the following syntax:
 
 <a id="chrono-format-spec"></a>
 <pre>
-chrono_format_spec ::= [[<a href="#replacement-field">fill</a>]<a href="#replacement-field">align</a>][<a href="#replacement-field">width</a>]["." <a href="#replacement-field">precision</a>][chrono_specs]
+chrono_format_spec ::= [[<a href="#format-spec">fill</a>]<a href="#format-spec">align</a>][<a href="#format-spec">width</a>]["." <a href="#format-spec">precision</a>][chrono_specs]
 chrono_specs       ::= [chrono_specs] conversion_spec | chrono_specs literal_char
 conversion_spec    ::= "%" [modifier] chrono_type
 literal_char       ::= <a character other than '{', '}' or '%'\>
@@ -358,24 +359,26 @@ characters or strings are printed according to the provided specification.
 
 Examples:
 
-    fmt::format("{}", std::vector{10, 20, 30});
-    // Result: [10, 20, 30]
-    fmt::format("{::#x}", std::vector{10, 20, 30});
-    // Result: [0xa, 0x14, 0x1e]
-    fmt::format("{}", vector{'h', 'e', 'l', 'l', 'o'});
-    // Result: ['h', 'e', 'l', 'l', 'o']
-    fmt::format("{:n}", vector{'h', 'e', 'l', 'l', 'o'});
-    // Result: 'h', 'e', 'l', 'l', 'o'
-    fmt::format("{:s}", vector{'h', 'e', 'l', 'l', 'o'});
-    // Result: "hello"
-    fmt::format("{:?s}", vector{'h', 'e', 'l', 'l', 'o', '\n'});
-    // Result: "hello\n"
-    fmt::format("{::}", vector{'h', 'e', 'l', 'l', 'o'});
-    // Result: [h, e, l, l, o]
-    fmt::format("{::d}", vector{'h', 'e', 'l', 'l', 'o'});
-    // Result: [104, 101, 108, 108, 111]
+```c++
+fmt::print("{}", std::vector{10, 20, 30});
+// Output: [10, 20, 30]
+fmt::print("{::#x}", std::vector{10, 20, 30});
+// Output: [0xa, 0x14, 0x1e]
+fmt::print("{}", std::vector{'h', 'e', 'l', 'l', 'o'});
+// Output: ['h', 'e', 'l', 'l', 'o']
+fmt::print("{:n}", std::vector{'h', 'e', 'l', 'l', 'o'});
+// Output: 'h', 'e', 'l', 'l', 'o'
+fmt::print("{:s}", std::vector{'h', 'e', 'l', 'l', 'o'});
+// Output: "hello"
+fmt::print("{:?s}", std::vector{'h', 'e', 'l', 'l', 'o', '\n'});
+// Output: "hello\n"
+fmt::print("{::}", std::vector{'h', 'e', 'l', 'l', 'o'});
+// Output: [h, e, l, l, o]
+fmt::print("{::d}", std::vector{'h', 'e', 'l', 'l', 'o'});
+// Output: [104, 101, 108, 108, 111]
+```
 
-## Format Examples {#formatexamples}
+## Format Examples
 
 This section contains examples of the format syntax and comparison with
 the printf formatting.
@@ -389,88 +392,110 @@ the following examples.
 
 Accessing arguments by position:
 
-    fmt::format("{0}, {1}, {2}", 'a', 'b', 'c');
-    // Result: "a, b, c"
-    fmt::format("{}, {}, {}", 'a', 'b', 'c');
-    // Result: "a, b, c"
-    fmt::format("{2}, {1}, {0}", 'a', 'b', 'c');
-    // Result: "c, b, a"
-    fmt::format("{0}{1}{0}", "abra", "cad");  // arguments' indices can be repeated
-    // Result: "abracadabra"
+```c++
+fmt::format("{0}, {1}, {2}", 'a', 'b', 'c');
+// Result: "a, b, c"
+fmt::format("{}, {}, {}", 'a', 'b', 'c');
+// Result: "a, b, c"
+fmt::format("{2}, {1}, {0}", 'a', 'b', 'c');
+// Result: "c, b, a"
+fmt::format("{0}{1}{0}", "abra", "cad");  // arguments' indices can be repeated
+// Result: "abracadabra"
+```
 
 Aligning the text and specifying a width:
 
-    fmt::format("{:<30}", "left aligned");
-    // Result: "left aligned                  "
-    fmt::format("{:>30}", "right aligned");
-    // Result: "                 right aligned"
-    fmt::format("{:^30}", "centered");
-    // Result: "           centered           "
-    fmt::format("{:*^30}", "centered");  // use '*' as a fill char
-    // Result: "***********centered***********"
+```c++
+fmt::format("{:<30}", "left aligned");
+// Result: "left aligned                  "
+fmt::format("{:>30}", "right aligned");
+// Result: "                 right aligned"
+fmt::format("{:^30}", "centered");
+// Result: "           centered           "
+fmt::format("{:*^30}", "centered");  // use '*' as a fill char
+// Result: "***********centered***********"
+```
 
 Dynamic width:
 
-    fmt::format("{:<{}}", "left aligned", 30);
-    // Result: "left aligned                  "
+```c++
+fmt::format("{:<{}}", "left aligned", 30);
+// Result: "left aligned                  "
+```
 
 Dynamic precision:
 
-    fmt::format("{:.{}f}", 3.14, 1);
-    // Result: "3.1"
+```c++
+fmt::format("{:.{}f}", 3.14, 1);
+// Result: "3.1"
+```
 
 Replacing `%+f`, `%-f`, and `% f` and specifying a sign:
 
-    fmt::format("{:+f}; {:+f}", 3.14, -3.14);  // show it always
-    // Result: "+3.140000; -3.140000"
-    fmt::format("{: f}; {: f}", 3.14, -3.14);  // show a space for positive numbers
-    // Result: " 3.140000; -3.140000"
-    fmt::format("{:-f}; {:-f}", 3.14, -3.14);  // show only the minus -- same as '{:f}; {:f}'
-    // Result: "3.140000; -3.140000"
+```c++
+fmt::format("{:+f}; {:+f}", 3.14, -3.14);  // show it always
+// Result: "+3.140000; -3.140000"
+fmt::format("{: f}; {: f}", 3.14, -3.14);  // show a space for positive numbers
+// Result: " 3.140000; -3.140000"
+fmt::format("{:-f}; {:-f}", 3.14, -3.14);  // show only the minus -- same as '{:f}; {:f}'
+// Result: "3.140000; -3.140000"
+```
 
 Replacing `%x` and `%o` and converting the value to different bases:
 
-    fmt::format("int: {0:d};  hex: {0:x};  oct: {0:o}; bin: {0:b}", 42);
-    // Result: "int: 42;  hex: 2a;  oct: 52; bin: 101010"
-    // with 0x or 0 or 0b as prefix:
-    fmt::format("int: {0:d};  hex: {0:#x};  oct: {0:#o};  bin: {0:#b}", 42);
-    // Result: "int: 42;  hex: 0x2a;  oct: 052;  bin: 0b101010"
+```c++
+fmt::format("int: {0:d};  hex: {0:x};  oct: {0:o}; bin: {0:b}", 42);
+// Result: "int: 42;  hex: 2a;  oct: 52; bin: 101010"
+// with 0x or 0 or 0b as prefix:
+fmt::format("int: {0:d};  hex: {0:#x};  oct: {0:#o};  bin: {0:#b}", 42);
+// Result: "int: 42;  hex: 0x2a;  oct: 052;  bin: 0b101010"
+```
 
 Padded hex byte with prefix and always prints both hex characters:
 
-    fmt::format("{:#04x}", 0);
-    // Result: "0x00"
+```c++
+fmt::format("{:#04x}", 0);
+// Result: "0x00"
+```
 
 Box drawing using Unicode fill:
 
-    fmt::print(
-      "┌{0:─^{2}}┐\n"
-      "│{1: ^{2}}│\n"
-      "└{0:─^{2}}┘\n", "", "Hello, world!", 20);
+```c++
+fmt::print(
+    "┌{0:─^{2}}┐\n"
+    "│{1: ^{2}}│\n"
+    "└{0:─^{2}}┘\n", "", "Hello, world!", 20);
+```
 
 prints:
 
-    ┌────────────────────┐
-    │   Hello, world!    │
-    └────────────────────┘
+```
+┌────────────────────┐
+│   Hello, world!    │
+└────────────────────┘
+```
 
 Using type-specific formatting:
 
-    #include <fmt/chrono.h>
+```c++
+#include <fmt/chrono.h>
 
-    auto t = tm();
-    t.tm_year = 2010 - 1900;
-    t.tm_mon = 7;
-    t.tm_mday = 4;
-    t.tm_hour = 12;
-    t.tm_min = 15;
-    t.tm_sec = 58;
-    fmt::print("{:%Y-%m-%d %H:%M:%S}", t);
-    // Prints: 2010-08-04 12:15:58
+auto t = tm();
+t.tm_year = 2010 - 1900;
+t.tm_mon = 7;
+t.tm_mday = 4;
+t.tm_hour = 12;
+t.tm_min = 15;
+t.tm_sec = 58;
+fmt::print("{:%Y-%m-%d %H:%M:%S}", t);
+// Prints: 2010-08-04 12:15:58
+```
 
 Using the comma as a thousands separator:
 
-    #include <fmt/format.h>
+```c++
+#include <fmt/format.h>
 
-    auto s = fmt::format(std::locale("en_US.UTF-8"), "{:L}", 1234567890);
-    // s == "1,234,567,890"
+auto s = fmt::format(std::locale("en_US.UTF-8"), "{:L}", 1234567890);
+// s == "1,234,567,890"
+```
