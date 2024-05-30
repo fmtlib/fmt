@@ -9,13 +9,13 @@ What users say:
 > I’ve used both `boost::format` and `loki::SPrintf`, and neither felt like the
 > right answer. This does.
 
-## Format API {#format-api-intro}
+## Format API
 
 The format API is similar in spirit to the C `printf` family of function
 but is safer, simpler and several times
 [faster](https://vitaut.net/posts/2020/fast-int-to-string-revisited/)
 than common standard library implementations.
-The [format string syntax](syntax) is similar to the one used by
+The [format string syntax](syntax.md) is similar to the one used by
 [str.format](https://docs.python.org/3/library/stdtypes.html#str.format)
 in Python:
 
@@ -90,7 +90,7 @@ format(FMT_STRING("The answer is {:d}"), "forty-two");
 ```
 
 reports a compile-time error on compilers that support relaxed `constexpr`.
-See [Compile-Time Format String Checks](api#compile-time-format-string-checks)
+See [Compile-Time Format String Checks](api.md#compile-time-format-string-checks)
 for details.
 
 The following code
@@ -171,5 +171,5 @@ permissive MIT [license](https://github.com/fmtlib/fmt#license) allows
 using the library both in open-source and commercial projects.
 
 <a class="btn btn-success" href="https://github.com/fmtlib/fmt">
-  GitHubRepository
+  GitHub Repository
 </a>
