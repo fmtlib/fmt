@@ -1,9 +1,0 @@
-code.grammar {
-  display: block;
-  padding: 1em;
-  font-size: .8em;
-}
-
-code.grammar::first-line {
-  line-height: 0;
-}
