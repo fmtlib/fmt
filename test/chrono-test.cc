@@ -1004,11 +1004,31 @@ TEST(chrono_test, glibc_extensions) {
   }
 
   {
-    const auto d = std::chrono::duration<double>(3.14);
+    auto d = std::chrono::duration<double>(3.14);
     EXPECT_EQ(fmt::format("{:%S}", d), "03.140000");
     EXPECT_EQ(fmt::format("{:%0S}", d), "03.140000");
     EXPECT_EQ(fmt::format("{:%_S}", d), " 3.140000");
     EXPECT_EQ(fmt::format("{:%-S}", d), "3.140000");
+  }
+
+  {
+    auto t = std::tm();
+    t.tm_yday = 7;
+    EXPECT_EQ(fmt::format("{:%U,%W,%V}", t), "02,01,01");
+    EXPECT_EQ(fmt::format("{:%0U,%0W,%0V}", t), "02,01,01");
+    EXPECT_EQ(fmt::format("{:%_U,%_W,%_V}", t), " 2, 1, 1");
+    EXPECT_EQ(fmt::format("{:%-U,%-W,%-V}", t), "2,1,1");
+  }
+
+  {
+    auto t = std::tm();
+    t.tm_mday = 7;
+    EXPECT_EQ(fmt::format("{:%d}", t), "07");
+    EXPECT_EQ(fmt::format("{:%0d}", t), "07");
+    EXPECT_EQ(fmt::format("{:%_d}", t), " 7");
+    EXPECT_EQ(fmt::format("{:%-d}", t), "7");
+
+    EXPECT_EQ(fmt::format("{:%e}", t), " 7");
   }
 }
 
