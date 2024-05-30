@@ -344,7 +344,7 @@ The available presentation types for `range_type` are:
 |--------|------------------------------------------------------------|
 | none   | Default format.                                            |
 | `'s'`  | String format. The range is formatted as a string.         |
-| `'?s'` | Debug format. The range is formatted as an escaped string. |
+| `'?⁠s'` | Debug format. The range is formatted as an escaped string. |
 
 If `range_type` is `'s'` or `'?s'`, the range element type must be a character
 type. The `'n'` option and `range_underlying_spec` are mutually exclusive with
