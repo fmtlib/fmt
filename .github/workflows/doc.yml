@@ -32,4 +32,4 @@ jobs:
       working-directory: ${{runner.workspace}}/build
       env:
         KEY: ${{secrets.KEY}}
-      run: $GITHUB_WORKSPACE/support/build-docs.py
+      run: # $GITHUB_WORKSPACE/support/build-docs.py
