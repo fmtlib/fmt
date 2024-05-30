@@ -91,11 +91,34 @@ the fill character and the alignment option are absent.
 
 The meaning of the various alignment options is as follows:
 
-| Option | Meaning                                                                                                |
-|--------|--------------------------------------------------------------------------------------------------------|
-| `'<'`  | Forces the field to be left-aligned within the available space (this is the default for most objects). |
-| `'>'`  | Forces the field to be right-aligned within the available space (this is the default for numbers).     |
-| `'^'`  | Forces the field to be centered within the available space.                                            |
+<table>
+<thead>
+<tr>
+  <th>Option</th>
+  <th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>'<'</code></td>
+  <td>
+    Forces the field to be left-aligned within the available space (this is the
+    default for most objects).
+  </td>
+</tr>
+<tr>
+  <td><code>'>'</code></td>
+  <td>
+    Forces the field to be right-aligned within the available space (this is
+    the default for numbers).
+  </td>
+</tr>
+<tr>
+  <td><code>'^'</code></td>
+  <td>Forces the field to be centered within the available space.</td>
+</tr>
+</tbody>
+</table>
 
 Note that unless a minimum field width is defined, the field width will
 always be the same size as the data to fill it, so that the alignment
