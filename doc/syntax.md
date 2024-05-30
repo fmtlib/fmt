@@ -27,7 +27,8 @@ output instead of the replacement field. The *arg_id* is optionally followed
 by a *format_spec*, which is preceded by a colon `':'`. These specify a
 non-default format for the replacement value.
 
-See also the [Format Specification Mini-Language](#formatspec) section.
+See also the [Format Specification Mini-Language](#format-specification-mini-
+language) section.
 
 If the numerical arg_ids in a format string are 0, 1, 2, \... in
 sequence, they can all be omitted (not just some) and the numbers 0, 1,
@@ -56,7 +57,7 @@ the formatting of a value to be dynamically specified.
 
 See the [Format Examples](#formatexamples) section for some examples.
 
-## Format Specification Mini-Language {#formatspec}
+## Format Specification Mini-Language
 
 "Format specifications" are used within replacement fields contained within a
 format string to define how individual values are presented. Each formattable
@@ -69,16 +70,16 @@ supported by the numeric types.
 The general form of a *standard format specifier* is:
 
 <a id="format-spec"></a>
-<code class="grammar">
-format_spec ::= [[fill]align]\[sign]["#"]\["0"][width]["." precision]["L"]\[type]
+<pre>
+format_spec ::= [[fill]align][sign]["#"]["0"][width]["." precision]["L"][type]
 fill        ::= <a character other than '{' or '}'\>
 align       ::= "<" | ">" | "^"
 sign        ::= "+" | "-" | " "
-width       ::= [integer](#replacement-field) | "{" [[arg_id](#replacement-field)] "}"
-precision   ::= [integer](#replacement-field) | "{" [[arg_id](#replacement-field)] "}"
+width       ::= <a href="#replacement-field">integer</a> | "{" [<a href="#replacement-field">arg_id</a>] "}"
+precision   ::= <a href="#replacement-field">integer</a> | "{" [<a href="#replacement-field">arg_id</a>] "}"
 type        ::= "a" | "A" | "b" | "B" | "c" | "d" | "e" | "E" | "f" | "F" |
                 "g" | "G" | "o" | "p" | "s" | "x" | "X" | "?"
-</code>
+</pre>
 
 The *fill* character can be any Unicode code point other than `'{'` or
 `'}'`. The presence of a fill character is signaled by the character
@@ -262,8 +263,8 @@ Format specifications for chrono duration and time point types as well
 as `std::tm` have the following syntax:
 
 <a id="chrono-format-spec"></a>
-<code class="grammar">
-chrono_format_spec ::= \[\[[fill](#replacement-field)][align](#replacement-field)][[width](#replacement-field)]["." [precision](#replacement-field)][chrono_specs]
+<pre>
+chrono_format_spec ::= [[<a href="#replacement-field">fill</a>]<a href="#replacement-field">align</a>][<a href="#replacement-field">width</a>]["." <a href="#replacement-field">precision</a>][chrono_specs]
 chrono_specs       ::= [chrono_specs] conversion_spec | chrono_specs literal_char
 conversion_spec    ::= "%" [modifier] chrono_type
 literal_char       ::= <a character other than '{', '}' or '%'\>
@@ -272,7 +273,7 @@ chrono_type        ::= "a" | "A" | "b" | "B" | "c" | "C" | "d" | "D" | "e" | "F"
                        "g" | "G" | "h" | "H" | "I" | "j" | "m" | "M" | "n" | "p" |
                        "q" | "Q" | "r" | "R" | "S" | "t" | "T" | "u" | "U" | "V" |
                        "w" | "W" | "x" | "X" | "y" | "Y" | "z" | "Z" | "%"
-</code>
+</pre>
 
 Literal chars are copied unchanged to the output. Precision is valid
 only for `std::chrono::duration` types with a floating-point
@@ -329,9 +330,9 @@ month) are valid only for `std::tm` and time points but not durations.
 
 Format specifications for range types have the following syntax:
 
-<code class="grammar">
-range_format_spec ::= ["n"]\[range_type][range_underlying_spec]
-</code>
+<pre>
+range_format_spec ::= ["n"][range_type][range_underlying_spec]
+</pre>
 
 The `'n'` option formats the range without the opening and closing
 brackets.
