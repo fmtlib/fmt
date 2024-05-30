@@ -74,7 +74,7 @@ The general form of a *standard format specifier* is:
 <a id="format-spec"></a>
 <pre>
 format_spec ::= [[fill]align][sign]["#"]["0"][width]["." precision]["L"][type]
-fill        ::= <a character other than '{' or '}'\>
+fill        ::= &lt;a character other than '{' or '}'>
 align       ::= "<" | ">" | "^"
 sign        ::= "+" | "-" | " "
 width       ::= <a href="#replacement-field">integer</a> | "{" [<a href="#replacement-field">arg_id</a>] "}"
@@ -268,7 +268,7 @@ as `std::tm` have the following syntax:
 chrono_format_spec ::= [[<a href="#format-spec">fill</a>]<a href="#format-spec">align</a>][<a href="#format-spec">width</a>]["." <a href="#format-spec">precision</a>][chrono_specs]
 chrono_specs       ::= [chrono_specs] conversion_spec | chrono_specs literal_char
 conversion_spec    ::= "%" [modifier] chrono_type
-literal_char       ::= <a character other than '{', '}' or '%'\>
+literal_char       ::= &lt;a character other than '{', '}' or '%'>
 modifier           ::= "E" | "O"
 chrono_type        ::= "a" | "A" | "b" | "B" | "c" | "C" | "d" | "D" | "e" | "F" |
                        "g" | "G" | "h" | "H" | "I" | "j" | "m" | "M" | "n" | "p" |
