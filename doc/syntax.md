@@ -379,58 +379,294 @@ representation type.
 
 The available presentation types (*chrono_type*) are:
 
-| Type  | Meaning                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-|-------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `'a'` | The abbreviated weekday name, e.g. "Sat". If the value does not contain a valid weekday, an exception of type `format_error` is thrown.                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `'A'` | The full weekday name, e.g. "Saturday". If the value does not contain a valid weekday, an exception of type `format_error` is thrown.                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `'b'` | The abbreviated month name, e.g. "Nov". If the value does not contain a valid month, an exception of type `format_error` is thrown.                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `'B'` | The full month name, e.g. "November". If the value does not contain a valid month, an exception of type `format_error` is thrown.                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `'c'` | The date and time representation, e.g. "Sat Nov 12 22:04:00 1955". The modified command `%Ec` produces the locale's alternate date and time representation.                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `'C'` | The year divided by 100 using floored division, e.g. "19". If the result is a single decimal digit, it is prefixed with 0. The modified command `%EC` produces the locale's alternative representation of the century.                                                                                                                                                                                                                                                                                                                                                                                   |
-| `'d'` | The day of month as a decimal number. If the result is a single decimal digit, it is prefixed with 0. The modified command `%Od` produces the locale's alternative representation.                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `'D'` | Equivalent to `%m/%d/%y`, e.g. "11/12/55".                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `'e'` | The day of month as a decimal number. If the result is a single decimal digit, it is prefixed with a space. The modified command `%Oe` produces the locale's alternative representation.                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `'F'` | Equivalent to `%Y-%m-%d`, e.g. "1955-11-12".                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `'g'` | The last two decimal digits of the ISO week-based year. If the result is a single digit it is prefixed by 0.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `'G'` | The ISO week-based year as a decimal number. If the result is less than four digits it is left-padded with 0 to four digits.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `'h'` | Equivalent to `%b`, e.g. "Nov".                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `'H'` | The hour (24-hour clock) as a decimal number. If the result is a single digit, it is prefixed with 0. The modified command `%OH` produces the locale's alternative representation.                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `'I'` | The hour (12-hour clock) as a decimal number. If the result is a single digit, it is prefixed with 0. The modified command `%OI` produces the locale's alternative representation.                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| `'j'` | If the type being formatted is a specialization of duration, the decimal number of days without padding. Otherwise, the day of the year as a decimal number. Jan 1 is 001. If the result is less than three digits, it is left-padded with 0 to three digits.                                                                                                                                                                                                                                                                                                                                               |
-| `'m'` | The month as a decimal number. Jan is 01. If the result is a single digit, it is prefixed with 0. The modified command `%Om` produces the locale's alternative representation.                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `'M'` | The minute as a decimal number. If the result is a single digit, it is prefixed with 0. The modified command `%OM` produces the locale's alternative representation.                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `'n'` | A new-line character.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `'p'` | The AM/PM designations associated with a 12-hour clock.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `'q'` | The duration's unit suffix.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `'Q'` | The duration's numeric value (as if extracted via `.count()`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `'r'` | The 12-hour clock time, e.g. "10:04:00 PM".                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| `'R'` | Equivalent to `%H:%M`, e.g. "22:04".                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `'S'` | Seconds as a decimal number. If the number of seconds is less than 10, the result is prefixed with 0. If the precision of the input cannot be exactly represented with seconds, then the format is a decimal floating-point number with a fixed format and a precision matching that of the precision of the input (or to a microseconds precision if the conversion to floating-point decimal seconds cannot be made within 18 fractional digits). The character for the decimal point is localized according to the locale. The modified command `%OS` produces the locale's alternative representation. |
-| `'t'` | A horizontal-tab character.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `'T'` | Equivalent to `%H:%M:%S`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `'u'` | The ISO weekday as a decimal number (1-7), where Monday is 1. The modified command `%Ou` produces the locale's alternative representation.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `'U'` | The week number of the year as a decimal number. The first Sunday of the year is the first day of week 01. Days of the same year prior to that are in week 00. If the result is a single digit, it is prefixed with 0. The modified command `%OU` produces the locale's alternative representation.                                                                                                                                                                                                                                                                                                        |
-| `'V'` | The ISO week-based week number as a decimal number. If the result is a single digit, it is prefixed with 0. The modified command `%OV` produces the locale's alternative representation.                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `'w'` | The weekday as a decimal number (0-6), where Sunday is 0. The modified command `%Ow` produces the locale's alternative representation.                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `'W'` | The week number of the year as a decimal number. The first Monday of the year is the first day of week 01. Days of the same year prior to that are in week 00. If the result is a single digit, it is prefixed with 0. The modified command `%OW` produces the locale's alternative representation.                                                                                                                                                                                                                                                                                                        |
-| `'x'` | The date representation, e.g. "11/12/55". The modified command `%Ex` produces the locale's alternate date representation.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `'X'` | The time representation, e.g. "10:04:00". The modified command `%EX` produces the locale's alternate time representation.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `'y'` | The last two decimal digits of the year. If the result is a single digit it is prefixed by 0. The modified command `%Oy` produces the locale's alternative representation. The modified command `%Ey` produces the locale's alternative representation of offset from `%EC` (year only).                                                                                                                                                                                                                                                                                                                  |
-| `'Y'` | The year as a decimal number. If the result is less than four digits it is left-padded with 0 to four digits. The modified command `%EY` produces the locale's alternative full year representation.                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `'z'` | The offset from UTC in the ISO 8601:2004 format. For example -0430 refers to 4 hours 30 minutes behind UTC. If the offset is zero, +0000 is used. The modified commands `%Ez` and `%Oz` insert a `:` between the hours and minutes: -04:30. If the offset information is not available, an exception of type `format_error` is thrown.                                                                                                                                                                                                                                                                      |
-| `'Z'` | The time zone abbreviation. If the time zone abbreviation is not available, an exception of type `format_error` is thrown.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `'%'` | A % character.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+<table>
+<tr>
+  <th>Type</th>
+  <th>Meaning</th>
+</tr>
+<tr>
+  <td><code>'a'</code></td>
+  <td>
+    The abbreviated weekday name, e.g. "Sat". If the value does not contain a
+    valid weekday, an exception of type <code>format_error</code> is thrown.
+  </td>
+</tr>
+<tr>
+  <td><code>'A'</code></td>
+  <td>
+    The full weekday name, e.g. "Saturday". If the value does not contain a
+    valid weekday, an exception of type <code>format_error</code> is thrown.
+  </td>
+</tr>
+<tr>
+  <td><code>'b'</code></td>
+  <td>
+    The abbreviated month name, e.g. "Nov". If the value does not contain a
+    valid month, an exception of type <code>format_error</code> is thrown.
+  </td>
+</tr>
+<tr>
+  <td><code>'B'</code></td>
+  <td>
+    The full month name, e.g. "November". If the value does not contain a valid
+    month, an exception of type <code>format_error</code> is thrown.
+  </td>
+</tr>
+<tr>
+  <td><code>'c'</code></td>
+  <td>
+    The date and time representation, e.g. "Sat Nov 12 22:04:00 1955". The
+    modified command <code>%Ec</code> produces the locale's alternate date and
+    time representation.
+  </td>
+</tr>
+<tr>
+  <td><code>'C'</code></td>
+  <td>
+    The year divided by 100 using floored division, e.g. "19". If the result
+    is a single decimal digit, it is prefixed with 0. The modified command
+    <code>%EC</code> produces the locale's alternative representation of the
+    century.
+  </td>
+</tr>
+<tr>
+  <td><code>'d'</code></td>
+  <td>
+    The day of month as a decimal number. If the result is a single decimal
+    digit, it is prefixed with 0. The modified command <code>%Od</code>
+    produces the locale's alternative representation.
+  </td>
+</tr>
+<tr>
+  <td><code>'D'</code></td>
+  <td>Equivalent to <code>%m/%d/%y</code>, e.g. "11/12/55".</td>
+</tr>
+<tr>
+  <td><code>'e'</code></td>
+  <td>
+    The day of month as a decimal number. If the result is a single decimal
+    digit, it is prefixed with a space. The modified command <code>%Oe</code>
+    produces the locale's alternative representation.
+  </td>
+</tr>
+<tr>
+  <td><code>'F'</code></td>
+  <td>Equivalent to <code>%Y-%m-%d</code>, e.g. "1955-11-12".</td>
+</tr>
+<tr>
+  <td><code>'g'</code></td>
+  <td>
+    The last two decimal digits of the ISO week-based year. If the result is a
+    single digit it is prefixed by 0.
+  </td>
+</tr>
+<tr>
+  <td><code>'G'</code></td>
+  <td>
+    The ISO week-based year as a decimal number. If the result is less than
+    four digits it is left-padded with 0 to four digits.
+  </td>
+</tr>
+<tr>
+  <td><code>'h'</code></td>
+  <td>Equivalent to <code>%b</code>, e.g. "Nov".</td>
+</tr>
+<tr>
+  <td><code>'H'</code></td>
+  <td>
+    The hour (24-hour clock) as a decimal number. If the result is a single
+    digit, it is prefixed with 0. The modified command <code>%OH</code>
+    produces the locale's alternative representation.
+  </td>
+</tr>
+<tr>
+  <td><code>'I'</code></td>
+  <td>
+    The hour (12-hour clock) as a decimal number. If the result is a single
+    digit, it is prefixed with 0. The modified command <code>%OI</code>
+    produces the locale's alternative representation.
+  </td>
+</tr>
+<tr>
+  <td><code>'j'</code></td>
+  <td>
+    If the type being formatted is a specialization of duration, the decimal
+    number of days without padding. Otherwise, the day of the year as a decimal
+    number. Jan 1 is 001. If the result is less than three digits, it is
+    left-padded with 0 to three digits.
+  </td>
+</tr>
+<tr>
+  <td><code>'m'</code></td>
+  <td>
+    The month as a decimal number. Jan is 01. If the result is a single digit,
+    it is prefixed with 0. The modified command <code>%Om</code> produces the
+    locale's alternative representation.
+  </td>
+</tr>
+<tr>
+  <td><code>'M'</code></td>
+  <td>
+    The minute as a decimal number. If the result is a single digit, it is
+    prefixed with 0. The modified command <code>%OM</code> produces the locale's
+    alternative representation.
+  </td>
+</tr>
+<tr>
+  <td><code>'n'</code></td>
+  <td>A new-line character.</td>
+</tr>
+<tr>
+  <td><code>'p'</code></td>
+  <td>The AM/PM designations associated with a 12-hour clock.</td>
+</tr>
+<tr>
+  <td><code>'q'</code></td>
+  <td>The duration's unit suffix.</td>
+</tr>
+<tr>
+  <td><code>'Q'</code></td>
+  <td>
+    The duration's numeric value (as if extracted via <code>.count()</code>).
+  </td>
+</tr>
+<tr>
+  <td><code>'r'</code></td>
+  <td>The 12-hour clock time, e.g. "10:04:00 PM".</td>
+</tr>
+<tr>
+  <td><code>'R'</code></td>
+  <td>Equivalent to <code>%H:%M</code>, e.g. "22:04".</td>
+</tr>
+<tr>
+  <td><code>'S'</code></td>
+  <td>
+    Seconds as a decimal number. If the number of seconds is less than 10, the
+    result is prefixed with 0. If the precision of the input cannot be exactly
+    represented with seconds, then the format is a decimal floating-point number
+    with a fixed format and a precision matching that of the precision of the
+    input (or to a microseconds precision if the conversion to floating-point
+    decimal seconds cannot be made within 18 fractional digits). The character
+    for the decimal point is localized according to the locale. The modified
+    command <code>%OS</code> produces the locale's alternative representation.
+  </td>
+</tr>
+<tr>
+  <td><code>'t'</code></td>
+  <td>A horizontal-tab character.</td>
+</tr>
+<tr>
+  <td><code>'T'</code></td>
+  <td>Equivalent to <code>%H:%M:%S</code>.</td>
+</tr>
+<tr>
+  <td><code>'u'</code></td>
+  <td>
+    The ISO weekday as a decimal number (1-7), where Monday is 1. The modified
+    command <code>%Ou</code> produces the locale's alternative representation.
+  </td>
+</tr>
+<tr>
+  <td><code>'U'</code></td>
+  <td>
+    The week number of the year as a decimal number. The first Sunday of the
+    year is the first day of week 01. Days of the same year prior to that are
+    in week 00. If the result is a single digit, it is prefixed with 0.
+    The modified command <code>%OU</code> produces the locale's alternative
+    representation.
+  </td>
+</tr>
+<tr>
+  <td><code>'V'</code></td>
+  <td>
+    The ISO week-based week number as a decimal number. If the result is a
+    single digit, it is prefixed with 0. The modified command <code>%OV</code>
+    produces the locale's alternative representation.
+  </td>
+</tr>
+<tr>
+  <td><code>'w'</code></td>
+  <td>
+    The weekday as a decimal number (0-6), where Sunday is 0. The modified
+    command <code>%Ow</code> produces the locale's alternative representation.
+  </td>
+</tr>
+<tr>
+  <td><code>'W'</code></td>
+  <td>
+    The week number of the year as a decimal number. The first Monday of the
+    year is the first day of week 01. Days of the same year prior to that are
+    in week 00. If the result is a single digit, it is prefixed with 0.
+    The modified command <code>%OW</code> produces the locale's alternative
+    representation.
+  </td>
+</tr>
+<tr>
+  <td><code>'x'</code></td>
+  <td>
+    The date representation, e.g. "11/12/55". The modified command
+    <code>%Ex</code> produces the locale's alternate date representation.
+  </td>
+</tr>
+<tr>
+  <td><code>'X'</code></td>
+  <td>
+    The time representation, e.g. "10:04:00". The modified command
+    <code>%EX</code> produces the locale's alternate time representation.
+  </td>
+</tr>
+<tr>
+  <td><code>'y'</code></td>
+  <td>
+    The last two decimal digits of the year. If the result is a single digit
+    it is prefixed by 0. The modified command <code>%Oy</code> produces the
+    locale's alternative representation. The modified command <code>%Ey</code>
+    produces the locale's alternative representation of offset from
+    <code>%EC</code> (year only).
+  </td>
+</tr>
+<tr>
+  <td><code>'Y'</code></td>
+  <td>
+    The year as a decimal number. If the result is less than four digits it is
+    left-padded with 0 to four digits. The modified command <code>%EY</code>
+    produces the locale's alternative full year representation.
+  </td>
+</tr>
+<tr>
+  <td><code>'z'</code></td>
+  <td>
+    The offset from UTC in the ISO 8601:2004 format. For example -0430 refers
+    to 4 hours 30 minutes behind UTC. If the offset is zero, +0000 is used.
+    The modified commands <code>%Ez</code> and <code>%Oz</code> insert a
+    <code>:</code> between the hours and minutes: -04:30. If the offset
+    information is not available, an exception of type
+    <code>format_error</code> is thrown.
+  </td>
+</tr>
+<tr>
+  <td><code>'Z'</code></td>
+  <td>
+    The time zone abbreviation. If the time zone abbreviation is not available,
+    an exception of type <code>format_error</code> is thrown.
+  </td>
+</tr>
+<tr>
+  <td><code>'%'</code></td>
+  <td>A % character.</td>
+</tr>
+</table>
 
 Specifiers that have a calendaric component such as `'d'` (the day of
 month) are valid only for `std::tm` and time points but not durations.
 
 The available padding modifiers (*padding_modifier*) are:
 
-| Type  | Meaning                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-|-------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `'-'` | Pad a numeric result with spaces.                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `'_'` | Do not pad a numeric result string.                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `'0'` | Pad a numeric result string with zeros.                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Type  | Meaning                                 |
+|-------|-----------------------------------------|
+| `'-'` | Pad a numeric result with spaces.       |
+| `'_'` | Do not pad a numeric result string.     |
+| `'0'` | Pad a numeric result string with zeros. |
 
 Currently, these modifiers are only supported for the `'H'`, `'I'`, `'M'`,
 `'S'`, `'U'`, `'V'` and `'W'` presentation types.
