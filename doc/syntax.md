@@ -137,11 +137,15 @@ types, and can be one of the following:
     Indicates that a sign should be used for both nonnegative as well as
     negative numbers.
   </td>
+</tr>
+<tr>
   <td><code>'-'</code></td>
   <td>
     Indicates that a sign should be used only for negative numbers (this is the
     default behavior).
   </td>
+</tr>
+<tr>
   <td>space</td>
   <td>
     Indicates that a leading space should be used on nonnegative numbers, and a
