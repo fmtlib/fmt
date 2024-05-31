@@ -5,8 +5,8 @@ same format string syntax described in this section.
 
 Format strings contain "replacement fields" surrounded by curly braces `{}`.
 Anything that is not contained in braces is considered literal text, which is
-copied unchanged to the output. If you need to include a brace character in the
-literal text, it can be escaped by doubling: `{{` and `}}`.
+copied unchanged to the output. If you need to include a brace character in
+the literal text, it can be escaped by doubling: `{{` and `}}`.
 
 The grammar for a replacement field is as follows:
 
@@ -31,9 +31,9 @@ non-default format for the replacement value.
 See also the [Format Specification
 Mini-Language](#format-specification-mini-language) section.
 
-If the numerical arg_ids in a format string are 0, 1, 2, ... in
-sequence, they can all be omitted (not just some) and the numbers 0, 1,
-2, ... will be automatically inserted in that order.
+If the numerical arg_ids in a format string are 0, 1, 2, ... in sequence,
+they can all be omitted (not just some) and the numbers 0, 1, 2, ... will be
+automatically inserted in that order.
 
 Named arguments can be referred to by their names or indices.
 
@@ -123,8 +123,8 @@ Note that unless a minimum field width is defined, the field width will
 always be the same size as the data to fill it, so that the alignment
 option has no meaning in this case.
 
-The *sign* option is only valid for floating point and signed integer
-types, and can be one of the following:
+The *sign* option is only valid for floating point and signed integer types,
+and can be one of the following:
 
 <table>
 <tr>
@@ -188,27 +188,57 @@ characters will be used from the field content. The *precision* is not
 allowed for integer, character, Boolean, and pointer values. Note that a
 C string must be null-terminated even if precision is specified.
 
-The `'L'` option uses the current locale setting to insert the
-appropriate number separator characters. This option is only valid for
-numeric types.
+The `'L'` option uses the current locale setting to insert the appropriate
+number separator characters. This option is only valid for numeric types.
 
 Finally, the *type* determines how the data should be presented.
 
 The available string presentation types are:
 
-| Type  | Meaning                                                                 |
-|-------|-------------------------------------------------------------------------|
-| `'s'` | String format. This is the default type for strings and may be omitted. |
-| `'?'` | Debug format. The string is quoted and special characters escaped.      |
-| none  | The same as `'s'`.                                                      |
+<table>
+<tr>
+  <th>Type</th>
+  <th>Meaning</th>
+</tr>
+<tr>
+  <td><code>'s'</code></td>
+  <td>
+    String format. This is the default type for strings and may be omitted.
+  </td>
+</tr>
+<tr>
+  <td><code>'?'</code></td>
+  <td>Debug format. The string is quoted and special characters escaped.</td>
+</tr>
+<tr>
+  <td>none</td>
+  <td>The same as <code>'s'</code>.</td>
+</tr>
+</table>
 
 The available character presentation types are:
 
-| Type  | Meaning                                                                       |
-|-------|-------------------------------------------------------------------------------|
-| `'c'` | Character format. This is the default type for characters and may be omitted. |
-| `'?'` | Debug format. The character is quoted and special characters escaped.         |
-| none  | The same as `'c'`.                                                            |
+<table>
+<tr>
+  <th>Type</th>
+  <th>Meaning</th>
+</tr>
+<tr>
+  <td><code>'c'</code></td>
+  <td>
+    Character format. This is the default type for characters and may be
+    omitted.
+  </td>
+</tr>
+<tr>
+  <td><code>'?'</code></td>
+  <td>Debug format. The character is quoted and special characters escaped.</td>
+</tr>
+<tr>
+  <td>none</td>
+  <td>The same as <code>'c'</code>.</td>
+</tr>
+</table>
 
 The available integer presentation types are:
 
@@ -347,35 +377,48 @@ The available presentation types for floating-point values are:
 
 The available presentation types for pointers are:
 
-| Type  | Meaning                                                                   |
-|-------|---------------------------------------------------------------------------|
-| `'p'` | Pointer format. This is the default type for pointers and may be omitted. |
-| none  | The same as `'p'`.                                                        |
+<table>
+<tr>
+  <th>Type</th>
+  <th>Meaning</th>
+</tr>
+<tr>
+  <td><code>'p'</code></td>
+  <td>
+    Pointer format. This is the default type for pointers and may be omitted.
+  </td>
+</tr>
+<tr>
+  <td>none</td>
+  <td>The same as <code>'p'</code>.</td>
+</tr>
+</table>
 
 ## Chrono Format Specifications
 
-Format specifications for chrono duration and time point types as well
-as `std::tm` have the following syntax:
+Format specifications for chrono duration and time point types as well as
+`std::tm` have the following syntax:
 
 <a id="chrono-format-spec"></a>
 <pre>
 chrono_format_spec ::= [[<a href="#format-spec">fill</a>]<a href="#format-spec"
   >align</a>][<a href="#format-spec">width</a>]["." <a href="#format-spec"
   >precision</a>][chrono_specs]
-chrono_specs       ::= [chrono_specs] conversion_spec | chrono_specs literal_char
+chrono_specs       ::= conversion_spec | <!--
+                    -->chrono_specs (conversion_spec | literal_char)
 conversion_spec    ::= "%" [padding_modifier] [locale_modifier] chrono_type
 literal_char       ::= &lt;a character other than '{', '}' or '%'>
 padding_modifier   ::= "-" | "_"  | "0"
 locale_modifier    ::= "E" | "O"
-chrono_type        ::= "a" | "A" | "b" | "B" | "c" | "C" | "d" | "D" | "e" | "F" |
-                       "g" | "G" | "h" | "H" | "I" | "j" | "m" | "M" | "n" | "p" |
-                       "q" | "Q" | "r" | "R" | "S" | "t" | "T" | "u" | "U" | "V" |
-                       "w" | "W" | "x" | "X" | "y" | "Y" | "z" | "Z" | "%"
+chrono_type        ::= "a" | "A" | "b" | "B" | "c" | "C" | "d" | "D" | "e" |
+                       "F" | "g" | "G" | "h" | "H" | "I" | "j" | "m" | "M" |
+                       "n" | "p" | "q" | "Q" | "r" | "R" | "S" | "t" | "T" |
+                       "u" | "U" | "V" | "w" | "W" | "x" | "X" | "y" | "Y" |
+                       "z" | "Z" | "%"
 </pre>
 
-Literal chars are copied unchanged to the output. Precision is valid
-only for `std::chrono::duration` types with a floating-point
-representation type.
+Literal chars are copied unchanged to the output. Precision is valid only
+for `std::chrono::duration` types with a floating-point representation type.
 
 The available presentation types (*chrono_type*) are:
 
@@ -507,9 +550,9 @@ The available presentation types (*chrono_type*) are:
 <tr>
   <td><code>'M'</code></td>
   <td>
-    The minute as a decimal number. If the result is a single digit, it is
-    prefixed with 0. The modified command <code>%OM</code> produces the locale's
-    alternative representation.
+    The minute as a decimal number. If the result is a single digit, it
+    is prefixed with 0. The modified command <code>%OM</code> produces the
+    locale's alternative representation.
   </td>
 </tr>
 <tr>
@@ -657,8 +700,8 @@ The available presentation types (*chrono_type*) are:
 </tr>
 </table>
 
-Specifiers that have a calendaric component such as `'d'` (the day of
-month) are valid only for `std::tm` and time points but not durations.
+Specifiers that have a calendaric component such as `'d'` (the day of month)
+are valid only for `std::tm` and time points but not durations.
 
 The available padding modifiers (*padding_modifier*) are:
 
@@ -668,8 +711,8 @@ The available padding modifiers (*padding_modifier*) are:
 | `'_'` | Do not pad a numeric result string.     |
 | `'0'` | Pad a numeric result string with zeros. |
 
-Currently, these modifiers are only supported for the `'H'`, `'I'`, `'M'`,
-`'S'`, `'U'`, `'V'` and `'W'` presentation types.
+These modifiers are only supported for the `'H'`, `'I'`, `'M'`, `'S'`, `'U'`,
+`'V'` and `'W'` presentation types.
 
 ## Range Format Specifications
 
@@ -679,8 +722,7 @@ Format specifications for range types have the following syntax:
 range_format_spec ::= ["n"][range_type][range_underlying_spec]
 </pre>
 
-The `'n'` option formats the range without the opening and closing
-brackets.
+The `'n'` option formats the range without the opening and closing brackets.
 
 The available presentation types for `range_type` are:
 
