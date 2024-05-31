@@ -148,7 +148,7 @@ template <typename Char, typename T, int N> struct field {
   template <typename OutputIt, typename... Args>
   constexpr OutputIt format(OutputIt out, const Args&... args) const {
     const T& arg = get_arg_checked<T, N>(args...);
-    if constexpr (std::is_convertible_v<T, basic_string_view<Char>>) {
+    if constexpr (std::is_convertible<T, basic_string_view<Char>>::value) {
       auto s = basic_string_view<Char>(arg);
       return copy<Char>(s.begin(), s.end(), out);
     }
