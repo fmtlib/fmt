@@ -494,11 +494,11 @@ inline auto get_container(OutputIt it) -> typename OutputIt::container_type& {
 template <typename T> struct is_contiguous : std::false_type {};
 
 /**
-  An implementation of ``std::basic_string_view`` for pre-C++17. It provides a
-  subset of the API. ``fmt::basic_string_view`` is used for format strings even
-  if ``std::string_view`` is available to prevent issues when a library is
-  compiled with a different ``-std`` option than the client code (which is not
-  recommended).
+ * An implementation of `std::basic_string_view` for pre-C++17. It provides a
+ * subset of the API. `fmt::basic_string_view` is used for format strings even
+ * if `std::basic_string_view` is available to prevent issues when a library is
+ * compiled with a different `-std` option than the client code (which is not
+ * recommended).
  */
 FMT_EXPORT
 template <typename Char> class basic_string_view {
@@ -527,10 +527,8 @@ template <typename Char> class basic_string_view {
                   ? strlen(reinterpret_cast<const char*>(s))
                   : detail::length(s)) {}
 
-  /**
-    Constructs a string reference from a ``std::basic_string`` or a
-    ``std::basic_string_view`` object.
-  */
+  /// Constructs a string reference from a `std::basic_string` or a
+  /// `std::basic_string_view` object.
   template <typename S,
             FMT_ENABLE_IF(detail::is_std_string_like<S>::value&& std::is_same<
                           typename S::value_type, Char>::value)>
@@ -599,7 +597,7 @@ template <typename Char> class basic_string_view {
 FMT_EXPORT
 using string_view = basic_string_view<char>;
 
-/// Specifies if ``T`` is a character type. Can be specialized by users.
+/// Specifies if `T` is a character type. Can be specialized by users.
 FMT_EXPORT
 template <typename T> struct is_char : std::false_type {};
 template <> struct is_char<char> : std::true_type {};
@@ -717,10 +715,8 @@ enum {
 };
 }  // namespace detail
 
-/**
-  Reports a format error at compile time or, via a ``format_error`` exception,
-  at runtime.
- */
+/// Reports a format error at compile time or, via a `format_error` exception,
+/// at runtime.
 // This function is intentionally not constexpr to give a compile-time error.
 FMT_NORETURN FMT_API void report_error(const char* message);
 
@@ -735,9 +731,9 @@ template <typename S,
 using char_t = typename V::value_type;
 
 /**
-  A parsing context consisting of a format string range being parsed and an
-  argument counter for automatic indexing.
-  You can use the `format_parse_context` type alias for `char` instead.
+ * Parsing context consisting of a format string range being parsed and an
+ * argument counter for automatic indexing.
+ * You can use the `format_parse_context` type alias for `char` instead.
  */
 FMT_EXPORT
 template <typename Char> class basic_format_parse_context {
@@ -755,10 +751,8 @@ template <typename Char> class basic_format_parse_context {
       basic_string_view<Char> format_str, int next_arg_id = 0)
       : format_str_(format_str), next_arg_id_(next_arg_id) {}
 
-  /**
-    Returns an iterator to the beginning of the format string range being
-    parsed.
-   */
+  /// Returns an iterator to the beginning of the format string range being
+  /// parsed.
   constexpr auto begin() const noexcept -> iterator {
     return format_str_.begin();
   }
@@ -771,10 +765,8 @@ template <typename Char> class basic_format_parse_context {
     format_str_.remove_prefix(detail::to_unsigned(it - begin()));
   }
 
-  /**
-    Reports an error if using the manual argument indexing; otherwise returns
-    the next argument index and switches to the automatic indexing.
-   */
+  /// Reports an error if using the manual argument indexing; otherwise returns
+  /// the next argument index and switches to the automatic indexing.
   FMT_CONSTEXPR auto next_arg_id() -> int {
     if (next_arg_id_ < 0) {
       report_error("cannot switch from manual to automatic argument indexing");
@@ -785,10 +777,8 @@ template <typename Char> class basic_format_parse_context {
     return id;
   }
 
-  /**
-    Reports an error if using the automatic argument indexing; otherwise
-    switches to the manual indexing.
-   */
+  /// Reports an error if using the automatic argument indexing; otherwise
+  /// switches to the manual indexing.
   FMT_CONSTEXPR void check_arg_id(int id) {
     if (next_arg_id_ > 0) {
       report_error("cannot switch from automatic to manual argument indexing");
@@ -843,10 +833,8 @@ class compile_parse_context : public basic_format_parse_context<Char> {
   }
 };
 
-/**
-  A contiguous memory buffer with an optional growing ability. It is an internal
-  class and shouldn't be used directly, only via `basic_memory_buffer`.
- */
+/// A contiguous memory buffer with an optional growing ability. It is an
+// internal class and shouldn't be used directly, only via `memory_buffer`.
 template <typename T> class buffer {
  private:
   T* ptr_;
@@ -1764,9 +1752,9 @@ template <typename Context> class basic_format_arg {
   }
 
   /**
-    Visits an argument dispatching to the appropriate visit method based on
-    the argument type. For example, if the argument type is `double` then
-    `vis(value)` will be called with the value of type `double`.
+   * Visits an argument dispatching to the appropriate visit method based on
+   * the argument type. For example, if the argument type is `double` then
+   * `vis(value)` will be called with the value of type `double`.
    */
   template <typename Visitor>
   FMT_CONSTEXPR auto visit(Visitor&& vis) -> decltype(vis(0)) {
@@ -1825,14 +1813,14 @@ FMT_DEPRECATED FMT_CONSTEXPR auto visit_format_arg(
 }
 
 /**
-  A view of a collection of formatting arguments. To avoid lifetime issues it
-  should only be used as a parameter type in type-erased functions such as
-  `vformat`:
-
-  ```c++
-  void vlog(string_view format_str, format_args args);  // OK
-  format_args args = make_format_args();  // Error: dangling reference
-  ```
+ * A view of a collection of formatting arguments. To avoid lifetime issues it
+ * should only be used as a parameter type in type-erased functions such as
+ * `vformat`:
+ *
+ * ```
+ * void vlog(string_view format_str, format_args args);  // OK
+ * format_args args = make_format_args();  // Error: dangling reference
+ * ```
  */
 template <typename Context> class basic_format_args {
  public:
@@ -1949,10 +1937,8 @@ class context {
   using parse_context_type = basic_format_parse_context<char>;
   template <typename T> using formatter_type = formatter<T, char>;
 
-  /**
-    Constructs a ``basic_format_context`` object. References to the arguments
-    are stored in the object so make sure they have appropriate lifetimes.
-   */
+  /// Constructs a `basic_format_context` object. References to the arguments
+  /// are stored in the object so make sure they have appropriate lifetimes.
   FMT_CONSTEXPR context(iterator out, basic_format_args<context> ctx_args,
                         detail::locale_ref loc = {})
       : out_(out), args_(ctx_args), loc_(loc) {}
@@ -1999,9 +1985,12 @@ concept formattable = is_formattable<remove_reference_t<T>, Char>::value;
 #endif
 
 /**
+  \rst
   Constructs an object that stores references to arguments and can be implicitly
-  converted to `format_args`. `Context` can be omitted in which case it defaults
-  to `format_context`. See `arg` for lifetime considerations.
+  converted to `~fmt::format_args`. `Context` can be omitted in which case it
+  defaults to `~fmt::format_context`. See `~fmt::arg` for lifetime
+  considerations.
+  \endrst
  */
 // Take arguments by lvalue references to avoid some lifetime issues, e.g.
 //   auto args = make_format_args(std::string());
@@ -2045,7 +2034,7 @@ inline auto arg(const Char* name, const T& arg) -> detail::named_arg<Char, T> {
 }
 FMT_END_EXPORT
 
-/// An alias to ``basic_format_args<format_context>``.
+/// An alias to `basic_format_args<format_context>`.
 // A separate type would result in shorter symbols but break ABI compatibility
 // between clang and gcc on ARM (#1919).
 FMT_EXPORT using format_args = basic_format_args<format_context>;
@@ -2905,7 +2894,7 @@ using format_string = basic_format_string<char, type_identity_t<Args>...>;
 inline auto runtime(string_view s) -> runtime_format_string<> { return {{s}}; }
 #endif
 
-/// Formats a string and writes the output to ``out``.
+/// Formats a string and writes the output to `out`.
 template <typename OutputIt,
           FMT_ENABLE_IF(detail::is_output_iterator<remove_cvref_t<OutputIt>,
                                                    char>::value)>
