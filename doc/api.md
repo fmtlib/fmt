@@ -80,9 +80,7 @@ Unused arguments are allowed as in Python's `str.format` and ordinary functions.
 
 ::: basic_format_string
 
-:: {.doxygentypedef}
-fmt::format_string
-::
+::: format_string
 
 ::: runtime(string_view)
 
@@ -107,10 +105,13 @@ Example ([run](https://godbolt.org/z/nvME4arz8)):
     #include <fmt/format.h>
 
     namespace kevin_namespacy {
+
     enum class film {
       house_of_cards, american_beauty, se7en = 7
     };
+
     auto format_as(film f) { return fmt::underlying(f); }
+
     }
 
     int main() {
@@ -272,17 +273,17 @@ Named arguments are not supported in compile-time checks at the moment.
 You can create your own formatting function with compile-time checks and
 small binary footprint, for example (<https://godbolt.org/z/vajfWEG4b>):
 
-``` c++
+```c++
 #include <fmt/base.h>
 
-void vlog(const char* file, int line, fmt::string_view format,
-          fmt::format_args args) {
-  fmt::print("{}: {}: ", file, line);
-  fmt::vprint(format, args);
+void vlog(const char* file, int line,
+          fmt::string_view format, fmt::format_args args) {
+  fmt::print("{}: {}: {}", file, line, fmt::vformat(format, args));
 }
 
 template <typename... T>
-void log(const char* file, int line, fmt::format_string<T...> format, T&&... args) {
+void log(const char* file, int line,
+         fmt::format_string<T...> format, T&&... args) {
   vlog(file, line, format, fmt::make_format_args(args...));
 }
 

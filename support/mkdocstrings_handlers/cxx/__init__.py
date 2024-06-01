@@ -9,8 +9,9 @@ from subprocess import CalledProcessError, PIPE, Popen, STDOUT
 
 class Definition:
   '''A definition extracted by Doxygen.'''
-  def __init__(self, name: str):
+  def __init__(self, name: str, kind: str):
     self.name = name
+    self.kind = kind
     self.params = None
     self.members = None
 
@@ -58,7 +59,7 @@ def get_template_params(node: et.Element) -> Optional[list[Definition]]:
   params = []
   for param_node in templateparamlist.findall('param'):
     name = param_node.find('declname')
-    param = Definition(name.text if name is not None else '')
+    param = Definition(name.text if name is not None else '', 'param')
     param.type = param_node.find('type').text
     params.append(param)
   return params
@@ -71,16 +72,18 @@ def clean_type(type: str) -> str:
   type = type.replace('< ', '<').replace(' >', '>')
   return type.replace(' &', '&').replace(' *', '*')
 
-def convert_param(param: et.Element) -> Definition:
-  d = Definition(param.find('declname').text)
-  type = param.find('type')
-  type_str = type.text if type.text else ''
+def convert_type(type: et.Element) -> str:
+  result = type.text if type.text else ''
   for ref in type:
-    type_str += ref.text
+    result += ref.text
     if ref.tail:
-      type_str += ref.tail
-  type_str += type.tail.strip()
-  d.type = clean_type(type_str)
+      result += ref.tail
+  result += type.tail.strip()
+  return clean_type(result)
+
+def convert_param(param: et.Element) -> Definition:
+  d = Definition(param.find('declname').text, 'param')
+  d.type = convert_type(param.find('type'))
   return d
 
 def render_decl(d: Definition) -> None:
@@ -90,13 +93,22 @@ def render_decl(d: Definition) -> None:
     text += ', '.join(
       [f'{p.type} {p.name}'.rstrip() for p in d.template_params])
     text += '&gt;\n'
-  text += d.type + ' ' + d.name
+  if d.kind == 'function' or d.kind == 'variable':
+    text += d.type
+  elif d.kind == 'typedef':
+    text += 'using'
+  else:
+    text += d.kind
+  text += ' ' + d.name
   if d.params is not None:
     params = ', '.join([f'{p.type} {p.name}' for p in d.params])
     text += '(' + escape_html(params) + ')'
     if d.trailing_return_type:
-      text += '\n ' if len(d.name) + len(params) > 60 else ''
+      text += '\n ' \
+        if len(d.name) + len(params) + len(d.trailing_return_type) > 74 else ''
       text += ' -> ' + escape_html(d.trailing_return_type)
+  elif d.kind == 'typedef':
+    text += ' = ' + escape_html(d.type)
   text += ';'
   text += '</code></pre>\n'
   return text
@@ -166,20 +178,24 @@ class CxxHandler(BaseHandler):
       f"compounddef/sectiondef/memberdef/name[.='{name}']/..")
     candidates = []
     for node in nodes:
-      # Process a function.
-      params = [convert_param(p) for p in node.findall('param')]
-      node_param_str = ', '.join([p.type for p in params])
-      if param_str and param_str != node_param_str:
-        candidates.append(f'{name}({node_param_str})')
-        continue
-      d = Definition(name)
-      d.type = node.find('type').text
+      # Process a function or a typedef.
+      params = None
+      kind = node.get('kind')
+      if kind == 'function':
+        params = [convert_param(p) for p in node.findall('param')]
+        node_param_str = ', '.join([p.type for p in params])
+        if param_str and param_str != node_param_str:
+          candidates.append(f'{name}({node_param_str})')
+          continue
+      d = Definition(name, kind)
+      d.type = convert_type(node.find('type'))
       d.template_params = get_template_params(node)
       d.params = params
       d.trailing_return_type = None
-      if d.type == 'auto':
-        d.trailing_return_type = clean_type(
-          node.find('argsstring').text.split(' -> ')[1])
+      if d.type == 'auto' or d.type == 'constexpr auto':
+        parts = node.find('argsstring').text.split(' -> ')
+        if len(parts) > 1:
+          d.trailing_return_type = clean_type(parts[1])
       d.desc = get_description(node)
       return d
     
@@ -190,14 +206,13 @@ class CxxHandler(BaseHandler):
     with open(os.path.join(self._doxyxml_dir, cls[0].get('refid') + '.xml')) as f:
       xml = et.parse(f)
       node = xml.find('compounddef')
-      d = Definition(name)
-      d.type = node.get('kind')
+      d = Definition(name, node.get('kind'))
       d.template_params = get_template_params(node)
       d.desc = get_description(node)
       d.members = []
       for m in node.findall('sectiondef[@kind="public-attrib"]/memberdef'):
         name = m.find('name').text
-        member = Definition(name if name else '')
+        member = Definition(name if name else '', m.get('kind'))
         type = m.find('type').text
         member.type = type if type else ''
         member.template_params = None
