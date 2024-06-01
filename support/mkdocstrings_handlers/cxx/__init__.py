@@ -7,7 +7,8 @@ from mkdocstrings.handlers.base import BaseHandler
 from typing import Any, Mapping, Optional
 from subprocess import CalledProcessError, PIPE, Popen, STDOUT
 
-class Decl:
+class Definition:
+  '''A definition extracted by Doxygen.'''
   def __init__(self, name: str):
     self.name = name
 
@@ -44,8 +45,20 @@ def doxyxml2html(nodes: list[et.Element]):
       out += n.tail
   return out
 
-def convert_param(param: et.Element) -> Decl:
-  d = Decl(param.find('declname').text)
+def get_template_params(node: et.Element) -> Optional[list[Definition]]:
+  param_nodes = node.findall('templateparamlist/param')
+  if param_nodes is None:
+    return None
+  params = []
+  for param_node in param_nodes:
+    name = param_node.find('declname')
+    param = Definition(name.text if name is not None else '')
+    param.type = param_node.find('type').text
+    params.append(param)
+  return params
+
+def convert_param(param: et.Element) -> Definition:
+  d = Definition(param.find('declname').text)
   type = param.find('type')
   type_str = type.text if type.text else ''
   for ref in type:
@@ -112,7 +125,7 @@ class CxxHandler(BaseHandler):
     with open(os.path.join(self._doxyxml_dir, 'namespacefmt.xml')) as f:
       self._doxyxml = et.parse(f)
 
-  def collect(self, identifier: str, config: Mapping[str, Any]) -> Decl:
+  def collect(self, identifier: str, config: Mapping[str, Any]) -> Definition:
     name = identifier
     paren = name.find('(')
     param_str = None
@@ -128,8 +141,9 @@ class CxxHandler(BaseHandler):
       if param_str and param_str != node_param_str:
         candidates.append(f'{name}({node_param_str})')
         continue
-      d = Decl(name)
+      d = Definition(name)
       d.type = node.find('type').text
+      d.template_params = get_template_params(node)
       d.params = params
       d.desc = node.findall('detaileddescription/para')
       return d
@@ -139,14 +153,19 @@ class CxxHandler(BaseHandler):
     with open(os.path.join(self._doxyxml_dir, cls[0].get('refid') + '.xml')) as f:
       xml = et.parse(f)
       node = xml.find('compounddef')
-      d = Decl(name)
+      d = Definition(name)
       d.type = node.get('kind')
+      d.template_params = get_template_params(node)
       d.params = None
       d.desc = node.findall('detaileddescription/para')
       return d
 
-  def render(self, d: Decl, config: dict) -> str:
+  def render(self, d: Definition, config: dict) -> str:
     text = '<pre><code>'
+    if d.template_params is not None:
+      text += 'template &lt;'
+      text += ', '.join([f'{p.type} {p.name}' for p in d.template_params])
+      text += '&gt;\n'
     text += d.type + ' ' + d.name
     if d.params is not None:
       params = ', '.join([p.type + ' ' + p.name for p in d.params])
