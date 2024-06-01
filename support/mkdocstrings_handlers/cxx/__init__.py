@@ -76,7 +76,8 @@ class CxxHandler(BaseHandler):
         CASE_SENSE_NAMES  = NO
         INPUT             = {0}/args.h {0}/base.h {0}/chrono.h {0}/color.h \
                             {0}/core.h {0}/compile.h {0}/format.h {0}/os.h \
-                            {0}/ostream.h {0}/printf.h {0}/ranges.h {0}/xchar.h
+                            {0}/ostream.h {0}/printf.h {0}/ranges.h {0}/std.h \
+                            {0}/xchar.h
         QUIET             = YES
         JAVADOC_AUTOBRIEF = NO
         AUTOLINK_SUPPORT  = NO
@@ -116,16 +117,16 @@ class CxxHandler(BaseHandler):
     paren = name.find('(')
     param_str = None
     if paren > 0:
-      name, param_str = name[:paren], name[paren:]
+      name, param_str = name[:paren], name[paren + 1:-1]
       
     nodes = self._doxyxml.findall(
       f"compounddef/sectiondef/memberdef/name[.='{name}']/..")
     candidates = []
     for node in nodes:
       params = [convert_param(p) for p in node.findall('param')]
-      node_param_str = '(' + ', '.join([p.type for p in params]) + ')'
+      node_param_str = ', '.join([p.type for p in params])
       if param_str and param_str != node_param_str:
-        candidates.append(name + node_param_str)
+        candidates.append(f'{name}({node_param_str})')
         continue
       d = Decl(name)
       d.type = node.find('type').text
@@ -147,8 +148,8 @@ class CxxHandler(BaseHandler):
   def render(self, d: Decl, config: dict) -> str:
     text = '<pre><code>'
     text += d.type + ' ' + d.name
-    if d.params:
-      params = ', '.join([p.type for p in d.params])
+    if d.params is not None:
+      params = ', '.join([p.type + ' ' + p.name for p in d.params])
       text += '(' + params + ')'
     text += ';'
     text += '</code></pre>\n'
