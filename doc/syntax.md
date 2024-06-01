@@ -12,14 +12,15 @@ The grammar for a replacement field is as follows:
 
 <a id="replacement-field"></a>
 <pre>
-replacement_field ::= "{" [arg_id] [":" (<a href="#format-spec">format_spec</a
-  > | <a href="#chrono-format-spec">chrono_format_spec</a>)] "}"
+<code>replacement_field ::= "{" [arg_id] [":" (<a href="#format-spec"
+  >format_spec</a> | <a href="#chrono-format-spec">chrono_format_spec</a>)] "}"
 arg_id            ::= integer | identifier
 integer           ::= digit+
 digit             ::= "0"..."9"
 identifier        ::= id_start id_continue*
 id_start          ::= "a"..."z" | "A"..."Z" | "_"
 id_continue       ::= id_start | digit
+</code>
 </pre>
 
 In less formal terms, the replacement field can start with an *arg_id* that
@@ -74,7 +75,7 @@ The general form of a *standard format specifier* is:
 
 <a id="format-spec"></a>
 <pre>
-format_spec ::= [[fill]align][sign]["#"]["0"][width]["." precision]["L"][type]
+<code>format_spec ::= [[fill]align][sign]["#"]["0"][width]["." precision]["L"][type]
 fill        ::= &lt;a character other than '{' or '}'>
 align       ::= "<" | ">" | "^"
 sign        ::= "+" | "-" | " "
@@ -84,6 +85,7 @@ precision   ::= <a href="#replacement-field">integer</a> | "{" [<a
   href="#replacement-field">arg_id</a>] "}"
 type        ::= "a" | "A" | "b" | "B" | "c" | "d" | "e" | "E" | "f" | "F" |
                 "g" | "G" | "o" | "p" | "s" | "x" | "X" | "?"
+</code>
 </pre>
 
 The *fill* character can be any Unicode code point other than `'{'` or `'}'`.
@@ -401,7 +403,7 @@ Format specifications for chrono duration and time point types as well as
 
 <a id="chrono-format-spec"></a>
 <pre>
-chrono_format_spec ::= [[<a href="#format-spec">fill</a>]<a href="#format-spec"
+<code>chrono_format_spec ::= [[<a href="#format-spec">fill</a>]<a href="#format-spec"
   >align</a>][<a href="#format-spec">width</a>]["." <a href="#format-spec"
   >precision</a>][chrono_specs]
 chrono_specs       ::= conversion_spec | <!--
@@ -415,6 +417,7 @@ chrono_type        ::= "a" | "A" | "b" | "B" | "c" | "C" | "d" | "D" | "e" |
                        "n" | "p" | "q" | "Q" | "r" | "R" | "S" | "t" | "T" |
                        "u" | "U" | "V" | "w" | "W" | "x" | "X" | "y" | "Y" |
                        "z" | "Z" | "%"
+</code>
 </pre>
 
 Literal chars are copied unchanged to the output. Precision is valid only
@@ -719,7 +722,7 @@ These modifiers are only supported for the `'H'`, `'I'`, `'M'`, `'S'`, `'U'`,
 Format specifications for range types have the following syntax:
 
 <pre>
-range_format_spec ::= ["n"][range_type][range_underlying_spec]
+<code>range_format_spec ::= ["n"][range_type][range_underlying_spec]</code>
 </pre>
 
 The `'n'` option formats the range without the opening and closing brackets.

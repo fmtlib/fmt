@@ -153,8 +153,10 @@ class CxxHandler(BaseHandler):
       text += '(' + params + ')'
     text += ';'
     text += '</code></pre>\n'
+    text += '<div class="docblock">\n'
     desc = doxyxml2html(d.desc)
     text += desc
+    text += '</div>\n'
     return text
 
 def get_handler(theme: str, custom_templates: Optional[str] = None,

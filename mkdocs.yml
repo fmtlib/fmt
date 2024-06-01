@@ -13,6 +13,9 @@ theme:
     - navigation.tabs
     - toc.integrate
 
+extra_css:
+  - fmt.css
+
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
