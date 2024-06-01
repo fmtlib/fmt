@@ -11,10 +11,12 @@ class Definition:
   '''A definition extracted by Doxygen.'''
   def __init__(self, name: str):
     self.name = name
+    self.params = None
 
 # A map from Doxygen to HTML tags.
 tag_map = {
   'bold': 'b',
+  'emphasis': 'em',
   'computeroutput': 'code',
   'para': 'p',
   'programlisting': 'pre',
@@ -79,6 +81,24 @@ def convert_param(param: et.Element) -> Definition:
   type_str += type.tail.strip()
   d.type = clean_type(type_str)
   return d
+
+def render_decl(d: Definition) -> None:
+  text = '<pre><code class="language-cpp">'
+  if d.template_params is not None:
+    text += 'template &lt;'
+    text += ', '.join(
+      [f'{p.type} {p.name}'.rstrip() for p in d.template_params])
+    text += '&gt;\n'
+  text += d.type + ' ' + d.name
+  if d.params is not None:
+    params = ', '.join(
+      [f'{escape_html(p.type)} {p.name}' for p in d.params])
+    text += '(' + params + ')'
+    if d.trailing_return_type:
+      text += ' -> ' + escape_html(d.trailing_return_type)
+  text += ';'
+  text += '</code></pre>\n'
+  return text
 
 class CxxHandler(BaseHandler):
   def __init__(self, **kwargs: Any) -> None:
@@ -145,6 +165,7 @@ class CxxHandler(BaseHandler):
       f"compounddef/sectiondef/memberdef/name[.='{name}']/..")
     candidates = []
     for node in nodes:
+      # Process a function.
       params = [convert_param(p) for p in node.findall('param')]
       node_param_str = ', '.join([p.type for p in params])
       if param_str and param_str != node_param_str:
@@ -160,6 +181,8 @@ class CxxHandler(BaseHandler):
           node.find('argsstring').text.split(' -> ')[1])
       d.desc = get_description(node)
       return d
+    
+    # Process a compound definition such as a struct.
     cls = self._doxyxml.findall(f"compounddef/innerclass[.='fmt::{name}']")
     if not cls:
       raise Exception(f'Cannot find {identifier}. Candidates: {candidates}')
@@ -169,29 +192,27 @@ class CxxHandler(BaseHandler):
       d = Definition(name)
       d.type = node.get('kind')
       d.template_params = get_template_params(node)
-      d.params = None
       d.desc = get_description(node)
+      d.members = []
+      for m in node.findall('sectiondef/memberdef'):
+        name = m.find('name').text
+        member = Definition(name if name else '')
+        type = m.find('type').text
+        member.type = type if type else ''
+        member.template_params = None
+        member.desc = get_description(m)
+        d.members.append(member)
       return d
 
   def render(self, d: Definition, config: dict) -> str:
     text = '<div class="docblock">\n'
-    text += '<pre><code class="language-cpp">'
-    if d.template_params is not None:
-      text += 'template &lt;'
-      text += ', '.join(
-        [f'{p.type} {p.name}'.rstrip() for p in d.template_params])
-      text += '&gt;\n'
-    text += d.type + ' ' + d.name
-    if d.params is not None:
-      params = ', '.join(
-        [f'{escape_html(p.type)} {p.name}' for p in d.params])
-      text += '(' + params + ')'
-      if d.trailing_return_type:
-        text += ' -> ' + escape_html(d.trailing_return_type)
-    text += ';'
-    text += '</code></pre>\n'
+    text += render_decl(d)
     text += '<div class="docblock-desc">\n'
     text += doxyxml2html(d.desc)
+    if d.params is None:
+      for m in d.members:
+        text += render_decl(m)
+        text += doxyxml2html(m.desc)
     text += '</div>\n'
     text += '</div>\n'
     return text
