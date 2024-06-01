@@ -12,6 +12,7 @@ class Definition:
   def __init__(self, name: str):
     self.name = name
     self.params = None
+    self.members = None
 
 # A map from Doxygen to HTML tags.
 tag_map = {
@@ -91,10 +92,10 @@ def render_decl(d: Definition) -> None:
     text += '&gt;\n'
   text += d.type + ' ' + d.name
   if d.params is not None:
-    params = ', '.join(
-      [f'{escape_html(p.type)} {p.name}' for p in d.params])
-    text += '(' + params + ')'
+    params = ', '.join([f'{p.type} {p.name}' for p in d.params])
+    text += '(' + escape_html(params) + ')'
     if d.trailing_return_type:
+      text += '\n ' if len(d.name) + len(params) > 60 else ''
       text += ' -> ' + escape_html(d.trailing_return_type)
   text += ';'
   text += '</code></pre>\n'
@@ -194,7 +195,7 @@ class CxxHandler(BaseHandler):
       d.template_params = get_template_params(node)
       d.desc = get_description(node)
       d.members = []
-      for m in node.findall('sectiondef/memberdef'):
+      for m in node.findall('sectiondef[@kind="public-attrib"]/memberdef'):
         name = m.find('name').text
         member = Definition(name if name else '')
         type = m.find('type').text
@@ -209,10 +210,9 @@ class CxxHandler(BaseHandler):
     text += render_decl(d)
     text += '<div class="docblock-desc">\n'
     text += doxyxml2html(d.desc)
-    if d.params is None:
+    if d.members is not None:
       for m in d.members:
-        text += render_decl(m)
-        text += doxyxml2html(m.desc)
+        text += self.render(m, config)
     text += '</div>\n'
     text += '</div>\n'
     return text
