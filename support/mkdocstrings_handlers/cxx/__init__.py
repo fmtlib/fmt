@@ -28,6 +28,9 @@ tag_text_map = {
   'sp': ' '
 }
 
+def escape_html(s: str) -> str:
+  return s.replace("<", "&lt;")
+
 def doxyxml2html(nodes: list[et.Element]):
   out = ''
   for n in nodes:
@@ -35,9 +38,9 @@ def doxyxml2html(nodes: list[et.Element]):
     if not tag:
       out += tag_text_map[n.tag]
     out += '<' + tag + '>' if tag else ''
-    out += '<code>' if tag == 'pre' else ''
+    out += '<code class="language-cpp">' if tag == 'pre' else ''
     if n.text:
-      out += n.text
+      out += escape_html(n.text)
     out += doxyxml2html(n)
     out += '</code>' if tag == 'pre' else ''
     out += '</' + tag + '>' if tag else ''
@@ -64,9 +67,6 @@ def get_description(node: et.Element) -> list[et.Element]:
 def clean_type(type: str) -> str:
   type = type.replace('< ', '<').replace(' >', '>')
   return type.replace(' &', '&').replace(' *', '*')
-
-def render_type(type: str) -> str:
-  return type.replace("<", "&lt;")
 
 def convert_param(param: et.Element) -> Definition:
   d = Definition(param.find('declname').text)
@@ -175,7 +175,7 @@ class CxxHandler(BaseHandler):
 
   def render(self, d: Definition, config: dict) -> str:
     text = '<div class="docblock">\n'
-    text += '<pre><code>'
+    text += '<pre><code class="language-cpp">'
     if d.template_params is not None:
       text += 'template &lt;'
       text += ', '.join(
@@ -184,15 +184,14 @@ class CxxHandler(BaseHandler):
     text += d.type + ' ' + d.name
     if d.params is not None:
       params = ', '.join(
-        [f'{render_type(p.type)} {p.name}' for p in d.params])
+        [f'{escape_html(p.type)} {p.name}' for p in d.params])
       text += '(' + params + ')'
       if d.trailing_return_type:
-        text += ' -> ' + render_type(d.trailing_return_type)
+        text += ' -> ' + escape_html(d.trailing_return_type)
     text += ';'
     text += '</code></pre>\n'
     text += '<div class="docblock-desc">\n'
-    desc = doxyxml2html(d.desc)
-    text += desc
+    text += doxyxml2html(d.desc)
     text += '</div>\n'
     text += '</div>\n'
     return text
