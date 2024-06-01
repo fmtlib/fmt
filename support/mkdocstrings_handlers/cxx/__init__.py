@@ -57,6 +57,17 @@ def get_template_params(node: et.Element) -> Optional[list[Definition]]:
     params.append(param)
   return params
 
+def get_description(node: et.Element) -> list[et.Element]:
+  return node.findall('briefdescription/para') + \
+         node.findall('detaileddescription/para')
+
+def clean_type(type: str) -> str:
+  type = type.replace('< ', '<').replace(' >', '>')
+  return type.replace(' &', '&').replace(' *', '*')
+
+def render_type(type: str) -> str:
+  return type.replace("<", "&lt;")
+
 def convert_param(param: et.Element) -> Definition:
   d = Definition(param.find('declname').text)
   type = param.find('type')
@@ -66,9 +77,7 @@ def convert_param(param: et.Element) -> Definition:
     if ref.tail:
       type_str += ref.tail
   type_str += type.tail.strip()
-  type_str = type_str.replace('< ', '<').replace(' >', '>')
-  type_str = type_str.replace(' &', '&').replace(' *', '*')
-  d.type = type_str
+  d.type = clean_type(type_str)
   return d
 
 class CxxHandler(BaseHandler):
@@ -145,7 +154,11 @@ class CxxHandler(BaseHandler):
       d.type = node.find('type').text
       d.template_params = get_template_params(node)
       d.params = params
-      d.desc = node.findall('detaileddescription/para')
+      d.trailing_return_type = None
+      if d.type == 'auto':
+        d.trailing_return_type = clean_type(
+          node.find('argsstring').text.split(' -> ')[1])
+      d.desc = get_description(node)
       return d
     cls = self._doxyxml.findall(f"compounddef/innerclass[.='fmt::{name}']")
     if not cls:
@@ -157,7 +170,7 @@ class CxxHandler(BaseHandler):
       d.type = node.get('kind')
       d.template_params = get_template_params(node)
       d.params = None
-      d.desc = node.findall('detaileddescription/para')
+      d.desc = get_description(node)
       return d
 
   def render(self, d: Definition, config: dict) -> str:
@@ -171,8 +184,10 @@ class CxxHandler(BaseHandler):
     text += d.type + ' ' + d.name
     if d.params is not None:
       params = ', '.join(
-        [f'{p.type.replace("<", "&lt;")} {p.name}' for p in d.params])
+        [f'{render_type(p.type)} {p.name}' for p in d.params])
       text += '(' + params + ')'
+      if d.trailing_return_type:
+        text += ' -> ' + render_type(d.trailing_return_type)
     text += ';'
     text += '</code></pre>\n'
     text += '<div class="docblock-desc">\n'

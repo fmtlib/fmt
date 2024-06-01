@@ -2905,8 +2905,8 @@ auto vformat_to(OutputIt&& out, string_view fmt, format_args args)
  *
  * **Example**:
  *
- *    auto out = std::vector<char>();
- *    fmt::format_to(std::back_inserter(out), "{}", 42);
+ *     auto out = std::vector<char>();
+ *     fmt::format_to(std::back_inserter(out), "{}", 42);
  */
 template <typename OutputIt, typename... T,
           FMT_ENABLE_IF(detail::is_output_iterator<remove_cvref_t<OutputIt>,
