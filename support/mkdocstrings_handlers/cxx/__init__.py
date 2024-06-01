@@ -168,7 +168,8 @@ class CxxHandler(BaseHandler):
       text += '&gt;\n'
     text += d.type + ' ' + d.name
     if d.params is not None:
-      params = ', '.join([p.type + ' ' + p.name for p in d.params])
+      params = ', '.join(
+        [f'{p.type.replace("<", "&lt;")} {p.name}' for p in d.params])
       text += '(' + params + ')'
     text += ';'
     text += '</code></pre>\n'
