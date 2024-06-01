@@ -19,8 +19,7 @@ integer           ::= digit+
 digit             ::= "0"..."9"
 identifier        ::= id_start id_continue*
 id_start          ::= "a"..."z" | "A"..."Z" | "_"
-id_continue       ::= id_start | digit
-</code>
+id_continue       ::= id_start | digit</code>
 </pre>
 
 In less formal terms, the replacement field can start with an *arg_id* that
@@ -84,8 +83,7 @@ width       ::= <a href="#replacement-field">integer</a> | "{" [<a
 precision   ::= <a href="#replacement-field">integer</a> | "{" [<a
   href="#replacement-field">arg_id</a>] "}"
 type        ::= "a" | "A" | "b" | "B" | "c" | "d" | "e" | "E" | "f" | "F" |
-                "g" | "G" | "o" | "p" | "s" | "x" | "X" | "?"
-</code>
+                "g" | "G" | "o" | "p" | "s" | "x" | "X" | "?"</code>
 </pre>
 
 The *fill* character can be any Unicode code point other than `'{'` or `'}'`.
@@ -416,8 +414,7 @@ chrono_type        ::= "a" | "A" | "b" | "B" | "c" | "C" | "d" | "D" | "e" |
                        "F" | "g" | "G" | "h" | "H" | "I" | "j" | "m" | "M" |
                        "n" | "p" | "q" | "Q" | "r" | "R" | "S" | "t" | "T" |
                        "u" | "U" | "V" | "w" | "W" | "x" | "X" | "y" | "Y" |
-                       "z" | "Z" | "%"
-</code>
+                       "z" | "Z" | "%"</code>
 </pre>
 
 Literal chars are copied unchanged to the output. Precision is valid only
