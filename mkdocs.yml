@@ -1,0 +1,38 @@
+site_name: '{fmt}'
+
+docs_dir: doc
+
+repo_url: https://github.com/fmtlib/fmt
+
+# Make the docs work locally without a server.
+use_directory_urls: false
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - toc.integrate
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+
+plugins:
+  - mkdocstrings:
+      default_handler: cxx
+
+nav:
+  - Usage: usage.md
+  - API: api.md
+  - Syntax: syntax.md
+  # Make the {fmt} link work locally.
+  - '': index.md
+
+extra:
+  version:
+    provider: mike
