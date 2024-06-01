@@ -1,4 +1,4 @@
-# API Reference {#string-formatting-api}
+# API Reference
 
 The {fmt} library API consists of the following parts:
 
@@ -55,11 +55,7 @@ specified otherwise.
 <a id="print"></a>
 ::: print(format_string<T...>, T&&...)
 
-::: vprint(string_view, format_args)
-
 ::: print(FILE*, format_string<T...>, T&&...)
-
-::: vprint(FILE*, string_view, format_args)
 
 ::: println(format_string<T...>, T&&...)
 
@@ -90,7 +86,8 @@ fmt::format_string
 
 ::: runtime(string_view)
 
-### Formatting User-Defined Types {#udt}
+<a id="udt"></a>
+### Formatting User-Defined Types
 
 The {fmt} library provides formatters for many standard C++ types.
 See [`fmt/ranges.h`](#ranges-api) for ranges and tuples including standard

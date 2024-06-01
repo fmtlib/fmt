@@ -46,11 +46,11 @@ def doxyxml2html(nodes: list[et.Element]):
   return out
 
 def get_template_params(node: et.Element) -> Optional[list[Definition]]:
-  param_nodes = node.findall('templateparamlist/param')
-  if param_nodes is None:
+  templateparamlist = node.find('templateparamlist')
+  if templateparamlist is None:
     return None
   params = []
-  for param_node in param_nodes:
+  for param_node in templateparamlist.findall('param'):
     name = param_node.find('declname')
     param = Definition(name.text if name is not None else '')
     param.type = param_node.find('type').text
@@ -161,10 +161,12 @@ class CxxHandler(BaseHandler):
       return d
 
   def render(self, d: Definition, config: dict) -> str:
-    text = '<pre><code>'
+    text = '<div class="docblock">\n'
+    text += '<pre><code>'
     if d.template_params is not None:
       text += 'template &lt;'
-      text += ', '.join([f'{p.type} {p.name}' for p in d.template_params])
+      text += ', '.join(
+        [f'{p.type} {p.name}'.rstrip() for p in d.template_params])
       text += '&gt;\n'
     text += d.type + ' ' + d.name
     if d.params is not None:
@@ -173,9 +175,10 @@ class CxxHandler(BaseHandler):
       text += '(' + params + ')'
     text += ';'
     text += '</code></pre>\n'
-    text += '<div class="docblock">\n'
+    text += '<div class="docblock-desc">\n'
     desc = doxyxml2html(d.desc)
     text += desc
+    text += '</div>\n'
     text += '</div>\n'
     return text
 
