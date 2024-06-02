@@ -136,14 +136,12 @@ struct formatter<detail::streamed_view<T>, Char>
 };
 
 /**
-  \rst
-  Returns a view that formats `value` via an ostream ``operator<<``.
-
-  **Example**:
-
-    fmt::print("Current thread id: {}\n",
-               fmt::streamed(std::this_thread::get_id()));
-  \endrst
+ * Returns a view that formats `value` via an ostream `operator<<`.
+ *
+ * **Example**:
+ *
+ *     fmt::print("Current thread id: {}\n",
+ *                fmt::streamed(std::this_thread::get_id()));
  */
 template <typename T>
 constexpr auto streamed(const T& value) -> detail::streamed_view<T> {
@@ -172,13 +170,11 @@ void vprint(std::basic_ostream<Char>& os,
 }
 
 /**
-  \rst
-  Prints formatted data to the stream `os`.
-
-  **Example**:
-
-    fmt::print(cerr, "Don't {}!", "panic");
-  \endrst
+ * Prints formatted data to the stream `os`.
+ *
+ * **Example**:
+ *
+ *     fmt::print(cerr, "Don't {}!", "panic");
  */
 FMT_EXPORT template <typename... T>
 void print(std::ostream& os, format_string<T...> fmt, T&&... args) {
