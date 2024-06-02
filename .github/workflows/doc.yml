@@ -25,7 +25,6 @@ jobs:
       run: |
         sudo apt update
         sudo apt install doxygen python3-virtualenv
-        sudo npm install -g sass
         cmake -E make_directory ${{runner.workspace}}/build
 
     - name: Build
