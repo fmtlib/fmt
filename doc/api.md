@@ -273,7 +273,7 @@ You can create your own formatting function with compile-time checks and
 small binary footprint, for example ([run](https://godbolt.org/z/b9Pbasvzc)):
 
 ```c++
-#include <fmt/base.h>
+#include <fmt/format.h>
 
 void vlog(const char* file, int line,
           fmt::string_view fmt, fmt::format_args args) {
@@ -514,14 +514,14 @@ feature](https://en.cppreference.com/w/cpp/feature_test).
 
     #include <fmt/std.h>
 
-    std::variant<char, float> v0{'x'};
-    // Prints "variant('x')"
-    fmt::print("{}", v0);
+    fmt::print("{}", std::variant<char, float>('x'));
+    // Output: variant('x')
 
-    std::variant<std::monostate, char> v1;
-    // Prints "variant(monostate)"
+    fmt::print("{}", std::variant<std::monostate, char>());
+    // Output: variant(monostate)
 
-## Format String Compilation {#compile-api}
+<a id="compile-api"></a>
+## Format String Compilation
 
 `fmt/compile.h` provides format string compilation enabled via the
 `FMT_COMPILE` macro or the `_cf` user-defined literal. Format strings
@@ -615,26 +615,19 @@ if an argument type doesn\'t match its format specification.
 
 ::: sprintf(const S&, const T&...)
 
-## `wchar_t` Support {#xchar-api}
+<a id="xchar-api"></a>
+## Wide Strings
 
 The optional header `fmt/xchar.h` provides support for `wchar_t` and
 exotic character types.
 
-:: {.doxygenstruct}
-fmt::is_char
-::
+::: is_char
 
-:: {.doxygentypedef}
-fmt::wstring_view
-::
+::: wstring_view
 
-:: {.doxygentypedef}
-fmt::wformat_context
-::
+::: wformat_context
 
-:: {.doxygenfunction}
-fmt::to_wstring(const T &value)
-::
+::: to_wstring(const T&)
 
 ## Compatibility with C++20 `std::format`
 

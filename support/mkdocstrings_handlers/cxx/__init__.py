@@ -52,7 +52,7 @@ def doxyxml2html(nodes: list[et.Element]):
       out += n.tail
   return out
 
-def get_template_params(node: et.Element) -> Optional[list[Definition]]:
+def convert_template_params(node: et.Element) -> Optional[list[Definition]]:
   templateparamlist = node.find('templateparamlist')
   if templateparamlist is None:
     return None
@@ -81,10 +81,20 @@ def convert_type(type: et.Element) -> str:
   result += type.tail.strip()
   return clean_type(result)
 
-def convert_param(param: et.Element) -> Definition:
-  d = Definition(param.find('declname').text, 'param')
-  d.type = convert_type(param.find('type'))
-  return d
+def convert_params(func: et.Element) -> Definition:
+  params = []
+  for p in func.findall('param'):
+    d = Definition(p.find('declname').text, 'param')
+    d.type = convert_type(p.find('type'))
+    params.append(d)
+  return params
+
+def convert_return_type(d: Definition, node: et.Element) -> None:
+  d.trailing_return_type = None
+  if d.type == 'auto' or d.type == 'constexpr auto':
+    parts = node.find('argsstring').text.split(' -> ')
+    if len(parts) > 1:
+      d.trailing_return_type = clean_type(parts[1])
 
 def render_decl(d: Definition) -> None:
   text = '<pre><code class="language-cpp">'
@@ -105,7 +115,7 @@ def render_decl(d: Definition) -> None:
     text += '(' + escape_html(params) + ')'
     if d.trailing_return_type:
       text += '\n ' \
-        if len(d.name) + len(params) + len(d.trailing_return_type) > 74 else ''
+        if len(d.name) + len(params) + len(d.trailing_return_type) > 68 else ''
       text += ' -> ' + escape_html(d.trailing_return_type)
   elif d.kind == 'typedef':
     text += ' = ' + escape_html(d.type)
@@ -182,20 +192,16 @@ class CxxHandler(BaseHandler):
       params = None
       kind = node.get('kind')
       if kind == 'function':
-        params = [convert_param(p) for p in node.findall('param')]
+        params = convert_params(node)
         node_param_str = ', '.join([p.type for p in params])
         if param_str and param_str != node_param_str:
           candidates.append(f'{name}({node_param_str})')
           continue
       d = Definition(name, kind)
       d.type = convert_type(node.find('type'))
-      d.template_params = get_template_params(node)
+      d.template_params = convert_template_params(node)
       d.params = params
-      d.trailing_return_type = None
-      if d.type == 'auto' or d.type == 'constexpr auto':
-        parts = node.find('argsstring').text.split(' -> ')
-        if len(parts) > 1:
-          d.trailing_return_type = clean_type(parts[1])
+      convert_return_type(d, node)
       d.desc = get_description(node)
       return d
     
@@ -207,16 +213,28 @@ class CxxHandler(BaseHandler):
       xml = et.parse(f)
       node = xml.find('compounddef')
       d = Definition(name, node.get('kind'))
-      d.template_params = get_template_params(node)
+      d.template_params = convert_template_params(node)
       d.desc = get_description(node)
       d.members = []
-      for m in node.findall('sectiondef[@kind="public-attrib"]/memberdef'):
+      for m in node.findall('sectiondef[@kind="public-attrib"]/memberdef') + \
+               node.findall('sectiondef[@kind="public-func"]/memberdef'):
         name = m.find('name').text
-        member = Definition(name if name else '', m.get('kind'))
+        # Doxygen incorrectly classifies members of private unnamed unions as
+        # public members of the containing class.
+        if name.endswith('_'):
+          continue
+        desc = get_description(m)
+        if len(desc) == 0:
+          continue
+        kind = m.get('kind')
+        member = Definition(name if name else '', kind)
         type = m.find('type').text
         member.type = type if type else ''
+        if kind == 'function':
+          member.params = convert_params(m)
+          convert_return_type(member, m)
         member.template_params = None
-        member.desc = get_description(m)
+        member.desc = desc
         d.members.append(member)
       return d
 
