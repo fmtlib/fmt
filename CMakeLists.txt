@@ -446,7 +446,7 @@ function(add_doc_target)
     SOURCES ${sources})
 
   include(GNUInstallDirs)
-  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/site/
+  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/support/site/
           DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/doc/fmt OPTIONAL)
 endfunction()
 
