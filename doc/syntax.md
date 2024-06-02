@@ -1,7 +1,8 @@
 # Format String Syntax
 
-[Formatting functions](api.md) such as `fmt::format` and [`fmt::print`](
-api.md#print) use the same format string syntax described in this section.
+[Formatting functions](api.md) such as [`fmt::format`](api.md#format) and
+[`fmt::print`]( api.md#print) use the same format string syntax described
+in this section.
 
 Format strings contain "replacement fields" surrounded by curly braces `{}`.
 Anything that is not contained in braces is considered literal text, which is

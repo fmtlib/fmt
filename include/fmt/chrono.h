@@ -96,10 +96,8 @@ FMT_CONSTEXPR auto lossless_integral_conversion(const From from, int& ec)
   return static_cast<To>(from);
 }
 
-/**
- * converts From to To, without loss. If the dynamic value of from
- * can't be converted to To without loss, ec is set.
- */
+/// Converts From to To, without loss. If the dynamic value of from
+/// can't be converted to To without loss, ec is set.
 template <typename To, typename From,
           FMT_ENABLE_IF(!std::is_same<From, To>::value &&
                         std::numeric_limits<From>::is_signed !=
@@ -187,9 +185,7 @@ FMT_CONSTEXPR auto safe_float_conversion(const From from, int& ec) -> To {
   return from;
 }
 
-/**
- * safe duration cast between integral durations
- */
+/// Safe duration cast between integral durations
 template <typename To, typename FromRep, typename FromPeriod,
           FMT_ENABLE_IF(std::is_integral<FromRep>::value),
           FMT_ENABLE_IF(std::is_integral<typename To::rep>::value)>
@@ -239,9 +235,7 @@ auto safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
   return ec ? To() : To(tocount);
 }
 
-/**
- * safe duration_cast between floating point durations
- */
+/// Safe duration_cast between floating point durations
 template <typename To, typename FromRep, typename FromPeriod,
           FMT_ENABLE_IF(std::is_floating_point<FromRep>::value),
           FMT_ENABLE_IF(std::is_floating_point<typename To::rep>::value)>
@@ -518,9 +512,9 @@ auto to_time_t(
 FMT_BEGIN_EXPORT
 
 /**
-  Converts given time since epoch as ``std::time_t`` value into calendar time,
-  expressed in local time. Unlike ``std::localtime``, this function is
-  thread-safe on most platforms.
+ * Converts given time since epoch as `std::time_t` value into calendar time,
+ * expressed in local time. Unlike `std::localtime`, this function is
+ * thread-safe on most platforms.
  */
 inline auto localtime(std::time_t time) -> std::tm {
   struct dispatcher {
@@ -567,9 +561,9 @@ inline auto localtime(std::chrono::local_time<Duration> time) -> std::tm {
 #endif
 
 /**
-  Converts given time since epoch as ``std::time_t`` value into calendar time,
-  expressed in Coordinated Universal Time (UTC). Unlike ``std::gmtime``, this
-  function is thread-safe on most platforms.
+ * Converts given time since epoch as `std::time_t` value into calendar time,
+ * expressed in Coordinated Universal Time (UTC). Unlike `std::gmtime`, this
+ * function is thread-safe on most platforms.
  */
 inline auto gmtime(std::time_t time) -> std::tm {
   struct dispatcher {

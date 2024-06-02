@@ -668,9 +668,9 @@ auto join(It begin, Sentinel end, string_view sep) -> join_view<It, Sentinel> {
 /**
  * Returns a view that formats `range` with elements separated by `sep`.
  *
- *  **Example**:
+ * **Example**:
  *
- *     std::vector<int> v = {1, 2, 3};
+ *     auto v = std::vector<int>{1, 2, 3};
  *     fmt::print("{}", fmt::join(v, ", "));
  *     // Output: 1, 2, 3
  *
@@ -802,15 +802,13 @@ struct formatter<
 FMT_BEGIN_EXPORT
 
 /**
-  \rst
-  Returns an object that formats `tuple` with elements separated by `sep`.
-
-  **Example**:
-
-    std::tuple<int, char> t = {1, 'a'};
-    fmt::print("{}", fmt::join(t, ", "));
-    // Output: "1, a"
-  \endrst
+ * Returns an object that formats `std::tuple` with elements separated by `sep`.
+ *
+ * **Example**:
+ *
+ *     auto t = std::tuple<int, char>{1, 'a'};
+ *     fmt::print("{}", fmt::join(t, ", "));
+ *     // Output: 1, a
  */
 template <typename... T>
 FMT_CONSTEXPR auto join(const std::tuple<T...>& tuple, string_view sep)
@@ -819,15 +817,13 @@ FMT_CONSTEXPR auto join(const std::tuple<T...>& tuple, string_view sep)
 }
 
 /**
-  \rst
-  Returns an object that formats `initializer_list` with elements separated by
-  `sep`.
-
-  **Example**:
-
-    fmt::print("{}", fmt::join({1, 2, 3}, ", "));
-    // Output: "1, 2, 3"
-  \endrst
+ * Returns an object that formats `std::initializer_list` with elements
+ * separated by `sep`.
+ *
+ * **Example**:
+ *
+ *     fmt::print("{}", fmt::join({1, 2, 3}, ", "));
+ *     // Output: "1, 2, 3"
  */
 template <typename T>
 auto join(std::initializer_list<T> list, string_view sep)

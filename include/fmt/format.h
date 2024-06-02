@@ -4343,7 +4343,7 @@ FMT_API auto vformat(string_view fmt, format_args args) -> std::string;
  *
  *     #include <fmt/format.h>
  *     std::string message = fmt::format("The answer is {}.", 42);
-*/
+ */
 template <typename... T>
 FMT_NODISCARD FMT_INLINE auto format(format_string<T...> fmt, T&&... args)
     -> std::string {

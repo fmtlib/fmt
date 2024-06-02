@@ -405,7 +405,8 @@ class file_buffer final : public buffer<char> {
 // occur in Xcode versions 7.2.1 and 8.2.1.
 constexpr detail::buffer_size buffer_size{};
 
-/** A fast output stream which is not thread-safe. */
+/// A fast output stream for writing from a single thread. Writing from
+/// multiple threads without external synchronization may result in a data race.
 class FMT_API ostream {
  private:
   FMT_MSC_WARNING(suppress : 4251)
@@ -426,10 +427,8 @@ class FMT_API ostream {
 
   void close() { buffer_.close(); }
 
-  /**
-    Formats ``args`` according to specifications in ``fmt`` and writes the
-    output to the file.
-   */
+  /// Formats `args` according to specifications in `fmt` and writes the
+  /// output to the file.
   template <typename... T> void print(format_string<T...> fmt, T&&... args) {
     vformat_to(appender(buffer_), fmt, fmt::make_format_args(args...));
   }

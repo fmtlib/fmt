@@ -41,7 +41,7 @@ in Python. They take *fmt* and *args* as arguments.
 
 *fmt* is a format string that contains literal text and replacement fields
 surrounded by braces `{}`. The fields are replaced with formatted arguments
-in the resulting string. [`fmt::format_string`](#format_string) is a format 
+in the resulting string. [`fmt::format_string`](#format_string) is a format
 string which can be implicitly constructed from a string literal or a
 `constexpr` string and is checked at compile time in C++20. To pass a runtime
 format string wrap it in [fmt::runtime](#runtime).
@@ -434,7 +434,7 @@ variable `FMT_ENFORCE_COMPILE_STRING`. When set, functions accepting
 <a id="ranges-api"></a>
 ## Range and Tuple Formatting
 
-The library also supports convenient formatting of ranges and tuples:
+`fmt/ranges.h` provides formatting support for ranges and tuples:
 
     #include <fmt/ranges.h>
 
@@ -453,14 +453,17 @@ Using `fmt::join`, you can separate tuple elements with a custom separator:
 
 ::: join(It, Sentinel, string_view)
 
+::: join(std::initializer_list<T>, string_view)
+
 <a id="chrono-api"></a>
 ## Date and Time Formatting
 
 `fmt/chrono.h` provides formatters for
 
-- [std::chrono::duration](https://en.cppreference.com/w/cpp/chrono/duration)
-- [std::chrono::time_point](https://en.cppreference.com/w/cpp/chrono/time_point)
-- [std::tm](https://en.cppreference.com/w/cpp/chrono/c/tm)
+- [`std::chrono::duration`](https://en.cppreference.com/w/cpp/chrono/duration)
+- [`std::chrono::time_point`](
+  https://en.cppreference.com/w/cpp/chrono/time_point)
+- [`std::tm`](https://en.cppreference.com/w/cpp/chrono/c/tm)
 
 The format syntax is described in [Chrono Format Specifications](syntax.md#
 chrono-format-specifications).

@@ -2992,7 +2992,7 @@ FMT_API void vprintln(FILE* f, string_view fmt, format_args args);
  * to `stdout`.
  *
  * **Example**:
- * 
+ *
  *     fmt::print("The answer is {}.", 42);
  */
 template <typename... T>

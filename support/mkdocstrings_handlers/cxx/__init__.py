@@ -10,10 +10,11 @@ from subprocess import CalledProcessError, PIPE, Popen, STDOUT
 class Definition:
   '''A definition extracted by Doxygen.'''
   def __init__(self, name: str, kind: Optional[str] = None,
-               node: Optional[et.Element] = None):
+               node: Optional[et.Element] = None,
+               is_member: bool = False):
     self.name = name
     self.kind = kind if kind is not None else node.get('kind')
-    self.id = node.get('id') if node is not None else None
+    self.id = name if not is_member else None
     self.params = None
     self.members = None
 
@@ -225,7 +226,7 @@ class CxxHandler(BaseHandler):
         if len(desc) == 0:
           continue
         kind = m.get('kind')
-        member = Definition(name if name else '', kind)
+        member = Definition(name if name else '', kind=kind, is_member=True)
         type = m.find('type').text
         member.type = type if type else ''
         if kind == 'function':
@@ -274,9 +275,9 @@ class CxxHandler(BaseHandler):
       elif d.kind == 'define':
         params = []
         for p in node.findall('param'):
-          d = Definition(p.find('defname').text, 'param')
-          d.type = None
-          params.append(d)
+          param = Definition(p.find('defname').text, kind='param')
+          param.type = None
+          params.append(param)
       d.type = convert_type(node.find('type'))
       d.template_params = convert_template_params(node)
       d.params = params
