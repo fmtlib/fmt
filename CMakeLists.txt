@@ -443,6 +443,7 @@ function(add_doc_target)
     COMMAND
       ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/support
         ${MKDOCS} build -f ${CMAKE_CURRENT_SOURCE_DIR}/support/mkdocs.yml
+                        --no-directory-urls
     SOURCES ${sources})
 
   include(GNUInstallDirs)

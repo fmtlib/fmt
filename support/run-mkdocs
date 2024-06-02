@@ -3,9 +3,12 @@
 
 import os, subprocess, sys
 
+dirname = os.path.dirname(__file__)
+
 # Set PYTHONPATH for the mkdocstrings handler.
 env = os.environ.copy()
 path = env.get('PYTHONPATH')
-env['PYTHONPATH'] = (path + ':' if path else '') + os.path.dirname(__file__)
+env['PYTHONPATH'] = (path + ':' if path else '') + dirname
 
-subprocess.run(['mkdocs'] + sys.argv[1:], env=env)
+config_path = os.path.join(dirname, 'mkdocs.yml')
+subprocess.run(['mkdocs'] + sys.argv[1:] + ['-f', config_path], env=env)

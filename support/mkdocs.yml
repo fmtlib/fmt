@@ -4,9 +4,6 @@ docs_dir: ../doc
 
 repo_url: https://github.com/fmtlib/fmt
 
-# Make the docs work locally without a server.
-use_directory_urls: false
-
 theme:
   name: material
   features:
