@@ -9,9 +9,11 @@ from subprocess import CalledProcessError, PIPE, Popen, STDOUT
 
 class Definition:
   '''A definition extracted by Doxygen.'''
-  def __init__(self, name: str, kind: str):
+  def __init__(self, name: str, kind: Optional[str] = None,
+               node: Optional[et.Element] = None):
     self.name = name
-    self.kind = kind
+    self.kind = kind if kind is not None else node.get('kind')
+    self.id = node.get('id') if node is not None else None
     self.params = None
     self.members = None
 
@@ -99,7 +101,10 @@ def convert_return_type(d: Definition, node: et.Element) -> None:
       d.trailing_return_type = normalize_type(parts[1])
 
 def render_decl(d: Definition) -> None:
-  text = '<pre><code class="language-cpp">'
+  text = ''
+  if d.id is not None:
+    text += f'<a id="{d.id}">\n'
+  text += '<pre><code class="language-cpp">'
 
   if d.template_params is not None:
     text += 'template &lt;'
@@ -131,6 +136,8 @@ def render_decl(d: Definition) -> None:
 
   text += end
   text += '</code></pre>\n'
+  if d.id is not None:
+    text += f'</a>\n'
   return text
 
 class CxxHandler(BaseHandler):
@@ -203,7 +210,7 @@ class CxxHandler(BaseHandler):
     with open(path) as f:
       xml = et.parse(f)
       node = xml.find('compounddef')
-      d = Definition(identifier, node.get('kind'))
+      d = Definition(identifier, node=node)
       d.template_params = convert_template_params(node)
       d.desc = get_description(node)
       d.members = []
@@ -257,20 +264,19 @@ class CxxHandler(BaseHandler):
     for node in nodes:
       # Process a function or a typedef.
       params = None
-      kind = node.get('kind')
-      if kind == 'function':
+      d = Definition(name, node=node)
+      if d.kind == 'function':
         params = convert_params(node)
         node_param_str = ', '.join([p.type for p in params])
         if param_str and param_str != node_param_str:
           candidates.append(f'{name}({node_param_str})')
           continue
-      elif kind == 'define':
+      elif d.kind == 'define':
         params = []
         for p in node.findall('param'):
           d = Definition(p.find('defname').text, 'param')
           d.type = None
           params.append(d)
-      d = Definition(name, kind)
       d.type = convert_type(node.find('type'))
       d.template_params = convert_template_params(node)
       d.params = params

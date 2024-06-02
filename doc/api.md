@@ -10,7 +10,7 @@ The {fmt} library API consists of the following components:
 - [`fmt/chrono.h`](#chrono-api): date and time formatting
 - [`fmt/std.h`](#std-api): formatters for standard library types
 - [`fmt/compile.h`](#compile-api): format string compilation
-- [`fmt/color.h`](#color-api): terminal color and text style
+- [`fmt/color.h`](#color-api): terminal colors and text styles
 - [`fmt/os.h`](#os-api): system APIs
 - [`fmt/ostream.h`](#ostream-api): `std::ostream` support
 - [`fmt/args.h`](#args-api): dynamic argument lists
@@ -394,7 +394,7 @@ allocator:
     }
 
 The allocator will be used for the output container only. Formatting
-functions normally don\'t do any allocations for built-in and string
+functions normally don't do any allocations for built-in and string
 types except for non-default floating-point formatting that occasionally
 falls back on `sprintf`.
 
@@ -554,7 +554,7 @@ performance bottleneck.
 ::: operator""_cf
 
 <a id="color-api"></a>
-## Terminal Color and Text Style
+## Terminal Colors and Text Styles
 
 `fmt/color.h` provides support for terminal color and text style output.
 
@@ -617,7 +617,7 @@ functionality. The following functions use [printf format string
 syntax](https://pubs.opengroup.org/onlinepubs/009695399/functions/fprintf.html)
 with the POSIX extension for positional arguments. Unlike their standard
 counterparts, the `fmt` functions are type-safe and throw an exception
-if an argument type doesn\'t match its format specification.
+if an argument type doesn't match its format specification.
 
 ::: printf(string_view, const T&...)
 
@@ -647,5 +647,5 @@ following differences:
 
 - Names are defined in the `fmt` namespace instead of `std` to avoid
   collisions with standard library implementations.
-- Width calculation doesn\'t use grapheme clusterization. The latter has
-  been implemented in a separate branch but hasn\'t been integrated yet.
+- Width calculation doesn't use grapheme clusterization. The latter has
+  been implemented in a separate branch but hasn't been integrated yet.
