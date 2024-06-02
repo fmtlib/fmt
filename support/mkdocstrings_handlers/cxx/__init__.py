@@ -73,6 +73,8 @@ def normalize_type(type: str) -> str:
   return type.replace(' &', '&').replace(' *', '*')
 
 def convert_type(type: et.Element) -> str:
+  if type is None:
+    return None
   result = type.text if type.text else ''
   for ref in type:
     result += ref.text
@@ -98,20 +100,27 @@ def convert_return_type(d: Definition, node: et.Element) -> None:
 
 def render_decl(d: Definition) -> None:
   text = '<pre><code class="language-cpp">'
+
   if d.template_params is not None:
     text += 'template &lt;'
     text += ', '.join(
       [f'{p.type} {p.name}'.rstrip() for p in d.template_params])
     text += '&gt;\n'
+
+  end = ';'
   if d.kind == 'function' or d.kind == 'variable':
-    text += d.type
+    text += d.type + ' '
   elif d.kind == 'typedef':
-    text += 'using'
+    text += 'using '
+  elif d.kind == 'define':
+    end = ''
   else:
-    text += d.kind
-  text += ' ' + d.name
+    text += d.kind + ' '
+  text += d.name
+
   if d.params is not None:
-    params = ', '.join([f'{p.type} {p.name}' for p in d.params])
+    params = ', '.join([
+      (p.type + ' ' if p.type else '') + p.name for p in d.params])
     text += '(' + escape_html(params) + ')'
     if d.trailing_return_type:
       text += '\n ' \
@@ -119,7 +128,8 @@ def render_decl(d: Definition) -> None:
       text += ' -> ' + escape_html(d.trailing_return_type)
   elif d.kind == 'typedef':
     text += ' = ' + escape_html(d.type)
-  text += ';'
+
+  text += end
   text += '</code></pre>\n'
   return text
 
@@ -174,50 +184,12 @@ class CxxHandler(BaseHandler):
     if p.returncode != 0:
         raise CalledProcessError(p.returncode, cmd)
 
-  def collect(self, identifier: str, config: Mapping[str, Any]) -> Definition:
-    qual_name = 'fmt::' + identifier
+    with open(os.path.join(self._doxyxml_dir, 'compile_8h.xml')) as f:
+      self._file_doxyxml = et.parse(f)
 
-    param_str = None
-    paren = qual_name.find('(')
-    if paren > 0:
-      qual_name, param_str = qual_name[:paren], qual_name[paren + 1:-1]
-    
-    colons = qual_name.rfind('::')
-    namespace, name = qual_name[:colons], qual_name[colons + 2:]
-
-    # Load XML.
-    doxyxml = self._ns2doxyxml.get(namespace)
-    if doxyxml is None:
-      path = f'namespace{namespace.replace("::", "_1_1")}.xml'
-      with open(os.path.join(self._doxyxml_dir, path)) as f:
-        doxyxml = et.parse(f)
-        self._ns2doxyxml[namespace] = doxyxml
-
-    nodes = doxyxml.findall(
-      f"compounddef/sectiondef/memberdef/name[.='{name}']/..")
-    candidates = []
-    for node in nodes:
-      # Process a function or a typedef.
-      params = None
-      kind = node.get('kind')
-      if kind == 'function':
-        params = convert_params(node)
-        node_param_str = ', '.join([p.type for p in params])
-        if param_str and param_str != node_param_str:
-          candidates.append(f'{name}({node_param_str})')
-          continue
-      d = Definition(name, kind)
-      d.type = convert_type(node.find('type'))
-      d.template_params = convert_template_params(node)
-      d.params = params
-      convert_return_type(d, node)
-      d.desc = get_description(node)
-      return d
-    
-    # Process a compound definition such as a struct.
-    cls = doxyxml.findall(f"compounddef/innerclass[.='{qual_name}']")
-    if not cls:
-      raise Exception(f'Cannot find {identifier}. Candidates: {candidates}')
+  def collect_compound(self, identifier: str,
+                       cls: list[et.Element]) -> Definition:
+    '''Collect a compound definition such as a struct.'''
     path = os.path.join(self._doxyxml_dir, cls[0].get('refid') + '.xml')
     with open(path) as f:
       xml = et.parse(f)
@@ -247,6 +219,60 @@ class CxxHandler(BaseHandler):
         member.desc = desc
         d.members.append(member)
       return d
+
+  def collect(self, identifier: str, config: Mapping[str, Any]) -> Definition:
+    qual_name = 'fmt::' + identifier
+
+    param_str = None
+    paren = qual_name.find('(')
+    if paren > 0:
+      qual_name, param_str = qual_name[:paren], qual_name[paren + 1:-1]
+    
+    colons = qual_name.rfind('::')
+    namespace, name = qual_name[:colons], qual_name[colons + 2:]
+
+    # Load XML.
+    doxyxml = self._ns2doxyxml.get(namespace)
+    if doxyxml is None:
+      path = f'namespace{namespace.replace("::", "_1_1")}.xml'
+      with open(os.path.join(self._doxyxml_dir, path)) as f:
+        doxyxml = et.parse(f)
+        self._ns2doxyxml[namespace] = doxyxml
+
+    nodes = doxyxml.findall(
+      f"compounddef/sectiondef/memberdef/name[.='{name}']/..")
+    if len(nodes) == 0:
+      nodes = self._file_doxyxml.findall(
+        f"compounddef/sectiondef/memberdef/name[.='{name}']/..")
+    candidates = []
+    for node in nodes:
+      # Process a function or a typedef.
+      params = None
+      kind = node.get('kind')
+      if kind == 'function':
+        params = convert_params(node)
+        node_param_str = ', '.join([p.type for p in params])
+        if param_str and param_str != node_param_str:
+          candidates.append(f'{name}({node_param_str})')
+          continue
+      elif kind == 'define':
+        params = []
+        for p in node.findall('param'):
+          d = Definition(p.find('defname').text, 'param')
+          d.type = None
+          params.append(d)
+      d = Definition(name, kind)
+      d.type = convert_type(node.find('type'))
+      d.template_params = convert_template_params(node)
+      d.params = params
+      convert_return_type(d, node)
+      d.desc = get_description(node)
+      return d
+    
+    cls = doxyxml.findall(f"compounddef/innerclass[.='{qual_name}']")
+    if not cls:
+      raise Exception(f'Cannot find {identifier}. Candidates: {candidates}')
+    return self.collect_compound(identifier, cls)
 
   def render(self, d: Definition, config: dict) -> str:
     text = '<div class="docblock">\n'

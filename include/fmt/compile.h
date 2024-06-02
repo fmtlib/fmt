@@ -30,17 +30,15 @@ template <typename S>
 struct is_compiled_string : std::is_base_of<compiled_string, S> {};
 
 /**
-  \rst
-  Converts a string literal *s* into a format string that will be parsed at
-  compile time and converted into efficient formatting code. Requires C++17
-  ``constexpr if`` compiler support.
-
-  **Example**::
-
-    // Converts 42 into std::string using the most efficient method and no
-    // runtime format string processing.
-    std::string s = fmt::format(FMT_COMPILE("{}"), 42);
-  \endrst
+ * Converts a string literal `s` into a format string that will be parsed at
+ * compile time and converted into efficient formatting code. Requires C++17
+ * `constexpr if` compiler support.
+ *
+ * **Example**::
+ *
+ *     // Converts 42 into std::string using the most efficient method and no
+ *     // runtime format string processing.
+ *     std::string s = fmt::format(FMT_COMPILE("{}"), 42);
  */
 #if defined(__cpp_if_constexpr) && defined(__cpp_return_type_deduction)
 #  define FMT_COMPILE(s) \

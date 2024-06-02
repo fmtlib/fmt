@@ -275,7 +275,7 @@ Unused arguments are allowed as in Python's `str.format` and ordinary functions.
 
 Named arguments are not supported in compile-time checks at the moment.
 
-### Argument Lists
+### Type Erasure
 
 You can create your own formatting function with compile-time checks and
 small binary footprint, for example ([run](https://godbolt.org/z/b9Pbasvzc)):
@@ -493,7 +493,8 @@ chrono-format-specifications).
 
 ::: gmtime(std::time_t)
 
-## Standard Library Types Formatting {#std-api}
+<a id="std-api"></a>
+## Standard Library Types Formatting
 
 `fmt/std.h` provides formatters for:
 
@@ -550,13 +551,12 @@ Format string compilation can generate more binary code compared to the
 default API and is only recommended in places where formatting is a
 performance bottleneck.
 
-:: {.doxygendefine}
-FMT_COMPILE
-::
+::: FMT_COMPILE
 
 ::: operator""_cf
 
-## Terminal Color and Text Style {#color-api}
+<a id="color-api"></a>
+## Terminal Color and Text Style
 
 `fmt/color.h` provides support for terminal color and text style output.
 
@@ -568,13 +568,15 @@ FMT_COMPILE
 
 ::: styled(const T&, text_style)
 
-## System APIs {#os-api}
+<a id="os-api"></a>
+## System APIs
 
 ::: ostream
 
 ::: windows_error
 
-## `std::ostream` Support {#ostream-api}
+<a id="ostream-api"></a>
+## `std::ostream` Support
 
 `fmt/ostream.h` provides `std::ostream` support including formatting of
 user-defined types that have an overloaded insertion operator
@@ -601,14 +603,16 @@ you should provide a `formatter` specialization inherited from
 
 ::: print(std::ostream&, format_string<T...>, T&&...)
 
-## Dynamic Argument Lists {#args-api}
+<a id="args-api"></a>
+## Dynamic Argument Lists
 
 The header `fmt/args.h` provides `dynamic_format_arg_store`, a builder-like API
 that can be used to construct format argument lists dynamically.
 
 ::: dynamic_format_arg_store
 
-## `printf` Formatting {#printf-api}
+<a id="printf-api"></a>
+## `printf` Formatting
 
 The header `fmt/printf.h` provides `printf`-like formatting
 functionality. The following functions use [printf format string
