@@ -146,8 +146,8 @@ FMT_API std::system_error vwindows_error(int error_code, string_view format_str,
 
  where *<message>* is the formatted message and *<system-message>* is the
  system message corresponding to the error code.
- *error_code* is a Windows error code as given by ``GetLastError``.
- If *error_code* is not a valid error code such as -1, the system message
+ `error_code` is a Windows error code as given by ``GetLastError``.
+ If `error_code` is not a valid error code such as -1, the system message
  will look like "error -1".
 
  **Example**::
@@ -437,7 +437,7 @@ class FMT_API ostream {
 
 /**
   \rst
-  Opens a file for writing. Supported parameters passed in *params*:
+  Opens a file for writing. Supported parameters passed in `params`:
 
   * ``<integer>``: Flags passed to `open
     <https://pubs.opengroup.org/onlinepubs/007904875/functions/open.html>`_

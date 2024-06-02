@@ -173,7 +173,7 @@ void vprint(std::basic_ostream<Char>& os,
 
 /**
   \rst
-  Prints formatted data to the stream *os*.
+  Prints formatted data to the stream `os`.
 
   **Example**::
 

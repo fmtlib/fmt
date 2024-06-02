@@ -914,11 +914,11 @@ class basic_memory_buffer : public detail::buffer<T> {
   // Returns a copy of the allocator associated with this buffer.
   auto get_allocator() const -> Allocator { return alloc_; }
 
-  /// Resizes the buffer to contain *count* elements. If T is a POD type new
+  /// Resizes the buffer to contain `count` elements. If T is a POD type new
   /// elements may not be initialized.
   FMT_CONSTEXPR20 void resize(size_t count) { this->try_resize(count); }
 
-  /// Increases the buffer capacity to *new_capacity*.
+  /// Increases the buffer capacity to `new_capacity`.
   void reserve(size_t new_capacity) { this->try_reserve(new_capacity); }
 
   using detail::buffer<T>::append;
@@ -1810,7 +1810,7 @@ inline auto find_escape(const char* begin, const char* end)
   }()
 
 /**
- * Constructs a compile-time format string from a string literal *s*.
+ * Constructs a compile-time format string from a string literal `s`.
  *
  * **Example**::
  *
@@ -3871,7 +3871,7 @@ FMT_API auto vsystem_error(int error_code, string_view format_str,
 /**
  * Constructs `std::system_error` with a message formatted with
  * `fmt::format(fmt, args...)`.
- * *error_code* is a system error code as given by `errno`.
+ * `error_code` is a system error code as given by `errno`.
  *
  * **Example**::
  *
@@ -3892,7 +3892,7 @@ auto system_error(int error_code, format_string<T...> fmt, T&&... args)
 /**
   \rst
   Formats an error message for an error returned by an operating system or a
-  language runtime, for example a file opening error, and writes it to *out*.
+  language runtime, for example a file opening error, and writes it to `out`.
   The format is the same as the one used by ``std::system_error(ec, message)``
   where ``ec`` is ``std::error_code(error_code, std::generic_category()})``.
   It is implementation-defined but normally looks like:
@@ -3902,7 +3902,7 @@ auto system_error(int error_code, format_string<T...> fmt, T&&... args)
 
   where *<message>* is the passed message and *<system-message>* is the system
   message corresponding to the error code.
-  *error_code* is a system error code as given by ``errno``.
+  `error_code` is a system error code as given by ``errno``.
   \endrst
  */
 FMT_API void format_system_error(detail::buffer<char>& out, int error_code,
@@ -4173,7 +4173,7 @@ template <typename T, typename Char = char> struct nested_formatter {
 };
 
 /**
- * Converts *value* to ``std::string`` using the default format for type *T*.
+ * Converts `value` to `std::string` using the default format for type `T`.
  *
  * **Example**::
  *

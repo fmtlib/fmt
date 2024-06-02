@@ -313,9 +313,7 @@ FMT_DEPRECATED void print(const text_style& ts, wformat_string<T...> fmt,
   return print(stdout, ts, fmt, args...);
 }
 
-/**
-  Converts *value* to ``std::wstring`` using the default format for type *T*.
- */
+/// Converts `value` to `std::wstring` using the default format for type `T`.
 template <typename T> inline auto to_wstring(const T& value) -> std::wstring {
   return format(FMT_STRING(L"{}"), value);
 }

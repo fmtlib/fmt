@@ -626,7 +626,7 @@ inline auto vfprintf(std::FILE* f, basic_string_view<Char> fmt,
 
 /**
   \rst
-  Prints formatted data to the file *f*.
+  Prints formatted data to the file `f`.
 
   **Example**::
 

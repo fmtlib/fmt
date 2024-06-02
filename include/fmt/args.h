@@ -223,8 +223,8 @@ class dynamic_format_arg_store
 
   /**
     \rst
-    Reserves space to store at least *new_cap* arguments including
-    *new_cap_named* named arguments.
+    Reserves space to store at least `new_cap` arguments including
+    `new_cap_named` named arguments.
     \endrst
   */
   void reserve(size_t new_cap, size_t new_cap_named) {

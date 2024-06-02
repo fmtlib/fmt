@@ -426,9 +426,7 @@ parameter to avoid the expensive `<locale>` include.
 `FMT_STRING` enables compile-time checks on older compilers. It requires
 C++14 or later and is a no-op in C++11.
 
-:: {.doxygendefine}
-FMT_STRING
-::
+::: FMT_STRING
 
 To force the use of legacy compile-time checks, define the preprocessor
 variable `FMT_ENFORCE_COMPILE_STRING`. When set, functions accepting
