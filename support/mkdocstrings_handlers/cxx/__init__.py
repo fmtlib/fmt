@@ -159,19 +159,13 @@ class CxxHandler(BaseHandler):
     p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
     out, _ = p.communicate(input=r'''
         PROJECT_NAME      = fmt
-        GENERATE_LATEX    = NO
-        GENERATE_MAN      = NO
-        GENERATE_RTF      = NO
-        CASE_SENSE_NAMES  = NO
-        INPUT             = {0}
-        QUIET             = YES
-        JAVADOC_AUTOBRIEF = NO
-        AUTOLINK_SUPPORT  = NO
-        GENERATE_HTML     = NO
         GENERATE_XML      = YES
+        GENERATE_LATEX    = NO
+        GENERATE_HTML     = NO
+        INPUT             = {0}
         XML_OUTPUT        = {1}
-        ALIASES           = "rst=\verbatim embed:rst"
-        ALIASES          += "endrst=\endverbatim"
+        QUIET             = YES
+        AUTOLINK_SUPPORT  = NO
         MACRO_EXPANSION   = YES
         PREDEFINED        = _WIN32=1 \
                             __linux__=1 \
@@ -183,8 +177,6 @@ class CxxHandler(BaseHandler):
                             "FMT_BEGIN_NAMESPACE=namespace fmt {{" \
                             "FMT_END_NAMESPACE=}}" \
                             "FMT_DOC=1"
-        EXCLUDE_SYMBOLS   = fmt::formatter fmt::printf_formatter fmt::arg_join \
-                            fmt::basic_format_arg::handle
         '''.format(
           ' '.join([os.path.join(include_dir, h) for h in headers]),
           self._doxyxml_dir).encode('utf-8'))
