@@ -1,6 +1,6 @@
 # API Reference
 
-The {fmt} library API consists of the following parts:
+The {fmt} library API consists of the following components:
 
 - [`fmt/base.h`](#base-api): the base API providing main formatting functions
   for `char`/UTF-8 with C++20 compile-time checks and minimal dependencies
@@ -112,32 +112,36 @@ The recommended way of defining a formatter is by reusing an existing
 one via inheritance or composition. This way you can support standard
 format specifiers without implementing them yourself. For example:
 
-    // color.h:
-    #include <fmt/base.h>
+```c++
+// color.h:
+#include <fmt/base.h>
 
-    enum class color {red, green, blue};
+enum class color {red, green, blue};
 
-    template <> struct fmt::formatter<color>: formatter<string_view> {
-      // parse is inherited from formatter<string_view>.
+template <> struct fmt::formatter<color>: formatter<string_view> {
+  // parse is inherited from formatter<string_view>.
 
-      auto format(color c, format_context& ctx) const
-        -> format_context::iterator;
-    };
+  auto format(color c, format_context& ctx) const
+    -> format_context::iterator;
+};
+```
 
-    // color.cc:
-    #include "color.h"
-    #include <fmt/format.h>
+```c++
+// color.cc:
+#include "color.h"
+#include <fmt/format.h>
 
-    auto fmt::formatter<color>::format(color c, format_context& ctx) const
-        -> format_context::iterator {
-      string_view name = "unknown";
-      switch (c) {
-      case color::red:   name = "red"; break;
-      case color::green: name = "green"; break;
-      case color::blue:  name = "blue"; break;
-      }
-      return formatter<string_view>::format(name, ctx);
-    }
+auto fmt::formatter<color>::format(color c, format_context& ctx) const
+    -> format_context::iterator {
+  string_view name = "unknown";
+  switch (c) {
+  case color::red:   name = "red"; break;
+  case color::green: name = "green"; break;
+  case color::blue:  name = "blue"; break;
+  }
+  return formatter<string_view>::format(name, ctx);
+}
+```
 
 Note that `formatter<string_view>::format` is defined in `fmt/format.h`
 so it has to be included in the source file. Since `parse` is inherited
@@ -213,36 +217,40 @@ formatters.
 
 You can also write a formatter for a hierarchy of classes:
 
-    // demo.h:
-    #include <type_traits>
-    #include <fmt/core.h>
+```c++
+// demo.h:
+#include <type_traits>
+#include <fmt/core.h>
 
-    struct A {
-      virtual ~A() {}
-      virtual std::string name() const { return "A"; }
-    };
+struct A {
+  virtual ~A() {}
+  virtual std::string name() const { return "A"; }
+};
 
-    struct B : A {
-      virtual std::string name() const { return "B"; }
-    };
+struct B : A {
+  virtual std::string name() const { return "B"; }
+};
 
-    template <typename T>
-    struct fmt::formatter<T, std::enable_if_t<std::is_base_of<A, T>::value, char>> :
-        fmt::formatter<std::string> {
-      auto format(const A& a, format_context& ctx) const {
-        return fmt::formatter<std::string>::format(a.name(), ctx);
-      }
-    };
+template <typename T>
+struct fmt::formatter<T, std::enable_if_t<std::is_base_of<A, T>::value, char>> :
+    fmt::formatter<std::string> {
+  auto format(const A& a, format_context& ctx) const {
+    return fmt::formatter<std::string>::format(a.name(), ctx);
+  }
+};
+```
 
-    // demo.cc:
-    #include "demo.h"
-    #include <fmt/format.h>
+```c++
+// demo.cc:
+#include "demo.h"
+#include <fmt/format.h>
 
-    int main() {
-      B b;
-      A& a = b;
-      fmt::print("{}", a); // prints "B"
-    }
+int main() {
+  B b;
+  A& a = b;
+  fmt::print("{}", a); // prints "B"
+}
+```
 
 Providing both a `formatter` specialization and a `format_as` overload
 is disallowed.
@@ -335,7 +343,7 @@ formatting functions and locale support.
 
 ::: group_digits(T)
 
-<!-- TODO ::: detail::buffer -->
+::: detail::buffer
 
 ::: basic_memory_buffer
 

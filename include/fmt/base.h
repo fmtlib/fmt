@@ -149,7 +149,6 @@ import std;
 #  define FMT_USE_NONTYPE_TEMPLATE_ARGS 0
 #endif
 
-// Detect C++20 concepts
 #ifdef FMT_USE_CONCEPTS
 // Use the provided definition.
 #elif defined(__cpp_concepts)
@@ -834,7 +833,7 @@ class compile_parse_context : public basic_format_parse_context<Char> {
 };
 
 /// A contiguous memory buffer with an optional growing ability. It is an
-// internal class and shouldn't be used directly, only via `memory_buffer`.
+/// internal class and shouldn't be used directly, only via `memory_buffer`.
 template <typename T> class buffer {
  private:
   T* ptr_;

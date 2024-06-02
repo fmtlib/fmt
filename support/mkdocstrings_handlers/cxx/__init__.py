@@ -68,7 +68,7 @@ def get_description(node: et.Element) -> list[et.Element]:
   return node.findall('briefdescription/para') + \
          node.findall('detaileddescription/para')
 
-def clean_type(type: str) -> str:
+def normalize_type(type: str) -> str:
   type = type.replace('< ', '<').replace(' >', '>')
   return type.replace(' &', '&').replace(' *', '*')
 
@@ -79,7 +79,7 @@ def convert_type(type: et.Element) -> str:
     if ref.tail:
       result += ref.tail
   result += type.tail.strip()
-  return clean_type(result)
+  return normalize_type(result)
 
 def convert_params(func: et.Element) -> Definition:
   params = []
@@ -94,7 +94,7 @@ def convert_return_type(d: Definition, node: et.Element) -> None:
   if d.type == 'auto' or d.type == 'constexpr auto':
     parts = node.find('argsstring').text.split(' -> ')
     if len(parts) > 1:
-      d.trailing_return_type = clean_type(parts[1])
+      d.trailing_return_type = normalize_type(parts[1])
 
 def render_decl(d: Definition) -> None:
   text = '<pre><code class="language-cpp">'
@@ -131,6 +131,7 @@ class CxxHandler(BaseHandler):
     cmd = ['doxygen', '-']
     doc_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     include_dir = os.path.join(os.path.dirname(doc_dir), 'include', 'fmt')
+    self._ns2doxyxml = {}
     self._doxyxml_dir = 'doxyxml'
     p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
     out, _ = p.communicate(input=r'''
@@ -173,18 +174,26 @@ class CxxHandler(BaseHandler):
     if p.returncode != 0:
         raise CalledProcessError(p.returncode, cmd)
 
-    # Load XML.
-    with open(os.path.join(self._doxyxml_dir, 'namespacefmt.xml')) as f:
-      self._doxyxml = et.parse(f)
-
   def collect(self, identifier: str, config: Mapping[str, Any]) -> Definition:
-    name = identifier
-    paren = name.find('(')
+    qual_name = 'fmt::' + identifier
+
     param_str = None
+    paren = qual_name.find('(')
     if paren > 0:
-      name, param_str = name[:paren], name[paren + 1:-1]
-      
-    nodes = self._doxyxml.findall(
+      qual_name, param_str = qual_name[:paren], qual_name[paren + 1:-1]
+    
+    colons = qual_name.rfind('::')
+    namespace, name = qual_name[:colons], qual_name[colons + 2:]
+
+    # Load XML.
+    doxyxml = self._ns2doxyxml.get(namespace)
+    if doxyxml is None:
+      path = f'namespace{namespace.replace("::", "_1_1")}.xml'
+      with open(os.path.join(self._doxyxml_dir, path)) as f:
+        doxyxml = et.parse(f)
+        self._ns2doxyxml[namespace] = doxyxml
+
+    nodes = doxyxml.findall(
       f"compounddef/sectiondef/memberdef/name[.='{name}']/..")
     candidates = []
     for node in nodes:
@@ -206,13 +215,14 @@ class CxxHandler(BaseHandler):
       return d
     
     # Process a compound definition such as a struct.
-    cls = self._doxyxml.findall(f"compounddef/innerclass[.='fmt::{name}']")
+    cls = doxyxml.findall(f"compounddef/innerclass[.='{qual_name}']")
     if not cls:
       raise Exception(f'Cannot find {identifier}. Candidates: {candidates}')
-    with open(os.path.join(self._doxyxml_dir, cls[0].get('refid') + '.xml')) as f:
+    path = os.path.join(self._doxyxml_dir, cls[0].get('refid') + '.xml')
+    with open(path) as f:
       xml = et.parse(f)
       node = xml.find('compounddef')
-      d = Definition(name, node.get('kind'))
+      d = Definition(identifier, node.get('kind'))
       d.template_params = convert_template_params(node)
       d.desc = get_description(node)
       d.members = []

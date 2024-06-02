@@ -3869,21 +3869,19 @@ FMT_API auto vsystem_error(int error_code, string_view format_str,
                            format_args args) -> std::system_error;
 
 /**
-  \rst
-  Constructs :class:`std::system_error` with a message formatted with
-  ``fmt::format(fmt, args...)``.
-  *error_code* is a system error code as given by ``errno``.
-
-  **Example**::
-
-    // This throws std::system_error with the description
-    //   cannot open file 'madeup': No such file or directory
-    // or similar (system message may vary).
-    const char* filename = "madeup";
-    std::FILE* file = std::fopen(filename, "r");
-    if (!file)
-      throw fmt::system_error(errno, "cannot open file '{}'", filename);
-  \endrst
+ * Constructs `std::system_error` with a message formatted with
+ * `fmt::format(fmt, args...)`.
+ * *error_code* is a system error code as given by `errno`.
+ *
+ * **Example**::
+ *
+ *     // This throws std::system_error with the description
+ *     //   cannot open file 'madeup': No such file or directory
+ *     // or similar (system message may vary).
+ *     const char* filename = "madeup";
+ *     std::FILE* file = std::fopen(filename, "r");
+ *     if (!file)
+ *       throw fmt::system_error(errno, "cannot open file '{}'", filename);
  */
 template <typename... T>
 auto system_error(int error_code, format_string<T...> fmt, T&&... args)
