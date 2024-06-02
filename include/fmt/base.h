@@ -1817,8 +1817,8 @@ FMT_DEPRECATED FMT_CONSTEXPR auto visit_format_arg(
  * should only be used as a parameter type in type-erased functions such as
  * `vformat`:
  *
- *     void vlog(string_view format_str, format_args args);  // OK
- *     format_args args = make_format_args();  // Error: dangling reference
+ *     void vlog(fmt::string_view fmt, fmt::format_args args);  // OK
+ *     fmt::format_args args = fmt::make_format_args();  // Dangling reference
  */
 template <typename Context> class basic_format_args {
  public:
@@ -2029,7 +2029,7 @@ inline auto arg(const Char* name, const T& arg) -> detail::named_arg<Char, T> {
 }
 FMT_END_EXPORT
 
-/// An alias to `basic_format_args<format_context>`.
+/// An alias for `basic_format_args<format_context>`.
 // A separate type would result in shorter symbols but break ABI compatibility
 // between clang and gcc on ARM (#1919).
 FMT_EXPORT using format_args = basic_format_args<format_context>;
@@ -2994,7 +2994,7 @@ FMT_API void vprintln(FILE* f, string_view fmt, format_args args);
  *
  * **Example**:
  * 
- *     fmt::print("Elapsed time: {0:.2f} seconds", 1.23);
+ *     fmt::print("The answer is {}.", 42);
  */
 template <typename... T>
 FMT_INLINE void print(format_string<T...> fmt, T&&... args) {

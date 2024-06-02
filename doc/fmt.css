@@ -1,3 +1,7 @@
+.md-grid {
+  max-width: 960px;
+}
+
 .docblock {
   border-left: .05rem solid var(--md-primary-fg-color);
 }

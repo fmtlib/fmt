@@ -65,24 +65,9 @@ specified otherwise.
 
 ::: format_to_n(OutputIt, size_t, format_string<T...>, T&&...)
 
-::: formatted_size(format_string<T...>, T&&...)
-
 ::: format_to_n_result
 
-### Compile-Time Format String Checks
-
-Compile-time format string checks are enabled by default on compilers
-that support C++20 `consteval`. On older compilers you can use the
-`FMT_STRING <legacy-checks>`{.interpreted-text role="ref"}: macro
-defined in `fmt/format.h` instead.
-
-Unused arguments are allowed as in Python's `str.format` and ordinary functions.
-
-::: basic_format_string
-
-::: format_string
-
-::: runtime(string_view)
+::: formatted_size(format_string<T...>, T&&...)
 
 <a id="udt"></a>
 ### Formatting User-Defined Types
@@ -159,7 +144,7 @@ so it has to be included in the source file. Since `parse` is inherited
 from `formatter<string_view>` it will recognize all string format
 specifications, for example
 
-``` c++
+```c++
 fmt::format("{:>10}", color::blue)
 ```
 
@@ -262,6 +247,20 @@ You can also write a formatter for a hierarchy of classes:
 Providing both a `formatter` specialization and a `format_as` overload
 is disallowed.
 
+### Compile-Time Format String Checks
+
+Compile-time format string checks are enabled by default on compilers
+that support C++20 `consteval`. On older compilers you can use the
+[FMT_STRING](legacy-checks>) macro defined in `fmt/format.h` instead.
+
+Unused arguments are allowed as in Python's `str.format` and ordinary functions.
+
+::: basic_format_string
+
+::: format_string
+
+::: runtime(string_view)
+
 ### Named Arguments
 
 ::: arg(const Char*, const T&)
@@ -271,23 +270,23 @@ Named arguments are not supported in compile-time checks at the moment.
 ### Argument Lists
 
 You can create your own formatting function with compile-time checks and
-small binary footprint, for example (<https://godbolt.org/z/vajfWEG4b>):
+small binary footprint, for example ([run](https://godbolt.org/z/b9Pbasvzc)):
 
 ```c++
 #include <fmt/base.h>
 
 void vlog(const char* file, int line,
-          fmt::string_view format, fmt::format_args args) {
-  fmt::print("{}: {}: {}", file, line, fmt::vformat(format, args));
+          fmt::string_view fmt, fmt::format_args args) {
+  fmt::print("{}: {}: {}", file, line, fmt::vformat(fmt, args));
 }
 
 template <typename... T>
 void log(const char* file, int line,
-         fmt::format_string<T...> format, T&&... args) {
-  vlog(file, line, format, fmt::make_format_args(args...));
+         fmt::format_string<T...> fmt, T&&... args) {
+  vlog(file, line, fmt, fmt::make_format_args(args...));
 }
 
-#define MY_LOG(format, ...) log(__FILE__, __LINE__, format, __VA_ARGS__)
+#define MY_LOG(fmt, ...) log(__FILE__, __LINE__, fmt, __VA_ARGS__)
 
 MY_LOG("invalid squishiness: {}", 42);
 ```
@@ -300,45 +299,21 @@ parameterized version.
 
 ::: basic_format_args
 
-:: {.doxygentypedef}
-fmt::format_args
-::
+::: format_args
 
-:: {.doxygenclass members=""}
-fmt::basic_format_arg
-::
+::: basic_format_arg
 
-:: {.doxygenclass members=""}
-fmt::basic_format_parse_context
-::
+::: basic_format_parse_context
 
-:: {.doxygenclass members=""}
-fmt::context
-::
+::: context
 
-:: {.doxygentypedef}
-fmt::format_context
-::
-
-### Dynamic Argument Lists {#args-api}
-
-The header `fmt/args.h` provides `dynamic_format_arg_store`, a
-builder-like API that can be used to construct format argument lists
-dynamically.
-
-:: {.doxygenclass members=""}
-fmt::dynamic_format_arg_store
-::
+::: format_context
 
 ### Compatibility
 
-:: {.doxygenclass members=""}
-fmt::basic_string_view
-::
+::: basic_string_view
 
-:: {.doxygentypedef}
-fmt::string_view
-::
+::: string_view
 
 ## Format API
 
@@ -350,12 +325,6 @@ formatting functions and locale support.
 
 ::: vformat(string_view, format_args)
 
-### Literal-Based API
-
-The following user-defined literals are defined in `fmt/format.h`.
-
-::: operator""_a()
-
 ### Utilities
 
 ::: ptr(T)
@@ -366,9 +335,7 @@ The following user-defined literals are defined in `fmt/format.h`.
 
 ::: group_digits(T)
 
-:: {.doxygenclass members=""}
-fmt::detail::buffer
-::
+<!-- TODO ::: detail::buffer -->
 
 ::: basic_memory_buffer
 
@@ -382,6 +349,12 @@ functions.
 ::: system_error
 
 ::: format_system_error
+
+### Literal-Based API
+
+The following user-defined literals are defined in `fmt/format.h`.
+
+::: operator""_a()
 
 ### Custom Allocators
 
@@ -439,7 +412,8 @@ parameter to avoid the expensive `<locale>` include.
 
 ::: formatted_size(const Locale&, format_string<T...>, T&&...)
 
-### Legacy Compile-Time Format String Checks {#legacy-checks}
+<a id="legacy-checks"></a>
+### Legacy Compile-Time Format String Checks
 
 `FMT_STRING` enables compile-time checks on older compilers. It requires
 C++14 or later and is a no-op in C++11.
@@ -452,7 +426,8 @@ To force the use of legacy compile-time checks, define the preprocessor
 variable `FMT_ENFORCE_COMPILE_STRING`. When set, functions accepting
 `FMT_STRING` will fail to compile with regular strings.
 
-## Range and Tuple Formatting {#ranges-api}
+<a id="ranges-api"></a>
+## Range and Tuple Formatting
 
 The library also supports convenient formatting of ranges and tuples:
 
@@ -475,7 +450,8 @@ separator:
 
 ::: join(It, Sentinel, string_view)
 
-## Date and Time Formatting {#chrono-api}
+<a id="chrono-api"></a>
+## Date and Time Formatting
 
 `fmt/chrono.h` provides formatters for
 
@@ -580,23 +556,15 @@ FMT_COMPILE
 
 ::: fg(detail::color_type)
 
-:: {.doxygenfunction}
-bg(detail::color_type)
-::
+::: bg(detail::color_type)
 
-:: {.doxygenfunction}
-styled(const T& value, text_style ts)
-::
+::: styled(const T&, text_style)
 
 ## System APIs {#os-api}
 
-:: {.doxygenclass members=""}
-fmt::ostream
-::
+::: ostream
 
-:: {.doxygenfunction}
-fmt::windows_error
-::
+::: windows_error
 
 ## `std::ostream` Support {#ostream-api}
 
@@ -621,13 +589,16 @@ you should provide a `formatter` specialization inherited from
     std::string s = fmt::format("The date is {}", date{2012, 12, 9});
     // s == "The date is 2012-12-9"
 
-:: {.doxygenfunction}
-streamed(const T &)
-::
+::: streamed(const T&)
 
-:: {.doxygenfunction}
-print(std::ostream &os, format_string\<T\...\> fmt, T&&\... args)
-::
+::: print(std::ostream&, format_string<T...>, T&&...)
+
+## Dynamic Argument Lists {#args-api}
+
+The header `fmt/args.h` provides `dynamic_format_arg_store`, a builder-like API
+that can be used to construct format argument lists dynamically.
+
+::: dynamic_format_arg_store
 
 ## `printf` Formatting {#printf-api}
 
@@ -638,17 +609,11 @@ with the POSIX extension for positional arguments. Unlike their standard
 counterparts, the `fmt` functions are type-safe and throw an exception
 if an argument type doesn\'t match its format specification.
 
-:: {.doxygenfunction}
-printf(string_view fmt, const T&\... args) -\> int
-::
+::: printf(string_view, const T&...)
 
-:: {.doxygenfunction}
-fprintf(std::FILE \*f, const S &fmt, const T&\... args) -\> int
-::
+::: fprintf(std::FILE*, const S&, const T&...)
 
-:: {.doxygenfunction}
-sprintf(const S&, const T&\...)
-::
+::: sprintf(const S&, const T&...)
 
 ## `wchar_t` Support {#xchar-api}
 
