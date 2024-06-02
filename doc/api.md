@@ -259,7 +259,7 @@ is disallowed.
 
 Compile-time format string checks are enabled by default on compilers
 that support C++20 `consteval`. On older compilers you can use the
-[FMT_STRING](legacy-checks>) macro defined in `fmt/format.h` instead.
+[FMT_STRING](#legacy-checks) macro defined in `fmt/format.h` instead.
 
 Unused arguments are allowed as in Python's `str.format` and ordinary functions.
 
