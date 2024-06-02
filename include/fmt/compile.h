@@ -34,7 +34,7 @@ struct is_compiled_string : std::is_base_of<compiled_string, S> {};
  * compile time and converted into efficient formatting code. Requires C++17
  * `constexpr if` compiler support.
  *
- * **Example**::
+ * **Example**:
  *
  *     // Converts 42 into std::string using the most efficient method and no
  *     // runtime format string processing.

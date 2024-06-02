@@ -602,7 +602,7 @@ inline auto vsprintf(basic_string_view<Char> fmt,
   \rst
   Formats arguments and returns the result as a string.
 
-  **Example**::
+  **Example**:
 
     std::string message = fmt::sprintf("The answer is %d", 42);
   \endrst
@@ -628,7 +628,7 @@ inline auto vfprintf(std::FILE* f, basic_string_view<Char> fmt,
   \rst
   Prints formatted data to the file `f`.
 
-  **Example**::
+  **Example**:
 
     fmt::fprintf(stderr, "Don't %s!", "panic");
   \endrst
@@ -650,7 +650,7 @@ FMT_DEPRECATED inline auto vprintf(basic_string_view<Char> fmt,
   \rst
   Prints formatted data to ``stdout``.
 
-  **Example**::
+  **Example**:
 
     fmt::printf("Elapsed time: %.2f seconds", 1.23);
   \endrst

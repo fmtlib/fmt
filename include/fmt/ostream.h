@@ -139,7 +139,7 @@ struct formatter<detail::streamed_view<T>, Char>
   \rst
   Returns a view that formats `value` via an ostream ``operator<<``.
 
-  **Example**::
+  **Example**:
 
     fmt::print("Current thread id: {}\n",
                fmt::streamed(std::this_thread::get_id()));
@@ -175,7 +175,7 @@ void vprint(std::basic_ostream<Char>& os,
   \rst
   Prints formatted data to the stream `os`.
 
-  **Example**::
+  **Example**:
 
     fmt::print(cerr, "Don't {}!", "panic");
   \endrst

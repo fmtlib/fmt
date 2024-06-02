@@ -41,10 +41,10 @@ in Python. They take *fmt* and *args* as arguments.
 
 *fmt* is a format string that contains literal text and replacement fields
 surrounded by braces `{}`. The fields are replaced with formatted arguments
-in the resulting string. [\~fmt::format_string]{.title-ref} is a format string
-which can be implicitly constructed from a string literal or a `constexpr`
-string and is checked at compile time in C++20. To pass a runtime format
-string wrap it in [fmt::runtime]{.title-ref}.
+in the resulting string. [`fmt::format_string`](#format_string) is a format 
+string which can be implicitly constructed from a string literal or a
+`constexpr` string and is checked at compile time in C++20. To pass a runtime
+format string wrap it in [fmt::runtime](#runtime).
 
 *args* is an argument list representing objects to be formatted.
 
@@ -52,7 +52,6 @@ I/O errors are reported as [`std::system_error`](
 https://en.cppreference.com/w/cpp/error/system_error) exceptions unless
 specified otherwise.
 
-<a id="print"></a>
 ::: print(format_string<T...>, T&&...)
 
 ::: print(FILE*, format_string<T...>, T&&...)
@@ -100,7 +99,7 @@ Example ([run](https://godbolt.org/z/nvME4arz8)):
     }
 
     int main() {
-      fmt::print("{}\n", kevin_namespacy::film::se7en); // prints "7"
+      fmt::print("{}\n", kevin_namespacy::film::se7en); // Output: 7
     }
 
 Using specialization is more complex but gives you full control over
@@ -154,7 +153,7 @@ fmt::format("{:>10}", color::blue)
 
 will return `"      blue"`.
 
-The experimental `nested_formatter` provides an easy way of applying a
+<!-- The experimental `nested_formatter` provides an easy way of applying a
 formatter to one or more subobjects.
 
 For example:
@@ -185,7 +184,7 @@ prints:
 
 Notice that fill, align and width are applied to the whole object which
 is the recommended behavior while the remaining specifiers apply to
-elements.
+elements. -->
 
 In general the formatter has the following form:
 
@@ -232,10 +231,10 @@ struct B : A {
 };
 
 template <typename T>
-struct fmt::formatter<T, std::enable_if_t<std::is_base_of<A, T>::value, char>> :
+struct fmt::formatter<T, std::enable_if_t<std::is_base_of_v<A, T>, char>> :
     fmt::formatter<std::string> {
   auto format(const A& a, format_context& ctx) const {
-    return fmt::formatter<std::string>::format(a.name(), ctx);
+    return formatter<std::string>::format(a.name(), ctx);
   }
 };
 ```
@@ -248,12 +247,18 @@ struct fmt::formatter<T, std::enable_if_t<std::is_base_of<A, T>::value, char>> :
 int main() {
   B b;
   A& a = b;
-  fmt::print("{}", a); // prints "B"
+  fmt::print("{}", a); // Output: B
 }
 ```
 
-Providing both a `formatter` specialization and a `format_as` overload
-is disallowed.
+Providing both a `formatter` specialization and a `format_as` overload is
+disallowed.
+
+::: basic_format_parse_context
+
+::: context
+
+::: format_context
 
 ### Compile-Time Format String Checks
 
@@ -311,12 +316,6 @@ parameterized version.
 
 ::: basic_format_arg
 
-::: basic_format_parse_context
-
-::: context
-
-::: format_context
-
 ### Compatibility
 
 ::: basic_string_view
@@ -368,7 +367,7 @@ The following user-defined literals are defined in `fmt/format.h`.
 
 The {fmt} library supports custom dynamic memory allocators. A custom
 allocator class can be specified as a template argument to
-`fmt::basic_memory_buffer`{.interpreted-text role="class"}:
+[`fmt::basic_memory_buffer`](#basic_memory_buffer):
 
     using custom_memory_buffer = 
       fmt::basic_memory_buffer<char, fmt::inline_buffer_size, custom_allocator>;
@@ -439,18 +438,16 @@ The library also supports convenient formatting of ranges and tuples:
 
     #include <fmt/ranges.h>
 
-    std::tuple<char, int, float> t{'a', 1, 2.0f};
-    // Prints "('a', 1, 2.0)"
-    fmt::print("{}", t);
+    fmt::print("{}", std::tuple<char, int>{'a', 42});
+    // Output: ('a', 42)
 
-Using `fmt::join`, you can separate tuple elements with a custom
-separator:
+Using `fmt::join`, you can separate tuple elements with a custom separator:
 
     #include <fmt/ranges.h>
 
-    std::tuple<int, char> t = {1, 'a'};
-    // Prints "1, a"
+    auto t = std::tuple<int, char>{1, 'a'};
     fmt::print("{}", fmt::join(t, ", "));
+    // Output: 1, a
 
 ::: join(Range&&, string_view)
 
@@ -475,16 +472,17 @@ chrono-format-specifications).
     int main() {
       std::time_t t = std::time(nullptr);
 
-      // Prints "The date is 2020-11-07." (with the current date):
       fmt::print("The date is {:%Y-%m-%d}.", fmt::localtime(t));
+      // Output: The date is 2020-11-07.
+      // (with 2020-11-07 replaced by the current date)
 
       using namespace std::literals::chrono_literals;
 
-      // Prints "Default format: 42s 100ms":
       fmt::print("Default format: {} {}\n", 42s, 100ms);
+      // Output: Default format: 42s 100ms
 
-      // Prints "strftime-like format: 03:15:30":
       fmt::print("strftime-like format: {:%H:%M:%S}\n", 3h + 15min + 30s);
+      // Output: strftime-like format: 03:15:30
     }
 
 ::: localtime(std::time_t)

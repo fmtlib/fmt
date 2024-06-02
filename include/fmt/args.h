@@ -159,7 +159,7 @@ class dynamic_format_arg_store
     Note that custom types and string types (but not string views) are copied
     into the store dynamically allocating memory if necessary.
 
-    **Example**::
+    **Example**:
 
       fmt::dynamic_format_arg_store<fmt::format_context> store;
       store.push_back(42);
@@ -180,7 +180,7 @@ class dynamic_format_arg_store
     Adds a reference to the argument into the dynamic store for later passing to
     a formatting function.
 
-    **Example**::
+    **Example**:
 
       fmt::dynamic_format_arg_store<fmt::format_context> store;
       char band[] = "Rolling Stones";

@@ -150,7 +150,7 @@ FMT_API std::system_error vwindows_error(int error_code, string_view format_str,
  If `error_code` is not a valid error code such as -1, the system message
  will look like "error -1".
 
- **Example**::
+ **Example**:
 
    // This throws a system_error with the description
    //   cannot open file 'madeup': The system cannot find the file specified.
@@ -444,7 +444,7 @@ class FMT_API ostream {
     (``file::WRONLY | file::CREATE | file::TRUNC`` by default)
   * ``buffer_size=<integer>``: Output buffer size
 
-  **Example**::
+  **Example**:
 
     auto out = fmt::output_file("guide.txt");
     out.print("Don't {}", "Panic");
