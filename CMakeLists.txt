@@ -418,8 +418,40 @@ if (FMT_INSTALL)
   install(FILES "${pkgconfig}" DESTINATION "${FMT_PKGCONFIG_DIR}")
 endif ()
 
+function(add_doc_target)
+  find_program(DOXYGEN doxygen
+    PATHS "$ENV{ProgramFiles}/doxygen/bin"
+          "$ENV{ProgramFiles\(x86\)}/doxygen/bin")
+  if (NOT DOXYGEN)
+    message(STATUS "Target 'doc' disabled because doxygen not found")
+    return ()
+  endif ()
+
+  find_program(MKDOCS mkdocs)
+  if (NOT MKDOCS)
+    message(STATUS "Target 'doc' disabled because mkdocs not found")
+    return ()
+  endif ()
+
+  set(sources )
+  foreach (source api.md index.md syntax.md usage.md fmt.css fmt.js)
+    set(sources ${sources} doc/${source})
+  endforeach()
+
+  add_custom_target(
+    doc
+    COMMAND
+      ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/support
+        ${MKDOCS} build -f ${CMAKE_CURRENT_SOURCE_DIR}/support/mkdocs.yml
+    SOURCES ${sources})
+
+  include(GNUInstallDirs)
+  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/site/
+          DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/doc/fmt OPTIONAL)
+endfunction()
+
 if (FMT_DOC)
-  add_subdirectory(doc)
+  add_doc_target()
 endif ()
 
 if (FMT_TEST)

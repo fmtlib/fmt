@@ -137,6 +137,11 @@ class CxxHandler(BaseHandler):
   def __init__(self, **kwargs: Any) -> None:
     super().__init__(handler='cxx', **kwargs)
 
+    headers = [
+      'args.h', 'base.h', 'chrono.h', 'color.h', 'compile.h', 'format.h',
+      'os.h', 'ostream.h', 'printf.h', 'ranges.h', 'std.h', 'xchar.h'
+    ]
+
     # Run doxygen.
     cmd = ['doxygen', '-']
     doc_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -150,10 +155,7 @@ class CxxHandler(BaseHandler):
         GENERATE_MAN      = NO
         GENERATE_RTF      = NO
         CASE_SENSE_NAMES  = NO
-        INPUT             = {0}/args.h {0}/base.h {0}/chrono.h {0}/color.h \
-                            {0}/core.h {0}/compile.h {0}/format.h {0}/os.h \
-                            {0}/ostream.h {0}/printf.h {0}/ranges.h {0}/std.h \
-                            {0}/xchar.h
+        INPUT             = {0}
         QUIET             = YES
         JAVADOC_AUTOBRIEF = NO
         AUTOLINK_SUPPORT  = NO
@@ -166,26 +168,33 @@ class CxxHandler(BaseHandler):
         PREDEFINED        = _WIN32=1 \
                             __linux__=1 \
                             FMT_ENABLE_IF(...)= \
-                            FMT_USE_VARIADIC_TEMPLATES=1 \
-                            FMT_USE_RVALUE_REFERENCES=1 \
                             FMT_USE_USER_DEFINED_LITERALS=1 \
                             FMT_USE_ALIAS_TEMPLATES=1 \
                             FMT_USE_NONTYPE_TEMPLATE_ARGS=1 \
                             FMT_API= \
                             "FMT_BEGIN_NAMESPACE=namespace fmt {{" \
                             "FMT_END_NAMESPACE=}}" \
-                            "FMT_STRING_ALIAS=1" \
-                            "FMT_VARIADIC(...)=" \
-                            "FMT_VARIADIC_W(...)=" \
                             "FMT_DOC=1"
         EXCLUDE_SYMBOLS   = fmt::formatter fmt::printf_formatter fmt::arg_join \
                             fmt::basic_format_arg::handle
-        '''.format(include_dir, self._doxyxml_dir).encode('utf-8'))
+        '''.format(
+          ' '.join([os.path.join(include_dir, h) for h in headers]),
+          self._doxyxml_dir).encode('utf-8'))
     if p.returncode != 0:
         raise CalledProcessError(p.returncode, cmd)
 
-    with open(os.path.join(self._doxyxml_dir, 'compile_8h.xml')) as f:
-      self._file_doxyxml = et.parse(f)
+    # Merge all file-level XMLs into one to simplify search.
+    self._file_doxyxml = None
+    for h in headers:
+      filename = h.replace(".h", "_8h.xml")
+      with open(os.path.join(self._doxyxml_dir, filename)) as f:
+        doxyxml = et.parse(f)
+        if self._file_doxyxml is None:
+          self._file_doxyxml = doxyxml
+          continue
+        root = self._file_doxyxml.getroot()
+        for node in doxyxml.getroot():
+          root.append(node)
 
   def collect_compound(self, identifier: str,
                        cls: list[et.Element]) -> Definition:

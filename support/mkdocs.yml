@@ -1,6 +1,6 @@
 site_name: '{fmt}'
 
-docs_dir: doc
+docs_dir: ../doc
 
 repo_url: https://github.com/fmtlib/fmt
 
