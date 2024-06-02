@@ -12,8 +12,8 @@ the literal text, it can be escaped by doubling: `{{` and `}}`.
 The grammar for a replacement field is as follows:
 
 <a id="replacement-field"></a>
-<pre>
-<code>replacement_field ::= "{" [arg_id] [":" (<a href="#format-spec"
+<pre><code class="language-json"
+>replacement_field ::= "{" [arg_id] [":" (<a href="#format-spec"
   >format_spec</a> | <a href="#chrono-format-spec">chrono_format_spec</a>)] "}"
 arg_id            ::= integer | identifier
 integer           ::= digit+
@@ -74,8 +74,8 @@ supported by the numeric types.
 The general form of a *standard format specifier* is:
 
 <a id="format-spec"></a>
-<pre>
-<code>format_spec ::= [[fill]align][sign]["#"]["0"][width]["." precision]["L"][type]
+<pre><code class="language-json"
+>format_spec ::= [[fill]align][sign]["#"]["0"][width]["." precision]["L"][type]
 fill        ::= &lt;a character other than '{' or '}'>
 align       ::= "<" | ">" | "^"
 sign        ::= "+" | "-" | " "
@@ -401,12 +401,12 @@ Format specifications for chrono duration and time point types as well as
 `std::tm` have the following syntax:
 
 <a id="chrono-format-spec"></a>
-<pre>
-<code>chrono_format_spec ::= [[<a href="#format-spec">fill</a>]<a href="#format-spec"
+<pre><code class="language-json"
+>chrono_format_spec ::= [[<a href="#format-spec">fill</a>]<a href="#format-spec"
   >align</a>][<a href="#format-spec">width</a>]["." <a href="#format-spec"
   >precision</a>][chrono_specs]
-chrono_specs       ::= conversion_spec | <!--
-                    -->chrono_specs (conversion_spec | literal_char)
+chrono_specs       ::= conversion_spec |
+                       chrono_specs (conversion_spec | literal_char)
 conversion_spec    ::= "%" [padding_modifier] [locale_modifier] chrono_type
 literal_char       ::= &lt;a character other than '{', '}' or '%'>
 padding_modifier   ::= "-" | "_"  | "0"
@@ -719,8 +719,8 @@ These modifiers are only supported for the `'H'`, `'I'`, `'M'`, `'S'`, `'U'`,
 
 Format specifications for range types have the following syntax:
 
-<pre>
-<code>range_format_spec ::= ["n"][range_type][range_underlying_spec]</code>
+<pre><code class="language-json"
+>range_format_spec ::= ["n"][range_type][range_underlying_spec]</code>
 </pre>
 
 The `'n'` option formats the range without the opening and closing brackets.
