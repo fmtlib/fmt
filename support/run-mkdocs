@@ -1,0 +1,11 @@
+#!/usr/bin/env python3
+# A script to invoke mkdocs with the correct environment.
+
+import os, subprocess, sys
+
+# Set PYTHONPATH for the mkdocstrings handler.
+env = os.environ.copy()
+path = env.get('PYTHONPATH')
+env['PYTHONPATH'] = (path + ':' if path else '') + os.path.dirname(__file__)
+
+subprocess.run(['mkdocs'] + sys.argv[1:], env=env)
