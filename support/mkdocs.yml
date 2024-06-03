@@ -34,11 +34,10 @@ plugins:
       default_handler: cxx
 
 nav:
+  - Home: index.md
   - Usage: usage.md
   - API: api.md
   - Syntax: syntax.md
-  # Make the {fmt} link work locally.
-  - '': index.md
 
 extra:
   version:
