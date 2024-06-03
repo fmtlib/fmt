@@ -9,3 +9,33 @@
 .docblock-desc {
   margin-left: 1em;
 }
+
+.features-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center; /* Center the items horizontally */
+}
+
+.feature {
+  flex: 1 1 calc(50% - 20px); /* Two columns with space between */
+  max-width: 600px; /* Set the maximum width for the feature boxes */
+  box-sizing: border-box;
+  padding: 10px;
+  overflow: hidden; /* Hide overflow content */
+  text-overflow: ellipsis; /* Handle text overflow */
+  white-space: normal; /* Allow text wrapping */
+}
+
+.feature h2 {
+  margin-top: 0px;
+  font-weight: bold;
+}
+
+@media (max-width: 768px) {
+  .feature {
+      flex: 1 1 100%; /* Stack columns on smaller screens */
+      max-width: 100%; /* Allow full width on smaller screens */
+      white-space: normal; /* Allow text wrapping on smaller screens */
+  }
+}
