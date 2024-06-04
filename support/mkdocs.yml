@@ -30,9 +30,9 @@ markdown_extensions:
   - pymdownx.snippets
 
 plugins:
+  - search
   - mkdocstrings:
       default_handler: cxx
-
 nav:
   - Home: index.md
   - Usage: usage.md
