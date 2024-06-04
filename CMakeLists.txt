@@ -62,7 +62,7 @@ function(add_module_library name)
     target_compile_options(${name} PUBLIC -fmodules-ts)
   endif ()
 
-  if (CMAKE_VERSION VERSION_LESS 3.28)
+  if (CMAKE_VERSION VERSION_LESS 3.28 OR NOT(CMAKE_GENERATOR STREQUAL "Ninja"))
     # `std` is affected by CMake options and may be higher than C++20.
     get_target_property(std ${name} CXX_STANDARD)
 
