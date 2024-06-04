@@ -1,3 +1,7 @@
+:root {
+  --md-primary-fg-color: #0065C9;
+}
+
 .md-grid {
   max-width: 960px;
 }
