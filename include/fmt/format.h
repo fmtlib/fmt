@@ -1069,6 +1069,8 @@ template <typename Locale> class format_facet : public Locale::facet {
   }
 };
 
+FMT_END_EXPORT
+
 namespace detail {
 
 // Returns true if value is negative, false otherwise.
@@ -3865,6 +3867,7 @@ FMT_API void report_error(format_func func, int error_code,
                           const char* message) noexcept;
 }  // namespace detail
 
+FMT_BEGIN_EXPORT
 FMT_API auto vsystem_error(int error_code, string_view format_str,
                            format_args args) -> std::system_error;
 
@@ -4285,6 +4288,8 @@ extern template FMT_API auto decimal_point_impl(locale_ref) -> char;
 extern template FMT_API auto decimal_point_impl(locale_ref) -> wchar_t;
 #endif  // FMT_HEADER_ONLY
 
+FMT_END_EXPORT
+
 template <typename T, typename Char, type TYPE>
 template <typename FormatContext>
 FMT_CONSTEXPR FMT_INLINE auto native_formatter<T, Char, TYPE>::format(
@@ -4300,7 +4305,6 @@ FMT_CONSTEXPR FMT_INLINE auto native_formatter<T, Char, TYPE>::format(
   return write<Char>(ctx.out(), val, specs, ctx.locale());
 }
 
-FMT_END_EXPORT
 }  // namespace detail
 
 FMT_BEGIN_EXPORT
