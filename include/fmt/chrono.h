@@ -1780,8 +1780,10 @@ class get_locale {
 
  public:
   get_locale(bool localized, locale_ref loc) : has_locale_(localized) {
+#ifndef FMT_STATIC_THOUSANDS_SEPARATOR
     if (localized)
       ::new (&locale_) std::locale(loc.template get<std::locale>());
+#endif
   }
   ~get_locale() {
     if (has_locale_) locale_.~locale();
