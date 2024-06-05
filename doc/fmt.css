@@ -1,5 +1,5 @@
 :root {
-  --md-primary-fg-color: #0065C9;
+  --md-primary-fg-color: #0050D0;
 }
 
 .md-grid {
@@ -12,6 +12,10 @@
 
 .docblock-desc {
   margin-left: 1em;
+}
+
+pre > code.decl {
+  white-space: pre-wrap;
 }
 
 .features-container {

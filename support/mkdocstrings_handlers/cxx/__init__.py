@@ -105,17 +105,17 @@ def render_decl(d: Definition) -> None:
   text = ''
   if d.id is not None:
     text += f'<a id="{d.id}">\n'
-  text += '<pre><code class="language-cpp">'
+  text += '<pre><code class="language-cpp decl">'
 
   if d.template_params is not None:
     text += 'template &lt;'
     text += ', '.join(
-      [f'{p.type} {p.name}'.rstrip() for p in d.template_params])
+      [f'{p.type}&nbsp;{p.name}'.rstrip() for p in d.template_params])
     text += '&gt;\n'
 
   end = ';'
   if d.kind == 'function' or d.kind == 'variable':
-    text += d.type + ' '
+    text += d.type + ' ' if len(d.type) > 0 else ''
   elif d.kind == 'typedef':
     text += 'using '
   elif d.kind == 'define':
@@ -129,9 +129,7 @@ def render_decl(d: Definition) -> None:
       (p.type + ' ' if p.type else '') + p.name for p in d.params])
     text += '(' + escape_html(params) + ')'
     if d.trailing_return_type:
-      text += '\n ' \
-        if len(d.name) + len(params) + len(d.trailing_return_type) > 68 else ''
-      text += ' -> ' + escape_html(d.trailing_return_type)
+      text += ' -&NoBreak;>&nbsp;' + escape_html(d.trailing_return_type)
   elif d.kind == 'typedef':
     text += ' = ' + escape_html(d.type)
 

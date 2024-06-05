@@ -105,7 +105,7 @@ hide:
   per-call binary code</b>. For example, a call to <code>fmt::print</code> with
   a single argument is fewer than <a href="https://godbolt.org/g/TZU4KF">ten
   x86-64 instructions</a>, comparable to <code>printf</code> despite adding
-  runtime safety and much smaller than the equivalent iostreams code.
+  runtime safety, and much smaller than the equivalent iostreams code.
 </p>
 <p>
   The library itself has small binary footprint and some components such as
