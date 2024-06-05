@@ -101,6 +101,9 @@ def convert_return_type(d: Definition, node: et.Element) -> None:
     if len(parts) > 1:
       d.trailing_return_type = normalize_type(parts[1])
 
+def render_param(param: Definition) -> str:
+  return param.type + (f'&nbsp;{param.name}' if len(param.name) > 0 else '')
+
 def render_decl(d: Definition) -> None:
   text = ''
   if d.id is not None:
@@ -110,8 +113,7 @@ def render_decl(d: Definition) -> None:
   text += '<div>'
   if d.template_params is not None:
     text += 'template &lt;'
-    text += ', '.join(
-      [f'{p.type}&nbsp;{p.name}'.rstrip() for p in d.template_params])
+    text += ', '.join([render_param(p) for p in d.template_params])
     text += '&gt;\n'
   text += '</div>'
 
