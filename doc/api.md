@@ -28,11 +28,12 @@ dependencies for better compile times. This header is only beneficial when
 using {fmt} as a library (the default) and not in the header-only mode.
 It also provides `formatter` specializations for the following types:
 
-- `int`, `unsigned`, `long long`, `unsigned long long`
+- `int`, `long long`,
+- `unsigned`, `unsigned long long`
 - `float`, `double`, `long double`
 - `bool`
 - `char`
-- `const char*`, `fmt::string_view`
+- `const char*`, [`fmt::string_view`](#basic_string_view)
 - `const void*`
 
 The following functions use [format string syntax](syntax.md) similar to that

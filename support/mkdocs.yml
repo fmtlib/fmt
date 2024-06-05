@@ -8,6 +8,7 @@ theme:
   name: material
   features:
     - navigation.tabs
+    - navigation.top
     - toc.integrate
 
 extra_javascript:
