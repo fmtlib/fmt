@@ -1,3 +1,11 @@
+# 11.0.0 - TBD
+
+- Fixed `FMT_OS` handling in CMake config
+  (https://github.com/fmtlib/fmt/pull/3783). Thanks @phprus.
+
+- Improved documentation and README (https://github.com/fmtlib/fmt/pull/3784,
+  https://github.com/fmtlib/fmt/pull/3789). Thanks @zencatalyst, WolleTD
+
 # 10.2.0 - 2024-01-01
 
 - Added support for the `%j` specifier (the number of days) for
