@@ -1,12 +1,12 @@
-# Usage
+# Get Started
 
 To use the {fmt} library, add `fmt/core.h`, `fmt/format.h`, `fmt/format-inl.h`,
 `src/format.cc` and optionally other headers from a [release archive](
 https://github.com/fmtlib/fmt/releases/latest) or the [git repository](
 https://github.com/fmtlib/fmt) to your project. Alternatively, you can
-[build the library with CMake](#building).
+build the library with CMake.
 
-## Building the Library {#building}
+## Building the Library
 
 The included [CMake build
 script](https://github.com/fmtlib/fmt/blob/master/CMakeLists.txt) can be

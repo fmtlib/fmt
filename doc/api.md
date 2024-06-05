@@ -45,7 +45,7 @@ surrounded by braces `{}`. The fields are replaced with formatted arguments
 in the resulting string. [`fmt::format_string`](#format_string) is a format
 string which can be implicitly constructed from a string literal or a
 `constexpr` string and is checked at compile time in C++20. To pass a runtime
-format string wrap it in [fmt::runtime](#runtime).
+format string wrap it in [`fmt::runtime`](#runtime).
 
 *args* is an argument list representing objects to be formatted.
 

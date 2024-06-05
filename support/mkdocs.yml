@@ -36,7 +36,7 @@ plugins:
       default_handler: cxx
 nav:
   - Home: index.md
-  - Usage: usage.md
+  - Get Started: get-started.md
   - API: api.md
   - Syntax: syntax.md
 
