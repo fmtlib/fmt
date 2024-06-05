@@ -52,7 +52,9 @@ hide:
   {fmt} can be anywhere from <b>tens of percent to 20-30 times faster</b> than
   iostreams and <code>sprintf</code>, especially for numeric formatting.
 
+<a href="https://github.com/fmtlib/fmt?tab=readme-ov-file#benchmarks">
 <img src="perf.svg">
+</a>
 
   The library <b>minimizes dynamic memory allocations</b> and can optionally
   <a href="api#compile-api">compile format strings</a> to optimal code.
@@ -69,12 +71,12 @@ hide:
   >fmt::print("Слава Україні!");</code></pre>
 
   will be printed correctly on Linux, macOS, and even Windows console,
-  regardless of the codepages.
+  irrespective of the codepages.
 </p>
 <p>
   The default is <b>locale-independent</b>, but you can opt into localized
-  formatting and {fmt} makes it work with Unicode, working around problems in
-  the standard libary.
+  formatting and {fmt} makes it work with Unicode, addressing issues in the
+  standard libary.
 </p>
 </div>
 
@@ -91,7 +93,8 @@ hide:
   equivalent iostreams code, and while <code>printf</code> compiles faster
   still, the gap is narrowing.
 </p>
-<a href="https://github.com/fmtlib/fmt?tab=readme-ov-file#compile-time-and-code-bloat">
+<a href=
+"https://github.com/fmtlib/fmt?tab=readme-ov-file#compile-time-and-code-bloat">
 → Learn more</a>
 </div>
 
@@ -115,7 +118,7 @@ hide:
 <h2>Portability</h2>
 <p>
   {fmt} has a <b>small self-contained codebase</b> with the core consisting of
-  just three header files and no external dependencies.
+  just three headers and no external dependencies.
 </p>
 <p>
   The library is highly portable and requires only a minimal <b>subset of
@@ -138,8 +141,10 @@ hide:
   all-time contributors</a>.
 </p>
 <p>
-  The permissive MIT <a href="https://github.com/fmtlib/fmt#license">license</a>
-  allows the use the library in both open-source and commercial projects.
+  The library is distributed under a permissive MIT
+  <a href="https://github.com/fmtlib/fmt#license">license</a> and is
+  <b>relied upon by many open-source projects</b>, including PyTorch, Apple's
+  FoundationDB, Windows Terminal, MongoDB, and others.
 </p>
 </div>
 
