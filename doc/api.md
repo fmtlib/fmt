@@ -4,8 +4,8 @@ The {fmt} library API consists of the following components:
 
 - [`fmt/base.h`](#base-api): the base API providing main formatting functions
   for `char`/UTF-8 with C++20 compile-time checks and minimal dependencies
-- [`fmt/format.h`](#format-api): the full format API providing additional
-  formatting functions and locale support
+- [`fmt/format.h`](#format-api): `fmt::format` and other formatting functions
+  as well as locale support
 - [`fmt/ranges.h`](#ranges-api): formatting of ranges and tuples
 - [`fmt/chrono.h`](#chrono-api): date and time formatting
 - [`fmt/std.h`](#std-api): formatters for standard library types

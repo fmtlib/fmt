@@ -107,12 +107,15 @@ def render_decl(d: Definition) -> None:
     text += f'<a id="{d.id}">\n'
   text += '<pre><code class="language-cpp decl">'
 
+  text += '<div>'
   if d.template_params is not None:
     text += 'template &lt;'
     text += ', '.join(
       [f'{p.type}&nbsp;{p.name}'.rstrip() for p in d.template_params])
     text += '&gt;\n'
+  text += '</div>'
 
+  text += '<div>'
   end = ';'
   if d.kind == 'function' or d.kind == 'variable':
     text += d.type + ' ' if len(d.type) > 0 else ''
@@ -134,6 +137,7 @@ def render_decl(d: Definition) -> None:
     text += ' = ' + escape_html(d.type)
 
   text += end
+  text += '</div>'
   text += '</code></pre>\n'
   if d.id is not None:
     text += f'</a>\n'

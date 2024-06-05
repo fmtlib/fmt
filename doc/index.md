@@ -143,8 +143,8 @@ hide:
 <p>
   The library is distributed under a permissive MIT
   <a href="https://github.com/fmtlib/fmt#license">license</a> and is
-  <b>relied upon by many open-source projects</b>, including PyTorch, Apple's
-  FoundationDB, Windows Terminal, MongoDB, and others.
+  <b>relied upon by many open-source projects</b>, including Blender, PyTorch,
+  Apple's FoundationDB, Windows Terminal, MongoDB, and others.
 </p>
 </div>
 
