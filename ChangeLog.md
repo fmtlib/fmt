@@ -1,10 +1,114 @@
 # 11.0.0 - TBD
 
-- Fixed `FMT_OS` handling in CMake config
-  (https://github.com/fmtlib/fmt/pull/3783). Thanks @phprus.
+- Fixed the scope of strftime `-` extension so that it doesn't apply to
+  subsequent specifiers (https://github.com/fmtlib/fmt/issues/3811,
+  https://github.com/fmtlib/fmt/pull/3812). Thanks @phprus.
 
-- Improved documentation and README (https://github.com/fmtlib/fmt/pull/3784,
-  https://github.com/fmtlib/fmt/pull/3789). Thanks @zencatalyst, WolleTD
+- Added a formatter for `std::complex`
+  (https://github.com/fmtlib/fmt/pull/3892,
+  https://github.com/fmtlib/fmt/pull/3900). Thanks @phprus.
+
+- Added a formatter for `std::expected`
+  (https://github.com/fmtlib/fmt/pull/3834. Thanks @dominicpoeschko.
+
+- Added a formatter for `std::type_info`
+  (https://github.com/fmtlib/fmt/pull/3978). Thanks @matt77hias.
+
+- Specialized `formatter` for `std::basic_string` types with custom traits and
+  allocators (https://github.com/fmtlib/fmt/pull/3943). Thanks @dieram3.
+
+- Added a `formattable` concept (https://github.com/fmtlib/fmt/pull/3974).
+  Thanks @matt77hias.
+
+- Added support for character range formatting
+  (https://github.com/fmtlib/fmt/pull/3863). Thanks @js324.
+
+- Enabled ADL for `begin` and `end` in `fmt::join`
+  (https://github.com/fmtlib/fmt/pull/3824). Thanks @bbolli.
+
+- Exported `range_format` and `range_format_kind` from the fmt module
+  (https://github.com/fmtlib/fmt/pull/3970). Thanks @matt77hias.
+
+- Made contiguous iterator optimizations apply to `std::basic_string` iterators
+  (https://github.com/fmtlib/fmt/pull/3798). Thanks @phprus.
+
+- Added support for ranges with lvalue-qualified, non-const `begin` and `end`
+  (https://github.com/fmtlib/fmt/pull/3800). Thanks @tcbrindle.
+
+- Removed dependency on `<memory>` for `std::allocator_traits` when possible
+  (https://github.com/fmtlib/fmt/pull/3804). Thanks @phprus.
+
+- Made `iterator_buffer`'s move constructor `noexcept`
+  (https://github.com/fmtlib/fmt/pull/3808). Thanks @waywardmonkeys.
+
+- Fixed group_digits for negative integers
+  (https://github.com/fmtlib/fmt/issues/3891,
+  https://github.com/fmtlib/fmt/pull/3901). Thanks @phprus.
+
+- Fixed handling of negative ids in `basic_format_args::get`
+  (https://github.com/fmtlib/fmt/pull/3945). Thanks @marlenecota.
+
+- Disabled copy contruction/assignment for `format_arg_store` and fixed moved
+  construction (https://github.com/fmtlib/fmt/pull/3833). Thanks @ivafanas.
+
+- Added RTTI detection for MSVC (https://github.com/fmtlib/fmt/pull/3821,
+  https://github.com/fmtlib/fmt/pull/3963). Thanks @edo9300.
+
+- Improved documentation and README
+  (https://github.com/fmtlib/fmt/pull/3784,
+  https://github.com/fmtlib/fmt/pull/3789,
+  https://github.com/fmtlib/fmt/pull/3793,
+  https://github.com/fmtlib/fmt/pull/3890,
+  https://github.com/fmtlib/fmt/pull/3820,
+  https://github.com/fmtlib/fmt/pull/3822,
+  https://github.com/fmtlib/fmt/pull/3843,
+  https://github.com/fmtlib/fmt/issues/3894,
+  https://github.com/fmtlib/fmt/pull/3895,
+  https://github.com/fmtlib/fmt/pull/3905).
+  Thanks @zencatalyst, WolleTD, @tupaschoal, @Dobiasd, @frank-weinberg, @bbolli,
+  @phprus, @waywardmonkeys, @js324.
+
+- Improved CI
+  (https://github.com/fmtlib/fmt/pull/3979,
+  https://github.com/fmtlib/fmt/pull/3980,
+  https://github.com/fmtlib/fmt/pull/3988).
+  Thanks @waywardmonkeys, @tchaikov, @phprus.
+
+- Fixed buffer overflow when using format string compilation with debug format
+  and `std::back_insert_iterator` (https://github.com/fmtlib/fmt/pull/3797).
+  Thanks @phprus.
+
+- Improved Bazel support
+  (https://github.com/fmtlib/fmt/pull/3792,
+  https://github.com/fmtlib/fmt/pull/3801,
+  https://github.com/fmtlib/fmt/pull/3962,
+  https://github.com/fmtlib/fmt/pull/3965). Thanks @Vertexwahn.
+
+- Improved the CMake config
+  (https://github.com/fmtlib/fmt/pull/3783,
+  https://github.com/fmtlib/fmt/pull/3907). Thanks @phprus, @xTachyon.
+
+- Fixed various warnings and compilation issues
+  (https://github.com/fmtlib/fmt/pull/3806,
+  https://github.com/fmtlib/fmt/pull/3807,
+  https://github.com/fmtlib/fmt/pull/3810,
+  https://github.com/fmtlib/fmt/pull/3832,
+  https://github.com/fmtlib/fmt/pull/3844,
+  https://github.com/fmtlib/fmt/pull/3856,
+  https://github.com/fmtlib/fmt/pull/3865,
+  https://github.com/fmtlib/fmt/pull/3866,
+  https://github.com/fmtlib/fmt/pull/3899,
+  https://github.com/fmtlib/fmt/pull/3909,
+  https://github.com/fmtlib/fmt/pull/3923,
+  https://github.com/fmtlib/fmt/pull/3930,
+  https://github.com/fmtlib/fmt/pull/3931,
+  https://github.com/fmtlib/fmt/issues/3935,
+  https://github.com/fmtlib/fmt/pull/3937,
+  https://github.com/fmtlib/fmt/pull/3967,
+  https://github.com/fmtlib/fmt/pull/3972,
+  https://github.com/fmtlib/fmt/pull/3983).
+  Thanks @hmbj, @phprus, @res2k, @Baardi, @matt77hias, @waywardmonkeys, @hmbj,
+  @yakra, @prlw1, @Arghnews.
 
 # 10.2.0 - 2024-01-01
 
