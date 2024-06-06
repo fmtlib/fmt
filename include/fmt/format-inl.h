@@ -1600,6 +1600,7 @@ template <typename F> class fallback_file : public file_base<F> {
   }
 };
 
+#ifndef FMT_FORCE_FALLBACK_FILE
 template <typename F, FMT_ENABLE_IF(sizeof(F::_p) != 0)>
 auto get_file(F* f, int) -> apple_file<F> {
   return f;
@@ -1608,6 +1609,8 @@ template <typename F, FMT_ENABLE_IF(sizeof(F::_IO_read_ptr) != 0)>
 inline auto get_file(F* f, int) -> glibc_file<F> {
   return f;
 }
+#endif
+
 inline auto get_file(FILE* f, ...) -> fallback_file<FILE> { return f; }
 
 using file_ref = decltype(get_file(static_cast<FILE*>(nullptr), 0));

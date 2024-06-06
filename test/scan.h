@@ -153,6 +153,7 @@ class string_scan_buffer final : public scan_buffer {
 
 class file_scan_buffer final : public scan_buffer {
  private:
+  #ifndef FMT_FORCE_FALLBACK_FILE
   template <typename F, FMT_ENABLE_IF(sizeof(F::_IO_read_ptr) != 0)>
   static auto get_file(F* f, int) -> glibc_file<F> {
     return f;
@@ -161,6 +162,7 @@ class file_scan_buffer final : public scan_buffer {
   static auto get_file(F* f, int) -> apple_file<F> {
     return f;
   }
+  #endif 
   static auto get_file(FILE* f, ...) -> fallback_file<FILE> { return f; }
 
   decltype(get_file(static_cast<FILE*>(nullptr), 0)) file_;
