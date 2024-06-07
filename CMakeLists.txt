@@ -53,6 +53,7 @@ function(add_module_library name)
   if (NOT ${${AML_IF}})
     # Create a non-modular library.
     target_sources(${name} PRIVATE ${AML_FALLBACK})
+    set_target_properties(${name} PROPERTIES CXX_SCAN_FOR_MODULES OFF)
     return()
   endif ()
 
