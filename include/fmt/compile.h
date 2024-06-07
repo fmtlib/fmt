@@ -15,6 +15,10 @@
 #include "format.h"
 
 FMT_BEGIN_NAMESPACE
+
+// A compile-time string which is compiled into fast formatting code.
+FMT_EXPORT class compiled_string {};
+
 namespace detail {
 
 template <typename T, typename InputIt>
@@ -22,9 +26,6 @@ FMT_CONSTEXPR inline auto copy(InputIt begin, InputIt end, counting_iterator it)
     -> counting_iterator {
   return it + (end - begin);
 }
-
-// A compile-time string which is compiled into fast formatting code.
-class compiled_string {};
 
 template <typename S>
 struct is_compiled_string : std::is_base_of<compiled_string, S> {};
@@ -41,8 +42,7 @@ struct is_compiled_string : std::is_base_of<compiled_string, S> {};
  *     std::string s = fmt::format(FMT_COMPILE("{}"), 42);
  */
 #if defined(__cpp_if_constexpr) && defined(__cpp_return_type_deduction)
-#  define FMT_COMPILE(s) \
-    FMT_STRING_IMPL(s, fmt::detail::compiled_string, explicit)
+#  define FMT_COMPILE(s) FMT_STRING_IMPL(s, fmt::compiled_string, explicit)
 #else
 #  define FMT_COMPILE(s) FMT_STRING(s)
 #endif
