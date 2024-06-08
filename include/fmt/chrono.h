@@ -676,12 +676,10 @@ enum class numeric_system {
 
 // Glibc extensions for formatting numeric values.
 enum class pad_type {
-  unspecified,
+  // Pad a numeric result string with zeros (the default).
+  zero,
   // Do not pad a numeric result string.
   none,
-  // Pad a numeric result string with zeros even if the conversion specifier
-  // character uses space-padding by default.
-  zero,
   // Pad a numeric result string with spaces.
   space,
 };
@@ -706,7 +704,7 @@ FMT_CONSTEXPR auto parse_chrono_format(const Char* begin, const Char* end,
   if (*begin != '%') FMT_THROW(format_error("invalid format"));
   auto ptr = begin;
   while (ptr != end) {
-    pad_type pad = pad_type::unspecified;
+    pad_type pad = pad_type::zero;
     auto c = *ptr;
     if (c == '}') break;
     if (c != '%') {
@@ -724,10 +722,6 @@ FMT_CONSTEXPR auto parse_chrono_format(const Char* begin, const Char* end,
       break;
     case '-':
       pad = pad_type::none;
-      ++ptr;
-      break;
-    case '0':
-      pad = pad_type::zero;
       ++ptr;
       break;
     }
@@ -1637,7 +1631,7 @@ class tm_writer {
   void on_iso_time() {
     on_24_hour_time();
     *out_++ = ':';
-    on_second(numeric_system::standard, pad_type::unspecified);
+    on_second(numeric_system::standard, pad_type::zero);
   }
 
   void on_am_pm() {
@@ -1878,7 +1872,7 @@ struct chrono_formatter {
     }
   }
 
-  void write(Rep value, int width, pad_type pad = pad_type::unspecified) {
+  void write(Rep value, int width, pad_type pad = pad_type::zero) {
     write_sign();
     if (isnan(value)) return write_nan();
     uint32_or_64_or_128_t<int> n =
@@ -2011,7 +2005,7 @@ struct chrono_formatter {
     on_24_hour_time();
     *out++ = ':';
     if (handle_nan_inf()) return;
-    on_second(numeric_system::standard, pad_type::unspecified);
+    on_second(numeric_system::standard, pad_type::zero);
   }
 
   void on_am_pm() {
@@ -2151,7 +2145,7 @@ struct formatter<day, Char> : private formatter<std::tm, Char> {
     detail::get_locale loc(false, ctx.locale());
     auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
     w.on_day_of_month(detail::numeric_system::standard,
-                      detail::pad_type::unspecified);
+                      detail::pad_type::zero);
     return w.out();
   }
 };
