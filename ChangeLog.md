@@ -1,8 +1,40 @@
 # 11.0.0 - TBD
 
-- Fixed the scope of strftime `-` extension so that it doesn't apply to
-  subsequent specifiers (https://github.com/fmtlib/fmt/issues/3811,
+- Improved C++20 module support
+  (https://github.com/fmtlib/fmt/pull/3991,
+  https://github.com/fmtlib/fmt/pull/3997,
+  https://github.com/fmtlib/fmt/pull/3998). Thanks @yujincheng08.
+
+- Added support for the `-` specifier (glibc `strftime` extension) to day of
+  the month (`%d`) and week of the year (`%W`, `%U`, `%V`) specifiers
+  (https://github.com/fmtlib/fmt/pull/3976). Thanks @ZaheenJ.
+
+- Fixed the scope of the `-` extension in chrono formatting so that it doesn't
+  apply to subsequent specifiers (https://github.com/fmtlib/fmt/issues/3811,
   https://github.com/fmtlib/fmt/pull/3812). Thanks @phprus.
+
+- Fixed handling of precision in `%S` (https://github.com/fmtlib/fmt/pull/3814).
+  Thanks @js324.
+
+- Added formatters for `std::chrono::day`, `std::chrono::month`,
+  `std::chrono::year` and `std::chrono::year_month_day`
+  (https://github.com/fmtlib/fmt/issues/3758,
+  https://github.com/fmtlib/fmt/pull/3906). For example:
+
+  ```c++
+  #include <fmt/chrono.h>
+  #include <fmt/color.h>
+
+  int main() {
+    fmt::print(fg(fmt::color::green), "{}\n", std::chrono::day(7));
+  }
+  ```
+
+  prints a green day:
+
+  <img width="306" alt="image" src="https://github.com/fmtlib/fmt/assets/576385/6e395f8b-451a-4cf7-bccc-ee92ca0dec65">
+
+  Thanks @zivshek.
 
 - Added a formatter for `std::complex`
   (https://github.com/fmtlib/fmt/pull/3892,
@@ -16,6 +48,13 @@
 
 - Specialized `formatter` for `std::basic_string` types with custom traits and
   allocators (https://github.com/fmtlib/fmt/pull/3943). Thanks @dieram3.
+
+* Improved safety of `format_to` when writting to an array
+  (https://github.com/fmtlib/fmt/pull/3805). Thanks @ThePhD.
+
+- Added an option to replace standard includes with `import std` enabled via
+  the `FMT_IMPORT_STD` macro (https://github.com/fmtlib/fmt/pull/3928).
+  Thanks @matt77hias.
 
 - Added a `formattable` concept (https://github.com/fmtlib/fmt/pull/3974).
   Thanks @matt77hias.
@@ -32,14 +71,30 @@
 - Made contiguous iterator optimizations apply to `std::basic_string` iterators
   (https://github.com/fmtlib/fmt/pull/3798). Thanks @phprus.
 
-- Added support for ranges with lvalue-qualified, non-const `begin` and `end`
-  (https://github.com/fmtlib/fmt/pull/3800). Thanks @tcbrindle.
+- Added support for ranges with mutable `begin` and `end`
+  (https://github.com/fmtlib/fmt/pull/3800,
+  https://github.com/fmtlib/fmt/pull/3955). Thanks @tcbrindle and @Arghnews.
+
+- Added support for move-only iterators to `fmt::join`
+  (https://github.com/fmtlib/fmt/issues/3802,
+  https://github.com/fmtlib/fmt/pull/3946). Thanks @Arghnews.
+
+- Fixed hanling of types with nondereferenceable `begin` such as Eigen matrices
+  (https://github.com/fmtlib/fmt/pull/3964). Thanks @Arghnews.
 
 - Removed dependency on `<memory>` for `std::allocator_traits` when possible
   (https://github.com/fmtlib/fmt/pull/3804). Thanks @phprus.
 
+- Made `fmt::isnan` not trigger floating-point exception for NaN values
+  (https://github.com/fmtlib/fmt/issues/3948,
+  https://github.com/fmtlib/fmt/pull/3951). Thanks @alexdewar.
+
 - Made `iterator_buffer`'s move constructor `noexcept`
   (https://github.com/fmtlib/fmt/pull/3808). Thanks @waywardmonkeys.
+
+- Made `fmt::basic_string_view` not constructible from `nullptr` for
+  consistency with `std::string_view` in C++23
+  (https://github.com/fmtlib/fmt/pull/3846). Thanks @dalle.
 
 - Fixed group_digits for negative integers
   (https://github.com/fmtlib/fmt/issues/3891,
@@ -50,6 +105,9 @@
 
 - Disabled copy contruction/assignment for `format_arg_store` and fixed moved
   construction (https://github.com/fmtlib/fmt/pull/3833). Thanks @ivafanas.
+
+- Worked around a locale issue in RHEL/devtoolset
+  (https://github.com/fmtlib/fmt/pull/3859). Thansk @g199209.
 
 - Added RTTI detection for MSVC (https://github.com/fmtlib/fmt/pull/3821,
   https://github.com/fmtlib/fmt/pull/3963). Thanks @edo9300.
@@ -68,11 +126,12 @@
   Thanks @zencatalyst, WolleTD, @tupaschoal, @Dobiasd, @frank-weinberg, @bbolli,
   @phprus, @waywardmonkeys, @js324.
 
-- Improved CI
-  (https://github.com/fmtlib/fmt/pull/3979,
+- Improved CI and tests
+  (https://github.com/fmtlib/fmt/pull/3883,
+  https://github.com/fmtlib/fmt/pull/3979,
   https://github.com/fmtlib/fmt/pull/3980,
   https://github.com/fmtlib/fmt/pull/3988).
-  Thanks @waywardmonkeys, @tchaikov, @phprus.
+  Thanks @vgorrX, @waywardmonkeys, @tchaikov, @phprus.
 
 - Fixed buffer overflow when using format string compilation with debug format
   and `std::back_insert_iterator` (https://github.com/fmtlib/fmt/pull/3797).
@@ -97,18 +156,22 @@
   https://github.com/fmtlib/fmt/pull/3856,
   https://github.com/fmtlib/fmt/pull/3865,
   https://github.com/fmtlib/fmt/pull/3866,
+  https://github.com/fmtlib/fmt/pull/3880,
   https://github.com/fmtlib/fmt/pull/3899,
   https://github.com/fmtlib/fmt/pull/3909,
+  https://github.com/fmtlib/fmt/pull/3917,
   https://github.com/fmtlib/fmt/pull/3923,
+  https://github.com/fmtlib/fmt/pull/3924,
   https://github.com/fmtlib/fmt/pull/3930,
   https://github.com/fmtlib/fmt/pull/3931,
   https://github.com/fmtlib/fmt/issues/3935,
   https://github.com/fmtlib/fmt/pull/3937,
   https://github.com/fmtlib/fmt/pull/3967,
+  https://github.com/fmtlib/fmt/pull/3968,
   https://github.com/fmtlib/fmt/pull/3972,
-  https://github.com/fmtlib/fmt/pull/3983).
+  https://github.com/fmtlib/fmt/pull/3983,).
   Thanks @hmbj, @phprus, @res2k, @Baardi, @matt77hias, @waywardmonkeys, @hmbj,
-  @yakra, @prlw1, @Arghnews.
+  @yakra, @prlw1, @Arghnews, @mtillmann0, @ShifftC, @eepp.
 
 # 10.2.0 - 2024-01-01
 
