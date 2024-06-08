@@ -533,12 +533,13 @@ feature](https://en.cppreference.com/w/cpp/feature_test).
 ## Format String Compilation
 
 `fmt/compile.h` provides format string compilation enabled via the
-`FMT_COMPILE` macro or the `_cf` user-defined literal. Format strings
-marked with `FMT_COMPILE` or `_cf` are parsed, checked and converted
-into efficient formatting code at compile-time. This supports arguments
-of built-in and string types as well as user-defined types with `format`
-functions taking the format context type as a template parameter in
-their `formatter` specializations. For example:
+`FMT_COMPILE` macro or the `_cf` user-defined literal (defined in
+namespace `fmt::literals`). Format strings marked with `FMT_COMPILE`
+or `_cf` are parsed, checked and converted into efficient formatting
+code at compile-time. This supports arguments of built-in and string
+types as well as user-defined types with `format` functions taking
+the format context type as a template parameter in their `formatter`
+specializations. For example:
 
     template <> struct fmt::formatter<point> {
       constexpr auto parse(format_parse_context& ctx);
