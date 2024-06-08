@@ -64,7 +64,7 @@ function(add_module_library name)
   endif ()
 
   if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.28 AND CMAKE_GENERATOR STREQUAL "Ninja")
-    target_sources(${name} PUBLIC FILE_SET CXX_MODULES FILES ${sources})
+    target_sources(${name} PUBLIC FILE_SET fmt TYPE CXX_MODULES FILES ${sources})
   else()
     # `std` is affected by CMake options and may be higher than C++20.
     get_target_property(std ${name} CXX_STANDARD)
@@ -406,6 +406,7 @@ if (FMT_INSTALL)
           LIBRARY DESTINATION ${FMT_LIB_DIR}
           ARCHIVE DESTINATION ${FMT_LIB_DIR}
           PUBLIC_HEADER DESTINATION "${FMT_INC_DIR}/fmt"
+          FILE_SET fmt DESTINATION "${FMT_INC_DIR}/fmt"
           RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
   # Use a namespace because CMake provides better diagnostics for namespaced
