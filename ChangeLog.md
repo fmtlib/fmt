@@ -5,16 +5,9 @@
   https://github.com/fmtlib/fmt/pull/3997,
   https://github.com/fmtlib/fmt/pull/3998). Thanks @yujincheng08.
 
-- Added support for the `-` specifier (glibc `strftime` extension) to day of
-  the month (`%d`) and week of the year (`%W`, `%U`, `%V`) specifiers
-  (https://github.com/fmtlib/fmt/pull/3976). Thanks @ZaheenJ.
-
-- Fixed the scope of the `-` extension in chrono formatting so that it doesn't
-  apply to subsequent specifiers (https://github.com/fmtlib/fmt/issues/3811,
-  https://github.com/fmtlib/fmt/pull/3812). Thanks @phprus.
-
-- Fixed handling of precision in `%S` (https://github.com/fmtlib/fmt/pull/3814).
-  Thanks @js324.
+- Added an option to replace standard includes with `import std` enabled via
+  the `FMT_IMPORT_STD` macro (https://github.com/fmtlib/fmt/pull/3928).
+  Thanks @matt77hias.
 
 - Added formatters for `std::chrono::day`, `std::chrono::month`,
   `std::chrono::year` and `std::chrono::year_month_day`
@@ -36,12 +29,23 @@
 
   Thanks @zivshek.
 
-- Added a formatter for `std::complex`
-  (https://github.com/fmtlib/fmt/pull/3892,
-  https://github.com/fmtlib/fmt/pull/3900). Thanks @phprus.
+- Fixed handling of precision in `%S` (https://github.com/fmtlib/fmt/pull/3814).
+  Thanks @js324.
+
+- Added support for the `-` specifier (glibc `strftime` extension) to day of
+  the month (`%d`) and week of the year (`%W`, `%U`, `%V`) specifiers
+  (https://github.com/fmtlib/fmt/pull/3976). Thanks @ZaheenJ.
+
+- Fixed the scope of the `-` extension in chrono formatting so that it doesn't
+  apply to subsequent specifiers (https://github.com/fmtlib/fmt/issues/3811,
+  https://github.com/fmtlib/fmt/pull/3812). Thanks @phprus.
 
 - Added a formatter for `std::expected`
   (https://github.com/fmtlib/fmt/pull/3834. Thanks @dominicpoeschko.
+
+- Added a formatter for `std::complex`
+  (https://github.com/fmtlib/fmt/pull/3892,
+  https://github.com/fmtlib/fmt/pull/3900). Thanks @phprus.
 
 - Added a formatter for `std::type_info`
   (https://github.com/fmtlib/fmt/pull/3978). Thanks @matt77hias.
@@ -49,15 +53,8 @@
 - Specialized `formatter` for `std::basic_string` types with custom traits and
   allocators (https://github.com/fmtlib/fmt/pull/3943). Thanks @dieram3.
 
-* Improved safety of `format_to` when writting to an array
+- Improved safety of `format_to` when writting to an array
   (https://github.com/fmtlib/fmt/pull/3805). Thanks @ThePhD.
-
-- Added an option to replace standard includes with `import std` enabled via
-  the `FMT_IMPORT_STD` macro (https://github.com/fmtlib/fmt/pull/3928).
-  Thanks @matt77hias.
-
-- Added a `formattable` concept (https://github.com/fmtlib/fmt/pull/3974).
-  Thanks @matt77hias.
 
 - Added support for character range formatting
   (https://github.com/fmtlib/fmt/pull/3863). Thanks @js324.
@@ -79,8 +76,11 @@
   (https://github.com/fmtlib/fmt/issues/3802,
   https://github.com/fmtlib/fmt/pull/3946). Thanks @Arghnews.
 
-- Fixed hanling of types with nondereferenceable `begin` such as Eigen matrices
+- Fixed hanling of types with `begin` returning `void` such as Eigen matrices
   (https://github.com/fmtlib/fmt/pull/3964). Thanks @Arghnews.
+
+- Added a `formattable` concept (https://github.com/fmtlib/fmt/pull/3974).
+  Thanks @matt77hias.
 
 - Removed dependency on `<memory>` for `std::allocator_traits` when possible
   (https://github.com/fmtlib/fmt/pull/3804). Thanks @phprus.
