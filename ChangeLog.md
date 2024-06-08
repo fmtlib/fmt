@@ -189,7 +189,7 @@
   #include <fmt/chrono.h>
 
   int main() {
-  fmt::print("{}\n", std::chrono::days(42)); // prints "42d"
+    fmt::print("{}\n", std::chrono::days(42)); // prints "42d"
   }
   ```
 
