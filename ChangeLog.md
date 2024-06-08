@@ -2411,4 +2411,5 @@
   https://github.com/fmtlib/fmt/pull/2346).
   Thanks @jgopel, @alexezeder and @DanielaE.
 
-The change log for versions 0.8.0 - 7.1.3 is available in doc/ChangeLog-old.md.
+The change log for versions 0.8.0 - 7.1.3 is available [here](
+doc/ChangeLog-old.md).
