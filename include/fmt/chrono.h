@@ -2144,8 +2144,7 @@ struct formatter<day, Char> : private formatter<std::tm, Char> {
     if (use_tm_formatter_) return formatter<std::tm, Char>::format(time, ctx);
     detail::get_locale loc(false, ctx.locale());
     auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
-    w.on_day_of_month(detail::numeric_system::standard,
-                      detail::pad_type::zero);
+    w.on_day_of_month(detail::numeric_system::standard, detail::pad_type::zero);
     return w.out();
   }
 };
