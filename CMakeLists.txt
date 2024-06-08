@@ -63,6 +63,8 @@ function(add_module_library name)
     target_compile_options(${name} PUBLIC -fmodules-ts)
   endif ()
 
+  target_compile_definitions(${name} PRIVATE FMT_MODULE)
+
   if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.28 AND CMAKE_GENERATOR STREQUAL "Ninja")
     target_sources(${name} PUBLIC FILE_SET fmt TYPE CXX_MODULES FILES ${sources})
   else()

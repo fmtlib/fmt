@@ -8,9 +8,12 @@
 #ifndef FMT_BASE_H_
 #define FMT_BASE_H_
 
-#include <limits.h>  // CHAR_BIT
-#include <stdio.h>   // FILE
-#include <string.h>  // strlen
+// c headers are preferable for performance reasons
+#ifndef FMT_MODULE
+#  include <limits.h>  // CHAR_BIT
+#  include <stdio.h>   // FILE
+#  include <string.h>  // strlen
+#endif
 
 #ifndef FMT_IMPORT_STD
 // <cstddef> is also included transitively from <type_traits>.
