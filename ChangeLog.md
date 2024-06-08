@@ -107,7 +107,7 @@
   construction (https://github.com/fmtlib/fmt/pull/3833). Thanks @ivafanas.
 
 - Worked around a locale issue in RHEL/devtoolset
-  (https://github.com/fmtlib/fmt/pull/3859). Thansk @g199209.
+  (https://github.com/fmtlib/fmt/pull/3859). Thanks @g199209.
 
 - Added RTTI detection for MSVC (https://github.com/fmtlib/fmt/pull/3821,
   https://github.com/fmtlib/fmt/pull/3963). Thanks @edo9300.
@@ -124,14 +124,14 @@
   https://github.com/fmtlib/fmt/pull/3895,
   https://github.com/fmtlib/fmt/pull/3905).
   Thanks @zencatalyst, WolleTD, @tupaschoal, @Dobiasd, @frank-weinberg, @bbolli,
-  @phprus, @waywardmonkeys, @js324.
+  @phprus, @waywardmonkeys and @js324.
 
 - Improved CI and tests
   (https://github.com/fmtlib/fmt/pull/3883,
   https://github.com/fmtlib/fmt/pull/3979,
   https://github.com/fmtlib/fmt/pull/3980,
   https://github.com/fmtlib/fmt/pull/3988).
-  Thanks @vgorrX, @waywardmonkeys, @tchaikov, @phprus.
+  Thanks @vgorrX, @waywardmonkeys, @tchaikov and @phprus.
 
 - Fixed buffer overflow when using format string compilation with debug format
   and `std::back_insert_iterator` (https://github.com/fmtlib/fmt/pull/3797).
@@ -145,7 +145,7 @@
 
 - Improved the CMake config
   (https://github.com/fmtlib/fmt/pull/3783,
-  https://github.com/fmtlib/fmt/pull/3907). Thanks @phprus, @xTachyon.
+  https://github.com/fmtlib/fmt/pull/3907). Thanks @phprus and @xTachyon.
 
 - Fixed various warnings and compilation issues
   (https://github.com/fmtlib/fmt/pull/3806,
@@ -171,7 +171,7 @@
   https://github.com/fmtlib/fmt/pull/3972,
   https://github.com/fmtlib/fmt/pull/3983,).
   Thanks @hmbj, @phprus, @res2k, @Baardi, @matt77hias, @waywardmonkeys, @hmbj,
-  @yakra, @prlw1, @Arghnews, @mtillmann0, @ShifftC, @eepp.
+  @yakra, @prlw1, @Arghnews, @mtillmann0, @ShifftC and @eepp.
 
 # 10.2.0 - 2024-01-01
 
