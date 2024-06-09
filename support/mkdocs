@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # A script to invoke mkdocs with the correct environment.
-# Additionally supports deploying:
-#   ./mkdocs deploy ...
+# Additionally supports deploying via mike:
+#   ./mkdocs deploy [mike-deploy-options]
 
 import errno, os, shutil, sys
 from subprocess import call
