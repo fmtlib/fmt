@@ -6,6 +6,12 @@
   max-width: 960px;
 }
 
+@media (min-width: 400px) {
+  .md-tabs {
+    display: block;
+  }
+}
+
 .docblock {
   border-left: .05rem solid var(--md-primary-fg-color);
 }
