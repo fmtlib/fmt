@@ -449,7 +449,8 @@ function(add_doc_target)
   add_custom_target(
     doc
     COMMAND
-      ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/support
+      ${CMAKE_COMMAND}
+        -E env PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/support/python
         ${MKDOCS} build -f ${CMAKE_CURRENT_SOURCE_DIR}/support/mkdocs.yml
                         --site-dir ${CMAKE_CURRENT_BINARY_DIR}/site
                         --no-directory-urls

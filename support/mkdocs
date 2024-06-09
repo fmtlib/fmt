@@ -3,7 +3,7 @@
 
 import os, subprocess, sys
 
-dirname = os.path.dirname(__file__)
+dirname = os.path.join(os.path.dirname(__file__), 'python')
 
 # Set PYTHONPATH for the mkdocstrings handler.
 env = os.environ.copy()
@@ -11,4 +11,7 @@ path = env.get('PYTHONPATH')
 env['PYTHONPATH'] = (path + ':' if path else '') + dirname
 
 config_path = os.path.join(dirname, 'mkdocs.yml')
-subprocess.run(['mkdocs'] + sys.argv[1:] + ['-f', config_path], env=env)
+args = sys.argv[1:]
+if 'build' in args:
+    args += ['-f', config_path]
+subprocess.run(['mkdocs'] + args, env=env)

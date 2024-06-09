@@ -33,6 +33,6 @@ jobs:
       env:
         KEY: ${{secrets.KEY}}
       run: |
-        cmake .
+        cmake $GITHUB_WORKSPACE
         make doc
         # $GITHUB_WORKSPACE/support/build-docs.py
