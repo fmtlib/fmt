@@ -20,14 +20,17 @@ args = sys.argv[1:]
 if len(args) > 0:
   command = args[0]
   if command == 'deploy':
+    site_repo = 'git@github.com:fmtlib/fmt.dev.git'
+    if 'CI' in os.environ:
+      site_repo = 'https://github.com/fmtlib/fmt.dev.git'
+
     site_dir = os.  path.join(build_dir, 'fmt.dev')
     try:
       shutil.rmtree(site_dir)
     except OSError as e:
       if e.errno == errno.ENOENT:
         pass
-    ret = call(['git', 'clone', '--depth=1',
-                'git@github.com:fmtlib/fmt.dev.git', site_dir])
+    ret = call(['git', 'clone', '--depth=1', site_repo, site_dir])
     if ret != 0:
       sys.exit(ret)
 
