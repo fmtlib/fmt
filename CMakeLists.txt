@@ -160,6 +160,7 @@ option(FMT_CUDA_TEST "Generate the cuda-test target." OFF)
 option(FMT_OS "Include OS-specific APIs." ON)
 option(FMT_MODULE "Build a module instead of a traditional library." OFF)
 option(FMT_SYSTEM_HEADERS "Expose headers with marking them as system." OFF)
+option(FMT_UNICODE "Enable Unicode support." ON)
 
 if (FMT_TEST AND FMT_MODULE)
   # The tests require {fmt} to be compiled as traditional library
@@ -347,7 +348,7 @@ endif ()
 add_library(fmt-header-only INTERFACE)
 add_library(fmt::fmt-header-only ALIAS fmt-header-only)
 
-if (MSVC)
+if (MSVC AND FMT_UNICODE)
   # Unicode support requires compiling with /utf-8.
   target_compile_options(fmt PUBLIC /utf-8)
   target_compile_options(fmt-header-only INTERFACE /utf-8)
