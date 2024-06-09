@@ -30,8 +30,8 @@ if len(args) > 0:
                 'git@github.com:fmtlib/fmt.dev.git', site_dir])
     if ret != 0:
       sys.exit(ret)
-    sys.exit(call(['mike', 'deploy', '--config-file', config_path,
-                   '--branch', 'master', 'dev'],
+    sys.exit(call(['mike'] + args + ['--config-file', config_path,
+                   '--branch', 'master'],
                   cwd=site_dir, env=env))
   elif not command.startswith('-'):
     args += ['-f', config_path]

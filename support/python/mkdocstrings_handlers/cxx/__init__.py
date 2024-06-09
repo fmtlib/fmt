@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 import xml.etree.ElementTree as et
 from mkdocstrings.handlers.base import BaseHandler
-from typing import Any, Mapping, Optional
+from typing import Any, List, Mapping, Optional
 from subprocess import CalledProcessError, PIPE, Popen, STDOUT
 
 class Definition:
@@ -39,7 +39,7 @@ tag_text_map = {
 def escape_html(s: str) -> str:
   return s.replace("<", "&lt;")
 
-def doxyxml2html(nodes: list[et.Element]):
+def doxyxml2html(nodes: List[et.Element]):
   out = ''
   for n in nodes:
     tag = tag_map.get(n.tag)
@@ -56,7 +56,7 @@ def doxyxml2html(nodes: list[et.Element]):
       out += n.tail
   return out
 
-def convert_template_params(node: et.Element) -> Optional[list[Definition]]:
+def convert_template_params(node: et.Element) -> Optional[List[Definition]]:
   templateparamlist = node.find('templateparamlist')
   if templateparamlist is None:
     return None
@@ -68,7 +68,7 @@ def convert_template_params(node: et.Element) -> Optional[list[Definition]]:
     params.append(param)
   return params
 
-def get_description(node: et.Element) -> list[et.Element]:
+def get_description(node: et.Element) -> List[et.Element]:
   return node.findall('briefdescription/para') + \
          node.findall('detaileddescription/para')
 
@@ -202,7 +202,7 @@ class CxxHandler(BaseHandler):
           root.append(node)
 
   def collect_compound(self, identifier: str,
-                       cls: list[et.Element]) -> Definition:
+                       cls: List[et.Element]) -> Definition:
     '''Collect a compound definition such as a struct.'''
     path = os.path.join(self._doxyxml_dir, cls[0].get('refid') + '.xml')
     with open(path) as f:
