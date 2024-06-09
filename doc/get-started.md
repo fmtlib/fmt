@@ -4,11 +4,11 @@ You can compile and run {fmt} examples online with [Compiler Explorer](
 https://godbolt.org/z/P7h6cd6o3).
 
 {fmt} can be used with any build system. The next section describes usage with
-CMake and [Build Systems](#build-systems) covers the rest.
+CMake, and [Build Systems](#build-systems) covers the rest.
 
 ## CMake
 
-{fmt} provides two CMake targets, `fmt::fmt` for the compiled library and
+{fmt} provides two CMake targets: `fmt::fmt` for the compiled library and
 `fmt::fmt-header-only` for the header-only library. It is recommended to use
 the compiled library for better build times.
 
@@ -34,7 +34,7 @@ There are three main ways to consume {fmt} from CMake:
         find_package(fmt)
         target_link_libraries(<your-target> fmt::fmt)
 
-* **Embedded**: You can add the `fmt` source tree to your project and include it
+* **Embedded**: You can add the {fmt} source tree to your project and include it
   in your `CMakeLists.txt` file:
 
         add_subdirectory(fmt)
@@ -44,7 +44,7 @@ There are three main ways to consume {fmt} from CMake:
 
 ### Debian/Ubuntu
 
-Use the following command to install {fmt} on Debian, Ubuntu or any other
+Use the following command to install {fmt} on Debian, Ubuntu, or any other
 Debian-based Linux distribution:
 
     apt install libfmt-dev
@@ -57,7 +57,7 @@ Debian-based Linux distribution:
 
 ### Conda
 
-{fmt} can be installed on Linux, macOS and Windows with [Conda](
+{fmt} can be installed on Linux, macOS, and Windows with [Conda](
 https://docs.conda.io/en/latest/), using its [conda-forge package](
 https://github.com/conda-forge/fmt-feedstock):
 
@@ -104,14 +104,31 @@ To build a shared library set the `BUILD_SHARED_LIBS` CMake variable to `TRUE`:
 
     cmake -DBUILD_SHARED_LIBS=TRUE ..
 
-To build a static library with position-independent code, e.g. for
-linking it into another shared library such as a Python extension, set the
+To build a static library with position-independent code (e.g. for
+linking it into another shared library such as a Python extension), set the
 `CMAKE_POSITION_INDEPENDENT_CODE` CMake variable to `TRUE`:
 
     cmake -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE ..
 
 After building the library you can install it on a Unix-like system by
 running `sudo make install`.
+
+### Building the Docs
+
+To build the documentation you need the following software installed on
+your system:
+
+- [Python](https://www.python.org/)
+- [Doxygen](http://www.stack.nl/~dimitri/doxygen/)
+- [MkDocs](https://www.mkdocs.org/) with `mike`, `mkdocstrings` and
+  `mkdocs-material`
+
+First generate makefiles or project files using CMake as described in
+the previous section. Then compile the `doc` target/project, for example:
+
+    make doc
+
+This will generate the HTML documentation in `doc/html`.
 
 ## Build Systems
 
@@ -204,19 +221,3 @@ To use the {fmt} library with any other build system, add
 https://github.com/fmtlib/fmt/releases) or the [git repository](
 https://github.com/fmtlib/fmt) to your project, add `include` to include
 directories and make sure `src/format.cc` is compiled and linked with your code.
-
-## Building the Docs
-
-To build the documentation you need the following software installed on
-your system:
-
-- [Python](https://www.python.org/) with pip and virtualenv
-- [Doxygen](http://www.stack.nl/~dimitri/doxygen/)
-
-First generate makefiles or project files using CMake as described in
-the previous section. Then compile the `doc` target/project, for
-example:
-
-    make doc
-
-This will generate the HTML documentation in `doc/html`.
