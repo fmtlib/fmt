@@ -34,5 +34,5 @@ jobs:
         KEY: ${{secrets.KEY}}
       run: |
         cmake $GITHUB_WORKSPACE
-        make doc
+        # make doc
         # $GITHUB_WORKSPACE/support/build-docs.py
