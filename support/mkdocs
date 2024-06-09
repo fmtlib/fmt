@@ -30,9 +30,13 @@ if len(args) > 0:
                 'git@github.com:fmtlib/fmt.dev.git', site_dir])
     if ret != 0:
       sys.exit(ret)
-    sys.exit(call(['mike'] + args + ['--config-file', config_path,
-                   '--branch', 'master'],
-                  cwd=site_dir, env=env))
+
+    # Copy the config to the build dir because the site is built relative to it.
+    config_build_path = os.path.join(build_dir, 'mkdocs.yml')
+    shutil.copyfile(config_path, config_build_path)
+
+    sys.exit(call(['mike'] + args + ['--config-file', config_build_path,
+                   '--branch', 'master'], cwd=site_dir, env=env))
   elif not command.startswith('-'):
     args += ['-f', config_path]
 sys.exit(call(['mkdocs'] + args, env=env))
