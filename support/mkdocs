@@ -1,17 +1,31 @@
 #!/usr/bin/env python3
 # A script to invoke mkdocs with the correct environment.
 
-import os, subprocess, sys
+import os, shutil, sys
+from subprocess import call
 
-dirname = os.path.join(os.path.dirname(__file__), 'python')
+dirname = os.path.dirname(__file__)
 
 # Set PYTHONPATH for the mkdocstrings handler.
 env = os.environ.copy()
 path = env.get('PYTHONPATH')
-env['PYTHONPATH'] = (path + ':' if path else '') + dirname
+env['PYTHONPATH'] = \
+  (path + ':' if path else '') + os.path.join(dirname, 'python')
 
 config_path = os.path.join(dirname, 'mkdocs.yml')
 args = sys.argv[1:]
-if 'build' in args:
+if len(args) > 0:
+  command = args[0]
+  if command == 'deploy':
+    site_dir = 'fmt.dev'
+    shutil.rmtree(site_dir)
+    ret = call(['git', 'clone', '--depth=1',
+                'git@github.com:fmtlib/fmt.dev.git'])
+    if ret != 0:
+      sys.exit(ret)
+    sys.exit(call(['mike', 'deploy', '--config-file', config_path,
+                   '--branch', 'master', 'dev'],
+                  cwd=site_dir, env=env))
+  elif not command.startswith('-'):
     args += ['-f', config_path]
-subprocess.run(['mkdocs'] + args, env=env)
+sys.exit(call(['mkdocs'] + args, env=env))

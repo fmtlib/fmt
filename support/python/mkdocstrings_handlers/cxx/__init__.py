@@ -2,6 +2,7 @@
 # Copyright (c) 2012 - present, Victor Zverovich
 
 import os
+from pathlib import Path
 import xml.etree.ElementTree as et
 from mkdocstrings.handlers.base import BaseHandler
 from typing import Any, Mapping, Optional
@@ -156,7 +157,7 @@ class CxxHandler(BaseHandler):
 
     # Run doxygen.
     cmd = ['doxygen', '-']
-    doc_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    doc_dir = Path(__file__).parents[3]
     include_dir = os.path.join(os.path.dirname(doc_dir), 'include', 'fmt')
     self._ns2doxyxml = {}
     self._doxyxml_dir = 'doxyxml'
