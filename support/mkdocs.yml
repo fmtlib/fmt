@@ -40,6 +40,8 @@ nav:
   - API: api.md
   - Syntax: syntax.md
 
+exclude_docs: ChangeLog-old.md
+
 extra:
   version:
     provider: mike
