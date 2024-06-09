@@ -15,11 +15,11 @@
 #  include <string.h>  // strlen
 #endif
 
-#ifndef FMT_IMPORT_STD
+#if !defined(FMT_IMPORT_STD) && !defined(FMT_MODULE)
 // <cstddef> is also included transitively from <type_traits>.
 #  include <cstddef>      // std::byte
 #  include <type_traits>  // std::enable_if
-#else
+#elif !defined(FMT_MODULE)
 import std;
 #endif
 

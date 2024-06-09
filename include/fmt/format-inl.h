@@ -8,16 +8,19 @@
 #ifndef FMT_FORMAT_INL_H_
 #define FMT_FORMAT_INL_H_
 
-#ifndef FMT_IMPORT_STD
+#if !defined(FMT_IMPORT_STD) && !defined(FMT_MODULE)
 #  include <algorithm>
 #  include <cmath>
 #  include <exception>
 #endif
-#include <cerrno>  // errno
-#include <climits>
 
-#if !defined(FMT_STATIC_THOUSANDS_SEPARATOR) && !defined(FMT_IMPORT_STD)
-#  include <locale>
+#ifndef FMT_MODULE
+#  include <cerrno>  // errno
+#  include <climits>
+
+#  if !defined(FMT_STATIC_THOUSANDS_SEPARATOR) && !defined(FMT_IMPORT_STD)
+#    include <locale>
+#  endif
 #endif
 
 #if defined(_WIN32) && !defined(FMT_USE_WRITE_CONSOLE)

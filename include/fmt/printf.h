@@ -8,7 +8,7 @@
 #ifndef FMT_PRINTF_H_
 #define FMT_PRINTF_H_
 
-#ifndef FMT_IMPORT_STD
+#if !defined(FMT_IMPORT_STD) && !defined(FMT_MODULE)
 #  include <algorithm>  // std::max
 #  include <limits>     // std::numeric_limits
 #endif

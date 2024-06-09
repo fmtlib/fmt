@@ -4,6 +4,7 @@ module;
 // to prevent attachment to this module.
 #ifndef FMT_IMPORT_STD
 #  include <algorithm>
+#  include <bitset>
 #  include <chrono>
 #  include <cmath>
 #  include <complex>

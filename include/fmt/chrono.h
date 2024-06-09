@@ -8,7 +8,7 @@
 #ifndef FMT_CHRONO_H_
 #define FMT_CHRONO_H_
 
-#ifndef FMT_IMPORT_STD
+#if !defined(FMT_IMPORT_STD) && !defined(FMT_MODULE)
 #  include <algorithm>
 #  include <chrono>
 #  include <cmath>    // std::isfinite

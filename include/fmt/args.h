@@ -8,7 +8,7 @@
 #ifndef FMT_ARGS_H_
 #define FMT_ARGS_H_
 
-#ifndef FMT_IMPORT_STD
+#if !defined(FMT_IMPORT_STD) && !defined(FMT_MODULE)
 #  include <functional>  // std::reference_wrapper
 #  include <memory>      // std::unique_ptr
 #  include <vector>
