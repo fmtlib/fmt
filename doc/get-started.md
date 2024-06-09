@@ -1,22 +1,22 @@
 # Get Started
 
-You can compile and run {fmt} examples online with [Compiler Explorer](
+Compile and run {fmt} examples online with [Compiler Explorer](
 https://godbolt.org/z/P7h6cd6o3).
 
-{fmt} can be used with any build system. The next section describes usage with
-CMake, and [Build Systems](#build-systems) covers the rest.
+{fmt} is compatible with any build system. The next section describes its usage
+with CMake, while the [Build Systems](#build-systems) section covers the rest.
 
 ## CMake
 
 {fmt} provides two CMake targets: `fmt::fmt` for the compiled library and
 `fmt::fmt-header-only` for the header-only library. It is recommended to use
-the compiled library for better build times.
+the compiled library for improved build times.
 
-There are three main ways to consume {fmt} from CMake:
+There are three primary ways to use {fmt} with CMake:
 
-* **FetchContent**: Since CMake v3.11, [`FetchContent`](
-  https://cmake.org/cmake/help/v3.30/module/FetchContent.html) can be used to
-  automatically download {fmt} as a dependency at configure time:
+* **FetchContent**: Starting from CMake 3.11, you can use [`FetchContent`](
+  https://cmake.org/cmake/help/v3.30/module/FetchContent.html) to automatically
+  download {fmt} as a dependency at configure time:
 
         include(FetchContent)
 
@@ -44,29 +44,28 @@ There are three main ways to consume {fmt} from CMake:
 
 ### Debian/Ubuntu
 
-Use the following command to install {fmt} on Debian, Ubuntu, or any other
-Debian-based Linux distribution:
+To install {fmt} on Debian, Ubuntu, or any other Debian-based Linux
+distribution, use the following command:
 
     apt install libfmt-dev
 
 ### Homebrew
 
-{fmt} can be installed on macOS using [Homebrew](https://brew.sh/):
+Install {fmt} on macOS using [Homebrew](https://brew.sh/):
 
     brew install fmt
 
 ### Conda
 
-{fmt} can be installed on Linux, macOS, and Windows with [Conda](
+Install {fmt} on Linux, macOS, and Windows with [Conda](
 https://docs.conda.io/en/latest/), using its [conda-forge package](
 https://github.com/conda-forge/fmt-feedstock):
 
     conda install -c conda-forge fmt
 
-### Vcpkg
+### vcpkg
 
-You can download and install {fmt} using the [vcpkg](
-https://github.com/Microsoft/vcpkg) package manager:
+Download and install {fmt} using the vcpkg package manager:
 
     git clone https://github.com/Microsoft/vcpkg.git
     cd vcpkg
