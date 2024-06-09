@@ -1,26 +1,33 @@
 #!/usr/bin/env python3
 # A script to invoke mkdocs with the correct environment.
+# Additionally supports deploying:
+#   ./mkdocs deploy ...
 
-import os, shutil, sys
+import errno, os, shutil, sys
 from subprocess import call
 
-dirname = os.path.dirname(__file__)
+support_dir = os.path.dirname(os.path.normpath(__file__))
+build_dir = os.path.join(os.path.dirname(support_dir), 'build')
 
 # Set PYTHONPATH for the mkdocstrings handler.
 env = os.environ.copy()
 path = env.get('PYTHONPATH')
 env['PYTHONPATH'] = \
-  (path + ':' if path else '') + os.path.join(dirname, 'python')
+  (path + ':' if path else '') + os.path.join(support_dir, 'python')
 
-config_path = os.path.join(dirname, 'mkdocs.yml')
+config_path = os.path.join(support_dir, 'mkdocs.yml')
 args = sys.argv[1:]
 if len(args) > 0:
   command = args[0]
   if command == 'deploy':
-    site_dir = 'fmt.dev'
-    shutil.rmtree(site_dir)
+    site_dir = os.  path.join(build_dir, 'fmt.dev')
+    try:
+      shutil.rmtree(site_dir)
+    except OSError as e:
+      if e.errno == errno.ENOENT:
+        pass
     ret = call(['git', 'clone', '--depth=1',
-                'git@github.com:fmtlib/fmt.dev.git'])
+                'git@github.com:fmtlib/fmt.dev.git', site_dir])
     if ret != 0:
       sys.exit(ret)
     sys.exit(call(['mike', 'deploy', '--config-file', config_path,
