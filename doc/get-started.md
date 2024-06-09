@@ -40,7 +40,7 @@ There are three primary ways to use {fmt} with CMake:
         add_subdirectory(fmt)
         target_link_libraries(<your-target> fmt::fmt)
 
-## Install
+## Installation
 
 ### Debian/Ubuntu
 
