@@ -84,9 +84,9 @@ hide:
 <h2>Fast compilation</h2>
 <p>
   The library makes extensive use of <b>type erasure</b> to achieve fast
-  compilation. <code>fmt/base.h</code> provides a subset
-  of the API with <b>minimal include dependencies</b> and enough functionality
-  to replace all uses of <code>*printf</code>.
+  compilation. <a href="api/#base-api"><code>fmt/base.h</code></a> provides a
+  subset of the API with <b>minimal include dependencies</b> and enough
+  functionality to replace all uses of <code>*printf</code>.
 </p>
 <p>
   Code using {fmt} is usually several times faster to compile than the
