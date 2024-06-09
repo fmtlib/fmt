@@ -122,7 +122,9 @@ extern "C++" {
 module :private;
 #endif
 
-#include "format.cc"
-#if FMT_OS
+#if FMT_HAS_INCLUDE("format.cc")
+#  include "format.cc"
+#endif
+#if FMT_OS && FMT_HAS_INCLUDE("os.cc")
 #  include "os.cc"
 #endif
