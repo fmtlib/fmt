@@ -45,3 +45,4 @@ exclude_docs: ChangeLog-old.md
 extra:
   version:
     provider: mike
+  generator: false
