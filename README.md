@@ -265,8 +265,7 @@ or the bloat test:
 
 # Migrating code
 
-[clang-tidy](https://clang.llvm.org/extra/clang-tidy/) v17 (not yet
-released) provides the
+[clang-tidy](https://clang.llvm.org/extra/clang-tidy/) v18 provides the
 [modernize-use-std-print](https://clang.llvm.org/extra/clang-tidy/checks/modernize/use-std-print.html)
 check that is capable of converting occurrences of `printf` and
 `fprintf` to `fmt::print` if configured to do so. (By default it
