@@ -333,6 +333,8 @@ formatting functions and locale support.
 
 ::: vformat(string_view, format_args)
 
+::: operator""_a()
+
 ### Utilities
 
 ::: ptr(T)
@@ -357,12 +359,6 @@ functions.
 ::: system_error
 
 ::: format_system_error
-
-### Literal-Based API
-
-The following user-defined literals are defined in `fmt/format.h`.
-
-::: operator""_a()
 
 ### Custom Allocators
 
