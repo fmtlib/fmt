@@ -60,8 +60,9 @@
 - Added a formatter for `std::type_info`
   (https://github.com/fmtlib/fmt/pull/3978). Thanks @matt77hias.
 
-- Specialized `formatter` for `std::basic_string` types with custom traits and
-  allocators (https://github.com/fmtlib/fmt/pull/3943). Thanks @dieram3.
+- Specialized `formatter` for `std::basic_string` types with custom traits
+  and allocators (https://github.com/fmtlib/fmt/issues/3938,
+  https://github.com/fmtlib/fmt/pull/3943). Thanks @dieram3.
 
 - Improved safety of `format_to` when writting to an array
   (https://github.com/fmtlib/fmt/pull/3805). Thanks @ThePhD.
@@ -78,7 +79,8 @@
   (https://github.com/fmtlib/fmt/pull/3798). Thanks @phprus.
 
 - Added support for ranges with mutable `begin` and `end`
-  (https://github.com/fmtlib/fmt/pull/3800,
+  (https://github.com/fmtlib/fmt/issues/3752,
+  https://github.com/fmtlib/fmt/pull/3800,
   https://github.com/fmtlib/fmt/pull/3955). Thanks @tcbrindle and @Arghnews.
 
 - Added support for move-only iterators to `fmt::join`
@@ -113,7 +115,7 @@
   consistency with `std::string_view` in C++23
   (https://github.com/fmtlib/fmt/pull/3846). Thanks @dalle.
 
-- Fixed group_digits for negative integers
+- Fixed `group_digits` for negative integers
   (https://github.com/fmtlib/fmt/issues/3891,
   https://github.com/fmtlib/fmt/pull/3901). Thanks @phprus.
 
@@ -146,7 +148,8 @@
   https://github.com/fmtlib/fmt/pull/3890,
   https://github.com/fmtlib/fmt/issues/3894,
   https://github.com/fmtlib/fmt/pull/3895,
-  https://github.com/fmtlib/fmt/pull/3905).
+  https://github.com/fmtlib/fmt/pull/3905,
+  https://github.com/fmtlib/fmt/issues/3942).
   Thanks @zencatalyst, WolleTD, @tupaschoal, @Dobiasd, @frank-weinberg, @bbolli,
   @phprus, @waywardmonkeys and @js324.
 
@@ -200,6 +203,7 @@
   https://github.com/fmtlib/fmt/pull/3917,
   https://github.com/fmtlib/fmt/pull/3923,
   https://github.com/fmtlib/fmt/pull/3924,
+  https://github.com/fmtlib/fmt/issues/3925,
   https://github.com/fmtlib/fmt/pull/3930,
   https://github.com/fmtlib/fmt/pull/3931,
   https://github.com/fmtlib/fmt/issues/3935,
