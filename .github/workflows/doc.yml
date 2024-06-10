@@ -36,7 +36,6 @@ jobs:
       env:
         KEY: ${{secrets.KEY}}
       run: |
-        cmake $GITHUB_WORKSPACE
         $GITHUB_WORKSPACE/support/mkdocs deploy dev
         cd $GITHUB_WORKSPACE/build/fmt.dev
         git push https://$KEY@github.com/fmtlib/fmt.dev.git
