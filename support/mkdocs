@@ -20,9 +20,8 @@ args = sys.argv[1:]
 if len(args) > 0:
   command = args[0]
   if command == 'deploy':
-    site_repo = 'git@github.com:fmtlib/fmt.dev.git'
-    if 'CI' in os.environ:
-      site_repo = 'https://github.com/fmtlib/fmt.dev.git'
+    git_url = 'https://github.com/' if 'CI' in os.environ else 'git@github.com:'
+    site_repo = git_url + 'fmtlib/fmt.dev.git'
 
     site_dir = os.  path.join(build_dir, 'fmt.dev')
     try:
