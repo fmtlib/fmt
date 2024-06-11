@@ -36,7 +36,7 @@ jobs:
       run: $GITHUB_WORKSPACE/support/mkdocs deploy dev
 
     - name: Deploy
-      if: secrets.KEY != ''
+      if: ${{secrets.KEY}} != ''
       working-directory: ${{runner.workspace}}/build/fmt.dev
       env:
         KEY: ${{secrets.KEY}}
