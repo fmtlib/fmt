@@ -36,8 +36,8 @@ jobs:
       run: $GITHUB_WORKSPACE/support/mkdocs deploy dev
 
     - name: Deploy
-      if: ${{secrets.KEY}} != ''
-      working-directory: ${{runner.workspace}}/build/fmt.dev
       env:
         KEY: ${{secrets.KEY}}
+      if: ${{env.KEY}} != ''
+      working-directory: ${{runner.workspace}}/build/fmt.dev
       run: git push https://$KEY@github.com/fmtlib/fmt.dev.git
