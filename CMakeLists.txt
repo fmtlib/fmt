@@ -403,13 +403,19 @@ if (FMT_INSTALL)
 
   set(INSTALL_TARGETS fmt fmt-header-only)
 
+  if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.28 AND CMAKE_GENERATOR STREQUAL "Ninja")
+    set(INSTALL_FILE_SET FILE_SET fmt DESTINATION "${FMT_INC_DIR}/fmt")
+  else()
+    set(INSTALL_FILE_SET)
+  endif()
+
   # Install the library and headers.
   install(TARGETS ${INSTALL_TARGETS} EXPORT ${targets_export_name}
           LIBRARY DESTINATION ${FMT_LIB_DIR}
           ARCHIVE DESTINATION ${FMT_LIB_DIR}
           PUBLIC_HEADER DESTINATION "${FMT_INC_DIR}/fmt"
-          FILE_SET fmt DESTINATION "${FMT_INC_DIR}/fmt"
-          RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+          RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+          ${INSTALL_FILE_SET})
 
   # Use a namespace because CMake provides better diagnostics for namespaced
   # imported targets.
