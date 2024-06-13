@@ -41,6 +41,8 @@ module;
 #  include <stdint.h>
 #  include <stdio.h>
 #  include <time.h>
+
+import std;
 #endif
 #include <cerrno>
 #include <climits>

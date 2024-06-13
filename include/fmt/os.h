@@ -10,11 +10,9 @@
 
 #ifndef FMT_MODULE
 #  include <cerrno>
-#  ifndef FMT_IMPORT_STD
-#    include <cstddef>
-#    include <cstdio>
-#    include <system_error>  // std::system_error
-#  endif
+#  include <cstddef>
+#  include <cstdio>
+#  include <system_error>  // std::system_error
 #endif
 
 #include "format.h"

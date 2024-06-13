@@ -8,7 +8,7 @@
 #ifndef FMT_COMPILE_H_
 #define FMT_COMPILE_H_
 
-#if !defined(FMT_IMPORT_STD) && !defined(FMT_MODULE)
+#ifndef FMT_MODULE
 #  include <iterator>  // std::back_inserter
 #endif
 

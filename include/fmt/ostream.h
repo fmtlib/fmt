@@ -8,7 +8,7 @@
 #ifndef FMT_OSTREAM_H_
 #define FMT_OSTREAM_H_
 
-#if !defined(FMT_IMPORT_STD) && !defined(FMT_MODULE)
+#ifndef FMT_MODULE
 #  include <fstream>  // std::filebuf
 #endif
 
