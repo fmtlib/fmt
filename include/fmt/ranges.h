@@ -15,9 +15,6 @@
 #  include <tuple>
 #  include <type_traits>
 #  include <utility>
-#  ifdef __cpp_lib_ranges
-#    include <ranges>
-#  endif
 #endif
 
 #include "format.h"
@@ -622,15 +619,11 @@ struct formatter<
                     range_format::debug_string>> {
  private:
   using range_type = detail::maybe_const_range<R>;
-#ifdef __cpp_lib_ranges
   using string_type = conditional_t<
-      std::is_constructible_v<std::basic_string_view<Char>,
-                              std::ranges::iterator_t<range_type>,
-                              std::ranges::sentinel_t<range_type>>,
-      std::basic_string_view<Char>, std::basic_string<Char>>;
-#else
-  using string_type = std::basic_string<Char>;
-#endif
+      std::is_constructible<detail::std_string_view<Char>,
+                            decltype(detail::range_begin(R())),
+                            decltype(detail::range_end(R()))>::value,
+      detail::std_string_view<Char>, std::basic_string<Char>>;
 
   formatter<string_type, Char> underlying_;
 
