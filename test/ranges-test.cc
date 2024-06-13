@@ -268,6 +268,33 @@ TEST(ranges_test, disabled_range_formatting_of_path) {
             fmt::range_format::disabled);
 }
 
+struct vector_string : std::vector<char> {
+  using base = std::vector<char>;
+  using base::base;
+};
+struct vector_debug_string : std::vector<char> {
+  using base = std::vector<char>;
+  using base::base;
+};
+FMT_BEGIN_NAMESPACE
+template <>
+struct range_format_kind<vector_string, char>
+    : std::integral_constant<range_format, range_format::string> {};
+template <>
+struct range_format_kind<vector_debug_string, char>
+    : std::integral_constant<range_format, range_format::debug_string> {};
+FMT_END_NAMESPACE
+
+TEST(ranges_test, range_format_string) {
+  const vector_string v{'f', 'o', 'o'};
+  EXPECT_EQ(fmt::format("{}", v), "foo");
+}
+
+TEST(ranges_test, range_format_debug_string) {
+  const vector_debug_string v{'f', 'o', 'o'};
+  EXPECT_EQ(fmt::format("{}", v), "\"foo\"");
+}
+
 // A range that provides non-const only begin()/end() to test fmt::join
 // handles that.
 //
