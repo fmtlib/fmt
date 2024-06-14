@@ -8,7 +8,7 @@
 #ifndef FMT_STD_H_
 #define FMT_STD_H_
 
-#ifndef FMT_IMPORT_STD
+#ifndef FMT_MODULE
 #  include <atomic>
 #  include <bitset>
 #  include <complex>
@@ -29,7 +29,7 @@
 #  include <version>
 #endif
 
-#ifndef FMT_IMPORT_STD
+#ifndef FMT_MODULE
 // Checking FMT_CPLUSPLUS for warning suppression in MSVC.
 #  if FMT_CPLUSPLUS >= 201703L
 #    if FMT_HAS_INCLUDE(<filesystem>)

@@ -8,7 +8,7 @@
 #ifndef FMT_RANGES_H_
 #define FMT_RANGES_H_
 
-#ifndef FMT_IMPORT_STD
+#ifndef FMT_MODULE
 #  include <initializer_list>
 #  include <iterator>
 #  include <string>

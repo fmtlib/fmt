@@ -8,8 +8,8 @@
 #ifndef FMT_OS_H_
 #define FMT_OS_H_
 
-#include <cerrno>
-#ifndef FMT_IMPORT_STD
+#ifndef FMT_MODULE
+#  include <cerrno>
 #  include <cstddef>
 #  include <cstdio>
 #  include <system_error>  // std::system_error
@@ -18,7 +18,7 @@
 #include "format.h"
 
 #if defined __APPLE__ || defined(__FreeBSD__)
-#  if FMT_HAS_INCLUDE(<xlocale.h>)
+#  if FMT_HAS_INCLUDE(<xlocale.h>) && !defined(FMT_MODULE)
 #    include <xlocale.h>  // for LC_NUMERIC_MASK on OS X
 #  endif
 #endif

@@ -8,19 +8,19 @@
 #ifndef FMT_BASE_H_
 #define FMT_BASE_H_
 
+#if defined(FMT_IMPORT_STD) && !defined(FMT_MODULE)
+#  define FMT_MODULE
+#endif
+
 // c headers are preferable for performance reasons
 #ifndef FMT_MODULE
 #  include <limits.h>  // CHAR_BIT
 #  include <stdio.h>   // FILE
 #  include <string.h>  // strlen
-#endif
 
-#ifndef FMT_IMPORT_STD
 // <cstddef> is also included transitively from <type_traits>.
 #  include <cstddef>      // std::byte
 #  include <type_traits>  // std::enable_if
-#else
-import std;
 #endif
 
 // The fmt library version in the form major * 10000 + minor * 100 + patch.

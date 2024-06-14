@@ -4,6 +4,7 @@ module;
 // to prevent attachment to this module.
 #ifndef FMT_IMPORT_STD
 #  include <algorithm>
+#  include <bitset>
 #  include <chrono>
 #  include <cmath>
 #  include <complex>
@@ -40,6 +41,8 @@ module;
 #  include <stdint.h>
 #  include <stdio.h>
 #  include <time.h>
+
+import std;
 #endif
 #include <cerrno>
 #include <climits>

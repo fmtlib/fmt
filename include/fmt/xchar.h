@@ -8,7 +8,7 @@
 #ifndef FMT_XCHAR_H_
 #define FMT_XCHAR_H_
 
-#ifndef FMT_IMPORT_STD
+#ifndef FMT_MODULE
 #  include <cwchar>
 #endif
 
@@ -16,7 +16,7 @@
 #include "format.h"
 #include "ranges.h"
 
-#if !defined(FMT_STATIC_THOUSANDS_SEPARATOR) && !defined(FMT_IMPORT_STD)
+#if !defined(FMT_STATIC_THOUSANDS_SEPARATOR) && !defined(FMT_MODULE)
 #  include <locale>
 #endif
 

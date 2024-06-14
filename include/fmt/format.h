@@ -38,7 +38,7 @@
 #  define FMT_REMOVE_TRANSITIVE_INCLUDES
 #endif
 
-#ifndef FMT_IMPORT_STD
+#ifndef FMT_MODULE
 #  include <cmath>             // std::signbit
 #  include <cstdint>           // uint32_t
 #  include <cstring>           // std::memcpy
@@ -56,15 +56,14 @@
 #include "base.h"
 
 // Checking FMT_CPLUSPLUS for warning suppression in MSVC.
-#if FMT_HAS_INCLUDE(<bit>) && FMT_CPLUSPLUS > 201703L && \
-    !defined(FMT_IMPORT_STD)
+#if FMT_HAS_INCLUDE(<bit>) && FMT_CPLUSPLUS > 201703L && !defined(FMT_MODULE)
 #  include <bit>  // std::bit_cast
 #endif
 
 // libc++ supports string_view in pre-c++17.
 #if FMT_HAS_INCLUDE(<string_view>) && \
     (FMT_CPLUSPLUS >= 201703L || defined(_LIBCPP_VERSION))
-#  ifndef FMT_IMPORT_STD
+#  if !defined(FMT_MODULE)
 #    include <string_view>
 #  endif
 #  define FMT_USE_STRING_VIEW
