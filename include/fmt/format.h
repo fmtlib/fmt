@@ -4321,7 +4321,7 @@ inline namespace literals {
  * **Example**:
  *
  *     using namespace fmt::literals;
- *     fmt::print("Elapsed time: {s:.2f} seconds", "s"_a=1.23);
+ *     fmt::print("The answer is {answer}.", "answer"_a=42);
  */
 #  if FMT_USE_NONTYPE_TEMPLATE_ARGS
 template <detail_exported::fixed_string Str> constexpr auto operator""_a() {

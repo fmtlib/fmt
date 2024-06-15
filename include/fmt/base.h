@@ -2024,7 +2024,7 @@ constexpr auto make_format_args(T&... args)
  *
  * **Example**:
  *
- *     fmt::print("Elapsed time: {s:.2f} seconds", fmt::arg("s", 1.23));
+ *     fmt::print("The answer is {answer}.", fmt::arg("answer", 42));
  */
 template <typename Char, typename T>
 inline auto arg(const Char* name, const T& arg) -> detail::named_arg<Char, T> {
