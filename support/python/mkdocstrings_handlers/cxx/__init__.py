@@ -159,9 +159,10 @@ class CxxHandler(BaseHandler):
     # Run doxygen.
     cmd = ['doxygen', '-']
     doc_dir = Path(__file__).parents[3]
-    include_dir = os.path.join(os.path.dirname(doc_dir), 'include', 'fmt')
+    top_dir = os.path.dirname(doc_dir)
+    include_dir = os.path.join(top_dir, 'include', 'fmt')
     self._ns2doxyxml = {}
-    self._doxyxml_dir = 'doxyxml'
+    self._doxyxml_dir = os.path.join(top_dir, 'build', 'doxyxml')
     p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
     out, _ = p.communicate(input=r'''
         PROJECT_NAME      = fmt
