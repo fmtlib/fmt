@@ -29,7 +29,9 @@
   https://github.com/fmtlib/fmt/pull/3997,
   https://github.com/fmtlib/fmt/pull/3998,
   https://github.com/fmtlib/fmt/pull/4004,
-  https://github.com/fmtlib/fmt/pull/4005). Thanks @yujincheng08.
+  https://github.com/fmtlib/fmt/pull/4005,
+  https://github.com/fmtlib/fmt/pull/4013). In particular, native CMake support
+  for modules is now used if available. Thanks @yujincheng08.
 
 - Added an option to replace standard includes with `import std` enabled via
   the `FMT_IMPORT_STD` macro (https://github.com/fmtlib/fmt/issues/3921,
@@ -137,6 +139,9 @@
 - Added support for character range formatting
   (https://github.com/fmtlib/fmt/issues/3857,
   https://github.com/fmtlib/fmt/pull/3863). Thanks @js324.
+
+- Added `string` and `debug_string` range formatters
+  (https://github.com/fmtlib/fmt/pull/3973). Thanks @matt77hias.
 
 - Enabled ADL for `begin` and `end` in `fmt::join`
   (https://github.com/fmtlib/fmt/issues/3813,
@@ -247,7 +252,8 @@
   https://github.com/fmtlib/fmt/pull/3979,
   https://github.com/fmtlib/fmt/pull/3980,
   https://github.com/fmtlib/fmt/pull/3988,
-  https://github.com/fmtlib/fmt/pull/4010).
+  https://github.com/fmtlib/fmt/pull/4010,
+  https://github.com/fmtlib/fmt/pull/4012).
   Thanks @vgorrX, @waywardmonkeys, @tchaikov and @phprus.
 
 - Fixed buffer overflow when using format string compilation with debug format
