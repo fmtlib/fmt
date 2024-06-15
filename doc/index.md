@@ -24,7 +24,7 @@ hide:
   <code>fmt::format</code></a> <b>prevent buffer overflow errors</b> via
   automatic memory management.
 </p>
-<a href="api#compile-time-format-string-checks">→ Learn more</a>
+<a href="api#compile-time-checks">→ Learn more</a>
 </div>
 
 <div class="feature">
@@ -103,8 +103,8 @@ hide:
 <p>
   Type erasure is also used to prevent template bloat, resulting in <b>compact
   per-call binary code</b>. For example, a call to <code>fmt::print</code> with
-  a single argument is fewer than <a href="https://godbolt.org/g/TZU4KF">ten
-  x86-64 instructions</a>, comparable to <code>printf</code> despite adding
+  a single argument is just <a href="https://godbolt.org/g/TZU4KF">a few
+  instructions</a>, comparable to <code>printf</code> despite adding
   runtime safety, and much smaller than the equivalent iostreams code.
 </p>
 <p>

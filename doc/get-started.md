@@ -28,8 +28,8 @@ There are three primary ways to use {fmt} with CMake:
 
         target_link_libraries(<your-target> fmt::fmt)
 
-* **Installed**: You can find and use an [installed](#install) version of {fmt}
-  in your `CMakeLists.txt` file as follows:
+* **Installed**: You can find and use an [installed](#installation) version of
+  {fmt} in your `CMakeLists.txt` file as follows:
 
         find_package(fmt)
         target_link_libraries(<your-target> fmt::fmt)
