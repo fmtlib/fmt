@@ -38,6 +38,6 @@ jobs:
     - name: Deploy
       env:
         KEY: "${{secrets.KEY}}"
-      if: env.KEY != ''
+      if: env.KEY != '' && github.event_name != 'pull_request'
       working-directory: ${{runner.workspace}}/fmt/build/fmt.dev
       run: git push https://$KEY@github.com/fmtlib/fmt.dev.git
