@@ -24,7 +24,7 @@
 #  include <utility>
 #  include <vector>
 
-// Checking FMT_CPLUSPLUS for warning suppression in MSVC.
+// CHeck FMT_CPLUSPLUS to suppress a bogus warning in MSVC.
 #  if FMT_CPLUSPLUS >= 201703L
 #    if FMT_HAS_INCLUDE(<filesystem>)
 #      include <filesystem>
@@ -35,14 +35,12 @@
 #    if FMT_HAS_INCLUDE(<optional>)
 #      include <optional>
 #    endif
+#    if FMT_HAS_INCLUDE(<source_location>)
+#      include <source_location>
+#    endif
 #  endif
-
-#  if FMT_HAS_INCLUDE(<expected>) && FMT_CPLUSPLUS > 202002L
+#  if FMT_CPLUSPLUS > 202002L && FMT_HAS_INCLUDE(<expected>)
 #    include <expected>
-#  endif
-
-#  if FMT_CPLUSPLUS > 201703L && FMT_HAS_INCLUDE(<source_location>)
-#    include <source_location>
 #  endif
 #endif  // FMT_MODULE
 
