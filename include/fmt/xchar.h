@@ -8,16 +8,15 @@
 #ifndef FMT_XCHAR_H_
 #define FMT_XCHAR_H_
 
-#ifndef FMT_MODULE
-#  include <cwchar>
-#endif
-
 #include "color.h"
 #include "format.h"
 #include "ranges.h"
 
-#if !defined(FMT_STATIC_THOUSANDS_SEPARATOR) && !defined(FMT_MODULE)
-#  include <locale>
+#ifndef FMT_MODULE
+#  include <cwchar>
+#  if !defined(FMT_STATIC_THOUSANDS_SEPARATOR)
+#    include <locale>
+#  endif
 #endif
 
 FMT_BEGIN_NAMESPACE
