@@ -619,11 +619,12 @@ struct formatter<
                     range_format::debug_string>> {
  private:
   using range_type = detail::maybe_const_range<R>;
-  using string_type = conditional_t<
-      std::is_constructible<detail::std_string_view<Char>,
-                            decltype(detail::range_begin(R())),
-                            decltype(detail::range_end(R()))>::value,
-      detail::std_string_view<Char>, std::basic_string<Char>>;
+  using string_type =
+      conditional_t<std::is_constructible<
+                        detail::std_string_view<Char>,
+                        decltype(detail::range_begin(std::declval<R>())),
+                        decltype(detail::range_end(std::declval<R>()))>::value,
+                    detail::std_string_view<Char>, std::basic_string<Char>>;
 
   formatter<string_type, Char> underlying_;
 
