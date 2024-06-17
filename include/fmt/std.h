@@ -24,7 +24,7 @@
 #  include <utility>
 #  include <vector>
 
-// CHeck FMT_CPLUSPLUS to suppress a bogus warning in MSVC.
+// Check FMT_CPLUSPLUS to suppress a bogus warning in MSVC.
 #  if FMT_CPLUSPLUS >= 201703L
 #    if FMT_HAS_INCLUDE(<filesystem>)
 #      include <filesystem>
