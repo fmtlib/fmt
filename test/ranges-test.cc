@@ -17,7 +17,7 @@
 #include <utility>
 #include <vector>
 
-#if FMT_HAS_INCLUDE(<ranges>)
+#if FMT_CPLUSPLUS > 201703L && FMT_HAS_INCLUDE(<ranges>)
 #  include <ranges>
 #endif
 
