@@ -41,8 +41,6 @@ module;
 #  include <stdint.h>
 #  include <stdio.h>
 #  include <time.h>
-
-import std;
 #endif
 #include <cerrno>
 #include <climits>
@@ -82,6 +80,10 @@ import std;
 #endif
 
 export module fmt;
+
+#ifdef FMT_IMPORT_STD
+import std;
+#endif
 
 #define FMT_EXPORT export
 #define FMT_BEGIN_EXPORT export {
