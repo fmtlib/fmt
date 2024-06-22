@@ -516,8 +516,8 @@ TEST(core_test, constexpr_parse_format_specs) {
   static_assert(parse_test_specs("{42}").width_ref.val.index == 42, "");
   static_assert(parse_test_specs(".42").precision == 42, "");
   static_assert(parse_test_specs(".{42}").precision_ref.val.index == 42, "");
-  static_assert(
-      parse_test_specs("f").type == fmt::presentation_type::fixed, "");
+  static_assert(parse_test_specs("f").type == fmt::presentation_type::fixed,
+                "");
 }
 
 struct test_format_string_handler {
@@ -706,13 +706,17 @@ TEST(core_test, format_to) {
   EXPECT_EQ(s, "42");
 }
 
-TEST(core_test, format_to_c_array) {
+TEST(core_test, format_to_array) {
   char buffer[4];
   auto result = fmt::format_to(buffer, "{}", 12345);
   EXPECT_EQ(4, std::distance(&buffer[0], result.out));
   EXPECT_TRUE(result.truncated);
   EXPECT_EQ(buffer + 4, result.out);
   EXPECT_EQ("1234", fmt::string_view(buffer, 4));
+
+  char* out = nullptr;
+  EXPECT_THROW(out = result, std::runtime_error);
+  (void)out;
 
   result = fmt::format_to(buffer, "{:s}", "foobar");
   EXPECT_EQ(4, std::distance(&buffer[0], result.out));
