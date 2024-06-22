@@ -3918,12 +3918,14 @@ class format_int {
   mutable char buffer_[buffer_size];
   char* str_;
 
-  template <typename UInt> FMT_CONSTEXPR20 auto format_unsigned(UInt value) -> char* {
+  template <typename UInt>
+  FMT_CONSTEXPR20 auto format_unsigned(UInt value) -> char* {
     auto n = static_cast<detail::uint32_or_64_or_128_t<UInt>>(value);
     return detail::format_decimal(buffer_, n, buffer_size - 1).begin;
   }
 
-  template <typename Int> FMT_CONSTEXPR20 auto format_signed(Int value) -> char* {
+  template <typename Int>
+  FMT_CONSTEXPR20 auto format_signed(Int value) -> char* {
     auto abs_value = static_cast<detail::uint32_or_64_or_128_t<Int>>(value);
     bool negative = value < 0;
     if (negative) abs_value = 0 - abs_value;
@@ -3934,10 +3936,14 @@ class format_int {
 
  public:
   explicit FMT_CONSTEXPR20 format_int(int value) : str_(format_signed(value)) {}
-  explicit FMT_CONSTEXPR20 format_int(long value) : str_(format_signed(value)) {}
-  explicit FMT_CONSTEXPR20 format_int(long long value) : str_(format_signed(value)) {}
-  explicit FMT_CONSTEXPR20 format_int(unsigned value) : str_(format_unsigned(value)) {}
-  explicit FMT_CONSTEXPR20 format_int(unsigned long value) : str_(format_unsigned(value)) {}
+  explicit FMT_CONSTEXPR20 format_int(long value)
+      : str_(format_signed(value)) {}
+  explicit FMT_CONSTEXPR20 format_int(long long value)
+      : str_(format_signed(value)) {}
+  explicit FMT_CONSTEXPR20 format_int(unsigned value)
+      : str_(format_unsigned(value)) {}
+  explicit FMT_CONSTEXPR20 format_int(unsigned long value)
+      : str_(format_unsigned(value)) {}
   explicit FMT_CONSTEXPR20 format_int(unsigned long long value)
       : str_(format_unsigned(value)) {}
 
@@ -3958,7 +3964,9 @@ class format_int {
   }
 
   /// Returns the content of the output buffer as an `std::string`.
-  FMT_CONSTEXPR20 auto str() const -> std::string { return std::string(str_, size()); }
+  FMT_CONSTEXPR20 auto str() const -> std::string {
+    return std::string(str_, size());
+  }
 };
 
 template <typename T, typename Char>
