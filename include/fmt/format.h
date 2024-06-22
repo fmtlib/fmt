@@ -3964,9 +3964,7 @@ class format_int {
   }
 
   /// Returns the content of the output buffer as an `std::string`.
-  FMT_CONSTEXPR20 auto str() const -> std::string {
-    return std::string(str_, size());
-  }
+  auto str() const -> std::string { return std::string(str_, size()); }
 };
 
 template <typename T, typename Char>
