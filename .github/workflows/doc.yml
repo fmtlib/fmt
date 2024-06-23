@@ -25,7 +25,7 @@ jobs:
       run: |
         sudo apt update
         sudo apt install doxygen
-        pip install mkdocs-material mkdocstrings  mike
+        pip install mkdocs-material==9.5.25 mkdocstrings==0.25.1 mike==2.1.1
         cmake -E make_directory ${{runner.workspace}}/build
         # Workaround https://github.com/actions/checkout/issues/13:
         git config --global user.name "$(git --no-pager log --format=format:'%an' -n 1)"
