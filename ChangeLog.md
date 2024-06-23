@@ -30,6 +30,7 @@
   https://github.com/fmtlib/fmt/pull/3998,
   https://github.com/fmtlib/fmt/pull/4004,
   https://github.com/fmtlib/fmt/pull/4005,
+  https://github.com/fmtlib/fmt/pull/4006,
   https://github.com/fmtlib/fmt/pull/4013). In particular, native CMake support
   for modules is now used if available. Thanks @yujincheng08.
 
@@ -141,7 +142,8 @@
   https://github.com/fmtlib/fmt/pull/3863). Thanks @js324.
 
 - Added `string` and `debug_string` range formatters
-  (https://github.com/fmtlib/fmt/pull/3973). Thanks @matt77hias.
+  (https://github.com/fmtlib/fmt/pull/3973,
+  https://github.com/fmtlib/fmt/pull/4024). Thanks @matt77hias.
 
 - Enabled ADL for `begin` and `end` in `fmt::join`
   (https://github.com/fmtlib/fmt/issues/3813,
@@ -308,7 +310,8 @@
   https://github.com/fmtlib/fmt/pull/3968,
   https://github.com/fmtlib/fmt/pull/3972,
   https://github.com/fmtlib/fmt/pull/3983,
-  https://github.com/fmtlib/fmt/pull/3995).
+  https://github.com/fmtlib/fmt/pull/3995,
+  https://github.com/fmtlib/fmt/pull/4023).
   Thanks @hmbj, @phprus, @res2k, @Baardi, @matt77hias, @waywardmonkeys, @hmbj,
   @yakra, @prlw1, @Arghnews, @mtillmann0, @ShifftC, @eepp, @jimmy-park and
   @ChristianGebhardt.
