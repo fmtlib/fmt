@@ -533,6 +533,8 @@ struct formatter<
   range_formatter<detail::uncvref_type<range_type>, Char> range_formatter_;
 
  public:
+  using nonlocking = void;
+
   FMT_CONSTEXPR formatter() {
     if (detail::const_check(range_format_kind<R, Char>::value !=
                             range_format::set))
