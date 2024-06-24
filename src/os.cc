@@ -30,30 +30,32 @@
 #        define WIN32_LEAN_AND_MEAN
 #      endif
 #      include <io.h>
-
-#      ifndef S_IRUSR
-#        define S_IRUSR _S_IREAD
-#      endif
-#      ifndef S_IWUSR
-#        define S_IWUSR _S_IWRITE
-#      endif
-#      ifndef S_IRGRP
-#        define S_IRGRP 0
-#      endif
-#      ifndef S_IWGRP
-#        define S_IWGRP 0
-#      endif
-#      ifndef S_IROTH
-#        define S_IROTH 0
-#      endif
-#      ifndef S_IWOTH
-#        define S_IWOTH 0
-#      endif
 #    endif  // _WIN32
 #  endif    // FMT_USE_FCNTL
 
 #  ifdef _WIN32
 #    include <windows.h>
+#  endif
+#endif
+
+#ifdef _WIN32
+#  ifndef S_IRUSR
+#    define S_IRUSR _S_IREAD
+#  endif
+#  ifndef S_IWUSR
+#    define S_IWUSR _S_IWRITE
+#  endif
+#  ifndef S_IRGRP
+#    define S_IRGRP 0
+#  endif
+#  ifndef S_IWGRP
+#    define S_IWGRP 0
+#  endif
+#  ifndef S_IROTH
+#    define S_IROTH 0
+#  endif
+#  ifndef S_IWOTH
+#    define S_IWOTH 0
 #  endif
 #endif
 
