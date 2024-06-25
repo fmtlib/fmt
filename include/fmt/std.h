@@ -646,13 +646,18 @@ struct formatter<std::complex<F>, Char> : nested_formatter<F, Char> {
       if (c.real() != 0 || compat_iostreams) {
         auto format_full_ = detail::string_literal<Char, '(', '{', '}', '+', '{',
                                                    '}', 'i', ')'>{};
+        auto format_neg_ = detail::string_literal<Char, '(', '{', '}', '{', '}',
+                                                  'i', ')'>{};
         auto pformat_full_ = detail::string_literal<Char, '(', '{', '}', ',', '{',
                                                     '}', ')'>{};
         if (compat_iostreams)
           return fmt::format_to(out, basic_string_view<Char>(pformat_full_),
                                 f->nested(c.real()), f->nested(c.imag()));
-        else
+        else if (c.imag() >= 0 /* check format_specs.sign */)
           return fmt::format_to(out, basic_string_view<Char>(format_full_),
+                                f->nested(c.real()), f->nested(c.imag()));
+        else
+          return fmt::format_to(out, basic_string_view<Char>(format_neg_),
                                 f->nested(c.real()), f->nested(c.imag()));
       }
       auto format_imag_ = detail::string_literal<Char, '{', '}', 'i'>{};
