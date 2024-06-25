@@ -67,7 +67,7 @@ TEST(std_test, thread_id) {
 
 TEST(std_test, complex) {
   EXPECT_EQ(fmt::format("{}", std::complex<double>(1, 2.2)), "(1+2.2i)");
-  EXPECT_EQ(fmt::format("{}", std::complex<double>(1, -2.2)), "(1-2.2i)");
+  EXPECT_EQ(fmt::format("{}", std::complex<double>(1, -2.2)), "(1-2.2i)"); //TODO
   EXPECT_EQ(fmt::format("{}", std::complex<double>(0, 2.2)), "2.2i");
   EXPECT_EQ(fmt::format("{:>20.2f}", std::complex<double>(1, 2.2)),
             "        (1.00+2.20i)");
@@ -78,8 +78,9 @@ TEST(std_test, complex) {
   EXPECT_EQ(fmt::format("{:p}", std::complex<double>(0, 2.2)), "(0,2.2)");
   EXPECT_EQ(fmt::format("{:p}", std::complex<double>(2.2, 0)), "(2.2,0)");
   EXPECT_EQ(fmt::format("{:p}", std::complex<double>(0, 0)), "(0,0)");
-  // :p + format
-  // :p + alignment
+  // :p + format + align
+  EXPECT_EQ(fmt::format("{:p<20.2f}", std::complex<double>(1, 2.2)),
+            "(1.00,2.20)         ");
   // 0-part omission - real
 }
 
