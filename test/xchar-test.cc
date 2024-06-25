@@ -183,12 +183,6 @@ TEST(xchar_test, format_custom_char) {
 }
 #endif
 
-// Convert a char8_t string to std::string. Otherwise GTest will insist on
-// inserting `char8_t` NTBS into a `char` stream which is disabled by P1423.
-template <typename S> std::string from_u8str(const S& str) {
-  return std::string(str.begin(), str.end());
-}
-
 TEST(xchar_test, format_to) {
   auto buf = std::vector<wchar_t>();
   fmt::format_to(std::back_inserter(buf), L"{}{}", 42, L'\0');

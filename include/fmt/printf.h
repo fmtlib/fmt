@@ -8,7 +8,7 @@
 #ifndef FMT_PRINTF_H_
 #define FMT_PRINTF_H_
 
-#ifndef FMT_IMPORT_STD
+#ifndef FMT_MODULE
 #  include <algorithm>  // std::max
 #  include <limits>     // std::numeric_limits
 #endif
@@ -36,12 +36,8 @@ template <typename Char> class basic_printf_context {
   using parse_context_type = basic_format_parse_context<Char>;
   template <typename T> using formatter_type = printf_formatter<T>;
 
-  /**
-    \rst
-    Constructs a ``printf_context`` object. References to the arguments are
-    stored in the context object so make sure they have appropriate lifetimes.
-    \endrst
-   */
+  /// Constructs a `printf_context` object. References to the arguments are
+  /// stored in the context object so make sure they have appropriate lifetimes.
   basic_printf_context(basic_appender<Char> out,
                        basic_format_args<basic_printf_context> args)
       : out_(out), args_(args) {}
@@ -227,7 +223,7 @@ auto make_arg_formatter(basic_appender<Char> iter, format_specs& s)
   return {iter, s, locale_ref()};
 }
 
-// The ``printf`` argument formatter.
+// The `printf` argument formatter.
 template <typename Char>
 class printf_arg_formatter : public arg_formatter<Char> {
  private:
@@ -276,7 +272,6 @@ class printf_arg_formatter : public arg_formatter<Char> {
     base::operator()(value);
   }
 
-  /** Formats a null-terminated C string. */
   void operator()(const char* value) {
     if (value)
       base::operator()(value);
@@ -284,7 +279,6 @@ class printf_arg_formatter : public arg_formatter<Char> {
       write_null_pointer(this->specs.type != presentation_type::pointer);
   }
 
-  /** Formats a null-terminated wide C string. */
   void operator()(const wchar_t* value) {
     if (value)
       base::operator()(value);
@@ -294,7 +288,6 @@ class printf_arg_formatter : public arg_formatter<Char> {
 
   void operator()(basic_string_view<Char> value) { base::operator()(value); }
 
-  /** Formats a pointer. */
   void operator()(const void* value) {
     if (value)
       base::operator()(value);
@@ -302,7 +295,6 @@ class printf_arg_formatter : public arg_formatter<Char> {
       write_null_pointer();
   }
 
-  /** Formats an argument of a custom (user-defined) type. */
   void operator()(typename basic_format_arg<context_type>::handle handle) {
     auto parse_ctx = basic_format_parse_context<Char>({});
     handle.format(parse_ctx, context_);
@@ -573,12 +565,8 @@ using wprintf_context = basic_printf_context<wchar_t>;
 using printf_args = basic_format_args<printf_context>;
 using wprintf_args = basic_format_args<wprintf_context>;
 
-/**
-  \rst
-  Constructs an `~fmt::format_arg_store` object that contains references to
-  arguments and can be implicitly converted to `~fmt::printf_args`.
-  \endrst
- */
+/// Constructs an `format_arg_store` object that contains references to
+/// arguments and can be implicitly converted to `printf_args`.
 template <typename Char = char, typename... T>
 inline auto make_printf_args(T&... args)
     -> decltype(make_format_args<basic_printf_context<Char>>(args...)) {
@@ -599,14 +587,13 @@ inline auto vsprintf(basic_string_view<Char> fmt,
 }
 
 /**
-  \rst
-  Formats arguments and returns the result as a string.
-
-  **Example**::
-
-    std::string message = fmt::sprintf("The answer is %d", 42);
-  \endrst
-*/
+ * Formats `args` according to specifications in `fmt` and returns the result
+ * as as string.
+ *
+ * **Example**:
+ *
+ *     std::string message = fmt::sprintf("The answer is %d", 42);
+ */
 template <typename S, typename... T, typename Char = char_t<S>>
 inline auto sprintf(const S& fmt, const T&... args) -> std::basic_string<Char> {
   return vsprintf(detail::to_string_view(fmt),
@@ -625,13 +612,12 @@ inline auto vfprintf(std::FILE* f, basic_string_view<Char> fmt,
 }
 
 /**
-  \rst
-  Prints formatted data to the file *f*.
-
-  **Example**::
-
-    fmt::fprintf(stderr, "Don't %s!", "panic");
-  \endrst
+ * Formats `args` according to specifications in `fmt` and writes the output
+ * to `f`.
+ *
+ * **Example**:
+ *
+ *     fmt::fprintf(stderr, "Don't %s!", "panic");
  */
 template <typename S, typename... T, typename Char = char_t<S>>
 inline auto fprintf(std::FILE* f, const S& fmt, const T&... args) -> int {
@@ -647,13 +633,12 @@ FMT_DEPRECATED inline auto vprintf(basic_string_view<Char> fmt,
 }
 
 /**
-  \rst
-  Prints formatted data to ``stdout``.
-
-  **Example**::
-
-    fmt::printf("Elapsed time: %.2f seconds", 1.23);
-  \endrst
+ * Formats `args` according to specifications in `fmt` and writes the output
+ * to `stdout`.
+ *
+ * **Example**:
+ *
+ *   fmt::printf("Elapsed time: %.2f seconds", 1.23);
  */
 template <typename... T>
 inline auto printf(string_view fmt, const T&... args) -> int {

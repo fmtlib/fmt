@@ -57,7 +57,7 @@ jobs:
           - shared: -DBUILD_SHARED_LIBS=ON
 
     steps:
-    - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
+    - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
 
     - name: Set timezone
       run: sudo timedatectl set-timezone 'Asia/Yekaterinburg'
@@ -72,7 +72,12 @@ jobs:
         # sudo apt-add-repository 'deb http://azure.archive.ubuntu.com/ubuntu/ bionic-updates universe'
       if: ${{ matrix.cxx == 'g++-4.8' }}
 
-    - name: Add ubuntu mirrors
+    - name: Add repositories for newer GCC
+      run: |
+        sudo apt-add-repository ppa:ubuntu-toolchain-r/test
+      if: ${{ matrix.cxx == 'g++-11' }}
+
+    - name: Add Ubuntu mirrors
       run: |
         # Github Actions caching proxy is at times unreliable
         # see https://github.com/actions/runner-images/issues/7048

@@ -8,26 +8,19 @@
 #ifndef FMT_XCHAR_H_
 #define FMT_XCHAR_H_
 
-#ifndef FMT_IMPORT_STD
-#  include <cwchar>
-#endif
-
 #include "color.h"
 #include "format.h"
 #include "ranges.h"
 
-#if !defined(FMT_STATIC_THOUSANDS_SEPARATOR) && !defined(FMT_IMPORT_STD)
-#  include <locale>
+#ifndef FMT_MODULE
+#  include <cwchar>
+#  if !defined(FMT_STATIC_THOUSANDS_SEPARATOR)
+#    include <locale>
+#  endif
 #endif
 
 FMT_BEGIN_NAMESPACE
 namespace detail {
-
-#ifdef __cpp_char8_t
-using char8_type = char8_t;
-#else
-enum char8_type : unsigned char {};
-#endif
 
 template <typename T>
 using is_exotic_char = bool_constant<!std::is_same<T, char>::value>;
@@ -83,9 +76,13 @@ inline auto runtime(wstring_view s) -> runtime_format_string<wchar_t> {
 #endif
 
 template <> struct is_char<wchar_t> : std::true_type {};
-template <> struct is_char<detail::char8_type> : std::true_type {};
 template <> struct is_char<char16_t> : std::true_type {};
 template <> struct is_char<char32_t> : std::true_type {};
+
+#ifdef __cpp_char8_t
+template <>
+struct is_char<char8_t> : bool_constant<detail::is_utf8_enabled()> {};
+#endif
 
 template <typename... T>
 constexpr auto make_wformat_args(T&... args)
@@ -315,9 +312,7 @@ FMT_DEPRECATED void print(const text_style& ts, wformat_string<T...> fmt,
   return print(stdout, ts, fmt, args...);
 }
 
-/**
-  Converts *value* to ``std::wstring`` using the default format for type *T*.
- */
+/// Converts `value` to `std::wstring` using the default format for type `T`.
 template <typename T> inline auto to_wstring(const T& value) -> std::wstring {
   return format(FMT_STRING(L"{}"), value);
 }

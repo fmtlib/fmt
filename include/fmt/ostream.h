@@ -8,7 +8,7 @@
 #ifndef FMT_OSTREAM_H_
 #define FMT_OSTREAM_H_
 
-#ifndef FMT_IMPORT_STD
+#ifndef FMT_MODULE
 #  include <fstream>  // std::filebuf
 #endif
 
@@ -44,12 +44,12 @@ auto get_file(std::filebuf&) -> FILE*;
 inline auto write_ostream_unicode(std::ostream& os, fmt::string_view data)
     -> bool {
   FILE* f = nullptr;
-#if FMT_MSC_VERSION
+#if FMT_MSC_VERSION && FMT_USE_RTTI
   if (auto* buf = dynamic_cast<std::filebuf*>(os.rdbuf()))
     f = get_file(*buf);
   else
     return false;
-#elif defined(_WIN32) && defined(__GLIBCXX__)
+#elif defined(_WIN32) && defined(__GLIBCXX__) && FMT_USE_RTTI
   auto* rdbuf = os.rdbuf();
   if (auto* sfbuf = dynamic_cast<__gnu_cxx::stdio_sync_filebuf<char>*>(rdbuf))
     f = sfbuf->file();
@@ -136,14 +136,12 @@ struct formatter<detail::streamed_view<T>, Char>
 };
 
 /**
-  \rst
-  Returns a view that formats `value` via an ostream ``operator<<``.
-
-  **Example**::
-
-    fmt::print("Current thread id: {}\n",
-               fmt::streamed(std::this_thread::get_id()));
-  \endrst
+ * Returns a view that formats `value` via an ostream `operator<<`.
+ *
+ * **Example**:
+ *
+ *     fmt::print("Current thread id: {}\n",
+ *                fmt::streamed(std::this_thread::get_id()));
  */
 template <typename T>
 constexpr auto streamed(const T& value) -> detail::streamed_view<T> {
@@ -172,18 +170,16 @@ void vprint(std::basic_ostream<Char>& os,
 }
 
 /**
-  \rst
-  Prints formatted data to the stream *os*.
-
-  **Example**::
-
-    fmt::print(cerr, "Don't {}!", "panic");
-  \endrst
+ * Prints formatted data to the stream `os`.
+ *
+ * **Example**:
+ *
+ *     fmt::print(cerr, "Don't {}!", "panic");
  */
 FMT_EXPORT template <typename... T>
 void print(std::ostream& os, format_string<T...> fmt, T&&... args) {
   const auto& vargs = fmt::make_format_args(args...);
-  if (detail::is_utf8())
+  if (detail::use_utf8())
     vprint(os, fmt, vargs);
   else
     detail::vprint_directly(os, fmt, vargs);

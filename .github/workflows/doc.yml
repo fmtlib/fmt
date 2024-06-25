@@ -11,9 +11,9 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
-    - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
+    - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
 
-    - name: Add ubuntu mirrors
+    - name: Add Ubuntu mirrors
       run: |
         # Github Actions caching proxy is at times unreliable
         # see https://github.com/actions/runner-images/issues/7048
@@ -21,15 +21,23 @@ jobs:
         curl http://mirrors.ubuntu.com/mirrors.txt | sudo tee --append /etc/apt/mirrors.txt
         sudo sed -i 's~http://azure.archive.ubuntu.com/ubuntu/~mirror+file:/etc/apt/mirrors.txt~' /etc/apt/sources.list
 
-    - name: Create Build Environment
+    - name: Create build environment
       run: |
         sudo apt update
-        sudo apt install doxygen python3-virtualenv
-        sudo npm install -g less clean-css
+        sudo apt install doxygen
+        pip install mkdocs-material==9.5.25 mkdocstrings==0.25.1 mike==2.1.1
         cmake -E make_directory ${{runner.workspace}}/build
+        # Workaround https://github.com/actions/checkout/issues/13:
+        git config --global user.name "$(git --no-pager log --format=format:'%an' -n 1)"
+        git config --global user.email "$(git --no-pager log --format=format:'%ae' -n 1)"
 
     - name: Build
       working-directory: ${{runner.workspace}}/build
+      run: $GITHUB_WORKSPACE/support/mkdocs deploy dev
+
+    - name: Deploy
       env:
-        KEY: ${{secrets.KEY}}
-      run: $GITHUB_WORKSPACE/support/build-docs.py
+        KEY: "${{secrets.KEY}}"
+      if: env.KEY != '' && github.ref == 'refs/heads/master'
+      working-directory: ${{runner.workspace}}/fmt/build/fmt.dev
+      run: git push https://$KEY@github.com/fmtlib/fmt.dev.git

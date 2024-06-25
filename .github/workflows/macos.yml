@@ -9,11 +9,10 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [macos-11, macos-13]
+        os: [macos-13, macos-14]
         build_type: [Debug, Release]
         std: [11, 17, 20]
         exclude:
-          - { os: macos-11, std: 20 }
           - { os: macos-13, std: 11 }
           - { os: macos-13, std: 17 }
         include:
@@ -22,7 +21,7 @@ jobs:
     runs-on: '${{ matrix.os }}'
 
     steps:
-    - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0
+    - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
 
     - name: Set timezone
       run: sudo systemsetup -settimezone 'Asia/Yekaterinburg'

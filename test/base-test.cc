@@ -92,7 +92,7 @@ TEST(string_view_test, compare) {
   check_op<std::greater_equal>();
 }
 
-TEST(core_test, is_output_iterator) {
+TEST(base_test, is_output_iterator) {
   EXPECT_TRUE((fmt::detail::is_output_iterator<char*, char>::value));
   EXPECT_FALSE((fmt::detail::is_output_iterator<const char*, char>::value));
   EXPECT_FALSE((fmt::detail::is_output_iterator<std::string, char>::value));
@@ -105,14 +105,14 @@ TEST(core_test, is_output_iterator) {
                                                 char>::value));
 }
 
-TEST(core_test, is_back_insert_iterator) {
+TEST(base_test, is_back_insert_iterator) {
   EXPECT_TRUE(fmt::detail::is_back_insert_iterator<
               std::back_insert_iterator<std::string>>::value);
   EXPECT_FALSE(fmt::detail::is_back_insert_iterator<
                std::front_insert_iterator<std::string>>::value);
 }
 
-TEST(core_test, buffer_appender) {
+TEST(base_test, buffer_appender) {
 #ifdef __cpp_lib_ranges
   static_assert(std::output_iterator<fmt::appender, char>);
 #endif
@@ -485,7 +485,7 @@ constexpr test_arg_id_handler parse_arg_id(const char (&s)[N]) {
   return h;
 }
 
-TEST(core_test, constexpr_parse_arg_id) {
+TEST(base_test, constexpr_parse_arg_id) {
   static_assert(parse_arg_id(":").res == arg_id_result::empty, "");
   static_assert(parse_arg_id("}").res == arg_id_result::empty, "");
   static_assert(parse_arg_id("42:").res == arg_id_result::index, "");
@@ -503,7 +503,7 @@ template <size_t N> constexpr auto parse_test_specs(const char (&s)[N]) {
   return specs;
 }
 
-TEST(core_test, constexpr_parse_format_specs) {
+TEST(base_test, constexpr_parse_format_specs) {
   static_assert(parse_test_specs("<").align == fmt::align::left, "");
   static_assert(parse_test_specs("*^").fill.get<char>() == '*', "");
   static_assert(parse_test_specs("+").sign == fmt::sign::plus, "");
@@ -516,8 +516,8 @@ TEST(core_test, constexpr_parse_format_specs) {
   static_assert(parse_test_specs("{42}").width_ref.val.index == 42, "");
   static_assert(parse_test_specs(".42").precision == 42, "");
   static_assert(parse_test_specs(".{42}").precision_ref.val.index == 42, "");
-  static_assert(
-      parse_test_specs("f").type == fmt::presentation_type::fixed, "");
+  static_assert(parse_test_specs("f").type == fmt::presentation_type::fixed,
+                "");
 }
 
 struct test_format_string_handler {
@@ -545,7 +545,7 @@ template <size_t N> constexpr bool parse_string(const char (&s)[N]) {
   return !h.error;
 }
 
-TEST(core_test, constexpr_parse_format_string) {
+TEST(base_test, constexpr_parse_format_string) {
   static_assert(parse_string("foo"), "");
   static_assert(!parse_string("}"), "");
   static_assert(parse_string("{}"), "");
@@ -584,7 +584,7 @@ template <> struct formatter<enabled_ptr_formatter*> {
 };
 FMT_END_NAMESPACE
 
-TEST(core_test, has_formatter) {
+TEST(base_test, has_formatter) {
   using fmt::has_formatter;
   using context = fmt::format_context;
   static_assert(has_formatter<enabled_formatter, context>::value, "");
@@ -643,7 +643,7 @@ FMT_END_NAMESPACE
 
 enum class unformattable_scoped_enum {};
 
-TEST(core_test, is_formattable) {
+TEST(base_test, is_formattable) {
   static_assert(!fmt::is_formattable<wchar_t>::value, "");
 #ifdef __cpp_char8_t
   static_assert(!fmt::is_formattable<char8_t>::value, "");
@@ -687,19 +687,36 @@ TEST(core_test, is_formattable) {
   static_assert(!fmt::is_formattable<unformattable_scoped_enum>::value, "");
 }
 
-TEST(core_test, format_to) {
+#if FMT_USE_CONCEPTS
+TEST(base_test, formattable) {
+  static_assert(fmt::formattable<char>);
+  static_assert(fmt::formattable<char&>);
+  static_assert(fmt::formattable<char&&>);
+  static_assert(fmt::formattable<const char>);
+  static_assert(fmt::formattable<const char&>);
+  static_assert(fmt::formattable<const char&&>);
+  static_assert(fmt::formattable<int>);
+  static_assert(!fmt::formattable<wchar_t>);
+}
+#endif
+
+TEST(base_test, format_to) {
   auto s = std::string();
   fmt::format_to(std::back_inserter(s), "{}", 42);
   EXPECT_EQ(s, "42");
 }
 
-TEST(core_test, format_to_c_array) {
+TEST(base_test, format_to_array) {
   char buffer[4];
   auto result = fmt::format_to(buffer, "{}", 12345);
   EXPECT_EQ(4, std::distance(&buffer[0], result.out));
   EXPECT_TRUE(result.truncated);
   EXPECT_EQ(buffer + 4, result.out);
   EXPECT_EQ("1234", fmt::string_view(buffer, 4));
+
+  char* out = nullptr;
+  EXPECT_THROW(out = result, std::runtime_error);
+  (void)out;
 
   result = fmt::format_to(buffer, "{:s}", "foobar");
   EXPECT_EQ(4, std::distance(&buffer[0], result.out));
@@ -735,7 +752,7 @@ TEST(core_test, format_to_c_array) {
 }
 
 #ifdef __cpp_lib_byte
-TEST(core_test, format_byte) {
+TEST(base_test, format_byte) {
   auto s = std::string();
   fmt::format_to(std::back_inserter(s), "{}", std::byte(42));
   EXPECT_EQ(s, "42");
@@ -744,7 +761,7 @@ TEST(core_test, format_byte) {
 
 // Test that check is not found by ADL.
 template <typename T> void check(T);
-TEST(core_test, adl_check) {
+TEST(base_test, adl_check) {
   auto s = std::string();
   fmt::format_to(std::back_inserter(s), "{}", test_struct());
   EXPECT_EQ(s, "test");
@@ -754,7 +771,7 @@ struct implicitly_convertible_to_string_view {
   operator fmt::string_view() const { return "foo"; }
 };
 
-TEST(core_test, no_implicit_conversion_to_string_view) {
+TEST(base_test, no_implicit_conversion_to_string_view) {
   EXPECT_FALSE(
       fmt::is_formattable<implicitly_convertible_to_string_view>::value);
 }
@@ -764,7 +781,7 @@ struct implicitly_convertible_to_std_string_view {
   operator std::string_view() const { return "foo"; }
 };
 
-TEST(core_test, no_implicit_conversion_to_std_string_view) {
+TEST(base_test, no_implicit_conversion_to_std_string_view) {
   EXPECT_FALSE(
       fmt::is_formattable<implicitly_convertible_to_std_string_view>::value);
 }
@@ -776,7 +793,7 @@ struct explicitly_convertible_to_string_view {
   explicit operator fmt::string_view() const { return "foo"; }
 };
 
-TEST(core_test, format_explicitly_convertible_to_string_view) {
+TEST(base_test, format_explicitly_convertible_to_string_view) {
   // Types explicitly convertible to string_view are not formattable by
   // default because it may introduce ODR violations.
   static_assert(
@@ -788,7 +805,7 @@ struct explicitly_convertible_to_std_string_view {
   explicit operator std::string_view() const { return "foo"; }
 };
 
-TEST(core_test, format_explicitly_convertible_to_std_string_view) {
+TEST(base_test, format_explicitly_convertible_to_std_string_view) {
   // Types explicitly convertible to string_view are not formattable by
   // default because it may introduce ODR violations.
   static_assert(
@@ -798,20 +815,20 @@ TEST(core_test, format_explicitly_convertible_to_std_string_view) {
 #  endif
 #endif
 
-TEST(core_test, has_const_formatter) {
+TEST(base_test, has_const_formatter) {
   EXPECT_TRUE((fmt::detail::has_const_formatter<const_formattable,
                                                 fmt::format_context>()));
   EXPECT_FALSE((fmt::detail::has_const_formatter<nonconst_formattable,
                                                  fmt::format_context>()));
 }
 
-TEST(core_test, format_nonconst) {
+TEST(base_test, format_nonconst) {
   auto s = std::string();
   fmt::format_to(std::back_inserter(s), "{}", nonconst_formattable());
   EXPECT_EQ(s, "test");
 }
 
-TEST(core_test, throw_in_buffer_dtor) {
+TEST(base_test, throw_in_buffer_dtor) {
   enum { buffer_size = 256 };
 
   struct throwing_iterator {
@@ -857,7 +874,7 @@ template <> struct formatter<its_a_trap> {
 };
 FMT_END_NAMESPACE
 
-TEST(format_test, trappy_conversion) {
+TEST(base_test, trappy_conversion) {
   auto s = std::string();
   fmt::format_to(std::back_inserter(s), "{}", its_a_trap());
   EXPECT_EQ(s, "x");

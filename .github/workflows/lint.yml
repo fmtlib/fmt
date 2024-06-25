@@ -8,19 +8,48 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   format_code:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
 
     - name: Install clang-format
-      uses: aminya/setup-cpp@v1
+      uses: aminya/setup-cpp@290824452986e378826155f3379d31bce8753d76 # v0.37.0
       with:
         clangformat: 17.0.5
 
     - name: Run clang-format
+      id: clang_format
       run: |
         find include src -name '*.h' -o -name '*.cc' |  xargs clang-format -i -style=file -fallback-style=none
-        git diff --exit-code
+        git diff | tee fmt.patch
+        if [ -s fmt.patch ]; then
+          exit 1
+        fi
+    - uses: actions/github-script@e69ef5462fd455e02edcaf4dd7708eda96b9eda0 # v7
+      if: failure() && steps.clang_format.outcome == 'failure'
+      with:
+        script: |
+          const fs = require('fs');
+          const patch = fs.readFileSync('fmt.patch', { encoding: 'utf8' });
+          const comment = `clang-format 17.0.5 found issues in the formatting in your code:
+          <details>
+          <summary>
+          View the diff from clang-format:
+          </summary>
+
+          \`\`\`diff
+          ${patch}
+          \`\`\`
+
+          </details>
+          `;
+          await github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
