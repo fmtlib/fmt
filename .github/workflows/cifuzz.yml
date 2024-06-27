@@ -10,13 +10,13 @@ jobs:
     steps:
     - name: Build fuzzers
       id: build
-      uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@061583ebb5a96653e42feb3a97ee513eedc18078 # master
+      uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@92182553173581f871130c71c71b17f003d47b0a # master
       with:
         oss-fuzz-project-name: 'fmt'
         dry-run: false
         language: c++
     - name: Run fuzzers
-      uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@061583ebb5a96653e42feb3a97ee513eedc18078 # master
+      uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@92182553173581f871130c71c71b17f003d47b0a # master
       with:
         oss-fuzz-project-name: 'fmt'
         fuzz-seconds: 300
