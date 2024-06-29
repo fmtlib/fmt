@@ -165,6 +165,7 @@ def release(args):
     if first_section[0] == '\n':
         first_section.pop(0)
 
+    # Workaround GitHub-flavored markdown treating newlines as <br>.
     changes = ''.join(first_section)
     code_block = False
     stripped = False
@@ -177,7 +178,7 @@ def release(args):
         if code_block:
             changes += line
             continue
-        if line == '\n' or re.match(r'^\s*|', line):
+        if line == '\n' or re.match(r'^\s*\|', line):
             changes += line
             if stripped:
                 changes += line
