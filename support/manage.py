@@ -189,7 +189,7 @@ def release(args):
         stripped = True
 
     fmt_repo.checkout('-B', 'release')
-    fmt_repo.add(changelog, cmakelists)
+    fmt_repo.add(changelog)
     fmt_repo.commit('-m', 'Update version')
 
     # Build the docs and package.
