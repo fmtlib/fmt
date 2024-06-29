@@ -1,25 +1,31 @@
 # 11.0.0 - TBD
 
 - Added `fmt/base.h` which provides a subset of the API with minimal include
-  dependencies and enough functionality to replace all uses of `*printf`.
-  This brings the compile time of code using {fmt} much closer to the
-  equivalent `printf` code as shown on the following benchmark that compiles
-  100 source files:
+  dependencies and enough functionality to replace all uses of the `printf`
+  family of functions. This brings the compile time of code using {fmt} much
+  closer to the equivalent `printf` code as shown on the following benchmark
+  that compiles 100 source files:
 
   | Method       | Compile Time (s) |
   |--------------|------------------|
   | printf       | 1.6              |
   | IOStreams    | 25.9             |
-  | fmt          | 4.8              |
+  | fmt 10.x     | 19.0             |
+  | fmt 11.0     | 4.8              |
   | tinyformat   | 29.1             |
   | Boost Format | 55.0             |
 
+  This gives almost 4x improvement in bulid speed compared to version 10.
   Note that this is purely formatting code and includes. In real projects the
-  difference will be smaller partly because common standard headers will be
-  included in almost any translation unit anyway.
+  difference from `printf` will be smaller partly because common standard
+  headers will be included in almost any translation unit (TU) anyway.
+  In particular, in every case except `printf` above ~1s is spent in total on
+  including `<type_traits>` in all TUs.
 
 - Optimized includes in other headers such as `fmt/format.h` which is now
-  roughly equivalent to the old `fmt/core.h`.
+  roughly equivalent to the old `fmt/core.h` in terms of build speed.
+
+- Migrated the documentation at https://fmt.dev/ from Sphinx to MkDocs.
 
 - Improved C++20 module support
   (https://github.com/fmtlib/fmt/issues/3990,
@@ -31,8 +37,10 @@
   https://github.com/fmtlib/fmt/pull/4004,
   https://github.com/fmtlib/fmt/pull/4005,
   https://github.com/fmtlib/fmt/pull/4006,
-  https://github.com/fmtlib/fmt/pull/4013). In particular, native CMake support
-  for modules is now used if available. Thanks @yujincheng08.
+  https://github.com/fmtlib/fmt/pull/4013,
+  https://github.com/fmtlib/fmt/pull/4027,
+  https://github.com/fmtlib/fmt/pull/4029). In particular, native CMake support
+  for modules is now used if available. Thanks @yujincheng08 and @matt77hias.
 
 - Added an option to replace standard includes with `import std` enabled via
   the `FMT_IMPORT_STD` macro (https://github.com/fmtlib/fmt/issues/3921,
@@ -255,7 +263,8 @@
   https://github.com/fmtlib/fmt/pull/3980,
   https://github.com/fmtlib/fmt/pull/3988,
   https://github.com/fmtlib/fmt/pull/4010,
-  https://github.com/fmtlib/fmt/pull/4012).
+  https://github.com/fmtlib/fmt/pull/4012,
+  https://github.com/fmtlib/fmt/pull/4038).
   Thanks @vgorrX, @waywardmonkeys, @tchaikov and @phprus.
 
 - Fixed buffer overflow when using format string compilation with debug format
@@ -310,7 +319,9 @@
   https://github.com/fmtlib/fmt/pull/3968,
   https://github.com/fmtlib/fmt/pull/3972,
   https://github.com/fmtlib/fmt/pull/3983,
+  https://github.com/fmtlib/fmt/issues/3992,
   https://github.com/fmtlib/fmt/pull/3995,
+  https://github.com/fmtlib/fmt/pull/4009,
   https://github.com/fmtlib/fmt/pull/4023).
   Thanks @hmbj, @phprus, @res2k, @Baardi, @matt77hias, @waywardmonkeys, @hmbj,
   @yakra, @prlw1, @Arghnews, @mtillmann0, @ShifftC, @eepp, @jimmy-park and
@@ -482,6 +493,10 @@
 
 - Made `fmt::streamed` `constexpr`.
   (https://github.com/fmtlib/fmt/pull/3650). Thanks @muggenhor.
+
+- Made `fmt::format_int` `constexpr`
+  (https://github.com/fmtlib/fmt/issues/4031,
+  https://github.com/fmtlib/fmt/pull/4032). Thanks @dixlorenz.
 
 - Enabled `consteval` on older versions of MSVC
   (https://github.com/fmtlib/fmt/pull/3757). Thanks @phprus.
