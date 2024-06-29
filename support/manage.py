@@ -165,7 +165,7 @@ def release(args):
     if first_section[0] == '\n':
         first_section.pop(0)
 
-    changes = first_section
+    changes = ''.join(first_section)
 
     fmt_repo.checkout('-B', 'release')
     fmt_repo.add(changelog)
