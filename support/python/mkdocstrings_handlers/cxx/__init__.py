@@ -158,8 +158,8 @@ class CxxHandler(BaseHandler):
 
     # Run doxygen.
     cmd = ['doxygen', '-']
-    doc_dir = Path(__file__).parents[3]
-    top_dir = os.path.dirname(doc_dir)
+    support_dir = Path(__file__).parents[3]
+    top_dir = os.path.dirname(support_dir)
     include_dir = os.path.join(top_dir, 'include', 'fmt')
     self._ns2doxyxml = {}
     self._doxyxml_dir = os.path.join(top_dir, 'build', 'doxyxml')
