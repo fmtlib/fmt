@@ -271,17 +271,8 @@ def release(args):
             line = prefix + version + ')\n'
         sys.stdout.write(line)
 
-    # Add the version to the build script.
-    script = os.path.join('doc', 'build.py')
-    script_path = os.path.join(fmt_repo.dir, script)
-    for line in fileinput.input(script_path, inplace=True):
-      m = re.match(r'( *versions \+= )\[(.+)\]', line)
-      if m:
-        line = '{}[{}, \'{}\']\n'.format(m.group(1), m.group(2), version)
-      sys.stdout.write(line)
-
     fmt_repo.checkout('-B', 'release')
-    fmt_repo.add(changelog, cmakelists, script)
+    fmt_repo.add(changelog, cmakelists)
     fmt_repo.commit('-m', 'Update version')
 
     # Build the docs and package.
