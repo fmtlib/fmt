@@ -178,7 +178,7 @@ def release(args):
         if code_block:
             changes += line
             continue
-        if line == '\n' or re.match(r'^\s*\|', line):
+        if line == '\n' or re.match(r'^\s*\|.*', line):
             changes += line
             if stripped:
                 changes += line
