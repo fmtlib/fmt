@@ -163,7 +163,7 @@ class CxxHandler(BaseHandler):
     include_dir = os.path.join(top_dir, 'include', 'fmt')
     self._ns2doxyxml = {}
     build_dir = os.path.join(top_dir, 'build')
-    os.mkdirs(build_dir, exists_ok=True)
+    os.makedirs(build_dir, exist_ok=True)
     self._doxyxml_dir = os.path.join(build_dir, 'doxyxml')
     p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
     _, _ = p.communicate(input=r'''
