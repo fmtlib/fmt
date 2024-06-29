@@ -24,7 +24,7 @@
 #endif
 
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
-#define FMT_VERSION 100202
+#define FMT_VERSION 110000
 
 // Detect compiler versions.
 #if defined(__clang__) && !defined(__ibmxl__)
