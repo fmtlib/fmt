@@ -76,18 +76,8 @@ def create_build_env():
     class Env:
         pass
     env = Env()
-
-    # Import the documentation build module.
     env.fmt_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    sys.path.insert(0, os.path.join(env.fmt_dir, 'doc'))
-    import build
-
     env.build_dir = 'build'
-    env.versions = build.versions
-
-    # Virtualenv and repos are cached to speed up builds.
-    build.create_build_env(os.path.join(env.build_dir, 'virtualenv'))
-
     env.fmt_repo = Git(os.path.join(env.build_dir, 'fmt'))
     return env
 
