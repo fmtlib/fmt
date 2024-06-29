@@ -464,12 +464,12 @@ function(add_doc_target)
       ${CMAKE_COMMAND}
         -E env PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/support/python
         ${MKDOCS} build -f ${CMAKE_CURRENT_SOURCE_DIR}/support/mkdocs.yml
-                        --site-dir ${CMAKE_CURRENT_BINARY_DIR}/site
+                        --site-dir ${CMAKE_CURRENT_BINARY_DIR}/doc/html
                         --no-directory-urls
     SOURCES ${sources})
 
   include(GNUInstallDirs)
-  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/support/site/
+  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc/html/
           DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/doc/fmt OPTIONAL)
 endfunction()
 
