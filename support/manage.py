@@ -166,7 +166,7 @@ def release(args):
         first_section.pop(0)
 
     # Workaround GitHub-flavored markdown treating newlines as <br>.
-    changes = ''.join(first_section)
+    changes = ''
     code_block = False
     stripped = False
     for line in first_section:
@@ -179,10 +179,10 @@ def release(args):
             changes += line
             continue
         if line == '\n' or re.match(r'^\s*\|.*', line):
-            changes += line
             if stripped:
-                changes += line
+                changes += '\n'
                 stripped = False
+            changes += line
             continue
         if stripped:
             line = ' ' + line.lstrip()
