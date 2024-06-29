@@ -162,9 +162,11 @@ class CxxHandler(BaseHandler):
     top_dir = os.path.dirname(support_dir)
     include_dir = os.path.join(top_dir, 'include', 'fmt')
     self._ns2doxyxml = {}
-    self._doxyxml_dir = os.path.join(top_dir, 'build', 'doxyxml')
+    build_dir = os.path.join(top_dir, 'build')
+    os.mkdirs(build_dir, exists_ok=True)
+    self._doxyxml_dir = os.path.join(build_dir, 'doxyxml')
     p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
-    out, _ = p.communicate(input=r'''
+    _, _ = p.communicate(input=r'''
         PROJECT_NAME      = fmt
         GENERATE_XML      = YES
         GENERATE_LATEX    = NO
@@ -188,7 +190,7 @@ class CxxHandler(BaseHandler):
           ' '.join([os.path.join(include_dir, h) for h in headers]),
           self._doxyxml_dir).encode('utf-8'))
     if p.returncode != 0:
-        raise CalledProcessError(p.returncode, cmd)
+      raise CalledProcessError(p.returncode, cmd)
 
     # Merge all file-level XMLs into one to simplify search.
     self._file_doxyxml = None
