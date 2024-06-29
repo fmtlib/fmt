@@ -165,28 +165,7 @@ def release(args):
     if first_section[0] == '\n':
         first_section.pop(0)
 
-    changes = ''
-    code_block = False
-    stripped = False
-    for line in first_section:
-        if re.match(r'^\s*```', line):
-            code_block = not code_block
-            changes += line
-            stripped = False
-            continue
-        if code_block:
-            changes += line
-            continue
-        if line == '\n':
-            changes += line
-            if stripped:
-                changes += line
-                stripped = False
-            continue
-        if stripped:
-            line = ' ' + line.lstrip()
-        changes += line.rstrip()
-        stripped = True
+    changes = first_section
 
     fmt_repo.checkout('-B', 'release')
     fmt_repo.add(changelog)
