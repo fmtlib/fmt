@@ -15,7 +15,7 @@
   | tinyformat   | 29.1             |
   | Boost Format | 55.0             |
 
-  This gives almost 4x improvement in bulid speed compared to version 10.
+  This gives almost 4x improvement in build speed compared to version 10.
   Note that this is purely formatting code and includes. In real projects the
   difference from `printf` will be smaller partly because common standard
   headers will be included in almost any translation unit (TU) anyway.
