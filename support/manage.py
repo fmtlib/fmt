@@ -104,8 +104,8 @@ fmt_repo_url = 'git@github.com:fmtlib/fmt'
 def update_site(env):
     env.fmt_repo.update(fmt_repo_url)
 
-    doc_repo = Git(os.path.join(env.build_dir, 'fmtlib.github.io'))
-    doc_repo.update('git@github.com:fmtlib/fmtlib.github.io')
+    doc_repo = Git(os.path.join(env.build_dir, 'fmt.dev'))
+    doc_repo.update('git@github.com:fmtlib/fmt.dev')
 
     version = '11.0.0'
     clean_checkout(env.fmt_repo, version)
@@ -124,13 +124,6 @@ def update_site(env):
     build.build_docs(version, doc_dir=target_doc_dir,
                         include_dir=include_dir, work_dir=env.build_dir)
     shutil.rmtree(os.path.join(html_dir, '.doctrees'))
-    # Create symlinks for older versions.
-    for link, target in {'index': 'contents', 'api': 'reference'}.items():
-        link = os.path.join(html_dir, link) + '.html'
-        target += '.html'
-        if os.path.exists(os.path.join(html_dir, target)) and \
-            not os.path.exists(link):
-            os.symlink(target, link)
     # Copy docs to the website.
     version_doc_dir = os.path.join(doc_repo.dir, version)
     try:
@@ -194,14 +187,6 @@ def release(args):
             line = ' ' + line.lstrip()
         changes += line.rstrip()
         stripped = True
-
-    cmakelists = 'CMakeLists.txt'
-    for line in fileinput.input(os.path.join(fmt_repo.dir, cmakelists),
-                                inplace=True):
-        prefix = 'set(FMT_VERSION '
-        if line.startswith(prefix):
-            line = prefix + version + ')\n'
-        sys.stdout.write(line)
 
     fmt_repo.checkout('-B', 'release')
     fmt_repo.add(changelog, cmakelists)
