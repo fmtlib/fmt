@@ -107,106 +107,38 @@ def update_site(env):
     doc_repo = Git(os.path.join(env.build_dir, 'fmtlib.github.io'))
     doc_repo.update('git@github.com:fmtlib/fmtlib.github.io')
 
-    for version in env.versions:
-        clean_checkout(env.fmt_repo, version)
-        target_doc_dir = os.path.join(env.fmt_repo.dir, 'doc')
-        # Remove the old theme.
-        for entry in os.listdir(target_doc_dir):
-            path = os.path.join(target_doc_dir, entry)
-            if os.path.isdir(path):
-                shutil.rmtree(path)
-        # Copy the new theme.
-        for entry in ['_static', '_templates', 'basic-bootstrap', 'bootstrap',
-                      'conf.py', 'fmt.less']:
-            src = os.path.join(env.fmt_dir, 'doc', entry)
-            dst = os.path.join(target_doc_dir, entry)
-            copy = shutil.copytree if os.path.isdir(src) else shutil.copyfile
-            copy(src, dst)
-        # Rename index to contents.
-        contents = os.path.join(target_doc_dir, 'contents.rst')
-        if not os.path.exists(contents):
-            os.rename(os.path.join(target_doc_dir, 'index.rst'), contents)
-        # Fix issues in reference.rst/api.rst.
-        for filename in ['reference.rst', 'api.rst', 'index.rst']:
-            pattern = re.compile('doxygenfunction.. (bin|oct|hexu|hex)$', re.M)
-            with rewrite(os.path.join(target_doc_dir, filename)) as b:
-                b.data = b.data.replace('std::ostream &', 'std::ostream&')
-                b.data = re.sub(pattern, r'doxygenfunction:: \1(int)', b.data)
-                b.data = b.data.replace('std::FILE*', 'std::FILE *')
-                b.data = b.data.replace('unsigned int', 'unsigned')
-                #b.data = b.data.replace('operator""_', 'operator"" _')
-                b.data = b.data.replace(
-                    'format_to_n(OutputIt, size_t, string_view, Args&&',
-                    'format_to_n(OutputIt, size_t, const S&, const Args&')
-                b.data = b.data.replace(
-                    'format_to_n(OutputIt, std::size_t, string_view, Args&&',
-                    'format_to_n(OutputIt, std::size_t, const S&, const Args&')
-                if version == ('3.0.2'):
-                    b.data = b.data.replace(
-                        'fprintf(std::ostream&', 'fprintf(std::ostream &')
-                if version == ('5.3.0'):
-                    b.data = b.data.replace(
-                        'format_to(OutputIt, const S&, const Args&...)',
-                        'format_to(OutputIt, const S &, const Args &...)')
-                if version.startswith('5.') or version.startswith('6.'):
-                    b.data = b.data.replace(', size_t', ', std::size_t')
-                if version.startswith('7.'):
-                    b.data = b.data.replace(', std::size_t', ', size_t')
-                    b.data = b.data.replace('join(It, It', 'join(It, Sentinel')
-                if version.startswith('7.1.'):
-                    b.data = b.data.replace(', std::size_t', ', size_t')
-                    b.data = b.data.replace('join(It, It', 'join(It, Sentinel')
-                    b.data = b.data.replace(
-                        'fmt::format_to(OutputIt, const S&, Args&&...)',
-                        'fmt::format_to(OutputIt, const S&, Args&&...) -> ' +
-                        'typename std::enable_if<enable, OutputIt>::type')
-                b.data = b.data.replace('aa long', 'a long')
-                b.data = b.data.replace('serveral', 'several')
-                if version.startswith('6.2.'):
-                    b.data = b.data.replace(
-                        'vformat(const S&, basic_format_args<' +
-                        'buffer_context<Char>>)',
-                        'vformat(const S&, basic_format_args<' +
-                        'buffer_context<type_identity_t<Char>>>)')
-        # Fix a broken link in index.rst.
-        index = os.path.join(target_doc_dir, 'index.rst')
-        with rewrite(index) as b:
-            b.data = b.data.replace(
-                'doc/latest/index.html#format-string-syntax', 'syntax.html')
-        # Fix issues in syntax.rst.
-        index = os.path.join(target_doc_dir, 'syntax.rst')
-        with rewrite(index) as b:
-            b.data = b.data.replace(
-                '..productionlist:: sf\n', '.. productionlist:: sf\n ')
-            b.data = b.data.replace('Examples:\n', 'Examples::\n')
-        # Build the docs.
-        html_dir = os.path.join(env.build_dir, 'html')
-        if os.path.exists(html_dir):
-            shutil.rmtree(html_dir)
-        include_dir = env.fmt_repo.dir
-        if LooseVersion(version) >= LooseVersion('5.0.0'):
-            include_dir = os.path.join(include_dir, 'include', 'fmt')
-        elif LooseVersion(version) >= LooseVersion('3.0.0'):
-            include_dir = os.path.join(include_dir, 'fmt')
-        import build
-        build.build_docs(version, doc_dir=target_doc_dir,
-                         include_dir=include_dir, work_dir=env.build_dir)
-        shutil.rmtree(os.path.join(html_dir, '.doctrees'))
-        # Create symlinks for older versions.
-        for link, target in {'index': 'contents', 'api': 'reference'}.items():
-            link = os.path.join(html_dir, link) + '.html'
-            target += '.html'
-            if os.path.exists(os.path.join(html_dir, target)) and \
-               not os.path.exists(link):
-                os.symlink(target, link)
-        # Copy docs to the website.
-        version_doc_dir = os.path.join(doc_repo.dir, version)
-        try:
-            shutil.rmtree(version_doc_dir)
-        except OSError as e:
-            if e.errno != errno.ENOENT:
-                raise
-        shutil.move(html_dir, version_doc_dir)
+    version = '11.0.0'
+    clean_checkout(env.fmt_repo, version)
+    target_doc_dir = os.path.join(env.fmt_repo.dir, 'doc')
+
+    # Build the docs.
+    html_dir = os.path.join(env.build_dir, 'html')
+    if os.path.exists(html_dir):
+        shutil.rmtree(html_dir)
+    include_dir = env.fmt_repo.dir
+    if LooseVersion(version) >= LooseVersion('5.0.0'):
+        include_dir = os.path.join(include_dir, 'include', 'fmt')
+    elif LooseVersion(version) >= LooseVersion('3.0.0'):
+        include_dir = os.path.join(include_dir, 'fmt')
+    import build
+    build.build_docs(version, doc_dir=target_doc_dir,
+                        include_dir=include_dir, work_dir=env.build_dir)
+    shutil.rmtree(os.path.join(html_dir, '.doctrees'))
+    # Create symlinks for older versions.
+    for link, target in {'index': 'contents', 'api': 'reference'}.items():
+        link = os.path.join(html_dir, link) + '.html'
+        target += '.html'
+        if os.path.exists(os.path.join(html_dir, target)) and \
+            not os.path.exists(link):
+            os.symlink(target, link)
+    # Copy docs to the website.
+    version_doc_dir = os.path.join(doc_repo.dir, version)
+    try:
+        shutil.rmtree(version_doc_dir)
+    except OSError as e:
+        if e.errno != errno.ENOENT:
+            raise
+    shutil.move(html_dir, version_doc_dir)
 
 
 def release(args):
