@@ -16,9 +16,9 @@
   | Boost Format | 55.0             |
 
   This gives almost 4x improvement in build speed compared to version 10.
-  Note that this is purely formatting code and includes. In real projects the
-  difference from `printf` will be smaller partly because common standard
-  headers will be included in almost any translation unit (TU) anyway.
+  Note that the benchmark is purely formatting code and includes. In real
+  projects the difference from `printf` will be smaller partly because common
+  standard headers will be included in almost any translation unit (TU) anyway.
   In particular, in every case except `printf` above ~1s is spent in total on
   including `<type_traits>` in all TUs.
 
@@ -68,7 +68,7 @@
   Benchmark             Time             CPU   Iterations
   -------------------------------------------------------
   printf             81.8 ns         81.5 ns      8496899
-  fmt::print (10.*)  63.8 ns         61.9 ns     11524151
+  fmt::print (10.x)  63.8 ns         61.9 ns     11524151
   fmt::print (11.0)  51.3 ns         51.0 ns     13846580
   ```
 
@@ -94,7 +94,7 @@
   compiled with Unicode enabled.
 
 - Added a formatter for `std::expected`
-  (https://github.com/fmtlib/fmt/pull/3834. Thanks @dominicpoeschko.
+  (https://github.com/fmtlib/fmt/pull/3834). Thanks @dominicpoeschko.
 
 - Added a formatter for `std::complex`
   (https://github.com/fmtlib/fmt/issues/1467,
