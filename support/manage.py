@@ -14,7 +14,6 @@ from __future__ import print_function
 import datetime, docopt, errno, fileinput, json, os
 import re, requests, shutil, sys
 from contextlib import contextmanager
-from distutils.version import LooseVersion
 from subprocess import check_call
 
 
@@ -82,22 +81,6 @@ def create_build_env():
     return env
 
 
-@contextmanager
-def rewrite(filename):
-    class Buffer:
-        pass
-    buffer = Buffer()
-    if not os.path.exists(filename):
-        buffer.data = ''
-        yield buffer
-        return
-    with open(filename) as f:
-        buffer.data = f.read()
-    yield buffer
-    with open(filename, 'w') as f:
-        f.write(buffer.data)
-
-
 fmt_repo_url = 'git@github.com:fmtlib/fmt'
 
 
@@ -116,10 +99,6 @@ def update_site(env):
     if os.path.exists(html_dir):
         shutil.rmtree(html_dir)
     include_dir = env.fmt_repo.dir
-    if LooseVersion(version) >= LooseVersion('5.0.0'):
-        include_dir = os.path.join(include_dir, 'include', 'fmt')
-    elif LooseVersion(version) >= LooseVersion('3.0.0'):
-        include_dir = os.path.join(include_dir, 'fmt')
     import build
     build.build_docs(version, doc_dir=target_doc_dir,
                         include_dir=include_dir, work_dir=env.build_dir)
@@ -165,7 +144,7 @@ def release(args):
     if first_section[0] == '\n':
         first_section.pop(0)
 
-    # Workaround GitHub-flavored markdown treating newlines as <br>.
+    # Workaround GitHub-flavored Markdown treating newlines as <br>.
     changes = ''
     code_block = False
     stripped = False
@@ -197,6 +176,7 @@ def release(args):
     run = Runner(fmt_repo.dir)
     run('cmake', '.')
     run('make', 'doc', 'package_source')
+    shutil.rmtree('build')
 
     # Create a release on GitHub.
     fmt_repo.push('origin', 'release')
