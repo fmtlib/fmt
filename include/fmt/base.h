@@ -12,7 +12,6 @@
 #  define FMT_MODULE
 #endif
 
-// c headers are preferable for performance reasons
 #ifndef FMT_MODULE
 #  include <limits.h>  // CHAR_BIT
 #  include <stdio.h>   // FILE
