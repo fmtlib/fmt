@@ -3,10 +3,9 @@
 
 # A vagrant config for testing against gcc-4.8.
 Vagrant.configure("2") do |config|
-  config.vm.box = "ubuntu/xenial64"
-  config.disksize.size = '15GB'
+  config.vm.box = "bento/ubuntu-22.04-arm64"
 
-  config.vm.provider "virtualbox" do |vb|
+  config.vm.provider "vmware_desktop" do |vb|
     vb.memory = "4096"
   end
 
