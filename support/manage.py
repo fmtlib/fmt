@@ -176,7 +176,6 @@ def release(args):
     run = Runner(fmt_repo.dir)
     run('cmake', '.')
     run('make', 'doc', 'package_source')
-    shutil.rmtree('build')
 
     # Create a release on GitHub.
     fmt_repo.push('origin', 'release')
