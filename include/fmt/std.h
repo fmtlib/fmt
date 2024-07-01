@@ -291,7 +291,7 @@ struct formatter<std::expected<T, E>, Char,
 
     if (value.has_value()) {
       out = detail::write<Char>(out, "expected(");
-      out = detail::write_escaped_alternative<Char>(out, value.value());
+      out = detail::write_escaped_alternative<Char>(out, *value);
     } else {
       out = detail::write<Char>(out, "unexpected(");
       out = detail::write_escaped_alternative<Char>(out, value.error());
