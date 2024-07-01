@@ -569,8 +569,8 @@ using wprintf_args = basic_format_args<wprintf_context>;
 /// arguments and can be implicitly converted to `printf_args`.
 template <typename Char = char, typename... T>
 inline auto make_printf_args(T&... args)
-    -> decltype(make_format_args<basic_printf_context<Char>>(args...)) {
-  return make_format_args<basic_printf_context<Char>>(args...);
+    -> decltype(fmt::make_format_args<basic_printf_context<Char>>(args...)) {
+  return fmt::make_format_args<basic_printf_context<Char>>(args...);
 }
 
 template <typename Char> struct vprintf_args {
