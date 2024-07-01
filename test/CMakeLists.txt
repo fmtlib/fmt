@@ -1,12 +1,38 @@
+cmake_minimum_required(VERSION 3.28.4...3.30)
+
+project(FMT_TEST CXX)
+
+if (PROJECT_IS_TOP_LEVEL)
+  enable_testing()
+  find_package(fmt 10.2.2 REQUIRED)
+
+  if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.28.4 AND
+      CMAKE_GENERATOR STREQUAL "Ninja")
+    set(FMT_MODULE TRUE)
+  endif ()
+
+  if (FMT_MODULE)
+    set(CMAKE_CXX_SCAN_FOR_MODULES ON)
+    # Always use libc++
+    set(CMAKE_CXX_STANDARD 23)
+    set(CMAKE_CXX_EXTENSIONS OFF)
+    add_compile_options(-stdlib=libc++ -ftime-trace)
+    add_link_options(-stdlib=libc++)
+    add_fmt_module(fmt-module)
+  else ()
+    # Disable module scanning
+    set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
+  endif ()
+endif ()
+
 add_subdirectory(gtest)
 
 include(CheckSymbolExists)
 
 set(TEST_MAIN_SRC test-main.cc gtest-extra.cc gtest-extra.h util.cc)
 add_library(test-main STATIC ${TEST_MAIN_SRC})
-target_include_directories(test-main PUBLIC
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
-target_link_libraries(test-main gtest fmt)
+#XXX target_include_directories(test-main PUBLIC SYSTEM $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>)
+target_link_libraries(test-main PUBLIC gtest fmt::fmt)
 
 function(add_fmt_executable name)
   add_executable(${name} ${ARGN})
@@ -32,7 +58,7 @@ function(add_fmt_test name)
   set(sources ${name}.cc ${ADD_FMT_TEST_UNPARSED_ARGUMENTS})
   if (ADD_FMT_TEST_HEADER_ONLY)
     set(sources ${sources} ${TEST_MAIN_SRC} ../src/os.cc)
-    set(libs gtest fmt-header-only)
+    set(libs gtest fmt::fmt-header-only)
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
       set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wno-weak-vtables)
     endif ()
@@ -40,7 +66,7 @@ function(add_fmt_test name)
     set(libs test-main test-module)
     set_source_files_properties(${name}.cc PROPERTIES OBJECT_DEPENDS test-module)
   else ()
-    set(libs test-main fmt)
+    set(libs test-main fmt::fmt)
   endif ()
   add_fmt_executable(${name} ${sources})
   target_link_libraries(${name} ${libs})
@@ -60,6 +86,12 @@ function(add_fmt_test name)
 endfunction()
 
 if (FMT_MODULE)
+  if (PROJECT_IS_TOP_LEVEL)
+    add_executable(module-test test-main.cc)
+    target_link_libraries(module-test fmt-module test-main)
+    add_test(NAME module-test COMMAND module-test)
+  endif ()
+
   return ()
 endif ()
 
@@ -110,15 +142,16 @@ add_fmt_test(enforce-checks-test)
 target_compile_definitions(enforce-checks-test PRIVATE
                            -DFMT_ENFORCE_COMPILE_STRING)
 
+# FIXME: never reached? CK
 if (FMT_MODULE)
+  message(STATUS "FMT_MODULE: ${FMT_MODULE}")
   # The tests need {fmt} to be compiled as traditional library
   # because of visibility of implementation details.
   # If module support is present the module tests require a
   # test-only module to be built from {fmt}
   add_library(test-module OBJECT ${CMAKE_SOURCE_DIR}/src/fmt.cc)
   target_compile_features(test-module PUBLIC cxx_std_11)
-  target_include_directories(test-module PUBLIC
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
+  target_include_directories(test-module PUBLIC $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>)
   enable_module(test-module)
 
   add_fmt_test(module-test MODULE test-main.cc)
@@ -144,9 +177,8 @@ endif()
 if (NOT MSVC_STATIC_RUNTIME)
   add_fmt_executable(posix-mock-test
     posix-mock-test.cc ../src/format.cc ${TEST_MAIN_SRC})
-  target_include_directories(
-    posix-mock-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
-  target_link_libraries(posix-mock-test gtest)
+  #XXX target_include_directories( posix-mock-test PRIVATE ${CMAKE_SOURCE_DIR}/include)
+  target_link_libraries(posix-mock-test gtest fmt::fmt)
   if (FMT_PEDANTIC)
     target_compile_options(posix-mock-test PRIVATE ${PEDANTIC_COMPILE_FLAGS})
   endif ()
@@ -167,16 +199,14 @@ if (FMT_PEDANTIC)
   endif ()
   if (HAVE_FNO_EXCEPTIONS_FLAG)
     add_library(noexception-test ../src/format.cc noexception-test.cc)
-    target_include_directories(
-      noexception-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
+    target_include_directories(noexception-test PRIVATE ${CMAKE_SOURCE_DIR}/include)
     target_compile_options(noexception-test PRIVATE -fno-exceptions)
     target_compile_options(noexception-test PRIVATE ${PEDANTIC_COMPILE_FLAGS})
   endif ()
 
   # Test that the library compiles without locale.
   add_library(nolocale-test ../src/format.cc)
-  target_include_directories(
-    nolocale-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
+  target_include_directories(nolocale-test PRIVATE ${CMAKE_SOURCE_DIR}/include)
   target_compile_definitions(
     nolocale-test PRIVATE FMT_STATIC_THOUSANDS_SEPARATOR=1)
 endif ()

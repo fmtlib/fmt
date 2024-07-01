@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8...3.28)
+cmake_minimum_required(VERSION 3.8...3.30)
 
 # Fallback for using newer policies on CMake <3.12.
 if (${CMAKE_VERSION} VERSION_LESS 3.12)
@@ -72,6 +72,7 @@ function(add_module_library name)
   target_compile_definitions(${name} PRIVATE FMT_MODULE)
 
   if (FMT_USE_CMAKE_MODULES)
+    message(STATUS "FMT_USE_CMAKE_MODULES: ${FMT_USE_CMAKE_MODULES}")
     target_sources(${name} PUBLIC FILE_SET fmt TYPE CXX_MODULES
                    FILES ${sources})
   else()
@@ -171,7 +172,7 @@ option(FMT_UNICODE "Enable Unicode support." ON)
 
 if (FMT_TEST AND FMT_MODULE)
   # The tests require {fmt} to be compiled as traditional library
-  message(STATUS "Testing is incompatible with build mode 'module'.")
+  message(WARNING "Testing is incompatible with build mode 'module'.")
 endif ()
 set(FMT_SYSTEM_HEADERS_ATTRIBUTE "")
 if (FMT_SYSTEM_HEADERS)
@@ -230,17 +231,17 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
       -Wconversion -Wundef
       -Wno-ctor-dtor-privacy -Wno-format-nonliteral)
   if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6)
-      set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS}
-         -Wno-dangling-else -Wno-unused-local-typedefs)
+    set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS}
+       -Wno-dangling-else -Wno-unused-local-typedefs)
   endif ()
   if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
-      set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wdouble-promotion
-          -Wtrampolines -Wzero-as-null-pointer-constant -Wuseless-cast
-          -Wvector-operation-performance -Wsized-deallocation -Wshadow)
+    set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wdouble-promotion
+        -Wtrampolines -Wzero-as-null-pointer-constant -Wuseless-cast
+        -Wvector-operation-performance -Wsized-deallocation -Wshadow)
   endif ()
   if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 6.0)
-      set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wshift-overflow=2
-          -Wnull-dereference -Wduplicated-cond)
+    set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wshift-overflow=2
+        -Wnull-dereference -Wduplicated-cond)
   endif ()
   set(WERROR_FLAG -Werror)
 endif ()
@@ -440,6 +441,9 @@ if (FMT_INSTALL)
           NAMESPACE fmt::)
 
   install(FILES "${pkgconfig}" DESTINATION "${FMT_PKGCONFIG_DIR}")
+
+  # install the module source for later use with add_fmt_module()
+  install(FILES src/fmt.cc src/os.cc src/format.cc DESTINATION ${FMT_INC_DIR}/fmt/src)
 endif ()
 
 function(add_doc_target)
