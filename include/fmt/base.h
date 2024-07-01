@@ -1760,7 +1760,7 @@ template <typename Context> class basic_format_arg {
    * `vis(value)` will be called with the value of type `double`.
    */
   template <typename Visitor>
-  FMT_CONSTEXPR auto visit(Visitor&& vis) -> decltype(vis(0)) {
+  FMT_CONSTEXPR auto visit(Visitor&& vis) const -> decltype(vis(0)) {
     switch (type_) {
     case detail::type::none_type:
       break;
