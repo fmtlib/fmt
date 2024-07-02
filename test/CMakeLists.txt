@@ -44,10 +44,6 @@ function(add_fmt_test name)
   endif ()
   add_fmt_executable(${name} ${sources})
   target_link_libraries(${name} ${libs})
-  # use C++20 if C++20 is available for https://github.com/fmtlib/fmt/pull/4042
-  if (cxx_std_20 IN_LIST CMAKE_CXX_COMPILE_FEATURES)
-    target_compile_features(${name} PRIVATE cxx_std_20)
-  endif()
   # Define if certain C++ features can be used.
   if (FMT_PEDANTIC)
     target_compile_options(${name} PRIVATE ${PEDANTIC_COMPILE_FLAGS})
