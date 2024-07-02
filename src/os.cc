@@ -186,17 +186,13 @@ void buffered_file::close() {
 }
 
 int buffered_file::descriptor() const {
-#ifdef FMT_HAS_SYSTEM
   // fileno is a macro on OpenBSD.
+#if defined __OpenBSD__
 #  ifdef fileno
 #    undef fileno
 #  endif
-  int fd = FMT_POSIX_CALL(fileno(file_));
-#elif defined(_WIN32)
-  int fd = _fileno(file_);
-#else
-  int fd = fileno(file_);
 #endif
+  int fd = FMT_POSIX_CALL(fileno(file_));
   if (fd == -1)
     FMT_THROW(system_error(errno, FMT_STRING("cannot get file descriptor")));
   return fd;
