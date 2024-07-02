@@ -44,6 +44,7 @@ function(add_fmt_test name)
   endif ()
   add_fmt_executable(${name} ${sources})
   target_link_libraries(${name} ${libs})
+
   # Define if certain C++ features can be used.
   if (FMT_PEDANTIC)
     target_compile_options(${name} PRIVATE ${PEDANTIC_COMPILE_FLAGS})
