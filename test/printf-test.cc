@@ -7,7 +7,7 @@
 
 #include "fmt/printf.h"
 // include <format> if possible for https://github.com/fmtlib/fmt/pull/4042
-#if defined(__has_include) &&  __has_include(<format>)
+#if FMT_HAS_INCLUDE(<format>) && FMT_CPLUSPLUS > 201703L
 #  include <format>
 #endif
 
