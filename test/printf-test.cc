@@ -6,6 +6,10 @@
 // For the license information refer to format.h.
 
 #include "fmt/printf.h"
+// include <format> if possible for https://github.com/fmtlib/fmt/pull/4042
+#if FMT_HAS_INCLUDE(<format>) && FMT_CPLUSPLUS > 201703L
+#  include <format>
+#endif
 
 #include <cctype>
 #include <climits>
