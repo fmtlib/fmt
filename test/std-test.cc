@@ -66,10 +66,34 @@ TEST(std_test, thread_id) {
 }
 
 TEST(std_test, complex) {
+  using limits = std::numeric_limits<double>;
+  EXPECT_EQ(fmt::format("{}", std::complex<double>(1, limits::quiet_NaN())),
+            "(1+nan i)");
+  EXPECT_EQ(fmt::format("{}", std::complex<double>(1, -limits::infinity())),
+            "(1-inf i)");
+
+  EXPECT_EQ(fmt::format("{}", std::complex<int>(1, 2)), "(1+2i)");
+
   EXPECT_EQ(fmt::format("{}", std::complex<double>(1, 2.2)), "(1+2.2i)");
+  EXPECT_EQ(fmt::format("{}", std::complex<double>(1, -2.2)), "(1-2.2i)");
   EXPECT_EQ(fmt::format("{}", std::complex<double>(0, 2.2)), "2.2i");
+  EXPECT_EQ(fmt::format("{}", std::complex<double>(0, -2.2)), "-2.2i");
+
+  EXPECT_EQ(fmt::format("{:+}", std::complex<double>(0, 2.2)), "+2.2i");
+  EXPECT_EQ(fmt::format("{:+}", std::complex<double>(0, -2.2)), "-2.2i");
+  EXPECT_EQ(fmt::format("{:+}", std::complex<double>(1, -2.2)), "(+1-2.2i)");
+  EXPECT_EQ(fmt::format("{:+}", std::complex<double>(1, 2.2)), "(+1+2.2i)");
+  EXPECT_EQ(fmt::format("{: }", std::complex<double>(1, 2.2)), "( 1+2.2i)");
+  EXPECT_EQ(fmt::format("{: }", std::complex<double>(1, -2.2)), "( 1-2.2i)");
+
   EXPECT_EQ(fmt::format("{:>20.2f}", std::complex<double>(1, 2.2)),
             "        (1.00+2.20i)");
+  EXPECT_EQ(fmt::format("{:<20.2f}", std::complex<double>(1, 2.2)),
+            "(1.00+2.20i)        ");
+  EXPECT_EQ(fmt::format("{:<20.2f}", std::complex<double>(1, -2.2)),
+            "(1.00-2.20i)        ");
+  EXPECT_EQ(fmt::format("{:<{}.{}f}", std::complex<double>(1, -2.2), 20, 2),
+            "(1.00-2.20i)        ");
 }
 
 #ifdef __cpp_lib_source_location
