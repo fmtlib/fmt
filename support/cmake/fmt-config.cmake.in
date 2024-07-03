@@ -7,8 +7,8 @@ endif ()
 check_required_components(fmt)
 
 function(add_fmt_module NAME)
-    #FIXME: set(FMT_ROOT @CMAKE_INSTALL_PREFIX@)
-    set(FMT_ROOT @PROJECT_SOURCE_DIR@)
+    set(FMT_ROOT @CMAKE_INSTALL_PREFIX@)
+    #XXX set(FMT_ROOT @PROJECT_SOURCE_DIR@)
     message(STATUS "FMT_ROOT is: ${FMT_ROOT}")
     add_library(${NAME})
     target_include_directories(${NAME} PUBLIC ${FMT_ROOT}/include)
@@ -17,15 +17,19 @@ function(add_fmt_module NAME)
                                            -Wno-unknown-warning-option
     )
 
+    #FIXME: target_compile_definitions(${NAME} PUBLIC FMT_MODULE FMT_ATTACH_TO_GLOBAL_MODULE)
+    target_compile_definitions(${NAME} PUBLIC FMT_MODULE)
+
     if (DEFINED CPPdefinitions)
         target_compile_definitions(${NAME} PUBLIC ${CPPdefinitions})
     endif ()
+
     # cmake-format: off
     target_sources(${NAME} PUBLIC
         FILE_SET modules_public TYPE CXX_MODULES
             BASE_DIRS ${FMT_ROOT}
-            #FIXME: FILES ${FMT_ROOT}/include/fmt/src/fmt.cc
-            FILES ${FMT_ROOT}/src/fmt.cc
+            FILES ${FMT_ROOT}/include/fmt/src/fmt.cc
+            #XXX FILES ${FMT_ROOT}/src/fmt.cc
     )
     # cmake-format: on
 endfunction()
