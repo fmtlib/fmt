@@ -1,32 +1,3 @@
-cmake_minimum_required(VERSION 3.28.4...3.30)
-
-if (NOT FMT_PEDANTIC AND NOT MSVC AND NOT MINGW)
-  project(FMT_TEST CXX)
-
-  if (PROJECT_IS_TOP_LEVEL)
-    enable_testing()
-    find_package(fmt 10.2.2 REQUIRED)
-
-    if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.28.4 AND
-        CMAKE_GENERATOR STREQUAL "Ninja")
-      set(FMT_MODULE TRUE)
-    endif ()
-
-    if (FMT_MODULE)
-      set(CMAKE_CXX_SCAN_FOR_MODULES ON)
-      # Always use libc++
-      set(CMAKE_CXX_STANDARD 23)
-      set(CMAKE_CXX_EXTENSIONS OFF)
-      add_compile_options(-stdlib=libc++ -ftime-trace)
-      add_link_options(-stdlib=libc++)
-      add_fmt_module(fmt)
-    else ()
-      # Disable module scanning
-      set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
-    endif ()
-  endif ()
-endif ()
-
 add_subdirectory(gtest)
 
 include(CheckSymbolExists)
@@ -35,7 +6,7 @@ set(TEST_MAIN_SRC test-main.cc gtest-extra.cc gtest-extra.h util.cc)
 add_library(test-main STATIC ${TEST_MAIN_SRC})
 target_include_directories(test-main PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
-target_link_libraries(test-main PUBLIC gtest fmt)
+target_link_libraries(test-main PUBLIC gtest fmt::fmt)
 
 function(add_fmt_executable name)
   add_executable(${name} ${ARGN})
@@ -92,12 +63,6 @@ endfunction()
 
 if (FMT_MODULE)
   message(STATUS "FMT_MODULE: ${FMT_MODULE}")
-
-  if (PROJECT_IS_TOP_LEVEL)
-    add_executable(module-test test-main.cc)
-    target_link_libraries(module-test test-main)
-    add_test(NAME module-test COMMAND module-test)
-  endif ()
 
   return ()
 endif ()

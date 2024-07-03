@@ -7,10 +7,11 @@ endif ()
 check_required_components(fmt)
 
 function(add_fmt_module NAME)
-    set(FMT_ROOT @CMAKE_INSTALL_PREFIX@)
+    #FIXME: set(FMT_ROOT @CMAKE_INSTALL_PREFIX@)
+    set(FMT_ROOT @PROJECT_SOURCE_DIR@)
     message(STATUS "FMT_ROOT is: ${FMT_ROOT}")
     add_library(${NAME})
-    target_include_directories(${NAME} PRIVATE ${FMT_ROOT}/include)
+    target_include_directories(${NAME} PUBLIC ${FMT_ROOT}/include)
     target_compile_features(${NAME} PUBLIC cxx_std_23)
     target_compile_options(${NAME} PRIVATE -Wno-include-angled-in-module-purview
                                            -Wno-unknown-warning-option
@@ -23,7 +24,8 @@ function(add_fmt_module NAME)
     target_sources(${NAME} PUBLIC
         FILE_SET modules_public TYPE CXX_MODULES
             BASE_DIRS ${FMT_ROOT}
-            FILES ${FMT_ROOT}/include/fmt/src/fmt.cc
+            #FIXME: FILES ${FMT_ROOT}/include/fmt/src/fmt.cc
+            FILES ${FMT_ROOT}/src/fmt.cc
     )
     # cmake-format: on
 endfunction()
