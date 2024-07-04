@@ -1,3 +1,17 @@
+# 11.0.1 - TBD
+
+- Fixed version number in the inline namespace
+  (https://github.com/fmtlib/fmt/issues/4047).
+
+- Fixed disabling Unicode support via CMake
+  (https://github.com/fmtlib/fmt/issues/4051).
+
+- Fixed deprecated `visit_format_arg` (https://github.com/fmtlib/fmt/pull/4043).
+  Thanks @nebkat.
+
+- Removed a redundant check in the formatter for `std::expected`
+  (https://github.com/fmtlib/fmt/pull/4040). Thanks @phprus.
+
 # 11.0.0 - 2024-07-01
 
 - Added `fmt/base.h` which provides a subset of the API with minimal include
