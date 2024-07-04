@@ -355,10 +355,14 @@ endif ()
 add_library(fmt-header-only INTERFACE)
 add_library(fmt::fmt-header-only ALIAS fmt-header-only)
 
-if (MSVC AND FMT_UNICODE)
+if (NOT MSVC)
+  # Unicode is always supported on compilers other than MSVC.
+elseif (FMT_UNICODE)
   # Unicode support requires compiling with /utf-8.
   target_compile_options(fmt PUBLIC $<$<COMPILE_LANGUAGE:CXX>:/utf-8>)
   target_compile_options(fmt-header-only INTERFACE $<$<COMPILE_LANGUAGE:CXX>:/utf-8>)
+else ()
+  target_compile_definitions(fmt PUBLIC FMT_UNICODE=0)
 endif ()
 
 target_compile_definitions(fmt-header-only INTERFACE FMT_HEADER_ONLY=1)
