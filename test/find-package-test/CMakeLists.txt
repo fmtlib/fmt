@@ -6,7 +6,9 @@ find_package(FMT 11.0.0 REQUIRED HINTS ${FMT_DIR})
 
 if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.28.4 AND
     CMAKE_GENERATOR STREQUAL "Ninja" AND
-    CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND
+    CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 17.0
+    )
   set(FMT_MODULE TRUE)
 endif ()
 
@@ -28,8 +30,9 @@ if (FMT_MODULE)
   set(CMAKE_CXX_EXTENSIONS OFF)
   add_compile_options(-stdlib=libc++)
   add_link_options(-stdlib=libc++)
-  add_fmt_module(fmt-module)
+  #TODO: add_fmt_module(fmt-module)
 
   add_executable(module-test main.cc)
-  target_link_libraries(module-test fmt-module)
+  target_compile_definitions(module-test PRIVATE FMT_MODULE)
+  target_link_libraries(module-test fmt::fmt)
 endif ()
