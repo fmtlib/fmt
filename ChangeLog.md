@@ -1,4 +1,4 @@
-# 11.0.1 - TBD
+# 11.0.1 - 2024-07-05
 
 - Fixed version number in the inline namespace
   (https://github.com/fmtlib/fmt/issues/4047).
