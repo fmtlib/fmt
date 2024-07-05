@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.8...3.30)
 
 project(fmt-test)
 
-find_package(FMT 11.0.0 REQUIRED HINTS ${FMT_DIR})
+find_package(FMT 11.0.1 REQUIRED HINTS ${FMT_DIR})
 
 if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.28.4 AND
     CMAKE_GENERATOR STREQUAL "Ninja" AND
