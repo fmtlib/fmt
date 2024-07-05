@@ -145,8 +145,9 @@ def release(args):
         first_section.pop(0)
 
     ns_version = None
-    for line in fileinput.input(os.path.join(fmt_repo.dir, 'base.h')):
-        m = re.match(r'inline namespace v(.*)', line)
+    base_h_path = os.path.join(fmt_repo.dir, 'include', 'fmt', 'base.h')
+    for line in fileinput.input(base_h_path):
+        m = re.match(r'\s*inline namespace v(.*) .*', line)
         if m:
             ns_version = m.group(1)
             break
