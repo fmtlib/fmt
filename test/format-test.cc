@@ -2420,3 +2420,25 @@ TEST(format_test, formatter_overrides_implicit_conversion) {
   EXPECT_EQ(fmt::format("{}", convertible_to_int()), "x");
   EXPECT_EQ(fmt::format("{}", convertible_to_cstring()), "y");
 }
+
+struct ustring {
+  using value_type = unsigned;
+
+  auto find_first_of(value_type, size_t) const -> size_t;
+
+  auto data() const -> const char*;
+  auto size() const -> size_t;
+};
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<ustring> : formatter<std::string> {
+  auto format(const ustring&, format_context& ctx) const
+      -> decltype(ctx.out()) {
+    return formatter<std::string>::format("ustring", ctx);
+  }
+};
+FMT_END_NAMESPACE
+
+TEST(format_test, ustring) {
+  EXPECT_EQ(fmt::format("{}", ustring()), "ustring");
+}
