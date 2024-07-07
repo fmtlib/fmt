@@ -1,3 +1,8 @@
+# 11.0.2 - TBD
+
+- Made `Glib::ustring` not be confused with `std::string`
+  (https://github.com/fmtlib/fmt/issues/4052).
+
 # 11.0.1 - 2024-07-05
 
 - Fixed version number in the inline namespace
