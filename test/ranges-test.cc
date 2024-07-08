@@ -752,22 +752,34 @@ TEST(ranges_test, std_istream_iterator_join) {
   EXPECT_EQ("1, 2, 3, 4, 5", fmt::format("{}", fmt::join(first, last, ", ")));
 }
 
-TEST(ranges_test, movable_only_istream_iter_join) {
-  // Mirrors C++20 std::ranges::basic_istream_view::iterator.
-  struct noncopyable_istream_iterator : std::istream_iterator<int> {
-    explicit noncopyable_istream_iterator(std::istringstream& iss)
-        : std::istream_iterator<int>{iss} {}
-    noncopyable_istream_iterator(const noncopyable_istream_iterator&) = delete;
-    noncopyable_istream_iterator(noncopyable_istream_iterator&&) = default;
-  };
-  static_assert(
-      !std::is_copy_constructible<noncopyable_istream_iterator>::value, "");
+// Mirrors C++20 std::ranges::basic_istream_view::iterator.
+struct noncopyable_istream_iterator : std::istream_iterator<int> {
+  using base = std::istream_iterator<int>;
+  explicit noncopyable_istream_iterator(std::istringstream& iss) : base{iss} {}
+  noncopyable_istream_iterator(const noncopyable_istream_iterator&) = delete;
+  noncopyable_istream_iterator(noncopyable_istream_iterator&&) = default;
+};
+static_assert(!std::is_copy_constructible<noncopyable_istream_iterator>::value,
+              "");
 
+TEST(ranges_test, movable_only_istream_iter_join) {
   auto&& iss = std::istringstream("1 2 3 4 5");
   auto first = noncopyable_istream_iterator(iss);
   auto last = std::istream_iterator<int>();
   EXPECT_EQ("1, 2, 3, 4, 5",
             fmt::format("{}", fmt::join(std::move(first), last, ", ")));
+}
+
+struct movable_iter_range {
+  std::istringstream iss{"1 2 3 4 5"};
+  noncopyable_istream_iterator begin() {
+    return noncopyable_istream_iterator{iss};
+  }
+  std::istream_iterator<int> end() { return {}; }
+};
+
+TEST(ranges_test, movable_only_istream_iter_join2) {
+  EXPECT_EQ("[1, 2, 3, 4, 5]", fmt::format("{}", movable_iter_range{}));
 }
 
 struct not_range {
