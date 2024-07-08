@@ -30,7 +30,7 @@ namespace detail {
 namespace {
 struct file_access_tag {};
 }  // namespace
-template <typename Tag, typename BufType, FILE* BufType::*FileMemberPtr>
+template <typename Tag, typename BufType, FILE* BufType::* FileMemberPtr>
 class file_access {
   friend auto get_file(BufType& obj) -> FILE* { return obj.*FileMemberPtr; }
 };
@@ -41,8 +41,8 @@ template class file_access<file_access_tag, std::filebuf,
 auto get_file(std::filebuf&) -> FILE*;
 #endif
 
-inline auto write_ostream_unicode(std::ostream& os, fmt::string_view data)
-    -> bool {
+inline auto write_ostream_unicode(std::ostream& os,
+                                  fmt::string_view data) -> bool {
   FILE* f = nullptr;
 #if FMT_MSC_VERSION && FMT_USE_RTTI
   if (auto* buf = dynamic_cast<std::filebuf*>(os.rdbuf()))
@@ -129,8 +129,8 @@ template <typename T, typename Char>
 struct formatter<detail::streamed_view<T>, Char>
     : basic_ostream_formatter<Char> {
   template <typename Context>
-  auto format(detail::streamed_view<T> view, Context& ctx) const
-      -> decltype(ctx.out()) {
+  auto format(detail::streamed_view<T> view,
+              Context& ctx) const -> decltype(ctx.out()) {
     return basic_ostream_formatter<Char>::format(view.value, ctx);
   }
 };

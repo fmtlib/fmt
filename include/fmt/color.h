@@ -155,7 +155,7 @@ enum class color : uint32_t {
   white_smoke = 0xF5F5F5,              // rgb(245,245,245)
   yellow = 0xFFFF00,                   // rgb(255,255,0)
   yellow_green = 0x9ACD32              // rgb(154,205,50)
-};                                     // enum class color
+};  // enum class color
 
 enum class terminal_color : uint8_t {
   black = 30,
@@ -257,8 +257,8 @@ class text_style {
     return *this;
   }
 
-  friend FMT_CONSTEXPR auto operator|(text_style lhs, const text_style& rhs)
-      -> text_style {
+  friend FMT_CONSTEXPR auto operator|(text_style lhs,
+                                      const text_style& rhs) -> text_style {
     return lhs |= rhs;
   }
 
@@ -322,8 +322,8 @@ FMT_CONSTEXPR inline auto bg(detail::color_type background) noexcept
   return text_style(false, background);
 }
 
-FMT_CONSTEXPR inline auto operator|(emphasis lhs, emphasis rhs) noexcept
-    -> text_style {
+FMT_CONSTEXPR inline auto operator|(emphasis lhs,
+                                    emphasis rhs) noexcept -> text_style {
   return text_style(lhs) | rhs;
 }
 
@@ -405,8 +405,8 @@ template <typename Char> struct ansi_color_escape {
     out[2] = static_cast<Char>('0' + c % 10);
     out[3] = static_cast<Char>(delimiter);
   }
-  static FMT_CONSTEXPR auto has_emphasis(emphasis em, emphasis mask) noexcept
-      -> bool {
+  static FMT_CONSTEXPR auto has_emphasis(emphasis em,
+                                         emphasis mask) noexcept -> bool {
     return static_cast<uint8_t>(em) & static_cast<uint8_t>(mask);
   }
 };
@@ -502,8 +502,8 @@ void print(const text_style& ts, format_string<T...> fmt, T&&... args) {
   return print(stdout, ts, fmt, std::forward<T>(args)...);
 }
 
-inline auto vformat(const text_style& ts, string_view fmt, format_args args)
-    -> std::string {
+inline auto vformat(const text_style& ts, string_view fmt,
+                    format_args args) -> std::string {
   auto buf = memory_buffer();
   detail::vformat_to(buf, ts, fmt, args);
   return fmt::to_string(buf);
@@ -522,8 +522,8 @@ inline auto vformat(const text_style& ts, string_view fmt, format_args args)
  * ```
  */
 template <typename... T>
-inline auto format(const text_style& ts, format_string<T...> fmt, T&&... args)
-    -> std::string {
+inline auto format(const text_style& ts, format_string<T...> fmt,
+                   T&&... args) -> std::string {
   return fmt::vformat(ts, fmt, fmt::make_format_args(args...));
 }
 
@@ -557,8 +557,8 @@ inline auto format_to(OutputIt out, const text_style& ts,
 template <typename T, typename Char>
 struct formatter<detail::styled_arg<T>, Char> : formatter<T, Char> {
   template <typename FormatContext>
-  auto format(const detail::styled_arg<T>& arg, FormatContext& ctx) const
-      -> decltype(ctx.out()) {
+  auto format(const detail::styled_arg<T>& arg,
+              FormatContext& ctx) const -> decltype(ctx.out()) {
     const auto& ts = arg.style;
     const auto& value = arg.value;
     auto out = ctx.out();

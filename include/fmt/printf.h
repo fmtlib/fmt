@@ -218,8 +218,8 @@ class printf_width_handler {
 // Workaround for a bug with the XL compiler when initializing
 // printf_arg_formatter's base class.
 template <typename Char>
-auto make_arg_formatter(basic_appender<Char> iter, format_specs& s)
-    -> arg_formatter<Char> {
+auto make_arg_formatter(basic_appender<Char> iter,
+                        format_specs& s) -> arg_formatter<Char> {
   return {iter, s, locale_ref()};
 }
 
@@ -364,8 +364,8 @@ auto parse_header(const Char*& it, const Char* end, format_specs& specs,
   return arg_index;
 }
 
-inline auto parse_printf_presentation_type(char c, type t, bool& upper)
-    -> presentation_type {
+inline auto parse_printf_presentation_type(char c, type t,
+                                           bool& upper) -> presentation_type {
   using pt = presentation_type;
   constexpr auto integral_set = sint_set | uint_set | bool_set | char_set;
   switch (c) {

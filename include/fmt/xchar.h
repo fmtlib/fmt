@@ -92,35 +92,35 @@ constexpr auto make_wformat_args(T&... args)
 
 inline namespace literals {
 #if FMT_USE_USER_DEFINED_LITERALS && !FMT_USE_NONTYPE_TEMPLATE_ARGS
-constexpr auto operator""_a(const wchar_t* s, size_t)
-    -> detail::udl_arg<wchar_t> {
+constexpr auto operator""_a(const wchar_t* s,
+                            size_t) -> detail::udl_arg<wchar_t> {
   return {s};
 }
 #endif
 }  // namespace literals
 
 template <typename It, typename Sentinel>
-auto join(It begin, Sentinel end, wstring_view sep)
-    -> join_view<It, Sentinel, wchar_t> {
+auto join(It begin, Sentinel end,
+          wstring_view sep) -> join_view<It, Sentinel, wchar_t> {
   return {begin, end, sep};
 }
 
 template <typename Range>
-auto join(Range&& range, wstring_view sep)
-    -> join_view<detail::iterator_t<Range>, detail::sentinel_t<Range>,
-                 wchar_t> {
+auto join(Range&& range,
+          wstring_view sep) -> join_view<detail::iterator_t<Range>,
+                                         detail::sentinel_t<Range>, wchar_t> {
   return join(std::begin(range), std::end(range), sep);
 }
 
 template <typename T>
-auto join(std::initializer_list<T> list, wstring_view sep)
-    -> join_view<const T*, const T*, wchar_t> {
+auto join(std::initializer_list<T> list,
+          wstring_view sep) -> join_view<const T*, const T*, wchar_t> {
   return join(std::begin(list), std::end(list), sep);
 }
 
 template <typename... T>
-auto join(const std::tuple<T...>& tuple, basic_string_view<wchar_t> sep)
-    -> tuple_join_view<wchar_t, T...> {
+auto join(const std::tuple<T...>& tuple,
+          basic_string_view<wchar_t> sep) -> tuple_join_view<wchar_t, T...> {
   return {tuple, sep};
 }
 
@@ -139,8 +139,8 @@ auto format(wformat_string<T...> fmt, T&&... args) -> std::wstring {
 }
 
 template <typename OutputIt, typename... T>
-auto format_to(OutputIt out, wformat_string<T...> fmt, T&&... args)
-    -> OutputIt {
+auto format_to(OutputIt out, wformat_string<T...> fmt,
+               T&&... args) -> OutputIt {
   return vformat_to(out, fmt::wstring_view(fmt),
                     fmt::make_wformat_args(args...));
 }
@@ -170,8 +170,8 @@ template <typename Locale, typename S, typename... T,
           typename Char = detail::format_string_char_t<S>,
           FMT_ENABLE_IF(detail::is_locale<Locale>::value&&
                             detail::is_exotic_char<Char>::value)>
-inline auto format(const Locale& loc, const S& format_str, T&&... args)
-    -> std::basic_string<Char> {
+inline auto format(const Locale& loc, const S& format_str,
+                   T&&... args) -> std::basic_string<Char> {
   return detail::vformat(
       loc, detail::to_string_view(format_str),
       fmt::make_format_args<buffered_context<Char>>(args...));
@@ -241,8 +241,8 @@ template <typename OutputIt, typename S, typename... T,
           typename Char = detail::format_string_char_t<S>,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value&&
                             detail::is_exotic_char<Char>::value)>
-inline auto format_to_n(OutputIt out, size_t n, const S& fmt, T&&... args)
-    -> format_to_n_result<OutputIt> {
+inline auto format_to_n(OutputIt out, size_t n, const S& fmt,
+                        T&&... args) -> format_to_n_result<OutputIt> {
   return vformat_to_n(out, n, fmt::basic_string_view<Char>(fmt),
                       fmt::make_format_args<buffered_context<Char>>(args...));
 }
@@ -287,16 +287,16 @@ template <typename... T> void println(wformat_string<T...> fmt, T&&... args) {
   return print(L"{}\n", fmt::format(fmt, std::forward<T>(args)...));
 }
 
-inline auto vformat(const text_style& ts, wstring_view fmt, wformat_args args)
-    -> std::wstring {
+inline auto vformat(const text_style& ts, wstring_view fmt,
+                    wformat_args args) -> std::wstring {
   auto buf = wmemory_buffer();
   detail::vformat_to(buf, ts, fmt, args);
   return fmt::to_string(buf);
 }
 
 template <typename... T>
-inline auto format(const text_style& ts, wformat_string<T...> fmt, T&&... args)
-    -> std::wstring {
+inline auto format(const text_style& ts, wformat_string<T...> fmt,
+                   T&&... args) -> std::wstring {
   return fmt::vformat(ts, fmt, fmt::make_wformat_args(args...));
 }
 

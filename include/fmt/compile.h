@@ -22,8 +22,8 @@ FMT_EXPORT class compiled_string {};
 namespace detail {
 
 template <typename T, typename InputIt>
-FMT_CONSTEXPR inline auto copy(InputIt begin, InputIt end, counting_iterator it)
-    -> counting_iterator {
+FMT_CONSTEXPR inline auto copy(InputIt begin, InputIt end,
+                               counting_iterator it) -> counting_iterator {
   return it + (end - begin);
 }
 
@@ -484,8 +484,8 @@ FMT_CONSTEXPR OutputIt format_to(OutputIt out, const S&, Args&&... args) {
 
 template <typename OutputIt, typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
-auto format_to_n(OutputIt out, size_t n, const S& fmt, Args&&... args)
-    -> format_to_n_result<OutputIt> {
+auto format_to_n(OutputIt out, size_t n, const S& fmt,
+                 Args&&... args) -> format_to_n_result<OutputIt> {
   using traits = detail::fixed_buffer_traits;
   auto buf = detail::iterator_buffer<OutputIt, char, traits>(out, n);
   fmt::format_to(std::back_inserter(buf), fmt, std::forward<Args>(args)...);
@@ -494,8 +494,8 @@ auto format_to_n(OutputIt out, size_t n, const S& fmt, Args&&... args)
 
 template <typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
-FMT_CONSTEXPR20 auto formatted_size(const S& fmt, const Args&... args)
-    -> size_t {
+FMT_CONSTEXPR20 auto formatted_size(const S& fmt,
+                                    const Args&... args) -> size_t {
   return fmt::format_to(detail::counting_iterator(), fmt, args...).count();
 }
 
