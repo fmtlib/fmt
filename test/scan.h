@@ -192,7 +192,10 @@ class file_scan_buffer final : public scan_buffer {
     flockfile(f);
     fill();
   }
-  ~file_scan_buffer() { funlockfile(file_); }
+  ~file_scan_buffer() {
+    FILE* f = file_;
+    funlockfile(f);
+  }
 };
 }  // namespace detail
 
