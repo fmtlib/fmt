@@ -1449,6 +1449,13 @@ inline void funlockfile(FILE* f) { _unlock_file(f); }
 inline int getc_unlocked(FILE* f) { return _fgetc_nolock(f); }
 #endif
 
+template <typename F = FILE, typename Enable = void>
+struct has_flockfile : std::false_type {};
+
+template <typename F>
+struct has_flockfile<F, void_t<decltype(flockfile(static_cast<F*>(nullptr)))>>
+    : std::true_type {};
+
 // A FILE wrapper. F is FILE defined as a template parameter to make system API
 // detection work.
 template <typename F> class file_base {
@@ -1619,7 +1626,15 @@ inline auto get_file(FILE* f, ...) -> fallback_file<FILE> { return f; }
 
 using file_ref = decltype(get_file(static_cast<FILE*>(nullptr), 0));
 
+template <typename F = FILE, typename Enable = void>
 class file_print_buffer : public buffer<char> {
+ public:
+  explicit file_print_buffer(F*) : buffer(nullptr, size_t()) {}
+};
+
+template <typename F>
+class file_print_buffer<F, enable_if_t<has_flockfile<F>::value>>
+    : public buffer<char> {
  private:
   file_ref file_;
 
@@ -1634,7 +1649,7 @@ class file_print_buffer : public buffer<char> {
   }
 
  public:
-  explicit file_print_buffer(FILE* f) : buffer(grow, size_t()), file_(f) {
+  explicit file_print_buffer(F* f) : buffer(grow, size_t()), file_(f) {
     flockfile(f);
     file_.init_buffer();
     auto buf = file_.get_write_buffer();
@@ -1692,8 +1707,9 @@ FMT_FUNC void vprint_buffered(std::FILE* f, string_view fmt, format_args args) {
 }
 
 FMT_FUNC void vprint(std::FILE* f, string_view fmt, format_args args) {
-  if (!detail::file_ref(f).is_buffered()) return vprint_buffered(f, fmt, args);
-  auto&& buffer = detail::file_print_buffer(f);
+  if (!detail::file_ref(f).is_buffered() || !detail::has_flockfile<>())
+    return vprint_buffered(f, fmt, args);
+  auto&& buffer = detail::file_print_buffer<>(f);
   return detail::vformat_to(buffer, fmt, args);
 }
 
