@@ -3029,7 +3029,8 @@ FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
  *     fmt::print(stderr, "Don't {}!", "panic");
  */
 template <typename... T>
-FMT_INLINE void print(FILE* f, format_string<T...> fmt, T&&... args) {
+FMT_INLINE void print(FILE* f,
+format_string<T...> fmt, T&&... args) {
   const auto& vargs = fmt::make_format_args(args...);
   if (!detail::use_utf8()) return detail::vprint_mojibake(f, fmt, vargs);
   return detail::is_locking<T...>() ? vprint_buffered(f, fmt, vargs)
