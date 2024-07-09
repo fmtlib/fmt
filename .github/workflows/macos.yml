@@ -11,10 +11,13 @@ jobs:
       matrix:
         os: [macos-13, macos-14]
         build_type: [Debug, Release]
-        std: [11, 17, 20]
+        std: [11, 14, 17, 20, 23]
         exclude:
-          - { os: macos-13, std: 11 }
-          - { os: macos-13, std: 17 }
+          - { os: macos-14, std: 11 }
+          - { os: macos-14, std: 14 }
+          - { os: macos-14, std: 17 }
+          - { os: macos-13, std: 20 }
+          - { os: macos-13, std: 23 }
         include:
           - shared: -DBUILD_SHARED_LIBS=ON
 
@@ -30,6 +33,20 @@ jobs:
       run: sudo xcode-select -s "/Applications/Xcode_14.3.app"
       if: ${{ matrix.os == 'macos-13' }}
 
+    - name: Install Ninja
+      if: matrix.os == 'macos-13'
+      run: |
+        brew install cmake ninja
+
+    - name: Install llvm-18
+      if: matrix.os == 'macos-14'
+      run: |
+        brew install gcc llvm cmake ninja
+        export PATH="$(brew --prefix llvm@18)/bin:$PATH" && echo "PATH=$PATH" >> $GITHUB_ENV
+        export LDFLAGS="-L$(brew --prefix llvm@18)/lib/c++ $LDFLAGS" && echo "LDFLAGS=$LDFLAGS" >> $GITHUB_ENV
+        echo "CXX=clang++" >> $GITHUB_ENV
+        echo "CC=clang-18" >> $GITHUB_ENV
+
     - name: Create Build Environment
       run: cmake -E make_directory ${{runner.workspace}}/build
 
@@ -39,7 +56,8 @@ jobs:
         cmake -DCMAKE_BUILD_TYPE=${{matrix.build_type}} ${{matrix.shared}} \
               -DCMAKE_CXX_STANDARD=${{matrix.std}} \
               -DCMAKE_CXX_VISIBILITY_PRESET=hidden -DCMAKE_VISIBILITY_INLINES_HIDDEN=ON \
-              -DFMT_DOC=OFF -DFMT_PEDANTIC=ON -DFMT_WERROR=ON $GITHUB_WORKSPACE
+              -DFMT_DOC=OFF -DFMT_PEDANTIC=ON -DFMT_WERROR=ON -G Ninja \
+              $GITHUB_WORKSPACE
 
     - name: Build
       working-directory: ${{runner.workspace}}/build

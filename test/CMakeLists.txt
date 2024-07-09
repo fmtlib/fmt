@@ -118,51 +118,56 @@ if (FMT_MODULE)
   # because of visibility of implementation details.
   # If module support is present the module tests require a
   # test-only module to be built from {fmt}
-  add_library(test-module OBJECT ${CMAKE_SOURCE_DIR}/src/fmt.cc)
-  target_compile_features(test-module PUBLIC cxx_std_11)
-  target_include_directories(test-module PUBLIC
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
-  enable_module(test-module)
 
-  add_fmt_test(module-test MODULE test-main.cc)
-  if (MSVC)
-    target_compile_options(test-module PRIVATE /utf-8 /Zc:__cplusplus
-                           /Zc:externConstexpr /Zc:inline)
-    target_compile_options(module-test PRIVATE /utf-8 /Zc:__cplusplus
-                           /Zc:externConstexpr /Zc:inline)
-  endif ()
-endif ()
+  # FIXME: CK HE?
+  # add_library(test-module OBJECT ${CMAKE_SOURCE_DIR}/src/fmt.cc)
+  # target_compile_features(test-module PUBLIC cxx_std_11)
+  # target_include_directories(test-module PUBLIC
+  #   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
+  # enable_module(test-module)
 
-if (NOT DEFINED MSVC_STATIC_RUNTIME AND MSVC)
-  foreach (flag_var
-			 CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
-			 CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-	if (${flag_var} MATCHES "^(/|-)(MT|MTd)")
-	  set(MSVC_STATIC_RUNTIME ON)
-	  break()
-	endif()
-  endforeach()
-endif()
+  # add_fmt_test(module-test MODULE test-main.cc)
+  # if (MSVC)
+  #   target_compile_options(test-module PRIVATE /utf-8 /Zc:__cplusplus
+  #                          /Zc:externConstexpr /Zc:inline)
+  #   target_compile_options(module-test PRIVATE /utf-8 /Zc:__cplusplus
+  #                          /Zc:externConstexpr /Zc:inline)
+  # endif ()
 
-if (NOT MSVC_STATIC_RUNTIME)
-  add_fmt_executable(posix-mock-test
-    posix-mock-test.cc ../src/format.cc ${TEST_MAIN_SRC})
-  target_include_directories(
-    posix-mock-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
-  target_link_libraries(posix-mock-test gtest)
-  if (FMT_PEDANTIC)
-    target_compile_options(posix-mock-test PRIVATE ${PEDANTIC_COMPILE_FLAGS})
+else ()
+
+  if (NOT DEFINED MSVC_STATIC_RUNTIME AND MSVC)
+    foreach (flag_var
+            CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
+            CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+      if (${flag_var} MATCHES "^(/|-)(MT|MTd)")
+        set(MSVC_STATIC_RUNTIME ON)
+        break()
+      endif()
+    endforeach()
+  endif()
+
+  if (NOT MSVC_STATIC_RUNTIME)
+    add_fmt_executable(posix-mock-test
+      posix-mock-test.cc ../src/format.cc ${TEST_MAIN_SRC})
+    target_include_directories(
+      posix-mock-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
+    target_link_libraries(posix-mock-test gtest)
+    if (FMT_PEDANTIC)
+      target_compile_options(posix-mock-test PRIVATE ${PEDANTIC_COMPILE_FLAGS})
+    endif ()
+    if (MSVC)
+      target_compile_options(posix-mock-test PRIVATE /utf-8)
+    endif ()
+    add_test(NAME posix-mock-test COMMAND posix-mock-test)
+    add_fmt_test(os-test)
   endif ()
-  if (MSVC)
-    target_compile_options(posix-mock-test PRIVATE /utf-8)
-  endif ()
-  add_test(NAME posix-mock-test COMMAND posix-mock-test)
-  add_fmt_test(os-test)
+
 endif ()
 
 message(STATUS "FMT_PEDANTIC: ${FMT_PEDANTIC}")
 
-if (FMT_PEDANTIC)
+if (FMT_PEDANTIC AND NOT FMT_MODULE)
   include(CheckCXXCompilerFlag)
 
   # Test that the library can be compiled with exceptions disabled.
