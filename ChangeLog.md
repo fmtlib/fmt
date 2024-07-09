@@ -1,5 +1,8 @@
 # 11.0.2 - TBD
 
+- Fixed compatibility with non-POSIX systems
+  (https://github.com/fmtlib/fmt/issues/4054).
+
 - Made `Glib::ustring` not be confused with `std::string`
   (https://github.com/fmtlib/fmt/issues/4052).
 
