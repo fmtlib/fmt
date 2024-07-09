@@ -490,7 +490,7 @@ struct range_formatter<
     auto out = ctx.out();
     auto it = detail::range_begin(range);
     auto end = detail::range_end(range);
-    if (is_debug) return write_debug_string(out, it, end);
+    if (is_debug) return write_debug_string(out, std::move(it), end);
 
     out = detail::copy<Char>(opening_bracket_, out);
     int i = 0;
