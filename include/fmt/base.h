@@ -1476,6 +1476,12 @@ template <typename Context> struct arg_mapper {
 
   FMT_MAP_API auto map(void* val) -> const void* { return val; }
   FMT_MAP_API auto map(const void* val) -> const void* { return val; }
+  FMT_MAP_API auto map(volatile void* val) -> const void* {
+    return const_cast<const void*>(val);
+  }
+  FMT_MAP_API auto map(const volatile void* val) -> const void* {
+    return const_cast<const void*>(val);
+  }
   FMT_MAP_API auto map(std::nullptr_t val) -> const void* { return val; }
 
   // Use SFINAE instead of a const T* parameter to avoid a conflict with the

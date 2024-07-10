@@ -425,6 +425,14 @@ TEST(arg_test, pointer_arg) {
   CHECK_ARG_SIMPLE(cp);
 }
 
+TEST(arg_test, volatile_pointer_arg) {
+  const void* p = nullptr;
+  volatile int* vip = nullptr;
+  const volatile int* cvip = nullptr;
+  CHECK_ARG(char, p, static_cast<volatile void*>(vip));
+  CHECK_ARG(char, p, static_cast<const volatile void*>(cvip));
+}
+
 struct check_custom {
   auto operator()(fmt::basic_format_arg<fmt::format_context>::handle h) const
       -> test_result {
