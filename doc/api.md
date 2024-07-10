@@ -14,7 +14,7 @@ The {fmt} library API consists of the following components:
 - [`fmt/os.h`](#os-api): system APIs
 - [`fmt/ostream.h`](#ostream-api): `std::ostream` support
 - [`fmt/args.h`](#args-api): dynamic argument lists
-- [`fmt/printf.h`](#printf-api): `printf` formatting
+- [`fmt/printf.h`](#printf-api): safe `printf`
 - [`fmt/xchar.h`](#xchar-api): optional `wchar_t` support
 
 All functions and types provided by the library reside in namespace `fmt`
@@ -609,7 +609,7 @@ that can be used to construct format argument lists dynamically.
 ::: dynamic_format_arg_store
 
 <a id="printf-api"></a>
-## `printf` Formatting
+## Safe `printf`
 
 The header `fmt/printf.h` provides `printf`-like formatting
 functionality. The following functions use [printf format string
