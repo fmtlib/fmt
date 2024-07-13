@@ -616,7 +616,8 @@ constexpr auto to_string_view(const Char* s) -> basic_string_view<Char> {
   return s;
 }
 template <typename T, FMT_ENABLE_IF(is_std_string_like<T>::value)>
-constexpr auto to_string_view(const T& s) -> basic_string_view<typename T::value_type> {
+constexpr auto to_string_view(const T& s)
+    -> basic_string_view<typename T::value_type> {
   return s;
 }
 template <typename Char>
