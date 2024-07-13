@@ -2442,3 +2442,30 @@ FMT_END_NAMESPACE
 TEST(format_test, ustring) {
   EXPECT_EQ(fmt::format("{}", ustring()), "ustring");
 }
+
+#if FMT_USE_BITINT
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wbit-int-extension"
+using BitIntS7 = _BitInt(7);
+using BitIntU32 = unsigned _BitInt(32);
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<BitIntS7> : formatter<int8_t> {};
+
+template <> struct formatter<BitIntU32> : formatter<uint32_t> {};
+FMT_END_NAMESPACE
+
+TEST(format_test, bitint) {
+  EXPECT_EQ(fmt::format("{}", BitIntS7{0}), "0");
+  EXPECT_EQ(fmt::format("{}", BitIntU32{4294967295}), "4294967295");
+
+  auto a = BitIntS7{0};
+  auto b = BitIntU32{4294967295};
+  const auto c = BitIntS7{0};
+  const auto d = BitIntU32{4294967295};
+  EXPECT_EQ(fmt::format("{}", a), "0");
+  EXPECT_EQ(fmt::format("{}", b), "4294967295");
+  EXPECT_EQ(fmt::format("{}", c), "0");
+  EXPECT_EQ(fmt::format("{}", d), "4294967295");
+}
+#  pragma clang diagnostic pop
+#endif
