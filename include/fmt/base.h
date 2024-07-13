@@ -474,14 +474,23 @@ FMT_CONSTEXPR auto compare(const Char* s1, const Char* s2, std::size_t n)
   return 0;
 }
 
+namespace detect {
+
+using namespace std;
+
 template <typename It, typename Enable = std::true_type>
 struct is_back_insert_iterator : std::false_type {};
+
 template <typename It>
 struct is_back_insert_iterator<
     It,
     bool_constant<std::is_same<
         decltype(back_inserter(std::declval<typename It::container_type&>())),
         It>::value>> : std::true_type {};
+
+}  // namespace detect
+
+using detect::is_back_insert_iterator;
 
 // Extracts a reference to the container from *insert_iterator.
 template <typename OutputIt>
@@ -1158,6 +1167,7 @@ template <typename T> class basic_appender {
   using difference_type = ptrdiff_t;
   using pointer = T*;
   using reference = T&;
+  using container_type = detail::buffer<T>;
   FMT_UNCHECKED_ITERATOR(basic_appender);
 
   FMT_CONSTEXPR basic_appender(detail::buffer<T>& buf) : buffer_(&buf) {}
@@ -1174,6 +1184,10 @@ template <typename T> class basic_appender {
 using appender = basic_appender<char>;
 
 namespace detail {
+namespace detect {
+template <typename T>
+struct is_back_insert_iterator<basic_appender<T>> : std::true_type {};
+}
 
 template <typename T, typename Enable = void>
 struct locking : std::true_type {};
@@ -1239,12 +1253,25 @@ constexpr auto has_const_formatter() -> bool {
   return has_const_formatter_impl<Context>(static_cast<T*>(nullptr));
 }
 
+template <typename It, typename Enable = std::true_type>
+struct is_buffer_appender : std::false_type {};
+template <typename It>
+struct is_buffer_appender<
+    It, bool_constant<
+            is_back_insert_iterator<It>::value &&
+            std::is_base_of<buffer<typename It::container_type::value_type>,
+                            typename It::container_type>::value>>
+    : std::true_type {};
+
 // Maps an output iterator to a buffer.
-template <typename T, typename OutputIt>
+template <typename T, typename OutputIt,
+          FMT_ENABLE_IF(!is_buffer_appender<OutputIt>::value)>
 auto get_buffer(OutputIt out) -> iterator_buffer<OutputIt, T> {
   return iterator_buffer<OutputIt, T>(out);
 }
-template <typename T> auto get_buffer(basic_appender<T> out) -> buffer<T>& {
+template <typename T, typename OutputIt,
+          FMT_ENABLE_IF(is_buffer_appender<OutputIt>::value)>
+auto get_buffer(OutputIt out) -> buffer<T>& {
   return get_container(out);
 }
 
