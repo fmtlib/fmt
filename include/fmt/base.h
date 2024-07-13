@@ -1202,12 +1202,6 @@ FMT_CONSTEXPR inline auto is_locking() -> bool {
 }
 
 // An optimized version of std::copy with the output value type (T).
-template <typename T, typename InputIt>
-auto copy(InputIt begin, InputIt end, appender out) -> appender {
-  get_container(out).append(begin, end);
-  return out;
-}
-
 template <typename T, typename InputIt, typename OutputIt,
           FMT_ENABLE_IF(is_back_insert_iterator<OutputIt>::value)>
 auto copy(InputIt begin, InputIt end, OutputIt out) -> OutputIt {
