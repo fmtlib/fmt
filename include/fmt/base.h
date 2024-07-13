@@ -474,23 +474,22 @@ FMT_CONSTEXPR auto compare(const Char* s1, const Char* s2, std::size_t n)
   return 0;
 }
 
-namespace detect {
-
+namespace adl {
 using namespace std;
+
+template <typename Container>
+auto invoke_back_inserter()
+    -> decltype(back_inserter(std::declval<Container&>()));
+}  // namespace adl
 
 template <typename It, typename Enable = std::true_type>
 struct is_back_insert_iterator : std::false_type {};
 
 template <typename It>
 struct is_back_insert_iterator<
-    It,
-    bool_constant<std::is_same<
-        decltype(back_inserter(std::declval<typename It::container_type&>())),
-        It>::value>> : std::true_type {};
-
-}  // namespace detect
-
-using detect::is_back_insert_iterator;
+    It, bool_constant<std::is_same<
+            decltype(adl::invoke_back_inserter<typename It::container_type>()),
+            It>::value>> : std::true_type {};
 
 // Extracts a reference to the container from *insert_iterator.
 template <typename OutputIt>
@@ -1185,10 +1184,8 @@ template <typename T> class basic_appender {
 using appender = basic_appender<char>;
 
 namespace detail {
-namespace detect {
 template <typename T>
 struct is_back_insert_iterator<basic_appender<T>> : std::true_type {};
-}
 
 template <typename T, typename Enable = void>
 struct locking : std::true_type {};
