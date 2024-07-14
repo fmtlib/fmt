@@ -553,7 +553,7 @@ struct scan_handler {
     return begin;
   }
 
-  void on_error(const char* message) { report_error(message); }
+  FMT_NORETURN void on_error(const char* message) { report_error(message); }
 };
 
 void vscan(detail::scan_buffer& buf, string_view fmt, scan_args args) {

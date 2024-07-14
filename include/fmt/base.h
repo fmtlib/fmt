@@ -467,6 +467,7 @@ template <typename Char> FMT_CONSTEXPR auto length(const Char* s) -> size_t {
 template <typename Char>
 FMT_CONSTEXPR auto compare(const Char* s1, const Char* s2, std::size_t n)
     -> int {
+  if (!is_constant_evaluated() && sizeof(Char) == 1) return memcmp(s1, s2, n);
   for (; n != 0; ++s1, ++s2, --n) {
     if (*s1 < *s2) return -1;
     if (*s1 > *s2) return 1;
