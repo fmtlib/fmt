@@ -1650,6 +1650,20 @@ TEST(format_test, format_explicitly_convertible_to_std_string_view) {
   EXPECT_EQ("'foo'",
             fmt::format("{}", explicitly_convertible_to_std_string_view()));
 }
+
+struct convertible_to_std_string_view {
+  operator std::string_view() const noexcept { return "Hi there"; }
+};
+FMT_BEGIN_NAMESPACE
+template <>
+class formatter<convertible_to_std_string_view>
+    : public formatter<std::string_view> {};
+FMT_END_NAMESPACE
+
+TEST(format_test, format_implicitly_convertible_and_inherits_string_view) {
+  static_assert(fmt::is_formattable<convertible_to_std_string_view>{}, "");
+  EXPECT_EQ("Hi there", fmt::format("{}", convertible_to_std_string_view{}));
+}
 #endif
 
 class Answer {};

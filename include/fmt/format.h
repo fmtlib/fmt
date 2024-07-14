@@ -3976,9 +3976,15 @@ struct formatter<T, Char, enable_if_t<detail::has_format_as<T>::value>>
   }
 };
 
-#define FMT_FORMAT_AS(Type, Base) \
-  template <typename Char>        \
-  struct formatter<Type, Char> : formatter<Base, Char> {}
+#define FMT_FORMAT_AS(Type, Base)                                              \
+  template <typename Char>                                                     \
+  struct formatter<Type, Char> : formatter<Base, Char> {                       \
+    template <typename FormatContext>                                          \
+    auto format(Type value, FormatContext& ctx) const -> decltype(ctx.out()) { \
+      using base = formatter<Base, Char>;                                      \
+      return base::format(value, ctx);                                         \
+    }                                                                          \
+  }
 
 FMT_FORMAT_AS(signed char, int);
 FMT_FORMAT_AS(unsigned char, unsigned);
