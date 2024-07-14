@@ -3629,9 +3629,7 @@ auto write(OutputIt out, monostate, format_specs = {}, locale_ref = {})
 template <typename Char, typename OutputIt>
 FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> value)
     -> OutputIt {
-  auto it = reserve(out, value.size());
-  it = copy_noinline<Char>(value.begin(), value.end(), it);
-  return base_iterator(out, it);
+  return copy_noinline<Char>(value.begin(), value.end(), out);
 }
 
 template <typename Char, typename OutputIt, typename T,
