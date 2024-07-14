@@ -110,6 +110,9 @@ add_fmt_test(enforce-checks-test)
 target_compile_definitions(enforce-checks-test PRIVATE
                            -DFMT_ENFORCE_COMPILE_STRING)
 
+add_executable(perf-sanity perf-sanity.cc)
+target_link_libraries(perf-sanity fmt::fmt)
+
 if (FMT_MODULE)
   # The tests need {fmt} to be compiled as traditional library
   # because of visibility of implementation details.
@@ -233,7 +236,7 @@ if (FMT_PEDANTIC AND NOT WIN32 AND NOT (
     "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 endif ()
 
-# This test are disabled on Windows because it is only *NIX issue.
+# This test is disabled on Windows because it is POSIX-specific.
 if (FMT_PEDANTIC AND NOT WIN32)
   add_test(static-export-test ${CMAKE_CTEST_COMMAND}
     -C ${CMAKE_BUILD_TYPE}
