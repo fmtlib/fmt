@@ -3969,9 +3969,8 @@ struct formatter<T, Char, enable_if_t<detail::has_format_as<T>::value>>
     : formatter<detail::format_as_t<T>, Char> {
   template <typename FormatContext>
   auto format(const T& value, FormatContext& ctx) const -> decltype(ctx.out()) {
-    using base = formatter<detail::format_as_t<T>, Char>;
     auto&& val = format_as(value);  // Make an lvalue reference for format.
-    return base::format(val, ctx);
+    return formatter<detail::format_as_t<T>, Char>::format(val, ctx);
   }
 };
 
@@ -3980,8 +3979,7 @@ struct formatter<T, Char, enable_if_t<detail::has_format_as<T>::value>>
   struct formatter<Type, Char> : formatter<Base, Char> {                       \
     template <typename FormatContext>                                          \
     auto format(Type value, FormatContext& ctx) const -> decltype(ctx.out()) { \
-      using base = formatter<Base, Char>;                                      \
-      return base::format(value, ctx);                                         \
+      return formatter<Base, Char>::format(value, ctx);                        \
     }                                                                          \
   }
 
