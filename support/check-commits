@@ -28,10 +28,10 @@ with tempfile.TemporaryDirectory() as work_dir:
   for commit in commits:
     check_call(['git', '-c', 'advice.detachedHead=false', 'checkout', commit],
                cwd=repo_dir)
-    return_code = run(
+    returncode = run(
       ['c++', '-std=c++11', '-O3', '-DNDEBUG', '-I', 'include',
-       'src/format.cc', os.path.join(cwd, source)], cwd=repo_dir).return_code
-    if return_code != 0:
+       'src/format.cc', os.path.join(cwd, source)], cwd=repo_dir).returncode
+    if returncode != 0:
       continue
     times = []
     for i in range(5):
