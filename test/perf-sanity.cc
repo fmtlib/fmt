@@ -19,8 +19,7 @@ int main() {
   std::atomic_signal_fence(std::memory_order_acq_rel);  // Clobber memory.
   auto end = std::chrono::steady_clock::now();
 
+  // Print time in milliseconds.
   std::chrono::duration<double> duration = end - start;
-  double total_time = duration.count() * 1000;  // Convert to milliseconds.
-  fmt::print("Total time for formatting {} strings: {:.1f} ms.\n", n,
-             total_time);
+  fmt::print("{:.1f}\n", duration.count() * 1000);
 }
