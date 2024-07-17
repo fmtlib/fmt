@@ -179,7 +179,7 @@ buffered_file::buffered_file(cstring_view filename, cstring_view mode) {
 
 void buffered_file::close() {
   if (!file_) return;
-  int result = FMT_SYSTEM(fclose(file_));
+  const int result = FMT_SYSTEM(fclose(file_));
   file_ = nullptr;
   if (result != 0)
     FMT_THROW(system_error(errno, FMT_STRING("cannot close file")));
@@ -191,11 +191,11 @@ int buffered_file::descriptor() const {
 #  ifdef fileno
 #    undef fileno
 #  endif
-  int fd = FMT_POSIX_CALL(fileno(file_));
+  const int fd = FMT_POSIX_CALL(fileno(file_));
 #elif defined(_WIN32)
-  int fd = _fileno(file_);
+  const int fd = _fileno(file_);
 #else
-  int fd = fileno(file_);
+  const int fd = fileno(file_);
 #endif
   if (fd == -1)
     FMT_THROW(system_error(errno, FMT_STRING("cannot get file descriptor")));
@@ -234,7 +234,7 @@ void file::close() {
   if (fd_ == -1) return;
   // Don't retry close in case of EINTR!
   // See http://linux.derkeiler.com/Mailing-Lists/Kernel/2005-09/3000.html
-  int result = FMT_POSIX_CALL(close(fd_));
+  const int result = FMT_POSIX_CALL(close(fd_));
   fd_ = -1;
   if (result != 0)
     FMT_THROW(system_error(errno, FMT_STRING("cannot close file")));
@@ -285,7 +285,7 @@ std::size_t file::write(const void* buffer, std::size_t count) {
 file file::dup(int fd) {
   // Don't retry as dup doesn't return EINTR.
   // http://pubs.opengroup.org/onlinepubs/009695399/functions/dup.html
-  int new_fd = FMT_POSIX_CALL(dup(fd));
+  const int new_fd = FMT_POSIX_CALL(dup(fd));
   if (new_fd == -1)
     FMT_THROW(system_error(
         errno, FMT_STRING("cannot duplicate file descriptor {}"), fd));
@@ -341,11 +341,11 @@ pipe::pipe() {
 #  ifdef _WIN32
   // Make the default pipe capacity same as on Linux 2.6.11+.
   enum { DEFAULT_CAPACITY = 65536 };
-  int result = FMT_POSIX_CALL(pipe(fds, DEFAULT_CAPACITY, _O_BINARY));
+  const int result = FMT_POSIX_CALL(pipe(fds, DEFAULT_CAPACITY, _O_BINARY));
 #  else
   // Don't retry as the pipe function doesn't return EINTR.
   // http://pubs.opengroup.org/onlinepubs/009696799/functions/pipe.html
-  int result = FMT_POSIX_CALL(pipe(fds));
+  const int result = FMT_POSIX_CALL(pipe(fds));
 #  endif
   if (result != 0)
     FMT_THROW(system_error(errno, FMT_STRING("cannot create pipe")));
@@ -362,9 +362,9 @@ long getpagesize() {
   return si.dwPageSize;
 #    else
 #      ifdef _WRS_KERNEL
-  long size = FMT_POSIX_CALL(getpagesize());
+  const long size = FMT_POSIX_CALL(getpagesize());
 #      else
-  long size = FMT_POSIX_CALL(sysconf(_SC_PAGESIZE));
+  const long size = FMT_POSIX_CALL(sysconf(_SC_PAGESIZE));
 #      endif
 
   if (size < 0)
