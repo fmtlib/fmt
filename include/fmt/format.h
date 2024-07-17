@@ -1120,7 +1120,7 @@ template <typename Char, typename Sign> constexpr auto sign(Sign s) -> Char {
 #if !FMT_GCC_VERSION || FMT_GCC_VERSION >= 604
   static_assert(std::is_same<Sign, sign_t>::value, "");
 #endif
-  return static_cast<Char>("\0-+ "[s]);
+  return static_cast<char>(((' ' << 24) | ('+' << 16) | ('-' << 8)) >> (s * 8));
 }
 
 template <typename T> FMT_CONSTEXPR auto count_digits_fallback(T n) -> int {
