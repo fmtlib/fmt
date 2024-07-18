@@ -3,6 +3,17 @@
 - Fixed compatibility with non-POSIX systems
   (https://github.com/fmtlib/fmt/issues/4054).
 
+- Fixed performance regressions when using `std::back_insert_iterator` with
+  `fmt::format_to`.
+
+- Fixed handling of `std::generator` and move-only iterators
+  (https://github.com/fmtlib/fmt/issues/4053,
+  https://github.com/fmtlib/fmt/pull/4057). Thanks @Arghnews.
+
+- Made `volatile void*` formattable
+  (https://github.com/fmtlib/fmt/issues/4049,
+  https://github.com/fmtlib/fmt/pull/4056). Thanks @Arghnews.
+
 - Made `Glib::ustring` not be confused with `std::string`
   (https://github.com/fmtlib/fmt/issues/4052).
 
@@ -20,6 +31,9 @@
 - Fixed handling of a sign and improved the `std::complex` formater
   (https://github.com/fmtlib/fmt/pull/4034,
   https://github.com/fmtlib/fmt/pull/4050). Thanks @tesch1 and @phprus.
+
+- Fixed ADL issues in `fmt::printf` when using C++20
+  (https://github.com/fmtlib/fmt/pull/4042). Thanks @toge.
 
 - Removed a redundant check in the formatter for `std::expected`
   (https://github.com/fmtlib/fmt/pull/4040). Thanks @phprus.
