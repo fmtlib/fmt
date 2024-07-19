@@ -1,7 +1,8 @@
 # 11.0.2 - TBD
 
 - Fixed compatibility with non-POSIX systems
-  (https://github.com/fmtlib/fmt/issues/4054).
+  (https://github.com/fmtlib/fmt/issues/4054,
+  https://github.com/fmtlib/fmt/issues/4060).
 
 - Fixed performance regressions when using `std::back_insert_iterator` with
   `fmt::format_to`.
@@ -9,6 +10,10 @@
 - Fixed handling of `std::generator` and move-only iterators
   (https://github.com/fmtlib/fmt/issues/4053,
   https://github.com/fmtlib/fmt/pull/4057). Thanks @Arghnews.
+
+- Made `formatter<std::string_view>::parse` work with types convertible to
+  `std::string_view` (https://github.com/fmtlib/fmt/issues/4036,
+  https://github.com/fmtlib/fmt/pull/4055). Thanks @Arghnews.
 
 - Made `volatile void*` formattable
   (https://github.com/fmtlib/fmt/issues/4049,
