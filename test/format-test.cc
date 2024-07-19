@@ -2057,6 +2057,13 @@ TEST(format_test, output_iterators) {
   EXPECT_EQ("42", s.str());
 }
 
+TEST(format_test, fill_via_appender) {
+  fmt::memory_buffer buf;
+  auto it = fmt::appender(buf);
+  std::fill_n(it, 3, '~');
+  EXPECT_EQ(fmt::to_string(buf), "~~~");
+}
+
 TEST(format_test, formatted_size) {
   EXPECT_EQ(2u, fmt::formatted_size("{}", 42));
   EXPECT_EQ(2u, fmt::formatted_size(std::locale(), "{}", 42));

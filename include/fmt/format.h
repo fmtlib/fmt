@@ -106,6 +106,13 @@
 #  define FMT_NOINLINE
 #endif
 
+namespace std {
+template <> struct iterator_traits<fmt::appender> {
+  using iterator_category = output_iterator_tag;
+  using value_type = char;
+};
+}  // namespace std
+
 #ifndef FMT_THROW
 #  if FMT_EXCEPTIONS
 #    if FMT_MSC_VERSION || defined(__NVCC__)
