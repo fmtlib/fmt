@@ -22,6 +22,9 @@
 - Made `Glib::ustring` not be confused with `std::string`
   (https://github.com/fmtlib/fmt/issues/4052).
 
+- Made `fmt::context` iterator compatible with STL algorithms that rely on
+  iterator category (https://github.com/fmtlib/fmt/issues/4079).
+
 # 11.0.1 - 2024-07-05
 
 - Fixed version number in the inline namespace
