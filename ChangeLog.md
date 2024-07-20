@@ -5,7 +5,7 @@
   https://github.com/fmtlib/fmt/issues/4060).
 
 - Fixed performance regressions when using `std::back_insert_iterator` with
-  `fmt::format_to`.
+  `fmt::format_to` (https://github.com/fmtlib/fmt/issues/4070).
 
 - Fixed handling of `std::generator` and move-only iterators
   (https://github.com/fmtlib/fmt/issues/4053,
