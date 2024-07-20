@@ -1,4 +1,4 @@
-# 11.0.2 - TBD
+# 11.0.2 - 2024-07-20
 
 - Fixed compatibility with non-POSIX systems
   (https://github.com/fmtlib/fmt/issues/4054,
