@@ -92,6 +92,10 @@ TEST(string_view_test, compare) {
   check_op<std::greater_equal>();
 }
 
+TEST(base_test, is_locking) {
+  EXPECT_FALSE(fmt::detail::is_locking<const char (&)[3]>());
+}
+
 TEST(base_test, is_output_iterator) {
   EXPECT_TRUE((fmt::detail::is_output_iterator<char*, char>::value));
   EXPECT_FALSE((fmt::detail::is_output_iterator<const char*, char>::value));
