@@ -4237,8 +4237,7 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
         : parse_context(str), context(p_out, p_args, p_loc) {}
 
     void on_text(const Char* begin, const Char* end) {
-      auto text = basic_string_view<Char>(begin, to_unsigned(end - begin));
-      context.advance_to(write<Char>(context.out(), text));
+      context.advance_to(copy_noinline<Char>(begin, end, context.out()));
     }
 
     FMT_CONSTEXPR auto on_arg_id() -> int {
