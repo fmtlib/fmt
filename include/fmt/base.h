@@ -2282,8 +2282,8 @@ template <typename Char> constexpr auto is_name_start(Char c) -> bool {
 }
 
 template <typename Char, typename Handler>
-FMT_CONSTEXPR auto do_parse_arg_id(const Char* begin, const Char* end,
-                                   Handler&& handler) -> const Char* {
+FMT_CONSTEXPR auto parse_arg_id(const Char* begin, const Char* end,
+                                Handler&& handler) -> const Char* {
   Char c = *begin;
   if (c >= '0' && c <= '9') {
     int index = 0;
@@ -2309,25 +2309,10 @@ FMT_CONSTEXPR auto do_parse_arg_id(const Char* begin, const Char* end,
   return it;
 }
 
-template <typename Char, typename Handler>
-FMT_CONSTEXPR auto parse_arg_id(const Char* begin, const Char* end,
-                                Handler&& handler) -> const Char* {
-  FMT_ASSERT(begin != end, "");
-  Char c = *begin;
-  if (c != '}' && c != ':') return do_parse_arg_id(begin, end, handler);
-  handler.on_auto();
-  return begin;
-}
-
 template <typename Char> struct dynamic_spec_id_handler {
   basic_format_parse_context<Char>& ctx;
   arg_ref<Char>& ref;
 
-  FMT_CONSTEXPR void on_auto() {
-    int id = ctx.next_arg_id();
-    ref = arg_ref<Char>(id);
-    ctx.check_dynamic_spec(id);
-  }
   FMT_CONSTEXPR void on_index(int id) {
     ref = arg_ref<Char>(id);
     ctx.check_arg_id(id);
@@ -2354,8 +2339,17 @@ FMT_CONSTEXPR auto parse_dynamic_spec(const Char* begin, const Char* end,
       report_error("number is too big");
   } else if (*begin == '{') {
     ++begin;
-    auto handler = dynamic_spec_id_handler<Char>{ctx, ref};
-    if (begin != end) begin = parse_arg_id(begin, end, handler);
+    if (begin != end) {
+      Char c = *begin;
+      if (c == '}' || c == ':') {
+        int id = ctx.next_arg_id();
+        ref = arg_ref<Char>(id);
+        ctx.check_dynamic_spec(id);
+      } else {
+        begin =
+            parse_arg_id(begin, end, dynamic_spec_id_handler<Char>{ctx, ref});
+      }
+    }
     if (begin != end && *begin == '}') return ++begin;
     report_error("invalid format string");
   }
@@ -2563,39 +2557,53 @@ FMT_CONSTEXPR auto parse_format_specs(const Char* begin, const Char* end,
 }
 
 template <typename Char, typename Handler>
-FMT_CONSTEXPR auto parse_replacement_field(const Char* begin, const Char* end,
-                                           Handler&& handler) -> const Char* {
-  struct id_adapter {
-    Handler& handler;
-    int arg_id;
-
-    FMT_CONSTEXPR void on_auto() { arg_id = handler.on_arg_id(); }
-    FMT_CONSTEXPR void on_index(int id) { arg_id = handler.on_arg_id(id); }
-    FMT_CONSTEXPR void on_name(basic_string_view<Char> id) {
-      arg_id = handler.on_arg_id(id);
-    }
-  };
-
+FMT_CONSTEXPR FMT_INLINE auto parse_replacement_field(const Char* begin,
+                                                      const Char* end,
+                                                      Handler&& handler)
+    -> const Char* {
   ++begin;
-  if (begin == end) return handler.on_error("invalid format string"), end;
-  if (*begin == '}') {
+  if (begin == end) {
+    handler.on_error("invalid format string");
+    return end;
+  }
+  int arg_id = 0;
+  switch (*begin) {
+  case '}':
     handler.on_replacement_field(handler.on_arg_id(), begin);
-  } else if (*begin == '{') {
+    return begin + 1;
+  case '{':
     handler.on_text(begin, begin + 1);
-  } else {
-    auto adapter = id_adapter{handler, 0};
+    return begin + 1;
+  case ':':
+    arg_id = handler.on_arg_id();
+    break;
+  default: {
+    struct id_adapter {
+      Handler& handler;
+      int arg_id;
+
+      FMT_CONSTEXPR void on_index(int id) { arg_id = handler.on_arg_id(id); }
+      FMT_CONSTEXPR void on_name(basic_string_view<Char> id) {
+        arg_id = handler.on_arg_id(id);
+      }
+    } adapter = {handler, 0};
     begin = parse_arg_id(begin, end, adapter);
+    arg_id = adapter.arg_id;
     Char c = begin != end ? *begin : Char();
     if (c == '}') {
-      handler.on_replacement_field(adapter.arg_id, begin);
-    } else if (c == ':') {
-      begin = handler.on_format_specs(adapter.arg_id, begin + 1, end);
-      if (begin == end || *begin != '}')
-        return handler.on_error("unknown format specifier"), end;
-    } else {
-      return handler.on_error("missing '}' in format string"), end;
+      handler.on_replacement_field(arg_id, begin);
+      return begin + 1;
     }
+    if (c != ':') {
+      handler.on_error("missing '}' in format string");
+      return end;
+    }
+    break;
   }
+  }
+  begin = handler.on_format_specs(arg_id, begin + 1, end);
+  if (begin == end || *begin != '}')
+    return handler.on_error("unknown format specifier"), end;
   return begin + 1;
 }
 

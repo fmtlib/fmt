@@ -481,13 +481,11 @@ TEST(arg_test, visit_invalid_arg) {
 
 #if FMT_USE_CONSTEXPR
 
-enum class arg_id_result { none, empty, index, name };
+enum class arg_id_result { none, index, name };
 struct test_arg_id_handler {
   arg_id_result res = arg_id_result::none;
   int index = 0;
   string_view name;
-
-  constexpr void on_auto() { res = arg_id_result::empty; }
 
   constexpr void on_index(int i) {
     res = arg_id_result::index;
@@ -508,8 +506,6 @@ constexpr test_arg_id_handler parse_arg_id(const char (&s)[N]) {
 }
 
 TEST(base_test, constexpr_parse_arg_id) {
-  static_assert(parse_arg_id(":").res == arg_id_result::empty, "");
-  static_assert(parse_arg_id("}").res == arg_id_result::empty, "");
   static_assert(parse_arg_id("42:").res == arg_id_result::index, "");
   static_assert(parse_arg_id("42:").index == 42, "");
   static_assert(parse_arg_id("foo:").res == arg_id_result::name, "");
