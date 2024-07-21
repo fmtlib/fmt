@@ -1615,7 +1615,7 @@ template <typename F> class fallback_file : public file_base<F> {
 };
 
 #ifndef FMT_USE_FALLBACK_FILE
-#  define FMT_USE_FALLBACK_FILE 1
+#  define FMT_USE_FALLBACK_FILE 0
 #endif
 
 template <typename F,
