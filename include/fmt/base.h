@@ -1103,7 +1103,7 @@ template <typename T = char> class counting_buffer : public buffer<T> {
   }
 
  public:
-  counting_buffer() : buffer<T>(grow, data_, 0, buffer_size) {}
+  FMT_CONSTEXPR counting_buffer() : buffer<T>(grow, data_, 0, buffer_size) {}
 
   auto count() -> size_t { return count_ + this->size(); }
 };

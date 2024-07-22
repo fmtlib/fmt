@@ -14,14 +14,6 @@
 #include "gmock/gmock.h"
 #include "gtest-extra.h"
 
-TEST(iterator_test, counting_iterator) {
-  auto it = fmt::detail::counting_iterator();
-  auto prev = it++;
-  EXPECT_EQ(prev.count(), 0);
-  EXPECT_EQ(it.count(), 1);
-  EXPECT_EQ((it + 41).count(), 42);
-}
-
 TEST(compile_test, compile_fallback) {
   // FMT_COMPILE should fallback on runtime formatting when `if constexpr` is
   // not available.

@@ -2235,46 +2235,6 @@ FMT_CONSTEXPR FMT_INLINE auto write(OutputIt out, T value,
                          loc);
 }
 
-// An output iterator that counts the number of objects written to it and
-// discards them.
-class counting_iterator {
- private:
-  size_t count_;
-
- public:
-  using iterator_category = std::output_iterator_tag;
-  using difference_type = std::ptrdiff_t;
-  using pointer = void;
-  using reference = void;
-  FMT_UNCHECKED_ITERATOR(counting_iterator);
-
-  struct value_type {
-    template <typename T> FMT_CONSTEXPR void operator=(const T&) {}
-  };
-
-  FMT_CONSTEXPR counting_iterator() : count_(0) {}
-
-  FMT_CONSTEXPR auto count() const -> size_t { return count_; }
-
-  FMT_CONSTEXPR auto operator++() -> counting_iterator& {
-    ++count_;
-    return *this;
-  }
-  FMT_CONSTEXPR auto operator++(int) -> counting_iterator {
-    auto it = *this;
-    ++*this;
-    return it;
-  }
-
-  FMT_CONSTEXPR friend auto operator+(counting_iterator it, difference_type n)
-      -> counting_iterator {
-    it.count_ += static_cast<size_t>(n);
-    return it;
-  }
-
-  FMT_CONSTEXPR auto operator*() const -> value_type { return {}; }
-};
-
 template <typename Char, typename OutputIt>
 FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
                          const format_specs& specs) -> OutputIt {
@@ -2285,7 +2245,11 @@ FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
   bool is_debug = specs.type == presentation_type::debug;
   size_t width = 0;
 
-  if (is_debug) size = write_escaped_string(counting_iterator{}, s).count();
+  if (is_debug) {
+    auto buf = counting_buffer<Char>();
+    write_escaped_string(basic_appender<Char>(buf), s);
+    size = buf.count();
+  }
 
   if (specs.width != 0) {
     if (is_debug)
