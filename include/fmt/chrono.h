@@ -2279,7 +2279,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     // As a possible future optimization, we could avoid extra copying if width
     // is not specified.
     auto buf = basic_memory_buffer<Char>();
-    auto out = std::back_inserter(buf);
+    auto out = basic_appender<Char>(buf);
     detail::handle_dynamic_spec<detail::width_checker>(specs.width, width_ref_,
                                                        ctx);
     detail::handle_dynamic_spec<detail::precision_checker>(precision,
@@ -2388,7 +2388,7 @@ template <typename Char> struct formatter<std::tm, Char> {
                  const Duration* subsecs) const -> decltype(ctx.out()) {
     auto specs = specs_;
     auto buf = basic_memory_buffer<Char>();
-    auto out = std::back_inserter(buf);
+    auto out = basic_appender<Char>(buf);
     detail::handle_dynamic_spec<detail::width_checker>(specs.width, width_ref_,
                                                        ctx);
 

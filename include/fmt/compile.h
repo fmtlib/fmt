@@ -494,9 +494,9 @@ auto format_to_n(OutputIt out, size_t n, const S& fmt, Args&&... args)
 
 template <typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
-FMT_CONSTEXPR20 auto formatted_size(const S& fmt, const Args&... args)
-    -> size_t {
-  return fmt::format_to(detail::counting_iterator(), fmt, args...).count();
+auto formatted_size(const S& fmt, const Args&... args) -> size_t {
+  auto buf = detail::counting_buffer<>();
+  return fmt::format_to(fmt::appender(buf), fmt, args...).count();
 }
 
 template <typename S, typename... Args,
