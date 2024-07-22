@@ -1295,23 +1295,23 @@ template <typename Char, typename UInt>
 FMT_CONSTEXPR20 auto format_decimal(Char* out, UInt value, int size)
     -> format_decimal_result<Char*> {
   FMT_ASSERT(size >= count_digits(value), "invalid digit count");
-  out += size;
-  Char* end = out;
+  auto begin = out, end = out + size;
+  unsigned n = to_unsigned(size);
   while (value >= 100) {
     // Integer division is slow so do it for a group of two digits instead
     // of for every digit. The idea comes from the talk by Alexandrescu
     // "Three Optimization Tips for C++". See speed-test for a comparison.
-    out -= 2;
-    copy2(out, digits2(static_cast<size_t>(value % 100)));
+    n -= 2;
+    copy2(begin + n, digits2(static_cast<unsigned>(value % 100)));
     value /= 100;
   }
-  if (value < 10) {
-    *--out = static_cast<Char>('0' + value);
-    return {out, end};
+  if (value >= 10) {
+    n -= 2;
+    copy2(begin + n, digits2(static_cast<unsigned>(value)));
+  } else {
+    begin[--n] = static_cast<Char>('0' + value);
   }
-  out -= 2;
-  copy2(out, digits2(static_cast<size_t>(value)));
-  return {out, end};
+  return {begin + n, end};
 }
 
 template <typename Char, typename UInt, typename Iterator,
