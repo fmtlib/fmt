@@ -8,7 +8,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   format_code:
@@ -22,35 +21,6 @@ jobs:
         clangformat: 17.0.5
 
     - name: Run clang-format
-      id: clang_format
       run: |
         find include src -name '*.h' -o -name '*.cc' |  xargs clang-format -i -style=file -fallback-style=none
-        git diff | tee fmt.patch
-        if [ -s fmt.patch ]; then
-          exit 1
-        fi
-    - uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
-      if: failure() && steps.clang_format.outcome == 'failure'
-      with:
-        github-token: ${{ secrets.KEY }}
-        script: |
-          const fs = require('fs');
-          const patch = fs.readFileSync('fmt.patch', { encoding: 'utf8' });
-          const comment = `clang-format 17.0.5 found issues in the formatting in your code:
-          <details>
-          <summary>
-          View the diff from clang-format:
-          </summary>
-
-          \`\`\`diff
-          ${patch}
-          \`\`\`
-
-          </details>
-          `;
-          await github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: comment
-          });
+        git diff --exit-code
