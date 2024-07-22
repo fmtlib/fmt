@@ -1147,7 +1147,7 @@ void write_fractional_seconds(OutputIt& out, Duration d, int precision = -1) {
                         std::chrono::seconds::period>::value) {
       *out++ = '.';
       out = detail::fill_n(out, leading_zeroes, '0');
-      out = format_decimal<Char>(out, n, num_digits).end;
+      out = format_decimal<Char>(out, n, num_digits);
     }
   } else if (precision > 0) {
     *out++ = '.';
@@ -1158,12 +1158,12 @@ void write_fractional_seconds(OutputIt& out, Duration d, int precision = -1) {
       int num_truncated_digits = num_digits - remaining;
       n /= to_unsigned(detail::pow10(to_unsigned(num_truncated_digits)));
       if (n) {
-        out = format_decimal<Char>(out, n, remaining).end;
+        out = format_decimal<Char>(out, n, remaining);
       }
       return;
     }
     if (n) {
-      out = format_decimal<Char>(out, n, num_digits).end;
+      out = format_decimal<Char>(out, n, num_digits);
       remaining -= num_digits;
     }
     out = detail::fill_n(out, remaining, '0');
@@ -1319,7 +1319,7 @@ class tm_writer {
     const int num_digits = count_digits(n);
     if (width > num_digits)
       out_ = detail::fill_n(out_, width - num_digits, '0');
-    out_ = format_decimal<Char>(out_, n, num_digits).end;
+    out_ = format_decimal<Char>(out_, n, num_digits);
   }
   void write_year(long long year) {
     if (year >= 0 && year < 10000) {
@@ -1881,7 +1881,7 @@ struct chrono_formatter {
     if (width > num_digits) {
       out = detail::write_padding(out, pad, width - num_digits);
     }
-    out = format_decimal<char_type>(out, n, num_digits).end;
+    out = format_decimal<char_type>(out, n, num_digits);
   }
 
   void write_nan() { std::copy_n("nan", 3, out); }
