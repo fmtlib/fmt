@@ -1308,20 +1308,24 @@ FMT_CONSTEXPR20 auto do_format_decimal(Char* out, UInt value, int size)
 }
 
 template <typename Char, typename UInt>
-FMT_CONSTEXPR FMT_INLINE auto format_decimal(Char* out, UInt value, int size)
-    -> Char* {
-  do_format_decimal(out, value, size);
-  return out + size;
+FMT_CONSTEXPR FMT_INLINE auto format_decimal(Char* out, UInt value,
+                                             int num_digits) -> Char* {
+  do_format_decimal(out, value, num_digits);
+  return out + num_digits;
 }
 
 template <typename Char, typename UInt, typename OutputIt,
           FMT_ENABLE_IF(is_back_insert_iterator<OutputIt>::value)>
-FMT_CONSTEXPR inline auto format_decimal(OutputIt out, UInt value, int size)
+FMT_CONSTEXPR auto format_decimal(OutputIt out, UInt value, int num_digits)
     -> OutputIt {
+  if (auto ptr = to_pointer<Char>(out, to_unsigned(num_digits))) {
+    do_format_decimal(ptr, value, num_digits);
+    return out;
+  }
   // Buffer is large enough to hold all digits (digits10 + 1).
   char buffer[digits10<UInt>() + 1] = {};
-  do_format_decimal(buffer, value, size);
-  return detail::copy_noinline<Char>(buffer, buffer + size, out);
+  do_format_decimal(buffer, value, num_digits);
+  return detail::copy_noinline<Char>(buffer, buffer + num_digits, out);
 }
 
 template <unsigned BASE_BITS, typename Char, typename UInt>
@@ -1338,9 +1342,9 @@ FMT_CONSTEXPR auto format_uint(Char* buffer, UInt value, int num_digits,
   return end;
 }
 
-template <unsigned BASE_BITS, typename Char, typename It, typename UInt>
-FMT_CONSTEXPR inline auto format_uint(It out, UInt value, int num_digits,
-                                      bool upper = false) -> It {
+template <unsigned BASE_BITS, typename Char, typename OutputIt, typename UInt>
+FMT_CONSTEXPR inline auto format_uint(OutputIt out, UInt value, int num_digits,
+                                      bool upper = false) -> OutputIt {
   if (auto ptr = to_pointer<Char>(out, to_unsigned(num_digits))) {
     format_uint<BASE_BITS>(ptr, value, num_digits, upper);
     return out;
