@@ -1342,7 +1342,8 @@ FMT_CONSTEXPR auto format_uint(Char* buffer, UInt value, int num_digits,
   return end;
 }
 
-template <unsigned BASE_BITS, typename Char, typename OutputIt, typename UInt>
+template <unsigned BASE_BITS, typename Char, typename OutputIt, typename UInt,
+          FMT_ENABLE_IF(is_back_insert_iterator<OutputIt>::value)>
 FMT_CONSTEXPR inline auto format_uint(OutputIt out, UInt value, int num_digits,
                                       bool upper = false) -> OutputIt {
   if (auto ptr = to_pointer<Char>(out, to_unsigned(num_digits))) {
