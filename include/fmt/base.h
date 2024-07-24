@@ -544,7 +544,7 @@ template <typename Char> class basic_string_view {
   /// `std::basic_string_view` object.
   template <typename S,
             FMT_ENABLE_IF(detail::is_std_string_like<S>::value&& std::is_same<
-                          typename S::value_type, Char>::value)>
+                          remove_const_t<typename S::value_type>, Char>::value)>
   FMT_CONSTEXPR basic_string_view(const S& s) noexcept
       : data_(s.data()), size_(s.size()) {}
 
@@ -626,7 +626,7 @@ constexpr auto to_string_view(const Char* s) -> basic_string_view<Char> {
 }
 template <typename T, FMT_ENABLE_IF(is_std_string_like<T>::value)>
 constexpr auto to_string_view(const T& s)
-    -> basic_string_view<typename T::value_type> {
+    -> basic_string_view<remove_const_t<typename T::value_type>> {
   return s;
 }
 template <typename Char>
@@ -742,7 +742,7 @@ FMT_DEPRECATED FMT_NORETURN inline void throw_format_error(
 /// String's character (code unit) type.
 template <typename S,
           typename V = decltype(detail::to_string_view(std::declval<S>()))>
-using char_t = typename V::value_type;
+using char_t = remove_const_t<typename V::value_type>;
 
 /**
  * Parsing context consisting of a format string range being parsed and an

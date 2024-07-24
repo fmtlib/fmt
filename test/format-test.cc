@@ -2463,3 +2463,16 @@ FMT_END_NAMESPACE
 TEST(format_test, ustring) {
   EXPECT_EQ(fmt::format("{}", ustring()), "ustring");
 }
+
+struct string_piece {
+  using value_type = char const;
+
+  auto find_first_of(value_type, size_t) const -> size_t;
+
+  auto data() const -> const char* { return "string_piece"; }
+  auto size() const -> size_t { return 12; }
+};
+
+TEST(format_test, string_piece) {
+  EXPECT_EQ(fmt::format("{}", string_piece()), "string_piece");
+}
