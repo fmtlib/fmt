@@ -61,7 +61,7 @@ if len(args) > 0:
     version = args[1]
     ret = call(['mike'] + args + ['--config-file', config_build_path,
                '--branch', 'master'], cwd=site_dir, env=env)
-    if ret != 0:
+    if ret != 0 or version == 'dev':
       sys.exit(ret)
     redirect_page_path = os.path.join(site_dir, version, 'api.html')
     with open(redirect_page_path, "w") as file:
