@@ -15,6 +15,27 @@ path = env.get('PYTHONPATH')
 env['PYTHONPATH'] = \
   (path + ':' if path else '') + os.path.join(support_dir, 'python')
 
+redirect_page = \
+'''<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Redirecting</title>
+  <noscript>
+    <meta http-equiv="refresh" content="1; url=11.0/" />
+  </noscript>
+  <script>
+    window.location.replace(
+      "api/" + window.location.search + window.location.hash
+    );
+  </script>
+</head>
+<body>
+  Redirecting to <a href="api/">api</a>...
+</body>
+</html>
+'''
+
 config_path = os.path.join(support_dir, 'mkdocs.yml')
 args = sys.argv[1:]
 if len(args) > 0:
@@ -23,7 +44,7 @@ if len(args) > 0:
     git_url = 'https://github.com/' if 'CI' in os.environ else 'git@github.com:'
     site_repo = git_url + 'fmtlib/fmt.dev.git'
 
-    site_dir = os.  path.join(build_dir, 'fmt.dev')
+    site_dir = os.path.join(build_dir, 'fmt.dev')
     try:
       shutil.rmtree(site_dir)
     except OSError as e:
@@ -37,8 +58,19 @@ if len(args) > 0:
     config_build_path = os.path.join(build_dir, 'mkdocs.yml')
     shutil.copyfile(config_path, config_build_path)
 
-    sys.exit(call(['mike'] + args + ['--config-file', config_build_path,
-                   '--branch', 'master'], cwd=site_dir, env=env))
+    version = args[1]
+    ret = call(['mike'] + args + ['--config-file', config_build_path,
+               '--branch', 'master'], cwd=site_dir, env=env)
+    if ret != 0:
+      sys.exit(ret)
+    redirect_page_path = os.path.join(site_dir, version, 'api.html')
+    with open(redirect_page_path, "w") as file:
+      file.write(redirect_page)
+    ret = call(['git', 'add', redirect_page_path], cwd=site_dir)
+    if ret != 0:
+      sys.exit(ret)
+    ret = call(['git', 'commit', '--amend', '--no-edit'], cwd=site_dir)
+    sys.exit(ret)
   elif not command.startswith('-'):
     args += ['-f', config_path]
 sys.exit(call(['mkdocs'] + args, env=env))
