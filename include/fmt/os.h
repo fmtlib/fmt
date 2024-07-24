@@ -383,7 +383,7 @@ class file_buffer final : public buffer<char> {
 
 }  // namespace detail
 
-constexpr auto buffer_size = detail::buffer_size();
+FMT_INLINE_VARIABLE constexpr auto buffer_size = detail::buffer_size();
 
 /// A fast output stream for writing from a single thread. Writing from
 /// multiple threads without external synchronization may result in a data race.
