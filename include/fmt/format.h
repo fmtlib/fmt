@@ -1113,13 +1113,17 @@ using uint64_or_128_t = conditional_t<num_bits<T>() <= 64, uint64_t, uint128_t>;
       (factor) * 100000000, (factor) * 1000000000
 
 // Converts value in the range [0, 100) to a string.
-constexpr auto digits2(size_t value) -> const char* {
-  // GCC generates slightly better code when value is pointer-size.
-  return &"0001020304050607080910111213141516171819"
-         "2021222324252627282930313233343536373839"
-         "4041424344454647484950515253545556575859"
-         "6061626364656667686970717273747576777879"
-         "8081828384858687888990919293949596979899"[value * 2];
+// GCC generates slightly better code when value is pointer-size.
+inline auto digits2(size_t value) -> const char* {
+  // Align data since unaligned access may be slower when crossing a
+  // hardware-specific boundary.
+  alignas(2) static const char data[] =
+    "0001020304050607080910111213141516171819"
+    "2021222324252627282930313233343536373839"
+    "4041424344454647484950515253545556575859"
+    "6061626364656667686970717273747576777879"
+    "8081828384858687888990919293949596979899";
+  return &data[value * 2];
 }
 
 // Sign is a template parameter to workaround a bug in gcc 4.8.
@@ -1272,15 +1276,15 @@ inline auto equal2(const char* lhs, const char* rhs) -> bool {
   return memcmp(lhs, rhs, 2) == 0;
 }
 
-// Copies two characters from src to dst.
+// Writes a two-digit value to out.
 template <typename Char>
-FMT_CONSTEXPR20 FMT_INLINE void copy2(Char* dst, const char* src) {
-  if (!is_constant_evaluated() && sizeof(Char) == sizeof(char)) {
-    memcpy(dst, src, 2);
+FMT_CONSTEXPR20 FMT_INLINE void write2digits(Char* out, size_t value) {
+  if (!is_constant_evaluated() && std::is_same<Char, char>::value) {
+    memcpy(out, digits2(value), 2);
     return;
   }
-  *dst++ = static_cast<Char>(*src++);
-  *dst = static_cast<Char>(*src);
+  *out++ = static_cast<Char>('0' + value / 10);
+  *out = static_cast<Char>('0' + value % 10);
 }
 
 // Formats a decimal unsigned integer value writing to out pointing to a buffer
@@ -1295,12 +1299,12 @@ FMT_CONSTEXPR20 auto do_format_decimal(Char* out, UInt value, int size)
     // of for every digit. The idea comes from the talk by Alexandrescu
     // "Three Optimization Tips for C++". See speed-test for a comparison.
     n -= 2;
-    copy2(out + n, digits2(static_cast<unsigned>(value % 100)));
+    write2digits(out + n, static_cast<unsigned>(value % 100));
     value /= 100;
   }
   if (value >= 10) {
     n -= 2;
-    copy2(out + n, digits2(static_cast<unsigned>(value)));
+    write2digits(out + n, static_cast<unsigned>(value));
   } else {
     out[--n] = static_cast<Char>('0' + value);
   }
@@ -1584,25 +1588,30 @@ template <typename Float> constexpr auto exponent_bias() -> int {
 }
 
 // Writes the exponent exp in the form "[+-]d{2,3}" to buffer.
-template <typename Char, typename It>
-FMT_CONSTEXPR auto write_exponent(int exp, It it) -> It {
+template <typename Char, typename OutputIt>
+FMT_CONSTEXPR auto write_exponent(int exp, OutputIt out) -> OutputIt {
   FMT_ASSERT(-10000 < exp && exp < 10000, "exponent out of range");
   if (exp < 0) {
-    *it++ = static_cast<Char>('-');
+    *out++ = static_cast<Char>('-');
     exp = -exp;
   } else {
-    *it++ = static_cast<Char>('+');
+    *out++ = static_cast<Char>('+');
   }
-  if (exp >= 100) {
-    const char* top = digits2(to_unsigned(exp / 100));
-    if (exp >= 1000) *it++ = static_cast<Char>(top[0]);
-    *it++ = static_cast<Char>(top[1]);
-    exp %= 100;
+  unsigned uexp = to_unsigned(exp);
+  if (is_constant_evaluated()) {
+    if (uexp < 10) *out++ = '0';
+    return format_decimal<Char>(out, uexp, count_digits(uexp));
   }
-  const char* d = digits2(to_unsigned(exp));
-  *it++ = static_cast<Char>(d[0]);
-  *it++ = static_cast<Char>(d[1]);
-  return it;
+  if (uexp >= 100u) {
+    const char* top = digits2(uexp / 100);
+    if (uexp >= 1000u) *out++ = static_cast<Char>(top[0]);
+    *out++ = static_cast<Char>(top[1]);
+    uexp %= 100;
+  }
+  const char* d = digits2(uexp);
+  *out++ = static_cast<Char>(d[0]);
+  *out++ = static_cast<Char>(d[1]);
+  return out;
 }
 
 // A floating-point number f * pow(2, e) where F is an unsigned type.
@@ -2457,7 +2466,7 @@ inline auto write_significand(Char* out, UInt significand, int significand_size,
   int floating_size = significand_size - integral_size;
   for (int i = floating_size / 2; i > 0; --i) {
     out -= 2;
-    copy2(out, digits2(static_cast<std::size_t>(significand % 100)));
+    write2digits(out, static_cast<std::size_t>(significand % 100));
     significand /= 100;
   }
   if (floating_size % 2 != 0) {
@@ -3361,7 +3370,7 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
             // for details.
             prod = ((subsegment * static_cast<uint64_t>(450359963)) >> 20) + 1;
             digits = static_cast<uint32_t>(prod >> 32);
-            copy2(buffer, digits2(digits));
+            write2digits(buffer, digits);
             number_of_digits_printed += 2;
           }
 
@@ -3369,7 +3378,7 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
           while (number_of_digits_printed < number_of_digits_to_print) {
             prod = static_cast<uint32_t>(prod) * static_cast<uint64_t>(100);
             digits = static_cast<uint32_t>(prod >> 32);
-            copy2(buffer + number_of_digits_printed, digits2(digits));
+            write2digits(buffer + number_of_digits_printed, digits);
             number_of_digits_printed += 2;
           }
         };

@@ -1481,7 +1481,7 @@ class tm_writer {
     char buf[10];
     size_t offset = 0;
     if (year >= 0 && year < 10000) {
-      copy2(buf, digits2(static_cast<size_t>(year / 100)));
+      write2digits(buf, static_cast<size_t>(year / 100));
     } else {
       offset = 4;
       write_year_extended(year);
