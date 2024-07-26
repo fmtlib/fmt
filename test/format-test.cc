@@ -471,6 +471,12 @@ TEST(memory_buffer_test, max_size_allocator_overflow) {
   EXPECT_THROW(buffer.resize(161), std::exception);
 }
 
+TEST(format_test, digits2_alignment) {
+  auto p =
+      fmt::detail::bit_cast<fmt::detail::uintptr_t>(fmt::detail::digits2(0));
+  EXPECT_EQ(p % 2, 0);
+}
+
 TEST(format_test, exception_from_lib) {
   EXPECT_THROW_MSG(fmt::report_error("test"), format_error, "test");
 }
@@ -1066,7 +1072,7 @@ TEST(format_test, precision) {
   EXPECT_EQ(fmt::format("{0:.6}", "123456\xad"), "123456");
 }
 
-TEST(xchar_test, utf8_precision) {
+TEST(format_test, utf8_precision) {
   auto result = fmt::format("{:.4}", "caf\u00e9s");  // cafés
   EXPECT_EQ(fmt::detail::compute_width(result), 4);
   EXPECT_EQ(result, "caf\u00e9");
