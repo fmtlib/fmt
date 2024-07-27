@@ -2251,8 +2251,11 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     it = detail::parse_align(it, end, specs_);
     if (it == end) return it;
 
-    it = detail::parse_dynamic_spec(it, end, specs_.width, width_ref_, ctx);
-    if (it == end) return it;
+    Char c = *it;
+    if ((c >= '0' && c <= '9') || c == '{') {
+      it = detail::parse_dynamic_spec(it, end, specs_.width, width_ref_, ctx);
+      if (it == end) return it;
+    }
 
     auto checker = detail::chrono_format_checker();
     if (*it == '.') {
@@ -2410,8 +2413,11 @@ template <typename Char> struct formatter<std::tm, Char> {
     it = detail::parse_align(it, end, specs_);
     if (it == end) return it;
 
-    it = detail::parse_dynamic_spec(it, end, specs_.width, width_ref_, ctx);
-    if (it == end) return it;
+    Char c = *it;
+    if ((c >= '0' && c <= '9') || c == '{') {
+      it = detail::parse_dynamic_spec(it, end, specs_.width, width_ref_, ctx);
+      if (it == end) return it;
+    }
 
     end = detail::parse_chrono_format(it, end, detail::tm_format_checker());
     // Replace the default format_str only if the new spec is not empty.

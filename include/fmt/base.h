@@ -2323,7 +2323,7 @@ template <typename Char> struct dynamic_spec_id_handler {
   }
 };
 
-// Parses [integer | "{" [arg_id] "}"].
+// Parses integer | "{" [arg_id] "}".
 template <typename Char>
 FMT_CONSTEXPR auto parse_dynamic_spec(const Char* begin, const Char* end,
                                       int& value, arg_ref<Char>& ref,
@@ -2332,24 +2332,24 @@ FMT_CONSTEXPR auto parse_dynamic_spec(const Char* begin, const Char* end,
   FMT_ASSERT(begin != end, "");
   if ('0' <= *begin && *begin <= '9') {
     int val = parse_nonnegative_int(begin, end, -1);
-    if (val != -1)
-      value = val;
-    else
-      report_error("number is too big");
-  } else if (*begin == '{') {
-    ++begin;
-    if (begin != end) {
-      Char c = *begin;
-      if (c == '}' || c == ':') {
-        int id = ctx.next_arg_id();
-        ref = arg_ref<Char>(id);
-        ctx.check_dynamic_spec(id);
-      } else {
-        begin =
-            parse_arg_id(begin, end, dynamic_spec_id_handler<Char>{ctx, ref});
+    if (val == -1) report_error("number is too big");
+    value = val;
+  } else {
+    if (*begin == '{') {
+      ++begin;
+      if (begin != end) {
+        Char c = *begin;
+        if (c == '}' || c == ':') {
+          int id = ctx.next_arg_id();
+          ref = arg_ref<Char>(id);
+          ctx.check_dynamic_spec(id);
+        } else {
+          begin =
+              parse_arg_id(begin, end, dynamic_spec_id_handler<Char>{ctx, ref});
+        }
       }
+      if (begin != end && *begin == '}') return ++begin;
     }
-    if (begin != end && *begin == '}') return ++begin;
     report_error("invalid format string");
   }
   return begin;
@@ -2361,11 +2361,9 @@ FMT_CONSTEXPR auto parse_precision(const Char* begin, const Char* end,
                                    basic_format_parse_context<Char>& ctx)
     -> const Char* {
   ++begin;
-  if (begin == end || *begin == '}') {
-    report_error("invalid precision");
-    return begin;
-  }
-  return parse_dynamic_spec(begin, end, value, ref, ctx);
+  if (begin != end) begin = parse_dynamic_spec(begin, end, value, ref, ctx);
+  else report_error("invalid precision");
+  return begin;
 }
 
 enum class state { start, align, sign, hash, zero, width, precision, locale };
