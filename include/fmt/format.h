@@ -2355,15 +2355,7 @@ FMT_CONSTEXPR auto parse_align(const Char* begin, const Char* end,
   return begin;
 }
 
-// A floating-point presentation format.
-enum class float_format : unsigned char {
-  general,  // General: exponent notation or fixed point based on magnitude.
-  exp,      // Exponent notation with the default precision of 6, e.g. 1.2e-3.
-  fixed     // Fixed point with the default precision of 6, e.g. 0.0012.
-};
-
 struct float_specs {
-  float_format format : 8;
   sign_t sign : 8;
 };
 
@@ -2507,8 +2499,8 @@ FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
 
   int output_exp = f.exponent + significand_size - 1;
   auto use_exp_format = [=]() {
-    if (fspecs.format == float_format::exp) return true;
-    if (fspecs.format != float_format::general) return false;
+    if (specs.type == presentation_type::exp) return true;
+    if (specs.type == presentation_type::fixed) return false;
     // Use the fixed notation if the exponent is in [exp_lower, exp_upper),
     // e.g. 0.0001 instead of 1e-04. Otherwise use the exponent notation.
     const int exp_lower = -4, exp_upper = 16;
@@ -2552,7 +2544,8 @@ FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
     abort_fuzzing_if(num_zeros > 5000);
     if (specs.alt) {
       ++size;
-      if (num_zeros <= 0 && fspecs.format != float_format::fixed) num_zeros = 0;
+      if (num_zeros <= 0 && specs.type != presentation_type::fixed)
+        num_zeros = 0;
       if (num_zeros > 0) size += to_unsigned(num_zeros);
     }
     auto grouping = Grouping(loc, specs.localized);
@@ -3518,31 +3511,16 @@ FMT_CONSTEXPR20 auto write_float(OutputIt out, T value, format_specs specs,
     else
       ++precision;
     specs.alt |= specs.precision != 0;
-  } else if (specs.type != presentation_type::fixed && precision == 0) {
-    precision = 1;
-  }
-  float_specs fspecs = float_specs();
-  switch (specs.type) {
-  default:
-    FMT_FALLTHROUGH;
-  case presentation_type::none:
-    fspecs.format = float_format::general;
-    break;
-  case presentation_type::exp:
-    fspecs.format = float_format::exp;
-    break;
-  case presentation_type::fixed:
-    fspecs.format = float_format::fixed;
+  } else if (specs.type == presentation_type::fixed) {
     specs.alt |= specs.precision != 0;
-    break;
-  case presentation_type::general:
-    fspecs.format = float_format::general;
-    break;
+  } else if (precision == 0) {
+    precision = 1;
   }
 
   int exp = format_float(convert_float(value), precision, specs,
                          std::is_same<T, float>(), buffer);
-                         
+
+  float_specs fspecs = float_specs();
   fspecs.sign = sign;
   specs.precision = precision;
   auto f = big_decimal_fp{buffer.data(), static_cast<int>(buffer.size()), exp};
