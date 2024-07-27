@@ -1855,7 +1855,7 @@ template <typename Context> class basic_format_args {
 
   FMT_CONSTEXPR auto type(int index) const -> detail::type {
     int shift = index * detail::packed_arg_bits;
-    unsigned int mask = (1 << detail::packed_arg_bits) - 1;
+    unsigned mask = (1 << detail::packed_arg_bits) - 1;
     return static_cast<detail::type>((desc_ >> shift) & mask);
   }
 
@@ -1895,8 +1895,7 @@ template <typename Context> class basic_format_args {
     }
     if (static_cast<unsigned>(id) >= detail::max_packed_args) return arg;
     arg.type_ = type(id);
-    if (arg.type_ == detail::type::none_type) return arg;
-    arg.value_ = values_[id];
+    if (arg.type_ != detail::type::none_type) arg.value_ = values_[id];
     return arg;
   }
 
