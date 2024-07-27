@@ -1118,11 +1118,11 @@ inline auto digits2(size_t value) -> const char* {
   // Align data since unaligned access may be slower when crossing a
   // hardware-specific boundary.
   alignas(2) static const char data[] =
-    "0001020304050607080910111213141516171819"
-    "2021222324252627282930313233343536373839"
-    "4041424344454647484950515253545556575859"
-    "6061626364656667686970717273747576777879"
-    "8081828384858687888990919293949596979899";
+      "0001020304050607080910111213141516171819"
+      "2021222324252627282930313233343536373839"
+      "4041424344454647484950515253545556575859"
+      "6061626364656667686970717273747576777879"
+      "8081828384858687888990919293949596979899";
   return &data[value * 2];
 }
 
@@ -2363,40 +2363,9 @@ enum class float_format : unsigned char {
 };
 
 struct float_specs {
-  int precision;
   float_format format : 8;
   sign_t sign : 8;
-  bool locale : 1;
-  bool binary32 : 1;
-  bool showpoint : 1;
 };
-
-// DEPRECATED!
-FMT_CONSTEXPR inline auto parse_float_type_spec(const format_specs& specs)
-    -> float_specs {
-  auto result = float_specs();
-  result.showpoint = specs.alt;
-  result.locale = specs.localized;
-  switch (specs.type) {
-  default:
-    FMT_FALLTHROUGH;
-  case presentation_type::none:
-    result.format = float_format::general;
-    break;
-  case presentation_type::exp:
-    result.format = float_format::exp;
-    result.showpoint |= specs.precision != 0;
-    break;
-  case presentation_type::fixed:
-    result.format = float_format::fixed;
-    result.showpoint |= specs.precision != 0;
-    break;
-  case presentation_type::general:
-    result.format = float_format::general;
-    break;
-  }
-  return result;
-}
 
 template <typename Char, typename OutputIt>
 FMT_CONSTEXPR20 auto write_nonfinite(OutputIt out, bool isnan,
@@ -2533,8 +2502,8 @@ FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
   size_t size = to_unsigned(significand_size) + (sign ? 1 : 0);
   using iterator = reserve_iterator<OutputIt>;
 
-  Char decimal_point =
-      fspecs.locale ? detail::decimal_point<Char>(loc) : static_cast<Char>('.');
+  Char decimal_point = specs.localized ? detail::decimal_point<Char>(loc)
+                                       : static_cast<Char>('.');
 
   int output_exp = f.exponent + significand_size - 1;
   auto use_exp_format = [=]() {
@@ -2544,12 +2513,12 @@ FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
     // e.g. 0.0001 instead of 1e-04. Otherwise use the exponent notation.
     const int exp_lower = -4, exp_upper = 16;
     return output_exp < exp_lower ||
-           output_exp >= (fspecs.precision > 0 ? fspecs.precision : exp_upper);
+           output_exp >= (specs.precision > 0 ? specs.precision : exp_upper);
   };
   if (use_exp_format()) {
     int num_zeros = 0;
-    if (fspecs.showpoint) {
-      num_zeros = fspecs.precision - significand_size;
+    if (specs.alt) {
+      num_zeros = specs.precision - significand_size;
       if (num_zeros < 0) num_zeros = 0;
       size += to_unsigned(num_zeros);
     } else if (significand_size == 1) {
@@ -2579,28 +2548,28 @@ FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
   if (f.exponent >= 0) {
     // 1234e5 -> 123400000[.0+]
     size += to_unsigned(f.exponent);
-    int num_zeros = fspecs.precision - exp;
+    int num_zeros = specs.precision - exp;
     abort_fuzzing_if(num_zeros > 5000);
-    if (fspecs.showpoint) {
+    if (specs.alt) {
       ++size;
       if (num_zeros <= 0 && fspecs.format != float_format::fixed) num_zeros = 0;
       if (num_zeros > 0) size += to_unsigned(num_zeros);
     }
-    auto grouping = Grouping(loc, fspecs.locale);
+    auto grouping = Grouping(loc, specs.localized);
     size += to_unsigned(grouping.count_separators(exp));
     return write_padded<Char, align::right>(out, specs, size, [&](iterator it) {
       if (sign) *it++ = detail::sign<Char>(sign);
       it = write_significand<Char>(it, significand, significand_size,
                                    f.exponent, grouping);
-      if (!fspecs.showpoint) return it;
+      if (!specs.alt) return it;
       *it++ = decimal_point;
       return num_zeros > 0 ? detail::fill_n(it, num_zeros, zero) : it;
     });
   } else if (exp > 0) {
     // 1234e-2 -> 12.34[0+]
-    int num_zeros = fspecs.showpoint ? fspecs.precision - significand_size : 0;
+    int num_zeros = specs.alt ? specs.precision - significand_size : 0;
     size += 1 + to_unsigned(num_zeros > 0 ? num_zeros : 0);
-    auto grouping = Grouping(loc, fspecs.locale);
+    auto grouping = Grouping(loc, specs.localized);
     size += to_unsigned(grouping.count_separators(exp));
     return write_padded<Char, align::right>(out, specs, size, [&](iterator it) {
       if (sign) *it++ = detail::sign<Char>(sign);
@@ -2611,11 +2580,11 @@ FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
   }
   // 1234e-6 -> 0.001234
   int num_zeros = -exp;
-  if (significand_size == 0 && fspecs.precision >= 0 &&
-      fspecs.precision < num_zeros) {
-    num_zeros = fspecs.precision;
+  if (significand_size == 0 && specs.precision >= 0 &&
+      specs.precision < num_zeros) {
+    num_zeros = specs.precision;
   }
-  bool pointy = num_zeros != 0 || significand_size != 0 || fspecs.showpoint;
+  bool pointy = num_zeros != 0 || significand_size != 0 || specs.alt;
   size += 1 + (pointy ? 1 : 0) + to_unsigned(num_zeros);
   return write_padded<Char, align::right>(out, specs, size, [&](iterator it) {
     if (sign) *it++ = detail::sign<Char>(sign);
@@ -3201,14 +3170,15 @@ constexpr auto fractional_part_rounding_thresholds(int index) -> uint32_t {
 }
 
 template <typename Float>
-FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
+FMT_CONSTEXPR20 auto format_float(Float value, int precision,
+                                  const format_specs& specs, bool binary32,
                                   buffer<char>& buf) -> int {
   // float is passed as double to reduce the number of instantiations.
   static_assert(!std::is_same<Float, float>::value, "");
   FMT_ASSERT(value >= 0, "value is negative");
   auto converted_value = convert_float(value);
 
-  const bool fixed = specs.format == float_format::fixed;
+  const bool fixed = specs.type == presentation_type::fixed;
   if (value <= 0) {  // <= instead of == to silence a warning.
     if (precision <= 0 || !fixed) {
       buf.push_back('0');
@@ -3236,7 +3206,7 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
     dragon_flags = dragon::fixup;
   } else if (precision < 0) {
     // Use Dragonbox for the shortest format.
-    if (specs.binary32) {
+    if (binary32) {
       auto dec = dragonbox::to_decimal(static_cast<float>(value));
       write<char>(appender(buf), dec.significand);
       return dec.exponent;
@@ -3487,9 +3457,8 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
   }
   if (use_dragon) {
     auto f = basic_fp<uint128_t>();
-    bool is_predecessor_closer = specs.binary32
-                                     ? f.assign(static_cast<float>(value))
-                                     : f.assign(converted_value);
+    bool is_predecessor_closer = binary32 ? f.assign(static_cast<float>(value))
+                                          : f.assign(converted_value);
     if (is_predecessor_closer) dragon_flags |= dragon::predecessor_closer;
     if (fixed) dragon_flags |= dragon::fixed;
     // Limit precision to the maximum possible number of significant digits in
@@ -3498,7 +3467,7 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision, float_specs specs,
     if (precision > max_double_digits) precision = max_double_digits;
     format_dragon(f, dragon_flags, precision, buf, exp);
   }
-  if (!fixed && !specs.showpoint) {
+  if (!fixed && !specs.alt) {
     // Remove trailing zeros.
     auto num_digits = buf.size();
     while (num_digits > 0 && buf[num_digits - 1] == '0') {
@@ -3548,14 +3517,34 @@ FMT_CONSTEXPR20 auto write_float(OutputIt out, T value, format_specs specs,
       report_error("number is too big");
     else
       ++precision;
+    specs.alt |= specs.precision != 0;
   } else if (specs.type != presentation_type::fixed && precision == 0) {
     precision = 1;
   }
-  float_specs fspecs = parse_float_type_spec(specs);
+  float_specs fspecs = float_specs();
+  switch (specs.type) {
+  default:
+    FMT_FALLTHROUGH;
+  case presentation_type::none:
+    fspecs.format = float_format::general;
+    break;
+  case presentation_type::exp:
+    fspecs.format = float_format::exp;
+    break;
+  case presentation_type::fixed:
+    fspecs.format = float_format::fixed;
+    specs.alt |= specs.precision != 0;
+    break;
+  case presentation_type::general:
+    fspecs.format = float_format::general;
+    break;
+  }
+
+  int exp = format_float(convert_float(value), precision, specs,
+                         std::is_same<T, float>(), buffer);
+                         
   fspecs.sign = sign;
-  if (const_check(std::is_same<T, float>())) fspecs.binary32 = true;
-  int exp = format_float(convert_float(value), precision, fspecs, buffer);
-  fspecs.precision = precision;
+  specs.precision = precision;
   auto f = big_decimal_fp{buffer.data(), static_cast<int>(buffer.size()), exp};
   return write_float<Char>(out, f, specs, fspecs, loc);
 }
