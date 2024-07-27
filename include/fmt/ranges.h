@@ -330,7 +330,26 @@ struct formatter<Tuple, Char,
   template <typename ParseContext>
   FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
     auto it = ctx.begin();
-    if (it != ctx.end() && *it != '}') report_error("invalid format specifier");
+    auto end = ctx.end();
+    if (it != end && detail::to_ascii(*it) == 'n') {
+      ++it;
+      set_brackets({}, {});
+      set_separator({});
+    } else if (it != end && detail::to_ascii(*it) == 'm') {
+      if (std::tuple_size<Tuple>::value != 2) report_error("'m' format specifier can only be used for tuples with 2 elements");
+      ++it;
+      set_brackets({}, {});
+      set_separator(detail::string_literal<Char, ':', ' '>{});
+    }
+    if (it != end && detail::to_ascii(*it) == ',') {
+      ++it;
+      auto sep_end = it;
+      while (sep_end != end && *sep_end != '}') { ++sep_end; }
+      set_separator(basic_string_view<Char>(it, std::distance(it, sep_end)));
+      it = sep_end;
+    }
+    if (it != end && *it != '}') report_error("invalid format specifier");
+    ctx.advance_to(it);
     detail::for_each(formatters_, detail::parse_empty_specs<ParseContext>{ctx});
     return it;
   }

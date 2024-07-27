@@ -23,6 +23,7 @@
 
 #include "fmt/format.h"
 #include "gtest/gtest.h"
+#include "gtest-extra.h"
 
 #if !FMT_GCC_VERSION || FMT_GCC_VERSION >= 601
 #  define FMT_RANGES_TEST_ENABLE_C_STYLE_ARRAY
@@ -170,6 +171,14 @@ TEST(ranges_test, format_adl_begin_end) {
 TEST(ranges_test, format_pair) {
   auto p = std::pair<int, float>(42, 1.5f);
   EXPECT_EQ(fmt::format("{}", p), "(42, 1.5)");
+  EXPECT_EQ(fmt::format("{:}", p), "(42, 1.5)");
+  EXPECT_EQ(fmt::format("{:m}", p), "42: 1.5");
+  EXPECT_EQ(fmt::format("{:n}", p), "421.5");
+  EXPECT_EQ(fmt::format("{:, }", p), "(42 1.5)");
+  EXPECT_EQ(fmt::format("{:,}", p), "(421.5)");
+  EXPECT_EQ(fmt::format("{:,; }", p), "(42; 1.5)");
+  EXPECT_EQ(fmt::format("{:n,; }", p), "42; 1.5");
+  EXPECT_EQ(fmt::format("{:n,=}", p), "42=1.5");
 }
 
 struct unformattable {};
@@ -178,6 +187,8 @@ TEST(ranges_test, format_tuple) {
   auto t =
       std::tuple<int, float, std::string, char>(42, 1.5f, "this is tuple", 'i');
   EXPECT_EQ(fmt::format("{}", t), "(42, 1.5, \"this is tuple\", 'i')");
+  EXPECT_EQ(fmt::format("{:n}", t), "421.5\"this is tuple\"'i'");
+  EXPECT_THROW_MSG((void)fmt::format(fmt::runtime("{:m}"), t), fmt::format_error, "'m' format specifier can only be used for tuples with 2 elements");
 
   EXPECT_EQ(fmt::format("{}", std::tuple<>()), "()");
 
