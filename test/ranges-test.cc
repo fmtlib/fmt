@@ -89,6 +89,13 @@ TEST(ranges_test, format_map) {
   auto m = std::map<std::string, int>{{"one", 1}, {"two", 2}};
   EXPECT_EQ(fmt::format("{}", m), "{\"one\": 1, \"two\": 2}");
   EXPECT_EQ(fmt::format("{:n}", m), "\"one\": 1, \"two\": 2");
+  EXPECT_EQ(fmt::format("{:n:}", m), "\"one\": 1, \"two\": 2");
+  EXPECT_EQ(fmt::format("{:n:m}", m), "\"one\": 1, \"two\": 2");
+  EXPECT_EQ(fmt::format("{:n:n}", m), "\"one\"1, \"two\"2");
+  EXPECT_EQ(fmt::format("{::n}", m), "{\"one\"1, \"two\"2}");
+  EXPECT_EQ(fmt::format("{:n:m}", m), "\"one\": 1, \"two\": 2");
+  EXPECT_EQ(fmt::format("{:n:n,;}", m), "\"one\";1, \"two\";2");
+  EXPECT_EQ(fmt::format("{:n:,;}", m), "(\"one\";1), (\"two\";2)");
 }
 
 struct test_map_value {};
@@ -100,18 +107,6 @@ template <> struct formatter<test_map_value> : formatter<string_view> {
     return formatter<string_view>::format("foo", ctx);
   }
 };
-
-template <typename K>
-struct formatter<std::pair<K, test_map_value>> : formatter<string_view> {
-  auto format(std::pair<K, test_map_value>, format_context& ctx) const
-      -> format_context::iterator {
-    return ctx.out();
-  }
-};
-
-template <typename K>
-struct is_tuple_formattable<std::pair<K, test_map_value>, char>
-    : std::false_type {};
 
 FMT_END_NAMESPACE
 

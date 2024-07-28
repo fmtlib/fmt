@@ -583,8 +583,8 @@ struct formatter<
   using map_type = detail::maybe_const_range<R>;
   using element_type = detail::uncvref_type<map_type>;
 
-  decltype(detail::tuple::get_formatters<element_type, Char>(
-      detail::tuple_index_sequence<element_type>())) formatters_;
+  formatter<element_type, Char> underlying_;
+
   bool no_delimiters_ = false;
 
  public:
@@ -605,8 +605,13 @@ struct formatter<
       }
       ctx.advance_to(it);
     }
-    detail::for_each(formatters_, detail::parse_empty_specs<ParseContext>{ctx});
-    return it;
+    auto it2 = underlying_.parse(ctx);
+    if (it2 != end && *it2 != '}') report_error("invalid format specifier");
+    if (it == it2) {
+      underlying_.set_separator(detail::string_literal<Char, ':', ' '>{});
+      underlying_.set_brackets({}, {});
+    }
+    return it2;
   }
 
   template <typename FormatContext>
@@ -620,9 +625,7 @@ struct formatter<
     for (auto&& value : map) {
       if (i > 0) out = detail::copy<Char>(sep, out);
       ctx.advance_to(out);
-      detail::for_each2(formatters_, mapper.map(value),
-                        detail::format_tuple_element<FormatContext>{
-                            0, ctx, detail::string_literal<Char, ':', ' '>{}});
+      underlying_.format(mapper.map(value), ctx);
       ++i;
     }
     basic_string_view<Char> close = detail::string_literal<Char, '}'>{};
