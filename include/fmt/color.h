@@ -560,31 +560,30 @@ struct formatter<detail::styled_arg<T>, Char> : formatter<T, Char> {
   auto format(const detail::styled_arg<T>& arg, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     const auto& ts = arg.style;
-    const auto& value = arg.value;
     auto out = ctx.out();
 
     bool has_style = false;
     if (ts.has_emphasis()) {
       has_style = true;
       auto emphasis = detail::make_emphasis<Char>(ts.get_emphasis());
-      out = std::copy(emphasis.begin(), emphasis.end(), out);
+      out = detail::copy<Char>(emphasis.begin(), emphasis.end(), out);
     }
     if (ts.has_foreground()) {
       has_style = true;
       auto foreground =
           detail::make_foreground_color<Char>(ts.get_foreground());
-      out = std::copy(foreground.begin(), foreground.end(), out);
+      out = detail::copy<Char>(foreground.begin(), foreground.end(), out);
     }
     if (ts.has_background()) {
       has_style = true;
       auto background =
           detail::make_background_color<Char>(ts.get_background());
-      out = std::copy(background.begin(), background.end(), out);
+      out = detail::copy<Char>(background.begin(), background.end(), out);
     }
-    out = formatter<T, Char>::format(value, ctx);
+    out = formatter<T, Char>::format(arg.value, ctx);
     if (has_style) {
       auto reset_color = string_view("\x1b[0m");
-      out = std::copy(reset_color.begin(), reset_color.end(), out);
+      out = detail::copy<Char>(reset_color.begin(), reset_color.end(), out);
     }
     return out;
   }
