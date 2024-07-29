@@ -26,6 +26,9 @@
 #include <string>              // std::string
 #include <thread>              // std::thread
 #include <type_traits>         // std::is_default_constructible
+#if FMT_CPLUSPLUS > 201703L && FMT_HAS_INCLUDE(<version>)
+#  include <version>
+#endif
 
 #include "gtest-extra.h"
 #include "mock-allocator.h"
@@ -41,6 +44,10 @@ using fmt::detail::uint128_fallback;
 
 using testing::Return;
 using testing::StrictMock;
+
+#ifdef __cpp_lib_concepts
+static_assert(std::output_iterator<fmt::appender, char>);
+#endif
 
 enum { buffer_size = 256 };
 

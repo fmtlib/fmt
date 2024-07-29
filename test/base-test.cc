@@ -93,7 +93,7 @@ TEST(string_view_test, compare) {
 }
 
 TEST(base_test, is_locking) {
-  EXPECT_FALSE(fmt::detail::is_locking<const char (&)[3]>());
+  EXPECT_FALSE(fmt::detail::is_locking<const char(&)[3]>());
 }
 
 TEST(base_test, is_output_iterator) {
@@ -114,12 +114,6 @@ TEST(base_test, is_back_insert_iterator) {
               std::back_insert_iterator<std::string>>::value);
   EXPECT_FALSE(fmt::detail::is_back_insert_iterator<
                std::front_insert_iterator<std::string>>::value);
-}
-
-TEST(base_test, buffer_appender) {
-#ifdef __cpp_lib_ranges
-  EXPECT_TRUE((std::output_iterator<fmt::appender, char>));
-#endif
 }
 
 #if !FMT_GCC_VERSION || FMT_GCC_VERSION >= 470

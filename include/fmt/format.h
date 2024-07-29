@@ -110,6 +110,7 @@ namespace std {
 template <> struct iterator_traits<fmt::appender> {
   using iterator_category = output_iterator_tag;
   using value_type = char;
+  using difference_type = ptrdiff_t;
 };
 }  // namespace std
 
