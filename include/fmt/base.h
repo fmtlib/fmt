@@ -2361,8 +2361,10 @@ FMT_CONSTEXPR auto parse_precision(const Char* begin, const Char* end,
                                    basic_format_parse_context<Char>& ctx)
     -> const Char* {
   ++begin;
-  if (begin != end) begin = parse_dynamic_spec(begin, end, value, ref, ctx);
-  else report_error("invalid precision");
+  if (begin != end)
+    begin = parse_dynamic_spec(begin, end, value, ref, ctx);
+  else
+    report_error("invalid precision");
   return begin;
 }
 
