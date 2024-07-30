@@ -82,11 +82,10 @@ function(add_module_library name)
       set(pcms)
       foreach (src ${sources})
         get_filename_component(pcm ${src} NAME_WE)
-        set(pcm ${pcm}.pcm)
 
-        # Propagate -fmodule-file=*.pcm to targets that link with this library.
+        # Propagate -fmodule-file=*=*.pcm to targets that link with this library.
         target_compile_options(
-          ${name} PUBLIC -fmodule-file=${CMAKE_CURRENT_BINARY_DIR}/${pcm})
+          ${name} PUBLIC -fmodule-file=${pcm}=${CMAKE_CURRENT_BINARY_DIR}/${pcm}.pcm)
 
         # Use an absolute path to prevent target_link_libraries prepending -l
         # to it.
