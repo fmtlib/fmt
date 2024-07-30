@@ -1418,10 +1418,12 @@ template <typename WChar, typename Buffer = memory_buffer> class to_utf8 {
           if (policy == to_utf8_error_policy::abort) return false;
           buf.append(string_view("\xEF\xBF\xBD"));
           --p;
+          continue;
         } else {
           c = (c << 10) + static_cast<uint32_t>(*p) - 0x35fdc00;
         }
-      } else if (c < 0x80) {
+      }
+      if (c < 0x80) {
         buf.push_back(static_cast<char>(c));
       } else if (c < 0x800) {
         buf.push_back(static_cast<char>(0xc0 | (c >> 6)));

@@ -35,6 +35,9 @@ TEST(std_test, path) {
                                    L"\x0447\x044B\x043D\x0430")),
             "Шчучыншчына");
   EXPECT_EQ(fmt::format("{}", path(L"\xd800")), "�");
+  EXPECT_EQ(fmt::format("{}", path(L"HEAD \xd800 TAIL")), "HEAD � TAIL");
+  EXPECT_EQ(fmt::format("{}", path(L"HEAD \xD83D\xDE00 TAIL")), "HEAD \xF0\x9F\x98\x80 TAIL");
+  EXPECT_EQ(fmt::format("{}", path(L"HEAD \xD83D\xD83D\xDE00 TAIL")), "HEAD �\xF0\x9F\x98\x80 TAIL");
   EXPECT_EQ(fmt::format("{:?}", path(L"\xd800")), "\"\\ud800\"");
 #  endif
 }
