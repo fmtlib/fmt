@@ -2315,7 +2315,6 @@ FMT_CONSTEXPR auto write(OutputIt out, T value) -> OutputIt {
   return format_decimal<Char>(out, abs_value, num_digits);
 }
 
-// DEPRECATED!
 template <typename Char>
 FMT_CONSTEXPR auto parse_align(const Char* begin, const Char* end,
                                format_specs& specs) -> const Char* {
@@ -4068,12 +4067,16 @@ template <typename T, typename Char = char> struct nested_formatter {
 
   FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
       -> decltype(ctx.begin()) {
-    auto specs = detail::dynamic_format_specs<Char>();
-    auto it = parse_format_specs(ctx.begin(), ctx.end(), specs, ctx,
-                                 detail::type::none_type);
-    width_ = specs.width;
+    auto it = ctx.begin(), end = ctx.end();
+    if (it == end) return it;
+    auto specs = format_specs();
+    it = detail::parse_align(it, end, specs);
     fill_ = specs.fill;
     align_ = specs.align;
+    Char c = *it;
+    auto width_ref = detail::arg_ref<Char>();
+    if ((c >= '0' && c <= '9') || c == '{')
+      it = detail::parse_dynamic_spec(it, end, width_, width_ref, ctx);
     ctx.advance_to(it);
     return formatter_.parse(ctx);
   }
