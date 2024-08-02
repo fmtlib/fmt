@@ -5,6 +5,7 @@
 //
 // For the license information refer to format.h.
 
+#define FMT_DETAIL_EXPLICIT_INSTANTIATIONS 1
 #include "fmt/format-inl.h"
 
 FMT_BEGIN_NAMESPACE

@@ -198,7 +198,7 @@ TEST(compile_test, format_to_n) {
   EXPECT_STREQ("2a", buffer);
 }
 
-#  if 0
+#  if FMT_USE_CONSTEVAL
 TEST(compile_test, constexpr_formatted_size) {
   FMT_CONSTEXPR20 size_t size = fmt::formatted_size(FMT_COMPILE("{}"), 42);
   EXPECT_EQ(size, 2);
