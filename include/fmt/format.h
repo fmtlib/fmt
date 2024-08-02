@@ -3194,16 +3194,6 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision,
     exp = static_cast<int>(e);
     if (e > exp) ++exp;  // Compute ceil.
     dragon_flags = dragon::fixup;
-  } else if (precision < 0) {
-    // Use Dragonbox for the shortest format.
-    if (binary32) {
-      auto dec = dragonbox::to_decimal(static_cast<float>(value));
-      write<char>(appender(buf), dec.significand);
-      return dec.exponent;
-    }
-    auto dec = dragonbox::to_decimal(static_cast<double>(value));
-    write<char>(appender(buf), dec.significand);
-    return dec.exponent;
   } else {
     // Extract significand bits and exponent bits.
     using info = dragonbox::float_info<double>;
@@ -3497,9 +3487,18 @@ FMT_CONSTEXPR20 auto write_float(OutputIt out, T value, format_specs specs,
                                            specs);
   }
 
-  int precision = specs.precision >= 0 || specs.type == presentation_type::none
-                      ? specs.precision
-                      : 6;
+  int precision = specs.precision;
+  if (precision < 0) {
+    if (specs.type != presentation_type::none) {
+      precision = 6;
+    } else if (is_fast_float<T>::value && !is_constant_evaluated()) {
+      // Use Dragonbox for the shortest format.
+      using floaty = conditional_t<sizeof(T) >= sizeof(double), double, float>;
+      auto dec = dragonbox::to_decimal(static_cast<floaty>(value));
+      return write_float<Char>(out, dec, specs, sign, loc);
+    }
+  }
+
   if (specs.type == presentation_type::exp) {
     if (precision == max_value<int>())
       report_error("number is too big");
@@ -3511,7 +3510,6 @@ FMT_CONSTEXPR20 auto write_float(OutputIt out, T value, format_specs specs,
   } else if (precision == 0) {
     precision = 1;
   }
-
   int exp = format_float(convert_float(value), precision, specs,
                          std::is_same<T, float>(), buffer);
 
