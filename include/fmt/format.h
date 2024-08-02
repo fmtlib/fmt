@@ -3165,11 +3165,10 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision,
                                   buffer<char>& buf) -> int {
   // float is passed as double to reduce the number of instantiations.
   static_assert(!std::is_same<Float, float>::value, "");
-  FMT_ASSERT(value >= 0, "value is negative");
   auto converted_value = convert_float(value);
 
   const bool fixed = specs.type == presentation_type::fixed;
-  if (value <= 0) {  // <= instead of == to silence a warning.
+  if (value == 0) {
     if (precision <= 0 || !fixed) {
       buf.push_back('0');
       return 0;
@@ -3462,13 +3461,8 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision,
 template <typename Char, typename OutputIt, typename T>
 FMT_CONSTEXPR20 auto write_float(OutputIt out, T value, format_specs specs,
                                  locale_ref loc) -> OutputIt {
-  sign_t sign = specs.sign;
-  if (detail::signbit(value)) {  // value < 0 is false for NaN so use signbit.
-    sign = sign::minus;
-    value = -value;
-  } else if (sign == sign::minus) {
-    sign = sign::none;
-  }
+  // Use signbit because value < 0 is false for NaN.
+  sign_t sign = detail::signbit(value) ? sign::minus : specs.sign;
 
   if (!detail::isfinite(value))
     return write_nonfinite<Char>(out, detail::isnan(value), specs, sign);
@@ -3477,14 +3471,6 @@ FMT_CONSTEXPR20 auto write_float(OutputIt out, T value, format_specs specs,
     *out++ = detail::sign<Char>(sign);
     sign = sign::none;
     if (specs.width != 0) --specs.width;
-  }
-
-  memory_buffer buffer;
-  if (specs.type == presentation_type::hexfloat) {
-    if (sign) buffer.push_back(detail::sign<char>(sign));
-    format_hexfloat(convert_float(value), specs, buffer);
-    return write_bytes<Char, align::right>(out, {buffer.data(), buffer.size()},
-                                           specs);
   }
 
   int precision = specs.precision;
@@ -3497,6 +3483,14 @@ FMT_CONSTEXPR20 auto write_float(OutputIt out, T value, format_specs specs,
       auto dec = dragonbox::to_decimal(static_cast<floaty>(value));
       return write_float<Char>(out, dec, specs, sign, loc);
     }
+  }
+
+  memory_buffer buffer;
+  if (specs.type == presentation_type::hexfloat) {
+    if (sign) buffer.push_back(detail::sign<char>(sign));
+    format_hexfloat(convert_float(value), specs, buffer);
+    return write_bytes<Char, align::right>(out, {buffer.data(), buffer.size()},
+                                           specs);
   }
 
   if (specs.type == presentation_type::exp) {
@@ -3534,14 +3528,10 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
   if (is_constant_evaluated()) return write<Char>(out, value, format_specs());
   if (const_check(!is_supported_floating_point(value))) return out;
 
-  auto sign = sign_t::none;
-  if (detail::signbit(value)) {
-    sign = sign::minus;
-    value = -value;
-  }
+  auto sign = detail::signbit(value) ? sign::minus : sign_t::none;
 
   constexpr auto specs = format_specs();
-  using floaty = conditional_t<std::is_same<T, long double>::value, double, T>;
+  using floaty = conditional_t<sizeof(T) >= sizeof(double), double, float>;
   using floaty_uint = typename dragonbox::float_info<floaty>::carrier_uint;
   floaty_uint mask = exponent_mask<floaty>();
   if ((bit_cast<floaty_uint>(value) & mask) == mask)

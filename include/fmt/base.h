@@ -2430,7 +2430,6 @@ FMT_CONSTEXPR auto parse_format_specs(const Char* begin, const Char* end,
         specs.sign = sign::plus;
         break;
       case '-':
-        specs.sign = sign::minus;
         break;
       case ' ':
         specs.sign = sign::space;

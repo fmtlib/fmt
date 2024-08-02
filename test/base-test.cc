@@ -519,7 +519,7 @@ TEST(base_test, constexpr_parse_format_specs) {
   static_assert(parse_test_specs("<").align == fmt::align::left, "");
   static_assert(parse_test_specs("*^").fill.get<char>() == '*', "");
   static_assert(parse_test_specs("+").sign == fmt::sign::plus, "");
-  static_assert(parse_test_specs("-").sign == fmt::sign::minus, "");
+  static_assert(parse_test_specs("-").sign == fmt::sign::none, "");
   static_assert(parse_test_specs(" ").sign == fmt::sign::space, "");
   static_assert(parse_test_specs("#").alt, "");
   static_assert(parse_test_specs("0").align == fmt::align::numeric, "");
