@@ -494,7 +494,8 @@ struct is_back_insert_iterator<
 
 // Extracts a reference to the container from *insert_iterator.
 template <typename OutputIt>
-inline auto get_container(OutputIt it) -> typename OutputIt::container_type& {
+inline FMT_CONSTEXPR20 auto get_container(OutputIt it) ->
+    typename OutputIt::container_type& {
   struct accessor : OutputIt {
     accessor(OutputIt base) : OutputIt(base) {}
     using OutputIt::container;
@@ -901,7 +902,7 @@ template <typename T> class buffer {
   FMT_CONSTEXPR auto data() const noexcept -> const T* { return ptr_; }
 
   /// Clears this buffer.
-  void clear() { size_ = 0; }
+  FMT_CONSTEXPR void clear() { size_ = 0; }
 
   // Tries resizing the buffer to contain `count` elements. If T is a POD type
   // the new elements may not be initialized.
@@ -924,7 +925,15 @@ template <typename T> class buffer {
   }
 
   /// Appends data to the end of the buffer.
-  template <typename U> void append(const U* begin, const U* end) {
+  template <typename U>
+// Workaround for Visual Studio 2019 to fix error C2893: Failed to specialize
+// function template 'void fmt::v11::detail::buffer<T>::append(const U *,const
+// U *)'
+#if !FMT_MSC_VERSION || FMT_MSC_VERSION >= 1930
+  FMT_CONSTEXPR20
+#endif
+      void
+      append(const U* begin, const U* end) {
     while (begin != end) {
       auto count = to_unsigned(end - begin);
       try_reserve(size_ + count);
@@ -1105,7 +1114,9 @@ template <typename T = char> class counting_buffer : public buffer<T> {
  public:
   FMT_CONSTEXPR counting_buffer() : buffer<T>(grow, data_, 0, buffer_size) {}
 
-  auto count() -> size_t { return count_ + this->size(); }
+  constexpr auto count() const noexcept -> size_t {
+    return count_ + this->size();
+  }
 };
 }  // namespace detail
 
@@ -1155,7 +1166,8 @@ template <typename T> class basic_appender {
  private:
   detail::buffer<T>* buffer_;
 
-  friend auto get_container(basic_appender app) -> detail::buffer<T>& {
+  friend FMT_CONSTEXPR20 auto get_container(basic_appender app)
+      -> detail::buffer<T>& {
     return *app.buffer_;
   }
 
@@ -1170,13 +1182,13 @@ template <typename T> class basic_appender {
 
   FMT_CONSTEXPR basic_appender(detail::buffer<T>& buf) : buffer_(&buf) {}
 
-  auto operator=(T c) -> basic_appender& {
+  FMT_CONSTEXPR20 auto operator=(T c) -> basic_appender& {
     buffer_->push_back(c);
     return *this;
   }
-  auto operator*() -> basic_appender& { return *this; }
-  auto operator++() -> basic_appender& { return *this; }
-  auto operator++(int) -> basic_appender { return *this; }
+  FMT_CONSTEXPR20 auto operator*() -> basic_appender& { return *this; }
+  FMT_CONSTEXPR20 auto operator++() -> basic_appender& { return *this; }
+  FMT_CONSTEXPR20 auto operator++(int) -> basic_appender { return *this; }
 };
 
 using appender = basic_appender<char>;
@@ -1188,7 +1200,8 @@ struct is_back_insert_iterator<basic_appender<T>> : std::true_type {};
 // An optimized version of std::copy with the output value type (T).
 template <typename T, typename InputIt, typename OutputIt,
           FMT_ENABLE_IF(is_back_insert_iterator<OutputIt>::value)>
-auto copy(InputIt begin, InputIt end, OutputIt out) -> OutputIt {
+FMT_CONSTEXPR20 auto copy(InputIt begin, InputIt end, OutputIt out)
+    -> OutputIt {
   get_container(out).append(begin, end);
   return out;
 }
