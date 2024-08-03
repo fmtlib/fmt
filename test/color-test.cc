@@ -67,6 +67,21 @@ TEST(color_test, format_to) {
 }
 
 TEST(color_test, print) {
-  EXPECT_WRITE(stdout, fmt::print(fg(fmt::rgb(255, 20, 30)), "rgb(255,20,30)"),
-               "\x1b[38;2;255;020;030mrgb(255,20,30)\x1b[0m");
+  EXPECT_WRITE(stderr,
+               fmt::print(stderr, fg(fmt::rgb(255, 20, 30)), "rgb(255,20,30) {:}", 123),
+               "\x1b[38;2;255;020;030mrgb(255,20,30) 123\x1b[0m");
+
+  EXPECT_WRITE(stdout,
+               fmt::print(fg(fmt::rgb(255, 20, 30)), "rgb(255,20,30) {:}", 123),
+               "\x1b[38;2;255;020;030mrgb(255,20,30) 123\x1b[0m");
+}
+
+TEST(color_test, println) {
+  EXPECT_WRITE(stderr,
+               fmt::println(stderr, fg(fmt::rgb(255, 20, 30)), "rgb(255,20,30) {:}", 123),
+               "\x1b[38;2;255;020;030mrgb(255,20,30) 123\x1b[0m\n");
+
+  EXPECT_WRITE(stdout,
+               fmt::println(fg(fmt::rgb(255, 20, 30)), "rgb(255,20,30) {:}", 123),
+               "\x1b[38;2;255;020;030mrgb(255,20,30) 123\x1b[0m\n");
 }

@@ -1732,6 +1732,10 @@ FMT_FUNC void vprint(string_view fmt, format_args args) {
   vprint(stdout, fmt, args);
 }
 
+FMT_FUNC void vprintln(string_view fmt, format_args args) {
+  vprintln(stdout, fmt, args);
+}
+
 namespace detail {
 
 struct singleton {

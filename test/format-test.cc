@@ -1801,6 +1801,17 @@ TEST(format_test, print) {
                "Don't panic!\n");
 }
 
+TEST(module_test, vprint) {
+  EXPECT_WRITE(stdout, fmt::vprint("Don't {}!", fmt::make_format_args("panic")),
+               "Don't panic!");
+  EXPECT_WRITE(stderr, fmt::vprint(stderr, "Don't {}!", fmt::make_format_args("panic")),
+               "Don't panic!");
+  EXPECT_WRITE(stdout, fmt::vprintln("Don't {}!", fmt::make_format_args("panic")),
+               "Don't panic!\n");
+  EXPECT_WRITE(stderr, fmt::vprintln(stderr, "Don't {}!", fmt::make_format_args("panic")),
+               "Don't panic!\n");
+}
+
 TEST(format_test, big_print) {
   enum { count = 5000 };
   auto big_print = []() {
