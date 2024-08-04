@@ -3074,18 +3074,17 @@ FMT_CONSTEXPR20 void format_hexfloat(Float value, format_specs specs,
   // Assume Float is in the format [sign][exponent][significand].
   using carrier_uint = typename info::carrier_uint;
 
-  constexpr auto num_float_significand_bits =
-      detail::num_significand_bits<Float>();
+  const auto num_float_significand_bits = detail::num_significand_bits<Float>();
 
   basic_fp<carrier_uint> f(value);
   f.e += num_float_significand_bits;
   if (!has_implicit_bit<Float>()) --f.e;
 
-  constexpr auto num_fraction_bits =
+  const auto num_fraction_bits =
       num_float_significand_bits + (has_implicit_bit<Float>() ? 1 : 0);
-  constexpr auto num_xdigits = (num_fraction_bits + 3) / 4;
+  const auto num_xdigits = (num_fraction_bits + 3) / 4;
 
-  constexpr auto leading_shift = ((num_xdigits - 1) * 4);
+  const auto leading_shift = ((num_xdigits - 1) * 4);
   const auto leading_mask = carrier_uint(0xF) << leading_shift;
   const auto leading_xdigit =
       static_cast<uint32_t>((f.f & leading_mask) >> leading_shift);
@@ -3640,21 +3639,19 @@ FMT_CONSTEXPR auto write(OutputIt out, const T& value)
 // An argument visitor that formats the argument and writes it via the output
 // iterator. It's a class and not a generic lambda for compatibility with C++11.
 template <typename Char> struct default_arg_formatter {
-  using iterator = basic_appender<Char>;
   using context = buffered_context<Char>;
 
-  iterator out;
-  basic_format_args<context> args;
-  locale_ref loc;
+  basic_appender<Char> out;
 
-  template <typename T> auto operator()(T value) -> iterator {
-    return write<Char>(out, value);
-  }
-  auto operator()(typename basic_format_arg<context>::handle h) -> iterator {
-    basic_format_parse_context<Char> parse_ctx({});
-    context format_ctx(out, args, loc);
+  void operator()(monostate) { report_error("argument not found"); }
+
+  template <typename T> void operator()(T value) { write<Char>(out, value); }
+
+  void operator()(typename basic_format_arg<context>::handle h) {
+    // Use a null locale since the default format must be unlocalized.
+    auto parse_ctx = basic_format_parse_context<Char>({});
+    auto format_ctx = context(out, {}, {});
     h.format(parse_ctx, format_ctx);
-    return format_ctx.out();
   }
 };
 
@@ -4121,74 +4118,62 @@ FMT_END_EXPORT
 
 namespace detail {
 
+template <typename Char> struct format_handler {
+  basic_format_parse_context<Char> parse_context;
+  buffered_context<Char> context;
+
+  void on_text(const Char* begin, const Char* end) {
+    copy_noinline<Char>(begin, end, context.out());
+  }
+
+  FMT_CONSTEXPR auto on_arg_id() -> int { return parse_context.next_arg_id(); }
+  FMT_CONSTEXPR auto on_arg_id(int id) -> int {
+    parse_context.check_arg_id(id);
+    return id;
+  }
+  FMT_CONSTEXPR auto on_arg_id(basic_string_view<Char> id) -> int {
+    parse_context.check_arg_id(id);
+    int arg_id = context.arg_id(id);
+    if (arg_id < 0) report_error("argument not found");
+    return arg_id;
+  }
+
+  FMT_INLINE void on_replacement_field(int id, const Char*) {
+    context.arg(id).visit(default_arg_formatter<Char>{context.out()});
+  }
+
+  auto on_format_specs(int id, const Char* begin, const Char* end)
+      -> const Char* {
+    auto arg = get_arg(context, id);
+    // Not using a visitor for custom types gives better codegen.
+    if (arg.format_custom(begin, parse_context, context))
+      return parse_context.begin();
+
+    auto specs = detail::dynamic_format_specs<Char>();
+    begin = parse_format_specs(begin, end, specs, parse_context, arg.type());
+    if (specs.width_ref.kind != detail::arg_id_kind::none)
+      specs.width = detail::get_dynamic_spec(specs.width_ref, context);
+    if (specs.precision_ref.kind != detail::arg_id_kind::none)
+      specs.precision = detail::get_dynamic_spec(specs.precision_ref, context);
+
+    if (begin == end || *begin != '}')
+      report_error("missing '}' in format string");
+    arg.visit(arg_formatter<Char>{context.out(), specs, context.locale()});
+    return begin;
+  }
+
+  FMT_NORETURN void on_error(const char* message) { report_error(message); }
+};
+
 template <typename Char>
 void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
                 typename vformat_args<Char>::type args, locale_ref loc) {
   auto out = basic_appender<Char>(buf);
-  if (fmt.size() == 2 && equal2(fmt.data(), "{}")) {
-    auto arg = args.get(0);
-    if (!arg) report_error("argument not found");
-    arg.visit(default_arg_formatter<Char>{out, args, loc});
-    return;
-  }
-
-  struct format_handler {
-    basic_format_parse_context<Char> parse_context;
-    buffered_context<Char> context;
-
-    format_handler(basic_appender<Char> p_out, basic_string_view<Char> str,
-                   basic_format_args<buffered_context<Char>> p_args,
-                   locale_ref p_loc)
-        : parse_context(str), context(p_out, p_args, p_loc) {}
-
-    void on_text(const Char* begin, const Char* end) {
-      context.advance_to(copy_noinline<Char>(begin, end, context.out()));
-    }
-
-    FMT_CONSTEXPR auto on_arg_id() -> int {
-      return parse_context.next_arg_id();
-    }
-    FMT_CONSTEXPR auto on_arg_id(int id) -> int {
-      parse_context.check_arg_id(id);
-      return id;
-    }
-    FMT_CONSTEXPR auto on_arg_id(basic_string_view<Char> id) -> int {
-      parse_context.check_arg_id(id);
-      int arg_id = context.arg_id(id);
-      if (arg_id < 0) report_error("argument not found");
-      return arg_id;
-    }
-
-    FMT_INLINE void on_replacement_field(int id, const Char*) {
-      auto arg = get_arg(context, id);
-      context.advance_to(arg.visit(default_arg_formatter<Char>{
-          context.out(), context.args(), context.locale()}));
-    }
-
-    auto on_format_specs(int id, const Char* begin, const Char* end)
-        -> const Char* {
-      auto arg = get_arg(context, id);
-      // Not using a visitor for custom types gives better codegen.
-      if (arg.format_custom(begin, parse_context, context))
-        return parse_context.begin();
-      auto specs = detail::dynamic_format_specs<Char>();
-      begin = parse_format_specs(begin, end, specs, parse_context, arg.type());
-      if (specs.width_ref.kind != detail::arg_id_kind::none)
-        specs.width = detail::get_dynamic_spec(specs.width_ref, context);
-      if (specs.precision_ref.kind != detail::arg_id_kind::none) {
-        specs.precision =
-            detail::get_dynamic_spec(specs.precision_ref, context);
-      }
-      if (begin == end || *begin != '}')
-        report_error("missing '}' in format string");
-      context.advance_to(arg.visit(
-          arg_formatter<Char>{context.out(), specs, context.locale()}));
-      return begin;
-    }
-
-    FMT_NORETURN void on_error(const char* message) { report_error(message); }
-  };
-  detail::parse_format_string<false>(fmt, format_handler(out, fmt, args, loc));
+  if (fmt.size() == 2 && equal2(fmt.data(), "{}"))
+    return args.get(0).visit(default_arg_formatter<Char>{out});
+  parse_format_string<false>(
+      fmt, format_handler<Char>{basic_format_parse_context<Char>(fmt),
+                                {out, args, loc}});
 }
 
 FMT_BEGIN_EXPORT
@@ -4215,9 +4200,9 @@ FMT_CONSTEXPR FMT_INLINE auto native_formatter<T, Char, TYPE>::format(
       specs_.precision_ref.kind == arg_id_kind::none) {
     return write<Char>(ctx.out(), val, specs_, ctx.locale());
   }
-  auto specs = specs_;
-  handle_dynamic_spec(specs.width, specs.width_ref, ctx);
-  handle_dynamic_spec(specs.precision, specs.precision_ref, ctx);
+  auto specs = format_specs(specs_);
+  handle_dynamic_spec(specs.width, specs_.width_ref, ctx);
+  handle_dynamic_spec(specs.precision, specs_.precision_ref, ctx);
   return write<Char>(ctx.out(), val, specs, ctx.locale());
 }
 
