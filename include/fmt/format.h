@@ -3698,17 +3698,22 @@ FMT_CONSTEXPR auto get_arg(Context& ctx, ID id) -> basic_format_arg<Context> {
 }
 
 template <typename Context>
-FMT_CONSTEXPR void handle_dynamic_spec(int& value,
-                                       arg_ref<typename Context::char_type> ref,
-                                       Context& ctx) {
-  if (ref.kind == arg_id_kind::none) return;
+FMT_CONSTEXPR int get_dynamic_spec(
+    const arg_ref<typename Context::char_type>& ref, Context& ctx) {
+  FMT_ASSERT(ref.kind != arg_id_kind::none, "");
   auto arg = ref.kind == arg_id_kind::index ? ctx.arg(ref.val.index)
                                             : ctx.arg(ref.val.name);
   if (!arg) report_error("argument not found");
-  unsigned long long arg_value = arg.visit(dynamic_spec_getter());
-  if (arg_value > to_unsigned(max_value<int>()))
+  unsigned long long value = arg.visit(dynamic_spec_getter());
+  if (value > to_unsigned(max_value<int>()))
     report_error("width/precision is out of range");
-  value = static_cast<int>(arg_value);
+  return static_cast<int>(value);
+}
+
+template <typename Context>
+FMT_CONSTEXPR void handle_dynamic_spec(
+    int& value, const arg_ref<typename Context::char_type>& ref, Context& ctx) {
+  if (ref.kind != arg_id_kind::none) value = get_dynamic_spec(ref, ctx);
 }
 
 #if FMT_USE_USER_DEFINED_LITERALS
@@ -4168,9 +4173,12 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
         return parse_context.begin();
       auto specs = detail::dynamic_format_specs<Char>();
       begin = parse_format_specs(begin, end, specs, parse_context, arg.type());
-      detail::handle_dynamic_spec(specs.width, specs.width_ref, context);
-      detail::handle_dynamic_spec(specs.precision, specs.precision_ref,
-                                  context);
+      if (specs.width_ref.kind != detail::arg_id_kind::none)
+        specs.width = detail::get_dynamic_spec(specs.width_ref, context);
+      if (specs.precision_ref.kind != detail::arg_id_kind::none) {
+        specs.precision =
+            detail::get_dynamic_spec(specs.precision_ref, context);
+      }
       if (begin == end || *begin != '}')
         report_error("missing '}' in format string");
       context.advance_to(arg.visit(
