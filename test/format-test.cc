@@ -897,11 +897,11 @@ TEST(format_test, runtime_width) {
                    "invalid format string");
 
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:{1}}"), 0, -1), format_error,
-                   "negative width");
+                   "negative width/precision");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:{1}}"), 0, (INT_MAX + 1u)),
                    format_error, "number is too big");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:{1}}"), 0, -1l), format_error,
-                   "negative width");
+                   "negative width/precision");
   if (fmt::detail::const_check(sizeof(long) > sizeof(int))) {
     long value = INT_MAX;
     EXPECT_THROW_MSG((void)fmt::format(runtime("{0:{1}}"), 0, (value + 1)),
@@ -911,9 +911,9 @@ TEST(format_test, runtime_width) {
                    format_error, "number is too big");
 
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:{1}}"), 0, '0'), format_error,
-                   "width is not integer");
+                   "width/precision is not integer");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:{1}}"), 0, 0.0), format_error,
-                   "width is not integer");
+                   "width/precision is not integer");
 
   EXPECT_EQ(fmt::format("{0:{1}}", -42, 4), " -42");
   EXPECT_EQ(fmt::format("{0:{1}}", 42u, 5), "   42");
@@ -1118,11 +1118,11 @@ TEST(format_test, runtime_precision) {
                    "invalid format string");
 
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0, -1),
-                   format_error, "negative precision");
+                   format_error, "negative width/precision");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0, (INT_MAX + 1u)),
                    format_error, "number is too big");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0, -1l),
-                   format_error, "negative precision");
+                   format_error, "negative width/precision");
   if (fmt::detail::const_check(sizeof(long) > sizeof(int))) {
     long value = INT_MAX;
     EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0, (value + 1)),
@@ -1132,9 +1132,9 @@ TEST(format_test, runtime_precision) {
                    format_error, "number is too big");
 
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0, '0'),
-                   format_error, "precision is not integer");
+                   format_error, "width/precision is not integer");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0, 0.0),
-                   format_error, "precision is not integer");
+                   format_error, "width/precision is not integer");
 
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 42, 2), format_error,
                    "invalid format specifier");

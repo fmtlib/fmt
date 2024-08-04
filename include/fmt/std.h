@@ -147,8 +147,7 @@ template <typename Char> struct formatter<std::filesystem::path, Char> {
         !path_type_ ? p.native()
                     : p.generic_string<std::filesystem::path::value_type>();
 
-    detail::handle_dynamic_spec<detail::width_checker>(specs.width, width_ref_,
-                                                       ctx);
+    detail::handle_dynamic_spec(specs.width, width_ref_, ctx);
     if (!debug_) {
       auto s = detail::get_path_string<Char>(p, path_string);
       return detail::write(ctx.out(), basic_string_view<Char>(s), specs);
@@ -672,10 +671,8 @@ template <typename T, typename Char> struct formatter<std::complex<T>, Char> {
     auto specs = specs_;
     if (specs.width_ref.kind != detail::arg_id_kind::none ||
         specs.precision_ref.kind != detail::arg_id_kind::none) {
-      detail::handle_dynamic_spec<detail::width_checker>(specs.width,
-                                                         specs.width_ref, ctx);
-      detail::handle_dynamic_spec<detail::precision_checker>(
-          specs.precision, specs.precision_ref, ctx);
+      detail::handle_dynamic_spec(specs.width, specs.width_ref, ctx);
+      detail::handle_dynamic_spec(specs.precision, specs.precision_ref, ctx);
     }
 
     if (specs.width == 0) return do_format(c, specs, ctx, ctx.out());

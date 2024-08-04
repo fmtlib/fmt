@@ -2283,10 +2283,8 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     // is not specified.
     auto buf = basic_memory_buffer<Char>();
     auto out = basic_appender<Char>(buf);
-    detail::handle_dynamic_spec<detail::width_checker>(specs.width, width_ref_,
-                                                       ctx);
-    detail::handle_dynamic_spec<detail::precision_checker>(precision,
-                                                           precision_ref_, ctx);
+    detail::handle_dynamic_spec(specs.width, width_ref_, ctx);
+    detail::handle_dynamic_spec(precision, precision_ref_, ctx);
     if (begin == end || *begin == '}') {
       out = detail::format_duration_value<Char>(out, d.count(), precision);
       detail::format_duration_unit<Char, Period>(out);
@@ -2392,8 +2390,7 @@ template <typename Char> struct formatter<std::tm, Char> {
     auto specs = specs_;
     auto buf = basic_memory_buffer<Char>();
     auto out = basic_appender<Char>(buf);
-    detail::handle_dynamic_spec<detail::width_checker>(specs.width, width_ref_,
-                                                       ctx);
+    detail::handle_dynamic_spec(specs.width, width_ref_, ctx);
 
     auto loc_ref = ctx.locale();
     detail::get_locale loc(static_cast<bool>(loc_ref), loc_ref);

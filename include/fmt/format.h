@@ -3677,49 +3677,35 @@ template <typename Char> struct arg_formatter {
   }
 };
 
-struct width_checker {
+struct dynamic_spec_getter {
   template <typename T, FMT_ENABLE_IF(is_integer<T>::value)>
   FMT_CONSTEXPR auto operator()(T value) -> unsigned long long {
-    if (is_negative(value)) report_error("negative width");
+    if (is_negative(value)) report_error("negative width/precision");
     return static_cast<unsigned long long>(value);
   }
 
   template <typename T, FMT_ENABLE_IF(!is_integer<T>::value)>
   FMT_CONSTEXPR auto operator()(T) -> unsigned long long {
-    report_error("width is not integer");
+    report_error("width/precision is not integer");
     return 0;
   }
 };
 
-struct precision_checker {
-  template <typename T, FMT_ENABLE_IF(is_integer<T>::value)>
-  FMT_CONSTEXPR auto operator()(T value) -> unsigned long long {
-    if (is_negative(value)) report_error("negative precision");
-    return static_cast<unsigned long long>(value);
-  }
-
-  template <typename T, FMT_ENABLE_IF(!is_integer<T>::value)>
-  FMT_CONSTEXPR auto operator()(T) -> unsigned long long {
-    report_error("precision is not integer");
-    return 0;
-  }
-};
-
-template <typename Handler, typename FormatArg>
-FMT_CONSTEXPR auto get_dynamic_spec(FormatArg arg) -> int {
-  unsigned long long value = arg.visit(Handler());
+template <typename Context>
+FMT_CONSTEXPR auto get_dynamic_spec(basic_format_arg<Context> arg) -> int {
+  unsigned long long value = arg.visit(dynamic_spec_getter());
   if (value > to_unsigned(max_value<int>())) report_error("number is too big");
   return static_cast<int>(value);
 }
 
 template <typename Context, typename ID>
-FMT_CONSTEXPR auto get_arg(Context& ctx, ID id) -> decltype(ctx.arg(id)) {
+FMT_CONSTEXPR auto get_arg(Context& ctx, ID id) -> basic_format_arg<Context> {
   auto arg = ctx.arg(id);
   if (!arg) report_error("argument not found");
   return arg;
 }
 
-template <typename Handler, typename Context>
+template <typename Context>
 FMT_CONSTEXPR void handle_dynamic_spec(int& value,
                                        arg_ref<typename Context::char_type> ref,
                                        Context& ctx) {
@@ -3727,10 +3713,10 @@ FMT_CONSTEXPR void handle_dynamic_spec(int& value,
   case arg_id_kind::none:
     break;
   case arg_id_kind::index:
-    value = detail::get_dynamic_spec<Handler>(get_arg(ctx, ref.val.index));
+    value = get_dynamic_spec(get_arg(ctx, ref.val.index));
     break;
   case arg_id_kind::name:
-    value = detail::get_dynamic_spec<Handler>(get_arg(ctx, ref.val.name));
+    value = get_dynamic_spec(get_arg(ctx, ref.val.name));
     break;
   }
 }
@@ -3987,10 +3973,8 @@ template <> struct formatter<bytes> {
   template <typename FormatContext>
   auto format(bytes b, FormatContext& ctx) const -> decltype(ctx.out()) {
     auto specs = specs_;
-    detail::handle_dynamic_spec<detail::width_checker>(specs.width,
-                                                       specs.width_ref, ctx);
-    detail::handle_dynamic_spec<detail::precision_checker>(
-        specs.precision, specs.precision_ref, ctx);
+    detail::handle_dynamic_spec(specs.width, specs.width_ref, ctx);
+    detail::handle_dynamic_spec(specs.precision, specs.precision_ref, ctx);
     return detail::write_bytes<char>(ctx.out(), b.data_, specs);
   }
 };
@@ -4028,10 +4012,8 @@ template <typename T> struct formatter<group_digits_view<T>> : formatter<T> {
   auto format(group_digits_view<T> t, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     auto specs = specs_;
-    detail::handle_dynamic_spec<detail::width_checker>(specs.width,
-                                                       specs.width_ref, ctx);
-    detail::handle_dynamic_spec<detail::precision_checker>(
-        specs.precision, specs.precision_ref, ctx);
+    detail::handle_dynamic_spec(specs.width, specs.width_ref, ctx);
+    detail::handle_dynamic_spec(specs.precision, specs.precision_ref, ctx);
     auto arg = detail::make_write_int_arg(t.value, specs.sign);
     return detail::write_int(
         ctx.out(), static_cast<detail::uint64_or_128_t<T>>(arg.abs_value),
@@ -4196,10 +4178,9 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
         return parse_context.begin();
       auto specs = detail::dynamic_format_specs<Char>();
       begin = parse_format_specs(begin, end, specs, parse_context, arg.type());
-      detail::handle_dynamic_spec<detail::width_checker>(
-          specs.width, specs.width_ref, context);
-      detail::handle_dynamic_spec<detail::precision_checker>(
-          specs.precision, specs.precision_ref, context);
+      detail::handle_dynamic_spec(specs.width, specs.width_ref, context);
+      detail::handle_dynamic_spec(specs.precision, specs.precision_ref,
+                                  context);
       if (begin == end || *begin != '}')
         report_error("missing '}' in format string");
       context.advance_to(arg.visit(
@@ -4237,9 +4218,8 @@ FMT_CONSTEXPR FMT_INLINE auto native_formatter<T, Char, TYPE>::format(
     return write<Char>(ctx.out(), val, specs_, ctx.locale());
   }
   auto specs = specs_;
-  handle_dynamic_spec<width_checker>(specs.width, specs.width_ref, ctx);
-  handle_dynamic_spec<precision_checker>(specs.precision, specs.precision_ref,
-                                         ctx);
+  handle_dynamic_spec(specs.width, specs.width_ref, ctx);
+  handle_dynamic_spec(specs.precision, specs.precision_ref, ctx);
   return write<Char>(ctx.out(), val, specs, ctx.locale());
 }
 
