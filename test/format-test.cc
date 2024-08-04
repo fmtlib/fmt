@@ -897,18 +897,18 @@ TEST(format_test, runtime_width) {
                    "invalid format string");
 
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:{1}}"), 0, -1), format_error,
-                   "negative width/precision");
+                   "width/precision is out of range");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:{1}}"), 0, (INT_MAX + 1u)),
-                   format_error, "number is too big");
+                   format_error, "width/precision is out of range");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:{1}}"), 0, -1l), format_error,
-                   "negative width/precision");
+                   "width/precision is out of range");
   if (fmt::detail::const_check(sizeof(long) > sizeof(int))) {
     long value = INT_MAX;
     EXPECT_THROW_MSG((void)fmt::format(runtime("{0:{1}}"), 0, (value + 1)),
-                     format_error, "number is too big");
+                     format_error, "width/precision is out of range");
   }
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:{1}}"), 0, (INT_MAX + 1ul)),
-                   format_error, "number is too big");
+                   format_error, "width/precision is out of range");
 
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:{1}}"), 0, '0'), format_error,
                    "width/precision is not integer");
@@ -1118,18 +1118,18 @@ TEST(format_test, runtime_precision) {
                    "invalid format string");
 
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0, -1),
-                   format_error, "negative width/precision");
+                   format_error, "width/precision is out of range");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0, (INT_MAX + 1u)),
-                   format_error, "number is too big");
+                   format_error, "width/precision is out of range");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0, -1l),
-                   format_error, "negative width/precision");
+                   format_error, "width/precision is out of range");
   if (fmt::detail::const_check(sizeof(long) > sizeof(int))) {
     long value = INT_MAX;
     EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0, (value + 1)),
-                     format_error, "number is too big");
+                     format_error, "width/precision is out of range");
   }
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0, (INT_MAX + 1ul)),
-                   format_error, "number is too big");
+                   format_error, "width/precision is out of range");
 
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0, '0'),
                    format_error, "width/precision is not integer");

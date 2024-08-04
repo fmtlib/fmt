@@ -3680,8 +3680,7 @@ template <typename Char> struct arg_formatter {
 struct dynamic_spec_getter {
   template <typename T, FMT_ENABLE_IF(is_integer<T>::value)>
   FMT_CONSTEXPR auto operator()(T value) -> unsigned long long {
-    if (is_negative(value)) report_error("negative width/precision");
-    return static_cast<unsigned long long>(value);
+    return is_negative(value) ? ~0ull : static_cast<unsigned long long>(value);
   }
 
   template <typename T, FMT_ENABLE_IF(!is_integer<T>::value)>
@@ -3690,13 +3689,6 @@ struct dynamic_spec_getter {
     return 0;
   }
 };
-
-template <typename Context>
-FMT_CONSTEXPR auto get_dynamic_spec(basic_format_arg<Context> arg) -> int {
-  unsigned long long value = arg.visit(dynamic_spec_getter());
-  if (value > to_unsigned(max_value<int>())) report_error("number is too big");
-  return static_cast<int>(value);
-}
 
 template <typename Context, typename ID>
 FMT_CONSTEXPR auto get_arg(Context& ctx, ID id) -> basic_format_arg<Context> {
@@ -3709,16 +3701,14 @@ template <typename Context>
 FMT_CONSTEXPR void handle_dynamic_spec(int& value,
                                        arg_ref<typename Context::char_type> ref,
                                        Context& ctx) {
-  switch (ref.kind) {
-  case arg_id_kind::none:
-    break;
-  case arg_id_kind::index:
-    value = get_dynamic_spec(get_arg(ctx, ref.val.index));
-    break;
-  case arg_id_kind::name:
-    value = get_dynamic_spec(get_arg(ctx, ref.val.name));
-    break;
-  }
+  if (ref.kind == arg_id_kind::none) return;
+  auto arg = ref.kind == arg_id_kind::index ? ctx.arg(ref.val.index)
+                                            : ctx.arg(ref.val.name);
+  if (!arg) report_error("argument not found");
+  unsigned long long arg_value = arg.visit(dynamic_spec_getter());
+  if (arg_value > to_unsigned(max_value<int>()))
+    report_error("width/precision is out of range");
+  value = static_cast<int>(arg_value);
 }
 
 #if FMT_USE_USER_DEFINED_LITERALS
