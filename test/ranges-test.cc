@@ -170,6 +170,8 @@ TEST(ranges_test, format_adl_begin_end) {
 TEST(ranges_test, format_pair) {
   auto p = std::pair<int, float>(42, 1.5f);
   EXPECT_EQ(fmt::format("{}", p), "(42, 1.5)");
+  EXPECT_EQ(fmt::format("{:}", p), "(42, 1.5)");
+  EXPECT_EQ(fmt::format("{:n}", p), "421.5");
 }
 
 struct unformattable {};
@@ -178,6 +180,7 @@ TEST(ranges_test, format_tuple) {
   auto t =
       std::tuple<int, float, std::string, char>(42, 1.5f, "this is tuple", 'i');
   EXPECT_EQ(fmt::format("{}", t), "(42, 1.5, \"this is tuple\", 'i')");
+  EXPECT_EQ(fmt::format("{:n}", t), "421.5\"this is tuple\"'i'");
 
   EXPECT_EQ(fmt::format("{}", std::tuple<>()), "()");
 
