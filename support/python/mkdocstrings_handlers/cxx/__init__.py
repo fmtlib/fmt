@@ -16,8 +16,7 @@ class Definition:
 
     def __init__(self, name: str, kind: Optional[str] = None,
                  node: Optional[ElementTree.Element] = None,
-                 is_member: bool = False
-                 ):
+                 is_member: bool = False):
         self.name = name
         self.kind = kind if kind is not None else node.get('kind')
         self.desc = None
