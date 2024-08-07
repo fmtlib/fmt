@@ -288,9 +288,9 @@ TEST(compile_test, compile_format_string_literal) {
 //  (compiler file
 //  'D:\a\_work\1\s\src\vctools\Compiler\CxxFE\sl\p1\c\constexpr\constexpr.cpp',
 //  line 8635)
-#if FMT_USE_CONSTEVAL &&                                     \
-    (!FMT_MSC_VERSION ||                                     \
-     (FMT_MSC_VERSION >= 1928 && FMT_MSC_VERSION < 1930)) && \
+// Can't support MSVC 19.28 & 19.29, because C++20 constexpr is required for
+// fmt::v11::detail::buffer<T>::append.
+#if FMT_USE_CONSTEVAL && (!FMT_MSC_VERSION || (FMT_MSC_VERSION >= 1939)) && \
     defined(__cpp_lib_is_constant_evaluated)
 template <size_t max_string_length, typename Char = char> struct test_string {
   template <typename T> constexpr bool operator==(const T& rhs) const noexcept {
@@ -302,6 +302,7 @@ template <size_t max_string_length, typename Char = char> struct test_string {
 template <size_t max_string_length, typename Char = char, typename... Args>
 consteval auto test_format(auto format, const Args&... args) {
   test_string<max_string_length, Char> string{};
+  fmt::detail::ignore_unused(fmt::formatted_size(format, args...));
   fmt::format_to(string.buffer, format, args...);
   return string;
 }
@@ -334,6 +335,7 @@ TEST(compile_time_formatting_test, integer) {
   EXPECT_EQ("0X4A", test_format<5>(FMT_COMPILE("{:#X}"), 0x4a));
 
   EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42));
+  EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42l));
   EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42ll));
   EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42ull));
 

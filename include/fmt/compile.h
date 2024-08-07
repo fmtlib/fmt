@@ -467,6 +467,8 @@ FMT_INLINE std::basic_string<typename S::char_type> format(const S&,
 template <typename OutputIt, typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
 FMT_CONSTEXPR OutputIt format_to(OutputIt out, const S&, Args&&... args) {
+  // Check that all types are formattable.
+  [[maybe_unused]] auto formattable_check = fmt::make_format_args(args...);
   constexpr auto compiled = detail::compile<Args...>(S());
   if constexpr (std::is_same<remove_cvref_t<decltype(compiled)>,
                              detail::unknown_format>()) {

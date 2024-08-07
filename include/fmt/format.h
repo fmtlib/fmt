@@ -970,7 +970,13 @@ template <typename Char, size_t N> struct fixed_string {
   }
   Char data[N] = {};
 };
-#endif
+
+template <typename Char, size_t N>
+constexpr auto format_as(fixed_string<Char, N> const& value)
+    -> basic_string_view<Char> {
+  return {value.data, N - 1};
+}
+#endif  // FMT_USE_NONTYPE_TEMPLATE_ARGS
 
 // Converts a compile-time string to basic_string_view.
 template <typename Char, size_t N>
@@ -3624,11 +3630,13 @@ FMT_CONSTEXPR auto write(OutputIt out, const T& value) -> enable_if_t<
 
 template <typename Char, typename OutputIt, typename T,
           typename Context = basic_format_context<OutputIt, Char>>
-FMT_CONSTEXPR auto write(OutputIt out, const T& value)
-    -> enable_if_t<mapped_type_constant<T, Context>::value ==
-                           type::custom_type &&
-                       !std::is_fundamental<T>::value,
-                   OutputIt> {
+FMT_CONSTEXPR auto write(OutputIt out, const T& value) -> enable_if_t<
+    mapped_type_constant<T, Context>::value == type::custom_type &&
+        !std::is_fundamental<T>::value &&
+        !std::is_same<
+            unformattable,
+            remove_cvref_t<decltype(arg_mapper<Context>().map(value))>>::value,
+    OutputIt> {
   auto formatter = typename Context::template formatter_type<T>();
   auto parse_ctx = typename Context::parse_context_type({});
   formatter.parse(parse_ctx);
@@ -3879,19 +3887,21 @@ template <typename T, typename Char>
 struct formatter<T, Char, enable_if_t<detail::has_format_as<T>::value>>
     : formatter<detail::format_as_t<T>, Char> {
   template <typename FormatContext>
-  auto format(const T& value, FormatContext& ctx) const -> decltype(ctx.out()) {
+  FMT_CONSTEXPR auto format(const T& value, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
     auto&& val = format_as(value);  // Make an lvalue reference for format.
     return formatter<detail::format_as_t<T>, Char>::format(val, ctx);
   }
 };
 
-#define FMT_FORMAT_AS(Type, Base)                                              \
-  template <typename Char>                                                     \
-  struct formatter<Type, Char> : formatter<Base, Char> {                       \
-    template <typename FormatContext>                                          \
-    auto format(Type value, FormatContext& ctx) const -> decltype(ctx.out()) { \
-      return formatter<Base, Char>::format(value, ctx);                        \
-    }                                                                          \
+#define FMT_FORMAT_AS(Type, Base)                                   \
+  template <typename Char>                                          \
+  struct formatter<Type, Char> : formatter<Base, Char> {            \
+    template <typename FormatContext>                               \
+    FMT_CONSTEXPR auto format(Type value, FormatContext& ctx) const \
+        -> decltype(ctx.out()) {                                    \
+      return formatter<Base, Char>::format(value, ctx);             \
+    }                                                               \
   }
 
 FMT_FORMAT_AS(signed char, int);
@@ -4235,6 +4245,10 @@ inline namespace literals {
  *     fmt::print("The answer is {answer}.", "answer"_a=42);
  */
 #  if FMT_USE_NONTYPE_TEMPLATE_ARGS
+template <detail_exported::fixed_string Str> constexpr auto operator""_fs() {
+  return Str;
+}
+
 template <detail_exported::fixed_string Str> constexpr auto operator""_a() {
   using char_t = remove_cvref_t<decltype(Str.data[0])>;
   return detail::udl_arg<char_t, sizeof(Str.data) / sizeof(char_t), Str>();
