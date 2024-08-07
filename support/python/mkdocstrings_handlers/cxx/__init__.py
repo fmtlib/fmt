@@ -186,25 +186,25 @@ class CxxHandler(BaseHandler):
     self._doxyxml_dir = os.path.join(build_dir, 'doxyxml')
     p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
     _, _ = p.communicate(input=r'''
-        PROJECT_NAME    = fmt
-        GENERATE_XML    = YES
-        GENERATE_LATEX  = NO
-        GENERATE_HTML   = NO
-        INPUT       = {0}
-        XML_OUTPUT    = {1}
-        QUIET       = YES
+        PROJECT_NAME      = fmt
+        GENERATE_XML      = YES
+        GENERATE_LATEX    = NO
+        GENERATE_HTML     = NO
+        INPUT             = {0}
+        XML_OUTPUT        = {1}
+        QUIET             = YES
         AUTOLINK_SUPPORT  = NO
         MACRO_EXPANSION   = YES
-        PREDEFINED    = _WIN32=1 \
-                  __linux__=1 \
-                  FMT_ENABLE_IF(...)= \
-                  FMT_USE_USER_DEFINED_LITERALS=1 \
-                  FMT_USE_ALIAS_TEMPLATES=1 \
-                  FMT_USE_NONTYPE_TEMPLATE_ARGS=1 \
-                  FMT_API= \
-                  "FMT_BEGIN_NAMESPACE=namespace fmt {{" \
-                  "FMT_END_NAMESPACE=}}" \
-                  "FMT_DOC=1"
+        PREDEFINED        = _WIN32=1 \
+                            __linux__=1 \
+                            FMT_ENABLE_IF(...)= \
+                            FMT_USE_USER_DEFINED_LITERALS=1 \
+                            FMT_USE_ALIAS_TEMPLATES=1 \
+                            FMT_USE_NONTYPE_TEMPLATE_ARGS=1 \
+                            FMT_API= \
+                            "FMT_BEGIN_NAMESPACE=namespace fmt {{" \
+                            "FMT_END_NAMESPACE=}}" \
+                            "FMT_DOC=1"
         '''.format(
           ' '.join([os.path.join(include_dir, h) for h in headers]),
           self._doxyxml_dir).encode('utf-8'))
@@ -248,8 +248,8 @@ class CxxHandler(BaseHandler):
           continue
         kind = m.get('kind')
         member = Definition(name if name else '', kind=kind, is_member=True)
-        text_type = m.find('type').text
-        member.type = text_type if text_type else ''
+        type_text = m.find('type').text
+        member.type = type_text if type_text else ''
         if kind == 'function':
           member.params = convert_params(m)
           convert_return_type(member, m)
