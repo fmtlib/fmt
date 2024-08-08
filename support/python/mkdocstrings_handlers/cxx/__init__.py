@@ -1,24 +1,34 @@
 # A basic mkdocstrings handler for {fmt}.
 # Copyright (c) 2012 - present, Victor Zverovich
+# https://github.com/fmtlib/fmt/blob/master/LICENSE
+
+from __future__ import annotations
 
 import os
 from pathlib import Path
 from typing import Any, List, Mapping, Optional
 from subprocess import CalledProcessError, PIPE, Popen, STDOUT
-import xml.etree.ElementTree as et
+import xml.etree.ElementTree as ElementTree
 
 from mkdocstrings.handlers.base import BaseHandler
 
+
 class Definition:
-  '''A definition extracted by Doxygen.'''
+  """A definition extracted by Doxygen."""
+
   def __init__(self, name: str, kind: Optional[str] = None,
-               node: Optional[et.Element] = None,
+               node: Optional[ElementTree.Element] = None,
                is_member: bool = False):
     self.name = name
     self.kind = kind if kind is not None else node.get('kind')
+    self.desc = None
     self.id = name if not is_member else None
-    self.params = None
     self.members = None
+    self.params = None
+    self.template_params = None
+    self.trailing_return_type = None
+    self.type = None
+
 
 # A map from Doxygen to HTML tags.
 tag_map = {
@@ -37,10 +47,12 @@ tag_text_map = {
   'sp': ' '
 }
 
+
 def escape_html(s: str) -> str:
   return s.replace("<", "&lt;")
 
-def doxyxml2html(nodes: List[et.Element]):
+
+def doxyxml2html(nodes: List[ElementTree.Element]):
   out = ''
   for n in nodes:
     tag = tag_map.get(n.tag)
@@ -50,45 +62,50 @@ def doxyxml2html(nodes: List[et.Element]):
     out += '<code class="language-cpp">' if tag == 'pre' else ''
     if n.text:
       out += escape_html(n.text)
-    out += doxyxml2html(n)
+    out += doxyxml2html(list(n))
     out += '</code>' if tag == 'pre' else ''
     out += '</' + tag + '>' if tag else ''
     if n.tail:
       out += n.tail
   return out
 
-def convert_template_params(node: et.Element) -> Optional[List[Definition]]:
-  templateparamlist = node.find('templateparamlist')
-  if templateparamlist is None:
+
+def convert_template_params(node: ElementTree.Element) -> Optional[List[Definition]]:
+  template_param_list = node.find('templateparamlist')
+  if template_param_list is None:
     return None
   params = []
-  for param_node in templateparamlist.findall('param'):
+  for param_node in template_param_list.findall('param'):
     name = param_node.find('declname')
     param = Definition(name.text if name is not None else '', 'param')
     param.type = param_node.find('type').text
     params.append(param)
   return params
 
-def get_description(node: et.Element) -> List[et.Element]:
+
+def get_description(node: ElementTree.Element) -> List[ElementTree.Element]:
   return node.findall('briefdescription/para') + \
-         node.findall('detaileddescription/para')
+    node.findall('detaileddescription/para')
 
-def normalize_type(type: str) -> str:
-  type = type.replace('< ', '<').replace(' >', '>')
-  return type.replace(' &', '&').replace(' *', '*')
 
-def convert_type(type: et.Element) -> str:
-  if type is None:
+def normalize_type(type_: str) -> str:
+  type_ = type_.replace('< ', '<').replace(' >', '>')
+  return type_.replace(' &', '&').replace(' *', '*')
+
+
+def convert_type(type_: ElementTree.Element) -> Optional[str]:
+  if type_ is None:
     return None
-  result = type.text if type.text else ''
-  for ref in type:
+  result = type_.text if type_.text else ''
+  for ref in type_:
     result += ref.text
     if ref.tail:
       result += ref.tail
-  result += type.tail.strip()
+  result += type_.tail.strip()
   return normalize_type(result)
 
-def convert_params(func: et.Element) -> Definition:
+
+def convert_params(func: ElementTree.Element) -> list[Definition]:
   params = []
   for p in func.findall('param'):
     d = Definition(p.find('declname').text, 'param')
@@ -96,17 +113,20 @@ def convert_params(func: et.Element) -> Definition:
     params.append(d)
   return params
 
-def convert_return_type(d: Definition, node: et.Element) -> None:
+
+def convert_return_type(d: Definition, node: ElementTree.Element) -> None:
   d.trailing_return_type = None
   if d.type == 'auto' or d.type == 'constexpr auto':
     parts = node.find('argsstring').text.split(' -> ')
     if len(parts) > 1:
       d.trailing_return_type = normalize_type(parts[1])
 
+
 def render_param(param: Definition) -> str:
   return param.type + (f'&nbsp;{param.name}' if len(param.name) > 0 else '')
 
-def render_decl(d: Definition) -> None:
+
+def render_decl(d: Definition) -> str:
   text = ''
   if d.id is not None:
     text += f'<a id="{d.id}">\n'
@@ -146,6 +166,7 @@ def render_decl(d: Definition) -> None:
   if d.id is not None:
     text += f'</a>\n'
   return text
+
 
 class CxxHandler(BaseHandler):
   def __init__(self, **kwargs: Any) -> None:
@@ -197,7 +218,7 @@ class CxxHandler(BaseHandler):
     for h in headers:
       filename = h.replace(".h", "_8h.xml")
       with open(os.path.join(self._doxyxml_dir, filename)) as f:
-        doxyxml = et.parse(f)
+        doxyxml = ElementTree.parse(f)
         if self._file_doxyxml is None:
           self._file_doxyxml = doxyxml
           continue
@@ -206,18 +227,19 @@ class CxxHandler(BaseHandler):
           root.append(node)
 
   def collect_compound(self, identifier: str,
-                       cls: List[et.Element]) -> Definition:
-    '''Collect a compound definition such as a struct.'''
+                       cls: List[ElementTree.Element]) -> Definition:
+    """Collect a compound definition such as a struct."""
     path = os.path.join(self._doxyxml_dir, cls[0].get('refid') + '.xml')
     with open(path) as f:
-      xml = et.parse(f)
+      xml = ElementTree.parse(f)
       node = xml.find('compounddef')
       d = Definition(identifier, node=node)
       d.template_params = convert_template_params(node)
       d.desc = get_description(node)
       d.members = []
-      for m in node.findall('sectiondef[@kind="public-attrib"]/memberdef') + \
-               node.findall('sectiondef[@kind="public-func"]/memberdef'):
+      for m in \
+          node.findall('sectiondef[@kind="public-attrib"]/memberdef') + \
+          node.findall('sectiondef[@kind="public-func"]/memberdef'):
         name = m.find('name').text
         # Doxygen incorrectly classifies members of private unnamed unions as
         # public members of the containing class.
@@ -228,8 +250,8 @@ class CxxHandler(BaseHandler):
           continue
         kind = m.get('kind')
         member = Definition(name if name else '', kind=kind, is_member=True)
-        type = m.find('type').text
-        member.type = type if type else ''
+        type_text = m.find('type').text
+        member.type = type_text if type_text else ''
         if kind == 'function':
           member.params = convert_params(m)
           convert_return_type(member, m)
@@ -238,14 +260,14 @@ class CxxHandler(BaseHandler):
         d.members.append(member)
       return d
 
-  def collect(self, identifier: str, config: Mapping[str, Any]) -> Definition:
+  def collect(self, identifier: str, _config: Mapping[str, Any]) -> Definition:
     qual_name = 'fmt::' + identifier
 
     param_str = None
     paren = qual_name.find('(')
     if paren > 0:
       qual_name, param_str = qual_name[:paren], qual_name[paren + 1:-1]
-    
+
     colons = qual_name.rfind('::')
     namespace, name = qual_name[:colons], qual_name[colons + 2:]
 
@@ -254,7 +276,7 @@ class CxxHandler(BaseHandler):
     if doxyxml is None:
       path = f'namespace{namespace.replace("::", "_1_1")}.xml'
       with open(os.path.join(self._doxyxml_dir, path)) as f:
-        doxyxml = et.parse(f)
+        doxyxml = ElementTree.parse(f)
         self._ns2doxyxml[namespace] = doxyxml
 
     nodes = doxyxml.findall(
@@ -285,7 +307,7 @@ class CxxHandler(BaseHandler):
       convert_return_type(d, node)
       d.desc = get_description(node)
       return d
-    
+
     cls = doxyxml.findall(f"compounddef/innerclass[.='{qual_name}']")
     if not cls:
       raise Exception(f'Cannot find {identifier}. Candidates: {candidates}')
@@ -305,13 +327,14 @@ class CxxHandler(BaseHandler):
     text += '</div>\n'
     return text
 
+
 def get_handler(theme: str, custom_templates: Optional[str] = None,
-                **config: Any) -> CxxHandler:
-  '''Return an instance of `CxxHandler`.
+                **_config: Any) -> CxxHandler:
+  """Return an instance of `CxxHandler`.
 
   Arguments:
     theme: The theme to use when rendering contents.
     custom_templates: Directory containing custom templates.
-    **config: Configuration passed to the handler.
-  '''
+    **_config: Configuration passed to the handler.
+  """
   return CxxHandler(theme=theme, custom_templates=custom_templates)
