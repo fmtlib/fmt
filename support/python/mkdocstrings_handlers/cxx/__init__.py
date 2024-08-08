@@ -62,7 +62,7 @@ def doxyxml2html(nodes: List[ElementTree.Element]):
     out += '<code class="language-cpp">' if tag == 'pre' else ''
     if n.text:
       out += escape_html(n.text)
-    out += doxyxml2html([n])
+    out += doxyxml2html(list(n))
     out += '</code>' if tag == 'pre' else ''
     out += '</' + tag + '>' if tag else ''
     if n.tail:
@@ -93,9 +93,9 @@ def normalize_type(type_: str) -> str:
   return type_.replace(' &', '&').replace(' *', '*')
 
 
-def convert_type(type_: ElementTree.Element) -> str:
+def convert_type(type_: ElementTree.Element) -> Optional[str]:
   if type_ is None:
-    return ''
+    return None
   result = type_.text if type_.text else ''
   for ref in type_:
     result += ref.text
