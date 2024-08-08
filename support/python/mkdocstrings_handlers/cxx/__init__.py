@@ -2,6 +2,8 @@
 # Copyright (c) 2012 - present, Victor Zverovich
 # https://github.com/fmtlib/fmt/blob/master/LICENSE
 
+from __future__ import annotations
+
 import os
 from pathlib import Path
 from typing import Any, List, Mapping, Optional
@@ -50,7 +52,7 @@ def escape_html(s: str) -> str:
   return s.replace("<", "&lt;")
 
 
-def doxyxml2html(nodes: List[ElementTree.Element] | ElementTree.Element):
+def doxyxml2html(nodes: List[ElementTree.Element]):
   out = ''
   for n in nodes:
     tag = tag_map.get(n.tag)
@@ -60,7 +62,7 @@ def doxyxml2html(nodes: List[ElementTree.Element] | ElementTree.Element):
     out += '<code class="language-cpp">' if tag == 'pre' else ''
     if n.text:
       out += escape_html(n.text)
-    out += doxyxml2html(n)
+    out += doxyxml2html([n])
     out += '</code>' if tag == 'pre' else ''
     out += '</' + tag + '>' if tag else ''
     if n.tail:
@@ -91,9 +93,9 @@ def normalize_type(type_: str) -> str:
   return type_.replace(' &', '&').replace(' *', '*')
 
 
-def convert_type(type_: ElementTree.Element) -> str | None:
+def convert_type(type_: ElementTree.Element) -> str:
   if type_ is None:
-    return None
+    return ''
   result = type_.text if type_.text else ''
   for ref in type_:
     result += ref.text
