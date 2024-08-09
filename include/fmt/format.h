@@ -1602,7 +1602,7 @@ FMT_CONSTEXPR auto write_exponent(int exp, OutputIt out) -> OutputIt {
   } else {
     *out++ = static_cast<Char>('+');
   }
-  unsigned uexp = to_unsigned(exp);
+  auto uexp = static_cast<uint32_t>(exp);
   if (is_constant_evaluated()) {
     if (uexp < 10) *out++ = '0';
     return format_decimal<Char>(out, uexp, count_digits(uexp));
