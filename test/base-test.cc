@@ -891,3 +891,24 @@ TEST(base_test, trappy_conversion) {
   fmt::format_to(std::back_inserter(s), "{}", its_a_trap());
   EXPECT_EQ(s, "x");
 }
+
+struct custom_container {
+  char data;
+
+  using value_type = char;
+
+  size_t size() const { return 0; }
+  void resize(size_t) {}
+
+  void push_back(char) {}
+  char& operator[](size_t) { return data; }
+};
+
+FMT_BEGIN_NAMESPACE
+template <> struct is_contiguous<custom_container> : std::true_type {};
+FMT_END_NAMESPACE
+
+TEST(base_test, format_to_custom_container) {
+  auto c = custom_container();
+  fmt::format_to(std::back_inserter(c), "");
+}
