@@ -1095,7 +1095,7 @@ class iterator_buffer<
   explicit iterator_buffer(OutputIt out, size_t = 0)
       : iterator_buffer(get_container(out)) {}
 
-  auto out() -> OutputIt { return back_inserter(container_); }
+  auto out() -> OutputIt { return OutputIt(container_); }
 };
 
 // A buffer that counts the number of code units written discarding the output.
