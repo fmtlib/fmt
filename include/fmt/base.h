@@ -2188,12 +2188,12 @@ struct format_specs {
         alt(false),
         localized(false) {}
 
-  enum { dynamic_width_mask = 3, dynamic_precision_mask = 12 };
-
-  constexpr auto dynamic_width() const -> detail::arg_id_kind {
+  FMT_CONSTEXPR auto dynamic_width() const -> detail::arg_id_kind {
+    enum { dynamic_width_mask = 3 };
     return static_cast<detail::arg_id_kind>(dynamic & dynamic_width_mask);
   }
-  constexpr auto dynamic_precision() const -> detail::arg_id_kind {
+  FMT_CONSTEXPR auto dynamic_precision() const -> detail::arg_id_kind {
+    enum { dynamic_precision_mask = 12 };
     return static_cast<detail::arg_id_kind>(
         (dynamic & dynamic_precision_mask) >> 2);
   }
