@@ -131,7 +131,7 @@ template <typename Char> struct formatter<std::filesystem::path, Char> {
 
     Char c = *it;
     if ((c >= '0' && c <= '9') || c == '{')
-      it = detail::parse_dynamic_spec(it, end, specs_.width, width_ref_, ctx);
+      it = detail::parse_width(it, end, specs_, width_ref_, ctx);
     if (it != end && *it == '?') {
       debug_ = true;
       ++it;
@@ -147,7 +147,8 @@ template <typename Char> struct formatter<std::filesystem::path, Char> {
         !path_type_ ? p.native()
                     : p.generic_string<std::filesystem::path::value_type>();
 
-    detail::handle_dynamic_spec(specs.width, width_ref_, ctx);
+    detail::handle_dynamic_spec(specs.dynamic_width(), specs.width, width_ref_,
+                                ctx);
     if (!debug_) {
       auto s = detail::get_path_string<Char>(p, path_string);
       return detail::write(ctx.out(), basic_string_view<Char>(s), specs);
@@ -669,10 +670,11 @@ template <typename T, typename Char> struct formatter<std::complex<T>, Char> {
   auto format(const std::complex<T>& c, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     auto specs = specs_;
-    if (specs.width_ref.kind != detail::arg_id_kind::none ||
-        specs.precision_ref.kind != detail::arg_id_kind::none) {
-      detail::handle_dynamic_spec(specs.width, specs.width_ref, ctx);
-      detail::handle_dynamic_spec(specs.precision, specs.precision_ref, ctx);
+    if (specs.dynamic != 0) {
+      detail::handle_dynamic_spec(specs.dynamic_width(), specs.width,
+                                  specs.width_ref, ctx);
+      detail::handle_dynamic_spec(specs.dynamic_precision(), specs.precision,
+                                  specs.precision_ref, ctx);
     }
 
     if (specs.width == 0) return do_format(c, specs, ctx, ctx.out());

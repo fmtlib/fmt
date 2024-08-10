@@ -3696,10 +3696,11 @@ FMT_CONSTEXPR auto get_arg(Context& ctx, ID id) -> basic_format_arg<Context> {
 
 template <typename Context>
 FMT_CONSTEXPR int get_dynamic_spec(
-    const arg_ref<typename Context::char_type>& ref, Context& ctx) {
-  FMT_ASSERT(ref.kind != arg_id_kind::none, "");
-  auto arg = ref.kind == arg_id_kind::index ? ctx.arg(ref.val.index)
-                                            : ctx.arg(ref.val.name);
+    arg_id_kind kind, const arg_ref<typename Context::char_type>& ref,
+    Context& ctx) {
+  FMT_ASSERT(kind != arg_id_kind::none, "");
+  auto arg =
+      kind == arg_id_kind::index ? ctx.arg(ref.index) : ctx.arg(ref.name);
   if (!arg) report_error("argument not found");
   unsigned long long value = arg.visit(dynamic_spec_getter());
   if (value > to_unsigned(max_value<int>()))
@@ -3709,8 +3710,9 @@ FMT_CONSTEXPR int get_dynamic_spec(
 
 template <typename Context>
 FMT_CONSTEXPR void handle_dynamic_spec(
-    int& value, const arg_ref<typename Context::char_type>& ref, Context& ctx) {
-  if (ref.kind != arg_id_kind::none) value = get_dynamic_spec(ref, ctx);
+    arg_id_kind kind, int& value,
+    const arg_ref<typename Context::char_type>& ref, Context& ctx) {
+  if (kind != arg_id_kind::none) value = get_dynamic_spec(kind, ref, ctx);
 }
 
 #if FMT_USE_USER_DEFINED_LITERALS
@@ -3965,8 +3967,10 @@ template <> struct formatter<bytes> {
   template <typename FormatContext>
   auto format(bytes b, FormatContext& ctx) const -> decltype(ctx.out()) {
     auto specs = specs_;
-    detail::handle_dynamic_spec(specs.width, specs.width_ref, ctx);
-    detail::handle_dynamic_spec(specs.precision, specs.precision_ref, ctx);
+    detail::handle_dynamic_spec(specs.dynamic_width(), specs.width,
+                                specs.width_ref, ctx);
+    detail::handle_dynamic_spec(specs.dynamic_precision(), specs.precision,
+                                specs.precision_ref, ctx);
     return detail::write_bytes<char>(ctx.out(), b.data_, specs);
   }
 };
@@ -4004,8 +4008,10 @@ template <typename T> struct formatter<group_digits_view<T>> : formatter<T> {
   auto format(group_digits_view<T> t, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     auto specs = specs_;
-    detail::handle_dynamic_spec(specs.width, specs.width_ref, ctx);
-    detail::handle_dynamic_spec(specs.precision, specs.precision_ref, ctx);
+    detail::handle_dynamic_spec(specs.dynamic_width(), specs.width,
+                                specs.width_ref, ctx);
+    detail::handle_dynamic_spec(specs.dynamic_precision(), specs.precision,
+                                specs.precision_ref, ctx);
     auto arg = detail::make_write_int_arg(t.value, specs.sign);
     return detail::write_int(
         ctx.out(), static_cast<detail::uint64_or_128_t<T>>(arg.abs_value),
@@ -4051,8 +4057,10 @@ template <typename T, typename Char = char> struct nested_formatter {
     align_ = specs.align;
     Char c = *it;
     auto width_ref = detail::arg_ref<Char>();
-    if ((c >= '0' && c <= '9') || c == '{')
-      it = detail::parse_dynamic_spec(it, end, width_, width_ref, ctx);
+    if ((c >= '0' && c <= '9') || c == '{') {
+      it = detail::parse_width(it, end, specs, width_ref, ctx);
+      width_ = specs.width;
+    }
     ctx.advance_to(it);
     return formatter_.parse(ctx);
   }
@@ -4149,12 +4157,14 @@ template <typename Char> struct format_handler {
     if (arg.format_custom(begin, parse_context, context))
       return parse_context.begin();
 
-    auto specs = detail::dynamic_format_specs<Char>();
+    auto specs = dynamic_format_specs<Char>();
     begin = parse_format_specs(begin, end, specs, parse_context, arg.type());
-    if (specs.width_ref.kind != detail::arg_id_kind::none)
-      specs.width = detail::get_dynamic_spec(specs.width_ref, context);
-    if (specs.precision_ref.kind != detail::arg_id_kind::none)
-      specs.precision = detail::get_dynamic_spec(specs.precision_ref, context);
+    if (specs.dynamic != 0) {
+      handle_dynamic_spec(specs.dynamic_width(), specs.width, specs.width_ref,
+                          context);
+      handle_dynamic_spec(specs.dynamic_precision(), specs.precision,
+                          specs.precision_ref, context);
+    }
 
     if (begin == end || *begin != '}')
       report_error("missing '}' in format string");
@@ -4196,13 +4206,13 @@ template <typename T, typename Char, type TYPE>
 template <typename FormatContext>
 FMT_CONSTEXPR FMT_INLINE auto native_formatter<T, Char, TYPE>::format(
     const T& val, FormatContext& ctx) const -> decltype(ctx.out()) {
-  if (specs_.width_ref.kind == arg_id_kind::none &&
-      specs_.precision_ref.kind == arg_id_kind::none) {
+  if (specs_.dynamic == 0)
     return write<Char>(ctx.out(), val, specs_, ctx.locale());
-  }
   auto specs = format_specs(specs_);
-  handle_dynamic_spec(specs.width, specs_.width_ref, ctx);
-  handle_dynamic_spec(specs.precision, specs_.precision_ref, ctx);
+  handle_dynamic_spec(specs.dynamic_width(), specs.width, specs_.width_ref,
+                      ctx);
+  handle_dynamic_spec(specs.dynamic_precision(), specs.precision,
+                      specs_.precision_ref, ctx);
   return write<Char>(ctx.out(), val, specs, ctx.locale());
 }
 

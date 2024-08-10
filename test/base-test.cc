@@ -525,9 +525,9 @@ TEST(base_test, constexpr_parse_format_specs) {
   static_assert(parse_test_specs("0").align == fmt::align::numeric, "");
   static_assert(parse_test_specs("L").localized, "");
   static_assert(parse_test_specs("42").width == 42, "");
-  static_assert(parse_test_specs("{42}").width_ref.val.index == 42, "");
+  static_assert(parse_test_specs("{42}").width_ref.index == 42, "");
   static_assert(parse_test_specs(".42").precision == 42, "");
-  static_assert(parse_test_specs(".{42}").precision_ref.val.index == 42, "");
+  static_assert(parse_test_specs(".{42}").precision_ref.index == 42, "");
   static_assert(parse_test_specs("f").type == fmt::presentation_type::fixed,
                 "");
 }

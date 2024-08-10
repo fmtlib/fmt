@@ -2136,6 +2136,9 @@ struct fill_t {
     return nullptr;
   }
 };
+
+enum class arg_id_kind { none, index, name };
+
 }  // namespace detail
 
 enum class presentation_type : unsigned char {
@@ -2168,6 +2171,7 @@ struct format_specs {
   presentation_type type;
   align_t align : 4;
   sign_t sign : 3;
+  unsigned char dynamic : 4;
   bool upper : 1;  // An uppercase version e.g. 'X' for 'x'.
   bool alt : 1;    // Alternate form ('#').
   bool localized : 1;
@@ -2179,38 +2183,31 @@ struct format_specs {
         type(presentation_type::none),
         align(align::none),
         sign(sign::none),
+        dynamic(0),
         upper(false),
         alt(false),
         localized(false) {}
+
+  enum { dynamic_width_mask = 3, dynamic_precision_mask = 12 };
+
+  constexpr auto dynamic_width() const -> detail::arg_id_kind {
+    return static_cast<detail::arg_id_kind>(dynamic & dynamic_width_mask);
+  }
+  constexpr auto dynamic_precision() const -> detail::arg_id_kind {
+    return static_cast<detail::arg_id_kind>(
+        (dynamic & dynamic_precision_mask) >> 2);
+  }
 };
 
 namespace detail {
 
-enum class arg_id_kind { none, index, name };
-
 // An argument reference.
-template <typename Char> struct arg_ref {
-  FMT_CONSTEXPR arg_ref() : kind(arg_id_kind::none), val() {}
+template <typename Char> union arg_ref {
+  FMT_CONSTEXPR arg_ref(int idx = 0) : index(idx) {}
+  FMT_CONSTEXPR arg_ref(basic_string_view<Char> n) : name(n) {}
 
-  FMT_CONSTEXPR explicit arg_ref(int index)
-      : kind(arg_id_kind::index), val(index) {}
-  FMT_CONSTEXPR explicit arg_ref(basic_string_view<Char> name)
-      : kind(arg_id_kind::name), val(name) {}
-
-  FMT_CONSTEXPR auto operator=(int idx) -> arg_ref& {
-    kind = arg_id_kind::index;
-    val.index = idx;
-    return *this;
-  }
-
-  arg_id_kind kind;
-  union value {
-    FMT_CONSTEXPR value(int idx = 0) : index(idx) {}
-    FMT_CONSTEXPR value(basic_string_view<Char> n) : name(n) {}
-
-    int index;
-    basic_string_view<Char> name;
-  } val;
+  int index;
+  basic_string_view<Char> name;
 };
 
 // Format specifiers with width and precision resolved at formatting rather
@@ -2321,19 +2318,27 @@ FMT_CONSTEXPR auto parse_arg_id(const Char* begin, const Char* end,
   return it;
 }
 
-template <typename Char> struct dynamic_spec_id_handler {
+template <typename Char> struct dynamic_spec_handler {
   basic_format_parse_context<Char>& ctx;
   arg_ref<Char>& ref;
+  arg_id_kind& kind;
 
   FMT_CONSTEXPR void on_index(int id) {
-    ref = arg_ref<Char>(id);
+    ref = id;
+    kind = arg_id_kind::index;
     ctx.check_arg_id(id);
     ctx.check_dynamic_spec(id);
   }
   FMT_CONSTEXPR void on_name(basic_string_view<Char> id) {
-    ref = arg_ref<Char>(id);
+    ref = id;
+    kind = arg_id_kind::name;
     ctx.check_arg_id(id);
   }
+};
+
+template <typename Char> struct parse_dynamic_spec_result {
+  const Char* end;
+  arg_id_kind kind;
 };
 
 // Parses integer | "{" [arg_id] "}".
@@ -2341,8 +2346,9 @@ template <typename Char>
 FMT_CONSTEXPR auto parse_dynamic_spec(const Char* begin, const Char* end,
                                       int& value, arg_ref<Char>& ref,
                                       basic_format_parse_context<Char>& ctx)
-    -> const Char* {
+    -> parse_dynamic_spec_result<Char> {
   FMT_ASSERT(begin != end, "");
+  auto kind = arg_id_kind::none;
   if ('0' <= *begin && *begin <= '9') {
     int val = parse_nonnegative_int(begin, end, -1);
     if (val == -1) report_error("number is too big");
@@ -2354,31 +2360,48 @@ FMT_CONSTEXPR auto parse_dynamic_spec(const Char* begin, const Char* end,
         Char c = *begin;
         if (c == '}' || c == ':') {
           int id = ctx.next_arg_id();
-          ref = arg_ref<Char>(id);
+          ref = id;
+          kind = arg_id_kind::index;
           ctx.check_dynamic_spec(id);
         } else {
-          begin =
-              parse_arg_id(begin, end, dynamic_spec_id_handler<Char>{ctx, ref});
+          begin = parse_arg_id(begin, end,
+                               dynamic_spec_handler<Char>{ctx, ref, kind});
         }
       }
-      if (begin != end && *begin == '}') return ++begin;
+      if (begin != end && *begin == '}') return {++begin, kind};
     }
     report_error("invalid format string");
   }
-  return begin;
+  return {begin, kind};
+}
+
+template <typename Char>
+FMT_CONSTEXPR auto parse_width(const Char* begin, const Char* end,
+                               format_specs& specs, arg_ref<Char>& width_ref,
+                               basic_format_parse_context<Char>& ctx)
+    -> const Char* {
+  auto result = parse_dynamic_spec(begin, end, specs.width, width_ref, ctx);
+  specs.dynamic = static_cast<unsigned char>(result.kind) & 0x3u;
+  return result.end;
 }
 
 template <typename Char>
 FMT_CONSTEXPR auto parse_precision(const Char* begin, const Char* end,
-                                   int& value, arg_ref<Char>& ref,
+                                   format_specs& specs,
+                                   arg_ref<Char>& precision_ref,
                                    basic_format_parse_context<Char>& ctx)
     -> const Char* {
   ++begin;
-  if (begin != end)
-    begin = parse_dynamic_spec(begin, end, value, ref, ctx);
-  else
+  if (begin == end) {
     report_error("invalid precision");
-  return begin;
+    return begin;
+  }
+  auto result =
+      parse_dynamic_spec(begin, end, specs.precision, precision_ref, ctx);
+  auto kind_val = static_cast<unsigned char>(result.kind);
+  specs.dynamic =
+      static_cast<unsigned char>(specs.dynamic | (kind_val << 2)) & 0xfu;
+  return result.end;
 }
 
 enum class state { start, align, sign, hash, zero, width, precision, locale };
@@ -2466,13 +2489,12 @@ FMT_CONSTEXPR auto parse_format_specs(const Char* begin, const Char* end,
     case '9':
     case '{':
       enter_state(state::width);
-      begin = parse_dynamic_spec(begin, end, specs.width, specs.width_ref, ctx);
+      begin = parse_width(begin, end, specs, specs.width_ref, ctx);
       break;
     case '.':
       enter_state(state::precision,
                   in(arg_type, float_set | string_set | cstring_set));
-      begin = parse_precision(begin, end, specs.precision, specs.precision_ref,
-                              ctx);
+      begin = parse_precision(begin, end, specs, specs.precision_ref, ctx);
       break;
     case 'L':
       enter_state(state::locale, is_arithmetic_type(arg_type));
