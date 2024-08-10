@@ -5,10 +5,10 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
-from typing import Any, List, Mapping, Optional
-from subprocess import CalledProcessError, PIPE, Popen, STDOUT
 import xml.etree.ElementTree as ElementTree
+from pathlib import Path
+from subprocess import PIPE, STDOUT, CalledProcessError, Popen
+from typing import Any, List, Mapping, Optional
 
 from mkdocstrings.handlers.base import BaseHandler
 
