@@ -2,8 +2,6 @@
 # Copyright (c) 2012 - present, Victor Zverovich
 # https://github.com/fmtlib/fmt/blob/master/LICENSE
 
-from __future__ import annotations
-
 import os
 import xml.etree.ElementTree as ElementTree
 from pathlib import Path
@@ -105,7 +103,7 @@ def convert_type(type_: ElementTree.Element) -> Optional[str]:
     return normalize_type(result)
 
 
-def convert_params(func: ElementTree.Element) -> list[Definition]:
+def convert_params(func: ElementTree.Element) -> List[Definition]:
     params = []
     for p in func.findall('param'):
         d = Definition(p.find('declname').text, 'param')
