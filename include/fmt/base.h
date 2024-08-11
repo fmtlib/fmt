@@ -2092,51 +2092,6 @@ using unsigned_char = typename conditional_t<std::is_integral<Char>::value,
                                              std::make_unsigned<Char>,
                                              type_identity<unsigned>>::type;
 
-// Character (code unit) type is erased to prevent template bloat.
-struct fill_t {
- private:
-  enum { max_size = 4 };
-  char data_[max_size] = {' '};
-  unsigned char size_ = 1;
-
- public:
-  template <typename Char>
-  FMT_CONSTEXPR void operator=(basic_string_view<Char> s) {
-    auto size = s.size();
-    size_ = static_cast<unsigned char>(size);
-    if (size == 1) {
-      unsigned uchar = static_cast<unsigned_char<Char>>(s[0]);
-      data_[0] = static_cast<char>(uchar);
-      data_[1] = static_cast<char>(uchar >> 8);
-      return;
-    }
-    FMT_ASSERT(size <= max_size, "invalid fill");
-    for (size_t i = 0; i < size; ++i) data_[i] = static_cast<char>(s[i]);
-  }
-
-  FMT_CONSTEXPR void operator=(char c) {
-    data_[0] = c;
-    size_ = 1;
-  }
-
-  constexpr auto size() const -> size_t { return size_; }
-
-  template <typename Char> constexpr auto get() const -> Char {
-    using uchar = unsigned char;
-    return static_cast<Char>(static_cast<uchar>(data_[0]) |
-                             (static_cast<uchar>(data_[1]) << 8));
-  }
-
-  template <typename Char, FMT_ENABLE_IF(std::is_same<Char, char>::value)>
-  constexpr auto data() const -> const Char* {
-    return data_;
-  }
-  template <typename Char, FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
-  constexpr auto data() const -> const Char* {
-    return nullptr;
-  }
-};
-
 enum class arg_id_kind { none, index, name };
 
 }  // namespace detail
@@ -2164,39 +2119,156 @@ enum class presentation_type : unsigned char {
   hexfloat  // 'a' or 'A'
 };
 
+// Basic format specifiers for built-in and string types.
+class basic_specs {
+ private:
+  // Upper 32-bit of data contain fill and lower 32-bit are arranged as follows:
+  //
+  //  0                   1                   2                   3
+  //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+  // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  // |type |align| w | p | s |u|#|L|  f  |          unused           |
+  // +-----+-----+---+---+---+-+-+-+-----+---------------------------+
+  //
+  //   w - dynamic width info
+  //   p - dynamic precision info
+  //   s - sign
+  //   u - uppercase (e.g. 'X' for 'x')
+  //   # - alternate form ('#')
+  //   L - localized
+  //   f - fill size
+  //
+  // Bitfields are not used because of compiler bugs such as gcc bug 61414.
+  enum : unsigned {
+    type_mask = 0x00007,
+    align_mask = 0x00038,
+    width_mask = 0x000C0,
+    precision_mask = 0x00300,
+    sign_mask = 0x00C00,
+    uppercase_mask = 0x01000,
+    alternate_mask = 0x02000,
+    localized_mask = 0x04000,
+    fill_size_mask = 0x38000,
+
+    align_shift = 3,
+    width_shift = 6,
+    precision_shift = 8,
+    sign_shift = 10,
+    fill_size_shift = 15,
+
+    max_fill_size = 4
+  };
+
+  unsigned long long data_ = 1 << fill_size_shift;
+
+  // Character (code unit) type is erased to prevent template bloat.
+  char fill_data_[max_fill_size] = {' '};
+
+  FMT_CONSTEXPR void set_fill_size(size_t size) {
+    data_ = (data_ & ~fill_size_mask) | (size << fill_size_shift);
+  }
+
+ public:
+  constexpr auto type() const -> presentation_type {
+    return static_cast<presentation_type>(data_ & type_mask);
+  }
+  FMT_CONSTEXPR void set_type(presentation_type t) {
+    data_ = (data_ & ~type_mask) | static_cast<unsigned>(t);
+  }
+
+  constexpr auto align() const -> align_t {
+    return static_cast<align_t>((data_ & align_mask) >> align_shift);
+  }
+  FMT_CONSTEXPR void set_align(align_t a) {
+    data_ = (data_ & ~align_mask) | (static_cast<unsigned>(a) << align_shift);
+  }
+
+  constexpr auto dynamic_width() const -> detail::arg_id_kind {
+    return static_cast<detail::arg_id_kind>((data_ & width_mask) >>
+                                            width_shift);
+  }
+  FMT_CONSTEXPR void set_dynamic_width(detail::arg_id_kind w) {
+    data_ = (data_ & ~width_mask) | (static_cast<unsigned>(w) << width_shift);
+  }
+
+  FMT_CONSTEXPR auto dynamic_precision() const -> detail::arg_id_kind {
+    return static_cast<detail::arg_id_kind>((data_ & precision_mask) >>
+                                            precision_shift);
+  }
+  FMT_CONSTEXPR void set_dynamic_precision(detail::arg_id_kind p) {
+    data_ = (data_ & ~precision_mask) |
+            (static_cast<unsigned>(p) << precision_shift);
+  }
+
+  constexpr bool dynamic() const {
+    return (data_ & (width_mask | precision_mask)) != 0;
+  }
+
+  constexpr auto sign() const -> sign_t {
+    return static_cast<sign_t>((data_ & sign_mask) >> sign_shift);
+  }
+  FMT_CONSTEXPR void set_sign(sign_t a) {
+    data_ = (data_ & ~sign_mask) | (static_cast<unsigned>(a) << sign_shift);
+  }
+
+  constexpr auto upper() const -> bool { return (data_ & uppercase_mask) != 0; }
+  FMT_CONSTEXPR void set_upper() { data_ |= uppercase_mask; }
+
+  constexpr auto alt() const -> bool { return (data_ & alternate_mask) != 0; }
+  FMT_CONSTEXPR void set_alt() { data_ |= alternate_mask; }
+  FMT_CONSTEXPR void clear_alt() { data_ &= ~alternate_mask; }
+
+  constexpr auto localized() const -> bool {
+    return (data_ & localized_mask) != 0;
+  }
+  FMT_CONSTEXPR void set_localized() { data_ |= localized_mask; }
+
+  constexpr auto fill_size() const -> size_t {
+    return (data_ & fill_size_mask) >> fill_size_shift;
+  }
+
+  template <typename Char, FMT_ENABLE_IF(std::is_same<Char, char>::value)>
+  constexpr auto fill() const -> const Char* {
+    return fill_data_;
+  }
+  template <typename Char, FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
+  constexpr auto fill() const -> const Char* {
+    return nullptr;
+  }
+
+  template <typename Char> constexpr auto fill_unit() const -> Char {
+    using uchar = unsigned char;
+    return static_cast<Char>(static_cast<uchar>(fill_data_[0]) |
+                             (static_cast<uchar>(fill_data_[1]) << 8));
+  }
+
+  FMT_CONSTEXPR void set_fill(char c) {
+    fill_data_[0] = c;
+    set_fill_size(1);
+  }
+
+  template <typename Char>
+  FMT_CONSTEXPR void set_fill(basic_string_view<Char> s) {
+    auto size = s.size();
+    set_fill_size(size);
+    if (size == 1) {
+      unsigned uchar = static_cast<detail::unsigned_char<Char>>(s[0]);
+      fill_data_[0] = static_cast<char>(uchar);
+      fill_data_[1] = static_cast<char>(uchar >> 8);
+      return;
+    }
+    FMT_ASSERT(size <= max_fill_size, "invalid fill");
+    for (size_t i = 0; i < size; ++i)
+      fill_data_[i & 3] = static_cast<char>(s[i]);
+  }
+};
+
 // Format specifiers for built-in and string types.
-struct format_specs {
+struct format_specs : basic_specs {
   int width;
   int precision;
-  presentation_type type;
-  align_t align : 4;
-  sign_t sign : 3;
-  unsigned char dynamic : 4;
-  bool upper : 1;  // An uppercase version e.g. 'X' for 'x'.
-  bool alt : 1;    // Alternate form ('#').
-  bool localized : 1;
-  detail::fill_t fill;
 
-  constexpr format_specs()
-      : width(0),
-        precision(-1),
-        type(presentation_type::none),
-        align(align::none),
-        sign(sign::none),
-        dynamic(0),
-        upper(false),
-        alt(false),
-        localized(false) {}
-
-  FMT_CONSTEXPR auto dynamic_width() const -> detail::arg_id_kind {
-    enum { dynamic_width_mask = 3 };
-    return static_cast<detail::arg_id_kind>(dynamic & dynamic_width_mask);
-  }
-  FMT_CONSTEXPR auto dynamic_precision() const -> detail::arg_id_kind {
-    enum { dynamic_precision_mask = 12 };
-    return static_cast<detail::arg_id_kind>(
-        (dynamic & dynamic_precision_mask) >> 2);
-  }
+  constexpr format_specs() : width(0), precision(-1) {}
 };
 
 namespace detail {
@@ -2381,7 +2453,7 @@ FMT_CONSTEXPR auto parse_width(const Char* begin, const Char* end,
                                basic_format_parse_context<Char>& ctx)
     -> const Char* {
   auto result = parse_dynamic_spec(begin, end, specs.width, width_ref, ctx);
-  specs.dynamic = static_cast<unsigned char>(result.kind) & 0x3u;
+  specs.set_dynamic_width(result.kind);
   return result.end;
 }
 
@@ -2398,9 +2470,7 @@ FMT_CONSTEXPR auto parse_precision(const Char* begin, const Char* end,
   }
   auto result =
       parse_dynamic_spec(begin, end, specs.precision, precision_ref, ctx);
-  auto kind_val = static_cast<unsigned char>(result.kind);
-  specs.dynamic =
-      static_cast<unsigned char>(specs.dynamic | (kind_val << 2)) & 0xfu;
+  specs.set_dynamic_precision(result.kind);
   return result.end;
 }
 
@@ -2439,7 +2509,7 @@ FMT_CONSTEXPR auto parse_format_specs(const Char* begin, const Char* end,
 
     FMT_CONSTEXPR auto operator()(pres pres_type, int set) -> const Char* {
       if (!in(arg_type, set)) report_error("invalid format specifier");
-      specs.type = pres_type;
+      specs.set_type(pres_type);
       return begin + 1;
     }
   } parse_presentation_type{begin, specs, arg_type};
@@ -2450,13 +2520,13 @@ FMT_CONSTEXPR auto parse_format_specs(const Char* begin, const Char* end,
     case '>':
     case '^':
       enter_state(state::align);
-      specs.align = parse_align(c);
+      specs.set_align(parse_align(c));
       ++begin;
       break;
     case '+':
       FMT_FALLTHROUGH;
     case ' ':
-      specs.sign = c == ' ' ? sign::space : sign::plus;
+      specs.set_sign(c == ' ' ? sign::space : sign::plus);
       FMT_FALLTHROUGH;
     case '-':
       enter_state(state::sign, in(arg_type, sint_set | float_set));
@@ -2464,17 +2534,17 @@ FMT_CONSTEXPR auto parse_format_specs(const Char* begin, const Char* end,
       break;
     case '#':
       enter_state(state::hash, is_arithmetic_type(arg_type));
-      specs.alt = true;
+      specs.set_alt();
       ++begin;
       break;
     case '0':
       enter_state(state::zero);
       if (!is_arithmetic_type(arg_type))
         report_error("format specifier requires numeric argument");
-      if (specs.align == align::none) {
+      if (specs.align() == align::none) {
         // Ignore 0 if align is specified for compatibility with std::format.
-        specs.align = align::numeric;
-        specs.fill = '0';
+        specs.set_align(align::numeric);
+        specs.set_fill('0');
       }
       ++begin;
       break;
@@ -2498,40 +2568,40 @@ FMT_CONSTEXPR auto parse_format_specs(const Char* begin, const Char* end,
       break;
     case 'L':
       enter_state(state::locale, is_arithmetic_type(arg_type));
-      specs.localized = true;
+      specs.set_localized();
       ++begin;
       break;
     case 'd':
       return parse_presentation_type(pres::dec, integral_set);
     case 'X':
-      specs.upper = true;
+      specs.set_upper();
       FMT_FALLTHROUGH;
     case 'x':
       return parse_presentation_type(pres::hex, integral_set);
     case 'o':
       return parse_presentation_type(pres::oct, integral_set);
     case 'B':
-      specs.upper = true;
+      specs.set_upper();
       FMT_FALLTHROUGH;
     case 'b':
       return parse_presentation_type(pres::bin, integral_set);
     case 'E':
-      specs.upper = true;
+      specs.set_upper();
       FMT_FALLTHROUGH;
     case 'e':
       return parse_presentation_type(pres::exp, float_set);
     case 'F':
-      specs.upper = true;
+      specs.set_upper();
       FMT_FALLTHROUGH;
     case 'f':
       return parse_presentation_type(pres::fixed, float_set);
     case 'G':
-      specs.upper = true;
+      specs.set_upper();
       FMT_FALLTHROUGH;
     case 'g':
       return parse_presentation_type(pres::general, float_set);
     case 'A':
-      specs.upper = true;
+      specs.set_upper();
       FMT_FALLTHROUGH;
     case 'a':
       return parse_presentation_type(pres::hexfloat, float_set);
@@ -2562,9 +2632,9 @@ FMT_CONSTEXPR auto parse_format_specs(const Char* begin, const Char* end,
       }
       auto align = parse_align(to_ascii(*fill_end));
       enter_state(state::align, align != align::none);
-      specs.fill =
-          basic_string_view<Char>(begin, to_unsigned(fill_end - begin));
-      specs.align = align;
+      specs.set_fill(
+          basic_string_view<Char>(begin, to_unsigned(fill_end - begin)));
+      specs.set_align(align);
       begin = fill_end + 1;
     }
     }
@@ -2706,13 +2776,15 @@ FMT_CONSTEXPR auto parse_format_specs(ParseContext& ctx)
 
 // Checks char specs and returns true iff the presentation type is char-like.
 FMT_CONSTEXPR inline auto check_char_specs(const format_specs& specs) -> bool {
-  if (specs.type != presentation_type::none &&
-      specs.type != presentation_type::chr &&
-      specs.type != presentation_type::debug) {
+  auto type = specs.type();
+  if (type != presentation_type::none && type != presentation_type::chr &&
+      type != presentation_type::debug) {
     return false;
   }
-  if (specs.align == align::numeric || specs.sign != sign::none || specs.alt)
+  if (specs.align() == align::numeric || specs.sign() != sign::none ||
+      specs.alt()) {
     report_error("invalid format specifier for char");
+  }
   return true;
 }
 
@@ -2861,7 +2933,7 @@ template <typename T, typename Char, type TYPE> struct native_formatter {
             FMT_ENABLE_IF(U == type::string_type || U == type::cstring_type ||
                           U == type::char_type)>
   FMT_CONSTEXPR void set_debug_format(bool set = true) {
-    specs_.type = set ? presentation_type::debug : presentation_type::none;
+    specs_.set_type(set ? presentation_type::debug : presentation_type::none);
   }
 
   template <typename FormatContext>

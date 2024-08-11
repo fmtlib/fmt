@@ -516,19 +516,19 @@ template <size_t N> constexpr auto parse_test_specs(const char (&s)[N]) {
 }
 
 TEST(base_test, constexpr_parse_format_specs) {
-  static_assert(parse_test_specs("<").align == fmt::align::left, "");
-  static_assert(parse_test_specs("*^").fill.get<char>() == '*', "");
-  static_assert(parse_test_specs("+").sign == fmt::sign::plus, "");
-  static_assert(parse_test_specs("-").sign == fmt::sign::none, "");
-  static_assert(parse_test_specs(" ").sign == fmt::sign::space, "");
-  static_assert(parse_test_specs("#").alt, "");
-  static_assert(parse_test_specs("0").align == fmt::align::numeric, "");
-  static_assert(parse_test_specs("L").localized, "");
+  static_assert(parse_test_specs("<").align() == fmt::align::left, "");
+  static_assert(parse_test_specs("*^").fill_unit<char>() == '*', "");
+  static_assert(parse_test_specs("+").sign() == fmt::sign::plus, "");
+  static_assert(parse_test_specs("-").sign() == fmt::sign::none, "");
+  static_assert(parse_test_specs(" ").sign() == fmt::sign::space, "");
+  static_assert(parse_test_specs("#").alt(), "");
+  static_assert(parse_test_specs("0").align() == fmt::align::numeric, "");
+  static_assert(parse_test_specs("L").localized(), "");
   static_assert(parse_test_specs("42").width == 42, "");
   static_assert(parse_test_specs("{42}").width_ref.index == 42, "");
   static_assert(parse_test_specs(".42").precision == 42, "");
   static_assert(parse_test_specs(".{42}").precision_ref.index == 42, "");
-  static_assert(parse_test_specs("f").type == fmt::presentation_type::fixed,
+  static_assert(parse_test_specs("f").type() == fmt::presentation_type::fixed,
                 "");
 }
 

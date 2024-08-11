@@ -645,7 +645,7 @@ template <typename T, typename Char> struct formatter<std::complex<T>, Char> {
     if (c.real() != 0) {
       *out++ = Char('(');
       out = detail::write<Char>(out, c.real(), specs, ctx.locale());
-      specs.sign = sign::plus;
+      specs.set_sign(sign::plus);
       out = detail::write<Char>(out, c.imag(), specs, ctx.locale());
       if (!detail::isfinite(c.imag())) *out++ = Char(' ');
       *out++ = Char('i');
@@ -670,7 +670,7 @@ template <typename T, typename Char> struct formatter<std::complex<T>, Char> {
   auto format(const std::complex<T>& c, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     auto specs = specs_;
-    if (specs.dynamic != 0) {
+    if (specs.dynamic()) {
       detail::handle_dynamic_spec(specs.dynamic_width(), specs.width,
                                   specs.width_ref, ctx);
       detail::handle_dynamic_spec(specs.dynamic_precision(), specs.precision,
@@ -682,12 +682,14 @@ template <typename T, typename Char> struct formatter<std::complex<T>, Char> {
 
     auto outer_specs = format_specs();
     outer_specs.width = specs.width;
-    outer_specs.fill = specs.fill;
-    outer_specs.align = specs.align;
+    auto fill = specs.template fill<Char>();
+    if (fill)
+      outer_specs.set_fill(basic_string_view<Char>(fill, specs.fill_size()));
+    outer_specs.set_align(specs.align());
 
     specs.width = 0;
-    specs.fill = {};
-    specs.align = align::none;
+    specs.set_fill({});
+    specs.set_align(align::none);
 
     do_format(c, specs, ctx, basic_appender<Char>(buf));
     return detail::write<Char>(ctx.out(),

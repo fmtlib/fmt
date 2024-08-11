@@ -422,7 +422,7 @@ struct range_formatter<
     auto buf = basic_memory_buffer<Char>();
     for (; it != end; ++it) buf.push_back(*it);
     auto specs = format_specs();
-    specs.type = presentation_type::debug;
+    specs.set_type(presentation_type::debug);
     return detail::write<Char>(
         out, basic_string_view<Char>(buf.data(), buf.size()), specs);
   }

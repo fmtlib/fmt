@@ -368,7 +368,7 @@ const char* parse_scan_specs(const char* begin, const char* end,
     switch (to_ascii(*begin)) {
     // TODO: parse more scan format specifiers
     case 'x':
-      specs.type = presentation_type::hex;
+      specs.set_type(presentation_type::hex);
       ++begin;
       break;
     case '}':
@@ -437,7 +437,7 @@ auto read_hex(scan_iterator it, T& value) -> scan_iterator {
 template <typename T, FMT_ENABLE_IF(std::is_unsigned<T>::value)>
 auto read(scan_iterator it, T& value, const format_specs& specs)
     -> scan_iterator {
-  if (specs.type == presentation_type::hex) return read_hex(it, value);
+  if (specs.type() == presentation_type::hex) return read_hex(it, value);
   return read(it, value);
 }
 
