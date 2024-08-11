@@ -1731,17 +1731,19 @@ FMT_NOINLINE FMT_CONSTEXPR auto fill(OutputIt it, size_t n,
 // Writes the output of f, padded according to format specifications in specs.
 // size: output size in code units.
 // width: output display width in (terminal) column positions.
-template <typename Char, align::type align = align::left, typename OutputIt,
+template <typename Char, align default_align = align::left, typename OutputIt,
           typename F>
 FMT_CONSTEXPR auto write_padded(OutputIt out, const format_specs& specs,
                                 size_t size, size_t width, F&& f) -> OutputIt {
-  static_assert(align == align::left || align == align::right, "");
+  static_assert(default_align == align::left || default_align == align::right,
+                "");
   unsigned spec_width = to_unsigned(specs.width);
   size_t padding = spec_width > width ? spec_width - width : 0;
   // Shifts are encoded as string literals because static constexpr is not
   // supported in constexpr functions.
-  auto* shifts = align == align::left ? "\x1f\x1f\x00\x01" : "\x00\x1f\x00\x01";
-  size_t left_padding = padding >> shifts[specs.align()];
+  auto* shifts =
+      default_align == align::left ? "\x1f\x1f\x00\x01" : "\x00\x1f\x00\x01";
+  size_t left_padding = padding >> shifts[static_cast<int>(specs.align())];
   size_t right_padding = padding - left_padding;
   auto it = reserve(out, size + padding * specs.fill_size());
   if (left_padding != 0) it = fill<Char>(it, left_padding, specs);
@@ -1750,17 +1752,17 @@ FMT_CONSTEXPR auto write_padded(OutputIt out, const format_specs& specs,
   return base_iterator(out, it);
 }
 
-template <typename Char, align::type align = align::left, typename OutputIt,
+template <typename Char, align default_align = align::left, typename OutputIt,
           typename F>
 constexpr auto write_padded(OutputIt out, const format_specs& specs,
                             size_t size, F&& f) -> OutputIt {
-  return write_padded<Char, align>(out, specs, size, size, f);
+  return write_padded<Char, default_align>(out, specs, size, size, f);
 }
 
-template <typename Char, align::type align = align::left, typename OutputIt>
+template <typename Char, align default_align = align::left, typename OutputIt>
 FMT_CONSTEXPR auto write_bytes(OutputIt out, string_view bytes,
                                const format_specs& specs = {}) -> OutputIt {
-  return write_padded<Char, align>(
+  return write_padded<Char, default_align>(
       out, specs, bytes.size(), [bytes](reserve_iterator<OutputIt> it) {
         const char* data = bytes.data();
         return copy<Char>(data, data + bytes.size(), it);
@@ -2321,22 +2323,22 @@ template <typename Char>
 FMT_CONSTEXPR auto parse_align(const Char* begin, const Char* end,
                                format_specs& specs) -> const Char* {
   FMT_ASSERT(begin != end, "");
-  auto align = align::none;
+  auto alignment = align::none;
   auto p = begin + code_point_length(begin);
   if (end - p <= 0) p = begin;
   for (;;) {
     switch (to_ascii(*p)) {
     case '<':
-      align = align::left;
+      alignment = align::left;
       break;
     case '>':
-      align = align::right;
+      alignment = align::right;
       break;
     case '^':
-      align = align::center;
+      alignment = align::center;
       break;
     }
-    if (align != align::none) {
+    if (alignment != align::none) {
       if (p != begin) {
         auto c = *begin;
         if (c == '}') return begin;
@@ -2355,7 +2357,7 @@ FMT_CONSTEXPR auto parse_align(const Char* begin, const Char* end,
     }
     p = begin;
   }
-  specs.set_align(align);
+  specs.set_align(alignment);
   return begin;
 }
 

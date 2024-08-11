@@ -2060,11 +2060,6 @@ FMT_EXPORT using format_args = basic_format_args<format_context>;
 #else
 #  define FMT_ENUM_UNDERLYING_TYPE(type) : type
 #endif
-namespace align {
-enum type FMT_ENUM_UNDERLYING_TYPE(unsigned char){none, left, right, center,
-                                                  numeric};
-}
-using align_t = align::type;
 namespace sign {
 enum type FMT_ENUM_UNDERLYING_TYPE(unsigned char){none, minus, plus, space};
 }
@@ -2119,10 +2114,12 @@ enum class presentation_type : unsigned char {
   hexfloat  // 'a' or 'A'
 };
 
+enum class align { none, left, right, center, numeric };
+
 // Basic format specifiers for built-in and string types.
 class basic_specs {
  private:
-  // Upper 32-bit of data contain fill and lower 32-bit are arranged as follows:
+  // Data is arranged as follows:
   //
   //  0                   1                   2                   3
   //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -2159,7 +2156,7 @@ class basic_specs {
     max_fill_size = 4
   };
 
-  unsigned long long data_ = 1 << fill_size_shift;
+  unsigned long data_ = 1 << fill_size_shift;
 
   // Character (code unit) type is erased to prevent template bloat.
   char fill_data_[max_fill_size] = {' '};
@@ -2176,10 +2173,10 @@ class basic_specs {
     data_ = (data_ & ~type_mask) | static_cast<unsigned>(t);
   }
 
-  constexpr auto align() const -> align_t {
-    return static_cast<align_t>((data_ & align_mask) >> align_shift);
+  constexpr auto align() const -> align {
+    return static_cast<fmt::align>((data_ & align_mask) >> align_shift);
   }
-  FMT_CONSTEXPR void set_align(align_t a) {
+  FMT_CONSTEXPR void set_align(fmt::align a) {
     data_ = (data_ & ~align_mask) | (static_cast<unsigned>(a) << align_shift);
   }
 
@@ -2346,7 +2343,7 @@ FMT_CONSTEXPR auto parse_nonnegative_int(const Char*& begin, const Char* end,
              : error_value;
 }
 
-FMT_CONSTEXPR inline auto parse_align(char c) -> align_t {
+FMT_CONSTEXPR inline auto parse_align(char c) -> align {
   switch (c) {
   case '<':
     return align::left;
@@ -2630,11 +2627,11 @@ FMT_CONSTEXPR auto parse_format_specs(const Char* begin, const Char* end,
         report_error("invalid fill character '{'");
         return begin;
       }
-      auto align = parse_align(to_ascii(*fill_end));
-      enter_state(state::align, align != align::none);
+      auto alignment = parse_align(to_ascii(*fill_end));
+      enter_state(state::align, alignment != align::none);
       specs.set_fill(
           basic_string_view<Char>(begin, to_unsigned(fill_end - begin)));
-      specs.set_align(align);
+      specs.set_align(alignment);
       begin = fill_end + 1;
     }
     }
