@@ -2264,26 +2264,24 @@ FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
   auto size = s.size();
   if (specs.precision >= 0 && to_unsigned(specs.precision) < size)
     size = code_point_index(s, to_unsigned(specs.precision));
-  bool is_debug = specs.type() == presentation_type::debug;
-  size_t width = 0;
 
+  bool is_debug = specs.type() == presentation_type::debug;
   if (is_debug) {
     auto buf = counting_buffer<Char>();
     write_escaped_string(basic_appender<Char>(buf), s);
     size = buf.count();
   }
 
+  size_t width = 0;
   if (specs.width != 0) {
-    if (is_debug)
-      width = size;
-    else
-      width = compute_width(basic_string_view<Char>(data, size));
+    width =
+        is_debug ? size : compute_width(basic_string_view<Char>(data, size));
   }
-  return write_padded<Char>(out, specs, size, width,
-                            [=](reserve_iterator<OutputIt> it) {
-                              if (is_debug) return write_escaped_string(it, s);
-                              return copy<Char>(data, data + size, it);
-                            });
+  return write_padded<Char>(
+      out, specs, size, width, [=](reserve_iterator<OutputIt> it) {
+        return is_debug ? write_escaped_string(it, s)
+                        : copy<Char>(data, data + size, it);
+      });
 }
 template <typename Char, typename OutputIt>
 FMT_CONSTEXPR auto write(OutputIt out,
