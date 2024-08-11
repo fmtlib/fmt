@@ -2051,20 +2051,6 @@ FMT_END_EXPORT
 // between clang and gcc on ARM (#1919).
 FMT_EXPORT using format_args = basic_format_args<format_context>;
 
-// We cannot use enum classes as bit fields because of a gcc bug, so we put them
-// in namespaces instead (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=61414).
-// Additionally, if an underlying type is specified, older gcc incorrectly warns
-// that the type is too small. Both bugs are fixed in gcc 9.3.
-#if FMT_GCC_VERSION && FMT_GCC_VERSION < 903
-#  define FMT_ENUM_UNDERLYING_TYPE(type)
-#else
-#  define FMT_ENUM_UNDERLYING_TYPE(type) : type
-#endif
-namespace sign {
-enum type FMT_ENUM_UNDERLYING_TYPE(unsigned char){none, minus, plus, space};
-}
-using sign_t = sign::type;
-
 namespace detail {
 
 template <typename T, typename Enable = void>
@@ -2115,6 +2101,7 @@ enum class presentation_type : unsigned char {
 };
 
 enum class align { none, left, right, center, numeric };
+enum class sign { none, minus, plus, space };
 
 // Basic format specifiers for built-in and string types.
 class basic_specs {
@@ -2201,11 +2188,11 @@ class basic_specs {
     return (data_ & (width_mask | precision_mask)) != 0;
   }
 
-  constexpr auto sign() const -> sign_t {
-    return static_cast<sign_t>((data_ & sign_mask) >> sign_shift);
+  constexpr auto sign() const -> sign {
+    return static_cast<fmt::sign>((data_ & sign_mask) >> sign_shift);
   }
-  FMT_CONSTEXPR void set_sign(sign_t a) {
-    data_ = (data_ & ~sign_mask) | (static_cast<unsigned>(a) << sign_shift);
+  FMT_CONSTEXPR void set_sign(fmt::sign s) {
+    data_ = (data_ & ~sign_mask) | (static_cast<unsigned>(s) << sign_shift);
   }
 
   constexpr auto upper() const -> bool { return (data_ & uppercase_mask) != 0; }

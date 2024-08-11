@@ -1130,11 +1130,12 @@ inline auto digits2(size_t value) -> const char* {
 }
 
 // Sign is a template parameter to workaround a bug in gcc 4.8.
-template <typename Char, typename Sign> constexpr auto sign(Sign s) -> Char {
+template <typename Char, typename Sign> constexpr auto getsign(Sign s) -> Char {
 #if !FMT_GCC_VERSION || FMT_GCC_VERSION >= 604
-  static_assert(std::is_same<Sign, sign_t>::value, "");
+  static_assert(std::is_same<Sign, sign>::value, "");
 #endif
-  return static_cast<char>(((' ' << 24) | ('+' << 16) | ('-' << 8)) >> (s * 8));
+  return static_cast<char>(((' ' << 24) | ('+' << 16) | ('-' << 8)) >>
+                           (static_cast<int>(s) * 8));
 }
 
 template <typename T> FMT_CONSTEXPR auto count_digits_fallback(T n) -> int {
@@ -2136,7 +2137,7 @@ template <typename UInt> struct write_int_arg {
 };
 
 template <typename T>
-FMT_CONSTEXPR auto make_write_int_arg(T value, sign_t sign)
+FMT_CONSTEXPR auto make_write_int_arg(T value, sign s)
     -> write_int_arg<uint32_or_64_or_128_t<T>> {
   auto prefix = 0u;
   auto abs_value = static_cast<uint32_or_64_or_128_t<T>>(value);
@@ -2146,7 +2147,7 @@ FMT_CONSTEXPR auto make_write_int_arg(T value, sign_t sign)
   } else {
     constexpr const unsigned prefixes[4] = {0, 0, 0x1000000u | '+',
                                             0x1000000u | ' '};
-    prefix = prefixes[sign];
+    prefix = prefixes[static_cast<int>(s)];
   }
   return {abs_value, prefix};
 }
@@ -2363,19 +2364,19 @@ FMT_CONSTEXPR auto parse_align(const Char* begin, const Char* end,
 
 template <typename Char, typename OutputIt>
 FMT_CONSTEXPR20 auto write_nonfinite(OutputIt out, bool isnan,
-                                     format_specs specs, sign_t sign)
-    -> OutputIt {
+                                     format_specs specs, sign s) -> OutputIt {
   auto str =
       isnan ? (specs.upper() ? "NAN" : "nan") : (specs.upper() ? "INF" : "inf");
   constexpr size_t str_size = 3;
-  auto size = str_size + (sign ? 1 : 0);
+  auto size = str_size + (s != sign::none ? 1 : 0);
   // Replace '0'-padding with space for non-finite values.
   const bool is_zero_fill =
       specs.fill_size() == 1 && specs.fill_unit<Char>() == '0';
   if (is_zero_fill) specs.set_fill(' ');
   return write_padded<Char>(out, specs, size,
                             [=](reserve_iterator<OutputIt> it) {
-                              if (sign) *it++ = detail::sign<Char>(sign);
+                              if (s != sign::none)
+                                *it++ = detail::getsign<Char>(s);
                               return copy<Char>(str, str + str_size, it);
                             });
 }
@@ -2486,12 +2487,12 @@ FMT_CONSTEXPR20 auto write_significand(OutputIt out, T significand,
 template <typename Char, typename OutputIt, typename DecimalFP,
           typename Grouping = digit_grouping<Char>>
 FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
-                                    const format_specs& specs, sign_t sign,
+                                    const format_specs& specs, sign s,
                                     locale_ref loc) -> OutputIt {
   auto significand = f.significand;
   int significand_size = get_significand_size(f);
   const Char zero = static_cast<Char>('0');
-  size_t size = to_unsigned(significand_size) + (sign ? 1 : 0);
+  size_t size = to_unsigned(significand_size) + (s != sign::none ? 1 : 0);
   using iterator = reserve_iterator<OutputIt>;
 
   Char decimal_point = specs.localized() ? detail::decimal_point<Char>(loc)
@@ -2523,7 +2524,7 @@ FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
     size += to_unsigned((decimal_point ? 1 : 0) + 2 + exp_digits);
     char exp_char = specs.upper() ? 'E' : 'e';
     auto write = [=](iterator it) {
-      if (sign) *it++ = detail::sign<Char>(sign);
+      if (s != sign::none) *it++ = detail::getsign<Char>(s);
       // Insert a decimal point after the first digit and add an exponent.
       it = write_significand(it, significand, significand_size, 1,
                              decimal_point);
@@ -2551,7 +2552,7 @@ FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
     auto grouping = Grouping(loc, specs.localized());
     size += to_unsigned(grouping.count_separators(exp));
     return write_padded<Char, align::right>(out, specs, size, [&](iterator it) {
-      if (sign) *it++ = detail::sign<Char>(sign);
+      if (s != sign::none) *it++ = detail::getsign<Char>(s);
       it = write_significand<Char>(it, significand, significand_size,
                                    f.exponent, grouping);
       if (!specs.alt()) return it;
@@ -2565,7 +2566,7 @@ FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
     auto grouping = Grouping(loc, specs.localized());
     size += to_unsigned(grouping.count_separators(exp));
     return write_padded<Char, align::right>(out, specs, size, [&](iterator it) {
-      if (sign) *it++ = detail::sign<Char>(sign);
+      if (s != sign::none) *it++ = detail::getsign<Char>(s);
       it = write_significand(it, significand, significand_size, exp,
                              decimal_point, grouping);
       return num_zeros > 0 ? detail::fill_n(it, num_zeros, zero) : it;
@@ -2580,7 +2581,7 @@ FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
   bool pointy = num_zeros != 0 || significand_size != 0 || specs.alt();
   size += 1 + (pointy ? 1 : 0) + to_unsigned(num_zeros);
   return write_padded<Char, align::right>(out, specs, size, [&](iterator it) {
-    if (sign) *it++ = detail::sign<Char>(sign);
+    if (s != sign::none) *it++ = detail::getsign<Char>(s);
     *it++ = zero;
     if (!pointy) return it;
     *it++ = decimal_point;
@@ -2605,14 +2606,13 @@ template <typename Char> class fallback_digit_grouping {
 
 template <typename Char, typename OutputIt, typename DecimalFP>
 FMT_CONSTEXPR20 auto write_float(OutputIt out, const DecimalFP& f,
-                                 const format_specs& specs, sign_t sign,
+                                 const format_specs& specs, sign s,
                                  locale_ref loc) -> OutputIt {
   if (is_constant_evaluated()) {
     return do_write_float<Char, OutputIt, DecimalFP,
-                          fallback_digit_grouping<Char>>(out, f, specs, sign,
-                                                         loc);
+                          fallback_digit_grouping<Char>>(out, f, specs, s, loc);
   } else {
-    return do_write_float<Char>(out, f, specs, sign, loc);
+    return do_write_float<Char>(out, f, specs, s, loc);
   }
 }
 
@@ -3464,14 +3464,14 @@ template <typename Char, typename OutputIt, typename T>
 FMT_CONSTEXPR20 auto write_float(OutputIt out, T value, format_specs specs,
                                  locale_ref loc) -> OutputIt {
   // Use signbit because value < 0 is false for NaN.
-  sign_t sign = detail::signbit(value) ? sign::minus : specs.sign();
+  sign s = detail::signbit(value) ? sign::minus : specs.sign();
 
   if (!detail::isfinite(value))
-    return write_nonfinite<Char>(out, detail::isnan(value), specs, sign);
+    return write_nonfinite<Char>(out, detail::isnan(value), specs, s);
 
-  if (specs.align() == align::numeric && sign) {
-    *out++ = detail::sign<Char>(sign);
-    sign = sign::none;
+  if (specs.align() == align::numeric && s != sign::none) {
+    *out++ = detail::getsign<Char>(s);
+    s = sign::none;
     if (specs.width != 0) --specs.width;
   }
 
@@ -3483,13 +3483,13 @@ FMT_CONSTEXPR20 auto write_float(OutputIt out, T value, format_specs specs,
       // Use Dragonbox for the shortest format.
       using floaty = conditional_t<sizeof(T) >= sizeof(double), double, float>;
       auto dec = dragonbox::to_decimal(static_cast<floaty>(value));
-      return write_float<Char>(out, dec, specs, sign, loc);
+      return write_float<Char>(out, dec, specs, s, loc);
     }
   }
 
   memory_buffer buffer;
   if (specs.type() == presentation_type::hexfloat) {
-    if (sign) buffer.push_back(detail::sign<char>(sign));
+    if (s != sign::none) buffer.push_back(detail::getsign<char>(s));
     format_hexfloat(convert_float(value), specs, buffer);
     return write_bytes<Char, align::right>(out, {buffer.data(), buffer.size()},
                                            specs);
@@ -3511,7 +3511,7 @@ FMT_CONSTEXPR20 auto write_float(OutputIt out, T value, format_specs specs,
 
   specs.precision = precision;
   auto f = big_decimal_fp{buffer.data(), static_cast<int>(buffer.size()), exp};
-  return write_float<Char>(out, f, specs, sign, loc);
+  return write_float<Char>(out, f, specs, s, loc);
 }
 
 template <typename Char, typename OutputIt, typename T,
@@ -3530,17 +3530,17 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
   if (is_constant_evaluated()) return write<Char>(out, value, format_specs());
   if (const_check(!is_supported_floating_point(value))) return out;
 
-  auto sign = detail::signbit(value) ? sign::minus : sign_t::none;
+  auto s = detail::signbit(value) ? sign::minus : sign::none;
 
   constexpr auto specs = format_specs();
   using floaty = conditional_t<sizeof(T) >= sizeof(double), double, float>;
   using floaty_uint = typename dragonbox::float_info<floaty>::carrier_uint;
   floaty_uint mask = exponent_mask<floaty>();
   if ((bit_cast<floaty_uint>(value) & mask) == mask)
-    return write_nonfinite<Char>(out, std::isnan(value), specs, sign);
+    return write_nonfinite<Char>(out, std::isnan(value), specs, s);
 
   auto dec = dragonbox::to_decimal(static_cast<floaty>(value));
-  return write_float<Char>(out, dec, specs, sign, {});
+  return write_float<Char>(out, dec, specs, s, {});
 }
 
 template <typename Char, typename OutputIt, typename T,
