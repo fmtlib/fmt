@@ -376,6 +376,11 @@ class FMT_API ostream : private detail::buffer<char> {
   ostream(ostream&& other) noexcept;
   ~ostream();
 
+  operator writer() {
+    detail::buffer<char>& buf = *this;
+    return buf;
+  }
+
   void flush() {
     if (size() == 0) return;
     file_.write(data(), size() * sizeof(data()[0]));

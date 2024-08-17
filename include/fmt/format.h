@@ -938,6 +938,41 @@ class basic_memory_buffer : public detail::buffer<T> {
 
 using memory_buffer = basic_memory_buffer<char>;
 
+// A writer to a buffered stream. It doesn't own the underlying stream.
+class writer {
+ private:
+  detail::buffer<char>* buf_;
+
+  // We cannot create a file buffer in advance because any write to a FILE may
+  // invalidate it.
+  FILE* file_;
+
+ public:
+  writer(FILE* f) : buf_(nullptr), file_(f) {}
+  writer(detail::buffer<char>& buf) : buf_(&buf) {}
+
+  /// Formats `args` according to specifications in `fmt` and writes the
+  /// output to the file.
+  template <typename... T> void print(format_string<T...> fmt, T&&... args) {
+    if (buf_)
+      fmt::format_to(appender(*buf_), fmt, std::forward<T>(args)...);
+    else
+      fmt::print(file_, fmt, std::forward<T>(args)...);
+  }
+};
+
+class string_buffer {
+ private:
+  std::string str_;
+  detail::container_buffer<std::string> buf_;
+
+ public:
+  string_buffer() : buf_(str_) {}
+
+  operator writer() { return buf_; }
+  std::string& str() { return str_; }
+};
+
 template <typename T, size_t SIZE, typename Allocator>
 struct is_contiguous<basic_memory_buffer<T, SIZE, Allocator>> : std::true_type {
 };

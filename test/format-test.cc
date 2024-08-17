@@ -2478,3 +2478,27 @@ FMT_END_NAMESPACE
 TEST(format_test, ustring) {
   EXPECT_EQ(fmt::format("{}", ustring()), "ustring");
 }
+
+TEST(format_test, writer) {
+  auto write_to_stdout = []() {
+    auto w = fmt::writer(stdout);
+    w.print("{}", 42);
+  };
+  EXPECT_WRITE(stdout, write_to_stdout(), "42");
+
+#if FMT_USE_FCNTL
+  auto pipe = fmt::pipe();
+  auto write_end = pipe.write_end.fdopen("w");
+  fmt::writer(write_end.get()).print("42");
+  write_end.close();
+  auto read_end = pipe.read_end.fdopen("r");
+  int n = 0;
+  int result = fscanf(read_end.get(), "%d", &n);
+  (void)result;
+  EXPECT_EQ(n, 42);
+#endif
+
+  auto s = fmt::string_buffer();
+  fmt::writer(s).print("foo");
+  EXPECT_EQ(s.str(), "foo");
+}
