@@ -374,30 +374,25 @@ long getpagesize() {
 }
 #  endif
 
-namespace detail {
-
-void file_buffer::grow(buffer<char>& buf, size_t) {
-  if (buf.size() == buf.capacity()) static_cast<file_buffer&>(buf).flush();
+void ostream::grow(buffer<char>& buf, size_t) {
+  if (buf.size() == buf.capacity()) static_cast<ostream&>(buf).flush();
 }
 
-file_buffer::file_buffer(cstring_view path, const ostream_params& params)
+ostream::ostream(cstring_view path, const detail::ostream_params& params)
     : buffer<char>(grow), file_(path, params.oflag) {
   set(new char[params.buffer_size], params.buffer_size);
 }
 
-file_buffer::file_buffer(file_buffer&& other) noexcept
+ostream::ostream(ostream&& other) noexcept
     : buffer<char>(grow, other.data(), other.size(), other.capacity()),
       file_(std::move(other.file_)) {
   other.clear();
   other.set(nullptr, 0);
 }
 
-file_buffer::~file_buffer() {
+ostream::~ostream() {
   flush();
   delete[] data();
 }
-}  // namespace detail
-
-ostream::~ostream() = default;
 #endif  // FMT_USE_FCNTL
 FMT_END_NAMESPACE

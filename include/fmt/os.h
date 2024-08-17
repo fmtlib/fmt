@@ -358,16 +358,23 @@ struct ostream_params {
 #  endif
 };
 
-class file_buffer final : public buffer<char> {
+}  // namespace detail
+
+FMT_INLINE_VARIABLE constexpr auto buffer_size = detail::buffer_size();
+
+/// A fast buffered output stream for writing from a single thread. Writing from
+/// multiple threads without external synchronization may result in a data race.
+class FMT_API ostream : private detail::buffer<char> {
  private:
   file file_;
 
-  FMT_API static void grow(buffer<char>& buf, size_t);
+  ostream(cstring_view path, const detail::ostream_params& params);
+
+  static void grow(buffer<char>& buf, size_t);
 
  public:
-  FMT_API file_buffer(cstring_view path, const ostream_params& params);
-  FMT_API file_buffer(file_buffer&& other) noexcept;
-  FMT_API ~file_buffer();
+  ostream(ostream&& other) noexcept;
+  ~ostream();
 
   void flush() {
     if (size() == 0) return;
@@ -375,42 +382,18 @@ class file_buffer final : public buffer<char> {
     clear();
   }
 
+  template <typename... T>
+  friend auto output_file(cstring_view path, T... params) -> ostream;
+
   void close() {
     flush();
     file_.close();
   }
-};
-
-}  // namespace detail
-
-FMT_INLINE_VARIABLE constexpr auto buffer_size = detail::buffer_size();
-
-/// A fast output stream for writing from a single thread. Writing from
-/// multiple threads without external synchronization may result in a data race.
-class FMT_API ostream {
- private:
-  FMT_MSC_WARNING(suppress : 4251)
-  detail::file_buffer buffer_;
-
-  ostream(cstring_view path, const detail::ostream_params& params)
-      : buffer_(path, params) {}
-
- public:
-  ostream(ostream&& other) : buffer_(std::move(other.buffer_)) {}
-
-  ~ostream();
-
-  void flush() { buffer_.flush(); }
-
-  template <typename... T>
-  friend auto output_file(cstring_view path, T... params) -> ostream;
-
-  void close() { buffer_.close(); }
 
   /// Formats `args` according to specifications in `fmt` and writes the
   /// output to the file.
   template <typename... T> void print(format_string<T...> fmt, T&&... args) {
-    vformat_to(appender(buffer_), fmt, fmt::make_format_args(args...));
+    vformat_to(appender(*this), fmt, fmt::make_format_args(args...));
   }
 };
 
