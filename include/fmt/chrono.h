@@ -2278,80 +2278,6 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
   }
 };
 
-template <typename Char, typename Duration>
-struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
-                 Char> : formatter<std::tm, Char> {
-  FMT_CONSTEXPR formatter() {
-    this->format_str_ = detail::string_literal<Char, '%', 'F', ' ', '%', 'T'>{};
-  }
-
-  template <typename FormatContext>
-  auto format(std::chrono::time_point<std::chrono::system_clock, Duration> val,
-              FormatContext& ctx) const -> decltype(ctx.out()) {
-    std::tm tm = gmtime(val);
-    using period = typename Duration::period;
-    if (detail::const_check(
-            period::num == 1 && period::den == 1 &&
-            !std::is_floating_point<typename Duration::rep>::value)) {
-      return formatter<std::tm, Char>::format(tm, ctx);
-    }
-    Duration epoch = val.time_since_epoch();
-    Duration subsecs = detail::duration_cast<Duration>(
-        epoch - detail::duration_cast<std::chrono::seconds>(epoch));
-    if (subsecs.count() < 0) {
-      auto second = detail::duration_cast<Duration>(std::chrono::seconds(1));
-      if (tm.tm_sec != 0)
-        --tm.tm_sec;
-      else
-        tm = gmtime(val - second);
-      subsecs += detail::duration_cast<Duration>(std::chrono::seconds(1));
-    }
-    return formatter<std::tm, Char>::do_format(tm, ctx, &subsecs);
-  }
-};
-
-#if FMT_USE_LOCAL_TIME
-template <typename Char, typename Duration>
-struct formatter<std::chrono::local_time<Duration>, Char>
-    : formatter<std::tm, Char> {
-  FMT_CONSTEXPR formatter() {
-    this->format_str_ = detail::string_literal<Char, '%', 'F', ' ', '%', 'T'>{};
-  }
-
-  template <typename FormatContext>
-  auto format(std::chrono::local_time<Duration> val, FormatContext& ctx) const
-      -> decltype(ctx.out()) {
-    using period = typename Duration::period;
-    if (period::num != 1 || period::den != 1 ||
-        std::is_floating_point<typename Duration::rep>::value) {
-      const auto epoch = val.time_since_epoch();
-      const auto subsecs = detail::duration_cast<Duration>(
-          epoch - detail::duration_cast<std::chrono::seconds>(epoch));
-
-      return formatter<std::tm, Char>::do_format(localtime(val), ctx, &subsecs);
-    }
-
-    return formatter<std::tm, Char>::format(localtime(val), ctx);
-  }
-};
-#endif
-
-#if FMT_USE_UTC_TIME
-template <typename Char, typename Duration>
-struct formatter<std::chrono::time_point<std::chrono::utc_clock, Duration>,
-                 Char>
-    : formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
-                Char> {
-  template <typename FormatContext>
-  auto format(std::chrono::time_point<std::chrono::utc_clock, Duration> val,
-              FormatContext& ctx) const -> decltype(ctx.out()) {
-    return formatter<
-        std::chrono::time_point<std::chrono::system_clock, Duration>,
-        Char>::format(std::chrono::utc_clock::to_sys(val), ctx);
-  }
-};
-#endif
-
 template <typename Char> struct formatter<std::tm, Char> {
  private:
   format_specs specs_;
@@ -2360,7 +2286,7 @@ template <typename Char> struct formatter<std::tm, Char> {
  protected:
   basic_string_view<Char> format_str_;
 
-  template <typename FormatContext, typename Duration>
+  template <typename Duration, typename FormatContext>
   auto do_format(const std::tm& tm, FormatContext& ctx,
                  const Duration* subsecs) const -> decltype(ctx.out()) {
     auto specs = specs_;
@@ -2402,9 +2328,83 @@ template <typename Char> struct formatter<std::tm, Char> {
   template <typename FormatContext>
   auto format(const std::tm& tm, FormatContext& ctx) const
       -> decltype(ctx.out()) {
-    return do_format<FormatContext, std::chrono::seconds>(tm, ctx, nullptr);
+    return do_format<std::chrono::seconds>(tm, ctx, nullptr);
   }
 };
+
+template <typename Char, typename Duration>
+struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
+                 Char> : formatter<std::tm, Char> {
+  FMT_CONSTEXPR formatter() {
+    this->format_str_ = detail::string_literal<Char, '%', 'F', ' ', '%', 'T'>();
+  }
+
+  template <typename FormatContext>
+  auto format(std::chrono::time_point<std::chrono::system_clock, Duration> val,
+              FormatContext& ctx) const -> decltype(ctx.out()) {
+    std::tm tm = gmtime(val);
+    using period = typename Duration::period;
+    if (detail::const_check(
+            period::num == 1 && period::den == 1 &&
+            !std::is_floating_point<typename Duration::rep>::value)) {
+      return formatter<std::tm, Char>::format(tm, ctx);
+    }
+    Duration epoch = val.time_since_epoch();
+    Duration subsecs = detail::duration_cast<Duration>(
+        epoch - detail::duration_cast<std::chrono::seconds>(epoch));
+    if (subsecs.count() < 0) {
+      auto second = detail::duration_cast<Duration>(std::chrono::seconds(1));
+      if (tm.tm_sec != 0)
+        --tm.tm_sec;
+      else
+        tm = gmtime(val - second);
+      subsecs += detail::duration_cast<Duration>(std::chrono::seconds(1));
+    }
+    return formatter<std::tm, Char>::do_format(tm, ctx, &subsecs);
+  }
+};
+
+#if FMT_USE_LOCAL_TIME
+template <typename Char, typename Duration>
+struct formatter<std::chrono::local_time<Duration>, Char>
+    : formatter<std::tm, Char> {
+  FMT_CONSTEXPR formatter() {
+    this->format_str_ = detail::string_literal<Char, '%', 'F', ' ', '%', 'T'>();
+  }
+
+  template <typename FormatContext>
+  auto format(std::chrono::local_time<Duration> val, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    using period = typename Duration::period;
+    if (period::num != 1 || period::den != 1 ||
+        std::is_floating_point<typename Duration::rep>::value) {
+      const auto epoch = val.time_since_epoch();
+      const auto subsecs = detail::duration_cast<Duration>(
+          epoch - detail::duration_cast<std::chrono::seconds>(epoch));
+
+      return formatter<std::tm, Char>::do_format(localtime(val), ctx, &subsecs);
+    }
+
+    return formatter<std::tm, Char>::format(localtime(val), ctx);
+  }
+};
+#endif
+
+#if FMT_USE_UTC_TIME
+template <typename Char, typename Duration>
+struct formatter<std::chrono::time_point<std::chrono::utc_clock, Duration>,
+                 Char>
+    : formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
+                Char> {
+  template <typename FormatContext>
+  auto format(std::chrono::time_point<std::chrono::utc_clock, Duration> val,
+              FormatContext& ctx) const -> decltype(ctx.out()) {
+    return formatter<
+        std::chrono::time_point<std::chrono::system_clock, Duration>,
+        Char>::format(std::chrono::utc_clock::to_sys(val), ctx);
+  }
+};
+#endif
 
 FMT_END_EXPORT
 FMT_END_NAMESPACE
