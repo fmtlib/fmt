@@ -930,6 +930,11 @@ TEST(format_test, runtime_width) {
   EXPECT_EQ(fmt::format("{:{}}", 42, short(4)), "  42");
 }
 
+TEST(format_test, exponent_range) {
+  for (int e = -1074; e <= 1023; ++e)
+    (void)fmt::format("{}", std::ldexp(1, e));
+}
+
 TEST(format_test, precision) {
   char format_str[buffer_size];
   safe_sprintf(format_str, "{0:.%u", UINT_MAX);
