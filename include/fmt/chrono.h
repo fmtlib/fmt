@@ -185,56 +185,6 @@ FMT_CONSTEXPR auto safe_float_conversion(const From from, int& ec) -> To {
   return from;
 }
 
-/// Safe duration cast between integral durations
-template <typename To, typename FromRep, typename FromPeriod,
-          FMT_ENABLE_IF(std::is_integral<FromRep>::value),
-          FMT_ENABLE_IF(std::is_integral<typename To::rep>::value)>
-auto safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
-                        int& ec) -> To {
-  using From = std::chrono::duration<FromRep, FromPeriod>;
-  ec = 0;
-  // the basic idea is that we need to convert from count() in the from type
-  // to count() in the To type, by multiplying it with this:
-  struct Factor
-      : std::ratio_divide<typename From::period, typename To::period> {};
-
-  static_assert(Factor::num > 0, "num must be positive");
-  static_assert(Factor::den > 0, "den must be positive");
-
-  // the conversion is like this: multiply from.count() with Factor::num
-  // /Factor::den and convert it to To::rep, all this without
-  // overflow/underflow. let's start by finding a suitable type that can hold
-  // both To, From and Factor::num
-  using IntermediateRep =
-      typename std::common_type<typename From::rep, typename To::rep,
-                                decltype(Factor::num)>::type;
-
-  // safe conversion to IntermediateRep
-  IntermediateRep count =
-      lossless_integral_conversion<IntermediateRep>(from.count(), ec);
-  if (ec) return {};
-  // multiply with Factor::num without overflow or underflow
-  if (detail::const_check(Factor::num != 1)) {
-    const auto max1 = detail::max_value<IntermediateRep>() / Factor::num;
-    if (count > max1) {
-      ec = 1;
-      return {};
-    }
-    const auto min1 =
-        (std::numeric_limits<IntermediateRep>::min)() / Factor::num;
-    if (detail::const_check(!std::is_unsigned<IntermediateRep>::value) &&
-        count < min1) {
-      ec = 1;
-      return {};
-    }
-    count *= Factor::num;
-  }
-
-  if (detail::const_check(Factor::den != 1)) count /= Factor::den;
-  auto tocount = lossless_integral_conversion<typename To::rep>(count, ec);
-  return ec ? To() : To(tocount);
-}
-
 /// Safe duration_cast between floating point durations
 template <typename To, typename FromRep, typename FromPeriod,
           FMT_ENABLE_IF(std::is_floating_point<FromRep>::value),
@@ -471,16 +421,56 @@ struct is_same_arithmetic_type
                                          std::is_floating_point<Rep2>::value)> {
 };
 
-template <
-    typename To, typename FromRep, typename FromPeriod,
-    FMT_ENABLE_IF(is_same_arithmetic_type<FromRep, typename To::rep>::value)>
-auto fmt_duration_cast(std::chrono::duration<FromRep, FromPeriod> from) -> To {
+inline void throw_duration_error() {
+  FMT_THROW(format_error("cannot format duration"));
+}
+
+// Cast one integral duration to another with an overflow check.
+template <typename To, typename FromRep, typename FromPeriod,
+          FMT_ENABLE_IF(std::is_integral<FromRep>::value&&
+                            std::is_integral<typename To::rep>::value)>
+auto duration_cast(std::chrono::duration<FromRep, FromPeriod> from) -> To {
+#if !FMT_SAFE_DURATION_CAST
+  return std::chrono::duration_cast<To>(from);
+#else
+  // The conversion factor: to.count() == factor * from.count().
+  using factor = std::ratio_divide<FromPeriod, typename To::period>;
+
+  using common_rep = typename std::common_type<FromRep, typename To::rep,
+                                               decltype(factor::num)>::type;
+
+  int ec = 0;
+  auto count = safe_duration_cast::lossless_integral_conversion<common_rep>(
+      from.count(), ec);
+  if (ec) throw_duration_error();
+
+  // Multiply from.count() by factor and check for overflow.
+  if (const_check(factor::num != 1)) {
+    if (count > max_value<common_rep>() / factor::num) throw_duration_error();
+    const auto min = (std::numeric_limits<common_rep>::min)() / factor::num;
+    if (const_check(!std::is_unsigned<common_rep>::value) && count < min)
+      throw_duration_error();
+    count *= factor::num;
+  }
+  if (const_check(factor::den != 1)) count /= factor::den;
+  auto to =
+      To(safe_duration_cast::lossless_integral_conversion<typename To::rep>(
+          count, ec));
+  if (ec) throw_duration_error();
+  return to;
+#endif
+}
+
+template <typename To, typename FromRep, typename FromPeriod,
+          FMT_ENABLE_IF(std::is_floating_point<FromRep>::value&&
+                            std::is_floating_point<typename To::rep>::value)>
+auto duration_cast(std::chrono::duration<FromRep, FromPeriod> from) -> To {
 #if FMT_SAFE_DURATION_CAST
   // Throwing version of safe_duration_cast is only available for
   // integer to integer or float to float casts.
   int ec;
   To to = safe_duration_cast::safe_duration_cast<To>(from, ec);
-  if (ec) FMT_THROW(format_error("cannot format duration"));
+  if (ec) throw_duration_error();
   return to;
 #else
   // Standard duration cast, may overflow.
@@ -491,7 +481,7 @@ auto fmt_duration_cast(std::chrono::duration<FromRep, FromPeriod> from) -> To {
 template <
     typename To, typename FromRep, typename FromPeriod,
     FMT_ENABLE_IF(!is_same_arithmetic_type<FromRep, typename To::rep>::value)>
-auto fmt_duration_cast(std::chrono::duration<FromRep, FromPeriod> from) -> To {
+auto duration_cast(std::chrono::duration<FromRep, FromPeriod> from) -> To {
   // Mixed integer <-> float cast is not supported by safe_duration_cast.
   return std::chrono::duration_cast<To>(from);
 }
@@ -503,7 +493,7 @@ auto to_time_t(
   // Cannot use std::chrono::system_clock::to_time_t since this would first
   // require a cast to std::chrono::system_clock::time_point, which could
   // overflow.
-  return fmt_duration_cast<std::chrono::duration<std::time_t>>(
+  return detail::duration_cast<std::chrono::duration<std::time_t>>(
              time_point.time_since_epoch())
       .count();
 }
@@ -1131,12 +1121,12 @@ void write_fractional_seconds(OutputIt& out, Duration d, int precision = -1) {
                                 std::chrono::seconds::rep>::type,
       std::ratio<1, detail::pow10(num_fractional_digits)>>;
 
-  const auto fractional = d - fmt_duration_cast<std::chrono::seconds>(d);
+  const auto fractional = d - detail::duration_cast<std::chrono::seconds>(d);
   const auto subseconds =
       std::chrono::treat_as_floating_point<
           typename subsecond_precision::rep>::value
           ? fractional.count()
-          : fmt_duration_cast<subsecond_precision>(fractional).count();
+          : detail::duration_cast<subsecond_precision>(fractional).count();
   auto n = static_cast<uint32_or_64_or_128_t<long long>>(subseconds);
   const int num_digits = detail::count_digits(n);
 
@@ -1707,17 +1697,17 @@ inline auto get_milliseconds(std::chrono::duration<Rep, Period> d)
 #if FMT_SAFE_DURATION_CAST
   using CommonSecondsType =
       typename std::common_type<decltype(d), std::chrono::seconds>::type;
-  const auto d_as_common = fmt_duration_cast<CommonSecondsType>(d);
+  const auto d_as_common = detail::duration_cast<CommonSecondsType>(d);
   const auto d_as_whole_seconds =
-      fmt_duration_cast<std::chrono::seconds>(d_as_common);
+      detail::duration_cast<std::chrono::seconds>(d_as_common);
   // this conversion should be nonproblematic
   const auto diff = d_as_common - d_as_whole_seconds;
   const auto ms =
-      fmt_duration_cast<std::chrono::duration<Rep, std::milli>>(diff);
+      detail::duration_cast<std::chrono::duration<Rep, std::milli>>(diff);
   return ms;
 #else
-  auto s = fmt_duration_cast<std::chrono::seconds>(d);
-  return fmt_duration_cast<std::chrono::milliseconds>(d - s);
+  auto s = detail::duration_cast<std::chrono::seconds>(d);
+  return detail::duration_cast<std::chrono::milliseconds>(d - s);
 #endif
 }
 
@@ -1821,7 +1811,7 @@ struct chrono_formatter {
     // this may overflow and/or the result may not fit in the
     // target type.
     // might need checked conversion (rep!=Rep)
-    s = fmt_duration_cast<seconds>(std::chrono::duration<rep, Period>(val));
+    s = detail::duration_cast<seconds>(std::chrono::duration<rep, Period>(val));
   }
 
   // returns true if nan or inf, writes to out.
@@ -2320,16 +2310,15 @@ struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
       return formatter<std::tm, Char>::format(tm, ctx);
     }
     Duration epoch = val.time_since_epoch();
-    Duration subsecs = detail::fmt_duration_cast<Duration>(
-        epoch - detail::fmt_duration_cast<std::chrono::seconds>(epoch));
+    Duration subsecs = detail::duration_cast<Duration>(
+        epoch - detail::duration_cast<std::chrono::seconds>(epoch));
     if (subsecs.count() < 0) {
-      auto second =
-          detail::fmt_duration_cast<Duration>(std::chrono::seconds(1));
+      auto second = detail::duration_cast<Duration>(std::chrono::seconds(1));
       if (tm.tm_sec != 0)
         --tm.tm_sec;
       else
         tm = gmtime(val - second);
-      subsecs += detail::fmt_duration_cast<Duration>(std::chrono::seconds(1));
+      subsecs += detail::duration_cast<Duration>(std::chrono::seconds(1));
     }
     return formatter<std::tm, Char>::do_format(tm, ctx, &subsecs);
   }
@@ -2350,8 +2339,8 @@ struct formatter<std::chrono::local_time<Duration>, Char>
     if (period::num != 1 || period::den != 1 ||
         std::is_floating_point<typename Duration::rep>::value) {
       const auto epoch = val.time_since_epoch();
-      const auto subsecs = detail::fmt_duration_cast<Duration>(
-          epoch - detail::fmt_duration_cast<std::chrono::seconds>(epoch));
+      const auto subsecs = detail::duration_cast<Duration>(
+          epoch - detail::duration_cast<std::chrono::seconds>(epoch));
 
       return formatter<std::tm, Char>::do_format(localtime(val), ctx, &subsecs);
     }
