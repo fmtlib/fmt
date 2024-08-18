@@ -37,15 +37,6 @@ FMT_BEGIN_NAMESPACE
 #  endif
 #endif
 
-// Check if std::chrono::utc_timestamp is available.
-#ifndef FMT_USE_UTC_TIME
-#  ifdef __cpp_lib_chrono
-#    define FMT_USE_UTC_TIME (__cpp_lib_chrono >= 201907L)
-#  else
-#    define FMT_USE_UTC_TIME 0
-#  endif
-#endif
-
 // Enable safe chrono durations, unless explicitly disabled.
 #ifndef FMT_SAFE_DURATION_CAST
 #  define FMT_SAFE_DURATION_CAST 1
@@ -254,11 +245,38 @@ auto safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
 }  // namespace safe_duration_cast
 #endif
 
+namespace detail {
+
+// Check if std::chrono::utc_time is available.
+#ifdef FMT_USE_UTC_TIME
+// Use the provided definition.
+#elif defined(__cpp_lib_chrono)
+#  define FMT_USE_UTC_TIME (__cpp_lib_chrono >= 201907L)
+#else
+#  define FMT_USE_UTC_TIME 0
+#endif
+#if FMT_USE_UTC_TIME
+using utc_clock = std::chrono::utc_clock;
+#else
+struct utc_clock {
+  void to_sys();
+};
+#endif
+
+}  // namespace detail
+
+template <typename Duration>
+using sys_time = std::chrono::time_point<std::chrono::system_clock, Duration>;
+
+template <typename Duration>
+using utc_time = std::chrono::time_point<detail::utc_clock, Duration>;
+
+namespace detail {
+
 // Prevents expansion of a preceding token as a function-style macro.
 // Usage: f FMT_NOMACRO()
 #define FMT_NOMACRO
 
-namespace detail {
 template <typename T = void> struct null {};
 inline auto localtime_r FMT_NOMACRO(...) -> null<> { return null<>(); }
 inline auto localtime_s(...) -> null<> { return null<>(); }
@@ -477,9 +495,7 @@ auto duration_cast(std::chrono::duration<FromRep, FromPeriod> from) -> To {
 }
 
 template <typename Duration>
-auto to_time_t(
-    std::chrono::time_point<std::chrono::system_clock, Duration> time_point)
-    -> std::time_t {
+auto to_time_t(sys_time<Duration> time_point) -> std::time_t {
   // Cannot use std::chrono::system_clock::to_time_t since this would first
   // require a cast to std::chrono::system_clock::time_point, which could
   // overflow.
@@ -581,9 +597,7 @@ inline auto gmtime(std::time_t time) -> std::tm {
 }
 
 template <typename Duration>
-inline auto gmtime(
-    std::chrono::time_point<std::chrono::system_clock, Duration> time_point)
-    -> std::tm {
+inline auto gmtime(sys_time<Duration> time_point) -> std::tm {
   return gmtime(detail::to_time_t(time_point));
 }
 
@@ -2333,15 +2347,14 @@ template <typename Char> struct formatter<std::tm, Char> {
 };
 
 template <typename Char, typename Duration>
-struct formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
-                 Char> : formatter<std::tm, Char> {
+struct formatter<sys_time<Duration>, Char> : formatter<std::tm, Char> {
   FMT_CONSTEXPR formatter() {
     this->format_str_ = detail::string_literal<Char, '%', 'F', ' ', '%', 'T'>();
   }
 
   template <typename FormatContext>
-  auto format(std::chrono::time_point<std::chrono::system_clock, Duration> val,
-              FormatContext& ctx) const -> decltype(ctx.out()) {
+  auto format(sys_time<Duration> val, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
     std::tm tm = gmtime(val);
     using period = typename Duration::period;
     if (detail::const_check(
@@ -2390,21 +2403,16 @@ struct formatter<std::chrono::local_time<Duration>, Char>
 };
 #endif
 
-#if FMT_USE_UTC_TIME
 template <typename Char, typename Duration>
-struct formatter<std::chrono::time_point<std::chrono::utc_clock, Duration>,
-                 Char>
-    : formatter<std::chrono::time_point<std::chrono::system_clock, Duration>,
-                Char> {
+struct formatter<utc_time<Duration>, Char>
+    : formatter<sys_time<Duration>, Char> {
   template <typename FormatContext>
-  auto format(std::chrono::time_point<std::chrono::utc_clock, Duration> val,
-              FormatContext& ctx) const -> decltype(ctx.out()) {
-    return formatter<
-        std::chrono::time_point<std::chrono::system_clock, Duration>,
-        Char>::format(std::chrono::utc_clock::to_sys(val), ctx);
+  auto format(utc_time<Duration> val, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    return formatter<sys_time<Duration>, Char>::format(
+        detail::utc_clock::to_sys(val), ctx);
   }
 };
-#endif
 
 FMT_END_EXPORT
 FMT_END_NAMESPACE
