@@ -589,8 +589,7 @@ The available presentation types (*chrono_type*) are:
     represented with seconds, then the format is a decimal floating-point number
     with a fixed format and a precision matching that of the precision of the
     input (or to a microseconds precision if the conversion to floating-point
-    decimal seconds cannot be made within 18 fractional digits). The character
-    for the decimal point is localized according to the locale. The modified
+    decimal seconds cannot be made within 18 fractional digits). The modified
     command <code>%OS</code> produces the locale's alternative representation.
   </td>
 </tr>
