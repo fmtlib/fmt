@@ -22,6 +22,10 @@
 
 #include "format.h"
 
+namespace fmt_detail {
+template <typename... T> inline void _tzset(T...) {}
+}  // namespace fmt_detail
+
 FMT_BEGIN_NAMESPACE
 
 // Check if std::chrono::local_t is available.
@@ -39,20 +43,6 @@ FMT_BEGIN_NAMESPACE
 #    define FMT_USE_UTC_TIME (__cpp_lib_chrono >= 201907L)
 #  else
 #    define FMT_USE_UTC_TIME 0
-#  endif
-#endif
-
-// Enable tzset.
-#ifndef FMT_USE_TZSET
-// UWP doesn't provide _tzset.
-#  if FMT_HAS_INCLUDE("winapifamily.h")
-#    include <winapifamily.h>
-#  endif
-#  if defined(_WIN32) && (!defined(WINAPI_FAMILY) || \
-                          (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP))
-#    define FMT_USE_TZSET 1
-#  else
-#    define FMT_USE_TZSET 0
 #  endif
 #endif
 
@@ -1060,15 +1050,14 @@ template <typename T>
 struct has_member_data_tm_zone<T, void_t<decltype(T::tm_zone)>>
     : std::true_type {};
 
-#if FMT_USE_TZSET
 inline void tzset_once() {
-  static bool init = []() -> bool {
+  static bool init = []() {
+    using namespace fmt_detail;
     _tzset();
-    return true;
+    return false;
   }();
   ignore_unused(init);
 }
-#endif
 
 // Converts value to Int and checks that it's in the range [0, upper).
 template <typename T, typename Int, FMT_ENABLE_IF(std::is_integral<T>::value)>
@@ -1119,7 +1108,7 @@ void write_fractional_seconds(OutputIt& out, Duration d, int precision = -1) {
   using subsecond_precision = std::chrono::duration<
       typename std::common_type<typename Duration::rep,
                                 std::chrono::seconds::rep>::type,
-      std::ratio<1, detail::pow10(num_fractional_digits)>>;
+      std::ratio<1, pow10(num_fractional_digits)>>;
 
   const auto fractional = d - detail::duration_cast<std::chrono::seconds>(d);
   const auto subseconds =
@@ -1128,7 +1117,7 @@ void write_fractional_seconds(OutputIt& out, Duration d, int precision = -1) {
           ? fractional.count()
           : detail::duration_cast<subsecond_precision>(fractional).count();
   auto n = static_cast<uint32_or_64_or_128_t<long long>>(subseconds);
-  const int num_digits = detail::count_digits(n);
+  const int num_digits = count_digits(n);
 
   int leading_zeroes = (std::max)(0, num_fractional_digits - num_digits);
   if (precision < 0) {
@@ -1146,13 +1135,11 @@ void write_fractional_seconds(OutputIt& out, Duration d, int precision = -1) {
     out = detail::fill_n(out, leading_zeroes, '0');
     if (remaining < num_digits) {
       int num_truncated_digits = num_digits - remaining;
-      n /= to_unsigned(detail::pow10(to_unsigned(num_truncated_digits)));
-      if (n) {
-        out = format_decimal<Char>(out, n, remaining);
-      }
+      n /= to_unsigned(pow10(to_unsigned(num_truncated_digits)));
+      if (n != 0) out = format_decimal<Char>(out, n, remaining);
       return;
     }
-    if (n) {
+    if (n != 0) {
       out = format_decimal<Char>(out, n, num_digits);
       remaining -= num_digits;
     }
@@ -1332,6 +1319,7 @@ class tm_writer {
     if (ns != numeric_system::standard) *out_++ = ':';
     write2(static_cast<int>(offset % 60));
   }
+
   template <typename T, FMT_ENABLE_IF(has_member_data_tm_gmtoff<T>::value)>
   void format_utc_offset_impl(const T& tm, numeric_system ns) {
     write_utc_offset(tm.tm_gmtoff, ns);
@@ -1339,9 +1327,7 @@ class tm_writer {
   template <typename T, FMT_ENABLE_IF(!has_member_data_tm_gmtoff<T>::value)>
   void format_utc_offset_impl(const T& tm, numeric_system ns) {
 #if defined(_WIN32) && defined(_UCRT)
-#  if FMT_USE_TZSET
     tzset_once();
-#  endif
     long offset = 0;
     _get_timezone(&offset);
     if (tm.tm_isdst) {

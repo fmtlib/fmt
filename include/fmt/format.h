@@ -586,9 +586,7 @@ FMT_CONSTEXPR auto fill_n(OutputIt out, Size count, const T& value)
 }
 template <typename T, typename Size>
 FMT_CONSTEXPR20 auto fill_n(T* out, Size count, char value) -> T* {
-  if (is_constant_evaluated()) {
-    return fill_n<T*, Size, T>(out, count, value);
-  }
+  if (is_constant_evaluated()) return fill_n<T*, Size, T>(out, count, value);
   std::memset(out, value, to_unsigned(count));
   return out + count;
 }
