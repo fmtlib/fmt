@@ -414,6 +414,21 @@ constexpr auto compile(S fmt) {
   }
 }
 #endif  // defined(__cpp_if_constexpr) && defined(__cpp_return_type_deduction)
+
+#if FMT_USE_NONTYPE_TEMPLATE_ARGS
+// A wrapper for non-type template arguments that automatically encapsulates
+// string literals, but leaves other argument types as-is.
+template <typename T> struct nttp_arg {
+  template <typename U = T> constexpr nttp_arg(U const& arg) : arg(arg) {}
+  T arg;
+};
+
+template <typename T> nttp_arg(const T&) -> nttp_arg<T>;
+
+template <typename Char, size_t N>
+nttp_arg(const Char (&arg)[N])
+    -> nttp_arg<fmt::detail_exported::fixed_string<Char, N>>;
+#endif  // FMT_USE_NONTYPE_TEMPLATE_ARGS
 }  // namespace detail
 
 FMT_BEGIN_EXPORT
@@ -522,6 +537,28 @@ template <detail_exported::fixed_string Str> constexpr auto operator""_cf() {
                                      Str>();
 }
 }  // namespace literals
+
+#  if FMT_USE_CONSTEVAL
+// Can't be consteval due to llvm bug preventing static constexpr members in
+// a consteval function: https://github.com/llvm/llvm-project/issues/82994.
+template <detail_exported::fixed_string format_str, detail::nttp_arg... args>
+constexpr auto format()
+    -> basic_string_view<remove_cvref_t<decltype(format_str.data[0])>> {
+  using char_t = remove_cvref_t<decltype(format_str.data[0])>;
+  static constexpr auto str = [] consteval {
+    // clang-format off
+    using namespace literals;
+    constexpr auto compiled_format = operator""_cf<format_str>();
+    // clang-format on
+    constexpr auto result_length =
+        formatted_size(compiled_format, (args.arg)...);
+    auto result = detail_exported::fixed_string<char_t, result_length>{};
+    format_to(result.data, compiled_format, (args.arg)...);
+    return result;
+  }();
+  return basic_string_view(str.data, sizeof(str.data) / sizeof(char_t));
+}
+#  endif  // FMT_USE_CONSTEVAL
 #endif
 
 FMT_END_EXPORT

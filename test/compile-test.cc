@@ -292,7 +292,8 @@ TEST(compile_test, compile_format_string_literal) {
 // fmt::v11::detail::buffer<T>::append.
 #if FMT_USE_CONSTEVAL && (!FMT_MSC_VERSION || (FMT_MSC_VERSION >= 1939)) && \
     defined(__cpp_lib_is_constant_evaluated)
-template <size_t max_string_length, typename Char = char> struct test_string {
+template <size_t max_string_length, typename Char = char>
+struct fixed_length_string {
   template <typename T> constexpr bool operator==(const T& rhs) const noexcept {
     return fmt::basic_string_view<Char>(rhs).compare(buffer) == 0;
   }
@@ -300,80 +301,117 @@ template <size_t max_string_length, typename Char = char> struct test_string {
 };
 
 template <size_t max_string_length, typename Char = char, typename... Args>
-consteval auto test_format(auto format, const Args&... args) {
-  test_string<max_string_length, Char> string{};
+consteval auto fixed_length_format(auto format, const Args&... args) {
+  fixed_length_string<max_string_length, Char> string{};
   fmt::detail::ignore_unused(fmt::formatted_size(format, args...));
   fmt::format_to(string.buffer, format, args...);
   return string;
 }
 
-TEST(compile_time_formatting_test, bool) {
-  EXPECT_EQ("true", test_format<5>(FMT_COMPILE("{}"), true));
-  EXPECT_EQ("false", test_format<6>(FMT_COMPILE("{}"), false));
-  EXPECT_EQ("true ", test_format<6>(FMT_COMPILE("{:5}"), true));
-  EXPECT_EQ("1", test_format<2>(FMT_COMPILE("{:d}"), true));
+template <class UseNTTPFormat>
+struct compile_time_formatting_test : testing::Test {
+  static constexpr bool use_nttp_format = UseNTTPFormat::value;
+};
+
+struct compile_time_formatting_test_name {
+  template <typename T> static std::string GetName(int) {
+    if constexpr (std::is_same_v<T, std::true_type>) {
+      return "nttp_format";
+    } else if constexpr (std::is_same_v<T, std::false_type>) {
+      return "fixed_length_format";
+    }
+  }
+};
+
+// clang-format off
+using compile_type_format_test_param_types = ::testing::Types<std::false_type
+#  if FMT_USE_NONTYPE_TEMPLATE_ARGS
+    , std::true_type
+#  endif //  FMT_USE_NONTYPE_TEMPLATE_ARGS
+  >;
+// clang-format on
+
+TYPED_TEST_SUITE(compile_time_formatting_test,
+                 compile_type_format_test_param_types,
+                 compile_time_formatting_test_name);
+
+#  define GEN_FMT_COMPILE_RESULT(length, format_str, ...)                   \
+    [] {                                                                    \
+      if constexpr (TestFixture::use_nttp_format) {                         \
+        return fmt::format<format_str __VA_OPT__(, ) __VA_ARGS__>();        \
+      } else {                                                              \
+        return fixed_length_format<length>(FMT_COMPILE(format_str)          \
+                                               __VA_OPT__(, ) __VA_ARGS__); \
+      }                                                                     \
+    }()
+
+TYPED_TEST(compile_time_formatting_test, bool) {
+  EXPECT_EQ("true", (GEN_FMT_COMPILE_RESULT(5, "{}", true)));
+  EXPECT_EQ("false", (GEN_FMT_COMPILE_RESULT(6, "{}", false)));
+  EXPECT_EQ("true ", (GEN_FMT_COMPILE_RESULT(6, "{:5}", true)));
+  EXPECT_EQ("1", (GEN_FMT_COMPILE_RESULT(2, "{:d}", true)));
 }
 
-TEST(compile_time_formatting_test, integer) {
-  EXPECT_EQ("42", test_format<3>(FMT_COMPILE("{}"), 42));
-  EXPECT_EQ("420", test_format<4>(FMT_COMPILE("{}"), 420));
-  EXPECT_EQ("42 42", test_format<6>(FMT_COMPILE("{} {}"), 42, 42));
+TYPED_TEST(compile_time_formatting_test, integer) {
+  EXPECT_EQ("42", (GEN_FMT_COMPILE_RESULT(3, "{}", 42)));
+  EXPECT_EQ("420", (GEN_FMT_COMPILE_RESULT(4, "{}", 420)));
+  EXPECT_EQ("42 42", (GEN_FMT_COMPILE_RESULT(6, "{} {}", 42, 42)));
   EXPECT_EQ("42 42",
-            test_format<6>(FMT_COMPILE("{} {}"), uint32_t{42}, uint64_t{42}));
+            (GEN_FMT_COMPILE_RESULT(6, "{} {}", uint32_t{42}, uint64_t{42})));
 
-  EXPECT_EQ("+42", test_format<4>(FMT_COMPILE("{:+}"), 42));
-  EXPECT_EQ("42", test_format<3>(FMT_COMPILE("{:-}"), 42));
-  EXPECT_EQ(" 42", test_format<4>(FMT_COMPILE("{: }"), 42));
+  EXPECT_EQ("+42", (GEN_FMT_COMPILE_RESULT(4, "{:+}", 42)));
+  EXPECT_EQ("42", (GEN_FMT_COMPILE_RESULT(3, "{:-}", 42)));
+  EXPECT_EQ(" 42", (GEN_FMT_COMPILE_RESULT(4, "{: }", 42)));
 
-  EXPECT_EQ("-0042", test_format<6>(FMT_COMPILE("{:05}"), -42));
+  EXPECT_EQ("-0042", (GEN_FMT_COMPILE_RESULT(6, "{:05}", -42)));
 
-  EXPECT_EQ("101010", test_format<7>(FMT_COMPILE("{:b}"), 42));
-  EXPECT_EQ("0b101010", test_format<9>(FMT_COMPILE("{:#b}"), 42));
-  EXPECT_EQ("0B101010", test_format<9>(FMT_COMPILE("{:#B}"), 42));
-  EXPECT_EQ("042", test_format<4>(FMT_COMPILE("{:#o}"), 042));
-  EXPECT_EQ("0x4a", test_format<5>(FMT_COMPILE("{:#x}"), 0x4a));
-  EXPECT_EQ("0X4A", test_format<5>(FMT_COMPILE("{:#X}"), 0x4a));
+  EXPECT_EQ("101010", (GEN_FMT_COMPILE_RESULT(7, "{:b}", 42)));
+  EXPECT_EQ("0b101010", (GEN_FMT_COMPILE_RESULT(9, "{:#b}", 42)));
+  EXPECT_EQ("0B101010", (GEN_FMT_COMPILE_RESULT(9, "{:#B}", 42)));
+  EXPECT_EQ("042", (GEN_FMT_COMPILE_RESULT(4, "{:#o}", 042)));
+  EXPECT_EQ("0x4a", (GEN_FMT_COMPILE_RESULT(5, "{:#x}", 0x4a)));
+  EXPECT_EQ("0X4A", (GEN_FMT_COMPILE_RESULT(5, "{:#X}", 0x4a)));
 
-  EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42));
-  EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42l));
-  EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42ll));
-  EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42ull));
+  EXPECT_EQ("   42", (GEN_FMT_COMPILE_RESULT(6, "{:5}", 42)));
+  EXPECT_EQ("   42", (GEN_FMT_COMPILE_RESULT(6, "{:5}", 42l)));
+  EXPECT_EQ("   42", (GEN_FMT_COMPILE_RESULT(6, "{:5}", 42ll)));
+  EXPECT_EQ("   42", (GEN_FMT_COMPILE_RESULT(6, "{:5}", 42ull)));
 
-  EXPECT_EQ("42  ", test_format<5>(FMT_COMPILE("{:<4}"), 42));
-  EXPECT_EQ("  42", test_format<5>(FMT_COMPILE("{:>4}"), 42));
-  EXPECT_EQ(" 42 ", test_format<5>(FMT_COMPILE("{:^4}"), 42));
-  EXPECT_EQ("**-42", test_format<6>(FMT_COMPILE("{:*>5}"), -42));
+  EXPECT_EQ("42  ", (GEN_FMT_COMPILE_RESULT(5, "{:<4}", 42)));
+  EXPECT_EQ("  42", (GEN_FMT_COMPILE_RESULT(5, "{:>4}", 42)));
+  EXPECT_EQ(" 42 ", (GEN_FMT_COMPILE_RESULT(5, "{:^4}", 42)));
+  EXPECT_EQ("**-42", (GEN_FMT_COMPILE_RESULT(6, "{:*>5}", -42)));
 }
 
-TEST(compile_time_formatting_test, char) {
-  EXPECT_EQ("c", test_format<2>(FMT_COMPILE("{}"), 'c'));
+TYPED_TEST(compile_time_formatting_test, char) {
+  EXPECT_EQ("c", (GEN_FMT_COMPILE_RESULT(2, "{}", 'c')));
 
-  EXPECT_EQ("c  ", test_format<4>(FMT_COMPILE("{:3}"), 'c'));
-  EXPECT_EQ("99", test_format<3>(FMT_COMPILE("{:d}"), 'c'));
+  EXPECT_EQ("c  ", (GEN_FMT_COMPILE_RESULT(4, "{:3}", 'c')));
+  EXPECT_EQ("99", (GEN_FMT_COMPILE_RESULT(3, "{:d}", 'c')));
 }
 
-TEST(compile_time_formatting_test, string) {
-  EXPECT_EQ("42", test_format<3>(FMT_COMPILE("{}"), "42"));
+TYPED_TEST(compile_time_formatting_test, string) {
+  EXPECT_EQ("42", (GEN_FMT_COMPILE_RESULT(3, "{}", "42")));
   EXPECT_EQ("The answer is 42",
-            test_format<17>(FMT_COMPILE("{} is {}"), "The answer", "42"));
+            (GEN_FMT_COMPILE_RESULT(17, "{} is {}", "The answer", "42")));
 
-  EXPECT_EQ("abc**", test_format<6>(FMT_COMPILE("{:*<5}"), "abc"));
-  EXPECT_EQ("**🤡**", test_format<9>(FMT_COMPILE("{:*^6}"), "🤡"));
+  EXPECT_EQ("abc**", (GEN_FMT_COMPILE_RESULT(6, "{:*<5}", "abc")));
+  EXPECT_EQ("**🤡**", (GEN_FMT_COMPILE_RESULT(9, "{:*^6}", "🤡")));
 }
 
-TEST(compile_time_formatting_test, combination) {
+TYPED_TEST(compile_time_formatting_test, combination) {
   EXPECT_EQ("420, true, answer",
-            test_format<18>(FMT_COMPILE("{}, {}, {}"), 420, true, "answer"));
+            (GEN_FMT_COMPILE_RESULT(18, "{}, {}, {}", 420, true, "answer")));
 
-  EXPECT_EQ(" -42", test_format<5>(FMT_COMPILE("{:{}}"), -42, 4));
+  EXPECT_EQ(" -42", (GEN_FMT_COMPILE_RESULT(5, "{:{}}", -42, 4)));
 }
 
-TEST(compile_time_formatting_test, custom_type) {
-  EXPECT_EQ("foo", test_format<4>(FMT_COMPILE("{}"), test_formattable()));
-  EXPECT_EQ("bar", test_format<4>(FMT_COMPILE("{:b}"), test_formattable()));
+TYPED_TEST(compile_time_formatting_test, custom_type) {
+  EXPECT_EQ("foo", (GEN_FMT_COMPILE_RESULT(4, "{}", test_formattable{})));
+  EXPECT_EQ("bar", (GEN_FMT_COMPILE_RESULT(4, "{:b}", test_formattable{})));
 }
 
-TEST(compile_time_formatting_test, multibyte_fill) {
-  EXPECT_EQ("жж42", test_format<8>(FMT_COMPILE("{:ж>4}"), 42));
+TYPED_TEST(compile_time_formatting_test, multibyte_fill) {
+  EXPECT_EQ("жж42", (GEN_FMT_COMPILE_RESULT(8, "{:ж>4}", 42)));
 }
 #endif
