@@ -4224,6 +4224,9 @@ FMT_BEGIN_EXPORT
 extern template FMT_API void vformat_to(buffer<char>&, string_view,
                                         typename vformat_args<>::type,
                                         locale_ref);
+extern template FMT_API void vformat_to(buffer<wchar_t>&, basic_string_view<wchar_t>,
+                                        typename vformat_args<wchar_t>::type,
+                                        locale_ref);
 extern template FMT_API auto thousands_sep_impl<char>(locale_ref)
     -> thousands_sep_result<char>;
 extern template FMT_API auto thousands_sep_impl<wchar_t>(locale_ref)

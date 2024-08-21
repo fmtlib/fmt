@@ -40,5 +40,9 @@ template FMT_API auto decimal_point_impl(locale_ref) -> wchar_t;
 
 template FMT_API void buffer<wchar_t>::append(const wchar_t*, const wchar_t*);
 
+template FMT_API void vformat_to(buffer<wchar_t>&, basic_string_view<wchar_t>,
+                                 typename vformat_args<wchar_t>::type,
+                                 locale_ref);
+
 }  // namespace detail
 FMT_END_NAMESPACE
