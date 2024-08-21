@@ -334,6 +334,7 @@ TEST(compile_time_formatting_test, integer) {
   EXPECT_EQ("0X4A", test_format<5>(FMT_COMPILE("{:#X}"), 0x4a));
 
   EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42));
+  EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42l));
   EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42ll));
   EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42ull));
 
