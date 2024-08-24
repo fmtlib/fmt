@@ -665,6 +665,7 @@ FMT_CONSTEXPR void for_each_codepoint(string_view s, F f) {
                     string_view(ptr, error ? 1 : to_unsigned(end - buf_ptr)));
     return result ? (error ? buf_ptr + 1 : end) : nullptr;
   };
+
   auto p = s.data();
   const size_t block_size = 4;  // utf8_decode always reads blocks of 4 chars.
   if (s.size() >= block_size) {
@@ -673,17 +674,19 @@ FMT_CONSTEXPR void for_each_codepoint(string_view s, F f) {
       if (!p) return;
     }
   }
-  if (auto num_chars_left = s.data() + s.size() - p) {
-    char buf[2 * block_size - 1] = {};
-    copy<char>(p, p + num_chars_left, buf);
-    const char* buf_ptr = buf;
-    do {
-      auto end = decode(buf_ptr, p);
-      if (!end) return;
-      p += end - buf_ptr;
-      buf_ptr = end;
-    } while (buf_ptr - buf < num_chars_left);
-  }
+  auto num_chars_left = to_unsigned(s.data() + s.size() - p);
+  if (num_chars_left == 0) return;
+
+  FMT_ASSERT(num_chars_left < block_size, "");
+  char buf[2 * block_size - 1] = {};
+  copy<char>(p, p + num_chars_left, buf);
+  const char* buf_ptr = buf;
+  do {
+    auto end = decode(buf_ptr, p);
+    if (!end) return;
+    p += end - buf_ptr;
+    buf_ptr = end;
+  } while (buf_ptr < buf + num_chars_left);
 }
 
 template <typename Char>
