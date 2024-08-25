@@ -1037,6 +1037,7 @@ template <typename OutputIt, typename Char> class generic_context {
   using iterator = OutputIt;
   using parse_context_type = basic_format_parse_context<Char>;
   template <typename T> using formatter_type = formatter<T, Char>;
+  enum { builtin_types = FMT_BUILTIN_TYPES };
 
   constexpr generic_context(OutputIt out,
                             basic_format_args<generic_context> ctx_args,
@@ -1074,7 +1075,10 @@ class loc_value {
 
  public:
   template <typename T, FMT_ENABLE_IF(!detail::is_float128<T>::value)>
-  loc_value(T value) : value_(detail::make_arg<format_context>(value)) {}
+  loc_value(T value) {
+    value_.type_ = detail::mapped_type_constant<T, format_context>::value;
+    value_.value_ = detail::arg_mapper<format_context>().map(value);
+  }
 
   template <typename T, FMT_ENABLE_IF(detail::is_float128<T>::value)>
   loc_value(T) {}
@@ -3672,6 +3676,10 @@ FMT_CONSTEXPR auto write(OutputIt out, const T& value)
   return formatter.format(value, ctx);
 }
 
+template <typename T>
+using is_builtin =
+    bool_constant<std::is_same<T, int>::value || FMT_BUILTIN_TYPES>;
+
 // An argument visitor that formats the argument and writes it via the output
 // iterator. It's a class and not a generic lambda for compatibility with C++11.
 template <typename Char> struct default_arg_formatter {
@@ -3681,7 +3689,15 @@ template <typename Char> struct default_arg_formatter {
 
   void operator()(monostate) { report_error("argument not found"); }
 
-  template <typename T> void operator()(T value) { write<Char>(out, value); }
+  template <typename T, FMT_ENABLE_IF(is_builtin<T>::value)>
+  void operator()(T value) {
+    write<Char>(out, value);
+  }
+
+  template <typename T, FMT_ENABLE_IF(!is_builtin<T>::value)>
+  void operator()(T) {
+    FMT_ASSERT(false, "");
+  }
 
   void operator()(typename basic_format_arg<context>::handle h) {
     // Use a null locale since the default format must be unlocalized.
@@ -3699,10 +3715,17 @@ template <typename Char> struct arg_formatter {
   const format_specs& specs;
   locale_ref locale;
 
-  template <typename T>
+  template <typename T, FMT_ENABLE_IF(is_builtin<T>::value)>
   FMT_CONSTEXPR FMT_INLINE auto operator()(T value) -> iterator {
     return detail::write<Char>(out, value, specs, locale);
   }
+
+  template <typename T, FMT_ENABLE_IF(!is_builtin<T>::value)>
+  auto operator()(T) -> iterator {
+    FMT_ASSERT(false, "");
+    return out;
+  }
+
   auto operator()(typename basic_format_arg<context>::handle) -> iterator {
     // User-defined types are handled separately because they require access
     // to the parse context.
@@ -3939,16 +3962,16 @@ FMT_FORMAT_AS(unsigned short, unsigned);
 FMT_FORMAT_AS(long, detail::long_type);
 FMT_FORMAT_AS(unsigned long, detail::ulong_type);
 FMT_FORMAT_AS(Char*, const Char*);
-FMT_FORMAT_AS(std::nullptr_t, const void*);
 FMT_FORMAT_AS(detail::std_string_view<Char>, basic_string_view<Char>);
+FMT_FORMAT_AS(std::nullptr_t, const void*);
 FMT_FORMAT_AS(void*, const void*);
+
+template <typename Char, size_t N>
+struct formatter<Char[N], Char> : formatter<basic_string_view<Char>, Char> {};
 
 template <typename Char, typename Traits, typename Allocator>
 class formatter<std::basic_string<Char, Traits, Allocator>, Char>
     : public formatter<basic_string_view<Char>, Char> {};
-
-template <typename Char, size_t N>
-struct formatter<Char[N], Char> : formatter<basic_string_view<Char>, Char> {};
 
 template <typename T, typename Char>
 struct formatter<T, Char,
@@ -4208,8 +4231,6 @@ template <typename Char> struct format_handler {
                           specs.precision_ref, context);
     }
 
-    if (begin == end || *begin != '}')
-      report_error("missing '}' in format string");
     arg.visit(arg_formatter<Char>{context.out(), specs, context.locale()});
     return begin;
   }
@@ -4246,7 +4267,7 @@ FMT_END_EXPORT
 
 template <typename T, typename Char, type TYPE>
 template <typename FormatContext>
-FMT_CONSTEXPR FMT_INLINE auto native_formatter<T, Char, TYPE>::format(
+FMT_CONSTEXPR auto native_formatter<T, Char, TYPE>::format(
     const T& val, FormatContext& ctx) const -> decltype(ctx.out()) {
   if (!specs_.dynamic())
     return write<Char>(ctx.out(), val, specs_, ctx.locale());

@@ -111,9 +111,9 @@ TEST(scan_test, invalid_format) {
 }
 
 namespace std {
-  using fmt::scan;
-  using fmt::scan_error;
-}
+using fmt::scan;
+using fmt::scan_error;
+}  // namespace std
 
 TEST(scan_test, example) {
   // Example from https://wg21.link/p1729r3.

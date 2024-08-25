@@ -429,7 +429,7 @@ TEST(file_test, read) {
 }
 
 TEST(file_test, read_error) {
-  auto test_file = uniq_file_name(__LINE__); 
+  auto test_file = uniq_file_name(__LINE__);
   file f(test_file, file::WRONLY | file::CREATE);
   char buf;
   // We intentionally read from a file opened in the write-only mode to

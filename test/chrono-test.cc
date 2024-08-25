@@ -753,7 +753,7 @@ TEST(chrono_test, weekday) {
   std::locale::global(loc);
 
   auto sat = fmt::weekday(6);
-  
+
   auto tm = std::tm();
   tm.tm_wday = static_cast<int>(sat.c_encoding());
 
@@ -795,20 +795,14 @@ TEST(chrono_test, cpp20_duration_subsecond_support) {
             "01.234000");
   EXPECT_EQ(fmt::format("{:.6%S}", std::chrono::milliseconds{-1234}),
             "-01.234000");
-  EXPECT_EQ(fmt::format("{:.2%S}", std::chrono::milliseconds{12345}),
-            "12.34");
-  EXPECT_EQ(fmt::format("{:.2%S}", std::chrono::milliseconds{12375}),
-            "12.37");
+  EXPECT_EQ(fmt::format("{:.2%S}", std::chrono::milliseconds{12345}), "12.34");
+  EXPECT_EQ(fmt::format("{:.2%S}", std::chrono::milliseconds{12375}), "12.37");
   EXPECT_EQ(fmt::format("{:.2%S}", std::chrono::milliseconds{-12375}),
             "-12.37");
-  EXPECT_EQ(fmt::format("{:.0%S}", std::chrono::milliseconds{12054}),
-            "12");
-  EXPECT_EQ(fmt::format("{:.2%S}", std::chrono::milliseconds{99999}),
-            "39.99");
-  EXPECT_EQ(fmt::format("{:.2%S}", std::chrono::milliseconds{1000}),
-            "01.00");
-  EXPECT_EQ(fmt::format("{:.3%S}", std::chrono::milliseconds{1}),
-            "00.001");
+  EXPECT_EQ(fmt::format("{:.0%S}", std::chrono::milliseconds{12054}), "12");
+  EXPECT_EQ(fmt::format("{:.2%S}", std::chrono::milliseconds{99999}), "39.99");
+  EXPECT_EQ(fmt::format("{:.2%S}", std::chrono::milliseconds{1000}), "01.00");
+  EXPECT_EQ(fmt::format("{:.3%S}", std::chrono::milliseconds{1}), "00.001");
   EXPECT_EQ(fmt::format("{:.3%S}", std::chrono::seconds{1234}), "34.000");
   EXPECT_EQ(fmt::format("{:.3%S}", std::chrono::hours{1234}), "00.000");
   EXPECT_EQ(fmt::format("{:.5%S}", dms(1.234)), "00.00123");
@@ -1032,7 +1026,7 @@ TEST(chrono_test, out_of_range) {
 TEST(chrono_test, year_month_day) {
   auto loc = get_locale("es_ES.UTF-8");
   std::locale::global(loc);
-  
+
   auto year = fmt::year(2024);
   auto month = fmt::month(1);
   auto day = fmt::day(1);

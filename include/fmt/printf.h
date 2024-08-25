@@ -35,6 +35,7 @@ template <typename Char> class basic_printf_context {
   using char_type = Char;
   using parse_context_type = basic_format_parse_context<Char>;
   template <typename T> using formatter_type = printf_formatter<T>;
+  enum { builtin_types = 1 };
 
   /// Constructs a `printf_context` object. References to the arguments are
   /// stored in the context object so make sure they have appropriate lifetimes.
@@ -238,19 +239,23 @@ class printf_arg_formatter : public arg_formatter<Char> {
     write_bytes<Char>(this->out, is_string ? "(null)" : "(nil)", s);
   }
 
+  template <typename T> void write(T value) {
+    detail::write<Char>(this->out, value, this->specs, this->locale);
+  }
+
  public:
   printf_arg_formatter(basic_appender<Char> iter, format_specs& s,
                        context_type& ctx)
       : base(make_arg_formatter(iter, s)), context_(ctx) {}
 
-  void operator()(monostate value) { base::operator()(value); }
+  void operator()(monostate value) { write(value); }
 
   template <typename T, FMT_ENABLE_IF(detail::is_integral<T>::value)>
   void operator()(T value) {
     // MSVC2013 fails to compile separate overloads for bool and Char so use
     // std::is_same instead.
     if (!std::is_same<T, Char>::value) {
-      base::operator()(value);
+      write(value);
       return;
     }
     format_specs s = this->specs;
@@ -265,33 +270,33 @@ class printf_arg_formatter : public arg_formatter<Char> {
     // ignored for non-numeric types
     if (s.align() == align::none || s.align() == align::numeric)
       s.set_align(align::right);
-    write<Char>(this->out, static_cast<Char>(value), s);
+    detail::write<Char>(this->out, static_cast<Char>(value), s);
   }
 
   template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value)>
   void operator()(T value) {
-    base::operator()(value);
+    write(value);
   }
 
   void operator()(const char* value) {
     if (value)
-      base::operator()(value);
+      write(value);
     else
       write_null_pointer(this->specs.type() != presentation_type::pointer);
   }
 
   void operator()(const wchar_t* value) {
     if (value)
-      base::operator()(value);
+      write(value);
     else
       write_null_pointer(this->specs.type() != presentation_type::pointer);
   }
 
-  void operator()(basic_string_view<Char> value) { base::operator()(value); }
+  void operator()(basic_string_view<Char> value) { write(value); }
 
   void operator()(const void* value) {
     if (value)
-      base::operator()(value);
+      write(value);
     else
       write_null_pointer();
   }

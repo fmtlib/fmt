@@ -810,7 +810,7 @@ TEST(format_test, hash_flag) {
   EXPECT_EQ(fmt::format("{:#.2g}", 0.5), "0.50");
   EXPECT_EQ(fmt::format("{:#.0f}", 0.5), "0.");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:#"), 'c'), format_error,
-                   "missing '}' in format string");
+                   "invalid format specifier for char");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:#}"), 'c'), format_error,
                    "invalid format specifier for char");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:#}"), "abc"), format_error,
@@ -831,7 +831,7 @@ TEST(format_test, zero_flag) {
   EXPECT_EQ(fmt::format("{0:07}", -42.0), "-000042");
   EXPECT_EQ(fmt::format("{0:07}", -42.0l), "-000042");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:0"), 'c'), format_error,
-                   "missing '}' in format string");
+                   "invalid format specifier for char");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:05}"), 'c'), format_error,
                    "invalid format specifier for char");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:05}"), "abc"), format_error,
@@ -878,6 +878,10 @@ TEST(format_test, width) {
   EXPECT_EQ(fmt::format("{:>06.0f}", 0.00884311), "     0");
 }
 
+auto bad_dynamic_spec_msg = FMT_BUILTIN_TYPES
+                                ? "width/precision is out of range"
+                                : "width/precision is not integer";
+
 TEST(format_test, runtime_width) {
   auto int_maxer = std::to_string(INT_MAX + 1u);
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:{" + int_maxer), 0),
@@ -902,16 +906,16 @@ TEST(format_test, runtime_width) {
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:{1}}"), 0, -1), format_error,
                    "width/precision is out of range");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:{1}}"), 0, (INT_MAX + 1u)),
-                   format_error, "width/precision is out of range");
+                   format_error, bad_dynamic_spec_msg);
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:{1}}"), 0, -1l), format_error,
-                   "width/precision is out of range");
+                   bad_dynamic_spec_msg);
   if (fmt::detail::const_check(sizeof(long) > sizeof(int))) {
     long value = INT_MAX;
     EXPECT_THROW_MSG((void)fmt::format(runtime("{0:{1}}"), 0, (value + 1)),
-                     format_error, "width/precision is out of range");
+                     format_error, bad_dynamic_spec_msg);
   }
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:{1}}"), 0, (INT_MAX + 1ul)),
-                   format_error, "width/precision is out of range");
+                   format_error, bad_dynamic_spec_msg);
 
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:{1}}"), 0, '0'), format_error,
                    "width/precision is not integer");
@@ -1127,16 +1131,16 @@ TEST(format_test, runtime_precision) {
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0, -1),
                    format_error, "width/precision is out of range");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0, (INT_MAX + 1u)),
-                   format_error, "width/precision is out of range");
+                   format_error, bad_dynamic_spec_msg);
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0, -1l),
-                   format_error, "width/precision is out of range");
+                   format_error, bad_dynamic_spec_msg);
   if (fmt::detail::const_check(sizeof(long) > sizeof(int))) {
     long value = INT_MAX;
     EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0, (value + 1)),
-                     format_error, "width/precision is out of range");
+                     format_error, bad_dynamic_spec_msg);
   }
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0, (INT_MAX + 1ul)),
-                   format_error, "width/precision is out of range");
+                   format_error, bad_dynamic_spec_msg);
 
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0, '0'),
                    format_error, "width/precision is not integer");
@@ -2408,6 +2412,7 @@ namespace adl_test {
 template <typename... T> void make_format_args(const T&...) = delete;
 
 struct string : std::string {};
+auto format_as(const string& s) -> std::string { return s; }
 }  // namespace adl_test
 
 // Test that formatting functions compile when make_format_args is found by ADL.
@@ -2566,5 +2571,13 @@ TEST(format_test, bitint) {
   EXPECT_EQ("340282366920938463463374607431768211455",
             fmt::format("{}", unsigned_bitint<128>(uint128_max)));
 #  endif
+}
+#endif
+
+#ifdef __cpp_lib_byte
+TEST(base_test, format_byte) {
+  auto s = std::string();
+  fmt::format_to(std::back_inserter(s), "{}", std::byte(42));
+  EXPECT_EQ(s, "42");
 }
 #endif

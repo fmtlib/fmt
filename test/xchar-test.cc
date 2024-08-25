@@ -78,7 +78,6 @@ TEST(xchar_test, format) {
   EXPECT_EQ(L"z", fmt::format(L"{}", L'z'));
   EXPECT_THROW(fmt::format(fmt::runtime(L"{:*\x343E}"), 42), fmt::format_error);
   EXPECT_EQ(L"true", fmt::format(L"{}", true));
-  EXPECT_EQ(L"a", fmt::format(L"{0}", 'a'));
   EXPECT_EQ(L"a", fmt::format(L"{0}", L'a'));
   EXPECT_EQ(L"Cyrillic letter \x42e",
             fmt::format(L"Cyrillic letter {}", L'\x42e'));
@@ -585,7 +584,8 @@ TEST(locale_test, sign) {
 TEST(std_test_xchar, complex) {
   auto s = fmt::format(L"{}", std::complex<double>(1, 2));
   EXPECT_EQ(s, L"(1+2i)");
-  EXPECT_EQ(fmt::format(L"{:.2f}", std::complex<double>(1, 2)), L"(1.00+2.00i)");
+  EXPECT_EQ(fmt::format(L"{:.2f}", std::complex<double>(1, 2)),
+            L"(1.00+2.00i)");
   EXPECT_EQ(fmt::format(L"{:8}", std::complex<double>(1, 2)), L"(1+2i)  ");
 }
 

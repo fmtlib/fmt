@@ -291,6 +291,16 @@
 #  define FMT_UNICODE 1
 #endif
 
+// Specifies whether to handle built-in and string types specially.
+// FMT_BUILTIN_TYPE=0 may result in smaller library size at the cost of higher
+// per-call binary size.
+#ifndef FMT_BUILTIN_TYPES
+#  define FMT_BUILTIN_TYPES 1
+#endif
+#if !FMT_BUILTIN_TYPES && !defined(__cpp_if_constexpr)
+#  error FMT_BUILTIN_TYPES=0 requires constexpr if support
+#endif
+
 // Check if rtti is available.
 #ifndef FMT_USE_RTTI
 // __RTTI is for EDG compilers. _CPPRTTI is for MSVC.
@@ -1317,8 +1327,18 @@ template <typename Char> struct named_arg_info {
 template <typename T> struct is_named_arg : std::false_type {};
 template <typename T> struct is_statically_named_arg : std::false_type {};
 
-template <typename T, typename Char>
+template <typename Char, typename T>
 struct is_named_arg<named_arg<Char, T>> : std::true_type {};
+
+template <typename Char, typename T>
+auto unwrap_named_arg(const named_arg<Char, T>& arg) -> const T& {
+  return arg.value;
+}
+template <typename T,
+          FMT_ENABLE_IF(!is_named_arg<remove_reference_t<T>>::value)>
+auto unwrap_named_arg(T&& value) -> T&& {
+  return value;
+}
 
 template <bool B = false> constexpr auto count() -> size_t { return B ? 1 : 0; }
 template <bool B1, bool B2, bool... Tail> constexpr auto count() -> size_t {
@@ -1353,6 +1373,8 @@ template <typename Context> struct custom_value {
   void* value;
   void (*format)(void* arg, parse_context& parse_ctx, Context& ctx);
 };
+
+enum class custom_tag {};
 
 // A formatting argument value.
 template <typename Context> class value {
@@ -1400,24 +1422,26 @@ template <typename Context> class value {
     string.size = val.size();
   }
   FMT_ALWAYS_INLINE value(const void* val) : pointer(val) {}
-  FMT_ALWAYS_INLINE value(const named_arg_info<char_type>* args, size_t size)
-      : named_args{args, size} {}
 
-  template <typename T> FMT_CONSTEXPR20 FMT_ALWAYS_INLINE value(T& val) {
-    using value_type = remove_const_t<T>;
+  template <typename T>
+  FMT_CONSTEXPR20 FMT_ALWAYS_INLINE value(T& val, custom_tag = {}) {
+    using value_type = typename std::remove_cv<T>::type;
     // T may overload operator& e.g. std::vector<bool>::reference in libc++.
 #if defined(__cpp_if_constexpr)
     if constexpr (std::is_same<decltype(&val), T*>::value)
       custom.value = const_cast<value_type*>(&val);
 #endif
     if (!is_constant_evaluated())
-      custom.value = const_cast<char*>(&reinterpret_cast<const char&>(val));
+      custom.value =
+          const_cast<char*>(&reinterpret_cast<const volatile char&>(val));
     // Get the formatter type through the context to allow different contexts
     // have different extension points, e.g. `formatter<T>` for `format` and
     // `printf_formatter<T>` for `printf`.
     custom.format = format_custom_arg<
         value_type, typename Context::template formatter_type<value_type>>;
   }
+  FMT_ALWAYS_INLINE value(const named_arg_info<char_type>* args, size_t size)
+      : named_args{args, size} {}
   value(unformattable);
   value(unformattable_char);
   value(unformattable_pointer);
@@ -1606,6 +1630,12 @@ using mapped_type_constant =
     type_constant<decltype(arg_mapper<Context>().map(std::declval<const T&>())),
                   typename Context::char_type>;
 
+template <typename T, typename Context,
+          type TYPE = mapped_type_constant<T, Context>::value>
+using stored_type_constant = std::integral_constant<
+    type, Context::builtin_types || TYPE == type::int_type ? TYPE
+                                                           : type::custom_type>;
+
 enum { packed_arg_bits = 4 };
 // Maximum number of arguments with packed types.
 enum { max_packed_args = 62 / packed_arg_bits };
@@ -1643,7 +1673,7 @@ template <typename> constexpr auto encode_types() -> unsigned long long {
 
 template <typename Context, typename Arg, typename... Args>
 constexpr auto encode_types() -> unsigned long long {
-  return static_cast<unsigned>(mapped_type_constant<Arg, Context>::value) |
+  return static_cast<unsigned>(stored_type_constant<Arg, Context>::value) |
          (encode_types<Context, Args...>() << packed_arg_bits);
 }
 
@@ -1686,6 +1716,8 @@ FMT_CONSTEXPR auto make_arg(T& val) -> value<Context> {
 #if defined(__cpp_if_constexpr)
   if constexpr (!formattable)
     type_is_unformattable_for<T, typename Context::char_type> _;
+  if constexpr (!Context::builtin_types && !std::is_same<arg_type, int>::value)
+    return {unwrap_named_arg(val), custom_tag()};
 #endif
   static_assert(
       formattable,
@@ -1697,7 +1729,7 @@ FMT_CONSTEXPR auto make_arg(T& val) -> value<Context> {
 template <typename Context, typename T>
 FMT_CONSTEXPR auto make_arg(T& val) -> basic_format_arg<Context> {
   auto arg = basic_format_arg<Context>();
-  arg.type_ = mapped_type_constant<T, Context>::value;
+  arg.type_ = stored_type_constant<T, Context>::value;
   arg.value_ = make_arg<true, Context>(val);
   return arg;
 }
@@ -1781,6 +1813,7 @@ template <typename Context> class basic_format_arg {
 
   friend class basic_format_args<Context>;
   friend class dynamic_format_arg_store<Context>;
+  friend class loc_value;
 
   using char_type = typename Context::char_type;
 
@@ -1999,6 +2032,7 @@ class context {
   using format_arg = basic_format_arg<context>;
   using parse_context_type = basic_format_parse_context<char>;
   template <typename T> using formatter_type = formatter<T, char>;
+  enum { builtin_types = FMT_BUILTIN_TYPES };
 
   /// Constructs a `basic_format_context` object. References to the arguments
   /// are stored in the object so make sure they have appropriate lifetimes.

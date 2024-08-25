@@ -36,12 +36,11 @@ std::locale do_get_locale(const char* name) {
 
 std::locale get_locale(const char* name, const char* alt_name) {
   auto loc = do_get_locale(name);
-  if (loc == std::locale::classic() && alt_name)
-    loc = do_get_locale(alt_name);
+  if (loc == std::locale::classic() && alt_name) loc = do_get_locale(alt_name);
 #ifdef __OpenBSD__
-    // Locales are not working in OpenBSD:
-    // https://github.com/fmtlib/fmt/issues/3670.
-    loc = std::locale::classic();
+  // Locales are not working in OpenBSD:
+  // https://github.com/fmtlib/fmt/issues/3670.
+  loc = std::locale::classic();
 #endif
   if (loc == std::locale::classic())
     fmt::print(stderr, "{} locale is missing.\n", name);

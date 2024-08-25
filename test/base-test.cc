@@ -372,15 +372,19 @@ VISIT_TYPE(long, long long);
 VISIT_TYPE(unsigned long, unsigned long long);
 #endif
 
-#define CHECK_ARG(Char, expected, value)                                  \
-  {                                                                       \
-    testing::StrictMock<mock_visitor<decltype(expected)>> visitor;        \
-    EXPECT_CALL(visitor, visit(expected));                                \
-    using iterator = fmt::basic_appender<Char>;                           \
-    auto var = value;                                                     \
-    fmt::detail::make_arg<fmt::basic_format_context<iterator, Char>>(var) \
-        .visit(visitor);                                                  \
-  }
+#if FMT_BUILTIN_TYPES
+#  define CHECK_ARG(Char, expected, value)                                  \
+    {                                                                       \
+      testing::StrictMock<mock_visitor<decltype(expected)>> visitor;        \
+      EXPECT_CALL(visitor, visit(expected));                                \
+      using iterator = fmt::basic_appender<Char>;                           \
+      auto var = value;                                                     \
+      fmt::detail::make_arg<fmt::basic_format_context<iterator, Char>>(var) \
+          .visit(visitor);                                                  \
+    }
+#else
+#  define CHECK_ARG(Char, expected, value)
+#endif
 
 #define CHECK_ARG_SIMPLE(value)                             \
   {                                                         \
@@ -391,10 +395,14 @@ VISIT_TYPE(unsigned long, unsigned long long);
 
 template <typename T> class numeric_arg_test : public testing::Test {};
 
+#if FMT_BUILTIN_TYPES
 using test_types =
     testing::Types<bool, signed char, unsigned char, short, unsigned short, int,
                    unsigned, long, unsigned long, long long, unsigned long long,
                    float, double, long double>;
+#else
+using test_types = testing::Types<int>;
+#endif
 TYPED_TEST_SUITE(numeric_arg_test, test_types);
 
 template <typename T, fmt::enable_if_t<std::is_integral<T>::value, int> = 0>
@@ -757,19 +765,11 @@ TEST(base_test, format_to_array) {
   EXPECT_TRUE(result.truncated);
   EXPECT_EQ("ABCD", fmt::string_view(buffer, 4));
 
-  result = fmt::format_to(buffer, "{}", std::string(1000, '*'));
+  result = fmt::format_to(buffer, "{}", std::string(1000, '*').c_str());
   EXPECT_EQ(4, std::distance(&buffer[0], result.out));
   EXPECT_TRUE(result.truncated);
   EXPECT_EQ("****", fmt::string_view(buffer, 4));
 }
-
-#ifdef __cpp_lib_byte
-TEST(base_test, format_byte) {
-  auto s = std::string();
-  fmt::format_to(std::back_inserter(s), "{}", std::byte(42));
-  EXPECT_EQ(s, "42");
-}
-#endif
 
 // Test that check is not found by ADL.
 template <typename T> void check(T);
