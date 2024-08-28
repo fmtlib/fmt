@@ -1597,7 +1597,7 @@ class tm_writer {
           write_floating_seconds(buf, *subsecs_);
           if (buf.size() > 1) {
             // Remove the leading "0", write something like ".123".
-            out_ = std::copy(buf.begin() + 1, buf.end(), out_);
+            out_ = copy<Char>(buf.begin() + 1, buf.end(), out_);
           }
         } else {
           write_fractional_seconds<Char>(out_, *subsecs_);
@@ -1737,7 +1737,7 @@ auto format_duration_value(OutputIt out, Rep val, int precision) -> OutputIt {
 
 template <typename Char, typename OutputIt>
 auto copy_unit(string_view unit, OutputIt out, Char) -> OutputIt {
-  return std::copy(unit.begin(), unit.end(), out);
+  return copy<Char>(unit.begin(), unit.end(), out);
 }
 
 template <typename OutputIt>
@@ -1745,7 +1745,7 @@ auto copy_unit(string_view unit, OutputIt out, wchar_t) -> OutputIt {
   // This works when wchar_t is UTF-32 because units only contain characters
   // that have the same representation in UTF-16 and UTF-32.
   utf8_to_utf16 u(unit);
-  return std::copy(u.c_str(), u.c_str() + u.size(), out);
+  return copy<wchar_t>(u.c_str(), u.c_str() + u.size(), out);
 }
 
 template <typename Char, typename Period, typename OutputIt>
@@ -1896,7 +1896,7 @@ struct chrono_formatter {
   }
 
   void on_text(const char_type* begin, const char_type* end) {
-    std::copy(begin, end, out);
+    copy<char_type>(begin, end, out);
   }
 
   // These are not implemented because durations don't have date information.
@@ -1969,7 +1969,7 @@ struct chrono_formatter {
         if (buf.size() < 2 || buf[1] == '.') {
           out = detail::write_padding(out, pad);
         }
-        out = std::copy(buf.begin(), buf.end(), out);
+        out = copy<char_type>(buf.begin(), buf.end(), out);
       } else {
         write(second(), 2, pad);
         write_fractional_seconds<char_type>(
