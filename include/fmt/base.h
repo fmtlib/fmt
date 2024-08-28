@@ -332,6 +332,7 @@ template <typename T>
 using make_unsigned_t = typename std::make_unsigned<T>::type;
 template <typename T>
 using underlying_t = typename std::underlying_type<T>::type;
+template <typename T> using decay_t = typename std::decay<T>::type;
 
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 500
 // A workaround for gcc 4.8 to make void_t work in a SFINAE context.
@@ -1580,7 +1581,8 @@ template <> struct is_output_iterator<appender, char> : std::true_type {};
 
 template <typename It, typename T>
 struct is_output_iterator<
-    It, T, void_t<decltype(*std::declval<It&>()++ = std::declval<T>())>>
+    It, T,
+    void_t<decltype(*std::declval<decay_t<It>&>()++ = std::declval<T>())>>
     : std::true_type {};
 
 // A type-erased reference to an std::locale to avoid a heavy <locale> include.
