@@ -143,8 +143,9 @@ template <typename Char, typename T, int N> struct field {
     if constexpr (std::is_convertible<T, basic_string_view<Char>>::value) {
       auto s = basic_string_view<Char>(arg);
       return copy<Char>(s.begin(), s.end(), out);
+    } else {
+      return write<Char>(out, arg);
     }
-    return write<Char>(out, arg);
   }
 };
 
