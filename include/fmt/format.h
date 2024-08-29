@@ -3950,6 +3950,11 @@ class formatter<std::basic_string<Char, Traits, Allocator>, Char>
 template <typename Char, size_t N>
 struct formatter<Char[N], Char> : formatter<basic_string_view<Char>, Char> {};
 
+template <typename T, typename Char>
+struct formatter<T, Char,
+                 enable_if_t<(detail::bitint_traits<T>::is_formattable)>>
+    : formatter<typename detail::bitint_traits<T>::formatter_type, Char> {};
+
 /**
  * Converts `p` to `const void*` for pointer formatting.
  *

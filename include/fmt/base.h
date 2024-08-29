@@ -428,6 +428,33 @@ enum class uint128_opt {};
 template <typename T> auto convert_for_visit(T) -> monostate { return {}; }
 #endif
 
+#ifndef FMT_USE_BITINT
+#  if FMT_CLANG_VERSION >= 1400
+#    define FMT_USE_BITINT 1
+#  else
+#    define FMT_USE_BITINT 0
+#  endif
+#endif
+
+template <class T, int N = 0> struct bitint_traits {};
+#if FMT_USE_BITINT
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wbit-int-extension"
+
+// fmt only supports up to 128 bits https://github.com/fmtlib/fmt/pull/4072
+template <int N> struct bitint_traits<_BitInt(N)> {
+  static constexpr bool is_formattable = N <= 128;
+  using formatter_type = conditional_t<(N <= 64), long long, __int128>;
+};
+template <int N> struct bitint_traits<unsigned _BitInt(N)> {
+  static constexpr bool is_formattable = N <= 128;
+  using formatter_type =
+      conditional_t<(N <= 64), unsigned long long, unsigned __int128>;
+};
+
+#  pragma clang diagnostic pop
+#endif
+
 // Casts a nonnegative integer to unsigned.
 template <typename Int>
 FMT_CONSTEXPR auto to_unsigned(Int value) -> make_unsigned_t<Int> {
@@ -1475,6 +1502,17 @@ template <typename Context> struct arg_mapper {
   FMT_MAP_API auto map(float val) -> float { return val; }
   FMT_MAP_API auto map(double val) -> double { return val; }
   FMT_MAP_API auto map(long double val) -> long double { return val; }
+
+  template <class T,
+            FMT_ENABLE_IF(bitint_traits<remove_cvref_t<T>>::is_formattable)>
+  FMT_MAP_API auto map(T&& val) -> decltype(val) {
+    return val;
+  }
+  template <class T,
+            FMT_ENABLE_IF(!bitint_traits<remove_cvref_t<T>>::is_formattable)>
+  FMT_MAP_API auto map(T&&) -> unformattable {
+    return {};
+  }
 
   FMT_MAP_API auto map(char_type* val) -> const char_type* { return val; }
   FMT_MAP_API auto map(const char_type* val) -> const char_type* { return val; }
