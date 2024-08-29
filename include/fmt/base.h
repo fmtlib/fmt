@@ -419,7 +419,7 @@ FMT_NORETURN FMT_API void assert_fail(const char* file, int line,
 #endif
 
 #ifdef FMT_USE_INT128
-// Do nothing.
+// Use the provided definition.
 #elif defined(__SIZEOF_INT128__) && !defined(__NVCC__) && \
     !(FMT_CLANG_VERSION && FMT_MSC_VERSION)
 #  define FMT_USE_INT128 1
@@ -439,11 +439,7 @@ template <typename T> auto convert_for_visit(T) -> monostate { return {}; }
 #endif
 
 #ifndef FMT_USE_BITINT
-#  if FMT_CLANG_VERSION >= 1400
-#    define FMT_USE_BITINT 1
-#  else
-#    define FMT_USE_BITINT 0
-#  endif
+#  define FMT_USE_BITINT (FMT_CLANG_VERSION >= 1400)
 #endif
 
 template <class T, int N = 0> struct bitint_traits {};
@@ -451,19 +447,18 @@ template <class T, int N = 0> struct bitint_traits {};
 #  pragma clang diagnostic push
 #  pragma clang diagnostic ignored "-Wbit-int-extension"
 
-// fmt only supports up to 128 bits https://github.com/fmtlib/fmt/pull/4072
 template <int N> struct bitint_traits<_BitInt(N)> {
   static constexpr bool is_formattable = N <= 128;
-  using formatter_type = conditional_t<(N <= 64), long long, __int128>;
+  using format_type = conditional_t<(N <= 64), long long, __int128>;
 };
 template <int N> struct bitint_traits<unsigned _BitInt(N)> {
   static constexpr bool is_formattable = N <= 128;
-  using formatter_type =
+  using format_type =
       conditional_t<(N <= 64), unsigned long long, unsigned __int128>;
 };
 
 #  pragma clang diagnostic pop
-#endif
+#endif  // FMT_USE_BITINT
 
 // Casts a nonnegative integer to unsigned.
 template <typename Int>
