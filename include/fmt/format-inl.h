@@ -83,6 +83,11 @@ inline void fwrite_fully(const void* ptr, size_t count, FILE* stream) {
 using std::locale;
 using std::numpunct;
 using std::use_facet;
+
+template <typename Locale>
+locale_ref::locale_ref(const Locale& loc) : locale_(&loc) {
+  static_assert(std::is_same<Locale, locale>::value, "");
+}
 #else
 struct locale {};
 template <typename Char> struct numpunct {
@@ -93,14 +98,12 @@ template <typename Char> struct numpunct {
 template <typename Facet> Facet use_facet(locale) { return {}; }
 #endif  // FMT_USE_LOCALE
 
-template <typename Locale>
-locale_ref::locale_ref(const Locale& loc) : locale_(&loc) {
-  static_assert(std::is_same<Locale, locale>::value, "");
-}
-
 template <typename Locale> auto locale_ref::get() const -> Locale {
   static_assert(std::is_same<Locale, locale>::value, "");
-  return locale_ ? *static_cast<const locale*>(locale_) : locale();
+#if FMT_USE_LOCALE
+  if (locale_) return *static_cast<const locale*>(locale_);
+#endif
+  return locale();
 }
 
 template <typename Char>
@@ -1020,8 +1023,7 @@ template <> struct cache_accessor<double> {
       {0xe4d5e82392a40515, 0x0fabaf3feaa5334b},
       {0xb8da1662e7b00a17, 0x3d6a751f3b936244},
       {0x95527a5202df0ccb, 0x0f37801e0c43ebc9},
-      { 0xf13e34aabb430a15,
-        0x647726b9e7c68ff0 }
+      {0xf13e34aabb430a15, 0x647726b9e7c68ff0}
 #endif
     };
 

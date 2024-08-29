@@ -213,6 +213,20 @@
 #  define FMT_DEPRECATED /* deprecated */
 #endif
 
+#ifndef FMT_NO_UNIQUE_ADDRESS
+#  if FMT_CPLUSPLUS >= 202002L
+#    if FMT_HAS_CPP_ATTRIBUTE(no_unique_address)
+#      define FMT_NO_UNIQUE_ADDRESS [[no_unique_address]]
+// VS2019 v16.10 and later except clang-cl (https://reviews.llvm.org/D110485).
+#    elif (FMT_MSC_VERSION >= 1929) && !FMT_CLANG_VERSION
+#      define FMT_NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
+#    endif
+#  endif
+#endif
+#ifndef FMT_NO_UNIQUE_ADDRESS
+#  define FMT_NO_UNIQUE_ADDRESS
+#endif
+
 #ifdef FMT_INLINE
 // Use the provided definition.
 #elif FMT_GCC_VERSION || FMT_CLANG_VERSION
@@ -1643,8 +1657,17 @@ struct is_output_iterator<
     void_t<decltype(*std::declval<decay_t<It>&>()++ = std::declval<T>())>>
     : std::true_type {};
 
+#ifdef FMT_USE_LOCALE
+// Use the provided definition.
+#elif defined(FMT_STATIC_THOUSANDS_SEPARATOR)
+#  define FMT_USE_LOCALE 0
+#else
+#  define FMT_USE_LOCALE 1
+#endif
+
 // A type-erased reference to an std::locale to avoid a heavy <locale> include.
-class locale_ref {
+struct locale_ref {
+#if FMT_USE_LOCALE
  private:
   const void* locale_;  // A type-erased pointer to std::locale.
 
@@ -1653,6 +1676,7 @@ class locale_ref {
   template <typename Locale> explicit locale_ref(const Locale& loc);
 
   explicit operator bool() const noexcept { return locale_ != nullptr; }
+#endif
 
   template <typename Locale> auto get() const -> Locale;
 };
@@ -2012,7 +2036,7 @@ class context {
  private:
   appender out_;
   basic_format_args<context> args_;
-  detail::locale_ref loc_;
+  FMT_NO_UNIQUE_ADDRESS detail::locale_ref loc_;
 
  public:
   /// The character type for the output.

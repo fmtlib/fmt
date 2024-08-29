@@ -73,20 +73,6 @@
 #  define FMT_INLINE_VARIABLE
 #endif
 
-#ifndef FMT_NO_UNIQUE_ADDRESS
-#  if FMT_CPLUSPLUS >= 202002L
-#    if FMT_HAS_CPP_ATTRIBUTE(no_unique_address)
-#      define FMT_NO_UNIQUE_ADDRESS [[no_unique_address]]
-// VS2019 v16.10 and later except clang-cl (https://reviews.llvm.org/D110485).
-#    elif (FMT_MSC_VERSION >= 1929) && !FMT_CLANG_VERSION
-#      define FMT_NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
-#    endif
-#  endif
-#endif
-#ifndef FMT_NO_UNIQUE_ADDRESS
-#  define FMT_NO_UNIQUE_ADDRESS
-#endif
-
 // Visibility when compiled as a shared library/object.
 #if defined(FMT_LIB_EXPORT) || defined(FMT_SHARED)
 #  define FMT_SO_VISIBILITY(value) FMT_VISIBILITY(value)
@@ -797,14 +783,6 @@ using is_double_double = bool_constant<std::numeric_limits<T>::digits == 106>;
 
 #ifndef FMT_USE_FULL_CACHE_DRAGONBOX
 #  define FMT_USE_FULL_CACHE_DRAGONBOX 0
-#endif
-
-#ifdef FMT_USE_LOCALE
-// Use the provided definition.
-#elif defined(FMT_STATIC_THOUSANDS_SEPARATOR)
-#  define FMT_USE_LOCALE 0
-#else
-#  define FMT_USE_LOCALE 1
 #endif
 
 template <typename T, typename Enable = void>
@@ -2207,8 +2185,7 @@ template <typename Char = char> struct loc_writer {
 
 template <typename Char, typename OutputIt, typename T>
 FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
-                                        const format_specs& specs, locale_ref)
-    -> OutputIt {
+                                        const format_specs& specs) -> OutputIt {
   static_assert(std::is_same<T, uint32_or_64_or_128_t<T>>::value, "");
   auto abs_value = arg.abs_value;
   auto prefix = arg.prefix;
@@ -2260,9 +2237,9 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
 template <typename Char, typename OutputIt, typename T>
 FMT_CONSTEXPR FMT_NOINLINE auto write_int_noinline(OutputIt out,
                                                    write_int_arg<T> arg,
-                                                   const format_specs& specs,
-                                                   locale_ref loc) -> OutputIt {
-  return write_int<Char>(out, arg, specs, loc);
+                                                   const format_specs& specs)
+    -> OutputIt {
+  return write_int<Char>(out, arg, specs);
 }
 template <typename Char, typename T,
           FMT_ENABLE_IF(is_integral<T>::value &&
@@ -2273,7 +2250,7 @@ FMT_CONSTEXPR FMT_INLINE auto write(basic_appender<Char> out, T value,
     -> basic_appender<Char> {
   if (specs.localized() && write_loc(out, value, specs, loc)) return out;
   return write_int_noinline<Char>(out, make_write_int_arg(value, specs.sign()),
-                                  specs, loc);
+                                  specs);
 }
 // An inlined version of write used in format string compilation.
 template <typename Char, typename OutputIt, typename T,
@@ -2285,8 +2262,7 @@ FMT_CONSTEXPR FMT_INLINE auto write(OutputIt out, T value,
                                     const format_specs& specs, locale_ref loc)
     -> OutputIt {
   if (specs.localized() && write_loc(out, value, specs, loc)) return out;
-  return write_int<Char>(out, make_write_int_arg(value, specs.sign()), specs,
-                         loc);
+  return write_int<Char>(out, make_write_int_arg(value, specs.sign()), specs);
 }
 
 template <typename Char, typename OutputIt>
