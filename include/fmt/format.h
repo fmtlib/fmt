@@ -765,16 +765,6 @@ using is_integer =
                   !std::is_same<T, char>::value &&
                   !std::is_same<T, wchar_t>::value>;
 
-#ifndef FMT_USE_FLOAT
-#  define FMT_USE_FLOAT 1
-#endif
-#ifndef FMT_USE_DOUBLE
-#  define FMT_USE_DOUBLE 1
-#endif
-#ifndef FMT_USE_LONG_DOUBLE
-#  define FMT_USE_LONG_DOUBLE 1
-#endif
-
 #if defined(FMT_USE_FLOAT128)
 // Use the provided definition.
 #elif FMT_CLANG_VERSION && FMT_HAS_INCLUDE(<quadmath.h>)
@@ -1130,14 +1120,6 @@ constexpr auto is_negative(T value) -> bool {
 template <typename T, FMT_ENABLE_IF(!is_signed<T>::value)>
 constexpr auto is_negative(T) -> bool {
   return false;
-}
-
-template <typename T>
-FMT_CONSTEXPR auto is_supported_floating_point(T) -> bool {
-  if (std::is_same<T, float>()) return FMT_USE_FLOAT;
-  if (std::is_same<T, double>()) return FMT_USE_DOUBLE;
-  if (std::is_same<T, long double>()) return FMT_USE_LONG_DOUBLE;
-  return true;
 }
 
 // Smallest of uint32_t, uint64_t, uint128_t that is large enough to
@@ -3556,7 +3538,6 @@ template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(is_floating_point<T>::value)>
 FMT_CONSTEXPR20 auto write(OutputIt out, T value, format_specs specs,
                            locale_ref loc = {}) -> OutputIt {
-  if (const_check(!is_supported_floating_point(value))) return out;
   return specs.localized() && write_loc(out, value, specs, loc)
              ? out
              : write_float<Char>(out, value, specs, loc);
@@ -3566,7 +3547,6 @@ template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(is_fast_float<T>::value)>
 FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
   if (is_constant_evaluated()) return write<Char>(out, value, format_specs());
-  if (const_check(!is_supported_floating_point(value))) return out;
 
   auto s = detail::signbit(value) ? sign::minus : sign::none;
 
@@ -3708,28 +3688,23 @@ template <typename Char> struct default_arg_formatter {
 };
 
 template <typename Char> struct arg_formatter {
-  using iterator = basic_appender<Char>;
-  using context = buffered_context<Char>;
-
-  iterator out;
+  basic_appender<Char> out;
   const format_specs& specs;
   locale_ref locale;
 
   template <typename T, FMT_ENABLE_IF(is_builtin<T>::value)>
-  FMT_CONSTEXPR FMT_INLINE auto operator()(T value) -> iterator {
-    return detail::write<Char>(out, value, specs, locale);
+  FMT_CONSTEXPR FMT_INLINE void operator()(T value) {
+    detail::write<Char>(out, value, specs, locale);
   }
 
   template <typename T, FMT_ENABLE_IF(!is_builtin<T>::value)>
-  auto operator()(T) -> iterator {
+  void operator()(T) {
     FMT_ASSERT(false, "");
-    return out;
   }
 
-  auto operator()(typename basic_format_arg<context>::handle) -> iterator {
+  void operator()(typename basic_format_arg<buffered_context<Char>>::handle) {
     // User-defined types are handled separately because they require access
     // to the parse context.
-    return out;
   }
 };
 
