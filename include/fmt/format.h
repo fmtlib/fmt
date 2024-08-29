@@ -799,6 +799,14 @@ using is_double_double = bool_constant<std::numeric_limits<T>::digits == 106>;
 #  define FMT_USE_FULL_CACHE_DRAGONBOX 0
 #endif
 
+#ifdef FMT_USE_LOCALE
+// Use the provided definition.
+#elif defined(FMT_STATIC_THOUSANDS_SEPARATOR)
+#  define FMT_USE_LOCALE 0
+#else
+#  define FMT_USE_LOCALE 1
+#endif
+
 template <typename T, typename Enable = void>
 struct is_locale : std::false_type {};
 template <typename T>
@@ -2144,9 +2152,11 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
       });
 }
 
+#if FMT_USE_LOCALE
 // Writes a localized value.
 FMT_API auto write_loc(appender out, loc_value value, const format_specs& specs,
                        locale_ref loc) -> bool;
+#endif
 template <typename OutputIt>
 inline auto write_loc(OutputIt, loc_value, const format_specs&, locale_ref)
     -> bool {

@@ -22,13 +22,6 @@
 
 #include "format.h"
 
-#ifdef FMT_USE_LOCALE
-// Use the provided definition.
-#elif defined(FMT_STATIC_THOUSANDS_SEPARATOR)
-#  define FMT_USE_LOCALE 0
-#else
-#  define FMT_USE_LOCALE 1
-#endif
 #if FMT_USE_LOCALE
 #  include <locale>
 #elif !defined(FMT_STATIC_THOUSANDS_SEPARATOR)
@@ -122,9 +115,9 @@ FMT_FUNC auto decimal_point_impl(locale_ref loc) -> Char {
   return use_facet<numpunct<Char>>(loc.get<locale>()).decimal_point();
 }
 
+#if FMT_USE_LOCALE
 FMT_FUNC auto write_loc(appender out, loc_value value,
                         const format_specs& specs, locale_ref loc) -> bool {
-#if FMT_USE_LOCALE
   auto locale = loc.get<std::locale>();
   // We cannot use the num_put<char> facet because it may produce output in
   // a wrong encoding.
@@ -132,12 +125,8 @@ FMT_FUNC auto write_loc(appender out, loc_value value,
   if (std::has_facet<facet>(locale))
     return use_facet<facet>(locale).put(out, value, specs);
   return facet(locale).put(out, value, specs);
-#else
-  value.visit(loc_writer<>{
-      out, specs, std::string(1, FMT_STATIC_THOUSANDS_SEPARATOR), "\3", "."});
-  return true;
-#endif
 }
+#endif
 }  // namespace detail
 
 FMT_FUNC void report_error(const char* message) {
