@@ -30,10 +30,13 @@
 #  include <version>
 #endif
 
+#include <limits.h>
+
+#include <limits>
+
 #include "gtest-extra.h"
 #include "mock-allocator.h"
 #include "util.h"
-
 using fmt::basic_memory_buffer;
 using fmt::format_error;
 using fmt::memory_buffer;
@@ -931,8 +934,7 @@ TEST(format_test, runtime_width) {
 }
 
 TEST(format_test, exponent_range) {
-  for (int e = -1074; e <= 1023; ++e)
-    (void)fmt::format("{}", std::ldexp(1, e));
+  for (int e = -1074; e <= 1023; ++e) (void)fmt::format("{}", std::ldexp(1, e));
 }
 
 TEST(format_test, precision) {
@@ -2507,3 +2509,62 @@ TEST(format_test, writer) {
   fmt::writer(s).print("foo");
   EXPECT_EQ(s.str(), "foo");
 }
+
+#if FMT_USE_BITINT
+#  pragma clang diagnostic ignored "-Wbit-int-extension"
+
+template <size_t N, bool is_signed>
+using bitint_helper =
+    fmt::conditional_t<is_signed, _BitInt(N), unsigned _BitInt(N)>;
+template <size_t N> using signed_bitint = bitint_helper<N, true>;
+template <size_t N> using unsigned_bitint = bitint_helper<N, false>;
+
+TEST(format_test, bitint) {
+  EXPECT_EQ(fmt::format("{}", unsigned_bitint<3>(7)), "7");
+  EXPECT_EQ(fmt::format("{}", signed_bitint<7>()), "0");
+
+  EXPECT_EQ(fmt::format("{}", unsigned_bitint<15>(31000)), "31000");
+  EXPECT_EQ(fmt::format("{}", signed_bitint<16>(INT16_MIN)), "-32768");
+  EXPECT_EQ(fmt::format("{}", signed_bitint<16>(INT16_MAX)), "32767");
+
+  EXPECT_EQ(fmt::format("{}", unsigned_bitint<32>(4294967295)), "4294967295");
+
+  EXPECT_EQ(fmt::format("{}", unsigned_bitint<47>(140737488355327ULL)),
+            "140737488355327");
+  EXPECT_EQ(fmt::format("{}", signed_bitint<47>(-40737488355327LL)),
+            "-40737488355327");
+
+  // Check lvalues and const
+  auto a = signed_bitint<8>(0);
+  auto b = unsigned_bitint<32>(4294967295);
+  const auto c = signed_bitint<7>(0);
+  const auto d = unsigned_bitint<32>(4294967295);
+  EXPECT_EQ(fmt::format("{}", a), "0");
+  EXPECT_EQ(fmt::format("{}", b), "4294967295");
+  EXPECT_EQ(fmt::format("{}", c), "0");
+  EXPECT_EQ(fmt::format("{}", d), "4294967295");
+
+  static_assert(fmt::is_formattable<signed_bitint<64>, char>{}, "");
+  static_assert(fmt::is_formattable<unsigned_bitint<64>, char>{}, "");
+
+#  if FMT_USE_INT128
+  static_assert(fmt::is_formattable<signed_bitint<128>, char>{}, "");
+  static_assert(fmt::is_formattable<unsigned_bitint<128>, char>{}, "");
+
+  EXPECT_EQ(fmt::format("{}", signed_bitint<128>(0)), "0");
+  EXPECT_EQ(fmt::format("{}", unsigned_bitint<128>(0)), "0");
+  EXPECT_EQ("9223372036854775808",
+            fmt::format("{}", signed_bitint<65>(INT64_MAX) + 1));
+  EXPECT_EQ("-9223372036854775809",
+            fmt::format("{}", signed_bitint<65>(INT64_MIN) - 1));
+  EXPECT_EQ("18446744073709551616",
+            fmt::format("{}", unsigned_bitint<66>(UINT64_MAX) + 1));
+  EXPECT_EQ("170141183460469231731687303715884105727",
+            fmt::format("{}", signed_bitint<128>(int128_max)));
+  EXPECT_EQ("-170141183460469231731687303715884105728",
+            fmt::format("{}", signed_bitint<128>(int128_min)));
+  EXPECT_EQ("340282366920938463463374607431768211455",
+            fmt::format("{}", unsigned_bitint<128>(uint128_max)));
+#  endif
+}
+#endif
