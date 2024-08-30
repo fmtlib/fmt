@@ -1986,28 +1986,6 @@ FMT_CONSTEXPR auto write(OutputIt out, Char value, const format_specs& specs,
              : write<Char>(out, static_cast<unsigned_type>(value), specs, loc);
 }
 
-// Data for write_int that doesn't depend on output iterator type. It is used to
-// avoid template code bloat.
-template <typename Char> struct write_int_data {
-  size_t size;
-  size_t padding;
-
-  FMT_CONSTEXPR write_int_data(int num_digits, unsigned prefix,
-                               const format_specs& specs)
-      : size((prefix >> 24) + to_unsigned(num_digits)), padding(0) {
-    if (specs.align() == align::numeric) {
-      auto width = to_unsigned(specs.width);
-      if (width > size) {
-        padding = width - size;
-        size = width;
-      }
-    } else if (specs.precision > num_digits) {
-      size = (prefix >> 24) + to_unsigned(specs.precision);
-      padding = to_unsigned(specs.precision - num_digits);
-    }
-  }
-};
-
 template <typename Char> class digit_grouping {
  private:
   std::string grouping_;
@@ -2181,6 +2159,27 @@ template <typename Char = char> struct loc_writer {
   }
 };
 
+// Size and padding computation separate from write_int to avoid template bloat.
+struct size_padding {
+  unsigned size;
+  unsigned padding;
+
+  FMT_CONSTEXPR size_padding(int num_digits, unsigned prefix,
+                             const format_specs& specs)
+      : size((prefix >> 24) + to_unsigned(num_digits)), padding(0) {
+    if (specs.align() == align::numeric) {
+      auto width = to_unsigned(specs.width);
+      if (width > size) {
+        padding = width - size;
+        size = width;
+      }
+    } else if (specs.precision > num_digits) {
+      size = (prefix >> 24) + to_unsigned(specs.precision);
+      padding = to_unsigned(specs.precision - num_digits);
+    }
+  }
+};
+
 template <typename Char, typename OutputIt, typename T>
 FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
                                         const format_specs& specs) -> OutputIt {
@@ -2236,12 +2235,13 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
       *it++ = static_cast<Char>(p & 0xff);
     return base_iterator(out, copy<Char>(begin, end, it));
   }
-  auto data = write_int_data<Char>(num_digits, prefix, specs);
+  auto sp = size_padding(num_digits, prefix, specs);
+  unsigned padding = sp.padding;
   return write_padded<Char, align::right>(
-      out, specs, data.size, [=](reserve_iterator<OutputIt> it) {
+      out, specs, sp.size, [=](reserve_iterator<OutputIt> it) {
         for (unsigned p = prefix & 0xffffff; p != 0; p >>= 8)
           *it++ = static_cast<Char>(p & 0xff);
-        it = detail::fill_n(it, data.padding, static_cast<Char>('0'));
+        it = detail::fill_n(it, padding, static_cast<Char>('0'));
         return copy<Char>(begin, end, it);
       });
 }
