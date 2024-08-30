@@ -46,6 +46,7 @@
 #  include <cstring>           // std::memcpy
 #  include <initializer_list>  // std::initializer_list
 #  include <limits>            // std::numeric_limits
+#  include <new>               // std::bad_alloc
 #  if defined(__GLIBCXX__) && !defined(_GLIBCXX_USE_DUAL_ABI)
 // Workaround for pre gcc 5 libstdc++.
 #    include <memory>  // std::allocator_traits
@@ -789,6 +790,22 @@ template <typename T, typename Enable = void>
 struct is_locale : std::false_type {};
 template <typename T>
 struct is_locale<T, void_t<decltype(T::classic())>> : std::true_type {};
+
+// An allocator that uses malloc/free to allow removing dependency on the C++
+// standard libary runtime.
+template <typename T> struct allocator {
+  using value_type = T;
+
+  T* allocate(size_t n) {
+    FMT_ASSERT(n <= max_value<size_t>() / sizeof(T), "");
+    T* p = static_cast<T*>(malloc(n * sizeof(T)));
+    if (!p) FMT_THROW(std::bad_alloc());
+    return p;
+  }
+
+  void deallocate(T* p, size_t) { free(p); }
+};
+
 }  // namespace detail
 
 FMT_BEGIN_EXPORT
@@ -811,7 +828,7 @@ enum { inline_buffer_size = 500 };
  * converted to `std::string` with `to_string(out)`.
  */
 template <typename T, size_t SIZE = inline_buffer_size,
-          typename Allocator = std::allocator<T>>
+          typename Allocator = detail::allocator<T>>
 class basic_memory_buffer : public detail::buffer<T> {
  private:
   T store_[SIZE];
