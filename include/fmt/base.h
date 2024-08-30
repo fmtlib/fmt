@@ -2837,10 +2837,8 @@ FMT_CONSTEXPR auto parse_format_specs(ParseContext& ctx)
     -> decltype(ctx.begin()) {
   using char_type = typename ParseContext::char_type;
   using context = buffered_context<char_type>;
-  using mapped_type = conditional_t<
-      mapped_type_constant<T, context>::value != type::custom_type,
-      decltype(arg_mapper<context>().map(std::declval<const T&>())),
-      typename strip_named_arg<T>::type>;
+  using mapped_type =
+      remove_cvref_t<decltype(arg_mapper<context>().map(std::declval<T&>()))>;
 #if defined(__cpp_if_constexpr)
   if constexpr (std::is_default_constructible<
                     formatter<mapped_type, char_type>>::value) {
