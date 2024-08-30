@@ -227,7 +227,7 @@
 #  define FMT_NO_UNIQUE_ADDRESS
 #endif
 
-#ifdef FMT_INLINE
+#ifdef FMT_ALWAYS_INLINE
 // Use the provided definition.
 #elif FMT_GCC_VERSION || FMT_CLANG_VERSION
 #  define FMT_ALWAYS_INLINE inline __attribute__((always_inline))
@@ -1657,6 +1657,10 @@ struct is_output_iterator<
     void_t<decltype(*std::declval<decay_t<It>&>()++ = std::declval<T>())>>
     : std::true_type {};
 
+#ifndef FMT_OPTIMIZE_SIZE
+#  define FMT_OPTIMIZE_SIZE 0
+#endif
+
 #ifdef FMT_USE_LOCALE
 // Use the provided definition.
 #elif defined(FMT_STATIC_THOUSANDS_SEPARATOR)
@@ -2779,7 +2783,7 @@ FMT_CONSTEXPR void parse_format_string(basic_string_view<Char> format_str,
                                        Handler&& handler) {
   auto begin = format_str.data();
   auto end = begin + format_str.size();
-  if (end - begin < 32) {
+  if (FMT_OPTIMIZE_SIZE || end - begin < 32) {
     // Use a simple loop instead of memchr for small strings.
     const Char* p = begin;
     while (p != end) {

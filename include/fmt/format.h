@@ -1166,10 +1166,6 @@ FMT_CONSTEXPR inline auto count_digits(uint128_opt n) -> int {
 }
 #endif
 
-#ifndef FMT_OPTIMIZE_SIZE
-#  define FMT_OPTIMIZE_SIZE 0
-#endif
-
 #ifdef FMT_BUILTIN_CLZLL
 // It is a separate function rather than a part of count_digits to workaround
 // the lack of static constexpr in constexpr functions.
@@ -3677,7 +3673,7 @@ template <typename Char> struct default_arg_formatter {
 template <typename Char> struct arg_formatter {
   basic_appender<Char> out;
   const format_specs& specs;
-  locale_ref locale;
+  FMT_NO_UNIQUE_ADDRESS locale_ref locale;
 
   template <typename T, FMT_ENABLE_IF(is_builtin<T>::value)>
   FMT_CONSTEXPR FMT_INLINE void operator()(T value) {
