@@ -2969,11 +2969,6 @@ void check_format_string(S format_str) {
   ignore_unused(error);
 }
 
-// Report truncation to prevent silent data loss.
-inline void report_truncation(bool truncated) {
-  if (truncated) report_error("output is truncated");
-}
-
 // Use vformat_args and avoid type_identity to keep symbols short.
 template <typename Char = char> struct vformat_args {
   using type = basic_format_args<buffered_context<Char>>;
@@ -3145,37 +3140,29 @@ FMT_INLINE auto format_to_n(OutputIt out, size_t n, format_string<T...> fmt,
   return vformat_to_n(out, n, fmt, fmt::make_format_args(args...));
 }
 
-template <typename OutputIt, typename Sentinel = OutputIt>
 struct format_to_result {
-  /// Iterator pointing to just after the last successful write in the range.
-  OutputIt out;
+  /// Pointer to just after the last successful write in the array.
+  char* out;
   /// Specifies if the output was truncated.
   bool truncated;
 
-  FMT_CONSTEXPR operator OutputIt&() & {
-    detail::report_truncation(truncated);
+  FMT_CONSTEXPR operator char*() const {
+    // Report truncation to prevent silent data loss.
+    if (truncated) report_error("output is truncated");
     return out;
-  }
-  FMT_CONSTEXPR operator const OutputIt&() const& {
-    detail::report_truncation(truncated);
-    return out;
-  }
-  FMT_CONSTEXPR operator OutputIt&&() && {
-    detail::report_truncation(truncated);
-    return static_cast<OutputIt&&>(out);
   }
 };
 
 template <size_t N>
 auto vformat_to(char (&out)[N], string_view fmt, format_args args)
-    -> format_to_result<char*> {
+    -> format_to_result {
   auto result = vformat_to_n(out, N, fmt, args);
   return {result.out, result.size > N};
 }
 
 template <size_t N, typename... T>
 FMT_INLINE auto format_to(char (&out)[N], format_string<T...> fmt, T&&... args)
-    -> format_to_result<char*> {
+    -> format_to_result {
   auto result = fmt::format_to_n(out, N, fmt, static_cast<T&&>(args)...);
   return {result.out, result.size > N};
 }
