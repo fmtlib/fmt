@@ -1166,6 +1166,10 @@ FMT_CONSTEXPR inline auto count_digits(uint128_opt n) -> int {
 }
 #endif
 
+#ifndef FMT_OPTIMIZE_SIZE
+#  define FMT_OPTIMIZE_SIZE 0
+#endif
+
 #ifdef FMT_BUILTIN_CLZLL
 // It is a separate function rather than a part of count_digits to workaround
 // the lack of static constexpr in constexpr functions.
@@ -1191,7 +1195,7 @@ inline auto do_count_digits(uint64_t n) -> int {
 // except for n == 0 in which case count_digits returns 1.
 FMT_CONSTEXPR20 inline auto count_digits(uint64_t n) -> int {
 #ifdef FMT_BUILTIN_CLZLL
-  if (!is_constant_evaluated()) return do_count_digits(n);
+  if (!is_constant_evaluated() && !FMT_OPTIMIZE_SIZE) return do_count_digits(n);
 #endif
   return count_digits_fallback(n);
 }
@@ -1241,9 +1245,7 @@ FMT_INLINE auto do_count_digits(uint32_t n) -> int {
 // Optional version of count_digits for better performance on 32-bit platforms.
 FMT_CONSTEXPR20 inline auto count_digits(uint32_t n) -> int {
 #ifdef FMT_BUILTIN_CLZ
-  if (!is_constant_evaluated()) {
-    return do_count_digits(n);
-  }
+  if (!is_constant_evaluated() && !FMT_OPTIMIZE_SIZE) return do_count_digits(n);
 #endif
   return count_digits_fallback(n);
 }
@@ -1291,7 +1293,8 @@ inline auto equal2(const char* lhs, const char* rhs) -> bool {
 // Writes a two-digit value to out.
 template <typename Char>
 FMT_CONSTEXPR20 FMT_INLINE void write2digits(Char* out, size_t value) {
-  if (!is_constant_evaluated() && std::is_same<Char, char>::value) {
+  if (!is_constant_evaluated() && std::is_same<Char, char>::value &&
+      !FMT_OPTIMIZE_SIZE) {
     memcpy(out, digits2(value), 2);
     return;
   }
@@ -1994,10 +1997,8 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, int num_digits,
   // Slightly faster check for specs.width == 0 && specs.precision == -1.
   if ((specs.width | (specs.precision + 1)) == 0) {
     auto it = reserve(out, to_unsigned(num_digits) + (prefix >> 24));
-    if (prefix != 0) {
-      for (unsigned p = prefix & 0xffffff; p != 0; p >>= 8)
-        *it++ = static_cast<Char>(p & 0xff);
-    }
+    for (unsigned p = prefix & 0xffffff; p != 0; p >>= 8)
+      *it++ = static_cast<Char>(p & 0xff);
     return base_iterator(out, write_digits(it));
   }
   auto data = write_int_data<Char>(num_digits, prefix, specs);
