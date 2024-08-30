@@ -1338,9 +1338,10 @@ FMT_CONSTEXPR auto format_decimal(OutputIt out, UInt value, int num_digits)
     return out;
   }
   // Buffer is large enough to hold all digits (digits10 + 1).
-  char buffer[digits10<UInt>() + 1] = {};
+  char buffer[digits10<UInt>() + 1];
+  if (is_constant_evaluated()) fill_n(buffer, sizeof(buffer), '\0');
   do_format_decimal(buffer, value, num_digits);
-  return detail::copy_noinline<Char>(buffer, buffer + num_digits, out);
+  return copy_noinline<Char>(buffer, buffer + num_digits, out);
 }
 
 template <typename Char, typename UInt>
@@ -1374,7 +1375,8 @@ FMT_CONSTEXPR inline auto format_base2e(int base_bits, OutputIt out, UInt value,
     return out;
   }
   // Make buffer large enough for any base.
-  char buffer[num_bits<UInt>()] = {};
+  char buffer[num_bits<UInt>()];
+  if (is_constant_evaluated()) fill_n(buffer, sizeof(buffer), '\0');
   format_base2e(base_bits, buffer, value, num_digits, upper);
   return detail::copy_noinline<Char>(buffer, buffer + num_digits, out);
 }
@@ -2168,7 +2170,8 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
   static_assert(std::is_same<T, uint32_or_64_or_128_t<T>>::value, "");
 
   constexpr int buffer_size = num_bits<T>();
-  char buffer[buffer_size] = {};
+  char buffer[buffer_size];
+  if (is_constant_evaluated()) fill_n(buffer, buffer_size, '\0');
   const char* begin = nullptr;
   const char* end = buffer + buffer_size;
 
