@@ -456,7 +456,7 @@ template <typename T> auto convert_for_visit(T) -> monostate { return {}; }
 #  define FMT_USE_BITINT (FMT_CLANG_VERSION >= 1400)
 #endif
 
-template <class T, int N = 0> struct bitint_traits {};
+template <typename T, int N = 0> struct bitint_traits {};
 #if FMT_USE_BITINT
 #  pragma clang diagnostic push
 #  pragma clang diagnostic ignored "-Wbit-int-extension"
@@ -1531,14 +1531,12 @@ template <typename Context> struct arg_mapper {
   FMT_MAP_API auto map(double val) -> double { return val; }
   FMT_MAP_API auto map(long double val) -> long double { return val; }
 
-  template <class T,
-            FMT_ENABLE_IF(bitint_traits<remove_cvref_t<T>>::is_formattable)>
-  FMT_MAP_API auto map(T&& val) -> decltype(val) {
+  template <typename T, FMT_ENABLE_IF(bitint_traits<T>::is_formattable)>
+  FMT_MAP_API auto map(T val) -> typename bitint_traits<T>::format_type {
     return val;
   }
-  template <class T,
-            FMT_ENABLE_IF(!bitint_traits<remove_cvref_t<T>>::is_formattable)>
-  FMT_MAP_API auto map(T&&) -> unformattable {
+  template <typename T, FMT_ENABLE_IF(!bitint_traits<T>::is_formattable)>
+  FMT_MAP_API auto map(T) -> unformattable {
     return {};
   }
 
