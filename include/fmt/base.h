@@ -179,6 +179,17 @@
 #  define FMT_CATCH(x) if (false)
 #endif
 
+// Check if RTTI is disabled.
+#ifdef FMT_USE_RTTI
+// Use the provided definition.
+#elif defined(__GXX_RTTI) || FMT_HAS_FEATURE(cxx_rtti) || defined(_CPPRTTI) || \
+    defined(__INTEL_RTTI__) || defined(__RTTI)
+// __RTTI is for EDG compilers. _CPPRTTI is for MSVC.
+#  define FMT_USE_RTTI 1
+#else
+#  define FMT_USE_RTTI 0
+#endif
+
 #if FMT_HAS_CPP17_ATTRIBUTE(fallthrough)
 #  define FMT_FALLTHROUGH [[fallthrough]]
 #elif defined(__clang__)
@@ -197,12 +208,12 @@
 #  define FMT_NORETURN
 #endif
 
-#ifndef FMT_NODISCARD
-#  if FMT_HAS_CPP17_ATTRIBUTE(nodiscard)
-#    define FMT_NODISCARD [[nodiscard]]
-#  else
-#    define FMT_NODISCARD
-#  endif
+#ifdef FMT_NODISCARD
+// Use the provided definition.
+#elif FMT_HAS_CPP17_ATTRIBUTE(nodiscard)
+#  define FMT_NODISCARD [[nodiscard]]
+#else
+#  define FMT_NODISCARD
 #endif
 
 #ifdef FMT_DEPRECATED
@@ -301,10 +312,6 @@
 #  define FMT_API
 #endif
 
-#ifndef FMT_UNICODE
-#  define FMT_UNICODE 1
-#endif
-
 // Specifies whether to handle built-in and string types specially.
 // FMT_BUILTIN_TYPE=0 may result in smaller library size at the cost of higher
 // per-call binary size.
@@ -313,17 +320,6 @@
 #endif
 #if !FMT_BUILTIN_TYPES && !defined(__cpp_if_constexpr)
 #  error FMT_BUILTIN_TYPES=0 requires constexpr if support
-#endif
-
-// Check if rtti is available.
-#ifndef FMT_USE_RTTI
-// __RTTI is for EDG compilers. _CPPRTTI is for MSVC.
-#  if defined(__GXX_RTTI) || FMT_HAS_FEATURE(cxx_rtti) || defined(_CPPRTTI) || \
-      defined(__INTEL_RTTI__) || defined(__RTTI)
-#    define FMT_USE_RTTI 1
-#  else
-#    define FMT_USE_RTTI 0
-#  endif
 #endif
 
 #define FMT_FWD(...) static_cast<decltype(__VA_ARGS__)&&>(__VA_ARGS__)
@@ -496,6 +492,10 @@ constexpr auto is_utf8_enabled() -> bool { return "\u00A7"[1] == '\xA7'; }
 constexpr auto use_utf8() -> bool {
   return !FMT_MSC_VERSION || is_utf8_enabled();
 }
+
+#ifndef FMT_UNICODE
+#  define FMT_UNICODE 1
+#endif
 
 static_assert(!FMT_UNICODE || use_utf8(),
               "Unicode support requires compiling with /utf-8");
@@ -1574,7 +1574,7 @@ template <typename Context> struct arg_mapper {
           std::is_function<typename std::remove_pointer<T>::type>::value ||
           (std::is_array<T>::value &&
            !std::is_convertible<T, const char_type*>::value))>
-  FMT_CONSTEXPR auto map(const T&) -> unformattable_pointer {
+  FMT_MAP_API auto map(const T&) -> unformattable_pointer {
     return {};
   }
 
@@ -1623,7 +1623,7 @@ template <typename Context> struct arg_mapper {
     return map(named_arg.value);
   }
 
-  auto map(...) -> unformattable { return {}; }
+  FMT_MAP_API auto map(...) -> unformattable { return {}; }
 };
 
 // A type constant after applying arg_mapper<Context>.
