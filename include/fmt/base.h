@@ -3014,14 +3014,15 @@ template <typename Char, typename... Args> class basic_format_string {
 
   using checker = detail::format_string_checker<Char, remove_cvref_t<Args>...>;
 
-  FMT_CONSTEXPR FMT_ALWAYS_INLINE void check() const {
+  FMT_CONSTEXPR FMT_ALWAYS_INLINE static void check(
+      basic_string_view<Char> fmt) {
     using namespace detail;
     static_assert(
         count<(std::is_base_of<view, remove_reference_t<Args>>::value &&
                std::is_reference<Args>::value)...>() == 0,
         "passing views as lvalues is disallowed");
     if (count_named_args<Args...>() == count_statically_named_args<Args...>())
-      parse_format_string(str_, checker(str_));
+      parse_format_string(fmt, checker(fmt));
   }
 
  public:
@@ -3030,7 +3031,7 @@ template <typename Char, typename... Args> class basic_format_string {
             FMT_ENABLE_IF(
                 std::is_convertible<const S&, basic_string_view<Char>>::value)>
   FMT_CONSTEVAL FMT_ALWAYS_INLINE basic_format_string(const S& s) : str_(s) {
-    if (FMT_USE_CONSTEVAL) check();
+    if (FMT_USE_CONSTEVAL) check(s);
 #ifdef FMT_ENFORCE_COMPILE_STRING
     static_assert(
         FMT_USE_CONSTEVAL && sizeof(S) != 0,
@@ -3040,13 +3041,9 @@ template <typename Char, typename... Args> class basic_format_string {
   }
   template <typename S,
             FMT_ENABLE_IF(std::is_base_of<detail::compile_string, S>::value&&
-                              std::is_constructible<basic_string_view<Char>,
-                                                    const S&>::value)>
+                              std::is_same<typename S::char_type, Char>::value)>
   FMT_ALWAYS_INLINE basic_format_string(const S& s) : str_(s) {
-    check();
-    if (FMT_USE_CONSTEVAL) return;
-    FMT_CONSTEXPR auto v = basic_string_view<Char>(S());
-    FMT_CONSTEXPR int ignore = (detail::parse_format_string(v, checker(v)), 0);
+    FMT_CONSTEXPR int ignore = (check(basic_string_view<Char>(S())), 0);
     detail::ignore_unused(ignore);
   }
   basic_format_string(runtime_format_string<Char> fmt) : str_(fmt.str) {}
