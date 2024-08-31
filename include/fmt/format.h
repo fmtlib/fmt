@@ -1869,7 +1869,7 @@ inline auto find_escape(const char* begin, const char* end)
   return result;
 }
 
-#define FMT_STRING_IMPL(s, base, explicit)                                    \
+#define FMT_STRING_IMPL(s, base)                                              \
   [] {                                                                        \
     /* Use the hidden visibility as a workaround for a GCC bug (#1973). */    \
     /* Use a macro-like name to avoid shadowing warnings. */                  \
@@ -1880,6 +1880,8 @@ inline auto find_escape(const char* begin, const char* end)
         return fmt::detail_exported::compile_string_to_view<char_type>(s);    \
       }                                                                       \
     };                                                                        \
+    typename FMT_COMPILE_STRING::char_type FMT_CHAR = {};                     \
+    (void)FMT_CHAR;                                                           \
     return FMT_COMPILE_STRING();                                              \
   }()
 
@@ -1891,7 +1893,7 @@ inline auto find_escape(const char* begin, const char* end)
  *     // A compile-time error because 'd' is an invalid specifier for strings.
  *     std::string s = fmt::format(FMT_STRING("{:d}"), "foo");
  */
-#define FMT_STRING(s) FMT_STRING_IMPL(s, fmt::detail::compile_string, )
+#define FMT_STRING(s) FMT_STRING_IMPL(s, fmt::detail::compile_string)
 
 template <size_t width, typename Char, typename OutputIt>
 auto write_codepoint(OutputIt out, char prefix, uint32_t cp) -> OutputIt {

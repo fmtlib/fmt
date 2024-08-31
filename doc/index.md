@@ -122,7 +122,7 @@ hide:
 </p>
 <p>
   The library is highly portable and requires only a minimal <b>subset of
-  C++11</b> features which are available in GCC 4.8, Clang 3.4, MSVC 19.0
+  C++11</b> features which are available in GCC 4.9, Clang 3.4, MSVC 19.0
   (2015) and later. Newer compiler and standard library features are used
   if available, and enable additional functionality.
 </p>

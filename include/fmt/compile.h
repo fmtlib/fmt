@@ -36,7 +36,7 @@ struct is_compiled_string : std::is_base_of<compiled_string, S> {};
  *     std::string s = fmt::format(FMT_COMPILE("{}"), 42);
  */
 #if defined(__cpp_if_constexpr) && defined(__cpp_return_type_deduction)
-#  define FMT_COMPILE(s) FMT_STRING_IMPL(s, fmt::compiled_string, explicit)
+#  define FMT_COMPILE(s) FMT_STRING_IMPL(s, fmt::compiled_string)
 #else
 #  define FMT_COMPILE(s) FMT_STRING(s)
 #endif

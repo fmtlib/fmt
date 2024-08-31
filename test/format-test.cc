@@ -2203,7 +2203,7 @@ TEST(format_test, vformat_to) {
   fmt::vformat_to(std::back_inserter(s), "{}", args);
   EXPECT_EQ(s, "42");
   s.clear();
-  fmt::vformat_to(std::back_inserter(s), FMT_STRING("{}"), args);
+  fmt::vformat_to(std::back_inserter(s), "{}", args);
   EXPECT_EQ(s, "42");
 }
 

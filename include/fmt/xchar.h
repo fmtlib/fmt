@@ -34,7 +34,8 @@ struct format_string_char<
 };
 
 template <typename S>
-struct format_string_char<S, enable_if_t<is_compile_string<S>::value>> {
+struct format_string_char<
+    S, enable_if_t<std::is_base_of<detail::compile_string, S>::value>> {
   using type = typename S::char_type;
 };
 
