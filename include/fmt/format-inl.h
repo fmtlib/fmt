@@ -67,13 +67,13 @@ FMT_FUNC void report_error(format_func func, int error_code,
                            const char* message) noexcept {
   memory_buffer full_message;
   func(full_message, error_code, message);
-  // Don't use fwrite_fully because the latter may throw.
+  // Don't use fwrite_all because the latter may throw.
   if (std::fwrite(full_message.data(), full_message.size(), 1, stderr) > 0)
     std::fputc('\n', stderr);
 }
 
 // A wrapper around fwrite that throws on error.
-inline void fwrite_fully(const void* ptr, size_t count, FILE* stream) {
+inline void fwrite_all(const void* ptr, size_t count, FILE* stream) {
   size_t written = std::fwrite(ptr, 1, count, stream);
   if (written < count)
     FMT_THROW(system_error(errno, FMT_STRING("cannot write to file")));
@@ -1696,7 +1696,7 @@ FMT_FUNC void vprint_mojibake(std::FILE* f, string_view fmt, format_args args,
   auto buffer = memory_buffer();
   detail::vformat_to(buffer, fmt, args);
   if (newline) buffer.push_back('\n');
-  fwrite_fully(buffer.data(), buffer.size(), f);
+  fwrite_all(buffer.data(), buffer.size(), f);
 }
 #endif
 
@@ -1708,7 +1708,7 @@ FMT_FUNC void print(std::FILE* f, string_view text) {
     if (write_console(fd, text)) return;
   }
 #endif
-  fwrite_fully(text.data(), text.size(), f);
+  fwrite_all(text.data(), text.size(), f);
 }
 }  // namespace detail
 
