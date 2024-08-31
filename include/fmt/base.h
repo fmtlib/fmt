@@ -3012,6 +3012,16 @@ template <typename Char = char> struct runtime_format_string {
   basic_string_view<Char> str;
 };
 
+/**
+ * Creates a runtime format string.
+ *
+ * **Example**:
+ *
+ *     // Check format string at runtime instead of compile-time.
+ *     fmt::print(fmt::runtime("{:d}"), "I am not a number");
+ */
+inline auto runtime(string_view s) -> runtime_format_string<> { return {{s}}; }
+
 /// A compile-time format string.
 template <typename Char, typename... Args> class basic_format_string {
  private:
@@ -3053,23 +3063,8 @@ template <typename Char, typename... Args> class basic_format_string {
   auto get() const -> basic_string_view<Char> { return str_; }
 };
 
-#if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
-// Workaround broken conversion on older gcc.
-template <typename...> using format_string = string_view;
-inline auto runtime(string_view s) -> string_view { return s; }
-#else
-template <typename... Args>
-using format_string = basic_format_string<char, type_identity_t<Args>...>;
-/**
- * Creates a runtime format string.
- *
- * **Example**:
- *
- *     // Check format string at runtime instead of compile-time.
- *     fmt::print(fmt::runtime("{:d}"), "I am not a number");
- */
-inline auto runtime(string_view s) -> runtime_format_string<> { return {{s}}; }
-#endif
+template <typename... T>
+using format_string = basic_format_string<char, type_identity_t<T>...>;
 
 /// Formats a string and writes the output to `out`.
 template <typename OutputIt,
