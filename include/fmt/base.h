@@ -2941,24 +2941,17 @@ struct compile_string {};
 template <typename S>
 using is_compile_string = std::is_base_of<compile_string, S>;
 
-// Reports a compile-time error if S is not a valid format string.
-template <typename..., typename S, FMT_ENABLE_IF(!is_compile_string<S>::value)>
-FMT_ALWAYS_INLINE void check_format_string(const S&) {
-#ifdef FMT_ENFORCE_COMPILE_STRING
-  static_assert(is_compile_string<S>::value,
-                "FMT_ENFORCE_COMPILE_STRING requires all format strings to use "
-                "FMT_STRING.");
-#endif
-}
-template <typename... Args, typename S,
-          FMT_ENABLE_IF(is_compile_string<S>::value)>
-void check_format_string(S format_str) {
-  using char_t = typename S::char_type;
-  FMT_CONSTEXPR auto s = basic_string_view<char_t>(format_str);
-  using checker = format_string_checker<char_t, remove_cvref_t<Args>...>;
+// Reports a compile-time error if S is not a valid format string for T.
+template <typename... T, typename S, FMT_ENABLE_IF(is_compile_string<S>::value)>
+void check_format_string(S fmt) {
+  using char_type = typename S::char_type;
+  FMT_CONSTEXPR auto s = basic_string_view<char_type>(fmt);
+  using checker = format_string_checker<char_type, remove_cvref_t<T>...>;
   FMT_CONSTEXPR bool error = (parse_format_string<true>(s, checker(s)), true);
   ignore_unused(error);
 }
+template <typename..., typename S, FMT_ENABLE_IF(!is_compile_string<S>::value)>
+FMT_ALWAYS_INLINE void check_format_string(S) {}
 
 // Use vformat_args and avoid type_identity to keep symbols short.
 template <typename Char = char> struct vformat_args {
@@ -3045,6 +3038,12 @@ template <typename Char, typename... Args> class basic_format_string {
       detail::parse_format_string<true>(str_, checker(s));
     }
 #else
+#  ifdef FMT_ENFORCE_COMPILE_STRING
+    static_assert(
+        detail::is_compile_string<S>::value,
+        "FMT_ENFORCE_COMPILE_STRING requires all format strings to use "
+        "FMT_STRING.");
+#  endif
     detail::check_format_string<Args...>(s);
 #endif
   }
