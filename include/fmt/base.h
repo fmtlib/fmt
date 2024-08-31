@@ -3014,20 +3014,14 @@ template <typename Char, typename... Args> class basic_format_string {
 
   using checker = detail::format_string_checker<Char, remove_cvref_t<Args>...>;
 
-  template <typename S>
-  FMT_CONSTEXPR FMT_ALWAYS_INLINE void check(const S& s) {
+  FMT_CONSTEXPR FMT_ALWAYS_INLINE void check() const {
+    using namespace detail;
     static_assert(
-        detail::count<
-            (std::is_base_of<detail::view, remove_reference_t<Args>>::value &&
-            std::is_reference<Args>::value)...>() == 0,
+        count<(std::is_base_of<view, remove_reference_t<Args>>::value &&
+               std::is_reference<Args>::value)...>() == 0,
         "passing views as lvalues is disallowed");
-    detail::ignore_unused(s);
-#if FMT_USE_CONSTEVAL
-    if constexpr (detail::count_named_args<Args...>() ==
-                  detail::count_statically_named_args<Args...>()) {
-      detail::parse_format_string(str_, checker(str_));
-    }
-#endif
+    if (count_named_args<Args...>() == count_statically_named_args<Args...>())
+      parse_format_string(str_, checker(str_));
   }
 
  public:
@@ -3036,7 +3030,7 @@ template <typename Char, typename... Args> class basic_format_string {
             FMT_ENABLE_IF(
                 std::is_convertible<const S&, basic_string_view<Char>>::value)>
   FMT_CONSTEVAL FMT_ALWAYS_INLINE basic_format_string(const S& s) : str_(s) {
-    check(s);
+    if (FMT_USE_CONSTEVAL) check();
 #ifdef FMT_ENFORCE_COMPILE_STRING
     static_assert(
         FMT_USE_CONSTEVAL && sizeof(S) != 0,
@@ -3048,8 +3042,8 @@ template <typename Char, typename... Args> class basic_format_string {
             FMT_ENABLE_IF(std::is_base_of<detail::compile_string, S>::value&&
                               std::is_constructible<basic_string_view<Char>,
                                                     const S&>::value)>
-  FMT_CONSTEVAL FMT_ALWAYS_INLINE basic_format_string(const S& s) : str_(s) {
-    check(s);
+  FMT_ALWAYS_INLINE basic_format_string(const S& s) : str_(s) {
+    check();
     if (FMT_USE_CONSTEVAL) return;
     FMT_CONSTEXPR auto v = basic_string_view<Char>(S());
     FMT_CONSTEXPR int ignore = (detail::parse_format_string(v, checker(v)), 0);
