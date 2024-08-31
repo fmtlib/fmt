@@ -278,6 +278,17 @@ template <typename Char> using std_string_view = std::basic_string_view<Char>;
 template <typename T> struct std_string_view {};
 #endif
 
+template <typename Char, Char... C> struct string_literal {
+  static constexpr Char value[sizeof...(C)] = {C...};
+  constexpr operator basic_string_view<Char>() const {
+    return {value, sizeof...(C)};
+  }
+};
+#if FMT_CPLUSPLUS < 201703L
+template <typename Char, Char... C>
+constexpr Char string_literal<Char, C...>::value[sizeof...(C)];
+#endif
+
 // Implementation of std::bit_cast for pre-C++20.
 template <typename To, typename From, FMT_ENABLE_IF(sizeof(To) == sizeof(From))>
 FMT_CONSTEXPR20 auto bit_cast(const From& from) -> To {
