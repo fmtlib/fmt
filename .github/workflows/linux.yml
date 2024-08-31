@@ -65,8 +65,8 @@ jobs:
     - name: Add repositories for older GCC
       run: |
         # Below repo provides GCC 4.9.
-        sudo apt-add-repository 'deb http://azure.archive.ubuntu.com/ubuntu/ xenial main'
-        sudo apt-add-repository 'deb http://azure.archive.ubuntu.com/ubuntu/ xenial universe'
+        sudo apt-add-repository 'deb http://dk.archive.ubuntu.com/ubuntu/ xenial main'
+        sudo apt-add-repository 'deb http://dk.archive.ubuntu.com/ubuntu/ xenial universe'
       if: ${{ matrix.cxx == 'g++-4.9' }}
 
     - name: Add repositories for newer GCC
