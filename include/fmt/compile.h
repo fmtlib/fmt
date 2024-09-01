@@ -71,6 +71,29 @@ constexpr const auto& get([[maybe_unused]] const T& first,
     return detail::get<N - 1>(rest...);
 }
 
+#if FMT_USE_NONTYPE_TEMPLATE_ARGS
+template <int N, typename T, typename... Args, typename Char>
+constexpr auto get_arg_index_by_name(basic_string_view<Char> name) -> int {
+  if constexpr (is_statically_named_arg<T>()) {
+    if (name == T::name) return N;
+  }
+  if constexpr (sizeof...(Args) > 0)
+    return get_arg_index_by_name<N + 1, Args...>(name);
+  (void)name;  // Workaround an MSVC bug about "unused" parameter.
+  return -1;
+}
+#endif
+
+template <typename... Args, typename Char>
+FMT_CONSTEXPR auto get_arg_index_by_name(basic_string_view<Char> name) -> int {
+#if FMT_USE_NONTYPE_TEMPLATE_ARGS
+  if constexpr (sizeof...(Args) > 0)
+    return get_arg_index_by_name<0, Args...>(name);
+#endif
+  (void)name;
+  return -1;
+}
+
 template <typename Char, typename... Args>
 constexpr int get_arg_index_by_name(basic_string_view<Char> name,
                                     type_list<Args...>) {

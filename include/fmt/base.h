@@ -1341,7 +1341,6 @@ template <bool B1, bool B2, bool... Tail> constexpr auto count() -> size_t {
 template <typename... Args> constexpr auto count_named_args() -> size_t {
   return count<is_named_arg<Args>::value...>();
 }
-
 template <typename... Args>
 constexpr auto count_statically_named_args() -> size_t {
   return count<is_statically_named_arg<Args>::value...>();
@@ -1756,6 +1755,20 @@ template <typename Char, typename T, FMT_ENABLE_IF(is_named_arg<T>::value)>
 void init_named_arg(named_arg_info<Char>* named_args, int& arg_index,
                     int& named_arg_index, const T& arg) {
   named_args[named_arg_index++] = {arg.name, arg_index++};
+}
+
+template <typename T, typename Char,
+          FMT_ENABLE_IF(!is_statically_named_arg<T>::value)>
+FMT_CONSTEXPR void init_statically_named_arg(named_arg_info<Char>*,
+                                             int& arg_index, int&) {
+  ++arg_index;
+}
+template <typename T, typename Char,
+          FMT_ENABLE_IF(is_statically_named_arg<T>::value)>
+FMT_CONSTEXPR void init_statically_named_arg(named_arg_info<Char>* named_args,
+                                             int& arg_index,
+                                             int& named_arg_index) {
+  named_args[named_arg_index++] = {T::name, arg_index++};
 }
 
 // An array of references to arguments. It can be implicitly converted to
@@ -2857,35 +2870,13 @@ FMT_CONSTEXPR inline auto check_char_specs(const format_specs& specs) -> bool {
   return true;
 }
 
-#if FMT_USE_NONTYPE_TEMPLATE_ARGS
-template <int N, typename T, typename... Args, typename Char>
-constexpr auto get_arg_index_by_name(basic_string_view<Char> name) -> int {
-  if constexpr (is_statically_named_arg<T>()) {
-    if (name == T::name) return N;
-  }
-  if constexpr (sizeof...(Args) > 0)
-    return get_arg_index_by_name<N + 1, Args...>(name);
-  (void)name;  // Workaround an MSVC bug about "unused" parameter.
-  return -1;
-}
-#endif
-
-template <typename... Args, typename Char>
-FMT_CONSTEXPR auto get_arg_index_by_name(basic_string_view<Char> name) -> int {
-#if FMT_USE_NONTYPE_TEMPLATE_ARGS
-  if constexpr (sizeof...(Args) > 0)
-    return get_arg_index_by_name<0, Args...>(name);
-#endif
-  (void)name;
-  return -1;
-}
-
 template <typename Char, typename... Args> class format_string_checker {
  private:
   using parse_context_type = compile_parse_context<Char>;
   static constexpr int num_args = sizeof...(Args);
+  static constexpr int num_named_args = count_statically_named_args<Args...>();
 
-  // Format specifier parsing function.
+  // Format specifiers parsing function.
   // In the future basic_format_parse_context will replace compile_parse_context
   // here and will use is_constant_evaluated and downcasting to access the data
   // needed for compile-time checks: https://godbolt.org/z/GvWzcTjh1.
@@ -2894,12 +2885,21 @@ template <typename Char, typename... Args> class format_string_checker {
   type types_[num_args > 0 ? static_cast<size_t>(num_args) : 1];
   parse_context_type context_;
   parse_func parse_funcs_[num_args > 0 ? static_cast<size_t>(num_args) : 1];
+  named_arg_info<Char> named_args_[num_named_args > 0 ? num_named_args : 1];
 
  public:
   explicit FMT_CONSTEXPR format_string_checker(basic_string_view<Char> fmt)
       : types_{mapped_type_constant<Args, buffered_context<Char>>::value...},
         context_(fmt, num_args, types_),
-        parse_funcs_{&parse_format_specs<Args, parse_context_type>...} {}
+        parse_funcs_{&parse_format_specs<Args, parse_context_type>...},
+        named_args_{} {
+    using dummy = int[];
+    int arg_index = 0, named_arg_index = 0;
+    (void)dummy{0, (init_statically_named_arg<Args>(named_args_, arg_index,
+                                                    named_arg_index),
+                    0)...};
+    ignore_unused(arg_index, named_arg_index);
+  }
 
   FMT_CONSTEXPR void on_text(const Char*, const Char*) {}
 
@@ -2908,15 +2908,11 @@ template <typename Char, typename... Args> class format_string_checker {
     return context_.check_arg_id(id), id;
   }
   FMT_CONSTEXPR auto on_arg_id(basic_string_view<Char> id) -> int {
-#if FMT_USE_NONTYPE_TEMPLATE_ARGS
-    auto index = get_arg_index_by_name<Args...>(id);
-    if (index < 0) on_error("named argument is not found");
-    return index;
-#else
-    (void)id;
-    on_error("compile-time checks for named arguments require C++20 support");
-    return 0;
-#endif
+    for (int i = 0; i < num_named_args; ++i) {
+      if (named_args_[i].name == id) return i;
+    }
+    on_error("named argument is not found");
+    return -1;
   }
 
   FMT_CONSTEXPR void on_replacement_field(int id, const Char* begin) {
@@ -2937,23 +2933,6 @@ template <typename Char, typename... Args> class format_string_checker {
 
 // A base class for compile-time strings.
 struct compile_string {};
-
-// Use vformat_args and avoid type_identity to keep symbols short.
-template <typename Char = char> struct vformat_args {
-  using type = basic_format_args<buffered_context<Char>>;
-};
-template <> struct vformat_args<char> {
-  using type = format_args;
-};
-
-template <typename Char>
-void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
-                typename vformat_args<Char>::type args, locale_ref loc = {});
-
-FMT_API void vprint_mojibake(FILE*, string_view, format_args, bool = false);
-#ifndef _WIN32
-inline void vprint_mojibake(FILE*, string_view, format_args, bool) {}
-#endif
 
 // TYPE can be different from type_constant<T>, e.g. for __float128.
 template <typename T, typename Char, type TYPE> struct native_formatter {
@@ -2982,6 +2961,23 @@ template <typename T, typename Char, type TYPE> struct native_formatter {
   FMT_CONSTEXPR auto format(const T& val, FormatContext& ctx) const
       -> decltype(ctx.out());
 };
+
+// Use vformat_args and avoid type_identity to keep symbols short.
+template <typename Char = char> struct vformat_args {
+  using type = basic_format_args<buffered_context<Char>>;
+};
+template <> struct vformat_args<char> {
+  using type = format_args;
+};
+
+template <typename Char>
+void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
+                typename vformat_args<Char>::type args, locale_ref loc = {});
+
+FMT_API void vprint_mojibake(FILE*, string_view, format_args, bool = false);
+#ifndef _WIN32
+inline void vprint_mojibake(FILE*, string_view, format_args, bool) {}
+#endif
 }  // namespace detail
 
 FMT_BEGIN_EXPORT
