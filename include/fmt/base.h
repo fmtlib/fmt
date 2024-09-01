@@ -2955,6 +2955,7 @@ FMT_API void vprint_mojibake(FILE*, string_view, format_args, bool = false);
 inline void vprint_mojibake(FILE*, string_view, format_args, bool) {}
 #endif
 
+// TYPE can be different from type_constant<T>, e.g. for __float128.
 template <typename T, typename Char, type TYPE> struct native_formatter {
  private:
   dynamic_format_specs<Char> specs_;
