@@ -153,14 +153,6 @@
 #  define FMT_USE_NONTYPE_TEMPLATE_ARGS 0
 #endif
 
-#ifdef FMT_USE_CONCEPTS
-// Use the provided definition.
-#elif defined(__cpp_concepts)
-#  define FMT_USE_CONCEPTS 1
-#else
-#  define FMT_USE_CONCEPTS 0
-#endif
-
 // Check if exceptions are disabled.
 #ifdef FMT_EXCEPTIONS
 // Use the provided definition.
@@ -375,15 +367,6 @@ struct monostate {
 #  define FMT_ENABLE_IF(...)
 #else
 #  define FMT_ENABLE_IF(...) fmt::enable_if_t<(__VA_ARGS__), int> = 0
-#endif
-
-// This is defined in base.h instead of format.h to avoid injecting in std.
-// It is a template to avoid undesirable implicit conversions to std::byte.
-#ifdef __cpp_lib_byte
-template <typename T, FMT_ENABLE_IF(std::is_same<T, std::byte>::value)>
-inline auto format_as(T b) -> unsigned char {
-  return static_cast<unsigned char>(b);
-}
 #endif
 
 namespace detail {
@@ -1804,6 +1787,20 @@ FMT_EXPORT template <typename Context> class basic_format_arg;
 FMT_EXPORT template <typename Context> class basic_format_args;
 FMT_EXPORT template <typename Context> class dynamic_format_arg_store;
 
+class context;
+template <typename OutputIt, typename Char> class generic_context;
+
+template <typename T> class basic_appender;
+
+template <typename Char>
+using buffered_context =
+    conditional_t<std::is_same<Char, char>::value, context,
+                  generic_context<basic_appender<Char>, Char>>;
+
+// A separate type would result in shorter symbols but break ABI compatibility
+// between clang and gcc on ARM (#1919).
+using format_args = basic_format_args<context>;
+
 // A formatter for objects of type T.
 FMT_EXPORT
 template <typename T, typename Char = char, typename Enable = void>
@@ -1817,6 +1814,15 @@ struct formatter {
 template <typename T, typename Context>
 using has_formatter =
     std::is_constructible<typename Context::template formatter_type<T>>;
+
+// This is defined in base.h instead of format.h to avoid injecting in std.
+// It is a template to avoid undesirable implicit conversions to std::byte.
+#ifdef __cpp_lib_byte
+template <typename T, FMT_ENABLE_IF(std::is_same<T, std::byte>::value)>
+inline auto format_as(T b) -> unsigned char {
+  return static_cast<unsigned char>(b);
+}
+#endif
 
 // An output iterator that appends to a buffer. It is used instead of
 // back_insert_iterator to reduce symbol sizes and avoid <iterator> dependency.
@@ -2260,10 +2266,6 @@ struct is_output_iterator<
     void_t<decltype(*std::declval<decay_t<It>&>()++ = std::declval<T>())>>
     : std::true_type {};
 
-#ifndef FMT_OPTIMIZE_SIZE
-#  define FMT_OPTIMIZE_SIZE 0
-#endif
-
 #ifdef FMT_USE_LOCALE
 // Use the provided definition.
 #elif defined(FMT_STATIC_THOUSANDS_SEPARATOR)
@@ -2693,17 +2695,6 @@ class context {
 
   FMT_CONSTEXPR auto locale() -> detail::locale_ref { return loc_; }
 };
-
-template <typename OutputIt, typename Char> class generic_context;
-
-template <typename Char>
-using buffered_context =
-    conditional_t<std::is_same<Char, char>::value, context,
-                  generic_context<basic_appender<Char>, Char>>;
-
-// A separate type would result in shorter symbols but break ABI compatibility
-// between clang and gcc on ARM (#1919).
-using format_args = basic_format_args<context>;
 FMT_END_EXPORT
 
 namespace detail {
@@ -2925,7 +2916,7 @@ using is_formattable = bool_constant<
                      decltype(detail::arg_mapper<buffered_context<Char>>::map(
                          std::declval<T&>()))>::value>;
 
-#if FMT_USE_CONCEPTS
+#ifdef __cpp_concepts
 template <typename T, typename Char = char>
 concept formattable = is_formattable<remove_reference_t<T>, Char>::value;
 #endif

@@ -146,6 +146,10 @@ FMT_END_NAMESPACE
 #  endif
 #endif
 
+#ifndef FMT_OPTIMIZE_SIZE
+#  define FMT_OPTIMIZE_SIZE 0
+#endif
+
 // Defining FMT_REDUCE_INT_INSTANTIATIONS to 1, will reduce the number of
 // integer formatter template instantiations to just one by only using the
 // largest integer type. This results in a reduction in binary size but will

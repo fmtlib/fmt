@@ -707,8 +707,8 @@ TEST(base_test, is_formattable) {
   static_assert(!fmt::is_formattable<unformattable_scoped_enum>::value, "");
 }
 
-#if FMT_USE_CONCEPTS
-TEST(base_test, formattable) {
+#ifdef __cpp_concepts
+TEST(base_test, formattable_concept) {
   static_assert(fmt::formattable<char>);
   static_assert(fmt::formattable<char&>);
   static_assert(fmt::formattable<char&&>);
