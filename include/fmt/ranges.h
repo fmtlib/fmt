@@ -369,9 +369,8 @@ template <typename Context> struct range_mapper {
   }
   template <typename T,
             FMT_ENABLE_IF(!has_formatter<remove_cvref_t<T>, Context>::value)>
-  static auto map(T&& value)
-      -> decltype(mapper().map(static_cast<T&&>(value))) {
-    return mapper().map(static_cast<T&&>(value));
+  static auto map(T&& value) -> decltype(mapper::map(static_cast<T&&>(value))) {
+    return mapper::map(static_cast<T&&>(value));
   }
 };
 

@@ -1473,7 +1473,7 @@ template <typename T>
 struct has_format_as
     : bool_constant<!std::is_same<format_as_t<T>, void>::value> {};
 
-#define FMT_MAP_API FMT_CONSTEXPR FMT_ALWAYS_INLINE
+#define FMT_MAP_API static FMT_CONSTEXPR FMT_ALWAYS_INLINE
 
 // Maps formatting arguments to reduce the set of types we need to work with.
 // Returns unformattable* on errors to be SFINAE-friendly.
@@ -1615,7 +1615,7 @@ template <typename Context> struct arg_mapper {
 // A type constant after applying arg_mapper<Context>.
 template <typename T, typename Context>
 using mapped_type_constant =
-    type_constant<decltype(arg_mapper<Context>().map(std::declval<const T&>())),
+    type_constant<decltype(arg_mapper<Context>::map(std::declval<const T&>())),
                   typename Context::char_type>;
 
 template <typename T, typename Context,
@@ -1697,7 +1697,7 @@ struct type_is_unformattable_for;
 
 template <bool PACKED, typename Context, typename T, FMT_ENABLE_IF(PACKED)>
 FMT_CONSTEXPR auto make_arg(T& val) -> value<Context> {
-  using arg_type = remove_cvref_t<decltype(arg_mapper<Context>().map(val))>;
+  using arg_type = remove_cvref_t<decltype(arg_mapper<Context>::map(val))>;
 
   // Use enum instead of constexpr because the latter may generate code.
   enum {
@@ -1725,7 +1725,7 @@ FMT_CONSTEXPR auto make_arg(T& val) -> value<Context> {
       formattable,
       "Cannot format an argument. To make type T formattable provide a "
       "formatter<T> specialization: https://fmt.dev/latest/api.html#udt");
-  return {arg_mapper<Context>().map(val)};
+  return {arg_mapper<Context>::map(val)};
 }
 
 template <typename Context, typename T>
@@ -1783,7 +1783,7 @@ struct format_arg_store {
   named_arg_info<typename Context::char_type> named_args[NUM_NAMED_ARGS];
 
   template <typename... T>
-  FMT_MAP_API format_arg_store(T&... values)
+  FMT_CONSTEXPR FMT_ALWAYS_INLINE format_arg_store(T&... values)
       : args{{named_args, NUM_NAMED_ARGS},
              make_arg<NUM_ARGS <= max_packed_args, Context>(values)...} {
     using dummy = int[];
@@ -2088,9 +2088,10 @@ template <typename Char>
 using buffered_context = basic_format_context<basic_appender<Char>, Char>;
 
 template <typename T, typename Char = char>
-using is_formattable = bool_constant<!std::is_base_of<
-    detail::unformattable, decltype(detail::arg_mapper<buffered_context<Char>>()
-                                        .map(std::declval<T&>()))>::value>;
+using is_formattable = bool_constant<
+    !std::is_base_of<detail::unformattable,
+                     decltype(detail::arg_mapper<buffered_context<Char>>::map(
+                         std::declval<T&>()))>::value>;
 
 #if FMT_USE_CONCEPTS
 template <typename T, typename Char = char>
@@ -2843,13 +2844,13 @@ FMT_VISIBILITY("hidden")  // Suppress an ld warning on macOS (#3769).
 FMT_CONSTEXPR auto parse_format_specs(parse_context<Char>& ctx)
     -> decltype(ctx.begin()) {
   using mapper = arg_mapper<buffered_context<Char>>;
-  using mapped = remove_cvref_t<decltype(mapper().map(std::declval<T&>()))>;
+  using mapped_type = remove_cvref_t<decltype(mapper::map(std::declval<T&>()))>;
 #if defined(__cpp_if_constexpr)
-  if constexpr (std::is_default_constructible<formatter<mapped, Char>>())
-    return formatter<mapped, Char>().parse(ctx);
-  return ctx.begin(); // Ignore the error - it is reported by make_format_args.
+  if constexpr (std::is_default_constructible<formatter<mapped_type, Char>>())
+    return formatter<mapped_type, Char>().parse(ctx);
+  return ctx.begin();  // Ignore the error - it is reported by make_format_args.
 #else
-  return formatter<mapped, Char>().parse(ctx);
+  return formatter<mapped_type, Char>().parse(ctx);
 #endif
 }
 
