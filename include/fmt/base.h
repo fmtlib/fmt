@@ -216,15 +216,15 @@
 #  define FMT_DEPRECATED /* deprecated */
 #endif
 
-#ifndef FMT_NO_UNIQUE_ADDRESS
-#  if FMT_CPLUSPLUS >= 202002L
-#    if FMT_HAS_CPP_ATTRIBUTE(no_unique_address)
-#      define FMT_NO_UNIQUE_ADDRESS [[no_unique_address]]
+#ifdef FMT_NO_UNIQUE_ADDRESS
+// Use the provided definition.
+#elif FMT_CPLUSPLUS < 202002L
+// Not supported.
+#elif FMT_HAS_CPP_ATTRIBUTE(no_unique_address)
+#  define FMT_NO_UNIQUE_ADDRESS [[no_unique_address]]
 // VS2019 v16.10 and later except clang-cl (https://reviews.llvm.org/D110485).
-#    elif (FMT_MSC_VERSION >= 1929) && !FMT_CLANG_VERSION
-#      define FMT_NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
-#    endif
-#  endif
+#elif FMT_MSC_VERSION >= 1929 && !FMT_CLANG_VERSION
+#  define FMT_NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
 #endif
 #ifndef FMT_NO_UNIQUE_ADDRESS
 #  define FMT_NO_UNIQUE_ADDRESS
@@ -633,13 +633,30 @@ template <typename Char> class basic_string_view {
   }
 };
 
-FMT_EXPORT
-using string_view = basic_string_view<char>;
+FMT_EXPORT using string_view = basic_string_view<char>;
 
 /// Specifies if `T` is a character type. Can be specialized by users.
-FMT_EXPORT
 template <typename T> struct is_char : std::false_type {};
 template <> struct is_char<char> : std::true_type {};
+
+template <typename T> class basic_appender;
+
+class context;
+template <typename OutputIt, typename Char> class generic_context;
+
+template <typename Char>
+using buffered_context =
+    conditional_t<std::is_same<Char, char>::value, context,
+                  generic_context<basic_appender<Char>, Char>>;
+
+template <typename Context> struct arg_mapper;
+FMT_EXPORT template <typename Context> class basic_format_arg;
+FMT_EXPORT template <typename Context> class basic_format_args;
+FMT_EXPORT template <typename Context> class dynamic_format_arg_store;
+
+// A separate type would result in shorter symbols but break ABI compatibility
+// between clang and gcc on ARM (#1919).
+using format_args = basic_format_args<context>;
 
 namespace detail {
 
@@ -747,6 +764,47 @@ enum {
   cstring_set = set(type::cstring_type),
   pointer_set = set(type::pointer_type)
 };
+
+struct view {};
+
+template <typename Char, typename T> struct named_arg : view {
+  const Char* name;
+  const T& value;
+  named_arg(const Char* n, const T& v) : name(n), value(v) {}
+};
+
+template <typename Char> struct named_arg_info {
+  const Char* name;
+  int id;
+};
+
+template <typename T> struct is_named_arg : std::false_type {};
+template <typename T> struct is_statically_named_arg : std::false_type {};
+
+template <typename Char, typename T>
+struct is_named_arg<named_arg<Char, T>> : std::true_type {};
+
+template <typename Char, typename T>
+auto unwrap_named_arg(const named_arg<Char, T>& arg) -> const T& {
+  return arg.value;
+}
+template <typename T,
+          FMT_ENABLE_IF(!is_named_arg<remove_reference_t<T>>::value)>
+auto unwrap_named_arg(T&& value) -> T&& {
+  return value;
+}
+
+template <bool B = false> constexpr auto count() -> size_t { return B ? 1 : 0; }
+template <bool B1, bool B2, bool... Tail> constexpr auto count() -> size_t {
+  return (B1 ? 1 : 0) + count<B2, Tail...>();
+}
+
+template <typename... Args> constexpr auto count_named_args() -> size_t {
+  return count<is_named_arg<Args>::value...>();
+}
+template <typename... Args> constexpr auto count_static_named_args() -> size_t {
+  return count<is_statically_named_arg<Args>::value...>();
+}
 }  // namespace detail
 
 /// Reports a format error at compile time or, via a `format_error` exception,
@@ -1768,9 +1826,8 @@ FMT_CONSTEXPR void parse_context<Char>::do_check_arg_id(int id) {
   // formatting has its own validation.
   if (detail::is_constant_evaluated() &&
       (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 1200)) {
-    using context = detail::compile_parse_context<Char>;
-    if (id >= static_cast<context*>(this)->num_args())
-      report_error("argument not found");
+    auto ctx = static_cast<detail::compile_parse_context<Char>*>(this);
+    if (id >= ctx->num_args()) report_error("argument not found");
   }
 }
 
@@ -1778,28 +1835,10 @@ template <typename Char>
 FMT_CONSTEXPR void parse_context<Char>::check_dynamic_spec(int arg_id) {
   if (detail::is_constant_evaluated() &&
       (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 1200)) {
-    using context = detail::compile_parse_context<Char>;
-    static_cast<context*>(this)->check_dynamic_spec(arg_id);
+    auto ctx = static_cast<detail::compile_parse_context<Char>*>(this);
+    ctx->check_dynamic_spec(arg_id);
   }
 }
-
-FMT_EXPORT template <typename Context> class basic_format_arg;
-FMT_EXPORT template <typename Context> class basic_format_args;
-FMT_EXPORT template <typename Context> class dynamic_format_arg_store;
-
-class context;
-template <typename OutputIt, typename Char> class generic_context;
-
-template <typename T> class basic_appender;
-
-template <typename Char>
-using buffered_context =
-    conditional_t<std::is_same<Char, char>::value, context,
-                  generic_context<basic_appender<Char>, Char>>;
-
-// A separate type would result in shorter symbols but break ABI compatibility
-// between clang and gcc on ARM (#1919).
-using format_args = basic_format_args<context>;
 
 // A formatter for objects of type T.
 FMT_EXPORT
@@ -1927,47 +1966,6 @@ auto get_iterator(Buf& buf, OutputIt) -> decltype(buf.out()) {
 template <typename T, typename OutputIt>
 auto get_iterator(buffer<T>&, OutputIt out) -> OutputIt {
   return out;
-}
-
-struct view {};
-
-template <typename Char, typename T> struct named_arg : view {
-  const Char* name;
-  const T& value;
-  named_arg(const Char* n, const T& v) : name(n), value(v) {}
-};
-
-template <typename Char> struct named_arg_info {
-  const Char* name;
-  int id;
-};
-
-template <typename T> struct is_named_arg : std::false_type {};
-template <typename T> struct is_statically_named_arg : std::false_type {};
-
-template <typename Char, typename T>
-struct is_named_arg<named_arg<Char, T>> : std::true_type {};
-
-template <typename Char, typename T>
-auto unwrap_named_arg(const named_arg<Char, T>& arg) -> const T& {
-  return arg.value;
-}
-template <typename T,
-          FMT_ENABLE_IF(!is_named_arg<remove_reference_t<T>>::value)>
-auto unwrap_named_arg(T&& value) -> T&& {
-  return value;
-}
-
-template <bool B = false> constexpr auto count() -> size_t { return B ? 1 : 0; }
-template <bool B1, bool B2, bool... Tail> constexpr auto count() -> size_t {
-  return (B1 ? 1 : 0) + count<B2, Tail...>();
-}
-
-template <typename... Args> constexpr auto count_named_args() -> size_t {
-  return count<is_named_arg<Args>::value...>();
-}
-template <typename... Args> constexpr auto count_static_named_args() -> size_t {
-  return count<is_statically_named_arg<Args>::value...>();
 }
 
 struct unformattable {};
