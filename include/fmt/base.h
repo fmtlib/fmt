@@ -2870,11 +2870,12 @@ FMT_CONSTEXPR inline auto check_char_specs(const format_specs& specs) -> bool {
   return true;
 }
 
-template <typename Char, typename... Args> class format_string_checker {
+template <typename... T> struct arg_pack {};
+
+template <typename Char, int NUM_ARGS, int NUM_NAMED_ARGS>
+class format_string_checker {
  private:
   using parse_context_type = compile_parse_context<Char>;
-  static constexpr int num_args = sizeof...(Args);
-  static constexpr int num_named_args = count_statically_named_args<Args...>();
 
   // Format specifiers parsing function.
   // In the future basic_format_parse_context will replace compile_parse_context
@@ -2882,21 +2883,23 @@ template <typename Char, typename... Args> class format_string_checker {
   // needed for compile-time checks: https://godbolt.org/z/GvWzcTjh1.
   using parse_func = const Char* (*)(parse_context_type&);
 
-  type types_[num_args > 0 ? static_cast<size_t>(num_args) : 1];
+  type types_[NUM_ARGS > 0 ? NUM_ARGS : 1];
   parse_context_type context_;
-  parse_func parse_funcs_[num_args > 0 ? static_cast<size_t>(num_args) : 1];
-  named_arg_info<Char> named_args_[num_named_args > 0 ? num_named_args : 1];
+  parse_func parse_funcs_[NUM_ARGS > 0 ? NUM_ARGS : 1];
+  named_arg_info<Char> named_args_[NUM_NAMED_ARGS > 0 ? NUM_NAMED_ARGS : 1];
 
  public:
-  explicit FMT_CONSTEXPR format_string_checker(basic_string_view<Char> fmt)
-      : types_{mapped_type_constant<Args, buffered_context<Char>>::value...},
-        context_(fmt, num_args, types_),
-        parse_funcs_{&parse_format_specs<Args, parse_context_type>...},
+  template <typename... T>
+  explicit FMT_CONSTEXPR format_string_checker(basic_string_view<Char> fmt,
+                                               arg_pack<T...>)
+      : types_{mapped_type_constant<T, buffered_context<Char>>::value...},
+        context_(fmt, NUM_ARGS, types_),
+        parse_funcs_{&parse_format_specs<T, parse_context_type>...},
         named_args_{} {
     using dummy = int[];
     int arg_index = 0, named_arg_index = 0;
-    (void)dummy{0, (init_statically_named_arg<Args>(named_args_, arg_index,
-                                                    named_arg_index),
+    (void)dummy{0, (init_statically_named_arg<T>(named_args_, arg_index,
+                                                 named_arg_index),
                     0)...};
     ignore_unused(arg_index, named_arg_index);
   }
@@ -2908,7 +2911,7 @@ template <typename Char, typename... Args> class format_string_checker {
     return context_.check_arg_id(id), id;
   }
   FMT_CONSTEXPR auto on_arg_id(basic_string_view<Char> id) -> int {
-    for (int i = 0; i < num_named_args; ++i) {
+    for (int i = 0; i < NUM_NAMED_ARGS; ++i) {
       if (named_args_[i].name == id) return i;
     }
     on_error("named argument is not found");
@@ -2923,7 +2926,7 @@ template <typename Char, typename... Args> class format_string_checker {
       -> const Char* {
     context_.advance_to(begin);
     // id >= 0 check is a workaround for gcc 10 bug (#2065).
-    return id >= 0 && id < num_args ? parse_funcs_[id](context_) : begin;
+    return id >= 0 && id < NUM_ARGS ? parse_funcs_[id](context_) : begin;
   }
 
   FMT_NORETURN FMT_CONSTEXPR void on_error(const char* message) {
@@ -3009,7 +3012,9 @@ template <typename Char, typename... Args> class basic_format_string {
  private:
   basic_string_view<Char> str_;
 
-  using checker = detail::format_string_checker<Char, remove_cvref_t<Args>...>;
+  using checker = detail::format_string_checker<
+      Char, static_cast<int>(sizeof...(Args)),
+      detail::count_statically_named_args<Args...>()>;
 
   FMT_CONSTEXPR FMT_ALWAYS_INLINE static void check(
       basic_string_view<Char> fmt) {
@@ -3019,7 +3024,7 @@ template <typename Char, typename... Args> class basic_format_string {
                std::is_reference<Args>::value)...>() == 0,
         "passing views as lvalues is disallowed");
     if (count_named_args<Args...>() == count_statically_named_args<Args...>())
-      parse_format_string(fmt, checker(fmt));
+      parse_format_string(fmt, checker(fmt, arg_pack<Args...>()));
   }
 
  public:
