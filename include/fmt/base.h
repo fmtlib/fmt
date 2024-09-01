@@ -1475,9 +1475,8 @@ struct has_format_as
 
 #define FMT_MAP_API FMT_CONSTEXPR FMT_ALWAYS_INLINE
 
-// Maps formatting arguments to core types.
-// arg_mapper reports errors by returning unformattable instead of using
-// static_assert because it's used in the is_formattable trait.
+// Maps formatting arguments to reduce the set of types we need to work with.
+// Returns unformattable* on errors to be SFINAE-friendly.
 template <typename Context> struct arg_mapper {
   using char_type = typename Context::char_type;
 
@@ -2843,19 +2842,14 @@ template <typename T, typename Char>
 FMT_VISIBILITY("hidden")  // Suppress an ld warning on macOS (#3769).
 FMT_CONSTEXPR auto parse_format_specs(parse_context<Char>& ctx)
     -> decltype(ctx.begin()) {
-  using context = buffered_context<Char>;
-  using mapped_type =
-      remove_cvref_t<decltype(arg_mapper<context>().map(std::declval<T&>()))>;
+  using mapper = arg_mapper<buffered_context<Char>>;
+  using mapped = remove_cvref_t<decltype(mapper().map(std::declval<T&>()))>;
 #if defined(__cpp_if_constexpr)
-  if constexpr (std::is_default_constructible<
-                    formatter<mapped_type, Char>>::value) {
-    return formatter<mapped_type, Char>().parse(ctx);
-  } else {
-    type_is_unformattable_for<T, Char> _;
-    return ctx.begin();
-  }
+  if constexpr (std::is_default_constructible<formatter<mapped, Char>>())
+    return formatter<mapped, Char>().parse(ctx);
+  return ctx.begin(); // Ignore the error - it is reported by make_format_args.
 #else
-  return formatter<mapped_type, Char>().parse(ctx);
+  return formatter<mapped, Char>().parse(ctx);
 #endif
 }
 
