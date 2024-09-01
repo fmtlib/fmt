@@ -1341,8 +1341,7 @@ template <bool B1, bool B2, bool... Tail> constexpr auto count() -> size_t {
 template <typename... Args> constexpr auto count_named_args() -> size_t {
   return count<is_named_arg<Args>::value...>();
 }
-template <typename... Args>
-constexpr auto count_statically_named_args() -> size_t {
+template <typename... Args> constexpr auto count_static_named_args() -> size_t {
   return count<is_statically_named_arg<Args>::value...>();
 }
 
@@ -2828,12 +2827,19 @@ FMT_CONSTEXPR void parse_format_string(basic_string_view<Char> format_str,
   }
 }
 
-template <typename T, bool = is_named_arg<T>::value> struct strip_named_arg {
-  using type = T;
-};
-template <typename T> struct strip_named_arg<T, true> {
-  using type = remove_cvref_t<decltype(T::value)>;
-};
+// Checks char specs and returns true iff the presentation type is char-like.
+FMT_CONSTEXPR inline auto check_char_specs(const format_specs& specs) -> bool {
+  auto type = specs.type();
+  if (type != presentation_type::none && type != presentation_type::chr &&
+      type != presentation_type::debug) {
+    return false;
+  }
+  if (specs.align() == align::numeric || specs.sign() != sign::none ||
+      specs.alt()) {
+    report_error("invalid format specifier for char");
+  }
+  return true;
+}
 
 template <typename T, typename ParseContext>
 FMT_VISIBILITY("hidden")  // Suppress an ld warning on macOS (#3769).
@@ -2856,23 +2862,9 @@ FMT_CONSTEXPR auto parse_format_specs(ParseContext& ctx)
 #endif
 }
 
-// Checks char specs and returns true iff the presentation type is char-like.
-FMT_CONSTEXPR inline auto check_char_specs(const format_specs& specs) -> bool {
-  auto type = specs.type();
-  if (type != presentation_type::none && type != presentation_type::chr &&
-      type != presentation_type::debug) {
-    return false;
-  }
-  if (specs.align() == align::numeric || specs.sign() != sign::none ||
-      specs.alt()) {
-    report_error("invalid format specifier for char");
-  }
-  return true;
-}
-
 template <typename... T> struct arg_pack {};
 
-template <typename Char, int NUM_ARGS, int NUM_NAMED_ARGS>
+template <typename Char, int NUM_ARGS, int NUM_NAMED_ARGS, bool DYNAMIC_NAMES>
 class format_string_checker {
  private:
   using parse_context_type = compile_parse_context<Char>;
@@ -2908,13 +2900,14 @@ class format_string_checker {
 
   FMT_CONSTEXPR auto on_arg_id() -> int { return context_.next_arg_id(); }
   FMT_CONSTEXPR auto on_arg_id(int id) -> int {
-    return context_.check_arg_id(id), id;
+    context_.check_arg_id(id);
+    return id;
   }
   FMT_CONSTEXPR auto on_arg_id(basic_string_view<Char> id) -> int {
     for (int i = 0; i < NUM_NAMED_ARGS; ++i) {
-      if (named_args_[i].name == id) return i;
+      if (named_args_[i].name == id) return named_args_[i].id;
     }
-    on_error("named argument is not found");
+    if (!DYNAMIC_NAMES) on_error("argument not found");
     return -1;
   }
 
@@ -2922,11 +2915,12 @@ class format_string_checker {
     on_format_specs(id, begin, begin);  // Call parse() on empty specs.
   }
 
-  FMT_CONSTEXPR auto on_format_specs(int id, const Char* begin, const Char*)
+  FMT_CONSTEXPR auto on_format_specs(int id, const Char* begin, const Char* end)
       -> const Char* {
     context_.advance_to(begin);
-    // id >= 0 check is a workaround for gcc 10 bug (#2065).
-    return id >= 0 && id < NUM_ARGS ? parse_funcs_[id](context_) : begin;
+    if (id >= 0 && id < NUM_ARGS) return parse_funcs_[id](context_);
+    while (begin != end && *begin != '}') ++begin;
+    return begin;
   }
 
   FMT_NORETURN FMT_CONSTEXPR void on_error(const char* message) {
@@ -3012,20 +3006,14 @@ template <typename Char, typename... Args> class basic_format_string {
  private:
   basic_string_view<Char> str_;
 
-  using checker = detail::format_string_checker<
-      Char, static_cast<int>(sizeof...(Args)),
-      detail::count_statically_named_args<Args...>()>;
+  static constexpr int num_static_named_args =
+      detail::count_static_named_args<Args...>();
 
-  FMT_CONSTEXPR FMT_ALWAYS_INLINE static void check(
-      basic_string_view<Char> fmt) {
-    using namespace detail;
-    static_assert(
-        count<(std::is_base_of<view, remove_reference_t<Args>>::value &&
-               std::is_reference<Args>::value)...>() == 0,
-        "passing views as lvalues is disallowed");
-    if (count_named_args<Args...>() == count_statically_named_args<Args...>())
-      parse_format_string(fmt, checker(fmt, arg_pack<Args...>()));
-  }
+  using checker = detail::format_string_checker<
+      Char, static_cast<int>(sizeof...(Args)), num_static_named_args,
+      num_static_named_args != detail::count_named_args<Args...>()>;
+
+  using arg_pack = detail::arg_pack<Args...>;
 
  public:
   // Reports a compile-time error if S is not a valid format string for Args.
@@ -3033,7 +3021,13 @@ template <typename Char, typename... Args> class basic_format_string {
             FMT_ENABLE_IF(
                 std::is_convertible<const S&, basic_string_view<Char>>::value)>
   FMT_CONSTEVAL FMT_ALWAYS_INLINE basic_format_string(const S& s) : str_(s) {
-    if (FMT_USE_CONSTEVAL) check(s);
+    using namespace detail;
+    static_assert(
+        detail::count<(std::is_base_of<view, remove_reference_t<Args>>::value &&
+                       std::is_reference<Args>::value)...>() == 0,
+        "passing views as lvalues is disallowed");
+    if (FMT_USE_CONSTEVAL)
+      parse_format_string<true, Char>(s, checker(s, arg_pack()));
 #ifdef FMT_ENFORCE_COMPILE_STRING
     static_assert(
         FMT_USE_CONSTEVAL && sizeof(S) != 0,
@@ -3045,7 +3039,9 @@ template <typename Char, typename... Args> class basic_format_string {
             FMT_ENABLE_IF(std::is_base_of<detail::compile_string, S>::value&&
                               std::is_same<typename S::char_type, Char>::value)>
   FMT_ALWAYS_INLINE basic_format_string(const S& s) : str_(s) {
-    FMT_CONSTEXPR int ignore = (check(basic_string_view<Char>(S())), 0);
+    FMT_CONSTEXPR auto fmt = basic_string_view<Char>(S());
+    FMT_CONSTEXPR int ignore =
+        (parse_format_string(fmt, checker(fmt, arg_pack())), 0);
     detail::ignore_unused(ignore);
   }
   basic_format_string(runtime_format_string<Char> fmt) : str_(fmt.str) {}
