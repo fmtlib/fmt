@@ -2841,24 +2841,23 @@ FMT_CONSTEXPR inline auto check_char_specs(const format_specs& specs) -> bool {
   return true;
 }
 
-template <typename T, typename ParseContext>
+template <typename T, typename Char>
 FMT_VISIBILITY("hidden")  // Suppress an ld warning on macOS (#3769).
-FMT_CONSTEXPR auto parse_format_specs(ParseContext& ctx)
+FMT_CONSTEXPR auto parse_format_specs(basic_format_parse_context<Char>& ctx)
     -> decltype(ctx.begin()) {
-  using char_type = typename ParseContext::char_type;
-  using context = buffered_context<char_type>;
+  using context = buffered_context<Char>;
   using mapped_type =
       remove_cvref_t<decltype(arg_mapper<context>().map(std::declval<T&>()))>;
 #if defined(__cpp_if_constexpr)
   if constexpr (std::is_default_constructible<
-                    formatter<mapped_type, char_type>>::value) {
-    return formatter<mapped_type, char_type>().parse(ctx);
+                    formatter<mapped_type, Char>>::value) {
+    return formatter<mapped_type, Char>().parse(ctx);
   } else {
-    type_is_unformattable_for<T, char_type> _;
+    type_is_unformattable_for<T, Char> _;
     return ctx.begin();
   }
 #else
-  return formatter<mapped_type, char_type>().parse(ctx);
+  return formatter<mapped_type, Char>().parse(ctx);
 #endif
 }
 
@@ -2867,32 +2866,26 @@ template <typename... T> struct arg_pack {};
 template <typename Char, int NUM_ARGS, int NUM_NAMED_ARGS, bool DYNAMIC_NAMES>
 class format_string_checker {
  private:
-  using parse_context_type = compile_parse_context<Char>;
-
-  // Format specifiers parsing function.
-  // In the future basic_format_parse_context will replace compile_parse_context
-  // here and will use is_constant_evaluated and downcasting to access the data
-  // needed for compile-time checks: https://godbolt.org/z/GvWzcTjh1.
-  using parse_func = const Char* (*)(parse_context_type&);
-
   type types_[NUM_ARGS > 0 ? NUM_ARGS : 1];
-  parse_context_type context_;
-  parse_func parse_funcs_[NUM_ARGS > 0 ? NUM_ARGS : 1];
   named_arg_info<Char> named_args_[NUM_NAMED_ARGS > 0 ? NUM_NAMED_ARGS : 1];
+  compile_parse_context<Char> context_;
+
+  using parse_func = const Char* (*)(basic_format_parse_context<Char>&);
+  parse_func parse_funcs_[NUM_ARGS > 0 ? NUM_ARGS : 1];
 
  public:
   template <typename... T>
   explicit FMT_CONSTEXPR format_string_checker(basic_string_view<Char> fmt,
                                                arg_pack<T...>)
       : types_{mapped_type_constant<T, buffered_context<Char>>::value...},
+        named_args_{},
         context_(fmt, NUM_ARGS, types_),
-        parse_funcs_{&parse_format_specs<T, parse_context_type>...},
-        named_args_{} {
-    using dummy = int[];
+        parse_funcs_{&parse_format_specs<T, Char>...} {
+    using ignore = int[];
     int arg_index = 0, named_arg_index = 0;
-    (void)dummy{0, (init_statically_named_arg<T>(named_args_, arg_index,
-                                                 named_arg_index),
-                    0)...};
+    (void)ignore{0, (init_statically_named_arg<T>(named_args_, arg_index,
+                                                  named_arg_index),
+                     0)...};
     ignore_unused(arg_index, named_arg_index);
   }
 
