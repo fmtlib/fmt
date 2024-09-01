@@ -561,7 +561,7 @@ struct test_format_string_handler {
 
 template <size_t N> constexpr bool parse_string(const char (&s)[N]) {
   auto h = test_format_string_handler();
-  fmt::detail::parse_format_string<true>(fmt::string_view(s, N - 1), h);
+  fmt::detail::parse_format_string(fmt::string_view(s, N - 1), h);
   return !h.error;
 }
 

@@ -558,7 +558,7 @@ struct scan_handler {
 
 void vscan(detail::scan_buffer& buf, string_view fmt, scan_args args) {
   auto h = detail::scan_handler(fmt, buf, args);
-  detail::parse_format_string<false>(fmt, h);
+  detail::parse_format_string(fmt, h);
 }
 
 template <size_t I, typename... T, FMT_ENABLE_IF(I == sizeof...(T))>

@@ -2387,23 +2387,6 @@ FMT_CONSTEXPR auto code_point_length(const Char* begin) -> int {
   return static_cast<int>((0x3a55000000000000ull >> (2 * (c >> 3))) & 3) + 1;
 }
 
-// Return the result via the out param to workaround gcc bug 77539.
-template <bool IS_CONSTEXPR, typename T, typename Ptr = const T*>
-FMT_CONSTEXPR auto find(Ptr first, Ptr last, T value, Ptr& out) -> bool {
-  for (out = first; out != last; ++out) {
-    if (*out == value) return true;
-  }
-  return false;
-}
-
-template <>
-inline auto find<false, char>(const char* first, const char* last, char value,
-                              const char*& out) -> bool {
-  out =
-      static_cast<const char*>(memchr(first, value, to_unsigned(last - first)));
-  return out != nullptr;
-}
-
 // Parses the range [begin, end) as an unsigned integer. This function assumes
 // that the range is non-empty and the first character is a digit.
 template <typename Char>
@@ -2775,54 +2758,24 @@ FMT_CONSTEXPR FMT_INLINE auto parse_replacement_field(const Char* begin,
   return begin + 1;
 }
 
-template <bool IS_CONSTEXPR = true, typename Char, typename Handler>
-FMT_CONSTEXPR void parse_format_string(basic_string_view<Char> format_str,
+template <typename Char, typename Handler>
+FMT_CONSTEXPR void parse_format_string(basic_string_view<Char> fmt,
                                        Handler&& handler) {
-  auto begin = format_str.data();
-  auto end = begin + format_str.size();
-  if (FMT_OPTIMIZE_SIZE || end - begin < 32) {
-    // Use a simple loop instead of memchr for small strings.
-    const Char* p = begin;
-    while (p != end) {
-      auto c = *p++;
-      if (c == '{') {
-        handler.on_text(begin, p - 1);
-        begin = p = parse_replacement_field(p - 1, end, handler);
-      } else if (c == '}') {
-        if (p == end || *p != '}')
-          return handler.on_error("unmatched '}' in format string");
-        handler.on_text(begin, p);
-        begin = ++p;
-      }
+  auto begin = fmt.data(), end = begin + fmt.size();
+  auto p = begin;
+  while (p != end) {
+    auto c = *p++;
+    if (c == '{') {
+      handler.on_text(begin, p - 1);
+      begin = p = parse_replacement_field(p - 1, end, handler);
+    } else if (c == '}') {
+      if (p == end || *p != '}')
+        return handler.on_error("unmatched '}' in format string");
+      handler.on_text(begin, p);
+      begin = ++p;
     }
-    handler.on_text(begin, end);
-    return;
   }
-  struct writer {
-    FMT_CONSTEXPR void operator()(const Char* from, const Char* to) {
-      if (from == to) return;
-      for (;;) {
-        const Char* p = nullptr;
-        if (!find<IS_CONSTEXPR>(from, to, Char('}'), p))
-          return handler_.on_text(from, to);
-        ++p;
-        if (p == to || *p != '}')
-          return handler_.on_error("unmatched '}' in format string");
-        handler_.on_text(from, p);
-        from = p + 1;
-      }
-    }
-    Handler& handler_;
-  } write = {handler};
-  while (begin != end) {
-    // Doing two passes with memchr (one for '{' and another for '}') is up to
-    // 2.5x faster than the naive one-pass implementation on big format strings.
-    const Char* p = begin;
-    if (*begin != '{' && !find<IS_CONSTEXPR>(begin + 1, end, Char('{'), p))
-      return write(begin, end);
-    write(begin, p);
-    begin = parse_replacement_field(p, end, handler);
-  }
+  handler.on_text(begin, end);
 }
 
 // Checks char specs and returns true iff the presentation type is char-like.
@@ -2841,8 +2794,7 @@ FMT_CONSTEXPR inline auto check_char_specs(const format_specs& specs) -> bool {
 
 template <typename T, typename Char>
 FMT_VISIBILITY("hidden")  // Suppress an ld warning on macOS (#3769).
-FMT_CONSTEXPR auto parse_format_specs(parse_context<Char>& ctx)
-    -> decltype(ctx.begin()) {
+FMT_CONSTEXPR auto invoke_parse(parse_context<Char>& ctx) -> const Char* {
   using mapper = arg_mapper<buffered_context<Char>>;
   using mapped_type = remove_cvref_t<decltype(mapper::map(std::declval<T&>()))>;
 #if defined(__cpp_if_constexpr)
@@ -2863,7 +2815,7 @@ class format_string_checker {
   named_arg_info<Char> named_args_[NUM_NAMED_ARGS > 0 ? NUM_NAMED_ARGS : 1];
   compile_parse_context<Char> context_;
 
-  using parse_func = const Char* (*)(parse_context<Char>&);
+  using parse_func = auto (*)(parse_context<Char>&) -> const Char*;
   parse_func parse_funcs_[NUM_ARGS > 0 ? NUM_ARGS : 1];
 
  public:
@@ -2873,7 +2825,7 @@ class format_string_checker {
       : types_{mapped_type_constant<T, buffered_context<Char>>::value...},
         named_args_{},
         context_(fmt, NUM_ARGS, types_),
-        parse_funcs_{&parse_format_specs<T, Char>...} {
+        parse_funcs_{&invoke_parse<T, Char>...} {
     using ignore = int[];
     int arg_index = 0, named_arg_index = 0;
     (void)ignore{0, (init_statically_named_arg<T>(named_args_, arg_index,
@@ -3011,8 +2963,7 @@ template <typename Char, typename... Args> class basic_format_string {
         detail::count<(std::is_base_of<view, remove_reference_t<Args>>::value &&
                        std::is_reference<Args>::value)...>() == 0,
         "passing views as lvalues is disallowed");
-    if (FMT_USE_CONSTEVAL)
-      parse_format_string<true, Char>(s, checker(s, arg_pack()));
+    if (FMT_USE_CONSTEVAL) parse_format_string<Char>(s, checker(s, arg_pack()));
 #ifdef FMT_ENFORCE_COMPILE_STRING
     static_assert(
         FMT_USE_CONSTEVAL && sizeof(S) != 0,

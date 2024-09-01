@@ -4229,7 +4229,7 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
   auto out = basic_appender<Char>(buf);
   if (fmt.size() == 2 && equal2(fmt.data(), "{}"))
     return args.get(0).visit(default_arg_formatter<Char>{out});
-  parse_format_string<false>(
+  parse_format_string(
       fmt, format_handler<Char>{parse_context<Char>(fmt), {out, args, loc}});
 }
 
