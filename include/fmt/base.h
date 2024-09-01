@@ -782,7 +782,7 @@ using char_t = typename V::value_type;
  * You can use the `format_parse_context` type alias for `char` instead.
  */
 FMT_EXPORT
-template <typename Char> class basic_format_parse_context {
+template <typename Char> class parse_context {
  private:
   basic_string_view<Char> format_str_;
   int next_arg_id_;
@@ -793,8 +793,8 @@ template <typename Char> class basic_format_parse_context {
   using char_type = Char;
   using iterator = const Char*;
 
-  explicit constexpr basic_format_parse_context(
-      basic_string_view<Char> format_str, int next_arg_id = 0)
+  explicit constexpr parse_context(basic_string_view<Char> format_str,
+                                   int next_arg_id = 0)
       : format_str_(format_str), next_arg_id_(next_arg_id) {}
 
   /// Returns an iterator to the beginning of the format string range being
@@ -840,16 +840,17 @@ template <typename Char> class basic_format_parse_context {
 };
 
 FMT_EXPORT
-using format_parse_context = basic_format_parse_context<char>;
+template <typename Char> using basic_format_parse_context = parse_context<Char>;
+using format_parse_context = parse_context<char>;
 
 namespace detail {
 // A parse context with extra data used only in compile-time checks.
 template <typename Char>
-class compile_parse_context : public basic_format_parse_context<Char> {
+class compile_parse_context : public parse_context<Char> {
  private:
   int num_args_;
   const type* types_;
-  using base = basic_format_parse_context<Char>;
+  using base = parse_context<Char>;
 
  public:
   explicit FMT_CONSTEXPR compile_parse_context(
@@ -1160,7 +1161,7 @@ template <typename T = char> class counting_buffer : public buffer<T> {
 }  // namespace detail
 
 template <typename Char>
-FMT_CONSTEXPR void basic_format_parse_context<Char>::do_check_arg_id(int id) {
+FMT_CONSTEXPR void parse_context<Char>::do_check_arg_id(int id) {
   // Argument id is only checked at compile-time during parsing because
   // formatting has its own validation.
   if (detail::is_constant_evaluated() &&
@@ -1172,8 +1173,7 @@ FMT_CONSTEXPR void basic_format_parse_context<Char>::do_check_arg_id(int id) {
 }
 
 template <typename Char>
-FMT_CONSTEXPR void basic_format_parse_context<Char>::check_dynamic_spec(
-    int arg_id) {
+FMT_CONSTEXPR void parse_context<Char>::check_dynamic_spec(int arg_id) {
   if (detail::is_constant_evaluated() &&
       (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 1200)) {
     using context = detail::compile_parse_context<Char>;
@@ -2047,7 +2047,7 @@ class context {
 
   using iterator = appender;
   using format_arg = basic_format_arg<context>;
-  using parse_context_type = basic_format_parse_context<char>;
+  using parse_context_type = parse_context<char>;
   template <typename T> using formatter_type = formatter<T, char>;
   enum { builtin_types = FMT_BUILTIN_TYPES };
 
@@ -2474,7 +2474,7 @@ FMT_CONSTEXPR auto parse_arg_id(const Char* begin, const Char* end,
 }
 
 template <typename Char> struct dynamic_spec_handler {
-  basic_format_parse_context<Char>& ctx;
+  parse_context<Char>& ctx;
   arg_ref<Char>& ref;
   arg_id_kind& kind;
 
@@ -2500,7 +2500,7 @@ template <typename Char> struct parse_dynamic_spec_result {
 template <typename Char>
 FMT_CONSTEXPR auto parse_dynamic_spec(const Char* begin, const Char* end,
                                       int& value, arg_ref<Char>& ref,
-                                      basic_format_parse_context<Char>& ctx)
+                                      parse_context<Char>& ctx)
     -> parse_dynamic_spec_result<Char> {
   FMT_ASSERT(begin != end, "");
   auto kind = arg_id_kind::none;
@@ -2533,8 +2533,7 @@ FMT_CONSTEXPR auto parse_dynamic_spec(const Char* begin, const Char* end,
 template <typename Char>
 FMT_CONSTEXPR auto parse_width(const Char* begin, const Char* end,
                                format_specs& specs, arg_ref<Char>& width_ref,
-                               basic_format_parse_context<Char>& ctx)
-    -> const Char* {
+                               parse_context<Char>& ctx) -> const Char* {
   auto result = parse_dynamic_spec(begin, end, specs.width, width_ref, ctx);
   specs.set_dynamic_width(result.kind);
   return result.end;
@@ -2544,8 +2543,7 @@ template <typename Char>
 FMT_CONSTEXPR auto parse_precision(const Char* begin, const Char* end,
                                    format_specs& specs,
                                    arg_ref<Char>& precision_ref,
-                                   basic_format_parse_context<Char>& ctx)
-    -> const Char* {
+                                   parse_context<Char>& ctx) -> const Char* {
   ++begin;
   if (begin == end) {
     report_error("invalid precision");
@@ -2563,8 +2561,8 @@ enum class state { start, align, sign, hash, zero, width, precision, locale };
 template <typename Char>
 FMT_CONSTEXPR auto parse_format_specs(const Char* begin, const Char* end,
                                       dynamic_format_specs<Char>& specs,
-                                      basic_format_parse_context<Char>& ctx,
-                                      type arg_type) -> const Char* {
+                                      parse_context<Char>& ctx, type arg_type)
+    -> const Char* {
   auto c = '\0';
   if (end - begin > 1) {
     auto next = to_ascii(begin[1]);
@@ -2843,7 +2841,7 @@ FMT_CONSTEXPR inline auto check_char_specs(const format_specs& specs) -> bool {
 
 template <typename T, typename Char>
 FMT_VISIBILITY("hidden")  // Suppress an ld warning on macOS (#3769).
-FMT_CONSTEXPR auto parse_format_specs(basic_format_parse_context<Char>& ctx)
+FMT_CONSTEXPR auto parse_format_specs(parse_context<Char>& ctx)
     -> decltype(ctx.begin()) {
   using context = buffered_context<Char>;
   using mapped_type =
@@ -2870,7 +2868,7 @@ class format_string_checker {
   named_arg_info<Char> named_args_[NUM_NAMED_ARGS > 0 ? NUM_NAMED_ARGS : 1];
   compile_parse_context<Char> context_;
 
-  using parse_func = const Char* (*)(basic_format_parse_context<Char>&);
+  using parse_func = const Char* (*)(parse_context<Char>&);
   parse_func parse_funcs_[NUM_ARGS > 0 ? NUM_ARGS : 1];
 
  public:
@@ -2932,8 +2930,7 @@ template <typename T, typename Char, type TYPE> struct native_formatter {
  public:
   using nonlocking = void;
 
-  template <typename ParseContext>
-  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> const Char* {
+  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     if (ctx.begin() == ctx.end() || *ctx.begin() == '}') return ctx.begin();
     auto end = parse_format_specs(ctx.begin(), ctx.end(), specs_, ctx, TYPE);
     if (const_check(TYPE == type::char_type)) check_char_specs(specs_);

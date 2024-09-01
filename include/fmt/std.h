@@ -508,8 +508,7 @@ template <typename Char>
 struct formatter<std::type_info, Char  // DEPRECATED! Mixing code unit types.
                  > {
  public:
-  FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
-      -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> decltype(ctx.begin()) {
     return ctx.begin();
   }
 
@@ -530,8 +529,7 @@ struct formatter<
   bool with_typename_ = false;
 
  public:
-  FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
-      -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> decltype(ctx.begin()) {
     auto it = ctx.begin();
     auto end = ctx.end();
     if (it == end || *it == '}') return it;
@@ -659,8 +657,7 @@ template <typename T, typename Char> struct formatter<std::complex<T>, Char> {
   }
 
  public:
-  FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
-      -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> decltype(ctx.begin()) {
     if (ctx.begin() == ctx.end() || *ctx.begin() == '}') return ctx.begin();
     return parse_format_specs(ctx.begin(), ctx.end(), specs_, ctx,
                               detail::type_constant<T, Char>::value);

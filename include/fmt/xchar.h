@@ -59,7 +59,7 @@ inline auto write_loc(basic_appender<wchar_t> out, loc_value value,
 FMT_BEGIN_EXPORT
 
 using wstring_view = basic_string_view<wchar_t>;
-using wformat_parse_context = basic_format_parse_context<wchar_t>;
+using wformat_parse_context = parse_context<wchar_t>;
 using wformat_context = buffered_context<wchar_t>;
 using wformat_args = basic_format_args<wformat_context>;
 using wmemory_buffer = basic_memory_buffer<wchar_t>;

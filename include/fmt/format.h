@@ -1039,7 +1039,7 @@ template <typename OutputIt, typename Char> class generic_context {
  public:
   using char_type = Char;
   using iterator = OutputIt;
-  using parse_context_type = basic_format_parse_context<Char>;
+  using parse_context_type = parse_context<Char>;
   template <typename T> using formatter_type = formatter<T, Char>;
   enum { builtin_types = FMT_BUILTIN_TYPES };
 
@@ -3693,7 +3693,7 @@ template <typename Char> struct default_arg_formatter {
 
   void operator()(typename basic_format_arg<context>::handle h) {
     // Use a null locale since the default format must be unlocalized.
-    auto parse_ctx = basic_format_parse_context<Char>({});
+    auto parse_ctx = parse_context<Char>({});
     auto format_ctx = context(out, {}, {});
     h.format(parse_ctx, format_ctx);
   }
@@ -4099,8 +4099,7 @@ template <typename T, typename Char = char> struct nested_formatter {
  public:
   constexpr nested_formatter() : width_(0) {}
 
-  FMT_CONSTEXPR auto parse(basic_format_parse_context<Char>& ctx)
-      -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> decltype(ctx.begin()) {
     auto it = ctx.begin(), end = ctx.end();
     if (it == end) return it;
     auto specs = format_specs();
@@ -4179,46 +4178,45 @@ FMT_END_EXPORT
 namespace detail {
 
 template <typename Char> struct format_handler {
-  basic_format_parse_context<Char> parse_context;
-  buffered_context<Char> context;
+  parse_context<Char> parse_ctx;
+  buffered_context<Char> ctx;
 
   void on_text(const Char* begin, const Char* end) {
-    copy_noinline<Char>(begin, end, context.out());
+    copy_noinline<Char>(begin, end, ctx.out());
   }
 
-  FMT_CONSTEXPR auto on_arg_id() -> int { return parse_context.next_arg_id(); }
+  FMT_CONSTEXPR auto on_arg_id() -> int { return parse_ctx.next_arg_id(); }
   FMT_CONSTEXPR auto on_arg_id(int id) -> int {
-    parse_context.check_arg_id(id);
+    parse_ctx.check_arg_id(id);
     return id;
   }
   FMT_CONSTEXPR auto on_arg_id(basic_string_view<Char> id) -> int {
-    parse_context.check_arg_id(id);
-    int arg_id = context.arg_id(id);
+    parse_ctx.check_arg_id(id);
+    int arg_id = ctx.arg_id(id);
     if (arg_id < 0) report_error("argument not found");
     return arg_id;
   }
 
   FMT_INLINE void on_replacement_field(int id, const Char*) {
-    context.arg(id).visit(default_arg_formatter<Char>{context.out()});
+    ctx.arg(id).visit(default_arg_formatter<Char>{ctx.out()});
   }
 
   auto on_format_specs(int id, const Char* begin, const Char* end)
       -> const Char* {
-    auto arg = get_arg(context, id);
+    auto arg = get_arg(ctx, id);
     // Not using a visitor for custom types gives better codegen.
-    if (arg.format_custom(begin, parse_context, context))
-      return parse_context.begin();
+    if (arg.format_custom(begin, parse_ctx, ctx)) return parse_ctx.begin();
 
     auto specs = dynamic_format_specs<Char>();
-    begin = parse_format_specs(begin, end, specs, parse_context, arg.type());
+    begin = parse_format_specs(begin, end, specs, parse_ctx, arg.type());
     if (specs.dynamic()) {
       handle_dynamic_spec(specs.dynamic_width(), specs.width, specs.width_ref,
-                          context);
+                          ctx);
       handle_dynamic_spec(specs.dynamic_precision(), specs.precision,
-                          specs.precision_ref, context);
+                          specs.precision_ref, ctx);
     }
 
-    arg.visit(arg_formatter<Char>{context.out(), specs, context.locale()});
+    arg.visit(arg_formatter<Char>{ctx.out(), specs, ctx.locale()});
     return begin;
   }
 
@@ -4232,8 +4230,7 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
   if (fmt.size() == 2 && equal2(fmt.data(), "{}"))
     return args.get(0).visit(default_arg_formatter<Char>{out});
   parse_format_string<false>(
-      fmt, format_handler<Char>{basic_format_parse_context<Char>(fmt),
-                                {out, args, loc}});
+      fmt, format_handler<Char>{parse_context<Char>(fmt), {out, args, loc}});
 }
 
 FMT_BEGIN_EXPORT
