@@ -122,7 +122,7 @@ template <typename Char> struct formatter<std::filesystem::path, Char> {
  public:
   FMT_CONSTEXPR void set_debug_format(bool set = true) { debug_ = set; }
 
-  template <typename ParseContext> FMT_CONSTEXPR auto parse(ParseContext& ctx) {
+  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) {
     auto it = ctx.begin(), end = ctx.end();
     if (it == end) return it;
 
@@ -235,7 +235,7 @@ struct formatter<std::optional<T>, Char,
   FMT_CONSTEXPR static void maybe_set_debug_format(U&, ...) {}
 
  public:
-  template <typename ParseContext> FMT_CONSTEXPR auto parse(ParseContext& ctx) {
+  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) {
     maybe_set_debug_format(underlying_, true);
     return underlying_.parse(ctx);
   }
@@ -281,8 +281,7 @@ template <typename T, typename E, typename Char>
 struct formatter<std::expected<T, E>, Char,
                  std::enable_if_t<is_formattable<T, Char>::value &&
                                   is_formattable<E, Char>::value>> {
-  template <typename ParseContext>
-  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     return ctx.begin();
   }
 
@@ -309,9 +308,7 @@ FMT_END_NAMESPACE
 FMT_BEGIN_NAMESPACE
 FMT_EXPORT
 template <> struct formatter<std::source_location> {
-  template <typename ParseContext> FMT_CONSTEXPR auto parse(ParseContext& ctx) {
-    return ctx.begin();
-  }
+  FMT_CONSTEXPR auto parse(parse_context<>& ctx) { return ctx.begin(); }
 
   template <typename FormatContext>
   auto format(const std::source_location& loc, FormatContext& ctx) const
@@ -367,8 +364,7 @@ template <typename T, typename C> struct is_variant_formattable {
 
 FMT_EXPORT
 template <typename Char> struct formatter<std::monostate, Char> {
-  template <typename ParseContext>
-  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     return ctx.begin();
   }
 
@@ -385,8 +381,7 @@ struct formatter<
     Variant, Char,
     std::enable_if_t<std::conjunction_v<
         is_variant_like<Variant>, is_variant_formattable<Variant, Char>>>> {
-  template <typename ParseContext>
-  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     return ctx.begin();
   }
 
@@ -416,8 +411,7 @@ FMT_END_NAMESPACE
 FMT_BEGIN_NAMESPACE
 FMT_EXPORT
 template <typename Char> struct formatter<std::error_code, Char> {
-  template <typename ParseContext>
-  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     return ctx.begin();
   }
 
@@ -508,7 +502,7 @@ template <typename Char>
 struct formatter<std::type_info, Char  // DEPRECATED! Mixing code unit types.
                  > {
  public:
-  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     return ctx.begin();
   }
 
@@ -529,7 +523,7 @@ struct formatter<
   bool with_typename_ = false;
 
  public:
-  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     auto it = ctx.begin();
     auto end = ctx.end();
     if (it == end || *it == '}') return it;
@@ -657,7 +651,7 @@ template <typename T, typename Char> struct formatter<std::complex<T>, Char> {
   }
 
  public:
-  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     if (ctx.begin() == ctx.end() || *ctx.begin() == '}') return ctx.begin();
     return parse_format_specs(ctx.begin(), ctx.end(), specs_, ctx,
                               detail::type_constant<T, Char>::value);

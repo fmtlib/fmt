@@ -4015,8 +4015,7 @@ template <> struct formatter<bytes> {
   detail::dynamic_format_specs<> specs_;
 
  public:
-  template <typename ParseContext>
-  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> const char* {
+  FMT_CONSTEXPR auto parse(parse_context<>& ctx) -> const char* {
     return parse_format_specs(ctx.begin(), ctx.end(), specs_, ctx,
                               detail::type::string_type);
   }
@@ -4055,8 +4054,7 @@ template <typename T> struct formatter<group_digits_view<T>> : formatter<T> {
   detail::dynamic_format_specs<> specs_;
 
  public:
-  template <typename ParseContext>
-  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> const char* {
+  FMT_CONSTEXPR auto parse(parse_context<>& ctx) -> const char* {
     return parse_format_specs(ctx.begin(), ctx.end(), specs_, ctx,
                               detail::type::int_type);
   }
@@ -4083,8 +4081,7 @@ template <typename T, typename Char> struct nested_view {
 
 template <typename T, typename Char>
 struct formatter<nested_view<T, Char>, Char> {
-  template <typename ParseContext>
-  FMT_CONSTEXPR auto parse(ParseContext& ctx) -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     return ctx.begin();
   }
   template <typename FormatContext>
@@ -4103,7 +4100,7 @@ template <typename T, typename Char = char> struct nested_formatter {
  public:
   constexpr nested_formatter() : width_(0) {}
 
-  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> decltype(ctx.begin()) {
+  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     auto it = ctx.begin(), end = ctx.end();
     if (it == end) return it;
     auto specs = format_specs();

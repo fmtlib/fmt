@@ -1006,7 +1006,7 @@ struct format_specs : basic_specs {
  * You can use the `format_parse_context` type alias for `char` instead.
  */
 FMT_EXPORT
-template <typename Char> class parse_context {
+template <typename Char = char> class parse_context {
  private:
   basic_string_view<Char> format_str_;
   int next_arg_id_;
