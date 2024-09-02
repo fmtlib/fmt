@@ -295,6 +295,10 @@
 
 #define FMT_FWD(...) static_cast<decltype(__VA_ARGS__)&&>(__VA_ARGS__)
 
+#define FMT_APPLY_VARIADIC(expr) \
+  using ignore = int[];          \
+  (void)ignore { 0, (expr, 0)... }
+
 // Enable minimal optimizations for more compact code in debug mode.
 FMT_GCC_PRAGMA("GCC push_options")
 #if !defined(__OPTIMIZE__) && !defined(__CUDACC__)
@@ -512,7 +516,8 @@ inline FMT_CONSTEXPR20 auto get_container(OutputIt it) ->
 }
 }  // namespace detail
 
-FMT_BEGIN_EXPORT // Parsing-related public API and forward declarations.
+// Parsing-related public API and forward declarations.
+FMT_BEGIN_EXPORT
 
 /**
  * An implementation of `std::basic_string_view` for pre-C++17. It provides a
@@ -1782,11 +1787,9 @@ class format_string_checker {
         named_args_{},
         context_(fmt, NUM_ARGS, types_),
         parse_funcs_{&invoke_parse<T, Char>...} {
-    using ignore = int[];
     int arg_index = 0, named_arg_index = 0;
-    (void)ignore{
-        0, (init_static_named_arg<T>(named_args_, arg_index, named_arg_index),
-            0)...};
+    FMT_APPLY_VARIADIC(
+        init_static_named_arg<T>(named_args_, arg_index, named_arg_index));
     ignore_unused(arg_index, named_arg_index);
   }
 
@@ -2392,11 +2395,9 @@ struct format_arg_store {
   FMT_CONSTEXPR FMT_ALWAYS_INLINE format_arg_store(T&... values)
       : args{{named_args, NUM_NAMED_ARGS},
              make_arg<NUM_ARGS <= max_packed_args, Context>(values)...} {
-    using dummy = int[];
     int arg_index = 0, named_arg_index = 0;
-    (void)dummy{
-        0,
-        (init_named_arg(named_args, arg_index, named_arg_index, values), 0)...};
+    FMT_APPLY_VARIADIC(
+        init_named_arg(named_args, arg_index, named_arg_index, values));
   }
 
   format_arg_store(format_arg_store&& rhs) {
@@ -2475,12 +2476,13 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
 
 #ifdef _WIN32
 FMT_API void vprint_mojibake(FILE*, string_view, format_args, bool);
-#else
+#else  // format_args is passed by reference since it is defined later.
 inline void vprint_mojibake(FILE*, string_view, const format_args&, bool) {}
 #endif
 }  // namespace detail
 
-FMT_BEGIN_EXPORT // Main public API:
+// The main public API.
+FMT_BEGIN_EXPORT
 
 template <typename Char>
 FMT_CONSTEXPR void parse_context<Char>::do_check_arg_id(int arg_id) {
