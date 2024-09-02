@@ -3820,6 +3820,10 @@ FMT_API void format_error_code(buffer<char>& out, int error_code,
 using fmt::report_error;
 FMT_API void report_error(format_func func, int error_code,
                           const char* message) noexcept;
+
+template <typename T>
+struct has_format_as
+    : bool_constant<!std::is_same<format_as_t<T>, void>::value> {};
 }  // namespace detail
 
 FMT_BEGIN_EXPORT

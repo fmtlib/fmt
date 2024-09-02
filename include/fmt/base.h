@@ -657,7 +657,6 @@ using buffered_context =
     conditional_t<std::is_same<Char, char>::value, context,
                   generic_context<basic_appender<Char>, Char>>;
 
-template <typename Context> struct arg_mapper;
 FMT_EXPORT template <typename Context> class basic_format_arg;
 FMT_EXPORT template <typename Context> class basic_format_args;
 FMT_EXPORT template <typename Context> class dynamic_format_arg_store;
@@ -693,6 +692,11 @@ template <typename T>
 struct has_to_string_view<
     T, void_t<decltype(detail::to_string_view(std::declval<T>()))>>
     : std::true_type {};
+
+/// String's character (code unit) type. detail:: is intentional to prevent ADL.
+template <typename S,
+          typename V = decltype(detail::to_string_view(std::declval<S>()))>
+using char_t = typename V::value_type;
 
 template <typename Char>
 using unsigned_char = typename conditional_t<std::is_integral<Char>::value,
@@ -824,11 +828,6 @@ FMT_DEPRECATED FMT_NORETURN inline void throw_format_error(
     const char* message) {
   report_error(message);
 }
-
-/// String's character (code unit) type.
-template <typename S,
-          typename V = decltype(detail::to_string_view(std::declval<S>()))>
-using char_t = typename V::value_type;
 
 enum class presentation_type : unsigned char {
   // Common specifiers:
@@ -2097,10 +2096,6 @@ template <typename T> struct format_as_result {
   using type = decltype(map(static_cast<T*>(nullptr)));
 };
 template <typename T> using format_as_t = typename format_as_result<T>::type;
-
-template <typename T>
-struct has_format_as
-    : bool_constant<!std::is_same<format_as_t<T>, void>::value> {};
 
 #define FMT_MAP_API static FMT_CONSTEXPR FMT_ALWAYS_INLINE
 

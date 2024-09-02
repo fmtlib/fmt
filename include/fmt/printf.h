@@ -618,7 +618,7 @@ inline auto vsprintf(basic_string_view<Char> fmt,
  *
  *     std::string message = fmt::sprintf("The answer is %d", 42);
  */
-template <typename S, typename... T, typename Char = char_t<S>>
+template <typename S, typename... T, typename Char = detail::char_t<S>>
 inline auto sprintf(const S& fmt, const T&... args) -> std::basic_string<Char> {
   return vsprintf(detail::to_string_view(fmt),
                   fmt::make_format_args<basic_printf_context<Char>>(args...));
@@ -643,7 +643,7 @@ inline auto vfprintf(std::FILE* f, basic_string_view<Char> fmt,
  *
  *     fmt::fprintf(stderr, "Don't %s!", "panic");
  */
-template <typename S, typename... T, typename Char = char_t<S>>
+template <typename S, typename... T, typename Char = detail::char_t<S>>
 inline auto fprintf(std::FILE* f, const S& fmt, const T&... args) -> int {
   return vfprintf(f, detail::to_string_view(fmt),
                   make_printf_args<Char>(args...));
