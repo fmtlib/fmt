@@ -1084,7 +1084,7 @@ class loc_value {
  public:
   template <typename T, FMT_ENABLE_IF(!detail::is_float128<T>::value)>
   loc_value(T value) {
-    value_.type_ = detail::mapped_type_constant<T, format_context>::value;
+    value_.type_ = detail::mapped_type_constant<T>::value;
     value_.value_ = detail::arg_mapper<char>::map(value);
   }
 
@@ -3606,10 +3606,8 @@ constexpr auto write(OutputIt out, const T& value) -> OutputIt {
 // FMT_ENABLE_IF() condition separated to workaround an MSVC bug.
 template <
     typename Char, typename OutputIt, typename T,
-    bool check =
-        std::is_enum<T>::value && !std::is_same<T, Char>::value &&
-        mapped_type_constant<T, basic_format_context<OutputIt, Char>>::value !=
-            type::custom_type,
+    bool check = std::is_enum<T>::value && !std::is_same<T, Char>::value &&
+                 mapped_type_constant<T, Char>::value != type::custom_type,
     FMT_ENABLE_IF(check)>
 FMT_CONSTEXPR auto write(OutputIt out, T value) -> OutputIt {
   return write<Char>(out, static_cast<underlying_t<T>>(value));
@@ -3659,17 +3657,15 @@ FMT_CONSTEXPR auto write(OutputIt out, const T& value) -> enable_if_t<
 }
 
 template <typename Char, typename OutputIt, typename T,
-          typename Context = basic_format_context<OutputIt, Char>>
-FMT_CONSTEXPR auto write(OutputIt out, const T& value)
-    -> enable_if_t<mapped_type_constant<T, Context>::value ==
-                           type::custom_type &&
-                       !std::is_fundamental<T>::value,
-                   OutputIt> {
-  auto formatter = typename Context::template formatter_type<T>();
-  auto parse_ctx = typename Context::parse_context_type({});
-  formatter.parse(parse_ctx);
-  auto ctx = Context(out, {}, {});
-  return formatter.format(value, ctx);
+          FMT_ENABLE_IF(mapped_type_constant<T, Char>::value ==
+                            type::custom_type &&
+                        !std::is_fundamental<T>::value)>
+FMT_CONSTEXPR auto write(OutputIt out, const T& value) -> OutputIt {
+  auto f = formatter<T, Char>();
+  auto parse_ctx = parse_context<Char>({});
+  f.parse(parse_ctx);
+  auto ctx = basic_format_context<OutputIt, Char>(out, {}, {});
+  return f.format(value, ctx);
 }
 
 template <typename T>

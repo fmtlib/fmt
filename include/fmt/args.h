@@ -84,7 +84,7 @@ class dynamic_format_arg_store
 
   template <typename T> struct need_copy {
     static constexpr detail::type mapped_type =
-        detail::mapped_type_constant<T, Context>::value;
+        detail::mapped_type_constant<T, char_type>::value;
 
     enum {
       value = !(detail::is_reference_wrapper<T>::value ||

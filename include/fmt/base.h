@@ -1028,14 +1028,12 @@ template <typename T, typename Char>
 using mapped_t = decltype(detail::arg_mapper<Char>::map(std::declval<T&>()));
 
 // A type constant after applying arg_mapper.
-template <typename T, typename Context>
-using mapped_type_constant =
-    type_constant<decltype(arg_mapper<typename Context::char_type>::map(
-                      std::declval<const T&>())),
-                  typename Context::char_type>;
+template <typename T, typename Char = char>
+using mapped_type_constant = type_constant<mapped_t<T, Char>, Char>;
 
 template <typename T, typename Context,
-          type TYPE = mapped_type_constant<T, Context>::value>
+          type TYPE =
+              mapped_type_constant<T, typename Context::char_type>::value>
 using stored_type_constant = std::integral_constant<
     type, Context::builtin_types || TYPE == type::int_type ? TYPE
                                                            : type::custom_type>;
@@ -1801,7 +1799,7 @@ class format_string_checker {
   template <typename... T>
   explicit FMT_CONSTEXPR format_string_checker(basic_string_view<Char> fmt,
                                                arg_pack<T...>)
-      : types_{mapped_type_constant<T, buffered_context<Char>>::value...},
+      : types_{mapped_type_constant<T, Char>::value...},
         named_args_{},
         context_(fmt, NUM_ARGS, types_),
         parse_funcs_{&invoke_parse<T, Char>...} {
@@ -2790,8 +2788,8 @@ template <typename T, typename Char, type TYPE> struct native_formatter {
 };
 
 template <typename T, typename Enable = void>
-struct locking : bool_constant<mapped_type_constant<T, context>::value ==
-                               type::custom_type> {};
+struct locking
+    : bool_constant<mapped_type_constant<T>::value == type::custom_type> {};
 template <typename T>
 struct locking<T, void_t<typename formatter<remove_cvref_t<T>>::nonlocking>>
     : std::false_type {};
