@@ -2109,60 +2109,7 @@ template <typename T = char> class counting_buffer : public buffer<T> {
     return count_ + this->size();
   }
 };
-}  // namespace detail
 
-template <typename Char>
-FMT_CONSTEXPR void parse_context<Char>::do_check_arg_id(int id) {
-  // Argument id is only checked at compile-time during parsing because
-  // formatting has its own validation.
-  if (detail::is_constant_evaluated() &&
-      (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 1200)) {
-    auto ctx = static_cast<detail::compile_parse_context<Char>*>(this);
-    if (id >= ctx->num_args()) report_error("argument not found");
-  }
-}
-
-template <typename Char>
-FMT_CONSTEXPR void parse_context<Char>::check_dynamic_spec(int arg_id) {
-  if (detail::is_constant_evaluated() &&
-      (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 1200)) {
-    auto ctx = static_cast<detail::compile_parse_context<Char>*>(this);
-    ctx->check_dynamic_spec(arg_id);
-  }
-}
-
-// An output iterator that appends to a buffer. It is used instead of
-// back_insert_iterator to reduce symbol sizes and avoid <iterator> dependency.
-template <typename T> class basic_appender {
- private:
-  detail::buffer<T>* buffer_;
-
-  friend FMT_CONSTEXPR20 auto get_container(basic_appender app)
-      -> detail::buffer<T>& {
-    return *app.buffer_;
-  }
-
- public:
-  using iterator_category = int;
-  using value_type = T;
-  using difference_type = ptrdiff_t;
-  using pointer = T*;
-  using reference = T&;
-  using container_type = detail::buffer<T>;
-  FMT_UNCHECKED_ITERATOR(basic_appender);
-
-  FMT_CONSTEXPR basic_appender(detail::buffer<T>& buf) : buffer_(&buf) {}
-
-  FMT_CONSTEXPR20 auto operator=(T c) -> basic_appender& {
-    buffer_->push_back(c);
-    return *this;
-  }
-  FMT_CONSTEXPR20 auto operator*() -> basic_appender& { return *this; }
-  FMT_CONSTEXPR20 auto operator++() -> basic_appender& { return *this; }
-  FMT_CONSTEXPR20 auto operator++(int) -> basic_appender { return *this; }
-};
-
-namespace detail {
 template <typename T>
 struct is_back_insert_iterator<basic_appender<T>> : std::true_type {};
 
@@ -2543,6 +2490,57 @@ inline void vprint_mojibake(FILE*, string_view, const format_args&, bool) {}
 }  // namespace detail
 
 FMT_BEGIN_EXPORT
+
+template <typename Char>
+FMT_CONSTEXPR void parse_context<Char>::do_check_arg_id(int id) {
+  // Argument id is only checked at compile-time during parsing because
+  // formatting has its own validation.
+  if (detail::is_constant_evaluated() &&
+      (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 1200)) {
+    auto ctx = static_cast<detail::compile_parse_context<Char>*>(this);
+    if (id >= ctx->num_args()) report_error("argument not found");
+  }
+}
+
+template <typename Char>
+FMT_CONSTEXPR void parse_context<Char>::check_dynamic_spec(int arg_id) {
+  if (detail::is_constant_evaluated() &&
+      (!FMT_GCC_VERSION || FMT_GCC_VERSION >= 1200)) {
+    auto ctx = static_cast<detail::compile_parse_context<Char>*>(this);
+    ctx->check_dynamic_spec(arg_id);
+  }
+}
+
+// An output iterator that appends to a buffer. It is used instead of
+// back_insert_iterator to reduce symbol sizes and avoid <iterator> dependency.
+template <typename T> class basic_appender {
+ private:
+  detail::buffer<T>* buffer_;
+
+  friend FMT_CONSTEXPR20 auto get_container(basic_appender app)
+      -> detail::buffer<T>& {
+    return *app.buffer_;
+  }
+
+ public:
+  using iterator_category = int;
+  using value_type = T;
+  using difference_type = ptrdiff_t;
+  using pointer = T*;
+  using reference = T&;
+  using container_type = detail::buffer<T>;
+  FMT_UNCHECKED_ITERATOR(basic_appender);
+
+  FMT_CONSTEXPR basic_appender(detail::buffer<T>& buf) : buffer_(&buf) {}
+
+  FMT_CONSTEXPR20 auto operator=(T c) -> basic_appender& {
+    buffer_->push_back(c);
+    return *this;
+  }
+  FMT_CONSTEXPR20 auto operator*() -> basic_appender& { return *this; }
+  FMT_CONSTEXPR20 auto operator++() -> basic_appender& { return *this; }
+  FMT_CONSTEXPR20 auto operator++(int) -> basic_appender { return *this; }
+};
 
 // A formatting argument. Context is a template parameter for the compiled API
 // where output can be unbuffered.
