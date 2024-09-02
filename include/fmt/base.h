@@ -465,15 +465,14 @@ struct is_std_string_like<T, void_t<decltype(std::declval<T>().find_first_of(
 
 // Returns true iff the literal encoding is UTF-8.
 constexpr auto is_utf8_enabled() -> bool { return "\u00A7"[1] == '\xA7'; }
-constexpr auto use_utf8() -> bool {
-  return !FMT_MSC_VERSION || is_utf8_enabled();
-}
+// It is a macro for better debug codegen without if constexpr.
+#define FMT_USE_UTF8 (!FMT_MSC_VERSION || fmt::detail::is_utf8_enabled())
 
 #ifndef FMT_UNICODE
 #  define FMT_UNICODE 1
 #endif
 
-static_assert(!FMT_UNICODE || use_utf8(),
+static_assert(!FMT_UNICODE || FMT_USE_UTF8,
               "Unicode support requires compiling with /utf-8");
 
 template <typename Char> FMT_CONSTEXPR auto length(const Char* s) -> size_t {
@@ -3061,7 +3060,7 @@ FMT_API void vprintln(FILE* f, string_view fmt, format_args args);
 template <typename... T>
 FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
   const auto& vargs = fmt::make_format_args(args...);
-  if (!detail::use_utf8()) return detail::vprint_mojibake(stdout, fmt, vargs);
+  if (!FMT_USE_UTF8) return detail::vprint_mojibake(stdout, fmt, vargs);
   return detail::is_locking<T...>() ? vprint_buffered(stdout, fmt, vargs)
                                     : vprint(fmt, vargs);
 }
@@ -3077,7 +3076,7 @@ FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
 template <typename... T>
 FMT_INLINE void print(FILE* f, format_string<T...> fmt, T&&... args) {
   const auto& vargs = fmt::make_format_args(args...);
-  if (!detail::use_utf8()) return detail::vprint_mojibake(f, fmt, vargs);
+  if (!FMT_USE_UTF8) return detail::vprint_mojibake(f, fmt, vargs);
   return detail::is_locking<T...>() ? vprint_buffered(f, fmt, vargs)
                                     : vprint(f, fmt, vargs);
 }
@@ -3087,8 +3086,8 @@ FMT_INLINE void print(FILE* f, format_string<T...> fmt, T&&... args) {
 template <typename... T>
 FMT_INLINE void println(FILE* f, format_string<T...> fmt, T&&... args) {
   const auto& vargs = fmt::make_format_args(args...);
-  return detail::use_utf8() ? vprintln(f, fmt, vargs)
-                            : detail::vprint_mojibake(f, fmt, vargs, true);
+  return FMT_USE_UTF8 ? vprintln(f, fmt, vargs)
+                      : detail::vprint_mojibake(f, fmt, vargs, true);
 }
 
 /// Formats `args` according to specifications in `fmt` and writes the output
