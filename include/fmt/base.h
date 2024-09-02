@@ -640,9 +640,17 @@ template <typename T> struct is_char : std::false_type {};
 template <> struct is_char<char> : std::true_type {};
 
 template <typename T> class basic_appender;
+using appender = basic_appender<char>;
 
 class context;
 template <typename OutputIt, typename Char> class generic_context;
+
+// Longer aliases for C++20 compatibility.
+template <typename OutputIt, typename Char>
+using basic_format_context =
+    conditional_t<std::is_same<OutputIt, appender>::value, context,
+                  generic_context<OutputIt, Char>>;
+using format_context = context;
 
 template <typename Char>
 using buffered_context =
@@ -1894,8 +1902,6 @@ template <typename T> class basic_appender {
   FMT_CONSTEXPR20 auto operator++(int) -> basic_appender { return *this; }
 };
 
-using appender = basic_appender<char>;
-
 namespace detail {
 template <typename T>
 struct is_back_insert_iterator<basic_appender<T>> : std::true_type {};
@@ -2900,13 +2906,6 @@ template <typename Char, typename... Args> class basic_format_string {
 
 template <typename... T>
 using format_string = basic_format_string<char, type_identity_t<T>...>;
-
-// Longer aliases for C++20 compatibility.
-template <typename OutputIt, typename Char>
-using basic_format_context =
-    conditional_t<std::is_same<OutputIt, appender>::value, context,
-                  generic_context<OutputIt, Char>>;
-using format_context = context;
 
 template <typename T, typename Char = char>
 using is_formattable = bool_constant<
