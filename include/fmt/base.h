@@ -260,13 +260,6 @@
 #  endif
 #endif
 
-// GCC < 5 requires this-> in decltype.
-#if FMT_GCC_VERSION && FMT_GCC_VERSION < 500
-#  define FMT_DECLTYPE_THIS this->
-#else
-#  define FMT_DECLTYPE_THIS
-#endif
-
 #if FMT_MSC_VERSION
 #  define FMT_MSC_WARNING(...) __pragma(warning(__VA_ARGS__))
 #  define FMT_UNCHECKED_ITERATOR(It) \
@@ -903,26 +896,24 @@ struct unformattable_pointer : unformattable {};
 template <typename Context> struct arg_mapper {
   using char_type = typename Context::char_type;
 
-  FMT_MAP_API auto map(signed char val) -> int { return val; }
-  FMT_MAP_API auto map(unsigned char val) -> unsigned { return val; }
-  FMT_MAP_API auto map(short val) -> int { return val; }
-  FMT_MAP_API auto map(unsigned short val) -> unsigned { return val; }
-  FMT_MAP_API auto map(int val) -> int { return val; }
-  FMT_MAP_API auto map(unsigned val) -> unsigned { return val; }
-  FMT_MAP_API auto map(long val) -> long_type { return val; }
-  FMT_MAP_API auto map(unsigned long val) -> ulong_type { return val; }
-  FMT_MAP_API auto map(long long val) -> long long { return val; }
-  FMT_MAP_API auto map(unsigned long long val) -> unsigned long long {
-    return val;
-  }
-  FMT_MAP_API auto map(int128_opt val) -> int128_opt { return val; }
-  FMT_MAP_API auto map(uint128_opt val) -> uint128_opt { return val; }
-  FMT_MAP_API auto map(bool val) -> bool { return val; }
+  FMT_MAP_API auto map(signed char x) -> int { return x; }
+  FMT_MAP_API auto map(unsigned char x) -> unsigned { return x; }
+  FMT_MAP_API auto map(short x) -> int { return x; }
+  FMT_MAP_API auto map(unsigned short x) -> unsigned { return x; }
+  FMT_MAP_API auto map(int x) -> int { return x; }
+  FMT_MAP_API auto map(unsigned x) -> unsigned { return x; }
+  FMT_MAP_API auto map(long x) -> long_type { return x; }
+  FMT_MAP_API auto map(unsigned long x) -> ulong_type { return x; }
+  FMT_MAP_API auto map(long long x) -> long long { return x; }
+  FMT_MAP_API auto map(unsigned long long x) -> unsigned long long { return x; }
+  FMT_MAP_API auto map(int128_opt x) -> int128_opt { return x; }
+  FMT_MAP_API auto map(uint128_opt x) -> uint128_opt { return x; }
+  FMT_MAP_API auto map(bool x) -> bool { return x; }
 
   template <typename T, FMT_ENABLE_IF(std::is_same<T, char>::value ||
                                       std::is_same<T, char_type>::value)>
-  FMT_MAP_API auto map(T val) -> char_type {
-    return val;
+  FMT_MAP_API auto map(T x) -> char_type {
+    return x;
   }
   template <typename T, enable_if_t<(std::is_same<T, wchar_t>::value ||
 #ifdef __cpp_char8_t
@@ -936,43 +927,43 @@ template <typename Context> struct arg_mapper {
     return {};
   }
 
-  FMT_MAP_API auto map(float val) -> float { return val; }
-  FMT_MAP_API auto map(double val) -> double { return val; }
-  FMT_MAP_API auto map(long double val) -> long double { return val; }
+  FMT_MAP_API auto map(float x) -> float { return x; }
+  FMT_MAP_API auto map(double x) -> double { return x; }
+  FMT_MAP_API auto map(long double x) -> long double { return x; }
 
   template <typename T, FMT_ENABLE_IF(bitint_traits<T>::is_formattable)>
-  FMT_MAP_API auto map(T val) -> typename bitint_traits<T>::format_type {
-    return val;
+  FMT_MAP_API auto map(T x) -> typename bitint_traits<T>::format_type {
+    return x;
   }
   template <typename T, FMT_ENABLE_IF(!bitint_traits<T>::is_formattable)>
   FMT_MAP_API auto map(T) -> unformattable {
     return {};
   }
 
-  FMT_MAP_API auto map(char_type* val) -> const char_type* { return val; }
-  FMT_MAP_API auto map(const char_type* val) -> const char_type* { return val; }
-  template <typename T, typename Char = char_t<T>,
-            FMT_ENABLE_IF(std::is_same<Char, char_type>::value &&
+  FMT_MAP_API auto map(char_type* x) -> const char_type* { return x; }
+  FMT_MAP_API auto map(const char_type* x) -> const char_type* { return x; }
+  template <typename T, typename C = char_t<T>,
+            FMT_ENABLE_IF(std::is_same<C, char_type>::value &&
                           !std::is_pointer<T>::value)>
-  FMT_MAP_API auto map(const T& val) -> basic_string_view<Char> {
-    return to_string_view(val);
+  FMT_MAP_API auto map(const T& x) -> basic_string_view<C> {
+    return to_string_view(x);
   }
-  template <typename T, typename Char = char_t<T>,
-            FMT_ENABLE_IF(!std::is_same<Char, char_type>::value &&
+  template <typename T, typename C = char_t<T>,
+            FMT_ENABLE_IF(!std::is_same<C, char_type>::value &&
                           !std::is_pointer<T>::value)>
   FMT_MAP_API auto map(const T&) -> unformattable_char {
     return {};
   }
 
-  FMT_MAP_API auto map(void* val) -> const void* { return val; }
-  FMT_MAP_API auto map(const void* val) -> const void* { return val; }
-  FMT_MAP_API auto map(volatile void* val) -> const void* {
-    return const_cast<const void*>(val);
+  FMT_MAP_API auto map(void* x) -> const void* { return x; }
+  FMT_MAP_API auto map(const void* x) -> const void* { return x; }
+  FMT_MAP_API auto map(volatile void* x) -> const void* {
+    return const_cast<const void*>(x);
   }
-  FMT_MAP_API auto map(const volatile void* val) -> const void* {
-    return const_cast<const void*>(val);
+  FMT_MAP_API auto map(const volatile void* x) -> const void* {
+    return const_cast<const void*>(x);
   }
-  FMT_MAP_API auto map(std::nullptr_t val) -> const void* { return val; }
+  FMT_MAP_API auto map(std::nullptr_t x) -> const void* { return x; }
 
   // Use SFINAE instead of a const T* parameter to avoid a conflict with the
   // array overload.
@@ -989,15 +980,15 @@ template <typename Context> struct arg_mapper {
 
   template <typename T, std::size_t N,
             FMT_ENABLE_IF(!std::is_same<T, wchar_t>::value)>
-  FMT_MAP_API auto map(const T (&values)[N]) -> const T (&)[N] {
-    return values;
+  FMT_MAP_API auto map(const T (&x)[N]) -> const T (&)[N] {
+    return x;
   }
 
   // Only map owning types because mapping views can be unsafe.
   template <typename T, typename U = format_as_t<T>,
             FMT_ENABLE_IF(std::is_arithmetic<U>::value)>
-  FMT_MAP_API auto map(const T& val) -> decltype(FMT_DECLTYPE_THIS map(U())) {
-    return map(format_as(val));
+  FMT_MAP_API auto map(const T& x) -> decltype(map(U())) {
+    return map(format_as(x));
   }
 
   template <typename T, typename U = remove_const_t<T>>
@@ -1007,8 +998,8 @@ template <typename Context> struct arg_mapper {
                        !std::is_const<T>::value)> {};
 
   template <typename T, FMT_ENABLE_IF(formattable<T>::value)>
-  FMT_MAP_API auto do_map(T& val) -> T& {
-    return val;
+  FMT_MAP_API auto do_map(T& x) -> T& {
+    return x;
   }
   template <typename T, FMT_ENABLE_IF(!formattable<T>::value)>
   FMT_MAP_API auto do_map(T&) -> unformattable {
@@ -1023,13 +1014,12 @@ template <typename Context> struct arg_mapper {
                 !has_to_string_view<U>::value && !is_char<U>::value &&
                 !is_named_arg<U>::value && !std::is_integral<U>::value &&
                 !std::is_arithmetic<format_as_t<U>>::value)>
-  FMT_MAP_API auto map(T& val) -> decltype(FMT_DECLTYPE_THIS do_map(val)) {
-    return do_map(val);
+  FMT_MAP_API auto map(T& x) -> decltype(do_map(x)) {
+    return do_map(x);
   }
 
   template <typename T, FMT_ENABLE_IF(is_named_arg<T>::value)>
-  FMT_MAP_API auto map(const T& named_arg)
-      -> decltype(FMT_DECLTYPE_THIS map(named_arg.value)) {
+  FMT_MAP_API auto map(const T& named_arg) -> decltype(map(named_arg.value)) {
     return map(named_arg.value);
   }
 
