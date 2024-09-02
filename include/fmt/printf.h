@@ -491,7 +491,7 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
     auto arg = get_arg(arg_index);
     // For d, i, o, u, x, and X conversion specifiers, if a precision is
     // specified, the '0' flag is ignored
-    if (specs.precision >= 0 && arg.is_integral()) {
+    if (specs.precision >= 0 && is_integral_type(arg.type())) {
       // Ignore '0' for non-numeric types or if '-' present.
       specs.set_fill(' ');
     }
@@ -556,7 +556,7 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
     // Parse type.
     if (it == end) report_error("invalid format string");
     char type = static_cast<char>(*it++);
-    if (arg.is_integral()) {
+    if (is_integral_type(arg.type())) {
       // Normalize type.
       switch (type) {
       case 'i':

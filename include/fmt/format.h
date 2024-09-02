@@ -124,6 +124,20 @@ FMT_END_NAMESPACE
 #  endif
 #endif
 
+#ifdef FMT_NO_UNIQUE_ADDRESS
+// Use the provided definition.
+#elif FMT_CPLUSPLUS < 202002L
+// Not supported.
+#elif FMT_HAS_CPP_ATTRIBUTE(no_unique_address)
+#  define FMT_NO_UNIQUE_ADDRESS [[no_unique_address]]
+// VS2019 v16.10 and later except clang-cl (https://reviews.llvm.org/D110485).
+#elif FMT_MSC_VERSION >= 1929 && !FMT_CLANG_VERSION
+#  define FMT_NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
+#endif
+#ifndef FMT_NO_UNIQUE_ADDRESS
+#  define FMT_NO_UNIQUE_ADDRESS
+#endif
+
 #ifndef FMT_MAYBE_UNUSED
 #  if FMT_HAS_CPP17_ATTRIBUTE(maybe_unused)
 #    define FMT_MAYBE_UNUSED [[maybe_unused]]
@@ -1077,14 +1091,11 @@ template <typename OutputIt, typename Char> class generic_context {
 
 class loc_value {
  private:
-  basic_format_arg<format_context> value_;
+  basic_format_arg<context> value_;
 
  public:
   template <typename T, FMT_ENABLE_IF(!detail::is_float128<T>::value)>
-  loc_value(T value) {
-    value_.type_ = detail::mapped_type_constant<T>::value;
-    value_.value_ = detail::arg_mapper<char>::map(value);
-  }
+  loc_value(T value) : value_(detail::make_arg<context>(value)) {}
 
   template <typename T, FMT_ENABLE_IF(detail::is_float128<T>::value)>
   loc_value(T) {}

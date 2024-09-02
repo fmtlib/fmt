@@ -112,13 +112,6 @@ class dynamic_format_arg_store
 
   friend class basic_format_args<Context>;
 
-  auto get_types() const -> unsigned long long {
-    return detail::is_unpacked_bit | data_.size() |
-           (named_info_.empty()
-                ? 0ULL
-                : static_cast<unsigned long long>(detail::has_named_args_bit));
-  }
-
   auto data() const -> const basic_format_arg<Context>* {
     return named_info_.empty() ? data_.data() : data_.data() + 1;
   }
@@ -140,12 +133,17 @@ class dynamic_format_arg_store
     std::unique_ptr<std::vector<basic_format_arg<Context>>, decltype(pop_one)>
         guard{&data_, pop_one};
     named_info_.push_back({arg.name, static_cast<int>(data_.size() - 2u)});
-    data_[0].value_.named_args = {named_info_.data(), named_info_.size()};
+    data_[0] = {named_info_.data(), named_info_.size()};
     guard.release();
   }
 
  public:
   constexpr dynamic_format_arg_store() = default;
+
+  operator basic_format_args<Context>() const {
+    return basic_format_args<Context>(data(), static_cast<int>(data_.size()),
+                                      !named_info_.empty());
+  }
 
   /**
    * Adds an argument into the dynamic store for later passing to a formatting
@@ -217,7 +215,7 @@ class dynamic_format_arg_store
   /// `new_cap_named` named arguments.
   void reserve(size_t new_cap, size_t new_cap_named) {
     FMT_ASSERT(new_cap >= new_cap_named,
-               "Set of arguments includes set of named arguments");
+               "set of arguments includes set of named arguments");
     data_.reserve(new_cap);
     named_info_.reserve(new_cap_named);
   }

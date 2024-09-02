@@ -216,20 +216,6 @@
 #  define FMT_DEPRECATED /* deprecated */
 #endif
 
-#ifdef FMT_NO_UNIQUE_ADDRESS
-// Use the provided definition.
-#elif FMT_CPLUSPLUS < 202002L
-// Not supported.
-#elif FMT_HAS_CPP_ATTRIBUTE(no_unique_address)
-#  define FMT_NO_UNIQUE_ADDRESS [[no_unique_address]]
-// VS2019 v16.10 and later except clang-cl (https://reviews.llvm.org/D110485).
-#elif FMT_MSC_VERSION >= 1929 && !FMT_CLANG_VERSION
-#  define FMT_NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
-#endif
-#ifndef FMT_NO_UNIQUE_ADDRESS
-#  define FMT_NO_UNIQUE_ADDRESS
-#endif
-
 #ifdef FMT_ALWAYS_INLINE
 // Use the provided definition.
 #elif FMT_GCC_VERSION || FMT_CLANG_VERSION
@@ -652,7 +638,6 @@ using buffered_context =
 
 template <typename Context> class basic_format_arg;
 template <typename Context> class basic_format_args;
-template <typename Context> class dynamic_format_arg_store;
 
 // A separate type would result in shorter symbols but break ABI compatibility
 // between clang and gcc on ARM (#1919).
@@ -790,17 +775,21 @@ enum {
 
 struct view {};
 
-template <typename Char, typename T> struct named_arg : view {
-  const Char* name;
-  const T& value;
-  named_arg(const Char* n, const T& v) : name(n), value(v) {}
-};
-
+template <typename Char, typename T> struct named_arg;
 template <typename T> struct is_named_arg : std::false_type {};
 template <typename T> struct is_static_named_arg : std::false_type {};
 
 template <typename Char, typename T>
 struct is_named_arg<named_arg<Char, T>> : std::true_type {};
+
+template <typename Char, typename T> struct named_arg : view {
+  const Char* name;
+  const T& value;
+
+  named_arg(const Char* n, const T& v) : name(n), value(v) {}
+
+  static_assert(!is_named_arg<T>::value, "nested named arguments");
+};
 
 template <typename Char, typename T>
 auto unwrap_named_arg(const named_arg<Char, T>& arg) -> const T& {
@@ -2407,7 +2396,7 @@ FMT_CONSTEXPR auto make_arg(T& val) -> value<Context> {
   enum {
     formattable_char = !std::is_same<arg_type, unformattable_char>::value
   };
-  static_assert(formattable_char, "Mixing character types is disallowed.");
+  static_assert(formattable_char, "mixing character types is disallowed");
 
   // Formatting of arbitrary pointers is disallowed. If you want to format a
   // pointer cast it to `void*` or `const void*`. In particular, this forbids
@@ -2416,7 +2405,7 @@ FMT_CONSTEXPR auto make_arg(T& val) -> value<Context> {
     formattable_pointer = !std::is_same<arg_type, unformattable_pointer>::value
   };
   static_assert(formattable_pointer,
-                "Formatting of non-void pointers is disallowed.");
+                "formatting of non-void pointers is disallowed");
 
   enum { formattable = !std::is_same<arg_type, unformattable>::value };
 #if defined(__cpp_if_constexpr)
@@ -2426,7 +2415,7 @@ FMT_CONSTEXPR auto make_arg(T& val) -> value<Context> {
 #endif
   static_assert(
       formattable,
-      "Cannot format an argument. To make type T formattable provide a "
+      "cannot format an argument; to make type T formattable provide a "
       "formatter<T> specialization: https://fmt.dev/latest/api.html#udt");
   return {arg_mapper<char_type>::map(val)};
 }
@@ -2562,21 +2551,11 @@ template <typename Context> class basic_format_arg {
   detail::value<Context> value_;
   detail::type type_;
 
-  template <typename ContextType, typename T>
-  friend FMT_CONSTEXPR auto detail::make_arg(T& value)
-      -> basic_format_arg<ContextType>;
-
+  template <typename Ctx, typename T>
+  friend FMT_CONSTEXPR auto detail::make_arg(T& value) -> basic_format_arg<Ctx>;
   friend class basic_format_args<Context>;
-  friend class dynamic_format_arg_store<Context>;
-  friend class loc_value;
 
   using char_type = typename Context::char_type;
-
-  template <typename, size_t, size_t, unsigned long long>
-  friend struct detail::format_arg_store;
-
-  basic_format_arg(const detail::named_arg_info<char_type>* args, size_t size)
-      : value_(args, size) {}
 
  public:
   class handle {
@@ -2592,14 +2571,13 @@ template <typename Context> class basic_format_arg {
   };
 
   constexpr basic_format_arg() : type_(detail::type::none_type) {}
+  basic_format_arg(const detail::named_arg_info<char_type>* args, size_t size)
+      : value_(args, size) {}
 
   constexpr explicit operator bool() const noexcept {
     return type_ != detail::type::none_type;
   }
-
   auto type() const -> detail::type { return type_; }
-
-  auto is_integral() const -> bool { return detail::is_integral_type(type_); }
 
   /**
    * Visits an argument dispatching to the appropriate visit method based on
@@ -2714,18 +2692,16 @@ template <typename Context> class basic_format_args {
           store)
       : desc_(DESC), args_(store.args + (NUM_NAMED_ARGS != 0 ? 1 : 0)) {}
 
-  /// Constructs a `basic_format_args` object from `dynamic_format_arg_store`.
-  constexpr basic_format_args(const dynamic_format_arg_store<Context>& store)
-      : desc_(store.get_types()), args_(store.data()) {}
-
   /// Constructs a `basic_format_args` object from a dynamic list of arguments.
-  constexpr basic_format_args(const format_arg* args, int count)
-      : desc_(detail::is_unpacked_bit | detail::to_unsigned(count)),
+  constexpr basic_format_args(const format_arg* args, int count,
+                              bool has_named = false)
+      : desc_(detail::is_unpacked_bit | detail::to_unsigned(count) |
+              (has_named ? +detail::has_named_args_bit : 0ULL)),
         args_(args) {}
 
   /// Returns the argument with the specified id.
   FMT_CONSTEXPR auto get(int id) const -> format_arg {
-    format_arg arg;
+    auto arg = format_arg();
     if (!is_packed()) {
       if (id < max_size()) arg = args_[id];
       return arg;
@@ -2761,11 +2737,10 @@ template <typename Context> class basic_format_args {
 };
 
 // A formatting context.
-class context {
+class context : private detail::locale_ref {
  private:
   appender out_;
   format_args args_;
-  FMT_NO_UNIQUE_ADDRESS detail::locale_ref loc_;
 
  public:
   /// The character type for the output.
@@ -2780,7 +2755,7 @@ class context {
   /// Constructs a `context` object. References to the arguments are stored
   /// in the object so make sure they have appropriate lifetimes.
   FMT_CONSTEXPR context(iterator out, format_args a, detail::locale_ref l = {})
-      : out_(out), args_(a), loc_(l) {}
+      : locale_ref(l), out_(out), args_(a) {}
   context(context&&) = default;
   context(const context&) = delete;
   void operator=(const context&) = delete;
@@ -2797,7 +2772,7 @@ class context {
   // Advances the begin iterator to `it`.
   void advance_to(iterator) {}
 
-  FMT_CONSTEXPR auto locale() -> detail::locale_ref { return loc_; }
+  FMT_CONSTEXPR auto locale() -> detail::locale_ref { return *this; }
 };
 
 template <typename Char = char> struct runtime_format_string {
@@ -2844,7 +2819,7 @@ template <typename Char, typename... Args> class basic_format_string {
     static_assert(
         FMT_USE_CONSTEVAL && sizeof(S) != 0,
         "FMT_ENFORCE_COMPILE_STRING requires all format strings to use "
-        "FMT_STRING.");
+        "FMT_STRING");
 #endif
   }
   template <typename S,
@@ -2918,8 +2893,7 @@ constexpr auto make_format_args(T&... args)
 
 /**
  * Returns a named argument to be used in a formatting function.
- * It should only be used in a call to a formatting function or
- * `dynamic_format_arg_store::push_back`.
+ * It should only be used in a call to a formatting function.
  *
  * **Example**:
  *
@@ -2927,7 +2901,6 @@ constexpr auto make_format_args(T&... args)
  */
 template <typename Char, typename T>
 inline auto arg(const Char* name, const T& arg) -> detail::named_arg<Char, T> {
-  static_assert(!detail::is_named_arg<T>(), "nested named arguments");
   return {name, arg};
 }
 
