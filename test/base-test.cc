@@ -820,9 +820,9 @@ TEST(base_test, format_explicitly_convertible_to_std_string_view) {
 
 TEST(base_test, has_const_formatter) {
   EXPECT_TRUE((fmt::detail::has_const_formatter<const_formattable,
-                                                fmt::format_context>()));
+                                                char>()));
   EXPECT_FALSE((fmt::detail::has_const_formatter<nonconst_formattable,
-                                                 fmt::format_context>()));
+                                                 char>()));
 }
 
 TEST(base_test, format_nonconst) {

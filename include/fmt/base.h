@@ -876,20 +876,20 @@ template <typename T> struct format_as_result {
 };
 template <typename T> using format_as_t = typename format_as_result<T>::type;
 
-template <typename Context, typename T>
+template <typename Char, typename T>
 constexpr auto has_const_formatter_impl(T*)
-    -> decltype(typename Context::template formatter_type<T>().format(
-                    std::declval<const T&>(), std::declval<Context&>()),
+    -> decltype(formatter<T, Char>().format(
+                    std::declval<const T&>(),
+                    std::declval<buffered_context<Char>&>()),
                 true) {
   return true;
 }
-template <typename Context>
-constexpr auto has_const_formatter_impl(...) -> bool {
+template <typename Char> constexpr auto has_const_formatter_impl(...) -> bool {
   return false;
 }
-template <typename T, typename Context>
+template <typename T, typename Char>
 constexpr auto has_const_formatter() -> bool {
-  return has_const_formatter_impl<Context>(static_cast<T*>(nullptr));
+  return has_const_formatter_impl<Char>(static_cast<T*>(nullptr));
 }
 
 struct unformattable {};
@@ -1002,7 +1002,7 @@ template <typename Context> struct arg_mapper {
 
   template <typename T, typename U = remove_const_t<T>>
   struct formattable
-      : bool_constant<has_const_formatter<U, Context>() ||
+      : bool_constant<has_const_formatter<U, char_type>() ||
                       (std::is_constructible<formatter<U, char_type>>::value &&
                        !std::is_const<T>::value)> {};
 
@@ -2341,7 +2341,7 @@ template <typename Context> class value {
     auto f = Formatter();
     parse_ctx.advance_to(f.parse(parse_ctx));
     using qualified_type =
-        conditional_t<has_const_formatter<T, Context>(), const T, T>;
+        conditional_t<has_const_formatter<T, char_type>(), const T, T>;
     // format must be const for compatibility with std::format and compilation.
     const auto& cf = f;
     ctx.advance_to(cf.format(*static_cast<qualified_type*>(arg), ctx));
