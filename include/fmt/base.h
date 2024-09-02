@@ -529,6 +529,8 @@ inline FMT_CONSTEXPR20 auto get_container(OutputIt it) ->
 }
 }  // namespace detail
 
+FMT_BEGIN_EXPORT
+
 // Checks whether T is a container with contiguous storage.
 template <typename T> struct is_contiguous : std::false_type {};
 
@@ -539,7 +541,6 @@ template <typename T> struct is_contiguous : std::false_type {};
  * compiled with a different `-std` option than the client code (which is not
  * recommended).
  */
-FMT_EXPORT
 template <typename Char> class basic_string_view {
  private:
   const Char* data_;
@@ -633,7 +634,7 @@ template <typename Char> class basic_string_view {
   }
 };
 
-FMT_EXPORT using string_view = basic_string_view<char>;
+using string_view = basic_string_view<char>;
 
 /// Specifies if `T` is a character type. Can be specialized by users.
 template <typename T> struct is_char : std::false_type {};
@@ -657,27 +658,20 @@ using buffered_context =
     conditional_t<std::is_same<Char, char>::value, context,
                   generic_context<basic_appender<Char>, Char>>;
 
-FMT_EXPORT template <typename Context> class basic_format_arg;
-FMT_EXPORT template <typename Context> class basic_format_args;
-FMT_EXPORT template <typename Context> class dynamic_format_arg_store;
+template <typename Context> class basic_format_arg;
+template <typename Context> class basic_format_args;
+template <typename Context> class dynamic_format_arg_store;
 
 // A separate type would result in shorter symbols but break ABI compatibility
 // between clang and gcc on ARM (#1919).
 using format_args = basic_format_args<context>;
 
 // A formatter for objects of type T.
-FMT_EXPORT
 template <typename T, typename Char = char, typename Enable = void>
 struct formatter {
   // A deleted default constructor indicates a disabled formatter.
   formatter() = delete;
 };
-
-// Specifies if T has an enabled formatter specialization. A type can be
-// formattable even if it doesn't have a formatter e.g. via a conversion.
-template <typename T, typename Context>
-using has_formatter =
-    std::is_constructible<typename Context::template formatter_type<T>>;
 
 // This is defined in base.h instead of format.h to avoid injecting in std.
 // It is a template to avoid undesirable implicit conversions to std::byte.
@@ -687,6 +681,8 @@ inline auto format_as(T b) -> unsigned char {
   return static_cast<unsigned char>(b);
 }
 #endif
+
+FMT_END_EXPORT
 
 namespace detail {
 
@@ -1005,9 +1001,10 @@ template <typename Context> struct arg_mapper {
   }
 
   template <typename T, typename U = remove_const_t<T>>
-  struct formattable : bool_constant<has_const_formatter<U, Context>() ||
-                                     (has_formatter<U, Context>::value &&
-                                      !std::is_const<T>::value)> {};
+  struct formattable
+      : bool_constant<has_const_formatter<U, Context>() ||
+                      (std::is_constructible<formatter<U, char_type>>::value &&
+                       !std::is_const<T>::value)> {};
 
   template <typename T, FMT_ENABLE_IF(formattable<T>::value)>
   FMT_MAP_API auto do_map(T& val) -> T& {
@@ -1790,8 +1787,7 @@ struct compile_string {};
 template <typename T, typename Char>
 FMT_VISIBILITY("hidden")  // Suppress an ld warning on macOS (#3769).
 FMT_CONSTEXPR auto invoke_parse(parse_context<Char>& ctx) -> const Char* {
-  using mapper = arg_mapper<buffered_context<Char>>;
-  using mapped_type = remove_cvref_t<decltype(mapper::map(std::declval<T&>()))>;
+  using mapped_type = remove_cvref_t<mapped_t<T, Char>>;
 #if defined(__cpp_if_constexpr)
   if constexpr (std::is_default_constructible<formatter<mapped_type, Char>>())
     return formatter<mapped_type, Char>().parse(ctx);

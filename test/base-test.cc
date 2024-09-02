@@ -604,15 +604,6 @@ template <> struct formatter<enabled_ptr_formatter*> {
 };
 FMT_END_NAMESPACE
 
-TEST(base_test, has_formatter) {
-  using fmt::has_formatter;
-  using context = fmt::format_context;
-  static_assert(has_formatter<enabled_formatter, context>::value, "");
-  static_assert(!has_formatter<disabled_formatter, context>::value, "");
-  static_assert(!has_formatter<disabled_formatter_convertible, context>::value,
-                "");
-}
-
 struct const_formattable {};
 struct nonconst_formattable {};
 

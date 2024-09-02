@@ -358,16 +358,21 @@ template <typename T, typename Char> struct is_range {
 };
 
 namespace detail {
+
+template <typename T, typename Char>
+using has_formatter = std::is_constructible<formatter<T, Char>>;
+
 template <typename Context> struct range_mapper {
   using mapper = arg_mapper<Context>;
+  using char_type = typename Context::char_type;
 
   template <typename T,
-            FMT_ENABLE_IF(has_formatter<remove_cvref_t<T>, Context>::value)>
+            FMT_ENABLE_IF(has_formatter<remove_cvref_t<T>, char_type>::value)>
   static auto map(T&& value) -> T&& {
     return static_cast<T&&>(value);
   }
   template <typename T,
-            FMT_ENABLE_IF(!has_formatter<remove_cvref_t<T>, Context>::value)>
+            FMT_ENABLE_IF(!has_formatter<remove_cvref_t<T>, char_type>::value)>
   static auto map(T&& value) -> decltype(mapper::map(static_cast<T&&>(value))) {
     return mapper::map(static_cast<T&&>(value));
   }

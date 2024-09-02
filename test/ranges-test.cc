@@ -363,8 +363,7 @@ TEST(ranges_test, enum_range) {
 
 #if !FMT_MSC_VERSION
 TEST(ranges_test, unformattable_range) {
-  EXPECT_FALSE((fmt::has_formatter<std::vector<unformattable>,
-                                   fmt::format_context>::value));
+  EXPECT_FALSE((fmt::is_formattable<std::vector<unformattable>, char>::value));
 }
 #endif
 
