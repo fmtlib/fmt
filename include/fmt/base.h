@@ -2241,6 +2241,10 @@ template <typename Context> struct arg_mapper {
   FMT_MAP_API auto map(...) -> unformattable { return {}; }
 };
 
+template <typename T, typename Char>
+using mapped_t = decltype(detail::arg_mapper<buffered_context<Char>>::map(
+    std::declval<T&>()));
+
 // A type constant after applying arg_mapper<Context>.
 template <typename T, typename Context>
 using mapped_type_constant =
@@ -2909,9 +2913,7 @@ using format_string = basic_format_string<char, type_identity_t<T>...>;
 
 template <typename T, typename Char = char>
 using is_formattable = bool_constant<
-    !std::is_base_of<detail::unformattable,
-                     decltype(detail::arg_mapper<buffered_context<Char>>::map(
-                         std::declval<T&>()))>::value>;
+    !std::is_base_of<detail::unformattable, detail::mapped_t<T, Char>>::value>;
 
 #ifdef __cpp_concepts
 template <typename T, typename Char = char>
