@@ -2240,9 +2240,9 @@ template <typename Char> struct named_arg_value {
 };
 
 template <typename Context> struct custom_value {
-  using parse_context = typename Context::parse_context_type;
+  using char_type = typename Context::char_type;
   void* value;
-  void (*format)(void* arg, parse_context& parse_ctx, Context& ctx);
+  void (*format)(void* arg, parse_context<char_type>& parse_ctx, Context& ctx);
 };
 
 enum class custom_tag {};
@@ -2600,9 +2600,6 @@ template <typename Context> class basic_format_arg {
   auto type() const -> detail::type { return type_; }
 
   auto is_integral() const -> bool { return detail::is_integral_type(type_); }
-  auto is_arithmetic() const -> bool {
-    return detail::is_arithmetic_type(type_);
-  }
 
   /**
    * Visits an argument dispatching to the appropriate visit method based on
@@ -2650,20 +2647,14 @@ template <typename Context> class basic_format_arg {
   }
 
   auto format_custom(const char_type* parse_begin,
-                     typename Context::parse_context_type& parse_ctx,
-                     Context& ctx) -> bool {
+                     parse_context<char_type>& parse_ctx, Context& ctx)
+      -> bool {
     if (type_ != detail::type::custom_type) return false;
     parse_ctx.advance_to(parse_begin);
     value_.custom.format(value_.custom.value, parse_ctx, ctx);
     return true;
   }
 };
-
-template <typename Visitor, typename Context>
-FMT_DEPRECATED FMT_CONSTEXPR auto visit_format_arg(
-    Visitor&& vis, const basic_format_arg<Context>& arg) -> decltype(vis(0)) {
-  return arg.visit(static_cast<Visitor&&>(vis));
-}
 
 /**
  * A view of a collection of formatting arguments. To avoid lifetime issues it
@@ -2674,10 +2665,6 @@ FMT_DEPRECATED FMT_CONSTEXPR auto visit_format_arg(
  *     fmt::format_args args = fmt::make_format_args();  // Dangling reference
  */
 template <typename Context> class basic_format_args {
- public:
-  using size_type = int;
-  using format_arg = basic_format_arg<Context>;
-
  private:
   // A descriptor that contains information about formatting arguments.
   // If the number of arguments is less or equal to max_packed_args then
@@ -2691,7 +2678,7 @@ template <typename Context> class basic_format_args {
     // may require more code (at least on x86-64) even if the same amount of
     // data is actually copied to stack. It saves ~10% on the bloat test.
     const detail::value<Context>* values_;
-    const format_arg* args_;
+    const basic_format_arg<Context>* args_;
   };
 
   constexpr auto is_packed() const -> bool {
@@ -2708,6 +2695,8 @@ template <typename Context> class basic_format_args {
   }
 
  public:
+  using format_arg = basic_format_arg<Context>;
+
   constexpr basic_format_args() : desc_(0), args_(nullptr) {}
 
   /// Constructs a `basic_format_args` object from `format_arg_store`.
@@ -2775,7 +2764,7 @@ template <typename Context> class basic_format_args {
 class context {
  private:
   appender out_;
-  basic_format_args<context> args_;
+  format_args args_;
   FMT_NO_UNIQUE_ADDRESS detail::locale_ref loc_;
 
  public:
@@ -2784,15 +2773,14 @@ class context {
 
   using iterator = appender;
   using format_arg = basic_format_arg<context>;
-  using parse_context_type = parse_context<char>;
+  using parse_context_type FMT_DEPRECATED = parse_context<>;
   template <typename T> using formatter_type FMT_DEPRECATED = formatter<T>;
   enum { builtin_types = FMT_BUILTIN_TYPES };
 
   /// Constructs a `context` object. References to the arguments are stored
   /// in the object so make sure they have appropriate lifetimes.
-  FMT_CONSTEXPR context(iterator out, basic_format_args<context> ctx_args,
-                        detail::locale_ref loc = {})
-      : out_(out), args_(ctx_args), loc_(loc) {}
+  FMT_CONSTEXPR context(iterator out, format_args a, detail::locale_ref l = {})
+      : out_(out), args_(a), loc_(l) {}
   context(context&&) = default;
   context(const context&) = delete;
   void operator=(const context&) = delete;
@@ -2802,7 +2790,6 @@ class context {
   FMT_CONSTEXPR auto arg_id(string_view name) -> int {
     return args_.get_id(name);
   }
-  auto args() const -> const basic_format_args<context>& { return args_; }
 
   // Returns an iterator to the beginning of the output range.
   FMT_CONSTEXPR auto out() -> iterator { return out_; }
@@ -2886,6 +2873,9 @@ using is_formattable = bool_constant<
 template <typename T, typename Char = char>
 concept formattable = is_formattable<remove_reference_t<T>, Char>::value;
 #endif
+
+template <typename T, typename Char>
+using has_formatter FMT_DEPRECATED = std::is_constructible<formatter<T, Char>>;
 
 // A formatter specialization for natively supported types.
 template <typename T, typename Char>

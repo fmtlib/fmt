@@ -505,7 +505,7 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
     }
     if (specs.alt() && arg.visit(is_zero_int())) specs.clear_alt();
     if (specs.fill_unit<Char>() == '0') {
-      if (arg.is_arithmetic() && specs.align() != align::left) {
+      if (is_arithmetic_type(arg.type()) && specs.align() != align::left) {
         specs.set_align(align::numeric);
       } else {
         // Ignore '0' flag for non-numeric types or if '-' flag is also present.

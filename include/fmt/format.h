@@ -1043,8 +1043,9 @@ template <typename OutputIt, typename Char> class generic_context {
  public:
   using char_type = Char;
   using iterator = OutputIt;
-  using parse_context_type = parse_context<Char>;
-  template <typename T> using formatter_type = formatter<T, Char>;
+  using parse_context_type FMT_DEPRECATED = parse_context<Char>;
+  template <typename T>
+  using formatter_type FMT_DEPRECATED = formatter<T, Char>;
   enum { builtin_types = FMT_BUILTIN_TYPES };
 
   constexpr generic_context(OutputIt out,
@@ -1063,9 +1064,6 @@ template <typename OutputIt, typename Char> class generic_context {
   }
   FMT_CONSTEXPR auto arg_id(basic_string_view<Char> name) -> int {
     return args_.get_id(name);
-  }
-  auto args() const -> const basic_format_args<generic_context>& {
-    return args_;
   }
 
   FMT_CONSTEXPR auto out() -> iterator { return out_; }
