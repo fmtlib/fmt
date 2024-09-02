@@ -3769,27 +3769,27 @@ FMT_CONSTEXPR void handle_dynamic_spec(
 #  if FMT_USE_NONTYPE_TEMPLATE_ARGS
 template <typename T, typename Char, size_t N,
           fmt::detail_exported::fixed_string<Char, N> Str>
-struct statically_named_arg : view {
+struct static_named_arg : view {
   static constexpr auto name = Str.data;
 
   const T& value;
-  statically_named_arg(const T& v) : value(v) {}
+  static_named_arg(const T& v) : value(v) {}
 };
 
 template <typename T, typename Char, size_t N,
           fmt::detail_exported::fixed_string<Char, N> Str>
-struct is_named_arg<statically_named_arg<T, Char, N, Str>> : std::true_type {};
+struct is_named_arg<static_named_arg<T, Char, N, Str>> : std::true_type {};
 
 template <typename T, typename Char, size_t N,
           fmt::detail_exported::fixed_string<Char, N> Str>
-struct is_statically_named_arg<statically_named_arg<T, Char, N, Str>>
-    : std::true_type {};
+struct is_static_named_arg<static_named_arg<T, Char, N, Str>> : std::true_type {
+};
 
 template <typename Char, size_t N,
           fmt::detail_exported::fixed_string<Char, N> Str>
 struct udl_arg {
   template <typename T> auto operator=(T&& value) const {
-    return statically_named_arg<T, Char, N, Str>(std::forward<T>(value));
+    return static_named_arg<T, Char, N, Str>(std::forward<T>(value));
   }
 };
 #  else

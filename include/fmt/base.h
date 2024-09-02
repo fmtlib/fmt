@@ -808,13 +808,8 @@ template <typename Char, typename T> struct named_arg : view {
   named_arg(const Char* n, const T& v) : name(n), value(v) {}
 };
 
-template <typename Char> struct named_arg_info {
-  const Char* name;
-  int id;
-};
-
 template <typename T> struct is_named_arg : std::false_type {};
-template <typename T> struct is_statically_named_arg : std::false_type {};
+template <typename T> struct is_static_named_arg : std::false_type {};
 
 template <typename Char, typename T>
 struct is_named_arg<named_arg<Char, T>> : std::true_type {};
@@ -838,7 +833,35 @@ template <typename... Args> constexpr auto count_named_args() -> size_t {
   return count<is_named_arg<Args>::value...>();
 }
 template <typename... Args> constexpr auto count_static_named_args() -> size_t {
-  return count<is_statically_named_arg<Args>::value...>();
+  return count<is_static_named_arg<Args>::value...>();
+}
+
+template <typename Char> struct named_arg_info {
+  const Char* name;
+  int id;
+};
+
+template <typename Char, typename T, FMT_ENABLE_IF(!is_named_arg<T>::value)>
+void init_named_arg(named_arg_info<Char>*, int& arg_index, int&, const T&) {
+  ++arg_index;
+}
+template <typename Char, typename T, FMT_ENABLE_IF(is_named_arg<T>::value)>
+void init_named_arg(named_arg_info<Char>* named_args, int& arg_index,
+                    int& named_arg_index, const T& arg) {
+  named_args[named_arg_index++] = {arg.name, arg_index++};
+}
+
+template <typename T, typename Char,
+          FMT_ENABLE_IF(!is_static_named_arg<T>::value)>
+FMT_CONSTEXPR void init_static_named_arg(named_arg_info<Char>*, int& arg_index,
+                                         int&) {
+  ++arg_index;
+}
+template <typename T, typename Char,
+          FMT_ENABLE_IF(is_static_named_arg<T>::value)>
+FMT_CONSTEXPR void init_static_named_arg(named_arg_info<Char>* named_args,
+                                         int& arg_index, int& named_arg_index) {
+  named_args[named_arg_index++] = {T::name, arg_index++};
 }
 
 // To minimize the number of types we need to deal with, long is translated
@@ -1761,6 +1784,83 @@ FMT_CONSTEXPR inline auto check_char_specs(const format_specs& specs) -> bool {
   return true;
 }
 
+// A base class for compile-time strings.
+struct compile_string {};
+
+template <typename T, typename Char>
+FMT_VISIBILITY("hidden")  // Suppress an ld warning on macOS (#3769).
+FMT_CONSTEXPR auto invoke_parse(parse_context<Char>& ctx) -> const Char* {
+  using mapper = arg_mapper<buffered_context<Char>>;
+  using mapped_type = remove_cvref_t<decltype(mapper::map(std::declval<T&>()))>;
+#if defined(__cpp_if_constexpr)
+  if constexpr (std::is_default_constructible<formatter<mapped_type, Char>>())
+    return formatter<mapped_type, Char>().parse(ctx);
+  return ctx.begin();  // Ignore the error - it is reported by make_format_args.
+#else
+  return formatter<mapped_type, Char>().parse(ctx);
+#endif
+}
+
+template <typename... T> struct arg_pack {};
+
+template <typename Char, int NUM_ARGS, int NUM_NAMED_ARGS, bool DYNAMIC_NAMES>
+class format_string_checker {
+ private:
+  type types_[NUM_ARGS > 0 ? NUM_ARGS : 1];
+  named_arg_info<Char> named_args_[NUM_NAMED_ARGS > 0 ? NUM_NAMED_ARGS : 1];
+  compile_parse_context<Char> context_;
+
+  using parse_func = auto (*)(parse_context<Char>&) -> const Char*;
+  parse_func parse_funcs_[NUM_ARGS > 0 ? NUM_ARGS : 1];
+
+ public:
+  template <typename... T>
+  explicit FMT_CONSTEXPR format_string_checker(basic_string_view<Char> fmt,
+                                               arg_pack<T...>)
+      : types_{mapped_type_constant<T, buffered_context<Char>>::value...},
+        named_args_{},
+        context_(fmt, NUM_ARGS, types_),
+        parse_funcs_{&invoke_parse<T, Char>...} {
+    using ignore = int[];
+    int arg_index = 0, named_arg_index = 0;
+    (void)ignore{
+        0, (init_static_named_arg<T>(named_args_, arg_index, named_arg_index),
+            0)...};
+    ignore_unused(arg_index, named_arg_index);
+  }
+
+  FMT_CONSTEXPR void on_text(const Char*, const Char*) {}
+
+  FMT_CONSTEXPR auto on_arg_id() -> int { return context_.next_arg_id(); }
+  FMT_CONSTEXPR auto on_arg_id(int id) -> int {
+    context_.check_arg_id(id);
+    return id;
+  }
+  FMT_CONSTEXPR auto on_arg_id(basic_string_view<Char> id) -> int {
+    for (int i = 0; i < NUM_NAMED_ARGS; ++i) {
+      if (named_args_[i].name == id) return named_args_[i].id;
+    }
+    if (!DYNAMIC_NAMES) on_error("argument not found");
+    return -1;
+  }
+
+  FMT_CONSTEXPR void on_replacement_field(int id, const Char* begin) {
+    on_format_specs(id, begin, begin);  // Call parse() on empty specs.
+  }
+
+  FMT_CONSTEXPR auto on_format_specs(int id, const Char* begin, const Char* end)
+      -> const Char* {
+    context_.advance_to(begin);
+    if (id >= 0 && id < NUM_ARGS) return parse_funcs_[id](context_);
+    while (begin != end && *begin != '}') ++begin;
+    return begin;
+  }
+
+  FMT_NORETURN FMT_CONSTEXPR void on_error(const char* message) {
+    report_error(message);
+  }
+};
+
 /// A contiguous memory buffer with an optional growing ability. It is an
 /// internal class and shouldn't be used directly, only via `memory_buffer`.
 template <typename T> class buffer {
@@ -2369,30 +2469,6 @@ template <typename Context, size_t NUM_ARGS>
 using arg_t = conditional_t<NUM_ARGS <= max_packed_args, value<Context>,
                             basic_format_arg<Context>>;
 
-template <typename Char, typename T, FMT_ENABLE_IF(!is_named_arg<T>::value)>
-void init_named_arg(named_arg_info<Char>*, int& arg_index, int&, const T&) {
-  ++arg_index;
-}
-template <typename Char, typename T, FMT_ENABLE_IF(is_named_arg<T>::value)>
-void init_named_arg(named_arg_info<Char>* named_args, int& arg_index,
-                    int& named_arg_index, const T& arg) {
-  named_args[named_arg_index++] = {arg.name, arg_index++};
-}
-
-template <typename T, typename Char,
-          FMT_ENABLE_IF(!is_statically_named_arg<T>::value)>
-FMT_CONSTEXPR void init_statically_named_arg(named_arg_info<Char>*,
-                                             int& arg_index, int&) {
-  ++arg_index;
-}
-template <typename T, typename Char,
-          FMT_ENABLE_IF(is_statically_named_arg<T>::value)>
-FMT_CONSTEXPR void init_statically_named_arg(named_arg_info<Char>* named_args,
-                                             int& arg_index,
-                                             int& named_arg_index) {
-  named_args[named_arg_index++] = {T::name, arg_index++};
-}
-
 // An array of references to arguments. It can be implicitly converted to
 // `fmt::basic_format_args` for passing into type-erased formatting functions
 // such as `fmt::vformat`.
@@ -2701,83 +2777,6 @@ class context {
 FMT_END_EXPORT
 
 namespace detail {
-
-// A base class for compile-time strings.
-struct compile_string {};
-
-template <typename T, typename Char>
-FMT_VISIBILITY("hidden")  // Suppress an ld warning on macOS (#3769).
-FMT_CONSTEXPR auto invoke_parse(parse_context<Char>& ctx) -> const Char* {
-  using mapper = arg_mapper<buffered_context<Char>>;
-  using mapped_type = remove_cvref_t<decltype(mapper::map(std::declval<T&>()))>;
-#if defined(__cpp_if_constexpr)
-  if constexpr (std::is_default_constructible<formatter<mapped_type, Char>>())
-    return formatter<mapped_type, Char>().parse(ctx);
-  return ctx.begin();  // Ignore the error - it is reported by make_format_args.
-#else
-  return formatter<mapped_type, Char>().parse(ctx);
-#endif
-}
-
-template <typename... T> struct arg_pack {};
-
-template <typename Char, int NUM_ARGS, int NUM_NAMED_ARGS, bool DYNAMIC_NAMES>
-class format_string_checker {
- private:
-  type types_[NUM_ARGS > 0 ? NUM_ARGS : 1];
-  named_arg_info<Char> named_args_[NUM_NAMED_ARGS > 0 ? NUM_NAMED_ARGS : 1];
-  compile_parse_context<Char> context_;
-
-  using parse_func = auto (*)(parse_context<Char>&) -> const Char*;
-  parse_func parse_funcs_[NUM_ARGS > 0 ? NUM_ARGS : 1];
-
- public:
-  template <typename... T>
-  explicit FMT_CONSTEXPR format_string_checker(basic_string_view<Char> fmt,
-                                               arg_pack<T...>)
-      : types_{mapped_type_constant<T, buffered_context<Char>>::value...},
-        named_args_{},
-        context_(fmt, NUM_ARGS, types_),
-        parse_funcs_{&invoke_parse<T, Char>...} {
-    using ignore = int[];
-    int arg_index = 0, named_arg_index = 0;
-    (void)ignore{0, (init_statically_named_arg<T>(named_args_, arg_index,
-                                                  named_arg_index),
-                     0)...};
-    ignore_unused(arg_index, named_arg_index);
-  }
-
-  FMT_CONSTEXPR void on_text(const Char*, const Char*) {}
-
-  FMT_CONSTEXPR auto on_arg_id() -> int { return context_.next_arg_id(); }
-  FMT_CONSTEXPR auto on_arg_id(int id) -> int {
-    context_.check_arg_id(id);
-    return id;
-  }
-  FMT_CONSTEXPR auto on_arg_id(basic_string_view<Char> id) -> int {
-    for (int i = 0; i < NUM_NAMED_ARGS; ++i) {
-      if (named_args_[i].name == id) return named_args_[i].id;
-    }
-    if (!DYNAMIC_NAMES) on_error("argument not found");
-    return -1;
-  }
-
-  FMT_CONSTEXPR void on_replacement_field(int id, const Char* begin) {
-    on_format_specs(id, begin, begin);  // Call parse() on empty specs.
-  }
-
-  FMT_CONSTEXPR auto on_format_specs(int id, const Char* begin, const Char* end)
-      -> const Char* {
-    context_.advance_to(begin);
-    if (id >= 0 && id < NUM_ARGS) return parse_funcs_[id](context_);
-    while (begin != end && *begin != '}') ++begin;
-    return begin;
-  }
-
-  FMT_NORETURN FMT_CONSTEXPR void on_error(const char* message) {
-    report_error(message);
-  }
-};
 
 // TYPE can be different from type_constant<T>, e.g. for __float128.
 template <typename T, typename Char, type TYPE> struct native_formatter {

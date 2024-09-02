@@ -74,7 +74,7 @@ constexpr const auto& get([[maybe_unused]] const T& first,
 #  if FMT_USE_NONTYPE_TEMPLATE_ARGS
 template <int N, typename T, typename... Args, typename Char>
 constexpr auto get_arg_index_by_name(basic_string_view<Char> name) -> int {
-  if constexpr (is_statically_named_arg<T>()) {
+  if constexpr (is_static_named_arg<T>()) {
     if (name == T::name) return N;
   }
   if constexpr (sizeof...(Args) > 0)
