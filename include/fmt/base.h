@@ -2308,8 +2308,7 @@ template <typename Context> class value {
     // Get the formatter type through the context to allow different contexts
     // have different extension points, e.g. `formatter<T>` for `format` and
     // `printf_formatter<T>` for `printf`.
-    custom.format = format_custom_arg<
-        value_type, typename Context::template formatter_type<value_type>>;
+    custom.format = format_custom<value_type, formatter<value_type, char_type>>;
   }
   FMT_ALWAYS_INLINE value(const named_arg_info<char_type>* args, size_t size)
       : named_args{args, size} {}
@@ -2320,9 +2319,8 @@ template <typename Context> class value {
  private:
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T, typename Formatter>
-  static void format_custom_arg(void* arg,
-                                typename Context::parse_context_type& parse_ctx,
-                                Context& ctx) {
+  static void format_custom(void* arg, parse_context<char_type>& parse_ctx,
+                            Context& ctx) {
     auto f = Formatter();
     parse_ctx.advance_to(f.parse(parse_ctx));
     using qualified_type =
@@ -2494,7 +2492,67 @@ struct format_arg_store<Context, NUM_ARGS, 0, DESC> {
   arg_t<Context, NUM_ARGS> args[NUM_ARGS != 0 ? NUM_ARGS : +1];
 };
 
+// TYPE can be different from type_constant<T>, e.g. for __float128.
+template <typename T, typename Char, type TYPE> struct native_formatter {
+ private:
+  dynamic_format_specs<Char> specs_;
+
+ public:
+  using nonlocking = void;
+
+  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
+    if (ctx.begin() == ctx.end() || *ctx.begin() == '}') return ctx.begin();
+    auto end = parse_format_specs(ctx.begin(), ctx.end(), specs_, ctx, TYPE);
+    if (const_check(TYPE == type::char_type)) check_char_specs(specs_);
+    return end;
+  }
+
+  template <type U = TYPE,
+            FMT_ENABLE_IF(U == type::string_type || U == type::cstring_type ||
+                          U == type::char_type)>
+  FMT_CONSTEXPR void set_debug_format(bool set = true) {
+    specs_.set_type(set ? presentation_type::debug : presentation_type::none);
+  }
+
+  template <typename FormatContext>
+  FMT_CONSTEXPR auto format(const T& val, FormatContext& ctx) const
+      -> decltype(ctx.out());
+};
+
+template <typename T, typename Enable = void>
+struct locking
+    : bool_constant<mapped_type_constant<T>::value == type::custom_type> {};
+template <typename T>
+struct locking<T, void_t<typename formatter<remove_cvref_t<T>>::nonlocking>>
+    : std::false_type {};
+
+template <typename T = int> FMT_CONSTEXPR inline auto is_locking() -> bool {
+  return locking<T>::value;
+}
+template <typename T1, typename T2, typename... Tail>
+FMT_CONSTEXPR inline auto is_locking() -> bool {
+  return locking<T1>::value || is_locking<T2, Tail...>();
+}
+
+// Use vformat_args and avoid type_identity to keep symbols short.
+template <typename Char = char> struct vformat_args {
+  using type = basic_format_args<buffered_context<Char>>;
+};
+template <> struct vformat_args<char> {
+  using type = format_args;
+};
+
+template <typename Char>
+void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
+                typename vformat_args<Char>::type args, locale_ref loc = {});
+
+#ifdef _WIN32
+FMT_API void vprint_mojibake(FILE*, string_view, format_args, bool);
+#else
+inline void vprint_mojibake(FILE*, string_view, const format_args&, bool) {}
+#endif
 }  // namespace detail
+
 FMT_BEGIN_EXPORT
 
 // A formatting argument. Context is a template parameter for the compiled API
@@ -2522,16 +2580,15 @@ template <typename Context> class basic_format_arg {
 
  public:
   class handle {
+   private:
+    detail::custom_value<Context> custom_;
+
    public:
     explicit handle(detail::custom_value<Context> custom) : custom_(custom) {}
 
-    void format(typename Context::parse_context_type& parse_ctx,
-                Context& ctx) const {
+    void format(parse_context<char_type>& parse_ctx, Context& ctx) const {
       custom_.format(custom_.value, parse_ctx, ctx);
     }
-
-   private:
-    detail::custom_value<Context> custom_;
   };
 
   constexpr basic_format_arg() : type_(detail::type::none_type) {}
@@ -2582,7 +2639,7 @@ template <typename Context> class basic_format_arg {
     case detail::type::cstring_type:
       return vis(value_.string.data);
     case detail::type::string_type:
-      using sv = basic_string_view<typename Context::char_type>;
+      using sv = basic_string_view<char_type>;
       return vis(sv(value_.string.data, value_.string.size));
     case detail::type::pointer_type:
       return vis(value_.pointer);
@@ -2728,7 +2785,7 @@ class context {
   using iterator = appender;
   using format_arg = basic_format_arg<context>;
   using parse_context_type = parse_context<char>;
-  template <typename T> using formatter_type = formatter<T, char>;
+  template <typename T> using formatter_type FMT_DEPRECATED = formatter<T>;
   enum { builtin_types = FMT_BUILTIN_TYPES };
 
   /// Constructs a `context` object. References to the arguments are stored
@@ -2755,71 +2812,6 @@ class context {
 
   FMT_CONSTEXPR auto locale() -> detail::locale_ref { return loc_; }
 };
-FMT_END_EXPORT
-
-namespace detail {
-
-// TYPE can be different from type_constant<T>, e.g. for __float128.
-template <typename T, typename Char, type TYPE> struct native_formatter {
- private:
-  dynamic_format_specs<Char> specs_;
-
- public:
-  using nonlocking = void;
-
-  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
-    if (ctx.begin() == ctx.end() || *ctx.begin() == '}') return ctx.begin();
-    auto end = parse_format_specs(ctx.begin(), ctx.end(), specs_, ctx, TYPE);
-    if (const_check(TYPE == type::char_type)) check_char_specs(specs_);
-    return end;
-  }
-
-  template <type U = TYPE,
-            FMT_ENABLE_IF(U == type::string_type || U == type::cstring_type ||
-                          U == type::char_type)>
-  FMT_CONSTEXPR void set_debug_format(bool set = true) {
-    specs_.set_type(set ? presentation_type::debug : presentation_type::none);
-  }
-
-  template <typename FormatContext>
-  FMT_CONSTEXPR auto format(const T& val, FormatContext& ctx) const
-      -> decltype(ctx.out());
-};
-
-template <typename T, typename Enable = void>
-struct locking
-    : bool_constant<mapped_type_constant<T>::value == type::custom_type> {};
-template <typename T>
-struct locking<T, void_t<typename formatter<remove_cvref_t<T>>::nonlocking>>
-    : std::false_type {};
-
-template <typename T = int> FMT_CONSTEXPR inline auto is_locking() -> bool {
-  return locking<T>::value;
-}
-template <typename T1, typename T2, typename... Tail>
-FMT_CONSTEXPR inline auto is_locking() -> bool {
-  return locking<T1>::value || is_locking<T2, Tail...>();
-}
-
-// Use vformat_args and avoid type_identity to keep symbols short.
-template <typename Char = char> struct vformat_args {
-  using type = basic_format_args<buffered_context<Char>>;
-};
-template <> struct vformat_args<char> {
-  using type = format_args;
-};
-
-template <typename Char>
-void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
-                typename vformat_args<Char>::type args, locale_ref loc = {});
-
-FMT_API void vprint_mojibake(FILE*, string_view, format_args, bool = false);
-#ifndef _WIN32
-inline void vprint_mojibake(FILE*, string_view, format_args, bool) {}
-#endif
-}  // namespace detail
-
-FMT_BEGIN_EXPORT
 
 template <typename Char = char> struct runtime_format_string {
   basic_string_view<Char> str;
@@ -3060,7 +3052,7 @@ FMT_API void vprintln(FILE* f, string_view fmt, format_args args);
 template <typename... T>
 FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
   const auto& vargs = fmt::make_format_args(args...);
-  if (!FMT_USE_UTF8) return detail::vprint_mojibake(stdout, fmt, vargs);
+  if (!FMT_USE_UTF8) return detail::vprint_mojibake(stdout, fmt, vargs, false);
   return detail::is_locking<T...>() ? vprint_buffered(stdout, fmt, vargs)
                                     : vprint(fmt, vargs);
 }
@@ -3076,7 +3068,7 @@ FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
 template <typename... T>
 FMT_INLINE void print(FILE* f, format_string<T...> fmt, T&&... args) {
   const auto& vargs = fmt::make_format_args(args...);
-  if (!FMT_USE_UTF8) return detail::vprint_mojibake(f, fmt, vargs);
+  if (!FMT_USE_UTF8) return detail::vprint_mojibake(f, fmt, vargs, false);
   return detail::is_locking<T...>() ? vprint_buffered(f, fmt, vargs)
                                     : vprint(f, fmt, vargs);
 }

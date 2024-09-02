@@ -276,27 +276,6 @@ TEST(base_test, get_buffer) {
   EXPECT_EQ(&back_inserter_result, buffer_ptr);
 }
 
-struct custom_context {
-  using char_type = char;
-  using parse_context_type = fmt::format_parse_context;
-
-  bool called = false;
-
-  template <typename T> struct formatter_type {
-    FMT_CONSTEXPR auto parse(fmt::format_parse_context& ctx)
-        -> decltype(ctx.begin()) {
-      return ctx.begin();
-    }
-
-    const char* format(const T&, custom_context& ctx) const {
-      ctx.called = true;
-      return nullptr;
-    }
-  };
-
-  void advance_to(const char*) {}
-};
-
 struct test_struct {};
 
 FMT_BEGIN_NAMESPACE
@@ -314,16 +293,6 @@ FMT_END_NAMESPACE
 TEST(arg_test, format_args) {
   auto args = fmt::format_args();
   EXPECT_FALSE(args.get(1));
-}
-
-TEST(arg_test, make_value_with_custom_context) {
-  auto t = test_struct();
-  auto arg = fmt::detail::value<custom_context>(
-      fmt::detail::arg_mapper<custom_context>().map(t));
-  auto ctx = custom_context();
-  auto parse_ctx = fmt::format_parse_context("");
-  arg.custom.format(&t, parse_ctx, ctx);
-  EXPECT_TRUE(ctx.called);
 }
 
 // Use a unique result type to make sure that there are no undesirable
