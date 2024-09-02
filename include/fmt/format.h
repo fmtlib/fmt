@@ -1085,7 +1085,7 @@ class loc_value {
   template <typename T, FMT_ENABLE_IF(!detail::is_float128<T>::value)>
   loc_value(T value) {
     value_.type_ = detail::mapped_type_constant<T, format_context>::value;
-    value_.value_ = detail::arg_mapper<format_context>::map(value);
+    value_.value_ = detail::arg_mapper<char>::map(value);
   }
 
   template <typename T, FMT_ENABLE_IF(detail::is_float128<T>::value)>
@@ -3652,10 +3652,10 @@ template <typename Char, typename OutputIt, typename T,
 FMT_CONSTEXPR auto write(OutputIt out, const T& value) -> enable_if_t<
     std::is_class<T>::value && !has_to_string_view<T>::value &&
         !is_floating_point<T>::value && !std::is_same<T, Char>::value &&
-        !std::is_same<T, remove_cvref_t<
-                             decltype(arg_mapper<Context>::map(value))>>::value,
+        !std::is_same<
+            T, remove_cvref_t<decltype(arg_mapper<Char>::map(value))>>::value,
     OutputIt> {
-  return write<Char>(out, arg_mapper<Context>::map(value));
+  return write<Char>(out, arg_mapper<Char>::map(value));
 }
 
 template <typename Char, typename OutputIt, typename T,

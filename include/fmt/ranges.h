@@ -363,7 +363,7 @@ template <typename T, typename Char>
 using has_formatter = std::is_constructible<formatter<T, Char>>;
 
 template <typename Context> struct range_mapper {
-  using mapper = arg_mapper<Context>;
+  using mapper = arg_mapper<typename Context::char_type>;
   using char_type = typename Context::char_type;
 
   template <typename T,

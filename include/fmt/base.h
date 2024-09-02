@@ -893,9 +893,7 @@ struct unformattable_pointer : unformattable {};
 
 // Maps formatting arguments to reduce the set of types we need to work with.
 // Returns unformattable* on errors to be SFINAE-friendly.
-template <typename Context> struct arg_mapper {
-  using char_type = typename Context::char_type;
-
+template <typename Char> struct arg_mapper {
   FMT_MAP_API auto map(signed char x) -> int { return x; }
   FMT_MAP_API auto map(unsigned char x) -> unsigned { return x; }
   FMT_MAP_API auto map(short x) -> int { return x; }
@@ -911,8 +909,8 @@ template <typename Context> struct arg_mapper {
   FMT_MAP_API auto map(bool x) -> bool { return x; }
 
   template <typename T, FMT_ENABLE_IF(std::is_same<T, char>::value ||
-                                      std::is_same<T, char_type>::value)>
-  FMT_MAP_API auto map(T x) -> char_type {
+                                      std::is_same<T, Char>::value)>
+  FMT_MAP_API auto map(T x) -> Char {
     return x;
   }
   template <typename T, enable_if_t<(std::is_same<T, wchar_t>::value ||
@@ -921,7 +919,7 @@ template <typename Context> struct arg_mapper {
 #endif
                                      std::is_same<T, char16_t>::value ||
                                      std::is_same<T, char32_t>::value) &&
-                                        !std::is_same<T, char_type>::value,
+                                        !std::is_same<T, Char>::value,
                                     int> = 0>
   FMT_MAP_API auto map(T) -> unformattable_char {
     return {};
@@ -940,16 +938,16 @@ template <typename Context> struct arg_mapper {
     return {};
   }
 
-  FMT_MAP_API auto map(char_type* x) -> const char_type* { return x; }
-  FMT_MAP_API auto map(const char_type* x) -> const char_type* { return x; }
+  FMT_MAP_API auto map(Char* x) -> const Char* { return x; }
+  FMT_MAP_API auto map(const Char* x) -> const Char* { return x; }
   template <typename T, typename C = char_t<T>,
-            FMT_ENABLE_IF(std::is_same<C, char_type>::value &&
+            FMT_ENABLE_IF(std::is_same<C, Char>::value &&
                           !std::is_pointer<T>::value)>
   FMT_MAP_API auto map(const T& x) -> basic_string_view<C> {
     return to_string_view(x);
   }
   template <typename T, typename C = char_t<T>,
-            FMT_ENABLE_IF(!std::is_same<C, char_type>::value &&
+            FMT_ENABLE_IF(!std::is_same<C, Char>::value &&
                           !std::is_pointer<T>::value)>
   FMT_MAP_API auto map(const T&) -> unformattable_char {
     return {};
@@ -973,7 +971,7 @@ template <typename Context> struct arg_mapper {
           std::is_pointer<T>::value || std::is_member_pointer<T>::value ||
           std::is_function<typename std::remove_pointer<T>::type>::value ||
           (std::is_array<T>::value &&
-           !std::is_convertible<T, const char_type*>::value))>
+           !std::is_convertible<T, const Char*>::value))>
   FMT_MAP_API auto map(const T&) -> unformattable_pointer {
     return {};
   }
@@ -993,8 +991,8 @@ template <typename Context> struct arg_mapper {
 
   template <typename T, typename U = remove_const_t<T>>
   struct formattable
-      : bool_constant<has_const_formatter<U, char_type>() ||
-                      (std::is_constructible<formatter<U, char_type>>::value &&
+      : bool_constant<has_const_formatter<U, Char>() ||
+                      (std::is_constructible<formatter<U, Char>>::value &&
                        !std::is_const<T>::value)> {};
 
   template <typename T, FMT_ENABLE_IF(formattable<T>::value)>
@@ -1027,13 +1025,13 @@ template <typename Context> struct arg_mapper {
 };
 
 template <typename T, typename Char>
-using mapped_t = decltype(detail::arg_mapper<buffered_context<Char>>::map(
-    std::declval<T&>()));
+using mapped_t = decltype(detail::arg_mapper<Char>::map(std::declval<T&>()));
 
-// A type constant after applying arg_mapper<Context>.
+// A type constant after applying arg_mapper.
 template <typename T, typename Context>
 using mapped_type_constant =
-    type_constant<decltype(arg_mapper<Context>::map(std::declval<const T&>())),
+    type_constant<decltype(arg_mapper<typename Context::char_type>::map(
+                      std::declval<const T&>())),
                   typename Context::char_type>;
 
 template <typename T, typename Context,
@@ -2407,7 +2405,8 @@ struct type_is_unformattable_for;
 
 template <bool PACKED, typename Context, typename T, FMT_ENABLE_IF(PACKED)>
 FMT_CONSTEXPR auto make_arg(T& val) -> value<Context> {
-  using arg_type = remove_cvref_t<decltype(arg_mapper<Context>::map(val))>;
+  using char_type = typename Context::char_type;
+  using arg_type = remove_cvref_t<decltype(arg_mapper<char_type>::map(val))>;
 
   // Use enum instead of constexpr because the latter may generate code.
   enum {
@@ -2426,8 +2425,7 @@ FMT_CONSTEXPR auto make_arg(T& val) -> value<Context> {
 
   enum { formattable = !std::is_same<arg_type, unformattable>::value };
 #if defined(__cpp_if_constexpr)
-  if constexpr (!formattable)
-    type_is_unformattable_for<T, typename Context::char_type> _;
+  if constexpr (!formattable) type_is_unformattable_for<T, char_type> _;
   if constexpr (!Context::builtin_types && !std::is_same<arg_type, int>::value)
     return {unwrap_named_arg(val), custom_tag()};
 #endif
@@ -2435,7 +2433,7 @@ FMT_CONSTEXPR auto make_arg(T& val) -> value<Context> {
       formattable,
       "Cannot format an argument. To make type T formattable provide a "
       "formatter<T> specialization: https://fmt.dev/latest/api.html#udt");
-  return {arg_mapper<Context>::map(val)};
+  return {arg_mapper<char_type>::map(val)};
 }
 
 template <typename Context, typename T>
