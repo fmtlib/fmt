@@ -360,9 +360,8 @@ template <typename... T> FMT_CONSTEXPR void ignore_unused(const T&...) {}
 
 constexpr auto is_constant_evaluated(bool default_value = false) noexcept
     -> bool {
-// Workaround for incompatibility between libstdc++ consteval-based
-// std::is_constant_evaluated() implementation and clang-14:
-// https://github.com/fmtlib/fmt/issues/3247.
+// Workaround for incompatibility between clang 14 and libstdc++ consteval-based
+// std::is_constant_evaluated: https://github.com/fmtlib/fmt/issues/3247.
 #if FMT_CPLUSPLUS >= 202002L && FMT_GLIBCXX_RELEASE >= 12 && \
     (FMT_CLANG_VERSION >= 1400 && FMT_CLANG_VERSION < 1500)
   ignore_unused(default_value);
@@ -2319,14 +2318,7 @@ constexpr unsigned long long make_descriptor() {
 }
 
 // This type is intentionally undefined, only used for errors.
-template <typename T, typename Char>
-#if FMT_CLANG_VERSION && FMT_CLANG_VERSION <= 1500
-// https://github.com/fmtlib/fmt/issues/3796
-struct type_is_unformattable_for {
-};
-#else
-struct type_is_unformattable_for;
-#endif
+template <typename T, typename Char> struct type_is_unformattable_for;
 
 template <bool PACKED, typename Context, typename T, FMT_ENABLE_IF(PACKED)>
 FMT_CONSTEXPR auto make_arg(T& val) -> value<Context> {
