@@ -578,7 +578,11 @@ TEST(ranges_test, escape) {
 
   EXPECT_EQ(fmt::format("{}", std::vector<std::vector<char>>{{'x'}}),
             "[['x']]");
+
+// Disabled due to a clang 17 bug: https://github.com/fmtlib/fmt/issues/4144.
+#if FMT_CLANG_VERSION >= 1800
   EXPECT_EQ(fmt::format("{}", std::tuple<std::vector<char>>{{'x'}}), "(['x'])");
+#endif
 }
 
 template <typename R> struct fmt_ref_view {
