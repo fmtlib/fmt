@@ -3973,10 +3973,11 @@ template <typename Char, typename Traits, typename Allocator>
 class formatter<std::basic_string<Char, Traits, Allocator>, Char>
     : public formatter<basic_string_view<Char>, Char> {};
 
-template <typename T, typename Char>
-struct formatter<T, Char,
-                 enable_if_t<(detail::bitint_traits<T>::is_formattable)>>
-    : formatter<typename detail::bitint_traits<T>::format_type, Char> {};
+template <int N, typename Char>
+struct formatter<detail::bitint<N>, Char> : formatter<long long, Char> {};
+template <int N, typename Char>
+struct formatter<detail::ubitint<N>, Char>
+    : formatter<unsigned long long, Char> {};
 
 /**
  * Converts `p` to `const void*` for pointer formatting.

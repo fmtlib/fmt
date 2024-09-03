@@ -417,22 +417,15 @@ template <typename T> auto convert_for_visit(T) -> monostate { return {}; }
 #  define FMT_USE_BITINT (FMT_CLANG_VERSION >= 1400)
 #endif
 
-template <typename T, int N = 0> struct bitint_traits {};
 #if FMT_USE_BITINT
 #  pragma clang diagnostic push
 #  pragma clang diagnostic ignored "-Wbit-int-extension"
-
-template <int N> struct bitint_traits<_BitInt(N)> {
-  static constexpr bool is_formattable = N <= 128;
-  using format_type = conditional_t<(N <= 64), long long, __int128>;
-};
-template <int N> struct bitint_traits<unsigned _BitInt(N)> {
-  static constexpr bool is_formattable = N <= 128;
-  using format_type =
-      conditional_t<(N <= 64), unsigned long long, unsigned __int128>;
-};
-
+template <int N> using bitint = _BitInt(N);
+template <int N> using ubitint = unsigned _BitInt(N);
 #  pragma clang diagnostic pop
+#else
+template <int N> struct bitint {};
+template <int N> struct ubitint {};
 #endif  // FMT_USE_BITINT
 
 // Casts a nonnegative integer to unsigned.
@@ -1170,12 +1163,20 @@ template <typename Char> struct arg_mapper {
   FMT_MAP_API auto map(double x) -> double { return x; }
   FMT_MAP_API auto map(long double x) -> long double { return x; }
 
-  template <typename T, FMT_ENABLE_IF(bitint_traits<T>::is_formattable)>
-  FMT_MAP_API auto map(T x) -> typename bitint_traits<T>::format_type {
+  template <int N, FMT_ENABLE_IF(N <= 64)>
+  FMT_MAP_API auto map(bitint<N> x) -> long long {
     return x;
   }
-  template <typename T, FMT_ENABLE_IF(!bitint_traits<T>::is_formattable)>
-  FMT_MAP_API auto map(T) -> unformattable {
+  template <int N, FMT_ENABLE_IF(N <= 64)>
+  FMT_MAP_API auto map(ubitint<N> x) -> unsigned long long {
+    return x;
+  }
+  template <int N, FMT_ENABLE_IF(N > 64)>
+  FMT_MAP_API auto map(bitint<N>) -> unformattable {
+    return {};
+  }
+  template <int N, FMT_ENABLE_IF(N > 64)>
+  FMT_MAP_API auto map(ubitint<N>) -> unformattable {
     return {};
   }
 
