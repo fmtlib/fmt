@@ -140,6 +140,7 @@ TEST(std_test, optional) {
 
 TEST(std_test, expected) {
 #ifdef __cpp_lib_expected
+  EXPECT_EQ(fmt::format("{}", std::expected<void, int>{}), "expected()");
   EXPECT_EQ(fmt::format("{}", std::expected<int, int>{1}), "expected(1)");
   EXPECT_EQ(fmt::format("{}", std::expected<int, int>{std::unexpected(1)}),
             "unexpected(1)");
@@ -163,6 +164,7 @@ TEST(std_test, expected) {
   EXPECT_FALSE(
       (fmt::is_formattable<std::expected<int, unformattable2>>::value));
   EXPECT_TRUE((fmt::is_formattable<std::expected<int, int>>::value));
+  EXPECT_TRUE((fmt::is_formattable<std::expected<void, int>>::value));
 #endif
 }
 

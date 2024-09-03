@@ -279,7 +279,8 @@ FMT_BEGIN_NAMESPACE
 FMT_EXPORT
 template <typename T, typename E, typename Char>
 struct formatter<std::expected<T, E>, Char,
-                 std::enable_if_t<is_formattable<T, Char>::value &&
+                 std::enable_if_t<(std::is_void<T>::value ||
+                                   is_formattable<T, Char>::value) &&
                                   is_formattable<E, Char>::value>> {
   FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     return ctx.begin();
@@ -292,7 +293,8 @@ struct formatter<std::expected<T, E>, Char,
 
     if (value.has_value()) {
       out = detail::write<Char>(out, "expected(");
-      out = detail::write_escaped_alternative<Char>(out, *value);
+      if constexpr (!std::is_void<T>::value)
+        out = detail::write_escaped_alternative<Char>(out, *value);
     } else {
       out = detail::write<Char>(out, "unexpected(");
       out = detail::write_escaped_alternative<Char>(out, value.error());
