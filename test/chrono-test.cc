@@ -763,7 +763,7 @@ TEST(chrono_test, weekday) {
   EXPECT_EQ(fmt::format("{:%a}", tm), "Sat");
 
   if (loc != std::locale::classic()) {
-    auto saturdays = std::vector<std::string>{"sáb", "sá."};
+    auto saturdays = std::vector<std::string>{"sáb", "sá.", "sáb."};
     EXPECT_THAT(saturdays, Contains(fmt::format(loc, "{:L}", sat)));
     EXPECT_THAT(saturdays, Contains(fmt::format(loc, "{:%a}", sat)));
     EXPECT_THAT(saturdays, Contains(fmt::format(loc, "{:%a}", tm)));
