@@ -1905,7 +1905,7 @@ template <typename T> class buffer {
   template <typename U>
 // Workaround for MSVC2019 to fix error C2893: Failed to specialize function
 // template 'void fmt::v11::detail::buffer<T>::append(const U *,const U *)'.
-#if !FMT_MSC_VERSION || FMT_MSC_VERSION >= 1930
+#if !FMT_MSC_VERSION || FMT_MSC_VERSION >= 1940
   FMT_CONSTEXPR20
 #endif
       void
