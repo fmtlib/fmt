@@ -2174,7 +2174,8 @@ template <typename Context> struct custom_value {
   void (*format)(void* arg, parse_context<char_type>& parse_ctx, Context& ctx);
 };
 
-enum class custom_tag {};
+// This type is intentionally undefined, only used for errors.
+template <typename T, typename Char> struct type_is_unformattable_for;
 
 // A formatting argument value.
 template <typename Context> class value {
@@ -2223,10 +2224,33 @@ template <typename Context> class value {
   }
   FMT_ALWAYS_INLINE value(const void* val) : pointer(val) {}
 
-  template <typename T>
-  FMT_CONSTEXPR20 FMT_ALWAYS_INLINE value(T& val, custom_tag = {}) {
-    using value_type = typename std::remove_cv<T>::type;
+  template <typename T> FMT_CONSTEXPR20 FMT_ALWAYS_INLINE value(T& val) {
+    // Use enum instead of constexpr because the latter may generate code.
+    enum { formattable_char = !std::is_same<T, unformattable_char>::value };
+    static_assert(formattable_char, "mixing character types is disallowed");
+
+    // Formatting of arbitrary pointers is disallowed. If you want to format a
+    // pointer cast it to `void*` or `const void*`. In particular, this forbids
+    // formatting of `[const] volatile char*` printed as bool by iostreams.
+    enum {
+      formattable_pointer = !std::is_same<T, unformattable_pointer>::value
+    };
+    static_assert(formattable_pointer,
+                  "formatting of non-void pointers is disallowed");
+
+    enum { formattable = !std::is_same<T, unformattable>::value };
+#if defined(__cpp_if_constexpr)
+    if constexpr (!formattable) type_is_unformattable_for<T, char_type> _;
+      // if constexpr (!Context::builtin_types && !std::is_same<T, int>::value)
+      // return {unwrap_named_arg(val), custom_tag()};
+#endif
+    static_assert(
+        formattable,
+        "cannot format an argument; to make type T formattable provide a "
+        "formatter<T> specialization: https://fmt.dev/latest/api.html#udt");
+
     // T may overload operator& e.g. std::vector<bool>::reference in libc++.
+    using value_type = typename std::remove_cv<T>::type;
 #if defined(__cpp_if_constexpr)
     if constexpr (std::is_same<decltype(&val), T*>::value)
       custom.value = const_cast<value_type*>(&val);
@@ -2241,9 +2265,6 @@ template <typename Context> class value {
   }
   FMT_ALWAYS_INLINE value(const named_arg_info<char_type>* args, size_t size)
       : named_args{args, size} {}
-  value(unformattable);
-  value(unformattable_char);
-  value(unformattable_pointer);
 
  private:
   // Formats an argument of a custom type, such as a user-defined class.
@@ -2317,40 +2338,9 @@ constexpr unsigned long long make_descriptor() {
                                      : is_unpacked_bit | NUM_ARGS;
 }
 
-// This type is intentionally undefined, only used for errors.
-template <typename T, typename Char> struct type_is_unformattable_for;
-
 template <bool PACKED, typename Context, typename T, FMT_ENABLE_IF(PACKED)>
 FMT_CONSTEXPR auto make_arg(T& val) -> value<Context> {
-  using char_type = typename Context::char_type;
-  using arg_type = remove_cvref_t<decltype(arg_mapper<char_type>::map(val))>;
-
-  // Use enum instead of constexpr because the latter may generate code.
-  enum {
-    formattable_char = !std::is_same<arg_type, unformattable_char>::value
-  };
-  static_assert(formattable_char, "mixing character types is disallowed");
-
-  // Formatting of arbitrary pointers is disallowed. If you want to format a
-  // pointer cast it to `void*` or `const void*`. In particular, this forbids
-  // formatting of `[const] volatile char*` printed as bool by iostreams.
-  enum {
-    formattable_pointer = !std::is_same<arg_type, unformattable_pointer>::value
-  };
-  static_assert(formattable_pointer,
-                "formatting of non-void pointers is disallowed");
-
-  enum { formattable = !std::is_same<arg_type, unformattable>::value };
-#if defined(__cpp_if_constexpr)
-  if constexpr (!formattable) type_is_unformattable_for<T, char_type> _;
-  if constexpr (!Context::builtin_types && !std::is_same<arg_type, int>::value)
-    return {unwrap_named_arg(val), custom_tag()};
-#endif
-  static_assert(
-      formattable,
-      "cannot format an argument; to make type T formattable provide a "
-      "formatter<T> specialization: https://fmt.dev/latest/api.html#udt");
-  return {arg_mapper<char_type>::map(val)};
+  return {arg_mapper<typename Context::char_type>::map(val)};
 }
 
 template <typename Context, typename T>
@@ -2378,9 +2368,9 @@ template <typename Context, size_t NUM_ARGS, size_t NUM_NAMED_ARGS,
 struct format_arg_store {
   // args_[0].named_args points to named_args to avoid bloating format_args.
   // +1 to workaround a bug in gcc 7.5 that causes duplicated-branches warning.
-  static constexpr size_t ARGS_ARR_SIZE = 1 + (NUM_ARGS != 0 ? NUM_ARGS : +1);
+  static constexpr size_t ARGS_ARRAY_SIZE = 1 + (NUM_ARGS != 0 ? NUM_ARGS : +1);
 
-  arg_t<Context, NUM_ARGS> args[ARGS_ARR_SIZE];
+  arg_t<Context, NUM_ARGS> args[ARGS_ARRAY_SIZE];
   named_arg_info<typename Context::char_type> named_args[NUM_NAMED_ARGS];
 
   template <typename... T>
@@ -2394,7 +2384,7 @@ struct format_arg_store {
 
   format_arg_store(format_arg_store&& rhs) {
     args[0] = {named_args, NUM_NAMED_ARGS};
-    for (size_t i = 1; i < ARGS_ARR_SIZE; ++i) args[i] = rhs.args[i];
+    for (size_t i = 1; i < ARGS_ARRAY_SIZE; ++i) args[i] = rhs.args[i];
     for (size_t i = 0; i < NUM_NAMED_ARGS; ++i)
       named_args[i] = rhs.named_args[i];
   }
@@ -2548,6 +2538,9 @@ template <typename Context> class basic_format_arg {
   constexpr basic_format_arg() : type_(detail::type::none_type) {}
   basic_format_arg(const detail::named_arg_info<char_type>* args, size_t size)
       : value_(args, size) {}
+  template <typename T>
+  basic_format_arg(T&& val)
+      : value_(val), type_(detail::stored_type_constant<T, Context>::value) {}
 
   constexpr explicit operator bool() const noexcept {
     return type_ != detail::type::none_type;
@@ -2848,8 +2841,7 @@ template <typename Context = context, typename... T,
           FMT_ENABLE_IF(NUM_NAMED_ARGS == 0)>
 constexpr FMT_ALWAYS_INLINE auto make_format_args(T&... args)
     -> detail::format_arg_store<Context, NUM_ARGS, 0, DESC> {
-  return {{detail::make_arg<NUM_ARGS <= detail::max_packed_args, Context>(
-      args)...}};
+  return {{{detail::arg_mapper<typename Context::char_type>::map(args)}...}};
 }
 
 #ifndef FMT_DOC

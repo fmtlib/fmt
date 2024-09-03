@@ -124,7 +124,7 @@ class dynamic_format_arg_store
   void emplace_arg(const detail::named_arg<char_type, T>& arg) {
     if (named_info_.empty()) {
       constexpr const detail::named_arg_info<char_type>* zero_ptr{nullptr};
-      data_.insert(data_.begin(), {zero_ptr, 0});
+      data_.insert(data_.begin(), basic_format_arg<Context>(zero_ptr, 0));
     }
     data_.emplace_back(detail::make_arg<Context>(detail::unwrap(arg.value)));
     auto pop_one = [](std::vector<basic_format_arg<Context>>* data) {
