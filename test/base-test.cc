@@ -342,24 +342,24 @@ VISIT_TYPE(unsigned long, unsigned long long);
 #endif
 
 #if FMT_BUILTIN_TYPES
-#  define CHECK_ARG(Char, expected, value)                                  \
-    {                                                                       \
-      testing::StrictMock<mock_visitor<decltype(expected)>> visitor;        \
-      EXPECT_CALL(visitor, visit(expected));                                \
-      using iterator = fmt::basic_appender<Char>;                           \
-      auto var = value;                                                     \
-      fmt::detail::make_arg<fmt::basic_format_context<iterator, Char>>(var) \
-          .visit(visitor);                                                  \
+#  define CHECK_ARG(expected, value)                                 \
+    {                                                                \
+      testing::StrictMock<mock_visitor<decltype(expected)>> visitor; \
+      EXPECT_CALL(visitor, visit(expected));                         \
+      auto var = value;                                              \
+      fmt::basic_format_arg<fmt::format_context>(                    \
+          fmt::detail::arg_mapper<char>::map(var))                   \
+          .visit(visitor);                                           \
     }
 #else
-#  define CHECK_ARG(Char, expected, value)
+#  define CHECK_ARG(expected, value)
 #endif
 
 #define CHECK_ARG_SIMPLE(value)                             \
   {                                                         \
     using value_type = decltype(value);                     \
     typename visit_type<value_type>::type expected = value; \
-    CHECK_ARG(char, expected, value)                        \
+    CHECK_ARG(expected, value)                              \
   }
 
 template <typename T> class numeric_arg_test : public testing::Test {};
@@ -391,22 +391,22 @@ TYPED_TEST(numeric_arg_test, make_and_visit) {
   CHECK_ARG_SIMPLE(std::numeric_limits<TypeParam>::max());
 }
 
-TEST(arg_test, char_arg) { CHECK_ARG(char, 'a', 'a'); }
+TEST(arg_test, char_arg) { CHECK_ARG('a', 'a'); }
 
 TEST(arg_test, string_arg) {
   char str_data[] = "test";
   char* str = str_data;
   const char* cstr = str;
-  CHECK_ARG(char, cstr, str);
+  CHECK_ARG(cstr, str);
 
   auto sv = fmt::string_view(str);
-  CHECK_ARG(char, sv, std::string(str));
+  CHECK_ARG(sv, std::string(str));
 }
 
 TEST(arg_test, pointer_arg) {
   void* p = nullptr;
   const void* cp = nullptr;
-  CHECK_ARG(char, cp, p);
+  CHECK_ARG(cp, p);
   CHECK_ARG_SIMPLE(cp);
 }
 
@@ -414,8 +414,8 @@ TEST(arg_test, volatile_pointer_arg) {
   const void* p = nullptr;
   volatile int* vip = nullptr;
   const volatile int* cvip = nullptr;
-  CHECK_ARG(char, p, static_cast<volatile void*>(vip));
-  CHECK_ARG(char, p, static_cast<const volatile void*>(cvip));
+  CHECK_ARG(p, static_cast<volatile void*>(vip));
+  CHECK_ARG(p, static_cast<const volatile void*>(cvip));
 }
 
 struct check_custom {
@@ -441,7 +441,7 @@ TEST(arg_test, custom_arg) {
       mock_visitor<fmt::basic_format_arg<fmt::format_context>::handle>;
   auto&& v = testing::StrictMock<visitor>();
   EXPECT_CALL(v, visit(_)).WillOnce(Invoke(check_custom()));
-  fmt::detail::make_arg<fmt::format_context>(test).visit(v);
+  fmt::basic_format_arg<fmt::format_context>(test).visit(v);
 }
 
 TEST(arg_test, visit_invalid_arg) {

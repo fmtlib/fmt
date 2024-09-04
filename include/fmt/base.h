@@ -2363,24 +2363,6 @@ constexpr unsigned long long make_descriptor() {
                                      : is_unpacked_bit | NUM_ARGS;
 }
 
-template <bool PACKED, typename Context, typename T, FMT_ENABLE_IF(PACKED)>
-FMT_CONSTEXPR auto make_arg(T& val) -> value<Context> {
-  return {arg_mapper<typename Context::char_type>::map(val)};
-}
-
-template <typename Context, typename T>
-FMT_CONSTEXPR auto make_arg(T& val) -> basic_format_arg<Context> {
-  auto arg = basic_format_arg<Context>();
-  arg.type_ = stored_type_constant<T, Context>::value;
-  arg.value_ = make_arg<true, Context>(val);
-  return arg;
-}
-
-template <bool PACKED, typename Context, typename T, FMT_ENABLE_IF(!PACKED)>
-FMT_CONSTEXPR inline auto make_arg(T& val) -> basic_format_arg<Context> {
-  return make_arg<Context>(val);
-}
-
 template <typename Context, size_t NUM_ARGS>
 using arg_t = conditional_t<NUM_ARGS <= max_packed_args, value<Context>,
                             basic_format_arg<Context>>;
@@ -2401,7 +2383,7 @@ struct format_arg_store {
   template <typename... T>
   FMT_CONSTEXPR FMT_ALWAYS_INLINE format_arg_store(T&... values)
       : args{{named_args, NUM_NAMED_ARGS},
-             make_arg<NUM_ARGS <= max_packed_args, Context>(values)...} {
+             arg_mapper<typename Context::char_type>::map(values)...} {
     int arg_index = 0, named_arg_index = 0;
     FMT_APPLY_VARIADIC(
         init_named_arg(named_args, arg_index, named_arg_index, values));
@@ -2543,8 +2525,6 @@ template <typename Context> class basic_format_arg {
   detail::value<Context> value_;
   detail::type type_;
 
-  template <typename Ctx, typename T>
-  friend FMT_CONSTEXPR auto detail::make_arg(T& value) -> basic_format_arg<Ctx>;
   friend class basic_format_args<Context>;
 
   using char_type = typename Context::char_type;
