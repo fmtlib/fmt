@@ -13,6 +13,7 @@ jobs:
         cxx: [g++-4.9, g++-10, clang++-9]
         build_type: [Debug, Release]
         std: [11]
+        shared: [""]
         include:
           - cxx: g++-4.9
             install: sudo apt install g++-4.9
@@ -54,7 +55,11 @@ jobs:
             std: 20
             cxxflags: -stdlib=libc++
             install: sudo apt install libc++-11-dev libc++abi-11-dev
-          - shared: -DBUILD_SHARED_LIBS=ON
+          - cxx: g++-11
+            build_type: Release
+            std: 23
+            install: sudo apt install g++-11
+            shared: -DBUILD_SHARED_LIBS=ON
 
     steps:
     - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6

@@ -12,11 +12,15 @@ jobs:
         os: [macos-13, macos-14]
         build_type: [Debug, Release]
         std: [11, 17, 20]
+        shared: [""]
         exclude:
           - { os: macos-13, std: 11 }
           - { os: macos-13, std: 17 }
         include:
-          - shared: -DBUILD_SHARED_LIBS=ON
+          - os: macos-14
+            std: 23
+            build_type: Release
+            shared: -DBUILD_SHARED_LIBS=ON
 
     runs-on: '${{ matrix.os }}'
 
