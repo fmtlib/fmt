@@ -624,47 +624,45 @@ FMT_END_NAMESPACE
 enum class unformattable_scoped_enum {};
 
 TEST(base_test, is_formattable) {
-  static_assert(!fmt::is_formattable<wchar_t>::value, "");
+  EXPECT_FALSE(fmt::is_formattable<wchar_t>::value);
 #ifdef __cpp_char8_t
-  static_assert(!fmt::is_formattable<char8_t>::value, "");
+  EXPECT_FALSE(fmt::is_formattable<char8_t>::value);
 #endif
-  static_assert(!fmt::is_formattable<char16_t>::value, "");
-  static_assert(!fmt::is_formattable<char32_t>::value, "");
-  static_assert(!fmt::is_formattable<signed char*>::value, "");
-  static_assert(!fmt::is_formattable<unsigned char*>::value, "");
-  static_assert(!fmt::is_formattable<const signed char*>::value, "");
-  static_assert(!fmt::is_formattable<const unsigned char*>::value, "");
-  static_assert(!fmt::is_formattable<const wchar_t*>::value, "");
-  static_assert(!fmt::is_formattable<const wchar_t[3]>::value, "");
-  static_assert(!fmt::is_formattable<fmt::basic_string_view<wchar_t>>::value,
-                "");
-  static_assert(fmt::is_formattable<enabled_formatter>::value, "");
-  static_assert(!fmt::is_formattable<enabled_ptr_formatter*>::value, "");
-  static_assert(!fmt::is_formattable<disabled_formatter>::value, "");
-  static_assert(!fmt::is_formattable<disabled_formatter_convertible>::value,
-                "");
+  EXPECT_FALSE(fmt::is_formattable<char16_t>::value);
+  EXPECT_FALSE(fmt::is_formattable<char32_t>::value);
+  EXPECT_FALSE(fmt::is_formattable<signed char*>::value);
+  EXPECT_FALSE(fmt::is_formattable<unsigned char*>::value);
+  EXPECT_FALSE(fmt::is_formattable<const signed char*>::value);
+  EXPECT_FALSE(fmt::is_formattable<const unsigned char*>::value);
+  EXPECT_FALSE(fmt::is_formattable<const wchar_t*>::value);
+  EXPECT_FALSE(fmt::is_formattable<const wchar_t[3]>::value);
+  EXPECT_FALSE(fmt::is_formattable<fmt::basic_string_view<wchar_t>>::value);
+  EXPECT_FALSE(fmt::is_formattable<enabled_ptr_formatter*>::value);
+  EXPECT_FALSE(fmt::is_formattable<disabled_formatter>::value);
+  EXPECT_FALSE(fmt::is_formattable<disabled_formatter_convertible>::value);
 
-  static_assert(fmt::is_formattable<const_formattable&>::value, "");
-  static_assert(fmt::is_formattable<const const_formattable&>::value, "");
+  EXPECT_TRUE(fmt::is_formattable<enabled_formatter>::value);
+  EXPECT_TRUE(fmt::is_formattable<const_formattable&>::value);
+  EXPECT_TRUE(fmt::is_formattable<const const_formattable&>::value);
 
-  static_assert(fmt::is_formattable<nonconst_formattable&>::value, "");
+  EXPECT_TRUE(fmt::is_formattable<nonconst_formattable&>::value);
 #if !FMT_MSC_VERSION || FMT_MSC_VERSION >= 1910
-  static_assert(!fmt::is_formattable<const nonconst_formattable&>::value, "");
+  EXPECT_FALSE(fmt::is_formattable<const nonconst_formattable&>::value);
 #endif
 
-  static_assert(!fmt::is_formattable<convertible_to_pointer>::value, "");
+  EXPECT_FALSE(fmt::is_formattable<convertible_to_pointer>::value);
   const auto f = convertible_to_pointer_formattable();
   auto str = std::string();
   fmt::format_to(std::back_inserter(str), "{}", f);
   EXPECT_EQ(str, "test");
 
-  static_assert(!fmt::is_formattable<void (*)()>::value, "");
+  EXPECT_FALSE(fmt::is_formattable<void (*)()>::value);
 
   struct s;
-  static_assert(!fmt::is_formattable<int(s::*)>::value, "");
-  static_assert(!fmt::is_formattable<int (s::*)()>::value, "");
-  static_assert(!fmt::is_formattable<unformattable_scoped_enum>::value, "");
-  static_assert(!fmt::is_formattable<unformattable_scoped_enum>::value, "");
+  EXPECT_FALSE(fmt::is_formattable<int(s::*)>::value);
+  EXPECT_FALSE(fmt::is_formattable<int (s::*)()>::value);
+  EXPECT_FALSE(fmt::is_formattable<unformattable_scoped_enum>::value);
+  EXPECT_FALSE(fmt::is_formattable<unformattable_scoped_enum>::value);
 }
 
 #ifdef __cpp_concepts
@@ -788,10 +786,9 @@ TEST(base_test, format_explicitly_convertible_to_std_string_view) {
 #endif
 
 TEST(base_test, has_const_formatter) {
-  EXPECT_TRUE((fmt::detail::has_const_formatter<const_formattable,
-                                                char>()));
-  EXPECT_FALSE((fmt::detail::has_const_formatter<nonconst_formattable,
-                                                 char>()));
+  EXPECT_TRUE((fmt::detail::has_const_formatter<const_formattable, char>()));
+  EXPECT_FALSE(
+      (fmt::detail::has_const_formatter<nonconst_formattable, char>()));
 }
 
 TEST(base_test, format_nonconst) {
