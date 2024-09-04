@@ -2465,7 +2465,6 @@ inline void vprint_mojibake(FILE*, string_view, const format_args&, bool) {}
 }  // namespace detail
 
 // The main public API.
-FMT_BEGIN_EXPORT
 
 template <typename Char>
 FMT_CONSTEXPR void parse_context<Char>::do_check_arg_id(int arg_id) {
@@ -2483,6 +2482,8 @@ FMT_CONSTEXPR void parse_context<Char>::check_dynamic_spec(int arg_id) {
   if (detail::is_constant_evaluated() && use_constexpr_cast)
     static_cast<compile_parse_context<Char>*>(this)->check_dynamic_spec(arg_id);
 }
+
+FMT_BEGIN_EXPORT
 
 // An output iterator that appends to a buffer. It is used instead of
 // back_insert_iterator to reduce symbol sizes and avoid <iterator> dependency.
