@@ -81,12 +81,6 @@
 #  define FMT_SO_VISIBILITY(value)
 #endif
 
-#ifdef __has_builtin
-#  define FMT_HAS_BUILTIN(x) __has_builtin(x)
-#else
-#  define FMT_HAS_BUILTIN(x) 0
-#endif
-
 #if FMT_GCC_VERSION || FMT_CLANG_VERSION
 #  define FMT_NOINLINE __attribute__((noinline))
 #else

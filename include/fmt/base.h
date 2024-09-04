@@ -78,6 +78,11 @@
 #else
 #  define FMT_HAS_INCLUDE(x) 0
 #endif
+#ifdef __has_builtin
+#  define FMT_HAS_BUILTIN(x) __has_builtin(x)
+#else
+#  define FMT_HAS_BUILTIN(x) 0
+#endif
 #ifdef __has_cpp_attribute
 #  define FMT_HAS_CPP_ATTRIBUTE(x) __has_cpp_attribute(x)
 #else
@@ -455,18 +460,15 @@ constexpr auto is_utf8_enabled() -> bool { return "\u00A7"[1] == '\xA7'; }
 // It is a macro for better debug codegen without if constexpr.
 #define FMT_USE_UTF8 (!FMT_MSC_VERSION || fmt::detail::is_utf8_enabled())
 
+template <typename T> constexpr const char* narrow(const T*) { return nullptr; }
+constexpr FMT_ALWAYS_INLINE const char* narrow(const char* s) { return s; }
+
 #ifndef FMT_UNICODE
 #  define FMT_UNICODE 1
 #endif
 
 static_assert(!FMT_UNICODE || FMT_USE_UTF8,
               "Unicode support requires compiling with /utf-8");
-
-template <typename Char> FMT_CONSTEXPR auto length(const Char* s) -> size_t {
-  size_t len = 0;
-  while (*s++) ++len;
-  return len;
-}
 
 template <typename Char>
 FMT_CONSTEXPR auto compare(const Char* s1, const Char* s2, std::size_t n)
@@ -536,13 +538,20 @@ template <typename Char> class basic_string_view {
   constexpr basic_string_view(std::nullptr_t) = delete;
 
   /// Constructs a string reference object from a C string.
-  FMT_CONSTEXPR20
-  basic_string_view(const Char* s)
-      : data_(s),
-        size_(detail::const_check(std::is_same<Char, char>::value &&
-                                  !detail::is_constant_evaluated(false))
-                  ? strlen(reinterpret_cast<const char*>(s))
-                  : detail::length(s)) {}
+#if FMT_GCC_VERSION
+  FMT_ALWAYS_INLINE
+#endif
+  FMT_CONSTEXPR20 basic_string_view(const Char* s) : data_(s) {
+#if FMT_HAS_BUILTIN(__buitin_strlen) || FMT_GCC_VERSION || FMT_CLANG_VERSION
+    if (std::is_same<Char, char>::value) {
+      size_ = __builtin_strlen(detail::narrow(s));
+      return;
+    }
+#endif
+    size_t len = 0;
+    while (*s++) ++len;
+    size_ = len;
+  }
 
   /// Constructs a string reference from a `std::basic_string` or a
   /// `std::basic_string_view` object.
