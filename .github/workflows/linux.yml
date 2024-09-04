@@ -55,10 +55,10 @@ jobs:
             std: 20
             cxxflags: -stdlib=libc++
             install: sudo apt install libc++-11-dev libc++abi-11-dev
-          - cxx: g++-11
+          - cxx: g++-13
             build_type: Release
             std: 23
-            install: sudo apt install g++-11
+            install: sudo apt install g++-13
             shared: -DBUILD_SHARED_LIBS=ON
 
     steps:
@@ -77,7 +77,7 @@ jobs:
     - name: Add repositories for newer GCC
       run: |
         sudo apt-add-repository ppa:ubuntu-toolchain-r/test
-      if: ${{ matrix.cxx == 'g++-11' }}
+      if: ${{ matrix.cxx == 'g++-11' || matrix.cxx == 'g++-13' }}
 
     - name: Add Ubuntu mirrors
       run: |
