@@ -29,6 +29,7 @@ template FMT_API auto decimal_point_impl(locale_ref) -> char;
 // DEPRECATED!
 template FMT_API void buffer<char>::append(const char*, const char*);
 
+// DEPRECATED!
 template FMT_API void vformat_to(buffer<char>&, string_view,
                                  typename vformat_args<>::type, locale_ref);
 

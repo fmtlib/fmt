@@ -254,7 +254,8 @@
 #ifdef FMT_CLANG_PRAGMA
 // Use the provided definition.
 #elif FMT_CLANG_VERSION
-#  define FMT_CLANG_PRAGMA(x) _Pragma(#x)
+#  define FMT_CLANG_PRAGMA_IMPL(x) _Pragma(#x)
+#  define FMT_CLANG_PRAGMA(x) FMT_CLANG_PRAGMA_IMPL(clang x)
 #else
 #  define FMT_CLANG_PRAGMA(x)
 #endif
@@ -317,7 +318,7 @@ FMT_GCC_PRAGMA(GCC push_options)
 #if !defined(__OPTIMIZE__) && !defined(__CUDACC__)
 FMT_GCC_PRAGMA(GCC optimize("Og"))
 #endif
-FMT_CLANG_PRAGMA(clang diagnostic push)
+FMT_CLANG_PRAGMA(diagnostic push)
 
 FMT_BEGIN_NAMESPACE
 
@@ -432,7 +433,7 @@ template <typename T> auto convert_for_visit(T) -> monostate { return {}; }
 #endif
 
 #if FMT_USE_BITINT
-#  pragma clang diagnostic ignored "-Wbit-int-extension"
+FMT_CLANG_PRAGMA(diagnostic ignored "-Wbit-int-extension")
 template <int N> using bitint = _BitInt(N);
 template <int N> using ubitint = unsigned _BitInt(N);
 #else
@@ -2431,7 +2432,7 @@ template <typename T, typename Char, type TYPE> struct native_formatter {
     specs_.set_type(set ? presentation_type::debug : presentation_type::none);
   }
 
-  FMT_CLANG_PRAGMA(clang diagnostic ignored "-Wundefined-inline")
+  FMT_CLANG_PRAGMA(diagnostic ignored "-Wundefined-inline")
   template <typename FormatContext>
   FMT_CONSTEXPR auto format(const T& val, FormatContext& ctx) const
       -> decltype(ctx.out());
@@ -2452,17 +2453,8 @@ FMT_CONSTEXPR inline auto is_locking() -> bool {
   return locking<T1>::value || is_locking<T2, Tail...>();
 }
 
-// Use vformat_args and avoid type_identity to keep symbols short.
-template <typename Char = char> struct vformat_args {
-  using type = basic_format_args<buffered_context<Char>>;
-};
-template <> struct vformat_args<char> {
-  using type = format_args;
-};
-
-template <typename Char>
-void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
-                typename vformat_args<Char>::type args, locale_ref loc = {});
+FMT_API void vformat_to(buffer<char>& buf, string_view fmt, format_args args,
+                        locale_ref loc = {});
 
 #ifdef _WIN32
 FMT_API void vprint_mojibake(FILE*, string_view, format_args, bool);
@@ -2978,7 +2970,7 @@ template <typename... T>
 FMT_NODISCARD FMT_INLINE auto formatted_size(format_string<T...> fmt,
                                              T&&... args) -> size_t {
   auto buf = detail::counting_buffer<>();
-  detail::vformat_to<char>(buf, fmt, fmt::make_format_args(args...), {});
+  detail::vformat_to(buf, fmt, fmt::make_format_args(args...), {});
   return buf.count();
 }
 
@@ -3036,7 +3028,7 @@ FMT_INLINE void println(format_string<T...> fmt, T&&... args) {
 }
 
 FMT_END_EXPORT
-FMT_CLANG_PRAGMA(clang diagnostic pop)
+FMT_CLANG_PRAGMA(diagnostic pop)
 FMT_GCC_PRAGMA(GCC pop_options)
 FMT_END_NAMESPACE
 
