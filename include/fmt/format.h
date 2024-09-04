@@ -196,7 +196,7 @@ FMT_END_NAMESPACE
 #  endif
 #endif
 
-#if FMT_MSC_VERSION
+#if FMT_MSC_VERSION && !defined(FMT_MODULE)
 #  include <intrin.h>  // _BitScanReverse[64], _BitScanForward[64], _umul128
 #endif
 
