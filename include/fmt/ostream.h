@@ -161,10 +161,10 @@ inline void vprint_directly(std::ostream& os, string_view format_str,
 
 FMT_EXPORT template <typename Char>
 void vprint(std::basic_ostream<Char>& os,
-            basic_string_view<type_identity_t<Char>> format_str,
+            basic_string_view<type_identity_t<Char>> fmt,
             typename detail::vformat_args<Char>::type args) {
   auto buffer = basic_memory_buffer<Char>();
-  detail::vformat_to(buffer, format_str, args);
+  detail::vformat_to(buffer, fmt, args);
   if (detail::write_ostream_unicode(os, {buffer.data(), buffer.size()})) return;
   detail::write_buffer(os, buffer);
 }

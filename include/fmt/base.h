@@ -334,10 +334,6 @@ template <typename T>
 using remove_const_t = typename std::remove_const<T>::type;
 template <typename T>
 using remove_cvref_t = typename std::remove_cv<remove_reference_t<T>>::type;
-template <typename T> struct type_identity {
-  using type = T;
-};
-template <typename T> using type_identity_t = typename type_identity<T>::type;
 template <typename T>
 using make_unsigned_t = typename std::make_unsigned<T>::type;
 template <typename T>
@@ -449,9 +445,7 @@ FMT_CONSTEXPR auto to_unsigned(Int value) -> make_unsigned_t<Int> {
 }
 
 template <typename Char>
-using unsigned_char = typename conditional_t<std::is_integral<Char>::value,
-                                             std::make_unsigned<Char>,
-                                             type_identity<unsigned>>::type;
+using unsigned_char = conditional_t<sizeof(Char) == 1, unsigned char, unsigned>;
 
 // A heuristic to detect std::string and std::[experimental::]string_view.
 // It is mainly used to avoid dependency on <[experimental/]string_view>.
@@ -2176,6 +2170,11 @@ auto get_iterator(buffer<T>&, OutputIt out) -> OutputIt {
   return out;
 }
 
+// This type is intentionally undefined, only used for errors.
+template <typename T, typename Char> struct type_is_unformattable_for;
+
+struct custom_tag {};
+
 template <typename Char> struct string_value {
   const Char* data;
   size_t size;
@@ -2191,11 +2190,6 @@ template <typename Context> struct custom_value {
   void* value;
   void (*format)(void* arg, parse_context<char_type>& parse_ctx, Context& ctx);
 };
-
-// This type is intentionally undefined, only used for errors.
-template <typename T, typename Char> struct type_is_unformattable_for;
-
-struct custom_tag {};
 
 // A formatting argument value.
 template <typename Context> class value {
