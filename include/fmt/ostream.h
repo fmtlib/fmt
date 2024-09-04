@@ -186,10 +186,9 @@ void print(std::ostream& os, format_string<T...> fmt, T&&... args) {
 }
 
 FMT_EXPORT
-template <typename... Args>
-void print(std::wostream& os,
-           basic_format_string<wchar_t, type_identity_t<Args>...> fmt,
-           Args&&... args) {
+template <typename... T>
+void print(std::wostream& os, typename fstring<wchar_t, T...>::t fmt,
+           T&&... args) {
   vprint(os, fmt, fmt::make_format_args<buffered_context<wchar_t>>(args...));
 }
 
@@ -199,11 +198,10 @@ void println(std::ostream& os, format_string<T...> fmt, T&&... args) {
 }
 
 FMT_EXPORT
-template <typename... Args>
-void println(std::wostream& os,
-             basic_format_string<wchar_t, type_identity_t<Args>...> fmt,
-             Args&&... args) {
-  print(os, L"{}\n", fmt::format(fmt, std::forward<Args>(args)...));
+template <typename... T>
+void println(std::wostream& os, typename fstring<wchar_t, T...>::t fmt,
+             T&&... args) {
+  print(os, L"{}\n", fmt::format(fmt, std::forward<T>(args)...));
 }
 
 FMT_END_NAMESPACE

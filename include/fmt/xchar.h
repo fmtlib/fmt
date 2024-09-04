@@ -64,17 +64,14 @@ using wformat_context = buffered_context<wchar_t>;
 using wformat_args = basic_format_args<wformat_context>;
 using wmemory_buffer = basic_memory_buffer<wchar_t>;
 
-#if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
-// Workaround broken conversion on older gcc.
-template <typename... Args> using wformat_string = wstring_view;
-inline auto runtime(wstring_view s) -> wstring_view { return s; }
-#else
-template <typename... Args>
-using wformat_string = basic_format_string<wchar_t, type_identity_t<Args>...>;
+template <typename Char, typename... T>
+using basic_format_string = fstring<Char, T...>;
+
+template <typename... T>
+using wformat_string = typename fstring<wchar_t, T...>::t;
 inline auto runtime(wstring_view s) -> runtime_format_string<wchar_t> {
   return {{s}};
 }
-#endif
 
 template <> struct is_char<wchar_t> : std::true_type {};
 template <> struct is_char<char16_t> : std::true_type {};

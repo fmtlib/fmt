@@ -2806,9 +2806,6 @@ template <typename Char, typename... T> class fstring {
   auto get() const -> basic_string_view<Char> { return str_; }
 };
 
-template <typename Char, typename... T>
-using basic_format_string = typename fstring<Char, T...>::t;
-
 template <typename... T> using format_string = typename fstring<char, T...>::t;
 
 template <typename T, typename Char = char>
