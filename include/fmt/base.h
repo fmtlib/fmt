@@ -2810,8 +2810,11 @@ template <typename Char, typename... T> class fstring {
 template <typename... T> using format_string = typename fstring<char, T...>::t;
 
 template <typename T, typename Char = char>
-using is_formattable = bool_constant<
-    !std::is_base_of<detail::unformattable, detail::mapped_t<T, Char>>::value>;
+using is_formattable = bool_constant<!std::is_base_of<
+    detail::unformattable,
+    detail::mapped_t<
+        conditional_t<std::is_same<T, void>::value, detail::unformattable, T>,
+        Char>>::value>;
 
 #ifdef __cpp_concepts
 template <typename T, typename Char = char>

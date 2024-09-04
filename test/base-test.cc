@@ -624,6 +624,7 @@ FMT_END_NAMESPACE
 enum class unformattable_scoped_enum {};
 
 TEST(base_test, is_formattable) {
+  EXPECT_FALSE(fmt::is_formattable<void>::value);
   EXPECT_FALSE(fmt::is_formattable<wchar_t>::value);
 #ifdef __cpp_char8_t
   EXPECT_FALSE(fmt::is_formattable<char8_t>::value);
