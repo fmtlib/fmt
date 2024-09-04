@@ -241,14 +241,22 @@
 #  define FMT_VISIBILITY(value)
 #endif
 
-#ifndef FMT_GCC_PRAGMA
+#ifdef FMT_GCC_PRAGMA
+// Use the provided definition.
+#elif FMT_GCC_VERSION >= 504 && !defined(__NVCOMPILER)
 // Workaround a _Pragma bug https://gcc.gnu.org/bugzilla/show_bug.cgi?id=59884
 // and an nvhpc warning: https://github.com/fmtlib/fmt/pull/2582.
-#  if FMT_GCC_VERSION >= 504 && !defined(__NVCOMPILER)
-#    define FMT_GCC_PRAGMA(arg) _Pragma(arg)
-#  else
-#    define FMT_GCC_PRAGMA(arg)
-#  endif
+#  define FMT_GCC_PRAGMA(x) _Pragma(#x)
+#else
+#  define FMT_GCC_PRAGMA(x)
+#endif
+
+#ifdef FMT_CLANG_PRAGMA
+// Use the provided definition.
+#elif FMT_CLANG_VERSION
+#  define FMT_CLANG_PRAGMA(x) _Pragma(#x)
+#else
+#  define FMT_CLANG_PRAGMA(x)
 #endif
 
 #if FMT_MSC_VERSION
@@ -305,10 +313,11 @@
   (void)ignore { 0, (expr, 0)... }
 
 // Enable minimal optimizations for more compact code in debug mode.
-FMT_GCC_PRAGMA("GCC push_options")
+FMT_GCC_PRAGMA(GCC push_options)
 #if !defined(__OPTIMIZE__) && !defined(__CUDACC__)
-FMT_GCC_PRAGMA("GCC optimize(\"Og\")")
+FMT_GCC_PRAGMA(GCC optimize("Og"))
 #endif
+FMT_CLANG_PRAGMA(clang diagnostic push)
 
 FMT_BEGIN_NAMESPACE
 
@@ -423,11 +432,9 @@ template <typename T> auto convert_for_visit(T) -> monostate { return {}; }
 #endif
 
 #if FMT_USE_BITINT
-#  pragma clang diagnostic push
 #  pragma clang diagnostic ignored "-Wbit-int-extension"
 template <int N> using bitint = _BitInt(N);
 template <int N> using ubitint = unsigned _BitInt(N);
-#  pragma clang diagnostic pop
 #else
 template <int N> struct bitint {};
 template <int N> struct ubitint {};
@@ -2187,6 +2194,8 @@ template <typename Context> struct custom_value {
 // This type is intentionally undefined, only used for errors.
 template <typename T, typename Char> struct type_is_unformattable_for;
 
+struct custom_tag {};
+
 // A formatting argument value.
 template <typename Context> class value {
  public:
@@ -2234,7 +2243,8 @@ template <typename Context> class value {
   }
   FMT_ALWAYS_INLINE value(const void* val) : pointer(val) {}
 
-  template <typename T> FMT_CONSTEXPR20 FMT_ALWAYS_INLINE value(T& val) {
+  template <typename T>
+  FMT_CONSTEXPR20 FMT_ALWAYS_INLINE value(T&& val, custom_tag = {}) {
     // Use enum instead of constexpr because the latter may generate code.
     enum { formattable_char = !std::is_same<T, unformattable_char>::value };
     static_assert(formattable_char, "mixing character types is disallowed");
@@ -2248,29 +2258,34 @@ template <typename Context> class value {
     static_assert(formattable_pointer,
                   "formatting of non-void pointers is disallowed");
 
+    using value_type = remove_cvref_t<T>;
     enum { formattable = !std::is_same<T, unformattable>::value };
+
 #if defined(__cpp_if_constexpr)
     if constexpr (!formattable) type_is_unformattable_for<T, char_type> _;
-      // if constexpr (!Context::builtin_types && !std::is_same<T, int>::value)
-      // return {unwrap_named_arg(val), custom_tag()};
+
+    if constexpr (std::is_same<T, int>::value) {
+      int_value = val;  // int is always handled as a built-in type.
+      return;
+    }
+
+    // T may overload operator& e.g. std::vector<bool>::reference in libc++.
+    if constexpr (std::is_same<decltype(&val), remove_reference_t<T>*>::value)
+      custom.value = const_cast<value_type*>(&val);
 #endif
+
     static_assert(
         formattable,
         "cannot format an argument; to make type T formattable provide a "
         "formatter<T> specialization: https://fmt.dev/latest/api.html#udt");
 
-    // T may overload operator& e.g. std::vector<bool>::reference in libc++.
-    using value_type = typename std::remove_cv<T>::type;
-#if defined(__cpp_if_constexpr)
-    if constexpr (std::is_same<decltype(&val), T*>::value)
-      custom.value = const_cast<value_type*>(&val);
-#endif
     if (!is_constant_evaluated())
       custom.value =
           const_cast<char*>(&reinterpret_cast<const volatile char&>(val));
     // Get the formatter type through the context to allow different contexts
     // have different extension points, e.g. `formatter<T>` for `format` and
     // `printf_formatter<T>` for `printf`.
+
     custom.format = format_custom<value_type, formatter<value_type, char_type>>;
   }
   FMT_ALWAYS_INLINE value(const named_arg_info<char_type>* args, size_t size)
@@ -2434,6 +2449,7 @@ template <typename T, typename Char, type TYPE> struct native_formatter {
     specs_.set_type(set ? presentation_type::debug : presentation_type::none);
   }
 
+  FMT_CLANG_PRAGMA(clang diagnostic ignored "-Wundefined-inline")
   template <typename FormatContext>
   FMT_CONSTEXPR auto format(const T& val, FormatContext& ctx) const
       -> decltype(ctx.out());
@@ -2841,6 +2857,12 @@ struct formatter<T, Char,
     : detail::native_formatter<T, Char, detail::type_constant<T, Char>::value> {
 };
 
+#if FMT_BUILTIN_TYPES
+#  define FMT_CUSTOM
+#else
+#  define FMT_CUSTOM , detail::custom_tag()
+#endif
+
 /**
  * Constructs an object that stores references to arguments and can be
  * implicitly converted to `format_args`. `Context` can be omitted in which case
@@ -2855,7 +2877,8 @@ template <typename Context = context, typename... T,
           FMT_ENABLE_IF(NUM_NAMED_ARGS == 0)>
 constexpr FMT_ALWAYS_INLINE auto make_format_args(T&... args)
     -> detail::format_arg_store<Context, NUM_ARGS, 0, DESC> {
-  return {{{detail::arg_mapper<typename Context::char_type>::map(args)}...}};
+  return {{{detail::arg_mapper<typename Context::char_type>::map(args)
+                FMT_CUSTOM}...}};
 }
 
 #ifndef FMT_DOC
@@ -3033,7 +3056,8 @@ FMT_INLINE void println(format_string<T...> fmt, T&&... args) {
 }
 
 FMT_END_EXPORT
-FMT_GCC_PRAGMA("GCC pop_options")
+FMT_CLANG_PRAGMA(clang diagnostic pop)
+FMT_GCC_PRAGMA(GCC pop_options)
 FMT_END_NAMESPACE
 
 #ifdef FMT_HEADER_ONLY
