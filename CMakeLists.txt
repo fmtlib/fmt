@@ -240,7 +240,13 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   endif ()
   if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 6.0)
       set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wshift-overflow=2
-          -Wnull-dereference -Wduplicated-cond)
+          -Wduplicated-cond)
+      # Workaround for GCC regression
+      # [12/13/14/15 regression] New (since gcc 12) false positive null-dereference in vector.resize
+      # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=108860
+      if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 12.0)
+        set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wnull-dereference)
+      endif ()
   endif ()
   set(WERROR_FLAG -Werror)
 endif ()
