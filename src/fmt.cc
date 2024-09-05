@@ -1,5 +1,11 @@
 module;
 
+#ifdef _MSVC_LANG
+#  define FMT_CPLUSPLUS _MSVC_LANG
+#else
+#  define FMT_CPLUSPLUS __cplusplus
+#endif
+
 // Put all implementation-provided headers into the global module fragment
 // to prevent attachment to this module.
 #ifndef FMT_IMPORT_STD
@@ -15,7 +21,9 @@ module;
 #  include <cstring>
 #  include <ctime>
 #  include <exception>
-#  include <expected>
+#  if FMT_CPLUSPLUS > 202002L
+#    include <expected>
+#  endif
 #  include <filesystem>
 #  include <fstream>
 #  include <functional>
