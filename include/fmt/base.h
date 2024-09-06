@@ -246,7 +246,8 @@
 #elif FMT_GCC_VERSION >= 504 && !defined(__NVCOMPILER)
 // Workaround a _Pragma bug https://gcc.gnu.org/bugzilla/show_bug.cgi?id=59884
 // and an nvhpc warning: https://github.com/fmtlib/fmt/pull/2582.
-#  define FMT_GCC_PRAGMA(x) _Pragma(#x)
+#  define FMT_GCC_PRAGMA_IMPL(x) _Pragma(#x)
+#  define FMT_GCC_PRAGMA(x) FMT_GCC_PRAGMA_IMPL(GCC x)
 #else
 #  define FMT_GCC_PRAGMA(x)
 #endif
@@ -314,9 +315,9 @@
   (void)ignore { 0, (expr, 0)... }
 
 // Enable minimal optimizations for more compact code in debug mode.
-FMT_GCC_PRAGMA(GCC push_options)
+FMT_GCC_PRAGMA(push_options)
 #if !defined(__OPTIMIZE__) && !defined(__CUDACC__)
-FMT_GCC_PRAGMA(GCC optimize("Og"))
+FMT_GCC_PRAGMA(optimize("Og"))
 #endif
 FMT_CLANG_PRAGMA(diagnostic push)
 
@@ -1277,6 +1278,7 @@ template <typename Char> struct arg_mapper {
   FMT_MAP_API auto map(...) -> unformattable { return {}; }
 };
 
+// detail:: is used to workaround a bug in MSVC 2017.
 template <typename T, typename Char>
 using mapped_t = decltype(detail::arg_mapper<Char>::map(std::declval<T&>()));
 
@@ -2239,17 +2241,15 @@ template <typename Context> class value {
   FMT_ALWAYS_INLINE value(const void* val) : pointer(val) {}
 
   template <typename T,
-            FMT_ENABLE_IF(
-                !std::is_same<T, decltype(detail::arg_mapper<char_type>::map(
-                                     std::declval<T&>()))>::value)>
+            FMT_ENABLE_IF(!std::is_same<T, decltype(arg_mapper<char_type>::map(
+                                               std::declval<T&>()))>::value)>
   FMT_CONSTEXPR20 FMT_ALWAYS_INLINE value(T&& val) {
     *this = arg_mapper<typename Context::char_type>::map(val);
   }
 
-  template <
-      typename T,
-      FMT_ENABLE_IF(std::is_same<T, decltype(detail::arg_mapper<char_type>::map(
-                                        std::declval<T&>()))>::value)>
+  template <typename T,
+            FMT_ENABLE_IF(std::is_same<T, decltype(arg_mapper<char_type>::map(
+                                              std::declval<T&>()))>::value)>
   FMT_CONSTEXPR20 FMT_ALWAYS_INLINE value(T&& val) {
     // Use enum instead of constexpr because the latter may generate code.
     enum { formattable_char = !std::is_same<T, unformattable_char>::value };
@@ -2871,12 +2871,6 @@ struct formatter<T, Char,
     : detail::native_formatter<T, Char, detail::type_constant<T, Char>::value> {
 };
 
-#if FMT_BUILTIN_TYPES
-#  define FMT_CUSTOM
-#else
-#  define FMT_CUSTOM , detail::custom_tag()
-#endif
-
 /**
  * Constructs an object that stores references to arguments and can be
  * implicitly converted to `format_args`. `Context` can be omitted in which case
@@ -2890,7 +2884,8 @@ template <typename Context = context, typename... T,
           unsigned long long DESC = detail::make_descriptor<Context, T...>()>
 constexpr FMT_ALWAYS_INLINE auto make_format_args(T&... args)
     -> detail::format_arg_store<Context, NUM_ARGS, NUM_NAMED_ARGS, DESC> {
-  FMT_GCC_PRAGMA(GCC diagnostic ignored "-Wconversion")
+  // Suppress warnings for pathological types convertible to detail::value.
+  FMT_GCC_PRAGMA(diagnostic ignored "-Wconversion")
   return {{args...}};
 }
 
@@ -3063,7 +3058,7 @@ FMT_INLINE void println(format_string<T...> fmt, T&&... args) {
 
 FMT_END_EXPORT
 FMT_CLANG_PRAGMA(diagnostic pop)
-FMT_GCC_PRAGMA(GCC pop_options)
+FMT_GCC_PRAGMA(pop_options)
 FMT_END_NAMESPACE
 
 #ifdef FMT_HEADER_ONLY
