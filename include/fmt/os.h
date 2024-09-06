@@ -146,10 +146,10 @@ FMT_API std::system_error vwindows_error(int error_code, string_view format_str,
  *                                "cannot open file '{}'", filename);
  *     }
  */
-template <typename... Args>
+template <typename... T>
 std::system_error windows_error(int error_code, string_view message,
-                                const Args&... args) {
-  return vwindows_error(error_code, message, fmt::make_format_args(args...));
+                                const T&... args) {
+  return vwindows_error(error_code, message, vargs<T...>{{args...}});
 }
 
 // Reports a Windows error without throwing an exception.
@@ -213,7 +213,7 @@ class buffered_file {
 
   template <typename... T>
   inline void print(string_view fmt, const T&... args) {
-    const auto& vargs = fmt::make_format_args(args...);
+    fmt::vargs<T...> vargs = {{args...}};
     detail::is_locking<T...>() ? fmt::vprint_buffered(file_, fmt, vargs)
                                : fmt::vprint(file_, fmt, vargs);
   }
@@ -398,7 +398,7 @@ class FMT_API ostream : private detail::buffer<char> {
   /// Formats `args` according to specifications in `fmt` and writes the
   /// output to the file.
   template <typename... T> void print(format_string<T...> fmt, T&&... args) {
-    vformat_to(appender(*this), fmt, fmt::make_format_args(args...));
+    vformat_to(appender(*this), fmt, vargs<T...>{{args...}});
   }
 };
 
