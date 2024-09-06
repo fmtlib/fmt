@@ -2362,12 +2362,9 @@ template <typename Context, size_t NUM_ARGS>
 using arg_t = conditional_t<NUM_ARGS <= max_packed_args, value<Context>,
                             basic_format_arg<Context>>;
 
-// An array of references to arguments. It can be implicitly converted to
-// `fmt::basic_format_args` for passing into type-erased formatting functions
-// such as `fmt::vformat`.
 template <typename Context, size_t NUM_ARGS, size_t NUM_NAMED_ARGS,
           unsigned long long DESC>
-struct format_arg_store {
+struct named_arg_store {
   // args_[0].named_args points to named_args to avoid bloating format_args.
   // +1 to workaround a bug in gcc 7.5 that causes duplicated-branches warning.
   static constexpr size_t ARGS_ARRAY_SIZE = 1 + (NUM_ARGS != 0 ? NUM_ARGS : +1);
@@ -2376,7 +2373,7 @@ struct format_arg_store {
   named_arg_info<typename Context::char_type> named_args[NUM_NAMED_ARGS];
 
   template <typename... T>
-  FMT_CONSTEXPR FMT_ALWAYS_INLINE format_arg_store(T&... values)
+  FMT_CONSTEXPR FMT_ALWAYS_INLINE named_arg_store(T&... values)
       : args{{named_args, NUM_NAMED_ARGS},
              arg_mapper<typename Context::char_type>::map(values)...} {
     int arg_index = 0, named_arg_index = 0;
@@ -2384,24 +2381,30 @@ struct format_arg_store {
         init_named_arg(named_args, arg_index, named_arg_index, values));
   }
 
-  format_arg_store(format_arg_store&& rhs) {
+  named_arg_store(named_arg_store&& rhs) {
     args[0] = {named_args, NUM_NAMED_ARGS};
     for (size_t i = 1; i < ARGS_ARRAY_SIZE; ++i) args[i] = rhs.args[i];
     for (size_t i = 0; i < NUM_NAMED_ARGS; ++i)
       named_args[i] = rhs.named_args[i];
   }
 
-  format_arg_store(const format_arg_store& rhs) = delete;
-  format_arg_store& operator=(const format_arg_store& rhs) = delete;
-  format_arg_store& operator=(format_arg_store&& rhs) = delete;
+  named_arg_store(const named_arg_store& rhs) = delete;
+  named_arg_store& operator=(const named_arg_store& rhs) = delete;
+  named_arg_store& operator=(named_arg_store&& rhs) = delete;
 };
 
-// A specialization of format_arg_store without named arguments.
-// It is a plain struct to reduce binary size in debug mode.
-template <typename Context, size_t NUM_ARGS, unsigned long long DESC>
-struct format_arg_store<Context, NUM_ARGS, 0, DESC> {
+// An array of references to arguments. It can be implicitly converted to
+// `basic_format_args` for passing into type-erased formatting functions
+// such as `vformat`. It is a plain struct to reduce binary size in debug mode.
+template <typename Context, size_t NUM_ARGS, size_t NUM_NAMED_ARGS,
+          unsigned long long DESC>
+struct format_arg_store {
   // +1 to workaround a bug in gcc 7.5 that causes duplicated-branches warning.
-  arg_t<Context, NUM_ARGS> args[NUM_ARGS != 0 ? NUM_ARGS : +1];
+  using type =
+      conditional_t<NUM_NAMED_ARGS == 0,
+                    arg_t<Context, NUM_ARGS>[NUM_ARGS != 0 ? NUM_ARGS : +1],
+                    named_arg_store<Context, NUM_ARGS, NUM_NAMED_ARGS, DESC>>;
+  type args;
 };
 
 // TYPE can be different from type_constant<T>, e.g. for __float128.
@@ -2640,18 +2643,36 @@ template <typename Context> class basic_format_args {
 
   /// Constructs a `basic_format_args` object from `format_arg_store`.
   template <size_t NUM_ARGS, size_t NUM_NAMED_ARGS, unsigned long long DESC,
-            FMT_ENABLE_IF(NUM_ARGS <= detail::max_packed_args)>
+            FMT_ENABLE_IF(NUM_ARGS <= detail::max_packed_args &&
+                          NUM_NAMED_ARGS == 0)>
   constexpr FMT_ALWAYS_INLINE basic_format_args(
       const detail::format_arg_store<Context, NUM_ARGS, NUM_NAMED_ARGS, DESC>&
           store)
-      : desc_(DESC), values_(store.args + (NUM_NAMED_ARGS != 0 ? 1 : 0)) {}
+      : desc_(DESC), values_(store.args) {}
 
   template <size_t NUM_ARGS, size_t NUM_NAMED_ARGS, unsigned long long DESC,
-            FMT_ENABLE_IF(NUM_ARGS > detail::max_packed_args)>
+            FMT_ENABLE_IF(NUM_ARGS <= detail::max_packed_args &&
+                          NUM_NAMED_ARGS != 0)>
+  constexpr FMT_ALWAYS_INLINE basic_format_args(
+      const detail::format_arg_store<Context, NUM_ARGS, NUM_NAMED_ARGS, DESC>&
+          store)
+      : desc_(DESC), values_(store.args.args + 1) {}
+
+  template <size_t NUM_ARGS, size_t NUM_NAMED_ARGS, unsigned long long DESC,
+            FMT_ENABLE_IF(NUM_ARGS > detail::max_packed_args &&
+                          NUM_NAMED_ARGS == 0)>
   constexpr basic_format_args(
       const detail::format_arg_store<Context, NUM_ARGS, NUM_NAMED_ARGS, DESC>&
           store)
       : desc_(DESC), args_(store.args + (NUM_NAMED_ARGS != 0 ? 1 : 0)) {}
+
+  template <size_t NUM_ARGS, size_t NUM_NAMED_ARGS, unsigned long long DESC,
+            FMT_ENABLE_IF(NUM_ARGS > detail::max_packed_args &&
+                          NUM_NAMED_ARGS != 0)>
+  constexpr basic_format_args(
+      const detail::format_arg_store<Context, NUM_ARGS, NUM_NAMED_ARGS, DESC>&
+          store)
+      : desc_(DESC), args_(store.args.args + 1) {}
 
   /// Constructs a `basic_format_args` object from a dynamic list of arguments.
   constexpr basic_format_args(const format_arg* args, int count,
@@ -2863,8 +2884,8 @@ template <typename Context = context, typename... T,
           FMT_ENABLE_IF(NUM_NAMED_ARGS == 0)>
 constexpr FMT_ALWAYS_INLINE auto make_format_args(T&... args)
     -> detail::format_arg_store<Context, NUM_ARGS, 0, DESC> {
-  return {{{detail::arg_mapper<typename Context::char_type>::map(args)
-                FMT_CUSTOM}...}};
+  FMT_GCC_PRAGMA(GCC diagnostic ignored "-Wconversion")
+  return {{detail::arg_mapper<typename Context::char_type>::map(args)...}};
 }
 
 #ifndef FMT_DOC
@@ -2876,7 +2897,7 @@ template <typename Context = context, typename... T,
           FMT_ENABLE_IF(NUM_NAMED_ARGS != 0)>
 constexpr auto make_format_args(T&... args)
     -> detail::format_arg_store<Context, sizeof...(T), NUM_NAMED_ARGS, DESC> {
-  return {args...};
+  return {{args...}};
 }
 #endif
 
