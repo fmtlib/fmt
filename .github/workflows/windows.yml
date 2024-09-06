@@ -15,21 +15,16 @@ jobs:
         # https://github.com/actions/virtual-environments.
         os: [windows-2019]
         platform: [Win32, x64]
-        toolset: [v140, v141, v142]
+        toolset: [v141, v142]
         standard: [14, 17, 20]
         shared: ["", -DBUILD_SHARED_LIBS=ON]
         build_type: [Debug, Release]
         exclude:
-          - { toolset: v140, standard: 17 }
-          - { toolset: v140, standard: 20 }
-          - { toolset: v141, standard: 14 }
           - { toolset: v141, standard: 20 }
           - { toolset: v142, standard: 14 }
-          - { platform: Win32, toolset: v140 }
           - { platform: Win32, toolset: v141 }
           - { platform: Win32, standard: 14 }
           - { platform: Win32, standard: 20 }
-          - { platform: x64, toolset: v140, shared: -DBUILD_SHARED_LIBS=ON }
           - { platform: x64, toolset: v141, shared: -DBUILD_SHARED_LIBS=ON }
           - { platform: x64, standard: 14, shared: -DBUILD_SHARED_LIBS=ON }
           - { platform: x64, standard: 20, shared: -DBUILD_SHARED_LIBS=ON }
