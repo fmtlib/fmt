@@ -2894,7 +2894,7 @@ template <typename Context = context, typename... T,
 constexpr FMT_ALWAYS_INLINE auto make_format_args(T&... args)
     -> detail::format_arg_store<Context, NUM_ARGS, 0, DESC> {
   FMT_GCC_PRAGMA(GCC diagnostic ignored "-Wconversion")
-  return {{detail::arg_mapper<typename Context::char_type>::map(args)...}};
+  return {{args...}};
 }
 
 #ifndef FMT_DOC
