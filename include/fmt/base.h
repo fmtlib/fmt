@@ -2240,11 +2240,12 @@ template <typename Context> class value {
   }
   FMT_ALWAYS_INLINE value(const void* val) : pointer(val) {}
 
+  // We can't use mapped_t because of a bug in MSVC 2017.
   template <typename T,
             FMT_ENABLE_IF(!std::is_same<T, decltype(arg_mapper<char_type>::map(
                                                std::declval<T&>()))>::value)>
   FMT_CONSTEXPR20 FMT_ALWAYS_INLINE value(T&& val) {
-    *this = arg_mapper<typename Context::char_type>::map(val);
+    *this = arg_mapper<char_type>::map(val);
   }
 
   template <typename T,
