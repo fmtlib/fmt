@@ -198,7 +198,7 @@ class CxxHandler(BaseHandler):
             PREDEFINED       = _WIN32=1 \
                                __linux__=1 \
                                FMT_ENABLE_IF(...)= \
-                               FMT_USE_USER_DEFINED_LITERALS=1 \
+                               FMT_USE_USER_LITERALS=1 \
                                FMT_USE_ALIAS_TEMPLATES=1 \
                                FMT_USE_NONTYPE_TEMPLATE_ARGS=1 \
                                FMT_API= \

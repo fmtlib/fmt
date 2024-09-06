@@ -147,8 +147,8 @@ FMT_API std::system_error vwindows_error(int error_code, string_view format_str,
  *     }
  */
 template <typename... T>
-std::system_error windows_error(int error_code, string_view message,
-                                const T&... args) {
+auto windows_error(int error_code, string_view message,
+                                const T&... args) -> std::system_error {
   return vwindows_error(error_code, message, vargs<T...>{{args...}});
 }
 

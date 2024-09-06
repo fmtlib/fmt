@@ -140,17 +140,14 @@ FMT_END_NAMESPACE
 #  endif
 #endif
 
-#ifndef FMT_USE_USER_DEFINED_LITERALS
+#ifndef FMT_USE_USER_LITERALS
 // EDG based compilers (Intel, NVIDIA, Elbrus, etc), GCC and MSVC support UDLs.
-//
-// GCC before 4.9 requires a space in `operator"" _a` which is invalid in later
-// compiler versions.
-#  if (FMT_HAS_FEATURE(cxx_user_literals) || FMT_GCC_VERSION >= 409 || \
+#  if (FMT_HAS_FEATURE(cxx_user_literals) || FMT_GCC_VERSION || \
        FMT_MSC_VERSION >= 1900) &&                                     \
       (!defined(__EDG_VERSION__) || __EDG_VERSION__ >= /* UDL feature */ 480)
-#    define FMT_USE_USER_DEFINED_LITERALS 1
+#    define FMT_USE_USER_LITERALS 1
 #  else
-#    define FMT_USE_USER_DEFINED_LITERALS 0
+#    define FMT_USE_USER_LITERALS 0
 #  endif
 #endif
 
@@ -3775,7 +3772,7 @@ FMT_CONSTEXPR void handle_dynamic_spec(
   if (kind != arg_id_kind::none) value = get_dynamic_spec(kind, ref, ctx);
 }
 
-#if FMT_USE_USER_DEFINED_LITERALS
+#if FMT_USE_USER_LITERALS
 #  if FMT_USE_NONTYPE_TEMPLATE_ARGS
 template <typename T, typename Char, size_t N,
           fmt::detail_exported::fixed_string<Char, N> Str>
@@ -3810,8 +3807,8 @@ template <typename Char> struct udl_arg {
     return {str, std::forward<T>(value)};
   }
 };
-#  endif
-#endif  // FMT_USE_USER_DEFINED_LITERALS
+#  endif // FMT_USE_NONTYPE_TEMPLATE_ARGS
+#endif  // FMT_USE_USER_LITERALS
 
 template <typename Char> struct format_handler {
   parse_context<Char> parse_ctx;
@@ -4294,7 +4291,7 @@ struct formatter<detail::float128, Char>
     : detail::native_formatter<detail::float128, Char,
                                detail::type::float_type> {};
 
-#if FMT_USE_USER_DEFINED_LITERALS
+#if FMT_USE_USER_LITERALS
 inline namespace literals {
 /**
  * User-defined literal equivalent of `fmt::arg`.
@@ -4315,7 +4312,7 @@ constexpr auto operator""_a(const char* s, size_t) -> detail::udl_arg<char> {
 }
 #  endif
 }  // namespace literals
-#endif  // FMT_USE_USER_DEFINED_LITERALS
+#endif  // FMT_USE_USER_LITERALS
 
 FMT_API auto vformat(string_view fmt, format_args args) -> std::string;
 

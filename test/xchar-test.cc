@@ -231,7 +231,7 @@ TEST(format_test, wide_format_to_n) {
   EXPECT_EQ(L"BC x", fmt::wstring_view(buffer, 4));
 }
 
-#if FMT_USE_USER_DEFINED_LITERALS
+#if FMT_USE_USER_LITERALS
 TEST(xchar_test, named_arg_udl) {
   using namespace fmt::literals;
   auto udl_a =
@@ -242,7 +242,7 @@ TEST(xchar_test, named_arg_udl) {
                   fmt::arg(L"second", L"cad"), fmt::arg(L"third", 99)),
       udl_a);
 }
-#endif  // FMT_USE_USER_DEFINED_LITERALS
+#endif  // FMT_USE_USER_LITERALS
 
 TEST(xchar_test, print) {
   // Check that the wide print overload compiles.

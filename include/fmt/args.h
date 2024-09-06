@@ -73,12 +73,7 @@ class dynamic_arg_list {
  * into type-erased formatting functions such as `fmt::vformat`.
  */
 template <typename Context>
-class dynamic_format_arg_store
-#if FMT_GCC_VERSION && FMT_GCC_VERSION < 409
-    // Workaround a GCC template argument substitution bug.
-    : public basic_format_args<Context>
-#endif
-{
+class dynamic_format_arg_store {
  private:
   using char_type = typename Context::char_type;
 
@@ -97,7 +92,7 @@ class dynamic_format_arg_store
   };
 
   template <typename T>
-  using stored_type = conditional_t<
+  using stored_t = conditional_t<
       std::is_convertible<T, std::basic_string<char_type>>::value &&
           !detail::is_reference_wrapper<T>::value,
       std::basic_string<char_type>, T>;
@@ -122,10 +117,8 @@ class dynamic_format_arg_store
 
   template <typename T>
   void emplace_arg(const detail::named_arg<char_type, T>& arg) {
-    if (named_info_.empty()) {
-      constexpr const detail::named_arg_info<char_type>* zero_ptr{nullptr};
-      data_.insert(data_.begin(), basic_format_arg<Context>(zero_ptr, 0));
-    }
+    if (named_info_.empty())
+      data_.insert(data_.begin(), basic_format_arg<Context>(nullptr, 0));
     data_.emplace_back(detail::make_arg<Context>(detail::unwrap(arg.value)));
     auto pop_one = [](std::vector<basic_format_arg<Context>>* data) {
       data->pop_back();
@@ -162,7 +155,7 @@ class dynamic_format_arg_store
    */
   template <typename T> void push_back(const T& arg) {
     if (detail::const_check(need_copy<T>::value))
-      emplace_arg(dynamic_args_.push<stored_type<T>>(arg));
+      emplace_arg(dynamic_args_.push<stored_t<T>>(arg));
     else
       emplace_arg(detail::unwrap(arg));
   }
@@ -198,7 +191,7 @@ class dynamic_format_arg_store
         dynamic_args_.push<std::basic_string<char_type>>(arg.name).c_str();
     if (detail::const_check(need_copy<T>::value)) {
       emplace_arg(
-          fmt::arg(arg_name, dynamic_args_.push<stored_type<T>>(arg.value)));
+          fmt::arg(arg_name, dynamic_args_.push<stored_t<T>>(arg.value)));
     } else {
       emplace_arg(fmt::arg(arg_name, arg.value));
     }

@@ -89,7 +89,7 @@ constexpr auto make_wformat_args(T&... args)
 }
 
 inline namespace literals {
-#if FMT_USE_USER_DEFINED_LITERALS && !FMT_USE_NONTYPE_TEMPLATE_ARGS
+#if FMT_USE_USER_LITERALS && !FMT_USE_NONTYPE_TEMPLATE_ARGS
 constexpr auto operator""_a(const wchar_t* s, size_t)
     -> detail::udl_arg<wchar_t> {
   return {s};
