@@ -143,7 +143,7 @@ FMT_END_NAMESPACE
 #ifndef FMT_USE_USER_LITERALS
 // EDG based compilers (Intel, NVIDIA, Elbrus, etc), GCC and MSVC support UDLs.
 #  if (FMT_HAS_FEATURE(cxx_user_literals) || FMT_GCC_VERSION || \
-       FMT_MSC_VERSION >= 1900) &&                                     \
+       FMT_MSC_VERSION >= 1900) &&                              \
       (!defined(__EDG_VERSION__) || __EDG_VERSION__ >= /* UDL feature */ 480)
 #    define FMT_USE_USER_LITERALS 1
 #  else
@@ -3807,8 +3807,8 @@ template <typename Char> struct udl_arg {
     return {str, std::forward<T>(value)};
   }
 };
-#  endif // FMT_USE_NONTYPE_TEMPLATE_ARGS
-#endif  // FMT_USE_USER_LITERALS
+#  endif  // FMT_USE_NONTYPE_TEMPLATE_ARGS
+#endif    // FMT_USE_USER_LITERALS
 
 template <typename Char> struct format_handler {
   parse_context<Char> parse_ctx;
@@ -3857,7 +3857,6 @@ template <typename Char> struct format_handler {
 };
 
 // DEPRECATED!
-// Use vformat_args and avoid type_identity to keep symbols short.
 template <typename Char = char> struct vformat_args {
   using type = basic_format_args<buffered_context<Char>>;
 };
@@ -4349,8 +4348,7 @@ template <typename OutputIt, typename Locale,
                             detail::is_locale<Locale>::value)>
 auto vformat_to(OutputIt out, const Locale& loc, string_view fmt,
                 format_args args) -> OutputIt {
-  using detail::get_buffer;
-  auto&& buf = get_buffer<char>(out);
+  auto&& buf = detail::get_buffer<char>(out);
   detail::vformat_to(buf, fmt, args, detail::locale_ref(loc));
   return detail::get_iterator(buf, out);
 }
@@ -4374,7 +4372,6 @@ FMT_NODISCARD FMT_INLINE auto formatted_size(const Locale& loc,
 }
 
 FMT_END_EXPORT
-
 FMT_END_NAMESPACE
 
 #ifdef FMT_HEADER_ONLY

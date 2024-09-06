@@ -17,7 +17,6 @@
 #include "format.h"  // std_string_view
 
 FMT_BEGIN_NAMESPACE
-
 namespace detail {
 
 template <typename T> struct is_reference_wrapper : std::false_type {};
@@ -72,8 +71,7 @@ class dynamic_arg_list {
  * It can be implicitly converted into `fmt::basic_format_args` for passing
  * into type-erased formatting functions such as `fmt::vformat`.
  */
-template <typename Context>
-class dynamic_format_arg_store {
+template <typename Context> class dynamic_format_arg_store {
  private:
   using char_type = typename Context::char_type;
 
@@ -201,7 +199,7 @@ class dynamic_format_arg_store {
   void clear() {
     data_.clear();
     named_info_.clear();
-    dynamic_args_ = detail::dynamic_arg_list();
+    dynamic_args_ = {};
   }
 
   /// Reserves space to store at least `new_cap` arguments including

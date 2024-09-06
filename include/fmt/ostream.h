@@ -148,25 +148,14 @@ constexpr auto streamed(const T& value) -> detail::streamed_view<T> {
   return {value};
 }
 
-namespace detail {
-
-inline void vprint_directly(std::ostream& os, string_view format_str,
-                            format_args args) {
-  auto buffer = memory_buffer();
-  detail::vformat_to(buffer, format_str, args);
-  detail::write_buffer(os, buffer);
-}
-
-}  // namespace detail
-
 FMT_EXPORT template <typename Char>
 void vprint(std::basic_ostream<Char>& os,
             basic_string_view<type_identity_t<Char>> fmt,
             typename detail::vformat_args<Char>::type args) {
   auto buffer = basic_memory_buffer<Char>();
   detail::vformat_to(buffer, fmt, args);
-  if (detail::write_ostream_unicode(os, {buffer.data(), buffer.size()})) return;
-  detail::write_buffer(os, buffer);
+  if (!detail::write_ostream_unicode(os, {buffer.data(), buffer.size()}))
+    detail::write_buffer(os, buffer);
 }
 
 /**
@@ -180,7 +169,9 @@ FMT_EXPORT template <typename... T>
 void print(std::ostream& os, format_string<T...> fmt, T&&... args) {
   fmt::vargs<T...> vargs = {{args...}};
   if (FMT_USE_UTF8) return vprint(os, fmt, vargs);
-  detail::vprint_directly(os, fmt, vargs);
+  auto buffer = memory_buffer();
+  detail::vformat_to(buffer, fmt, vargs);
+  detail::write_buffer(os, buffer);
 }
 
 FMT_EXPORT

@@ -44,18 +44,6 @@ template <typename T> class is_set {
       !std::is_void<decltype(check<T>(nullptr))>::value && !is_map<T>::value;
 };
 
-template <typename... Ts> struct conditional_helper {};
-
-template <typename T, typename _ = void> struct is_range_ : std::false_type {};
-
-#if !FMT_MSC_VERSION || FMT_MSC_VERSION > 1800
-
-#  define FMT_DECLTYPE_RETURN(val)  \
-    ->decltype(val) { return val; } \
-    static_assert(                  \
-        true, "")  // This makes it so that a semicolon is required after the
-                   // macro, which helps clang-format handle the formatting.
-
 // C array overload
 template <typename T, std::size_t N>
 auto range_begin(const T (&arr)[N]) -> const T* {
@@ -76,9 +64,13 @@ struct has_member_fn_begin_end_t<T, void_t<decltype(*std::declval<T>().begin()),
 
 // Member function overloads.
 template <typename T>
-auto range_begin(T&& rng) FMT_DECLTYPE_RETURN(static_cast<T&&>(rng).begin());
+auto range_begin(T&& rng) -> decltype(static_cast<T&&>(rng).begin()) {
+  return static_cast<T&&>(rng).begin();
+}
 template <typename T>
-auto range_end(T&& rng) FMT_DECLTYPE_RETURN(static_cast<T&&>(rng).end());
+auto range_end(T&& rng) -> decltype(static_cast<T&&>(rng).end()) {
+  return static_cast<T&&>(rng).end();
+}
 
 // ADL overloads. Only participate in overload resolution if member functions
 // are not found.
@@ -115,12 +107,11 @@ struct has_mutable_begin_end<
               // SFINAE properly unless there are distinct types
               int>> : std::true_type {};
 
+template <typename T, typename _ = void> struct is_range_ : std::false_type {};
 template <typename T>
 struct is_range_<T, void>
     : std::integral_constant<bool, (has_const_begin_end<T>::value ||
                                     has_mutable_begin_end<T>::value)> {};
-#  undef FMT_DECLTYPE_RETURN
-#endif
 
 // tuple_size and tuple_element check.
 template <typename T> class is_tuple_like_ {
