@@ -2877,8 +2877,6 @@ struct formatter<T, Char,
 #  define FMT_CUSTOM , detail::custom_tag()
 #endif
 
-template <typename T> constexpr T& identity(T& x) { return x; }
-
 /**
  * Constructs an object that stores references to arguments and can be
  * implicitly converted to `format_args`. `Context` can be omitted in which case
@@ -2889,26 +2887,12 @@ template <typename T> constexpr T& identity(T& x) { return x; }
 template <typename Context = context, typename... T,
           size_t NUM_ARGS = sizeof...(T),
           size_t NUM_NAMED_ARGS = detail::count_named_args<T...>(),
-          unsigned long long DESC = detail::make_descriptor<Context, T...>(),
-          FMT_ENABLE_IF(NUM_NAMED_ARGS == 0)>
+          unsigned long long DESC = detail::make_descriptor<Context, T...>()>
 constexpr FMT_ALWAYS_INLINE auto make_format_args(T&... args)
-    -> detail::format_arg_store<Context, NUM_ARGS, 0, DESC> {
+    -> detail::format_arg_store<Context, NUM_ARGS, NUM_NAMED_ARGS, DESC> {
   FMT_GCC_PRAGMA(GCC diagnostic ignored "-Wconversion")
   return {{args...}};
 }
-
-#ifndef FMT_DOC
-template <typename Context = context, typename... T,
-          size_t NUM_NAMED_ARGS = detail::count_named_args<T...>(),
-          unsigned long long DESC =
-              detail::make_descriptor<Context, T...>() |
-              static_cast<unsigned long long>(detail::has_named_args_bit),
-          FMT_ENABLE_IF(NUM_NAMED_ARGS != 0)>
-constexpr auto make_format_args(T&... args)
-    -> detail::format_arg_store<Context, sizeof...(T), NUM_NAMED_ARGS, DESC> {
-  return {{args...}};
-}
-#endif
 
 template <typename... T>
 using vargs =
