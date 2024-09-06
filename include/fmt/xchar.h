@@ -10,6 +10,7 @@
 
 #include "color.h"
 #include "format.h"
+#include "ostream.h"
 #include "ranges.h"
 
 #ifndef FMT_MODULE
@@ -308,6 +309,24 @@ template <typename... T>
 FMT_DEPRECATED void print(const text_style& ts, wformat_string<T...> fmt,
                           const T&... args) {
   return print(stdout, ts, fmt, args...);
+}
+
+inline void vprint(std::wostream& os, wstring_view fmt, wformat_args args) {
+  auto buffer = basic_memory_buffer<wchar_t>();
+  detail::vformat_to(buffer, fmt, args);
+  detail::write_buffer(os, buffer);
+}
+
+template <typename... T>
+void print(std::wostream& os, typename fstring<wchar_t, T...>::t fmt,
+           T&&... args) {
+  vprint(os, fmt, fmt::make_format_args<buffered_context<wchar_t>>(args...));
+}
+
+template <typename... T>
+void println(std::wostream& os, typename fstring<wchar_t, T...>::t fmt,
+             T&&... args) {
+  print(os, L"{}\n", fmt::format(fmt, std::forward<T>(args)...));
 }
 
 /// Converts `value` to `std::wstring` using the default format for type `T`.

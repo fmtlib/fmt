@@ -330,7 +330,7 @@ FMT_CONSTEXPR inline auto operator|(emphasis lhs, emphasis rhs) noexcept
 namespace detail {
 
 template <typename Char> struct ansi_color_escape {
-  FMT_CONSTEXPR ansi_color_escape(detail::color_type text_color,
+  FMT_CONSTEXPR ansi_color_escape(color_type text_color,
                                   const char* esc) noexcept {
     // If we have a terminal color, we need to output another escape code
     // sequence.
@@ -412,13 +412,13 @@ template <typename Char> struct ansi_color_escape {
 };
 
 template <typename Char>
-FMT_CONSTEXPR auto make_foreground_color(detail::color_type foreground) noexcept
+FMT_CONSTEXPR auto make_foreground_color(color_type foreground) noexcept
     -> ansi_color_escape<Char> {
   return ansi_color_escape<Char>(foreground, "\x1b[38;2;");
 }
 
 template <typename Char>
-FMT_CONSTEXPR auto make_background_color(detail::color_type background) noexcept
+FMT_CONSTEXPR auto make_background_color(color_type background) noexcept
     -> ansi_color_escape<Char> {
   return ansi_color_escape<Char>(background, "\x1b[48;2;");
 }
@@ -434,7 +434,7 @@ template <typename Char> inline void reset_color(buffer<Char>& buffer) {
   buffer.append(reset_color.begin(), reset_color.end());
 }
 
-template <typename T> struct styled_arg : detail::view {
+template <typename T> struct styled_arg : view {
   const T& value;
   text_style style;
   styled_arg(const T& v, text_style s) : value(v), style(s) {}
@@ -447,21 +447,21 @@ void vformat_to(buffer<Char>& buf, const text_style& ts,
   bool has_style = false;
   if (ts.has_emphasis()) {
     has_style = true;
-    auto emphasis = detail::make_emphasis<Char>(ts.get_emphasis());
+    auto emphasis = make_emphasis<Char>(ts.get_emphasis());
     buf.append(emphasis.begin(), emphasis.end());
   }
   if (ts.has_foreground()) {
     has_style = true;
-    auto foreground = detail::make_foreground_color<Char>(ts.get_foreground());
+    auto foreground = make_foreground_color<Char>(ts.get_foreground());
     buf.append(foreground.begin(), foreground.end());
   }
   if (ts.has_background()) {
     has_style = true;
-    auto background = detail::make_background_color<Char>(ts.get_background());
+    auto background = make_background_color<Char>(ts.get_background());
     buf.append(background.begin(), background.end());
   }
-  detail::vformat_to(buf, fmt, args);
-  if (has_style) detail::reset_color<Char>(buf);
+  vformat_to(buf, fmt, args);
+  if (has_style) reset_color<Char>(buf);
 }
 }  // namespace detail
 

@@ -41,47 +41,12 @@ template class file_access<file_access_tag, std::filebuf,
 auto get_file(std::filebuf&) -> FILE*;
 #endif
 
-inline auto write_ostream_unicode(std::ostream& os, fmt::string_view data)
-    -> bool {
-  FILE* f = nullptr;
-#if FMT_MSC_VERSION && FMT_USE_RTTI
-  if (auto* buf = dynamic_cast<std::filebuf*>(os.rdbuf()))
-    f = get_file(*buf);
-  else
-    return false;
-#elif defined(_WIN32) && defined(__GLIBCXX__) && FMT_USE_RTTI
-  auto* rdbuf = os.rdbuf();
-  if (auto* sfbuf = dynamic_cast<__gnu_cxx::stdio_sync_filebuf<char>*>(rdbuf))
-    f = sfbuf->file();
-  else if (auto* fbuf = dynamic_cast<__gnu_cxx::stdio_filebuf<char>*>(rdbuf))
-    f = fbuf->file();
-  else
-    return false;
-#else
-  ignore_unused(os, data, f);
-#endif
-#ifdef _WIN32
-  if (f) {
-    int fd = _fileno(f);
-    if (_isatty(fd)) {
-      os.flush();
-      return write_console(fd, data);
-    }
-  }
-#endif
-  return false;
-}
-inline auto write_ostream_unicode(std::wostream&,
-                                  fmt::basic_string_view<wchar_t>) -> bool {
-  return false;
-}
-
 // Write the content of buf to os.
 // It is a separate function rather than a part of vprint to simplify testing.
 template <typename Char>
 void write_buffer(std::basic_ostream<Char>& os, buffer<Char>& buf) {
   const Char* buf_data = buf.data();
-  using unsigned_streamsize = std::make_unsigned<std::streamsize>::type;
+  using unsigned_streamsize =make_unsigned_t<std::streamsize>;
   unsigned_streamsize size = buf.size();
   unsigned_streamsize max_size = to_unsigned(max_value<std::streamsize>());
   do {
@@ -96,9 +61,7 @@ template <typename Char, typename T>
 void format_value(buffer<Char>& buf, const T& value) {
   auto&& format_buf = formatbuf<std::basic_streambuf<Char>>(buf);
   auto&& output = std::basic_ostream<Char>(&format_buf);
-#if !defined(FMT_STATIC_THOUSANDS_SEPARATOR)
   output.imbue(std::locale::classic());  // The default is always unlocalized.
-#endif
   output << value;
   output.exceptions(std::ios_base::failbit | std::ios_base::badbit);
 }
@@ -106,7 +69,6 @@ void format_value(buffer<Char>& buf, const T& value) {
 template <typename T> struct streamed_view {
   const T& value;
 };
-
 }  // namespace detail
 
 // Formats an object of type T that has an overloaded ostream operator<<.
@@ -148,14 +110,31 @@ constexpr auto streamed(const T& value) -> detail::streamed_view<T> {
   return {value};
 }
 
-FMT_EXPORT template <typename Char>
-void vprint(std::basic_ostream<Char>& os,
-            basic_string_view<type_identity_t<Char>> fmt,
-            typename detail::vformat_args<Char>::type args) {
-  auto buffer = basic_memory_buffer<Char>();
+inline void vprint(std::ostream& os, string_view fmt, format_args args) {
+  auto buffer = memory_buffer();
   detail::vformat_to(buffer, fmt, args);
-  if (!detail::write_ostream_unicode(os, {buffer.data(), buffer.size()}))
-    detail::write_buffer(os, buffer);
+  FILE* f = nullptr;
+#if FMT_MSC_VERSION && FMT_USE_RTTI
+  if (auto* buf = dynamic_cast<std::filebuf*>(os.rdbuf()))
+    f = detail::get_file(*buf);
+#elif defined(_WIN32) && defined(__GLIBCXX__) && FMT_USE_RTTI
+  auto* rdbuf = os.rdbuf();
+  if (auto* sfbuf = dynamic_cast<__gnu_cxx::stdio_sync_filebuf<char>*>(rdbuf))
+    f = sfbuf->file();
+  else if (auto* fbuf = dynamic_cast<__gnu_cxx::stdio_filebuf<char>*>(rdbuf))
+    f = fbuf->file();
+#endif
+#ifdef _WIN32
+  if (f) {
+    int fd = _fileno(f);
+    if (_isatty(fd)) {
+      os.flush();
+      if (detail::write_console(fd, {buffer.data(), buffer.size()})) return;
+    }
+  }
+#endif
+  detail::ignore_unused(f);
+  detail::write_buffer(os, buffer);
 }
 
 /**
@@ -174,23 +153,9 @@ void print(std::ostream& os, format_string<T...> fmt, T&&... args) {
   detail::write_buffer(os, buffer);
 }
 
-FMT_EXPORT
-template <typename... T>
-void print(std::wostream& os, typename fstring<wchar_t, T...>::t fmt,
-           T&&... args) {
-  vprint(os, fmt, fmt::make_format_args<buffered_context<wchar_t>>(args...));
-}
-
 FMT_EXPORT template <typename... T>
 void println(std::ostream& os, format_string<T...> fmt, T&&... args) {
   fmt::print(os, "{}\n", fmt::format(fmt, std::forward<T>(args)...));
-}
-
-FMT_EXPORT
-template <typename... T>
-void println(std::wostream& os, typename fstring<wchar_t, T...>::t fmt,
-             T&&... args) {
-  print(os, L"{}\n", fmt::format(fmt, std::forward<T>(args)...));
 }
 
 FMT_END_NAMESPACE
