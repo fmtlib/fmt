@@ -1774,7 +1774,7 @@ FMT_CONSTEXPR auto invoke_parse(parse_context<Char>& ctx) -> const Char* {
 #if defined(__cpp_if_constexpr)
   if constexpr (std::is_default_constructible<formatter<mapped_type, Char>>())
     return formatter<mapped_type, Char>().parse(ctx);
-  return ctx.begin();  // Ignore the error - it is reported by make_format_args.
+  return ctx.begin();  // Ignore the error - it is reported in the value ctor.
 #else
   return formatter<mapped_type, Char>().parse(ctx);
 #endif
@@ -2935,7 +2935,7 @@ template <typename OutputIt, typename... T,
                                                    char>::value)>
 FMT_INLINE auto format_to(OutputIt&& out, format_string<T...> fmt, T&&... args)
     -> remove_cvref_t<OutputIt> {
-  return vformat_to(FMT_FWD(out), fmt, fmt::make_format_args(args...));
+  return vformat_to(FMT_FWD(out), fmt, vargs<T...>{{args...}});
 }
 
 template <typename OutputIt> struct format_to_n_result {
@@ -2965,7 +2965,7 @@ template <typename OutputIt, typename... T,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
 FMT_INLINE auto format_to_n(OutputIt out, size_t n, format_string<T...> fmt,
                             T&&... args) -> format_to_n_result<OutputIt> {
-  return vformat_to_n(out, n, fmt, fmt::make_format_args(args...));
+  return vformat_to_n(out, n, fmt, vargs<T...>{{args...}});
 }
 
 struct format_to_result {
@@ -3000,7 +3000,7 @@ template <typename... T>
 FMT_NODISCARD FMT_INLINE auto formatted_size(format_string<T...> fmt,
                                              T&&... args) -> size_t {
   auto buf = detail::counting_buffer<>();
-  detail::vformat_to(buf, fmt, fmt::make_format_args(args...), {});
+  detail::vformat_to(buf, fmt, vargs<T...>{{args...}}, {});
   return buf.count();
 }
 
@@ -3019,7 +3019,7 @@ FMT_API void vprintln(FILE* f, string_view fmt, format_args args);
  */
 template <typename... T>
 FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
-  const auto& vargs = fmt::make_format_args(args...);
+  fmt::vargs<T...> vargs = {{args...}};
   if (!FMT_USE_UTF8) return detail::vprint_mojibake(stdout, fmt, vargs, false);
   return detail::is_locking<T...>() ? vprint_buffered(stdout, fmt, vargs)
                                     : vprint(fmt, vargs);
@@ -3035,7 +3035,7 @@ FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
  */
 template <typename... T>
 FMT_INLINE void print(FILE* f, format_string<T...> fmt, T&&... args) {
-  const auto& vargs = fmt::make_format_args(args...);
+  fmt::vargs<T...> vargs = {{args...}};
   if (!FMT_USE_UTF8) return detail::vprint_mojibake(f, fmt, vargs, false);
   return detail::is_locking<T...>() ? vprint_buffered(f, fmt, vargs)
                                     : vprint(f, fmt, vargs);
@@ -3045,7 +3045,7 @@ FMT_INLINE void print(FILE* f, format_string<T...> fmt, T&&... args) {
 /// to the file `f` followed by a newline.
 template <typename... T>
 FMT_INLINE void println(FILE* f, format_string<T...> fmt, T&&... args) {
-  const auto& vargs = fmt::make_format_args(args...);
+  fmt::vargs<T...> vargs = {{args...}};
   return FMT_USE_UTF8 ? vprintln(f, fmt, vargs)
                       : detail::vprint_mojibake(f, fmt, vargs, true);
 }
