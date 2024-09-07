@@ -46,7 +46,7 @@ auto get_file(std::filebuf&) -> FILE*;
 template <typename Char>
 void write_buffer(std::basic_ostream<Char>& os, buffer<Char>& buf) {
   const Char* buf_data = buf.data();
-  using unsigned_streamsize =make_unsigned_t<std::streamsize>;
+  using unsigned_streamsize = make_unsigned_t<std::streamsize>;
   unsigned_streamsize size = buf.size();
   unsigned_streamsize max_size = to_unsigned(max_value<std::streamsize>());
   do {

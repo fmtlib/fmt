@@ -2193,6 +2193,12 @@ template <typename Context> struct custom_value {
   void (*format)(void* arg, parse_context<char_type>& parse_ctx, Context& ctx);
 };
 
+#if !FMT_BUILTIN_TYPES
+#  define FMT_BUILTIN , monostate
+#else
+#  define FMT_BUILTIN
+#endif
+
 // A formatting argument value.
 template <typename Context> class value {
  public:
@@ -2217,41 +2223,42 @@ template <typename Context> class value {
     named_arg_value<char_type> named_args;
   };
 
-  constexpr FMT_ALWAYS_INLINE value() : no_value() {}
-  constexpr FMT_ALWAYS_INLINE value(int val) : int_value(val) {}
-  constexpr FMT_ALWAYS_INLINE value(unsigned val) : uint_value(val) {}
-  constexpr FMT_ALWAYS_INLINE value(long long val) : long_long_value(val) {}
-  constexpr FMT_ALWAYS_INLINE value(unsigned long long val)
+  constexpr FMT_INLINE value() : no_value() {}
+  constexpr FMT_INLINE value(int val) : int_value(val) {}
+  constexpr FMT_INLINE value(unsigned val FMT_BUILTIN) : uint_value(val) {}
+  constexpr FMT_INLINE value(long long val FMT_BUILTIN)
+      : long_long_value(val) {}
+  constexpr FMT_INLINE value(unsigned long long val FMT_BUILTIN)
       : ulong_long_value(val) {}
-  FMT_ALWAYS_INLINE value(int128_opt val) : int128_value(val) {}
-  FMT_ALWAYS_INLINE value(uint128_opt val) : uint128_value(val) {}
-  constexpr FMT_ALWAYS_INLINE value(float val) : float_value(val) {}
-  constexpr FMT_ALWAYS_INLINE value(double val) : double_value(val) {}
-  FMT_ALWAYS_INLINE value(long double val) : long_double_value(val) {}
-  constexpr FMT_ALWAYS_INLINE value(bool val) : bool_value(val) {}
-  constexpr FMT_ALWAYS_INLINE value(char_type val) : char_value(val) {}
-  FMT_CONSTEXPR FMT_ALWAYS_INLINE value(const char_type* val) {
+  FMT_INLINE value(int128_opt val FMT_BUILTIN) : int128_value(val) {}
+  FMT_INLINE value(uint128_opt val FMT_BUILTIN) : uint128_value(val) {}
+  constexpr FMT_INLINE value(float val FMT_BUILTIN) : float_value(val) {}
+  constexpr FMT_INLINE value(double val FMT_BUILTIN) : double_value(val) {}
+  FMT_INLINE value(long double val FMT_BUILTIN) : long_double_value(val) {}
+  constexpr FMT_INLINE value(bool val FMT_BUILTIN) : bool_value(val) {}
+  constexpr FMT_INLINE value(char_type val FMT_BUILTIN) : char_value(val) {}
+  FMT_CONSTEXPR FMT_INLINE value(const char_type* val FMT_BUILTIN) {
     string.data = val;
     if (is_constant_evaluated()) string.size = {};
   }
-  FMT_CONSTEXPR FMT_ALWAYS_INLINE value(basic_string_view<char_type> val) {
+  FMT_CONSTEXPR FMT_INLINE value(basic_string_view<char_type> val FMT_BUILTIN) {
     string.data = val.data();
     string.size = val.size();
   }
-  FMT_ALWAYS_INLINE value(const void* val) : pointer(val) {}
+  FMT_INLINE value(const void* val FMT_BUILTIN) : pointer(val) {}
 
   // We can't use mapped_t because of a bug in MSVC 2017.
   template <typename T,
             FMT_ENABLE_IF(!std::is_same<T, decltype(arg_mapper<char_type>::map(
                                                std::declval<T&>()))>::value)>
-  FMT_CONSTEXPR20 FMT_ALWAYS_INLINE value(T&& val) {
+  FMT_CONSTEXPR20 FMT_INLINE value(T&& val) {
     *this = arg_mapper<char_type>::map(val);
   }
 
   template <typename T,
             FMT_ENABLE_IF(std::is_same<T, decltype(arg_mapper<char_type>::map(
                                               std::declval<T&>()))>::value)>
-  FMT_CONSTEXPR20 FMT_ALWAYS_INLINE value(T&& val) {
+  FMT_CONSTEXPR20 FMT_INLINE value(T&& val) {
     // Use enum instead of constexpr because the latter may generate code.
     enum { formattable_char = !std::is_same<T, unformattable_char>::value };
     static_assert(formattable_char, "mixing character types is disallowed");
@@ -2347,7 +2354,6 @@ struct locale_ref {
  public:
   constexpr locale_ref() : locale_(nullptr) {}
   template <typename Locale> explicit locale_ref(const Locale& loc);
-
   explicit operator bool() const noexcept { return locale_ != nullptr; }
 #endif
 
@@ -2991,7 +2997,7 @@ auto vformat_to(char (&out)[N], string_view fmt, format_args args)
 template <size_t N, typename... T>
 FMT_INLINE auto format_to(char (&out)[N], format_string<T...> fmt, T&&... args)
     -> format_to_result {
-  auto result = fmt::format_to_n(out, N, fmt, static_cast<T&&>(args)...);
+  auto result = vformat_to_n(out, N, fmt, vargs<T...>{{args...}});
   return {result.out, result.size > N};
 }
 
