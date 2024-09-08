@@ -2812,29 +2812,29 @@ template <typename Char = char> struct runtime_format_string {
 inline auto runtime(string_view s) -> runtime_format_string<> { return {{s}}; }
 
 /// A compile-time format string.
-template <typename Char, typename... T> struct fstring {
+template <typename... T> struct fstring {
  private:
   static constexpr int num_static_named_args =
       detail::count_static_named_args<T...>();
 
   using checker = detail::format_string_checker<
-      Char, static_cast<int>(sizeof...(T)), num_static_named_args,
+      char, static_cast<int>(sizeof...(T)), num_static_named_args,
       num_static_named_args != detail::count_named_args<T...>()>;
 
   using arg_pack = detail::arg_pack<T...>;
 
  public:
-  basic_string_view<Char> str;
+  string_view str;
   using t = fstring;
 
   // Reports a compile-time error if S is not a valid format string for T.
   template <size_t N>
-  FMT_CONSTEVAL FMT_ALWAYS_INLINE fstring(const Char (&s)[N]) : str(s, N - 1) {
+  FMT_CONSTEVAL FMT_ALWAYS_INLINE fstring(const char (&s)[N]) : str(s, N - 1) {
     using namespace detail;
     static_assert(count<(std::is_base_of<view, remove_reference_t<T>>::value &&
                          std::is_reference<T>::value)...>() == 0,
                   "passing views as lvalues is disallowed");
-    if (FMT_USE_CONSTEVAL) parse_format_string<Char>(s, checker(s, arg_pack()));
+    if (FMT_USE_CONSTEVAL) parse_format_string<char>(s, checker(s, arg_pack()));
 #ifdef FMT_ENFORCE_COMPILE_STRING
     static_assert(
         FMT_USE_CONSTEVAL && sizeof(s) != 0,
@@ -2842,11 +2842,10 @@ template <typename Char, typename... T> struct fstring {
 #endif
   }
   template <typename S,
-            FMT_ENABLE_IF(
-                std::is_convertible<const S&, basic_string_view<Char>>::value)>
+            FMT_ENABLE_IF(std::is_convertible<const S&, string_view>::value)>
   FMT_CONSTEVAL FMT_ALWAYS_INLINE fstring(const S& s) : str(s) {
     if (FMT_USE_CONSTEVAL)
-      detail::parse_format_string<Char>(s, checker(s, arg_pack()));
+      detail::parse_format_string<char>(s, checker(s, arg_pack()));
 #ifdef FMT_ENFORCE_COMPILE_STRING
     static_assert(
         FMT_USE_CONSTEVAL && sizeof(s) != 0,
@@ -2855,23 +2854,21 @@ template <typename Char, typename... T> struct fstring {
   }
   template <typename S,
             FMT_ENABLE_IF(std::is_base_of<detail::compile_string, S>::value&&
-                              std::is_same<typename S::char_type, Char>::value)>
+                              std::is_same<typename S::char_type, char>::value)>
   FMT_ALWAYS_INLINE fstring(const S&) : str(S()) {
-    FMT_CONSTEXPR auto sv = basic_string_view<Char>(S());
+    FMT_CONSTEXPR auto sv = string_view(S());
     FMT_CONSTEXPR int ignore =
         (parse_format_string(sv, checker(sv, arg_pack())), 0);
     detail::ignore_unused(ignore);
   }
-  fstring(runtime_format_string<Char> fmt) : str(fmt.str) {}
+  fstring(runtime_format_string<> fmt) : str(fmt.str) {}
 
   // Returning by reference generates better code in debug mode.
-  FMT_ALWAYS_INLINE operator const basic_string_view<Char>&() const {
-    return str;
-  }
-  auto get() const -> basic_string_view<Char> { return str; }
+  FMT_ALWAYS_INLINE operator const string_view&() const { return str; }
+  auto get() const -> string_view { return str; }
 };
 
-template <typename... T> using format_string = typename fstring<char, T...>::t;
+template <typename... T> using format_string = typename fstring<T...>::t;
 
 template <typename T, typename Char = char>
 using is_formattable = bool_constant<
