@@ -131,7 +131,12 @@ FMT_FUNC auto write_loc(appender out, loc_value value,
 }  // namespace detail
 
 FMT_FUNC void report_error(const char* message) {
-  FMT_THROW(format_error(message));
+#if FMT_EXCEPTIONS
+  throw format_error(message);
+#else
+  fputs(message, stderr);
+  abort();
+#endif
 }
 
 template <typename Locale> typename Locale::id format_facet<Locale>::id;
