@@ -2812,11 +2812,8 @@ template <typename Char = char> struct runtime_format_string {
 inline auto runtime(string_view s) -> runtime_format_string<> { return {{s}}; }
 
 /// A compile-time format string.
-template <typename Char, typename... T> class fstring {
+template <typename Char, typename... T> struct fstring {
  private:
-  const Char* str_;
-  size_t size_;
-
   static constexpr int num_static_named_args =
       detail::count_static_named_args<T...>();
 
@@ -2827,12 +2824,12 @@ template <typename Char, typename... T> class fstring {
   using arg_pack = detail::arg_pack<T...>;
 
  public:
+  basic_string_view<Char> str;
   using t = fstring;
 
   // Reports a compile-time error if S is not a valid format string for T.
   template <size_t N>
-  FMT_CONSTEVAL FMT_ALWAYS_INLINE fstring(const Char (&s)[N])
-      : str_(s), size_(N - 1) {
+  FMT_CONSTEVAL FMT_ALWAYS_INLINE fstring(const Char (&s)[N]) : str(s, N - 1) {
     using namespace detail;
     static_assert(count<(std::is_base_of<view, remove_reference_t<T>>::value &&
                          std::is_reference<T>::value)...>() == 0,
@@ -2847,10 +2844,7 @@ template <typename Char, typename... T> class fstring {
   template <typename S,
             FMT_ENABLE_IF(
                 std::is_convertible<const S&, basic_string_view<Char>>::value)>
-  FMT_CONSTEVAL FMT_ALWAYS_INLINE fstring(const S& s) {
-    auto sv = basic_string_view<Char>(s);
-    str_ = sv.data();
-    size_ = sv.size();
+  FMT_CONSTEVAL FMT_ALWAYS_INLINE fstring(const S& s) : str(s) {
     if (FMT_USE_CONSTEVAL)
       detail::parse_format_string<Char>(s, checker(s, arg_pack()));
 #ifdef FMT_ENFORCE_COMPILE_STRING
@@ -2862,21 +2856,19 @@ template <typename Char, typename... T> class fstring {
   template <typename S,
             FMT_ENABLE_IF(std::is_base_of<detail::compile_string, S>::value&&
                               std::is_same<typename S::char_type, Char>::value)>
-  FMT_ALWAYS_INLINE fstring(const S&) {
+  FMT_ALWAYS_INLINE fstring(const S&) : str(S()) {
     FMT_CONSTEXPR auto sv = basic_string_view<Char>(S());
-    str_ = sv.data();
-    size_ = sv.size();
     FMT_CONSTEXPR int ignore =
         (parse_format_string(sv, checker(sv, arg_pack())), 0);
     detail::ignore_unused(ignore);
   }
-  fstring(runtime_format_string<Char> fmt)
-      : str_(fmt.str.data()), size_(fmt.str.size()) {}
+  fstring(runtime_format_string<Char> fmt) : str(fmt.str) {}
 
-  FMT_ALWAYS_INLINE operator basic_string_view<Char>() const {
-    return {str_, size_};
+  // Returning by reference generates better code in debug mode.
+  FMT_ALWAYS_INLINE operator const basic_string_view<Char>&() const {
+    return str;
   }
-  auto get() const -> basic_string_view<Char> { return {str_, size_}; }
+  auto get() const -> basic_string_view<Char> { return str; }
 };
 
 template <typename... T> using format_string = typename fstring<char, T...>::t;
@@ -3023,7 +3015,7 @@ auto vformat_to(char (&out)[N], string_view fmt, format_args args)
 template <size_t N, typename... T>
 FMT_INLINE auto format_to(char (&out)[N], format_string<T...> fmt, T&&... args)
     -> format_to_result {
-  auto result = vformat_to_n(out, N, fmt, vargs<T...>{{args...}});
+  auto result = vformat_to_n(out, N, fmt.str, vargs<T...>{{args...}});
   return {result.out, result.size > N};
 }
 
@@ -3032,7 +3024,7 @@ template <typename... T>
 FMT_NODISCARD FMT_INLINE auto formatted_size(format_string<T...> fmt,
                                              T&&... args) -> size_t {
   auto buf = detail::counting_buffer<>();
-  detail::vformat_to(buf, fmt, vargs<T...>{{args...}}, {});
+  detail::vformat_to(buf, fmt.str, vargs<T...>{{args...}}, {});
   return buf.count();
 }
 
@@ -3054,7 +3046,7 @@ FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
   fmt::vargs<T...> vargs = {{args...}};
   if (!FMT_USE_UTF8) return detail::vprint_mojibake(stdout, fmt, vargs, false);
   return detail::is_locking<T...>() ? vprint_buffered(stdout, fmt, vargs)
-                                    : vprint(fmt, vargs);
+                                    : vprint(fmt.str, vargs);
 }
 
 /**
@@ -3070,7 +3062,7 @@ FMT_INLINE void print(FILE* f, format_string<T...> fmt, T&&... args) {
   fmt::vargs<T...> vargs = {{args...}};
   if (!FMT_USE_UTF8) return detail::vprint_mojibake(f, fmt, vargs, false);
   return detail::is_locking<T...>() ? vprint_buffered(f, fmt, vargs)
-                                    : vprint(f, fmt, vargs);
+                                    : vprint(f, fmt.str, vargs);
 }
 
 /// Formats `args` according to specifications in `fmt` and writes the output
