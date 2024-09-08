@@ -197,10 +197,13 @@ template <typename Locale, typename S,
           typename Char = detail::format_string_char_t<S>,
           FMT_ENABLE_IF(detail::is_locale<Locale>::value&&
                             detail::is_exotic_char<Char>::value)>
-inline auto vformat(const Locale& loc, const S& format_str,
+inline auto vformat(const Locale& loc, const S& fmt,
                     typename detail::vformat_args<Char>::type args)
     -> std::basic_string<Char> {
-  return detail::vformat(loc, detail::to_string_view(format_str), args);
+  auto buf = basic_memory_buffer<Char>();
+  detail::vformat_to(buf, detail::to_string_view(fmt), args,
+                     detail::locale_ref(loc));
+  return {buf.data(), buf.size()};
 }
 
 template <typename Locale, typename S, typename... T,
@@ -209,9 +212,8 @@ template <typename Locale, typename S, typename... T,
                             detail::is_exotic_char<Char>::value)>
 inline auto format(const Locale& loc, const S& format_str, T&&... args)
     -> std::basic_string<Char> {
-  return detail::vformat(
-      loc, detail::to_string_view(format_str),
-      fmt::make_format_args<buffered_context<Char>>(args...));
+  return vformat(loc, detail::to_string_view(format_str),
+                 fmt::make_format_args<buffered_context<Char>>(args...));
 }
 
 template <typename OutputIt, typename S,

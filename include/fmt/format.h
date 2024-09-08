@@ -3868,17 +3868,14 @@ template <typename Char>
 void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
                 typename vformat_args<Char>::type args, locale_ref loc = {}) {
   auto out = basic_appender<Char>(buf);
-  if (fmt.size() == 2 && equal2(fmt.data(), "{}"))
-    return args.get(0).visit(default_arg_formatter<Char>{out});
   parse_format_string(
       fmt, format_handler<Char>{parse_context<Char>(fmt), {out, args, loc}});
 }
 
-template <typename Locale, typename Char>
-auto vformat(const Locale& loc, basic_string_view<Char> fmt,
-             typename detail::vformat_args<Char>::type args)
-    -> std::basic_string<Char> {
-  auto buf = basic_memory_buffer<Char>();
+template <typename Locale>
+auto vformat(const Locale& loc, string_view fmt, format_args args)
+    -> std::string {
+  auto buf = memory_buffer();
   detail::vformat_to(buf, fmt, args, detail::locale_ref(loc));
   return {buf.data(), buf.size()};
 }
