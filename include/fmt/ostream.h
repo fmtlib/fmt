@@ -57,15 +57,6 @@ void write_buffer(std::basic_ostream<Char>& os, buffer<Char>& buf) {
   } while (size != 0);
 }
 
-template <typename Char, typename T>
-void format_value(buffer<Char>& buf, const T& value) {
-  auto&& format_buf = formatbuf<std::basic_streambuf<Char>>(buf);
-  auto&& output = std::basic_ostream<Char>(&format_buf);
-  output.imbue(std::locale::classic());  // The default is always unlocalized.
-  output << value;
-  output.exceptions(std::ios_base::failbit | std::ios_base::badbit);
-}
-
 template <typename T> struct streamed_view {
   const T& value;
 };
@@ -79,7 +70,11 @@ struct basic_ostream_formatter : formatter<basic_string_view<Char>, Char> {
   template <typename T, typename Context>
   auto format(const T& value, Context& ctx) const -> decltype(ctx.out()) {
     auto buffer = basic_memory_buffer<Char>();
-    detail::format_value(buffer, value);
+    auto&& formatbuf = detail::formatbuf<std::basic_streambuf<Char>>(buffer);
+    auto&& output = std::basic_ostream<Char>(&formatbuf);
+    output.imbue(std::locale::classic());  // The default is always unlocalized.
+    output << value;
+    output.exceptions(std::ios_base::failbit | std::ios_base::badbit);
     return formatter<basic_string_view<Char>, Char>::format(
         {buffer.data(), buffer.size()}, ctx);
   }
@@ -147,9 +142,9 @@ inline void vprint(std::ostream& os, string_view fmt, format_args args) {
 FMT_EXPORT template <typename... T>
 void print(std::ostream& os, format_string<T...> fmt, T&&... args) {
   fmt::vargs<T...> vargs = {{args...}};
-  if (FMT_USE_UTF8) return vprint(os, fmt, vargs);
+  if (FMT_USE_UTF8) return vprint(os, fmt.str, vargs);
   auto buffer = memory_buffer();
-  detail::vformat_to(buffer, fmt, vargs);
+  detail::vformat_to(buffer, fmt.str, vargs);
   detail::write_buffer(os, buffer);
 }
 

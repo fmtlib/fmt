@@ -484,7 +484,7 @@ inline void vprint(FILE* f, const text_style& ts, string_view fmt,
 template <typename... T>
 void print(FILE* f, const text_style& ts, format_string<T...> fmt,
            T&&... args) {
-  vprint(f, ts, fmt, vargs<T...>{{args...}});
+  vprint(f, ts, fmt.str, vargs<T...>{{args...}});
 }
 
 /**
@@ -523,7 +523,7 @@ inline auto vformat(const text_style& ts, string_view fmt, format_args args)
 template <typename... T>
 inline auto format(const text_style& ts, format_string<T...> fmt, T&&... args)
     -> std::string {
-  return fmt::vformat(ts, fmt, vargs<T...>{{args...}});
+  return fmt::vformat(ts, fmt.str, vargs<T...>{{args...}});
 }
 
 /// Formats a string with the given text_style and writes the output to `out`.
@@ -550,7 +550,7 @@ template <typename OutputIt, typename... T,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
 inline auto format_to(OutputIt out, const text_style& ts,
                       format_string<T...> fmt, T&&... args) -> OutputIt {
-  return vformat_to(out, ts, fmt, vargs<T...>{{args...}});
+  return vformat_to(out, ts, fmt.str, vargs<T...>{{args...}});
 }
 
 template <typename T, typename Char>

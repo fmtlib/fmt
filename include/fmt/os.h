@@ -398,7 +398,7 @@ class FMT_API ostream : private detail::buffer<char> {
   /// Formats `args` according to specifications in `fmt` and writes the
   /// output to the file.
   template <typename... T> void print(format_string<T...> fmt, T&&... args) {
-    vformat_to(appender(*this), fmt, vargs<T...>{{args...}});
+    vformat_to(appender(*this), fmt.str, vargs<T...>{{args...}});
   }
 };
 

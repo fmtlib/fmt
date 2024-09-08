@@ -3919,7 +3919,7 @@ FMT_API auto vsystem_error(int error_code, string_view format_str,
 template <typename... T>
 auto system_error(int error_code, format_string<T...> fmt, T&&... args)
     -> std::system_error {
-  return vsystem_error(error_code, fmt, vargs<T...>{{args...}});
+  return vsystem_error(error_code, fmt.str, vargs<T...>{{args...}});
 }
 
 /**
@@ -4327,7 +4327,7 @@ FMT_API auto vformat(string_view fmt, format_args args) -> std::string;
 template <typename... T>
 FMT_NODISCARD FMT_INLINE auto format(format_string<T...> fmt, T&&... args)
     -> std::string {
-  return vformat(fmt, vargs<T...>{{args...}});
+  return vformat(fmt.str, vargs<T...>{{args...}});
 }
 
 template <typename Locale, FMT_ENABLE_IF(detail::is_locale<Locale>::value)>
@@ -4340,7 +4340,7 @@ template <typename Locale, typename... T,
           FMT_ENABLE_IF(detail::is_locale<Locale>::value)>
 inline auto format(const Locale& loc, format_string<T...> fmt, T&&... args)
     -> std::string {
-  return fmt::vformat(loc, string_view(fmt), vargs<T...>{{args...}});
+  return fmt::vformat(loc, fmt.str, vargs<T...>{{args...}});
 }
 
 template <typename OutputIt, typename Locale,
@@ -4358,7 +4358,7 @@ template <typename OutputIt, typename Locale, typename... T,
                             detail::is_locale<Locale>::value)>
 FMT_INLINE auto format_to(OutputIt out, const Locale& loc,
                           format_string<T...> fmt, T&&... args) -> OutputIt {
-  return vformat_to(out, loc, fmt, vargs<T...>{{args...}});
+  return vformat_to(out, loc, fmt.str, vargs<T...>{{args...}});
 }
 
 template <typename Locale, typename... T,
@@ -4367,7 +4367,8 @@ FMT_NODISCARD FMT_INLINE auto formatted_size(const Locale& loc,
                                              format_string<T...> fmt,
                                              T&&... args) -> size_t {
   auto buf = detail::counting_buffer<>();
-  detail::vformat_to(buf, fmt, vargs<T...>{{args...}}, detail::locale_ref(loc));
+  detail::vformat_to(buf, fmt.str, vargs<T...>{{args...}},
+                     detail::locale_ref(loc));
   return buf.count();
 }
 

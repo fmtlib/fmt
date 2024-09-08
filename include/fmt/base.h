@@ -15,7 +15,7 @@
 #ifndef FMT_MODULE
 #  include <limits.h>  // CHAR_BIT
 #  include <stdio.h>   // FILE
-#  include <string.h>  // strlen
+#  include <string.h>  // memcmp
 
 // <cstddef> is also included transitively from <type_traits>.
 #  include <cstddef>      // std::byte
@@ -2956,7 +2956,7 @@ template <typename OutputIt, typename... T,
                                                    char>::value)>
 FMT_INLINE auto format_to(OutputIt&& out, format_string<T...> fmt, T&&... args)
     -> remove_cvref_t<OutputIt> {
-  return vformat_to(FMT_FWD(out), fmt, vargs<T...>{{args...}});
+  return vformat_to(FMT_FWD(out), fmt.str, vargs<T...>{{args...}});
 }
 
 template <typename OutputIt> struct format_to_n_result {
@@ -2986,7 +2986,7 @@ template <typename OutputIt, typename... T,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
 FMT_INLINE auto format_to_n(OutputIt out, size_t n, format_string<T...> fmt,
                             T&&... args) -> format_to_n_result<OutputIt> {
-  return vformat_to_n(out, n, fmt, vargs<T...>{{args...}});
+  return vformat_to_n(out, n, fmt.str, vargs<T...>{{args...}});
 }
 
 struct format_to_result {
@@ -3041,8 +3041,9 @@ FMT_API void vprintln(FILE* f, string_view fmt, format_args args);
 template <typename... T>
 FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
   fmt::vargs<T...> vargs = {{args...}};
-  if (!FMT_USE_UTF8) return detail::vprint_mojibake(stdout, fmt, vargs, false);
-  return detail::is_locking<T...>() ? vprint_buffered(stdout, fmt, vargs)
+  if (!FMT_USE_UTF8)
+    return detail::vprint_mojibake(stdout, fmt.str, vargs, false);
+  return detail::is_locking<T...>() ? vprint_buffered(stdout, fmt.str, vargs)
                                     : vprint(fmt.str, vargs);
 }
 
@@ -3057,8 +3058,8 @@ FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
 template <typename... T>
 FMT_INLINE void print(FILE* f, format_string<T...> fmt, T&&... args) {
   fmt::vargs<T...> vargs = {{args...}};
-  if (!FMT_USE_UTF8) return detail::vprint_mojibake(f, fmt, vargs, false);
-  return detail::is_locking<T...>() ? vprint_buffered(f, fmt, vargs)
+  if (!FMT_USE_UTF8) return detail::vprint_mojibake(f, fmt.str, vargs, false);
+  return detail::is_locking<T...>() ? vprint_buffered(f, fmt.str, vargs)
                                     : vprint(f, fmt.str, vargs);
 }
 
@@ -3067,8 +3068,8 @@ FMT_INLINE void print(FILE* f, format_string<T...> fmt, T&&... args) {
 template <typename... T>
 FMT_INLINE void println(FILE* f, format_string<T...> fmt, T&&... args) {
   fmt::vargs<T...> vargs = {{args...}};
-  return FMT_USE_UTF8 ? vprintln(f, fmt, vargs)
-                      : detail::vprint_mojibake(f, fmt, vargs, true);
+  return FMT_USE_UTF8 ? vprintln(f, fmt.str, vargs)
+                      : detail::vprint_mojibake(f, fmt.str, vargs, true);
 }
 
 /// Formats `args` according to specifications in `fmt` and writes the output
