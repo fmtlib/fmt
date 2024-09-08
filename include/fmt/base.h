@@ -2226,9 +2226,27 @@ template <typename Context> class value {
   constexpr FMT_INLINE value() : no_value() {}
   constexpr FMT_INLINE value(int val) : int_value(val) {}
   constexpr FMT_INLINE value(unsigned val FMT_BUILTIN) : uint_value(val) {}
+  FMT_CONSTEXPR FMT_INLINE value(long val FMT_BUILTIN) {
+    if (sizeof(long) == sizeof(int))
+      int_value = static_cast<int>(val);
+    else
+      long_long_value = val;
+  }
+  FMT_CONSTEXPR FMT_INLINE value(unsigned long val FMT_BUILTIN) {
+    if (sizeof(long) == sizeof(int))
+      uint_value = static_cast<unsigned>(val);
+    else
+      ulong_long_value = val;
+  }
   constexpr FMT_INLINE value(long long val FMT_BUILTIN)
       : long_long_value(val) {}
   constexpr FMT_INLINE value(unsigned long long val FMT_BUILTIN)
+      : ulong_long_value(val) {}
+  template <int N>
+  constexpr FMT_INLINE value(bitint<N> val FMT_BUILTIN)
+      : long_long_value(val) {}
+  template <int N>
+  constexpr FMT_INLINE value(ubitint<N> val FMT_BUILTIN)
       : ulong_long_value(val) {}
   FMT_INLINE value(int128_opt val FMT_BUILTIN) : int128_value(val) {}
   FMT_INLINE value(uint128_opt val FMT_BUILTIN) : uint128_value(val) {}
@@ -2236,7 +2254,11 @@ template <typename Context> class value {
   constexpr FMT_INLINE value(double val FMT_BUILTIN) : double_value(val) {}
   FMT_INLINE value(long double val FMT_BUILTIN) : long_double_value(val) {}
   constexpr FMT_INLINE value(bool val FMT_BUILTIN) : bool_value(val) {}
-  constexpr FMT_INLINE value(char_type val FMT_BUILTIN) : char_value(val) {}
+  template <typename T, FMT_ENABLE_IF(is_char<T>::value)>
+  constexpr FMT_INLINE value(T val FMT_BUILTIN) : char_value(val) {
+    static_assert(std::is_same<T, char_type>::value,
+                  "mixing character types is disallowed");
+  }
   FMT_CONSTEXPR FMT_INLINE value(const char_type* val FMT_BUILTIN) {
     string.data = val;
     if (is_constant_evaluated()) string.size = {};
@@ -2248,16 +2270,20 @@ template <typename Context> class value {
   FMT_INLINE value(const void* val FMT_BUILTIN) : pointer(val) {}
 
   // We can't use mapped_t because of a bug in MSVC 2017.
-  template <typename T,
-            FMT_ENABLE_IF(!std::is_same<T, decltype(arg_mapper<char_type>::map(
-                                               std::declval<T&>()))>::value)>
+  template <
+      typename T,
+      typename M = decltype(arg_mapper<char_type>::map(std::declval<T&>())),
+      FMT_ENABLE_IF(!std::is_same<T, M>::value &&
+                    !std::is_integral<remove_cvref_t<T>>::value)>
   FMT_CONSTEXPR20 FMT_INLINE value(T&& val) {
     *this = arg_mapper<char_type>::map(val);
   }
 
-  template <typename T,
-            FMT_ENABLE_IF(std::is_same<T, decltype(arg_mapper<char_type>::map(
-                                              std::declval<T&>()))>::value)>
+  template <
+      typename T,
+      typename M = decltype(arg_mapper<char_type>::map(std::declval<T&>())),
+      FMT_ENABLE_IF(std::is_same<T, M>::value &&
+                    !std::is_integral<remove_cvref_t<T>>::value)>
   FMT_CONSTEXPR20 FMT_INLINE value(T&& val) {
     // Use enum instead of constexpr because the latter may generate code.
     enum { formattable_char = !std::is_same<T, unformattable_char>::value };
