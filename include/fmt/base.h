@@ -298,6 +298,10 @@
 #  define FMT_API
 #endif
 
+#ifndef FMT_OPTIMIZE_SIZE
+#  define FMT_OPTIMIZE_SIZE 0
+#endif
+
 // Specifies whether to handle built-in and string types specially.
 // FMT_BUILTIN_TYPE=0 may result in smaller library size at the cost of higher
 // per-call binary size.
@@ -1416,7 +1420,7 @@ FMT_CONSTEXPR auto parse_arg_id(const Char* begin, const Char* end,
       handler.on_index(index);
     return begin;
   }
-  if (!is_name_start(c)) {
+  if (FMT_OPTIMIZE_SIZE > 1 || !is_name_start(c)) {
     report_error("invalid format string");
     return begin;
   }
@@ -2365,7 +2369,7 @@ struct is_output_iterator<
 
 #ifdef FMT_USE_LOCALE
 // Use the provided definition.
-#elif defined(FMT_STATIC_THOUSANDS_SEPARATOR)
+#elif defined(FMT_STATIC_THOUSANDS_SEPARATOR) || FMT_OPTIMIZE_SIZE > 1
 #  define FMT_USE_LOCALE 0
 #else
 #  define FMT_USE_LOCALE 1
