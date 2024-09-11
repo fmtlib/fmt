@@ -286,8 +286,6 @@
 #  error FMT_BUILTIN_TYPES=0 requires constexpr if support
 #endif
 
-#define FMT_FWD(...) static_cast<decltype(__VA_ARGS__)&&>(__VA_ARGS__)
-
 #define FMT_APPLY_VARIADIC(expr) \
   using ignore = int[];          \
   (void)ignore { 0, (expr, 0)... }
@@ -2868,7 +2866,7 @@ template <typename OutputIt, typename... T,
                                                    char>::value)>
 FMT_INLINE auto format_to(OutputIt&& out, format_string<T...> fmt, T&&... args)
     -> remove_cvref_t<OutputIt> {
-  return vformat_to(FMT_FWD(out), fmt.str, vargs<T...>{{args...}});
+  return vformat_to(out, fmt.str, vargs<T...>{{args...}});
 }
 
 template <typename OutputIt> struct format_to_n_result {
