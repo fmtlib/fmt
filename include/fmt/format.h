@@ -68,10 +68,36 @@
 #  endif
 #endif  // FMT_MODULE
 
+#if defined(FMT_USE_NONTYPE_TEMPLATE_ARGS)
+// Use the provided definition.
+#elif defined(__NVCOMPILER)
+#  define FMT_USE_NONTYPE_TEMPLATE_ARGS 0
+#elif FMT_GCC_VERSION >= 903 && FMT_CPLUSPLUS >= 201709L
+#  define FMT_USE_NONTYPE_TEMPLATE_ARGS 1
+#elif defined(__cpp_nontype_template_args) && \
+    __cpp_nontype_template_args >= 201911L
+#  define FMT_USE_NONTYPE_TEMPLATE_ARGS 1
+#elif FMT_CLANG_VERSION >= 1200 && FMT_CPLUSPLUS >= 202002L
+#  define FMT_USE_NONTYPE_TEMPLATE_ARGS 1
+#else
+#  define FMT_USE_NONTYPE_TEMPLATE_ARGS 0
+#endif
+
 #if defined __cpp_inline_variables && __cpp_inline_variables >= 201606L
 #  define FMT_INLINE_VARIABLE inline
 #else
 #  define FMT_INLINE_VARIABLE
+#endif
+
+// Check if RTTI is disabled.
+#ifdef FMT_USE_RTTI
+// Use the provided definition.
+#elif defined(__GXX_RTTI) || FMT_HAS_FEATURE(cxx_rtti) || defined(_CPPRTTI) || \
+    defined(__INTEL_RTTI__) || defined(__RTTI)
+// __RTTI is for EDG compilers. _CPPRTTI is for MSVC.
+#  define FMT_USE_RTTI 1
+#else
+#  define FMT_USE_RTTI 0
 #endif
 
 // Visibility when compiled as a shared library/object.
