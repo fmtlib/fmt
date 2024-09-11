@@ -167,7 +167,7 @@ auto vformat(basic_string_view<Char> fmt,
     -> std::basic_string<Char> {
   auto buf = basic_memory_buffer<Char>();
   detail::vformat_to(buf, fmt, args);
-  return to_string(buf);
+  return {buf.data(), buf.size()};
 }
 
 template <typename... T>
@@ -328,7 +328,7 @@ inline auto vformat(const text_style& ts, wstring_view fmt, wformat_args args)
     -> std::wstring {
   auto buf = wmemory_buffer();
   detail::vformat_to(buf, ts, fmt, args);
-  return fmt::to_string(buf);
+  return {buf.data(), buf.size()};
 }
 
 template <typename... T>

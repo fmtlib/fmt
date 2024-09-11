@@ -567,7 +567,7 @@ inline auto vsprintf(basic_string_view<Char> fmt,
     -> std::basic_string<Char> {
   auto buf = basic_memory_buffer<Char>();
   detail::vprintf(buf, fmt, args);
-  return to_string(buf);
+  return {buf.data(), buf.size()};
 }
 
 /**
