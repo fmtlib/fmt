@@ -1028,9 +1028,7 @@ FMT_API void print(std::FILE*, string_view);
 FMT_BEGIN_EXPORT
 
 // Suppress a misleading warning in older versions of clang.
-#if FMT_CLANG_VERSION
-#  pragma clang diagnostic ignored "-Wweak-vtables"
-#endif
+FMT_CLANG_PRAGMA(diagnostic ignored "-Wweak-vtables")
 
 /// An error reported from a formatting function.
 class FMT_SO_VISIBILITY("default") format_error : public std::runtime_error {

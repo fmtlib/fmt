@@ -276,14 +276,10 @@
 #  define FMT_OPTIMIZE_SIZE 0
 #endif
 
-// Specifies whether to handle built-in and string types specially.
 // FMT_BUILTIN_TYPE=0 may result in smaller library size at the cost of higher
-// per-call binary size.
+// per-call binary size by passing built-in types through the extension API.
 #ifndef FMT_BUILTIN_TYPES
 #  define FMT_BUILTIN_TYPES 1
-#endif
-#if !FMT_BUILTIN_TYPES && !defined(__cpp_if_constexpr)
-#  error FMT_BUILTIN_TYPES=0 requires constexpr if support
 #endif
 
 #define FMT_APPLY_VARIADIC(expr) \
@@ -2195,7 +2191,7 @@ template <typename Context> class value {
   }
   FMT_CONSTEXPR FMT_INLINE value(const char_type* x FMT_BUILTIN) {
     string.data = x;
-    if (is_constant_evaluated()) string.size = {};
+    if (is_constant_evaluated()) string.size = 0;
   }
   FMT_CONSTEXPR FMT_INLINE value(basic_string_view<char_type> x FMT_BUILTIN) {
     string.data = x.data();
@@ -2237,11 +2233,6 @@ template <typename Context> class value {
 
 #if defined(__cpp_if_constexpr)
     if constexpr (!formattable) type_is_unformattable_for<T, char_type> _;
-
-    if constexpr (std::is_same<T, int>::value) {
-      int_value = x;  // int is always handled as a built-in type.
-      return;
-    }
 
     // T may overload operator& e.g. std::vector<bool>::reference in libc++.
     if constexpr (std::is_same<decltype(&x), remove_reference_t<T>*>::value)
