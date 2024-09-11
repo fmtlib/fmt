@@ -2936,11 +2936,10 @@ FMT_API void vprintln(FILE* f, string_view fmt, format_args args);
  */
 template <typename... T>
 FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
-  fmt::vargs<T...> vargs = {{args...}};
-  if (!FMT_USE_UTF8)
-    return detail::vprint_mojibake(stdout, fmt.str, vargs, false);
-  return detail::is_locking<T...>() ? vprint_buffered(stdout, fmt.str, vargs)
-                                    : vprint(fmt.str, vargs);
+  vargs<T...> va = {{args...}};
+  if (!FMT_USE_UTF8) return detail::vprint_mojibake(stdout, fmt.str, va, false);
+  return detail::is_locking<T...>() ? vprint_buffered(stdout, fmt.str, va)
+                                    : vprint(fmt.str, va);
 }
 
 /**
@@ -2953,19 +2952,19 @@ FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
  */
 template <typename... T>
 FMT_INLINE void print(FILE* f, format_string<T...> fmt, T&&... args) {
-  fmt::vargs<T...> vargs = {{args...}};
-  if (!FMT_USE_UTF8) return detail::vprint_mojibake(f, fmt.str, vargs, false);
-  return detail::is_locking<T...>() ? vprint_buffered(f, fmt.str, vargs)
-                                    : vprint(f, fmt.str, vargs);
+  vargs<T...> va = {{args...}};
+  if (!FMT_USE_UTF8) return detail::vprint_mojibake(f, fmt.str, va, false);
+  return detail::is_locking<T...>() ? vprint_buffered(f, fmt.str, va)
+                                    : vprint(f, fmt.str, va);
 }
 
 /// Formats `args` according to specifications in `fmt` and writes the output
 /// to the file `f` followed by a newline.
 template <typename... T>
 FMT_INLINE void println(FILE* f, format_string<T...> fmt, T&&... args) {
-  fmt::vargs<T...> vargs = {{args...}};
-  return FMT_USE_UTF8 ? vprintln(f, fmt.str, vargs)
-                      : detail::vprint_mojibake(f, fmt.str, vargs, true);
+  vargs<T...> va = {{args...}};
+  return FMT_USE_UTF8 ? vprintln(f, fmt.str, va)
+                      : detail::vprint_mojibake(f, fmt.str, va, true);
 }
 
 /// Formats `args` according to specifications in `fmt` and writes the output
