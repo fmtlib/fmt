@@ -328,23 +328,14 @@ template <typename Char>
 void parse_flags(format_specs& specs, const Char*& it, const Char* end) {
   for (; it != end; ++it) {
     switch (*it) {
-    case '-':
-      specs.set_align(align::left);
-      break;
-    case '+':
-      specs.set_sign(sign::plus);
-      break;
-    case '0':
-      specs.set_fill('0');
-      break;
+    case '-': specs.set_align(align::left); break;
+    case '+': specs.set_sign(sign::plus); break;
+    case '0': specs.set_fill('0'); break;
     case ' ':
       if (specs.sign() != sign::plus) specs.set_sign(sign::space);
       break;
-    case '#':
-      specs.set_alt();
-      break;
-    default:
-      return;
+    case '#': specs.set_alt(); break;
+    default:  return;
     }
   }
 }
@@ -392,43 +383,22 @@ inline auto parse_printf_presentation_type(char c, type t, bool& upper)
   using pt = presentation_type;
   constexpr auto integral_set = sint_set | uint_set | bool_set | char_set;
   switch (c) {
-  case 'd':
-    return in(t, integral_set) ? pt::dec : pt::none;
-  case 'o':
-    return in(t, integral_set) ? pt::oct : pt::none;
-  case 'X':
-    upper = true;
-    FMT_FALLTHROUGH;
-  case 'x':
-    return in(t, integral_set) ? pt::hex : pt::none;
-  case 'E':
-    upper = true;
-    FMT_FALLTHROUGH;
-  case 'e':
-    return in(t, float_set) ? pt::exp : pt::none;
-  case 'F':
-    upper = true;
-    FMT_FALLTHROUGH;
-  case 'f':
-    return in(t, float_set) ? pt::fixed : pt::none;
-  case 'G':
-    upper = true;
-    FMT_FALLTHROUGH;
-  case 'g':
-    return in(t, float_set) ? pt::general : pt::none;
-  case 'A':
-    upper = true;
-    FMT_FALLTHROUGH;
-  case 'a':
-    return in(t, float_set) ? pt::hexfloat : pt::none;
-  case 'c':
-    return in(t, integral_set) ? pt::chr : pt::none;
-  case 's':
-    return in(t, string_set | cstring_set) ? pt::string : pt::none;
-  case 'p':
-    return in(t, pointer_set | cstring_set) ? pt::pointer : pt::none;
-  default:
-    return pt::none;
+  case 'd': return in(t, integral_set) ? pt::dec : pt::none;
+  case 'o': return in(t, integral_set) ? pt::oct : pt::none;
+  case 'X': upper = true; FMT_FALLTHROUGH;
+  case 'x': return in(t, integral_set) ? pt::hex : pt::none;
+  case 'E': upper = true; FMT_FALLTHROUGH;
+  case 'e': return in(t, float_set) ? pt::exp : pt::none;
+  case 'F': upper = true; FMT_FALLTHROUGH;
+  case 'f': return in(t, float_set) ? pt::fixed : pt::none;
+  case 'G': upper = true; FMT_FALLTHROUGH;
+  case 'g': return in(t, float_set) ? pt::general : pt::none;
+  case 'A': upper = true; FMT_FALLTHROUGH;
+  case 'a': return in(t, float_set) ? pt::hexfloat : pt::none;
+  case 'c': return in(t, integral_set) ? pt::chr : pt::none;
+  case 's': return in(t, string_set | cstring_set) ? pt::string : pt::none;
+  case 'p': return in(t, pointer_set | cstring_set) ? pt::pointer : pt::none;
+  default:  return pt::none;
   }
 }
 
@@ -535,22 +505,14 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
         convert_arg<long>(arg, t);
       }
       break;
-    case 'j':
-      convert_arg<intmax_t>(arg, t);
-      break;
-    case 'z':
-      convert_arg<size_t>(arg, t);
-      break;
-    case 't':
-      convert_arg<std::ptrdiff_t>(arg, t);
-      break;
+    case 'j': convert_arg<intmax_t>(arg, t); break;
+    case 'z': convert_arg<size_t>(arg, t); break;
+    case 't': convert_arg<std::ptrdiff_t>(arg, t); break;
     case 'L':
       // printf produces garbage when 'L' is omitted for long double, no
       // need to do the same.
       break;
-    default:
-      --it;
-      convert_arg<void>(arg, c);
+    default: --it; convert_arg<void>(arg, c);
     }
 
     // Parse type.
@@ -560,9 +522,7 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
       // Normalize type.
       switch (type) {
       case 'i':
-      case 'u':
-        type = 'd';
-        break;
+      case 'u': type = 'd'; break;
       case 'c':
         arg.visit(char_converter<basic_printf_context<Char>>(arg));
         break;

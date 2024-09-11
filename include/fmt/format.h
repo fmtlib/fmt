@@ -1959,13 +1959,9 @@ auto write_escaped_cp(OutputIt out, const find_escape_result<Char>& escape)
     *out++ = static_cast<Char>('\\');
     c = static_cast<Char>('t');
     break;
-  case '"':
-    FMT_FALLTHROUGH;
-  case '\'':
-    FMT_FALLTHROUGH;
-  case '\\':
-    *out++ = static_cast<Char>('\\');
-    break;
+  case '"':  FMT_FALLTHROUGH;
+  case '\'': FMT_FALLTHROUGH;
+  case '\\': *out++ = static_cast<Char>('\\'); break;
   default:
     if (escape.cp < 0x100) return write_codepoint<2, Char>(out, 'x', escape.cp);
     if (escape.cp < 0x10000)
@@ -2114,9 +2110,7 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
   int num_digits = 0;
   auto buffer = memory_buffer();
   switch (specs.type()) {
-  default:
-    FMT_ASSERT(false, "");
-    FMT_FALLTHROUGH;
+  default: FMT_ASSERT(false, ""); FMT_FALLTHROUGH;
   case presentation_type::none:
   case presentation_type::dec:
     num_digits = count_digits(value);
@@ -2244,9 +2238,7 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
   auto abs_value = arg.abs_value;
   auto prefix = arg.prefix;
   switch (specs.type()) {
-  default:
-    FMT_ASSERT(false, "");
-    FMT_FALLTHROUGH;
+  default: FMT_ASSERT(false, ""); FMT_FALLTHROUGH;
   case presentation_type::none:
   case presentation_type::dec:
     begin = do_format_decimal(buffer, abs_value, buffer_size);
@@ -2399,15 +2391,9 @@ FMT_CONSTEXPR auto parse_align(const Char* begin, const Char* end,
   if (end - p <= 0) p = begin;
   for (;;) {
     switch (to_ascii(*p)) {
-    case '<':
-      alignment = align::left;
-      break;
-    case '>':
-      alignment = align::right;
-      break;
-    case '^':
-      alignment = align::center;
-      break;
+    case '<': alignment = align::left; break;
+    case '>': alignment = align::right; break;
+    case '^': alignment = align::center; break;
     }
     if (alignment != align::none) {
       if (p != begin) {

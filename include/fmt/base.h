@@ -1364,12 +1364,9 @@ FMT_CONSTEXPR auto parse_nonnegative_int(const Char*& begin, const Char* end,
 
 FMT_CONSTEXPR inline auto parse_align(char c) -> align {
   switch (c) {
-  case '<':
-    return align::left;
-  case '>':
-    return align::right;
-  case '^':
-    return align::center;
+  case '<': return align::left;
+  case '>': return align::right;
+  case '^': return align::center;
   }
   return align::none;
 }
@@ -1584,40 +1581,20 @@ FMT_CONSTEXPR auto parse_format_specs(const Char* begin, const Char* end,
       specs.set_localized();
       ++begin;
       break;
-    case 'd':
-      return parse_presentation_type(pres::dec, integral_set);
-    case 'X':
-      specs.set_upper();
-      FMT_FALLTHROUGH;
-    case 'x':
-      return parse_presentation_type(pres::hex, integral_set);
-    case 'o':
-      return parse_presentation_type(pres::oct, integral_set);
-    case 'B':
-      specs.set_upper();
-      FMT_FALLTHROUGH;
-    case 'b':
-      return parse_presentation_type(pres::bin, integral_set);
-    case 'E':
-      specs.set_upper();
-      FMT_FALLTHROUGH;
-    case 'e':
-      return parse_presentation_type(pres::exp, float_set);
-    case 'F':
-      specs.set_upper();
-      FMT_FALLTHROUGH;
-    case 'f':
-      return parse_presentation_type(pres::fixed, float_set);
-    case 'G':
-      specs.set_upper();
-      FMT_FALLTHROUGH;
-    case 'g':
-      return parse_presentation_type(pres::general, float_set);
-    case 'A':
-      specs.set_upper();
-      FMT_FALLTHROUGH;
-    case 'a':
-      return parse_presentation_type(pres::hexfloat, float_set);
+    case 'd': return parse_presentation_type(pres::dec, integral_set);
+    case 'X': specs.set_upper(); FMT_FALLTHROUGH;
+    case 'x': return parse_presentation_type(pres::hex, integral_set);
+    case 'o': return parse_presentation_type(pres::oct, integral_set);
+    case 'B': specs.set_upper(); FMT_FALLTHROUGH;
+    case 'b': return parse_presentation_type(pres::bin, integral_set);
+    case 'E': specs.set_upper(); FMT_FALLTHROUGH;
+    case 'e': return parse_presentation_type(pres::exp, float_set);
+    case 'F': specs.set_upper(); FMT_FALLTHROUGH;
+    case 'f': return parse_presentation_type(pres::fixed, float_set);
+    case 'G': specs.set_upper(); FMT_FALLTHROUGH;
+    case 'g': return parse_presentation_type(pres::general, float_set);
+    case 'A': specs.set_upper(); FMT_FALLTHROUGH;
+    case 'a': return parse_presentation_type(pres::hexfloat, float_set);
     case 'c':
       if (arg_type == type::bool_type) report_error("invalid format specifier");
       return parse_presentation_type(pres::chr, integral_set);
@@ -1629,9 +1606,8 @@ FMT_CONSTEXPR auto parse_format_specs(const Char* begin, const Char* end,
     case '?':
       return parse_presentation_type(pres::debug,
                                      char_set | string_set | cstring_set);
-    case '}':
-      return begin;
-    default: {
+    case '}': return begin;
+    default:  {
       if (*begin == '}') return begin;
       // Parse fill and alignment.
       auto fill_end = begin + code_point_length(begin);
@@ -1671,13 +1647,9 @@ FMT_CONSTEXPR FMT_INLINE auto parse_replacement_field(const Char* begin,
   case '}':
     handler.on_replacement_field(handler.on_arg_id(), begin);
     return begin + 1;
-  case '{':
-    handler.on_text(begin, begin + 1);
-    return begin + 1;
-  case ':':
-    arg_id = handler.on_arg_id();
-    break;
-  default: {
+  case '{': handler.on_text(begin, begin + 1); return begin + 1;
+  case ':': arg_id = handler.on_arg_id(); break;
+  default:  {
     struct id_adapter {
       Handler& handler;
       int arg_id;
@@ -2559,37 +2531,25 @@ template <typename Context> class basic_format_arg {
   template <typename Visitor>
   FMT_CONSTEXPR FMT_INLINE auto visit(Visitor&& vis) const -> decltype(vis(0)) {
     switch (type_) {
-    case detail::type::none_type:
-      break;
-    case detail::type::int_type:
-      return vis(value_.int_value);
-    case detail::type::uint_type:
-      return vis(value_.uint_value);
-    case detail::type::long_long_type:
-      return vis(value_.long_long_value);
-    case detail::type::ulong_long_type:
-      return vis(value_.ulong_long_value);
+    case detail::type::none_type:       break;
+    case detail::type::int_type:        return vis(value_.int_value);
+    case detail::type::uint_type:       return vis(value_.uint_value);
+    case detail::type::long_long_type:  return vis(value_.long_long_value);
+    case detail::type::ulong_long_type: return vis(value_.ulong_long_value);
     case detail::type::int128_type:
       return vis(detail::convert_for_visit(value_.int128_value));
     case detail::type::uint128_type:
       return vis(detail::convert_for_visit(value_.uint128_value));
-    case detail::type::bool_type:
-      return vis(value_.bool_value);
-    case detail::type::char_type:
-      return vis(value_.char_value);
-    case detail::type::float_type:
-      return vis(value_.float_value);
-    case detail::type::double_type:
-      return vis(value_.double_value);
-    case detail::type::long_double_type:
-      return vis(value_.long_double_value);
-    case detail::type::cstring_type:
-      return vis(value_.string.data);
+    case detail::type::bool_type:        return vis(value_.bool_value);
+    case detail::type::char_type:        return vis(value_.char_value);
+    case detail::type::float_type:       return vis(value_.float_value);
+    case detail::type::double_type:      return vis(value_.double_value);
+    case detail::type::long_double_type: return vis(value_.long_double_value);
+    case detail::type::cstring_type:     return vis(value_.string.data);
     case detail::type::string_type:
       using sv = basic_string_view<char_type>;
       return vis(sv(value_.string.data, value_.string.size));
-    case detail::type::pointer_type:
-      return vis(value_.pointer);
+    case detail::type::pointer_type: return vis(value_.pointer);
     case detail::type::custom_type:
       return vis(typename basic_format_arg<Context>::handle(value_.custom));
     }

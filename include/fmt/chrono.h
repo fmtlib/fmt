@@ -731,9 +731,7 @@ FMT_CONSTEXPR auto parse_chrono_format(const Char* begin, const Char* end,
     if (ptr == end) FMT_THROW(format_error("invalid format"));
     c = *ptr++;
     switch (c) {
-    case '%':
-      handler.on_text(ptr - 1, ptr);
-      break;
+    case '%': handler.on_text(ptr - 1, ptr); break;
     case 'n': {
       const Char newline[] = {'\n'};
       handler.on_text(newline, newline + 1);
@@ -745,45 +743,21 @@ FMT_CONSTEXPR auto parse_chrono_format(const Char* begin, const Char* end,
       break;
     }
     // Year:
-    case 'Y':
-      handler.on_year(numeric_system::standard);
-      break;
-    case 'y':
-      handler.on_short_year(numeric_system::standard);
-      break;
-    case 'C':
-      handler.on_century(numeric_system::standard);
-      break;
-    case 'G':
-      handler.on_iso_week_based_year();
-      break;
-    case 'g':
-      handler.on_iso_week_based_short_year();
-      break;
+    case 'Y': handler.on_year(numeric_system::standard); break;
+    case 'y': handler.on_short_year(numeric_system::standard); break;
+    case 'C': handler.on_century(numeric_system::standard); break;
+    case 'G': handler.on_iso_week_based_year(); break;
+    case 'g': handler.on_iso_week_based_short_year(); break;
     // Day of the week:
-    case 'a':
-      handler.on_abbr_weekday();
-      break;
-    case 'A':
-      handler.on_full_weekday();
-      break;
-    case 'w':
-      handler.on_dec0_weekday(numeric_system::standard);
-      break;
-    case 'u':
-      handler.on_dec1_weekday(numeric_system::standard);
-      break;
+    case 'a': handler.on_abbr_weekday(); break;
+    case 'A': handler.on_full_weekday(); break;
+    case 'w': handler.on_dec0_weekday(numeric_system::standard); break;
+    case 'u': handler.on_dec1_weekday(numeric_system::standard); break;
     // Month:
     case 'b':
-    case 'h':
-      handler.on_abbr_month();
-      break;
-    case 'B':
-      handler.on_full_month();
-      break;
-    case 'm':
-      handler.on_dec_month(numeric_system::standard);
-      break;
+    case 'h': handler.on_abbr_month(); break;
+    case 'B': handler.on_full_month(); break;
+    case 'm': handler.on_dec_month(numeric_system::standard); break;
     // Day of the year/month:
     case 'U':
       handler.on_dec0_week_of_year(numeric_system::standard, pad);
@@ -791,99 +765,44 @@ FMT_CONSTEXPR auto parse_chrono_format(const Char* begin, const Char* end,
     case 'W':
       handler.on_dec1_week_of_year(numeric_system::standard, pad);
       break;
-    case 'V':
-      handler.on_iso_week_of_year(numeric_system::standard, pad);
-      break;
-    case 'j':
-      handler.on_day_of_year();
-      break;
-    case 'd':
-      handler.on_day_of_month(numeric_system::standard, pad);
-      break;
+    case 'V': handler.on_iso_week_of_year(numeric_system::standard, pad); break;
+    case 'j': handler.on_day_of_year(); break;
+    case 'd': handler.on_day_of_month(numeric_system::standard, pad); break;
     case 'e':
       handler.on_day_of_month(numeric_system::standard, pad_type::space);
       break;
     // Hour, minute, second:
-    case 'H':
-      handler.on_24_hour(numeric_system::standard, pad);
-      break;
-    case 'I':
-      handler.on_12_hour(numeric_system::standard, pad);
-      break;
-    case 'M':
-      handler.on_minute(numeric_system::standard, pad);
-      break;
-    case 'S':
-      handler.on_second(numeric_system::standard, pad);
-      break;
+    case 'H': handler.on_24_hour(numeric_system::standard, pad); break;
+    case 'I': handler.on_12_hour(numeric_system::standard, pad); break;
+    case 'M': handler.on_minute(numeric_system::standard, pad); break;
+    case 'S': handler.on_second(numeric_system::standard, pad); break;
     // Other:
-    case 'c':
-      handler.on_datetime(numeric_system::standard);
-      break;
-    case 'x':
-      handler.on_loc_date(numeric_system::standard);
-      break;
-    case 'X':
-      handler.on_loc_time(numeric_system::standard);
-      break;
-    case 'D':
-      handler.on_us_date();
-      break;
-    case 'F':
-      handler.on_iso_date();
-      break;
-    case 'r':
-      handler.on_12_hour_time();
-      break;
-    case 'R':
-      handler.on_24_hour_time();
-      break;
-    case 'T':
-      handler.on_iso_time();
-      break;
-    case 'p':
-      handler.on_am_pm();
-      break;
-    case 'Q':
-      handler.on_duration_value();
-      break;
-    case 'q':
-      handler.on_duration_unit();
-      break;
-    case 'z':
-      handler.on_utc_offset(numeric_system::standard);
-      break;
-    case 'Z':
-      handler.on_tz_name();
-      break;
+    case 'c': handler.on_datetime(numeric_system::standard); break;
+    case 'x': handler.on_loc_date(numeric_system::standard); break;
+    case 'X': handler.on_loc_time(numeric_system::standard); break;
+    case 'D': handler.on_us_date(); break;
+    case 'F': handler.on_iso_date(); break;
+    case 'r': handler.on_12_hour_time(); break;
+    case 'R': handler.on_24_hour_time(); break;
+    case 'T': handler.on_iso_time(); break;
+    case 'p': handler.on_am_pm(); break;
+    case 'Q': handler.on_duration_value(); break;
+    case 'q': handler.on_duration_unit(); break;
+    case 'z': handler.on_utc_offset(numeric_system::standard); break;
+    case 'Z': handler.on_tz_name(); break;
     // Alternative representation:
     case 'E': {
       if (ptr == end) FMT_THROW(format_error("invalid format"));
       c = *ptr++;
       switch (c) {
-      case 'Y':
-        handler.on_year(numeric_system::alternative);
-        break;
-      case 'y':
-        handler.on_offset_year();
-        break;
-      case 'C':
-        handler.on_century(numeric_system::alternative);
-        break;
-      case 'c':
-        handler.on_datetime(numeric_system::alternative);
-        break;
-      case 'x':
-        handler.on_loc_date(numeric_system::alternative);
-        break;
-      case 'X':
-        handler.on_loc_time(numeric_system::alternative);
-        break;
-      case 'z':
-        handler.on_utc_offset(numeric_system::alternative);
-        break;
-      default:
-        FMT_THROW(format_error("invalid format"));
+      case 'Y': handler.on_year(numeric_system::alternative); break;
+      case 'y': handler.on_offset_year(); break;
+      case 'C': handler.on_century(numeric_system::alternative); break;
+      case 'c': handler.on_datetime(numeric_system::alternative); break;
+      case 'x': handler.on_loc_date(numeric_system::alternative); break;
+      case 'X': handler.on_loc_time(numeric_system::alternative); break;
+      case 'z': handler.on_utc_offset(numeric_system::alternative); break;
+      default:  FMT_THROW(format_error("invalid format"));
       }
       break;
     }
@@ -891,12 +810,8 @@ FMT_CONSTEXPR auto parse_chrono_format(const Char* begin, const Char* end,
       if (ptr == end) FMT_THROW(format_error("invalid format"));
       c = *ptr++;
       switch (c) {
-      case 'y':
-        handler.on_short_year(numeric_system::alternative);
-        break;
-      case 'm':
-        handler.on_dec_month(numeric_system::alternative);
-        break;
+      case 'y': handler.on_short_year(numeric_system::alternative); break;
+      case 'm': handler.on_dec_month(numeric_system::alternative); break;
       case 'U':
         handler.on_dec0_week_of_year(numeric_system::alternative, pad);
         break;
@@ -912,33 +827,17 @@ FMT_CONSTEXPR auto parse_chrono_format(const Char* begin, const Char* end,
       case 'e':
         handler.on_day_of_month(numeric_system::alternative, pad_type::space);
         break;
-      case 'w':
-        handler.on_dec0_weekday(numeric_system::alternative);
-        break;
-      case 'u':
-        handler.on_dec1_weekday(numeric_system::alternative);
-        break;
-      case 'H':
-        handler.on_24_hour(numeric_system::alternative, pad);
-        break;
-      case 'I':
-        handler.on_12_hour(numeric_system::alternative, pad);
-        break;
-      case 'M':
-        handler.on_minute(numeric_system::alternative, pad);
-        break;
-      case 'S':
-        handler.on_second(numeric_system::alternative, pad);
-        break;
-      case 'z':
-        handler.on_utc_offset(numeric_system::alternative);
-        break;
-      default:
-        FMT_THROW(format_error("invalid format"));
+      case 'w': handler.on_dec0_weekday(numeric_system::alternative); break;
+      case 'u': handler.on_dec1_weekday(numeric_system::alternative); break;
+      case 'H': handler.on_24_hour(numeric_system::alternative, pad); break;
+      case 'I': handler.on_12_hour(numeric_system::alternative, pad); break;
+      case 'M': handler.on_minute(numeric_system::alternative, pad); break;
+      case 'S': handler.on_second(numeric_system::alternative, pad); break;
+      case 'z': handler.on_utc_offset(numeric_system::alternative); break;
+      default:  FMT_THROW(format_error("invalid format"));
       }
       break;
-    default:
-      FMT_THROW(format_error("invalid format"));
+    default: FMT_THROW(format_error("invalid format"));
     }
     begin = ptr;
   }
