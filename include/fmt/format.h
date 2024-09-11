@@ -534,16 +534,6 @@ FMT_INLINE void assume(bool condition) {
 #endif
 }
 
-// A workaround for std::string not having mutable data() until C++17.
-template <typename Char>
-inline auto get_data(std::basic_string<Char>& s) -> Char* {
-  return &s[0];
-}
-template <typename Container>
-inline auto get_data(Container& c) -> typename Container::value_type* {
-  return c.data();
-}
-
 // Attempts to reserve space for n extra characters in the output range.
 // Returns a pointer to the reserved range or a reference to it.
 template <typename OutputIt,
@@ -557,7 +547,7 @@ reserve(OutputIt it, size_t n) -> typename OutputIt::value_type* {
   auto& c = get_container(it);
   size_t size = c.size();
   c.resize(size + n);
-  return get_data(c) + size;
+  return &c[size];
 }
 
 template <typename T>
