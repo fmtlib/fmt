@@ -1195,11 +1195,7 @@ inline auto digits2(size_t value) -> const char* {
   return &data[value * 2];
 }
 
-// Sign is a template parameter to workaround a bug in gcc 4.8.
-template <typename Char, typename Sign> constexpr auto getsign(Sign s) -> Char {
-#if !FMT_GCC_VERSION || FMT_GCC_VERSION >= 604
-  static_assert(std::is_same<Sign, sign>::value, "");
-#endif
+template <typename Char> constexpr auto getsign(sign s) -> Char {
   return static_cast<char>(((' ' << 24) | ('+' << 16) | ('-' << 8)) >>
                            (static_cast<int>(s) * 8));
 }
