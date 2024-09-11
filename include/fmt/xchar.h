@@ -144,7 +144,7 @@ auto join(It begin, Sentinel end, wstring_view sep)
 
 template <typename Range>
 auto join(Range&& range, wstring_view sep)
-    -> join_view<detail::iterator_t<Range>, detail::sentinel_t<Range>,
+    -> join_view<decltype(std::begin(range)), decltype(std::end(range)),
                  wchar_t> {
   return join(std::begin(range), std::end(range), sep);
 }

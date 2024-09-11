@@ -2125,6 +2125,7 @@ template <typename T, typename Char> struct type_is_unformattable_for;
 template <typename Char> struct string_value {
   const Char* data;
   size_t size;
+  auto str() const -> basic_string_view<Char> { return {data, size}; }
 };
 
 template <typename Char> struct named_arg_value {
@@ -2542,10 +2543,8 @@ template <typename Context> class basic_format_arg {
     case detail::type::double_type:      return vis(value_.double_value);
     case detail::type::long_double_type: return vis(value_.long_double_value);
     case detail::type::cstring_type:     return vis(value_.string.data);
-    case detail::type::string_type:
-      using sv = basic_string_view<char_type>;
-      return vis(sv(value_.string.data, value_.string.size));
-    case detail::type::pointer_type: return vis(value_.pointer);
+    case detail::type::string_type:      return vis(value_.string.str());
+    case detail::type::pointer_type:     return vis(value_.pointer);
     case detail::type::custom_type:
       return vis(typename basic_format_arg<Context>::handle(value_.custom));
     }

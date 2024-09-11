@@ -534,11 +534,6 @@ FMT_INLINE void assume(bool condition) {
 #endif
 }
 
-// An approximation of iterator_t for pre-C++20 systems.
-template <typename T>
-using iterator_t = decltype(std::begin(std::declval<T&>()));
-template <typename T> using sentinel_t = decltype(std::end(std::declval<T&>()));
-
 // A workaround for std::string not having mutable data() until C++17.
 template <typename Char>
 inline auto get_data(std::basic_string<Char>& s) -> Char* {
