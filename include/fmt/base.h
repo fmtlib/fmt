@@ -388,9 +388,8 @@ FMT_NORETURN FMT_API void assert_fail(const char* file, int line,
 #  define FMT_USE_INT128 1
 using int128_opt = __int128_t;  // An optional native 128-bit integer.
 using uint128_opt = __uint128_t;
-template <typename T> inline auto convert_for_visit(T value) -> T {
-  return value;
-}
+inline auto map(int128_opt x) -> int128_opt { return x; }
+inline auto map(uint128_opt x) -> uint128_opt { return x; }
 #else
 #  define FMT_USE_INT128 0
 #endif
@@ -398,7 +397,8 @@ template <typename T> inline auto convert_for_visit(T value) -> T {
 enum class int128_opt {};
 enum class uint128_opt {};
 // Reduce template instantiations.
-template <typename T> auto convert_for_visit(T) -> monostate { return {}; }
+inline auto map(int128_opt) -> monostate { return {}; }
+inline auto map(uint128_opt) -> monostate { return {}; }
 #endif
 
 #ifndef FMT_USE_BITINT
@@ -2527,16 +2527,15 @@ template <typename Context> class basic_format_arg {
    */
   template <typename Visitor>
   FMT_CONSTEXPR FMT_INLINE auto visit(Visitor&& vis) const -> decltype(vis(0)) {
+    using detail::map;
     switch (type_) {
-    case detail::type::none_type:       break;
-    case detail::type::int_type:        return vis(value_.int_value);
-    case detail::type::uint_type:       return vis(value_.uint_value);
-    case detail::type::long_long_type:  return vis(value_.long_long_value);
-    case detail::type::ulong_long_type: return vis(value_.ulong_long_value);
-    case detail::type::int128_type:
-      return vis(detail::convert_for_visit(value_.int128_value));
-    case detail::type::uint128_type:
-      return vis(detail::convert_for_visit(value_.uint128_value));
+    case detail::type::none_type:        break;
+    case detail::type::int_type:         return vis(value_.int_value);
+    case detail::type::uint_type:        return vis(value_.uint_value);
+    case detail::type::long_long_type:   return vis(value_.long_long_value);
+    case detail::type::ulong_long_type:  return vis(value_.ulong_long_value);
+    case detail::type::int128_type:      return vis(map(value_.int128_value));
+    case detail::type::uint128_type:     return vis(map(value_.uint128_value));
     case detail::type::bool_type:        return vis(value_.bool_value);
     case detail::type::char_type:        return vis(value_.char_value);
     case detail::type::float_type:       return vis(value_.float_value);
@@ -2545,8 +2544,7 @@ template <typename Context> class basic_format_arg {
     case detail::type::cstring_type:     return vis(value_.string.data);
     case detail::type::string_type:      return vis(value_.string.str());
     case detail::type::pointer_type:     return vis(value_.pointer);
-    case detail::type::custom_type:
-      return vis(typename basic_format_arg<Context>::handle(value_.custom));
+    case detail::type::custom_type:      return vis(handle(value_.custom));
     }
     return vis(monostate());
   }
