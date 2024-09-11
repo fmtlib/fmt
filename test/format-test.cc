@@ -2005,7 +2005,6 @@ TEST(format_test, custom_format_compile_time_string) {
   EXPECT_EQ(fmt::format(FMT_STRING("{}"), const_answer), "42");
 }
 
-#if FMT_USE_USER_LITERALS
 TEST(format_test, named_arg_udl) {
   using namespace fmt::literals;
   auto udl_a = fmt::format("{first}{second}{first}{third}", "first"_a = "abra",
@@ -2017,7 +2016,6 @@ TEST(format_test, named_arg_udl) {
 
   EXPECT_EQ(fmt::format("{answer}", "answer"_a = Answer()), "42");
 }
-#endif  // FMT_USE_USER_LITERALS
 
 TEST(format_test, enum) { EXPECT_EQ(fmt::format("{}", foo), "0"); }
 
@@ -2521,7 +2519,7 @@ TEST(format_test, writer) {
 TEST(format_test, bitint) {
   using fmt::detail::bitint;
   using fmt::detail::ubitint;
-  
+
   EXPECT_EQ(fmt::format("{}", ubitint<3>(7)), "7");
   EXPECT_EQ(fmt::format("{}", bitint<7>()), "0");
 

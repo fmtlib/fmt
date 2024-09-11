@@ -127,14 +127,13 @@ constexpr auto make_wformat_args(T&... args)
   return fmt::make_format_args<wformat_context>(args...);
 }
 
+#if !FMT_USE_NONTYPE_TEMPLATE_ARGS
 inline namespace literals {
-#if FMT_USE_USER_LITERALS && !FMT_USE_NONTYPE_TEMPLATE_ARGS
-constexpr auto operator""_a(const wchar_t* s, size_t)
-    -> detail::udl_arg<wchar_t> {
+inline auto operator""_a(const wchar_t* s, size_t) -> detail::udl_arg<wchar_t> {
   return {s};
 }
-#endif
 }  // namespace literals
+#endif
 
 template <typename It, typename Sentinel>
 auto join(It begin, Sentinel end, wstring_view sep)

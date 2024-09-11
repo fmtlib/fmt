@@ -2671,8 +2671,9 @@ class context : private detail::locale_ref {
 
   /// Constructs a `context` object. References to the arguments are stored
   /// in the object so make sure they have appropriate lifetimes.
-  FMT_CONSTEXPR context(iterator out, format_args a, detail::locale_ref l = {})
-      : locale_ref(l), out_(out), args_(a) {}
+  FMT_CONSTEXPR context(iterator out, format_args args,
+                        detail::locale_ref loc = {})
+      : locale_ref(loc), out_(out), args_(args) {}
   context(context&&) = default;
   context(const context&) = delete;
   void operator=(const context&) = delete;

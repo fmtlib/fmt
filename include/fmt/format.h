@@ -166,17 +166,6 @@ FMT_END_NAMESPACE
 #  endif
 #endif
 
-#ifndef FMT_USE_USER_LITERALS
-// EDG based compilers (Intel, NVIDIA, Elbrus, etc), GCC and MSVC support UDLs.
-#  if (FMT_HAS_FEATURE(cxx_user_literals) || FMT_GCC_VERSION || \
-       FMT_MSC_VERSION >= 1900) &&                              \
-      (!defined(__EDG_VERSION__) || __EDG_VERSION__ >= /* UDL feature */ 480)
-#    define FMT_USE_USER_LITERALS 1
-#  else
-#    define FMT_USE_USER_LITERALS 0
-#  endif
-#endif
-
 // Defining FMT_REDUCE_INT_INSTANTIATIONS to 1, will reduce the number of
 // integer formatter template instantiations to just one by only using the
 // largest integer type. This results in a reduction in binary size but will
@@ -1078,9 +1067,9 @@ template <typename OutputIt, typename Char> class generic_context {
   enum { builtin_types = FMT_BUILTIN_TYPES };
 
   constexpr generic_context(OutputIt out,
-                            basic_format_args<generic_context> ctx_args,
+                            basic_format_args<generic_context> args,
                             detail::locale_ref loc = {})
-      : out_(out), args_(ctx_args), loc_(loc) {}
+      : out_(out), args_(args), loc_(loc) {}
   generic_context(generic_context&&) = default;
   generic_context(const generic_context&) = delete;
   void operator=(const generic_context&) = delete;
@@ -3768,8 +3757,7 @@ FMT_CONSTEXPR void handle_dynamic_spec(
   if (kind != arg_id_kind::none) value = get_dynamic_spec(kind, ref, ctx);
 }
 
-#if FMT_USE_USER_LITERALS
-#  if FMT_USE_NONTYPE_TEMPLATE_ARGS
+#if FMT_USE_NONTYPE_TEMPLATE_ARGS
 template <typename T, typename Char, size_t N,
           fmt::detail_exported::fixed_string<Char, N> Str>
 struct static_named_arg : view {
@@ -3795,7 +3783,7 @@ struct udl_arg {
     return static_named_arg<T, Char, N, Str>(std::forward<T>(value));
   }
 };
-#  else
+#else
 template <typename Char> struct udl_arg {
   const Char* str;
 
@@ -3803,8 +3791,7 @@ template <typename Char> struct udl_arg {
     return {str, std::forward<T>(value)};
   }
 };
-#  endif  // FMT_USE_NONTYPE_TEMPLATE_ARGS
-#endif    // FMT_USE_USER_LITERALS
+#endif  // FMT_USE_NONTYPE_TEMPLATE_ARGS
 
 template <typename Char> struct format_handler {
   parse_context<Char> parse_ctx;
@@ -4125,7 +4112,6 @@ struct formatter<detail::float128, Char>
     : detail::native_formatter<detail::float128, Char,
                                detail::type::float_type> {};
 
-#if FMT_USE_USER_LITERALS
 inline namespace literals {
 /**
  * User-defined literal equivalent of `fmt::arg`.
@@ -4135,18 +4121,17 @@ inline namespace literals {
  *     using namespace fmt::literals;
  *     fmt::print("The answer is {answer}.", "answer"_a=42);
  */
-#  if FMT_USE_NONTYPE_TEMPLATE_ARGS
+#if FMT_USE_NONTYPE_TEMPLATE_ARGS
 template <detail_exported::fixed_string Str> constexpr auto operator""_a() {
   using char_t = remove_cvref_t<decltype(Str.data[0])>;
   return detail::udl_arg<char_t, sizeof(Str.data) / sizeof(char_t), Str>();
 }
-#  else
+#else
 constexpr auto operator""_a(const char* s, size_t) -> detail::udl_arg<char> {
   return {s};
 }
-#  endif
+#endif
 }  // namespace literals
-#endif  // FMT_USE_USER_LITERALS
 
 /// A fast integer formatter.
 class format_int {
