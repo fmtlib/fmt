@@ -118,7 +118,7 @@ FMT_API void format_windows_error(buffer<char>& out, int error_code,
                                   const char* message) noexcept;
 }
 
-FMT_API std::system_error vwindows_error(int error_code, string_view format_str,
+FMT_API std::system_error vwindows_error(int error_code, string_view fmt,
                                          format_args args);
 
 /**
@@ -164,8 +164,8 @@ inline auto system_category() noexcept -> const std::error_category& {
 // std::system is not available on some platforms such as iOS (#2248).
 #ifdef __OSX__
 template <typename S, typename... Args, typename Char = char_t<S>>
-void say(const S& format_str, Args&&... args) {
-  std::system(format("say \"{}\"", format(format_str, args...)).c_str());
+void say(const S& fmt, Args&&... args) {
+  std::system(format("say \"{}\"", format(fmt, args...)).c_str());
 }
 #endif
 

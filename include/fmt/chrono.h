@@ -2133,7 +2133,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
   detail::arg_ref<Char> width_ref_;
   detail::arg_ref<Char> precision_ref_;
   bool localized_ = false;
-  basic_string_view<Char> format_str_;
+  basic_string_view<Char> fmt_;
 
  public:
   FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
@@ -2159,7 +2159,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
       ++it;
     }
     end = detail::parse_chrono_format(it, end, checker);
-    format_str_ = {it, detail::to_unsigned(end - it)};
+    fmt_ = {it, detail::to_unsigned(end - it)};
     return end;
   }
 
@@ -2169,7 +2169,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
     auto specs = specs_;
     auto precision = specs.precision;
     specs.precision = -1;
-    auto begin = format_str_.begin(), end = format_str_.end();
+    auto begin = fmt_.begin(), end = fmt_.end();
     // As a possible future optimization, we could avoid extra copying if width
     // is not specified.
     auto buf = basic_memory_buffer<Char>();
@@ -2200,7 +2200,7 @@ template <typename Char> struct formatter<std::tm, Char> {
   detail::arg_ref<Char> width_ref_;
 
  protected:
-  basic_string_view<Char> format_str_;
+  basic_string_view<Char> fmt_;
 
   template <typename Duration, typename FormatContext>
   auto do_format(const std::tm& tm, FormatContext& ctx,
@@ -2215,7 +2215,7 @@ template <typename Char> struct formatter<std::tm, Char> {
     detail::get_locale loc(static_cast<bool>(loc_ref), loc_ref);
     auto w =
         detail::tm_writer<decltype(out), Char, Duration>(loc, out, tm, subsecs);
-    detail::parse_chrono_format(format_str_.begin(), format_str_.end(), w);
+    detail::parse_chrono_format(fmt_.begin(), fmt_.end(), w);
     return detail::write(
         ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
   }
@@ -2235,8 +2235,8 @@ template <typename Char> struct formatter<std::tm, Char> {
     }
 
     end = detail::parse_chrono_format(it, end, detail::tm_format_checker());
-    // Replace the default format_str only if the new spec is not empty.
-    if (end != it) format_str_ = {it, detail::to_unsigned(end - it)};
+    // Replace the default format string only if the new spec is not empty.
+    if (end != it) fmt_ = {it, detail::to_unsigned(end - it)};
     return end;
   }
 
@@ -2250,7 +2250,7 @@ template <typename Char> struct formatter<std::tm, Char> {
 template <typename Char, typename Duration>
 struct formatter<sys_time<Duration>, Char> : formatter<std::tm, Char> {
   FMT_CONSTEXPR formatter() {
-    this->format_str_ = detail::string_literal<Char, '%', 'F', ' ', '%', 'T'>();
+    this->fmt_ = detail::string_literal<Char, '%', 'F', ' ', '%', 'T'>();
   }
 
   template <typename FormatContext>
@@ -2292,7 +2292,7 @@ struct formatter<utc_time<Duration>, Char>
 template <typename Duration, typename Char>
 struct formatter<local_time<Duration>, Char> : formatter<std::tm, Char> {
   FMT_CONSTEXPR formatter() {
-    this->format_str_ = detail::string_literal<Char, '%', 'F', ' ', '%', 'T'>();
+    this->fmt_ = detail::string_literal<Char, '%', 'F', ' ', '%', 'T'>();
   }
 
   template <typename FormatContext>

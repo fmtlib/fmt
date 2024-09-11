@@ -837,7 +837,7 @@ struct format_specs : basic_specs {
  */
 template <typename Char = char> class parse_context {
  private:
-  basic_string_view<Char> format_str_;
+  basic_string_view<Char> fmt_;
   int next_arg_id_;
 
   enum { use_constexpr_cast = !FMT_GCC_VERSION || FMT_GCC_VERSION >= 1200 };
@@ -848,22 +848,20 @@ template <typename Char = char> class parse_context {
   using char_type = Char;
   using iterator = const Char*;
 
-  explicit constexpr parse_context(basic_string_view<Char> format_str,
+  explicit constexpr parse_context(basic_string_view<Char> fmt,
                                    int next_arg_id = 0)
-      : format_str_(format_str), next_arg_id_(next_arg_id) {}
+      : fmt_(fmt), next_arg_id_(next_arg_id) {}
 
   /// Returns an iterator to the beginning of the format string range being
   /// parsed.
-  constexpr auto begin() const noexcept -> iterator {
-    return format_str_.begin();
-  }
+  constexpr auto begin() const noexcept -> iterator { return fmt_.begin(); }
 
   /// Returns an iterator past the end of the format string range being parsed.
-  constexpr auto end() const noexcept -> iterator { return format_str_.end(); }
+  constexpr auto end() const noexcept -> iterator { return fmt_.end(); }
 
   /// Advances the begin iterator to `it`.
   FMT_CONSTEXPR void advance_to(iterator it) {
-    format_str_.remove_prefix(detail::to_unsigned(it - begin()));
+    fmt_.remove_prefix(detail::to_unsigned(it - begin()));
   }
 
   /// Reports an error if using the manual argument indexing; otherwise returns
@@ -1273,10 +1271,10 @@ class compile_parse_context : public parse_context<Char> {
   using base = parse_context<Char>;
 
  public:
-  explicit FMT_CONSTEXPR compile_parse_context(
-      basic_string_view<Char> format_str, int num_args, const type* types,
-      int next_arg_id = 0)
-      : base(format_str, next_arg_id), num_args_(num_args), types_(types) {}
+  explicit FMT_CONSTEXPR compile_parse_context(basic_string_view<Char> fmt,
+                                               int num_args, const type* types,
+                                               int next_arg_id = 0)
+      : base(fmt, next_arg_id), num_args_(num_args), types_(types) {}
 
   constexpr auto num_args() const -> int { return num_args_; }
   constexpr auto arg_type(int id) const -> type { return types_[id]; }
