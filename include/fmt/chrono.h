@@ -293,12 +293,12 @@ inline auto gmtime_s(...) -> null<> { return null<>(); }
 
 // It is defined here and not in ostream.h because the latter has expensive
 // includes.
-template <typename Streambuf> class formatbuf : public Streambuf {
+template <typename StreamBuf> class formatbuf : public StreamBuf {
  private:
-  using char_type = typename Streambuf::char_type;
-  using streamsize = decltype(std::declval<Streambuf>().sputn(nullptr, 0));
-  using int_type = typename Streambuf::int_type;
-  using traits_type = typename Streambuf::traits_type;
+  using char_type = typename StreamBuf::char_type;
+  using streamsize = decltype(std::declval<StreamBuf>().sputn(nullptr, 0));
+  using int_type = typename StreamBuf::int_type;
+  using traits_type = typename StreamBuf::traits_type;
 
   buffer<char_type>& buffer_;
 
@@ -336,20 +336,16 @@ template <typename CodeUnit> struct codecvt_result {
 };
 
 template <typename CodeUnit>
-void write_codecvt(codecvt_result<CodeUnit>& out, string_view in_buf,
+void write_codecvt(codecvt_result<CodeUnit>& out, string_view in,
                    const std::locale& loc) {
-#if FMT_CLANG_VERSION
-#  pragma clang diagnostic push
-#  pragma clang diagnostic ignored "-Wdeprecated"
+  FMT_CLANG_PRAGMA(diagnostic push)
+  FMT_CLANG_PRAGMA(diagnostic ignored "-Wdeprecated")
   auto& f = std::use_facet<std::codecvt<CodeUnit, char, std::mbstate_t>>(loc);
-#  pragma clang diagnostic pop
-#else
-  auto& f = std::use_facet<std::codecvt<CodeUnit, char, std::mbstate_t>>(loc);
-#endif
+  FMT_CLANG_PRAGMA(diagnostic pop)
   auto mb = std::mbstate_t();
   const char* from_next = nullptr;
-  auto result = f.in(mb, in_buf.begin(), in_buf.end(), from_next,
-                     std::begin(out.buf), std::end(out.buf), out.end);
+  auto result = f.in(mb, in.begin(), in.end(), from_next, std::begin(out.buf),
+                     std::end(out.buf), out.end);
   if (result != std::codecvt_base::ok)
     FMT_THROW(format_error("failed to format time"));
 }
