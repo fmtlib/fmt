@@ -314,7 +314,7 @@ using underlying_t = typename std::underlying_type<T>::type;
 template <typename T> using decay_t = typename std::decay<T>::type;
 
 #if FMT_GCC_VERSION && FMT_GCC_VERSION < 500
-// A workaround for gcc 4.8 to make void_t work in a SFINAE context.
+// A workaround for gcc 4.9 to make void_t work in a SFINAE context.
 template <typename...> struct void_t_impl {
   using type = void;
 };
