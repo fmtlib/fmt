@@ -15,7 +15,7 @@ template FMT_API auto dragonbox::to_decimal(float x) noexcept
 template FMT_API auto dragonbox::to_decimal(double x) noexcept
     -> dragonbox::decimal_fp<double>;
 
-#ifndef FMT_STATIC_THOUSANDS_SEPARATOR
+#if FMT_USE_LOCALE
 template FMT_API locale_ref::locale_ref(const std::locale& loc);
 template FMT_API auto locale_ref::get<std::locale>() const -> std::locale;
 #endif
