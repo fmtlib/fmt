@@ -215,13 +215,13 @@
 #  define FMT_VISIBILITY(value)
 #endif
 
+#define FMT_PRAGMA_IMPL(x) _Pragma(#x)
 #ifdef FMT_GCC_PRAGMA
 // Use the provided definition.
 #elif FMT_GCC_VERSION >= 504 && !defined(__NVCOMPILER)
 // Workaround a _Pragma bug https://gcc.gnu.org/bugzilla/show_bug.cgi?id=59884
 // and an nvhpc warning: https://github.com/fmtlib/fmt/pull/2582.
-#  define FMT_GCC_PRAGMA_IMPL(x) _Pragma(#x)
-#  define FMT_GCC_PRAGMA(x) FMT_GCC_PRAGMA_IMPL(GCC x)
+#  define FMT_GCC_PRAGMA(x) FMT_PRAGMA_IMPL(GCC x)
 #else
 #  define FMT_GCC_PRAGMA(x)
 #endif
@@ -229,8 +229,7 @@
 #ifdef FMT_CLANG_PRAGMA
 // Use the provided definition.
 #elif FMT_CLANG_VERSION
-#  define FMT_CLANG_PRAGMA_IMPL(x) _Pragma(#x)
-#  define FMT_CLANG_PRAGMA(x) FMT_CLANG_PRAGMA_IMPL(clang x)
+#  define FMT_CLANG_PRAGMA(x) FMT_PRAGMA_IMPL(clang x)
 #else
 #  define FMT_CLANG_PRAGMA(x)
 #endif
