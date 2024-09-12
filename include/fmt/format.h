@@ -709,7 +709,7 @@ FMT_CONSTEXPR inline auto compute_width(string_view s) -> size_t {
   struct count_code_points {
     size_t* count;
     FMT_CONSTEXPR auto operator()(uint32_t cp, string_view) const -> bool {
-      *count += detail::to_unsigned(
+      *count += to_unsigned(
           1 +
           (cp >= 0x1100 &&
            (cp <= 0x115f ||  // Hangul Jamo init. consonants
@@ -4113,6 +4113,12 @@ struct formatter<detail::float128, Char>
                                detail::type::float_type> {};
 
 inline namespace literals {
+#if FMT_USE_NONTYPE_TEMPLATE_ARGS
+template <detail_exported::fixed_string Str> constexpr auto operator""_a() {
+  using char_t = remove_cvref_t<decltype(Str.data[0])>;
+  return detail::udl_arg<char_t, sizeof(Str.data) / sizeof(char_t), Str>();
+}
+#else
 /**
  * User-defined literal equivalent of `fmt::arg`.
  *
@@ -4121,16 +4127,10 @@ inline namespace literals {
  *     using namespace fmt::literals;
  *     fmt::print("The answer is {answer}.", "answer"_a=42);
  */
-#if FMT_USE_NONTYPE_TEMPLATE_ARGS
-template <detail_exported::fixed_string Str> constexpr auto operator""_a() {
-  using char_t = remove_cvref_t<decltype(Str.data[0])>;
-  return detail::udl_arg<char_t, sizeof(Str.data) / sizeof(char_t), Str>();
-}
-#else
 constexpr auto operator""_a(const char* s, size_t) -> detail::udl_arg<char> {
   return {s};
 }
-#endif
+#endif  // FMT_USE_NONTYPE_TEMPLATE_ARGS
 }  // namespace literals
 
 /// A fast integer formatter.
@@ -4188,7 +4188,7 @@ class format_int {
   }
 
   /// Returns the content of the output buffer as an `std::string`.
-  auto str() const -> std::string { return std::string(str_, size()); }
+  auto str() const -> std::string { return {str_, size()}; }
 };
 
 FMT_BEGIN_EXPORT

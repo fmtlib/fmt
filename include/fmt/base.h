@@ -1292,7 +1292,7 @@ class compile_parse_context : public parse_context<Char> {
   using base::check_arg_id;
 
   FMT_CONSTEXPR void check_dynamic_spec(int arg_id) {
-    detail::ignore_unused(arg_id);
+    ignore_unused(arg_id);
     if (arg_id < num_args_ && types_ && !is_integral_type(types_[arg_id]))
       report_error("width/precision is not integer");
   }
@@ -2022,7 +2022,7 @@ class container_buffer : public buffer<typename Container::value_type> {
 template <typename OutputIt>
 class iterator_buffer<
     OutputIt,
-    enable_if_t<detail::is_back_insert_iterator<OutputIt>::value &&
+    enable_if_t<is_back_insert_iterator<OutputIt>::value &&
                     is_contiguous<typename OutputIt::container_type>::value,
                 typename OutputIt::container_type::value_type>>
     : public container_buffer<typename OutputIt::container_type> {
