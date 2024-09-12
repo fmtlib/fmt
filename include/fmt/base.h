@@ -2286,12 +2286,8 @@ struct is_output_iterator<
     void_t<decltype(*std::declval<decay_t<It>&>()++ = std::declval<T>())>>
     : std::true_type {};
 
-#ifdef FMT_USE_LOCALE
-// Use the provided definition.
-#elif defined(FMT_STATIC_THOUSANDS_SEPARATOR) || FMT_OPTIMIZE_SIZE > 1
-#  define FMT_USE_LOCALE 0
-#else
-#  define FMT_USE_LOCALE 1
+#ifndef FMT_USE_LOCALE
+#  define FMT_USE_LOCALE (FMT_OPTIMIZE_SIZE <= 1)
 #endif
 
 // A type-erased reference to an std::locale to avoid a heavy <locale> include.

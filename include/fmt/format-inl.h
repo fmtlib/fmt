@@ -24,8 +24,6 @@
 
 #if FMT_USE_LOCALE
 #  include <locale>
-#elif !defined(FMT_STATIC_THOUSANDS_SEPARATOR)
-#  define FMT_STATIC_THOUSANDS_SEPARATOR ','
 #endif
 
 FMT_BEGIN_NAMESPACE
@@ -90,7 +88,7 @@ locale_ref::locale_ref(const Locale& loc) : locale_(&loc) {
 struct locale {};
 template <typename Char> struct numpunct {
   auto grouping() const -> std::string { return "\03"; }
-  auto thousands_sep() const -> Char { return FMT_STATIC_THOUSANDS_SEPARATOR; }
+  auto thousands_sep() const -> Char { return ','; }
   auto decimal_point() const -> Char { return '.'; }
 };
 template <typename Facet> Facet use_facet(locale) { return {}; }
