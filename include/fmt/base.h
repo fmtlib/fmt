@@ -144,16 +144,16 @@
 #endif
 
 // Check if exceptions are disabled.
-#ifdef FMT_EXCEPTIONS
+#ifdef FMT_USE_EXCEPTIONS
 // Use the provided definition.
 #elif defined(__GNUC__) && !defined(__EXCEPTIONS)
-#  define FMT_EXCEPTIONS 0
+#  define FMT_USE_EXCEPTIONS 0
 #elif FMT_MSC_VERSION && !_HAS_EXCEPTIONS
-#  define FMT_EXCEPTIONS 0
+#  define FMT_USE_EXCEPTIONS 0
 #else
-#  define FMT_EXCEPTIONS 1
+#  define FMT_USE_EXCEPTIONS 1
 #endif
-#if FMT_EXCEPTIONS
+#if FMT_USE_EXCEPTIONS
 #  define FMT_TRY try
 #  define FMT_CATCH(x) catch (x)
 #else

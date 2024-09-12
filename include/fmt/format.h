@@ -122,7 +122,7 @@ template <> struct iterator_traits<fmt::appender> {
 }  // namespace std
 
 #ifndef FMT_THROW
-#  if FMT_EXCEPTIONS
+#  if FMT_USE_EXCEPTIONS
 #    if FMT_MSC_VERSION || defined(__NVCC__)
 FMT_BEGIN_NAMESPACE
 namespace detail {
