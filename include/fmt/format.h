@@ -158,14 +158,6 @@ FMT_END_NAMESPACE
 #  define FMT_NO_UNIQUE_ADDRESS
 #endif
 
-#ifndef FMT_MAYBE_UNUSED
-#  if FMT_HAS_CPP17_ATTRIBUTE(maybe_unused)
-#    define FMT_MAYBE_UNUSED [[maybe_unused]]
-#  else
-#    define FMT_MAYBE_UNUSED
-#  endif
-#endif
-
 // Defining FMT_REDUCE_INT_INSTANTIATIONS to 1, will reduce the number of
 // integer formatter template instantiations to just one by only using the
 // largest integer type. This results in a reduction in binary size but will
@@ -1882,31 +1874,6 @@ inline auto find_escape(const char* begin, const char* end)
                      });
   return result;
 }
-
-#define FMT_STRING_IMPL(s, base)                                           \
-  [] {                                                                     \
-    /* Use the hidden visibility as a workaround for a GCC bug (#1973). */ \
-    /* Use a macro-like name to avoid shadowing warnings. */               \
-    struct FMT_VISIBILITY("hidden") FMT_COMPILE_STRING : base {            \
-      using char_type = fmt::remove_cvref_t<decltype(s[0])>;               \
-      FMT_MAYBE_UNUSED FMT_CONSTEXPR explicit                              \
-      operator fmt::basic_string_view<char_type>() const {                 \
-        return fmt::detail_exported::compile_string_to_view<char_type>(s); \
-      }                                                                    \
-    };                                                                     \
-    fmt::detail::ignore_unused(typename FMT_COMPILE_STRING::char_type());  \
-    return FMT_COMPILE_STRING();                                           \
-  }()
-
-/**
- * Constructs a compile-time format string from a string literal `s`.
- *
- * **Example**:
- *
- *     // A compile-time error because 'd' is an invalid specifier for strings.
- *     std::string s = fmt::format(FMT_STRING("{:d}"), "foo");
- */
-#define FMT_STRING(s) FMT_STRING_IMPL(s, fmt::detail::compile_string)
 
 template <size_t width, typename Char, typename OutputIt>
 auto write_codepoint(OutputIt out, char prefix, uint32_t cp) -> OutputIt {
@@ -4191,6 +4158,33 @@ class format_int {
   auto str() const -> std::string { return {str_, size()}; }
 };
 
+#define FMT_STRING_IMPL(s, base)                                           \
+  [] {                                                                     \
+    /* Use the hidden visibility as a workaround for a GCC bug (#1973). */ \
+    /* Use a macro-like name to avoid shadowing warnings. */               \
+    struct FMT_VISIBILITY("hidden") FMT_COMPILE_STRING : base {            \
+      using char_type = fmt::remove_cvref_t<decltype(s[0])>;               \
+      FMT_CONSTEXPR explicit operator fmt::basic_string_view<char_type>()  \
+          const {                                                          \
+        return fmt::detail_exported::compile_string_to_view<char_type>(s); \
+      }                                                                    \
+    };                                                                     \
+    using FMT_STRING_VIEW =                                                \
+        fmt::basic_string_view<typename FMT_COMPILE_STRING::char_type>;    \
+    fmt::detail::ignore_unused(FMT_STRING_VIEW(FMT_COMPILE_STRING()));     \
+    return FMT_COMPILE_STRING();                                           \
+  }()
+
+/**
+ * Constructs a compile-time format string from a string literal `s`.
+ *
+ * **Example**:
+ *
+ *     // A compile-time error because 'd' is an invalid specifier for strings.
+ *     std::string s = fmt::format(FMT_STRING("{:d}"), "foo");
+ */
+#define FMT_STRING(s) FMT_STRING_IMPL(s, fmt::detail::compile_string)
+
 FMT_BEGIN_EXPORT
 FMT_API auto vsystem_error(int error_code, string_view fmt, format_args args)
     -> std::system_error;
@@ -4311,7 +4305,7 @@ FMT_NODISCARD auto to_string(T value) -> std::string {
   constexpr int max_size = detail::digits10<T>() + 2;
   char buffer[max_size > 5 ? static_cast<unsigned>(max_size) : 5];
   char* begin = buffer;
-  return std::string(buffer, detail::write<char>(begin, value));
+  return {buffer, detail::write<char>(begin, value)};
 }
 
 template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value &&
