@@ -338,10 +338,10 @@ template <typename CodeUnit> struct codecvt_result {
 template <typename CodeUnit>
 void write_codecvt(codecvt_result<CodeUnit>& out, string_view in,
                    const std::locale& loc) {
-  FMT_CLANG_PRAGMA(diagnostic push)
-  FMT_CLANG_PRAGMA(diagnostic ignored "-Wdeprecated")
+  FMT_PRAGMA_CLANG(diagnostic push)
+  FMT_PRAGMA_CLANG(diagnostic ignored "-Wdeprecated")
   auto& f = std::use_facet<std::codecvt<CodeUnit, char, std::mbstate_t>>(loc);
-  FMT_CLANG_PRAGMA(diagnostic pop)
+  FMT_PRAGMA_CLANG(diagnostic pop)
   auto mb = std::mbstate_t();
   const char* from_next = nullptr;
   auto result = f.in(mb, in.begin(), in.end(), from_next, std::begin(out.buf),

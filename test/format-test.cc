@@ -2514,7 +2514,7 @@ TEST(format_test, writer) {
 }
 
 #if FMT_USE_BITINT
-FMT_CLANG_PRAGMA(diagnostic ignored "-Wbit-int-extension")
+FMT_PRAGMA_CLANG(diagnostic ignored "-Wbit-int-extension")
 
 TEST(format_test, bitint) {
   using fmt::detail::bitint;

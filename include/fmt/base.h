@@ -202,7 +202,7 @@
 #else
 #  define FMT_ALWAYS_INLINE inline
 #endif
-// A version of FMT_INLINE to prevent code bloat in debug mode.
+// A version of FMT_ALWAYS_INLINE to prevent code bloat in debug mode.
 #ifdef NDEBUG
 #  define FMT_INLINE FMT_ALWAYS_INLINE
 #else
@@ -216,22 +216,22 @@
 #endif
 
 #define FMT_PRAGMA_IMPL(x) _Pragma(#x)
-#ifdef FMT_GCC_PRAGMA
+#ifdef FMT_PRAGMA_GCC
 // Use the provided definition.
 #elif FMT_GCC_VERSION >= 504 && !defined(__NVCOMPILER)
 // Workaround a _Pragma bug https://gcc.gnu.org/bugzilla/show_bug.cgi?id=59884
 // and an nvhpc warning: https://github.com/fmtlib/fmt/pull/2582.
-#  define FMT_GCC_PRAGMA(x) FMT_PRAGMA_IMPL(GCC x)
+#  define FMT_PRAGMA_GCC(x) FMT_PRAGMA_IMPL(GCC x)
 #else
-#  define FMT_GCC_PRAGMA(x)
+#  define FMT_PRAGMA_GCC(x)
 #endif
 
-#ifdef FMT_CLANG_PRAGMA
+#ifdef FMT_PRAGMA_CLANG
 // Use the provided definition.
 #elif FMT_CLANG_VERSION
-#  define FMT_CLANG_PRAGMA(x) FMT_PRAGMA_IMPL(clang x)
+#  define FMT_PRAGMA_CLANG(x) FMT_PRAGMA_IMPL(clang x)
 #else
-#  define FMT_CLANG_PRAGMA(x)
+#  define FMT_PRAGMA_CLANG(x)
 #endif
 
 #if FMT_MSC_VERSION
@@ -286,11 +286,11 @@
   (void)ignore { 0, (expr, 0)... }
 
 // Enable minimal optimizations for more compact code in debug mode.
-FMT_GCC_PRAGMA(push_options)
+FMT_PRAGMA_GCC(push_options)
 #if !defined(__OPTIMIZE__) && !defined(__CUDACC__)
-FMT_GCC_PRAGMA(optimize("Og"))
+FMT_PRAGMA_GCC(optimize("Og"))
 #endif
-FMT_CLANG_PRAGMA(diagnostic push)
+FMT_PRAGMA_CLANG(diagnostic push)
 
 FMT_BEGIN_NAMESPACE
 
@@ -401,7 +401,7 @@ inline auto map(uint128_opt) -> monostate { return {}; }
 #endif
 
 #if FMT_USE_BITINT
-FMT_CLANG_PRAGMA(diagnostic ignored "-Wbit-int-extension")
+FMT_PRAGMA_CLANG(diagnostic ignored "-Wbit-int-extension")
 template <int N> using bitint = _BitInt(N);
 template <int N> using ubitint = unsigned _BitInt(N);
 #else
@@ -2315,7 +2315,7 @@ constexpr auto encode_types() -> unsigned long long {
 }
 
 template <typename Context, typename... T, size_t NUM_ARGS = sizeof...(T)>
-constexpr unsigned long long make_descriptor() {
+constexpr auto make_descriptor() -> unsigned long long {
   return NUM_ARGS <= max_packed_args ? encode_types<Context, T...>()
                                      : is_unpacked_bit | NUM_ARGS;
 }
@@ -2390,7 +2390,7 @@ template <typename T, typename Char, type TYPE> struct native_formatter {
     specs_.set_type(set ? presentation_type::debug : presentation_type::none);
   }
 
-  FMT_CLANG_PRAGMA(diagnostic ignored "-Wundefined-inline")
+  FMT_PRAGMA_CLANG(diagnostic ignored "-Wundefined-inline")
   template <typename FormatContext>
   FMT_CONSTEXPR auto format(const T& val, FormatContext& ctx) const
       -> decltype(ctx.out());
@@ -2797,7 +2797,7 @@ template <typename Context = context, typename... T,
 constexpr FMT_ALWAYS_INLINE auto make_format_args(T&... args)
     -> detail::format_arg_store<Context, NUM_ARGS, NUM_NAMED_ARGS, DESC> {
   // Suppress warnings for pathological types convertible to detail::value.
-  FMT_GCC_PRAGMA(diagnostic ignored "-Wconversion")
+  FMT_PRAGMA_GCC(diagnostic ignored "-Wconversion")
   return {{args...}};
 }
 
@@ -2917,8 +2917,8 @@ FMT_NODISCARD FMT_INLINE auto formatted_size(format_string<T...> fmt,
 
 FMT_API void vprint(string_view fmt, format_args args);
 FMT_API void vprint(FILE* f, string_view fmt, format_args args);
-FMT_API void vprint_buffered(FILE* f, string_view fmt, format_args args);
 FMT_API void vprintln(FILE* f, string_view fmt, format_args args);
+FMT_API void vprint_buffered(FILE* f, string_view fmt, format_args args);
 
 /**
  * Formats `args` according to specifications in `fmt` and writes the output
@@ -2969,8 +2969,8 @@ FMT_INLINE void println(format_string<T...> fmt, T&&... args) {
 }
 
 FMT_END_EXPORT
-FMT_CLANG_PRAGMA(diagnostic pop)
-FMT_GCC_PRAGMA(pop_options)
+FMT_PRAGMA_CLANG(diagnostic pop)
+FMT_PRAGMA_GCC(pop_options)
 FMT_END_NAMESPACE
 
 #ifdef FMT_HEADER_ONLY
