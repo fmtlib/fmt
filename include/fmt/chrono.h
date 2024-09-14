@@ -23,6 +23,17 @@
 #include "format.h"
 
 namespace fmt_detail {
+struct time_zone {
+  template <typename Duration, typename T>
+  auto to_sys(T)
+      -> std::chrono::time_point<std::chrono::system_clock, Duration> {
+    return {};
+  }
+};
+template <typename... T> inline auto current_zone(T...) -> time_zone* {
+  return nullptr;
+}
+
 template <typename... T> inline void _tzset(T...) {}
 }  // namespace fmt_detail
 
@@ -507,6 +518,14 @@ auto to_time_t(sys_time<Duration> time_point) -> std::time_t {
              time_point.time_since_epoch())
       .count();
 }
+
+// Workaround a bug in libstc++ which sets __cpp_lib_chrono to 201907 without
+// providing current_zone(): https://github.com/fmtlib/fmt/issues/4160.
+template <typename T> FMT_CONSTEXPR auto has_current_zone() -> bool {
+  using namespace std::chrono;
+  using namespace fmt_detail;
+  return !std::is_same<decltype(current_zone()), fmt_detail::time_zone*>::value;
+}
 }  // namespace detail
 
 FMT_BEGIN_EXPORT
@@ -553,10 +572,12 @@ inline auto localtime(std::time_t time) -> std::tm {
 }
 
 #if FMT_USE_LOCAL_TIME
-template <typename Duration>
+template <typename Duration,
+          FMT_ENABLE_IF(detail::has_current_zone<Duration>())>
 inline auto localtime(std::chrono::local_time<Duration> time) -> std::tm {
-  return localtime(
-      detail::to_time_t(std::chrono::current_zone()->to_sys(time)));
+  using namespace std::chrono;
+  using namespace fmt_detail;
+  return localtime(detail::to_time_t(current_zone()->to_sys<Duration>(time)));
 }
 #endif
 
@@ -1559,9 +1580,8 @@ struct chrono_format_checker : null_chrono_spec_handler<chrono_format_checker> {
   FMT_CONSTEXPR void on_iso_time() {}
   FMT_CONSTEXPR void on_am_pm() {}
   FMT_CONSTEXPR void on_duration_value() const {
-    if (has_precision_integral) {
+    if (has_precision_integral)
       FMT_THROW(format_error("precision not allowed for this argument type"));
-    }
   }
   FMT_CONSTEXPR void on_duration_unit() {}
 };
