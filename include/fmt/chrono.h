@@ -1233,11 +1233,11 @@ class tm_writer {
     }
     uint32_or_64_or_128_t<long long> n = to_unsigned(year);
     const int num_digits = count_digits(n);
-    if(negative && pad == pad_type::zero) *out_++ = '-';
+    if (negative && pad == pad_type::zero) *out_++ = '-';
     if (width > num_digits) {
       out_ = detail::write_padding(out_, pad, width - num_digits);
     }
-    if(negative && pad != pad_type::zero) *out_++ = '-';
+    if (negative && pad != pad_type::zero) *out_++ = '-';
     out_ = format_decimal<Char>(out_, n, num_digits);
   }
   void write_year(long long year, pad_type pad) {
@@ -1471,7 +1471,9 @@ class tm_writer {
     format_localized('V', 'O');
   }
 
-  void on_iso_week_based_year() { write_year(tm_iso_week_year(), pad_type::zero); }
+  void on_iso_week_based_year() { 
+    write_year(tm_iso_week_year(), pad_type::zero);
+  }
   void on_iso_week_based_short_year() {
     write2(split_year_lower(tm_iso_week_year()));
   }
@@ -1481,8 +1483,7 @@ class tm_writer {
     auto digit1 = yday / 100;
     if (digit1 != 0) {
       write1(digit1);
-    }
-    else {
+    } else {
       out_ = detail::write_padding(out_, pad);
     }
     write2(yday % 100, pad);
