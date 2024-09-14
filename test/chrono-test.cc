@@ -1021,6 +1021,32 @@ TEST(chrono_test, glibc_extensions) {
 
     EXPECT_EQ(fmt::format("{:%e}", t), " 7");
   }
+
+  {
+    auto t = std::tm();
+    t.tm_year = 7 - 1900;
+    EXPECT_EQ(fmt::format("{:%Y}", t), "0007");
+    EXPECT_EQ(fmt::format("{:%_Y}", t), "   7");
+    EXPECT_EQ(fmt::format("{:%-Y}", t), "7");
+  }
+
+  {
+    auto t = std::tm();
+    t.tm_year = -5 - 1900;
+    EXPECT_EQ(fmt::format( "{:%Y}", t), "-005");
+    EXPECT_EQ(fmt::format("{:%_Y}", t), "  -5");
+    EXPECT_EQ(fmt::format("{:%-Y}", t), "-5");
+  }
+
+  {
+    auto t = std::tm();
+    t.tm_mon = 7 - 1;
+    EXPECT_EQ(fmt::format("{:%m}", t), "07");
+    EXPECT_EQ(fmt::format("{:%_m}", t), " 7");
+    EXPECT_EQ(fmt::format("{:%-m}", t), "7");
+  }
+
+
 }
 
 TEST(chrono_test, out_of_range) {
