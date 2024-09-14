@@ -560,7 +560,7 @@ TEST(ranges_test, escape) {
   EXPECT_EQ(fmt::format("{}", vec{"\x7f"}), "[\"\\x7f\"]");
   EXPECT_EQ(fmt::format("{}", vec{"n\xcc\x83"}), "[\"n\xcc\x83\"]");
 
-  if (FMT_USE_UTF8) {
+  if (fmt::detail::use_utf8) {
     EXPECT_EQ(fmt::format("{}", vec{"\xcd\xb8"}), "[\"\\u0378\"]");
     // Unassigned Unicode code points.
     EXPECT_EQ(fmt::format("{}", vec{"\xf0\xaa\x9b\x9e"}), "[\"\\U0002a6de\"]");

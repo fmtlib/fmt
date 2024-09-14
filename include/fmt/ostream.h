@@ -142,7 +142,7 @@ inline void vprint(std::ostream& os, string_view fmt, format_args args) {
 FMT_EXPORT template <typename... T>
 void print(std::ostream& os, format_string<T...> fmt, T&&... args) {
   fmt::vargs<T...> vargs = {{args...}};
-  if (FMT_USE_UTF8) return vprint(os, fmt.str, vargs);
+  if (detail::use_utf8) return vprint(os, fmt.str, vargs);
   auto buffer = memory_buffer();
   detail::vformat_to(buffer, fmt.str, vargs);
   detail::write_buffer(os, buffer);

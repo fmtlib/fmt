@@ -15,7 +15,7 @@
 
 using testing::Contains;
 
-TEST(unicode_test, use_utf8) { EXPECT_TRUE(FMT_USE_UTF8); }
+TEST(unicode_test, use_utf8) { EXPECT_TRUE(fmt::detail::use_utf8); }
 
 TEST(unicode_test, legacy_locale) {
   auto loc = get_locale("be_BY.CP1251", "Belarusian_Belarus.1251");

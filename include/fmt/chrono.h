@@ -353,7 +353,7 @@ void write_codecvt(codecvt_result<CodeUnit>& out, string_view in,
 template <typename OutputIt>
 auto write_encoded_tm_str(OutputIt out, string_view in, const std::locale& loc)
     -> OutputIt {
-  if (FMT_USE_UTF8 && loc != get_classic_locale()) {
+  if (detail::use_utf8 && loc != get_classic_locale()) {
     // char16_t and char32_t codecvts are broken in MSVC (linkage errors) and
     // gcc-4.
 #if FMT_MSC_VERSION != 0 ||  \
@@ -648,7 +648,7 @@ FMT_CONSTEXPR inline auto get_units() -> const char* {
   if (std::is_same<Period, std::pico>::value) return "ps";
   if (std::is_same<Period, std::nano>::value) return "ns";
   if (std::is_same<Period, std::micro>::value)
-    return FMT_USE_UTF8 ? "µs" : "us";
+    return detail::use_utf8 ? "µs" : "us";
   if (std::is_same<Period, std::milli>::value) return "ms";
   if (std::is_same<Period, std::centi>::value) return "cs";
   if (std::is_same<Period, std::deci>::value) return "ds";

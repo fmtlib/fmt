@@ -118,7 +118,7 @@ template <> struct is_char<char32_t> : std::true_type {};
 
 #ifdef __cpp_char8_t
 template <>
-struct is_char<char8_t> : bool_constant<detail::is_utf8_enabled()> {};
+struct is_char<char8_t> : bool_constant<detail::is_utf8_enabled> {};
 #endif
 
 template <typename... T>
