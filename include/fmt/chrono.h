@@ -783,7 +783,7 @@ FMT_CONSTEXPR auto parse_chrono_format(const Char* begin, const Char* end,
       handler.on_dec1_week_of_year(numeric_system::standard, pad);
       break;
     case 'V': handler.on_iso_week_of_year(numeric_system::standard, pad); break;
-    case 'j': handler.on_day_of_year(); break;
+    case 'j': handler.on_day_of_year(pad); break;
     case 'd': handler.on_day_of_month(numeric_system::standard, pad); break;
     case 'e':
       handler.on_day_of_month(numeric_system::standard, pad_type::space);
@@ -888,7 +888,7 @@ template <typename Derived> struct null_chrono_spec_handler {
   FMT_CONSTEXPR void on_iso_week_of_year(numeric_system, pad_type) {
     unsupported();
   }
-  FMT_CONSTEXPR void on_day_of_year() { unsupported(); }
+  FMT_CONSTEXPR void on_day_of_year(pad_type) { unsupported(); }
   FMT_CONSTEXPR void on_day_of_month(numeric_system, pad_type) {
     unsupported();
   }
@@ -932,7 +932,7 @@ struct tm_format_checker : null_chrono_spec_handler<tm_format_checker> {
   FMT_CONSTEXPR void on_dec0_week_of_year(numeric_system, pad_type) {}
   FMT_CONSTEXPR void on_dec1_week_of_year(numeric_system, pad_type) {}
   FMT_CONSTEXPR void on_iso_week_of_year(numeric_system, pad_type) {}
-  FMT_CONSTEXPR void on_day_of_year() {}
+  FMT_CONSTEXPR void on_day_of_year(pad_type) {}
   FMT_CONSTEXPR void on_day_of_month(numeric_system, pad_type) {}
   FMT_CONSTEXPR void on_24_hour(numeric_system, pad_type) {}
   FMT_CONSTEXPR void on_12_hour(numeric_system, pad_type) {}
@@ -1478,11 +1478,18 @@ class tm_writer {
     write2(split_year_lower(tm_iso_week_year()));
   }
 
-  void on_day_of_year() {
+  void on_day_of_year(pad_type pad) {
     auto yday = tm_yday() + 1;
-    write1(yday / 100);
-    write2(yday % 100);
+    auto digit1 = yday / 100;
+    if (digit1 != 0) {
+      write1(digit1);
+    }
+    else {
+      out_ = detail::write_padding(out_, pad);
+}
+    write2(yday % 100, pad);
   }
+
   void on_day_of_month(numeric_system ns, pad_type pad) {
     if (is_classic_ || ns == numeric_system::standard)
       return write2(tm_mday(), pad);
@@ -1570,7 +1577,7 @@ struct chrono_format_checker : null_chrono_spec_handler<chrono_format_checker> {
 
   template <typename Char>
   FMT_CONSTEXPR void on_text(const Char*, const Char*) {}
-  FMT_CONSTEXPR void on_day_of_year() {}
+  FMT_CONSTEXPR void on_day_of_year(pad_type) {}
   FMT_CONSTEXPR void on_24_hour(numeric_system, pad_type) {}
   FMT_CONSTEXPR void on_12_hour(numeric_system, pad_type) {}
   FMT_CONSTEXPR void on_minute(numeric_system, pad_type) {}
@@ -1839,7 +1846,7 @@ struct chrono_formatter {
   void on_iso_week_of_year(numeric_system, pad_type) {}
   void on_day_of_month(numeric_system, pad_type) {}
 
-  void on_day_of_year() {
+  void on_day_of_year(pad_type) {
     if (handle_nan_inf()) return;
     write(days(), 0);
   }

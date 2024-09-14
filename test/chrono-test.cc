@@ -539,6 +539,7 @@ TEST(chrono_test, format_specs) {
   EXPECT_EQ(fmt::format("{:%I}", std::chrono::hours(24)), "12");
   EXPECT_EQ(fmt::format("{:%I}", std::chrono::hours(4)), "04");
   EXPECT_EQ(fmt::format("{:%I}", std::chrono::hours(14)), "02");
+  EXPECT_EQ(fmt::format("{:%j}", days(12)), "12");
   EXPECT_EQ(fmt::format("{:%j}", days(12345)), "12345");
   EXPECT_EQ(fmt::format("{:%j}", std::chrono::hours(12345 * 24 + 12)), "12345");
   EXPECT_EQ(fmt::format("{:%H:%M:%S}", std::chrono::seconds(12345)),
@@ -1005,6 +1006,10 @@ TEST(chrono_test, glibc_extensions) {
     EXPECT_EQ(fmt::format("{:%U,%W,%V}", t), "02,01,01");
     EXPECT_EQ(fmt::format("{:%_U,%_W,%_V}", t), " 2, 1, 1");
     EXPECT_EQ(fmt::format("{:%-U,%-W,%-V}", t), "2,1,1");
+
+    EXPECT_EQ(fmt::format("{:%j}", t), "008");
+    EXPECT_EQ(fmt::format("{:%_j}", t), "  8");
+    EXPECT_EQ(fmt::format("{:%-j}", t), "8");
   }
 
   {
