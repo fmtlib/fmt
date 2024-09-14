@@ -1710,13 +1710,11 @@ template <typename T, typename Char>
 FMT_VISIBILITY("hidden")  // Suppress an ld warning on macOS (#3769).
 FMT_CONSTEXPR auto invoke_parse(parse_context<Char>& ctx) -> const Char* {
   using mapped_type = remove_cvref_t<mapped_t<T, Char>>;
-#if defined(__cpp_if_constexpr)
-  if constexpr (std::is_default_constructible<formatter<mapped_type, Char>>())
-    return formatter<mapped_type, Char>().parse(ctx);
-  return ctx.begin();  // Ignore the error - it is reported in the value ctor.
-#else
-  return formatter<mapped_type, Char>().parse(ctx);
-#endif
+  constexpr bool formattable =
+      std::is_constructible<formatter<mapped_type, Char>>::value;
+  if (!formattable) return ctx.begin();  // Error is reported in the value ctor.
+  using formatted_type = conditional_t<formattable, mapped_type, int>;
+  return formatter<formatted_type, Char>().parse(ctx);
 }
 
 template <typename... T> struct arg_pack {};
