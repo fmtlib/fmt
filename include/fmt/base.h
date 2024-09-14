@@ -2210,10 +2210,6 @@ template <typename Context> class value {
       FMT_ENABLE_IF(std::is_same<T, M>::value &&
                     !std::is_integral<remove_cvref_t<T>>::value)>
   FMT_CONSTEXPR20 FMT_INLINE value(T&& x) {
-    // Use enum instead of constexpr because the latter may generate code.
-    enum { formattable_char = !std::is_same<T, unformattable_char>::value };
-    static_assert(formattable_char, "mixing character types is disallowed");
-
     // Formatting of arbitrary pointers is disallowed. If you want to format a
     // pointer cast it to `void*` or `const void*`. In particular, this forbids
     // formatting of `[const] volatile char*` printed as bool by iostreams.
