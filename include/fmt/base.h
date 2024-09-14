@@ -567,9 +567,8 @@ template <typename Char> class basic_string_view {
   FMT_CONSTEXPR auto compare(basic_string_view other) const -> int {
     size_t str_size = size_ < other.size_ ? size_ : other.size_;
     int result = detail::compare(data_, other.data_, str_size);
-    if (result == 0)
-      result = size_ == other.size_ ? 0 : (size_ < other.size_ ? -1 : 1);
-    return result;
+    if (result != 0) return result;
+    return size_ == other.size_ ? 0 : (size_ < other.size_ ? -1 : 1);
   }
 
   FMT_CONSTEXPR friend auto operator==(basic_string_view lhs,
@@ -1146,22 +1145,12 @@ template <typename Char> struct arg_mapper {
   FMT_MAP_API auto map(double x) -> double { return x; }
   FMT_MAP_API auto map(long double x) -> long double { return x; }
 
-  template <int N, FMT_ENABLE_IF(N <= 64)>
-  FMT_MAP_API auto map(bitint<N> x) -> long long {
-    return x;
-  }
-  template <int N, FMT_ENABLE_IF(N <= 64)>
-  FMT_MAP_API auto map(ubitint<N> x) -> unsigned long long {
-    return x;
-  }
-  template <int N, FMT_ENABLE_IF(N > 64)>
-  FMT_MAP_API auto map(bitint<N>) -> unformattable {
-    return {};
-  }
-  template <int N, FMT_ENABLE_IF(N > 64)>
-  FMT_MAP_API auto map(ubitint<N>) -> unformattable {
-    return {};
-  }
+  template <int N>
+  FMT_MAP_API auto map(bitint<N>)
+      -> conditional_t<N <= 64, long long, unformattable>;
+  template <int N>
+  FMT_MAP_API auto map(ubitint<N>)
+      -> conditional_t<N <= 64, unsigned long long, unformattable>;
 
   FMT_MAP_API auto map(Char* x) -> const Char* { return x; }
   FMT_MAP_API auto map(const Char* x) -> const Char* { return x; }
@@ -2169,9 +2158,13 @@ template <typename Context> class value {
   constexpr FMT_INLINE value(unsigned long long x FMT_BUILTIN)
       : ulong_long_value(x) {}
   template <int N>
-  constexpr FMT_INLINE value(bitint<N> x FMT_BUILTIN) : long_long_value(x) {}
+  constexpr FMT_INLINE value(bitint<N> x FMT_BUILTIN) : long_long_value(x) {
+    static_assert(N <= 64, "unsupported _BitInt");
+  }
   template <int N>
-  constexpr FMT_INLINE value(ubitint<N> x FMT_BUILTIN) : ulong_long_value(x) {}
+  constexpr FMT_INLINE value(ubitint<N> x FMT_BUILTIN) : ulong_long_value(x) {
+    static_assert(N <= 64, "unsupported _BitInt");
+  }
   FMT_INLINE value(int128_opt x FMT_BUILTIN) : int128_value(x) {}
   FMT_INLINE value(uint128_opt x FMT_BUILTIN) : uint128_value(x) {}
   constexpr FMT_INLINE value(float x FMT_BUILTIN) : float_value(x) {}
