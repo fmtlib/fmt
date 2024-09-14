@@ -342,14 +342,12 @@ VISIT_TYPE(unsigned long, unsigned long long);
 #endif
 
 #if FMT_BUILTIN_TYPES
-#  define CHECK_ARG(expected, value)                                 \
-    {                                                                \
-      testing::StrictMock<mock_visitor<decltype(expected)>> visitor; \
-      EXPECT_CALL(visitor, visit(expected));                         \
-      auto var = value;                                              \
-      fmt::basic_format_arg<fmt::format_context>(                    \
-          fmt::detail::arg_mapper<char>::map(var))                   \
-          .visit(visitor);                                           \
+#  define CHECK_ARG(expected, value)                                  \
+    {                                                                 \
+      testing::StrictMock<mock_visitor<decltype(expected)>> visitor;  \
+      EXPECT_CALL(visitor, visit(expected));                          \
+      auto var = value;                                               \
+      fmt::basic_format_arg<fmt::format_context>(var).visit(visitor); \
     }
 #else
 #  define CHECK_ARG(expected, value)

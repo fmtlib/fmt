@@ -995,12 +995,6 @@ struct is_contiguous<basic_memory_buffer<T, SIZE, Allocator>> : std::true_type {
 
 FMT_END_EXPORT
 namespace detail {
-
-template <typename Context, typename T>
-FMT_CONSTEXPR auto make_arg(T& val) -> basic_format_arg<Context> {
-  return {arg_mapper<typename Context::char_type>::map(val)};
-}
-
 FMT_API auto write_console(int fd, string_view text) -> bool;
 FMT_API void print(FILE*, string_view);
 }  // namespace detail
@@ -1092,7 +1086,7 @@ class loc_value {
 
  public:
   template <typename T, FMT_ENABLE_IF(!detail::is_float128<T>::value)>
-  loc_value(T value) : value_(detail::make_arg<context>(value)) {}
+  loc_value(T value) : value_(value) {}
 
   template <typename T, FMT_ENABLE_IF(detail::is_float128<T>::value)>
   loc_value(T) {}
