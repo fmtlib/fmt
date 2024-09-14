@@ -595,8 +595,17 @@ template <typename Char> class basic_string_view {
 
 using string_view = basic_string_view<char>;
 
-/// Specifies if `T` is a character type. Can be specialized by users.
-template <typename T> struct is_char : std::false_type {};
+/// Specifies if `T` is an extended character type. Can be specialized by users.
+template <typename T> struct is_xchar : std::false_type {};
+template <> struct is_xchar<wchar_t> : std::true_type {};
+template <> struct is_xchar<char16_t> : std::true_type {};
+template <> struct is_xchar<char32_t> : std::true_type {};
+#ifdef __cpp_char8_t
+template <> struct is_xchar<char8_t> : std::true_type {};
+#endif
+
+// DEPRECATED! Will be replaced with an alias to prevent specializations.
+template <typename T> struct is_char : is_xchar<T> {};
 template <> struct is_char<char> : std::true_type {};
 
 template <typename T> class basic_appender;
@@ -1127,14 +1136,8 @@ template <typename Char> struct arg_mapper {
   FMT_MAP_API auto map(T x) -> Char {
     return x;
   }
-  template <typename T, enable_if_t<(std::is_same<T, wchar_t>::value ||
-#ifdef __cpp_char8_t
-                                     std::is_same<T, char8_t>::value ||
-#endif
-                                     std::is_same<T, char16_t>::value ||
-                                     std::is_same<T, char32_t>::value) &&
-                                        !std::is_same<T, Char>::value,
-                                    int> = 0>
+  template <typename T,
+            FMT_ENABLE_IF(is_xchar<T>::value && !std::is_same<T, Char>::value)>
   FMT_MAP_API auto map(T) -> unformattable_char {
     return {};
   }
@@ -1185,15 +1188,12 @@ template <typename Char> struct arg_mapper {
   }
   FMT_MAP_API auto map(std::nullptr_t x) -> const void* { return x; }
 
-  // Use SFINAE instead of a const T* parameter to avoid a conflict with the
-  // array overload.
   template <
-      typename T,
+      typename T, typename Element = typename std::remove_extent<T>::type,
       FMT_ENABLE_IF(
           std::is_pointer<T>::value || std::is_member_pointer<T>::value ||
           std::is_function<typename std::remove_pointer<T>::type>::value ||
-          (std::is_array<T>::value &&
-           !std::is_convertible<T, const Char*>::value))>
+          (std::is_array<T>::value && !is_char<Element>::value))>
   FMT_MAP_API auto map(const T&) -> unformattable_pointer {
     return {};
   }
@@ -2182,8 +2182,9 @@ template <typename Context> class value {
   constexpr FMT_INLINE value(bool x FMT_BUILTIN) : bool_value(x) {}
   template <typename T, FMT_ENABLE_IF(is_char<T>::value)>
   constexpr FMT_INLINE value(T x FMT_BUILTIN) : char_value(x) {
-    static_assert(std::is_same<T, char_type>::value,
-                  "mixing character types is disallowed");
+    static_assert(
+        std::is_same<T, char>::value || std::is_same<T, char_type>::value,
+        "mixing character types is disallowed");
   }
   FMT_CONSTEXPR FMT_INLINE value(const char_type* x FMT_BUILTIN) {
     string.data = x;
