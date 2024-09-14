@@ -1146,10 +1146,10 @@ template <typename Char> struct arg_mapper {
   FMT_MAP_API auto map(long double x) -> long double { return x; }
 
   template <int N>
-  FMT_MAP_API auto map(bitint<N>)
+  static auto map(bitint<N>)
       -> conditional_t<N <= 64, long long, unformattable>;
   template <int N>
-  FMT_MAP_API auto map(ubitint<N>)
+  static auto map(ubitint<N>)
       -> conditional_t<N <= 64, unsigned long long, unformattable>;
 
   FMT_MAP_API auto map(Char* x) -> const Char* { return x; }
@@ -1228,9 +1228,7 @@ template <typename Char> struct arg_mapper {
   }
 
   template <typename T, FMT_ENABLE_IF(is_named_arg<T>::value)>
-  FMT_MAP_API auto map(const T& named_arg) -> decltype(map(named_arg.value)) {
-    return map(named_arg.value);
-  }
+  static auto map(const T& named_arg) -> decltype(map(named_arg.value));
 
   FMT_MAP_API auto map(...) -> unformattable { return {}; }
 };
@@ -2187,12 +2185,18 @@ template <typename Context> class value {
   }
   FMT_INLINE value(const void* x FMT_BUILTIN) : pointer(x) {}
 
+  template <typename T, FMT_ENABLE_IF(is_named_arg<T>::value)>
+  value(const T& named_arg) : value(named_arg.value) {}
+
+  template <typename T, typename U = remove_cvref_t<T>>
+  using mappable =
+      bool_constant<!std::is_integral<U>::value && !is_named_arg<U>::value>;
+
   // We can't use mapped_t because of a bug in MSVC 2017.
   template <
       typename T,
       typename M = decltype(arg_mapper<char_type>::map(std::declval<T&>())),
-      FMT_ENABLE_IF(!std::is_same<T, M>::value &&
-                    !std::is_integral<remove_cvref_t<T>>::value)>
+      FMT_ENABLE_IF(!std::is_same<T, M>::value && mappable<T>::value)>
   FMT_CONSTEXPR20 FMT_INLINE value(T&& x) {
     *this = arg_mapper<char_type>::map(x);
   }
@@ -2200,8 +2204,7 @@ template <typename Context> class value {
   template <
       typename T,
       typename M = decltype(arg_mapper<char_type>::map(std::declval<T&>())),
-      FMT_ENABLE_IF(std::is_same<T, M>::value &&
-                    !std::is_integral<remove_cvref_t<T>>::value)>
+      FMT_ENABLE_IF(std::is_same<T, M>::value&& mappable<T>::value)>
   FMT_CONSTEXPR20 FMT_INLINE value(T&& x) {
     // Formatting of arbitrary pointers is disallowed. If you want to format a
     // pointer cast it to `void*` or `const void*`. In particular, this forbids
