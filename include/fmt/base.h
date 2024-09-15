@@ -1100,6 +1100,13 @@ struct use_format_as<
     T, bool_constant<std::is_integral<format_as_result<T>>::value>>
     : std::true_type {};
 
+template <typename T>
+using use_formatter =
+    bool_constant<(std::is_class<T>::value || std::is_enum<T>::value ||
+                   std::is_union<T>::value) &&
+                  !has_to_string_view<T>::value && !is_named_arg<T>::value &&
+                  !use_format_as<T>::value>;
+
 template <typename Char, typename T>
 constexpr auto has_const_formatter_impl(T*)
     -> decltype(formatter<T, Char>().format(
@@ -1117,11 +1124,9 @@ constexpr auto has_const_formatter() -> bool {
 }
 
 struct unformattable {};
-struct unformattable_char : unformattable {};
-struct unformattable_pointer : unformattable {};
 
-// Maps formatting argument types to reduce the set of types we need to work
-// with. Returns unformattable* on errors to be SFINAE-friendly.
+// Maps formatting argument types to a smaller set. Returns unformattable* on
+// errors to be SFINAE-friendly.
 template <typename Char> struct arg_mapper {
   static auto map(signed char) -> int;
   static auto map(unsigned char) -> unsigned;
@@ -1147,7 +1152,7 @@ template <typename Char> struct arg_mapper {
   template <typename T, FMT_ENABLE_IF(is_char<T>::value)>
   static auto map(T) -> conditional_t<std::is_same<T, char>::value ||
                                           std::is_same<T, Char>::value,
-                                      Char, unformattable_char>;
+                                      Char, unformattable>;
 
   static auto map(float) -> float;
   static auto map(double) -> double;
@@ -1159,7 +1164,7 @@ template <typename Char> struct arg_mapper {
             FMT_ENABLE_IF(!std::is_pointer<T>::value)>
   static auto map(const T&)
       -> conditional_t<std::is_same<C, Char>::value, basic_string_view<C>,
-                       unformattable_char>;
+                       unformattable>;
 
   static auto map(void*) -> const void*;
   static auto map(const void*) -> const void*;
@@ -1168,7 +1173,7 @@ template <typename Char> struct arg_mapper {
   static auto map(std::nullptr_t) -> const void*;
   template <typename T, FMT_ENABLE_IF(std::is_pointer<T>::value ||
                                       std::is_member_pointer<T>::value)>
-  static auto map(const T&) -> unformattable_pointer;
+  static auto map(const T&) -> unformattable;
 
   template <typename T, std::size_t N, FMT_ENABLE_IF(!is_char<T>::value)>
   static auto map(const T (&)[N]) -> const T (&)[N];
@@ -1182,25 +1187,12 @@ template <typename Char> struct arg_mapper {
                       (std::is_constructible<formatter<U, Char>>::value &&
                        !std::is_const<T>::value)> {};
 
-  template <typename T, FMT_ENABLE_IF(formattable<T>::value)>
-  static auto do_map(T& x) -> T&;
-  template <typename T, FMT_ENABLE_IF(!formattable<T>::value)>
-  static auto do_map(T&) -> unformattable;
-
-  // is_fundamental is used to allow formatters for extended FP types.
-  template <typename T, typename U = remove_const_t<T>,
-            FMT_ENABLE_IF(
-                (std::is_class<U>::value || std::is_enum<U>::value ||
-                 std::is_union<U>::value || std::is_fundamental<U>::value) &&
-                !has_to_string_view<U>::value && !is_char<U>::value &&
-                !is_named_arg<U>::value && !std::is_integral<U>::value &&
-                !use_format_as<U>::value)>
-  static auto map(T& x) -> decltype(do_map(x));
+  template <typename T, FMT_ENABLE_IF(use_formatter<remove_const_t<T>>::value)>
+  static auto map(T&)
+      -> conditional_t<formattable<T>::value, T&, unformattable>;
 
   template <typename T, FMT_ENABLE_IF(is_named_arg<T>::value)>
   static auto map(const T& named_arg) -> decltype(map(named_arg.value));
-
-  static auto map(...) -> unformattable;
 };
 
 // detail:: is used to workaround a bug in MSVC 2017.
@@ -2183,6 +2175,9 @@ template <typename Context> class value {
   template <typename T, FMT_ENABLE_IF(std::is_pointer<T>::value ||
                                       std::is_member_pointer<T>::value)>
   value(const T&) {
+    // Formatting of arbitrary pointers is disallowed. If you want to format a
+    // pointer cast it to `void*` or `const void*`. In particular, this forbids
+    // formatting of `[const] volatile char*` printed as bool by iostreams.
     static_assert(sizeof(T) == 0,
                   "formatting of non-void pointers is disallowed");
   }
@@ -2196,16 +2191,7 @@ template <typename Context> class value {
   template <typename T, FMT_ENABLE_IF(is_named_arg<T>::value)>
   value(const T& named_arg) : value(named_arg.value) {}
 
-  template <typename T, typename U = remove_cvref_t<T>>
-  using mappable =
-      bool_constant<!std::is_fundamental<U>::value &&
-                    !std::is_pointer<U>::value && !is_named_arg<U>::value &&
-                    !use_format_as<U>::value>;
-
-  template <
-      typename T,
-      typename M = decltype(arg_mapper<char_type>::map(std::declval<T&>())),
-      FMT_ENABLE_IF(std::is_same<T, M>::value&& mappable<T>::value)>
+  template <typename T, FMT_ENABLE_IF(use_formatter<remove_cvref_t<T>>::value)>
   FMT_CONSTEXPR20 FMT_INLINE value(T&& x) : value(x, custom_tag()) {}
 
   FMT_ALWAYS_INLINE value(const named_arg_info<char_type>* args, size_t size)
@@ -2213,15 +2199,6 @@ template <typename Context> class value {
 
  private:
   template <typename T> FMT_CONSTEXPR value(const T& x, custom_tag) {
-    // Formatting of arbitrary pointers is disallowed. If you want to format a
-    // pointer cast it to `void*` or `const void*`. In particular, this forbids
-    // formatting of `[const] volatile char*` printed as bool by iostreams.
-    enum {
-      formattable_pointer = !std::is_same<T, unformattable_pointer>::value
-    };
-    static_assert(formattable_pointer,
-                  "formatting of non-void pointers is disallowed");
-
     using value_type = remove_cvref_t<T>;
     enum { formattable = !std::is_same<T, unformattable>::value };
 
@@ -2242,10 +2219,6 @@ template <typename Context> class value {
     if (!is_constant_evaluated())
       custom.value =
           const_cast<char*>(&reinterpret_cast<const volatile char&>(x));
-    // Get the formatter type through the context to allow different contexts
-    // have different extension points, e.g. `formatter<T>` for `format` and
-    // `printf_formatter<T>` for `printf`.
-
     custom.format = format_custom<value_type, formatter<value_type, char_type>>;
   }
 
