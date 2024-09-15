@@ -1081,15 +1081,18 @@ enum { long_short = sizeof(long) == sizeof(int) };
 using long_type = conditional_t<long_short, int, long long>;
 using ulong_type = conditional_t<long_short, unsigned, unsigned long long>;
 
-template <typename T> struct format_as_result {
-  template <typename U,
-            FMT_ENABLE_IF(std::is_enum<U>::value || std::is_class<U>::value)>
-  static auto map(U*) -> remove_cvref_t<decltype(format_as(std::declval<U>()))>;
-  static auto map(...) -> void;
+template <typename T>
+using format_as_result =
+    remove_cvref_t<decltype(format_as(std::declval<const T&>()))>;
 
-  using type = decltype(map(static_cast<T*>(nullptr)));
-};
-template <typename T> using format_as_t = typename format_as_result<T>::type;
+template <typename T, typename Enable = std::true_type>
+struct use_format_as : std::false_type {};
+
+// Only map owning types because mapping views can be unsafe.
+template <typename T>
+struct use_format_as<
+    T, bool_constant<std::is_integral<format_as_result<T>>::value>>
+    : std::true_type {};
 
 template <typename Char, typename T>
 constexpr auto has_const_formatter_impl(T*)
@@ -1193,10 +1196,8 @@ template <typename Char> struct arg_mapper {
     return x;
   }
 
-  // Only map owning types because mapping views can be unsafe.
-  template <typename T, typename U = format_as_t<T>,
-            FMT_ENABLE_IF(std::is_arithmetic<U>::value)>
-  FMT_MAP_API auto map(const T& x) -> decltype(map(U())) {
+  template <typename T, FMT_ENABLE_IF(use_format_as<T>::value)>
+  FMT_MAP_API auto map(const T& x) -> decltype(map(format_as(x))) {
     return map(format_as(x));
   }
 
@@ -1222,7 +1223,7 @@ template <typename Char> struct arg_mapper {
                  std::is_union<U>::value || std::is_fundamental<U>::value) &&
                 !has_to_string_view<U>::value && !is_char<U>::value &&
                 !is_named_arg<U>::value && !std::is_integral<U>::value &&
-                !std::is_arithmetic<format_as_t<U>>::value)>
+                !use_format_as<U>::value)>
   FMT_MAP_API auto map(T& x) -> decltype(do_map(x)) {
     return do_map(x);
   }

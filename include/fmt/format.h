@@ -3826,10 +3826,6 @@ using fmt::report_error;
 FMT_API void report_error(format_func func, int error_code,
                           const char* message) noexcept;
 
-template <typename T>
-struct has_format_as
-    : bool_constant<!std::is_same<format_as_t<T>, void>::value> {};
-
 FMT_BEGIN_EXPORT
 
 #ifndef FMT_HEADER_ONLY
@@ -3859,13 +3855,13 @@ FMT_CONSTEXPR auto native_formatter<T, Char, TYPE>::format(
 }  // namespace detail
 
 template <typename T, typename Char>
-struct formatter<T, Char, enable_if_t<detail::has_format_as<T>::value>>
-    : formatter<detail::format_as_t<T>, Char> {
+struct formatter<T, Char, void_t<detail::format_as_result<T>>>
+    : formatter<detail::format_as_result<T>, Char> {
   template <typename FormatContext>
   FMT_CONSTEXPR auto format(const T& value, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     auto&& val = format_as(value);  // Make an lvalue reference for format.
-    return formatter<detail::format_as_t<T>, Char>::format(val, ctx);
+    return formatter<detail::format_as_result<T>, Char>::format(val, ctx);
   }
 };
 
@@ -4303,18 +4299,17 @@ FMT_NODISCARD auto to_string(T value) -> std::string {
   return {buffer, detail::write<char>(begin, value)};
 }
 
+template <typename T, FMT_ENABLE_IF(detail::use_format_as<T>::value)>
+FMT_NODISCARD auto to_string(const T& value) -> std::string {
+  return to_string(format_as(value));
+}
+
 template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value &&
-                                    !detail::has_format_as<T>::value)>
+                                    !detail::use_format_as<T>::value)>
 FMT_NODISCARD auto to_string(const T& value) -> std::string {
   auto buffer = memory_buffer();
   detail::write<char>(appender(buffer), value);
   return {buffer.data(), buffer.size()};
-}
-
-template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value &&
-                                    detail::has_format_as<T>::value)>
-FMT_NODISCARD auto to_string(const T& value) -> std::string {
-  return to_string(format_as(value));
 }
 
 FMT_END_EXPORT
