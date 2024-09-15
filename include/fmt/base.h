@@ -258,7 +258,13 @@
 #  define FMT_END_EXPORT
 #endif
 
-#if !defined(FMT_HEADER_ONLY) && defined(_WIN32)
+#ifdef _WIN32
+#  define FMT_WIN32 1
+#else
+#  define FMT_WIN32 0
+#endif
+
+#if !defined(FMT_HEADER_ONLY) && FMT_WIN32
 #  if defined(FMT_LIB_EXPORT)
 #    define FMT_API __declspec(dllexport)
 #  elif defined(FMT_SHARED)
@@ -431,7 +437,7 @@ struct is_std_string_like<T, void_t<decltype(std::declval<T>().find_first_of(
 
 // Check if the literal encoding is UTF-8.
 enum { is_utf8_enabled = "\u00A7"[1] == '\xA7' };
-enum { use_utf8 = !FMT_MSC_VERSION || is_utf8_enabled };
+enum { use_utf8 = !FMT_WIN32 || is_utf8_enabled };
 
 #ifndef FMT_UNICODE
 #  define FMT_UNICODE 1
@@ -2416,7 +2422,7 @@ FMT_CONSTEXPR inline auto is_locking() -> bool {
 FMT_API void vformat_to(buffer<char>& buf, string_view fmt, format_args args,
                         locale_ref loc = {});
 
-#ifdef _WIN32
+#if FMT_WIN32
 FMT_API void vprint_mojibake(FILE*, string_view, format_args, bool);
 #else  // format_args is passed by reference since it is defined later.
 inline void vprint_mojibake(FILE*, string_view, const format_args&, bool) {}
