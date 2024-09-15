@@ -1120,10 +1120,8 @@ struct unformattable {};
 struct unformattable_char : unformattable {};
 struct unformattable_pointer : unformattable {};
 
-#define FMT_MAP_API static FMT_CONSTEXPR FMT_ALWAYS_INLINE
-
-// Maps formatting arguments to reduce the set of types we need to work with.
-// Returns unformattable* on errors to be SFINAE-friendly.
+// Maps formatting argument types to reduce the set of types we need to work
+// with. Returns unformattable* on errors to be SFINAE-friendly.
 template <typename Char> struct arg_mapper {
   static auto map(signed char) -> int;
   static auto map(unsigned char) -> unsigned;
@@ -1173,9 +1171,7 @@ template <typename Char> struct arg_mapper {
   static auto map(const T&) -> unformattable_pointer;
 
   template <typename T, std::size_t N, FMT_ENABLE_IF(!is_char<T>::value)>
-  FMT_MAP_API auto map(const T (&x)[N]) -> const T (&)[N] {
-    return x;
-  }
+  static auto map(const T (&)[N]) -> const T (&)[N];
 
   template <typename T, FMT_ENABLE_IF(use_format_as<T>::value)>
   static auto map(const T& x) -> decltype(map(format_as(x)));
@@ -1187,13 +1183,9 @@ template <typename Char> struct arg_mapper {
                        !std::is_const<T>::value)> {};
 
   template <typename T, FMT_ENABLE_IF(formattable<T>::value)>
-  FMT_MAP_API auto do_map(T& x) -> T& {
-    return x;
-  }
+  static auto do_map(T& x) -> T&;
   template <typename T, FMT_ENABLE_IF(!formattable<T>::value)>
-  FMT_MAP_API auto do_map(T&) -> unformattable {
-    return {};
-  }
+  static auto do_map(T&) -> unformattable;
 
   // is_fundamental is used to allow formatters for extended FP types.
   template <typename T, typename U = remove_const_t<T>,
@@ -1203,14 +1195,12 @@ template <typename Char> struct arg_mapper {
                 !has_to_string_view<U>::value && !is_char<U>::value &&
                 !is_named_arg<U>::value && !std::is_integral<U>::value &&
                 !use_format_as<U>::value)>
-  FMT_MAP_API auto map(T& x) -> decltype(do_map(x)) {
-    return do_map(x);
-  }
+  static auto map(T& x) -> decltype(do_map(x));
 
   template <typename T, FMT_ENABLE_IF(is_named_arg<T>::value)>
   static auto map(const T& named_arg) -> decltype(map(named_arg.value));
 
-  FMT_MAP_API auto map(...) -> unformattable { return {}; }
+  static auto map(...) -> unformattable;
 };
 
 // detail:: is used to workaround a bug in MSVC 2017.
