@@ -1155,27 +1155,19 @@ template <typename Char> struct arg_mapper {
   static auto map(double) -> double;
   static auto map(long double) -> long double;
 
-  FMT_MAP_API auto map(Char* x) -> const Char* { return x; }
-  FMT_MAP_API auto map(const Char* x) -> const Char* { return x; }
+  static auto map(Char*) -> const Char*;
+  static auto map(const Char*) -> const Char*;
   template <typename T, typename C = char_t<T>,
-            FMT_ENABLE_IF(std::is_same<C, Char>::value &&
-                          !std::is_pointer<T>::value)>
-  FMT_MAP_API auto map(const T& x) -> basic_string_view<C> {
-    return to_string_view(x);
-  }
-  template <typename T, typename C = char_t<T>,
-            FMT_ENABLE_IF(!std::is_same<C, Char>::value &&
-                          !std::is_pointer<T>::value)>
-  FMT_MAP_API auto map(const T&) -> unformattable_char {
-    return {};
-  }
+            FMT_ENABLE_IF(!std::is_pointer<T>::value)>
+  static auto map(const T&)
+      -> conditional_t<std::is_same<C, Char>::value, basic_string_view<C>,
+                       unformattable_char>;
 
   static auto map(void*) -> const void*;
   static auto map(const void*) -> const void*;
   static auto map(volatile void*) -> const void*;
   static auto map(const volatile void*) -> const void*;
   static auto map(std::nullptr_t) -> const void*;
-
   template <typename T, FMT_ENABLE_IF(std::is_pointer<T>::value ||
                                       std::is_member_pointer<T>::value)>
   static auto map(const T&) -> unformattable_pointer;
@@ -2093,16 +2085,18 @@ template <typename Char> struct string_value {
   auto str() const -> basic_string_view<Char> { return {data, size}; }
 };
 
-template <typename Char> struct named_arg_value {
-  const named_arg_info<Char>* data;
-  size_t size;
-};
-
 template <typename Context> struct custom_value {
   using char_type = typename Context::char_type;
   void* value;
   void (*format)(void* arg, parse_context<char_type>& parse_ctx, Context& ctx);
 };
+
+template <typename Char> struct named_arg_value {
+  const named_arg_info<Char>* data;
+  size_t size;
+};
+
+struct custom_tag {};
 
 #if !FMT_BUILTIN_TYPES
 #  define FMT_BUILTIN , monostate
@@ -2136,9 +2130,9 @@ template <typename Context> class value {
 
   constexpr FMT_INLINE value() : no_value() {}
   constexpr FMT_INLINE value(signed char x) : int_value(x) {}
-  constexpr FMT_INLINE value(unsigned char x) : uint_value(x) {}
+  constexpr FMT_INLINE value(unsigned char x FMT_BUILTIN) : uint_value(x) {}
   constexpr FMT_INLINE value(signed short x) : int_value(x) {}
-  constexpr FMT_INLINE value(unsigned short x) : uint_value(x) {}
+  constexpr FMT_INLINE value(unsigned short x FMT_BUILTIN) : uint_value(x) {}
   constexpr FMT_INLINE value(int x) : int_value(x) {}
   constexpr FMT_INLINE value(unsigned x FMT_BUILTIN) : uint_value(x) {}
   FMT_CONSTEXPR FMT_INLINE value(long x FMT_BUILTIN) : value(long_type(x)) {}
@@ -2179,9 +2173,14 @@ template <typename Context> class value {
     string.data = x;
     if (is_constant_evaluated()) string.size = 0;
   }
-  FMT_CONSTEXPR FMT_INLINE value(basic_string_view<char_type> x FMT_BUILTIN) {
-    string.data = x.data();
-    string.size = x.size();
+  template <typename T, typename C = char_t<T>,
+            FMT_ENABLE_IF(!std::is_pointer<T>::value)>
+  FMT_CONSTEXPR value(const T& x FMT_BUILTIN) {
+    static_assert(std::is_same<C, char_type>::value,
+                  "mixing character types is disallowed");
+    auto sv = to_string_view(x);
+    string.data = sv.data();
+    string.size = sv.size();
   }
   FMT_INLINE value(void* x FMT_BUILTIN) : pointer(x) {}
   FMT_INLINE value(const void* x FMT_BUILTIN) : pointer(x) {}
@@ -2198,6 +2197,9 @@ template <typename Context> class value {
                   "formatting of non-void pointers is disallowed");
   }
 
+  template <typename T, std::size_t N, FMT_ENABLE_IF(!is_char<T>::value)>
+  FMT_CONSTEXPR value(const T (&x)[N]) : value(x, custom_tag()) {}
+
   template <typename T, FMT_ENABLE_IF(use_format_as<T>::value)>
   value(const T& x) : value(format_as(x)) {}
 
@@ -2210,20 +2212,17 @@ template <typename Context> class value {
                     !std::is_pointer<U>::value && !is_named_arg<U>::value &&
                     !use_format_as<U>::value>;
 
-  // We can't use mapped_t because of a bug in MSVC 2017.
-  template <
-      typename T,
-      typename M = decltype(arg_mapper<char_type>::map(std::declval<T&>())),
-      FMT_ENABLE_IF(!std::is_same<T, M>::value && mappable<T>::value)>
-  FMT_CONSTEXPR20 FMT_INLINE value(T&& x) {
-    *this = arg_mapper<char_type>::map(x);
-  }
-
   template <
       typename T,
       typename M = decltype(arg_mapper<char_type>::map(std::declval<T&>())),
       FMT_ENABLE_IF(std::is_same<T, M>::value&& mappable<T>::value)>
-  FMT_CONSTEXPR20 FMT_INLINE value(T&& x) {
+  FMT_CONSTEXPR20 FMT_INLINE value(T&& x) : value(x, custom_tag()) {}
+
+  FMT_ALWAYS_INLINE value(const named_arg_info<char_type>* args, size_t size)
+      : named_args{args, size} {}
+
+ private:
+  template <typename T> FMT_CONSTEXPR value(const T& x, custom_tag) {
     // Formatting of arbitrary pointers is disallowed. If you want to format a
     // pointer cast it to `void*` or `const void*`. In particular, this forbids
     // formatting of `[const] volatile char*` printed as bool by iostreams.
@@ -2249,6 +2248,7 @@ template <typename Context> class value {
         "cannot format an argument; to make type T formattable provide a "
         "formatter<T> specialization: https://fmt.dev/latest/api.html#udt");
 
+    custom.value = nullptr;
     if (!is_constant_evaluated())
       custom.value =
           const_cast<char*>(&reinterpret_cast<const volatile char&>(x));
@@ -2258,10 +2258,7 @@ template <typename Context> class value {
 
     custom.format = format_custom<value_type, formatter<value_type, char_type>>;
   }
-  FMT_ALWAYS_INLINE value(const named_arg_info<char_type>* args, size_t size)
-      : named_args{args, size} {}
 
- private:
   // Formats an argument of a custom type, such as a user-defined class.
   template <typename T, typename Formatter>
   static void format_custom(void* arg, parse_context<char_type>& parse_ctx,
