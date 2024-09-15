@@ -1119,34 +1119,19 @@ struct unformattable_pointer : unformattable {};
 // Maps formatting arguments to reduce the set of types we need to work with.
 // Returns unformattable* on errors to be SFINAE-friendly.
 template <typename Char> struct arg_mapper {
-  FMT_MAP_API auto map(signed char x) -> int { return x; }
-  FMT_MAP_API auto map(unsigned char x) -> unsigned { return x; }
-  FMT_MAP_API auto map(short x) -> int { return x; }
-  FMT_MAP_API auto map(unsigned short x) -> unsigned { return x; }
-  FMT_MAP_API auto map(int x) -> int { return x; }
-  FMT_MAP_API auto map(unsigned x) -> unsigned { return x; }
-  FMT_MAP_API auto map(long x) -> long_type { return x; }
-  FMT_MAP_API auto map(unsigned long x) -> ulong_type { return x; }
-  FMT_MAP_API auto map(long long x) -> long long { return x; }
-  FMT_MAP_API auto map(unsigned long long x) -> unsigned long long { return x; }
-  FMT_MAP_API auto map(int128_opt x) -> int128_opt { return x; }
-  FMT_MAP_API auto map(uint128_opt x) -> uint128_opt { return x; }
-  FMT_MAP_API auto map(bool x) -> bool { return x; }
-
-  template <typename T, FMT_ENABLE_IF(std::is_same<T, char>::value ||
-                                      std::is_same<T, Char>::value)>
-  FMT_MAP_API auto map(T x) -> Char {
-    return x;
-  }
-  template <typename T,
-            FMT_ENABLE_IF(is_xchar<T>::value && !std::is_same<T, Char>::value)>
-  FMT_MAP_API auto map(T) -> unformattable_char {
-    return {};
-  }
-
-  FMT_MAP_API auto map(float x) -> float { return x; }
-  FMT_MAP_API auto map(double x) -> double { return x; }
-  FMT_MAP_API auto map(long double x) -> long double { return x; }
+  static auto map(signed char) -> int;
+  static auto map(unsigned char) -> unsigned;
+  static auto map(short) -> int;
+  static auto map(unsigned short) -> unsigned;
+  static auto map(int) -> int;
+  static auto map(unsigned) -> unsigned;
+  static auto map(long) -> long_type;
+  static auto map(unsigned long) -> ulong_type;
+  static auto map(long long) -> long long;
+  static auto map(unsigned long long) -> unsigned long long;
+  static auto map(int128_opt) -> int128_opt;
+  static auto map(uint128_opt) -> uint128_opt;
+  static auto map(bool) -> bool;
 
   template <int N>
   static auto map(bitint<N>)
@@ -1154,6 +1139,15 @@ template <typename Char> struct arg_mapper {
   template <int N>
   static auto map(ubitint<N>)
       -> conditional_t<N <= 64, unsigned long long, unformattable>;
+
+  template <typename T, FMT_ENABLE_IF(is_char<T>::value)>
+  static auto map(T) -> conditional_t<std::is_same<T, char>::value ||
+                                          std::is_same<T, Char>::value,
+                                      Char, unformattable_char>;
+
+  static auto map(float) -> float;
+  static auto map(double) -> double;
+  static auto map(long double) -> long double;
 
   FMT_MAP_API auto map(Char* x) -> const Char* { return x; }
   FMT_MAP_API auto map(const Char* x) -> const Char* { return x; }
@@ -1197,9 +1191,7 @@ template <typename Char> struct arg_mapper {
   }
 
   template <typename T, FMT_ENABLE_IF(use_format_as<T>::value)>
-  FMT_MAP_API auto map(const T& x) -> decltype(map(format_as(x))) {
-    return map(format_as(x));
-  }
+  static auto map(const T& x) -> decltype(map(format_as(x)));
 
   template <typename T, typename U = remove_const_t<T>>
   struct formattable
@@ -2156,6 +2148,10 @@ template <typename Context> class value {
   constexpr FMT_INLINE value(long long x FMT_BUILTIN) : long_long_value(x) {}
   constexpr FMT_INLINE value(unsigned long long x FMT_BUILTIN)
       : ulong_long_value(x) {}
+  FMT_INLINE value(int128_opt x FMT_BUILTIN) : int128_value(x) {}
+  FMT_INLINE value(uint128_opt x FMT_BUILTIN) : uint128_value(x) {}
+  constexpr FMT_INLINE value(bool x FMT_BUILTIN) : bool_value(x) {}
+
   template <int N>
   constexpr FMT_INLINE value(bitint<N> x FMT_BUILTIN) : long_long_value(x) {
     static_assert(N <= 64, "unsupported _BitInt");
@@ -2164,18 +2160,18 @@ template <typename Context> class value {
   constexpr FMT_INLINE value(ubitint<N> x FMT_BUILTIN) : ulong_long_value(x) {
     static_assert(N <= 64, "unsupported _BitInt");
   }
-  FMT_INLINE value(int128_opt x FMT_BUILTIN) : int128_value(x) {}
-  FMT_INLINE value(uint128_opt x FMT_BUILTIN) : uint128_value(x) {}
-  constexpr FMT_INLINE value(float x FMT_BUILTIN) : float_value(x) {}
-  constexpr FMT_INLINE value(double x FMT_BUILTIN) : double_value(x) {}
-  FMT_INLINE value(long double x FMT_BUILTIN) : long_double_value(x) {}
-  constexpr FMT_INLINE value(bool x FMT_BUILTIN) : bool_value(x) {}
+
   template <typename T, FMT_ENABLE_IF(is_char<T>::value)>
   constexpr FMT_INLINE value(T x FMT_BUILTIN) : char_value(x) {
     static_assert(
         std::is_same<T, char>::value || std::is_same<T, char_type>::value,
         "mixing character types is disallowed");
   }
+
+  constexpr FMT_INLINE value(float x FMT_BUILTIN) : float_value(x) {}
+  constexpr FMT_INLINE value(double x FMT_BUILTIN) : double_value(x) {}
+  FMT_INLINE value(long double x FMT_BUILTIN) : long_double_value(x) {}
+
   FMT_CONSTEXPR FMT_INLINE value(const char_type* x FMT_BUILTIN) {
     string.data = x;
     if (is_constant_evaluated()) string.size = 0;
@@ -2186,12 +2182,16 @@ template <typename Context> class value {
   }
   FMT_INLINE value(const void* x FMT_BUILTIN) : pointer(x) {}
 
+  template <typename T, FMT_ENABLE_IF(use_format_as<T>::value)>
+  value(const T& x) : value(format_as(x)) {}
+
   template <typename T, FMT_ENABLE_IF(is_named_arg<T>::value)>
   value(const T& named_arg) : value(named_arg.value) {}
 
   template <typename T, typename U = remove_cvref_t<T>>
   using mappable =
-      bool_constant<!std::is_integral<U>::value && !is_named_arg<U>::value>;
+      bool_constant<!std::is_arithmetic<U>::value && !is_named_arg<U>::value &&
+                    !use_format_as<U>::value>;
 
   // We can't use mapped_t because of a bug in MSVC 2017.
   template <
