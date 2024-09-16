@@ -1471,7 +1471,7 @@ class tm_writer {
     format_localized('V', 'O');
   }
 
-  void on_iso_week_based_year() { 
+  void on_iso_week_based_year() {
     write_year(tm_iso_week_year(), pad_type::zero);
   }
   void on_iso_week_based_short_year() {
@@ -1488,7 +1488,7 @@ class tm_writer {
     }
     write2(yday % 100, pad);
   }
-  
+
   void on_day_of_month(numeric_system ns, pad_type pad) {
     if (is_classic_ || ns == numeric_system::standard)
       return write2(tm_mday(), pad);
