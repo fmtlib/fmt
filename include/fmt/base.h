@@ -1123,9 +1123,7 @@ constexpr auto has_const_formatter() -> bool {
   return has_const_formatter_impl<Char>(static_cast<T*>(nullptr));
 }
 
-struct unformattable {};
-
-// Maps formatting argument types to a smaller set. Returns unformattable on
+// Maps formatting argument types to a smaller set. Returns void on
 // errors to be SFINAE-friendly.
 template <typename Char> struct type_mapper {
   static auto map(signed char) -> int;
@@ -1143,16 +1141,14 @@ template <typename Char> struct type_mapper {
   static auto map(bool) -> bool;
 
   template <int N>
-  static auto map(bitint<N>)
-      -> conditional_t<N <= 64, long long, unformattable>;
+  static auto map(bitint<N>) -> conditional_t<N <= 64, long long, void>;
   template <int N>
   static auto map(ubitint<N>)
-      -> conditional_t<N <= 64, unsigned long long, unformattable>;
+      -> conditional_t<N <= 64, unsigned long long, void>;
 
   template <typename T, FMT_ENABLE_IF(is_char<T>::value)>
-  static auto map(T) -> conditional_t<std::is_same<T, char>::value ||
-                                          std::is_same<T, Char>::value,
-                                      Char, unformattable>;
+  static auto map(T) -> conditional_t<
+      std::is_same<T, char>::value || std::is_same<T, Char>::value, Char, void>;
 
   static auto map(float) -> float;
   static auto map(double) -> double;
@@ -1162,9 +1158,8 @@ template <typename Char> struct type_mapper {
   static auto map(const Char*) -> const Char*;
   template <typename T, typename C = char_t<T>,
             FMT_ENABLE_IF(!std::is_pointer<T>::value)>
-  static auto map(const T&)
-      -> conditional_t<std::is_same<C, Char>::value, basic_string_view<C>,
-                       unformattable>;
+  static auto map(const T&) -> conditional_t<std::is_same<C, Char>::value,
+                                             basic_string_view<C>, void>;
 
   static auto map(void*) -> const void*;
   static auto map(const void*) -> const void*;
@@ -1173,7 +1168,7 @@ template <typename Char> struct type_mapper {
   static auto map(std::nullptr_t) -> const void*;
   template <typename T, FMT_ENABLE_IF(std::is_pointer<T>::value ||
                                       std::is_member_pointer<T>::value)>
-  static auto map(const T&) -> unformattable;
+  static auto map(const T&) -> void;
 
   template <typename T, std::size_t N, FMT_ENABLE_IF(!is_char<T>::value)>
   static auto map(const T (&)[N]) -> const T (&)[N];
@@ -1188,8 +1183,7 @@ template <typename Char> struct type_mapper {
                        !std::is_const<T>::value)> {};
 
   template <typename T, FMT_ENABLE_IF(use_formatter<remove_const_t<T>>::value)>
-  static auto map(T&)
-      -> conditional_t<formattable<T>::value, T&, unformattable>;
+  static auto map(T&) -> conditional_t<formattable<T>::value, T&, void>;
 
   template <typename T, FMT_ENABLE_IF(is_named_arg<T>::value)>
   static auto map(const T& named_arg) -> decltype(map(named_arg.value));
@@ -2200,7 +2194,7 @@ template <typename Context> class value {
  private:
   template <typename T> FMT_CONSTEXPR value(const T& x, custom_tag) {
     using value_type = remove_cvref_t<T>;
-    enum { formattable = !std::is_same<T, unformattable>::value };
+    enum { formattable = !std::is_same<T, void>::value };
 
 #if defined(__cpp_if_constexpr)
     if constexpr (!formattable) type_is_unformattable_for<T, char_type> _;
@@ -2730,11 +2724,9 @@ template <typename... T> struct fstring {
 template <typename... T> using format_string = typename fstring<T...>::t;
 
 template <typename T, typename Char = char>
-using is_formattable = bool_constant<
-    !std::is_base_of<detail::unformattable,
-                     detail::mapped_t<conditional_t<std::is_void<T>::value,
-                                                    detail::unformattable, T>,
-                                      Char>>::value>;
+using is_formattable = bool_constant<!std::is_same<
+    detail::mapped_t<conditional_t<std::is_void<T>::value, int*, T>, Char>,
+    void>::value>;
 #ifdef __cpp_concepts
 template <typename T, typename Char = char>
 concept formattable = is_formattable<remove_reference_t<T>, Char>::value;
