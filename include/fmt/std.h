@@ -17,6 +17,7 @@
 #  include <complex>
 #  include <cstdlib>
 #  include <exception>
+#  include <functional>
 #  include <memory>
 #  include <thread>
 #  include <type_traits>
@@ -692,4 +693,14 @@ template <typename T, typename Char> struct formatter<std::complex<T>, Char> {
 };
 
 FMT_END_NAMESPACE
+
+namespace std {
+
+template <typename T>
+constexpr auto format_as(std::reference_wrapper<T> ref) -> T& {
+  return ref.get();
+}
+
+}  // namespace std
+
 #endif  // FMT_STD_H_

@@ -395,3 +395,8 @@ TEST(std_test, format_shared_ptr) {
   EXPECT_EQ(fmt::format("{}", fmt::ptr(sp.get())),
             fmt::format("{}", fmt::ptr(sp)));
 }
+
+TEST(std_test, format_reference_wrapper) {
+  int num = 35;
+  EXPECT_EQ("35", fmt::to_string(std::cref(num)));
+}
