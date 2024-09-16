@@ -351,7 +351,7 @@ template <typename T, typename Char> struct is_range {
 namespace detail {
 
 template <typename Context> struct range_mapper {
-  using mapper = arg_mapper<typename Context::char_type>;
+  using mapper = type_mapper<typename Context::char_type>;
   using char_type = typename Context::char_type;
 
   template <typename T,

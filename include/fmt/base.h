@@ -1125,9 +1125,9 @@ constexpr auto has_const_formatter() -> bool {
 
 struct unformattable {};
 
-// Maps formatting argument types to a smaller set. Returns unformattable* on
+// Maps formatting argument types to a smaller set. Returns unformattable on
 // errors to be SFINAE-friendly.
-template <typename Char> struct arg_mapper {
+template <typename Char> struct type_mapper {
   static auto map(signed char) -> int;
   static auto map(unsigned char) -> unsigned;
   static auto map(short) -> int;
@@ -1197,9 +1197,9 @@ template <typename Char> struct arg_mapper {
 
 // detail:: is used to workaround a bug in MSVC 2017.
 template <typename T, typename Char>
-using mapped_t = decltype(detail::arg_mapper<Char>::map(std::declval<T&>()));
+using mapped_t = decltype(detail::type_mapper<Char>::map(std::declval<T&>()));
 
-// A type constant after applying arg_mapper.
+// A type constant after applying type_mapper.
 template <typename T, typename Char = char>
 using mapped_type_constant = type_constant<mapped_t<T, Char>, Char>;
 

@@ -3602,18 +3602,6 @@ auto write(OutputIt out, const T* value, const format_specs& specs = {},
   return write_ptr<Char>(out, bit_cast<uintptr_t>(value), &specs);
 }
 
-// A write overload that handles implicit conversions.
-template <typename Char, typename OutputIt, typename T,
-          typename Context = basic_format_context<OutputIt, Char>>
-FMT_CONSTEXPR auto write(OutputIt out, const T& value) -> enable_if_t<
-    std::is_class<T>::value && !has_to_string_view<T>::value &&
-        !is_floating_point<T>::value && !std::is_same<T, Char>::value &&
-        !std::is_same<
-            T, remove_cvref_t<decltype(arg_mapper<Char>::map(value))>>::value,
-    OutputIt> {
-  return write<Char>(out, arg_mapper<Char>::map(value));
-}
-
 template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(mapped_type_constant<T, Char>::value ==
                             type::custom_type &&
