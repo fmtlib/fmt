@@ -1100,12 +1100,12 @@ struct use_format_as<
     T, bool_constant<std::is_integral<format_as_result<T>>::value>>
     : std::true_type {};
 
-template <typename T>
-using use_formatter =
-    bool_constant<(std::is_class<T>::value || std::is_enum<T>::value ||
-                   std::is_union<T>::value) &&
-                  !has_to_string_view<T>::value && !is_named_arg<T>::value &&
-                  !use_format_as<T>::value>;
+template <typename T, typename U = remove_const_t<T>>
+struct use_formatter
+    : bool_constant<(std::is_class<T>::value || std::is_enum<T>::value ||
+                     std::is_union<T>::value) &&
+                    !has_to_string_view<T>::value && !is_named_arg<T>::value &&
+                    !use_format_as<T>::value> {};
 
 template <typename Char, typename T>
 constexpr auto has_const_formatter_impl(T*)
@@ -1182,7 +1182,7 @@ template <typename Char> struct type_mapper {
   template <typename T, FMT_ENABLE_IF(use_format_as<T>::value)>
   static auto map(const T& x) -> decltype(map(format_as(x)));
 
-  template <typename T, FMT_ENABLE_IF(use_formatter<remove_const_t<T>>::value)>
+  template <typename T, FMT_ENABLE_IF(use_formatter<T>::value)>
   static auto map(T&) -> conditional_t<formattable<T, Char>::value, T&, void>;
 
   template <typename T, FMT_ENABLE_IF(is_named_arg<T>::value)>
@@ -2185,26 +2185,27 @@ template <typename Context> class value {
   template <typename T, FMT_ENABLE_IF(is_named_arg<T>::value)>
   value(const T& named_arg) : value(named_arg.value) {}
 
-  template <typename T, FMT_ENABLE_IF(use_formatter<remove_cvref_t<T>>::value)>
-  FMT_CONSTEXPR20 FMT_INLINE value(T&& x) : value(x, custom_tag()) {}
+  template <typename T, FMT_ENABLE_IF(use_formatter<T>::value)>
+  FMT_CONSTEXPR20 FMT_INLINE value(T& x) : value(x, custom_tag()) {}
 
   FMT_ALWAYS_INLINE value(const named_arg_info<char_type>* args, size_t size)
       : named_args{args, size} {}
 
  private:
   template <typename T, FMT_ENABLE_IF(formattable<T, char_type>::value)>
-  FMT_CONSTEXPR value(const T& x, custom_tag) {
+  FMT_CONSTEXPR value(T& x, custom_tag) {
     using value_type = remove_cvref_t<T>;
-#if defined(__cpp_if_constexpr)
     // T may overload operator& e.g. std::vector<bool>::reference in libc++.
-    if constexpr (std::is_same<decltype(&x), remove_reference_t<T>*>::value)
-      custom.value = const_cast<value_type*>(&x);
-#endif
-
-    custom.value = nullptr;
-    if (!is_constant_evaluated())
+    if (!is_constant_evaluated()) {
       custom.value =
           const_cast<char*>(&reinterpret_cast<const volatile char&>(x));
+    } else {
+      custom.value = nullptr;
+#if defined(__cpp_if_constexpr)
+      if constexpr (std::is_same<decltype(&x), remove_reference_t<T>*>::value)
+        custom.value = const_cast<value_type*>(&x);
+#endif
+    }
     custom.format = format_custom<value_type, formatter<value_type, char_type>>;
   }
 
