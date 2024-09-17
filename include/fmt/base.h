@@ -1027,19 +1027,8 @@ template <typename Char, typename T> struct named_arg : view {
   const T& value;
 
   named_arg(const Char* n, const T& v) : name(n), value(v) {}
-
   static_assert(!is_named_arg<T>::value, "nested named arguments");
 };
-
-template <typename Char, typename T>
-auto unwrap_named_arg(const named_arg<Char, T>& arg) -> const T& {
-  return arg.value;
-}
-template <typename T,
-          FMT_ENABLE_IF(!is_named_arg<remove_reference_t<T>>::value)>
-auto unwrap_named_arg(T&& value) -> T&& {
-  return value;
-}
 
 template <bool B = false> constexpr auto count() -> size_t { return B ? 1 : 0; }
 template <bool B1, bool B2, bool... Tail> constexpr auto count() -> size_t {
@@ -2181,7 +2170,7 @@ template <typename Context> class value {
  private:
   template <typename T, FMT_ENABLE_IF(has_formatter<T, char_type>())>
   FMT_CONSTEXPR value(T& x, custom_tag) {
-    using value_type = remove_cvref_t<T>;
+    using value_type = remove_const_t<T>;
     // T may overload operator& e.g. std::vector<bool>::reference in libc++.
     if (!is_constant_evaluated()) {
       custom.value =
