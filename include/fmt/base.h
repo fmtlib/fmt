@@ -1108,19 +1108,14 @@ struct use_formatter
                     !use_format_as<T>::value> {};
 
 template <typename Char, typename T>
-constexpr auto has_formatter_impl(T*)
+auto has_formatter_impl(T* p)
     -> decltype(formatter<remove_const_t<T>, Char>().format(
-                    std::declval<T&>(),
-                    std::declval<buffered_context<Char>&>()),
-                true) {
-  return true;
-}
-template <typename Char> constexpr auto has_formatter_impl(...) -> bool {
-  return false;
-}
+                    *p, std::declval<buffered_context<Char>&>()),
+                std::true_type());
+template <typename Char> auto has_formatter_impl(...) -> std::false_type;
 // T can be const-qualified to check if it is const-formattable.
 template <typename T, typename Char> constexpr auto has_formatter() -> bool {
-  return has_formatter_impl<Char>(static_cast<T*>(nullptr));
+  return decltype(has_formatter_impl<Char>(static_cast<T*>(nullptr)))::value;
 }
 
 template <typename T, typename Char>
