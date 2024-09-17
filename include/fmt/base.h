@@ -1116,9 +1116,6 @@ template <typename T, typename Char> constexpr auto has_formatter() -> bool {
   return decltype(has_formatter_impl<Char>(static_cast<T*>(nullptr)))::value;
 }
 
-template <typename T, typename Char>
-struct formattable : bool_constant<has_formatter<T, Char>()> {};
-
 // Maps formatting argument types to natively supported types or user-defined
 // types with formatters. Returns void on errors to be SFINAE-friendly.
 template <typename Char> struct type_mapper {
@@ -1173,7 +1170,7 @@ template <typename Char> struct type_mapper {
   static auto map(const T& x) -> decltype(map(format_as(x)));
 
   template <typename T, FMT_ENABLE_IF(use_formatter<T>::value)>
-  static auto map(T&) -> conditional_t<formattable<T, Char>::value, T&, void>;
+  static auto map(T&) -> conditional_t<has_formatter<T, Char>(), T&, void>;
 
   template <typename T, FMT_ENABLE_IF(is_named_arg<T>::value)>
   static auto map(const T& named_arg) -> decltype(map(named_arg.value));
@@ -2182,7 +2179,7 @@ template <typename Context> class value {
       : named_args{args, size} {}
 
  private:
-  template <typename T, FMT_ENABLE_IF(formattable<T, char_type>::value)>
+  template <typename T, FMT_ENABLE_IF(has_formatter<T, char_type>())>
   FMT_CONSTEXPR value(T& x, custom_tag) {
     using value_type = remove_cvref_t<T>;
     // T may overload operator& e.g. std::vector<bool>::reference in libc++.
@@ -2199,7 +2196,7 @@ template <typename Context> class value {
     custom.format = format_custom<value_type, formatter<value_type, char_type>>;
   }
 
-  template <typename T, FMT_ENABLE_IF(!formattable<T, char_type>::value)>
+  template <typename T, FMT_ENABLE_IF(!has_formatter<T, char_type>())>
   FMT_CONSTEXPR value(const T&, custom_tag) {
     // Cannot format an argument; to make type T formattable provide a
     // formatter<T> specialization: https://fmt.dev/latest/api.html#udt.
