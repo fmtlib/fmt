@@ -350,29 +350,8 @@ template <typename T, typename Char> struct is_range {
 
 namespace detail {
 
-template <typename Context> struct range_mapper {
-  using mapper = type_mapper<typename Context::char_type>;
-  using char_type = typename Context::char_type;
-
-  template <typename T,
-            FMT_ENABLE_IF(std::is_constructible<
-                          formatter<remove_cvref_t<T>, char_type>>::value)>
-  static auto map(T&& value) -> T&& {
-    return static_cast<T&&>(value);
-  }
-  template <typename T,
-            FMT_ENABLE_IF(!std::is_constructible<
-                          formatter<remove_cvref_t<T>, char_type>>::value)>
-  static auto map(T&& value) -> decltype(mapper::map(static_cast<T&&>(value))) {
-    return mapper::map(static_cast<T&&>(value));
-  }
-};
-
 template <typename Char, typename Element>
-using range_formatter_type =
-    formatter<remove_cvref_t<decltype(range_mapper<buffered_context<Char>>{}
-                                          .map(std::declval<Element>()))>,
-              Char>;
+using range_formatter_type = formatter<remove_cvref_t<Element>, Char>;
 
 template <typename R>
 using maybe_const_range =
@@ -485,7 +464,6 @@ struct range_formatter<
 
   template <typename R, typename FormatContext>
   auto format(R&& range, FormatContext& ctx) const -> decltype(ctx.out()) {
-    auto mapper = detail::range_mapper<buffered_context<Char>>();
     auto out = ctx.out();
     auto it = detail::range_begin(range);
     auto end = detail::range_end(range);
@@ -497,7 +475,7 @@ struct range_formatter<
       if (i > 0) out = detail::copy<Char>(separator_, out);
       ctx.advance_to(out);
       auto&& item = *it;  // Need an lvalue
-      out = underlying_.format(mapper.map(item), ctx);
+      out = underlying_.format(item, ctx);
       ++i;
     }
     out = detail::copy<Char>(closing_bracket_, out);
@@ -593,12 +571,11 @@ struct formatter<
     basic_string_view<Char> open = detail::string_literal<Char, '{'>{};
     if (!no_delimiters_) out = detail::copy<Char>(open, out);
     int i = 0;
-    auto mapper = detail::range_mapper<buffered_context<Char>>();
     basic_string_view<Char> sep = detail::string_literal<Char, ',', ' '>{};
     for (auto&& value : map) {
       if (i > 0) out = detail::copy<Char>(sep, out);
       ctx.advance_to(out);
-      detail::for_each2(formatters_, mapper.map(value),
+      detail::for_each2(formatters_, value,
                         detail::format_tuple_element<FormatContext>{
                             0, ctx, detail::string_literal<Char, ':', ' '>{}});
       ++i;
