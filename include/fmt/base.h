@@ -1123,8 +1123,14 @@ constexpr auto has_const_formatter() -> bool {
   return has_const_formatter_impl<Char>(static_cast<T*>(nullptr));
 }
 
-// Maps formatting argument types to a smaller set. Returns void on
-// errors to be SFINAE-friendly.
+template <typename T, typename Char, typename U = remove_const_t<T>>
+struct formattable
+    : bool_constant<has_const_formatter<U, Char>() ||
+                    (std::is_constructible<formatter<U, Char>>::value &&
+                     !std::is_const<T>::value)> {};
+
+// Maps formatting argument types to natively supported types or user-defined
+// types with formatters. Returns void on errors to be SFINAE-friendly.
 template <typename Char> struct type_mapper {
   static auto map(signed char) -> int;
   static auto map(unsigned char) -> unsigned;
@@ -1176,14 +1182,8 @@ template <typename Char> struct type_mapper {
   template <typename T, FMT_ENABLE_IF(use_format_as<T>::value)>
   static auto map(const T& x) -> decltype(map(format_as(x)));
 
-  template <typename T, typename U = remove_const_t<T>>
-  struct formattable
-      : bool_constant<has_const_formatter<U, Char>() ||
-                      (std::is_constructible<formatter<U, Char>>::value &&
-                       !std::is_const<T>::value)> {};
-
   template <typename T, FMT_ENABLE_IF(use_formatter<remove_const_t<T>>::value)>
-  static auto map(T&) -> conditional_t<formattable<T>::value, T&, void>;
+  static auto map(T&) -> conditional_t<formattable<T, Char>::value, T&, void>;
 
   template <typename T, FMT_ENABLE_IF(is_named_arg<T>::value)>
   static auto map(const T& named_arg) -> decltype(map(named_arg.value));
@@ -2192,28 +2192,27 @@ template <typename Context> class value {
       : named_args{args, size} {}
 
  private:
-  template <typename T> FMT_CONSTEXPR value(const T& x, custom_tag) {
+  template <typename T, FMT_ENABLE_IF(formattable<T, char_type>::value)>
+  FMT_CONSTEXPR value(const T& x, custom_tag) {
     using value_type = remove_cvref_t<T>;
-    enum { formattable = !std::is_same<T, void>::value };
-
 #if defined(__cpp_if_constexpr)
-    if constexpr (!formattable) type_is_unformattable_for<T, char_type> _;
-
     // T may overload operator& e.g. std::vector<bool>::reference in libc++.
     if constexpr (std::is_same<decltype(&x), remove_reference_t<T>*>::value)
       custom.value = const_cast<value_type*>(&x);
 #endif
-
-    static_assert(
-        formattable,
-        "cannot format an argument; to make type T formattable provide a "
-        "formatter<T> specialization: https://fmt.dev/latest/api.html#udt");
 
     custom.value = nullptr;
     if (!is_constant_evaluated())
       custom.value =
           const_cast<char*>(&reinterpret_cast<const volatile char&>(x));
     custom.format = format_custom<value_type, formatter<value_type, char_type>>;
+  }
+
+  template <typename T, FMT_ENABLE_IF(!formattable<T, char_type>::value)>
+  FMT_CONSTEXPR value(const T&, custom_tag) {
+    // Cannot format an argument; to make type T formattable provide a
+    // formatter<T> specialization: https://fmt.dev/latest/api.html#udt.
+    type_is_unformattable_for<T, char_type> _;
   }
 
   // Formats an argument of a custom type, such as a user-defined class.

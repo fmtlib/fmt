@@ -779,7 +779,7 @@ using is_integer =
 #if FMT_USE_FLOAT128
 using float128 = __float128;
 #else
-using float128 = void;
+struct float128 {};
 #endif
 
 template <typename T> using is_float128 = std::is_same<T, float128>;
