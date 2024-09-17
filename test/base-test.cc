@@ -784,10 +784,10 @@ TEST(base_test, format_explicitly_convertible_to_std_string_view) {
 #  endif
 #endif
 
-TEST(base_test, has_const_formatter) {
-  EXPECT_TRUE((fmt::detail::has_const_formatter<const_formattable, char>()));
+TEST(base_test, has_formatter) {
+  EXPECT_TRUE((fmt::detail::has_formatter<const const_formattable, char>()));
   EXPECT_FALSE(
-      (fmt::detail::has_const_formatter<nonconst_formattable, char>()));
+      (fmt::detail::has_formatter<const nonconst_formattable, char>()));
 }
 
 TEST(base_test, format_nonconst) {

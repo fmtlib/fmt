@@ -1108,26 +1108,23 @@ struct use_formatter
                     !use_format_as<T>::value> {};
 
 template <typename Char, typename T>
-constexpr auto has_const_formatter_impl(T*)
-    -> decltype(formatter<T, Char>().format(
-                    std::declval<const T&>(),
+constexpr auto has_formatter_impl(T*)
+    -> decltype(formatter<remove_const_t<T>, Char>().format(
+                    std::declval<T&>(),
                     std::declval<buffered_context<Char>&>()),
                 true) {
   return true;
 }
-template <typename Char> constexpr auto has_const_formatter_impl(...) -> bool {
+template <typename Char> constexpr auto has_formatter_impl(...) -> bool {
   return false;
 }
-template <typename T, typename Char>
-constexpr auto has_const_formatter() -> bool {
-  return has_const_formatter_impl<Char>(static_cast<T*>(nullptr));
+// T can be const-qualified to check if it is const-formattable.
+template <typename T, typename Char> constexpr auto has_formatter() -> bool {
+  return has_formatter_impl<Char>(static_cast<T*>(nullptr));
 }
 
-template <typename T, typename Char, typename U = remove_const_t<T>>
-struct formattable
-    : bool_constant<has_const_formatter<U, Char>() ||
-                    (std::is_constructible<formatter<U, Char>>::value &&
-                     !std::is_const<T>::value)> {};
+template <typename T, typename Char>
+struct formattable : bool_constant<has_formatter<T, Char>()> {};
 
 // Maps formatting argument types to natively supported types or user-defined
 // types with formatters. Returns void on errors to be SFINAE-friendly.
@@ -2223,7 +2220,7 @@ template <typename Context> class value {
     auto f = Formatter();
     parse_ctx.advance_to(f.parse(parse_ctx));
     using qualified_type =
-        conditional_t<has_const_formatter<T, char_type>(), const T, T>;
+        conditional_t<has_formatter<const T, char_type>(), const T, T>;
     // format must be const for compatibility with std::format and compilation.
     const auto& cf = f;
     ctx.advance_to(cf.format(*static_cast<qualified_type*>(arg), ctx));
