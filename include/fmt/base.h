@@ -1092,7 +1092,7 @@ struct use_format_as<
 template <typename T, typename U = remove_const_t<T>>
 struct use_formatter
     : bool_constant<(std::is_class<T>::value || std::is_enum<T>::value ||
-                     std::is_union<T>::value) &&
+                     std::is_union<T>::value || std::is_array<T>::value) &&
                     !has_to_string_view<T>::value && !is_named_arg<T>::value &&
                     !use_format_as<T>::value> {};
 
@@ -1100,6 +1100,7 @@ template <typename Char, typename T, typename U = remove_const_t<T>>
 auto has_formatter_impl(T* p, buffered_context<Char>* ctx = nullptr)
     -> decltype(formatter<U, Char>().format(*p, *ctx), std::true_type());
 template <typename Char> auto has_formatter_impl(...) -> std::false_type;
+
 // T can be const-qualified to check if it is const-formattable.
 template <typename T, typename Char> constexpr auto has_formatter() -> bool {
   return decltype(has_formatter_impl<Char>(static_cast<T*>(nullptr)))::value;
@@ -1151,9 +1152,6 @@ template <typename Char> struct type_mapper {
   template <typename T, FMT_ENABLE_IF(std::is_pointer<T>::value ||
                                       std::is_member_pointer<T>::value)>
   static auto map(const T&) -> void;
-
-  template <typename T, std::size_t N, FMT_ENABLE_IF(!is_char<T>::value)>
-  static auto map(const T (&)[N]) -> const T (&)[N];
 
   template <typename T, FMT_ENABLE_IF(use_format_as<T>::value)>
   static auto map(const T& x) -> decltype(map(format_as(x)));
@@ -2151,9 +2149,6 @@ template <typename Context> class value {
     static_assert(sizeof(T) == 0,
                   "formatting of non-void pointers is disallowed");
   }
-
-  template <typename T, std::size_t N, FMT_ENABLE_IF(!is_char<T>::value)>
-  FMT_CONSTEXPR value(const T (&x)[N]) : value(x, custom_tag()) {}
 
   template <typename T, FMT_ENABLE_IF(use_format_as<T>::value)>
   value(const T& x) : value(format_as(x)) {}
