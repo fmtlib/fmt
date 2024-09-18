@@ -526,7 +526,7 @@ template <typename S, typename... Args,
           FMT_ENABLE_IF(detail::is_compiled_string<S>::value)>
 void print(std::FILE* f, const S& fmt, const Args&... args) {
   memory_buffer buffer;
-  fmt::format_to(std::back_inserter(buffer), fmt, args...);
+  fmt::format_to(appender(buffer), fmt, args...);
   detail::print(f, {buffer.data(), buffer.size()});
 }
 
