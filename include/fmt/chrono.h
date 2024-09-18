@@ -760,7 +760,7 @@ FMT_CONSTEXPR auto parse_chrono_format(const Char* begin, const Char* end,
       break;
     }
     // Year:
-    case 'Y': handler.on_year(numeric_system::standard); break;
+    case 'Y': handler.on_year(numeric_system::standard, pad); break;
     case 'y': handler.on_short_year(numeric_system::standard); break;
     case 'C': handler.on_century(numeric_system::standard); break;
     case 'G': handler.on_iso_week_based_year(); break;
@@ -774,7 +774,7 @@ FMT_CONSTEXPR auto parse_chrono_format(const Char* begin, const Char* end,
     case 'b':
     case 'h': handler.on_abbr_month(); break;
     case 'B': handler.on_full_month(); break;
-    case 'm': handler.on_dec_month(numeric_system::standard); break;
+    case 'm': handler.on_dec_month(numeric_system::standard, pad); break;
     // Day of the year/month:
     case 'U':
       handler.on_dec0_week_of_year(numeric_system::standard, pad);
@@ -783,7 +783,7 @@ FMT_CONSTEXPR auto parse_chrono_format(const Char* begin, const Char* end,
       handler.on_dec1_week_of_year(numeric_system::standard, pad);
       break;
     case 'V': handler.on_iso_week_of_year(numeric_system::standard, pad); break;
-    case 'j': handler.on_day_of_year(); break;
+    case 'j': handler.on_day_of_year(pad); break;
     case 'd': handler.on_day_of_month(numeric_system::standard, pad); break;
     case 'e':
       handler.on_day_of_month(numeric_system::standard, pad_type::space);
@@ -812,7 +812,7 @@ FMT_CONSTEXPR auto parse_chrono_format(const Char* begin, const Char* end,
       if (ptr == end) FMT_THROW(format_error("invalid format"));
       c = *ptr++;
       switch (c) {
-      case 'Y': handler.on_year(numeric_system::alternative); break;
+      case 'Y': handler.on_year(numeric_system::alternative, pad); break;
       case 'y': handler.on_offset_year(); break;
       case 'C': handler.on_century(numeric_system::alternative); break;
       case 'c': handler.on_datetime(numeric_system::alternative); break;
@@ -828,7 +828,7 @@ FMT_CONSTEXPR auto parse_chrono_format(const Char* begin, const Char* end,
       c = *ptr++;
       switch (c) {
       case 'y': handler.on_short_year(numeric_system::alternative); break;
-      case 'm': handler.on_dec_month(numeric_system::alternative); break;
+      case 'm': handler.on_dec_month(numeric_system::alternative, pad); break;
       case 'U':
         handler.on_dec0_week_of_year(numeric_system::alternative, pad);
         break;
@@ -866,7 +866,7 @@ template <typename Derived> struct null_chrono_spec_handler {
   FMT_CONSTEXPR void unsupported() {
     static_cast<Derived*>(this)->unsupported();
   }
-  FMT_CONSTEXPR void on_year(numeric_system) { unsupported(); }
+  FMT_CONSTEXPR void on_year(numeric_system, pad_type) { unsupported(); }
   FMT_CONSTEXPR void on_short_year(numeric_system) { unsupported(); }
   FMT_CONSTEXPR void on_offset_year() { unsupported(); }
   FMT_CONSTEXPR void on_century(numeric_system) { unsupported(); }
@@ -878,7 +878,7 @@ template <typename Derived> struct null_chrono_spec_handler {
   FMT_CONSTEXPR void on_dec1_weekday(numeric_system) { unsupported(); }
   FMT_CONSTEXPR void on_abbr_month() { unsupported(); }
   FMT_CONSTEXPR void on_full_month() { unsupported(); }
-  FMT_CONSTEXPR void on_dec_month(numeric_system) { unsupported(); }
+  FMT_CONSTEXPR void on_dec_month(numeric_system, pad_type) { unsupported(); }
   FMT_CONSTEXPR void on_dec0_week_of_year(numeric_system, pad_type) {
     unsupported();
   }
@@ -888,7 +888,7 @@ template <typename Derived> struct null_chrono_spec_handler {
   FMT_CONSTEXPR void on_iso_week_of_year(numeric_system, pad_type) {
     unsupported();
   }
-  FMT_CONSTEXPR void on_day_of_year() { unsupported(); }
+  FMT_CONSTEXPR void on_day_of_year(pad_type) { unsupported(); }
   FMT_CONSTEXPR void on_day_of_month(numeric_system, pad_type) {
     unsupported();
   }
@@ -916,7 +916,7 @@ struct tm_format_checker : null_chrono_spec_handler<tm_format_checker> {
 
   template <typename Char>
   FMT_CONSTEXPR void on_text(const Char*, const Char*) {}
-  FMT_CONSTEXPR void on_year(numeric_system) {}
+  FMT_CONSTEXPR void on_year(numeric_system, pad_type) {}
   FMT_CONSTEXPR void on_short_year(numeric_system) {}
   FMT_CONSTEXPR void on_offset_year() {}
   FMT_CONSTEXPR void on_century(numeric_system) {}
@@ -928,11 +928,11 @@ struct tm_format_checker : null_chrono_spec_handler<tm_format_checker> {
   FMT_CONSTEXPR void on_dec1_weekday(numeric_system) {}
   FMT_CONSTEXPR void on_abbr_month() {}
   FMT_CONSTEXPR void on_full_month() {}
-  FMT_CONSTEXPR void on_dec_month(numeric_system) {}
+  FMT_CONSTEXPR void on_dec_month(numeric_system, pad_type) {}
   FMT_CONSTEXPR void on_dec0_week_of_year(numeric_system, pad_type) {}
   FMT_CONSTEXPR void on_dec1_week_of_year(numeric_system, pad_type) {}
   FMT_CONSTEXPR void on_iso_week_of_year(numeric_system, pad_type) {}
-  FMT_CONSTEXPR void on_day_of_year() {}
+  FMT_CONSTEXPR void on_day_of_year(pad_type) {}
   FMT_CONSTEXPR void on_day_of_month(numeric_system, pad_type) {}
   FMT_CONSTEXPR void on_24_hour(numeric_system, pad_type) {}
   FMT_CONSTEXPR void on_12_hour(numeric_system, pad_type) {}
@@ -1223,27 +1223,25 @@ class tm_writer {
     }
   }
 
-  void write_year_extended(long long year) {
+  void write_year_extended(long long year, pad_type pad) {
     // At least 4 characters.
     int width = 4;
-    if (year < 0) {
-      *out_++ = '-';
+    bool negative = year < 0;
+    if (negative) {
       year = 0 - year;
       --width;
     }
     uint32_or_64_or_128_t<long long> n = to_unsigned(year);
     const int num_digits = count_digits(n);
-    if (width > num_digits)
-      out_ = detail::fill_n(out_, width - num_digits, '0');
+    if (negative && pad == pad_type::zero) *out_++ = '-';
+    if (width > num_digits) {
+      out_ = detail::write_padding(out_, pad, width - num_digits);
+    }
+    if (negative && pad != pad_type::zero) *out_++ = '-';
     out_ = format_decimal<Char>(out_, n, num_digits);
   }
-  void write_year(long long year) {
-    if (year >= 0 && year < 10000) {
-      write2(static_cast<int>(year / 100));
-      write2(static_cast<int>(year % 100));
-    } else {
-      write_year_extended(year);
-    }
+  void write_year(long long year, pad_type pad) {
+    write_year_extended(year, pad);
   }
 
   void write_utc_offset(long offset, numeric_system ns) {
@@ -1367,7 +1365,7 @@ class tm_writer {
       *out_++ = ' ';
       on_iso_time();
       *out_++ = ' ';
-      on_year(numeric_system::standard);
+      on_year(numeric_system::standard, pad_type::space);
     } else {
       format_localized('c', ns == numeric_system::standard ? '\0' : 'E');
     }
@@ -1399,7 +1397,7 @@ class tm_writer {
       write2digits(buf, static_cast<size_t>(year / 100));
     } else {
       offset = 4;
-      write_year_extended(year);
+      write_year_extended(year, pad_type::zero);
       year = 0;
     }
     write_digit2_separated(buf + 2, static_cast<unsigned>(year % 100),
@@ -1411,9 +1409,9 @@ class tm_writer {
   void on_utc_offset(numeric_system ns) { format_utc_offset_impl(tm_, ns); }
   void on_tz_name() { format_tz_name_impl(tm_); }
 
-  void on_year(numeric_system ns) {
+  void on_year(numeric_system ns, pad_type pad) {
     if (is_classic_ || ns == numeric_system::standard)
-      return write_year(tm_year());
+      return write_year(tm_year(), pad);
     format_localized('Y', 'E');
   }
   void on_short_year(numeric_system ns) {
@@ -1444,9 +1442,9 @@ class tm_writer {
     }
   }
 
-  void on_dec_month(numeric_system ns) {
+  void on_dec_month(numeric_system ns, pad_type pad) {
     if (is_classic_ || ns == numeric_system::standard)
-      return write2(tm_mon() + 1);
+      return write2(tm_mon() + 1, pad);
     format_localized('m', 'O');
   }
 
@@ -1473,16 +1471,24 @@ class tm_writer {
     format_localized('V', 'O');
   }
 
-  void on_iso_week_based_year() { write_year(tm_iso_week_year()); }
+  void on_iso_week_based_year() {
+    write_year(tm_iso_week_year(), pad_type::zero);
+  }
   void on_iso_week_based_short_year() {
     write2(split_year_lower(tm_iso_week_year()));
   }
 
-  void on_day_of_year() {
+  void on_day_of_year(pad_type pad) {
     auto yday = tm_yday() + 1;
-    write1(yday / 100);
-    write2(yday % 100);
+    auto digit1 = yday / 100;
+    if (digit1 != 0) {
+      write1(digit1);
+    } else {
+      out_ = detail::write_padding(out_, pad);
+    }
+    write2(yday % 100, pad);
   }
+
   void on_day_of_month(numeric_system ns, pad_type pad) {
     if (is_classic_ || ns == numeric_system::standard)
       return write2(tm_mday(), pad);
@@ -1570,7 +1576,7 @@ struct chrono_format_checker : null_chrono_spec_handler<chrono_format_checker> {
 
   template <typename Char>
   FMT_CONSTEXPR void on_text(const Char*, const Char*) {}
-  FMT_CONSTEXPR void on_day_of_year() {}
+  FMT_CONSTEXPR void on_day_of_year(pad_type) {}
   FMT_CONSTEXPR void on_24_hour(numeric_system, pad_type) {}
   FMT_CONSTEXPR void on_12_hour(numeric_system, pad_type) {}
   FMT_CONSTEXPR void on_minute(numeric_system, pad_type) {}
@@ -1827,19 +1833,19 @@ struct chrono_formatter {
   void on_iso_date() {}
   void on_utc_offset(numeric_system) {}
   void on_tz_name() {}
-  void on_year(numeric_system) {}
+  void on_year(numeric_system, pad_type) {}
   void on_short_year(numeric_system) {}
   void on_offset_year() {}
   void on_century(numeric_system) {}
   void on_iso_week_based_year() {}
   void on_iso_week_based_short_year() {}
-  void on_dec_month(numeric_system) {}
+  void on_dec_month(numeric_system, pad_type) {}
   void on_dec0_week_of_year(numeric_system, pad_type) {}
   void on_dec1_week_of_year(numeric_system, pad_type) {}
   void on_iso_week_of_year(numeric_system, pad_type) {}
   void on_day_of_month(numeric_system, pad_type) {}
 
-  void on_day_of_year() {
+  void on_day_of_year(pad_type) {
     if (handle_nan_inf()) return;
     write(days(), 0);
   }
@@ -2108,7 +2114,7 @@ struct formatter<year, Char> : private formatter<std::tm, Char> {
     if (use_tm_formatter_) return formatter<std::tm, Char>::format(time, ctx);
     detail::get_locale loc(false, ctx.locale());
     auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
-    w.on_year(detail::numeric_system::standard);
+    w.on_year(detail::numeric_system::standard, detail::pad_type::zero);
     return w.out();
   }
 };
