@@ -236,11 +236,8 @@
 
 #if FMT_MSC_VERSION
 #  define FMT_MSC_WARNING(...) __pragma(warning(__VA_ARGS__))
-#  define FMT_UNCHECKED_ITERATOR(It) \
-    using _Unchecked_type = It  // Mark iterator as checked.
 #else
 #  define FMT_MSC_WARNING(...)
-#  define FMT_UNCHECKED_ITERATOR(It) using unchecked_type = It
 #endif
 
 #ifndef FMT_BEGIN_NAMESPACE
@@ -2388,7 +2385,6 @@ template <typename T> class basic_appender {
   using pointer = T*;
   using reference = T&;
   using container_type = detail::buffer<T>;
-  FMT_UNCHECKED_ITERATOR(basic_appender);
 
   FMT_CONSTEXPR basic_appender(detail::buffer<T>& buf) : container(&buf) {}
 
