@@ -692,15 +692,17 @@ template <typename T, typename Char> struct formatter<std::complex<T>, Char> {
   }
 };
 
+FMT_EXPORT
+template <typename T, typename Char>
+struct formatter<std::reference_wrapper<T>, Char,
+                 enable_if_t<is_formattable<remove_cvref_t<T>, Char>::value>>
+    : formatter<remove_cvref_t<T>, Char> {
+  template <typename FormatContext>
+  auto format(std::reference_wrapper<T> ref, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    return formatter<remove_cvref_t<T>, Char>::format(ref.get(), ctx);
+  }
+};
+
 FMT_END_NAMESPACE
-
-namespace std {
-
-template <typename T>
-constexpr auto format_as(std::reference_wrapper<T> ref) -> T& {
-  return ref.get();
-}
-
-}  // namespace std
-
 #endif  // FMT_STD_H_
