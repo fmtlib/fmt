@@ -519,7 +519,7 @@ auto to_time_t(sys_time<Duration> time_point) -> std::time_t {
       .count();
 }
 
-// Workaround a bug in libstc++ which sets __cpp_lib_chrono to 201907 without
+// Workaround a bug in libstdc++ which sets __cpp_lib_chrono to 201907 without
 // providing current_zone(): https://github.com/fmtlib/fmt/issues/4160.
 template <typename T> FMT_CONSTEXPR auto has_current_zone() -> bool {
   using namespace std::chrono;
