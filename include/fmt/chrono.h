@@ -521,24 +521,24 @@ inline auto localtime(std::time_t time) -> std::tm {
     std::time_t time_;
     std::tm tm_;
 
-    dispatcher(std::time_t t) : time_(t) {}
+    FMT_INLINE dispatcher(std::time_t t) : time_(t) {}
 
-    auto run() -> bool {
+    FMT_INLINE auto run() -> bool {
       using namespace fmt::detail;
       return handle(localtime_r(&time_, &tm_));
     }
 
-    auto handle(std::tm* tm) -> bool { return tm != nullptr; }
+    FMT_INLINE auto handle(std::tm* tm) -> bool { return tm != nullptr; }
 
-    auto handle(detail::null<>) -> bool {
+    FMT_INLINE auto handle(detail::null<>) -> bool {
       using namespace fmt::detail;
       return fallback(localtime_s(&tm_, &time_));
     }
 
-    auto fallback(int res) -> bool { return res == 0; }
+    FMT_INLINE auto fallback(int res) -> bool { return res == 0; }
 
 #if !FMT_MSC_VERSION
-    auto fallback(detail::null<>) -> bool {
+    FMT_INLINE auto fallback(detail::null<>) -> bool {
       using namespace fmt::detail;
       std::tm* tm = std::localtime(&time_);
       if (tm) tm_ = *tm;
@@ -570,24 +570,24 @@ inline auto gmtime(std::time_t time) -> std::tm {
     std::time_t time_;
     std::tm tm_;
 
-    dispatcher(std::time_t t) : time_(t) {}
+    FMT_INLINE dispatcher(std::time_t t) : time_(t) {}
 
-    auto run() -> bool {
+    FMT_INLINE auto run() -> bool {
       using namespace fmt::detail;
       return handle(gmtime_r(&time_, &tm_));
     }
 
-    auto handle(std::tm* tm) -> bool { return tm != nullptr; }
+    FMT_INLINE auto handle(std::tm* tm) -> bool { return tm != nullptr; }
 
-    auto handle(detail::null<>) -> bool {
+    FMT_INLINE auto handle(detail::null<>) -> bool {
       using namespace fmt::detail;
       return fallback(gmtime_s(&tm_, &time_));
     }
 
-    auto fallback(int res) -> bool { return res == 0; }
+    FMT_INLINE auto fallback(int res) -> bool { return res == 0; }
 
 #if !FMT_MSC_VERSION
-    auto fallback(detail::null<>) -> bool {
+    FMT_INLINE auto fallback(detail::null<>) -> bool {
       std::tm* tm = std::gmtime(&time_);
       if (tm) tm_ = *tm;
       return tm != nullptr;
@@ -891,7 +891,7 @@ template <typename Derived> struct null_chrono_spec_handler {
 };
 
 struct tm_format_checker : null_chrono_spec_handler<tm_format_checker> {
-  FMT_NORETURN void unsupported() { FMT_THROW(format_error("no format")); }
+  FMT_NORETURN FMT_INLINE void unsupported() { FMT_THROW(format_error("no format")); }
 
   template <typename Char>
   FMT_CONSTEXPR void on_text(const Char*, const Char*) {}
@@ -1545,7 +1545,7 @@ class tm_writer {
 struct chrono_format_checker : null_chrono_spec_handler<chrono_format_checker> {
   bool has_precision_integral = false;
 
-  FMT_NORETURN void unsupported() { FMT_THROW(format_error("no date")); }
+  FMT_NORETURN FMT_INLINE void unsupported() { FMT_THROW(format_error("no date")); }
 
   template <typename Char>
   FMT_CONSTEXPR void on_text(const Char*, const Char*) {}
@@ -1667,14 +1667,14 @@ class get_locale {
   bool has_locale_ = false;
 
  public:
-  get_locale(bool localized, locale_ref loc) : has_locale_(localized) {
+  FMT_INLINE get_locale(bool localized, locale_ref loc) : has_locale_(localized) {
     if (localized)
       ::new (&locale_) std::locale(loc.template get<std::locale>());
   }
-  ~get_locale() {
+  FMT_INLINE ~get_locale() {
     if (has_locale_) locale_.~locale();
   }
-  operator const std::locale&() const {
+  FMT_INLINE operator const std::locale&() const {
     return has_locale_ ? locale_ : get_classic_locale();
   }
 };
