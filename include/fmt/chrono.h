@@ -1244,7 +1244,7 @@ class tm_writer {
     write_year_extended(year, pad);
   }
 
-  void write_utc_offset(long offset, numeric_system ns) {
+  void write_utc_offset(long long offset, numeric_system ns) {
     if (offset < 0) {
       *out_++ = '-';
       offset = -offset;
@@ -1281,7 +1281,7 @@ class tm_writer {
     std::time_t gt = std::mktime(&gtm);
     std::tm ltm = gmtime(gt);
     std::time_t lt = std::mktime(&ltm);
-    long offset = gt - lt;
+    long long offset = gt - lt;
     write_utc_offset(offset, ns);
 #endif
   }
