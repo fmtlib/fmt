@@ -42,6 +42,7 @@
 
 #ifndef FMT_MODULE
 #  include <cmath>             // std::signbit
+#  include <cstddef>           // std::byte
 #  include <cstdint>           // uint32_t
 #  include <cstring>           // std::memcpy
 #  include <initializer_list>  // std::initializer_list
@@ -3918,6 +3919,18 @@ constexpr auto format_as(Enum e) noexcept -> underlying_t<Enum> {
   return static_cast<underlying_t<Enum>>(e);
 }
 }  // namespace enums
+
+#ifdef __cpp_lib_byte
+template <> struct formatter<std::byte> : formatter<unsigned> {
+  static auto format_as(std::byte b) -> unsigned char {
+    return static_cast<unsigned char>(b);
+  }
+  template <typename Context>
+  auto format(std::byte b, Context& ctx) const -> decltype(ctx.out()) {
+    return formatter<unsigned>::format(format_as(b), ctx);
+  }
+};
+#endif
 
 class bytes {
  private:
