@@ -2598,7 +2598,7 @@ class context : private detail::locale_ref {
   void operator=(const context&) = delete;
 
   FMT_CONSTEXPR auto arg(int id) const -> format_arg { return args_.get(id); }
-  FMT_CONSTEXPR auto arg(string_view name) -> format_arg { return args_.get(name); }
+  FMT_INLINE auto arg(string_view name) -> format_arg { return args_.get(name); }
   FMT_CONSTEXPR auto arg_id(string_view name) -> int {
     return args_.get_id(name);
   }
