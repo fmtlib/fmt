@@ -1281,7 +1281,7 @@ class tm_writer {
     std::time_t gt = std::mktime(&gtm);
     std::tm ltm = gmtime(gt);
     std::time_t lt = std::mktime(&ltm);
-    long offset = gt - lt;
+    long offset = static_cast<long>(gt - lt);
     write_utc_offset(offset, ns);
 #endif
   }
