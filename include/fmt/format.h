@@ -4134,7 +4134,7 @@ class format_int {
   }
 
   /// Returns the content of the output buffer as an `std::string`.
-  FMT_CONSTEXPR20 auto str() const -> std::string { return {str_, size()}; }
+  FMT_INLINE auto str() const -> std::string { return {str_, size()}; }
 };
 
 #define FMT_STRING_IMPL(s, base)                                           \
