@@ -117,6 +117,7 @@ namespace std {
 template <> struct iterator_traits<fmt::appender> {
   using iterator_category = output_iterator_tag;
   using value_type = char;
+  using reference = char&;
   using difference_type = ptrdiff_t;
 };
 }  // namespace std
@@ -778,7 +779,7 @@ using is_integer =
 #if FMT_USE_FLOAT128
 using float128 = __float128;
 #else
-using float128 = void;
+struct float128 {};
 #endif
 
 template <typename T> using is_float128 = std::is_same<T, float128>;
@@ -994,12 +995,6 @@ struct is_contiguous<basic_memory_buffer<T, SIZE, Allocator>> : std::true_type {
 
 FMT_END_EXPORT
 namespace detail {
-
-template <typename Context, typename T>
-FMT_CONSTEXPR auto make_arg(T& val) -> basic_format_arg<Context> {
-  return {arg_mapper<typename Context::char_type>::map(val)};
-}
-
 FMT_API auto write_console(int fd, string_view text) -> bool;
 FMT_API void print(FILE*, string_view);
 }  // namespace detail
@@ -1091,7 +1086,7 @@ class loc_value {
 
  public:
   template <typename T, FMT_ENABLE_IF(!detail::is_float128<T>::value)>
-  loc_value(T value) : value_(detail::make_arg<context>(value)) {}
+  loc_value(T value) : value_(value) {}
 
   template <typename T, FMT_ENABLE_IF(detail::is_float128<T>::value)>
   loc_value(T) {}
@@ -3607,18 +3602,6 @@ auto write(OutputIt out, const T* value, const format_specs& specs = {},
   return write_ptr<Char>(out, bit_cast<uintptr_t>(value), &specs);
 }
 
-// A write overload that handles implicit conversions.
-template <typename Char, typename OutputIt, typename T,
-          typename Context = basic_format_context<OutputIt, Char>>
-FMT_CONSTEXPR auto write(OutputIt out, const T& value) -> enable_if_t<
-    std::is_class<T>::value && !has_to_string_view<T>::value &&
-        !is_floating_point<T>::value && !std::is_same<T, Char>::value &&
-        !std::is_same<
-            T, remove_cvref_t<decltype(arg_mapper<Char>::map(value))>>::value,
-    OutputIt> {
-  return write<Char>(out, arg_mapper<Char>::map(value));
-}
-
 template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(mapped_type_constant<T, Char>::value ==
                             type::custom_type &&
@@ -3831,10 +3814,6 @@ using fmt::report_error;
 FMT_API void report_error(format_func func, int error_code,
                           const char* message) noexcept;
 
-template <typename T>
-struct has_format_as
-    : bool_constant<!std::is_same<format_as_t<T>, void>::value> {};
-
 FMT_BEGIN_EXPORT
 
 #ifndef FMT_HEADER_ONLY
@@ -3864,13 +3843,13 @@ FMT_CONSTEXPR auto native_formatter<T, Char, TYPE>::format(
 }  // namespace detail
 
 template <typename T, typename Char>
-struct formatter<T, Char, enable_if_t<detail::has_format_as<T>::value>>
-    : formatter<detail::format_as_t<T>, Char> {
+struct formatter<T, Char, void_t<detail::format_as_result<T>>>
+    : formatter<detail::format_as_result<T>, Char> {
   template <typename FormatContext>
   FMT_CONSTEXPR auto format(const T& value, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     auto&& val = format_as(value);  // Make an lvalue reference for format.
-    return formatter<detail::format_as_t<T>, Char>::format(val, ctx);
+    return formatter<detail::format_as_result<T>, Char>::format(val, ctx);
   }
 };
 
@@ -4308,18 +4287,17 @@ FMT_NODISCARD auto to_string(T value) -> std::string {
   return {buffer, detail::write<char>(begin, value)};
 }
 
+template <typename T, FMT_ENABLE_IF(detail::use_format_as<T>::value)>
+FMT_NODISCARD auto to_string(const T& value) -> std::string {
+  return to_string(format_as(value));
+}
+
 template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value &&
-                                    !detail::has_format_as<T>::value)>
+                                    !detail::use_format_as<T>::value)>
 FMT_NODISCARD auto to_string(const T& value) -> std::string {
   auto buffer = memory_buffer();
   detail::write<char>(appender(buffer), value);
   return {buffer.data(), buffer.size()};
-}
-
-template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value &&
-                                    detail::has_format_as<T>::value)>
-FMT_NODISCARD auto to_string(const T& value) -> std::string {
-  return to_string(format_as(value));
 }
 
 FMT_END_EXPORT

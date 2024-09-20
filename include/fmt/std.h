@@ -17,6 +17,7 @@
 #  include <complex>
 #  include <cstdlib>
 #  include <exception>
+#  include <functional>
 #  include <memory>
 #  include <thread>
 #  include <type_traits>
@@ -688,6 +689,18 @@ template <typename T, typename Char> struct formatter<std::complex<T>, Char> {
     return detail::write<Char>(ctx.out(),
                                basic_string_view<Char>(buf.data(), buf.size()),
                                outer_specs);
+  }
+};
+
+FMT_EXPORT
+template <typename T, typename Char>
+struct formatter<std::reference_wrapper<T>, Char,
+                 enable_if_t<is_formattable<remove_cvref_t<T>, Char>::value>>
+    : formatter<remove_cvref_t<T>, Char> {
+  template <typename FormatContext>
+  auto format(std::reference_wrapper<T> ref, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    return formatter<remove_cvref_t<T>, Char>::format(ref.get(), ctx);
   }
 };
 
