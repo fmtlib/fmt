@@ -324,7 +324,7 @@ auto getpagesize() -> long;
 namespace detail {
 
 struct buffer_size {
-  buffer_size() = default;
+  FMT_CONSTEXPR buffer_size() = default;
   size_t value = 0;
   FMT_CONSTEXPR auto operator=(size_t val) const -> buffer_size {
     auto bs = buffer_size();
