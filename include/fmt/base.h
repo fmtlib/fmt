@@ -1459,16 +1459,10 @@ FMT_CONSTEXPR auto parse_format_specs(const Char* begin, const Char* end,
       }
       ++begin;
       break;
-    case '1':
-    case '2':
-    case '3':
-    case '4':
-    case '5':
-    case '6':
-    case '7':
-    case '8':
-    case '9':
-    case '{':
+    // clang-format off
+    case '1': case '2': case '3': case '4': case '5':
+    case '6': case '7': case '8': case '9': case '{':
+    // clang-format on
       enter_state(state::width);
       begin = parse_width(begin, end, specs, specs.width_ref, ctx);
       break;
