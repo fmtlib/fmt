@@ -67,6 +67,10 @@
 #    include <string_view>
 #    define FMT_USE_STRING_VIEW
 #  endif
+
+#  if FMT_MSC_VERSION
+#    include <intrin.h>  // _BitScanReverse[64], _BitScanForward[64], _umul128
+#  endif
 #endif  // FMT_MODULE
 
 #if defined(FMT_USE_NONTYPE_TEMPLATE_ARGS)
@@ -119,7 +123,7 @@ template <> struct iterator_traits<fmt::appender> {
   using iterator_category = output_iterator_tag;
   using value_type = char;
   using reference = char&;
-  using difference_type = ptrdiff_t;
+  using difference_type = fmt::appender::difference_type;
 };
 }  // namespace std
 
@@ -168,7 +172,7 @@ FMT_END_NAMESPACE
 #  define FMT_REDUCE_INT_INSTANTIATIONS 0
 #endif
 
-// __builtin_clz is broken in clang with Microsoft CodeGen:
+// __builtin_clz is broken in clang with Microsoft codegen:
 // https://github.com/fmtlib/fmt/issues/519.
 #if !FMT_MSC_VERSION
 #  if FMT_HAS_BUILTIN(__builtin_clz) || FMT_GCC_VERSION || FMT_ICC_VERSION
@@ -190,10 +194,6 @@ FMT_END_NAMESPACE
       FMT_ICC_VERSION || defined(__NVCOMPILER)
 #    define FMT_BUILTIN_CTZLL(n) __builtin_ctzll(n)
 #  endif
-#endif
-
-#if FMT_MSC_VERSION && !defined(FMT_MODULE)
-#  include <intrin.h>  // _BitScanReverse[64], _BitScanForward[64], _umul128
 #endif
 
 // Some compilers masquerade as both MSVC and GCC-likes or otherwise support
@@ -2287,8 +2287,7 @@ FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
       });
 }
 template <typename Char, typename OutputIt>
-FMT_CONSTEXPR auto write(OutputIt out,
-                         basic_string_view<type_identity_t<Char>> s,
+FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
                          const format_specs& specs, locale_ref) -> OutputIt {
   return write<Char>(out, s, specs);
 }
@@ -3888,6 +3887,11 @@ template <int N, typename Char>
 struct formatter<detail::ubitint<N>, Char>
     : formatter<unsigned long long, Char> {};
 
+template <typename Char>
+struct formatter<detail::float128, Char>
+    : detail::native_formatter<detail::float128, Char,
+                               detail::type::float_type> {};
+
 /**
  * Converts `p` to `const void*` for pointer formatting.
  *
@@ -3932,13 +3936,10 @@ template <> struct formatter<std::byte> : formatter<unsigned> {
 };
 #endif
 
-class bytes {
- private:
-  string_view data_;
-  friend struct formatter<bytes>;
+struct bytes {
+  string_view data;
 
- public:
-  explicit bytes(string_view data) : data_(data) {}
+  explicit bytes(string_view s) : data(s) {}
 };
 
 template <> struct formatter<bytes> {
@@ -3958,7 +3959,7 @@ template <> struct formatter<bytes> {
                                 specs.width_ref, ctx);
     detail::handle_dynamic_spec(specs.dynamic_precision(), specs.precision,
                                 specs.precision_ref, ctx);
-    return detail::write_bytes<char>(ctx.out(), b.data_, specs);
+    return detail::write_bytes<char>(ctx.out(), b.data, specs);
   }
 };
 
@@ -4065,11 +4066,6 @@ template <typename T, typename Char = char> struct nested_formatter {
     return nested_view<T, Char>{&formatter_, &value};
   }
 };
-
-template <typename Char>
-struct formatter<detail::float128, Char>
-    : detail::native_formatter<detail::float128, Char,
-                               detail::type::float_type> {};
 
 inline namespace literals {
 #if FMT_USE_NONTYPE_TEMPLATE_ARGS
