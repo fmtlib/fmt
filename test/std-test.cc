@@ -265,9 +265,13 @@ TEST(std_test, variant) {
 }
 
 TEST(std_test, error_code) {
+  auto& generic = std::generic_category();
   EXPECT_EQ("generic:42",
-            fmt::format(FMT_STRING("{0}"),
-                        std::error_code(42, std::generic_category())));
+            fmt::format(FMT_STRING("{0}"), std::error_code(42, generic)));
+  EXPECT_EQ("  generic:42",
+            fmt::format(FMT_STRING("{:>12}"), std::error_code(42, generic)));
+  EXPECT_EQ("generic:42  ",
+            fmt::format(FMT_STRING("{:12}"), std::error_code(42, generic)));
   EXPECT_EQ("system:42",
             fmt::format(FMT_STRING("{0}"),
                         std::error_code(42, fmt::system_category())));

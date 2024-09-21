@@ -413,19 +413,37 @@ FMT_END_NAMESPACE
 
 FMT_BEGIN_NAMESPACE
 FMT_EXPORT
-template <typename Char> struct formatter<std::error_code, Char> {
-  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
-    return ctx.begin();
+template <> struct formatter<std::error_code> {
+ private:
+  format_specs specs_;
+  detail::arg_ref<char> width_ref_;
+
+ public:
+  FMT_CONSTEXPR auto parse(parse_context<>& ctx) -> const char* {
+    auto it = ctx.begin(), end = ctx.end();
+    if (it == end) return it;
+
+    it = detail::parse_align(it, end, specs_);
+    if (it == end) return it;
+
+    char c = *it;
+    if ((c >= '0' && c <= '9') || c == '{')
+      it = detail::parse_width(it, end, specs_, width_ref_, ctx);
+    return it;
   }
 
   template <typename FormatContext>
-  FMT_CONSTEXPR auto format(const std::error_code& ec, FormatContext& ctx) const
+  FMT_CONSTEXPR20 auto format(const std::error_code& ec, FormatContext& ctx) const
       -> decltype(ctx.out()) {
-    auto out = ctx.out();
-    out = detail::write_bytes<Char>(out, ec.category().name(), format_specs());
-    out = detail::write<Char>(out, Char(':'));
-    out = detail::write<Char>(out, ec.value());
-    return out;
+    auto specs = specs_;
+    detail::handle_dynamic_spec(specs.dynamic_width(), specs.width, width_ref_,
+                                ctx);
+    memory_buffer buf;
+    buf.append(string_view(ec.category().name()));
+    buf.push_back(':');
+    detail::write<char>(appender(buf), ec.value());
+    return detail::write<char>(ctx.out(), string_view(buf.data(), buf.size()),
+                               specs);
   }
 };
 
