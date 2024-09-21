@@ -277,11 +277,6 @@ template <typename Char, typename Traits, typename Allocator>
 struct is_contiguous<std::basic_string<Char, Traits, Allocator>>
     : std::true_type {};
 
-template <typename T> struct type_identity {
-  using type = T;
-};
-template <typename T> using type_identity_t = typename type_identity<T>::type;
-
 namespace detail {
 
 FMT_CONSTEXPR inline void abort_fuzzing_if(bool condition) {
