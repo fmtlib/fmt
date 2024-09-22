@@ -16,6 +16,7 @@ template FMT_API auto dragonbox::to_decimal(double x) noexcept
     -> dragonbox::decimal_fp<double>;
 
 #if FMT_USE_LOCALE
+// DEPRECATED! locale_ref in the detail namespace
 template FMT_API locale_ref::locale_ref(const std::locale& loc);
 template FMT_API auto locale_ref::get<std::locale>() const -> std::locale;
 #endif
