@@ -160,7 +160,7 @@ void detail::format_windows_error(detail::buffer<char>& out, int error_code,
 }
 
 void report_windows_error(int error_code, const char* message) noexcept {
-  report_error(detail::format_windows_error, error_code, message);
+  do_report_error(detail::format_windows_error, error_code, message);
 }
 #endif  // _WIN32
 

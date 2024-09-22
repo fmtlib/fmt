@@ -1297,6 +1297,17 @@ template <> inline auto decimal_point(locale_ref loc) -> wchar_t {
   return decimal_point_impl<wchar_t>(loc);
 }
 
+#ifndef FMT_HEADER_ONLY
+FMT_BEGIN_EXPORT
+extern template FMT_API auto thousands_sep_impl<char>(locale_ref)
+    -> thousands_sep_result<char>;
+extern template FMT_API auto thousands_sep_impl<wchar_t>(locale_ref)
+    -> thousands_sep_result<wchar_t>;
+extern template FMT_API auto decimal_point_impl(locale_ref) -> char;
+extern template FMT_API auto decimal_point_impl(locale_ref) -> wchar_t;
+FMT_END_EXPORT
+#endif  // FMT_HEADER_ONLY
+
 // Compares two characters for equality.
 template <typename Char> auto equal2(const Char* lhs, const char* rhs) -> bool {
   return lhs[0] == Char(rhs[0]) && lhs[1] == Char(rhs[1]);
@@ -3779,6 +3790,27 @@ template <typename Char> struct format_handler {
   FMT_NORETURN void on_error(const char* message) { report_error(message); }
 };
 
+using format_func = void (*)(detail::buffer<char>&, int, const char*);
+FMT_API void do_report_error(format_func func, int error_code,
+                             const char* message) noexcept;
+
+FMT_API void format_error_code(buffer<char>& out, int error_code,
+                               string_view message) noexcept;
+
+template <typename T, typename Char, type TYPE>
+template <typename FormatContext>
+FMT_CONSTEXPR auto native_formatter<T, Char, TYPE>::format(
+    const T& val, FormatContext& ctx) const -> decltype(ctx.out()) {
+  if (!specs_.dynamic())
+    return write<Char>(ctx.out(), val, specs_, ctx.locale());
+  auto specs = format_specs(specs_);
+  handle_dynamic_spec(specs.dynamic_width(), specs.width, specs_.width_ref,
+                      ctx);
+  handle_dynamic_spec(specs.dynamic_precision(), specs.precision,
+                      specs_.precision_ref, ctx);
+  return write<Char>(ctx.out(), val, specs, ctx.locale());
+}
+
 // DEPRECATED!
 template <typename Char = char> struct vformat_args {
   using type = basic_format_args<buffered_context<Char>>;
@@ -3794,56 +3826,9 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
   parse_format_string(
       fmt, format_handler<Char>{parse_context<Char>(fmt), {out, args, loc}});
 }
-
-using format_func = void (*)(detail::buffer<char>&, int, const char*);
-
-FMT_API void format_error_code(buffer<char>& out, int error_code,
-                               string_view message) noexcept;
-
-using fmt::report_error;
-FMT_API void report_error(format_func func, int error_code,
-                          const char* message) noexcept;
-
-FMT_BEGIN_EXPORT
-
-#ifndef FMT_HEADER_ONLY
-extern template FMT_API auto thousands_sep_impl<char>(locale_ref)
-    -> thousands_sep_result<char>;
-extern template FMT_API auto thousands_sep_impl<wchar_t>(locale_ref)
-    -> thousands_sep_result<wchar_t>;
-extern template FMT_API auto decimal_point_impl(locale_ref) -> char;
-extern template FMT_API auto decimal_point_impl(locale_ref) -> wchar_t;
-#endif  // FMT_HEADER_ONLY
-
-FMT_END_EXPORT
-
-template <typename T, typename Char, type TYPE>
-template <typename FormatContext>
-FMT_CONSTEXPR auto native_formatter<T, Char, TYPE>::format(
-    const T& val, FormatContext& ctx) const -> decltype(ctx.out()) {
-  if (!specs_.dynamic())
-    return write<Char>(ctx.out(), val, specs_, ctx.locale());
-  auto specs = format_specs(specs_);
-  handle_dynamic_spec(specs.dynamic_width(), specs.width, specs_.width_ref,
-                      ctx);
-  handle_dynamic_spec(specs.dynamic_precision(), specs.precision,
-                      specs_.precision_ref, ctx);
-  return write<Char>(ctx.out(), val, specs, ctx.locale());
-}
 }  // namespace detail
 
 FMT_BEGIN_EXPORT
-
-template <typename T, typename Char>
-struct formatter<T, Char, void_t<detail::format_as_result<T>>>
-    : formatter<detail::format_as_result<T>, Char> {
-  template <typename FormatContext>
-  FMT_CONSTEXPR auto format(const T& value, FormatContext& ctx) const
-      -> decltype(ctx.out()) {
-    auto&& val = format_as(value);  // Make an lvalue reference for format.
-    return formatter<detail::format_as_result<T>, Char>::format(val, ctx);
-  }
-};
 
 #define FMT_FORMAT_AS(Type, Base)                                   \
   template <typename Char>                                          \
@@ -3883,6 +3868,17 @@ template <typename Char>
 struct formatter<detail::float128, Char>
     : detail::native_formatter<detail::float128, Char,
                                detail::type::float_type> {};
+
+template <typename T, typename Char>
+struct formatter<T, Char, void_t<detail::format_as_result<T>>>
+    : formatter<detail::format_as_result<T>, Char> {
+  template <typename FormatContext>
+  FMT_CONSTEXPR auto format(const T& value, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    auto&& val = format_as(value);  // Make an lvalue reference for format.
+    return formatter<detail::format_as_result<T>, Char>::format(val, ctx);
+  }
+};
 
 /**
  * Converts `p` to `const void*` for pointer formatting.
