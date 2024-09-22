@@ -3832,6 +3832,8 @@ FMT_CONSTEXPR auto native_formatter<T, Char, TYPE>::format(
 }
 }  // namespace detail
 
+FMT_BEGIN_EXPORT
+
 template <typename T, typename Char>
 struct formatter<T, Char, void_t<detail::format_as_result<T>>>
     : formatter<detail::format_as_result<T>, Char> {
@@ -4163,7 +4165,6 @@ class format_int {
  */
 #define FMT_STRING(s) FMT_STRING_IMPL(s, fmt::detail::compile_string)
 
-FMT_BEGIN_EXPORT
 FMT_API auto vsystem_error(int error_code, string_view fmt, format_args args)
     -> std::system_error;
 
