@@ -2220,9 +2220,12 @@ struct locale_ref {
 
  public:
   constexpr locale_ref() : locale_(nullptr) {}
-  template <typename Locale> explicit locale_ref(const Locale& loc);
+
+  template <typename Locale, FMT_ENABLE_IF(sizeof(Locale::collate) != 0)>
+  locale_ref(const Locale& loc);
+
   explicit operator bool() const noexcept { return locale_ != nullptr; }
-#endif
+#endif  // FMT_USE_LOCALE
 
   template <typename Locale> auto get() const -> Locale;
 };

@@ -410,11 +410,11 @@ locale:
 that take `std::locale` as a parameter. The locale type is a template
 parameter to avoid the expensive `<locale>` include.
 
-::: format(const Locale&, format_string<T...>, T&&...)
+::: format(detail::locale_ref, format_string<T...>, T&&...)
 
-::: format_to(OutputIt, const Locale&, format_string<T...>, T&&...)
+::: format_to(OutputIt, detail::locale_ref, format_string<T...>, T&&...)
 
-::: formatted_size(const Locale&, format_string<T...>, T&&...)
+::: formatted_size(detail::locale_ref, format_string<T...>, T&&...)
 
 <a id="legacy-checks"></a>
 ### Legacy Compile-Time Checks

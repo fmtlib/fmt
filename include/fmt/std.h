@@ -433,8 +433,8 @@ template <> struct formatter<std::error_code> {
   }
 
   template <typename FormatContext>
-  FMT_CONSTEXPR20 auto format(const std::error_code& ec, FormatContext& ctx) const
-      -> decltype(ctx.out()) {
+  FMT_CONSTEXPR20 auto format(const std::error_code& ec,
+                              FormatContext& ctx) const -> decltype(ctx.out()) {
     auto specs = specs_;
     detail::handle_dynamic_spec(specs.dynamic_width(), specs.width, width_ref_,
                                 ctx);
