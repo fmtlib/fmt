@@ -26,6 +26,10 @@
 #  include <locale>
 #endif
 
+#ifndef FMT_FUNC
+#  define FMT_FUNC
+#endif
+
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
