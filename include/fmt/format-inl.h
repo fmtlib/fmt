@@ -26,6 +26,10 @@
 #  include <locale>
 #endif
 
+#ifndef FMT_FUNC
+#  define FMT_FUNC
+#endif
+
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
@@ -59,8 +63,8 @@ FMT_FUNC void format_error_code(detail::buffer<char>& out, int error_code,
   FMT_ASSERT(out.size() <= inline_buffer_size, "");
 }
 
-FMT_FUNC void report_error(format_func func, int error_code,
-                           const char* message) noexcept {
+FMT_FUNC void do_report_error(format_func func, int error_code,
+                              const char* message) noexcept {
   memory_buffer full_message;
   func(full_message, error_code, message);
   // Don't use fwrite_all because the latter may throw.
@@ -80,7 +84,7 @@ using std::locale;
 using std::numpunct;
 using std::use_facet;
 
-template <typename Locale>
+template <typename Locale, enable_if_t<(sizeof(Locale::collate) != 0), int>>
 locale_ref::locale_ref(const Locale& loc) : locale_(&loc) {
   static_assert(std::is_same<Locale, locale>::value, "");
 }
@@ -1430,7 +1434,7 @@ FMT_FUNC void format_system_error(detail::buffer<char>& out, int error_code,
 
 FMT_FUNC void report_system_error(int error_code,
                                   const char* message) noexcept {
-  report_error(format_system_error, error_code, message);
+  do_report_error(format_system_error, error_code, message);
 }
 
 FMT_FUNC auto vformat(string_view fmt, format_args args) -> std::string {
