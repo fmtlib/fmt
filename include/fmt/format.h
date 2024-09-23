@@ -376,13 +376,14 @@ class uint128_fallback {
       -> uint128_fallback {
     return {~n.hi_, ~n.lo_};
   }
-  FMT_CONSTEXPR friend auto operator+(const uint128_fallback& lhs,
-                                      const uint128_fallback& rhs) -> uint128_fallback {
+  friend constexpr auto operator+(const uint128_fallback& lhs,
+                                  const uint128_fallback& rhs)
+      -> uint128_fallback {
     auto result = uint128_fallback(lhs);
     result += rhs;
     return result;
   }
-  FMT_CONSTEXPR friend auto operator*(const uint128_fallback& lhs, uint32_t rhs)
+  friend constexpr auto operator*(const uint128_fallback& lhs, uint32_t rhs)
       -> uint128_fallback {
     FMT_ASSERT(lhs.hi_ == 0, "");
     uint64_t hi = (lhs.lo_ >> 32) * rhs;
@@ -390,7 +391,7 @@ class uint128_fallback {
     uint64_t new_lo = (hi << 32) + lo;
     return {(hi >> 32) + (new_lo < lo ? 1 : 0), new_lo};
   }
-  FMT_CONSTEXPR friend auto operator-(const uint128_fallback& lhs, uint64_t rhs)
+  friend constexpr auto operator-(const uint128_fallback& lhs, uint64_t rhs)
       -> uint128_fallback {
     return {lhs.hi_ - (lhs.lo_ < rhs ? 1 : 0), lhs.lo_ - rhs};
   }
@@ -964,8 +965,8 @@ class writer {
   FILE* file_;
 
  public:
-  FMT_INLINE writer(FILE* f) : buf_(nullptr), file_(f) {}
-  FMT_INLINE writer(detail::buffer<char>& buf) : buf_(&buf) {}
+  inline writer(FILE* f) : buf_(nullptr), file_(f) {}
+  inline writer(detail::buffer<char>& buf) : buf_(&buf) {}
 
   /// Formats `args` according to specifications in `fmt` and writes the
   /// output to the file.
@@ -983,10 +984,10 @@ class string_buffer {
   detail::container_buffer<std::string> buf_;
 
  public:
-  FMT_INLINE string_buffer() : buf_(str_) {}
+  inline string_buffer() : buf_(str_) {}
 
-  FMT_INLINE operator writer() { return buf_; }
-  FMT_INLINE std::string& str() { return str_; }
+  inline operator writer() { return buf_; }
+  inline std::string& str() { return str_; }
 };
 
 template <typename T, size_t SIZE, typename Allocator>
@@ -1416,10 +1417,10 @@ class utf8_to_utf16 {
 
  public:
   FMT_API explicit utf8_to_utf16(string_view s);
-  FMT_INLINE operator basic_string_view<wchar_t>() const { return {&buffer_[0], size()}; }
-  FMT_INLINE auto size() const -> size_t { return buffer_.size() - 1; }
-  FMT_INLINE auto c_str() const -> const wchar_t* { return &buffer_[0]; }
-  FMT_INLINE auto str() const -> std::wstring { return {&buffer_[0], size()}; }
+  inline operator basic_string_view<wchar_t>() const { return {&buffer_[0], size()}; }
+  inline auto size() const -> size_t { return buffer_.size() - 1; }
+  inline auto c_str() const -> const wchar_t* { return &buffer_[0]; }
+  inline auto str() const -> std::wstring { return {&buffer_[0], size()}; }
 };
 
 enum class to_utf8_error_policy { abort, replace };
@@ -3925,7 +3926,7 @@ class bytes {
   friend struct formatter<bytes>;
 
  public:
-  FMT_INLINE explicit bytes(string_view data) : data_(data) {}
+  inline explicit bytes(string_view data) : data_(data) {}
 };
 
 template <> struct formatter<bytes> {
@@ -4134,7 +4135,7 @@ class format_int {
   }
 
   /// Returns the content of the output buffer as an `std::string`.
-  FMT_INLINE auto str() const -> std::string { return {str_, size()}; }
+  inline auto str() const -> std::string { return {str_, size()}; }
 };
 
 #define FMT_STRING_IMPL(s, base)                                           \
