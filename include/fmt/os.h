@@ -326,7 +326,7 @@ namespace detail {
 struct buffer_size {
   constexpr buffer_size() = default;
   size_t value = 0;
-  constexpr auto operator=(size_t val) const -> buffer_size {
+  FMT_CONSTEXPR auto operator=(size_t val) const -> buffer_size {
     auto bs = buffer_size();
     bs.value = val;
     return bs;

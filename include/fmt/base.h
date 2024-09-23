@@ -1790,7 +1790,7 @@ template <typename T> class buffer {
 struct buffer_traits {
   constexpr explicit buffer_traits(size_t) {}
   constexpr auto count() const -> size_t { return 0; }
-  FMT_CONSTEXPR auto limit(size_t size) -> size_t { return size; }
+  constexpr auto limit(size_t size) const -> size_t { return size; }
 };
 
 class fixed_buffer_traits {
