@@ -1419,7 +1419,9 @@ class utf8_to_utf16 {
 
  public:
   FMT_API explicit utf8_to_utf16(string_view s);
-  inline operator basic_string_view<wchar_t>() const { return {&buffer_[0], size()}; }
+  inline operator basic_string_view<wchar_t>() const {
+    return {&buffer_[0], size()};
+  }
   inline auto size() const -> size_t { return buffer_.size() - 1; }
   inline auto c_str() const -> const wchar_t* { return &buffer_[0]; }
   inline auto str() const -> std::wstring { return {&buffer_[0], size()}; }

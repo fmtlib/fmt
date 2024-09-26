@@ -912,7 +912,9 @@ template <typename Derived> struct null_chrono_spec_handler {
 };
 
 struct tm_format_checker : null_chrono_spec_handler<tm_format_checker> {
-  FMT_NORETURN inline void unsupported() { FMT_THROW(format_error("no format")); }
+  FMT_NORETURN inline void unsupported() {
+    FMT_THROW(format_error("no format"));
+  }
 
   template <typename Char>
   FMT_CONSTEXPR void on_text(const Char*, const Char*) {}
