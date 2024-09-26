@@ -79,7 +79,7 @@ template <bool IsSigned> struct int_checker {
     unsigned max = to_unsigned(max_value<int>());
     return value <= max;
   }
-  static auto fits_in_int(bool) -> bool { return true; }
+  inline static auto fits_in_int(bool) -> bool { return true; }
 };
 
 template <> struct int_checker<true> {
@@ -87,7 +87,7 @@ template <> struct int_checker<true> {
     return value >= (std::numeric_limits<int>::min)() &&
            value <= max_value<int>();
   }
-  static auto fits_in_int(int) -> bool { return true; }
+  inline static auto fits_in_int(int) -> bool { return true; }
 };
 
 struct printf_precision_handler {
@@ -205,7 +205,7 @@ class printf_width_handler {
   format_specs& specs_;
 
  public:
-  explicit printf_width_handler(format_specs& specs) : specs_(specs) {}
+  inline explicit printf_width_handler(format_specs& specs) : specs_(specs) {}
 
   template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
   auto operator()(T value) -> unsigned {

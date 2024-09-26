@@ -176,24 +176,24 @@ class buffered_file {
 
   friend class file;
 
-  explicit buffered_file(FILE* f) : file_(f) {}
+  inline explicit buffered_file(FILE* f) : file_(f) {}
 
  public:
   buffered_file(const buffered_file&) = delete;
   void operator=(const buffered_file&) = delete;
 
   // Constructs a buffered_file object which doesn't represent any file.
-  buffered_file() noexcept : file_(nullptr) {}
+  inline buffered_file() noexcept : file_(nullptr) {}
 
   // Destroys the object closing the file it represents if any.
   FMT_API ~buffered_file() noexcept;
 
  public:
-  buffered_file(buffered_file&& other) noexcept : file_(other.file_) {
+  inline buffered_file(buffered_file&& other) noexcept : file_(other.file_) {
     other.file_ = nullptr;
   }
 
-  auto operator=(buffered_file&& other) -> buffered_file& {
+  inline auto operator=(buffered_file&& other) -> buffered_file& {
     close();
     file_ = other.file_;
     other.file_ = nullptr;
@@ -207,7 +207,7 @@ class buffered_file {
   FMT_API void close();
 
   // Returns the pointer to a FILE object representing this file.
-  auto get() const noexcept -> FILE* { return file_; }
+  inline auto get() const noexcept -> FILE* { return file_; }
 
   FMT_API auto descriptor() const -> int;
 
@@ -248,7 +248,7 @@ class FMT_API file {
   };
 
   // Constructs a file object which doesn't represent any file.
-  file() noexcept : fd_(-1) {}
+  inline file() noexcept : fd_(-1) {}
 
   // Opens a file and constructs a file object representing this file.
   file(cstring_view path, int oflag);
@@ -257,10 +257,10 @@ class FMT_API file {
   file(const file&) = delete;
   void operator=(const file&) = delete;
 
-  file(file&& other) noexcept : fd_(other.fd_) { other.fd_ = -1; }
+  inline file(file&& other) noexcept : fd_(other.fd_) { other.fd_ = -1; }
 
   // Move assignment is not noexcept because close may throw.
-  auto operator=(file&& other) -> file& {
+  inline auto operator=(file&& other) -> file& {
     close();
     fd_ = other.fd_;
     other.fd_ = -1;
@@ -271,7 +271,7 @@ class FMT_API file {
   ~file() noexcept;
 
   // Returns the file descriptor.
-  auto descriptor() const noexcept -> int { return fd_; }
+  inline auto descriptor() const noexcept -> int { return fd_; }
 
   // Closes the file.
   void close();
@@ -324,9 +324,9 @@ auto getpagesize() -> long;
 namespace detail {
 
 struct buffer_size {
-  buffer_size() = default;
+  constexpr buffer_size() = default;
   size_t value = 0;
-  auto operator=(size_t val) const -> buffer_size {
+  FMT_CONSTEXPR auto operator=(size_t val) const -> buffer_size {
     auto bs = buffer_size();
     bs.value = val;
     return bs;
@@ -337,7 +337,7 @@ struct ostream_params {
   int oflag = file::WRONLY | file::CREATE | file::TRUNC;
   size_t buffer_size = BUFSIZ > 32768 ? BUFSIZ : 32768;
 
-  ostream_params() {}
+  constexpr ostream_params() {}
 
   template <typename... T>
   ostream_params(T... params, int new_oflag) : ostream_params(params...) {
@@ -381,7 +381,7 @@ class FMT_API ostream : private detail::buffer<char> {
     return buf;
   }
 
-  void flush() {
+  inline void flush() {
     if (size() == 0) return;
     file_.write(data(), size() * sizeof(data()[0]));
     clear();
@@ -390,7 +390,7 @@ class FMT_API ostream : private detail::buffer<char> {
   template <typename... T>
   friend auto output_file(cstring_view path, T... params) -> ostream;
 
-  void close() {
+  inline void close() {
     flush();
     file_.close();
   }
