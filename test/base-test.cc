@@ -868,3 +868,17 @@ TEST(base_test, format_to_custom_container) {
   auto c = custom_container();
   fmt::format_to(std::back_inserter(c), "");
 }
+
+struct nondeterministic_format_string {
+  mutable int i = 0;
+  FMT_CONSTEXPR operator string_view() const {
+    return string_view("{}", i++ != 0 ? 2 : 0);
+  }
+};
+
+TEST(base_test, no_repeated_format_string_conversions) {
+#if !FMT_GCC_VERSION
+  char buf[10];
+  fmt::format_to(buf, nondeterministic_format_string());
+#endif
+}
