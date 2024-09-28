@@ -2146,7 +2146,8 @@ template <typename Context> class value {
   template <typename T, FMT_ENABLE_IF(is_named_arg<T>::value)>
   value(const T& named_arg) : value(named_arg.value) {}
 
-  template <typename T, FMT_ENABLE_IF(use_formatter<T>::value)>
+  template <typename T,
+            FMT_ENABLE_IF(use_formatter<T>::value || !FMT_BUILTIN_TYPES)>
   FMT_CONSTEXPR20 FMT_INLINE value(T& x) : value(x, custom_tag()) {}
 
   FMT_ALWAYS_INLINE value(const named_arg_info<char_type>* args, size_t size)
