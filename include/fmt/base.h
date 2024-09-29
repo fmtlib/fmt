@@ -1694,7 +1694,7 @@ template <typename T> class buffer {
  protected:
   // Don't initialize ptr_ since it is not accessed to save a few cycles.
   FMT_MSC_WARNING(suppress : 26495)
-  FMT_CONSTEXPR20 buffer(grow_fun grow, size_t sz) noexcept
+  FMT_CONSTEXPR buffer(grow_fun grow, size_t sz) noexcept
       : size_(sz), capacity_(sz), grow_(grow) {}
 
   constexpr buffer(grow_fun grow, T* p = nullptr, size_t sz = 0,
