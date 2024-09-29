@@ -2680,9 +2680,6 @@ class bigint {
     return bigits_[to_unsigned(index)];
   }
 
-  static constexpr auto minimum(int a, int b) -> int { return a < b ? a : b; }
-  static constexpr auto maximum(int a, int b) -> int { return a > b ? a : b; }
-
   FMT_CONSTEXPR auto get_bigit(int i) const -> bigit {
     return i >= exp_ && i < num_bigits() ? bigits_[i - exp_] : 0;
   };
@@ -2820,12 +2817,12 @@ class bigint {
   // Returns compare(lhs1 + lhs2, rhs).
   friend FMT_CONSTEXPR auto add_compare(const bigint& lhs1, const bigint& lhs2,
                                         const bigint& rhs) -> int {
-    int max_lhs_bigits = maximum(lhs1.num_bigits(), lhs2.num_bigits());
+    int max_lhs_bigits = max_of(lhs1.num_bigits(), lhs2.num_bigits());
     int num_rhs_bigits = rhs.num_bigits();
     if (max_lhs_bigits + 1 < num_rhs_bigits) return -1;
     if (max_lhs_bigits > num_rhs_bigits) return 1;
     double_bigit borrow = 0;
-    int min_exp = minimum(minimum(lhs1.exp_, lhs2.exp_), rhs.exp_);
+    int min_exp = min_of(min_of(lhs1.exp_, lhs2.exp_), rhs.exp_);
     for (int i = num_rhs_bigits - 1; i >= min_exp; --i) {
       double_bigit sum =
           static_cast<double_bigit>(lhs1.get_bigit(i)) + lhs2.get_bigit(i);

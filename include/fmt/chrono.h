@@ -1071,7 +1071,7 @@ void write_fractional_seconds(OutputIt& out, Duration d, int precision = -1) {
     }
   } else if (precision > 0) {
     *out++ = '.';
-    leading_zeroes = (std::min)(leading_zeroes, precision);
+    leading_zeroes = min_of(leading_zeroes, precision);
     int remaining = precision - leading_zeroes;
     out = detail::fill_n(out, leading_zeroes, '0');
     if (remaining < num_digits) {
