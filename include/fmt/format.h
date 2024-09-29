@@ -729,8 +729,7 @@ FMT_CONSTEXPR inline auto compute_width(string_view s) -> size_t {
 
 template <typename Char>
 inline auto code_point_index(basic_string_view<Char> s, size_t n) -> size_t {
-  size_t size = s.size();
-  return n < size ? n : size;
+  return min_of(n, s.size());
 }
 
 // Calculates the index of the nth code point in a UTF-8 string.
@@ -858,7 +857,7 @@ class basic_memory_buffer : public detail::buffer<T> {
     if (size > new_capacity)
       new_capacity = size;
     else if (new_capacity > max_size)
-      new_capacity = size > max_size ? size : max_size;
+      new_capacity = max_of(size, max_size);
     T* old_data = buf.data();
     T* new_data = self.alloc_.allocate(new_capacity);
     // Suppress a bogus -Wstringop-overflow in gcc 13.1 (#3481).
@@ -2560,7 +2559,7 @@ FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
   } else if (exp > 0) {
     // 1234e-2 -> 12.34[0+]
     int num_zeros = specs.alt() ? specs.precision - significand_size : 0;
-    size += 1 + to_unsigned(num_zeros > 0 ? num_zeros : 0);
+    size += 1 + static_cast<unsigned>(max_of(num_zeros, 0));
     auto grouping = Grouping(loc, specs.localized());
     size += to_unsigned(grouping.count_separators(exp));
     return write_padded<Char, align::right>(out, specs, size, [&](iterator it) {
@@ -2673,26 +2672,19 @@ class bigint {
 
   friend struct formatter<bigint>;
 
-  FMT_CONSTEXPR auto operator[](int index) const -> bigit {
-    return bigits_[to_unsigned(index)];
-  }
-  FMT_CONSTEXPR auto operator[](int index) -> bigit& {
-    return bigits_[to_unsigned(index)];
-  }
-
   FMT_CONSTEXPR auto get_bigit(int i) const -> bigit {
     return i >= exp_ && i < num_bigits() ? bigits_[i - exp_] : 0;
   };
 
   FMT_CONSTEXPR void subtract_bigits(int index, bigit other, bigit& borrow) {
-    auto result = static_cast<double_bigit>((*this)[index]) - other - borrow;
-    (*this)[index] = static_cast<bigit>(result);
+    auto result = double_bigit(bigits_[index]) - other - borrow;
+    bigits_[index] = static_cast<bigit>(result);
     borrow = static_cast<bigit>(result >> (bigit_bits * 2 - 1));
   }
 
   FMT_CONSTEXPR void remove_leading_zeros() {
     int num_bigits = static_cast<int>(bigits_.size()) - 1;
-    while (num_bigits > 0 && (*this)[num_bigits] == 0) --num_bigits;
+    while (num_bigits > 0 && bigits_[num_bigits] == 0) --num_bigits;
     bigits_.resize(to_unsigned(num_bigits + 1));
   }
 
@@ -2704,13 +2696,14 @@ class bigint {
     int i = other.exp_ - exp_;
     for (size_t j = 0, n = other.bigits_.size(); j != n; ++i, ++j)
       subtract_bigits(i, other.bigits_[j], borrow);
-    while (borrow > 0) subtract_bigits(i, 0, borrow);
+    if (borrow != 0) subtract_bigits(i, 0, borrow);
+    FMT_ASSERT(borrow == 0, "");
     remove_leading_zeros();
   }
 
   FMT_CONSTEXPR void multiply(uint32_t value) {
-    const double_bigit wide_value = value;
     bigit carry = 0;
+    const double_bigit wide_value = value;
     for (size_t i = 0, n = bigits_.size(); i < n; ++i) {
       double_bigit result = bigits_[i] * wide_value + carry;
       bigits_[i] = static_cast<bigit>(result);
@@ -2807,7 +2800,7 @@ class bigint {
     int end = i - j;
     if (end < 0) end = 0;
     for (; i >= end; --i, --j) {
-      bigit lhs_bigit = lhs[i], rhs_bigit = rhs[j];
+      bigit lhs_bigit = lhs.bigits_[i], rhs_bigit = rhs.bigits_[j];
       if (lhs_bigit != rhs_bigit) return lhs_bigit > rhs_bigit ? 1 : -1;
     }
     if (i != j) return i > j ? 1 : -1;
@@ -2824,8 +2817,7 @@ class bigint {
     double_bigit borrow = 0;
     int min_exp = min_of(min_of(lhs1.exp_, lhs2.exp_), rhs.exp_);
     for (int i = num_rhs_bigits - 1; i >= min_exp; --i) {
-      double_bigit sum =
-          static_cast<double_bigit>(lhs1.get_bigit(i)) + lhs2.get_bigit(i);
+      double_bigit sum = double_bigit(lhs1.get_bigit(i)) + lhs2.get_bigit(i);
       bigit rhs_bigit = rhs.get_bigit(i);
       if (sum > rhs_bigit + borrow) return 1;
       borrow = rhs_bigit + borrow - sum;
@@ -2866,17 +2858,17 @@ class bigint {
       // cross-product terms n[i] * n[j] such that i + j == bigit_index.
       for (int i = 0, j = bigit_index; j >= 0; ++i, --j) {
         // Most terms are multiplied twice which can be optimized in the future.
-        sum += static_cast<double_bigit>(n[i]) * n[j];
+        sum += double_bigit(n[i]) * n[j];
       }
-      (*this)[bigit_index] = static_cast<bigit>(sum);
+      bigits_[bigit_index] = static_cast<bigit>(sum);
       sum >>= num_bits<bigit>();  // Compute the carry.
     }
     // Do the same for the top half.
     for (int bigit_index = num_bigits; bigit_index < num_result_bigits;
          ++bigit_index) {
       for (int j = num_bigits - 1, i = bigit_index - j; i < num_bigits;)
-        sum += static_cast<double_bigit>(n[i++]) * n[j--];
-      (*this)[bigit_index] = static_cast<bigit>(sum);
+        sum += double_bigit(n[i++]) * n[j--];
+      bigits_[bigit_index] = static_cast<bigit>(sum);
       sum >>= num_bits<bigit>();
     }
     remove_leading_zeros();
@@ -3286,7 +3278,7 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision,
         uint64_t prod;
         uint32_t digits;
         bool should_round_up;
-        int number_of_digits_to_print = precision > 9 ? 9 : precision;
+        int number_of_digits_to_print = min_of(precision, 9);
 
         // Print a 9-digits subsegment, either the first or the second.
         auto print_subsegment = [&](uint32_t subsegment, char* buffer) {
@@ -4269,8 +4261,7 @@ template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
 FMT_NODISCARD auto to_string(T value) -> std::string {
   // The buffer should be large enough to store the number including the sign
   // or "false" for bool.
-  constexpr int max_size = detail::digits10<T>() + 2;
-  char buffer[max_size > 5 ? static_cast<unsigned>(max_size) : 5];
+  char buffer[max_of(detail::digits10<T>() + 2, 5)];
   char* begin = buffer;
   return {buffer, detail::write<char>(begin, value)};
 }
