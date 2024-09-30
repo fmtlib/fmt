@@ -2790,18 +2790,16 @@ class bigint {
     return *this;
   }
 
-  friend FMT_CONSTEXPR auto compare(const bigint& lhs, const bigint& rhs)
-      -> int {
-    int num_lhs_bigits = lhs.num_bigits(), num_rhs_bigits = rhs.num_bigits();
-    if (num_lhs_bigits != num_rhs_bigits)
-      return num_lhs_bigits > num_rhs_bigits ? 1 : -1;
-    int i = static_cast<int>(lhs.bigits_.size()) - 1;
-    int j = static_cast<int>(rhs.bigits_.size()) - 1;
+  friend FMT_CONSTEXPR auto compare(const bigint& b1, const bigint& b2) -> int {
+    int num_bigits1 = b1.num_bigits(), num_bigits2 = b2.num_bigits();
+    if (num_bigits1 != num_bigits2) return num_bigits1 > num_bigits2 ? 1 : -1;
+    int i = static_cast<int>(b1.bigits_.size()) - 1;
+    int j = static_cast<int>(b2.bigits_.size()) - 1;
     int end = i - j;
     if (end < 0) end = 0;
     for (; i >= end; --i, --j) {
-      bigit lhs_bigit = lhs.bigits_[i], rhs_bigit = rhs.bigits_[j];
-      if (lhs_bigit != rhs_bigit) return lhs_bigit > rhs_bigit ? 1 : -1;
+      bigit b1_bigit = b1.bigits_[i], b2_bigit = b2.bigits_[j];
+      if (b1_bigit != b2_bigit) return b1_bigit > b2_bigit ? 1 : -1;
     }
     if (i != j) return i > j ? 1 : -1;
     return 0;
