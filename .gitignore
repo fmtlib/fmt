@@ -18,3 +18,4 @@ build/
 cmake_install.cmake
 fmt-*.cmake
 fmt.pc
+.gradle/
