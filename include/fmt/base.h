@@ -2382,11 +2382,6 @@ template <typename T> class basic_appender {
   detail::buffer<T>* container;
 
  public:
-  using iterator_category = int;
-  using value_type = T;
-  using pointer = T*;
-  using reference = T&;
-  using difference_type = decltype(pointer() - pointer());
   using container_type = detail::buffer<T>;
 
   FMT_CONSTEXPR basic_appender(detail::buffer<T>& buf) : container(&buf) {}
