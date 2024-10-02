@@ -727,7 +727,8 @@ class basic_specs {
   char fill_data_[max_fill_size] = {' '};
 
   FMT_CONSTEXPR void set_fill_size(size_t size) {
-    data_ = (data_ & ~fill_size_mask) | (size << fill_size_shift);
+    data_ &= ~fill_size_mask;
+    data_ |= static_cast<unsigned long>(size << fill_size_shift);
   }
 
  public:
