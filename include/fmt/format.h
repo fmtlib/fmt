@@ -119,11 +119,13 @@
 #endif
 
 namespace std {
-template <> struct iterator_traits<fmt::appender> {
+template <class T> struct iterator_traits<fmt::basic_appender<T>> {
   using iterator_category = output_iterator_tag;
-  using value_type = char;
-  using reference = char&;
-  using difference_type = fmt::appender::difference_type;
+  using value_type = T;
+  using difference_type =
+      decltype(static_cast<int*>(nullptr) - static_cast<int*>(nullptr));
+  using pointer = void;
+  using reference = void;
 };
 }  // namespace std
 
