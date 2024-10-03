@@ -2674,7 +2674,7 @@ class bigint {
 
   FMT_CONSTEXPR auto get_bigit(int i) const -> bigit {
     return i >= exp_ && i < num_bigits() ? bigits_[i - exp_] : 0;
-  };
+  }
 
   FMT_CONSTEXPR void subtract_bigits(int index, bigit other, bigit& borrow) {
     auto result = double_bigit(bigits_[index]) - other - borrow;
