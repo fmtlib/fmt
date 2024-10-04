@@ -2662,7 +2662,7 @@ template <typename... T> struct fstring {
   template <typename S,
             FMT_ENABLE_IF(std::is_convertible<const S&, string_view>::value)>
   FMT_CONSTEVAL FMT_ALWAYS_INLINE fstring(const S& s) : str(s) {
-    FMT_CONSTEXPR auto sv = string_view(S());
+    auto sv = string_view(str);
     if (FMT_USE_CONSTEVAL)
       detail::parse_format_string<char>(sv, checker(sv, arg_pack()));
 #ifdef FMT_ENFORCE_COMPILE_STRING
