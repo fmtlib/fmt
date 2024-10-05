@@ -375,18 +375,17 @@ allocator:
     using custom_string =
       std::basic_string<char, std::char_traits<char>, custom_allocator>;
 
-    custom_string vformat(custom_allocator alloc, fmt::string_view format_str,
-                          fmt::format_args args) {
+    auto vformat(custom_allocator alloc, fmt::string_view fmt,
+                 fmt::format_args args) -> custom_string {
       auto buf = custom_memory_buffer(alloc);
-      fmt::vformat_to(std::back_inserter(buf), format_str, args);
+      fmt::vformat_to(std::back_inserter(buf), fmt, args);
       return custom_string(buf.data(), buf.size(), alloc);
     }
 
     template <typename ...Args>
-    inline custom_string format(custom_allocator alloc,
-                                fmt::string_view format_str,
-                                const Args& ... args) {
-      return vformat(alloc, format_str, fmt::make_format_args(args...));
+    auto format(custom_allocator alloc, fmt::string_view fmt,
+                const Args& ... args) -> custom_string {
+      return vformat(alloc, fmt, fmt::make_format_args(args...));
     }
 
 The allocator will be used for the output container only. Formatting
