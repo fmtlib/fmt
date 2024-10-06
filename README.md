@@ -291,7 +291,7 @@ converts to `std::print`.)
 - [ccache](https://ccache.dev/): a compiler cache
 - [ClickHouse](https://github.com/ClickHouse/ClickHouse): an
   analytical database management system
-- [ContextVision](https://www.contextvision.com/), medical imaging software
+- [ContextVision](https://www.contextvision.com/): medical imaging software
 - [Contour](https://github.com/contour-terminal/contour/): a modern
   terminal emulator
 - [CUAUV](https://cuauv.org/): Cornell University\'s autonomous
