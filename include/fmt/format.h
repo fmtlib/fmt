@@ -1004,15 +1004,13 @@ class FMT_SO_VISIBILITY("default") format_error : public std::runtime_error {
 };
 
 namespace detail_exported {
-#if FMT_USE_NONTYPE_TEMPLATE_ARGS
 template <typename Char, size_t N> struct fixed_string {
-  constexpr fixed_string(const Char (&str)[N]) {
-    detail::copy<Char, const Char*, Char*>(static_cast<const Char*>(str),
-                                           str + N, data);
+  FMT_CONSTEXPR20 fixed_string(const Char (&s)[N]) {
+    detail::copy<Char, const Char*, Char*>(static_cast<const Char*>(s), s + N,
+                                           data);
   }
   Char data[N] = {};
 };
-#endif  // FMT_USE_NONTYPE_TEMPLATE_ARGS
 
 // Converts a compile-time string to basic_string_view.
 template <typename Char, size_t N>
