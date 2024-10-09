@@ -1003,7 +1003,7 @@ class FMT_SO_VISIBILITY("default") format_error : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
-namespace detail_exported {
+namespace detail {
 template <typename Char, size_t N> struct fixed_string {
   FMT_CONSTEXPR20 fixed_string(const Char (&s)[N]) {
     detail::copy<Char, const Char*, Char*>(static_cast<const Char*>(s), s + N,
@@ -1025,7 +1025,7 @@ constexpr auto compile_string_to_view(basic_string_view<Char> s)
     -> basic_string_view<Char> {
   return s;
 }
-}  // namespace detail_exported
+}  // namespace detail
 
 // A generic formatting context with custom output iterator and character
 // (code unit) support. Char is the format string code unit type which can be
@@ -3696,7 +3696,7 @@ FMT_CONSTEXPR void handle_dynamic_spec(
 
 #if FMT_USE_NONTYPE_TEMPLATE_ARGS
 template <typename T, typename Char, size_t N,
-          fmt::detail_exported::fixed_string<Char, N> Str>
+          fmt::detail::fixed_string<Char, N> Str>
 struct static_named_arg : view {
   static constexpr auto name = Str.data;
 
@@ -3705,16 +3705,15 @@ struct static_named_arg : view {
 };
 
 template <typename T, typename Char, size_t N,
-          fmt::detail_exported::fixed_string<Char, N> Str>
+          fmt::detail::fixed_string<Char, N> Str>
 struct is_named_arg<static_named_arg<T, Char, N, Str>> : std::true_type {};
 
 template <typename T, typename Char, size_t N,
-          fmt::detail_exported::fixed_string<Char, N> Str>
+          fmt::detail::fixed_string<Char, N> Str>
 struct is_static_named_arg<static_named_arg<T, Char, N, Str>> : std::true_type {
 };
 
-template <typename Char, size_t N,
-          fmt::detail_exported::fixed_string<Char, N> Str>
+template <typename Char, size_t N, fmt::detail::fixed_string<Char, N> Str>
 struct udl_arg {
   template <typename T> auto operator=(T&& value) const {
     return static_named_arg<T, Char, N, Str>(std::forward<T>(value));
@@ -4043,7 +4042,7 @@ template <typename T, typename Char = char> struct nested_formatter {
 
 inline namespace literals {
 #if FMT_USE_NONTYPE_TEMPLATE_ARGS
-template <detail_exported::fixed_string Str> constexpr auto operator""_a() {
+template <detail::fixed_string Str> constexpr auto operator""_a() {
   using char_t = remove_cvref_t<decltype(Str.data[0])>;
   return detail::udl_arg<char_t, sizeof(Str.data) / sizeof(char_t), Str>();
 }
@@ -4128,7 +4127,7 @@ class format_int {
       using char_type = fmt::remove_cvref_t<decltype(s[0])>;               \
       FMT_CONSTEXPR explicit operator fmt::basic_string_view<char_type>()  \
           const {                                                          \
-        return fmt::detail_exported::compile_string_to_view<char_type>(s); \
+        return fmt::detail::compile_string_to_view<char_type>(s);          \
       }                                                                    \
     };                                                                     \
     using FMT_STRING_VIEW =                                                \
