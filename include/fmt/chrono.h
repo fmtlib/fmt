@@ -444,7 +444,7 @@ struct is_same_arithmetic_type
                                          std::is_floating_point<Rep2>::value)> {
 };
 
-inline void throw_duration_error() {
+FMT_NORETURN inline void throw_duration_error() {
   FMT_THROW(format_error("cannot format duration"));
 }
 
