@@ -10,18 +10,20 @@ jobs:
     steps:
     - name: Build fuzzers
       id: build
-      uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@92182553173581f871130c71c71b17f003d47b0a # master
+      uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@9218255
       with:
         oss-fuzz-project-name: 'fmt'
         dry-run: false
         language: c++
+
     - name: Run fuzzers
-      uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@92182553173581f871130c71c71b17f003d47b0a # master
+      uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@9218255
       with:
         oss-fuzz-project-name: 'fmt'
         fuzz-seconds: 300
         dry-run: false
         language: c++
+
     - name: Upload crash
       uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
       if: failure() && steps.build.outcome == 'success'
