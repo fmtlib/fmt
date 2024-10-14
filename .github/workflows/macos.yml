@@ -9,20 +9,23 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [macos-11, macos-13]
+        os: [macos-13, macos-14]
         build_type: [Debug, Release]
         std: [11, 17, 20]
+        shared: [""]
         exclude:
-          - { os: macos-11, std: 20 }
           - { os: macos-13, std: 11 }
           - { os: macos-13, std: 17 }
         include:
-          - shared: -DBUILD_SHARED_LIBS=ON
+          - os: macos-14
+            std: 23
+            build_type: Release
+            shared: -DBUILD_SHARED_LIBS=ON
 
     runs-on: '${{ matrix.os }}'
 
     steps:
-    - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
+    - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
 
     - name: Set timezone
       run: sudo systemsetup -settimezone 'Asia/Yekaterinburg'

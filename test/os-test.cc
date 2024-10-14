@@ -18,6 +18,10 @@ using fmt::buffered_file;
 using testing::HasSubstr;
 using wstring_view = fmt::basic_string_view<wchar_t>;
 
+static std::string uniq_file_name(unsigned line_number) {
+  return "test-file" + std::to_string(line_number);
+}
+
 #ifdef _WIN32
 
 #  include <windows.h>
@@ -104,7 +108,7 @@ TEST(file_test, open_windows_file) {
 
 using fmt::file;
 
-bool isclosed(int fd) {
+auto isclosed(int fd) -> bool {
   char buffer;
   auto result = std::streamsize();
   SUPPRESS_ASSERT(result = FMT_POSIX(read(fd, &buffer, 1)));
@@ -112,12 +116,11 @@ bool isclosed(int fd) {
 }
 
 // Opens a file for reading.
-file open_file() {
-  file read_end, write_end;
-  file::pipe(read_end, write_end);
-  write_end.write(file_content, std::strlen(file_content));
-  write_end.close();
-  return read_end;
+auto open_file() -> file {
+  auto pipe = fmt::pipe();
+  pipe.write_end.write(file_content, std::strlen(file_content));
+  pipe.write_end.close();
+  return std::move(pipe.read_end);
 }
 
 // Attempts to write a string to a file.
@@ -233,69 +236,75 @@ TEST(buffered_file_test, descriptor) {
 }
 
 TEST(ostream_test, move) {
-  fmt::ostream out = fmt::output_file("test-file");
+  auto test_file = uniq_file_name(__LINE__);
+  fmt::ostream out = fmt::output_file(test_file);
   fmt::ostream moved(std::move(out));
   moved.print("hello");
 }
 
 TEST(ostream_test, move_while_holding_data) {
+  auto test_file = uniq_file_name(__LINE__);
   {
-    fmt::ostream out = fmt::output_file("test-file");
+    fmt::ostream out = fmt::output_file(test_file);
     out.print("Hello, ");
     fmt::ostream moved(std::move(out));
     moved.print("world!\n");
   }
   {
-    file in("test-file", file::RDONLY);
+    file in(test_file, file::RDONLY);
     EXPECT_READ(in, "Hello, world!\n");
   }
 }
 
 TEST(ostream_test, print) {
-  fmt::ostream out = fmt::output_file("test-file");
-  out.print("The answer is {}.\n",
-            fmt::join(std::initializer_list<int>{42}, ", "));
+  auto test_file = uniq_file_name(__LINE__);
+  fmt::ostream out = fmt::output_file(test_file);
+  out.print("The answer is {}.\n", 42);
   out.close();
-  file in("test-file", file::RDONLY);
+  file in(test_file, file::RDONLY);
   EXPECT_READ(in, "The answer is 42.\n");
 }
 
 TEST(ostream_test, buffer_boundary) {
   auto str = std::string(4096, 'x');
-  fmt::ostream out = fmt::output_file("test-file");
+  auto test_file = uniq_file_name(__LINE__);
+  fmt::ostream out = fmt::output_file(test_file);
   out.print("{}", str);
   out.print("{}", str);
   out.close();
-  file in("test-file", file::RDONLY);
+  file in(test_file, file::RDONLY);
   EXPECT_READ(in, str + str);
 }
 
 TEST(ostream_test, buffer_size) {
-  fmt::ostream out = fmt::output_file("test-file", fmt::buffer_size = 1);
+  auto test_file = uniq_file_name(__LINE__);
+  fmt::ostream out = fmt::output_file(test_file, fmt::buffer_size = 1);
   out.print("{}", "foo");
   out.close();
-  file in("test-file", file::RDONLY);
+  file in(test_file, file::RDONLY);
   EXPECT_READ(in, "foo");
 }
 
 TEST(ostream_test, truncate) {
+  auto test_file = uniq_file_name(__LINE__);
   {
-    fmt::ostream out = fmt::output_file("test-file");
+    fmt::ostream out = fmt::output_file(test_file);
     out.print("0123456789");
   }
   {
-    fmt::ostream out = fmt::output_file("test-file");
+    fmt::ostream out = fmt::output_file(test_file);
     out.print("foo");
   }
-  file in("test-file", file::RDONLY);
+  file in(test_file, file::RDONLY);
   EXPECT_EQ("foo", read(in, 4));
 }
 
 TEST(ostream_test, flush) {
-  auto out = fmt::output_file("test-file");
+  auto test_file = uniq_file_name(__LINE__);
+  auto out = fmt::output_file(test_file);
   out.print("x");
   out.flush();
-  auto in = fmt::file("test-file", file::RDONLY);
+  auto in = fmt::file(test_file, file::RDONLY);
   EXPECT_READ(in, "x");
 }
 
@@ -305,10 +314,11 @@ TEST(file_test, default_ctor) {
 }
 
 TEST(file_test, open_buffered_file_in_ctor) {
-  FILE* fp = safe_fopen("test-file", "w");
+  auto test_file = uniq_file_name(__LINE__);
+  FILE* fp = safe_fopen(test_file.c_str(), "w");
   std::fputs(file_content, fp);
   std::fclose(fp);
-  file f("test-file", file::RDONLY);
+  file f(test_file.c_str(), file::RDONLY);
   // Check if the file is open by reading one character from it.
   char buffer;
   bool isopen = FMT_POSIX(read(f.descriptor(), &buffer, 1)) == 1;
@@ -419,7 +429,8 @@ TEST(file_test, read) {
 }
 
 TEST(file_test, read_error) {
-  file f("test-file", file::WRONLY);
+  auto test_file = uniq_file_name(__LINE__);
+  file f(test_file, file::WRONLY | file::CREATE);
   char buf;
   // We intentionally read from a file opened in the write-only mode to
   // cause error.
@@ -427,15 +438,16 @@ TEST(file_test, read_error) {
 }
 
 TEST(file_test, write) {
-  file read_end, write_end;
-  file::pipe(read_end, write_end);
-  write(write_end, "test");
-  write_end.close();
-  EXPECT_READ(read_end, "test");
+  auto pipe = fmt::pipe();
+  auto test_file = uniq_file_name(__LINE__);
+  write(pipe.write_end, test_file);
+  pipe.write_end.close();
+  EXPECT_READ(pipe.read_end, test_file);
 }
 
 TEST(file_test, write_error) {
-  file f("test-file", file::RDONLY);
+  auto test_file = uniq_file_name(__LINE__);
+  file f(test_file, file::RDONLY | file::CREATE);
   // We intentionally write to a file opened in the read-only mode to
   // cause error.
   EXPECT_SYSTEM_ERROR(f.write(" ", 1), EBADF, "cannot write to file");
@@ -489,18 +501,16 @@ TEST(file_test, dup2_noexcept_error) {
 }
 
 TEST(file_test, pipe) {
-  file read_end, write_end;
-  file::pipe(read_end, write_end);
-  EXPECT_NE(-1, read_end.descriptor());
-  EXPECT_NE(-1, write_end.descriptor());
-  write(write_end, "test");
-  EXPECT_READ(read_end, "test");
+  auto pipe = fmt::pipe();
+  EXPECT_NE(-1, pipe.read_end.descriptor());
+  EXPECT_NE(-1, pipe.write_end.descriptor());
+  write(pipe.write_end, "test");
+  EXPECT_READ(pipe.read_end, "test");
 }
 
 TEST(file_test, fdopen) {
-  file read_end, write_end;
-  file::pipe(read_end, write_end);
-  int read_fd = read_end.descriptor();
-  EXPECT_EQ(read_fd, FMT_POSIX(fileno(read_end.fdopen("r").get())));
+  auto pipe = fmt::pipe();
+  int read_fd = pipe.read_end.descriptor();
+  EXPECT_EQ(read_fd, FMT_POSIX(fileno(pipe.read_end.fdopen("r").get())));
 }
 #endif  // FMT_USE_FCNTL

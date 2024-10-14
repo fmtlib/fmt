@@ -316,10 +316,9 @@ using fmt::buffered_file;
 using fmt::file;
 
 TEST(output_redirect_test, scoped_redirect) {
-  file read_end, write_end;
-  file::pipe(read_end, write_end);
+  auto pipe = fmt::pipe();
   {
-    buffered_file file(write_end.fdopen("w"));
+    buffered_file file(pipe.write_end.fdopen("w"));
     std::fprintf(file.get(), "[[[");
     {
       output_redirect redir(file.get());
@@ -327,16 +326,15 @@ TEST(output_redirect_test, scoped_redirect) {
     }
     std::fprintf(file.get(), "]]]");
   }
-  EXPECT_READ(read_end, "[[[]]]");
+  EXPECT_READ(pipe.read_end, "[[[]]]");
 }
 
 // Test that output_redirect handles errors in flush correctly.
 TEST(output_redirect_test, flush_error_in_ctor) {
-  file read_end, write_end;
-  file::pipe(read_end, write_end);
-  int write_fd = write_end.descriptor();
-  file write_copy = write_end.dup(write_fd);
-  buffered_file f = write_end.fdopen("w");
+  auto pipe = fmt::pipe();
+  int write_fd = pipe.write_end.descriptor();
+  file write_copy = pipe.write_end.dup(write_fd);
+  buffered_file f = pipe.write_end.fdopen("w");
   // Put a character in a file buffer.
   EXPECT_EQ('x', fputc('x', f.get()));
   FMT_POSIX(close(write_fd));
@@ -354,15 +352,14 @@ TEST(output_redirect_test, dup_error_in_ctor) {
   FMT_POSIX(close(fd));
   std::unique_ptr<output_redirect> redir{nullptr};
   EXPECT_SYSTEM_ERROR_NOASSERT(
-      redir.reset(new output_redirect(f.get())), EBADF,
+      redir.reset(new output_redirect(f.get(), false)), EBADF,
       fmt::format("cannot duplicate file descriptor {}", fd));
   copy.dup2(fd);  // "undo" close or dtor will fail
 }
 
 TEST(output_redirect_test, restore_and_read) {
-  file read_end, write_end;
-  file::pipe(read_end, write_end);
-  buffered_file file(write_end.fdopen("w"));
+  auto pipe = fmt::pipe();
+  buffered_file file(pipe.write_end.fdopen("w"));
   std::fprintf(file.get(), "[[[");
   output_redirect redir(file.get());
   std::fprintf(file.get(), "censored");
@@ -370,16 +367,15 @@ TEST(output_redirect_test, restore_and_read) {
   EXPECT_EQ("", redir.restore_and_read());
   std::fprintf(file.get(), "]]]");
   file = buffered_file();
-  EXPECT_READ(read_end, "[[[]]]");
+  EXPECT_READ(pipe.read_end, "[[[]]]");
 }
 
 // Test that OutputRedirect handles errors in flush correctly.
 TEST(output_redirect_test, flush_error_in_restore_and_read) {
-  file read_end, write_end;
-  file::pipe(read_end, write_end);
-  int write_fd = write_end.descriptor();
-  file write_copy = write_end.dup(write_fd);
-  buffered_file f = write_end.fdopen("w");
+  auto pipe = fmt::pipe();
+  int write_fd = pipe.write_end.descriptor();
+  file write_copy = pipe.write_end.dup(write_fd);
+  buffered_file f = pipe.write_end.fdopen("w");
   output_redirect redir(f.get());
   // Put a character in a file buffer.
   EXPECT_EQ('x', fputc('x', f.get()));
@@ -390,11 +386,10 @@ TEST(output_redirect_test, flush_error_in_restore_and_read) {
 }
 
 TEST(output_redirect_test, error_in_dtor) {
-  file read_end, write_end;
-  file::pipe(read_end, write_end);
-  int write_fd = write_end.descriptor();
-  file write_copy = write_end.dup(write_fd);
-  buffered_file f = write_end.fdopen("w");
+  auto pipe = fmt::pipe();
+  int write_fd = pipe.write_end.descriptor();
+  file write_copy = pipe.write_end.dup(write_fd);
+  buffered_file f = pipe.write_end.fdopen("w");
   std::unique_ptr<output_redirect> redir(new output_redirect(f.get()));
   // Put a character in a file buffer.
   EXPECT_EQ('x', fputc('x', f.get()));

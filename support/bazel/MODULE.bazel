@@ -1,0 +1,6 @@
+module(
+   name = "fmt",
+   compatibility_level = 10,
+)
+
+bazel_dep(name = "platforms", version = "0.0.10")

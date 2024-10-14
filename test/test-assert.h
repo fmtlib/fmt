@@ -12,7 +12,7 @@
 
 void throw_assertion_failure(const char* message);
 #define FMT_ASSERT(condition, message) \
-  if (!(condition)) throw_assertion_failure(message);
+  ((condition) ? (void)0 : throw_assertion_failure(message))
 
 #include "gtest/gtest.h"
 

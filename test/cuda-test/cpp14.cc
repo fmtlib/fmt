@@ -1,4 +1,4 @@
-#include <fmt/core.h>
+#include <fmt/base.h>
 
 // The purpose of this part is to ensure NVCC's host compiler also supports
 // the standard version. See 'cuda-cpp14.cu'.

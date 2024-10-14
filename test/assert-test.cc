@@ -9,7 +9,7 @@
 //
 // For the license information refer to format.h.
 
-#include "fmt/core.h"
+#include "fmt/base.h"
 #include "gtest/gtest.h"
 
 TEST(assert_test, fail) {

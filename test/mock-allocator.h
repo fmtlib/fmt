@@ -17,9 +17,22 @@
 
 template <typename T> class mock_allocator {
  public:
+  using value_type = T;
+  using size_type = size_t;
+
+  using pointer = T*;
+  using const_pointer = const T*;
+  using reference = T&;
+  using const_reference = const T&;
+  using difference_type = ptrdiff_t;
+
+  template <typename U> struct rebind {
+    using other = mock_allocator<U>;
+  };
+
   mock_allocator() {}
   mock_allocator(const mock_allocator&) {}
-  using value_type = T;
+
   MOCK_METHOD(T*, allocate, (size_t));
   MOCK_METHOD(void, deallocate, (T*, size_t));
 };

@@ -17,7 +17,7 @@ struct test {};
 // included after fmt/format.h.
 namespace fmt {
 template <> struct formatter<test> : formatter<int> {
-  auto format(const test&, format_context& ctx) -> decltype(ctx.out()) {
+  auto format(const test&, format_context& ctx) const -> decltype(ctx.out()) {
     return formatter<int>::format(42, ctx);
   }
 };
@@ -135,8 +135,8 @@ TEST(ostream_test, write_to_ostream_max_size) {
 
   struct test_buffer final : fmt::detail::buffer<char> {
     explicit test_buffer(size_t size)
-        : fmt::detail::buffer<char>(nullptr, size, size) {}
-    void grow(size_t) override {}
+        : fmt::detail::buffer<char>([](buffer<char>&, size_t) {}, nullptr, size,
+                                    size) {}
   } buffer(max_size);
 
   struct mock_streambuf : std::streambuf {
@@ -201,7 +201,8 @@ auto operator<<(std::ostream& os, test_template<T>) -> std::ostream& {
 
 namespace fmt {
 template <typename T> struct formatter<test_template<T>> : formatter<int> {
-  auto format(test_template<T>, format_context& ctx) -> decltype(ctx.out()) {
+  auto format(test_template<T>, format_context& ctx) const
+      -> decltype(ctx.out()) {
     return formatter<int>::format(2, ctx);
   }
 };
@@ -288,4 +289,20 @@ TEST(ostream_test, streamed) {
 TEST(ostream_test, closed_ofstream) {
   std::ofstream ofs;
   fmt::print(ofs, "discard");
+}
+
+struct unlocalized {};
+
+auto operator<<(std::ostream& os, unlocalized) -> std::ostream& {
+  return os << 12345;
+}
+
+namespace fmt {
+template <> struct formatter<unlocalized> : ostream_formatter {};
+}  // namespace fmt
+
+TEST(ostream_test, unlocalized) {
+  auto loc = get_locale("en_US.UTF-8");
+  std::locale::global(loc);
+  EXPECT_EQ(fmt::format(loc, "{}", unlocalized()), "12345");
 }

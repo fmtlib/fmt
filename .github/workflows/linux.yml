@@ -10,12 +10,13 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        cxx: [g++-4.8, g++-10, clang++-9]
+        cxx: [g++-4.9, g++-10, clang++-9]
         build_type: [Debug, Release]
         std: [11]
+        shared: [""]
         include:
-          - cxx: g++-4.8
-            install: sudo apt install g++-4.8
+          - cxx: g++-4.9
+            install: sudo apt install g++-4.9
           - cxx: g++-8
             build_type: Debug
             std: 14
@@ -54,25 +55,31 @@ jobs:
             std: 20
             cxxflags: -stdlib=libc++
             install: sudo apt install libc++-11-dev libc++abi-11-dev
-          - shared: -DBUILD_SHARED_LIBS=ON
+          - cxx: g++-13
+            build_type: Release
+            std: 23
+            install: sudo apt install g++-13
+            shared: -DBUILD_SHARED_LIBS=ON
 
     steps:
-    - uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
+    - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
 
     - name: Set timezone
       run: sudo timedatectl set-timezone 'Asia/Yekaterinburg'
 
     - name: Add repositories for older GCC
       run: |
-        # Below two repos provide GCC 4.8, 5.5 and 6.4
-        sudo apt-add-repository 'deb http://azure.archive.ubuntu.com/ubuntu/ bionic main'
-        sudo apt-add-repository 'deb http://azure.archive.ubuntu.com/ubuntu/ bionic universe'
-        # Below two repos additionally update GCC 6 to 6.5
-        # sudo apt-add-repository 'deb http://azure.archive.ubuntu.com/ubuntu/ bionic-updates main'
-        # sudo apt-add-repository 'deb http://azure.archive.ubuntu.com/ubuntu/ bionic-updates universe'
-      if: ${{ matrix.cxx == 'g++-4.8' }}
+        # Below repo provides GCC 4.9.
+        sudo apt-add-repository 'deb http://dk.archive.ubuntu.com/ubuntu/ xenial main'
+        sudo apt-add-repository 'deb http://dk.archive.ubuntu.com/ubuntu/ xenial universe'
+      if: ${{ matrix.cxx == 'g++-4.9' }}
 
-    - name: Add ubuntu mirrors
+    - name: Add repositories for newer GCC
+      run: |
+        sudo apt-add-repository ppa:ubuntu-toolchain-r/test
+      if: ${{ matrix.cxx == 'g++-11' || matrix.cxx == 'g++-13' }}
+
+    - name: Add Ubuntu mirrors
       run: |
         # Github Actions caching proxy is at times unreliable
         # see https://github.com/actions/runner-images/issues/7048

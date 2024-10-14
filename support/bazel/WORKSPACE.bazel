@@ -1,1 +1,2 @@
-workspace(name = "fmt")
+# WORKSPACE marker file needed by Bazel
+

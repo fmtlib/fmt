@@ -8,22 +8,24 @@ jobs:
   Fuzzing:
     runs-on: ubuntu-latest
     steps:
-    - name: Build Fuzzers
+    - name: Build fuzzers
       id: build
-      uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@master
+      uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@9218255
       with:
         oss-fuzz-project-name: 'fmt'
         dry-run: false
         language: c++
-    - name: Run Fuzzers
-      uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@master
+
+    - name: Run fuzzers
+      uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@9218255
       with:
         oss-fuzz-project-name: 'fmt'
         fuzz-seconds: 300
         dry-run: false
         language: c++
-    - name: Upload Crash
-      uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+
+    - name: Upload crash
+      uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
       if: failure() && steps.build.outcome == 'success'
       with:
         name: artifacts
