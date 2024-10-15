@@ -721,7 +721,7 @@ class basic_specs {
     max_fill_size = 4
   };
 
-  unsigned long data_ = 1 << fill_size_shift;
+  size_t data_ = 1 << fill_size_shift;
 
   // Character (code unit) type is erased to prevent template bloat.
   char fill_data_[max_fill_size] = {' '};
