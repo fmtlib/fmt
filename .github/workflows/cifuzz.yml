@@ -10,14 +10,14 @@ jobs:
     steps:
     - name: Build fuzzers
       id: build
-      uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@9218255
+      uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@92182553173581f871130c71c71b17f003d47b0a
       with:
         oss-fuzz-project-name: 'fmt'
         dry-run: false
         language: c++
 
     - name: Run fuzzers
-      uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@9218255
+      uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@92182553173581f871130c71c71b17f003d47b0a
       with:
         oss-fuzz-project-name: 'fmt'
         fuzz-seconds: 300
