@@ -800,7 +800,8 @@ class basic_specs {
   template <typename Char> constexpr auto fill_unit() const -> Char {
     using uchar = unsigned char;
     return static_cast<Char>(static_cast<uchar>(fill_data_[0]) |
-                             (static_cast<uchar>(fill_data_[1]) << 8));
+                             (static_cast<uchar>(fill_data_[1]) << 8) |
+                             (static_cast<uchar>(fill_data_[2]) << 16));
   }
 
   FMT_CONSTEXPR void set_fill(char c) {
@@ -816,6 +817,7 @@ class basic_specs {
       unsigned uchar = static_cast<detail::unsigned_char<Char>>(s[0]);
       fill_data_[0] = static_cast<char>(uchar);
       fill_data_[1] = static_cast<char>(uchar >> 8);
+      fill_data_[2] = static_cast<char>(uchar >> 16);
       return;
     }
     FMT_ASSERT(size <= max_fill_size, "invalid fill");
