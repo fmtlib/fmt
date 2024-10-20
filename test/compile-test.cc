@@ -265,11 +265,23 @@ TEST(compile_test, to_string_and_formatter) {
   fmt::format(FMT_COMPILE("{}"), to_stringable());
 }
 
+struct std_context_test {};
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<std_context_test> : formatter<int> {
+  auto format(std_context_test, format_context& ctx) const
+      -> decltype(ctx.out()) {
+    return ctx.out();
+  }
+};
+FMT_END_NAMESPACE
+
 TEST(compile_test, print) {
   EXPECT_WRITE(stdout, fmt::print(FMT_COMPILE("Don't {}!"), "panic"),
                "Don't panic!");
   EXPECT_WRITE(stderr, fmt::print(stderr, FMT_COMPILE("Don't {}!"), "panic"),
                "Don't panic!");
+  fmt::print(FMT_COMPILE("{}"), std_context_test());
 }
 #endif
 
