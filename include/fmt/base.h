@@ -146,6 +146,8 @@
 // Use the provided definition.
 #elif defined(__GNUC__) && !defined(__EXCEPTIONS)
 #  define FMT_USE_EXCEPTIONS 0
+#elif defined(__clang__) && !defined(__cpp_exceptions)
+#  define FMT_USE_EXCEPTIONS 0
 #elif FMT_MSC_VERSION && !_HAS_EXCEPTIONS
 #  define FMT_USE_EXCEPTIONS 0
 #else
