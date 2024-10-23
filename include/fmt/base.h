@@ -1973,20 +1973,20 @@ template <typename T = char> class counting_buffer : public buffer<T> {
 template <typename T>
 struct is_back_insert_iterator<basic_appender<T>> : std::true_type {};
 
-template <typename T, typename It, typename = void>
-struct has_container_append : std::false_type {};
-template <typename T, typename It>
-struct has_container_append<T, It,
-                            void_t<decltype(std::declval<T>().append(
-                                std::declval<It>(), std::declval<It>()))>>
-    : std::true_type {};
+template <typename OutputIt, typename InputIt, typename = void>
+struct has_back_insert_iterator_container_append : std::false_type {};
+template <typename OutputIt, typename InputIt>
+struct has_back_insert_iterator_container_append<
+    OutputIt, InputIt,
+    void_t<decltype(get_container(std::declval<OutputIt>())
+                        .append(std::declval<InputIt>(),
+                                std::declval<InputIt>()))>> : std::true_type {};
 
 // An optimized version of std::copy with the output value type (T).
-template <
-    typename T, typename InputIt, typename OutputIt,
-    FMT_ENABLE_IF(
-        is_back_insert_iterator<OutputIt>::value&& has_container_append<
-            decltype(get_container(std::declval<OutputIt>())), InputIt>::value)>
+template <typename T, typename InputIt, typename OutputIt,
+          FMT_ENABLE_IF(is_back_insert_iterator<OutputIt>::value&&
+                            has_back_insert_iterator_container_append<
+                                OutputIt, InputIt>::value)>
 FMT_CONSTEXPR20 auto copy(InputIt begin, InputIt end, OutputIt out)
     -> OutputIt {
   get_container(out).append(begin, end);
@@ -1995,9 +1995,8 @@ FMT_CONSTEXPR20 auto copy(InputIt begin, InputIt end, OutputIt out)
 
 template <typename T, typename InputIt, typename OutputIt,
           FMT_ENABLE_IF(is_back_insert_iterator<OutputIt>::value &&
-                        !has_container_append<
-                            decltype(get_container(std::declval<OutputIt>())),
-                            InputIt>::value)>
+                        !has_back_insert_iterator_container_append<
+                            OutputIt, InputIt>::value)>
 FMT_CONSTEXPR20 auto copy(InputIt begin, InputIt end, OutputIt out)
     -> OutputIt {
   auto& c = get_container(out);
