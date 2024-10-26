@@ -8,6 +8,7 @@
 #include "fmt/compile.h"
 
 #include <type_traits>
+#include <vector>
 
 #include "fmt/chrono.h"
 #include "fmt/ranges.h"
@@ -229,10 +230,14 @@ TEST(compile_test, unknown_format_fallback) {
   EXPECT_EQ(" 42 ",
             fmt::format(FMT_COMPILE("{name:^4}"), fmt::arg("name", 42)));
 
-  std::vector<char> v;
-  fmt::format_to(std::back_inserter(v), FMT_COMPILE("{name:^4}"),
+  std::vector<char> v1;
+  fmt::format_to(std::back_inserter(v1), FMT_COMPILE("{}"), 42);
+  EXPECT_EQ("42", fmt::string_view(v1.data(), v1.size()));
+
+  std::vector<char> v2;
+  fmt::format_to(std::back_inserter(v2), FMT_COMPILE("{name:^4}"),
                  fmt::arg("name", 42));
-  EXPECT_EQ(" 42 ", fmt::string_view(v.data(), v.size()));
+  EXPECT_EQ(" 42 ", fmt::string_view(v2.data(), v2.size()));
 
   char buffer[4];
   auto result = fmt::format_to_n(buffer, 4, FMT_COMPILE("{name:^5}"),
