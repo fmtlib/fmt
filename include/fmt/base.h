@@ -2658,12 +2658,14 @@ inline auto runtime(string_view s) -> runtime_format_string<> { return {{s}}; }
 /// A compile-time format string.
 template <typename... T> struct fstring {
  private:
-  static constexpr int num_static_named_args =
+  static constexpr size_t num_static_named_args =
       detail::count_static_named_args<T...>();
 
-  using checker = detail::format_string_checker<
-      char, static_cast<int>(sizeof...(T)), num_static_named_args,
-      num_static_named_args != detail::count_named_args<T...>()>;
+  using checker =
+      detail::format_string_checker<char, static_cast<int>(sizeof...(T)),
+                                    static_cast<int>(num_static_named_args),
+                                    num_static_named_args !=
+                                        detail::count_named_args<T...>()>;
 
   using arg_pack = detail::arg_pack<T...>;
 
