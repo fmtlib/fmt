@@ -56,7 +56,7 @@
 #  include <string>        // std::string
 #  include <system_error>  // std::system_error
 
-// Checking FMT_CPLUSPLUS for warning suppression in MSVC.
+// Check FMT_CPLUSPLUS to avoid a warning in MSVC.
 #  if FMT_HAS_INCLUDE(<bit>) && FMT_CPLUSPLUS > 201703L
 #    include <bit>  // std::bit_cast
 #  endif
@@ -119,7 +119,7 @@
 #endif
 
 namespace std {
-template <class T> struct iterator_traits<fmt::basic_appender<T>> {
+template <typename T> struct iterator_traits<fmt::basic_appender<T>> {
   using iterator_category = output_iterator_tag;
   using value_type = T;
   using difference_type =
@@ -149,8 +149,8 @@ FMT_END_NAMESPACE
 #  else
 #    define FMT_THROW(x) \
       ::fmt::detail::assert_fail(__FILE__, __LINE__, (x).what())
-#  endif
-#endif
+#  endif  // FMT_USE_EXCEPTIONS
+#endif    // FMT_THROW
 
 #ifdef FMT_NO_UNIQUE_ADDRESS
 // Use the provided definition.
@@ -192,17 +192,12 @@ FMT_END_NAMESPACE
       defined(__NVCOMPILER)
 #    define FMT_BUILTIN_CTZ(n) __builtin_ctz(n)
 #  endif
-#  if FMT_HAS_BUILTIN(__builtin_ctzll) || FMT_GCC_VERSION || \
-      FMT_ICC_VERSION || defined(__NVCOMPILER)
-#    define FMT_BUILTIN_CTZLL(n) __builtin_ctzll(n)
-#  endif
 #endif
 
-// Some compilers masquerade as both MSVC and GCC-likes or otherwise support
+// Some compilers masquerade as both MSVC and GCC-likes but otherwise support
 // __builtin_clz and __builtin_clzll, so only define FMT_BUILTIN_CLZ using the
 // MSVC intrinsics if the clz and clzll builtins are not available.
-#if FMT_MSC_VERSION && !defined(FMT_BUILTIN_CLZLL) && \
-    !defined(FMT_BUILTIN_CTZLL)
+#if FMT_MSC_VERSION && !defined(FMT_BUILTIN_CLZLL)
 FMT_BEGIN_NAMESPACE
 namespace detail {
 // Avoid Clang with Microsoft CodeGen's -Wunknown-pragmas warning.
@@ -210,7 +205,6 @@ namespace detail {
 #    pragma intrinsic(_BitScanForward)
 #    pragma intrinsic(_BitScanReverse)
 #    if defined(_WIN64)
-#      pragma intrinsic(_BitScanForward64)
 #      pragma intrinsic(_BitScanReverse64)
 #    endif
 #  endif
@@ -219,9 +213,8 @@ inline auto clz(uint32_t x) -> int {
   unsigned long r = 0;
   _BitScanReverse(&r, x);
   FMT_ASSERT(x != 0, "");
-  // Static analysis complains about using uninitialized data
-  // "r", but the only way that can happen is if "x" is 0,
-  // which the callers guarantee to not happen.
+  // Static analysis complains about using uninitialized data "r", but this can
+  // only happen if `x` is 0, which the callers guarantee to not happen.
   FMT_MSC_WARNING(suppress : 6102)
   return 31 ^ static_cast<int>(r);
 }
@@ -252,23 +245,6 @@ inline auto ctz(uint32_t x) -> int {
   return static_cast<int>(r);
 }
 #  define FMT_BUILTIN_CTZ(n) detail::ctz(n)
-
-inline auto ctzll(uint64_t x) -> int {
-  unsigned long r = 0;
-  FMT_ASSERT(x != 0, "");
-  FMT_MSC_WARNING(suppress : 6102)  // Suppress a bogus static analysis warning.
-#  ifdef _WIN64
-  _BitScanForward64(&r, x);
-#  else
-  // Scan the low 32 bits.
-  if (_BitScanForward(&r, static_cast<uint32_t>(x))) return static_cast<int>(r);
-  // Scan the high 32 bits.
-  _BitScanForward(&r, static_cast<uint32_t>(x >> 32));
-  r += 32;
-#  endif
-  return static_cast<int>(r);
-}
-#  define FMT_BUILTIN_CTZLL(n) detail::ctzll(n)
 }  // namespace detail
 FMT_END_NAMESPACE
 #endif
