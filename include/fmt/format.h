@@ -174,6 +174,14 @@ FMT_END_NAMESPACE
 #  define FMT_REDUCE_INT_INSTANTIATIONS 0
 #endif
 
+FMT_BEGIN_NAMESPACE
+
+template <typename Char, typename Traits, typename Allocator>
+struct is_contiguous<std::basic_string<Char, Traits, Allocator>>
+    : std::true_type {};
+
+namespace detail {
+
 // __builtin_clz is broken in clang with Microsoft codegen:
 // https://github.com/fmtlib/fmt/issues/519.
 #if !FMT_MSC_VERSION
@@ -189,8 +197,6 @@ FMT_END_NAMESPACE
 // __builtin_clz and __builtin_clzll, so only define FMT_BUILTIN_CLZ using the
 // MSVC intrinsics if the clz and clzll builtins are not available.
 #if FMT_MSC_VERSION && !defined(FMT_BUILTIN_CLZLL)
-FMT_BEGIN_NAMESPACE
-namespace detail {
 // Avoid Clang with Microsoft CodeGen's -Wunknown-pragmas warning.
 #  ifndef __clang__
 #    pragma intrinsic(_BitScanReverse)
@@ -224,17 +230,7 @@ inline auto clzll(uint64_t x) -> int {
   return 63 ^ static_cast<int>(r);
 }
 #  define FMT_BUILTIN_CLZLL(n) detail::clzll(n)
-}  // namespace detail
-FMT_END_NAMESPACE
 #endif  // FMT_MSC_VERSION && !defined(FMT_BUILTIN_CLZLL)
-
-FMT_BEGIN_NAMESPACE
-
-template <typename Char, typename Traits, typename Allocator>
-struct is_contiguous<std::basic_string<Char, Traits, Allocator>>
-    : std::true_type {};
-
-namespace detail {
 
 FMT_CONSTEXPR inline void abort_fuzzing_if(bool condition) {
   ignore_unused(condition);
@@ -1817,7 +1813,7 @@ auto find_escape(const Char* begin, const Char* end)
 
 inline auto find_escape(const char* begin, const char* end)
     -> find_escape_result<char> {
-  if (!detail::use_utf8) return find_escape<char>(begin, end);
+  if (!use_utf8) return find_escape<char>(begin, end);
   auto result = find_escape_result<char>{end, nullptr, 0};
   for_each_codepoint(string_view(begin, to_unsigned(end - begin)),
                      [&](uint32_t cp, string_view sv) {
