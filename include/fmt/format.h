@@ -185,42 +185,32 @@ FMT_END_NAMESPACE
 #  endif
 #endif
 
-// __builtin_ctz is broken in Intel Compiler Classic on Windows:
-// https://github.com/fmtlib/fmt/issues/2510.
-#ifndef __ICL
-#  if FMT_HAS_BUILTIN(__builtin_ctz) || FMT_GCC_VERSION || FMT_ICC_VERSION || \
-      defined(__NVCOMPILER)
-#    define FMT_BUILTIN_CTZ(n) __builtin_ctz(n)
-#  endif
-#endif
-
-// Some compilers masquerade as both MSVC and GCC-likes but otherwise support
+// Some compilers masquerade as both MSVC and GCC but otherwise support
 // __builtin_clz and __builtin_clzll, so only define FMT_BUILTIN_CLZ using the
 // MSVC intrinsics if the clz and clzll builtins are not available.
 #if FMT_MSC_VERSION && !defined(FMT_BUILTIN_CLZLL)
 FMT_BEGIN_NAMESPACE
 namespace detail {
 // Avoid Clang with Microsoft CodeGen's -Wunknown-pragmas warning.
-#  if !defined(__clang__)
-#    pragma intrinsic(_BitScanForward)
+#  ifndef __clang__
 #    pragma intrinsic(_BitScanReverse)
-#    if defined(_WIN64)
+#    ifdef _WIN64
 #      pragma intrinsic(_BitScanReverse64)
 #    endif
 #  endif
 
 inline auto clz(uint32_t x) -> int {
+  FMT_ASSERT(x != 0, "");
+  FMT_MSC_WARNING(suppress : 6102)  // Suppress a bogus static analysis warning.
   unsigned long r = 0;
   _BitScanReverse(&r, x);
-  FMT_ASSERT(x != 0, "");
-  // Static analysis complains about using uninitialized data "r", but this can
-  // only happen if `x` is 0, which the callers guarantee to not happen.
-  FMT_MSC_WARNING(suppress : 6102)
   return 31 ^ static_cast<int>(r);
 }
 #  define FMT_BUILTIN_CLZ(n) detail::clz(n)
 
 inline auto clzll(uint64_t x) -> int {
+  FMT_ASSERT(x != 0, "");
+  FMT_MSC_WARNING(suppress : 6102)  // Suppress a bogus static analysis warning.
   unsigned long r = 0;
 #  ifdef _WIN64
   _BitScanReverse64(&r, x);
@@ -231,23 +221,12 @@ inline auto clzll(uint64_t x) -> int {
   // Scan the low 32 bits.
   _BitScanReverse(&r, static_cast<uint32_t>(x));
 #  endif
-  FMT_ASSERT(x != 0, "");
-  FMT_MSC_WARNING(suppress : 6102)  // Suppress a bogus static analysis warning.
   return 63 ^ static_cast<int>(r);
 }
 #  define FMT_BUILTIN_CLZLL(n) detail::clzll(n)
-
-inline auto ctz(uint32_t x) -> int {
-  unsigned long r = 0;
-  _BitScanForward(&r, x);
-  FMT_ASSERT(x != 0, "");
-  FMT_MSC_WARNING(suppress : 6102)  // Suppress a bogus static analysis warning.
-  return static_cast<int>(r);
-}
-#  define FMT_BUILTIN_CTZ(n) detail::ctz(n)
 }  // namespace detail
 FMT_END_NAMESPACE
-#endif
+#endif  // FMT_MSC_VERSION && !defined(FMT_BUILTIN_CLZLL)
 
 FMT_BEGIN_NAMESPACE
 
