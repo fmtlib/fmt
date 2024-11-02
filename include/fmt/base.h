@@ -853,7 +853,7 @@ template <typename Char = char> class parse_context {
   using char_type = Char;
   using iterator = const Char*;
 
-  explicit constexpr parse_context(basic_string_view<Char> fmt,
+  constexpr explicit parse_context(basic_string_view<Char> fmt,
                                    int next_arg_id = 0)
       : fmt_(fmt), next_arg_id_(next_arg_id) {}
 
@@ -1191,7 +1191,7 @@ class compile_parse_context : public parse_context<Char> {
   using base = parse_context<Char>;
 
  public:
-  explicit FMT_CONSTEXPR compile_parse_context(basic_string_view<Char> fmt,
+  FMT_CONSTEXPR explicit compile_parse_context(basic_string_view<Char> fmt,
                                                int num_args, const type* types,
                                                int next_arg_id = 0)
       : base(fmt, next_arg_id), num_args_(num_args), types_(types) {}
@@ -1647,7 +1647,7 @@ class format_string_checker {
 
  public:
   template <typename... T>
-  explicit FMT_CONSTEXPR format_string_checker(basic_string_view<Char> fmt,
+  FMT_CONSTEXPR explicit format_string_checker(basic_string_view<Char> fmt,
                                                arg_pack<T...>)
       : types_{mapped_type_constant<T, Char>::value...},
         named_args_{},

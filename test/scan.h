@@ -211,7 +211,7 @@ class scan_parse_context {
  public:
   using iterator = string_view::iterator;
 
-  explicit FMT_CONSTEXPR scan_parse_context(string_view format)
+  FMT_CONSTEXPR explicit scan_parse_context(string_view format)
       : format_(format) {}
 
   FMT_CONSTEXPR auto begin() const -> iterator { return format_.begin(); }
@@ -347,7 +347,7 @@ class scan_context {
   using iterator = detail::scan_iterator;
   using sentinel = detail::scan_sentinel;
 
-  explicit FMT_CONSTEXPR scan_context(detail::scan_buffer& buf, scan_args args)
+  FMT_CONSTEXPR explicit scan_context(detail::scan_buffer& buf, scan_args args)
       : buf_(buf), args_(args) {}
 
   FMT_CONSTEXPR auto arg(int id) const -> scan_arg {

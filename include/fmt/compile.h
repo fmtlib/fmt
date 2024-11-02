@@ -45,7 +45,7 @@ struct is_compiled_string : std::is_base_of<compiled_string, S> {};
 template <typename Char, size_t N, fmt::detail::fixed_string<Char, N> Str>
 struct udl_compiled_string : compiled_string {
   using char_type = Char;
-  explicit constexpr operator basic_string_view<char_type>() const {
+  constexpr explicit operator basic_string_view<char_type>() const {
     return {Str.data, N - 1};
   }
 };

@@ -4039,16 +4039,16 @@ class format_int {
   }
 
  public:
-  explicit FMT_CONSTEXPR20 format_int(int value) : str_(format_signed(value)) {}
-  explicit FMT_CONSTEXPR20 format_int(long value)
+  FMT_CONSTEXPR20 explicit format_int(int value) : str_(format_signed(value)) {}
+  FMT_CONSTEXPR20 explicit format_int(long value)
       : str_(format_signed(value)) {}
-  explicit FMT_CONSTEXPR20 format_int(long long value)
+  FMT_CONSTEXPR20 explicit format_int(long long value)
       : str_(format_signed(value)) {}
-  explicit FMT_CONSTEXPR20 format_int(unsigned value)
+  FMT_CONSTEXPR20 explicit format_int(unsigned value)
       : str_(format_unsigned(value)) {}
-  explicit FMT_CONSTEXPR20 format_int(unsigned long value)
+  FMT_CONSTEXPR20 explicit format_int(unsigned long value)
       : str_(format_unsigned(value)) {}
-  explicit FMT_CONSTEXPR20 format_int(unsigned long long value)
+  FMT_CONSTEXPR20 explicit format_int(unsigned long long value)
       : str_(format_unsigned(value)) {}
 
   /// Returns the number of characters written to the output buffer.

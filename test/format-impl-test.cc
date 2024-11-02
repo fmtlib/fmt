@@ -283,7 +283,7 @@ struct double_double {
   double a;
   double b;
 
-  explicit constexpr double_double(double a_val = 0, double b_val = 0)
+  constexpr explicit double_double(double a_val = 0, double b_val = 0)
       : a(a_val), b(b_val) {}
 
   operator double() const { return a + b; }
@@ -299,7 +299,7 @@ bool operator>=(const double_double& lhs, const double_double& rhs) {
 struct slow_float {
   float value;
 
-  explicit constexpr slow_float(float val = 0) : value(val) {}
+  constexpr explicit slow_float(float val = 0) : value(val) {}
   operator float() const { return value; }
   auto operator-() const -> slow_float { return slow_float(-value); }
 };
