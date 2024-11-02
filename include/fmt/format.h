@@ -3835,7 +3835,7 @@ template <typename T> auto ptr(T p) -> const void* {
  * **Example**:
  *
  *     enum class color { red, green, blue };
- *     auto s = fmt::format("{}", fmt::underlying(color::red));
+ *     auto s = fmt::format("{}", fmt::underlying(color::red));  // s == "0"
  */
 template <typename Enum>
 constexpr auto underlying(Enum e) noexcept -> underlying_t<Enum> {
@@ -3917,14 +3917,14 @@ template <typename T> struct formatter<group_digits_view<T>> : formatter<T> {
   }
 
   template <typename FormatContext>
-  auto format(group_digits_view<T> t, FormatContext& ctx) const
+  auto format(group_digits_view<T> view, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     auto specs = specs_;
     detail::handle_dynamic_spec(specs.dynamic_width(), specs.width,
                                 specs.width_ref, ctx);
     detail::handle_dynamic_spec(specs.dynamic_precision(), specs.precision,
                                 specs.precision_ref, ctx);
-    auto arg = detail::make_write_int_arg(t.value, specs.sign());
+    auto arg = detail::make_write_int_arg(view.value, specs.sign());
     return detail::write_int(
         ctx.out(), static_cast<detail::uint64_or_128_t<T>>(arg.abs_value),
         arg.prefix, specs, detail::digit_grouping<char>("\3", ","));
@@ -3994,9 +3994,9 @@ template <typename T, typename Char = char> struct nested_formatter {
 
 inline namespace literals {
 #if FMT_USE_NONTYPE_TEMPLATE_ARGS
-template <detail::fixed_string Str> constexpr auto operator""_a() {
-  using char_t = remove_cvref_t<decltype(Str.data[0])>;
-  return detail::udl_arg<char_t, sizeof(Str.data) / sizeof(char_t), Str>();
+template <detail::fixed_string S> constexpr auto operator""_a() {
+  using char_t = remove_cvref_t<decltype(*S.data)>;
+  return detail::udl_arg<char_t, sizeof(S.data) / sizeof(char_t), S>();
 }
 #else
 /**
@@ -4071,21 +4071,20 @@ class format_int {
   inline auto str() const -> std::string { return {str_, size()}; }
 };
 
-#define FMT_STRING_IMPL(s, base)                                           \
-  [] {                                                                     \
-    /* Use the hidden visibility as a workaround for a GCC bug (#1973). */ \
-    /* Use a macro-like name to avoid shadowing warnings. */               \
-    struct FMT_VISIBILITY("hidden") FMT_COMPILE_STRING : base {            \
-      using char_type = fmt::remove_cvref_t<decltype(s[0])>;               \
-      FMT_CONSTEXPR explicit operator fmt::basic_string_view<char_type>()  \
-          const {                                                          \
-        return fmt::detail::compile_string_to_view<char_type>(s);          \
-      }                                                                    \
-    };                                                                     \
-    using FMT_STRING_VIEW =                                                \
-        fmt::basic_string_view<typename FMT_COMPILE_STRING::char_type>;    \
-    fmt::detail::ignore_unused(FMT_STRING_VIEW(FMT_COMPILE_STRING()));     \
-    return FMT_COMPILE_STRING();                                           \
+#define FMT_STRING_IMPL(s, base)                                              \
+  [] {                                                                        \
+    /* Use the hidden visibility as a workaround for a GCC bug (#1973). */    \
+    /* Use a macro-like name to avoid shadowing warnings. */                  \
+    struct FMT_VISIBILITY("hidden") FMT_COMPILE_STRING : base {               \
+      using char_type = fmt::remove_cvref_t<decltype(s[0])>;                  \
+      constexpr explicit operator fmt::basic_string_view<char_type>() const { \
+        return fmt::detail::compile_string_to_view<char_type>(s);             \
+      }                                                                       \
+    };                                                                        \
+    using FMT_STRING_VIEW =                                                   \
+        fmt::basic_string_view<typename FMT_COMPILE_STRING::char_type>;       \
+    fmt::detail::ignore_unused(FMT_STRING_VIEW(FMT_COMPILE_STRING()));        \
+    return FMT_COMPILE_STRING();                                              \
   }()
 
 /**
