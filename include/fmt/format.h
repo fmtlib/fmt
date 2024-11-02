@@ -4089,7 +4089,7 @@ class format_int {
   }()
 
 /**
- * Constructs a compile-time format string from a string literal `s`.
+ * Constructs a legacy compile-time format string from a string literal `s`.
  *
  * **Example**:
  *
@@ -4209,8 +4209,7 @@ FMT_NODISCARD auto to_string(T value) -> std::string {
   // The buffer should be large enough to store the number including the sign
   // or "false" for bool.
   char buffer[max_of(detail::digits10<T>() + 2, 5)];
-  char* begin = buffer;
-  return {buffer, detail::write<char>(begin, value)};
+  return {buffer, detail::write<char>(buffer, value)};
 }
 
 template <typename T, FMT_ENABLE_IF(detail::use_format_as<T>::value)>
