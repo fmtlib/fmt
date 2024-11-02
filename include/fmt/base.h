@@ -1023,15 +1023,15 @@ template <typename Char, typename T> struct named_arg : view {
   static_assert(!is_named_arg<T>::value, "nested named arguments");
 };
 
-template <bool B = false> constexpr auto count() -> size_t { return B ? 1 : 0; }
-template <bool B1, bool B2, bool... Tail> constexpr auto count() -> size_t {
+template <bool B = false> constexpr auto count() -> int { return B ? 1 : 0; }
+template <bool B1, bool B2, bool... Tail> constexpr auto count() -> int {
   return (B1 ? 1 : 0) + count<B2, Tail...>();
 }
 
-template <typename... Args> constexpr auto count_named_args() -> size_t {
+template <typename... Args> constexpr auto count_named_args() -> int {
   return count<is_named_arg<Args>::value...>();
 }
-template <typename... Args> constexpr auto count_static_named_args() -> size_t {
+template <typename... Args> constexpr auto count_static_named_args() -> int {
   return count<is_static_named_arg<Args>::value...>();
 }
 
@@ -2280,11 +2280,11 @@ constexpr auto make_descriptor() -> unsigned long long {
                                      : is_unpacked_bit | NUM_ARGS;
 }
 
-template <typename Context, size_t NUM_ARGS>
+template <typename Context, int NUM_ARGS>
 using arg_t = conditional_t<NUM_ARGS <= max_packed_args, value<Context>,
                             basic_format_arg<Context>>;
 
-template <typename Context, size_t NUM_ARGS, size_t NUM_NAMED_ARGS,
+template <typename Context, int NUM_ARGS, int NUM_NAMED_ARGS,
           unsigned long long DESC>
 struct named_arg_store {
   // args_[0].named_args points to named_args to avoid bloating format_args.
@@ -2316,13 +2316,13 @@ struct named_arg_store {
 // An array of references to arguments. It can be implicitly converted to
 // `basic_format_args` for passing into type-erased formatting functions
 // such as `vformat`. It is a plain struct to reduce binary size in debug mode.
-template <typename Context, size_t NUM_ARGS, size_t NUM_NAMED_ARGS,
+template <typename Context, int NUM_ARGS, int NUM_NAMED_ARGS,
           unsigned long long DESC>
 struct format_arg_store {
   // +1 to workaround a bug in gcc 7.5 that causes duplicated-branches warning.
   using type =
       conditional_t<NUM_NAMED_ARGS == 0,
-                    arg_t<Context, NUM_ARGS>[max_of<size_t>(1, NUM_ARGS)],
+                    arg_t<Context, NUM_ARGS>[max_of(1, NUM_ARGS)],
                     named_arg_store<Context, NUM_ARGS, NUM_NAMED_ARGS, DESC>>;
   type args;
 };
@@ -2534,7 +2534,7 @@ template <typename Context> class basic_format_args {
     return static_cast<detail::type>((desc_ >> shift) & mask);
   }
 
-  template <size_t NUM_ARGS, size_t NUM_NAMED_ARGS, unsigned long long DESC>
+  template <int NUM_ARGS, int NUM_NAMED_ARGS, unsigned long long DESC>
   using store =
       detail::format_arg_store<Context, NUM_ARGS, NUM_NAMED_ARGS, DESC>;
 
@@ -2544,14 +2544,14 @@ template <typename Context> class basic_format_args {
   constexpr basic_format_args() : desc_(0), args_(nullptr) {}
 
   /// Constructs a `basic_format_args` object from `format_arg_store`.
-  template <size_t NUM_ARGS, size_t NUM_NAMED_ARGS, unsigned long long DESC,
+  template <int NUM_ARGS, int NUM_NAMED_ARGS, unsigned long long DESC,
             FMT_ENABLE_IF(NUM_ARGS <= detail::max_packed_args)>
   constexpr FMT_ALWAYS_INLINE basic_format_args(
       const store<NUM_ARGS, NUM_NAMED_ARGS, DESC>& s)
       : desc_(DESC | (NUM_NAMED_ARGS != 0 ? +detail::has_named_args_bit : 0)),
         values_(s.args) {}
 
-  template <size_t NUM_ARGS, size_t NUM_NAMED_ARGS, unsigned long long DESC,
+  template <int NUM_ARGS, int NUM_NAMED_ARGS, unsigned long long DESC,
             FMT_ENABLE_IF(NUM_ARGS > detail::max_packed_args)>
   constexpr basic_format_args(const store<NUM_ARGS, NUM_NAMED_ARGS, DESC>& s)
       : desc_(DESC | (NUM_NAMED_ARGS != 0 ? +detail::has_named_args_bit : 0)),
@@ -2658,14 +2658,12 @@ inline auto runtime(string_view s) -> runtime_format_string<> { return {{s}}; }
 /// A compile-time format string.
 template <typename... T> struct fstring {
  private:
-  static constexpr size_t num_static_named_args =
+  static constexpr int num_static_named_args =
       detail::count_static_named_args<T...>();
 
-  using checker =
-      detail::format_string_checker<char, static_cast<int>(sizeof...(T)),
-                                    static_cast<int>(num_static_named_args),
-                                    num_static_named_args !=
-                                        detail::count_named_args<T...>()>;
+  using checker = detail::format_string_checker<
+      char, static_cast<int>(sizeof...(T)), num_static_named_args,
+      num_static_named_args != detail::count_named_args<T...>()>;
 
   using arg_pack = detail::arg_pack<T...>;
 
@@ -2745,8 +2743,8 @@ struct formatter<T, Char,
 // Take arguments by lvalue references to avoid some lifetime issues, e.g.
 //   auto args = make_format_args(std::string());
 template <typename Context = context, typename... T,
-          size_t NUM_ARGS = sizeof...(T),
-          size_t NUM_NAMED_ARGS = detail::count_named_args<T...>(),
+          int NUM_ARGS = sizeof...(T),
+          int NUM_NAMED_ARGS = detail::count_named_args<T...>(),
           unsigned long long DESC = detail::make_descriptor<Context, T...>()>
 constexpr FMT_ALWAYS_INLINE auto make_format_args(T&... args)
     -> detail::format_arg_store<Context, NUM_ARGS, NUM_NAMED_ARGS, DESC> {
