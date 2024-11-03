@@ -955,6 +955,8 @@ class FMT_SO_VISIBILITY("default") format_error : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
+class loc_value;
+
 namespace detail {
 template <typename Char, size_t N> struct fixed_string {
   FMT_CONSTEXPR20 fixed_string(const Char (&s)[N]) {
@@ -978,95 +980,6 @@ constexpr auto compile_string_to_view(basic_string_view<Char> s)
   return s;
 }
 }  // namespace detail
-
-// A generic formatting context with custom output iterator and character
-// (code unit) support. Char is the format string code unit type which can be
-// different from OutputIt::value_type.
-template <typename OutputIt, typename Char> class generic_context {
- private:
-  OutputIt out_;
-  basic_format_args<generic_context> args_;
-  detail::locale_ref loc_;
-
- public:
-  using char_type = Char;
-  using iterator = OutputIt;
-  using parse_context_type FMT_DEPRECATED = parse_context<Char>;
-  template <typename T>
-  using formatter_type FMT_DEPRECATED = formatter<T, Char>;
-  enum { builtin_types = FMT_BUILTIN_TYPES };
-
-  constexpr generic_context(OutputIt out,
-                            basic_format_args<generic_context> args,
-                            detail::locale_ref loc = {})
-      : out_(out), args_(args), loc_(loc) {}
-  generic_context(generic_context&&) = default;
-  generic_context(const generic_context&) = delete;
-  void operator=(const generic_context&) = delete;
-
-  constexpr auto arg(int id) const -> basic_format_arg<generic_context> {
-    return args_.get(id);
-  }
-  auto arg(basic_string_view<Char> name) -> basic_format_arg<generic_context> {
-    return args_.get(name);
-  }
-  FMT_CONSTEXPR auto arg_id(basic_string_view<Char> name) -> int {
-    return args_.get_id(name);
-  }
-
-  FMT_CONSTEXPR auto out() -> iterator { return out_; }
-
-  void advance_to(iterator it) {
-    if (!detail::is_back_insert_iterator<iterator>()) out_ = it;
-  }
-
-  FMT_CONSTEXPR auto locale() -> detail::locale_ref { return loc_; }
-};
-
-class loc_value {
- private:
-  basic_format_arg<context> value_;
-
- public:
-  template <typename T, FMT_ENABLE_IF(!detail::is_float128<T>::value)>
-  loc_value(T value) : value_(value) {}
-
-  template <typename T, FMT_ENABLE_IF(detail::is_float128<T>::value)>
-  loc_value(T) {}
-
-  template <typename Visitor> auto visit(Visitor&& vis) -> decltype(vis(0)) {
-    return value_.visit(vis);
-  }
-};
-
-// A locale facet that formats values in UTF-8.
-// It is parameterized on the locale to avoid the heavy <locale> include.
-template <typename Locale> class format_facet : public Locale::facet {
- private:
-  std::string separator_;
-  std::string grouping_;
-  std::string decimal_point_;
-
- protected:
-  virtual auto do_put(appender out, loc_value val,
-                      const format_specs& specs) const -> bool;
-
- public:
-  static FMT_API typename Locale::id id;
-
-  explicit format_facet(Locale& loc);
-  explicit format_facet(string_view sep = "",
-                        std::initializer_list<unsigned char> g = {3},
-                        std::string decimal_point = ".")
-      : separator_(sep.data(), sep.size()),
-        grouping_(g.begin(), g.end()),
-        decimal_point_(decimal_point) {}
-
-  auto put(appender out, loc_value val, const format_specs& specs) const
-      -> bool {
-    return do_put(out, val, specs);
-  }
-};
 
 FMT_END_EXPORT
 
@@ -2050,8 +1963,8 @@ FMT_API auto write_loc(appender out, loc_value value, const format_specs& specs,
                        locale_ref loc) -> bool;
 #endif
 template <typename OutputIt>
-inline auto write_loc(OutputIt, loc_value, const format_specs&, locale_ref)
-    -> bool {
+inline auto write_loc(OutputIt, const loc_value&, const format_specs&,
+                      locale_ref) -> bool {
   return false;
 }
 
@@ -3766,6 +3679,95 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
 }  // namespace detail
 
 FMT_BEGIN_EXPORT
+
+// A generic formatting context with custom output iterator and character
+// (code unit) support. Char is the format string code unit type which can be
+// different from OutputIt::value_type.
+template <typename OutputIt, typename Char> class generic_context {
+ private:
+  OutputIt out_;
+  basic_format_args<generic_context> args_;
+  detail::locale_ref loc_;
+
+ public:
+  using char_type = Char;
+  using iterator = OutputIt;
+  using parse_context_type FMT_DEPRECATED = parse_context<Char>;
+  template <typename T>
+  using formatter_type FMT_DEPRECATED = formatter<T, Char>;
+  enum { builtin_types = FMT_BUILTIN_TYPES };
+
+  constexpr generic_context(OutputIt out,
+                            basic_format_args<generic_context> args,
+                            detail::locale_ref loc = {})
+      : out_(out), args_(args), loc_(loc) {}
+  generic_context(generic_context&&) = default;
+  generic_context(const generic_context&) = delete;
+  void operator=(const generic_context&) = delete;
+
+  constexpr auto arg(int id) const -> basic_format_arg<generic_context> {
+    return args_.get(id);
+  }
+  auto arg(basic_string_view<Char> name) -> basic_format_arg<generic_context> {
+    return args_.get(name);
+  }
+  FMT_CONSTEXPR auto arg_id(basic_string_view<Char> name) -> int {
+    return args_.get_id(name);
+  }
+
+  FMT_CONSTEXPR auto out() -> iterator { return out_; }
+
+  void advance_to(iterator it) {
+    if (!detail::is_back_insert_iterator<iterator>()) out_ = it;
+  }
+
+  FMT_CONSTEXPR auto locale() -> detail::locale_ref { return loc_; }
+};
+
+class loc_value {
+ private:
+  basic_format_arg<context> value_;
+
+ public:
+  template <typename T, FMT_ENABLE_IF(!detail::is_float128<T>::value)>
+  loc_value(T value) : value_(value) {}
+
+  template <typename T, FMT_ENABLE_IF(detail::is_float128<T>::value)>
+  loc_value(T) {}
+
+  template <typename Visitor> auto visit(Visitor&& vis) -> decltype(vis(0)) {
+    return value_.visit(vis);
+  }
+};
+
+// A locale facet that formats values in UTF-8.
+// It is parameterized on the locale to avoid the heavy <locale> include.
+template <typename Locale> class format_facet : public Locale::facet {
+ private:
+  std::string separator_;
+  std::string grouping_;
+  std::string decimal_point_;
+
+ protected:
+  virtual auto do_put(appender out, loc_value val,
+                      const format_specs& specs) const -> bool;
+
+ public:
+  static FMT_API typename Locale::id id;
+
+  explicit format_facet(Locale& loc);
+  explicit format_facet(string_view sep = "",
+                        std::initializer_list<unsigned char> g = {3},
+                        std::string decimal_point = ".")
+      : separator_(sep.data(), sep.size()),
+        grouping_(g.begin(), g.end()),
+        decimal_point_(decimal_point) {}
+
+  auto put(appender out, loc_value val, const format_specs& specs) const
+      -> bool {
+    return do_put(out, val, specs);
+  }
+};
 
 #define FMT_FORMAT_AS(Type, Base)                                   \
   template <typename Char>                                          \
