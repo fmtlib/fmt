@@ -41,13 +41,12 @@
 #include "base.h"
 
 #ifndef FMT_MODULE
-#  include <cmath>             // std::signbit
-#  include <cstddef>           // std::byte
-#  include <cstdint>           // uint32_t
-#  include <cstring>           // std::memcpy
-#  include <initializer_list>  // std::initializer_list
-#  include <limits>            // std::numeric_limits
-#  include <new>               // std::bad_alloc
+#  include <cmath>    // std::signbit
+#  include <cstddef>  // std::byte
+#  include <cstdint>  // uint32_t
+#  include <cstring>  // std::memcpy
+#  include <limits>   // std::numeric_limits
+#  include <new>      // std::bad_alloc
 #  if defined(__GLIBCXX__) && !defined(_GLIBCXX_USE_DUAL_ABI)
 // Workaround for pre gcc 5 libstdc++.
 #    include <memory>  // std::allocator_traits
@@ -3757,11 +3756,10 @@ template <typename Locale> class format_facet : public Locale::facet {
   static FMT_API typename Locale::id id;
 
   explicit format_facet(Locale& loc);
-  explicit format_facet(string_view sep = "",
-                        std::initializer_list<unsigned char> g = {3},
+  explicit format_facet(string_view sep = "", std::string grouping = "\3",
                         std::string decimal_point = ".")
       : separator_(sep.data(), sep.size()),
-        grouping_(g.begin(), g.end()),
+        grouping_(grouping),
         decimal_point_(decimal_point) {}
 
   auto put(appender out, loc_value val, const format_specs& specs) const
