@@ -943,8 +943,6 @@ FMT_API auto write_console(int fd, string_view text) -> bool;
 FMT_API void print(FILE*, string_view);
 }  // namespace detail
 
-FMT_BEGIN_EXPORT
-
 // Suppress a misleading warning in older versions of clang.
 FMT_PRAGMA_CLANG(diagnostic ignored "-Wweak-vtables")
 
@@ -967,22 +965,17 @@ template <typename Char, size_t N> struct fixed_string {
 
 // Converts a compile-time string to basic_string_view.
 template <typename Char, size_t N>
-constexpr auto compile_string_to_view(const Char (&s)[N])
+FMT_EXPORT constexpr auto compile_string_to_view(const Char (&s)[N])
     -> basic_string_view<Char> {
   // Remove trailing NUL character if needed. Won't be present if this is used
   // with a raw character array (i.e. not defined as a string).
   return {s, N - (std::char_traits<Char>::to_int_type(s[N - 1]) == 0 ? 1 : 0)};
 }
 template <typename Char>
-constexpr auto compile_string_to_view(basic_string_view<Char> s)
+FMT_EXPORT constexpr auto compile_string_to_view(basic_string_view<Char> s)
     -> basic_string_view<Char> {
   return s;
 }
-}  // namespace detail
-
-FMT_END_EXPORT
-
-namespace detail {
 
 // Returns true if value is negative, false otherwise.
 // Same as `value < 0` but doesn't produce warnings if T is an unsigned type.
