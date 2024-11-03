@@ -2627,18 +2627,20 @@ class context : private detail::locale_ref {
   void operator=(const context&) = delete;
 
   FMT_CONSTEXPR auto arg(int id) const -> format_arg { return args_.get(id); }
-  inline auto arg(string_view name) -> format_arg { return args_.get(name); }
-  FMT_CONSTEXPR auto arg_id(string_view name) -> int {
+  inline auto arg(string_view name) const -> format_arg {
+    return args_.get(name);
+  }
+  FMT_CONSTEXPR auto arg_id(string_view name) const -> int {
     return args_.get_id(name);
   }
 
   // Returns an iterator to the beginning of the output range.
-  FMT_CONSTEXPR auto out() -> iterator { return out_; }
+  FMT_CONSTEXPR auto out() const -> iterator { return out_; }
 
   // Advances the begin iterator to `it`.
   FMT_CONSTEXPR void advance_to(iterator) {}
 
-  FMT_CONSTEXPR auto locale() -> detail::locale_ref { return *this; }
+  FMT_CONSTEXPR auto locale() const -> detail::locale_ref { return *this; }
 };
 
 template <typename Char = char> struct runtime_format_string {

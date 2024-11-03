@@ -3708,20 +3708,21 @@ template <typename OutputIt, typename Char> class generic_context {
   constexpr auto arg(int id) const -> basic_format_arg<generic_context> {
     return args_.get(id);
   }
-  auto arg(basic_string_view<Char> name) -> basic_format_arg<generic_context> {
+  auto arg(basic_string_view<Char> name) const
+      -> basic_format_arg<generic_context> {
     return args_.get(name);
   }
-  FMT_CONSTEXPR auto arg_id(basic_string_view<Char> name) -> int {
+  constexpr auto arg_id(basic_string_view<Char> name) const -> int {
     return args_.get_id(name);
   }
 
-  FMT_CONSTEXPR auto out() -> iterator { return out_; }
+  constexpr auto out() const -> iterator { return out_; }
 
   void advance_to(iterator it) {
     if (!detail::is_back_insert_iterator<iterator>()) out_ = it;
   }
 
-  FMT_CONSTEXPR auto locale() -> detail::locale_ref { return loc_; }
+  constexpr auto locale() const -> detail::locale_ref { return loc_; }
 };
 
 class loc_value {
