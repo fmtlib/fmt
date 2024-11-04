@@ -68,7 +68,7 @@
 #  endif
 
 #  if FMT_MSC_VERSION
-#    include <intrin.h>  // _BitScanReverse[64], _BitScanForward[64], _umul128
+#    include <intrin.h>  // _BitScanReverse[64], _umul128
 #  endif
 #endif  // FMT_MODULE
 
