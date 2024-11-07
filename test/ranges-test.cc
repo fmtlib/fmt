@@ -213,7 +213,8 @@ TEST(ranges_test, tuple_parse_calls_element_parse) {
   EXPECT_THROW(f.parse(ctx), bad_format);
 }
 
-#ifdef FMT_RANGES_TEST_ENABLE_FORMAT_STRUCT
+#if defined(FMT_RANGES_TEST_ENABLE_JOIN) || \
+    defined(FMT_RANGES_TEST_ENABLE_FORMAT_STRUCT)
 struct tuple_like {
   int i;
   std::string str;
@@ -241,7 +242,9 @@ template <size_t N> struct tuple_element<N, tuple_like> {
   using type = decltype(std::declval<tuple_like>().get<N>());
 };
 }  // namespace std
+#endif
 
+#ifdef FMT_RANGES_TEST_ENABLE_FORMAT_STRUCT
 TEST(ranges_test, format_struct) {
   auto t = tuple_like{42, "foo"};
   EXPECT_EQ(fmt::format("{}", t), "(42, \"foo\")");
@@ -419,6 +422,10 @@ TEST(ranges_test, join_tuple) {
   // Single element tuple.
   auto t4 = std::tuple<float>(4.0f);
   EXPECT_EQ(fmt::format("{}", fmt::join(t4, "/")), "4");
+
+  // Tuple-like.
+  auto t5 = tuple_like{42, "foo"};
+  EXPECT_EQ(fmt::format("{}", fmt::join(t5, ", ")), "42, foo");
 
 #  if FMT_TUPLE_JOIN_SPECIFIERS
   // Specs applied to each element.

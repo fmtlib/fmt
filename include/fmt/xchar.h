@@ -140,7 +140,7 @@ auto join(It begin, Sentinel end, wstring_view sep)
   return {begin, end, sep};
 }
 
-template <typename Range>
+template <typename Range, FMT_ENABLE_IF(!is_tuple_like<Range>::value)>
 auto join(Range&& range, wstring_view sep)
     -> join_view<decltype(std::begin(range)), decltype(std::end(range)),
                  wchar_t> {
@@ -153,9 +153,9 @@ auto join(std::initializer_list<T> list, wstring_view sep)
   return join(std::begin(list), std::end(list), sep);
 }
 
-template <typename... T>
-auto join(const std::tuple<T...>& tuple, basic_string_view<wchar_t> sep)
-    -> tuple_join_view<wchar_t, T...> {
+template <typename Tuple, FMT_ENABLE_IF(is_tuple_like<Tuple>::value)>
+auto join(const Tuple& tuple, basic_string_view<wchar_t> sep)
+    -> tuple_join_view<wchar_t, Tuple> {
   return {tuple, sep};
 }
 
