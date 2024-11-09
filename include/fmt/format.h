@@ -505,8 +505,8 @@ constexpr auto to_pointer(OutputIt, size_t) -> T* {
 template <typename T>
 FMT_CONSTEXPR20 auto to_pointer(basic_appender<T> it, size_t n) -> T* {
   buffer<T>& buf = get_container(it);
+  buf.try_reserve(buf.size() + n);
   auto size = buf.size();
-  buf.try_reserve(size + n);
   if (buf.capacity() < size + n) return nullptr;
   buf.try_resize(size + n);
   return buf.data() + size;

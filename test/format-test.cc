@@ -1821,7 +1821,9 @@ TEST(format_test, big_print) {
 }
 
 // Windows CRT implements _IOLBF incorrectly (full buffering).
-#if FMT_USE_FCNTL && !defined(_WIN32)
+#if FMT_USE_FCNTL
+
+#  ifndef _WIN32
 TEST(format_test, line_buffering) {
   auto pipe = fmt::pipe();
 
@@ -1845,7 +1847,26 @@ TEST(format_test, line_buffering) {
 
   reader.join();
 }
-#endif
+#  endif
+
+TEST(format_test, buffer_boundary) {
+  auto pipe = fmt::pipe();
+
+  auto write_end = pipe.write_end.fdopen("w");
+  setvbuf(write_end.get(), nullptr, _IOFBF, 4096);
+  for (int i = 3; i < 4094; i++)
+    write_end.print("{}", (i % 73) != 0 ? 'x' : '\n');
+  write_end.print("{} {}", 1234, 567);
+  write_end.close();
+
+  auto read_end = pipe.read_end.fdopen("r");
+  char buf[4091] = {};
+  size_t n = fread(buf, 1, sizeof(buf), read_end.get());
+  EXPECT_EQ(n, sizeof(buf));
+  EXPECT_STREQ(fgets(buf, sizeof(buf), read_end.get()), "1234 567");
+}
+
+#endif  // FMT_USE_FCNTL
 
 struct deadlockable {
   int value = 0;
