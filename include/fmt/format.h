@@ -1695,7 +1695,7 @@ FMT_API auto is_printable(uint32_t cp) -> bool;
 
 inline auto needs_escape(uint32_t cp) -> bool {
   if (cp < 0x20 || cp == 0x7f || cp == '"' || cp == '\\') return true;
-  if (FMT_OPTIMIZE_SIZE > 1) return false;
+  if (const_check(FMT_OPTIMIZE_SIZE > 1)) return false;
   return !is_printable(cp);
 }
 
@@ -1718,7 +1718,7 @@ auto find_escape(const Char* begin, const Char* end)
 
 inline auto find_escape(const char* begin, const char* end)
     -> find_escape_result<char> {
-  if (!use_utf8) return find_escape<char>(begin, end);
+  if (const_check(!use_utf8)) return find_escape<char>(begin, end);
   auto result = find_escape_result<char>{end, nullptr, 0};
   for_each_codepoint(string_view(begin, to_unsigned(end - begin)),
                      [&](uint32_t cp, string_view sv) {
