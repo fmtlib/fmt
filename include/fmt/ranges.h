@@ -696,18 +696,18 @@ auto join(It begin, Sentinel end, string_view sep) -> join_view<It, Sentinel> {
  *     fmt::print("{:02}", fmt::join(v, ", "));
  *     // Output: 01, 02, 03
  */
-template <typename Range>
+template <typename Range, FMT_ENABLE_IF(!is_tuple_like<Range>::value)>
 auto join(Range&& r, string_view sep)
     -> join_view<decltype(detail::range_begin(r)),
                  decltype(detail::range_end(r))> {
   return {detail::range_begin(r), detail::range_end(r), sep};
 }
 
-template <typename Char, typename... T> struct tuple_join_view : detail::view {
-  const std::tuple<T...>& tuple;
+template <typename Char, typename Tuple> struct tuple_join_view : detail::view {
+  const Tuple& tuple;
   basic_string_view<Char> sep;
 
-  tuple_join_view(const std::tuple<T...>& t, basic_string_view<Char> s)
+  tuple_join_view(const Tuple& t, basic_string_view<Char> s)
       : tuple(t), sep{s} {}
 };
 
@@ -718,21 +718,22 @@ template <typename Char, typename... T> struct tuple_join_view : detail::view {
 #  define FMT_TUPLE_JOIN_SPECIFIERS 0
 #endif
 
-template <typename Char, typename... T>
-struct formatter<tuple_join_view<Char, T...>, Char> {
+template <typename Char, typename Tuple>
+struct formatter<tuple_join_view<Char, Tuple>, Char,
+                 enable_if_t<is_tuple_like<Tuple>::value>> {
   FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
-    return do_parse(ctx, std::integral_constant<size_t, sizeof...(T)>());
+    return do_parse(ctx, std::tuple_size<Tuple>());
   }
 
   template <typename FormatContext>
-  auto format(const tuple_join_view<Char, T...>& value,
+  auto format(const tuple_join_view<Char, Tuple>& value,
               FormatContext& ctx) const -> typename FormatContext::iterator {
-    return do_format(value, ctx,
-                     std::integral_constant<size_t, sizeof...(T)>());
+    return do_format(value, ctx, std::tuple_size<Tuple>());
   }
 
  private:
-  std::tuple<formatter<typename std::decay<T>::type, Char>...> formatters_;
+  decltype(detail::tuple::get_formatters<Tuple, Char>(
+      detail::tuple_index_sequence<Tuple>())) formatters_;
 
   FMT_CONSTEXPR auto do_parse(parse_context<Char>& ctx,
                               std::integral_constant<size_t, 0>)
@@ -746,7 +747,7 @@ struct formatter<tuple_join_view<Char, T...>, Char> {
       -> const Char* {
     auto end = ctx.begin();
 #if FMT_TUPLE_JOIN_SPECIFIERS
-    end = std::get<sizeof...(T) - N>(formatters_).parse(ctx);
+    end = std::get<std::tuple_size<Tuple>::value - N>(formatters_).parse(ctx);
     if (N > 1) {
       auto end1 = do_parse(ctx, std::integral_constant<size_t, N - 1>());
       if (end != end1)
@@ -757,18 +758,20 @@ struct formatter<tuple_join_view<Char, T...>, Char> {
   }
 
   template <typename FormatContext>
-  auto do_format(const tuple_join_view<Char, T...>&, FormatContext& ctx,
+  auto do_format(const tuple_join_view<Char, Tuple>&, FormatContext& ctx,
                  std::integral_constant<size_t, 0>) const ->
       typename FormatContext::iterator {
     return ctx.out();
   }
 
   template <typename FormatContext, size_t N>
-  auto do_format(const tuple_join_view<Char, T...>& value, FormatContext& ctx,
+  auto do_format(const tuple_join_view<Char, Tuple>& value, FormatContext& ctx,
                  std::integral_constant<size_t, N>) const ->
       typename FormatContext::iterator {
-    auto out = std::get<sizeof...(T) - N>(formatters_)
-                   .format(std::get<sizeof...(T) - N>(value.tuple), ctx);
+    using std::get;
+    auto out =
+        std::get<std::tuple_size<Tuple>::value - N>(formatters_)
+            .format(get<std::tuple_size<Tuple>::value - N>(value.tuple), ctx);
     if (N <= 1) return out;
     out = detail::copy<Char>(value.sep, out);
     ctx.advance_to(out);
@@ -825,9 +828,9 @@ FMT_BEGIN_EXPORT
  *     fmt::print("{}", fmt::join(t, ", "));
  *     // Output: 1, a
  */
-template <typename... T>
-FMT_CONSTEXPR auto join(const std::tuple<T...>& tuple, string_view sep)
-    -> tuple_join_view<char, T...> {
+template <typename Tuple, FMT_ENABLE_IF(is_tuple_like<Tuple>::value)>
+FMT_CONSTEXPR auto join(const Tuple& tuple, string_view sep)
+    -> tuple_join_view<char, Tuple> {
   return {tuple, sep};
 }
 
