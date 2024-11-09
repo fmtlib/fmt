@@ -2885,7 +2885,7 @@ FMT_API void vprint_buffered(FILE* f, string_view fmt, format_args args);
 template <typename... T>
 FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
   vargs<T...> va = {{args...}};
-  if (!detail::use_utf8)
+  if (detail::const_check(!detail::use_utf8))
     return detail::vprint_mojibake(stdout, fmt.str, va, false);
   return detail::is_locking<T...>() ? vprint_buffered(stdout, fmt.str, va)
                                     : vprint(fmt.str, va);
@@ -2902,7 +2902,8 @@ FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
 template <typename... T>
 FMT_INLINE void print(FILE* f, format_string<T...> fmt, T&&... args) {
   vargs<T...> va = {{args...}};
-  if (!detail::use_utf8) return detail::vprint_mojibake(f, fmt.str, va, false);
+  if (detail::const_check(!detail::use_utf8))
+    return detail::vprint_mojibake(f, fmt.str, va, false);
   return detail::is_locking<T...>() ? vprint_buffered(f, fmt.str, va)
                                     : vprint(f, fmt.str, va);
 }
@@ -2912,8 +2913,9 @@ FMT_INLINE void print(FILE* f, format_string<T...> fmt, T&&... args) {
 template <typename... T>
 FMT_INLINE void println(FILE* f, format_string<T...> fmt, T&&... args) {
   vargs<T...> va = {{args...}};
-  return detail::use_utf8 ? vprintln(f, fmt.str, va)
-                          : detail::vprint_mojibake(f, fmt.str, va, true);
+  return detail::const_check(detail::use_utf8)
+             ? vprintln(f, fmt.str, va)
+             : detail::vprint_mojibake(f, fmt.str, va, true);
 }
 
 /// Formats `args` according to specifications in `fmt` and writes the output
