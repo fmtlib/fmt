@@ -937,12 +937,6 @@ template <typename T, size_t SIZE, typename Allocator>
 struct is_contiguous<basic_memory_buffer<T, SIZE, Allocator>> : std::true_type {
 };
 
-FMT_END_EXPORT
-namespace detail {
-FMT_API auto write_console(int fd, string_view text) -> bool;
-FMT_API void print(FILE*, string_view);
-}  // namespace detail
-
 // Suppress a misleading warning in older versions of clang.
 FMT_PRAGMA_CLANG(diagnostic ignored "-Wweak-vtables")
 
@@ -954,6 +948,12 @@ class FMT_SO_VISIBILITY("default") format_error : public std::runtime_error {
 
 class loc_value;
 
+FMT_END_EXPORT
+namespace detail {
+FMT_API auto write_console(int fd, string_view text) -> bool;
+FMT_API void print(FILE*, string_view);
+}  // namespace detail
+
 namespace detail {
 template <typename Char, size_t N> struct fixed_string {
   FMT_CONSTEXPR20 fixed_string(const Char (&s)[N]) {
@@ -964,15 +964,15 @@ template <typename Char, size_t N> struct fixed_string {
 };
 
 // Converts a compile-time string to basic_string_view.
-template <typename Char, size_t N>
-FMT_EXPORT constexpr auto compile_string_to_view(const Char (&s)[N])
+FMT_EXPORT template <typename Char, size_t N>
+constexpr auto compile_string_to_view(const Char (&s)[N])
     -> basic_string_view<Char> {
   // Remove trailing NUL character if needed. Won't be present if this is used
   // with a raw character array (i.e. not defined as a string).
   return {s, N - (std::char_traits<Char>::to_int_type(s[N - 1]) == 0 ? 1 : 0)};
 }
-template <typename Char>
-FMT_EXPORT constexpr auto compile_string_to_view(basic_string_view<Char> s)
+FMT_EXPORT template <typename Char>
+constexpr auto compile_string_to_view(basic_string_view<Char> s)
     -> basic_string_view<Char> {
   return s;
 }
