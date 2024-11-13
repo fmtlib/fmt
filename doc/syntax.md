@@ -706,12 +706,12 @@ The available padding modifiers (*padding_modifier*) are:
 
 | Type  | Meaning                                 |
 |-------|-----------------------------------------|
-| `'-'` | Pad a numeric result with spaces.       |
-| `'_'` | Do not pad a numeric result string.     |
+| `'_'` | Pad a numeric result with spaces.       |
+| `'-'` | Do not pad a numeric result string.     |
 | `'0'` | Pad a numeric result string with zeros. |
 
 These modifiers are only supported for the `'H'`, `'I'`, `'M'`, `'S'`, `'U'`,
-`'V'`, `'W'`, `'m'`, `'j'`, `'Y'` presentation types.
+`'V'`, `'W'`, `'m'`, `'j'`, `'d'`, `'Y'` presentation types.
 
 ## Range Format Specifications
 
