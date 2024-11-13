@@ -711,7 +711,7 @@ The available padding modifiers (*padding_modifier*) are:
 | `'0'` | Pad a numeric result string with zeros. |
 
 These modifiers are only supported for the `'H'`, `'I'`, `'M'`, `'S'`, `'U'`,
-`'V'`, `'W'`, `'m'`, `'j'`, `'d'`, `'Y'` presentation types.
+`'V'`, `'W'`, `'Y'`, `'d'`, `'j'` and `'m'` presentation types.
 
 ## Range Format Specifications
 
