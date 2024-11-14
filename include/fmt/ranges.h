@@ -646,9 +646,9 @@ struct formatter<join_view<It, Sentinel, Char>, Char> {
 #endif
   formatter<remove_cvref_t<value_type>, Char> value_formatter_;
 
-  using view_ref = conditional_t<std::is_copy_constructible<It>::value,
-                                 const join_view<It, Sentinel, Char>&,
-                                 join_view<It, Sentinel, Char>&&>;
+  using view = conditional_t<std::is_copy_constructible<It>::value,
+                             const join_view<It, Sentinel, Char>,
+                             join_view<It, Sentinel, Char>>;
 
  public:
   using nonlocking = void;
@@ -658,9 +658,10 @@ struct formatter<join_view<It, Sentinel, Char>, Char> {
   }
 
   template <typename FormatContext>
-  auto format(view_ref& value, FormatContext& ctx) const
-      -> decltype(ctx.out()) {
-    auto it = std::forward<view_ref>(value).begin;
+  auto format(view& value, FormatContext& ctx) const -> decltype(ctx.out()) {
+    using iter =
+        conditional_t<std::is_copy_constructible<view>::value, It, It&>;
+    iter it = value.begin;
     auto out = ctx.out();
     if (it == value.end) return out;
     out = value_formatter_.format(*it, ctx);
