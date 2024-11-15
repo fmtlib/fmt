@@ -357,12 +357,9 @@ template <typename R>
 using maybe_const_range =
     conditional_t<has_const_begin_end<R>::value, const R, R>;
 
-// Workaround a bug in MSVC 2015 and earlier.
-#if !FMT_MSC_VERSION || FMT_MSC_VERSION >= 1910
 template <typename R, typename Char>
 struct is_formattable_delayed
     : is_formattable<uncvref_type<maybe_const_range<R>>, Char> {};
-#endif
 }  // namespace detail
 
 template <typename...> struct conjunction : std::true_type {};
@@ -498,13 +495,8 @@ struct formatter<
             range_format_kind<R, Char>::value != range_format::disabled &&
             range_format_kind<R, Char>::value != range_format::map &&
             range_format_kind<R, Char>::value != range_format::string &&
-            range_format_kind<R, Char>::value != range_format::debug_string>
-// Workaround a bug in MSVC 2015 and earlier.
-#if !FMT_MSC_VERSION || FMT_MSC_VERSION >= 1910
-        ,
-        detail::is_formattable_delayed<R, Char>
-#endif
-        >::value>> {
+            range_format_kind<R, Char>::value != range_format::debug_string>,
+        detail::is_formattable_delayed<R, Char>>::value>> {
  private:
   using range_type = detail::maybe_const_range<R>;
   range_formatter<detail::uncvref_type<range_type>, Char> range_formatter_;
