@@ -668,34 +668,6 @@ struct formatter<join_view<It, Sentinel, Char>, Char> {
   }
 };
 
-/// Returns a view that formats the iterator range `[begin, end)` with elements
-/// separated by `sep`.
-template <typename It, typename Sentinel>
-auto join(It begin, Sentinel end, string_view sep) -> join_view<It, Sentinel> {
-  return {std::move(begin), end, sep};
-}
-
-/**
- * Returns a view that formats `range` with elements separated by `sep`.
- *
- * **Example**:
- *
- *     auto v = std::vector<int>{1, 2, 3};
- *     fmt::print("{}", fmt::join(v, ", "));
- *     // Output: 1, 2, 3
- *
- * `fmt::join` applies passed format specifiers to the range elements:
- *
- *     fmt::print("{:02}", fmt::join(v, ", "));
- *     // Output: 01, 02, 03
- */
-template <typename Range, FMT_ENABLE_IF(!is_tuple_like<Range>::value)>
-auto join(Range&& r, string_view sep)
-    -> join_view<decltype(detail::range_begin(r)),
-                 decltype(detail::range_end(r))> {
-  return {detail::range_begin(r), detail::range_end(r), sep};
-}
-
 template <typename Char, typename Tuple> struct tuple_join_view : detail::view {
   const Tuple& tuple;
   basic_string_view<Char> sep;
@@ -811,6 +783,34 @@ struct formatter<
 };
 
 FMT_BEGIN_EXPORT
+
+/// Returns a view that formats the iterator range `[begin, end)` with elements
+/// separated by `sep`.
+template <typename It, typename Sentinel>
+auto join(It begin, Sentinel end, string_view sep) -> join_view<It, Sentinel> {
+  return {std::move(begin), end, sep};
+}
+
+/**
+ * Returns a view that formats `range` with elements separated by `sep`.
+ *
+ * **Example**:
+ *
+ *     auto v = std::vector<int>{1, 2, 3};
+ *     fmt::print("{}", fmt::join(v, ", "));
+ *     // Output: 1, 2, 3
+ *
+ * `fmt::join` applies passed format specifiers to the range elements:
+ *
+ *     fmt::print("{:02}", fmt::join(v, ", "));
+ *     // Output: 01, 02, 03
+ */
+template <typename Range, FMT_ENABLE_IF(!is_tuple_like<Range>::value)>
+auto join(Range&& r, string_view sep)
+    -> join_view<decltype(detail::range_begin(r)),
+                 decltype(detail::range_end(r))> {
+  return {detail::range_begin(r), detail::range_end(r), sep};
+}
 
 /**
  * Returns an object that formats `std::tuple` with elements separated by `sep`.
