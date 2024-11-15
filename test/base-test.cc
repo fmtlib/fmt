@@ -645,9 +645,7 @@ TEST(base_test, is_formattable) {
   EXPECT_TRUE(fmt::is_formattable<const const_formattable&>::value);
 
   EXPECT_TRUE(fmt::is_formattable<nonconst_formattable&>::value);
-#if !FMT_MSC_VERSION || FMT_MSC_VERSION >= 1910
   EXPECT_FALSE(fmt::is_formattable<const nonconst_formattable&>::value);
-#endif
 
   EXPECT_FALSE(fmt::is_formattable<convertible_to_pointer>::value);
   const auto f = convertible_to_pointer_formattable();
@@ -745,19 +743,6 @@ TEST(base_test, no_implicit_conversion_to_string_view) {
       fmt::is_formattable<implicitly_convertible_to_string_view>::value);
 }
 
-#ifdef FMT_USE_STRING_VIEW
-struct implicitly_convertible_to_std_string_view {
-  operator std::string_view() const { return "foo"; }
-};
-
-TEST(base_test, no_implicit_conversion_to_std_string_view) {
-  EXPECT_FALSE(
-      fmt::is_formattable<implicitly_convertible_to_std_string_view>::value);
-}
-#endif
-
-// std::is_constructible is broken in MSVC until version 2015.
-#if !FMT_MSC_VERSION || FMT_MSC_VERSION >= 1900
 struct explicitly_convertible_to_string_view {
   explicit operator fmt::string_view() const { return "foo"; }
 };
@@ -769,7 +754,16 @@ TEST(base_test, format_explicitly_convertible_to_string_view) {
       !fmt::is_formattable<explicitly_convertible_to_string_view>::value, "");
 }
 
-#  ifdef FMT_USE_STRING_VIEW
+#if FMT_CPLUSPLUS >= 201703L
+struct implicitly_convertible_to_std_string_view {
+  operator std::string_view() const { return "foo"; }
+};
+
+TEST(base_test, no_implicit_conversion_to_std_string_view) {
+  EXPECT_FALSE(
+      fmt::is_formattable<implicitly_convertible_to_std_string_view>::value);
+}
+
 struct explicitly_convertible_to_std_string_view {
   explicit operator std::string_view() const { return "foo"; }
 };
@@ -781,8 +775,7 @@ TEST(base_test, format_explicitly_convertible_to_std_string_view) {
       !fmt::is_formattable<explicitly_convertible_to_std_string_view>::value,
       "");
 }
-#  endif
-#endif
+#endif  // FMT_CPLUSPLUS >= 201703L
 
 TEST(base_test, has_formatter) {
   EXPECT_TRUE((fmt::detail::has_formatter<const const_formattable, char>()));
