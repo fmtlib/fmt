@@ -29,7 +29,6 @@
 #endif
 
 #if !FMT_MSC_VERSION || FMT_MSC_VERSION > 1910
-#  define FMT_RANGES_TEST_ENABLE_JOIN
 #  define FMT_RANGES_TEST_ENABLE_FORMAT_STRUCT
 #endif
 
@@ -213,8 +212,6 @@ TEST(ranges_test, tuple_parse_calls_element_parse) {
   EXPECT_THROW(f.parse(ctx), bad_format);
 }
 
-#if defined(FMT_RANGES_TEST_ENABLE_JOIN) || \
-    defined(FMT_RANGES_TEST_ENABLE_FORMAT_STRUCT)
 struct tuple_like {
   int i;
   std::string str;
@@ -242,7 +239,6 @@ template <size_t N> struct tuple_element<N, tuple_like> {
   using type = decltype(std::declval<tuple_like>().get<N>());
 };
 }  // namespace std
-#endif
 
 #ifdef FMT_RANGES_TEST_ENABLE_FORMAT_STRUCT
 TEST(ranges_test, format_struct) {
@@ -404,7 +400,6 @@ TEST(ranges_test, join_bytes) {
 }
 #endif
 
-#ifdef FMT_RANGES_TEST_ENABLE_JOIN
 TEST(ranges_test, join_tuple) {
   // Value tuple args.
   auto t1 = std::tuple<char, int, float>('a', 1, 2.0f);
@@ -539,8 +534,6 @@ auto end(const vec& v) -> const int* { return v.n + 2; }
 TEST(ranges_test, format_join_adl_begin_end) {
   EXPECT_EQ(fmt::format("{}", fmt::join(adl::vec(), "/")), "42/43");
 }
-
-#endif  // FMT_RANGES_TEST_ENABLE_JOIN
 
 #if defined(__cpp_lib_ranges) && __cpp_lib_ranges >= 202207L
 TEST(ranges_test, nested_ranges) {
