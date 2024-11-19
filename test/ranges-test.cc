@@ -28,10 +28,6 @@
 #  define FMT_RANGES_TEST_ENABLE_C_STYLE_ARRAY
 #endif
 
-#if !FMT_MSC_VERSION || FMT_MSC_VERSION > 1910
-#  define FMT_RANGES_TEST_ENABLE_FORMAT_STRUCT
-#endif
-
 #ifdef FMT_RANGES_TEST_ENABLE_C_STYLE_ARRAY
 TEST(ranges_test, format_array) {
   int arr[] = {1, 2, 3, 5, 7, 11};
@@ -240,12 +236,10 @@ template <size_t N> struct tuple_element<N, tuple_like> {
 };
 }  // namespace std
 
-#ifdef FMT_RANGES_TEST_ENABLE_FORMAT_STRUCT
 TEST(ranges_test, format_struct) {
   auto t = tuple_like{42, "foo"};
   EXPECT_EQ(fmt::format("{}", t), "(42, \"foo\")");
 }
-#endif  // FMT_RANGES_TEST_ENABLE_FORMAT_STRUCT
 
 TEST(ranges_test, format_to) {
   char buf[10];
