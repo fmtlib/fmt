@@ -78,7 +78,7 @@ jobs:
     - name: Set timezone
       run: tzutil /s "Ekaterinburg Standard Time"
       shell: cmd
-    - uses: msys2/setup-msys2@5df0ca6cbf14efcd08f8d5bd5e049a3cc8e07fd2 # v2.24.0
+    - uses: msys2/setup-msys2@c52d1fa9c7492275e60fe763540fb601f5f232a1 # v2.25.0
       with:
         release: false
         msystem: ${{matrix.sys}}
