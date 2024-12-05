@@ -1,4 +1,6 @@
+#ifdef FMT_MODULE
 module;
+#endif
 
 #ifdef _MSVC_LANG
 #  define FMT_CPLUSPLUS _MSVC_LANG
@@ -6,92 +8,98 @@ module;
 #  define FMT_CPLUSPLUS __cplusplus
 #endif
 
+#ifndef FMT_IMPORT_STD_MODULE
+
 // Put all implementation-provided headers into the global module fragment
 // to prevent attachment to this module.
-#ifndef FMT_IMPORT_STD
-#  include <algorithm>
-#  include <bitset>
-#  include <chrono>
-#  include <cmath>
-#  include <complex>
-#  include <cstddef>
-#  include <cstdint>
-#  include <cstdio>
-#  include <cstdlib>
-#  include <cstring>
-#  include <ctime>
-#  include <exception>
-#  if FMT_CPLUSPLUS > 202002L
-#    include <expected>
-#  endif
-#  include <filesystem>
-#  include <fstream>
-#  include <functional>
-#  include <iterator>
-#  include <limits>
-#  include <locale>
-#  include <memory>
-#  include <optional>
-#  include <ostream>
-#  include <source_location>
-#  include <stdexcept>
-#  include <string>
-#  include <string_view>
-#  include <system_error>
-#  include <thread>
-#  include <type_traits>
-#  include <typeinfo>
-#  include <utility>
-#  include <variant>
-#  include <vector>
-#else
-#  include <limits.h>
-#  include <stdint.h>
-#  include <stdio.h>
-#  include <time.h>
-#endif
-#include <cerrno>
-#include <climits>
-#include <version>
+#  ifndef FMT_IMPORT_STD
+#    include <algorithm>
+#    include <bitset>
+#    include <chrono>
+#    include <cmath>
+#    include <complex>
+#    include <cstddef>
+#    include <cstdint>
+#    include <cstdio>
+#    include <cstdlib>
+#    include <cstring>
+#    include <ctime>
+#    include <exception>
+#    if FMT_CPLUSPLUS > 202002L
+#      include <expected>
+#    endif
+#    include <filesystem>
+#    include <fstream>
+#    include <functional>
+#    include <iterator>
+#    include <limits>
+#    include <locale>
+#    include <memory>
+#    include <optional>
+#    include <ostream>
+#    include <source_location>
+#    include <stdexcept>
+#    include <string>
+#    include <string_view>
+#    include <system_error>
+#    include <thread>
+#    include <type_traits>
+#    include <typeinfo>
+#    include <utility>
+#    include <variant>
+#    include <vector>
+#  else
+#    include <limits.h>
+#    include <stdint.h>
+#    include <stdio.h>
+#    include <time.h>
+#  endif  // FMT_IMPORT_STD
 
-#if __has_include(<cxxabi.h>)
-#  include <cxxabi.h>
-#endif
-#if defined(_MSC_VER) || defined(__MINGW32__)
-#  include <intrin.h>
-#endif
-#if defined __APPLE__ || defined(__FreeBSD__)
-#  include <xlocale.h>
-#endif
-#if __has_include(<winapifamily.h>)
-#  include <winapifamily.h>
-#endif
-#if (__has_include(<fcntl.h>) || defined(__APPLE__) || \
+#  include <cerrno>
+#  include <climits>
+#  include <version>
+
+#  if __has_include(<cxxabi.h>)
+#    include <cxxabi.h>
+#  endif
+#  if defined(_MSC_VER) || defined(__MINGW32__)
+#    include <intrin.h>
+#  endif
+#  if defined __APPLE__ || defined(__FreeBSD__)
+#    include <xlocale.h>
+#  endif
+#  if __has_include(<winapifamily.h>)
+#    include <winapifamily.h>
+#  endif
+#  if (__has_include(<fcntl.h>) || defined(__APPLE__) || \
      defined(__linux__)) &&                            \
     (!defined(WINAPI_FAMILY) || (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP))
-#  include <fcntl.h>
-#  include <sys/stat.h>
-#  include <sys/types.h>
-#  ifndef _WIN32
-#    include <unistd.h>
-#  else
-#    include <io.h>
+#    include <fcntl.h>
+#    include <sys/stat.h>
+#    include <sys/types.h>
+#    ifndef _WIN32
+#      include <unistd.h>
+#    else
+#      include <io.h>
+#    endif
 #  endif
-#endif
-#ifdef _WIN32
-#  if defined(__GLIBCXX__)
-#    include <ext/stdio_filebuf.h>
-#    include <ext/stdio_sync_filebuf.h>
+#  ifdef _WIN32
+#    if defined(__GLIBCXX__)
+#      include <ext/stdio_filebuf.h>
+#      include <ext/stdio_sync_filebuf.h>
+#    endif
+#    define WIN32_LEAN_AND_MEAN
+#    include <windows.h>
 #  endif
-#  define WIN32_LEAN_AND_MEAN
-#  include <windows.h>
-#endif
+#endif  // FMT_IMPORT_STD_MODULE
 
+#ifdef FMT_MODULE
 export module fmt;
 
-#ifdef FMT_IMPORT_STD
+#  ifdef FMT_IMPORT_STD_MODULE
 import std;
-#endif
+#  endif
+#endif  // FMT_MODULE
 
 #define FMT_EXPORT export
 #define FMT_BEGIN_EXPORT export {
@@ -130,9 +138,11 @@ extern "C++" {
 }
 #endif
 
+#ifdef FMT_MODULE
 // gcc doesn't yet implement private module fragments
-#if !FMT_GCC_VERSION
+#  if !FMT_GCC_VERSION
 module :private;
+#  endif
 #endif
 
 #ifdef FMT_ATTACH_TO_GLOBAL_MODULE
