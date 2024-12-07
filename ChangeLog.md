@@ -2,6 +2,37 @@
 
 - Improved debug codegen.
 
+- Implemented a more efficient compile-time `fmt::formatted_size`
+  (https://github.com/fmtlib/fmt/issues/4102,
+  https://github.com/fmtlib/fmt/pull/4103). Thanks @phprus.
+
+- Fixed an unreleased regression in transcoding of surrogate pairs
+  (https://github.com/fmtlib/fmt/issues/4094,
+  https://github.com/fmtlib/fmt/pull/4095). Thanks @phprus.
+
+- Made `fmt::appender` satisfy `std::output_iterator` concept
+  (https://github.com/fmtlib/fmt/issues/4092,
+  https://github.com/fmtlib/fmt/pull/4093). Thanks @phprus.
+
+- Made it easier to reuse `formatter<std::string_view>` for types with implicit
+  conversion to `std::string_view` (https://github.com/fmtlib/fmt/issues/4036,
+  https://github.com/fmtlib/fmt/pull/4055). Thanks @Arghnews.
+
+- Fixed compile-time formatting of some string types
+  (https://github.com/fmtlib/fmt/pull/4065). Thanks @torshepherd.
+
+- Made it possible to disable `<filesystem>` use via `FMT_CPP_LIB_FILESYSTEM`
+  for compatibility with some video game console SDKs, e.g. Nintendo Switch SDK
+  (https://github.com/fmtlib/fmt/issues/4257,
+  https://github.com/fmtlib/fmt/pull/4258). Thanks @W4RH4WK.
+
+- Fixed compatibility with platforms that use 80-bit `long double`
+  (https://github.com/fmtlib/fmt/issues/4245,
+  https://github.com/fmtlib/fmt/pull/4246). Thanks @jsirpoma.
+
+- Improved documentation and README
+  (https://github.com/fmtlib/fmt/pull/4066). Thanks @zyctree.
+
 # 11.0.2 - 2024-07-20
 
 - Fixed compatibility with non-POSIX systems
