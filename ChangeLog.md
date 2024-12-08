@@ -2,6 +2,41 @@
 
 - Improved debug codegen.
 
+- Made `std::expected<void, E>` formattable
+  (https://github.com/fmtlib/fmt/issues/4145,
+  https://github.com/fmtlib/fmt/pull/4148).
+  For example ([godbolt](https://www.godbolt.org/z/hrj5c6G86)):
+
+  ```c++
+  fmt::print("{}", std::expected<void, int>());
+  ```
+
+  prints
+
+  ```
+  expected()
+  ``
+
+  Thanks @phprus.
+
+- Added support for `_BitInt` formatting when using clang
+  (https://github.com/fmtlib/fmt/issues/4007,
+  https://github.com/fmtlib/fmt/pull/4072).
+  For example ([godbolt](https://www.godbolt.org/z/KWjbWec5z)):
+
+  ```c++
+  using int42 = _BitInt(42);
+  fmt::print("{}", int42(100));
+  ```
+
+  Thanks @Arghnews.
+
+- Added the `n` specifier for tuples and pairs
+  (https://github.com/fmtlib/fmt/pull/4107). Thanks @someonewithpc.
+
+- Made more types formattable at compile time
+  (https://github.com/fmtlib/fmt/pull/4127). Thanks @AnthonyVH.
+
 - Implemented a more efficient compile-time `fmt::formatted_size`
   (https://github.com/fmtlib/fmt/issues/4102,
   https://github.com/fmtlib/fmt/pull/4103). Thanks @phprus.
@@ -30,8 +65,26 @@
   (https://github.com/fmtlib/fmt/issues/4245,
   https://github.com/fmtlib/fmt/pull/4246). Thanks @jsirpoma.
 
-- Improved documentation and README
-  (https://github.com/fmtlib/fmt/pull/4066). Thanks @zyctree.
+- Improved include directory ordering to reduce the chance of including
+  incorrect headers when using multiple versions of {fmt}
+  (https://github.com/fmtlib/fmt/pull/4116). Thanks @cdzhan.
+
+- Improved documentation and README (https://github.com/fmtlib/fmt/pull/4066).
+  Thanks @zyctree.
+
+- Improved the documentation generator (https://github.com/fmtlib/fmt/pull/4110,
+  https://github.com/fmtlib/fmt/pull/4115). Thanks @rturrado.
+
+- Improved CI (https://github.com/fmtlib/fmt/pull/4155,
+  https://github.com/fmtlib/fmt/pull/4151). Thanks @phprus.
+
+- Fixed various warnings and compilation issues
+  (https://github.com/fmtlib/fmt/issues/4129,
+  https://github.com/fmtlib/fmt/pull/4130,
+  https://github.com/fmtlib/fmt/pull/4131,
+  https://github.com/fmtlib/fmt/pull/4132,
+  https://github.com/fmtlib/fmt/pull/4159).
+  Thanks @torsten48, @Arghnews, @tinfoilboy, aminya .
 
 # 11.0.2 - 2024-07-20
 
