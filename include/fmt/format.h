@@ -891,7 +891,7 @@ class basic_memory_buffer : public detail::buffer<T> {
 using memory_buffer = basic_memory_buffer<char>;
 
 template <size_t SIZE>
-FMT_NODISCARD auto to_string(basic_memory_buffer<char, SIZE>& buf)
+FMT_NODISCARD auto to_string(const basic_memory_buffer<char, SIZE>& buf)
     -> std::string {
   auto size = buf.size();
   detail::assume(size < std::string().max_size());
