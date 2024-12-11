@@ -2,6 +2,13 @@
 
 - Improved debug codegen.
 
+- Improved C++20 module support
+  (https://github.com/fmtlib/fmt/pull/4083,
+  https://github.com/fmtlib/fmt/pull/4084,
+  https://github.com/fmtlib/fmt/pull/4152,
+  https://github.com/fmtlib/fmt/pull/4169).
+  Thanks @kamrann.
+
 - Made `std::expected<void, E>` formattable
   (https://github.com/fmtlib/fmt/issues/4145,
   https://github.com/fmtlib/fmt/pull/4148).
@@ -15,13 +22,14 @@
 
   ```
   expected()
-  ``
+  ```
 
   Thanks @phprus.
 
 - Added support for `_BitInt` formatting when using clang
   (https://github.com/fmtlib/fmt/issues/4007,
-  https://github.com/fmtlib/fmt/pull/4072).
+  https://github.com/fmtlib/fmt/pull/4072,
+  https://github.com/fmtlib/fmt/pull/4176).
   For example ([godbolt](https://www.godbolt.org/z/KWjbWec5z)):
 
   ```c++
@@ -41,6 +49,13 @@
   (https://github.com/fmtlib/fmt/issues/4102,
   https://github.com/fmtlib/fmt/pull/4103). Thanks @phprus.
 
+- Added a formatter for `std::reference_wrapper`
+  (https://github.com/fmtlib/fmt/pull/4163,
+  https://github.com/fmtlib/fmt/pull/4164). Thanks @yfeldblum and @phprus.
+
+- Added experimental padding support (glibc `strftime` extension) to `%m`, `%j`
+  and `%Y`. (https://github.com/fmtlib/fmt/pull/4161). Thanks @KKhanhH.
+
 - Fixed an unreleased regression in transcoding of surrogate pairs
   (https://github.com/fmtlib/fmt/issues/4094,
   https://github.com/fmtlib/fmt/pull/4095). Thanks @phprus.
@@ -48,6 +63,9 @@
 - Made `fmt::appender` satisfy `std::output_iterator` concept
   (https://github.com/fmtlib/fmt/issues/4092,
   https://github.com/fmtlib/fmt/pull/4093). Thanks @phprus.
+
+- Made `std::iterator_traits<fmt::appender>` standard-conforming
+  (https://github.com/fmtlib/fmt/pull/4185). Thanks @CaseyCarter.
 
 - Made it easier to reuse `formatter<std::string_view>` for types with implicit
   conversion to `std::string_view` (https://github.com/fmtlib/fmt/issues/4036,
@@ -59,7 +77,8 @@
 - Made it possible to disable `<filesystem>` use via `FMT_CPP_LIB_FILESYSTEM`
   for compatibility with some video game console SDKs, e.g. Nintendo Switch SDK
   (https://github.com/fmtlib/fmt/issues/4257,
-  https://github.com/fmtlib/fmt/pull/4258). Thanks @W4RH4WK.
+  https://github.com/fmtlib/fmt/pull/4258,
+  https://github.com/fmtlib/fmt/pull/4259). Thanks @W4RH4WK and @phprus.
 
 - Fixed compatibility with platforms that use 80-bit `long double`
   (https://github.com/fmtlib/fmt/issues/4245,
@@ -83,8 +102,10 @@
   https://github.com/fmtlib/fmt/pull/4130,
   https://github.com/fmtlib/fmt/pull/4131,
   https://github.com/fmtlib/fmt/pull/4132,
-  https://github.com/fmtlib/fmt/pull/4159).
-  Thanks @torsten48, @Arghnews, @tinfoilboy, aminya .
+  https://github.com/fmtlib/fmt/pull/4159,
+  https://github.com/fmtlib/fmt/pull/4170,
+  https://github.com/fmtlib/fmt/pull/4188).
+  Thanks @torsten48, @Arghnews, @tinfoilboy, @aminya, @Ottani, @c4v4.
 
 # 11.0.2 - 2024-07-20
 
