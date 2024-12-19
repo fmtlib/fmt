@@ -35,7 +35,7 @@ class file_access {
   friend auto get_file(BufType& obj) -> FILE* { return obj.*FileMemberPtr; }
 };
 
-#if FMT_MSC_VERSION
+#ifdef _MSVC_STL_UPDATE
 template class file_access<file_access_tag, std::filebuf,
                            &std::filebuf::_Myfile>;
 auto get_file(std::filebuf&) -> FILE*;
@@ -109,7 +109,7 @@ inline void vprint(std::ostream& os, string_view fmt, format_args args) {
   auto buffer = memory_buffer();
   detail::vformat_to(buffer, fmt, args);
   FILE* f = nullptr;
-#if FMT_MSC_VERSION && FMT_USE_RTTI
+#if defined(_MSVC_STL_UPDATE) && FMT_USE_RTTI
   if (auto* buf = dynamic_cast<std::filebuf*>(os.rdbuf()))
     f = detail::get_file(*buf);
 #elif defined(_WIN32) && defined(__GLIBCXX__) && FMT_USE_RTTI
