@@ -210,6 +210,9 @@ template <typename Context> class dynamic_format_arg_store {
     data_.reserve(new_cap);
     named_info_.reserve(new_cap_named);
   }
+
+  /// Returns the number of elements in the store.
+  size_t size() const noexcept { return data_.size(); }
 };
 
 FMT_END_NAMESPACE
