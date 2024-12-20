@@ -46,6 +46,11 @@
 #else
 #  define FMT_MSC_VERSION 0
 #endif
+#ifdef _MSVC_LANG
+#  define FMT_CPLUSPLUS _MSVC_LANG
+#else
+#  define FMT_CPLUSPLUS __cplusplus
+#endif
 
 // Detect standard library versions.
 #ifdef _GLIBCXX_RELEASE
@@ -58,11 +63,12 @@
 #else
 #  define FMT_LIBCPP_VERSION 0
 #endif
-
-#ifdef _MSVC_LANG
-#  define FMT_CPLUSPLUS _MSVC_LANG
+#ifdef _MSVC_STL_UPDATE
+#  define FMT_MSVC_STL_UPDATE _MSVC_STL_UPDATE
+#elif defined(_MSC_VER) && _MSC_VER < 1912 // VS 15.5
+#    define FMT_MSVC_STL_UPDATE _MSVC_LANG
 #else
-#  define FMT_CPLUSPLUS __cplusplus
+#    define FMT_MSVC_STL_UPDATE 0
 #endif
 
 // Detect __has_*.
