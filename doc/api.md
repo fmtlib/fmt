@@ -511,7 +511,7 @@ chrono-format-specifications).
 
 ::: ptr(const std::shared_ptr<T>&)
 
-### Formatting Variants
+### Variants
 
 A `std::variant` is only formattable if every variant alternative is
 formattable, and requires the `__cpp_lib_variant` [library
@@ -526,6 +526,23 @@ feature](https://en.cppreference.com/w/cpp/feature_test).
 
     fmt::print("{}", std::variant<std::monostate, char>());
     // Output: variant(monostate)
+
+## Bit-Fields and Packed Structs
+
+To format a bit-field or a field of a struct with `__attribute__((packed))`
+applied to it, you need to convert it to the underlying or compatible type via
+a cast or a unary `+` ([godbolt](https://www.godbolt.org/z/3qKKs6T5Y)):
+
+```c++
+struct smol {
+  int bit : 1;
+};
+
+auto s = smol();
+fmt::print("{}", +s.bit);
+```
+
+This is a known limitation of "perfect" forwarding in C++.
 
 <a id="compile-api"></a>
 ## Format String Compilation
