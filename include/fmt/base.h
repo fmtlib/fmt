@@ -63,13 +63,6 @@
 #else
 #  define FMT_LIBCPP_VERSION 0
 #endif
-#ifdef _MSVC_STL_UPDATE
-#  define FMT_MSVC_STL_UPDATE _MSVC_STL_UPDATE
-#elif defined(_MSC_VER) && _MSC_VER < 1912  // VS 15.5
-#  define FMT_MSVC_STL_UPDATE _MSVC_LANG
-#else
-#  define FMT_MSVC_STL_UPDATE 0
-#endif
 
 // Detect __has_*.
 #ifdef __has_feature
