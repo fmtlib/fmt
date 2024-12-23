@@ -46,11 +46,6 @@
 #else
 #  define FMT_MSC_VERSION 0
 #endif
-#ifdef _MSVC_LANG
-#  define FMT_CPLUSPLUS _MSVC_LANG
-#else
-#  define FMT_CPLUSPLUS __cplusplus
-#endif
 
 // Detect standard library versions.
 #ifdef _GLIBCXX_RELEASE
@@ -62,6 +57,12 @@
 #  define FMT_LIBCPP_VERSION _LIBCPP_VERSION
 #else
 #  define FMT_LIBCPP_VERSION 0
+#endif
+
+#ifdef _MSVC_LANG
+#  define FMT_CPLUSPLUS _MSVC_LANG
+#else
+#  define FMT_CPLUSPLUS __cplusplus
 #endif
 
 // Detect __has_*.
