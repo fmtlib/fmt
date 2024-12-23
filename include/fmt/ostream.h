@@ -22,6 +22,14 @@
 
 #include "chrono.h"  // formatbuf
 
+#ifdef _MSVC_STL_UPDATE
+#  define FMT_MSVC_STL_UPDATE _MSVC_STL_UPDATE
+#elif defined(_MSC_VER) && _MSC_VER < 1912  // VS 15.5
+#  define FMT_MSVC_STL_UPDATE _MSVC_LANG
+#else
+#  define FMT_MSVC_STL_UPDATE 0
+#endif
+
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
@@ -35,7 +43,7 @@ class file_access {
   friend auto get_file(BufType& obj) -> FILE* { return obj.*FileMemberPtr; }
 };
 
-#ifdef _MSVC_STL_UPDATE
+#if FMT_MSVC_STL_UPDATE
 template class file_access<file_access_tag, std::filebuf,
                            &std::filebuf::_Myfile>;
 auto get_file(std::filebuf&) -> FILE*;
@@ -109,7 +117,7 @@ inline void vprint(std::ostream& os, string_view fmt, format_args args) {
   auto buffer = memory_buffer();
   detail::vformat_to(buffer, fmt, args);
   FILE* f = nullptr;
-#if defined(_MSVC_STL_UPDATE) && FMT_USE_RTTI
+#if FMT_MSVC_STL_UPDATE && FMT_USE_RTTI
   if (auto* buf = dynamic_cast<std::filebuf*>(os.rdbuf()))
     f = detail::get_file(*buf);
 #elif defined(_WIN32) && defined(__GLIBCXX__) && FMT_USE_RTTI
