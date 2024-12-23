@@ -6,8 +6,9 @@
   (https://github.com/fmtlib/fmt/pull/4083,
   https://github.com/fmtlib/fmt/pull/4084,
   https://github.com/fmtlib/fmt/pull/4152,
-  https://github.com/fmtlib/fmt/pull/4169).
-  Thanks @kamrann.
+  https://github.com/fmtlib/fmt/pull/4169,
+  https://github.com/fmtlib/fmt/pull/4239).
+  Thanks @kamrann, @Arghnews.
 
 - Made `std::expected<void, E>` formattable
   (https://github.com/fmtlib/fmt/issues/4145,
@@ -41,6 +42,10 @@
 
 - Added the `n` specifier for tuples and pairs
   (https://github.com/fmtlib/fmt/pull/4107). Thanks @someonewithpc.
+
+- Added support for tuple-like types to `fmt::join`
+  (https://github.com/fmtlib/fmt/issues/4226,
+  https://github.com/fmtlib/fmt/pull/4230). Thanks @phprus.
 
 - Made more types formattable at compile time
   (https://github.com/fmtlib/fmt/pull/4127). Thanks @AnthonyVH.
@@ -84,18 +89,34 @@
   (https://github.com/fmtlib/fmt/issues/4245,
   https://github.com/fmtlib/fmt/pull/4246). Thanks @jsirpoma.
 
+- Made compiled version of `fmt::format_to` work with
+  `std::back_insert_iterator<std::vector<char>>`
+  (https://github.com/fmtlib/fmt/issues/4206,
+  https://github.com/fmtlib/fmt/pull/4211). Thanks @phprus.
+
+- Made `fmt::to_string` take `fmt::basic_memory_buffer` by const reference
+  (https://github.com/fmtlib/fmt/issues/4261,
+  https://github.com/fmtlib/fmt/pull/4262). Thanks @sascha-devel.
+
+- Added `fmt::dynamic_format_arg_store::size`
+  (https://github.com/fmtlib/fmt/pull/4270). Thanks @hannes-harnisch.
+
 - Improved include directory ordering to reduce the chance of including
   incorrect headers when using multiple versions of {fmt}
   (https://github.com/fmtlib/fmt/pull/4116). Thanks @cdzhan.
 
-- Improved documentation and README (https://github.com/fmtlib/fmt/pull/4066).
-  Thanks @zyctree.
+- Improved documentation and README (https://github.com/fmtlib/fmt/pull/4066,
+  https://github.com/fmtlib/fmt/pull/4235). Thanks @zyctree, @nikola-sh.
 
 - Improved the documentation generator (https://github.com/fmtlib/fmt/pull/4110,
   https://github.com/fmtlib/fmt/pull/4115). Thanks @rturrado.
 
 - Improved CI (https://github.com/fmtlib/fmt/pull/4155,
   https://github.com/fmtlib/fmt/pull/4151). Thanks @phprus.
+
+- Improved {fmt}'s compatibility with Nintendo Switch console SDK
+  (https://github.com/fmtlib/fmt/pull/4258,
+  https://github.com/fmtlib/fmt/pull/4259). Thanks @W4RH4WK, @phprus.
 
 - Fixed various warnings and compilation issues
   (https://github.com/fmtlib/fmt/issues/4129,
@@ -104,8 +125,22 @@
   https://github.com/fmtlib/fmt/pull/4132,
   https://github.com/fmtlib/fmt/pull/4159,
   https://github.com/fmtlib/fmt/pull/4170,
-  https://github.com/fmtlib/fmt/pull/4188).
-  Thanks @torsten48, @Arghnews, @tinfoilboy, @aminya, @Ottani, @c4v4.
+  https://github.com/fmtlib/fmt/issues/4177,
+  https://github.com/fmtlib/fmt/pull/4187,
+  https://github.com/fmtlib/fmt/pull/4188,
+  https://github.com/fmtlib/fmt/pull/4194,
+  https://github.com/fmtlib/fmt/pull/4200,
+  https://github.com/fmtlib/fmt/pull/4208,
+  https://github.com/fmtlib/fmt/pull/4210,
+  https://github.com/fmtlib/fmt/issues/4220,
+  https://github.com/fmtlib/fmt/issues/4231,
+  https://github.com/fmtlib/fmt/issues/4232,
+  https://github.com/fmtlib/fmt/pull/4233,
+  https://github.com/fmtlib/fmt/pull/4236,
+  https://github.com/fmtlib/fmt/pull/4267,
+  https://github.com/fmtlib/fmt/pull/4271).
+  Thanks @torsten48, @Arghnews, @tinfoilboy, @aminya, @Ottani, @zeroomega,
+  @c4v4, @kongy, @vinayyadav3016, @sergio-nsk, @phprus, @Arghnews, @YexuanXiao.
 
 # 11.0.2 - 2024-07-20
 
