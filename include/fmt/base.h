@@ -364,7 +364,9 @@ constexpr auto is_constant_evaluated(bool default_value = false) noexcept
 }
 
 // Suppresses "conditional expression is constant" warnings.
-template <typename T> constexpr auto const_check(T value) -> T { return value; }
+template <typename T> FMT_ALWAYS_INLINE constexpr auto const_check(T val) -> T {
+  return val;
+}
 
 FMT_NORETURN FMT_API void assert_fail(const char* file, int line,
                                       const char* message);
