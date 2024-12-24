@@ -2,8 +2,36 @@
 
 - Improved debug codegen.
 
+- Added an experimental `fmt::writer` API that can be used for writing to
+  different destinations such as files or strings
+  (https://github.com/fmtlib/fmt/issues/2354).
+  For example ([godbolt](https://www.godbolt.org/z/rWoKfbP7e)):
+
+  ```c++
+  #include <fmt/os.h>
+
+  void write_text(fmt::writer w) {
+    w.print("The answer is {}.", 42);
+  }
+
+  int main() {
+    // Write to FILE.
+    write_text(stdout);
+
+    // Write to fmt::ostream.
+    auto f = fmt::output_file("myfile");
+    write_text(f);
+
+    // Write to std::string.
+    auto sb = fmt::string_buffer();
+    write_text(sb);
+    std::string s = sb.str();
+  }
+  ```
+
 - Improved C++20 module support
-  (https://github.com/fmtlib/fmt/pull/4083,
+  (https://github.com/fmtlib/fmt/issues/4081,
+  https://github.com/fmtlib/fmt/pull/4083,
   https://github.com/fmtlib/fmt/pull/4084,
   https://github.com/fmtlib/fmt/pull/4152,
   https://github.com/fmtlib/fmt/pull/4169,
@@ -30,6 +58,7 @@
 - Added support for `_BitInt` formatting when using clang
   (https://github.com/fmtlib/fmt/issues/4007,
   https://github.com/fmtlib/fmt/pull/4072,
+  https://github.com/fmtlib/fmt/issues/4140,
   https://github.com/fmtlib/fmt/pull/4176).
   For example ([godbolt](https://www.godbolt.org/z/KWjbWec5z)):
 
@@ -60,6 +89,9 @@
 
 - Added experimental padding support (glibc `strftime` extension) to `%m`, `%j`
   and `%Y`. (https://github.com/fmtlib/fmt/pull/4161). Thanks @KKhanhH.
+
+- Made microseconds formatted as `us` instead of `µs` if the Unicode support is
+  disabled (https://github.com/fmtlib/fmt/issues/4088.
 
 - Fixed an unreleased regression in transcoding of surrogate pairs
   (https://github.com/fmtlib/fmt/issues/4094,
@@ -105,7 +137,9 @@
   incorrect headers when using multiple versions of {fmt}
   (https://github.com/fmtlib/fmt/pull/4116). Thanks @cdzhan.
 
-- Improved documentation and README (https://github.com/fmtlib/fmt/pull/4066,
+- Improved documentation and README
+  (https://github.com/fmtlib/fmt/pull/4066,
+  https://github.com/fmtlib/fmt/issues/4117,
   https://github.com/fmtlib/fmt/pull/4235). Thanks @zyctree, @nikola-sh.
 
 - Improved the documentation generator (https://github.com/fmtlib/fmt/pull/4110,
@@ -119,10 +153,15 @@
   https://github.com/fmtlib/fmt/pull/4259). Thanks @W4RH4WK, @phprus.
 
 - Fixed various warnings and compilation issues
-  (https://github.com/fmtlib/fmt/issues/4129,
+  (https://github.com/fmtlib/fmt/issues/2708,
+  https://github.com/fmtlib/fmt/issues/4109,
+  https://github.com/fmtlib/fmt/issues/4113,
+  https://github.com/fmtlib/fmt/issues/4125,
+  https://github.com/fmtlib/fmt/issues/4129,
   https://github.com/fmtlib/fmt/pull/4130,
   https://github.com/fmtlib/fmt/pull/4131,
   https://github.com/fmtlib/fmt/pull/4132,
+  https://github.com/fmtlib/fmt/issues/4144,
   https://github.com/fmtlib/fmt/pull/4159,
   https://github.com/fmtlib/fmt/pull/4170,
   https://github.com/fmtlib/fmt/issues/4177,
