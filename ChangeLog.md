@@ -15,11 +15,13 @@
 - Improved debug codegen and reduced the number of template instantiations when
   passing formatting arguments. For example, unoptimized binary code size for
   `fmt::print("{}", 42)` was reduced by ~40% on GCC and ~60% on clang (x86-64).
+
   GCC:
-  - Before: 161 instructions of which 106 are in reusable functions
+  - Before: 161 instructions of which 105 are in reusable functions
     ([godbolt](https://www.godbolt.org/z/s9bGoo4ze)).
   - After: 116 instructions of which 60 are in reusable functions
     ([godbolt](https://www.godbolt.org/z/r7GGGxMs6)).
+
   Clang:
   - Before: 310 instructions of which 251 are in reusable functions
     ([godbolt](https://www.godbolt.org/z/Ts88b7M9o)).
