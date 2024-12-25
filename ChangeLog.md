@@ -119,10 +119,10 @@
   https://github.com/fmtlib/fmt/pull/4164). Thanks @yfeldblum and @phprus.
 
 - Added experimental padding support (glibc `strftime` extension) to `%m`, `%j`
-  and `%Y`. (https://github.com/fmtlib/fmt/pull/4161). Thanks @KKhanhH.
+  and `%Y` (https://github.com/fmtlib/fmt/pull/4161). Thanks @KKhanhH.
 
 - Made microseconds formatted as `us` instead of `µs` if the Unicode support is
-  disabled (https://github.com/fmtlib/fmt/issues/4088.
+  disabled (https://github.com/fmtlib/fmt/issues/4088).
 
 - Fixed an unreleased regression in transcoding of surrogate pairs
   (https://github.com/fmtlib/fmt/issues/4094,
