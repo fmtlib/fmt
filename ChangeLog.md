@@ -1,6 +1,30 @@
 # 11.1.0 - TBD
 
-- Improved debug codegen.
+- Improved C++20 module support
+  (https://github.com/fmtlib/fmt/issues/4081,
+  https://github.com/fmtlib/fmt/pull/4083,
+  https://github.com/fmtlib/fmt/pull/4084,
+  https://github.com/fmtlib/fmt/pull/4152,
+  https://github.com/fmtlib/fmt/issues/4153,
+  https://github.com/fmtlib/fmt/pull/4169,
+  https://github.com/fmtlib/fmt/issues/4190,
+  https://github.com/fmtlib/fmt/issues/4234,
+  https://github.com/fmtlib/fmt/pull/4239).
+  Thanks @kamrann and @Arghnews.
+
+- Improved debug codegen and reduced the number of template instantiations when
+  passing formatting arguments. For example, unoptimized binary code size for
+  `fmt::print("{}", 42)` was reduced by ~40% on GCC and ~60% on clang (x86-64).
+  GCC:
+  - Before: 161 instructions of which 106 are in reusable functions
+    ([godbolt](https://www.godbolt.org/z/s9bGoo4ze)).
+  - After: 116 instructions of which 60 are in reusable functions
+    ([godbolt](https://www.godbolt.org/z/r7GGGxMs6)).
+  Clang:
+  - Before: 310 instructions of which 251 are in reusable functions
+    ([godbolt](https://www.godbolt.org/z/Ts88b7M9o)).
+  - After: 194 instructions of which 135 are in reusable functions
+    ([godbolt](https://www.godbolt.org/z/vcrjP8ceW)).
 
 - Added an experimental `fmt::writer` API that can be used for writing to
   different destinations such as files or strings
@@ -29,14 +53,7 @@
   }
   ```
 
-- Improved C++20 module support
-  (https://github.com/fmtlib/fmt/issues/4081,
-  https://github.com/fmtlib/fmt/pull/4083,
-  https://github.com/fmtlib/fmt/pull/4084,
-  https://github.com/fmtlib/fmt/pull/4152,
-  https://github.com/fmtlib/fmt/pull/4169,
-  https://github.com/fmtlib/fmt/pull/4239).
-  Thanks @kamrann, @Arghnews.
+- Added width and alignment support to the formatter of `std::error_code`.
 
 - Made `std::expected<void, E>` formattable
   (https://github.com/fmtlib/fmt/issues/4145,
@@ -55,10 +72,14 @@
 
   Thanks @phprus.
 
+- Made `fmt::is_formattable<void>` SFINAE-friendly
+  (https://github.com/fmtlib/fmt/issues/4147).
+
 - Added support for `_BitInt` formatting when using clang
   (https://github.com/fmtlib/fmt/issues/4007,
   https://github.com/fmtlib/fmt/pull/4072,
   https://github.com/fmtlib/fmt/issues/4140,
+  https://github.com/fmtlib/fmt/issues/4173,
   https://github.com/fmtlib/fmt/pull/4176).
   For example ([godbolt](https://www.godbolt.org/z/KWjbWec5z)):
 
@@ -104,8 +125,9 @@
 - Made `std::iterator_traits<fmt::appender>` standard-conforming
   (https://github.com/fmtlib/fmt/pull/4185). Thanks @CaseyCarter.
 
-- Made it easier to reuse `formatter<std::string_view>` for types with implicit
-  conversion to `std::string_view` (https://github.com/fmtlib/fmt/issues/4036,
+- Made it easier to reuse `fmt::formatter<std::string_view>` for types with
+  an implicit conversion to `std::string_view`
+  (https://github.com/fmtlib/fmt/issues/4036,
   https://github.com/fmtlib/fmt/pull/4055). Thanks @Arghnews.
 
 - Fixed compile-time formatting of some string types
@@ -121,6 +143,12 @@
   (https://github.com/fmtlib/fmt/issues/4245,
   https://github.com/fmtlib/fmt/pull/4246). Thanks @jsirpoma.
 
+- Added support for UTF-32 code units greater than `0xFFFF` in fill
+  (https://github.com/fmtlib/fmt/issues/4201).
+
+- Fixed handling of legacy encodings on Windows with gcc
+  (https://github.com/fmtlib/fmt/issues/4162).
+
 - Made compiled version of `fmt::format_to` work with
   `std::back_insert_iterator<std::vector<char>>`
   (https://github.com/fmtlib/fmt/issues/4206,
@@ -133,14 +161,23 @@
 - Added `fmt::dynamic_format_arg_store::size`
   (https://github.com/fmtlib/fmt/pull/4270). Thanks @hannes-harnisch.
 
+- Removed the ability to control locale usage via an undocumented
+  `FMT_STATIC_THOUSANDS_SEPARATOR` in favor of `FMT_USE_LOCALE`.
+
+- Renamed `FMT_EXCEPTIONS` to `FMT_USE_EXCEPTIONS` for consistency with other
+  similar macros.
+
 - Improved include directory ordering to reduce the chance of including
   incorrect headers when using multiple versions of {fmt}
   (https://github.com/fmtlib/fmt/pull/4116). Thanks @cdzhan.
 
+- Made it possible to compile a subset of {fmt} without the C++ runtime.
+
 - Improved documentation and README
   (https://github.com/fmtlib/fmt/pull/4066,
   https://github.com/fmtlib/fmt/issues/4117,
-  https://github.com/fmtlib/fmt/pull/4235). Thanks @zyctree, @nikola-sh.
+  https://github.com/fmtlib/fmt/issues/4203,
+  https://github.com/fmtlib/fmt/pull/4235). Thanks @zyctree and @nikola-sh.
 
 - Improved the documentation generator (https://github.com/fmtlib/fmt/pull/4110,
   https://github.com/fmtlib/fmt/pull/4115). Thanks @rturrado.
@@ -150,10 +187,11 @@
 
 - Improved {fmt}'s compatibility with Nintendo Switch console SDK
   (https://github.com/fmtlib/fmt/pull/4258,
-  https://github.com/fmtlib/fmt/pull/4259). Thanks @W4RH4WK, @phprus.
+  https://github.com/fmtlib/fmt/pull/4259). Thanks @W4RH4WK and @phprus.
 
 - Fixed various warnings and compilation issues
   (https://github.com/fmtlib/fmt/issues/2708,
+  https://github.com/fmtlib/fmt/issues/4091,
   https://github.com/fmtlib/fmt/issues/4109,
   https://github.com/fmtlib/fmt/issues/4113,
   https://github.com/fmtlib/fmt/issues/4125,
@@ -161,14 +199,20 @@
   https://github.com/fmtlib/fmt/pull/4130,
   https://github.com/fmtlib/fmt/pull/4131,
   https://github.com/fmtlib/fmt/pull/4132,
+  https://github.com/fmtlib/fmt/issues/4133,
   https://github.com/fmtlib/fmt/issues/4144,
+  https://github.com/fmtlib/fmt/issues/4150,
+  https://github.com/fmtlib/fmt/issues/4158,
   https://github.com/fmtlib/fmt/pull/4159,
+  https://github.com/fmtlib/fmt/issues/4160,
   https://github.com/fmtlib/fmt/pull/4170,
   https://github.com/fmtlib/fmt/issues/4177,
   https://github.com/fmtlib/fmt/pull/4187,
   https://github.com/fmtlib/fmt/pull/4188,
   https://github.com/fmtlib/fmt/pull/4194,
   https://github.com/fmtlib/fmt/pull/4200,
+  https://github.com/fmtlib/fmt/issues/4205,
+  https://github.com/fmtlib/fmt/issues/4207,
   https://github.com/fmtlib/fmt/pull/4208,
   https://github.com/fmtlib/fmt/pull/4210,
   https://github.com/fmtlib/fmt/issues/4220,
@@ -179,7 +223,8 @@
   https://github.com/fmtlib/fmt/pull/4267,
   https://github.com/fmtlib/fmt/pull/4271).
   Thanks @torsten48, @Arghnews, @tinfoilboy, @aminya, @Ottani, @zeroomega,
-  @c4v4, @kongy, @vinayyadav3016, @sergio-nsk, @phprus, @Arghnews, @YexuanXiao.
+  @c4v4, @kongy, @vinayyadav3016, @sergio-nsk, @phprus, @Arghnews and
+  @YexuanXiao.
 
 # 11.0.2 - 2024-07-20
 
@@ -450,6 +495,9 @@
 
 - Fixed handling of negative ids in `fmt::basic_format_args::get`
   (https://github.com/fmtlib/fmt/pull/3945). Thanks @marlenecota.
+
+- Fixed handling of a buffer boundary on flush
+  (https://github.com/fmtlib/fmt/issues/4229).
 
 - Improved named argument validation
   (https://github.com/fmtlib/fmt/issues/3817).
