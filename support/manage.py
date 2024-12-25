@@ -12,9 +12,10 @@ obtained from https://github.com/settings/tokens.
 
 from __future__ import print_function
 import datetime, docopt, errno, fileinput, json, os
-import re, requests, shutil, sys
+import re, shutil, sys
 from contextlib import contextmanager
 from subprocess import check_call
+import urllib.request
 
 
 class Git:
@@ -191,22 +192,30 @@ def release(args):
     # Create a release on GitHub.
     fmt_repo.push('origin', 'release')
     auth_headers = {'Authorization': 'token ' + os.getenv('FMT_TOKEN')}
-    r = requests.post('https://api.github.com/repos/fmtlib/fmt/releases',
-                      headers=auth_headers,
-                      data=json.dumps({'tag_name': version,
-                                       'target_commitish': 'release',
-                                       'body': changes, 'draft': True}))
-    if r.status_code != 201:
-        raise Exception('Failed to create a release ' + str(r))
-    id = r.json()['id']
+    req = urllib.request.Request(
+        'https://api.github.com/repos/fmtlib/fmt/releases',
+        data=json.dumps({'tag_name': version,
+                         'target_commitish': 'release',
+                         'body': changes, 'draft': True}).encode('utf-8'),
+        headers=auth_headers, method='POST')
+    with urllib.request.urlopen(req) as response:
+        if response.status != 201:
+            raise Exception(f'Failed to create a release ' +
+                            '{response.status} {response.reason}')
+        response_data = json.loads(response.read().decode('utf-8'))
+        id = response_data['id']
+
+    # Upload the package.
     uploads_url = 'https://uploads.github.com/repos/fmtlib/fmt/releases'
     package = 'fmt-{}.zip'.format(version)
-    r = requests.post(
-        '{}/{}/assets?name={}'.format(uploads_url, id, package),
+    req = urllib.request.Request(
+        f'{uploads_url}/{id}/assets?name={package}',
         headers={'Content-Type': 'application/zip'} | auth_headers,
-        data=open('build/fmt/' + package, 'rb'))
-    if r.status_code != 201:
-        raise Exception('Failed to upload an asset ' + str(r))
+        data=open('build/fmt/' + package, 'rb'), method='POST')
+    with urllib.request.urlopen(req) as response:
+        if response.status != 201:
+            raise Exception(f'Failed to upload an asset '
+                            '{response.status} {response.reason}')
 
     update_site(env)
 
