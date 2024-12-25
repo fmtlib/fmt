@@ -17,14 +17,12 @@
   `fmt::print("{}", 42)` was reduced by ~40% on GCC and ~60% on clang (x86-64).
 
   GCC:
-
   - Before: 161 instructions of which 105 are in reusable functions
     ([godbolt](https://www.godbolt.org/z/s9bGoo4ze)).
   - After: 116 instructions of which 60 are in reusable functions
     ([godbolt](https://www.godbolt.org/z/r7GGGxMs6)).
 
   Clang:
-
   - Before: 310 instructions of which 251 are in reusable functions
     ([godbolt](https://www.godbolt.org/z/Ts88b7M9o)).
   - After: 194 instructions of which 135 are in reusable functions
@@ -223,8 +221,7 @@
   https://github.com/fmtlib/fmt/pull/4267,
   https://github.com/fmtlib/fmt/pull/4271).
   Thanks @torsten48, @Arghnews, @tinfoilboy, @aminya, @Ottani, @zeroomega,
-  @c4v4, @kongy, @vinayyadav3016, @sergio-nsk, @phprus, @Arghnews and
-  @YexuanXiao.
+  @c4v4, @kongy, @vinayyadav3016, @sergio-nsk, @phprus and @YexuanXiao.
 
 # 11.0.2 - 2024-07-20
 
