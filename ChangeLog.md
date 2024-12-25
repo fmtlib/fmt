@@ -106,6 +106,9 @@
   (https://github.com/fmtlib/fmt/issues/4102,
   https://github.com/fmtlib/fmt/pull/4103). Thanks @phprus.
 
+- Fixed compile-time formatting of some string types
+  (https://github.com/fmtlib/fmt/pull/4065). Thanks @torshepherd.
+
 - Added a formatter for `std::reference_wrapper`
   (https://github.com/fmtlib/fmt/pull/4163,
   https://github.com/fmtlib/fmt/pull/4164). Thanks @yfeldblum and @phprus.
@@ -132,9 +135,6 @@
   (https://github.com/fmtlib/fmt/issues/4036,
   https://github.com/fmtlib/fmt/pull/4055). Thanks @Arghnews.
 
-- Fixed compile-time formatting of some string types
-  (https://github.com/fmtlib/fmt/pull/4065). Thanks @torshepherd.
-
 - Made it possible to disable `<filesystem>` use via `FMT_CPP_LIB_FILESYSTEM`
   for compatibility with some video game console SDKs, e.g. Nintendo Switch SDK
   (https://github.com/fmtlib/fmt/issues/4257,
@@ -148,7 +148,7 @@
 - Added support for UTF-32 code units greater than `0xFFFF` in fill
   (https://github.com/fmtlib/fmt/issues/4201).
 
-- Fixed handling of legacy encodings on Windows with gcc
+- Fixed handling of legacy encodings on Windows with GCC
   (https://github.com/fmtlib/fmt/issues/4162).
 
 - Made compiled version of `fmt::format_to` work with
@@ -186,10 +186,6 @@
 
 - Improved CI (https://github.com/fmtlib/fmt/pull/4155,
   https://github.com/fmtlib/fmt/pull/4151). Thanks @phprus.
-
-- Improved {fmt}'s compatibility with Nintendo Switch console SDK
-  (https://github.com/fmtlib/fmt/pull/4258,
-  https://github.com/fmtlib/fmt/pull/4259). Thanks @W4RH4WK and @phprus.
 
 - Fixed various warnings and compilation issues
   (https://github.com/fmtlib/fmt/issues/2708,
