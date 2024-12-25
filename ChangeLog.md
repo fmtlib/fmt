@@ -12,9 +12,10 @@
   https://github.com/fmtlib/fmt/pull/4239).
   Thanks @kamrann and @Arghnews.
 
-- Improved debug codegen and reduced the number of template instantiations when
-  passing formatting arguments. For example, unoptimized binary code size for
-  `fmt::print("{}", 42)` was reduced by ~40% on GCC and ~60% on clang (x86-64).
+- Reduced debug (unoptimized) binary code size and the number of template
+  instantiations when passing formatting arguments. For example, unoptimized
+  binary code size for `fmt::print("{}", 42)` was reduced by ~40% on GCC and
+  ~60% on clang (x86-64).
 
   GCC:
   - Before: 161 instructions of which 105 are in reusable functions
