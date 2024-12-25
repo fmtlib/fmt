@@ -1,4 +1,4 @@
-# 11.1.0 - TBD
+# 11.1.0 - 2024-12-25
 
 - Improved C++20 module support
   (https://github.com/fmtlib/fmt/issues/4081,
