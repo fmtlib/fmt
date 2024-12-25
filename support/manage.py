@@ -211,7 +211,7 @@ def release(args):
     req = urllib.request.Request(
         f'{uploads_url}/{id}/assets?name={package}',
         headers={'Content-Type': 'application/zip'} | auth_headers,
-        data=open('build/fmt/' + package, 'rb'), method='POST')
+        data=open('build/fmt/' + package, 'rb').read(), method='POST')
     with urllib.request.urlopen(req) as response:
         if response.status != 201:
             raise Exception(f'Failed to upload an asset '
