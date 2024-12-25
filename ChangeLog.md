@@ -109,6 +109,11 @@
 - Fixed compile-time formatting of some string types
   (https://github.com/fmtlib/fmt/pull/4065). Thanks @torshepherd.
 
+- Made compiled version of `fmt::format_to` work with
+  `std::back_insert_iterator<std::vector<char>>`
+  (https://github.com/fmtlib/fmt/issues/4206,
+  https://github.com/fmtlib/fmt/pull/4211). Thanks @phprus.
+
 - Added a formatter for `std::reference_wrapper`
   (https://github.com/fmtlib/fmt/pull/4163,
   https://github.com/fmtlib/fmt/pull/4164). Thanks @yfeldblum and @phprus.
@@ -150,11 +155,6 @@
 
 - Fixed handling of legacy encodings on Windows with GCC
   (https://github.com/fmtlib/fmt/issues/4162).
-
-- Made compiled version of `fmt::format_to` work with
-  `std::back_insert_iterator<std::vector<char>>`
-  (https://github.com/fmtlib/fmt/issues/4206,
-  https://github.com/fmtlib/fmt/pull/4211). Thanks @phprus.
 
 - Made `fmt::to_string` take `fmt::basic_memory_buffer` by const reference
   (https://github.com/fmtlib/fmt/issues/4261,
