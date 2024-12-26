@@ -269,17 +269,15 @@ that support C++20 `consteval`. On older compilers you can use the
 
 Unused arguments are allowed as in Python's `str.format` and ordinary functions.
 
-::: basic_format_string
+See [Type Erasure](#type-erasure) for an example of how to enable compile-time
+checks in your own functions with `fmt::format_string` while avoiding template
+bloat.
+
+::: fstring
 
 ::: format_string
 
 ::: runtime(string_view)
-
-### Named Arguments
-
-::: arg(const Char*, const T&)
-
-Named arguments are not supported in compile-time checks at the moment.
 
 ### Type Erasure
 
@@ -316,6 +314,12 @@ parameterized version.
 ::: format_args
 
 ::: basic_format_arg
+
+### Named Arguments
+
+::: arg(const Char*, const T&)
+
+Named arguments are not supported in compile-time checks at the moment.
 
 ### Compatibility
 
