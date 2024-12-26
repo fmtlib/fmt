@@ -3,6 +3,10 @@
 - Fixed ABI compatibility with earlier 11.x versions
   (https://github.com/fmtlib/fmt/issues/4278).
 
+- Defined CMake components (`core` and `doc`) to allow docs to be installed
+  separately (https://github.com/fmtlib/fmt/pull/4276).
+  Thanks @carlsmedstad.
+
 # 11.1.0 - 2024-12-25
 
 - Improved C++20 module support
