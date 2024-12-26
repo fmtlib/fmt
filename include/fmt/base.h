@@ -2659,7 +2659,8 @@ template <typename Char = char> struct runtime_format_string {
  */
 inline auto runtime(string_view s) -> runtime_format_string<> { return {{s}}; }
 
-/// A compile-time format string.
+/// A compile-time format string. Use `format_string` in the public API to
+/// prevent type deduction.
 template <typename... T> struct fstring {
  private:
   static constexpr int num_static_named_args =
