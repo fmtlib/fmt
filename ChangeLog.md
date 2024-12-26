@@ -1,3 +1,8 @@
+# 11.1.1 - TBD
+
+- Fixed ABI compatibility with earlier 11.x versions
+  (https://github.com/fmtlib/fmt/issues/4278).
+
 # 11.1.0 - 2024-12-25
 
 - Improved C++20 module support
