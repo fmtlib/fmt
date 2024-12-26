@@ -2604,10 +2604,11 @@ template <typename Context> class basic_format_args {
 };
 
 // A formatting context.
-class context : private detail::locale_ref {
+class context {
  private:
   appender out_;
   format_args args_;
+  detail::locale_ref loc_;  // DEPRECATED! Should be replaced with a base class.
 
  public:
   /// The character type for the output.
@@ -2623,7 +2624,7 @@ class context : private detail::locale_ref {
   /// in the object so make sure they have appropriate lifetimes.
   FMT_CONSTEXPR context(iterator out, format_args args,
                         detail::locale_ref loc = {})
-      : locale_ref(loc), out_(out), args_(args) {}
+      : out_(out), args_(args), loc_(loc) {}
   context(context&&) = default;
   context(const context&) = delete;
   void operator=(const context&) = delete;
@@ -2642,7 +2643,7 @@ class context : private detail::locale_ref {
   // Advances the begin iterator to `it`.
   FMT_CONSTEXPR void advance_to(iterator) {}
 
-  FMT_CONSTEXPR auto locale() const -> detail::locale_ref { return *this; }
+  FMT_CONSTEXPR auto locale() const -> detail::locale_ref { return loc_; }
 };
 
 template <typename Char = char> struct runtime_format_string {
