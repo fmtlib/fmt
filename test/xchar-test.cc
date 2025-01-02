@@ -491,6 +491,13 @@ TEST(locale_test, sign) {
   EXPECT_EQ(fmt::format(std::locale(), L"{:L}", -50), L"-50");
 }
 
+TEST(std_test_xchar, format_bitset) {
+  auto bs = std::bitset<6>(42);
+  EXPECT_EQ(fmt::format(L"{}", bs), L"101010");
+  EXPECT_EQ(fmt::format(L"{:0>8}", bs), L"00101010");
+  EXPECT_EQ(fmt::format(L"{:-^12}", bs), L"---101010---");
+}
+
 TEST(std_test_xchar, complex) {
   auto s = fmt::format(L"{}", std::complex<double>(1, 2));
   EXPECT_EQ(s, L"(1+2i)");
