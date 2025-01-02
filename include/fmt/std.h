@@ -696,9 +696,7 @@ template <typename T, typename Char> struct formatter<std::complex<T>, Char> {
 
     auto outer_specs = format_specs();
     outer_specs.width = specs.width;
-    auto fill = specs.template fill<Char>();
-    if (fill)
-      outer_specs.set_fill(basic_string_view<Char>(fill, specs.fill_size()));
+    detail::basic_specs_copy_fill<Char>(outer_specs, specs);
     outer_specs.set_align(specs.align());
 
     specs.width = 0;
