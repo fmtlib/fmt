@@ -79,7 +79,7 @@ TEST(xchar_test, format) {
   EXPECT_THROW(fmt::format(fmt::runtime(L"{:*\x343E}"), 42), fmt::format_error);
   EXPECT_EQ(fmt::format(L"{}", true), L"true");
   EXPECT_EQ(fmt::format(L"{0}", L'a'), L"a");
-  EXPECT_EQ(fmt::format(L"Letter {}", L'\x40e'), L"Letter \x40e"); // Ў
+  EXPECT_EQ(fmt::format(L"Letter {}", L'\x40e'), L"Letter \x40e");  // Ў
   if (sizeof(wchar_t) == 4)
     EXPECT_EQ(fmt::format(fmt::runtime(L"{:𓀨>3}"), 42), L"𓀨42");
   EXPECT_EQ(fmt::format(L"{}c{}", L"ab", 1), L"abc1");
@@ -504,6 +504,7 @@ TEST(std_test_xchar, complex) {
   EXPECT_EQ(fmt::format(L"{:.2f}", std::complex<double>(1, 2)),
             L"(1.00+2.00i)");
   EXPECT_EQ(fmt::format(L"{:8}", std::complex<double>(1, 2)), L"(1+2i)  ");
+  EXPECT_EQ(fmt::format(L"{:-<8}", std::complex<double>(1, 2)), L"(1+2i)--");
 }
 
 TEST(std_test_xchar, optional) {

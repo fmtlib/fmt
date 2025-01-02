@@ -91,6 +91,9 @@ TEST(std_test, complex) {
   EXPECT_EQ(fmt::format("{: }", std::complex<double>(1, 2.2)), "( 1+2.2i)");
   EXPECT_EQ(fmt::format("{: }", std::complex<double>(1, -2.2)), "( 1-2.2i)");
 
+  EXPECT_EQ(fmt::format("{:8}", std::complex<double>(1, 2)), "(1+2i)  ");
+  EXPECT_EQ(fmt::format("{:-<8}", std::complex<double>(1, 2)), "(1+2i)--");
+
   EXPECT_EQ(fmt::format("{:>20.2f}", std::complex<double>(1, 2.2)),
             "        (1.00+2.20i)");
   EXPECT_EQ(fmt::format("{:<20.2f}", std::complex<double>(1, 2.2)),
