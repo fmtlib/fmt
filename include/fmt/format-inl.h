@@ -134,7 +134,7 @@ FMT_FUNC auto write_loc(appender out, loc_value value,
 
 FMT_FUNC void report_error(const char* message) {
 #if FMT_USE_EXCEPTIONS
-  throw format_error(message);
+  FMT_THROW(format_error(message));
 #else
   fputs(message, stderr);
   abort();
