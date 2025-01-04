@@ -3654,17 +3654,6 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
   parse_format_string(
       fmt, format_handler<Char>{parse_context<Char>(fmt), {out, args, loc}});
 }
-
-template <typename Char>
-void basic_specs_copy_fill(basic_specs& dst, const basic_specs& src) {
-  if (src.fill_size() == 1 && const_check(!std::is_same<Char, char>::value)) {
-    Char fill = src.fill_unit<Char>();
-    dst.set_fill(basic_string_view<Char>(&fill, 1));
-    return;
-  }
-  dst.set_fill(basic_string_view<char>(src.fill<char>(), src.fill_size()));
-}
-
 }  // namespace detail
 
 FMT_BEGIN_EXPORT
@@ -3971,7 +3960,7 @@ template <typename T, typename Char = char> struct nested_formatter {
     write(basic_appender<Char>(buf));
     auto specs = format_specs();
     specs.width = width_;
-    detail::basic_specs_copy_fill<Char>(specs, specs_);
+    specs.set_fill(specs_);
     specs.set_align(specs_.align());
     return detail::write<Char>(
         ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);

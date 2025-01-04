@@ -842,6 +842,12 @@ class basic_specs {
     for (size_t i = 0; i < size; ++i)
       fill_data_[i & 3] = static_cast<char>(s[i]);
   }
+
+  FMT_CONSTEXPR void set_fill(const basic_specs& specs) {
+    set_fill_size(specs.fill_size());
+    for (size_t i = 0; i < max_fill_size; ++i)
+      fill_data_[i] = specs.fill_data_[i];
+  }
 };
 
 // Format specifiers for built-in and string types.
