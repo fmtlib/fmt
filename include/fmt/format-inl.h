@@ -134,6 +134,8 @@ FMT_FUNC auto write_loc(appender out, loc_value value,
 
 FMT_FUNC void report_error(const char* message) {
 #if FMT_USE_EXCEPTIONS
+  // Use FMT_THROW instead of throw to avoid bogus unreachable code warnings
+  // from MSVC.
   FMT_THROW(format_error(message));
 #else
   fputs(message, stderr);
