@@ -202,7 +202,7 @@ For a static build, use the following subproject definition:
 
 For the header-only version, use:
 
-    fmt = subproject('fmt')
+    fmt = subproject('fmt', default_options: ['header-only=true'])
     fmt_dep = fmt.get_variable('fmt_header_only_dep')
 
 ### Android NDK
