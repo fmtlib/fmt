@@ -261,7 +261,8 @@ namespace detail {
 using utc_clock = std::chrono::utc_clock;
 #else
 struct utc_clock {
-  void to_sys();
+  template <typename T>
+  void to_sys(T);
 };
 #endif
 
