@@ -3968,7 +3968,7 @@ template <typename T, typename Char = char> struct nested_formatter {
     write(basic_appender<Char>(buf));
     auto specs = format_specs();
     specs.width = width_;
-    specs.set_fill(specs_);
+    specs.copy_fill_from(specs_);
     specs.set_align(specs_.align());
     return detail::write<Char>(
         ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
