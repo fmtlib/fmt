@@ -84,7 +84,7 @@ using std::locale;
 using std::numpunct;
 using std::use_facet;
 
-template <typename Locale, enable_if_t<(sizeof(Locale::collate) != 0), int>>
+template <typename Locale>
 locale_ref::locale_ref(const Locale& loc) : locale_(&loc) {
   static_assert(std::is_same<Locale, locale>::value, "");
 }
