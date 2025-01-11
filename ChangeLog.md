@@ -15,6 +15,10 @@
 - Updated docs for meson (https://github.com/fmtlib/fmt/pull/4291).
   Thanks @trim21.
 
+- Fixed a compilation error in chrono on nvcc
+  (https://github.com/fmtlib/fmt/issues/4297,
+  https://github.com/fmtlib/fmt/pull/4301). Thanks @breyerml.
+
 - Fixed various warnings
   (https://github.com/fmtlib/fmt/pull/4288,
   https://github.com/fmtlib/fmt/pull/4299). Thanks @GamesTrap and @edo9300.
