@@ -427,7 +427,7 @@ if (FMT_INSTALL)
 
   # Install the library and headers.
   install(TARGETS ${INSTALL_TARGETS}
-          COMPONENT core
+          COMPONENT fmt-core
           EXPORT ${targets_export_name}
           LIBRARY DESTINATION ${FMT_LIB_DIR}
           ARCHIVE DESTINATION ${FMT_LIB_DIR}
@@ -443,13 +443,13 @@ if (FMT_INSTALL)
   # Install version, config and target files.
   install(FILES ${project_config} ${version_config}
           DESTINATION ${FMT_CMAKE_DIR}
-          COMPONENT core)
+          COMPONENT fmt-core)
   install(EXPORT ${targets_export_name} DESTINATION ${FMT_CMAKE_DIR}
           NAMESPACE fmt::
-          COMPONENT core)
+          COMPONENT fmt-core)
 
   install(FILES "${pkgconfig}" DESTINATION "${FMT_PKGCONFIG_DIR}"
-          COMPONENT core)
+          COMPONENT fmt-core)
 endif ()
 
 function(add_doc_target)
@@ -486,7 +486,7 @@ function(add_doc_target)
   include(GNUInstallDirs)
   install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc-html/
           DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/doc/fmt
-          COMPONENT doc OPTIONAL)
+          COMPONENT fmt-doc OPTIONAL)
 endfunction()
 
 if (FMT_DOC)
