@@ -739,13 +739,15 @@ class basic_specs {
     max_fill_size = 4
   };
 
-  size_t data_ = 1 << fill_size_shift;
+  unsigned data_ = 1 << fill_size_shift;
+  static_assert(sizeof(data_) * CHAR_BIT >= 18, "");
 
   // Character (code unit) type is erased to prevent template bloat.
   char fill_data_[max_fill_size] = {' '};
 
   FMT_CONSTEXPR void set_fill_size(size_t size) {
-    data_ = (data_ & ~fill_size_mask) | (size << fill_size_shift);
+    data_ = (data_ & ~fill_size_mask) |
+            (static_cast<unsigned>(size) << fill_size_shift);
   }
 
  public:
