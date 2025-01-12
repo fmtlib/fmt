@@ -1,4 +1,4 @@
-# 11.1.2 - TBD
+# 11.1.2 - 2025-01-12
 
 - Fixed ABI compatibility with earlier 11.x versions
   (https://github.com/fmtlib/fmt/issues/4292).
