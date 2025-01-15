@@ -211,5 +211,12 @@ if (CMAKE_CXX_STANDARD GREATER_EQUAL 20)
   " ERROR)
 endif ()
 
+# Copying a format_context
+expect_compile(format-context-accessors "
+  auto copy_context = [](fmt::appender app, const fmt::format_context& ctx)
+    -> fmt::format_context
+  { return fmt::format_context(std::move(app), ctx.args(), ctx.locale()); };
+")
+
 # Run all tests
 run_tests()
