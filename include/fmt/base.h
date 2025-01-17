@@ -2656,6 +2656,7 @@ class context {
   FMT_CONSTEXPR auto arg_id(string_view name) const -> int {
     return args_.get_id(name);
   }
+  auto args() const -> const format_args& { return args_; }
 
   // Returns an iterator to the beginning of the output range.
   FMT_CONSTEXPR auto out() const -> iterator { return out_; }

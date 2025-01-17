@@ -875,3 +875,12 @@ TEST(base_test, no_repeated_format_string_conversions) {
   fmt::format_to(buf, nondeterministic_format_string());
 #endif
 }
+
+TEST(base_test, format_context_accessors) {
+  class copier {
+    static fmt::format_context copy(fmt::appender app,
+                                    const fmt::format_context& ctx) {
+      return fmt::format_context(std::move(app), ctx.args(), ctx.locale());
+    }
+  };
+}
