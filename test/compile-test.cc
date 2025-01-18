@@ -7,6 +7,8 @@
 
 #include "fmt/compile.h"
 
+#include <iterator>
+#include <list>
 #include <type_traits>
 #include <vector>
 
@@ -197,6 +199,21 @@ TEST(compile_test, format_to_n) {
   res = fmt::format_to_n(buffer, buffer_size, FMT_COMPILE("{:x}"), 42);
   *res.out = '\0';
   EXPECT_STREQ("2a", buffer);
+}
+
+TEST(compile_test, output_iterators) {
+  std::list<char> out;
+  fmt::format_to(std::back_inserter(out), FMT_COMPILE("{}"), 42);
+  EXPECT_EQ("42", std::string(out.begin(), out.end()));
+
+  std::stringstream s;
+  fmt::format_to(std::ostream_iterator<char>(s), FMT_COMPILE("{}"), 42);
+  EXPECT_EQ("42", s.str());
+
+  std::stringstream s2;
+  fmt::format_to(std::ostreambuf_iterator<char>(s2), FMT_COMPILE("{}.{:06d}"),
+                 42, 43);
+  EXPECT_EQ("42.000043", s2.str());
 }
 
 #  if FMT_USE_CONSTEVAL && (!FMT_MSC_VERSION || FMT_MSC_VERSION >= 1940)

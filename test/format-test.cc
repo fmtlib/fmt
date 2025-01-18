@@ -2102,6 +2102,10 @@ TEST(format_test, output_iterators) {
   std::stringstream s;
   fmt::format_to(std::ostream_iterator<char>(s), "{}", 42);
   EXPECT_EQ("42", s.str());
+
+  std::stringstream s2;
+  fmt::format_to(std::ostreambuf_iterator<char>(s2), "{}.{:06d}", 42, 43);
+  EXPECT_EQ("42.000043", s2.str());
 }
 
 TEST(format_test, fill_via_appender) {

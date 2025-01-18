@@ -1203,7 +1203,7 @@ FMT_CONSTEXPR FMT_INLINE auto format_decimal(Char* out, UInt value,
 }
 
 template <typename Char, typename UInt, typename OutputIt,
-          FMT_ENABLE_IF(is_back_insert_iterator<OutputIt>::value)>
+          FMT_ENABLE_IF(!std::is_pointer<remove_cvref_t<OutputIt>>::value)>
 FMT_CONSTEXPR auto format_decimal(OutputIt out, UInt value, int num_digits)
     -> OutputIt {
   if (auto ptr = to_pointer<Char>(out, to_unsigned(num_digits))) {
