@@ -287,6 +287,13 @@
 #  define FMT_OPTIMIZE_SIZE 0
 #endif
 
+// libc++ supports string_view in pre-c++17.
+#if FMT_HAS_INCLUDE(<string_view>) && \
+    (FMT_CPLUSPLUS >= 201703L || defined(_LIBCPP_VERSION))
+#  include <string_view>
+#  define FMT_USE_STRING_VIEW
+#endif
+
 // FMT_BUILTIN_TYPE=0 may result in smaller library size at the cost of higher
 // per-call binary size by passing built-in types through the extension API.
 #ifndef FMT_BUILTIN_TYPES
@@ -503,6 +510,11 @@ inline FMT_CONSTEXPR20 auto get_container(OutputIt it) ->
   };
   return *accessor(it).container;
 }
+
+#if !defined(FMT_USE_STRING_VIEW)
+template <class Ch> struct std_string_view;
+#endif
+
 }  // namespace detail
 
 // Parsing-related public API and forward declarations.
@@ -555,6 +567,10 @@ template <typename Char> class basic_string_view {
                           typename S::value_type, Char>::value)>
   FMT_CONSTEXPR basic_string_view(const S& s) noexcept
       : data_(s.data()), size_(s.size()) {}
+
+#if !defined(FMT_USE_STRING_VIEW)
+  FMT_CONSTEXPR basic_string_view(detail::std_string_view<Char> /*s*/) {}
+#endif
 
   /// Returns a pointer to the string data.
   constexpr auto data() const noexcept -> const Char* { return data_; }

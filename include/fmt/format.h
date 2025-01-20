@@ -60,13 +60,6 @@
 #    include <bit>  // std::bit_cast
 #  endif
 
-// libc++ supports string_view in pre-c++17.
-#  if FMT_HAS_INCLUDE(<string_view>) && \
-      (FMT_CPLUSPLUS >= 201703L || defined(_LIBCPP_VERSION))
-#    include <string_view>
-#    define FMT_USE_STRING_VIEW
-#  endif
-
 #  if FMT_MSC_VERSION
 #    include <intrin.h>  // _BitScanReverse[64], _umul128
 #  endif
