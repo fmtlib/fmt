@@ -2,14 +2,14 @@
 
 - Fixed compilation on GCC 9.4 (https://github.com/fmtlib/fmt/issues/4313).
 
-- Worked around an internal compiler error when using C++20 modules with gcc
+- Worked around an internal compiler error when using C++20 modules with GCC
   14.2 and earlier (https://github.com/fmtlib/fmt/issues/4295).
 
 - Fixed formatting into `std::ostreambuf_iterator` when using format string
   compilation (https://github.com/fmtlib/fmt/issues/4309,
   https://github.com/fmtlib/fmt/pull/4312). Thanks @phprus.
 
-- Reduced size of format specs (https://github.com/fmtlib/fmt/issues/4298).
+- Reduced the size of format specs (https://github.com/fmtlib/fmt/issues/4298).
 
 - Readded `args()` to `fmt::format_context`
   (https://github.com/fmtlib/fmt/issues/4307,
