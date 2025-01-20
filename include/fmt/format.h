@@ -1213,7 +1213,7 @@ FMT_CONSTEXPR auto format_decimal(OutputIt out, UInt value, int num_digits)
     return out;
   }
   // Buffer is large enough to hold all digits (digits10 + 1).
-  char buffer[digits10<UInt>() + 1];
+  char buffer[digits10<UInt>() + 1]{};
   if (is_constant_evaluated()) fill_n(buffer, sizeof(buffer), '\0');
   do_format_decimal(buffer, value, num_digits);
   return copy_noinline<Char>(buffer, buffer + num_digits, out);
@@ -1250,7 +1250,7 @@ FMT_CONSTEXPR inline auto format_base2e(int base_bits, OutputIt out, UInt value,
     return out;
   }
   // Make buffer large enough for any base.
-  char buffer[num_bits<UInt>()];
+  char buffer[num_bits<UInt>()]{};
   if (is_constant_evaluated()) fill_n(buffer, sizeof(buffer), '\0');
   format_base2e(base_bits, buffer, value, num_digits, upper);
   return detail::copy_noinline<Char>(buffer, buffer + num_digits, out);
@@ -2019,7 +2019,7 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
   static_assert(std::is_same<T, uint32_or_64_or_128_t<T>>::value, "");
 
   constexpr int buffer_size = num_bits<T>();
-  char buffer[buffer_size];
+  char buffer[buffer_size]{};
   if (is_constant_evaluated()) fill_n(buffer, buffer_size, '\0');
   const char* begin = nullptr;
   const char* end = buffer + buffer_size;
@@ -2519,24 +2519,24 @@ class bigint {
 
   friend struct formatter<bigint>;
 
-  FMT_CONSTEXPR auto get_bigit(int i) const -> bigit {
+  FMT_CONSTEXPR20 auto get_bigit(int i) const -> bigit {
     return i >= exp_ && i < num_bigits() ? bigits_[i - exp_] : 0;
   }
 
-  FMT_CONSTEXPR void subtract_bigits(int index, bigit other, bigit& borrow) {
+  FMT_CONSTEXPR20 void subtract_bigits(int index, bigit other, bigit& borrow) {
     auto result = double_bigit(bigits_[index]) - other - borrow;
     bigits_[index] = static_cast<bigit>(result);
     borrow = static_cast<bigit>(result >> (bigit_bits * 2 - 1));
   }
 
-  FMT_CONSTEXPR void remove_leading_zeros() {
+  FMT_CONSTEXPR20 void remove_leading_zeros() {
     int num_bigits = static_cast<int>(bigits_.size()) - 1;
     while (num_bigits > 0 && bigits_[num_bigits] == 0) --num_bigits;
     bigits_.resize(to_unsigned(num_bigits + 1));
   }
 
   // Computes *this -= other assuming aligned bigints and *this >= other.
-  FMT_CONSTEXPR void subtract_aligned(const bigint& other) {
+  FMT_CONSTEXPR20 void subtract_aligned(const bigint& other) {
     FMT_ASSERT(other.exp_ >= exp_, "unaligned bigints");
     FMT_ASSERT(compare(*this, other) >= 0, "");
     bigit borrow = 0;
@@ -2548,7 +2548,7 @@ class bigint {
     remove_leading_zeros();
   }
 
-  FMT_CONSTEXPR void multiply(uint32_t value) {
+  FMT_CONSTEXPR20 void multiply(uint32_t value) {
     bigit carry = 0;
     const double_bigit wide_value = value;
     for (size_t i = 0, n = bigits_.size(); i < n; ++i) {
@@ -2561,7 +2561,7 @@ class bigint {
 
   template <typename UInt, FMT_ENABLE_IF(std::is_same<UInt, uint64_t>::value ||
                                          std::is_same<UInt, uint128_t>::value)>
-  FMT_CONSTEXPR void multiply(UInt value) {
+  FMT_CONSTEXPR20 void multiply(UInt value) {
     using half_uint =
         conditional_t<std::is_same<UInt, uint128_t>::value, uint64_t, uint32_t>;
     const int shift = num_bits<half_uint>() - bigit_bits;
@@ -2582,7 +2582,7 @@ class bigint {
 
   template <typename UInt, FMT_ENABLE_IF(std::is_same<UInt, uint64_t>::value ||
                                          std::is_same<UInt, uint128_t>::value)>
-  FMT_CONSTEXPR void assign(UInt n) {
+  FMT_CONSTEXPR20 void assign(UInt n) {
     size_t num_bigits = 0;
     do {
       bigits_[num_bigits++] = static_cast<bigit>(n);
@@ -2593,13 +2593,13 @@ class bigint {
   }
 
  public:
-  FMT_CONSTEXPR bigint() : exp_(0) {}
+  FMT_CONSTEXPR20 bigint() : exp_(0) {}
   explicit bigint(uint64_t n) { assign(n); }
 
   bigint(const bigint&) = delete;
   void operator=(const bigint&) = delete;
 
-  FMT_CONSTEXPR void assign(const bigint& other) {
+  FMT_CONSTEXPR20 void assign(const bigint& other) {
     auto size = other.bigits_.size();
     bigits_.resize(size);
     auto data = other.bigits_.data();
@@ -2607,16 +2607,16 @@ class bigint {
     exp_ = other.exp_;
   }
 
-  template <typename Int> FMT_CONSTEXPR void operator=(Int n) {
+  template <typename Int> FMT_CONSTEXPR20 void operator=(Int n) {
     FMT_ASSERT(n > 0, "");
     assign(uint64_or_128_t<Int>(n));
   }
 
-  FMT_CONSTEXPR auto num_bigits() const -> int {
+  FMT_CONSTEXPR20 auto num_bigits() const -> int {
     return static_cast<int>(bigits_.size()) + exp_;
   }
 
-  FMT_CONSTEXPR auto operator<<=(int shift) -> bigint& {
+  FMT_CONSTEXPR20 auto operator<<=(int shift) -> bigint& {
     FMT_ASSERT(shift >= 0, "");
     exp_ += shift / bigit_bits;
     shift %= bigit_bits;
@@ -2631,13 +2631,15 @@ class bigint {
     return *this;
   }
 
-  template <typename Int> FMT_CONSTEXPR auto operator*=(Int value) -> bigint& {
+  template <typename Int>
+  FMT_CONSTEXPR20 auto operator*=(Int value) -> bigint& {
     FMT_ASSERT(value > 0, "");
     multiply(uint32_or_64_or_128_t<Int>(value));
     return *this;
   }
 
-  friend FMT_CONSTEXPR auto compare(const bigint& b1, const bigint& b2) -> int {
+  friend FMT_CONSTEXPR20 auto compare(const bigint& b1, const bigint& b2)
+      -> int {
     int num_bigits1 = b1.num_bigits(), num_bigits2 = b2.num_bigits();
     if (num_bigits1 != num_bigits2) return num_bigits1 > num_bigits2 ? 1 : -1;
     int i = static_cast<int>(b1.bigits_.size()) - 1;
@@ -2653,8 +2655,9 @@ class bigint {
   }
 
   // Returns compare(lhs1 + lhs2, rhs).
-  friend FMT_CONSTEXPR auto add_compare(const bigint& lhs1, const bigint& lhs2,
-                                        const bigint& rhs) -> int {
+  friend FMT_CONSTEXPR20 auto add_compare(const bigint& lhs1,
+                                          const bigint& lhs2, const bigint& rhs)
+      -> int {
     int max_lhs_bigits = max_of(lhs1.num_bigits(), lhs2.num_bigits());
     int num_rhs_bigits = rhs.num_bigits();
     if (max_lhs_bigits + 1 < num_rhs_bigits) return -1;
@@ -2720,7 +2723,7 @@ class bigint {
 
   // If this bigint has a bigger exponent than other, adds trailing zero to make
   // exponents equal. This simplifies some operations such as subtraction.
-  FMT_CONSTEXPR void align(const bigint& other) {
+  FMT_CONSTEXPR20 void align(const bigint& other) {
     int exp_difference = exp_ - other.exp_;
     if (exp_difference <= 0) return;
     int num_bigits = static_cast<int>(bigits_.size());
@@ -2733,7 +2736,7 @@ class bigint {
 
   // Divides this bignum by divisor, assigning the remainder to this and
   // returning the quotient.
-  FMT_CONSTEXPR auto divmod_assign(const bigint& divisor) -> int {
+  FMT_CONSTEXPR20 auto divmod_assign(const bigint& divisor) -> int {
     FMT_ASSERT(this != &divisor, "");
     if (compare(*this, divisor) < 0) return 0;
     FMT_ASSERT(divisor.bigits_[divisor.bigits_.size() - 1u] != 0, "");
