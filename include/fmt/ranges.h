@@ -528,8 +528,7 @@ template <typename R, typename Char>
 struct formatter<
     R, Char,
     enable_if_t<conjunction<
-        bool_constant<
-            range_format_kind<R, Char>::value == range_format::map>,
+        bool_constant<range_format_kind<R, Char>::value == range_format::map>,
         detail::is_formattable_delayed<R, Char>>::value>> {
  private:
   using map_type = detail::maybe_const_range<R>;
