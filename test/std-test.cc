@@ -13,13 +13,17 @@
 #include <vector>
 
 #include "fmt/os.h"  // fmt::system_category
-#include "fmt/ranges.h"
 #include "gtest-extra.h"  // StartsWith
 
 #ifdef __cpp_lib_filesystem
 TEST(std_test, path) {
   using std::filesystem::path;
   EXPECT_EQ(fmt::format("{}", path("/usr/bin")), "/usr/bin");
+
+  // see #4303
+  const path p = "/usr/bin";
+  EXPECT_EQ(fmt::format("{}", p), "/usr/bin");
+
   EXPECT_EQ(fmt::format("{:?}", path("/usr/bin")), "\"/usr/bin\"");
   EXPECT_EQ(fmt::format("{:8}", path("foo")), "foo     ");
 
@@ -43,6 +47,9 @@ TEST(std_test, path) {
   EXPECT_EQ(fmt::format("{:?}", path(L"\xd800")), "\"\\ud800\"");
 #  endif
 }
+
+// Intentionally delayed include to test #4303
+#include "fmt/ranges.h"
 
 // Test ambiguity problem described in #2954.
 TEST(ranges_std_test, format_vector_path) {
