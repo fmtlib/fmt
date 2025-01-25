@@ -47,6 +47,8 @@ TEST(ranges_test, format_array_of_literals) {
 }
 #endif  // FMT_RANGES_TEST_ENABLE_C_STYLE_ARRAY
 
+struct unformattable {};
+
 TEST(ranges_test, format_vector) {
   auto v = std::vector<int>{1, 2, 3, 5, 7, 11};
   EXPECT_EQ(fmt::format("{}", v), "[1, 2, 3, 5, 7, 11]");
@@ -65,6 +67,9 @@ TEST(ranges_test, format_vector) {
   EXPECT_EQ(fmt::format("{:n}", vvc), "['a', 'b', 'c'], ['a', 'b', 'c']");
   EXPECT_EQ(fmt::format("{:n:n}", vvc), "'a', 'b', 'c', 'a', 'b', 'c'");
   EXPECT_EQ(fmt::format("{:n:n:}", vvc), "a, b, c, a, b, c");
+
+  EXPECT_FALSE(fmt::is_formattable<unformattable>::value);
+  EXPECT_FALSE(fmt::is_formattable<std::vector<unformattable>>::value);
 }
 
 TEST(ranges_test, format_nested_vector) {
@@ -83,6 +88,8 @@ TEST(ranges_test, format_map) {
   auto m = std::map<std::string, int>{{"one", 1}, {"two", 2}};
   EXPECT_EQ(fmt::format("{}", m), "{\"one\": 1, \"two\": 2}");
   EXPECT_EQ(fmt::format("{:n}", m), "\"one\": 1, \"two\": 2");
+
+  EXPECT_FALSE((fmt::is_formattable<std::map<int, unformattable>>::value));
 }
 
 struct test_map_value {};
@@ -146,6 +153,7 @@ template <typename T> class flat_set {
 TEST(ranges_test, format_flat_set) {
   EXPECT_EQ(fmt::format("{}", flat_set<std::string>{"one", "two"}),
             "{\"one\", \"two\"}");
+  EXPECT_FALSE(fmt::is_formattable<flat_set<unformattable>>::value);
 }
 
 namespace adl {
@@ -169,8 +177,6 @@ TEST(ranges_test, format_pair) {
   EXPECT_EQ(fmt::format("{:n}", p), "421.5");
 }
 
-struct unformattable {};
-
 TEST(ranges_test, format_tuple) {
   auto t =
       std::tuple<int, float, std::string, char>(42, 1.5f, "this is tuple", 'i');
@@ -180,7 +186,6 @@ TEST(ranges_test, format_tuple) {
   EXPECT_EQ(fmt::format("{}", std::tuple<>()), "()");
 
   EXPECT_TRUE((fmt::is_formattable<std::tuple<>>::value));
-  EXPECT_FALSE((fmt::is_formattable<unformattable>::value));
   EXPECT_FALSE((fmt::is_formattable<std::tuple<unformattable>>::value));
   EXPECT_FALSE((fmt::is_formattable<std::tuple<unformattable, int>>::value));
   EXPECT_FALSE((fmt::is_formattable<std::tuple<int, unformattable>>::value));
@@ -655,6 +660,8 @@ TEST(ranges_test, container_adaptor) {
     m.push(2);
     EXPECT_EQ(fmt::format("{}", m), "[1, 2]");
   }
+
+  EXPECT_FALSE(fmt::is_formattable<std::stack<unformattable>>::value);
 }
 
 struct tieable {
