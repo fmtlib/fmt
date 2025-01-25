@@ -1,4 +1,4 @@
-# 11.1.3 - TBD
+# 11.1.3 - 2025-01-25
 
 - Fixed compilation on GCC 9.4 (https://github.com/fmtlib/fmt/issues/4313).
 
