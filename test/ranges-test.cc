@@ -68,8 +68,8 @@ TEST(ranges_test, format_vector) {
   EXPECT_EQ(fmt::format("{:n:n}", vvc), "'a', 'b', 'c', 'a', 'b', 'c'");
   EXPECT_EQ(fmt::format("{:n:n:}", vvc), "a, b, c, a, b, c");
 
-  EXPECT_FALSE((fmt::is_formattable<unformattable>::value));
-  EXPECT_FALSE((fmt::is_formattable<std::vector<unformattable>>::value));
+  EXPECT_FALSE(fmt::is_formattable<unformattable>::value);
+  EXPECT_FALSE(fmt::is_formattable<std::vector<unformattable>>::value);
 }
 
 TEST(ranges_test, format_nested_vector) {
@@ -153,7 +153,7 @@ template <typename T> class flat_set {
 TEST(ranges_test, format_flat_set) {
   EXPECT_EQ(fmt::format("{}", flat_set<std::string>{"one", "two"}),
             "{\"one\", \"two\"}");
-  EXPECT_FALSE((fmt::is_formattable<flat_set<unformattable>>::value));
+  EXPECT_FALSE(fmt::is_formattable<flat_set<unformattable>>::value);
 }
 
 namespace adl {
@@ -661,7 +661,7 @@ TEST(ranges_test, container_adaptor) {
     EXPECT_EQ(fmt::format("{}", m), "[1, 2]");
   }
 
-  EXPECT_FALSE((fmt::is_formattable<std::stack<unformattable>>::value));
+  EXPECT_FALSE(fmt::is_formattable<std::stack<unformattable>>::value);
 }
 
 struct tieable {
