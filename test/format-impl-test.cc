@@ -312,6 +312,7 @@ template <> struct numeric_limits<double_double> {
   // is_iec559 is true for double-double in libstdc++.
   static constexpr bool is_iec559 = true;
   static constexpr int digits = 106;
+  static constexpr int digits10 = 33;
 };
 
 template <> struct is_floating_point<slow_float> : std::true_type {};
@@ -341,7 +342,7 @@ TEST(format_impl_test, write_dragon_even) {
   auto s = std::string();
   fmt::detail::write<char>(std::back_inserter(s), slow_float(33554450.0f), {});
   // Specializing is_floating_point is broken in MSVC.
-  if (!FMT_MSC_VERSION) EXPECT_EQ(s, "33554450");
+  if (!FMT_MSC_VERSION) EXPECT_EQ(s, "3.355445e+07");
 }
 
 #if defined(_WIN32) && !defined(FMT_USE_WRITE_CONSOLE)
