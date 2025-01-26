@@ -22,6 +22,8 @@
 
 #include "format.h"
 
+FMT_BEGIN_NAMESPACE
+
 namespace fmt_detail {
 struct time_zone {
   template <typename Duration, typename T>
@@ -36,8 +38,6 @@ template <typename... T> inline auto current_zone(T...) -> time_zone* {
 
 template <typename... T> inline void _tzset(T...) {}
 }  // namespace fmt_detail
-
-FMT_BEGIN_NAMESPACE
 
 // Enable safe chrono durations, unless explicitly disabled.
 #ifndef FMT_SAFE_DURATION_CAST
@@ -522,8 +522,8 @@ auto to_time_t(sys_time<Duration> time_point) -> std::time_t {
 // Workaround a bug in libstdc++ which sets __cpp_lib_chrono to 201907 without
 // providing current_zone(): https://github.com/fmtlib/fmt/issues/4160.
 template <typename T> FMT_CONSTEXPR auto has_current_zone() -> bool {
-  using namespace std::chrono;
-  using namespace fmt_detail;
+  using std::chrono::current_zone;
+  using fmt_detail::current_zone;
   return !std::is_same<decltype(current_zone()), fmt_detail::time_zone*>::value;
 }
 }  // namespace detail
