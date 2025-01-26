@@ -669,5 +669,13 @@ following differences:
 
 - Names are defined in the `fmt` namespace instead of `std` to avoid
   collisions with standard library implementations.
+
 - Width calculation doesn't use grapheme clusterization. The latter has
   been implemented in a separate branch but hasn't been integrated yet.
+
+- The default floating-point representation in {fmt} uses the smallest
+  precision that provides round-trip guarantees similarly to other languages
+  like Java and Python. `std::format` is currently specified in terms of
+  `std::to_chars` which tries to generate the smallest number of characters
+  (ignoring redundant digits and sign in exponent) and may procude more
+  decimal digits than necessary.
