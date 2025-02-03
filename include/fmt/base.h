@@ -2263,8 +2263,8 @@ template <> struct is_output_iterator<appender, char> : std::true_type {};
 template <typename It, typename T>
 struct is_output_iterator<
     It, T,
-    void_t<decltype(*std::declval<decay_t<It>&>()++ = std::declval<T>())>>
-    : std::true_type {};
+    enable_if_t<std::is_assignable<decltype(*std::declval<decay_t<It>&>()++),
+                                   T>::value>> : std::true_type {};
 
 #ifndef FMT_USE_LOCALE
 #  define FMT_USE_LOCALE (FMT_OPTIMIZE_SIZE <= 1)
