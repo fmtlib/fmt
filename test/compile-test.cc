@@ -316,6 +316,18 @@ TEST(compile_test, compile_format_string_literal) {
 }
 #endif
 
+#if defined(__cpp_if_constexpr) && defined(__cpp_return_type_deduction)
+template <typename S>
+bool check_is_compiled_string(const S&) {
+  return fmt::is_compiled_string<S>::value;
+}
+
+TEST(compile_test, is_compiled_string) {
+  EXPECT_TRUE(check_is_compiled_string(FMT_COMPILE("asdf")));
+  EXPECT_TRUE(check_is_compiled_string(FMT_COMPILE("{}")));
+}
+#endif
+
 // MSVS 2019 19.29.30145.0 - OK
 // MSVS 2022 19.32.31332.0, 19.37.32826.1 - compile-test.cc(362,3): fatal error
 // C1001: Internal compiler error.
