@@ -113,7 +113,7 @@ void write_escaped_path(basic_memory_buffer<Char>& quoted,
 
 }  // namespace detail
 
-FMT_EXPORT
+FMT_BEGIN_EXPORT
 template <typename Char> struct formatter<std::filesystem::path, Char> {
  private:
   format_specs specs_;
@@ -162,6 +162,7 @@ template <typename Char> struct formatter<std::filesystem::path, Char> {
                          specs);
   }
 };
+FMT_END_EXPORT
 
 class path : public std::filesystem::path {
  public:
@@ -181,9 +182,7 @@ class path : public std::filesystem::path {
 FMT_END_NAMESPACE
 #endif  // FMT_CPP_LIB_FILESYSTEM
 
-FMT_BEGIN_NAMESPACE
-FMT_EXPORT
-template <std::size_t N, typename Char>
+FMT_EXPORT FMT_BEGIN_NAMESPACE template <std::size_t N, typename Char>
 struct formatter<std::bitset<N>, Char>
     : nested_formatter<basic_string_view<Char>, Char> {
  private:
@@ -209,15 +208,12 @@ struct formatter<std::bitset<N>, Char>
   }
 };
 
-FMT_EXPORT
 template <typename Char>
 struct formatter<std::thread::id, Char> : basic_ostream_formatter<Char> {};
 FMT_END_NAMESPACE
 
 #ifdef __cpp_lib_optional
-FMT_BEGIN_NAMESPACE
-FMT_EXPORT
-template <typename T, typename Char>
+FMT_EXPORT FMT_BEGIN_NAMESPACE template <typename T, typename Char>
 struct formatter<std::optional<T>, Char,
                  std::enable_if_t<is_formattable<T, Char>::value>> {
  private:
@@ -277,14 +273,13 @@ FMT_END_NAMESPACE
 #endif
 
 #ifdef __cpp_lib_expected
-FMT_BEGIN_NAMESPACE
+FMT_EXPORT FMT_BEGIN_NAMESPACE
 
-FMT_EXPORT
-template <typename T, typename E, typename Char>
-struct formatter<std::expected<T, E>, Char,
-                 std::enable_if_t<(std::is_void<T>::value ||
-                                   is_formattable<T, Char>::value) &&
-                                  is_formattable<E, Char>::value>> {
+  template <typename T, typename E, typename Char>
+  struct formatter<std::expected<T, E>, Char,
+                   std::enable_if_t<(std::is_void<T>::value ||
+                                     is_formattable<T, Char>::value) &&
+                                     is_formattable<E, Char>::value>> {
   FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     return ctx.begin();
   }
@@ -310,9 +305,8 @@ FMT_END_NAMESPACE
 #endif  // __cpp_lib_expected
 
 #ifdef __cpp_lib_source_location
-FMT_BEGIN_NAMESPACE
-FMT_EXPORT
-template <> struct formatter<std::source_location> {
+FMT_EXPORT FMT_BEGIN_NAMESPACE template <>
+struct formatter<std::source_location> {
   FMT_CONSTEXPR auto parse(parse_context<>& ctx) { return ctx.begin(); }
 
   template <typename FormatContext>
@@ -367,7 +361,7 @@ template <typename T, typename C> struct is_variant_formattable {
       detail::is_variant_formattable_<T, C>::value;
 };
 
-FMT_EXPORT
+FMT_BEGIN_EXPORT
 template <typename Char> struct formatter<std::monostate, Char> {
   FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     return ctx.begin();
@@ -380,7 +374,6 @@ template <typename Char> struct formatter<std::monostate, Char> {
   }
 };
 
-FMT_EXPORT
 template <typename Variant, typename Char>
 struct formatter<
     Variant, Char,
@@ -410,11 +403,12 @@ struct formatter<
     return out;
   }
 };
+FMT_END_EXPORT
 FMT_END_NAMESPACE
 #endif  // FMT_CPP_LIB_VARIANT
 
 FMT_BEGIN_NAMESPACE
-FMT_EXPORT
+FMT_BEGIN_EXPORT
 template <> struct formatter<std::error_code> {
  private:
   format_specs specs_;
@@ -448,6 +442,7 @@ template <> struct formatter<std::error_code> {
                                specs);
   }
 };
+FMT_END_EXPORT
 
 #if FMT_USE_RTTI
 namespace detail {
@@ -520,7 +515,7 @@ auto write_demangled_name(OutputIt out, const std::type_info& ti) -> OutputIt {
 
 }  // namespace detail
 
-FMT_EXPORT
+FMT_BEGIN_EXPORT
 template <typename Char>
 struct formatter<std::type_info, Char  // DEPRECATED! Mixing code unit types.
                  > {
@@ -537,7 +532,6 @@ struct formatter<std::type_info, Char  // DEPRECATED! Mixing code unit types.
 };
 #endif
 
-FMT_EXPORT
 template <typename T, typename Char>
 struct formatter<
     T, Char,  // DEPRECATED! Mixing code unit types.
@@ -571,6 +565,7 @@ struct formatter<
     return detail::write_bytes<Char>(out, string_view(ex.what()));
   }
 };
+FMT_END_EXPORT
 
 namespace detail {
 
@@ -603,7 +598,7 @@ struct is_bit_reference_like<std::__bit_const_reference<C>> {
 // We can't use std::vector<bool, Allocator>::reference and
 // std::bitset<N>::reference because the compiler can't deduce Allocator and N
 // in partial specialization.
-FMT_EXPORT
+FMT_BEGIN_EXPORT
 template <typename BitRef, typename Char>
 struct formatter<BitRef, Char,
                  enable_if_t<detail::is_bit_reference_like<BitRef>::value>>
@@ -623,7 +618,6 @@ template <typename T> auto ptr(const std::shared_ptr<T>& p) -> const void* {
   return p.get();
 }
 
-FMT_EXPORT
 template <typename T, typename Char>
 struct formatter<std::atomic<T>, Char,
                  enable_if_t<is_formattable<T, Char>::value>>
@@ -634,9 +628,10 @@ struct formatter<std::atomic<T>, Char,
     return formatter<T, Char>::format(v.load(), ctx);
   }
 };
+FMT_END_EXPORT
 
 #ifdef __cpp_lib_atomic_flag_test
-FMT_EXPORT
+FMT_BEGIN_EXPORT
 template <typename Char>
 struct formatter<std::atomic_flag, Char> : formatter<bool, Char> {
   template <typename FormatContext>
@@ -645,9 +640,10 @@ struct formatter<std::atomic_flag, Char> : formatter<bool, Char> {
     return formatter<bool, Char>::format(v.test(), ctx);
   }
 };
+FMT_END_EXPORT
 #endif  // __cpp_lib_atomic_flag_test
 
-FMT_EXPORT
+FMT_BEGIN_EXPORT
 template <typename T, typename Char> struct formatter<std::complex<T>, Char> {
  private:
   detail::dynamic_format_specs<Char> specs_;
@@ -710,7 +706,6 @@ template <typename T, typename Char> struct formatter<std::complex<T>, Char> {
   }
 };
 
-FMT_EXPORT
 template <typename T, typename Char>
 struct formatter<std::reference_wrapper<T>, Char,
                  enable_if_t<is_formattable<remove_cvref_t<T>, Char>::value>>
@@ -721,6 +716,7 @@ struct formatter<std::reference_wrapper<T>, Char,
     return formatter<remove_cvref_t<T>, Char>::format(ref.get(), ctx);
   }
 };
+FMT_END_EXPORT
 
 FMT_END_NAMESPACE
 #endif  // FMT_STD_H_
