@@ -41,16 +41,6 @@ namespace detail {
 #  define FMT_COMPILE(s) FMT_STRING(s)
 #endif
 
-#if FMT_USE_NONTYPE_TEMPLATE_ARGS
-template <typename Char, size_t N, fmt::detail::fixed_string<Char, N> Str>
-struct udl_compiled_string : compiled_string {
-  using char_type = Char;
-  constexpr explicit operator basic_string_view<char_type>() const {
-    return {Str.data, N - 1};
-  }
-};
-#endif
-
 template <typename T, typename... Tail>
 auto first(const T& value, const Tail&...) -> const T& {
   return value;
@@ -538,9 +528,7 @@ void print(const S& fmt, const Args&... args) {
 #if FMT_USE_NONTYPE_TEMPLATE_ARGS
 inline namespace literals {
 template <detail::fixed_string Str> constexpr auto operator""_cf() {
-  using char_t = remove_cvref_t<decltype(Str.data[0])>;
-  return detail::udl_compiled_string<char_t, sizeof(Str.data) / sizeof(char_t),
-                                     Str>();
+  return FMT_COMPILE(Str.data);
 }
 }  // namespace literals
 #endif
