@@ -212,7 +212,7 @@ inline auto floor_log10_pow2_minus_log10_4_over_3(int e) noexcept -> int {
   return (e * 631305 - 261663) >> 21;
 }
 
-FMT_INLINE_VARIABLE constexpr struct {
+FMT_INLINE_VARIABLE constexpr struct div_small_pow10_infos_struct {
   uint32_t divisor;
   int shift_amount;
 } div_small_pow10_infos[] = {{10, 16}, {100, 16}};
