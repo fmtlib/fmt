@@ -585,11 +585,13 @@ inline auto localtime(std::chrono::local_time<Duration> time) -> std::tm {
   using namespace std::chrono;
   using namespace fmt_detail;
 
-#if FMT_USE_EARLIEST_TIME
-  return localtime(detail::to_time_t(current_zone()->to_sys<Duration>(time, std::chrono::choose::earliest)));
-#else
-  return localtime(detail::to_time_t(current_zone()->to_sys<Duration>(time, std::chrono::choose::latest)));
-#endif
+#  if FMT_USE_EARLIEST_TIME
+  return localtime(detail::to_time_t(
+      current_zone()->to_sys<Duration>(time, std::chrono::choose::earliest)));
+#  else
+  return localtime(detail::to_time_t(
+      current_zone()->to_sys<Duration>(time, std::chrono::choose::latest)));
+#  endif
 }
 #endif
 
