@@ -281,6 +281,13 @@ struct local_t {};
 
 }  // namespace detail
 
+// When converting a local zoned time to system time, it could be ambigous
+// By default prefer the earliest time but this can be set to 0 to use latest
+// refer to std::chrono::time_zone::to_sys and std::chrono::choose for more info
+#ifndef FMT_USE_EARLIEST_TIME
+#  define FMT_USE_EARLIEST_TIME 1
+#endif
+
 template <typename Duration>
 using sys_time = std::chrono::time_point<std::chrono::system_clock, Duration>;
 
@@ -577,7 +584,12 @@ template <typename Duration,
 inline auto localtime(std::chrono::local_time<Duration> time) -> std::tm {
   using namespace std::chrono;
   using namespace fmt_detail;
-  return localtime(detail::to_time_t(current_zone()->to_sys<Duration>(time)));
+
+#if FMT_USE_EARLIEST_TIME
+  return localtime(detail::to_time_t(current_zone()->to_sys<Duration>(time, std::chrono::choose::earliest)));
+#else
+  return localtime(detail::to_time_t(current_zone()->to_sys<Duration>(time, std::chrono::choose::latest)));
+#endif
 }
 #endif
 
