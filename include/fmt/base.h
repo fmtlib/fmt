@@ -294,8 +294,8 @@
 #endif
 
 #define FMT_APPLY_VARIADIC(expr) \
-  using ignore = int[];          \
-  (void)ignore { 0, (expr, 0)... }
+  using unused = int[];          \
+  (void)unused { 0, (expr, 0)... }
 
 // Enable minimal optimizations for more compact code in debug mode.
 FMT_PRAGMA_GCC(push_options)
@@ -2729,9 +2729,9 @@ template <typename... T> struct fstring {
                               std::is_same<typename S::char_type, char>::value)>
   FMT_ALWAYS_INLINE fstring(const S&) : str(S()) {
     FMT_CONSTEXPR auto sv = string_view(S());
-    FMT_CONSTEXPR int ignore =
+    FMT_CONSTEXPR int unused =
         (parse_format_string(sv, checker(sv, arg_pack())), 0);
-    detail::ignore_unused(ignore);
+    detail::ignore_unused(unused);
   }
   fstring(runtime_format_string<> fmt) : str(fmt.str) {}
 
