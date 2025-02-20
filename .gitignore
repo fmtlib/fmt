@@ -3,6 +3,7 @@
 *.xcodeproj
 *~
 .vscode/
+.vs/
 /CMakeScripts
 /Testing
 /_CPack_Packages
