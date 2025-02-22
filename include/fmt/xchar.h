@@ -322,7 +322,7 @@ template <typename... T> void println(wformat_string<T...> fmt, T&&... args) {
   return print(L"{}\n", fmt::format(fmt, std::forward<T>(args)...));
 }
 
-inline auto vformat(const text_style& ts, wstring_view fmt, wformat_args args)
+inline auto vformat(text_style ts, wstring_view fmt, wformat_args args)
     -> std::wstring {
   auto buf = wmemory_buffer();
   detail::vformat_to(buf, ts, fmt, args);
@@ -330,19 +330,19 @@ inline auto vformat(const text_style& ts, wstring_view fmt, wformat_args args)
 }
 
 template <typename... T>
-inline auto format(const text_style& ts, wformat_string<T...> fmt, T&&... args)
+inline auto format(text_style ts, wformat_string<T...> fmt, T&&... args)
     -> std::wstring {
   return fmt::vformat(ts, fmt, fmt::make_wformat_args(args...));
 }
 
 template <typename... T>
-FMT_DEPRECATED void print(std::FILE* f, const text_style& ts,
-                          wformat_string<T...> fmt, const T&... args) {
+FMT_DEPRECATED void print(std::FILE* f, text_style ts, wformat_string<T...> fmt,
+                          const T&... args) {
   vprint(f, ts, fmt, fmt::make_wformat_args(args...));
 }
 
 template <typename... T>
-FMT_DEPRECATED void print(const text_style& ts, wformat_string<T...> fmt,
+FMT_DEPRECATED void print(text_style ts, wformat_string<T...> fmt,
                           const T&... args) {
   return print(stdout, ts, fmt, args...);
 }
