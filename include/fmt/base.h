@@ -1071,6 +1071,11 @@ void init_named_arg(named_arg_info<Char>*, int& arg_index, int&, const T&) {
 template <typename Char, typename T, FMT_ENABLE_IF(is_named_arg<T>::value)>
 void init_named_arg(named_arg_info<Char>* named_args, int& arg_index,
                     int& named_arg_index, const T& arg) {
+  for (auto i = 0; i < named_arg_index; ++i) {
+    if (basic_string_view<Char>(named_args[i].name) == basic_string_view<Char>(arg.name)) {
+      report_error("duplicate named args found");
+    }
+  }
   named_args[named_arg_index++] = {arg.name, arg_index++};
 }
 
@@ -1084,6 +1089,11 @@ template <typename T, typename Char,
           FMT_ENABLE_IF(is_static_named_arg<T>::value)>
 FMT_CONSTEXPR void init_static_named_arg(named_arg_info<Char>* named_args,
                                          int& arg_index, int& named_arg_index) {
+  for (auto i = 0; i < named_arg_index; ++i) {
+    if (basic_string_view<Char>(named_args[i].name) == basic_string_view<Char>(T::name)) {
+      report_error("duplicate named args found");
+    }
+  }
   named_args[named_arg_index++] = {T::name, arg_index++};
 }
 
