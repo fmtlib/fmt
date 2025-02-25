@@ -1,0 +1,34 @@
+{
+    "version": 2,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 20,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "windows-x64-v143-debug-cpp20",
+            "displayName": "Windows 2022 x64 Debug C++20",
+            "generator": "Visual Studio 17 2022",
+            "binaryDir": "${sourceDir}/out/${presetName}",
+            "architecture": "x64",
+            "toolset": "v143",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_CXX_STANDARD": "20"
+            }
+        },
+        {
+            "name": "windows-x64-v143-release-cpp20",
+            "displayName": "Windows 2022 x64 Release C++20",
+            "generator": "Visual Studio 17 2022",
+            "binaryDir": "${sourceDir}/out/${presetName}",
+            "architecture": "x64",
+            "toolset": "v143",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_CXX_STANDARD": "20"
+            }
+        }
+    ]
+}
