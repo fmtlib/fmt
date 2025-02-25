@@ -475,3 +475,18 @@ TEST(format_impl_test, to_utf8) {
   EXPECT_EQ(s, u.str());
   EXPECT_EQ(s.size(), u.size());
 }
+
+#if FMT_USE_CONSTEVAL
+TEST(format_test, format_to_n_constexpr) {
+  // This test doesn't have to be extensive -
+  // it just checks format_to_n can be done in constexpr context
+  constexpr bool result  = []{
+    std::array buffer {'x', 'x', 'x', 'x'};
+    fmt::format_to_n(buffer.data(), buffer.size(), "{}", 42);
+    fmt::format_to_n(buffer.data() + 2, 1, "{}", 'F');
+    return buffer == std::array{ '4', '2', 'F', 'x'};
+  }();
+
+  ASSERT_TRUE(result);
+}
+#endif

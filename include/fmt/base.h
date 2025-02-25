@@ -1835,6 +1835,7 @@ class fixed_buffer_traits {
 
  public:
   constexpr explicit fixed_buffer_traits(size_t limit) : limit_(limit) {}
+  FMT_CONSTEXPR20 ~fixed_buffer_traits(){};
   constexpr auto count() const -> size_t { return count_; }
   FMT_CONSTEXPR auto limit(size_t size) -> size_t {
     size_t n = limit_ > count_ ? limit_ - count_ : 0;
@@ -1855,7 +1856,7 @@ class iterator_buffer : public Traits, public buffer<T> {
     if (buf.size() == buffer_size) static_cast<iterator_buffer&>(buf).flush();
   }
 
-  void flush() {
+  FMT_CONSTEXPR void flush() {
     auto size = this->size();
     this->clear();
     const T* begin = data_;
@@ -1864,9 +1865,9 @@ class iterator_buffer : public Traits, public buffer<T> {
   }
 
  public:
-  explicit iterator_buffer(OutputIt out, size_t n = buffer_size)
+  FMT_CONSTEXPR explicit iterator_buffer(OutputIt out, size_t n = buffer_size)
       : Traits(n), buffer<T>(grow, data_, 0, buffer_size), out_(out) {}
-  iterator_buffer(iterator_buffer&& other) noexcept
+  FMT_CONSTEXPR iterator_buffer(iterator_buffer&& other) noexcept
       : Traits(other),
         buffer<T>(grow, data_, 0, buffer_size),
         out_(other.out_) {}
@@ -1876,11 +1877,13 @@ class iterator_buffer : public Traits, public buffer<T> {
     FMT_CATCH(...) {}
   }
 
-  auto out() -> OutputIt {
+  FMT_CONSTEXPR auto out() -> OutputIt {
     flush();
     return out_;
   }
-  auto count() const -> size_t { return Traits::count() + this->size(); }
+  FMT_CONSTEXPR auto count() const -> size_t {
+    return Traits::count() + this->size();
+  }
 };
 
 template <typename T>
@@ -1896,7 +1899,7 @@ class iterator_buffer<T*, T, fixed_buffer_traits> : public fixed_buffer_traits,
       static_cast<iterator_buffer&>(buf).flush();
   }
 
-  void flush() {
+  FMT_CONSTEXPR void flush() {
     size_t n = this->limit(this->size());
     if (this->data() == out_) {
       out_ += n;
@@ -1906,9 +1909,9 @@ class iterator_buffer<T*, T, fixed_buffer_traits> : public fixed_buffer_traits,
   }
 
  public:
-  explicit iterator_buffer(T* out, size_t n = buffer_size)
+  FMT_CONSTEXPR explicit iterator_buffer(T* out, size_t n = buffer_size)
       : fixed_buffer_traits(n), buffer<T>(grow, out, 0, n), out_(out) {}
-  iterator_buffer(iterator_buffer&& other) noexcept
+  FMT_CONSTEXPR iterator_buffer(iterator_buffer&& other) noexcept
       : fixed_buffer_traits(other),
         buffer<T>(static_cast<iterator_buffer&&>(other)),
         out_(other.out_) {
@@ -1917,13 +1920,13 @@ class iterator_buffer<T*, T, fixed_buffer_traits> : public fixed_buffer_traits,
       this->clear();
     }
   }
-  ~iterator_buffer() { flush(); }
+  FMT_CONSTEXPR20 ~iterator_buffer() { flush(); }
 
-  auto out() -> T* {
+  FMT_CONSTEXPR auto out() -> T* {
     flush();
     return out_;
   }
-  auto count() const -> size_t {
+  FMT_CONSTEXPR auto count() const -> size_t {
     return fixed_buffer_traits::count() + this->size();
   }
 };
@@ -2077,7 +2080,9 @@ template <typename T, typename Char> struct type_is_unformattable_for;
 template <typename Char> struct string_value {
   const Char* data;
   size_t size;
-  auto str() const -> basic_string_view<Char> { return {data, size}; }
+  FMT_CONSTEXPR auto str() const -> basic_string_view<Char> {
+    return {data, size};
+  }
 };
 
 template <typename Context> struct custom_value {
@@ -2392,8 +2397,8 @@ FMT_CONSTEXPR inline auto is_locking() -> bool {
   return locking<T1>::value || is_locking<T2, Tail...>();
 }
 
-FMT_API void vformat_to(buffer<char>& buf, string_view fmt, format_args args,
-                        locale_ref loc = {});
+FMT_API FMT_CONSTEXPR void vformat_to(buffer<char>& buf, string_view fmt,
+                                      format_args args, locale_ref loc = {});
 
 #if FMT_WIN32
 FMT_API void vprint_mojibake(FILE*, string_view, format_args, bool);
@@ -2803,7 +2808,7 @@ inline auto arg(const Char* name, const T& arg) -> detail::named_arg<Char, T> {
 template <typename OutputIt,
           FMT_ENABLE_IF(detail::is_output_iterator<remove_cvref_t<OutputIt>,
                                                    char>::value)>
-auto vformat_to(OutputIt&& out, string_view fmt, format_args args)
+FMT_CONSTEXPR auto vformat_to(OutputIt&& out, string_view fmt, format_args args)
     -> remove_cvref_t<OutputIt> {
   auto&& buf = detail::get_buffer<char>(out);
   detail::vformat_to(buf, fmt, args, {});
@@ -2837,7 +2842,8 @@ template <typename OutputIt> struct format_to_n_result {
 
 template <typename OutputIt, typename... T,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
-auto vformat_to_n(OutputIt out, size_t n, string_view fmt, format_args args)
+FMT_CONSTEXPR auto vformat_to_n(OutputIt out, size_t n, string_view fmt,
+                                format_args args)
     -> format_to_n_result<OutputIt> {
   using traits = detail::fixed_buffer_traits;
   auto buf = detail::iterator_buffer<OutputIt, char, traits>(out, n);
@@ -2853,8 +2859,9 @@ auto vformat_to_n(OutputIt out, size_t n, string_view fmt, format_args args)
  */
 template <typename OutputIt, typename... T,
           FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, char>::value)>
-FMT_INLINE auto format_to_n(OutputIt out, size_t n, format_string<T...> fmt,
-                            T&&... args) -> format_to_n_result<OutputIt> {
+FMT_CONSTEXPR FMT_INLINE auto format_to_n(OutputIt out, size_t n,
+                                          format_string<T...> fmt, T&&... args)
+    -> format_to_n_result<OutputIt> {
   return vformat_to_n(out, n, fmt.str, vargs<T...>{{args...}});
 }
 
@@ -2872,7 +2879,7 @@ struct format_to_result {
 };
 
 template <size_t N>
-auto vformat_to(char (&out)[N], string_view fmt, format_args args)
+FMT_CONSTEXPR auto vformat_to(char (&out)[N], string_view fmt, format_args args)
     -> format_to_result {
   auto result = vformat_to_n(out, N, fmt, args);
   return {result.out, result.size > N};

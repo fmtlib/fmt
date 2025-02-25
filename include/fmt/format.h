@@ -1154,11 +1154,12 @@ FMT_END_EXPORT
 #endif  // FMT_HEADER_ONLY
 
 // Compares two characters for equality.
-template <typename Char> auto equal2(const Char* lhs, const char* rhs) -> bool {
+template <typename Char>
+FMT_CONSTEXPR auto equal2(const Char* lhs, const char* rhs) -> bool {
   return lhs[0] == Char(rhs[0]) && lhs[1] == Char(rhs[1]);
 }
-inline auto equal2(const char* lhs, const char* rhs) -> bool {
-  return memcmp(lhs, rhs, 2) == 0;
+FMT_CONSTEXPR inline auto equal2(const char* lhs, const char* rhs) -> bool {
+  return lhs[0] == rhs[0] && lhs[1] == rhs[1];
 }
 
 // Writes a two-digit value to out.
@@ -3469,19 +3470,21 @@ template <typename Char> struct default_arg_formatter {
 
   basic_appender<Char> out;
 
-  void operator()(monostate) { report_error("argument not found"); }
+  FMT_CONSTEXPR void operator()(monostate) {
+    report_error("argument not found");
+  }
 
   template <typename T, FMT_ENABLE_IF(is_builtin<T>::value)>
-  void operator()(T value) {
+  FMT_CONSTEXPR void operator()(T value) {
     write<Char>(out, value);
   }
 
   template <typename T, FMT_ENABLE_IF(!is_builtin<T>::value)>
-  void operator()(T) {
+  FMT_CONSTEXPR void operator()(T) {
     FMT_ASSERT(false, "");
   }
 
-  void operator()(typename basic_format_arg<context>::handle h) {
+  FMT_CONSTEXPR void operator()(typename basic_format_arg<context>::handle h) {
     // Use a null locale since the default format must be unlocalized.
     auto parse_ctx = parse_context<Char>({});
     auto format_ctx = context(out, {}, {});
@@ -3590,7 +3593,7 @@ template <typename Char> struct format_handler {
   parse_context<Char> parse_ctx;
   buffered_context<Char> ctx;
 
-  void on_text(const Char* begin, const Char* end) {
+  FMT_CONSTEXPR void on_text(const Char* begin, const Char* end) {
     copy_noinline<Char>(begin, end, ctx.out());
   }
 
@@ -3606,11 +3609,11 @@ template <typename Char> struct format_handler {
     return arg_id;
   }
 
-  FMT_INLINE void on_replacement_field(int id, const Char*) {
+  FMT_INLINE FMT_CONSTEXPR void on_replacement_field(int id, const Char*) {
     ctx.arg(id).visit(default_arg_formatter<Char>{ctx.out()});
   }
 
-  auto on_format_specs(int id, const Char* begin, const Char* end)
+  FMT_CONSTEXPR auto on_format_specs(int id, const Char* begin, const Char* end)
       -> const Char* {
     auto arg = get_arg(ctx, id);
     // Not using a visitor for custom types gives better codegen.
@@ -3629,7 +3632,9 @@ template <typename Char> struct format_handler {
     return begin;
   }
 
-  FMT_NORETURN void on_error(const char* message) { report_error(message); }
+  FMT_NORETURN FMT_CONSTEXPR void on_error(const char* message) {
+    report_error(message);
+  }
 };
 
 using format_func = void (*)(detail::buffer<char>&, int, const char*);
