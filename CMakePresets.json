@@ -29,6 +29,38 @@
                 "CMAKE_BUILD_TYPE": "Release",
                 "CMAKE_CXX_STANDARD": "20"
             }
+        },
+        {
+            "name": "linux-base",
+            "hidden": true,
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_CXX_VISIBILITY_PRESET": "hidden",
+                "CMAKE_VISIBILITY_INLINES_HIDDEN": "ON",
+                "FMT_DOC": "OFF",
+                "FMT_PEDANTIC": "ON",
+                "FMT_WERROR": "ON"
+            }
+        },
+        {
+            "name": "linux-release-cpp20",
+            "inherits": "linux-base",
+            "displayName": "Linux Release C++20",
+            "binaryDir": "${sourceDir}/out/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "CMAKE_CXX_STANDARD": "20"
+            }
+        },
+        {
+            "name": "linux-debug-cpp20",
+            "inherits": "linux-base",
+            "displayName": "Linux Debug C++20",
+            "binaryDir": "${sourceDir}/out/${presetName}",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_CXX_STANDARD": "20"
+            }
         }
     ]
 }
