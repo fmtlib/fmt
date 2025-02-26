@@ -222,7 +222,7 @@ struct color_type {
     return (value_ & (1 << 25)) != 0;
   }
 
-  FMT_CONSTEXPR auto get_value() const noexcept -> uint32_t {
+  FMT_CONSTEXPR auto value() const noexcept -> uint32_t {
     return value_ & 0xFFFFFF;
   }
 
@@ -370,7 +370,7 @@ template <typename Char> struct ansi_color_escape {
     // sequence.
     if (text_color.is_terminal_color()) {
       bool is_background = esc == string_view("\x1b[48;2;");
-      uint32_t value = text_color.get_value();
+      uint32_t value = text_color.value();
       // Background ASCII codes are the same as the foreground ones but with
       // 10 more.
       if (is_background) value += 10u;
@@ -394,7 +394,7 @@ template <typename Char> struct ansi_color_escape {
     for (int i = 0; i < 7; i++) {
       buffer[i] = static_cast<Char>(esc[i]);
     }
-    rgb color(text_color.get_value());
+    rgb color(text_color.value());
     to_esc(color.r, buffer + 7, ';');
     to_esc(color.g, buffer + 11, ';');
     to_esc(color.b, buffer + 15, 'm');
