@@ -205,7 +205,7 @@ struct rgb {
 
 namespace detail {
 
-// a bit-packed variant of either an rgb color or a terminal color.
+// a bit-packed variant of an RGB color, a terminal color, or unset color.
 // see text_style for the bit-packing scheme.
 struct color_type {
   FMT_CONSTEXPR color_type() noexcept = default;
@@ -347,13 +347,13 @@ class text_style {
 /// Creates a text style from the foreground (text) color.
 FMT_CONSTEXPR inline auto fg(detail::color_type foreground) noexcept
     -> text_style {
-  return foreground.value_ | (1ULL << 24);
+  return foreground.value_;
 }
 
 /// Creates a text style from the background color.
 FMT_CONSTEXPR inline auto bg(detail::color_type background) noexcept
     -> text_style {
-  return (background.value_ | (1ULL << 24)) << 27;
+  return static_cast<uint64_t>(background.value_) << 27;
 }
 
 FMT_CONSTEXPR inline auto operator|(emphasis lhs, emphasis rhs) noexcept
