@@ -1,3 +1,20 @@
+# 11.1.4 - TBD
+
+- Fixed ABI compatibility with earlier 11.x versions on Windows
+  (https://github.com/fmtlib/fmt/issues/4359).
+
+- Improved the logic of switching between fixed and exponential format for
+  `float` (https://github.com/fmtlib/fmt/issues/3649).
+
+- Moved `is_compiled_string` to the public API
+  (https://github.com/fmtlib/fmt/issues/4342). Thanks @SwooshyCueb.
+
+- Fixed `__builtin_strlen` detection (https://github.com/fmtlib/fmt/pull/4329).
+  Thanks @LocalSpook.
+
+- Fixed gcc 8.3 compile errors (https://github.com/fmtlib/fmt/pull/4336).
+  Thanks @sergiud.
+
 # 11.1.3 - 2025-01-25
 
 - Fixed compilation on GCC 9.4 (https://github.com/fmtlib/fmt/issues/4313).
