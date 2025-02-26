@@ -582,8 +582,6 @@ TEST(format_test, named_arg) {
   EXPECT_EQ("1/a/A", fmt::format("{_1}/{a_}/{A_}", fmt::arg("a_", 'a'),
                                  fmt::arg("A_", "A"), fmt::arg("_1", 1)));
   EXPECT_EQ(fmt::format("{0:{width}}", -42, fmt::arg("width", 4)), " -42");
-  EXPECT_THROW_MSG(fmt::format("{enum}", fmt::arg("enum", 1), fmt::arg("enum", 10)),
-      format_error, "duplicate named args found");
   EXPECT_EQ("st",
             fmt::format("{0:.{precision}}", "str", fmt::arg("precision", 2)));
   EXPECT_EQ(fmt::format("{} {two}", 1, fmt::arg("two", 2)), "1 2");
@@ -601,6 +599,8 @@ TEST(format_test, named_arg) {
   EXPECT_THROW_MSG((void)fmt::format(runtime("{a} {}"), fmt::arg("a", 2), 42),
                    format_error,
                    "cannot switch from manual to automatic argument indexing");
+  EXPECT_THROW_MSG((void)fmt::format("{enum}", fmt::arg("enum", 1),
+      fmt::arg("enum", 10)), format_error, "duplicate named args found");
 }
 
 TEST(format_test, auto_arg_index) {
