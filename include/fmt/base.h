@@ -1835,7 +1835,7 @@ class fixed_buffer_traits {
 
  public:
   constexpr explicit fixed_buffer_traits(size_t limit) : limit_(limit) {}
-  FMT_CONSTEXPR20 ~fixed_buffer_traits(){};
+  FMT_CONSTEXPR20 ~fixed_buffer_traits() = default;
   constexpr auto count() const -> size_t { return count_; }
   FMT_CONSTEXPR auto limit(size_t size) -> size_t {
     size_t n = limit_ > count_ ? limit_ - count_ : 0;
@@ -1912,7 +1912,7 @@ class iterator_buffer<T*, T, fixed_buffer_traits> : public fixed_buffer_traits,
   FMT_CONSTEXPR explicit iterator_buffer(T* out, size_t n = buffer_size)
       : fixed_buffer_traits(n), buffer<T>(grow, out, 0, n), out_(out) {}
   FMT_CONSTEXPR iterator_buffer(iterator_buffer&& other) noexcept
-      : fixed_buffer_traits(other),
+      : fixed_buffer_traits(static_cast<iterator_buffer&&>(other)),
         buffer<T>(static_cast<iterator_buffer&&>(other)),
         out_(other.out_) {
     if (this->data() != out_) {
