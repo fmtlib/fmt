@@ -9,11 +9,20 @@
 - Moved `is_compiled_string` to the public API
   (https://github.com/fmtlib/fmt/issues/4342). Thanks @SwooshyCueb.
 
+- Simplified implementation of `operator""_cf`
+  (https://github.com/fmtlib/fmt/pull/4349). Thanks @LocalSpook.
+
 - Fixed `__builtin_strlen` detection (https://github.com/fmtlib/fmt/pull/4329).
   Thanks @LocalSpook.
 
-- Fixed gcc 8.3 compile errors (https://github.com/fmtlib/fmt/pull/4336).
-  Thanks @sergiud.
+- Fixed handling of BMI paths with the Ninja generator
+  (https://github.com/fmtlib/fmt/pull/4344). Thanks @tkhyn.
+
+- Fixed gcc 8.3 compile errors (https://github.com/fmtlib/fmt/issues/4331,
+  https://github.com/fmtlib/fmt/pull/4336). Thanks @sergiud.
+
+- Fixed a bogus MSVC warning (https://github.com/fmtlib/fmt/pull/4356).
+  Thanks @dinomight.
 
 # 11.1.3 - 2025-01-25
 
