@@ -1062,7 +1062,7 @@ template <typename... Args> constexpr auto count_static_named_args() -> int {
 template <typename Char> struct named_arg_info {
   FMT_CONSTEXPR named_arg_info() : name(nullptr), id(0) {}
   FMT_CONSTEXPR named_arg_info(const Char* a_name, const int an_id)
-    : name(a_name), id(an_id) {}
+      : name(a_name), id(an_id) {}
   const Char* name;
   int id;
 };
