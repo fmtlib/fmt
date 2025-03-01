@@ -580,7 +580,7 @@ performance bottleneck.
 
 `fmt/color.h` provides support for terminal color and text style output.
 
-::: print(const text_style&, format_string<T...>, T&&...)
+::: print(text_style, format_string<T...>, T&&...)
 
 ::: fg(detail::color_type)
 
