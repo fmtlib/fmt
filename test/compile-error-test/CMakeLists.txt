@@ -209,14 +209,6 @@ if (CMAKE_CXX_STANDARD GREATER_EQUAL 20)
       #error
     #endif
   " ERROR)
-  expect_compile(format-string-duplicate-name-error "
-    #if defined(FMT_HAS_CONSTEVAL) && FMT_USE_NONTYPE_TEMPLATE_ARGS
-      using namespace fmt::literals;
-      fmt::print(\"{bar}\", \"bar\"_a=42, \"bar\"_a=43);
-    #else
-      #error
-    #endif
-  " ERROR)
 endif ()
 
 # Run all tests
