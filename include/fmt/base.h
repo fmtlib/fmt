@@ -1068,7 +1068,7 @@ template <typename Char>
 FMT_CONSTEXPR void check_for_duplicate(
     const named_arg_info<Char>* const named_args, const int named_arg_index,
     const Char* const arg_name) {
-  const basic_string_view arg_name_view(arg_name);
+  const basic_string_view<Char> arg_name_view(arg_name);
   for (auto i = 0; i < named_arg_index; ++i) {
     if (basic_string_view<Char>(named_args[i].name) == arg_name_view) {
       report_error("duplicate named args found");
