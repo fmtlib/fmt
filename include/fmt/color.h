@@ -190,11 +190,11 @@ enum class emphasis : uint8_t {
 // rgb is a struct for red, green and blue colors.
 // Using the name "rgb" makes some editors show the color in a tooltip.
 struct rgb {
-  FMT_CONSTEXPR rgb() : r(0), g(0), b(0) {}
-  FMT_CONSTEXPR rgb(uint8_t r_, uint8_t g_, uint8_t b_) : r(r_), g(g_), b(b_) {}
-  FMT_CONSTEXPR rgb(uint32_t hex)
+  constexpr rgb() : r(0), g(0), b(0) {}
+  constexpr rgb(uint8_t r_, uint8_t g_, uint8_t b_) : r(r_), g(g_), b(b_) {}
+  constexpr rgb(uint32_t hex)
       : r((hex >> 16) & 0xFF), g((hex >> 8) & 0xFF), b(hex & 0xFF) {}
-  FMT_CONSTEXPR rgb(color hex)
+  constexpr rgb(color hex)
       : r((uint32_t(hex) >> 16) & 0xFF),
         g((uint32_t(hex) >> 8) & 0xFF),
         b(uint32_t(hex) & 0xFF) {}
@@ -205,30 +205,30 @@ struct rgb {
 
 namespace detail {
 
-// a bit-packed variant of an RGB color, a terminal color, or unset color.
+// A bit-packed variant of an RGB color, a terminal color, or unset color.
 // see text_style for the bit-packing scheme.
 struct color_type {
-  FMT_CONSTEXPR color_type() noexcept = default;
-  FMT_CONSTEXPR color_type(color rgb_color) noexcept
+  constexpr color_type() noexcept = default;
+  constexpr color_type(color rgb_color) noexcept
       : value_(static_cast<uint32_t>(rgb_color) | (1 << 24)) {}
-  FMT_CONSTEXPR color_type(rgb rgb_color) noexcept
+  constexpr color_type(rgb rgb_color) noexcept
       : color_type(static_cast<color>(
             (static_cast<uint32_t>(rgb_color.r) << 16) |
             (static_cast<uint32_t>(rgb_color.g) << 8) | rgb_color.b)) {}
-  FMT_CONSTEXPR color_type(terminal_color term_color) noexcept
+  constexpr color_type(terminal_color term_color) noexcept
       : value_(static_cast<uint32_t>(term_color) | (3 << 24)) {}
 
-  FMT_CONSTEXPR auto is_terminal_color() const noexcept -> bool {
+  constexpr auto is_terminal_color() const noexcept -> bool {
     return (value_ & (1 << 25)) != 0;
   }
 
-  FMT_CONSTEXPR auto value() const noexcept -> uint32_t {
+  constexpr auto value() const noexcept -> uint32_t {
     return value_ & 0xFFFFFF;
   }
 
-  FMT_CONSTEXPR color_type(uint32_t value) noexcept : value_(value) {}
+  constexpr color_type(uint32_t value) noexcept : value_(value) {}
 
-  uint32_t value_{};
+  uint32_t value_ = 0;
 };
 }  // namespace detail
 
@@ -341,7 +341,7 @@ class text_style {
   friend FMT_CONSTEXPR auto bg(detail::color_type background) noexcept
       -> text_style;
 
-  uint64_t style_{};
+  uint64_t style_ = 0;
 };
 
 /// Creates a text style from the foreground (text) color.
@@ -490,7 +490,7 @@ void vformat_to(buffer<Char>& buf, text_style ts, basic_string_view<Char> fmt,
     buf.append(background.begin(), background.end());
   }
   vformat_to(buf, fmt, args);
-  if (ts != text_style{}) reset_color<Char>(buf);
+  if (ts != text_style()) reset_color<Char>(buf);
 }
 }  // namespace detail
 

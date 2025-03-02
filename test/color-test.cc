@@ -12,9 +12,9 @@
 #include "gtest-extra.h"  // EXPECT_WRITE, EXPECT_THROW_MSG
 
 TEST(color_test, text_style) {
-  EXPECT_FALSE(fmt::text_style{}.has_foreground());
-  EXPECT_FALSE(fmt::text_style{}.has_background());
-  EXPECT_FALSE(fmt::text_style{}.has_emphasis());
+  EXPECT_FALSE(fmt::text_style().has_foreground());
+  EXPECT_FALSE(fmt::text_style().has_background());
+  EXPECT_FALSE(fmt::text_style().has_emphasis());
 
   EXPECT_TRUE(fg(fmt::rgb(0)).has_foreground());
   EXPECT_FALSE(fg(fmt::rgb(0)).has_background());
@@ -57,18 +57,20 @@ TEST(color_test, text_style) {
   EXPECT_NO_THROW(fg(fmt::terminal_color::white) |
                   bg(fmt::terminal_color::white));
   EXPECT_NO_THROW(fg(fmt::terminal_color::white) | bg(fmt::rgb(0xFFFFFF)));
-  EXPECT_NO_THROW(fg(fmt::terminal_color::white) | fmt::text_style{});
-  EXPECT_NO_THROW(bg(fmt::terminal_color::white) | fmt::text_style{});
+  EXPECT_NO_THROW(fg(fmt::terminal_color::white) | fmt::text_style());
+  EXPECT_NO_THROW(bg(fmt::terminal_color::white) | fmt::text_style());
 }
 
 TEST(color_test, format) {
-  EXPECT_EQ(fmt::format(fmt::text_style{}, "no style"), "no style");
+  EXPECT_EQ(fmt::format(fmt::text_style(), "no style"), "no style");
   EXPECT_EQ(fmt::format(fg(fmt::rgb(255, 20, 30)), "rgb(255,20,30)"),
             "\x1b[38;2;255;020;030mrgb(255,20,30)\x1b[0m");
-  EXPECT_EQ(fmt::format(fg(fmt::rgb(255, 0, 0)) | fg(fmt::rgb(0, 20, 30)), "rgb(255,20,30)"),
+  EXPECT_EQ(fmt::format(fg(fmt::rgb(255, 0, 0)) | fg(fmt::rgb(0, 20, 30)),
+                        "rgb(255,20,30)"),
             "\x1b[38;2;255;020;030mrgb(255,20,30)\x1b[0m");
-  EXPECT_EQ(fmt::format(fg(fmt::rgb(0, 0, 0)) | fg(fmt::rgb(0, 0, 0)), "rgb(0,0,0)"),
-            "\x1b[38;2;000;000;000mrgb(0,0,0)\x1b[0m");
+  EXPECT_EQ(
+      fmt::format(fg(fmt::rgb(0, 0, 0)) | fg(fmt::rgb(0, 0, 0)), "rgb(0,0,0)"),
+      "\x1b[38;2;000;000;000mrgb(0,0,0)\x1b[0m");
   EXPECT_EQ(fmt::format(fg(fmt::color::blue), "blue"),
             "\x1b[38;2;000;000;255mblue\x1b[0m");
   EXPECT_EQ(

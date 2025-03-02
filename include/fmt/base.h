@@ -1064,16 +1064,13 @@ template <typename Char> struct named_arg_info {
   int id;
 };
 
+// named_args is non-const to suppress a bogus -Wmaybe-uninitalized in gcc 13.
 template <typename Char>
 FMT_CONSTEXPR void check_for_duplicate(named_arg_info<Char>* named_args,
                                        int named_arg_index,
                                        basic_string_view<Char> arg_name) {
-  if (named_arg_index <= 0) return;
-
-  for (auto i = 0; i < named_arg_index; ++i) {
-    if (basic_string_view<Char>(named_args[i].name) == arg_name) {
-      report_error("duplicate named args found");
-    }
+  for (int i = 0; i < named_arg_index; ++i) {
+    if (named_args[i].name == arg_name) report_error("duplicate named arg");
   }
 }
 
@@ -1081,7 +1078,6 @@ template <typename Char, typename T, FMT_ENABLE_IF(!is_named_arg<T>::value)>
 void init_named_arg(named_arg_info<Char>*, int& arg_index, int&, const T&) {
   ++arg_index;
 }
-
 template <typename Char, typename T, FMT_ENABLE_IF(is_named_arg<T>::value)>
 void init_named_arg(named_arg_info<Char>* named_args, int& arg_index,
                     int& named_arg_index, const T& arg) {
