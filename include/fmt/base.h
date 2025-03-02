@@ -1065,9 +1065,9 @@ template <typename Char> struct named_arg_info {
 };
 
 template <typename Char>
-FMT_CONSTEXPR void check_for_duplicate(
-    named_arg_info<Char>* named_args, int named_arg_index,
-    basic_string_view<Char> arg_name) {
+FMT_CONSTEXPR void check_for_duplicate(named_arg_info<Char>* named_args,
+                                       int named_arg_index,
+                                       basic_string_view<Char> arg_name) {
   if (named_arg_index <= 0) return;
 
   for (auto i = 0; i < named_arg_index; ++i) {
