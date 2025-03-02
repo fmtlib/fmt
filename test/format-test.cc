@@ -599,6 +599,8 @@ TEST(format_test, named_arg) {
   EXPECT_THROW_MSG((void)fmt::format(runtime("{a} {}"), fmt::arg("a", 2), 42),
                    format_error,
                    "cannot switch from manual to automatic argument indexing");
+  EXPECT_THROW_MSG((void)fmt::format("{a}", fmt::arg("a", 1),
+      fmt::arg("a", 10)), format_error, "duplicate named args found");
 }
 
 TEST(format_test, auto_arg_index) {
