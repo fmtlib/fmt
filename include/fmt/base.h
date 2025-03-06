@@ -465,6 +465,9 @@ static_assert(!FMT_UNICODE || use_utf8,
 template <typename T> constexpr const char* narrow(const T*) { return nullptr; }
 constexpr FMT_ALWAYS_INLINE const char* narrow(const char* s) { return s; }
 
+#if defined(__NVCC__)
+#  pragma nv_diag_suppress 128
+#endif
 template <typename Char>
 FMT_CONSTEXPR auto compare(const Char* s1, const Char* s2, std::size_t n)
     -> int {
@@ -475,6 +478,9 @@ FMT_CONSTEXPR auto compare(const Char* s1, const Char* s2, std::size_t n)
   }
   return 0;
 }
+#if defined(__NVCC__)
+#  pragma nv_diag_default 128
+#endif
 
 namespace adl {
 using namespace std;
