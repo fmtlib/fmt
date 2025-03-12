@@ -1030,7 +1030,7 @@ enum {
   pointer_set = set(type::pointer_type)
 };
 
-struct view {};
+template <typename T> struct is_view : std::false_type {};
 
 template <typename Char, typename T> struct named_arg;
 template <typename T> struct is_named_arg : std::false_type {};
@@ -1039,13 +1039,16 @@ template <typename T> struct is_static_named_arg : std::false_type {};
 template <typename Char, typename T>
 struct is_named_arg<named_arg<Char, T>> : std::true_type {};
 
-template <typename Char, typename T> struct named_arg : view {
+template <typename Char, typename T> struct named_arg {
   const Char* name;
   const T& value;
 
   named_arg(const Char* n, const T& v) : name(n), value(v) {}
   static_assert(!is_named_arg<T>::value, "nested named arguments");
 };
+
+template <typename Char, typename T>
+struct is_view<named_arg<Char, T>> : std::true_type {};
 
 template <bool B = false> constexpr auto count() -> int { return B ? 1 : 0; }
 template <bool B1, bool B2, bool... Tail> constexpr auto count() -> int {
@@ -2715,7 +2718,7 @@ template <typename... T> struct fstring {
   template <size_t N>
   FMT_CONSTEVAL FMT_ALWAYS_INLINE fstring(const char (&s)[N]) : str(s, N - 1) {
     using namespace detail;
-    static_assert(count<(std::is_base_of<view, remove_reference_t<T>>::value &&
+    static_assert(count<(is_view<remove_cvref_t<T>>::value &&
                          std::is_reference<T>::value)...>() == 0,
                   "passing views as lvalues is disallowed");
     if (FMT_USE_CONSTEVAL) parse_format_string<char>(s, checker(s, arg_pack()));

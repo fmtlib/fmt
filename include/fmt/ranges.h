@@ -620,7 +620,7 @@ struct formatter<
 };
 
 template <typename It, typename Sentinel, typename Char = char>
-struct join_view : detail::view {
+struct join_view {
   It begin;
   Sentinel end;
   basic_string_view<Char> sep;
@@ -628,6 +628,13 @@ struct join_view : detail::view {
   join_view(It b, Sentinel e, basic_string_view<Char> s)
       : begin(std::move(b)), end(e), sep(s) {}
 };
+
+namespace detail {
+
+template <typename It, typename Sentinel, typename Char>
+struct is_view<join_view<It, Sentinel, Char>> : std::true_type {};
+
+}  // namespace detail
 
 template <typename It, typename Sentinel, typename Char>
 struct formatter<join_view<It, Sentinel, Char>, Char> {
@@ -670,13 +677,20 @@ struct formatter<join_view<It, Sentinel, Char>, Char> {
   }
 };
 
-template <typename Char, typename Tuple> struct tuple_join_view : detail::view {
+template <typename Char, typename Tuple> struct tuple_join_view {
   const Tuple& tuple;
   basic_string_view<Char> sep;
 
   tuple_join_view(const Tuple& t, basic_string_view<Char> s)
       : tuple(t), sep{s} {}
 };
+
+namespace detail {
+
+template <typename Char, typename Tuple>
+struct is_view<tuple_join_view<Char, Tuple>> : std::true_type {};
+
+}  // namespace detail
 
 // Define FMT_TUPLE_JOIN_SPECIFIERS to enable experimental format specifiers
 // support in tuple_join. It is disabled by default because of issues with

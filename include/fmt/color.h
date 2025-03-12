@@ -468,11 +468,13 @@ template <typename Char> inline void reset_color(buffer<Char>& buffer) {
   buffer.append(reset_color.begin(), reset_color.end());
 }
 
-template <typename T> struct styled_arg : view {
+template <typename T> struct styled_arg {
   const T& value;
   text_style style;
   styled_arg(const T& v, text_style s) : value(v), style(s) {}
 };
+
+template <typename T> struct is_view<styled_arg<T>> : std::true_type {};
 
 template <typename Char>
 void vformat_to(buffer<Char>& buf, text_style ts, basic_string_view<Char> fmt,
