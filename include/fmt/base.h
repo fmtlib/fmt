@@ -1033,6 +1033,11 @@ enum {
 
 struct view {};
 
+template <typename T, typename Enable = std::true_type>
+struct is_view : std::false_type {};
+template <typename T>
+struct is_view<T, bool_constant<sizeof(T) != 0>> : std::is_base_of<view, T> {};
+
 template <typename Char, typename T> struct named_arg;
 template <typename T> struct is_named_arg : std::false_type {};
 template <typename T> struct is_static_named_arg : std::false_type {};
@@ -2726,7 +2731,7 @@ template <typename... T> struct fstring {
   template <size_t N>
   FMT_CONSTEVAL FMT_ALWAYS_INLINE fstring(const char (&s)[N]) : str(s, N - 1) {
     using namespace detail;
-    static_assert(count<(std::is_base_of<view, remove_reference_t<T>>::value &&
+    static_assert(count<(is_view<remove_cvref_t<T>>::value &&
                          std::is_reference<T>::value)...>() == 0,
                   "passing views as lvalues is disallowed");
     if (FMT_USE_CONSTEVAL) parse_format_string<char>(s, checker(s, arg_pack()));
