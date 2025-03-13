@@ -468,10 +468,19 @@ constexpr FMT_ALWAYS_INLINE const char* narrow(const char* s) { return s; }
 template <typename Char>
 FMT_CONSTEXPR auto compare(const Char* s1, const Char* s2, std::size_t n)
     -> int {
-  if (!is_constant_evaluated() && sizeof(Char) == 1) return memcmp(s1, s2, n);
+  if (!is_constant_evaluated() && sizeof(Char) == 1) 
+  {
+    return memcmp(s1, s2, n);
+  }
   for (; n != 0; ++s1, ++s2, --n) {
-    if (*s1 < *s2) return -1;
-    if (*s1 > *s2) return 1;
+    if (*s1 < *s2) 
+    {
+      return -1;
+    }
+    if (*s1 > *s2) 
+    {
+      return 1;
+    }
   }
   return 0;
 }
@@ -542,10 +551,11 @@ template <typename Char> class basic_string_view {
       size_ = __builtin_strlen(detail::narrow(s));
       return;
     }
-#endif
+#else
     size_t len = 0;
     while (*s++) ++len;
     size_ = len;
+#endif
   }
 
   /// Constructs a string reference from a `std::basic_string` or a
