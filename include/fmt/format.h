@@ -2516,7 +2516,7 @@ class bigint {
   enum { bigit_bits = num_bits<bigit>() };
   enum { bigits_capacity = 32 };
   basic_memory_buffer<bigit, bigits_capacity> bigits_;
-  int exp_;
+  int exp_ = 0;
 
   friend struct formatter<bigint>;
 
@@ -2594,7 +2594,7 @@ class bigint {
   }
 
  public:
-  FMT_CONSTEXPR bigint() : exp_(0) {}
+  FMT_CONSTEXPR bigint() = default;
   explicit bigint(uint64_t n) { assign(n); }
 
   bigint(const bigint&) = delete;
