@@ -705,7 +705,7 @@ using is_integer =
 
 #if defined(FMT_USE_FLOAT128)
 // Use the provided definition.
-#elif FMT_CLANG_VERSION && FMT_HAS_INCLUDE(<quadmath.h>)
+#elif FMT_CLANG_VERSION >= 309 && FMT_HAS_INCLUDE(<quadmath.h>)
 #  define FMT_USE_FLOAT128 1
 #elif FMT_GCC_VERSION && defined(_GLIBCXX_USE_FLOAT128) && \
     !defined(__STRICT_ANSI__)

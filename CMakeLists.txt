@@ -232,7 +232,9 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
       -Wctor-dtor-privacy -Wdisabled-optimization
       -Winvalid-pch -Woverloaded-virtual
       -Wconversion -Wundef
-      -Wno-ctor-dtor-privacy -Wno-format-nonliteral)
+      -Wno-ctor-dtor-privacy -Wno-format-nonliteral
+      -Wno-mismatched-tags # https://github.com/llvm/llvm-project/issues/39218
+      )
   if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.6)
       set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS}
          -Wno-dangling-else -Wno-unused-local-typedefs)
