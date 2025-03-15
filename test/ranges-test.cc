@@ -232,9 +232,12 @@ auto get(const tuple_like& t) noexcept -> decltype(t.get<N>()) {
   return t.get<N>();
 }
 
+// https://github.com/llvm/llvm-project/issues/39218
+FMT_PRAGMA_CLANG(diagnostic ignored "-Wmismatched-tags")
+
 namespace std {
 template <>
-struct tuple_size<tuple_like> : std::integral_constant<size_t, 2> {};
+struct tuple_size<tuple_like> : public std::integral_constant<size_t, 2> {};
 
 template <size_t N> struct tuple_element<N, tuple_like> {
   using type = decltype(std::declval<tuple_like>().get<N>());
