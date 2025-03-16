@@ -383,11 +383,12 @@ TEST(std_test, format_atomic) {
 
 #ifdef __cpp_lib_atomic_flag_test
 TEST(std_test, format_atomic_flag) {
-  std::atomic_flag f = ATOMIC_FLAG_INIT;
+  std::atomic_flag f;
   (void)f.test_and_set();
   EXPECT_EQ(fmt::format("{}", f), "true");
 
-  const std::atomic_flag cf = ATOMIC_FLAG_INIT;
+  f.clear();
+  const std::atomic_flag& cf = f;
   EXPECT_EQ(fmt::format("{}", cf), "false");
 }
 #endif  // __cpp_lib_atomic_flag_test
