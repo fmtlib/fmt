@@ -1722,14 +1722,12 @@ class format_string_checker {
     // If id is out of range, it means we do not know the type and cannot parse
     // the format at compile time. Instead, skip over content until we finish
     // the format spec, accounting for any nested replacements.
-    auto bracket_count = 0;
-    while (begin != end && (bracket_count > 0 || *begin != '}')) {
+    for (int bracket_count = 0;
+         begin != end && (bracket_count > 0 || *begin != '}'); ++begin) {
       if (*begin == '{')
         ++bracket_count;
       else if (*begin == '}')
         --bracket_count;
-
-      ++begin;
     }
     return begin;
   }
