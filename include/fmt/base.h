@@ -209,20 +209,6 @@
 #  define FMT_DEPRECATED /* deprecated */
 #endif
 
-#ifdef FMT_ALWAYS_INLINE
-// Use the provided definition.
-#elif FMT_GCC_VERSION || FMT_CLANG_VERSION
-#  define FMT_ALWAYS_INLINE inline __attribute__((always_inline))
-#else
-#  define FMT_ALWAYS_INLINE inline
-#endif
-// A version of FMT_ALWAYS_INLINE to prevent code bloat in debug mode.
-#ifdef NDEBUG
-#  define FMT_INLINE FMT_ALWAYS_INLINE
-#else
-#  define FMT_INLINE inline
-#endif
-
 #if FMT_GCC_VERSION || FMT_CLANG_VERSION
 #  define FMT_VISIBILITY(value) __attribute__((visibility(value)))
 #else
@@ -247,6 +233,28 @@
 #  define FMT_MSC_WARNING(...) __pragma(warning(__VA_ARGS__))
 #else
 #  define FMT_MSC_WARNING(...)
+#endif
+
+// Enable minimal optimizations for more compact code in debug mode.
+FMT_PRAGMA_GCC(push_options)
+#if !defined(__OPTIMIZE__) && !defined(__CUDACC__) && !defined(FMT_MODULE)
+FMT_PRAGMA_GCC(optimize("Og"))
+#define FMT_GCC_OPTIMIZED
+#endif
+FMT_PRAGMA_CLANG(diagnostic push)
+
+#ifdef FMT_ALWAYS_INLINE
+// Use the provided definition.
+#elif FMT_GCC_VERSION || FMT_CLANG_VERSION
+#  define FMT_ALWAYS_INLINE inline __attribute__((always_inline))
+#else
+#  define FMT_ALWAYS_INLINE inline
+#endif
+// A version of FMT_ALWAYS_INLINE to prevent code bloat in debug mode.
+#if defined(NDEBUG) || defined(FMT_GCC_OPTIMIZED)
+#  define FMT_INLINE FMT_ALWAYS_INLINE
+#else
+#  define FMT_INLINE inline
 #endif
 
 #ifndef FMT_BEGIN_NAMESPACE
@@ -296,13 +304,6 @@
 #define FMT_APPLY_VARIADIC(expr) \
   using unused = int[];          \
   (void)unused { 0, (expr, 0)... }
-
-// Enable minimal optimizations for more compact code in debug mode.
-FMT_PRAGMA_GCC(push_options)
-#if !defined(__OPTIMIZE__) && !defined(__CUDACC__) && !defined(FMT_MODULE)
-FMT_PRAGMA_GCC(optimize("Og"))
-#endif
-FMT_PRAGMA_CLANG(diagnostic push)
 
 FMT_BEGIN_NAMESPACE
 
@@ -2145,54 +2146,48 @@ template <typename Context> class value {
     named_arg_value<char_type> named_args;
   };
 
-  constexpr FMT_ALWAYS_INLINE value() : no_value() {}
-  constexpr FMT_ALWAYS_INLINE value(signed char x) : int_value(x) {}
-  constexpr FMT_ALWAYS_INLINE value(unsigned char x FMT_BUILTIN)
-      : uint_value(x) {}
-  constexpr FMT_ALWAYS_INLINE value(signed short x) : int_value(x) {}
-  constexpr FMT_ALWAYS_INLINE value(unsigned short x FMT_BUILTIN)
-      : uint_value(x) {}
-  constexpr FMT_ALWAYS_INLINE value(int x) : int_value(x) {}
-  constexpr FMT_ALWAYS_INLINE value(unsigned x FMT_BUILTIN) : uint_value(x) {}
-  FMT_CONSTEXPR FMT_ALWAYS_INLINE value(long x FMT_BUILTIN)
-      : value(long_type(x)) {}
-  FMT_CONSTEXPR FMT_ALWAYS_INLINE value(unsigned long x FMT_BUILTIN)
+  constexpr FMT_INLINE value() : no_value() {}
+  constexpr FMT_INLINE value(signed char x) : int_value(x) {}
+  constexpr FMT_INLINE value(unsigned char x FMT_BUILTIN) : uint_value(x) {}
+  constexpr FMT_INLINE value(signed short x) : int_value(x) {}
+  constexpr FMT_INLINE value(unsigned short x FMT_BUILTIN) : uint_value(x) {}
+  constexpr FMT_INLINE value(int x) : int_value(x) {}
+  constexpr FMT_INLINE value(unsigned x FMT_BUILTIN) : uint_value(x) {}
+  FMT_CONSTEXPR FMT_INLINE value(long x FMT_BUILTIN) : value(long_type(x)) {}
+  FMT_CONSTEXPR FMT_INLINE value(unsigned long x FMT_BUILTIN)
       : value(ulong_type(x)) {}
-  constexpr FMT_ALWAYS_INLINE value(long long x FMT_BUILTIN)
-      : long_long_value(x) {}
-  constexpr FMT_ALWAYS_INLINE value(unsigned long long x FMT_BUILTIN)
+  constexpr FMT_INLINE value(long long x FMT_BUILTIN) : long_long_value(x) {}
+  constexpr FMT_INLINE value(unsigned long long x FMT_BUILTIN)
       : ulong_long_value(x) {}
-  FMT_ALWAYS_INLINE value(int128_opt x FMT_BUILTIN) : int128_value(x) {}
-  FMT_ALWAYS_INLINE value(uint128_opt x FMT_BUILTIN) : uint128_value(x) {}
-  constexpr FMT_ALWAYS_INLINE value(bool x FMT_BUILTIN) : bool_value(x) {}
+  FMT_INLINE value(int128_opt x FMT_BUILTIN) : int128_value(x) {}
+  FMT_INLINE value(uint128_opt x FMT_BUILTIN) : uint128_value(x) {}
+  constexpr FMT_INLINE value(bool x FMT_BUILTIN) : bool_value(x) {}
 
   template <int N>
-  constexpr FMT_ALWAYS_INLINE value(bitint<N> x FMT_BUILTIN)
-      : long_long_value(x) {
+  constexpr FMT_INLINE value(bitint<N> x FMT_BUILTIN) : long_long_value(x) {
     static_assert(N <= 64, "unsupported _BitInt");
   }
   template <int N>
-  constexpr FMT_ALWAYS_INLINE value(ubitint<N> x FMT_BUILTIN)
-      : ulong_long_value(x) {
+  constexpr FMT_INLINE value(ubitint<N> x FMT_BUILTIN) : ulong_long_value(x) {
     static_assert(N <= 64, "unsupported _BitInt");
   }
 
   template <typename T, FMT_ENABLE_IF(is_char<T>::value)>
-  constexpr FMT_ALWAYS_INLINE value(T x FMT_BUILTIN) : char_value(x) {
+  constexpr FMT_INLINE value(T x FMT_BUILTIN) : char_value(x) {
     static_assert(
         std::is_same<T, char>::value || std::is_same<T, char_type>::value,
         "mixing character types is disallowed");
   }
 
-  constexpr FMT_ALWAYS_INLINE value(float x FMT_BUILTIN) : float_value(x) {}
-  constexpr FMT_ALWAYS_INLINE value(double x FMT_BUILTIN) : double_value(x) {}
-  FMT_ALWAYS_INLINE value(long double x FMT_BUILTIN) : long_double_value(x) {}
+  constexpr FMT_INLINE value(float x FMT_BUILTIN) : float_value(x) {}
+  constexpr FMT_INLINE value(double x FMT_BUILTIN) : double_value(x) {}
+  FMT_INLINE value(long double x FMT_BUILTIN) : long_double_value(x) {}
 
-  FMT_CONSTEXPR FMT_ALWAYS_INLINE value(char_type* x FMT_BUILTIN) {
+  FMT_CONSTEXPR FMT_INLINE value(char_type* x FMT_BUILTIN) {
     string.data = x;
     if (is_constant_evaluated()) string.size = 0;
   }
-  FMT_CONSTEXPR FMT_ALWAYS_INLINE value(const char_type* x FMT_BUILTIN) {
+  FMT_CONSTEXPR FMT_INLINE value(const char_type* x FMT_BUILTIN) {
     string.data = x;
     if (is_constant_evaluated()) string.size = 0;
   }
@@ -2205,13 +2200,13 @@ template <typename Context> class value {
     string.data = sv.data();
     string.size = sv.size();
   }
-  FMT_ALWAYS_INLINE value(void* x FMT_BUILTIN) : pointer(x) {}
-  FMT_ALWAYS_INLINE value(const void* x FMT_BUILTIN) : pointer(x) {}
-  FMT_ALWAYS_INLINE value(volatile void* x FMT_BUILTIN)
+  FMT_INLINE value(void* x FMT_BUILTIN) : pointer(x) {}
+  FMT_INLINE value(const void* x FMT_BUILTIN) : pointer(x) {}
+  FMT_INLINE value(volatile void* x FMT_BUILTIN)
       : pointer(const_cast<const void*>(x)) {}
-  FMT_ALWAYS_INLINE value(const volatile void* x FMT_BUILTIN)
+  FMT_INLINE value(const volatile void* x FMT_BUILTIN)
       : pointer(const_cast<const void*>(x)) {}
-  FMT_ALWAYS_INLINE value(nullptr_t) : pointer(nullptr) {}
+  FMT_INLINE value(nullptr_t) : pointer(nullptr) {}
 
   template <typename T, FMT_ENABLE_IF(std::is_pointer<T>::value ||
                                       std::is_member_pointer<T>::value)>
@@ -2233,7 +2228,7 @@ template <typename Context> class value {
 
   template <typename T,
             FMT_ENABLE_IF(use_formatter<T>::value || !FMT_BUILTIN_TYPES)>
-  FMT_CONSTEXPR20 FMT_ALWAYS_INLINE value(T& x) : value(x, custom_tag()) {}
+  FMT_CONSTEXPR20 FMT_INLINE value(T& x) : value(x, custom_tag()) {}
 
   FMT_ALWAYS_INLINE value(const named_arg_info<char_type>* args, size_t size)
       : named_args{args, size} {}
