@@ -2323,7 +2323,7 @@ constexpr auto encode_types() -> unsigned long long {
 template <typename Context, typename... T, size_t NUM_ARGS = sizeof...(T)>
 constexpr auto make_descriptor() -> unsigned long long {
   return NUM_ARGS <= max_packed_args ? encode_types<Context, T...>()
-                                     : is_unpacked_bit | NUM_ARGS;
+                                     : static_cast<unsigned long long>(is_unpacked_bit) | NUM_ARGS;
 }
 
 template <typename Context, int NUM_ARGS>
