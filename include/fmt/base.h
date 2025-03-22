@@ -239,7 +239,7 @@
 FMT_PRAGMA_GCC(push_options)
 #if !defined(__OPTIMIZE__) && !defined(__CUDACC__) && !defined(FMT_MODULE)
 FMT_PRAGMA_GCC(optimize("Og"))
-#define FMT_GCC_OPTIMIZED
+#  define FMT_GCC_OPTIMIZED
 #endif
 FMT_PRAGMA_CLANG(diagnostic push)
 
@@ -1102,7 +1102,7 @@ FMT_CONSTEXPR void init_static_named_arg(named_arg_info<Char>* named_args,
 
 // To minimize the number of types we need to deal with, long is translated
 // either to int or to long long depending on its size.
-enum { long_short = sizeof(long) == sizeof(int) };
+enum { long_short = sizeof(long) == sizeof(int) && FMT_BUILTIN_TYPES };
 using long_type = conditional_t<long_short, int, long long>;
 using ulong_type = conditional_t<long_short, unsigned, unsigned long long>;
 

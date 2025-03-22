@@ -13,6 +13,7 @@
 
 TEST(no_builtin_types_test, format) {
   EXPECT_EQ(fmt::format("{}", 42), "42");
+  EXPECT_EQ(fmt::format("{}", 42L), "42");
 }
 
 TEST(no_builtin_types_test, double_is_custom_type) {
