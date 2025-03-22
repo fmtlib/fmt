@@ -6,15 +6,17 @@
 - Worked around an ABI issue in spdlog
   (https://github.com/fmtlib/fmt/issues/4385).
 
-- Optimized `text_style` using bit packing
-  (https://github.com/fmtlib/fmt/pull/4363). Thanks @LocalSpook.
-
 - Fixed handling of named arguments in format specs
   (https://github.com/fmtlib/fmt/issues/4360,
   https://github.com/fmtlib/fmt/pull/4361). Thanks @dinomight.
 
 - Added error reporting for duplicate named arguments
   (https://github.com/fmtlib/fmt/pull/4367). Thanks @dinomight.
+
+- Fixed formatting of `long` with `FMT_BUILTIN_TYPES=0`.
+
+- Optimized `text_style` using bit packing
+  (https://github.com/fmtlib/fmt/pull/4363). Thanks @LocalSpook.
 
 # 11.1.4 - 2025-02-26
 
