@@ -353,10 +353,10 @@ TEST(chrono_test, system_clock_time_point) {
 #if FMT_USE_LOCAL_TIME
 
 template <typename Duration>
-auto strftime_full_local(std::chrono::local_time<Duration> tp) -> std::string {
-  auto t = std::chrono::system_clock::to_time_t(
-      std::chrono::current_zone()->to_sys(tp));
-  auto tm = *std::localtime(&t);
+auto strftime_full_local(fmt::local_time<Duration> t) -> std::string {
+  auto sys_time = std::chrono::system_clock::to_time_t(
+      std::chrono::current_zone()->to_sys(t));
+  auto tm = *std::localtime(&sys_time);
   return system_strftime("%Y-%m-%d %H:%M:%S", &tm);
 }
 
@@ -369,7 +369,7 @@ TEST(chrono_test, local_system_clock_time_point) {
   EXPECT_EQ(strftime_full_local(t1), fmt::format("{:%Y-%m-%d %H:%M:%S}", t1));
   EXPECT_EQ(strftime_full_local(t1), fmt::format("{}", t1));
   EXPECT_EQ(strftime_full_local(t1), fmt::format("{:}", t1));
-  using time_point = std::chrono::local_time<std::chrono::seconds>;
+  using time_point = fmt::local_time<std::chrono::seconds>;
   auto t2 = time_point(std::chrono::seconds(86400 + 42));
   EXPECT_EQ(strftime_full_local(t2), fmt::format("{:%Y-%m-%d %H:%M:%S}", t2));
 
