@@ -428,6 +428,18 @@ TEST(chrono_test, local_system_clock_time_point) {
 
 #endif  // FMT_USE_LOCAL_TIME
 
+TEST(chrono_test, daylight_savings_time_end) {
+  // 2024-10-27 03:05 as the number of seconds since epoch in Europe/Kyiv time.
+  // It is slightly after the DST end and passing it to to_sys will result in
+  // an ambiguous time error:
+  //   2024-10-27 03:05:00 is ambiguous.  It could be
+  //   2024-10-27 03:05:00 EEST == 2024-10-27 00:05:00 UTC or
+  //   2024-10-27 03:05:00 EET == 2024-10-27 01:05:00 UTC
+  auto t =
+      fmt::local_time<std::chrono::seconds>(std::chrono::seconds(1729998300));
+  EXPECT_EQ(fmt::format("{}", t), "2024-10-27 03:05:00");
+}
+
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
 
 TEST(chrono_test, format_default) {
@@ -1033,7 +1045,7 @@ TEST(chrono_test, glibc_extensions) {
   {
     auto t = std::tm();
     t.tm_year = -5 - 1900;
-    EXPECT_EQ(fmt::format( "{:%Y}", t), "-005");
+    EXPECT_EQ(fmt::format("{:%Y}", t), "-005");
     EXPECT_EQ(fmt::format("{:%_Y}", t), "  -5");
     EXPECT_EQ(fmt::format("{:%-Y}", t), "-5");
   }
@@ -1045,8 +1057,6 @@ TEST(chrono_test, glibc_extensions) {
     EXPECT_EQ(fmt::format("{:%_m}", t), " 7");
     EXPECT_EQ(fmt::format("{:%-m}", t), "7");
   }
-
-
 }
 
 TEST(chrono_test, out_of_range) {

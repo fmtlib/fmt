@@ -2320,15 +2320,20 @@ struct formatter<local_time<Duration>, Char> : formatter<std::tm, Char> {
   template <typename FormatContext>
   auto format(local_time<Duration> val, FormatContext& ctx) const
       -> decltype(ctx.out()) {
+    auto time_since_epoch = val.time_since_epoch();
+    auto seconds_since_epoch =
+        detail::duration_cast<std::chrono::seconds>(time_since_epoch);
+    // Use gmtime to prevent time conversion since local_time has an
+    // unspecified time zone.
+    auto t = gmtime(seconds_since_epoch.count());
     using period = typename Duration::period;
     if (period::num == 1 && period::den == 1 &&
         !std::is_floating_point<typename Duration::rep>::value) {
-      return formatter<std::tm, Char>::format(localtime(val), ctx);
+      return formatter<std::tm, Char>::format(t, ctx);
     }
-    auto epoch = val.time_since_epoch();
-    auto subsecs = detail::duration_cast<Duration>(
-        epoch - detail::duration_cast<std::chrono::seconds>(epoch));
-    return formatter<std::tm, Char>::do_format(localtime(val), ctx, &subsecs);
+    auto subsecs =
+        detail::duration_cast<Duration>(time_since_epoch - seconds_since_epoch);
+    return formatter<std::tm, Char>::do_format(t, ctx, &subsecs);
   }
 };
 
