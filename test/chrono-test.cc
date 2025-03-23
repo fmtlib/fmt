@@ -351,11 +351,11 @@ TEST(chrono_test, system_clock_time_point) {
 }
 
 TEST(chrono_test, local_time) {
-  auto t =
+  auto time =
       fmt::local_time<std::chrono::seconds>(std::chrono::seconds(290088000));
-  EXPECT_EQ(fmt::format("{:%Y-%m-%d %H:%M:%S}", t), "1979-03-12 12:00:00");
-  EXPECT_EQ(fmt::format("{}", t), "1979-03-12 12:00:00");
-  EXPECT_EQ(fmt::format("{:}", t), "1979-03-12 12:00:00");
+  EXPECT_EQ(fmt::format("{:%Y-%m-%d %H:%M:%S}", time), "1979-03-12 12:00:00");
+  EXPECT_EQ(fmt::format("{}", time), "1979-03-12 12:00:00");
+  EXPECT_EQ(fmt::format("{:}", time), "1979-03-12 12:00:00");
 
   std::vector<std::string> specs = {
       "%%",  "%n",  "%t",  "%Y",  "%EY", "%y",  "%Oy", "%Ey", "%C",
@@ -363,7 +363,7 @@ TEST(chrono_test, local_time) {
       "%OU", "%W",  "%OW", "%V",  "%OV", "%j",  "%d",  "%Od", "%e",
       "%Oe", "%a",  "%A",  "%w",  "%Ow", "%u",  "%Ou", "%H",  "%OH",
       "%I",  "%OI", "%M",  "%OM", "%S",  "%OS", "%x",  "%Ex", "%X",
-      "%EX", "%D",  "%F",  "%R",  "%T",  "%p",  "%z",  "%Z"};
+      "%EX", "%D",  "%F",  "%R",  "%T",  "%p"};
 #ifndef _WIN32
   // Disabled on Windows because these formats are not consistent among
   // platforms.
@@ -375,38 +375,21 @@ TEST(chrono_test, local_time) {
 #endif
   specs.push_back("%Y-%m-%d %H:%M:%S");
 
-#if FMT_USE_LOCAL_TIME
-#  ifdef _WIN32
+#ifdef _WIN32
   return;  // Not supported on Windows.
-#  endif
+#endif
 
   for (const auto& spec : specs) {
-    auto sys_time = std::chrono::system_clock::to_time_t(
-        std::chrono::current_zone()->to_sys(t));
-    auto tm = *std::localtime(&sys_time);
-
+    auto tm = fmt::gmtime(time.time_since_epoch().count());
     auto sys_output = system_strftime(spec, &tm);
 
     auto fmt_spec = fmt::format("{{:{}}}", spec);
-    EXPECT_EQ(sys_output, fmt::format(fmt::runtime(fmt_spec), t));
+    EXPECT_EQ(sys_output, fmt::format(fmt::runtime(fmt_spec), time))
+        << fmt_spec;
     EXPECT_EQ(sys_output, fmt::format(fmt::runtime(fmt_spec), tm));
   }
 
-  if (std::find(specs.cbegin(), specs.cend(), "%z") != specs.cend()) {
-    auto sys_time = std::chrono::system_clock::to_time_t(
-        std::chrono::current_zone()->to_sys(t));
-    auto tm = *std::localtime(&sys_time);
-
-    auto sys_output = system_strftime("%z", &tm);
-    sys_output.insert(sys_output.end() - 2, 1, ':');
-
-    EXPECT_EQ(sys_output, fmt::format("{:%Ez}", t));
-    EXPECT_EQ(sys_output, fmt::format("{:%Ez}", tm));
-
-    EXPECT_EQ(sys_output, fmt::format("{:%Oz}", t));
-    EXPECT_EQ(sys_output, fmt::format("{:%Oz}", tm));
-  }
-#endif  // FMT_USE_LOCAL_TIME
+  // TODO: check that %z and %Z result in an error
 }
 
 TEST(chrono_test, daylight_savings_time_end) {
