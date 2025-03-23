@@ -350,77 +350,64 @@ TEST(chrono_test, system_clock_time_point) {
   }
 }
 
-#if FMT_USE_LOCAL_TIME
+TEST(chrono_test, local_time) {
+  auto t =
+      fmt::local_time<std::chrono::seconds>(std::chrono::seconds(290088000));
+  EXPECT_EQ(fmt::format("{:%Y-%m-%d %H:%M:%S}", t), "1979-03-12 12:00:00");
+  EXPECT_EQ(fmt::format("{}", t), "1979-03-12 12:00:00");
+  EXPECT_EQ(fmt::format("{:}", t), "1979-03-12 12:00:00");
 
-template <typename Duration>
-auto strftime_full_local(fmt::local_time<Duration> t) -> std::string {
-  auto sys_time = std::chrono::system_clock::to_time_t(
-      std::chrono::current_zone()->to_sys(t));
-  auto tm = *std::localtime(&sys_time);
-  return system_strftime("%Y-%m-%d %H:%M:%S", &tm);
-}
-
-TEST(chrono_test, local_system_clock_time_point) {
-#  ifdef _WIN32
-  return;  // Not supported on Windows.
-#  endif
-  auto t1 = std::chrono::time_point_cast<std::chrono::seconds>(
-      std::chrono::current_zone()->to_local(std::chrono::system_clock::now()));
-  EXPECT_EQ(strftime_full_local(t1), fmt::format("{:%Y-%m-%d %H:%M:%S}", t1));
-  EXPECT_EQ(strftime_full_local(t1), fmt::format("{}", t1));
-  EXPECT_EQ(strftime_full_local(t1), fmt::format("{:}", t1));
-  using time_point = fmt::local_time<std::chrono::seconds>;
-  auto t2 = time_point(std::chrono::seconds(86400 + 42));
-  EXPECT_EQ(strftime_full_local(t2), fmt::format("{:%Y-%m-%d %H:%M:%S}", t2));
-
-  std::vector<std::string> spec_list = {
+  std::vector<std::string> specs = {
       "%%",  "%n",  "%t",  "%Y",  "%EY", "%y",  "%Oy", "%Ey", "%C",
       "%EC", "%G",  "%g",  "%b",  "%h",  "%B",  "%m",  "%Om", "%U",
       "%OU", "%W",  "%OW", "%V",  "%OV", "%j",  "%d",  "%Od", "%e",
       "%Oe", "%a",  "%A",  "%w",  "%Ow", "%u",  "%Ou", "%H",  "%OH",
       "%I",  "%OI", "%M",  "%OM", "%S",  "%OS", "%x",  "%Ex", "%X",
       "%EX", "%D",  "%F",  "%R",  "%T",  "%p",  "%z",  "%Z"};
-#  ifndef _WIN32
+#ifndef _WIN32
   // Disabled on Windows because these formats are not consistent among
   // platforms.
-  spec_list.insert(spec_list.end(), {"%c", "%Ec", "%r"});
-#  elif !FMT_HAS_C99_STRFTIME
+  specs.insert(specs.end(), {"%c", "%Ec", "%r"});
+#elif !FMT_HAS_C99_STRFTIME
   // Only C89 conversion specifiers when using MSVCRT instead of UCRT
-  spec_list = {"%%", "%Y", "%y", "%b", "%B", "%m", "%U", "%W", "%j", "%d", "%a",
-               "%A", "%w", "%H", "%I", "%M", "%S", "%x", "%X", "%p", "%Z"};
-#  endif
-  spec_list.push_back("%Y-%m-%d %H:%M:%S");
+  specs = {"%%", "%Y", "%y", "%b", "%B", "%m", "%U", "%W", "%j", "%d", "%a",
+           "%A", "%w", "%H", "%I", "%M", "%S", "%x", "%X", "%p", "%Z"};
+#endif
+  specs.push_back("%Y-%m-%d %H:%M:%S");
 
-  for (const auto& spec : spec_list) {
-    auto t = std::chrono::system_clock::to_time_t(
-        std::chrono::current_zone()->to_sys(t1));
-    auto tm = *std::localtime(&t);
+#if FMT_USE_LOCAL_TIME
+#  ifdef _WIN32
+  return;  // Not supported on Windows.
+#  endif
+
+  for (const auto& spec : specs) {
+    auto sys_time = std::chrono::system_clock::to_time_t(
+        std::chrono::current_zone()->to_sys(t));
+    auto tm = *std::localtime(&sys_time);
 
     auto sys_output = system_strftime(spec, &tm);
 
     auto fmt_spec = fmt::format("{{:{}}}", spec);
-    EXPECT_EQ(sys_output, fmt::format(fmt::runtime(fmt_spec), t1));
+    EXPECT_EQ(sys_output, fmt::format(fmt::runtime(fmt_spec), t));
     EXPECT_EQ(sys_output, fmt::format(fmt::runtime(fmt_spec), tm));
   }
 
-  if (std::find(spec_list.cbegin(), spec_list.cend(), "%z") !=
-      spec_list.cend()) {
-    auto t = std::chrono::system_clock::to_time_t(
-        std::chrono::current_zone()->to_sys(t1));
-    auto tm = *std::localtime(&t);
+  if (std::find(specs.cbegin(), specs.cend(), "%z") != specs.cend()) {
+    auto sys_time = std::chrono::system_clock::to_time_t(
+        std::chrono::current_zone()->to_sys(t));
+    auto tm = *std::localtime(&sys_time);
 
     auto sys_output = system_strftime("%z", &tm);
     sys_output.insert(sys_output.end() - 2, 1, ':');
 
-    EXPECT_EQ(sys_output, fmt::format("{:%Ez}", t1));
+    EXPECT_EQ(sys_output, fmt::format("{:%Ez}", t));
     EXPECT_EQ(sys_output, fmt::format("{:%Ez}", tm));
 
-    EXPECT_EQ(sys_output, fmt::format("{:%Oz}", t1));
+    EXPECT_EQ(sys_output, fmt::format("{:%Oz}", t));
     EXPECT_EQ(sys_output, fmt::format("{:%Oz}", tm));
   }
-}
-
 #endif  // FMT_USE_LOCAL_TIME
+}
 
 TEST(chrono_test, daylight_savings_time_end) {
   // 2024-10-27 03:05 as the number of seconds since epoch in Europe/Kyiv time.
