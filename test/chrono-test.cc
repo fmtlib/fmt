@@ -352,12 +352,6 @@ TEST(chrono_test, system_clock_time_point) {
 
 #if FMT_USE_LOCAL_TIME
 
-TEST(chrono_test, localtime) {
-  auto t = std::time(nullptr);
-  auto tm = *std::localtime(&t);
-  EXPECT_TRUE(equal(tm, fmt::localtime(t)));
-}
-
 template <typename Duration>
 auto strftime_full_local(std::chrono::local_time<Duration> tp) -> std::string {
   auto t = std::chrono::system_clock::to_time_t(

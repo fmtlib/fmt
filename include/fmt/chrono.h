@@ -574,7 +574,7 @@ inline auto localtime(std::time_t time) -> std::tm {
 #if FMT_USE_LOCAL_TIME
 template <typename Duration,
           FMT_ENABLE_IF(detail::has_current_zone<Duration>())>
-inline auto localtime(std::chrono::local_time<Duration> time) -> std::tm {
+FMT_DEPRECATED inline auto localtime(std::chrono::local_time<Duration> time) -> std::tm {
   using namespace std::chrono;
   using namespace fmt_detail;
   return localtime(detail::to_time_t(current_zone()->to_sys<Duration>(time)));
