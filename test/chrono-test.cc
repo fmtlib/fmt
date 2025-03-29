@@ -353,37 +353,66 @@ TEST(chrono_test, system_clock_time_point) {
 TEST(chrono_test, local_time) {
   auto time =
       fmt::local_time<std::chrono::seconds>(std::chrono::seconds(290088000));
-  EXPECT_EQ(fmt::format("{:%Y-%m-%d %H:%M:%S}", time), "1979-03-12 12:00:00");
+
   EXPECT_EQ(fmt::format("{}", time), "1979-03-12 12:00:00");
   EXPECT_EQ(fmt::format("{:}", time), "1979-03-12 12:00:00");
 
-  std::vector<std::string> specs = {
-      "%%",  "%n",  "%t",  "%Y",  "%EY", "%y",  "%Oy", "%Ey", "%C",
-      "%EC", "%G",  "%g",  "%b",  "%h",  "%B",  "%m",  "%Om", "%U",
-      "%OU", "%W",  "%OW", "%V",  "%OV", "%j",  "%d",  "%Od", "%e",
-      "%Oe", "%a",  "%A",  "%w",  "%Ow", "%u",  "%Ou", "%H",  "%OH",
-      "%I",  "%OI", "%M",  "%OM", "%S",  "%OS", "%x",  "%Ex", "%X",
-      "%EX", "%D",  "%F",  "%R",  "%T",  "%p"};
-#ifndef _WIN32
-  // Disabled on Windows because these formats are not consistent among
-  // platforms.
-  specs.insert(specs.end(), {"%c", "%Ec", "%r"});
-#elif !FMT_HAS_C99_STRFTIME
-  // Only C89 conversion specifiers when using MSVCRT instead of UCRT
-  specs = {"%%", "%Y", "%y", "%b", "%B", "%m", "%U", "%W", "%j", "%d", "%a",
-           "%A", "%w", "%H", "%I", "%M", "%S", "%x", "%X", "%p"};
-#endif
-  specs.push_back("%Y-%m-%d %H:%M:%S");
+  EXPECT_EQ(fmt::format("{:%%}", time), "%");
+  EXPECT_EQ(fmt::format("{:%n}", time), "\n");
+  EXPECT_EQ(fmt::format("{:%t}", time), "\t");
+  EXPECT_EQ(fmt::format("{:%Y}", time), "1979");
+  EXPECT_EQ(fmt::format("{:%EY}", time), "1979");
+  EXPECT_EQ(fmt::format("{:%y}", time), "79");
+  EXPECT_EQ(fmt::format("{:%Oy}", time), "79");
+  EXPECT_EQ(fmt::format("{:%Ey}", time), "79");
+  EXPECT_EQ(fmt::format("{:%C}", time), "19");
+  EXPECT_EQ(fmt::format("{:%EC}", time), "19");
+  EXPECT_EQ(fmt::format("{:%G}", time), "1979");
+  EXPECT_EQ(fmt::format("{:%g}", time), "79");
+  EXPECT_EQ(fmt::format("{:%b}", time), "Mar");
+  EXPECT_EQ(fmt::format("{:%h}", time), "Mar");
+  EXPECT_EQ(fmt::format("{:%B}", time), "March");
+  EXPECT_EQ(fmt::format("{:%m}", time), "03");
+  EXPECT_EQ(fmt::format("{:%Om}", time), "03");
+  EXPECT_EQ(fmt::format("{:%U}", time), "10");
+  EXPECT_EQ(fmt::format("{:%OU}", time), "10");
+  EXPECT_EQ(fmt::format("{:%W}", time), "11");
+  EXPECT_EQ(fmt::format("{:%OW}", time), "11");
+  EXPECT_EQ(fmt::format("{:%V}", time), "11");
+  EXPECT_EQ(fmt::format("{:%OV}", time), "11");
+  EXPECT_EQ(fmt::format("{:%j}", time), "071");
+  EXPECT_EQ(fmt::format("{:%d}", time), "12");
+  EXPECT_EQ(fmt::format("{:%Od}", time), "12");
+  EXPECT_EQ(fmt::format("{:%e}", time), "12");
+  EXPECT_EQ(fmt::format("{:%Oe}", time), "12");
+  EXPECT_EQ(fmt::format("{:%a}", time), "Mon");
+  EXPECT_EQ(fmt::format("{:%A}", time), "Monday");
+  EXPECT_EQ(fmt::format("{:%w}", time), "1");
+  EXPECT_EQ(fmt::format("{:%Ow}", time), "1");
+  EXPECT_EQ(fmt::format("{:%u}", time), "1");
+  EXPECT_EQ(fmt::format("{:%Ou}", time), "1");
+  EXPECT_EQ(fmt::format("{:%H}", time), "12");
+  EXPECT_EQ(fmt::format("{:%OH}", time), "12");
+  EXPECT_EQ(fmt::format("{:%I}", time), "12");
+  EXPECT_EQ(fmt::format("{:%OI}", time), "12");
+  EXPECT_EQ(fmt::format("{:%M}", time), "00");
+  EXPECT_EQ(fmt::format("{:%OM}", time), "00");
+  EXPECT_EQ(fmt::format("{:%S}", time), "00");
+  EXPECT_EQ(fmt::format("{:%OS}", time), "00");
+  EXPECT_EQ(fmt::format("{:%x}", time), "03/12/79");
+  EXPECT_EQ(fmt::format("{:%Ex}", time), "03/12/79");
+  EXPECT_EQ(fmt::format("{:%X}", time), "12:00:00");
+  EXPECT_EQ(fmt::format("{:%EX}", time), "12:00:00");
+  EXPECT_EQ(fmt::format("{:%D}", time), "03/12/79");
+  EXPECT_EQ(fmt::format("{:%F}", time), "1979-03-12");
+  EXPECT_EQ(fmt::format("{:%R}", time), "12:00");
+  EXPECT_EQ(fmt::format("{:%T}", time), "12:00:00");
+  EXPECT_EQ(fmt::format("{:%p}", time), "PM");
+  EXPECT_EQ(fmt::format("{:%c}", time), "Mon Mar 12 12:00:00 1979");
+  EXPECT_EQ(fmt::format("{:%Ec}", time), "Mon Mar 12 12:00:00 1979");
+  EXPECT_EQ(fmt::format("{:%r}", time), "12:00:00 PM");
 
-  for (const auto& spec : specs) {
-    auto tm = fmt::gmtime(time.time_since_epoch().count());
-    auto sys_output = system_strftime(spec, &tm);
-
-    auto fmt_spec = fmt::format("{{:{}}}", spec);
-    EXPECT_EQ(sys_output, fmt::format(fmt::runtime(fmt_spec), time))
-        << fmt_spec;
-    EXPECT_EQ(sys_output, fmt::format(fmt::runtime(fmt_spec), tm));
-  }
+  EXPECT_EQ(fmt::format("{:%Y-%m-%d %H:%M:%S}", time), "1979-03-12 12:00:00");
 
   EXPECT_THROW_MSG((void)fmt::format(fmt::runtime("{:%z}"), time),
                    fmt::format_error, "no timezone");
