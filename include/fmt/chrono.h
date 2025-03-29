@@ -574,7 +574,8 @@ inline auto localtime(std::time_t time) -> std::tm {
 #if FMT_USE_LOCAL_TIME
 template <typename Duration,
           FMT_ENABLE_IF(detail::has_current_zone<Duration>())>
-FMT_DEPRECATED inline auto localtime(std::chrono::local_time<Duration> time) -> std::tm {
+FMT_DEPRECATED inline auto localtime(std::chrono::local_time<Duration> time)
+    -> std::tm {
   using namespace std::chrono;
   using namespace fmt_detail;
   return localtime(detail::to_time_t(current_zone()->to_sys<Duration>(time)));
@@ -911,7 +912,14 @@ template <typename Derived> struct null_chrono_spec_handler {
   FMT_CONSTEXPR void on_tz_name() { unsupported(); }
 };
 
-struct tm_format_checker : null_chrono_spec_handler<tm_format_checker> {
+class tm_format_checker : public null_chrono_spec_handler<tm_format_checker> {
+ private:
+  bool no_timezone_ = false;
+
+ public:
+  constexpr explicit tm_format_checker(bool no_timezone = false)
+      : no_timezone_(no_timezone) {}
+
   FMT_NORETURN inline void unsupported() {
     FMT_THROW(format_error("no format"));
   }
@@ -949,8 +957,12 @@ struct tm_format_checker : null_chrono_spec_handler<tm_format_checker> {
   FMT_CONSTEXPR void on_24_hour_time() {}
   FMT_CONSTEXPR void on_iso_time() {}
   FMT_CONSTEXPR void on_am_pm() {}
-  FMT_CONSTEXPR void on_utc_offset(numeric_system) {}
-  FMT_CONSTEXPR void on_tz_name() {}
+  FMT_CONSTEXPR void on_utc_offset(numeric_system) {
+    if (no_timezone_) FMT_THROW(format_error("no timezone"));
+  }
+  FMT_CONSTEXPR void on_tz_name() {
+    if (no_timezone_) FMT_THROW(format_error("no timezone"));
+  }
 };
 
 inline auto tm_wday_full_name(int wday) -> const char* {
@@ -1005,7 +1017,7 @@ template <typename T, typename Int, FMT_ENABLE_IF(std::is_integral<T>::value)>
 inline auto to_nonnegative_int(T value, Int upper) -> Int {
   if (!std::is_unsigned<Int>::value &&
       (value < 0 || to_unsigned(value) > to_unsigned(upper))) {
-    FMT_THROW(fmt::format_error("chrono value is out of range"));
+    FMT_THROW(format_error("chrono value is out of range"));
   }
   return static_cast<Int>(value);
 }
@@ -2242,8 +2254,8 @@ template <typename Char> struct formatter<std::tm, Char> {
         ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
   }
 
- public:
-  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
+  FMT_CONSTEXPR auto do_parse(parse_context<Char>& ctx,
+                              bool no_timezone = false) -> const Char* {
     auto it = ctx.begin(), end = ctx.end();
     if (it == end || *it == '}') return it;
 
@@ -2256,10 +2268,16 @@ template <typename Char> struct formatter<std::tm, Char> {
       if (it == end) return it;
     }
 
-    end = detail::parse_chrono_format(it, end, detail::tm_format_checker());
+    end = detail::parse_chrono_format(it, end,
+                                      detail::tm_format_checker(no_timezone));
     // Replace the default format string only if the new spec is not empty.
     if (end != it) fmt_ = {it, detail::to_unsigned(end - it)};
     return end;
+  }
+
+ public:
+  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
+    return do_parse(ctx);
   }
 
   template <typename FormatContext>
@@ -2315,6 +2333,10 @@ template <typename Duration, typename Char>
 struct formatter<local_time<Duration>, Char> : formatter<std::tm, Char> {
   FMT_CONSTEXPR formatter() {
     this->fmt_ = detail::string_literal<Char, '%', 'F', ' ', '%', 'T'>();
+  }
+
+  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
+    return this->do_parse(ctx, true);
   }
 
   template <typename FormatContext>

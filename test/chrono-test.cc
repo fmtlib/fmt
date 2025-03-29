@@ -371,7 +371,7 @@ TEST(chrono_test, local_time) {
 #elif !FMT_HAS_C99_STRFTIME
   // Only C89 conversion specifiers when using MSVCRT instead of UCRT
   specs = {"%%", "%Y", "%y", "%b", "%B", "%m", "%U", "%W", "%j", "%d", "%a",
-           "%A", "%w", "%H", "%I", "%M", "%S", "%x", "%X", "%p", "%Z"};
+           "%A", "%w", "%H", "%I", "%M", "%S", "%x", "%X", "%p"};
 #endif
   specs.push_back("%Y-%m-%d %H:%M:%S");
 
@@ -385,7 +385,10 @@ TEST(chrono_test, local_time) {
     EXPECT_EQ(sys_output, fmt::format(fmt::runtime(fmt_spec), tm));
   }
 
-  // TODO: check that %z and %Z result in an error
+  EXPECT_THROW_MSG((void)fmt::format(fmt::runtime("{:%z}"), time),
+                   fmt::format_error, "no timezone");
+  EXPECT_THROW_MSG((void)fmt::format(fmt::runtime("{:%Z}"), time),
+                   fmt::format_error, "no timezone");
 }
 
 TEST(chrono_test, daylight_savings_time_end) {
