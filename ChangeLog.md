@@ -1,10 +1,7 @@
-# 11.1.5 - TBD
+# 11.2.0 - TBD
 
 - Fixed compilation with GCC 15 and C++20 modules enabled
   (https://github.com/fmtlib/fmt/pull/4347). Thanks @tkhyn.
-
-- Worked around an ABI issue in spdlog
-  (https://github.com/fmtlib/fmt/issues/4385).
 
 - Fixed handling of named arguments in format specs
   (https://github.com/fmtlib/fmt/issues/4360,
