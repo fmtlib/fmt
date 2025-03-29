@@ -375,10 +375,6 @@ TEST(chrono_test, local_time) {
 #endif
   specs.push_back("%Y-%m-%d %H:%M:%S");
 
-#ifdef _WIN32
-  return;  // Not supported on Windows.
-#endif
-
   for (const auto& spec : specs) {
     auto tm = fmt::gmtime(time.time_since_epoch().count());
     auto sys_output = system_strftime(spec, &tm);
