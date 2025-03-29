@@ -774,9 +774,7 @@ enum { inline_buffer_size = 500 };
  * converted to `std::string` with `to_string(out)`.
  */
 template <typename T, size_t SIZE = inline_buffer_size,
-          // DEPRECATED! std::allocator should be replaced with
-          // detail::allocator
-          typename Allocator = std::allocator<T>>
+          typename Allocator = detail::allocator<T>>
 class basic_memory_buffer : public detail::buffer<T> {
  private:
   T store_[SIZE];
@@ -2596,7 +2594,7 @@ class bigint {
   }
 
  public:
-  FMT_CONSTEXPR20 bigint() : exp_(0) {}
+  FMT_CONSTEXPR bigint() : exp_(0) {}
   explicit bigint(uint64_t n) { assign(n); }
 
   bigint(const bigint&) = delete;
