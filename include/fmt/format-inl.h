@@ -1526,9 +1526,8 @@ template <typename F> class glibc_file : public file_base<F> {
   }
 
   void init_buffer() {
-    if (this->file_->_IO_write_ptr) return;
+    if (this->file_->_IO_write_ptr < this->file_->_IO_write_end) return;
     // Force buffer initialization by placing and removing a char in a buffer.
-    assume(this->file_->_IO_write_ptr >= this->file_->_IO_write_end);
     putc_unlocked(0, this->file_);
     --this->file_->_IO_write_ptr;
   }

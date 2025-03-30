@@ -540,7 +540,7 @@ TEST(file_test, line_buffering) {
 
   reader.join();
 }
-#  endif // _WIN32
+#  endif  // _WIN32
 
 TEST(file_test, buffer_boundary) {
   auto pipe = fmt::pipe();
@@ -557,6 +557,36 @@ TEST(file_test, buffer_boundary) {
   size_t n = fread(buf, 1, sizeof(buf), read_end.get());
   EXPECT_EQ(n, sizeof(buf));
   EXPECT_STREQ(fgets(buf, sizeof(buf), read_end.get()), "1234 567");
+}
+
+TEST(file_test, io_putting) {
+  auto pipe = fmt::pipe();
+  auto read_end = pipe.read_end.fdopen("r");
+  auto write_end = pipe.write_end.fdopen("w");
+
+  size_t read_size = 0;
+  auto reader = std::thread([&]() {
+    size_t n = 0;
+    do {
+      char buf[4096] = {};
+      n = fread(buf, 1, sizeof(buf), read_end.get());
+      read_size += n;
+    } while (n != 0);
+  });
+
+  // This initialize buffers but doesn't set _IO_CURRENTLY_PUTTING.
+  fseek(write_end.get(), 0, SEEK_SET);
+
+  size_t write_size = 0;
+  for (int i = 0; i <= 20000; ++i) {
+    auto s = fmt::format("{}\n", i);
+    fmt::print(write_end.get(), "{}", s);
+    write_size += s.size();
+  }
+
+  write_end.close();
+  reader.join();
+  EXPECT_EQ(read_size, write_size);
 }
 
 #endif  // FMT_USE_FCNTL
