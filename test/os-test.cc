@@ -10,6 +10,7 @@
 #include <cstdlib>  // std::exit
 #include <cstring>
 #include <memory>
+#include <thread>
 
 #include "gtest-extra.h"
 #include "util.h"
@@ -513,4 +514,49 @@ TEST(file_test, fdopen) {
   int read_fd = pipe.read_end.descriptor();
   EXPECT_EQ(read_fd, FMT_POSIX(fileno(pipe.read_end.fdopen("r").get())));
 }
+
+// Windows CRT implements _IOLBF incorrectly (full buffering).
+#  ifndef _WIN32
+TEST(file_test, line_buffering) {
+  auto pipe = fmt::pipe();
+
+  int write_fd = pipe.write_end.descriptor();
+  auto write_end = pipe.write_end.fdopen("w");
+  setvbuf(write_end.get(), nullptr, _IOLBF, 4096);
+  write_end.print("42\n");
+  close(write_fd);
+  try {
+    write_end.close();
+  } catch (const std::system_error&) {
+  }
+
+  auto read_end = pipe.read_end.fdopen("r");
+  std::thread reader([&]() {
+    int n = 0;
+    int result = fscanf(read_end.get(), "%d", &n);
+    (void)result;
+    EXPECT_EQ(n, 42);
+  });
+
+  reader.join();
+}
+#  endif // _WIN32
+
+TEST(file_test, buffer_boundary) {
+  auto pipe = fmt::pipe();
+
+  auto write_end = pipe.write_end.fdopen("w");
+  setvbuf(write_end.get(), nullptr, _IOFBF, 4096);
+  for (int i = 3; i < 4094; i++)
+    write_end.print("{}", (i % 73) != 0 ? 'x' : '\n');
+  write_end.print("{} {}", 1234, 567);
+  write_end.close();
+
+  auto read_end = pipe.read_end.fdopen("r");
+  char buf[4091] = {};
+  size_t n = fread(buf, 1, sizeof(buf), read_end.get());
+  EXPECT_EQ(n, sizeof(buf));
+  EXPECT_STREQ(fgets(buf, sizeof(buf), read_end.get()), "1234 567");
+}
+
 #endif  // FMT_USE_FCNTL
