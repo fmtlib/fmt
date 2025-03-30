@@ -13,7 +13,7 @@ The [Bazel Central Registry](https://github.com/bazelbuild/bazel-central-registr
 For instance, to use {fmt} add to your `MODULE.bazel` file:
 
 ```
-bazel_dep(name = "fmt", version = "10.2.1")
+bazel_dep(name = "fmt", version = "11.1.4")
 ```
 
 ### Live at head
