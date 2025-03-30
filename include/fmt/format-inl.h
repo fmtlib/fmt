@@ -14,6 +14,7 @@
 #  include <climits>
 #  include <cmath>
 #  include <exception>
+#  include <vector>
 #endif
 
 #if defined(_WIN32) && !defined(FMT_USE_WRITE_CONSOLE)
@@ -1943,6 +1944,41 @@ FMT_FUNC auto is_printable(uint32_t cp) -> bool {
 }
 
 }  // namespace detail
+
+FMT_FUNC void vcowsay(string_view fmt, format_args args) {
+  std::string message = vformat(fmt, args);
+  std::vector<std::string> lines;
+  size_t max_length = 0;
+  size_t width = 40;
+  size_t start = 0;
+
+  while (start < message.size()) {
+    size_t end = start + width;
+    if (end >= message.size()) {
+      lines.push_back(message.substr(start));
+      max_length = std::max(max_length, message.size() - start);
+      break;
+    }
+
+    size_t space_pos = message.rfind(' ', end);
+    if (space_pos == std::string::npos || space_pos < start) space_pos = end;
+
+    lines.push_back(message.substr(start, space_pos - start));
+    max_length = std::max(max_length, space_pos - start);
+    start = space_pos + 1;
+  }
+
+  print(" /{:-<{}}\\\n", "", max_length + 2);
+  for (const auto& line : lines) print(" | {:<{}} |\n", line, max_length);
+  print(" \\{:-<{}}/\n", "", max_length + 2);
+
+  println(R"(
+        \   ^__^
+         \  (oo)\_______
+            (__)\       )\/\
+                ||----w |
+                ||     ||)");
+}
 
 FMT_END_NAMESPACE
 

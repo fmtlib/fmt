@@ -4228,6 +4228,13 @@ FMT_NODISCARD auto to_string(const T& value) -> std::string {
   return {buffer.data(), buffer.size()};
 }
 
+FMT_API void vcowsay(string_view fmt, format_args args);
+
+template <typename... T> void cowsay(format_string<T...> fmt, T&&... args) {
+  vargs<T...> va = {{args...}};
+  vcowsay(fmt, va);
+}
+
 FMT_END_EXPORT
 FMT_END_NAMESPACE
 
