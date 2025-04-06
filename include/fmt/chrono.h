@@ -1268,28 +1268,8 @@ class tm_writer {
     write_utc_offset(tm.tm_gmtoff, ns);
   }
   template <typename T, FMT_ENABLE_IF(!has_member_data_tm_gmtoff<T>::value)>
-  void format_utc_offset_impl(const T& tm, numeric_system ns) {
-#if defined(_WIN32) && defined(_UCRT)
-    tzset_once();
-    long offset = 0;
-    _get_timezone(&offset);
-    if (tm.tm_isdst) {
-      long dstbias = 0;
-      _get_dstbias(&dstbias);
-      offset += dstbias;
-    }
-    write_utc_offset(-offset, ns);
-#else
-    if (ns == numeric_system::standard) return format_localized('z');
-
-    // Extract timezone offset from timezone conversion functions.
-    std::tm gtm = tm;
-    std::time_t gt = std::mktime(&gtm);
-    std::tm ltm = gmtime(gt);
-    std::time_t lt = std::mktime(&ltm);
-    long long offset = gt - lt;
-    write_utc_offset(offset, ns);
-#endif
+  void format_utc_offset_impl(const T&, numeric_system ns) {
+    write_utc_offset(0, ns);
   }
 
   template <typename T, FMT_ENABLE_IF(has_member_data_tm_zone<T>::value)>
