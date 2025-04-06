@@ -263,7 +263,11 @@ auto strftime_full_utc(TimePoint tp) -> std::string {
   return system_strftime("%Y-%m-%d %H:%M:%S", &tm);
 }
 
-TEST(chrono_test, system_clock_time_point) {
+TEST(chrono_test, sys_time) {
+  auto time =
+      fmt::sys_time<std::chrono::seconds>(std::chrono::seconds(290088000));
+  EXPECT_EQ(fmt::format("{:%z}", time), "+0000");
+
   auto t1 = std::chrono::time_point_cast<std::chrono::seconds>(
       std::chrono::system_clock::now());
   EXPECT_EQ(strftime_full_utc(t1), fmt::format("{:%Y-%m-%d %H:%M:%S}", t1));
@@ -303,7 +307,7 @@ TEST(chrono_test, system_clock_time_point) {
   }
 
   // Timezone formatters tests makes sense for localtime.
-#if FMT_HAS_C99_STRFTIME
+#if FMT_HAS_C99_STRFTIME && !defined(_WIN32)
   spec_list = {"%z", "%Z"};
 #else
   spec_list = {"%Z"};
