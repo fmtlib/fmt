@@ -22,21 +22,6 @@
 
 #include "format.h"
 
-namespace fmt_detail {
-struct time_zone {
-  template <typename Duration, typename T>
-  auto to_sys(T)
-      -> std::chrono::time_point<std::chrono::system_clock, Duration> {
-    return {};
-  }
-};
-template <typename... T> inline auto current_zone(T...) -> time_zone* {
-  return nullptr;
-}
-
-template <typename... T> inline void _tzset(T...) {}
-}  // namespace fmt_detail
-
 FMT_BEGIN_NAMESPACE
 
 // Enable safe chrono durations, unless explicitly disabled.
@@ -519,12 +504,27 @@ auto to_time_t(sys_time<Duration> time_point) -> std::time_t {
       .count();
 }
 
+namespace tz {
+struct time_zone {
+  template <typename Duration, typename T>
+  auto to_sys(T)
+      -> std::chrono::time_point<std::chrono::system_clock, Duration> {
+    return {};
+  }
+};
+template <typename... T> inline auto current_zone(T...) -> time_zone* {
+  return nullptr;
+}
+
+template <typename... T> inline void _tzset(T...) {}
+}  // namespace tz
+
 // Workaround a bug in libstdc++ which sets __cpp_lib_chrono to 201907 without
 // providing current_zone(): https://github.com/fmtlib/fmt/issues/4160.
 template <typename T> FMT_CONSTEXPR auto has_current_zone() -> bool {
   using namespace std::chrono;
-  using namespace fmt_detail;
-  return !std::is_same<decltype(current_zone()), fmt_detail::time_zone*>::value;
+  using namespace tz;
+  return !std::is_same<decltype(current_zone()), tz::time_zone*>::value;
 }
 }  // namespace detail
 
@@ -577,7 +577,7 @@ template <typename Duration,
 FMT_DEPRECATED inline auto localtime(std::chrono::local_time<Duration> time)
     -> std::tm {
   using namespace std::chrono;
-  using namespace fmt_detail;
+  using namespace detail::tz;
   return localtime(detail::to_time_t(current_zone()->to_sys<Duration>(time)));
 }
 #endif
@@ -1005,7 +1005,7 @@ struct has_member_data_tm_zone<T, void_t<decltype(T::tm_zone)>>
 
 inline void tzset_once() {
   static bool init = []() {
-    using namespace fmt_detail;
+    using namespace tz;
     _tzset();
     return false;
   }();
