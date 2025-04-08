@@ -3554,12 +3554,16 @@ FMT_CONSTEXPR void handle_dynamic_spec(
 #if FMT_USE_NONTYPE_TEMPLATE_ARGS
 template <typename T, typename Char, size_t N,
           fmt::detail::fixed_string<Char, N> Str>
-struct static_named_arg : view {
+struct static_named_arg {
   static constexpr auto name = Str.data;
 
   const T& value;
   static_named_arg(const T& v) : value(v) {}
 };
+
+template <typename T, typename Char, size_t N,
+          fmt::detail::fixed_string<Char, N> Str>
+struct is_view<static_named_arg<T, Char, N, Str>> : std::true_type {};
 
 template <typename T, typename Char, size_t N,
           fmt::detail::fixed_string<Char, N> Str>
