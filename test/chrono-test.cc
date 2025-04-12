@@ -263,101 +263,8 @@ auto strftime_full_utc(TimePoint tp) -> std::string {
   return system_strftime("%Y-%m-%d %H:%M:%S", &tm);
 }
 
-TEST(chrono_test, sys_time) {
-  auto time =
-      fmt::sys_time<std::chrono::seconds>(std::chrono::seconds(290088000));
-  EXPECT_EQ(fmt::format("{:%z}", time), "+0000");
-
-  auto t1 = std::chrono::time_point_cast<std::chrono::seconds>(
-      std::chrono::system_clock::now());
-  EXPECT_EQ(strftime_full_utc(t1), fmt::format("{:%Y-%m-%d %H:%M:%S}", t1));
-  EXPECT_EQ(strftime_full_utc(t1), fmt::format("{}", t1));
-  EXPECT_EQ(strftime_full_utc(t1), fmt::format("{:}", t1));
-
-  auto t2 = sys_time<std::chrono::seconds>(std::chrono::seconds(42));
-  EXPECT_EQ(strftime_full_utc(t2), fmt::format("{:%Y-%m-%d %H:%M:%S}", t2));
-
-  std::vector<std::string> spec_list = {
-      "%%",  "%n",  "%t",  "%Y",  "%EY", "%y",  "%Oy", "%Ey", "%C",
-      "%EC", "%G",  "%g",  "%b",  "%h",  "%B",  "%m",  "%Om", "%U",
-      "%OU", "%W",  "%OW", "%V",  "%OV", "%j",  "%d",  "%Od", "%e",
-      "%Oe", "%a",  "%A",  "%w",  "%Ow", "%u",  "%Ou", "%H",  "%OH",
-      "%I",  "%OI", "%M",  "%OM", "%S",  "%OS", "%x",  "%Ex", "%X",
-      "%EX", "%D",  "%F",  "%R",  "%T",  "%p"};
-#ifndef _WIN32
-  // Disabled on Windows because these formats are not consistent among
-  // platforms.
-  spec_list.insert(spec_list.end(), {"%c", "%Ec", "%r"});
-#elif !FMT_HAS_C99_STRFTIME
-  // Only C89 conversion specifiers when using MSVCRT instead of UCRT
-  spec_list = {"%%", "%Y", "%y", "%b", "%B", "%m", "%U", "%W", "%j", "%d",
-               "%a", "%A", "%w", "%H", "%I", "%M", "%S", "%x", "%X", "%p"};
-#endif
-  spec_list.push_back("%Y-%m-%d %H:%M:%S");
-
-  for (const auto& spec : spec_list) {
-    auto t = std::chrono::system_clock::to_time_t(t1);
-    auto tm = *std::gmtime(&t);
-
-    auto sys_output = system_strftime(spec, &tm);
-
-    auto fmt_spec = fmt::format("{{:{}}}", spec);
-    EXPECT_EQ(sys_output, fmt::format(fmt::runtime(fmt_spec), t1));
-    EXPECT_EQ(sys_output, fmt::format(fmt::runtime(fmt_spec), tm));
-  }
-
-  // Timezone formatters tests makes sense for localtime.
-#if FMT_HAS_C99_STRFTIME && !defined(_WIN32)
-  spec_list = {"%z", "%Z"};
-#else
-  spec_list = {"%Z"};
-#endif
-  for (const auto& spec : spec_list) {
-    auto t = std::chrono::system_clock::to_time_t(t1);
-    auto tm = *std::localtime(&t);
-
-    auto sys_output = system_strftime(spec, &tm);
-
-    auto fmt_spec = fmt::format("{{:{}}}", spec);
-    EXPECT_EQ(sys_output, fmt::format(fmt::runtime(fmt_spec), tm));
-
-    if (spec == "%z") {
-      sys_output.insert(sys_output.end() - 2, 1, ':');
-      EXPECT_EQ(sys_output, fmt::format("{:%Ez}", tm));
-      EXPECT_EQ(sys_output, fmt::format("{:%Oz}", tm));
-    }
-  }
-
-  // Separate tests for UTC, since std::time_put can use local time and ignoring
-  // the timezone in std::tm (if it presents on platform).
-  if (fmt::detail::has_member_data_tm_zone<std::tm>::value) {
-    auto t = std::chrono::system_clock::to_time_t(t1);
-    auto tm = *std::gmtime(&t);
-
-    std::vector<std::string> tz_names = {"GMT", "UTC"};
-    EXPECT_THAT(tz_names, Contains(fmt::format("{:%Z}", t1)));
-    EXPECT_THAT(tz_names, Contains(fmt::format("{:%Z}", tm)));
-  }
-
-  if (fmt::detail::has_member_data_tm_gmtoff<std::tm>::value) {
-    auto t = std::chrono::system_clock::to_time_t(t1);
-    auto tm = *std::gmtime(&t);
-
-    EXPECT_EQ(fmt::format("{:%z}", t1), "+0000");
-    EXPECT_EQ(fmt::format("{:%z}", tm), "+0000");
-
-    EXPECT_EQ(fmt::format("{:%Ez}", t1), "+00:00");
-    EXPECT_EQ(fmt::format("{:%Ez}", tm), "+00:00");
-
-    EXPECT_EQ(fmt::format("{:%Oz}", t1), "+00:00");
-    EXPECT_EQ(fmt::format("{:%Oz}", tm), "+00:00");
-  }
-}
-
-TEST(chrono_test, local_time) {
-  auto time =
-      fmt::local_time<std::chrono::seconds>(std::chrono::seconds(290088000));
-
+template <typename Time>
+void test_time(Time time) {
   EXPECT_EQ(fmt::format("{}", time), "1979-03-12 12:00:00");
   EXPECT_EQ(fmt::format("{:}", time), "1979-03-12 12:00:00");
 
@@ -417,7 +324,35 @@ TEST(chrono_test, local_time) {
   EXPECT_EQ(fmt::format("{:%r}", time), "12:00:00 PM");
 
   EXPECT_EQ(fmt::format("{:%Y-%m-%d %H:%M:%S}", time), "1979-03-12 12:00:00");
+}
 
+TEST(chrono_test, sys_time) {
+  auto time =
+      fmt::sys_time<std::chrono::seconds>(std::chrono::seconds(290088000));
+  test_time(time);
+  EXPECT_EQ(fmt::format("{:%z}", time), "+0000");
+  EXPECT_EQ(fmt::format("{:%Ez}", time), "+00:00");
+  EXPECT_EQ(fmt::format("{:%Oz}", time), "+00:00");
+
+  auto t1 = std::chrono::time_point_cast<std::chrono::seconds>(
+      std::chrono::system_clock::now());
+
+  // Separate tests for UTC, since std::time_put can use local time and ignoring
+  // the timezone in std::tm (if it presents on platform).
+  if (fmt::detail::has_member_data_tm_zone<std::tm>::value) {
+    auto t = std::chrono::system_clock::to_time_t(t1);
+    auto tm = *std::gmtime(&t);
+
+    std::vector<std::string> tz_names = {"GMT", "UTC"};
+    EXPECT_THAT(tz_names, Contains(fmt::format("{:%Z}", t1)));
+    EXPECT_THAT(tz_names, Contains(fmt::format("{:%Z}", tm)));
+  }
+}
+
+TEST(chrono_test, local_time) {
+  auto time =
+      fmt::local_time<std::chrono::seconds>(std::chrono::seconds(290088000));
+  test_time(time);
   EXPECT_THROW_MSG((void)fmt::format(fmt::runtime("{:%z}"), time),
                    fmt::format_error, "no timezone");
   EXPECT_THROW_MSG((void)fmt::format(fmt::runtime("{:%Z}"), time),
