@@ -16,7 +16,6 @@
 
 using fmt::runtime;
 using fmt::sys_time;
-using fmt::sys_time;
 using testing::Contains;
 
 #if defined(__MINGW32__) && !defined(_UCRT)
@@ -336,9 +335,31 @@ TEST(chrono_test, local_time) {
                    fmt::format_error, "no timezone");
 }
 
+template <typename T,
+          FMT_ENABLE_IF(fmt::detail::has_member_data_tm_gmtoff<T>::value)>
+bool set_gmtoff(T& time, long offset) {
+  time.tm_gmtoff = offset;
+  return true;
+}
+template <typename T,
+          FMT_ENABLE_IF(!fmt::detail::has_member_data_tm_gmtoff<T>::value)>
+bool set_gmtoff(T&, long) {
+  return false;
+}
+
 TEST(chrono_test, tm) {
   auto time = fmt::gmtime(290088000);
   test_time(time);
+  if (set_gmtoff(time, -28800)) {
+    EXPECT_EQ(fmt::format(fmt::runtime("{:%z}"), time), "-0800");
+    EXPECT_EQ(fmt::format(fmt::runtime("{:%Ez}"), time), "-08:00");
+    EXPECT_EQ(fmt::format(fmt::runtime("{:%Oz}"), time), "-08:00");
+  } else {
+    EXPECT_THROW_MSG((void)fmt::format(fmt::runtime("{:%z}"), time),
+                     fmt::format_error, "no timezone");
+    EXPECT_THROW_MSG((void)fmt::format(fmt::runtime("{:%Z}"), time),
+                     fmt::format_error, "no timezone");
+  }
 }
 
 TEST(chrono_test, daylight_savings_time_end) {
@@ -740,11 +761,11 @@ TEST(chrono_test, cpp20_duration_subsecond_support) {
     EXPECT_EQ(fmt::format("{:.6%H:%M:%S}", dur), "01:00:01.234000");
   }
   using nanoseconds_dbl = std::chrono::duration<double, std::nano>;
-  EXPECT_EQ(fmt::format("{:%S}", nanoseconds_dbl{-123456789}), "-00.123456789");
-  EXPECT_EQ(fmt::format("{:%S}", nanoseconds_dbl{9123456789}), "09.123456789");
+  EXPECT_EQ(fmt::format("{:%S}", nanoseconds_dbl(-123456789)), "-00.123456789");
+  EXPECT_EQ(fmt::format("{:%S}", nanoseconds_dbl(9123456789)), "09.123456789");
   // Verify that only the seconds part is extracted and printed.
-  EXPECT_EQ(fmt::format("{:%S}", nanoseconds_dbl{99123456789}), "39.123456789");
-  EXPECT_EQ(fmt::format("{:%S}", nanoseconds_dbl{99123000000}), "39.123000000");
+  EXPECT_EQ(fmt::format("{:%S}", nanoseconds_dbl(99123456789)), "39.123456789");
+  EXPECT_EQ(fmt::format("{:%S}", nanoseconds_dbl(99123000000)), "39.123000000");
   {
     // Now the hour is printed, and we also test if negative doubles work.
     auto dur = nanoseconds_dbl{-99123456789};
@@ -755,7 +776,7 @@ TEST(chrono_test, cpp20_duration_subsecond_support) {
   }
   // Check that durations with precision greater than std::chrono::seconds have
   // fixed precision, and print zeros even if there is no fractional part.
-  EXPECT_EQ(fmt::format("{:%S}", std::chrono::microseconds{7000000}),
+  EXPECT_EQ(fmt::format("{:%S}", std::chrono::microseconds(7000000)),
             "07.000000");
   EXPECT_EQ(fmt::format("{:%S}",
                         std::chrono::duration<long long, std::ratio<1, 3>>(1)),
@@ -775,9 +796,9 @@ TEST(chrono_test, cpp20_duration_subsecond_support) {
       "-05:27.68");
 
   // Check that floating point seconds with ratio<1,1> are printed.
-  EXPECT_EQ(fmt::format("{:%S}", std::chrono::duration<double>{1.5}),
+  EXPECT_EQ(fmt::format("{:%S}", std::chrono::duration<double>(1.5)),
             "01.500000");
-  EXPECT_EQ(fmt::format("{:%M:%S}", std::chrono::duration<double>{-61.25}),
+  EXPECT_EQ(fmt::format("{:%M:%S}", std::chrono::duration<double>(-61.25)),
             "-01:01.250000");
 }
 
