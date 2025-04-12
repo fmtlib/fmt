@@ -16,6 +16,7 @@
 
 using fmt::runtime;
 using fmt::sys_time;
+using fmt::sys_time;
 using testing::Contains;
 
 #if defined(__MINGW32__) && !defined(_UCRT)
@@ -238,8 +239,6 @@ TEST(chrono_test, format_to_empty_container) {
   EXPECT_EQ(s, "42");
 }
 
-TEST(chrono_test, empty_result) { EXPECT_EQ(fmt::format("{}", std::tm()), ""); }
-
 TEST(chrono_test, gmtime) {
   auto t = std::time(nullptr);
   auto expected = *std::gmtime(&t);
@@ -335,6 +334,11 @@ TEST(chrono_test, local_time) {
                    fmt::format_error, "no timezone");
   EXPECT_THROW_MSG((void)fmt::format(fmt::runtime("{:%Z}"), time),
                    fmt::format_error, "no timezone");
+}
+
+TEST(chrono_test, tm) {
+  auto time = fmt::gmtime(290088000);
+  test_time(time);
 }
 
 TEST(chrono_test, daylight_savings_time_end) {

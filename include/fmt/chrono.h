@@ -2206,7 +2206,8 @@ template <typename Char> struct formatter<std::tm, Char> {
   detail::arg_ref<Char> width_ref_;
 
  protected:
-  basic_string_view<Char> fmt_;
+  basic_string_view<Char> fmt_ =
+      detail::string_literal<Char, '%', 'F', ' ', '%', 'T'>();
 
   template <typename Duration, typename FormatContext>
   auto do_format(const std::tm& tm, FormatContext& ctx,
@@ -2261,10 +2262,6 @@ template <typename Char> struct formatter<std::tm, Char> {
 
 template <typename Char, typename Duration>
 struct formatter<sys_time<Duration>, Char> : formatter<std::tm, Char> {
-  FMT_CONSTEXPR formatter() {
-    this->fmt_ = detail::string_literal<Char, '%', 'F', ' ', '%', 'T'>();
-  }
-
   template <typename FormatContext>
   auto format(sys_time<Duration> val, FormatContext& ctx) const
       -> decltype(ctx.out()) {
@@ -2303,10 +2300,6 @@ struct formatter<utc_time<Duration>, Char>
 
 template <typename Duration, typename Char>
 struct formatter<local_time<Duration>, Char> : formatter<std::tm, Char> {
-  FMT_CONSTEXPR formatter() {
-    this->fmt_ = detail::string_literal<Char, '%', 'F', ' ', '%', 'T'>();
-  }
-
   FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     return this->do_parse(ctx, true);
   }
