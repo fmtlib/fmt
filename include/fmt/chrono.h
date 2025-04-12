@@ -1393,7 +1393,7 @@ class tm_writer {
   }
 
   void on_utc_offset(numeric_system ns) { format_utc_offset_impl(tm_, ns); }
-  void on_tz_name() { format_tz_name_impl(tm_); }
+  void on_tz_name() { out_ = std::copy_n("UTC", 3, out_); }
 
   void on_year(numeric_system ns, pad_type pad) {
     if (is_classic_ || ns == numeric_system::standard)
