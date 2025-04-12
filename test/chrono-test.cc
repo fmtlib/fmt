@@ -15,10 +15,8 @@
 #include "util.h"         // get_locale
 
 using fmt::runtime;
+using fmt::sys_time;
 using testing::Contains;
-
-template <typename Duration>
-using sys_time = std::chrono::time_point<std::chrono::system_clock, Duration>;
 
 #if defined(__MINGW32__) && !defined(_UCRT)
 // Only C89 conversion specifiers when using MSVCRT instead of UCRT
@@ -242,25 +240,19 @@ TEST(chrono_test, format_to_empty_container) {
 
 TEST(chrono_test, empty_result) { EXPECT_EQ(fmt::format("{}", std::tm()), ""); }
 
-auto equal(const std::tm& lhs, const std::tm& rhs) -> bool {
-  return lhs.tm_sec == rhs.tm_sec && lhs.tm_min == rhs.tm_min &&
-         lhs.tm_hour == rhs.tm_hour && lhs.tm_mday == rhs.tm_mday &&
-         lhs.tm_mon == rhs.tm_mon && lhs.tm_year == rhs.tm_year &&
-         lhs.tm_wday == rhs.tm_wday && lhs.tm_yday == rhs.tm_yday &&
-         lhs.tm_isdst == rhs.tm_isdst;
-}
-
 TEST(chrono_test, gmtime) {
   auto t = std::time(nullptr);
-  auto tm = *std::gmtime(&t);
-  EXPECT_TRUE(equal(tm, fmt::gmtime(t)));
-}
-
-template <typename TimePoint>
-auto strftime_full_utc(TimePoint tp) -> std::string {
-  auto t = std::chrono::system_clock::to_time_t(tp);
-  auto tm = *std::gmtime(&t);
-  return system_strftime("%Y-%m-%d %H:%M:%S", &tm);
+  auto expected = *std::gmtime(&t);
+  auto actual = fmt::gmtime(t);
+  EXPECT_EQ(actual.tm_sec, expected.tm_sec);
+  EXPECT_EQ(actual.tm_min, expected.tm_min);
+  EXPECT_EQ(actual.tm_hour, expected.tm_hour);
+  EXPECT_EQ(actual.tm_mday, expected.tm_mday);
+  EXPECT_EQ(actual.tm_mon, expected.tm_mon);
+  EXPECT_EQ(actual.tm_year, expected.tm_year);
+  EXPECT_EQ(actual.tm_wday, expected.tm_wday);
+  EXPECT_EQ(actual.tm_yday, expected.tm_yday);
+  EXPECT_EQ(actual.tm_isdst, expected.tm_isdst);
 }
 
 template <typename Time> void test_time(Time time) {
@@ -356,8 +348,6 @@ TEST(chrono_test, daylight_savings_time_end) {
       fmt::local_time<std::chrono::seconds>(std::chrono::seconds(1729998300));
   EXPECT_EQ(fmt::format("{}", t), "2024-10-27 03:05:00");
 }
-
-#ifndef FMT_STATIC_THOUSANDS_SEPARATOR
 
 TEST(chrono_test, format_default) {
   EXPECT_EQ(fmt::format("{}", std::chrono::seconds(42)), "42s");
@@ -535,12 +525,12 @@ auto format_tm(const std::tm& time, fmt::string_view spec,
 TEST(chrono_test, locale) {
   auto loc = get_locale("ja_JP.utf8");
   if (loc == std::locale::classic()) return;
-#  define EXPECT_TIME(spec, time, duration)                     \
-    {                                                           \
-      auto jp_loc = std::locale("ja_JP.utf8");                  \
-      EXPECT_EQ(format_tm(time, spec, jp_loc),                  \
-                fmt::format(jp_loc, "{:L" spec "}", duration)); \
-    }
+#define EXPECT_TIME(spec, time, duration)                     \
+  {                                                           \
+    auto jp_loc = std::locale("ja_JP.utf8");                  \
+    EXPECT_EQ(format_tm(time, spec, jp_loc),                  \
+              fmt::format(jp_loc, "{:L" spec "}", duration)); \
+  }
   EXPECT_TIME("%OH", make_hour(14), std::chrono::hours(14));
   EXPECT_TIME("%OI", make_hour(14), std::chrono::hours(14));
   EXPECT_TIME("%OM", make_minute(42), std::chrono::minutes(42));
@@ -787,8 +777,6 @@ TEST(chrono_test, cpp20_duration_subsecond_support) {
             "-01:01.250000");
 }
 
-#endif  // FMT_STATIC_THOUSANDS_SEPARATOR
-
 // Disable the utc_clock test for windows, as the icu.dll used for tzdb
 // (time zone database) is not shipped with many windows versions.
 #if FMT_USE_UTC_TIME && !defined(_WIN32)
@@ -861,19 +849,11 @@ TEST(chrono_test, timestamp_sub_seconds) {
   auto t8 =
       sys_time<std::chrono::nanoseconds>(std::chrono::nanoseconds(123456789));
   EXPECT_EQ(fmt::format("{:%S}", t8), "00.123456789");
+  EXPECT_EQ(fmt::format("{:%T}", t8), "00:00:00.123456789");
 
-  auto t9 = std::chrono::time_point_cast<std::chrono::nanoseconds>(
-      std::chrono::system_clock::now());
-  auto t9_sec = std::chrono::time_point_cast<std::chrono::seconds>(t9);
-  auto t9_sub_sec_part = fmt::format("{0:09}", (t9 - t9_sec).count());
-  EXPECT_EQ(fmt::format("{}.{}", strftime_full_utc(t9_sec), t9_sub_sec_part),
-            fmt::format("{:%Y-%m-%d %H:%M:%S}", t9));
-  EXPECT_EQ(fmt::format("{}.{}", strftime_full_utc(t9_sec), t9_sub_sec_part),
-            fmt::format("{:%Y-%m-%d %T}", t9));
-
-  auto t10 =
+  auto t9 =
       sys_time<std::chrono::milliseconds>(std::chrono::milliseconds(2000));
-  EXPECT_EQ(fmt::format("{:%S}", t10), "02.000");
+  EXPECT_EQ(fmt::format("{:%S}", t9), "02.000");
 
   auto epoch = sys_time<std::chrono::milliseconds>();
   auto d = std::chrono::milliseconds(250);
