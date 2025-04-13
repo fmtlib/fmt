@@ -337,26 +337,43 @@ TEST(chrono_test, local_time) {
 
 template <typename T,
           FMT_ENABLE_IF(fmt::detail::has_member_data_tm_gmtoff<T>::value)>
-bool set_gmtoff(T& time, long offset) {
+bool set_tm_gmtoff(T& time, long offset) {
   time.tm_gmtoff = offset;
   return true;
 }
 template <typename T,
           FMT_ENABLE_IF(!fmt::detail::has_member_data_tm_gmtoff<T>::value)>
-bool set_gmtoff(T&, long) {
+bool set_tm_gmtoff(T&, long) {
+  return false;
+}
+
+template <typename T,
+          FMT_ENABLE_IF(fmt::detail::has_member_data_tm_zone<T>::value)>
+bool set_tm_zone(T& time, char* tz) {
+  time.tm_zone = tz;
+  return true;
+}
+template <typename T,
+          FMT_ENABLE_IF(!fmt::detail::has_member_data_tm_zone<T>::value)>
+bool set_tm_zone(T&, char*) {
   return false;
 }
 
 TEST(chrono_test, tm) {
   auto time = fmt::gmtime(290088000);
   test_time(time);
-  if (set_gmtoff(time, -28800)) {
+  if (set_tm_gmtoff(time, -28800)) {
     EXPECT_EQ(fmt::format(fmt::runtime("{:%z}"), time), "-0800");
     EXPECT_EQ(fmt::format(fmt::runtime("{:%Ez}"), time), "-08:00");
     EXPECT_EQ(fmt::format(fmt::runtime("{:%Oz}"), time), "-08:00");
   } else {
     EXPECT_THROW_MSG((void)fmt::format(fmt::runtime("{:%z}"), time),
                      fmt::format_error, "no timezone");
+  }
+  char tz[] = "EET";
+  if (set_tm_zone(time, tz)) {
+    EXPECT_EQ(fmt::format(fmt::runtime("{:%Z}"), time), "EET");
+  } else {
     EXPECT_THROW_MSG((void)fmt::format(fmt::runtime("{:%Z}"), time),
                      fmt::format_error, "no timezone");
   }
