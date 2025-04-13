@@ -1694,10 +1694,9 @@ class get_locale {
   }
 };
 
-template <typename FormatContext, typename OutputIt, typename Rep,
-          typename Period>
+template <typename Char, typename OutputIt, typename Rep, typename Period>
 struct duration_formatter {
-  FormatContext& context;
+  locale_ref locale;
   OutputIt out;
   int precision;
   bool localized = false;
@@ -1711,15 +1710,11 @@ struct duration_formatter {
   using milliseconds = std::chrono::duration<rep, std::milli>;
   bool negative;
 
-  using char_type = typename FormatContext::char_type;
-  using tm_writer_type = tm_writer<OutputIt, char_type>;
+  using tm_writer_type = tm_writer<OutputIt, Char>;
 
-  duration_formatter(FormatContext& ctx, OutputIt o,
+  duration_formatter(locale_ref loc, OutputIt o,
                      std::chrono::duration<Rep, Period> d)
-      : context(ctx),
-        out(o),
-        val(static_cast<rep>(d.count())),
-        negative(false) {
+      : locale(loc), out(o), val(static_cast<rep>(d.count())), negative(false) {
     if (d.count() < 0) {
       val = 0 - val;
       negative = true;
@@ -1784,7 +1779,7 @@ struct duration_formatter {
     if (width > num_digits) {
       out = detail::write_padding(out, pad, width - num_digits);
     }
-    out = format_decimal<char_type>(out, n, num_digits);
+    out = format_decimal<Char>(out, n, num_digits);
   }
 
   void write_nan() { std::copy_n("nan", 3, out); }
@@ -1792,14 +1787,14 @@ struct duration_formatter {
   template <typename Callback, typename... Args>
   void format_tm(const tm& time, Callback cb, Args... args) {
     if (isnan(val)) return write_nan();
-    get_locale loc(localized, context.locale());
+    get_locale loc(localized, locale);
     auto w = tm_writer_type(loc, out, time);
     (w.*cb)(args...);
     out = w.out();
   }
 
-  void on_text(const char_type* begin, const char_type* end) {
-    copy<char_type>(begin, end, out);
+  void on_text(const Char* begin, const Char* end) {
+    copy<Char>(begin, end, out);
   }
 
   // These are not implemented because durations don't have date information.
@@ -1871,10 +1866,10 @@ struct duration_formatter {
         if (negative) *out++ = '-';
         if (buf.size() < 2 || buf[1] == '.')
           out = detail::write_padding(out, pad);
-        out = copy<char_type>(buf.begin(), buf.end(), out);
+        out = copy<Char>(buf.begin(), buf.end(), out);
       } else {
         write(second(), 2, pad);
-        write_fractional_seconds<char_type>(
+        write_fractional_seconds<Char>(
             out, std::chrono::duration<rep, Period>(val), precision);
       }
       return;
@@ -1916,12 +1911,10 @@ struct duration_formatter {
   void on_duration_value() {
     if (handle_nan_inf()) return;
     write_sign();
-    out = format_duration_value<char_type>(out, val, precision);
+    out = format_duration_value<Char>(out, val, precision);
   }
 
-  void on_duration_unit() {
-    out = format_duration_unit<char_type, Period>(out);
-  }
+  void on_duration_unit() { out = format_duration_unit<Char, Period>(out); }
 };
 
 }  // namespace detail
@@ -2181,8 +2174,8 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
       detail::format_duration_unit<Char, Period>(out);
     } else {
       using duration_formatter =
-          detail::duration_formatter<FormatContext, decltype(out), Rep, Period>;
-      auto f = duration_formatter(ctx, out, d);
+          detail::duration_formatter<Char, decltype(out), Rep, Period>;
+      auto f = duration_formatter(ctx.locale(), out, d);
       f.precision = precision;
       f.localized = localized_;
       detail::parse_chrono_format(begin, end, f);
