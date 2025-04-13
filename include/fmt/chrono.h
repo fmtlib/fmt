@@ -2123,7 +2123,6 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
   format_specs specs_;
   detail::arg_ref<Char> width_ref_;
   detail::arg_ref<Char> precision_ref_;
-  bool localized_ = false;
   basic_string_view<Char> fmt_;
 
  public:
@@ -2146,7 +2145,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
       it = detail::parse_precision(it, end, specs_, precision_ref_, ctx);
     }
     if (it != end && *it == 'L') {
-      localized_ = true;
+      specs_.set_localized();
       ++it;
     }
     end = detail::parse_chrono_format(it, end, checker);
@@ -2177,7 +2176,7 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
           detail::duration_formatter<Char, decltype(out), Rep, Period>;
       auto f = duration_formatter(ctx.locale(), out, d);
       f.precision = precision;
-      f.localized = localized_;
+      f.localized = specs_.localized();
       detail::parse_chrono_format(begin, end, f);
     }
     return detail::write(
