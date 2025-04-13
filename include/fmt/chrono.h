@@ -991,16 +991,28 @@ inline auto tm_mon_short_name(int mon) -> const char* {
 }
 
 template <typename T, typename = void>
-struct has_member_data_tm_gmtoff : std::false_type {};
+struct has_tm_gmtoff : std::false_type {};
 template <typename T>
-struct has_member_data_tm_gmtoff<T, void_t<decltype(T::tm_gmtoff)>>
-    : std::true_type {};
+struct has_tm_gmtoff<T, void_t<decltype(T::tm_gmtoff)>> : std::true_type {};
 
-template <typename T, typename = void>
-struct has_member_data_tm_zone : std::false_type {};
+template <typename T, typename = void> struct has_tm_zone : std::false_type {};
 template <typename T>
-struct has_member_data_tm_zone<T, void_t<decltype(T::tm_zone)>>
-    : std::true_type {};
+struct has_tm_zone<T, void_t<decltype(T::tm_zone)>> : std::true_type {};
+
+template <typename T, FMT_ENABLE_IF(has_tm_zone<T>::value)>
+bool set_tm_zone(T& time, char* tz) {
+  time.tm_zone = tz;
+  return true;
+}
+template <typename T, FMT_ENABLE_IF(!has_tm_zone<T>::value)>
+bool set_tm_zone(T&, char*) {
+  return false;
+}
+
+inline char* utc() {
+  static char tz[] = "UTC";
+  return tz;
+}
 
 // Converts value to Int and checks that it's in the range [0, upper).
 template <typename T, typename Int, FMT_ENABLE_IF(std::is_integral<T>::value)>
@@ -1260,25 +1272,22 @@ class tm_writer {
     write2(static_cast<int>(offset % 60));
   }
 
-  template <typename T, FMT_ENABLE_IF(has_member_data_tm_gmtoff<T>::value)>
-  void format_utc_offset_impl(const T& tm, numeric_system ns) {
+  template <typename T, FMT_ENABLE_IF(has_tm_gmtoff<T>::value)>
+  void format_utc_offset(const T& tm, numeric_system ns) {
     write_utc_offset(tm.tm_gmtoff, ns);
   }
-  template <typename T, FMT_ENABLE_IF(!has_member_data_tm_gmtoff<T>::value)>
-  void format_utc_offset_impl(const T&, numeric_system ns) {
+  template <typename T, FMT_ENABLE_IF(!has_tm_gmtoff<T>::value)>
+  void format_utc_offset(const T&, numeric_system ns) {
     write_utc_offset(0, ns);
   }
 
-  template <typename T, FMT_ENABLE_IF(has_member_data_tm_zone<T>::value)>
-  void format_tz_name_impl(const T& tm) {
-    if (is_classic_)
-      out_ = write_tm_str<Char>(out_, tm.tm_zone, loc_);
-    else
-      format_localized('Z');
+  template <typename T, FMT_ENABLE_IF(has_tm_zone<T>::value)>
+  void format_tz_name(const T& tm) {
+    out_ = write_tm_str<Char>(out_, tm.tm_zone, loc_);
   }
-  template <typename T, FMT_ENABLE_IF(!has_member_data_tm_zone<T>::value)>
-  void format_tz_name_impl(const T&) {
-    format_localized('Z');
+  template <typename T, FMT_ENABLE_IF(!has_tm_zone<T>::value)>
+  void format_tz_name(const T&) {
+    out_ = std::copy_n(utc(), 3, out_);
   }
 
   void format_localized(char format, char modifier = 0) {
@@ -1389,8 +1398,8 @@ class tm_writer {
     out_ = copy<Char>(std::begin(buf) + offset, std::end(buf), out_);
   }
 
-  void on_utc_offset(numeric_system ns) { format_utc_offset_impl(tm_, ns); }
-  void on_tz_name() { format_tz_name_impl(tm_); }
+  void on_utc_offset(numeric_system ns) { format_utc_offset(tm_, ns); }
+  void on_tz_name() { format_tz_name(tm_); }
 
   void on_year(numeric_system ns, pad_type pad) {
     if (is_classic_ || ns == numeric_system::standard)
@@ -1987,7 +1996,6 @@ class year_month_day {
 template <typename Char>
 struct formatter<weekday, Char> : private formatter<std::tm, Char> {
  private:
-  bool localized_ = false;
   bool use_tm_formatter_ = false;
 
  public:
@@ -1995,8 +2003,7 @@ struct formatter<weekday, Char> : private formatter<std::tm, Char> {
     auto it = ctx.begin(), end = ctx.end();
     if (it != end && *it == 'L') {
       ++it;
-      localized_ = true;
-      return it;
+      this->set_localized();
     }
     use_tm_formatter_ = it != end && *it != '}';
     return use_tm_formatter_ ? formatter<std::tm, Char>::parse(ctx) : it;
@@ -2007,7 +2014,7 @@ struct formatter<weekday, Char> : private formatter<std::tm, Char> {
     auto time = std::tm();
     time.tm_wday = static_cast<int>(wd.c_encoding());
     if (use_tm_formatter_) return formatter<std::tm, Char>::format(time, ctx);
-    detail::get_locale loc(localized_, ctx.locale());
+    detail::get_locale loc(this->localized(), ctx.locale());
     auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
     w.on_abbr_weekday();
     return w.out();
@@ -2041,7 +2048,6 @@ struct formatter<day, Char> : private formatter<std::tm, Char> {
 template <typename Char>
 struct formatter<month, Char> : private formatter<std::tm, Char> {
  private:
-  bool localized_ = false;
   bool use_tm_formatter_ = false;
 
  public:
@@ -2049,8 +2055,7 @@ struct formatter<month, Char> : private formatter<std::tm, Char> {
     auto it = ctx.begin(), end = ctx.end();
     if (it != end && *it == 'L') {
       ++it;
-      localized_ = true;
-      return it;
+      this->set_localized();
     }
     use_tm_formatter_ = it != end && *it != '}';
     return use_tm_formatter_ ? formatter<std::tm, Char>::parse(ctx) : it;
@@ -2061,7 +2066,7 @@ struct formatter<month, Char> : private formatter<std::tm, Char> {
     auto time = std::tm();
     time.tm_mon = static_cast<int>(static_cast<unsigned>(m)) - 1;
     if (use_tm_formatter_) return formatter<std::tm, Char>::format(time, ctx);
-    detail::get_locale loc(localized_, ctx.locale());
+    detail::get_locale loc(this->localized(), ctx.locale());
     auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
     w.on_abbr_month();
     return w.out();
@@ -2195,6 +2200,9 @@ template <typename Char> struct formatter<std::tm, Char> {
       detail::string_literal<Char, '%', 'F', ' ', '%', 'T'>();
 
  protected:
+  auto localized() const -> bool { return specs_.localized(); }
+  FMT_CONSTEXPR void set_localized() { specs_.set_localized(); }
+
   FMT_CONSTEXPR auto do_parse(parse_context<Char>& ctx, bool has_timezone)
       -> const Char* {
     auto it = ctx.begin(), end = ctx.end();
@@ -2207,6 +2215,11 @@ template <typename Char> struct formatter<std::tm, Char> {
     if ((c >= '0' && c <= '9') || c == '{') {
       it = detail::parse_width(it, end, specs_, width_ref_, ctx);
       if (it == end) return it;
+    }
+
+    if (*it == 'L') {
+      specs_.set_localized();
+      ++it;
     }
 
     end = detail::parse_chrono_format(it, end,
@@ -2225,7 +2238,7 @@ template <typename Char> struct formatter<std::tm, Char> {
     detail::handle_dynamic_spec(specs.dynamic_width(), specs.width, width_ref_,
                                 ctx);
 
-    auto loc_ref = ctx.locale();
+    auto loc_ref = specs.localized() ? ctx.locale() : detail::locale_ref();
     detail::get_locale loc(static_cast<bool>(loc_ref), loc_ref);
     auto w = detail::tm_writer<basic_appender<Char>, Char, Duration>(
         loc, out, tm, subsecs);
@@ -2236,7 +2249,7 @@ template <typename Char> struct formatter<std::tm, Char> {
 
  public:
   FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
-    return do_parse(ctx, detail::has_member_data_tm_gmtoff<std::tm>::value);
+    return do_parse(ctx, detail::has_tm_gmtoff<std::tm>::value);
   }
 
   template <typename FormatContext>
@@ -2261,6 +2274,7 @@ struct formatter<sys_time<Duration>, Char> : private formatter<std::tm, Char> {
     if (detail::const_check(
             period::num == 1 && period::den == 1 &&
             !std::is_floating_point<typename Duration::rep>::value)) {
+      detail::set_tm_zone(tm, detail::utc());
       return formatter<std::tm, Char>::format(tm, ctx);
     }
     Duration epoch = val.time_since_epoch();
@@ -2268,10 +2282,12 @@ struct formatter<sys_time<Duration>, Char> : private formatter<std::tm, Char> {
         epoch - detail::duration_cast<std::chrono::seconds>(epoch));
     if (subsecs.count() < 0) {
       auto second = detail::duration_cast<Duration>(std::chrono::seconds(1));
-      if (tm.tm_sec != 0)
+      if (tm.tm_sec != 0) {
         --tm.tm_sec;
-      else
+      } else {
         tm = gmtime(val - second);
+        detail::set_tm_zone(tm, detail::utc());
+      }
       subsecs += second;
     }
     return formatter<std::tm, Char>::do_format(tm, ctx, &subsecs);

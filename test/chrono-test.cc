@@ -335,27 +335,13 @@ TEST(chrono_test, local_time) {
                    fmt::format_error, "no timezone");
 }
 
-template <typename T,
-          FMT_ENABLE_IF(fmt::detail::has_member_data_tm_gmtoff<T>::value)>
+template <typename T, FMT_ENABLE_IF(fmt::detail::has_tm_gmtoff<T>::value)>
 bool set_tm_gmtoff(T& time, long offset) {
   time.tm_gmtoff = offset;
   return true;
 }
-template <typename T,
-          FMT_ENABLE_IF(!fmt::detail::has_member_data_tm_gmtoff<T>::value)>
+template <typename T, FMT_ENABLE_IF(!fmt::detail::has_tm_gmtoff<T>::value)>
 bool set_tm_gmtoff(T&, long) {
-  return false;
-}
-
-template <typename T,
-          FMT_ENABLE_IF(fmt::detail::has_member_data_tm_zone<T>::value)>
-bool set_tm_zone(T& time, char* tz) {
-  time.tm_zone = tz;
-  return true;
-}
-template <typename T,
-          FMT_ENABLE_IF(!fmt::detail::has_member_data_tm_zone<T>::value)>
-bool set_tm_zone(T&, char*) {
   return false;
 }
 
@@ -371,7 +357,7 @@ TEST(chrono_test, tm) {
                      fmt::format_error, "no timezone");
   }
   char tz[] = "EET";
-  if (set_tm_zone(time, tz)) {
+  if (fmt::detail::set_tm_zone(time, tz)) {
     EXPECT_EQ(fmt::format(fmt::runtime("{:%Z}"), time), "EET");
   } else {
     EXPECT_THROW_MSG((void)fmt::format(fmt::runtime("{:%Z}"), time),
@@ -727,8 +713,8 @@ TEST(chrono_test, weekday) {
   if (loc != std::locale::classic()) {
     auto saturdays = std::vector<std::string>{"sáb", "sá.", "sáb."};
     EXPECT_THAT(saturdays, Contains(fmt::format(loc, "{:L}", sat)));
-    EXPECT_THAT(saturdays, Contains(fmt::format(loc, "{:%a}", sat)));
-    EXPECT_THAT(saturdays, Contains(fmt::format(loc, "{:%a}", tm)));
+    EXPECT_THAT(saturdays, Contains(fmt::format(loc, "{:L%a}", sat)));
+    EXPECT_THAT(saturdays, Contains(fmt::format(loc, "{:L%a}", tm)));
   }
 }
 
@@ -1032,6 +1018,6 @@ TEST(chrono_test, year_month_day) {
   if (loc != std::locale::classic()) {
     auto months = std::vector<std::string>{"ene.", "ene"};
     EXPECT_THAT(months, Contains(fmt::format(loc, "{:L}", month)));
-    EXPECT_THAT(months, Contains(fmt::format(loc, "{:%b}", month)));
+    EXPECT_THAT(months, Contains(fmt::format(loc, "{:L%b}", month)));
   }
 }
