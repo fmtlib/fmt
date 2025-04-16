@@ -1694,27 +1694,28 @@ class get_locale {
   }
 };
 
-template <typename Char, typename OutputIt, typename Rep, typename Period>
+template <typename Char, typename Rep, typename Period>
 struct duration_formatter {
-  locale_ref locale;
-  OutputIt out;
-  int precision;
-  bool localized = false;
+  using iterator = basic_appender<Char>;
+  iterator out;
   // rep is unsigned to avoid overflow.
   using rep =
       conditional_t<std::is_integral<Rep>::value && sizeof(Rep) < sizeof(int),
                     unsigned, typename make_unsigned_or_unchanged<Rep>::type>;
   rep val;
+  int precision;
+  locale_ref locale;
+  bool localized = false;
   using seconds = std::chrono::duration<rep>;
   seconds s;
   using milliseconds = std::chrono::duration<rep, std::milli>;
   bool negative;
 
-  using tm_writer_type = tm_writer<OutputIt, Char>;
+  using tm_writer_type = tm_writer<iterator, Char>;
 
-  duration_formatter(locale_ref loc, OutputIt o,
-                     std::chrono::duration<Rep, Period> d)
-      : locale(loc), out(o), val(static_cast<rep>(d.count())), negative(false) {
+  duration_formatter(iterator o, std::chrono::duration<Rep, Period> d,
+                     locale_ref loc)
+      : out(o), val(static_cast<rep>(d.count())), locale(loc), negative(false) {
     if (d.count() < 0) {
       val = 0 - val;
       negative = true;
@@ -2172,9 +2173,8 @@ struct formatter<std::chrono::duration<Rep, Period>, Char> {
       out = detail::format_duration_value<Char>(out, d.count(), precision);
       detail::format_duration_unit<Char, Period>(out);
     } else {
-      using duration_formatter =
-          detail::duration_formatter<Char, decltype(out), Rep, Period>;
-      auto f = duration_formatter(ctx.locale(), out, d);
+      auto f =
+          detail::duration_formatter<Char, Rep, Period>(out, d, ctx.locale());
       f.precision = precision;
       f.localized = specs_.localized();
       detail::parse_chrono_format(begin, end, f);
