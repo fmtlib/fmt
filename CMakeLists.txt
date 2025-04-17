@@ -172,6 +172,9 @@ option(FMT_OS "Include OS-specific APIs." ON)
 option(FMT_MODULE "Build a module instead of a traditional library." OFF)
 option(FMT_SYSTEM_HEADERS "Expose headers with marking them as system." OFF)
 option(FMT_UNICODE "Enable Unicode support." ON)
+if (APPLE)
+  option(FMT_FRAMEWORK "Build as Apple Frameworks" OFF)
+endif ()
 
 if (FMT_TEST AND FMT_MODULE)
   # The tests require {fmt} to be compiled as traditional library
@@ -197,6 +200,7 @@ math(EXPR CPACK_PACKAGE_VERSION_MINOR ${CMAKE_MATCH_2})
 math(EXPR CPACK_PACKAGE_VERSION_PATCH ${CMAKE_MATCH_3})
 join(FMT_VERSION ${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.
                  ${CPACK_PACKAGE_VERSION_PATCH})
+join(FMT_SHORT_VERSION ${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR})
 message(STATUS "{fmt} version: ${FMT_VERSION}")
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
@@ -348,6 +352,24 @@ set_target_properties(fmt PROPERTIES
   COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
   COMPILE_PDB_NAME "fmt"
   COMPILE_PDB_NAME_DEBUG "fmt${FMT_DEBUG_POSTFIX}")
+if (FMT_FRAMEWORK)
+  set_target_properties(fmt PROPERTIES
+    FRAMEWORK TRUE
+    FRAMEWORK_VERSION "${FMT_VERSION}"
+    PRODUCT_BUNDLE_IDENTIFIER "github.com/fmtlib/fmt"
+    XCODE_ATTRIBUTE_INSTALL_PATH "@rpath"
+    # PUBLIC_HEADER "${FMT_HEADERS}"
+    # OUTPUT_NAME "fmt"
+    XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
+    XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+    XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO"
+    MACOSX_FRAMEWORK_IDENTIFIER "github.com/fmtlib/fmt"
+    MACOSX_FRAMEWORK_BUNDLE_VERSION "${FMT_VERSION}"
+    MACOSX_FRAMEWORK_SHORT_VERSION_STRING "${FMT_SHORT_VERSION}"
+    MACOSX_RPATH TRUE
+    # RESOURCE ${PublicHeaders}
+    )
+endif ()
 
 # Set FMT_LIB_NAME for pkg-config fmt.pc. We cannot use the OUTPUT_NAME target
 # property because it's not set by default.
@@ -436,6 +458,7 @@ if (FMT_INSTALL)
           EXPORT ${targets_export_name}
           LIBRARY DESTINATION ${FMT_LIB_DIR}
           ARCHIVE DESTINATION ${FMT_LIB_DIR}
+          FRAMEWORK DESTINATION "${CMAKE_INSTALL_LIBDIR}" COMPONENT runtime OPTIONAL
           PUBLIC_HEADER DESTINATION "${FMT_INC_DIR}/fmt"
           RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
           ${INSTALL_FILE_SET})
