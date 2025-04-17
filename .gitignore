@@ -1,6 +1,8 @@
 *.a
 *.so*
 *.xcodeproj
+*.framework
+.xcframework
 *~
 .vscode/
 .vs/
@@ -15,7 +17,7 @@ CTestTestfile.cmake
 FMT.build
 Makefile
 bin/
-build/
+build*/
 cmake_install.cmake
 fmt-*.cmake
 fmt.pc
