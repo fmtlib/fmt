@@ -220,7 +220,7 @@ You can also write a formatter for a hierarchy of classes:
 ```c++
 // demo.h:
 #include <type_traits>
-#include <fmt/core.h>
+#include <fmt/format.h>
 
 struct A {
   virtual ~A() {}
@@ -403,7 +403,7 @@ All formatting is locale-independent by default. Use the `'L'` format
 specifier to insert the appropriate number separator characters from the
 locale:
 
-    #include <fmt/core.h>
+    #include <fmt/format.h>
     #include <locale>
 
     std::locale::global(std::locale("en_US.UTF-8"));
