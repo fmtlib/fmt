@@ -2555,14 +2555,11 @@ TEST(incomplete_type_test, format) {
   EXPECT_EQ(fmt::format("{}", external_instance), "42");
 }
 
-struct incomplete_type {
-  int i;
-};
+struct incomplete_type {};
+const incomplete_type& external_instance = {};
 
-const incomplete_type& external_instance = {42};
-
-auto fmt::formatter<incomplete_type>::format(const incomplete_type& x,
+auto fmt::formatter<incomplete_type>::format(const incomplete_type&,
                                              fmt::context& ctx) const
     -> fmt::appender {
-  return formatter<int>::format(x.i, ctx);
+  return formatter<int>::format(42, ctx);
 }
