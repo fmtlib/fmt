@@ -1613,7 +1613,7 @@ constexpr auto convert_float(T value) -> convert_float_result<T> {
 }
 
 template <typename Char, typename OutputIt>
-FMT_NOINLINE FMT_CONSTEXPR auto fill(OutputIt it, size_t n,
+FMT_CONSTEXPR FMT_NOINLINE auto fill(OutputIt it, size_t n,
                                      const basic_specs& specs) -> OutputIt {
   auto fill_size = specs.fill_size();
   if (fill_size == 1) return detail::fill_n(it, n, specs.fill_unit<Char>());
