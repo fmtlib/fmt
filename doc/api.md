@@ -473,9 +473,9 @@ chrono-format-specifications).
     #include <fmt/chrono.h>
 
     int main() {
-      std::time_t t = std::time(nullptr);
+      auto now = std::chrono::system_clock::now();
 
-      fmt::print("The date is {:%Y-%m-%d}.", fmt::localtime(t));
+      fmt::print("The date is {:%Y-%m-%d}.\n", now);
       // Output: The date is 2020-11-07.
       // (with 2020-11-07 replaced by the current date)
 
@@ -487,8 +487,6 @@ chrono-format-specifications).
       fmt::print("strftime-like format: {:%H:%M:%S}\n", 3h + 15min + 30s);
       // Output: strftime-like format: 03:15:30
     }
-
-::: localtime(std::time_t)
 
 ::: gmtime(std::time_t)
 
