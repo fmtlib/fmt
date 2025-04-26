@@ -617,7 +617,7 @@ template <typename Char> class basic_string_view {
 
 using string_view = basic_string_view<char>;
 
-/// Specifies if `T` is an extended character type. Can be specialized by users.
+// DEPRECATED! Will be merged with is_char and moved to detail.
 template <typename T> struct is_xchar : std::false_type {};
 template <> struct is_xchar<wchar_t> : std::true_type {};
 template <> struct is_xchar<char16_t> : std::true_type {};
@@ -626,7 +626,7 @@ template <> struct is_xchar<char32_t> : std::true_type {};
 template <> struct is_xchar<char8_t> : std::true_type {};
 #endif
 
-// DEPRECATED! Will be replaced with an alias to prevent specializations.
+// Specifies if `T` is a character (code unit) type.
 template <typename T> struct is_char : is_xchar<T> {};
 template <> struct is_char<char> : std::true_type {};
 
