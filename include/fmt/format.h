@@ -721,11 +721,10 @@ struct float128 {};
 
 template <typename T> using is_float128 = std::is_same<T, float128>;
 
-template <typename T>
-using is_floating_point =
-    bool_constant<std::is_floating_point<T>::value || is_float128<T>::value>;
+template <typename T> struct is_floating_point : std::is_floating_point<T> {};
+template <> struct is_floating_point<float128> : std::true_type {};
 
-template <typename T, bool = std::is_floating_point<T>::value>
+template <typename T, bool = is_floating_point<T>::value>
 struct is_fast_float : bool_constant<std::numeric_limits<T>::is_iec559 &&
                                      sizeof(T) <= sizeof(double)> {};
 template <typename T> struct is_fast_float<T, false> : std::false_type {};
@@ -2472,8 +2471,8 @@ template <typename T>
 struct has_isfinite<T, enable_if_t<sizeof(std::isfinite(T())) != 0>>
     : std::true_type {};
 
-template <typename T, FMT_ENABLE_IF(std::is_floating_point<T>::value&&
-                                        has_isfinite<T>::value)>
+template <typename T,
+          FMT_ENABLE_IF(is_floating_point<T>::value&& has_isfinite<T>::value)>
 FMT_CONSTEXPR20 auto isfinite(T value) -> bool {
   constexpr T inf = T(std::numeric_limits<double>::infinity());
   if (is_constant_evaluated())

@@ -307,7 +307,6 @@ struct slow_float {
 auto format_as(slow_float f) -> float { return f; }
 
 namespace std {
-template <> struct is_floating_point<double_double> : std::true_type {};
 template <> struct numeric_limits<double_double> {
   // is_iec559 is true for double-double in libstdc++.
   static constexpr bool is_iec559 = true;
@@ -315,12 +314,13 @@ template <> struct numeric_limits<double_double> {
   static constexpr int digits10 = 33;
 };
 
-template <> struct is_floating_point<slow_float> : std::true_type {};
 template <> struct numeric_limits<slow_float> : numeric_limits<float> {};
 }  // namespace std
 
 FMT_BEGIN_NAMESPACE
 namespace detail {
+template <> struct is_floating_point<double_double> : std::true_type {};
+template <> struct is_floating_point<slow_float> : std::true_type {};
 template <> struct is_fast_float<slow_float> : std::false_type {};
 namespace dragonbox {
 template <> struct float_info<slow_float> {
