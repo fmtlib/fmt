@@ -2563,3 +2563,23 @@ auto fmt::formatter<incomplete_type>::format(const incomplete_type&,
     -> fmt::appender {
   return formatter<int>::format(42, ctx);
 }
+
+namespace {
+
+template <size_t N>
+struct fixed_string {
+    char data[N] = {};
+
+    constexpr fixed_string(char const (&m)[N]) {
+        for (size_t i = 0; i != N; ++i) {
+            data[i] = m[i];
+        }
+    }
+};
+
+}
+
+TEST(format_test, fixed_string_constant) {
+  static constexpr auto f = fixed_string<5>("x={}");
+  EXPECT_EQ(fmt::format(f.data, 42), "x=42");
+}
