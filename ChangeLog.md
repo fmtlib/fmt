@@ -15,6 +15,26 @@
 - Optimized `text_style` using bit packing
   (https://github.com/fmtlib/fmt/pull/4363). Thanks @LocalSpook.
 
+- Added support for incomplete types (https://github.com/fmtlib/fmt/issues/3180,
+  https://github.com/fmtlib/fmt/pull/4383). Thanks @LocalSpook.
+
+- Fixed `fmt::println` usage with `FMT_ENFORCE_COMPILE_STRING` and legacy
+  compile-time checks (https://github.com/fmtlib/fmt/pull/4407).
+  Thanks @madmaxoft.
+
+- Removed legacy header `fmt/core.h` from docs
+  (https://github.com/fmtlib/fmt/pull/4421,
+  https://github.com/fmtlib/fmt/pull/4422). Thanks @krzysztofkortas.
+
+- Worked around a bug in MSVC v141 (https://github.com/fmtlib/fmt/issues/4412,
+  https://github.com/fmtlib/fmt/pull/4413). Thanks @hirohira9119.
+
+- Fixed a CMake error when setting `CMAKE_MODULE_PATH` in the pedantic mode
+  (https://github.com/fmtlib/fmt/pull/4426). Thanks @rlalik.
+
+- Updated the Bazel config (https://github.com/fmtlib/fmt/pull/4400).
+  Thanks @Vertexwahn.
+
 # 11.1.4 - 2025-02-26
 
 - Fixed ABI compatibility with earlier 11.x versions on Windows
