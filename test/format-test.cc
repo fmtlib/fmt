@@ -2564,7 +2564,7 @@ auto fmt::formatter<incomplete_type>::format(const incomplete_type&,
   return formatter<int>::format(42, ctx);
 }
 
-#if FMT_CPLUSPLUS >= 201703L
+#if FMT_USE_CONSTEVAL
 namespace {
 
 template <size_t N>
