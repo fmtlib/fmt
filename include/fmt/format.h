@@ -117,6 +117,7 @@
 #  define FMT_NOINLINE
 #endif
 
+// GCC 4.9 doesn't support qualified names in specializations.
 namespace std {
 template <typename T> struct iterator_traits<fmt::basic_appender<T>> {
   using iterator_category = output_iterator_tag;
