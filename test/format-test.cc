@@ -2564,6 +2564,7 @@ auto fmt::formatter<incomplete_type>::format(const incomplete_type&,
   return formatter<int>::format(42, ctx);
 }
 
+#if FMT_CPLUSPLUS >= 201703L
 namespace {
 
 template <size_t N>
@@ -2583,3 +2584,4 @@ TEST(format_test, fixed_string_constant) {
   static constexpr auto f = fixed_string<5>("x={}");
   EXPECT_EQ(fmt::format(f.data, 42), "x=42");
 }
+#endif
