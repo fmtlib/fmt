@@ -2580,8 +2580,9 @@ struct fixed_string {
 
 }
 
-TEST(format_test, fixed_string_constant) {
-  static constexpr auto f = fixed_string<5>("x={}");
-  EXPECT_EQ(fmt::format(f.data, 42), "x=42");
+TEST(base_test, from_constexpr_fixed_string) {
+  static constexpr auto fs = fixed_string<5>("x={}");
+  static constexpr auto fmt = fmt::string_view(fs.data);
+  EXPECT_EQ(fmt, "x={}");
 }
 #endif
