@@ -92,6 +92,29 @@ TEST(string_view_test, compare) {
   check_op<std::greater_equal>();
 }
 
+#if FMT_USE_CONSTEVAL
+namespace {
+
+template <size_t N>
+struct fixed_string {
+    char data[N] = {};
+
+    constexpr fixed_string(char const (&m)[N]) {
+        for (size_t i = 0; i != N; ++i) {
+            data[i] = m[i];
+        }
+    }
+};
+
+}
+
+TEST(string_view_test, from_constexpr_fixed_string) {
+  static constexpr auto fs = fixed_string<5>("x={}");
+  static constexpr auto fmt = fmt::string_view(fs.data);
+  EXPECT_EQ(fmt, "x={}");
+}
+#endif
+
 TEST(base_test, is_locking) {
   EXPECT_FALSE(fmt::detail::is_locking<const char(&)[3]>());
 }
