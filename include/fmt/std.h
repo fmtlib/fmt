@@ -422,6 +422,12 @@ template <> struct formatter<std::error_code> {
     char c = *it;
     if ((c >= '0' && c <= '9') || c == '{')
       it = detail::parse_width(it, end, specs_, width_ref_, ctx);
+    if (it == end) return it;
+
+    if (*it == 's') {
+      specs_.set_type(presentation_type::string);
+      ++it;
+    }
     return it;
   }
 
@@ -431,10 +437,14 @@ template <> struct formatter<std::error_code> {
     auto specs = specs_;
     detail::handle_dynamic_spec(specs.dynamic_width(), specs.width, width_ref_,
                                 ctx);
-    memory_buffer buf;
-    buf.append(string_view(ec.category().name()));
-    buf.push_back(':');
-    detail::write<char>(appender(buf), ec.value());
+    auto buf = memory_buffer();
+    if (specs_.type() == presentation_type::string) {
+      buf.append(ec.message());
+    } else {
+      buf.append(string_view(ec.category().name()));
+      buf.push_back(':');
+      detail::write<char>(appender(buf), ec.value());
+    }
     return detail::write<char>(ctx.out(), string_view(buf.data(), buf.size()),
                                specs);
   }

@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#include "fmt/os.h"  // fmt::system_category
+#include "fmt/os.h"       // fmt::system_category
 #include "gtest-extra.h"  // StartsWith
 
 #ifdef __cpp_lib_filesystem
@@ -49,7 +49,7 @@ TEST(std_test, path) {
 }
 
 // Intentionally delayed include to test #4303
-#include "fmt/ranges.h"
+#  include "fmt/ranges.h"
 
 // Test ambiguity problem described in #2954.
 TEST(ranges_std_test, format_vector_path) {
@@ -276,18 +276,16 @@ TEST(std_test, variant) {
 
 TEST(std_test, error_code) {
   auto& generic = std::generic_category();
-  EXPECT_EQ("generic:42",
-            fmt::format(FMT_STRING("{0}"), std::error_code(42, generic)));
-  EXPECT_EQ("  generic:42",
-            fmt::format(FMT_STRING("{:>12}"), std::error_code(42, generic)));
-  EXPECT_EQ("generic:42  ",
-            fmt::format(FMT_STRING("{:12}"), std::error_code(42, generic)));
-  EXPECT_EQ("system:42",
-            fmt::format(FMT_STRING("{0}"),
-                        std::error_code(42, fmt::system_category())));
-  EXPECT_EQ("system:-42",
-            fmt::format(FMT_STRING("{0}"),
-                        std::error_code(-42, fmt::system_category())));
+  EXPECT_EQ(fmt::format("{}", std::error_code(42, generic)), "generic:42");
+  EXPECT_EQ(fmt::format("{:>12}", std::error_code(42, generic)),
+            "  generic:42");
+  EXPECT_EQ(fmt::format("{:12}", std::error_code(42, generic)), "generic:42  ");
+  EXPECT_EQ(fmt::format("{}", std::error_code(42, fmt::system_category())),
+            "system:42");
+  EXPECT_EQ(fmt::format("{}", std::error_code(-42, fmt::system_category())),
+            "system:-42");
+  auto ec = std::make_error_code(std::errc::value_too_large);
+  EXPECT_EQ(fmt::format("{:s}", ec), ec.message());
 }
 
 template <typename Catch> void exception_test() {
