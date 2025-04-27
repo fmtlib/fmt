@@ -35,7 +35,7 @@
   }
   ```
 
-  is now formatted consistenly between platforms.
+  is now formatted consistenly across platforms.
 
 - Added diagnostics for cases when timezone information is not available.
   For example:
