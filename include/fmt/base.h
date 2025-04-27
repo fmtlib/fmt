@@ -540,7 +540,7 @@ template <typename Char> class basic_string_view {
   FMT_CONSTEXPR20 basic_string_view(const Char* s) : data_(s) {
 #if FMT_HAS_BUILTIN(__builtin_strlen) || FMT_GCC_VERSION || FMT_CLANG_VERSION
     if (std::is_same<Char, char>::value && !detail::is_constant_evaluated()) {
-      size_ = __builtin_strlen(detail::narrow(s));
+      size_ = __builtin_strlen(detail::narrow(s));  // strlen is not costexpr.
       return;
     }
 #endif
