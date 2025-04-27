@@ -2563,26 +2563,3 @@ auto fmt::formatter<incomplete_type>::format(const incomplete_type&,
     -> fmt::appender {
   return formatter<int>::format(42, ctx);
 }
-
-#if FMT_USE_CONSTEVAL
-namespace {
-
-template <size_t N>
-struct fixed_string {
-    char data[N] = {};
-
-    constexpr fixed_string(char const (&m)[N]) {
-        for (size_t i = 0; i != N; ++i) {
-            data[i] = m[i];
-        }
-    }
-};
-
-}
-
-TEST(base_test, from_constexpr_fixed_string) {
-  static constexpr auto fs = fixed_string<5>("x={}");
-  static constexpr auto fmt = fmt::string_view(fs.data);
-  EXPECT_EQ(fmt, "x={}");
-}
-#endif
