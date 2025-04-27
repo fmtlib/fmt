@@ -1,5 +1,8 @@
 # 11.2.0 - TBD
 
+- Added the `s` specifier that formats an error message as a string in
+  `std::error_code`.
+
 - Fixed compilation with GCC 15 and C++20 modules enabled
   (https://github.com/fmtlib/fmt/pull/4347). Thanks @tkhyn.
 
@@ -17,6 +20,10 @@
 - Fixed formatting of `std::chrono::local_time`
   (https://github.com/fmtlib/fmt/issues/3815,
   https://github.com/fmtlib/fmt/issues/4350).
+
+- Added diagnostics for cases when timezone information is not available.
+
+- Deprecated `fmt::localtime` in favor of `std::localtime`.
 
 - Optimized `text_style` using bit packing
   (https://github.com/fmtlib/fmt/pull/4363). Thanks @LocalSpook.
