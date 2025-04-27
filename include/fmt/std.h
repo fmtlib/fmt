@@ -410,6 +410,7 @@ template <> struct formatter<std::error_code> {
  private:
   format_specs specs_;
   detail::arg_ref<char> width_ref_;
+  bool debug_ = false;
 
  public:
   FMT_CONSTEXPR auto parse(parse_context<>& ctx) -> const char* {
@@ -417,14 +418,16 @@ template <> struct formatter<std::error_code> {
     if (it == end) return it;
 
     it = detail::parse_align(it, end, specs_);
-    if (it == end) return it;
 
     char c = *it;
-    if ((c >= '0' && c <= '9') || c == '{')
+    if (it != end && ((c >= '0' && c <= '9') || c == '{'))
       it = detail::parse_width(it, end, specs_, width_ref_, ctx);
-    if (it == end) return it;
 
-    if (*it == 's') {
+    if (it != end && *it == '?') {
+      debug_ = true;
+      ++it;
+    }
+    if (it != end && *it == 's') {
       specs_.set_type(presentation_type::string);
       ++it;
     }
@@ -445,8 +448,13 @@ template <> struct formatter<std::error_code> {
       buf.push_back(':');
       detail::write<char>(appender(buf), ec.value());
     }
-    return detail::write<char>(ctx.out(), string_view(buf.data(), buf.size()),
-                               specs);
+    auto quoted = memory_buffer();
+    auto str = string_view(buf.data(), buf.size());
+    if (debug_) {
+      detail::write_escaped_string<char>(std::back_inserter(quoted), str);
+      str = string_view(quoted.data(), quoted.size());
+    }
+    return detail::write<char>(ctx.out(), str, specs);
   }
 };
 

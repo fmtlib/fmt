@@ -286,6 +286,8 @@ TEST(std_test, error_code) {
             "system:-42");
   auto ec = std::make_error_code(std::errc::value_too_large);
   EXPECT_EQ(fmt::format("{:s}", ec), ec.message());
+  EXPECT_EQ(fmt::format("{:?}", std::error_code(42, generic)),
+            "\"generic:42\"");
 }
 
 template <typename Catch> void exception_test() {
