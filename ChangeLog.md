@@ -1,7 +1,7 @@
 # 11.2.0 - TBD
 
-- Added the `s` specifier that formats an error message as a string in
-  `std::error_code`. For example:
+- Added the `s` specifier for `std::error_code`. It allows formatting an error
+  message as a string. For example:
 
   ```c++
   #include <fmt/std.h>
