@@ -1,7 +1,52 @@
 # 11.2.0 - TBD
 
 - Added the `s` specifier that formats an error message as a string in
-  `std::error_code`.
+  `std::error_code`. For example:
+
+  ```c++
+  #include <fmt/std.h>
+
+  int main() {
+    auto ec = std::make_error_code(std::errc::no_such_file_or_directory);
+    fmt::print("{:s}\n", ec);
+  }
+  ```
+
+  prints
+
+  ```
+  No such file or directory
+  ```
+  (The actual message is platform-specific.)
+
+- Fixed formatting of `std::chrono::local_time`
+  (https://github.com/fmtlib/fmt/issues/3815,
+  https://github.com/fmtlib/fmt/issues/4350).
+  For example ([godbolt](https://www.godbolt.org/z/8o4b1PPn5)):
+
+  ```c++
+  #include <fmt/chrono.h>
+
+  int main() {
+    std::chrono::zoned_time zt(
+      std::chrono::current_zone(),
+      std::chrono::system_clock::now());
+    fmt::print("{}", zt.get_local_time());
+  }
+  ```
+
+  is now formatted consistenly between platforms.
+
+- Added diagnostics for cases when timezone information is not available.
+  For example:
+
+  ```c++
+  fmt::print("{:Z}", std::chrono::local_seconds());
+  ```
+
+  now gives a compile-time error.
+
+- Deprecated `fmt::localtime` in favor of `std::localtime`.
 
 - Fixed compilation with GCC 15 and C++20 modules enabled
   (https://github.com/fmtlib/fmt/pull/4347). Thanks @tkhyn.
@@ -17,21 +62,13 @@
   (https://github.com/fmtlib/fmt/issues/4375,
   https://github.com/fmtlib/fmt/issues/4394).
 
-- Fixed formatting of `std::chrono::local_time`
-  (https://github.com/fmtlib/fmt/issues/3815,
-  https://github.com/fmtlib/fmt/issues/4350).
-
-- Added diagnostics for cases when timezone information is not available.
-
-- Deprecated `fmt::localtime` in favor of `std::localtime`.
-
 - Optimized `text_style` using bit packing
   (https://github.com/fmtlib/fmt/pull/4363). Thanks @LocalSpook.
 
 - Added support for incomplete types (https://github.com/fmtlib/fmt/issues/3180,
   https://github.com/fmtlib/fmt/pull/4383). Thanks @LocalSpook.
 
-- Fixed a missing flush in `fmt::print` when using libstdc++
+- Fixed a flush issue in `fmt::print` when using libstdc++
   (https://github.com/fmtlib/fmt/issues/4398).
 
 - Fixed `fmt::println` usage with `FMT_ENFORCE_COMPILE_STRING` and legacy
@@ -49,7 +86,7 @@
 - Worked around a bug in MSVC v141 (https://github.com/fmtlib/fmt/issues/4412,
   https://github.com/fmtlib/fmt/pull/4413). Thanks @hirohira9119.
 
-- Replaced `fmt_detail` with a subnamespace of `fmt`
+- Removed the `fmt_detail` namespace
   (https://github.com/fmtlib/fmt/issues/4324).
 
 - Removed specializations of `std::is_floating_point` in tests
