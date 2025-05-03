@@ -19,7 +19,7 @@
   ```
   (The actual message is platform-specific.)
 
-- Fixed formatting of `std::chrono::local_time`
+- Fixed formatting of `std::chrono::local_time` and `tm`
   (https://github.com/fmtlib/fmt/issues/3815,
   https://github.com/fmtlib/fmt/issues/4350).
   For example ([godbolt](https://www.godbolt.org/z/8o4b1PPn5)):
