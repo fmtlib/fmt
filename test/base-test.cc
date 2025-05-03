@@ -93,26 +93,20 @@ TEST(string_view_test, compare) {
 }
 
 #if FMT_USE_CONSTEVAL
-namespace {
-
 template <size_t N> struct fixed_string {
   char data[N] = {};
 
   constexpr fixed_string(const char (&m)[N]) {
-    for (size_t i = 0; i != N; ++i) {
-      data[i] = m[i];
-    }
+    for (size_t i = 0; i != N; ++i) data[i] = m[i];
   }
 };
 
-}  // namespace
-
 TEST(string_view_test, from_constexpr_fixed_string) {
-  static constexpr auto fs = fixed_string<5>("x={}");
-  static constexpr auto fmt = fmt::string_view(fs.data);
-  EXPECT_EQ(fmt, "x={}");
+  static constexpr auto fs = fixed_string<4>("foo");
+  static constexpr auto sv = fmt::string_view(fs.data);
+  EXPECT_EQ(sv, "foo");
 }
-#endif
+#endif  // FMT_USE_CONSTEVAL
 
 TEST(base_test, is_locking) {
   EXPECT_FALSE(fmt::detail::is_locking<const char(&)[3]>());
