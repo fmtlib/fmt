@@ -1097,7 +1097,7 @@ template <> struct cache_accessor<double> {
     return {r.high(), r.low() == 0};
   }
 
-  static auto compute_delta(cache_entry_type const& cache, int beta) noexcept
+  static auto compute_delta(const cache_entry_type& cache, int beta) noexcept
       -> uint32_t {
     return static_cast<uint32_t>(cache.high() >> (64 - 1 - beta));
   }

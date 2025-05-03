@@ -583,7 +583,8 @@ TEST(format_test, named_arg) {
                                  fmt::arg("A_", "A"), fmt::arg("_1", 1)));
   EXPECT_EQ(fmt::format("{0:{width}}", -42, fmt::arg("width", 4)), " -42");
   EXPECT_EQ(fmt::format("{value:{width}}", fmt::arg("value", -42),
-      fmt::arg("width", 4)), " -42");
+                        fmt::arg("width", 4)),
+            " -42");
   EXPECT_EQ("st",
             fmt::format("{0:.{precision}}", "str", fmt::arg("precision", 2)));
   EXPECT_EQ(fmt::format("{} {two}", 1, fmt::arg("two", 2)), "1 2");
@@ -601,8 +602,9 @@ TEST(format_test, named_arg) {
   EXPECT_THROW_MSG((void)fmt::format(runtime("{a} {}"), fmt::arg("a", 2), 42),
                    format_error,
                    "cannot switch from manual to automatic argument indexing");
-  EXPECT_THROW_MSG((void)fmt::format("{a}", fmt::arg("a", 1),
-      fmt::arg("a", 10)), format_error, "duplicate named arg");
+  EXPECT_THROW_MSG(
+      (void)fmt::format("{a}", fmt::arg("a", 1), fmt::arg("a", 10)),
+      format_error, "duplicate named arg");
 }
 
 TEST(format_test, auto_arg_index) {

@@ -330,7 +330,7 @@ template <typename T> class noncopyable_range {
   explicit noncopyable_range(Args&&... args)
       : vec(std::forward<Args>(args)...) {}
 
-  noncopyable_range(noncopyable_range const&) = delete;
+  noncopyable_range(const noncopyable_range&) = delete;
   noncopyable_range(noncopyable_range&) = delete;
 
   auto begin() -> iterator { return vec.begin(); }
@@ -424,7 +424,7 @@ TEST(ranges_test, join_tuple) {
   auto t5 = tuple_like{42, "foo"};
   EXPECT_EQ(fmt::format("{}", fmt::join(t5, ", ")), "42, foo");
 
-#  if FMT_TUPLE_JOIN_SPECIFIERS
+#if FMT_TUPLE_JOIN_SPECIFIERS
   // Specs applied to each element.
   auto t5 = std::tuple<int, int, long>(-3, 100, 1);
   EXPECT_EQ(fmt::format("{:+03}", fmt::join(t5, ", ")), "-03, +100, +01");
@@ -437,7 +437,7 @@ TEST(ranges_test, join_tuple) {
   int y = -1;
   auto t7 = std::tuple<int, int&, const int&>(3, y, y);
   EXPECT_EQ(fmt::format("{:03}", fmt::join(t7, ", ")), "003, -01, -01");
-#  endif
+#endif
 }
 
 TEST(ranges_test, join_initializer_list) {
@@ -457,7 +457,7 @@ struct zstring {
   auto end() const -> zstring_sentinel { return {}; }
 };
 
-#  ifdef __cpp_lib_ranges
+#ifdef __cpp_lib_ranges
 struct cpp20_only_range {
   struct iterator {
     int val = 0;
@@ -487,7 +487,7 @@ struct cpp20_only_range {
 };
 
 static_assert(std::input_iterator<cpp20_only_range::iterator>);
-#  endif
+#endif
 
 TEST(ranges_test, join_sentinel) {
   auto hello = zstring{"hello"};
@@ -515,13 +515,13 @@ TEST(ranges_test, join_range) {
   const auto z = std::vector<int>(3u, 0);
   EXPECT_EQ(fmt::format("{}", fmt::join(z, ",")), "0,0,0");
 
-#  ifdef __cpp_lib_ranges
+#ifdef __cpp_lib_ranges
   EXPECT_EQ(fmt::format("{}", cpp20_only_range{.lo = 0, .hi = 5}),
             "[0, 1, 2, 3, 4]");
   EXPECT_EQ(
       fmt::format("{}", fmt::join(cpp20_only_range{.lo = 0, .hi = 5}, ",")),
       "0,1,2,3,4");
-#  endif
+#endif
 }
 
 namespace adl {

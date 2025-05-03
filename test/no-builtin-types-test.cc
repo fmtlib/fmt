@@ -8,8 +8,8 @@
 #include "gtest/gtest.h"
 
 #if !defined(__GNUC__) || __GNUC__ >= 5
-#define FMT_BUILTIN_TYPES 0
-#include "fmt/format.h"
+#  define FMT_BUILTIN_TYPES 0
+#  include "fmt/format.h"
 
 TEST(no_builtin_types_test, format) {
   EXPECT_EQ(fmt::format("{}", 42), "42");

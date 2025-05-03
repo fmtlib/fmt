@@ -95,18 +95,17 @@ TEST(string_view_test, compare) {
 #if FMT_USE_CONSTEVAL
 namespace {
 
-template <size_t N>
-struct fixed_string {
-    char data[N] = {};
+template <size_t N> struct fixed_string {
+  char data[N] = {};
 
-    constexpr fixed_string(char const (&m)[N]) {
-        for (size_t i = 0; i != N; ++i) {
-            data[i] = m[i];
-        }
+  constexpr fixed_string(const char (&m)[N]) {
+    for (size_t i = 0; i != N; ++i) {
+      data[i] = m[i];
     }
+  }
 };
 
-}
+}  // namespace
 
 TEST(string_view_test, from_constexpr_fixed_string) {
   static constexpr auto fs = fixed_string<5>("x={}");

@@ -7,6 +7,7 @@ IndentCaseLabels: false
 AlwaysBreakTemplateDeclarations: false
 DerivePointerAlignment: false
 AllowShortCaseLabelsOnASingleLine: true
+QualifierAlignment: Left
 AlignConsecutiveShortCaseStatements:
   Enabled: true
   AcrossEmptyLines: true
