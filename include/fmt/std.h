@@ -713,9 +713,27 @@ template <typename T, typename Char> struct formatter<std::complex<T>, Char> {
   }
 };
 
+template <typename T, typename Enable = void>
+struct has_format_as : std::false_type {};
+template <typename T>
+struct has_format_as<T, void_t<decltype(format_as(std::declval<const T&>()))>>
+    : std::true_type {};
+
+template <typename T, typename Enable = void>
+struct has_format_as_member : std::false_type {};
+template <typename T>
+struct has_format_as_member<
+    T, void_t<decltype(formatter<T>::format_as(std::declval<const T&>()))>>
+    : std::true_type {};
+
+// Guard against format_as because reference_wrappers are implicitly convertible
+// to T&
+
 template <typename T, typename Char>
-struct formatter<std::reference_wrapper<T>, Char,
-                 enable_if_t<is_formattable<remove_cvref_t<T>, Char>::value>>
+struct formatter<
+    std::reference_wrapper<T>, Char,
+    enable_if_t<is_formattable<remove_cvref_t<T>, Char>::value &&
+                !has_format_as<T>::value && !has_format_as_member<T>::value>>
     : formatter<remove_cvref_t<T>, Char> {
   template <typename FormatContext>
   auto format(std::reference_wrapper<T> ref, FormatContext& ctx) const
