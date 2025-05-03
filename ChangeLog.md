@@ -1,4 +1,4 @@
-# 11.2.0 - TBD
+# 11.2.0 - 2025-05-03
 
 - Added the `s` specifier for `std::error_code`. It allows formatting an error
   message as a string. For example:
