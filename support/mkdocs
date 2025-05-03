@@ -63,7 +63,9 @@ if len(args) > 0:
                '--branch', 'master'], cwd=site_dir, env=env)
     if ret != 0 or version == 'dev':
       sys.exit(ret)
-    redirect_page_path = os.path.join(site_dir, version, 'api.html')
+    current_doc_path = os.path.join(site_dir, version)
+    os.makedirs(current_doc_path, exist_ok=True)
+    redirect_page_path = os.path.join(current_doc_path, 'api.html')
     with open(redirect_page_path, "w") as file:
       file.write(redirect_page)
     ret = call(['git', 'add', redirect_page_path], cwd=site_dir)
