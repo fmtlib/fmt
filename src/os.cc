@@ -66,14 +66,14 @@ using rwresult = int;
 
 // On Windows the count argument to read and write is unsigned, so convert
 // it from size_t preventing integer overflow.
-inline unsigned convert_rwcount(std::size_t count) {
+inline unsigned convert_rwcount(size_t count) {
   return count <= UINT_MAX ? static_cast<unsigned>(count) : UINT_MAX;
 }
 #elif FMT_USE_FCNTL
 // Return type of read and write functions.
 using rwresult = ssize_t;
 
-inline std::size_t convert_rwcount(std::size_t count) { return count; }
+inline size_t convert_rwcount(size_t count) { return count; }
 #endif
 }  // namespace
 
@@ -266,7 +266,7 @@ long long file::size() const {
 #  endif
 }
 
-std::size_t file::read(void* buffer, std::size_t count) {
+size_t file::read(void* buffer, size_t count) {
   rwresult result = 0;
   FMT_RETRY(result, FMT_POSIX_CALL(read(fd_, buffer, convert_rwcount(count))));
   if (result < 0)
@@ -274,7 +274,7 @@ std::size_t file::read(void* buffer, std::size_t count) {
   return detail::to_unsigned(result);
 }
 
-std::size_t file::write(const void* buffer, std::size_t count) {
+size_t file::write(const void* buffer, size_t count) {
   rwresult result = 0;
   FMT_RETRY(result, FMT_POSIX_CALL(write(fd_, buffer, convert_rwcount(count))));
   if (result < 0)

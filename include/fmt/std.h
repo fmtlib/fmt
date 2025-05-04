@@ -123,10 +123,6 @@ auto write_escaped_alternative(OutputIt out, const T& v) -> OutputIt {
 
 #if FMT_CPP_LIB_VARIANT
 
-template <typename T>
-using variant_index_sequence =
-    std::make_index_sequence<std::variant_size<T>::value>;
-
 template <typename> struct is_variant_like_ : std::false_type {};
 template <typename... Types>
 struct is_variant_like_<std::variant<Types...>> : std::true_type {};
@@ -138,8 +134,8 @@ template <typename Variant, typename Char> class is_variant_formattable {
       check(std::index_sequence<Is...>);
 
  public:
-  static constexpr const bool value =
-      decltype(check(variant_index_sequence<Variant>{}))::value;
+  static constexpr const bool value = decltype(check(
+      std::make_index_sequence<std::variant_size<Variant>::value>()))::value;
 };
 
 #endif  // FMT_CPP_LIB_VARIANT
@@ -318,7 +314,7 @@ template <size_t N, typename Char>
 struct formatter<std::bitset<N>, Char>
     : nested_formatter<basic_string_view<Char>, Char> {
  private:
-  // This is functor because C++11 doesn't support generic lambdas.
+  // This is a functor because C++11 doesn't support generic lambdas.
   struct writer {
     const std::bitset<N>& bs;
 

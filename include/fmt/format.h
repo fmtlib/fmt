@@ -2274,7 +2274,7 @@ inline auto write_significand(Char* out, UInt significand, int significand_size,
   int floating_size = significand_size - integral_size;
   for (int i = floating_size / 2; i > 0; --i) {
     out -= 2;
-    write2digits(out, static_cast<std::size_t>(significand % 100));
+    write2digits(out, static_cast<size_t>(significand % 100));
     significand /= 100;
   }
   if (floating_size % 2 != 0) {
