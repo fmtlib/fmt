@@ -668,7 +668,7 @@ struct formatter<join_view<It, Sentinel, Char>, Char> {
   }
 };
 
-template <typename Char, typename Tuple> struct tuple_join_view : detail::view {
+template <typename Tuple, typename Char> struct tuple_join_view : detail::view {
   const Tuple& tuple;
   basic_string_view<Char> sep;
 
@@ -683,15 +683,15 @@ template <typename Char, typename Tuple> struct tuple_join_view : detail::view {
 #  define FMT_TUPLE_JOIN_SPECIFIERS 0
 #endif
 
-template <typename Char, typename Tuple>
-struct formatter<tuple_join_view<Char, Tuple>, Char,
+template <typename Tuple, typename Char>
+struct formatter<tuple_join_view<Tuple, Char>, Char,
                  enable_if_t<is_tuple_like<Tuple>::value>> {
   FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     return do_parse(ctx, std::tuple_size<Tuple>());
   }
 
   template <typename FormatContext>
-  auto format(const tuple_join_view<Char, Tuple>& value,
+  auto format(const tuple_join_view<Tuple, Char>& value,
               FormatContext& ctx) const -> typename FormatContext::iterator {
     return do_format(value, ctx, std::tuple_size<Tuple>());
   }
@@ -723,14 +723,14 @@ struct formatter<tuple_join_view<Char, Tuple>, Char,
   }
 
   template <typename FormatContext>
-  auto do_format(const tuple_join_view<Char, Tuple>&, FormatContext& ctx,
+  auto do_format(const tuple_join_view<Tuple, Char>&, FormatContext& ctx,
                  std::integral_constant<size_t, 0>) const ->
       typename FormatContext::iterator {
     return ctx.out();
   }
 
   template <typename FormatContext, size_t N>
-  auto do_format(const tuple_join_view<Char, Tuple>& value, FormatContext& ctx,
+  auto do_format(const tuple_join_view<Tuple, Char>& value, FormatContext& ctx,
                  std::integral_constant<size_t, N>) const ->
       typename FormatContext::iterator {
     using std::get;
@@ -823,7 +823,7 @@ auto join(Range&& r, string_view sep)
  */
 template <typename Tuple, FMT_ENABLE_IF(is_tuple_like<Tuple>::value)>
 FMT_CONSTEXPR auto join(const Tuple& tuple, string_view sep)
-    -> tuple_join_view<char, Tuple> {
+    -> tuple_join_view<Tuple, char> {
   return {tuple, sep};
 }
 
