@@ -11,7 +11,6 @@
 #ifndef FMT_MODULE
 #  include <initializer_list>
 #  include <iterator>
-#  include <string>
 #  include <tuple>
 #  include <type_traits>
 #  include <utility>
