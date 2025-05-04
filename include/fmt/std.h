@@ -15,14 +15,13 @@
 #  include <atomic>
 #  include <bitset>
 #  include <complex>
-#  include <cstdlib>
 #  include <exception>
-#  include <functional>
+#  include <functional>  // std::reference_wrapper
 #  include <memory>
 #  include <thread>
 #  include <type_traits>
-#  include <typeinfo>
-#  include <utility>
+#  include <typeinfo>  // std::type_info
+#  include <utility>   // std::make_index_sequence
 
 // Check FMT_CPLUSPLUS to suppress a bogus warning in MSVC.
 #  if FMT_CPLUSPLUS >= 201703L
@@ -132,16 +131,15 @@ template <typename> struct is_variant_like_ : std::false_type {};
 template <typename... Types>
 struct is_variant_like_<std::variant<Types...>> : std::true_type {};
 
-// formattable element check.
-template <typename T, typename C> class is_variant_formattable_ {
-  template <std::size_t... Is>
+template <typename Variant, typename Char> class is_variant_formattable {
+  template <size_t... Is>
   static std::conjunction<
-      is_formattable<std::variant_alternative_t<Is, T>, C>...>
+      is_formattable<std::variant_alternative_t<Is, Variant>, Char>...>
       check(std::index_sequence<Is...>);
 
  public:
   static constexpr const bool value =
-      decltype(check(variant_index_sequence<T>{}))::value;
+      decltype(check(variant_index_sequence<Variant>{}))::value;
 };
 
 #endif  // FMT_CPP_LIB_VARIANT
@@ -152,7 +150,7 @@ template <typename Char, typename OutputIt>
 auto write_demangled_name(OutputIt out, const std::type_info& ti) -> OutputIt {
 #  ifdef FMT_HAS_ABI_CXA_DEMANGLE
   int status = 0;
-  std::size_t size = 0;
+  size_t size = 0;
   std::unique_ptr<char, void (*)(void*)> demangled_name_ptr(
       abi::__cxa_demangle(ti.name(), nullptr, &size, &status), &std::free);
 
@@ -191,7 +189,7 @@ auto write_demangled_name(OutputIt out, const std::type_info& ti) -> OutputIt {
   return detail::write_bytes<Char>(out, demangled_name_view);
 #  elif FMT_MSC_VERSION
   const string_view demangled_name(ti.name());
-  for (std::size_t i = 0; i < demangled_name.size(); ++i) {
+  for (size_t i = 0; i < demangled_name.size(); ++i) {
     auto sub = demangled_name;
     sub.remove_prefix(i);
     if (sub.starts_with("enum ")) {
@@ -240,7 +238,30 @@ struct is_bit_reference_like<std::__bit_const_reference<C>> {
 
 }  // namespace detail
 
+template <typename T, typename Deleter>
+auto ptr(const std::unique_ptr<T, Deleter>& p) -> const void* {
+  return p.get();
+}
+template <typename T> auto ptr(const std::shared_ptr<T>& p) -> const void* {
+  return p.get();
+}
+
 #if FMT_CPP_LIB_FILESYSTEM
+
+class path : public std::filesystem::path {
+ public:
+  auto display_string() const -> std::string {
+    const std::filesystem::path& base = *this;
+    return fmt::format(FMT_STRING("{}"), base);
+  }
+  auto system_string() const -> std::string { return string(); }
+
+  auto generic_display_string() const -> std::string {
+    const std::filesystem::path& base = *this;
+    return fmt::format(FMT_STRING("{:g}"), base);
+  }
+  auto generic_system_string() const -> std::string { return generic_string(); }
+};
 
 template <typename Char> struct formatter<std::filesystem::path, Char> {
  private:
@@ -291,37 +312,20 @@ template <typename Char> struct formatter<std::filesystem::path, Char> {
   }
 };
 
-class path : public std::filesystem::path {
- public:
-  auto display_string() const -> std::string {
-    const std::filesystem::path& base = *this;
-    return fmt::format(FMT_STRING("{}"), base);
-  }
-  auto system_string() const -> std::string { return string(); }
-
-  auto generic_display_string() const -> std::string {
-    const std::filesystem::path& base = *this;
-    return fmt::format(FMT_STRING("{:g}"), base);
-  }
-  auto generic_system_string() const -> std::string { return generic_string(); }
-};
-
 #endif  // FMT_CPP_LIB_FILESYSTEM
 
-template <std::size_t N, typename Char>
+template <size_t N, typename Char>
 struct formatter<std::bitset<N>, Char>
     : nested_formatter<basic_string_view<Char>, Char> {
  private:
-  // Functor because C++11 doesn't support generic lambdas.
+  // This is functor because C++11 doesn't support generic lambdas.
   struct writer {
     const std::bitset<N>& bs;
 
     template <typename OutputIt>
     FMT_CONSTEXPR auto operator()(OutputIt out) -> OutputIt {
-      for (auto pos = N; pos > 0; --pos) {
+      for (auto pos = N; pos > 0; --pos)
         out = detail::write<Char>(out, bs[pos - 1] ? Char('1') : Char('0'));
-      }
-
       return out;
     }
   };
@@ -433,11 +437,6 @@ template <typename T> struct is_variant_like {
   static constexpr const bool value = detail::is_variant_like_<T>::value;
 };
 
-template <typename T, typename C> struct is_variant_formattable {
-  static constexpr const bool value =
-      detail::is_variant_formattable_<T, C>::value;
-};
-
 template <typename Char> struct formatter<std::monostate, Char> {
   FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     return ctx.begin();
@@ -451,10 +450,10 @@ template <typename Char> struct formatter<std::monostate, Char> {
 };
 
 template <typename Variant, typename Char>
-struct formatter<
-    Variant, Char,
-    std::enable_if_t<std::conjunction_v<
-        is_variant_like<Variant>, is_variant_formattable<Variant, Char>>>> {
+struct formatter<Variant, Char,
+                 std::enable_if_t<std::conjunction_v<
+                     is_variant_like<Variant>,
+                     detail::is_variant_formattable<Variant, Char>>>> {
   FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     return ctx.begin();
   }
@@ -598,14 +597,6 @@ struct formatter<BitRef, Char,
     return formatter<bool, Char>::format(v, ctx);
   }
 };
-
-template <typename T, typename Deleter>
-auto ptr(const std::unique_ptr<T, Deleter>& p) -> const void* {
-  return p.get();
-}
-template <typename T> auto ptr(const std::shared_ptr<T>& p) -> const void* {
-  return p.get();
-}
 
 template <typename T, typename Char>
 struct formatter<std::atomic<T>, Char,
