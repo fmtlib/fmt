@@ -20,8 +20,19 @@
 #  include <type_traits>  // std::enable_if
 #endif
 
-// The fmt library version in the form major * 10000 + minor * 100 + patch.
-#define FMT_VERSION 110201
+#define FMT_VERSION_MAJOR 11
+#define FMT_VERSION_MINOR 2
+#define FMT_VERSION_PATCH 1
+
+#define FMT_STRINGIZE_IMPL(x) #x
+#define FMT_STRINGIZE(x) FMT_STRINGIZE_IMPL(x)
+
+#define FMT_VERSION_STR            \
+  FMT_STRINGIZE(FMT_VERSION_MAJOR) \
+  "." FMT_STRINGIZE(FMT_VERSION_MINOR) "." FMT_STRINGIZE(FMT_VERSION_PATCH)
+
+#define FMT_VERSION \
+  (FMT_VERSION_MAJOR * 10000 + FMT_VERSION_MINOR * 100 + FMT_VERSION_PATCH)
 
 // Detect compiler versions.
 #if defined(__clang__) && !defined(__ibmxl__)
