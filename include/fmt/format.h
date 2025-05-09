@@ -2136,8 +2136,12 @@ FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
   auto data = s.data();
   auto size = s.size();
   if (specs.precision >= 0 && to_unsigned(specs.precision) < size) {
-    auto code_points = count_code_points_with_display_width_precision(s, specs.precision);
-    size = code_point_index(s, to_unsigned(code_points));
+    if constexpr (std::is_same<Char, char>::value) {
+      auto code_points = count_code_points_with_display_width_precision(to_string_view(data), to_unsigned(specs.precision));
+      size = code_point_index(s, to_unsigned(code_points));
+    } else {
+      size = code_point_index(s, to_unsigned(size));
+    }
   }
 
   bool is_debug = specs.type() == presentation_type::debug;
