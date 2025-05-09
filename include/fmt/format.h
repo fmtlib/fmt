@@ -2130,18 +2130,31 @@ FMT_INLINE auto count_code_points_with_display_width_precision(string_view s, si
     return code_points;
 }
 
+template <typename Char>
+FMT_CONSTEXPR auto handle_precision(
+    basic_string_view<Char> s, const Char* data, const format_specs& specs,
+    typename std::enable_if<std::is_same<Char, char>::value>::type* = nullptr)
+    -> size_t {
+  auto code_points = count_code_points_with_display_width_precision(
+      to_string_view(data), to_unsigned(specs.precision));
+  return code_point_index(s, to_unsigned(code_points));
+}
+
+template <typename Char>
+FMT_CONSTEXPR auto handle_precision(
+    basic_string_view<Char> s, const Char*, const format_specs& specs,
+    typename std::enable_if<!std::is_same<Char, char>::value>::type* = nullptr)
+    -> size_t {
+  return code_point_index(s, to_unsigned(s.size()));
+}
+
 template <typename Char, typename OutputIt>
 FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
                          const format_specs& specs) -> OutputIt {
   auto data = s.data();
   auto size = s.size();
   if (specs.precision >= 0 && to_unsigned(specs.precision) < size) {
-    if constexpr (std::is_same<Char, char>::value) {
-      auto code_points = count_code_points_with_display_width_precision(to_string_view(data), to_unsigned(specs.precision));
-      size = code_point_index(s, to_unsigned(code_points));
-    } else {
-      size = code_point_index(s, to_unsigned(size));
-    }
+    size = handle_precision(s, data, specs);
   }
 
   bool is_debug = specs.type() == presentation_type::debug;
