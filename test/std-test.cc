@@ -414,4 +414,36 @@ TEST(std_test, format_shared_ptr) {
 TEST(std_test, format_reference_wrapper) {
   int num = 35;
   EXPECT_EQ("35", fmt::to_string(std::cref(num)));
+  EXPECT_EQ("35", fmt::to_string(std::ref(num)));
+  EXPECT_EQ("35", fmt::format("{}", std::cref(num)));
+  EXPECT_EQ("35", fmt::format("{}", std::ref(num)));
+}
+
+// Regression test for https://github.com/fmtlib/fmt/issues/4424
+struct type_with_format_as {
+  int x;
+};
+
+int format_as(const type_with_format_as& t) { return t.x; }
+
+TEST(std_test, format_reference_wrapper_with_format_as) {
+  type_with_format_as t{20};
+  EXPECT_EQ("20", fmt::to_string(std::cref(t)));
+  EXPECT_EQ("20", fmt::to_string(std::ref(t)));
+  EXPECT_EQ("20", fmt::format("{}", std::cref(t)));
+  EXPECT_EQ("20", fmt::format("{}", std::ref(t)));
+}
+
+struct type_with_format_as_string {
+  std::string str;
+};
+
+std::string format_as(const type_with_format_as_string& t) { return t.str; }
+
+TEST(std_test, format_reference_wrapper_with_format_as_string) {
+  type_with_format_as_string t{"foo"};
+  EXPECT_EQ("foo", fmt::to_string(std::cref(t)));
+  EXPECT_EQ("foo", fmt::to_string(std::ref(t)));
+  EXPECT_EQ("foo", fmt::format("{}", std::cref(t)));
+  EXPECT_EQ("foo", fmt::format("{}", std::ref(t)));
 }
