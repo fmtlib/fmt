@@ -2117,7 +2117,7 @@ FMT_INLINE auto count_code_points_with_display_width_precision(
   size_t code_points = 0;
 
   // Iterate through the string to compute display width
-  for_each_codepoint(s, [&](uint32_t cp, string_view sv) {
+  for_each_codepoint(s, [&](uint32_t, string_view sv) {
     // Compute the display width of the current code point
     size_t cp_width = compute_width(sv);
     if (display_width + cp_width > display_width_precision) {
@@ -2143,7 +2143,7 @@ FMT_CONSTEXPR auto handle_precision(
 
 template <typename Char>
 FMT_CONSTEXPR auto handle_precision(
-    basic_string_view<Char> s, const Char*, const format_specs& specs,
+    basic_string_view<Char> s, const Char*, const format_specs&,
     FMT_ENABLE_IF(!std::is_same<Char, char>::value)) -> size_t {
   return code_point_index(s, to_unsigned(s.size()));
 }
