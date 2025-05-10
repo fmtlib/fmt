@@ -435,7 +435,7 @@ TEST(std_test, format_reference_wrapper_with_format_as) {
 }
 
 struct type_with_format_as_string {
-    std::string str;
+  std::string str;
 };
 
 std::string format_as(const type_with_format_as_string& t) { return t.str; }
