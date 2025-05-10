@@ -433,3 +433,17 @@ TEST(std_test, format_reference_wrapper_with_format_as) {
   EXPECT_EQ("20", fmt::format("{}", std::cref(t)));
   EXPECT_EQ("20", fmt::format("{}", std::ref(t)));
 }
+
+struct type_with_format_as_string {
+    std::string str;
+};
+
+std::string format_as(const type_with_format_as_string& t) { return t.str; }
+
+TEST(std_test, format_reference_wrapper_with_format_as_string) {
+  type_with_format_as_string t{"foo"};
+  EXPECT_EQ("foo", fmt::to_string(std::cref(t)));
+  EXPECT_EQ("foo", fmt::to_string(std::ref(t)));
+  EXPECT_EQ("foo", fmt::format("{}", std::cref(t)));
+  EXPECT_EQ("foo", fmt::format("{}", std::ref(t)));
+}
