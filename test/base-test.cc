@@ -464,6 +464,7 @@ TYPED_TEST(numeric_arg_test, make_and_visit) {
 #if FMT_USE_CONSTEXPR
 
 enum class arg_id_result { none, index, name };
+
 struct test_arg_id_handler {
   arg_id_result res = arg_id_result::none;
   int index = 0;
@@ -481,7 +482,7 @@ struct test_arg_id_handler {
 };
 
 template <size_t N>
-constexpr test_arg_id_handler parse_arg_id(const char (&s)[N]) {
+constexpr auto parse_arg_id(const char (&s)[N]) -> test_arg_id_handler {
   auto h = test_arg_id_handler();
   fmt::detail::parse_arg_id(s, s + N, h);
   return h;
@@ -539,7 +540,7 @@ struct test_format_string_handler {
   bool error = false;
 };
 
-template <size_t N> constexpr bool parse_string(const char (&s)[N]) {
+template <size_t N> constexpr auto parse_string(const char (&s)[N]) -> bool {
   auto h = test_format_string_handler();
   fmt::detail::parse_format_string(fmt::string_view(s, N - 1), h);
   return !h.error;
@@ -553,6 +554,7 @@ TEST(base_test, constexpr_parse_format_string) {
   static_assert(parse_string("{foo}"), "");
   static_assert(parse_string("{:}"), "");
 }
+
 #endif  // FMT_USE_CONSTEXPR
 
 struct enabled_formatter {};
@@ -803,7 +805,7 @@ TEST(base_test, format_nonconst) {
 }
 
 TEST(base_test, throw_in_buffer_dtor) {
-  enum { buffer_size = 256 };
+  constexpr int buffer_size = 256;
 
   struct throwing_iterator {
     int& count;
