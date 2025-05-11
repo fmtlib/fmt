@@ -79,8 +79,6 @@ time formatting and [`fmt/std.h`](#std-api) for other standard library types.
 
 There are two ways to make a user-defined type formattable: providing a
 `format_as` function or specializing the `formatter` struct template.
-Formatting of non-void pointer types is intentionally disallowed and they
-cannot be made formattable via either extension API.
 
 Use `format_as` if you want to make your type formattable as some other
 type with the same format specifiers. The `format_as` function should
