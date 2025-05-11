@@ -5,6 +5,7 @@
 //
 // For the license information refer to format.h.
 
+// Turn assertion failures into exceptions for testing.
 // clang-format off
 #include "test-assert.h"
 // clang-format on
@@ -22,15 +23,13 @@
 
 #include "gmock/gmock.h"
 
-using fmt::detail::buffer;
+#ifdef FMT_FORMAT_H_
+#  error base-test includes format.h
+#endif
 
 using testing::_;
 using testing::Invoke;
 using testing::Return;
-
-#ifdef FMT_FORMAT_H_
-#  error base-test includes format.h
-#endif
 
 auto copy(fmt::string_view s, fmt::appender out) -> fmt::appender {
   for (char c : s) *out++ = c;
@@ -96,53 +95,48 @@ TEST(string_view_test, compare) {
 }
 
 #if FMT_USE_CONSTEVAL
-template <size_t N> struct fixed_string {
-  char data[N] = {};
-
-  constexpr fixed_string(const char (&m)[N]) {
-    for (size_t i = 0; i != N; ++i) data[i] = m[i];
-  }
-};
-
 TEST(string_view_test, from_constexpr_fixed_string) {
-  static constexpr auto fs = fixed_string<4>("foo");
+  constexpr int size = 4;
+
+  struct fixed_string {
+    char data[size] = {};
+
+    constexpr fixed_string(const char (&m)[size]) {
+      for (size_t i = 0; i != size; ++i) data[i] = m[i];
+    }
+  };
+
+  static constexpr auto fs = fixed_string("foo");
   static constexpr auto sv = fmt::string_view(fs.data);
   EXPECT_EQ(sv, "foo");
 }
 #endif  // FMT_USE_CONSTEVAL
 
-#if !FMT_GCC_VERSION || FMT_GCC_VERSION >= 470
 TEST(buffer_test, noncopyable) {
-  EXPECT_FALSE(std::is_copy_constructible<buffer<char>>::value);
-#  if !FMT_MSC_VERSION
-  // std::is_copy_assignable is broken in MSVC2013.
-  EXPECT_FALSE(std::is_copy_assignable<buffer<char>>::value);
-#  endif
+  EXPECT_FALSE(std::is_copy_constructible<fmt::detail::buffer<char>>::value);
+  EXPECT_FALSE(std::is_copy_assignable<fmt::detail::buffer<char>>::value);
 }
 
 TEST(buffer_test, nonmoveable) {
-  EXPECT_FALSE(std::is_move_constructible<buffer<char>>::value);
-#  if !FMT_MSC_VERSION
-  // std::is_move_assignable is broken in MSVC2013.
-  EXPECT_FALSE(std::is_move_assignable<buffer<char>>::value);
-#  endif
+  EXPECT_FALSE(std::is_move_constructible<fmt::detail::buffer<char>>::value);
+  EXPECT_FALSE(std::is_move_assignable<fmt::detail::buffer<char>>::value);
 }
-#endif
 
 TEST(buffer_test, indestructible) {
   static_assert(!std::is_destructible<fmt::detail::buffer<int>>(),
                 "buffer's destructor is protected");
 }
 
-template <typename T> struct mock_buffer final : buffer<T> {
+template <typename T> struct mock_buffer final : fmt::detail::buffer<T> {
   MOCK_METHOD(size_t, do_grow, (size_t));
 
-  static void grow(buffer<T>& buf, size_t capacity) {
+  static void grow(fmt::detail::buffer<T>& buf, size_t capacity) {
     auto& self = static_cast<mock_buffer&>(buf);
     self.set(buf.data(), self.do_grow(capacity));
   }
 
-  mock_buffer(T* data = nullptr, size_t buf_capacity = 0) : buffer<T>(grow) {
+  mock_buffer(T* data = nullptr, size_t buf_capacity = 0)
+      : fmt::detail::buffer<T>(grow) {
     this->set(data, buf_capacity);
     ON_CALL(*this, do_grow(_)).WillByDefault(Invoke([](size_t capacity) {
       return capacity;
@@ -309,11 +303,6 @@ template <typename Char> struct formatter<test_struct, Char> {
 };
 FMT_END_NAMESPACE
 
-TEST(arg_test, format_args) {
-  auto args = fmt::format_args();
-  EXPECT_FALSE(args.get(1));
-}
-
 // Use a unique result type to make sure that there are no undesirable
 // conversions.
 struct test_result {};
@@ -379,33 +368,9 @@ VISIT_TYPE(unsigned long, unsigned long long);
     CHECK_ARG(expected, value)                              \
   }
 
-template <typename T> class numeric_arg_test : public testing::Test {};
-
-#if FMT_BUILTIN_TYPES
-using test_types =
-    testing::Types<bool, signed char, unsigned char, short, unsigned short, int,
-                   unsigned, long, unsigned long, long long, unsigned long long,
-                   float, double, long double>;
-#else
-using test_types = testing::Types<int>;
-#endif
-TYPED_TEST_SUITE(numeric_arg_test, test_types);
-
-template <typename T, fmt::enable_if_t<std::is_integral<T>::value, int> = 0>
-auto test_value() -> T {
-  return static_cast<T>(42);
-}
-
-template <typename T,
-          fmt::enable_if_t<std::is_floating_point<T>::value, int> = 0>
-auto test_value() -> T {
-  return static_cast<T>(4.2);
-}
-
-TYPED_TEST(numeric_arg_test, make_and_visit) {
-  CHECK_ARG_SIMPLE(test_value<TypeParam>());
-  CHECK_ARG_SIMPLE(std::numeric_limits<TypeParam>::min());
-  CHECK_ARG_SIMPLE(std::numeric_limits<TypeParam>::max());
+TEST(arg_test, format_args) {
+  auto args = fmt::format_args();
+  EXPECT_FALSE(args.get(1));
 }
 
 TEST(arg_test, char_arg) { CHECK_ARG('a', 'a'); }
@@ -465,6 +430,35 @@ TEST(arg_test, visit_invalid_arg) {
   auto&& visitor = testing::StrictMock<mock_visitor<fmt::monostate>>();
   EXPECT_CALL(visitor, visit(_));
   fmt::basic_format_arg<fmt::format_context>().visit(visitor);
+}
+
+template <typename T> class numeric_arg_test : public testing::Test {};
+
+#if FMT_BUILTIN_TYPES
+using test_types =
+    testing::Types<bool, signed char, unsigned char, short, unsigned short, int,
+                   unsigned, long, unsigned long, long long, unsigned long long,
+                   float, double, long double>;
+#else
+using test_types = testing::Types<int>;
+#endif
+TYPED_TEST_SUITE(numeric_arg_test, test_types);
+
+template <typename T, fmt::enable_if_t<std::is_integral<T>::value, int> = 0>
+auto test_value() -> T {
+  return static_cast<T>(42);
+}
+
+template <typename T,
+          fmt::enable_if_t<std::is_floating_point<T>::value, int> = 0>
+auto test_value() -> T {
+  return static_cast<T>(4.2);
+}
+
+TYPED_TEST(numeric_arg_test, make_and_visit) {
+  CHECK_ARG_SIMPLE(test_value<TypeParam>());
+  CHECK_ARG_SIMPLE(std::numeric_limits<TypeParam>::min());
+  CHECK_ARG_SIMPLE(std::numeric_limits<TypeParam>::max());
 }
 
 #if FMT_USE_CONSTEXPR
