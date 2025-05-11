@@ -884,7 +884,7 @@ TEST(base_test, no_repeated_format_string_conversions) {
     }
   };
 
-#if !FMT_GCC_VERSION
+#if !FMT_GCC_VERSION || FMT_GCC_VERSION >= 1200
   char buf[10];
   fmt::format_to(buf, nondeterministic_format_string());
 #endif
