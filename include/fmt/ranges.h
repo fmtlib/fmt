@@ -30,7 +30,7 @@ template <typename T> class is_map {
   template <typename> static void check(...);
 
  public:
-  static constexpr const bool value =
+  static constexpr bool value =
       !std::is_void<decltype(check<T>(nullptr))>::value;
 };
 
@@ -39,7 +39,7 @@ template <typename T> class is_set {
   template <typename> static void check(...);
 
  public:
-  static constexpr const bool value =
+  static constexpr bool value =
       !std::is_void<decltype(check<T>(nullptr))>::value && !is_map<T>::value;
 };
 
@@ -118,7 +118,7 @@ template <typename T> class is_tuple_like_ {
   template <typename> static void check(...);
 
  public:
-  static constexpr const bool value =
+  static constexpr bool value =
       !std::is_void<decltype(check<T>(nullptr))>::value;
 };
 
@@ -152,7 +152,7 @@ using tuple_index_sequence = make_index_sequence<std::tuple_size<T>::value>;
 template <typename T, typename C, bool = is_tuple_like_<T>::value>
 class is_tuple_formattable_ {
  public:
-  static constexpr const bool value = false;
+  static constexpr bool value = false;
 };
 template <typename T, typename C> class is_tuple_formattable_<T, C, true> {
   template <size_t... Is>
@@ -168,7 +168,7 @@ template <typename T, typename C> class is_tuple_formattable_<T, C, true> {
                                        C>::value)...>{}));
 
  public:
-  static constexpr const bool value =
+  static constexpr bool value =
       decltype(check(tuple_index_sequence<T>{}))::value;
 };
 
@@ -280,13 +280,12 @@ template <typename FormatContext> struct format_tuple_element {
 }  // namespace detail
 
 template <typename T> struct is_tuple_like {
-  static constexpr const bool value =
+  static constexpr bool value =
       detail::is_tuple_like_<T>::value && !detail::is_range_<T>::value;
 };
 
 template <typename T, typename C> struct is_tuple_formattable {
-  static constexpr const bool value =
-      detail::is_tuple_formattable_<T, C>::value;
+  static constexpr bool value = detail::is_tuple_formattable_<T, C>::value;
 };
 
 template <typename Tuple, typename Char>
@@ -342,7 +341,7 @@ struct formatter<Tuple, Char,
 };
 
 template <typename T, typename Char> struct is_range {
-  static constexpr const bool value =
+  static constexpr bool value =
       detail::is_range_<T>::value && !detail::has_to_string_view<T>::value;
 };
 
@@ -752,7 +751,7 @@ template <typename T> class is_container_adaptor_like {
   template <typename> static void check(...);
 
  public:
-  static constexpr const bool value =
+  static constexpr bool value =
       !std::is_void<decltype(check<T>(nullptr))>::value;
 };
 

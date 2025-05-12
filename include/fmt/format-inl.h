@@ -275,7 +275,7 @@ template <> struct cache_accessor<float> {
   static auto get_cached_power(int k) noexcept -> uint64_t {
     FMT_ASSERT(k >= float_info<float>::min_k && k <= float_info<float>::max_k,
                "k is out of range");
-    static constexpr const uint64_t pow10_significands[] = {
+    static constexpr uint64_t pow10_significands[] = {
         0x81ceb32c4b43fcf5, 0xa2425ff75e14fc32, 0xcad2f7f5359a3b3f,
         0xfd87b5f28300ca0e, 0x9e74d1b791e07e49, 0xc612062576589ddb,
         0xf79687aed3eec552, 0x9abe14cd44753b53, 0xc16d9a0095928a28,
@@ -370,7 +370,7 @@ template <> struct cache_accessor<double> {
     FMT_ASSERT(k >= float_info<double>::min_k && k <= float_info<double>::max_k,
                "k is out of range");
 
-    static constexpr const uint128_fallback pow10_significands[] = {
+    static constexpr uint128_fallback pow10_significands[] = {
 #if FMT_USE_FULL_CACHE_DRAGONBOX
       {0xff77b1fcbebcdc4f, 0x25e8e89c13bb0f7b},
       {0x9faacf3df73609b1, 0x77b191618c54e9ad},
@@ -1037,7 +1037,7 @@ template <> struct cache_accessor<double> {
 #if FMT_USE_FULL_CACHE_DRAGONBOX
     return pow10_significands[k - float_info<double>::min_k];
 #else
-    static constexpr const uint64_t powers_of_5_64[] = {
+    static constexpr uint64_t powers_of_5_64[] = {
         0x0000000000000001, 0x0000000000000005, 0x0000000000000019,
         0x000000000000007d, 0x0000000000000271, 0x0000000000000c35,
         0x0000000000003d09, 0x000000000001312d, 0x000000000005f5e1,

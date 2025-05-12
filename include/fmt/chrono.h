@@ -326,7 +326,7 @@ inline auto get_classic_locale() -> const std::locale& {
 }
 
 template <typename CodeUnit> struct codecvt_result {
-  static constexpr const size_t max_size = 32;
+  static constexpr size_t max_size = 32;
   CodeUnit buf[max_size];
   CodeUnit* end;
 };
@@ -652,7 +652,7 @@ inline void write_digit2_separated(char* buf, unsigned a, unsigned b,
   // Add ASCII '0' to each digit byte and insert separators.
   digits |= 0x3030003030003030 | (usep << 16) | (usep << 40);
 
-  constexpr const size_t len = 8;
+  constexpr size_t len = 8;
   if (const_check(is_big_endian())) {
     char tmp[len];
     std::memcpy(tmp, &digits, len);
