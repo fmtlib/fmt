@@ -555,10 +555,10 @@ FMT_CONSTEXPR FMT_NOINLINE auto copy_noinline(InputIt begin, InputIt end,
  */
 FMT_CONSTEXPR inline auto utf8_decode(const char* s, uint32_t* c, int* e)
     -> const char* {
-  constexpr const int masks[] = {0x00, 0x7f, 0x1f, 0x0f, 0x07};
-  constexpr const uint32_t mins[] = {4194304, 0, 128, 2048, 65536};
-  constexpr const int shiftc[] = {0, 18, 12, 6, 0};
-  constexpr const int shifte[] = {0, 6, 4, 2, 0};
+  constexpr int masks[] = {0x00, 0x7f, 0x1f, 0x0f, 0x07};
+  constexpr uint32_t mins[] = {4194304, 0, 128, 2048, 65536};
+  constexpr int shiftc[] = {0, 18, 12, 6, 0};
+  constexpr int shifte[] = {0, 6, 4, 2, 0};
 
   int len = "\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\1\0\0\0\0\0\0\0\0\2\2\2\2\3\3\4"
       [static_cast<unsigned char>(*s) >> 3];
@@ -1044,7 +1044,7 @@ inline auto do_count_digits(uint64_t n) -> int {
       10, 11, 11, 11, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 15, 15,
       15, 16, 16, 16, 16, 17, 17, 17, 18, 18, 18, 19, 19, 19, 19, 20};
   auto t = bsr2log10[FMT_BUILTIN_CLZLL(n | 1) ^ 63];
-  static constexpr const uint64_t zero_or_powers_of_10[] = {
+  static constexpr uint64_t zero_or_powers_of_10[] = {
       0, 0, FMT_POWERS_OF_10(1U), FMT_POWERS_OF_10(1000000000ULL),
       10000000000000000000ULL};
   return t - (n < zero_or_powers_of_10[t]);
@@ -1519,7 +1519,7 @@ template <typename F> struct basic_fp {
   F f;
   int e;
 
-  static constexpr const int num_significand_bits =
+  static constexpr int num_significand_bits =
       static_cast<int>(sizeof(F) * num_bits<unsigned char>());
 
   constexpr basic_fp() : f(0), e(0) {}
@@ -1964,8 +1964,7 @@ FMT_CONSTEXPR auto make_write_int_arg(T value, sign s)
     prefix = 0x01000000 | '-';
     abs_value = 0 - abs_value;
   } else {
-    constexpr const unsigned prefixes[4] = {0, 0, 0x1000000u | '+',
-                                            0x1000000u | ' '};
+    constexpr unsigned prefixes[4] = {0, 0, 0x1000000u | '+', 0x1000000u | ' '};
     prefix = prefixes[static_cast<int>(s)];
   }
   return {abs_value, prefix};

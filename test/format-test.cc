@@ -1940,8 +1940,8 @@ TEST(format_test, unpacked_args) {
 
 constexpr char with_null[3] = {'{', '}', '\0'};
 constexpr char no_null[2] = {'{', '}'};
-static constexpr const char static_with_null[3] = {'{', '}', '\0'};
-static constexpr const char static_no_null[2] = {'{', '}'};
+static constexpr char static_with_null[3] = {'{', '}', '\0'};
+static constexpr char static_no_null[2] = {'{', '}'};
 
 TEST(format_test, compile_time_string) {
   EXPECT_EQ(fmt::format(FMT_STRING("foo")), "foo");
