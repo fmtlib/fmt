@@ -1225,7 +1225,8 @@ FMT_CONSTEXPR auto do_format_base2e(int base_bits, Char* out, UInt value,
   out += size;
   do {
     const char* digits = upper ? "0123456789ABCDEF" : "0123456789abcdef";
-    unsigned digit = static_cast<unsigned>(value & ((1 << base_bits) - 1));
+    unsigned digit = static_cast<unsigned>(
+        value & ((static_cast<UInt>(1) << base_bits) - 1));
     *--out = static_cast<Char>(base_bits < 4 ? static_cast<char>('0' + digit)
                                              : digits[digit]);
   } while ((value >>= base_bits) != 0);
