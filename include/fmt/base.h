@@ -539,7 +539,7 @@ template <typename Char> class basic_string_view {
   FMT_CONSTEXPR20 basic_string_view(const Char* s) : data_(s) {
 #if FMT_HAS_BUILTIN(__builtin_strlen) || FMT_GCC_VERSION || FMT_CLANG_VERSION
     if (std::is_same<Char, char>::value && !detail::is_constant_evaluated()) {
-      size_ = __builtin_strlen(detail::narrow(s));  // strlen is not costexpr.
+      size_ = __builtin_strlen(detail::narrow(s));  // strlen is not constexpr.
       return;
     }
 #endif
@@ -1068,7 +1068,7 @@ template <typename Char> struct named_arg_info {
   int id;
 };
 
-// named_args is non-const to suppress a bogus -Wmaybe-uninitalized in gcc 13.
+// named_args is non-const to suppress a bogus -Wmaybe-uninitialized in gcc 13.
 template <typename Char>
 FMT_CONSTEXPR void check_for_duplicate(named_arg_info<Char>* named_args,
                                        int named_arg_index,
