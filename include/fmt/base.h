@@ -1678,12 +1678,13 @@ template <typename... T> struct arg_pack {};
 template <typename Char, int NUM_ARGS, int NUM_NAMED_ARGS, bool DYNAMIC_NAMES>
 class format_string_checker {
  private:
-  type types_[max_of(1, NUM_ARGS)];
-  named_arg_info<Char> named_args_[max_of(1, NUM_NAMED_ARGS)];
+  type types_[static_cast<size_t>(max_of(1, NUM_ARGS))];
+  named_arg_info<Char>
+      named_args_[static_cast<size_t>(max_of(1, NUM_NAMED_ARGS))];
   compile_parse_context<Char> context_;
 
   using parse_func = auto (*)(parse_context<Char>&) -> const Char*;
-  parse_func parse_funcs_[max_of(1, NUM_ARGS)];
+  parse_func parse_funcs_[static_cast<size_t>(max_of(1, NUM_ARGS))];
 
  public:
   template <typename... T>
@@ -2338,8 +2339,9 @@ template <typename Context, int NUM_ARGS, int NUM_NAMED_ARGS,
           unsigned long long DESC>
 struct named_arg_store {
   // args_[0].named_args points to named_args to avoid bloating format_args.
-  arg_t<Context, NUM_ARGS> args[1 + NUM_ARGS];
-  named_arg_info<typename Context::char_type> named_args[NUM_NAMED_ARGS];
+  arg_t<Context, NUM_ARGS> args[static_cast<size_t>(1 + NUM_ARGS)];
+  named_arg_info<typename Context::char_type>
+      named_args[static_cast<size_t>(NUM_NAMED_ARGS)];
 
   template <typename... T>
   FMT_CONSTEXPR FMT_ALWAYS_INLINE named_arg_store(T&... values)
@@ -2370,10 +2372,10 @@ template <typename Context, int NUM_ARGS, int NUM_NAMED_ARGS,
           unsigned long long DESC>
 struct format_arg_store {
   // +1 to workaround a bug in gcc 7.5 that causes duplicated-branches warning.
-  using type =
-      conditional_t<NUM_NAMED_ARGS == 0,
-                    arg_t<Context, NUM_ARGS>[max_of(1, NUM_ARGS)],
-                    named_arg_store<Context, NUM_ARGS, NUM_NAMED_ARGS, DESC>>;
+  using type = conditional_t<
+      NUM_NAMED_ARGS == 0,
+      arg_t<Context, NUM_ARGS>[static_cast<size_t>(max_of(1, NUM_ARGS))],
+      named_arg_store<Context, NUM_ARGS, NUM_NAMED_ARGS, DESC>>;
   type args;
 };
 

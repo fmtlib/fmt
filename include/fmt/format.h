@@ -1225,7 +1225,8 @@ FMT_CONSTEXPR auto do_format_base2e(int base_bits, Char* out, UInt value,
   out += size;
   do {
     const char* digits = upper ? "0123456789ABCDEF" : "0123456789abcdef";
-    unsigned digit = static_cast<unsigned>(value & ((1 << base_bits) - 1));
+    unsigned digit = static_cast<unsigned>(
+        value & ((static_cast<UInt>(1) << base_bits) - 1));
     *--out = static_cast<Char>(base_bits < 4 ? static_cast<char>('0' + digit)
                                              : digits[digit]);
   } while ((value >>= base_bits) != 0);
@@ -2017,7 +2018,7 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
                                         const format_specs& specs) -> OutputIt {
   static_assert(std::is_same<T, uint32_or_64_or_128_t<T>>::value, "");
 
-  constexpr int buffer_size = num_bits<T>();
+  constexpr size_t buffer_size = num_bits<T>();
   char buffer[buffer_size];
   if (is_constant_evaluated()) fill_n(buffer, buffer_size, '\0');
   const char* begin = nullptr;
