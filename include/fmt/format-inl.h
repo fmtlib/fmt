@@ -22,7 +22,7 @@
 
 #include "format.h"
 
-#if FMT_USE_LOCALE
+#if FMT_USE_LOCALE && !defined(FMT_MODULE)
 #  include <locale>
 #endif
 
