@@ -3824,7 +3824,7 @@ struct formatter<T, Char, void_t<detail::format_as_result<T>>>
  *     auto s = fmt::format("{}", fmt::ptr(p));
  */
 template <typename T> auto ptr(T p) -> const void* {
-  static_assert(std::is_pointer<T>::value, "");
+  static_assert(std::is_pointer<T>::value, "fmt::ptr used with non-pointer");
   return detail::bit_cast<const void*>(p);
 }
 
