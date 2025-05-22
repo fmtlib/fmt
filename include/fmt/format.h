@@ -2137,14 +2137,14 @@ FMT_CONSTEXPR auto handle_precision(
     FMT_ENABLE_IF(std::is_same<Char, char>::value)) -> size_t {
   auto code_points = count_code_points_with_display_width_precision(
       s, to_unsigned(specs.precision));
-  return code_point_index(s, to_unsigned(code_points));
+  return code_point_index(s, code_points);
 }
 
 template <typename Char>
 FMT_CONSTEXPR auto handle_precision(
     basic_string_view<Char> s, const format_specs&,
     FMT_ENABLE_IF(!std::is_same<Char, char>::value)) -> size_t {
-  return code_point_index(s, to_unsigned(s.size()));
+  return code_point_index(s, s.size());
 }
 
 template <typename Char, typename OutputIt>
