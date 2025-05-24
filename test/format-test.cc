@@ -210,6 +210,12 @@ TEST(format_impl_test, compute_width) {
   EXPECT_EQ(fmt::detail::compute_width("вожык"), 5);
 }
 
+TEST(format_impl_test, count_code_points_with_display_width_precision) {
+  EXPECT_EQ(
+      fmt::detail::count_code_points_with_display_width_precision("🐱🐱🐱", 5),
+      2);
+}
+
 TEST(util_test, utf8_to_utf16) {
   auto u = fmt::detail::utf8_to_utf16("лошадка");
   EXPECT_EQ(L"\x043B\x043E\x0448\x0430\x0434\x043A\x0430", u.str());

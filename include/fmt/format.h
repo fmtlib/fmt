@@ -2109,13 +2109,51 @@ FMT_CONSTEXPR FMT_INLINE auto write(OutputIt out, T value,
   return write_int<Char>(out, make_write_int_arg(value, specs.sign()), specs);
 }
 
+FMT_INLINE auto count_code_points_with_display_width_precision(
+    string_view s, size_t display_width_precision) -> size_t {
+  size_t display_width = 0;
+  size_t code_points = 0;
+
+  // Iterate through the string to compute display width
+  for_each_codepoint(s, [&](uint32_t, string_view sv) {
+    // Compute the display width of the current code point
+    size_t cp_width = compute_width(sv);
+    if (display_width + cp_width > display_width_precision) {
+      return false;  // Stop iteration when display width exceeds precision
+    }
+
+    display_width += cp_width;
+    code_points++;
+    return true;
+  });
+
+  return code_points;
+}
+
+template <typename Char>
+FMT_CONSTEXPR auto handle_precision(
+    basic_string_view<Char> s, const format_specs& specs,
+    FMT_ENABLE_IF(std::is_same<Char, char>::value)) -> size_t {
+  auto code_points = count_code_points_with_display_width_precision(
+      s, to_unsigned(specs.precision));
+  return code_point_index(s, code_points);
+}
+
+template <typename Char>
+FMT_CONSTEXPR auto handle_precision(
+    basic_string_view<Char> s, const format_specs&,
+    FMT_ENABLE_IF(!std::is_same<Char, char>::value)) -> size_t {
+  return code_point_index(s, s.size());
+}
+
 template <typename Char, typename OutputIt>
 FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
                          const format_specs& specs) -> OutputIt {
   auto data = s.data();
   auto size = s.size();
-  if (specs.precision >= 0 && to_unsigned(specs.precision) < size)
-    size = code_point_index(s, to_unsigned(specs.precision));
+  if (specs.precision >= 0 && to_unsigned(specs.precision) < size) {
+    size = handle_precision(s, specs);
+  }
 
   bool is_debug = specs.type() == presentation_type::debug;
   if (is_debug) {
