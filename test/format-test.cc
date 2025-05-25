@@ -6,6 +6,7 @@
 // For the license information refer to format.h.
 
 // Check if fmt/format.h compiles with windows.h included before it.
+#include <gtest/gtest.h>
 #ifdef _WIN32
 #  include <windows.h>
 #endif
@@ -208,12 +209,6 @@ TEST(util_test, parse_nonnegative_int) {
 
 TEST(format_impl_test, compute_width) {
   EXPECT_EQ(fmt::detail::compute_width("вожык"), 5);
-}
-
-TEST(format_impl_test, count_code_points_with_display_width_precision) {
-  EXPECT_EQ(
-      fmt::detail::count_code_points_with_display_width_precision("🐱🐱🐱", 5),
-      2);
 }
 
 TEST(util_test, utf8_to_utf16) {
@@ -556,6 +551,10 @@ TEST(format_test, arg_errors) {
                    "invalid format string");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{" + int_maxer + "}")),
                    format_error, "argument not found");
+}
+
+TEST(format_test, display_width_precision) {
+  EXPECT_EQ(fmt::format("{:.5}", "🐱🐱🐱"), "🐱🐱");
 }
 
 template <int N> struct test_format {
