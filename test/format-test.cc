@@ -6,6 +6,7 @@
 // For the license information refer to format.h.
 
 // Check if fmt/format.h compiles with windows.h included before it.
+#include <gtest/gtest.h>
 #ifdef _WIN32
 #  include <windows.h>
 #endif
@@ -550,6 +551,10 @@ TEST(format_test, arg_errors) {
                    "invalid format string");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{" + int_maxer + "}")),
                    format_error, "argument not found");
+}
+
+TEST(format_test, display_width_precision) {
+  EXPECT_EQ(fmt::format("{:.5}", "🐱🐱🐱"), "🐱🐱");
 }
 
 template <int N> struct test_format {
