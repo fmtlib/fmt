@@ -6,7 +6,6 @@
 // For the license information refer to format.h.
 
 // Check if fmt/format.h compiles with windows.h included before it.
-#include <gtest/gtest.h>
 #ifdef _WIN32
 #  include <windows.h>
 #endif
