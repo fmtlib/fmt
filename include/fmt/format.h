@@ -738,8 +738,9 @@ using is_double_double = bool_constant<std::numeric_limits<T>::digits == 106>;
 #endif
 
 // An allocator that uses malloc/free to allow removing dependency on the C++
-// standard libary runtime.
-template <typename T> struct allocator {
+// standard libary runtime. std::decay is used for back_inserter to be found by
+// ADL when applied to memory_buffer.
+template <typename T> struct allocator : private std::decay<void> {
   using value_type = T;
 
   T* allocate(size_t n) {

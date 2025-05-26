@@ -481,6 +481,12 @@ TEST(memory_buffer_test, max_size_allocator_overflow) {
   EXPECT_THROW(buffer.resize(161), std::exception);
 }
 
+TEST(memory_buffer_test, back_insert_iterator) {
+  fmt::memory_buffer buf;
+  using iterator = decltype(std::back_inserter(buf));
+  EXPECT_TRUE(fmt::detail::is_back_insert_iterator<iterator>::value);
+}
+
 TEST(format_test, digits2_alignment) {
   auto p =
       fmt::detail::bit_cast<fmt::detail::uintptr_t>(fmt::detail::digits2(0));
