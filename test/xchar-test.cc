@@ -411,7 +411,7 @@ TEST(std_test_xchar, complex) {
 }
 
 TEST(std_test_xchar, optional) {
-#  ifdef __cpp_lib_optional
+#  if FMT_CPP_LIB_OPTIONAL
   EXPECT_EQ(fmt::format(L"{}", std::optional{L'C'}), L"optional(\'C\')");
   EXPECT_EQ(fmt::format(L"{}", std::optional{std::wstring{L"wide string"}}),
             L"optional(\"wide string\")");

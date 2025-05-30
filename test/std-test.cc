@@ -65,7 +65,7 @@ TEST(ranges_std_test, format_quote_path) {
       std::vector<std::filesystem::path>{"path1/file1.txt", "path2/file2.txt"};
   EXPECT_EQ(fmt::format("{}", vec),
             "[\"path1/file1.txt\", \"path2/file2.txt\"]");
-#  ifdef __cpp_lib_optional
+#  if FMT_CPP_LIB_OPTIONAL
   auto o = std::optional<std::filesystem::path>("path/file.txt");
   EXPECT_EQ(fmt::format("{}", o), "optional(\"path/file.txt\")");
   EXPECT_EQ(fmt::format("{:?}", o), "optional(\"path/file.txt\")");
@@ -121,7 +121,7 @@ TEST(std_test, source_location) {
 #endif
 
 TEST(std_test, optional) {
-#ifdef __cpp_lib_optional
+#if FMT_CPP_LIB_OPTIONAL
   EXPECT_EQ(fmt::format("{}", std::optional<int>{}), "none");
   EXPECT_EQ(fmt::format("{}", std::pair{1, "second"}), "(1, \"second\")");
   EXPECT_EQ(fmt::format("{}", std::vector{std::optional{1}, std::optional{2},
@@ -149,7 +149,7 @@ TEST(std_test, optional) {
 }
 
 TEST(std_test, expected) {
-#ifdef __cpp_lib_expected
+#if FMT_CPP_LIB_EXPECTED
   EXPECT_EQ(fmt::format("{}", std::expected<void, int>{}), "expected()");
   EXPECT_EQ(fmt::format("{}", std::expected<int, int>{1}), "expected(1)");
   EXPECT_EQ(fmt::format("{}", std::expected<int, int>{std::unexpected(1)}),
@@ -198,7 +198,7 @@ class my_class {
 };
 }  // namespace my_nso
 TEST(std_test, optional_format_as) {
-#ifdef __cpp_lib_optional
+#if FMT_CPP_LIB_OPTIONAL
   EXPECT_EQ(fmt::format("{}", std::optional<my_nso::my_number>{}), "none");
   EXPECT_EQ(fmt::format("{}", std::optional{my_nso::my_number::one}),
             "optional(\"first\")");

@@ -77,6 +77,22 @@
 #  endif
 #endif
 
+#ifndef FMT_CPP_LIB_OPTIONAL
+#  ifdef __cpp_lib_optional
+#    define FMT_CPP_LIB_OPTIONAL __cpp_lib_optional
+#  else
+#    define FMT_CPP_LIB_OPTIONAL 0
+#  endif
+#endif
+
+#ifndef FMT_CPP_LIB_EXPECTED
+#  ifdef __cpp_lib_expected
+#    define FMT_CPP_LIB_EXPECTED __cpp_lib_expected
+#  else
+#    define FMT_CPP_LIB_EXPECTED 0
+#  endif
+#endif
+
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
@@ -111,7 +127,7 @@ void write_escaped_path(basic_memory_buffer<Char>& quoted,
 
 #endif  // FMT_CPP_LIB_FILESYSTEM
 
-#if defined(__cpp_lib_expected) || FMT_CPP_LIB_VARIANT
+#if FMT_CPP_LIB_EXPECTED || FMT_CPP_LIB_VARIANT
 template <typename Char, typename OutputIt, typename T>
 auto write_escaped_alternative(OutputIt out, const T& v) -> OutputIt {
   if constexpr (has_to_string_view<T>::value)
@@ -350,7 +366,7 @@ struct formatter<std::bitset<N>, Char>
 template <typename Char>
 struct formatter<std::thread::id, Char> : basic_ostream_formatter<Char> {};
 
-#ifdef __cpp_lib_optional
+#if FMT_CPP_LIB_OPTIONAL
 template <typename T, typename Char>
 struct formatter<std::optional<T>, Char,
                  std::enable_if_t<is_formattable<T, Char>::value>> {
@@ -389,9 +405,9 @@ struct formatter<std::optional<T>, Char,
     return detail::write(out, ')');
   }
 };
-#endif  // __cpp_lib_optional
+#endif  // FMT_CPP_LIB_OPTIONAL
 
-#ifdef __cpp_lib_expected
+#if FMT_CPP_LIB_EXPECTED
 template <typename T, typename E, typename Char>
 struct formatter<std::expected<T, E>, Char,
                  std::enable_if_t<(std::is_void<T>::value ||
@@ -418,7 +434,7 @@ struct formatter<std::expected<T, E>, Char,
     return out;
   }
 };
-#endif  // __cpp_lib_expected
+#endif  // FMT_CPP_LIB_EXPECTED
 
 #ifdef __cpp_lib_source_location
 template <> struct formatter<std::source_location> {
