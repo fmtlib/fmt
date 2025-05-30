@@ -2357,7 +2357,7 @@ FMT_CONSTEXPR20 auto write_significand(OutputIt out, T significand,
 
 // Numbers with exponents greater or equal to the returned value will use
 // the exponential notation.
-template <typename T> constexpr auto exp_upper() -> int {
+template <typename T> FMT_CONSTEVAL auto exp_upper() -> int {
   return std::numeric_limits<T>::digits10 != 0
              ? min_of(16, std::numeric_limits<T>::digits10 + 1)
              : 16;
@@ -3394,20 +3394,17 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
   if (is_constant_evaluated()) return write<Char>(out, value, format_specs());
 
   auto s = detail::signbit(value) ? sign::minus : sign::none;
+  using float_type = conditional_t<sizeof(T) == sizeof(double), double, float>;
+  auto mask = exponent_mask<float_type>();
+  if ((bit_cast<decltype(mask)>(value) & mask) == mask)
+    return write_nonfinite<Char>(out, std::isnan(value), {}, s);
 
-  constexpr auto specs = format_specs();
-  using floaty = conditional_t<sizeof(T) >= sizeof(double), double, float>;
-  using floaty_uint = typename dragonbox::float_info<floaty>::carrier_uint;
-  floaty_uint mask = exponent_mask<floaty>();
-  if ((bit_cast<floaty_uint>(value) & mask) == mask)
-    return write_nonfinite<Char>(out, std::isnan(value), specs, s);
-
-  auto dec = dragonbox::to_decimal(static_cast<floaty>(value));
+  auto dec = dragonbox::to_decimal<float_type>(value);
   int significand_size = count_digits(dec.significand);
   int exp = dec.exponent + significand_size - 1;
   if (use_fixed(exp, detail::exp_upper<T>())) {
     return write_fixed<Char, fallback_digit_grouping<Char>>(
-        out, dec, significand_size, Char('.'), specs, s);
+        out, dec, significand_size, Char('.'), {}, s);
   }
 
   // Write value in the exponential format.
@@ -3416,11 +3413,11 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
       to_unsigned((s != sign::none ? 1 : 0) + significand_size +
                   (has_decimal_point ? 1 : 0) + compute_exp_size(exp));
   auto it = reserve(out, size);
-  if (s != sign::none) *it++ = detail::getsign<Char>(s);
+  if (s != sign::none) *it++ = Char('-');
   // Insert a decimal point after the first digit and add an exponent.
   it = write_significand(it, dec.significand, significand_size, 1,
                          has_decimal_point ? '.' : Char());
-  *it++ = static_cast<Char>('e');
+  *it++ = Char('e');
   it = write_exponent<Char>(exp, it);
   return base_iterator(out, it);
 }
