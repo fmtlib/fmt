@@ -1488,6 +1488,13 @@ template <typename Float> constexpr auto exponent_bias() -> int {
                               : std::numeric_limits<Float>::max_exponent - 1;
 }
 
+FMT_CONSTEXPR inline auto compute_exp_size(int exp) -> int {
+  auto prefix_size = 2;  // sign + 'e'
+  auto abs_exp = exp >= 0 ? exp : -exp;
+  if (exp < 100) return prefix_size + 2;
+  return prefix_size + (abs_exp >= 1000 ? 4 : 3);
+}
+
 // Writes the exponent exp in the form "[+-]d{2,3}" to buffer.
 template <typename Char, typename OutputIt>
 FMT_CONSTEXPR auto write_exponent(int exp, OutputIt out) -> OutputIt {
@@ -2348,6 +2355,16 @@ FMT_CONSTEXPR20 auto write_significand(OutputIt out, T significand,
                                      buffer.end(), out);
 }
 
+enum { exp_lower = -4 };
+
+// Numbers with exponents greater or equal to the returned value will use
+// the exponential notation.
+template <typename T> constexpr auto exp_upper() -> int {
+  return std::numeric_limits<T>::digits10 != 0
+             ? min_of(16, std::numeric_limits<T>::digits10 + 1)
+             : 16;
+}
+
 template <typename Char, typename OutputIt, typename DecimalFP,
           typename Grouping = digit_grouping<Char>>
 FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
@@ -2368,7 +2385,6 @@ FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
     if (specs.type() == presentation_type::fixed) return false;
     // Use the fixed notation if the exponent is in [exp_lower, exp_upper),
     // e.g. 0.0001 instead of 1e-04. Otherwise use the exponent notation.
-    const int exp_lower = -4;
     return output_exp < exp_lower ||
            output_exp >= (specs.precision > 0 ? specs.precision : exp_upper);
   };
@@ -2381,11 +2397,7 @@ FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
     } else if (significand_size == 1) {
       decimal_point = Char();
     }
-    auto abs_output_exp = output_exp >= 0 ? output_exp : -output_exp;
-    int exp_digits = 2;
-    if (abs_output_exp >= 100) exp_digits = abs_output_exp >= 1000 ? 4 : 3;
-
-    size += to_unsigned((decimal_point ? 1 : 0) + 2 + exp_digits);
+    size += to_unsigned((decimal_point ? 1 : 0) + compute_exp_size(output_exp));
     char exp_char = specs.upper() ? 'E' : 'e';
     auto write = [=](iterator it) {
       if (s != sign::none) *it++ = detail::getsign<Char>(s);
@@ -3309,14 +3321,6 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision,
   return exp;
 }
 
-// Numbers with exponents greater or equal to the returned value will use
-// the exponential notation.
-template <typename T> constexpr auto exp_upper() -> int {
-  return std::numeric_limits<T>::digits10 != 0
-             ? min_of(16, std::numeric_limits<T>::digits10 + 1)
-             : 16;
-}
-
 template <typename Char, typename OutputIt, typename T>
 FMT_CONSTEXPR20 auto write_float(OutputIt out, T value, format_specs specs,
                                  locale_ref loc) -> OutputIt {
@@ -3396,7 +3400,24 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
     return write_nonfinite<Char>(out, std::isnan(value), specs, s);
 
   auto dec = dragonbox::to_decimal(static_cast<floaty>(value));
-  return write_float<Char>(out, dec, specs, s, exp_upper<T>(), {});
+  int significand_size = count_digits(dec.significand);
+  int exp = dec.exponent + significand_size - 1;
+  int exp_upper = detail::exp_upper<T>();
+  if (exp < exp_lower || exp >= exp_upper) {
+    auto has_decimal_point = significand_size != 1;
+    size_t size =
+        to_unsigned((s != sign::none ? 1 : 0) + significand_size +
+                    (has_decimal_point ? 1 : 0) + compute_exp_size(exp));
+    auto it = reserve(out, size);
+    if (s != sign::none) *it++ = detail::getsign<Char>(s);
+    // Insert a decimal point after the first digit and add an exponent.
+    it = write_significand(it, dec.significand, significand_size, 1,
+                           has_decimal_point ? '.' : Char());
+    *it++ = static_cast<Char>('e');
+    it = write_exponent<Char>(exp, it);
+    return base_iterator(out, it);
+  }
+  return write_float<Char>(out, dec, specs, s, exp_upper, {});
 }
 
 template <typename Char, typename OutputIt, typename T,
