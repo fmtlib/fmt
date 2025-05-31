@@ -674,7 +674,7 @@
   https://github.com/fmtlib/fmt/issues/1747,
   https://github.com/fmtlib/fmt/pull/1750).
   Thanks @gsjaardema, @gabime, @johnor, @Kurkin, @invexed, @peterbell10,
-  @daixtrose, @petrutlucian94, @Neargye, @ambitslix, @gabime, @erthink,
+  @daixtrose, @petrutlucian94, @Neargye, @ambitslix, @gabime,
   @tohammer and @0x8000-0000.
 
 # 6.2.1 - 2020-05-09
