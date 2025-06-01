@@ -2392,7 +2392,7 @@ FMT_CONSTEXPR20 auto write_fixed(OutputIt out, const DecimalFP& f,
   using iterator = reserve_iterator<OutputIt>;
 
   int exp = f.exponent + significand_size;
-  int size = significand_size + (s != sign::none ? 1 : 0);
+  long long size = significand_size + (s != sign::none ? 1 : 0);
   if (f.exponent >= 0) {
     // 1234e5 -> 123400000[.0+]
     size += f.exponent;
@@ -2466,7 +2466,7 @@ FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
 
   // Write value in the exponential format.
   int num_zeros = 0;
-  int size = significand_size + (s != sign::none ? 1 : 0);
+  long long size = significand_size + (s != sign::none ? 1 : 0);
   if (specs.alt()) {
     num_zeros = max_of(specs.precision - significand_size, 0);
     size += num_zeros;

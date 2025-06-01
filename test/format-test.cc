@@ -1095,9 +1095,6 @@ TEST(format_test, precision) {
   EXPECT_THROW_MSG(
       (void)fmt::format(runtime("{0:.2f}"), reinterpret_cast<void*>(0xcafe)),
       format_error, "invalid format specifier");
-  EXPECT_THROW_MSG((void)fmt::format(runtime("{:.{}e}"), 42.0,
-                                     fmt::detail::max_value<int>()),
-                   format_error, "number is too big");
   EXPECT_THROW_MSG(
       (void)fmt::format("{:.2147483646f}", -2.2121295195081227E+304),
       format_error, "number is too big");
@@ -1107,6 +1104,32 @@ TEST(format_test, precision) {
   EXPECT_EQ(fmt::format("{0:.2}", "str"), "st");
   EXPECT_EQ(fmt::format("{0:.5}", "вожыкі"), "вожык");
   EXPECT_EQ(fmt::format("{0:.6}", "123456\xad"), "123456");
+}
+
+TEST(format_test, large_precision) {
+  // Iterator used to abort the actual output.
+  struct throwing_iterator {
+    auto operator=(char) -> throwing_iterator& {
+      throw std::runtime_error("aborted");
+      return *this;
+    }
+    auto operator*() -> throwing_iterator& { return *this; }
+    auto operator++() -> throwing_iterator& { return *this; }
+    auto operator++(int) -> throwing_iterator { return *this; }
+  };
+  auto it = throwing_iterator();
+
+  EXPECT_THROW_MSG(fmt::format_to(it, fmt::runtime("{:#.{}}"), 1.0,
+                                  fmt::detail::max_value<int>()),
+                   std::runtime_error, "aborted");
+
+  EXPECT_THROW_MSG(fmt::format_to(it, fmt::runtime("{:#.{}e}"), 1.0,
+                                  fmt::detail::max_value<int>() - 1),
+                   std::runtime_error, "aborted");
+
+  EXPECT_THROW_MSG((void)fmt::format(fmt::runtime("{:.{}e}"), 42.0,
+                                     fmt::detail::max_value<int>()),
+                   format_error, "number is too big");
 }
 
 TEST(format_test, utf8_precision) {
