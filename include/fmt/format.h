@@ -117,6 +117,33 @@
 #  define FMT_NOINLINE
 #endif
 
+// Detect constexpr std::string.
+#if !FMT_USE_CONSTEVAL
+#  define FMT_USE_CONSTEXPR_STRING 0
+#elif defined(__cpp_lib_constexpr_string) && \
+    __cpp_lib_constexpr_string >= 201907L
+#  if FMT_CLANG_VERSION && FMT_GLIBCXX_RELEASE
+// clang + libstdc++ are able to work only starting with gcc13.3
+// https://gcc.gnu.org/bugzilla/show_bug.cgi?id=113294
+#    if FMT_GLIBCXX_RELEASE < 13
+#      define FMT_USE_CONSTEXPR_STRING 0
+#    elif FMT_GLIBCXX_RELEASE == 13 && __GLIBCXX__ < 20240521
+#      define FMT_USE_CONSTEXPR_STRING 0
+#    else
+#      define FMT_USE_CONSTEXPR_STRING 1
+#    endif
+#  else
+#    define FMT_USE_CONSTEXPR_STRING 1
+#  endif
+#else
+#  define FMT_USE_CONSTEXPR_STRING 0
+#endif
+#if FMT_USE_CONSTEXPR_STRING
+#  define FMT_CONSTEXPR_STRING constexpr
+#else
+#  define FMT_CONSTEXPR_STRING
+#endif
+
 // GCC 4.9 doesn't support qualified names in specializations.
 namespace std {
 template <typename T> struct iterator_traits<fmt::basic_appender<T>> {
@@ -4252,7 +4279,7 @@ FMT_NODISCARD FMT_INLINE auto format(format_string<T...> fmt, T&&... args)
  *     std::string answer = fmt::to_string(42);
  */
 template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
-FMT_NODISCARD auto to_string(T value) -> std::string {
+FMT_NODISCARD FMT_CONSTEXPR_STRING auto to_string(T value) -> std::string {
   // The buffer should be large enough to store the number including the sign
   // or "false" for bool.
   char buffer[max_of(detail::digits10<T>() + 2, 5)];
@@ -4260,13 +4287,15 @@ FMT_NODISCARD auto to_string(T value) -> std::string {
 }
 
 template <typename T, FMT_ENABLE_IF(detail::use_format_as<T>::value)>
-FMT_NODISCARD auto to_string(const T& value) -> std::string {
+FMT_NODISCARD FMT_CONSTEXPR_STRING auto to_string(const T& value)
+    -> std::string {
   return to_string(format_as(value));
 }
 
 template <typename T, FMT_ENABLE_IF(!std::is_integral<T>::value &&
                                     !detail::use_format_as<T>::value)>
-FMT_NODISCARD auto to_string(const T& value) -> std::string {
+FMT_NODISCARD FMT_CONSTEXPR_STRING auto to_string(const T& value)
+    -> std::string {
   auto buffer = memory_buffer();
   detail::write<char>(appender(buffer), value);
   return {buffer.data(), buffer.size()};

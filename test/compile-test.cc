@@ -421,3 +421,49 @@ TEST(compile_time_formatting_test, multibyte_fill) {
   EXPECT_EQ("жж42", test_format<8>(FMT_COMPILE("{:ж>4}"), 42));
 }
 #endif
+
+#if FMT_USE_CONSTEXPR_STRING
+
+TEST(compile_test, constexpr_format) {
+  {
+    constexpr auto result = []() {
+      return fmt::format(FMT_COMPILE("{}"), 1) == "1";
+    }();
+    EXPECT_TRUE(result);
+  }
+
+  {
+    constexpr auto result = []() {
+      return fmt::format(FMT_COMPILE("{:#b}"), 42) == "0b101010";
+    }();
+    EXPECT_TRUE(result);
+  }
+
+  {
+    constexpr auto result = []() {
+      return "**-42" == fmt::format(FMT_COMPILE("{:*>5}"), -42);
+    }();
+    EXPECT_TRUE(result);
+  }
+
+  {
+    constexpr auto result = []() {
+      return "10 " == fmt::format(FMT_COMPILE("{: ^3}"), 10);
+    }();
+    EXPECT_TRUE(result);
+  }
+
+  {
+    constexpr auto result = []() {
+      return "42 is 42" == fmt::format(FMT_COMPILE("{} is {}"), 42, 42);
+    }();
+    EXPECT_TRUE(result);
+  }
+
+    constexpr auto result = []() {
+      return "This is a very huge int: 1234567890" == fmt::format(FMT_COMPILE("This is a very huge int: {}"), 1234567890);
+    }();
+    EXPECT_TRUE(result);
+}
+
+#endif  // FMT_USE_CONSTEXPR_STRING
