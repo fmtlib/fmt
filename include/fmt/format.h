@@ -2799,7 +2799,7 @@ class bigint {
     bigits_.resize(to_unsigned(num_bigits + exp_difference));
     for (int i = num_bigits - 1, j = i + exp_difference; i >= 0; --i, --j)
       bigits_[j] = bigits_[i];
-    memset(bigits_.data(), 0, to_unsigned(exp_difference) * sizeof(bigit));
+    fill_n(bigits_.data(), to_unsigned(exp_difference), 0);
     exp_ -= exp_difference;
   }
 
