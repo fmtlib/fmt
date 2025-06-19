@@ -2032,6 +2032,17 @@ struct has_back_insert_iterator_container_append<
                         .append(std::declval<InputIt>(),
                                 std::declval<InputIt>()))>> : std::true_type {};
 
+template <typename OutputIt, typename InputIt, typename = void>
+struct has_back_insert_iterator_container_insert_at_end : std::false_type {};
+
+template <typename OutputIt, typename InputIt>
+struct has_back_insert_iterator_container_insert_at_end<
+    OutputIt, InputIt,
+    void_t<decltype(get_container(std::declval<OutputIt>())
+                        .insert(get_container(std::declval<OutputIt>()).end(),
+                                std::declval<InputIt>(),
+                                std::declval<InputIt>()))>> : std::true_type {};
+
 // An optimized version of std::copy with the output value type (T).
 template <typename T, typename InputIt, typename OutputIt,
           FMT_ENABLE_IF(is_back_insert_iterator<OutputIt>::value&&
@@ -2046,6 +2057,8 @@ FMT_CONSTEXPR20 auto copy(InputIt begin, InputIt end, OutputIt out)
 template <typename T, typename InputIt, typename OutputIt,
           FMT_ENABLE_IF(is_back_insert_iterator<OutputIt>::value &&
                         !has_back_insert_iterator_container_append<
+                            OutputIt, InputIt>::value &&
+                        has_back_insert_iterator_container_insert_at_end<
                             OutputIt, InputIt>::value)>
 FMT_CONSTEXPR20 auto copy(InputIt begin, InputIt end, OutputIt out)
     -> OutputIt {
@@ -2055,7 +2068,11 @@ FMT_CONSTEXPR20 auto copy(InputIt begin, InputIt end, OutputIt out)
 }
 
 template <typename T, typename InputIt, typename OutputIt,
-          FMT_ENABLE_IF(!is_back_insert_iterator<OutputIt>::value)>
+          FMT_ENABLE_IF(!(is_back_insert_iterator<OutputIt>::value &&
+                          (has_back_insert_iterator_container_append<
+                               OutputIt, InputIt>::value ||
+                           has_back_insert_iterator_container_insert_at_end<
+                               OutputIt, InputIt>::value)))>
 FMT_CONSTEXPR auto copy(InputIt begin, InputIt end, OutputIt out) -> OutputIt {
   while (begin != end) *out++ = static_cast<T>(*begin++);
   return out;
