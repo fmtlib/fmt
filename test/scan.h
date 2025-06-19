@@ -229,6 +229,8 @@ enum class scan_type {
   uint_type,
   long_long_type,
   ulong_long_type,
+  double_type,
+  float_type,
   string_type,
   string_view_type,
   custom_type
@@ -246,17 +248,18 @@ template <typename Context> class basic_scan_arg {
  private:
   using scan_type = detail::scan_type;
   scan_type type_;
-  union {
-    int* int_value_;
-    unsigned* uint_value_;
-    long long* long_long_value_;
-    unsigned long long* ulong_long_value_;
-    std::string* string_;
-    string_view* string_view_;
-    detail::custom_scan_arg<Context> custom_;
-    // TODO: more types
-  };
-
+union {
+  int* int_value_;
+  unsigned* uint_value_;
+  long long* long_long_value_;
+  unsigned long long* ulong_long_value_;
+  double* double_value_;
+  float* float_value_;
+  std::string* string_;
+  string_view* string_view_;
+  detail::custom_scan_arg<Context> custom_;
+  // TODO: more types
+};
   template <typename T>
   static void scan_custom_arg(void* arg, scan_parse_context& parse_ctx,
                               Context& ctx) {
@@ -276,6 +279,10 @@ template <typename Context> class basic_scan_arg {
       : type_(scan_type::long_long_type), long_long_value_(&value) {}
   FMT_CONSTEXPR basic_scan_arg(unsigned long long& value)
       : type_(scan_type::ulong_long_type), ulong_long_value_(&value) {}
+  FMT_CONSTEXPR basic_scan_arg(double& value)
+    : type_(scan_type::double_type), double_value_(&value) {}
+  FMT_CONSTEXPR basic_scan_arg(float& value)
+    : type_(scan_type::float_type), float_value_(&value) {}
   FMT_CONSTEXPR basic_scan_arg(std::string& value)
       : type_(scan_type::string_type), string_(&value) {}
   FMT_CONSTEXPR basic_scan_arg(string_view& value)
@@ -305,6 +312,10 @@ template <typename Context> class basic_scan_arg {
       return vis(*long_long_value_);
     case scan_type::ulong_long_type:
       return vis(*ulong_long_value_);
+    case scan_type::double_type:
+      return vis(*double_value_);
+    case scan_type::float_type:
+      return vis(*float_value_);
     case scan_type::string_type:
       return vis(*string_);
     case scan_type::string_view_type:
@@ -454,6 +465,47 @@ auto read(scan_iterator it, T& value, const format_specs& specs = {})
   it = read(it, abs_value, specs);
   auto n = static_cast<T>(abs_value);
   value = negative ? -n : n;
+  return it;
+}
+
+auto read(scan_iterator it, double& value, const format_specs& = {})
+    -> scan_iterator {
+  if (it == scan_sentinel()) return it;
+  
+  // Simple floating-point parsing
+  bool negative = *it == '-';
+  if (negative) {
+    ++it;
+    if (it == scan_sentinel()) report_error("invalid input");
+  }
+  
+  double result = 0.0;
+  // Parse integer part
+  while (it != scan_sentinel() && *it >= '0' && *it <= '9') {
+    result = result * 10.0 + (*it - '0');
+    ++it;
+  }
+  
+  // Parse decimal part if present
+  if (it != scan_sentinel() && *it == '.') {
+    ++it;
+    double fraction = 0.1;
+    while (it != scan_sentinel() && *it >= '0' && *it <= '9') {
+      result += (*it - '0') * fraction;
+      fraction *= 0.1;
+      ++it;
+    }
+  }
+  
+  value = negative ? -result : result;
+  return it;
+}
+
+auto read(scan_iterator it, float& value, const format_specs& specs = {})
+    -> scan_iterator {
+  double temp;
+  it = read(it, temp, specs);
+  value = static_cast<float>(temp);
   return it;
 }
 
