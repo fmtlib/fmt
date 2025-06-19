@@ -248,19 +248,19 @@ template <typename Context> struct custom_scan_arg {
   private:
     using scan_type = detail::scan_type;
     scan_type type_;
-  union {
-    int* int_value_;
-    unsigned* uint_value_;
-    long long* long_long_value_;
-    unsigned long long* ulong_long_value_;
-    double* double_value_;
-    float* float_value_;
-    std::string* string_;
-    string_view* string_view_;
-    detail::custom_scan_arg<Context> custom_;
-    // TODO: more types
-  };
-  
+    union {
+      int* int_value_;
+      unsigned* uint_value_;
+      long long* long_long_value_;
+      unsigned long long* ulong_long_value_;
+      double* double_value_;
+      float* float_value_;
+      std::string* string_;
+      string_view* string_view_;
+      detail::custom_scan_arg<Context> custom_;
+      // TODO: more types
+    };
+
   template <typename T>
   static void scan_custom_arg(void* arg, scan_parse_context& parse_ctx,
                               Context& ctx) {
