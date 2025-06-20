@@ -696,26 +696,6 @@ FMT_CONSTEXPR inline auto compute_width(string_view s) -> size_t {
   return num_code_points;
 }
 
-template <typename Char>
-inline auto code_point_index(basic_string_view<Char> s, size_t n) -> size_t {
-  return min_of(n, s.size());
-}
-
-// Calculates the index of the nth code point in a UTF-8 string.
-inline auto code_point_index(string_view s, size_t n) -> size_t {
-  size_t result = s.size();
-  const char* begin = s.begin();
-  for_each_codepoint(s, [begin, &n, &result](uint32_t, string_view sv) {
-    if (n != 0) {
-      --n;
-      return true;
-    }
-    result = to_unsigned(sv.begin() - begin);
-    return false;
-  });
-  return result;
-}
-
 template <typename T> struct is_integral : std::is_integral<T> {};
 template <> struct is_integral<int128_opt> : std::true_type {};
 template <> struct is_integral<uint128_t> : std::true_type {};
@@ -2150,15 +2130,17 @@ FMT_CONSTEXPR FMT_INLINE auto write(OutputIt out, T value,
 inline auto convert_precision_to_size(string_view s, size_t precision)
     -> size_t {
   size_t display_width = 0;
-  size_t num_code_points = 0;
+  size_t result = s.size();
   for_each_codepoint(s, [&](uint32_t, string_view sv) {
     display_width += compute_width(sv);
     // Stop when display width exceeds precision.
-    if (display_width > precision) return false;
-    ++num_code_points;
+    if (display_width > precision) {
+      result = to_unsigned(sv.begin() - s.begin());
+      return false;
+    }
     return true;
   });
-  return code_point_index(s, num_code_points);
+  return result;
 }
 
 template <typename Char, FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
