@@ -244,7 +244,7 @@ template <typename Context> struct custom_scan_arg {
 
 // A scan argument. Context is a template parameter for the compiled API where
 // output can be unbuffered.
-  template <typename Context> class basic_scan_arg {
+template <typename Context> class basic_scan_arg {
   private:
     using scan_type = detail::scan_type;
     scan_type type_;
@@ -281,9 +281,9 @@ template <typename Context> struct custom_scan_arg {
   FMT_CONSTEXPR basic_scan_arg(unsigned long long& value)
       : type_(scan_type::ulong_long_type), ulong_long_value_(&value) {}
   FMT_CONSTEXPR basic_scan_arg(double& value)
-    : type_(scan_type::double_type), double_value_(&value) {}
+      : type_(scan_type::double_type), double_value_(&value) {}
   FMT_CONSTEXPR basic_scan_arg(float& value)
-    : type_(scan_type::float_type), float_value_(&value) {}
+      : type_(scan_type::float_type), float_value_(&value) {}
   FMT_CONSTEXPR basic_scan_arg(std::string& value)
       : type_(scan_type::string_type), string_(&value) {}
   FMT_CONSTEXPR basic_scan_arg(string_view& value)
