@@ -44,6 +44,7 @@
 #  include <cmath>    // std::signbit
 #  include <cstddef>  // std::byte
 #  include <cstdint>  // uint32_t
+#  include <cstdlib>  // std::malloc, std::free
 #  include <cstring>  // std::memcpy
 #  include <limits>   // std::numeric_limits
 #  include <new>      // std::bad_alloc
@@ -755,12 +756,12 @@ template <typename T> struct allocator : private std::decay<void> {
 
   T* allocate(size_t n) {
     FMT_ASSERT(n <= max_value<size_t>() / sizeof(T), "");
-    T* p = static_cast<T*>(malloc(n * sizeof(T)));
+    T* p = static_cast<T*>(std::malloc(n * sizeof(T)));
     if (!p) FMT_THROW(std::bad_alloc());
     return p;
   }
 
-  void deallocate(T* p, size_t) { free(p); }
+  void deallocate(T* p, size_t) { std::free(p); }
 };
 
 }  // namespace detail
