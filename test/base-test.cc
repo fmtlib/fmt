@@ -279,6 +279,17 @@ TEST(base_test, is_back_insert_iterator) {
                std::front_insert_iterator<std::string>>::value);
 }
 
+struct minimal_container {
+  using value_type = char;
+  void push_back(char) {}
+};
+
+TEST(base_test, copy) {
+  minimal_container c;
+  static constexpr char str[] = "a";
+  fmt::detail::copy<char>(str, str + 1, std::back_inserter(c));
+}
+
 TEST(base_test, get_buffer) {
   mock_buffer<char> buffer;
   void* buffer_ptr = &buffer;
