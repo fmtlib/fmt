@@ -362,7 +362,6 @@ struct is_formattable_delayed
     : is_formattable<uncvref_type<maybe_const_range<R>>, Char> {};
 }  // namespace detail
 
-FMT_EXPORT
 template <typename...> struct conjunction : std::true_type {};
 template <typename P> struct conjunction<P> : P {};
 template <typename P1, typename... Pn>
