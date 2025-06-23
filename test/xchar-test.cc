@@ -171,6 +171,13 @@ TEST(xchar_test, join) {
   EXPECT_EQ(fmt::format(L"({})", fmt::join(t, L", ")), L"(a, 1, 2)");
 }
 
+#ifdef __cpp_lib_byte
+TEST(xchar_test, join_bytes) {
+  auto v = std::vector<std::byte>{std::byte(1), std::byte(2), std::byte(3)};
+  EXPECT_EQ(fmt::format(L"{}", fmt::join(v, L", ")), L"1, 2, 3");
+}
+#endif
+
 enum streamable_enum {};
 
 std::wostream& operator<<(std::wostream& os, streamable_enum) {
