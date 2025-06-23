@@ -3904,13 +3904,14 @@ constexpr auto format_as(Enum e) noexcept -> underlying_t<Enum> {
 }  // namespace enums
 
 #ifdef __cpp_lib_byte
-template <> struct formatter<std::byte> : formatter<unsigned> {
+template <typename Char>
+struct formatter<std::byte, Char> : formatter<unsigned, Char> {
   static auto format_as(std::byte b) -> unsigned char {
     return static_cast<unsigned char>(b);
   }
   template <typename Context>
   auto format(std::byte b, Context& ctx) const -> decltype(ctx.out()) {
-    return formatter<unsigned>::format(format_as(b), ctx);
+    return formatter<unsigned, Char>::format(format_as(b), ctx);
   }
 };
 #endif
