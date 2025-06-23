@@ -554,6 +554,8 @@ FMT_CONSTEXPR auto fill_n(OutputIt out, Size count, const T& value)
 template <typename T, typename Size>
 FMT_CONSTEXPR20 auto fill_n(T* out, Size count, char value) -> T* {
   if (is_constant_evaluated()) return fill_n<T*, Size, T>(out, count, value);
+  static_assert(sizeof(T) == 1,
+                "sizeof(T) must be 1 to use char for initialization");
   std::memset(out, value, to_unsigned(count));
   return out + count;
 }
@@ -2782,7 +2784,7 @@ class bigint {
     bigits_.resize(to_unsigned(num_bigits + exp_difference));
     for (int i = num_bigits - 1, j = i + exp_difference; i >= 0; --i, --j)
       bigits_[j] = bigits_[i];
-    memset(bigits_.data(), 0, to_unsigned(exp_difference) * sizeof(bigit));
+    fill_n(bigits_.data(), to_unsigned(exp_difference), 0U);
     exp_ -= exp_difference;
   }
 
