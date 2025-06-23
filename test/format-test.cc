@@ -206,10 +206,6 @@ TEST(util_test, parse_nonnegative_int) {
   EXPECT_EQ(fmt::detail::parse_nonnegative_int(begin, end, -1), -1);
 }
 
-TEST(format_impl_test, compute_width) {
-  EXPECT_EQ(fmt::detail::compute_width("вожык"), 5);
-}
-
 TEST(util_test, utf8_to_utf16) {
   auto u = fmt::detail::utf8_to_utf16("лошадка");
   EXPECT_EQ(L"\x043B\x043E\x0448\x0430\x0434\x043A\x0430", u.str());
@@ -887,11 +883,37 @@ TEST(format_test, width) {
             "    0xcafe");
   EXPECT_EQ(fmt::format("{:11}", 'x'), "x          ");
   EXPECT_EQ(fmt::format("{:12}", "str"), "str         ");
+  EXPECT_EQ(fmt::format("{:*^5}", "🤡"), "*🤡**");
   EXPECT_EQ(fmt::format("{:*^6}", "🤡"), "**🤡**");
   EXPECT_EQ(fmt::format("{:*^8}", "你好"), "**你好**");
   EXPECT_EQ(fmt::format("{:#6}", 42.0), "   42.");
   EXPECT_EQ(fmt::format("{:6c}", static_cast<int>('x')), "x     ");
   EXPECT_EQ(fmt::format("{:>06.0f}", 0.00884311), "     0");
+}
+
+TEST(format_test, debug_presentation) {
+  EXPECT_EQ(fmt::format("{:?}", ""), R"("")");
+
+  EXPECT_EQ(fmt::format("{:*<5.0?}", "\n"), R"(*****)");
+  EXPECT_EQ(fmt::format("{:*<5.1?}", "\n"), R"("****)");
+  EXPECT_EQ(fmt::format("{:*<5.2?}", "\n"), R"("\***)");
+  EXPECT_EQ(fmt::format("{:*<5.3?}", "\n"), R"("\n**)");
+  EXPECT_EQ(fmt::format("{:*<5.4?}", "\n"), R"("\n"*)");
+
+  EXPECT_EQ(fmt::format("{:*<5.1?}", "Σ"), R"("****)");
+  EXPECT_EQ(fmt::format("{:*<5.2?}", "Σ"), R"("Σ***)");
+  EXPECT_EQ(fmt::format("{:*<5.3?}", "Σ"), R"("Σ"**)");
+
+  EXPECT_EQ(fmt::format("{:*<5.1?}", "笑"), R"("****)");
+  EXPECT_EQ(fmt::format("{:*<5.2?}", "笑"), R"("****)");
+  EXPECT_EQ(fmt::format("{:*<5.3?}", "笑"), R"("笑**)");
+  EXPECT_EQ(fmt::format("{:*<5.4?}", "笑"), R"("笑"*)");
+
+  EXPECT_EQ(fmt::format("{:*<8?}", "туда"), R"("туда"**)");
+  EXPECT_EQ(fmt::format("{:*>8?}", "сюда"), R"(**"сюда")");
+  EXPECT_EQ(fmt::format("{:*^8?}", "中心"), R"(*"中心"*)");
+
+  EXPECT_EQ(fmt::format("{:*^14?}", "A\t👈🤯ы猫"), R"(*"A\t👈🤯ы猫"*)");
 }
 
 auto bad_dynamic_spec_msg = FMT_BUILTIN_TYPES
@@ -1134,7 +1156,6 @@ TEST(format_test, large_precision) {
 
 TEST(format_test, utf8_precision) {
   auto result = fmt::format("{:.4}", "caf\u00e9s");  // cafés
-  EXPECT_EQ(fmt::detail::compute_width(result), 4);
   EXPECT_EQ(result, "caf\u00e9");
 }
 
