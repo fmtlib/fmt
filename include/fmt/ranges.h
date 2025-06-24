@@ -279,11 +279,13 @@ template <typename FormatContext> struct format_tuple_element {
 
 }  // namespace detail
 
+FMT_EXPORT
 template <typename T> struct is_tuple_like {
   static constexpr bool value =
       detail::is_tuple_like_<T>::value && !detail::is_range_<T>::value;
 };
 
+FMT_EXPORT
 template <typename T, typename C> struct is_tuple_formattable {
   static constexpr bool value = detail::is_tuple_formattable_<T, C>::value;
 };
@@ -340,6 +342,7 @@ struct formatter<Tuple, Char,
   }
 };
 
+FMT_EXPORT
 template <typename T, typename Char> struct is_range {
   static constexpr bool value =
       detail::is_range_<T>::value && !detail::has_to_string_view<T>::value;
@@ -365,6 +368,7 @@ template <typename P1, typename... Pn>
 struct conjunction<P1, Pn...>
     : conditional_t<bool(P1::value), conjunction<Pn...>, P1> {};
 
+FMT_EXPORT
 template <typename T, typename Char, typename Enable = void>
 struct range_formatter;
 
@@ -667,6 +671,7 @@ struct formatter<join_view<It, Sentinel, Char>, Char> {
   }
 };
 
+FMT_EXPORT
 template <typename Tuple, typename Char> struct tuple_join_view : detail::view {
   const Tuple& tuple;
   basic_string_view<Char> sep;
