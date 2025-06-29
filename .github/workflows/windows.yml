@@ -10,22 +10,18 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        # windows-2019 has MSVC 2019 installed;
         # windows-2022 has MSVC 2022 installed:
         # https://github.com/actions/virtual-environments.
-        os: [windows-2019]
+        os: [windows-2022]
         platform: [Win32, x64]
-        toolset: [v141, v142]
+        toolset: [v142]
         standard: [14, 17, 20]
         shared: ["", -DBUILD_SHARED_LIBS=ON]
         build_type: [Debug, Release]
         exclude:
-          - { toolset: v141, standard: 20 }
           - { toolset: v142, standard: 14 }
-          - { platform: Win32, toolset: v141 }
           - { platform: Win32, standard: 14 }
           - { platform: Win32, standard: 20 }
-          - { platform: x64, toolset: v141, shared: -DBUILD_SHARED_LIBS=ON }
           - { platform: x64, standard: 14, shared: -DBUILD_SHARED_LIBS=ON }
           - { platform: x64, standard: 20, shared: -DBUILD_SHARED_LIBS=ON }
         include:
@@ -76,7 +72,7 @@ jobs:
         sys: [ mingw64, ucrt64 ]
     steps:
     - name: Set timezone
-      run: tzutil /s "Ekaterinburg Standard Time"
+      run: tzutil /s "FLE Standard Time"
       shell: cmd
     - uses: msys2/setup-msys2@61f9e5e925871ba6c9e3e8da24ede83ea27fa91f # v2.27.0
       with:
