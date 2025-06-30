@@ -3429,7 +3429,7 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
   if (s != sign::none) *it++ = Char('-');
   // Insert a decimal point after the first digit and add an exponent.
   it = write_significand(it, dec.significand, significand_size, 1,
-                         has_decimal_point ? '.' : Char());
+                         has_decimal_point ? Char('.') : Char());
   *it++ = Char('e');
   it = write_exponent<Char>(exp, it);
   return base_iterator(out, it);
