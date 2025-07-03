@@ -317,6 +317,7 @@ TEST(file_test, default_ctor) {
 TEST(file_test, open_buffered_file_in_ctor) {
   auto test_file = uniq_file_name(__LINE__);
   FILE* fp = safe_fopen(test_file.c_str(), "w");
+  ASSERT_NE(fp, nullptr) << "safe_fopen failed to open " << test_file;
   std::fputs(file_content, fp);
   std::fclose(fp);
   file f(test_file.c_str(), file::RDONLY);
