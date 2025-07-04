@@ -31,17 +31,6 @@ extern const char* const file_content;
 // Opens a buffered file for reading.
 auto open_buffered_file(FILE** fp = nullptr) -> fmt::buffered_file;
 
-inline auto safe_fopen(const char* filename, const char* mode) -> FILE* {
-#if defined(_WIN32) && !defined(__MINGW32__)
-  // Fix MSVC warning about "unsafe" fopen.
-  FILE* f = nullptr;
-  errno = fopen_s(&f, filename, mode);
-  return f;
-#else
-  return std::fopen(filename, mode);
-#endif
-}
-
 template <typename Char> class basic_test_string {
  private:
   std::basic_string<Char> value_;

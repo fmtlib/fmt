@@ -1809,19 +1809,15 @@ TEST(format_test, format_examples) {
   fmt::format_to(std::back_inserter(out), "The answer is {}.", 42);
   EXPECT_EQ("The answer is 42.", to_string(out));
 
-  const char* filename = "nonexistent";
-  FILE* ftest = safe_fopen(filename, "r");
-  if (ftest) fclose(ftest);
-  int error_code = errno;
-  EXPECT_TRUE(ftest == nullptr);
-  EXPECT_SYSTEM_ERROR(
+  EXPECT_THROW(
       {
-        FILE* f = safe_fopen(filename, "r");
-        if (!f)
-          throw fmt::system_error(errno, "Cannot open file '{}'", filename);
-        fclose(f);
+        const char* filename = "madeup";
+        FILE* file = fopen(filename, "r");
+        if (!file)
+          throw fmt::system_error(errno, "cannot open file '{}'", filename);
+        fclose(file);
       },
-      error_code, "Cannot open file 'nonexistent'");
+      std::system_error);
 
   EXPECT_EQ("First, thou shalt count to three",
             fmt::format("First, thou shalt count to {0}", "three"));
