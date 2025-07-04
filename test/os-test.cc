@@ -248,8 +248,7 @@ TEST(buffered_file_test, descriptor) {
 }
 
 TEST(ostream_test, move) {
-  auto test_file = uniq_file_name(__LINE__);
-  fmt::ostream out = fmt::output_file(test_file);
+  fmt::ostream out = fmt::output_file(uniq_file_name(__LINE__));
   fmt::ostream moved(std::move(out));
   moved.print("hello");
 }
@@ -441,8 +440,7 @@ TEST(file_test, read) {
 }
 
 TEST(file_test, read_error) {
-  auto test_file = uniq_file_name(__LINE__);
-  file f(test_file, file::WRONLY | file::CREATE);
+  file f(uniq_file_name(__LINE__), file::WRONLY | file::CREATE);
   char buf;
   // We intentionally read from a file opened in the write-only mode to
   // cause error.
@@ -451,15 +449,13 @@ TEST(file_test, read_error) {
 
 TEST(file_test, write) {
   auto pipe = fmt::pipe();
-  auto test_file = uniq_file_name(__LINE__);
-  write(pipe.write_end, test_file);
+  write(pipe.write_end, "test");
   pipe.write_end.close();
-  EXPECT_READ(pipe.read_end, test_file);
+  EXPECT_READ(pipe.read_end, "test");
 }
 
 TEST(file_test, write_error) {
-  auto test_file = uniq_file_name(__LINE__);
-  file f(test_file, file::RDONLY | file::CREATE);
+  file f(uniq_file_name(__LINE__), file::RDONLY | file::CREATE);
   // We intentionally write to a file opened in the read-only mode to
   // cause error.
   EXPECT_SYSTEM_ERROR(f.write(" ", 1), EBADF, "cannot write to file");
