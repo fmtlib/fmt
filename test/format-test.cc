@@ -2549,6 +2549,20 @@ TEST(format_test, writer) {
   EXPECT_EQ(s.str(), "foo");
 }
 
+#if FMT_USE_FCNTL && !defined(_WIN32)
+TEST(format_test, invalid_glibc_buffer) {
+  auto pipe = fmt::pipe();
+  auto write_end = pipe.write_end.fdopen("w");
+  auto file = write_end.get();
+
+  // This results in _IO_write_ptr < _IO_write_end.
+  fprintf(file, "111\n");
+  setvbuf(file, nullptr, _IOLBF, 0);
+
+  fmt::print(file, "------\n");
+}
+#endif  // FMT_USE_FCNTL
+
 #if FMT_USE_BITINT
 FMT_PRAGMA_CLANG(diagnostic ignored "-Wbit-int-extension")
 

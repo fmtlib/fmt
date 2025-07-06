@@ -1549,7 +1549,8 @@ template <typename F> class glibc_file : public file_base<F> {
   bool needs_flush() const {
     if ((this->file_->_flags & line_buffered) == 0) return false;
     char* end = this->file_->_IO_write_end;
-    return memchr(end, '\n', to_unsigned(this->file_->_IO_write_ptr - end));
+    auto size = max_of<ptrdiff_t>(this->file_->_IO_write_ptr - end, 0);
+    return memchr(end, '\n', static_cast<size_t>(size));
   }
 
   void flush() { fflush_unlocked(this->file_); }
