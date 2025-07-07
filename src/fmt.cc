@@ -46,7 +46,7 @@ module;
 #  include <utility>
 #  include <variant>
 #  include <vector>
-#elifndef FMT_IMPORT_STD_COMPAT
+#else
 #  include <limits.h>
 #  include <stdint.h>
 #  include <stdio.h>
@@ -95,8 +95,6 @@ export module fmt;
 
 #ifdef FMT_IMPORT_STD
 import std;
-#elifdef FMT_IMPORT_STD_COMPAT
-import std.compat;
 #endif
 
 #define FMT_EXPORT export
