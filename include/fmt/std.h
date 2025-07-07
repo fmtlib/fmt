@@ -225,7 +225,7 @@ template <typename T> struct is_bit_reference_like {
 
 // Workaround for libc++ incompatibility with C++ standard.
 // According to the Standard, `bitset::operator[] const` returns bool.
-#ifdef _LIBCPP_VERSION
+#if defined(_LIBCPP_VERSION) && !defined(FMT_IMPORT_STD)
 template <typename C>
 struct is_bit_reference_like<std::__bit_const_reference<C>> {
   static constexpr bool value = true;
