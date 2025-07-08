@@ -38,7 +38,7 @@
 #  define FMT_REMOVE_TRANSITIVE_INCLUDES
 #endif
 
-#include "base.h"
+#include "base.h"  // IWYU pragma: export
 
 #ifndef FMT_MODULE
 #  include <cmath>    // std::signbit
