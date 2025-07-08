@@ -751,6 +751,14 @@ template <typename T> struct allocator : private std::decay<void> {
   }
 
   void deallocate(T* p, size_t) { std::free(p); }
+
+  friend bool operator==(const allocator&, const allocator&) noexcept {
+      return true; // All instances of this allocator are equivalent.
+  }
+
+  friend bool operator!=(const allocator& a, const allocator& b) noexcept {
+      return !(a == b);
+  }
 };
 
 }  // namespace detail
@@ -828,9 +836,20 @@ class basic_memory_buffer : public detail::buffer<T> {
  private:
   // Move data from other to this buffer.
   FMT_CONSTEXPR20 void move(basic_memory_buffer& other) {
-    alloc_ = std::move(other.alloc_);
+    using alloc_traits = std::allocator_traits<Allocator>;
     T* data = other.data();
     size_t size = other.size(), capacity = other.capacity();
+    if constexpr (alloc_traits::propagate_on_container_move_assignment::value) {
+      alloc_ = std::move(other.alloc_);
+    } else {
+      if (alloc_ != other.alloc_) {
+        this->reserve(capacity);
+        detail::copy<T>(data, data + size, this->data());
+        this->resize(size);
+        return;
+      }
+    }
+
     if (data == other.store_) {
       this->set(store_, capacity);
       detail::copy<T>(other.store_, other.store_ + size, store_);
