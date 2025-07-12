@@ -27,18 +27,15 @@ endfunction()
 # DEPRECATED! Should be merged into add_module_library.
 function(enable_module target)
   if (MSVC)
-    if(CMAKE_GENERATOR STREQUAL "Ninja")
-      # Ninja dyndep expects the .ifc output to be located in a specific relative path
-      file(RELATIVE_PATH BMI_DIR "${CMAKE_BINARY_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${target}.dir")
-    else()
+    if(NOT CMAKE_GENERATOR STREQUAL "Ninja")
       set(BMI_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+      file(TO_NATIVE_PATH "${BMI_DIR}/${target}.ifc" BMI)
+      target_compile_options(${target}
+        PRIVATE /interface /ifcOutput ${BMI}
+        INTERFACE /reference fmt=${BMI})
+      set_target_properties(${target} PROPERTIES ADDITIONAL_CLEAN_FILES ${BMI})
+      set_source_files_properties(${BMI} PROPERTIES GENERATED ON)
     endif()
-    file(TO_NATIVE_PATH "${BMI_DIR}/${target}.ifc" BMI)
-    target_compile_options(${target}
-      PRIVATE /interface /ifcOutput ${BMI}
-      INTERFACE /reference fmt=${BMI})
-    set_target_properties(${target} PROPERTIES ADDITIONAL_CLEAN_FILES ${BMI})
-    set_source_files_properties(${BMI} PROPERTIES GENERATED ON)
   endif ()
 endfunction()
 
