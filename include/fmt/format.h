@@ -2125,7 +2125,7 @@ FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
   size_t display_width_limit =
       specs.precision < 0 ? SIZE_MAX : to_unsigned(specs.precision);
   size_t display_width =
-      !is_debug || specs.precision == 0 ? 0 : 1;  // Account for opening "
+      !is_debug || specs.precision == 0 ? 0 : 1;  // Account for opening '"'.
   size_t size = !is_debug || specs.precision == 0 ? 0 : 1;
   for_each_codepoint(s, [&](uint32_t cp, string_view sv) {
     if (is_debug && needs_escape(cp)) {
@@ -2138,7 +2138,7 @@ FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
       if (display_width + cp_width <= display_width_limit) {
         display_width += cp_width;
         size += cp_width;
-        // If this is the end of the string, account for closing "
+        // If this is the end of the string, account for closing '"'.
         if (display_width < display_width_limit && sv.end() == s.end()) {
           ++display_width;
           ++size;
@@ -2155,7 +2155,7 @@ FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
     if (cp_width + display_width <= display_width_limit) {
       display_width += cp_width;
       size += sv.size();
-      // If this is the end of the string, account for closing "
+      // If this is the end of the string, account for closing '"'.
       if (is_debug && display_width < display_width_limit &&
           sv.end() == s.end()) {
         ++display_width;
@@ -2188,7 +2188,7 @@ FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
   };
 
   return write_padded<char>(
-      out, specs, size, display_width, [&](reserve_iterator<OutputIt> it) {
+      out, specs, size, display_width, [=](reserve_iterator<OutputIt> it) {
         return is_debug
                    ? write_escaped_string(bounded_output_iterator{it, size}, s)
                          .underlying_iterator
@@ -2213,7 +2213,7 @@ FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
   }
 
   return write_padded<Char>(
-      out, specs, size, [&](reserve_iterator<OutputIt> it) {
+      out, specs, size, [=](reserve_iterator<OutputIt> it) {
         return is_debug ? write_escaped_string(it, s)
                         : copy<Char>(data, data + size, it);
       });
