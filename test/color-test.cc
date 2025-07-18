@@ -113,6 +113,15 @@ TEST(color_test, format) {
   EXPECT_EQ(fmt::format("{}", fmt::styled("bar", fg(fmt::color::blue) |
                                                      fmt::emphasis::underline)),
             "\x1b[4m\x1b[38;2;000;000;255mbar\x1b[0m");
+  EXPECT_EQ(
+      fmt::format(
+          "{}", fmt::styled(
+                    "all", fmt::emphasis::bold | fmt::emphasis::faint |
+                               fmt::emphasis::italic |
+                               fmt::emphasis::underline | fmt::emphasis::blink |
+                               fmt::emphasis::reverse | fmt::emphasis::conceal |
+                               fmt::emphasis::strikethrough)),
+      "\x1b[1m\x1b[2m\x1b[3m\x1b[4m\x1b[5m\x1b[7m\x1b[8m\x1b[9mall\x1b[0m");
 }
 
 TEST(color_test, format_to) {
