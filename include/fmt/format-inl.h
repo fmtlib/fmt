@@ -173,16 +173,6 @@ inline auto operator==(basic_fp<F> x, basic_fp<F> y) -> bool {
   return x.f == y.f && x.e == y.e;
 }
 
-// Compilers should be able to optimize this into the ror instruction.
-FMT_CONSTEXPR inline auto rotr(uint32_t n, uint32_t r) noexcept -> uint32_t {
-  r &= 31;
-  return (n >> r) | (n << (32 - r));
-}
-FMT_CONSTEXPR inline auto rotr(uint64_t n, uint32_t r) noexcept -> uint64_t {
-  r &= 63;
-  return (n >> r) | (n << (64 - r));
-}
-
 // Implementation of Dragonbox algorithm: https://github.com/jk-jeon/dragonbox.
 namespace dragonbox {
 // Computes upper 64 bits of multiplication of a 32-bit unsigned integer and a
@@ -1149,65 +1139,6 @@ auto is_left_endpoint_integer_shorter_interval(int exponent) noexcept -> bool {
          exponent <= case_shorter_interval_left_endpoint_upper_threshold;
 }
 
-// Remove trailing zeros from n and return the number of zeros removed (float)
-FMT_INLINE int remove_trailing_zeros(uint32_t& n, int s = 0) noexcept {
-  FMT_ASSERT(n != 0, "");
-  // Modular inverse of 5 (mod 2^32): (mod_inv_5 * 5) mod 2^32 = 1.
-  constexpr uint32_t mod_inv_5 = 0xcccccccd;
-  constexpr uint32_t mod_inv_25 = 0xc28f5c29;  // = mod_inv_5 * mod_inv_5
-
-  while (true) {
-    auto q = rotr(n * mod_inv_25, 2);
-    if (q > max_value<uint32_t>() / 100) break;
-    n = q;
-    s += 2;
-  }
-  auto q = rotr(n * mod_inv_5, 1);
-  if (q <= max_value<uint32_t>() / 10) {
-    n = q;
-    s |= 1;
-  }
-  return s;
-}
-
-// Removes trailing zeros and returns the number of zeros removed (double)
-FMT_INLINE int remove_trailing_zeros(uint64_t& n) noexcept {
-  FMT_ASSERT(n != 0, "");
-
-  // This magic number is ceil(2^90 / 10^8).
-  constexpr uint64_t magic_number = 12379400392853802749ull;
-  auto nm = umul128(n, magic_number);
-
-  // Is n is divisible by 10^8?
-  if ((nm.high() & ((1ull << (90 - 64)) - 1)) == 0 && nm.low() < magic_number) {
-    // If yes, work with the quotient...
-    auto n32 = static_cast<uint32_t>(nm.high() >> (90 - 64));
-    // ... and use the 32 bit variant of the function
-    int s = remove_trailing_zeros(n32, 8);
-    n = n32;
-    return s;
-  }
-
-  // If n is not divisible by 10^8, work with n itself.
-  constexpr uint64_t mod_inv_5 = 0xcccccccccccccccd;
-  constexpr uint64_t mod_inv_25 = 0x8f5c28f5c28f5c29;  // mod_inv_5 * mod_inv_5
-
-  int s = 0;
-  while (true) {
-    auto q = rotr(n * mod_inv_25, 2);
-    if (q > max_value<uint64_t>() / 100) break;
-    n = q;
-    s += 2;
-  }
-  auto q = rotr(n * mod_inv_5, 1);
-  if (q <= max_value<uint64_t>() / 10) {
-    n = q;
-    s |= 1;
-  }
-
-  return s;
-}
-
 // The main algorithm for shorter interval case
 template <typename T>
 FMT_INLINE decimal_fp<T> shorter_interval_case(int exponent) noexcept {
@@ -1234,7 +1165,7 @@ FMT_INLINE decimal_fp<T> shorter_interval_case(int exponent) noexcept {
   // If succeed, remove trailing zeros if necessary and return
   if (ret_value.significand * 10 >= xi) {
     ret_value.exponent = minus_k + 1;
-    ret_value.exponent += remove_trailing_zeros(ret_value.significand);
+    // Trailing zeros are removed later.
     return ret_value;
   }
 
@@ -1340,8 +1271,7 @@ template <typename T> auto to_decimal(T x) noexcept -> decimal_fp<T> {
   }
   ret_value.exponent = minus_k + float_info<T>::kappa + 1;
 
-  // We may need to remove trailing zeros.
-  ret_value.exponent += remove_trailing_zeros(ret_value.significand);
+  // Trailing zeros are remove later.
   return ret_value;
 
   // Step 3: Find the significand with the smaller divisor.
