@@ -853,10 +853,8 @@ class basic_memory_buffer : public detail::buffer<T> {
     if (alloc_ != other.alloc_ && data != other.store_) {
       size_t size = other.size(), capacity = other.capacity();
       // Perform copy operation, allocators are different
-      this->reserve(size);
-      detail::copy<T>(data, data + size, this->data());
       this->resize(size);
-      other.clear();
+      detail::copy<T>(data, data + size, this->data());
       return false;
     }
     return true;
