@@ -358,8 +358,11 @@ TEST(memory_buffer_test, move_ctor_inline_buffer_non_propagating) {
       [](const char* str,
          basic_memory_buffer<char, 5, std_allocator_n>& buffer) {
         std::allocator<char>* original_alloc_ptr = buffer.get_allocator().get();
+        const char* original_data_ptr = &buffer[0];
         basic_memory_buffer<char, 5, std_allocator_n> buffer2(
             std::move(buffer));
+        const char* new_data_ptr = &buffer2[0];
+        EXPECT_NE(original_data_ptr, new_data_ptr);
         EXPECT_EQ(str, std::string(&buffer[0], buffer.size()));
         EXPECT_EQ(str, std::string(&buffer2[0], buffer2.size()));
         EXPECT_EQ(5u, buffer2.capacity());
@@ -389,7 +392,8 @@ TEST(memory_buffer_test, move_ctor_dynamic_buffer_non_propagating) {
   buffer.push_back('a');
   EXPECT_NE(&buffer[0], inline_buffer_ptr);
   std::allocator<char>* original_alloc_ptr = buffer.get_allocator().get();
-  basic_memory_buffer<char, 4, std_allocator_n> buffer2(std::move(buffer));
+  basic_memory_buffer<char, 4, std_allocator_n> buffer2;
+  buffer2 = std::move(buffer);
   EXPECT_EQ(buffer.size(), 0);
   EXPECT_EQ(std::string(&buffer2[0], buffer2.size()), "testa");
   EXPECT_GT(buffer2.capacity(), 4u);
