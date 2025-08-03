@@ -519,6 +519,11 @@ template <typename T, typename OutputIt>
 constexpr auto to_pointer(OutputIt, size_t) -> T* {
   return nullptr;
 }
+template <typename T> FMT_CONSTEXPR auto to_pointer(T*& ptr, size_t n) -> T* {
+  T* begin = ptr;
+  ptr += n;
+  return begin;
+}
 template <typename T>
 FMT_CONSTEXPR20 auto to_pointer(basic_appender<T> it, size_t n) -> T* {
   buffer<T>& buf = get_container(it);
@@ -1613,6 +1618,15 @@ using convert_float_result =
 template <typename T>
 constexpr auto convert_float(T value) -> convert_float_result<T> {
   return static_cast<convert_float_result<T>>(value);
+}
+
+template <bool C, typename T, typename F, FMT_ENABLE_IF(C)>
+auto select(T true_value, F) -> T {
+  return true_value;
+}
+template <bool C, typename T, typename F, FMT_ENABLE_IF(!C)>
+auto select(T, F false_value) -> F {
+  return false_value;
 }
 
 template <typename Char, typename OutputIt>
@@ -3455,25 +3469,53 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
     return write_nonfinite<Char>(out, std::isnan(value), {}, s);
 
   auto dec = dragonbox::to_decimal(static_cast<fast_float_t<T>>(value));
-  int significand_size = count_digits(dec.significand);
-  int exp = dec.exponent + significand_size - 1;
-  if (use_fixed(exp, detail::exp_upper<T>())) {
+  auto significand = dec.significand;
+  int significand_size = count_digits(significand);
+  int exponent = dec.exponent + significand_size - 1;
+  if (use_fixed(exponent, detail::exp_upper<T>())) {
     return write_fixed<Char, fallback_digit_grouping<Char>>(
         out, dec, significand_size, Char('.'), {}, s);
   }
 
   // Write value in the exponential format.
+  const char* prefix = "e+";
+  int abs_exponent = exponent;
+  if (exponent < 0) {
+    abs_exponent = -exponent;
+    prefix = "e-";
+  }
   auto has_decimal_point = significand_size != 1;
-  size_t size =
-      to_unsigned((s != sign::none ? 1 : 0) + significand_size +
-                  (has_decimal_point ? 1 : 0) + compute_exp_size(exp));
+  size_t size = std::is_pointer<OutputIt>::value
+                    ? 0u
+                    : to_unsigned((s != sign::none ? 1 : 0) + significand_size +
+                                  (has_decimal_point ? 1 : 0) +
+                                  (abs_exponent >= 100 ? 5 : 4));
+  if (auto ptr = to_pointer<Char>(out, size)) {
+    if (s != sign::none) *ptr++ = Char('-');
+    if (has_decimal_point) {
+      auto begin = ptr;
+      ptr = format_decimal<Char>(ptr, significand, significand_size + 1);
+      *begin = begin[1];
+      begin[1] = '.';
+    } else {
+      *ptr++ = static_cast<Char>('0' + significand);
+    }
+    memcpy(ptr, prefix, 2);
+    ptr += 2;
+    if (abs_exponent >= 100) {
+      *ptr++ = static_cast<Char>('0' + abs_exponent / 100);
+      abs_exponent %= 100;
+    }
+    write2digits(ptr, static_cast<unsigned>(abs_exponent));
+    return select<std::is_pointer<OutputIt>::value>(ptr + 2, out);
+  }
   auto it = reserve(out, size);
   if (s != sign::none) *it++ = Char('-');
   // Insert a decimal point after the first digit and add an exponent.
-  it = write_significand(it, dec.significand, significand_size, 1,
+  it = write_significand(it, significand, significand_size, 1,
                          has_decimal_point ? Char('.') : Char());
   *it++ = Char('e');
-  it = write_exponent<Char>(exp, it);
+  it = write_exponent<Char>(exponent, it);
   return base_iterator(out, it);
 }
 
