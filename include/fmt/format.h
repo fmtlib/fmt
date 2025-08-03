@@ -851,7 +851,7 @@ class basic_memory_buffer : public detail::buffer<T> {
   allocator_move_impl(basic_memory_buffer& other) {
     T* data = other.data();
     if (alloc_ != other.alloc_ && data != other.store_) {
-      size_t size = other.size(), capacity = other.capacity();
+      size_t size = other.size();
       // Perform copy operation, allocators are different
       this->resize(size);
       detail::copy<T>(data, data + size, this->data());
@@ -862,7 +862,6 @@ class basic_memory_buffer : public detail::buffer<T> {
 
   // Move data from other to this buffer.
   FMT_CONSTEXPR20 void move(basic_memory_buffer& other) {
-    using alloc_traits = std::allocator_traits<Allocator>;
     T* data = other.data();
     size_t size = other.size(), capacity = other.capacity();
     // Replicate the behaviour of std library containers
