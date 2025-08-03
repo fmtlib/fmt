@@ -1486,7 +1486,7 @@ template <typename Float> constexpr auto exponent_bias() -> int {
 FMT_CONSTEXPR inline auto compute_exp_size(int exp) -> int {
   auto prefix_size = 2;  // sign + 'e'
   auto abs_exp = exp >= 0 ? exp : -exp;
-  if (exp < 100) return prefix_size + 2;
+  if (abs_exp < 100) return prefix_size + 2;
   return prefix_size + (abs_exp >= 1000 ? 4 : 3);
 }
 
