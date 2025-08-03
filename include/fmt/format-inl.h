@@ -1149,7 +1149,7 @@ auto is_left_endpoint_integer_shorter_interval(int exponent) noexcept -> bool {
          exponent <= case_shorter_interval_left_endpoint_upper_threshold;
 }
 
-// Remove trailing zeros from n and return the number of zeros removed (float)
+// Remove trailing zeros from n and return the number of zeros removed (float).
 FMT_INLINE int remove_trailing_zeros(uint32_t& n, int s = 0) noexcept {
   FMT_ASSERT(n != 0, "");
   // Modular inverse of 5 (mod 2^32): (mod_inv_5 * 5) mod 2^32 = 1.
@@ -1170,22 +1170,19 @@ FMT_INLINE int remove_trailing_zeros(uint32_t& n, int s = 0) noexcept {
   return s;
 }
 
-// Removes trailing zeros and returns the number of zeros removed (double)
+// Removes trailing zeros and returns the number of zeros removed (double).
 FMT_INLINE int remove_trailing_zeros(uint64_t& n) noexcept {
   FMT_ASSERT(n != 0, "");
 
-  // This magic number is ceil(2^90 / 10^8).
-  constexpr uint64_t magic_number = 12379400392853802749ull;
-  auto nm = umul128(n, magic_number);
-
   // Is n is divisible by 10^8?
-  if ((nm.high() & ((1ull << (90 - 64)) - 1)) == 0 && nm.low() < magic_number) {
+  constexpr uint32_t ten_pow_8 = 100000000u;
+  if ((n % ten_pow_8) == 0) {
     // If yes, work with the quotient...
-    auto n32 = static_cast<uint32_t>(nm.high() >> (90 - 64));
+    auto n32 = static_cast<uint32_t>(n / ten_pow_8);
     // ... and use the 32 bit variant of the function
-    int s = remove_trailing_zeros(n32, 8);
+    int num_zeros = remove_trailing_zeros(n32, 8);
     n = n32;
-    return s;
+    return num_zeros;
   }
 
   // If n is not divisible by 10^8, work with n itself.
