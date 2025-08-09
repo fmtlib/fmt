@@ -307,7 +307,7 @@ TEST(memory_buffer_test, ctor) {
   EXPECT_EQ(123u, buffer.capacity());
 }
 
-using std_allocator = allocator_ref<std::allocator<char>>;
+using std_allocator = allocator_ref<std::allocator<char>, true>;
 
 TEST(memory_buffer_test, move_ctor_inline_buffer) {
   auto check_move_buffer =
@@ -349,6 +349,56 @@ TEST(memory_buffer_test, move_ctor_dynamic_buffer) {
   EXPECT_EQ(buffer.size(), 0);
   EXPECT_EQ(std::string(&buffer2[0], buffer2.size()), "testa");
   EXPECT_GT(buffer2.capacity(), 4u);
+}
+
+using std_allocator_n = allocator_ref<std::allocator<char>, false>;
+
+TEST(memory_buffer_test, move_ctor_inline_buffer_non_propagating) {
+  auto check_move_buffer =
+      [](const char* str,
+         basic_memory_buffer<char, 5, std_allocator_n>& buffer) {
+        std::allocator<char>* original_alloc_ptr = buffer.get_allocator().get();
+        const char* original_data_ptr = &buffer[0];
+        basic_memory_buffer<char, 5, std_allocator_n> buffer2(
+            std::move(buffer));
+        const char* new_data_ptr = &buffer2[0];
+        EXPECT_NE(original_data_ptr, new_data_ptr);
+        EXPECT_EQ(str, std::string(&buffer[0], buffer.size()));
+        EXPECT_EQ(str, std::string(&buffer2[0], buffer2.size()));
+        EXPECT_EQ(5u, buffer2.capacity());
+        // Allocators should NOT be transferred; they remain distinct instances.
+        // The original buffer's allocator pointer should still be valid (not
+        // nullptr).
+        EXPECT_EQ(original_alloc_ptr, buffer.get_allocator().get());
+        EXPECT_NE(original_alloc_ptr, buffer2.get_allocator().get());
+      };
+  auto alloc = std::allocator<char>();
+  basic_memory_buffer<char, 5, std_allocator_n> buffer(
+      (std_allocator_n(&alloc)));
+  const char test[] = "test";
+  buffer.append(string_view(test, 4));
+  check_move_buffer("test", buffer);
+  buffer.push_back('a');
+  check_move_buffer("testa", buffer);
+}
+
+TEST(memory_buffer_test, move_ctor_dynamic_buffer_non_propagating) {
+  auto alloc = std::allocator<char>();
+  basic_memory_buffer<char, 4, std_allocator_n> buffer(
+      (std_allocator_n(&alloc)));
+  const char test[] = "test";
+  buffer.append(test, test + 4);
+  const char* inline_buffer_ptr = &buffer[0];
+  buffer.push_back('a');
+  EXPECT_NE(&buffer[0], inline_buffer_ptr);
+  std::allocator<char>* original_alloc_ptr = buffer.get_allocator().get();
+  basic_memory_buffer<char, 4, std_allocator_n> buffer2;
+  buffer2 = std::move(buffer);
+  EXPECT_EQ(std::string(&buffer2[0], buffer2.size()), "testa");
+  EXPECT_GT(buffer2.capacity(), 4u);
+  EXPECT_NE(&buffer2[0], inline_buffer_ptr);
+  EXPECT_EQ(original_alloc_ptr, buffer.get_allocator().get());
+  EXPECT_NE(original_alloc_ptr, buffer2.get_allocator().get());
 }
 
 void check_move_assign_buffer(const char* str,

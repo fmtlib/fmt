@@ -751,6 +751,14 @@ template <typename T> struct allocator : private std::decay<void> {
   }
 
   void deallocate(T* p, size_t) { std::free(p); }
+
+  FMT_CONSTEXPR20 friend bool operator==(allocator, allocator) noexcept {
+    return true;  // All instances of this allocator are equivalent.
+  }
+
+  FMT_CONSTEXPR20 friend bool operator!=(allocator a, allocator b) noexcept {
+    return !(a == b);
+  }
 };
 
 }  // namespace detail
@@ -826,11 +834,42 @@ class basic_memory_buffer : public detail::buffer<T> {
   FMT_CONSTEXPR20 ~basic_memory_buffer() { deallocate(); }
 
  private:
+  template <typename Alloc = Allocator>
+  FMT_CONSTEXPR20
+      typename std::enable_if<std::allocator_traits<Alloc>::
+                                  propagate_on_container_move_assignment::value,
+                              bool>::type
+      allocator_move_impl(basic_memory_buffer& other) {
+    alloc_ = std::move(other.alloc_);
+    return true;
+  }
+  // If the allocator does not propagate,
+  // then copy the content from source buffer.
+  template <typename Alloc = Allocator>
+  FMT_CONSTEXPR20
+      typename std::enable_if<!std::allocator_traits<Alloc>::
+                                  propagate_on_container_move_assignment::value,
+                              bool>::type
+      allocator_move_impl(basic_memory_buffer& other) {
+    T* data = other.data();
+    if (alloc_ != other.alloc_ && data != other.store_) {
+      size_t size = other.size();
+      // Perform copy operation, allocators are different
+      this->resize(size);
+      detail::copy<T>(data, data + size, this->data());
+      return false;
+    }
+    return true;
+  }
+
   // Move data from other to this buffer.
   FMT_CONSTEXPR20 void move(basic_memory_buffer& other) {
-    alloc_ = std::move(other.alloc_);
     T* data = other.data();
     size_t size = other.size(), capacity = other.capacity();
+    // Replicate the behaviour of std library containers
+    if (!allocator_move_impl(other)) {
+      return;
+    }
     if (data == other.store_) {
       this->set(store_, capacity);
       detail::copy<T>(other.store_, other.store_ + size, store_);
