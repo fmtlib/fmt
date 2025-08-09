@@ -77,16 +77,16 @@ class allocator_ref {
   }
   void deallocate(value_type* p, size_t n) { alloc_->deallocate(p, n); }
 
-  friend bool operator==(const allocator_ref& a,
-                         const allocator_ref& b) noexcept {
+  FMT_CONSTEXPR20 friend bool operator==(const allocator_ref& a,
+                                         const allocator_ref& b) noexcept {
     if (a.alloc_ == b.alloc_) return true;
     if (a.alloc_ == nullptr || b.alloc_ == nullptr) return false;
 
     return *a.alloc_ == *b.alloc_;
   }
 
-  friend bool operator!=(const allocator_ref& a,
-                         const allocator_ref& b) noexcept {
+  FMT_CONSTEXPR20 friend bool operator!=(const allocator_ref& a,
+                                         const allocator_ref& b) noexcept {
     return !(a == b);
   }
 };

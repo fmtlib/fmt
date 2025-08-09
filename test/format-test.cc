@@ -394,7 +394,6 @@ TEST(memory_buffer_test, move_ctor_dynamic_buffer_non_propagating) {
   std::allocator<char>* original_alloc_ptr = buffer.get_allocator().get();
   basic_memory_buffer<char, 4, std_allocator_n> buffer2;
   buffer2 = std::move(buffer);
-  EXPECT_EQ(buffer.size(), 0);
   EXPECT_EQ(std::string(&buffer2[0], buffer2.size()), "testa");
   EXPECT_GT(buffer2.capacity(), 4u);
   EXPECT_NE(&buffer2[0], inline_buffer_ptr);

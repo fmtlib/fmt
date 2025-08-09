@@ -752,11 +752,11 @@ template <typename T> struct allocator : private std::decay<void> {
 
   void deallocate(T* p, size_t) { std::free(p); }
 
-  friend bool operator==(allocator, allocator) noexcept {
+  FMT_CONSTEXPR20 friend bool operator==(allocator, allocator) noexcept {
     return true;  // All instances of this allocator are equivalent.
   }
 
-  friend bool operator!=(allocator a, allocator b) noexcept {
+  FMT_CONSTEXPR20 friend bool operator!=(allocator a, allocator b) noexcept {
     return !(a == b);
   }
 };
@@ -835,20 +835,22 @@ class basic_memory_buffer : public detail::buffer<T> {
 
  private:
   template <typename Alloc = Allocator>
-  typename std::enable_if<std::allocator_traits<Alloc>::
-                              propagate_on_container_move_assignment::value,
-                          bool>::type
-  allocator_move_impl(basic_memory_buffer& other) {
+  FMT_CONSTEXPR20
+      typename std::enable_if<std::allocator_traits<Alloc>::
+                                  propagate_on_container_move_assignment::value,
+                              bool>::type
+      allocator_move_impl(basic_memory_buffer& other) {
     alloc_ = std::move(other.alloc_);
     return true;
   }
   // If the allocator does not propagate,
   // then copy the content from source buffer.
   template <typename Alloc = Allocator>
-  typename std::enable_if<!std::allocator_traits<Alloc>::
-                              propagate_on_container_move_assignment::value,
-                          bool>::type
-  allocator_move_impl(basic_memory_buffer& other) {
+  FMT_CONSTEXPR20
+      typename std::enable_if<!std::allocator_traits<Alloc>::
+                                  propagate_on_container_move_assignment::value,
+                              bool>::type
+      allocator_move_impl(basic_memory_buffer& other) {
     T* data = other.data();
     if (alloc_ != other.alloc_ && data != other.store_) {
       size_t size = other.size();
