@@ -174,11 +174,11 @@ inline auto operator==(basic_fp<F> x, basic_fp<F> y) -> bool {
 }
 
 // Compilers should be able to optimize this into the ror instruction.
-FMT_CONSTEXPR inline auto rotr(uint32_t n, uint32_t r) noexcept -> uint32_t {
+FMT_INLINE auto rotr(uint32_t n, uint32_t r) noexcept -> uint32_t {
   r &= 31;
   return (n >> r) | (n << (32 - r));
 }
-FMT_CONSTEXPR inline auto rotr(uint64_t n, uint32_t r) noexcept -> uint64_t {
+FMT_INLINE auto rotr(uint64_t n, uint32_t r) noexcept -> uint64_t {
   r &= 63;
   return (n >> r) | (n << (64 - r));
 }
