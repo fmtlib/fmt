@@ -138,8 +138,12 @@ FMT_FUNC void report_error(const char* message) {
   // from MSVC.
   FMT_THROW(format_error(message));
 #else
-  fputs(message, stderr);
-  abort();
+  // Silence unreachable code warnings in MSVC.
+  volatile bool b = true;
+  if (b) {
+    fputs(message, stderr);
+    abort();
+  }
 #endif
 }
 
