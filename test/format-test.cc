@@ -315,18 +315,17 @@ TEST(memory_buffer_test, move_ctor_inline_buffer) {
         std::allocator<char>* alloc = buffer.get_allocator().get();
         basic_memory_buffer<char, 5, std_allocator> buffer2(std::move(buffer));
         // Move shouldn't destroy the inline content of the first buffer.
-        EXPECT_EQ(str, std::string(&buffer[0], buffer.size()));
-        EXPECT_EQ(str, std::string(&buffer2[0], buffer2.size()));
-        EXPECT_EQ(5u, buffer2.capacity());
+        EXPECT_EQ(std::string(buffer.data(), buffer.size()), str);
+        EXPECT_EQ(std::string(&buffer2[0], buffer2.size()), str);
+        EXPECT_EQ(buffer2.capacity(), 5u);
         // Move should transfer allocator.
-        EXPECT_EQ(nullptr, buffer.get_allocator().get());
-        EXPECT_EQ(alloc, buffer2.get_allocator().get());
+        EXPECT_EQ(buffer.get_allocator().get(), nullptr);
+        EXPECT_EQ(buffer2.get_allocator().get(), alloc);
       };
 
   auto alloc = std::allocator<char>();
   basic_memory_buffer<char, 5, std_allocator> buffer((std_allocator(&alloc)));
-  const char test[] = "test";
-  buffer.append(string_view(test, 4));
+  buffer.append(string_view("test"));
   check_move_buffer("test", buffer);
   // Adding one more character fills the inline buffer, but doesn't cause
   // dynamic allocation.
