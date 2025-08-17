@@ -2981,9 +2981,9 @@ FMT_INLINE void println(format_string<T...> fmt, T&&... args) {
   return fmt::println(stdout, fmt, static_cast<T&&>(args)...);
 }
 
-FMT_END_EXPORT
 FMT_PRAGMA_CLANG(diagnostic pop)
 FMT_PRAGMA_GCC(pop_options)
+FMT_END_EXPORT
 FMT_END_NAMESPACE
 
 #ifdef FMT_HEADER_ONLY
