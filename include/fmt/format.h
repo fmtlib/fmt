@@ -1312,10 +1312,11 @@ template <typename WChar, typename Buffer = memory_buffer> class to_utf8 {
   explicit to_utf8(basic_string_view<WChar> s,
                    to_utf8_error_policy policy = to_utf8_error_policy::abort) {
     static_assert(sizeof(WChar) == 2 || sizeof(WChar) == 4,
-                  "Expect utf16 or utf32");
-    if (!convert(s, policy))
+                  "expected utf16 or utf32");
+    if (!convert(s, policy)) {
       FMT_THROW(std::runtime_error(sizeof(WChar) == 2 ? "invalid utf16"
                                                       : "invalid utf32"));
+    }
   }
   operator string_view() const { return string_view(&buffer_[0], size()); }
   auto size() const -> size_t { return buffer_.size() - 1; }
