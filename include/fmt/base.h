@@ -2797,9 +2797,6 @@ template <typename T, typename Char = char>
 concept formattable = is_formattable<remove_reference_t<T>, Char>::value;
 #endif
 
-template <typename T, typename Char>
-using has_formatter FMT_DEPRECATED = std::is_constructible<formatter<T, Char>>;
-
 // A formatter specialization for natively supported types.
 template <typename T, typename Char>
 struct formatter<T, Char,
