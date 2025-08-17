@@ -201,14 +201,6 @@
 #  define FMT_NODISCARD
 #endif
 
-#ifdef FMT_DEPRECATED
-// Use the provided definition.
-#elif FMT_HAS_CPP14_ATTRIBUTE(deprecated)
-#  define FMT_DEPRECATED [[deprecated]]
-#else
-#  define FMT_DEPRECATED /* deprecated */
-#endif
-
 #if FMT_GCC_VERSION || FMT_CLANG_VERSION
 #  define FMT_VISIBILITY(value) __attribute__((visibility(value)))
 #else
@@ -2677,13 +2669,9 @@ class context {
   FMT_NO_UNIQUE_ADDRESS detail::locale_ref loc_;
 
  public:
-  /// The character type for the output.
-  using char_type = char;
-
+  using char_type = char;  ///< The character type for the output.
   using iterator = appender;
   using format_arg = basic_format_arg<context>;
-  using parse_context_type FMT_DEPRECATED = parse_context<>;
-  template <typename T> using formatter_type FMT_DEPRECATED = formatter<T>;
   enum { builtin_types = FMT_BUILTIN_TYPES };
 
   /// Constructs a `context` object. References to the arguments are stored
