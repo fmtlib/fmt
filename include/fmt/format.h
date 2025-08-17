@@ -1345,9 +1345,8 @@ template <typename WChar, typename Buffer = memory_buffer> class to_utf8 {
           buf.append(string_view("\xEF\xBF\xBD"));
           --p;
           continue;
-        } else {
-          c = (c << 10) + static_cast<uint32_t>(*p) - 0x35fdc00;
         }
+        c = (c << 10) + static_cast<uint32_t>(*p) - 0x35fdc00;
       }
       if (c < 0x80) {
         buf.push_back(static_cast<char>(c));
