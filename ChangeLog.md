@@ -1,3 +1,8 @@
+# 12.0.0 - TBD
+
+- Improved performance of the default floating point formatting
+  (https://github.com/fmtlib/fmt/issues/3675).
+
 # 11.2.0 - 2025-05-03
 
 - Added the `s` specifier for `std::error_code`. It allows formatting an error
