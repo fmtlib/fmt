@@ -140,9 +140,7 @@ FMT_FUNC void report_error(const char* message) {
   if (!b) return;
 #endif
 #if FMT_USE_EXCEPTIONS
-  // Use FMT_THROW instead of throw to avoid bogus unreachable code warnings
-  // from MSVC.
-  FMT_THROW(format_error(message));
+  throw format_error(message);
 #else
   fputs(message, stderr);
   abort();
