@@ -3522,8 +3522,13 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
     } else {
       *ptr++ = static_cast<Char>('0' + significand);
     }
-    memcpy(ptr, prefix, 2);
-    ptr += 2;
+    if (std::is_same<Char, char>::value) {
+      memcpy(ptr, prefix, 2);
+      ptr += 2;
+    } else {
+      *ptr++ = prefix[0];
+      *ptr++ = prefix[1];
+    }
     if (abs_exponent >= 100) {
       *ptr++ = static_cast<Char>('0' + abs_exponent / 100);
       abs_exponent %= 100;

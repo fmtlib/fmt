@@ -74,6 +74,7 @@ TEST(xchar_test, format_explicitly_convertible_to_wstring_view) {
 TEST(xchar_test, format) {
   EXPECT_EQ(fmt::format(L"{}", 42), L"42");
   EXPECT_EQ(fmt::format(L"{}", 4.2), L"4.2");
+  EXPECT_EQ(fmt::format(L"{}", 1e100), L"1e+100");
   EXPECT_EQ(fmt::format(L"{}", L"abc"), L"abc");
   EXPECT_EQ(fmt::format(L"{}", L'z'), L"z");
   EXPECT_THROW(fmt::format(fmt::runtime(L"{:*\x343E}"), 42), fmt::format_error);
