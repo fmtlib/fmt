@@ -2257,7 +2257,7 @@ template <typename Context> class value {
         custom.value = const_cast<value_type*>(&x);
 #endif
     }
-    custom.format = format_custom<value_type, formatter<value_type, char_type>>;
+    custom.format = format_custom<value_type>;
   }
 
   template <typename T, FMT_ENABLE_IF(!has_formatter<T, char_type>())>
@@ -2268,11 +2268,10 @@ template <typename Context> class value {
   }
 
   // Formats an argument of a custom type, such as a user-defined class.
-  // DEPRECATED! Formatter template parameter will be removed.
-  template <typename T, typename Formatter>
+  template <typename T>
   static void format_custom(void* arg, parse_context<char_type>& parse_ctx,
                             Context& ctx) {
-    auto f = Formatter();
+    auto f = formatter<T, char_type>();
     parse_ctx.advance_to(f.parse(parse_ctx));
     using qualified_type =
         conditional_t<has_formatter<const T, char_type>(), const T, T>;
