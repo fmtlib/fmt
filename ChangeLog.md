@@ -1,7 +1,10 @@
 # 12.0.0 - TBD
 
-- Improved performance of the default floating point formatting
+- Optimized the default floating point formatting
   (https://github.com/fmtlib/fmt/issues/3675).
+
+- Removed deprecated `basic_format_args::parse_context_type` and
+  `basic_format_args::formatter_type`.
 
 # 11.2.0 - 2025-05-03
 
