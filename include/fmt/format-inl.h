@@ -133,17 +133,19 @@ FMT_FUNC auto write_loc(appender out, loc_value value,
 }  // namespace detail
 
 FMT_FUNC void report_error(const char* message) {
+#if FMT_MSC_VERSION || defined(__NVCC__)
+  // Silence unreachable code warnings in MSVC and NVCC because these
+  // are nearly impossible to fix in a generic code.
+  volatile bool b = true;
+  if (!b) return;
+#endif
 #if FMT_USE_EXCEPTIONS
   // Use FMT_THROW instead of throw to avoid bogus unreachable code warnings
   // from MSVC.
   FMT_THROW(format_error(message));
 #else
-  // Silence unreachable code warnings in MSVC.
-  volatile bool b = true;
-  if (b) {
-    fputs(message, stderr);
-    abort();
-  }
+  fputs(message, stderr);
+  abort();
 #endif
 }
 
