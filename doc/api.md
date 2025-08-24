@@ -653,8 +653,6 @@ if an argument type doesn't match its format specification.
 The optional header `fmt/xchar.h` provides support for `wchar_t` and
 exotic character types.
 
-::: is_char
-
 ::: wstring_view
 
 ::: wformat_context

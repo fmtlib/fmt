@@ -607,19 +607,6 @@ template <typename Char> class basic_string_view {
 
 using string_view = basic_string_view<char>;
 
-// DEPRECATED! Will be merged with is_char and moved to detail.
-template <typename T> struct is_xchar : std::false_type {};
-template <> struct is_xchar<wchar_t> : std::true_type {};
-template <> struct is_xchar<char16_t> : std::true_type {};
-template <> struct is_xchar<char32_t> : std::true_type {};
-#ifdef __cpp_char8_t
-template <> struct is_xchar<char8_t> : std::true_type {};
-#endif
-
-// Specifies if `T` is a character (code unit) type.
-template <typename T> struct is_char : is_xchar<T> {};
-template <> struct is_char<char> : std::true_type {};
-
 template <typename T> class basic_appender;
 using appender = basic_appender<char>;
 
@@ -915,6 +902,20 @@ template <typename Char = char> class parse_context {
 FMT_END_EXPORT
 
 namespace detail {
+
+// DEPRECATED! Will be merged with is_char
+template <typename T> struct is_xchar : std::false_type {};
+template <> struct is_xchar<wchar_t> : std::true_type {};
+template <> struct is_xchar<char16_t> : std::true_type {};
+template <> struct is_xchar<char32_t> : std::true_type {};
+#ifdef __cpp_char8_t
+template <>
+struct is_xchar<char8_t> : bool_constant<detail::is_utf8_enabled> {};
+#endif
+
+// Specifies if `T` is a character (code unit) type.
+template <typename T> struct is_char : is_xchar<T> {};
+template <> struct is_char<char> : std::true_type {};
 
 // Constructs fmt::basic_string_view<Char> from types implicitly convertible
 // to it, deducing Char. Explicitly convertible types such as the ones returned

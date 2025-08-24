@@ -112,10 +112,6 @@ inline auto runtime(wstring_view s) -> runtime_format_string<wchar_t> {
   return {{s}};
 }
 
-#ifdef __cpp_char8_t
-template <> struct is_char<char8_t> : bool_constant<detail::is_utf8_enabled> {};
-#endif
-
 template <typename... T>
 constexpr auto make_wformat_args(T&... args)
     -> decltype(fmt::make_format_args<wformat_context>(args...)) {
