@@ -348,6 +348,9 @@ template <typename T> constexpr auto max_of(T a, T b) -> T {
   return a > b ? a : b;
 }
 
+FMT_NORETURN FMT_API void assert_fail(const char* file, int line,
+                                      const char* message);
+
 namespace detail {
 // Suppresses "unused variable" warnings with the method described in
 // https://herbsutter.com/2009/10/18/mailbag-shutting-up-compiler-warnings/.
@@ -388,7 +391,7 @@ FMT_NORETURN FMT_API void assert_fail(const char* file, int line,
 #  define FMT_ASSERT(condition, message)                                    \
     ((condition) /* void() fails with -Winvalid-constexpr on clang 4.0.1 */ \
          ? (void)0                                                          \
-         : fmt::detail::assert_fail(__FILE__, __LINE__, (message)))
+         : ::fmt::assert_fail(__FILE__, __LINE__, (message)))
 #endif
 
 #ifdef FMT_USE_INT128

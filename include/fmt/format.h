@@ -170,8 +170,7 @@ template <typename T> struct iterator_traits<fmt::basic_appender<T>> {
 #elif FMT_USE_EXCEPTIONS
 #  define FMT_THROW(x) throw x
 #else
-#  define FMT_THROW(x) \
-    ::fmt::detail::assert_fail(__FILE__, __LINE__, (x).what())
+#  define FMT_THROW(x) ::fmt::assert_fail(__FILE__, __LINE__, (x).what())
 #endif
 
 // Defining FMT_REDUCE_INT_INSTANTIATIONS to 1, will reduce the number of

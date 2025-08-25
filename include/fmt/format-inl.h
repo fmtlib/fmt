@@ -31,13 +31,21 @@
 #endif
 
 FMT_BEGIN_NAMESPACE
-namespace detail {
 
+#ifndef FMT_CUSTOM_ASSERT_FAIL
 FMT_FUNC void assert_fail(const char* file, int line, const char* message) {
   // Use unchecked std::fprintf to avoid triggering another assertion when
   // writing to stderr fails.
   fprintf(stderr, "%s:%d: assertion failed: %s", file, line, message);
   abort();
+}
+#endif
+
+namespace detail {
+
+// For binary compatibility.
+FMT_FUNC void assert_fail(const char* file, int line, const char* message) {
+  ::fmt::assert_fail(file, line, message);
 }
 
 FMT_FUNC void format_error_code(detail::buffer<char>& out, int error_code,
