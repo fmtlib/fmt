@@ -393,9 +393,11 @@ constexpr auto compile_format_string(S fmt) {
               decltype(get_type<arg_index, Args>::value), Args, arg_id_end_pos,
               arg_index, next_id>(fmt);
         } else if constexpr (c == '}') {
+          static_assert(arg_index >= 0, "Named argument is missing");
           return parse_tail<Args, arg_id_end_pos + 1, ID>(
               runtime_named_field<char_type>{arg_id_result.arg_id.name}, fmt);
         } else if constexpr (c == ':') {
+          static_assert(arg_index >= 0, "Named argument is missing");
           return unknown_format();  // no type info for specs parsing
         }
       }
