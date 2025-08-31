@@ -3,8 +3,22 @@
 - Optimized the default floating point formatting
   (https://github.com/fmtlib/fmt/issues/3675).
 
+- Fixed an ambiguity between `std::reference_wrapper<T>` and `format_as`
+  formatters (https://github.com/fmtlib/fmt/issues/4424,
+  https://github.com/fmtlib/fmt/pull/4434). Thanks @jeremy-rifkin.
+
 - Removed deprecated `basic_format_args::parse_context_type` and
   `basic_format_args::formatter_type`.
+
+- Changed component prefix from `fmt-` to `fmt_` for compatibility with
+  NSIS/CPack on Windows, e.g. `fmt-doc` changed to `fmt_doc`
+  (https://github.com/fmtlib/fmt/pull/4442). Thanks @n-stein.
+
+- Updated `.gitignore` (https://github.com/fmtlib/fmt/pull/4355).
+  Thanks @dinomight.
+
+- Fixed various warnings and compilation issues
+  (https://github.com/fmtlib/fmt/pull/4356). Thanks @dinomight.
 
 # 11.2.0 - 2025-05-03
 
