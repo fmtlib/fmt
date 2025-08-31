@@ -3753,7 +3753,7 @@ template <typename Char> struct udl_arg {
 };
 #endif  // FMT_USE_NONTYPE_TEMPLATE_ARGS
 
-template <typename Char> struct format_handler {
+template <typename Char = char> struct format_handler {
   parse_context<Char> parse_ctx;
   buffered_context<Char> ctx;
 
@@ -3818,22 +3818,6 @@ FMT_CONSTEXPR auto native_formatter<T, Char, TYPE>::format(
   handle_dynamic_spec(specs.dynamic_precision(), specs.precision,
                       specs_.precision_ref, ctx);
   return write<Char>(ctx.out(), val, specs, ctx.locale());
-}
-
-// DEPRECATED!
-template <typename Char = char> struct vformat_args {
-  using type = basic_format_args<buffered_context<Char>>;
-};
-template <> struct vformat_args<char> {
-  using type = format_args;
-};
-
-template <typename Char>
-void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
-                typename vformat_args<Char>::type args, locale_ref loc = {}) {
-  auto out = basic_appender<Char>(buf);
-  parse_format_string(
-      fmt, format_handler<Char>{parse_context<Char>(fmt), {out, args, loc}});
 }
 }  // namespace detail
 

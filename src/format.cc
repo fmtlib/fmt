@@ -30,16 +30,13 @@ template FMT_API auto decimal_point_impl(locale_ref) -> char;
 // DEPRECATED!
 template FMT_API void buffer<char>::append(const char*, const char*);
 
-// DEPRECATED!
-template FMT_API void vformat_to(buffer<char>&, string_view,
-                                 typename vformat_args<>::type, locale_ref);
-
 // Explicit instantiations for wchar_t.
 
 template FMT_API auto thousands_sep_impl(locale_ref)
     -> thousands_sep_result<wchar_t>;
 template FMT_API auto decimal_point_impl(locale_ref) -> wchar_t;
 
+// DEPRECATED!
 template FMT_API void buffer<wchar_t>::append(const wchar_t*, const wchar_t*);
 
 }  // namespace detail

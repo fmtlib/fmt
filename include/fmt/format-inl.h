@@ -1463,8 +1463,8 @@ FMT_FUNC void vformat_to(buffer<char>& buf, string_view fmt, format_args args,
   auto out = appender(buf);
   if (fmt.size() == 2 && equal2(fmt.data(), "{}"))
     return args.get(0).visit(default_arg_formatter<char>{out});
-  parse_format_string(
-      fmt, format_handler<char>{parse_context<char>(fmt), {out, args, loc}});
+  parse_format_string(fmt,
+                      format_handler<>{parse_context<>(fmt), {out, args, loc}});
 }
 
 template <typename T> struct span {
