@@ -3851,9 +3851,6 @@ template <typename OutputIt, typename Char> class generic_context {
  public:
   using char_type = Char;
   using iterator = OutputIt;
-  using parse_context_type FMT_DEPRECATED = parse_context<Char>;
-  template <typename T>
-  using formatter_type FMT_DEPRECATED = formatter<T, Char>;
   enum { builtin_types = FMT_BUILTIN_TYPES };
 
   constexpr generic_context(OutputIt out,
