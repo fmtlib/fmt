@@ -147,12 +147,7 @@ FMT_FUNC void report_error(const char* message) {
   volatile bool b = true;
   if (!b) return;
 #endif
-#if FMT_USE_EXCEPTIONS
-  throw format_error(message);
-#else
-  fputs(message, stderr);
-  abort();
-#endif
+  FMT_THROW(format_error(message));
 }
 
 template <typename Locale> typename Locale::id format_facet<Locale>::id;
