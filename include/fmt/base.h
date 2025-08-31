@@ -1071,11 +1071,11 @@ template <bool B1, bool B2, bool... Tail> constexpr auto count() -> int {
   return (B1 ? 1 : 0) + count<B2, Tail...>();
 }
 
-template <typename... Args> constexpr auto count_named_args() -> int {
-  return count<is_named_arg<Args>::value...>();
+template <typename... T> constexpr auto count_named_args() -> int {
+  return count<is_named_arg<T>::value...>();
 }
-template <typename... Args> constexpr auto count_static_named_args() -> int {
-  return count<is_static_named_arg<Args>::value...>();
+template <typename... T> constexpr auto count_static_named_args() -> int {
+  return count<is_static_named_arg<T>::value...>();
 }
 
 template <typename Char> struct named_arg_info {
@@ -2328,10 +2328,10 @@ template <typename> constexpr auto encode_types() -> unsigned long long {
   return 0;
 }
 
-template <typename Context, typename Arg, typename... Args>
+template <typename Context, typename First, typename... T>
 constexpr auto encode_types() -> unsigned long long {
-  return static_cast<unsigned>(stored_type_constant<Arg, Context>::value) |
-         (encode_types<Context, Args...>() << packed_arg_bits);
+  return static_cast<unsigned>(stored_type_constant<First, Context>::value) |
+         (encode_types<Context, T...>() << packed_arg_bits);
 }
 
 template <typename Context, typename... T, size_t NUM_ARGS = sizeof...(T)>
