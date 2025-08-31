@@ -43,9 +43,9 @@ FMT_FUNC void assert_fail(const char* file, int line, const char* message) {
 
 namespace detail {
 
-// For binary compatibility.
+// DEPRECATED!
 FMT_FUNC void assert_fail(const char* file, int line, const char* message) {
-  ::fmt::assert_fail(file, line, message);
+  fmt::assert_fail(file, line, message);
 }
 
 FMT_FUNC void format_error_code(detail::buffer<char>& out, int error_code,
