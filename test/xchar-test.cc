@@ -379,7 +379,7 @@ TEST(locale_test, int_formatter) {
   f.parse(parse_ctx);
   auto buf = fmt::memory_buffer();
   fmt::basic_format_context<fmt::appender, char> format_ctx(
-      fmt::appender(buf), {}, fmt::detail::locale_ref(loc));
+      fmt::appender(buf), {}, fmt::locale_ref(loc));
   f.format(12345, format_ctx);
   EXPECT_EQ(fmt::to_string(buf), "12,345");
 }

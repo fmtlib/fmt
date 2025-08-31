@@ -41,6 +41,38 @@ FMT_FUNC void assert_fail(const char* file, int line, const char* message) {
 }
 #endif
 
+#if FMT_USE_LOCALE
+namespace detail {
+using std::locale;
+using std::numpunct;
+using std::use_facet;
+}  // namespace detail
+
+template <typename Locale, enable_if_t<(sizeof(Locale::collate) != 0), int>>
+locale_ref::locale_ref(const Locale& loc) : locale_(&loc) {
+  static_assert(std::is_same<Locale, std::locale>::value, "");
+}
+#else
+namespace detail {
+struct locale {};
+template <typename Char> struct numpunct {
+  auto grouping() const -> std::string { return "\03"; }
+  auto thousands_sep() const -> Char { return ','; }
+  auto decimal_point() const -> Char { return '.'; }
+};
+template <typename Facet> Facet use_facet(locale) { return {}; }
+}  // namespace detail
+#endif  // FMT_USE_LOCALE
+
+template <typename Locale> auto locale_ref::get() const -> Locale {
+  using namespace detail;
+  static_assert(std::is_same<Locale, locale>::value, "");
+#if FMT_USE_LOCALE
+  if (locale_) return *static_cast<const locale*>(locale_);
+#endif
+  return locale();
+}
+
 namespace detail {
 
 // DEPRECATED!
@@ -85,33 +117,6 @@ inline void fwrite_all(const void* ptr, size_t count, FILE* stream) {
   size_t written = std::fwrite(ptr, 1, count, stream);
   if (written < count)
     FMT_THROW(system_error(errno, FMT_STRING("cannot write to file")));
-}
-
-#if FMT_USE_LOCALE
-using std::locale;
-using std::numpunct;
-using std::use_facet;
-
-template <typename Locale>
-locale_ref::locale_ref(const Locale& loc) : locale_(&loc) {
-  static_assert(std::is_same<Locale, locale>::value, "");
-}
-#else
-struct locale {};
-template <typename Char> struct numpunct {
-  auto grouping() const -> std::string { return "\03"; }
-  auto thousands_sep() const -> Char { return ','; }
-  auto decimal_point() const -> Char { return '.'; }
-};
-template <typename Facet> Facet use_facet(locale) { return {}; }
-#endif  // FMT_USE_LOCALE
-
-template <typename Locale> auto locale_ref::get() const -> Locale {
-  static_assert(std::is_same<Locale, locale>::value, "");
-#if FMT_USE_LOCALE
-  if (locale_) return *static_cast<const locale*>(locale_);
-#endif
-  return locale();
 }
 
 template <typename Char>

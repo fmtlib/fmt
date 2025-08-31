@@ -902,6 +902,29 @@ template <typename Char = char> class parse_context {
   FMT_CONSTEXPR void check_dynamic_spec(int arg_id);
 };
 
+#ifndef FMT_USE_LOCALE
+#  define FMT_USE_LOCALE (FMT_OPTIMIZE_SIZE <= 1)
+#endif
+
+// A type-erased reference to std::locale to avoid the heavy <locale> include.
+class locale_ref {
+#if FMT_USE_LOCALE
+ private:
+  const void* locale_;  // A type-erased pointer to std::locale.
+
+ public:
+  constexpr locale_ref() : locale_(nullptr) {}
+
+  template <typename Locale, FMT_ENABLE_IF(sizeof(Locale::collate) != 0)>
+  locale_ref(const Locale& loc);
+
+  inline explicit operator bool() const noexcept { return locale_ != nullptr; }
+#endif  // FMT_USE_LOCALE
+
+ public:
+  template <typename Locale> auto get() const -> Locale;
+};
+
 FMT_END_EXPORT
 
 namespace detail {
@@ -2301,27 +2324,6 @@ struct is_output_iterator<
     enable_if_t<std::is_assignable<decltype(*std::declval<decay_t<It>&>()++),
                                    T>::value>> : std::true_type {};
 
-#ifndef FMT_USE_LOCALE
-#  define FMT_USE_LOCALE (FMT_OPTIMIZE_SIZE <= 1)
-#endif
-
-// A type-erased reference to an std::locale to avoid a heavy <locale> include.
-class locale_ref {
-#if FMT_USE_LOCALE
- private:
-  const void* locale_;  // A type-erased pointer to std::locale.
-
- public:
-  constexpr locale_ref() : locale_(nullptr) {}
-  template <typename Locale> locale_ref(const Locale& loc);
-
-  inline explicit operator bool() const noexcept { return locale_ != nullptr; }
-#endif  // FMT_USE_LOCALE
-
- public:
-  template <typename Locale> auto get() const -> Locale;
-};
-
 template <typename> constexpr auto encode_types() -> unsigned long long {
   return 0;
 }
@@ -2665,7 +2667,7 @@ class context {
  private:
   appender out_;
   format_args args_;
-  FMT_NO_UNIQUE_ADDRESS detail::locale_ref loc_;
+  FMT_NO_UNIQUE_ADDRESS locale_ref loc_;
 
  public:
   using char_type = char;  ///< The character type for the output.
@@ -2675,8 +2677,7 @@ class context {
 
   /// Constructs a `context` object. References to the arguments are stored
   /// in the object so make sure they have appropriate lifetimes.
-  FMT_CONSTEXPR context(iterator out, format_args args,
-                        detail::locale_ref loc = {})
+  FMT_CONSTEXPR context(iterator out, format_args args, locale_ref loc = {})
       : out_(out), args_(args), loc_(loc) {}
   context(context&&) = default;
   context(const context&) = delete;
@@ -2697,7 +2698,7 @@ class context {
   // Advances the begin iterator to `it`.
   FMT_CONSTEXPR void advance_to(iterator) {}
 
-  FMT_CONSTEXPR auto locale() const -> detail::locale_ref { return loc_; }
+  FMT_CONSTEXPR auto locale() const -> locale_ref { return loc_; }
 };
 
 template <typename Char = char> struct runtime_format_string {

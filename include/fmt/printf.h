@@ -46,7 +46,7 @@ template <typename Char> class basic_printf_context {
   auto out() -> basic_appender<Char> { return out_; }
   void advance_to(basic_appender<Char>) {}
 
-  auto locale() -> detail::locale_ref { return {}; }
+  auto locale() -> locale_ref { return {}; }
 
   auto arg(int id) const -> basic_format_arg<basic_printf_context> {
     return args_.get(id);
