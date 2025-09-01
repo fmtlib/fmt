@@ -586,7 +586,7 @@ and `consteval` functions. Additionally there is an experimental
 `FMT_STATIC_FORMAT` that allows formatting into a string of the exact
 required size at compile time. Compile-time formatting works with built-in
 and user-defined formatters that have `constexpr` `format` methods.
-Example:
+Example ([run](https://www.godbolt.org/z/3c13erEoq)):
 
     template <> struct fmt::formatter<point> {
       constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
