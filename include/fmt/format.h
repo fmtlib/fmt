@@ -736,7 +736,7 @@ using is_double_double = bool_constant<std::numeric_limits<T>::digits == 106>;
 template <typename T> struct allocator : private std::decay<void> {
   using value_type = T;
 
-  T* allocate(size_t n) {
+  auto allocate(size_t n) -> T* {
     FMT_ASSERT(n <= max_value<size_t>() / sizeof(T), "");
     T* p = static_cast<T*>(std::malloc(n * sizeof(T)));
     if (!p) FMT_THROW(std::bad_alloc());
@@ -940,7 +940,7 @@ class string_buffer {
   inline string_buffer() : buf_(str_) {}
 
   inline operator writer() { return buf_; }
-  inline std::string& str() { return str_; }
+  inline auto str() -> std::string& { return str_; }
 };
 
 template <typename T, size_t SIZE, typename Allocator>
@@ -2622,7 +2622,7 @@ FMT_CONSTEXPR auto isfinite(T value) -> bool {
 }
 
 template <typename T, FMT_ENABLE_IF(is_floating_point<T>::value)>
-FMT_INLINE FMT_CONSTEXPR bool signbit(T value) {
+FMT_INLINE FMT_CONSTEXPR auto signbit(T value) -> bool {
   if (is_constant_evaluated()) {
 #ifdef __cpp_if_constexpr
     if constexpr (std::numeric_limits<double>::is_iec559) {
@@ -3698,9 +3698,9 @@ FMT_CONSTEXPR auto get_arg(Context& ctx, ID id) -> basic_format_arg<Context> {
 }
 
 template <typename Context>
-FMT_CONSTEXPR int get_dynamic_spec(
+FMT_CONSTEXPR auto get_dynamic_spec(
     arg_id_kind kind, const arg_ref<typename Context::char_type>& ref,
-    Context& ctx) {
+    Context& ctx) -> int {
   FMT_ASSERT(kind != arg_id_kind::none, "");
   auto arg =
       kind == arg_id_kind::index ? ctx.arg(ref.index) : ctx.arg(ref.name);

@@ -1162,7 +1162,7 @@ auto is_left_endpoint_integer_shorter_interval(int exponent) noexcept -> bool {
 }
 
 // Remove trailing zeros from n and return the number of zeros removed (float).
-FMT_INLINE int remove_trailing_zeros(uint32_t& n, int s = 0) noexcept {
+FMT_INLINE auto remove_trailing_zeros(uint32_t& n, int s = 0) noexcept -> int {
   FMT_ASSERT(n != 0, "");
   // Modular inverse of 5 (mod 2^32): (mod_inv_5 * 5) mod 2^32 = 1.
   constexpr uint32_t mod_inv_5 = 0xcccccccd;
@@ -1183,7 +1183,7 @@ FMT_INLINE int remove_trailing_zeros(uint32_t& n, int s = 0) noexcept {
 }
 
 // Removes trailing zeros and returns the number of zeros removed (double).
-FMT_INLINE int remove_trailing_zeros(uint64_t& n) noexcept {
+FMT_INLINE auto remove_trailing_zeros(uint64_t& n) noexcept -> int {
   FMT_ASSERT(n != 0, "");
 
   // Is n is divisible by 10^8?
@@ -1219,7 +1219,7 @@ FMT_INLINE int remove_trailing_zeros(uint64_t& n) noexcept {
 
 // The main algorithm for shorter interval case
 template <typename T>
-FMT_INLINE decimal_fp<T> shorter_interval_case(int exponent) noexcept {
+FMT_INLINE auto shorter_interval_case(int exponent) noexcept -> decimal_fp<T> {
   decimal_fp<T> ret_value;
   // Compute k and beta
   const int minus_k = floor_log10_pow2_minus_log10_4_over_3(exponent);
@@ -1555,7 +1555,7 @@ template <typename F> class glibc_file : public file_base<F> {
 
   void advance_write_buffer(size_t size) { this->file_->_IO_write_ptr += size; }
 
-  bool needs_flush() const {
+  auto needs_flush() const -> bool {
     if ((this->file_->_flags & line_buffered) == 0) return false;
     char* end = this->file_->_IO_write_end;
     auto size = max_of<ptrdiff_t>(this->file_->_IO_write_ptr - end, 0);
@@ -1604,7 +1604,7 @@ template <typename F> class apple_file : public file_base<F> {
     this->file_->_w -= size;
   }
 
-  bool needs_flush() const {
+  auto needs_flush() const -> bool {
     if ((this->file_->_flags & line_buffered) == 0) return false;
     return memchr(this->file_->_p + this->file_->_w, '\n',
                   to_unsigned(-this->file_->_w));

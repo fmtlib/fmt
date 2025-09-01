@@ -1000,16 +1000,16 @@ template <typename T>
 struct has_tm_zone<T, void_t<decltype(T::tm_zone)>> : std::true_type {};
 
 template <typename T, FMT_ENABLE_IF(has_tm_zone<T>::value)>
-bool set_tm_zone(T& time, char* tz) {
+auto set_tm_zone(T& time, char* tz) -> bool {
   time.tm_zone = tz;
   return true;
 }
 template <typename T, FMT_ENABLE_IF(!has_tm_zone<T>::value)>
-bool set_tm_zone(T&, char*) {
+auto set_tm_zone(T&, char*) -> bool {
   return false;
 }
 
-inline char* utc() {
+inline auto utc() -> char* {
   static char tz[] = "UTC";
   return tz;
 }

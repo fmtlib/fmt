@@ -43,7 +43,7 @@ struct is_compiled_string : std::is_base_of<compiled_string, S> {};
  * Converts a string literal into a format string that will be parsed at
  * compile time and converted into efficient formatting code. Requires support
  * for class types in constant template parameters (a C++20 feature).
- * 
+ *
  *  **Example**:
  *
  *     // Converts 42 into std::string using the most efficient method and no
@@ -71,8 +71,8 @@ template <typename... T> struct type_list {};
 
 // Returns a reference to the argument at index N from [first, rest...].
 template <int N, typename T, typename... Args>
-constexpr const auto& get([[maybe_unused]] const T& first,
-                          [[maybe_unused]] const Args&... rest) {
+constexpr auto get([[maybe_unused]] const T& first,
+                   [[maybe_unused]] const Args&... rest) -> const auto& {
   static_assert(N < 1 + sizeof...(Args), "index is out of bounds");
   if constexpr (N == 0)
     return first;

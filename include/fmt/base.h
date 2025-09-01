@@ -458,8 +458,10 @@ enum { use_utf8 = !FMT_WIN32 || is_utf8_enabled };
 static_assert(!FMT_UNICODE || use_utf8,
               "Unicode support requires compiling with /utf-8");
 
-template <typename T> constexpr const char* narrow(const T*) { return nullptr; }
-constexpr FMT_ALWAYS_INLINE const char* narrow(const char* s) { return s; }
+template <typename T> constexpr auto narrow(T*) -> char* { return nullptr; }
+constexpr FMT_ALWAYS_INLINE auto narrow(const char* s) -> const char* {
+  return s;
+}
 
 template <typename Char>
 FMT_CONSTEXPR auto compare(const Char* s1, const Char* s2, size_t n) -> int {
@@ -762,7 +764,7 @@ class basic_specs {
             (static_cast<unsigned>(p) << precision_shift);
   }
 
-  constexpr bool dynamic() const {
+  constexpr auto dynamic() const -> bool {
     return (data_ & (width_mask | precision_mask)) != 0;
   }
 
@@ -2369,8 +2371,8 @@ struct named_arg_store {
   }
 
   named_arg_store(const named_arg_store& rhs) = delete;
-  named_arg_store& operator=(const named_arg_store& rhs) = delete;
-  named_arg_store& operator=(named_arg_store&& rhs) = delete;
+  auto operator=(const named_arg_store& rhs) -> named_arg_store& = delete;
+  auto operator=(named_arg_store&& rhs) -> named_arg_store& = delete;
   operator const arg_t<Context, NUM_ARGS>*() const { return args + 1; }
 };
 

@@ -129,9 +129,8 @@ struct is_variant_like_<std::variant<Types...>> : std::true_type {};
 
 template <typename Variant, typename Char> class is_variant_formattable {
   template <size_t... Is>
-  static std::conjunction<
-      is_formattable<std::variant_alternative_t<Is, Variant>, Char>...>
-      check(std::index_sequence<Is...>);
+  static auto check(std::index_sequence<Is...>) -> std::conjunction<
+      is_formattable<std::variant_alternative_t<Is, Variant>, Char>...>;
 
  public:
   static constexpr bool value = decltype(check(
