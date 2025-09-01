@@ -64,7 +64,7 @@ TEST(args_test, custom_format) {
 }
 
 struct to_stringable {
-  friend fmt::string_view to_string_view(to_stringable) { return {}; }
+  friend auto to_string_view(to_stringable) -> fmt::string_view { return {}; }
 };
 
 FMT_BEGIN_NAMESPACE

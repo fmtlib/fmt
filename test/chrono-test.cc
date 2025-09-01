@@ -55,8 +55,8 @@ auto make_second(int s) -> std::tm {
   return time;
 }
 
-std::string system_strftime(const std::string& format, const std::tm* timeptr,
-                            std::locale* locptr = nullptr) {
+auto system_strftime(const std::string& format, const std::tm* timeptr,
+                     std::locale* locptr = nullptr) -> std::string {
   auto loc = locptr ? *locptr : std::locale::classic();
   auto& facet = std::use_facet<std::time_put<char>>(loc);
   std::ostringstream os;
@@ -73,8 +73,8 @@ std::string system_strftime(const std::string& format, const std::tm* timeptr,
 #endif
 }
 
-FMT_CONSTEXPR std::tm make_tm(int year, int mon, int mday, int hour, int min,
-                              int sec) {
+FMT_CONSTEXPR auto make_tm(int year, int mon, int mday, int hour, int min,
+                           int sec) -> std::tm {
   auto tm = std::tm();
   tm.tm_sec = sec;
   tm.tm_min = min;
@@ -336,12 +336,12 @@ TEST(chrono_test, local_time) {
 }
 
 template <typename T, FMT_ENABLE_IF(fmt::detail::has_tm_gmtoff<T>::value)>
-bool set_tm_gmtoff(T& time, long offset) {
+auto set_tm_gmtoff(T& time, long offset) -> bool {
   time.tm_gmtoff = offset;
   return true;
 }
 template <typename T, FMT_ENABLE_IF(!fmt::detail::has_tm_gmtoff<T>::value)>
-bool set_tm_gmtoff(T&, long) {
+auto set_tm_gmtoff(T&, long) -> bool {
   return false;
 }
 
