@@ -292,7 +292,7 @@ struct double_double {
 
 auto format_as(double_double d) -> double { return d; }
 
-bool operator>=(const double_double& lhs, const double_double& rhs) {
+auto operator>=(const double_double& lhs, const double_double& rhs) -> bool {
   return lhs.a + lhs.b >= rhs.a + rhs.b;
 }
 
@@ -356,11 +356,11 @@ TEST(format_impl_test, write_console_signature) {
 
 // A public domain branchless UTF-8 decoder by Christopher Wellons:
 // https://github.com/skeeto/branchless-utf8
-constexpr bool unicode_is_surrogate(uint32_t c) {
+constexpr auto unicode_is_surrogate(uint32_t c) -> bool {
   return c >= 0xD800U && c <= 0xDFFFU;
 }
 
-FMT_CONSTEXPR char* utf8_encode(char* s, uint32_t c) {
+FMT_CONSTEXPR auto utf8_encode(char* s, uint32_t c) -> char* {
   if (c >= (1UL << 16)) {
     s[0] = static_cast<char>(0xf0 | (c >> 18));
     s[1] = static_cast<char>(0x80 | ((c >> 12) & 0x3f));

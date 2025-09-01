@@ -11,10 +11,11 @@
 #if FMT_USE_CONSTEVAL
 
 template <size_t max_string_length, typename Char = char> struct test_string {
+  Char buffer[max_string_length] = {};
+
   template <typename T> constexpr bool operator==(const T& rhs) const noexcept {
     return fmt::basic_string_view<Char>(rhs).compare(buffer) == 0;
   }
-  Char buffer[max_string_length]{};
 };
 
 template <size_t max_string_length, typename Char = char, typename... Args>
