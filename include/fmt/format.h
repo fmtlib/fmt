@@ -173,6 +173,12 @@ template <typename T> struct iterator_traits<fmt::basic_appender<T>> {
 #  define FMT_THROW(x) ::fmt::assert_fail(__FILE__, __LINE__, (x).what())
 #endif
 
+#ifdef __clang_analyzer__
+#  define FMT_CLANG_ANALYZER 1
+#else
+#  define FMT_CLANG_ANALYZER 0
+#endif
+
 // Defining FMT_REDUCE_INT_INSTANTIATIONS to 1, will reduce the number of
 // integer formatter template instantiations to just one by only using the
 // largest integer type. This results in a reduction in binary size but will
@@ -4213,21 +4219,26 @@ class format_int {
   inline auto str() const -> std::string { return {str_, size()}; }
 };
 
-#define FMT_STRING_IMPL(s, base)                                              \
-  [] {                                                                        \
-    /* Use the hidden visibility as a workaround for a GCC bug (#1973). */    \
-    /* Use a macro-like name to avoid shadowing warnings. */                  \
-    struct FMT_VISIBILITY("hidden") FMT_COMPILE_STRING : base {               \
-      using char_type = fmt::remove_cvref_t<decltype(s[0])>;                  \
-      constexpr explicit operator fmt::basic_string_view<char_type>() const { \
-        return fmt::detail::compile_string_to_view<char_type>(s);             \
-      }                                                                       \
-    };                                                                        \
-    using FMT_STRING_VIEW =                                                   \
-        fmt::basic_string_view<typename FMT_COMPILE_STRING::char_type>;       \
-    fmt::detail::ignore_unused(FMT_STRING_VIEW(FMT_COMPILE_STRING()));        \
-    return FMT_COMPILE_STRING();                                              \
-  }()
+#if FMT_CLANG_ANALYZER
+#  define FMT_STRING_IMPL(s, base) s
+#else
+#  define FMT_STRING_IMPL(s, base)                                           \
+    [] {                                                                     \
+      /* Use the hidden visibility as a workaround for a GCC bug (#1973). */ \
+      /* Use a macro-like name to avoid shadowing warnings. */               \
+      struct FMT_VISIBILITY("hidden") FMT_COMPILE_STRING : base {            \
+        using char_type = fmt::remove_cvref_t<decltype(s[0])>;               \
+        constexpr explicit operator fmt::basic_string_view<char_type>()      \
+            const {                                                          \
+          return fmt::detail::compile_string_to_view<char_type>(s);          \
+        }                                                                    \
+      };                                                                     \
+      using FMT_STRING_VIEW =                                                \
+          fmt::basic_string_view<typename FMT_COMPILE_STRING::char_type>;    \
+      fmt::detail::ignore_unused(FMT_STRING_VIEW(FMT_COMPILE_STRING()));     \
+      return FMT_COMPILE_STRING();                                           \
+    }()
+#endif  // FMT_CLANG_ANALYZER
 
 /**
  * Constructs a legacy compile-time format string from a string literal `s`.

@@ -1583,7 +1583,7 @@ template <typename F> class apple_file : public file_base<F> {
   void init_buffer() {
     if (this->file_->_p) return;
     // Force buffer initialization by placing and removing a char in a buffer.
-    putc_unlocked(0, this->file_);
+    if (!FMT_CLANG_ANALYZER) putc_unlocked(0, this->file_);
     --this->file_->_p;
     ++this->file_->_w;
   }
