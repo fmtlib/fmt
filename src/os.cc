@@ -73,7 +73,7 @@ inline unsigned convert_rwcount(size_t count) {
 // Return type of read and write functions.
 using rwresult = ssize_t;
 
-inline size_t convert_rwcount(size_t count) { return count; }
+inline auto convert_rwcount(size_t count) -> size_t { return count; }
 #endif
 }  // namespace
 
@@ -185,7 +185,7 @@ void buffered_file::close() {
     FMT_THROW(system_error(errno, FMT_STRING("cannot close file")));
 }
 
-int buffered_file::descriptor() const {
+auto buffered_file::descriptor() const -> int {
 #ifdef FMT_HAS_SYSTEM
   // fileno is a macro on OpenBSD.
 #  ifdef fileno
@@ -240,7 +240,7 @@ void file::close() {
     FMT_THROW(system_error(errno, FMT_STRING("cannot close file")));
 }
 
-long long file::size() const {
+auto file::size() const -> long long {
 #  ifdef _WIN32
   // Use GetFileSize instead of GetFileSizeEx for the case when _WIN32_WINNT
   // is less than 0x0500 as is the case with some default MinGW builds.
@@ -266,7 +266,7 @@ long long file::size() const {
 #  endif
 }
 
-size_t file::read(void* buffer, size_t count) {
+auto file::read(void* buffer, size_t count) -> size_t {
   rwresult result = 0;
   FMT_RETRY(result, FMT_POSIX_CALL(read(fd_, buffer, convert_rwcount(count))));
   if (result < 0)
@@ -274,7 +274,7 @@ size_t file::read(void* buffer, size_t count) {
   return detail::to_unsigned(result);
 }
 
-size_t file::write(const void* buffer, size_t count) {
+auto file::write(const void* buffer, size_t count) -> size_t {
   rwresult result = 0;
   FMT_RETRY(result, FMT_POSIX_CALL(write(fd_, buffer, convert_rwcount(count))));
   if (result < 0)
@@ -282,7 +282,7 @@ size_t file::write(const void* buffer, size_t count) {
   return detail::to_unsigned(result);
 }
 
-file file::dup(int fd) {
+auto file::dup(int fd) -> file {
   // Don't retry as dup doesn't return EINTR.
   // http://pubs.opengroup.org/onlinepubs/009695399/functions/dup.html
   int new_fd = FMT_POSIX_CALL(dup(fd));
@@ -308,7 +308,7 @@ void file::dup2(int fd, std::error_code& ec) noexcept {
   if (result == -1) ec = std::error_code(errno, std::generic_category());
 }
 
-buffered_file file::fdopen(const char* mode) {
+auto file::fdopen(const char* mode) -> buffered_file {
 // Don't retry as fdopen doesn't return EINTR.
 #  if defined(__MINGW32__) && defined(_POSIX_)
   FILE* f = ::fdopen(fd_, mode);
@@ -355,7 +355,7 @@ pipe::pipe() {
 }
 
 #  if !defined(__MSDOS__)
-long getpagesize() {
+auto getpagesize() -> long {
 #    ifdef _WIN32
   SYSTEM_INFO si;
   GetSystemInfo(&si);
