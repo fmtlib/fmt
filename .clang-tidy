@@ -1,0 +1,4 @@
+Checks: modernize-use-trailing-return-type
+CheckOptions:
+  - key: modernize-use-trailing-return-type.TransformLambdas
+    value: none
