@@ -525,6 +525,40 @@ void print(const S& fmt, T&&... args) {
   print(stdout, fmt, std::forward<T>(args)...);
 }
 
+template <size_t N> class static_format_result {
+ private:
+  char data[N];
+
+ public:
+  template <typename S, typename... T,
+            FMT_ENABLE_IF(is_compiled_string<S>::value)>
+  explicit FMT_CONSTEXPR static_format_result(const S& fmt, T&&... args) {
+    *fmt::format_to(data, fmt, std::forward<T>(args)...) = '\0';
+  }
+
+  auto str() const -> fmt::string_view { return {data, N - 1}; }
+  auto c_str() const -> const char* { return data; }
+};
+
+/**
+ * Formats arguments according to the format string `fmt_str` and produces
+ * a string of the exact required size at compile time. Both the format string
+ * and the arguments must be compile-time expressions.
+ *
+ * The resulting string can be accessed as a C string via `c_str()` or as
+ * a `fmt::string_view` via `str()`.
+ *
+ * **Example**:
+ *
+ *     // Produces the static string "42" at compile time.
+ *     static constexpr auto result = FMT_STATIC_FORMAT("{}", 42);
+ *     const char* s = result.c_str();
+ */
+#define FMT_STATIC_FORMAT(fmt_str, ...)                            \
+  fmt::static_format_result<                                       \
+      fmt::formatted_size(FMT_COMPILE(fmt_str), __VA_ARGS__) + 1>( \
+      FMT_COMPILE(fmt_str), __VA_ARGS__)
+
 #if FMT_USE_NONTYPE_TEMPLATE_ARGS
 inline namespace literals {
 template <detail::fixed_string Str> constexpr auto operator""_cf() {
