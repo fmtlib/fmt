@@ -558,7 +558,7 @@ marked with `FMT_COMPILE` or `_cf` are parsed, checked and converted into
 efficient formatting code at compile-time. This supports arguments of built-in
 and string types as well as user-defined types with `format` methods taking
 the format context type as a template parameter in their `formatter`
-specializations. For example:
+specializations. For example ([run](https://www.godbolt.org/z/3c13erEoq)):
 
     struct point {
       double x;
@@ -586,7 +586,7 @@ and `consteval` functions. Additionally there is an experimental
 `FMT_STATIC_FORMAT` that allows formatting into a string of the exact
 required size at compile time. Compile-time formatting works with built-in
 and user-defined formatters that have `constexpr` `format` methods.
-Example ([run](https://www.godbolt.org/z/3c13erEoq)):
+Example:
 
     template <> struct fmt::formatter<point> {
       constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }

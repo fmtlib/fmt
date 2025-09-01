@@ -22,8 +22,6 @@ FMT_EXPORT class compiled_string {};
 template <typename S>
 struct is_compiled_string : std::is_base_of<compiled_string, S> {};
 
-namespace detail {
-
 /**
  * Converts a string literal `s` into a format string that will be parsed at
  * compile time and converted into efficient formatting code. Requires C++17
@@ -40,6 +38,28 @@ namespace detail {
 #else
 #  define FMT_COMPILE(s) FMT_STRING(s)
 #endif
+
+/**
+ * Converts a string literal into a format string that will be parsed at
+ * compile time and converted into efficient formatting code. Requires support
+ * for class types in constant template parameters (a C++20 feature).
+ * 
+ *  **Example**:
+ *
+ *     // Converts 42 into std::string using the most efficient method and no
+ *     // runtime format string processing.
+ *     using namespace fmt::literals;
+ *     std::string s = fmt::format("{}"_cf, 42);
+ */
+#if FMT_USE_NONTYPE_TEMPLATE_ARGS
+inline namespace literals {
+template <detail::fixed_string Str> constexpr auto operator""_cf() {
+  return FMT_COMPILE(Str.data);
+}
+}  // namespace literals
+#endif
+
+namespace detail {
 
 template <typename T, typename... Tail>
 constexpr auto first(const T& value, const Tail&...) -> const T& {
@@ -558,14 +578,6 @@ template <size_t N> class static_format_result {
   fmt::static_format_result<                                       \
       fmt::formatted_size(FMT_COMPILE(fmt_str), __VA_ARGS__) + 1>( \
       FMT_COMPILE(fmt_str), __VA_ARGS__)
-
-#if FMT_USE_NONTYPE_TEMPLATE_ARGS
-inline namespace literals {
-template <detail::fixed_string Str> constexpr auto operator""_cf() {
-  return FMT_COMPILE(Str.data);
-}
-}  // namespace literals
-#endif
 
 FMT_END_EXPORT
 FMT_END_NAMESPACE
