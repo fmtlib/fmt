@@ -251,7 +251,7 @@ auto file::size() const -> long long {
   if (size_lower == INVALID_FILE_SIZE) {
     DWORD error = GetLastError();
     if (error != NO_ERROR)
-      FMT_THROW(windows_error(GetLastError(), "cannot get file size"));
+      FMT_THROW(windows_error(error, "cannot get file size"));
   }
   unsigned long long long_size = size_upper;
   return (long_size << sizeof(DWORD) * CHAR_BIT) | size_lower;
