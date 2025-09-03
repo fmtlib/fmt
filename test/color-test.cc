@@ -121,7 +121,7 @@ TEST(color_test, format) {
                                fmt::emphasis::underline | fmt::emphasis::blink |
                                fmt::emphasis::reverse | fmt::emphasis::conceal |
                                fmt::emphasis::strikethrough)),
-      "\x1b[1m\x1b[2m\x1b[3m\x1b[4m\x1b[5m\x1b[7m\x1b[8m\x1b[9mall\x1b[0m");
+      "\x1b[1;2;3;4;5;7;8;9mall\x1b[0m");
 }
 
 TEST(color_test, format_to) {
