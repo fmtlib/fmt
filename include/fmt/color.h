@@ -409,13 +409,16 @@ template <typename Char> struct ansi_color_escape {
     if (has_emphasis(em, emphasis::conceal)) em_codes[6] = 8;
     if (has_emphasis(em, emphasis::strikethrough)) em_codes[7] = 9;
 
+    buffer[size++] = static_cast<Char>('\x1b');
+    buffer[size++] = static_cast<Char>('[');
+
     for (size_t i = 0; i < num_emphases; ++i) {
       if (!em_codes[i]) continue;
-      buffer[size++] = static_cast<Char>('\x1b');
-      buffer[size++] = static_cast<Char>('[');
       buffer[size++] = static_cast<Char>('0' + em_codes[i]);
-      buffer[size++] = static_cast<Char>('m');
+      buffer[size++] = static_cast<Char>(';');
     }
+
+    buffer[size - 1] = static_cast<Char>('m');
   }
   FMT_CONSTEXPR operator const Char*() const noexcept { return buffer; }
 
