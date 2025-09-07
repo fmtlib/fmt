@@ -3,6 +3,34 @@
 - Optimized the default floating point formatting
   (https://github.com/fmtlib/fmt/issues/3675).
 
+- Improved C++20 module support (https://github.com/fmtlib/fmt/pull/4451,
+  https://github.com/fmtlib/fmt/pull/4459).
+  Thanks @arBmind, @tkhyn.
+
+- Added `constexpr` support to `fmt::format`. For example:
+
+  ```c++
+  using namespace fmt::literals;
+  std::string s = fmt::format(""_cf, 42);
+  ```
+
+  now works at compile time provided that `std::string` supports `constexpr`
+  (https://github.com/fmtlib/fmt/pull/4456). Thanks @msvetkin.
+
+- Switched to using estimated display width in precision. For example:
+
+  ```c++
+  fmt::print("{:.4}\n1234\n", "🐱🐱🐱");
+  ```
+
+  prints
+
+  ![](https://private-user-images.githubusercontent.com/576385/486518905-1f3c6b32-3d96-4889-8158-bf79c697bdc7.png
+
+  because `🐱` has an estimated width of 2
+  (https://github.com/fmtlib/fmt/issues/4272,
+  https://github.com/fmtlib/fmt/pull/4443). Thanks @nikhilreddydev.
+
 - Fixed an ambiguity between `std::reference_wrapper<T>` and `format_as`
   formatters (https://github.com/fmtlib/fmt/issues/4424,
   https://github.com/fmtlib/fmt/pull/4434). Thanks @jeremy-rifkin.
@@ -10,15 +38,24 @@
 - Removed deprecated `basic_format_args::parse_context_type` and
   `basic_format_args::formatter_type`.
 
+- Improved diagnostics for the incorrect usage of `fmt::ptr`
+  (https://github.com/fmtlib/fmt/pull/4453). Thanks @TobiSchluter.
+
+- Fixed an integer overflow for precision close to the max `int` value.
+
 - Changed component prefix from `fmt-` to `fmt_` for compatibility with
   NSIS/CPack on Windows, e.g. `fmt-doc` changed to `fmt_doc`
   (https://github.com/fmtlib/fmt/pull/4442). Thanks @n-stein.
+
+- Various code improvements (https://github.com/fmtlib/fmt/pull/4445,
+  https://github.com/fmtlib/fmt/pull/4448). Thanks @LocalSpook and @tchaikov.
 
 - Updated `.gitignore` (https://github.com/fmtlib/fmt/pull/4355).
   Thanks @dinomight.
 
 - Fixed various warnings and compilation issues
-  (https://github.com/fmtlib/fmt/pull/4356). Thanks @dinomight.
+  (https://github.com/fmtlib/fmt/pull/4356,
+  https://github.com/fmtlib/fmt/pull/4447). Thanks @dinomight and @dodomorandi.
 
 # 11.2.0 - 2025-05-03
 
