@@ -1,15 +1,8 @@
 # 12.0.0 - TBD
 
 - Optimized the default floating point formatting
-  (https://github.com/fmtlib/fmt/issues/3675).
-
-- Improved C++20 module support
-  (https://github.com/fmtlib/fmt/pull/4451,
-  https://github.com/fmtlib/fmt/pull/4459,
-  https://github.com/fmtlib/fmt/pull/4476,
-  https://github.com/fmtlib/fmt/pull/4488,
-  https://github.com/fmtlib/fmt/pull/4495).
-  Thanks @arBmind, @tkhyn, @Mishura4, @anonymouspc and @autoantwort.
+  (https://github.com/fmtlib/fmt/issues/3675,
+  https://github.com/fmtlib/fmt/issues/4516).
 
 - Added `constexpr` support to `fmt::format`. For example:
 
@@ -21,7 +14,17 @@
   ```
 
   now works at compile time provided that `std::string` supports `constexpr`
-  (https://github.com/fmtlib/fmt/pull/4456). Thanks @msvetkin.
+  (https://github.com/fmtlib/fmt/issues/3403,
+  https://github.com/fmtlib/fmt/pull/4456). Thanks @msvetkin.
+
+- Improved C++20 module support
+  (https://github.com/fmtlib/fmt/pull/4451,
+  https://github.com/fmtlib/fmt/pull/4459,
+  https://github.com/fmtlib/fmt/pull/4476,
+  https://github.com/fmtlib/fmt/pull/4488,
+  https://github.com/fmtlib/fmt/issues/4491,
+  https://github.com/fmtlib/fmt/pull/4495).
+  Thanks @arBmind, @tkhyn, @Mishura4, @anonymouspc and @autoantwort.
 
 - Switched to using estimated display width in precision. For example:
 
@@ -66,8 +69,14 @@
 
 - Fixed an integer overflow for precision close to the max `int` value.
 
-- Fixed compatibility with WASI (https://github.com/fmtlib/fmt/pull/4497).
-  Thanks @whitequark.
+- Fixed compatibility with WASI (https://github.com/fmtlib/fmt/issues/4496,
+  https://github.com/fmtlib/fmt/pull/4497). Thanks @whitequark.
+
+- Fixed `back_insert_iterator` detection, preventing a fallback on slower path
+  that handles arbitrary iterators (https://github.com/fmtlib/fmt/issues/4454).
+
+- Fixed handling of invalid glibc `FILE` buffers
+  (https://github.com/fmtlib/fmt/issues/4469).
 
 - Added `wchar_t` support to the `std::byte` formatter
   (https://github.com/fmtlib/fmt/issues/4479,
@@ -75,7 +84,8 @@
 
 - Changed component prefix from `fmt-` to `fmt_` for compatibility with
   NSIS/CPack on Windows, e.g. `fmt-doc` changed to `fmt_doc`
-  (https://github.com/fmtlib/fmt/pull/4442). Thanks @n-stein.
+  (https://github.com/fmtlib/fmt/issues/4441,
+  https://github.com/fmtlib/fmt/pull/4442). Thanks @n-stein.
 
 - Added the `FMT_CUSTOM_ASSERT_FAIL` macro to simplify providing a custom
   `fmt::assert_fail` implementation (https://github.com/fmtlib/fmt/pull/4505).
@@ -168,7 +178,8 @@
   https://github.com/fmtlib/fmt/pull/4361). Thanks @dinomight.
 
 - Added error reporting for duplicate named arguments
-  (https://github.com/fmtlib/fmt/pull/4367). Thanks @dinomight.
+  (https://github.com/fmtlib/fmt/issues/4282,
+  https://github.com/fmtlib/fmt/pull/4367). Thanks @dinomight.
 
 - Fixed formatting of `long` with `FMT_BUILTIN_TYPES=0`
   (https://github.com/fmtlib/fmt/issues/4375,
@@ -219,7 +230,8 @@
   `float` (https://github.com/fmtlib/fmt/issues/3649).
 
 - Moved `is_compiled_string` to the public API
-  (https://github.com/fmtlib/fmt/issues/4342). Thanks @SwooshyCueb.
+  (https://github.com/fmtlib/fmt/issues/4335,
+  https://github.com/fmtlib/fmt/issues/4342). Thanks @SwooshyCueb.
 
 - Simplified implementation of `operator""_cf`
   (https://github.com/fmtlib/fmt/pull/4349). Thanks @localspook.
