@@ -26,12 +26,12 @@
 - Switched to using estimated display width in precision. For example:
 
   ```c++
-  fmt::print("{:.4}\n1234\n", "🐱🐱🐱");
+  fmt::print("|{:.4}|\n|1234|\n", "🐱🐱🐱");
   ```
 
   prints
 
-  ![](https://private-user-images.githubusercontent.com/576385/486518905-1f3c6b32-3d96-4889-8158-bf79c697bdc7.png)
+  ![](https://github.com/user-attachments/assets/6c4446b3-13eb-43b9-b74a-b4543540ad6a)
 
   because `🐱` has an estimated width of 2
   (https://github.com/fmtlib/fmt/issues/4272,
