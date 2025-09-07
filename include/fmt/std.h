@@ -60,21 +60,20 @@
 #  endif
 #endif
 
-// For older Xcode versions, __cpp_lib_xxx flags are inaccurately defined.
-#ifndef FMT_CPP_LIB_FILESYSTEM
-#  ifdef __cpp_lib_filesystem
-#    define FMT_CPP_LIB_FILESYSTEM __cpp_lib_filesystem
-#  else
-#    define FMT_CPP_LIB_FILESYSTEM 0
-#  endif
+#ifdef FMT_CPP_LIB_FILESYSTEM
+// Use the provided definition.
+#elif defined(__cpp_lib_filesystem)
+#  define FMT_CPP_LIB_FILESYSTEM __cpp_lib_filesystem
+#else
+#  define FMT_CPP_LIB_FILESYSTEM 0
 #endif
 
-#ifndef FMT_CPP_LIB_VARIANT
-#  ifdef __cpp_lib_variant
-#    define FMT_CPP_LIB_VARIANT __cpp_lib_variant
-#  else
-#    define FMT_CPP_LIB_VARIANT 0
-#  endif
+#ifdef FMT_CPP_LIB_VARIANT
+// Use the provided definition.
+#elif defined(__cpp_lib_variant)
+#  define FMT_CPP_LIB_VARIANT __cpp_lib_variant
+#else
+#  define FMT_CPP_LIB_VARIANT 0
 #endif
 
 FMT_BEGIN_NAMESPACE
