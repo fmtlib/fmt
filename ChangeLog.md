@@ -10,6 +10,8 @@
 - Added `constexpr` support to `fmt::format`. For example:
 
   ```c++
+  #include <fmt/compile.h>
+
   using namespace fmt::literals;
   std::string s = fmt::format(""_cf, 42);
   ```
@@ -25,11 +27,13 @@
 
   prints
 
-  ![](https://private-user-images.githubusercontent.com/576385/486518905-1f3c6b32-3d96-4889-8158-bf79c697bdc7.png
+  ![](https://private-user-images.githubusercontent.com/576385/486518905-1f3c6b32-3d96-4889-8158-bf79c697bdc7.png)
 
   because `🐱` has an estimated width of 2
   (https://github.com/fmtlib/fmt/issues/4272,
-  https://github.com/fmtlib/fmt/pull/4443). Thanks @nikhilreddydev.
+  https://github.com/fmtlib/fmt/pull/4443,
+  https://github.com/fmtlib/fmt/pull/4475).
+  Thanks @nikhilreddydev and LocalSpook.
 
 - Fixed an ambiguity between `std::reference_wrapper<T>` and `format_as`
   formatters (https://github.com/fmtlib/fmt/issues/4424,
@@ -48,7 +52,9 @@
   (https://github.com/fmtlib/fmt/pull/4442). Thanks @n-stein.
 
 - Various code improvements (https://github.com/fmtlib/fmt/pull/4445,
-  https://github.com/fmtlib/fmt/pull/4448). Thanks @LocalSpook and @tchaikov.
+  https://github.com/fmtlib/fmt/pull/4448,
+  https://github.com/fmtlib/fmt/pull/4473).
+  Thanks @LocalSpook, @tchaikov and @way4sahil.
 
 - Updated `.gitignore` (https://github.com/fmtlib/fmt/pull/4355).
   Thanks @dinomight.
