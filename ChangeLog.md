@@ -3,9 +3,13 @@
 - Optimized the default floating point formatting
   (https://github.com/fmtlib/fmt/issues/3675).
 
-- Improved C++20 module support (https://github.com/fmtlib/fmt/pull/4451,
-  https://github.com/fmtlib/fmt/pull/4459).
-  Thanks @arBmind, @tkhyn.
+- Improved C++20 module support
+  (https://github.com/fmtlib/fmt/pull/4451,
+  https://github.com/fmtlib/fmt/pull/4459,
+  https://github.com/fmtlib/fmt/pull/4476,
+  https://github.com/fmtlib/fmt/pull/4488,
+  https://github.com/fmtlib/fmt/pull/4495).
+  Thanks @arBmind, @tkhyn, @Mishura4, @anonymouspc and @autoantwort.
 
 - Added `constexpr` support to `fmt::format`. For example:
 
@@ -33,7 +37,14 @@
   (https://github.com/fmtlib/fmt/issues/4272,
   https://github.com/fmtlib/fmt/pull/4443,
   https://github.com/fmtlib/fmt/pull/4475).
-  Thanks @nikhilreddydev and LocalSpook.
+  Thanks @nikhilreddydev and @localspook.
+
+- Fix interaction between debug presentation, precision, and width for strings
+  (https://github.com/fmtlib/fmt/pull/4478). Thanks @localspook.
+
+- Implemented allocator propagation on `basic_memory_buffer` move
+  (https://github.com/fmtlib/fmt/issues/4487,
+  https://github.com/fmtlib/fmt/pull/4490). Thanks @toprakmurat.
 
 - Fixed an ambiguity between `std::reference_wrapper<T>` and `format_as`
   formatters (https://github.com/fmtlib/fmt/issues/4424,
@@ -45,23 +56,59 @@
 - Improved diagnostics for the incorrect usage of `fmt::ptr`
   (https://github.com/fmtlib/fmt/pull/4453). Thanks @TobiSchluter.
 
+- Made handling of ANSI escape sequences more efficient
+  (https://github.com/fmtlib/fmt/pull/4511,
+  https://github.com/fmtlib/fmt/pull/4528).
+  Thanks @localspook and @Anas-Hamdane.
+
+- Fixed a buffer overflow on all emphasis flags set
+  (https://github.com/fmtlib/fmt/pull/4498). Thanks @dominicpoeschko.
+
 - Fixed an integer overflow for precision close to the max `int` value.
+
+- Fixed compatibility with WASI (https://github.com/fmtlib/fmt/pull/4497).
+  Thanks @whitequark.
+
+- Added `wchar_t` support to the `std::byte` formatter
+  (https://github.com/fmtlib/fmt/issues/4479,
+  https://github.com/fmtlib/fmt/pull/4480). Thanks @phprus.
 
 - Changed component prefix from `fmt-` to `fmt_` for compatibility with
   NSIS/CPack on Windows, e.g. `fmt-doc` changed to `fmt_doc`
   (https://github.com/fmtlib/fmt/pull/4442). Thanks @n-stein.
 
+- Added the `FMT_CUSTOM_ASSERT_FAIL` macro to simplify providing a custom
+  `fmt::assert_fail` implementation (https://github.com/fmtlib/fmt/pull/4505).
+  Thanks @HazardyKnusperkeks.
+
+- Switched to `FMT_THROW` on reporting format errors so that it can be
+  overriden by users when exceptions are disabled
+  (https://github.com/fmtlib/fmt/pull/4521). Thanks @HazardyKnusperkeks.
+
 - Various code improvements (https://github.com/fmtlib/fmt/pull/4445,
   https://github.com/fmtlib/fmt/pull/4448,
-  https://github.com/fmtlib/fmt/pull/4473).
-  Thanks @LocalSpook, @tchaikov and @way4sahil.
+  https://github.com/fmtlib/fmt/pull/4473,
+  https://github.com/fmtlib/fmt/pull/4522).
+  Thanks @localspook, @tchaikov and @way4sahil.
 
-- Updated `.gitignore` (https://github.com/fmtlib/fmt/pull/4355).
-  Thanks @dinomight.
+- Added more entries for generated files to `.gitignore`
+  (https://github.com/fmtlib/fmt/pull/4355,
+  https://github.com/fmtlib/fmt/pull/4512).
+  Thanks @dinomight and @localspook.
+
+- Removed Bazel files to avoid issues with downstream packaging
+  (https://github.com/fmtlib/fmt/pull/4530). Thanks @mering.
 
 - Fixed various warnings and compilation issues
-  (https://github.com/fmtlib/fmt/pull/4356,
-  https://github.com/fmtlib/fmt/pull/4447). Thanks @dinomight and @dodomorandi.
+  (https://github.com/fmtlib/fmt/pull/4447,
+  https://github.com/fmtlib/fmt/issues/4470,
+  https://github.com/fmtlib/fmt/pull/4474,
+  https://github.com/fmtlib/fmt/pull/4477,
+  https://github.com/fmtlib/fmt/pull/4471,
+  https://github.com/fmtlib/fmt/pull/4483,
+  https://github.com/fmtlib/fmt/pull/4515).
+  Thanks @dodomorandi, @localspook, @remyjette, @Tomek-Stolarczyk, @Mishura4
+  and @mattiasljungstrom.
 
 # 11.2.0 - 2025-05-03
 
@@ -128,10 +175,10 @@
   https://github.com/fmtlib/fmt/issues/4394).
 
 - Optimized `text_style` using bit packing
-  (https://github.com/fmtlib/fmt/pull/4363). Thanks @LocalSpook.
+  (https://github.com/fmtlib/fmt/pull/4363). Thanks @localspook.
 
 - Added support for incomplete types (https://github.com/fmtlib/fmt/issues/3180,
-  https://github.com/fmtlib/fmt/pull/4383). Thanks @LocalSpook.
+  https://github.com/fmtlib/fmt/pull/4383). Thanks @localspook.
 
 - Fixed a flush issue in `fmt::print` when using libstdc++
   (https://github.com/fmtlib/fmt/issues/4398).
@@ -175,10 +222,10 @@
   (https://github.com/fmtlib/fmt/issues/4342). Thanks @SwooshyCueb.
 
 - Simplified implementation of `operator""_cf`
-  (https://github.com/fmtlib/fmt/pull/4349). Thanks @LocalSpook.
+  (https://github.com/fmtlib/fmt/pull/4349). Thanks @localspook.
 
 - Fixed `__builtin_strlen` detection (https://github.com/fmtlib/fmt/pull/4329).
-  Thanks @LocalSpook.
+  Thanks @localspook.
 
 - Fixed handling of BMI paths with the Ninja generator
   (https://github.com/fmtlib/fmt/pull/4344). Thanks @tkhyn.
