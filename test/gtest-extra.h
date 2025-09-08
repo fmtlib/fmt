@@ -15,6 +15,10 @@
 #include "fmt/os.h"
 #include "gmock/gmock.h"
 
+#ifdef _MSC_VER
+#  include <crtdbg.h>
+#endif
+
 #define FMT_TEST_THROW_(statement, expected_exception, expected_message, fail) \
   GTEST_AMBIGUOUS_ELSE_BLOCKER_                                                \
   if (::testing::AssertionResult gtest_ar = ::testing::AssertionSuccess()) {   \
