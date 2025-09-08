@@ -545,6 +545,21 @@ void print(const S& fmt, T&&... args) {
   print(stdout, fmt, std::forward<T>(args)...);
 }
 
+template <typename S, typename... T,
+          FMT_ENABLE_IF(is_compiled_string<S>::value)>
+void println(std::FILE* f, const S& fmt, T&&... args) {
+  auto buf = memory_buffer();
+  fmt::format_to(appender(buf), fmt, std::forward<T>(args)...);
+  buf.push_back('\n');
+  detail::print(f, {buf.data(), buf.size()});
+}
+
+template <typename S, typename... T,
+          FMT_ENABLE_IF(is_compiled_string<S>::value)>
+void println(const S& fmt, T&&... args) {
+  println(stdout, fmt, std::forward<T>(args)...);
+}
+
 template <size_t N> class static_format_result {
  private:
   char data[N];

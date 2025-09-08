@@ -311,6 +311,14 @@ TEST(compile_test, print) {
                "Don't panic!");
   fmt::print(FMT_COMPILE("{}"), std_context_test());
 }
+
+TEST(compile_test_bla, println) {
+  EXPECT_WRITE(stdout, fmt::println(FMT_COMPILE("Thanks for all the {}!"), "fish"),
+               "Thanks for all the fish!\n");
+  EXPECT_WRITE(stderr, fmt::println(stderr, FMT_COMPILE("Thanks for all the {}!"), "panic"),
+               "Thanks for all the panic!\n");
+  fmt::println(FMT_COMPILE("{}"), std_context_test());
+}
 #endif
 
 #if FMT_USE_NONTYPE_TEMPLATE_ARGS
