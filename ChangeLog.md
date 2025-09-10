@@ -54,7 +54,11 @@
   https://github.com/fmtlib/fmt/pull/4434). Thanks @jeremy-rifkin.
 
 - Removed deprecated `basic_format_args::parse_context_type` and
-  `basic_format_args::formatter_type`.
+  `basic_format_args::formatter_type` and similar aliases in context types.
+
+- Removed deprecated `has_formatter`. Use `is_formattable` instead.
+
+- Removed legacy `is_*char` traits.
 
 - Improved diagnostics for the incorrect usage of `fmt::ptr`
   (https://github.com/fmtlib/fmt/pull/4453). Thanks @TobiSchluter.
@@ -116,9 +120,11 @@
   https://github.com/fmtlib/fmt/pull/4477,
   https://github.com/fmtlib/fmt/pull/4471,
   https://github.com/fmtlib/fmt/pull/4483,
-  https://github.com/fmtlib/fmt/pull/4515).
-  Thanks @dodomorandi, @localspook, @remyjette, @Tomek-Stolarczyk, @Mishura4
-  and @mattiasljungstrom.
+  https://github.com/fmtlib/fmt/pull/4515,
+  https://github.com/fmtlib/fmt/issues/4533,
+  https://github.com/fmtlib/fmt/pull/4534).
+  Thanks @dodomorandi, @localspook, @remyjette, @Tomek-Stolarczyk, @Mishura4,
+  @mattiasljungstrom and @FatihBAKIR.
 
 # 11.2.0 - 2025-05-03
 
