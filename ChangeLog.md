@@ -26,6 +26,27 @@
   https://github.com/fmtlib/fmt/pull/4495).
   Thanks @arBmind, @tkhyn, @Mishura4, @anonymouspc and @autoantwort.
 
+- Added `FMT_STATIC_FORMAT` that allows formatting into a string of the exact
+  required size at compile time.
+
+  For example:
+
+  ```c++
+  #include <fmt/compile.h>
+
+  constexpr auto s = FMT_STATIC_FORMAT("{}", 42);
+  ```
+
+  compiles to just
+
+  ```s
+  __ZL1s:
+        .asciiz "42"
+  ```
+
+  It can be accessed as a C string with `s.c_str()` or as a string view with
+  `s.str()`.
+
 - Switched to using estimated display width in precision. For example:
 
   ```c++
