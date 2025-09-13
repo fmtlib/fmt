@@ -674,9 +674,9 @@ if an argument type doesn't match its format specification.
 
 ::: printf(string_view, const T&...)
 
-::: fprintf(std::FILE*, const S&, const T&...)
+::: fprintf(std::FILE*, string_view, const T&...)
 
-::: sprintf(const S&, const T&...)
+::: sprintf(string_view, const T&...)
 
 <a id="xchar-api"></a>
 ## Wide Strings

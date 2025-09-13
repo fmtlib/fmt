@@ -74,10 +74,16 @@
   formatters (https://github.com/fmtlib/fmt/issues/4424,
   https://github.com/fmtlib/fmt/pull/4434). Thanks @jeremy-rifkin.
 
-- Removed deprecated `basic_format_args::parse_context_type` and
+- Removed the deprecated `has_formatter` trait. Use `is_formattable` instead.
+
+- Removed the deprecated `basic_format_args::parse_context_type`,
   `basic_format_args::formatter_type` and similar aliases in context types.
 
-- Removed deprecated `has_formatter`. Use `is_formattable` instead.
+- Removed the deprecated wide stream overload of `fmt::printf` and deprecated
+  wide overloads of `fmt::fprintf` and `fmt::sprintf`.
+
+- Removed the deprecated wide stream overloads of `fmt::print` that take text
+  styles.
 
 - Removed legacy `is_*char` traits.
 

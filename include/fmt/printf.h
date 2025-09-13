@@ -18,10 +18,6 @@
 FMT_BEGIN_NAMESPACE
 FMT_BEGIN_EXPORT
 
-template <typename T> struct printf_formatter {
-  printf_formatter() = delete;
-};
-
 template <typename Char> class basic_printf_context {
  private:
   basic_appender<Char> out_;
@@ -33,8 +29,6 @@ template <typename Char> class basic_printf_context {
 
  public:
   using char_type = Char;
-  using parse_context_type = parse_context<Char>;
-  template <typename T> using formatter_type = printf_formatter<T>;
   enum { builtin_types = 1 };
 
   /// Constructs a `printf_context` object. References to the arguments are
@@ -74,7 +68,7 @@ inline auto find<false, char>(const char* first, const char* last, char value,
 
 // Checks if a value fits in int - used to avoid warnings about comparing
 // signed and unsigned integers.
-template <bool IsSigned> struct int_checker {
+template <bool IS_SIGNED> struct int_checker {
   template <typename T> static auto fits_in_int(T value) -> bool {
     return value <= to_unsigned(max_value<int>());
   }
@@ -570,15 +564,19 @@ inline auto vsprintf(basic_string_view<Char> fmt,
  *
  *     std::string message = fmt::sprintf("The answer is %d", 42);
  */
-template <typename S, typename... T, typename Char = detail::char_t<S>>
-inline auto sprintf(const S& fmt, const T&... args) -> std::basic_string<Char> {
-  return vsprintf(detail::to_string_view(fmt),
-                  fmt::make_format_args<basic_printf_context<Char>>(args...));
+template <typename... T>
+inline auto sprintf(string_view fmt, const T&... args) -> std::string {
+  return vsprintf(fmt, make_printf_args(args...));
+}
+template <typename... T>
+FMT_DEPRECATED auto sprintf(basic_string_view<wchar_t> fmt, const T&... args)
+    -> std::wstring {
+  return vsprintf(fmt, make_printf_args<wchar_t>(args...));
 }
 
 template <typename Char>
-inline auto vfprintf(std::FILE* f, basic_string_view<Char> fmt,
-                     typename vprintf_args<Char>::type args) -> int {
+auto vfprintf(std::FILE* f, basic_string_view<Char> fmt,
+              typename vprintf_args<Char>::type args) -> int {
   auto buf = basic_memory_buffer<Char>();
   detail::vprintf(buf, fmt, args);
   size_t size = buf.size();
@@ -595,17 +593,14 @@ inline auto vfprintf(std::FILE* f, basic_string_view<Char> fmt,
  *
  *     fmt::fprintf(stderr, "Don't %s!", "panic");
  */
-template <typename S, typename... T, typename Char = detail::char_t<S>>
-inline auto fprintf(std::FILE* f, const S& fmt, const T&... args) -> int {
-  return vfprintf(f, detail::to_string_view(fmt),
-                  make_printf_args<Char>(args...));
+template <typename... T>
+inline auto fprintf(std::FILE* f, string_view fmt, const T&... args) -> int {
+  return vfprintf(f, fmt, make_printf_args(args...));
 }
-
-template <typename Char>
-FMT_DEPRECATED inline auto vprintf(basic_string_view<Char> fmt,
-                                   typename vprintf_args<Char>::type args)
-    -> int {
-  return vfprintf(stdout, fmt, args);
+template <typename... T>
+FMT_DEPRECATED auto fprintf(std::FILE* f, basic_string_view<wchar_t> fmt,
+                            const T&... args) -> int {
+  return vfprintf(f, fmt, make_printf_args<wchar_t>(args...));
 }
 
 /**
@@ -619,11 +614,6 @@ FMT_DEPRECATED inline auto vprintf(basic_string_view<Char> fmt,
 template <typename... T>
 inline auto printf(string_view fmt, const T&... args) -> int {
   return vfprintf(stdout, fmt, make_printf_args(args...));
-}
-template <typename... T>
-FMT_DEPRECATED inline auto printf(basic_string_view<wchar_t> fmt,
-                                  const T&... args) -> int {
-  return vfprintf(stdout, fmt, make_printf_args<wchar_t>(args...));
 }
 
 FMT_END_EXPORT

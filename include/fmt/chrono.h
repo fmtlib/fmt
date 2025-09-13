@@ -513,19 +513,7 @@ struct time_zone {
 template <typename... T> auto current_zone(T...) -> time_zone* {
   return nullptr;
 }
-
-template <typename... T> void _tzset(T...) {}
 }  // namespace tz
-
-// DEPRECATED!
-inline void tzset_once() {
-  static bool init = []() {
-    using namespace tz;
-    _tzset();
-    return false;
-  }();
-  ignore_unused(init);
-}
 }  // namespace detail
 
 FMT_BEGIN_EXPORT

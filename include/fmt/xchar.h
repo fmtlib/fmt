@@ -330,18 +330,6 @@ inline auto format(text_style ts, wformat_string<T...> fmt, T&&... args)
   return fmt::vformat(ts, fmt, fmt::make_wformat_args(args...));
 }
 
-template <typename... T>
-FMT_DEPRECATED void print(std::FILE* f, text_style ts, wformat_string<T...> fmt,
-                          const T&... args) {
-  vprint(f, ts, fmt, fmt::make_wformat_args(args...));
-}
-
-template <typename... T>
-FMT_DEPRECATED void print(text_style ts, wformat_string<T...> fmt,
-                          const T&... args) {
-  return print(stdout, ts, fmt, args...);
-}
-
 inline void vprint(std::wostream& os, wstring_view fmt, wformat_args args) {
   auto buffer = basic_memory_buffer<wchar_t>();
   detail::vformat_to(buffer, fmt, args);

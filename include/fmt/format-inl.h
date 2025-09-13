@@ -75,11 +75,6 @@ template <typename Locale> auto locale_ref::get() const -> Locale {
 
 namespace detail {
 
-// DEPRECATED!
-FMT_FUNC void assert_fail(const char* file, int line, const char* message) {
-  fmt::assert_fail(file, line, message);
-}
-
 FMT_FUNC void format_error_code(detail::buffer<char>& out, int error_code,
                                 string_view message) noexcept {
   // Report error code making sure that the output fits into
