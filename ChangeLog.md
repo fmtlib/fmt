@@ -99,19 +99,27 @@
   overriden by users when exceptions are disabled
   (https://github.com/fmtlib/fmt/pull/4521). Thanks @HazardyKnusperkeks.
 
-- Various code improvements (https://github.com/fmtlib/fmt/pull/4445,
+- Improved master project detection and disabled install targets when using
+  {fmt} as a subproject by default (https://github.com/fmtlib/fmt/pull/4536).
+  Thanks @crueter.
+
+- Made various code improvements
+  (https://github.com/fmtlib/fmt/pull/4445,
   https://github.com/fmtlib/fmt/pull/4448,
   https://github.com/fmtlib/fmt/pull/4473,
   https://github.com/fmtlib/fmt/pull/4522).
   Thanks @localspook, @tchaikov and @way4sahil.
 
+- Added Conan instructions to the docs
+  (https://github.com/fmtlib/fmt/pull/4537). Thanks @uilianries.
+
+- Removed Bazel files to avoid issues with downstream packaging
+  (https://github.com/fmtlib/fmt/pull/4530). Thanks @mering.
+
 - Added more entries for generated files to `.gitignore`
   (https://github.com/fmtlib/fmt/pull/4355,
   https://github.com/fmtlib/fmt/pull/4512).
   Thanks @dinomight and @localspook.
-
-- Removed Bazel files to avoid issues with downstream packaging
-  (https://github.com/fmtlib/fmt/pull/4530). Thanks @mering.
 
 - Fixed various warnings and compilation issues
   (https://github.com/fmtlib/fmt/pull/4447,
