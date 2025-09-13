@@ -282,8 +282,6 @@ namespace detail {
 #define FMT_NOMACRO
 
 template <typename T = void> struct null {};
-inline auto localtime_r FMT_NOMACRO(...) -> null<> { return null<>(); }
-inline auto localtime_s(...) -> null<> { return null<>(); }
 inline auto gmtime_r(...) -> null<> { return null<>(); }
 inline auto gmtime_s(...) -> null<> { return null<>(); }
 
@@ -501,73 +499,9 @@ auto to_time_t(sys_time<Duration> time_point) -> std::time_t {
       .count();
 }
 
-namespace tz {
-
-// DEPRECATED!
-struct time_zone {
-  template <typename Duration, typename LocalTime>
-  auto to_sys(LocalTime) -> sys_time<Duration> {
-    return {};
-  }
-};
-template <typename... T> auto current_zone(T...) -> time_zone* {
-  return nullptr;
-}
-}  // namespace tz
 }  // namespace detail
 
 FMT_BEGIN_EXPORT
-
-/**
- * Converts given time since epoch as `std::time_t` value into calendar time,
- * expressed in local time. Unlike `std::localtime`, this function is
- * thread-safe on most platforms.
- */
-FMT_DEPRECATED inline auto localtime(std::time_t time) -> std::tm {
-  struct dispatcher {
-    std::time_t time_;
-    std::tm tm_;
-
-    inline dispatcher(std::time_t t) : time_(t) {}
-
-    inline auto run() -> bool {
-      using namespace fmt::detail;
-      return handle(localtime_r(&time_, &tm_));
-    }
-
-    inline auto handle(std::tm* tm) -> bool { return tm != nullptr; }
-
-    inline auto handle(detail::null<>) -> bool {
-      using namespace fmt::detail;
-      return fallback(localtime_s(&tm_, &time_));
-    }
-
-    inline auto fallback(int res) -> bool { return res == 0; }
-
-#if !FMT_MSC_VERSION
-    inline auto fallback(detail::null<>) -> bool {
-      using namespace fmt::detail;
-      std::tm* tm = std::localtime(&time_);
-      if (tm) tm_ = *tm;
-      return tm != nullptr;
-    }
-#endif
-  };
-  dispatcher lt(time);
-  // Too big time values may be unsupported.
-  if (!lt.run()) FMT_THROW(format_error("time_t value out of range"));
-  return lt.tm_;
-}
-
-#if FMT_USE_LOCAL_TIME
-template <typename Duration>
-FMT_DEPRECATED auto localtime(std::chrono::local_time<Duration> time)
-    -> std::tm {
-  using namespace std::chrono;
-  using namespace detail::tz;
-  return localtime(detail::to_time_t(current_zone()->to_sys<Duration>(time)));
-}
-#endif
 
 /**
  * Converts given time since epoch as `std::time_t` value into calendar time,
