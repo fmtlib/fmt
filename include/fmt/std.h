@@ -140,7 +140,7 @@ template <typename Variant, typename Char> class is_variant_formattable {
 
 #if FMT_USE_RTTI
 
-template <typename Char, typename OutputIt>
+template <typename OutputIt>
 auto write_demangled_name(OutputIt out, const std::type_info& ti) -> OutputIt {
 #  ifdef FMT_HAS_ABI_CXA_DEMANGLE
   int status = 0;
@@ -180,7 +180,7 @@ auto write_demangled_name(OutputIt out, const std::type_info& ti) -> OutputIt {
   } else {
     demangled_name_view = string_view(ti.name());
   }
-  return detail::write_bytes<Char>(out, demangled_name_view);
+  return detail::write_bytes<char>(out, demangled_name_view);
 #  elif FMT_MSC_VERSION
   const string_view demangled_name(ti.name());
   for (size_t i = 0; i < demangled_name.size(); ++i) {
@@ -202,7 +202,7 @@ auto write_demangled_name(OutputIt out, const std::type_info& ti) -> OutputIt {
   }
   return out;
 #  else
-  return detail::write_bytes<Char>(out, string_view(ti.name()));
+  return detail::write_bytes<char>(out, string_view(ti.name()));
 #  endif
 }
 
@@ -541,31 +541,29 @@ template <> struct formatter<std::error_code> {
 };
 
 #if FMT_USE_RTTI
-template <typename Char>
-struct formatter<std::type_info, Char  // DEPRECATED! Mixing code unit types.
-                 > {
+template <> struct formatter<std::type_info> {
  public:
-  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
+  FMT_CONSTEXPR auto parse(parse_context<>& ctx) -> const char* {
     return ctx.begin();
   }
 
   template <typename Context>
   auto format(const std::type_info& ti, Context& ctx) const
       -> decltype(ctx.out()) {
-    return detail::write_demangled_name<Char>(ctx.out(), ti);
+    return detail::write_demangled_name(ctx.out(), ti);
   }
 };
 #endif  // FMT_USE_RTTI
 
-template <typename T, typename Char>
+template <typename T>
 struct formatter<
-    T, Char,  // DEPRECATED! Mixing code unit types.
+    T, char,
     typename std::enable_if<std::is_base_of<std::exception, T>::value>::type> {
  private:
   bool with_typename_ = false;
 
  public:
-  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
+  FMT_CONSTEXPR auto parse(parse_context<>& ctx) -> const char* {
     auto it = ctx.begin();
     auto end = ctx.end();
     if (it == end || *it == '}') return it;
@@ -582,12 +580,12 @@ struct formatter<
     auto out = ctx.out();
 #if FMT_USE_RTTI
     if (with_typename_) {
-      out = detail::write_demangled_name<Char>(out, typeid(ex));
+      out = detail::write_demangled_name(out, typeid(ex));
       *out++ = ':';
       *out++ = ' ';
     }
 #endif
-    return detail::write_bytes<Char>(out, string_view(ex.what()));
+    return detail::write_bytes<char>(out, string_view(ex.what()));
   }
 };
 
