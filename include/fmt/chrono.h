@@ -38,6 +38,7 @@ FMT_BEGIN_NAMESPACE
 // Copyright Paul Dreik 2019
 namespace safe_duration_cast {
 
+// DEPRECATED!
 template <typename To, typename From,
           FMT_ENABLE_IF(!std::is_same<From, To>::value &&
                         std::numeric_limits<From>::is_signed ==
@@ -161,17 +162,6 @@ auto safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
                         int& ec) -> To {
   using From = std::chrono::duration<FromRep, FromPeriod>;
   ec = 0;
-  if (std::isnan(from.count())) {
-    // nan in, gives nan out. easy.
-    return To{std::numeric_limits<typename To::rep>::quiet_NaN()};
-  }
-  // maybe we should also check if from is denormal, and decide what to do about
-  // it.
-
-  // +-inf should be preserved.
-  if (std::isinf(from.count())) {
-    return To{from.count()};
-  }
 
   // the basic idea is that we need to convert from count() in the from type
   // to count() in the To type, by multiplying it with this:
@@ -441,11 +431,7 @@ auto duration_cast(std::chrono::duration<FromRep, FromPeriod> from) -> To {
 
   using common_rep = typename std::common_type<FromRep, typename To::rep,
                                                decltype(factor::num)>::type;
-
-  int ec = 0;
-  auto count = safe_duration_cast::lossless_integral_conversion<common_rep>(
-      from.count(), ec);
-  if (ec) throw_duration_error();
+  common_rep count = from.count();  // This conversion is lossless.
 
   // Multiply from.count() by factor and check for overflow.
   if (const_check(factor::num != 1)) {
@@ -456,6 +442,7 @@ auto duration_cast(std::chrono::duration<FromRep, FromPeriod> from) -> To {
     count *= factor::num;
   }
   if (const_check(factor::den != 1)) count /= factor::den;
+  int ec = 0;
   auto to =
       To(safe_duration_cast::lossless_integral_conversion<typename To::rep>(
           count, ec));
@@ -469,6 +456,8 @@ template <typename To, typename FromRep, typename FromPeriod,
                             std::is_floating_point<typename To::rep>::value)>
 auto duration_cast(std::chrono::duration<FromRep, FromPeriod> from) -> To {
 #if FMT_SAFE_DURATION_CAST
+  // Preserve infinity and NaN.
+  if (!isfinite(from.count())) return static_cast<To>(from.count());
   // Throwing version of safe_duration_cast is only available for
   // integer to integer or float to float casts.
   int ec;
@@ -485,7 +474,7 @@ template <typename To, typename FromRep, typename FromPeriod,
           FMT_ENABLE_IF(
               !is_similar_arithmetic_type<FromRep, typename To::rep>::value)>
 auto duration_cast(std::chrono::duration<FromRep, FromPeriod> from) -> To {
-  // Mixed integer <-> float cast is not supported by safe_duration_cast.
+  // Mixed integer <-> float cast is not supported by safe duration_cast.
   return std::chrono::duration_cast<To>(from);
 }
 
