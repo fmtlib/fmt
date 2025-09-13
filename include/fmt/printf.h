@@ -403,7 +403,9 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
       arg_index = parse_ctx.next_arg_id();
     else
       parse_ctx.check_arg_id(--arg_index);
-    return detail::get_arg(context, arg_index);
+    auto arg = context.arg(arg_index);
+    if (!arg) report_error("argument not found");
+    return arg;
   };
 
   const Char* start = parse_ctx.begin();

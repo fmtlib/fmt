@@ -1893,7 +1893,7 @@ template <typename Char> class digit_grouping {
     return count;
   }
 
-  // Applies grouping to digits and write the output to out.
+  // Applies grouping to digits and writes the output to out.
   template <typename Out, typename C>
   auto apply(Out out, basic_string_view<C> digits) const -> Out {
     auto num_digits = static_cast<int>(digits.size());
@@ -3696,32 +3696,18 @@ struct dynamic_spec_getter {
   }
 };
 
-template <typename Context, typename ID>
-FMT_CONSTEXPR auto get_arg(Context& ctx, ID id) -> basic_format_arg<Context> {
-  auto arg = ctx.arg(id);
-  if (!arg) report_error("argument not found");
-  return arg;
-}
-
-template <typename Context>
-FMT_CONSTEXPR auto get_dynamic_spec(
-    arg_id_kind kind, const arg_ref<typename Context::char_type>& ref,
-    Context& ctx) -> int {
-  FMT_ASSERT(kind != arg_id_kind::none, "");
-  auto arg =
-      kind == arg_id_kind::index ? ctx.arg(ref.index) : ctx.arg(ref.name);
-  if (!arg) report_error("argument not found");
-  unsigned long long value = arg.visit(dynamic_spec_getter());
-  if (value > to_unsigned(max_value<int>()))
-    report_error("width/precision is out of range");
-  return static_cast<int>(value);
-}
-
 template <typename Context>
 FMT_CONSTEXPR void handle_dynamic_spec(
     arg_id_kind kind, int& value,
     const arg_ref<typename Context::char_type>& ref, Context& ctx) {
-  if (kind != arg_id_kind::none) value = get_dynamic_spec(kind, ref, ctx);
+  if (kind == arg_id_kind::none) return;
+  auto arg =
+      kind == arg_id_kind::index ? ctx.arg(ref.index) : ctx.arg(ref.name);
+  if (!arg) report_error("argument not found");
+  unsigned long long result = arg.visit(dynamic_spec_getter());
+  if (result > to_unsigned(max_value<int>()))
+    report_error("width/precision is out of range");
+  value = static_cast<int>(result);
 }
 
 #if FMT_USE_NONTYPE_TEMPLATE_ARGS
@@ -3785,7 +3771,8 @@ template <typename Char = char> struct format_handler {
 
   auto on_format_specs(int id, const Char* begin, const Char* end)
       -> const Char* {
-    auto arg = get_arg(ctx, id);
+    auto arg = ctx.arg(id);
+    if (!arg) report_error("argument not found");
     // Not using a visitor for custom types gives better codegen.
     if (arg.format_custom(begin, parse_ctx, ctx)) return parse_ctx.begin();
 
