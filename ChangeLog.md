@@ -17,15 +17,6 @@
   (https://github.com/fmtlib/fmt/issues/3403,
   https://github.com/fmtlib/fmt/pull/4456). Thanks @msvetkin.
 
-- Improved C++20 module support
-  (https://github.com/fmtlib/fmt/pull/4451,
-  https://github.com/fmtlib/fmt/pull/4459,
-  https://github.com/fmtlib/fmt/pull/4476,
-  https://github.com/fmtlib/fmt/pull/4488,
-  https://github.com/fmtlib/fmt/issues/4491,
-  https://github.com/fmtlib/fmt/pull/4495).
-  Thanks @arBmind, @tkhyn, @Mishura4, @anonymouspc and @autoantwort.
-
 - Added `FMT_STATIC_FORMAT` that allows formatting into a string of the exact
   required size at compile time.
 
@@ -46,6 +37,15 @@
 
   It can be accessed as a C string with `s.c_str()` or as a string view with
   `s.str()`.
+
+- Improved C++20 module support
+  (https://github.com/fmtlib/fmt/pull/4451,
+  https://github.com/fmtlib/fmt/pull/4459,
+  https://github.com/fmtlib/fmt/pull/4476,
+  https://github.com/fmtlib/fmt/pull/4488,
+  https://github.com/fmtlib/fmt/issues/4491,
+  https://github.com/fmtlib/fmt/pull/4495).
+  Thanks @arBmind, @tkhyn, @Mishura4, @anonymouspc and @autoantwort.
 
 - Switched to using estimated display width in precision. For example:
 
