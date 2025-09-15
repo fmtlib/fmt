@@ -1849,7 +1849,7 @@ template <typename T> class buffer {
       if (free_cap < count) {
         try_reserve(size_ + count);
         free_cap = capacity_ - size_;
-        count = std::min(count, free_cap);
+        count = (count < free_cap) ? count : free_cap;
       }
       // A loop is faster than memcpy on small sizes.
       T* out = ptr_ + size_;
