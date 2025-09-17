@@ -8,9 +8,9 @@
   [dtoa-benchmark](https://github.com/fmtlib/dtoa-benchmark):
 
   ```
-  Function	Time (ns)  Speedup
+  Function  Time (ns)  Speedup
   fmt11        34.471    1.00x
-  fmt12	       21.000    1.64x
+  fmt12        21.000    1.64x
   ```
 
   <img width="766" height="609" src="https://github.com/user-attachments/assets/d7d768ad-7543-468c-b0bb-449abf73b31b" />
