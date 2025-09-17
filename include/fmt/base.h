@@ -21,7 +21,7 @@
 #endif
 
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
-#define FMT_VERSION 110201
+#define FMT_VERSION 120000
 
 // Detect compiler versions.
 #if defined(__clang__) && !defined(__ibmxl__)
@@ -252,7 +252,7 @@ FMT_PRAGMA_CLANG(diagnostic push)
 #ifndef FMT_BEGIN_NAMESPACE
 #  define FMT_BEGIN_NAMESPACE \
     namespace fmt {           \
-    inline namespace v11 {
+    inline namespace v12 {
 #  define FMT_END_NAMESPACE \
     }                       \
     }
