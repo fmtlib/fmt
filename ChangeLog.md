@@ -9,7 +9,7 @@
 
   ```
   Function	Time (ns)  Speedup
-  fmt11        34.471    1.00x
+  fmt11.       34.471    1.00x
   fmt12	       21.000    1.64x
   ```
 
