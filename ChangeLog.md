@@ -1,4 +1,4 @@
-# 12.0.0 - TBD
+# 12.0.0 - 2025-09-17
 
 - Optimized the default floating point formatting
   (https://github.com/fmtlib/fmt/issues/3675,
