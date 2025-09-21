@@ -2,6 +2,9 @@
 # A script to invoke mkdocs with the correct environment.
 # Additionally supports deploying via mike:
 #   ./mkdocs deploy [mike-deploy-options]
+# For example:
+#   ./mkdocs deploy <version>
+# This will checkout website to fmt/build/fmt.dev and deploy <version> to it.
 
 import errno, os, shutil, sys
 from subprocess import call
