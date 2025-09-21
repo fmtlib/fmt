@@ -4,7 +4,8 @@
 #   ./mkdocs deploy [mike-deploy-options]
 # For example:
 #   ./mkdocs deploy <version>
-# This will checkout website to fmt/build/fmt.dev and deploy <version> to it.
+# This will checkout the website to fmt/build/fmt.dev and deploy documentation
+# <version> there.
 
 import errno, os, shutil, sys
 from subprocess import call
@@ -43,7 +44,7 @@ config_path = os.path.join(support_dir, 'mkdocs.yml')
 args = sys.argv[1:]
 if len(args) > 0:
   command = args[0]
-  if command == 'deploy':
+  if command == 'deploy' or command == 'set-default':
     git_url = 'https://github.com/' if 'CI' in os.environ else 'git@github.com:'
     site_repo = git_url + 'fmtlib/fmt.dev.git'
 
