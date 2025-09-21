@@ -64,14 +64,18 @@ if len(args) > 0:
     if ret != 0 or version == 'dev':
       sys.exit(ret)
     current_doc_path = os.path.join(site_dir, version)
-    os.makedirs(current_doc_path, exist_ok=True)
-    redirect_page_path = os.path.join(current_doc_path, 'api.html')
-    with open(redirect_page_path, "w") as file:
-      file.write(redirect_page)
-    ret = call(['git', 'add', redirect_page_path], cwd=site_dir)
-    if ret != 0:
-      sys.exit(ret)
-    ret = call(['git', 'commit', '--amend', '--no-edit'], cwd=site_dir)
+    # mike stages files added by deploy for deletion for unclear reason,
+    # undo it.
+    ret = call(['git', 'reset', '--hard'], cwd=site_dir)
+    if False:
+      os.makedirs(current_doc_path, exist_ok=True)
+      redirect_page_path = os.path.join(current_doc_path, 'api.html')
+      with open(redirect_page_path, "w") as file:
+        file.write(redirect_page)
+      ret = call(['git', 'add', redirect_page_path], cwd=site_dir)
+      if ret != 0:
+        sys.exit(ret)
+      ret = call(['git', 'commit', '--amend', '--no-edit'], cwd=site_dir)
     sys.exit(ret)
   elif not command.startswith('-'):
     args += ['-f', config_path]
