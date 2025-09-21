@@ -1847,7 +1847,7 @@ template <typename T> class buffer {
       auto free_cap = capacity_ - size_;
       auto count = to_unsigned(end - begin);
       if (free_cap < count) {
-        grow_(*this, size_ + count); 
+        grow_(*this, size_ + count);
         free_cap = capacity_ - size_;
         count = (count < free_cap) ? count : free_cap;
       }
