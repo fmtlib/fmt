@@ -114,7 +114,9 @@
 #endif
 
 // Detect consteval, C++20 constexpr extensions and std::is_constant_evaluated.
-#if !defined(__cpp_lib_is_constant_evaluated)
+#ifdef FMT_USE_CONSTEVAL
+// Use the provided definition.
+#elif !defined(__cpp_lib_is_constant_evaluated)
 #  define FMT_USE_CONSTEVAL 0
 #elif FMT_CPLUSPLUS < 201709L
 #  define FMT_USE_CONSTEVAL 0
