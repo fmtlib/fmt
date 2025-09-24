@@ -2,6 +2,10 @@
 # A script to invoke mkdocs with the correct environment.
 # Additionally supports deploying via mike:
 #   ./mkdocs deploy [mike-deploy-options]
+# For example:
+#   ./mkdocs deploy <version>
+# This will checkout the website to fmt/build/fmt.dev and deploy documentation
+# <version> there.
 
 import errno, os, shutil, sys
 from subprocess import call
@@ -40,7 +44,7 @@ config_path = os.path.join(support_dir, 'mkdocs.yml')
 args = sys.argv[1:]
 if len(args) > 0:
   command = args[0]
-  if command == 'deploy':
+  if command == 'deploy' or command == 'set-default':
     git_url = 'https://github.com/' if 'CI' in os.environ else 'git@github.com:'
     site_repo = git_url + 'fmtlib/fmt.dev.git'
 
@@ -64,14 +68,18 @@ if len(args) > 0:
     if ret != 0 or version == 'dev':
       sys.exit(ret)
     current_doc_path = os.path.join(site_dir, version)
-    os.makedirs(current_doc_path, exist_ok=True)
-    redirect_page_path = os.path.join(current_doc_path, 'api.html')
-    with open(redirect_page_path, "w") as file:
-      file.write(redirect_page)
-    ret = call(['git', 'add', redirect_page_path], cwd=site_dir)
-    if ret != 0:
-      sys.exit(ret)
-    ret = call(['git', 'commit', '--amend', '--no-edit'], cwd=site_dir)
+    # mike stages files added by deploy for deletion for unclear reason,
+    # undo it.
+    ret = call(['git', 'reset', '--hard'], cwd=site_dir)
+    if False:
+      os.makedirs(current_doc_path, exist_ok=True)
+      redirect_page_path = os.path.join(current_doc_path, 'api.html')
+      with open(redirect_page_path, "w") as file:
+        file.write(redirect_page)
+      ret = call(['git', 'add', redirect_page_path], cwd=site_dir)
+      if ret != 0:
+        sys.exit(ret)
+      ret = call(['git', 'commit', '--amend', '--no-edit'], cwd=site_dir)
     sys.exit(ret)
   elif not command.startswith('-'):
     args += ['-f', config_path]

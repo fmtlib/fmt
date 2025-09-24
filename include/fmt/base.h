@@ -1850,12 +1850,17 @@ template <typename T> class buffer {
       void
       append(const U* begin, const U* end) {
     while (begin != end) {
+      auto size = size_;
+      auto free_cap = capacity_ - size;
       auto count = to_unsigned(end - begin);
-      try_reserve(size_ + count);
-      auto free_cap = capacity_ - size_;
-      if (free_cap < count) count = free_cap;
+      if (free_cap < count) {
+        grow_(*this, size + count);
+        size = size_;
+        free_cap = capacity_ - size;
+        count = count < free_cap ? count : free_cap;
+      }
       // A loop is faster than memcpy on small sizes.
-      T* out = ptr_ + size_;
+      T* out = ptr_ + size;
       for (size_t i = 0; i < count; ++i) out[i] = begin[i];
       size_ += count;
       begin += count;
