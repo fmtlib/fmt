@@ -255,21 +255,6 @@ template <typename T> auto ptr(const std::shared_ptr<T>& p) -> const void* {
 
 #if FMT_CPP_LIB_FILESYSTEM
 
-class path : public std::filesystem::path {
- public:
-  auto display_string() const -> std::string {
-    const std::filesystem::path& base = *this;
-    return fmt::format(FMT_STRING("{}"), base);
-  }
-  auto system_string() const -> std::string { return string(); }
-
-  auto generic_display_string() const -> std::string {
-    const std::filesystem::path& base = *this;
-    return fmt::format(FMT_STRING("{:g}"), base);
-  }
-  auto generic_system_string() const -> std::string { return generic_string(); }
-};
-
 template <typename Char> struct formatter<std::filesystem::path, Char> {
  private:
   format_specs specs_;
@@ -317,6 +302,21 @@ template <typename Char> struct formatter<std::filesystem::path, Char> {
                          basic_string_view<Char>(quoted.data(), quoted.size()),
                          specs);
   }
+};
+
+class path : public std::filesystem::path {
+ public:
+  auto display_string() const -> std::string {
+    const std::filesystem::path& base = *this;
+    return fmt::format(FMT_STRING("{}"), base);
+  }
+  auto system_string() const -> std::string { return string(); }
+
+  auto generic_display_string() const -> std::string {
+    const std::filesystem::path& base = *this;
+    return fmt::format(FMT_STRING("{:g}"), base);
+  }
+  auto generic_system_string() const -> std::string { return generic_string(); }
 };
 
 #endif  // FMT_CPP_LIB_FILESYSTEM
