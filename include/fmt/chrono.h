@@ -1594,8 +1594,12 @@ class get_locale {
 
  public:
   inline get_locale(bool localized, locale_ref loc) : has_locale_(localized) {
-    if (localized)
-      ::new (&locale_) std::locale(loc.template get<std::locale>());
+    if (!localized) return;
+    ::new (&locale_) std::locale(
+#if FMT_USE_LOCALE
+      loc.template get<std::locale>()
+#endif
+    );
   }
   inline ~get_locale() {
     if (has_locale_) locale_.~locale();
