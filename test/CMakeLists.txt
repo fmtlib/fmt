@@ -255,3 +255,13 @@ if (FMT_CUDA_TEST)
     add_test(NAME cuda-test COMMAND fmt-in-cuda-test)
   endif ()
 endif ()
+
+add_fmt_test(size-opt-test HEADER_ONLY)
+# Apply size optimization definitions from recipe
+target_compile_definitions(size-opt-test PRIVATE
+  FMT_USE_EXCEPTIONS=0
+  FMT_OS=0
+  FMT_BUILTIN_TYPES=0
+  FMT_OPTIMIZE_SIZE=2
+  FMT_USE_LOCALE=0
+)
