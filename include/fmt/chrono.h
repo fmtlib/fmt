@@ -1593,7 +1593,7 @@ class get_locale {
   bool has_locale_ = false;
 
  public:
-  inline get_locale(bool localized, [[maybe_unused]] locale_ref loc) : has_locale_(localized) {
+  inline get_locale(bool localized, locale_ref loc) : has_locale_(localized) {
     if (!localized) return;
     ::new (&locale_) std::locale(
 #if FMT_USE_LOCALE
