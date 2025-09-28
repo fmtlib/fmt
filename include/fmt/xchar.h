@@ -156,9 +156,9 @@ auto join(std::initializer_list<T> list, wstring_view sep)
 }
 
 template <typename Tuple, FMT_ENABLE_IF(is_tuple_like<Tuple>::value)>
-auto join(const Tuple& tuple, basic_string_view<wchar_t> sep)
+auto join(Tuple&& tuple, basic_string_view<wchar_t> sep)
     -> tuple_join_view<Tuple, wchar_t> {
-  return {tuple, sep};
+  return {std::forward<Tuple>(tuple), sep};
 }
 
 template <typename Char, FMT_ENABLE_IF(!std::is_same<Char, char>::value)>

@@ -113,13 +113,12 @@ struct is_range_<T, void>
 
 // tuple_size and tuple_element check.
 template <typename T> class is_tuple_like_ {
-  template <typename U, typename V = typename std::remove_cv<U>::type>
-  static auto check(U* p) -> decltype(std::tuple_size<V>::value, 0);
+  template <typename U, typename V = remove_cvref_t<U>>
+  static auto check(int) -> decltype(std::tuple_size<V>::value, 0);
   template <typename> static void check(...);
 
  public:
-  static constexpr bool value =
-      !std::is_void<decltype(check<T>(nullptr))>::value;
+  static constexpr bool value = !std::is_void<decltype(check<T>(0))>::value;
 };
 
 // Check for integer_sequence
@@ -147,7 +146,8 @@ using make_index_sequence = make_integer_sequence<size_t, N>;
 #endif
 
 template <typename T>
-using tuple_index_sequence = make_index_sequence<std::tuple_size<T>::value>;
+using tuple_index_sequence =
+    make_index_sequence<std::tuple_size<remove_cvref_t<T>>::value>;
 
 template <typename T, typename C, bool = is_tuple_like_<T>::value>
 class is_tuple_formattable_ {
@@ -673,11 +673,11 @@ struct formatter<join_view<It, Sentinel, Char>, Char> {
 
 FMT_EXPORT
 template <typename Tuple, typename Char> struct tuple_join_view : detail::view {
-  const Tuple& tuple;
+  Tuple tuple;
   basic_string_view<Char> sep;
 
-  tuple_join_view(const Tuple& t, basic_string_view<Char> s)
-      : tuple(t), sep{s} {}
+  tuple_join_view(Tuple&& t, basic_string_view<Char> s)
+      : tuple(std::forward<Tuple>(t)), sep{s} {}
 };
 
 // Define FMT_TUPLE_JOIN_SPECIFIERS to enable experimental format specifiers
@@ -691,13 +691,13 @@ template <typename Tuple, typename Char>
 struct formatter<tuple_join_view<Tuple, Char>, Char,
                  enable_if_t<is_tuple_like<Tuple>::value>> {
   FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
-    return do_parse(ctx, std::tuple_size<Tuple>());
+    return do_parse(ctx, std::tuple_size<remove_cvref_t<Tuple>>());
   }
 
   template <typename FormatContext>
   auto format(const tuple_join_view<Tuple, Char>& value,
               FormatContext& ctx) const -> typename FormatContext::iterator {
-    return do_format(value, ctx, std::tuple_size<Tuple>());
+    return do_format(value, ctx, std::tuple_size<remove_cvref_t<Tuple>>());
   }
 
  private:
@@ -739,8 +739,10 @@ struct formatter<tuple_join_view<Tuple, Char>, Char,
       typename FormatContext::iterator {
     using std::get;
     auto out =
-        std::get<std::tuple_size<Tuple>::value - N>(formatters_)
-            .format(get<std::tuple_size<Tuple>::value - N>(value.tuple), ctx);
+        std::get<std::tuple_size<remove_cvref_t<Tuple>>::value - N>(formatters_)
+            .format(get<std::tuple_size<remove_cvref_t<Tuple>>::value - N>(
+                        value.tuple),
+                    ctx);
     if (N <= 1) return out;
     out = detail::copy<Char>(value.sep, out);
     ctx.advance_to(out);
@@ -826,9 +828,9 @@ auto join(Range&& r, string_view sep)
  *     // Output: 1, a
  */
 template <typename Tuple, FMT_ENABLE_IF(is_tuple_like<Tuple>::value)>
-FMT_CONSTEXPR auto join(const Tuple& tuple, string_view sep)
+FMT_CONSTEXPR auto join(Tuple&& tuple, string_view sep)
     -> tuple_join_view<Tuple, char> {
-  return {tuple, sep};
+  return {std::forward<Tuple>(tuple), sep};
 }
 
 /**

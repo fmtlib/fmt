@@ -194,6 +194,11 @@ TEST(ranges_test, format_tuple) {
   EXPECT_TRUE((fmt::is_formattable<std::tuple<int, float>>::value));
 }
 
+TEST(ranges_test, format_tuple_rvalue) {
+  EXPECT_EQ(fmt::format("{}", std::make_tuple(42, 1.5f, "this is tuple", 'i')),
+            "(42, 1.5, \"this is tuple\", 'i')");
+}
+
 struct not_default_formattable {};
 struct bad_format {};
 
