@@ -416,7 +416,11 @@ constexpr auto compile_format_string(S fmt) {
               decltype(get_type<arg_index, Args>::value), Args, arg_id_end_pos,
               arg_index, next_id>(fmt);
         } else if constexpr (c == '}') {
-          return parse_tail<Args, arg_id_end_pos + 1, ID>(
+            if constexpr (std::is_same_v<Args, type_list<>>) {
+                static_assert(!std::is_same_v<Args, type_list<>>,
+                                  "named argument referenced in format string but no arguments provided");
+                   }
+            return parse_tail<Args, arg_id_end_pos + 1, ID>(
               runtime_named_field<char_type>{arg_id_result.arg_id.name}, fmt);
         } else if constexpr (c == ':') {
           return unknown_format();  // no type info for specs parsing
