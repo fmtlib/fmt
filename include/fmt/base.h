@@ -2990,6 +2990,10 @@ FMT_INLINE void println(format_string<T...> fmt, T&&... args) {
   return fmt::println(stdout, fmt, static_cast<T&&>(args)...);
 }
 
+FMT_INLINE void println(FILE* f) { fmt::print(f, "\n"); }
+
+FMT_INLINE void println() { fmt::println(stdout); }
+
 FMT_PRAGMA_CLANG(diagnostic pop)
 FMT_PRAGMA_GCC(pop_options)
 FMT_END_EXPORT
