@@ -708,3 +708,44 @@ following differences:
   `std::to_chars` which tries to generate the smallest number of characters
   (ignoring redundant digits and sign in exponent) and may procude more
   decimal digits than necessary.
+
+## Compile-Time Configuration
+
+{fmt} provides configuration via CMake options and preprocessor macros to enable or disable features and to optimize for binary size. You can set CMake options when generating your build system (e.g. `-DFMT_OS=OFF`) and define macros or pass them to your compiler (e.g. `-DFMT_USE_EXCEPTIONS=0`).
+
+### Available Options
+
+| Option               | Type         | Default                                  | Description                                                                                                                         |
+| -------------------- | ------------ | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Header-Only Mode     | CMake target | `fmt::fmt`                               | Enable header-only usage by linking the `fmt::fmt-header-only` target.                                                              |
+| `FMT_HEADER_ONLY`    | 0 / 1        | 0                                        | Enables header-only mode when set to 1 (CMake target `fmt::fmt-header-only` defines it); disable with 0 for library mode.           |
+| `FMT_OS`             | ON / OFF     | ON                                       | Enables OS-specific APIs (`fmt/os.h`); disable with OFF.                                                                            |
+| `FMT_UNICODE`        | ON / OFF     | ON                                       | Enables Unicode support; disable with OFF.                                                                                          |
+| `FMT_USE_EXCEPTIONS` | 0 / 1        | 1 (0 if compiled with `-fno-exceptions`) | Enables exception-based error handling; disable with 0.                                                                             |
+| `FMT_BUILTIN_TYPES`  | 0 / 1        | 1                                        | Enables built-in type formatters; disable with 0.                                                                                   |
+| `FMT_OPTIMIZE_SIZE`  | 0 / 1 / 2    | 0                                        | Controls size-optimized routines: 0 = off, 1 = size optimization, >1 = aggressive size optimization disabling format-string checks. |
+| `FMT_USE_LOCALE`     | 0 / 1        | 1 (0 when `FMT_OPTIMIZE_SIZE > 1`)       | Enables locale-dependent formatting; disable with 0.                                                                                |
+| `FMT_THROW(x)`       | macro        | `throw x` (or `abort`)                   | Defines error handling via macro (not a toggle flag): if exceptions enabled, `throw x`; otherwise, `fmt::assert_fail(...)`.         |
+
+### Size Optimization Recipe
+
+To minimize your binary footprint, use the following CMake configuration and compile definitions:
+
+```cmake
+# Link to the header-only target
+target_link_libraries(${PROJECT_NAME} PRIVATE fmt::fmt-header-only)
+# Disable OS-specific APIs
+set(FMT_OS OFF CACHE BOOL "" FORCE)
+# Disable Unicode support
+set(FMT_UNICODE OFF CACHE BOOL "" FORCE)
+# Add compile definitions to your target
+target_compile_definitions(
+    ${PROJECT_NAME}
+    PRIVATE
+    FMT_USE_EXCEPTIONS=0
+    FMT_OS=0
+    FMT_BUILTIN_TYPES=0
+    FMT_OPTIMIZE_SIZE=2
+    FMT_USE_LOCALE=0
+)
+```
