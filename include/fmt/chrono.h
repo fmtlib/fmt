@@ -1598,7 +1598,7 @@ class get_locale {
     ignore_unused(loc);
     ::new (&locale_) std::locale(
 #if FMT_USE_LOCALE
-      loc.template get<std::locale>()
+        loc.template get<std::locale>()
 #endif
     );
   }
