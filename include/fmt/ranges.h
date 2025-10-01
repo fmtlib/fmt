@@ -113,12 +113,13 @@ struct is_range_<T, void>
 
 // tuple_size and tuple_element check.
 template <typename T> class is_tuple_like_ {
-  template <typename U, typename V = remove_cvref_t<U>>
-  static auto check(int) -> decltype(std::tuple_size<V>::value, 0);
+  template <typename U, typename V = typename std::remove_cv<U>::type>
+  static auto check(U* p) -> decltype(std::tuple_size<V>::value, 0);
   template <typename> static void check(...);
 
  public:
-  static constexpr bool value = !std::is_void<decltype(check<T>(0))>::value;
+  static constexpr bool value =
+      !std::is_void<decltype(check<T>(nullptr))>::value;
 };
 
 // Check for integer_sequence
@@ -282,12 +283,14 @@ template <typename FormatContext> struct format_tuple_element {
 FMT_EXPORT
 template <typename T> struct is_tuple_like {
   static constexpr bool value =
-      detail::is_tuple_like_<T>::value && !detail::is_range_<T>::value;
+      detail::is_tuple_like_<remove_cvref_t<T>>::value &&
+      !detail::is_range_<T>::value;
 };
 
 FMT_EXPORT
 template <typename T, typename C> struct is_tuple_formattable {
-  static constexpr bool value = detail::is_tuple_formattable_<T, C>::value;
+  static constexpr bool value =
+      detail::is_tuple_formattable_<remove_cvref_t<T>, C>::value;
 };
 
 template <typename Tuple, typename Char>
@@ -716,7 +719,9 @@ struct formatter<tuple_join_view<Tuple, Char>, Char,
       -> const Char* {
     auto end = ctx.begin();
 #if FMT_TUPLE_JOIN_SPECIFIERS
-    end = std::get<std::tuple_size<Tuple>::value - N>(formatters_).parse(ctx);
+    end =
+        std::get<std::tuple_size<remove_cvref_t<Tuple>>::value - N>(formatters_)
+            .parse(ctx);
     if (N > 1) {
       auto end1 = do_parse(ctx, std::integral_constant<size_t, N - 1>());
       if (end != end1)
