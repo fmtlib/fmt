@@ -139,50 +139,39 @@ template <typename Variant, typename Char> class is_variant_formattable {
 #endif  // FMT_CPP_LIB_VARIANT
 
 #if FMT_USE_RTTI
-
-template <typename OutputIt>
-auto write_demangled_name(OutputIt out, const std::type_info& ti) -> OutputIt {
-#  ifdef FMT_HAS_ABI_CXA_DEMANGLE
-  int status = 0;
-  size_t size = 0;
-  std::unique_ptr<char, void (*)(void*)> demangled_name_ptr(
-      abi::__cxa_demangle(ti.name(), nullptr, &size, &status), &std::free);
-
-  string_view demangled_name_view;
-  if (demangled_name_ptr) {
-    demangled_name_view = demangled_name_ptr.get();
-
-    // Normalization of stdlib inline namespace names.
-    // libc++ inline namespaces.
-    //  std::__1::*       -> std::*
-    //  std::__1::__fs::* -> std::*
-    // libstdc++ inline namespaces.
-    //  std::__cxx11::*             -> std::*
-    //  std::filesystem::__cxx11::* -> std::filesystem::*
-    if (demangled_name_view.starts_with("std::")) {
-      char* begin = demangled_name_ptr.get();
-      char* to = begin + 5;  // std::
-      for (char *from = to, *end = begin + demangled_name_view.size();
-           from < end;) {
-        // This is safe, because demangled_name is NUL-terminated.
-        if (from[0] == '_' && from[1] == '_') {
-          char* next = from + 1;
-          while (next < end && *next != ':') next++;
-          if (next[0] == ':' && next[1] == ':') {
-            from = next + 2;
-            continue;
-          }
+string_view normalize_libcxx_inline_namespaces(string_view demangled_name_view,
+                                               char* begin) {
+  // Normalization of stdlib inline namespace names.
+  // libc++ inline namespaces.
+  //  std::__1::*       -> std::*
+  //  std::__1::__fs::* -> std::*
+  // libstdc++ inline namespaces.
+  //  std::__cxx11::*             -> std::*
+  //  std::filesystem::__cxx11::* -> std::filesystem::*
+  if (demangled_name_view.starts_with("std::")) {
+    char* to = begin + 5;  // std::
+    for (const char *from = to, *end = begin + demangled_name_view.size();
+         from < end;) {
+      // This is safe, because demangled_name is NUL-terminated.
+      if (from[0] == '_' && from[1] == '_') {
+        const char* next = from + 1;
+        while (next < end && *next != ':') next++;
+        if (next[0] == ':' && next[1] == ':') {
+          from = next + 2;
+          continue;
         }
-        *to++ = *from++;
       }
-      demangled_name_view = {begin, detail::to_unsigned(to - begin)};
+      *to++ = *from++;
     }
-  } else {
-    demangled_name_view = string_view(ti.name());
+    demangled_name_view = {begin, detail::to_unsigned(to - begin)};
   }
-  return detail::write_bytes<char>(out, demangled_name_view);
-#  elif FMT_MSC_VERSION
-  const string_view demangled_name(ti.name());
+  return demangled_name_view;
+}
+
+template <class OutputIt>
+auto normalize_msvc_abi_name(string_view abi_name_view, OutputIt out)
+    -> OutputIt {
+  const string_view demangled_name(abi_name_view);
   for (size_t i = 0; i < demangled_name.size(); ++i) {
     auto sub = demangled_name;
     sub.remove_prefix(i);
@@ -201,6 +190,39 @@ auto write_demangled_name(OutputIt out, const std::type_info& ti) -> OutputIt {
     if (*sub.begin() != ' ') *out++ = *sub.begin();
   }
   return out;
+}
+
+template <typename OutputIt>
+auto write_demangled_name(OutputIt out, const std::type_info& ti) -> OutputIt {
+#  ifdef FMT_HAS_ABI_CXA_DEMANGLE
+  int status = 0;
+  size_t size = 0;
+  std::unique_ptr<char, void (*)(void*)> demangled_name_ptr(
+      abi::__cxa_demangle(ti.name(), nullptr, &size, &status), &std::free);
+
+  string_view demangled_name_view;
+  if (demangled_name_ptr) {
+    demangled_name_view = normalize_libcxx_inline_namespaces(
+        demangled_name_ptr.get(), demangled_name_ptr.get());
+  } else {
+    demangled_name_view = string_view(ti.name());
+  }
+  return detail::write_bytes<char>(out, demangled_name_view);
+#  elif FMT_MSC_VERSION && defined(_MSVC_STL_UPDATE)
+  return normalize_msvc_abi_name(ti.name(), out);
+#  elif FMT_MSC_VERSION && defined(_LIBCPP_VERSION)
+  const string_view demangled_name(ti.name());
+  std::string name_copy(demangled_name.size(), '\0');
+  // normalize_msvc_abi_name removes class, struct, union etc that MSVC has in
+  // front of types
+  name_copy.erase(normalize_msvc_abi_name(demangled_name, name_copy.begin()),
+                  name_copy.end());
+  // normalize_libcxx_inline_namespaces removes the inline __1, __2, etc
+  // namespaces libc++ uses for ABI versioning On MSVC ABI + libc++
+  // environments, we need to eliminate both of them.
+  const string_view normalized_name =
+      normalize_libcxx_inline_namespaces(name_copy, name_copy.data());
+  return detail::write_bytes<char>(out, normalized_name);
 #  else
   return detail::write_bytes<char>(out, string_view(ti.name()));
 #  endif
