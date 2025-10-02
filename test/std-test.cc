@@ -145,6 +145,7 @@ TEST(std_test, optional) {
   EXPECT_FALSE((fmt::is_formattable<unformattable>::value));
   EXPECT_FALSE((fmt::is_formattable<std::optional<unformattable>>::value));
   EXPECT_TRUE((fmt::is_formattable<std::optional<int>>::value));
+  EXPECT_TRUE((fmt::is_formattable<std::optional<const int>>::value));
 #endif
 }
 
