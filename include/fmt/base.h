@@ -17,6 +17,7 @@
 #  include <stdio.h>   // FILE
 #  include <string.h>  // memcmp
 
+#  include <string>       // std::char_traits
 #  include <type_traits>  // std::enable_if
 #endif
 
@@ -161,6 +162,12 @@
 #else
 #  define FMT_TRY if (true)
 #  define FMT_CATCH(x) if (false)
+#endif
+
+#ifdef __clang_analyzer__
+#  define FMT_CLANG_ANALYZER 1
+#else
+#  define FMT_CLANG_ANALYZER 0
 #endif
 
 #ifdef FMT_NO_UNIQUE_ADDRESS
@@ -2448,7 +2455,52 @@ FMT_API void vprint_mojibake(FILE*, string_view, format_args, bool);
 #else  // format_args is passed by reference since it is defined later.
 inline void vprint_mojibake(FILE*, string_view, const format_args&, bool) {}
 #endif
+
+// Converts a compile-time string to basic_string_view.
+FMT_EXPORT template <typename Char, size_t N>
+constexpr auto compile_string_to_view(const Char (&s)[N])
+    -> basic_string_view<Char> {
+  // Remove trailing NUL character if needed. Won't be present if this is used
+  // with a raw character array (i.e. not defined as a string).
+  return {s, N - (std::char_traits<Char>::to_int_type(s[N - 1]) == 0 ? 1 : 0)};
+}
+FMT_EXPORT template <typename Char>
+constexpr auto compile_string_to_view(basic_string_view<Char> s)
+    -> basic_string_view<Char> {
+  return s;
+}
 }  // namespace detail
+
+#if FMT_CLANG_ANALYZER
+#  define FMT_STRING_IMPL(s, base) s
+#else
+#  define FMT_STRING_IMPL(s, base)                                           \
+    [] {                                                                     \
+      /* Use the hidden visibility as a workaround for a GCC bug (#1973). */ \
+      /* Use a macro-like name to avoid shadowing warnings. */               \
+      struct FMT_VISIBILITY("hidden") FMT_COMPILE_STRING : base {            \
+        using char_type = fmt::remove_cvref_t<decltype(s[0])>;               \
+        constexpr explicit operator fmt::basic_string_view<char_type>()      \
+            const {                                                          \
+          return fmt::detail::compile_string_to_view<char_type>(s);          \
+        }                                                                    \
+      };                                                                     \
+      using FMT_STRING_VIEW =                                                \
+          fmt::basic_string_view<typename FMT_COMPILE_STRING::char_type>;    \
+      fmt::detail::ignore_unused(FMT_STRING_VIEW(FMT_COMPILE_STRING()));     \
+      return FMT_COMPILE_STRING();                                           \
+    }()
+#endif  // FMT_CLANG_ANALYZER
+
+/**
+ * Constructs a legacy compile-time format string from a string literal `s`.
+ *
+ * **Example**:
+ *
+ *     // A compile-time error because 'd' is an invalid specifier for strings.
+ *     std::string s = fmt::format(FMT_STRING("{:d}"), "foo");
+ */
+#define FMT_STRING(s) FMT_STRING_IMPL(s, fmt::detail::compile_string)
 
 // The main public API.
 
@@ -2990,7 +3042,7 @@ FMT_INLINE void println(format_string<T...> fmt, T&&... args) {
   return fmt::println(stdout, fmt, static_cast<T&&>(args)...);
 }
 
-FMT_INLINE void println(FILE* f) { fmt::print(f, "\n"); }
+FMT_INLINE void println(FILE* f) { fmt::print(f, FMT_STRING("\n")); }
 
 FMT_INLINE void println() { fmt::println(stdout); }
 
