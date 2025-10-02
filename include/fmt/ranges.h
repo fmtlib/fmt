@@ -23,6 +23,7 @@
 #else
 #  define FMT_LIFETIMEBOUND
 #endif
+FMT_PRAGMA_CLANG(diagnostic error "-Wreturn-stack-address")
 
 FMT_BEGIN_NAMESPACE
 
