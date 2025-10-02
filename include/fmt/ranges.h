@@ -18,6 +18,12 @@
 
 #include "format.h"
 
+#if FMT_HAS_CPP_ATTRIBUTE(clang::lifetimebound)
+#  define FMT_LIFETIMEBOUND [[clang::lifetimebound]]
+#else
+#  define FMT_LIFETIMEBOUND
+#endif
+
 FMT_BEGIN_NAMESPACE
 
 FMT_EXPORT
@@ -821,12 +827,12 @@ auto join(Range&& r, string_view sep)
  *
  * **Example**:
  *
- *     auto t = std::tuple<int, char>{1, 'a'};
+ *     auto t = std::tuple<int, char>(1, 'a');
  *     fmt::print("{}", fmt::join(t, ", "));
  *     // Output: 1, a
  */
 template <typename Tuple, FMT_ENABLE_IF(is_tuple_like<Tuple>::value)>
-FMT_CONSTEXPR auto join(const Tuple& tuple, string_view sep)
+FMT_CONSTEXPR auto join(const Tuple& tuple FMT_LIFETIMEBOUND, string_view sep)
     -> tuple_join_view<Tuple, char> {
   return {tuple, sep};
 }
