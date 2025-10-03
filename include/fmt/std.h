@@ -353,7 +353,7 @@ template <typename T, typename Char>
 struct formatter<std::optional<T>, Char,
                  std::enable_if_t<is_formattable<T, Char>::value>> {
  private:
-  formatter<T, Char> underlying_;
+  formatter<std::remove_cv_t<T>, Char> underlying_;
   static constexpr basic_string_view<Char> optional =
       detail::string_literal<Char, 'o', 'p', 't', 'i', 'o', 'n', 'a', 'l',
                              '('>{};
