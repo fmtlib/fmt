@@ -718,7 +718,7 @@ These modifiers are only supported for the `'H'`, `'I'`, `'M'`, `'S'`, `'U'`,
 Format specifications for range types have the following syntax:
 
 <pre><code class="language-json"
->range_format_spec ::= ["n"][range_type][range_underlying_spec]</code>
+>range_format_spec ::= ["n"][range_type][":" range_underlying_spec]</code>
 </pre>
 
 The `'n'` option formats the range without the opening and closing brackets.
@@ -761,6 +761,8 @@ fmt::print("{::}", std::vector{'h', 'e', 'l', 'l', 'o'});
 // Output: [h, e, l, l, o]
 fmt::print("{::d}", std::vector{'h', 'e', 'l', 'l', 'o'});
 // Output: [104, 101, 108, 108, 111]
+fmt::print("{:n:f}", std::array{std::numbers::pi, std::numbers::e});
+// Output: 3.141593, 2.718282
 ```
 
 ## Format Examples
