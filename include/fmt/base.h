@@ -416,12 +416,12 @@ inline auto map(int128_opt) -> monostate { return {}; }
 inline auto map(uint128_opt) -> monostate { return {}; }
 #endif
 
-#ifndef FMT_USE_BITINT
-#  if FMT_CLANG_VERSION >= 1500 && !defined(__CUDACC__)
-#    define FMT_USE_BITINT 1
-#  else
-#    define FMT_USE_BITINT 0
-#  endif
+#ifdef FMT_USE_BITINT
+// Use the provided definition.
+#elif FMT_CLANG_VERSION >= 1500 && !defined(__CUDACC__)
+#  define FMT_USE_BITINT 1
+#else
+#  define FMT_USE_BITINT 0
 #endif
 
 #if FMT_USE_BITINT
