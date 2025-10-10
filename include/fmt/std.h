@@ -139,8 +139,8 @@ template <typename Variant, typename Char> class is_variant_formattable {
 #endif  // FMT_CPP_LIB_VARIANT
 
 #if FMT_USE_RTTI
-string_view normalize_libcxx_inline_namespaces(string_view demangled_name_view,
-                                               char* begin) {
+inline string_view normalize_libcxx_inline_namespaces(
+    string_view demangled_name_view, char* begin) {
   // Normalization of stdlib inline namespace names.
   // libc++ inline namespaces.
   //  std::__1::*       -> std::*
