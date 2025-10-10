@@ -2506,7 +2506,7 @@ FMT_CONSTEXPR20 auto write_fixed(OutputIt out, const DecimalFP& f,
     auto grouping = Grouping(loc, specs.localized());
     size += grouping.count_separators(exp);
     return write_padded<Char, align::right>(
-        out, specs, to_unsigned(size), [&](iterator it) {
+        out, specs, static_cast<size_t>(size), [&](iterator it) {
           if (s != sign::none) *it++ = detail::getsign<Char>(s);
           it = write_significand<Char>(it, f.significand, significand_size,
                                        f.exponent, grouping);
