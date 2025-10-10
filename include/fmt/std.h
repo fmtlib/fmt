@@ -198,7 +198,7 @@ auto write_demangled_name(OutputIt out, const std::type_info& ti) -> OutputIt {
   int status = 0;
   size_t size = 0;
   std::unique_ptr<char, void (*)(void*)> demangled_name_ptr(
-      abi::__cxa_demangle(ti.name(), nullptr, &size, &status), &std::free);
+      abi::__cxa_demangle(ti.name(), nullptr, &size, &status), &free);
 
   string_view demangled_name_view;
   if (demangled_name_ptr) {
