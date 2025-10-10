@@ -41,10 +41,11 @@
 #include "base.h"
 
 #ifndef FMT_MODULE
+#  include <stdlib.h>  // malloc, free
+
 #  include <cmath>    // std::signbit
 #  include <cstddef>  // std::byte
 #  include <cstdint>  // uint32_t
-#  include <stdlib.h>  // malloc, free
 #  include <cstring>  // std::memcpy
 #  include <limits>   // std::numeric_limits
 #  include <new>      // std::bad_alloc
@@ -489,8 +490,8 @@ template <typename OutputIt,
 #if FMT_CLANG_VERSION >= 307 && !FMT_ICC_VERSION
 __attribute__((no_sanitize("undefined")))
 #endif
-FMT_CONSTEXPR20 inline auto
-reserve(OutputIt it, size_t n) -> typename OutputIt::value_type* {
+FMT_CONSTEXPR20 inline auto reserve(OutputIt it, size_t n) ->
+    typename OutputIt::value_type* {
   auto& c = get_container(it);
   size_t size = c.size();
   c.resize(size + n);
