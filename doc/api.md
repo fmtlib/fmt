@@ -709,15 +709,17 @@ following differences:
   (ignoring redundant digits and sign in exponent) and may procude more
   decimal digits than necessary.
 
-## Compile-Time Configuration
+## Configuration Options
 
-{fmt} provides configuration via CMake options and preprocessor macros to enable or disable features and to optimize for binary size. You can set CMake options when generating your build system (e.g. `-DFMT_OS=OFF`) and define macros or pass them to your compiler (e.g. `-DFMT_USE_EXCEPTIONS=0`).
+{fmt} provides configuration via CMake options and preprocessor macros to
+enable or disable features and to optimize for binary size. For example, you
+can disable platform-specific APIs defined in `fmt/os.h` with `-DFMT_OS=OFF`
+when configuring CMake.
 
 ### Available Options
 
 | Option               | Type         | Default                                  | Description                                                                                                                         |
 | -------------------- | ------------ | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Header-Only Mode     | CMake target | `fmt::fmt`                               | Enable header-only usage by linking the `fmt::fmt-header-only` target.                                                              |
 | `FMT_HEADER_ONLY`    | 0 / 1        | 0                                        | Enables header-only mode when set to 1 (CMake target `fmt::fmt-header-only` defines it); disable with 0 for library mode.           |
 | `FMT_OS`             | ON / OFF     | ON                                       | Enables OS-specific APIs (`fmt/os.h`); disable with OFF.                                                                            |
 | `FMT_UNICODE`        | ON / OFF     | ON                                       | Enables Unicode support; disable with OFF.                                                                                          |
@@ -729,7 +731,8 @@ following differences:
 
 ### Size Optimization Recipe
 
-To minimize your binary footprint, use the following CMake configuration and compile definitions:
+To minimize your binary footprint, use the following CMake configuration and
+compile definitions:
 
 ```cmake
 # Link to the header-only target
