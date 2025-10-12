@@ -724,8 +724,9 @@ configuring CMake.
 
 ### Macros
 
-- **`FMT_HEADER_ONLY`**: Enables the header-only mode when set to `1` as an
-  alternative to using the `fmt::fmt-header-only` CMake target. Default: `0`.
+- **`FMT_HEADER_ONLY`**: Enables the header-only mode when defined. Defining
+  this macro is an alternative to using the `fmt::fmt-header-only` CMake target.
+  Default: not defined.
 
 - **`FMT_USE_EXCEPTIONS`**: Disables the use of exceptions when set to `0`.
   Default: `1` (`0` if compiled with `-fno-exceptions`).
@@ -755,6 +756,5 @@ some features, you can use the following configuration:
 - CMake options:
     - `FMT_OS=OFF`
 - Macros:
-    - `FMT_USE_EXCEPTIONS=0`
     - `FMT_BUILTIN_TYPES=0`
     - `FMT_OPTIMIZE_SIZE=2`
