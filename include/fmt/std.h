@@ -139,8 +139,8 @@ template <typename Variant, typename Char> class is_variant_formattable {
 #endif  // FMT_CPP_LIB_VARIANT
 
 #if FMT_USE_RTTI
-inline string_view normalize_libcxx_inline_namespaces(
-    string_view demangled_name_view, char* begin) {
+inline auto normalize_libcxx_inline_namespaces(string_view demangled_name_view,
+                                               char* begin) -> string_view {
   // Normalization of stdlib inline namespace names.
   // libc++ inline namespaces.
   //  std::__1::*       -> std::*
@@ -198,7 +198,7 @@ auto write_demangled_name(OutputIt out, const std::type_info& ti) -> OutputIt {
   int status = 0;
   size_t size = 0;
   std::unique_ptr<char, void (*)(void*)> demangled_name_ptr(
-      abi::__cxa_demangle(ti.name(), nullptr, &size, &status), &std::free);
+      abi::__cxa_demangle(ti.name(), nullptr, &size, &status), &free);
 
   string_view demangled_name_view;
   if (demangled_name_ptr) {
@@ -211,7 +211,7 @@ auto write_demangled_name(OutputIt out, const std::type_info& ti) -> OutputIt {
 #  elif FMT_MSC_VERSION && defined(_MSVC_STL_UPDATE)
   return normalize_msvc_abi_name(ti.name(), out);
 #  elif FMT_MSC_VERSION && defined(_LIBCPP_VERSION)
-  const string_view demangled_name(ti.name());
+  const string_view demangled_name = ti.name();
   std::string name_copy(demangled_name.size(), '\0');
   // normalize_msvc_abi_name removes class, struct, union etc that MSVC has in
   // front of types
