@@ -742,10 +742,10 @@ configuring CMake.
   the cost of per-call overhead. Default: `1`.
 
 - **`FMT_OPTIMIZE_SIZE`**: Controls binary size optimizations:
-  - `0` - off (default)
-  - `1` - disables locale support and applies some optimizations
-  - `2` - disables some Unicode features, named arguments and applies more
-    aggresive optimizations
+    - `0` - off (default)
+    - `1` - disables locale support and applies some optimizations
+    - `2` - disables some Unicode features, named arguments and applies more
+      aggresive optimizations
 
 ### Binary Size Optimization
 
@@ -753,8 +753,8 @@ To minimize the binary footprint of {fmt} as much as possible at the cost of
 some features, you can use the following configuration:
 
 - CMake options:
-  - `FMT_OS=OFF`
+    - `FMT_OS=OFF`
 - Macros:
-  - `FMT_USE_EXCEPTIONS=0`
-  - `FMT_BUILTIN_TYPES=0`
-  - `FMT_OPTIMIZE_SIZE=2`
+    - `FMT_USE_EXCEPTIONS=0`
+    - `FMT_BUILTIN_TYPES=0`
+    - `FMT_OPTIMIZE_SIZE=2`
