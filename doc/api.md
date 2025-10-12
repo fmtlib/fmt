@@ -716,63 +716,45 @@ enable or disable features and to optimize for binary size. For example, you
 can disable OS-specific APIs defined in `fmt/os.h` with `-DFMT_OS=OFF` when
 configuring CMake.
 
-### Available Options
+### CMake Options
 
-- **`FMT_HEADER_ONLY`**
-  Default: `0`
-  Enables header-only mode when set to `1` (CMake target `fmt::fmt-header-only`
-  defines it); disable with `0` for library mode.
+- **`FMT_OS`**: When set to `OFF`, disables OS-specific APIs (`fmt/os.h`).
+- **`FMT_UNICODE`**: When set of `OFF`, disables Unicode support on
+  Windows/MSVC. Unicode support is always enabled on other platforms.
 
-- **`FMT_OS`**
-  Default: `ON`
-  Enables OS-specific APIs (`fmt/os.h`); disable with `OFF`.
+### Macros
 
-- **`FMT_UNICODE`**
-  Default: `ON`
-  Enables Unicode support; disable with `OFF`.
+- **`FMT_HEADER_ONLY`**: Enables the header-only mode when set to `1` as an
+  alternative to using the `fmt::fmt-header-only` CMake target. Default: `0`.
 
-- **`FMT_USE_EXCEPTIONS`**
-  Default: `1` (`0` if compiled with `-fno-exceptions`)
-  Enables exception-based error handling; disable with `0`.
+- **`FMT_USE_EXCEPTIONS`**: Disables the use of exceptions when set to `0`.
+  Default: `1` (`0` if compiled with `-fno-exceptions`).
 
-- **`FMT_BUILTIN_TYPES`**
-  Default: `1`
-  Enables built-in type formatters; disable with `0`.
+- **`FMT_USE_LOCALE`**: When set to `0`, disables locale support.
+  Default: `1` (`0` when `FMT_OPTIMIZE_SIZE > 1`).
 
-- **`FMT_OPTIMIZE_SIZE`**
-  Default: `0`
-  Controls size-optimized routines: `0` = off, `1` = size optimization, `>1` =
-  aggressive size optimization disabling format-string checks.
+- **`FMT_CUSTOM_ASSERT_FAIL`**: When set to `1`, allows users to provide a
+  custom `fmt::assert_fail` function which is called on assertion failures and,
+  if exceptions are disabled, on runtime errors. Default: `0`.
 
-- **`FMT_USE_LOCALE`**
-  Default: `1` (`0` when `FMT_OPTIMIZE_SIZE > 1`)
-  Enables locale-dependent formatting; disable with `0`.
+- **`FMT_BUILTIN_TYPES`**: When set to `0`, disables built-in handling of
+  arithmetic and string types other than `int`. This reduces library size at
+  the cost of per-call overhead. Default: `1`.
 
-- **`FMT_THROW(x)`**
-  Default: ``throw x`` (or `abort`)
-  Defines error handling via macro (not a toggle flag): if exceptions enabled,
-  `throw x`; otherwise, `fmt::assert_fail(...)`.
+- **`FMT_OPTIMIZE_SIZE`**: Controls binary size optimizations:
+  - `0` - off (default)
+  - `1` - disables locale support and applies some optimizations
+  - `2` - disables some Unicode features, named arguments and applies more
+    aggresive optimizations
 
 ### Binary Size Optimization
 
-To minimize your binary footprint, use the following CMake configuration and
-compile definitions:
+To minimize the binary footprint of {fmt} as much as possible at the cost of
+some features, you can use the following configuration:
 
-```cmake
-# Link to the header-only target
-target_link_libraries(${PROJECT_NAME} PRIVATE fmt::fmt-header-only)
-# Disable OS-specific APIs
-set(FMT_OS OFF CACHE BOOL "" FORCE)
-# Disable Unicode support
-set(FMT_UNICODE OFF CACHE BOOL "" FORCE)
-# Add compile definitions to your target
-target_compile_definitions(
-    ${PROJECT_NAME}
-    PRIVATE
-    FMT_USE_EXCEPTIONS=0
-    FMT_OS=0
-    FMT_BUILTIN_TYPES=0
-    FMT_OPTIMIZE_SIZE=2
-    FMT_USE_LOCALE=0
-)
-```
+- CMake options:
+  - `FMT_OS=OFF`
+- Macros:
+  - `FMT_USE_EXCEPTIONS=0`
+  - `FMT_BUILTIN_TYPES=0`
+  - `FMT_OPTIMIZE_SIZE=2`
