@@ -760,6 +760,14 @@ template <typename T> struct allocator : private std::decay<void> {
   }
 };
 
+template <typename Formatter>
+FMT_CONSTEXPR auto maybe_set_debug_format(Formatter& f, bool set)
+    -> decltype(f.set_debug_format(set)) {
+  f.set_debug_format(set);
+}
+template <typename Formatter>
+FMT_CONSTEXPR void maybe_set_debug_format(Formatter&, ...) {}
+
 }  // namespace detail
 
 FMT_BEGIN_EXPORT
