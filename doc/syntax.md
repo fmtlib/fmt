@@ -251,7 +251,7 @@ The available integer presentation types are:
   <td><code>'b'</code></td>
   <td>
     Binary format. Outputs the number in base 2. Using the <code>'#'</code>
-    option with this type adds the prefix <code>"0b"</code> to the output value.    
+    option with this type adds the prefix <code>"0b"</code> to the output value.
   </td>
 </tr>
 <tr>
@@ -768,9 +768,9 @@ fmt::print("{:n:f}", std::array{std::numbers::pi, std::numbers::e});
 ## Format Examples
 
 This section contains examples of the format syntax and comparison with
-the printf formatting.
+the `printf` formatting.
 
-In most of the cases the syntax is similar to the printf formatting,
+In most of the cases the syntax is similar to the `printf` formatting,
 with the addition of the `{}` and with `:` used instead of `%`. For
 example, `"%03.2f"` can be translated to `"{:03.2f}"`.
 
