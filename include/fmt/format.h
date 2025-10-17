@@ -40,6 +40,12 @@
 
 #include "base.h"
 
+// libc++ supports string_view in pre-c++17.
+#if FMT_HAS_INCLUDE(<string_view>) && \
+    (FMT_CPLUSPLUS >= 201703L || defined(_LIBCPP_VERSION))
+#  define FMT_USE_STRING_VIEW
+#endif
+
 #ifndef FMT_MODULE
 #  include <stdlib.h>  // malloc, free
 
@@ -62,11 +68,8 @@
 #    include <bit>  // std::bit_cast
 #  endif
 
-// libc++ supports string_view in pre-c++17.
-#  if FMT_HAS_INCLUDE(<string_view>) && \
-      (FMT_CPLUSPLUS >= 201703L || defined(_LIBCPP_VERSION))
+#  if defined(FMT_USE_STRING_VIEW)
 #    include <string_view>
-#    define FMT_USE_STRING_VIEW
 #  endif
 
 #  if FMT_MSC_VERSION
