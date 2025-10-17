@@ -81,6 +81,15 @@ function(add_module_library name)
     # `std` is affected by CMake options and may be higher than C++20.
     get_target_property(std ${name} CXX_STANDARD)
 
+    # Respect CMAKE_CXX_EXTENSIONS when forming the -std flag used to
+    # precompile modules. A mismatch between -std=gnu++<ver> and -std=c++<ver>
+    # can cause "configuration mismatch" errors when loading .pcm files.
+    if (CMAKE_CXX_EXTENSIONS)
+      set(std_flag "-std=gnu++${std}")
+    else()
+      set(std_flag "-std=c++${std}")
+    endif()
+
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
       set(pcms)
       foreach (src ${sources})
@@ -94,15 +103,15 @@ function(add_module_library name)
         # Use an absolute path to prevent target_link_libraries prepending -l
         # to it.
         set(pcms ${pcms} ${CMAKE_CURRENT_BINARY_DIR}/${pcm})
-        add_custom_command(
-          OUTPUT ${pcm}
-          COMMAND ${CMAKE_CXX_COMPILER}
-                  -std=c++${std} -x c++-module --precompile -c
-                  -o ${pcm} ${CMAKE_CURRENT_SOURCE_DIR}/${src}
-                  "-I$<JOIN:$<TARGET_PROPERTY:${name},INCLUDE_DIRECTORIES>,;-I>"
-          # Required by the -I generator expression above.
-          COMMAND_EXPAND_LISTS
-          DEPENDS ${src})
+  add_custom_command(
+    OUTPUT ${pcm}
+    COMMAND ${CMAKE_CXX_COMPILER}
+      ${std_flag} -x c++-module --precompile -c
+      -o ${pcm} ${CMAKE_CURRENT_SOURCE_DIR}/${src}
+      "-I$<JOIN:$<TARGET_PROPERTY:${name},INCLUDE_DIRECTORIES>,;-I>"
+    # Required by the -I generator expression above.
+    COMMAND_EXPAND_LISTS
+    DEPENDS ${src})
       endforeach ()
 
       # Add .pcm files as sources to make sure they are built before the library.
@@ -112,11 +121,12 @@ function(add_module_library name)
         set(obj ${pcm_we}.o)
         # Use an absolute path to prevent target_link_libraries prepending -l.
         set(sources ${sources} ${pcm} ${CMAKE_CURRENT_BINARY_DIR}/${obj})
-        add_custom_command(
-          OUTPUT ${obj}
-          COMMAND ${CMAKE_CXX_COMPILER} $<TARGET_PROPERTY:${name},COMPILE_OPTIONS>
-                  -c -o ${obj} ${pcm}
-          DEPENDS ${pcm})
+  add_custom_command(
+    OUTPUT ${obj}
+    COMMAND ${CMAKE_CXX_COMPILER} ${std_flag} -c -o ${obj} ${pcm}
+      "-I$<JOIN:$<TARGET_PROPERTY:${name},INCLUDE_DIRECTORIES>,;-I>"
+    COMMAND_EXPAND_LISTS
+    DEPENDS ${pcm})
       endforeach ()
     endif ()
     target_sources(${name} PRIVATE ${sources})
