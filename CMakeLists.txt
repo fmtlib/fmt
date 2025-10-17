@@ -121,12 +121,12 @@ function(add_module_library name)
         set(obj ${pcm_we}.o)
         # Use an absolute path to prevent target_link_libraries prepending -l.
         set(sources ${sources} ${pcm} ${CMAKE_CURRENT_BINARY_DIR}/${obj})
-  add_custom_command(
-    OUTPUT ${obj}
-    COMMAND ${CMAKE_CXX_COMPILER} ${std_flag} -c -o ${obj} ${pcm}
-      "-I$<JOIN:$<TARGET_PROPERTY:${name},INCLUDE_DIRECTORIES>,;-I>"
-    COMMAND_EXPAND_LISTS
-    DEPENDS ${pcm})
+        add_custom_command(
+          OUTPUT ${obj}
+          COMMAND ${CMAKE_CXX_COMPILER} ${std_flag} -c -o ${obj} ${pcm}
+            "-I$<JOIN:$<TARGET_PROPERTY:${name},INCLUDE_DIRECTORIES>,;-I>"
+          COMMAND_EXPAND_LISTS
+          DEPENDS ${pcm})
       endforeach ()
     endif ()
     target_sources(${name} PRIVATE ${sources})
