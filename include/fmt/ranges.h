@@ -241,14 +241,6 @@ using range_reference_type =
 template <typename Range>
 using uncvref_type = remove_cvref_t<range_reference_type<Range>>;
 
-template <typename Formatter>
-FMT_CONSTEXPR auto maybe_set_debug_format(Formatter& f, bool set)
-    -> decltype(f.set_debug_format(set)) {
-  f.set_debug_format(set);
-}
-template <typename Formatter>
-FMT_CONSTEXPR void maybe_set_debug_format(Formatter&, ...) {}
-
 template <typename T>
 struct range_format_kind_
     : std::integral_constant<range_format,
