@@ -365,17 +365,17 @@ FMT_INLINE_VARIABLE constexpr auto buffer_size = detail::buffer_size();
 
 /// A fast buffered output stream for writing from a single thread. Writing from
 /// multiple threads without external synchronization may result in a data race.
-class FMT_API ostream : private detail::buffer<char> {
+class ostream : private detail::buffer<char> {
  private:
   file file_;
 
-  ostream(cstring_view path, const detail::ostream_params& params);
+  FMT_API ostream(cstring_view path, const detail::ostream_params& params);
 
-  static void grow(buffer<char>& buf, size_t);
+  FMT_API static void grow(buffer<char>& buf, size_t);
 
  public:
-  ostream(ostream&& other) noexcept;
-  ~ostream();
+  FMT_API ostream(ostream&& other) noexcept;
+  FMT_API ~ostream();
 
   operator writer() {
     detail::buffer<char>& buf = *this;
