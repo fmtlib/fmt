@@ -47,11 +47,6 @@ using std::locale;
 using std::numpunct;
 using std::use_facet;
 }  // namespace detail
-
-template <typename Locale, enable_if_t<(sizeof(Locale::collate) != 0), int>>
-locale_ref::locale_ref(const Locale& loc) : locale_(&loc) {
-  static_assert(std::is_same<Locale, std::locale>::value, "");
-}
 #else
 namespace detail {
 struct locale {};
