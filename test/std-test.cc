@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "fmt/os.h"       // fmt::system_category
+#include "fmt/ranges.h"
 #include "gtest-extra.h"  // StartsWith
 
 #ifdef __cpp_lib_filesystem
@@ -335,6 +336,10 @@ TEST(std_test, error_code) {
   EXPECT_EQ(fmt::format("{:s}", ec), ec.message());
   EXPECT_EQ(fmt::format("{:?}", std::error_code(42, generic)),
             "\"generic:42\"");
+  EXPECT_EQ(fmt::format("{}",
+                        std::map<std::error_code, int>{
+                            {std::error_code(42, generic), 0}}),
+            "{\"generic:42\": 0}");
 }
 
 template <typename Catch> void exception_test() {

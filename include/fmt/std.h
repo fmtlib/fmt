@@ -513,6 +513,8 @@ template <> struct formatter<std::error_code> {
   bool debug_ = false;
 
  public:
+  FMT_CONSTEXPR void set_debug_format(bool set = true) { debug_ = set; }
+  
   FMT_CONSTEXPR auto parse(parse_context<>& ctx) -> const char* {
     auto it = ctx.begin(), end = ctx.end();
     if (it == end) return it;
