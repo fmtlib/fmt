@@ -1,3 +1,8 @@
+# 12.0.1 - TBD
+
+- Worked around an ABI incompatibility in `std::locale_ref` between clang and
+  gcc (https://github.com/fmtlib/fmt/issues/4573).
+
 # 12.0.0 - 2025-09-17
 
 - Optimized the default floating point formatting
