@@ -236,6 +236,7 @@ FMT_PRAGMA_GCC(optimize("Og"))
 #  define FMT_GCC_OPTIMIZED
 #endif
 FMT_PRAGMA_CLANG(diagnostic push)
+FMT_PRAGMA_GCC(diagnostic push)
 
 #ifdef FMT_ALWAYS_INLINE
 // Use the provided definition.
@@ -2997,6 +2998,7 @@ FMT_INLINE void println(format_string<T...> fmt, T&&... args) {
   return fmt::println(stdout, fmt, static_cast<T&&>(args)...);
 }
 
+FMT_PRAGMA_GCC(diagnostic pop)
 FMT_PRAGMA_CLANG(diagnostic pop)
 FMT_PRAGMA_GCC(pop_options)
 FMT_END_EXPORT
