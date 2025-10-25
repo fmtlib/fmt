@@ -39,7 +39,7 @@
 - Made the `FMT_USE_CONSTEVAL` macro configurable by users
   (https://github.com/fmtlib/fmt/pull/4546). Thanks @SnapperTT.
 
-- Fixed compilation with locale disabled in the header-only mode
+- Fixed compilation with locales disabled in the header-only mode
   (https://github.com/fmtlib/fmt/issues/4550).
 
 - Fixed compilation with clang 21 and `-std=c++20`
