@@ -49,6 +49,9 @@
   (https://github.com/fmtlib/fmt/issues/4576,
   https://github.com/fmtlib/fmt/pull/4584). Thanks @FatihBAKIR.
 
+- Fixed a warning suppression leakage on gcc
+  (https://github.com/fmtlib/fmt/pull/4588). Thanks @ZedThree.
+
 - Made more internal color APIs `constexpr`
   (https://github.com/fmtlib/fmt/pull/4581). Thanks @ishani.
 
