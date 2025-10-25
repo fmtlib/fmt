@@ -111,12 +111,17 @@ void write_escaped_path(basic_memory_buffer<Char>& quoted,
 #endif  // FMT_CPP_LIB_FILESYSTEM
 
 #if defined(__cpp_lib_expected) || FMT_CPP_LIB_VARIANT
-template <typename Char, typename OutputIt, typename T>
-auto write_escaped_alternative(OutputIt out, const T& v) -> OutputIt {
+
+template <typename Char, typename OutputIt, typename T, typename FormatContext>
+auto write_escaped_alternative(OutputIt out, const T& v, FormatContext& ctx)
+    -> OutputIt {
   if constexpr (has_to_string_view<T>::value)
     return write_escaped_string<Char>(out, detail::to_string_view(v));
   if constexpr (std::is_same_v<T, Char>) return write_escaped_char(out, v);
-  return write<Char>(out, v);
+
+  formatter<std::remove_cv_t<T>, Char> underlying;
+  maybe_set_debug_format(underlying, true);
+  return underlying.format(v, ctx);
 }
 #endif
 
@@ -382,18 +387,9 @@ struct formatter<std::optional<T>, Char,
   static constexpr basic_string_view<Char> none =
       detail::string_literal<Char, 'n', 'o', 'n', 'e'>{};
 
-  template <class U>
-  FMT_CONSTEXPR static auto maybe_set_debug_format(U& u, bool set)
-      -> decltype(u.set_debug_format(set)) {
-    u.set_debug_format(set);
-  }
-
-  template <class U>
-  FMT_CONSTEXPR static void maybe_set_debug_format(U&, ...) {}
-
  public:
   FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) {
-    maybe_set_debug_format(underlying_, true);
+    detail::maybe_set_debug_format(underlying_, true);
     return underlying_.parse(ctx);
   }
 
@@ -429,10 +425,10 @@ struct formatter<std::expected<T, E>, Char,
     if (value.has_value()) {
       out = detail::write<Char>(out, "expected(");
       if constexpr (!std::is_void<T>::value)
-        out = detail::write_escaped_alternative<Char>(out, *value);
+        out = detail::write_escaped_alternative<Char>(out, *value, ctx);
     } else {
       out = detail::write<Char>(out, "unexpected(");
-      out = detail::write_escaped_alternative<Char>(out, value.error());
+      out = detail::write_escaped_alternative<Char>(out, value.error(), ctx);
     }
     *out++ = ')';
     return out;
@@ -496,7 +492,7 @@ struct formatter<Variant, Char,
     FMT_TRY {
       std::visit(
           [&](const auto& v) {
-            out = detail::write_escaped_alternative<Char>(out, v);
+            out = detail::write_escaped_alternative<Char>(out, v, ctx);
           },
           value);
     }
@@ -517,6 +513,8 @@ template <> struct formatter<std::error_code> {
   bool debug_ = false;
 
  public:
+  FMT_CONSTEXPR void set_debug_format(bool set = true) { debug_ = set; }
+  
   FMT_CONSTEXPR auto parse(parse_context<>& ctx) -> const char* {
     auto it = ctx.begin(), end = ctx.end();
     if (it == end) return it;

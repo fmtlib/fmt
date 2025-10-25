@@ -10,7 +10,7 @@
 FMT_BEGIN_NAMESPACE
 
 #if FMT_USE_LOCALE
-template FMT_API locale_ref::locale_ref(const std::locale& loc);
+template FMT_API locale_ref::locale_ref(const std::locale& loc);  // DEPRECATED!
 template FMT_API auto locale_ref::get<std::locale>() const -> std::locale;
 #endif
 

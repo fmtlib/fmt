@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "fmt/os.h"       // fmt::system_category
+#include "fmt/ranges.h"
 #include "gtest-extra.h"  // StartsWith
 
 #ifdef __cpp_lib_filesystem
@@ -197,7 +198,33 @@ class my_class {
     return fmt::to_string(elm.av);
   }
 };
+
+class my_class_int {
+ public:
+  int av;
+
+ private:
+  friend auto format_as(const my_class_int& elm) -> int { return elm.av; }
+};
 }  // namespace my_nso
+
+TEST(std_test, expected_format_as) {
+#ifdef __cpp_lib_expected
+  EXPECT_EQ(
+      fmt::format(
+          "{}", std::expected<my_nso::my_number, int>{my_nso::my_number::one}),
+      "expected(\"first\")");
+  EXPECT_EQ(
+      fmt::format("{}",
+                  std::expected<my_nso::my_class, int>{my_nso::my_class{7}}),
+      "expected(\"7\")");
+  EXPECT_EQ(fmt::format("{}",
+                        std::expected<my_nso::my_class_int, int>{
+                            my_nso::my_class_int{8}}),
+            "expected(8)");
+#endif
+}
+
 TEST(std_test, optional_format_as) {
 #ifdef __cpp_lib_optional
   EXPECT_EQ(fmt::format("{}", std::optional<my_nso::my_number>{}), "none");
@@ -206,6 +233,8 @@ TEST(std_test, optional_format_as) {
   EXPECT_EQ(fmt::format("{}", std::optional<my_nso::my_class>{}), "none");
   EXPECT_EQ(fmt::format("{}", std::optional{my_nso::my_class{7}}),
             "optional(\"7\")");
+  EXPECT_EQ(fmt::format("{}", std::optional{my_nso::my_class_int{8}}),
+            "optional(8)");
 #endif
 }
 
@@ -275,6 +304,24 @@ TEST(std_test, variant) {
 #endif
 }
 
+TEST(std_test, variant_format_as) {
+#ifdef __cpp_lib_variant
+
+  EXPECT_EQ(fmt::format("{}", std::variant<my_nso::my_number>{}),
+            "variant(\"first\")");
+  EXPECT_EQ(fmt::format(
+                "{}", std::variant<my_nso::my_number>{my_nso::my_number::one}),
+            "variant(\"first\")");
+  EXPECT_EQ(
+      fmt::format("{}", std::variant<my_nso::my_class>{my_nso::my_class{7}}),
+      "variant(\"7\")");
+  EXPECT_EQ(
+      fmt::format("{}",
+                  std::variant<my_nso::my_class_int>{my_nso::my_class_int{8}}),
+      "variant(8)");
+#endif
+}
+
 TEST(std_test, error_code) {
   auto& generic = std::generic_category();
   EXPECT_EQ(fmt::format("{}", std::error_code(42, generic)), "generic:42");
@@ -289,6 +336,10 @@ TEST(std_test, error_code) {
   EXPECT_EQ(fmt::format("{:s}", ec), ec.message());
   EXPECT_EQ(fmt::format("{:?}", std::error_code(42, generic)),
             "\"generic:42\"");
+  EXPECT_EQ(fmt::format("{}",
+                        std::map<std::error_code, int>{
+                            {std::error_code(42, generic), 0}}),
+            "{\"generic:42\": 0}");
 }
 
 template <typename Catch> void exception_test() {

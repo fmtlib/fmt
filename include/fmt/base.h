@@ -923,8 +923,11 @@ class locale_ref {
  public:
   constexpr locale_ref() : locale_(nullptr) {}
 
-  template <typename Locale, FMT_ENABLE_IF(sizeof(Locale::collate) != 0)>
-  locale_ref(const Locale& loc);
+  template <typename Locale, int = (Locale::collate, 0)>
+  locale_ref(const Locale& loc) : locale_(&loc) {
+    // Check if std::isalpha is found via ADL to reduce the chance of misuse.
+    isalpha('x', loc);
+  }
 
   inline explicit operator bool() const noexcept { return locale_ != nullptr; }
 #endif  // FMT_USE_LOCALE
