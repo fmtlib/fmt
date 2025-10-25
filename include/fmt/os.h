@@ -136,10 +136,9 @@ FMT_API std::system_error vwindows_error(int error_code, string_view fmt,
  * **Example**:
  *
  *     // This throws a system_error with the description
- *     //   cannot open file 'madeup': The system cannot find the file
- * specified.
- *     // or similar (system message may vary).
- *     const char *filename = "madeup";
+ *     //   cannot open file 'foo': The system cannot find the file specified.
+ *     // or similar (system message may vary) if the file doesn't exist.
+ *     const char *filename = "foo";
  *     LPOFSTRUCT of = LPOFSTRUCT();
  *     HFILE file = OpenFile(filename, &of, OF_READ);
  *     if (file == HFILE_ERROR) {
