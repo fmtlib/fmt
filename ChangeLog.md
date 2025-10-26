@@ -1,3 +1,77 @@
+# 12.1.0 - TBD
+
+- Optimized `buffer::append`, resulting in up to ~16% improvement on spdlog
+  benchmarks (https://github.com/fmtlib/fmt/pull/4541). Thanks @fyrsta7.
+
+- Worked around an ABI incompatibility in `std::locale_ref` between clang and
+  gcc (https://github.com/fmtlib/fmt/issues/4573).
+
+- Made `std::variant` and `std::expected` formatters work with `format_as`
+  (https://github.com/fmtlib/fmt/issues/4574,
+  https://github.com/fmtlib/fmt/pull/4575). Thanks @phprus.
+
+- Made `fmt::join<string_view>` work with C++ modules
+  (https://github.com/fmtlib/fmt/issues/4379,
+  https://github.com/fmtlib/fmt/pull/4577). Thanks @Arghnews.
+
+- Exported `fmt::is_compiled_string` and `operator""_cf` from the module
+  (https://github.com/fmtlib/fmt/pull/4544). Thanks @CrackedMatter.
+
+- Fixed a compatibility issue with C++ modules in clang
+  (https://github.com/fmtlib/fmt/pull/4548). Thanks @tsarn.
+
+- Added support for cv-qualified types to the `std::optional` formatter
+  (https://github.com/fmtlib/fmt/issues/4561,
+  https://github.com/fmtlib/fmt/pull/4562). Thanks @OleksandrKvl.
+
+- Added demangling support (used in exception and `std::type_info` formatters)
+  for libc++ and clang-cl
+  (https://github.com/fmtlib/fmt/issues/4542,
+  https://github.com/fmtlib/fmt/pull/4560,
+  https://github.com/fmtlib/fmt/issues/4568,
+  https://github.com/fmtlib/fmt/pull/4571).
+  Thanks @FatihBAKIR and @rohitsutreja.
+
+- Switched to global `malloc`/`free` to enable allocator customization
+  (https://github.com/fmtlib/fmt/issues/4569,
+  https://github.com/fmtlib/fmt/pull/4570). Thanks @rohitsutreja.
+
+- Made the `FMT_USE_CONSTEVAL` macro configurable by users
+  (https://github.com/fmtlib/fmt/pull/4546). Thanks @SnapperTT.
+
+- Fixed compilation with locales disabled in the header-only mode
+  (https://github.com/fmtlib/fmt/issues/4550).
+
+- Fixed compilation with clang 21 and `-std=c++20`
+  (https://github.com/fmtlib/fmt/issues/4552).
+
+- Fixed a dynamic linking issue with clang-cl
+  (https://github.com/fmtlib/fmt/issues/4576,
+  https://github.com/fmtlib/fmt/pull/4584). Thanks @FatihBAKIR.
+
+- Fixed a warning suppression leakage on gcc
+  (https://github.com/fmtlib/fmt/pull/4588). Thanks @ZedThree.
+
+- Made more internal color APIs `constexpr`
+  (https://github.com/fmtlib/fmt/pull/4581). Thanks @ishani.
+
+- Fixed compatibility with clang as a host compiler for NVCC
+  (https://github.com/fmtlib/fmt/pull/4564). Thanks @valgur.
+
+- Fixed various warnings and lint issues
+  (https://github.com/fmtlib/fmt/issues/4565,
+  https://github.com/fmtlib/fmt/pull/4572,
+  https://github.com/fmtlib/fmt/pull/4557).
+  Thanks @LiangHuDream and @teruyamato0731.
+
+- Improved documentation
+  (https://github.com/fmtlib/fmt/issues/4549,
+  https://github.com/fmtlib/fmt/pull/4551,
+  https://github.com/fmtlib/fmt/issues/4566,
+  https://github.com/fmtlib/fmt/pull/4567,
+  https://github.com/fmtlib/fmt/pull/4578,).
+  Thanks @teruyamato0731, @petersteneteg and @zimmerman-dev.
+
 # 12.0.0 - 2025-09-17
 
 - Optimized the default floating point formatting

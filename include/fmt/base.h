@@ -21,7 +21,7 @@
 #endif
 
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
-#define FMT_VERSION 120000
+#define FMT_VERSION 120100
 
 // Detect compiler versions.
 #if defined(__clang__) && !defined(__ibmxl__)
@@ -236,6 +236,7 @@ FMT_PRAGMA_GCC(optimize("Og"))
 #  define FMT_GCC_OPTIMIZED
 #endif
 FMT_PRAGMA_CLANG(diagnostic push)
+FMT_PRAGMA_GCC(diagnostic push)
 
 #ifdef FMT_ALWAYS_INLINE
 // Use the provided definition.
@@ -923,7 +924,7 @@ class locale_ref {
  public:
   constexpr locale_ref() : locale_(nullptr) {}
 
-  template <typename Locale, int = (Locale::collate, 0)>
+  template <typename Locale, FMT_ENABLE_IF(sizeof(Locale::collate) != 0)>
   locale_ref(const Locale& loc) : locale_(&loc) {
     // Check if std::isalpha is found via ADL to reduce the chance of misuse.
     isalpha('x', loc);
@@ -2997,6 +2998,7 @@ FMT_INLINE void println(format_string<T...> fmt, T&&... args) {
   return fmt::println(stdout, fmt, static_cast<T&&>(args)...);
 }
 
+FMT_PRAGMA_GCC(diagnostic pop)
 FMT_PRAGMA_CLANG(diagnostic pop)
 FMT_PRAGMA_GCC(pop_options)
 FMT_END_EXPORT
