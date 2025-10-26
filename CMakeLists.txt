@@ -44,8 +44,20 @@ endfunction()
 set(FMT_USE_CMAKE_MODULES FALSE)
 if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.28 AND
     CMAKE_GENERATOR STREQUAL "Ninja")
+  # Tentatively enable CMake FILE_SET module support; the final decision
+  # (considering the compiler id) will be made after the project() call
+  # when CMAKE_CXX_COMPILER_ID is known.
   set(FMT_USE_CMAKE_MODULES TRUE)
 endif ()
+
+# If the project is configured to build the module variant (FMT_MODULE=ON)
+# then disable CMake's automatic module scanning early to prevent CMake from
+# stopping the generation when the compiler can't discover import graphs
+# (common with some compiler+generator combinations such as GCC + Ninja).
+# A user can still override CMAKE_CXX_SCAN_FOR_MODULES explicitly if needed.
+if (DEFINED FMT_MODULE AND FMT_MODULE)
+  set(CMAKE_CXX_SCAN_FOR_MODULES OFF CACHE BOOL "Disable CMake module scanning when using manual module precompilation" FORCE)
+endif()
 
 # Adds a library compiled with C++20 module support.
 # `enabled` is a CMake variables that specifies if modules are enabled.
@@ -78,6 +90,12 @@ function(add_module_library name)
     target_sources(${name} PUBLIC FILE_SET fmt TYPE CXX_MODULES
                    FILES ${sources})
   else()
+    # Disable CMake's automatic module scanning for this target. We perform
+    # manual precompilation of module units and propagate module files via
+    # -fmodule-file, so CMake's scanner is not needed and on some compilers
+    # it is unavailable which causes generation errors.
+    set_target_properties(${name} PROPERTIES CXX_SCAN_FOR_MODULES OFF)
+
     # `std` is affected by CMake options and may be higher than C++20.
     get_target_property(std ${name} CXX_STANDARD)
 
@@ -176,6 +194,17 @@ if (FMT_TEST AND FMT_MODULE)
   # The tests require {fmt} to be compiled as traditional library
   message(STATUS "Testing is incompatible with build mode 'module'.")
 endif ()
+
+# GCC's module support via -fmodules-ts is experimental and known to be
+# unstable in some versions; if the user requested module build but we are
+# using GCC, prefer to disable FMT_MODULE to avoid compiler internal errors.
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND FMT_MODULE)
+  # GCC module support is unstable in some environments. Prefer a non-fatal
+  # status message so developers are informed but not alarmed; the behavior
+  # still disables module mode to avoid compiler crashes.
+  message(STATUS "Disabling FMT_MODULE because GCC's module support is unstable in this environment.")
+  set(FMT_MODULE OFF CACHE BOOL "Build a module instead of a traditional library." FORCE)
+endif()
 set(FMT_SYSTEM_HEADERS_ATTRIBUTE "")
 if (FMT_SYSTEM_HEADERS)
   set(FMT_SYSTEM_HEADERS_ATTRIBUTE SYSTEM)
@@ -209,12 +238,32 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/support/cmake")
 include(CheckCXXCompilerFlag)
 include(JoinPaths)
 
+# Disable CMake's automatic module scanning on GCC because CMake's import
+# graph discovery is not available for some GCC versions/combination and
+# causes generation to fail. We perform manual precompilation instead.
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+  set(CMAKE_CXX_SCAN_FOR_MODULES OFF CACHE BOOL "Disable CMake module scanning for GCC; we use manual precompilation" FORCE)
+endif()
+
 if (FMT_MASTER_PROJECT AND NOT DEFINED CMAKE_CXX_VISIBILITY_PRESET)
   set_verbose(CMAKE_CXX_VISIBILITY_PRESET hidden CACHE STRING
               "Preset for the export of private symbols")
   set_property(CACHE CMAKE_CXX_VISIBILITY_PRESET PROPERTY STRINGS
                hidden default)
 endif ()
+
+# Decide whether to use CMake's FILE_SET-based module support. We only enable
+# it when the generator and CMake version support it and the compiler is not
+# GCC (GCC lacks import-graph discovery in many setups). This check must run
+# after project() so CMAKE_CXX_COMPILER_ID is available.
+if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.28 AND
+    CMAKE_GENERATOR STREQUAL "Ninja" AND
+    NOT CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+  set(FMT_USE_CMAKE_MODULES TRUE)
+else()
+  set(FMT_USE_CMAKE_MODULES FALSE)
+endif()
+message(STATUS "FMT_USE_CMAKE_MODULES = ${FMT_USE_CMAKE_MODULES}")
 
 if (FMT_MASTER_PROJECT AND NOT DEFINED CMAKE_VISIBILITY_INLINES_HIDDEN)
   set_verbose(CMAKE_VISIBILITY_INLINES_HIDDEN ON CACHE BOOL
