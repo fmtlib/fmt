@@ -2645,6 +2645,7 @@ template <typename Context> class basic_format_args {
   /// Returns the argument with the specified id.
   FMT_CONSTEXPR auto get(int id) const -> format_arg {
     auto arg = format_arg();
+    arg.value_.no_value = {};
     if (!is_packed()) {
       if (id < max_size()) arg = args_[id];
       return arg;
