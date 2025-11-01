@@ -2534,7 +2534,7 @@ FMT_CONSTEXPR20 auto write_fixed(OutputIt out, const DecimalFP& f,
     auto grouping = Grouping(loc, specs.localized());
     size += grouping.count_separators(exp);
     return write_padded<Char, align::right>(
-        out, specs, to_unsigned(size), [&](iterator it) {
+        out, specs, static_cast<size_t>(size), [&](iterator it) {
           if (s != sign::none) *it++ = detail::getsign<Char>(s);
           it = write_significand(it, f.significand, significand_size, exp,
                                  decimal_point, grouping);
@@ -2550,7 +2550,7 @@ FMT_CONSTEXPR20 auto write_fixed(OutputIt out, const DecimalFP& f,
   bool pointy = num_zeros != 0 || significand_size != 0 || specs.alt();
   size += 1 + (pointy ? 1 : 0) + num_zeros;
   return write_padded<Char, align::right>(
-      out, specs, to_unsigned(size), [&](iterator it) {
+      out, specs, static_cast<size_t>(size), [&](iterator it) {
         if (s != sign::none) *it++ = detail::getsign<Char>(s);
         *it++ = Char('0');
         if (!pointy) return it;
@@ -2594,7 +2594,7 @@ FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
     *it++ = Char(exp_char);
     return write_exponent<Char>(exp, it);
   };
-  auto usize = to_unsigned(size);
+  size_t usize = static_cast<size_t>(size);
   return specs.width > 0
              ? write_padded<Char, align::right>(out, specs, usize, write)
              : base_iterator(out, write(reserve(out, usize)));
