@@ -559,8 +559,8 @@ template <size_t N> class static_format_result {
     *fmt::format_to(data, fmt, std::forward<T>(args)...) = '\0';
   }
 
-  auto str() const -> fmt::string_view { return {data, N - 1}; }
-  auto c_str() const -> const char* { return data; }
+  FMT_CONSTEXPR auto str() const -> fmt::string_view { return {data, N - 1}; }
+  FMT_CONSTEXPR auto c_str() const -> const char* { return data; }
 };
 
 /**

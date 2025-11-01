@@ -1,4 +1,4 @@
-# 12.1.0 - TBD
+# 12.1.0 - 2025-10-29
 
 - Optimized `buffer::append`, resulting in up to ~16% improvement on spdlog
   benchmarks (https://github.com/fmtlib/fmt/pull/4541). Thanks @fyrsta7.
