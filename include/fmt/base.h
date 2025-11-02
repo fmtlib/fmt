@@ -8,6 +8,8 @@
 #ifndef FMT_BASE_H_
 #define FMT_BASE_H_
 
+// IWYU pragma: private, include "fmt/format.h"
+
 #if defined(FMT_IMPORT_STD) && !defined(FMT_MODULE)
 #  define FMT_MODULE
 #endif
