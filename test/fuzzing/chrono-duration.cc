@@ -12,10 +12,10 @@ void invoke_inner(fmt::string_view format_str, Rep rep) {
   auto value = std::chrono::duration<Rep, Period>(rep);
   try {
 #if FMT_FUZZ_FORMAT_TO_STRING
-    std::string message = fmt::format(format_str, value);
+    std::string message = fmt::format(fmt::runtime(format_str), value);
 #else
     auto buf = fmt::memory_buffer();
-    fmt::format_to(std::back_inserter(buf), format_str, value);
+    fmt::format_to(std::back_inserter(buf), fmt::runtime(format_str), value);
 #endif
   } catch (std::exception&) {
   }
