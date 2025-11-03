@@ -1422,6 +1422,61 @@ FMT_FUNC detail::utf8_to_utf16::utf8_to_utf16(string_view s) {
   buffer_.push_back(0);
 }
 
+namespace {
+
+// Global UTF-8 error handler.
+std::atomic<fmt::utf8::error_handler> global_utf8_error_handler;
+
+}  // namespace
+
+FMT_FUNC auto fmt::utf8::replace_invalid(string_view s, char32_t replacement) -> std::string {
+  auto buffer = detail::memory_buffer();
+  for_each_codepoint(s, [&buffer, replacement](uint32_t cp, string_view sv) {
+    if (cp == invalid_code_point) {
+      // Replace invalid code point with the specified replacement character.
+      if (replacement <= 0x7F) {
+        buffer.push_back(static_cast<char>(replacement));
+      } else if (replacement <= 0x7FF) {
+        buffer.push_back(static_cast<char>(0xC0 | (replacement >> 6)));
+        buffer.push_back(static_cast<char>(0x80 | (replacement & 0x3F)));
+      } else if (replacement <= 0xFFFF) {
+        buffer.push_back(static_cast<char>(0xE0 | (replacement >> 12)));
+        buffer.push_back(static_cast<char>(0x80 | ((replacement & 0xFFF) >> 6)));
+        buffer.push_back(static_cast<char>(0x80 | (replacement & 0x3F)));
+      } else if (replacement <= 0x10FFFF) {
+        buffer.push_back(static_cast<char>(0xF0 | (replacement >> 18)));
+        buffer.push_back(static_cast<char>(0x80 | ((replacement & 0x3FFFF) >> 12)));
+        buffer.push_back(static_cast<char>(0x80 | ((replacement & 0xFFF) >> 6)));
+        buffer.push_back(static_cast<char>(0x80 | (replacement & 0x3F)));
+      }
+    } else {
+      // Copy valid code point as-is.
+      buffer.append(sv);
+    }
+    return true;
+  });
+  return to_string(buffer);
+}
+
+FMT_FUNC auto fmt::utf8::replace_invalid(string_view s, string_view replacement) -> std::string {
+  auto buffer = detail::memory_buffer();
+  for_each_codepoint(s, [&buffer, replacement](uint32_t cp, string_view sv) {
+    if (cp == invalid_code_point) {
+      // Replace invalid code point with the specified replacement string.
+      buffer.append(replacement);
+    } else {
+      // Copy valid code point as-is.
+      buffer.append(sv);
+    }
+    return true;
+  });
+  return to_string(buffer);
+}
+
+FMT_FUNC auto fmt::utf8::set_error_handler(error_handler handler) -> error_handler {
+  return global_utf8_error_handler.exchange(std::move(handler));
+}
+
 FMT_FUNC void format_system_error(detail::buffer<char>& out, int error_code,
                                   const char* message) noexcept {
   FMT_TRY {

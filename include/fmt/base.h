@@ -677,6 +677,7 @@ enum class presentation_type : unsigned char {
 
   // String and pointer specifiers:
   pointer = 3,  // 'p'
+  u8replace,    // 'u' for UTF-8 replace
 
   // Floating-point specifiers:
   exp = 1,  // 'e' or 'E' (1 since there is no FP debug presentation)
@@ -1576,6 +1577,9 @@ FMT_CONSTEXPR auto parse_format_specs(const Char* begin, const Char* end,
                                      bool_set | string_set | cstring_set);
     case 'p':
       return parse_presentation_type(pres::pointer, pointer_set | cstring_set);
+    case 'u':
+      return parse_presentation_type(pres::u8replace,
+                                     string_set | cstring_set);
     case '?':
       return parse_presentation_type(pres::debug,
                                      char_set | string_set | cstring_set);

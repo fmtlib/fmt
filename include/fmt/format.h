@@ -197,6 +197,22 @@ template <typename Char, typename Traits, typename Allocator>
 struct is_contiguous<std::basic_string<Char, Traits, Allocator>>
     : std::true_type {};
 
+namespace utf8 {
+
+// Replace invalid UTF-8 byte sequences with the specified replacement character.
+FMT_API auto replace_invalid(string_view s, char32_t replacement = U'�') -> std::string;
+
+// Replace invalid UTF-8 byte sequences with the specified replacement string.
+FMT_API auto replace_invalid(string_view s, string_view replacement) -> std::string;
+
+// A function type for custom UTF-8 error handlers.
+typedef std::function<void(uint32_t cp, string_view sv)> error_handler;
+
+// Register a custom UTF-8 error handler. Returns the previous handler.
+FMT_API error_handler set_error_handler(error_handler handler);
+
+}  // namespace utf8
+
 namespace detail {
 
 // __builtin_clz is broken in clang with Microsoft codegen:
@@ -2171,6 +2187,15 @@ template <typename Char, typename OutputIt,
 FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
                          const format_specs& specs) -> OutputIt {
   bool is_debug = specs.type() == presentation_type::debug;
+  bool do_u8replace = specs.type() == presentation_type::u8replace;
+  
+  // Handle u8replace option
+  if (do_u8replace) {
+    std::string replaced;
+    fmt::utf8::replace_invalid(s, std::back_inserter(replaced));
+    s = basic_string_view<Char>(replaced.data(), replaced.size());
+  }
+
   if (specs.precision < 0 && specs.width == 0) {
     auto&& it = reserve(out, s.size());
     return is_debug ? write_escaped_string(it, s) : copy<char>(s, it);
