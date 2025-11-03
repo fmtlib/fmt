@@ -35,7 +35,9 @@ tag_map = {
     'computeroutput': 'code',
     'para': 'p',
     'programlisting': 'pre',
-    'verbatim': 'pre'
+    'verbatim': 'pre',
+    'itemizedlist': 'ul',
+    'listitem': 'li'
 }
 
 # A map from Doxygen tags to text.
@@ -54,9 +56,12 @@ def doxyxml2html(nodes: List[ElementTree.Element]):
     out = ''
     for n in nodes:
         tag = tag_map.get(n.tag)
-        if not tag:
+        if tag:
+            out += '<' + tag + '>'
+        elif n.tag == 'ulink':
+            out += '<a href="' + n.attrib['url'] + '">'
+        else:
             out += tag_text_map[n.tag]
-        out += '<' + tag + '>' if tag else ''
         out += '<code class="language-cpp">' if tag == 'pre' else ''
         if n.text:
             out += escape_html(n.text)
