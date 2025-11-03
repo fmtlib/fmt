@@ -34,8 +34,6 @@ tag_map = {
     'emphasis': 'em',
     'computeroutput': 'code',
     'para': 'p',
-    'programlisting': 'pre',
-    'verbatim': 'pre',
     'itemizedlist': 'ul',
     'listitem': 'li'
 }
@@ -52,24 +50,37 @@ def escape_html(s: str) -> str:
     return s.replace("<", "&lt;")
 
 
+# Converts a node from doxygen to HTML format.
+def convert_node(node: ElementTree.Element, tag: str, attrs: dict = {}):
+    out = '<' + tag
+    for key, value in attrs.items():
+        out += ' ' + key + '="' + value + '"'
+    out += '>'
+    if node.text:
+        out += escape_html(node.text)
+    out += doxyxml2html(list(node))
+    out += '</' + tag + '>'
+    if node.tail:
+        out += node.tail
+    return out
+
+
 def doxyxml2html(nodes: List[ElementTree.Element]):
     out = ''
     for n in nodes:
         tag = tag_map.get(n.tag)
         if tag:
-            out += '<' + tag + '>'
-        elif n.tag == 'ulink':
-            out += '<a href="' + n.attrib['url'] + '">'
-        else:
-            out += tag_text_map[n.tag]
-        out += '<code class="language-cpp">' if tag == 'pre' else ''
-        if n.text:
-            out += escape_html(n.text)
-        out += doxyxml2html(list(n))
-        out += '</code>' if tag == 'pre' else ''
-        out += '</' + tag + '>' if tag else ''
-        if n.tail:
-            out += n.tail
+            out += convert_node(n, tag)
+            continue
+        if n.tag == 'programlisting' or n.tag == 'verbatim':
+            out += '<pre>'
+            out += convert_node(n, 'code', {'class': 'language-cpp'})
+            out += '</pre>'
+            continue
+        if n.tag == 'ulink':
+            out += convert_node(n, 'a', {'href': n.attrib['url']})
+            continue
+        out += tag_text_map[n.tag]
     return out
 
 
