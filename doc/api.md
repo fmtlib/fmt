@@ -624,6 +624,8 @@ Example:
 
 ::: ostream
 
+::: output_file(cstring_view, T...)
+
 ::: windows_error
 
 <a id="ostream-api"></a>
