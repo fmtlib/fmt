@@ -233,7 +233,6 @@
 FMT_PRAGMA_GCC(push_options)
 #if !defined(__OPTIMIZE__) && !defined(__CUDACC__) && !defined(FMT_MODULE)
 FMT_PRAGMA_GCC(optimize("Og"))
-#  define FMT_GCC_OPTIMIZED
 #endif
 FMT_PRAGMA_CLANG(diagnostic push)
 FMT_PRAGMA_GCC(diagnostic push)
@@ -246,7 +245,7 @@ FMT_PRAGMA_GCC(diagnostic push)
 #  define FMT_ALWAYS_INLINE inline
 #endif
 // A version of FMT_ALWAYS_INLINE to prevent code bloat in debug mode.
-#if defined(NDEBUG) || defined(FMT_GCC_OPTIMIZED)
+#ifdef NDEBUG
 #  define FMT_INLINE FMT_ALWAYS_INLINE
 #else
 #  define FMT_INLINE inline
