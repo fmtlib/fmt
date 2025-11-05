@@ -39,13 +39,12 @@ TEST(std_test, path) {
   EXPECT_EQ(fmt::format("{}", path(L"\x0428\x0447\x0443\x0447\x044B\x043D\x0448"
                                    L"\x0447\x044B\x043D\x0430")),
             "Шчучыншчына");
-  EXPECT_EQ(fmt::format("{}", path(L"\xd800")), "�");
-  EXPECT_EQ(fmt::format("{}", path(L"HEAD \xd800 TAIL")), "HEAD � TAIL");
-  EXPECT_EQ(fmt::format("{}", path(L"HEAD \xD83D\xDE00 TAIL")),
-            "HEAD \xF0\x9F\x98\x80 TAIL");
-  EXPECT_EQ(fmt::format("{}", path(L"HEAD \xD83D\xD83D\xDE00 TAIL")),
-            "HEAD �\xF0\x9F\x98\x80 TAIL");
-  EXPECT_EQ(fmt::format("{:?}", path(L"\xd800")), "\"\\ud800\"");
+  EXPECT_EQ(fmt::format("{}", path(L"\xD800")), "\xED\xA0\x80");
+  EXPECT_EQ(fmt::format("{}", path(L"[\xD800]")), "[\xED\xA0\x80]");
+  EXPECT_EQ(fmt::format("{}", path(L"[\xD83D\xDE00]")), "[\xF0\x9F\x98\x80]");
+  EXPECT_EQ(fmt::format("{}", path(L"[\xD83D\xD83D\xDE00]")),
+            "[\xED\xA0\xBD\xF0\x9F\x98\x80]");
+  EXPECT_EQ(fmt::format("{:?}", path(L"\xD800")), "\"\\ud800\"");
 #  endif
 }
 
