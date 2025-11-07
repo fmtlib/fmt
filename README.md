@@ -219,9 +219,9 @@ in the following tables.
 | Method        | Compile Time, s | Executable size, KiB | Stripped size, KiB |
 |---------------|-----------------|----------------------|--------------------|
 | printf        |             1.6 |                   54 |                 50 |
-| IOStreams     |            25.9 |                   98 |                 84 |
-| fmt 83652df   |             4.8 |                   54 |                 50 |
-| tinyformat    |            29.1 |                  161 |                136 |
+| IOStreams     |            28.4 |                   98 |                 84 |
+| fmt 1122268   |             5.0 |                   54 |                 50 |
+| tinyformat    |            32.6 |                  164 |                136 |
 | Boost Format  |            55.0 |                  530 |                317 |
 
 {fmt} is fast to compile and is comparable to `printf` in terms of per-call
@@ -232,10 +232,10 @@ binary size (within a rounding error on this system).
 | Method        | Compile Time, s | Executable size, KiB | Stripped size, KiB |
 |---------------|-----------------|----------------------|--------------------|
 | printf        |             1.4 |                   54 |                 50 |
-| IOStreams     |            23.4 |                   92 |                 68 |
-| {fmt} 83652df |             4.4 |                   89 |                 85 |
-| tinyformat    |            24.5 |                  204 |                161 |
-| Boost Format  |            36.4 |                  831 |                462 |
+| IOStreams     |            27.0 |                   88 |                 68 |
+| {fmt} 1122268 |             4.7 |                   87 |                 84 |
+| tinyformat    |            28.1 |                  185 |                145 |
+| Boost Format  |            38.9 |                  678 |                381 |
 
 `libc`, `lib(std)c++`, and `libfmt` are all linked as shared libraries
 to compare formatting function overhead only. Boost Format is a
