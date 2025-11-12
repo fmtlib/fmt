@@ -161,14 +161,6 @@ inline auto system_category() noexcept -> const std::error_category& {
 }
 #endif  // _WIN32
 
-// std::system is not available on some platforms such as iOS (#2248).
-#ifdef __OSX__
-template <typename S, typename... Args, typename Char = char_t<S>>
-void say(const S& fmt, Args&&... args) {
-  std::system(format("say \"{}\"", format(fmt, args...)).c_str());
-}
-#endif
-
 // A buffered file.
 class buffered_file {
  private:
