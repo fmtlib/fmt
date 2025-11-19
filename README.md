@@ -12,7 +12,7 @@
 alternative to C stdio and C++ iostreams.
 
 If you like this project, please consider donating to one of the funds
-that help victims of the war in Ukraine: <https://www.stopputin.net/>.
+that help victims of the war in Ukraine: <https://u24.gov.ua/>.
 
 [Documentation](https://fmt.dev)
 
