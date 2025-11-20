@@ -4228,7 +4228,7 @@ class format_int {
   inline auto str() const -> std::string { return {str_, size()}; }
 };
 
-#if FMT_CLANG_ANALYZER
+#if FMT_USE_CONSTEVAL || FMT_CLANG_ANALYZER
 #  define FMT_STRING_IMPL(s, base) s
 #else
 #  define FMT_STRING_IMPL(s, base)                                           \
