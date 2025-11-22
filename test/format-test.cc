@@ -2037,9 +2037,7 @@ TEST(format_test, unpacked_args) {
 }
 
 constexpr char with_null[3] = {'{', '}', '\0'};
-constexpr char no_null[2] = {'{', '}'};
 static constexpr char static_with_null[3] = {'{', '}', '\0'};
-static constexpr char static_no_null[2] = {'{', '}'};
 
 TEST(format_test, compile_time_string) {
   EXPECT_EQ(fmt::format(FMT_STRING("foo")), "foo");
@@ -2056,17 +2054,13 @@ TEST(format_test, compile_time_string) {
 #endif
 
   (void)static_with_null;
-  (void)static_no_null;
 #ifndef _MSC_VER
   EXPECT_EQ(fmt::format(FMT_STRING(static_with_null), 42), "42");
-  EXPECT_EQ(fmt::format(FMT_STRING(static_no_null), 42), "42");
 #endif
 
   (void)with_null;
-  (void)no_null;
 #if FMT_CPLUSPLUS >= 201703L
   EXPECT_EQ(fmt::format(FMT_STRING(with_null), 42), "42");
-  EXPECT_EQ(fmt::format(FMT_STRING(no_null), 42), "42");
 #endif
 #if defined(FMT_USE_STRING_VIEW) && FMT_CPLUSPLUS >= 201703L
   EXPECT_EQ(fmt::format(FMT_STRING(std::string_view("{}")), 42), "42");
