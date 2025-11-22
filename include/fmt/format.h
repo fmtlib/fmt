@@ -4257,7 +4257,11 @@ class format_int {
  *     // A compile-time error because 'd' is an invalid specifier for strings.
  *     std::string s = fmt::format(FMT_STRING("{:d}"), "foo");
  */
-#define FMT_STRING(s) FMT_STRING_IMPL(s, fmt::detail::compile_string)
+#if FMT_USE_CONSTEVAL
+#  define FMT_STRING(s) s
+#else
+#  define FMT_STRING(s) FMT_STRING_IMPL(s, fmt::detail::compile_string)
+#endif  // FMT_USE_CONSTEVAL
 
 FMT_API auto vsystem_error(int error_code, string_view fmt, format_args args)
     -> std::system_error;
