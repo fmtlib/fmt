@@ -647,6 +647,11 @@ struct formatter<std::atomic_flag, Char> : formatter<bool, Char> {
 };
 #endif  // __cpp_lib_atomic_flag_test
 
+template <typename T> struct is_tuple_like;
+
+template <typename T>
+struct is_tuple_like<std::complex<T>> : std::false_type {};
+
 template <typename T, typename Char> struct formatter<std::complex<T>, Char> {
  private:
   detail::dynamic_format_specs<Char> specs_;
