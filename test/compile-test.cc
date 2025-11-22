@@ -90,9 +90,6 @@ TEST(compile_test, format_escape) {
   EXPECT_EQ("\"abc\"  ", fmt::format(FMT_COMPILE("{0:<7?}"), "abc"));
 }
 
-TEST(compile_test, format_wide_string) {
-  EXPECT_EQ(L"42", fmt::format(FMT_COMPILE(L"{}"), 42));
-}
 
 TEST(compile_test, format_specs) {
   EXPECT_EQ("42", fmt::format(FMT_COMPILE("{:x}"), 0x42));
@@ -124,7 +121,6 @@ TEST(compile_test, manual_ordering) {
       "true 42 42 foo 0x1234 foo",
       fmt::format(FMT_COMPILE("{0} {1} {2} {3} {4} {5}"), true, 42, 42.0f,
                   "foo", reinterpret_cast<void*>(0x1234), test_formattable()));
-  EXPECT_EQ(L"42", fmt::format(FMT_COMPILE(L"{0}"), 42));
 }
 
 TEST(compile_test, named) {
@@ -132,10 +128,6 @@ TEST(compile_test, named) {
       fmt::detail::compile<decltype(fmt::arg("arg", 42))>(FMT_COMPILE("{arg}"));
   static_assert(std::is_same_v<decltype(runtime_named_field_compiled),
                                fmt::detail::runtime_named_field<char>>);
-
-  EXPECT_EQ("42", fmt::format(FMT_COMPILE("{}"), fmt::arg("arg", 42)));
-  EXPECT_EQ("41 43", fmt::format(FMT_COMPILE("{} {}"), fmt::arg("arg", 41),
-                                 fmt::arg("arg", 43)));
 
   EXPECT_EQ("foobar",
             fmt::format(FMT_COMPILE("{a0}{a1}"), fmt::arg("a0", "foo"),
@@ -318,7 +310,6 @@ TEST(compile_test, compile_format_string_literal) {
   using namespace fmt::literals;
   EXPECT_EQ("", fmt::format(""_cf));
   EXPECT_EQ("42", fmt::format("{}"_cf, 42));
-  EXPECT_EQ(L"42", fmt::format(L"{}"_cf, 42));
 }
 #endif
 

@@ -265,7 +265,7 @@ template <> struct formatter<abstract> : ostream_formatter {};
 }  // namespace fmt
 
 void format_abstract_compiles(const abstract& a) {
-  fmt::format(FMT_COMPILE("{}"), a);
+  (void)fmt::format(FMT_COMPILE("{}"), a);
 }
 
 TEST(ostream_test, is_formattable) {
