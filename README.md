@@ -150,8 +150,8 @@ int main() {
 }
 ```
 
-This can be [5 to 9 times faster than
-fprintf](http://www.zverovich.net/2020/08/04/optimal-file-buffer-size.html).
+This can be [up to 9 times faster than `fprintf`](
+http://www.zverovich.net/2020/08/04/optimal-file-buffer-size.html).
 
 **Print with colors and text styles**
 
