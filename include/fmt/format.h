@@ -736,10 +736,6 @@ using fast_float_t = conditional_t<sizeof(T) == sizeof(double), double, float>;
 template <typename T>
 using is_double_double = bool_constant<std::numeric_limits<T>::digits == 106>;
 
-#ifndef FMT_USE_FULL_CACHE_DRAGONBOX
-#  define FMT_USE_FULL_CACHE_DRAGONBOX 0
-#endif
-
 // An allocator that uses malloc/free to allow removing dependency on the C++
 // standard libary runtime. std::decay is used for back_inserter to be found by
 // ADL when applied to memory_buffer.

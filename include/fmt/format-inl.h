@@ -30,6 +30,14 @@
 #  define FMT_FUNC
 #endif
 
+#if defined(FMT_USE_FULL_CACHE_DRAGONBOX)
+// Use the provided definition.
+#elif defined(__OPTIMIZE_SIZE__)
+#  define FMT_USE_FULL_CACHE_DRAGONBOX 0
+#else
+#  define FMT_USE_FULL_CACHE_DRAGONBOX 1
+#endif
+
 FMT_BEGIN_NAMESPACE
 
 #ifndef FMT_CUSTOM_ASSERT_FAIL
