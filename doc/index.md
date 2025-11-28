@@ -76,7 +76,7 @@ hide:
 <p>
   The default is <b>locale-independent</b>, but you can opt into localized
   formatting and {fmt} makes it work with Unicode, addressing issues in the
-  standard libary.
+  standard library.
 </p>
 </div>
 
