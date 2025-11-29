@@ -493,8 +493,8 @@ template <typename OutputIt,
 #if FMT_CLANG_VERSION >= 307 && !FMT_ICC_VERSION
 __attribute__((no_sanitize("undefined")))
 #endif
-FMT_CONSTEXPR20 inline auto
-reserve(OutputIt it, size_t n) -> typename OutputIt::value_type* {
+FMT_CONSTEXPR20 inline auto reserve(OutputIt it, size_t n) ->
+    typename OutputIt::value_type* {
   auto& c = get_container(it);
   size_t size = c.size();
   c.resize(size + n);

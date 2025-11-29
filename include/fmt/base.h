@@ -1850,8 +1850,7 @@ template <typename T> class buffer {
 #if !FMT_MSC_VERSION || FMT_MSC_VERSION >= 1940
   FMT_CONSTEXPR20
 #endif
-      void
-      append(const U* begin, const U* end) {
+      void append(const U* begin, const U* end) {
     while (begin != end) {
       auto size = size_;
       auto free_cap = capacity_ - size;

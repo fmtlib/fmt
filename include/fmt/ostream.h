@@ -38,7 +38,7 @@ namespace detail {
 namespace {
 struct file_access_tag {};
 }  // namespace
-template <typename Tag, typename BufType, FILE* BufType::*FileMemberPtr>
+template <typename Tag, typename BufType, FILE* BufType::* FileMemberPtr>
 class file_access {
   friend auto get_file(BufType& obj) -> FILE* { return obj.*FileMemberPtr; }
 };

@@ -18,11 +18,11 @@ jobs:
     - name: Install clang-format
       run: |
         wget https://apt.llvm.org/llvm.sh
-        sudo bash ./llvm.sh 17
-        sudo apt install clang-format-17
+        sudo bash ./llvm.sh 21
+        sudo apt install clang-format-21
 
     - name: Run clang-format
       run: |
         find include src -name '*.h' -o -name '*.cc' | \
-          xargs clang-format-17 -i -style=file -fallback-style=none
+          xargs clang-format-21 -i -style=file -fallback-style=none
         git diff --exit-code
