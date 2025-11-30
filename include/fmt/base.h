@@ -926,7 +926,7 @@ class locale_ref {
   template <typename Locale, FMT_ENABLE_IF(sizeof(Locale::collate) != 0)>
   locale_ref(const Locale& loc) : locale_(&loc) {
     // Check if std::isalpha is found via ADL to reduce the chance of misuse.
-    detail::ignore_unused(isalpha('x', loc));
+    detail::ignore_unused(sizeof(isalpha('x', loc)));
   }
 
   inline explicit operator bool() const noexcept { return locale_ != nullptr; }
