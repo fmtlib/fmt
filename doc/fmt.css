@@ -20,6 +20,7 @@
   margin-left: 1em;
 }
 
+code,
 pre > code.decl {
   white-space: pre-wrap;
 }
