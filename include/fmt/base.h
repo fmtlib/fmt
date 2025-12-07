@@ -2258,8 +2258,11 @@ template <typename Context> class value {
       : pointer(const_cast<const void*>(x)) {}
   FMT_INLINE value(nullptr_t) : pointer(nullptr) {}
 
-  template <typename T, FMT_ENABLE_IF(std::is_pointer<T>::value ||
-                                      std::is_member_pointer<T>::value)>
+  template <typename T,
+            FMT_ENABLE_IF(
+                (std::is_pointer<T>::value ||
+                 std::is_member_pointer<T>::value) &&
+                !std::is_void<typename std::remove_pointer<T>::type>::value)>
   value(const T&) {
     // Formatting of arbitrary pointers is disallowed. If you want to format a
     // pointer cast it to `void*` or `const void*`. In particular, this forbids
