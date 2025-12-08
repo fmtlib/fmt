@@ -1027,9 +1027,9 @@ using uint64_or_128_t = conditional_t<num_bits<T>() <= 64, uint64_t, uint128_t>;
       (factor) * 100000, (factor) * 1000000, (factor) * 10000000, \
       (factor) * 100000000, (factor) * 1000000000
 
-// Converts value in the range [0, 100) to a string.
-// GCC generates slightly better code when value is pointer-size.
-inline auto digits2(size_t value) -> const char* {
+// Converts value in the range [0, 100) to a string. GCC generates a bit better
+// code when value is pointer-size (https://www.godbolt.org/z/5fEPMT1cc).
+inline auto digits2(size_t value) noexcept -> const char* {
   // Align data since unaligned access may be slower when crossing a
   // hardware-specific boundary.
   alignas(2) static const char data[] =
