@@ -930,6 +930,9 @@ class locale_ref {
   }
 
   inline explicit operator bool() const noexcept { return locale_ != nullptr; }
+#else
+ public:
+  inline explicit operator bool() const noexcept { return false; }
 #endif  // FMT_USE_LOCALE
 
  public:
