@@ -1251,7 +1251,8 @@ FMT_CONSTEXPR20 auto do_format_decimal(Char* out, UInt value, int size)
     if (!is_constant_evaluated() && sizeof(UInt) == 4) {
       auto p = value * ((1ull << 39) / 100 + 1);
       write2digits_i(out + n, p >> (39 - 7) & ((1 << 7) - 1));
-      value = static_cast<UInt>(p >> 39) + (static_cast<UInt>(value >= (100u << 25)) << 25);
+      value = static_cast<UInt>(p >> 39) +
+              (static_cast<UInt>(value >= (100u << 25)) << 25);
     } else {
       // Integer division is slow so do it for a group of two digits instead
       // of for every digit. The idea comes from the talk by Alexandrescu
