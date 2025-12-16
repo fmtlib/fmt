@@ -321,8 +321,6 @@ parameterized version.
 
 ::: arg(const Char*, const T&)
 
-Named arguments are not supported in compile-time checks at the moment.
-
 ### Compatibility
 
 ::: basic_string_view
