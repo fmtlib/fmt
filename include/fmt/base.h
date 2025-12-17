@@ -2310,7 +2310,7 @@ template <typename Context> class value {
   template <typename T, FMT_ENABLE_IF(!has_formatter<T, char_type>())>
   FMT_CONSTEXPR value(const T&, custom_tag) {
     // Cannot format an argument; to make type T formattable provide a
-    // formatter<T> specialization: https://fmt.dev/latest/api.html#udt.
+    // formatter<T> specialization: https://fmt.dev/latest/api#udt.
     type_is_unformattable_for<T, char_type> _;
   }
 
@@ -2847,6 +2847,10 @@ using vargs =
  * **Example**:
  *
  *     fmt::print("The answer is {answer}.", fmt::arg("answer", 42));
+ *
+ * Named arguments passed with `fmt::arg` are not supported
+ * in compile-time checks, but `"answer"_a=42` are compile-time checked in
+ * sufficiently new compilers. See `operator""_a()`.
  */
 template <typename Char, typename T>
 inline auto arg(const Char* name, const T& arg) -> detail::named_arg<Char, T> {

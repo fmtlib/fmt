@@ -4147,6 +4147,14 @@ template <typename T, typename Char = char> struct nested_formatter {
 
 inline namespace literals {
 #if FMT_USE_NONTYPE_TEMPLATE_ARGS
+/**
+ * User-defined literal equivalent of `fmt::arg`, but with compile-time checks.
+ *
+ * **Example**:
+ *
+ *     using namespace fmt::literals;
+ *     fmt::print("The answer is {answer}.", "answer"_a=42);
+ */
 template <detail::fixed_string S> constexpr auto operator""_a() {
   using char_t = remove_cvref_t<decltype(*S.data)>;
   return detail::udl_arg<char_t, sizeof(S.data) / sizeof(char_t), S>();
