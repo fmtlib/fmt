@@ -169,6 +169,11 @@ TEST(util_test, bit_cast) {
   EXPECT_EQ(fmt::detail::bit_cast<uint64_t>(s), 42ull);
   s = fmt::detail::bit_cast<uint32_pair>(~uint64_t{0});
   EXPECT_EQ(fmt::detail::bit_cast<uint64_t>(s), ~0ull);
+
+  int32_t i = -1;
+  auto u = fmt::detail::bit_cast<uint32_t>(i);
+  EXPECT_EQ(u, 0xffffffffu);
+  EXPECT_EQ(fmt::detail::bit_cast<int32_t>(u), -1);
 }
 
 // Increment a number in a string.
