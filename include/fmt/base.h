@@ -2148,7 +2148,9 @@ auto get_iterator(buffer<T>&, OutputIt out) -> OutputIt {
 }
 
 // This type is intentionally undefined, only used for errors.
-template <typename T, typename Char> struct type_is_unformattable_for;
+template <typename T, typename Char> struct type_is_unformattable_for {
+  // Intentionally incomplete - causes compile error when instantiated
+};
 
 template <typename Char> struct string_value {
   const Char* data;
@@ -2311,7 +2313,8 @@ template <typename Context> class value {
   FMT_CONSTEXPR value(const T&, custom_tag) {
     // Cannot format an argument; to make type T formattable provide a
     // formatter<T> specialization: https://fmt.dev/latest/api#udt.
-    type_is_unformattable_for<T, char_type> _;
+    static_assert(sizeof(T) != sizeof(T),
+                  "Type is not formattable. Provide a formatter<T> specialization.");
   }
 
   // Formats an argument of a custom type, such as a user-defined class.
