@@ -7,6 +7,7 @@ set(fmt_headers "
   #include <fmt/format.h>
   #include <fmt/xchar.h>
   #include <fmt/ostream.h>
+  #include <fmt/compile.h>
   #include <iostream>
 ")
 
@@ -205,6 +206,43 @@ if (CMAKE_CXX_STANDARD GREATER_EQUAL 20)
     #if defined(FMT_HAS_CONSTEVAL) && FMT_USE_NONTYPE_TEMPLATE_ARGS
       using namespace fmt::literals;
       fmt::print(\"{foo}\", \"bar\"_a=42);
+    #else
+      #error
+    #endif
+  " ERROR)
+
+  # Format string compilation tests
+  expect_compile(compiled-format-string-missing-argument-error "
+    #if defined(FMT_HAS_CONSTEVAL) && FMT_USE_NONTYPE_TEMPLATE_ARGS
+      using namespace fmt::literals;
+      fmt::format(FMT_COMPILE(\"{x}\"));
+    #else
+      #error
+    #endif
+  " ERROR)
+
+  expect_compile(compiled-format-string-argument-unassigned-error "
+    #if defined(FMT_HAS_CONSTEVAL) && FMT_USE_NONTYPE_TEMPLATE_ARGS
+      using namespace fmt::literals;
+      fmt::format(FMT_COMPILE(\"{x}\"), \"x\"_a);
+    #else
+      #error
+    #endif
+  " ERROR)
+
+  expect_compile(compiled-format-string-argument-duplicate-error "
+    #if defined(FMT_HAS_CONSTEVAL) && FMT_USE_NONTYPE_TEMPLATE_ARGS
+      using namespace fmt::literals;
+      fmt::format(FMT_COMPILE(\"{x}\"), \"x\"_a=42, \"x\"_a=43);
+    #else
+      #error
+    #endif
+  " ERROR)
+
+  expect_compile(compiled-format-string-missing-other-argument-error "
+    #if defined(FMT_HAS_CONSTEVAL) && FMT_USE_NONTYPE_TEMPLATE_ARGS
+      using namespace fmt::literals;
+      fmt::format(FMT_COMPILE(\"{a} {b}\"), \"b\"_a=42);
     #else
       #error
     #endif
