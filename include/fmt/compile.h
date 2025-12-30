@@ -270,12 +270,12 @@ constexpr auto parse_text(basic_string_view<Char> str, size_t pos) -> size_t {
 template <typename Args, size_t POS, int ID, bool DYNAMIC_NAMES, typename S>
 constexpr auto compile_format_string(S fmt);
 
-template <typename Args, size_t POS, int ID,
-          bool DYNAMIC_NAMES, typename T, typename S>
+template <typename Args, size_t POS, int ID, bool DYNAMIC_NAMES, typename T,
+          typename S>
 constexpr auto parse_tail(T head, S fmt) {
   if constexpr (POS != basic_string_view<typename S::char_type>(fmt).size()) {
-    constexpr auto tail = compile_format_string<Args, POS,
-                                                ID, DYNAMIC_NAMES>(fmt);
+    constexpr auto tail =
+        compile_format_string<Args, POS, ID, DYNAMIC_NAMES>(fmt);
     if constexpr (std::is_same<remove_cvref_t<decltype(tail)>,
                                unknown_format>())
       return tail;
@@ -348,8 +348,8 @@ struct field_type<T, enable_if_t<detail::is_named_arg<T>::value>> {
   using type = remove_cvref_t<decltype(T::value)>;
 };
 
-template <typename T, typename Args, size_t END_POS, int ARG_INDEX,
-          int NEXT_ID, bool DYNAMIC_NAMES, typename S>
+template <typename T, typename Args, size_t END_POS, int ARG_INDEX, int NEXT_ID,
+          bool DYNAMIC_NAMES, typename S>
 constexpr auto parse_replacement_field_then_tail(S fmt) {
   using char_type = typename S::char_type;
   constexpr auto str = basic_string_view<char_type>(fmt);
@@ -366,8 +366,8 @@ constexpr auto parse_replacement_field_then_tail(S fmt) {
       FMT_THROW(format_error("expected '}'"));
       return 0;
     } else {
-      return parse_tail<Args, result.end + 1,
-                        result.next_arg_id, DYNAMIC_NAMES>(
+      return parse_tail<Args, result.end + 1, result.next_arg_id,
+                        DYNAMIC_NAMES>(
           spec_field<char_type, typename field_type<T>::type, ARG_INDEX>{
               result.fmt},
           fmt);
@@ -385,16 +385,15 @@ constexpr auto compile_format_string(S fmt) {
     if constexpr (POS + 1 == str.size())
       FMT_THROW(format_error("unmatched '{' in format string"));
     if constexpr (str[POS + 1] == '{') {
-      return parse_tail<Args, POS + 2,
-                        ID, DYNAMIC_NAMES>(make_text(str, POS, 1), fmt);
+      return parse_tail<Args, POS + 2, ID, DYNAMIC_NAMES>(
+          make_text(str, POS, 1), fmt);
     } else if constexpr (str[POS + 1] == '}' || str[POS + 1] == ':') {
       static_assert(ID != manual_indexing_id,
                     "cannot switch from manual to automatic argument indexing");
       constexpr auto next_id =
           ID != manual_indexing_id ? ID + 1 : manual_indexing_id;
-      return parse_replacement_field_then_tail<get_type<ID, Args>, Args,
-                                               POS + 1, ID, next_id,
-                                               DYNAMIC_NAMES>(fmt);
+      return parse_replacement_field_then_tail<
+          get_type<ID, Args>, Args, POS + 1, ID, next_id, DYNAMIC_NAMES>(fmt);
     } else {
       constexpr auto arg_id_result =
           parse_arg_id<ID>(str.data() + POS + 1, str.data() + str.size());
@@ -407,18 +406,15 @@ constexpr auto compile_format_string(S fmt) {
             ID == manual_indexing_id || ID == 0,
             "cannot switch from automatic to manual argument indexing");
         constexpr auto arg_index = arg_id_result.arg_id.index;
-        return parse_replacement_field_then_tail<get_type<arg_index, Args>,
-                                                 Args, arg_id_end_pos,
-                                                 arg_index, manual_indexing_id,
-                                                 DYNAMIC_NAMES>(
-            fmt);
+        return parse_replacement_field_then_tail<
+            get_type<arg_index, Args>, Args, arg_id_end_pos, arg_index,
+            manual_indexing_id, DYNAMIC_NAMES>(fmt);
       } else if constexpr (arg_id_result.kind == arg_id_kind::name) {
         constexpr auto arg_index =
             get_arg_index_by_name(arg_id_result.arg_id.name, Args{});
 
-        static_assert(
-            arg_index >= 0 || DYNAMIC_NAMES,
-            "named argument not found");
+        static_assert(arg_index >= 0 || DYNAMIC_NAMES,
+                      "named argument not found");
 
         if constexpr (arg_index >= 0) {
           constexpr auto next_id =
@@ -437,16 +433,16 @@ constexpr auto compile_format_string(S fmt) {
   } else if constexpr (str[POS] == '}') {
     if constexpr (POS + 1 == str.size())
       FMT_THROW(format_error("unmatched '}' in format string"));
-    return parse_tail<Args, POS + 2,
-                      ID, DYNAMIC_NAMES>(make_text(str, POS, 1), fmt);
+    return parse_tail<Args, POS + 2, ID, DYNAMIC_NAMES>(make_text(str, POS, 1),
+                                                        fmt);
   } else {
     constexpr auto end = parse_text(str, POS + 1);
     if constexpr (end - POS > 1) {
-      return parse_tail<Args, end,
-                        ID, DYNAMIC_NAMES>(make_text(str, POS, end - POS), fmt);
+      return parse_tail<Args, end, ID, DYNAMIC_NAMES>(
+          make_text(str, POS, end - POS), fmt);
     } else {
-      return parse_tail<Args, end,
-                        ID, DYNAMIC_NAMES>(code_unit<char_type>{str[POS]}, fmt);
+      return parse_tail<Args, end, ID, DYNAMIC_NAMES>(
+          code_unit<char_type>{str[POS]}, fmt);
     }
   }
 }
@@ -460,9 +456,9 @@ constexpr auto compile(S fmt) {
   } else {
     constexpr int num_static_named_args =
         detail::count_static_named_args<Args...>();
-    constexpr auto result =
-        detail::compile_format_string<detail::type_list<Args...>, 0, 0,
-            num_static_named_args != detail::count_named_args<Args...>()>(fmt);
+    constexpr auto result = detail::compile_format_string<
+        detail::type_list<Args...>, 0, 0,
+        num_static_named_args != detail::count_named_args<Args...>()>(fmt);
     return result;
   }
 }
