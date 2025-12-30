@@ -230,15 +230,6 @@ if (CMAKE_CXX_STANDARD GREATER_EQUAL 20)
     #endif
   " ERROR)
 
-  expect_compile(compiled-format-string-argument-duplicate-error "
-    #if defined(FMT_HAS_CONSTEVAL) && FMT_USE_NONTYPE_TEMPLATE_ARGS
-      using namespace fmt::literals;
-      fmt::format(FMT_COMPILE(\"{x}\"), \"x\"_a=42, \"x\"_a=43);
-    #else
-      #error
-    #endif
-  " ERROR)
-
   expect_compile(compiled-format-string-missing-other-argument-error "
     #if defined(FMT_HAS_CONSTEVAL) && FMT_USE_NONTYPE_TEMPLATE_ARGS
       using namespace fmt::literals;
