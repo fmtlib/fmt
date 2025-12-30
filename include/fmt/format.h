@@ -1044,7 +1044,7 @@ inline auto digits2(size_t value) noexcept -> const char* {
 // Given i in [0, 100), let x be the first 7 digits after
 // the decimal point of i / 100 in base 2, the first 2 bytes
 // after digits2_i(x) is the string representation of i.
-inline auto digits2_i(size_t value) -> const char* {
+inline auto digits2_i(size_t value) noexcept -> const char* {
   alignas(2) static const char data[] =
       "00010203  0405060707080910  1112"
       "131414151617  18192021  222324  "
