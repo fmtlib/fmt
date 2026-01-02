@@ -322,7 +322,7 @@ TEST(printf_test, positional_width_and_precision) {
   EXPECT_EQ("  00042", test_sprintf("%3$*1$.*2$d", 7, 5, 42));
   EXPECT_EQ("     ab", test_sprintf("%3$*1$.*2$s", 7, 2, "abcdef"));
   EXPECT_EQ("  00042", test_sprintf("%3$*1$.*2$x", 7, 5, 0x42));
-  EXPECT_EQ("100.4400000", sprintf("%6$-*5$.*4$f%3$s%2$s%1$s", "", "", "", 7, 4, 100.44));
+  EXPECT_EQ("100.4400000", test_sprintf("%6$-*5$.*4$f%3$s%2$s%1$s", "", "", "", 7, 4, 100.44));
 }
 
 template <typename T> struct make_signed {
