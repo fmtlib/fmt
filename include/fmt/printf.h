@@ -357,8 +357,21 @@ auto parse_header(const Char*& it, const Char* end, format_specs& specs,
       if (specs.width == -1) report_error("number is too big");
     } else if (*it == '*') {
       ++it;
-      specs.width = static_cast<int>(
-          get_arg(-1).visit(detail::printf_width_handler(specs)));
+      // Check for positional width argument like *1$
+      if (it != end && *it >= '0' && *it <= '9') {
+        int width_index = parse_nonnegative_int(it, end, -1);
+        if (it != end && *it == '$') {
+          ++it;
+          specs.width = static_cast<int>(
+              get_arg(width_index).visit(detail::printf_width_handler(specs)));
+        } else {
+          // Invalid format, rewind and treat as non-positional
+          report_error("invalid format specifier");
+        }
+      } else {
+        specs.width = static_cast<int>(
+            get_arg(-1).visit(detail::printf_width_handler(specs)));
+      }
     }
   }
   return arg_index;
@@ -439,8 +452,21 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
         specs.precision = parse_nonnegative_int(it, end, 0);
       } else if (c == '*') {
         ++it;
-        specs.precision =
-            static_cast<int>(get_arg(-1).visit(printf_precision_handler()));
+        // Check for positional precision argument like .*1$
+        if (it != end && *it >= '0' && *it <= '9') {
+          int precision_index = parse_nonnegative_int(it, end, -1);
+          if (it != end && *it == '$') {
+            ++it;
+            specs.precision = static_cast<int>(
+                get_arg(precision_index).visit(printf_precision_handler()));
+          } else {
+            // Invalid format, rewind and treat as non-positional
+            report_error("invalid format specifier");
+          }
+        } else {
+          specs.precision =
+              static_cast<int>(get_arg(-1).visit(printf_precision_handler()));
+        }
       } else {
         specs.precision = 0;
       }
