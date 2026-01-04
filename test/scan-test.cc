@@ -82,6 +82,36 @@ TEST(scan_test, read_string_view) {
   EXPECT_EQ(fmt::scan<fmt::string_view>("foo", "{}")->value(), "foo");
 }
 
+TEST(scan_test, read_double_exponent_current_behavior) {
+  // Exponent (e/E) and leading '+' parsing are not supported yet.
+  {
+    fmt::string_view input = "1e3";
+    double value = 0.0;
+    auto it = fmt::scan_to(input, "{}", value);
+    EXPECT_DOUBLE_EQ(value, 1.0);
+    ASSERT_NE(it, input.end());
+    EXPECT_EQ(*it, 'e');
+  }
+
+  {
+    fmt::string_view input = "-2.5e-2";
+    double value = 0.0;
+    auto it = fmt::scan_to(input, "{}", value);
+    EXPECT_DOUBLE_EQ(value, -2.5);
+    ASSERT_NE(it, input.end());
+    EXPECT_EQ(*it, 'e');
+  }
+
+  {
+    fmt::string_view input = "+1E6";
+    double value = 0.0;
+    auto it = fmt::scan_to(input, "{}", value);
+    EXPECT_DOUBLE_EQ(value, 0.0);
+    ASSERT_NE(it, input.end());
+    EXPECT_EQ(*it, '+');
+  }
+}
+
 TEST(scan_test, separator) {
   int n1 = 0, n2 = 0;
   fmt::scan_to("10 20", "{} {}", n1, n2);
