@@ -7,7 +7,6 @@ set(fmt_headers "
   #include <fmt/format.h>
   #include <fmt/xchar.h>
   #include <fmt/ostream.h>
-  #include <fmt/compile.h>
   #include <iostream>
 ")
 
