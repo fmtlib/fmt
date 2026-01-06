@@ -403,7 +403,7 @@ class uint128_fallback {
     auto carry = __builtin_ia32_addcarryx_u64(0, lo_, n, &result);
     lo_ = result;
     hi_ += carry;
-#elif defined(_MSC_VER) && defined(_M_X64)
+#elif defined(_MSC_VER) && defined(_M_AMD64)
     auto carry = _addcarry_u64(0, lo_, n, &lo_);
     _addcarry_u64(carry, hi_, 0, &hi_);
 #else
@@ -1425,7 +1425,7 @@ FMT_INLINE auto umul128(uint64_t x, uint64_t y) noexcept -> uint128_fallback {
 #if FMT_USE_INT128
   auto p = static_cast<uint128_opt>(x) * static_cast<uint128_opt>(y);
   return {static_cast<uint64_t>(p >> 64), static_cast<uint64_t>(p)};
-#elif defined(_MSC_VER) && defined(_M_X64)
+#elif defined(_MSC_VER) && defined(_M_AMD64)
   auto hi = uint64_t();
   auto lo = _umul128(x, y, &hi);
   return {hi, lo};
@@ -1468,7 +1468,7 @@ inline auto umul128_upper64(uint64_t x, uint64_t y) noexcept -> uint64_t {
 #if FMT_USE_INT128
   auto p = static_cast<uint128_opt>(x) * static_cast<uint128_opt>(y);
   return static_cast<uint64_t>(p >> 64);
-#elif defined(_MSC_VER) && defined(_M_X64)
+#elif defined(_MSC_VER) && defined(_M_AMD64)
   return __umulh(x, y);
 #else
   return umul128(x, y).high();
