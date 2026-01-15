@@ -1021,3 +1021,30 @@ TEST(chrono_test, year_month_day) {
     EXPECT_THAT(months, Contains(fmt::format(loc, "{:L%b}", month)));
   }
 }
+
+#if defined(__cpp_lib_chrono) && __cpp_lib_chrono >= 201907L
+TEST(chrono_test, zoned_time) {
+   const static std::map<std::string, std::pair<std::string, std::string>> map_to_test{
+    {"Africa/Cairo", {"EET", "+0200"}},
+    {"Africa/Johannesburg", {"SAST", "+0200"}},
+    {"America/Chicago", {"CST", "-0600"}},
+    {"America/Denver", {"MST", "-0700"}},
+    {"America/Los_Angeles", {"PST", "-0800"}},
+    {"America/New_York", {"EST", "-0500"}},
+    {"Asia/Kolkata", {"IST", "+0530"}},
+    {"Asia/Riyadh", {"+03", "+0300"}},
+    {"Asia/Shanghai", {"CST", "+0800"}},
+    {"Asia/Tokyo", {"JST", "+0900"}},
+    {"Australia/Sydney", {"AEDT", "+1100"}},
+    {"Europe/Berlin", {"CET", "+0100"}},
+    {"Europe/London", {"GMT", "+0000"}},
+    {"Europe/Paris", {"CET", "+0100"}},
+    {"Pacific/Auckland", {"NZDT", "+1300"}}};
+   for (const auto& entry : map_to_test) {
+     const std::chrono::zoned_time entry_to_test{std::chrono::locate_zone(entry.first),
+     std::chrono::system_clock::now()};
+     EXPECT_EQ(fmt::format("{:%Z}", entry_to_test), entry.second.first);
+     EXPECT_EQ(fmt::format("{:%z}", entry_to_test), entry.second.second);
+    }
+}
+#endif

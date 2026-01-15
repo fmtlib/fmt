@@ -265,6 +265,15 @@ using utc_time = std::chrono::time_point<detail::utc_clock, Duration>;
 template <class Duration>
 using local_time = std::chrono::time_point<detail::local_t, Duration>;
 
+// Check if std::chrono::zoned_time is available.
+#ifdef FMT_HAVE_STD_ZONED_TIME
+// Use the provided definition.
+#elif defined(__cpp_lib_chrono)
+#  define FMT_HAVE_STD_ZONED_TIME (__cpp_lib_chrono >= 201907L)
+#else
+#  define FMT_HAVE_STD_ZONED_TIME 0
+#endif
+
 namespace detail {
 
 // Prevents expansion of a preceding token as a function-style macro.
@@ -2239,6 +2248,40 @@ struct formatter<local_time<Duration>, Char>
     return formatter<std::tm, Char>::do_format(t, ctx, &subsecs);
   }
 };
+
+#if FMT_HAVE_STD_ZONED_TIME
+template <typename Duration, typename TimeZonePtr, typename Char>
+struct formatter<std::chrono::zoned_time<Duration, TimeZonePtr>, Char,
+                 std::enable_if_t<std::is_pointer_v<TimeZonePtr>>>
+    : private formatter<std::tm, Char> {
+  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
+    return this->do_parse(ctx, true);
+  }
+
+  template <typename FormatContext>
+  auto format(const std::chrono::zoned_time<Duration, TimeZonePtr>& val,
+              FormatContext& ctx) const -> decltype(ctx.out()) {
+    auto time_info = val.get_info();
+    auto time_since_epoch = val.get_local_time().time_since_epoch();
+    auto seconds_since_epoch =
+        detail::duration_cast<std::chrono::seconds>(time_since_epoch);
+    std::tm t = gmtime(seconds_since_epoch.count());
+    // Create a custom tm with timezone info if supported
+    if constexpr (detail::has_tm_zone<std::tm>::value) {
+      t.tm_zone = time_info.abbrev.c_str();
+      t.tm_gmtoff = time_info.offset.count();
+    }
+    using period = typename Duration::period;
+    if (period::num == 1 && period::den == 1 &&
+        !std::is_floating_point<typename Duration::rep>::value) {
+      return formatter<std::tm, Char>::format(t, ctx);
+    }
+    auto subsecs =
+        detail::duration_cast<Duration>(time_since_epoch - seconds_since_epoch);
+    return formatter<std::tm, Char>::do_format(t, ctx, &subsecs);
+  }
+};
+#endif
 
 FMT_END_EXPORT
 FMT_END_NAMESPACE
