@@ -2803,7 +2803,7 @@ template <typename T, typename Char = char>
 using is_formattable = bool_constant<!std::is_same<
     detail::mapped_t<conditional_t<std::is_void<T>::value, int*, T>, Char>,
     void>::value>;
-#ifdef __cpp_concepts
+#if defined(__cpp_concepts) && __cpp_concepts >= 201907L
 template <typename T, typename Char = char>
 concept formattable = is_formattable<remove_reference_t<T>, Char>::value;
 #endif
