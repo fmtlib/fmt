@@ -3944,8 +3944,8 @@ template <typename Locale> class format_facet : public Locale::facet {
   explicit format_facet(string_view sep = "", std::string grouping = "\3",
                         std::string decimal_point = ".")
       : separator_(sep.data(), sep.size()),
-        grouping_(grouping),
-        decimal_point_(decimal_point) {}
+        grouping_(std::move(grouping)),
+        decimal_point_(std::move(decimal_point)) {}
 
   auto put(appender out, loc_value val, const format_specs& specs) const
       -> bool {
