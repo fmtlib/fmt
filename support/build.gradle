@@ -1,5 +1,5 @@
 //UPDATED: Updated for Android Gradle Plugin 9.x
-//Removes depracted APIs
+//Removes deprecated APIs
 
 import java.nio.file.Paths
 
