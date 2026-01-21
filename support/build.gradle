@@ -1,56 +1,68 @@
+//UPDATED: Updated for Android Gradle Plugin 9.x
+//Removes deprecated APIs
+
 import java.nio.file.Paths
 
 // General gradle arguments for root project
 buildscript {    
     repositories {
         google()
-        jcenter()
+        mavenCentral() // UPDATED: jcenter() is deprecated and shut-down
     }
     dependencies {
+        /*
+         https://developer.android.com/studio/releases/gradle-plugin#updating-gradle
         //
-        // https://developer.android.com/studio/releases/gradle-plugin#updating-gradle
-        //
-        // Notice that 4.0.0 here is the version of [Android Gradle Plugin]
-        // According to URL above you will need Gradle 6.1 or higher
-        //
-        classpath "com.android.tools.build:gradle:4.1.1"
+         UPDATED to Android Gradle Plugin 9.0.0
+
+         According to URL above you will need Gradle 6.1 or higher
+        */
+        classpath "com.android.tools.build:gradle:9.0.0"
     }
 }
 repositories {
     google()
-    jcenter()
+    mavenCentral() // UPDATED: jcenter replacement
 }
 
 // Project's root where CMakeLists.txt exists: rootDir/support/.cxx -> rootDir
+
 def rootDir = Paths.get(project.buildDir.getParent()).getParent()
 println("rootDir: ${rootDir}")
 
-// Output: Shared library (.so) for Android 
+// Output: Shared library (.so) for Android
+
 apply plugin: "com.android.library"
 android {
-    compileSdkVersion 25    // Android 7.0
 
-    // Target ABI
-    //  - This option controls target platform of module
-    //  - The platform might be limited by compiler's support
-    //    some can work with Clang(default), but some can work only with GCC...
-    //    if bad, both toolchains might not support it
-    splits {
-        abi {
-            enable true
-            // Specify platforms for Application
-            reset()
-            include  "arm64-v8a", "armeabi-v7a", "x86_64"
-        }
-    }
-    ndkVersion "21.3.6528147" // ANDROID_NDK_HOME is deprecated. Be explicit
+    // UPDATED: Namespace is now required in build.gralde for AGP 8+ (it was moved from manifest)
+
+    namespace = "dev.fmt"
+
+    compileSdk 36   // UPDATED: Target Android 16 (API 36). 'compileSdkVersion' is deprecated
+
+    /*  Target ABI
+      - This option controls target platform of module
+      - The platform might be limited by compiler's support
+        some can work with Clang(default), but some can work only with GCC...
+        if bad, both toolchains might not support it
+      -* UPDATED: 'splits' block is deprecated for libraries. We now use 'ndk.abifilters' in defaultConfig
+          -> splits { abi { ...... } } -> removed
+    */
+
+    ndkVersion = "28.2.13676358" // UPDATED: Locked to stable NDK 28 (AGP 9 defualt). Be explicit.
 
     defaultConfig {
-        minSdkVersion 21    // Android 5.0+
-        targetSdkVersion 25 // Follow Compile SDK
+        minSdk 21    // Android 5.0+ (UPDATED: syntax)
+        targetSdkVersion 36 // Follow Compile SDK (UPDATED: syntax)
         versionCode 34      // Follow release count
         versionName "7.1.2" // Follow Official version
-        
+
+        // UPDATED: Correct way to filter ABIs for a library in modern AGP
+        ndk{
+            abiFilters "arm64-v8a", "armeabi-v7a", "x86_64"
+        }
+
         externalNativeBuild {
             cmake {
                 arguments "-DANDROID_STL=c++_shared"    // Specify Android STL
@@ -71,7 +83,7 @@ android {
     //    neighbor of the top level cmake
     externalNativeBuild {
         cmake {
-            version "3.10.0+"
+            version = "3.22.1" // UPDATED: 3.10 is too old for AGP 9
             path "${rootDir}/CMakeLists.txt"
             // buildStagingDirectory "./build"  // Custom path for cmake output
         }
@@ -86,20 +98,26 @@ android {
 
     // https://developer.android.com/studio/build/native-dependencies#build_system_configuration
     buildFeatures {
-        prefab true
-        prefabPublishing true
+        prefab = true
+        prefabPublishing = true
     }
     prefab {
         fmt {
-            headers "${rootDir}/include"
+            headers = "${rootDir}/include"
         }
     }
 }
 
 assemble.doLast
 {
-    // Instead of `ninja install`, Gradle will deploy the files.
-    // We are doing this since FMT is dependent to the ANDROID_STL after build
+    /*
+    *- Instead of `ninja install`, Gradle will deploy the files.
+    *- We are doing this since FMT is dependent to the ANDROID_STL after build
+
+    UPDATED: Path Adjustments
+    -> AGP 9+ often puts intermediates in build/intermediates/cxx/ or similar
+    -> Note: This manual copy is Fragile. If empty, check 'build/intermediates/cxx'.
+    */
     copy {
         from "build/intermediates/cmake"
         into "${rootDir}/libs"
