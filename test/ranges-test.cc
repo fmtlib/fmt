@@ -6,6 +6,10 @@
 // For the license information refer to format.h.
 
 #include "fmt/ranges.h"
+#include "fmt/ranges.h"
+#include "fmt/ranges.h"
+#include "fmt/ranges.h"
+#include "fmt/ranges.h"
 
 #include <array>
 #include <list>
@@ -16,6 +20,9 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "posix-mock.h"
+#include "fmt/base.h"
 
 #if FMT_CPLUSPLUS > 201703L && FMT_HAS_INCLUDE(<ranges>)
 #  include <ranges>
@@ -797,3 +804,43 @@ struct not_range {
   void end() const {}
 };
 static_assert(!fmt::is_formattable<not_range>{}, "");
+
+namespace test_detail
+{
+  template <typename T>
+  struct partial_opt_out_wrapper
+  {
+    using container_type = std::vector<T>;
+    std::vector<T> c = {1, 2, 3};
+    auto begin() const {return c.begin(); }
+    auto end() const {return c.end(); }
+
+  };
+
+}
+namespace fmt
+{
+  // disables is_range
+  template <typename T>
+  struct fmt::is_range<test_detail::partial_opt_out_wrapper<T>, char> : std::false_type{};
+  // opt-out of the container adaptor format
+  template <typename T>
+  struct fmt::is_container_adaptor<test_detail::partial_opt_out_wrapper<T>> : std::false_type{};
+}
+//a custom partial specializtion
+template <typename T>
+struct fmt::formatter<test_detail::partial_opt_out_wrapper<T>>
+{
+  constexpr auto parse(fmt::format_parse_context& ctx) { return ctx.begin(); }
+  auto format(const test_detail::partial_opt_out_wrapper<T>& val, fmt::format_context& ctx) const
+  {
+    return fmt::format_to(ctx.out(), "PartialOptOut(size={})", val.c.size());
+  }
+
+};
+TEST(ranges_test, container_adaptor_partial_specialization)
+{
+  test_detail::partial_opt_out_wrapper<int> obj;
+  EXPECT_EQ(fmt::format("{}", obj), "PartialOptOut(size=3)");
+}
+

@@ -347,6 +347,16 @@ template <typename T, typename Char> struct is_range {
       detail::is_range_<T>::value && !detail::has_to_string_view<T>::value;
 };
 
+/**
+ * returns "true" if "T" is a container adaptor (like "std::stack")
+ * that should be formatted by iterating over the underlying container.
+ * */
+
+FMT_EXPORT
+template <typename T>
+struct is_container_adaptor : std::true_type {};
+
+
 namespace detail {
 
 template <typename Char, typename Element>
@@ -770,6 +780,7 @@ template <typename T, typename Char>
 struct formatter<
     T, Char,
     enable_if_t<conjunction<detail::is_container_adaptor_like<T>,
+                            is_container_adaptor<T>, // -> added the sanity checker
                             bool_constant<range_format_kind<T, Char>::value ==
                                           range_format::disabled>>::value>>
     : formatter<detail::all<typename T::container_type>, Char> {
