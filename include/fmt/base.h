@@ -2253,20 +2253,20 @@ template <typename Context> class value {
     string.data = sv.data();
     string.size = sv.size();
   }
-  FMT_INLINE value(void* x FMT_BUILTIN) : pointer(x) {}
-  FMT_INLINE value(const void* x FMT_BUILTIN) : pointer(x) {}
-  FMT_INLINE value(volatile void* x FMT_BUILTIN)
+  constexpr FMT_INLINE value(void* x FMT_BUILTIN) : pointer(x) {}
+  constexpr FMT_INLINE value(const void* x FMT_BUILTIN) : pointer(x) {}
+  constexpr FMT_INLINE value(volatile void* x FMT_BUILTIN)
       : pointer(const_cast<const void*>(x)) {}
-  FMT_INLINE value(const volatile void* x FMT_BUILTIN)
+  constexpr FMT_INLINE value(const volatile void* x FMT_BUILTIN)
       : pointer(const_cast<const void*>(x)) {}
-  FMT_INLINE value(nullptr_t) : pointer(nullptr) {}
+  constexpr FMT_INLINE value(nullptr_t) : pointer(nullptr) {}
 
   template <typename T,
             FMT_ENABLE_IF(
                 (std::is_pointer<T>::value ||
                  std::is_member_pointer<T>::value) &&
                 !std::is_void<typename std::remove_pointer<T>::type>::value)>
-  value(const T&) {
+  constexpr value(const T&) {
     // Formatting of arbitrary pointers is disallowed. If you want to format a
     // pointer cast it to `void*` or `const void*`. In particular, this forbids
     // formatting of `[const] volatile char*` printed as bool by iostreams.
@@ -2275,12 +2275,12 @@ template <typename Context> class value {
   }
 
   template <typename T, FMT_ENABLE_IF(use_format_as<T>::value)>
-  value(const T& x) : value(format_as(x)) {}
+  constexpr value(const T& x) : value(format_as(x)) {}
   template <typename T, FMT_ENABLE_IF(use_format_as_member<T>::value)>
-  value(const T& x) : value(formatter<T>::format_as(x)) {}
+  constexpr value(const T& x) : value(formatter<T>::format_as(x)) {}
 
   template <typename T, FMT_ENABLE_IF(is_named_arg<T>::value)>
-  value(const T& named_arg) : value(named_arg.value) {}
+  constexpr value(const T& named_arg) : value(named_arg.value) {}
 
   template <typename T,
             FMT_ENABLE_IF(use_formatter<T>::value || !FMT_BUILTIN_TYPES)>
