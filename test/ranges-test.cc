@@ -803,37 +803,35 @@ struct not_range {
 static_assert(!fmt::is_formattable<not_range>{}, "");
 
 namespace test_detail {
-template <typename T> struct partial_opt_out_wrapper {
-  using container_type = std::vector<T>;
-  std::vector<T> c = {1, 2, 3};
+  template <typename T>
+  struct partial_opt_out_wrapper {
+    using container_type = std::vector<T>;
+    std::vector<T> c = {1, 2, 3};
 
-  typename std::vector<T>::const_iterator begin() const { return c.begin(); }
-  typename std::vector<T>::const_iterator end() const { return c.end(); }
-};
+    typename std::vector<T>::const_iterator begin() const { return c.begin(); }
+    typename std::vector<T>::const_iterator end() const { return c.end(); }
+  };
 }  // namespace test_detail
 
 namespace fmt {
-template <typename T>
-struct is_range<test_detail::partial_opt_out_wrapper<T>, char>
-    : std::false_type {};
+  template <typename T>
+  struct is_range<test_detail::partial_opt_out_wrapper<T>, char> : std::false_type {};
 
-template <typename T>
-struct is_container_adaptor<test_detail::partial_opt_out_wrapper<T>>
-    : std::false_type {};
+  template <typename T>
+  struct is_container_adaptor<test_detail::partial_opt_out_wrapper<T>> : std::false_type {};
+
+  template <typename T>
+  struct formatter<test_detail::partial_opt_out_wrapper<T>> {
+    constexpr fmt::format_parse_context::iterator parse(fmt::format_parse_context& ctx) const {
+      return ctx.begin();
+    }
+
+    fmt::format_context::iterator format(const test_detail::partial_opt_out_wrapper<T>& val,
+                                         fmt::format_context& ctx) const {
+      return fmt::format_to(ctx.out(), "PartialOptOut(size={})", val.c.size());
+    }
+  };
 }  // namespace fmt
-
-template <typename T>
-struct fmt::formatter<test_detail::partial_opt_out_wrapper<T>> {
-  fmt::format_parse_context::iterator parse(fmt::format_parse_context& ctx)
-  {
-    return ctx.begin();
-  }
-
-  fmt::format_context::iterator format(const test_detail::partial_opt_out_wrapper<T>& val,
-                                       fmt::format_context& ctx) const {
-    return fmt::format_to(ctx.out(), "PartialOptOut(size={})", val.c.size());
-  }
-};
 
 TEST(ranges_test, container_adaptor_partial_specialization) {
   test_detail::partial_opt_out_wrapper<int> obj;
