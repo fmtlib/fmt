@@ -6,10 +6,6 @@
 // For the license information refer to format.h.
 
 #include "fmt/ranges.h"
-#include "fmt/ranges.h"
-#include "fmt/ranges.h"
-#include "fmt/ranges.h"
-#include "fmt/ranges.h"
 
 #include <array>
 #include <list>
@@ -21,8 +17,9 @@
 #include <utility>
 #include <vector>
 
-#include "posix-mock.h"
 #include "fmt/base.h"
+#include "fmt/ranges.h"
+#include "posix-mock.h"
 
 #if FMT_CPLUSPLUS > 201703L && FMT_HAS_INCLUDE(<ranges>)
 #  include <ranges>
@@ -805,42 +802,40 @@ struct not_range {
 };
 static_assert(!fmt::is_formattable<not_range>{}, "");
 
-namespace test_detail
-{
-  template <typename T>
-  struct partial_opt_out_wrapper
-  {
-    using container_type = std::vector<T>;
-    std::vector<T> c = {1, 2, 3};
-    auto begin() const {return c.begin(); }
-    auto end() const {return c.end(); }
+namespace test_detail {
+template <typename T> struct partial_opt_out_wrapper {
+  using container_type = std::vector<T>;
+  std::vector<T> c = {1, 2, 3};
 
-  };
+  typename std::vector<T>::const_iterator begin() const { return c.begin(); }
+  typename std::vector<T>::const_iterator end() const { return c.end(); }
+};
+}  // namespace test_detail
 
-}
-namespace fmt
-{
-  // disables is_range
-  template <typename T>
-  struct fmt::is_range<test_detail::partial_opt_out_wrapper<T>, char> : std::false_type{};
-  // opt-out of the container adaptor format
-  template <typename T>
-  struct fmt::is_container_adaptor<test_detail::partial_opt_out_wrapper<T>> : std::false_type{};
-}
-//a custom partial specializtion
+namespace fmt {
 template <typename T>
-struct fmt::formatter<test_detail::partial_opt_out_wrapper<T>>
-{
-  constexpr auto parse(fmt::format_parse_context& ctx) { return ctx.begin(); }
-  auto format(const test_detail::partial_opt_out_wrapper<T>& val, fmt::format_context& ctx) const
+struct is_range<test_detail::partial_opt_out_wrapper<T>, char>
+    : std::false_type {};
+
+template <typename T>
+struct is_container_adaptor<test_detail::partial_opt_out_wrapper<T>>
+    : std::false_type {};
+}  // namespace fmt
+
+template <typename T>
+struct fmt::formatter<test_detail::partial_opt_out_wrapper<T>> {
+  fmt::format_parse_context::iterator parse(fmt::format_parse_context& ctx)
   {
-    return fmt::format_to(ctx.out(), "PartialOptOut(size={})", val.c.size());
+    return ctx.begin();
   }
 
+  fmt::format_context::iterator format(const test_detail::partial_opt_out_wrapper<T>& val,
+                                       fmt::format_context& ctx) const {
+    return fmt::format_to(ctx.out(), "PartialOptOut(size={})", val.c.size());
+  }
 };
-TEST(ranges_test, container_adaptor_partial_specialization)
-{
+
+TEST(ranges_test, container_adaptor_partial_specialization) {
   test_detail::partial_opt_out_wrapper<int> obj;
   EXPECT_EQ(fmt::format("{}", obj), "PartialOptOut(size=3)");
 }
-
