@@ -564,7 +564,7 @@ FMT_CONSTEXPR20 auto fill_n(T* out, Size count, char value) -> T* {
   if (is_constant_evaluated()) return fill_n<T*, Size, T>(out, count, value);
   static_assert(sizeof(T) == 1,
                 "sizeof(T) must be 1 to use char for initialization");
-  std::memset(out, value, to_unsigned(count));
+  memset(out, value, to_unsigned(count));
   return out + count;
 }
 
