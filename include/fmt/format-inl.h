@@ -14,6 +14,7 @@
 #  include <climits>
 #  include <cmath>
 #  include <exception>
+#  include <new>  // std::bad_alloc
 #endif
 
 #if defined(_WIN32) && !defined(FMT_USE_WRITE_CONSOLE)
@@ -78,11 +79,16 @@ template <typename Locale> auto locale_ref::get() const -> Locale {
 
 namespace detail {
 
+FMT_FUNC auto allocate(size_t size) -> void* {
+  void* p = malloc(size);
+  if (!p) FMT_THROW(std::bad_alloc());
+  return p;
+}
+
 FMT_FUNC void format_error_code(detail::buffer<char>& out, int error_code,
                                 string_view message) noexcept {
-  // Report error code making sure that the output fits into
-  // inline_buffer_size to avoid dynamic memory allocation and potential
-  // bad_alloc.
+  // Report error code making sure that the output fits into inline_buffer_size
+  // to avoid dynamic memory allocation and potential bad_alloc.
   out.try_resize(0);
   static const char SEP[] = ": ";
   static const char ERROR_STR[] = "error ";

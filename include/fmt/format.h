@@ -54,7 +54,6 @@
 #  include <cstddef>  // std::byte
 #  include <cstdint>  // uint32_t
 #  include <limits>   // std::numeric_limits
-#  include <new>      // std::bad_alloc
 #  if defined(__GLIBCXX__) && !defined(_GLIBCXX_USE_DUAL_ABI)
 // Workaround for pre gcc 5 libstdc++.
 #    include <memory>  // std::allocator_traits
@@ -736,6 +735,8 @@ using fast_float_t = conditional_t<sizeof(T) == sizeof(double), double, float>;
 template <typename T>
 using is_double_double = bool_constant<std::numeric_limits<T>::digits == 106>;
 
+FMT_API auto allocate(size_t size) -> void*;
+
 // An allocator that uses malloc/free to allow removing dependency on the C++
 // standard library runtime. std::decay is used for back_inserter to be found by
 // ADL when applied to memory_buffer.
@@ -744,9 +745,7 @@ template <typename T> struct allocator : private std::decay<void> {
 
   auto allocate(size_t n) -> T* {
     FMT_ASSERT(n <= max_value<size_t>() / sizeof(T), "");
-    T* p = static_cast<T*>(malloc(n * sizeof(T)));
-    if (!p) FMT_THROW(std::bad_alloc());
-    return p;
+    return static_cast<T*>(detail::allocate(n * sizeof(T)));
   }
 
   void deallocate(T* p, size_t) { free(p); }
