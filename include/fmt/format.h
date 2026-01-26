@@ -48,11 +48,11 @@
 
 #ifndef FMT_MODULE
 #  include <stdlib.h>  // malloc, free
+#  include <string.h>  // memcpy
 
 #  include <cmath>    // std::signbit
 #  include <cstddef>  // std::byte
 #  include <cstdint>  // uint32_t
-#  include <cstring>  // std::memcpy
 #  include <limits>   // std::numeric_limits
 #  include <new>      // std::bad_alloc
 #  if defined(__GLIBCXX__) && !defined(_GLIBCXX_USE_DUAL_ABI)
@@ -283,7 +283,7 @@ FMT_CONSTEXPR20 auto bit_cast(const From& from) -> To {
 #endif
   auto to = To();
   // The cast suppresses a bogus -Wclass-memaccess on GCC.
-  std::memcpy(static_cast<void*>(&to), &from, sizeof(to));
+  memcpy(static_cast<void*>(&to), &from, sizeof(to));
   return to;
 }
 
