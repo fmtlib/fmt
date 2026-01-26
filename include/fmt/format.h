@@ -2372,9 +2372,8 @@ FMT_CONSTEXPR auto parse_align(const Char* begin, const Char* end,
         ++begin;
       }
       break;
-    } else if (p == begin) {
-      break;
     }
+    if (p == begin) break;
     p = begin;
   }
   specs.set_align(alignment);
