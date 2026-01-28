@@ -380,10 +380,7 @@ template <typename T> FMT_ALWAYS_INLINE constexpr auto const_check(T val) -> T {
   return val;
 }
 
-FMT_NORETURN FMT_API void assert_fail(const char* file, int line,
-                                      const char* message);
-
-#if defined(FMT_ASSERT)
+#ifdef FMT_ASSERT
 // Use the provided definition.
 #elif defined(NDEBUG)
 // FMT_ASSERT is not empty to avoid -Wempty-body.
