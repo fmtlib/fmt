@@ -2757,9 +2757,7 @@ template <typename... T> struct fstring {
     static_assert(count<(is_view<remove_cvref_t<T>>::value &&
                          std::is_reference<T>::value)...>() == 0,
                   "passing views as lvalues is disallowed");
-#if FMT_USE_CONSTEVAL
-    parse_format_string<char>(s, checker(s, arg_pack()));
-#endif
+    if (FMT_USE_CONSTEVAL) parse_format_string<char>(s, checker(s, arg_pack()));
 #ifdef FMT_ENFORCE_COMPILE_STRING
     static_assert(
         FMT_USE_CONSTEVAL && sizeof(s) != 0,
@@ -2783,9 +2781,8 @@ template <typename... T> struct fstring {
                               std::is_same<typename S::char_type, char>::value)>
   FMT_ALWAYS_INLINE fstring(const S&) : str(S()) {
     FMT_CONSTEXPR auto sv = string_view(S());
-    FMT_CONSTEXPR int unused =
-        (parse_format_string(sv, checker(sv, arg_pack())), 0);
-    detail::ignore_unused(unused);
+    FMT_CONSTEXPR int x = (parse_format_string(sv, checker(sv, arg_pack())), 0);
+    detail::ignore_unused(x);
   }
   fstring(runtime_format_string<> fmt) : str(fmt.str) {}
 
