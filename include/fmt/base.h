@@ -511,8 +511,8 @@ inline FMT_CONSTEXPR auto get_container(OutputIt it) ->
 FMT_BEGIN_EXPORT
 
 /**
- * An implementation of `std::basic_string_view` for pre-C++17. It provides a
- * subset of the API. `fmt::basic_string_view` is used for format strings even
+ * An implementation of `std::basic_string_view` for pre-C++17 providing a
+ * subset of the API. `fmt::basic_string_view` is used in the public API even
  * if `std::basic_string_view` is available to prevent issues when a library is
  * compiled with a different `-std` option than the client code (which is not
  * recommended).
@@ -527,14 +527,10 @@ template <typename Char> class basic_string_view {
   using iterator = const Char*;
 
   constexpr basic_string_view() noexcept : data_(nullptr), size_(0) {}
-
-  /// Constructs a string view object from a C string and a size.
   constexpr basic_string_view(const Char* s, size_t count) noexcept
       : data_(s), size_(count) {}
-
   constexpr basic_string_view(nullptr_t) = delete;
 
-  /// Constructs a string view object from a C string.
 #if FMT_GCC_VERSION
   FMT_ALWAYS_INLINE
 #endif
@@ -550,18 +546,14 @@ template <typename Char> class basic_string_view {
     size_ = len;
   }
 
-  /// Constructs a string view from a `std::basic_string` or a
-  /// `std::basic_string_view` object.
-  template <typename S,
-            FMT_ENABLE_IF(detail::is_std_string_like<S>::value&& std::is_same<
-                          typename S::value_type, Char>::value)>
+  template <
+      typename S,
+      FMT_ENABLE_IF(detail::is_std_string_like<S>::value&&  //
+                        std::is_same<typename S::value_type, Char>::value)>
   constexpr basic_string_view(const S& s) noexcept
       : data_(s.data()), size_(s.size()) {}
 
-  /// Returns a pointer to the string data.
   constexpr auto data() const noexcept -> const Char* { return data_; }
-
-  /// Returns the string size.
   constexpr auto size() const noexcept -> size_t { return size_; }
 
   constexpr auto begin() const noexcept -> iterator { return data_; }
@@ -587,9 +579,8 @@ template <typename Char> class basic_string_view {
   }
 
   FMT_CONSTEXPR auto compare(basic_string_view other) const -> int {
-    int result =
-        detail::compare(data_, other.data_, min_of(size_, other.size_));
-    if (result != 0) return result;
+    int cmp = detail::compare(data_, other.data_, min_of(size_, other.size_));
+    if (cmp != 0) return cmp;
     return size_ == other.size_ ? 0 : (size_ < other.size_ ? -1 : 1);
   }
 
@@ -1277,7 +1268,6 @@ class compile_parse_context : public parse_context<Char> {
   using base::check_arg_id;
 
   FMT_CONSTEXPR void check_dynamic_spec(int arg_id) {
-    ignore_unused(arg_id);
     if (arg_id < num_args_ && types_ && !is_integral_type(types_[arg_id]))
       report_error("width/precision is not integer");
   }
@@ -2872,10 +2862,8 @@ FMT_INLINE auto format_to(OutputIt&& out, format_string<T...> fmt, T&&... args)
 }
 
 template <typename OutputIt> struct format_to_n_result {
-  /// Iterator past the end of the output range.
-  OutputIt out;
-  /// Total (not truncated) output size.
-  size_t size;
+  OutputIt out;  ///< Iterator past the end of the output range.
+  size_t size;   ///< Total (not truncated) output size.
 };
 
 template <typename OutputIt, typename... T,
@@ -2902,10 +2890,8 @@ FMT_INLINE auto format_to_n(OutputIt out, size_t n, format_string<T...> fmt,
 }
 
 struct format_to_result {
-  /// Pointer to just after the last successful write in the array.
-  char* out;
-  /// Specifies if the output was truncated.
-  bool truncated;
+  char* out;       ///< Pointer to just after the last successful write.
+  bool truncated;  ///< Specifies if the output was truncated.
 
   FMT_CONSTEXPR operator char*() const {
     // Report truncation to prevent silent data loss.
@@ -2981,9 +2967,8 @@ FMT_INLINE void print(FILE* f, format_string<T...> fmt, T&&... args) {
 template <typename... T>
 FMT_INLINE void println(FILE* f, format_string<T...> fmt, T&&... args) {
   vargs<T...> va = {{args...}};
-  return detail::const_check(detail::use_utf8)
-             ? vprintln(f, fmt.str, va)
-             : detail::vprint_mojibake(f, fmt.str, va, true);
+  if (detail::const_check(detail::use_utf8)) return vprintln(f, fmt.str, va);
+  detail::vprint_mojibake(f, fmt.str, va, true);
 }
 
 /// Formats `args` according to specifications in `fmt` and writes the output
