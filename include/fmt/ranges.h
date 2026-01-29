@@ -352,8 +352,6 @@ template <typename T, typename Char> struct is_range {
  * that should be formatted by iterating over the underlying container.
  * */
 
-
-
 namespace detail {
 
 template <typename Char, typename Element>
@@ -771,7 +769,6 @@ template <typename Container> struct all {
   auto end() const -> typename Container::const_iterator { return c.end(); }
 };
 }  // namespace detail
-
 FMT_EXPORT
 template <typename T>
 struct is_container_adaptor : detail::is_container_adaptor_like<T> {};
