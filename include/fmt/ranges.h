@@ -753,7 +753,6 @@ struct formatter<tuple_join_view<Tuple, Char>, Char,
     return do_format(value, ctx, std::integral_constant<size_t, N - 1>());
   }
 };
-
 namespace detail {
 // Check if T has an interface like a container adaptor (e.g. std::stack,
 // std::queue, std::priority_queue).
