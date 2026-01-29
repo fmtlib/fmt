@@ -17,10 +17,6 @@
 #include <utility>
 #include <vector>
 
-#include "fmt/base.h"
-#include "fmt/ranges.h"
-#include "posix-mock.h"
-
 #if FMT_CPLUSPLUS > 201703L && FMT_HAS_INCLUDE(<ranges>)
 #  include <ranges>
 #endif
@@ -807,16 +803,10 @@ namespace test_detail {
   struct partial_opt_out_wrapper {
     using container_type = std::vector<T>;
     std::vector<T> c = {1, 2, 3};
-
-    typename std::vector<T>::const_iterator begin() const { return c.begin(); }
-    typename std::vector<T>::const_iterator end() const { return c.end(); }
   };
 }  // namespace test_detail
 
 namespace fmt {
-  template <typename T>
-  struct is_range<test_detail::partial_opt_out_wrapper<T>, char> : std::false_type {};
-
   template <typename T>
   struct is_container_adaptor<test_detail::partial_opt_out_wrapper<T>> : std::false_type {};
 

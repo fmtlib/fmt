@@ -352,8 +352,7 @@ template <typename T, typename Char> struct is_range {
  * that should be formatted by iterating over the underlying container.
  * */
 
-FMT_EXPORT
-template <typename T> struct is_container_adaptor : std::true_type {};
+
 
 namespace detail {
 
@@ -774,11 +773,14 @@ template <typename Container> struct all {
 };
 }  // namespace detail
 
+FMT_EXPORT
+template <typename T> struct is_container_adaptor:  detail::is_container_adaptor_like<T> {};
+
+
 template <typename T, typename Char>
 struct formatter<
     T, Char,
-    enable_if_t<conjunction<detail::is_container_adaptor_like<T>,
-                            is_container_adaptor<T>,
+    enable_if_t<conjunction<is_container_adaptor<T>,
                             bool_constant<range_format_kind<T, Char>::value ==
                                           range_format::disabled>>::value>>
     : formatter<detail::all<typename T::container_type>, Char> {
