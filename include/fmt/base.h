@@ -495,10 +495,10 @@ struct is_back_insert_iterator<
 
 // Extracts a reference to the container from *insert_iterator.
 template <typename OutputIt>
-inline FMT_CONSTEXPR20 auto get_container(OutputIt it) ->
+inline FMT_CONSTEXPR auto get_container(OutputIt it) ->
     typename OutputIt::container_type& {
   struct accessor : OutputIt {
-    FMT_CONSTEXPR20 accessor(OutputIt base) : OutputIt(base) {}
+    constexpr accessor(OutputIt base) : OutputIt(base) {}
     using OutputIt::container;
   };
   return *accessor(it).container;
@@ -2078,8 +2078,7 @@ template <typename T, typename InputIt, typename OutputIt,
           FMT_ENABLE_IF(is_back_insert_iterator<OutputIt>::value&&
                             has_back_insert_iterator_container_append<
                                 OutputIt, InputIt>::value)>
-FMT_CONSTEXPR20 auto copy(InputIt begin, InputIt end, OutputIt out)
-    -> OutputIt {
+FMT_CONSTEXPR auto copy(InputIt begin, InputIt end, OutputIt out) -> OutputIt {
   get_container(out).append(begin, end);
   return out;
 }
@@ -2090,8 +2089,7 @@ template <typename T, typename InputIt, typename OutputIt,
                             OutputIt, InputIt>::value &&
                         has_back_insert_iterator_container_insert_at_end<
                             OutputIt, InputIt>::value)>
-FMT_CONSTEXPR20 auto copy(InputIt begin, InputIt end, OutputIt out)
-    -> OutputIt {
+FMT_CONSTEXPR auto copy(InputIt begin, InputIt end, OutputIt out) -> OutputIt {
   auto& c = get_container(out);
   c.insert(c.end(), begin, end);
   return out;
