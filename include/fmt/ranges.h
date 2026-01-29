@@ -774,8 +774,8 @@ template <typename Container> struct all {
 }  // namespace detail
 
 FMT_EXPORT
-template <typename T> struct is_container_adaptor:  detail::is_container_adaptor_like<T> {};
-
+template <typename T>
+struct is_container_adaptor : detail::is_container_adaptor_like<T> {};
 
 template <typename T, typename Char>
 struct formatter<
