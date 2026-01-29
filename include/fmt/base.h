@@ -320,6 +320,8 @@ using underlying_t = typename std::underlying_type<T>::type;
 template <typename T> using decay_t = typename std::decay<T>::type;
 using nullptr_t = decltype(nullptr);
 
+using ullong = unsigned long long;
+
 #if (FMT_GCC_VERSION && FMT_GCC_VERSION < 500) || FMT_MSC_VERSION
 // A workaround for gcc 4.9 & MSVC v141 to make void_t work in a SFINAE context.
 template <typename...> struct void_t_impl {
@@ -1014,7 +1016,7 @@ struct type_constant : std::integral_constant<type, type::custom_type> {};
 FMT_TYPE_CONSTANT(int, int_type);
 FMT_TYPE_CONSTANT(unsigned, uint_type);
 FMT_TYPE_CONSTANT(long long, long_long_type);
-FMT_TYPE_CONSTANT(unsigned long long, ulong_long_type);
+FMT_TYPE_CONSTANT(ullong, ulong_long_type);
 FMT_TYPE_CONSTANT(int128_opt, int128_type);
 FMT_TYPE_CONSTANT(uint128_opt, uint128_type);
 FMT_TYPE_CONSTANT(bool, bool_type);
@@ -1131,7 +1133,7 @@ FMT_CONSTEXPR void init_static_named_arg(named_arg_info<Char>* named_args,
 // either to int or to long long depending on its size.
 enum { long_short = sizeof(long) == sizeof(int) && FMT_BUILTIN_TYPES };
 using long_type = conditional_t<long_short, int, long long>;
-using ulong_type = conditional_t<long_short, unsigned, unsigned long long>;
+using ulong_type = conditional_t<long_short, unsigned, ullong>;
 
 template <typename T>
 using format_as_result =
@@ -1185,7 +1187,7 @@ template <typename Char> struct type_mapper {
   static auto map(long) -> long_type;
   static auto map(unsigned long) -> ulong_type;
   static auto map(long long) -> long long;
-  static auto map(unsigned long long) -> unsigned long long;
+  static auto map(ullong) -> ullong;
   static auto map(int128_opt) -> int128_opt;
   static auto map(uint128_opt) -> uint128_opt;
   static auto map(bool) -> bool;
@@ -1193,8 +1195,7 @@ template <typename Char> struct type_mapper {
   template <int N>
   static auto map(bitint<N>) -> conditional_t<N <= 64, long long, void>;
   template <int N>
-  static auto map(ubitint<N>)
-      -> conditional_t<N <= 64, unsigned long long, void>;
+  static auto map(ubitint<N>) -> conditional_t<N <= 64, ullong, void>;
 
   template <typename T, FMT_ENABLE_IF(is_code_unit<T>::value)>
   static auto map(T) -> conditional_t<
@@ -2178,7 +2179,7 @@ template <typename Context> class value {
     int int_value;
     unsigned uint_value;
     long long long_long_value;
-    unsigned long long ulong_long_value;
+    ullong ulong_long_value;
     int128_opt int128_value;
     uint128_opt uint128_value;
     bool bool_value;
@@ -2203,8 +2204,7 @@ template <typename Context> class value {
   constexpr FMT_INLINE value(unsigned long x FMT_BUILTIN)
       : value(ulong_type(x)) {}
   constexpr FMT_INLINE value(long long x FMT_BUILTIN) : long_long_value(x) {}
-  constexpr FMT_INLINE value(unsigned long long x FMT_BUILTIN)
-      : ulong_long_value(x) {}
+  constexpr FMT_INLINE value(ullong x FMT_BUILTIN) : ulong_long_value(x) {}
   FMT_INLINE value(int128_opt x FMT_BUILTIN) : int128_value(x) {}
   FMT_INLINE value(uint128_opt x FMT_BUILTIN) : uint128_value(x) {}
   constexpr FMT_INLINE value(bool x FMT_BUILTIN) : bool_value(x) {}
@@ -2324,8 +2324,8 @@ template <typename Context> class value {
 enum { packed_arg_bits = 4 };
 // Maximum number of arguments with packed types.
 enum { max_packed_args = 62 / packed_arg_bits };
-enum : unsigned long long { is_unpacked_bit = 1ULL << 63 };
-enum : unsigned long long { has_named_args_bit = 1ULL << 62 };
+enum : ullong { is_unpacked_bit = 1ULL << 63 };
+enum : ullong { has_named_args_bit = 1ULL << 62 };
 
 template <typename It, typename T, typename Enable = void>
 struct is_output_iterator : std::false_type {};
@@ -2338,18 +2338,16 @@ struct is_output_iterator<
     enable_if_t<std::is_assignable<decltype(*std::declval<decay_t<It>&>()++),
                                    T>::value>> : std::true_type {};
 
-template <typename> constexpr auto encode_types() -> unsigned long long {
-  return 0;
-}
+template <typename> constexpr auto encode_types() -> ullong { return 0; }
 
 template <typename Context, typename First, typename... T>
-constexpr auto encode_types() -> unsigned long long {
+constexpr auto encode_types() -> ullong {
   return static_cast<unsigned>(stored_type_constant<First, Context>::value) |
          (encode_types<Context, T...>() << packed_arg_bits);
 }
 
 template <typename Context, typename... T, size_t NUM_ARGS = sizeof...(T)>
-constexpr auto make_descriptor() -> unsigned long long {
+constexpr auto make_descriptor() -> ullong {
   return NUM_ARGS <= max_packed_args ? encode_types<Context, T...>()
                                      : is_unpacked_bit | NUM_ARGS;
 }
@@ -2358,8 +2356,7 @@ template <typename Context, int NUM_ARGS>
 using arg_t = conditional_t<NUM_ARGS <= max_packed_args, value<Context>,
                             basic_format_arg<Context>>;
 
-template <typename Context, int NUM_ARGS, int NUM_NAMED_ARGS,
-          unsigned long long DESC>
+template <typename Context, int NUM_ARGS, int NUM_NAMED_ARGS, ullong DESC>
 struct named_arg_store {
   // args_[0].named_args points to named_args to avoid bloating format_args.
   arg_t<Context, NUM_ARGS> args[1u + NUM_ARGS];
@@ -2391,8 +2388,7 @@ struct named_arg_store {
 // An array of references to arguments. It can be implicitly converted to
 // `basic_format_args` for passing into type-erased formatting functions
 // such as `vformat`. It is a plain struct to reduce binary size in debug mode.
-template <typename Context, int NUM_ARGS, int NUM_NAMED_ARGS,
-          unsigned long long DESC>
+template <typename Context, int NUM_ARGS, int NUM_NAMED_ARGS, ullong DESC>
 struct format_arg_store {
   // +1 to workaround a bug in gcc 7.5 that causes duplicated-branches warning.
   using type =
@@ -2585,7 +2581,7 @@ template <typename Context> class basic_format_args {
   // If the number of arguments is less or equal to max_packed_args then
   // argument types are passed in the descriptor. This reduces binary code size
   // per formatting function call.
-  unsigned long long desc_;
+  ullong desc_;
   union {
     // If is_packed() returns true then argument values are stored in values_;
     // otherwise they are stored in args_. This is done to improve cache
@@ -2609,7 +2605,7 @@ template <typename Context> class basic_format_args {
     return static_cast<detail::type>((desc_ >> shift) & mask);
   }
 
-  template <int NUM_ARGS, int NUM_NAMED_ARGS, unsigned long long DESC>
+  template <int NUM_ARGS, int NUM_NAMED_ARGS, ullong DESC>
   using store =
       detail::format_arg_store<Context, NUM_ARGS, NUM_NAMED_ARGS, DESC>;
 
@@ -2619,14 +2615,14 @@ template <typename Context> class basic_format_args {
   constexpr basic_format_args() : desc_(0), args_(nullptr) {}
 
   /// Constructs a `basic_format_args` object from `format_arg_store`.
-  template <int NUM_ARGS, int NUM_NAMED_ARGS, unsigned long long DESC,
+  template <int NUM_ARGS, int NUM_NAMED_ARGS, ullong DESC,
             FMT_ENABLE_IF(NUM_ARGS <= detail::max_packed_args)>
   constexpr FMT_ALWAYS_INLINE basic_format_args(
       const store<NUM_ARGS, NUM_NAMED_ARGS, DESC>& s)
       : desc_(DESC | (NUM_NAMED_ARGS != 0 ? +detail::has_named_args_bit : 0)),
         values_(s.args) {}
 
-  template <int NUM_ARGS, int NUM_NAMED_ARGS, unsigned long long DESC,
+  template <int NUM_ARGS, int NUM_NAMED_ARGS, ullong DESC,
             FMT_ENABLE_IF(NUM_ARGS > detail::max_packed_args)>
   constexpr basic_format_args(const store<NUM_ARGS, NUM_NAMED_ARGS, DESC>& s)
       : desc_(DESC | (NUM_NAMED_ARGS != 0 ? +detail::has_named_args_bit : 0)),
@@ -2670,8 +2666,7 @@ template <typename Context> class basic_format_args {
   }
 
   auto max_size() const -> int {
-    unsigned long long max_packed = detail::max_packed_args;
-    return static_cast<int>(is_packed() ? max_packed
+    return static_cast<int>(is_packed() ? ullong(detail::max_packed_args)
                                         : desc_ & ~detail::is_unpacked_bit);
   }
 };
@@ -2816,7 +2811,7 @@ struct formatter<T, Char,
 template <typename Context = context, typename... T,
           int NUM_ARGS = sizeof...(T),
           int NUM_NAMED_ARGS = detail::count_named_args<T...>(),
-          unsigned long long DESC = detail::make_descriptor<Context, T...>()>
+          ullong DESC = detail::make_descriptor<Context, T...>()>
 constexpr FMT_ALWAYS_INLINE auto make_format_args(T&... args)
     -> detail::format_arg_store<Context, NUM_ARGS, NUM_NAMED_ARGS, DESC> {
   // Suppress warnings for pathological types convertible to detail::value.

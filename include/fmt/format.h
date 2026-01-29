@@ -394,11 +394,11 @@ class uint128_fallback {
       return *this;
     }
 #if FMT_HAS_BUILTIN(__builtin_addcll) && !defined(__ibmxl__)
-    unsigned long long carry;
+    ullong carry;
     lo_ = __builtin_addcll(lo_, n, 0, &carry);
     hi_ += carry;
 #elif FMT_HAS_BUILTIN(__builtin_ia32_addcarryx_u64) && !defined(__ibmxl__)
-    unsigned long long result;
+    ullong result;
     auto carry = __builtin_ia32_addcarryx_u64(0, lo_, n, &result);
     lo_ = result;
     hi_ += carry;
@@ -1645,7 +1645,7 @@ template <typename F> struct basic_fp {
   }
 };
 
-using fp = basic_fp<unsigned long long>;
+using fp = basic_fp<ullong>;
 
 // Normalizes the value converted from double and multiplied by (1 << SHIFT).
 template <int SHIFT = 0, typename F>
@@ -3733,12 +3733,12 @@ template <typename Char> struct arg_formatter {
 
 struct dynamic_spec_getter {
   template <typename T, FMT_ENABLE_IF(is_integer<T>::value)>
-  FMT_CONSTEXPR auto operator()(T value) -> unsigned long long {
-    return is_negative(value) ? ~0ull : static_cast<unsigned long long>(value);
+  FMT_CONSTEXPR auto operator()(T value) -> ullong {
+    return is_negative(value) ? ~0ull : static_cast<ullong>(value);
   }
 
   template <typename T, FMT_ENABLE_IF(!is_integer<T>::value)>
-  FMT_CONSTEXPR auto operator()(T) -> unsigned long long {
+  FMT_CONSTEXPR auto operator()(T) -> ullong {
     report_error("width/precision is not integer");
     return 0;
   }
@@ -3752,7 +3752,7 @@ FMT_CONSTEXPR void handle_dynamic_spec(
   auto arg =
       kind == arg_id_kind::index ? ctx.arg(ref.index) : ctx.arg(ref.name);
   if (!arg) report_error("argument not found");
-  unsigned long long result = arg.visit(dynamic_spec_getter());
+  ullong result = arg.visit(dynamic_spec_getter());
   if (result > to_unsigned(max_value<int>()))
     report_error("width/precision is out of range");
   value = static_cast<int>(result);
@@ -3982,8 +3982,7 @@ class formatter<std::basic_string<Char, Traits, Allocator>, Char>
 template <int N, typename Char>
 struct formatter<detail::bitint<N>, Char> : formatter<long long, Char> {};
 template <int N, typename Char>
-struct formatter<detail::ubitint<N>, Char>
-    : formatter<unsigned long long, Char> {};
+struct formatter<detail::ubitint<N>, Char> : formatter<ullong, Char> {};
 
 template <typename Char>
 struct formatter<detail::float128, Char>
@@ -4210,7 +4209,7 @@ class format_int {
  private:
   // Buffer should be large enough to hold all digits (digits10 + 1),
   // a sign and a null character.
-  enum { buffer_size = std::numeric_limits<unsigned long long>::digits10 + 3 };
+  enum { buffer_size = std::numeric_limits<ullong>::digits10 + 3 };
   mutable char buffer_[buffer_size];
   char* str_;
 
@@ -4240,7 +4239,7 @@ class format_int {
       : str_(format_unsigned(value)) {}
   FMT_CONSTEXPR20 explicit format_int(unsigned long value)
       : str_(format_unsigned(value)) {}
-  FMT_CONSTEXPR20 explicit format_int(unsigned long long value)
+  FMT_CONSTEXPR20 explicit format_int(ullong value)
       : str_(format_unsigned(value)) {}
 
   /// Returns the number of characters written to the output buffer.

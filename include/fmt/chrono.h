@@ -544,8 +544,7 @@ namespace detail {
 // https://johnnylee-sde.github.io/Fast-unsigned-integer-to-time-string/.
 inline void write_digit2_separated(char* buf, unsigned a, unsigned b,
                                    unsigned c, char sep) {
-  unsigned long long digits =
-      a | (b << 24) | (static_cast<unsigned long long>(c) << 48);
+  ullong digits = a | (b << 24) | (static_cast<ullong>(c) << 48);
   // Convert each value to BCD.
   // We have x = a * 10 + b and we want to convert it to BCD y = a * 16 + b.
   // The difference is
@@ -559,7 +558,7 @@ inline void write_digit2_separated(char* buf, unsigned a, unsigned b,
   // Put low nibbles to high bytes and high nibbles to low bytes.
   digits = ((digits & 0x00f00000f00000f0) >> 4) |
            ((digits & 0x000f00000f00000f) << 8);
-  auto usep = static_cast<unsigned long long>(sep);
+  auto usep = static_cast<ullong>(sep);
   // Add ASCII '0' to each digit byte and insert separators.
   digits |= 0x3030003030003030 | (usep << 16) | (usep << 40);
 
