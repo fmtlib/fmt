@@ -156,6 +156,12 @@
 #  define FMT_CONSTEXPR_STRING
 #endif
 
+#if FMT_MSC_VERSION
+#  define FMT_MSC_WARNING(...) __pragma(warning(__VA_ARGS__))
+#else
+#  define FMT_MSC_WARNING(...)
+#endif
+
 // GCC 4.9 doesn't support qualified names in specializations.
 namespace std {
 template <typename T> struct iterator_traits<fmt::basic_appender<T>> {

@@ -223,11 +223,6 @@
 #else
 #  define FMT_PRAGMA_CLANG(x)
 #endif
-#if FMT_MSC_VERSION
-#  define FMT_MSC_WARNING(...) __pragma(warning(__VA_ARGS__))
-#else
-#  define FMT_MSC_WARNING(...)
-#endif
 
 // Enable minimal optimizations for more compact code in debug mode.
 FMT_PRAGMA_GCC(push_options)
@@ -1741,9 +1736,12 @@ template <typename T> class buffer {
 
  protected:
   // Don't initialize ptr_ since it is not accessed to save a few cycles.
-  FMT_MSC_WARNING(suppress : 26495)
   constexpr buffer(grow_fun grow, size_t sz) noexcept
-      : size_(sz), capacity_(sz), grow_(grow) {}
+      : size_(sz), capacity_(sz), grow_(grow) {
+#if FMT_MSC_VERSION
+    ptr_ = nullptr;  // Suppress warning 26495.
+#endif
+  }
 
   constexpr buffer(grow_fun grow, T* p = nullptr, size_t sz = 0,
                    size_t cap = 0) noexcept
