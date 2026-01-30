@@ -248,6 +248,11 @@ inline auto clzll(uint64_t x) -> int {
 #  define FMT_BUILTIN_CLZLL(n) detail::clzll(n)
 #endif  // FMT_MSC_VERSION && !defined(FMT_BUILTIN_CLZLL)
 
+// Suppresses "conditional expression is constant" warnings.
+template <typename T> FMT_ALWAYS_INLINE constexpr auto const_check(T val) -> T {
+  return val;
+}
+
 FMT_CONSTEXPR inline void abort_fuzzing_if(bool condition) {
   ignore_unused(condition);
 #ifdef FMT_FUZZ

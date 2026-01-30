@@ -377,11 +377,6 @@ constexpr auto is_constant_evaluated(bool default_value = false) noexcept
 #endif
 }
 
-// Suppresses "conditional expression is constant" warnings.
-template <typename T> FMT_ALWAYS_INLINE constexpr auto const_check(T val) -> T {
-  return val;
-}
-
 #ifdef FMT_ASSERT
 // Use the provided definition.
 #elif defined(NDEBUG)
@@ -1299,7 +1294,7 @@ constexpr auto to_ascii(Char c) -> char {
 // Returns the number of code units in a code point or 1 on error.
 template <typename Char>
 FMT_CONSTEXPR auto code_point_length(const Char* begin) -> int {
-  if (const_check(sizeof(Char) != 1)) return 1;
+  if FMT_CONSTEXPR20 (sizeof(Char) != 1) return 1;
   auto c = static_cast<unsigned char>(*begin);
   return static_cast<int>((0x3a55000000000000ull >> (2 * (c >> 3))) & 3) + 1;
 }
@@ -2394,7 +2389,7 @@ template <typename T, typename Char, type TYPE> struct native_formatter {
   FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     if (ctx.begin() == ctx.end() || *ctx.begin() == '}') return ctx.begin();
     auto end = parse_format_specs(ctx.begin(), ctx.end(), specs_, ctx, TYPE);
-    if (const_check(TYPE == type::char_type)) check_char_specs(specs_);
+    if FMT_CONSTEXPR20 (TYPE == type::char_type) check_char_specs(specs_);
     return end;
   }
 
@@ -2934,7 +2929,7 @@ FMT_API void vprint_buffered(FILE* f, string_view fmt, format_args args);
 template <typename... T>
 FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
   vargs<T...> va = {{args...}};
-  if (detail::const_check(!detail::use_utf8))
+  if FMT_CONSTEXPR20 (!detail::use_utf8)
     return detail::vprint_mojibake(stdout, fmt.str, va, false);
   return detail::is_locking<T...>() ? vprint_buffered(stdout, fmt.str, va)
                                     : vprint(fmt.str, va);
@@ -2951,7 +2946,7 @@ FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
 template <typename... T>
 FMT_INLINE void print(FILE* f, format_string<T...> fmt, T&&... args) {
   vargs<T...> va = {{args...}};
-  if (detail::const_check(!detail::use_utf8))
+  if FMT_CONSTEXPR20 (!detail::use_utf8)
     return detail::vprint_mojibake(f, fmt.str, va, false);
   return detail::is_locking<T...>() ? vprint_buffered(f, fmt.str, va)
                                     : vprint(f, fmt.str, va);
@@ -2962,7 +2957,7 @@ FMT_INLINE void print(FILE* f, format_string<T...> fmt, T&&... args) {
 template <typename... T>
 FMT_INLINE void println(FILE* f, format_string<T...> fmt, T&&... args) {
   vargs<T...> va = {{args...}};
-  if (detail::const_check(detail::use_utf8)) return vprintln(f, fmt.str, va);
+  if FMT_CONSTEXPR20 (detail::use_utf8) return vprintln(f, fmt.str, va);
   detail::vprint_mojibake(f, fmt.str, va, true);
 }
 
