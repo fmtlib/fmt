@@ -746,7 +746,6 @@ struct formatter<tuple_join_view<Tuple, Char>, Char,
     return do_format(value, ctx, std::integral_constant<size_t, N - 1>());
   }
 };
-
 namespace detail {
 // Check if T has an interface like a container adaptor (e.g. std::stack,
 // std::queue, std::priority_queue).
@@ -766,10 +765,19 @@ template <typename Container> struct all {
 };
 }  // namespace detail
 
+/**
+ * returns "true" if "T" is a container adaptor (like "std::stack")
+ * that should be formatted by iterating over the underlying container.
+ * */
+
+FMT_EXPORT
+template <typename T>
+struct is_container_adaptor : detail::is_container_adaptor_like<T> {};
+
 template <typename T, typename Char>
 struct formatter<
     T, Char,
-    enable_if_t<conjunction<detail::is_container_adaptor_like<T>,
+    enable_if_t<conjunction<is_container_adaptor<T>,
                             bool_constant<range_format_kind<T, Char>::value ==
                                           range_format::disabled>>::value>>
     : formatter<detail::all<typename T::container_type>, Char> {

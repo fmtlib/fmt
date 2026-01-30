@@ -797,3 +797,33 @@ struct not_range {
   void end() const {}
 };
 static_assert(!fmt::is_formattable<not_range>{}, "");
+
+namespace test_detail {
+  template <typename T>
+  struct partial_opt_out_wrapper {
+    using container_type = std::vector<T>;
+    std::vector<T> c = {1, 2, 3};
+  };
+}  // namespace test_detail
+
+namespace fmt {
+  template <typename T>
+  struct is_container_adaptor<test_detail::partial_opt_out_wrapper<T>> : std::false_type {};
+
+  template <typename T>
+  struct formatter<test_detail::partial_opt_out_wrapper<T>> {
+    constexpr fmt::format_parse_context::iterator parse(fmt::format_parse_context& ctx) const {
+      return ctx.begin();
+    }
+
+    fmt::format_context::iterator format(const test_detail::partial_opt_out_wrapper<T>& val,
+                                         fmt::format_context& ctx) const {
+      return fmt::format_to(ctx.out(), "PartialOptOut(size={})", val.c.size());
+    }
+  };
+}  // namespace fmt
+
+TEST(ranges_test, container_adaptor_partial_specialization) {
+  test_detail::partial_opt_out_wrapper<int> obj;
+  EXPECT_EQ(fmt::format("{}", obj), "PartialOptOut(size=3)");
+}
