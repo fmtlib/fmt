@@ -235,7 +235,6 @@ FMT_PRAGMA_GCC(push_options)
 FMT_PRAGMA_GCC(optimize("Og"))
 #endif
 FMT_PRAGMA_CLANG(diagnostic push)
-FMT_PRAGMA_GCC(diagnostic push)
 
 #ifdef FMT_ALWAYS_INLINE
 // Use the provided definition.
@@ -2794,8 +2793,6 @@ template <typename Context = context, typename... T,
           ullong DESC = detail::make_descriptor<Context, T...>()>
 constexpr FMT_ALWAYS_INLINE auto make_format_args(T&... args)
     -> detail::format_arg_store<Context, NUM_ARGS, NUM_NAMED_ARGS, DESC> {
-  // Suppress warnings for pathological types convertible to detail::value.
-  FMT_PRAGMA_GCC(diagnostic ignored "-Wconversion")
   return {{args...}};
 }
 
@@ -2968,7 +2965,6 @@ FMT_INLINE void println(format_string<T...> fmt, T&&... args) {
   return fmt::println(stdout, fmt, static_cast<T&&>(args)...);
 }
 
-FMT_PRAGMA_GCC(diagnostic pop)
 FMT_PRAGMA_CLANG(diagnostic pop)
 FMT_PRAGMA_GCC(pop_options)
 FMT_END_EXPORT

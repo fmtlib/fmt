@@ -10,6 +10,9 @@
 #include "test-assert.h"
 // clang-format on
 
+// Suppress warnings for pathological types convertible to detail::value.
+#pragma GCC diagnostic ignored "-Wconversion"
+
 #include "fmt/base.h"
 
 #include <limits.h>  // INT_MAX
