@@ -126,8 +126,8 @@
 #  define FMT_USE_CONSTEVAL 0
 #elif defined(__apple_build_version__) && __apple_build_version__ < 14000029L
 #  define FMT_USE_CONSTEVAL 0  // consteval is broken in Apple clang < 14.
-#elif FMT_MSC_VERSION && FMT_MSC_VERSION < 1929
-#  define FMT_USE_CONSTEVAL 0  // consteval is broken in MSVC VS2019 < 16.10.
+#elif FMT_MSC_VERSION && FMT_MSC_VERSION < 1940
+#  define FMT_USE_CONSTEVAL 0  // consteval is broken in some MSVC2022 versions.
 #elif defined(__cpp_consteval)
 #  define FMT_USE_CONSTEVAL 1
 #elif FMT_GCC_VERSION >= 1002 || FMT_CLANG_VERSION >= 1101
@@ -1834,12 +1834,7 @@ template <typename T> class buffer {
 
   /// Appends data to the end of the buffer.
   template <typename U>
-// Workaround for MSVC2019 to fix error C2893: Failed to specialize function
-// template 'void fmt::v11::detail::buffer<T>::append(const U *,const U *)'.
-#if !FMT_MSC_VERSION || FMT_MSC_VERSION >= 1940
-  FMT_CONSTEXPR20
-#endif
-      void append(const U* begin, const U* end) {
+  FMT_CONSTEXPR20 void append(const U* begin, const U* end) {
     while (begin != end) {
       auto size = size_;
       auto free_cap = capacity_ - size;

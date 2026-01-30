@@ -979,7 +979,7 @@ FMT_API void print(FILE*, string_view);
 
 namespace detail {
 template <typename Char, size_t N> struct fixed_string {
-  FMT_CONSTEXPR20 fixed_string(const Char (&s)[N]) {
+  FMT_CONSTEXPR fixed_string(const Char (&s)[N]) {
     detail::copy<Char, const Char*, Char*>(static_cast<const Char*>(s), s + N,
                                            data);
   }
