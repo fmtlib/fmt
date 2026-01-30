@@ -347,11 +347,6 @@ template <typename T, typename Char> struct is_range {
       detail::is_range_<T>::value && !detail::has_to_string_view<T>::value;
 };
 
-/**
- * returns "true" if "T" is a container adaptor (like "std::stack")
- * that should be formatted by iterating over the underlying container.
- * */
-
 namespace detail {
 
 template <typename Char, typename Element>
@@ -769,6 +764,12 @@ template <typename Container> struct all {
   auto end() const -> typename Container::const_iterator { return c.end(); }
 };
 }  // namespace detail
+
+/**
+ * returns "true" if "T" is a container adaptor (like "std::stack")
+ * that should be formatted by iterating over the underlying container.
+ * */
+
 FMT_EXPORT
 template <typename T>
 struct is_container_adaptor : detail::is_container_adaptor_like<T> {};
