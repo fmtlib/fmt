@@ -248,11 +248,6 @@ inline auto clzll(uint64_t x) -> int {
 #  define FMT_BUILTIN_CLZLL(n) detail::clzll(n)
 #endif  // FMT_MSC_VERSION && !defined(FMT_BUILTIN_CLZLL)
 
-// Suppresses "conditional expression is constant" warnings.
-template <typename T> FMT_ALWAYS_INLINE constexpr auto const_check(T val) -> T {
-  return val;
-}
-
 FMT_CONSTEXPR inline void abort_fuzzing_if(bool condition) {
   ignore_unused(condition);
 #ifdef FMT_FUZZ
@@ -448,7 +443,7 @@ inline auto bit_cast(const From& from) -> To {
     unsigned short value[static_cast<unsigned>(size)];
   } data = bit_cast<data_t>(from);
   auto result = To();
-  if (const_check(is_big_endian())) {
+  if (is_big_endian()) {
     for (int i = 0; i < size; ++i)
       result = (result << num_bits<unsigned short>()) | data.value[i];
   } else {
@@ -1495,26 +1490,26 @@ template <typename T, typename Enable = void> struct float_info;
 
 template <> struct float_info<float> {
   using carrier_uint = uint32_t;
-  static const int exponent_bits = 8;
-  static const int kappa = 1;
-  static const int big_divisor = 100;
-  static const int small_divisor = 10;
-  static const int min_k = -31;
-  static const int max_k = 46;
-  static const int shorter_interval_tie_lower_threshold = -35;
-  static const int shorter_interval_tie_upper_threshold = -35;
+  static constexpr int exponent_bits = 8;
+  static constexpr int kappa = 1;
+  static constexpr int big_divisor = 100;
+  static constexpr int small_divisor = 10;
+  static constexpr int min_k = -31;
+  enum { max_k = 46 };
+  static constexpr int shorter_interval_tie_lower_threshold = -35;
+  static constexpr int shorter_interval_tie_upper_threshold = -35;
 };
 
 template <> struct float_info<double> {
   using carrier_uint = uint64_t;
-  static const int exponent_bits = 11;
-  static const int kappa = 2;
-  static const int big_divisor = 1000;
-  static const int small_divisor = 100;
-  static const int min_k = -292;
-  static const int max_k = 341;
-  static const int shorter_interval_tie_lower_threshold = -77;
-  static const int shorter_interval_tie_upper_threshold = -77;
+  static constexpr int exponent_bits = 11;
+  static constexpr int kappa = 2;
+  static constexpr int big_divisor = 1000;
+  static constexpr int small_divisor = 100;
+  static constexpr int min_k = -292;
+  enum { max_k = 341 };
+  static constexpr int shorter_interval_tie_lower_threshold = -77;
+  static constexpr int shorter_interval_tie_upper_threshold = -77;
 };
 
 // An 80- or 128-bit floating point number.
@@ -1781,7 +1776,7 @@ FMT_API auto is_printable(uint32_t cp) -> bool;
 
 inline auto needs_escape(uint32_t cp) -> bool {
   if (cp < 0x20 || cp == 0x7f || cp == '"' || cp == '\\') return true;
-  if (const_check(FMT_OPTIMIZE_SIZE > 1)) return false;
+  if FMT_CONSTEXPR20 (FMT_OPTIMIZE_SIZE > 1) return false;
   return !is_printable(cp);
 }
 
@@ -1796,7 +1791,7 @@ auto find_escape(const Char* begin, const Char* end)
     -> find_escape_result<Char> {
   for (; begin != end; ++begin) {
     uint32_t cp = static_cast<unsigned_char<Char>>(*begin);
-    if (const_check(sizeof(Char) == 1) && cp >= 0x80) continue;
+    if (sizeof(Char) == 1 && cp >= 0x80) continue;
     if (needs_escape(cp)) return {begin, begin + 1, cp};
   }
   return {begin, nullptr, 0};
@@ -1804,7 +1799,7 @@ auto find_escape(const Char* begin, const Char* end)
 
 inline auto find_escape(const char* begin, const char* end)
     -> find_escape_result<char> {
-  if (const_check(!use_utf8)) return find_escape<char>(begin, end);
+  if FMT_CONSTEXPR20 (!use_utf8) return find_escape<char>(begin, end);
   auto result = find_escape_result<char>{end, nullptr, 0};
   for_each_codepoint(string_view(begin, to_unsigned(end - begin)),
                      [&](uint32_t cp, string_view sv) {

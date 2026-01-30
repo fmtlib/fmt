@@ -136,7 +136,7 @@ template <typename T, typename Context> class arg_converter {
   void operator()(U value) {
     bool is_signed = type_ == 'd' || type_ == 'i';
     using target_type = conditional_t<std::is_same<T, void>::value, U, T>;
-    if (const_check(sizeof(target_type) <= sizeof(int))) {
+    if FMT_CONSTEXPR20 (sizeof(target_type) <= sizeof(int)) {
       // Extra casts are used to silence warnings.
       using unsigned_type = typename make_unsigned_or_bool<target_type>::type;
       if (is_signed)

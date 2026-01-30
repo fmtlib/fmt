@@ -348,11 +348,10 @@ void test_length(const char* length_spec, U value) {
   unsigned long long unsigned_value = 0;
   // Apply integer promotion to the argument.
   unsigned long long max = max_value<U>();
-  using fmt::detail::const_check;
-  if (const_check(max <= static_cast<unsigned>(max_value<int>()))) {
+  if (max <= static_cast<unsigned>(max_value<int>())) {
     signed_value = static_cast<int>(value);
     unsigned_value = static_cast<unsigned long long>(value);
-  } else if (const_check(max <= max_value<unsigned>())) {
+  } else if (max <= max_value<unsigned>()) {
     signed_value = static_cast<unsigned>(value);
     unsigned_value = static_cast<unsigned long long>(value);
   }

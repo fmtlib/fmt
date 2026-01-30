@@ -52,7 +52,7 @@ FMT_CONSTEXPR auto lossless_integral_conversion(const From from, int& ec)
   static_assert(T::is_integer, "To must be integral");
 
   // A and B are both signed, or both unsigned.
-  if (detail::const_check(F::digits <= T::digits)) {
+  if FMT_CONSTEXPR20 (F::digits <= T::digits) {
     // From fits in To without any problem.
   } else {
     // From does not always fit in To, resort to a dynamic check.
@@ -79,22 +79,21 @@ FMT_CONSTEXPR auto lossless_integral_conversion(const From from, int& ec)
   static_assert(F::is_integer, "From must be integral");
   static_assert(T::is_integer, "To must be integral");
 
-  if (detail::const_check(F::is_signed && !T::is_signed)) {
+  if FMT_CONSTEXPR20 (F::is_signed && !T::is_signed) {
     // From may be negative, not allowed!
     if (fmt::detail::is_negative(from)) {
       ec = 1;
       return {};
     }
     // From is positive. Can it always fit in To?
-    if (detail::const_check(F::digits > T::digits) &&
+    if (F::digits > T::digits &&
         from > static_cast<From>(detail::max_value<To>())) {
       ec = 1;
       return {};
     }
   }
 
-  if (detail::const_check(!F::is_signed && T::is_signed &&
-                          F::digits >= T::digits) &&
+  if (!F::is_signed && T::is_signed && F::digits >= T::digits &&
       from > static_cast<From>(detail::max_value<To>())) {
     ec = 1;
     return {};
@@ -188,7 +187,7 @@ auto safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
   }
 
   // multiply with Factor::num without overflow or underflow
-  if (detail::const_check(Factor::num != 1)) {
+  if FMT_CONSTEXPR20 (Factor::num != 1) {
     constexpr auto max1 = detail::max_value<IntermediateRep>() /
                           static_cast<IntermediateRep>(Factor::num);
     if (count > max1) {
@@ -205,7 +204,7 @@ auto safe_duration_cast(std::chrono::duration<FromRep, FromPeriod> from,
   }
 
   // this can't go wrong, right? den>0 is checked earlier.
-  if (detail::const_check(Factor::den != 1)) {
+  if FMT_CONSTEXPR20 (Factor::den != 1) {
     using common_t = typename std::common_type<IntermediateRep, intmax_t>::type;
     count /= static_cast<common_t>(Factor::den);
   }
@@ -337,7 +336,7 @@ void write_codecvt(codecvt_result<CodeUnit>& out, string_view in,
 template <typename OutputIt>
 auto write_encoded_tm_str(OutputIt out, string_view in, const std::locale& loc)
     -> OutputIt {
-  if (const_check(detail::use_utf8) && loc != get_classic_locale()) {
+  if (detail::use_utf8 && loc != get_classic_locale()) {
     // char16_t and char32_t codecvts are broken in MSVC (linkage errors) and
     // gcc-4.
 #if FMT_MSC_VERSION != 0 ||  \
@@ -434,14 +433,14 @@ auto duration_cast(std::chrono::duration<FromRep, FromPeriod> from) -> To {
   common_rep count = from.count();  // This conversion is lossless.
 
   // Multiply from.count() by factor and check for overflow.
-  if (const_check(factor::num != 1)) {
+  if FMT_CONSTEXPR20 (factor::num != 1) {
     if (count > max_value<common_rep>() / factor::num) throw_duration_error();
     const auto min = (std::numeric_limits<common_rep>::min)() / factor::num;
-    if (const_check(!std::is_unsigned<common_rep>::value) && count < min)
+    if (!std::is_unsigned<common_rep>::value && count < min)
       throw_duration_error();
     count *= factor::num;
   }
-  if (const_check(factor::den != 1)) count /= factor::den;
+  if FMT_CONSTEXPR20 (factor::den != 1) count /= factor::den;
   int ec = 0;
   auto to =
       To(safe_duration_cast::lossless_integral_conversion<typename To::rep>(
@@ -563,7 +562,7 @@ inline void write_digit2_separated(char* buf, unsigned a, unsigned b,
   digits |= 0x3030003030003030 | (usep << 16) | (usep << 40);
 
   constexpr size_t len = 8;
-  if (const_check(is_big_endian())) {
+  if (is_big_endian()) {
     char tmp[len];
     std::memcpy(tmp, &digits, len);
     std::reverse_copy(tmp, tmp + len, buf);
@@ -1575,7 +1574,7 @@ auto format_duration_unit(OutputIt out) -> OutputIt {
     return copy_unit(string_view(unit), out, Char());
   *out++ = '[';
   out = write<Char>(out, Period::num);
-  if (const_check(Period::den != 1)) {
+  if FMT_CONSTEXPR20 (Period::den != 1) {
     *out++ = '/';
     out = write<Char>(out, Period::den);
   }
@@ -2178,9 +2177,9 @@ struct formatter<sys_time<Duration>, Char> : private formatter<std::tm, Char> {
       -> decltype(ctx.out()) {
     std::tm tm = gmtime(val);
     using period = typename Duration::period;
-    if (detail::const_check(
-            period::num == 1 && period::den == 1 &&
-            !std::is_floating_point<typename Duration::rep>::value)) {
+    if FMT_CONSTEXPR20 (period::num == 1 && period::den == 1 &&
+                        !std::is_floating_point<
+                            typename Duration::rep>::value) {
       detail::set_tm_zone(tm, detail::utc());
       return formatter<std::tm, Char>::format(tm, ctx);
     }

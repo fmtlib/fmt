@@ -995,7 +995,7 @@ TEST(format_test, runtime_width) {
                    format_error, bad_dynamic_spec_msg);
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:{1}}"), 0, -1l), format_error,
                    bad_dynamic_spec_msg);
-  if (fmt::detail::const_check(sizeof(long) > sizeof(int))) {
+  if (sizeof(long) > sizeof(int)) {
     long value = INT_MAX;
     EXPECT_THROW_MSG((void)fmt::format(runtime("{0:{1}}"), 0, (value + 1)),
                      format_error, bad_dynamic_spec_msg);
@@ -1243,7 +1243,7 @@ TEST(format_test, runtime_precision) {
                    format_error, bad_dynamic_spec_msg);
   EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0, -1l),
                    format_error, bad_dynamic_spec_msg);
-  if (fmt::detail::const_check(sizeof(long) > sizeof(int))) {
+  if (sizeof(long) > sizeof(int)) {
     long value = INT_MAX;
     EXPECT_THROW_MSG((void)fmt::format(runtime("{0:.{1}}"), 0.0, (value + 1)),
                      format_error, bad_dynamic_spec_msg);
@@ -1519,7 +1519,7 @@ TEST(format_test, format_double) {
   }
 #endif
 
-  if (fmt::detail::const_check(std::numeric_limits<double>::is_iec559)) {
+  if (std::numeric_limits<double>::is_iec559) {
     double d = (std::numeric_limits<double>::min)();
     EXPECT_EQ(fmt::format("{:a}", d), "0x1p-1022");
     EXPECT_EQ(fmt::format("{:#a}", d), "0x1.p-1022");
@@ -2489,7 +2489,7 @@ auto format_as(const string& s) -> std::string { return s; }
 TEST(format_test, adl) {
   // Only check compilation and don't run the code to avoid polluting the output
   // and since the output is tested elsewhere.
-  if (fmt::detail::const_check(true)) return;
+  if (true) return;
   auto s = adl_test::string();
   char buf[10];
   (void)fmt::format("{}", s);

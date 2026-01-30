@@ -505,8 +505,7 @@ struct formatter<
   using nonlocking = void;
 
   FMT_CONSTEXPR formatter() {
-    if (detail::const_check(range_format_kind<R, Char>::value !=
-                            range_format::set))
+    if FMT_CONSTEXPR20 (range_format_kind<R, Char>::value != range_format::set)
       return;
     range_formatter_.set_brackets(detail::string_literal<Char, '{'>{},
                                   detail::string_literal<Char, '}'>{});
@@ -607,13 +606,14 @@ struct formatter<
   auto format(range_type& range, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     auto out = ctx.out();
-    if (detail::const_check(range_format_kind<R, Char>::value ==
-                            range_format::debug_string))
+    if FMT_CONSTEXPR20 (range_format_kind<R, Char>::value ==
+                        range_format::debug_string) {
       *out++ = '"';
+    }
     out = underlying_.format(
         string_type{detail::range_begin(range), detail::range_end(range)}, ctx);
-    if (detail::const_check(range_format_kind<R, Char>::value ==
-                            range_format::debug_string))
+    if FMT_CONSTEXPR20 (range_format_kind<R, Char>::value ==
+                        range_format::debug_string)
       *out++ = '"';
     return out;
   }

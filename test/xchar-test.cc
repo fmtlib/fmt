@@ -159,7 +159,7 @@ TEST(xchar_test, named_arg_udl) {
 
 TEST(xchar_test, print) {
   // Check that the wide print overload compiles.
-  if (fmt::detail::const_check(false)) {
+  if (false) {
     fmt::print(L"test");
     fmt::println(L"test");
   }

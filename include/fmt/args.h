@@ -152,7 +152,7 @@ FMT_EXPORT template <typename Context> class dynamic_format_arg_store {
    *     std::string result = fmt::vformat("{} and {} and {}", store);
    */
   template <typename T> void push_back(const T& arg) {
-    if (detail::const_check(need_copy<T>::value))
+    if FMT_CONSTEXPR20 (need_copy<T>::value)
       emplace_arg(dynamic_args_.push<stored_t<T>>(arg));
     else
       emplace_arg(detail::unwrap(arg));
@@ -187,7 +187,7 @@ FMT_EXPORT template <typename Context> class dynamic_format_arg_store {
   void push_back(const detail::named_arg<char_type, T>& arg) {
     const char_type* arg_name =
         dynamic_args_.push<std::basic_string<char_type>>(arg.name).c_str();
-    if (detail::const_check(need_copy<T>::value)) {
+    if FMT_CONSTEXPR20 (need_copy<T>::value) {
       emplace_arg(
           fmt::arg(arg_name, dynamic_args_.push<stored_t<T>>(arg.value)));
     } else {
