@@ -196,6 +196,17 @@ TEST(util_test, increment) {
   EXPECT_STREQ("200", s);
 }
 
+struct minimal_container {
+  using value_type = char;
+  void push_back(char) {}
+};
+
+TEST(util_test, copy) {
+  minimal_container c;
+  static constexpr char str[] = "a";
+  fmt::detail::copy<char>(str, str + 1, std::back_inserter(c));
+}
+
 TEST(util_test, parse_nonnegative_int) {
   auto s = fmt::string_view("10000000000");
   auto begin = s.begin(), end = s.end();
