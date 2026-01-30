@@ -409,23 +409,6 @@ inline auto map(int128_opt) -> monostate { return {}; }
 inline auto map(uint128_opt) -> monostate { return {}; }
 #endif
 
-#ifdef FMT_USE_BITINT
-// Use the provided definition.
-#elif FMT_CLANG_VERSION >= 1500 && !defined(__CUDACC__)
-#  define FMT_USE_BITINT 1
-#else
-#  define FMT_USE_BITINT 0
-#endif
-
-#if FMT_USE_BITINT
-FMT_PRAGMA_CLANG(diagnostic ignored "-Wbit-int-extension")
-template <int N> using bitint = _BitInt(N);
-template <int N> using ubitint = unsigned _BitInt(N);
-#else
-template <int N> struct bitint {};
-template <int N> struct ubitint {};
-#endif  // FMT_USE_BITINT
-
 // Casts a nonnegative integer to unsigned.
 template <typename Int>
 FMT_CONSTEXPR auto to_unsigned(Int value) -> make_unsigned_t<Int> {
@@ -1176,11 +1159,6 @@ template <typename Char> struct type_mapper {
   static auto map(int128_opt) -> int128_opt;
   static auto map(uint128_opt) -> uint128_opt;
   static auto map(bool) -> bool;
-
-  template <int N>
-  static auto map(bitint<N>) -> conditional_t<N <= 64, long long, void>;
-  template <int N>
-  static auto map(ubitint<N>) -> conditional_t<N <= 64, ullong, void>;
 
   template <typename T, FMT_ENABLE_IF(is_code_unit<T>::value)>
   static auto map(T) -> conditional_t<
@@ -2129,15 +2107,6 @@ template <typename Context> class value {
   FMT_INLINE value(int128_opt x FMT_BUILTIN) : int128_value(x) {}
   FMT_INLINE value(uint128_opt x FMT_BUILTIN) : uint128_value(x) {}
   constexpr FMT_INLINE value(bool x FMT_BUILTIN) : bool_value(x) {}
-
-  template <int N>
-  constexpr FMT_INLINE value(bitint<N> x FMT_BUILTIN) : long_long_value(x) {
-    static_assert(N <= 64, "unsupported _BitInt");
-  }
-  template <int N>
-  constexpr FMT_INLINE value(ubitint<N> x FMT_BUILTIN) : ulong_long_value(x) {
-    static_assert(N <= 64, "unsupported _BitInt");
-  }
 
   template <typename T, FMT_ENABLE_IF(is_code_unit<T>::value)>
   constexpr FMT_INLINE value(T x FMT_BUILTIN) : char_value(x) {
