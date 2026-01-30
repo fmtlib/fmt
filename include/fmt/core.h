@@ -1,5 +1,7 @@
-// This file is only provided for compatibility and may be removed in future
-// versions. Use fmt/base.h if you don't need fmt::format and fmt/format.h
-// otherwise.
+#include "base.h"
 
-#include "format.h"
+// Using fmt::format via fmt/core.h has been deprecated since version 11
+// and now requires an explicit opt in.
+#ifdef FMT_DEPRECATED_HEAVY_CORE
+#  include "format.h"
+#endif
