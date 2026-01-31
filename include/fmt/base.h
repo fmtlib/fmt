@@ -501,7 +501,6 @@ template <typename Char> class basic_string_view {
   constexpr basic_string_view() noexcept : data_(nullptr), size_(0) {}
   constexpr basic_string_view(const Char* s, size_t count) noexcept
       : data_(s), size_(count) {}
-  constexpr basic_string_view(nullptr_t) = delete;
 
 #if FMT_GCC_VERSION
   FMT_ALWAYS_INLINE
@@ -1732,11 +1731,9 @@ template <typename T> class buffer {
 
  protected:
   // Don't initialize ptr_ since it is not accessed to save a few cycles.
-  constexpr buffer(grow_fun grow, size_t sz) noexcept
+  FMT_CONSTEXPR buffer(grow_fun grow, size_t sz) noexcept
       : size_(sz), capacity_(sz), grow_(grow) {
-#if FMT_MSC_VERSION
-    ptr_ = nullptr;  // Suppress warning 26495.
-#endif
+    if (FMT_MSC_VERSION) ptr_ = nullptr;  // Suppress warning 26495.
   }
 
   constexpr buffer(grow_fun grow, T* p = nullptr, size_t sz = 0,
