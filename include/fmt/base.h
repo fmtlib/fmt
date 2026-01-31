@@ -695,8 +695,7 @@ class basic_specs {
   char fill_data_[max_fill_size] = {' '};
 
   FMT_CONSTEXPR void set_fill_size(size_t size) {
-    data_ = (data_ & ~fill_size_mask) |
-            (static_cast<unsigned>(size) << fill_size_shift);
+    data_ = (data_ & ~fill_size_mask) | (unsigned(size) << fill_size_shift);
   }
 
  public:
@@ -704,21 +703,21 @@ class basic_specs {
     return static_cast<presentation_type>(data_ & type_mask);
   }
   FMT_CONSTEXPR void set_type(presentation_type t) {
-    data_ = (data_ & ~type_mask) | static_cast<unsigned>(t);
+    data_ = (data_ & ~type_mask) | unsigned(t);
   }
 
   constexpr auto align() const -> align {
     return static_cast<fmt::align>((data_ & align_mask) >> align_shift);
   }
   FMT_CONSTEXPR void set_align(fmt::align a) {
-    data_ = (data_ & ~align_mask) | (static_cast<unsigned>(a) << align_shift);
+    data_ = (data_ & ~align_mask) | (unsigned(a) << align_shift);
   }
 
   constexpr auto dynamic_width() const -> arg_id_kind {
     return static_cast<arg_id_kind>((data_ & width_mask) >> width_shift);
   }
   FMT_CONSTEXPR void set_dynamic_width(arg_id_kind w) {
-    data_ = (data_ & ~width_mask) | (static_cast<unsigned>(w) << width_shift);
+    data_ = (data_ & ~width_mask) | (unsigned(w) << width_shift);
   }
 
   FMT_CONSTEXPR auto dynamic_precision() const -> arg_id_kind {
@@ -726,8 +725,7 @@ class basic_specs {
                                     precision_shift);
   }
   FMT_CONSTEXPR void set_dynamic_precision(arg_id_kind p) {
-    data_ = (data_ & ~precision_mask) |
-            (static_cast<unsigned>(p) << precision_shift);
+    data_ = (data_ & ~precision_mask) | (unsigned(p) << precision_shift);
   }
 
   constexpr auto dynamic() const -> bool {
@@ -738,7 +736,7 @@ class basic_specs {
     return static_cast<fmt::sign>((data_ & sign_mask) >> sign_shift);
   }
   FMT_CONSTEXPR void set_sign(fmt::sign s) {
-    data_ = (data_ & ~sign_mask) | (static_cast<unsigned>(s) << sign_shift);
+    data_ = (data_ & ~sign_mask) | (unsigned(s) << sign_shift);
   }
 
   constexpr auto upper() const -> bool { return (data_ & uppercase_mask) != 0; }
@@ -768,9 +766,8 @@ class basic_specs {
 
   template <typename Char> constexpr auto fill_unit() const -> Char {
     using uchar = unsigned char;
-    return static_cast<Char>(static_cast<uchar>(fill_data_[0]) |
-                             (static_cast<uchar>(fill_data_[1]) << 8) |
-                             (static_cast<uchar>(fill_data_[2]) << 16));
+    return Char(uchar(fill_data_[0]) | uchar(fill_data_[1]) << 8 |
+                uchar(fill_data_[2]) << 16);
   }
 
   FMT_CONSTEXPR void set_fill(char c) {
@@ -784,14 +781,13 @@ class basic_specs {
     set_fill_size(size);
     if (size == 1) {
       unsigned uchar = static_cast<detail::unsigned_char<Char>>(s[0]);
-      fill_data_[0] = static_cast<char>(uchar);
-      fill_data_[1] = static_cast<char>(uchar >> 8);
-      fill_data_[2] = static_cast<char>(uchar >> 16);
+      fill_data_[0] = char(uchar);
+      fill_data_[1] = char(uchar >> 8);
+      fill_data_[2] = char(uchar >> 16);
       return;
     }
     FMT_ASSERT(size <= max_fill_size, "invalid fill");
-    for (size_t i = 0; i < size; ++i)
-      fill_data_[i & 3] = static_cast<char>(s[i]);
+    for (size_t i = 0; i < size; ++i) fill_data_[i & 3] = char(s[i]);
   }
 
   FMT_CONSTEXPR void copy_fill_from(const basic_specs& specs) {
@@ -998,9 +994,9 @@ constexpr auto is_arithmetic_type(type t) -> bool {
   return t > type::none_type && t <= type::last_numeric_type;
 }
 
-constexpr auto set(type rhs) -> int { return 1 << static_cast<int>(rhs); }
+constexpr auto set(type rhs) -> int { return 1 << int(rhs); }
 constexpr auto in(type t, int set) -> bool {
-  return ((set >> static_cast<int>(t)) & 1) != 0;
+  return ((set >> int(t)) & 1) != 0;
 }
 
 // Bitsets of types.
@@ -1260,7 +1256,7 @@ template <typename Char = char> struct dynamic_format_specs : format_specs {
 // Converts a character to ASCII. Returns '\0' on conversion failure.
 template <typename Char, FMT_ENABLE_IF(std::is_integral<Char>::value)>
 constexpr auto to_ascii(Char c) -> char {
-  return c <= 0xff ? static_cast<char>(c) : '\0';
+  return c <= 0xff ? char(c) : '\0';
 }
 
 // Returns the number of code units in a code point or 1 on error.
@@ -1286,13 +1282,13 @@ FMT_CONSTEXPR auto parse_nonnegative_int(const Char*& begin, const Char* end,
   } while (p != end && '0' <= *p && *p <= '9');
   auto num_digits = p - begin;
   begin = p;
-  int digits10 = static_cast<int>(sizeof(int) * CHAR_BIT * 3 / 10);
-  if (num_digits <= digits10) return static_cast<int>(value);
+  int digits10 = int(sizeof(int) * CHAR_BIT * 3 / 10);
+  if (num_digits <= digits10) return int(value);
   // Check for overflow.
   unsigned max = INT_MAX;
   return num_digits == digits10 + 1 &&
                  prev * 10ull + unsigned(p[-1] - '0') <= max
-             ? static_cast<int>(value)
+             ? int(value)
              : error_value;
 }
 
@@ -2230,7 +2226,7 @@ template <typename> constexpr auto encode_types() -> ullong { return 0; }
 
 template <typename Context, typename First, typename... T>
 constexpr auto encode_types() -> ullong {
-  return static_cast<unsigned>(stored_type_constant<First, Context>::value) |
+  return unsigned(stored_type_constant<First, Context>::value) |
          (encode_types<Context, T...>() << packed_arg_bits);
 }
 
@@ -2247,9 +2243,8 @@ using arg_t = conditional_t<NUM_ARGS <= max_packed_args, value<Context>,
 template <typename Context, int NUM_ARGS, int NUM_NAMED_ARGS, ullong DESC>
 struct named_arg_store {
   // args_[0].named_args points to named_args to avoid bloating format_args.
-  arg_t<Context, NUM_ARGS> args[1u + NUM_ARGS];
-  named_arg_info<typename Context::char_type>
-      named_args[static_cast<size_t>(NUM_NAMED_ARGS)];
+  arg_t<Context, NUM_ARGS> args[NUM_ARGS + 1u];
+  named_arg_info<typename Context::char_type> named_args[NUM_NAMED_ARGS + 0u];
 
   template <typename... T>
   FMT_CONSTEXPR FMT_ALWAYS_INLINE named_arg_store(T&... values)
@@ -2530,7 +2525,7 @@ template <typename Context> class basic_format_args {
       if (id < max_size()) arg = args_[id];
       return arg;
     }
-    if (static_cast<unsigned>(id) >= detail::max_packed_args) return arg;
+    if (unsigned(id) >= detail::max_packed_args) return arg;
     arg.type_ = type(id);
     if (arg.type_ != detail::type::none_type) arg.value_ = values_[id];
     return arg;
@@ -2554,8 +2549,8 @@ template <typename Context> class basic_format_args {
   }
 
   auto max_size() const -> int {
-    return static_cast<int>(is_packed() ? ullong(detail::max_packed_args)
-                                        : desc_ & ~detail::is_unpacked_bit);
+    return int(is_packed() ? ullong(detail::max_packed_args)
+                           : desc_ & ~detail::is_unpacked_bit);
   }
 };
 
@@ -2620,7 +2615,7 @@ template <typename... T> struct fstring {
       detail::count_static_named_args<T...>();
 
   using checker = detail::format_string_checker<
-      char, static_cast<int>(sizeof...(T)), num_static_named_args,
+      char, int(sizeof...(T)), num_static_named_args,
       num_static_named_args != detail::count_named_args<T...>()>;
 
   using arg_pack = detail::arg_pack<T...>;
