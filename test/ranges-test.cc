@@ -128,7 +128,7 @@ TEST(ranges_test, format_set) {
 
 // Models std::flat_set close enough to test if no ambiguous lookup of a
 // formatter happens due to the flat_set type matching is_set and
-// is_container_adaptor_like.
+// is_container_adaptor.
 template <typename T> class flat_set {
  public:
   using key_type = T;
@@ -608,12 +608,11 @@ TEST(ranges_test, vector_char) {
 
 TEST(ranges_test, container_adaptor) {
   {
-    using fmt::detail::is_container_adaptor_like;
     using T = std::nullptr_t;
-    static_assert(is_container_adaptor_like<std::stack<T>>::value, "");
-    static_assert(is_container_adaptor_like<std::queue<T>>::value, "");
-    static_assert(is_container_adaptor_like<std::priority_queue<T>>::value, "");
-    static_assert(!is_container_adaptor_like<std::vector<T>>::value, "");
+    static_assert(fmt::is_container_adaptor<std::stack<T>>::value, "");
+    static_assert(fmt::is_container_adaptor<std::queue<T>>::value, "");
+    static_assert(fmt::is_container_adaptor<std::priority_queue<T>>::value, "");
+    static_assert(!fmt::is_container_adaptor<std::vector<T>>::value, "");
   }
 
   {
@@ -798,32 +797,22 @@ struct not_range {
 };
 static_assert(!fmt::is_formattable<not_range>{}, "");
 
-namespace test_detail {
-  template <typename T>
-  struct partial_opt_out_wrapper {
-    using container_type = std::vector<T>;
-    std::vector<T> c = {1, 2, 3};
-  };
-}  // namespace test_detail
+struct test_adaptor {
+  using container_type = std::vector<int>;
+  std::vector<int> c = {1, 2, 3};
+};
 
 namespace fmt {
-  template <typename T>
-  struct is_container_adaptor<test_detail::partial_opt_out_wrapper<T>> : std::false_type {};
+template <> struct is_container_adaptor<test_adaptor> : std::false_type {};
 
-  template <typename T>
-  struct formatter<test_detail::partial_opt_out_wrapper<T>> {
-    constexpr fmt::format_parse_context::iterator parse(fmt::format_parse_context& ctx) const {
-      return ctx.begin();
-    }
-
-    fmt::format_context::iterator format(const test_detail::partial_opt_out_wrapper<T>& val,
-                                         fmt::format_context& ctx) const {
-      return fmt::format_to(ctx.out(), "PartialOptOut(size={})", val.c.size());
-    }
-  };
+template <> struct formatter<test_adaptor> : formatter<string_view> {
+  auto format(const test_adaptor&, format_context& ctx) const
+      -> format_context::iterator {
+    return formatter<string_view>::format("test", ctx);
+  }
+};
 }  // namespace fmt
 
-TEST(ranges_test, container_adaptor_partial_specialization) {
-  test_detail::partial_opt_out_wrapper<int> obj;
-  EXPECT_EQ(fmt::format("{}", obj), "PartialOptOut(size=3)");
+TEST(ranges_test, container_adaptor_opt_out) {
+  EXPECT_EQ(fmt::format("{}", test_adaptor()), "test");
 }

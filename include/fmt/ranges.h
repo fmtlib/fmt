@@ -746,18 +746,8 @@ struct formatter<tuple_join_view<Tuple, Char>, Char,
     return do_format(value, ctx, std::integral_constant<size_t, N - 1>());
   }
 };
+
 namespace detail {
-// Check if T has an interface like a container adaptor (e.g. std::stack,
-// std::queue, std::priority_queue).
-template <typename T> class is_container_adaptor_like {
-  template <typename U> static auto check(U* p) -> typename U::container_type;
-  template <typename> static void check(...);
-
- public:
-  static constexpr bool value =
-      !std::is_void<decltype(check<T>(nullptr))>::value;
-};
-
 template <typename Container> struct all {
   const Container& c;
   auto begin() const -> typename Container::const_iterator { return c.begin(); }
@@ -766,13 +756,20 @@ template <typename Container> struct all {
 }  // namespace detail
 
 /**
- * returns "true" if "T" is a container adaptor (like "std::stack")
- * that should be formatted by iterating over the underlying container.
- * */
-
+ * Specifies if `T` is a container adaptor (like `std::stack`) that should be
+ * formatted as the underlying container.
+ */
 FMT_EXPORT
 template <typename T>
-struct is_container_adaptor : detail::is_container_adaptor_like<T> {};
+struct is_container_adaptor {
+ private:
+  template <typename U> static auto check(U* p) -> typename U::container_type;
+  template <typename> static void check(...);
+
+ public:
+  static constexpr bool value =
+      !std::is_void<decltype(check<T>(nullptr))>::value;
+};
 
 template <typename T, typename Char>
 struct formatter<
