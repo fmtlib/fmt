@@ -623,6 +623,9 @@ struct formatter {
   formatter() = delete;
 };
 
+template <typename T, typename Enable = void>
+struct locking : std::false_type {};
+
 /// Reports a format error at compile time or, via a `format_error` exception,
 /// at runtime.
 // This function is intentionally not constexpr to give a compile-time error.
@@ -2292,8 +2295,6 @@ template <typename T, typename Char, type TYPE> struct native_formatter {
   dynamic_format_specs<Char> specs_;
 
  public:
-  using nonlocking = void;
-
   FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     if (ctx.begin() == ctx.end() || *ctx.begin() == '}') return ctx.begin();
     auto end = parse_format_specs(ctx.begin(), ctx.end(), specs_, ctx, TYPE);
@@ -2313,19 +2314,12 @@ template <typename T, typename Char, type TYPE> struct native_formatter {
       -> decltype(ctx.out());
 };
 
-template <typename T, typename Enable = void>
-struct locking
-    : bool_constant<mapped_type_constant<T>::value == type::custom_type> {};
-template <typename T>
-struct locking<T, void_t<typename formatter<remove_cvref_t<T>>::nonlocking>>
-    : std::false_type {};
-
-template <typename T = int> constexpr inline auto is_locking() -> bool {
-  return locking<T>::value;
+template <typename T = int> constexpr auto is_locking() -> bool {
+  return locking<remove_cvref_t<T>>::value;
 }
 template <typename T1, typename T2, typename... Tail>
-constexpr inline auto is_locking() -> bool {
-  return locking<T1>::value || is_locking<T2, Tail...>();
+constexpr auto is_locking() -> bool {
+  return locking<remove_cvref_t<T1>>::value || is_locking<T2, Tail...>();
 }
 
 FMT_API void vformat_to(buffer<char>& buf, string_view fmt, format_args args,
@@ -2835,8 +2829,8 @@ FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
   vargs<T...> va = {{args...}};
   if FMT_CONSTEXPR20 (!detail::use_utf8)
     return detail::vprint_mojibake(stdout, fmt.str, va, false);
-  return detail::is_locking<T...>() ? vprint_buffered(stdout, fmt.str, va)
-                                    : vprint(fmt.str, va);
+  detail::is_locking<T...>() ? vprint_buffered(stdout, fmt.str, va)
+                             : vprint(fmt.str, va);
 }
 
 /**
@@ -2852,8 +2846,8 @@ FMT_INLINE void print(FILE* f, format_string<T...> fmt, T&&... args) {
   vargs<T...> va = {{args...}};
   if FMT_CONSTEXPR20 (!detail::use_utf8)
     return detail::vprint_mojibake(f, fmt.str, va, false);
-  return detail::is_locking<T...>() ? vprint_buffered(f, fmt.str, va)
-                                    : vprint(f, fmt.str, va);
+  detail::is_locking<T...>() ? vprint_buffered(f, fmt.str, va)
+                             : vprint(f, fmt.str, va);
 }
 
 /// Formats `args` according to specifications in `fmt` and writes the output
@@ -2869,7 +2863,7 @@ FMT_INLINE void println(FILE* f, format_string<T...> fmt, T&&... args) {
 /// to `stdout` followed by a newline.
 template <typename... T>
 FMT_INLINE void println(format_string<T...> fmt, T&&... args) {
-  return fmt::println(stdout, fmt, static_cast<T&&>(args)...);
+  fmt::println(stdout, fmt, static_cast<T&&>(args)...);
 }
 
 FMT_PRAGMA_CLANG(diagnostic pop)

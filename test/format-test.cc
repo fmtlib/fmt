@@ -1953,6 +1953,8 @@ template <> struct formatter<deadlockable> {
     return format_to(ctx.out(), "{}", d.value);
   }
 };
+
+template <> struct locking<deadlockable> : std::true_type {};
 FMT_END_NAMESPACE
 
 TEST(format_test, locking_formatter) {
