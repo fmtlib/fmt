@@ -2695,7 +2695,7 @@ struct formatter<T, Char,
 // Take arguments by lvalue references to avoid some lifetime issues, e.g.
 //   auto args = make_format_args(std::string());
 template <typename Context = context, typename... T,
-          int NUM_ARGS = sizeof...(T),
+          int NUM_ARGS = int(sizeof...(T)),
           int NUM_NAMED_ARGS = detail::count_named_args<T...>(),
           ullong DESC = detail::make_descriptor<Context, T...>()>
 constexpr FMT_ALWAYS_INLINE auto make_format_args(T&... args)
@@ -2705,7 +2705,7 @@ constexpr FMT_ALWAYS_INLINE auto make_format_args(T&... args)
 
 template <typename... T>
 using vargs =
-    detail::format_arg_store<context, sizeof...(T),
+    detail::format_arg_store<context, int(sizeof...(T)),
                              detail::count_named_args<T...>(),
                              detail::make_descriptor<context, T...>()>;
 
