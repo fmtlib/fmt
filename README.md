@@ -1,6 +1,6 @@
 <img src="https://user-images.githubusercontent.com/576385/156254208-f5b743a9-88cf-439d-b0c0-923d53e8d551.png" alt="{fmt}" width="25%"/>
 
-[![image]([https://github.com/fmtlib/fmt/actions/workflows/linux.yml/badge.svg?branch=master](https://github.com/fmtlib/fmt/actions/workflows/linux.yml/badge.svg?branch=master))](https://github.com/fmtlib/fmt/actions?query=workflow%3Alinux)
+[![image](https://github.com/fmtlib/fmt/actions/workflows/linux.yml/badge.svg?branch=master)](https://github.com/fmtlib/fmt/actions?query=workflow%3Alinux)
 [![image](https://github.com/fmtlib/fmt/actions/workflows/macos.yml/badge.svg?branch=master)](https://github.com/fmtlib/fmt/actions?query=workflow%3Amacos)
 [![image](https://github.com/fmtlib/fmt/actions/workflows/windows.yml/badge.svg?branch=master)](https://github.com/fmtlib/fmt/actions?query=workflow%3Awindows)
 [![fmt is continuously fuzzed at oss-fuzz](https://oss-fuzz-build-logs.storage.googleapis.com/badges/fmt.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?\%0Acolspec=ID%20Type%20Component%20Status%20Proj%20Reported%20Owner%20\%0ASummary&q=proj%3Dfmt&can=1)
