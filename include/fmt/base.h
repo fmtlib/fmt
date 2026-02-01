@@ -2724,6 +2724,7 @@ inline auto arg(const Char* name, const T& arg) -> detail::named_arg<Char, T> {
 template <typename OutputIt,
           FMT_ENABLE_IF(detail::is_output_iterator<remove_cvref_t<OutputIt>,
                                                    char>::value)>
+// DEPRECATED! Passing out as a forwarding reference.
 auto vformat_to(OutputIt&& out, string_view fmt, format_args args)
     -> remove_cvref_t<OutputIt> {
   auto&& buf = detail::get_buffer<char>(out);
@@ -2789,8 +2790,8 @@ struct format_to_result {
 };
 
 template <size_t N>
-auto vformat_to(char (&out)[N], string_view fmt, format_args args)
-    -> format_to_result {
+FMT_DEPRECATED auto vformat_to(char (&out)[N], string_view fmt,
+                               format_args args) -> format_to_result {
   auto result = vformat_to_n(out, N, fmt, args);
   return {result.out, result.size > N};
 }
