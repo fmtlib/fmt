@@ -121,14 +121,6 @@
 #  define FMT_NOINLINE
 #endif
 
-#ifdef FMT_DEPRECATED
-// Use the provided definition.
-#elif FMT_HAS_CPP14_ATTRIBUTE(deprecated)
-#  define FMT_DEPRECATED [[deprecated]]
-#else
-#  define FMT_DEPRECATED /* deprecated */
-#endif
-
 // Detect constexpr std::string.
 #if !FMT_USE_CONSTEVAL
 #  define FMT_USE_CONSTEXPR_STRING 0

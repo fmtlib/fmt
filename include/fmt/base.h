@@ -231,6 +231,14 @@ FMT_PRAGMA_GCC(optimize("Og"))
 #endif
 FMT_PRAGMA_CLANG(diagnostic push)
 
+#ifdef FMT_DEPRECATED
+// Use the provided definition.
+#elif FMT_HAS_CPP14_ATTRIBUTE(deprecated)
+#  define FMT_DEPRECATED [[deprecated]]
+#else
+#  define FMT_DEPRECATED /* deprecated */
+#endif
+
 #ifdef FMT_ALWAYS_INLINE
 // Use the provided definition.
 #elif FMT_GCC_VERSION || FMT_CLANG_VERSION
@@ -2656,8 +2664,7 @@ template <typename... T> struct fstring {
   }
   fstring(runtime_format_string<> fmt) : str(fmt.str) {}
 
-  // Returning by reference generates better code in debug mode.
-  FMT_ALWAYS_INLINE operator const string_view&() const { return str; }
+  FMT_DEPRECATED operator const string_view&() const { return str; }
   auto get() const -> string_view { return str; }
 };
 
