@@ -114,7 +114,7 @@ FMT_EXPORT template <typename Context> class dynamic_format_arg_store {
   }
 
   template <typename T>
-  void emplace_arg(const detail::named_arg<char_type, T>& arg) {
+  void emplace_arg(const detail::named_arg<T, char_type>& arg) {
     if (named_info_.empty())
       data_.insert(data_.begin(), basic_format_arg<Context>(nullptr, 0));
     data_.emplace_back(detail::unwrap(arg.value));
@@ -184,7 +184,7 @@ FMT_EXPORT template <typename Context> class dynamic_format_arg_store {
    * copying of the argument. The name is always copied into the store.
    */
   template <typename T>
-  void push_back(const detail::named_arg<char_type, T>& arg) {
+  void push_back(const detail::named_arg<T, char_type>& arg) {
     const char_type* arg_name =
         dynamic_args_.push<std::basic_string<char_type>>(arg.name).c_str();
     if FMT_CONSTEXPR20 (need_copy<T>::value) {

@@ -1031,14 +1031,14 @@ struct is_view : std::false_type {};
 template <typename T>
 struct is_view<T, bool_constant<sizeof(T) != 0>> : std::is_base_of<view, T> {};
 
-template <typename Char, typename T> struct named_arg;
+template <typename T, typename Char> struct named_arg;
 template <typename T> struct is_named_arg : std::false_type {};
 template <typename T> struct is_static_named_arg : std::false_type {};
 
 template <typename Char, typename T>
-struct is_named_arg<named_arg<Char, T>> : std::true_type {};
+struct is_named_arg<named_arg<T, Char>> : std::true_type {};
 
-template <typename Char, typename T> struct named_arg : view {
+template <typename T, typename Char = char> struct named_arg : view {
   const Char* name;
   const T& value;
 
@@ -2719,7 +2719,7 @@ using vargs =
  * sufficiently new compilers. See `operator""_a()`.
  */
 template <typename Char, typename T>
-inline auto arg(const Char* name, const T& arg) -> detail::named_arg<Char, T> {
+inline auto arg(const Char* name, const T& arg) -> detail::named_arg<T, Char> {
   return {name, arg};
 }
 

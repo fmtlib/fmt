@@ -760,8 +760,7 @@ template <typename Container> struct all {
  * formatted as the underlying container.
  */
 FMT_EXPORT
-template <typename T>
-struct is_container_adaptor {
+template <typename T> struct is_container_adaptor {
  private:
   template <typename U> static auto check(U* p) -> typename U::container_type;
   template <typename> static void check(...);

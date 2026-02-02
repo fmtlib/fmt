@@ -3861,7 +3861,7 @@ struct udl_arg {
 template <typename Char> struct udl_arg {
   const Char* str;
 
-  template <typename T> auto operator=(T&& value) const -> named_arg<Char, T> {
+  template <typename T> auto operator=(T&& value) const -> named_arg<T, Char> {
     return {str, std::forward<T>(value)};
   }
 };
