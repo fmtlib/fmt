@@ -136,6 +136,11 @@ inline auto operator""_a(const wchar_t* s, size_t) -> detail::udl_arg<wchar_t> {
 }  // namespace literals
 #endif
 
+template <typename T>
+auto arg(const wchar_t* name, const T& arg) -> detail::named_arg<T, wchar_t> {
+  return {name, arg};
+}
+
 template <typename It, typename Sentinel>
 auto join(It begin, Sentinel end, wstring_view sep)
     -> join_view<It, Sentinel, wchar_t> {

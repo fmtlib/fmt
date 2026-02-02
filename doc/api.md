@@ -319,7 +319,7 @@ parameterized version.
 
 ### Named Arguments
 
-::: arg(const Char*, const T&)
+::: arg(const char*, const T&)
 
 ### Compatibility
 

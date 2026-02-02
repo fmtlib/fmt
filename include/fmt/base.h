@@ -1035,7 +1035,7 @@ template <typename T, typename Char> struct named_arg;
 template <typename T> struct is_named_arg : std::false_type {};
 template <typename T> struct is_static_named_arg : std::false_type {};
 
-template <typename Char, typename T>
+template <typename T, typename Char>
 struct is_named_arg<named_arg<T, Char>> : std::true_type {};
 
 template <typename T, typename Char = char> struct named_arg : view {
@@ -2718,8 +2718,8 @@ using vargs =
  * in compile-time checks, but `"answer"_a=42` are compile-time checked in
  * sufficiently new compilers. See `operator""_a()`.
  */
-template <typename Char, typename T>
-inline auto arg(const Char* name, const T& arg) -> detail::named_arg<T, Char> {
+template <typename T>
+inline auto arg(const char* name, const T& arg) -> detail::named_arg<T> {
   return {name, arg};
 }
 
