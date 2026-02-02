@@ -229,7 +229,6 @@ FMT_PRAGMA_GCC(push_options)
 #if !defined(__OPTIMIZE__) && !defined(__CUDACC__) && !defined(FMT_MODULE)
 FMT_PRAGMA_GCC(optimize("Og"))
 #endif
-FMT_PRAGMA_CLANG(diagnostic push)
 
 #ifdef FMT_DEPRECATED
 // Use the provided definition.
@@ -2870,7 +2869,6 @@ FMT_INLINE void println(format_string<T...> fmt, T&&... args) {
   fmt::println(stdout, fmt, static_cast<T&&>(args)...);
 }
 
-FMT_PRAGMA_CLANG(diagnostic pop)
 FMT_PRAGMA_GCC(pop_options)
 FMT_END_EXPORT
 FMT_END_NAMESPACE
