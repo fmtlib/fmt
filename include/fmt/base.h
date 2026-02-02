@@ -2314,6 +2314,15 @@ template <typename T, typename Char, type TYPE> struct native_formatter {
       -> decltype(ctx.out());
 };
 
+template <bool B> constexpr bool enforce_compile_checks() {
+#ifdef FMT_ENFORCE_COMPILE_STRING
+  static_assert(
+      FMT_USE_CONSTEVAL && B,
+      "FMT_ENFORCE_COMPILE_STRING requires format strings to use FMT_STRING");
+#endif
+  return true;
+}
+
 template <typename T = int> constexpr auto is_locking() -> bool {
   return locking<remove_cvref_t<T>>::value;
 }
@@ -2630,11 +2639,8 @@ template <typename... T> struct fstring {
                          std::is_reference<T>::value)...>() == 0,
                   "passing views as lvalues is disallowed");
     if (FMT_USE_CONSTEVAL) parse_format_string<char>(s, checker(s, arg_pack()));
-#ifdef FMT_ENFORCE_COMPILE_STRING
-    static_assert(
-        FMT_USE_CONSTEVAL && sizeof(s) != 0,
-        "FMT_ENFORCE_COMPILE_STRING requires format strings to use FMT_STRING");
-#endif
+    constexpr bool unused = detail::enforce_compile_checks<sizeof(s) != 0>();
+    (void)unused;
   }
   template <typename S,
             FMT_ENABLE_IF(std::is_convertible<const S&, string_view>::value)>
@@ -2642,11 +2648,8 @@ template <typename... T> struct fstring {
     auto sv = string_view(str);
     if (FMT_USE_CONSTEVAL)
       detail::parse_format_string<char>(sv, checker(sv, arg_pack()));
-#ifdef FMT_ENFORCE_COMPILE_STRING
-    static_assert(
-        FMT_USE_CONSTEVAL && sizeof(s) != 0,
-        "FMT_ENFORCE_COMPILE_STRING requires format strings to use FMT_STRING");
-#endif
+    constexpr bool unused = detail::enforce_compile_checks<sizeof(s) != 0>();
+    (void)unused;
   }
   template <typename S,
             FMT_ENABLE_IF(std::is_base_of<detail::compile_string, S>::value&&
