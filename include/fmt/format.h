@@ -47,9 +47,9 @@
 #endif
 
 #ifndef FMT_MODULE
+#  include <stdint.h>  // uint32_t
 #  include <stdlib.h>  // malloc, free
 #  include <string.h>  // memcpy
-#  include <stdint.h>  // uint32_t
 
 #  include <cmath>    // std::signbit
 #  include <cstddef>  // std::byte
@@ -403,7 +403,8 @@ class uint128_fallback {
   }
 };
 
-using uint128_t = conditional_t<FMT_USE_INT128, uint128_opt, uint128_fallback>;
+using uint128_t =
+    conditional_t<FMT_USE_INT128, native_uint128, uint128_fallback>;
 
 #ifdef UINTPTR_MAX
 using uintptr_t = ::uintptr_t;
@@ -420,8 +421,8 @@ template <typename T> constexpr auto num_bits() -> int {
   return std::numeric_limits<T>::digits;
 }
 // std::numeric_limits<T>::digits may return 0 for 128-bit ints.
-template <> constexpr auto num_bits<int128_opt>() -> int { return 128; }
-template <> constexpr auto num_bits<uint128_opt>() -> int { return 128; }
+template <> constexpr auto num_bits<native_int128>() -> int { return 128; }
+template <> constexpr auto num_bits<native_uint128>() -> int { return 128; }
 template <> constexpr auto num_bits<uint128_fallback>() -> int { return 128; }
 
 // A heterogeneous bit_cast used for converting 96-bit long double to uint128_t
@@ -738,13 +739,13 @@ FMT_CONSTEXPR inline auto display_width_of(uint32_t cp) noexcept -> size_t {
 }
 
 template <typename T> struct is_integral : std::is_integral<T> {};
-template <> struct is_integral<int128_opt> : std::true_type {};
+template <> struct is_integral<native_int128> : std::true_type {};
 template <> struct is_integral<uint128_t> : std::true_type {};
 
 template <typename T>
 using is_signed =
     std::integral_constant<bool, std::numeric_limits<T>::is_signed ||
-                                     std::is_same<T, int128_opt>::value>;
+                                     std::is_same<T, native_int128>::value>;
 
 template <typename T>
 using is_integer =
@@ -1125,7 +1126,7 @@ template <typename T> FMT_CONSTEXPR auto count_digits_fallback(T n) -> int {
   }
 }
 #if FMT_USE_INT128
-FMT_CONSTEXPR inline auto count_digits(uint128_opt n) -> int {
+FMT_CONSTEXPR inline auto count_digits(native_uint128 n) -> int {
   return count_digits_fallback(n);
 }
 #endif
@@ -1213,7 +1214,9 @@ FMT_CONSTEXPR20 inline auto count_digits(uint32_t n) -> int {
 template <typename Int> constexpr auto digits10() noexcept -> int {
   return std::numeric_limits<Int>::digits10;
 }
-template <> constexpr auto digits10<int128_opt>() noexcept -> int { return 38; }
+template <> constexpr auto digits10<native_int128>() noexcept -> int {
+  return 38;
+}
 template <> constexpr auto digits10<uint128_t>() noexcept -> int { return 38; }
 
 template <typename Char> struct thousands_sep_result {
@@ -1471,7 +1474,7 @@ template <typename WChar, typename Buffer = memory_buffer> class to_utf8 {
 // Computes 128-bit result of multiplication of two 64-bit unsigned integers.
 FMT_INLINE auto umul128(uint64_t x, uint64_t y) noexcept -> uint128_fallback {
 #if FMT_USE_INT128
-  auto p = static_cast<uint128_opt>(x) * static_cast<uint128_opt>(y);
+  auto p = static_cast<native_uint128>(x) * static_cast<native_uint128>(y);
   return {static_cast<uint64_t>(p >> 64), static_cast<uint64_t>(p)};
 #elif defined(_MSC_VER) && defined(_M_AMD64)
   auto hi = uint64_t();
@@ -1514,7 +1517,7 @@ inline auto floor_log2_pow10(int e) noexcept -> int {
 // Computes upper 64 bits of multiplication of two 64-bit unsigned integers.
 inline auto umul128_upper64(uint64_t x, uint64_t y) noexcept -> uint64_t {
 #if FMT_USE_INT128
-  auto p = static_cast<uint128_opt>(x) * static_cast<uint128_opt>(y);
+  auto p = static_cast<native_uint128>(x) * static_cast<native_uint128>(y);
   return static_cast<uint64_t>(p >> 64);
 #elif defined(_MSC_VER) && defined(_M_AMD64)
   return __umulh(x, y);
