@@ -79,6 +79,23 @@
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
+#ifdef FMT_USE_BITINT
+// Use the provided definition.
+#elif FMT_CLANG_VERSION >= 1500 && !defined(__CUDACC__)
+#  define FMT_USE_BITINT 1
+#else
+#  define FMT_USE_BITINT 0
+#endif
+
+#if FMT_USE_BITINT
+FMT_PRAGMA_CLANG(diagnostic ignored "-Wbit-int-extension")
+template <int N> using bitint = _BitInt(N);
+template <int N> using ubitint = unsigned _BitInt(N);
+#else
+template <int N> struct bitint {};
+template <int N> struct ubitint {};
+#endif  // FMT_USE_BITINT
+
 #if FMT_CPP_LIB_FILESYSTEM
 
 template <typename Char, typename PathChar>
@@ -608,6 +625,30 @@ struct formatter<
     }
 #endif
     return detail::write_bytes<char>(out, string_view(ex.what()));
+  }
+};
+
+template <int N, typename Char>
+struct formatter<detail::bitint<N>, Char> : formatter<long long, Char> {
+  static_assert(N <= 64, "unsupported _BitInt");
+  static auto format_as(detail::bitint<N> x) -> long long {
+    return static_cast<long long>(x);
+  }
+  template <typename Context>
+  auto format(detail::bitint<N> x, Context& ctx) const -> decltype(ctx.out()) {
+    return formatter<long long, Char>::format(format_as(x), ctx);
+  }
+};
+
+template <int N, typename Char>
+struct formatter<detail::ubitint<N>, Char> : formatter<ullong, Char> {
+  static_assert(N <= 64, "unsupported _BitInt");
+  static auto format_as(detail::ubitint<N> x) -> ullong {
+    return static_cast<ullong>(x);
+  }
+  template <typename Context>
+  auto format(detail::ubitint<N> x, Context& ctx) const -> decltype(ctx.out()) {
+    return formatter<ullong, Char>::format(format_as(x), ctx);
   }
 };
 

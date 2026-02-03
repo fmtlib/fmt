@@ -403,6 +403,42 @@ TEST(std_test, type_info) {
 }
 #endif
 
+#if FMT_USE_BITINT
+FMT_PRAGMA_CLANG(diagnostic ignored "-Wbit-int-extension")
+
+TEST(std_test, bitint) {
+  using fmt::detail::bitint;
+  using fmt::detail::ubitint;
+
+  EXPECT_EQ(fmt::format("{}", ubitint<3>(7)), "7");
+  EXPECT_EQ(fmt::format("{}", bitint<7>()), "0");
+
+  EXPECT_EQ(fmt::format("{}", ubitint<15>(31000)), "31000");
+  EXPECT_EQ(fmt::format("{}", bitint<16>(INT16_MIN)), "-32768");
+  EXPECT_EQ(fmt::format("{}", bitint<16>(INT16_MAX)), "32767");
+
+  EXPECT_EQ(fmt::format("{}", ubitint<32>(4294967295)), "4294967295");
+
+  EXPECT_EQ(fmt::format("{}", ubitint<47>(140737488355327ULL)),
+            "140737488355327");
+  EXPECT_EQ(fmt::format("{}", bitint<47>(-40737488355327LL)),
+            "-40737488355327");
+
+  // Check lvalues and const
+  auto a = bitint<8>(0);
+  auto b = ubitint<32>(4294967295);
+  const auto c = bitint<7>(0);
+  const auto d = ubitint<32>(4294967295);
+  EXPECT_EQ(fmt::format("{}", a), "0");
+  EXPECT_EQ(fmt::format("{}", b), "4294967295");
+  EXPECT_EQ(fmt::format("{}", c), "0");
+  EXPECT_EQ(fmt::format("{}", d), "4294967295");
+
+  static_assert(fmt::is_formattable<bitint<64>, char>{}, "");
+  static_assert(fmt::is_formattable<ubitint<64>, char>{}, "");
+}
+#endif
+
 TEST(std_test, format_bit_reference) {
   std::bitset<2> bs(1);
   EXPECT_EQ(fmt::format("{} {}", bs[0], bs[1]), "true false");
