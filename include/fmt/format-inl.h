@@ -1489,12 +1489,16 @@ template <typename F> auto getc_unlocked(F* f) -> decltype(_fgetc_nolock(f)) {
 }
 #endif
 
+#ifndef FMT_USE_FLOCKFILE
+#  define FMT_USE_FLOCKFILE 1
+#endif
+
 template <typename F = FILE, typename Enable = void>
 struct has_flockfile : std::false_type {};
 
 template <typename F>
 struct has_flockfile<F, void_t<decltype(flockfile(&std::declval<F&>()))>>
-    : std::true_type {};
+    : bool_constant<FMT_USE_FLOCKFILE != 0> {};
 
 // A FILE wrapper. F is FILE defined as a template parameter to make system API
 // detection work.
