@@ -49,10 +49,10 @@
 #ifndef FMT_MODULE
 #  include <stdlib.h>  // malloc, free
 #  include <string.h>  // memcpy
+#  include <stdint.h>  // uint32_t
 
 #  include <cmath>    // std::signbit
 #  include <cstddef>  // std::byte
-#  include <cstdint>  // uint32_t
 #  include <limits>   // std::numeric_limits
 #  if defined(__GLIBCXX__) && !defined(_GLIBCXX_USE_DUAL_ABI)
 // Workaround for pre gcc 5 libstdc++.
@@ -148,12 +148,6 @@
 #  define FMT_CONSTEXPR_STRING
 #endif
 
-#if FMT_MSC_VERSION
-#  define FMT_MSC_WARNING(...) __pragma(warning(__VA_ARGS__))
-#else
-#  define FMT_MSC_WARNING(...)
-#endif
-
 // GCC 4.9 doesn't support qualified names in specializations.
 namespace std {
 template <typename T> struct iterator_traits<fmt::basic_appender<T>> {
@@ -221,7 +215,6 @@ namespace detail {
 
 inline auto clz(uint32_t x) -> int {
   FMT_ASSERT(x != 0, "");
-  FMT_MSC_WARNING(suppress : 6102)  // Suppress a bogus static analysis warning.
   unsigned long r = 0;
   _BitScanReverse(&r, x);
   return 31 ^ static_cast<int>(r);
@@ -230,7 +223,6 @@ inline auto clz(uint32_t x) -> int {
 
 inline auto clzll(uint64_t x) -> int {
   FMT_ASSERT(x != 0, "");
-  FMT_MSC_WARNING(suppress : 6102)  // Suppress a bogus static analysis warning.
   unsigned long r = 0;
 #  ifdef _WIN64
   _BitScanReverse64(&r, x);
