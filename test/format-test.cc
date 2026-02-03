@@ -43,7 +43,7 @@ using fmt::memory_buffer;
 using fmt::runtime;
 using fmt::string_view;
 using fmt::detail::max_value;
-using fmt::detail::uint128_fallback;
+using fmt::detail::uint128;
 
 using testing::Return;
 using testing::StrictMock;
@@ -55,15 +55,15 @@ static_assert(std::output_iterator<fmt::appender, char>);
 enum { buffer_size = 256 };
 
 TEST(uint128_test, ctor) {
-  auto n = uint128_fallback();
+  auto n = uint128();
   EXPECT_EQ(n, 0);
-  n = uint128_fallback(42);
+  n = uint128(42);
   EXPECT_EQ(n, 42);
   EXPECT_EQ(static_cast<uint64_t>(n), 42);
 }
 
 TEST(uint128_test, shift) {
-  auto n = uint128_fallback(42);
+  auto n = uint128(42);
   n = n << 64;
   EXPECT_EQ(static_cast<uint64_t>(n), 0);
   n = n >> 64;
@@ -73,26 +73,26 @@ TEST(uint128_test, shift) {
   EXPECT_EQ(static_cast<uint64_t>(n), 0x8000000000000000);
   n = n >> 62;
   EXPECT_EQ(static_cast<uint64_t>(n), 42);
-  EXPECT_EQ(uint128_fallback(1) << 112, uint128_fallback(0x1000000000000, 0));
-  EXPECT_EQ(uint128_fallback(0x1000000000000, 0) >> 112, uint128_fallback(1));
+  EXPECT_EQ(uint128(1) << 112, uint128(0x1000000000000, 0));
+  EXPECT_EQ(uint128(0x1000000000000, 0) >> 112, uint128(1));
 }
 
 TEST(uint128_test, minus) {
-  auto n = uint128_fallback(42);
+  auto n = uint128(42);
   EXPECT_EQ(n - 2, 40);
 }
 
 TEST(uint128_test, plus_assign) {
-  auto n = uint128_fallback(32);
-  n += uint128_fallback(10);
+  auto n = uint128(32);
+  n += uint128(10);
   EXPECT_EQ(n, 42);
-  n = uint128_fallback(max_value<uint64_t>());
-  n += uint128_fallback(1);
-  EXPECT_EQ(n, uint128_fallback(1) << 64);
+  n = uint128(max_value<uint64_t>());
+  n += uint128(1);
+  EXPECT_EQ(n, uint128(1) << 64);
 }
 
 TEST(uint128_test, multiply) {
-  auto n = uint128_fallback(2251799813685247);
+  auto n = uint128(2251799813685247);
   n = n * 3611864890;
   EXPECT_EQ(static_cast<uint64_t>(n >> 64), 440901);
 }
@@ -1723,14 +1723,13 @@ TEST(format_test, format_pointer) {
 }
 
 TEST(format_test, write_uintptr_fallback) {
-  // Test that formatting a pointer by converting it to uint128_fallback works.
+  // Test that formatting a pointer by converting it to uint128 works.
   // This is needed to support systems without uintptr_t.
   auto s = std::string();
-  fmt::detail::write_ptr<char>(
-      std::back_inserter(s),
-      fmt::detail::bit_cast<fmt::detail::uint128_fallback>(
-          reinterpret_cast<void*>(0xface)),
-      nullptr);
+  fmt::detail::write_ptr<char>(std::back_inserter(s),
+                               fmt::detail::bit_cast<fmt::detail::uint128>(
+                                   reinterpret_cast<void*>(0xface)),
+                               nullptr);
   EXPECT_EQ(s, "0xface");
 }
 

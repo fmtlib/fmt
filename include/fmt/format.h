@@ -291,13 +291,13 @@ inline auto is_big_endian() -> bool {
 #endif
 }
 
-class uint128_fallback {
+class uint128 {
  private:
   uint64_t lo_, hi_;
 
  public:
-  constexpr uint128_fallback(uint64_t hi, uint64_t lo) : lo_(lo), hi_(hi) {}
-  constexpr uint128_fallback(uint64_t value = 0) : lo_(value), hi_(0) {}
+  constexpr uint128(uint64_t hi, uint64_t lo) : lo_(lo), hi_(hi) {}
+  constexpr uint128(uint64_t value = 0) : lo_(value), hi_(0) {}
 
   constexpr auto high() const noexcept -> uint64_t { return hi_; }
   constexpr auto low() const noexcept -> uint64_t { return lo_; }
@@ -307,77 +307,69 @@ class uint128_fallback {
     return static_cast<T>(lo_);
   }
 
-  friend constexpr auto operator==(const uint128_fallback& lhs,
-                                   const uint128_fallback& rhs) -> bool {
+  friend constexpr auto operator==(const uint128& lhs, const uint128& rhs)
+      -> bool {
     return lhs.hi_ == rhs.hi_ && lhs.lo_ == rhs.lo_;
   }
-  friend constexpr auto operator!=(const uint128_fallback& lhs,
-                                   const uint128_fallback& rhs) -> bool {
+  friend constexpr auto operator!=(const uint128& lhs, const uint128& rhs)
+      -> bool {
     return !(lhs == rhs);
   }
-  friend constexpr auto operator>(const uint128_fallback& lhs,
-                                  const uint128_fallback& rhs) -> bool {
+  friend constexpr auto operator>(const uint128& lhs, const uint128& rhs)
+      -> bool {
     return lhs.hi_ != rhs.hi_ ? lhs.hi_ > rhs.hi_ : lhs.lo_ > rhs.lo_;
   }
-  friend constexpr auto operator|(const uint128_fallback& lhs,
-                                  const uint128_fallback& rhs)
-      -> uint128_fallback {
+  friend constexpr auto operator|(const uint128& lhs, const uint128& rhs)
+      -> uint128 {
     return {lhs.hi_ | rhs.hi_, lhs.lo_ | rhs.lo_};
   }
-  friend constexpr auto operator&(const uint128_fallback& lhs,
-                                  const uint128_fallback& rhs)
-      -> uint128_fallback {
+  friend constexpr auto operator&(const uint128& lhs, const uint128& rhs)
+      -> uint128 {
     return {lhs.hi_ & rhs.hi_, lhs.lo_ & rhs.lo_};
   }
-  friend constexpr auto operator~(const uint128_fallback& n)
-      -> uint128_fallback {
-    return {~n.hi_, ~n.lo_};
-  }
-  friend FMT_CONSTEXPR auto operator+(const uint128_fallback& lhs,
-                                      const uint128_fallback& rhs)
-      -> uint128_fallback {
-    auto result = uint128_fallback(lhs);
+  friend FMT_CONSTEXPR auto operator+(const uint128& lhs, const uint128& rhs)
+      -> uint128 {
+    auto result = uint128(lhs);
     result += rhs;
     return result;
   }
-  friend FMT_CONSTEXPR auto operator*(const uint128_fallback& lhs, uint32_t rhs)
-      -> uint128_fallback {
+  friend FMT_CONSTEXPR auto operator*(const uint128& lhs, uint32_t rhs)
+      -> uint128 {
     FMT_ASSERT(lhs.hi_ == 0, "");
     uint64_t hi = (lhs.lo_ >> 32) * rhs;
     uint64_t lo = (lhs.lo_ & ~uint32_t()) * rhs;
     uint64_t new_lo = (hi << 32) + lo;
     return {(hi >> 32) + (new_lo < lo ? 1 : 0), new_lo};
   }
-  friend constexpr auto operator-(const uint128_fallback& lhs, uint64_t rhs)
-      -> uint128_fallback {
+  friend constexpr auto operator-(const uint128& lhs, uint64_t rhs) -> uint128 {
     return {lhs.hi_ - (lhs.lo_ < rhs ? 1 : 0), lhs.lo_ - rhs};
   }
-  FMT_CONSTEXPR auto operator>>(int shift) const -> uint128_fallback {
+  FMT_CONSTEXPR auto operator>>(int shift) const -> uint128 {
     if (shift == 64) return {0, hi_};
-    if (shift > 64) return uint128_fallback(0, hi_) >> (shift - 64);
+    if (shift > 64) return uint128(0, hi_) >> (shift - 64);
     return {hi_ >> shift, (hi_ << (64 - shift)) | (lo_ >> shift)};
   }
-  FMT_CONSTEXPR auto operator<<(int shift) const -> uint128_fallback {
+  FMT_CONSTEXPR auto operator<<(int shift) const -> uint128 {
     if (shift == 64) return {lo_, 0};
-    if (shift > 64) return uint128_fallback(lo_, 0) << (shift - 64);
+    if (shift > 64) return uint128(lo_, 0) << (shift - 64);
     return {hi_ << shift | (lo_ >> (64 - shift)), (lo_ << shift)};
   }
-  FMT_CONSTEXPR auto operator>>=(int shift) -> uint128_fallback& {
+  FMT_CONSTEXPR auto operator>>=(int shift) -> uint128& {
     return *this = *this >> shift;
   }
-  FMT_CONSTEXPR void operator+=(uint128_fallback n) {
+  FMT_CONSTEXPR void operator+=(uint128 n) {
     uint64_t new_lo = lo_ + n.lo_;
     uint64_t new_hi = hi_ + n.hi_ + (new_lo < lo_ ? 1 : 0);
     FMT_ASSERT(new_hi >= hi_, "");
     lo_ = new_lo;
     hi_ = new_hi;
   }
-  FMT_CONSTEXPR void operator&=(uint128_fallback n) {
+  FMT_CONSTEXPR void operator&=(uint128 n) {
     lo_ &= n.lo_;
     hi_ &= n.hi_;
   }
 
-  FMT_CONSTEXPR20 auto operator+=(uint64_t n) noexcept -> uint128_fallback& {
+  FMT_CONSTEXPR20 auto operator+=(uint64_t n) noexcept -> uint128& {
     if (is_constant_evaluated()) {
       lo_ += n;
       hi_ += (lo_ < n ? 1 : 0);
@@ -403,8 +395,7 @@ class uint128_fallback {
   }
 };
 
-using uint128_t =
-    conditional_t<FMT_USE_INT128, native_uint128, uint128_fallback>;
+using uint128_t = conditional_t<FMT_USE_INT128, native_uint128, uint128>;
 
 #ifdef UINTPTR_MAX
 using uintptr_t = ::uintptr_t;
@@ -423,10 +414,10 @@ template <typename T> constexpr auto num_bits() -> int {
 // std::numeric_limits<T>::digits may return 0 for 128-bit ints.
 template <> constexpr auto num_bits<native_int128>() -> int { return 128; }
 template <> constexpr auto num_bits<native_uint128>() -> int { return 128; }
-template <> constexpr auto num_bits<uint128_fallback>() -> int { return 128; }
+template <> constexpr auto num_bits<uint128>() -> int { return 128; }
 
 // A heterogeneous bit_cast used for converting 96-bit long double to uint128_t
-// and 128-bit pointers to uint128_fallback.
+// and 128-bit pointers to uint128.
 template <typename To, typename From, FMT_ENABLE_IF(sizeof(To) > sizeof(From))>
 inline auto bit_cast(const From& from) -> To {
   constexpr auto size = static_cast<int>(sizeof(From) / sizeof(unsigned short));
@@ -1472,7 +1463,7 @@ template <typename WChar, typename Buffer = memory_buffer> class to_utf8 {
 };
 
 // Computes 128-bit result of multiplication of two 64-bit unsigned integers.
-FMT_INLINE auto umul128(uint64_t x, uint64_t y) noexcept -> uint128_fallback {
+FMT_INLINE auto umul128(uint64_t x, uint64_t y) noexcept -> uint128 {
 #if FMT_USE_INT128
   auto p = static_cast<native_uint128>(x) * static_cast<native_uint128>(y);
   return {static_cast<uint64_t>(p >> 64), static_cast<uint64_t>(p)};
@@ -1528,14 +1519,13 @@ inline auto umul128_upper64(uint64_t x, uint64_t y) noexcept -> uint64_t {
 
 // Computes upper 128 bits of multiplication of a 64-bit unsigned integer and a
 // 128-bit unsigned integer.
-inline auto umul192_upper128(uint64_t x, uint128_fallback y) noexcept
-    -> uint128_fallback {
-  uint128_fallback r = umul128(x, y.high());
+inline auto umul192_upper128(uint64_t x, uint128 y) noexcept -> uint128 {
+  uint128 r = umul128(x, y.high());
   r += umul128_upper64(x, y.low());
   return r;
 }
 
-FMT_API auto get_cached_power(int k) noexcept -> uint128_fallback;
+FMT_API auto get_cached_power(int k) noexcept -> uint128;
 
 // Type-specific information that Dragonbox uses.
 template <typename T, typename Enable = void> struct float_info;

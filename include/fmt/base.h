@@ -404,9 +404,9 @@ inline auto map(native_uint128 x) -> native_uint128 { return x; }
 #  define FMT_USE_INT128 0
 #endif
 #if !FMT_USE_INT128
-enum class native_int128 {};  // A fallback to reduce conditional compilation.
+// Fallbacks to reduce conditional compilation and SFINAE.
+enum class native_int128 {};
 enum class native_uint128 {};
-// Reduce template instantiations.
 inline auto map(native_int128) -> monostate { return {}; }
 inline auto map(native_uint128) -> monostate { return {}; }
 #endif
