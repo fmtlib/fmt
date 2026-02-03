@@ -9,6 +9,8 @@
 #define FMT_FORMAT_INL_H_
 
 #ifndef FMT_MODULE
+#  include <stddef.h>  // ptrdiff_t
+
 #  include <algorithm>
 #  include <cerrno>  // errno
 #  include <climits>

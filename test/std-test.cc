@@ -460,6 +460,14 @@ TEST(std_test, format_bitset) {
   EXPECT_EQ(fmt::format("{:-^12}", bs), "---101010---");
 }
 
+#ifdef __cpp_lib_byte
+TEST(base_test, format_byte) {
+  auto s = std::string();
+  fmt::format_to(std::back_inserter(s), "{}", std::byte(42));
+  EXPECT_EQ(s, "42");
+}
+#endif
+
 TEST(std_test, format_atomic) {
   std::atomic<bool> b(false);
   EXPECT_EQ(fmt::format("{}", b), "false");

@@ -2611,14 +2611,6 @@ TEST(format_test, invalid_glibc_buffer) {
 }
 #endif  // FMT_USE_FCNTL
 
-#ifdef __cpp_lib_byte
-TEST(base_test, format_byte) {
-  auto s = std::string();
-  fmt::format_to(std::back_inserter(s), "{}", std::byte(42));
-  EXPECT_EQ(s, "42");
-}
-#endif
-
 // Only defined after the test case.
 struct incomplete_type;
 extern const incomplete_type& external_instance;

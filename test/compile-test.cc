@@ -75,9 +75,6 @@ TEST(compile_test, format_default) {
   EXPECT_EQ("foo", fmt::format(FMT_COMPILE("{}"), test_formattable()));
   auto t = std::chrono::system_clock::now();
   EXPECT_EQ(fmt::format("{}", t), fmt::format(FMT_COMPILE("{}"), t));
-#  ifdef __cpp_lib_byte
-  EXPECT_EQ("42", fmt::format(FMT_COMPILE("{}"), std::byte{42}));
-#  endif
 }
 
 TEST(compile_test, format_escape) {

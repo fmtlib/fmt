@@ -395,13 +395,6 @@ TEST(ranges_test, join) {
   EXPECT_EQ(fmt::format("{}", join(v4, " ")), "0 1 0");
 }
 
-#ifdef __cpp_lib_byte
-TEST(ranges_test, join_bytes) {
-  auto v = std::vector<std::byte>{std::byte(1), std::byte(2), std::byte(3)};
-  EXPECT_EQ(fmt::format("{}", fmt::join(v, ", ")), "1, 2, 3");
-}
-#endif
-
 TEST(ranges_test, join_tuple) {
   // Value tuple args.
   auto t1 = std::tuple<char, int, float>('a', 1, 2.0f);

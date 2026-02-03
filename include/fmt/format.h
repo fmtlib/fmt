@@ -51,9 +51,8 @@
 #  include <stdlib.h>  // malloc, free
 #  include <string.h>  // memcpy
 
-#  include <cmath>    // std::signbit
-#  include <cstddef>  // std::byte
-#  include <limits>   // std::numeric_limits
+#  include <cmath>   // std::signbit
+#  include <limits>  // std::numeric_limits
 #  if defined(__GLIBCXX__) && !defined(_GLIBCXX_USE_DUAL_ABI)
 // Workaround for pre gcc 5 libstdc++.
 #    include <memory>  // std::allocator_traits
@@ -4068,19 +4067,6 @@ constexpr auto format_as(Enum e) noexcept -> underlying_t<Enum> {
   return static_cast<underlying_t<Enum>>(e);
 }
 }  // namespace enums
-
-#ifdef __cpp_lib_byte
-template <typename Char>
-struct formatter<std::byte, Char> : formatter<unsigned, Char> {
-  static auto format_as(std::byte b) -> unsigned char {
-    return static_cast<unsigned char>(b);
-  }
-  template <typename Context>
-  auto format(std::byte b, Context& ctx) const -> decltype(ctx.out()) {
-    return formatter<unsigned, Char>::format(format_as(b), ctx);
-  }
-};
-#endif
 
 struct bytes {
   string_view data;

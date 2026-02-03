@@ -15,7 +15,8 @@
 #  include <atomic>
 #  include <bitset>
 #  include <complex>
-#  include <exception>
+#  include <cstddef>     // std::byte
+#  include <exception>   // std::exception
 #  include <functional>  // std::reference_wrapper
 #  include <memory>
 #  include <thread>
@@ -665,6 +666,19 @@ struct formatter<BitRef, Char,
     return formatter<bool, Char>::format(v, ctx);
   }
 };
+
+#ifdef __cpp_lib_byte
+template <typename Char>
+struct formatter<std::byte, Char> : formatter<unsigned, Char> {
+  static auto format_as(std::byte b) -> unsigned char {
+    return static_cast<unsigned char>(b);
+  }
+  template <typename Context>
+  auto format(std::byte b, Context& ctx) const -> decltype(ctx.out()) {
+    return formatter<unsigned, Char>::format(format_as(b), ctx);
+  }
+};
+#endif
 
 template <typename T, typename Char>
 struct formatter<std::atomic<T>, Char,
