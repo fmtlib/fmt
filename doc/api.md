@@ -194,7 +194,7 @@ In general the formatter has the following form:
     template <> struct fmt::formatter<T> {
       // Parses format specifiers and stores them in the formatter.
       //
-      // (ctx.begin(), ctx.end()) is a, possibly empty, character range that
+      // [ctx.begin(), ctx.end()) is a, possibly empty, character range that
       // contains a part of the format string starting from the format
       // specifications to be parsed, e.g. in
       //
