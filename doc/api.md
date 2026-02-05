@@ -28,7 +28,7 @@ dependencies for better compile times. This header is only beneficial when
 using {fmt} as a library (the default) and not in the header-only mode.
 It also provides `formatter` specializations for the following types:
 
-- `int`, `long long`,
+- `int`, `long long`
 - `unsigned`, `unsigned long long`
 - `float`, `double`, `long double`
 - `bool`
@@ -105,8 +105,8 @@ Example ([run](https://godbolt.org/z/nvME4arz8)):
       fmt::print("{}\n", kevin_namespacy::film::se7en); // Output: 7
     }
 
-Using specialization is more complex but gives you full control over
-parsing and formatting. To use this method specialize the `formatter`
+Using a specialization is more complex, but gives you full control over
+parsing and formatting. To use this method, specialize the `formatter`
 struct template for your type and implement `parse` and `format`
 methods.
 
@@ -515,7 +515,7 @@ chrono-format-specifications).
 
 ### Variants
 
-A `std::variant` is only formattable if every variant alternative is
+A `std::variant` can be formatted only if every alternative is
 formattable, and requires the `__cpp_lib_variant` [library
 feature](https://en.cppreference.com/w/cpp/feature_test).
 
@@ -719,7 +719,7 @@ configuring CMake.
 ### CMake Options
 
 - **`FMT_OS`**: When set to `OFF`, disables OS-specific APIs (`fmt/os.h`).
-- **`FMT_UNICODE`**: When set of `OFF`, disables Unicode support on
+- **`FMT_UNICODE`**: When set to `OFF`, disables Unicode support on
   Windows/MSVC. Unicode support is always enabled on other platforms.
 
 ### Macros

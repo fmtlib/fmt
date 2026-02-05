@@ -473,7 +473,7 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
     }
 
     auto arg = get_arg(arg_index);
-    // For d, i, o, u, x, and X conversion specifiers, if a precision is
+    // For d, i, o, u, x and X conversion specifiers, if a precision is
     // specified, the '0' flag is ignored
     if (specs.precision >= 0 && is_integral_type(arg.type())) {
       // Ignore '0' for non-numeric types or if '-' present.
@@ -586,7 +586,7 @@ inline auto vsprintf(basic_string_view<Char> fmt,
 
 /**
  * Formats `args` according to specifications in `fmt` and returns the result
- * as as string.
+ * as string.
  *
  * **Example**:
  *
