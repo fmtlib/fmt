@@ -1743,7 +1743,7 @@ template <typename T> class buffer {
   // Don't initialize ptr_ since it is not accessed to save a few cycles.
   FMT_CONSTEXPR buffer(grow_fun grow, size_t sz) noexcept
       : size_(sz), capacity_(sz), grow_(grow) {
-    if (FMT_MSC_VERSION) ptr_ = nullptr;  // Suppress warning 26495.
+    if (FMT_MSC_VERSION != 0) ptr_ = nullptr;  // Suppress warning 26495.
   }
 
   constexpr buffer(grow_fun grow, T* p = nullptr, size_t sz = 0,
