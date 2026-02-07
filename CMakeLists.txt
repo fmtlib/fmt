@@ -535,7 +535,7 @@ endif ()
 
 # C API Wrapper
 
-option(FMT_C_API "Build C API wrapper" OFF)
+option(FMT_C_API "Build C API wrapper" ON)
 
 if(FMT_C_API)
   message(STATUS "Building C API wrapper (fmt::fmt_c)")
