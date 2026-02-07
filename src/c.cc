@@ -189,10 +189,6 @@ int fmt_c_format(char* buffer, size_t capacity, const char* format_str,
 
     *result.out = '\0';
     return static_cast<int>(result.size);
-
-  } catch (const fmt::format_error& e) {
-    set_error(e.what());
-    return FMT_ERR_EXCEPTION;
   } catch (const std::exception& e) {
     set_error(e.what());
     return FMT_ERR_EXCEPTION;
@@ -235,8 +231,6 @@ void fmt_c_print(FILE* f, const char* format_str, const FmtArg* args,
         g_fixed_store.data(), static_cast<int>(arg_count));
     fmt::vprint(f, format_str, format_args_view);
 
-  } catch (const fmt::format_error& e) {
-    set_error(e.what());
   } catch (const std::exception& e) {
     set_error(e.what());
   } catch (...) {
