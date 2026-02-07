@@ -8,7 +8,7 @@
 #include <vector>
 #include <array>
 
-static const size_t MAX_PACKED_ARGS = 16;
+static const size_t MAX_PACKED_ARGS = FMT_C_MAX_ARGS;
 
 extern "C" {
 static thread_local std::string g_last_error;
