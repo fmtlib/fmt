@@ -532,3 +532,68 @@ if (FMT_MASTER_PROJECT AND EXISTS ${gitignore})
   set(CPACK_RESOURCE_FILE_README ${PROJECT_SOURCE_DIR}/README.md)
   include(CPack)
 endif ()
+
+# C API Wrapper
+
+option(FMT_C_API "Build C API wrapper" OFF)
+
+if(FMT_C_API)
+  message(STATUS "Building C API wrapper (fmt::fmt_c)")
+
+  enable_language(C)
+
+  add_library(fmt_c STATIC src/c.cc)
+
+  target_compile_features(fmt_c PUBLIC cxx_std_11)
+  target_compile_definitions(fmt_c PUBLIC FMT_C_STATIC)
+  target_link_libraries(fmt_c PUBLIC fmt::fmt)
+
+  target_include_directories(fmt_c PUBLIC
+          $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+          $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+  )
+
+  set_target_properties(fmt_c PROPERTIES
+          VERSION ${FMT_VERSION}
+          SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR}
+          DEBUG_POSTFIX "${CMAKE_DEBUG_POSTFIX}"
+          C_VISIBILITY_PRESET default
+          CXX_VISIBILITY_PRESET hidden
+  )
+
+  add_library(fmt::fmt_c ALIAS fmt_c)
+  if(FMT_INSTALL)
+    install(TARGETS fmt_c
+            EXPORT fmt-targets
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    )
+    install(FILES include/fmt/c.h
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/fmt
+    )
+  endif()
+
+  if(FMT_TEST AND EXISTS ${PROJECT_SOURCE_DIR}/test/test_c.c)
+    message(STATUS "Adding C API test executable")
+
+    add_executable(test-c-api test/test_c.c)
+
+    set_source_files_properties(test/test_c.c PROPERTIES LANGUAGE C)
+
+    target_link_libraries(test-c-api PRIVATE fmt::fmt_c)
+#needed for c11(_generic)
+    if(MSVC)
+      target_compile_options(test-c-api PRIVATE /std:c11 /Zc:preprocessor)
+    else()
+      set_target_properties(test-c-api PROPERTIES
+              C_STANDARD 11
+              C_STANDARD_REQUIRED ON
+              C_EXTENSIONS OFF
+      )
+    endif()
+
+    add_test(NAME c-api-test COMMAND test-c-api)
+  endif()
+
+endif(FMT_C_API)
