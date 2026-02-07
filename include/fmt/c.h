@@ -192,7 +192,6 @@ static inline FmtArg fmt_identity(FmtArg x) { return x; }
         FmtArg: fmt_identity,              \
         _Bool: fmt_from_bool,              \
         char: fmt_from_char,               \
-        signed char: fmt_from_int,         \
         unsigned char: fmt_from_uint,      \
         short: fmt_from_int,               \
         unsigned short: fmt_from_uint,     \
