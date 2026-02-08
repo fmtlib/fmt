@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "fmt/c.h"
+#include "fmt/fmt-c.h"
 
 #define TEST(name)                          \
   static void test_##name(void);            \
@@ -43,41 +43,41 @@
 
 TEST(basic_integer) {
   char buf[100];
-  int ret = fmt_snprintf(buf, sizeof(buf), "Number: {}", 42);
+  int ret = fmt_format(buf, sizeof(buf), "Number: {}", 42);
   ASSERT_STR_EQ(buf, "Number: 42");
   ASSERT_INT_EQ(ret, 10);
 }
 
 TEST(multiple_integers) {
   char buf[100];
-  fmt_snprintf(buf, sizeof(buf), "{} + {} = {}", 1, 2, 3);
+  fmt_format(buf, sizeof(buf), "{} + {} = {}", 1, 2, 3);
   ASSERT_STR_EQ(buf, "1 + 2 = 3");
 }
 
 TEST(unsigned_integers) {
   char buf[100];
   unsigned int x = 4294967295U;
-  fmt_snprintf(buf, sizeof(buf), "{}", x);
+  fmt_format(buf, sizeof(buf), "{}", x);
   ASSERT_STR_EQ(buf, "4294967295");
 }
 
 TEST(floating_point) {
   char buf[100];
-  fmt_snprintf(buf, sizeof(buf), "Pi = {}", 3.14159);
+  fmt_format(buf, sizeof(buf), "Pi = {}", 3.14159);
   ASSERT_TRUE(strncmp(buf, "Pi = 3.14159", 12) == 0);
 }
 
 TEST(float_type) {
   char buf[100];
   float f = 1.234f;
-  fmt_snprintf(buf, sizeof(buf), "Float: {:.3f}", f);
+  fmt_format(buf, sizeof(buf), "Float: {:.3f}", f);
   ASSERT_STR_EQ(buf, "Float: 1.234");
 }
 
 TEST(long_double_type) {
   char buf[100];
   long double ld = 12345.6789L;
-  fmt_snprintf(buf, sizeof(buf), "{:.4f}", ld);
+  fmt_format(buf, sizeof(buf), "{:.4f}", ld);
   ASSERT_STR_EQ(buf, "12345.6789");
 }
 
@@ -87,45 +87,45 @@ TEST(mixed_floating_types) {
   double d = 2.5;
   long double ld = 3.5L;
 
-  fmt_snprintf(buf, sizeof(buf), "{} {} {}", f, d, ld);
+  fmt_format(buf, sizeof(buf), "{} {} {}", f, d, ld);
   ASSERT_STR_EQ(buf, "1.5 2.5 3.5");
 }
 
 TEST(strings) {
   char buf[100];
-  fmt_snprintf(buf, sizeof(buf), "Hello, {}!", "from fmt!");
+  fmt_format(buf, sizeof(buf), "Hello, {}!", "from fmt!");
   ASSERT_STR_EQ(buf, "Hello, from fmt!!");
 }
 
 TEST(null_string) {
   char buf[100];
   const char* null_str = NULL;
-  fmt_snprintf(buf, sizeof(buf), "{}", null_str);
+  fmt_format(buf, sizeof(buf), "{}", null_str);
   ASSERT_STR_EQ(buf, "(null)");
 }
 
 TEST(pointers) {
   char buf[100];
   void* ptr = (void*)0x12345678;
-  fmt_snprintf(buf, sizeof(buf), "{}", ptr);
+  fmt_format(buf, sizeof(buf), "{}", ptr);
   ASSERT_TRUE(strstr(buf, "12345678") != NULL);
 }
 
 TEST(booleans) {
   char buf[100];
-  fmt_snprintf(buf, sizeof(buf), "{} {}", (bool)true, (bool)false);
+  fmt_format(buf, sizeof(buf), "{} {}", (bool)true, (bool)false);
   ASSERT_STR_EQ(buf, "true false");
 }
 
 TEST(characters) {
   char buf[100];
-  fmt_snprintf(buf, sizeof(buf), "Char: {}", (char)'A');
+  fmt_format(buf, sizeof(buf), "Char: {}", (char)'A');
   ASSERT_STR_EQ(buf, "Char: A");
 }
 
 TEST(mixed_types) {
   char buf[100];
-  fmt_snprintf(buf, sizeof(buf), "{} {} {} {}", 42, 3.14, "text", (bool)true);
+  fmt_format(buf, sizeof(buf), "{} {} {} {}", 42, 3.14, "text", (bool)true);
   ASSERT_TRUE(strstr(buf, "42") != NULL);
   ASSERT_TRUE(strstr(buf, "3.14") != NULL);
   ASSERT_TRUE(strstr(buf, "text") != NULL);
@@ -134,51 +134,50 @@ TEST(mixed_types) {
 
 TEST(format_zero_padding) {
   char buf[100];
-  fmt_snprintf(buf, sizeof(buf), "{:05d}", 42);
+  fmt_format(buf, sizeof(buf), "{:05d}", 42);
   ASSERT_STR_EQ(buf, "00042");
 }
 
 TEST(format_precision) {
   char buf[100];
-  fmt_snprintf(buf, sizeof(buf), "{:.2f}", 3.14159);
+  fmt_format(buf, sizeof(buf), "{:.2f}", 3.14159);
   ASSERT_STR_EQ(buf, "3.14");
 }
 
 TEST(format_hex) {
   char buf[100];
-  fmt_snprintf(buf, sizeof(buf), "{:x}", 255);
+  fmt_format(buf, sizeof(buf), "{:x}", 255);
   ASSERT_STR_EQ(buf, "ff");
 }
 
 TEST(format_hex_upper) {
   char buf[100];
-  fmt_snprintf(buf, sizeof(buf), "{:X}", 255);
+  fmt_format(buf, sizeof(buf), "{:X}", 255);
   ASSERT_STR_EQ(buf, "FF");
 }
 
 TEST(positional_arguments) {
   char buf[100];
-  fmt_snprintf(buf, sizeof(buf), "{1} {0}", "from fmt!", "Hello");
+  fmt_format(buf, sizeof(buf), "{1} {0}", "from fmt!", "Hello");
   ASSERT_STR_EQ(buf, "Hello from fmt!");
 }
 
 TEST(zero_arguments) {
   char buf[100];
-  // fmt_snprintf(buf, sizeof(buf), "No arguments");
+  // fmt_format(buf, sizeof(buf), "No arguments");
   fmt_c_format(buf, sizeof(buf), "No arguments", NULL,
-               0);  // strict compiler check bypass - either turn on cextension
-                    // in cmake or this
+               0);  // strict compiler check bypass
   ASSERT_STR_EQ(buf, "No arguments");
 }
 
 TEST(buffer_size_query) {
-  int size = fmt_snprintf(NULL, 0, "Test string: {}", 42);
+  int size = fmt_format(NULL, 0, "Test string: {}", 42);
   ASSERT_INT_EQ(size, 15);
 }
 
 TEST(buffer_overflow) {
   char buf[10];
-  int ret = fmt_snprintf(buf, sizeof(buf), "Very long string: {}", 12345);
+  int ret = fmt_format(buf, sizeof(buf), "Very long string: {}", 12345);
   ASSERT_INT_EQ(buf[9], '\0');
   ASSERT_TRUE(ret > 9);
 }
@@ -205,8 +204,7 @@ TEST(custom_formatter_null_function) {
   FmtArg args[] = {fmt_from_custom(&data, NULL)};
   int ret = fmt_c_format(buf, sizeof(buf), "Value: {}", args, 1);
   ASSERT_TRUE(ret < 0);
-  const char* err = fmt_c_get_error();
-  ASSERT_TRUE(strstr(err, "NULL") != NULL);
+  // ASSERT_INT_EQ(ret, FMT_ERR_EXCEPTION); // Optional specific check
 }
 
 TEST(custom_formatter_null_data) {
@@ -214,8 +212,6 @@ TEST(custom_formatter_null_data) {
   FmtArg args[] = {fmt_from_custom(NULL, custom_point_formatter)};
   int ret = fmt_c_format(buf, sizeof(buf), "Value: {}", args, 1);
   ASSERT_TRUE(ret < 0);
-  const char* err = fmt_c_get_error();
-  ASSERT_TRUE(strstr(err, "NULL") != NULL);
 }
 
 static int failing_formatter(char* buf, size_t cap, const void* data) {
@@ -231,16 +227,12 @@ TEST(custom_formatter_error_return) {
   FmtArg args[] = {FMT_MAKE_CUSTOM(&data, failing_formatter)};
   int ret = fmt_c_format(buf, sizeof(buf), "Value: {}", args, 1);
   ASSERT_TRUE(ret < 0);
-  const char* err = fmt_c_get_error();
-  ASSERT_TRUE(strstr(err, "error") != NULL);
 }
 
 TEST(error_null_format) {
   char buf[100];
   int ret = fmt_c_format(buf, sizeof(buf), NULL, NULL, 0);
-  ASSERT_TRUE(ret < 0);
-  const char* err = fmt_c_get_error();
-  ASSERT_TRUE(strlen(err) > 0);
+  ASSERT_INT_EQ(ret, FMT_ERR_NULL_FORMAT);
 }
 
 TEST(error_too_many_args) {
@@ -250,44 +242,19 @@ TEST(error_too_many_args) {
     args[i] = fmt_from_int(i);
   }
   int ret = fmt_c_format(buf, sizeof(buf), "{}", args, 20);
-  ASSERT_TRUE(ret < 0);
-  const char* err = fmt_c_get_error();
-  ASSERT_TRUE(strstr(err, "maximum") != NULL || strstr(err, "many") != NULL);
+  ASSERT_INT_EQ(ret, FMT_ERR_INVALID_ARG);
 }
 
-// NEW: Test NULL args with non-zero count
 TEST(error_null_args_nonzero_count) {
   char buf[100];
   int ret = fmt_c_format(buf, sizeof(buf), "{}", NULL, 1);
-  ASSERT_TRUE(ret < 0);
-  const char* err = fmt_c_get_error();
-  ASSERT_TRUE(strlen(err) > 0);
+  ASSERT_INT_EQ(ret, FMT_ERR_INVALID_ARG);
 }
 
 TEST(error_invalid_format) {
   char buf[100];
-  int ret = fmt_snprintf(buf, sizeof(buf), "{:invalid}", 1);
+  int ret = fmt_format(buf, sizeof(buf), "{:invalid}", 1);
   ASSERT_TRUE(ret < 0);
-  const char* err = fmt_c_get_error();
-  ASSERT_TRUE(strlen(err) > 0);
-}
-
-TEST(printf_to_stdout) {
-  printf("\n  Output from fmt_printf: ");
-  fmt_printf("Test {} {} {}", 1, 2.5, "string");
-  printf("\n");
-}
-TEST(print_null_file) {
-  FmtArg args[] = {fmt_from_int(42)};
-  fmt_c_print(NULL, "{}", args, 1);
-  const char* err = fmt_c_get_error();
-  ASSERT_TRUE(strstr(err, "NULL") != NULL);
-}
-
-TEST(print_null_format) {
-  fmt_c_print(stdout, NULL, NULL, 0);
-  const char* err = fmt_c_get_error();
-  ASSERT_TRUE(strstr(err, "NULL") != NULL);
 }
 
 TEST(long_strings) {
@@ -295,26 +262,26 @@ TEST(long_strings) {
   const char* long_str =
       "This is a very long string that contains a lot of text "
       "to test the buffer handling capabilities of the formatter";
-  fmt_snprintf(buf, sizeof(buf), "Message: {}", long_str);
+  fmt_format(buf, sizeof(buf), "Message: {}", long_str);
   ASSERT_TRUE(strstr(buf, long_str) != NULL);
 }
 
 TEST(multiple_calls) {
   char buf[100];
 
-  fmt_snprintf(buf, sizeof(buf), "{} {}", 1, 2);
+  fmt_format(buf, sizeof(buf), "{} {}", 1, 2);
   ASSERT_STR_EQ(buf, "1 2");
 
-  fmt_snprintf(buf, sizeof(buf), "{} {}", "hello", 3.14);
+  fmt_format(buf, sizeof(buf), "{} {}", "hello", 3.14);
   ASSERT_TRUE(strstr(buf, "hello") != NULL);
 
-  fmt_snprintf(buf, sizeof(buf), "{}", (bool)true);
+  fmt_format(buf, sizeof(buf), "{}", (bool)true);
   ASSERT_STR_EQ(buf, "true");
 }
 
 TEST(escaped_braces) {
   char buf[100];
-  fmt_snprintf(buf, sizeof(buf), "{{}} {}", 42);
+  fmt_format(buf, sizeof(buf), "{{}} {}", 42);
   ASSERT_STR_EQ(buf, "{} 42");
 }
 
@@ -329,7 +296,7 @@ TEST(all_integer_types) {
   unsigned long ul = 700UL;
   unsigned long long ull = 800ULL;
 
-  fmt_snprintf(buf, sizeof(buf), "{} {} {} {} {} {} {} {}", s, i, l, ll, us, ui,
+  fmt_format(buf, sizeof(buf), "{} {} {} {} {} {} {} {}", s, i, l, ll, us, ui,
                ul, ull);
   ASSERT_TRUE(strstr(buf, "100") != NULL);
   ASSERT_TRUE(strstr(buf, "800") != NULL);
@@ -342,21 +309,19 @@ TEST(version_check) {
 
 TEST(alignment) {
   char buf[100];
-  fmt_snprintf(buf, sizeof(buf), "{:>10}", 42);
+  fmt_format(buf, sizeof(buf), "{:>10}", 42);
   ASSERT_STR_EQ(buf, "        42");
 }
 
 TEST(center_alignment) {
   char buf[100];
-  fmt_snprintf(buf, sizeof(buf), "{:^10}", "Hi");
+  fmt_format(buf, sizeof(buf), "{:^10}", "Hi");
   ASSERT_STR_EQ(buf, "    Hi    ");
 }
 
 TEST(struct_size_and_alignment) {
   // Verify that FmtArg has expected size with explicit padding
-  // On 64-bit: 4 (type) + 4 (padding) + 16 (union) + 8 (ptr) = 32 bytes .... 24
-  // bytes in MSVC becuz of it's internal optimization This may vary on 32-bit
-  // or with different compilers
+  // On 64-bit: 4 (type) + 4 (padding) + 16 (union) + 8 (ptr) = 32 bytes ....
   printf("\n  FmtArg size: %zu bytes (alignment: %zu)\n", sizeof(FmtArg),
          _Alignof(FmtArg));
 
@@ -396,9 +361,6 @@ int main(void) {
   run_test_error_null_format();
   run_test_error_too_many_args();
   run_test_error_invalid_format();
-  run_test_printf_to_stdout();
-  run_test_print_null_file();
-  run_test_print_null_format();
   run_test_long_strings();
   run_test_multiple_calls();
   run_test_escaped_braces();

@@ -542,7 +542,7 @@ if(FMT_C_API)
 
   enable_language(C)
 
-  add_library(fmt_c STATIC src/c.cc)
+  add_library(fmt_c STATIC src/fmt-c.cc)
 
   target_compile_features(fmt_c PUBLIC cxx_std_11)
   target_compile_definitions(fmt_c PUBLIC FMT_C_STATIC)
@@ -569,7 +569,7 @@ if(FMT_C_API)
             ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
             RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
-    install(FILES include/fmt/c.h
+    install(FILES include/fmt/fmt-c.h
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/fmt
     )
   endif()

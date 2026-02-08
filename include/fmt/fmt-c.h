@@ -1,6 +1,9 @@
 #ifndef FMT_C_API_H
 #define FMT_C_API_H
 
+#include <stddef.h>
+#include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 
 #define FMT_C_ABI_VERSION 1
@@ -10,14 +13,10 @@
 #define FMT_ERR_NULL_FORMAT -1
 #define FMT_ERR_EXCEPTION -2
 #define FMT_ERR_MEMORY -3
+#define FMT_ERR_INVALID_ARG -4
 
 #ifdef __cplusplus
-#  include <cstddef>
-#  include <cstdint>
 extern "C" {
-#else
-#  include <stdbool.h>
-#  include <stdint.h>
 #endif
 
 #if defined(_WIN32) && !defined(FMT_C_STATIC)
@@ -76,10 +75,6 @@ typedef struct {
 FMT_C_API int fmt_c_format(char* buffer, size_t capacity,
                            const char* format_str, const FmtArg* args,
                            size_t arg_count);
-FMT_C_API void fmt_c_print(FILE* f, const char* format_str, const FmtArg* args,
-                           size_t arg_count);
-
-FMT_C_API const char* fmt_c_get_error(void);
 
 FMT_C_API int fmt_c_get_version(void);
 
@@ -257,19 +252,12 @@ static inline FmtArg fmt_identity(FmtArg x) { return x; }
 #  define FMT_MAP(f, ...) \
     FMT_CAT(FMT_MAP_, FMT_NARG(__VA_ARGS__))(f, ##__VA_ARGS__)
 
-#  define fmt_snprintf(buf, cap, fmt, ...)                               \
+#  define fmt_format(buf, cap, fmt, ...)                               \
     fmt_c_format(                                                        \
         buf, cap, fmt,                                                   \
         (FmtArg[]){{FMT_INT}, FMT_MAP(FMT_MAKE_ARG, ##__VA_ARGS__)} + 1, \
         FMT_NARG(__VA_ARGS__))
 
-#  define fmt_fprintf(f, fmt, ...)                                       \
-    fmt_c_print(                                                         \
-        f, fmt,                                                          \
-        (FmtArg[]){{FMT_INT}, FMT_MAP(FMT_MAKE_ARG, ##__VA_ARGS__)} + 1, \
-        FMT_NARG(__VA_ARGS__))
-
-#  define fmt_printf(fmt, ...) fmt_fprintf(stdout, fmt, ##__VA_ARGS__)
 
 #endif  // !__cplusplus
 
