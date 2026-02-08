@@ -9,7 +9,6 @@
 #include <string>
 #include <vector>
 
-
 extern "C" {
 
 int fmt_c_get_version(void) { return FMT_C_ABI_VERSION; }
@@ -62,7 +61,8 @@ static bool populate_store(const FmtArg* c_args, size_t arg_count,
 
     case FMT_CUSTOM: {
       if (!c_args[i].custom_fn || !c_args[i].value.ptr) {
-        g_fixed_store[i] = fmt::basic_format_arg<Context>(fmt::string_view("<error>"));
+        g_fixed_store[i] =
+            fmt::basic_format_arg<Context>(fmt::string_view("<error>"));
         return false;
       }
 
@@ -90,14 +90,13 @@ static bool populate_store(const FmtArg* c_args, size_t arg_count,
       break;
     }
 
-    default:
-      return false;
+    default: return false;
     }
   }
   return true;
 }
 int fmt_c_format(char* buffer, size_t capacity, const char* format_str,
-                   const FmtArg* args, size_t arg_count) {
+                 const FmtArg* args, size_t arg_count) {
   if (!format_str) return FMT_ERR_NULL_FORMAT;
   if (arg_count > FMT_C_MAX_ARGS) return FMT_ERR_INVALID_ARG;
 
@@ -119,7 +118,8 @@ int fmt_c_format(char* buffer, size_t capacity, const char* format_str,
       return static_cast<int>(result.size);
     }
 
-    auto result = fmt::vformat_to_n(buffer, capacity - 1, format_str, format_args_view);
+    auto result =
+        fmt::vformat_to_n(buffer, capacity - 1, format_str, format_args_view);
     *result.out = '\0';
     return static_cast<int>(result.size);
 
@@ -129,6 +129,5 @@ int fmt_c_format(char* buffer, size_t capacity, const char* format_str,
     return FMT_ERR_EXCEPTION;
   }
 }
-
 
 }  // extern "C"

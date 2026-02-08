@@ -297,7 +297,7 @@ TEST(all_integer_types) {
   unsigned long long ull = 800ULL;
 
   fmt_format(buf, sizeof(buf), "{} {} {} {} {} {} {} {}", s, i, l, ll, us, ui,
-               ul, ull);
+             ul, ull);
   ASSERT_TRUE(strstr(buf, "100") != NULL);
   ASSERT_TRUE(strstr(buf, "800") != NULL);
 }

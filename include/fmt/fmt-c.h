@@ -1,9 +1,9 @@
 #ifndef FMT_C_API_H
 #define FMT_C_API_H
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include <stdio.h>
 
 #define FMT_C_ABI_VERSION 1
@@ -252,12 +252,11 @@ static inline FmtArg fmt_identity(FmtArg x) { return x; }
 #  define FMT_MAP(f, ...) \
     FMT_CAT(FMT_MAP_, FMT_NARG(__VA_ARGS__))(f, ##__VA_ARGS__)
 
-#  define fmt_format(buf, cap, fmt, ...)                               \
+#  define fmt_format(buf, cap, fmt, ...)                                 \
     fmt_c_format(                                                        \
         buf, cap, fmt,                                                   \
         (FmtArg[]){{FMT_INT}, FMT_MAP(FMT_MAKE_ARG, ##__VA_ARGS__)} + 1, \
         FMT_NARG(__VA_ARGS__))
-
 
 #endif  // !__cplusplus
 
