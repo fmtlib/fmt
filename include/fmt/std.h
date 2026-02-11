@@ -454,6 +454,26 @@ struct formatter<std::expected<T, E>, Char,
     return out;
   }
 };
+
+template <typename E, typename Char>
+struct formatter<std::unexpected<E>, Char,
+                 std::enable_if_t<is_formattable<E, Char>::value>> {
+  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
+    return ctx.begin();
+  }
+
+  template <typename FormatContext>
+  auto format(const std::unexpected<E>& value, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    auto out = ctx.out();
+
+    out = detail::write<Char>(out, "unexpected(");
+    out = detail::write_escaped_alternative<Char>(out, value.error(), ctx);
+
+    *out++ = ')';
+    return out;
+  }
+};
 #endif  // __cpp_lib_expected
 
 #ifdef __cpp_lib_source_location

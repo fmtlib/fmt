@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#include "fmt/os.h"       // fmt::system_category
+#include "fmt/os.h"  // fmt::system_category
 #include "fmt/ranges.h"
 #include "gtest-extra.h"  // StartsWith
 
@@ -176,6 +176,14 @@ TEST(std_test, expected) {
       (fmt::is_formattable<std::expected<int, unformattable2>>::value));
   EXPECT_TRUE((fmt::is_formattable<std::expected<int, int>>::value));
   EXPECT_TRUE((fmt::is_formattable<std::expected<void, int>>::value));
+
+  EXPECT_EQ(fmt::format("{}", std::unexpected{1}), "unexpected(1)");
+  EXPECT_EQ(fmt::format("{}", std::unexpected<std::string>{"test"}),
+            "unexpected(\"test\")");
+
+  EXPECT_EQ(fmt::format("{}", std::unexpected<char>{'a'}), "unexpected('a')");
+
+  EXPECT_FALSE((fmt::is_formattable<std::unexpected<unformattable2>>::value));
 #endif
 }
 
