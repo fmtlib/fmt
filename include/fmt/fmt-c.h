@@ -1,15 +1,16 @@
 #ifndef FMT_C_H
 #define FMT_C_H
 
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
+#ifdef __cplusplus
+#  define _Bool bool
+#endif
 #include <stdio.h>
 
-#define FMT_C_MAX_ARGS 16
+void fmt_error_unsupported_type_detected(void);
+
+enum { fmt_c_max_args = 16 };
 
 typedef enum {
-  fmt_ok = 0,
   fmt_err_exception = -1,
   fmt_err_memory = -2,
   fmt_err_invalid_arg = -3
@@ -34,29 +35,29 @@ typedef enum {
 typedef struct {
   fmt_type type;
   union {
-    int64_t i64;
-    uint64_t u64;
+    long long i64;
+    unsigned long long u64;
     float f32;
     double f64;
     long double f128;
     const char* str;
     const void* ptr;  // Used for FMT_PTR and custom data
-    int bool_val;
-    int char_val;
+    _Bool bool_val;
+    char char_val;
   } value;
 } fmt_arg;
 
 int fmt_vformat(char* buffer, size_t capacity, const char* format_str,
                 const fmt_arg* args, size_t arg_count);
 
-static inline fmt_arg fmt_from_int(int64_t x) {
+static inline fmt_arg fmt_from_int(long long x) {
   fmt_arg arg;
   arg.type = fmt_int;
   arg.value.i64 = x;
   return arg;
 }
 
-static inline fmt_arg fmt_from_uint(uint64_t x) {
+static inline fmt_arg fmt_from_uint(unsigned long long x) {
   fmt_arg arg;
   arg.type = fmt_uint;
   arg.value.u64 = x;
@@ -98,7 +99,7 @@ static inline fmt_arg fmt_from_ptr(const void* x) {
   return arg;
 }
 
-static inline fmt_arg fmt_from_bool(bool x) {
+static inline fmt_arg fmt_from_bool(_Bool x) {
   fmt_arg arg;
   arg.type = fmt_bool;
   arg.value.bool_val = x;
@@ -143,7 +144,7 @@ static inline fmt_arg fmt_from_char(int x) {
         const char*: fmt_from_str,         \
         void*: fmt_from_ptr,               \
         const void*: fmt_from_ptr,         \
-        default: fmt_from_ptr)(x)
+        default: fmt_error_unsupported_type_detected)(x)
 
 #  define FMT_CAT(a, b) FMT_CAT_(a, b)
 #  define FMT_CAT_(a, b) a##b

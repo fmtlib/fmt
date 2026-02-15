@@ -537,7 +537,6 @@ endif ()
 add_library(fmt_c STATIC src/fmt-c.cc)
 
 target_compile_features(fmt_c PUBLIC cxx_std_11)
-target_compile_definitions(fmt_c PUBLIC FMT_C_STATIC)
 target_link_libraries(fmt_c PUBLIC fmt::fmt)
 
 target_include_directories(fmt_c PUBLIC
@@ -570,16 +569,13 @@ if(FMT_TEST)
 
   add_executable(test-c-api test/test_c.c)
   target_link_libraries(test-c-api PRIVATE fmt::fmt_c)
-  #needed for c11(_generic)
+  set_target_properties(test-c-api PROPERTIES
+          C_STANDARD 11
+          C_STANDARD_REQUIRED ON
+  )
   if(MSVC)
-    target_compile_options(test-c-api PRIVATE /std:c11 /Zc:preprocessor)
-  else()
-    set_target_properties(test-c-api PROPERTIES
-            C_STANDARD 11
-            C_STANDARD_REQUIRED ON
-    )
+    target_compile_options(test-c-api PRIVATE /Zc:preprocessor)
   endif()
 
   add_test(NAME c-api-test COMMAND test-c-api)
 endif()
-
