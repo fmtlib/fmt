@@ -1,61 +1,38 @@
-#ifndef FMT_C_API_H
-#define FMT_C_API_H
+#ifndef FMT_C_H
+#define FMT_C_H
 
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 
-#define FMT_C_ABI_VERSION 1
 #define FMT_C_MAX_ARGS 16
 
-#define FMT_OK 0
-#define FMT_ERR_NULL_FORMAT -1
-#define FMT_ERR_EXCEPTION -2
-#define FMT_ERR_MEMORY -3
-#define FMT_ERR_INVALID_ARG -4
+typedef enum {
+  fmt_ok = 0,
+  fmt_err_exception = -1,
+  fmt_err_memory = -2,
+  fmt_err_invalid_arg = -3
+} fmt_error;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#if defined(_WIN32) && !defined(FMT_C_STATIC)
-#  ifdef FMT_C_EXPORT
-#    define FMT_C_API __declspec(dllexport)
-#  else
-#    define FMT_C_API __declspec(dllimport)
-#  endif
-#else
-#  define FMT_C_API
-#endif
-
-// Custom formatter callback
-// Returns number of bytes written (excluding null terminator), or -1 on error
-typedef int (*FmtCustomFn)(char* buf, size_t cap, const void* data);
-
 typedef enum {
-  FMT_INT,
-  FMT_UINT,
-  FMT_FLOAT,
-  FMT_DOUBLE,
-  FMT_LONG_DOUBLE,
-  FMT_STRING,
-  FMT_PTR,
-  FMT_BOOL,
-  FMT_CHAR,
-  FMT_CUSTOM
-} FmtType;
+  fmt_int,
+  fmt_uint,
+  fmt_float,
+  fmt_double,
+  fmt_long_double,
+  fmt_string,
+  fmt_ptr,
+  fmt_bool,
+  fmt_char
+} fmt_type;
 
 typedef struct {
-  FmtType type;
-
-  // Explicit padding for ABI stability
-  //   - type:      4 bytes (enum)
-  //   - _padding:  4 bytes (explicit alignment)
-  //   - value:    16 bytes (union, sized by long double)
-  //   - custom_fn: 8 bytes (function pointer)
-  // Ensures consistent struct size across compilers (..* 24 bytes in MSVC)
-  int32_t _padding;
+  fmt_type type;
   union {
     int64_t i64;
     uint64_t u64;
@@ -67,108 +44,73 @@ typedef struct {
     int bool_val;
     int char_val;
   } value;
+} fmt_arg;
 
-  // FMT_CUSTOM type only
-  FmtCustomFn custom_fn;
-} FmtArg;
+int fmt_vformat(char* buffer, size_t capacity, const char* format_str,
+                const fmt_arg* args, size_t arg_count);
 
-FMT_C_API int fmt_c_format(char* buffer, size_t capacity,
-                           const char* format_str, const FmtArg* args,
-                           size_t arg_count);
-
-FMT_C_API int fmt_c_get_version(void);
-
-static inline FmtArg fmt_from_int(int64_t x) {
-  FmtArg a;
-  a.type = FMT_INT;
-  a._padding = 0;
-  a.value.i64 = x;
-  a.custom_fn = NULL;
-  return a;
+static inline fmt_arg fmt_from_int(int64_t x) {
+  fmt_arg arg;
+  arg.type = fmt_int;
+  arg.value.i64 = x;
+  return arg;
 }
 
-static inline FmtArg fmt_from_uint(uint64_t x) {
-  FmtArg a;
-  a.type = FMT_UINT;
-  a._padding = 0;
-  a.value.u64 = x;
-  a.custom_fn = NULL;
-  return a;
+static inline fmt_arg fmt_from_uint(uint64_t x) {
+  fmt_arg arg;
+  arg.type = fmt_uint;
+  arg.value.u64 = x;
+  return arg;
 }
 
-static inline FmtArg fmt_from_float(float x) {
-  FmtArg a;
-  a.type = FMT_FLOAT;
-  a._padding = 0;
-  a.value.f32 = x;
-  a.custom_fn = NULL;
-  return a;
+static inline fmt_arg fmt_from_float(float x) {
+  fmt_arg arg;
+  arg.type = fmt_float;
+  arg.value.f32 = x;
+  return arg;
 }
 
-static inline FmtArg fmt_from_double(double x) {
-  FmtArg a;
-  a.type = FMT_DOUBLE;
-  a._padding = 0;
-  a.value.f64 = x;
-  a.custom_fn = NULL;
-  return a;
+static inline fmt_arg fmt_from_double(double x) {
+  fmt_arg arg;
+  arg.type = fmt_double;
+  arg.value.f64 = x;
+  return arg;
 }
 
-static inline FmtArg fmt_from_long_double(long double x) {
-  FmtArg a;
-  a.type = FMT_LONG_DOUBLE;
-  a._padding = 0;
-  a.value.f128 = x;
-  a.custom_fn = NULL;
-  return a;
+static inline fmt_arg fmt_from_long_double(long double x) {
+  fmt_arg arg;
+  arg.type = fmt_long_double;
+  arg.value.f128 = x;
+  return arg;
 }
 
-static inline FmtArg fmt_from_str(const char* x) {
-  FmtArg a;
-  a.type = FMT_STRING;
-  a._padding = 0;
-  a.value.str = x;
-  a.custom_fn = NULL;
-  return a;
+static inline fmt_arg fmt_from_str(const char* x) {
+  fmt_arg arg;
+  arg.type = fmt_string;
+  arg.value.str = x;
+  return arg;
 }
 
-static inline FmtArg fmt_from_ptr(const void* x) {
-  FmtArg a;
-  a.type = FMT_PTR;
-  a._padding = 0;
-  a.value.ptr = x;
-  a.custom_fn = NULL;
-  return a;
+static inline fmt_arg fmt_from_ptr(const void* x) {
+  fmt_arg arg;
+  arg.type = fmt_ptr;
+  arg.value.ptr = x;
+  return arg;
 }
 
-static inline FmtArg fmt_from_bool(bool x) {
-  FmtArg a;
-  a.type = FMT_BOOL;
-  a._padding = 0;
-  a.value.bool_val = x;
-  a.custom_fn = NULL;
-  return a;
+static inline fmt_arg fmt_from_bool(bool x) {
+  fmt_arg arg;
+  arg.type = fmt_bool;
+  arg.value.bool_val = x;
+  return arg;
 }
 
-static inline FmtArg fmt_from_char(int x) {
-  FmtArg a;
-  a.type = FMT_CHAR;
-  a._padding = 0;
-  a.value.char_val = x;
-  a.custom_fn = NULL;
-  return a;
+static inline fmt_arg fmt_from_char(int x) {
+  fmt_arg arg;
+  arg.type = fmt_char;
+  arg.value.char_val = x;
+  return arg;
 }
-
-static inline FmtArg fmt_from_custom(const void* data, FmtCustomFn func) {
-  FmtArg a;
-  a.type = FMT_CUSTOM;
-  a._padding = 0;
-  a.value.ptr = data;
-  a.custom_fn = func;
-  return a;
-}
-
-static inline FmtArg fmt_identity(FmtArg x) { return x; }
 
 #ifdef __cplusplus
 }
@@ -178,13 +120,11 @@ static inline FmtArg fmt_identity(FmtArg x) { return x; }
 
 // Require modern MSVC with conformant preprocessor
 #  if defined(_MSC_VER) && (!defined(_MSVC_TRADITIONAL) || _MSVC_TRADITIONAL)
-#    error \
-        "C API requires MSVC 2019+ with /Zc:preprocessor flag. Add /Zc:preprocessor to your compiler flags."
+#    error "C API requires MSVC 2019+ with /Zc:preprocessor flag."
 #  endif
 
 #  define FMT_MAKE_ARG(x)                  \
     _Generic((x),                          \
-        FmtArg: fmt_identity,              \
         _Bool: fmt_from_bool,              \
         char: fmt_from_char,               \
         unsigned char: fmt_from_uint,      \
@@ -204,9 +144,6 @@ static inline FmtArg fmt_identity(FmtArg x) { return x; }
         void*: fmt_from_ptr,               \
         const void*: fmt_from_ptr,         \
         default: fmt_from_ptr)(x)
-
-#  define FMT_MAKE_CUSTOM(data_ptr, func_ptr) \
-    fmt_from_custom((const void*)(data_ptr), func_ptr)
 
 #  define FMT_CAT(a, b) FMT_CAT_(a, b)
 #  define FMT_CAT_(a, b) a##b
@@ -252,12 +189,12 @@ static inline FmtArg fmt_identity(FmtArg x) { return x; }
 #  define FMT_MAP(f, ...) \
     FMT_CAT(FMT_MAP_, FMT_NARG(__VA_ARGS__))(f, ##__VA_ARGS__)
 
-#  define fmt_format(buf, cap, fmt, ...)                                 \
-    fmt_c_format(                                                        \
-        buf, cap, fmt,                                                   \
-        (FmtArg[]){{FMT_INT}, FMT_MAP(FMT_MAKE_ARG, ##__VA_ARGS__)} + 1, \
+#  define fmt_format(buf, cap, fmt, ...)                                  \
+    fmt_vformat(                                                          \
+        buf, cap, fmt,                                                    \
+        (fmt_arg[]){{fmt_int}, FMT_MAP(FMT_MAKE_ARG, ##__VA_ARGS__)} + 1, \
         FMT_NARG(__VA_ARGS__))
 
 #endif  // !__cplusplus
 
-#endif  // FMT_C_API_H
+#endif  // FMT_C_H
