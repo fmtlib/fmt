@@ -1,6 +1,6 @@
 #ifndef FMT_C_H
 #define FMT_C_H
-
+#include <stddef.h>
 #ifdef __cplusplus
 #  define _Bool bool
 #endif
