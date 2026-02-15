@@ -4,7 +4,6 @@
 #ifdef __cplusplus
 #  define _Bool bool
 #endif
-#include <stdio.h>
 
 void fmt_error_unsupported_type_detected(void);
 
