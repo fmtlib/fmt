@@ -198,4 +198,3 @@ static inline fmt_arg fmt_from_char(int x) {
 #endif  // __cplusplus
 
 #endif  // FMT_C_H
-

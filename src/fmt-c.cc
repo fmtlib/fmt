@@ -53,4 +53,3 @@ int fmt_vformat(char* buffer, size_t capacity, const char* format_str,
 }
 
 }  // extern "C"
-
