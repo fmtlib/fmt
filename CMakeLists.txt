@@ -579,3 +579,4 @@ if(FMT_TEST)
 
   add_test(NAME c-api-test COMMAND test-c-api)
 endif()
+

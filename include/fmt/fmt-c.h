@@ -195,6 +195,7 @@ static inline fmt_arg fmt_from_char(int x) {
         (fmt_arg[]){{fmt_int}, FMT_MAP(FMT_MAKE_ARG, ##__VA_ARGS__)} + 1, \
         FMT_NARG(__VA_ARGS__))
 
-#endif  // !__cplusplus
+#endif  // __cplusplus
 
 #endif  // FMT_C_H
+
