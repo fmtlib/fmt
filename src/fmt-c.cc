@@ -19,24 +19,22 @@ extern "C" int fmt_vformat(char* buffer, size_t size, const char* fmt,
     switch (args[i].type) {
     case fmt_int:    format_args[i] = args[i].value.int_value; break;
     case fmt_uint:   format_args[i] = args[i].value.uint_value; break;
+    case fmt_bool:   format_args[i] = args[i].value.bool_value; break;
+    case fmt_char:   format_args[i] = args[i].value.char_value; break;
     case fmt_float:  format_args[i] = args[i].value.float_value; break;
     case fmt_double: format_args[i] = args[i].value.double_value; break;
     case fmt_long_double:
       format_args[i] = args[i].value.long_double_value;
       break;
-    case fmt_pointer: format_args[i] = args[i].value.pointer; break;
-    case fmt_char:    format_args[i] = args[i].value.char_value; break;
-    case fmt_bool:    format_args[i] = args[i].value.bool_value; break;
     case fmt_cstring: format_args[i] = args[i].value.cstring; break;
+    case fmt_pointer: format_args[i] = args[i].value.pointer; break;
     default:          return fmt_error_invalid_arg;
     }
   }
-
-  auto format_args_view = fmt::basic_format_args<fmt::format_context>(
-      format_args, static_cast<int>(num_args));
-
   try {
-    auto result = fmt::vformat_to_n(buffer, size, fmt, format_args_view);
+    auto result = fmt::vformat_to_n(
+        buffer, size, fmt,
+        fmt::format_args(format_args, static_cast<int>(num_args)));
     return static_cast<int>(result.size);
   } catch (...) {
   }

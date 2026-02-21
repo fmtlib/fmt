@@ -44,71 +44,8 @@ typedef struct {
 
 enum { fmt_error = -1, fmt_error_invalid_arg = -2 };
 
-int fmt_vformat(char* buffer, size_t size, const char* fmt,
-                const fmt_arg* args, size_t num_args);
-
-static inline fmt_arg fmt_from_int(long long x) {
-  fmt_arg arg;
-  arg.type = fmt_int;
-  arg.value.int_value = x;
-  return arg;
-}
-
-static inline fmt_arg fmt_from_uint(unsigned long long x) {
-  fmt_arg arg;
-  arg.type = fmt_uint;
-  arg.value.uint_value = x;
-  return arg;
-}
-
-static inline fmt_arg fmt_from_bool(bool x) {
-  fmt_arg arg;
-  arg.type = fmt_bool;
-  arg.value.bool_value = x;
-  return arg;
-}
-
-static inline fmt_arg fmt_from_char(int x) {
-  fmt_arg arg;
-  arg.type = fmt_char;
-  arg.value.char_value = x;
-  return arg;
-}
-
-static inline fmt_arg fmt_from_float(float x) {
-  fmt_arg arg;
-  arg.type = fmt_float;
-  arg.value.float_value = x;
-  return arg;
-}
-
-static inline fmt_arg fmt_from_double(double x) {
-  fmt_arg arg;
-  arg.type = fmt_double;
-  arg.value.double_value = x;
-  return arg;
-}
-
-static inline fmt_arg fmt_from_long_double(long double x) {
-  fmt_arg arg;
-  arg.type = fmt_long_double;
-  arg.value.long_double_value = x;
-  return arg;
-}
-
-static inline fmt_arg fmt_from_str(const char* x) {
-  fmt_arg arg;
-  arg.type = fmt_cstring;
-  arg.value.cstring = x;
-  return arg;
-}
-
-static inline fmt_arg fmt_from_ptr(const void* x) {
-  fmt_arg arg;
-  arg.type = fmt_pointer;
-  arg.value.pointer = x;
-  return arg;
-}
+int fmt_vformat(char* buffer, size_t size, const char* fmt, const fmt_arg* args,
+                size_t num_args);
 
 #ifdef __cplusplus
 }
@@ -116,8 +53,49 @@ static inline fmt_arg fmt_from_ptr(const void* x) {
 
 #ifndef __cplusplus
 
+static inline fmt_arg fmt_from_int(long long x) {
+  return (fmt_arg){.type = fmt_int, .value.int_value = x};
+}
+
+static inline fmt_arg fmt_from_uint(unsigned long long x) {
+  return (fmt_arg){.type = fmt_uint, .value.uint_value = x};
+}
+
+static inline fmt_arg fmt_from_bool(bool x) {
+  return (fmt_arg){.type = fmt_bool, .value.bool_value = x};
+}
+
+static inline fmt_arg fmt_from_char(char x) {
+  return (fmt_arg){.type = fmt_char, .value.char_value = x};
+}
+
+static inline fmt_arg fmt_from_float(float x) {
+  return (fmt_arg){.type = fmt_float, .value.float_value = x};
+}
+
+static inline fmt_arg fmt_from_double(double x) {
+  return (fmt_arg){.type = fmt_double, .value.double_value = x};
+}
+
+static inline fmt_arg fmt_from_long_double(long double x) {
+  return (fmt_arg){.type = fmt_long_double, .value.long_double_value = x};
+}
+
+static inline fmt_arg fmt_from_str(const char* x) {
+  return (fmt_arg){.type = fmt_cstring, .value.cstring = x};
+}
+
+static inline fmt_arg fmt_from_ptr(const void* x) {
+  return (fmt_arg){.type = fmt_pointer, .value.pointer = x};
+}
+
 void fmt_unsupported_type(void);
 
+#  ifndef _MSC_VER
+typedef signed char fmt_signed_char;
+#  else
+typedef enum {} fmt_signed_char;
+#  endif
 // Require modern MSVC with conformant preprocessor
 #  if defined(_MSC_VER) && (!defined(_MSVC_TRADITIONAL) || _MSVC_TRADITIONAL)
 #    error "C API requires MSVC 2019+ with /Zc:preprocessor flag."
@@ -125,6 +103,7 @@ void fmt_unsupported_type(void);
 
 #  define FMT_MAKE_ARG(x)                  \
     _Generic((x),                          \
+        fmt_signed_char: fmt_from_int,     \
         unsigned char: fmt_from_uint,      \
         short: fmt_from_int,               \
         unsigned short: fmt_from_uint,     \
@@ -189,9 +168,9 @@ void fmt_unsupported_type(void);
 #  define FMT_MAP(f, ...) \
     FMT_CAT(FMT_MAP_, FMT_NARG(__VA_ARGS__))(f, ##__VA_ARGS__)
 
-#  define fmt_format(buffer, size, fmt, ...)                                  \
+#  define fmt_format(buffer, size, fmt, ...)                              \
     fmt_vformat(                                                          \
-        buffer, size, fmt,                                                    \
+        buffer, size, fmt,                                                \
         (fmt_arg[]){{fmt_int}, FMT_MAP(FMT_MAKE_ARG, ##__VA_ARGS__)} + 1, \
         FMT_NARG(__VA_ARGS__))
 
