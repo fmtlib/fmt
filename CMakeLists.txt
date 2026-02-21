@@ -383,6 +383,14 @@ target_include_directories(fmt-header-only
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${FMT_INC_DIR}>)
 
+add_library(fmt-c STATIC src/fmt-c.cc)
+target_compile_features(fmt-c INTERFACE c_std_11)
+if (MSVC)
+  target_compile_options(fmt-c PUBLIC /Zc:preprocessor)
+endif ()
+target_link_libraries(fmt-c PUBLIC fmt::fmt)
+add_library(fmt::fmt-c ALIAS fmt-c)
+
 # Install targets.
 if (FMT_INSTALL)
   include(CMakePackageConfigHelpers)
@@ -422,7 +430,7 @@ if (FMT_INSTALL)
     ${project_config}
     INSTALL_DESTINATION ${FMT_CMAKE_DIR})
 
-  set(INSTALL_TARGETS fmt fmt-header-only)
+  set(INSTALL_TARGETS fmt fmt-header-only fmt-c)
 
   set(INSTALL_FILE_SET)
   if (FMT_USE_CMAKE_MODULES)
@@ -533,51 +541,3 @@ if (FMT_MASTER_PROJECT AND EXISTS ${gitignore})
   set(CPACK_RESOURCE_FILE_README ${PROJECT_SOURCE_DIR}/README.md)
   include(CPack)
 endif ()
-
-# C API Wrapper
-add_library(fmt_c STATIC src/fmt-c.cc)
-
-target_compile_features(fmt_c PUBLIC cxx_std_11)
-target_link_libraries(fmt_c PUBLIC fmt::fmt)
-
-target_include_directories(fmt_c PUBLIC
-        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-)
-
-set_target_properties(fmt_c PROPERTIES
-        VERSION ${FMT_VERSION}
-        SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR}
-        DEBUG_POSTFIX "${CMAKE_DEBUG_POSTFIX}"
-        C_VISIBILITY_PRESET default
-        CXX_VISIBILITY_PRESET hidden
-)
-
-add_library(fmt::fmt_c ALIAS fmt_c)
-if(FMT_INSTALL)
-  install(TARGETS fmt_c
-          EXPORT fmt-targets
-          ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
-  install(FILES include/fmt/fmt-c.h
-          DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/fmt
-)
-endif()
-
-if(FMT_TEST)
-  enable_language(C)
-  message(STATUS "Adding C API test executable")
-
-  add_executable(test-c-api test/test_c.c)
-  target_link_libraries(test-c-api PRIVATE fmt::fmt_c)
-  set_target_properties(test-c-api PROPERTIES
-          C_STANDARD 11
-          C_STANDARD_REQUIRED ON
-  )
-  if(MSVC)
-    target_compile_options(test-c-api PRIVATE /Zc:preprocessor)
-  endif()
-
-  add_test(NAME c-api-test COMMAND test-c-api)
-endif()
-
