@@ -1,55 +1,44 @@
+// Formatting library for C++ - the C API
+//
+// Copyright (c) 2012 - present, Victor Zverovich
+// All rights reserved.
+//
+// For the license information refer to format.h.
+
 #include "fmt/fmt-c.h"
 
-#include <fmt/core.h>
+#include <fmt/base.h>
 
-#include <cassert>
+extern "C" int fmt_vformat(char* buffer, size_t size, const char* fmt,
+                           const fmt_arg* args, size_t num_args) {
+  constexpr size_t max_args = 16;
+  if (num_args > max_args) return fmt_error_invalid_arg;
 
-extern "C" {
-
-using format_arg = fmt::basic_format_arg<fmt::format_context>;
-
-static bool populate_store(format_arg* out, const fmt_arg* c_args,
-                           size_t arg_count) {
-  if (arg_count > fmt_c_max_args) {
-    return false;
-  }
-
-  for (size_t i = 0; i < arg_count; ++i) {
-    switch (c_args[i].type) {
-    case fmt_int:         out[i] = c_args[i].value.i64; break;
-    case fmt_uint:        out[i] = c_args[i].value.u64; break;
-    case fmt_float:       out[i] = c_args[i].value.f32; break;
-    case fmt_double:      out[i] = c_args[i].value.f64; break;
-    case fmt_long_double: out[i] = c_args[i].value.f128; break;
-    case fmt_ptr:         out[i] = c_args[i].value.ptr; break;
-    case fmt_char:        out[i] = c_args[i].value.char_val; break;
-    case fmt_bool:        out[i] = c_args[i].value.bool_val; break;
-    case fmt_string:      out[i] = c_args[i].value.str; break;
-    default:              return false;
-    }
-  }
-  return true;
-}
-
-int fmt_vformat(char* buffer, size_t capacity, const char* format_str,
-                const fmt_arg* args, size_t arg_count) {
-  assert(format_str);
-
-  format_arg format_args[fmt_c_max_args];
-
-  if (arg_count > 0) {
-    assert(args);
-    if (!populate_store(format_args, args, arg_count)) {
-      return fmt_err_invalid_arg;
+  fmt::basic_format_arg<fmt::format_context> format_args[max_args];
+  for (size_t i = 0; i < num_args; ++i) {
+    switch (args[i].type) {
+    case fmt_int:    format_args[i] = args[i].value.int_value; break;
+    case fmt_uint:   format_args[i] = args[i].value.uint_value; break;
+    case fmt_float:  format_args[i] = args[i].value.float_value; break;
+    case fmt_double: format_args[i] = args[i].value.double_value; break;
+    case fmt_long_double:
+      format_args[i] = args[i].value.long_double_value;
+      break;
+    case fmt_pointer: format_args[i] = args[i].value.pointer; break;
+    case fmt_char:    format_args[i] = args[i].value.char_value; break;
+    case fmt_bool:    format_args[i] = args[i].value.bool_value; break;
+    case fmt_cstring: format_args[i] = args[i].value.cstring; break;
+    default:          return fmt_error_invalid_arg;
     }
   }
 
   auto format_args_view = fmt::basic_format_args<fmt::format_context>(
-      format_args, static_cast<int>(arg_count));
+      format_args, static_cast<int>(num_args));
 
-  auto result =
-      fmt::vformat_to_n(buffer, capacity, format_str, format_args_view);
-  return static_cast<int>(result.size);
+  try {
+    auto result = fmt::vformat_to_n(buffer, size, fmt, format_args_view);
+    return static_cast<int>(result.size);
+  } catch (...) {
+  }
+  return fmt_error;
 }
-
-}  // extern "C"

@@ -1,114 +1,112 @@
-#ifndef FMT_C_H
-#define FMT_C_H
-#include <stddef.h>
-#ifdef __cplusplus
-#  define _Bool bool
-#endif
+// Formatting library for C++ - the C API
+//
+// Copyright (c) 2012 - present, Victor Zverovich
+// All rights reserved.
+//
+// For the license information refer to format.h.
 
-void fmt_error_unsupported_type_detected(void);
+#ifndef FMT_C_H_
+#define FMT_C_H_
 
-enum { fmt_c_max_args = 16 };
-
-typedef enum {
-  fmt_err_exception = -1,
-  fmt_err_memory = -2,
-  fmt_err_invalid_arg = -3
-} fmt_error;
+#include <stdbool.h>  // bool
+#include <stddef.h>   // size_t
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef enum {
-  fmt_int,
+  fmt_int = 1,
   fmt_uint,
+  fmt_bool = 7,
+  fmt_char,
   fmt_float,
   fmt_double,
   fmt_long_double,
-  fmt_string,
-  fmt_ptr,
-  fmt_bool,
-  fmt_char
+  fmt_cstring,
+  fmt_pointer = 14
 } fmt_type;
 
 typedef struct {
   fmt_type type;
   union {
-    long long i64;
-    unsigned long long u64;
-    float f32;
-    double f64;
-    long double f128;
-    const char* str;
-    const void* ptr;  // Used for FMT_PTR and custom data
-    _Bool bool_val;
-    char char_val;
+    long long int_value;
+    unsigned long long uint_value;  // Used for FMT_PTR and custom data
+    bool bool_value;
+    char char_value;
+    float float_value;
+    double double_value;
+    long double long_double_value;
+    const char* cstring;
+    const void* pointer;
   } value;
 } fmt_arg;
 
-int fmt_vformat(char* buffer, size_t capacity, const char* format_str,
-                const fmt_arg* args, size_t arg_count);
+enum { fmt_error = -1, fmt_error_invalid_arg = -2 };
+
+int fmt_vformat(char* buffer, size_t size, const char* fmt,
+                const fmt_arg* args, size_t num_args);
 
 static inline fmt_arg fmt_from_int(long long x) {
   fmt_arg arg;
   arg.type = fmt_int;
-  arg.value.i64 = x;
+  arg.value.int_value = x;
   return arg;
 }
 
 static inline fmt_arg fmt_from_uint(unsigned long long x) {
   fmt_arg arg;
   arg.type = fmt_uint;
-  arg.value.u64 = x;
+  arg.value.uint_value = x;
   return arg;
 }
 
-static inline fmt_arg fmt_from_float(float x) {
-  fmt_arg arg;
-  arg.type = fmt_float;
-  arg.value.f32 = x;
-  return arg;
-}
-
-static inline fmt_arg fmt_from_double(double x) {
-  fmt_arg arg;
-  arg.type = fmt_double;
-  arg.value.f64 = x;
-  return arg;
-}
-
-static inline fmt_arg fmt_from_long_double(long double x) {
-  fmt_arg arg;
-  arg.type = fmt_long_double;
-  arg.value.f128 = x;
-  return arg;
-}
-
-static inline fmt_arg fmt_from_str(const char* x) {
-  fmt_arg arg;
-  arg.type = fmt_string;
-  arg.value.str = x;
-  return arg;
-}
-
-static inline fmt_arg fmt_from_ptr(const void* x) {
-  fmt_arg arg;
-  arg.type = fmt_ptr;
-  arg.value.ptr = x;
-  return arg;
-}
-
-static inline fmt_arg fmt_from_bool(_Bool x) {
+static inline fmt_arg fmt_from_bool(bool x) {
   fmt_arg arg;
   arg.type = fmt_bool;
-  arg.value.bool_val = x;
+  arg.value.bool_value = x;
   return arg;
 }
 
 static inline fmt_arg fmt_from_char(int x) {
   fmt_arg arg;
   arg.type = fmt_char;
-  arg.value.char_val = x;
+  arg.value.char_value = x;
+  return arg;
+}
+
+static inline fmt_arg fmt_from_float(float x) {
+  fmt_arg arg;
+  arg.type = fmt_float;
+  arg.value.float_value = x;
+  return arg;
+}
+
+static inline fmt_arg fmt_from_double(double x) {
+  fmt_arg arg;
+  arg.type = fmt_double;
+  arg.value.double_value = x;
+  return arg;
+}
+
+static inline fmt_arg fmt_from_long_double(long double x) {
+  fmt_arg arg;
+  arg.type = fmt_long_double;
+  arg.value.long_double_value = x;
+  return arg;
+}
+
+static inline fmt_arg fmt_from_str(const char* x) {
+  fmt_arg arg;
+  arg.type = fmt_cstring;
+  arg.value.cstring = x;
+  return arg;
+}
+
+static inline fmt_arg fmt_from_ptr(const void* x) {
+  fmt_arg arg;
+  arg.type = fmt_pointer;
+  arg.value.pointer = x;
   return arg;
 }
 
@@ -118,6 +116,8 @@ static inline fmt_arg fmt_from_char(int x) {
 
 #ifndef __cplusplus
 
+void fmt_unsupported_type(void);
+
 // Require modern MSVC with conformant preprocessor
 #  if defined(_MSC_VER) && (!defined(_MSVC_TRADITIONAL) || _MSVC_TRADITIONAL)
 #    error "C API requires MSVC 2019+ with /Zc:preprocessor flag."
@@ -125,8 +125,6 @@ static inline fmt_arg fmt_from_char(int x) {
 
 #  define FMT_MAKE_ARG(x)                  \
     _Generic((x),                          \
-        _Bool: fmt_from_bool,              \
-        char: fmt_from_char,               \
         unsigned char: fmt_from_uint,      \
         short: fmt_from_int,               \
         unsigned short: fmt_from_uint,     \
@@ -136,6 +134,8 @@ static inline fmt_arg fmt_from_char(int x) {
         unsigned long: fmt_from_uint,      \
         long long: fmt_from_int,           \
         unsigned long long: fmt_from_uint, \
+        bool: fmt_from_bool,               \
+        char: fmt_from_char,               \
         float: fmt_from_float,             \
         double: fmt_from_double,           \
         long double: fmt_from_long_double, \
@@ -143,7 +143,7 @@ static inline fmt_arg fmt_from_char(int x) {
         const char*: fmt_from_str,         \
         void*: fmt_from_ptr,               \
         const void*: fmt_from_ptr,         \
-        default: fmt_error_unsupported_type_detected)(x)
+        default: fmt_unsupported_type)(x)
 
 #  define FMT_CAT(a, b) FMT_CAT_(a, b)
 #  define FMT_CAT_(a, b) a##b
@@ -189,12 +189,12 @@ static inline fmt_arg fmt_from_char(int x) {
 #  define FMT_MAP(f, ...) \
     FMT_CAT(FMT_MAP_, FMT_NARG(__VA_ARGS__))(f, ##__VA_ARGS__)
 
-#  define fmt_format(buf, cap, fmt, ...)                                  \
+#  define fmt_format(buffer, size, fmt, ...)                                  \
     fmt_vformat(                                                          \
-        buf, cap, fmt,                                                    \
+        buffer, size, fmt,                                                    \
         (fmt_arg[]){{fmt_int}, FMT_MAP(FMT_MAKE_ARG, ##__VA_ARGS__)} + 1, \
         FMT_NARG(__VA_ARGS__))
 
 #endif  // __cplusplus
 
-#endif  // FMT_C_H
+#endif  // FMT_C_H_
