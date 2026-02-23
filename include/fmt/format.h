@@ -1071,7 +1071,7 @@ using uint64_or_128_t = conditional_t<num_bits<T>() <= 64, uint64_t, uint128_t>;
 inline auto digits2(size_t value) noexcept -> const char* {
   // Align data since unaligned access may be slower when crossing a
   // hardware-specific boundary.
-  alignas(2) static const char data[] =
+  alignas(2) static constexpr char data[] =
       "0001020304050607080910111213141516171819"
       "2021222324252627282930313233343536373839"
       "4041424344454647484950515253545556575859"
@@ -1084,7 +1084,7 @@ inline auto digits2(size_t value) noexcept -> const char* {
 // the decimal point of i / 100 in base 2, the first 2 bytes
 // after digits2_i(x) is the string representation of i.
 inline auto digits2_i(size_t value) noexcept -> const char* {
-  alignas(2) static const char data[] =
+  alignas(2) static constexpr char data[] =
       "00010203  0405060707080910  1112"
       "131414151617  18192021  222324  "
       "25262728  2930313232333435  3637"
