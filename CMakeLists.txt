@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8...3.28)
+cmake_minimum_required(VERSION 3.30...4.3)
 include_guard(GLOBAL)
 
 # Fallback for using newer policies on CMake <3.12.
@@ -66,6 +66,7 @@ function(add_module_library name)
     # Create a non-modular library.
     target_sources(${name} PRIVATE ${AML_FALLBACK})
     set_target_properties(${name} PROPERTIES CXX_SCAN_FOR_MODULES OFF)
+    message(WARNING "CXX_SCAN_FOR_MODULES: OFF")
     return()
   endif ()
 
@@ -73,7 +74,31 @@ function(add_module_library name)
   target_compile_features(${name} PUBLIC cxx_std_20)
   if (CMAKE_COMPILER_IS_GNUCXX)
     target_compile_options(${name} PUBLIC -fmodules-ts)
+    if (CMAKE_VERSION VERSION_GREATER_EQUAL 4.3)
+      set(FMT_IMPORT_STD ON)
+    endif()
   endif ()
+
+  if(FMT_USE_CMAKE_MODULES AND FMT_IMPORT_STD)
+    # -------------------------------------------------------------------------
+    # Tell CMake that we explicitly want `import std`.
+    # This will initialize the property on all targets declared after this to 1
+    # -------------------------------------------------------------------------
+    message(
+      STATUS
+      "CMAKE_CXX_COMPILER_IMPORT_STD=${CMAKE_CXX_COMPILER_IMPORT_STD}"
+    )
+    if(${CMAKE_CXX_STANDARD} IN_LIST CMAKE_CXX_COMPILER_IMPORT_STD)
+      set(CMAKE_CXX_MODULE_STD ON)
+      set(CMAKE_CXX_SCAN_FOR_MODULES ON)
+      message(STATUS "CMAKE_CXX_MODULE_STD=${CMAKE_CXX_MODULE_STD}")
+      target_compile_definitions(${name} PUBLIC FMT_IMPORT_STD)
+    else()
+      set(CMAKE_CXX_MODULE_STD OFF)
+      message(WARNING "CMAKE_CXX_MODULE_STD=${CMAKE_CXX_MODULE_STD}")
+    endif()
+    message(STATUS "FMT_IMPORT_STD=${FMT_IMPORT_STD}")
+  endif()
 
   if (FMT_USE_CMAKE_MODULES)
     target_sources(${name} PUBLIC FILE_SET fmt TYPE CXX_MODULES
@@ -175,7 +200,7 @@ option(FMT_UNICODE "Enable Unicode support." ON)
 
 if (FMT_TEST AND FMT_MODULE)
   # The tests require {fmt} to be compiled as traditional library
-  message(STATUS "Testing is incompatible with build mode 'module'.")
+  message(WARNING "Testing is incompatible with build mode 'module'.")
 endif ()
 set(FMT_SYSTEM_HEADERS_ATTRIBUTE "")
 if (FMT_SYSTEM_HEADERS)
