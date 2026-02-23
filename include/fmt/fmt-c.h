@@ -170,7 +170,7 @@ typedef enum {} fmt_signed_char;
 
 #  define fmt_format(buffer, size, fmt, ...)                              \
     fmt_vformat(                                                          \
-        buffer, size, fmt,                                                \
+        (buffer), (size), (fmt),                                          \
         (fmt_arg[]){{fmt_int}, FMT_MAP(FMT_MAKE_ARG, ##__VA_ARGS__)} + 1, \
         FMT_NARG(__VA_ARGS__))
 
