@@ -141,29 +141,29 @@ auto arg(const wchar_t* name, const T& arg) -> detail::named_arg<T, wchar_t> {
   return {name, arg};
 }
 
-template <typename It, typename Sentinel>
-auto join(It begin, Sentinel end, wstring_view sep)
-    -> join_view<It, Sentinel, wchar_t> {
-  return {begin, end, sep};
+template <typename It, typename Sentinel, typename S>
+auto join(It begin, Sentinel end, S &&sep)
+    -> join_view<It, Sentinel, typename decltype(detail::to_string_view(std::declval<S>()))::value_type> {
+  return {begin, end, detail::to_string_view(sep)};
 }
 
-template <typename Range, FMT_ENABLE_IF(!is_tuple_like<Range>::value)>
-auto join(Range&& range, wstring_view sep)
+template <typename Range, typename S, FMT_ENABLE_IF(!is_tuple_like<Range>::value)>
+auto join(Range &&range, S &&sep)
     -> join_view<decltype(std::begin(range)), decltype(std::end(range)),
-                 wchar_t> {
-  return join(std::begin(range), std::end(range), sep);
+                 typename decltype(detail::to_string_view(std::declval<S>()))::value_type> {
+  return {std::begin(range), std::end(range), detail::to_string_view(sep)};
 }
 
-template <typename T>
-auto join(std::initializer_list<T> list, wstring_view sep)
-    -> join_view<const T*, const T*, wchar_t> {
-  return join(std::begin(list), std::end(list), sep);
+template <typename T, typename S>
+auto join(std::initializer_list<T> list, S &&sep)
+    -> join_view<const T *, const T *, typename decltype(detail::to_string_view(std::declval<S>()))::value_type> {
+  return {std::begin(list), std::end(list), detail::to_string_view(sep)};
 }
 
-template <typename Tuple, FMT_ENABLE_IF(is_tuple_like<Tuple>::value)>
-auto join(const Tuple& tuple, basic_string_view<wchar_t> sep)
-    -> tuple_join_view<Tuple, wchar_t> {
-  return {tuple, sep};
+template <typename Tuple, typename S, FMT_ENABLE_IF(is_tuple_like<Tuple>::value)>
+auto join(const Tuple &tuple, S &&sep)
+    -> tuple_join_view<Tuple, typename decltype(detail::to_string_view(std::declval<S>()))::value_type> {
+  return {tuple, detail::to_string_view(sep)};
 }
 
 template <typename Char, FMT_ENABLE_IF(!std::is_same<Char, char>::value)>

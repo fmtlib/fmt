@@ -1820,7 +1820,7 @@ template <typename T> class buffer {
       }
       // A loop is faster than memcpy on small sizes.
       T* out = ptr_ + size;
-      for (size_t i = 0; i < count; ++i) out[i] = begin[i];
+      for (size_t i = 0; i < count; ++i) out[i] = static_cast<T>(begin[i]);
       size_ += count;
       begin += count;
     }
