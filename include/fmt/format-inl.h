@@ -92,8 +92,8 @@ FMT_FUNC void format_error_code(detail::buffer<char>& out, int error_code,
   // Report error code making sure that the output fits into inline_buffer_size
   // to avoid dynamic memory allocation and potential bad_alloc.
   out.try_resize(0);
-  static const char SEP[] = ": ";
-  static const char ERROR_STR[] = "error ";
+  static constexpr char SEP[] = ": ";
+  static constexpr char ERROR_STR[] = "error ";
   // Subtract 2 to account for terminating null characters in SEP and ERROR_STR.
   size_t error_code_size = sizeof(SEP) + sizeof(ERROR_STR) - 2;
   auto abs_value = static_cast<uint32_or_64_or_128_t<int>>(error_code);
