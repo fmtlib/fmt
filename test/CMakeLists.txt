@@ -1,3 +1,8 @@
+if (FMT_MODULE)
+  message(WARNING "Testing is incompatible with build mode 'module'.")
+  return ()
+endif ()
+
 add_subdirectory(gtest)
 
 set(TEST_MAIN_SRC test-main.cc gtest-extra.cc gtest-extra.h util.cc)
@@ -40,10 +45,6 @@ function(add_fmt_test name)
   endif ()
   add_test(NAME ${name} COMMAND ${name})
 endfunction()
-
-if (FMT_MODULE)
-  return ()
-endif ()
 
 add_fmt_test(args-test)
 add_fmt_test(base-test)

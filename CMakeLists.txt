@@ -30,7 +30,7 @@ endfunction()
 # DEPRECATED! Should be merged into add_module_library.
 function(enable_module target)
   if (MSVC)
-    if(NOT CMAKE_GENERATOR STREQUAL "Ninja")
+    if (NOT CMAKE_GENERATOR STREQUAL "Ninja")
       set(BMI_DIR "${CMAKE_CURRENT_BINARY_DIR}")
       file(TO_NATIVE_PATH "${BMI_DIR}/${target}.ifc" BMI)
       target_compile_options(${target}
@@ -38,7 +38,7 @@ function(enable_module target)
         INTERFACE /reference fmt=${BMI})
       set_target_properties(${target} PROPERTIES ADDITIONAL_CLEAN_FILES ${BMI})
       set_source_files_properties(${BMI} PROPERTIES GENERATED ON)
-    endif()
+    endif ()
   endif ()
 endfunction()
 
@@ -76,10 +76,10 @@ function(add_module_library name)
     target_compile_options(${name} PUBLIC -fmodules-ts)
     if (CMAKE_VERSION VERSION_GREATER_EQUAL 4.3)
       option(FMT_IMPORT_STD "Enable use of import std;" OFF)
-    endif()
+    endif ()
   endif ()
 
-  if(FMT_USE_CMAKE_MODULES AND FMT_IMPORT_STD)
+  if (FMT_USE_CMAKE_MODULES AND FMT_IMPORT_STD)
     # -------------------------------------------------------------------------
     # Tell CMake that we explicitly want `import std`.
     # This will initialize the property on all targets declared after this to 1
@@ -88,20 +88,20 @@ function(add_module_library name)
       STATUS
       "CMAKE_CXX_COMPILER_IMPORT_STD=${CMAKE_CXX_COMPILER_IMPORT_STD}"
     )
-    if(${CMAKE_CXX_STANDARD} IN_LIST CMAKE_CXX_COMPILER_IMPORT_STD)
+    if (${CMAKE_CXX_STANDARD} IN_LIST CMAKE_CXX_COMPILER_IMPORT_STD)
       message(STATUS "Use FMT_IMPORT_STD=${FMT_IMPORT_STD}")
-      target_compile_definitions(${name} PUBLIC FMT_IMPORT_STD)
+      target_compile_definitions(${name} PUBLIC FMT_IMPORT_STD FMT_USE_FCNTL=0)
       message(STATUS "Use CXX_MODULE_STD=ON")
       set_target_properties(${name} PROPERTIES CXX_MODULE_STD ON)
-    else()
+    else ()
       message(WARNING "CXX_MODULE_STD=OFF")
-    endif()
-  endif()
+    endif ()
+  endif ()
 
   if (FMT_USE_CMAKE_MODULES)
     target_sources(${name} PUBLIC FILE_SET fmt TYPE CXX_MODULES
                    FILES ${sources})
-  else()
+  else ()
     # `std` is affected by CMake options and may be higher than C++20.
     get_target_property(std ${name} CXX_STANDARD)
 
@@ -144,7 +144,7 @@ function(add_module_library name)
       endforeach ()
     endif ()
     target_sources(${name} PRIVATE ${sources})
-  endif()
+  endif ()
 endfunction()
 
 include(CMakeParseArguments)
@@ -198,7 +198,7 @@ option(FMT_UNICODE "Enable Unicode support." ON)
 
 if (FMT_TEST AND FMT_MODULE)
   # The tests require {fmt} to be compiled as traditional library
-  message(WARNING "Testing is incompatible with build mode 'module'.")
+  message(STATUS "Testing is incompatible with build mode 'module'.")
 endif ()
 set(FMT_SYSTEM_HEADERS_ATTRIBUTE "")
 if (FMT_SYSTEM_HEADERS)
@@ -335,7 +335,7 @@ if (FMT_MODULE)
   enable_module(fmt)
 elseif (FMT_OS)
   target_sources(fmt PRIVATE src/os.cc)
-else()
+else ()
   target_compile_definitions(fmt PRIVATE FMT_OS=0)
 endif ()
 
@@ -388,6 +388,31 @@ endif ()
 add_library(fmt-header-only INTERFACE)
 add_library(fmt::fmt-header-only ALIAS fmt-header-only)
 
+if (FMT_USE_CMAKE_MODULES)
+  target_sources(
+    fmt-header-only
+    PUBLIC
+    FILE_SET HEADERS
+      BASE_DIRS include
+      FILES
+        include/fmt/ostream.h
+        include/fmt/format-inl.h
+        include/fmt/ranges.h
+        include/fmt/xchar.h
+        include/fmt/core.h
+        include/fmt/chrono.h
+        include/fmt/os.h
+        include/fmt/color.h
+        include/fmt/args.h
+        include/fmt/printf.h
+        include/fmt/compile.h
+        include/fmt/format.h
+        include/fmt/fmt-c.h
+        include/fmt/std.h
+        include/fmt/base.h
+)
+endif ()
+
 if (NOT MSVC)
   # Unicode is always supported on compilers other than MSVC.
 elseif (FMT_UNICODE)
@@ -400,6 +425,7 @@ endif ()
 
 target_compile_definitions(fmt-header-only INTERFACE FMT_HEADER_ONLY=1)
 target_compile_features(fmt-header-only INTERFACE cxx_std_11)
+set_target_properties(fmt-header-only PROPERTIES VERIFY_INTERFACE_HEADER_SETS ${PROJECT_IS_TOP_LEVEL})
 
 target_include_directories(fmt-header-only
   ${FMT_SYSTEM_HEADERS_ATTRIBUTE} BEFORE INTERFACE
@@ -411,7 +437,7 @@ target_compile_features(fmt-c INTERFACE c_std_11)
 if (MSVC)
   target_compile_options(fmt-c PUBLIC /Zc:preprocessor)
 endif ()
-target_link_libraries(fmt-c PUBLIC fmt::fmt)
+target_link_libraries(fmt-c PUBLIC fmt::fmt-header-only)
 add_library(fmt::fmt-c ALIAS fmt-c)
 
 # Install targets.
@@ -457,8 +483,8 @@ if (FMT_INSTALL)
 
   set(INSTALL_FILE_SET)
   if (FMT_USE_CMAKE_MODULES)
-    set(INSTALL_FILE_SET FILE_SET fmt DESTINATION "${FMT_INC_DIR}/fmt")
-  endif()
+      set(INSTALL_FILE_SET FILE_SET fmt DESTINATION "${FMT_INC_DIR}/fmt" FILE_SET HEADERS)
+  endif ()
 
   # Install the library and headers.
   install(TARGETS ${INSTALL_TARGETS}
