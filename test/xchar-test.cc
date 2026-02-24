@@ -174,10 +174,9 @@ TEST(xchar_test, join) {
   EXPECT_EQ(fmt::format(u"({})", fmt::join(vector, u", ")), u"(1, 2, 3)");
   EXPECT_EQ(fmt::format(U"({})", fmt::join(vector, U", ")), U"(1, 2, 3)");
   EXPECT_EQ(fmt::format(L"({})", fmt::join(vector, L", ")), L"(1, 2, 3)");
-  auto initializer_list = {1, 2, 3};
-  EXPECT_EQ(fmt::format(u"({})", fmt::join(initializer_list, u", ")), u"(1, 2, 3)");
-  EXPECT_EQ(fmt::format(U"({})", fmt::join(initializer_list, U", ")), U"(1, 2, 3)");
-  EXPECT_EQ(fmt::format(L"({})", fmt::join(initializer_list, L", ")), L"(1, 2, 3)");
+  EXPECT_EQ(fmt::format(u"({})", fmt::join({1, 2, 3}, u", ")), u"(1, 2, 3)");
+  EXPECT_EQ(fmt::format(U"({})", fmt::join({1, 2, 3}, U", ")), U"(1, 2, 3)");
+  EXPECT_EQ(fmt::format(L"({})", fmt::join({1, 2, 3}, L", ")), L"(1, 2, 3)");
   auto tuple_char16 = std::tuple<char16_t, int, float>(u'a', 1, 2.0f);
   EXPECT_EQ(fmt::format(u"({})", fmt::join(tuple_char16, u", ")), u"(a, 1, 2)");
   auto tuple_char32 = std::tuple<char32_t, int, float>(U'a', 1, 2.0f);

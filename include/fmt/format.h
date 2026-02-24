@@ -1097,8 +1097,8 @@ inline auto digits2_i(size_t value) noexcept -> const char* {
 }
 
 template <typename Char> constexpr auto getsign(sign s) -> Char {
-  return static_cast<Char>(static_cast<char>(((' ' << 24) | ('+' << 16) | ('-' << 8)) >>
-                           (static_cast<int>(s) * 8)));
+  return static_cast<Char>(static_cast<char>(
+      ((' ' << 24) | ('+' << 16) | ('-' << 8)) >> (static_cast<int>(s) * 8)));
 }
 
 template <typename T> FMT_CONSTEXPR auto count_digits_fallback(T n) -> int {
