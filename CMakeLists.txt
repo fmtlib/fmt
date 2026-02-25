@@ -72,17 +72,20 @@ function(add_module_library name)
 
   # Modules require C++20.
   target_compile_features(${name} PUBLIC cxx_std_20)
-  if (CMAKE_COMPILER_IS_GNUCXX)
-    target_compile_options(${name} PUBLIC -fmodules-ts)
+  if (CMAKE_COMPILER_IS_GNUCXX OR MSVC)
+    # XXX target_compile_options(${name} PUBLIC -fmodules-ts)
     if (CMAKE_VERSION VERSION_GREATER_EQUAL 4.3)
-      option(FMT_IMPORT_STD "Enable use of import std;" OFF)
+      option(FMT_IMPORT_STD "Enable use of `import std;`" OFF)
     endif ()
   endif ()
 
   if (FMT_USE_CMAKE_MODULES AND FMT_IMPORT_STD)
+    if (NOT DEFINED CMAKE_CXX_STANDARD)
+        set(CMAKE_CXX_STANDARD 23)
+    endif ()
     # -------------------------------------------------------------------------
     # Tell CMake that we explicitly want `import std`.
-    # This will initialize the property on all targets declared after this to 1
+    # This will set the property CXX_MODULE_STD on target {fmt} to 1
     # -------------------------------------------------------------------------
     message(
       STATUS
@@ -90,9 +93,8 @@ function(add_module_library name)
     )
     if (${CMAKE_CXX_STANDARD} IN_LIST CMAKE_CXX_COMPILER_IMPORT_STD)
       message(STATUS "Use FMT_IMPORT_STD=${FMT_IMPORT_STD}")
-      target_compile_definitions(${name} PUBLIC FMT_IMPORT_STD FMT_USE_FCNTL=0)
-      message(STATUS "Use CXX_MODULE_STD=ON")
       set_target_properties(${name} PROPERTIES CXX_MODULE_STD ON)
+      message(STATUS "Set target property CXX_MODULE_STD=ON")
     else ()
       message(WARNING "CXX_MODULE_STD=OFF")
     endif ()
@@ -483,7 +485,7 @@ if (FMT_INSTALL)
 
   set(INSTALL_FILE_SET)
   if (FMT_USE_CMAKE_MODULES)
-      set(INSTALL_FILE_SET FILE_SET fmt DESTINATION "${FMT_INC_DIR}/fmt" FILE_SET HEADERS)
+    set(INSTALL_FILE_SET FILE_SET fmt DESTINATION "${FMT_INC_DIR}/fmt" FILE_SET HEADERS)
   endif ()
 
   # Install the library and headers.
