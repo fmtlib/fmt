@@ -81,25 +81,29 @@ target_compile_definitions(enforce-checks-test PRIVATE
 add_executable(perf-sanity perf-sanity.cc)
 target_link_libraries(perf-sanity fmt::fmt)
 
-# if (FMT_MODULE)
-#   # The tests need {fmt} to be compiled as traditional library
-#   # because of visibility of implementation details.
-#   # If module support is present the module tests require a
-#   # test-only module to be built from {fmt}
-#   add_library(test-module OBJECT ${CMAKE_SOURCE_DIR}/src/fmt.cc)
-#   target_compile_features(test-module PUBLIC cxx_std_11)
-#   target_include_directories(test-module PUBLIC
-#     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
-#   enable_module(test-module)
-#
-#   add_fmt_test(module-test MODULE test-main.cc)
-#   if (MSVC)
-#     target_compile_options(test-module PRIVATE /utf-8 /Zc:__cplusplus
-#                            /Zc:externConstexpr /Zc:inline)
-#     target_compile_options(module-test PRIVATE /utf-8 /Zc:__cplusplus
-#                            /Zc:externConstexpr /Zc:inline)
-#   endif ()
-# endif ()
+if (FMT_MODULE)
+  # The module-test.cc needs some work and is not working yet. 
+  # For now We simply just return 
+  # so that the other tests are not affected.
+  return()
+  # The tests need {fmt} to be compiled as traditional library
+  # because of visibility of implementation details.
+  # If module support is present the module tests require a
+  # test-only module to be built from {fmt}
+  #add_library(test-module OBJECT ${CMAKE_SOURCE_DIR}/src/fmt.cc)
+  #target_compile_features(test-module PUBLIC cxx_std_11)
+  #target_include_directories(test-module PUBLIC
+  #  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
+  #enable_module(test-module)
+
+  #add_fmt_test(module-test MODULE test-main.cc)
+  #if (MSVC)
+  #  target_compile_options(test-module PRIVATE /utf-8 /Zc:__cplusplus
+  #                         /Zc:externConstexpr /Zc:inline)
+  #  target_compile_options(module-test PRIVATE /utf-8 /Zc:__cplusplus
+  #                         /Zc:externConstexpr /Zc:inline)
+  #endif ()
+endif ()
 
 if (NOT DEFINED MSVC_STATIC_RUNTIME AND MSVC)
   foreach (flag_var

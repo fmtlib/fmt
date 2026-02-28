@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8...4.3)
+cmake_minimum_required(VERSION 3.8...3.28)
 include_guard(GLOBAL)
 
 # Fallback for using newer policies on CMake <3.12.
@@ -42,22 +42,16 @@ function(enable_module target)
   endif ()
 endfunction()
 
-set(FMT_USE_CMAKE_MODULES FALSE)
-if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.28 AND
-    CMAKE_GENERATOR STREQUAL "Ninja")
-  set(FMT_USE_CMAKE_MODULES TRUE)
-endif ()
-
 # Adds a library compiled with C++20 module support.
 # `enabled` is a CMake variables that specifies if modules are enabled.
 # If modules are disabled `add_module_library` falls back to creating a
 # non-modular library.
 #
 # Usage:
-#   add_module_library(<name> [sources...] FALLBACK [sources...] [IF_MODULE enabled]
-# IF_MODERN enabled)
+#   add_module_library(<name> [sources...] FALLBACK [sources...] [IF_MODULE enabled] 
+#   [USE_CMAKE_MODULES true])
 function(add_module_library name)
-  cmake_parse_arguments(AML "" "IF_MODULE;IF_MODERN" "FALLBACK" ${ARGN})
+  cmake_parse_arguments(AML "" "IF_MODULE;USE_CMAKE_MODULES" "FALLBACK" ${ARGN})
   set(sources ${AML_UNPARSED_ARGUMENTS})
 
   add_library(${name})
@@ -73,7 +67,7 @@ function(add_module_library name)
   # Modules require C++20.
   target_compile_features(${name} PUBLIC cxx_std_20)
 
-  if (${AML_IF_MODERN})
+  if (${AML_USE_CMAKE_MODULES})
     target_sources(${name} PUBLIC FILE_SET fmt_module TYPE CXX_MODULES
                    FILES ${sources})
   else ()
@@ -154,26 +148,30 @@ if (FMT_MASTER_PROJECT AND NOT CMAKE_BUILD_TYPE)
 endif ()
 
 project(FMT CXX)
+
 # Determine Support for the C++ Module Scanning Features
-# Requires CMake>= 3.28 plus (Ninja >= 1.11 OR Visual Studio >=17.4)
+# Requires C++20, CMake>=3.28 and (Ninja >= 1.11 OR Visual Studio >=17.4)
 # The project() CMake Function sets several variables including those
 # needed for Compiler Versions
 set(FMT_USE_CMAKE_MODULES FALSE)
-if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.28)
+if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.28 
+    AND CMAKE_CXX_STANDARD GREATER_EQUAL 20)
   # Check Version of Ninja to determine CXX_MODULES support
   if (CMAKE_GENERATOR STREQUAL "Ninja")
-    execute_process(COMMAND "${CMAKE_MAKE_PROGRAM}" "--version" OUTPUT_VARIABLE MY_NINJA_VERSION)
-    message(STATUS "Ninja Version: ${MY_NINJA_VERSION}")
-    if (MY_NINJA_VERSION VERSION_GREATER_EQUAL 1.11)
+    execute_process(COMMAND "${CMAKE_MAKE_PROGRAM}" "--version" 
+      OUTPUT_VARIABLE NINJA_VERSION)
+    message(STATUS "Ninja Version: ${NINJA_VERSION}")
+    if (NINJA_VERSION VERSION_GREATER_EQUAL 1.11)
       set(FMT_USE_CMAKE_MODULES TRUE)
       message(STATUS "Using CXX Modules by Default with Ninja")
     endif ()
-  elseif (CMAKE_GENERATOR MATCHES "^Visual Studio"
-      AND MSVC_VERSION GREATER_EQUAL 1934)
-      set(FMT_USE_CMAKE_MODULES TRUE)
-      message(STATUS "Using CXX Modules by Default with Visual Studio")
+  elseif (CMAKE_GENERATOR MATCHES "^Visual Studio" 
+    AND MSVC_VERSION GREATER_EQUAL 1934)
+    set(FMT_USE_CMAKE_MODULES TRUE)
+    message(STATUS "Using CXX Modules by Default with Visual Studio")
   endif ()
 endif ()
+
 include(GNUInstallDirs)
 set_verbose(FMT_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR} CACHE STRING
             "Installation directory for include files, a relative path that "
@@ -190,7 +188,7 @@ option(FMT_TEST "Generate the test target." ${FMT_MASTER_PROJECT})
 option(FMT_FUZZ "Generate the fuzz target." OFF)
 option(FMT_CUDA_TEST "Generate the cuda-test target." OFF)
 option(FMT_OS "Include OS-specific APIs." ON)
-option(FMT_MODULE "Build a module library in addition to the traditional library." ${CMAKE_CXX_SCAN_FOR_MODULES})
+option(FMT_MODULE "Build a module library in addition to the traditional library." ${FMT_USE_CMAKE_MODULES})
 option(FMT_SYSTEM_HEADERS "Expose headers with marking them as system." OFF)
 option(FMT_UNICODE "Enable Unicode support." ON)
 
@@ -321,9 +319,9 @@ add_headers(FMT_HEADERS args.h base.h chrono.h color.h compile.h core.h format.h
                         xchar.h)
 set(FMT_SOURCES src/format.cc)
 
-# Add Regular library By setting IF_MODULE=FALSE
-add_module_library(fmt src/fmt.cc
-    FALLBACK ${FMT_SOURCES} # TODO(CK): WHY? ${FMT_HEADERS} README.md ChangeLog.md
+# add regular library by setting IF_MODULE=FALSE
+add_module_library(fmt src/fmt.cc 
+                    FALLBACK ${FMT_SOURCES} ${FMT_HEADERS} README.md ChangeLog.md
                     IF_MODULE FALSE)
 add_library(fmt::fmt ALIAS fmt)
 
@@ -381,8 +379,8 @@ endif ()
 
 if (FMT_MODULE)
   add_module_library(fmt-module "src/fmt.cc"
-    IF_MODULE ${FMT_MODULE}
-    IF_MODERN ${FMT_USE_CMAKE_MODULES})
+    IF_MODULE TRUE
+    USE_CMAKE_MODULES ${FMT_USE_CMAKE_MODULES})
 
   add_library(fmt::fmt-module ALIAS fmt-module)
   enable_module(fmt-module)
@@ -394,37 +392,9 @@ if (FMT_MODULE)
     target_compile_options(fmt-module PRIVATE ${PEDANTIC_COMPILE_FLAGS})
   endif ()
 
-  if (FMT_IMPORT_STD)
-    target_compile_features(fmt-module PUBLIC cxx_std_23)
-    set_target_properties(fmt-module PROPERTIES CXX_MODULE_STD ON)
-    target_compile_definitions(fmt-module PUBLIC FMT_IMPORT_STD)
-    message(STATUS "Use FMT_IMPORT_STD=${FMT_IMPORT_STD}")
-  elseif (cxx_std_20 IN_LIST CMAKE_CXX_COMPILE_FEATURES)
-    target_compile_features(fmt-module PUBLIC cxx_std_20)
-  else ()
-    message(WARNING "Feature cxx_std_20 is unknown for the CXX compiler")
-  endif ()
-
   if (FMT_USE_CMAKE_MODULES)
-      target_sources(fmt-module PUBLIC FILE_SET fmt_module_headers TYPE HEADERS
-        BASE_DIRS include
-          FILES
-            include/fmt/ostream.h
-            include/fmt/format-inl.h
-            include/fmt/ranges.h
-            include/fmt/xchar.h
-            include/fmt/core.h
-            include/fmt/chrono.h
-            include/fmt/os.h
-            include/fmt/color.h
-            include/fmt/args.h
-            include/fmt/printf.h
-            include/fmt/compile.h
-            include/fmt/format.h
-            include/fmt/fmt-c.h
-            include/fmt/std.h
-            include/fmt/base.h
-      )
+    target_sources(fmt-module PRIVATE FILE_SET fmt_module_headers TYPE HEADERS
+      BASE_DIRS ${PROJECT_SOURCE_DIR}/include FILES ${FMT_HEADERS})
   else ()
     target_include_directories(fmt-module ${FMT_SYSTEM_HEADERS_ATTRIBUTE} BEFORE PUBLIC
       $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
@@ -434,8 +404,10 @@ if (FMT_MODULE)
   set(FMT_DEBUG_POSTFIX d CACHE STRING "Debug library postfix.")
 
   set_target_properties(fmt-module PROPERTIES
-    VERSION ${FMT_VERSION} SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR}
-    DEBUG_POSTFIX "${FMT_DEBUG_POSTFIX}")
+    VERSION ${FMT_VERSION} 
+    SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR}
+    DEBUG_POSTFIX "${FMT_DEBUG_POSTFIX}"
+    )
 endif ()
 
 add_library(fmt-header-only INTERFACE)
@@ -516,20 +488,22 @@ if (FMT_INSTALL)
   endif ()
 
   set(INSTALL_FILE_SET)
-  if (${CMAKE_VERSION} VERSION_GREATER 3.22)
+  if (${CMAKE_VERSION} VERSION_GREATER "3.22")
       list(APPEND INSTALL_FILE_SET FILE_SET fmt DESTINATION "${FMT_INC_DIR}/fmt")
-      # FIXME: missing? list(APPEND INSTALL_FILE_SET FILE_SET fmt_header_only DESTINATION "${FMT_INC_DIR}/fmt")
+      list(APPEND INSTALL_FILE_SET FILE_SET fmt_header_only DESTINATION "${FMT_INC_DIR}/fmt")
   endif ()
   if (FMT_MODULE AND FMT_USE_CMAKE_MODULES)
       list(APPEND INSTALL_FILE_SET FILE_SET fmt_module DESTINATION "${FMT_INC_DIR}/fmt")
-      list(APPEND INSTALL_FILE_SET FILE_SET fmt_module_headers)
   endif ()
 
   # Install the library and headers.
   install(TARGETS ${INSTALL_TARGETS}
           COMPONENT fmt_core
           EXPORT ${targets_export_name}
+          LIBRARY DESTINATION ${FMT_LIB_DIR}
+          ARCHIVE DESTINATION ${FMT_LIB_DIR}
           PUBLIC_HEADER DESTINATION "${FMT_INC_DIR}/fmt"
+          RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
           ${INSTALL_FILE_SET})
 
   # Use a namespace because CMake provides better diagnostics for namespaced
