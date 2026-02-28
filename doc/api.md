@@ -20,6 +20,12 @@ The {fmt} library API consists of the following components:
 All functions and types provided by the library reside in namespace `fmt`
 and macros have prefix `FMT_`.
 
+## C++ Modules API
+
+With the new C++ Modules API, all the headers listed above do not need to 
+be explicitly #included. We can instead use the `import fmt;` statement instead. 
+All other functionality, listed below remains the same.
+
 ## Base API
 
 `fmt/base.h` defines the base API which provides main formatting functions

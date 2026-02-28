@@ -42,11 +42,7 @@ function(enable_module target)
   endif ()
 endfunction()
 
-set(FMT_USE_CMAKE_MODULES FALSE)
-if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.28 AND
-    CMAKE_GENERATOR STREQUAL "Ninja")
-  set(FMT_USE_CMAKE_MODULES TRUE)
-endif ()
+
 
 # Adds a library compiled with C++20 module support.
 # `enabled` is a CMake variables that specifies if modules are enabled.
@@ -55,6 +51,10 @@ endif ()
 #
 # Usage:
 #   add_module_library(<name> [sources...] FALLBACK [sources...] [IF enabled])
+
+# DEPRECATED! Not currently used as we create both the regular and modular
+# library with add_library below as opposed to selecting between the two as
+# was previously done with this function
 function(add_module_library name)
   cmake_parse_arguments(AML "" "IF" "FALLBACK" ${ARGN})
   set(sources ${AML_UNPARSED_ARGUMENTS})
@@ -153,6 +153,27 @@ if (FMT_MASTER_PROJECT AND NOT CMAKE_BUILD_TYPE)
 endif ()
 
 project(FMT CXX)
+# Determine Support for the C++ Module Scanning Features
+# Requires CMake>= 3.28 plus (Ninja >= 1.11 OR Visual Studio >=17.4)
+# The project() CMake Function sets several variables including those
+# needed for Compiler Versions
+set(FMT_USE_CMAKE_MODULES FALSE)
+if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.28)
+  # Check Version of Ninja to determine CXX_MODULES support
+  if(CMAKE_GENERATOR STREQUAL "Ninja")
+    execute_process(COMMAND "${CMAKE_MAKE_PROGRAM}" "--version" OUTPUT_VARIABLE MY_NINJA_VERSION)
+    message(STATUS "Ninja Version: ${MY_NINJA_VERSION}")
+    if(MY_NINJA_VERSION VERSION_GREATER_EQUAL 1.11)
+      set(FMT_USE_CMAKE_MODULES TRUE)
+      message(STATUS "Using CXX Modules by Default with Ninja")
+    endif ()
+  elseif(CMAKE_GENERATOR MATCHES "^Visual Studio" 
+      AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 17.4)
+      set(FMT_USE_CMAKE_MODULES TRUE)
+      message(STATUS "Using CXX Modules by Default with Visual Studio")
+  endif()
+endif()
+
 include(GNUInstallDirs)
 set_verbose(FMT_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR} CACHE STRING
             "Installation directory for include files, a relative path that "
@@ -169,7 +190,7 @@ option(FMT_TEST "Generate the test target." ${FMT_MASTER_PROJECT})
 option(FMT_FUZZ "Generate the fuzz target." OFF)
 option(FMT_CUDA_TEST "Generate the cuda-test target." OFF)
 option(FMT_OS "Include OS-specific APIs." ON)
-option(FMT_MODULE "Build a module instead of a traditional library." OFF)
+option(FMT_MODULE "Build a module library in addition to a traditional library." ${FMT_USE_CMAKE_MODULES})
 option(FMT_SYSTEM_HEADERS "Expose headers with marking them as system." OFF)
 option(FMT_UNICODE "Enable Unicode support." ON)
 
@@ -304,13 +325,21 @@ add_headers(FMT_HEADERS args.h base.h chrono.h color.h compile.h core.h format.h
                         xchar.h)
 set(FMT_SOURCES src/format.cc)
 
-add_module_library(fmt src/fmt.cc FALLBACK
-                   ${FMT_SOURCES} ${FMT_HEADERS} README.md ChangeLog.md
-                   IF FMT_MODULE)
+# add Regular library  
+add_library(fmt)
+target_sources(fmt PRIVATE ${FMT_SOURCES})
+set_target_properties(fmt PROPERTIES CXX_SCAN_FOR_MODULES OFF)
 add_library(fmt::fmt ALIAS fmt)
-if (FMT_MODULE)
-  enable_module(fmt)
-elseif (FMT_OS)
+
+if(${CMAKE_VERSION} VERSION_LESS "3.23")
+    target_include_directories(fmt ${FMT_SYSTEM_HEADERS_ATTRIBUTE} BEFORE PUBLIC
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:${FMT_INC_DIR}>)
+else()
+    target_sources(fmt PUBLIC FILE_SET fmt TYPE HEADERS BASE_DIRS ${PROJECT_SOURCE_DIR}/include FILES ${FMT_HEADERS})
+endif()
+
+if (FMT_OS)
   target_sources(fmt PRIVATE src/os.cc)
 else()
   target_compile_definitions(fmt PRIVATE FMT_OS=0)
@@ -329,15 +358,8 @@ else ()
   message(WARNING "Feature cxx_std_11 is unknown for the CXX compiler")
 endif ()
 
-target_include_directories(fmt ${FMT_SYSTEM_HEADERS_ATTRIBUTE} BEFORE PUBLIC
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:${FMT_INC_DIR}>)
-
-set(FMT_DEBUG_POSTFIX d CACHE STRING "Debug library postfix.")
-
 set_target_properties(fmt PROPERTIES
   VERSION ${FMT_VERSION} SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR}
-  PUBLIC_HEADER "${FMT_HEADERS}"
   DEBUG_POSTFIX "${FMT_DEBUG_POSTFIX}"
 
   # Workaround for Visual Studio 2017:
@@ -362,26 +384,140 @@ if (FMT_SAFE_DURATION_CAST)
   target_compile_definitions(fmt PUBLIC FMT_SAFE_DURATION_CAST)
 endif ()
 
-add_library(fmt-header-only INTERFACE)
-add_library(fmt::fmt-header-only ALIAS fmt-header-only)
-
-if (NOT MSVC)
-  # Unicode is always supported on compilers other than MSVC.
-elseif (FMT_UNICODE)
+if (FMT_UNICODE)
   # Unicode support requires compiling with /utf-8.
   target_compile_options(fmt PUBLIC $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>:/utf-8>)
-  target_compile_options(fmt-header-only INTERFACE $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>:/utf-8>)
 else ()
   target_compile_definitions(fmt PUBLIC FMT_UNICODE=0)
 endif ()
 
+# add module library
+if (FMT_MODULE)
+  add_library(fmt-module)
+  add_library(fmt::fmt-module ALIAS fmt-module)
+  # Modules require C++20.
+  target_compile_features(fmt-module PUBLIC cxx_std_20)
+
+  # Modern CMake Method
+  if (FMT_USE_CMAKE_MODULES)
+    target_sources(fmt-module 
+      PUBLIC FILE_SET fmt_module TYPE CXX_MODULES FILES src/fmt.cc
+      PUBLIC FILE_SET fmt_module_headers TYPE HEADERS BASE_DIRS ${PROJECT_SOURCE_DIR}/include FILES ${FMT_HEADERS})
+
+  # Legacy CMake Method
+  else()
+      target_include_directories(fmt-module PUBLIC ${PROJECT_DIR}/include)
+  
+      enable_module(fmt-module)
+        
+      if (CMAKE_COMPILER_IS_GNUCXX)
+        target_compile_options(fmt-module PUBLIC -fmodules-ts)
+      endif ()
+      # `std` is affected by CMake options and may be higher than C++20.
+      get_target_property(std fmt-module CXX_STANDARD)
+
+      if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        set(pcms)
+        foreach (src ${sources})
+          get_filename_component(pcm ${src} NAME_WE)
+          set(pcm ${pcm}.pcm)
+
+          # Propagate -fmodule-file=*.pcm to targets that link with this library.
+          target_compile_options(
+            fmt-module PUBLIC -fmodule-file=${CMAKE_CURRENT_BINARY_DIR}/${pcm})
+
+          # Use an absolute path to prevent target_link_libraries prepending -l
+          # to it.
+          set(pcms ${pcms} ${CMAKE_CURRENT_BINARY_DIR}/${pcm})
+          add_custom_command(
+            OUTPUT ${pcm}
+            COMMAND ${CMAKE_CXX_COMPILER}
+            -std=c++${std} -x c++-module --precompile -c
+            -o ${pcm} ${CMAKE_CURRENT_SOURCE_DIR}/${src}
+            "-I$<JOIN:$<TARGET_PROPERTY:fmt-module,INCLUDE_DIRECTORIES>,;-I>"
+            # Required by the -I generator expression above.
+            COMMAND_EXPAND_LISTS
+            DEPENDS ${src})
+        endforeach ()
+
+        # Add .pcm files as sources to make sure they are built before the library.
+        set(sources)
+        foreach (pcm ${pcms})
+          get_filename_component(pcm_we ${pcm} NAME_WE)
+          set(obj ${pcm_we}.o)
+          # Use an absolute path to prevent target_link_libraries prepending -l.
+          set(sources ${sources} ${pcm} ${CMAKE_CURRENT_BINARY_DIR}/${obj})
+          add_custom_command(
+            OUTPUT ${obj}
+            COMMAND ${CMAKE_CXX_COMPILER} $<TARGET_PROPERTY:fmt-module,COMPILE_OPTIONS>
+            -c -o ${obj} ${pcm}
+            DEPENDS ${pcm})
+        endforeach ()
+      endif ()
+    endif()
+
+    if (FMT_WERROR)
+      target_compile_options(fmt-module PRIVATE ${WERROR_FLAG})
+    endif ()
+    if (FMT_PEDANTIC)
+      target_compile_options(fmt-module PRIVATE ${PEDANTIC_COMPILE_FLAGS})
+    endif ()
+
+    set_target_properties(fmt-module PROPERTIES
+      VERSION ${FMT_VERSION} SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR}
+      DEBUG_POSTFIX "${FMT_DEBUG_POSTFIX}"
+
+      # Workaround for Visual Studio 2017:
+      # Ensure the .pdb is created with the same name and in the same directory
+      # as the .lib. Newer VS versions already do this by default, but there is no
+      # harm in setting it for those too. Ignored by other generators.
+      COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+      COMPILE_PDB_NAME "fmt"
+      COMPILE_PDB_NAME_DEBUG "fmt${FMT_DEBUG_POSTFIX}")
+
+    # Set FMT_LIB_NAME for pkg-config fmt.pc. We cannot use the OUTPUT_NAME target
+    # property because it's not set by default.
+    set(FMT_LIB_NAME_MODULE fmt-module)
+    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+      set(FMT_LIB_NAME_MODULE ${FMT_LIB_NAME_MODULE}${FMT_DEBUG_POSTFIX})
+    endif ()
+
+    if (BUILD_SHARED_LIBS)
+      target_compile_definitions(fmt-module PRIVATE FMT_LIB_EXPORT INTERFACE FMT_SHARED)
+    endif ()
+    if (FMT_SAFE_DURATION_CAST)
+      target_compile_definitions(fmt-module PUBLIC FMT_SAFE_DURATION_CAST)
+    endif ()
+
+    if (FMT_UNICODE)
+      # Unicode support requires compiling with /utf-8.
+      target_compile_options(fmt-module PUBLIC $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>:/utf-8>)
+    else ()
+      target_compile_definitions(fmt-module PUBLIC FMT_UNICODE=0)
+    endif ()
+
+endif()
+
+# add header only library
+add_library(fmt-header-only INTERFACE)
+add_library(fmt::fmt-header-only ALIAS fmt-header-only)
+
+if(${CMAKE_VERSION} VERSION_LESS "3.23")
+    target_include_directories(fmt-header-only
+        ${FMT_SYSTEM_HEADERS_ATTRIBUTE} BEFORE INTERFACE
+        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:${FMT_INC_DIR}>)
+else()
+    target_sources(fmt-header-only PUBLIC FILE_SET fmt_header_only TYPE HEADERS BASE_DIRS ${PROJECT_SOURCE_DIR}/include FILES ${FMT_HEADERS}) 
+endif()
+
+if (FMT_UNICODE)
+  # Unicode support requires compiling with /utf-8.
+  target_compile_options(fmt-header-only INTERFACE $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>:/utf-8>)
+endif()
+
 target_compile_definitions(fmt-header-only INTERFACE FMT_HEADER_ONLY=1)
 target_compile_features(fmt-header-only INTERFACE cxx_std_11)
-
-target_include_directories(fmt-header-only
-  ${FMT_SYSTEM_HEADERS_ATTRIBUTE} BEFORE INTERFACE
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:${FMT_INC_DIR}>)
 
 add_library(fmt-c STATIC src/fmt-c.cc)
 target_compile_features(fmt-c INTERFACE c_std_11)
@@ -432,9 +568,19 @@ if (FMT_INSTALL)
 
   set(INSTALL_TARGETS fmt fmt-header-only fmt-c)
 
+  if(FMT_MODULE)
+    list(APPEND INSTALL_TARGETS fmt-module)
+  endif()
+
   set(INSTALL_FILE_SET)
+  if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.23")
+    list(APPEND INSTALL_FILE_SET FILE_SET fmt DESTINATION "${FMT_INC_DIR}/fmt") 
+    list(APPEND INSTALL_FILE_SET FILE_SET fmt_header_only DESTINATION "${FMT_INC_DIR}/fmt") 
+  endif()
+
   if (FMT_USE_CMAKE_MODULES)
-    set(INSTALL_FILE_SET FILE_SET fmt DESTINATION "${FMT_INC_DIR}/fmt")
+    list(APPEND INSTALL_FILE_SET FILE_SET fmt_module DESTINATION "${FMT_INC_DIR}/fmt")
+    list(APPEND INSTALL_FILE_SET FILE_SET fmt_module_headers DESTINATION "${FMT_INC_DIR}/fmt")
   endif()
 
   # Install the library and headers.
