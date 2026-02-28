@@ -137,7 +137,7 @@ inline auto operator""_a(const wchar_t* s, size_t) -> detail::udl_arg<wchar_t> {
 #endif
 
 template <typename T>
-auto arg(const wchar_t* name, const T& arg) -> detail::named_arg<T, wchar_t> {
+auto arg(const wchar_t* name, const T& arg) -> named_arg<T, wchar_t> {
   return {name, arg};
 }
 
