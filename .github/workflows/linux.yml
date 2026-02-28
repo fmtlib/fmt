@@ -31,7 +31,7 @@ jobs:
           - cxx: g++-13
             build_type: Release
             std: 23
-            install: sudo apt install g++-13
+            install: sudo apt install g++-13 libcc1-0
             shared: -DBUILD_SHARED_LIBS=ON
           - cxx: clang++-11
             build_type: Debug
