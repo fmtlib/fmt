@@ -391,6 +391,9 @@ endif ()
 target_link_libraries(fmt-c PUBLIC fmt::fmt)
 add_library(fmt::fmt-c ALIAS fmt-c)
 
+set_target_properties(fmt-c PROPERTIES
+  PUBLIC_HEADER include/fmt/fmt-c.h)
+
 # Install targets.
 if (FMT_INSTALL)
   include(CMakePackageConfigHelpers)
