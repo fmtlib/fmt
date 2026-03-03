@@ -26,23 +26,12 @@ function(join result_var)
   set(${result_var} "${result}" PARENT_SCOPE)
 endfunction()
 
-include(CMakeParseArguments)
-
 # Sets a cache variable with a docstring joined from multiple arguments:
-#   set(<variable> <value>... CACHE <type> <docstring>...)
+#   set_verbose(<variable> <value> CACHE <type> <docstring>...)
 # This allows splitting a long docstring for readability.
-function(set_verbose)
-  # cmake_parse_arguments is broken in CMake 3.4 (cannot parse CACHE) so use
-  # list instead.
-  list(GET ARGN 0 var)
-  list(REMOVE_AT ARGN 0)
-  list(GET ARGN 0 val)
-  list(REMOVE_AT ARGN 0)
-  list(REMOVE_AT ARGN 0)
-  list(GET ARGN 0 type)
-  list(REMOVE_AT ARGN 0)
+function(set_verbose variable value _cache type)
   join(doc ${ARGN})
-  set(${var} ${val} CACHE ${type} ${doc})
+  set(${variable} ${value} CACHE ${type} ${doc})
 endfunction()
 
 # Set the default CMAKE_BUILD_TYPE to Release.
@@ -73,16 +62,6 @@ if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.28 AND
   endif ()
 endif ()
 
-include(GNUInstallDirs)
-set_verbose(FMT_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR} CACHE STRING
-            "Installation directory for include files, a relative path that "
-            "will be joined with ${CMAKE_INSTALL_PREFIX} or an absolute path.")
-
-option(FMT_PEDANTIC "Enable extra warnings and expensive tests." OFF)
-option(FMT_WERROR "Halt the compilation with an error on compiler warnings."
-       OFF)
-
-# Options that control generation of various targets.
 option(FMT_DOC "Generate the doc target." ${FMT_MASTER_PROJECT})
 option(FMT_INSTALL "Generate the install target." ${FMT_MASTER_PROJECT})
 option(FMT_TEST "Generate the test target." ${FMT_MASTER_PROJECT})
@@ -92,11 +71,22 @@ option(FMT_OS "Include OS-specific APIs." ON)
 option(FMT_MODULE "Build a module library." ${FMT_USE_CMAKE_MODULES})
 option(FMT_SYSTEM_HEADERS "Expose headers with marking them as system." OFF)
 option(FMT_UNICODE "Enable Unicode support." ON)
+option(FMT_PEDANTIC "Enable extra warnings and expensive tests." OFF)
+option(FMT_WERROR "Halt the compilation with an error on compiler warnings."
+       OFF)
 
 set(FMT_SYSTEM_HEADERS_ATTRIBUTE "")
 if (FMT_SYSTEM_HEADERS)
   set(FMT_SYSTEM_HEADERS_ATTRIBUTE SYSTEM)
 endif ()
+
+include(GNUInstallDirs) # CMAKE_INSTALL_INCLUDEDIR
+
+set_verbose(FMT_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR} CACHE STRING
+            "Installation directory for include files, a relative path that "
+            "will be joined with ${CMAKE_INSTALL_PREFIX} or an absolute path.")
+
+set(FMT_DEBUG_POSTFIX d CACHE STRING "Debug library postfix.")
 
 # Get version from base.h
 file(READ include/fmt/base.h base_h)
@@ -124,7 +114,7 @@ include(JoinPaths)
 
 if (FMT_MASTER_PROJECT AND NOT DEFINED CMAKE_CXX_VISIBILITY_PRESET)
   set_verbose(CMAKE_CXX_VISIBILITY_PRESET hidden CACHE STRING
-              "Preset for the export of private symbols")
+              "Preset for the export of private symbols.")
   set_property(CACHE CMAKE_CXX_VISIBILITY_PRESET PROPERTY STRINGS
                hidden default)
 endif ()
@@ -132,7 +122,7 @@ endif ()
 if (FMT_MASTER_PROJECT AND NOT DEFINED CMAKE_VISIBILITY_INLINES_HIDDEN)
   set_verbose(CMAKE_VISIBILITY_INLINES_HIDDEN ON CACHE BOOL
               "Whether to add a compile flag to hide symbols of inline "
-              "functions")
+              "functions.")
 endif ()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
@@ -202,31 +192,42 @@ if (FMT_MASTER_PROJECT AND CMAKE_GENERATOR MATCHES "Visual Studio")
     ${CMAKE_MAKE_PROGRAM} -p:FrameworkPathOverride=\"${netfxpath}\" %*")
 endif ()
 
-function(set_include_directories target kind)
+# Sets up a top-level fmt target. Targets that depend on other top-level targets
+# should call this because they'll automatically get the required properties.
+function(setup_target target kind)
+  add_library(fmt::${target} ALIAS ${target})
+
   target_include_directories(${target}
     ${FMT_SYSTEM_HEADERS_ATTRIBUTE} BEFORE ${kind}
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${FMT_INC_DIR}>)
+
+  if (NOT MSVC)
+    # Unicode is always supported on compilers other than MSVC.
+  elseif (FMT_UNICODE)
+    # Unicode support requires compiling with /utf-8.
+    target_compile_options(${target} ${kind}
+      $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>:/utf-8>)
+  else ()
+    target_compile_definitions(${target} ${kind} FMT_UNICODE=0)
+  endif ()
+
+  set_target_properties(${target} PROPERTIES
+    VERSION ${FMT_VERSION}
+    SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR}
+    DEBUG_POSTFIX "${FMT_DEBUG_POSTFIX}")
 endfunction()
 
-function(add_headers VAR)
-  set(headers ${${VAR}})
-  foreach (header ${ARGN})
-    set(headers ${headers} include/fmt/${header})
-  endforeach()
-  set(${VAR} ${headers} PARENT_SCOPE)
-endfunction()
-
-# Define the fmt library, its includes and configuration macros.
 set(FMT_HEADERS)
-add_headers(FMT_HEADERS args.h base.h chrono.h color.h compile.h core.h format.h
-                        format-inl.h os.h ostream.h printf.h ranges.h std.h
-                        xchar.h)
-set(FMT_SOURCES src/format.cc)
+foreach (header args.h base.h chrono.h color.h compile.h core.h format.h
+                format-inl.h os.h ostream.h printf.h ranges.h std.h xchar.h)
+  set(FMT_HEADERS ${FMT_HEADERS} include/fmt/${header})
+endforeach()
 
-add_library(fmt ${FMT_SOURCES} ${FMT_HEADERS} README.md ChangeLog.md)
-add_library(fmt::fmt ALIAS fmt)
-set_include_directories(fmt PUBLIC)
+# Add the main fmt library.
+add_library(fmt src/format.cc ${FMT_HEADERS} README.md ChangeLog.md)
+setup_target(fmt PUBLIC)
+set_target_properties(fmt PROPERTIES PUBLIC_HEADER "${FMT_HEADERS}")
 
 if (FMT_OS)
   target_sources(fmt PRIVATE src/os.cc)
@@ -247,21 +248,6 @@ else ()
   message(WARNING "Feature cxx_std_11 is unknown for the CXX compiler")
 endif ()
 
-set(FMT_DEBUG_POSTFIX d CACHE STRING "Debug library postfix.")
-
-set_target_properties(fmt PROPERTIES
-  VERSION ${FMT_VERSION} SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR}
-  PUBLIC_HEADER "${FMT_HEADERS}"
-  DEBUG_POSTFIX "${FMT_DEBUG_POSTFIX}"
-
-  # Workaround for Visual Studio 2017:
-  # Ensure the .pdb is created with the same name and in the same directory
-  # as the .lib. Newer VS versions already do this by default, but there is no
-  # harm in setting it for those too. Ignored by other generators.
-  COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-  COMPILE_PDB_NAME "fmt"
-  COMPILE_PDB_NAME_DEBUG "fmt${FMT_DEBUG_POSTFIX}")
-
 # Set FMT_LIB_NAME for pkg-config fmt.pc. We cannot use the OUTPUT_NAME target
 # property because it's not set by default.
 set(FMT_LIB_NAME fmt)
@@ -276,20 +262,7 @@ if (FMT_SAFE_DURATION_CAST)
   target_compile_definitions(fmt PUBLIC FMT_SAFE_DURATION_CAST)
 endif ()
 
-# DEPRECATED! Should be merged into add_module_library.
-function(enable_module target)
-  if (MSVC)
-    if (NOT CMAKE_GENERATOR STREQUAL "Ninja")
-      set(BMI_DIR "${CMAKE_CURRENT_BINARY_DIR}")
-      file(TO_NATIVE_PATH "${BMI_DIR}/${target}.ifc" BMI)
-      target_compile_options(${target}
-        PRIVATE /interface /ifcOutput ${BMI}
-        INTERFACE /reference fmt=${BMI})
-      set_target_properties(${target} PROPERTIES ADDITIONAL_CLEAN_FILES ${BMI})
-      set_source_files_properties(${BMI} PROPERTIES GENERATED ON)
-    endif ()
-  endif ()
-endfunction()
+include(CMakeParseArguments)
 
 # Adds a library compiled with C++20 module support.
 #
@@ -304,6 +277,18 @@ function(add_module_library name)
 
   # Modules require C++20.
   target_compile_features(${name} PUBLIC cxx_std_20)
+
+  if (MSVC)
+    if (NOT CMAKE_GENERATOR STREQUAL "Ninja")
+      set(BMI_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+      file(TO_NATIVE_PATH "${BMI_DIR}/${name}.ifc" BMI)
+      target_compile_options(${name}
+        PRIVATE /interface /ifcOutput ${BMI}
+        INTERFACE /reference fmt=${BMI})
+      set_target_properties(${name} PROPERTIES ADDITIONAL_CLEAN_FILES ${BMI})
+      set_source_files_properties(${BMI} PROPERTIES GENERATED ON)
+    endif ()
+  endif ()
 
   if (${AML_USE_CMAKE_MODULES})
     target_sources(${name} PUBLIC FILE_SET fmt TYPE CXX_MODULES
@@ -362,35 +347,14 @@ endfunction()
 if (FMT_MODULE)
   add_module_library(fmt-module src/fmt.cc
     USE_CMAKE_MODULES ${FMT_USE_CMAKE_MODULES})
-  add_library(fmt::fmt-module ALIAS fmt-module)
-  set_include_directories(fmt-module PUBLIC)
-  enable_module(fmt-module)
-
-  set_target_properties(fmt-module PROPERTIES
-    VERSION ${FMT_VERSION} 
-    SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR}
-    DEBUG_POSTFIX "${FMT_DEBUG_POSTFIX}")
+  setup_target(fmt-module PUBLIC)
 endif ()
 
 add_library(fmt-header-only INTERFACE)
-add_library(fmt::fmt-header-only ALIAS fmt-header-only)
-
-if (NOT MSVC)
-  # Unicode is always supported on compilers other than MSVC.
-elseif (FMT_UNICODE)
-  # Unicode support requires compiling with /utf-8.
-  target_compile_options(fmt PUBLIC $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>:/utf-8>)
-  target_compile_options(fmt-header-only INTERFACE $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>:/utf-8>)
-  if (FMT_MODULE)
-    target_compile_options(fmt-module PUBLIC $<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CXX_COMPILER_ID:MSVC>>:/utf-8>)
-  endif ()
-else ()
-  target_compile_definitions(fmt PUBLIC FMT_UNICODE=0)
-endif ()
 
 target_compile_definitions(fmt-header-only INTERFACE FMT_HEADER_ONLY=1)
 target_compile_features(fmt-header-only INTERFACE cxx_std_11)
-set_include_directories(fmt-header-only INTERFACE)
+setup_target(fmt-header-only INTERFACE)
 
 add_library(fmt-c STATIC src/fmt-c.cc)
 target_compile_features(fmt-c INTERFACE c_std_11)
