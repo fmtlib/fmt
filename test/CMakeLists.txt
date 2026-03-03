@@ -2,13 +2,13 @@ add_subdirectory(gtest)
 
 set(TEST_MAIN_SRC test-main.cc gtest-extra.cc gtest-extra.h util.cc)
 add_library(test-main STATIC ${TEST_MAIN_SRC})
-target_include_directories(test-main PUBLIC
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
+target_include_directories(
+  test-main PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
 target_link_libraries(test-main gtest fmt)
 
 # Adds a test.
 # Usage: add_fmt_test(name srcs...)
-function(add_fmt_test name)
+function (add_fmt_test name)
   cmake_parse_arguments(ADD_FMT_TEST "HEADER_ONLY;MODULE" "" "" ${ARGN})
 
   set(sources ${name}.cc ${ADD_FMT_TEST_UNPARSED_ARGUMENTS})
@@ -38,7 +38,7 @@ function(add_fmt_test name)
     target_compile_options(${name} PRIVATE ${WERROR_FLAG})
   endif ()
   add_test(NAME ${name} COMMAND ${name})
-endfunction()
+endfunction ()
 
 add_fmt_test(args-test)
 add_fmt_test(base-test)
@@ -60,10 +60,10 @@ add_fmt_test(ranges-test ranges-odr-test.cc)
 add_fmt_test(no-builtin-types-test HEADER_ONLY)
 add_fmt_test(scan-test HEADER_ONLY)
 add_fmt_test(std-test)
-try_compile(compile_result_unused
-            ${CMAKE_CURRENT_BINARY_DIR}
-            SOURCES ${CMAKE_CURRENT_LIST_DIR}/detect-stdfs.cc
-            OUTPUT_VARIABLE RAWOUTPUT)
+try_compile(
+  compile_result_unused ${CMAKE_CURRENT_BINARY_DIR}
+  SOURCES ${CMAKE_CURRENT_LIST_DIR}/detect-stdfs.cc
+  OUTPUT_VARIABLE RAWOUTPUT)
 string(REGEX REPLACE ".*libfound \"([^\"]*)\".*" "\\1" STDLIBFS "${RAWOUTPUT}")
 if (STDLIBFS)
   target_link_libraries(std-test ${STDLIBFS})
@@ -74,8 +74,8 @@ if (MSVC)
 endif ()
 add_fmt_test(xchar-test)
 add_fmt_test(enforce-checks-test)
-target_compile_definitions(enforce-checks-test PRIVATE
-                           -DFMT_ENFORCE_COMPILE_STRING)
+target_compile_definitions(enforce-checks-test
+                           PRIVATE -DFMT_ENFORCE_COMPILE_STRING)
 
 add_executable(perf-sanity perf-sanity.cc)
 target_link_libraries(perf-sanity fmt::fmt)
@@ -88,20 +88,20 @@ endif ()
 
 if (NOT DEFINED MSVC_STATIC_RUNTIME AND MSVC)
   foreach (flag_var
-			 CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
-			 CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-	if (${flag_var} MATCHES "^(/|-)(MT|MTd)")
-	  set(MSVC_STATIC_RUNTIME ON)
-	  break()
-	endif ()
+           CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
+           CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+    if (${flag_var} MATCHES "^(/|-)(MT|MTd)")
+      set(MSVC_STATIC_RUNTIME ON)
+      break()
+    endif ()
   endforeach ()
 endif ()
 
 if (NOT MSVC_STATIC_RUNTIME)
-  add_executable(posix-mock-test
-    posix-mock-test.cc ../src/format.cc ${TEST_MAIN_SRC})
-  target_include_directories(
-    posix-mock-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
+  add_executable(posix-mock-test posix-mock-test.cc ../src/format.cc
+                                 ${TEST_MAIN_SRC})
+  target_include_directories(posix-mock-test
+                             PRIVATE ${PROJECT_SOURCE_DIR}/include)
   target_link_libraries(posix-mock-test gtest)
   if (FMT_PEDANTIC)
     target_compile_options(posix-mock-test PRIVATE ${PEDANTIC_COMPILE_FLAGS})
@@ -123,34 +123,38 @@ if (FMT_PEDANTIC)
   endif ()
   if (HAVE_FNO_EXCEPTIONS_FLAG)
     add_library(noexception-test ../src/format.cc noexception-test.cc)
-    target_include_directories(
-      noexception-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
+    target_include_directories(noexception-test
+                               PRIVATE ${PROJECT_SOURCE_DIR}/include)
     target_compile_options(noexception-test PRIVATE -fno-exceptions)
     target_compile_options(noexception-test PRIVATE ${PEDANTIC_COMPILE_FLAGS})
   endif ()
 
   # Test that the library compiles without locale.
   add_library(nolocale-test ../src/format.cc)
-  target_include_directories(
-    nolocale-test PRIVATE ${PROJECT_SOURCE_DIR}/include)
-  target_compile_definitions(
-    nolocale-test PRIVATE FMT_STATIC_THOUSANDS_SEPARATOR=1)
+  target_include_directories(nolocale-test
+                             PRIVATE ${PROJECT_SOURCE_DIR}/include)
+  target_compile_definitions(nolocale-test
+                             PRIVATE FMT_STATIC_THOUSANDS_SEPARATOR=1)
 endif ()
 
 # These tests are disabled on Windows because they take too long.
-# They are disabled on GCC < 4.9 because it can not parse UDLs without
-# a space after `operator""` but that is an incorrect syntax for any more
-# modern compiler.
-if (FMT_PEDANTIC AND NOT WIN32 AND NOT (
-    CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND
-    CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9))
+# They are disabled on GCC < 4.9 because it can't parse UDLs without a space
+# after operator"" but that is an incorrect syntax for any more modern compiler.
+if (FMT_PEDANTIC
+    AND NOT WIN32
+    AND NOT (CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND CMAKE_CXX_COMPILER_VERSION
+                                                     VERSION_LESS 4.9))
   # Test if incorrect API usages produce compilation error.
-  add_test(compile-error-test ${CMAKE_CTEST_COMMAND}
+  add_test(
+    compile-error-test
+    ${CMAKE_CTEST_COMMAND}
     --build-and-test
     "${CMAKE_CURRENT_SOURCE_DIR}/compile-error-test"
     "${CMAKE_CURRENT_BINARY_DIR}/compile-error-test"
-    --build-generator ${CMAKE_GENERATOR}
-    --build-makeprogram ${CMAKE_MAKE_PROGRAM}
+    --build-generator
+    ${CMAKE_GENERATOR}
+    --build-makeprogram
+    ${CMAKE_MAKE_PROGRAM}
     --build-options
     "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
     "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}"
@@ -159,13 +163,18 @@ if (FMT_PEDANTIC AND NOT WIN32 AND NOT (
     "-DFMT_DIR=${CMAKE_SOURCE_DIR}")
 
   # Test if the targets are found from the build directory.
-  add_test(find-package-test ${CMAKE_CTEST_COMMAND}
-    -C ${CMAKE_BUILD_TYPE}
+  add_test(
+    find-package-test
+    ${CMAKE_CTEST_COMMAND}
+    -C
+    ${CMAKE_BUILD_TYPE}
     --build-and-test
     "${CMAKE_CURRENT_SOURCE_DIR}/find-package-test"
     "${CMAKE_CURRENT_BINARY_DIR}/find-package-test"
-    --build-generator ${CMAKE_GENERATOR}
-    --build-makeprogram ${CMAKE_MAKE_PROGRAM}
+    --build-generator
+    ${CMAKE_GENERATOR}
+    --build-makeprogram
+    ${CMAKE_MAKE_PROGRAM}
     --build-options
     "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
     "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}"
@@ -175,13 +184,18 @@ if (FMT_PEDANTIC AND NOT WIN32 AND NOT (
     "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 
   # Test if the targets are found when add_subdirectory is used.
-  add_test(add-subdirectory-test ${CMAKE_CTEST_COMMAND}
-    -C ${CMAKE_BUILD_TYPE}
+  add_test(
+    add-subdirectory-test
+    ${CMAKE_CTEST_COMMAND}
+    -C
+    ${CMAKE_BUILD_TYPE}
     --build-and-test
     "${CMAKE_CURRENT_SOURCE_DIR}/add-subdirectory-test"
     "${CMAKE_CURRENT_BINARY_DIR}/add-subdirectory-test"
-    --build-generator ${CMAKE_GENERATOR}
-    --build-makeprogram ${CMAKE_MAKE_PROGRAM}
+    --build-generator
+    ${CMAKE_GENERATOR}
+    --build-makeprogram
+    ${CMAKE_MAKE_PROGRAM}
     --build-options
     "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
     "-DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}"
@@ -191,13 +205,18 @@ endif ()
 
 # This test is disabled on Windows because it is POSIX-specific.
 if (FMT_PEDANTIC AND NOT WIN32)
-  add_test(static-export-test ${CMAKE_CTEST_COMMAND}
-    -C ${CMAKE_BUILD_TYPE}
+  add_test(
+    static-export-test
+    ${CMAKE_CTEST_COMMAND}
+    -C
+    ${CMAKE_BUILD_TYPE}
     --build-and-test
     "${CMAKE_CURRENT_SOURCE_DIR}/static-export-test"
     "${CMAKE_CURRENT_BINARY_DIR}/static-export-test"
-    --build-generator ${CMAKE_GENERATOR}
-    --build-makeprogram ${CMAKE_MAKE_PROGRAM}
+    --build-generator
+    ${CMAKE_GENERATOR}
+    --build-makeprogram
+    ${CMAKE_MAKE_PROGRAM}
     --build-options
     "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
     "-DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}"

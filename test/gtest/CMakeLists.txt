@@ -1,12 +1,10 @@
-#------------------------------------------------------------------------------
-# Build the google test library
+# Compile Google Test ourselves instead of using pre-compiled libraries. See the
+# Google Test FAQ "Why is it not recommended to install a pre-compiled copy of
+# Google Test (for example, into /usr/local)?" at
+# http://code.google.com/p/googletest/wiki/FAQ for more details.
 
-# Compile Google Test ourselves instead of using pre-compiled libraries.
-# See the Google Test FAQ "Why is it not recommended to install a
-# pre-compiled copy of Google Test (for example, into /usr/local)?"
-# at http://code.google.com/p/googletest/wiki/FAQ for more details.
-add_library(gtest STATIC
-  gmock-gtest-all.cc gmock/gmock.h gtest/gtest.h gtest/gtest-spi.h)
+add_library(gtest STATIC gmock-gtest-all.cc gmock/gmock.h gtest/gtest.h
+                         gtest/gtest-spi.h)
 target_compile_definitions(gtest PUBLIC GTEST_HAS_STD_WSTRING=1)
 target_include_directories(gtest SYSTEM PUBLIC .)
 target_compile_features(gtest PUBLIC cxx_std_11)
