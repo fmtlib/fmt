@@ -1808,7 +1808,7 @@ template <typename T> class buffer {
   /// Appends data to the end of the buffer.
   template <typename U>
   FMT_CONSTEXPR20 void append(const U* begin, const U* end) {
-    static_assert(std::is_same<T, U>::value || std::is_same<U, char>::value);
+    static_assert(std::is_same<T, U>::value || std::is_same<U, char>::value, "");
     while (begin != end) {
       auto size = size_;
       auto free_cap = capacity_ - size;
