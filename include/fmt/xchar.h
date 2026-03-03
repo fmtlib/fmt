@@ -159,13 +159,10 @@ auto join(Range&& range, S&& sep)
   return {std::begin(range), std::end(range), detail::to_string_view(sep)};
 }
 
-template <typename T, typename S,
-          typename Char = typename decltype(detail::to_string_view(
-              std::declval<S>()))::value_type,
-          FMT_ENABLE_IF(detail::is_exotic_char<Char>::value)>
-auto join(std::initializer_list<T> list, S&& sep)
-    -> join_view<const T*, const T*, Char> {
-  return {std::begin(list), std::end(list), detail::to_string_view(sep)};
+template <typename T>
+auto join(std::initializer_list<T> list, wstring_view sep)
+    -> join_view<const T*, const T*, wchar_t> {
+  return join(std::begin(list), std::end(list), sep);
 }
 
 template <typename Tuple, typename S,
