@@ -88,7 +88,7 @@ set_verbose(FMT_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR} CACHE STRING
 
 set(FMT_DEBUG_POSTFIX d CACHE STRING "Debug library postfix.")
 
-# Get version from base.h
+# Get version from base.h.
 file(READ include/fmt/base.h base_h)
 if (NOT base_h MATCHES "FMT_VERSION ([0-9]+)([0-9][0-9])([0-9][0-9])")
   message(FATAL_ERROR "Cannot get FMT_VERSION from base.h.")
