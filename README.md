@@ -391,7 +391,7 @@ available being a part of the C standard library. The main drawback is
 that it doesn\'t support user-defined types. `printf` also has safety
 issues although they are somewhat mitigated with [\_\_attribute\_\_
 ((format (printf,
-\...))](https://gcc.gnu.org/onlinedocs/gcc/Function-Attributes.html) in
+\...))](https://gcc.gnu.org/onlinedocs/gcc/Common-Attributes.html) in
 GCC. There is a POSIX extension that adds positional arguments required
 for
 [i18n](https://en.wikipedia.org/wiki/Internationalization_and_localization)
