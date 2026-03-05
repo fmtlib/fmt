@@ -3609,14 +3609,8 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
                                   (abs_exponent >= 100 ? 5 : 4));
   if (auto ptr = to_pointer<Char>(out, size)) {
     if (s != sign::none) *ptr++ = Char('-');
-    if (has_decimal_point) {
-      auto begin = ptr;
-      ptr = format_decimal<Char>(ptr, significand, significand_size + 1);
-      *begin = begin[1];
-      begin[1] = '.';
-    } else {
-      *ptr++ = static_cast<Char>('0' + significand);
-    }
+    ptr = write_significand(ptr, significand, significand_size, 1,
+                            has_decimal_point ? Char('.') : Char());
     if (std::is_same<Char, char>::value) {
       memcpy(ptr, prefix, 2);
       ptr += 2;
