@@ -30,6 +30,16 @@ jobs:
             toolset: v143
             build_type: Debug
             standard: 20
+          - os: windows-11-arm
+            platform: ARM64
+            toolset: v143
+            build_type: Debug
+            standard: 20
+          - os: windows-11-arm
+            platform: ARM64
+            toolset: v143
+            build_type: Release
+            standard: 20
 
     steps:
     - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
