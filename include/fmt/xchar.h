@@ -160,7 +160,7 @@ auto join(Range&& range, S&& sep)
 }
 
 template <typename T>
-auto join(std::initializer_list<T> list, wstring_view sep)
+FMT_DEPRECATED auto join(std::initializer_list<T> list, wstring_view sep)
     -> join_view<const T*, const T*, wchar_t> {
   return join(std::begin(list), std::end(list), sep);
 }

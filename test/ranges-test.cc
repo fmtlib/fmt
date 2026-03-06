@@ -433,12 +433,6 @@ TEST(ranges_test, join_tuple) {
 #endif
 }
 
-TEST(ranges_test, join_initializer_list) {
-  EXPECT_EQ(fmt::format("{}", fmt::join({1, 2, 3}, ", ")), "1, 2, 3");
-  EXPECT_EQ(fmt::format("{}", fmt::join({"fmt", "rocks", "!"}, " ")),
-            "fmt rocks !");
-}
-
 struct zstring_sentinel {};
 
 bool operator==(const char* p, zstring_sentinel) { return *p == '\0'; }

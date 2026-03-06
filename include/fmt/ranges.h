@@ -844,7 +844,7 @@ FMT_CONSTEXPR auto join(const Tuple& tuple FMT_LIFETIMEBOUND, string_view sep)
  *     // Output: "1, 2, 3"
  */
 template <typename T>
-auto join(std::initializer_list<T> list, string_view sep)
+FMT_DEPRECATED auto join(std::initializer_list<T> list, string_view sep)
     -> join_view<const T*, const T*> {
   return join(std::begin(list), std::end(list), sep);
 }
