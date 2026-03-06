@@ -221,15 +221,26 @@
 #  define FMT_UNICODE !FMT_MSC_VERSION
 #endif
 
+#ifndef FMT_USE_CONSTEVAL
+#  if defined(__apple_build_version__) && FMT_CLANG_VERSION >= 2100
+// Apple clang 21 (Xcode 26 beta) rejects some FMT_STRING consteval paths.
+#    define FMT_USE_CONSTEVAL 0
+#  elif ((FMT_GCC_VERSION >= 1000 || FMT_CLANG_VERSION >= 1101) && \
+         (!defined(__apple_build_version__) ||                     \
+          __apple_build_version__ >= 14000029L) &&                \
+         FMT_CPLUSPLUS >= 202002L) ||                             \
+        (defined(__cpp_consteval) &&                              \
+         (!FMT_MSC_VERSION || FMT_MSC_VERSION >= 1929))
+#    define FMT_USE_CONSTEVAL 1
+#  else
+#    define FMT_USE_CONSTEVAL 0
+#  endif
+#endif
+
 #ifndef FMT_CONSTEVAL
-#  if ((FMT_GCC_VERSION >= 1000 || FMT_CLANG_VERSION >= 1101) && \
-       (!defined(__apple_build_version__) ||                     \
-        __apple_build_version__ >= 14000029L) &&                 \
-       FMT_CPLUSPLUS >= 202002L) ||                              \
-      (defined(__cpp_consteval) &&                               \
-       (!FMT_MSC_VERSION || FMT_MSC_VERSION >= 1929))
+#  if FMT_USE_CONSTEVAL
 // consteval is broken in MSVC before VS2019 version 16.10 and Apple clang
-// before 14.
+// before 14, and Apple clang 21 regressed for some FMT_STRING call sites.
 #    define FMT_CONSTEVAL consteval
 #    define FMT_HAS_CONSTEVAL
 #  else
