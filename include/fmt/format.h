@@ -2528,6 +2528,26 @@ inline auto write_exponent_significand(Char* out, UInt significand,
   return out;
 }
 
+template <typename Char, typename UInt,
+          FMT_ENABLE_IF(std::is_integral<UInt>::value)>
+inline auto write_default_fp(Char* out, UInt significand, int significand_size,
+                             int decimal_exponent, sign s) -> Char* {
+  if (s != sign::none) *out++ = Char('-');
+  int exp = decimal_exponent + significand_size;
+  if (decimal_exponent >= 0) {
+    out = write_significand<Char>(out, significand, significand_size);
+    return detail::fill_n(out, decimal_exponent, Char('0'));
+  }
+  if (exp > 0) {
+    return write_significand(out, significand, significand_size, exp,
+                             Char('.'));
+  }
+  *out++ = Char('0');
+  *out++ = Char('.');
+  out = detail::fill_n(out, -exp, Char('0'));
+  return write_significand<Char>(out, significand, significand_size);
+}
+
 template <typename OutputIt, typename Char>
 FMT_CONSTEXPR auto write_significand(OutputIt out, const char* significand,
                                      int significand_size, int integral_size,
@@ -3605,6 +3625,21 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
   int significand_size = count_digits(significand);
   int exponent = dec.exponent + significand_size - 1;
   if (use_fixed(exponent, detail::exp_upper<T>())) {
+    size_t size = std::is_pointer<OutputIt>::value
+                      ? 0u
+                      : to_unsigned((s != sign::none ? 1 : 0) +
+                                    (dec.exponent >= 0
+                                         ? significand_size + dec.exponent
+                                         : exponent >= 0
+                                               ? significand_size + 1
+                                               : significand_size + 2 -
+                                                     (dec.exponent +
+                                                      significand_size)));
+    if (auto ptr = to_pointer<Char>(out, size)) {
+      ptr = write_default_fp(ptr, significand, significand_size, dec.exponent,
+                             s);
+      return select<std::is_pointer<OutputIt>::value>(ptr, out);
+    }
     return write_fixed<Char, fallback_digit_grouping<Char>>(
         out, dec, significand_size, Char('.'), {}, s);
   }
