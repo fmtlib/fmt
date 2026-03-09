@@ -2513,6 +2513,21 @@ inline auto write_significand(OutputIt out, UInt significand,
   return detail::copy_noinline<Char>(buffer, end, out);
 }
 
+template <typename Char, typename UInt,
+          FMT_ENABLE_IF(std::is_integral<UInt>::value)>
+inline auto write_exponent_significand(Char* out, UInt significand,
+                                       int significand_size) -> Char* {
+  if (significand_size == 1) {
+    *out++ = static_cast<Char>('0' + significand);
+    return out;
+  }
+  auto begin = out;
+  out = format_decimal(out, significand, significand_size + 1);
+  *begin = begin[1];
+  begin[1] = static_cast<Char>('.');
+  return out;
+}
+
 template <typename OutputIt, typename Char>
 FMT_CONSTEXPR auto write_significand(OutputIt out, const char* significand,
                                      int significand_size, int integral_size,
@@ -3609,8 +3624,7 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
                                   (abs_exponent >= 100 ? 5 : 4));
   if (auto ptr = to_pointer<Char>(out, size)) {
     if (s != sign::none) *ptr++ = Char('-');
-    ptr = write_significand(ptr, significand, significand_size, 1,
-                            has_decimal_point ? Char('.') : Char());
+    ptr = write_exponent_significand(ptr, significand, significand_size);
     if (std::is_same<Char, char>::value) {
       memcpy(ptr, prefix, 2);
       ptr += 2;
