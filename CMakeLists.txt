@@ -50,16 +50,28 @@ endif ()
 
 project(FMT CXX)
 
-# Determine support for the C++ module scanning.
-# Requires C++20, CMake >= 3.28 and (Ninja >= 1.11 OR Visual Studio >= 17.4).
-set(FMT_USE_CMAKE_MODULES FALSE)
+# Determine support for the C++ module scanning and CXX_MODULE File_Sets
+# Requires C++20, CMake >= 3.28 and 
+# Generators(Ninja >= 1.11 OR Visual Studio >= 17.4).
+# Compilers GCC>=14, Clang>=16 or MSVC >= 17.4
+# Source: https://cmake.org/cmake/help/latest/manual/cmake-cxxmodules.7.html
+Set(FMT_USE_CMAKE_MODULES FALSE)
 if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.28 AND CMAKE_CXX_STANDARD
                                                  GREATER_EQUAL 20)
   if (CMAKE_GENERATOR STREQUAL "Ninja")
     execute_process(COMMAND "${CMAKE_MAKE_PROGRAM}" "--version"
                     OUTPUT_VARIABLE NINJA_VERSION)
     if (NINJA_VERSION VERSION_GREATER_EQUAL 1.11)
+      if (
+          (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" 
+          AND CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 14)
+        OR(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" 
+          AND CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 16)
+        OR(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC"
+          AND MSVC_VERSION GREATER_EQUAL 1934)
+        )
       set(FMT_USE_CMAKE_MODULES TRUE)
+     endif ()
     endif ()
   elseif (CMAKE_GENERATOR MATCHES "^Visual Studio" AND MSVC_VERSION
                                                        GREATER_EQUAL 1934)
