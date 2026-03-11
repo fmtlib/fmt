@@ -326,8 +326,6 @@ if (FMT_SAFE_DURATION_CAST)
   target_compile_definitions(fmt PUBLIC FMT_SAFE_DURATION_CAST)
 endif ()
 
-include(CMakeParseArguments)
-
 # Adds a library compiled with C++20 module support.
 #
 # Usage:
@@ -549,7 +547,6 @@ function (add_doc_target)
       --site-dir ${CMAKE_CURRENT_BINARY_DIR}/doc-html --no-directory-urls
     SOURCES ${sources})
 
-  include(GNUInstallDirs)
   install(
     DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc-html/
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/doc/fmt
