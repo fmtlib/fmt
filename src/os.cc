@@ -59,6 +59,8 @@
 #  endif
 #endif
 
+FMT_BEGIN_NAMESPACE
+
 namespace {
 #ifdef _WIN32
 // Return type of read and write functions.
@@ -77,10 +79,10 @@ inline auto convert_rwcount(size_t count) -> size_t { return count; }
 #endif
 }  // namespace
 
-FMT_BEGIN_NAMESPACE
-
 #ifdef _WIN32
 namespace detail {
+
+namespace {
 
 class system_message {
   system_message(const system_message&) = delete;
@@ -128,6 +130,8 @@ class utf8_system_category final : public std::error_category {
     return "unknown error";
   }
 };
+
+}  // namespace
 
 }  // namespace detail
 
