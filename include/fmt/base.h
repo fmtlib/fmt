@@ -907,7 +907,7 @@ class locale_ref {
 FMT_END_EXPORT
 
 // forward declaration
-template <typename Char> class runtime_format_string;
+template <typename Char> struct runtime_format_string;
 
 namespace detail {
 
@@ -944,7 +944,7 @@ constexpr auto to_string_view(runtime_format_string<Char> s)
   return s.str;
 }
 // forward declaration of internal compile-time string type base
-class compile_string;
+struct compile_string;
 template <typename Char, typename S,
           FMT_ENABLE_IF(std::is_base_of<detail::compile_string, S>::value&&
                             std::is_same<typename S::char_type, Char>::value)>
