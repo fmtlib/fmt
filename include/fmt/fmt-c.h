@@ -91,14 +91,15 @@ static inline fmt_arg fmt_from_ptr(const void* x) {
 
 void fmt_unsupported_type(void);
 
-#  ifndef _MSC_VER
+#  if !defined(_MSC_VER) || defined(__clang__)
 typedef signed char fmt_signed_char;
 #  else
 typedef enum {} fmt_signed_char;
 #  endif
 
 // Require modern MSVC with conformant preprocessor.
-#  if defined(_MSC_VER) && (!defined(_MSVC_TRADITIONAL) || _MSVC_TRADITIONAL)
+#  if defined(_MSC_VER) && !defined(__clang__) && \
+      (!defined(_MSVC_TRADITIONAL) || _MSVC_TRADITIONAL)
 #    error "C API requires MSVC 2019+ with /Zc:preprocessor flag."
 #  endif
 
