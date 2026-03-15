@@ -87,6 +87,10 @@
 #  define FMT_HAS_CPP_ATTRIBUTE(x) 0
 #endif
 
+#if FMT_HAS_INCLUDE(<ranges>)
+#  include <ranges>
+#endif
+
 #define FMT_HAS_CPP14_ATTRIBUTE(attribute) \
   (FMT_CPLUSPLUS >= 201402L && FMT_HAS_CPP_ATTRIBUTE(attribute))
 
@@ -588,7 +592,12 @@ template <typename T> class basic_appender;
 using appender = basic_appender<char>;
 
 // Checks whether T is a container with contiguous storage.
+#if defined(__cpp_lib_ranges)
+template <typename T>
+struct is_contiguous : std::bool_constant<std::ranges::contiguous_range<T>> {};
+#else
 template <typename T> struct is_contiguous : std::false_type {};
+#endif
 
 class context;
 template <typename OutputIt, typename Char> class generic_context;
