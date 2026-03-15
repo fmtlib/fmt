@@ -59,8 +59,6 @@
 #  endif
 #endif
 
-FMT_BEGIN_NAMESPACE
-
 namespace {
 #ifdef _WIN32
 // Return type of read and write functions.
@@ -78,6 +76,8 @@ using rwresult = ssize_t;
 inline auto convert_rwcount(size_t count) -> size_t { return count; }
 #endif
 }  // namespace
+
+FMT_BEGIN_NAMESPACE
 
 #ifdef _WIN32
 namespace detail {
