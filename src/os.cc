@@ -82,6 +82,8 @@ FMT_BEGIN_NAMESPACE
 #ifdef _WIN32
 namespace detail {
 
+namespace {
+
 class system_message {
   system_message(const system_message&) = delete;
   void operator=(const system_message&) = delete;
@@ -128,6 +130,8 @@ class utf8_system_category final : public std::error_category {
     return "unknown error";
   }
 };
+
+}  // namespace
 
 }  // namespace detail
 
