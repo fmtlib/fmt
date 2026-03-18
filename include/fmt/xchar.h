@@ -285,7 +285,7 @@ template <typename OutputIt, typename S, typename... T,
                             detail::is_exotic_char<Char>::value)>
 inline auto format_to_n(OutputIt out, size_t n, const S& fmt, T&&... args)
     -> format_to_n_result<OutputIt> {
-  return vformat_to_n(out, n, detail::to_string_view<Char>(fmt),
+  return vformat_to_n(out, n, fmt::basic_string_view<Char>(fmt),
                       fmt::make_format_args<buffered_context<Char>>(args...));
 }
 
