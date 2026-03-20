@@ -286,6 +286,17 @@ FMT_INLINE auto format_to_n(OutputIt out, size_t n, wformat_string<T...> fmt,
   return vformat_to_n(out, n, fmt.get(), fmt::make_wformat_args(args...));
 }
 
+template <typename OutputIt, typename S, typename... T,
+          typename Char = detail::format_string_char_t<S>,
+          FMT_ENABLE_IF(detail::is_output_iterator<OutputIt, Char>::value &&
+                        !std::is_same<Char, char>::value &&
+                        !std::is_same<Char, wchar_t>::value)>
+inline auto format_to_n(OutputIt out, size_t n, const S& fmt, T&&... args)
+    -> format_to_n_result<OutputIt> {
+  return vformat_to_n(out, n, fmt::basic_string_view<Char>(fmt),
+                      fmt::make_format_args<buffered_context<Char>>(args...));
+}
+
 template <typename S, typename... T,
           typename Char = detail::format_string_char_t<S>,
           FMT_ENABLE_IF(detail::is_exotic_char<Char>::value)>
