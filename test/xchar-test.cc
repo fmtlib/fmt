@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <complex>
 #include <cwchar>
+#include <string>
 #include <vector>
 
 #include "fmt/chrono.h"
@@ -97,11 +98,23 @@ TEST(xchar_test, compile_time_string) {
 #endif
 }
 
-TEST(xchar_test, format_to) {
-  auto buf = std::vector<wchar_t>();
-  fmt::format_to(std::back_inserter(buf), L"{}{}", 42, L'\0');
-  EXPECT_STREQ(buf.data(), L"42");
-}
+#define WLIT(x) L##x
+#define U16LIT(x) u##x
+#define U32LIT(x) U##x
+
+#define DEFINE_FORMAT_TO_TEST(SUITE, NAME, CHAR_TYPE, LIT)                 \
+  TEST(SUITE, NAME) {                                                      \
+    auto buf = std::vector<CHAR_TYPE>();                                   \
+    fmt::format_to(std::back_inserter(buf), LIT("{}{}"), 42, LIT('\0'));   \
+    auto expected = std::vector<CHAR_TYPE>{LIT('4'), LIT('2'), LIT('\0')}; \
+    EXPECT_EQ(buf, expected);                                              \
+  }
+
+DEFINE_FORMAT_TO_TEST(xchar_test, wchar_format_to, wchar_t, WLIT)
+DEFINE_FORMAT_TO_TEST(xchar_test, char16_format_to, char16_t, U16LIT)
+DEFINE_FORMAT_TO_TEST(xchar_test, char32_format_to, char32_t, U32LIT)
+
+#undef DEFINE_FORMAT_TO_TEST
 
 TEST(xchar_test, compile_time_string_format_to) {
   std::wstring ws;
@@ -126,27 +139,41 @@ TEST(xchar_test, format_as) {
   EXPECT_EQ(fmt::format(L"{}", test::struct_as_wstring_view()), L"foo");
 }
 
-TEST(format_test, wide_format_to_n) {
-  wchar_t buffer[4];
-  buffer[3] = L'x';
-  auto result = fmt::format_to_n(buffer, 3, L"{}", 12345);
-  EXPECT_EQ(5u, result.size);
-  EXPECT_EQ(buffer + 3, result.out);
-  EXPECT_EQ(L"123x", fmt::wstring_view(buffer, 4));
-  buffer[0] = L'x';
-  buffer[1] = L'x';
-  buffer[2] = L'x';
-  result = fmt::format_to_n(buffer, 3, L"{}", L'A');
-  EXPECT_EQ(1u, result.size);
-  EXPECT_EQ(buffer + 1, result.out);
-  EXPECT_EQ(L"Axxx", fmt::wstring_view(buffer, 4));
-  result = fmt::format_to_n(buffer, 3, L"{}{} ", L'B', L'C');
-  EXPECT_EQ(3u, result.size);
-  EXPECT_EQ(buffer + 3, result.out);
-  EXPECT_EQ(L"BC x", fmt::wstring_view(buffer, 4));
-}
+#define DEFINE_FORMAT_TO_N_TEST(SUITE, NAME, CHAR_TYPE, LIT)                \
+  TEST(SUITE, NAME) {                                                       \
+    CHAR_TYPE buffer[4];                                                    \
+    buffer[3] = LIT('x');                                                   \
+    auto result = fmt::format_to_n(buffer, 3, LIT("{}"), 12345);            \
+    EXPECT_EQ(5u, result.size);                                             \
+    EXPECT_EQ(buffer + 3, result.out);                                      \
+    EXPECT_EQ(std::basic_string<CHAR_TYPE>(LIT("123x")),                    \
+              std::basic_string<CHAR_TYPE>(buffer, 4));                     \
+    buffer[0] = LIT('x');                                                   \
+    buffer[1] = LIT('x');                                                   \
+    buffer[2] = LIT('x');                                                   \
+    result = fmt::format_to_n(buffer, 3, LIT("{}"), LIT('A'));              \
+    EXPECT_EQ(1u, result.size);                                             \
+    EXPECT_EQ(buffer + 1, result.out);                                      \
+    EXPECT_EQ(std::basic_string<CHAR_TYPE>(LIT("Axxx")),                    \
+              std::basic_string<CHAR_TYPE>(buffer, 4));                     \
+    result = fmt::format_to_n(buffer, 3, LIT("{}{} "), LIT('B'), LIT('C')); \
+    EXPECT_EQ(3u, result.size);                                             \
+    EXPECT_EQ(buffer + 3, result.out);                                      \
+    EXPECT_EQ(std::basic_string<CHAR_TYPE>(LIT("BC x")),                    \
+              std::basic_string<CHAR_TYPE>(buffer, 4));                     \
+  }
 
-TEST(format_test, wide_format_to_n_runtime) {
+DEFINE_FORMAT_TO_N_TEST(xchar_test, wchar_format_to_n, wchar_t, WLIT)
+DEFINE_FORMAT_TO_N_TEST(xchar_test, char16_format_to_n, char16_t, U16LIT)
+DEFINE_FORMAT_TO_N_TEST(xchar_test, char32_format_to_n, char32_t, U32LIT)
+
+#undef DEFINE_FORMAT_TO_N_TEST
+
+#undef U32LIT
+#undef U16LIT
+#undef WLIT
+
+TEST(xchar_test, wchar_format_to_n_runtime) {
   wchar_t buffer[4];
   buffer[3] = L'x';
   auto result = fmt::format_to_n(buffer, 3, fmt::runtime(L"{}"), 12345);
