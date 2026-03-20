@@ -181,11 +181,14 @@ typedef enum {} fmt_signed_char;
     (fmt_arg[]) { FMT_MAP(FMT_MAKE_ARG, ##__VA_ARGS__) }
 #  define FMT_EXPAND(v) v
 
-#  define fmt_format(buffer, size, fmt, ...)                              \
-    fmt_vformat((buffer), (size), (fmt),                                  \
-                FMT_EXPAND(FMT_VA_SELECT(FMT_MAKE_NULL, FMT_MAKE_ARGLIST, \
-                                         ##__VA_ARGS__)(__VA_ARGS__)),    \
-                FMT_NARG(, ##__VA_ARGS__))
+#  define FMT_FORMAT_ARGS(fmt, ...)                               \
+    (fmt),                                                        \
+        FMT_EXPAND(FMT_VA_SELECT(FMT_MAKE_NULL, FMT_MAKE_ARGLIST, \
+                                 ##__VA_ARGS__)(__VA_ARGS__)),    \
+        FMT_NARG(, ##__VA_ARGS__)
+
+#  define fmt_format(buffer, size, fmt, ...) \
+    fmt_vformat((buffer), (size), FMT_FORMAT_ARGS((fmt), ##__VA_ARGS__))
 
 #endif  // __cplusplus
 
