@@ -19,7 +19,7 @@ function (add_fmt_test name)
       set(PEDANTIC_COMPILE_FLAGS ${PEDANTIC_COMPILE_FLAGS} -Wno-weak-vtables)
     endif ()
   elseif (ADD_FMT_TEST_MODULE)
-    set(libs test-main)
+    set(libs test-main fmt-module)
   else ()
     set(libs test-main fmt)
   endif ()
@@ -80,10 +80,8 @@ target_compile_definitions(enforce-checks-test
 add_executable(perf-sanity perf-sanity.cc)
 target_link_libraries(perf-sanity fmt::fmt)
 
-if (FMT_MODULE)
-  # Module tests are currently disabled.
-  # add_fmt_test(module-test MODULE test-main.cc)
-  # target_link_libraries(module-test fmt-module)
+if (FMT_MODULE AND NOT MSVC)
+  add_fmt_test(module-test MODULE)
 endif ()
 
 if (NOT DEFINED MSVC_STATIC_RUNTIME AND MSVC)
