@@ -330,6 +330,7 @@ template <typename Char, typename GetArg>
 auto parse_header(const Char*& it, const Char* end, format_specs& specs,
                   GetArg get_arg) -> int {
   int arg_index = -1;
+  if (it == end) return arg_index;
   Char c = *it;
   if (c >= '0' && c <= '9') {
     // Parse an argument index (if followed by '$') or a width possibly
