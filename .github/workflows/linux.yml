@@ -33,6 +33,10 @@ jobs:
             std: 23
             install: sudo apt install g++-13
             shared: -DBUILD_SHARED_LIBS=ON
+          - cxx: g++-14
+            build_type: Release
+            std: 23
+            install: sudo apt install g++-14
           - cxx: clang++-11
             build_type: Debug
             std: 17
@@ -55,6 +59,11 @@ jobs:
             std: 20
             cxxflags: -stdlib=libc++
             install: sudo apt install libc++-14-dev libc++abi-14-dev
+          - cxx: clang++-20
+            build_type: Debug
+            std: 20
+            cxxflags: -stdlib=libc++
+            install: sudo apt install clang-20 libc++-20-dev libc++abi-20-dev
 
     steps:
     - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
@@ -131,7 +140,14 @@ jobs:
     - name: Add repositories for newer GCC
       run: |
         sudo apt-add-repository ppa:ubuntu-toolchain-r/test
-      if: ${{ matrix.cxx == 'g++-13' }}
+      if: ${{ matrix.cxx == 'g++-13' || matrix.cxx == 'g++-14' }}
+
+    - name: Install LLVM-20
+      run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 20
+      if: ${{ matrix.cxx == 'clang++-20' }}
 
     - name: Add Ubuntu mirrors
       run: |
@@ -164,6 +180,23 @@ jobs:
               -DCMAKE_VISIBILITY_INLINES_HIDDEN=ON \
               -DFMT_DOC=OFF -DFMT_PEDANTIC=ON -DFMT_WERROR=ON \
               ${{matrix.fuzz}} ${{matrix.shared}} $GITHUB_WORKSPACE
+      if: ${{ matrix.cxx != 'clang++-20' && matrix.cxx != 'g++-14' }}
+
+    - name: Configure-Modules
+      working-directory: ${{runner.workspace}}/build
+      env:
+        CXX: ${{matrix.cxx}}
+        CXXFLAGS: ${{matrix.cxxflags}}
+      run: |
+        cmake -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \
+              -DCMAKE_CXX_STANDARD=${{matrix.std}} \
+              -DCMAKE_CXX_EXTENSIONS=OFF \
+              -G Ninja \
+              -DCMAKE_CXX_VISIBILITY_PRESET=hidden \
+              -DCMAKE_VISIBILITY_INLINES_HIDDEN=ON \
+              -DFMT_DOC=OFF -DFMT_PEDANTIC=ON \
+              ${{matrix.fuzz}} ${{matrix.shared}} $GITHUB_WORKSPACE
+      if: ${{ matrix.cxx == 'clang++-20' || matrix.cxx == 'g++-14' }}
 
     - name: Build
       working-directory: ${{runner.workspace}}/build
