@@ -811,10 +811,10 @@ TEST(base_test, throw_in_buffer_dtor) {
   constexpr int buffer_size = 256;
 
   struct throwing_iterator {
-    int& count;
+    int* count;
 
     auto operator=(char) -> throwing_iterator& {
-      if (++count > buffer_size) throw std::exception();
+      if (++*count > buffer_size) throw std::exception();
       return *this;
     }
     auto operator*() -> throwing_iterator& { return *this; }
@@ -824,7 +824,7 @@ TEST(base_test, throw_in_buffer_dtor) {
 
   try {
     int count = 0;
-    fmt::format_to(throwing_iterator{count}, fmt::runtime("{:{}}{"), "",
+    fmt::format_to(throwing_iterator{&count}, fmt::runtime("{:{}}{"), "",
                    buffer_size + 1);
   } catch (const std::exception&) {
   }
