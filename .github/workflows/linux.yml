@@ -48,6 +48,8 @@ jobs:
           - cxx: clang++-14
             build_type: Debug
             std: 20
+            cxxflags: -fsanitize=address
+            cxxflags_extra: -fno-sanitize-recover=all -fno-omit-frame-pointer
           - cxx: clang++-14
             build_type: Debug
             std: 20
@@ -154,7 +156,7 @@ jobs:
       working-directory: ${{runner.workspace}}/build
       env:
         CXX: ${{matrix.cxx}}
-        CXXFLAGS: ${{matrix.cxxflags}}
+        CXXFLAGS: ${{matrix.cxxflags}} ${{matrix.cxxflags_extra}}
       run: |
         cmake -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \
               -DCMAKE_CXX_STANDARD=${{matrix.std}} \

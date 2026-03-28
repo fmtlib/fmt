@@ -313,7 +313,8 @@ TEST(printf_test, positional_precision) {
   EXPECT_EQ("Hell", test_sprintf("%2$.*1$s", 4, "Hello"));
   EXPECT_THROW_MSG(test_sprintf("%2$.*1$d", 5.0, 42), format_error,
                    "precision is not integer");
-  EXPECT_THROW_MSG(test_sprintf("%2$.*1$d"), format_error, "argument not found");
+  EXPECT_THROW_MSG(test_sprintf("%2$.*1$d"), format_error,
+                   "argument not found");
   EXPECT_THROW_MSG(test_sprintf("%2$.*1$d", big_num, 42), format_error,
                    "number is too big");
 }
@@ -322,7 +323,8 @@ TEST(printf_test, positional_width_and_precision) {
   EXPECT_EQ("  00042", test_sprintf("%3$*1$.*2$d", 7, 5, 42));
   EXPECT_EQ("     ab", test_sprintf("%3$*1$.*2$s", 7, 2, "abcdef"));
   EXPECT_EQ("  00042", test_sprintf("%3$*1$.*2$x", 7, 5, 0x42));
-  EXPECT_EQ("100.4400000", test_sprintf("%6$-*5$.*4$f%3$s%2$s%1$s", "", "", "", 7, 4, 100.44));
+  EXPECT_EQ("100.4400000",
+            test_sprintf("%6$-*5$.*4$f%3$s%2$s%1$s", "", "", "", 7, 4, 100.44));
 }
 
 template <typename T> struct make_signed {
@@ -554,4 +556,9 @@ TEST(printf_test, make_printf_args) {
   EXPECT_EQ(L"[42] something happened",
             fmt::vsprintf(fmt::basic_string_view<wchar_t>(L"[%d] %s happened"),
                           {fmt::make_printf_args<wchar_t>(n, L"something")}));
+}
+
+TEST(printf_test, trailing_percent_non_nul_terminated) {
+  auto p = std::unique_ptr<char>(new char('%'));
+  EXPECT_THROW(fmt::sprintf(fmt::string_view(p.get(), 1)), format_error);
 }
