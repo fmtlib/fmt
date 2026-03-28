@@ -3151,7 +3151,7 @@ FMT_CONSTEXPR20 void format_hexfloat(Float value, format_specs specs,
 
 // pre C++23 does not allow static constexpr inside of constexpr functions
 // so we must declare this outside of fractional_part_rounding_thresholds
-static constexpr uint32_t utf8_raw_rounding_thresholds[8] = {
+inline constexpr uint32_t rounding_thresholds[8] = {
     0x9999999au, 0x828f5c29u, 0x80418938u, 0x80068db9,
     0x8000a7c6u, 0x800010c7u, 0x800001aeu, 0x8000002bu};
 
@@ -3163,7 +3163,7 @@ constexpr auto fractional_part_rounding_thresholds(int index) -> uint32_t {
   // These are stored in a string literal because we cannot have static arrays
   // in constexpr functions and non-static ones are poorly optimized.
 
-  return utf8_raw_rounding_thresholds[index];
+  return rounding_thresholds[index];
 }
 
 template <typename Float>
