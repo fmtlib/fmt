@@ -548,6 +548,11 @@ FMT_CONSTEXPR20 auto fill_n(T* out, Size count, char value) -> T* {
   return out + count;
 }
 
+template <typename T, typename V, typename OutputIt>
+FMT_CONSTEXPR auto copy(basic_string_view<V> s, OutputIt out) -> OutputIt {
+  return copy<T>(s.begin(), s.end(), out);
+}
+
 template <typename OutChar, typename InputIt, typename OutputIt>
 FMT_CONSTEXPR FMT_NOINLINE auto copy_noinline(InputIt begin, InputIt end,
                                               OutputIt out) -> OutputIt {
