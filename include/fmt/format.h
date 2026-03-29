@@ -3161,8 +3161,32 @@ constexpr auto fractional_part_rounding_thresholds(int index) -> uint32_t {
   // It is equal to ceil(2^31 + 2^32/10^(k + 1)).
   // These are stored in a string literal because we cannot have static arrays
   // in constexpr functions and non-static ones are poorly optimized.
-  return U"\x9999999a\x828f5c29\x80418938\x80068db9\x8000a7c6\x800010c7"
-         U"\x800001ae\x8000002b"[index];
+
+  // while in C++23 we can use static constexpr, and in c++17 we can use out of
+  // function definition of inline constexpr, in C++11 we have to rely on string
+  // literals in order to avoid duplicating constant definitions across
+  // translation units.  We take the following uint32 array definition:
+  // {0x9999999au, 0x828f5c29u, 0x80418938u, 0x80068db9,
+  //  0x8000a7c6u, 0x800010c7u, 0x800001aeu, 0x8000002bu};
+  // and convert that into a series of char hexidecimal literals in a char
+  // array:
+  //     "\x99\x99\x99\x9a \x82\x8f\x5c\x29 \x80\x41\x89\x38 \x80\x06\x8d\xb9
+  //      \x80\x00\xa7\xc6 \x80\x00\x10\xc7 \x80\x00\x01\xae \x80\x00\x00\x2b"
+  // Then we split this up into four separate arrays of bytes, so the bytes can
+  // be properly recombined into endian-correct uint32_t.
+
+  const uint32_t byte_3 =
+      static_cast<uint8_t>("\x99\x82\x80\x80\x80\x80\x80\x80"[index]);
+  const uint32_t byte_2 =
+      static_cast<uint8_t>("\x99\x8f\x41\x06\x00\x00\x00\x00"[index]);
+  const uint32_t byte_1 =
+      static_cast<uint8_t>("\x99\x5c\x89\x8d\xa7\x10\x01\x00"[index]);
+  const uint32_t byte_0 =
+      static_cast<uint8_t>("\x9a\x29\x38\xb9\xc6\xc7\xae\x2b"[index]);
+
+  // recombine as uint32, this should eliminate endian issues, as now we are
+  // shifting bytes as uint32 which should match platform endian.
+  return byte_3 << 24u | byte_2 << 16u | byte_1 << 8u | byte_0;
 }
 
 template <typename Float>
