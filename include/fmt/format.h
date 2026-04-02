@@ -3162,26 +3162,22 @@ constexpr auto fractional_part_rounding_thresholds(int index) -> uint32_t {
   // literals in order to avoid duplicating constant definitions across
   // translation units.  We take the following uint32 array definition:
   // {0x9999999au, 0x828f5c29u, 0x80418938u, 0x80068db9,
-  //  0x8000a7c6u, 0x800010c7u, 0x800001aeu, 0x8000002bu};
-  // and convert that into a series of char hexidecimal literals in a char
+  //  0x8000a7c6u, 0x800010c7u, 0x800001aeu, 0x8000002b};
+  // and convert that into a series of char hexidecimal literals in a char16_t
   // array:
-  //     "\x99\x99\x99\x9a \x82\x8f\x5c\x29 \x80\x41\x89\x38 \x80\x06\x8d\xb9
-  //      \x80\x00\xa7\xc6 \x80\x00\x10\xc7 \x80\x00\x01\xae \x80\x00\x00\x2b"
-  // Then we split this up into four separate arrays of bytes, so the bytes can
-  // be properly recombined into endian-correct uint32_t.
+  // "\x9999\x999a \x828f\x5c29 \x8041\x8938 \x8006\x8db9
+  //  \x8000\xa7c6 \x8000\x10c7 \x8000\x01ae \x8000\x002b";
+  // Then we split this up into two separate arrays of char16_ts, so they can
+  // be properly recombined into uint32_t.
 
-  const uint32_t byte_3 =
-      static_cast<uint8_t>("\x99\x82\x80\x80\x80\x80\x80\x80"[index]);
-  const uint32_t byte_2 =
-      static_cast<uint8_t>("\x99\x8f\x41\x06\x00\x00\x00\x00"[index]);
-  const uint32_t byte_1 =
-      static_cast<uint8_t>("\x99\x5c\x89\x8d\xa7\x10\x01\x00"[index]);
-  const uint32_t byte_0 =
-      static_cast<uint8_t>("\x9a\x29\x38\xb9\xc6\xc7\xae\x2b"[index]);
+  const uint32_t high_bytes = static_cast<uint16_t>(
+      u"\x9999\x828f\x8041\x8006"
+      u"\x8000\x8000\x8000\x8000"[index]);
+  const uint32_t low_bytes = static_cast<uint16_t>(
+      u"\x999a\x5c29\x8938\x8db9"
+      u"\xa7c6\x10c7\x01ae\x002b"[index]);
 
-  // recombine as uint32, this should eliminate endian issues, as now we are
-  // shifting bytes as uint32 which should match platform endian.
-  return byte_3 << 24u | byte_2 << 16u | byte_1 << 8u | byte_0;
+  return high_bytes << 16u | low_bytes;
 }
 
 template <typename Float>
