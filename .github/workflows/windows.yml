@@ -7,6 +7,9 @@ permissions:
 
 jobs:
   build:
+    name: >-
+      ${{matrix.platform}} ${{matrix.toolset}} c++${{matrix.standard}}
+      ${{matrix.build_type}} ${{matrix.shared && 'Shared' || ''}}
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
