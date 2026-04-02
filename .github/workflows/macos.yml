@@ -7,6 +7,9 @@ permissions:
 
 jobs:
   build:
+    name: >-
+      c++${{matrix.std }} ${{ matrix.build_type}}
+      ${{matrix.shared && 'Shared' || ''}}
     strategy:
       matrix:
         os: [macos-14]
