@@ -1859,42 +1859,38 @@ class fixed_buffer_traits {
 };
 
 template <typename OutputIt, typename InputIt, typename = void>
-struct has_back_insert_iterator_container_append : std::false_type {};
+struct has_append : std::false_type {};
 
 template <typename OutputIt, typename InputIt>
-struct has_back_insert_iterator_container_append<
-    OutputIt, InputIt,
-    void_t<decltype(get_container(std::declval<OutputIt>())
-                        .append(std::declval<InputIt>(),
-                                std::declval<InputIt>()))>> : std::true_type {};
+struct has_append<OutputIt, InputIt,
+                  void_t<decltype(get_container(std::declval<OutputIt>())
+                                      .append(std::declval<InputIt>(),
+                                              std::declval<InputIt>()))>>
+    : std::true_type {};
 
-template <typename OutputIt, typename InputIt, typename = void>
-struct has_back_insert_iterator_container_insert_at_end : std::false_type {};
+template <typename OutputIt, typename T, typename = void>
+struct has_insert : std::false_type {};
 
-template <typename OutputIt, typename InputIt>
-struct has_back_insert_iterator_container_insert_at_end<
-    OutputIt, InputIt,
-    void_t<decltype(get_container(std::declval<OutputIt>())
-                        .insert(get_container(std::declval<OutputIt>()).end(),
-                                std::declval<InputIt>(),
-                                std::declval<InputIt>()))>> : std::true_type {};
+template <typename OutputIt, typename T>
+struct has_insert<OutputIt, T,
+                  void_t<decltype(get_container(std::declval<OutputIt>())
+                                      .insert({}, std::declval<T>(),
+                                              std::declval<T>()))>>
+    : std::true_type {};
 
 // An optimized version of std::copy with the output value type (T).
 template <typename T, typename InputIt, typename OutputIt,
-          FMT_ENABLE_IF(is_back_insert_iterator<OutputIt>::value&&
-                            has_back_insert_iterator_container_append<
-                                OutputIt, InputIt>::value)>
+          FMT_ENABLE_IF(is_back_insert_iterator<OutputIt>() &&
+                        has_append<OutputIt, InputIt>())>
 FMT_CONSTEXPR auto copy(InputIt begin, InputIt end, OutputIt out) -> OutputIt {
   get_container(out).append(begin, end);
   return out;
 }
 
 template <typename T, typename InputIt, typename OutputIt,
-          FMT_ENABLE_IF(is_back_insert_iterator<OutputIt>::value &&
-                        !has_back_insert_iterator_container_append<
-                            OutputIt, InputIt>::value &&
-                        has_back_insert_iterator_container_insert_at_end<
-                            OutputIt, InputIt>::value)>
+          FMT_ENABLE_IF(is_back_insert_iterator<OutputIt>() &&
+                        !has_append<OutputIt, InputIt>() &&
+                        has_insert<OutputIt, InputIt>())>
 FMT_CONSTEXPR auto copy(InputIt begin, InputIt end, OutputIt out) -> OutputIt {
   auto& c = get_container(out);
   c.insert(c.end(), begin, end);
@@ -1902,19 +1898,12 @@ FMT_CONSTEXPR auto copy(InputIt begin, InputIt end, OutputIt out) -> OutputIt {
 }
 
 template <typename T, typename InputIt, typename OutputIt,
-          FMT_ENABLE_IF(!(is_back_insert_iterator<OutputIt>::value &&
-                          (has_back_insert_iterator_container_append<
-                               OutputIt, InputIt>::value ||
-                           has_back_insert_iterator_container_insert_at_end<
-                               OutputIt, InputIt>::value)))>
+          FMT_ENABLE_IF(!is_back_insert_iterator<OutputIt>() ||
+                        !(has_append<OutputIt, InputIt>() ||
+                          has_insert<OutputIt, InputIt>()))>
 FMT_CONSTEXPR auto copy(InputIt begin, InputIt end, OutputIt out) -> OutputIt {
   while (begin != end) *out++ = static_cast<T>(*begin++);
   return out;
-}
-
-template <typename T, typename V, typename OutputIt>
-FMT_CONSTEXPR auto copy(basic_string_view<V> s, OutputIt out) -> OutputIt {
-  return copy<T>(s.begin(), s.end(), out);
 }
 
 // A buffer that writes to an output iterator when flushed.
@@ -1934,12 +1923,7 @@ class iterator_buffer : public Traits, public buffer<T> {
     this->clear();
     const T* begin = data_;
     const T* end = begin + this->limit(size);
-#if defined(__cpp_if_constexpr)
-    if constexpr (std::is_move_assignable<OutputIt>::value)
-      out_ = copy<T>(begin, end, out_);
-    else
-#endif
-      while (begin != end) *out_++ = *begin++;
+    out_ = copy<T>(begin, end, out_);
   }
 
  public:
