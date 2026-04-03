@@ -7,7 +7,6 @@
 
 #include "fmt/os.h"
 
-#include <cstdlib>  // std::exit
 #include <cstring>
 #include <memory>
 #include <thread>

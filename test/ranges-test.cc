@@ -10,7 +10,6 @@
 #include <array>
 #include <list>
 #include <map>
-#include <numeric>
 #include <queue>
 #include <stack>
 #include <string>

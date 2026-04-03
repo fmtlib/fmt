@@ -9,7 +9,6 @@
 
 #include <cctype>
 #include <climits>
-#include <cstring>
 
 #include "fmt/xchar.h"  // DEPRECATED!
 #include "gtest-extra.h"
