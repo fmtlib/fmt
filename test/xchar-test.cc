@@ -7,9 +7,7 @@
 
 #include "fmt/xchar.h"
 
-#include <algorithm>
 #include <complex>
-#include <cwchar>
 #include <vector>
 
 #include "fmt/chrono.h"

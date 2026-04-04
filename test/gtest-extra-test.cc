@@ -9,7 +9,6 @@
 
 #include <gtest/gtest-spi.h>
 
-#include <cstring>
 #include <memory>
 #include <stdexcept>
 

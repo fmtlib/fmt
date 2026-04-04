@@ -5,7 +5,6 @@
 //
 // For the license information refer to format.h.
 
-#include <algorithm>
 #include <cstring>
 
 // clang-format off
