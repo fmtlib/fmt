@@ -1872,10 +1872,10 @@ template <typename OutputIt, typename T, typename = void>
 struct has_insert : std::false_type {};
 
 template <typename OutputIt, typename T>
-struct has_insert<OutputIt, T,
-                  void_t<decltype(get_container(std::declval<OutputIt>())
-                                      .insert({}, std::declval<T>(),
-                                              std::declval<T>()))>>
+struct has_insert<
+    OutputIt, T,
+    void_t<decltype(get_container(std::declval<OutputIt>())
+                        .insert({}, std::declval<T>(), std::declval<T>()))>>
     : std::true_type {};
 
 // An optimized version of std::copy with the output value type (T).
