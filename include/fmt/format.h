@@ -3175,10 +3175,10 @@ constexpr auto fractional_part_rounding_thresholds(int index) -> uint32_t {
   // Then we split this up into two separate arrays of char16_ts, so they can
   // be properly recombined into uint32_t.
 
-  return static_cast<uint16_t>(
+  return static_cast<uint32_t>(
              u"\x9999\x828f\x8041\x8006\x8000\x8000\x8000\x8000"[index])
              << 16u |
-         static_cast<uint16_t>(
+         static_cast<uint32_t>(
              u"\x999a\x5c29\x8938\x8db9\xa7c6\x10c7\x01ae\x002b"[index]);
 }
 
