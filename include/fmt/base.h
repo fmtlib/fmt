@@ -2690,16 +2690,16 @@ template <typename... T> struct fstring {
     static_assert(count<(is_view<remove_cvref_t<T>>::value &&
                          std::is_reference<T>::value)...>() == 0,
                   "passing views as lvalues is disallowed");
-    if (FMT_USE_CONSTEVAL) parse_format_string<char>(s, checker(s, arg_pack()));
+    if (FMT_USE_CONSTEVAL)
+      parse_format_string<char>(str, checker(str, arg_pack()));
     constexpr bool unused = detail::enforce_compile_checks<sizeof(s) != 0>();
     (void)unused;
   }
   template <typename S,
             FMT_ENABLE_IF(std::is_convertible<const S&, string_view>::value)>
   FMT_CONSTEVAL FMT_ALWAYS_INLINE fstring(const S& s) : str(s) {
-    auto sv = string_view(str);
     if (FMT_USE_CONSTEVAL)
-      detail::parse_format_string<char>(sv, checker(sv, arg_pack()));
+      detail::parse_format_string<char>(str, checker(str, arg_pack()));
     constexpr bool unused = detail::enforce_compile_checks<sizeof(s) != 0>();
     (void)unused;
   }
