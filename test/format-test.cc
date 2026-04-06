@@ -15,17 +15,16 @@
 
 #include <stdint.h>  // uint32_t
 
-#include <cfenv>               // fegetexceptflag and FE_ALL_EXCEPT
-#include <climits>             // INT_MAX
-#include <cmath>               // std::signbit
-#include <condition_variable>  // std::condition_variable
-#include <cstring>             // std::strlen
-#include <iterator>            // std::back_inserter
-#include <list>                // std::list
-#include <mutex>               // std::mutex
-#include <string>              // std::string
-#include <thread>              // std::thread
-#include <type_traits>         // std::is_default_constructible
+#include <cfenv>        // fegetexceptflag and FE_ALL_EXCEPT
+#include <climits>      // INT_MAX
+#include <cmath>        // std::signbit
+#include <cstring>      // std::strlen
+#include <iterator>     // std::back_inserter
+#include <list>         // std::list
+#include <mutex>        // std::mutex
+#include <string>       // std::string
+#include <thread>       // std::thread
+#include <type_traits>  // std::is_default_constructible
 #if FMT_CPLUSPLUS > 201703L && FMT_HAS_INCLUDE(<version>)
 #  include <version>
 #endif

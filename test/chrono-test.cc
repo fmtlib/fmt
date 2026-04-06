@@ -7,7 +7,6 @@
 
 #include "fmt/chrono.h"
 
-#include <algorithm>
 #include <ctime>
 #include <vector>
 

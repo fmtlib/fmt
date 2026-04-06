@@ -7,8 +7,6 @@
 
 #include "scan.h"
 
-#include <time.h>
-
 #include <climits>
 #include <thread>
 
