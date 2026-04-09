@@ -308,7 +308,8 @@ else ()
   message(WARNING "Feature cxx_std_11 is unknown for the CXX compiler")
 endif ()
 
-check_cxx_source_compiles([[
+check_cxx_source_compiles(
+  [[
     #include <stdio.h>
     int main() {
         // Use stdout just to prove we can pass a FILE* to it
@@ -316,9 +317,11 @@ check_cxx_source_compiles([[
         funlockfile(stdout);
         return 0;
     }
-]] HAVE_FLOCKFILE_COMPILE_TEST)
-target_compile_definitions(fmt PRIVATE
-  FMT_HAVE_FLOCKFILE_COMPILE_TEST=$<BOOL:HAVE_FLOCKFILE_COMPILE_TEST>)
+]]
+  HAVE_FLOCKFILE_COMPILE_TEST)
+target_compile_definitions(
+  fmt
+  PRIVATE FMT_HAVE_FLOCKFILE_COMPILE_TEST=$<BOOL:HAVE_FLOCKFILE_COMPILE_TEST>)
 
 # Set FMT_LIB_NAME for pkg-config fmt.pc. We cannot use the OUTPUT_NAME target
 # property because it's not set by default.
