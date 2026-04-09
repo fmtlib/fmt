@@ -1477,10 +1477,10 @@ template <typename T> struct span {
 };
 
 template <typename F> auto flockfile(F* f) -> decltype(_lock_file(f)) {
-  _lock_file(f);
+  return _lock_file(f);
 }
 template <typename F> auto funlockfile(F* f) -> decltype(_unlock_file(f)) {
-  _unlock_file(f);
+  return _unlock_file(f);
 }
 
 #ifndef getc_unlocked
