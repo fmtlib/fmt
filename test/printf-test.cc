@@ -46,6 +46,14 @@ auto test_sprintf(fmt::basic_string_view<wchar_t> format, const Args&... args)
 
 TEST(printf_test, no_args) { EXPECT_EQ("test", test_sprintf("test")); }
 
+TEST(printf_test, trailing_percent) {
+  EXPECT_THROW_MSG(test_sprintf("%"), format_error, "invalid format string");
+  EXPECT_THROW_MSG(test_sprintf("hello%"), format_error,
+                   "invalid format string");
+  EXPECT_THROW_MSG(test_sprintf("%1$d%", 1, 2), format_error,
+                   "invalid format string");
+}
+
 TEST(printf_test, escape) {
   EXPECT_EQ("%", test_sprintf("%%"));
   EXPECT_EQ("before %", test_sprintf("before %%"));
@@ -76,8 +84,6 @@ TEST(printf_test, number_is_too_big_in_arg_index) {
 }
 
 TEST(printf_test, switch_arg_indexing) {
-  EXPECT_THROW_MSG(test_sprintf("%1$d%", 1, 2), format_error,
-                   "cannot switch from manual to automatic argument indexing");
   EXPECT_THROW_MSG(test_sprintf(format("%1$d%{}d", big_num), 1, 2),
                    format_error, "number is too big");
   EXPECT_THROW_MSG(test_sprintf("%1$d%d", 1, 2), format_error,

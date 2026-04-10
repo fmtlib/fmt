@@ -438,6 +438,8 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
     }
     write(out, basic_string_view<Char>(start, to_unsigned(it - 1 - start)));
 
+    if (it == end) report_error("invalid format string");
+
     auto specs = format_specs();
     specs.set_align(align::right);
 
