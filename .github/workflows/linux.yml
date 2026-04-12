@@ -37,10 +37,10 @@ jobs:
             std: 23
             install: sudo apt install g++-13
             shared: -DBUILD_SHARED_LIBS=ON
-          - cxx: g++-14
+          - cxx: g++-15
             build_type: Release
             std: 23
-            install: sudo apt install g++-14
+            install: sudo apt install g++-15
             gen: Ninja
           - cxx: clang++-3.6
           - cxx: clang++-11
@@ -147,7 +147,7 @@ jobs:
     - name: Add repositories for newer GCC
       run: |
         sudo apt-add-repository ppa:ubuntu-toolchain-r/test
-      if: ${{ matrix.cxx == 'g++-13' || matrix.cxx == 'g++-14' }}
+      if: ${{ matrix.cxx == 'g++-13' || matrix.cxx == 'g++-15' }}
 
     - name: Install LLVM-20
       run: |
@@ -200,6 +200,6 @@ jobs:
 
     - name: Test
       working-directory: ${{runner.workspace}}/build
-      run: ctest -C ${{matrix.build_type}}
+      run: ctest -C ${{matrix.build_type}} -V
       env:
         CTEST_OUTPUT_ON_FAILURE: True
