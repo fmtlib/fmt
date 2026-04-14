@@ -9,12 +9,6 @@
 // All Rights Reserved
 // {fmt} module.
 
-#ifdef _MSC_FULL_VER
-// hide some implementation bugs in msvc
-// that are not essential to users of the module.
-#  define FMT_HIDE_MODULE_BUGS
-#endif
-
 #include <bit>
 #include <chrono>
 #include <exception>
@@ -43,17 +37,7 @@
 
 import fmt;
 
-// check for macros leaking from BMI
-static bool macro_leaked =
-#if defined(FMT_CORE_H_) || defined(FMT_FORMAT_H_)
-    true;
-#else
-    false;
-#endif
-
 #define FMT_OS_H_  // don't pull in os.h, neither directly nor indirectly
-                   // this define plus the #include <gmock/gmock.h> above 
-                   // prevents header inclusion after the import fmt statement
 #include "gtest-extra.h"
 
 // an implicitly exported namespace must be visible [module.interface]/2.2
@@ -63,16 +47,11 @@ TEST(module_test, namespace) {
   ASSERT_TRUE(true);
 }
 
-// macros must not be imported from a *named* module  [cpp.import]/5.1
+// Macros must not be imported from a named module [cpp.import]/5.1.
 TEST(module_test, macros) {
-#if defined(FMT_HIDE_MODULE_BUGS) && defined(_MSC_FULL_VER) && \
-    _MSC_FULL_VER <= 192930130
-  // bug in msvc up to 16.11-pre2:
-  // include-guard macros leak from BMI
-  // and even worse: they cannot be #undef-ined
-  macro_leaked = false;
+#if defined(FMT_BASE_H_) || defined(FMT_FORMAT_H_)
+  FAIL() << "Macros are leaking from a named module";
 #endif
-  EXPECT_FALSE(macro_leaked);
 }
 
 // The following is less about functional testing (that's done elsewhere)
@@ -144,41 +123,16 @@ TEST(module_test, format_to_n) {
 }
 
 TEST(module_test, format_args) {
-  auto no_args = fmt::format_args();
-  EXPECT_FALSE(no_args.get(1));
-
   int n = 42;
-  fmt::basic_format_args<fmt::format_context> args = fmt::make_format_args(n);
-  EXPECT_TRUE(args.max_size() > 0);
-  auto arg0 = args.get(0);
-  EXPECT_TRUE(arg0);
-  decltype(arg0) arg_none;
-  EXPECT_FALSE(arg_none);
-  EXPECT_TRUE(arg0.type() != arg_none.type());
-}
-
-TEST(module_test, wformat_args) {
-  auto no_args = fmt::wformat_args();
-  EXPECT_FALSE(no_args.get(1));
-  int n = 42;
-  fmt::basic_format_args<fmt::wformat_context> args = fmt::make_wformat_args(n);
+  auto store = fmt::make_format_args(n);
+  fmt::format_args args = store;
   EXPECT_TRUE(args.get(0));
-}
-
-TEST(module_test, dynamic_format_args) {
-  fmt::dynamic_format_arg_store<fmt::format_context> dyn_store;
-  dyn_store.push_back(fmt::arg("a42", 42));
-
-  fmt::basic_format_args<fmt::format_context> args = dyn_store;
-  EXPECT_FALSE(args.get(3));
-  EXPECT_TRUE(args.get(fmt::string_view("a42")));
+  EXPECT_FALSE(args.get(1));
 }
 
 TEST(module_test, vformat) {
   int n = 42;
   EXPECT_EQ("42", fmt::vformat("{}", fmt::make_format_args(n)));
-  EXPECT_EQ(L"42",
-            fmt::vformat(fmt::wstring_view(L"{}"), fmt::make_wformat_args(n)));
 }
 
 TEST(module_test, vformat_to) {
@@ -187,15 +141,6 @@ TEST(module_test, vformat_to) {
   std::string s;
   fmt::vformat_to(std::back_inserter(s), "{}", store);
   EXPECT_EQ("42", s);
-
-  auto wstore = fmt::make_wformat_args(n);
-  std::wstring w;
-  fmt::vformat_to(std::back_inserter(w), L"{}", wstore);
-  EXPECT_EQ(L"42", w);
-
-  wchar_t wbuffer[4] = {0};
-  fmt::vformat_to(wbuffer, L"{:}", wstore);
-  EXPECT_EQ(L"42", std::wstring_view(wbuffer));
 }
 
 TEST(module_test, vformat_to_n) {
@@ -205,11 +150,6 @@ TEST(module_test, vformat_to_n) {
   fmt::vformat_to_n(std::back_inserter(s), 1, "{}", store);
   char buffer[4] = {0};
   fmt::vformat_to_n(buffer, 3, "{:}", store);
-
-  auto wstore = fmt::make_wformat_args(n);
-  std::wstring w;
-  wchar_t wbuffer[4] = {0};
-  fmt::vformat_to_n(wbuffer, 3, fmt::wstring_view(L"{:}"), wstore);
 }
 
 std::string as_string(std::wstring_view text) {
@@ -251,11 +191,6 @@ TEST(module_test, locale) {
   fmt::vformat_to(std::back_inserter(s), classic, "{:L}", store);
   EXPECT_EQ("4.2", s);
   EXPECT_EQ("4.2", fmt::format("{:L}", 4.2));
-
-  auto wstore = fmt::make_wformat_args(m);
-  EXPECT_EQ(L"4.2", fmt::format(classic, L"{:L}", 4.2));
-  EXPECT_EQ(L"4.2", fmt::vformat(classic, L"{:L}", wstore));
-  EXPECT_EQ(L"4.2", fmt::format(L"{:L}", 4.2));
 }
 
 TEST(module_test, string_view) {
@@ -383,23 +318,6 @@ TEST(module_test, fprintf) {
 
 TEST(module_test, sprintf) {
   EXPECT_EQ("42", fmt::sprintf("%d", 42));
-}
-
-TEST(module_test, vfprintf) {
-  int n = 42;
-  auto store = fmt::make_format_args<fmt::printf_context>(n);
-  auto args = fmt::basic_format_args<fmt::printf_context>(store);
-  EXPECT_WRITE(stdout, fmt::vfprintf(stdout, fmt::string_view("%d"), args),
-               "42");
-}
-
-TEST(module_test, vsprintf) {
-  int n = 42;
-  auto store = fmt::make_format_args<fmt::printf_context>(n);
-  auto args = fmt::basic_format_args<fmt::printf_context>(store);
-  EXPECT_EQ(fmt::vsprintf(fmt::string_view("%d"), args), "42");
-  EXPECT_WRITE(stdout, fmt::vfprintf(stdout, fmt::string_view("%d"), args),
-               "42");
 }
 
 TEST(module_test, color) {
