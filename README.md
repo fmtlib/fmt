@@ -38,7 +38,7 @@ Try {fmt} in [Compiler Explorer](https://godbolt.org/z/8Mx1EW73v).
   [Dragonbox](https://github.com/jk-jeon/dragonbox) algorithm
 - Portable Unicode support
 - Safe [printf
-  implementation](https://fmt.dev/latest/api/#printf-formatting)
+  implementation](https://fmt.dev/latest/api/#printf-api)
   including the POSIX extension for positional arguments
 - Extensibility: [support for user-defined
   types](https://fmt.dev/latest/api/#formatting-user-defined-types)
