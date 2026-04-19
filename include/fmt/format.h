@@ -3885,6 +3885,9 @@ template <typename OutputIt, typename Char> class generic_context {
   constexpr auto arg_id(basic_string_view<Char> name) const -> int {
     return args_.get_id(name);
   }
+  auto args() const -> const basic_format_args<generic_context>& {
+    return args_;
+  }
 
   constexpr auto out() const -> iterator { return out_; }
 
@@ -4085,20 +4088,31 @@ template <typename T> struct formatter<group_digits_view<T>> : formatter<T> {
   }
 };
 
-template <typename T, typename Char> struct nested_view {
+template <typename T, typename Char, typename OuterContext = context>
+struct nested_view {
   const formatter<T, Char>* fmt;
   const T* value;
+  // Args and locale of the outer format call so that dynamic width/precision
+  // arg indices are resolved against the user's original argument list rather
+  // than the arguments of the intermediate format_to invocation.
+  basic_format_args<OuterContext> outer_args;
+  locale_ref outer_loc;
 };
 
-template <typename T, typename Char>
-struct formatter<nested_view<T, Char>, Char> {
+template <typename T, typename Char, typename OuterContext>
+struct formatter<nested_view<T, Char, OuterContext>, Char> {
   FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     return ctx.begin();
   }
   template <typename FormatContext>
-  auto format(nested_view<T, Char> view, FormatContext& ctx) const
+  auto format(nested_view<T, Char, OuterContext> view, FormatContext& ctx) const
       -> decltype(ctx.out()) {
-    return view.fmt->format(*view.value, ctx);
+    // Delegate to the inner formatter using a context that carries the outer
+    // format args so dynamic specs like "{:.{}}" can be resolved.
+    auto outer_ctx = OuterContext(ctx.out(), view.outer_args, view.outer_loc);
+    auto it = view.fmt->format(*view.value, outer_ctx);
+    ctx.advance_to(it);
+    return ctx.out();
   }
 };
 
@@ -4141,7 +4155,14 @@ template <typename T, typename Char = char> struct nested_formatter {
   }
 
   auto nested(const T& value) const -> nested_view<T, Char> {
-    return nested_view<T, Char>{&formatter_, &value};
+    return nested_view<T, Char>{&formatter_, &value, {}, {}};
+  }
+
+  template <typename FormatContext>
+  auto nested(const T& value, FormatContext& ctx) const
+      -> nested_view<T, Char, FormatContext> {
+    return nested_view<T, Char, FormatContext>{
+        &formatter_, &value, ctx.args(), ctx.locale()};
   }
 };
 
