@@ -31,12 +31,12 @@ extern "C" int fmt_vformat(char* buffer, size_t size, const char* fmt,
     default:          return fmt_error_invalid_arg;
     }
   }
-  try {
+  FMT_TRY {
     auto result = fmt::vformat_to_n(
         buffer, size, fmt,
         fmt::format_args(format_args, static_cast<int>(num_args)));
     return static_cast<int>(result.size);
-  } catch (...) {
   }
+  FMT_CATCH(...) {}
   return fmt_error;
 }
