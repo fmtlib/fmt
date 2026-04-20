@@ -3,7 +3,7 @@
 [![image](https://github.com/fmtlib/fmt/actions/workflows/linux.yml/badge.svg?branch=master)](https://github.com/fmtlib/fmt/actions?query=workflow%3Alinux)
 [![image](https://github.com/fmtlib/fmt/actions/workflows/macos.yml/badge.svg?branch=master)](https://github.com/fmtlib/fmt/actions?query=workflow%3Amacos)
 [![image](https://github.com/fmtlib/fmt/actions/workflows/windows.yml/badge.svg?branch=master)](https://github.com/fmtlib/fmt/actions?query=workflow%3Awindows)
-[![fmt is continuously fuzzed at oss-fuzz](https://oss-fuzz-build-logs.storage.googleapis.com/badges/fmt.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?\%0Acolspec=ID%20Type%20Component%20Status%20Proj%20Reported%20Owner%20\%0ASummary&q=proj%3Dfmt&can=1)
+[![fmt is continuously fuzzed at oss-fuzz](https://oss-fuzz-build-logs.storage.googleapis.com/badges/fmt.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?colspec=ID%20Type%20Component%20Status%20Proj%20Reported%20Owner%20Summary&q=proj%3Dfmt&can=1)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/8880/badge)](https://www.bestpractices.dev/projects/8880)
 [![image](https://api.securityscorecards.dev/projects/github.com/fmtlib/fmt/badge)](https://securityscorecards.dev/viewer/?uri=github.com/fmtlib/fmt)
 [![Ask questions at StackOverflow with the tag fmt](https://img.shields.io/badge/stackoverflow-fmt-blue.svg)](https://stackoverflow.com/questions/tagged/fmt)
@@ -170,7 +170,7 @@ int main() {
 
 Output on a modern terminal with Unicode support:
 
-![image](https://github.com/fmtlib/fmt/assets/%0A576385/2a93c904-d6fa-4aa6-b453-2618e1c327d7)
+![image](https://github.com/fmtlib/fmt/assets/576385/2a93c904-d6fa-4aa6-b453-2618e1c327d7)
 
 # Benchmarks
 
