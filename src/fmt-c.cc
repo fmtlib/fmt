@@ -36,7 +36,7 @@ extern "C" int fmt_vformat(char* buffer, size_t size, const char* fmt,
         buffer, size, fmt,
         fmt::format_args(format_args, static_cast<int>(num_args)));
     return static_cast<int>(result.size);
-  } FMT_CATCH (...) {
   }
+  FMT_CATCH(...) {}
   return fmt_error;
 }
