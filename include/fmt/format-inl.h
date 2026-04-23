@@ -1490,7 +1490,11 @@ template <typename F> auto getc_unlocked(F* f) -> decltype(_fgetc_nolock(f)) {
 #endif
 
 #ifndef FMT_USE_FLOCKFILE
-#  define FMT_USE_FLOCKFILE 1
+#  ifdef FMT_HAVE_FLOCKFILE_COMPILE_TEST
+#    define FMT_USE_FLOCKFILE FMT_HAVE_FLOCKFILE_COMPILE_TEST
+#  else
+#    define FMT_USE_FLOCKFILE 1
+#  endif
 #endif
 
 template <typename F = FILE, typename Enable = void>
