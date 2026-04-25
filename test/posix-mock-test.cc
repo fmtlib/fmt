@@ -15,19 +15,19 @@
 #include <errno.h>
 #include <fcntl.h>
 
-#include <climits>
 #include <memory>
 
 #include "../src/os.cc"
 
 #ifdef _WIN32
 #  include <io.h>
+
+#  include <climits>  // UINT_MAX
 #  undef max
 #endif
 
 #include "gmock/gmock.h"
 #include "gtest-extra.h"
-#include "util.h"
 
 using fmt::buffered_file;
 

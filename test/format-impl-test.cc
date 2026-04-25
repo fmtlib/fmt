@@ -13,7 +13,6 @@
 
 #include "fmt/format.h"
 #include "gmock/gmock.h"
-#include "util.h"
 
 using fmt::detail::bigint;
 using fmt::detail::fp;
