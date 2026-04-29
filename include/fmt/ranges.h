@@ -69,11 +69,12 @@ struct has_member_fn_begin_end_t<T, void_t<decltype(*std::declval<T>().begin()),
 
 // Member function overloads.
 template <typename T>
-auto range_begin(T&& rng) -> decltype(static_cast<T&&>(rng).begin()) {
+FMT_CONSTEXPR auto range_begin(T&& rng)
+    -> decltype(static_cast<T&&>(rng).begin()) {
   return static_cast<T&&>(rng).begin();
 }
 template <typename T>
-auto range_end(T&& rng) -> decltype(static_cast<T&&>(rng).end()) {
+FMT_CONSTEXPR auto range_end(T&& rng) -> decltype(static_cast<T&&>(rng).end()) {
   return static_cast<T&&>(rng).end();
 }
 
@@ -460,7 +461,8 @@ struct range_formatter<
   }
 
   template <typename R, typename FormatContext>
-  auto format(R&& range, FormatContext& ctx) const -> decltype(ctx.out()) {
+  FMT_CONSTEXPR auto format(R&& range, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
     auto out = ctx.out();
     auto it = detail::range_begin(range);
     auto end = detail::range_end(range);
@@ -516,7 +518,7 @@ struct formatter<
   }
 
   template <typename FormatContext>
-  auto format(range_type& range, FormatContext& ctx) const
+  FMT_CONSTEXPR auto format(range_type& range, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     return range_formatter_.format(range, ctx);
   }
@@ -625,7 +627,7 @@ struct join_view : detail::view {
   Sentinel end;
   basic_string_view<Char> sep;
 
-  join_view(It b, Sentinel e, basic_string_view<Char> s)
+  FMT_CONSTEXPR join_view(It b, Sentinel e, basic_string_view<Char> s)
       : begin(std::move(b)), end(e), sep(s) {}
 };
 
@@ -652,7 +654,8 @@ struct formatter<join_view<It, Sentinel, Char>, Char> {
   }
 
   template <typename FormatContext>
-  auto format(view& value, FormatContext& ctx) const -> decltype(ctx.out()) {
+  FMT_CONSTEXPR auto format(view& value, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
     using iter =
         conditional_t<std::is_copy_constructible<view>::value, It, It&>;
     iter it = value.begin;
@@ -675,7 +678,7 @@ template <typename Tuple, typename Char> struct tuple_join_view : detail::view {
   const Tuple& tuple;
   basic_string_view<Char> sep;
 
-  tuple_join_view(const Tuple& t, basic_string_view<Char> s)
+  FMT_CONSTEXPR tuple_join_view(const Tuple& t, basic_string_view<Char> s)
       : tuple(t), sep{s} {}
 };
 
@@ -694,8 +697,9 @@ struct formatter<tuple_join_view<Tuple, Char>, Char,
   }
 
   template <typename FormatContext>
-  auto format(const tuple_join_view<Tuple, Char>& value,
-              FormatContext& ctx) const -> typename FormatContext::iterator {
+  FMT_CONSTEXPR auto format(const tuple_join_view<Tuple, Char>& value,
+                            FormatContext& ctx) const ->
+      typename FormatContext::iterator {
     return do_format(value, ctx, std::tuple_size<Tuple>());
   }
 
@@ -726,15 +730,17 @@ struct formatter<tuple_join_view<Tuple, Char>, Char,
   }
 
   template <typename FormatContext>
-  auto do_format(const tuple_join_view<Tuple, Char>&, FormatContext& ctx,
-                 std::integral_constant<size_t, 0>) const ->
+  FMT_CONSTEXPR auto do_format(const tuple_join_view<Tuple, Char>&,
+                               FormatContext& ctx,
+                               std::integral_constant<size_t, 0>) const ->
       typename FormatContext::iterator {
     return ctx.out();
   }
 
   template <typename FormatContext, size_t N>
-  auto do_format(const tuple_join_view<Tuple, Char>& value, FormatContext& ctx,
-                 std::integral_constant<size_t, N>) const ->
+  FMT_CONSTEXPR auto do_format(const tuple_join_view<Tuple, Char>& value,
+                               FormatContext& ctx,
+                               std::integral_constant<size_t, N>) const ->
       typename FormatContext::iterator {
     using std::get;
     auto out =
@@ -813,7 +819,7 @@ auto join(It begin, Sentinel end, string_view sep) -> join_view<It, Sentinel> {
  *     // Output: 01, 02, 03
  */
 template <typename Range, FMT_ENABLE_IF(!is_tuple_like<Range>::value)>
-auto join(Range&& r, string_view sep)
+FMT_CONSTEXPR auto join(Range&& r, string_view sep)
     -> join_view<decltype(detail::range_begin(r)),
                  decltype(detail::range_end(r))> {
   return {detail::range_begin(r), detail::range_end(r), sep};
