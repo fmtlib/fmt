@@ -13,7 +13,9 @@
 #include <vector>
 
 #include "fmt/chrono.h"
+#include "fmt/color.h"
 #include "fmt/ranges.h"
+#include "fmt/std.h"
 #include "gmock/gmock.h"
 #include "gtest-extra.h"
 
@@ -86,7 +88,6 @@ TEST(compile_test, format_escape) {
   EXPECT_EQ("\"abc\"", fmt::format(FMT_COMPILE("{0:<5?}"), "abc"));
   EXPECT_EQ("\"abc\"  ", fmt::format(FMT_COMPILE("{0:<7?}"), "abc"));
 }
-
 
 TEST(compile_test, format_specs) {
   EXPECT_EQ("42", fmt::format(FMT_COMPILE("{:x}"), 0x42));
@@ -224,6 +225,19 @@ TEST(compile_test, constexpr_formatted_size) {
   FMT_CONSTEXPR20 size_t str_size =
       fmt::formatted_size(FMT_COMPILE("{:s}"), "abc");
   EXPECT_EQ(str_size, 3);
+  FMT_CONSTEXPR20 size_t tuple_size = fmt::formatted_size(
+      FMT_COMPILE("{}"), fmt::join(std::tuple(1, 2, 3), ","));
+  EXPECT_EQ(tuple_size, 5);
+  FMT_CONSTEXPR20 size_t array_size = fmt::formatted_size(
+      FMT_COMPILE("{}"), fmt::join(std::array{1, 2, 3}, ","));
+  EXPECT_EQ(array_size, 5);
+  FMT_CONSTEXPR20 size_t styled_size = fmt::formatted_size(
+      FMT_COMPILE("{}"),
+      fmt::styled(std::array{1, 2, 3}, fmt::bg(fmt::color::green)));
+  EXPECT_EQ(styled_size, 32);
+  FMT_CONSTEXPR20 size_t variant_size = fmt::formatted_size(
+      FMT_COMPILE("{}"), std::variant<std::monostate, char>{});
+  EXPECT_EQ(variant_size, 18);
 }
 
 TEST(compile_test, static_format) {
