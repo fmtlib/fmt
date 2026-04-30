@@ -14,6 +14,13 @@
 #  include <tuple>
 #  include <type_traits>
 #  include <utility>
+
+// Check FMT_CPLUSPLUS to suppress a bogus warning in MSVC.
+#  if FMT_CPLUSPLUS >= 201703L
+#    if FMT_HAS_INCLUDE(<optional>)
+#      include <optional>
+#    endif
+#  endif
 #endif
 
 #include "format.h"
@@ -486,6 +493,12 @@ struct range_format_kind
     : conditional_t<
           is_range<T, Char>::value, detail::range_format_kind_<T>,
           std::integral_constant<range_format, range_format::disabled>> {};
+
+#if defined(__cpp_lib_optional_range_support)
+template <typename T, typename Char>
+struct range_format_kind<std::optional<T>, Char>
+    : std::integral_constant<range_format, range_format::disabled> {};
+#endif
 
 template <typename R, typename Char>
 struct formatter<

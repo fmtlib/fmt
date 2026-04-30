@@ -20,6 +20,10 @@
 #  include <ranges>
 #endif
 
+#if FMT_CPLUSPLUS > 201703L && FMT_HAS_INCLUDE(<optional>)
+#  include <optional>
+#endif
+
 #include "fmt/format.h"
 #include "gtest/gtest.h"
 
@@ -270,6 +274,14 @@ TEST(ranges_test, disabled_range_formatting_of_path) {
   EXPECT_EQ((fmt::range_format_kind<path_like<wchar_t>, char>::value),
             fmt::range_format::disabled);
 }
+
+# if defined(__cpp_lib_optional_range_support)
+TEST(ranges_test, disabled_range_formatting_of_optional) {
+  // Range format of optional is disabled to avoid ambiguity with fmt/std.h.
+  EXPECT_EQ((fmt::range_format_kind<std::optional<int>, char>::value),
+            fmt::range_format_disabled);
+}
+#endif
 
 struct vector_string : std::vector<char> {
   using base = std::vector<char>;
