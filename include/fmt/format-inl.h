@@ -18,10 +18,7 @@ extern "C" void __tsan_release(void*);
 
 #  include <algorithm>
 #  include <cerrno>  // errno
-#  include <climits>
-#  include <cmath>
-#  include <exception>
-#  include <new>  // std::bad_alloc
+#  include <new>     // std::bad_alloc
 #endif
 
 #if defined(_WIN32) && !defined(FMT_USE_WRITE_CONSOLE)
