@@ -177,7 +177,7 @@ int main() {
 
 Output on a modern terminal with Unicode support:
 
-![image](https://github.com/fmtlib/fmt/assets/%0A576385/2a93c904-d6fa-4aa6-b453-2618e1c327d7)
+![image](https://github.com/fmtlib/fmt/assets/576385/2a93c904-d6fa-4aa6-b453-2618e1c327d7)
 
 # Benchmarks
 
