@@ -12,7 +12,7 @@ jobs:
       ${{matrix.gen}} ${{matrix.fuzz && 'Fuzz' || ''}}
       ${{matrix.shared && 'Shared' || ''}}
       ${{matrix.cxxflags_extra && 'Sanitize' || ''}}
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.os || 'ubuntu-22.04' }}
     strategy:
       matrix:
         cxx: [g++-4.9, g++-11, clang++-3.6, clang++-11]
@@ -35,12 +35,12 @@ jobs:
           - cxx: g++-13
             build_type: Release
             std: 23
-            install: sudo apt install g++-13
+            os: ubuntu-24.04
             shared: -DBUILD_SHARED_LIBS=ON
-          - cxx: g++-15
+          - cxx: g++-14
             build_type: Release
             std: 23
-            install: sudo apt install g++-15
+            os: ubuntu-24.04
             gen: Ninja
           - cxx: clang++-3.6
           - cxx: clang++-11
@@ -143,11 +143,6 @@ jobs:
           gcc-5-base_5.4.0-6ubuntu1~16.04.12_amd64.deb \
           clang-3.6_3.6.2-3ubuntu2_amd64.deb
       if: ${{ matrix.cxx == 'clang++-3.6' }}
-
-    - name: Add repositories for newer GCC
-      run: |
-        sudo apt-add-repository ppa:ubuntu-toolchain-r/test
-      if: ${{ matrix.cxx == 'g++-13' || matrix.cxx == 'g++-15' }}
 
     - name: Install LLVM-20
       run: |
