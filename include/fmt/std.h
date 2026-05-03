@@ -133,8 +133,8 @@ void write_escaped_path(basic_memory_buffer<Char>& quoted,
 #if defined(__cpp_lib_expected) || FMT_CPP_LIB_VARIANT
 
 template <typename Char, typename OutputIt, typename T, typename FormatContext>
-auto write_escaped_alternative(OutputIt out, const T& v, FormatContext& ctx)
-    -> OutputIt {
+FMT_CONSTEXPR auto write_escaped_alternative(OutputIt out, const T& v,
+                                             FormatContext& ctx) -> OutputIt {
   if constexpr (has_to_string_view<T>::value)
     return write_escaped_string<Char>(out, detail::to_string_view(v));
   if constexpr (std::is_same_v<T, Char>) return write_escaped_char(out, v);
@@ -508,7 +508,7 @@ template <typename Char> struct formatter<std::monostate, Char> {
   }
 
   template <typename FormatContext>
-  auto format(const std::monostate&, FormatContext& ctx) const
+  FMT_CONSTEXPR auto format(const std::monostate&, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     return detail::write<Char>(ctx.out(), "monostate");
   }
@@ -524,7 +524,7 @@ struct formatter<Variant, Char,
   }
 
   template <typename FormatContext>
-  auto format(const Variant& value, FormatContext& ctx) const
+  FMT_CONSTEXPR20 auto format(const Variant& value, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     auto out = ctx.out();
 
@@ -635,7 +635,7 @@ struct formatter<
   }
 
   template <typename Context>
-  auto format(const std::exception& ex, Context& ctx) const
+  FMT_CONSTEXPR auto format(const std::exception& ex, Context& ctx) const
       -> decltype(ctx.out()) {
     auto out = ctx.out();
 #if FMT_USE_RTTI
@@ -690,11 +690,12 @@ struct formatter<BitRef, Char,
 #ifdef __cpp_lib_byte
 template <typename Char>
 struct formatter<std::byte, Char> : formatter<unsigned, Char> {
-  static auto format_as(std::byte b) -> unsigned char {
+  FMT_CONSTEXPR static auto format_as(std::byte b) -> unsigned char {
     return static_cast<unsigned char>(b);
   }
   template <typename Context>
-  auto format(std::byte b, Context& ctx) const -> decltype(ctx.out()) {
+  FMT_CONSTEXPR auto format(std::byte b, Context& ctx) const
+      -> decltype(ctx.out()) {
     return formatter<unsigned, Char>::format(format_as(b), ctx);
   }
 };
