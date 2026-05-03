@@ -1708,7 +1708,7 @@ class file_print_buffer<F, enable_if_t<has_flockfile<F>::value>>
   ~file_print_buffer() {
     file_.advance_write_buffer(size());
     bool flush = file_.needs_flush();
-    F* f = file_;    // Make funlockfile depend on the template parameter F.
+    F* f = file_;  // Make funlockfile depend on the template parameter F.
 #ifdef __SANITIZE_THREAD__
     __tsan_release(f);
 #endif
