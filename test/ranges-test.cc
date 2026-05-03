@@ -271,6 +271,23 @@ TEST(ranges_test, disabled_range_formatting_of_path) {
             fmt::range_format::disabled);
 }
 
+template <typename T> struct optional_like {
+  auto begin() const -> const T*;
+  auto end() const -> const T*;
+
+  bool has_value() const noexcept;
+  T& value() &;
+  const T& value() const&;
+  T&& value() &&;
+  const T&& value() const&&;
+};
+
+TEST(ranges_test, disabled_range_formatting_of_optional) {
+  // (C++26) Has a range support for std::optional.
+  EXPECT_EQ((fmt::range_format_kind<optional_like<int>, char>::value),
+            fmt::range_format::disabled);
+}
+
 struct vector_string : std::vector<char> {
   using base = std::vector<char>;
   using base::base;

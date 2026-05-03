@@ -129,6 +129,13 @@ template <typename T> class is_tuple_like_ {
       !std::is_void<decltype(check<T>(nullptr))>::value;
 };
 
+template <typename T, typename _ = void>
+struct is_optional_like_ : std::false_type {};
+template <typename T>
+struct is_optional_like_<T, void_t<decltype(std::declval<T>().has_value()),
+                                   decltype(std::declval<T>().value())>>
+    : std::true_type {};
+
 // Check for integer_sequence
 #if defined(__cpp_lib_integer_sequence) || FMT_MSC_VERSION >= 1900
 template <typename T, T... N>
@@ -343,8 +350,9 @@ struct formatter<Tuple, Char,
 
 FMT_EXPORT
 template <typename T, typename Char> struct is_range {
-  static constexpr bool value =
-      detail::is_range_<T>::value && !detail::has_to_string_view<T>::value;
+  static constexpr bool value = detail::is_range_<T>::value &&
+                                !detail::is_optional_like_<T>::value &&
+                                !detail::has_to_string_view<T>::value;
 };
 
 namespace detail {
