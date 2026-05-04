@@ -587,8 +587,21 @@ using string_view = basic_string_view<char>;
 template <typename T> class basic_appender;
 using appender = basic_appender<char>;
 
+namespace detail {
+
 // Checks whether T is a container with contiguous storage.
-template <typename T> struct is_contiguous : std::false_type {};
+template <typename T>
+auto is_contiguous_helper(int)
+    -> decltype(std::declval<T&>().data(), std::declval<T&>().size(),
+                std::declval<T&>().resize(size_t{}),
+                std::declval<T&>()[size_t{}], std::true_type{});
+
+template <typename T> auto is_contiguous_helper(...) -> std::false_type;
+
+}  // namespace detail
+
+template <typename T>
+struct is_contiguous : decltype(detail::is_contiguous_helper<T>(0)) {};
 
 class context;
 template <typename OutputIt, typename Char> class generic_context;
