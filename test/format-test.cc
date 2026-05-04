@@ -1984,9 +1984,9 @@ struct point {
 FMT_BEGIN_NAMESPACE
 template <> struct formatter<point> : nested_formatter<double> {
   auto format(point p, format_context& ctx) const -> decltype(ctx.out()) {
-    return write_padded(ctx, [this, p](auto out) -> decltype(out) {
-      return fmt::format_to(out, "({}, {})", this->nested(p.x),
-                            this->nested(p.y));
+    return write_padded(ctx, [this, p, &ctx](auto out) -> decltype(out) {
+      return fmt::format_to(out, "({}, {})", this->nested(p.x, ctx),
+                            this->nested(p.y, ctx));
     });
   }
 };
@@ -1994,6 +1994,12 @@ FMT_END_NAMESPACE
 
 TEST(format_test, nested_formatter) {
   EXPECT_EQ(fmt::format("{:>16.2f}", point{1, 2}), "    (1.00, 2.00)");
+}
+
+TEST(format_test, nested_formatter_dynamic_precision) {
+  // https://github.com/fmtlib/fmt/issues/3860
+  EXPECT_EQ(fmt::format("{:>16.{}f}", point{1, 2}, 2), "    (1.00, 2.00)");
+  EXPECT_EQ(fmt::format("{:>16.{}f}", point{1, 2}, 3), "  (1.000, 2.000)");
 }
 #endif  // __cpp_generic_lambdas
 
