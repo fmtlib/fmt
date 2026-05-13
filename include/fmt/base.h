@@ -593,7 +593,20 @@ template <typename T> class basic_appender;
 using appender = basic_appender<char>;
 
 // Checks whether T is a container with contiguous storage.
-template <typename T> struct is_contiguous : std::false_type {};
+namespace detail {
+
+template <typename T, typename Enable = void>
+struct is_contiguous_ : std::false_type {};
+
+template <typename T>
+struct is_contiguous_<T, void_t<decltype(std::declval<T&>().data()),
+                                decltype(std::declval<T&>().size()),
+                                decltype(std::declval<T&>()[size_t{}])>>
+    : std::true_type {};
+
+}  // namespace detail
+
+template <typename T> struct is_contiguous : detail::is_contiguous_<T> {};
 
 class context;
 template <typename OutputIt, typename Char> class generic_context;

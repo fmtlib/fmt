@@ -21,8 +21,10 @@
 #include <functional>   // std::equal_to
 #include <iterator>     // std::back_insert_iterator, std::distance
 #include <limits>       // std::numeric_limits
+#include <list>         // std::list
 #include <string>       // std::string
 #include <type_traits>  // std::is_same
+#include <vector>       // std::vector
 
 #include "gmock/gmock.h"
 
@@ -875,6 +877,14 @@ struct custom_container {
 FMT_BEGIN_NAMESPACE
 template <> struct is_contiguous<custom_container> : std::true_type {};
 FMT_END_NAMESPACE
+
+TEST(base_test, is_contiguous) {
+  EXPECT_TRUE((fmt::is_contiguous<custom_container>::value));
+  EXPECT_TRUE((fmt::is_contiguous<std::string>::value));
+  EXPECT_TRUE((fmt::is_contiguous<fmt::string_view>::value));
+  EXPECT_TRUE((fmt::is_contiguous<std::vector<char>>::value));
+  EXPECT_FALSE((fmt::is_contiguous<std::list<char>>::value));
+}
 
 TEST(base_test, format_to_custom_container) {
   auto c = custom_container();
