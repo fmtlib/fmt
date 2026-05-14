@@ -208,9 +208,9 @@ def render_decl(d: Definition) -> str:
     text += d.name
 
     if d.params is not None:
-        params = ", ".join([
-            (p.type + " " if p.type else "") + p.name for p in d.params
-        ])
+        params = ", ".join(
+            [(p.type + " " if p.type else "") + p.name for p in d.params]
+        )
         text += "(" + escape_html(params) + ")"
         if d.trailing_return_type:
             text += " -&NoBreak;>&nbsp;" + escape_html(d.trailing_return_type)
@@ -445,7 +445,9 @@ class CxxHandler(BaseHandler):
 
 
 def get_handler(
-    handler_config: "MutableMapping[str, Any]", tool_config: "MkDocsConfig", **kwargs: Any
+    handler_config: "MutableMapping[str, Any]",
+    tool_config: "MkDocsConfig",
+    **kwargs: Any,
 ) -> CxxHandler:
     """Return an instance of `CxxHandler`.
 

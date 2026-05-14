@@ -1,7 +1,21 @@
-#include "base.h"
+// ... (existing content)
+#include <type_traits>
+#include <utility>
 
-// Using fmt::format via fmt/core.h has been deprecated since version 11
-// and now requires an explicit opt in.
-#ifdef FMT_DEPRECATED_HEAVY_CORE
-#  include "format.h"
+#ifdef __STDCPP_FLOAT16_T__
+#  include <stdfloat>
 #endif
+
+// ... (inside the namespace fmt::detail)
+
+template <typename T>
+struct is_floating_point
+    : std::integral_constant<bool, std::is_floating_point<T>::value
+#ifdef __STDCPP_FLOAT16_T__
+                                   || std::is_same<T, std::float16_t>::value
+                                   || std::is_same<T, std::float32_t>::value
+                                   || std::is_same<T, std::float64_t>::value
+#endif
+    > {};
+
+// ... (rest of the file)
