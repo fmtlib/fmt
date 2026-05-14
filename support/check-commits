@@ -6,8 +6,12 @@ Usage:
   check-commits <start> <source>
 """
 
-import docopt, os, sys, tempfile
+import os
+import sys
+import tempfile
 from subprocess import check_call, check_output, run
+
+import docopt
 
 args = docopt.docopt(__doc__)
 start = args.get('<start>')

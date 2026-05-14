@@ -7,7 +7,10 @@
 # This will checkout the website to fmt/build/fmt.dev and deploy documentation
 # <version> there.
 
-import errno, os, shutil, sys
+import errno
+import os
+import shutil
+import sys
 from subprocess import call
 
 support_dir = os.path.dirname(os.path.normpath(__file__))
