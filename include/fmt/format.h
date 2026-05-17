@@ -2452,8 +2452,8 @@ template <typename OutputIt, typename UInt, typename Char,
 inline auto write_significand(OutputIt out, UInt significand,
                               int significand_size, int integral_size,
                               Char decimal_point) -> OutputIt {
-  // Buffer is large enough to hold digits (digits10 + 1) and a decimal point.
-  Char buffer[digits10<UInt>() + 2];
+  // Buffer is large enough to hold digits (digits10 + 2) and a decimal point.
+  Char buffer[digits10<UInt>() + 3];
   auto end = write_significand(buffer, significand, significand_size,
                                integral_size, decimal_point);
   return detail::copy_noinline<Char>(buffer, end, out);
