@@ -117,6 +117,8 @@ FMT_API const std::error_category& system_category() noexcept;
 namespace detail {
 FMT_API void format_windows_error(buffer<char>& out, int error_code,
                                   const char* message) noexcept;
+FMT_API bool append_system_error_message_as_utf8(buffer<char>& buf,
+                                                 string_view message) noexcept;
 }
 
 FMT_API std::system_error vwindows_error(int error_code, string_view fmt,

@@ -165,6 +165,29 @@ void report_windows_error(int error_code, const char* message) noexcept {
   do_report_error(detail::format_windows_error, error_code, message);
 }
 
+namespace detail {
+bool append_system_error_message_as_utf8(buffer<char>& buf,
+                                         string_view message) noexcept {
+  FMT_TRY {
+    if (message.empty()) return true;
+    const int size = static_cast<int>(message.size());
+    const int wide_size =
+        MultiByteToWideChar(CP_ACP, 0, message.data(), size, nullptr, 0);
+    if (wide_size == 0) return false;
+    std::wstring wide(static_cast<size_t>(wide_size), L'\0');
+    if (MultiByteToWideChar(CP_ACP, 0, message.data(), size, wide.data(),
+                            wide_size) == 0)
+      return false;
+    auto utf8_message = to_utf8<wchar_t>();
+    if (!utf8_message.convert(wide)) return false;
+    buf.append(string_view(utf8_message.c_str(), utf8_message.size()));
+    return true;
+  }
+  FMT_CATCH(...) {}
+  return false;
+}
+}  // namespace detail
+
 #endif  // _WIN32
 
 buffered_file::~buffered_file() noexcept {

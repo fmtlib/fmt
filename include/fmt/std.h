@@ -546,6 +546,13 @@ struct formatter<Variant, Char,
 
 #endif  // FMT_CPP_LIB_VARIANT
 
+#ifdef _WIN32
+namespace detail {
+FMT_API bool append_system_error_message_as_utf8(buffer<char>& buf,
+                                                 string_view message) noexcept;
+}
+#endif
+
 template <> struct formatter<std::error_code> {
  private:
   format_specs specs_;
@@ -584,7 +591,12 @@ template <> struct formatter<std::error_code> {
                                 ctx);
     auto buf = memory_buffer();
     if (specs_.type() == presentation_type::string) {
+#ifdef _WIN32
+      if (!detail::append_system_error_message_as_utf8(buf, ec.message()))
+        buf.append(ec.message());
+#else
       buf.append(ec.message());
+#endif
     } else {
       buf.append(string_view(ec.category().name()));
       buf.push_back(':');
