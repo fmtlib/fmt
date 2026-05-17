@@ -804,6 +804,55 @@ struct formatter<std::reference_wrapper<T>, Char,
   }
 };
 
+#if FMT_HAS_INCLUDE(<stdfloat>) && defined(__cpp_lib_stdfloat)
+#  include <stdfloat>
+
+inline auto format_as(std::float16_t value) -> float {
+  return static_cast<float>(value);
+}
+inline auto format_as(std::bfloat16_t value) -> float {
+  return static_cast<float>(value);
+}
+
+template <typename Char>
+struct formatter<std::complex<std::float16_t>, Char> {
+ private:
+  formatter<std::complex<float>, Char> underlying_;
+
+ public:
+  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
+    return underlying_.parse(ctx);
+  }
+  template <typename FormatContext>
+  auto format(const std::complex<std::float16_t>& value, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    return underlying_.format(
+        std::complex<float>(static_cast<float>(value.real()),
+                            static_cast<float>(value.imag())),
+        ctx);
+  }
+};
+
+template <typename Char>
+struct formatter<std::complex<std::bfloat16_t>, Char> {
+ private:
+  formatter<std::complex<float>, Char> underlying_;
+
+ public:
+  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
+    return underlying_.parse(ctx);
+  }
+  template <typename FormatContext>
+  auto format(const std::complex<std::bfloat16_t>& value,
+              FormatContext& ctx) const -> decltype(ctx.out()) {
+    return underlying_.format(
+        std::complex<float>(static_cast<float>(value.real()),
+                            static_cast<float>(value.imag())),
+        ctx);
+  }
+};
+#endif  // stdfloat
+
 FMT_END_NAMESPACE
 
 #endif  // FMT_STD_H_

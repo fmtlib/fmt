@@ -111,6 +111,16 @@ TEST(std_test, complex) {
             "(1.00-2.20i)        ");
 }
 
+#if FMT_HAS_INCLUDE(<stdfloat>) && defined(__cpp_lib_stdfloat)
+#  include <stdfloat>
+TEST(std_test, stdfloat) {
+  std::float16_t f16 = std::float16_t(1.5f);
+  EXPECT_EQ(fmt::format("{}", f16), fmt::format("{}", 1.5f));
+  EXPECT_EQ(fmt::format("{}", std::complex<std::float16_t>(f16, std::float16_t(2.f))),
+            fmt::format("{}", std::complex<float>(1.5f, 2.f)));
+}
+#endif
+
 #ifdef __cpp_lib_source_location
 TEST(std_test, source_location) {
   std::source_location loc = std::source_location::current();

@@ -514,6 +514,9 @@ chrono-format-specifications).
   https://en.cppreference.com/w/cpp/utility/source_location)
 - [`std::thread::id`](https://en.cppreference.com/w/cpp/thread/thread/id)
 - [`std::variant`](https://en.cppreference.com/w/cpp/utility/variant/variant)
+- C++23 [`std::float16_t`](https://en.cppreference.com/w/cpp/types/float16_t) /
+  [`std::bfloat16_t`](https://en.cppreference.com/w/cpp/types/bfloat16_t) and
+  `std::complex` of those types (via `format_as`, when `<stdfloat>` is available)
 
 ::: ptr(const std::unique_ptr<T, Deleter>&)
 
