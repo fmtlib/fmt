@@ -352,7 +352,7 @@ converts to `std::print`.)
   cluster proxy
 - [redpanda](https://vectorized.io/redpanda): a 10x faster Kafka®
   replacement for mission-critical systems written in C++
-- [rpclib](http://rpclib.net/): a modern C++ msgpack-RPC server and
+- [rpclib](https://rpclib.net/): a modern C++ msgpack-RPC server and
   client library
 - [Salesforce Analytics
   Cloud](https://www.salesforce.com/analytics-cloud/overview/):
@@ -360,7 +360,7 @@ converts to `std::print`.)
 - [Scylla](https://www.scylladb.com/): a Cassandra-compatible NoSQL
   data store that can handle 1 million transactions per second on a
   single server
-- [Seastar](http://www.seastar-project.org/): an advanced, open-source
+- [Seastar](https://www.seastar-project.org/): an advanced, open-source
   C++ framework for high-performance server applications on modern
   hardware
 - [spdlog](https://github.com/gabime/spdlog): super fast C++ logging
