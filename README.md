@@ -53,7 +53,7 @@ Try {fmt} in [Compiler Explorer](https://godbolt.org/z/8Mx1EW73v).
   implementations of `(s)printf`, iostreams, `to_string` and
   `to_chars`, see [Speed tests](#speed-tests) and [Converting a
   hundred million integers to strings per
-  second](http://www.zverovich.net/2020/06/13/fast-int-to-string-revisited.html)
+  second](https://www.zverovich.net/2020/06/13/fast-int-to-string-revisited.html)
 - Small code size both in terms of source code with the minimum
   configuration consisting of just three files, `base.h`, `format.h`
   and `format-inl.h`, and compiled code; see [Compile time and code
@@ -158,7 +158,7 @@ int main() {
 ```
 
 This can be [up to 9 times faster than `fprintf`](
-http://www.zverovich.net/2020/08/04/optimal-file-buffer-size.html).
+https://www.zverovich.net/2020/08/04/optimal-file-buffer-size.html).
 
 **Print with colors and text styles**
 
@@ -456,7 +456,7 @@ verbatim text with arguments. The library is pretty fast, but slower on
 integer formatting than `fmt::format_to` with format string compilation
 on Karma\'s own benchmark, see [Converting a hundred million integers to
 strings per
-second](http://www.zverovich.net/2020/06/13/fast-int-to-string-revisited.html).
+second](https://www.zverovich.net/2020/06/13/fast-int-to-string-revisited.html).
 
 # License
 
