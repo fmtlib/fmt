@@ -47,6 +47,51 @@ In order to use the header-only target or the module target, simply substitute t
 `fmt::fmt` in the above steps with `fmt::fmt-header-only` or `fmt::fmt-module` 
 accordingly.
 
+### C++20 Modules
+
+{fmt} ships a named module (`import fmt;`). Use the **`fmt::fmt-module`** CMake
+target — do not wrap {fmt} headers in your own module.
+
+Requirements:
+
+- C++20 or later (`CMAKE_CXX_STANDARD 20`)
+- A compiler with module support (e.g. GCC 14+, Clang 16+, MSVC 19.34+)
+- CMake 3.28+ (for native `CXX_MODULES` support) or Clang with `-fmodules-ts`
+
+**CMake (subdirectory or installed package):**
+
+```cmake
+cmake_minimum_required(VERSION 3.28)
+project(my_app LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+
+add_subdirectory(fmt)  # or find_package(fmt CONFIG REQUIRED)
+
+add_executable(my_app my_module.cpp)
+target_link_libraries(my_app PRIVATE fmt::fmt-module)
+```
+
+`my_module.cpp`:
+
+```cpp
+import fmt;
+
+int main() {
+  fmt::print("Hello, modules!\n");
+}
+```
+
+**Build {fmt} itself as a module** (when hacking on {fmt}):
+
+```bash
+cmake -S . -B build -DFMT_MODULE=ON
+cmake --build build
+```
+
+On older CMake versions, {fmt} can fall back to scanning `src/fmt.cc` with
+`-fmodules-ts` (see `add_module_library` in the top-level `CMakeLists.txt`).
+
 ## Installation
 
 ### Debian/Ubuntu
