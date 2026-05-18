@@ -528,6 +528,42 @@ void print(text_style ts, format_string<T...> fmt, T&&... args) {
   return print(stdout, ts, fmt, std::forward<T>(args)...);
 }
 
+inline void vprintln(FILE* f, text_style ts, string_view fmt,
+                     format_args args) {
+  auto buf = memory_buffer();
+  detail::vformat_to(buf, ts, fmt, args);
+  buf.push_back('\n');
+  print(f, FMT_STRING("{}"), string_view(buf.begin(), buf.size()));
+}
+
+/**
+ * Formats a string and prints it to the specified file stream followed by a
+ * newline, using ANSI escape sequences to specify text formatting.
+ *
+ * **Example**:
+ *
+ *     fmt::println(fmt::emphasis::bold | fg(fmt::color::red),
+ *                  "Elapsed time: {0:.2f} seconds", 1.23);
+ */
+template <typename... T>
+void println(FILE* f, text_style ts, format_string<T...> fmt, T&&... args) {
+  vprintln(f, ts, fmt.str, vargs<T...>{{args...}});
+}
+
+/**
+ * Formats a string and prints it to stdout followed by a newline, using ANSI
+ * escape sequences to specify text formatting.
+ *
+ * **Example**:
+ *
+ *     fmt::println(fmt::emphasis::bold | fg(fmt::color::red),
+ *                  "Elapsed time: {0:.2f} seconds", 1.23);
+ */
+template <typename... T>
+void println(text_style ts, format_string<T...> fmt, T&&... args) {
+  return println(stdout, ts, fmt, std::forward<T>(args)...);
+}
+
 inline auto vformat(text_style ts, string_view fmt, format_args args)
     -> std::string {
   auto buf = memory_buffer();
