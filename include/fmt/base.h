@@ -489,6 +489,14 @@ inline FMT_CONSTEXPR auto get_container(OutputIt it) ->
   };
   return *accessor(it).container;
 }
+
+template <typename T, typename Enable = void>
+struct is_contiguous : std::false_type {};
+template <typename T>
+struct is_contiguous<T, void_t<decltype(std::declval<T&>().data()),
+                               decltype(std::declval<T&>().size()),
+                               decltype(std::declval<T&>()[size_t()])>>
+    : std::true_type {};
 }  // namespace detail
 
 // Parsing-related public API and forward declarations.
@@ -592,22 +600,6 @@ using string_view = basic_string_view<char>;
 template <typename T> class basic_appender;
 using appender = basic_appender<char>;
 
-// Checks whether T is a container with contiguous storage.
-namespace detail {
-
-template <typename T, typename Enable = void>
-struct is_contiguous_ : std::false_type {};
-
-template <typename T>
-struct is_contiguous_<T, void_t<decltype(std::declval<T&>().data()),
-                                decltype(std::declval<T&>().size()),
-                                decltype(std::declval<T&>()[size_t{}])>>
-    : std::true_type {};
-
-}  // namespace detail
-
-template <typename T> struct is_contiguous : detail::is_contiguous_<T> {};
-
 class context;
 template <typename OutputIt, typename Char> class generic_context;
 template <typename Char> class parse_context;
@@ -625,6 +617,8 @@ template <typename Char>
 using buffered_context =
     conditional_t<std::is_same<Char, char>::value, context,
                   generic_context<basic_appender<Char>, Char>>;
+
+template <typename T> struct is_contiguous : detail::is_contiguous<T> {};
 
 template <typename Context> class basic_format_arg;
 template <typename Context> class basic_format_args;
