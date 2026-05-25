@@ -3888,7 +3888,7 @@ template <typename OutputIt, typename Char> class generic_context {
 
   constexpr auto out() const -> iterator { return out_; }
 
-  void advance_to(iterator it) {
+  FMT_CONSTEXPR void advance_to(iterator it) {
     if (!detail::is_back_insert_iterator<iterator>()) out_ = it;
   }
 
