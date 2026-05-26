@@ -1,3 +1,10 @@
+// Formatting library for C++ - module implementation
+//
+// Copyright (c) 2012 - present, Victor Zverovich
+// All rights reserved.
+//
+// For the license information refer to format.h.
+
 module;
 
 #define FMT_MODULE
