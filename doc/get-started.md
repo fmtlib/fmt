@@ -136,7 +136,7 @@ To build the documentation you need the following software installed on
 your system:
 
 - [Python](https://www.python.org/)
-- [Doxygen](http://www.stack.nl/~dimitri/doxygen/)
+- [Doxygen](https://www.doxygen.nl/)
 - [MkDocs](https://www.mkdocs.org/) with `mkdocs-material`, `mkdocstrings`,
   `pymdown-extensions` and `mike`
 
