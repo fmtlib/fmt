@@ -715,6 +715,11 @@ following differences:
   (ignoring redundant digits and sign in exponent) and may produce more
   decimal digits than necessary.
 
+- For the `'a'`/`'A'` presentation types, {fmt} includes the `0x`/`0X`
+  prefix in the output (like `printf`'s `%a`), while `std::format` output
+  for hexadecimal floating-point values is specified in terms of
+  `std::to_chars` and does not include that prefix.
+
 ## Configuration Options
 
 {fmt} provides configuration via CMake options and preprocessor macros to
