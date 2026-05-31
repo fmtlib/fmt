@@ -14,12 +14,11 @@ https://www.bestpractices.dev/projects/8880)
 https://securityscorecards.dev/viewer/?uri=github.com/fmtlib/fmt)
 [![Ask questions at StackOverflow with the tag fmt](
 https://img.shields.io/badge/stackoverflow-fmt-blue.svg)](https://stackoverflow.com/questions/tagged/fmt)
+[![Support Ukraine](
+https://img.shields.io/badge/Support-Ukraine-005BBB?labelColor=FFD500)](https://novaukraine.org/)
 
 **{fmt}** is an open-source formatting library providing a fast and safe
 alternative to C stdio and C++ iostreams.
-
-If you like this project, please consider donating to one of the funds
-that help victims of the war in Ukraine: <https://u24.gov.ua/>.
 
 [Documentation](https://fmt.dev)
 
