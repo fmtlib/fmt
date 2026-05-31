@@ -380,82 +380,11 @@ If you are aware of other projects using this library, please let me
 know by [email](mailto:victor.zverovich@gmail.com) or by submitting an
 [issue](https://github.com/fmtlib/fmt/issues).
 
-# Motivation
+# Sponsors
 
-So why yet another formatting library?
-
-There are plenty of methods for doing this task, from standard ones like
-the printf family of function and iostreams to Boost Format and
-FastFormat libraries. The reason for creating a new library is that
-every existing solution that I found either had serious issues or
-didn\'t provide all the features I needed.
-
-## printf
-
-The good thing about `printf` is that it is pretty fast and readily
-available being a part of the C standard library. The main drawback is
-that it doesn\'t support user-defined types. `printf` also has safety
-issues although they are somewhat mitigated with [\_\_attribute\_\_
-((format (printf,
-\...))](https://gcc.gnu.org/onlinedocs/gcc/Common-Attributes.html) in
-GCC. There is a POSIX extension that adds positional arguments required
-for
-[i18n](https://en.wikipedia.org/wiki/Internationalization_and_localization)
-to `printf` but it is not a part of C99 and may not be available on some
-platforms.
-
-## iostreams
-
-The main issue with iostreams is best illustrated with an example:
-
-``` c++
-std::cout << std::setprecision(2) << std::fixed << 1.23456 << "\n";
-```
-
-which is a lot of typing compared to printf:
-
-``` c++
-printf("%.2f\n", 1.23456);
-```
-
-Matthew Wilson, the author of FastFormat, called this \"chevron hell\".
-iostreams don\'t support positional arguments by design.
-
-The good part is that iostreams support user-defined types and are safe
-although error handling is awkward.
-
-## Boost Format
-
-This is a very powerful library that supports both `printf`-like format
-strings and positional arguments. Its main drawback is performance.
-According to various benchmarks, it is much slower than other methods
-considered here. Boost Format also has excessive build times and severe
-code bloat issues (see [Benchmarks](#benchmarks)).
-
-## FastFormat
-
-This is an interesting library that is fast, safe and has positional
-arguments. However, it has significant limitations, citing its author:
-
-> Three features that have no hope of being accommodated within the
-> current design are:
->
-> - Leading zeros (or any other non-space padding)
-> - Octal/hexadecimal encoding
-> - Runtime width/alignment specification
-
-It is also quite big and has a heavy dependency, on STLSoft, which might be
-too restrictive for use in some projects.
-
-## Boost Spirit.Karma
-
-This is not a formatting library but I decided to include it here for
-completeness. As iostreams, it suffers from the problem of mixing
-verbatim text with arguments. The library is pretty fast, but slower on
-integer formatting than `fmt::format_to` with format string compilation
-on Karma\'s own benchmark, see [Converting a hundred million integers to
-strings per
-second](http://www.zverovich.net/2020/06/13/fast-int-to-string-revisited.html).
+{fmt} development is supported by individual sponsors. If you find this
+library useful, please consider [sponsoring its development on GitHub
+Sponsors](https://github.com/sponsors/vitaut).
 
 # License
 
