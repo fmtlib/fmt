@@ -1,6 +1,6 @@
 // Tests of the C++ interface to POSIX functions that require mocks
 //
-// Copyright (c) 2012 - present, Victor Zverovich
+// Copyright (c) 2012 - present, Victor Zverovich and {fmt} contributors
 // All rights reserved.
 //
 // For the license information refer to format.h.

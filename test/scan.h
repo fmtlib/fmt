@@ -1,6 +1,6 @@
 // Formatting library for C++ - scanning API proof of concept
 //
-// Copyright (c) 2019 - present, Victor Zverovich
+// Copyright (c) 2019 - present, Victor Zverovich and {fmt} contributors
 // All rights reserved.
 //
 // For the license information refer to format.h.

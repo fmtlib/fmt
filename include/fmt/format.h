@@ -1,7 +1,7 @@
 /*
   Formatting library for C++
 
-  Copyright (c) 2012 - present, Victor Zverovich
+  Copyright (c) 2012 - present, Victor Zverovich and {fmt} contributors
 
   Permission is hereby granted, free of charge, to any person obtaining
   a copy of this software and associated documentation files (the

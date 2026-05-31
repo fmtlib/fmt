@@ -1,6 +1,6 @@
 // Formatting library for C++ - test version of FMT_ASSERT
 //
-// Copyright (c) 2012 - present, Victor Zverovich
+// Copyright (c) 2012 - present, Victor Zverovich and {fmt} contributors
 // All rights reserved.
 //
 // For the license information refer to format.h.

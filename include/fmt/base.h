@@ -1,6 +1,6 @@
 // Formatting library for C++ - the base API for char/UTF-8
 //
-// Copyright (c) 2012 - present, Victor Zverovich
+// Copyright (c) 2012 - present, Victor Zverovich and {fmt} contributors
 // All rights reserved.
 //
 // For the license information refer to format.h.

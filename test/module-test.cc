@@ -1,13 +1,9 @@
 // Formatting library for C++ - module tests
 //
-// Copyright (c) 2012 - present, Victor Zverovich
+// Copyright (c) 2012 - present, Victor Zverovich and {fmt} contributors
 // All rights reserved.
 //
 // For the license information refer to format.h.
-//
-// Copyright (c) 2021 - present, Daniela Engert
-// All Rights Reserved
-// {fmt} module.
 
 #include <bit>
 #include <chrono>

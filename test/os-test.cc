@@ -1,6 +1,6 @@
 // Formatting library for C++ - tests of the OS-specific functionality
 //
-// Copyright (c) 2012 - present, Victor Zverovich
+// Copyright (c) 2012 - present, Victor Zverovich and {fmt} contributors
 // All rights reserved.
 //
 // For the license information refer to format.h.
