@@ -635,7 +635,7 @@ struct formatter<
   }
 
   template <typename Context>
-  FMT_CONSTEXPR auto format(const std::exception& ex, Context& ctx) const
+  auto format(const std::exception& ex, Context& ctx) const
       -> decltype(ctx.out()) {
     auto out = ctx.out();
 #if FMT_USE_RTTI
