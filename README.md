@@ -391,15 +391,12 @@ Sponsors](https://github.com/sponsors/vitaut).
 {fmt} is distributed under the MIT
 [license](https://github.com/fmtlib/fmt/blob/master/LICENSE).
 
-# Documentation License
-
 The [Format String Syntax](https://fmt.dev/latest/syntax/) section
 in the documentation is based on the one from Python [string module
 documentation](https://docs.python.org/3/library/string.html#module-string).
 For this reason, the documentation is distributed under the Python
 Software Foundation license available in
 [doc/python-license.txt](https://raw.github.com/fmtlib/fmt/master/doc/python-license.txt).
-It only applies if you distribute the documentation of {fmt}.
 
 # Maintainers
 
