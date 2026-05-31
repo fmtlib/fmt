@@ -151,12 +151,17 @@ if __name__ == '__main__':
     fmt_repo.add(changelog)
     fmt_repo.commit('-m', 'Update version')
 
-    # Build the docs and package.
+    # Build the docs locally; the source zip is now built and attached to the
+    # release in CI by .github/workflows/release.yml, which also generates a
+    # SLSA provenance attestation for it.
     run = Runner(fmt_repo.dir)
     run('cmake', '.')
-    run('make', 'doc', 'package_source')
+    run('make', 'doc')
 
-    # Create a release on GitHub.
+    # Create a draft release on GitHub. The release workflow triggers on
+    # `release: created`, builds the source zip from `target_commitish`, and
+    # attaches the zip plus *.intoto.jsonl provenance to this draft. After
+    # reviewing the draft, the maintainer clicks Publish to finalize.
     fmt_repo.push('origin', 'release')
     auth_headers = {'Authorization': 'token ' + os.getenv('FMT_TOKEN')}
     req = urllib.request.Request(
@@ -168,20 +173,6 @@ if __name__ == '__main__':
     with urllib.request.urlopen(req) as response:
         if response.status != 201:
             raise Exception(f'Failed to create a release ' +
-                            '{response.status} {response.reason}')
-        response_data = json.loads(response.read().decode('utf-8'))
-        id = response_data['id']
-
-    # Upload the package.
-    uploads_url = 'https://uploads.github.com/repos/fmtlib/fmt/releases'
-    package = 'fmt-{}.zip'.format(version)
-    req = urllib.request.Request(
-        f'{uploads_url}/{id}/assets?name={package}',
-        headers={'Content-Type': 'application/zip'} | auth_headers,
-        data=open('build/fmt/' + package, 'rb').read(), method='POST')
-    with urllib.request.urlopen(req) as response:
-        if response.status != 201:
-            raise Exception(f'Failed to upload an asset '
                             '{response.status} {response.reason}')
 
     short_version = '.'.join(version.split('.')[:-1])
