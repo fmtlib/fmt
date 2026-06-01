@@ -37,6 +37,6 @@ jobs:
     - name: Deploy
       env:
         KEY: "${{secrets.KEY}}"
-      if: env.KEY != '' && github.ref == 'refs/heads/master'
+      if: env.KEY != '' && github.ref == 'refs/heads/main'
       working-directory: ${{runner.workspace}}/fmt/build/fmt.dev
       run: git push https://$KEY@github.com/fmtlib/fmt.dev.git
