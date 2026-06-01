@@ -386,18 +386,6 @@ know by [email](mailto:victor.zverovich@gmail.com) or by submitting an
 library useful, please consider [sponsoring its development on GitHub
 Sponsors](https://github.com/sponsors/vitaut).
 
-# License
-
-{fmt} is distributed under the MIT
-[license](https://github.com/fmtlib/fmt/blob/master/LICENSE).
-
-The [Format String Syntax](https://fmt.dev/latest/syntax/) section
-in the documentation is based on the one from Python [string module
-documentation](https://docs.python.org/3/library/string.html#module-string).
-For this reason, the documentation is distributed under the Python
-Software Foundation license available in
-[doc/python-license.txt](https://raw.github.com/fmtlib/fmt/master/doc/python-license.txt).
-
 # Maintainers
 
 The {fmt} library is maintained by Victor Zverovich
