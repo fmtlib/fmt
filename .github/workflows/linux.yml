@@ -146,9 +146,13 @@ jobs:
 
     - name: Install LLVM-20
       run: |
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh 20
+        sudo install -D -m 0644 support/llvm-snapshot.gpg.key \
+          /etc/apt/keyrings/apt.llvm.org.asc
+        codename=$(lsb_release -cs)
+        echo "deb [signed-by=/etc/apt/keyrings/apt.llvm.org.asc]" \
+             "https://apt.llvm.org/$codename/" \
+             "llvm-toolchain-$codename-20 main" \
+          | sudo tee /etc/apt/sources.list.d/llvm.list
       if: ${{ matrix.cxx == 'clang++-20' }}
 
     - name: Add Ubuntu mirrors
