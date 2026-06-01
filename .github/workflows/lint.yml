@@ -35,7 +35,7 @@ jobs:
     - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
     - name: Install cmake-format
-      run: pip install cmakelang
+      run: pip install --require-hashes -r support/cmake-format-requirements.txt
 
     - name: Run cmake-format
       run: |
