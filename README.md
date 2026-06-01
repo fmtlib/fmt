@@ -407,12 +407,3 @@ people. See
 [Releases](https://github.com/fmtlib/fmt/releases) for some of the
 names. Let us know if your contribution is not listed or mentioned
 incorrectly and we\'ll make it right.
-
-# Security Policy
-
-To report a security issue, please disclose it at [security
-advisory](https://github.com/fmtlib/fmt/security/advisories/new).
-
-This project is maintained by a team of volunteers on a
-reasonable-effort basis. As such, please give us at least *90* days to
-work on a fix before public exposure.
