@@ -1,0 +1,4 @@
+mkdocs-material==9.7.0
+mkdocstrings==1.0.0
+mike==2.1.3
+typing_extensions==4.15.0
