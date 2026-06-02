@@ -104,7 +104,7 @@ already at least as wide as *width*; the value is never truncated to fit.
 fmt::format("[{:<10}]", "42");   // Result: "[42        ]"
 fmt::format("[{:>10}]", "42");   // Result: "[        42]"
 fmt::format("[{:^10}]", "42");   // Result: "[    42    ]"
-fmt::format("[{:*^10}]", "42");  // Result: "[****42****]"  -- '*' as fill
+fmt::format("[{:*^10}]", "42");  // Result: "[****42****]"  - '*' as fill
 ```
 
 ### Sign
@@ -174,9 +174,12 @@ This keeps fixed *width* values visually consistent in monospace renderings
 that combine Latin and CJK text.
 
 ```c++
-fmt::format("[{:6}]", 42);      // Result: "[    42]"  -- right-aligned by default
-fmt::format("[{:6}]", "hi");    // Result: "[hi    ]"  -- left-aligned by default
-fmt::format("[{:{}}]", 42, 6);  // Result: "[    42]"  -- width from an argument
+fmt::format("[{:6}]", 42);
+// Result: "[    42]"  - right-aligned by default
+fmt::format("[{:6}]", "hi");
+// Result: "[hi    ]"  - left-aligned by default
+fmt::format("[{:{}}]", 42, 6);
+// Result: "[    42]"  - width from an argument
 ```
 
 ### Precision
@@ -200,7 +203,8 @@ string, the string must still be null-terminated.
 fmt::format("{:.2f}", 3.14159);        // Result: "3.14"
 fmt::format("{:.3g}", 3.14159);        // Result: "3.14"
 fmt::format("{:.4}", "hello, world");  // Result: "hell"
-fmt::format("{:.{}f}", 3.14159, 4);    // Result: "3.1416"  -- precision from an argument
+fmt::format("{:.{}f}", 3.14159, 4);
+// Result: "3.1416"  - precision from an argument
 ```
 
 ### Locale (`L`)
