@@ -286,10 +286,10 @@ A C string (`char*` or `const char*`) accepts both the string presentation
 types and `p`, so the same value can be formatted as either text or an
 address.
 
-## Chrono Format Specifications
+## Chrono Format Specification
 
-Format specifications for chrono duration and time point types as well as
-`std::tm` have the following syntax:
+The format specification for chrono duration and time point types as well
+as `std::tm` has the following syntax:
 
 <a id="chrono-format-spec"></a>
 <pre><code class="language-json"
@@ -621,9 +621,9 @@ fmt::print("{:%Y-%m-%d %H:%M:%S}", t);
 // Prints: 2010-08-04 12:15:58
 ```
 
-## Range Format Specifications
+## Range Format Specification
 
-Format specifications for range types have the following syntax:
+The format specification for range types has the following syntax:
 
 <pre><code class="language-json"
 >range_format_spec ::= ["n"][range_type][":" range_underlying_spec]</code>
