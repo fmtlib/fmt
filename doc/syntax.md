@@ -669,11 +669,9 @@ fmt::print("{:n:f}", std::array{std::numbers::pi, std::numbers::e});
 // Output: 3.141593, 2.718282
 ```
 
-<a id="format-examples"></a>
-## Examples
+## A Combined Example
 
-Most of the format options are introduced alongside their grammar in the
-sections above. The example below combines several of them — nested
+The example below ties together several elements introduced above — nested
 replacement fields, fill characters, and centering — to draw a fixed-width
 box around a message:
 
