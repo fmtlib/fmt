@@ -87,7 +87,7 @@ if __name__ == '__main__':
 
     branch = args.get('<branch>')
     if branch is None:
-        branch = 'master'
+        branch = 'main'
     if not fmt_repo.update('-b', branch, 'git@github.com:fmtlib/fmt'):
         clean_checkout(fmt_repo, branch)
 
