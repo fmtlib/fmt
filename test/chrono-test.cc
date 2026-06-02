@@ -358,6 +358,9 @@ TEST(chrono_test, tm) {
   char tz[] = "EET";
   if (fmt::detail::set_tm_zone(time, tz)) {
     EXPECT_EQ(fmt::format(fmt::runtime("{:%Z}"), time), "EET");
+    fmt::detail::set_tm_zone(time, nullptr);
+    EXPECT_THROW_MSG((void)fmt::format(fmt::runtime("{:%Z}"), time),
+                     fmt::format_error, "no timezone");
   } else {
     EXPECT_THROW_MSG((void)fmt::format(fmt::runtime("{:%Z}"), time),
                      fmt::format_error, "no timezone");
