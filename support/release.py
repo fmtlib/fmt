@@ -88,7 +88,9 @@ def create_doc_env(env, fmt_repo):
     return an environment dict with it prepended to PATH. This ensures the
     docs are built with the exact mkdocs/mkdocstrings versions required by the
     custom handler, regardless of what is installed system-wide."""
-    venv_dir = os.path.join(env.build_dir, 'venv')
+    # Use an absolute path so the venv resolves on PATH regardless of the
+    # working directory the build steps run in.
+    venv_dir = os.path.abspath(os.path.join(env.build_dir, 'venv'))
     shutil.rmtree(venv_dir, ignore_errors=True)
     check_call([sys.executable, '-m', 'venv', venv_dir])
     venv_bin = os.path.join(venv_dir, 'bin')
