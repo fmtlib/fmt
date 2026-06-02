@@ -4,7 +4,7 @@
   `fmt-c` library and `fmt/fmt-c.h` header use `_Generic` to dispatch on
   argument types and outperform `printf`/`sprintf`. For example:
 
-  ```c
+  ```c++
   #include <fmt/fmt-c.h>
 
   char buf[100];
@@ -85,7 +85,7 @@
   (https://github.com/fmtlib/fmt/pull/4731,
   https://github.com/fmtlib/fmt/pull/4770). Thanks @user202729 and @phprus.
 
-- Added the `FMT_USE_FLOCKFILE` macro to force `has_flockfile` to false
+- Added the `FMT_USE_FLOCKFILE` macro to disable the use of `flockfile`
   (https://github.com/fmtlib/fmt/issues/4646,
   https://github.com/fmtlib/fmt/pull/4666). Thanks @MikeVastola.
 
