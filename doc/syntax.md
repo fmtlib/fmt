@@ -54,9 +54,9 @@ nested replacement field — `{}` or `{arg_id}` — in which case it takes its
 value from an integer argument at runtime. Nested fields accept only an
 *arg_id*; they cannot themselves contain a *format_spec*.
 
-## Standard Format Specification
+## Format Specification
 
-The grammar below describes the *format_spec* shared by the standard built-in
+The grammar below describes the *format_spec* shared by the built-in
 types — integers, floating-point values, characters, strings, booleans, and
 pointers — as well as by any user-defined type whose `formatter` reuses
 fmt's parser.
