@@ -101,10 +101,10 @@ Alignment has no observable effect when the value's natural rendering is
 already at least as wide as *width*; the value is never truncated to fit.
 
 ```c++
-fmt::format("[{:<10}]", "42");    // Result: "[42        ]"
-fmt::format("[{:>10}]", "42");    // Result: "[        42]"
-fmt::format("[{:^10}]", "42");    // Result: "[    42    ]"
-fmt::format("[{:*^10}]", "42");   // Result: "[****42****]"  -- '*' as fill
+fmt::format("[{:<10}]", "42");   // Result: "[42        ]"
+fmt::format("[{:>10}]", "42");   // Result: "[        42]"
+fmt::format("[{:^10}]", "42");   // Result: "[    42    ]"
+fmt::format("[{:*^10}]", "42");  // Result: "[****42****]"  -- '*' as fill
 ```
 
 ### Sign
@@ -121,8 +121,8 @@ applies to signed integer and floating-point types only.
 The sign of `-0.0` is preserved in floating-point output.
 
 ```c++
-fmt::format("{:+d} {:+d}", 7, -7);    // Result: "+7 -7"
-fmt::format("{: d} {: d}", 7, -7);    // Result: " 7 -7"
+fmt::format("{:+d} {:+d}", 7, -7);  // Result: "+7 -7"
+fmt::format("{: d} {: d}", 7, -7);  // Result: " 7 -7"
 ```
 
 ### Alternate form (`#`)
@@ -134,7 +134,7 @@ presentation type:
   appropriate base prefix (`0b`/`0B`, `0`, or `0x`/`0X`). The case of the
   prefix follows the case of the type specifier — `0x` for `x`, `0X` for
   `X`, and so on.
-- For floating-point values, it forces the radix character to appear in the
+- For floating-point values, it forces the decimal point to appear in the
   output even if no fractional digits would otherwise be emitted, and
   prevents the `g`/`G` presentation types from removing trailing zeros from
   the significand.
@@ -153,7 +153,7 @@ Zero padding:
 
 - applies only to numeric types;
 - has no effect on `inf` or `nan`;
-- is silently ignored when an explicit *align* is also present.
+- is ignored when an explicit *align* is also present.
 
 ### Width
 
@@ -174,9 +174,9 @@ This keeps fixed *width* values visually consistent in monospace renderings
 that combine Latin and CJK text.
 
 ```c++
-fmt::format("[{:6}]", 42);          // Result: "[    42]"  -- right-aligned by default
-fmt::format("[{:6}]", "hi");        // Result: "[hi    ]"  -- left-aligned by default
-fmt::format("[{:{}}]", 42, 6);      // Result: "[    42]"  -- width from an argument
+fmt::format("[{:6}]", 42);      // Result: "[    42]"  -- right-aligned by default
+fmt::format("[{:6}]", "hi");    // Result: "[hi    ]"  -- left-aligned by default
+fmt::format("[{:{}}]", 42, 6);  // Result: "[    42]"  -- width from an argument
 ```
 
 ### Precision
@@ -187,9 +187,9 @@ supplied as a nested replacement field for runtime evaluation.
 
 | Type                          | Meaning of `.precision`                       |
 |-------------------------------|-----------------------------------------------|
-| `e`, `E`, `f`, `F`            | Digits emitted after the radix character.     |
+| `e`, `E`, `f`, `F`            | Digits emitted after the decimal point.       |
 | `g`, `G`                      | Total number of significant digits.           |
-| `a`, `A`                      | Digits after the radix character in the hexadecimal significand. If omitted, just enough digits are emitted to round-trip the value exactly. |
+| `a`, `A`                      | Digits after the decimal point in the hexadecimal significand. If omitted, just enough digits are emitted to round-trip the value exactly. |
 | Strings (`s`, `?`, or default) | Upper bound on the number of code points copied from the value. |
 
 A *precision* is not accepted for integer, character, boolean, or pointer
@@ -197,10 +197,10 @@ types. When a *precision* limits the number of characters taken from a C
 string, the string must still be null-terminated.
 
 ```c++
-fmt::format("{:.2f}", 3.14159);     // Result: "3.14"
-fmt::format("{:.3g}", 3.14159);     // Result: "3.14"
-fmt::format("{:.4}", "hello, world"); // Result: "hell"
-fmt::format("{:.{}f}", 3.14159, 4); // Result: "3.1416"  -- precision from an argument
+fmt::format("{:.2f}", 3.14159);        // Result: "3.14"
+fmt::format("{:.3g}", 3.14159);        // Result: "3.14"
+fmt::format("{:.4}", "hello, world");  // Result: "hell"
+fmt::format("{:.{}f}", 3.14159, 4);    // Result: "3.1416"  -- precision from an argument
 ```
 
 ### Locale (`L`)
@@ -208,7 +208,7 @@ fmt::format("{:.{}f}", 3.14159, 4); // Result: "3.1416"  -- precision from an ar
 The `L` flag selects locale-sensitive formatting for numeric types. The
 formatter inspects the C++ locale supplied to the formatting function (or
 the global locale, if none was passed) and inserts the locale's digit
-grouping characters and — for floating-point values — its radix character.
+grouping characters and — for floating-point values — its decimal point.
 The flag has no effect on non-numeric types.
 
 ```c++
@@ -239,7 +239,7 @@ grouped below by the value categories they apply to.
 fmt::format("{:d} {:#x} {:#o} {:#b}", 42, 42, 42, 42);
 // Result: "42 0x2a 052 0b101010"
 
-fmt::format("{:#06x}", 0xfe);   // # adds the prefix, 06 zero-pads to width 6
+fmt::format("{:#06x}", 0xfe);  // # adds the prefix, 06 zero-pads to width 6
 // Result: "0x00fe"
 ```
 
