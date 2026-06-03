@@ -17,7 +17,7 @@
   https://github.com/fmtlib/fmt/issues/4693,
   https://github.com/fmtlib/fmt/pull/4694,
   https://github.com/fmtlib/fmt/pull/4712).
-  Thanks @Soumik15630m, @yrlf and @localspook.
+  Thanks @Soumik15630m, @Ferdi265 and @localspook.
 
 - Added a separate `fmt::fmt-module` CMake target for C++20 modules and a
   CI workflow that exercises module-based builds
@@ -87,14 +87,13 @@
 
 - Added the `FMT_USE_FLOCKFILE` macro to disable the use of `flockfile`
   (https://github.com/fmtlib/fmt/issues/4646,
-  https://github.com/fmtlib/fmt/pull/4666). Thanks @MikeVastola.
+  https://github.com/fmtlib/fmt/pull/4666). Thanks @mvastola.
 
 - Added `include_guard(GLOBAL)` so that {fmt} can be used in multiple
   submodules of the same project
   (https://github.com/fmtlib/fmt/pull/4672). Thanks @torsten48.
 
-- Added `constexpr` to argument `value` constructors and to
-  `static_format_result` members
+- Improved `constexpr` support
   (https://github.com/fmtlib/fmt/pull/4659,
   https://github.com/fmtlib/fmt/pull/4591).
   Thanks @elbeno and @17steen.
@@ -125,7 +124,7 @@
   Thanks @Yancey2023 and @sunmy2019.
 
 - Fixed formatting of `std::tm` with a null `tm_zone`
-  (https://github.com/fmtlib/fmt/pull/4790). Thanks @JiamiLin.
+  (https://github.com/fmtlib/fmt/pull/4790). Thanks @Carmel0.
 
 - Fixed compile-time formatting in `fmt/ranges.h`, `fmt/style.h` and
   `fmt/std.h` (https://github.com/fmtlib/fmt/pull/4759). Thanks @j4niwzis.
@@ -145,10 +144,10 @@
 
 - Fixed an out-of-bounds read in `fmt::vprintf` with a trailing `%`
   (https://github.com/fmtlib/fmt/issues/4741,
-  https://github.com/fmtlib/fmt/pull/4742). Thanks @rmarin.
+  https://github.com/fmtlib/fmt/pull/4742). Thanks @Algunenano.
 
-- Fixed the return type of the `f(un)lockfile` wrappers on Windows
-  (https://github.com/fmtlib/fmt/pull/4739). Thanks @MikeVastola.
+- Fixed the return type of the `f(un)lockfile`   wrappers on Windows
+  (https://github.com/fmtlib/fmt/pull/4739). Thanks @mvastola.
 
 - Worked around a CUDA issue when handling UTF-32 literals
   (https://github.com/fmtlib/fmt/pull/4719). Thanks @Cazadorro.
@@ -174,7 +173,7 @@
   https://github.com/fmtlib/fmt/pull/4660). Thanks @Soumik15630m.
 
 - Fixed C++20 concept detection
-  (https://github.com/fmtlib/fmt/pull/4653). Thanks @lagoho7.
+  (https://github.com/fmtlib/fmt/pull/4653). Thanks @tearfur.
 
 - Fixed a clang compilation failure
   (https://github.com/fmtlib/fmt/pull/4718). Thanks @mccakit.
@@ -182,7 +181,7 @@
 - Fixed various MSVC warnings, including C4305 and conversion warnings on
   x86 (https://github.com/fmtlib/fmt/pull/4668,
   https://github.com/fmtlib/fmt/pull/4594).
-  Thanks @kanren3 and @JBerger.
+  Thanks @kanren3 and @blizzard4591.
 
 - Updated the Android Gradle Plugin to 9.x
   (https://github.com/fmtlib/fmt/issues/4651,
