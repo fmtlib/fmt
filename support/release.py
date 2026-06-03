@@ -35,6 +35,9 @@ class Git:
     def clone(self, *args):
         return self.call('clone', list(args) + [self.dir])
 
+    def fetch(self, *args):
+        return self.call('fetch', args, cwd=self.dir)
+
     def commit(self, *args):
         return self.call('commit', args, cwd=self.dir)
 
@@ -56,8 +59,11 @@ class Git:
 
 def clean_checkout(repo, branch):
     repo.clean('-f', '-d')
-    repo.reset('--hard')
+    repo.fetch('origin')
     repo.checkout(branch)
+    # Hard-reset to the remote so a reused clone picks up new commits
+    # instead of building from stale local state.
+    repo.reset('--hard', 'origin/' + branch)
 
 
 class Runner:
