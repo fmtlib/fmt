@@ -121,6 +121,10 @@ extern "C++" {
 #  define FMT_OS 1
 #endif
 
+#ifndef FMT_XCHAR
+#  define FMT_XCHAR 1
+#endif
+
 // All library-provided declarations and definitions must be in the module
 // purview to be exported.
 #include "fmt/args.h"
@@ -135,7 +139,9 @@ extern "C++" {
 #include "fmt/printf.h"
 #include "fmt/ranges.h"
 #include "fmt/std.h"
-#include "fmt/xchar.h"
+#if FMT_XCHAR
+#  include "fmt/xchar.h"
+#endif
 
 #ifdef FMT_ATTACH_TO_GLOBAL_MODULE
 }

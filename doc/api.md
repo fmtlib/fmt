@@ -725,6 +725,8 @@ configuring CMake.
 ### CMake Options
 
 - **`FMT_OS`**: When set to `OFF`, disables OS-specific APIs (`fmt/os.h`).
+- **`FMT_XCHAR`**: When set to `OFF`, disables wchar_t and exotic character
+  support.
 - **`FMT_UNICODE`**: When set to `OFF`, disables Unicode support on
   Windows/MSVC. Unicode support is always enabled on other platforms.
 
@@ -761,6 +763,7 @@ some features, you can use the following configuration:
 
 - CMake options:
     - `FMT_OS=OFF`
+    - `FMT_XCHAR=OFF`
 - Macros:
     - `FMT_BUILTIN_TYPES=0`
     - `FMT_OPTIMIZE_SIZE=2`
