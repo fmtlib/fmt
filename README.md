@@ -380,12 +380,6 @@ If you are aware of other projects using this library, please let me
 know by [email](mailto:victor.zverovich@gmail.com) or by submitting an
 [issue](https://github.com/fmtlib/fmt/issues).
 
-# Sponsors
-
-{fmt} development is supported by individual sponsors. If you find this
-library useful, please consider [sponsoring its development on GitHub
-Sponsors](https://github.com/sponsors/vitaut).
-
 # Maintainers
 
 The {fmt} library is maintained by Victor Zverovich
