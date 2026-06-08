@@ -78,15 +78,38 @@ jobs:
             "${{ steps.build.outputs.package }}" \
             --repo "${{ github.repository }}" --clobber
 
+  # Generate the provenance only; do not let the generator upload it. With
+  # upload-assets, the generator creates and publishes its own release (and
+  # tag) to host the attestation, which duplicates our draft. Instead we
+  # download the attestation artifact and attach it to the draft below.
   provenance:
     needs: [build]
     permissions:
       actions: read
       id-token: write
-      contents: write
+      contents: read
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
     with:
       base64-subjects: ${{ needs.build.outputs.hashes }}
       provenance-name: "fmt-${{ needs.build.outputs.tag }}.intoto.jsonl"
-      upload-assets: true
-      upload-tag-name: ${{ needs.build.outputs.tag }}
+      upload-assets: false
+
+  attach-provenance:
+    name: Attach provenance to the release
+    needs: [build, provenance]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download the provenance attestation
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ needs.provenance.outputs.provenance-name }}
+
+      - name: Attach provenance to the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${{ needs.build.outputs.tag }}" \
+            "${{ needs.provenance.outputs.provenance-name }}" \
+            --repo "${{ github.repository }}" --clobber
