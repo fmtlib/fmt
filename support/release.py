@@ -193,10 +193,10 @@ if __name__ == '__main__':
     run('cmake', '.')
     run('make', 'doc')
 
-    # Create a draft release on GitHub. The release workflow triggers on
-    # `release: created`, builds the source zip from `target_commitish`, and
-    # attaches the zip plus *.intoto.jsonl provenance to this draft. After
-    # reviewing the draft, the maintainer clicks Publish to finalize.
+    # Create a draft release on GitHub, then trigger the release workflow to
+    # build the source zip from the `release` branch and attach the zip plus
+    # *.intoto.jsonl provenance to this draft. After reviewing the draft, the
+    # maintainer clicks Publish to finalize.
     fmt_repo.push('origin', 'release')
     auth_headers = {'Authorization': 'token ' + os.getenv('FMT_TOKEN')}
     req = urllib.request.Request(
@@ -209,6 +209,21 @@ if __name__ == '__main__':
         if response.status != 201:
             raise Exception(f'Failed to create a release ' +
                             '{response.status} {response.reason}')
+
+    # Draft releases do not fire `release: created`, so explicitly dispatch the
+    # release workflow. It runs from the default branch (`branch`) but builds
+    # and uploads artifacts from the `release` branch for tag `version`.
+    dispatch_req = urllib.request.Request(
+        'https://api.github.com/repos/fmtlib/fmt/actions/workflows/'
+        'release.yml/dispatches',
+        data=json.dumps({'ref': branch,
+                         'inputs': {'tag_name': version,
+                                    'ref': 'release'}}).encode('utf-8'),
+        headers=auth_headers, method='POST')
+    with urllib.request.urlopen(dispatch_req) as response:
+        if response.status != 204:
+            raise Exception('Failed to dispatch the release workflow ' +
+                            f'{response.status} {response.reason}')
 
     short_version = '.'.join(version.split('.')[:-1])
     check_call(['./mkdocs', 'deploy', short_version], env=doc_env)
