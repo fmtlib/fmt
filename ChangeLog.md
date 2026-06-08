@@ -7,8 +7,7 @@
   ```c++
   #include <fmt/fmt-c.h>
 
-  char buf[100];
-  int n = fmt_format(buf, sizeof(buf), "The answer is {}.", 42);
+  fmt_print(stdout, "The answer is {}.\n", 42);
   ```
 
   (https://github.com/fmtlib/fmt/issues/4663,
@@ -16,7 +15,8 @@
   https://github.com/fmtlib/fmt/pull/4696,
   https://github.com/fmtlib/fmt/issues/4693,
   https://github.com/fmtlib/fmt/pull/4694,
-  https://github.com/fmtlib/fmt/pull/4712).
+  https://github.com/fmtlib/fmt/pull/4712,
+  https://github.com/fmtlib/fmt/pull/4789).
   Thanks @Soumik15630m, @Ferdi265 and @localspook.
 
 - Added a separate `fmt::fmt-module` CMake target for C++20 modules and a
