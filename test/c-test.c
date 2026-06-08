@@ -83,10 +83,30 @@ void test_buffer_size_query(void) {
   ASSERT_INT_EQ(size, 15);
 }
 
+void test_print(void) {
+  FILE* file = tmpfile();
+  if (!file) {
+    fprintf(stderr, "\nFailed to create temporary file\n");
+    exit(1);
+  }
+
+  int ret = fmt_print(file, "{} and {}", 42, "foo");
+  ASSERT_INT_EQ(ret, 0);
+
+  rewind(file);
+  char buf[100];
+  size_t n = fread(buf, 1, sizeof(buf) - 1, file);
+  buf[n] = '\0';
+  ASSERT_STR_EQ(buf, "42 and foo");
+
+  fclose(file);
+}
+
 int main(void) {
   printf("Running C API tests\n");
   test_types();
   test_zero_arguments();
   test_buffer_size_query();
+  test_print();
   printf("C API tests passed\n");
 }

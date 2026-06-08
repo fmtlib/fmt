@@ -10,6 +10,7 @@
 #include <fmt/base.h>
 
 constexpr size_t max_c_format_args = 16;
+
 static int convert_c_format_args(
     fmt::basic_format_arg<fmt::format_context>* format_args,
     const fmt_arg* args, size_t num_args) {
