@@ -2,11 +2,6 @@ name: lint
 
 on:
   pull_request:
-    paths:
-      - '**.h'
-      - '**.cc'
-      - '**.cmake'
-      - '**/CMakeLists.txt'
 
 permissions:
   contents: read
