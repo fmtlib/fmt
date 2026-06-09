@@ -87,7 +87,10 @@ jobs:
     permissions:
       actions: read
       id-token: write
-      contents: read
+      # contents: write is required because the generator's (skipped)
+      # upload-assets job declares it, and a reusable workflow's job
+      # permissions may not exceed the caller's, or the run fails at startup.
+      contents: write
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
     with:
       base64-subjects: ${{ needs.build.outputs.hashes }}
