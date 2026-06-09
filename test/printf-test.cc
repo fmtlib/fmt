@@ -116,6 +116,17 @@ TEST(printf_test, invalid_arg_index) {
                    "argument not found");
 }
 
+TEST(printf_test, zero_positional_width_precision) {
+  // A '0' positional index for a '*' width or precision must be rejected. Use
+  // enough arguments to exercise the unpacked argument storage path.
+  EXPECT_THROW_MSG(test_sprintf("%*0$d", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+                                13, 14, 15, 16),
+                   format_error, "argument not found");
+  EXPECT_THROW_MSG(test_sprintf("%.*0$d", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+                                13, 14, 15, 16),
+                   format_error, "argument not found");
+}
+
 TEST(printf_test, default_align_right) {
   EXPECT_PRINTF("   42", "%5d", 42);
   EXPECT_PRINTF("  abc", "%5s", "abc");
