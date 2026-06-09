@@ -1338,7 +1338,7 @@ template <typename T> auto to_decimal(T x) noexcept -> decimal_fp<T> {
 
   if (r < deltai) {
     // Exclude the right endpoint if necessary.
-    if (r == 0 && (z_mul.is_integer & !include_right_endpoint)) {
+    if (r == 0 && (z_mul.is_integer && !include_right_endpoint)) {
       --ret_value.significand;
       r = float_info<T>::big_divisor;
       goto small_divisor_case_label;
@@ -1350,7 +1350,7 @@ template <typename T> auto to_decimal(T x) noexcept -> decimal_fp<T> {
     const typename cache_accessor<T>::compute_mul_parity_result x_mul =
         cache_accessor<T>::compute_mul_parity(two_fc - 1, cache, beta);
 
-    if (!(x_mul.parity | (x_mul.is_integer & include_left_endpoint)))
+    if (!(x_mul.parity || (x_mul.is_integer && include_left_endpoint)))
       goto small_divisor_case_label;
   }
   ret_value.exponent = minus_k + float_info<T>::kappa + 1;
@@ -1390,7 +1390,7 @@ small_divisor_case_label:
   // or equivalently, when y is an integer.
   if (y_mul.parity != approx_y_parity)
     --ret_value.significand;
-  else if (y_mul.is_integer & (ret_value.significand % 2 != 0))
+  else if (y_mul.is_integer && (ret_value.significand % 2 != 0))
     --ret_value.significand;
   return ret_value;
 }
