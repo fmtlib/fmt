@@ -142,9 +142,11 @@
   an embedded null byte
   (https://github.com/fmtlib/fmt/pull/4732). Thanks @user202729.
 
-- Fixed an out-of-bounds read in `fmt::vprintf` with a trailing `%`
+- Fixed out-of-bounds reads in `printf` formatting
   (https://github.com/fmtlib/fmt/issues/4741,
-  https://github.com/fmtlib/fmt/pull/4742). Thanks @Algunenano.
+  https://github.com/fmtlib/fmt/pull/4742,
+  https://github.com/fmtlib/fmt/pull/4800).
+  Thanks @Algunenano and @aizu-m.
 
 - Fixed the return type of the `f(un)lockfile`   wrappers on Windows
   (https://github.com/fmtlib/fmt/pull/4739). Thanks @mvastola.
@@ -199,9 +201,10 @@
   https://github.com/fmtlib/fmt/pull/4713,
   https://github.com/fmtlib/fmt/pull/4729,
   https://github.com/fmtlib/fmt/pull/4751,
-  https://github.com/fmtlib/fmt/pull/4758).
+  https://github.com/fmtlib/fmt/pull/4758,
+  https://github.com/fmtlib/fmt/pull/4799).
   Thanks @ZephyrLykos, @togunchan, @kagancansit, @BerndPetrovitsch,
-  @Skylion007, @st0rmbtw and @localspook.
+  @Skylion007, @st0rmbtw, @localspook and @EXtremeExploit.
 
 - Improved documentation, including a rewrite of the format string syntax,
   better handling of doxygen tags, documenting `output_file`, fixing CSS so
