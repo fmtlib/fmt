@@ -989,6 +989,9 @@ TEST(chrono_test, glibc_extensions) {
 TEST(chrono_test, out_of_range) {
   auto d = std::chrono::duration<unsigned long, std::giga>(538976288);
   EXPECT_THROW((void)fmt::format("{:%j}", d), fmt::format_error);
+  // A floating-point day count that doesn't fit in int.
+  auto fd = std::chrono::duration<double>(1e300);
+  EXPECT_THROW((void)fmt::format("{:%j}", fd), fmt::format_error);
 }
 
 TEST(chrono_test, year_month_day) {

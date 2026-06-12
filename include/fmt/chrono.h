@@ -934,10 +934,9 @@ inline auto to_nonnegative_int(T value, Int upper) -> Int {
 }
 template <typename T, typename Int, FMT_ENABLE_IF(!std::is_integral<T>::value)>
 inline auto to_nonnegative_int(T value, Int upper) -> Int {
-  auto int_value = static_cast<Int>(value);
-  if (int_value < 0 || value > static_cast<T>(upper))
+  if (value < 0 || value >= static_cast<T>(upper) + 1)
     FMT_THROW(format_error("invalid value"));
-  return int_value;
+  return static_cast<Int>(value);
 }
 
 constexpr auto pow10(std::uint32_t n) -> long long {
