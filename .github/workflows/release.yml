@@ -4,6 +4,10 @@
 # slsa-github-generator. The maintainer reviews the draft (which by then has
 # both the zip and *.intoto.jsonl attached) and clicks Publish to finalize.
 #
+# The source package includes the pre-rendered HTML documentation (doc-html/),
+# so this workflow builds the docs and stages them into the source tree before
+# running CPack's package_source target.
+#
 # This makes the provenance attest to the actual build that produced the
 # artifact, rather than just attesting to a hash observed after the fact.
 #
@@ -54,10 +58,31 @@ jobs:
           ref: ${{ steps.vars.outputs.ref }}
           persist-credentials: false
 
+      - name: Install the documentation toolchain
+        # The source zip ships the pre-rendered HTML docs (doc-html/), so the
+        # docs must be built before packaging. doxygen feeds the API reference;
+        # mkdocs plus the pinned, hash-verified deps render the site. The venv
+        # lives outside the checkout so it is not swept into the source zip, and
+        # is added to PATH so CMake's find_program(MKDOCS) and the doxygen call
+        # in the mkdocstrings handler both resolve in later steps.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y doxygen
+          python3 -m venv "$RUNNER_TEMP/doc-venv"
+          "$RUNNER_TEMP/doc-venv/bin/pip" install --quiet --upgrade pip
+          "$RUNNER_TEMP/doc-venv/bin/pip" install --quiet --require-hashes \
+            -r support/doc-requirements.txt
+          echo "$RUNNER_TEMP/doc-venv/bin" >> "$GITHUB_PATH"
+
       - name: Build source zip via CPack
         id: build
+        # Configure first so the doc target picks up doxygen/mkdocs, build the
+        # docs, then stage the generated site into the source tree so the CPack
+        # source package (which packages the source dir) includes doc-html/.
         run: |
           cmake -B build .
+          cmake --build build --target doc
+          cp -r build/doc-html doc-html
           cmake --build build --target package_source
           pkg=$(ls build/fmt-*.zip)
           test -f "$pkg"
