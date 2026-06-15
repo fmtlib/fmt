@@ -1501,7 +1501,7 @@ FMT_CONSTEXPR auto parse_format_specs(const Char* begin, const Char* end,
       break;
     case '0':
       enter_state(state::zero);
-      if (!is_arithmetic_type(arg_type))
+      if (!is_arithmetic_type(arg_type) && !in(arg_type, pointer_set))
         report_error("format specifier requires numeric argument");
       if (specs.align() == align::none) {
         // Ignore 0 if align is specified for compatibility with std::format.
