@@ -76,9 +76,9 @@ jobs:
 
       - name: Build source zip via CPack
         id: build
-        # Configure first so the doc target picks up doxygen/mkdocs, build the
-        # docs, then stage the generated site into the source tree so the CPack
-        # source package (which packages the source dir) includes doc-html/.
+        # Build the docs and stage the rendered site at the top level so the
+        # CPack source package includes doc-html/. The build/ tree itself is
+        # excluded by CPACK_SOURCE_IGNORE_FILES.
         run: |
           cmake -B build .
           cmake --build build --target doc
