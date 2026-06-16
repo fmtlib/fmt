@@ -82,6 +82,11 @@ TEST(uint128_test, minus) {
   EXPECT_EQ(n - 2, 40);
 }
 
+TEST(uint128_test, bitwise_not) {
+  auto n = ~uint128(0x123456789abcdef0, 0x0fedcba987654321);
+  EXPECT_EQ(n, uint128(0xedcba9876543210f, 0xf0123456789abcde));
+}
+
 TEST(uint128_test, plus_assign) {
   auto n = uint128(32);
   n += uint128(10);
