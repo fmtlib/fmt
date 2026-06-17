@@ -18,6 +18,7 @@
 #include <cfenv>        // fegetexceptflag and FE_ALL_EXCEPT
 #include <climits>      // INT_MAX
 #include <cmath>        // std::signbit
+#include <csignal>      // std::signal, SIGPIPE
 #include <cstring>      // std::strlen
 #include <iterator>     // std::back_inserter
 #include <list>         // std::list
@@ -2591,6 +2592,24 @@ TEST(format_test, invalid_glibc_buffer) {
   setvbuf(file, nullptr, _IOLBF, 0);
 
   fmt::print(file, "------\n");
+}
+
+TEST(format_test, print_to_broken_pipe) {
+  // Ignore SIGPIPE so that a failing write reports EPIPE instead of
+  // terminating the test process. It must stay ignored until the file is
+  // closed below because closing also flushes the remaining buffered data.
+  auto old_handler = std::signal(SIGPIPE, SIG_IGN);
+  {
+    auto pipe = fmt::pipe();
+    pipe.read_end.close();
+    auto write_end = pipe.write_end.fdopen("w");
+
+    // The data must exceed the file's buffer to force a flush during
+    // formatting, whose underlying write() then fails with EPIPE.
+    auto data = std::string(1024 * 1024, 'x');
+    EXPECT_THROW(fmt::print(write_end.get(), "{}", data), std::system_error);
+  }
+  std::signal(SIGPIPE, old_handler);
 }
 #endif  // FMT_USE_FCNTL
 

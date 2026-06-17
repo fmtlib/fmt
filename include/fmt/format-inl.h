@@ -1526,7 +1526,10 @@ template <typename F> class file_base {
       FMT_THROW(system_error(errno, FMT_STRING("ungetc failed")));
   }
 
-  void flush() { fflush(this->file_); }
+  void flush() {
+    if (fflush(this->file_) != 0)
+      FMT_THROW(system_error(errno, FMT_STRING("fflush failed")));
+  }
 };
 
 // A FILE wrapper for glibc.
@@ -1572,7 +1575,10 @@ template <typename F> class glibc_file : public file_base<F> {
     return memchr(end, '\n', static_cast<size_t>(size));
   }
 
-  void flush() { fflush_unlocked(this->file_); }
+  void flush() {
+    if (fflush_unlocked(this->file_) != 0)
+      FMT_THROW(system_error(errno, FMT_STRING("fflush failed")));
+  }
 };
 
 // A FILE wrapper for Apple's libc.
