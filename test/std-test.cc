@@ -404,6 +404,26 @@ TEST(std_test, exception) {
 #endif
 }
 
+TEST(std_test, exception_ptr) {
+  std::exception_ptr p1 = nullptr;
+  std::exception_ptr p2;
+
+  try {
+    using namespace my_ns1::my_ns2;
+    throw my_exception("My Exception");
+  } catch (...) {
+    p2 = std::current_exception();
+  }
+
+  EXPECT_EQ(fmt::format("{}", p1), "nullptr");
+  EXPECT_EQ(fmt::format("{}", p2), "My Exception");
+
+#if FMT_USE_RTTI
+  EXPECT_EQ(fmt::format("{:t}", p2),
+            "my_ns1::my_ns2::my_exception: My Exception");
+#endif
+}
+
 #if FMT_USE_RTTI
 TEST(std_test, type_info) {
   EXPECT_EQ(fmt::format("{}", typeid(std::runtime_error)),
