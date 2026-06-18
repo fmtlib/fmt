@@ -326,6 +326,9 @@ class uint128 {
       -> uint128 {
     return {lhs.hi_ & rhs.hi_, lhs.lo_ & rhs.lo_};
   }
+  friend constexpr auto operator~(const uint128& n) -> uint128 {
+    return {~n.hi_, ~n.lo_};
+  }
   friend FMT_CONSTEXPR auto operator+(const uint128& lhs, const uint128& rhs)
       -> uint128 {
     auto result = uint128(lhs);
