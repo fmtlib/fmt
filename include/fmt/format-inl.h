@@ -1338,7 +1338,7 @@ template <typename T> auto to_decimal(T x) noexcept -> decimal_fp<T> {
 
   if (r < deltai) {
     // Exclude the right endpoint if necessary.
-    if (r == 0 && (z_mul.is_integer & !include_right_endpoint)) {
+    if (r == 0 && (z_mul.is_integer && !include_right_endpoint)) {
       --ret_value.significand;
       r = float_info<T>::big_divisor;
       goto small_divisor_case_label;
