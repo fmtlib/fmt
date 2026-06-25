@@ -875,19 +875,19 @@ struct custom_container {
 };
 
 struct phantom_subscript_operator_container {
-  std::vector<char> buffer_;
+  std::vector<char> buffer;
 
   using value_type = char;
 
-  auto size() const noexcept -> size_t { return buffer_.size(); }
+  auto size() const noexcept -> size_t { return buffer.size(); }
 
-  auto data() noexcept -> char* { return buffer_.data(); }
+  auto data() noexcept -> char* { return buffer.data(); }
 
-  auto data() const noexcept -> const char* { return buffer_.data(); }
+  auto data() const noexcept -> const char* { return buffer.data(); }
 
-  void resize(size_t n) { buffer_.resize(n); }
+  void resize(size_t n) { buffer.resize(n); }
 
-  void push_back(const char& value) { buffer_.push_back(value); }
+  void push_back(const char& value) { buffer.push_back(value); }
 
   operator const char*() const noexcept { return data(); }
 };
