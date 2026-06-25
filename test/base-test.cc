@@ -874,23 +874,22 @@ struct custom_container {
   auto operator[](size_t) -> char& { return data; }
 };
 
-struct phantom_subscript_operator_container
-{
+struct phantom_subscript_operator_container {
   std::vector<char> buffer_;
 
   using value_type = char;
 
-  FMT_NODISCARD auto size() const noexcept -> size_t { return buffer_.size(); }
+  auto size() const noexcept -> size_t { return buffer_.size(); }
 
-  FMT_NODISCARD auto data() noexcept -> char* { return buffer_.data(); }
+  auto data() noexcept -> char* { return buffer_.data(); }
 
-  FMT_NODISCARD auto data() const noexcept -> char const* { return buffer_.data(); }
+  auto data() const noexcept -> const char* { return buffer_.data(); }
 
   void resize(size_t n) { buffer_.resize(n); }
 
-  void push_back(char const& value) { buffer_.push_back(value); }
+  void push_back(const char& value) { buffer_.push_back(value); }
 
-  FMT_NODISCARD operator char const*() const noexcept { return data(); }
+  operator const char*() const noexcept { return data(); }
 };
 
 FMT_BEGIN_NAMESPACE
