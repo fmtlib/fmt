@@ -874,6 +874,24 @@ struct custom_container {
   auto operator[](size_t) -> char& { return data; }
 };
 
+struct phantom_subscript_operator_container {
+  std::vector<char> buffer;
+
+  using value_type = char;
+
+  auto size() const noexcept -> size_t { return buffer.size(); }
+
+  auto data() noexcept -> char* { return buffer.data(); }
+
+  auto data() const noexcept -> const char* { return buffer.data(); }
+
+  void resize(size_t n) { buffer.resize(n); }
+
+  void push_back(const char& value) { buffer.push_back(value); }
+
+  operator const char*() const noexcept { return data(); }
+};
+
 FMT_BEGIN_NAMESPACE
 template <> struct is_contiguous<custom_container> : std::true_type {};
 FMT_END_NAMESPACE
@@ -884,6 +902,7 @@ TEST(base_test, is_contiguous) {
   EXPECT_TRUE((fmt::is_contiguous<fmt::string_view>::value));
   EXPECT_TRUE((fmt::is_contiguous<std::vector<char>>::value));
   EXPECT_FALSE((fmt::is_contiguous<std::list<char>>::value));
+  EXPECT_FALSE((fmt::is_contiguous<phantom_subscript_operator_container>::value));
 }
 
 TEST(base_test, format_to_custom_container) {

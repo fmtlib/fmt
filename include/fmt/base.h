@@ -493,9 +493,10 @@ inline FMT_CONSTEXPR auto get_container(OutputIt it) ->
 template <typename T, typename Enable = void>
 struct is_contiguous : std::false_type {};
 template <typename T>
-struct is_contiguous<T, void_t<decltype(std::declval<T&>().data()),
-                               decltype(std::declval<T&>().size()),
-                               decltype(std::declval<T&>()[size_t()])>>
+struct is_contiguous<T,
+                     void_t<decltype(std::declval<T&>().data()),
+                            decltype(std::declval<T&>().size()),
+                            decltype(std::declval<T&>().operator[](size_t()))>>
     : std::true_type {};
 }  // namespace detail
 
