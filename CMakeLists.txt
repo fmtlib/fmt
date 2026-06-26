@@ -417,8 +417,19 @@ target_compile_definitions(fmt-header-only INTERFACE FMT_HEADER_ONLY=1)
 target_compile_features(fmt-header-only INTERFACE cxx_std_11)
 setup_target(fmt-header-only INTERFACE)
 
-add_library(fmt-c STATIC src/fmt-c.cc)
+add_library(fmt-c src/fmt-c.cc)
 target_compile_features(fmt-c INTERFACE c_std_11)
+if (BUILD_SHARED_LIBS)
+  target_compile_definitions(
+    fmt-c
+    PRIVATE FMT_LIB_EXPORT
+    INTERFACE FMT_SHARED)
+endif ()
+set_target_properties(
+  fmt-c
+  PROPERTIES VERSION ${FMT_VERSION}
+             SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR}
+             DEBUG_POSTFIX "${FMT_DEBUG_POSTFIX}")
 if (MSVC)
   target_compile_options(fmt-c PUBLIC /Zc:preprocessor)
 endif ()
