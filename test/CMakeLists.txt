@@ -243,5 +243,5 @@ endif ()
 
 enable_language(C)
 add_executable(c-test c-test.c)
-target_link_libraries(c-test PUBLIC fmt::fmt-c)
+target_link_libraries(c-test PRIVATE fmt::fmt-c)
 add_test(NAME c-test COMMAND c-test)

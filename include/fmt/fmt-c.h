@@ -12,12 +12,6 @@
 #include <stddef.h>   // size_t
 #include <stdio.h>    // FILE
 
-#if defined(__GNUC__)
-#  define FMT_CVISIBILITY(value) __attribute__((visibility(value)))
-#else
-#  define FMT_CVISIBILITY(value)
-#endif
-
 #if !defined(FMT_HEADER_ONLY) && defined(_WIN32)
 #  if defined(FMT_LIB_EXPORT)
 #    define FMT_CAPI __declspec(dllexport)
@@ -25,7 +19,11 @@
 #    define FMT_CAPI __declspec(dllimport)
 #  endif
 #elif defined(FMT_LIB_EXPORT) || defined(FMT_SHARED)
-#  define FMT_CAPI FMT_CVISIBILITY("default")
+#  ifdef __GNUC__
+#    define FMT_CAPI __attribute__((visibility("default")))
+#  else
+#    define FMT_CAPI
+#  endif
 #endif
 #ifndef FMT_CAPI
 #  define FMT_CAPI
