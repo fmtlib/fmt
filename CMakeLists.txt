@@ -504,10 +504,7 @@ if (FMT_INSTALL)
 
   # Use a namespace because CMake provides better diagnostics for namespaced
   # imported targets.
-  export(
-    TARGETS ${INSTALL_TARGETS}
-    NAMESPACE fmt::
-    FILE ${PROJECT_BINARY_DIR}/${targets_export_name}.cmake)
+ 
 
   # Install version, config and target files.
   install(
@@ -525,6 +522,11 @@ if (FMT_INSTALL)
     DESTINATION "${FMT_PKGCONFIG_DIR}"
     COMPONENT fmt_core)
 endif ()
+
+ export(
+    TARGETS ${INSTALL_TARGETS}
+    NAMESPACE fmt::
+    FILE ${PROJECT_BINARY_DIR}/${targets_export_name}.cmake)
 
 function (add_doc_target)
   find_program(DOXYGEN doxygen PATHS "$ENV{ProgramFiles}/doxygen/bin"
