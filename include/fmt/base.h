@@ -2898,8 +2898,9 @@ FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
   vargs<T...> va = {{args...}};
   if FMT_CONSTEXPR20 (!detail::use_utf8)
     return detail::vprint_mojibake(stdout, fmt.str, va, false);
-  detail::is_locking<T...>() ? vprint_buffered(stdout, fmt.str, va)
-                             : vprint(fmt.str, va);
+  else
+    detail::is_locking<T...>() ? vprint_buffered(stdout, fmt.str, va)
+                               : vprint(fmt.str, va);
 }
 
 /**
@@ -2915,8 +2916,9 @@ FMT_INLINE void print(FILE* f, format_string<T...> fmt, T&&... args) {
   vargs<T...> va = {{args...}};
   if FMT_CONSTEXPR20 (!detail::use_utf8)
     return detail::vprint_mojibake(f, fmt.str, va, false);
-  detail::is_locking<T...>() ? vprint_buffered(f, fmt.str, va)
-                             : vprint(f, fmt.str, va);
+  else
+    detail::is_locking<T...>() ? vprint_buffered(f, fmt.str, va)
+                               : vprint(f, fmt.str, va);
 }
 
 /// Formats `args` according to specifications in `fmt` and writes the output
@@ -2925,7 +2927,7 @@ template <typename... T>
 FMT_INLINE void println(FILE* f, format_string<T...> fmt, T&&... args) {
   vargs<T...> va = {{args...}};
   if FMT_CONSTEXPR20 (detail::use_utf8) return vprintln(f, fmt.str, va);
-  detail::vprint_mojibake(f, fmt.str, va, true);
+  else detail::vprint_mojibake(f, fmt.str, va, true);
 }
 
 /// Formats `args` according to specifications in `fmt` and writes the output
