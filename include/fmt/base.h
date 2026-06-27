@@ -1285,9 +1285,12 @@ constexpr auto to_ascii(Char c) -> char {
 // Returns the number of code units in a code point or 1 on error.
 template <typename Char>
 FMT_CONSTEXPR auto code_point_length(const Char* begin) -> int {
-  if FMT_CONSTEXPR20 (sizeof(Char) != 1) return 1;
-  auto c = static_cast<unsigned char>(*begin);
-  return static_cast<int>((0x3a55000000000000ull >> (2 * (c >> 3))) & 3) + 1;
+  if FMT_CONSTEXPR20 (sizeof(Char) != 1) {
+    return 1;
+  } else {
+    auto c = static_cast<unsigned char>(*begin);
+    return static_cast<int>((0x3a55000000000000ull >> (2 * (c >> 3))) & 3) + 1;
+  }
 }
 
 // Parses the range [begin, end) as an unsigned integer. This function assumes
@@ -2896,10 +2899,12 @@ FMT_API void vprint_buffered(FILE* f, string_view fmt, format_args args);
 template <typename... T>
 FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
   vargs<T...> va = {{args...}};
-  if FMT_CONSTEXPR20 (!detail::use_utf8)
-    return detail::vprint_mojibake(stdout, fmt.str, va, false);
-  detail::is_locking<T...>() ? vprint_buffered(stdout, fmt.str, va)
-                             : vprint(fmt.str, va);
+  if FMT_CONSTEXPR20 (!detail::use_utf8) {
+    detail::vprint_mojibake(stdout, fmt.str, va, false);
+  } else {
+    detail::is_locking<T...>() ? vprint_buffered(stdout, fmt.str, va)
+                               : vprint(fmt.str, va);
+  }
 }
 
 /**
@@ -2913,10 +2918,12 @@ FMT_INLINE void print(format_string<T...> fmt, T&&... args) {
 template <typename... T>
 FMT_INLINE void print(FILE* f, format_string<T...> fmt, T&&... args) {
   vargs<T...> va = {{args...}};
-  if FMT_CONSTEXPR20 (!detail::use_utf8)
-    return detail::vprint_mojibake(f, fmt.str, va, false);
-  detail::is_locking<T...>() ? vprint_buffered(f, fmt.str, va)
-                             : vprint(f, fmt.str, va);
+  if FMT_CONSTEXPR20 (!detail::use_utf8) {
+    detail::vprint_mojibake(f, fmt.str, va, false);
+  } else {
+    detail::is_locking<T...>() ? vprint_buffered(f, fmt.str, va)
+                               : vprint(f, fmt.str, va);
+  }
 }
 
 /// Formats `args` according to specifications in `fmt` and writes the output
@@ -2924,8 +2931,11 @@ FMT_INLINE void print(FILE* f, format_string<T...> fmt, T&&... args) {
 template <typename... T>
 FMT_INLINE void println(FILE* f, format_string<T...> fmt, T&&... args) {
   vargs<T...> va = {{args...}};
-  if FMT_CONSTEXPR20 (detail::use_utf8) return vprintln(f, fmt.str, va);
-  detail::vprint_mojibake(f, fmt.str, va, true);
+  if FMT_CONSTEXPR20 (detail::use_utf8) {
+    vprintln(f, fmt.str, va);
+  } else {
+    detail::vprint_mojibake(f, fmt.str, va, true);
+  }
 }
 
 /// Formats `args` according to specifications in `fmt` and writes the output
