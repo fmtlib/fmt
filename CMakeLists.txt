@@ -256,11 +256,13 @@ function (setup_target target kind)
     target_compile_definitions(${target} ${kind} FMT_UNICODE=0)
   endif ()
 
-  set_target_properties(
-    ${target}
-    PROPERTIES VERSION ${FMT_VERSION}
-               SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR}
-               DEBUG_POSTFIX "${FMT_DEBUG_POSTFIX}")
+  if (NOT "${kind}" STREQUAL "INTERFACE")
+    set_target_properties(
+            ${target}
+            PROPERTIES VERSION ${FMT_VERSION}
+            SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR}
+            DEBUG_POSTFIX "${FMT_DEBUG_POSTFIX}")
+  endif ()
 endfunction ()
 
 set(FMT_HEADERS)
