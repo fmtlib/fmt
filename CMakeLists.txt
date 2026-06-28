@@ -505,14 +505,14 @@ if (FMT_INSTALL)
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} ${INSTALL_FILE_SET})
 
   # Use a namespace because CMake provides better diagnostics for namespaced
-  # imported targets.
-  export(
-    TARGETS ${INSTALL_TARGETS}
-    NAMESPACE fmt::
-    FILE ${PROJECT_BINARY_DIR}/${targets_export_name}.cmake)
+# imported targets.
+export(
+TARGETS ${INSTALL_TARGETS}
+AMESPACE fmt::
+FILE ${PROJECT_BINARY_DIR}/${targets_export_name}.cmake)
 
-  # Install version, config and target files.
-  install(
+# Install version, config and target files.
+install(
     FILES ${project_config} ${version_config}
     DESTINATION ${FMT_CMAKE_DIR}
     COMPONENT fmt_core)
