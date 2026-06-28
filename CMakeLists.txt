@@ -258,10 +258,10 @@ function (setup_target target kind)
 
   if (NOT "${kind}" STREQUAL "INTERFACE")
     set_target_properties(
-            ${target}
-            PROPERTIES VERSION ${FMT_VERSION}
-            SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR}
-            DEBUG_POSTFIX "${FMT_DEBUG_POSTFIX}")
+      ${target}
+      PROPERTIES VERSION ${FMT_VERSION}
+                 SOVERSION ${CPACK_PACKAGE_VERSION_MAJOR}
+                 DEBUG_POSTFIX "${FMT_DEBUG_POSTFIX}")
   endif ()
 endfunction ()
 
