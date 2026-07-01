@@ -19,7 +19,7 @@ jobs:
     steps:
     - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
-    - uses: github/codeql-action/init@87557b9c84dde89fdd9b10e88954ac2f4248e463 # v3.29.5
+    - uses: github/codeql-action/init@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v3.29.5
       with:
         languages: c-cpp
 
