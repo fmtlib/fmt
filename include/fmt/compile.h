@@ -175,6 +175,7 @@ struct compile_has_format_as : std::false_type {};
 template <typename T>
 struct compile_has_format_as<T, void_t<decltype(format_as(std::declval<const T&>()))>> : std::true_type {};
 
+
 template <typename Char, typename V, int N> struct field {
   using char_type = Char;
 
@@ -184,13 +185,20 @@ template <typename Char, typename V, int N> struct field {
     if constexpr (std::is_convertible<V, basic_string_view<Char>>::value) {
       auto s = basic_string_view<Char>(arg);
       return copy<Char>(s.begin(), s.end(), out);
-    } else if constexpr (compile_has_format_as<V>::value) {
+    } else if constexpr (detail::use_format_as<V>::value) {
       return write<Char>(out, format_as(arg));
+    } else if constexpr (detail::use_format_as_member<V>::value) {
+      return write<Char>(out, formatter<V>::format_as(arg));
     } else {
       return write<Char>(out, arg);
     }
   }
 };
+
+
+
+
+
 
 template <typename Char, typename T, int N>
 struct is_compiled_format<field<Char, T, N>> : std::true_type {};
