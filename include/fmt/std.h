@@ -649,6 +649,73 @@ struct formatter<
   }
 };
 
+#if FMT_USE_EXCEPTIONS
+namespace detail {
+
+// Formats the exception currently being handled, writing its (dynamic) type
+// name and message, and recursing into nested exceptions. Must be called from
+// within a catch block.
+template <typename OutputIt>
+auto write_current_exception(OutputIt out) -> OutputIt {
+  try {
+    throw;
+  } catch (const std::exception& ex) {
+    // Reuse the std::exception formatter to render "<type>: <what>".
+    out = fmt::format_to(out, "{:t}", ex);
+  } catch (...) {
+    // The thrown object does not derive from std::exception, so it has no
+    // what(); fall back to its type name obtained from the ABI, if available.
+#  if FMT_USE_RTTI && defined(FMT_HAS_ABI_CXA_DEMANGLE)
+    if (const std::type_info* tp = abi::__cxa_current_exception_type())
+      out = write_demangled_name(out, *tp);
+    else
+      out = write<char>(out, string_view("<unknown exception>"));
+#  else
+    out = write<char>(out, string_view("<unknown exception>"));
+#  endif
+  }
+
+  // Recurse into nested exceptions.
+  try {
+    throw;
+  } catch (const std::nested_exception& ne) {
+    if (ne.nested_ptr()) {
+      out = write<char>(out, string_view(": "));
+      try {
+        std::rethrow_exception(ne.nested_ptr());
+      } catch (...) {
+        out = write_current_exception(out);
+      }
+    }
+  } catch (...) {
+  }
+  return out;
+}
+
+}  // namespace detail
+
+// {fmt} has no formatter for std::exception_ptr through the std::exception
+// formatter above because std::exception_ptr is not derived from
+// std::exception. An empty exception_ptr is formatted as "<no exception>".
+template <> struct formatter<std::exception_ptr> {
+  FMT_CONSTEXPR auto parse(parse_context<>& ctx) -> const char* {
+    return ctx.begin();
+  }
+
+  template <typename Context>
+  auto format(const std::exception_ptr& eptr, Context& ctx) const
+      -> decltype(ctx.out()) {
+    if (!eptr)
+      return detail::write<char>(ctx.out(), string_view("<no exception>"));
+    try {
+      std::rethrow_exception(eptr);
+    } catch (...) {
+      return detail::write_current_exception(ctx.out());
+    }
+  }
+};
+#endif  // FMT_USE_EXCEPTIONS
+
 template <int N, typename Char>
 struct formatter<detail::bitint<N>, Char> : formatter<long long, Char> {
   static_assert(N <= 64, "unsupported _BitInt");

@@ -506,6 +506,8 @@ chrono-format-specifications).
 - [`std::bitset`](https://en.cppreference.com/w/cpp/utility/bitset)
 - [`std::error_code`](https://en.cppreference.com/w/cpp/error/error_code)
 - [`std::exception`](https://en.cppreference.com/w/cpp/error/exception)
+- [`std::exception_ptr`](
+  https://en.cppreference.com/w/cpp/error/exception_ptr)
 - [`std::filesystem::path`](https://en.cppreference.com/w/cpp/filesystem/path)
 - [`std::monostate`](
   https://en.cppreference.com/w/cpp/utility/variant/monostate)

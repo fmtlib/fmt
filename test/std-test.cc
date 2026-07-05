@@ -404,6 +404,48 @@ TEST(std_test, exception) {
 #endif
 }
 
+#if FMT_USE_EXCEPTIONS
+TEST(std_test, exception_ptr) {
+  using testing::StartsWith;
+
+  EXPECT_EQ("<no exception>", fmt::format("{}", std::exception_ptr()));
+
+  auto eptr = std::make_exception_ptr(std::runtime_error("Test Exception"));
+#  if FMT_USE_RTTI
+  EXPECT_EQ("std::runtime_error: Test Exception", fmt::format("{}", eptr));
+#  else
+  EXPECT_EQ("Test Exception", fmt::format("{}", eptr));
+#  endif
+
+  // A nested exception is formatted recursively. The outer type name is an
+  // implementation-defined wrapper (e.g. std::_Nested_exception<...>) so only
+  // the messages and the nested rendering are checked here.
+  std::exception_ptr nested;
+  try {
+    try {
+      throw std::logic_error("inner");
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error("outer"));
+    }
+  } catch (...) {
+    nested = std::current_exception();
+  }
+#  if FMT_USE_RTTI
+  EXPECT_THAT(fmt::format("{}", nested),
+              testing::AllOf(testing::HasSubstr("outer"),
+                             testing::HasSubstr(": std::logic_error: inner")));
+#  endif
+
+  // A non-std::exception object is formatted by its type name when available.
+  auto int_eptr = std::make_exception_ptr(42);
+#  if FMT_USE_RTTI && defined(FMT_HAS_ABI_CXA_DEMANGLE)
+  EXPECT_EQ("int", fmt::format("{}", int_eptr));
+#  else
+  EXPECT_THAT(fmt::format("{}", int_eptr), StartsWith("<unknown exception>"));
+#  endif
+}
+#endif
+
 #if FMT_USE_RTTI
 TEST(std_test, type_info) {
   EXPECT_EQ(fmt::format("{}", typeid(std::runtime_error)),
