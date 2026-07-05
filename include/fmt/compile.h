@@ -168,14 +168,6 @@ constexpr auto get_arg_checked(const Args&... args) -> const T& {
 template <typename Char>
 struct is_compiled_format<code_unit<Char>> : std::true_type {};
 
-
-template <typename T, typename = void>
-struct compile_has_format_as : std::false_type {};
-
-template <typename T>
-struct compile_has_format_as<T, void_t<decltype(format_as(std::declval<const T&>()))>> : std::true_type {};
-
-
 template <typename Char, typename V, int N> struct field {
   using char_type = Char;
 
@@ -194,11 +186,6 @@ template <typename Char, typename V, int N> struct field {
     }
   }
 };
-
-
-
-
-
 
 template <typename Char, typename T, int N>
 struct is_compiled_format<field<Char, T, N>> : std::true_type {};
