@@ -223,6 +223,11 @@
 #else
 #  define FMT_PRAGMA_CLANG(x)
 #endif
+#if FMT_MSC_VERSION
+#  define FMT_PRAGMA_MSVC(x) __pragma(x)
+#else
+#  define FMT_PRAGMA_MSVC(x)
+#endif
 
 #ifndef FMT_USE_OPTIMIZE_PRAGMA
 #  define FMT_USE_OPTIMIZE_PRAGMA 1
@@ -234,6 +239,9 @@ FMT_PRAGMA_GCC(push_options)
     !defined(__CUDACC__) && !defined(FMT_MODULE)
 FMT_PRAGMA_GCC(optimize("Og"))
 #endif
+
+FMT_PRAGMA_MSVC(warning(push))
+FMT_PRAGMA_MSVC(warning(disable : 4702))
 
 #ifdef FMT_DEPRECATED
 // Use the provided definition.
@@ -2936,6 +2944,7 @@ FMT_INLINE void println(format_string<T...> fmt, T&&... args) {
 }
 
 FMT_PRAGMA_GCC(pop_options)
+FMT_PRAGMA_MSVC(warning(pop))
 FMT_END_EXPORT
 FMT_END_NAMESPACE
 
