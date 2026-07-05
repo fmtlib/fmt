@@ -480,16 +480,12 @@ TEST(compile_test, constexpr_string_format) {
 }
 #endif  // FMT_USE_CONSTEXPR_STRING
 
-
-
-
 namespace {
-struct CompileFormatAsType {
+struct compile_format_as_type {
   int value;
 };
-int format_as(CompileFormatAsType f) { return f.value; }
-} // namespace
-
-TEST(CompileTest, FormatAs) {
-  EXPECT_EQ("42", fmt::format(FMT_COMPILE("{}"), CompileFormatAsType{42}));
+int format_as(compile_format_as_type f) { return f.value; }
+} 
+TEST(compile_test, format_as) {
+  EXPECT_EQ("42", fmt::format(FMT_COMPILE("{}"), compile_format_as_type{42}));
 }
