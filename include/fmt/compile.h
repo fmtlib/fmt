@@ -292,7 +292,7 @@ template <typename T, typename Char> struct parse_specs_result {
   int next_arg_id;
 };
 
-enum { manual_indexing_id = -1 };
+enum manual_indexing_id_t { manual_indexing_id = -1 };
 
 template <typename T, typename Char>
 constexpr auto parse_specs(basic_string_view<Char> str, size_t pos,

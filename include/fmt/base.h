@@ -445,8 +445,8 @@ struct is_std_string_like<T, void_t<decltype(std::declval<T>().find_first_of(
                           const typename T::value_type*> {};
 
 // Check if the literal encoding is UTF-8.
-enum { is_utf8_enabled = "\u00A7"[1] == '\xA7' };
-enum { use_utf8 = !FMT_WIN32 || is_utf8_enabled };
+enum is_utf8_enabled_t { is_utf8_enabled = "\u00A7"[1] == '\xA7' };
+enum use_utf8_t { use_utf8 = !FMT_WIN32 || is_utf8_enabled };
 
 #ifndef FMT_UNICODE
 #  define FMT_UNICODE 1
@@ -1030,7 +1030,7 @@ constexpr auto in(type t, int set) -> bool {
 }
 
 // Bitsets of types.
-enum {
+enum type_set {
   sint_set =
       set(type::int_type) | set(type::long_long_type) | set(type::int128_type),
   uint_set = set(type::uint_type) | set(type::ulong_long_type) |
@@ -1121,7 +1121,9 @@ FMT_CONSTEXPR void init_static_named_arg(named_arg_info<Char>* named_args,
 
 // To minimize the number of types we need to deal with, long is translated
 // either to int or to long long depending on its size.
-enum { long_short = sizeof(long) == sizeof(int) && FMT_BUILTIN_TYPES };
+enum long_short_t {
+  long_short = sizeof(long) == sizeof(int) && FMT_BUILTIN_TYPES
+};
 using long_type = conditional_t<long_short, int, long long>;
 using ulong_type = conditional_t<long_short, unsigned, ullong>;
 
@@ -2283,11 +2285,11 @@ template <typename Context> class value {
   }
 };
 
-enum { packed_arg_bits = 4 };
+enum packed_arg_bits_t { packed_arg_bits = 4 };
 // Maximum number of arguments with packed types.
-enum { max_packed_args = 62 / packed_arg_bits };
-enum : ullong { is_unpacked_bit = 1ULL << 63 };
-enum : ullong { has_named_args_bit = 1ULL << 62 };
+enum max_packed_args_t { max_packed_args = 62 / packed_arg_bits };
+enum is_unpacked_bit_t : ullong { is_unpacked_bit = 1ULL << 63 };
+enum has_named_args_bit_t : ullong { has_named_args_bit = 1ULL << 62 };
 
 template <typename It, typename T, typename Enable = void>
 struct is_output_iterator : std::false_type {};

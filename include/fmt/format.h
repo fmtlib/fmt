@@ -761,7 +761,7 @@ FMT_BEGIN_EXPORT
 
 // The number of characters to store in the basic_memory_buffer object itself
 // to avoid dynamic memory allocation.
-enum { inline_buffer_size = 500 };
+enum inline_buffer_size_t { inline_buffer_size = 500 };
 
 /**
  * A dynamically growing memory buffer for trivially copyable/constructible
