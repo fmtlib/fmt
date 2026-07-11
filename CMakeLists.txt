@@ -507,10 +507,10 @@ if (FMT_INSTALL)
   # Use a namespace because CMake provides better diagnostics for namespaced
   # imported targets.
   export(
-    TARGETS ${INSTALL_TARGETS}
-    NAMESPACE fmt::
-    FILE ${PROJECT_BINARY_DIR}/${targets_export_name}.cmake)
-
+  TARGETS ${INSTALL_TARGETS}
+  NAMESPACE fmt::
+  FILE ${PROJECT_BINARY_DIR}/${targets_export_name}.cmake)
+  
   # Install version, config and target files.
   install(
     FILES ${project_config} ${version_config}
