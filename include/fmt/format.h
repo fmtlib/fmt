@@ -2124,6 +2124,10 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
       prefix_append(prefix, unsigned(specs.upper() ? 'B' : 'b') << 8 | '0');
     break;
   case presentation_type::chr:
+    // Handles negative cases on casts to smaller types using Two's complement
+    // One example is int{-104} to char which std::format uses as 152
+    if (sizeof(Char) < sizeof(abs_value) && (arg.prefix & 0xff) == '-')
+        abs_value = (1 << (8*sizeof(Char))) - abs_value;
     return write_char<Char>(out, static_cast<Char>(abs_value), specs);
   }
 
