@@ -1234,7 +1234,7 @@ FMT_CONSTEXPR20 auto do_format_decimal(Char* out, UInt value, int size)
   unsigned n = to_unsigned(size);
   while (value >= 100) {
     n -= 2;
-    if (!is_constant_evaluated() && sizeof(UInt) == 4) {
+    if (!is_constant_evaluated() && num_bits<UInt>() == 32) {
       auto p = value * static_cast<uint64_t>((1ull << 39) / 100 + 1);
       write2digits_i(out + n, p >> (39 - 7) & ((1 << 7) - 1));
       value = static_cast<UInt>(p >> 39) +
