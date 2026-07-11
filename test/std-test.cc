@@ -415,7 +415,7 @@ TEST(std_test, exception_ptr) {
     p2 = std::current_exception();
   }
 
-  EXPECT_EQ(fmt::format("{}", p1), "nullptr");
+  EXPECT_EQ(fmt::format("{}", p1), "none");
   EXPECT_EQ(fmt::format("{}", p2), "My Exception");
 
 #if FMT_USE_RTTI
