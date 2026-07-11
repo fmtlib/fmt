@@ -1334,6 +1334,7 @@ TEST(format_test, format_int) {
                    "invalid format specifier");
   check_unknown_types(42, "bBdoxXnLc", "integer");
   EXPECT_EQ(fmt::format("{:c}", static_cast<int>('x')), "x");
+  EXPECT_EQ(fmt::format("{:c}", int(-136)), "x");
 }
 
 TEST(format_test, format_bin) {
