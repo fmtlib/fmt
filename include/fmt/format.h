@@ -3750,6 +3750,46 @@ FMT_CONSTEXPR void handle_dynamic_spec(
 }
 
 #if FMT_USE_NONTYPE_TEMPLATE_ARGS
+/**
+ * `fmt::detail::static_named_arg<...>` is the type of expressions like
+ * `"argname"_a = value` when `FMT_USE_NONTYPE_TEMPLATE_ARGS` is defined.
+ * The argument name `"argname"` is in the `fixed_string<Char, N> Str` template argument.
+ * See [`udl_arg::operator=`](#detail::udl_arg) below.
+ *
+ * `T` is the type of the `value` on the right-hand side of `=`, as deduced by
+ * perfect forwarding. More specifically:
+ *
+ * | Value category of `value`   | Example                                   | `T`          | `const T&`   |
+ * |-----------------------------|-------------------------------------------|--------------|--------------|
+ * | const lvalue                | `const int x; f("arg"_a = x);`            | `const int&` | `const int&` |
+ * | mutable lvalue              | `int x; f("arg"_a = x);`                  | `int&`       | `int&`       |
+ * | const xvalue                | `const int x; f("arg"_a = std::move(x));` | `const int`  | `const int&` |
+ * | mutable xvalue              | `int x; f("arg"_a = std::move(x));`       | `int`        | `const int&` |
+ * | const prvalue (class/array) | `f("arg"_a = static_cast<const S>(S{}));` | `const S`    | `const S&`   |
+ * | const prvalue (other)       | `f("arg"_a = static_cast<const int>(1));` | `int`        | `const int&` |
+ * | mutable prvalue             | `f("arg"_a = 1);`                         | `int`        | `const int&` |
+ *
+ * Explanation of the const prvalue case: https://timsong-cpp.github.io/cppwp/std23/expr#expr.type-2.
+ * The `{fmt}` library doesn't need perfect forwarding, but it is possible to perfectly forward
+ * the value using `const_cast<T&&>(value)`. In other words, if you write:
+ *
+ *     template <typename T, typename Char, size_t N, fmt::detail::fixed_string<Char, N> Str>
+ *     void f(fmt::detail::static_named_arg<T, Char, N, Str> arg) {
+ *         g(const_cast<T&&>(arg.value));
+ *     }
+ *
+ * and call it as:
+ *
+ *     f("arg"_a = any_expression);
+ *
+ * then the value category of `any_expression` is perfectly forwarded to `g`.
+ *
+ * Using this outside function arguments risks lifetime issues. For example:
+ *
+ *     auto x = "arg"_a = 1;
+ *
+ * After the statement is executed, the prvalue `1` is destroyed, and `x.value` is dangling.
+ */
 template <typename T, typename Char, size_t N,
           fmt::detail::fixed_string<Char, N> Str>
 struct static_named_arg : view {
@@ -3768,6 +3808,10 @@ template <typename T, typename Char, size_t N,
 struct is_static_named_arg<static_named_arg<T, Char, N, Str>> : std::true_type {
 };
 
+/**
+ * `fmt::detail::udl_arg<...>` is the type of expressions like `"argname"_a`.
+ * See also [`operator""_a`](#operator&quot;&quot;_a).
+ */
 template <typename Char, size_t N, fmt::detail::fixed_string<Char, N> Str>
 struct udl_arg {
   template <typename T> auto operator=(T&& value) const {
