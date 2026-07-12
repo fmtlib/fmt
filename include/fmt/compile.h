@@ -168,6 +168,7 @@ constexpr auto get_arg_checked(const Args&... args) -> const T& {
 template <typename Char>
 struct is_compiled_format<code_unit<Char>> : std::true_type {};
 
+// A replacement field that refers to argument N.
 template <typename Char, typename V, int N> struct field {
   using char_type = Char;
 
@@ -177,9 +178,9 @@ template <typename Char, typename V, int N> struct field {
     if constexpr (std::is_convertible<V, basic_string_view<Char>>::value) {
       auto s = basic_string_view<Char>(arg);
       return copy<Char>(s.begin(), s.end(), out);
-    } else if constexpr (detail::use_format_as<V>::value) {
+    } else if constexpr (use_format_as<V>::value) {
       return write<Char>(out, format_as(arg));
-    } else if constexpr (detail::use_format_as_member<V>::value) {
+    } else if constexpr (use_format_as_member<V>::value) {
       return write<Char>(out, formatter<V>::format_as(arg));
     } else {
       return write<Char>(out, arg);
