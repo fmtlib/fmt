@@ -402,6 +402,34 @@ TEST(std_test, exception) {
                 StartsWith("std::filesystem::filesystem_error: "));
   }
 #endif
+
+#if FMT_USE_RTTI
+  // Nested exceptions (e.g. from std::throw_with_nested) are unwound.
+  try {
+    try {
+      throw std::runtime_error("inner");
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error("outer"));
+    }
+  } catch (const std::exception& ex) {
+    EXPECT_EQ("outer: inner", fmt::format("{}", ex));
+  }
+
+  // Multiple levels of nesting.
+  try {
+    try {
+      try {
+        throw std::runtime_error("level 3");
+      } catch (...) {
+        std::throw_with_nested(std::runtime_error("level 2"));
+      }
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error("level 1"));
+    }
+  } catch (const std::exception& ex) {
+    EXPECT_EQ("level 1: level 2: level 3", fmt::format("{}", ex));
+  }
+#endif
 }
 
 TEST(std_test, exception_ptr) {
@@ -421,6 +449,19 @@ TEST(std_test, exception_ptr) {
 #if FMT_USE_RTTI
   EXPECT_EQ(fmt::format("{:t}", p2),
             "my_ns1::my_ns2::my_exception: My Exception");
+
+  // Nested exceptions are unwound through an exception_ptr too.
+  std::exception_ptr p3;
+  try {
+    try {
+      throw std::runtime_error("inner");
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error("outer"));
+    }
+  } catch (...) {
+    p3 = std::current_exception();
+  }
+  EXPECT_EQ(fmt::format("{}", p3), "outer: inner");
 #endif
 }
 

@@ -637,7 +637,12 @@ struct formatter<
   template <typename Context>
   auto format(const std::exception& ex, Context& ctx) const
       -> decltype(ctx.out()) {
-    auto out = ctx.out();
+    return write(ctx.out(), ex);
+  }
+
+ private:
+  template <typename OutputIt>
+  auto write(OutputIt out, const std::exception& ex) const -> OutputIt {
 #if FMT_USE_RTTI
     if (with_typename_) {
       out = detail::write_demangled_name(out, typeid(ex));
@@ -645,7 +650,24 @@ struct formatter<
       *out++ = ' ';
     }
 #endif
-    return detail::write_bytes<char>(out, string_view(ex.what()));
+    out = detail::write_bytes<char>(out, string_view(ex.what()));
+#if FMT_USE_RTTI
+    // If the exception carries a nested exception (e.g. via
+    // std::throw_with_nested), format the whole chain.
+    if (auto* nested = dynamic_cast<const std::nested_exception*>(&ex)) {
+      if (auto ep = nested->nested_ptr()) {
+        out = detail::write(out, string_view(": "));
+        try {
+          std::rethrow_exception(ep);
+        } catch (const std::exception& nested_ex) {
+          out = write(out, nested_ex);
+        } catch (...) {
+          out = detail::write(out, string_view("unknown exception"));
+        }
+      }
+    }
+#endif
+    return out;
   }
 };
 
