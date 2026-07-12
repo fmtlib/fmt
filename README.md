@@ -52,7 +52,7 @@ Try {fmt} in [Compiler Explorer](https://godbolt.org/z/8Mx1EW73v).
   implementations of `(s)printf`, iostreams, `to_string` and
   `to_chars`, see [Speed tests](#speed-tests) and [Converting a
   hundred million integers to strings per
-  second](http://www.zverovich.net/2020/06/13/fast-int-to-string-revisited.html)
+  second](https://vitaut.net/posts/2020/fast-int-to-string-revisited/)
 - Small code size both in terms of source code with the minimum
   configuration consisting of just three files, `base.h`, `format.h`
   and `format-inl.h`, and compiled code; see [Compile time and code
@@ -157,7 +157,7 @@ int main() {
 ```
 
 This can be [up to 9 times faster than `fprintf`](
-http://www.zverovich.net/2020/08/04/optimal-file-buffer-size.html).
+https://vitaut.net/posts/2020/optimal-file-buffer-size/).
 
 **Print with colors and text styles**
 
@@ -351,7 +351,7 @@ converts to `std::print`.)
   cluster proxy
 - [redpanda](https://vectorized.io/redpanda): a 10x faster Kafka®
   replacement for mission-critical systems written in C++
-- [rpclib](http://rpclib.net/): a modern C++ msgpack-RPC server and
+- [rpclib](https://github.com/rpclib/rpclib): a modern C++ msgpack-RPC server and
   client library
 - [Salesforce Analytics
   Cloud](https://www.salesforce.com/analytics-cloud/overview/):
@@ -359,7 +359,7 @@ converts to `std::print`.)
 - [Scylla](https://www.scylladb.com/): a Cassandra-compatible NoSQL
   data store that can handle 1 million transactions per second on a
   single server
-- [Seastar](http://www.seastar-project.org/): an advanced, open-source
+- [Seastar](https://seastar.io/): an advanced, open-source
   C++ framework for high-performance server applications on modern
   hardware
 - [spdlog](https://github.com/gabime/spdlog): super fast C++ logging
