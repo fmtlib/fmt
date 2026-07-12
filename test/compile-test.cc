@@ -479,3 +479,13 @@ TEST(compile_test, constexpr_string_format) {
   EXPECT_TRUE(big);
 }
 #endif  // FMT_USE_CONSTEXPR_STRING
+
+namespace {
+struct compile_format_as_type {
+  int value;
+};
+int format_as(compile_format_as_type f) { return f.value; }
+} 
+TEST(compile_test, format_as) {
+  EXPECT_EQ("42", fmt::format(FMT_COMPILE("{}"), compile_format_as_type{42}));
+}
