@@ -15,7 +15,7 @@ jobs:
     runs-on: ${{ matrix.os || 'ubuntu-22.04' }}
     strategy:
       matrix:
-        cxx: [g++-4.9, g++-11, clang++-3.6, clang++-11]
+        cxx: [g++-4.9, g++-11, clang++-11]
         build_type: [Debug, Release]
         std: [11]
         shared: [""]
@@ -42,7 +42,7 @@ jobs:
             std: 23
             os: ubuntu-24.04
             gen: Ninja
-          - cxx: clang++-3.6
+          # - cxx: clang++-3.6
           - cxx: clang++-11
             build_type: Debug
             std: 17

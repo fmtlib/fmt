@@ -416,6 +416,12 @@ endfunction ()
 if (FMT_MODULE)
   add_module_library(fmt-module src/fmt.cc USE_CMAKE_MODULES
                      ${FMT_USE_CMAKE_MODULES})
+  # Add implementation sources as separate compilation units
+  # This ensures symbols are available for linking even in C++20
+  target_sources(fmt-module PRIVATE src/format.cc)
+  if (FMT_OS)
+    target_sources(fmt-module PRIVATE src/os.cc)
+  endif ()
   setup_target(fmt-module PUBLIC)
 endif ()
 
