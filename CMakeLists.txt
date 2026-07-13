@@ -53,7 +53,7 @@ project(FMT CXX)
 # Determine support for the C++ module scanning and CXX_MODULE File_Sets
 # Requires C++20, CMake >= 3.28 and
 # Generators(Ninja >= 1.11 OR Visual Studio >= 17.4).
-# Compilers GCC>=14, Clang>=16 or MSVC >= 17.4
+CMAKE_CXX_COMPILER_VERSION GREATER_EQUAL 15
 # Source: https://cmake.org/cmake/help/latest/manual/cmake-cxxmodules.7.html
 set(FMT_USE_CMAKE_MODULES FALSE)
 if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.28 AND CMAKE_CXX_STANDARD
