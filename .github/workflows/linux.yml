@@ -178,10 +178,18 @@ jobs:
       working-directory: ${{runner.workspace}}/build
       env:
         CXX: ${{ matrix.cxx }}
-        CC: ${{ startsWith(matrix.cxx, 'g++') && replace(matrix.cxx, 'g++', 'gcc') ||
-                replace(matrix.cxx, 'clang++', 'clang') }}
         CXXFLAGS: ${{matrix.cxxflags}} ${{matrix.cxxflags_extra}}
       run: |
+        case "$CXX" in
+          g++-*)
+            export CC="${CXX/g++/gcc}"
+            ;;
+          clang++-*)
+            export CC="${CXX/clang++/clang}"
+            ;;
+        esac
+        echo "CC=$CC"
+        echo "CXX=$CXX"
         cmake ${{matrix.gen && '-G' || ''}} ${{matrix.gen}} \
               -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \
               -DCMAKE_CXX_STANDARD=${{matrix.std}} \
