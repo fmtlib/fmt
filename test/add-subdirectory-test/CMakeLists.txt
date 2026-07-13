@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8...3.25)
+cmake_minimum_required(VERSION 3.8...4.4)
 
 project(fmt-test CXX)
 

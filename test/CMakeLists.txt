@@ -26,6 +26,13 @@ function (add_fmt_test name)
   add_executable(${name} ${sources})
   target_link_libraries(${name} ${libs})
 
+  if (ADD_FMT_TEST_MODULE)
+    if (FMT_IMPORT_STD)
+      target_compile_features(${name} PRIVATE cxx_std_23)
+      set_target_properties(${name} PROPERTIES CXX_MODULE_STD 1)
+    endif ()
+  endif ()
+
   if (ADD_FMT_TEST_HEADER_ONLY AND NOT FMT_UNICODE)
     target_compile_definitions(${name} PUBLIC FMT_UNICODE=0)
   endif ()

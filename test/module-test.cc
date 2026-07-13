@@ -5,16 +5,22 @@
 //
 // For the license information refer to format.h.
 
-#include <bit>
-#include <chrono>
-#include <exception>
-#include <iterator>
-#include <locale>
-#include <memory>
-#include <ostream>
-#include <string>
-#include <string_view>
-#include <system_error>
+// TODO(CK): not usable here!
+#ifdef FMT_IMPORT_STD_ENABLED
+import std;
+#else
+#  include <bit>
+#  include <chrono>
+#  include <exception>
+#  include <iterator>
+#  include <locale>
+#  include <memory>
+#  include <ostream>
+#  include <string>
+#  include <string_view>
+#  include <system_error>
+#endif
+
 #include <gmock/gmock.h>
 
 #if (__has_include(<fcntl.h>) || defined(__APPLE__) || \
@@ -312,9 +318,7 @@ TEST(module_test, fprintf) {
   EXPECT_WRITE(stderr, fmt::fprintf(stderr, "%d", 42), "42");
 }
 
-TEST(module_test, sprintf) {
-  EXPECT_EQ("42", fmt::sprintf("%d", 42));
-}
+TEST(module_test, sprintf) { EXPECT_EQ("42", fmt::sprintf("%d", 42)); }
 
 TEST(module_test, color) {
   EXPECT_EQ("\x1B[30m42\x1B[0m",

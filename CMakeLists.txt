@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8...3.28)
+cmake_minimum_required(VERSION 3.8...4.4)
 include_guard(GLOBAL)
 
 # Fallback for using newer policies on CMake <3.12.
@@ -48,7 +48,7 @@ if (FMT_MASTER_PROJECT AND NOT CMAKE_BUILD_TYPE)
     "CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel.")
 endif ()
 
-project(FMT CXX)
+project(FMT LANGUAGES C CXX)
 
 # Determine support for the C++ module scanning and CXX_MODULE File_Sets
 # Requires C++20, CMake >= 3.28 and
@@ -353,6 +353,12 @@ function (add_module_library name)
     endif ()
   endif ()
 
+  if (FMT_IMPORT_STD)
+    target_compile_features(${name} PUBLIC cxx_std_23)
+    target_compile_definitions(${name} PUBLIC FMT_IMPORT_STD)
+    set_target_properties(${name} PROPERTIES CXX_MODULE_STD 1)
+  endif ()
+
   if (${AML_USE_CMAKE_MODULES})
     target_sources(${name} PUBLIC FILE_SET fmt TYPE CXX_MODULES FILES
                                   ${sources})
@@ -520,7 +526,8 @@ if (FMT_INSTALL)
     EXPORT ${targets_export_name}
     DESTINATION ${FMT_CMAKE_DIR}
     NAMESPACE fmt::
-    COMPONENT fmt_core)
+    COMPONENT fmt_core
+    CXX_MODULES_DIRECTORY .)
 
   install(
     FILES "${pkgconfig}"
