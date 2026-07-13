@@ -19,13 +19,13 @@ build: GNUmakefile CMakeLists.txt
 	cmake -G Ninja -S . -B build --fresh \
 	  -D CMAKE_SKIP_TEST_ALL_DEPENDENCY=NO \
 	  -D FMT_PEDANTIC=YES \
-	  -D FMT_MODULE=1 -D FMT_IMPORT_STD=0 -D CMAKE_CXX_STANDARD=20 \
+	  -D FMT_MODULE=1 -D FMT_IMPORT_STD=1 -D CMAKE_CXX_STANDARD=26 \
 	  -D CMAKE_EXPERIMENTAL_CXX_IMPORT_STD=f35a9ac6-8463-4d38-8eec-5d6008153e7d
 	ln -fs build/compile_commands.json .
 
 find-package-test: install
 	cmake -G Ninja -S test/find-package-test -B build/find-package-build --fresh \
-	  -D FMT_MODULE=1 -D FMT_IMPORT_STD=0 -D CMAKE_CXX_STANDARD=20 \
+	  -D FMT_MODULE=1 -D FMT_IMPORT_STD=1 -D CMAKE_CXX_STANDARD=26 \
 	  -D CMAKE_EXPERIMENTAL_CXX_IMPORT_STD=f35a9ac6-8463-4d38-8eec-5d6008153e7d
 	ninja -C build/find-package-build -v
 	ninja -C build/find-package-build -t deps CMakeFiles/module-test.dir/main.cc.o
