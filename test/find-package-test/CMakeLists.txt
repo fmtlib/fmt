@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.8...4.4)
 
-project(fmt-test)
+project(fmt-test CXX)
 
-find_package(FMT REQUIRED)
+find_package(fmt REQUIRED)
+# TODO(CK): find_package(fmt 12.2.0 EXACT COMPONENTS fmt fmt-module fmt-header-only)
 
 set(PEDANTIC_COMPILE_FLAGS)
 
