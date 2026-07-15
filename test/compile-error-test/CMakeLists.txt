@@ -79,7 +79,7 @@ function (run_tests)
     "
     cmake_minimum_required(VERSION 3.8...4.4)
     project(tests CXX)
-    add_subdirectory(${FMT_DIR} fmt)
+    add_subdirectory(${fmt_DIR} fmt)
     ${cmake_targets}
     ")
 
@@ -91,7 +91,7 @@ function (run_tests)
       "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}"
       "-DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}"
       "-DCMAKE_GENERATOR=${CMAKE_GENERATOR}"
-      "-DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}" "-DFMT_DIR=${FMT_DIR}"
+      "-DCMAKE_MAKE_PROGRAM=${CMAKE_MAKE_PROGRAM}" "-Dfmt_DIR=${fmt_DIR}"
       "${CMAKE_CURRENT_BINARY_DIR}/test"
     WORKING_DIRECTORY "${build_directory}"
     RESULT_VARIABLE result_var
