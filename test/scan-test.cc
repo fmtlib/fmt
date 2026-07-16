@@ -35,6 +35,62 @@ TEST(scan_test, read_long_long) {
   EXPECT_EQ(fmt::scan<long long>("-42", "{}")->value(), -42);
 }
 
+TEST(scan_test, read_short) {
+  EXPECT_EQ(fmt::scan<short>("42", "{}")->value(), 42);
+  EXPECT_EQ(fmt::scan<short>("-42", "{}")->value(), -42);
+  short value = 0;
+  fmt::scan_to("123", "{}", value);
+  EXPECT_EQ(value, 123);
+}
+
+TEST(scan_test, read_ushort) {
+  EXPECT_EQ(fmt::scan<unsigned short>("42", "{}")->value(), 42);
+  EXPECT_THROW_MSG(fmt::scan<unsigned short>("-42", "{}"), fmt::format_error,
+                   "invalid input");
+  unsigned short value = 0;
+  fmt::scan_to("321", "{}", value);
+  EXPECT_EQ(value, 321);
+}
+
+TEST(scan_test, read_long) {
+  EXPECT_EQ(fmt::scan<long>("42", "{}")->value(), 42);
+  EXPECT_EQ(fmt::scan<long>("-42", "{}")->value(), -42);
+}
+
+TEST(scan_test, read_ulong) {
+  EXPECT_EQ(fmt::scan<unsigned long>("42", "{}")->value(), 42u);
+  EXPECT_THROW_MSG(fmt::scan<unsigned long>("-42", "{}"), fmt::format_error,
+                   "invalid input");
+}
+
+TEST(scan_test, read_long_double) {
+  auto result = fmt::scan<long double>("3.14", "{}");
+  EXPECT_TRUE(result);
+  EXPECT_DOUBLE_EQ(static_cast<double>(result->value()), 3.14);
+}
+
+TEST(scan_test, read_bool) {
+  EXPECT_EQ(fmt::scan<bool>("true", "{}")->value(), true);
+  EXPECT_EQ(fmt::scan<bool>("false", "{}")->value(), false);
+  EXPECT_EQ(fmt::scan<bool>("1", "{}")->value(), true);
+  EXPECT_EQ(fmt::scan<bool>("0", "{}")->value(), false);
+  bool value = false;
+  fmt::scan_to("true", "{}", value);
+  EXPECT_EQ(value, true);
+}
+
+TEST(scan_test, read_signed_char) {
+  signed char value = 0;
+  fmt::scan_to("65", "{}", value);
+  EXPECT_EQ(value, static_cast<signed char>(65));
+}
+
+TEST(scan_test, read_unsigned_char) {
+  unsigned char value = 0;
+  fmt::scan_to("65", "{}", value);
+  EXPECT_EQ(value, static_cast<unsigned char>(65));
+}
+
 TEST(scan_test, read_uint) {
   EXPECT_EQ(fmt::scan<unsigned>("42", "{}")->value(), 42);
   EXPECT_THROW_MSG(fmt::scan<unsigned>("-42", "{}"), fmt::format_error,

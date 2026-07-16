@@ -227,9 +227,18 @@ enum class scan_type {
   none_type,
   int_type,
   uint_type,
+  short_type,
+  ushort_type,
+  long_type,
+  ulong_type,
   long_long_type,
   ulong_long_type,
+  bool_type,
+  signed_char_type,
+  char_type,
+  uchar_type,
   double_type,
+  long_double_type,
   float_type,
   string_type,
   string_view_type,
@@ -251,9 +260,18 @@ template <typename Context> class basic_scan_arg {
   union {
     int* int_value_;
     unsigned* uint_value_;
+    short* short_value_;
+    unsigned short* ushort_value_;
+    long* long_value_;
+    unsigned long* ulong_value_;
     long long* long_long_value_;
     unsigned long long* ulong_long_value_;
+    bool* bool_value_;
+    signed char* signed_char_value_;
+    char* char_value_;
+    unsigned char* uchar_value_;
     double* double_value_;
+    long double* long_double_value_;
     float* float_value_;
     std::string* string_;
     string_view* string_view_;
@@ -276,12 +294,30 @@ template <typename Context> class basic_scan_arg {
       : type_(scan_type::int_type), int_value_(&value) {}
   FMT_CONSTEXPR basic_scan_arg(unsigned& value)
       : type_(scan_type::uint_type), uint_value_(&value) {}
+  FMT_CONSTEXPR basic_scan_arg(short& value)
+      : type_(scan_type::short_type), short_value_(&value) {}
+  FMT_CONSTEXPR basic_scan_arg(unsigned short& value)
+      : type_(scan_type::ushort_type), ushort_value_(&value) {}
+  FMT_CONSTEXPR basic_scan_arg(long& value)
+      : type_(scan_type::long_type), long_value_(&value) {}
+  FMT_CONSTEXPR basic_scan_arg(unsigned long& value)
+      : type_(scan_type::ulong_type), ulong_value_(&value) {}
   FMT_CONSTEXPR basic_scan_arg(long long& value)
       : type_(scan_type::long_long_type), long_long_value_(&value) {}
   FMT_CONSTEXPR basic_scan_arg(unsigned long long& value)
       : type_(scan_type::ulong_long_type), ulong_long_value_(&value) {}
+  FMT_CONSTEXPR basic_scan_arg(bool& value)
+      : type_(scan_type::bool_type), bool_value_(&value) {}
+  FMT_CONSTEXPR basic_scan_arg(signed char& value)
+      : type_(scan_type::signed_char_type), signed_char_value_(&value) {}
+  FMT_CONSTEXPR basic_scan_arg(char& value)
+      : type_(scan_type::char_type), char_value_(&value) {}
+  FMT_CONSTEXPR basic_scan_arg(unsigned char& value)
+      : type_(scan_type::uchar_type), uchar_value_(&value) {}
   FMT_CONSTEXPR basic_scan_arg(double& value)
       : type_(scan_type::double_type), double_value_(&value) {}
+  FMT_CONSTEXPR basic_scan_arg(long double& value)
+      : type_(scan_type::long_double_type), long_double_value_(&value) {}
   FMT_CONSTEXPR basic_scan_arg(float& value)
       : type_(scan_type::float_type), float_value_(&value) {}
   FMT_CONSTEXPR basic_scan_arg(std::string& value)
@@ -309,12 +345,30 @@ template <typename Context> class basic_scan_arg {
       return vis(*int_value_);
     case scan_type::uint_type:
       return vis(*uint_value_);
+    case scan_type::short_type:
+      return vis(*short_value_);
+    case scan_type::ushort_type:
+      return vis(*ushort_value_);
+    case scan_type::long_type:
+      return vis(*long_value_);
+    case scan_type::ulong_type:
+      return vis(*ulong_value_);
     case scan_type::long_long_type:
       return vis(*long_long_value_);
     case scan_type::ulong_long_type:
       return vis(*ulong_long_value_);
+    case scan_type::bool_type:
+      return vis(*bool_value_);
+    case scan_type::signed_char_type:
+      return vis(*signed_char_value_);
+    case scan_type::char_type:
+      return vis(*char_value_);
+    case scan_type::uchar_type:
+      return vis(*uchar_value_);
     case scan_type::double_type:
       return vis(*double_value_);
+    case scan_type::long_double_type:
+      return vis(*long_double_value_);
     case scan_type::float_type:
       return vis(*float_value_);
     case scan_type::string_type:
@@ -500,6 +554,47 @@ auto read(scan_iterator it, double& value, const format_specs& = {})
   
   value = negative ? -result : result;
   return it;
+}
+
+auto read(scan_iterator it, long double& value, const format_specs& specs = {})
+    -> scan_iterator {
+  double temp;
+  it = read(it, temp, specs);
+  value = static_cast<long double>(temp);
+  return it;
+}
+
+auto read(scan_iterator it, bool& value, const format_specs& = {})
+    -> scan_iterator {
+  if (it == scan_sentinel()) return it;
+  auto parse_literal = [&](const char* literal, bool& ok) -> scan_iterator {
+    auto begin = it;
+    ok = true;
+    for (const char* p = literal; *p; ++p) {
+      if (begin == scan_sentinel() || *begin != *p) {
+        ok = false;
+        return scan_iterator();
+      }
+      ++begin;
+    }
+    return begin;
+  };
+  bool ok = false;
+  auto next = parse_literal("true", ok);
+  if (ok) {
+    value = true;
+    return next;
+  }
+  next = parse_literal("false", ok);
+  if (ok) {
+    value = false;
+    return next;
+  }
+  if (*it == '0' || *it == '1') {
+    value = *it == '1';
+    return ++it;
+  }
+  report_error("invalid input");
 }
 
 auto read(scan_iterator it, float& value, const format_specs& specs = {})
