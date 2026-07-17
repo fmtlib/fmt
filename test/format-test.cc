@@ -1334,6 +1334,16 @@ TEST(format_test, format_int) {
                    "invalid format specifier");
   check_unknown_types(42, "bBdoxXnLc", "integer");
   EXPECT_EQ(fmt::format("{:c}", static_cast<int>('x')), "x");
+  // The 'c' type treats all character types as unsigned for portability, so the
+  // representable range for char is [0, 255] and out-of-range values are
+  // reported as an error.
+  EXPECT_EQ(fmt::format("{:c}", 200), std::string(1, static_cast<char>(200)));
+  EXPECT_EQ(fmt::format("{:c}", 255), std::string(1, static_cast<char>(255)));
+  const char* msg = "character value out of range";
+  EXPECT_THROW_MSG((void)fmt::format("{:c}", -1), format_error, msg);
+  EXPECT_THROW_MSG((void)fmt::format("{:c}", -104), format_error, msg);
+  EXPECT_THROW_MSG((void)fmt::format("{:c}", 256), format_error, msg);
+  EXPECT_THROW_MSG((void)fmt::format("{:c}", 400u), format_error, msg);
 }
 
 TEST(format_test, format_bin) {
