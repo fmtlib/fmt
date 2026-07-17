@@ -2157,29 +2157,19 @@ FMT_CONSTEXPR FMT_NOINLINE auto write_int_noinline(OutputIt out,
   return write_int<Char>(out, arg, specs);
 }
 
-template <typename Char, typename T,
-          FMT_ENABLE_IF(is_integral<T>::value &&
-                        !std::is_same<T, bool>::value &&
-                        !std::is_same<T, Char>::value)>
-FMT_CONSTEXPR FMT_INLINE auto write(basic_appender<Char> out, T value,
-                                    const format_specs& specs, locale_ref loc)
-    -> basic_appender<Char> {
-  if (specs.localized() && write_loc(out, value, specs, loc)) return out;
-  return write_int_noinline<Char>(out, make_write_int_arg(value, specs.sign()),
-                                  specs);
-}
-
-// An inlined version of write used in format string compilation.
 template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(is_integral<T>::value &&
                         !std::is_same<T, bool>::value &&
-                        !std::is_same<T, Char>::value &&
-                        !std::is_same<OutputIt, basic_appender<Char>>::value)>
+                        !std::is_same<T, Char>::value)>
 FMT_CONSTEXPR FMT_INLINE auto write(OutputIt out, T value,
                                     const format_specs& specs, locale_ref loc)
     -> OutputIt {
   if (specs.localized() && write_loc(out, value, specs, loc)) return out;
-  return write_int<Char>(out, make_write_int_arg(value, specs.sign()), specs);
+  auto arg = make_write_int_arg(value, specs.sign());
+  // Out of line for appenders to avoid bloat; inlined for compiled formatting.
+  if FMT_CONSTEXPR20 (std::is_same<OutputIt, basic_appender<Char>>::value)
+    return write_int_noinline<Char>(out, arg, specs);
+  return write_int<Char>(out, arg, specs);
 }
 
 template <typename Char, typename OutputIt>
