@@ -429,7 +429,7 @@ TEST(std_test, exception) {
   } catch (const std::exception& ex) {
     EXPECT_EQ("level 1: level 2: level 3", fmt::format("{}", ex));
   }
-#endif
+#endif  // FMT_USE_RTTI
 }
 
 TEST(std_test, exception_ptr) {
@@ -462,7 +462,7 @@ TEST(std_test, exception_ptr) {
     p3 = std::current_exception();
   }
   EXPECT_EQ(fmt::format("{}", p3), "outer: inner");
-#endif
+#endif  // FMT_USE_RTTI
 }
 
 #if FMT_USE_RTTI
@@ -470,7 +470,7 @@ TEST(std_test, type_info) {
   EXPECT_EQ(fmt::format("{}", typeid(std::runtime_error)),
             "std::runtime_error");
 }
-#endif
+#endif  // FMT_USE_RTTI
 
 #if FMT_USE_BITINT
 FMT_PRAGMA_CLANG(diagnostic ignored "-Wbit-int-extension")

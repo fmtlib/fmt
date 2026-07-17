@@ -649,7 +649,7 @@ struct formatter<
       *out++ = ':';
       *out++ = ' ';
     }
-#endif
+#endif  // FMT_USE_RTTI
     out = detail::write_bytes<char>(out, string_view(ex.what()));
 #if FMT_USE_RTTI
     // If the exception carries a nested exception (e.g. via
@@ -666,7 +666,7 @@ struct formatter<
         }
       }
     }
-#endif
+#endif  // FMT_USE_RTTI
     return out;
   }
 };
