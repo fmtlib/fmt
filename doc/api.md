@@ -475,7 +475,7 @@ Using `fmt::join`, you can separate tuple elements with a custom separator:
 - [`std::tm`](https://en.cppreference.com/w/cpp/chrono/c/tm)
 
 The format syntax is described in [Chrono Format Specifications](syntax.md#
-chrono-format-spec).
+chrono-format-specifications).
 
 **Example**:
 
