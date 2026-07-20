@@ -1064,12 +1064,6 @@ template <typename T> FMT_CONSTEXPR auto count_digits_fallback(T n) -> int {
     count += 4;
   }
 }
-#if FMT_USE_INT128
-FMT_CONSTEXPR inline auto count_digits(native_uint128 n) -> int {
-  return count_digits_fallback(n);
-}
-#endif
-
 #ifdef FMT_BUILTIN_CLZLL
 // It is a separate function rather than a part of count_digits to workaround
 // the lack of static constexpr in constexpr functions.
@@ -1099,6 +1093,20 @@ FMT_CONSTEXPR20 inline auto count_digits(uint64_t n) -> int {
 #endif
   return count_digits_fallback(n);
 }
+
+#if FMT_USE_INT128
+FMT_CONSTEXPR20 inline auto count_digits(native_uint128 n) -> int {
+  if (is_constant_evaluated()) return count_digits_fallback(n);
+  // 128-bit division is a slow library call, so reduce to 64-bit chunks via
+  // 10^19 (the largest power of 10 fitting in uint64_t).
+  const uint64_t pow10_19 = 10000000000000000000ULL;
+  if ((n >> 64) == 0) return count_digits(static_cast<uint64_t>(n));
+  n /= pow10_19;
+  if ((n >> 64) == 0) return count_digits(static_cast<uint64_t>(n)) + 19;
+  n /= pow10_19;
+  return count_digits(static_cast<uint64_t>(n)) + 38;
+}
+#endif
 
 // Counts the number of digits in n. BITS = log2(radix).
 template <int BITS, typename UInt>
@@ -1231,6 +1239,26 @@ template <typename Char, typename UInt>
 FMT_CONSTEXPR20 auto do_format_decimal(Char* out, UInt value, int size)
     -> Char* {
   FMT_ASSERT(size >= count_digits(value), "invalid digit count");
+#if FMT_USE_INT128
+  // Avoid slow 128-bit division by formatting 64-bit chunks of 19 digits each.
+  if (!is_constant_evaluated() && num_bits<UInt>() == 128) {
+    const uint64_t pow10_19 = 10000000000000000000ULL;
+    auto v = static_cast<native_uint128>(value);
+    unsigned pos = to_unsigned(size);
+    while ((v >> 64) != 0) {
+      auto chunk = static_cast<uint64_t>(v % pow10_19);
+      v /= pow10_19;
+      pos -= 19;
+      fill_n(out + pos, 19, Char('0'));
+      do_format_decimal(out + pos, chunk, 19);
+    }
+    auto top = static_cast<uint64_t>(v);
+    int top_digits = count_digits(top);
+    pos -= to_unsigned(top_digits);
+    do_format_decimal(out + pos, top, top_digits);
+    return out + pos;
+  }
+#endif  // FMT_USE_INT128
   unsigned n = to_unsigned(size);
   while (value >= 100) {
     n -= 2;
