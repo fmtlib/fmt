@@ -620,6 +620,8 @@ struct formatter<
     T, char,
     typename std::enable_if<std::is_base_of<std::exception, T>::value>::type> {
  private:
+  format_specs specs_;
+  detail::arg_ref<char> width_ref_;
   bool with_typename_ = false;
 
  public:
@@ -627,7 +629,14 @@ struct formatter<
     auto it = ctx.begin();
     auto end = ctx.end();
     if (it == end || *it == '}') return it;
-    if (*it == 't') {
+
+    it = detail::parse_align(it, end, specs_);
+    if (it == end) return it;
+
+    char c = *it;
+    if ((c >= '0' && c <= '9') || c == '{')
+      it = detail::parse_width(it, end, specs_, width_ref_, ctx);
+    if (it != end && *it == 't') {
       ++it;
       with_typename_ = FMT_USE_RTTI != 0;
     }
@@ -637,7 +646,20 @@ struct formatter<
   template <typename Context>
   auto format(const std::exception& ex, Context& ctx) const
       -> decltype(ctx.out()) {
-    return write(ctx.out(), ex);
+    auto buf = memory_buffer();
+    write(appender(buf), ex);
+    return write_padded(ctx, string_view(buf.data(), buf.size()));
+  }
+
+ protected:
+  // Applies the parsed fill/align/width to an already-formatted message.
+  template <typename Context>
+  auto write_padded(Context& ctx, string_view message) const
+      -> decltype(ctx.out()) {
+    auto specs = specs_;
+    detail::handle_dynamic_spec(specs.dynamic_width(), specs.width, width_ref_,
+                                ctx);
+    return detail::write(ctx.out(), message, specs);
   }
 
  private:
@@ -675,13 +697,13 @@ template <> struct formatter<std::exception_ptr> : formatter<std::exception> {
   template <typename FormatContext>
   auto format(const std::exception_ptr& ep, FormatContext& ctx) const
       -> decltype(ctx.out()) {
-    if (!ep) return detail::write(ctx.out(), string_view("none"));
+    if (!ep) return this->write_padded(ctx, string_view("none"));
     try {
       std::rethrow_exception(ep);
     } catch (const std::exception& e) {
       return formatter<std::exception>::format(e, ctx);
     } catch (...) {
-      return detail::write(ctx.out(), string_view("unknown exception"));
+      return this->write_padded(ctx, string_view("unknown exception"));
     }
   }
 };
