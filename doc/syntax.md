@@ -251,7 +251,7 @@ fmt::format("{:#06x}", 0xfe);  // # adds the prefix, 06 zero-pads to width 6
 
 | Type | Effect                                                              |
 |------|---------------------------------------------------------------------|
-| `a`  | Hexadecimal-significand form (e.g. `1.8p+1`). Lower-case digits and a lower-case `p` for the binary exponent. The `#` flag adds a `0x` prefix. |
+| `a`  | Hexadecimal-significand form (e.g. `0x1.8p+1`). Lower-case digits and a lower-case `p` for the binary exponent. The `0x` prefix is always emitted, matching printf's `%a`. The `#` flag forces a decimal point (e.g. `0x1.p+1`).
 | `A`  | Same as `a`, but upper-case throughout.                             |
 | `e`  | Scientific notation with a lower-case `e` for the decimal exponent. |
 | `E`  | Scientific notation with an upper-case `E`.                         |
