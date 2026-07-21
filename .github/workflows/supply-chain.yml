@@ -1,9 +1,6 @@
-# This workflow uses actions that are not certified by GitHub. They are provided
-# by a third-party and are governed by separate terms of service, privacy
-# policy, and support documentation.
-
-name: Scorecard supply-chain security
+name: supply-chain
 on:
+  workflow_dispatch:
   # For Branch-Protection check. Only the default branch is supported. See
   # https://github.com/ossf/scorecard/blob/main/docs/checks.md#branch-protection
   branch_protection_rule:
@@ -12,14 +9,13 @@ on:
   schedule:
     - cron: '26 14 * * 5'
   push:
-    branches: [ "master" ]
+    branches: [main]
 
 # Declare default permissions as read only.
 permissions: read-all
 
 jobs:
-  analysis:
-    name: Scorecard analysis
+  scorecard:
     runs-on: ubuntu-latest
     permissions:
       # Needed to upload the results to code-scanning dashboard.
@@ -28,20 +24,15 @@ jobs:
       id-token: write
 
     steps:
-      - name: "Checkout code"
-        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           persist-credentials: false
 
-      - name: "Run analysis"
+      - name: Run analysis
         uses: ossf/scorecard-action@05b42c624433fc40578a4040d5cf5e36ddca8cde # v2.4.2
         with:
           results_file: results.sarif
           results_format: sarif
-          # (Optional) "write" PAT token. Uncomment the `repo_token` line below if:
-          # - you want to enable the Branch-Protection check on a *public* repository, or
-          # To create the PAT, follow the steps in https://github.com/ossf/scorecard-action#authentication-with-pat.
-          # repo_token: ${{ secrets.SCORECARD_TOKEN }}
 
           # Public repositories:
           #   - Publish results to OpenSSF REST API for easy access by consumers
@@ -49,17 +40,8 @@ jobs:
           #   - See https://github.com/ossf/scorecard-action#publishing-results.
           publish_results: true
 
-      # Upload the results as artifacts (optional). Commenting out will disable uploads of run results in SARIF
-      # format to the repository Actions tab.
-      - name: "Upload artifact"
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
-        with:
-          name: SARIF file
-          path: results.sarif
-          retention-days: 5
-
       # Upload the results to GitHub's code scanning dashboard.
-      - name: "Upload to code-scanning"
-        uses: github/codeql-action/upload-sarif@b20883b0cd1f46c72ae0ba6d1090936928f9fa30 # v3.29.5
+      - name: Upload to code-scanning
+        uses: github/codeql-action/upload-sarif@87557b9c84dde89fdd9b10e88954ac2f4248e463 # v3.29.5
         with:
           sarif_file: results.sarif

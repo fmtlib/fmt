@@ -1,6 +1,6 @@
 // Formatting library for C++ - core tests
 //
-// Copyright (c) 2012 - present, Victor Zverovich
+// Copyright (c) 2012 - present, Victor Zverovich and {fmt} contributors
 // All rights reserved.
 //
 // For the license information refer to format.h.
@@ -21,8 +21,10 @@
 #include <functional>   // std::equal_to
 #include <iterator>     // std::back_insert_iterator, std::distance
 #include <limits>       // std::numeric_limits
+#include <list>         // std::list
 #include <string>       // std::string
 #include <type_traits>  // std::is_same
+#include <vector>       // std::vector
 
 #include "gmock/gmock.h"
 
@@ -811,10 +813,10 @@ TEST(base_test, throw_in_buffer_dtor) {
   constexpr int buffer_size = 256;
 
   struct throwing_iterator {
-    int& count;
+    int* count;
 
     auto operator=(char) -> throwing_iterator& {
-      if (++count > buffer_size) throw std::exception();
+      if (++*count > buffer_size) throw std::exception();
       return *this;
     }
     auto operator*() -> throwing_iterator& { return *this; }
@@ -824,7 +826,7 @@ TEST(base_test, throw_in_buffer_dtor) {
 
   try {
     int count = 0;
-    fmt::format_to(throwing_iterator{count}, fmt::runtime("{:{}}{"), "",
+    fmt::format_to(throwing_iterator{&count}, fmt::runtime("{:{}}{"), "",
                    buffer_size + 1);
   } catch (const std::exception&) {
   }
@@ -872,9 +874,31 @@ struct custom_container {
   auto operator[](size_t) -> char& { return data; }
 };
 
+struct phantom_subscript_container {
+  using value_type = char;
+
+  auto data() -> char*;
+  auto size() const -> size_t;
+  operator const char*() const;
+};
+
+struct real_subscript_container : phantom_subscript_container {
+  auto operator[](size_t) -> char&;
+};
+
 FMT_BEGIN_NAMESPACE
 template <> struct is_contiguous<custom_container> : std::true_type {};
 FMT_END_NAMESPACE
+
+TEST(base_test, is_contiguous) {
+  EXPECT_TRUE((fmt::is_contiguous<custom_container>::value));
+  EXPECT_TRUE((fmt::is_contiguous<std::string>::value));
+  EXPECT_TRUE((fmt::is_contiguous<fmt::string_view>::value));
+  EXPECT_TRUE((fmt::is_contiguous<std::vector<char>>::value));
+  EXPECT_FALSE((fmt::is_contiguous<std::list<char>>::value));
+  EXPECT_FALSE((fmt::is_contiguous<phantom_subscript_container>::value));
+  EXPECT_TRUE((fmt::is_contiguous<real_subscript_container>::value));
+}
 
 TEST(base_test, format_to_custom_container) {
   auto c = custom_container();

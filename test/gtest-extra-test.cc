@@ -1,6 +1,6 @@
 // Formatting library for C++ - tests of custom Google Test assertions
 //
-// Copyright (c) 2012 - present, Victor Zverovich
+// Copyright (c) 2012 - present, Victor Zverovich and {fmt} contributors
 // All rights reserved.
 //
 // For the license information refer to format.h.
@@ -9,7 +9,6 @@
 
 #include <gtest/gtest-spi.h>
 
-#include <cstring>
 #include <memory>
 #include <stdexcept>
 

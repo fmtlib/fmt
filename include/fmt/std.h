@@ -1,6 +1,6 @@
 // Formatting library for C++ - formatters for standard library types
 //
-// Copyright (c) 2012 - present, Victor Zverovich
+// Copyright (c) 2012 - present, Victor Zverovich and {fmt} contributors
 // All rights reserved.
 //
 // For the license information refer to format.h.
@@ -133,8 +133,8 @@ void write_escaped_path(basic_memory_buffer<Char>& quoted,
 #if defined(__cpp_lib_expected) || FMT_CPP_LIB_VARIANT
 
 template <typename Char, typename OutputIt, typename T, typename FormatContext>
-auto write_escaped_alternative(OutputIt out, const T& v, FormatContext& ctx)
-    -> OutputIt {
+FMT_CONSTEXPR auto write_escaped_alternative(OutputIt out, const T& v,
+                                             FormatContext& ctx) -> OutputIt {
   if constexpr (has_to_string_view<T>::value)
     return write_escaped_string<Char>(out, detail::to_string_view(v));
   if constexpr (std::is_same_v<T, Char>) return write_escaped_char(out, v);
@@ -508,7 +508,7 @@ template <typename Char> struct formatter<std::monostate, Char> {
   }
 
   template <typename FormatContext>
-  auto format(const std::monostate&, FormatContext& ctx) const
+  FMT_CONSTEXPR auto format(const std::monostate&, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     return detail::write<Char>(ctx.out(), "monostate");
   }
@@ -524,7 +524,7 @@ struct formatter<Variant, Char,
   }
 
   template <typename FormatContext>
-  auto format(const Variant& value, FormatContext& ctx) const
+  FMT_CONSTEXPR20 auto format(const Variant& value, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     auto out = ctx.out();
 
@@ -637,15 +637,52 @@ struct formatter<
   template <typename Context>
   auto format(const std::exception& ex, Context& ctx) const
       -> decltype(ctx.out()) {
-    auto out = ctx.out();
+    return write(ctx.out(), ex);
+  }
+
+ private:
+  template <typename OutputIt>
+  auto write(OutputIt out, const std::exception& ex) const -> OutputIt {
 #if FMT_USE_RTTI
     if (with_typename_) {
       out = detail::write_demangled_name(out, typeid(ex));
       *out++ = ':';
       *out++ = ' ';
     }
-#endif
-    return detail::write_bytes<char>(out, string_view(ex.what()));
+#endif  // FMT_USE_RTTI
+    out = detail::write_bytes<char>(out, string_view(ex.what()));
+#if FMT_USE_RTTI
+    // If the exception carries a nested exception (e.g. via
+    // std::throw_with_nested), format the whole chain.
+    if (auto* nested = dynamic_cast<const std::nested_exception*>(&ex)) {
+      if (auto ep = nested->nested_ptr()) {
+        out = detail::write(out, string_view(": "));
+        try {
+          std::rethrow_exception(ep);
+        } catch (const std::exception& nested_ex) {
+          out = write(out, nested_ex);
+        } catch (...) {
+          out = detail::write(out, string_view("unknown exception"));
+        }
+      }
+    }
+#endif  // FMT_USE_RTTI
+    return out;
+  }
+};
+
+template <> struct formatter<std::exception_ptr> : formatter<std::exception> {
+  template <typename FormatContext>
+  auto format(const std::exception_ptr& ep, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    if (!ep) return detail::write(ctx.out(), string_view("none"));
+    try {
+      std::rethrow_exception(ep);
+    } catch (const std::exception& e) {
+      return formatter<std::exception>::format(e, ctx);
+    } catch (...) {
+      return detail::write(ctx.out(), string_view("unknown exception"));
+    }
   }
 };
 
@@ -690,11 +727,12 @@ struct formatter<BitRef, Char,
 #ifdef __cpp_lib_byte
 template <typename Char>
 struct formatter<std::byte, Char> : formatter<unsigned, Char> {
-  static auto format_as(std::byte b) -> unsigned char {
+  FMT_CONSTEXPR static auto format_as(std::byte b) -> unsigned char {
     return static_cast<unsigned char>(b);
   }
   template <typename Context>
-  auto format(std::byte b, Context& ctx) const -> decltype(ctx.out()) {
+  FMT_CONSTEXPR auto format(std::byte b, Context& ctx) const
+      -> decltype(ctx.out()) {
     return formatter<unsigned, Char>::format(format_as(b), ctx);
   }
 };

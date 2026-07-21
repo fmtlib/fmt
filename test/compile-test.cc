@@ -1,19 +1,22 @@
 // Formatting library for C++ - formatting library tests
 //
-// Copyright (c) 2012 - present, Victor Zverovich
+// Copyright (c) 2012 - present, Victor Zverovich and {fmt} contributors
 // All rights reserved.
 //
 // For the license information refer to format.h.
 
 #include "fmt/compile.h"
 
+#include <array>
 #include <iterator>
 #include <list>
 #include <type_traits>
 #include <vector>
 
 #include "fmt/chrono.h"
+#include "fmt/color.h"
 #include "fmt/ranges.h"
+#include "fmt/std.h"
 #include "gmock/gmock.h"
 #include "gtest-extra.h"
 
@@ -86,7 +89,6 @@ TEST(compile_test, format_escape) {
   EXPECT_EQ("\"abc\"", fmt::format(FMT_COMPILE("{0:<5?}"), "abc"));
   EXPECT_EQ("\"abc\"  ", fmt::format(FMT_COMPILE("{0:<7?}"), "abc"));
 }
-
 
 TEST(compile_test, format_specs) {
   EXPECT_EQ("42", fmt::format(FMT_COMPILE("{:x}"), 0x42));
@@ -224,6 +226,19 @@ TEST(compile_test, constexpr_formatted_size) {
   FMT_CONSTEXPR20 size_t str_size =
       fmt::formatted_size(FMT_COMPILE("{:s}"), "abc");
   EXPECT_EQ(str_size, 3);
+  FMT_CONSTEXPR20 size_t tuple_size = fmt::formatted_size(
+      FMT_COMPILE("{}"), fmt::join(std::tuple(1, 2, 3), ","));
+  EXPECT_EQ(tuple_size, 5);
+  FMT_CONSTEXPR20 size_t array_size = fmt::formatted_size(
+      FMT_COMPILE("{}"), fmt::join(std::array<int, 3>{1, 2, 3}, ","));
+  EXPECT_EQ(array_size, 5);
+  FMT_CONSTEXPR20 size_t styled_size = fmt::formatted_size(
+      FMT_COMPILE("{}"),
+      fmt::styled(std::array{1, 2, 3}, fmt::bg(fmt::color::green)));
+  EXPECT_EQ(styled_size, 32);
+  FMT_CONSTEXPR20 size_t variant_size = fmt::formatted_size(
+      FMT_COMPILE("{}"), std::variant<std::monostate, char>{});
+  EXPECT_EQ(variant_size, 18);
 }
 
 TEST(compile_test, static_format) {
@@ -464,3 +479,13 @@ TEST(compile_test, constexpr_string_format) {
   EXPECT_TRUE(big);
 }
 #endif  // FMT_USE_CONSTEXPR_STRING
+
+namespace {
+struct compile_format_as_type {
+  int value;
+};
+int format_as(compile_format_as_type f) { return f.value; }
+} 
+TEST(compile_test, format_as) {
+  EXPECT_EQ("42", fmt::format(FMT_COMPILE("{}"), compile_format_as_type{42}));
+}

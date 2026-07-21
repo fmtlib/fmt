@@ -1,6 +1,6 @@
 // Formatting library for C++ - tests of formatters for standard library types
 //
-// Copyright (c) 2012 - present, Victor Zverovich
+// Copyright (c) 2012 - present, Victor Zverovich and {fmt} contributors
 // All rights reserved.
 //
 // For the license information refer to format.h.
@@ -402,6 +402,67 @@ TEST(std_test, exception) {
                 StartsWith("std::filesystem::filesystem_error: "));
   }
 #endif
+
+#if FMT_USE_RTTI
+  // Nested exceptions (e.g. from std::throw_with_nested) are unwound.
+  try {
+    try {
+      throw std::runtime_error("inner");
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error("outer"));
+    }
+  } catch (const std::exception& ex) {
+    EXPECT_EQ("outer: inner", fmt::format("{}", ex));
+  }
+
+  // Multiple levels of nesting.
+  try {
+    try {
+      try {
+        throw std::runtime_error("level 3");
+      } catch (...) {
+        std::throw_with_nested(std::runtime_error("level 2"));
+      }
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error("level 1"));
+    }
+  } catch (const std::exception& ex) {
+    EXPECT_EQ("level 1: level 2: level 3", fmt::format("{}", ex));
+  }
+#endif  // FMT_USE_RTTI
+}
+
+TEST(std_test, exception_ptr) {
+  std::exception_ptr p1 = nullptr;
+  std::exception_ptr p2;
+
+  try {
+    using namespace my_ns1::my_ns2;
+    throw my_exception("My Exception");
+  } catch (...) {
+    p2 = std::current_exception();
+  }
+
+  EXPECT_EQ(fmt::format("{}", p1), "none");
+  EXPECT_EQ(fmt::format("{}", p2), "My Exception");
+
+#if FMT_USE_RTTI
+  EXPECT_EQ(fmt::format("{:t}", p2),
+            "my_ns1::my_ns2::my_exception: My Exception");
+
+  // Nested exceptions are unwound through an exception_ptr too.
+  std::exception_ptr p3;
+  try {
+    try {
+      throw std::runtime_error("inner");
+    } catch (...) {
+      std::throw_with_nested(std::runtime_error("outer"));
+    }
+  } catch (...) {
+    p3 = std::current_exception();
+  }
+  EXPECT_EQ(fmt::format("{}", p3), "outer: inner");
+#endif  // FMT_USE_RTTI
 }
 
 #if FMT_USE_RTTI
@@ -409,7 +470,7 @@ TEST(std_test, type_info) {
   EXPECT_EQ(fmt::format("{}", typeid(std::runtime_error)),
             "std::runtime_error");
 }
-#endif
+#endif  // FMT_USE_RTTI
 
 #if FMT_USE_BITINT
 FMT_PRAGMA_CLANG(diagnostic ignored "-Wbit-int-extension")

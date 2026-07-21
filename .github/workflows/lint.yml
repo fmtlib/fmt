@@ -2,11 +2,6 @@ name: lint
 
 on:
   pull_request:
-    paths:
-      - '**.h'
-      - '**.cc'
-      - '**.cmake'
-      - '**/CMakeLists.txt'
 
 permissions:
   contents: read
@@ -15,13 +10,19 @@ jobs:
   clang-format:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
     - name: Install clang-format
       run: |
-        wget https://apt.llvm.org/llvm.sh
-        sudo bash ./llvm.sh 21
-        sudo apt install clang-format-21
+        sudo install -D -m 0644 support/llvm-snapshot.gpg.key \
+          /etc/apt/keyrings/apt.llvm.org.asc
+        codename=$(lsb_release -cs)
+        echo "deb [signed-by=/etc/apt/keyrings/apt.llvm.org.asc]" \
+             "https://apt.llvm.org/$codename/" \
+             "llvm-toolchain-$codename-21 main" \
+          | sudo tee /etc/apt/sources.list.d/llvm.list
+        sudo apt-get update
+        sudo apt-get install -y clang-format-21
 
     - name: Run clang-format
       run: |
@@ -32,10 +33,10 @@ jobs:
   cmake-format:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
     - name: Install cmake-format
-      run: pip install cmakelang
+      run: pip install --require-hashes -r support/cmake-format-requirements.txt
 
     - name: Run cmake-format
       run: |

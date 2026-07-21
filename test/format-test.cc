@@ -1,6 +1,6 @@
 // Formatting library for C++ - formatting library tests
 //
-// Copyright (c) 2012 - present, Victor Zverovich
+// Copyright (c) 2012 - present, Victor Zverovich and {fmt} contributors
 // All rights reserved.
 //
 // For the license information refer to format.h.
@@ -15,17 +15,17 @@
 
 #include <stdint.h>  // uint32_t
 
-#include <cfenv>               // fegetexceptflag and FE_ALL_EXCEPT
-#include <climits>             // INT_MAX
-#include <cmath>               // std::signbit
-#include <condition_variable>  // std::condition_variable
-#include <cstring>             // std::strlen
-#include <iterator>            // std::back_inserter
-#include <list>                // std::list
-#include <mutex>               // std::mutex
-#include <string>              // std::string
-#include <thread>              // std::thread
-#include <type_traits>         // std::is_default_constructible
+#include <cfenv>        // fegetexceptflag and FE_ALL_EXCEPT
+#include <climits>      // INT_MAX
+#include <cmath>        // std::signbit
+#include <csignal>      // std::signal, SIGPIPE
+#include <cstring>      // std::strlen
+#include <iterator>     // std::back_inserter
+#include <list>         // std::list
+#include <mutex>        // std::mutex
+#include <string>       // std::string
+#include <thread>       // std::thread
+#include <type_traits>  // std::is_default_constructible
 #if FMT_CPLUSPLUS > 201703L && FMT_HAS_INCLUDE(<version>)
 #  include <version>
 #endif
@@ -80,6 +80,11 @@ TEST(uint128_test, shift) {
 TEST(uint128_test, minus) {
   auto n = uint128(42);
   EXPECT_EQ(n - 2, 40);
+}
+
+TEST(uint128_test, bitwise_not) {
+  auto n = ~uint128(0x123456789abcdef0, 0x0fedcba987654321);
+  EXPECT_EQ(n, uint128(0xedcba9876543210f, 0xf0123456789abcde));
 }
 
 TEST(uint128_test, plus_assign) {
@@ -268,22 +273,6 @@ TEST(util_test, format_system_error) {
   fmt::format_system_error(message, EDOM, "test");
   auto ec = std::error_code(EDOM, std::generic_category());
   EXPECT_EQ(to_string(message), std::system_error(ec, "test").what());
-  message = fmt::memory_buffer();
-
-  // Check if std::allocator throws on allocating max size_t / 2 chars.
-  size_t max_size = max_value<size_t>() / 2;
-  bool throws_on_alloc = false;
-  try {
-    auto alloc = std::allocator<char>();
-    alloc.deallocate(alloc.allocate(max_size), max_size);
-  } catch (const std::bad_alloc&) {
-    throws_on_alloc = true;
-  }
-  if (!throws_on_alloc) {
-    fmt::print(stderr, "warning: std::allocator allocates {} chars\n",
-               max_size);
-    return;
-  }
 }
 
 TEST(util_test, system_error) {
@@ -1345,6 +1334,16 @@ TEST(format_test, format_int) {
                    "invalid format specifier");
   check_unknown_types(42, "bBdoxXnLc", "integer");
   EXPECT_EQ(fmt::format("{:c}", static_cast<int>('x')), "x");
+  // The 'c' type treats all character types as unsigned for portability, so the
+  // representable range for char is [0, 255] and out-of-range values are
+  // reported as an error.
+  EXPECT_EQ(fmt::format("{:c}", 200), std::string(1, static_cast<char>(200)));
+  EXPECT_EQ(fmt::format("{:c}", 255), std::string(1, static_cast<char>(255)));
+  const char* msg = "character value out of range";
+  EXPECT_THROW_MSG((void)fmt::format("{:c}", -1), format_error, msg);
+  EXPECT_THROW_MSG((void)fmt::format("{:c}", -104), format_error, msg);
+  EXPECT_THROW_MSG((void)fmt::format("{:c}", 256), format_error, msg);
+  EXPECT_THROW_MSG((void)fmt::format("{:c}", 400u), format_error, msg);
 }
 
 TEST(format_test, format_bin) {
@@ -2608,6 +2607,24 @@ TEST(format_test, invalid_glibc_buffer) {
   setvbuf(file, nullptr, _IOLBF, 0);
 
   fmt::print(file, "------\n");
+}
+
+TEST(format_test, print_to_broken_pipe) {
+  // Ignore SIGPIPE so that a failing write reports EPIPE instead of
+  // terminating the test process. It must stay ignored until the file is
+  // closed below because closing also flushes the remaining buffered data.
+  auto old_handler = std::signal(SIGPIPE, SIG_IGN);
+  {
+    auto pipe = fmt::pipe();
+    pipe.read_end.close();
+    auto write_end = pipe.write_end.fdopen("w");
+
+    // The data must exceed the file's buffer to force a flush during
+    // formatting, whose underlying write() then fails with EPIPE.
+    auto data = std::string(1024 * 1024, 'x');
+    EXPECT_THROW(fmt::print(write_end.get(), "{}", data), std::system_error);
+  }
+  std::signal(SIGPIPE, old_handler);
 }
 #endif  // FMT_USE_FCNTL
 

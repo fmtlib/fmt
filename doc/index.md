@@ -130,7 +130,6 @@ hide:
   Where possible, the output of formatting functions is <b>consistent across
   platforms</b>.
 </p>
-</p>
 </div>
 
 <div class="feature">

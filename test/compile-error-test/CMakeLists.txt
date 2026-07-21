@@ -239,6 +239,16 @@ if (CMAKE_CXX_STANDARD GREATER_EQUAL 20)
   #endif
     "
     ERROR)
+  expect_compile(
+    format-string-embedded-nul-error
+    "
+    #if FMT_USE_CONSTEVAL
+      fmt::format(\"a\\0{}\");
+    #else
+      #error
+    #endif
+    "
+    ERROR)
 
   # Compile-time argument name check
   expect_compile(

@@ -1,6 +1,6 @@
 // Formatting library for C++ - color tests
 //
-// Copyright (c) 2012 - present, Victor Zverovich
+// Copyright (c) 2012 - present, Victor Zverovich and {fmt} contributors
 // All rights reserved.
 //
 // For the license information refer to format.h.
@@ -135,4 +135,16 @@ TEST(color_test, format_to) {
 TEST(color_test, print) {
   EXPECT_WRITE(stdout, fmt::print(fg(fmt::rgb(255, 20, 30)), "rgb(255,20,30)"),
                "\x1b[38;2;255;020;030mrgb(255,20,30)\x1b[0m");
+}
+
+TEST(color_test, println) {
+  EXPECT_WRITE(stdout,
+               fmt::println(fg(fmt::rgb(255, 20, 30)), "rgb(255,20,30)"),
+               "\x1b[38;2;255;020;030mrgb(255,20,30)\x1b[0m\n");
+  EXPECT_WRITE(stdout, fmt::println(fmt::emphasis::bold, "bold"),
+               "\x1b[1mbold\x1b[0m\n");
+  EXPECT_WRITE(
+      stdout,
+      fmt::println(fg(fmt::color::blue) | fmt::emphasis::bold, "blue/bold"),
+      "\x1b[1m\x1b[38;2;000;000;255mblue/bold\x1b[0m\n");
 }

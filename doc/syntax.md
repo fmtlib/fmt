@@ -1,14 +1,15 @@
 # Format String Syntax
 
-Formatting functions such as [`fmt::format`](api.md#format) and [`fmt::print`](
-api.md#print) use the same format string syntax described in this section.
+The formatting functions in this library — most notably
+[`fmt::format`](api.md#format) and [`fmt::print`](api.md#print) — accept
+format strings written in the syntax described here.
 
-Format strings contain "replacement fields" surrounded by curly braces `{}`.
-Anything that is not contained in braces is considered literal text, which is
-copied unchanged to the output. If you need to include a brace character in
-the literal text, it can be escaped by doubling: `{{` and `}}`.
+A format string is plain text with embedded *replacement fields* delimited by
+the braces `{` and `}`. Characters outside of any replacement field are
+copied to the output unchanged. To emit a literal brace, double it: `{{`
+yields a single `{` in the output, and `}}` yields a single `}`.
 
-The grammar for a replacement field is as follows:
+A replacement field is described by the grammar below.
 
 <a id="replacement-field"></a>
 <pre><code class="language-json"
@@ -22,55 +23,43 @@ id_start          ::= "a"..."z" | "A"..."Z" | "_"
 id_continue       ::= id_start | digit</code>
 </pre>
 
-In less formal terms, the replacement field can start with an *arg_id* that
-specifies the argument whose value is to be formatted and inserted into the
-output instead of the replacement field. The *arg_id* is optionally followed
-by a *format_spec*, which is preceded by a colon `':'`. These specify a
-non-default format for the replacement value.
+An *arg_id* selects which argument to format. It may be a non-negative
+integer (positional reference) or an identifier matching the name of an
+argument passed via [`fmt::arg`](api.md#arg) (named reference). When *arg_id*
+is omitted, arguments are consumed in left-to-right order; this *automatic*
+indexing must be used uniformly throughout the format string — mixing
+automatic and explicit numeric ids is a compile-time error (or a
+`format_error` at runtime).
 
-See also the [Format Specification
-Mini-Language](#format-specification-mini-language) section.
+A *format_spec*, introduced by `:`, describes how the value should be
+rendered. Its grammar is type-dependent; the form used by the standard
+built-in types is documented in the next section.
 
-If the numerical arg_ids in a format string are 0, 1, 2, ... in sequence,
-they can all be omitted (not just some) and the numbers 0, 1, 2, ... will be
-automatically inserted in that order.
-
-Named arguments can be referred to by their names or indices.
-
-Some simple format string examples:
+For example:
 
 ```c++
-"First, thou shalt count to {0}" // References the first argument
-"Bring me a {}"                  // Implicitly references the first argument
-"From {} to {}"                  // Same as "From {0} to {1}"
+fmt::format("hello, {}", "world");
+// Result: "hello, world"
+
+fmt::format("{1}, {0}!", "world", "hello");
+// Result: "hello, world!"
+
+fmt::format("{greeting}, {name}!",
+            fmt::arg("greeting", "hi"), fmt::arg("name", "fmt"));
+// Result: "hi, fmt!"
 ```
 
-The *format_spec* field contains a specification of how the value should
-be presented, including such details as field width, alignment, padding,
-decimal precision and so on. Each value type can define its own
-"formatting mini-language" or interpretation of the *format_spec*.
+A *width* or *precision* inside a *format_spec* may itself be written as a
+nested replacement field — `{}` or `{arg_id}` — in which case it takes its
+value from an integer argument at runtime. Nested fields accept only an
+*arg_id*; they cannot themselves contain a *format_spec*.
 
-Most built-in types support a common formatting mini-language, which is
-described in the next section.
+## Format Specification
 
-A *format_spec* field can also include nested replacement fields in
-certain positions within it. These nested replacement fields can contain
-only an argument id; format specifications are not allowed. This allows
-the formatting of a value to be dynamically specified.
-
-See the [Format Examples](#format-examples) section for some examples.
-
-## Format Specification Mini-Language
-
-"Format specifications" are used within replacement fields contained within a
-format string to define how individual values are presented. Each formattable
-type may define how the format specification is to be interpreted.
-
-Most built-in types implement the following options for format
-specifications, although some of the formatting options are only
-supported by the numeric types.
-
-The general form of a *standard format specifier* is:
+The grammar below describes the *format_spec* shared by the built-in
+types — integers, floating-point values, characters, strings, booleans, and
+pointers — as well as by any user-defined type whose `formatter` reuses
+fmt's parser.
 
 <a id="format-spec"></a>
 <pre><code class="language-json"
@@ -86,318 +75,221 @@ type        ::= "a" | "A" | "b" | "B" | "c" | "d" | "e" | "E" | "f" | "F" |
                 "g" | "G" | "o" | "p" | "s" | "x" | "X" | "?"</code>
 </pre>
 
-The *fill* character can be any Unicode code point other than `'{'` or `'}'`.
-The presence of a fill character is signaled by the character following it,
-which must be one of the alignment options. If the second character of
-*format_spec* is not a valid alignment option, then it is assumed that both
-the fill character and the alignment option are absent.
+Whether a particular option is meaningful depends on the value being
+formatted; options that do not apply to a value's type are diagnosed at
+compile time when possible and otherwise raise a `format_error`.
 
-The meaning of the various alignment options is as follows:
+### Fill and alignment
 
-<table>
-<tr>
-  <th>Option</th>
-  <th>Meaning</th>
-</tr>
-<tr>
-  <td><code>'<'</code></td>
-  <td>
-    Forces the field to be left-aligned within the available space (this is the
-    default for most objects).
-  </td>
-</tr>
-<tr>
-  <td><code>'>'</code></td>
-  <td>
-    Forces the field to be right-aligned within the available space (this is
-    the default for numbers).
-  </td>
-</tr>
-<tr>
-  <td><code>'^'</code></td>
-  <td>Forces the field to be centered within the available space.</td>
-</tr>
-</table>
+The *align* field selects where padding is placed when *width* makes the
+field wider than the value's natural rendering.
 
-Note that unless a minimum field width is defined, the field width will
-always be the same size as the data to fill it, so that the alignment
-option has no meaning in this case.
+| Option | Effect                                                            |
+|--------|-------------------------------------------------------------------|
+| `<`    | Left-align; pad on the right. Default for non-numeric types.      |
+| `>`    | Right-align; pad on the left. Default for numeric types.          |
+| `^`    | Center the value; if the padding cannot be split evenly, the extra padding character goes on the right. |
 
-The *sign* option is only valid for floating point and signed integer types,
-and can be one of the following:
+The *fill* character is any single Unicode code point other than `{` or `}`,
+encoded the same way as the format string. It supplies the padding character
+in place of the default space. A fill character is recognized only when it is
+immediately followed by an *align* character — otherwise it would be
+indistinguishable from an option in another position — so to use a custom
+fill you must also specify an alignment.
 
-<table>
-<tr>
-  <th>Option</th>
-  <th>Meaning</th>
-</tr>
-<tr>
-  <td><code>'+'</code></td>
-  <td>
-    Indicates that a sign should be used for both nonnegative as well as
-    negative numbers.
-  </td>
-</tr>
-<tr>
-  <td><code>'-'</code></td>
-  <td>
-    Indicates that a sign should be used only for negative numbers (this is the
-    default behavior).
-  </td>
-</tr>
-<tr>
-  <td>space</td>
-  <td>
-    Indicates that a leading space should be used on nonnegative numbers, and a
-    minus sign on negative numbers.
-  </td>
-</tr>
-</table>
+Alignment has no observable effect when the value's natural rendering is
+already at least as wide as *width*; the value is never truncated to fit.
 
-The `'#'` option causes the "alternate form" to be used for the
-conversion. The alternate form is defined differently for different
-types. This option is only valid for integer and floating-point types.
-For integers, when binary, octal, or hexadecimal output is used, this
-option adds the prefix respective `"0b"` (`"0B"`), `"0"`, or `"0x"`
-(`"0X"`) to the output value. Whether the prefix is lower-case or
-upper-case is determined by the case of the type specifier, for example,
-the prefix `"0x"` is used for the type `'x'` and `"0X"` is used for
-`'X'`. For floating-point numbers the alternate form causes the result
-of the conversion to always contain a decimal-point character, even if
-no digits follow it. Normally, a decimal-point character appears in the
-result of these conversions only if a digit follows it. In addition, for
-`'g'` and `'G'` conversions, trailing zeros are not removed from the
-result.
+```c++
+fmt::format("[{:<10}]", "42");   // Result: "[42        ]"
+fmt::format("[{:>10}]", "42");   // Result: "[        42]"
+fmt::format("[{:^10}]", "42");   // Result: "[    42    ]"
+fmt::format("[{:*^10}]", "42");  // Result: "[****42****]"  - '*' as fill
+```
 
-*width* is a decimal integer defining the minimum field width. If not
-specified, then the field width will be determined by the content.
+### Sign
 
-Preceding the *width* field by a zero (`'0'`) character enables
-sign-aware zero-padding for numeric types. It forces the padding to be
-placed after the sign or base (if any) but before the digits. This is
-used for printing fields in the form "+000000120". This option is only
-valid for numeric types and it has no effect on formatting of infinity
-and NaN. This option is ignored when any alignment specifier is present.
+The *sign* field controls how the sign of a numeric value is emitted. It
+applies to signed integer and floating-point types only.
 
-The *precision* is a decimal number indicating how many digits should be
-displayed after the decimal point for a floating-point value formatted
-with `'f'` and `'F'`, or before and after the decimal point for a
-floating-point value formatted with `'g'` or `'G'`. For non-number types
-the field indicates the maximum field size - in other words, how many
-characters will be used from the field content. The *precision* is not
-allowed for integer, character, Boolean, and pointer values. Note that a
-C string must be null-terminated even if precision is specified.
+| Option | Effect                                                            |
+|--------|-------------------------------------------------------------------|
+| `+`    | Always emit a sign (`+` for nonnegative values, `-` for negative).|
+| `-`    | Emit `-` only for negative values. This is the default.           |
+| space  | Emit a leading space for nonnegative values and `-` for negative ones; useful for aligning columns of signed numbers. |
 
-The `'L'` option uses the current locale setting to insert the appropriate
-number separator characters. This option is only valid for numeric types.
+The sign of `-0.0` is preserved in floating-point output.
 
-Finally, the *type* determines how the data should be presented.
+```c++
+fmt::format("{:+d} {:+d}", 7, -7);  // Result: "+7 -7"
+fmt::format("{: d} {: d}", 7, -7);  // Result: " 7 -7"
+```
 
-The available string presentation types are:
+### Alternate form (`#`)
 
-<table>
-<tr>
-  <th>Type</th>
-  <th>Meaning</th>
-</tr>
-<tr>
-  <td><code>'s'</code></td>
-  <td>
-    String format. This is the default type for strings and may be omitted.
-  </td>
-</tr>
-<tr>
-  <td><code>'?'</code></td>
-  <td>Debug format. The string is quoted and special characters escaped.</td>
-</tr>
-<tr>
-  <td>none</td>
-  <td>The same as <code>'s'</code>.</td>
-</tr>
-</table>
+The `#` flag selects an *alternate form* whose exact meaning depends on the
+presentation type:
 
-The available character presentation types are:
+- For integers rendered in binary, octal, or hexadecimal, it prepends the
+  appropriate base prefix (`0b`/`0B`, `0`, or `0x`/`0X`). The case of the
+  prefix follows the case of the type specifier — `0x` for `x`, `0X` for
+  `X`, and so on.
+- For floating-point values, it forces the decimal point to appear in the
+  output even if no fractional digits would otherwise be emitted, and
+  prevents the `g`/`G` presentation types from removing trailing zeros from
+  the significand.
 
-<table>
-<tr>
-  <th>Type</th>
-  <th>Meaning</th>
-</tr>
-<tr>
-  <td><code>'c'</code></td>
-  <td>
-    Character format. This is the default type for characters and may be
-    omitted.
-  </td>
-</tr>
-<tr>
-  <td><code>'?'</code></td>
-  <td>Debug format. The character is quoted and special characters escaped.</td>
-</tr>
-<tr>
-  <td>none</td>
-  <td>The same as <code>'c'</code>.</td>
-</tr>
-</table>
+The `#` flag is not accepted by non-numeric types.
 
-The available integer presentation types are:
+### Zero padding (`0`)
 
-<table>
-<tr>
-  <th>Type</th>
-  <th>Meaning</th>
-</tr>
-<tr>
-  <td><code>'b'</code></td>
-  <td>
-    Binary format. Outputs the number in base 2. Using the <code>'#'</code>
-    option with this type adds the prefix <code>"0b"</code> to the output value.
-  </td>
-</tr>
-<tr>
-  <td><code>'B'</code></td>
-  <td>
-    Binary format. Outputs the number in base 2. Using the <code>'#'</code>
-    option with this type adds the prefix <code>"0B"</code> to the output value.
-  </td>
-</tr>
-<tr>
-  <td><code>'c'</code></td>
-  <td>Character format. Outputs the number as a character.</td>
-</tr>
-<tr>
-  <td><code>'d'</code></td>
-  <td>Decimal integer. Outputs the number in base 10.</td>
-</tr>
-<tr>
-  <td><code>'o'</code></td>
-  <td>Octal format. Outputs the number in base 8.</td>
-</tr>
-<tr>
-  <td><code>'x'</code></td>
-  <td>
-    Hex format. Outputs the number in base 16, using lower-case letters for the
-    digits above 9. Using the <code>'#'</code> option with this type adds the
-    prefix <code>"0x"</code> to the output value.
-  </td>
-</tr>
-<tr>
-  <td><code>'X'</code></td>
-  <td>
-    Hex format. Outputs the number in base 16, using upper-case letters for the
-    digits above 9. Using the <code>'#'</code> option with this type adds the
-    prefix <code>"0X"</code> to the output value.
-  </td>
-</tr>
-<tr>
-  <td>none</td>
-  <td>The same as <code>'d'</code>.</td>
-</tr>
-</table>
+A `0` placed immediately before *width* enables sign-aware zero padding for
+numeric types. Zeros are inserted between the sign (or base prefix, if any)
+and the most significant digit, so that a sign or `0x` prefix stays adjacent
+to the digits rather than being separated by spaces. For example, `{:+08d}`
+applied to `120` produces `+0000120`.
 
-Integer presentation types can also be used with character and Boolean values
-with the only exception that `'c'` cannot be used with `bool`. Boolean values
-are formatted using textual representation, either `true` or `false`, if the
-presentation type is not specified.
+Zero padding:
 
-The available presentation types for floating-point values are:
+- applies only to numeric types;
+- has no effect on `inf` or `nan`;
+- is ignored when an explicit *align* is also present.
 
-<table>
-<tr>
-  <th>Type</th>
-  <th>Meaning</th>
-</tr>
-<tr>
-  <td><code>'a'</code></td>
-  <td>
-    Hexadecimal floating point format. Prints the number in base 16 with
-    prefix <code>"0x"</code> and lower-case letters for digits above 9.
-    Uses <code>'p'</code> to indicate the exponent.
-  </td>
-</tr>
-<tr>
-  <td><code>'A'</code></td>
-  <td>
-    Same as <code>'a'</code> except it uses upper-case letters for the
-    prefix, digits above 9 and to indicate the exponent.
-  </td>
-</tr>
-<tr>
-  <td><code>'e'</code></td>
-  <td>
-    Exponent notation. Prints the number in scientific notation using
-    the letter 'e' to indicate the exponent.
-  </td>
-</tr>
-<tr>
-  <td><code>'E'</code></td>
-  <td>
-    Exponent notation. Same as <code>'e'</code> except it uses an
-    upper-case <code>'E'</code> as the separator character.
-  </td>
-</tr>
-<tr>
-  <td><code>'f'</code></td>
-  <td>Fixed point. Displays the number as a fixed-point number.</td>
-</tr>
-<tr>
-  <td><code>'F'</code></td>
-  <td>
-    Fixed point. Same as <code>'f'</code>, but converts <code>nan</code>
-    to <code>NAN</code> and <code>inf</code> to <code>INF</code>.
-  </td>
-</tr>
-<tr>
-  <td><code>'g'</code></td>
-  <td>
-    <p>General format. For a given precision <code>p &gt;= 1</code>,
-    this rounds the number to <code>p</code> significant digits and then
-    formats the result in either fixed-point format or in scientific
-    notation, depending on its magnitude.</p>
-    <p>A precision of <code>0</code> is treated as equivalent to a precision
-    of <code>1</code>.</p>
-  </td>
-</tr>
-<tr>
-  <td><code>'G'</code></td>
-  <td>
-    General format. Same as <code>'g'</code> except switches to
-    <code>'E'</code> if the number gets too large. The representations of
-    infinity and NaN are uppercased, too.
-  </td>
-</tr>
-<tr>
-  <td>none</td>
-  <td>
-    Similar to <code>'g'</code>, except that the default precision is as
-    high as needed to represent the particular value.
-  </td>
-</tr>
-</table>
+### Width
 
-The available presentation types for pointers are:
+*width* is a non-negative decimal integer giving the minimum number of
+characters that the field should occupy. If the formatted value is shorter
+than *width*, it is padded according to *align* and *fill*; if it is longer,
+the value is written in full. *width* never causes the value to be
+truncated.
 
-<table>
-<tr>
-  <th>Type</th>
-  <th>Meaning</th>
-</tr>
-<tr>
-  <td><code>'p'</code></td>
-  <td>
-    Pointer format. This is the default type for pointers and may be omitted.
-  </td>
-</tr>
-<tr>
-  <td>none</td>
-  <td>The same as <code>'p'</code>.</td>
-</tr>
-</table>
+To supply *width* at runtime, write the field as `{}` to consume the next
+argument, or as `{arg_id}` to reference an integer argument by position or
+by name.
 
-## Chrono Format Specifications
+When formatting strings, "width" is measured in display columns using a
+Unicode-aware estimate (East Asian wide and fullwidth characters, plus
+common emoji ranges, count as two columns; everything else counts as one).
+This keeps fixed *width* values visually consistent in monospace renderings
+that combine Latin and CJK text.
 
-Format specifications for chrono duration and time point types as well as
-`std::tm` have the following syntax:
+```c++
+fmt::format("[{:6}]", 42);
+// Result: "[    42]"  - right-aligned by default
+fmt::format("[{:6}]", "hi");
+// Result: "[hi    ]"  - left-aligned by default
+fmt::format("[{:{}}]", 42, 6);
+// Result: "[    42]"  - width from an argument
+```
+
+### Precision
+
+*precision* is a non-negative decimal integer (introduced by `.`) whose
+meaning depends on the value being formatted. As with *width*, it may be
+supplied as a nested replacement field for runtime evaluation.
+
+| Type                          | Meaning of `.precision`                       |
+|-------------------------------|-----------------------------------------------|
+| `e`, `E`, `f`, `F`            | Digits emitted after the decimal point.       |
+| `g`, `G`                      | Total number of significant digits.           |
+| `a`, `A`                      | Digits after the decimal point in the hexadecimal significand. If omitted, just enough digits are emitted to round-trip the value exactly. |
+| Strings (`s`, `?`, or default) | Upper bound on the number of code points copied from the value. |
+
+A *precision* is not accepted for integer, character, boolean, or pointer
+types. When a *precision* limits the number of characters taken from a C
+string, the string must still be null-terminated.
+
+```c++
+fmt::format("{:.2f}", 3.14159);        // Result: "3.14"
+fmt::format("{:.3g}", 3.14159);        // Result: "3.14"
+fmt::format("{:.4}", "hello, world");  // Result: "hell"
+fmt::format("{:.{}f}", 3.14159, 4);
+// Result: "3.1416"  - precision from an argument
+```
+
+### Locale (`L`)
+
+The `L` flag selects locale-sensitive formatting for numeric types. The
+formatter inspects the C++ locale supplied to the formatting function (or
+the global locale, if none was passed) and inserts the locale's digit
+grouping characters and — for floating-point values — its decimal point.
+The flag has no effect on non-numeric types.
+
+```c++
+auto loc = std::locale("en_US.UTF-8");
+fmt::format(loc, "{:L}", 1234567890);     // Result: "1,234,567,890"
+fmt::format(loc, "{:.2Lf}", 1234567.89);  // Result: "1,234,567.89"
+```
+
+### Presentation type
+
+The *type* field chooses the representation for the value. Specifiers are
+grouped below by the value categories they apply to.
+
+**Integers, booleans, and characters:**
+
+| Type | Effect                                                              |
+|------|---------------------------------------------------------------------|
+| `b`  | Base 2. The `#` flag adds a `0b` prefix.                            |
+| `B`  | Base 2. The `#` flag adds a `0B` prefix.                            |
+| `c`  | Render the integer as the character with that code point. Not allowed for `bool`. |
+| `d`  | Base 10. The default for integer types.                             |
+| `o`  | Base 8.                                                             |
+| `x`  | Base 16, lower-case digits. The `#` flag adds a `0x` prefix.        |
+| `X`  | Base 16, upper-case digits. The `#` flag adds a `0X` prefix.        |
+| none | Same as `d` for integers, `c` for characters, and the textual form (`true`/`false`) for `bool`. |
+
+```c++
+fmt::format("{:d} {:#x} {:#o} {:#b}", 42, 42, 42, 42);
+// Result: "42 0x2a 052 0b101010"
+
+fmt::format("{:#06x}", 0xfe);  // # adds the prefix, 06 zero-pads to width 6
+// Result: "0x00fe"
+```
+
+**Floating-point values:**
+
+| Type | Effect                                                              |
+|------|---------------------------------------------------------------------|
+| `a`  | Hexadecimal-significand form (e.g. `0x1.8p+1`). Lower-case digits and a lower-case `p` for the binary exponent. The `0x` prefix is always emitted, matching printf's `%a`. The `#` flag forces a decimal point (e.g. `0x1.p+1`).
+| `A`  | Same as `a`, but upper-case throughout.                             |
+| `e`  | Scientific notation with a lower-case `e` for the decimal exponent. |
+| `E`  | Scientific notation with an upper-case `E`.                         |
+| `f`  | Fixed-point notation.                                               |
+| `F`  | Same as `f`, but renders `nan` as `NAN` and `inf` as `INF`.         |
+| `g`  | General form: scientific notation when the exponent would be less than &minus;4 or not less than the precision, otherwise fixed-point; trailing zeros are removed from the fractional part unless `#` is set. A precision of `0` is interpreted as `1`. |
+| `G`  | Same as `g`, but uses `E` for the exponent and upper-case `INF`/`NAN`. |
+| none | Shortest round-trip representation: the formatted value, when parsed back into the same floating-point type, reproduces the input bit for bit. |
+
+**Strings and characters:**
+
+| Type | Effect                                                              |
+|------|---------------------------------------------------------------------|
+| `s`  | Plain string output. Default for string types and for `bool` (which is rendered as `true` or `false`). |
+| `c`  | Character output. Default for character types. Not allowed for `bool`. |
+| `?`  | Debug output: the value is wrapped in single quotes (characters) or double quotes (strings), and non-printable, non-ASCII, and special characters are escaped using C-style escape sequences such as `\n`, `\t`, `\"`, and `\u{...}`. |
+| none | Same as `s` for strings and `bool`, and as `c` for characters.      |
+
+```c++
+fmt::format("{}",   "tab\there");  // Result contains a literal tab character.
+fmt::format("{:?}", "tab\there");  // Result: "\"tab\\there\""
+```
+
+**Pointers:**
+
+| Type | Effect                                                              |
+|------|---------------------------------------------------------------------|
+| `p`  | Hexadecimal address prefixed by `0x`. Default for pointer types.    |
+| none | Same as `p`.                                                        |
+
+A C string (`char*` or `const char*`) accepts both the string presentation
+types and `p`, so the same value can be formatted as either text or an
+address.
+
+## Chrono Format Specification
+
+The format specification for chrono duration and time point types as well
+as `std::tm` has the following syntax:
 
 <a id="chrono-format-spec"></a>
 <pre><code class="language-json"
@@ -713,9 +605,25 @@ The available padding modifiers (*padding_modifier*) are:
 These modifiers are only supported for the `'H'`, `'I'`, `'M'`, `'S'`, `'U'`,
 `'V'`, `'W'`, `'Y'`, `'d'`, `'j'` and `'m'` presentation types.
 
-## Range Format Specifications
+Example:
 
-Format specifications for range types have the following syntax:
+```c++
+#include <fmt/chrono.h>
+
+auto t = std::tm();
+t.tm_year = 2010 - 1900;
+t.tm_mon = 7;
+t.tm_mday = 4;
+t.tm_hour = 12;
+t.tm_min = 15;
+t.tm_sec = 58;
+fmt::print("{:%Y-%m-%d %H:%M:%S}", t);
+// Prints: 2010-08-04 12:15:58
+```
+
+## Range Format Specification
+
+The format specification for range types has the following syntax:
 
 <pre><code class="language-json"
 >range_format_spec ::= ["n"][range_type][":" range_underlying_spec]</code>
@@ -765,87 +673,11 @@ fmt::print("{:n:f}", std::array{std::numbers::pi, std::numbers::e});
 // Output: 3.141593, 2.718282
 ```
 
-## Format Examples
+## A Combined Example
 
-This section contains examples of the format syntax and comparison with
-the `printf` formatting.
-
-In most of the cases the syntax is similar to the `printf` formatting,
-with the addition of the `{}` and with `:` used instead of `%`. For
-example, `"%03.2f"` can be translated to `"{:03.2f}"`.
-
-The new format syntax also supports new and different options, shown in
-the following examples.
-
-Accessing arguments by position:
-
-```c++
-fmt::format("{0}, {1}, {2}", 'a', 'b', 'c');
-// Result: "a, b, c"
-fmt::format("{}, {}, {}", 'a', 'b', 'c');
-// Result: "a, b, c"
-fmt::format("{2}, {1}, {0}", 'a', 'b', 'c');
-// Result: "c, b, a"
-fmt::format("{0}{1}{0}", "abra", "cad");  // arguments' indices can be repeated
-// Result: "abracadabra"
-```
-
-Aligning the text and specifying a width:
-
-```c++
-fmt::format("{:<30}", "left aligned");
-// Result: "left aligned                  "
-fmt::format("{:>30}", "right aligned");
-// Result: "                 right aligned"
-fmt::format("{:^30}", "centered");
-// Result: "           centered           "
-fmt::format("{:*^30}", "centered");  // use '*' as a fill char
-// Result: "***********centered***********"
-```
-
-Dynamic width:
-
-```c++
-fmt::format("{:<{}}", "left aligned", 30);
-// Result: "left aligned                  "
-```
-
-Dynamic precision:
-
-```c++
-fmt::format("{:.{}f}", 3.14, 1);
-// Result: "3.1"
-```
-
-Replacing `%+f`, `%-f`, and `% f` and specifying a sign:
-
-```c++
-fmt::format("{:+f}; {:+f}", 3.14, -3.14);  // show it always
-// Result: "+3.140000; -3.140000"
-fmt::format("{: f}; {: f}", 3.14, -3.14);  // show a space for positive numbers
-// Result: " 3.140000; -3.140000"
-fmt::format("{:-f}; {:-f}", 3.14, -3.14);  // show only the minus -- same as '{:f}; {:f}'
-// Result: "3.140000; -3.140000"
-```
-
-Replacing `%x` and `%o` and converting the value to different bases:
-
-```c++
-fmt::format("int: {0:d};  hex: {0:x};  oct: {0:o}; bin: {0:b}", 42);
-// Result: "int: 42;  hex: 2a;  oct: 52; bin: 101010"
-// with 0x or 0 or 0b as prefix:
-fmt::format("int: {0:d};  hex: {0:#x};  oct: {0:#o};  bin: {0:#b}", 42);
-// Result: "int: 42;  hex: 0x2a;  oct: 052;  bin: 0b101010"
-```
-
-Padded hex byte with prefix and always prints both hex characters:
-
-```c++
-fmt::format("{:#04x}", 0);
-// Result: "0x00"
-```
-
-Box drawing using Unicode fill:
+The example below ties together several elements introduced above — nested
+replacement fields, fill characters, and centering — to draw a fixed-width
+box around a message:
 
 ```c++
 fmt::print(
@@ -854,35 +686,10 @@ fmt::print(
     "└{0:─^{2}}┘\n", "", "Hello, world!", 20);
 ```
 
-prints:
+Output:
 
 ```
 ┌────────────────────┐
 │   Hello, world!    │
 └────────────────────┘
-```
-
-Using type-specific formatting:
-
-```c++
-#include <fmt/chrono.h>
-
-auto t = tm();
-t.tm_year = 2010 - 1900;
-t.tm_mon = 7;
-t.tm_mday = 4;
-t.tm_hour = 12;
-t.tm_min = 15;
-t.tm_sec = 58;
-fmt::print("{:%Y-%m-%d %H:%M:%S}", t);
-// Prints: 2010-08-04 12:15:58
-```
-
-Using the comma as a thousands separator:
-
-```c++
-#include <fmt/format.h>
-
-auto s = fmt::format(std::locale("en_US.UTF-8"), "{:L}", 1234567890);
-// s == "1,234,567,890"
 ```

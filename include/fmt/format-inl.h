@@ -1,6 +1,6 @@
 // Formatting library for C++ - implementation
 //
-// Copyright (c) 2012 - 2016, Victor Zverovich
+// Copyright (c) 2012 - present, Victor Zverovich and {fmt} contributors
 // All rights reserved.
 //
 // For the license information refer to format.h.
@@ -8,15 +8,17 @@
 #ifndef FMT_FORMAT_INL_H_
 #define FMT_FORMAT_INL_H_
 
+#ifdef __SANITIZE_THREAD__
+extern "C" void __tsan_acquire(void*);
+extern "C" void __tsan_release(void*);
+#endif
+
 #ifndef FMT_MODULE
 #  include <stddef.h>  // ptrdiff_t
 
 #  include <algorithm>
 #  include <cerrno>  // errno
-#  include <climits>
-#  include <cmath>
-#  include <exception>
-#  include <new>  // std::bad_alloc
+#  include <new>     // std::bad_alloc
 #endif
 
 #if defined(_WIN32) && !defined(FMT_USE_WRITE_CONSOLE)
@@ -1477,10 +1479,10 @@ template <typename T> struct span {
 };
 
 template <typename F> auto flockfile(F* f) -> decltype(_lock_file(f)) {
-  _lock_file(f);
+  return _lock_file(f);
 }
 template <typename F> auto funlockfile(F* f) -> decltype(_unlock_file(f)) {
-  _unlock_file(f);
+  return _unlock_file(f);
 }
 
 #ifndef getc_unlocked
@@ -1524,7 +1526,10 @@ template <typename F> class file_base {
       FMT_THROW(system_error(errno, FMT_STRING("ungetc failed")));
   }
 
-  void flush() { fflush(this->file_); }
+  void flush() {
+    if (fflush(this->file_) != 0)
+      FMT_THROW(system_error(errno, FMT_STRING("fflush failed")));
+  }
 };
 
 // A FILE wrapper for glibc.
@@ -1570,7 +1575,10 @@ template <typename F> class glibc_file : public file_base<F> {
     return memchr(end, '\n', static_cast<size_t>(size));
   }
 
-  void flush() { fflush_unlocked(this->file_); }
+  void flush() {
+    if (fflush_unlocked(this->file_) != 0)
+      FMT_THROW(system_error(errno, FMT_STRING("fflush failed")));
+  }
 };
 
 // A FILE wrapper for Apple's libc.
@@ -1696,6 +1704,9 @@ class file_print_buffer<F, enable_if_t<has_flockfile<F>::value>>
  public:
   explicit file_print_buffer(F* f) : buffer(grow, size_t()), file_(f) {
     flockfile(f);
+#ifdef __SANITIZE_THREAD__
+    __tsan_acquire(f);
+#endif
     file_.init_buffer();
     auto buf = file_.get_write_buffer();
     set(buf.data, buf.size);
@@ -1703,7 +1714,10 @@ class file_print_buffer<F, enable_if_t<has_flockfile<F>::value>>
   ~file_print_buffer() {
     file_.advance_write_buffer(size());
     bool flush = file_.needs_flush();
-    F* f = file_;    // Make funlockfile depend on the template parameter F
+    F* f = file_;  // Make funlockfile depend on the template parameter F.
+#ifdef __SANITIZE_THREAD__
+    __tsan_release(f);
+#endif
     funlockfile(f);  // for the system API detection to work.
     if (flush) fflush(file_);
   }

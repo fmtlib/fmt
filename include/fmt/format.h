@@ -1,7 +1,7 @@
 /*
   Formatting library for C++
 
-  Copyright (c) 2012 - present, Victor Zverovich
+  Copyright (c) 2012 - present, Victor Zverovich and {fmt} contributors
 
   Permission is hereby granted, free of charge, to any person obtaining
   a copy of this software and associated documentation files (the
@@ -326,6 +326,9 @@ class uint128 {
       -> uint128 {
     return {lhs.hi_ & rhs.hi_, lhs.lo_ & rhs.lo_};
   }
+  friend constexpr auto operator~(const uint128& n) -> uint128 {
+    return {~n.hi_, ~n.lo_};
+  }
   friend FMT_CONSTEXPR auto operator+(const uint128& lhs, const uint128& rhs)
       -> uint128 {
     auto result = uint128(lhs);
@@ -546,60 +549,6 @@ FMT_CONSTEXPR20 auto fill_n(T* out, Size count, char value) -> T* {
                 "sizeof(T) must be 1 to use char for initialization");
   memset(out, value, to_unsigned(count));
   return out + count;
-}
-
-template <typename OutputIt, typename InputIt, typename = void>
-struct has_back_insert_iterator_container_append : std::false_type {};
-
-template <typename OutputIt, typename InputIt>
-struct has_back_insert_iterator_container_append<
-    OutputIt, InputIt,
-    void_t<decltype(get_container(std::declval<OutputIt>())
-                        .append(std::declval<InputIt>(),
-                                std::declval<InputIt>()))>> : std::true_type {};
-
-template <typename OutputIt, typename InputIt, typename = void>
-struct has_back_insert_iterator_container_insert_at_end : std::false_type {};
-
-template <typename OutputIt, typename InputIt>
-struct has_back_insert_iterator_container_insert_at_end<
-    OutputIt, InputIt,
-    void_t<decltype(get_container(std::declval<OutputIt>())
-                        .insert(get_container(std::declval<OutputIt>()).end(),
-                                std::declval<InputIt>(),
-                                std::declval<InputIt>()))>> : std::true_type {};
-
-// An optimized version of std::copy with the output value type (T).
-template <typename T, typename InputIt, typename OutputIt,
-          FMT_ENABLE_IF(is_back_insert_iterator<OutputIt>::value&&
-                            has_back_insert_iterator_container_append<
-                                OutputIt, InputIt>::value)>
-FMT_CONSTEXPR auto copy(InputIt begin, InputIt end, OutputIt out) -> OutputIt {
-  get_container(out).append(begin, end);
-  return out;
-}
-
-template <typename T, typename InputIt, typename OutputIt,
-          FMT_ENABLE_IF(is_back_insert_iterator<OutputIt>::value &&
-                        !has_back_insert_iterator_container_append<
-                            OutputIt, InputIt>::value &&
-                        has_back_insert_iterator_container_insert_at_end<
-                            OutputIt, InputIt>::value)>
-FMT_CONSTEXPR auto copy(InputIt begin, InputIt end, OutputIt out) -> OutputIt {
-  auto& c = get_container(out);
-  c.insert(c.end(), begin, end);
-  return out;
-}
-
-template <typename T, typename InputIt, typename OutputIt,
-          FMT_ENABLE_IF(!(is_back_insert_iterator<OutputIt>::value &&
-                          (has_back_insert_iterator_container_append<
-                               OutputIt, InputIt>::value ||
-                           has_back_insert_iterator_container_insert_at_end<
-                               OutputIt, InputIt>::value)))>
-FMT_CONSTEXPR auto copy(InputIt begin, InputIt end, OutputIt out) -> OutputIt {
-  while (begin != end) *out++ = static_cast<T>(*begin++);
-  return out;
 }
 
 template <typename T, typename V, typename OutputIt>
@@ -1115,12 +1064,6 @@ template <typename T> FMT_CONSTEXPR auto count_digits_fallback(T n) -> int {
     count += 4;
   }
 }
-#if FMT_USE_INT128
-FMT_CONSTEXPR inline auto count_digits(native_uint128 n) -> int {
-  return count_digits_fallback(n);
-}
-#endif
-
 #ifdef FMT_BUILTIN_CLZLL
 // It is a separate function rather than a part of count_digits to workaround
 // the lack of static constexpr in constexpr functions.
@@ -1150,6 +1093,20 @@ FMT_CONSTEXPR20 inline auto count_digits(uint64_t n) -> int {
 #endif
   return count_digits_fallback(n);
 }
+
+#if FMT_USE_INT128
+FMT_CONSTEXPR20 inline auto count_digits(native_uint128 n) -> int {
+  if (is_constant_evaluated()) return count_digits_fallback(n);
+  // 128-bit division is a slow library call, so reduce to 64-bit chunks via
+  // 10^19 (the largest power of 10 fitting in uint64_t).
+  const uint64_t pow10_19 = 10000000000000000000ULL;
+  if ((n >> 64) == 0) return count_digits(static_cast<uint64_t>(n));
+  n /= pow10_19;
+  if ((n >> 64) == 0) return count_digits(static_cast<uint64_t>(n)) + 19;
+  n /= pow10_19;
+  return count_digits(static_cast<uint64_t>(n)) + 38;
+}
+#endif
 
 // Counts the number of digits in n. BITS = log2(radix).
 template <int BITS, typename UInt>
@@ -1282,10 +1239,30 @@ template <typename Char, typename UInt>
 FMT_CONSTEXPR20 auto do_format_decimal(Char* out, UInt value, int size)
     -> Char* {
   FMT_ASSERT(size >= count_digits(value), "invalid digit count");
+#if FMT_USE_INT128
+  // Avoid slow 128-bit division by formatting 64-bit chunks of 19 digits each.
+  if (!is_constant_evaluated() && num_bits<UInt>() == 128) {
+    const uint64_t pow10_19 = 10000000000000000000ULL;
+    auto v = static_cast<native_uint128>(value);
+    unsigned pos = to_unsigned(size);
+    while ((v >> 64) != 0) {
+      auto chunk = static_cast<uint64_t>(v % pow10_19);
+      v /= pow10_19;
+      pos -= 19;
+      fill_n(out + pos, 19, Char('0'));
+      do_format_decimal(out + pos, chunk, 19);
+    }
+    auto top = static_cast<uint64_t>(v);
+    int top_digits = count_digits(top);
+    pos -= to_unsigned(top_digits);
+    do_format_decimal(out + pos, top, top_digits);
+    return out + pos;
+  }
+#endif  // FMT_USE_INT128
   unsigned n = to_unsigned(size);
   while (value >= 100) {
     n -= 2;
-    if (!is_constant_evaluated() && sizeof(UInt) == 4) {
+    if (!is_constant_evaluated() && num_bits<UInt>() == 32) {
       auto p = value * static_cast<uint64_t>((1ull << 39) / 100 + 1);
       write2digits_i(out + n, p >> (39 - 7) & ((1 << 7) - 1));
       value = static_cast<UInt>(p >> 39) +
@@ -2012,6 +1989,15 @@ FMT_CONSTEXPR inline void prefix_append(unsigned& prefix, unsigned value) {
   prefix += (1u + (value > 0xff ? 1 : 0)) << 24;
 }
 
+// Writes an integer as a character, treating chars as unsigned.
+template <typename Char, typename OutputIt, typename UInt>
+FMT_CONSTEXPR auto write_int_chr(OutputIt out, UInt abs_value, bool negative,
+                                 const format_specs& specs) -> OutputIt {
+  if (negative || abs_value > max_value<make_unsigned_t<Char>>())
+    report_error("character value out of range");
+  return write_char<Char>(out, static_cast<Char>(abs_value), specs);
+}
+
 // Writes a decimal integer with digit grouping.
 template <typename OutputIt, typename UInt, typename Char>
 auto write_int(OutputIt out, UInt value, unsigned prefix,
@@ -2048,7 +2034,7 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
     format_base2e<char>(1, appender(buffer), value, num_digits);
     break;
   case presentation_type::chr:
-    return write_char<Char>(out, static_cast<Char>(value), specs);
+    return write_int_chr<Char>(out, value, (prefix & 0xff) == '-', specs);
   }
 
   unsigned size = (prefix != 0 ? prefix >> 24 : 0) + to_unsigned(num_digits) +
@@ -2175,7 +2161,7 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
       prefix_append(prefix, unsigned(specs.upper() ? 'B' : 'b') << 8 | '0');
     break;
   case presentation_type::chr:
-    return write_char<Char>(out, static_cast<Char>(abs_value), specs);
+    return write_int_chr<Char>(out, abs_value, (prefix & 0xff) == '-', specs);
   }
 
   // Write an integer in the format
@@ -2208,29 +2194,19 @@ FMT_CONSTEXPR FMT_NOINLINE auto write_int_noinline(OutputIt out,
   return write_int<Char>(out, arg, specs);
 }
 
-template <typename Char, typename T,
-          FMT_ENABLE_IF(is_integral<T>::value &&
-                        !std::is_same<T, bool>::value &&
-                        !std::is_same<T, Char>::value)>
-FMT_CONSTEXPR FMT_INLINE auto write(basic_appender<Char> out, T value,
-                                    const format_specs& specs, locale_ref loc)
-    -> basic_appender<Char> {
-  if (specs.localized() && write_loc(out, value, specs, loc)) return out;
-  return write_int_noinline<Char>(out, make_write_int_arg(value, specs.sign()),
-                                  specs);
-}
-
-// An inlined version of write used in format string compilation.
 template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(is_integral<T>::value &&
                         !std::is_same<T, bool>::value &&
-                        !std::is_same<T, Char>::value &&
-                        !std::is_same<OutputIt, basic_appender<Char>>::value)>
+                        !std::is_same<T, Char>::value)>
 FMT_CONSTEXPR FMT_INLINE auto write(OutputIt out, T value,
                                     const format_specs& specs, locale_ref loc)
     -> OutputIt {
   if (specs.localized() && write_loc(out, value, specs, loc)) return out;
-  return write_int<Char>(out, make_write_int_arg(value, specs.sign()), specs);
+  auto arg = make_write_int_arg(value, specs.sign());
+  // Out of line for appenders to avoid bloat; inlined for compiled formatting.
+  if FMT_CONSTEXPR20 (std::is_same<OutputIt, basic_appender<Char>>::value)
+    return write_int_noinline<Char>(out, arg, specs);
+  return write_int<Char>(out, arg, specs);
 }
 
 template <typename Char, typename OutputIt>
@@ -3215,8 +3191,9 @@ constexpr auto fractional_part_rounding_thresholds(int index) -> uint32_t {
   // It is equal to ceil(2^31 + 2^32/10^(k + 1)).
   // These are stored in a string literal because we cannot have static arrays
   // in constexpr functions and non-static ones are poorly optimized.
-  return U"\x9999999a\x828f5c29\x80418938\x80068db9\x8000a7c6\x800010c7"
-         U"\x800001ae\x8000002b"[index];
+  return uint32_t(u"\x9999\x828f\x8041\x8006\x8000\x8000\x8000\x8000"[index])
+             << 16u |
+         uint32_t(u"\x999a\x5c29\x8938\x8db9\xa7c6\x10c7\x01ae\x002b"[index]);
 }
 
 template <typename Float>
@@ -3941,7 +3918,7 @@ template <typename OutputIt, typename Char> class generic_context {
 
   constexpr auto out() const -> iterator { return out_; }
 
-  void advance_to(iterator it) {
+  FMT_CONSTEXPR void advance_to(iterator it) {
     if (!detail::is_back_insert_iterator<iterator>()) out_ = it;
   }
 

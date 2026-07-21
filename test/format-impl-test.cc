@@ -1,11 +1,10 @@
 // Formatting library for C++ - formatting library implementation tests
 //
-// Copyright (c) 2012 - present, Victor Zverovich
+// Copyright (c) 2012 - present, Victor Zverovich and {fmt} contributors
 // All rights reserved.
 //
 // For the license information refer to format.h.
 
-#include <algorithm>
 #include <cstring>
 
 // clang-format off
@@ -14,7 +13,6 @@
 
 #include "fmt/format.h"
 #include "gmock/gmock.h"
-#include "util.h"
 
 using fmt::detail::bigint;
 using fmt::detail::fp;

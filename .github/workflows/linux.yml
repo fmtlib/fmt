@@ -7,7 +7,12 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    name: >-
+      ${{matrix.cxx}} c++${{matrix.std}} ${{matrix.build_type}}
+      ${{matrix.gen}} ${{matrix.fuzz && 'Fuzz' || ''}}
+      ${{matrix.shared && 'Shared' || ''}}
+      ${{matrix.cxxflags_extra && 'Sanitize' || ''}}
+    runs-on: ${{ matrix.os || 'ubuntu-22.04' }}
     strategy:
       matrix:
         cxx: [g++-4.9, g++-11, clang++-3.6, clang++-11]
@@ -16,7 +21,6 @@ jobs:
         shared: [""]
         include:
           - cxx: g++-4.9
-          - cxx: clang++-3.6
           - cxx: g++-11
             build_type: Debug
             std: 14
@@ -31,8 +35,14 @@ jobs:
           - cxx: g++-13
             build_type: Release
             std: 23
-            install: sudo apt install g++-13
+            os: ubuntu-24.04
             shared: -DBUILD_SHARED_LIBS=ON
+          - cxx: g++-14
+            build_type: Release
+            std: 23
+            os: ubuntu-24.04
+            gen: Ninja
+          - cxx: clang++-3.6
           - cxx: clang++-11
             build_type: Debug
             std: 17
@@ -48,14 +58,22 @@ jobs:
           - cxx: clang++-14
             build_type: Debug
             std: 20
+            cxxflags: -fsanitize=address
+            cxxflags_extra: -fno-sanitize-recover=all -fno-omit-frame-pointer
           - cxx: clang++-14
             build_type: Debug
             std: 20
             cxxflags: -stdlib=libc++
             install: sudo apt install libc++-14-dev libc++abi-14-dev
+          - cxx: clang++-20
+            build_type: Debug
+            std: 20
+            cxxflags: -stdlib=libc++
+            install: sudo apt install clang-20 libc++-20-dev libc++abi-20-dev
+            gen: Ninja
 
     steps:
-    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
     - name: Set timezone
       run: sudo timedatectl set-timezone 'Europe/Kyiv'
@@ -126,10 +144,16 @@ jobs:
           clang-3.6_3.6.2-3ubuntu2_amd64.deb
       if: ${{ matrix.cxx == 'clang++-3.6' }}
 
-    - name: Add repositories for newer GCC
+    - name: Install LLVM-20
       run: |
-        sudo apt-add-repository ppa:ubuntu-toolchain-r/test
-      if: ${{ matrix.cxx == 'g++-13' }}
+        sudo install -D -m 0644 support/llvm-snapshot.gpg.key \
+          /etc/apt/keyrings/apt.llvm.org.asc
+        codename=$(lsb_release -cs)
+        echo "deb [signed-by=/etc/apt/keyrings/apt.llvm.org.asc]" \
+             "https://apt.llvm.org/$codename/" \
+             "llvm-toolchain-$codename-20 main" \
+          | sudo tee /etc/apt/sources.list.d/llvm.list
+      if: ${{ matrix.cxx == 'clang++-20' }}
 
     - name: Add Ubuntu mirrors
       run: |
@@ -154,14 +178,18 @@ jobs:
       working-directory: ${{runner.workspace}}/build
       env:
         CXX: ${{matrix.cxx}}
-        CXXFLAGS: ${{matrix.cxxflags}}
+        CXXFLAGS: ${{matrix.cxxflags}} ${{matrix.cxxflags_extra}}
       run: |
-        cmake -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \
+        cmake ${{matrix.gen && '-G' || ''}} ${{matrix.gen}} \
+              -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \
               -DCMAKE_CXX_STANDARD=${{matrix.std}} \
               -DCMAKE_CXX_VISIBILITY_PRESET=hidden \
               -DCMAKE_VISIBILITY_INLINES_HIDDEN=ON \
-              -DFMT_DOC=OFF -DFMT_PEDANTIC=ON -DFMT_WERROR=ON \
-              ${{matrix.fuzz}} ${{matrix.shared}} $GITHUB_WORKSPACE
+              -DFMT_DOC=OFF -DFMT_PEDANTIC=ON \
+              -DFMT_WERROR=ON \
+              ${{matrix.fuzz}} \
+              ${{matrix.shared}} \
+              $GITHUB_WORKSPACE
 
     - name: Build
       working-directory: ${{runner.workspace}}/build

@@ -1,13 +1,11 @@
 // Formatting library for C++ - scanning API test
 //
-// Copyright (c) 2019 - present, Victor Zverovich
+// Copyright (c) 2019 - present, Victor Zverovich and {fmt} contributors
 // All rights reserved.
 //
 // For the license information refer to format.h.
 
 #include "scan.h"
-
-#include <time.h>
 
 #include <climits>
 #include <thread>

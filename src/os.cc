@@ -1,6 +1,6 @@
 // Formatting library for C++ - optional OS-specific functionality
 //
-// Copyright (c) 2012 - 2016, Victor Zverovich
+// Copyright (c) 2012 - present, Victor Zverovich and {fmt} contributors
 // All rights reserved.
 //
 // For the license information refer to format.h.
@@ -13,7 +13,6 @@
 #include "fmt/os.h"
 
 #ifndef FMT_MODULE
-#  include <climits>
 
 #  if FMT_USE_FCNTL
 #    include <sys/stat.h>
@@ -35,6 +34,8 @@
 
 #  ifdef _WIN32
 #    include <windows.h>
+
+#    include <climits>  // CHAR_BIT
 #  endif
 #endif
 

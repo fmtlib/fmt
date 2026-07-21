@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
     - name: Add Ubuntu mirrors
       run: |
@@ -24,7 +24,7 @@ jobs:
       run: |
         sudo apt update
         sudo apt install doxygen
-        pip install mkdocs-material==9.7.0 mkdocstrings==1.0.0 mike==2.1.3 typing_extensions==4.15.0
+        pip install --require-hashes -r support/doc-requirements.txt
         cmake -E make_directory ${{runner.workspace}}/build
         # Workaround https://github.com/actions/checkout/issues/13:
         git config --global user.name "$(git --no-pager log --format=format:'%an' -n 1)"
@@ -37,6 +37,6 @@ jobs:
     - name: Deploy
       env:
         KEY: "${{secrets.KEY}}"
-      if: env.KEY != '' && github.ref == 'refs/heads/master'
+      if: env.KEY != '' && github.ref == 'refs/heads/main'
       working-directory: ${{runner.workspace}}/fmt/build/fmt.dev
       run: git push https://$KEY@github.com/fmtlib/fmt.dev.git

@@ -4,7 +4,7 @@
 // which are slow on some platforms. In other tests FMT_ASSERT is made to throw
 // an exception which is much faster and easier to check.
 //
-// Copyright (c) 2012 - present, Victor Zverovich
+// Copyright (c) 2012 - present, Victor Zverovich and {fmt} contributors
 // All rights reserved.
 //
 // For the license information refer to format.h.

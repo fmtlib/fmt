@@ -1,6 +1,6 @@
 // Formatting library for C++ - legacy printf implementation
 //
-// Copyright (c) 2012 - 2016, Victor Zverovich
+// Copyright (c) 2012 - present, Victor Zverovich and {fmt} contributors
 // All rights reserved.
 //
 // For the license information refer to format.h.
@@ -330,6 +330,7 @@ template <typename Char, typename GetArg>
 auto parse_header(const Char*& it, const Char* end, format_specs& specs,
                   GetArg get_arg) -> int {
   int arg_index = -1;
+  if (it == end) return arg_index;
   Char c = *it;
   if (c >= '0' && c <= '9') {
     // Parse an argument index (if followed by '$') or a width possibly
@@ -436,6 +437,8 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
       continue;
     }
     write(out, basic_string_view<Char>(start, to_unsigned(it - 1 - start)));
+
+    if (it == end) report_error("invalid format string");
 
     auto specs = format_specs();
     specs.set_align(align::right);
