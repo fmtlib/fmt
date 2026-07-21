@@ -1010,14 +1010,14 @@ constexpr auto in(type t, int set) -> bool {
 
 // Bitsets of types.
 enum {
-  sint_set =
-      set(type::int_type) | set(type::long_long_type) | set(type::int128_type),
+  sint_set = set(type::int_type) | set(type::long_long_type) |
+      set(type::int128_type),
   uint_set = set(type::uint_type) | set(type::ulong_long_type) |
-             set(type::uint128_type),
+      set(type::uint128_type),
   bool_set = set(type::bool_type),
   char_set = set(type::char_type),
   float_set = set(type::float_type) | set(type::double_type) |
-              set(type::long_double_type),
+      set(type::long_double_type),
   string_set = set(type::string_type),
   cstring_set = set(type::cstring_type),
   pointer_set = set(type::pointer_type)
@@ -2616,7 +2616,9 @@ template <typename Char = char> struct runtime_format_string {
  *     // Check format string at runtime instead of compile-time.
  *     fmt::print(fmt::runtime("{:d}"), "I am not a number");
  */
-inline auto runtime(string_view s) -> runtime_format_string<> { return {{s}}; }
+inline auto runtime(string_view s) -> runtime_format_string<> {
+  return {{s}};
+}
 
 /// A compile-time format string. Use `format_string` in the public API to
 /// prevent type deduction.

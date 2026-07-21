@@ -2021,7 +2021,7 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
   int num_digits = 0;
   auto buffer = memory_buffer();
   switch (specs.type()) {
-  default: FMT_ASSERT(false, ""); FMT_FALLTHROUGH;
+  default:                      FMT_ASSERT(false, ""); FMT_FALLTHROUGH;
   case presentation_type::none:
   case presentation_type::dec:
     num_digits = count_digits(value);
@@ -2150,7 +2150,7 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
   auto abs_value = arg.abs_value;
   auto prefix = arg.prefix;
   switch (specs.type()) {
-  default: FMT_ASSERT(false, ""); FMT_FALLTHROUGH;
+  default:                      FMT_ASSERT(false, ""); FMT_FALLTHROUGH;
   case presentation_type::none:
   case presentation_type::dec:
     begin = do_format_decimal(buffer, abs_value, buffer_size);
