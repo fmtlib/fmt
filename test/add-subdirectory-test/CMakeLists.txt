@@ -16,11 +16,9 @@ if (TARGET fmt::fmt-header-only)
   target_link_libraries(header-only-test fmt::fmt-header-only)
 endif ()
 
-# Test that a target publicly depending on fmt can itself be exported even
-# though fmt is added via add_subdirectory and FMT_INSTALL is off (#4806).
-add_library(export-test STATIC export-lib.cc)
-target_link_libraries(export-test PUBLIC fmt::fmt)
+# Test that a target depending on fmt can itself be exported (#4806).
+add_library(export-test INTERFACE)
+target_link_libraries(export-test INTERFACE fmt::fmt)
 export(
   TARGETS export-test
-  NAMESPACE test::
   FILE ${CMAKE_CURRENT_BINARY_DIR}/export-test-targets.cmake)

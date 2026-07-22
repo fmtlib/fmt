@@ -442,13 +442,10 @@ set_target_properties(fmt-c PROPERTIES PUBLIC_HEADER include/fmt/fmt-c.h)
 
 # Install targets.
 set(targets_export_name fmt-targets)
-set(INSTALL_TARGETS fmt fmt-header-only fmt-c)
+set(FMT_TARGETS fmt fmt-header-only fmt-c)
 
 if (FMT_MODULE)
-  list(APPEND INSTALL_TARGETS fmt-module)
-  if (FMT_USE_CMAKE_MODULES)
-    set(INSTALL_FILE_SET FILE_SET fmt DESTINATION ${FMT_INC_DIR}/fmt)
-  endif ()
+  list(APPEND FMT_TARGETS fmt-module)
 endif ()
 
 if (FMT_INSTALL)
@@ -495,8 +492,11 @@ if (FMT_INSTALL)
     INSTALL_DESTINATION ${FMT_CMAKE_DIR})
 
   # Install the library and headers.
+  if (FMT_MODULE AND FMT_USE_CMAKE_MODULES)
+    set(INSTALL_FILE_SET FILE_SET fmt DESTINATION ${FMT_INC_DIR}/fmt)
+  endif ()
   install(
-    TARGETS ${INSTALL_TARGETS}
+    TARGETS ${FMT_TARGETS}
     COMPONENT fmt_core
     EXPORT ${targets_export_name}
     LIBRARY DESTINATION ${FMT_LIB_DIR}
@@ -521,12 +521,12 @@ if (FMT_INSTALL)
     COMPONENT fmt_core)
 endif ()
 
-# Generate an export file in the build tree so that fmt can be used by
-# add_subdirectory() or FetchContent without being installed. Use a
-# namespace because CMake provides better diagnostics for namespaced
-# imported targets.
+# Generate a build-tree export so that targets depending on fmt can also be
+# exported without installing fmt, including when fmt is provided through
+# add_subdirectory() or FetchContent. Use a namespace because CMake provides
+# better diagnostics for namespaced imported targets.
 export(
-  TARGETS ${INSTALL_TARGETS}
+  TARGETS ${FMT_TARGETS}
   NAMESPACE fmt::
   FILE ${PROJECT_BINARY_DIR}/${targets_export_name}.cmake)
 
