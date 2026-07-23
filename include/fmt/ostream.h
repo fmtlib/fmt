@@ -70,6 +70,8 @@ template <typename T> struct streamed_view {
 };
 }  // namespace detail
 
+FMT_BEGIN_EXPORT
+
 // Formats an object of type T that has an overloaded ostream operator<<.
 template <typename Char>
 struct basic_ostream_formatter : formatter<basic_string_view<Char>, Char> {
@@ -147,7 +149,7 @@ inline void vprint(std::ostream& os, string_view fmt, format_args args) {
  *
  *     fmt::print(cerr, "Don't {}!", "panic");
  */
-FMT_EXPORT template <typename... T>
+template <typename... T>
 void print(std::ostream& os, format_string<T...> fmt, T&&... args) {
   fmt::vargs<T...> vargs = {{args...}};
   if FMT_CONSTEXPR20 (detail::use_utf8) return vprint(os, fmt.str, vargs);
@@ -156,11 +158,13 @@ void print(std::ostream& os, format_string<T...> fmt, T&&... args) {
   detail::write_buffer(os, buffer);
 }
 
-FMT_EXPORT template <typename... T>
+template <typename... T>
 void println(std::ostream& os, format_string<T...> fmt, T&&... args) {
   fmt::print(os, FMT_STRING("{}\n"),
              fmt::format(fmt, std::forward<T>(args)...));
 }
+
+FMT_END_EXPORT
 
 FMT_END_NAMESPACE
 
