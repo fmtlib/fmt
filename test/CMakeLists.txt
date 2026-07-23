@@ -242,6 +242,14 @@ if (FMT_CUDA_TEST)
 endif ()
 
 enable_language(C)
-add_executable(c-test c-test.c)
-target_link_libraries(c-test PRIVATE fmt::fmt-c)
-add_test(NAME c-test COMMAND c-test)
+# Clang < 3.8 doesn't apply array-to-pointer decay to the controlling
+# expression of _Generic (https://llvm.org/PR16340), so fmt-c.h's argument
+# dispatch doesn't match string literals there.
+if (CMAKE_C_COMPILER_ID STREQUAL "Clang" AND CMAKE_C_COMPILER_VERSION
+                                             VERSION_LESS 3.8)
+  message(STATUS "Skipping c-test: _Generic is broken in Clang < 3.8")
+else ()
+  add_executable(c-test c-test.c)
+  target_link_libraries(c-test PRIVATE fmt::fmt-c)
+  add_test(NAME c-test COMMAND c-test)
+endif ()
