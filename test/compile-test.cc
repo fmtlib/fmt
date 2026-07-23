@@ -480,12 +480,13 @@ TEST(compile_test, constexpr_string_format) {
 }
 #endif  // FMT_USE_CONSTEXPR_STRING
 
-namespace {
-struct compile_format_as_type {
+struct type_with_format_as {
   int value;
 };
-int format_as(compile_format_as_type f) { return f.value; }
-} 
+int format_as(type_with_format_as v) { return v.value; }
+
 TEST(compile_test, format_as) {
-  EXPECT_EQ("42", fmt::format(FMT_COMPILE("{}"), compile_format_as_type{42}));
+  // Use a format string other than "{}" so that formatting goes through the
+  // compiled field path rather than the to_string fast path.
+  EXPECT_EQ("[42]", fmt::format(FMT_COMPILE("[{}]"), type_with_format_as{42}));
 }
