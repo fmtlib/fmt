@@ -655,26 +655,92 @@ FMT_CONSTEXPR void for_each_codepoint(string_view s, F f) {
   } while (buf_ptr < buf + num_chars_left);
 }
 
+struct wide_cp_range {
+  uint32_t first;
+  uint32_t last;
+};
+
+// Code points with display width 2: East Asian Wide/Fullwidth
+// (https://www.unicode.org/reports/tr11/) and Emoji_Presentation
+// (https://www.unicode.org/reports/tr51/) ranges, sorted and merged.
+inline constexpr wide_cp_range wide_cp_ranges[] = {
+    {0x1100, 0x115f},    // Hangul Jamo init. consonants
+    {0x231a, 0x231b},    // Watch, hourglass done
+    {0x2329, 0x232a},    // Angle brackets
+    {0x23e9, 0x23ec},    // Fast-forward/-backward, next/last track buttons
+    {0x23f0, 0x23f0},    // Alarm clock
+    {0x23f3, 0x23f3},    // Hourglass not done
+    {0x25fd, 0x25fe},    // White/black medium-small square
+    {0x2614, 0x2615},    // Umbrella with rain drops, hot beverage
+    {0x2648, 0x2653},    // Zodiac signs
+    {0x267f, 0x267f},    // Wheelchair symbol
+    {0x2693, 0x2693},    // Anchor
+    {0x26a1, 0x26a1},    // High voltage
+    {0x26aa, 0x26ab},    // White/black circle
+    {0x26bd, 0x26be},    // Soccer ball, baseball
+    {0x26c4, 0x26c5},    // Snowman, sun behind cloud
+    {0x26ce, 0x26ce},    // Ophiuchus
+    {0x26d4, 0x26d4},    // No entry
+    {0x26ea, 0x26ea},    // Church
+    {0x26f2, 0x26f3},    // Fountain, flag in hole
+    {0x26f5, 0x26f5},    // Sailboat
+    {0x26fa, 0x26fa},    // Tent
+    {0x26fd, 0x26fd},    // Fuel pump
+    {0x2705, 0x2705},    // White heavy check mark
+    {0x270a, 0x270b},    // Raised fist/hand
+    {0x2728, 0x2728},    // Sparkles
+    {0x274c, 0x274c},    // Cross mark
+    {0x274e, 0x274e},    // Negative squared cross mark
+    {0x2753, 0x2755},    // Question/exclamation mark ornaments
+    {0x2757, 0x2757},    // Heavy exclamation mark
+    {0x2795, 0x2797},    // Heavy plus/minus/division sign
+    {0x27b0, 0x27b0},    // Curly loop
+    {0x27bf, 0x27bf},    // Double curly loop
+    {0x2b1b, 0x2b1c},    // Black/white large square
+    {0x2b50, 0x2b50},    // White medium star
+    {0x2b55, 0x2b55},    // Heavy large circle
+    // CJK ... Yi except IDEOGRAPHIC HALF FILL SPACE:
+    {0x2e80, 0x303e}, {0x3040, 0xa4cf},
+    {0xac00, 0xd7a3},    // Hangul Syllables
+    {0xf900, 0xfaff},    // CJK Compatibility Ideographs
+    {0xfe10, 0xfe19},    // Vertical Forms
+    {0xfe30, 0xfe6f},    // CJK Compatibility Forms
+    {0xff00, 0xff60},    // Fullwidth Forms
+    {0xffe0, 0xffe6},    // Fullwidth Forms
+    // The following are Emoji_Presentation code points from UTS #51 that
+    // fall outside the Unicode blocks above:
+    {0x1f004, 0x1f004}, {0x1f0cf, 0x1f0cf}, {0x1f18e, 0x1f18e},
+    {0x1f191, 0x1f19a}, {0x1f1e6, 0x1f1ff},  // regional indicator symbols
+    {0x1f201, 0x1f201}, {0x1f21a, 0x1f21a}, {0x1f22f, 0x1f22f},
+    {0x1f232, 0x1f236}, {0x1f238, 0x1f23a}, {0x1f250, 0x1f251},
+    // Miscellaneous Symbols and Pictographs + Emoticons:
+    {0x1f300, 0x1f64f},
+    {0x1f680, 0x1f6c5},  // Transport and Map Symbols
+    {0x1f6cc, 0x1f6cc}, {0x1f6d0, 0x1f6d2}, {0x1f6d5, 0x1f6d8},
+    {0x1f6dc, 0x1f6df}, {0x1f6eb, 0x1f6ec}, {0x1f6f4, 0x1f6fc},
+    {0x1f7e0, 0x1f7eb}, {0x1f7f0, 0x1f7f0},
+    {0x1f900, 0x1f9ff},  // Supplemental Symbols and Pictographs
+    // Symbols and Pictographs Extended-A:
+    {0x1fa70, 0x1fa7c}, {0x1fa80, 0x1fa8a}, {0x1fa8e, 0x1fac6},
+    {0x1fac8, 0x1fac8}, {0x1facd, 0x1fadc}, {0x1fadf, 0x1faea},
+    {0x1faef, 0x1faf8},
+    {0x20000, 0x2fffd},  // CJK
+    {0x30000, 0x3fffd},
+};
+
 FMT_CONSTEXPR inline auto display_width_of(uint32_t cp) noexcept -> size_t {
-  return to_unsigned(
-      1 + (cp >= 0x1100 &&
-           (cp <= 0x115f ||  // Hangul Jamo init. consonants
-            cp == 0x2329 ||  // LEFT-POINTING ANGLE BRACKET
-            cp == 0x232a ||  // RIGHT-POINTING ANGLE BRACKET
-            // CJK ... Yi except IDEOGRAPHIC HALF FILL SPACE:
-            (cp >= 0x2e80 && cp <= 0xa4cf && cp != 0x303f) ||
-            (cp >= 0xac00 && cp <= 0xd7a3) ||    // Hangul Syllables
-            (cp >= 0xf900 && cp <= 0xfaff) ||    // CJK Compatibility Ideographs
-            (cp >= 0xfe10 && cp <= 0xfe19) ||    // Vertical Forms
-            (cp >= 0xfe30 && cp <= 0xfe6f) ||    // CJK Compatibility Forms
-            (cp >= 0xff00 && cp <= 0xff60) ||    // Fullwidth Forms
-            (cp >= 0xffe0 && cp <= 0xffe6) ||    // Fullwidth Forms
-            (cp >= 0x20000 && cp <= 0x2fffd) ||  // CJK
-            (cp >= 0x30000 && cp <= 0x3fffd) ||
-            // Miscellaneous Symbols and Pictographs + Emoticons:
-            (cp >= 0x1f300 && cp <= 0x1f64f) ||
-            // Supplemental Symbols and Pictographs:
-            (cp >= 0x1f900 && cp <= 0x1f9ff))));
+  if (cp < 0x1100) return 1;
+  size_t lo = 0, hi = sizeof(wide_cp_ranges) / sizeof(wide_cp_range);
+  while (lo < hi) {
+    size_t mid = lo + (hi - lo) / 2;
+    if (cp < wide_cp_ranges[mid].first)
+      hi = mid;
+    else if (cp > wide_cp_ranges[mid].last)
+      lo = mid + 1;
+    else
+      return 2;
+  }
+  return 1;
 }
 
 template <typename T> struct is_integral : std::is_integral<T> {};

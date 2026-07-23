@@ -606,6 +606,71 @@ TEST(format_test, display_width_precision) {
   EXPECT_EQ(fmt::format("{:.5}", "🐱🐱🐱"), "🐱🐱");
 }
 
+TEST(format_test, display_width_emoji) {
+  // U+2705 and U+274C are Emoji_Presentation code points outside the East
+  // Asian Wide ranges; they should still occupy two columns like other
+  // emoji (https://github.com/fmtlib/fmt/issues/4851).
+  EXPECT_EQ(fmt::format("{:^6}", "✅"), "  ✅  ");
+  EXPECT_EQ(fmt::format("{:^6}", "❌"), "  ❌  ");
+}
+
+// Reproduces the exact example from
+// https://github.com/fmtlib/fmt/issues/4851: emoji should be centered like
+// other double-width (e.g. CJK) text instead of like single-width text.
+TEST(format_test, display_width_issue_4851) {
+  EXPECT_EQ(fmt::format("{:^20}", 12345), "       12345        ");
+  EXPECT_EQ(fmt::format("{:^20}", "normal string"), "   normal string    ");
+  EXPECT_EQ(fmt::format("{:^20}", "❌"), "         ❌         ");
+  EXPECT_EQ(fmt::format("{:^20}", "✅"), "         ✅         ");
+  EXPECT_EQ(fmt::format("{:^20}", "Müller"), "       Müller       ");
+  EXPECT_EQ(fmt::format("{:^20}", "我"), "         我         ");
+}
+
+TEST(format_test, display_width_multiple_emoji) {
+  // Several Emoji_Presentation code points back to back, each contributing
+  // two columns.
+  EXPECT_EQ(fmt::format("{:^10}", "❌✅"), "   ❌✅   ");
+  EXPECT_EQ(fmt::format("{:^12}", "❌✅❌"), "   ❌✅❌   ");
+  // Mixing an already-supported emoji range (🐱, U+1F431) with a newly
+  // covered one (✅, U+2705).
+  EXPECT_EQ(fmt::format("{:^10}", "🐱✅"), "   🐱✅   ");
+}
+
+TEST(format_test, display_width_mixed_content) {
+  // ASCII + new-range emoji + CJK in the same string.
+  EXPECT_EQ(fmt::format("{:^11}", "A✅我"), "   A✅我   ");
+  // Accented Latin (each combined character is one column) + emoji + ASCII.
+  EXPECT_EQ(fmt::format("{:^16}", "Müller❌!"), "   Müller❌!    ");
+}
+
+TEST(format_test, display_width_precision_multiple_emoji) {
+  // Precision truncates by display width, not code point count: a third
+  // two-column emoji would push the total past the limit in both cases.
+  EXPECT_EQ(fmt::format("{:.5}", "❌✅❌"), "❌✅");
+  EXPECT_EQ(fmt::format("{:.4}", "❌✅❌"), "❌✅");
+}
+
+TEST(format_test, display_width_emoji_alignment) {
+  EXPECT_EQ(fmt::format("{:<10}", "✅"), "✅        ");
+  EXPECT_EQ(fmt::format("{:>10}", "✅"), "        ✅");
+  EXPECT_EQ(fmt::format("{:*^10}", "✅"), "****✅****");
+}
+
+TEST(format_test, display_width_new_emoji_ranges) {
+  // Spot-check ranges added outside the two blocks fmt already supported
+  // (Transport and Map Symbols, Symbols and Pictographs Extended-A).
+  EXPECT_EQ(fmt::format("{:^10}", "🚗"), "    🚗    ");  // U+1F697
+  EXPECT_EQ(fmt::format("{:^10}", "🫠"), "    🫠    ");  // U+1FAE0
+}
+
+TEST(format_test, display_width_regional_indicator_pair) {
+  // A flag is two regional indicator code points; fmt has no grapheme
+  // clustering, so each is measured independently at two columns (four
+  // columns total) even though most terminals render the pair as a single
+  // two-column glyph.
+  EXPECT_EQ(fmt::format("{:^10}", "🇺🇸"), "   🇺🇸   ");
+}
+
 template <int N> struct test_format {
   template <typename... T>
   static auto format(fmt::string_view fmt, const T&... args) -> std::string {
