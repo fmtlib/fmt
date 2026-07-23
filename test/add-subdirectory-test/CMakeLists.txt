@@ -19,6 +19,5 @@ endif ()
 # Test that a target depending on fmt can itself be exported (#4806).
 add_library(export-test INTERFACE)
 target_link_libraries(export-test INTERFACE fmt::fmt)
-export(
-  TARGETS export-test
-  FILE ${CMAKE_CURRENT_BINARY_DIR}/export-test-targets.cmake)
+export(TARGETS export-test
+       FILE ${CMAKE_CURRENT_BINARY_DIR}/export-test-targets.cmake)
