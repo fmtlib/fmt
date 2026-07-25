@@ -165,7 +165,6 @@ void println(std::ostream& os, format_string<T...> fmt, T&&... args) {
 }
 
 FMT_END_EXPORT
-
 FMT_END_NAMESPACE
 
 #endif  // FMT_OSTREAM_H_
