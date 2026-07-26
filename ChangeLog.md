@@ -1,3 +1,70 @@
+# 12.2.1 - TBD
+
+- Added a formatter for `std::exception_ptr` that formats the referenced
+  exception (or `none` when null)
+  (https://github.com/fmtlib/fmt/issues/4808,
+  https://github.com/fmtlib/fmt/pull/4819).
+  Thanks @avikivity and @Atlas-Zero.
+
+- Added unwinding of nested exceptions created via
+  `std::throw_with_nested` to the `std::exception` formatter, joining each
+  level with `": "` (https://github.com/fmtlib/fmt/pull/4844).
+  Thanks @avikivity.
+
+- Exported the ostream formatters (`fmt::basic_ostream_formatter`,
+  `fmt::ostream_formatter`) and `fmt::streamed` from the C++20 module
+  (https://github.com/fmtlib/fmt/pull/4861). Thanks @avikivity.
+
+- Optimized 128-bit integer formatting by reducing the value to 64-bit
+  chunks instead of doing repeated 128-bit division, giving a ~5x speedup
+  on full-range values.
+
+- Fixed handling of out-of-range floating-point durations in chrono
+  formatting (https://github.com/fmtlib/fmt/pull/4802). Thanks @aizu-m.
+
+- Fixed a hang and assertion failure when printing to a pipe whose read
+  end is closed (https://github.com/fmtlib/fmt/issues/4797).
+  Thanks @nikola-sh.
+
+- Fixed formatting of out-of-range integers with the `c` presentation
+  type, which previously mangled negative values and silently truncated
+  out-of-range ones (https://github.com/fmtlib/fmt/issues/4839).
+  Thanks @igoloe.
+
+- Fixed an `FMT_COMPILE` failure for user-defined types formatted via
+  `format_as` (https://github.com/fmtlib/fmt/issues/4794,
+  https://github.com/fmtlib/fmt/pull/4836).
+  Thanks @mjerabek and @upadhyay74aman.
+
+- Fixed the fallback `uint128` bitwise-not implementation
+  (https://github.com/fmtlib/fmt/pull/4813). Thanks @Vcode2407.
+
+- Fixed a false positive in `fmt::is_contiguous` by explicitly checking
+  for `operator[]` on the container itself
+  (https://github.com/fmtlib/fmt/pull/4825). Thanks @tearfur.
+
+- Generated the build-tree CMake export set regardless of `FMT_INSTALL`,
+  so projects consuming {fmt} via `add_subdirectory` or `FetchContent` can
+  export their own `fmt::*`-dependent targets
+  (https://github.com/fmtlib/fmt/issues/4806,
+  https://github.com/fmtlib/fmt/pull/4850). Thanks @Krzmbrzl and @hexonal.
+
+- Made the `fmt-c` library respect `BUILD_SHARED_LIBS` like the main
+  {fmt} library (https://github.com/fmtlib/fmt/pull/4812). Thanks @jengelh.
+
+- Skipped `VERSION`/`SOVERSION`/`DEBUG_POSTFIX` on the header-only
+  `INTERFACE` target (https://github.com/fmtlib/fmt/pull/4830).
+  Thanks @soumik15630m.
+
+- Suppressed the MSVC C4702 (unreachable code) warning
+  (https://github.com/fmtlib/fmt/pull/4822). Thanks @torsten48.
+
+- Documented that the hexfloat `a`/`A` presentation types always emit the
+  `0x` prefix (https://github.com/fmtlib/fmt/pull/4862). Thanks @ny000815.
+
+- Fixed a minor formatting issue in the documentation
+  (https://github.com/fmtlib/fmt/pull/4826). Thanks @brooklynwidz.
+
 # 12.2.0 - 2026-06-16
 
 - Added a C11 API that brings fast, type-safe formatting to C. The new
