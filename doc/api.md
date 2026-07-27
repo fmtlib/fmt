@@ -92,9 +92,10 @@ Use `format_as` if you want to make your type formattable as some other
 type with the same format specifiers. The `format_as` function should
 take an object of your type and return an object of a formattable type.
 It should be defined in the same namespace as your type.
-Note that `format_as` is not suitable for user-defined types which are already
-formattable due to one of the general implementations (e.g. in
-[`fmt/ranges.h`](#ranges-api)), specialize `formatter` explicitly in these cases.
+`format_as` cannot be used when a type also matches another `formatter`
+specialization, such as the range `formatter`, because the specializations
+would be ambiguous. Disable the conflicting specialization, if possible,
+or provide an explicit `formatter` specialization instead.
 
 Example ([run](https://godbolt.org/z/nvME4arz8)):
 
