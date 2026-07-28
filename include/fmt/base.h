@@ -1059,6 +1059,10 @@ template <typename T> struct is_static_named_arg : std::false_type {};
 template <typename T, typename Char>
 struct is_named_arg<named_arg<T, Char>> : std::true_type {};
 
+template <typename T> struct is_named_arg<const T> : is_named_arg<T> {};
+template <typename T>
+struct is_static_named_arg<const T> : is_static_named_arg<T> {};
+
 template <typename T, typename Char = char> struct named_arg : view {
   const Char* name;
   const T& value;

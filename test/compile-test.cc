@@ -163,6 +163,10 @@ TEST(compile_test, named) {
             fmt::format(FMT_COMPILE("{a0} {a1}"), "a0"_a = 41, "a1"_a = 43));
   EXPECT_EQ("41 43",
             fmt::format(FMT_COMPILE("{a1} {a0}"), "a0"_a = 43, "a1"_a = 41));
+
+  // A statically-named argument with a format spec compiles to spec_field,
+  // which passes the argument to make_format_args as const (#4866).
+  EXPECT_EQ("4.2", fmt::format(FMT_COMPILE("{arg:3.1f}"), "arg"_a = 4.2));
 #  endif
 }
 

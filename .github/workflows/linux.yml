@@ -13,6 +13,10 @@ jobs:
       ${{matrix.shared && 'Shared' || ''}}
       ${{matrix.cxxflags_extra && 'Sanitize' || ''}}
     runs-on: ${{ matrix.os || 'ubuntu-22.04' }}
+    env:
+      # Run tests in a non-UTC timezone. glibc localtime/strftime honor TZ, so
+      # there is no need for timedatectl, which fails without systemd-timedated.
+      TZ: Europe/Kyiv
     strategy:
       matrix:
         cxx: [g++-4.9, g++-11, clang++-3.6, clang++-11]
@@ -75,15 +79,14 @@ jobs:
     steps:
     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-    - name: Set timezone
-      run: sudo timedatectl set-timezone 'Europe/Kyiv'
-
     - name: Install GCC 4.9
       run: |
         sudo apt update
         sudo apt install libatomic1 libc6-dev libgomp1 libitm1 libmpc3
         # https://launchpad.net/ubuntu/xenial/amd64/g++-4.9/4.9.3-13ubuntu2
-        wget --no-verbose \
+        # launchpad periodically returns 503s, so retry to avoid flaky CI.
+        wget --no-verbose --tries=5 --waitretry=10 \
+          --retry-connrefused --retry-on-http-error=503 \
           http://launchpadlibrarian.net/230069137/libmpfr4_3.1.3-2_amd64.deb \
           http://launchpadlibrarian.net/253728424/libasan1_4.9.3-13ubuntu2_amd64.deb \
           http://launchpadlibrarian.net/445346135/libubsan0_5.4.0-6ubuntu1~16.04.12_amd64.deb \
@@ -114,7 +117,9 @@ jobs:
         sudo apt update
         sudo apt install libtinfo5
         # https://code.launchpad.net/ubuntu/xenial/amd64/clang-3.6/1:3.6.2-3ubuntu2
-        wget --no-verbose \
+        # launchpad periodically returns 503s, so retry to avoid flaky CI.
+        wget --no-verbose --tries=5 --waitretry=10 \
+          --retry-connrefused --retry-on-http-error=503 \
           http://launchpadlibrarian.net/230019046/libffi6_3.2.1-4_amd64.deb \
           http://launchpadlibrarian.net/445346109/libasan2_5.4.0-6ubuntu1~16.04.12_amd64.deb \
           http://launchpadlibrarian.net/445346135/libubsan0_5.4.0-6ubuntu1~16.04.12_amd64.deb \
