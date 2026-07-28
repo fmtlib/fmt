@@ -649,13 +649,12 @@ FMT_CONSTEXPR void for_each_codepoint(string_view s, F f) {
   } while (buf_ptr < buf + num_chars_left);
 }
 
-struct wide_cp_range {
-  uint32_t first;
-  uint32_t last;
-};
-
 inline auto display_width_of(uint32_t cp) noexcept -> size_t {
   if (cp < 0x1100) return 1;
+  struct wide_cp_range {
+    uint32_t first;
+    uint32_t last;
+  };
   // Code points with display width 2: East Asian Wide/Fullwidth
   // (https://www.unicode.org/reports/tr11/) and Emoji_Presentation
   // (https://www.unicode.org/reports/tr51/) ranges, sorted and merged.
