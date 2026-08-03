@@ -232,7 +232,7 @@ if (FMT_MASTER_PROJECT AND CMAKE_GENERATOR MATCHES "Visual Studio")
   join(netfxpath
        "C:\\Program Files\\Reference Assemblies\\Microsoft\\Framework\\"
        ".NETFramework\\v4.0")
-  file(WRITE run-msbuild.bat "${MSBUILD_SETUP}
+  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/run-msbuild.bat "${MSBUILD_SETUP}
     ${CMAKE_MAKE_PROGRAM} -p:FrameworkPathOverride=\"${netfxpath}\" %*")
 endif ()
 
