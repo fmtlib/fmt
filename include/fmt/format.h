@@ -3110,6 +3110,11 @@ FMT_CONSTEXPR20 void format_hexfloat(Float value, format_specs specs,
   f.e += num_float_significand_bits;
   if (!has_implicit_bit<Float>()) --f.e;
 
+  // basic_fp maps a zero biased exponent to the minimum subnormal exponent,
+  // which is correct for subnormals but not for zero: printf prints zero as
+  // 0x0p+0. A zero significand can only come from +-0, so reset the exponent.
+  if (f.f == 0) f.e = 0;
+
   const auto num_fraction_bits =
       num_float_significand_bits + (has_implicit_bit<Float>() ? 1 : 0);
   const auto num_xdigits = (num_fraction_bits + 3) / 4;
