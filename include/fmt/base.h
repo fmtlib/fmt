@@ -188,8 +188,15 @@
 #  define FMT_FALLTHROUGH
 #endif
 
-// Disable [[noreturn]] on MSVC/NVCC because of bogus unreachable code warnings.
-#if FMT_HAS_CPP_ATTRIBUTE(noreturn) && !FMT_MSC_VERSION && !defined(__NVCC__)
+#if FMT_MSC_VERSION || defined(__NVCC__)
+// Disable unusual warning on MSVC/NVCC because of bogus unreachable code
+// warnings in many places.
+#  pragma warning(disable : 4702)
+// Disable because don't need to check
+#  pragma warning(disable : 26495)
+#endif
+
+#if FMT_HAS_CPP_ATTRIBUTE(noreturn)
 #  define FMT_NORETURN [[noreturn]]
 #else
 #  define FMT_NORETURN
@@ -1768,9 +1775,7 @@ template <typename T> class buffer {
  protected:
   // Don't initialize ptr_ since it is not accessed to save a few cycles.
   FMT_CONSTEXPR buffer(grow_fun grow, size_t sz) noexcept
-      : size_(sz), capacity_(sz), grow_(grow) {
-    if (FMT_MSC_VERSION != 0) ptr_ = nullptr;  // Suppress warning 26495.
-  }
+      : size_(sz), capacity_(sz), grow_(grow) {}
 
   constexpr buffer(grow_fun grow, T* p = nullptr, size_t sz = 0,
                    size_t cap = 0) noexcept
