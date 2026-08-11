@@ -347,6 +347,14 @@ TEST(std_test, error_code) {
                         std::map<std::error_code, int>{
                             {std::error_code(42, generic), 0}}),
             "{\"generic:42\": 0}");
+#ifdef _WIN32
+  // {:s} must accept localized system messages (often ACP, not UTF-8).
+  auto win_ec = std::error_code(3, std::system_category());  // ERROR_PATH_NOT_FOUND
+  EXPECT_NO_THROW({
+    auto s = fmt::format("{:s}", win_ec);
+    EXPECT_FALSE(s.empty());
+  });
+#endif
 }
 
 template <typename Catch> void exception_test() {
