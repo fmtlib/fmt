@@ -1,5 +1,9 @@
 # 12.2.1 - TBD
 
+- Fixed `std::error_code` `{:s}` formatting on Windows when
+  `std::system_category().message()` returns a non-UTF-8 (ACP) string, which
+  previously could throw `invalid utf8` (https://github.com/fmtlib/fmt/issues/4436).
+
 - Added a formatter for `std::exception_ptr` that formats the referenced
   exception (or `none` when null)
   (https://github.com/fmtlib/fmt/issues/4808,
