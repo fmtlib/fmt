@@ -546,6 +546,90 @@ struct formatter<Variant, Char,
 
 #endif  // FMT_CPP_LIB_VARIANT
 
+#if defined(_WIN32)
+namespace detail {
+// Avoid pulling windows.h into every TU that includes fmt/std.h.
+extern "C" {
+__declspec(dllimport) unsigned long __stdcall FormatMessageW(
+    unsigned long flags, const void* source, unsigned long message_id,
+    unsigned long language_id, wchar_t* buffer, unsigned long size,
+    void* arguments);
+__declspec(dllimport) void* __stdcall LocalFree(void* mem);
+__declspec(dllimport) int __stdcall MultiByteToWideChar(
+    unsigned code_page, unsigned long flags, const char* str, int str_size,
+    wchar_t* buffer, int buffer_size);
+}
+
+// Prefer FormatMessageW so system messages are UTF-8 (LWG 4156 / #4436).
+inline auto append_system_error_message_utf8(memory_buffer& out, int error_code)
+    -> bool {
+  enum : unsigned long {
+    format_message_allocate_buffer = 0x00000100,
+    format_message_ignore_inserts = 0x00000200,
+    format_message_from_system = 0x00001000
+  };
+  wchar_t* message = nullptr;
+  auto size = FormatMessageW(
+      format_message_allocate_buffer | format_message_from_system |
+          format_message_ignore_inserts,
+      nullptr, static_cast<unsigned long>(error_code), 0,
+      reinterpret_cast<wchar_t*>(&message), 0, nullptr);
+  if (size != 0 && message != nullptr) {
+    while (size != 0 &&
+           (message[size - 1] == L' ' || message[size - 1] == L'\n' ||
+            message[size - 1] == L'\r' || message[size - 1] == L'\t')) {
+      --size;
+    }
+    auto utf8 = to_utf8<wchar_t>();
+    bool ok =
+        utf8.convert(basic_string_view<wchar_t>(message, size));
+    LocalFree(message);
+    if (ok) {
+      out.append(string_view(utf8));
+      return true;
+    }
+  } else if (message != nullptr) {
+    LocalFree(message);
+  }
+  return false;
+}
+
+// Fallback when FormatMessageW fails: treat ec.message() as ACP → UTF-8.
+inline void append_acp_as_utf8(memory_buffer& out, string_view s) {
+  if (s.empty()) return;
+  enum : unsigned { cp_acp = 0 };
+  int wlen = MultiByteToWideChar(cp_acp, 0, s.data(),
+                                 static_cast<int>(s.size()), nullptr, 0);
+  if (wlen <= 0) {
+    out.append(s);
+    return;
+  }
+  basic_memory_buffer<wchar_t> wbuf;
+  wbuf.resize(to_unsigned(wlen));
+  if (MultiByteToWideChar(cp_acp, 0, s.data(), static_cast<int>(s.size()),
+                          wbuf.data(), wlen) <= 0) {
+    out.append(s);
+    return;
+  }
+  auto utf8 = to_utf8<wchar_t>();
+  if (utf8.convert(basic_string_view<wchar_t>(wbuf.data(), wbuf.size())))
+    out.append(string_view(utf8));
+  else
+    out.append(s);
+}
+
+inline void append_error_code_message(memory_buffer& out,
+                                      const std::error_code& ec) {
+  if (ec.category() == std::system_category()) {
+    if (!append_system_error_message_utf8(out, ec.value()))
+      append_acp_as_utf8(out, ec.message());
+    return;
+  }
+  out.append(ec.message());
+}
+}  // namespace detail
+#endif  // _WIN32
+
 template <> struct formatter<std::error_code> {
  private:
   format_specs specs_;
@@ -584,7 +668,13 @@ template <> struct formatter<std::error_code> {
                                 ctx);
     auto buf = memory_buffer();
     if (specs_.type() == presentation_type::string) {
+#if defined(_WIN32)
+      // std::system_category().message() is often not UTF-8 on Windows
+      // (ACP/GBK). Convert so {:s} does not throw "invalid utf8" (#4436).
+      detail::append_error_code_message(buf, ec);
+#else
       buf.append(ec.message());
+#endif
     } else {
       buf.append(string_view(ec.category().name()));
       buf.push_back(':');
