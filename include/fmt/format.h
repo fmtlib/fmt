@@ -3109,6 +3109,8 @@ FMT_CONSTEXPR20 void format_hexfloat(Float value, format_specs specs,
   basic_fp<carrier_uint> f(value);
   f.e += num_float_significand_bits;
   if (!has_implicit_bit<Float>()) --f.e;
+  // Reset the exponent for zero to print it as 0x0p+0.
+  if (f.f == 0) f.e = 0;
 
   const auto num_fraction_bits =
       num_float_significand_bits + (has_implicit_bit<Float>() ? 1 : 0);
@@ -3132,7 +3134,7 @@ FMT_CONSTEXPR20 void format_hexfloat(Float value, format_specs specs,
       f.f &= ~(inc - 1);
     }
 
-    // Check long double overflow
+    // Check long double overflow.
     if (!has_implicit_bit<Float>()) {
       const auto implicit_bit = carrier_uint(1) << num_float_significand_bits;
       if ((f.f & implicit_bit) == implicit_bit) {
@@ -3148,7 +3150,7 @@ FMT_CONSTEXPR20 void format_hexfloat(Float value, format_specs specs,
   detail::fill_n(xdigits, sizeof(xdigits), '0');
   format_base2e(4, xdigits, f.f, num_xdigits, specs.upper());
 
-  // Remove zero tail
+  // Remove zero tail.
   while (print_xdigits > 0 && xdigits[print_xdigits] == '0') --print_xdigits;
 
   buf.push_back('0');

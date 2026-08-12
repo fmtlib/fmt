@@ -1539,6 +1539,13 @@ TEST(format_test, format_double) {
 
     d = std::numeric_limits<double>::denorm_min();
     EXPECT_EQ(fmt::format("{:a}", d), "0x0.0000000000001p-1022");
+
+    // Zero has no subnormal exponent: printf prints it as 0x0p+0.
+    EXPECT_EQ(fmt::format("{:a}", 0.0), "0x0p+0");
+    EXPECT_EQ(fmt::format("{:a}", -0.0), "-0x0p+0");
+    EXPECT_EQ(fmt::format("{:A}", 0.0), "0X0P+0");
+    EXPECT_EQ(fmt::format("{:#a}", 0.0), "0x0.p+0");
+    EXPECT_EQ(fmt::format("{:.3a}", 0.0), "0x0.000p+0");
   }
 
   if (std::numeric_limits<long double>::digits == 64) {
