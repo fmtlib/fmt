@@ -320,7 +320,7 @@ template <typename Char> struct formatter<std::filesystem::path, Char> {
     if (it == end) return it;
 
     Char c = *it;
-    if ((c >= '0' && c <= '9') || c == '{')
+    if ((c >= '1' && c <= '9') || c == '{')
       it = detail::parse_width(it, end, specs_, width_ref_, ctx);
     if (it != end && *it == '?') {
       debug_ = true;
