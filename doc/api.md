@@ -9,6 +9,7 @@ The {fmt} library API consists of the following components:
 - [`fmt/ranges.h`](#ranges-api): formatting of ranges and tuples
 - [`fmt/chrono.h`](#chrono-api): date and time formatting
 - [`fmt/std.h`](#std-api): formatters for standard library types
+- [`fmt/enum.h`](#enum-api): formatting of annotated enums
 - [`fmt/compile.h`](#compile-api): format string compilation
 - [`fmt/color.h`](#color-api): terminal colors and text styles
 - [`fmt/os.h`](#os-api): system APIs
@@ -555,6 +556,55 @@ fmt::print("{}", +s.bit);
 ```
 
 This is a known limitation of "perfect" forwarding in C++.
+
+<a id="enum-api"></a>
+## Enum Formatting
+
+`fmt/enum.h` provides formatting of enums annotated with
+`fmt::as_identifiers`. Such an enum is formatted as the identifier of the
+enumerator matching the formatted value:
+
+    #include <fmt/enum.h>
+
+    enum class [[=fmt::as_identifiers]] color { red, green, blue };
+
+    fmt::print("{}", color::green);
+    // Output: green
+
+Such enums are formatted using the string [Format Specification](
+syntax.md#format-specification), for example:
+
+    fmt::print("[{:>7}]", color::red);
+    // Output: [    red]
+
+Identifiers are only available as `char` strings so annotated enums are not
+formattable with other character types.
+
+If several enumerators have the same value, the first one in the order of
+declaration is used. A value that doesn't match any enumerator is represented
+as its underlying value in decimal before applying string formatting:
+
+    fmt::print("{}", static_cast<color>(42));
+    // Output: 42
+
+Enums without the annotation are not affected and are formatted as before, i.e.
+scoped enums require `format_as` or a `formatter` specialization, see
+[Formatting User-Defined Types](#udt).
+
+Identifiers are retrieved with C++26 reflection ([P2996](
+https://wg21.link/p2996)) and the annotation with [P3394](
+https://wg21.link/p3394), so this requires a compiler with reflection support,
+which may need an extra flag such as `-freflection` in GCC. The macro
+`FMT_USE_REFLECTION` is set to 1 if reflection is available and to 0 otherwise.
+It can also be defined by the user to disable the use of reflection, in which
+case `fmt/enum.h` is empty.
+
+When {fmt} is built as a module, reflection support is detected when the module
+itself is compiled, so this API is only available to importers if the module was
+built with reflection enabled. An importing translation unit may also have to
+include `<meta>` itself: some compilers, such as GCC 16, fail to look up
+implementation details of `std::define_static_string` when instantiating the
+formatter otherwise.
 
 <a id="compile-api"></a>
 ## Compile-Time Support

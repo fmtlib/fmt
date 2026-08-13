@@ -77,6 +77,34 @@ add_fmt_test(enforce-checks-test)
 target_compile_definitions(enforce-checks-test
                            PRIVATE -DFMT_ENFORCE_COMPILE_STRING)
 
+# Enum formatting requires C++26 reflection, which needs compiler support and,
+# in some compilers such as GCC, an extra flag to enable it.
+if (NOT MSVC)
+  include(CheckCXXSourceCompiles)
+  set(CMAKE_REQUIRED_INCLUDES ${PROJECT_SOURCE_DIR}/include)
+  set(CMAKE_REQUIRED_FLAGS "-std=c++26")
+  check_cxx_source_compiles("${FMT_REFLECTION_TEST_CODE}" FMT_HAVE_REFLECTION)
+  if (NOT FMT_HAVE_REFLECTION)
+    set(CMAKE_REQUIRED_FLAGS "-std=c++26 -freflection")
+    check_cxx_source_compiles("${FMT_REFLECTION_TEST_CODE}"
+                              FMT_HAVE_REFLECTION_FLAG)
+  endif ()
+  unset(CMAKE_REQUIRED_FLAGS)
+  unset(CMAKE_REQUIRED_INCLUDES)
+
+  if (FMT_HAVE_REFLECTION OR FMT_HAVE_REFLECTION_FLAG)
+    add_fmt_test(enum-test)
+    set_target_properties(
+      enum-test
+      PROPERTIES CXX_STANDARD 26
+                 CXX_STANDARD_REQUIRED ON
+                 CXX_EXTENSIONS OFF)
+    if (FMT_HAVE_REFLECTION_FLAG)
+      target_compile_options(enum-test PRIVATE -freflection)
+    endif ()
+  endif ()
+endif ()
+
 add_executable(perf-sanity perf-sanity.cc)
 target_link_libraries(perf-sanity fmt::fmt)
 

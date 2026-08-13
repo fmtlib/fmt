@@ -275,6 +275,7 @@ foreach (
   color.h
   compile.h
   core.h
+  enum.h
   format.h
   format-inl.h
   os.h
@@ -408,9 +409,41 @@ function (add_module_library name)
   target_sources(${name} PRIVATE ${sources})
 endfunction ()
 
+# Code that compiles only if C++26 reflection, required by fmt/enum.h, is
+# available. Also used by test/CMakeLists.txt.
+set(FMT_REFLECTION_TEST_CODE
+    "
+  #include <fmt/enum.h>
+  enum class [[=fmt::as_identifiers]] color { red };
+  static_assert(fmt::is_formattable<color>::value, \"\");
+  int main() {}
+")
+
 if (FMT_MODULE)
+  # Unlike with headers, whether fmt/enum.h provides anything is decided when
+  # the module is compiled, so detect reflection with the configured standard
+  # and enable it if possible. Reflection needs C++26 and, in some compilers
+  # such as GCC, an extra flag.
+  if (NOT MSVC AND CMAKE_CXX_STANDARD GREATER_EQUAL 26)
+    include(CheckCXXSourceCompiles)
+    set(CMAKE_REQUIRED_INCLUDES ${PROJECT_SOURCE_DIR}/include)
+    check_cxx_source_compiles("${FMT_REFLECTION_TEST_CODE}"
+                              FMT_MODULE_HAVE_REFLECTION)
+    if (NOT FMT_MODULE_HAVE_REFLECTION)
+      set(CMAKE_REQUIRED_FLAGS -freflection)
+      check_cxx_source_compiles("${FMT_REFLECTION_TEST_CODE}"
+                                FMT_MODULE_HAVE_REFLECTION_FLAG)
+      unset(CMAKE_REQUIRED_FLAGS)
+    endif ()
+    unset(CMAKE_REQUIRED_INCLUDES)
+  endif ()
+
   add_module_library(fmt-module src/fmt.cc USE_CMAKE_MODULES
                      ${FMT_USE_CMAKE_MODULES})
+  if (FMT_MODULE_HAVE_REFLECTION_FLAG)
+    # PUBLIC because importers need the flag to use annotations.
+    target_compile_options(fmt-module PUBLIC -freflection)
+  endif ()
   setup_target(fmt-module PUBLIC)
 endif ()
 

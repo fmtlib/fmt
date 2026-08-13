@@ -15,6 +15,10 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <version>
+#if defined(__cpp_impl_reflection) && __has_include(<meta>)
+#  include <meta>  // to instantiate the formatter for annotated enums
+#endif
 #include <gmock/gmock.h>
 
 #if (__has_include(<fcntl.h>) || defined(__APPLE__) || \
@@ -366,3 +370,18 @@ TEST(module_test, compile_format_string) {
   EXPECT_EQ(L" 42", fmt::format(L"{arg:>3}"_cf, L"arg"_a = L"42"));
 #endif
 }
+
+// Enum formatting is only exported if the module was built with C++26
+// reflection enabled.
+#if defined(__cpp_impl_reflection) && defined(__cpp_lib_reflection) && \
+    defined(__cpp_lib_define_static)
+// clang-format doesn't support annotations yet.
+// clang-format off
+enum class [[=fmt::as_identifiers]] color { red, green, blue };
+// clang-format on
+
+TEST(module_test, format_enum) {
+  EXPECT_EQ("green", fmt::format("{}", color::green));
+  EXPECT_EQ("  red", fmt::format("{:>5}", color::red));
+}
+#endif
