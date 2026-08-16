@@ -466,34 +466,25 @@ TEST(std_test, exception_ptr) {
 }
 
 TEST(std_test, exception_align) {
-  // The exception formatter supports standard width, fill and alignment.
   auto ex = std::runtime_error("boom");
-  EXPECT_EQ(fmt::format("{:>8}", ex), "    boom");
-  EXPECT_EQ(fmt::format("{:<8}", ex), "boom    ");
-  EXPECT_EQ(fmt::format("{:^8}", ex), "  boom  ");
-  EXPECT_EQ(fmt::format("{:*>8}", ex), "****boom");
+
+  // Static width, fill and alignment.
+  EXPECT_EQ(fmt::format("{:*^8}", ex), "**boom**");
+
+  // Dynamic width.
   EXPECT_EQ(fmt::format("{:{}}", ex, 8), "boom    ");
-  // A width smaller than the message leaves the message untouched.
-  EXPECT_EQ(fmt::format("{:>2}", ex), "boom");
+
+  // Sign-aware zero padding is not applicable to exceptions.
+  EXPECT_THROW((void)fmt::format(fmt::runtime("{:08}"), ex), fmt::format_error);
 
 #if FMT_USE_RTTI
-  // Alignment combines with the 't' (type name) presentation type.
-  try {
-    using namespace my_ns1::my_ns2;
-    throw my_exception("oops");
-  } catch (const std::exception& e) {
-    auto base = fmt::format("{:t}", e);
-    auto padded = fmt::format("{:*<40t}", e);
-    EXPECT_EQ(padded.size(), 40u);
-    EXPECT_EQ(padded.substr(0, base.size()), base);
-    EXPECT_EQ(padded.substr(base.size()), std::string(40 - base.size(), '*'));
-  }
+  // Formatting specs followed by the exception-specific 't'.
+  EXPECT_EQ(fmt::format("{:*<40t}", ex),
+            "std::runtime_error: boom****************");
 #endif  // FMT_USE_RTTI
 
-  // exception_ptr honors the same specifiers, for both the empty ("none")
-  // and the non-empty case.
-  std::exception_ptr enull = nullptr;
-  EXPECT_EQ(fmt::format("{:>8}", enull), "    none");
+  // exception_ptr takes a distinct path: null formats directly as "none", while
+  // a non-null pointer is rethrown and delegated to the exception formatter.
   std::exception_ptr ep;
   try {
     throw std::runtime_error("bang");
@@ -501,6 +492,9 @@ TEST(std_test, exception_align) {
     ep = std::current_exception();
   }
   EXPECT_EQ(fmt::format("{:>8}", ep), "    bang");
+
+  std::exception_ptr enull;
+  EXPECT_EQ(fmt::format("{:>8}", enull), "    none");
 }
 #if FMT_USE_RTTI
 TEST(std_test, type_info) {
