@@ -147,6 +147,10 @@
 #  define FMT_CONSTEXPR_STRING
 #endif
 
+// msvc produces unusable warnings if noreturn enabled.
+FMT_PRAGMA_MSVC(warning(push))
+FMT_PRAGMA_MSVC(warning(disable : 4702))
+
 // GCC 4.9 doesn't support qualified names in specializations.
 namespace std {
 template <typename T> struct iterator_traits<fmt::basic_appender<T>> {
@@ -4424,6 +4428,9 @@ FMT_END_NAMESPACE
 #  define FMT_FUNC inline
 #  include "format-inl.h"
 #endif
+
+// Restore msvc warning state.
+FMT_PRAGMA_MSVC(warning(pop))
 
 // Restore _LIBCPP_REMOVE_TRANSITIVE_INCLUDES.
 #ifdef FMT_REMOVE_TRANSITIVE_INCLUDES
