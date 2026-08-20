@@ -39,6 +39,7 @@
 #endif
 
 #include "base.h"
+#include "unicode_width_table.h"
 
 // libc++ supports string_view in pre-c++17.
 #if FMT_HAS_INCLUDE(<string_view>) && \
@@ -649,26 +650,29 @@ FMT_CONSTEXPR void for_each_codepoint(string_view s, F f) {
   } while (buf_ptr < buf + num_chars_left);
 }
 
+FMT_CONSTEXPR inline auto is_wide(uint32_t cp) noexcept -> bool {
+  size_t left = 0;
+  size_t right = kUnicodeWidthRangeCount;
+
+  while (left < right) {
+    size_t mid = left + (right - left) / 2;
+
+    const auto& range = kUnicodeWidthRanges[mid];
+
+    if (cp < range.first) {
+      right = mid;
+    } else if (cp > range.last) {
+      left = mid + 1;
+    } else {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 FMT_CONSTEXPR inline auto display_width_of(uint32_t cp) noexcept -> size_t {
-  return to_unsigned(
-      1 + (cp >= 0x1100 &&
-           (cp <= 0x115f ||  // Hangul Jamo init. consonants
-            cp == 0x2329 ||  // LEFT-POINTING ANGLE BRACKET
-            cp == 0x232a ||  // RIGHT-POINTING ANGLE BRACKET
-            // CJK ... Yi except IDEOGRAPHIC HALF FILL SPACE:
-            (cp >= 0x2e80 && cp <= 0xa4cf && cp != 0x303f) ||
-            (cp >= 0xac00 && cp <= 0xd7a3) ||    // Hangul Syllables
-            (cp >= 0xf900 && cp <= 0xfaff) ||    // CJK Compatibility Ideographs
-            (cp >= 0xfe10 && cp <= 0xfe19) ||    // Vertical Forms
-            (cp >= 0xfe30 && cp <= 0xfe6f) ||    // CJK Compatibility Forms
-            (cp >= 0xff00 && cp <= 0xff60) ||    // Fullwidth Forms
-            (cp >= 0xffe0 && cp <= 0xffe6) ||    // Fullwidth Forms
-            (cp >= 0x20000 && cp <= 0x2fffd) ||  // CJK
-            (cp >= 0x30000 && cp <= 0x3fffd) ||
-            // Miscellaneous Symbols and Pictographs + Emoticons:
-            (cp >= 0x1f300 && cp <= 0x1f64f) ||
-            // Supplemental Symbols and Pictographs:
-            (cp >= 0x1f900 && cp <= 0x1f9ff))));
+  return to_unsigned(1 + is_wide(cp));
 }
 
 template <typename T> struct is_integral : std::is_integral<T> {};
