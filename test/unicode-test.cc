@@ -26,6 +26,9 @@ TEST(unicode_test, unicode_alignment_regression) {
 
   EXPECT_EQ(fmt::format("|{:^20}|", "😀"),
             "|         😀         |");
+            
+  EXPECT_EQ(fmt::format("|{:^20}|", "🇺🇸"),
+            "|         🇺🇸         |");
 
   EXPECT_EQ(fmt::format("|{:^20}|", "Müller"),
             "|       Müller       |");
