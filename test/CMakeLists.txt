@@ -50,6 +50,11 @@ add_fmt_test(format-test mock-allocator.h)
 if (MSVC)
   target_compile_options(format-test PRIVATE /bigobj)
 endif ()
+if (CMAKE_COMPILER_IS_GNUCXX AND NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 16)
+  # format-test completes a type after it failed to be complete in a SFINAE
+  # context, which is exactly what it is testing.
+  target_compile_options(format-test PRIVATE -Wno-sfinae-incomplete)
+endif ()
 if (NOT (MSVC AND BUILD_SHARED_LIBS))
   add_fmt_test(format-impl-test HEADER_ONLY header-only-test.cc)
 endif ()
