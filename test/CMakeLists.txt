@@ -107,6 +107,8 @@ if (NOT MSVC)
     if (FMT_HAVE_REFLECTION_FLAG)
       target_compile_options(enum-test PRIVATE -freflection)
     endif ()
+  else ()
+    message(STATUS "Reflection is not supported, skipping enum-test.")
   endif ()
 endif ()
 
