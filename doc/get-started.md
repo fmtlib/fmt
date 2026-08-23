@@ -47,6 +47,22 @@ In order to use the header-only target or the module target, simply substitute t
 `fmt::fmt` in the above steps with `fmt::fmt-header-only` or `fmt::fmt-module` 
 accordingly.
 
+### Using the C++20 Module
+
+Link your target to `fmt::fmt-module` and import `fmt` instead of including a
+{fmt} header:
+
+    target_link_libraries(<your-target> PRIVATE fmt::fmt-module)
+
+    import fmt;
+
+    int main() {
+      fmt::print("Hello, world!\\n");
+    }
+
+The module target requires C++20 module support in CMake and the compiler. For
+GCC, use CMake 3.28 or newer, Ninja 1.11 or newer, and GCC 15 or newer.
+
 ## Installation
 
 ### Debian/Ubuntu
