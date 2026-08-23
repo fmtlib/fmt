@@ -15,6 +15,10 @@
   `fmt::ostream_formatter`) and `fmt::streamed` from the C++20 module
   (https://github.com/fmtlib/fmt/pull/4861). Thanks @avikivity.
 
+- Documented how to use the C++20 module with CMake, including the
+  `fmt::fmt-module` target and compiler requirements
+  (https://github.com/fmtlib/fmt/issues/4237).
+
 - Optimized 128-bit integer formatting by reducing the value to 64-bit
   chunks instead of doing repeated 128-bit division, giving a ~5x speedup
   on full-range values.
