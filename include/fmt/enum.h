@@ -61,19 +61,75 @@ consteval auto use_identifiers() -> bool {
   }
 }
 
+// Returns the identifier of e. identifier_of returns a view of a string with
+// static storage duration so it doesn't need to be copied.
+inline consteval auto identifier(std::meta::info e) -> string_view {
+  auto id = std::meta::identifier_of(e);
+  return string_view(id.data(), id.size());
+}
+
+// Returns the underlying value of `value` converted to uint64_t. Negative
+// values wrap around, so the difference of two such values is the distance
+// between them.
+template <typename E> constexpr auto to_uint64(E value) -> uint64_t {
+  return static_cast<uint64_t>(static_cast<underlying_t<E>>(value));
+}
+
 template <typename E> consteval auto count_enumerators() -> size_t {
   return std::meta::enumerators_of(^^E).size();
 }
+
+// Returns the smallest enumerator value of E or 0 if E has no enumerators.
+template <typename E> consteval auto min_enumerator() -> E {
+  auto enumerators = std::meta::enumerators_of(^^E);
+  if (enumerators.empty()) return E();
+  auto min = std::meta::extract<E>(enumerators[0]);
+  for (std::meta::info e : enumerators) {
+    auto value = std::meta::extract<E>(e);
+    if (value < min) min = value;
+  }
+  return min;
+}
+
+// Returns the size of a table that maps the distance from the smallest
+// enumerator value of E to an identifier, or 0 if the values are too sparse
+// for such a table to be worthwhile.
+template <typename E> consteval auto identifier_table_size() -> size_t {
+  auto enumerators = std::meta::enumerators_of(^^E);
+  if (enumerators.empty()) return 0;
+  auto min = to_uint64(min_enumerator<E>());
+  auto span = uint64_t();
+  for (std::meta::info e : enumerators)
+    span = max_of(span, to_uint64(std::meta::extract<E>(e)) - min);
+  // Require the density of at least 70% to limit the size of the table.
+  // Comparing with the limit instead of adding one to span avoids overflow.
+  auto limit = uint64_t(enumerators.size()) * 10 / 7;
+  return span < limit ? static_cast<size_t>(span) + 1 : 0;
+}
+
+template <typename E, size_t N = identifier_table_size<E>()>
+consteval auto make_identifier_table() -> std::array<string_view, N> {
+  auto ids = std::array<string_view, N>();
+  auto min = to_uint64(min_enumerator<E>());
+  for (std::meta::info e : std::meta::enumerators_of(^^E)) {
+    auto i = static_cast<size_t>(to_uint64(std::meta::extract<E>(e)) - min);
+    // Keep the identifier of the first enumerator with this value.
+    if (ids[i].size() == 0) ids[i] = identifier(e);
+  }
+  return ids;
+}
+
+// Identifiers of enumerators of E indexed by the distance from the smallest
+// enumerator value with empty string views in the holes.
+template <typename E>
+inline constexpr auto identifier_table = make_identifier_table<E>();
 
 template <typename E, size_t N = count_enumerators<E>()>
 consteval auto make_identifiers() -> std::array<std::pair<E, string_view>, N> {
   auto ids = std::array<std::pair<E, string_view>, N>();
   auto i = size_t();
-  for (std::meta::info e : std::meta::enumerators_of(^^E)) {
-    auto id = std::meta::identifier_of(e);
-    // identifier_of returns a view of a string with static storage duration.
-    ids[i++] = {std::meta::extract<E>(e), string_view(id.data(), id.size())};
-  }
+  for (std::meta::info e : std::meta::enumerators_of(^^E))
+    ids[i++] = {std::meta::extract<E>(e), identifier(e)};
   return ids;
 }
 
@@ -83,10 +139,18 @@ template <typename E> inline constexpr auto identifiers = make_identifiers<E>();
 // Returns the identifier of the first enumerator of E equal to value or an
 // empty string view if there is no such enumerator.
 template <typename E> constexpr auto identifier_of(E value) -> string_view {
-  for (const auto& id : identifiers<E>) {
-    if (id.first == value) return id.second;
+  constexpr size_t table_size = identifier_table_size<E>();
+  if constexpr (table_size != 0) {
+    // Values outside of the table wrap around and are rejected by the check.
+    auto i = to_uint64(value) - to_uint64(min_enumerator<E>());
+    return i < table_size ? identifier_table<E>[static_cast<size_t>(i)]
+                          : string_view();
+  } else {
+    for (const auto& id : identifiers<E>) {
+      if (id.first == value) return id.second;
+    }
+    return {};
   }
-  return {};
 }
 
 }  // namespace detail
