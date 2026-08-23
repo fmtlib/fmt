@@ -2649,6 +2649,9 @@ TEST(incomplete_type_test, format) {
   EXPECT_EQ(fmt::format("{}", external_instance), "42");
 }
 
+#if FMT_GCC_VERSION >= 1600
+FMT_PRAGMA_GCC(diagnostic ignored "-Wsfinae-incomplete")
+#endif
 struct incomplete_type {};
 const incomplete_type& external_instance = {};
 
