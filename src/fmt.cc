@@ -66,6 +66,12 @@ module;
 #include <climits>
 #include <version>
 
+// fmt/enum.h uses C++26 reflection if it is available.
+#if defined(__cpp_impl_reflection) && __has_include(<meta>)
+#  include <array>
+#  include <meta>
+#endif
+
 #if __has_include(<cxxabi.h>)
 #  include <cxxabi.h>
 #endif
@@ -128,6 +134,7 @@ extern "C++" {
 #include "fmt/chrono.h"
 #include "fmt/color.h"
 #include "fmt/compile.h"
+#include "fmt/enum.h"
 #include "fmt/format.h"
 #if FMT_OS
 #  include "fmt/os.h"

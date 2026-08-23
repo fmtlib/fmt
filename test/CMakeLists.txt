@@ -50,6 +50,11 @@ add_fmt_test(format-test mock-allocator.h)
 if (MSVC)
   target_compile_options(format-test PRIVATE /bigobj)
 endif ()
+if (CMAKE_COMPILER_IS_GNUCXX AND NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 16)
+  # format-test completes a type after it failed to be complete in a SFINAE
+  # context, which is exactly what it is testing.
+  target_compile_options(format-test PRIVATE -Wno-sfinae-incomplete)
+endif ()
 if (NOT (MSVC AND BUILD_SHARED_LIBS))
   add_fmt_test(format-impl-test HEADER_ONLY header-only-test.cc)
 endif ()
@@ -76,6 +81,36 @@ add_fmt_test(xchar-test)
 add_fmt_test(enforce-checks-test)
 target_compile_definitions(enforce-checks-test
                            PRIVATE -DFMT_ENFORCE_COMPILE_STRING)
+
+# Enum formatting requires C++26 reflection, which needs compiler support and,
+# in some compilers such as GCC, an extra flag to enable it.
+if (NOT MSVC)
+  include(CheckCXXSourceCompiles)
+  set(CMAKE_REQUIRED_INCLUDES ${PROJECT_SOURCE_DIR}/include)
+  set(CMAKE_REQUIRED_FLAGS "-std=c++26")
+  check_cxx_source_compiles("${FMT_REFLECTION_TEST_CODE}" FMT_HAVE_REFLECTION)
+  if (NOT FMT_HAVE_REFLECTION)
+    set(CMAKE_REQUIRED_FLAGS "-std=c++26 -freflection")
+    check_cxx_source_compiles("${FMT_REFLECTION_TEST_CODE}"
+                              FMT_HAVE_REFLECTION_FLAG)
+  endif ()
+  unset(CMAKE_REQUIRED_FLAGS)
+  unset(CMAKE_REQUIRED_INCLUDES)
+
+  if (FMT_HAVE_REFLECTION OR FMT_HAVE_REFLECTION_FLAG)
+    add_fmt_test(enum-test)
+    set_target_properties(
+      enum-test
+      PROPERTIES CXX_STANDARD 26
+                 CXX_STANDARD_REQUIRED ON
+                 CXX_EXTENSIONS OFF)
+    if (FMT_HAVE_REFLECTION_FLAG)
+      target_compile_options(enum-test PRIVATE -freflection)
+    endif ()
+  else ()
+    message(STATUS "Reflection is not supported, skipping enum-test.")
+  endif ()
+endif ()
 
 add_executable(perf-sanity perf-sanity.cc)
 target_link_libraries(perf-sanity fmt::fmt)

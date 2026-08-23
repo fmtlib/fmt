@@ -249,6 +249,7 @@ class CxxHandler(BaseHandler):
             "chrono.h",
             "color.h",
             "compile.h",
+            "enum.h",
             "format.h",
             "os.h",
             "ostream.h",
