@@ -664,11 +664,11 @@ TEST(format_test, display_width_new_emoji_ranges) {
 }
 
 TEST(format_test, display_width_regional_indicator_pair) {
-  // A flag is two regional indicator code points; fmt has no grapheme
-  // clustering, so each is measured independently at two columns (four
-  // columns total) even though most terminals render the pair as a single
-  // two-column glyph.
-  EXPECT_EQ(fmt::format("{:^10}", "🇺🇸"), "   🇺🇸   ");
+  // A flag is two regional indicator code points; each is Neutral under
+  // East_Asian_Width (not Wide), so each is measured as one column, giving
+  // the pair a total of two columns, matching how terminals render the flag
+  // as a single two-column glyph.
+  EXPECT_EQ(fmt::format("{:^10}", "🇺🇸"), "    🇺🇸    ");
 }
 
 template <int N> struct test_format {
