@@ -422,6 +422,14 @@ setup_target(fmt-header-only INTERFACE)
 
 add_library(fmt-c src/fmt-c.cc)
 target_compile_features(fmt-c INTERFACE c_std_11)
+
+# Set FMT_C_LIB_NAME for pkg-config fmt-c.pc. We cannot use the OUTPUT_NAME
+# target property because it's not set by default.
+set(FMT_C_LIB_NAME fmt-c)
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(FMT_C_LIB_NAME ${FMT_C_LIB_NAME}${FMT_DEBUG_POSTFIX})
+endif ()
+
 if (BUILD_SHARED_LIBS)
   target_compile_definitions(
     fmt-c
@@ -462,6 +470,7 @@ if (FMT_INSTALL)
   set(version_config ${PROJECT_BINARY_DIR}/fmt-config-version.cmake)
   set(project_config ${PROJECT_BINARY_DIR}/fmt-config.cmake)
   set(pkgconfig ${PROJECT_BINARY_DIR}/fmt.pc)
+  set(pkgconfig_c ${PROJECT_BINARY_DIR}/fmt-c.pc)
 
   set_verbose(
     FMT_LIB_DIR ${CMAKE_INSTALL_LIBDIR} CACHE STRING
@@ -488,6 +497,8 @@ if (FMT_INSTALL)
 
   configure_file("${PROJECT_SOURCE_DIR}/support/cmake/fmt.pc.in" "${pkgconfig}"
                  @ONLY)
+  configure_file("${PROJECT_SOURCE_DIR}/support/cmake/fmt-c.pc.in"
+                 "${pkgconfig_c}" @ONLY)
   configure_package_config_file(
     ${PROJECT_SOURCE_DIR}/support/cmake/fmt-config.cmake.in ${project_config}
     INSTALL_DESTINATION ${FMT_CMAKE_DIR})
@@ -517,7 +528,7 @@ if (FMT_INSTALL)
     COMPONENT fmt_core)
 
   install(
-    FILES "${pkgconfig}"
+    FILES "${pkgconfig}" "${pkgconfig_c}"
     DESTINATION "${FMT_PKGCONFIG_DIR}"
     COMPONENT fmt_core)
 endif ()
