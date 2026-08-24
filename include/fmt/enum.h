@@ -124,17 +124,50 @@ consteval auto make_identifier_table() -> std::array<string_view, N> {
 template <typename E>
 inline constexpr auto identifier_table = make_identifier_table<E>();
 
-template <typename E, size_t N = count_enumerators<E>()>
-consteval auto make_identifiers() -> std::array<std::pair<E, string_view>, N> {
-  auto ids = std::array<std::pair<E, string_view>, N>();
-  auto i = size_t();
-  for (std::meta::info e : std::meta::enumerators_of(^^E))
-    ids[i++] = {std::meta::extract<E>(e), identifier(e)};
-  return ids;
+// Returns the size of the hash table that maps enumerator values of E to
+// identifiers. It is the smallest power of two that keeps the load factor at or
+// below 0.5, which guarantees a free slot and therefore terminates the search.
+template <typename E> consteval auto identifier_map_size() -> size_t {
+  auto size = size_t(1);
+  while (size < count_enumerators<E>() * 2) size *= 2;
+  return size;
 }
 
-// Identifiers of enumerators of E in the order of declaration.
-template <typename E> inline constexpr auto identifiers = make_identifiers<E>();
+// Returns the index of the first slot to probe for `value`. The bits of the
+// underlying value are mixed because enumerator values are usually small and
+// only the low bits of the hash are used.
+template <typename E, size_t N = identifier_map_size<E>()>
+constexpr auto identifier_slot(E value) -> size_t {
+  auto h = to_uint64(value);
+  h ^= h >> 33;
+  h *= 0xff51afd7ed558ccd;
+  h ^= h >> 33;
+  return static_cast<size_t>(h & (N - 1));
+}
+
+template <typename E, size_t N = identifier_map_size<E>()>
+consteval auto make_identifier_map()
+    -> std::array<std::pair<E, string_view>, N> {
+  auto map = std::array<std::pair<E, string_view>, N>();
+  for (std::meta::info e : std::meta::enumerators_of(^^E)) {
+    auto value = std::meta::extract<E>(e);
+    for (auto i = identifier_slot(value);; i = (i + 1) & (N - 1)) {
+      if (map[i].second.size() != 0) {
+        // Keep the identifier of the first enumerator with this value.
+        if (map[i].first == value) break;
+        continue;  // The slot is taken by another value; probe the next one.
+      }
+      map[i] = {value, identifier(e)};
+      break;
+    }
+  }
+  return map;
+}
+
+// Identifiers of enumerators of E in an open-addressed hash table with linear
+// probing and empty string views in the free slots.
+template <typename E>
+inline constexpr auto identifier_map = make_identifier_map<E>();
 
 // Returns the identifier of the first enumerator of E equal to value or an
 // empty string view if there is no such enumerator.
@@ -146,10 +179,12 @@ template <typename E> constexpr auto identifier_of(E value) -> string_view {
     return i < table_size ? identifier_table<E>[static_cast<size_t>(i)]
                           : string_view();
   } else {
-    for (const auto& id : identifiers<E>) {
-      if (id.first == value) return id.second;
+    constexpr size_t map_size = identifier_map_size<E>();
+    // A free slot terminates the search and its empty identifier is the result.
+    for (auto i = identifier_slot(value);; i = (i + 1) & (map_size - 1)) {
+      const auto& entry = identifier_map<E>[i];
+      if (entry.second.size() == 0 || entry.first == value) return entry.second;
     }
-    return {};
   }
 }
 
