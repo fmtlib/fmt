@@ -1622,6 +1622,7 @@ TEST(format_test, format_nan) {
   EXPECT_EQ(fmt::format("{:<7}", nan), "nan    ");
   EXPECT_EQ(fmt::format("{:^7}", nan), "  nan  ");
   EXPECT_EQ(fmt::format("{:>7}", nan), "    nan");
+  EXPECT_EQ(fmt::format("{:7}", nan), "    nan");
 }
 
 TEST(format_test, format_infinity) {
@@ -1639,6 +1640,7 @@ TEST(format_test, format_infinity) {
   EXPECT_EQ(fmt::format("{:<7}", inf), "inf    ");
   EXPECT_EQ(fmt::format("{:^7}", inf), "  inf  ");
   EXPECT_EQ(fmt::format("{:>7}", inf), "    inf");
+  EXPECT_EQ(fmt::format("{:7}", inf), "    inf");
 }
 
 TEST(format_test, format_long_double) {
