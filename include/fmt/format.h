@@ -701,7 +701,8 @@ FMT_CONSTEXPR inline auto display_width_of(uint32_t cp) {
       {0x1face, 0x1fadc}, {0x1fadf, 0x1fae9}, {0x1faf0, 0x1faf8},
       {0x20000, 0x2fffd}, {0x30000, 0x3fffd},
   };
-  size_t lo = 0, hi = sizeof(wide_cp_ranges) / sizeof(wide_cp_range);
+  size_t lo = 0;
+  size_t hi = sizeof(wide_cp_ranges) / sizeof(wide_cp_range);
   while (lo < hi) {
     size_t mid = lo + (hi - lo) / 2;
     if (cp < wide_cp_ranges[mid].first)
