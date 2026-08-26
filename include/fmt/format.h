@@ -649,7 +649,7 @@ FMT_CONSTEXPR void for_each_codepoint(string_view s, F f) {
   } while (buf_ptr < buf + num_chars_left);
 }
 
-FMT_CONSTEXPR auto display_width_of(uint32_t cp) noexcept -> size_t {
+FMT_CONSTEXPR inline auto display_width_of(uint32_t cp) noexcept -> size_t {
   if (cp < 0x1100) return 1;
   struct wide_cp_range {
     uint32_t first;
@@ -782,26 +782,9 @@ FMT_CONSTEXPR auto display_width_of(uint32_t cp) noexcept -> size_t {
       {0x1f240, 0x1f248},
       {0x1f250, 0x1f251},
       {0x1f260, 0x1f265},
-      // Miscellaneous Symbols and Pictographs
-      {0x1f300, 0x1f320},
-      {0x1f32d, 0x1f335},
-      {0x1f337, 0x1f37c},
-      {0x1f37e, 0x1f393},
-      {0x1f3a0, 0x1f3ca},
-      {0x1f3cf, 0x1f3d3},
-      {0x1f3e0, 0x1f3f0},
-      {0x1f3f4, 0x1f3f4},
-      {0x1f3f8, 0x1f43e},
-      {0x1f440, 0x1f440},
-      {0x1f442, 0x1f4fc},
-      {0x1f4ff, 0x1f53d},
-      {0x1f54b, 0x1f54e},
-      {0x1f550, 0x1f567},
-      {0x1f57a, 0x1f57a},
-      {0x1f595, 0x1f596},
-      {0x1f5a4, 0x1f5a4},
-      // Miscellaneous Symbols and Pictographs .. Emoticons
-      {0x1f5fb, 0x1f64f},
+      // Miscellaneous Symbols and Pictographs .. Emoticons, treated as
+      // fully wide per [format.string.std] regardless of East_Asian_Width.
+      {0x1f300, 0x1f64f},
       // Transport and Map Symbols
       {0x1f680, 0x1f6c5},
       {0x1f6cc, 0x1f6cc},
@@ -813,10 +796,9 @@ FMT_CONSTEXPR auto display_width_of(uint32_t cp) noexcept -> size_t {
       // Geometric Shapes Extended
       {0x1f7e0, 0x1f7eb},
       {0x1f7f0, 0x1f7f0},
-      // Supplemental Symbols and Pictographs
-      {0x1f90c, 0x1f93a},
-      {0x1f93c, 0x1f945},
-      {0x1f947, 0x1f9ff},
+      // Supplemental Symbols and Pictographs, treated as fully wide per
+      // [format.string.std] regardless of East_Asian_Width.
+      {0x1f900, 0x1f9ff},
       // Symbols and Pictographs Extended-A
       {0x1fa70, 0x1fa7c},
       {0x1fa80, 0x1fa89},
