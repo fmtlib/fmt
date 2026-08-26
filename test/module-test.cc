@@ -377,7 +377,7 @@ TEST(module_test, compile_format_string) {
     defined(__cpp_lib_define_static)
 // clang-format doesn't support annotations yet.
 // clang-format off
-enum class [[=fmt::as_identifiers]] color { red, green, blue };
+enum class [[=fmt::as_identifiers()]] color { red, green, blue };
 // clang-format on
 
 TEST(module_test, format_enum) {

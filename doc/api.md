@@ -566,7 +566,7 @@ enumerator matching the formatted value:
 
     #include <fmt/enum.h>
 
-    enum class [[=fmt::as_identifiers]] color { red, green, blue };
+    enum class [[=fmt::as_identifiers()]] color { red, green, blue };
 
     fmt::print("{}", color::green);
     // Output: green
