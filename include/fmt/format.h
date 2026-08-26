@@ -811,7 +811,8 @@ FMT_CONSTEXPR inline auto display_width_of(uint32_t cp) noexcept -> size_t {
       // CJK Unified Ideographs Extension G (plane 3)
       {0x30000, 0x3fffd},
   };
-  size_t lo = 0, hi = sizeof(wide_cp_ranges) / sizeof(wide_cp_range);
+  size_t lo = 0;
+  size_t hi = sizeof(wide_cp_ranges) / sizeof(wide_cp_range);
   while (lo < hi) {
     size_t mid = lo + (hi - lo) / 2;
     if (cp < wide_cp_ranges[mid].first)
