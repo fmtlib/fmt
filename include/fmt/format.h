@@ -2402,12 +2402,11 @@ FMT_CONSTEXPR20 auto write_nonfinite(OutputIt out, bool isnan,
   const bool is_zero_fill =
       specs.fill_size() == 1 && specs.fill_unit<Char>() == '0';
   if (is_zero_fill) specs.set_fill(' ');
-  return write_padded<Char>(out, specs, size,
-                            [=](reserve_iterator<OutputIt> it) {
-                              if (s != sign::none)
-                                *it++ = detail::getsign<Char>(s);
-                              return copy<Char>(str, str + str_size, it);
-                            });
+  return write_padded<Char, align::right>(
+      out, specs, size, [=](reserve_iterator<OutputIt> it) {
+        if (s != sign::none) *it++ = detail::getsign<Char>(s);
+        return copy<Char>(str, str + str_size, it);
+      });
 }
 
 // A decimal floating-point number significand * pow(10, exp).
