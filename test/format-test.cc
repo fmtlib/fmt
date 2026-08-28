@@ -941,6 +941,7 @@ TEST(format_test, width) {
 
 TEST(format_test, debug_presentation) {
   EXPECT_EQ(fmt::format("{:?}", ""), R"("")");
+  EXPECT_EQ(fmt::format("{:1?}", ""), R"("")");
 
   EXPECT_EQ(fmt::format("{:*<5.0?}", "\n"), R"(*****)");
   EXPECT_EQ(fmt::format("{:*<5.1?}", "\n"), R"("****)");
@@ -1683,6 +1684,7 @@ TEST(format_test, format_char) {
 
   EXPECT_EQ(fmt::format("{}", '\n'), "\n");
   EXPECT_EQ(fmt::format("{:?}", '\n'), "'\\n'");
+  EXPECT_EQ(fmt::format("{:6?}", 'a'), "'a'   ");
   EXPECT_EQ(fmt::format("{:x}", '\xff'), "ff");
 }
 
