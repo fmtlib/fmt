@@ -37,7 +37,7 @@ enum class [[=fmt::as_identifiers]] dense { d0, d1, d2, d3, d4 };
 enum class [[=fmt::as_identifiers]] holey {
   h0, h1, h2, h3, h4, h5, h6 = 9
 };
-// 4 holes out of 11: just too sparse, formatted via a linear search.
+// 4 holes out of 11: just too sparse, formatted via a hash table.
 enum class [[=fmt::as_identifiers]] sparse {
   s0, s1, s2, s3, s4, s5, s6 = 10
 };
@@ -46,6 +46,25 @@ enum class [[=fmt::as_identifiers]] signed_enum {
   minus_two = -2,
   minus_one = -1,
   one = 1
+};
+// Many scattered values, exercising collisions in the hash table.
+enum class [[=fmt::as_identifiers]] scattered {
+  a = 1, b = 17, c = 33, d = 49, e = 65, f = 81,
+  g = 97, h = 113, i = 129, j = 145, k = 161, l = 177
+};
+// Values that collide in the hash table: c0, c7 and c15 share a slot, and c6
+// occupies the next one, so probing for c7 and c15 has to step over it.
+enum class [[=fmt::as_identifiers]] collision {
+  c0 = 0, c6 = 6, c7 = 7, c15 = 15
+};
+// Values that collide in the last slot of the hash table, so the probe
+// sequence wraps around to the beginning.
+enum class [[=fmt::as_identifiers]] wrapping_collision {
+  w8 = 8, w16 = 16, w24 = 24
+};
+// Aliased values in an enum that is too sparse for a lookup table.
+enum class [[=fmt::as_identifiers]] sparse_alias {
+  one = 1, dup = 1, far = 1000
 };
 enum class [[=fmt::as_identifiers]] extremes : int {
   lowest = INT_MIN,
@@ -97,6 +116,8 @@ TEST(enum_test, format_holey_enum) {
 TEST(enum_test, format_sparse_enum) {
   // One more hole than holey, which is too many for a lookup table.
   static_assert(fmt::detail::identifier_table_size<sparse>() == 0);
+  // 7 enumerators need 16 slots to keep the load factor at or below 0.5.
+  static_assert(fmt::detail::identifier_map_size<sparse>() == 16);
   EXPECT_EQ(fmt::format("{}", sparse::s0), "s0");
   EXPECT_EQ(fmt::format("{}", sparse::s5), "s5");
   EXPECT_EQ(fmt::format("{}", sparse::s6), "s6");
@@ -113,6 +134,68 @@ TEST(enum_test, format_enum_with_negative_values) {
   EXPECT_EQ(fmt::format("{}", static_cast<signed_enum>(0)), "0");
   EXPECT_EQ(fmt::format("{}", static_cast<signed_enum>(-3)), "-3");
   EXPECT_EQ(fmt::format("{}", static_cast<signed_enum>(2)), "2");
+}
+
+TEST(enum_test, format_scattered_enum) {
+  static_assert(fmt::detail::identifier_table_size<scattered>() == 0);
+  static_assert(fmt::detail::identifier_map_size<scattered>() == 32);
+  EXPECT_EQ(fmt::format("{}", scattered::a), "a");
+  EXPECT_EQ(fmt::format("{}", scattered::b), "b");
+  EXPECT_EQ(fmt::format("{}", scattered::c), "c");
+  EXPECT_EQ(fmt::format("{}", scattered::d), "d");
+  EXPECT_EQ(fmt::format("{}", scattered::e), "e");
+  EXPECT_EQ(fmt::format("{}", scattered::f), "f");
+  EXPECT_EQ(fmt::format("{}", scattered::g), "g");
+  EXPECT_EQ(fmt::format("{}", scattered::h), "h");
+  EXPECT_EQ(fmt::format("{}", scattered::i), "i");
+  EXPECT_EQ(fmt::format("{}", scattered::j), "j");
+  EXPECT_EQ(fmt::format("{}", scattered::k), "k");
+  EXPECT_EQ(fmt::format("{}", scattered::l), "l");
+  EXPECT_EQ(fmt::format("{}", static_cast<scattered>(0)), "0");
+  EXPECT_EQ(fmt::format("{}", static_cast<scattered>(-1)), "-1");
+  EXPECT_EQ(fmt::format("{}", static_cast<scattered>(999)), "999");
+}
+
+TEST(enum_test, format_enum_with_hash_collision) {
+  static_assert(fmt::detail::identifier_table_size<collision>() == 0);
+  static_assert(fmt::detail::identifier_map_size<collision>() == 8);
+  // Three of the four values want the same slot and the fourth takes the slot
+  // next to it, filling the table to its maximum load factor of 0.5.
+  static_assert(fmt::detail::identifier_slot(collision::c0) ==
+                fmt::detail::identifier_slot(collision::c7));
+  static_assert(fmt::detail::identifier_slot(collision::c0) ==
+                fmt::detail::identifier_slot(collision::c15));
+  static_assert(fmt::detail::identifier_slot(collision::c6) !=
+                fmt::detail::identifier_slot(collision::c0));
+  EXPECT_EQ(fmt::format("{}", collision::c0), "c0");
+  EXPECT_EQ(fmt::format("{}", collision::c6), "c6");
+  EXPECT_EQ(fmt::format("{}", collision::c7), "c7");
+  EXPECT_EQ(fmt::format("{}", collision::c15), "c15");
+  // A value that collides with the enumerators but doesn't match any of them
+  // is rejected after probing the whole chain.
+  static_assert(fmt::detail::identifier_slot(static_cast<collision>(23)) ==
+                fmt::detail::identifier_slot(collision::c0));
+  EXPECT_EQ(fmt::format("{}", static_cast<collision>(23)), "23");
+}
+
+TEST(enum_test, format_enum_with_wrapping_hash_collision) {
+  static_assert(fmt::detail::identifier_table_size<wrapping_collision>() == 0);
+  static_assert(fmt::detail::identifier_map_size<wrapping_collision>() == 8);
+  // All the values want the last slot, so the probe sequence wraps around.
+  static_assert(fmt::detail::identifier_slot(wrapping_collision::w8) == 7);
+  static_assert(fmt::detail::identifier_slot(wrapping_collision::w16) == 7);
+  static_assert(fmt::detail::identifier_slot(wrapping_collision::w24) == 7);
+  EXPECT_EQ(fmt::format("{}", wrapping_collision::w8), "w8");
+  EXPECT_EQ(fmt::format("{}", wrapping_collision::w16), "w16");
+  EXPECT_EQ(fmt::format("{}", wrapping_collision::w24), "w24");
+  EXPECT_EQ(fmt::format("{}", static_cast<wrapping_collision>(33)), "33");
+}
+
+TEST(enum_test, format_sparse_enum_alias) {
+  // The first enumerator with a matching value is used in the hash table too.
+  static_assert(fmt::detail::identifier_table_size<sparse_alias>() == 0);
+  EXPECT_EQ(fmt::format("{}", sparse_alias::dup), "one");
+  EXPECT_EQ(fmt::format("{}", sparse_alias::far), "far");
 }
 
 TEST(enum_test, format_enum_with_extreme_values) {
