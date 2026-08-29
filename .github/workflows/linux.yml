@@ -50,6 +50,7 @@ jobs:
             build_type: Debug
             std: 26
             os: ubuntu-24.04
+            cxxflags: -freflection
             install: sudo apt install g++-16
           - cxx: clang++-3.6
           - cxx: clang++-11
