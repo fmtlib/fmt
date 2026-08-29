@@ -25,6 +25,7 @@
 #if FMT_USE_REFLECTION && !defined(FMT_MODULE)
 #  include <array>
 #  include <meta>
+#  include <string_view>
 #  include <utility>  // std::pair
 #endif
 
@@ -61,22 +62,11 @@ consteval auto use_identifiers() -> bool {
   }
 }
 
-// Returns the identifier of e. identifier_of returns a view of a string with
-// static storage duration so it doesn't need to be copied.
-inline consteval auto identifier(std::meta::info e) -> string_view {
-  auto id = std::meta::identifier_of(e);
-  return string_view(id.data(), id.size());
-}
-
 // Returns the underlying value of `value` converted to uint64_t. Negative
 // values wrap around, so the difference of two such values is the distance
 // between them.
 template <typename E> constexpr auto to_uint64(E value) -> uint64_t {
   return static_cast<uint64_t>(static_cast<underlying_t<E>>(value));
-}
-
-template <typename E> consteval auto count_enumerators() -> size_t {
-  return std::meta::enumerators_of(^^E).size();
 }
 
 // Returns the smallest enumerator value of E or 0 if E has no enumerators.
@@ -108,13 +98,15 @@ template <typename E> consteval auto identifier_table_size() -> size_t {
 }
 
 template <typename E, size_t N = identifier_table_size<E>()>
-consteval auto make_identifier_table() -> std::array<string_view, N> {
-  auto ids = std::array<string_view, N>();
+consteval auto make_identifier_table() -> std::array<std::string_view, N> {
+  auto ids = std::array<std::string_view, N>();
   auto min = to_uint64(min_enumerator<E>());
   for (std::meta::info e : std::meta::enumerators_of(^^E)) {
     auto i = static_cast<size_t>(to_uint64(std::meta::extract<E>(e)) - min);
-    // Keep the identifier of the first enumerator with this value.
-    if (ids[i].size() == 0) ids[i] = identifier(e);
+    // identifier_of returns a view of a string with static storage duration so
+    // it doesn't need to be copied. Keep the identifier of the first
+    // enumerator with this value.
+    if (ids[i].size() == 0) ids[i] = std::meta::identifier_of(e);
   }
   return ids;
 }
@@ -129,7 +121,7 @@ inline constexpr auto identifier_table = make_identifier_table<E>();
 // below 0.5, which guarantees a free slot and therefore terminates the search.
 template <typename E> consteval auto identifier_map_size() -> size_t {
   auto size = size_t(1);
-  while (size < count_enumerators<E>() * 2) size *= 2;
+  while (size < std::meta::enumerators_of(^^E).size() * 2) size *= 2;
   return size;
 }
 
@@ -147,8 +139,8 @@ constexpr auto identifier_slot(E value) -> size_t {
 
 template <typename E, size_t N = identifier_map_size<E>()>
 consteval auto make_identifier_map()
-    -> std::array<std::pair<E, string_view>, N> {
-  auto map = std::array<std::pair<E, string_view>, N>();
+    -> std::array<std::pair<E, std::string_view>, N> {
+  auto map = std::array<std::pair<E, std::string_view>, N>();
   for (std::meta::info e : std::meta::enumerators_of(^^E)) {
     auto value = std::meta::extract<E>(e);
     for (auto i = identifier_slot(value);; i = (i + 1) & (N - 1)) {
@@ -157,7 +149,7 @@ consteval auto make_identifier_map()
         if (map[i].first == value) break;
         continue;  // The slot is taken by another value; probe the next one.
       }
-      map[i] = {value, identifier(e)};
+      map[i] = {value, std::meta::identifier_of(e)};
       break;
     }
   }
@@ -171,13 +163,13 @@ inline constexpr auto identifier_map = make_identifier_map<E>();
 
 // Returns the identifier of the first enumerator of E equal to value or an
 // empty string view if there is no such enumerator.
-template <typename E> constexpr auto identifier_of(E value) -> string_view {
+template <typename E> constexpr auto identifier_of(E value) -> std::string_view {
   constexpr size_t table_size = identifier_table_size<E>();
   if constexpr (table_size != 0) {
     // Values outside of the table wrap around and are rejected by the check.
     auto i = to_uint64(value) - to_uint64(min_enumerator<E>());
     return i < table_size ? identifier_table<E>[static_cast<size_t>(i)]
-                          : string_view();
+                          : std::string_view();
   } else {
     constexpr size_t map_size = identifier_map_size<E>();
     // A free slot terminates the search and its empty identifier is the result.

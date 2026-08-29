@@ -591,20 +591,19 @@ Enums without the annotation are not affected and are formatted as before, i.e.
 scoped enums require `format_as` or a `formatter` specialization, see
 [Formatting User-Defined Types](#udt).
 
-Identifiers are retrieved with C++26 reflection ([P2996](
-https://wg21.link/p2996)) and the annotation with [P3394](
-https://wg21.link/p3394), so this requires a compiler with reflection support,
+This uses two C++26 features:
+[reflection](https://en.cppreference.com/w/cpp/language/operator_reflection) to
+retrieve the enumerator identifiers and
+[annotations](https://en.cppreference.com/w/cpp/language/annotations) to opt an
+enum in via `fmt::as_identifiers`. It therefore requires a compiler with
+reflection support,
 which may need an extra flag such as `-freflection` in GCC. The macro
 `FMT_USE_REFLECTION` is set to 1 if reflection is available and to 0 otherwise.
-It can also be defined by the user to disable the use of reflection, in which
-case `fmt/enum.h` is empty.
+It can also be defined by the user to disable the use of reflection.
 
 When {fmt} is built as a module, reflection support is detected when the module
 itself is compiled, so this API is only available to importers if the module was
-built with reflection enabled. An importing translation unit may also have to
-include `<meta>` itself: some compilers, such as GCC 16, fail to look up
-implementation details of `std::define_static_string` when instantiating the
-formatter otherwise.
+built with reflection enabled.
 
 <a id="compile-api"></a>
 ## Compile-Time Support
