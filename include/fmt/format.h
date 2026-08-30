@@ -650,25 +650,179 @@ FMT_CONSTEXPR void for_each_codepoint(string_view s, F f) {
 }
 
 FMT_CONSTEXPR inline auto display_width_of(uint32_t cp) noexcept -> size_t {
-  return to_unsigned(
-      1 + (cp >= 0x1100 &&
-           (cp <= 0x115f ||  // Hangul Jamo init. consonants
-            cp == 0x2329 ||  // LEFT-POINTING ANGLE BRACKET
-            cp == 0x232a ||  // RIGHT-POINTING ANGLE BRACKET
-            // CJK ... Yi except IDEOGRAPHIC HALF FILL SPACE:
-            (cp >= 0x2e80 && cp <= 0xa4cf && cp != 0x303f) ||
-            (cp >= 0xac00 && cp <= 0xd7a3) ||    // Hangul Syllables
-            (cp >= 0xf900 && cp <= 0xfaff) ||    // CJK Compatibility Ideographs
-            (cp >= 0xfe10 && cp <= 0xfe19) ||    // Vertical Forms
-            (cp >= 0xfe30 && cp <= 0xfe6f) ||    // CJK Compatibility Forms
-            (cp >= 0xff00 && cp <= 0xff60) ||    // Fullwidth Forms
-            (cp >= 0xffe0 && cp <= 0xffe6) ||    // Fullwidth Forms
-            (cp >= 0x20000 && cp <= 0x2fffd) ||  // CJK
-            (cp >= 0x30000 && cp <= 0x3fffd) ||
-            // Miscellaneous Symbols and Pictographs + Emoticons:
-            (cp >= 0x1f300 && cp <= 0x1f64f) ||
-            // Supplemental Symbols and Pictographs:
-            (cp >= 0x1f900 && cp <= 0x1f9ff))));
+  if (cp < 0x1100) return 1;
+  struct wide_cp_range {
+    uint32_t first;
+    uint32_t last;
+  };
+  // Code points with display width 2, i.e. those with the Unicode
+  // East_Asian_Width property set to W(ide) or F(ullwidth)
+  // (https://www.unicode.org/reports/tr11/), sorted and merged.
+  constexpr wide_cp_range wide_cp_ranges[] = {
+      // Hangul Jamo
+      {0x1100, 0x115f},
+      // Miscellaneous Technical
+      {0x231a, 0x231b},
+      {0x2329, 0x232a},
+      {0x23e9, 0x23ec},
+      {0x23f0, 0x23f0},
+      {0x23f3, 0x23f3},
+      // Geometric Shapes
+      {0x25fd, 0x25fe},
+      // Miscellaneous Symbols
+      {0x2614, 0x2615},
+      {0x2630, 0x2637},
+      {0x2648, 0x2653},
+      {0x267f, 0x267f},
+      {0x268a, 0x268f},
+      {0x2693, 0x2693},
+      {0x26a1, 0x26a1},
+      {0x26aa, 0x26ab},
+      {0x26bd, 0x26be},
+      {0x26c4, 0x26c5},
+      {0x26ce, 0x26ce},
+      {0x26d4, 0x26d4},
+      {0x26ea, 0x26ea},
+      {0x26f2, 0x26f3},
+      {0x26f5, 0x26f5},
+      {0x26fa, 0x26fa},
+      {0x26fd, 0x26fd},
+      // Dingbats
+      {0x2705, 0x2705},
+      {0x270a, 0x270b},
+      {0x2728, 0x2728},
+      {0x274c, 0x274c},
+      {0x274e, 0x274e},
+      {0x2753, 0x2755},
+      {0x2757, 0x2757},
+      {0x2795, 0x2797},
+      {0x27b0, 0x27b0},
+      {0x27bf, 0x27bf},
+      // Miscellaneous Symbols and Arrows
+      {0x2b1b, 0x2b1c},
+      {0x2b50, 0x2b50},
+      {0x2b55, 0x2b55},
+      // CJK Radicals Supplement
+      {0x2e80, 0x2e99},
+      {0x2e9b, 0x2ef3},
+      // Kangxi Radicals
+      {0x2f00, 0x2fd5},
+      // Ideographic Description Characters .. CJK Symbols and Punctuation
+      {0x2ff0, 0x303e},
+      // Hiragana
+      {0x3041, 0x3096},
+      // Hiragana .. Katakana
+      {0x3099, 0x30ff},
+      // Bopomofo
+      {0x3105, 0x312f},
+      // Hangul Compatibility Jamo
+      {0x3131, 0x318e},
+      // Kanbun .. CJK Strokes
+      {0x3190, 0x31e5},
+      // CJK Strokes .. Enclosed CJK Letters and Months
+      {0x31ef, 0x321e},
+      // Enclosed CJK Letters and Months
+      {0x3220, 0x3247},
+      // Enclosed CJK Letters and Months .. Yi Syllables
+      {0x3250, 0xa48c},
+      // Yi Radicals
+      {0xa490, 0xa4c6},
+      // Hangul Jamo Extended-A
+      {0xa960, 0xa97c},
+      // Hangul Syllables
+      {0xac00, 0xd7a3},
+      // CJK Compatibility Ideographs
+      {0xf900, 0xfaff},
+      // Vertical Forms
+      {0xfe10, 0xfe19},
+      // CJK Compatibility Forms .. Small Form Variants
+      {0xfe30, 0xfe52},
+      // Small Form Variants
+      {0xfe54, 0xfe66},
+      {0xfe68, 0xfe6b},
+      // Halfwidth and Fullwidth Forms
+      {0xff01, 0xff60},
+      {0xffe0, 0xffe6},
+      // Ideographic Symbols and Punctuation
+      {0x16fe0, 0x16fe4},
+      {0x16ff0, 0x16ff1},
+      // Tangut
+      {0x17000, 0x187f7},
+      // Tangut Components .. Khitan Small Script
+      {0x18800, 0x18cd5},
+      // Khitan Small Script .. Tangut Supplement
+      {0x18cff, 0x18d08},
+      // Kana Extended-B
+      {0x1aff0, 0x1aff3},
+      {0x1aff5, 0x1affb},
+      {0x1affd, 0x1affe},
+      // Kana Supplement .. Kana Extended-A
+      {0x1b000, 0x1b122},
+      // Small Kana Extension
+      {0x1b132, 0x1b132},
+      {0x1b150, 0x1b152},
+      {0x1b155, 0x1b155},
+      {0x1b164, 0x1b167},
+      // Nushu
+      {0x1b170, 0x1b2fb},
+      // Tai Xuan Jing Symbols
+      {0x1d300, 0x1d356},
+      // Counting Rod Numerals
+      {0x1d360, 0x1d376},
+      // Mahjong Tiles
+      {0x1f004, 0x1f004},
+      // Playing Cards
+      {0x1f0cf, 0x1f0cf},
+      // Enclosed Alphanumeric Supplement
+      {0x1f18e, 0x1f18e},
+      {0x1f191, 0x1f19a},
+      // Enclosed Ideographic Supplement
+      {0x1f200, 0x1f202},
+      {0x1f210, 0x1f23b},
+      {0x1f240, 0x1f248},
+      {0x1f250, 0x1f251},
+      {0x1f260, 0x1f265},
+      // Miscellaneous Symbols and Pictographs .. Emoticons, treated as
+      // fully wide per [format.string.std] regardless of East_Asian_Width.
+      {0x1f300, 0x1f64f},
+      // Transport and Map Symbols
+      {0x1f680, 0x1f6c5},
+      {0x1f6cc, 0x1f6cc},
+      {0x1f6d0, 0x1f6d2},
+      {0x1f6d5, 0x1f6d7},
+      {0x1f6dc, 0x1f6df},
+      {0x1f6eb, 0x1f6ec},
+      {0x1f6f4, 0x1f6fc},
+      // Geometric Shapes Extended
+      {0x1f7e0, 0x1f7eb},
+      {0x1f7f0, 0x1f7f0},
+      // Supplemental Symbols and Pictographs, treated as fully wide per
+      // [format.string.std] regardless of East_Asian_Width.
+      {0x1f900, 0x1f9ff},
+      // Symbols and Pictographs Extended-A
+      {0x1fa70, 0x1fa7c},
+      {0x1fa80, 0x1fa89},
+      {0x1fa8f, 0x1fac6},
+      {0x1face, 0x1fadc},
+      {0x1fadf, 0x1fae9},
+      {0x1faf0, 0x1faf8},
+      // CJK Unified Ideographs Extension B (plane 2)
+      {0x20000, 0x2fffd},
+      // CJK Unified Ideographs Extension G (plane 3)
+      {0x30000, 0x3fffd},
+  };
+  size_t lo = 0;
+  size_t hi = sizeof(wide_cp_ranges) / sizeof(wide_cp_range);
+  while (lo < hi) {
+    size_t mid = lo + (hi - lo) / 2;
+    if (cp < wide_cp_ranges[mid].first)
+      hi = mid;
+    else if (cp > wide_cp_ranges[mid].last)
+      lo = mid + 1;
+    else
+      return 2;
+  }
+  return 1;
 }
 
 template <typename T> struct is_integral : std::is_integral<T> {};
