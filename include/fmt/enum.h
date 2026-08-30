@@ -163,7 +163,8 @@ inline constexpr auto identifier_map = make_identifier_map<E>();
 
 // Returns the identifier of the first enumerator of E equal to value or an
 // empty string view if there is no such enumerator.
-template <typename E> constexpr auto identifier_of(E value) -> std::string_view {
+template <typename E>
+constexpr auto identifier_of(E value) -> std::string_view {
   constexpr size_t table_size = identifier_table_size<E>();
   if constexpr (table_size != 0) {
     // Values outside of the table wrap around and are rejected by the check.
