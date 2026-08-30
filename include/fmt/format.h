@@ -4111,63 +4111,128 @@ template <typename T> struct formatter<group_digits_view<T>> : formatter<T> {
   }
 };
 
-template <typename T, typename Char> struct nested_view {
-  const formatter<T, Char>* fmt;
-  const T* value;
+namespace detail {
+
+template <typename OutputIt, typename Char, typename OuterContext>
+class nested_context {
+ private:
+  OutputIt out_;
+  const OuterContext& outer_;
+
+ public:
+  using char_type = Char;
+  using iterator = OutputIt;
+  enum { builtin_types = FMT_BUILTIN_TYPES };
+
+  constexpr nested_context(OutputIt out, const OuterContext& outer)
+      : out_(out), outer_(outer) {}
+
+  FMT_CONSTEXPR auto arg(int id) const -> decltype(outer_.arg(id)) {
+    return outer_.arg(id);
+  }
+  FMT_CONSTEXPR auto arg(basic_string_view<Char> name) const
+      -> decltype(outer_.arg(name)) {
+    return outer_.arg(name);
+  }
+  FMT_CONSTEXPR auto arg_id(basic_string_view<Char> name) const
+      -> decltype(outer_.arg_id(name)) {
+    return outer_.arg_id(name);
+  }
+  constexpr auto out() const -> iterator { return out_; }
+  FMT_CONSTEXPR void advance_to(iterator it) { out_ = it; }
+  constexpr auto locale() const -> locale_ref { return outer_.locale(); }
 };
 
+template <typename T, typename Char, typename OuterContext = void>
+struct nested_view {
+  const formatter<T, Char>* fmt;
+  const T* value;
+  const OuterContext* outer;
+};
+
+}  // namespace detail
+
 template <typename T, typename Char>
-struct formatter<nested_view<T, Char>, Char> {
+struct formatter<detail::nested_view<T, Char, void>, Char> {
   FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     return ctx.begin();
   }
   template <typename FormatContext>
-  auto format(nested_view<T, Char> view, FormatContext& ctx) const
+  auto format(detail::nested_view<T, Char, void> view, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     return view.fmt->format(*view.value, ctx);
   }
 };
 
+template <typename T, typename Char, typename OuterContext>
+struct formatter<detail::nested_view<T, Char, OuterContext>, Char> {
+  FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
+    return ctx.begin();
+  }
+  template <typename FormatContext>
+  auto format(detail::nested_view<T, Char, OuterContext> view,
+              FormatContext& ctx) const -> decltype(ctx.out()) {
+    static_assert(std::is_same<typename OuterContext::char_type, Char>::value,
+                  "");
+    using nested_context_type =
+        detail::nested_context<decltype(ctx.out()), Char, OuterContext>;
+    auto nested_ctx = nested_context_type(ctx.out(), *view.outer);
+    return view.fmt->format(*view.value, nested_ctx);
+  }
+};
+
 template <typename T, typename Char = char> struct nested_formatter {
  private:
-  basic_specs specs_;
-  int width_;
+  detail::dynamic_format_specs<Char> specs_;
   formatter<T, Char> formatter_;
 
  public:
-  constexpr nested_formatter() : width_(0) {}
+  constexpr nested_formatter() = default;
 
   FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     auto it = ctx.begin(), end = ctx.end();
     if (it == end) return it;
-    auto specs = format_specs();
+    auto specs = detail::dynamic_format_specs<Char>();
     it = detail::parse_align(it, end, specs);
-    specs_ = specs;
-    Char c = *it;
-    auto width_ref = detail::arg_ref<Char>();
-    if ((c >= '0' && c <= '9') || c == '{') {
-      it = detail::parse_width(it, end, specs, width_ref, ctx);
-      width_ = specs.width;
+    if (it == end) {
+      specs_ = specs;
+      return it;
     }
+    Char c = *it;
+    if ((c >= '0' && c <= '9') || c == '{') {
+      it = detail::parse_width(it, end, specs, specs.width_ref, ctx);
+    }
+    specs_ = specs;
     ctx.advance_to(it);
     return formatter_.parse(ctx);
   }
 
   template <typename FormatContext, typename F>
   auto write_padded(FormatContext& ctx, F write) const -> decltype(ctx.out()) {
-    if (width_ == 0) return write(ctx.out());
+    auto width = specs_.width;
+    if (specs_.dynamic_width() != arg_id_kind::none)
+      detail::handle_dynamic_spec(specs_.dynamic_width(), width,
+                                  specs_.width_ref, ctx);
+    if (width == 0) return write(ctx.out());
     auto buf = basic_memory_buffer<Char>();
     write(basic_appender<Char>(buf));
     auto specs = format_specs();
-    specs.width = width_;
+    specs.width = width;
     specs.copy_fill_from(specs_);
     specs.set_align(specs_.align());
     return detail::write<Char>(
         ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
   }
 
-  auto nested(const T& value) const -> nested_view<T, Char> {
-    return nested_view<T, Char>{&formatter_, &value};
+  auto nested(const T& value) const -> detail::nested_view<T, Char> {
+    return detail::nested_view<T, Char>{&formatter_, &value, nullptr};
+  }
+
+  template <typename FormatContext>
+  auto nested(const T& value, const FormatContext& ctx) const
+      -> detail::nested_view<T, Char, FormatContext> {
+    return detail::nested_view<T, Char, FormatContext>{&formatter_, &value,
+                                                       &ctx};
   }
 };
 

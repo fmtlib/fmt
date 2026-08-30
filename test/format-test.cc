@@ -2004,6 +2004,10 @@ struct point {
   double x, y;
 };
 
+struct dynamic_point {
+  double x, y;
+};
+
 FMT_BEGIN_NAMESPACE
 template <> struct formatter<point> : nested_formatter<double> {
   auto format(point p, format_context& ctx) const -> decltype(ctx.out()) {
@@ -2013,10 +2017,38 @@ template <> struct formatter<point> : nested_formatter<double> {
     });
   }
 };
+
+template <> struct formatter<dynamic_point> : nested_formatter<double> {
+  template <typename FormatContext>
+  auto format(dynamic_point p, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    return write_padded(ctx, [this, p, &ctx](auto out) -> decltype(out) {
+      return fmt::format_to(out, "({}, {})", this->nested(p.x, ctx),
+                            this->nested(p.y, ctx));
+    });
+  }
+};
 FMT_END_NAMESPACE
 
 TEST(format_test, nested_formatter) {
   EXPECT_EQ(fmt::format("{:>16.2f}", point{1, 2}), "    (1.00, 2.00)");
+  EXPECT_EQ(fmt::format("{:>16.2f}", dynamic_point{1, 2}),
+            "    (1.00, 2.00)");
+  EXPECT_EQ(fmt::format("{:.{}f}", dynamic_point{1, 2}, 2),
+            "(1.00, 2.00)");
+  EXPECT_EQ(fmt::format("{:>16.{}f}", dynamic_point{1, 2}, 2),
+            "    (1.00, 2.00)");
+  EXPECT_EQ(fmt::format("{:>{}f}", dynamic_point{1, 2}, 24),
+            "    (1.000000, 2.000000)");
+  EXPECT_EQ(fmt::format("{:.{prec}f}", dynamic_point{1, 2},
+                        fmt::arg("prec", 2)),
+            "(1.00, 2.00)");
+  EXPECT_EQ(fmt::format("{0:.{1}f}", dynamic_point{1, 2}, 2),
+            "(1.00, 2.00)");
+  auto output = std::string();
+  fmt::format_to(std::back_inserter(output), "{:.{}f}", dynamic_point{1, 2},
+                 2);
+  EXPECT_EQ("(1.00, 2.00)", output);
 }
 #endif  // __cpp_generic_lambdas
 

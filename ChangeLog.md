@@ -31,6 +31,10 @@
   out-of-range ones (https://github.com/fmtlib/fmt/issues/4839).
   Thanks @igoloe.
 
+- Fixed dynamic width and precision handling in nested formatters by
+  resolving nested format arguments against the enclosing format context
+  (https://github.com/fmtlib/fmt/issues/3860).
+
 - Fixed an `FMT_COMPILE` failure for user-defined types formatted via
   `format_as` (https://github.com/fmtlib/fmt/issues/4794,
   https://github.com/fmtlib/fmt/pull/4836).
