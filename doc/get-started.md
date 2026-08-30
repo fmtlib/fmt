@@ -8,10 +8,11 @@ with CMake, while the [Build Systems](#build-systems) section covers the rest.
 
 ## CMake
 
-{fmt} provides three CMake targets: `fmt::fmt` for the standard compiled library,
-`fmt::fmt-module` for the C++ module library and `fmt::fmt-header-only` for the
-header-only library. It is recommended to use the compiled library or the module 
-library for improved build times. 
+{fmt} provides CMake targets: `fmt::fmt` for the standard compiled library,
+`fmt::fmt-header-only` for the header-only library, and optionally
+`fmt::fmt-module` for the C++ module library when the `FMT_MODULE` option is
+enabled. It is recommended to use the compiled library or the module library for
+improved build times. 
 
 There are three primary ways to use {fmt} with CMake:
 
@@ -46,6 +47,29 @@ There are three primary ways to use {fmt} with CMake:
 In order to use the header-only target or the module target, simply substitute the
 `fmt::fmt` in the above steps with `fmt::fmt-header-only` or `fmt::fmt-module` 
 accordingly.
+
+### Using the C++20 Module
+
+The `fmt::fmt-module` target is only available when the `FMT_MODULE` CMake
+option is enabled. Enable it by passing `-DFMT_MODULE=ON` when configuring your
+project before adding {fmt}, or set `CMAKE_CXX_STANDARD` to at least 20 before
+adding {fmt} which will enable module support automatically when supported by
+the toolchain.
+
+Link your target to `fmt::fmt-module` and import `fmt` instead of including a
+{fmt} header:
+
+    target_link_libraries(<your-target> PRIVATE fmt::fmt-module)
+
+    import fmt;
+
+    int main() {
+      fmt::print("Hello, world!\n");
+    }
+
+When using CMake's native C++ module support, you need CMake 3.28 or newer,
+Ninja 1.11 or newer (with the Ninja generator), and GCC 15 or newer (with GCC).
+{fmt} also provides a fallback build path for other toolchains.
 
 ## Installation
 
