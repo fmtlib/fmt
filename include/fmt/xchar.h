@@ -53,6 +53,7 @@ inline auto write_loc(basic_appender<wchar_t> out, loc_value value,
   if (!grouping.empty()) separator = std::wstring(1, numpunct.thousands_sep());
   return value.visit(loc_writer<wchar_t>{out, specs, separator, grouping, {}});
 #endif
+  ignore_unused(out, value, specs, loc);
   return false;
 }
 
