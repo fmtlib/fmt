@@ -254,7 +254,7 @@ library](https://fmt.dev/latest/get-started/#building-from-source) for
 instructions on how to build the library and run the unit tests.
 
 Benchmarks reside in a separate repository,
-[format-benchmarks](https://github.com/fmtlib/format-benchmark), so to
+[format-benchmark](https://github.com/fmtlib/format-benchmark), so to
 run the benchmarks you first need to clone this repository and generate
 Makefiles with CMake:
 
