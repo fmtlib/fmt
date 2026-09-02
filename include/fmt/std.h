@@ -371,24 +371,13 @@ class path : public std::filesystem::path {
 template <size_t N, typename Char>
 struct formatter<std::bitset<N>, Char>
     : nested_formatter<basic_string_view<Char>, Char> {
- private:
-  // This is a functor because C++11 doesn't support generic lambdas.
-  struct writer {
-    const std::bitset<N>& bs;
-
-    template <typename OutputIt>
-    FMT_CONSTEXPR auto operator()(OutputIt out) -> OutputIt {
-      for (auto pos = N; pos > 0; --pos)
-        out = detail::write<Char>(out, bs[pos - 1] ? Char('1') : Char('0'));
-      return out;
-    }
-  };
-
  public:
   template <typename FormatContext>
   auto format(const std::bitset<N>& bs, FormatContext& ctx) const
       -> decltype(ctx.out()) {
-    return this->write_padded(ctx, writer{bs});
+    auto str = bs.template to_string<Char>();
+    auto view = basic_string_view<Char>(str);
+    return this->write(ctx, this->nested(view));
   }
 };
 

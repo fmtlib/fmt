@@ -2066,7 +2066,6 @@ TEST(format_test, group_digits_view) {
   EXPECT_EQ(fmt::format("{:8}", fmt::group_digits(-100)), "    -100");
 }
 
-#ifdef __cpp_generic_lambdas
 struct point {
   double x, y;
 };
@@ -2074,18 +2073,19 @@ struct point {
 FMT_BEGIN_NAMESPACE
 template <> struct formatter<point> : nested_formatter<double> {
   auto format(point p, format_context& ctx) const -> decltype(ctx.out()) {
-    return write_padded(ctx, [this, p](auto out) -> decltype(out) {
-      return fmt::format_to(out, "({}, {})", this->nested(p.x),
-                            this->nested(p.y));
-    });
+    return write(ctx, "(", nested(p.x), ", ", nested(p.y), ")");
   }
 };
 FMT_END_NAMESPACE
 
 TEST(format_test, nested_formatter) {
   EXPECT_EQ(fmt::format("{:>16.2f}", point{1, 2}), "    (1.00, 2.00)");
+  EXPECT_EQ(fmt::format("{:.{}f}", point{1.234, 5.678}, 2), "(1.23, 5.68)");
+  EXPECT_EQ(fmt::format("{:>20.{}f}", point{1.234, 5.678}, 2),
+            "        (1.23, 5.68)");
+  EXPECT_EQ(fmt::format("{:.{}f}", point{1.2344, 67.8901}, 3),
+            "(1.234, 67.890)");
 }
-#endif  // __cpp_generic_lambdas
 
 enum test_enum { foo, bar };
 auto format_as(test_enum e) -> int { return e; }
