@@ -2083,6 +2083,7 @@ TEST(format_test, nested_formatter) {
   EXPECT_EQ(fmt::format("{:.{}f}", point{1.234, 5.678}, 2), "(1.23, 5.68)");
   EXPECT_EQ(fmt::format("{:>20.{}f}", point{1.234, 5.678}, 2),
             "        (1.23, 5.68)");
+  EXPECT_EQ(fmt::format("{:>{}.2f}", point{1, 2}, 20), "        (1.00, 2.00)");
   EXPECT_EQ(fmt::format("{:.{}f}", point{1.2344, 67.8901}, 3),
             "(1.234, 67.890)");
 }
