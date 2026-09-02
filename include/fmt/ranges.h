@@ -297,6 +297,37 @@ template <typename T, typename C> struct is_tuple_formattable {
   static constexpr bool value = detail::is_tuple_formattable_<T, C>::value;
 };
 
+namespace detail {
+
+// The fill, alignment and width that a range, tuple or map format spec may
+// begin with. They apply to the composed output rather than to the elements.
+template <typename Char> struct composed_specs {
+  format_specs specs;
+  arg_ref<Char> width_ref;
+
+  FMT_CONSTEXPR auto parse(const Char* it, const Char* end,
+                           parse_context<Char>& ctx) -> const Char* {
+    // A leading ':' introduces the underlying spec, so it is never a fill.
+    if (it == end || *it == '}' || *it == ':') return it;
+    it = parse_align(it, end, specs);
+    if (it == end) return it;
+    Char c = *it;
+    if ((c >= '0' && c <= '9') || c == '{')
+      it = parse_width(it, end, specs, width_ref, ctx);
+    return it;
+  }
+
+  // Resolves a dynamic width. A width of 0 means no padding is needed.
+  template <typename FormatContext>
+  FMT_CONSTEXPR auto resolve(FormatContext& ctx) const -> format_specs {
+    auto s = specs;
+    handle_dynamic_spec(s.dynamic_width(), s.width, width_ref, ctx);
+    return s;
+  }
+};
+
+}  // namespace detail
+
 template <typename Tuple, typename Char>
 struct formatter<Tuple, Char,
                  enable_if_t<fmt::is_tuple_like<Tuple>::value &&
@@ -310,6 +341,17 @@ struct formatter<Tuple, Char,
       detail::string_literal<Char, '('>{};
   basic_string_view<Char> closing_bracket_ =
       detail::string_literal<Char, ')'>{};
+  detail::composed_specs<Char> composed_;
+
+  template <typename FormatContext>
+  auto write_body(const Tuple& value, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    ctx.advance_to(detail::copy<Char>(opening_bracket_, ctx.out()));
+    detail::for_each2(
+        formatters_, value,
+        detail::format_tuple_element<FormatContext>{0, ctx, separator_});
+    return detail::copy<Char>(closing_bracket_, ctx.out());
+  }
 
  public:
   FMT_CONSTEXPR formatter() {}
@@ -327,6 +369,7 @@ struct formatter<Tuple, Char,
   FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     auto it = ctx.begin();
     auto end = ctx.end();
+    it = composed_.parse(it, end, ctx);
     if (it != end && detail::to_ascii(*it) == 'n') {
       ++it;
       set_brackets({}, {});
@@ -341,11 +384,14 @@ struct formatter<Tuple, Char,
   template <typename FormatContext>
   auto format(const Tuple& value, FormatContext& ctx) const
       -> decltype(ctx.out()) {
-    ctx.advance_to(detail::copy<Char>(opening_bracket_, ctx.out()));
-    detail::for_each2(
-        formatters_, value,
-        detail::format_tuple_element<FormatContext>{0, ctx, separator_});
-    return detail::copy<Char>(closing_bracket_, ctx.out());
+    auto specs = composed_.resolve(ctx);
+    if (specs.width == 0) return write_body(value, ctx);
+    auto buf = basic_memory_buffer<Char>();
+    auto nested_ctx =
+        FormatContext(basic_appender<Char>(buf), ctx.args(), ctx.locale());
+    write_body(value, nested_ctx);
+    return detail::write<Char>(
+        ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
   }
 };
 
@@ -393,6 +439,7 @@ struct range_formatter<
   basic_string_view<Char> closing_bracket_ =
       detail::string_literal<Char, ']'>{};
   bool is_debug = false;
+  detail::composed_specs<Char> composed_;
 
   template <typename Output, typename It, typename Sentinel, typename U = T,
             FMT_ENABLE_IF(std::is_same<U, Char>::value)>
@@ -434,6 +481,12 @@ struct range_formatter<
     detail::maybe_set_debug_format(underlying_, true);
     if (it == end) return underlying_.parse(ctx);
 
+    it = composed_.parse(it, end, ctx);
+    if (it == end) {
+      ctx.advance_to(it);
+      return underlying_.parse(ctx);
+    }
+
     switch (detail::to_ascii(*it)) {
     case 'n':
       set_brackets({}, {});
@@ -470,6 +523,19 @@ struct range_formatter<
 
   template <typename R, typename FormatContext>
   FMT_CONSTEXPR auto format(R&& range, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    auto specs = composed_.resolve(ctx);
+    if (specs.width == 0) return write_body(range, ctx);
+    auto buf = basic_memory_buffer<Char>();
+    auto nested_ctx =
+        FormatContext(basic_appender<Char>(buf), ctx.args(), ctx.locale());
+    write_body(range, nested_ctx);
+    return detail::write<Char>(
+        ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
+  }
+
+  template <typename R, typename FormatContext>
+  FMT_CONSTEXPR auto write_body(R&& range, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     auto out = ctx.out();
     auto it = detail::range_begin(range);
@@ -546,6 +612,7 @@ struct formatter<
   decltype(detail::tuple::get_formatters<element_type, Char>(
       detail::tuple_index_sequence<element_type>())) formatters_;
   bool no_delimiters_ = false;
+  detail::composed_specs<Char> composed_;
 
  public:
   FMT_CONSTEXPR formatter() {}
@@ -554,7 +621,8 @@ struct formatter<
     auto it = ctx.begin();
     auto end = ctx.end();
     if (it != end) {
-      if (detail::to_ascii(*it) == 'n') {
+      it = composed_.parse(it, end, ctx);
+      if (it != end && detail::to_ascii(*it) == 'n') {
         no_delimiters_ = true;
         ++it;
       }
@@ -570,6 +638,19 @@ struct formatter<
 
   template <typename FormatContext>
   auto format(map_type& map, FormatContext& ctx) const -> decltype(ctx.out()) {
+    auto specs = composed_.resolve(ctx);
+    if (specs.width == 0) return write_body(map, ctx);
+    auto buf = basic_memory_buffer<Char>();
+    auto nested_ctx =
+        FormatContext(basic_appender<Char>(buf), ctx.args(), ctx.locale());
+    write_body(map, nested_ctx);
+    return detail::write<Char>(
+        ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
+  }
+
+  template <typename FormatContext>
+  auto write_body(map_type& map, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
     auto out = ctx.out();
     basic_string_view<Char> open = detail::string_literal<Char, '{'>{};
     if (!no_delimiters_) out = detail::copy<Char>(open, out);

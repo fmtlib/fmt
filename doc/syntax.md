@@ -626,8 +626,14 @@ fmt::print("{:%Y-%m-%d %H:%M:%S}", t);
 The format specification for range types has the following syntax:
 
 <pre><code class="language-json"
->range_format_spec ::= ["n"][range_type][":" range_underlying_spec]</code>
+>range_format_spec ::= [[fill]align][width]["n"][range_type][":" range_underlying_spec]</code>
 </pre>
+
+The `fill`, `align` and `width` options have the same meaning as in the
+[standard format specification](#format-specification-mini-language), except
+that `:` cannot be used as a fill character because it introduces the
+underlying element specification. They apply to the whole formatted range
+rather than to its elements.
 
 The `'n'` option formats the range without the opening and closing brackets.
 
