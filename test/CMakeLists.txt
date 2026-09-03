@@ -134,6 +134,8 @@ if (FMT_PEDANTIC)
                              PRIVATE ${PROJECT_SOURCE_DIR}/include)
   target_compile_definitions(nolocale-test
                              PRIVATE FMT_STATIC_THOUSANDS_SEPARATOR=1)
+  target_compile_options(nolocale-test
+                         PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/utf-8>)
 endif ()
 
 # These tests are disabled on Windows because they take too long.
