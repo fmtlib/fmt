@@ -29,6 +29,8 @@ fmt](https://stackoverflow.com/questions/tagged/fmt).
 
 Try {fmt} in [Compiler Explorer](https://godbolt.org/z/8Mx1EW73v).
 
+[![Live demo by Demoshell](https://build.demoshell.com/v1/embed/badge.svg)](https://build.demoshell.com/launch?snapshot=demoshell%2Ftools%3Afmt)
+
 # Features
 
 - Simple [format API](https://fmt.dev/latest/api/) with positional
