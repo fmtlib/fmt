@@ -1007,6 +1007,9 @@ TEST(format_test, width) {
 TEST(format_test, debug_presentation) {
   EXPECT_EQ(fmt::format("{:?}", ""), R"("")");
 
+  EXPECT_EQ(fmt::format("{:1?}", ""), R"("")");
+  EXPECT_EQ(fmt::format("{:6?}", 'a'), "'a'   ");
+
   EXPECT_EQ(fmt::format("{:*<5.0?}", "\n"), R"(*****)");
   EXPECT_EQ(fmt::format("{:*<5.1?}", "\n"), R"("****)");
   EXPECT_EQ(fmt::format("{:*<5.2?}", "\n"), R"("\***)");

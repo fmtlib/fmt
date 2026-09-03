@@ -2061,11 +2061,19 @@ template <typename Char, typename OutputIt>
 FMT_CONSTEXPR auto write_char(OutputIt out, Char value,
                               const format_specs& specs) -> OutputIt {
   bool is_debug = specs.type() == presentation_type::debug;
-  return write_padded<Char>(out, specs, 1, [=](reserve_iterator<OutputIt> it) {
-    if (is_debug) return write_escaped_char(it, value);
-    *it++ = value;
-    return it;
-  });
+
+  const int max_buffer_size = 12;
+  Char buf[max_buffer_size];
+  auto* begin = buf;
+  auto* end = (is_debug) ? write_escaped_char(begin, value) : begin;
+  size_t size = (is_debug) ? to_unsigned(end - begin) : 1;
+
+  return write_padded<Char>(out, specs, size,
+                            [=](reserve_iterator<OutputIt> it) {
+                              if (is_debug) return copy<Char>(begin, end, it);
+                              *it++ = value;
+                              return it;
+                            });
 }
 
 template <typename Char> class digit_grouping {
@@ -2422,6 +2430,11 @@ FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
 
     return false;
   });
+
+  if (is_debug && s.size() == 0 && specs.precision != 0 && display_width < display_width_limit) {
+    ++display_width;
+    ++size;
+  }
 
   struct bounded_output_iterator {
     reserve_iterator<OutputIt> underlying_iterator;

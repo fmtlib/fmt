@@ -299,6 +299,15 @@ TEST(xchar_test, escape_string) {
 
 TEST(xchar_test, to_wstring) { EXPECT_EQ(L"42", fmt::to_wstring(42)); }
 
+TEST(xchar_test, astral_codepoint_width) {
+  // U+E0001 (LANGUAGE TAG) is non-printable, so it takes the \Uxxxxxxxx
+  // escape path: quote + '\' + 'U' + 8 hex digits + quote = 12 code units,
+  char32_t cp = 0xE0001;
+  EXPECT_EQ(fmt::format(U"{:11?}", cp).size(), 12u);  // width < size: no pad
+  EXPECT_EQ(fmt::format(U"{:12?}", cp).size(), 12u);  // width == size: exact
+  EXPECT_EQ(fmt::format(U"{:13?}", cp).size(), 13u);  // width > size: 1 pad
+}
+
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
 
 template <typename Char> struct numpunct : std::numpunct<Char> {
