@@ -182,8 +182,8 @@ Output on a modern terminal with Unicode support:
 
 # Performance
 
-{fmt} can be tens of percent to 20–30 times faster than iostreams and
-`sprintf`, especially for numeric formatting. It minimizes dynamic memory
+{fmt} can be tens of percent to 20–30 times faster than `sprintf` and
+iostreams, especially for numeric formatting. It minimizes dynamic memory
 allocations and can optionally [compile format strings](
 https://fmt.dev/latest/api/#compile-api) into efficient formatting code.
 
