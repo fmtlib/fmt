@@ -649,16 +649,16 @@ FMT_CONSTEXPR void for_each_codepoint(string_view s, F f) {
   } while (buf_ptr < buf + num_chars_left);
 }
 
-FMT_CONSTEXPR inline auto display_width_of(uint32_t cp) noexcept -> size_t {
-  if (cp < 0x1100) return 1;
-  struct wide_cp_range {
-    uint32_t first;
-    uint32_t last;
-  };
-  // Code points with display width 2, i.e. those with the Unicode
-  // East_Asian_Width property set to W(ide) or F(ullwidth)
-  // (https://www.unicode.org/reports/tr11/), sorted and merged.
-  constexpr wide_cp_range wide_cp_ranges[] = {
+struct wide_cp_range {
+  uint32_t first;
+  uint32_t last;
+};
+
+// Code points with display width 2, i.e. those with the Unicode 16.0.0
+// East_Asian_Width property set to W(ide) or F(ullwidth)
+// (https://www.unicode.org/reports/tr11/), sorted and merged.
+template <typename = void> struct wide_cp_data {
+  static constexpr wide_cp_range ranges[] = {
       // Hangul Jamo
       {0x1100, 0x115f},
       // Miscellaneous Technical
@@ -811,13 +811,21 @@ FMT_CONSTEXPR inline auto display_width_of(uint32_t cp) noexcept -> size_t {
       // CJK Unified Ideographs Extension G (plane 3)
       {0x30000, 0x3fffd},
   };
+};
+
+#if FMT_CPLUSPLUS < 201703L
+template <typename T> constexpr wide_cp_range wide_cp_data<T>::ranges[];
+#endif
+
+FMT_CONSTEXPR inline auto display_width_of(uint32_t cp) noexcept -> size_t {
+  if (cp < 0x1100) return 1;
   size_t lo = 0;
-  size_t hi = sizeof(wide_cp_ranges) / sizeof(wide_cp_range);
+  size_t hi = sizeof(wide_cp_data<>::ranges) / sizeof(wide_cp_range);
   while (lo < hi) {
     size_t mid = lo + (hi - lo) / 2;
-    if (cp < wide_cp_ranges[mid].first)
+    if (cp < wide_cp_data<>::ranges[mid].first)
       hi = mid;
-    else if (cp > wide_cp_ranges[mid].last)
+    else if (cp > wide_cp_data<>::ranges[mid].last)
       lo = mid + 1;
     else
       return 2;
