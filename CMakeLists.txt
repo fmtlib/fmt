@@ -395,12 +395,13 @@ function (add_module_library name)
   if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(pcms)
     foreach (src ${sources})
-      get_filename_component(pcm ${src} NAME_WE)
-      set(pcm ${pcm}.pcm)
+      get_filename_component(module_name ${src} NAME_WE)
+      set(pcm ${module_name}.pcm)
 
-      # Propagate -fmodule-file=*.pcm to targets that link with this library.
+      # Propagate the module BMI to targets that link with this library.
       target_compile_options(
-        ${name} PUBLIC -fmodule-file=${CMAKE_CURRENT_BINARY_DIR}/${pcm})
+        ${name} PUBLIC
+        -fmodule-file=${module_name}=${CMAKE_CURRENT_BINARY_DIR}/${pcm})
 
       # Use an absolute path to prevent target_link_libraries prepending -l
       # to it.
