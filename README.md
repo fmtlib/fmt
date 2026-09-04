@@ -215,39 +215,42 @@ and [ryu](https://github.com/ulfjack/ryu):
 The script [bloat-test.py][test] from [format-benchmark][bench] tests compile
 time and code bloat for nontrivial projects. It generates 100 translation units
 and uses `printf()` or its alternative five times in each to simulate a
-medium-sized project. The resulting executable size and compile time (Apple
-clang version 15.0.0 (clang-1500.1.0.2.5), macOS Sonoma, best of three) is shown
-in the following tables.
+medium-sized project. The resulting executable size and compile time on an
+Apple M5 Max running macOS 26.6.2 with Apple Clang 21.0.0
+(clang-2100.1.1.101), taking the best of three runs, are shown in the following
+tables.
 
 [test]: https://github.com/fmtlib/format-benchmark/blob/master/bloat-test.py
 [bench]: https://github.com/fmtlib/format-benchmark
 
 **Optimized build (-O3)**
 
-| Method          | Compile Time, s | Executable size, KiB | Stripped size, KiB |
-|-----------------|-----------------|----------------------|--------------------|
-| printf          |             1.6 |                   54 |                 50 |
-| IOStreams       |            28.4 |                   98 |                 84 |
-| {fmt} `1122268` |             5.0 |                   54 |                 50 |
-| tinyformat      |            32.6 |                  164 |                136 |
-| Boost Format    |            55.0 |                  530 |                317 |
+| Method            | Compile Time, s | Executable size, KiB | Stripped size, KiB |
+|-------------------|-----------------|----------------------|--------------------|
+| printf            |             1.2 |                   54 |                 50 |
+| IOStreams         |            21.8 |                   98 |                 84 |
+| {fmt} 12.2        |             4.2 |                   54 |                 50 |
+| tinyformat        |            25.5 |                  164 |                136 |
+| Boost Format 1.88 |            43.4 |                  550 |                333 |
+| stb_sprintf       |             1.4 |                   87 |                 83 |
 
 {fmt} is fast to compile and is comparable to `printf` in terms of per-call
 binary size (within a rounding error on this system).
 
 **Non-optimized build**
 
-| Method          | Compile Time, s | Executable size, KiB | Stripped size, KiB |
-|-----------------|-----------------|----------------------|--------------------|
-| printf          |             1.4 |                   54 |                 50 |
-| IOStreams       |            27.0 |                   88 |                 68 |
-| {fmt} `1122268` |             4.7 |                   87 |                 84 |
-| tinyformat      |            28.1 |                  185 |                145 |
-| Boost Format    |            38.9 |                  678 |                381 |
+| Method            | Compile Time, s | Executable size, KiB | Stripped size, KiB |
+|-------------------|-----------------|----------------------|--------------------|
+| printf            |             1.1 |                   54 |                 50 |
+| IOStreams         |            20.7 |                   88 |                 68 |
+| {fmt} 12.2        |             4.0 |                   87 |                 84 |
+| tinyformat        |            21.8 |                  188 |                145 |
+| Boost Format 1.88 |            30.0 |                  749 |                430 |
+| stb_sprintf       |             1.2 |                  103 |                 99 |
 
-`libc`, `lib(std)c++`, and `libfmt` are all linked as shared libraries
-to compare formatting function overhead only. Boost Format is a
-header-only library so it doesn\'t provide any linkage options.
+`libc`, `libc++`, and `libfmt` were linked as shared libraries to compare
+formatting function overhead only. tinyformat, Boost Format, and stb_sprintf
+are header-only libraries.
 
 # Projects using {fmt}
 
