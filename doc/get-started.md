@@ -120,6 +120,14 @@ You can download and install {fmt} using the [Conan](https://conan.io/) package 
 If the version is out of date or the package does not work,
 please create an issue or pull request on the Conan Center Index repository. -->
 
+## Migrating from `printf`
+
+[clang-tidy](https://clang.llvm.org/extra/clang-tidy/) v18 provides the
+[modernize-use-std-print](https://clang.llvm.org/extra/clang-tidy/checks/modernize/use-std-print.html)
+check that is capable of converting occurrences of `printf` and
+`fprintf` to `fmt::print` if configured to do so. (By default it
+converts to `std::print`.)
+
 ## Building from Source
 
 CMake works by generating native makefiles or project files that can be

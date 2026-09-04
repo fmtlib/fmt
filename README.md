@@ -247,14 +247,6 @@ binary size (within a rounding error on this system).
 to compare formatting function overhead only. Boost Format is a
 header-only library so it doesn\'t provide any linkage options.
 
-# Migrating code
-
-[clang-tidy](https://clang.llvm.org/extra/clang-tidy/) v18 provides the
-[modernize-use-std-print](https://clang.llvm.org/extra/clang-tidy/checks/modernize/use-std-print.html)
-check that is capable of converting occurrences of `printf` and
-`fprintf` to `fmt::print` if configured to do so. (By default it
-converts to `std::print`.)
-
 # Projects using {fmt}
 
 Notable users include:
