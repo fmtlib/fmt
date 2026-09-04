@@ -341,6 +341,23 @@ TEST(std_test, error_code) {
             "system:-42");
   auto ec = std::make_error_code(std::errc::value_too_large);
   EXPECT_EQ(fmt::format("{:s}", ec), ec.message());
+  // On Windows, ec.message() may contain bytes invalid in UTF-8 (system code
+  // page). The formatter must sanitize these to U+FFFD instead of crashing.
+  // Verify the sanitize helper directly with non-UTF-8 input.
+  {
+    std::string bad_input = "ok";
+    bad_input.push_back(char(0xff));
+    bad_input.push_back(char(0xfe));
+    bad_input.append("bad");
+    fmt::memory_buffer buf;
+    fmt::detail::append_utf8_sanitized(buf, bad_input);
+    std::string result(buf.data(), buf.size());
+    std::string expected = "ok";
+    expected.append({char(0xEF), char(0xBF), char(0xBD)});
+    expected.append({char(0xEF), char(0xBF), char(0xBD)});
+    expected.append("bad");
+    EXPECT_EQ(result, expected);
+  }
   EXPECT_EQ(fmt::format("{:?}", std::error_code(42, generic)),
             "\"generic:42\"");
   EXPECT_EQ(fmt::format("{}",

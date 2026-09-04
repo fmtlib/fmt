@@ -290,6 +290,63 @@ struct has_format_as_member<
     T, void_t<decltype(formatter<T>::format_as(std::declval<const T&>()))>>
     : std::true_type {};
 
+// On Windows, std::error_code::message() may return a string in a system
+// code page (e.g. CP-1252) that contains bytes invalid in UTF-8. This helper
+// validates the input as UTF-8 and replaces any invalid byte sequences with
+// U+FFFD (the Unicode replacement character), preventing encoding errors
+// during formatting. See https://github.com/fmtlib/fmt/issues/4436.
+inline void append_utf8_sanitized(basic_memory_buffer<char>& buf,
+                                   const std::string& input) {
+  const unsigned char* p =
+      reinterpret_cast<const unsigned char*>(input.data());
+  const unsigned char* end = p + input.size();
+  const char* repl = "\xEF\xBF\xBD";
+  while (p < end) {
+    unsigned char b0 = *p;
+    // Decode UTF-8 sequence length from leading byte
+    int len;
+    if (b0 < 0x80) {
+      len = 1;
+    } else if ((b0 & 0xE0) == 0xC0) {
+      len = 2;
+    } else if ((b0 & 0xF0) == 0xE0) {
+      len = 3;
+    } else if ((b0 & 0xF8) == 0xF0) {
+      len = 4;
+    } else {
+      // Invalid leading byte — emit replacement and advance 1
+      buf.append(repl, repl + 3);
+      ++p;
+      continue;
+    }
+    // Check we have enough continuation bytes
+    if (p + len > end) {
+      // Truncated sequence — emit replacement for each remaining byte
+      while (p < end) {
+        buf.append(repl, repl + 3);
+        ++p;
+      }
+      break;
+    }
+    // Validate continuation bytes (10xxxxxx)
+    bool valid = true;
+    for (int i = 1; i < len; ++i) {
+      if ((p[i] & 0xC0) != 0x80) {
+        valid = false;
+        break;
+      }
+    }
+    if (!valid) {
+      buf.append(repl, repl + 3);
+      ++p;
+      continue;
+    }
+    // Valid UTF-8 sequence — copy it
+    buf.append(reinterpret_cast<const char*>(p), reinterpret_cast<const char*>(p + len));
+    p += len;
+  }
+}
+
 }  // namespace detail
 
 template <typename T, typename Deleter>
@@ -573,7 +630,7 @@ template <> struct formatter<std::error_code> {
                                 ctx);
     auto buf = memory_buffer();
     if (specs_.type() == presentation_type::string) {
-      buf.append(ec.message());
+      detail::append_utf8_sanitized(buf, ec.message());
     } else {
       buf.append(string_view(ec.category().name()));
       buf.push_back(':');
