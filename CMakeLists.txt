@@ -78,13 +78,19 @@ if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.28 AND CMAKE_CXX_STANDARD
   endif ()
 endif ()
 
+set(FMT_USE_MODULES ${FMT_USE_CMAKE_MODULES})
+if (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND
+    CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 21)
+  set(FMT_USE_MODULES ON)
+endif ()
+
 option(FMT_DOC "Generate the doc target." ${FMT_MASTER_PROJECT})
 option(FMT_INSTALL "Generate the install target." ${FMT_MASTER_PROJECT})
 option(FMT_TEST "Generate the test target." ${FMT_MASTER_PROJECT})
 option(FMT_FUZZ "Generate the fuzz target." OFF)
 option(FMT_CUDA_TEST "Generate the cuda-test target." OFF)
 option(FMT_OS "Include OS-specific APIs." ON)
-option(FMT_MODULE "Build a module library." ${FMT_USE_CMAKE_MODULES})
+option(FMT_MODULE "Build a module library." ${FMT_USE_MODULES})
 option(FMT_SYSTEM_HEADERS "Expose headers with marking them as system." OFF)
 option(FMT_UNICODE "Enable Unicode support." ON)
 option(FMT_PEDANTIC "Enable extra warnings and expensive tests." OFF)
@@ -383,6 +389,9 @@ function (add_module_library name)
 
   # The standard and extension mode are affected by CMake options.
   get_target_property(std ${name} CXX_STANDARD)
+  if (NOT std OR std LESS 20)
+    set(std 20)
+  endif ()
   get_target_property(extensions ${name} CXX_EXTENSIONS)
   if (extensions STREQUAL "extensions-NOTFOUND")
     set(extensions ON)
