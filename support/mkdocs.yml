@@ -29,6 +29,8 @@ extra_javascript:
 extra_css:
   - https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/styles/default.min.css
   - fmt.css
+  - dark.css
+
 
 markdown_extensions:
   - pymdownx.highlight:

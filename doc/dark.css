@@ -1,0 +1,79 @@
+/* DARK MODE SETTINGS */
+
+[data-md-color-scheme="slate"] .hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 0.5em;
+  color: #abb2bf;
+  background: #282c34;
+}
+
+[data-md-color-scheme="slate"] .hljs-comment,
+[data-md-color-scheme="slate"] .hljs-quote {
+  color: #5c6370;
+  font-style: italic;
+}
+
+[data-md-color-scheme="slate"] .hljs-doctag,
+[data-md-color-scheme="slate"] .hljs-keyword,
+[data-md-color-scheme="slate"] .hljs-formula {
+  color: #c678dd;
+}
+
+[data-md-color-scheme="slate"] .hljs-section,
+[data-md-color-scheme="slate"] .hljs-name,
+[data-md-color-scheme="slate"] .hljs-selector-tag,
+[data-md-color-scheme="slate"] .hljs-deletion,
+[data-md-color-scheme="slate"] .hljs-subst {
+  color: #e06c75;
+}
+
+[data-md-color-scheme="slate"] .hljs-literal {
+  color: #56b6c2;
+}
+
+[data-md-color-scheme="slate"] .hljs-string,
+[data-md-color-scheme="slate"] .hljs-regexp,
+[data-md-color-scheme="slate"] .hljs-addition,
+[data-md-color-scheme="slate"] .hljs-attribute,
+[data-md-color-scheme="slate"] .hljs-meta-string {
+  color: #98c379;
+}
+
+[data-md-color-scheme="slate"] .hljs-built_in,
+[data-md-color-scheme="slate"] .hljs-class .hljs-title {
+  color: #e6c07b;
+}
+
+[data-md-color-scheme="slate"] .hljs-attr,
+[data-md-color-scheme="slate"] .hljs-variable,
+[data-md-color-scheme="slate"] .hljs-template-variable,
+[data-md-color-scheme="slate"] .hljs-type,
+[data-md-color-scheme="slate"] .hljs-selector-class,
+[data-md-color-scheme="slate"] .hljs-selector-attr,
+[data-md-color-scheme="slate"] .hljs-selector-pseudo,
+[data-md-color-scheme="slate"] .hljs-number {
+  color: #d19a66;
+}
+
+[data-md-color-scheme="slate"] .hljs-symbol,
+[data-md-color-scheme="slate"] .hljs-bullet,
+[data-md-color-scheme="slate"] .hljs-link,
+[data-md-color-scheme="slate"] .hljs-meta,
+[data-md-color-scheme="slate"] .hljs-selector-id,
+[data-md-color-scheme="slate"] .hljs-title {
+  color: #61aeee;
+}
+
+[data-md-color-scheme="slate"] .hljs-emphasis {
+  font-style: italic;
+}
+
+[data-md-color-scheme="slate"] .hljs-strong {
+  font-weight: bold;
+}
+
+[data-md-color-scheme="slate"] .hljs-link {
+  text-decoration: underline;
+}
+
