@@ -365,8 +365,32 @@ function (add_module_library name)
     target_compile_options(${name} PUBLIC -fmodules-ts)
   endif ()
 
-  # `std` is affected by CMake options and may be higher than C++20.
+  set(module_compile_options)
+  if (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+    # AppleClang requires explicit module and SDK flags when precompiling.
+    execute_process(
+      COMMAND xcrun --sdk "${CMAKE_OSX_SYSROOT}" --show-sdk-path
+      RESULT_VARIABLE module_sdk_result
+      OUTPUT_VARIABLE module_sysroot
+      ERROR_VARIABLE module_sdk_error
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    if (NOT module_sdk_result EQUAL 0 OR NOT module_sysroot)
+      message(FATAL_ERROR "Failed to find Apple SDK: ${module_sdk_error}")
+    endif ()
+    set(module_compile_options -fcxx-modules -isysroot "${module_sysroot}")
+    target_compile_options(${name} PUBLIC ${module_compile_options})
+  endif ()
+
+  # The standard and extension mode are affected by CMake options.
   get_target_property(std ${name} CXX_STANDARD)
+  get_target_property(extensions ${name} CXX_EXTENSIONS)
+  if (extensions STREQUAL "extensions-NOTFOUND")
+    set(extensions ON)
+  endif ()
+  set(std_prefix c++)
+  if (extensions)
+    set(std_prefix gnu++)
+  endif ()
 
   if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(pcms)
@@ -384,8 +408,9 @@ function (add_module_library name)
       add_custom_command(
         OUTPUT ${pcm}
         COMMAND
-          ${CMAKE_CXX_COMPILER} -std=c++${std} -x c++-module --precompile -c -o
-          ${pcm} ${CMAKE_CURRENT_SOURCE_DIR}/${src}
+          ${CMAKE_CXX_COMPILER} ${module_compile_options}
+          -std=${std_prefix}${std} -x c++-module --precompile -o ${pcm}
+          ${CMAKE_CURRENT_SOURCE_DIR}/${src}
           "-I$<JOIN:$<TARGET_PROPERTY:${name},INCLUDE_DIRECTORIES>,;-I>"
         # Required by the -I generator expression above.
         COMMAND_EXPAND_LISTS
@@ -403,6 +428,7 @@ function (add_module_library name)
         OUTPUT ${obj}
         COMMAND ${CMAKE_CXX_COMPILER} $<TARGET_PROPERTY:${name},COMPILE_OPTIONS>
                 -c -o ${obj} ${pcm}
+        COMMAND_EXPAND_LISTS
         DEPENDS ${pcm})
     endforeach ()
   endif ()
