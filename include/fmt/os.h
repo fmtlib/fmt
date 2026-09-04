@@ -31,7 +31,9 @@
       (!defined(WINAPI_FAMILY) ||                          \
        (WINAPI_FAMILY == WINAPI_FAMILY_DESKTOP_APP)) &&    \
       !defined(__wasm__)
-#    include <fcntl.h>  // for O_RDONLY
+#    ifndef FMT_MODULE
+#      include <fcntl.h>  // for O_RDONLY
+#    endif
 #    define FMT_USE_FCNTL 1
 #  else
 #    define FMT_USE_FCNTL 0
