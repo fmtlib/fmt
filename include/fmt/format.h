@@ -649,16 +649,16 @@ FMT_CONSTEXPR void for_each_codepoint(string_view s, F f) {
   } while (buf_ptr < buf + num_chars_left);
 }
 
-FMT_CONSTEXPR inline auto display_width_of(uint32_t cp) noexcept -> size_t {
-  if (cp < 0x1100) return 1;
-  struct wide_cp_range {
-    uint32_t first;
-    uint32_t last;
-  };
-  // Code points with display width 2, i.e. those with the Unicode
-  // East_Asian_Width property set to W(ide) or F(ullwidth)
-  // (https://www.unicode.org/reports/tr11/), sorted and merged.
-  constexpr wide_cp_range wide_cp_ranges[] = {
+struct wide_cp_range {
+  uint32_t first;
+  uint32_t last;
+};
+
+// Code points with display width 2, i.e. those with the Unicode 16.0.0
+// East_Asian_Width property set to W(ide) or F(ullwidth)
+// (https://www.unicode.org/reports/tr11/), sorted and merged.
+template <typename = void> struct wide_cp_data {
+  static constexpr wide_cp_range ranges[] = {
       // Hangul Jamo
       {0x1100, 0x115f},
       // Miscellaneous Technical
@@ -811,13 +811,21 @@ FMT_CONSTEXPR inline auto display_width_of(uint32_t cp) noexcept -> size_t {
       // CJK Unified Ideographs Extension G (plane 3)
       {0x30000, 0x3fffd},
   };
+};
+
+#if FMT_CPLUSPLUS < 201703L
+template <typename T> constexpr wide_cp_range wide_cp_data<T>::ranges[];
+#endif
+
+FMT_CONSTEXPR inline auto display_width_of(uint32_t cp) noexcept -> size_t {
+  if (cp < 0x1100) return 1;
   size_t lo = 0;
-  size_t hi = sizeof(wide_cp_ranges) / sizeof(wide_cp_range);
+  size_t hi = sizeof(wide_cp_data<>::ranges) / sizeof(wide_cp_range);
   while (lo < hi) {
     size_t mid = lo + (hi - lo) / 2;
-    if (cp < wide_cp_ranges[mid].first)
+    if (cp < wide_cp_data<>::ranges[mid].first)
       hi = mid;
-    else if (cp > wide_cp_ranges[mid].last)
+    else if (cp > wide_cp_data<>::ranges[mid].last)
       lo = mid + 1;
     else
       return 2;
@@ -2061,11 +2069,22 @@ template <typename Char, typename OutputIt>
 FMT_CONSTEXPR auto write_char(OutputIt out, Char value,
                               const format_specs& specs) -> OutputIt {
   bool is_debug = specs.type() == presentation_type::debug;
-  return write_padded<Char>(out, specs, 1, [=](reserve_iterator<OutputIt> it) {
-    if (is_debug) return write_escaped_char(it, value);
-    *it++ = value;
-    return it;
-  });
+  Char buf[12];
+  auto* begin = buf;
+  auto* end = begin;
+  size_t size = 1;
+
+  if (is_debug) {
+    end = write_escaped_char(begin, value);
+    size = to_unsigned(end - begin);
+  }
+
+  return write_padded<Char>(out, specs, size,
+                            [=](reserve_iterator<OutputIt> it) {
+                              if (is_debug) return copy<Char>(begin, end, it);
+                              *it++ = value;
+                              return it;
+                            });
 }
 
 template <typename Char> class digit_grouping {
@@ -2422,6 +2441,12 @@ FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
 
     return false;
   });
+
+  if (is_debug && s.size() == 0 && specs.precision != 0 &&
+      display_width < display_width_limit) {
+    ++display_width;
+    ++size;
+  }
 
   struct bounded_output_iterator {
     reserve_iterator<OutputIt> underlying_iterator;

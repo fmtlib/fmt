@@ -247,145 +247,22 @@ binary size (within a rounding error on this system).
 to compare formatting function overhead only. Boost Format is a
 header-only library so it doesn\'t provide any linkage options.
 
-## Running the tests
+# Projects using {fmt}
 
-Please refer to [Building the
-library](https://fmt.dev/latest/get-started/#building-from-source) for
-instructions on how to build the library and run the unit tests.
+Notable users include:
 
-Benchmarks reside in a separate repository,
-[format-benchmark](https://github.com/fmtlib/format-benchmark), so to
-run the benchmarks you first need to clone this repository and generate
-Makefiles with CMake:
+- [Apple's FoundationDB](https://github.com/apple/foundationdb)
+- [Blizzard Battle.net](https://battle.net/)
+- [Ceph](https://ceph.com/)
+- [ClickHouse](https://github.com/ClickHouse/ClickHouse)
+- [Envoy](https://github.com/envoyproxy/envoy)
+- [Folly](https://github.com/facebook/folly)
+- [MariaDB](https://mariadb.org/)
+- [MongoDB](https://mongodb.com/)
+- [PyTorch](https://github.com/pytorch/pytorch)
+- [Seastar](https://seastar.io/)
+- [spdlog](https://github.com/gabime/spdlog)
+- [Windows Terminal](https://github.com/microsoft/terminal)
 
-    $ git clone --recursive https://github.com/fmtlib/format-benchmark.git
-    $ cd format-benchmark
-    $ cmake .
-
-Then you can run the speed test:
-
-    $ make speed-test
-
-or the bloat test:
-
-    $ make bloat-test
-
-# Migrating code
-
-[clang-tidy](https://clang.llvm.org/extra/clang-tidy/) v18 provides the
-[modernize-use-std-print](https://clang.llvm.org/extra/clang-tidy/checks/modernize/use-std-print.html)
-check that is capable of converting occurrences of `printf` and
-`fprintf` to `fmt::print` if configured to do so. (By default it
-converts to `std::print`.)
-
-# Notable projects using this library
-
-- [0 A.D.](https://play0ad.com/): a free, open-source, cross-platform
-  real-time strategy game
-- [AMPL/MP](https://github.com/ampl/mp): an open-source library for
-  mathematical programming
-- [Apple's FoundationDB](https://github.com/apple/foundationdb): an open-source,
-  distributed, transactional key-value store
-- [Aseprite](https://github.com/aseprite/aseprite): animated sprite
-  editor & pixel art tool
-- [AvioBook](https://www.aviobook.aero/en): a comprehensive aircraft
-  operations suite
-- [Blizzard Battle.net](https://battle.net/): an online gaming
-  platform
-- [Celestia](https://celestia.space/): real-time 3D visualization of
-  space
-- [Ceph](https://ceph.com/): a scalable distributed storage system
-- [ccache](https://ccache.dev/): a compiler cache
-- [ClickHouse](https://github.com/ClickHouse/ClickHouse): an
-  analytical database management system
-- [ContextVision](https://www.contextvision.com/): medical imaging software
-- [Contour](https://github.com/contour-terminal/contour/): a modern
-  terminal emulator
-- [CUAUV](https://cuauv.org/): Cornell University\'s autonomous
-  underwater vehicle
-- [Drake](https://drake.mit.edu/): a planning, control, and analysis
-  toolbox for nonlinear dynamical systems (MIT)
-- [Envoy](https://github.com/envoyproxy/envoy): C++ L7 proxy and
-  communication bus (Lyft)
-- [FiveM](https://fivem.net/): a modification framework for GTA V
-- [fmtlog](https://github.com/MengRao/fmtlog): a performant
-  fmtlib-style logging library with latency in nanoseconds
-- [Folly](https://github.com/facebook/folly): Facebook open-source
-  library
-- [GemRB](https://gemrb.org/): a portable open-source implementation
-  of Bioware's Infinity Engine
-- [Grand Mountain
-  Adventure](https://store.steampowered.com/app/1247360/Grand_Mountain_Adventure/):
-  a beautiful open-world ski & snowboarding game
-- [HarpyWar/pvpgn](https://github.com/pvpgn/pvpgn-server): Player vs
-  Player Gaming Network with tweaks
-- [KBEngine](https://github.com/kbengine/kbengine): an open-source
-  MMOG server engine
-- [Keypirinha](https://keypirinha.com/): a semantic launcher for
-  Windows
-- [Kodi](https://kodi.tv/) (formerly xbmc): home theater software
-- [Knuth](https://kth.cash/): high-performance Bitcoin full-node
-- [libunicode](https://github.com/contour-terminal/libunicode/): a
-  modern C++17 Unicode library
-- [MariaDB](https://mariadb.org/): relational database management
-  system
-- [Microsoft Verona](https://github.com/microsoft/verona): research
-  programming language for concurrent ownership
-- [MongoDB](https://mongodb.com/): distributed document database
-- [MongoDB Smasher](https://github.com/duckie/mongo_smasher): a small
-  tool to generate randomized datasets
-- [OpenSpace](https://openspaceproject.com/): an open-source
-  astrovisualization framework
-- [PenUltima Online (POL)](https://www.polserver.com/): an MMO server,
-  compatible with most Ultima Online clients
-- [PyTorch](https://github.com/pytorch/pytorch): an open-source
-  machine learning library
-- [quasardb](https://www.quasardb.net/): a distributed,
-  high-performance, associative database
-- [Quill](https://github.com/odygrd/quill): asynchronous low-latency
-  logging library
-- [QKW](https://github.com/ravijanjam/qkw): generalizing aliasing to
-  simplify navigation, and execute complex multi-line terminal
-  command sequences
-- [redis-cerberus](https://github.com/HunanTV/redis-cerberus): a Redis
-  cluster proxy
-- [redpanda](https://vectorized.io/redpanda): a 10x faster Kafka®
-  replacement for mission-critical systems written in C++
-- [rpclib](https://github.com/rpclib/rpclib): a modern C++ msgpack-RPC server and
-  client library
-- [Salesforce Analytics
-  Cloud](https://www.salesforce.com/analytics-cloud/overview/):
-  business intelligence software
-- [Scylla](https://www.scylladb.com/): a Cassandra-compatible NoSQL
-  data store that can handle 1 million transactions per second on a
-  single server
-- [Seastar](https://seastar.io/): an advanced, open-source
-  C++ framework for high-performance server applications on modern
-  hardware
-- [spdlog](https://github.com/gabime/spdlog): super fast C++ logging
-  library
-- [Stellar](https://www.stellar.org/): financial platform
-- [Touch Surgery](https://www.touchsurgery.com/): surgery simulator
-- [TrinityCore](https://github.com/TrinityCore/TrinityCore):
-  open-source MMORPG framework
-- [🐙 userver framework](https://userver.tech/): open-source
-  asynchronous framework with a rich set of abstractions and database
-  drivers
-- [Windows Terminal](https://github.com/microsoft/terminal): the new
-  Windows terminal
-
-[More\...](https://github.com/search?q=fmtlib&type=Code)
-
-If you are aware of other projects using this library, please let me
-know by [email](mailto:victor.zverovich@gmail.com) or by submitting an
-[issue](https://github.com/fmtlib/fmt/issues).
-
-# Maintainers
-
-The {fmt} library is maintained by Victor Zverovich
-([vitaut](https://github.com/vitaut)) with contributions from many other
-people. See
-[Contributors](https://github.com/fmtlib/fmt/graphs/contributors) and
-[Releases](https://github.com/fmtlib/fmt/releases) for some of the
-names. Let us know if your contribution is not listed or mentioned
-incorrectly and we\'ll make it right.
+[Find more projects using {fmt} on GitHub](
+https://github.com/search?q=fmtlib&type=Code).
