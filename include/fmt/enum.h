@@ -33,21 +33,18 @@ FMT_BEGIN_NAMESPACE
 
 #if FMT_USE_REFLECTION
 
-/// The type of the `fmt::as_identifiers` annotation.
-FMT_EXPORT struct as_identifiers_t {};
-
 /**
  * An annotation that makes an enum format as identifiers of its enumerators.
  *
  * **Example**:
  *
- *     enum class [[=fmt::as_identifiers]] color { red, green, blue };
+ *     enum class [[=fmt::as_identifiers()]] color { red, green, blue };
  *     auto s = fmt::format("{}", color::green);  // s == "green"
  *
  * A value that doesn't match any enumerator is represented as its underlying
  * value in decimal before applying string formatting.
  */
-FMT_EXPORT inline constexpr auto as_identifiers = as_identifiers_t();
+FMT_EXPORT struct as_identifiers {};
 
 namespace detail {
 
@@ -57,8 +54,7 @@ consteval auto use_identifiers() -> bool {
   if constexpr (!std::is_enum<U>::value) {
     return false;
   } else {
-    return !std::meta::annotations_of_with_type(^^U, ^^as_identifiers_t)
-                .empty();
+    return !std::meta::annotations_of_with_type(^^U, ^^as_identifiers).empty();
   }
 }
 

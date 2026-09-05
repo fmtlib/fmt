@@ -21,56 +21,61 @@ TEST(enum_test, no_reflection) {
 
 // clang-format doesn't support annotations yet.
 // clang-format off
-enum class [[=fmt::as_identifiers]] color { red, green, blue };
+enum class [[=fmt::as_identifiers()]] color { red, green, blue };
 enum class color_without_annotation { red, green, blue };
-enum [[=fmt::as_identifiers]] unscoped_color { unscoped_red, unscoped_green };
-enum class [[=fmt::as_identifiers]] level : unsigned char { low = 1, high = 2 };
-enum class [[=fmt::as_identifiers]] byte_enum : char { one = 1 };
-enum class [[=fmt::as_identifiers]] signed_byte_enum : signed char { minus_one = -1 };
-enum class [[=fmt::as_identifiers]] bool_enum : bool { off = false };
-enum class [[=fmt::as_identifiers]] alias { one = 1, uno = 1 };
-enum class [[=fmt::as_identifiers]] empty_enum {};
+enum [[=fmt::as_identifiers()]] unscoped_color { unscoped_red, unscoped_green };
+enum class [[=fmt::as_identifiers()]] level : unsigned char {
+  low = 1,
+  high = 2
+};
+enum class [[=fmt::as_identifiers()]] byte_enum : char { one = 1 };
+enum class [[=fmt::as_identifiers()]] signed_byte_enum : signed char {
+  minus_one = -1
+};
+enum class [[=fmt::as_identifiers()]] bool_enum : bool { off = false };
+enum class [[=fmt::as_identifiers()]] alias { one = 1, uno = 1 };
+enum class [[=fmt::as_identifiers()]] empty_enum {};
 
 // Dense values: formatted via a lookup table.
-enum class [[=fmt::as_identifiers]] dense { d0, d1, d2, d3, d4 };
+enum class [[=fmt::as_identifiers()]] dense { d0, d1, d2, d3, d4 };
 // 3 holes out of 10: the sparsest case that still uses a lookup table.
-enum class [[=fmt::as_identifiers]] holey {
+enum class [[=fmt::as_identifiers()]] holey {
   h0, h1, h2, h3, h4, h5, h6 = 9
 };
 // 4 holes out of 11: just too sparse, formatted via a hash table.
-enum class [[=fmt::as_identifiers]] sparse {
+enum class [[=fmt::as_identifiers()]] sparse {
   s0, s1, s2, s3, s4, s5, s6 = 10
 };
 // Values spanning both signs and the extremes of the underlying type.
-enum class [[=fmt::as_identifiers]] signed_enum {
+enum class [[=fmt::as_identifiers()]] signed_enum {
   minus_two = -2,
   minus_one = -1,
   one = 1
 };
 // Many scattered values, exercising collisions in the hash table.
-enum class [[=fmt::as_identifiers]] scattered {
+enum class [[=fmt::as_identifiers()]] scattered {
   a = 1, b = 17, c = 33, d = 49, e = 65, f = 81,
   g = 97, h = 113, i = 129, j = 145, k = 161, l = 177
 };
 // Values that collide in the hash table: c0, c7 and c15 share a slot, and c6
 // occupies the next one, so probing for c7 and c15 has to step over it.
-enum class [[=fmt::as_identifiers]] collision {
+enum class [[=fmt::as_identifiers()]] collision {
   c0 = 0, c6 = 6, c7 = 7, c15 = 15
 };
 // Values that collide in the last slot of the hash table, so the probe
 // sequence wraps around to the beginning.
-enum class [[=fmt::as_identifiers]] wrapping_collision {
+enum class [[=fmt::as_identifiers()]] wrapping_collision {
   w8 = 8, w16 = 16, w24 = 24
 };
 // Aliased values in an enum that is too sparse for a lookup table.
-enum class [[=fmt::as_identifiers]] sparse_alias {
+enum class [[=fmt::as_identifiers()]] sparse_alias {
   one = 1, dup = 1, far = 1000
 };
-enum class [[=fmt::as_identifiers]] extremes : int {
+enum class [[=fmt::as_identifiers()]] extremes : int {
   lowest = INT_MIN,
   highest = INT_MAX
 };
-enum class [[=fmt::as_identifiers]] big : unsigned long long {
+enum class [[=fmt::as_identifiers()]] big : unsigned long long {
   huge = ULLONG_MAX
 };
 // clang-format on
