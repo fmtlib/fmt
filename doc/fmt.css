@@ -1,4 +1,4 @@
-:root {
+:root > * {
   --md-primary-fg-color: #0050D0;
 }
 
@@ -59,4 +59,52 @@ code.decl > div {
       max-width: 100%; /* Allow full width on smaller screens */
       white-space: normal; /* Allow text wrapping on smaller screens */
   }
+}
+
+/* HLJS Overrides for Material Theme */
+
+.hljs {
+  color: var(--md-code-fg-color);
+  background: var(--md-code-bg-color);
+}
+.hljs-comment,
+.hljs-quote {
+  color: var(--md-code-hl-comment-color);
+}
+.hljs-doctag,
+.hljs-keyword,
+.hljs-formula {
+  color: var(--md-code-hl-keyword-color);
+}
+.hljs-string,
+.hljs-regexp,
+.hljs-addition,
+.hljs-attribute,
+.hljs-meta-string {
+  color: var(--md-code-hl-string-color);
+}
+.hljs-number,
+.hljs-literal {
+  color: var(--md-code-hl-number-color);
+}
+.hljs-built_in,
+.hljs-class .hljs-title {
+  color: var(--md-code-hl-function-color);
+}
+.hljs-symbol,
+.hljs-bullet,
+.hljs-link,
+.hljs-meta,
+.hljs-selector-id,
+.hljs-title {
+  color: var(--md-code-hl-special-color);
+}
+.hljs-attr,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-type,
+.hljs-selector-class,
+.hljs-selector-attr,
+.hljs-selector-pseudo {
+  color: var(--md-code-hl-constant-color);
 }
