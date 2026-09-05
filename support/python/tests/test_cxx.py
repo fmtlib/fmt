@@ -78,7 +78,9 @@ class XmlEncodingTest(unittest.TestCase):
         ):
             handler = cxx.CxxHandler({}, self.root)
         paragraphs = handler._file_doxyxml.findall("compounddef/briefdescription/para")
-        self.assertEqual([p.text for p in paragraphs], [self.description] * len(headers))
+        self.assertEqual(
+            [p.text for p in paragraphs], [self.description] * len(headers)
+        )
 
     def test_compound_xml(self):
         self.write_xml("struct_example.xml", self.compound())
