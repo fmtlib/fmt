@@ -300,7 +300,7 @@ chrono_specs       ::= conversion_spec |
                        chrono_specs (conversion_spec | literal_char)
 conversion_spec    ::= "%" [padding_modifier] [locale_modifier] chrono_type
 literal_char       ::= &lt;a character other than '{', '}' or '%'>
-padding_modifier   ::= "-" | "_"  | "0"
+padding_modifier   ::= "-" | "_"
 locale_modifier    ::= "E" | "O"
 chrono_type        ::= "a" | "A" | "b" | "B" | "c" | "C" | "d" | "D" | "e" |
                        "F" | "g" | "G" | "h" | "H" | "I" | "j" | "m" | "M" |
@@ -594,13 +594,13 @@ The available presentation types (*chrono_type*) are:
 Specifiers that have a calendaric component such as `'d'` (the day of month)
 are valid only for `std::tm` and time points but not durations.
 
-The available padding modifiers (*padding_modifier*) are:
+Numeric results are padded with zeros by default. The available padding
+modifiers (*padding_modifier*) are:
 
 | Type  | Meaning                                 |
 |-------|-----------------------------------------|
 | `'_'` | Pad a numeric result with spaces.       |
 | `'-'` | Do not pad a numeric result string.     |
-| `'0'` | Pad a numeric result string with zeros. |
 
 These modifiers are only supported for the `'H'`, `'I'`, `'M'`, `'S'`, `'U'`,
 `'V'`, `'W'`, `'Y'`, `'d'`, `'j'` and `'m'` presentation types.
