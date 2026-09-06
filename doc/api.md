@@ -800,9 +800,9 @@ configuring CMake.
 
 - **`FMT_OPTIMIZE_SIZE`**: Controls binary size optimizations:
     - `0` - off (default)
-    - `1` - disables locale support and applies some optimizations
-    - `2` - disables some Unicode features, named arguments and applies more
-      aggressive optimizations
+    - `1` - applies some optimizations
+    - `2` - disables locale support by default, some Unicode features, and
+      named arguments, and applies more aggressive optimizations
 
 ### Binary Size Optimization
 
