@@ -302,7 +302,7 @@ class CxxHandler(BaseHandler):
         self._file_doxyxml: "ET.ElementTree[ET.Element[str]] | None" = None
         for h in headers:
             filename = h.replace(".h", "_8h.xml")
-            with open(os.path.join(self._doxyxml_dir, filename)) as f:
+            with open(os.path.join(self._doxyxml_dir, filename), "rb") as f:
                 doxyxml = ET.parse(f)
                 if self._file_doxyxml is None:
                     self._file_doxyxml = doxyxml
@@ -317,7 +317,7 @@ class CxxHandler(BaseHandler):
         if refid is None:
             raise ValueError
         path = os.path.join(self._doxyxml_dir, refid + ".xml")
-        with open(path) as f:
+        with open(path, "rb") as f:
             xml = ET.parse(f)
             node = xml.find("compounddef")
             if node is None:
@@ -371,7 +371,7 @@ class CxxHandler(BaseHandler):
         doxyxml = self._ns2doxyxml.get(namespace)
         if doxyxml is None:
             path = f"namespace{namespace.replace('::', '_1_1')}.xml"
-            with open(os.path.join(self._doxyxml_dir, path)) as f:
+            with open(os.path.join(self._doxyxml_dir, path), "rb") as f:
                 doxyxml = ET.parse(f)
                 self._ns2doxyxml[namespace] = doxyxml
 
