@@ -11,6 +11,7 @@
 #include <list>
 #include <map>
 #include <queue>
+#include <set>
 #include <stack>
 #include <string>
 #include <utility>
@@ -167,6 +168,40 @@ auto end(const box& b) -> const int* { return &b.value + 1; }
 TEST(ranges_test, format_adl_begin_end) {
   auto b = adl::box{42};
   EXPECT_EQ(fmt::format("{}", b), "[42]");
+}
+
+TEST(ranges_test, format_width) {
+  auto v = std::vector<int>{1, 2, 3};
+  EXPECT_EQ(fmt::format("{:20}", v), "[1, 2, 3]           ");
+  EXPECT_EQ(fmt::format("{:<20}", v), "[1, 2, 3]           ");
+  EXPECT_EQ(fmt::format("{:>20}", v), "           [1, 2, 3]");
+  EXPECT_EQ(fmt::format("{:^20}", v), "     [1, 2, 3]      ");
+  EXPECT_EQ(fmt::format("{:*>20}", v), "***********[1, 2, 3]");
+  EXPECT_EQ(fmt::format("{:*>{}}", v, 20), "***********[1, 2, 3]");
+  // The width applies to the composed output, not to the elements.
+  EXPECT_EQ(fmt::format("{:*>20n}", v), "*************1, 2, 3");
+  EXPECT_EQ(fmt::format("{:*>20:03}", v), "*****[001, 002, 003]");
+  // A leading ':' introduces the underlying spec and is not a fill character.
+  EXPECT_EQ(fmt::format("{::>5}", v), "[    1,     2,     3]");
+  // Output longer than the width is not truncated.
+  EXPECT_EQ(fmt::format("{:*>3}", v), "[1, 2, 3]");
+
+  auto s = std::set<int>{1, 2};
+  EXPECT_EQ(fmt::format("{:*>20}", s), "**************{1, 2}");
+
+  auto m = std::map<int, int>{{1, 2}};
+  EXPECT_EQ(fmt::format("{:*>20}", m), "**************{1: 2}");
+  EXPECT_EQ(fmt::format("{:*>10n}", m), "******1: 2");
+
+  auto vs = std::vector<std::string>{"a", "b"};
+  EXPECT_EQ(fmt::format("{:*>20}", vs), "**********[\"a\", \"b\"]");
+
+  EXPECT_EQ(fmt::format("{:*>20}", std::tuple<int, int>(1, 2)),
+            "**************(1, 2)");
+  EXPECT_EQ(fmt::format("{:*>20}", std::pair<int, int>(1, 2)),
+            "**************(1, 2)");
+  EXPECT_EQ(fmt::format("{:*>{}}", std::pair<int, int>(1, 2), 20),
+            "**************(1, 2)");
 }
 
 TEST(ranges_test, format_pair) {
