@@ -202,40 +202,39 @@ magnitude slower than the other methods.
 
 ## Compile time and code bloat
 
-The script [bloat-test.py][test] from [format-benchmark][bench] tests compile
-time and code bloat for nontrivial projects. It generates 100 translation units
-and uses `printf()` or its alternative five times in each to simulate a
-medium-sized project. The resulting executable size and compile time on an
-Apple M5 Max running macOS 26.6.2 with Apple Clang 21.0.0
-(clang-2100.1.1.101), taking the best of three runs, are shown in the following
-tables.
+The script [bloat-test.py][test] from [format-benchmark][bench] measures the
+compile-time and code-size overhead each formatting method adds to application
+code. It generates 100 translation units and uses `printf` or its alternative
+five times in each to simulate a medium-sized project. Library and module build
+costs are excluded. Results on an Apple M5 Max running macOS 26.6.2 with
+Apple Clang 21.0.0 (clang-2100.1.1.101), taking the best of three runs, are
+shown in the following tables.
 
 [test]: https://github.com/fmtlib/format-benchmark/blob/master/bloat-test.py
 [bench]: https://github.com/fmtlib/format-benchmark
 
 **Optimized build (-O3)**
 
-| Method                   | Compile Time, s | Executable size, KiB | Stripped size, KiB |
-|--------------------------|-----------------|----------------------|--------------------|
-| printf                   |             1.6 |                   54 |                 50 |
-| IOStreams                |            25.5 |                   98 |                 84 |
-| {fmt} 12.2 (non-modular) |             5.1 |                   54 |                 50 |
-| {fmt} 12.2 (modular)     |             3.7 |                   59 |                 50 |
-| Boost Format 1.92        |            49.1 |                  517 |                317 |
+| Method             | Compile time, s | Binary size, KiB | Stripped size, KiB |
+|--------------------|----------------:|-----------------:|-------------------:|
+| printf             |             1.6 |               54 |                 50 |
+| IOStreams          |            25.5 |               98 |                 84 |
+| fmt 12.2 (headers) |             5.1 |               54 |                 50 |
+| fmt 12.2 (module)  |             3.7 |               59 |                 50 |
+| Boost Format 1.92  |            49.1 |              517 |                317 |
 
-Modular {fmt} is faster to compile than non-modular {fmt}, and both are
-comparable to `printf` in terms of per-call binary size (within a rounding error
-on this system).
+Using modular {fmt} reduces optimized application-code compile time by 27%
+without changing the reported stripped binary size.
 
 **Non-optimized build**
 
-| Method                   | Compile Time, s | Executable size, KiB | Stripped size, KiB |
-|--------------------------|-----------------|----------------------|--------------------|
-| printf                   |             1.6 |                   54 |                 50 |
-| IOStreams                |            26.0 |                   88 |                 68 |
-| {fmt} 12.2 (non-modular) |             4.9 |                   87 |                 84 |
-| {fmt} 12.2 (modular)     |             3.2 |                   77 |                 68 |
-| Boost Format 1.92        |            35.7 |                  741 |                431 |
+| Method             | Compile time, s | Binary size, KiB | Stripped size, KiB |
+|--------------------|----------------:|-----------------:|-------------------:|
+| printf             |             1.6 |               54 |                 50 |
+| IOStreams          |            26.0 |               88 |                 68 |
+| fmt 12.2 (headers) |             4.9 |               87 |                 84 |
+| fmt 12.2 (module)  |             3.2 |               77 |                 68 |
+| Boost Format 1.92  |            35.7 |              741 |                431 |
 
 `libc`, `libc++`, `libfmt`, and `libfmt-module` were linked as shared libraries
 to compare formatting function overhead only. Boost Format is header-only.
