@@ -79,8 +79,8 @@ if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.28 AND CMAKE_CXX_STANDARD
 endif ()
 
 set(FMT_USE_MODULES ${FMT_USE_CMAKE_MODULES})
-if (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND
-    CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 21)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND CMAKE_CXX_COMPILER_VERSION
+                                                    VERSION_GREATER_EQUAL 21)
   set(FMT_USE_MODULES ON)
 endif ()
 
@@ -409,8 +409,8 @@ function (add_module_library name)
 
       # Propagate the module BMI to targets that link with this library.
       target_compile_options(
-        ${name} PUBLIC
-        -fmodule-file=${module_name}=${CMAKE_CURRENT_BINARY_DIR}/${pcm})
+        ${name}
+        PUBLIC -fmodule-file=${module_name}=${CMAKE_CURRENT_BINARY_DIR}/${pcm})
 
       # Use an absolute path to prevent target_link_libraries prepending -l
       # to it.

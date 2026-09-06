@@ -215,32 +215,30 @@ tables.
 
 **Optimized build (-O3)**
 
-| Method            | Compile Time, s | Executable size, KiB | Stripped size, KiB |
-|-------------------|-----------------|----------------------|--------------------|
-| printf            |             1.2 |                   54 |                 50 |
-| IOStreams         |            21.8 |                   98 |                 84 |
-| {fmt} 12.2        |             4.2 |                   54 |                 50 |
-| tinyformat        |            25.5 |                  164 |                136 |
-| Boost Format 1.88 |            43.4 |                  550 |                333 |
-| stb_sprintf       |             1.4 |                   87 |                 83 |
+| Method                   | Compile Time, s | Executable size, KiB | Stripped size, KiB |
+|--------------------------|-----------------|----------------------|--------------------|
+| printf                   |             1.6 |                   54 |                 50 |
+| IOStreams                |            25.5 |                   98 |                 84 |
+| {fmt} 12.2 (non-modular) |             5.1 |                   54 |                 50 |
+| {fmt} 12.2 (modular)     |             3.7 |                   59 |                 50 |
+| Boost Format 1.92        |            49.1 |                  517 |                317 |
 
-{fmt} is fast to compile and is comparable to `printf` in terms of per-call
-binary size (within a rounding error on this system).
+Modular {fmt} is faster to compile than non-modular {fmt}, and both are
+comparable to `printf` in terms of per-call binary size (within a rounding error
+on this system).
 
 **Non-optimized build**
 
-| Method            | Compile Time, s | Executable size, KiB | Stripped size, KiB |
-|-------------------|-----------------|----------------------|--------------------|
-| printf            |             1.1 |                   54 |                 50 |
-| IOStreams         |            20.7 |                   88 |                 68 |
-| {fmt} 12.2        |             4.0 |                   87 |                 84 |
-| tinyformat        |            21.8 |                  188 |                145 |
-| Boost Format 1.88 |            30.0 |                  749 |                430 |
-| stb_sprintf       |             1.2 |                  103 |                 99 |
+| Method                   | Compile Time, s | Executable size, KiB | Stripped size, KiB |
+|--------------------------|-----------------|----------------------|--------------------|
+| printf                   |             1.6 |                   54 |                 50 |
+| IOStreams                |            26.0 |                   88 |                 68 |
+| {fmt} 12.2 (non-modular) |             4.9 |                   87 |                 84 |
+| {fmt} 12.2 (modular)     |             3.2 |                   77 |                 68 |
+| Boost Format 1.92        |            35.7 |                  741 |                431 |
 
-`libc`, `libc++`, and `libfmt` were linked as shared libraries to compare
-formatting function overhead only. tinyformat, Boost Format, and stb_sprintf
-are header-only libraries.
+`libc`, `libc++`, `libfmt`, and `libfmt-module` were linked as shared libraries
+to compare formatting function overhead only. Boost Format is header-only.
 
 # Projects using {fmt}
 
