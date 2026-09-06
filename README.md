@@ -252,6 +252,7 @@ Notable users include:
 - [MariaDB](https://mariadb.org/)
 - [MongoDB](https://mongodb.com/)
 - [PyTorch](https://github.com/pytorch/pytorch)
+- [Quill](https://github.com/odygrd/quill)
 - [Seastar](https://seastar.io/)
 - [spdlog](https://github.com/gabime/spdlog)
 - [Windows Terminal](https://github.com/microsoft/terminal)
