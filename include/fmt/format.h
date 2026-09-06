@@ -4053,6 +4053,50 @@ FMT_CONSTEXPR auto native_formatter<T, Char, TYPE>::format(
                       specs_.precision_ref, ctx);
   return write<Char>(ctx.out(), val, specs, ctx.locale());
 }
+
+// Parses and applies the outer alignment and width of a nested value.
+template <typename Char> class nested_format_specs {
+ private:
+  format_specs specs_;
+  arg_ref<Char> width_ref_;
+
+ public:
+  constexpr nested_format_specs() : specs_(), width_ref_() {}
+
+  FMT_CONSTEXPR auto parse(const Char* begin, const Char* end,
+                           parse_context<Char>& ctx) -> const Char* {
+    if (begin == end || *begin == '}') return begin;
+    begin = parse_align(begin, end, specs_);
+    if (begin == end) return begin;
+    Char c = *begin;
+    if ((c >= '0' && c <= '9') || c == '{')
+      begin = parse_width(begin, end, specs_, width_ref_, ctx);
+    return begin;
+  }
+
+  FMT_CONSTEXPR auto parse(const Char* begin, const Char* end,
+                           parse_context<Char>& ctx, Char separator)
+      -> const Char* {
+    // A separator introduces the nested spec and is never a fill character.
+    if (begin != end && *begin == separator) return begin;
+    return parse(begin, end, ctx);
+  }
+
+  template <typename FormatContext, typename F, typename... T>
+  FMT_CONSTEXPR auto write(FormatContext& ctx, const F& f, T&&... values) const
+      -> decltype(ctx.out()) {
+    auto specs = specs_;
+    handle_dynamic_spec(specs.dynamic_width(), specs.width, width_ref_, ctx);
+    if (specs.width == 0) return f.write_body(ctx, static_cast<T&&>(values)...);
+
+    auto buf = basic_memory_buffer<Char>();
+    auto buffer_ctx =
+        FormatContext(basic_appender<Char>(buf), ctx.args(), ctx.locale());
+    f.write_body(buffer_ctx, static_cast<T&&>(values)...);
+    return detail::write<Char>(
+        ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
+  }
+};
 }  // namespace detail
 
 FMT_BEGIN_EXPORT
@@ -4298,8 +4342,7 @@ template <typename T> struct nested_view {
 
 template <typename U, typename Char = char> struct nested_formatter {
  private:
-  format_specs specs_;
-  detail::arg_ref<Char> width_ref_;
+  detail::nested_format_specs<Char> specs_;
   formatter<U, Char> formatter_;
 
   template <typename FormatContext>
@@ -4315,23 +4358,21 @@ template <typename U, typename Char = char> struct nested_formatter {
   }
 
   template <typename FormatContext, typename... T>
-  auto write_args(FormatContext& ctx, const T&... args) const
+  auto write_body(FormatContext& ctx, const T&... args) const
       -> decltype(ctx.out()) {
     FMT_APPLY_VARIADIC(ctx.advance_to(write_arg(ctx, args)));
     return ctx.out();
   }
 
+  friend class detail::nested_format_specs<Char>;
+
  public:
-  constexpr nested_formatter() : specs_(), width_ref_(), formatter_() {}
+  constexpr nested_formatter() : specs_(), formatter_() {}
 
   FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     auto it = ctx.begin(), end = ctx.end();
     if (it == end) return it;
-    it = detail::parse_align(it, end, specs_);
-    if (it == end) return it;
-    Char c = *it;
-    if ((c >= '0' && c <= '9') || c == '{')
-      it = detail::parse_width(it, end, specs_, width_ref_, ctx);
+    it = specs_.parse(it, end, ctx);
     ctx.advance_to(it);
     return formatter_.parse(ctx);
   }
@@ -4339,17 +4380,7 @@ template <typename U, typename Char = char> struct nested_formatter {
   template <typename FormatContext, typename... T>
   auto write(FormatContext& ctx, const T&... args) const
       -> decltype(ctx.out()) {
-    auto specs = specs_;
-    detail::handle_dynamic_spec(specs.dynamic_width(), specs.width, width_ref_,
-                                ctx);
-    if (specs.width == 0) return write_args(ctx, args...);
-
-    auto buf = basic_memory_buffer<Char>();
-    auto buffer_ctx =
-        FormatContext(basic_appender<Char>(buf), ctx.args(), ctx.locale());
-    write_args(buffer_ctx, args...);
-    return detail::write<Char>(
-        ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
+    return specs_.write(ctx, *this, args...);
   }
 
   auto nested(const U& value) const -> nested_view<U> { return {&value}; }
