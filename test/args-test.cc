@@ -200,3 +200,38 @@ TEST(args_test, size) {
   store.clear();
   EXPECT_EQ(store.size(), 0);
 }
+
+TEST(args_test, named_arg_count) {
+  fmt::dynamic_format_arg_store<fmt::format_context> store;
+  EXPECT_EQ(store.size(), 0u);
+  EXPECT_THROW(fmt::vformat("{0}", store), fmt::format_error);
+
+  store.push_back(fmt::arg("a", 42));
+  EXPECT_EQ(store.size(), 1u);
+  EXPECT_EQ("42 42", fmt::vformat("{0} {a}", store));
+  EXPECT_THROW(fmt::vformat("{1}", store), fmt::format_error);
+
+  store.push_back(fmt::arg("b", 43));
+  EXPECT_EQ(store.size(), 2u);
+  EXPECT_EQ("42 43 43", fmt::vformat("{0} {1} {b}", store));
+  EXPECT_THROW(fmt::vformat("{2}", store), fmt::format_error);
+
+  store.push_back(44);
+  EXPECT_EQ(store.size(), 3u);
+  EXPECT_EQ("42 43 44", fmt::vformat("{a} {b} {2}", store));
+  EXPECT_THROW(fmt::vformat("{3}", store), fmt::format_error);
+
+  store.clear();
+  EXPECT_EQ(store.size(), 0u);
+  EXPECT_THROW(fmt::vformat("{0}", store), fmt::format_error);
+
+  store.push_back(45);
+  EXPECT_EQ(store.size(), 1u);
+  EXPECT_EQ("45", fmt::vformat("{0}", store));
+  EXPECT_THROW(fmt::vformat("{1}", store), fmt::format_error);
+
+  store.push_back(fmt::arg("c", 46));
+  EXPECT_EQ(store.size(), 2u);
+  EXPECT_EQ("45 46 46", fmt::vformat("{0} {1} {c}", store));
+  EXPECT_THROW(fmt::vformat("{2}", store), fmt::format_error);
+}

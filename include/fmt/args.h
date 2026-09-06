@@ -131,7 +131,7 @@ FMT_EXPORT template <typename Context> class dynamic_format_arg_store {
   constexpr dynamic_format_arg_store() = default;
 
   operator basic_format_args<Context>() const {
-    return basic_format_args<Context>(data(), static_cast<int>(data_.size()),
+    return basic_format_args<Context>(data(), static_cast<int>(size()),
                                       !named_info_.empty());
   }
 
@@ -210,7 +210,9 @@ FMT_EXPORT template <typename Context> class dynamic_format_arg_store {
   }
 
   /// Returns the number of elements in the store.
-  auto size() const noexcept -> size_t { return data_.size(); }
+  auto size() const noexcept -> size_t {
+    return data_.size() - (named_info_.empty() ? 0 : 1);
+  }
 };
 
 FMT_END_NAMESPACE
