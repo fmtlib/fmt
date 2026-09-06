@@ -378,6 +378,14 @@ auto write_tm_str(OutputIt out, string_view sv, const std::locale& loc)
   return write_encoded_tm_str(out, sv, loc);
 }
 
+#if !FMT_USE_LOCALE
+// Zone names are ASCII, so there is nothing to transcode without a locale.
+template <typename Char, typename OutputIt>
+auto write_tm_str(OutputIt out, string_view sv) -> OutputIt {
+  return copy<Char>(sv.data(), sv.data() + sv.size(), out);
+}
+#endif
+
 template <typename Char>
 inline void do_write(buffer<Char>& buf, const std::tm& time,
                      const std::locale& loc, char format, char modifier) {
@@ -1039,14 +1047,20 @@ void write_floating_seconds(memory_buffer& buf, Duration duration,
                  num_fractional_digits);
 }
 
+class get_locale;
+
 template <typename OutputIt, typename Char,
           typename Duration = std::chrono::seconds>
 class tm_writer {
  private:
   static constexpr int days_per_week = 7;
 
+#if FMT_USE_LOCALE
   const std::locale& loc_;
   bool is_classic_;
+#else
+  static constexpr bool is_classic_ = true;
+#endif
   OutputIt out_;
   const Duration* subsecs_;
   const std::tm& tm_;
@@ -1192,7 +1206,11 @@ class tm_writer {
   template <typename T, FMT_ENABLE_IF(has_tm_zone<T>::value)>
   void format_tz_name(const T& tm) {
     if (!tm.tm_zone) FMT_THROW(format_error("no timezone"));
+#if FMT_USE_LOCALE
     out_ = write_tm_str<Char>(out_, tm.tm_zone, loc_);
+#else
+    out_ = write_tm_str<Char>(out_, tm.tm_zone);
+#endif
   }
   template <typename T, FMT_ENABLE_IF(!has_tm_zone<T>::value)>
   void format_tz_name(const T&) {
@@ -1200,10 +1218,16 @@ class tm_writer {
   }
 
   void format_localized(char format, char modifier = 0) {
+#if FMT_USE_LOCALE
     out_ = write<Char>(out_, tm_, loc_, format, modifier);
+#else
+    // Unreachable: is_classic_ is always true without locale support.
+    ignore_unused(format, modifier);
+#endif
   }
 
  public:
+#if FMT_USE_LOCALE
   tm_writer(const std::locale& loc, OutputIt out, const std::tm& tm,
             const Duration* subsecs = nullptr)
       : loc_(loc),
@@ -1211,6 +1235,11 @@ class tm_writer {
         out_(out),
         subsecs_(subsecs),
         tm_(tm) {}
+#else
+  tm_writer(const get_locale&, OutputIt out, const std::tm& tm,
+            const Duration* subsecs = nullptr)
+      : out_(out), subsecs_(subsecs), tm_(tm) {}
+#endif
 
   auto out() const -> OutputIt { return out_; }
 
@@ -1583,6 +1612,7 @@ auto format_duration_unit(OutputIt out) -> OutputIt {
   return out;
 }
 
+#if FMT_USE_LOCALE
 class get_locale {
  private:
   union {
@@ -1594,11 +1624,7 @@ class get_locale {
   inline get_locale(bool localized, locale_ref loc) : has_locale_(localized) {
     if (!localized) return;
     ignore_unused(loc);
-    ::new (&locale_) std::locale(
-#if FMT_USE_LOCALE
-        loc.template get<std::locale>()
-#endif
-    );
+    ::new (&locale_) std::locale(loc.template get<std::locale>());
   }
   inline ~get_locale() {
     if (has_locale_) locale_.~locale();
@@ -1607,6 +1633,14 @@ class get_locale {
     return has_locale_ ? locale_ : get_classic_locale();
   }
 };
+#else
+class get_locale {
+ public:
+  inline get_locale(bool localized, locale_ref loc) {
+    ignore_unused(localized, loc);
+  }
+};
+#endif
 
 template <typename Char, typename Rep, typename Period>
 struct duration_formatter {
