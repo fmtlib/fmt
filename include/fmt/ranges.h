@@ -644,23 +644,18 @@ struct formatter<
 
  public:
   FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
-    return underlying_.parse(ctx);
+    auto it = underlying_.parse(ctx);
+    if FMT_CONSTEXPR20 (range_format_kind<R, Char>::value ==
+                        range_format::debug_string)
+      underlying_.set_debug_format();
+    return it;
   }
 
   template <typename FormatContext>
   auto format(range_type& range, FormatContext& ctx) const
       -> decltype(ctx.out()) {
-    auto out = ctx.out();
-    if FMT_CONSTEXPR20 (range_format_kind<R, Char>::value ==
-                        range_format::debug_string) {
-      *out++ = '"';
-    }
-    out = underlying_.format(
+    return underlying_.format(
         string_type{detail::range_begin(range), detail::range_end(range)}, ctx);
-    if FMT_CONSTEXPR20 (range_format_kind<R, Char>::value ==
-                        range_format::debug_string)
-      *out++ = '"';
-    return out;
   }
 };
 

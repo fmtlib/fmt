@@ -348,6 +348,10 @@ TEST(ranges_test, range_format_string) {
 TEST(ranges_test, range_format_debug_string) {
   const vector_debug_string v{'f', 'o', 'o'};
   EXPECT_EQ(fmt::format("{}", v), "\"foo\"");
+  EXPECT_EQ(fmt::format("{}", vector_debug_string{'\n'}), "\"\\n\"");
+  EXPECT_EQ(fmt::format("{}", vector_debug_string{'\\'}), "\"\\\\\"");
+  EXPECT_EQ(fmt::format("{}", vector_debug_string{'\"'}), "\"\\\"\"");
+  EXPECT_EQ(fmt::format("{:8}", vector_debug_string{'a'}), "\"a\"     ");
 }
 
 // A range that provides non-const only begin()/end() to test fmt::join
