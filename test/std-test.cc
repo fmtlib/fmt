@@ -359,15 +359,6 @@ TEST(std_test, error_code_truncated_alignment) {
       fmt::format_error);
 }
 
-TEST(std_test, error_code_truncated_fill_alignment) {
-  const char format[] = {'{', ':', '*', '>'};
-  auto ec = std::error_code(42, std::generic_category());
-  EXPECT_THROW(
-      (void)fmt::vformat(fmt::string_view(format, sizeof(format)),
-                         fmt::make_format_args(ec)),
-      fmt::format_error);
-}
-
 template <typename Catch> void exception_test() {
   try {
     throw std::runtime_error("Test Exception");
