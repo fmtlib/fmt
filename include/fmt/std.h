@@ -549,9 +549,10 @@ template <> struct formatter<std::error_code> {
     if (it == end) return it;
 
     it = detail::parse_align(it, end, specs_);
+    if (it == end) return it;
 
     char c = *it;
-    if (it != end && ((c >= '1' && c <= '9') || c == '{'))
+    if ((c >= '1' && c <= '9') || c == '{')
       it = detail::parse_width(it, end, specs_, width_ref_, ctx);
 
     if (it != end && *it == '?') {
