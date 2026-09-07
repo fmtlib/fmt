@@ -349,6 +349,16 @@ TEST(std_test, error_code) {
             "{\"generic:42\": 0}");
 }
 
+TEST(std_test, error_code_truncated_alignment) {
+  // No null terminator: reading past the format string must be detectable.
+  const char format[] = {'{', ':', '>'};
+  auto ec = std::error_code(42, std::generic_category());
+  EXPECT_THROW(
+      (void)fmt::vformat(fmt::string_view(format, sizeof(format)),
+                         fmt::make_format_args(ec)),
+      fmt::format_error);
+}
+
 template <typename Catch> void exception_test() {
   try {
     throw std::runtime_error("Test Exception");
