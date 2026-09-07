@@ -994,6 +994,57 @@ TEST(chrono_test, out_of_range) {
   EXPECT_THROW((void)fmt::format("{:%j}", fd), fmt::format_error);
 }
 
+template <typename T>
+void check_calendar_padding(T value, const char* expected,
+                            const char* chrono_format) {
+  EXPECT_EQ(expected, fmt::format("{}", value));
+  EXPECT_EQ(expected, fmt::format("{:}", value));
+  EXPECT_EQ(fmt::format("{:15}", expected), fmt::format("{:15}", value));
+  EXPECT_EQ(fmt::format("{:<15}", expected), fmt::format("{:<15}", value));
+  EXPECT_EQ(fmt::format("{:>15}", expected), fmt::format("{:>15}", value));
+  EXPECT_EQ(fmt::format("{:*^15}", expected), fmt::format("{:*^15}", value));
+  EXPECT_EQ(fmt::format("{:%>15}", expected), fmt::format("{:%>15}", value));
+  EXPECT_EQ(fmt::format("{:L>15}", expected), fmt::format("{:L>15}", value));
+  EXPECT_EQ(fmt::format("{:>15}", expected), fmt::format("{:>{}}", value, 15));
+  EXPECT_EQ(expected, fmt::format("{:1}", value));
+  auto explicit_format = fmt::format("{{:*^15{}}}", chrono_format);
+  auto unpadded_format = fmt::format("{{:{}}}", chrono_format);
+  EXPECT_EQ(fmt::format("{:*^15}",
+                        fmt::format(runtime(unpadded_format), value)),
+            fmt::format(runtime(explicit_format), value));
+  EXPECT_THROW((void)fmt::format(runtime("{:>{}}"), value, -1),
+               fmt::format_error);
+}
+
+TEST(chrono_test, calendar_padding) {
+  check_calendar_padding(fmt::day(5), "05", "%d");
+  check_calendar_padding(fmt::month(1), "Jan", "%B");
+  check_calendar_padding(fmt::year(2024), "2024", "%y");
+  check_calendar_padding(fmt::weekday(6), "Sat", "%A");
+  check_calendar_padding(
+      fmt::year_month_day(fmt::year(2024), fmt::month(1), fmt::day(5)),
+      "2024-01-05", "%Y/%m/%d");
+}
+
+template <typename T> void check_localized_calendar_padding(T value) {
+  auto loc = get_locale("es_ES.UTF-8");
+  auto expected = fmt::format(loc, "{:L}", value);
+  EXPECT_EQ(fmt::format("{:*>15}", expected),
+            fmt::format(loc, "{:*>15L}", value));
+  EXPECT_EQ(fmt::format("{:>15}", expected),
+            fmt::format(loc, "{:>{}L}", value, 15));
+}
+
+TEST(chrono_test, localized_calendar_padding) {
+  check_localized_calendar_padding(fmt::month(1));
+  check_localized_calendar_padding(fmt::weekday(6));
+  auto loc = get_locale("es_ES.UTF-8");
+  EXPECT_EQ(fmt::format("{:>15}", fmt::format(loc, "{:L%B}", fmt::month(1))),
+            fmt::format(loc, "{:>15L%B}", fmt::month(1)));
+  EXPECT_EQ(fmt::format("{:>15}", fmt::format(loc, "{:L%A}", fmt::weekday(6))),
+            fmt::format(loc, "{:>15L%A}", fmt::weekday(6)));
+}
+
 TEST(chrono_test, year_month_day) {
   auto loc = get_locale("es_ES.UTF-8");
   std::locale::global(loc);
