@@ -302,14 +302,13 @@ class CxxHandler(BaseHandler):
         self._file_doxyxml: "ET.ElementTree[ET.Element[str]] | None" = None
         for h in headers:
             filename = h.replace(".h", "_8h.xml")
-            with open(os.path.join(self._doxyxml_dir, filename), "rb") as f:
-                doxyxml = ET.parse(f)
-                if self._file_doxyxml is None:
-                    self._file_doxyxml = doxyxml
-                    continue
-                root = self._file_doxyxml.getroot()
-                for node in doxyxml.getroot():
-                    root.append(node)
+            doxyxml = ET.parse(os.path.join(self._doxyxml_dir, filename))
+            if self._file_doxyxml is None:
+                self._file_doxyxml = doxyxml
+                continue
+            root = self._file_doxyxml.getroot()
+            for node in doxyxml.getroot():
+                root.append(node)
 
     def collect_compound(self, identifier: str, cls: "list[ET.Element]") -> Definition:
         """Collect a compound definition such as a struct."""
@@ -317,43 +316,42 @@ class CxxHandler(BaseHandler):
         if refid is None:
             raise ValueError
         path = os.path.join(self._doxyxml_dir, refid + ".xml")
-        with open(path, "rb") as f:
-            xml = ET.parse(f)
-            node = xml.find("compounddef")
-            if node is None:
+        xml = ET.parse(path)
+        node = xml.find("compounddef")
+        if node is None:
+            raise ValueError
+        d = Definition(identifier, node=node)
+        d.template_params = convert_template_params(node)
+        d.desc = get_description(node)
+        d.members = []
+        for m in node.findall(
+            'sectiondef[@kind="public-attrib"]/memberdef'
+        ) + node.findall('sectiondef[@kind="public-func"]/memberdef'):
+            name = m.find("name")
+            if name is None or name.text is None:
                 raise ValueError
-            d = Definition(identifier, node=node)
-            d.template_params = convert_template_params(node)
-            d.desc = get_description(node)
-            d.members = []
-            for m in node.findall(
-                'sectiondef[@kind="public-attrib"]/memberdef'
-            ) + node.findall('sectiondef[@kind="public-func"]/memberdef'):
-                name = m.find("name")
-                if name is None or name.text is None:
-                    raise ValueError
-                name = name.text
-                # Doxygen incorrectly classifies members of private unnamed unions as
-                # public members of the containing class.
-                if name.endswith("_"):
-                    continue
-                desc = get_description(m)
-                if len(desc) == 0:
-                    continue
-                kind = m.get("kind")
-                member = Definition(name if name else "", kind=kind, is_member=True)
-                type_ = m.find("type")
-                if type_ is None:
-                    raise ValueError
-                type_text = type_.text
-                member.type = type_text if type_text else ""
-                if kind == "function":
-                    member.params = convert_params(m)
-                    convert_return_type(member, m)
-                member.template_params = None
-                member.desc = desc
-                d.members.append(member)
-            return d
+            name = name.text
+            # Doxygen incorrectly classifies members of private unnamed unions as
+            # public members of the containing class.
+            if name.endswith("_"):
+                continue
+            desc = get_description(m)
+            if len(desc) == 0:
+                continue
+            kind = m.get("kind")
+            member = Definition(name if name else "", kind=kind, is_member=True)
+            type_ = m.find("type")
+            if type_ is None:
+                raise ValueError
+            type_text = type_.text
+            member.type = type_text if type_text else ""
+            if kind == "function":
+                member.params = convert_params(m)
+                convert_return_type(member, m)
+            member.template_params = None
+            member.desc = desc
+            d.members.append(member)
+        return d
 
     @override
     def collect(self, identifier: str, options: "Mapping[str, Any]") -> Definition:
@@ -371,9 +369,8 @@ class CxxHandler(BaseHandler):
         doxyxml = self._ns2doxyxml.get(namespace)
         if doxyxml is None:
             path = f"namespace{namespace.replace('::', '_1_1')}.xml"
-            with open(os.path.join(self._doxyxml_dir, path), "rb") as f:
-                doxyxml = ET.parse(f)
-                self._ns2doxyxml[namespace] = doxyxml
+            doxyxml = ET.parse(os.path.join(self._doxyxml_dir, path))
+            self._ns2doxyxml[namespace] = doxyxml
 
         nodes = doxyxml.findall(f"compounddef/sectiondef/memberdef/name[.='{name}']/..")
         if len(nodes) == 0:
