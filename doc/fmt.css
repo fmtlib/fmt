@@ -88,7 +88,8 @@ code.decl > div {
   color: var(--md-code-hl-number-color);
 }
 .hljs-built_in,
-.hljs-class .hljs-title {
+.hljs-class .hljs-title,
+.hljs-code {
   color: var(--md-code-hl-function-color);
 }
 .hljs-symbol,
@@ -96,7 +97,8 @@ code.decl > div {
 .hljs-link,
 .hljs-meta,
 .hljs-selector-id,
-.hljs-title {
+.hljs-title,
+.hljs-section {
   color: var(--md-code-hl-special-color);
 }
 .hljs-attr,
@@ -105,6 +107,12 @@ code.decl > div {
 .hljs-type,
 .hljs-selector-class,
 .hljs-selector-attr,
-.hljs-selector-pseudo {
+.hljs-selector-pseudo,
+.hljs-template-tag,
+.hljs-deletion {
   color: var(--md-code-hl-constant-color);
+}
+
+.hljs-subst {
+  color: var(--md-code-fg-color);
 }
