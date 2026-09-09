@@ -112,7 +112,6 @@ code.decl > div {
 .hljs-deletion {
   color: var(--md-code-hl-constant-color);
 }
-
 .hljs-subst {
   color: var(--md-code-fg-color);
 }
