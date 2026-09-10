@@ -2208,7 +2208,7 @@ template <typename Context> class value {
   FMT_CONSTEXPR value(const T& x FMT_BUILTIN) {
     static_assert(std::is_same<C, char_type>::value,
                   "mixing character types is disallowed");
-    auto sv = to_string_view(x);
+    auto sv = detail::to_string_view(x);
     string.data = sv.data();
     string.size = sv.size();
   }

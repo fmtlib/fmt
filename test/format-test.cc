@@ -2213,6 +2213,28 @@ struct formatter<adl_test::fmt::detail::foo> : formatter<std::string> {
 };
 FMT_END_NAMESPACE
 
+namespace adl_to_string_view_test {
+struct string_like {
+  using value_type = char;
+
+  auto find_first_of(char, size_t) const -> size_t { return 0; }
+  auto data() const -> const char* { return "test"; }
+  auto size() const -> size_t { return 4; }
+};
+
+template <typename T> auto to_string_view(const T&) -> fmt::string_view {
+  return "adl";
+}
+}  // namespace adl_to_string_view_test
+
+// Test that to_string_view is not found by ADL. to_string() passes the
+// argument to detail::write without mapping it first, which reaches the
+// has_to_string_view overload of write and is a separate call site from the
+// one core-test covers.
+TEST(format_test, adl_to_string_view) {
+  EXPECT_EQ(fmt::to_string(adl_to_string_view_test::string_like()), "test");
+}
+
 TEST(format_test, to_string) {
   EXPECT_EQ(fmt::to_string(42), "42");
   EXPECT_EQ(fmt::to_string(reinterpret_cast<void*>(0x1234)), "0x1234");
