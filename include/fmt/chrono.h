@@ -2025,7 +2025,7 @@ struct formatter<year_month_day, Char> : private formatter<std::tm, Char> {
     time.tm_mon = static_cast<int>(static_cast<unsigned>(val.month())) - 1;
     time.tm_mday = static_cast<int>(static_cast<unsigned>(val.day()));
     if (use_tm_formatter_) return formatter<std::tm, Char>::format(time, ctx);
-    detail::get_locale loc(true, ctx.locale());
+    detail::get_locale loc(false, ctx.locale());
     auto w = detail::tm_writer<decltype(ctx.out()), Char>(loc, ctx.out(), time);
     w.on_iso_date();
     return w.out();
