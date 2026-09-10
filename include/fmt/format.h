@@ -2331,6 +2331,11 @@ FMT_CONSTEXPR FMT_INLINE auto write_int(OutputIt out, write_int_arg<T> arg,
     return write_int_chr<Char>(out, abs_value, (prefix & 0xff) == '-', specs);
   }
 
+  // C requires no characters when converting a zero value with a precision of
+  // zero. Only printf can specify a precision for an integer; the format API
+  // rejects it.
+  if (specs.precision == 0 && abs_value == 0) begin = end;
+
   // Write an integer in the format
   //   <left-padding><prefix><numeric-padding><digits><right-padding>
   // prefix contains chars in three lower bytes and the size in the fourth byte.
