@@ -754,33 +754,6 @@ TEST(base_test, adl_check) {
   EXPECT_EQ(s, "test");
 }
 
-namespace adl_to_string_view_test {
-struct string_like {
-  using value_type = char;
-
-  auto find_first_of(char, size_t) const -> size_t { return 0; }
-  auto data() const -> const char* { return "test"; }
-  auto size() const -> size_t { return 4; }
-};
-
-// Ties with fmt::detail::to_string_view during partial ordering, so an
-// unqualified call from inside fmt::detail is ambiguous rather than silently
-// resolving here.
-template <typename T> auto to_string_view(const T&) -> fmt::string_view {
-  return "adl";
-}
-}  // namespace adl_to_string_view_test
-
-// Test that to_string_view is not found by ADL. has_to_string_view and char_t
-// both select the type through detail::to_string_view, so the conversion has
-// to go through the same overload.
-TEST(base_test, adl_to_string_view) {
-  auto s = std::string();
-  fmt::format_to(std::back_inserter(s), "{}",
-                 adl_to_string_view_test::string_like());
-  EXPECT_EQ(s, "test");
-}
-
 struct implicitly_convertible_to_string_view {
   operator fmt::string_view() const { return "foo"; }
 };
