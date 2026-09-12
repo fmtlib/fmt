@@ -3815,7 +3815,7 @@ FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> value)
 template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(has_to_string_view<T>::value)>
 constexpr auto write(OutputIt out, const T& value) -> OutputIt {
-  return write<Char>(out, to_string_view(value));
+  return write<Char>(out, detail::to_string_view(value));
 }
 
 // FMT_ENABLE_IF() condition separated to workaround an MSVC bug.
