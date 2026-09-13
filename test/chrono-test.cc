@@ -717,6 +717,9 @@ TEST(chrono_test, weekday) {
     EXPECT_THAT(saturdays, Contains(fmt::format(loc, "{:L}", sat)));
     EXPECT_THAT(saturdays, Contains(fmt::format(loc, "{:L%a}", sat)));
     EXPECT_THAT(saturdays, Contains(fmt::format(loc, "{:L%a}", tm)));
+    // Without an explicit locale the global one is used.
+    EXPECT_THAT(saturdays, Contains(fmt::format("{:L}", sat)));
+    EXPECT_THAT(saturdays, Contains(fmt::format("{:L%a}", tm)));
   }
 }
 
@@ -1038,5 +1041,6 @@ TEST(chrono_test, year_month_day) {
     auto months = std::vector<std::string>{"ene.", "ene"};
     EXPECT_THAT(months, Contains(fmt::format(loc, "{:L}", month)));
     EXPECT_THAT(months, Contains(fmt::format(loc, "{:L%b}", month)));
+    EXPECT_THAT(months, Contains(fmt::format("{:L}", month)));
   }
 }
