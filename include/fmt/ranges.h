@@ -515,9 +515,10 @@ struct formatter<
   using nonlocking = void;
 
   FMT_CONSTEXPR formatter() {
-    if FMT_CONSTEXPR20 (range_format_kind<R, Char>::value == range_format::set)
+    if FMT_CONSTEXPR20 (range_format_kind<R, Char>::value == range_format::set) {
       range_formatter_.set_brackets(detail::string_literal<Char, '{'>{},
                                     detail::string_literal<Char, '}'>{});
+    }
   }
 
   FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
