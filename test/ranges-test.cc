@@ -721,6 +721,23 @@ TEST(ranges_test, format_as_tie) {
   EXPECT_EQ(fmt::format("{}", tieable()), "(3, 0.42)");
 }
 
+struct format_as_tuple_like {};
+
+auto format_as(const format_as_tuple_like&) -> std::string { return "Hello"; }
+
+namespace std {
+template <> struct tuple_size<format_as_tuple_like>
+    : integral_constant<size_t, 1> {};
+template <> struct tuple_element<0, format_as_tuple_like> {
+  using type = format_as_tuple_like;
+};
+}  // namespace std
+
+TEST(ranges_test, format_as_tuple_like) {
+  EXPECT_TRUE((fmt::is_formattable<format_as_tuple_like>::value));
+  EXPECT_EQ(fmt::format("{}", format_as_tuple_like{}), "Hello");
+}
+
 struct lvalue_qualified_begin_end {
   int arr[5] = {1, 2, 3, 4, 5};
 
