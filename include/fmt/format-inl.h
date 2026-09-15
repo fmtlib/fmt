@@ -64,7 +64,7 @@ using std::use_facet;
 namespace detail {
 struct locale {};
 template <typename Char> struct numpunct {
-  auto grouping() const -> std::string { return "\03"; }
+  auto grouping() const -> std::string { return {}; }
   auto thousands_sep() const -> Char { return ','; }
   auto decimal_point() const -> Char { return '.'; }
 };
