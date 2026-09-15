@@ -278,6 +278,39 @@ TEST(printf_test, int_precision) {
   EXPECT_PRINTF("00042     ", "%-#10.5o", 042);
 }
 
+// C99 7.21.6.1: the result of converting a zero value with a precision of zero
+// is no characters.
+TEST(printf_test, zero_int_with_zero_precision) {
+  EXPECT_PRINTF("", "%.0d", 0);
+  EXPECT_PRINTF("", "%.d", 0);
+  EXPECT_PRINTF("", "%.0i", 0);
+  EXPECT_PRINTF("", "%.0o", 0);
+  EXPECT_PRINTF("", "%.0u", 0);
+  EXPECT_PRINTF("", "%.0x", 0);
+  EXPECT_PRINTF("", "%.0X", 0);
+
+  // '#' forces a single '0' for octal, but has no effect on other conversions.
+  EXPECT_PRINTF("0", "%#.0o", 0);
+  EXPECT_PRINTF("", "%#.0x", 0);
+  EXPECT_PRINTF("", "%#.0X", 0);
+
+  // The sign, space and width still apply.
+  EXPECT_PRINTF("+", "%+.0d", 0);
+  EXPECT_PRINTF(" ", "% .0d", 0);
+  EXPECT_PRINTF("     ", "%5.0d", 0);
+  EXPECT_PRINTF("     ", "%-5.0d", 0);
+  EXPECT_PRINTF("     ", "%05.0d", 0);
+  EXPECT_PRINTF("    0", "%#5.0o", 0);
+  EXPECT_PRINTF("0    ", "%#-5.0o", 0);
+
+  // A nonzero value or a nonzero precision is unaffected.
+  EXPECT_PRINTF("42", "%.0d", 42);
+  EXPECT_PRINTF("-42", "%.0d", -42);
+  EXPECT_PRINTF("ff", "%.0x", 255);
+  EXPECT_PRINTF("0", "%.1d", 0);
+  EXPECT_PRINTF("00", "%.2d", 0);
+}
+
 TEST(printf_test, float_precision) {
   char buffer[256];
   safe_sprintf(buffer, "%.3e", 1234.5678);
