@@ -89,9 +89,11 @@ namespace detail {
 #endif
 
 #if FMT_USE_BITINT
+FMT_PRAGMA_CLANG(diagnostic push)
 FMT_PRAGMA_CLANG(diagnostic ignored "-Wbit-int-extension")
 template <int N> using bitint = _BitInt(N);
 template <int N> using ubitint = unsigned _BitInt(N);
+FMT_PRAGMA_CLANG(diagnostic pop)
 #else
 template <int N> struct bitint {};
 template <int N> struct ubitint {};

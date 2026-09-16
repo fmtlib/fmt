@@ -1106,6 +1106,7 @@ struct is_contiguous<basic_memory_buffer<T, SIZE, Allocator>> : std::true_type {
 };
 
 // Suppress a misleading warning in older versions of clang.
+FMT_PRAGMA_CLANG(diagnostic push)
 FMT_PRAGMA_CLANG(diagnostic ignored "-Wweak-vtables")
 
 /// An error reported from a formatting function.
@@ -1113,6 +1114,7 @@ class FMT_SO_VISIBILITY("default") format_error : public std::runtime_error {
  public:
   using std::runtime_error::runtime_error;
 };
+FMT_PRAGMA_CLANG(diagnostic pop)
 
 class loc_value;
 
