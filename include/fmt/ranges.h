@@ -303,10 +303,20 @@ template <typename T, typename C> struct is_tuple_formattable {
   static constexpr bool value = detail::is_tuple_formattable_<T, C>::value;
 };
 
+namespace detail {
+template <typename T, typename C, bool = has_format_as_<T>::value>
+struct is_tuple_formattable_for_formatter : std::false_type {};
+
+template <typename T, typename C>
+struct is_tuple_formattable_for_formatter<T, C, false>
+    : std::integral_constant<bool, fmt::is_tuple_formattable<T, C>::value> {};
+}  // namespace detail
+
 template <typename Tuple, typename Char>
 struct formatter<Tuple, Char,
                  enable_if_t<fmt::is_tuple_like<Tuple>::value &&
-                             fmt::is_tuple_formattable<Tuple, Char>::value>> {
+                             detail::is_tuple_formattable_for_formatter<
+                                 Tuple, Char>::value>> {
  private:
   decltype(detail::tuple::get_formatters<Tuple, Char>(
       detail::tuple_index_sequence<Tuple>())) formatters_;
