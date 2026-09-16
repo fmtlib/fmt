@@ -291,6 +291,7 @@ TEST(printf_test, zero_int_with_zero_precision) {
 
   // '#' forces a single '0' for octal, but has no effect on other conversions.
   EXPECT_PRINTF("0", "%#.0o", 0);
+  EXPECT_PRINTF("0", "%#.0hho", 256);
   EXPECT_PRINTF("", "%#.0x", 0);
   EXPECT_PRINTF("", "%#.0X", 0);
 

@@ -510,10 +510,6 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
           str, to_unsigned(nul != str_end ? nul - str : specs.precision));
       arg = sv;
     }
-    // '#' has no effect on a zero value except for octal, where it forces a
-    // single '0'. The conversion specifier is not parsed yet, so remember it.
-    bool alt_zero = specs.alt() && arg.visit(is_zero_int());
-    if (alt_zero) specs.clear_alt();
     if (specs.fill_unit<Char>() == '0') {
       if (is_arithmetic_type(arg.type()) && specs.align() != align::left) {
         specs.set_align(align::numeric);
@@ -575,6 +571,8 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
     if (upper) specs.set_upper();
     // For '#o', C requires a single '0' when the value and the precision are
     // both zero.
+    bool alt_zero = specs.alt() && arg.visit(is_zero_int());
+    if (alt_zero) specs.clear_alt();
     if (alt_zero && specs.type() == presentation_type::oct &&
         specs.precision == 0)
       specs.precision = 1;
