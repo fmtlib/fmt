@@ -169,8 +169,7 @@ struct has_format_as_ : std::false_type {};
 template <typename T>
 struct has_format_as_<T, void_t<format_as_result<T>>> : std::true_type {};
 
-template <typename T, typename C,
-          bool = is_tuple_like_<T>::value && !has_format_as_<T>::value>
+template <typename T, typename C, bool = is_tuple_like_<T>::value>
 class is_tuple_formattable_ {
  public:
   static constexpr bool value = false;

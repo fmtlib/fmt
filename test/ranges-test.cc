@@ -734,6 +734,7 @@ template <> struct tuple_element<0, format_as_tuple_like> {
 }  // namespace std
 
 TEST(ranges_test, format_as_tuple_like) {
+  EXPECT_TRUE((fmt::is_tuple_formattable<format_as_tuple_like>::value));
   EXPECT_TRUE((fmt::is_formattable<format_as_tuple_like>::value));
   EXPECT_EQ(fmt::format("{}", format_as_tuple_like{}), "Hello");
 }
