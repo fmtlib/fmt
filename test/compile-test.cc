@@ -10,6 +10,7 @@
 #include <array>
 #include <iterator>
 #include <list>
+#include <tuple>
 #include <type_traits>
 #include <vector>
 
@@ -95,6 +96,15 @@ TEST(compile_test, format_specs) {
   EXPECT_EQ("1.2 ms ",
             fmt::format(FMT_COMPILE("{:7.1%Q %q}"),
                         std::chrono::duration<double, std::milli>(1.234)));
+}
+
+TEST(compile_test, range_and_tuple_width) {
+  auto arr = std::array<int, 3>{1, 2, 3};
+  EXPECT_EQ("[1, 2, 3]", fmt::format(FMT_COMPILE("{}"), arr));
+  EXPECT_EQ(" [1, 2, 3]", fmt::format(FMT_COMPILE("{:>10}"), arr));
+  EXPECT_EQ("[1, 2, 3]*", fmt::format(FMT_COMPILE("{:*<10}"), arr));
+  EXPECT_EQ("  (1, 2)",
+            fmt::format(FMT_COMPILE("{:>8}"), std::make_tuple(1, 2)));
 }
 
 TEST(compile_test, dynamic_format_specs) {
