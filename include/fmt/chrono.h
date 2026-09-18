@@ -407,47 +407,46 @@ auto write(OutputIt out, const std::tm& time, const std::locale& loc,
   return write_encoded_tm_str(out, string_view(buf.data(), buf.size()), loc);
 }
 
-#if FMT_USE_LOCALE
-// The locale used for localized formatting: the one passed to the formatting
-// function or the global locale if none was passed.
-inline auto get_locale(locale_ref loc, bool localized) -> std::locale {
-  if (!localized) return get_classic_locale();
-  return loc.get<std::locale>();
-}
+// locale_ref::get<std::locale>() is ill-formed when FMT_USE_LOCALE is 0, so
+// that branch must not be instantiated.
+template <bool UseLocale = FMT_USE_LOCALE != 0> struct locale_writer {
+  static auto is_classic(locale_ref loc) -> bool {
+    return loc.get<std::locale>() == get_classic_locale();
+  }
 
-inline auto is_classic_locale(locale_ref loc, bool localized) -> bool {
-  return !localized || loc.get<std::locale>() == get_classic_locale();
-}
+  // Only called when the locale is localized and not classic.
+  template <typename Char, typename OutputIt>
+  static auto write_time(OutputIt out, const std::tm& time, locale_ref loc,
+                         char format, char modifier) -> OutputIt {
+    return write<Char>(out, time, loc.get<std::locale>(), format, modifier);
+  }
 
-template <typename Char, typename OutputIt>
-auto write_localized_time(OutputIt out, const std::tm& time, locale_ref loc,
-                          bool localized, char format, char modifier)
-    -> OutputIt {
-  return write<Char>(out, time, get_locale(loc, localized), format, modifier);
-}
+  // An empty locale_ref means the global locale, not the classic one.
+  template <typename Char, typename OutputIt>
+  static auto write_str(OutputIt out, string_view sv, locale_ref loc,
+                        bool localized) -> OutputIt {
+    if (!localized) return write_tm_str<Char>(out, sv, get_classic_locale());
+    return write_tm_str<Char>(out, sv, loc.get<std::locale>());
+  }
+};
 
-template <typename Char, typename OutputIt>
-auto write_localized_str(OutputIt out, string_view sv, locale_ref loc,
-                         bool localized) -> OutputIt {
-  return write_tm_str<Char>(out, sv, get_locale(loc, localized));
-}
-#else
-constexpr auto is_classic_locale(locale_ref, bool) -> bool { return true; }
+template <> struct locale_writer<false> {
+  static constexpr auto is_classic(locale_ref) -> bool { return true; }
 
-// Never called because is_classic_locale() is always true.
-template <typename Char, typename OutputIt>
-auto write_localized_time(OutputIt out, const std::tm&, locale_ref, bool, char,
-                          char) -> OutputIt {
-  return out;
-}
+  // Never called because is_classic() is always true.
+  template <typename Char, typename OutputIt>
+  static auto write_time(OutputIt out, const std::tm&, locale_ref, char, char)
+      -> OutputIt {
+    return out;
+  }
 
-// Zone names are ASCII, so there is nothing to transcode.
-template <typename Char, typename OutputIt>
-auto write_localized_str(OutputIt out, string_view sv, locale_ref, bool)
-    -> OutputIt {
-  return copy<Char>(sv.data(), sv.data() + sv.size(), out);
-}
-#endif  // FMT_USE_LOCALE
+  // Zone names are ASCII, so there is nothing to transcode.
+  template <typename Char, typename OutputIt>
+  static auto write_str(OutputIt out, string_view sv, locale_ref, bool)
+      -> OutputIt {
+    return copy<Char>(sv.data(), sv.data() + sv.size(), out);
+  }
+};
 
 template <typename T, typename U>
 using is_similar_arithmetic_type =
@@ -1235,7 +1234,7 @@ class tm_writer {
   template <typename T, FMT_ENABLE_IF(has_tm_zone<T>::value)>
   void format_tz_name(const T& tm) {
     if (!tm.tm_zone) FMT_THROW(format_error("no timezone"));
-    out_ = write_localized_str<Char>(out_, tm.tm_zone, loc_, localized_);
+    out_ = locale_writer<>::write_str<Char>(out_, tm.tm_zone, loc_, localized_);
   }
   template <typename T, FMT_ENABLE_IF(!has_tm_zone<T>::value)>
   void format_tz_name(const T&) {
@@ -1243,8 +1242,7 @@ class tm_writer {
   }
 
   void format_localized(char format, char modifier = 0) {
-    out_ = write_localized_time<Char>(out_, tm_, loc_, localized_, format,
-                                      modifier);
+    out_ = locale_writer<>::write_time<Char>(out_, tm_, loc_, format, modifier);
   }
 
  public:
@@ -1252,7 +1250,7 @@ class tm_writer {
             const Duration* subsecs = nullptr)
       : loc_(loc),
         localized_(localized),
-        is_classic_(is_classic_locale(loc, localized)),
+        is_classic_(!localized || locale_writer<>::is_classic(loc)),
         out_(out),
         subsecs_(subsecs),
         tm_(tm) {}
