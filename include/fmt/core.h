@@ -18,6 +18,7 @@
 #  include <string.h>  // memcmp
 
 #  include <type_traits>  // std::enable_if
+#  include <version>      // __cpp_lib_reflection
 #endif
 
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
@@ -1155,7 +1156,11 @@ struct use_format_as_member<
 template <typename T, typename U = remove_const_t<T>>
 using use_formatter =
     bool_constant<(std::is_class<T>::value || std::is_enum<T>::value ||
-                   std::is_union<T>::value || std::is_array<T>::value) &&
+                   std::is_union<T>::value || std::is_array<T>::value
+#if defined(__cpp_lib_reflection) && __cpp_lib_reflection >= 202506L  // C++26
+                   || std::is_reflection<std::remove_cvref_t<T>>::value
+#endif
+                   ) &&
                   !has_to_string_view<T>::value && !is_named_arg<T>::value &&
                   !use_format_as<T>::value && !use_format_as_member<U>::value>;
 
