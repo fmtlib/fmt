@@ -1114,6 +1114,7 @@ class FMT_SO_VISIBILITY("default") format_error : public std::runtime_error {
  public:
   using std::runtime_error::runtime_error;
 };
+
 FMT_PRAGMA_CLANG(diagnostic pop)
 
 class loc_value;
