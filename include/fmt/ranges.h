@@ -164,11 +164,6 @@ using make_index_sequence = make_integer_sequence<size_t, N>;
 template <typename T>
 using tuple_index_sequence = make_index_sequence<std::tuple_size<T>::value>;
 
-template <typename T, typename = void>
-struct has_format_as_ : std::false_type {};
-template <typename T>
-struct has_format_as_<T, void_t<format_as_result<T>>> : std::true_type {};
-
 template <typename T, typename C, bool = is_tuple_like_<T>::value>
 class is_tuple_formattable_ {
  public:
@@ -303,12 +298,13 @@ template <typename T, typename C> struct is_tuple_formattable {
 };
 
 namespace detail {
-template <typename T, typename C, bool = has_format_as_<T>::value>
-struct is_tuple_formattable_for_formatter : std::false_type {};
+template <typename T, typename C, typename = void>
+struct is_tuple_formattable_for_formatter
+    : std::integral_constant<bool, fmt::is_tuple_formattable<T, C>::value> {};
 
 template <typename T, typename C>
-struct is_tuple_formattable_for_formatter<T, C, false>
-    : std::integral_constant<bool, fmt::is_tuple_formattable<T, C>::value> {};
+struct is_tuple_formattable_for_formatter<T, C, void_t<format_as_result<T>>>
+    : std::false_type {};
 }  // namespace detail
 
 template <typename Tuple, typename Char>
