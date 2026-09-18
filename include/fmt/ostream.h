@@ -164,6 +164,25 @@ void println(std::ostream& os, format_string<T...> fmt, T&&... args) {
              fmt::format(fmt, std::forward<T>(args)...));
 }
 
+/**
+ * Prints `arg` to the stream `os`.
+ *
+ * **Example**:
+ *
+ *     fmt::print(cerr, 42);
+ */
+template <typename T,
+          FMT_ENABLE_IF(!detail::is_format_string_arg<T>::value)>
+void print(std::ostream& os, T&& arg) {
+  fmt::print(os, FMT_STRING("{}"), std::forward<T>(arg));
+}
+
+template <typename T,
+          FMT_ENABLE_IF(!detail::is_format_string_arg<T>::value)>
+void println(std::ostream& os, T&& arg) {
+  fmt::print(os, FMT_STRING("{}\n"), std::forward<T>(arg));
+}
+
 FMT_END_EXPORT
 FMT_END_NAMESPACE
 

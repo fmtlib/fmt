@@ -368,6 +368,18 @@ void println(std::wostream& os, wformat_string<T...> fmt, T&&... args) {
   print(os, L"{}\n", fmt::format(fmt, std::forward<T>(args)...));
 }
 
+template <typename T,
+          FMT_ENABLE_IF(!detail::is_format_string_arg<T>::value)>
+void print(std::wostream& os, T&& arg) {
+  print(os, L"{}", std::forward<T>(arg));
+}
+
+template <typename T,
+          FMT_ENABLE_IF(!detail::is_format_string_arg<T>::value)>
+void println(std::wostream& os, T&& arg) {
+  println(os, L"{}", std::forward<T>(arg));
+}
+
 /// Converts `value` to `std::wstring` using the default format for type `T`.
 template <typename T> inline auto to_wstring(const T& value) -> std::wstring {
   return format(FMT_STRING(L"{}"), value);

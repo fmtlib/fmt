@@ -564,6 +564,62 @@ void println(text_style ts, format_string<T...> fmt, T&&... args) {
   return println(stdout, ts, fmt, std::forward<T>(args)...);
 }
 
+/**
+ * Prints `arg` to the specified file stream using ANSI escape sequences
+ * to specify text formatting.
+ *
+ * **Example**:
+ *
+ *     fmt::print(stderr, fmt::fg(fmt::color::red), 42);
+ */
+template <typename T,
+          FMT_ENABLE_IF(!detail::is_format_string_arg<T>::value)>
+void print(FILE* f, text_style ts, T&& arg) {
+  fmt::print(f, ts, FMT_STRING("{}"), std::forward<T>(arg));
+}
+
+/**
+ * Prints `arg` to stdout using ANSI escape sequences to specify text
+ * formatting.
+ *
+ * **Example**:
+ *
+ *     fmt::print(fmt::fg(fmt::color::red), 42);
+ */
+template <typename T,
+          FMT_ENABLE_IF(!detail::is_format_string_arg<T>::value)>
+void print(text_style ts, T&& arg) {
+  return print(stdout, ts, std::forward<T>(arg));
+}
+
+/**
+ * Prints `arg` to the specified file stream followed by a newline,
+ * using ANSI escape sequences to specify text formatting.
+ *
+ * **Example**:
+ *
+ *     fmt::println(stderr, fmt::fg(fmt::color::red), 42);
+ */
+template <typename T,
+          FMT_ENABLE_IF(!detail::is_format_string_arg<T>::value)>
+void println(FILE* f, text_style ts, T&& arg) {
+  fmt::println(f, ts, FMT_STRING("{}"), std::forward<T>(arg));
+}
+
+/**
+ * Prints `arg` to stdout followed by a newline, using ANSI escape sequences
+ * to specify text formatting.
+ *
+ * **Example**:
+ *
+ *     fmt::println(fmt::fg(fmt::color::red), 42);
+ */
+template <typename T,
+          FMT_ENABLE_IF(!detail::is_format_string_arg<T>::value)>
+void println(text_style ts, T&& arg) {
+  return println(stdout, ts, std::forward<T>(arg));
+}
+
 inline auto vformat(text_style ts, string_view fmt, format_args args)
     -> std::string {
   auto buf = memory_buffer();

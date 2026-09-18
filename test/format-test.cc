@@ -2002,6 +2002,44 @@ TEST(format_test, print) {
                "Don't panic!\n");
 }
 
+TEST(format_test, print_single_arg) {
+  EXPECT_WRITE(stdout, fmt::print(42), "42");
+  EXPECT_WRITE(stdout, fmt::print(-42), "-42");
+  EXPECT_WRITE(stdout, fmt::print(0), "0");
+  EXPECT_WRITE(stdout, fmt::print(42u), "42");
+  EXPECT_WRITE(stdout, fmt::print(42ll), "42");
+  EXPECT_WRITE(stdout, fmt::print(3.14), "3.14");
+  EXPECT_WRITE(stdout, fmt::print(true), "true");
+  EXPECT_WRITE(stdout, fmt::print(false), "false");
+  EXPECT_WRITE(stdout, fmt::print('c'), "c");
+
+  auto dynamic_str = std::string("dynamic {} value");
+  EXPECT_WRITE(stdout, fmt::print(dynamic_str), "dynamic {} value");
+  const char* dynamic_cstr = dynamic_str.c_str();
+  EXPECT_WRITE(stdout, fmt::print(dynamic_cstr), "dynamic {} value");
+
+  EXPECT_WRITE(stdout, fmt::print(std::string()), "");
+  EXPECT_WRITE(stdout, fmt::print(std::string("{}{{}}")), "{}{{}}");
+
+  EXPECT_WRITE(stdout, fmt::print("literal"), "literal");
+  EXPECT_WRITE(stdout, fmt::print("{} and {}", 1, 2), "1 and 2");
+
+  EXPECT_WRITE(stdout, fmt::print(fmt::runtime(std::string("literal"))),
+               "literal");
+
+  EXPECT_WRITE(stderr, fmt::print(stderr, 42), "42");
+  EXPECT_WRITE(stderr, fmt::print(stderr, dynamic_str), "dynamic {} value");
+
+  EXPECT_WRITE(stdout, fmt::println(42), "42\n");
+  EXPECT_WRITE(stdout, fmt::println(dynamic_str), "dynamic {} value\n");
+  EXPECT_WRITE(stderr, fmt::println(stderr, 42), "42\n");
+  EXPECT_WRITE(stderr, fmt::println(stderr, dynamic_str),
+               "dynamic {} value\n");
+
+  EXPECT_WRITE(stdout, fmt::print(Answer()), "42");
+  EXPECT_WRITE(stdout, fmt::println(Answer()), "42\n");
+}
+
 TEST(format_test, big_print) {
   enum { count = 5000 };
   auto big_print = []() {

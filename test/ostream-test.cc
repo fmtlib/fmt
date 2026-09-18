@@ -119,6 +119,53 @@ TEST(ostream_test, print) {
   }
 }
 
+TEST(ostream_test, print_single_arg) {
+  {
+    std::ostringstream os;
+    fmt::print(os, 42);
+    EXPECT_EQ("42", os.str());
+  }
+
+  {
+    std::ostringstream os;
+    fmt::print(os, 3.5);
+    EXPECT_EQ("3.5", os.str());
+  }
+
+  {
+    std::ostringstream os;
+    auto dynamic_str = std::string("dynamic {} value");
+    fmt::print(os, dynamic_str);
+    EXPECT_EQ("dynamic {} value", os.str());
+  }
+
+  {
+    std::ostringstream os;
+    fmt::print(os, std::string());
+    EXPECT_EQ("", os.str());
+  }
+
+  {
+    std::ostringstream os;
+    fmt::print(os, "literal");
+    fmt::print(os, "{} and {}", 1, 2);
+    EXPECT_EQ("literal1 and 2", os.str());
+  }
+
+  {
+    std::ostringstream os;
+    fmt::println(os, 42);
+    EXPECT_EQ("42\n", os.str());
+  }
+
+  {
+    std::ostringstream os;
+    auto dynamic_str = std::string("dynamic {} value");
+    fmt::println(os, dynamic_str);
+    EXPECT_EQ("dynamic {} value\n", os.str());
+  }
+}
+
 TEST(ostream_test, write_to_ostream) {
   std::ostringstream os;
   fmt::memory_buffer buffer;

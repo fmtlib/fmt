@@ -286,6 +286,54 @@ TEST(xchar_test, ostream) {
 #endif
 }
 
+TEST(xchar_test, ostream_print_single_arg) {
+#if !FMT_GCC_VERSION || FMT_GCC_VERSION >= 409
+  {
+    std::wostringstream wos;
+    fmt::print(wos, 42);
+    EXPECT_EQ(wos.str(), L"42");
+  }
+  {
+    std::wostringstream wos;
+    fmt::print(wos, 3.5);
+    EXPECT_EQ(wos.str(), L"3.5");
+  }
+
+  {
+    std::wostringstream wos;
+    auto dynamic_str = std::wstring(L"dynamic {} value");
+    fmt::print(wos, dynamic_str);
+    EXPECT_EQ(wos.str(), L"dynamic {} value");
+  }
+
+  {
+    std::wostringstream wos;
+    fmt::print(wos, std::wstring());
+    EXPECT_EQ(wos.str(), L"");
+  }
+
+  {
+    std::wostringstream wos;
+    fmt::print(wos, L"literal");
+    fmt::print(wos, L"{} and {}", 1, 2);
+    EXPECT_EQ(wos.str(), L"literal1 and 2");
+  }
+
+  {
+    std::wostringstream wos;
+    fmt::println(wos, 42);
+    EXPECT_EQ(wos.str(), L"42\n");
+  }
+
+  {
+    std::wostringstream wos;
+    auto dynamic_str = std::wstring(L"dynamic {} value");
+    fmt::println(wos, dynamic_str);
+    EXPECT_EQ(wos.str(), L"dynamic {} value\n");
+  }
+#endif
+}
+
 TEST(xchar_test, format_map) {
   auto m = std::map<std::wstring, int>{{L"one", 1}, {L"t\"wo", 2}};
   EXPECT_EQ(fmt::format(L"{}", m), L"{\"one\": 1, \"t\\\"wo\": 2}");

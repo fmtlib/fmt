@@ -148,3 +148,35 @@ TEST(color_test, println) {
       fmt::println(fg(fmt::color::blue) | fmt::emphasis::bold, "blue/bold"),
       "\x1b[1m\x1b[38;2;000;000;255mblue/bold\x1b[0m\n");
 }
+
+TEST(color_test, print_single_arg) {
+  EXPECT_WRITE(stdout, fmt::print(fg(fmt::rgb(255, 20, 30)), 42),
+               "\x1b[38;2;255;020;030m42\x1b[0m");
+  EXPECT_WRITE(stdout, fmt::print(fmt::emphasis::bold, 3.5),
+               "\x1b[1m3.5\x1b[0m");
+
+  auto dynamic_str = std::string("dynamic {} value");
+  EXPECT_WRITE(stdout, fmt::print(fg(fmt::color::red), dynamic_str),
+               "\x1b[38;2;255;000;000mdynamic {} value\x1b[0m");
+
+  EXPECT_WRITE(stdout, fmt::print(fmt::text_style(), 7), "7");
+
+  EXPECT_WRITE(stderr, fmt::print(stderr, fg(fmt::rgb(255, 20, 30)), 42),
+               "\x1b[38;2;255;020;030m42\x1b[0m");
+
+  EXPECT_WRITE(stdout, fmt::print(fg(fmt::color::red), "literal"),
+               "\x1b[38;2;255;000;000mliteral\x1b[0m");
+  EXPECT_WRITE(stdout, fmt::print(fg(fmt::color::red), "{} and {}", 1, 2),
+               "\x1b[38;2;255;000;000m1 and 2\x1b[0m");
+}
+
+TEST(color_test, println_single_arg) {
+  EXPECT_WRITE(stdout, fmt::println(fg(fmt::rgb(255, 20, 30)), 42),
+               "\x1b[38;2;255;020;030m42\x1b[0m\n");
+  EXPECT_WRITE(stderr, fmt::println(stderr, fg(fmt::rgb(255, 20, 30)), 42),
+               "\x1b[38;2;255;020;030m42\x1b[0m\n");
+
+  auto dynamic_str = std::string("dynamic {} value");
+  EXPECT_WRITE(stdout, fmt::println(fg(fmt::color::red), dynamic_str),
+               "\x1b[38;2;255;000;000mdynamic {} value\x1b[0m\n");
+}

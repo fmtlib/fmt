@@ -2744,6 +2744,23 @@ template <typename... T> struct fstring {
 
 template <typename... T> using format_string = typename fstring<T...>::t;
 
+namespace detail {
+// Detects whether `T` is meant to be used as a format string argument,
+// as opposed to a value to be formatted, to disambiguate the
+// single-argument `print(T&&)`/`println(T&&)` overloads.
+template <typename T, typename Enable = void> struct is_runtime_format_string
+    : std::false_type {};
+template <typename Char>
+struct is_runtime_format_string<runtime_format_string<Char>> : std::true_type {
+};
+
+template <typename T>
+struct is_format_string_arg
+    : bool_constant<std::is_array<remove_reference_t<T>>::value ||
+                    std::is_base_of<compile_string, remove_cvref_t<T>>::value ||
+                    is_runtime_format_string<remove_cvref_t<T>>::value> {};
+}  // namespace detail
+
 template <typename T, typename Char = char>
 using is_formattable = bool_constant<!std::is_same<
     detail::mapped_t<conditional_t<std::is_void<T>::value, int*, T>, Char>,
@@ -2945,6 +2962,58 @@ FMT_INLINE void println(FILE* f, format_string<T...> fmt, T&&... args) {
 template <typename... T>
 FMT_INLINE void println(format_string<T...> fmt, T&&... args) {
   fmt::println(stdout, fmt, static_cast<T&&>(args)...);
+}
+
+/**
+ * Prints `arg` to `stdout`.
+ *
+ * **Example**:
+ *
+ *     fmt::print(42);
+ */
+template <typename T,
+          FMT_ENABLE_IF(!detail::is_format_string_arg<T>::value)>
+FMT_INLINE void print(T&& arg) {
+  fmt::print("{}", static_cast<T&&>(arg));
+}
+
+/**
+ * Prints `arg` to the file `f`.
+ *
+ * **Example**:
+ *
+ *     fmt::print(stderr, 42);
+ */
+template <typename T,
+          FMT_ENABLE_IF(!detail::is_format_string_arg<T>::value)>
+FMT_INLINE void print(FILE* f, T&& arg) {
+  fmt::print(f, "{}", static_cast<T&&>(arg));
+}
+
+/**
+ * Prints `arg` to `stdout` followed by a newline.
+ *
+ * **Example**:
+ *
+ *     fmt::println(42);
+ */
+template <typename T,
+          FMT_ENABLE_IF(!detail::is_format_string_arg<T>::value)>
+FMT_INLINE void println(T&& arg) {
+  fmt::println("{}", static_cast<T&&>(arg));
+}
+
+/**
+ * Prints `arg` to the file `f` followed by a newline.
+ *
+ * **Example**:
+ *
+ *     fmt::println(stderr, 42);
+ */
+template <typename T,
+          FMT_ENABLE_IF(!detail::is_format_string_arg<T>::value)>
+FMT_INLINE void println(FILE* f, T&& arg) {
+  fmt::println(f, "{}", static_cast<T&&>(arg));
 }
 
 FMT_PRAGMA_GCC(pop_options)
