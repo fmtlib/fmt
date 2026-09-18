@@ -357,13 +357,23 @@ class path : public std::filesystem::path {
     const std::filesystem::path& base = *this;
     return fmt::format(FMT_STRING("{}"), base);
   }
-  auto system_string() const -> std::string { return string(); }
 
   auto generic_display_string() const -> std::string {
     const std::filesystem::path& base = *this;
     return fmt::format(FMT_STRING("{:g}"), base);
   }
+
+  // string() deprecated in C++26
+#  if defined(__cpp_lib_format_path) && \
+      __cpp_lib_format_path >= 202506L  // C++26
+  auto system_string() const -> std::string { return native_encoded_string(); }
+  auto generic_system_string() const -> std::string {
+    return generic_native_encoded_string();
+  }
+#  else
+  auto system_string() const -> std::string { return string(); }
   auto generic_system_string() const -> std::string { return generic_string(); }
+#  endif
 };
 
 #endif  // FMT_CPP_LIB_FILESYSTEM
