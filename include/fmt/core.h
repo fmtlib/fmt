@@ -18,7 +18,9 @@
 #  include <string.h>  // memcmp
 
 #  include <type_traits>  // std::enable_if
-#  include <version>      // __cpp_lib_reflection
+#  if __has_include(<version>)
+#    include <version>  // __cpp_lib_reflection
+#  endif
 #endif
 
 // The fmt library version in the form major * 10000 + minor * 100 + patch.
@@ -1158,7 +1160,7 @@ using use_formatter =
     bool_constant<(std::is_class<T>::value || std::is_enum<T>::value ||
                    std::is_union<T>::value || std::is_array<T>::value
 #if defined(__cpp_lib_reflection) && __cpp_lib_reflection >= 202506L  // C++26
-                   || std::is_reflection<std::remove_cvref_t<T>>::value
+                   || std::is_reflection<T>::value
 #endif
                    ) &&
                   !has_to_string_view<T>::value && !is_named_arg<T>::value &&
