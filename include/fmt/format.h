@@ -4092,12 +4092,35 @@ template <typename Char> class nested_format_specs {
     handle_dynamic_spec(specs.dynamic_width(), specs.width, width_ref_, ctx);
     if (specs.width == 0) return f.write_body(ctx, static_cast<T&&>(values)...);
 
-    auto buf = basic_memory_buffer<Char>();
-    auto buffer_ctx =
-        FormatContext(basic_appender<Char>(buf), ctx.args(), ctx.locale());
-    f.write_body(buffer_ctx, static_cast<T&&>(values)...);
-    return detail::write<Char>(
-        ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
+    // The body is formatted into a temporary buffer so that it can be padded.
+    // This requires a context that writes to the buffer while sharing the
+    // args of `ctx`, which is only possible when an output iterator of the
+    // context type can be pointed at storage owned here: an appender
+    // (context) or a back insert iterator (generic_context, used by the
+    // compile-time API and format_to with custom iterators).
+    using iterator = typename FormatContext::iterator;
+    if constexpr (std::is_same<iterator, basic_appender<Char>>::value) {
+      auto buf = basic_memory_buffer<Char>();
+      auto buffer_ctx =
+          FormatContext(basic_appender<Char>(buf), ctx.args(), ctx.locale());
+      f.write_body(buffer_ctx, static_cast<T&&>(values)...);
+      return detail::write<Char>(
+          ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
+    } else if constexpr (is_back_insert_iterator<iterator>::value) {
+      using container = typename iterator::container_type;
+      container storage;
+      auto buffer_ctx =
+          FormatContext(iterator(storage), ctx.args(), ctx.locale());
+      f.write_body(buffer_ctx, static_cast<T&&>(values)...);
+      auto buf = basic_memory_buffer<Char>();
+      for (auto value : storage) buf.push_back(value);
+      return detail::write<Char>(
+          ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
+    } else {
+      // Cannot create an output iterator of the context type that writes
+      // into a temporary buffer.
+      FMT_THROW(format_error("cannot pad output with this iterator type"));
+    }
   }
 };
 }  // namespace detail
