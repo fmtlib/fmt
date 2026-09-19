@@ -278,6 +278,40 @@ TEST(printf_test, int_precision) {
   EXPECT_PRINTF("00042     ", "%-#10.5o", 042);
 }
 
+// C99 7.21.6.1: the result of converting a zero value with a precision of zero
+// is no characters.
+TEST(printf_test, zero_int_with_zero_precision) {
+  EXPECT_PRINTF("", "%.0d", 0);
+  EXPECT_PRINTF("", "%.d", 0);
+  EXPECT_PRINTF("", "%.0i", 0);
+  EXPECT_PRINTF("", "%.0o", 0);
+  EXPECT_PRINTF("", "%.0u", 0);
+  EXPECT_PRINTF("", "%.0x", 0);
+  EXPECT_PRINTF("", "%.0X", 0);
+
+  // '#' forces a single '0' for octal, but has no effect on other conversions.
+  EXPECT_PRINTF("0", "%#.0o", 0);
+  EXPECT_PRINTF("0", "%#.0hho", 256);
+  EXPECT_PRINTF("", "%#.0x", 0);
+  EXPECT_PRINTF("", "%#.0X", 0);
+
+  // The sign, space and width still apply.
+  EXPECT_PRINTF("+", "%+.0d", 0);
+  EXPECT_PRINTF(" ", "% .0d", 0);
+  EXPECT_PRINTF("     ", "%5.0d", 0);
+  EXPECT_PRINTF("     ", "%-5.0d", 0);
+  EXPECT_PRINTF("     ", "%05.0d", 0);
+  EXPECT_PRINTF("    0", "%#5.0o", 0);
+  EXPECT_PRINTF("0    ", "%#-5.0o", 0);
+
+  // A nonzero value or a nonzero precision is unaffected.
+  EXPECT_PRINTF("42", "%.0d", 42);
+  EXPECT_PRINTF("-42", "%.0d", -42);
+  EXPECT_PRINTF("ff", "%.0x", 255);
+  EXPECT_PRINTF("0", "%.1d", 0);
+  EXPECT_PRINTF("00", "%.2d", 0);
+}
+
 TEST(printf_test, float_precision) {
   char buffer[256];
   safe_sprintf(buffer, "%.3e", 1234.5678);
@@ -300,6 +334,8 @@ TEST(printf_test, ignore_precision_for_non_numeric_arg) {
 TEST(printf_test, dynamic_precision) {
   EXPECT_EQ("00042", test_sprintf("%.*d", 5, 42));
   EXPECT_EQ("42", test_sprintf("%.*d", -5, 42));
+  EXPECT_EQ("0", test_sprintf("%.*d", -1, 0));
+  EXPECT_EQ("+0", test_sprintf("%+.*d", -1, 0));
   EXPECT_THROW_MSG(test_sprintf("%.*d", 5.0, 42), format_error,
                    "precision is not integer");
   EXPECT_THROW_MSG(test_sprintf("%.*d"), format_error, "argument not found");
@@ -326,6 +362,8 @@ TEST(printf_test, positional_width) {
 TEST(printf_test, positional_precision) {
   EXPECT_EQ("00042", test_sprintf("%2$.*1$d", 5, 42));
   EXPECT_EQ("42", test_sprintf("%2$.*1$d", -5, 42));
+  EXPECT_EQ("0", test_sprintf("%2$.*1$d", -1, 0));
+  EXPECT_EQ("+0", test_sprintf("%2$+.*1$d", -1, 0));
   EXPECT_EQ("Hell", test_sprintf("%2$.*1$s", 4, "Hello"));
   EXPECT_THROW_MSG(test_sprintf("%2$.*1$d", 5.0, 42), format_error,
                    "precision is not integer");
@@ -561,7 +599,7 @@ TEST(printf_test, check_format_string_regression) {
 }
 
 TEST(printf_test, fixed_large_exponent) {
-  EXPECT_EQ("1000000000000000000000", fmt::sprintf("%.*f", -13, 1e21));
+  EXPECT_EQ("1000000000000000000000.000000", fmt::sprintf("%.*f", -13, 1e21));
 }
 
 TEST(printf_test, make_printf_args) {
