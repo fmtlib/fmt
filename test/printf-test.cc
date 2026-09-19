@@ -334,6 +334,8 @@ TEST(printf_test, ignore_precision_for_non_numeric_arg) {
 TEST(printf_test, dynamic_precision) {
   EXPECT_EQ("00042", test_sprintf("%.*d", 5, 42));
   EXPECT_EQ("42", test_sprintf("%.*d", -5, 42));
+  EXPECT_EQ("0", test_sprintf("%.*d", -1, 0));
+  EXPECT_EQ("+0", test_sprintf("%+.*d", -1, 0));
   EXPECT_THROW_MSG(test_sprintf("%.*d", 5.0, 42), format_error,
                    "precision is not integer");
   EXPECT_THROW_MSG(test_sprintf("%.*d"), format_error, "argument not found");
@@ -360,6 +362,8 @@ TEST(printf_test, positional_width) {
 TEST(printf_test, positional_precision) {
   EXPECT_EQ("00042", test_sprintf("%2$.*1$d", 5, 42));
   EXPECT_EQ("42", test_sprintf("%2$.*1$d", -5, 42));
+  EXPECT_EQ("0", test_sprintf("%2$.*1$d", -1, 0));
+  EXPECT_EQ("+0", test_sprintf("%2$+.*1$d", -1, 0));
   EXPECT_EQ("Hell", test_sprintf("%2$.*1$s", 4, "Hello"));
   EXPECT_THROW_MSG(test_sprintf("%2$.*1$d", 5.0, 42), format_error,
                    "precision is not integer");
@@ -595,7 +599,7 @@ TEST(printf_test, check_format_string_regression) {
 }
 
 TEST(printf_test, fixed_large_exponent) {
-  EXPECT_EQ("1000000000000000000000", fmt::sprintf("%.*f", -13, 1e21));
+  EXPECT_EQ("1000000000000000000000.000000", fmt::sprintf("%.*f", -13, 1e21));
 }
 
 TEST(printf_test, make_printf_args) {
