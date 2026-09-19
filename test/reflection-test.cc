@@ -12,8 +12,8 @@
 
 template <> struct fmt::formatter<std::meta::info> {
   consteval auto parse(auto& ctx) { return ctx.begin(); }
-  consteval auto format(const std::meta::info&, auto& ctx) const {
-    return fmt::formatter<std::string_view>{}.format("magic_type", ctx);
+  consteval auto format(std::meta::info r, auto& ctx) const {
+    return fmt::formatter<std::string_view>{}.format(identifier_of(r), ctx);
   }
 };
 
