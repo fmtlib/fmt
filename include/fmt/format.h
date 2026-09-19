@@ -3864,8 +3864,7 @@ auto write(OutputIt out, const T* value, const format_specs& specs = {},
 
 template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(mapped_type_constant<T, Char>::value ==
-                            type::custom_type &&
-                        !std::is_fundamental<T>::value)>
+                        type::custom_type)>
 FMT_CONSTEXPR auto write(OutputIt out, const T& value) -> OutputIt {
   auto f = formatter<T, Char>();
   auto parse_ctx = parse_context<Char>({});
