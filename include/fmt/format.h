@@ -4100,6 +4100,11 @@ template <typename Char> class nested_format_specs {
         ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
   }
 };
+
+template <typename T, typename Enable = void>
+struct has_format_as : std::false_type {};
+template <typename T>
+struct has_format_as<T, void_t<format_as_result<T>>> : std::true_type {};
 }  // namespace detail
 
 FMT_BEGIN_EXPORT

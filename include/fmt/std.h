@@ -280,12 +280,6 @@ struct is_bit_reference_like<std::__bit_const_reference<C>> {
 #endif
 
 template <typename T, typename Enable = void>
-struct has_format_as : std::false_type {};
-template <typename T>
-struct has_format_as<T, void_t<decltype(format_as(std::declval<const T&>()))>>
-    : std::true_type {};
-
-template <typename T, typename Enable = void>
 struct has_format_as_member : std::false_type {};
 template <typename T>
 struct has_format_as_member<

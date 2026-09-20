@@ -297,21 +297,17 @@ template <typename T, typename C> struct is_tuple_formattable {
   static constexpr bool value = detail::is_tuple_formattable_<T, C>::value;
 };
 
-namespace detail {
-template <typename T, typename C, typename = void>
-struct is_tuple_formattable_for_formatter
-    : std::integral_constant<bool, fmt::is_tuple_formattable<T, C>::value> {};
-
-template <typename T, typename C>
-struct is_tuple_formattable_for_formatter<T, C, void_t<format_as_result<T>>>
-    : std::false_type {};
-}  // namespace detail
-
 template <typename Tuple, typename Char>
-struct formatter<Tuple, Char,
-                 enable_if_t<fmt::is_tuple_like<Tuple>::value &&
-                             detail::is_tuple_formattable_for_formatter<
-                                 Tuple, Char>::value>> {
+struct formatter<
+    Tuple, Char,
+    // format_as takes precedence. conditional_t rather than && because
+    // is_tuple_formattable must not be instantiated for types with format_as:
+    // for self-referential tuple-like types it recurses back into this
+    // specialization.
+    enable_if_t<
+        fmt::is_tuple_like<Tuple>::value &&
+        conditional_t<detail::has_format_as<Tuple>::value, std::false_type,
+                      fmt::is_tuple_formattable<Tuple, Char>>::value>> {
  private:
   decltype(detail::tuple::get_formatters<Tuple, Char>(
       detail::tuple_index_sequence<Tuple>())) formatters_;
