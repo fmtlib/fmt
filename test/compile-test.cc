@@ -494,3 +494,27 @@ TEST(compile_test, format_as) {
   // compiled field path rather than the to_string fast path.
   EXPECT_EQ("[42]", fmt::format(FMT_COMPILE("[{}]"), type_with_format_as{42}));
 }
+
+#if FMT_CPLUSPLUS >= 202000L
+struct consteval_printable {};
+
+template<>
+struct fmt::formatter<consteval_printable> {
+  bool debug = false;
+  consteval auto parse(auto& ctx) {
+    if (ctx.begin() != ctx.end() && *ctx.begin() == '?') {
+      debug = true;
+      ctx.advance_to(ctx.begin() + 1);
+    }
+    return ctx.begin();
+  }
+  consteval auto format(consteval_printable, auto& ctx) const {
+    return fmt::formatter<std::string_view>{}.format(debug ? "debug" : "regular", ctx);
+  }
+};
+
+static_assert(fmt::format(FMT_COMPILE("{}"), consteval_printable{}) == "regular");
+static_assert(fmt::format(FMT_COMPILE("[{}]"), consteval_printable{}) == "[regular]");
+static_assert(fmt::format(FMT_COMPILE("{:?}"), consteval_printable{}) == "debug");
+static_assert(fmt::format(FMT_COMPILE("[{:?}]"), consteval_printable{}) == "[debug]");
+#endif // FMT_CPLUSPLUS >= 202000L
