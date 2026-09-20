@@ -52,10 +52,11 @@ template <typename T> class is_set {
 
 // C array overload
 template <typename T, size_t N>
-auto range_begin(const T (&arr)[N]) -> const T* {
+FMT_CONSTEXPR auto range_begin(const T (&arr)[N]) -> const T* {
   return arr;
 }
-template <typename T, size_t N> auto range_end(const T (&arr)[N]) -> const T* {
+template <typename T, size_t N>
+FMT_CONSTEXPR auto range_end(const T (&arr)[N]) -> const T* {
   return arr + N;
 }
 
@@ -81,14 +82,15 @@ FMT_CONSTEXPR auto range_end(T&& rng) -> decltype(static_cast<T&&>(rng).end()) {
 // ADL overloads. Only participate in overload resolution if member functions
 // are not found.
 template <typename T>
-auto range_begin(T&& rng)
+FMT_CONSTEXPR auto range_begin(T&& rng)
     -> enable_if_t<!has_member_fn_begin_end_t<T&&>::value,
                    decltype(begin(static_cast<T&&>(rng)))> {
   return begin(static_cast<T&&>(rng));
 }
 template <typename T>
-auto range_end(T&& rng) -> enable_if_t<!has_member_fn_begin_end_t<T&&>::value,
-                                       decltype(end(static_cast<T&&>(rng)))> {
+FMT_CONSTEXPR auto range_end(T&& rng)
+    -> enable_if_t<!has_member_fn_begin_end_t<T&&>::value,
+                   decltype(end(static_cast<T&&>(rng)))> {
   return end(static_cast<T&&>(rng));
 }
 
@@ -273,7 +275,7 @@ template <typename FormatContext> struct format_tuple_element {
   using char_type = typename FormatContext::char_type;
 
   template <typename T>
-  void operator()(const formatter<T, char_type>& f, const T& v) {
+  FMT_CONSTEXPR void operator()(const formatter<T, char_type>& f, const T& v) {
     if (i > 0) ctx.advance_to(detail::copy<char_type>(separator, ctx.out()));
     ctx.advance_to(f.format(v, ctx));
     ++i;
@@ -353,7 +355,7 @@ struct formatter<Tuple, Char,
   }
 
   template <typename FormatContext>
-  auto format(const Tuple& value, FormatContext& ctx) const
+  FMT_CONSTEXPR auto format(const Tuple& value, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     return specs_.write(ctx, *this, value);
   }
@@ -407,7 +409,8 @@ struct range_formatter<
 
   template <typename Output, typename It, typename Sentinel, typename U = T,
             FMT_ENABLE_IF(std::is_same<U, Char>::value)>
-  auto write_debug_string(Output& out, It it, Sentinel end) const -> Output {
+  FMT_CONSTEXPR auto write_debug_string(Output& out, It it, Sentinel end) const
+      -> Output {
     auto buf = basic_memory_buffer<Char>();
     for (; it != end; ++it) buf.push_back(*it);
     auto specs = format_specs();
@@ -418,7 +421,8 @@ struct range_formatter<
 
   template <typename Output, typename It, typename Sentinel, typename U = T,
             FMT_ENABLE_IF(!std::is_same<U, Char>::value)>
-  auto write_debug_string(Output& out, It, Sentinel) const -> Output {
+  FMT_CONSTEXPR auto write_debug_string(Output& out, It, Sentinel) const
+      -> Output {
     return out;
   }
 
@@ -599,7 +603,8 @@ struct formatter<
   }
 
   template <typename FormatContext>
-  auto format(map_type& map, FormatContext& ctx) const -> decltype(ctx.out()) {
+  FMT_CONSTEXPR auto format(map_type& map, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
     return specs_.write(ctx, *this, map);
   }
 
@@ -654,7 +659,7 @@ struct formatter<
   }
 
   template <typename FormatContext>
-  auto format(range_type& range, FormatContext& ctx) const
+  FMT_CONSTEXPR auto format(range_type& range, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     return underlying_.format(
         string_type{detail::range_begin(range), detail::range_end(range)}, ctx);
@@ -825,7 +830,8 @@ struct formatter<
     : formatter<detail::all<typename T::container_type>, Char> {
   using all = detail::all<typename T::container_type>;
   template <typename FormatContext>
-  auto format(const T& value, FormatContext& ctx) const -> decltype(ctx.out()) {
+  FMT_CONSTEXPR auto format(const T& value, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
     struct getter : T {
       static auto get(const T& v) -> all {
         return {v.*(&getter::c)};  // Access c through the derived class.
