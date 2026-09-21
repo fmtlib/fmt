@@ -250,13 +250,9 @@ class printf_arg_formatter : public arg_formatter<Char> {
   // zero, so only the sign and the padding remain.
   void write_zero_with_zero_precision() {
     auto s = this->specs;
-    const char* sign_str = s.sign() == sign::plus    ? "+"
-                           : s.sign() == sign::space ? " "
-                                                     : "";
     s.set_type(presentation_type::none);
-    if (s.align() == align::none || s.align() == align::numeric)
-      s.set_align(align::right);
-    write_bytes<Char>(this->out, sign_str, s);
+    char sign_str[] = {getsign<char>(s.sign()), '\0'};
+    write_bytes<Char, align::right>(this->out, sign_str, s);
   }
 
  public:
@@ -271,15 +267,9 @@ class printf_arg_formatter : public arg_formatter<Char> {
     // MSVC2013 fails to compile separate overloads for bool and Char so use
     // std::is_same instead.
     if (!std::is_same<T, Char>::value) {
-      auto t = this->specs.type();
-      if (value == 0 && this->specs.precision == 0 &&
-          (t == presentation_type::dec || t == presentation_type::oct ||
-           t == presentation_type::hex)) {
-        write_zero_with_zero_precision();
-        return;
-      }
-      write(value);
-      return;
+      if (value == 0 && this->specs.precision == 0)
+        return write_zero_with_zero_precision();
+      return write(value);
     }
     format_specs s = this->specs;
     if (s.type() != presentation_type::none &&
@@ -569,13 +559,13 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
     if (specs.type() == presentation_type::none)
       report_error("invalid format specifier");
     if (upper) specs.set_upper();
-    // For '#o', C requires a single '0' when the value and the precision are
-    // both zero.
-    bool alt_zero = specs.alt() && arg.visit(is_zero_int());
-    if (alt_zero) specs.clear_alt();
-    if (alt_zero && specs.type() == presentation_type::oct &&
-        specs.precision == 0)
-      specs.precision = 1;
+    // C requires no '0x' prefix for a zero value and, for '#o', a single '0'
+    // when the value and the precision are both zero.
+    if (specs.alt() && arg.visit(is_zero_int())) {
+      specs.clear_alt();
+      if (specs.type() == presentation_type::oct && specs.precision == 0)
+        specs.precision = 1;
+    }
 
     start = it;
 
