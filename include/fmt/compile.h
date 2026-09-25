@@ -479,9 +479,9 @@ template <typename CompiledFormat, typename... T,
 FMT_INLINE FMT_CONSTEXPR_STRING auto format(const CompiledFormat& cf,
                                             const T&... args)
     -> std::basic_string<Char> {
-  auto s = std::basic_string<Char>();
-  cf.format(std::back_inserter(s), args...);
-  return s;
+  auto buf = basic_memory_buffer<Char>();
+  cf.format(basic_appender<Char>(buf), args...);
+  return std::basic_string<Char>(buf.data(), buf.size());
 }
 
 template <typename OutputIt, typename CompiledFormat, typename... T,
