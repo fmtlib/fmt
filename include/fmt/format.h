@@ -4093,8 +4093,11 @@ template <typename Char> class nested_format_specs {
     if (specs.width == 0) return f.write_body(ctx, static_cast<T&&>(values)...);
 
     auto buf = basic_memory_buffer<Char>();
-    auto buffer_ctx =
-        FormatContext(basic_appender<Char>(buf), ctx.args(), ctx.locale());
+    using buffer_context = generic_context<basic_appender<Char>, Char>;
+    basic_format_args<buffer_context> buffer_args;
+    memcpy(&buffer_args, &ctx.args(), sizeof(buffer_args));
+    auto buffer_ctx = buffer_context(
+        basic_appender<Char>(buf), buffer_args, ctx.locale());
     f.write_body(buffer_ctx, static_cast<T&&>(values)...);
     return detail::write<Char>(
         ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
