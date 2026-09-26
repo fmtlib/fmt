@@ -82,6 +82,7 @@ TEST(xchar_test, format) {
   if (sizeof(wchar_t) == 4)
     EXPECT_EQ(fmt::format(fmt::runtime(L"{:𓀨>3}"), 42), L"𓀨42");
   EXPECT_EQ(fmt::format(L"{}c{}", L"ab", 1), L"abc1");
+  EXPECT_EQ(std::wstring(600, L'\u03a9'), fmt::format(L"{:\u03a9>600}", L""));
 }
 
 TEST(xchar_test, is_formattable) {

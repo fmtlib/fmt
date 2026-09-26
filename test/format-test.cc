@@ -2254,6 +2254,7 @@ TEST(format_test, formatted_size) {
 #if FMT_USE_LOCALE
   EXPECT_EQ(2u, fmt::formatted_size(std::locale(), "{}", 42));
 #endif
+  EXPECT_EQ(602u, fmt::formatted_size("[{:*>600}]", 42));
 }
 
 TEST(format_test, format_to_no_args) {
@@ -2327,6 +2328,11 @@ TEST(format_test, format_to_n) {
   result = fmt::format_to_n(buffer, 3, "{}", std::string(1000, '*'));
   EXPECT_EQ(1000u, result.size);
   EXPECT_EQ("***x", fmt::string_view(buffer, 4));
+
+  result = fmt::format_to_n(buffer, 0, "{:!>600}", 42);
+  EXPECT_EQ(600u, result.size);
+  EXPECT_EQ(buffer, result.out);
+  EXPECT_EQ("***x", fmt::string_view(buffer, 4));
 }
 
 struct test_output_iterator {
@@ -2354,6 +2360,10 @@ TEST(format_test, format_to_n_output_iterator) {
   char buf[10] = {};
   fmt::format_to_n(test_output_iterator{buf}, 10, "{}", 42);
   EXPECT_STREQ(buf, "42");
+  auto result = fmt::format_to_n(test_output_iterator{buf}, 3, "{:*>600}", 42);
+  EXPECT_EQ(600u, result.size);
+  EXPECT_EQ(buf + 3, result.out.data);
+  EXPECT_STREQ(buf, "***");
 }
 
 TEST(format_test, vformat_to) {
