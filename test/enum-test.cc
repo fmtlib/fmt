@@ -73,6 +73,10 @@ enum class [[=fmt::as_identifiers]] extremes : int {
 enum class [[=fmt::as_identifiers]] big : unsigned long long {
   huge = ULLONG_MAX
 };
+
+enum class [[=fmt::as_underlying]] flags { red = 1, green = 2, blue = 4 };
+enum class [[=fmt::as_underlying]] small_flags : unsigned char { one = 1 };
+enum class [[=fmt::as_underlying]] size : int { large = 10 };
 // clang-format on
 
 TEST(enum_test, format_enum) {
@@ -245,5 +249,28 @@ TEST(enum_test, format_enum_range) {
 TEST(enum_test, annotation_is_required) {
   EXPECT_TRUE(fmt::is_formattable<color>::value);
   EXPECT_FALSE(fmt::is_formattable<color_without_annotation>::value);
+}
+
+TEST(enum_test, format_underlying) {
+  EXPECT_EQ(fmt::format("{}", flags::green), "2");
+  // Integer format specifiers are accepted unlike for as_identifiers.
+  EXPECT_EQ(fmt::format("{:04x}", flags::blue), "0004");
+  // A one-byte underlying type is written in decimal, not as a character.
+  EXPECT_EQ(fmt::format("{}", small_flags::one), "1");
+}
+
+TEST(enum_test, format_underlying_is_mapped) {
+  // The value is mapped to its underlying type before type erasure.
+  static_assert(fmt::detail::mapped_type_constant<flags, char>::value ==
+                fmt::detail::type::int_type);
+  static_assert(fmt::detail::mapped_type_constant<small_flags, char>::value ==
+                fmt::detail::type::uint_type);
+  // Mapping to an integer allows using an enum as dynamic width.
+  EXPECT_EQ(fmt::format("{:{}}", 42, size::large), "        42");
+}
+
+TEST(enum_test, format_underlying_range) {
+  auto v = std::vector<flags>{flags::red, flags::blue};
+  EXPECT_EQ(fmt::format("{}", v), "[1, 4]");
 }
 #endif  // FMT_USE_REFLECTION

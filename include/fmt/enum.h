@@ -33,7 +33,6 @@ FMT_BEGIN_NAMESPACE
 
 #if FMT_USE_REFLECTION
 
-/// The type of the `fmt::as_identifiers` annotation.
 FMT_EXPORT struct as_identifiers_t {};
 
 /**
@@ -49,18 +48,55 @@ FMT_EXPORT struct as_identifiers_t {};
  */
 FMT_EXPORT inline constexpr auto as_identifiers = as_identifiers_t();
 
+FMT_EXPORT struct as_underlying_t {};
+
+/**
+ * An annotation that makes an enum format as its underlying value.
+ *
+ * **Example**:
+ *
+ *     enum class [[=fmt::as_underlying]] color { red = 1, green = 2 };
+ *     auto s = fmt::format("{:04x}", color::green);  // s == "0002"
+ */
+FMT_EXPORT inline constexpr auto as_underlying = as_underlying_t();
+
 namespace detail {
+
+// Returns true if U is annotated with an annotation of type A.
+template <typename A, typename U> consteval auto is_annotated() -> bool {
+  return !std::meta::annotations_of_with_type(^^U, ^^A).empty();
+}
 
 // Returns true if T is an enum annotated with fmt::as_identifiers.
 template <typename T, typename U = remove_cvref_t<T>>
 consteval auto use_identifiers() -> bool {
-  if constexpr (!std::is_enum<U>::value) {
-    return false;
+  if constexpr (std::is_enum<U>::value) {
+    return is_annotated<as_identifiers_t, U>();
   } else {
-    return !std::meta::annotations_of_with_type(^^U, ^^as_identifiers_t)
-                .empty();
+    return false;
   }
 }
+
+// Returns true if T is an enum annotated with fmt::as_underlying.
+template <typename T, typename U = remove_cvref_t<T>>
+consteval auto use_underlying() -> bool {
+  if constexpr (std::is_enum<U>::value) {
+    // The annotations specify different representations. Reporting this here
+    // gives a better diagnostic than an ambiguous formatter specialization.
+    static_assert(!is_annotated<as_underlying_t, U>() ||
+                      !is_annotated<as_identifiers_t, U>(),
+                  "fmt::as_underlying and fmt::as_identifiers are mutually "
+                  "exclusive");
+    return is_annotated<as_underlying_t, U>();
+  } else {
+    return false;
+  }
+}
+
+// The formatter for the underlying type of E. formatter is only specialized
+// for mapped types, e.g. unsigned rather than unsigned char.
+template <typename E, typename Char>
+using underlying_formatter = formatter<mapped_t<underlying_t<E>, Char>, Char>;
 
 // Returns the underlying value of `value` converted to uint64_t. Negative
 // values wrap around, so the difference of two such values is the distance
@@ -205,6 +241,22 @@ struct formatter<E, char, enable_if_t<detail::use_identifiers<E>()>> {
     auto buf = memory_buffer();
     detail::write<char>(appender(buf), +underlying(value));
     return impl_.format(string_view(buf.data(), buf.size()), ctx);
+  }
+};
+
+// A formatter for enums annotated with fmt::as_underlying.
+template <typename E, typename Char>
+struct formatter<E, Char, enable_if_t<detail::use_underlying<E>()>>
+    : detail::underlying_formatter<E, Char> {
+  FMT_CONSTEXPR static auto format_as(E value) noexcept -> underlying_t<E> {
+    return underlying(value);
+  }
+
+  template <typename FormatContext>
+  FMT_CONSTEXPR auto format(E value, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    using base = detail::underlying_formatter<E, Char>;
+    return base::format(format_as(value), ctx);
   }
 };
 

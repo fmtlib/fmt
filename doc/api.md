@@ -584,7 +584,21 @@ as its underlying value in decimal before applying string formatting:
     fmt::print("{}", static_cast<color>(42));
     // Output: 42
 
-Enums without the annotation are not affected and are formatted as before, i.e.
+An enum annotated with `fmt::as_underlying` is instead formatted as its
+underlying value using the integer [Format Specification](
+syntax.md#format-specification):
+
+    enum class [[=fmt::as_underlying]] color { red = 1, green = 2, blue = 4 };
+
+    fmt::print("{:04x}", color::blue);
+    // Output: 0004
+
+Such an enum is mapped to its underlying type before type erasure, so it can
+also be used as dynamic width or precision. Unlike `fmt::as_identifiers`, it
+works with all character types. The two annotations specify different
+representations and cannot be combined.
+
+Enums without an annotation are not affected and are formatted as before, i.e.
 scoped enums require `format_as` or a `formatter` specialization, see
 [Formatting User-Defined Types](#udt).
 
