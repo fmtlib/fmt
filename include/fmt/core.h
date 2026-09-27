@@ -2245,10 +2245,8 @@ template <typename Context> class value {
             FMT_ENABLE_IF(use_formatter<T>::value || !FMT_BUILTIN_TYPES)>
   FMT_CONSTEXPR FMT_INLINE value(T& x) : value(x, custom_tag()) {}
 
-  // Could accept const pointer instead, but this avoids a GCC 16+ false
-  // positive from `-Wmaybe-uninitialized` in Debug builds, in `named_arg_store`
-  // constructor. Related bug report:
-  // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=127470
+  // A non-const pointer avoids a bogus gcc 16 -Wmaybe-uninitialized at -O0 in
+  // named_arg_store: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=127470.
   FMT_ALWAYS_INLINE value(named_arg_info<char_type>* args, size_t size)
       : named_args{args, size} {}
 

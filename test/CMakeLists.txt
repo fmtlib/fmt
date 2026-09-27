@@ -128,11 +128,13 @@ if (FMT_PEDANTIC)
     target_compile_options(noexception-test PRIVATE ${PEDANTIC_COMPILE_FLAGS})
   endif ()
 
-  # Test that the library compiles without locale.
-  add_executable(nolocale-test ../src/format.cc nolocale-test.cc)
+  # Test that the library works without locale support.
+  add_executable(nolocale-test format-test.cc mock-allocator.h ${TEST_MAIN_SRC}
+                               ../src/format.cc ../src/os.cc)
   target_include_directories(nolocale-test
                              PRIVATE ${PROJECT_SOURCE_DIR}/include)
   target_compile_definitions(nolocale-test PRIVATE FMT_USE_LOCALE=0)
+  target_link_libraries(nolocale-test gtest)
   target_compile_options(nolocale-test
                          PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/utf-8>)
   add_test(NAME nolocale-test COMMAND nolocale-test)

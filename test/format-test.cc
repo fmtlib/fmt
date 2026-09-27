@@ -1560,6 +1560,7 @@ TEST(format_test, format_int_locale) {
 TEST(format_test, format_float) {
   EXPECT_EQ(fmt::format("{}", 0.0f), "0");
   EXPECT_EQ(fmt::format("{0:f}", 392.5f), "392.500000");
+  EXPECT_EQ(fmt::format("{:L}", 1234.5), "1234.5");
 }
 
 TEST(format_test, format_double) {
@@ -2250,7 +2251,9 @@ TEST(format_test, fill_via_appender) {
 
 TEST(format_test, formatted_size) {
   EXPECT_EQ(2u, fmt::formatted_size("{}", 42));
+#if FMT_USE_LOCALE
   EXPECT_EQ(2u, fmt::formatted_size(std::locale(), "{}", 42));
+#endif
 }
 
 TEST(format_test, format_to_no_args) {
@@ -2483,7 +2486,9 @@ TEST(format_int_test, format_int) {
             std::to_string(max_value<int64_t>()));
 }
 
-#ifndef FMT_STATIC_THOUSANDS_SEPARATOR
+// This file is also compiled with FMT_USE_LOCALE=0 by nolocale-test, so tests
+// that use std::locale must go in this block.
+#if FMT_USE_LOCALE
 
 #  include <locale>
 
@@ -2548,7 +2553,7 @@ TEST(format_test, format_locale) {
   EXPECT_EQ(fmt::format(loc, "{:10Lo}", 12345), "    30,071");
 }
 
-#endif  // FMT_STATIC_THOUSANDS_SEPARATOR
+#endif  // FMT_USE_LOCALE
 
 struct convertible_to_nonconst_cstring {
   operator char*() const {
