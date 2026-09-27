@@ -497,7 +497,7 @@ TEST(compile_test, format_as) {
 
 struct constexpr_enabled {};
 
-template <> struct fmt::formatter<constexpr_enabled> {
+template <> struct fmt::formatter<constexpr_enabled> : formatter<const char*> {
   bool debug = false;
   FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
     if (ctx.begin() != ctx.end() && *ctx.begin() == '?') {
@@ -509,8 +509,7 @@ template <> struct fmt::formatter<constexpr_enabled> {
   template <typename FormatContext>
   FMT_CONSTEXPR auto format(constexpr_enabled, FormatContext& ctx) const
       -> decltype(ctx.out()) {
-    return fmt::formatter<std::string_view>{}.format(
-        debug ? "debug" : "regular", ctx);
+    return formatter<const char*>::format(debug ? "debug" : "regular", ctx);
   }
 };
 
