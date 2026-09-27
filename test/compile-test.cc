@@ -495,26 +495,36 @@ TEST(compile_test, format_as) {
   EXPECT_EQ("[42]", fmt::format(FMT_COMPILE("[{}]"), type_with_format_as{42}));
 }
 
-#if FMT_CPLUSPLUS >= 202000L
-struct consteval_printable {};
+struct constexpr_enabled {};
 
-template<>
-struct fmt::formatter<consteval_printable> {
+template <> struct fmt::formatter<constexpr_enabled> {
   bool debug = false;
-  consteval auto parse(auto& ctx) {
+  FMT_CONSTEXPR auto parse(auto& ctx) {
     if (ctx.begin() != ctx.end() && *ctx.begin() == '?') {
       debug = true;
       ctx.advance_to(ctx.begin() + 1);
     }
     return ctx.begin();
   }
-  consteval auto format(consteval_printable, auto& ctx) const {
-    return fmt::formatter<std::string_view>{}.format(debug ? "debug" : "regular", ctx);
+  FMT_CONSTEXPR auto format(constexpr_enabled, auto& ctx) const {
+    return fmt::formatter<std::string_view>{}.format(
+        debug ? "debug" : "regular", ctx);
   }
 };
 
-static_assert(fmt::format(FMT_COMPILE("{}"), consteval_printable{}) == "regular");
-static_assert(fmt::format(FMT_COMPILE("[{}]"), consteval_printable{}) == "[regular]");
-static_assert(fmt::format(FMT_COMPILE("{:?}"), consteval_printable{}) == "debug");
-static_assert(fmt::format(FMT_COMPILE("[{:?}]"), consteval_printable{}) == "[debug]");
-#endif // FMT_CPLUSPLUS >= 202000L
+TEST(compile_test, constexpr_enabled_runtime_form) {
+  EXPECT_EQ("regular", fmt::format(FMT_COMPILE("{}"), constexpr_enabled{}));
+  EXPECT_EQ("[regular]", fmt::format(FMT_COMPILE("[{}]"), constexpr_enabled{}));
+  EXPECT_EQ("debug", fmt::format(FMT_COMPILE("{:?}"), constexpr_enabled{}));
+  EXPECT_EQ("[debug]", fmt::format(FMT_COMPILE("[{:?}]"), constexpr_enabled{}));
+}
+
+// constexpr_enabled compile time form
+#if FMT_USE_CONSTEXPR_STRING
+static_assert(fmt::format(FMT_COMPILE("{}"), constexpr_enabled{}) == "regular");
+static_assert(fmt::format(FMT_COMPILE("[{}]"), constexpr_enabled{}) ==
+              "[regular]");
+static_assert(fmt::format(FMT_COMPILE("{:?}"), constexpr_enabled{}) == "debug");
+static_assert(fmt::format(FMT_COMPILE("[{:?}]"), constexpr_enabled{}) ==
+              "[debug]");
+#endif  // FMT_USE_CONSTEXPR_STRING
