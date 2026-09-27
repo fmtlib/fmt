@@ -2793,7 +2793,9 @@ template <typename Char, typename Grouping, typename OutputIt,
 FMT_CONSTEXPR20 auto do_write_float(OutputIt out, const DecimalFP& f,
                                     const format_specs& specs, sign s,
                                     int exp_upper, locale_ref loc) -> OutputIt {
-  Char point = specs.localized() ? detail::decimal_point<Char>(loc) : Char('.');
+  Char point = FMT_USE_LOCALE && specs.localized()
+                   ? detail::decimal_point<Char>(loc)
+                   : Char('.');
   int significand_size = get_significand_size(f);
   int exp = f.exponent + significand_size - 1;
   if (specs.type() == presentation_type::fixed ||
@@ -2832,7 +2834,7 @@ template <typename Char, typename OutputIt, typename DecimalFP>
 FMT_CONSTEXPR20 auto write_float(OutputIt out, const DecimalFP& f,
                                  const format_specs& specs, sign s,
                                  int exp_upper, locale_ref loc) -> OutputIt {
-  if (is_constant_evaluated()) {
+  if (is_constant_evaluated() || !FMT_USE_LOCALE) {
     return do_write_float<Char, fallback_digit_grouping<Char>>(out, f, specs, s,
                                                                exp_upper, loc);
   } else {

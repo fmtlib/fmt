@@ -129,12 +129,13 @@ if (FMT_PEDANTIC)
   endif ()
 
   # Test that the library compiles without locale.
-  add_library(nolocale-test ../src/format.cc)
+  add_executable(nolocale-test ../src/format.cc nolocale-test.cc)
   target_include_directories(nolocale-test
                              PRIVATE ${PROJECT_SOURCE_DIR}/include)
   target_compile_definitions(nolocale-test PRIVATE FMT_USE_LOCALE=0)
   target_compile_options(nolocale-test
                          PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/utf-8>)
+  add_test(NAME nolocale-test COMMAND nolocale-test)
 endif ()
 
 # These tests are disabled on Windows because they take too long.
