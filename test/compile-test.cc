@@ -499,14 +499,16 @@ struct constexpr_enabled {};
 
 template <> struct fmt::formatter<constexpr_enabled> {
   bool debug = false;
-  FMT_CONSTEXPR auto parse(auto& ctx) {
+  FMT_CONSTEXPR auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
     if (ctx.begin() != ctx.end() && *ctx.begin() == '?') {
       debug = true;
       ctx.advance_to(ctx.begin() + 1);
     }
     return ctx.begin();
   }
-  FMT_CONSTEXPR auto format(constexpr_enabled, auto& ctx) const {
+  template <typename FormatContext>
+  FMT_CONSTEXPR auto format(constexpr_enabled, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
     return fmt::formatter<std::string_view>{}.format(
         debug ? "debug" : "regular", ctx);
   }
