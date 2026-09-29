@@ -2735,7 +2735,9 @@ FMT_CONSTEXPR20 auto write_fixed(OutputIt out, const DecimalFP& f,
   if (f.exponent >= 0) {
     // 1234e5 -> 123400000[.0+]
     size += f.exponent;
-    int num_zeros = specs.precision - exp;
+    int num_zeros = specs.type() == presentation_type::fixed
+                        ? specs.precision
+                        : specs.precision - exp;
     abort_fuzzing_if(num_zeros > 5000);
     if (specs.alt()) {
       ++size;
@@ -2757,8 +2759,12 @@ FMT_CONSTEXPR20 auto write_fixed(OutputIt out, const DecimalFP& f,
   }
   if (exp > 0) {
     // 1234e-2 -> 12.34[0+]
-    int num_zeros = specs.alt() ? specs.precision - significand_size : 0;
-    size += 1 + max_of(num_zeros, 0);
+    int num_zeros = specs.type() == presentation_type::fixed
+                        ? specs.precision + f.exponent
+                    : specs.alt() ? specs.precision - significand_size
+                                  : 0;
+    size += 1;
+    size += max_of(num_zeros, 0);
     auto grouping = Grouping(loc, specs.localized());
     size += grouping.count_separators(exp);
     return write_padded<Char, align::right>(
@@ -2775,8 +2781,13 @@ FMT_CONSTEXPR20 auto write_fixed(OutputIt out, const DecimalFP& f,
       specs.precision < num_zeros) {
     num_zeros = specs.precision;
   }
+  int trailing_zeros = specs.type() == presentation_type::fixed
+                           ? specs.precision + f.exponent
+                       : specs.alt() ? specs.precision - significand_size
+                                     : 0;
   bool pointy = num_zeros != 0 || significand_size != 0 || specs.alt();
   size += 1 + (pointy ? 1 : 0) + num_zeros;
+  size += max_of(trailing_zeros, 0);
   return write_padded<Char, align::right>(
       out, specs, static_cast<size_t>(size), [&](iterator it) {
         if (s != sign::none) *it++ = detail::getsign<Char>(s);
@@ -2784,7 +2795,10 @@ FMT_CONSTEXPR20 auto write_fixed(OutputIt out, const DecimalFP& f,
         if (!pointy) return it;
         *it++ = decimal_point;
         it = detail::fill_n(it, num_zeros, Char('0'));
-        return write_significand<Char>(it, f.significand, significand_size);
+        it = write_significand<Char>(it, f.significand, significand_size);
+        return trailing_zeros > 0
+                   ? detail::fill_n(it, trailing_zeros, Char('0'))
+                   : it;
       });
 }
 

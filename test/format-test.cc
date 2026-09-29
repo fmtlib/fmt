@@ -1242,6 +1242,48 @@ TEST(format_test, precision) {
   EXPECT_EQ(fmt::format("{0:.6}", "123456\xad"), "123456");
 }
 
+TEST(format_test, high_precision_trailing_zeros) {
+  EXPECT_EQ(std::string("1.") + std::string(767, '0'),
+            fmt::format("{:.767f}", 1.0));
+  EXPECT_EQ(std::string("0.5") + std::string(767, '0'),
+            fmt::format("{:#.768g}", 0.5));
+
+  EXPECT_EQ(std::string("1.") + std::string(766, '0'),
+            fmt::format("{:.766f}", 1.0));
+  EXPECT_EQ(std::string("0.5") + std::string(766, '0'),
+            fmt::format("{:#.767g}", 0.5));
+  EXPECT_EQ(std::string("1.") + std::string(767, '0'),
+            fmt::format("{:#.768g}", 1.0));
+  EXPECT_EQ("0.5", fmt::format("{:.768g}", 0.5));
+
+  auto fixed = std::string("0.0625") + std::string(764, '0');
+  auto general = std::string("0.0625") + std::string(765, '0');
+  EXPECT_EQ(fixed, fmt::format("{:.768f}", 0.0625));
+  EXPECT_EQ(general, fmt::format("{:#.768g}", 0.0625));
+  EXPECT_EQ(std::string("-0.5") + std::string(767, '0'),
+            fmt::format("{:.{}f}", -0.5f, 768));
+  EXPECT_EQ(std::string("-0.0625") + std::string(765, '0'),
+            fmt::format("{:#.{}g}", -0.0625, 768));
+  EXPECT_EQ(std::string("  ") + fixed,
+            fmt::format("{:>772.768f}", 0.0625));
+  EXPECT_EQ(std::string(" ") + general,
+            fmt::format("{:>#772.768g}", 0.0625));
+}
+
+TEST(format_test, high_precision_bounded_output) {
+  char buffer[9] = {};
+  buffer[8] = 'x';
+  auto result = fmt::format_to_n(buffer, 8, "{:.768f}", 0.0625);
+  EXPECT_EQ(770u, result.size);
+  EXPECT_EQ(buffer + 8, result.out);
+  EXPECT_EQ("0.062500x", fmt::string_view(buffer, 9));
+
+  result = fmt::format_to_n(buffer, 8, "{:#.768g}", 0.0625);
+  EXPECT_EQ(771u, result.size);
+  EXPECT_EQ(buffer + 8, result.out);
+  EXPECT_EQ("0.062500x", fmt::string_view(buffer, 9));
+}
+
 TEST(format_test, large_precision) {
   // Iterator used to abort the actual output.
   struct throwing_iterator {
@@ -1256,6 +1298,14 @@ TEST(format_test, large_precision) {
   auto it = throwing_iterator();
 
   EXPECT_THROW_MSG(fmt::format_to(it, fmt::runtime("{:#.{}}"), 1.0,
+                                  fmt::detail::max_value<int>()),
+                   std::runtime_error, "aborted");
+
+  EXPECT_THROW_MSG(fmt::format_to(it, fmt::runtime("{:#.{}g}"), 0.0625,
+                                  fmt::detail::max_value<int>()),
+                   std::runtime_error, "aborted");
+
+  EXPECT_THROW_MSG(fmt::format_to(it, fmt::runtime("{:.{}f}"), 0.0625,
                                   fmt::detail::max_value<int>()),
                    std::runtime_error, "aborted");
 
