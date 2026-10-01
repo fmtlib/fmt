@@ -4094,8 +4094,8 @@ template <typename Char> class nested_format_specs {
     if (specs.width == 0) return f.write_body(ctx, static_cast<T&&>(values)...);
 
     auto buf = basic_memory_buffer<Char>();
-    auto buffer_ctx =
-        FormatContext(basic_appender<Char>(buf), ctx.args(), ctx.locale());
+    auto buffer_ctx = basic_format_context<basic_appender<Char>, Char>(
+        basic_appender<Char>(buf), ctx.args(), ctx.locale());
     f.write_body(buffer_ctx, static_cast<T&&>(values)...);
     return detail::write<Char>(
         ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
