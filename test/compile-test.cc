@@ -250,6 +250,18 @@ TEST(compile_test, static_format) {
   EXPECT_STREQ(result.c_str(), "42");
   EXPECT_EQ(result.str(), "42");
 }
+
+TEST(compile_test, high_precision_constexpr_float) {
+  constexpr auto tiny = []() {
+    auto value = 1.0;
+    for (int i = 0; i < 900; ++i) value /= 2;
+    return value;
+  }();
+  constexpr auto result = FMT_STATIC_FORMAT("{:.1000f}", tiny);
+  EXPECT_EQ(1002u, result.str().size());
+  EXPECT_EQ("43174959877427608893241125591038",
+            fmt::string_view(result.c_str() + 768, 32));
+}
 #  endif
 
 TEST(compile_test, text_and_arg) {

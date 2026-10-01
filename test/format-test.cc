@@ -307,6 +307,30 @@ TEST(memory_buffer_test, ctor) {
   EXPECT_EQ(123u, buffer.capacity());
 }
 
+#if FMT_USE_CONSTEVAL && (!FMT_MSC_VERSION || FMT_MSC_VERSION >= 1940)
+template <typename Allocator> constexpr auto constexpr_buffer_growth() -> bool {
+  basic_memory_buffer<char, 2, Allocator> buffer;
+  buffer.push_back('a');
+  buffer.push_back('b');
+  buffer.push_back('c');
+  buffer.push_back('d');
+  buffer.push_back('e');
+  buffer.push_back('f');
+  return buffer.size() == 6 && buffer[0] == 'a' && buffer[1] == 'b' &&
+         buffer[2] == 'c' && buffer[3] == 'd' && buffer[4] == 'e' &&
+         buffer[5] == 'f';
+}
+
+TEST(memory_buffer_test, constexpr_grow) {
+  constexpr auto default_allocator =
+      constexpr_buffer_growth<fmt::detail::allocator<char>>();
+  constexpr auto standard_allocator =
+      constexpr_buffer_growth<std::allocator<char>>();
+  EXPECT_TRUE(default_allocator);
+  EXPECT_TRUE(standard_allocator);
+}
+#endif
+
 using std_allocator = allocator_ref<std::allocator<char>>;
 
 TEST(memory_buffer_test, move_ctor_inline_buffer) {
@@ -1264,10 +1288,8 @@ TEST(format_test, high_precision_trailing_zeros) {
             fmt::format("{:.{}f}", -0.5f, 768));
   EXPECT_EQ(std::string("-0.0625") + std::string(765, '0'),
             fmt::format("{:#.{}g}", -0.0625, 768));
-  EXPECT_EQ(std::string("  ") + fixed,
-            fmt::format("{:>772.768f}", 0.0625));
-  EXPECT_EQ(std::string(" ") + general,
-            fmt::format("{:>#772.768g}", 0.0625));
+  EXPECT_EQ(std::string("  ") + fixed, fmt::format("{:>772.768f}", 0.0625));
+  EXPECT_EQ(std::string(" ") + general, fmt::format("{:>#772.768g}", 0.0625));
 }
 
 TEST(format_test, high_precision_bounded_output) {
@@ -1282,6 +1304,29 @@ TEST(format_test, high_precision_bounded_output) {
   EXPECT_EQ(771u, result.size);
   EXPECT_EQ(buffer + 8, result.out);
   EXPECT_EQ("0.062500x", fmt::string_view(buffer, 9));
+}
+
+TEST(format_test, high_precision_long_double) {
+  if (std::numeric_limits<long double>::max_exponent <= 3000 ||
+      fmt::detail::is_double_double<long double>::value)
+    return;
+  auto tiny = std::ldexp(1.0L, -3000);
+  auto large = std::ldexp(1.0L, 3000);
+  char buffer[3004];
+  safe_sprintf(buffer, "%.1000Lf", tiny);
+  EXPECT_EQ(buffer, fmt::format("{:.1000f}", tiny));
+  safe_sprintf(buffer, "%.1000Lf", -tiny);
+  EXPECT_EQ(buffer, fmt::format("{:.1000f}", -tiny));
+  safe_sprintf(buffer, "%.3000Lf", tiny);
+  EXPECT_EQ(buffer, fmt::format("{:.3000f}", tiny));
+  safe_sprintf(buffer, "%#.1000Lg", large);
+  EXPECT_EQ(buffer, fmt::format("{:#.1000g}", large));
+  safe_sprintf(buffer, "%.0Lf", large);
+  EXPECT_EQ(buffer, fmt::format("{:.0f}", large));
+  EXPECT_EQ("0." + std::string(1000, '0'), fmt::format("{:.1000f}", 0.0L));
+  EXPECT_EQ("-0." + std::string(1000, '0'), fmt::format("{:.1000f}", -0.0L));
+  EXPECT_EQ("0.5" + std::string(999, '0'), fmt::format("{:.1000f}", 0.5L));
+  EXPECT_EQ("-0.5" + std::string(999, '0'), fmt::format("{:.1000f}", -0.5L));
 }
 
 TEST(format_test, large_precision) {

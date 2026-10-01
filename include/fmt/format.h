@@ -53,7 +53,9 @@
 
 #  include <cmath>   // std::signbit
 #  include <limits>  // std::numeric_limits
-#  if defined(__GLIBCXX__) && !defined(_GLIBCXX_USE_DUAL_ABI)
+#  if FMT_USE_CONSTEVAL
+#    include <memory>  // std::construct_at
+#  elif defined(__GLIBCXX__) && !defined(_GLIBCXX_USE_DUAL_ABI)
 // Workaround for pre gcc 5 libstdc++.
 #    include <memory>  // std::allocator_traits
 #  endif
@@ -888,12 +890,26 @@ FMT_API auto allocate(size_t size) -> void*;
 template <typename T> struct allocator : private std::decay<void> {
   using value_type = T;
 
-  auto allocate(size_t n) -> T* {
+  FMT_CONSTEXPR20 auto allocate(size_t n) -> T* {
     FMT_ASSERT(n <= max_value<size_t>() / sizeof(T), "");
+#if FMT_USE_CONSTEVAL
+    // Use the builtin directly to avoid C++ runtime dependencies at -O0.
+    if (__builtin_is_constant_evaluated())
+      return std::allocator<T>().allocate(n);
+#endif
     return static_cast<T*>(detail::allocate(n * sizeof(T)));
   }
 
-  void deallocate(T* p, size_t) { free(p); }
+  FMT_CONSTEXPR20 void deallocate(T* p, size_t n) {
+#if FMT_USE_CONSTEVAL
+    if (__builtin_is_constant_evaluated()) {
+      std::allocator<T>().deallocate(p, n);
+      return;
+    }
+#endif
+    ignore_unused(n);
+    free(p);
+  }
 
   constexpr friend auto operator==(allocator, allocator) noexcept -> bool {
     return true;  // All instances of this allocator are equivalent.
@@ -960,10 +976,17 @@ class basic_memory_buffer : public detail::buffer<T> {
       new_capacity = max_of(size, max_size);
     T* old_data = buf.data();
     T* new_data = self.alloc_.allocate(new_capacity);
-    // Suppress a bogus -Wstringop-overflow in gcc 13.1 (#3481).
-    detail::assume(buf.size() <= new_capacity);
     // The following code doesn't throw, so the raw pointer above doesn't leak.
-    memcpy(new_data, old_data, buf.size() * sizeof(T));
+    if (detail::is_constant_evaluated()) {
+#if FMT_USE_CONSTEVAL
+      for (size_t i = 0; i < new_capacity; ++i) std::construct_at(new_data + i);
+#endif
+      for (size_t i = 0; i < buf.size(); ++i) new_data[i] = old_data[i];
+    } else {
+      // Suppress a bogus -Wstringop-overflow in gcc 13.1 (#3481).
+      detail::assume(buf.size() <= new_capacity);
+      memcpy(new_data, old_data, buf.size() * sizeof(T));
+    }
     self.set(new_data, new_capacity);
     // deallocate must not throw according to the standard, but even if it does,
     // the buffer already uses the new storage and will deallocate it in
@@ -3669,10 +3692,17 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision,
                                           : f.assign(converted_value);
     if (is_predecessor_closer) dragon_flags |= dragon::predecessor_closer;
     if (fixed) dragon_flags |= dragon::fixed;
-    // Limit precision to the maximum possible number of significant digits in
-    // an IEEE754 double because we don't need to generate zeros.
-    const int max_double_digits = 767;
-    if (precision > max_double_digits) precision = max_double_digits;
+    // Keep the fast double path's significant-digit limit.
+    int max_precision = 767;
+    if ((dragon_flags & dragon::fixup) != 0) {
+      // Fixed precision still counts fractional places before fixup. A value
+      // f * 2^e has at most max(-e, 0) fractional decimal places, and its
+      // number of significant decimal digits is bounded by the bit length of f
+      // + |e|.
+      max_precision = fixed ? (f.e < 0 ? -f.e : 0)
+                            : count_digits<1>(f.f) + (f.e < 0 ? -f.e : f.e);
+    }
+    if (precision > max_precision) precision = max_precision;
     format_dragon(f, dragon_flags, precision, buf, exp);
   }
   if (!fixed && !specs.alt()) {
