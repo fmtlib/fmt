@@ -544,6 +544,20 @@ FMT_CONSTEXPR20 auto fill_n(T* out, Size count, char value) -> T* {
   memset(out, value, to_unsigned(count));
   return out + count;
 }
+template <typename T>
+FMT_CONSTEXPR auto fill_n(basic_appender<T> out, size_t n, T value)
+    -> basic_appender<T> {
+  auto& buf = get_container(out);
+  while (n != 0 && !is_constant_evaluated(true)) {
+    buf.try_reserve(buf.size() + n);
+    auto count = min_of(n, buf.capacity() - buf.size());
+    auto ptr = buf.data() + buf.size();
+    buf.try_resize(buf.size() + count);
+    detail::fill_n(ptr, count, value);
+    n -= count;
+  }
+  return fill_n<basic_appender<T>, size_t, T>(out, n, value);
+}
 
 template <typename T, typename V, typename OutputIt>
 FMT_CONSTEXPR auto copy(basic_string_view<V> s, OutputIt out) -> OutputIt {
