@@ -595,6 +595,11 @@ TEST(ranges_test, is_printable) {
   EXPECT_TRUE(is_printable(0x0323));
   EXPECT_FALSE(is_printable(0x0378));
   EXPECT_FALSE(is_printable(0x110000));
+  // Code points assigned after Unicode 13.0.
+  EXPECT_TRUE(is_printable(0x2a6de));
+  EXPECT_TRUE(is_printable(0x1fae0));
+  EXPECT_TRUE(is_printable(0x31350));
+  EXPECT_TRUE(is_printable(0x323b0));
 }
 
 TEST(ranges_test, escape) {
@@ -607,7 +612,7 @@ TEST(ranges_test, escape) {
   if (fmt::detail::use_utf8) {
     EXPECT_EQ(fmt::format("{}", vec{"\xcd\xb8"}), "[\"\\u0378\"]");
     // Unassigned Unicode code points.
-    EXPECT_EQ(fmt::format("{}", vec{"\xf0\xaa\x9b\x9e"}), "[\"\\U0002a6de\"]");
+    EXPECT_EQ(fmt::format("{}", vec{"\xf0\xaa\x9b\xa0"}), "[\"\\U0002a6e0\"]");
     // Broken utf-8.
     EXPECT_EQ(fmt::format("{}", vec{"\xf4\x8f\xbf\xc0"}),
               "[\"\\xf4\\x8f\\xbf\\xc0\"]");
@@ -618,6 +623,9 @@ TEST(ranges_test, escape) {
 
     // Correct utf-8.
     EXPECT_EQ(fmt::format("{}", vec{"🦄"}), "[\"🦄\"]");
+    EXPECT_EQ(fmt::format("{}", vec{"🫠"}), "[\"🫠\"]");
+    EXPECT_EQ(fmt::format("{}", vec{"\xf0\xb1\x8d\x90"}),
+              "[\"\xf0\xb1\x8d\x90\"]");
   }
 
   EXPECT_EQ(fmt::format("{}", std::vector<std::vector<char>>{{'x'}}),
