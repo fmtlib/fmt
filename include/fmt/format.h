@@ -53,9 +53,7 @@
 
 #  include <cmath>   // std::signbit
 #  include <limits>  // std::numeric_limits
-#  if FMT_USE_CONSTEVAL
-#    include <memory>  // std::construct_at
-#  elif defined(__GLIBCXX__) && !defined(_GLIBCXX_USE_DUAL_ABI)
+#  if defined(__GLIBCXX__) && !defined(_GLIBCXX_USE_DUAL_ABI)
 // Workaround for pre gcc 5 libstdc++.
 #    include <memory>  // std::allocator_traits
 #  endif
@@ -894,20 +892,18 @@ template <typename T> struct allocator : private std::decay<void> {
     FMT_ASSERT(n <= max_value<size_t>() / sizeof(T), "");
 #if FMT_USE_CONSTEVAL
     // Use the builtin directly to avoid C++ runtime dependencies at -O0.
-    if (__builtin_is_constant_evaluated())
-      return std::allocator<T>().allocate(n);
+    if (__builtin_is_constant_evaluated()) return new T[n];
 #endif
     return static_cast<T*>(detail::allocate(n * sizeof(T)));
   }
 
-  FMT_CONSTEXPR20 void deallocate(T* p, size_t n) {
+  FMT_CONSTEXPR20 void deallocate(T* p, size_t) {
 #if FMT_USE_CONSTEVAL
     if (__builtin_is_constant_evaluated()) {
-      std::allocator<T>().deallocate(p, n);
+      delete[] p;
       return;
     }
 #endif
-    ignore_unused(n);
     free(p);
   }
 
@@ -978,9 +974,10 @@ class basic_memory_buffer : public detail::buffer<T> {
     T* new_data = self.alloc_.allocate(new_capacity);
     // The following code doesn't throw, so the raw pointer above doesn't leak.
     if (detail::is_constant_evaluated()) {
-#if FMT_USE_CONSTEVAL
-      for (size_t i = 0; i < new_capacity; ++i) std::construct_at(new_data + i);
-#endif
+      auto alloc = detail::allocator<T>();
+      for (size_t i = 0; i < new_capacity; ++i)
+        std::allocator_traits<detail::allocator<T>>::construct(alloc,
+                                                               new_data + i);
       for (size_t i = 0; i < buf.size(); ++i) new_data[i] = old_data[i];
     } else {
       // Suppress a bogus -Wstringop-overflow in gcc 13.1 (#3481).

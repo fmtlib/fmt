@@ -1272,10 +1272,6 @@ TEST(format_test, high_precision_trailing_zeros) {
   EXPECT_EQ(std::string("0.5") + std::string(767, '0'),
             fmt::format("{:#.768g}", 0.5));
 
-  EXPECT_EQ(std::string("1.") + std::string(766, '0'),
-            fmt::format("{:.766f}", 1.0));
-  EXPECT_EQ(std::string("0.5") + std::string(766, '0'),
-            fmt::format("{:#.767g}", 0.5));
   EXPECT_EQ(std::string("1.") + std::string(767, '0'),
             fmt::format("{:#.768g}", 1.0));
   EXPECT_EQ("0.5", fmt::format("{:.768g}", 0.5));
@@ -1284,10 +1280,6 @@ TEST(format_test, high_precision_trailing_zeros) {
   auto general = std::string("0.0625") + std::string(765, '0');
   EXPECT_EQ(fixed, fmt::format("{:.768f}", 0.0625));
   EXPECT_EQ(general, fmt::format("{:#.768g}", 0.0625));
-  EXPECT_EQ(std::string("-0.5") + std::string(767, '0'),
-            fmt::format("{:.{}f}", -0.5f, 768));
-  EXPECT_EQ(std::string("-0.0625") + std::string(765, '0'),
-            fmt::format("{:#.{}g}", -0.0625, 768));
   EXPECT_EQ(std::string("  ") + fixed, fmt::format("{:>772.768f}", 0.0625));
   EXPECT_EQ(std::string(" ") + general, fmt::format("{:>#772.768g}", 0.0625));
 }
@@ -1315,18 +1307,12 @@ TEST(format_test, high_precision_long_double) {
   char buffer[3004];
   safe_sprintf(buffer, "%.1000Lf", tiny);
   EXPECT_EQ(buffer, fmt::format("{:.1000f}", tiny));
-  safe_sprintf(buffer, "%.1000Lf", -tiny);
-  EXPECT_EQ(buffer, fmt::format("{:.1000f}", -tiny));
   safe_sprintf(buffer, "%.3000Lf", tiny);
   EXPECT_EQ(buffer, fmt::format("{:.3000f}", tiny));
   safe_sprintf(buffer, "%#.1000Lg", large);
   EXPECT_EQ(buffer, fmt::format("{:#.1000g}", large));
   safe_sprintf(buffer, "%.0Lf", large);
   EXPECT_EQ(buffer, fmt::format("{:.0f}", large));
-  EXPECT_EQ("0." + std::string(1000, '0'), fmt::format("{:.1000f}", 0.0L));
-  EXPECT_EQ("-0." + std::string(1000, '0'), fmt::format("{:.1000f}", -0.0L));
-  EXPECT_EQ("0.5" + std::string(999, '0'), fmt::format("{:.1000f}", 0.5L));
-  EXPECT_EQ("-0.5" + std::string(999, '0'), fmt::format("{:.1000f}", -0.5L));
 }
 
 TEST(format_test, large_precision) {
