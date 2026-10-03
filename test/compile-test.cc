@@ -185,6 +185,59 @@ TEST(compile_test, format_to) {
   EXPECT_STREQ("2a", buf);
 }
 
+TEST(compile_test, format_variant) {
+#  ifdef __cpp_lib_variant
+  char buffer[100];
+  auto end =
+      fmt::format_to(buffer, FMT_COMPILE("<{}> {}"), std::variant<int>{42}, 7);
+  EXPECT_EQ("<variant(42)> 7", std::string(buffer, end));
+
+  end =
+      fmt::format_to(buffer, FMT_COMPILE("{}"), std::variant<std::monostate>{});
+  EXPECT_EQ("variant(monostate)", std::string(buffer, end));
+
+  end = fmt::format_to(buffer, FMT_COMPILE("{}"),
+                       std::variant<std::variant<int>>{std::variant<int>{42}});
+  EXPECT_EQ("variant(variant(42))", std::string(buffer, end));
+
+  end = fmt::format_to(buffer, FMT_COMPILE("{}"),
+                       std::variant<std::string>{"test"});
+  EXPECT_EQ("variant(\"test\")", std::string(buffer, end));
+
+  end = fmt::format_to(buffer, FMT_COMPILE("{}"), std::variant<char>{'a'});
+  EXPECT_EQ("variant('a')", std::string(buffer, end));
+#  endif
+}
+
+TEST(compile_test, format_expected) {
+#  ifdef __cpp_lib_expected
+  char buffer[100];
+  auto end = fmt::format_to(buffer, FMT_COMPILE("<{}> {}"),
+                            std::expected<int, int>{42}, 7);
+  EXPECT_EQ("<expected(42)> 7", std::string(buffer, end));
+
+  end = fmt::format_to(buffer, FMT_COMPILE("{}"),
+                       std::expected<int, int>{std::unexpected(42)});
+  EXPECT_EQ("unexpected(42)", std::string(buffer, end));
+
+  end = fmt::format_to(buffer, FMT_COMPILE("{}"), std::expected<void, int>{});
+  EXPECT_EQ("expected()", std::string(buffer, end));
+
+  end = fmt::format_to(buffer, FMT_COMPILE("{}"),
+                       std::expected<std::string, int>{"test"});
+  EXPECT_EQ("expected(\"test\")", std::string(buffer, end));
+#  endif
+}
+
+TEST(compile_test, format_unexpected) {
+#  ifdef __cpp_lib_expected
+  char buffer[100];
+  auto end = fmt::format_to(buffer, FMT_COMPILE("<{}> {}"),
+                            std::unexpected<int>{42}, 7);
+  EXPECT_EQ("<unexpected(42)> 7", std::string(buffer, end));
+#  endif
+}
+
 TEST(compile_test, format_to_n) {
   constexpr auto buffer_size = 8;
   char buffer[buffer_size];
