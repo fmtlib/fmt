@@ -547,16 +547,18 @@ FMT_CONSTEXPR20 auto fill_n(T* out, Size count, char value) -> T* {
 template <typename T>
 FMT_CONSTEXPR auto fill_n(basic_appender<T> out, size_t n, T value)
     -> basic_appender<T> {
+  if (is_constant_evaluated(true))
+    return fill_n<basic_appender<T>, size_t, T>(out, n, value);
   auto& buf = get_container(out);
-  while (n != 0 && !is_constant_evaluated(true)) {
+  while (n != 0) {
     buf.try_reserve(buf.size() + n);
-    auto count = min_of(n, buf.capacity() - buf.size());
-    auto ptr = buf.data() + buf.size();
-    buf.try_resize(buf.size() + count);
-    detail::fill_n(ptr, count, value);
+    auto size = buf.size();
+    auto count = min_of(n, buf.capacity() - size);
+    buf.try_resize(size + count);
+    detail::fill_n(buf.data() + size, count, value);
     n -= count;
   }
-  return fill_n<basic_appender<T>, size_t, T>(out, n, value);
+  return out;
 }
 
 template <typename T, typename V, typename OutputIt>
