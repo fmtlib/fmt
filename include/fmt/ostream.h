@@ -51,12 +51,14 @@ auto get_file(std::filebuf&) -> FILE*;
 
 // Write the content of buf to os.
 // It is a separate function rather than a part of vprint to simplify testing.
+// max_size must be positive and no greater than the maximum streamsize.
 template <typename Char>
-void write_buffer(std::basic_ostream<Char>& os, buffer<Char>& buf) {
+void write_buffer(std::basic_ostream<Char>& os, buffer<Char>& buf,
+                  make_unsigned_t<std::streamsize> max_size =
+                      to_unsigned(max_value<std::streamsize>())) {
   const Char* buf_data = buf.data();
   using unsigned_streamsize = make_unsigned_t<std::streamsize>;
   unsigned_streamsize size = buf.size();
-  unsigned_streamsize max_size = to_unsigned(max_value<std::streamsize>());
   do {
     unsigned_streamsize n = size <= max_size ? size : max_size;
     os.write(buf_data, static_cast<std::streamsize>(n));

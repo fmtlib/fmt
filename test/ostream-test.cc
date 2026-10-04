@@ -129,41 +129,22 @@ TEST(ostream_test, write_to_ostream) {
 }
 
 TEST(ostream_test, write_to_ostream_max_size) {
-  auto max_size = fmt::detail::max_value<size_t>();
-  auto max_streamsize = fmt::detail::max_value<std::streamsize>();
-  if (max_size <= fmt::detail::to_unsigned(max_streamsize)) return;
-
-  struct test_buffer final : fmt::detail::buffer<char> {
-    explicit test_buffer(size_t size)
-        : fmt::detail::buffer<char>([](buffer<char>&, size_t) {}, nullptr, size,
-                                    size) {}
-  } buffer(max_size);
+  fmt::memory_buffer buffer;
+  buffer.append(fmt::string_view("hello"));
 
   struct mock_streambuf : std::streambuf {
-    MOCK_METHOD(std::streamsize, xsputn, (const void*, std::streamsize));
-    auto xsputn(const char* s, std::streamsize n) -> std::streamsize override {
-      const void* v = s;
-      return xsputn(v, n);
-    }
+    MOCK_METHOD(std::streamsize, xsputn, (const char*, std::streamsize),
+                (override));
   } streambuf;
-
-  struct test_ostream : std::ostream {
-    explicit test_ostream(mock_streambuf& output_buffer)
-        : std::ostream(&output_buffer) {}
-  } os(streambuf);
+  std::ostream os(&streambuf);
 
   testing::InSequence sequence;
-  const char* data = nullptr;
-  using ustreamsize = std::make_unsigned<std::streamsize>::type;
-  ustreamsize size = max_size;
-  do {
-    auto n = std::min(size, fmt::detail::to_unsigned(max_streamsize));
-    EXPECT_CALL(streambuf, xsputn(data, static_cast<std::streamsize>(n)))
-        .WillOnce(testing::Return(max_streamsize));
-    data += n;
-    size -= n;
-  } while (size != 0);
-  fmt::detail::write_buffer(os, buffer);
+  EXPECT_CALL(streambuf, xsputn(buffer.data(), 2)).WillOnce(testing::Return(2));
+  EXPECT_CALL(streambuf, xsputn(buffer.data() + 2, 2))
+      .WillOnce(testing::Return(2));
+  EXPECT_CALL(streambuf, xsputn(buffer.data() + 4, 1))
+      .WillOnce(testing::Return(1));
+  fmt::detail::write_buffer(os, buffer, 2);
 }
 
 TEST(ostream_test, join) {
