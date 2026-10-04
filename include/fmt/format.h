@@ -665,6 +665,25 @@ FMT_CONSTEXPR void for_each_codepoint(string_view s, F f) {
   } while (buf_ptr < buf + num_chars_left);
 }
 
+template <typename Char, typename F,
+          FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
+FMT_CONSTEXPR void for_each_codepoint(basic_string_view<Char> s, F f) {
+  auto p = s.begin(), end = s.end();
+  while (p != end) {
+    auto begin = p;
+    uint32_t cp = static_cast<unsigned_char<Char>>(*p++);
+    // Leave unpaired surrogates intact so they can be escaped individually.
+    if (sizeof(Char) == 2 && cp >= 0xd800 && cp <= 0xdbff && p != end) {
+      uint32_t low = static_cast<unsigned_char<Char>>(*p);
+      if (low >= 0xdc00 && low <= 0xdfff) {
+        cp = 0x10000 + ((cp - 0xd800) << 10) + (low - 0xdc00);
+        ++p;
+      }
+    }
+    if (!f(cp, basic_string_view<Char>(begin, to_unsigned(p - begin)))) return;
+  }
+}
+
 struct wide_cp_range {
   uint32_t first;
   uint32_t last;
@@ -1982,12 +2001,17 @@ template <typename Char> struct find_escape_result {
 template <typename Char>
 auto find_escape(const Char* begin, const Char* end)
     -> find_escape_result<Char> {
-  for (; begin != end; ++begin) {
-    uint32_t cp = static_cast<unsigned_char<Char>>(*begin);
-    if (sizeof(Char) == 1 && cp >= 0x80) continue;
-    if (needs_escape(cp)) return {begin, begin + 1, cp};
-  }
-  return {begin, nullptr, 0};
+  auto result = find_escape_result<Char>{end, nullptr, 0};
+  for_each_codepoint(basic_string_view<Char>(begin, to_unsigned(end - begin)),
+                     [&](uint32_t cp, basic_string_view<Char> sv) {
+                       if (sizeof(Char) == 1 && cp >= 0x80) return true;
+                       if (needs_escape(cp)) {
+                         result = {sv.begin(), sv.end(), cp};
+                         return false;
+                       }
+                       return true;
+                     });
+  return result;
 }
 
 inline auto find_escape(const char* begin, const char* end)
@@ -2406,14 +2430,13 @@ FMT_CONSTEXPR auto write(OutputIt out, Char value, const format_specs& specs,
              : write<Char>(out, static_cast<unsigned_type>(value), specs, loc);
 }
 
-template <typename Char, typename OutputIt,
-          FMT_ENABLE_IF(std::is_same<Char, char>::value)>
+template <typename Char, typename OutputIt>
 FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
                          const format_specs& specs) -> OutputIt {
   bool is_debug = specs.type() == presentation_type::debug;
   if (specs.precision < 0 && specs.width == 0) {
     auto&& it = reserve(out, s.size());
-    return is_debug ? write_escaped_string(it, s) : copy<char>(s, it);
+    return is_debug ? write_escaped_string(it, s) : copy<Char>(s, it);
   }
 
   size_t display_width_limit =
@@ -2421,12 +2444,13 @@ FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
   size_t display_width =
       !is_debug || specs.precision == 0 ? 0 : 1;  // Account for opening '"'.
   size_t size = !is_debug || specs.precision == 0 ? 0 : 1;
-  for_each_codepoint(s, [&](uint32_t cp, string_view sv) {
-    if (is_debug && needs_escape(cp)) {
-      counting_buffer<char> buf;
-      write_escaped_cp(basic_appender<char>(buf),
-                       find_escape_result<char>{sv.begin(), sv.end(), cp});
-      // We're reinterpreting bytes as display width. That's okay
+  for_each_codepoint(s, [&](uint32_t cp, basic_string_view<Char> sv) {
+    if (is_debug && needs_escape(cp) &&
+        (sizeof(Char) != 1 || std::is_same<Char, char>::value || cp < 0x80)) {
+      counting_buffer<Char> buf;
+      write_escaped_cp(basic_appender<Char>(buf),
+                       find_escape_result<Char>{sv.begin(), sv.end(), cp});
+      // We're reinterpreting code units as display width. That's okay
       // because write_escaped_cp() only writes ASCII characters.
       size_t cp_width = buf.count();
       if (display_width + cp_width <= display_width_limit) {
@@ -2478,7 +2502,7 @@ FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
     FMT_CONSTEXPR auto operator++(int) -> bounded_output_iterator& {
       return *this;
     }
-    FMT_CONSTEXPR auto operator=(char c) -> bounded_output_iterator& {
+    FMT_CONSTEXPR auto operator=(Char c) -> bounded_output_iterator& {
       if (bound > 0) {
         *underlying_iterator++ = c;
         --bound;
@@ -2487,35 +2511,12 @@ FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
     }
   };
 
-  return write_padded<char>(
+  return write_padded<Char>(
       out, specs, size, display_width, [=](reserve_iterator<OutputIt> it) {
         return is_debug
                    ? write_escaped_string(bounded_output_iterator{it, size}, s)
                          .underlying_iterator
-                   : copy<char>(s.data(), s.data() + size, it);
-      });
-}
-
-template <typename Char, typename OutputIt,
-          FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
-FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
-                         const format_specs& specs) -> OutputIt {
-  auto data = s.data();
-  auto size = s.size();
-  if (specs.precision >= 0 && to_unsigned(specs.precision) < size)
-    size = to_unsigned(specs.precision);
-
-  bool is_debug = specs.type() == presentation_type::debug;
-  if (is_debug) {
-    auto buf = counting_buffer<Char>();
-    write_escaped_string(basic_appender<Char>(buf), s);
-    size = buf.count();
-  }
-
-  return write_padded<Char>(
-      out, specs, size, [=](reserve_iterator<OutputIt> it) {
-        return is_debug ? write_escaped_string(it, s)
-                        : copy<Char>(data, data + size, it);
+                   : copy<Char>(s.data(), s.data() + size, it);
       });
 }
 

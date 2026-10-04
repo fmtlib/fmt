@@ -298,6 +298,98 @@ TEST(xchar_test, escape_string) {
   EXPECT_EQ(fmt::format(L"{}", vec{L"понедельник"}), L"[\"понедельник\"]");
 }
 
+TEST(xchar_test, utf16_string_width) {
+  EXPECT_EQ(fmt::format(u"{:>4}", u"\u4e2d"), u"  \u4e2d");
+  EXPECT_EQ(fmt::format(u"{:^5}", u"\U0001f600"), u" \U0001f600  ");
+  EXPECT_EQ(fmt::format(u"{:>{}}", u"\U00010000", 3), u"  \U00010000");
+  EXPECT_EQ(fmt::format(u"{:<5}", u"a\U0001f600"), u"a\U0001f600  ");
+}
+
+TEST(xchar_test, utf16_string_precision) {
+  EXPECT_EQ(fmt::format(u"{:.1}", u"\U00010000x"), u"\U00010000");
+  EXPECT_EQ(fmt::format(u"{:.1}", u"\U0001f600x"), u"");
+  EXPECT_EQ(fmt::format(u"{:.2}", u"\U0001f600x"), u"\U0001f600");
+  EXPECT_EQ(fmt::format(u"{:.3}", u"a\U0001f600x"), u"a\U0001f600");
+  EXPECT_EQ(fmt::format(u"{:>4.2}", u"\U0001f600x"), u"  \U0001f600");
+  EXPECT_EQ(fmt::format(u"{:.0}", u"\U0001f600"), u"");
+  const char16_t input[] = {u'a', 0, 0xd800, 0xdc00};
+  auto view = fmt::basic_string_view<char16_t>(input, 4);
+  EXPECT_EQ(fmt::format(u"{:.3}", view), std::u16string(input, 4));
+}
+
+TEST(xchar_test, utf16_debug_string) {
+  EXPECT_EQ(fmt::format(u"{:?}", u"\U0001f600"), u"\"\U0001f600\"");
+  EXPECT_EQ(fmt::format(u"{:?}", u"a\U00010000\n\U0001f600"),
+            u"\"a\U00010000\\n\U0001f600\"");
+  EXPECT_EQ(fmt::format(u"{:?}", u"\U0001d173"), u"\"\\U0001d173\"");
+  EXPECT_EQ(fmt::format(u"{:?}", u"\U0010ffff"), u"\"\\U0010ffff\"");
+  auto values = std::vector<std::u16string>{u"\U0001f600", u"\U0001d173"};
+  EXPECT_EQ(fmt::format(u"{}", values), u"[\"\U0001f600\", \"\\U0001d173\"]");
+}
+
+TEST(xchar_test, utf16_debug_width_and_precision) {
+  EXPECT_EQ(fmt::format(u"{:>6?}", u"\U0001f600"), u"  \"\U0001f600\"");
+  EXPECT_EQ(fmt::format(u"{:.0?}", u"\U0001f600"), u"");
+  EXPECT_EQ(fmt::format(u"{:.1?}", u"\U0001f600"), u"\"");
+  EXPECT_EQ(fmt::format(u"{:.2?}", u"\U0001f600"), u"\"");
+  EXPECT_EQ(fmt::format(u"{:.3?}", u"\U0001f600"), u"\"\U0001f600");
+  EXPECT_EQ(fmt::format(u"{:.4?}", u"\U0001f600"), u"\"\U0001f600\"");
+  EXPECT_EQ(fmt::format(u"{:>6.3?}", u"\U0001f600"), u"   \"\U0001f600");
+  EXPECT_EQ(fmt::format(u"{:.4?}", u"\U0001d173"), u"\"\\U0");
+  EXPECT_EQ(fmt::format(u"{:.1?}", u""), u"\"");
+  EXPECT_EQ(fmt::format(u"{:.2?}", u""), u"\"\"");
+}
+
+TEST(xchar_test, utf16_debug_invalid_sequences) {
+  const char16_t high[] = {0xd800, 0};
+  const char16_t low[] = {0xdc00, 0};
+  const char16_t high_ascii[] = {0xd800, u'x', 0};
+  const char16_t high_pair[] = {0xd800, 0xd800, 0xdc00, 0};
+  EXPECT_EQ(fmt::format(u"{:?}", high), u"\"\\ud800\"");
+  EXPECT_EQ(fmt::format(u"{:?}", low), u"\"\\udc00\"");
+  EXPECT_EQ(fmt::format(u"{:?}", high_ascii), u"\"\\ud800x\"");
+  EXPECT_EQ(fmt::format(u"{:?}", high_pair), u"\"\\ud800\U00010000\"");
+  EXPECT_EQ(fmt::format(u"{:.1}", high_pair), std::u16string(high_pair, 1));
+}
+
+TEST(xchar_test, utf32_string_width_and_precision) {
+  EXPECT_EQ(fmt::format(U"{:>4}", U"\u4e2d"), U"  \u4e2d");
+  EXPECT_EQ(fmt::format(U"{:^5}", U"\U0001f600"), U" \U0001f600  ");
+  EXPECT_EQ(fmt::format(U"{:.1}", U"\U0001f600x"), U"");
+  EXPECT_EQ(fmt::format(U"{:.2}", U"\U0001f600x"), U"\U0001f600");
+  EXPECT_EQ(fmt::format(U"{:>6?}", U"\U0001f600"), U"  \"\U0001f600\"");
+  EXPECT_EQ(fmt::format(U"{:.4?}", U"\U0001d173"), U"\"\\U0");
+}
+
+TEST(xchar_test, wide_string_width_and_precision) {
+  EXPECT_EQ(fmt::format(L"{:>4}", L"\u4e2d"), L"  \u4e2d");
+  EXPECT_EQ(fmt::format(L"{:.1}", L"\U0001f600x"), L"");
+  EXPECT_EQ(fmt::format(L"{:.2}", L"\U0001f600x"), L"\U0001f600");
+  EXPECT_EQ(fmt::format(L"{:?}", L"\U0001f600"), L"\"\U0001f600\"");
+  EXPECT_EQ(fmt::format(L"{:>6?}", L"\U0001f600"), L"  \"\U0001f600\"");
+  EXPECT_EQ(fmt::format(L"{:.4?}", L"\U0001d173"), L"\"\\U0");
+}
+
+TEST(xchar_test, utf16_format_to) {
+  auto output = std::u16string();
+  fmt::format_to(std::back_inserter(output), u"{:>{}.{}}", u"\U0001f600x", 4,
+                 2);
+  EXPECT_EQ(output, u"  \U0001f600");
+  char16_t buffer[4] = {};
+  auto result = fmt::format_to_n(buffer, 4, u"{:>6?}", u"\U0001f600");
+  EXPECT_EQ(std::u16string(buffer, 4), u"  \"\xd83d");
+  EXPECT_EQ(result.size, 6);
+  EXPECT_EQ(result.out, buffer + 4);
+}
+
+#ifdef __cpp_char8_t
+TEST(xchar_test, char8_debug_string_width) {
+  EXPECT_EQ(fmt::format(u8"{:>7?}", u8"\u4e2d"), u8"  \"\u4e2d\"");
+  EXPECT_EQ(fmt::format(u8"{:>8?}", u8"\U0001f600"), u8"  \"\U0001f600\"");
+  EXPECT_EQ(fmt::format(u8"{:>6?}", u8"\n"), u8"  \"\\n\"");
+}
+#endif
+
 TEST(xchar_test, to_wstring) { EXPECT_EQ(L"42", fmt::to_wstring(42)); }
 
 #ifndef FMT_STATIC_THOUSANDS_SEPARATOR
