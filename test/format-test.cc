@@ -380,23 +380,46 @@ TEST(memory_buffer_test, move_ctor_inline_buffer_non_propagating) {
   check_move_buffer("testa", buffer);
 }
 
+struct stateful_allocator {
+  using value_type = char;
+  int id;
+
+  auto allocate(size_t n) -> char* {
+    return std::allocator<char>().allocate(n);
+  }
+  void deallocate(char* p, size_t n) {
+    std::allocator<char>().deallocate(p, n);
+  }
+  friend auto operator==(stateful_allocator a, stateful_allocator b) -> bool {
+    return a.id == b.id;
+  }
+};
+
 TEST(memory_buffer_test, move_ctor_dynamic_buffer_non_propagating) {
-  auto alloc = std::allocator<char>();
-  basic_memory_buffer<char, 4, std_allocator_noprop> buffer(
-      (std_allocator_noprop(&alloc)));
+  using test_allocator = allocator_ref<stateful_allocator, false>;
+  stateful_allocator alloc{1};
+  stateful_allocator alloc2{2};
+  basic_memory_buffer<char, 4, test_allocator> buffer((test_allocator(&alloc)));
   const char test[] = "test";
   buffer.append(test, test + 4);
   const char* inline_buffer_ptr = &buffer[0];
   buffer.push_back('a');
   EXPECT_NE(buffer.data(), inline_buffer_ptr);
-  std::allocator<char>* original_alloc_ptr = buffer.get_allocator().get();
-  basic_memory_buffer<char, 4, std_allocator_noprop> buffer2;
+  auto* original_alloc_ptr = buffer.get_allocator().get();
+  const char* original_data_ptr = buffer.data();
+  basic_memory_buffer<char, 4, test_allocator> buffer2(
+      (test_allocator(&alloc2)));
+  EXPECT_NE(buffer.get_allocator(), buffer2.get_allocator());
   buffer2 = std::move(buffer);
   EXPECT_EQ(std::string(buffer2.data(), buffer2.size()), "testa");
   EXPECT_GT(buffer2.capacity(), 4u);
   EXPECT_NE(buffer2.data(), inline_buffer_ptr);
   EXPECT_EQ(buffer.get_allocator().get(), original_alloc_ptr);
   EXPECT_NE(buffer2.get_allocator().get(), original_alloc_ptr);
+  EXPECT_EQ(buffer2.get_allocator().get(), &alloc2);
+  EXPECT_NE(buffer2.data(), original_data_ptr);
+  EXPECT_EQ(buffer.data(), original_data_ptr);
+  EXPECT_EQ(std::string(buffer.data(), buffer.size()), "testa");
 }
 
 void check_move_assign_buffer(const char* str,
