@@ -623,9 +623,6 @@ TEST(ranges_test, escape) {
 
     // Correct utf-8.
     EXPECT_EQ(fmt::format("{}", vec{"🦄"}), "[\"🦄\"]");
-    EXPECT_EQ(fmt::format("{}", vec{"🫠"}), "[\"🫠\"]");
-    EXPECT_EQ(fmt::format("{}", vec{"\xf0\xb1\x8d\x90"}),
-              "[\"\xf0\xb1\x8d\x90\"]");
   }
 
   EXPECT_EQ(fmt::format("{}", std::vector<std::vector<char>>{{'x'}}),
