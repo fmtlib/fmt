@@ -1091,7 +1091,7 @@ class writer {
 
  public:
   inline writer(FILE* f) : buf_(nullptr), file_(f) {}
-  inline writer(detail::buffer<char>& buf) : buf_(&buf) {}
+  inline writer(detail::buffer<char>& buf) : buf_(&buf), file_(nullptr) {}
 
   /// Formats `args` according to specifications in `fmt` and writes the
   /// output to the file.
