@@ -11,12 +11,20 @@ jobs:
       ${{matrix.cxx}} c++${{matrix.std}} ${{matrix.build_type}}
       ${{matrix.gen}} ${{matrix.fuzz && 'Fuzz' || ''}}
       ${{matrix.shared && 'Shared' || ''}}
-      ${{matrix.cxxflags_extra && 'Sanitize' || ''}}
+      ${{matrix.cxxflags}}
+      ${{matrix.sanitizers && 'ASan UBSan' || ''}}
     runs-on: ${{ matrix.os || 'ubuntu-22.04' }}
     env:
       # Run tests in a non-UTC timezone. glibc localtime/strftime honor TZ, so
       # there is no need for timedatectl, which fails without systemd-timedated.
       TZ: Europe/Kyiv
+      # LLVM 11's ASan signal-stack setup is incompatible with newer glibc.
+      ASAN_OPTIONS: ${{ matrix.cxx == 'clang++-11' && 'use_sigaltstack=false' || '' }}
+      GTEST_DEATH_TEST_USE_FORK: ${{ startsWith(matrix.cxx, 'g++') && '1' || '0' }}
+      # GCC 4.9 predates -fno-sanitize-recover; check its test log below.
+      SANITIZER_FLAGS: >-
+        ${{ matrix.sanitizers && '-fsanitize=address,undefined -fno-omit-frame-pointer' || '' }}
+        ${{ matrix.sanitizers && matrix.cxx != 'g++-4.9' && '-fno-sanitize-recover=all' || '' }}
     strategy:
       matrix:
         cxx: [g++-4.9, g++-11, clang++-3.6, clang++-11]
@@ -25,30 +33,39 @@ jobs:
         shared: [""]
         include:
           - cxx: g++-4.9
+            sanitizers: true
           - cxx: g++-11
             build_type: Debug
             std: 14
+            sanitizers: true
             install: sudo apt install g++-11
           - cxx: g++-11
             build_type: Debug
             std: 17
+            sanitizers: true
           - cxx: g++-11
             build_type: Debug
             std: 20
+            sanitizers: true
             install: sudo apt install g++-11
+          - cxx: g++-11
+            sanitizers: true
           - cxx: g++-13
             build_type: Release
             std: 23
+            sanitizers: true
             os: ubuntu-24.04
             shared: -DBUILD_SHARED_LIBS=ON
           - cxx: g++-14
             build_type: Release
             std: 23
+            sanitizers: true
             os: ubuntu-24.04
             gen: Ninja
           - cxx: g++-16
             build_type: Debug
             std: 26
+            sanitizers: true
             os: ubuntu-24.04
             cxxflags: -freflection
             install: sudo apt install g++-16
@@ -57,19 +74,21 @@ jobs:
             build_type: Debug
             std: 17
             cxxflags: -stdlib=libc++
+            sanitizers: true
             install: sudo apt install clang-11 libc++-11-dev libc++abi-11-dev
           - cxx: clang++-11
             install: sudo apt install clang-11
+            sanitizers: true
           - cxx: clang++-11
             build_type: Debug
             fuzz: -DFMT_FUZZ=ON -DFMT_FUZZ_LINKMAIN=ON
             std: 17
+            sanitizers: true
             install: sudo apt install clang-11
           - cxx: clang++-14
             build_type: Debug
             std: 20
-            cxxflags: -fsanitize=address
-            cxxflags_extra: -fno-sanitize-recover=all -fno-omit-frame-pointer
+            sanitizers: true
           - cxx: clang++-14
             build_type: Debug
             std: 20
@@ -79,6 +98,7 @@ jobs:
             build_type: Debug
             std: 20
             cxxflags: -stdlib=libc++
+            sanitizers: true
             install: sudo apt install clang-20 libc++-20-dev libc++abi-20-dev
             gen: Ninja
 
@@ -201,7 +221,8 @@ jobs:
       working-directory: ${{runner.workspace}}/build
       env:
         CXX: ${{matrix.cxx}}
-        CXXFLAGS: ${{matrix.cxxflags}} ${{matrix.cxxflags_extra}}
+        CFLAGS: ${{env.SANITIZER_FLAGS}}
+        CXXFLAGS: ${{matrix.cxxflags}} ${{env.SANITIZER_FLAGS}}
       run: |
         cmake ${{matrix.gen && '-G' || ''}} ${{matrix.gen}} \
               -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \
@@ -222,6 +243,12 @@ jobs:
 
     - name: Test
       working-directory: ${{runner.workspace}}/build
-      run: ctest -C ${{matrix.build_type}}
+      run: |
+        if [ "${{matrix.cxx}}" = "g++-4.9" ]; then
+          ctest -C ${{matrix.build_type}} -V --output-log ctest.log
+          if grep -F 'runtime error:' ctest.log; then exit 1; fi
+        else
+          ctest -C ${{matrix.build_type}}
+        fi
       env:
         CTEST_OUTPUT_ON_FAILURE: True
