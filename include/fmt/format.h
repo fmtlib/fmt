@@ -4074,6 +4074,43 @@ FMT_CONSTEXPR auto native_formatter<T, Char, TYPE>::format(
   return write<Char>(ctx.out(), val, specs, ctx.locale());
 }
 
+// A context that writes to a buffer and takes arguments and locale from
+// another context with a possibly different output iterator.
+template <typename Context> class nested_buffer_context {
+ public:
+  using char_type = typename Context::char_type;
+  using iterator = basic_appender<char_type>;
+
+ private:
+  iterator out_;
+  basic_format_args<Context> args_;
+  locale_ref loc_;
+
+ public:
+  constexpr nested_buffer_context(iterator out, basic_format_args<Context> args,
+                                  locale_ref loc)
+      : out_(out), args_(args), loc_(loc) {}
+  nested_buffer_context(nested_buffer_context&&) = default;
+  nested_buffer_context(const nested_buffer_context&) = delete;
+  void operator=(const nested_buffer_context&) = delete;
+
+  constexpr auto arg(int id) const -> basic_format_arg<Context> {
+    return args_.get(id);
+  }
+  auto arg(basic_string_view<char_type> name) const
+      -> basic_format_arg<Context> {
+    return args_.get(name);
+  }
+  constexpr auto arg_id(basic_string_view<char_type> name) const -> int {
+    return args_.get_id(name);
+  }
+  auto args() const -> const basic_format_args<Context>& { return args_; }
+
+  constexpr auto out() const -> iterator { return out_; }
+  FMT_CONSTEXPR void advance_to(iterator) {}
+  constexpr auto locale() const -> locale_ref { return loc_; }
+};
+
 // Parses and applies the outer alignment and width of a nested value.
 template <typename Char> class nested_format_specs {
  private:
@@ -4109,9 +4146,13 @@ template <typename Char> class nested_format_specs {
     handle_dynamic_spec(specs.dynamic_width(), specs.width, width_ref_, ctx);
     if (specs.width == 0) return f.write_body(ctx, static_cast<T&&>(values)...);
 
+    // FormatContext can only be reused if it writes to an appender (#4949).
+    using buffer_context = conditional_t<
+        std::is_same<decltype(ctx.out()), basic_appender<Char>>::value,
+        FormatContext, nested_buffer_context<FormatContext>>;
     auto buf = basic_memory_buffer<Char>();
     auto buffer_ctx =
-        FormatContext(basic_appender<Char>(buf), ctx.args(), ctx.locale());
+        buffer_context(basic_appender<Char>(buf), ctx.args(), ctx.locale());
     f.write_body(buffer_ctx, static_cast<T&&>(values)...);
     return detail::write<Char>(
         ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
