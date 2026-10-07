@@ -211,6 +211,20 @@ TEST(compile_test, output_iterators) {
   EXPECT_EQ("42.000043", s2.str());
 }
 
+TEST(compile_test, format_range) {
+  // https://github.com/fmtlib/fmt/issues/4949
+  std::array<int, 3> values{1, 2, 3};
+  EXPECT_EQ("array=[1, 2, 3]", fmt::format(FMT_COMPILE("array={}"), values));
+  EXPECT_EQ("***********[1, 2, 3]",
+            fmt::format(FMT_COMPILE("{:*>20}"), values));
+  EXPECT_EQ("*****[  1,   2,   3]",
+            fmt::format(FMT_COMPILE("{:*>20:{}}"), values, 3));
+
+  std::list<char> out;
+  fmt::format_to(std::back_inserter(out), FMT_COMPILE("{:*>20}"), values);
+  EXPECT_EQ("***********[1, 2, 3]", std::string(out.begin(), out.end()));
+}
+
 #  if FMT_USE_CONSTEVAL && (!FMT_MSC_VERSION || FMT_MSC_VERSION >= 1940)
 TEST(compile_test, constexpr_formatted_size) {
   FMT_CONSTEXPR20 size_t size = fmt::formatted_size(FMT_COMPILE("{}"), 42);
