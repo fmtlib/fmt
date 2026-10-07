@@ -143,6 +143,7 @@ FMT_CONSTEXPR auto write_escaped_alternative(OutputIt out, const T& v,
 
   formatter<std::remove_cv_t<T>, Char> underlying;
   maybe_set_debug_format(underlying, true);
+  ctx.advance_to(out);
   return underlying.format(v, ctx);
 }
 #endif
