@@ -1044,3 +1044,18 @@ TEST(chrono_test, year_month_day) {
     EXPECT_THAT(months, Contains(fmt::format("{:L}", month)));
   }
 }
+
+TEST(chrono_test, year_month_day_weekday_and_day_of_year) {
+  auto ymd = fmt::year_month_day(fmt::year(2024), fmt::month(3), fmt::day(1));
+  EXPECT_EQ(fmt::format("{:%a %A %u %w}", ymd), "Fri Friday 5 5");
+  EXPECT_EQ(fmt::format("{:%j %U %W}", ymd), "061 08 09");
+  EXPECT_EQ(fmt::format("{:%G-W%V}", ymd), "2024-W09");
+
+  ymd = fmt::year_month_day(fmt::year(2021), fmt::month(1), fmt::day(1));
+  EXPECT_EQ(fmt::format("{:%a %j %U %W}", ymd), "Fri 001 00 00");
+  EXPECT_EQ(fmt::format("{:%G-W%V-%u}", ymd), "2020-W53-5");
+
+  ymd = fmt::year_month_day(fmt::year(1969), fmt::month(12), fmt::day(31));
+  EXPECT_EQ(fmt::format("{:%A %j}", ymd), "Wednesday 365");
+  EXPECT_EQ(fmt::format("{:%G-W%V}", ymd), "1970-W01");
+}
