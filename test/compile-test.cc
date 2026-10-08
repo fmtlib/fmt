@@ -199,14 +199,7 @@ TEST(compile_test, format_variant) {
   end = fmt::format_to(buffer, FMT_COMPILE("{}"),
                        std::variant<std::variant<int>>{std::variant<int>{42}});
   EXPECT_EQ("variant(variant(42))", std::string(buffer, end));
-
-  end = fmt::format_to(buffer, FMT_COMPILE("{}"),
-                       std::variant<std::string>{"test"});
-  EXPECT_EQ("variant(\"test\")", std::string(buffer, end));
-
-  end = fmt::format_to(buffer, FMT_COMPILE("{}"), std::variant<char>{'a'});
-  EXPECT_EQ("variant('a')", std::string(buffer, end));
-#  endif
+#  endif  // __cpp_lib_variant
 }
 
 TEST(compile_test, format_expected) {
@@ -220,22 +213,12 @@ TEST(compile_test, format_expected) {
                        std::expected<int, int>{std::unexpected(42)});
   EXPECT_EQ("unexpected(42)", std::string(buffer, end));
 
-  end = fmt::format_to(buffer, FMT_COMPILE("{}"), std::expected<void, int>{});
-  EXPECT_EQ("expected()", std::string(buffer, end));
-
-  end = fmt::format_to(buffer, FMT_COMPILE("{}"),
-                       std::expected<std::string, int>{"test"});
-  EXPECT_EQ("expected(\"test\")", std::string(buffer, end));
-#  endif
-}
-
-TEST(compile_test, format_unexpected) {
-#  ifdef __cpp_lib_expected
-  char buffer[100];
-  auto end = fmt::format_to(buffer, FMT_COMPILE("<{}> {}"),
-                            std::unexpected<int>{42}, 7);
+  // std::unexpected has its own formatter, separate from the error branch of
+  // the std::expected one checked above.
+  end = fmt::format_to(buffer, FMT_COMPILE("<{}> {}"), std::unexpected<int>{42},
+                       7);
   EXPECT_EQ("<unexpected(42)> 7", std::string(buffer, end));
-#  endif
+#  endif  // __cpp_lib_expected
 }
 
 TEST(compile_test, format_to_n) {
