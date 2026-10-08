@@ -264,7 +264,7 @@ TEST(compile_test, output_iterators) {
   EXPECT_EQ("42.000043", s2.str());
 }
 
-#  if FMT_USE_CONSTEVAL && (!FMT_MSC_VERSION || FMT_MSC_VERSION >= 1940)
+#  if FMT_USE_CONSTEVAL
 TEST(compile_test, constexpr_formatted_size) {
   FMT_CONSTEXPR20 size_t size = fmt::formatted_size(FMT_COMPILE("{}"), 42);
   EXPECT_EQ(size, 2);
@@ -304,18 +304,15 @@ TEST(compile_test, static_format) {
   EXPECT_EQ(result.str(), "42");
 }
 
-TEST(compile_test, high_precision_constexpr_float) {
-  constexpr auto tiny = []() {
-    auto value = 1.0;
-    for (int i = 0; i < 900; ++i) value /= 2;
-    return value;
-  }();
-  constexpr auto result = FMT_STATIC_FORMAT("{:.1000f}", tiny);
+TEST(compile_test, static_format_high_precision) {
+  // 0x1p-900 has 900 nonzero fractional digits, more than the 767 produced by
+  // the fast path.
+  constexpr auto result = FMT_STATIC_FORMAT("{:.1000f}", 0x1p-900);
   EXPECT_EQ(1002u, result.str().size());
   EXPECT_EQ("43174959877427608893241125591038",
             fmt::string_view(result.c_str() + 768, 32));
 }
-#  endif
+#  endif  // FMT_USE_CONSTEVAL
 
 TEST(compile_test, text_and_arg) {
   EXPECT_EQ(">>>42<<<", fmt::format(FMT_COMPILE(">>>{}<<<"), 42));

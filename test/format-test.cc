@@ -307,27 +307,16 @@ TEST(memory_buffer_test, ctor) {
   EXPECT_EQ(123u, buffer.capacity());
 }
 
-#if FMT_USE_CONSTEVAL && (!FMT_MSC_VERSION || FMT_MSC_VERSION >= 1940)
-template <typename Allocator> constexpr auto constexpr_buffer_growth() -> bool {
-  basic_memory_buffer<char, 2, Allocator> buffer;
-  buffer.push_back('a');
-  buffer.push_back('b');
-  buffer.push_back('c');
-  buffer.push_back('d');
-  buffer.push_back('e');
-  buffer.push_back('f');
-  return buffer.size() == 6 && buffer[0] == 'a' && buffer[1] == 'b' &&
-         buffer[2] == 'c' && buffer[3] == 'd' && buffer[4] == 'e' &&
-         buffer[5] == 'f';
-}
-
+#if FMT_USE_CONSTEVAL
 TEST(memory_buffer_test, constexpr_grow) {
-  constexpr auto default_allocator =
-      constexpr_buffer_growth<fmt::detail::allocator<char>>();
-  constexpr auto standard_allocator =
-      constexpr_buffer_growth<std::allocator<char>>();
-  EXPECT_TRUE(default_allocator);
-  EXPECT_TRUE(standard_allocator);
+  // std::allocator is used because, unlike detail::allocator, it hands out raw
+  // storage in constant expressions, so grow() must construct elements there.
+  constexpr auto result = [] {
+    basic_memory_buffer<char, 2, std::allocator<char>> buf;
+    for (char c : string_view("abcdef")) buf.push_back(c);
+    return string_view(buf.data(), buf.size()) == "abcdef";
+  }();
+  EXPECT_TRUE(result);
 }
 #endif
 
@@ -1267,21 +1256,20 @@ TEST(format_test, precision) {
 }
 
 TEST(format_test, high_precision_trailing_zeros) {
-  EXPECT_EQ(std::string("1.") + std::string(767, '0'),
-            fmt::format("{:.767f}", 1.0));
-  EXPECT_EQ(std::string("0.5") + std::string(767, '0'),
-            fmt::format("{:#.768g}", 0.5));
+  auto zeros = [](size_t n) { return std::string(n, '0'); };
 
-  EXPECT_EQ(std::string("1.") + std::string(767, '0'),
-            fmt::format("{:#.768g}", 1.0));
+  EXPECT_EQ("1." + zeros(767), fmt::format("{:.767f}", 1.0));
+  EXPECT_EQ("1." + zeros(767), fmt::format("{:#.768g}", 1.0));
+
+  EXPECT_EQ("0.5" + zeros(767), fmt::format("{:#.768g}", 0.5));
   EXPECT_EQ("0.5", fmt::format("{:.768g}", 0.5));
 
-  auto fixed = std::string("0.0625") + std::string(764, '0');
-  auto general = std::string("0.0625") + std::string(765, '0');
+  auto fixed = "0.0625" + zeros(764);
+  auto general = "0.0625" + zeros(765);
   EXPECT_EQ(fixed, fmt::format("{:.768f}", 0.0625));
   EXPECT_EQ(general, fmt::format("{:#.768g}", 0.0625));
-  EXPECT_EQ(std::string("  ") + fixed, fmt::format("{:>772.768f}", 0.0625));
-  EXPECT_EQ(std::string(" ") + general, fmt::format("{:>#772.768g}", 0.0625));
+  EXPECT_EQ("  " + fixed, fmt::format("{:>772.768f}", 0.0625));
+  EXPECT_EQ(" " + general, fmt::format("{:>#772.768g}", 0.0625));
 }
 
 TEST(format_test, high_precision_bounded_output) {
@@ -1300,8 +1288,9 @@ TEST(format_test, high_precision_bounded_output) {
 
 TEST(format_test, high_precision_long_double) {
   if (std::numeric_limits<long double>::max_exponent <= 3000 ||
-      fmt::detail::is_double_double<long double>::value)
-    return;
+      fmt::detail::is_double_double<long double>::value) {
+    GTEST_SKIP() << "long double is not an extended-precision type";
+  }
   auto tiny = std::ldexp(1.0L, -3000);
   auto large = std::ldexp(1.0L, 3000);
   char buffer[3004];

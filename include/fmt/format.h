@@ -978,8 +978,7 @@ class basic_memory_buffer : public detail::buffer<T> {
   static FMT_CONSTEXPR20 void grow(detail::buffer<T>& buf, size_t size) {
     detail::abort_fuzzing_if(size > 5000);
     auto& self = static_cast<basic_memory_buffer&>(buf);
-    const size_t max_size =
-        std::allocator_traits<Allocator>::max_size(self.alloc_);
+    size_t max_size = std::allocator_traits<Allocator>::max_size(self.alloc_);
     size_t old_capacity = buf.capacity();
     size_t new_capacity = old_capacity + old_capacity / 2;
     if (size > new_capacity)
@@ -990,11 +989,10 @@ class basic_memory_buffer : public detail::buffer<T> {
     T* new_data = self.alloc_.allocate(new_capacity);
     // The following code doesn't throw, so the raw pointer above doesn't leak.
     if (detail::is_constant_evaluated()) {
-      auto alloc = detail::allocator<T>();
-      for (size_t i = 0; i < new_capacity; ++i)
-        std::allocator_traits<detail::allocator<T>>::construct(alloc,
-                                                               new_data + i);
-      for (size_t i = 0; i < buf.size(); ++i) new_data[i] = old_data[i];
+      for (size_t i = 0; i < new_capacity; ++i) {
+        std::allocator_traits<Allocator>::construct(
+            self.alloc_, new_data + i, i < buf.size() ? old_data[i] : T());
+      }
     } else {
       // Suppress a bogus -Wstringop-overflow in gcc 13.1 (#3481).
       detail::assume(buf.size() <= new_capacity);
@@ -2766,21 +2764,15 @@ FMT_CONSTEXPR20 auto write_fixed(OutputIt out, const DecimalFP& f,
                                  locale_ref loc = {}) -> OutputIt {
   using iterator = reserve_iterator<OutputIt>;
 
+  const bool fixed = specs.type() == presentation_type::fixed;
   int exp = f.exponent + significand_size;
   long long size = significand_size + (s != sign::none ? 1 : 0);
   if (f.exponent >= 0) {
     // 1234e5 -> 123400000[.0+]
     size += f.exponent;
-    int num_zeros = specs.type() == presentation_type::fixed
-                        ? specs.precision
-                        : specs.precision - exp;
+    int num_zeros = fixed ? specs.precision : specs.precision - exp;
     abort_fuzzing_if(num_zeros > 5000);
-    if (specs.alt()) {
-      ++size;
-      if (num_zeros <= 0 && specs.type() != presentation_type::fixed)
-        num_zeros = 0;
-      if (num_zeros > 0) size += num_zeros;
-    }
+    if (specs.alt()) size += 1 + max_of(num_zeros, 0);
     auto grouping = Grouping(loc, specs.localized());
     size += grouping.count_separators(exp);
     return write_padded<Char, align::right>(
@@ -2793,14 +2785,12 @@ FMT_CONSTEXPR20 auto write_fixed(OutputIt out, const DecimalFP& f,
           return num_zeros > 0 ? detail::fill_n(it, num_zeros, Char('0')) : it;
         });
   }
+  int num_digits = fixed ? -f.exponent : significand_size;
+  int trailing_zeros =
+      fixed || specs.alt() ? max_of(specs.precision - num_digits, 0) : 0;
   if (exp > 0) {
     // 1234e-2 -> 12.34[0+]
-    int num_zeros = specs.type() == presentation_type::fixed
-                        ? specs.precision + f.exponent
-                    : specs.alt() ? specs.precision - significand_size
-                                  : 0;
-    size += 1;
-    size += max_of(num_zeros, 0);
+    size += 1 + trailing_zeros;
     auto grouping = Grouping(loc, specs.localized());
     size += grouping.count_separators(exp);
     return write_padded<Char, align::right>(
@@ -2808,7 +2798,7 @@ FMT_CONSTEXPR20 auto write_fixed(OutputIt out, const DecimalFP& f,
           if (s != sign::none) *it++ = detail::getsign<Char>(s);
           it = write_significand(it, f.significand, significand_size, exp,
                                  decimal_point, grouping);
-          return num_zeros > 0 ? detail::fill_n(it, num_zeros, Char('0')) : it;
+          return detail::fill_n(it, trailing_zeros, Char('0'));
         });
   }
   // 1234e-6 -> 0.001234
@@ -2817,13 +2807,8 @@ FMT_CONSTEXPR20 auto write_fixed(OutputIt out, const DecimalFP& f,
       specs.precision < num_zeros) {
     num_zeros = specs.precision;
   }
-  int trailing_zeros = specs.type() == presentation_type::fixed
-                           ? specs.precision + f.exponent
-                       : specs.alt() ? specs.precision - significand_size
-                                     : 0;
   bool pointy = num_zeros != 0 || significand_size != 0 || specs.alt();
-  size += 1 + (pointy ? 1 : 0) + num_zeros;
-  size += max_of(trailing_zeros, 0);
+  size += 1 + (pointy ? 1 : 0) + num_zeros + trailing_zeros;
   return write_padded<Char, align::right>(
       out, specs, static_cast<size_t>(size), [&](iterator it) {
         if (s != sign::none) *it++ = detail::getsign<Char>(s);
@@ -2832,9 +2817,7 @@ FMT_CONSTEXPR20 auto write_fixed(OutputIt out, const DecimalFP& f,
         *it++ = decimal_point;
         it = detail::fill_n(it, num_zeros, Char('0'));
         it = write_significand<Char>(it, f.significand, significand_size);
-        return trailing_zeros > 0
-                   ? detail::fill_n(it, trailing_zeros, Char('0'))
-                   : it;
+        return detail::fill_n(it, trailing_zeros, Char('0'));
       });
 }
 
@@ -3708,14 +3691,13 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision,
     // Keep the fast double path's significant-digit limit.
     int max_precision = 767;
     if ((dragon_flags & dragon::fixup) != 0) {
-      // Fixed precision still counts fractional places before fixup. A value
-      // f * 2^e has at most max(-e, 0) fractional decimal places, and its
-      // number of significant decimal digits is bounded by the bit length of f
-      // + |e|.
+      // Before fixup, fixed precision counts fractional places rather than
+      // significant digits. f * 2^e has at most max(-e, 0) fractional places,
+      // and its significant digits are bounded by |e| + the bit length of f.
       max_precision = fixed ? (f.e < 0 ? -f.e : 0)
                             : count_digits<1>(f.f) + (f.e < 0 ? -f.e : f.e);
     }
-    if (precision > max_precision) precision = max_precision;
+    precision = min_of(precision, max_precision);
     format_dragon(f, dragon_flags, precision, buf, exp);
   }
   if (!fixed && !specs.alt()) {
