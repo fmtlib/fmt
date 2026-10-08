@@ -1671,6 +1671,8 @@ TEST(format_test, format_double) {
   EXPECT_EQ(fmt::format("{:L}", 42.0), "42");
   EXPECT_EQ(fmt::format("{:24a}", 4.2f), "           0x1.0cccccp+2");
   EXPECT_EQ(fmt::format("{:24a}", 4.2), "    0x1.0cccccccccccdp+2");
+  EXPECT_EQ(fmt::format("{:012a}", 1.0), "0x0000001p+0");
+  EXPECT_EQ(fmt::format("{:*>12a}", 1.0), "******0x1p+0");
   EXPECT_EQ(fmt::format("{:<24a}", 4.2), "0x1.0cccccccccccdp+2    ");
   EXPECT_EQ(fmt::format("{0:e}", 392.65), "3.926500e+02");
   EXPECT_EQ(fmt::format("{0:E}", 392.65), "3.926500E+02");
