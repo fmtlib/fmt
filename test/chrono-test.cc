@@ -332,6 +332,14 @@ TEST(chrono_test, local_time) {
                    fmt::format_error, "no timezone");
   EXPECT_THROW_MSG((void)fmt::format(fmt::runtime("{:%Z}"), time),
                    fmt::format_error, "no timezone");
+
+  auto epoch = fmt::local_time<std::chrono::milliseconds>();
+  auto d = std::chrono::milliseconds(250);
+  EXPECT_EQ(fmt::format("{:%S}", epoch - d), "59.750");
+
+  auto pre_epoch = fmt::local_time<std::chrono::milliseconds>(
+      std::chrono::milliseconds(-14398877));
+  EXPECT_EQ(fmt::format("{:%S}", pre_epoch), "01.123");
 }
 
 template <typename T, FMT_ENABLE_IF(fmt::detail::has_tm_gmtoff<T>::value)>

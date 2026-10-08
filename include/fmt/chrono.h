@@ -2245,6 +2245,15 @@ struct formatter<local_time<Duration>, Char>
     }
     auto subsecs =
         detail::duration_cast<Duration>(time_since_epoch - seconds_since_epoch);
+    if (subsecs.count() < 0) {
+      auto second = detail::duration_cast<Duration>(std::chrono::seconds(1));
+      if (t.tm_sec != 0) {
+        --t.tm_sec;
+      } else {
+        t = gmtime(seconds_since_epoch.count() - 1);
+      }
+      subsecs += second;
+    }
     return formatter<std::tm, Char>::do_format(t, ctx, &subsecs);
   }
 };
