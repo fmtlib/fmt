@@ -541,14 +541,19 @@ TEST(compile_test, format_as) {
 }
 
 TEST(compile_test, ranges_basic) {
-  EXPECT_EQ("[1, 2, 3]",
-            fmt::format(FMT_COMPILE("{}"), std::array<int, 3>{1, 2, 3}));
-  EXPECT_EQ("[[1, 2, 3]]",
-            fmt::format(FMT_COMPILE("[{}]"), std::array<int, 3>{1, 2, 3}));
-  EXPECT_EQ("[1, 2, 3]",
-            fmt::format(FMT_COMPILE("{}"), std::vector<int>{1, 2, 3}));
-  EXPECT_EQ("[[1, 2, 3]]",
-            fmt::format(FMT_COMPILE("[{}]"), std::vector<int>{1, 2, 3}));
+  std::array<int, 3> arr;
+  arr[0] = 1;
+  arr[1] = 2;
+  arr[2] = 3;
+  EXPECT_EQ("[1, 2, 3]", fmt::format(FMT_COMPILE("{}"), arr));
+  EXPECT_EQ("[[1, 2, 3]]", fmt::format(FMT_COMPILE("[{}]"), arr));
+
+  std::vector<int> vec;
+  vec.push_back(1);
+  vec.push_back(2);
+  vec.push_back(3);
+  EXPECT_EQ("[1, 2, 3]", fmt::format(FMT_COMPILE("{}"), vec));
+  EXPECT_EQ("[[1, 2, 3]]", fmt::format(FMT_COMPILE("[{}]"), vec));
 }
 
 // constexpr form of ranges_basic
