@@ -694,6 +694,35 @@ TEST(chrono_test, special_durations) {
       "01.234");
 }
 
+TEST(chrono_test, negative_floating_duration_sign) {
+  auto d = std::chrono::duration<double>(-61.25);
+  EXPECT_EQ(fmt::format("{:%S %M}", d), "-01.250000 01");
+  EXPECT_EQ(fmt::format("{:%S %S}", d), "-01.250000 01.250000");
+  EXPECT_EQ(fmt::format("{:%S %Q}", d), "-01.250000 61.25");
+  EXPECT_EQ(fmt::format("{:%Q %S}", d), "-61.25 01.250000");
+  EXPECT_EQ(fmt::format("{:%S %Q}", -d), "01.250000 61.25");
+  EXPECT_EQ(fmt::format("{:%S %Q}", std::chrono::duration<float>(-1)), "-01 1");
+  EXPECT_EQ(fmt::format("{:%S %Q}", std::chrono::duration<long double>(-1)),
+            "-01 1");
+}
+
+TEST(chrono_test, negative_infinite_duration_sign) {
+  auto inf = std::numeric_limits<double>::infinity();
+  auto d = std::chrono::duration<double>(-inf);
+  EXPECT_EQ(fmt::format("{:%Q}", d), "-inf");
+  EXPECT_EQ(fmt::format("{:%S}", d), "-inf");
+  EXPECT_EQ(fmt::format("{:%H}", d), "-inf");
+  EXPECT_EQ(fmt::format("{:%j}", d), "-inf");
+  EXPECT_EQ(fmt::format("{:%R}", d), "-inf:inf");
+  EXPECT_EQ(fmt::format("{:%T}", d), "-inf:inf:inf");
+  EXPECT_EQ(fmt::format("{:%S %Q}", d), "-inf inf");
+  EXPECT_EQ(fmt::format("{:>6%Q}", d), "  -inf");
+  EXPECT_EQ(fmt::format("{:%Q %S}", -d), "inf inf");
+  EXPECT_EQ(fmt::format("{:%Q}", std::chrono::duration<float>(-inf)), "-inf");
+  EXPECT_EQ(fmt::format("{:%Q}", std::chrono::duration<long double>(-inf)),
+            "-inf");
+}
+
 TEST(chrono_test, unsigned_duration) {
   EXPECT_EQ(fmt::format("{}", std::chrono::duration<unsigned>(42)), "42s");
 }

@@ -1667,10 +1667,8 @@ struct duration_formatter {
       return true;
     }
     // must be +-inf
-    if (val > 0)
-      std::copy_n("inf", 3, out);
-    else
-      std::copy_n("-inf", 4, out);
+    write_sign();
+    std::copy_n("inf", 3, out);
     return true;
   }
 
@@ -1795,7 +1793,7 @@ struct duration_formatter {
         auto buf = memory_buffer();
         write_floating_seconds(buf, std::chrono::duration<rep, Period>(val),
                                precision);
-        if (negative) *out++ = '-';
+        write_sign();
         if (buf.size() < 2 || buf[1] == '.')
           out = detail::write_padding(out, pad);
         out = copy<Char>(buf.begin(), buf.end(), out);
