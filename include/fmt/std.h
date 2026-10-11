@@ -11,6 +11,10 @@
 #include "format.h"
 #include "ostream.h"
 
+#if FMT_HAS_INCLUDE(<version>)
+#  include <version>
+#endif
+
 #ifndef FMT_MODULE
 #  include <atomic>
 #  include <bitset>
@@ -45,11 +49,11 @@
 #  if FMT_CPLUSPLUS > 202002L && FMT_HAS_INCLUDE(<expected>)
 #    include <expected>
 #  endif
+#  if FMT_CPLUSPLUS >= 202302L && FMT_HAS_INCLUDE(<stacktrace>) && \
+      defined(__cpp_lib_stacktrace)
+#    include <stacktrace>
+#  endif
 #endif  // FMT_MODULE
-
-#if FMT_HAS_INCLUDE(<version>)
-#  include <version>
-#endif
 
 // GCC 4 does not support FMT_HAS_INCLUDE.
 #if FMT_HAS_INCLUDE(<cxxabi.h>) || defined(__GLIBCXX__)
@@ -466,6 +470,69 @@ template <> struct formatter<std::source_location> {
   }
 };
 #endif
+
+#ifdef __cpp_lib_stacktrace
+namespace detail {
+inline auto write_stacktrace_address(appender out,
+                                     const std::stacktrace_entry& entry)
+    -> appender {
+  return format_to(out, "{:#x}",
+                   static_cast<std::uintptr_t>(
+                       reinterpret_cast<std::uintptr_t>(entry.native_handle())));
+}
+
+inline auto write_stacktrace_entry(appender out,
+                                   const std::stacktrace_entry& entry)
+    -> appender {
+  auto description = entry.description();
+  if (description.empty())
+    return write_stacktrace_address(out, entry);
+
+  out = write(out, string_view(description));
+  auto source_file = entry.source_file();
+  auto source_line = entry.source_line();
+  if (!source_file.empty() && source_line != 0) {
+    out = write(out, " at ");
+    out = write(out, string_view(source_file));
+    out = write(out, ':');
+    out = write<char>(out, source_line);
+  }
+  return out;
+}
+}  // namespace detail
+
+FMT_EXPORT template <> struct formatter<std::stacktrace_entry>
+    : formatter<string_view> {
+  template <typename FormatContext>
+  auto format(const std::stacktrace_entry& entry, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    auto buf = memory_buffer();
+    detail::write_stacktrace_entry(appender(buf), entry);
+    return formatter<string_view>::format(string_view(buf.data(), buf.size()),
+                                          ctx);
+  }
+};
+
+FMT_EXPORT template <> struct formatter<std::stacktrace>
+    : formatter<string_view> {
+  template <typename FormatContext>
+  auto format(const std::stacktrace& trace, FormatContext& ctx) const
+      -> decltype(ctx.out()) {
+    auto buf = memory_buffer();
+    auto out = appender(buf);
+    auto index = std::size_t();
+    for (const auto& entry : trace) {
+      if (index != 0) *out++ = '\n';
+      out = detail::write(out, '#');
+      out = detail::write<char>(out, index++);
+      out = detail::write(out, ' ');
+      out = detail::write_stacktrace_entry(out, entry);
+    }
+    return formatter<string_view>::format(string_view(buf.data(), buf.size()),
+                                          ctx);
+  }
+};
+#endif  // __cpp_lib_stacktrace
 
 #if FMT_CPP_LIB_VARIANT
 

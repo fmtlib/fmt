@@ -512,10 +512,17 @@ chrono-format-spec).
 - [`std::monostate`](
   https://en.cppreference.com/w/cpp/utility/variant/monostate)
 - [`std::optional`](https://en.cppreference.com/w/cpp/utility/optional)
+- `std::stacktrace`
+- `std::stacktrace_entry`
 - [`std::source_location`](
   https://en.cppreference.com/w/cpp/utility/source_location)
 - [`std::thread::id`](https://en.cppreference.com/w/cpp/thread/thread/id)
 - [`std::variant`](https://en.cppreference.com/w/cpp/utility/variant/variant)
+
+When the C++23 stacktrace feature is available, `std::stacktrace_entry` is
+formatted as a function description followed by its source location when
+available, or its address when symbols are unavailable. `std::stacktrace`
+formats one indexed entry per line. Both support width and alignment specs.
 
 ::: ptr(const std::unique_ptr<T, Deleter>&)
 

@@ -120,6 +120,74 @@ TEST(std_test, source_location) {
 }
 #endif
 
+#ifdef __cpp_lib_stacktrace
+TEST(std_test, stacktrace_entry) {
+  auto trace = std::stacktrace::current();
+  ASSERT_FALSE(trace.empty());
+
+  const auto& entry = trace[0];
+  auto formatted = fmt::format("{}", entry);
+  EXPECT_FALSE(formatted.empty());
+
+  auto description = entry.description();
+  if (!description.empty())
+    EXPECT_NE(formatted.find(description), std::string::npos);
+  auto source_file = entry.source_file();
+  auto source_line = entry.source_line();
+  if (!source_file.empty() && source_line != 0) {
+    auto location = fmt::format("{}:{}", source_file, source_line);
+    EXPECT_NE(formatted.find(location), std::string::npos);
+    if (!description.empty()) {
+      auto expected = fmt::format("{} at {}", description, location);
+      EXPECT_NE(formatted.find(expected), std::string::npos);
+    }
+  }
+
+  auto expected = formatted;
+  if (expected.size() < 40) expected.insert(0, 40 - expected.size(), ' ');
+  EXPECT_EQ(fmt::format("{:>40}", entry), expected);
+  expected = formatted;
+  if (expected.size() < 40) expected.append(40 - expected.size(), ' ');
+  EXPECT_EQ(fmt::format("{:<40}", entry), expected);
+  EXPECT_EQ(fmt::format("{:>{}}", entry, formatted.size() + 2),
+            "  " + formatted);
+}
+
+TEST(std_test, stacktrace) {
+  auto trace = std::stacktrace::current();
+  ASSERT_FALSE(trace.empty());
+
+  auto formatted = fmt::format("{}", trace);
+  EXPECT_FALSE(formatted.empty());
+  EXPECT_NE(formatted.find(fmt::format("#0 {}", trace[0])),
+            std::string::npos);
+  if (trace.size() > 1)
+    EXPECT_NE(formatted.find("\n#1 "), std::string::npos);
+
+  auto line_count = std::size_t();
+  for (auto c : formatted)
+    if (c == '\n') ++line_count;
+  EXPECT_EQ(line_count + 1, trace.size());
+
+  auto expected = formatted;
+  if (expected.size() < 40) expected.insert(0, 40 - expected.size(), ' ');
+  EXPECT_EQ(fmt::format("{:>40}", trace), expected);
+  expected = formatted;
+  if (expected.size() < 40) expected.append(40 - expected.size(), ' ');
+  EXPECT_EQ(fmt::format("{:<40}", trace), expected);
+  EXPECT_EQ(fmt::format("{:>{}}", trace, formatted.size() + 2),
+            "  " + formatted);
+}
+
+TEST(std_test, stacktrace_empty) {
+  // An empty stacktrace should format to an empty string without crashing.
+  auto trace = std::stacktrace();
+  EXPECT_EQ(fmt::format("{}", trace), "");
+  // Width/align on empty trace should pad correctly.
+  EXPECT_EQ(fmt::format("{:>5}", trace), "     ");
+}
+#endif  // __cpp_lib_stacktrace
+
 TEST(std_test, optional) {
 #ifdef __cpp_lib_optional
   EXPECT_EQ(fmt::format("{}", std::optional<int>{}), "none");
