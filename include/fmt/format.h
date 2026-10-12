@@ -4114,18 +4114,16 @@ template <typename Char> class nested_format_specs {
 
   template <typename FormatContext, typename F, typename... T,
             FMT_ENABLE_IF(!std::is_same<typename FormatContext::iterator,
-                                        basic_appender<Char>>::value&&
-                              is_back_insert_iterator<
-                                  typename FormatContext::iterator>::value)>
+                                        basic_appender<Char>>::value &&
+                          is_back_insert_iterator<
+                              typename FormatContext::iterator>::value)>
   FMT_CONSTEXPR auto write_padded(FormatContext& ctx, const F& f,
                                   const format_specs& specs,
                                   T&&... values) const -> decltype(ctx.out()) {
-    using container =
-        typename FormatContext::iterator::container_type;
+    using container = typename FormatContext::iterator::container_type;
     container storage;
-    auto buffer_ctx =
-        FormatContext(typename FormatContext::iterator(storage), ctx.args(),
-                      ctx.locale());
+    auto buffer_ctx = FormatContext(typename FormatContext::iterator(storage),
+                                    ctx.args(), ctx.locale());
     f.write_body(buffer_ctx, static_cast<T&&>(values)...);
     auto buf = basic_memory_buffer<Char>();
     for (auto value : storage) buf.push_back(value);
@@ -4134,13 +4132,14 @@ template <typename Char> class nested_format_specs {
   }
 
   template <typename FormatContext, typename F, typename... T,
-            FMT_ENABLE_IF(
-                !is_back_insert_iterator<typename FormatContext::iterator>::value)>
+            FMT_ENABLE_IF(!is_back_insert_iterator<
+                          typename FormatContext::iterator>::value)>
   FMT_CONSTEXPR auto write_padded(FormatContext& ctx, const F& f,
                                   const format_specs& specs,
                                   T&&... values) const -> decltype(ctx.out()) {
     // Cannot create an output iterator of the context type that writes
     // into a temporary buffer.
+    ignore_unused(f, specs, sizeof...(values));
     FMT_THROW(format_error("cannot pad output with this iterator type"));
   }
 };
