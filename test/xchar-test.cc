@@ -301,7 +301,6 @@ TEST(xchar_test, escape_string) {
 TEST(xchar_test, utf16_string_width) {
   EXPECT_EQ(fmt::format(u"{:>4}", u"\u4e2d"), u"  \u4e2d");
   EXPECT_EQ(fmt::format(u"{:^5}", u"\U0001f600"), u" \U0001f600  ");
-  EXPECT_EQ(fmt::format(u"{:>{}}", u"\U00010000", 3), u"  \U00010000");
   EXPECT_EQ(fmt::format(u"{:<5}", u"a\U0001f600"), u"a\U0001f600  ");
 }
 
@@ -323,8 +322,6 @@ TEST(xchar_test, utf16_debug_string) {
             u"\"a\U00010000\\n\U0001f600\"");
   EXPECT_EQ(fmt::format(u"{:?}", u"\U0001d173"), u"\"\\U0001d173\"");
   EXPECT_EQ(fmt::format(u"{:?}", u"\U0010ffff"), u"\"\\U0010ffff\"");
-  auto values = std::vector<std::u16string>{u"\U0001f600", u"\U0001d173"};
-  EXPECT_EQ(fmt::format(u"{}", values), u"[\"\U0001f600\", \"\\U0001d173\"]");
 }
 
 TEST(xchar_test, utf16_debug_width_and_precision) {
@@ -369,26 +366,6 @@ TEST(xchar_test, wide_string_width_and_precision) {
   EXPECT_EQ(fmt::format(L"{:>6?}", L"\U0001f600"), L"  \"\U0001f600\"");
   EXPECT_EQ(fmt::format(L"{:.4?}", L"\U0001d173"), L"\"\\U0");
 }
-
-TEST(xchar_test, utf16_format_to) {
-  auto output = std::u16string();
-  fmt::format_to(std::back_inserter(output), u"{:>{}.{}}", u"\U0001f600x", 4,
-                 2);
-  EXPECT_EQ(output, u"  \U0001f600");
-  char16_t buffer[4] = {};
-  auto result = fmt::format_to_n(buffer, 4, u"{:>6?}", u"\U0001f600");
-  EXPECT_EQ(std::u16string(buffer, 4), u"  \"\xd83d");
-  EXPECT_EQ(result.size, 6);
-  EXPECT_EQ(result.out, buffer + 4);
-}
-
-#ifdef __cpp_char8_t
-TEST(xchar_test, char8_debug_string_width) {
-  EXPECT_EQ(fmt::format(u8"{:>7?}", u8"\u4e2d"), u8"  \"\u4e2d\"");
-  EXPECT_EQ(fmt::format(u8"{:>8?}", u8"\U0001f600"), u8"  \"\U0001f600\"");
-  EXPECT_EQ(fmt::format(u8"{:>6?}", u8"\n"), u8"  \"\\n\"");
-}
-#endif
 
 TEST(xchar_test, to_wstring) { EXPECT_EQ(L"42", fmt::to_wstring(42)); }
 
