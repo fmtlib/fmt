@@ -244,7 +244,7 @@ endif ()
 
 # Sets up a top-level fmt target. Targets that depend on other top-level targets
 # should call this because they'll automatically get the required properties.
-function (setup_target target kind)
+function (fmt_setup_target target kind)
   add_library(fmt::${target} ALIAS ${target})
 
   target_include_directories(
@@ -295,7 +295,7 @@ endforeach ()
 
 # Add the main fmt library.
 add_library(fmt src/format.cc ${FMT_HEADERS} README.md ChangeLog.md)
-setup_target(fmt PUBLIC)
+fmt_setup_target(fmt PUBLIC)
 set_target_properties(fmt PROPERTIES PUBLIC_HEADER "${FMT_HEADERS}")
 
 if (FMT_OS)
@@ -448,14 +448,14 @@ endfunction ()
 if (FMT_MODULE)
   add_module_library(fmt-module src/fmt.cc USE_CMAKE_MODULES
                      ${FMT_USE_CMAKE_MODULES})
-  setup_target(fmt-module PUBLIC)
+  fmt_setup_target(fmt-module PUBLIC)
 endif ()
 
 add_library(fmt-header-only INTERFACE)
 
 target_compile_definitions(fmt-header-only INTERFACE FMT_HEADER_ONLY=1)
 target_compile_features(fmt-header-only INTERFACE cxx_std_11)
-setup_target(fmt-header-only INTERFACE)
+fmt_setup_target(fmt-header-only INTERFACE)
 
 add_library(fmt-c src/fmt-c.cc)
 target_compile_features(fmt-c INTERFACE c_std_11)
