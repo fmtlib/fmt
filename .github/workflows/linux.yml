@@ -19,8 +19,6 @@ jobs:
       # there is no need for timedatectl, which fails without systemd-timedated.
       TZ: Europe/Kyiv
       GTEST_DEATH_TEST_USE_FORK: ${{ matrix.sanitizers && startsWith(matrix.cxx, 'g++') && '1' || '0' }}
-      SANITIZER_FLAGS: >-
-        ${{ matrix.sanitizers && '-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all' || '' }}
     strategy:
       matrix:
         cxx: [g++-4.9, g++-11, clang++-3.6, clang++-11]
@@ -204,8 +202,9 @@ jobs:
       working-directory: ${{runner.workspace}}/build
       env:
         CXX: ${{matrix.cxx}}
-        CFLAGS: ${{env.SANITIZER_FLAGS}}
-        CXXFLAGS: ${{matrix.cxxflags}} ${{env.SANITIZER_FLAGS}}
+        CXXFLAGS: >-
+          ${{matrix.cxxflags}}
+          ${{ matrix.sanitizers && '-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all' || '' }}
       run: |
         cmake ${{matrix.gen && '-G' || ''}} ${{matrix.gen}} \
               -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \
