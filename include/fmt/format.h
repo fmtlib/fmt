@@ -1069,6 +1069,10 @@ class basic_memory_buffer : public detail::buffer<T> {
   auto operator=(basic_memory_buffer&& other) noexcept -> basic_memory_buffer& {
     FMT_ASSERT(this != &other, "");
     deallocate();
+    // Restore the inline buffer: deallocate() leaves this pointing at freed
+    // storage and move() doesn't always replace the pointer before using it.
+    this->set(store_, SIZE);
+    this->clear();
     move(other);
     return *this;
   }

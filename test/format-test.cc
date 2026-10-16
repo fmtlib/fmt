@@ -408,31 +408,51 @@ struct stateful_allocator {
   }
 };
 
-TEST(memory_buffer_test, move_ctor_dynamic_buffer_non_propagating) {
-  using test_allocator = allocator_ref<stateful_allocator, false>;
-  stateful_allocator alloc{1};
-  stateful_allocator alloc2{2};
-  basic_memory_buffer<char, 4, test_allocator> buffer((test_allocator(&alloc)));
-  const char test[] = "test";
-  buffer.append(test, test + 4);
-  const char* inline_buffer_ptr = &buffer[0];
-  buffer.push_back('a');
-  EXPECT_NE(buffer.data(), inline_buffer_ptr);
-  auto* original_alloc_ptr = buffer.get_allocator().get();
-  const char* original_data_ptr = buffer.data();
-  basic_memory_buffer<char, 4, test_allocator> buffer2(
-      (test_allocator(&alloc2)));
-  EXPECT_NE(buffer.get_allocator(), buffer2.get_allocator());
+TEST(memory_buffer_test, move_assignment_unequal_allocators) {
+  using buffer_type = basic_memory_buffer<char, 4, stateful_allocator>;
+  buffer_type buffer(stateful_allocator{1});
+  buffer.append(string_view("source"));
+  buffer_type buffer2(stateful_allocator{2});
+  // The source must own dynamic storage to reach the copying path; the
+  // destination is still inline, so nothing is deallocated.
+  ASSERT_GT(buffer.capacity(), 4u);
+  ASSERT_EQ(buffer2.capacity(), 4u);
+  const char* source_data = buffer.data();
+
   buffer2 = std::move(buffer);
-  EXPECT_EQ(std::string(buffer2.data(), buffer2.size()), "testa");
+
+  // The allocators are unequal and don't propagate, so the contents are
+  // copied and the source keeps its storage and allocator.
+  EXPECT_EQ(std::string(buffer2.data(), buffer2.size()), "source");
   EXPECT_GT(buffer2.capacity(), 4u);
-  EXPECT_NE(buffer2.data(), inline_buffer_ptr);
-  EXPECT_EQ(buffer.get_allocator().get(), original_alloc_ptr);
-  EXPECT_NE(buffer2.get_allocator().get(), original_alloc_ptr);
-  EXPECT_EQ(buffer2.get_allocator().get(), &alloc2);
-  EXPECT_NE(buffer2.data(), original_data_ptr);
-  EXPECT_EQ(buffer.data(), original_data_ptr);
-  EXPECT_EQ(std::string(buffer.data(), buffer.size()), "testa");
+  EXPECT_EQ(buffer2.get_allocator().id, 2);
+  EXPECT_NE(buffer2.data(), source_data);
+  EXPECT_EQ(std::string(buffer.data(), buffer.size()), "source");
+  EXPECT_EQ(buffer.get_allocator().id, 1);
+  EXPECT_EQ(buffer.data(), source_data);
+}
+
+TEST(memory_buffer_test, move_assignment_unequal_allocators_both_dynamic) {
+  using buffer_type = basic_memory_buffer<char, 4, stateful_allocator>;
+  buffer_type buffer(stateful_allocator{1});
+  buffer.append(string_view("source"));
+  buffer_type buffer2(stateful_allocator{2});
+  buffer2.append(string_view("destination"));
+  // Both buffers must own dynamic storage to reach the copying path.
+  ASSERT_GT(buffer.capacity(), 4u);
+  ASSERT_GT(buffer2.capacity(), 4u);
+  const char* source_data = buffer.data();
+
+  buffer2 = std::move(buffer);
+
+  // The allocators are unequal and don't propagate, so the contents are
+  // copied and the source keeps its storage and allocator.
+  EXPECT_EQ(std::string(buffer2.data(), buffer2.size()), "source");
+  EXPECT_EQ(buffer2.get_allocator().id, 2);
+  EXPECT_NE(buffer2.data(), source_data);
+  EXPECT_EQ(std::string(buffer.data(), buffer.size()), "source");
+  EXPECT_EQ(buffer.get_allocator().id, 1);
+  EXPECT_EQ(buffer.data(), source_data);
 }
 
 void check_move_assign_buffer(const char* str,
