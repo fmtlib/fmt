@@ -8,6 +8,7 @@
 #include "fmt/fmt-c.h"
 
 #include <fmt/core.h>
+#include <limits.h>  // INT_MAX
 
 constexpr size_t max_c_format_args = 16;
 
@@ -45,6 +46,7 @@ extern "C" int fmt_vformat(char* buffer, size_t size, const char* fmt,
     auto result = fmt::vformat_to_n(
         buffer, size, fmt,
         fmt::format_args(format_args, static_cast<int>(num_args)));
+    if (result.size > INT_MAX) return fmt_error;
     return static_cast<int>(result.size);
   }
   FMT_CATCH(...) {}
