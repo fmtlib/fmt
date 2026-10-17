@@ -342,6 +342,44 @@ TEST(chrono_test, local_time) {
   EXPECT_EQ(fmt::format("{:%S}", pre_epoch), "01.123");
 }
 
+TEST(chrono_test, local_time_before_epoch) {
+  using std::chrono::milliseconds;
+  using std::chrono::nanoseconds;
+  using std::chrono::seconds;
+  auto ms = [](long long n) {
+    return fmt::local_time<milliseconds>(milliseconds(n));
+  };
+  // Subseconds are a remainder of a floored second, not a negative offset.
+  EXPECT_EQ(fmt::format("{}", ms(-500)), "1969-12-31 23:59:59.500");
+  EXPECT_EQ(fmt::format("{}", ms(-1000)), "1969-12-31 23:59:59.000");
+  EXPECT_EQ(fmt::format("{}", ms(-1500)), "1969-12-31 23:59:58.500");
+  // Flooring the second also moves to the previous minute.
+  EXPECT_EQ(fmt::format("{}", ms(-61500)), "1969-12-31 23:58:58.500");
+  EXPECT_EQ(fmt::format("{}", fmt::local_time<std::chrono::duration<double>>(
+                                  std::chrono::duration<double>(-1.5))),
+            "1969-12-31 23:59:58.500000");
+  // A whole-second duration has no fractional part to format.
+  EXPECT_EQ(fmt::format("{}", fmt::local_time<seconds>(seconds(-1))),
+            "1969-12-31 23:59:59");
+  // Flooring the seconds must not convert them back to the input precision,
+  // which would overflow. Only a sanitizer detects this, so the result is
+  // irrelevant and gmtime may reject the value on platforms with a narrower
+  // supported range.
+  auto ns_min = nanoseconds((std::numeric_limits<nanoseconds::rep>::min)());
+  try {
+    (void)fmt::format("{}", fmt::local_time<nanoseconds>(ns_min));
+  } catch (const fmt::format_error&) {
+  }
+}
+
+TEST(chrono_test, local_time_narrow_duration) {
+  // int16_t microseconds hold less than a second, so the subsecond remainder
+  // does not fit in the duration itself.
+  using narrow = std::chrono::duration<int16_t, std::micro>;
+  EXPECT_EQ(fmt::format("{}", fmt::local_time<narrow>(narrow(-30000))),
+            "1969-12-31 23:59:59.970000");
+}
+
 template <typename T, FMT_ENABLE_IF(fmt::detail::has_tm_gmtoff<T>::value)>
 auto set_tm_gmtoff(T& time, long offset) -> bool {
   time.tm_gmtoff = offset;

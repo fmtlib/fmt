@@ -2233,26 +2233,24 @@ struct formatter<local_time<Duration>, Char>
   auto format(local_time<Duration> val, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     auto time_since_epoch = val.time_since_epoch();
-    auto seconds_since_epoch =
-        detail::duration_cast<std::chrono::seconds>(time_since_epoch);
+    auto secs = detail::duration_cast<std::chrono::seconds>(time_since_epoch);
+    // duration_cast truncates towards zero, so the remainder is negative
+    // before the epoch. Compute it before flooring the seconds because
+    // converting floored seconds back overflows at the limits, e.g.
+    // nanoseconds(INT64_MIN). Keep it in the common duration type as well
+    // since Duration may be too narrow, e.g. duration<int16_t, std::micro>.
+    auto subsecs = time_since_epoch - secs;
+    if (subsecs.count() < 0) {
+      secs -= std::chrono::seconds(1);
+      subsecs += std::chrono::seconds(1);
+    }
     // Use gmtime to prevent time zone conversion since local_time has an
     // unspecified time zone.
-    std::tm t = gmtime(seconds_since_epoch.count());
+    std::tm t = gmtime(secs.count());
     using period = typename Duration::period;
     if (period::num == 1 && period::den == 1 &&
         !std::is_floating_point<typename Duration::rep>::value) {
       return formatter<std::tm, Char>::format(t, ctx);
-    }
-    auto subsecs =
-        detail::duration_cast<Duration>(time_since_epoch - seconds_since_epoch);
-    if (subsecs.count() < 0) {
-      auto second = detail::duration_cast<Duration>(std::chrono::seconds(1));
-      if (t.tm_sec != 0) {
-        --t.tm_sec;
-      } else {
-        t = gmtime(seconds_since_epoch.count() - 1);
-      }
-      subsecs += second;
     }
     return formatter<std::tm, Char>::do_format(t, ctx, &subsecs);
   }
