@@ -2001,15 +2001,22 @@ template <typename Char> struct find_escape_result {
   uint32_t cp;
 };
 
+template <typename Char> struct escape_scanner {
+  static auto find(const Char* begin, const Char* end)
+      -> find_escape_result<Char> {
+    for (; begin != end; ++begin) {
+      uint32_t cp = static_cast<unsigned_char<Char>>(*begin);
+      if (sizeof(Char) == 1 && cp >= 0x80) continue;
+      if (needs_escape(cp)) return {begin, begin + 1, cp};
+    }
+    return {begin, nullptr, 0};
+  }
+};
+
 template <typename Char>
 auto find_escape(const Char* begin, const Char* end)
     -> find_escape_result<Char> {
-  for (; begin != end; ++begin) {
-    uint32_t cp = static_cast<unsigned_char<Char>>(*begin);
-    if (sizeof(Char) == 1 && cp >= 0x80) continue;
-    if (needs_escape(cp)) return {begin, begin + 1, cp};
-  }
-  return {begin, nullptr, 0};
+  return escape_scanner<Char>::find(begin, end);
 }
 
 inline auto find_escape(const char* begin, const char* end)
@@ -2521,25 +2528,7 @@ FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
 template <typename Char, typename OutputIt,
           FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
 FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
-                         const format_specs& specs) -> OutputIt {
-  auto data = s.data();
-  auto size = s.size();
-  if (specs.precision >= 0 && to_unsigned(specs.precision) < size)
-    size = to_unsigned(specs.precision);
-
-  bool is_debug = specs.type() == presentation_type::debug;
-  if (is_debug) {
-    auto buf = counting_buffer<Char>();
-    write_escaped_string(basic_appender<Char>(buf), s);
-    size = buf.count();
-  }
-
-  return write_padded<Char>(
-      out, specs, size, [=](reserve_iterator<OutputIt> it) {
-        return is_debug ? write_escaped_string(it, s)
-                        : copy<Char>(data, data + size, it);
-      });
-}
+                         const format_specs& specs) -> OutputIt;
 
 template <typename Char, typename OutputIt>
 FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
