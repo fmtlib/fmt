@@ -1139,15 +1139,23 @@ class tm_writer {
     return static_cast<int>(l);
   }
 
+  // Returns the weekday of December 31 of the given year (0 = Sunday). Uses
+  // floored division and a non-negative remainder so that it is also correct
+  // for negative years.
+  static auto dec31_weekday(long long year) noexcept -> long long {
+    auto floor_div = [](long long a, long long b) {
+      return a / b - (a % b < 0 ? 1 : 0);
+    };
+    auto p = (year + floor_div(year, 4) - floor_div(year, 100) +
+              floor_div(year, 400)) %
+             days_per_week;
+    return p < 0 ? p + days_per_week : p;
+  }
+
   // Algorithm: https://en.wikipedia.org/wiki/ISO_week_date.
   auto iso_year_weeks(long long curr_year) const noexcept -> int {
-    auto prev_year = curr_year - 1;
-    auto curr_p =
-        (curr_year + curr_year / 4 - curr_year / 100 + curr_year / 400) %
-        days_per_week;
-    auto prev_p =
-        (prev_year + prev_year / 4 - prev_year / 100 + prev_year / 400) %
-        days_per_week;
+    auto curr_p = dec31_weekday(curr_year);
+    auto prev_p = dec31_weekday(curr_year - 1);
     return 52 + ((curr_p == 4 || prev_p == 3) ? 1 : 0);
   }
   auto iso_week_num(int tm_yday, int tm_wday) const noexcept -> int {
