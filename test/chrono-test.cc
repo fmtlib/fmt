@@ -123,6 +123,21 @@ TEST(chrono_test, format_tm) {
   tm.tm_year = -2147483648;
   EXPECT_EQ(fmt::format("{:%Y}", tm), "-2147481748");
 
+  // ISO week-based year and week number for negative years. The year -2 starts
+  // on a Thursday, so it has 53 ISO weeks.
+  tm = make_tm(-2, 12, 31, 0, 0, 0);
+  tm.tm_wday = 4;
+  tm.tm_yday = 364;
+  EXPECT_EQ(fmt::format("{:%G %V}", tm), "-002 53");
+  tm = make_tm(-1, 1, 1, 0, 0, 0);
+  tm.tm_wday = 5;
+  tm.tm_yday = 0;
+  EXPECT_EQ(fmt::format("{:%G %V}", tm), "-002 53");
+  tm = make_tm(-1, 1, 4, 0, 0, 0);
+  tm.tm_wday = 1;
+  tm.tm_yday = 3;
+  EXPECT_EQ(fmt::format("{:%G %V}", tm), "-001 01");
+
   // for week on the year
   // https://www.cl.cam.ac.uk/~mgk25/iso-time.html
   std::vector<std::tm> tm_list = {
