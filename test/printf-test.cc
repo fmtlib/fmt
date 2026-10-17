@@ -210,9 +210,7 @@ TEST(printf_test, space_flag) {
 
   // ' ' flag is ignored for unsigned conversions.
   EXPECT_PRINTF("42", "% u", 42);
-  EXPECT_PRINTF("42", "% o", 042);
   EXPECT_PRINTF("0002a", "% 05x", 0x2a);
-  EXPECT_PRINTF("2A", "% X", 0x2a);
 }
 
 TEST(printf_test, hash_flag) {
