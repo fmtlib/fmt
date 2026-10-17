@@ -995,6 +995,15 @@ TEST(chrono_test, out_of_range) {
   // A floating-point day count that doesn't fit in int.
   auto fd = std::chrono::duration<double>(1e300);
   EXPECT_THROW((void)fmt::format("{:%j}", fd), fmt::format_error);
+  // A floating-point time point whose seconds don't fit in time_t.
+  auto ftp = sys_time<std::chrono::duration<double>>(fd);
+  EXPECT_THROW((void)fmt::format("{:%T}", ftp), fmt::format_error);
+  auto fnan = sys_time<std::chrono::duration<double>>(
+      std::chrono::duration<double>(std::numeric_limits<double>::quiet_NaN()));
+  EXPECT_THROW((void)fmt::format("{:%T}", fnan), fmt::format_error);
+  auto flocal = fmt::local_time<std::chrono::duration<double>>(
+      std::chrono::duration<double>(-1e300));
+  EXPECT_THROW((void)fmt::format("{:%F}", flocal), fmt::format_error);
 }
 
 TEST(chrono_test, calendar_padding) {
