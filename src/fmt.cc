@@ -101,7 +101,9 @@ module;
 #    include <ext/stdio_filebuf.h>
 #    include <ext/stdio_sync_filebuf.h>
 #  endif
-#  define WIN32_LEAN_AND_MEAN
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
 #  include <windows.h>
 #endif
 
