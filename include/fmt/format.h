@@ -3747,24 +3747,18 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value, format_specs specs,
   memory_buffer buffer;
   if (specs.type() == presentation_type::hexfloat) {
     if (s != sign::none) buffer.push_back(detail::getsign<char>(s));
-
-    size_t prefix_length = 0;
-    buffer.push_back('0');
-    buffer.push_back(specs.upper() ? 'X' : 'x');
     if (specs.align() == align::numeric) {
-      prefix_length = buffer.size();
-      const char* data = buffer.data();
-      out = copy<Char>(data, data + prefix_length, out);
-      buffer.clear();
+      // Write the prefix before the padding.
+      *out++ = static_cast<Char>('0');
+      *out++ = static_cast<Char>(specs.upper() ? 'X' : 'x');
+      specs.width -= min_of(specs.width, 2);
+    } else {
+      buffer.push_back('0');
+      buffer.push_back(specs.upper() ? 'X' : 'x');
     }
-
     format_hexfloat(convert_float(value), specs, buffer);
-    return write_padded<Char, align::right>(
-        out, specs, buffer.size(), buffer.size() + prefix_length,
-        [&buffer](reserve_iterator<OutputIt> it) {
-          const char* data = buffer.data();
-          return copy<Char>(data, data + buffer.size(), it);
-        });
+    return write_bytes<Char, align::right>(out, {buffer.data(), buffer.size()},
+                                           specs);
   }
 
   if (specs.type() == presentation_type::exp) {
