@@ -539,3 +539,55 @@ TEST(compile_test, format_as) {
   // compiled field path rather than the to_string fast path.
   EXPECT_EQ("[42]", fmt::format(FMT_COMPILE("[{}]"), type_with_format_as{42}));
 }
+
+TEST(compile_test, ranges_basic) {
+  std::array<int, 3> arr;
+  arr[0] = 1;
+  arr[1] = 2;
+  arr[2] = 3;
+  EXPECT_EQ("[1, 2, 3]", fmt::format(FMT_COMPILE("{}"), arr));
+  EXPECT_EQ("[[1, 2, 3]]", fmt::format(FMT_COMPILE("[{}]"), arr));
+
+  std::vector<int> vec;
+  vec.push_back(1);
+  vec.push_back(2);
+  vec.push_back(3);
+  EXPECT_EQ("[1, 2, 3]", fmt::format(FMT_COMPILE("{}"), vec));
+  EXPECT_EQ("[[1, 2, 3]]", fmt::format(FMT_COMPILE("[{}]"), vec));
+}
+
+// constexpr form of ranges_basic
+#if FMT_USE_CONSTEXPR_STRING
+#  ifdef __cpp_lib_array_constexpr
+static_assert("[1, 2, 3]" ==
+              fmt::format(FMT_COMPILE("{}"), std::array<int, 3>{1, 2, 3}));
+static_assert("[[1, 2, 3]]" ==
+              fmt::format(FMT_COMPILE("[{}]"), std::array<int, 3>{1, 2, 3}));
+#  endif  // __cpp_lib_array_constexpr
+
+#  ifdef __cpp_lib_constexpr_vector
+static_assert("[1, 2, 3]" ==
+              fmt::format(FMT_COMPILE("{}"), std::vector<int>{1, 2, 3}));
+static_assert("[[1, 2, 3]]" ==
+              fmt::format(FMT_COMPILE("[{}]"), std::vector<int>{1, 2, 3}));
+#  endif  // __cpp_lib_constexpr_vector
+#endif    // FMT_USE_CONSTEXPR_STRING
+
+struct custom_range {
+  int data[3];
+  constexpr custom_range() : data{1, 2, 3} {}
+  constexpr const int* begin() const { return data; }
+  constexpr const int* end() const { return data + 3; }
+};
+
+TEST(compile_test, ranges_custom) {
+  EXPECT_EQ("[1, 2, 3]", fmt::format(FMT_COMPILE("{}"), custom_range{}));
+  EXPECT_EQ("[[1, 2, 3]]", fmt::format(FMT_COMPILE("[{}]"), custom_range{}));
+}
+
+// constexpr form of ranges_custom
+#if FMT_USE_CONSTEXPR_STRING
+static_assert("[1, 2, 3]" == fmt::format(FMT_COMPILE("{}"), custom_range{}));
+static_assert("[[1, 2, 3]]" ==
+              fmt::format(FMT_COMPILE("[{}]"), custom_range{}));
+#endif  // FMT_USE_CONSTEXPR_STRING
