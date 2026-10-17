@@ -2247,10 +2247,17 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
 
   unsigned size = (prefix != 0 ? prefix >> 24 : 0) + to_unsigned(num_digits) +
                   to_unsigned(grouping.count_separators(num_digits));
+  unsigned padding = 0;
+  if (specs.align() == align::numeric) {
+    auto width = to_unsigned(specs.width);
+    if (width > size) padding = width - size;
+    size += padding;
+  }
   return write_padded<Char, align::right>(
       out, specs, size, size, [&](reserve_iterator<OutputIt> it) {
         for (unsigned p = prefix & 0xffffff; p != 0; p >>= 8)
           *it++ = static_cast<Char>(p & 0xff);
+        it = detail::fill_n(it, padding, static_cast<Char>('0'));
         return grouping.apply(it, string_view(buffer.data(), buffer.size()));
       });
 }
