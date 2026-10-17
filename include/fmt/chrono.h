@@ -1681,7 +1681,7 @@ struct duration_formatter {
 
   auto hour12() const -> Rep {
     Rep hour = static_cast<Rep>(mod((s.count() / 3600), 12));
-    return hour <= 0 ? 12 : hour;
+    return hour < 1 ? 12 : hour;
   }
 
   auto minute() const -> Rep {
