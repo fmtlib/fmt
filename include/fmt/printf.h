@@ -545,6 +545,9 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
     if (it == end) report_error("invalid format string");
     char type = static_cast<char>(*it++);
     if (is_integral_type(arg.type())) {
+      // The '+' and space flags only apply to signed conversions.
+      if (type == 'u' || type == 'o' || type == 'x' || type == 'X')
+        specs.set_sign(sign::none);
       // Normalize type.
       switch (type) {
       case 'i':
