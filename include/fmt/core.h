@@ -610,7 +610,8 @@ template <typename T> class basic_appender;
 using appender = basic_appender<char>;
 
 class context;
-template <typename OutputIt, typename Char> class generic_context;
+template <typename OutputIt, typename Char, typename ArgContext = void>
+class generic_context;
 template <typename Char> class parse_context;
 
 // Longer aliases for C++20 compatibility.
