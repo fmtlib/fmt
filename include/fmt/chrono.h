@@ -926,6 +926,18 @@ inline auto tm_wday_short_name(int wday) -> const char* {
   return wday >= 0 && wday <= 6 ? short_name_list[wday] : "???";
 }
 
+// Returns the number of days from 1970-01-01 to the given date in the
+// proleptic Gregorian calendar.
+inline auto days_from_civil(int y, unsigned m, unsigned d) noexcept
+    -> long long {
+  if (m <= 2) --y;
+  long long era = (y >= 0 ? y : y - 399) / 400;
+  auto yoe = static_cast<unsigned>(y - era * 400);
+  unsigned doy = (153 * (m > 2 ? m - 3 : m + 9) + 2) / 5 + d - 1;
+  unsigned doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+  return era * 146097 + static_cast<long long>(doe) - 719468;
+}
+
 inline auto tm_mon_full_name(int mon) -> const char* {
   static constexpr const char* full_name_list[] = {
       "January", "February", "March",     "April",   "May",      "June",
@@ -2035,10 +2047,19 @@ struct formatter<year_month_day, Char> : private formatter<std::tm, Char> {
   auto format(year_month_day val, FormatContext& ctx) const
       -> decltype(ctx.out()) {
     auto time = std::tm();
-    time.tm_year = static_cast<int>(val.year()) - 1900;
-    time.tm_mon = static_cast<int>(static_cast<unsigned>(val.month())) - 1;
-    time.tm_mday = static_cast<int>(static_cast<unsigned>(val.day()));
-    if (use_tm_formatter_) return formatter<std::tm, Char>::format(time, ctx);
+    auto y = static_cast<int>(val.year());
+    auto m = static_cast<unsigned>(val.month());
+    auto d = static_cast<unsigned>(val.day());
+    time.tm_year = y - 1900;
+    time.tm_mon = static_cast<int>(m) - 1;
+    time.tm_mday = static_cast<int>(d);
+    if (use_tm_formatter_) {
+      // 1970-01-01 was a Thursday.
+      auto days = detail::days_from_civil(y, m, d);
+      time.tm_wday = static_cast<int>((days % 7 + 11) % 7);
+      time.tm_yday = static_cast<int>(days - detail::days_from_civil(y, 1, 1));
+      return formatter<std::tm, Char>::format(time, ctx);
+    }
     auto w = detail::tm_writer<decltype(ctx.out()), Char>(locale_ref(), false,
                                                           ctx.out(), time);
     w.on_iso_date();
