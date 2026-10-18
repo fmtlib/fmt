@@ -448,12 +448,6 @@ template <> struct locale_writer<false> {
   }
 };
 
-template <typename T, typename U>
-using is_similar_arithmetic_type =
-    bool_constant<(std::is_integral<T>::value && std::is_integral<U>::value) ||
-                  (std::is_floating_point<T>::value &&
-                   std::is_floating_point<U>::value)>;
-
 FMT_NORETURN inline void throw_duration_error() {
   FMT_THROW(format_error("cannot format duration"));
 }
@@ -510,12 +504,35 @@ auto duration_cast(std::chrono::duration<FromRep, FromPeriod> from) -> To {
 #endif
 }
 
+// Mixed integer <-> float casts are not supported by safe_duration_cast.
+// An integer to float conversion is always defined.
 template <typename To, typename FromRep, typename FromPeriod,
-          FMT_ENABLE_IF(
-              !is_similar_arithmetic_type<FromRep, typename To::rep>::value)>
+          FMT_ENABLE_IF(std::is_integral<FromRep>::value&&
+                            std::is_floating_point<typename To::rep>::value)>
 auto duration_cast(std::chrono::duration<FromRep, FromPeriod> from) -> To {
-  // Mixed integer <-> float cast is not supported by safe duration_cast.
   return std::chrono::duration_cast<To>(from);
+}
+
+// Cast a floating-point duration to an integral one with a range check since
+// converting an out-of-range or NaN value to an integer is undefined behavior.
+template <typename To, typename FromRep, typename FromPeriod,
+          FMT_ENABLE_IF(std::is_floating_point<FromRep>::value&&
+                            std::is_integral<typename To::rep>::value)>
+auto duration_cast(std::chrono::duration<FromRep, FromPeriod> from) -> To {
+#if FMT_SAFE_DURATION_CAST
+  using to_rep = typename To::rep;
+  auto count = detail::duration_cast<
+                   std::chrono::duration<FromRep, typename To::period>>(from)
+                   .count();
+  // max + 1 is a power of 2 so the cast to FromRep is exact even when max
+  // itself is rounded up by the conversion; the comparison is false for NaN.
+  auto upper = static_cast<FromRep>(max_value<to_rep>()) + 1;
+  auto lower = static_cast<FromRep>((std::numeric_limits<to_rep>::min)());
+  if (!(count >= lower && count < upper)) throw_duration_error();
+  return To(static_cast<to_rep>(count));
+#else
+  return std::chrono::duration_cast<To>(from);
+#endif
 }
 
 template <typename Duration>
