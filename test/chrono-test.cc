@@ -507,6 +507,15 @@ TEST(chrono_test, format_specs) {
   EXPECT_EQ(fmt::format("{:%q}", std::chrono::seconds(12345)), "s");
 }
 
+TEST(chrono_test, format_12_hour_fp) {
+  using seconds = std::chrono::duration<double>;
+  EXPECT_EQ(fmt::format("{:%I:%M:%S %p}", seconds(1)), "12:00:01 AM");
+  EXPECT_EQ(fmt::format("{:%I:%M:%S %p}", seconds(43201)), "12:00:01 PM");
+  EXPECT_EQ(fmt::format("{:%I}", seconds(3599)), "12");
+  EXPECT_EQ(fmt::format("{:%I}", seconds(3600)), "01");
+  EXPECT_EQ(fmt::format("{:%I}", seconds(86401)), "12");
+}
+
 TEST(chrono_test, invalid_specs) {
   auto sec = std::chrono::seconds(0);
   EXPECT_THROW_MSG((void)fmt::format(runtime("{:%a}"), sec), fmt::format_error,
