@@ -23,6 +23,139 @@
 FMT_BEGIN_NAMESPACE
 namespace detail {
 
+template <typename Char, typename F,
+          FMT_ENABLE_IF(!std::is_same<Char, char>::value)>
+FMT_CONSTEXPR void for_each_codepoint(basic_string_view<Char> s, F f) {
+  auto p = s.begin(), end = s.end();
+  while (p != end) {
+    auto begin = p;
+    uint32_t cp = static_cast<unsigned_char<Char>>(*p++);
+    // Leave unpaired surrogates intact so they can be escaped individually.
+    if (sizeof(Char) == 2 && cp >= 0xd800 && cp <= 0xdbff && p != end) {
+      uint32_t low = static_cast<unsigned_char<Char>>(*p);
+      if (low >= 0xdc00 && low <= 0xdfff) {
+        cp = 0x10000 + ((cp - 0xd800) << 10) + (low - 0xdc00);
+        ++p;
+      }
+    }
+    if (!f(cp, basic_string_view<Char>(begin, to_unsigned(p - begin)))) return;
+  }
+}
+
+template <typename Char> struct unicode_escape_scanner {
+  static auto find(const Char* begin, const Char* end)
+      -> find_escape_result<Char> {
+    auto result = find_escape_result<Char>{end, nullptr, 0};
+    for_each_codepoint(basic_string_view<Char>(begin, to_unsigned(end - begin)),
+                       [&](uint32_t cp, basic_string_view<Char> sv) {
+                         if (sizeof(Char) == 1 && cp >= 0x80) return true;
+                         if (needs_escape(cp)) {
+                           result = {sv.begin(), sv.end(), cp};
+                           return false;
+                         }
+                         return true;
+                       });
+    return result;
+  }
+};
+
+template <> struct escape_scanner<wchar_t> : unicode_escape_scanner<wchar_t> {};
+template <>
+struct escape_scanner<char16_t> : unicode_escape_scanner<char16_t> {};
+template <>
+struct escape_scanner<char32_t> : unicode_escape_scanner<char32_t> {};
+
+template <typename Char, typename OutputIt,
+          enable_if_t<!std::is_same<Char, char>::value, int>>
+FMT_CONSTEXPR auto write(OutputIt out, basic_string_view<Char> s,
+                         const format_specs& specs) -> OutputIt {
+  bool is_debug = specs.type() == presentation_type::debug;
+  if (specs.precision < 0 && specs.width == 0) {
+    auto&& it = reserve(out, s.size());
+    return is_debug ? write_escaped_string(it, s) : copy<Char>(s, it);
+  }
+
+  size_t display_width_limit =
+      specs.precision < 0 ? SIZE_MAX : to_unsigned(specs.precision);
+  size_t display_width =
+      !is_debug || specs.precision == 0 ? 0 : 1;  // Account for opening '"'.
+  size_t size = !is_debug || specs.precision == 0 ? 0 : 1;
+  for_each_codepoint(s, [&](uint32_t cp, basic_string_view<Char> sv) {
+    if (is_debug && needs_escape(cp) &&
+        (sizeof(Char) != 1 || std::is_same<Char, char>::value || cp < 0x80)) {
+      counting_buffer<Char> buf;
+      write_escaped_cp(basic_appender<Char>(buf),
+                       find_escape_result<Char>{sv.begin(), sv.end(), cp});
+      // We're reinterpreting code units as display width. That's okay
+      // because write_escaped_cp() only writes ASCII characters.
+      size_t cp_width = buf.count();
+      if (display_width + cp_width <= display_width_limit) {
+        display_width += cp_width;
+        size += cp_width;
+        // If this is the end of the string, account for closing '"'.
+        if (display_width < display_width_limit && sv.end() == s.end()) {
+          ++display_width;
+          ++size;
+        }
+        return true;
+      }
+
+      size += display_width_limit - display_width;
+      display_width = display_width_limit;
+      return false;
+    }
+
+    size_t cp_width = display_width_of(cp);
+    if (cp_width + display_width <= display_width_limit) {
+      display_width += cp_width;
+      size += sv.size();
+      // If this is the end of the string, account for closing '"'.
+      if (is_debug && display_width < display_width_limit &&
+          sv.end() == s.end()) {
+        ++display_width;
+        ++size;
+      }
+      return true;
+    }
+
+    return false;
+  });
+
+  if (is_debug && s.size() == 0 && specs.precision != 0 &&
+      display_width < display_width_limit) {
+    ++display_width;
+    ++size;
+  }
+
+  struct bounded_output_iterator {
+    reserve_iterator<OutputIt> underlying_iterator;
+    size_t bound;
+
+    FMT_CONSTEXPR auto operator*() -> bounded_output_iterator& { return *this; }
+    FMT_CONSTEXPR auto operator++() -> bounded_output_iterator& {
+      return *this;
+    }
+    FMT_CONSTEXPR auto operator++(int) -> bounded_output_iterator& {
+      return *this;
+    }
+    FMT_CONSTEXPR auto operator=(Char c) -> bounded_output_iterator& {
+      if (bound > 0) {
+        *underlying_iterator++ = c;
+        --bound;
+      }
+      return *this;
+    }
+  };
+
+  return write_padded<Char>(
+      out, specs, size, display_width, [=](reserve_iterator<OutputIt> it) {
+        return is_debug
+                   ? write_escaped_string(bounded_output_iterator{it, size}, s)
+                         .underlying_iterator
+                   : copy<Char>(s.data(), s.data() + size, it);
+      });
+}
+
 template <typename T>
 using is_exotic_char = bool_constant<!std::is_same<T, char>::value>;
 
