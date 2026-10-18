@@ -4143,9 +4143,14 @@ template <typename Char> class nested_format_specs {
     handle_dynamic_spec(specs.dynamic_width(), specs.width, width_ref_, ctx);
     if (specs.width == 0) return f.write_body(ctx, static_cast<T&&>(values)...);
 
+    // FormatContext can only be reused if it writes to an appender (#4949).
+    using buffer_context = conditional_t<
+        std::is_same<decltype(ctx.out()), basic_appender<Char>>::value,
+        FormatContext,
+        generic_context<basic_appender<Char>, Char, FormatContext>>;
     auto buf = basic_memory_buffer<Char>();
     auto buffer_ctx =
-        FormatContext(basic_appender<Char>(buf), ctx.args(), ctx.locale());
+        buffer_context(basic_appender<Char>(buf), ctx.args(), ctx.locale());
     f.write_body(buffer_ctx, static_cast<T&&>(values)...);
     return detail::write<Char>(
         ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
@@ -4162,11 +4167,16 @@ FMT_BEGIN_EXPORT
 
 // A generic formatting context with custom output iterator and character
 // (code unit) support. Char is the format string code unit type which can be
-// different from OutputIt::value_type.
-template <typename OutputIt, typename Char> class generic_context {
+// different from OutputIt::value_type. ArgContext is the context the arguments
+// are typed on; void means the context itself.
+template <typename OutputIt, typename Char, typename ArgContext>
+class generic_context {
  private:
+  using arg_context = conditional_t<std::is_void<ArgContext>::value,
+                                    generic_context, ArgContext>;
+
   OutputIt out_;
-  basic_format_args<generic_context> args_;
+  basic_format_args<arg_context> args_;
   locale_ref loc_;
 
  public:
@@ -4174,27 +4184,24 @@ template <typename OutputIt, typename Char> class generic_context {
   using iterator = OutputIt;
   enum { builtin_types = FMT_BUILTIN_TYPES };
 
-  constexpr generic_context(OutputIt out,
-                            basic_format_args<generic_context> args,
+  constexpr generic_context(OutputIt out, basic_format_args<arg_context> args,
                             locale_ref loc = {})
       : out_(out), args_(args), loc_(loc) {}
   generic_context(generic_context&&) = default;
   generic_context(const generic_context&) = delete;
   void operator=(const generic_context&) = delete;
 
-  constexpr auto arg(int id) const -> basic_format_arg<generic_context> {
+  constexpr auto arg(int id) const -> basic_format_arg<arg_context> {
     return args_.get(id);
   }
   auto arg(basic_string_view<Char> name) const
-      -> basic_format_arg<generic_context> {
+      -> basic_format_arg<arg_context> {
     return args_.get(name);
   }
   constexpr auto arg_id(basic_string_view<Char> name) const -> int {
     return args_.get_id(name);
   }
-  auto args() const -> const basic_format_args<generic_context>& {
-    return args_;
-  }
+  auto args() const -> const basic_format_args<arg_context>& { return args_; }
 
   constexpr auto out() const -> iterator { return out_; }
 
