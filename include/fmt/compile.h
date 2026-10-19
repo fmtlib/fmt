@@ -175,7 +175,8 @@ template <typename Char, typename V, int N> struct field {
   template <typename OutputIt, typename... T>
   constexpr auto format(OutputIt out, const T&... args) const -> OutputIt {
     const V& arg = get_arg_checked<V, N>(args...);
-    if constexpr (std::is_convertible<V, basic_string_view<Char>>::value) {
+    if constexpr (std::is_convertible<V, basic_string_view<Char>>::value &&
+                  !std::is_same<V, nullptr_t>::value) {
       auto s = basic_string_view<Char>(arg);
       return copy<Char>(s.begin(), s.end(), out);
     } else if constexpr (use_format_as<V>::value) {
