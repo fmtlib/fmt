@@ -3757,8 +3757,14 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value, format_specs specs,
       buffer.push_back(specs.upper() ? 'X' : 'x');
     }
     format_hexfloat(convert_float(value), specs, buffer);
-    return write_bytes<Char, align::right>(out, {buffer.data(), buffer.size()},
-                                           specs);
+    Char point = FMT_USE_LOCALE && specs.localized()
+                     ? detail::decimal_point<Char>(loc)
+                     : Char('.');
+    return write_padded<Char, align::right>(
+        out, specs, buffer.size(), [&](reserve_iterator<OutputIt> it) {
+          for (char c : buffer) *it++ = c == '.' ? point : static_cast<Char>(c);
+          return it;
+        });
   }
 
   if (specs.type() == presentation_type::exp) {

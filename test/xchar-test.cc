@@ -340,6 +340,8 @@ TEST(locale_test, localized_double) {
   EXPECT_EQ(fmt::format(loc, "{:15.6Lf}", 0.1), "       0?100000");
   EXPECT_EQ(fmt::format(loc, "{:15.6Lf}", 1.0), "       1?000000");
   EXPECT_EQ(fmt::format(loc, "{:15.6Lf}", 1e3), "   1~000?000000");
+  EXPECT_EQ(fmt::format(loc, "{:La}", 1234.5), "0x1?34ap+10");
+  EXPECT_EQ(fmt::format(loc, "{:+012La}", 1.5), "+0x0001?8p+0");
 }
 
 TEST(locale_test, format) {
@@ -386,6 +388,7 @@ TEST(locale_test, wformat) {
   EXPECT_EQ(L"1~234~567",
             fmt::vformat(loc, L"{:L}", fmt::make_wformat_args(n)));
   EXPECT_EQ(L"1234567", fmt::format(std::locale("C"), L"{:L}", 1234567));
+  EXPECT_EQ(L"0x1?8p+0", fmt::format(loc, L"{:La}", 1.5));
 
   auto no_grouping_loc = std::locale(std::locale(), new no_grouping<wchar_t>());
   EXPECT_EQ(L"1234567", fmt::format(no_grouping_loc, L"{:L}", 1234567));
