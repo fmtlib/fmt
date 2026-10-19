@@ -2332,6 +2332,7 @@ FMT_END_NAMESPACE
 TEST(format_test, to_string) {
   EXPECT_EQ(fmt::to_string(42), "42");
   EXPECT_EQ(fmt::to_string(reinterpret_cast<void*>(0x1234)), "0x1234");
+  EXPECT_EQ(fmt::to_string(nullptr), "0x0");
   EXPECT_EQ(fmt::to_string(adl_test::fmt::detail::foo()), "foo");
   EXPECT_EQ(fmt::to_string(foo), "0");
 
