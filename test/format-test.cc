@@ -1149,6 +1149,213 @@ TEST(format_test, exponent_range) {
   for (int e = -1074; e <= 1023; ++e) (void)fmt::format("{}", std::ldexp(1, e));
 }
 
+// Replaces '_' with the ISO 80000-1 digit group separator: U+202F NARROW
+// NO-BREAK SPACE if the literal encoding is UTF-8 and U+0020 SPACE otherwise.
+static auto iso(const char* s) -> std::string {
+  const char* sep = fmt::detail::is_utf8_enabled != 0 && FMT_UNICODE != 0
+                        ? "\xE2\x80\xAF"
+                        : " ";
+  auto result = std::string();
+  for (; *s; ++s) {
+    if (*s == '_')
+      result += sep;
+    else
+      result += *s;
+  }
+  return result;
+}
+
+TEST(format_test, iso_digit_grouping) {
+  // Integers.
+  EXPECT_EQ(fmt::format("{:'}", 0), "0");
+  EXPECT_EQ(fmt::format("{:'}", 1), "1");
+  EXPECT_EQ(fmt::format("{:'}", 12), "12");
+  EXPECT_EQ(fmt::format("{:'}", 123), "123");
+  EXPECT_EQ(fmt::format("{:'}", 1234), iso("1_234"));
+  EXPECT_EQ(fmt::format("{:'}", 12345), iso("12_345"));
+  EXPECT_EQ(fmt::format("{:'}", 123456), iso("123_456"));
+  EXPECT_EQ(fmt::format("{:'}", 1234567), iso("1_234_567"));
+  EXPECT_EQ(fmt::format("{:'}", -1234567), iso("-1_234_567"));
+  EXPECT_EQ(fmt::format("{:'}", -123), "-123");
+  EXPECT_EQ(fmt::format("{:'d}", 1234567), iso("1_234_567"));
+  EXPECT_EQ(fmt::format("{:'}", 1234567u), iso("1_234_567"));
+  EXPECT_EQ(fmt::format("{:'}", static_cast<short>(-1234)), iso("-1_234"));
+  EXPECT_EQ(fmt::format("{:'}", static_cast<signed char>(-123)), "-123");
+  EXPECT_EQ(fmt::format("{:'}", 1234567L), iso("1_234_567"));
+  EXPECT_EQ(fmt::format("{:'}", INT64_MIN), iso("-9_223_372_036_854_775_808"));
+  EXPECT_EQ(fmt::format("{:'}", INT64_MAX), iso("9_223_372_036_854_775_807"));
+  EXPECT_EQ(fmt::format("{:'}", UINT64_MAX), iso("18_446_744_073_709_551_615"));
+#if FMT_USE_INT128
+  EXPECT_EQ(
+      fmt::format("{:'}",
+                  static_cast<fmt::detail::native_int128>(INT64_MIN) * 1000),
+      iso("-9_223_372_036_854_775_808_000"));
+#endif
+  EXPECT_EQ(fmt::format(runtime("{:'}"), 1234567), iso("1_234_567"));
+
+  // Sign.
+  EXPECT_EQ(fmt::format("{:+'}", 1234), iso("+1_234"));
+  EXPECT_EQ(fmt::format("{:+'d}", -1234), iso("-1_234"));
+  EXPECT_EQ(fmt::format("{: '}", 1234), iso(" 1_234"));
+  EXPECT_EQ(fmt::format("{:-'}", 1234), iso("1_234"));
+  EXPECT_EQ(fmt::format("{:+'}", 0), "+0");
+
+  // Width, alignment and fill: each separator has display width 1.
+  EXPECT_EQ(fmt::format("{:>12'}", 1234567), iso("   1_234_567"));
+  EXPECT_EQ(fmt::format("{:12'}", 1234567), iso("   1_234_567"));
+  EXPECT_EQ(fmt::format("{:<12'}", 1234567), iso("1_234_567   "));
+  EXPECT_EQ(fmt::format("{:*^15'}", 1234567), iso("***1_234_567***"));
+  EXPECT_EQ(fmt::format("{:*>15'}", -1234567), iso("*****-1_234_567"));
+  EXPECT_EQ(fmt::format("{:*>+15'}", 1234567), iso("*****+1_234_567"));
+  EXPECT_EQ(fmt::format("{:5'}", 1234567), iso("1_234_567"));
+  EXPECT_EQ(fmt::format("{:{}'}", 1234567, 12), iso("   1_234_567"));
+  EXPECT_EQ(fmt::format("{:>{}'}", 1234567.0, 12), iso("   1_234_567"));
+  EXPECT_EQ(fmt::format(runtime("{:>12'}"), 1234567), iso("   1_234_567"));
+  EXPECT_EQ(fmt::format("{:—>8'}", 1234), iso("———1_234"));
+  // ' is still a valid fill character.
+  EXPECT_EQ(fmt::format("{:'>5}", 42), "'''42");
+  EXPECT_EQ(fmt::format("{:'>8'}", 1234), iso("'''1_234"));
+
+  // Zero padding: padding zeros are digits and are grouped too. The smallest
+  // number of zeros giving at least the requested width is used, so the
+  // result never starts with a separator and can be one column wider.
+  EXPECT_EQ(fmt::format("{:0'}", 1234), iso("1_234"));
+  EXPECT_EQ(fmt::format("{:03'}", 1), "001");
+  EXPECT_EQ(fmt::format("{:04'}", 1), iso("0_001"));
+  EXPECT_EQ(fmt::format("{:05'}", 1), iso("0_001"));
+  EXPECT_EQ(fmt::format("{:06'}", 1), iso("00_001"));
+  EXPECT_EQ(fmt::format("{:07'}", 1), iso("000_001"));
+  EXPECT_EQ(fmt::format("{:08'}", 1), iso("0_000_001"));
+  EXPECT_EQ(fmt::format("{:09'}", 1), iso("0_000_001"));
+  EXPECT_EQ(fmt::format("{:010'}", 1234567), iso("01_234_567"));
+  EXPECT_EQ(fmt::format("{:09'}", 1234567), iso("1_234_567"));
+  EXPECT_EQ(fmt::format("{:010'}", -1234), iso("-0_001_234"));
+  EXPECT_EQ(fmt::format("{:+08'}", 12), iso("+000_012"));
+  EXPECT_EQ(fmt::format("{:0{}'}", 1, 4), iso("0_001"));
+  EXPECT_EQ(fmt::format(runtime("{:010'}"), 1234567), iso("01_234_567"));
+  // An explicit alignment disables zero padding as usual.
+  EXPECT_EQ(fmt::format("{:>08'}", 1234), iso("   1_234"));
+  EXPECT_EQ(fmt::format("{:012'.2f}", 1234.5), iso("0_001_234.50"));
+  EXPECT_EQ(fmt::format("{:015'.3f}", -0.5), iso("-00_000_000.500"));
+  EXPECT_EQ(fmt::format("{:011'.4f}", 1.23456), iso("0_001.234_6"));
+  EXPECT_EQ(fmt::format("{:013'.3e}", 123456.0), iso("0_001.235e+05"));
+  EXPECT_EQ(fmt::format("{:08'}", std::numeric_limits<double>::infinity()),
+            "     inf");
+
+  // Fixed.
+  EXPECT_EQ(fmt::format("{:'.6f}", 1234567.891234), iso("1_234_567.891_234"));
+  EXPECT_EQ(fmt::format("{:'.4f}", 1234.5678), iso("1_234.567_8"));
+  EXPECT_EQ(fmt::format("{:'.0f}", 1234.0), iso("1_234"));
+  EXPECT_EQ(fmt::format("{:#'.0f}", 1234.0), iso("1_234."));
+  EXPECT_EQ(fmt::format("{:'f}", 1.0), iso("1.000_000"));
+  EXPECT_EQ(fmt::format("{:'F}", 1234.5), iso("1_234.500_000"));
+  EXPECT_EQ(fmt::format("{:'.1f}", 0.1234567), "0.1");
+  EXPECT_EQ(fmt::format("{:'.2f}", 0.1234567), "0.12");
+  EXPECT_EQ(fmt::format("{:'.3f}", 0.1234567), "0.123");
+  EXPECT_EQ(fmt::format("{:'.4f}", 0.1234567), iso("0.123_5"));
+  EXPECT_EQ(fmt::format("{:'.5f}", 0.1234567), iso("0.123_46"));
+  EXPECT_EQ(fmt::format("{:'.6f}", 0.1234567), iso("0.123_457"));
+  EXPECT_EQ(fmt::format("{:'.7f}", 0.1234567), iso("0.123_456_7"));
+  EXPECT_EQ(fmt::format("{:'.4f}", 0.1234), iso("0.123_4"));
+  EXPECT_EQ(fmt::format("{:'.6f}", 0.000123), iso("0.000_123"));
+  EXPECT_EQ(fmt::format("{:'.3f}", -1234.5), iso("-1_234.500"));
+  EXPECT_EQ(fmt::format("{:+'.3f}", 1234.5), iso("+1_234.500"));
+  EXPECT_EQ(fmt::format("{:'.0f}", 1e20), iso("100_000_000_000_000_000_000"));
+  {
+    // 1e300 has 301 integer digits, hence 100 separators. The trailing
+    // digits are those of the exact value of the nearest double.
+    auto s = fmt::format("{:'.0f}", 1e300);
+    auto sep_size = iso("_").size();
+    EXPECT_EQ(s.size(), 301 + 100 * sep_size);
+    EXPECT_EQ(s.substr(0, 2 + sep_size), iso("1_0"));
+    EXPECT_EQ(s.substr(s.size() - 3 * (sep_size + 3)), iso("_400_540_160"));
+  }
+  EXPECT_EQ(fmt::format("{:>20'.3f}", 1234567.5), iso("       1_234_567.500"));
+
+  // Exponent: only the fraction of the significand is grouped.
+  EXPECT_EQ(fmt::format("{:'e}", 123456.7), iso("1.234_567e+05"));
+  EXPECT_EQ(fmt::format("{:'.6e}", 123456.789), iso("1.234_568e+05"));
+  EXPECT_EQ(fmt::format("{:'.3e}", 123456.789), "1.235e+05");
+  EXPECT_EQ(fmt::format("{:'.4E}", 123456.789), iso("1.234_6E+05"));
+  EXPECT_EQ(fmt::format("{:'.0e}", 123456.789), "1e+05");
+  EXPECT_EQ(fmt::format("{:'.10e}", 1e300), iso("1.000_000_000_0e+300"));
+  EXPECT_EQ(fmt::format("{:'.6e}", -1.5e-300), iso("-1.500_000e-300"));
+  EXPECT_EQ(fmt::format("{:>16'e}", 123456.7), iso("   1.234_567e+05"));
+
+  // General.
+  EXPECT_EQ(fmt::format("{:'g}", 1234567.0), iso("1.234_57e+06"));
+  EXPECT_EQ(fmt::format("{:'g}", 123456.0), iso("123_456"));
+  EXPECT_EQ(fmt::format("{:'g}", 1234.5), iso("1_234.5"));
+  EXPECT_EQ(fmt::format("{:'.10g}", 1234567.891), iso("1_234_567.891"));
+  EXPECT_EQ(fmt::format("{:'.10G}", 1.234567891e-10), iso("1.234_567_891E-10"));
+  EXPECT_EQ(fmt::format("{:#'g}", 1234.0), iso("1_234.00"));
+
+  // Default (shortest round trip).
+  EXPECT_EQ(fmt::format("{:'}", 0.0), "0");
+  EXPECT_EQ(fmt::format("{:'}", 1234.0), iso("1_234"));
+  EXPECT_EQ(fmt::format("{:'}", 1234567.0), iso("1_234_567"));
+  EXPECT_EQ(fmt::format("{:'}", 1234567.891234), iso("1_234_567.891_234"));
+  EXPECT_EQ(fmt::format("{:'}", 0.000123456), iso("0.000_123_456"));
+  EXPECT_EQ(fmt::format("{:'}", 0.1234), iso("0.123_4"));
+  EXPECT_EQ(fmt::format("{:'}", 1.5e300), "1.5e+300");
+  EXPECT_EQ(fmt::format("{:'}", 1.234567e300), iso("1.234_567e+300"));
+  EXPECT_EQ(fmt::format("{:'}", 1.234567e-10), iso("1.234_567e-10"));
+  EXPECT_EQ(fmt::format("{:'}", 1234.5f), iso("1_234.5"));
+  EXPECT_EQ(fmt::format("{:'}", 1234567.5L), iso("1_234_567.5"));
+  EXPECT_EQ(fmt::format("{:'.3f}", 1234.5L), iso("1_234.500"));
+
+  // Non-finite values are not affected.
+  EXPECT_EQ(fmt::format("{:'}", std::numeric_limits<double>::infinity()),
+            "inf");
+  EXPECT_EQ(fmt::format("{:>6'}", -std::numeric_limits<double>::infinity()),
+            "  -inf");
+  EXPECT_EQ(fmt::format("{:'F}", std::numeric_limits<double>::quiet_NaN()),
+            "NAN");
+
+  // Errors.
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:'x}"), 42), format_error,
+                   "invalid presentation type for digit grouping");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:'X}"), 42), format_error,
+                   "invalid presentation type for digit grouping");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:'o}"), 42), format_error,
+                   "invalid presentation type for digit grouping");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:'b}"), 42), format_error,
+                   "invalid presentation type for digit grouping");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:'B}"), 42), format_error,
+                   "invalid presentation type for digit grouping");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:'c}"), 42), format_error,
+                   "invalid presentation type for digit grouping");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:'a}"), 4.2), format_error,
+                   "invalid presentation type for digit grouping");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:'A}"), 4.2), format_error,
+                   "invalid presentation type for digit grouping");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:'d}"), 4.2), format_error,
+                   "invalid format specifier");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:'}"), true), format_error,
+                   "invalid format specifier");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:'d}"), true), format_error,
+                   "invalid format specifier");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:'}"), 'x'), format_error,
+                   "invalid format specifier");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:'d}"), 'x'), format_error,
+                   "invalid format specifier");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:'}"), "abc"), format_error,
+                   "invalid format specifier");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:'}"), std::string("abc")),
+                   format_error, "invalid format specifier");
+  EXPECT_THROW_MSG(
+      (void)fmt::format(runtime("{:'}"), static_cast<const void*>(nullptr)),
+      format_error, "invalid format specifier");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:L'}"), 42), format_error,
+                   "invalid format specifier");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:'010}"), 42), format_error,
+                   "invalid format specifier");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:''}"), 42), format_error,
+                   "invalid format specifier");
+  EXPECT_THROW_MSG((void)fmt::format(runtime("{:.2'f}"), 4.2), format_error,
+                   "invalid format specifier");
+}
+
 TEST(format_test, precision) {
   char format_str[buffer_size];
   safe_sprintf(format_str, "{0:.%u", UINT_MAX);
@@ -1496,7 +1703,7 @@ TEST(format_test, format_short) {
 template <typename T>
 void check_unknown_types(const T& value, const char* types, const char*) {
   char format_str[buffer_size];
-  const char* special = ".0123456789L?}";
+  const char* special = ".0123456789L?}'";
   for (int i = CHAR_MIN; i <= CHAR_MAX; ++i) {
     char c = static_cast<char>(i);
     if (std::strchr(types, c) || std::strchr(special, c) || !c) continue;
@@ -2663,6 +2870,43 @@ TEST(format_test, format_facet_grouping) {
   auto loc =
       std::locale({}, new fmt::format_facet<std::locale>(",", {1, 2, 3}));
   EXPECT_EQ(fmt::format(loc, "{:L}", 1234567890), "1,234,567,89,0");
+}
+
+namespace {
+struct comma_numpunct : std::numpunct<char> {
+ protected:
+  auto do_decimal_point() const -> char override { return ','; }
+  auto do_thousands_sep() const -> char override { return '.'; }
+  auto do_grouping() const -> std::string override { return "\3"; }
+};
+}  // namespace
+
+TEST(format_test, iso_digit_grouping_locale) {
+  // With ' the grouping and separator never come from the locale; L only
+  // supplies the decimal point of floating-point numbers.
+  auto loc = std::locale(std::locale::classic(), new comma_numpunct());
+  EXPECT_EQ(fmt::format(loc, "{:.4Lf}", 1234.5678), "1.234,5678");
+  EXPECT_EQ(fmt::format(loc, "{:'.4Lf}", 1234.5678), iso("1_234,567_8"));
+  EXPECT_EQ(fmt::format(loc, "{:'.4f}", 1234.5678), iso("1_234.567_8"));
+  EXPECT_EQ(fmt::format(loc, "{:'L}", 1234567.125), iso("1_234_567,125"));
+  EXPECT_EQ(fmt::format(loc, "{:'.3Le}", 123456.0), iso("1,235e+05"));
+  EXPECT_EQ(fmt::format(loc, "{:'.4Le}", 123456.0), iso("1,234_6e+05"));
+  EXPECT_EQ(fmt::format(loc, "{:>14'.4Lf}", -1234.5678), iso("  -1_234,567_8"));
+  EXPECT_EQ(fmt::format(loc, "{:012'.2Lf}", 1234.5), iso("0_001_234,50"));
+  EXPECT_EQ(fmt::format(loc, "{:'L}", 1234567), iso("1_234_567"));
+  EXPECT_EQ(fmt::format(loc, "{:'Ld}", -1234567), iso("-1_234_567"));
+  EXPECT_EQ(fmt::format(loc, "{:L}", 1234567), "1.234.567");
+  EXPECT_EQ(fmt::format(loc, runtime("{:'.4Lf}"), 1234.5678),
+            iso("1_234,567_8"));
+  for (auto s : {fmt::format(loc, "{:'L}", 1234567),
+                 fmt::format(loc, "{:'.6Lf}", 1234567.891234),
+                 fmt::format(loc, "{:'Lg}", 1234567.0)}) {
+    EXPECT_EQ(s.find('.'), std::string::npos) << s;
+  }
+  // The format_facet thousands separator is not used either.
+  auto facet_loc =
+      std::locale({}, new fmt::format_facet<std::locale>(",", {1, 2, 3}));
+  EXPECT_EQ(fmt::format(facet_loc, "{:'L}", 1234567890), iso("1_234_567_890"));
 }
 
 TEST(format_test, format_named_arg_with_locale) {

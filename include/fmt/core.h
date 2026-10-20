@@ -687,8 +687,8 @@ class basic_specs {
   //  0                   1                   2                   3
   //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
   // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-  // |type |align| w | p | s |u|#|L|  f  |          unused           |
-  // +-----+-----+---+---+---+-+-+-+-----+---------------------------+
+  // |type |align| w | p | s |u|#|L|  f  |'|         unused          |
+  // +-----+-----+---+---+---+-+-+-+-----+-+-------------------------+
   //
   //   w - dynamic width info
   //   p - dynamic precision info
@@ -697,6 +697,7 @@ class basic_specs {
   //   # - alternate form ('#')
   //   L - localized
   //   f - fill size
+  //   ' - ISO 80000-1 digit grouping
   //
   // Bitfields are not used because of compiler bugs such as gcc bug 61414.
   enum : unsigned {
@@ -709,6 +710,7 @@ class basic_specs {
     alternate_mask = 0x02000,
     localized_mask = 0x04000,
     fill_size_mask = 0x38000,
+    iso_grouping_mask = 0x40000,
 
     align_shift = 3,
     width_shift = 6,
@@ -720,7 +722,7 @@ class basic_specs {
   };
 
   unsigned data_ = 1 << fill_size_shift;
-  static_assert(sizeof(basic_specs::data_) * CHAR_BIT >= 18, "");
+  static_assert(sizeof(basic_specs::data_) * CHAR_BIT >= 19, "");
 
   // Character (code unit) type is erased to prevent template bloat.
   char fill_data_[max_fill_size] = {' '};
@@ -781,6 +783,15 @@ class basic_specs {
     return (data_ & localized_mask) != 0;
   }
   FMT_CONSTEXPR void set_localized() { data_ |= localized_mask; }
+  FMT_CONSTEXPR void clear_localized() { data_ &= ~localized_mask; }
+
+  // Digit grouping in threes on both sides of the decimal marker as specified
+  // by ISO 80000-1 and the SI Brochure (the ' option).
+  constexpr auto iso_grouping() const -> bool {
+    return (data_ & iso_grouping_mask) != 0;
+  }
+  FMT_CONSTEXPR void set_iso_grouping() { data_ |= iso_grouping_mask; }
+  FMT_CONSTEXPR void clear_iso_grouping() { data_ &= ~iso_grouping_mask; }
 
   constexpr auto fill_size() const -> size_t {
     return (data_ & fill_size_mask) >> fill_size_shift;
@@ -1451,7 +1462,17 @@ FMT_CONSTEXPR auto parse_precision(const Char* begin, const Char* end,
   return result.end;
 }
 
-enum class state { start, align, sign, hash, zero, width, precision, locale };
+enum class state {
+  start,
+  align,
+  sign,
+  hash,
+  zero,
+  width,
+  iso_grouping,
+  precision,
+  locale
+};
 
 // Parses standard format specifiers.
 template <typename Char>
@@ -1486,6 +1507,12 @@ FMT_CONSTEXPR auto parse_format_specs(const Char* begin, const Char* end,
 
     FMT_CONSTEXPR auto operator()(pres pres_type, int set) -> const Char* {
       if (!in(arg_type, set)) report_error("invalid format specifier");
+      // Digit grouping is only defined for decimal presentations.
+      if (specs.iso_grouping() &&
+          (in(arg_type, float_set) ? pres_type == pres::hexfloat
+                                   : pres_type != pres::dec)) {
+        report_error("invalid presentation type for digit grouping");
+      }
       specs.set_type(pres_type);
       return begin + 1;
     }
@@ -1530,6 +1557,12 @@ FMT_CONSTEXPR auto parse_format_specs(const Char* begin, const Char* end,
       // clang-format on
       enter_state(state::width);
       begin = parse_width(begin, end, specs, specs.width_ref, ctx);
+      break;
+    case '\'':
+      enter_state(state::iso_grouping,
+                  in(arg_type, sint_set | uint_set | float_set));
+      specs.set_iso_grouping();
+      ++begin;
       break;
     case '.':
       enter_state(state::precision,

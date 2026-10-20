@@ -63,7 +63,7 @@ fmt's parser.
 
 <a id="format-spec"></a>
 <pre><code class="language-json"
->format_spec ::= [[fill]align][sign]["#"]["0"][width]["." precision]["L"][type]
+>format_spec ::= [[fill]align][sign]["#"]["0"][width]["'"]["." precision]["L"][type]
 fill        ::= &lt;a character other than '{' or '}'>
 align       ::= "<" | ">" | "^"
 sign        ::= "+" | "-" | " "
@@ -220,6 +220,35 @@ auto loc = std::locale("en_US.UTF-8");
 fmt::format(loc, "{:L}", 1234567890);     // Result: "1,234,567,890"
 fmt::format(loc, "{:.2Lf}", 1234567.89);  // Result: "1,234,567.89"
 ```
+
+### Digit grouping (`'`)
+
+The `'` option groups the digits of integers and of floating-point values in
+decimal notation in threes, counting from the decimal marker towards the left
+and towards the right, as specified by ISO 80000-1 and the SI Brochure. The
+separator is U+202F NARROW NO-BREAK SPACE: a single code unit for wide
+character types and its UTF-8 encoding for `char` when the literal encoding is
+UTF-8, otherwise U+0020 SPACE. Each separator counts as one column of width.
+
+In exponential notation only the fraction digits of the significand are
+grouped, never the exponent. Infinity and NaN are not affected. With `0`, the
+padding zeros are grouped like other digits; the result never starts with a
+separator, so it can be one column wider than *width*. With `L`, the locale
+supplies only the decimal point; grouping always follows `'`.
+
+The option is accepted for integers (other than `bool` and characters) with
+presentation type `d` or none, and for floating-point values with presentation
+types `e`, `E`, `f`, `F`, `g`, `G` or none.
+
+```c++
+fmt::format("{:'}", 1234567);            // Result: "1 234 567"
+fmt::format("{:'.6f}", 1234567.891234);  // Result: "1 234 567.891 234"
+fmt::format("{:'.6e}", 123456.789);      // Result: "1.234 568e+05"
+fmt::format("{:*>12'}", 1234567);        // Result: "***1 234 567"
+fmt::format("{:010'}", 1234567);         // Result: "01 234 567"
+```
+
+(The spaces in the results above are U+202F.)
 
 ### Presentation type
 

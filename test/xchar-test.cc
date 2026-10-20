@@ -85,6 +85,19 @@ TEST(xchar_test, format) {
   EXPECT_EQ(std::wstring(600, L'\u03a9'), fmt::format(L"{:\u03a9>600}", L""));
 }
 
+TEST(xchar_test, iso_digit_grouping) {
+  // Wide character types use the single code unit U+202F.
+  EXPECT_EQ(fmt::format(L"{:'}", 1234567), L"1 234 567");
+  EXPECT_EQ(fmt::format(L"{:'.6f}", 1234567.891234), L"1 234 567.891 234");
+  EXPECT_EQ(fmt::format(L"{:'.6e}", 123456.789), L"1.234 568e+05");
+  EXPECT_EQ(fmt::format(L"{:*>12'}", -1234567), L"**-1 234 567");
+  EXPECT_EQ(fmt::format(fmt::runtime(L"{:>12'}"), 1234567), L"   1 234 567");
+  EXPECT_THROW((void)fmt::format(fmt::runtime(L"{:'x}"), 42),
+               fmt::format_error);
+  EXPECT_EQ(fmt::format(u"{:'}", 1234567), u"1 234 567");
+  EXPECT_EQ(fmt::format(U"{:>10'.1f}", 1234.5), U"   1 234.5");
+}
+
 TEST(xchar_test, is_formattable) {
   static_assert(!fmt::is_formattable<const wchar_t*>::value, "");
 }

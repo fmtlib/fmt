@@ -250,6 +250,76 @@ if (CMAKE_CXX_STANDARD GREATER_EQUAL 20)
     "
     ERROR)
 
+  # Compile-time check of the ' (ISO digit grouping) option. Note that the
+  # tests above use FMT_HAS_CONSTEVAL which is no longer defined.
+  expect_compile(
+    format-iso-grouping
+    "
+    #if FMT_USE_CONSTEVAL
+      fmt::format(\"{:>12'.3f} {:'} {:010'} {:'L}\", 1.5, 42, 42, 42);
+    #endif
+    ")
+  expect_compile(
+    format-iso-grouping-int-hex-error
+    "
+    #if FMT_USE_CONSTEVAL
+      fmt::format(\"{:'x}\", 42);
+    #else
+      #error
+    #endif
+    "
+    ERROR)
+  expect_compile(
+    format-iso-grouping-float-hexfloat-error
+    "
+    #if FMT_USE_CONSTEVAL
+      fmt::format(\"{:'a}\", 4.2);
+    #else
+      #error
+    #endif
+    "
+    ERROR)
+  expect_compile(
+    format-iso-grouping-bool-error
+    "
+    #if FMT_USE_CONSTEVAL
+      fmt::format(\"{:'}\", true);
+    #else
+      #error
+    #endif
+    "
+    ERROR)
+  expect_compile(
+    format-iso-grouping-char-error
+    "
+    #if FMT_USE_CONSTEVAL
+      fmt::format(\"{:'}\", 'x');
+    #else
+      #error
+    #endif
+    "
+    ERROR)
+  expect_compile(
+    format-iso-grouping-string-error
+    "
+    #if FMT_USE_CONSTEVAL
+      fmt::format(\"{:'}\", \"abc\");
+    #else
+      #error
+    #endif
+    "
+    ERROR)
+  expect_compile(
+    format-iso-grouping-pointer-error
+    "
+    #if FMT_USE_CONSTEVAL
+      fmt::format(\"{:'}\", static_cast<void*>(nullptr));
+    #else
+      #error
+    #endif
+    "
+    ERROR)
+
   # Compile-time argument name check
   expect_compile(
     format-string-name
