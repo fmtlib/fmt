@@ -256,7 +256,7 @@ if (CMAKE_CXX_STANDARD GREATER_EQUAL 20)
     format-iso-grouping
     "
     #if FMT_USE_CONSTEVAL
-      fmt::format(\"{:>12'.3f} {:'} {:010'} {:'L}\", 1.5, 42, 42, 42);
+      fmt::format(\"{:>12'.3f} {:'} {:010'} {:'L} {:' L} {:',} {:'_.2f} {:''} {:'>8''}\", 1.5, 42, 42, 42, 42, 42, 1.5, 42, 42);
     #endif
     ")
   expect_compile(
@@ -314,6 +314,37 @@ if (CMAKE_CXX_STANDARD GREATER_EQUAL 20)
     "
     #if FMT_USE_CONSTEVAL
       fmt::format(\"{:'}\", static_cast<void*>(nullptr));
+    #else
+      #error
+    #endif
+    "
+    ERROR)
+
+  expect_compile(
+    format-iso-grouping-comma-locale-error
+    "
+    #if FMT_USE_CONSTEVAL
+      fmt::format(\"{:',L}\", 42);
+    #else
+      #error
+    #endif
+    "
+    ERROR)
+  expect_compile(
+    format-iso-grouping-underscore-hex-error
+    "
+    #if FMT_USE_CONSTEVAL
+      fmt::format(\"{:'_x}\", 42);
+    #else
+      #error
+    #endif
+    "
+    ERROR)
+  expect_compile(
+    format-iso-grouping-apostrophe-locale-float-error
+    "
+    #if FMT_USE_CONSTEVAL
+      fmt::format(\"{:''.2Lf}\", 4.2);
     #else
       #error
     #endif

@@ -54,6 +54,14 @@ TEST(iso_grouping_min2_test, four_digit_exception) {
   EXPECT_EQ(fmt::format("{:04'}", 1), "0001");
   EXPECT_EQ(fmt::format("{:05'}", 1), iso("00_001"));
   EXPECT_EQ(fmt::format("{:010'}", 1234567), iso("01_234_567"));
+  // All forms; the comma forms only group the integer part.
+  EXPECT_EQ(fmt::format("{:',}", 1234), "1234");
+  EXPECT_EQ(fmt::format("{:',}", 12345), "12,345");
+  EXPECT_EQ(fmt::format("{:' .4f}", 1234.5678), "1234.5678");
+  EXPECT_EQ(fmt::format("{:' .5f}", 1234.56789), "1234.567 89");
+  EXPECT_EQ(fmt::format("{:'_.5f}", 1234.56789), "1234.56789");
+  EXPECT_EQ(fmt::format("{:04',}", 1), "0001");
+  EXPECT_EQ(fmt::format("{:05''}", 1), "00'001");
   EXPECT_THROW_MSG((void)fmt::format(runtime("{:'x}"), 42), format_error,
                    "invalid presentation type for digit grouping");
 }

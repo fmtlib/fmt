@@ -87,15 +87,25 @@ TEST(xchar_test, format) {
 
 TEST(xchar_test, iso_digit_grouping) {
   // Wide character types use the single code unit U+202F.
-  EXPECT_EQ(fmt::format(L"{:'}", 1234567), L"1 234 567");
-  EXPECT_EQ(fmt::format(L"{:'.6f}", 1234567.891234), L"1 234 567.891 234");
-  EXPECT_EQ(fmt::format(L"{:'.6e}", 123456.789), L"1.234 568e+05");
-  EXPECT_EQ(fmt::format(L"{:*>12'}", -1234567), L"**-1 234 567");
-  EXPECT_EQ(fmt::format(fmt::runtime(L"{:>12'}"), 1234567), L"   1 234 567");
+  EXPECT_EQ(fmt::format(L"{:'}", 1234567), L"1\u202F234\u202F567");
+  EXPECT_EQ(fmt::format(L"{:'.6f}", 1234567.891234),
+            L"1\u202F234\u202F567.891\u202F234");
+  EXPECT_EQ(fmt::format(L"{:'.6e}", 123456.789), L"1.234\u202F568e+05");
+  EXPECT_EQ(fmt::format(L"{:*>12'}", -1234567), L"**-1\u202F234\u202F567");
+  EXPECT_EQ(fmt::format(fmt::runtime(L"{:>12'}"), 1234567),
+            L"   1\u202F234\u202F567");
   EXPECT_THROW((void)fmt::format(fmt::runtime(L"{:'x}"), 42),
                fmt::format_error);
-  EXPECT_EQ(fmt::format(u"{:'}", 1234567), u"1 234 567");
-  EXPECT_EQ(fmt::format(U"{:>10'.1f}", 1234.5), U"   1 234.5");
+  EXPECT_EQ(fmt::format(u"{:'}", 1234567), u"1\u202F234\u202F567");
+  EXPECT_EQ(fmt::format(U"{:>10'.1f}", 1234.5), U"   1\u202F234.5");
+  // The other forms emit a single code unit too.
+  EXPECT_EQ(fmt::format(L"{:' }", 1234567), L"1 234 567");
+  EXPECT_EQ(fmt::format(L"{:',}", 1234567), L"1,234,567");
+  EXPECT_EQ(fmt::format(L"{:'_.3f}", 1234.5), L"1_234.500");
+  EXPECT_EQ(fmt::format(L"{:''}", -1234567), L"-1'234'567");
+  EXPECT_EQ(fmt::format(L"{:010',}", 1234567), L"01,234,567");
+  EXPECT_EQ(fmt::format(u"{:*>10',}", 1234567), u"*1,234,567");
+  EXPECT_EQ(fmt::format(U"{:' .4f}", 1234.5678), U"1 234.567 8");
 }
 
 TEST(xchar_test, is_formattable) {

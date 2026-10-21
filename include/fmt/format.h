@@ -2417,18 +2417,36 @@ template <typename Char> struct iso_separator {
   size_t size;  // In code units; the display width is always 1.
 };
 
-// Returns the digit group separator: U+202F NARROW NO-BREAK SPACE encoded as
-// a single code unit for wide character types, as UTF-8 for char if the
-// literal encoding is UTF-8, and U+0020 SPACE otherwise.
+// Returns the digit group separator for g: U+202F NARROW NO-BREAK SPACE for
+// group_separator::iso, encoded as a single code unit for wide character types,
+// as UTF-8 for char if the literal encoding is UTF-8, and U+0020 SPACE
+// otherwise. The other forms use the corresponding ASCII character.
 template <typename Char>
-FMT_CONSTEXPR auto iso_digit_separator() -> iso_separator<Char> {
+FMT_CONSTEXPR auto iso_digit_separator(group_separator g)
+    -> iso_separator<Char> {
+  switch (g) {
+  case group_separator::space:      return {{Char(' '), Char(), Char()}, 1};
+  case group_separator::comma:      return {{Char(','), Char(), Char()}, 1};
+  case group_separator::underscore: return {{Char('_'), Char(), Char()}, 1};
+  case group_separator::apostrophe: return {{Char('\''), Char(), Char()}, 1};
+  default:                          break;
+  }
   return {{static_cast<Char>(0x202F), Char(), Char()}, 1};
 }
 template <>
-FMT_CONSTEXPR inline auto iso_digit_separator<char>() -> iso_separator<char> {
-  if (FMT_UNICODE != 0 && is_utf8_enabled != 0)
-    return {{'\xE2', '\x80', '\xAF'}, 3};
-  return {{' ', '\0', '\0'}, 1};
+FMT_CONSTEXPR inline auto iso_digit_separator<char>(group_separator g)
+    -> iso_separator<char> {
+  if (g == group_separator::iso) {
+    if (FMT_UNICODE != 0 && is_utf8_enabled != 0)
+      return {{'\xE2', '\x80', '\xAF'}, 3};
+    g = group_separator::space;
+  }
+  switch (g) {
+  case group_separator::comma:      return {{',', '\0', '\0'}, 1};
+  case group_separator::underscore: return {{'_', '\0', '\0'}, 1};
+  case group_separator::apostrophe: return {{'\'', '\0', '\0'}, 1};
+  default:                          return {{' ', '\0', '\0'}, 1};
+  }
 }
 
 FMT_CONSTEXPR inline auto is_iso_digit(char c) -> bool {
@@ -2469,7 +2487,9 @@ FMT_CONSTEXPR auto write_iso_grouped(OutputIt out, const char* begin,
   }
   int digits_size = static_cast<int>(int_end - int_begin);
   int frac_size = static_cast<int>(frac_end - frac_begin);
-  int frac_seps = iso_separator_count(frac_size);
+  // Only the ISO forms (' and ' ) group the fraction digits.
+  bool group_frac = specs.grouping() <= group_separator::space;
+  int frac_seps = group_frac ? iso_separator_count(frac_size) : 0;
   auto num_chars = to_unsigned(end - begin);
 
   auto padded_specs = specs;
@@ -2492,7 +2512,7 @@ FMT_CONSTEXPR auto write_iso_grouped(OutputIt out, const char* begin,
   }
   int num_zeros = int_size - digits_size;
   int int_seps = iso_separator_count(int_size);
-  auto sep = iso_digit_separator<Char>();
+  auto sep = iso_digit_separator<Char>(specs.grouping());
   auto num_seps = to_unsigned(int_seps + frac_seps);
   // Each separator is one code point of display width 1 but may take several
   // code units, so size and width are passed to write_padded separately.
@@ -3855,7 +3875,7 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value, format_specs specs,
     // separators and pad. ' takes precedence over L for grouping; L only
     // supplies the decimal point.
     auto plain_specs = specs;
-    plain_specs.clear_iso_grouping();
+    plain_specs.set_grouping(group_separator::none);
     plain_specs.clear_localized();
     plain_specs.set_align(align::none);
     plain_specs.width = 0;
