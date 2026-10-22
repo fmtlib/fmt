@@ -363,8 +363,16 @@ function (add_module_library name)
   endif ()
 
   if (${AML_USE_CMAKE_MODULES})
-    target_sources(${name} PUBLIC FILE_SET fmt TYPE CXX_MODULES
-                   BASE_DIRS ${AML_BASE_DIR} FILES ${sources})
+    target_sources(
+      ${name}
+      PUBLIC FILE_SET
+             fmt
+             TYPE
+             CXX_MODULES
+             BASE_DIRS
+             ${AML_BASE_DIR}
+             FILES
+             ${sources})
     return()
   endif ()
 
@@ -449,22 +457,26 @@ endfunction ()
 if (FMT_MODULE)
   set(FMT_MODULE_SOURCE src/fmt.cc)
   set(FMT_MODULE_BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-  if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND
-      CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 19.50)
+  if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC" AND CMAKE_CXX_COMPILER_VERSION
+                                                VERSION_GREATER_EQUAL 19.50)
     # MSVC loses template parameters when importing explicitly instantiated
     # definitions from the interface. Keep the implementation in a private
     # fragment. Generate a separate source because module directives cannot be
     # controlled by preprocessor conditionals (and GCC has no private fragments).
-    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
-                 "${CMAKE_CURRENT_SOURCE_DIR}/src/fmt.cc")
+    set_property(
+      DIRECTORY
+      APPEND
+      PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/fmt.cc")
     file(READ "${CMAKE_CURRENT_SOURCE_DIR}/src/fmt.cc" FMT_MODULE_CONTENT)
     string(REPLACE "#if FMT_HAS_INCLUDE(\"format.cc\")"
                    "module :private;\n\n#if FMT_HAS_INCLUDE(\"format.cc\")"
                    FMT_MODULE_CONTENT "${FMT_MODULE_CONTENT}")
     set(FMT_MODULE_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/fmt.cc")
     set(FMT_MODULE_BASE_DIR "${CMAKE_CURRENT_BINARY_DIR}")
-    file(GENERATE OUTPUT "${FMT_MODULE_SOURCE}"
-                  CONTENT "${FMT_MODULE_CONTENT}")
+    file(
+      GENERATE
+      OUTPUT "${FMT_MODULE_SOURCE}"
+      CONTENT "${FMT_MODULE_CONTENT}")
   endif ()
   add_module_library(fmt-module ${FMT_MODULE_SOURCE} USE_CMAKE_MODULES
                      ${FMT_USE_CMAKE_MODULES} BASE_DIR ${FMT_MODULE_BASE_DIR})
