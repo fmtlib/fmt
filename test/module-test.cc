@@ -64,9 +64,11 @@ TEST(module_test, macros) {
 TEST(module_test, to_string) {
   EXPECT_EQ("42", fmt::to_string(42));
   EXPECT_EQ("42", fmt::to_string(42.0));
+  EXPECT_EQ("4.25", fmt::to_string(4.25f));
 
   EXPECT_EQ(L"42", fmt::to_wstring(42));
   EXPECT_EQ(L"42", fmt::to_wstring(42.0));
+  EXPECT_EQ(L"4.25", fmt::to_wstring(4.25f));
 }
 
 TEST(module_test, format) {
