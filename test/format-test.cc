@@ -23,6 +23,7 @@
 #include <iterator>     // std::back_inserter
 #include <list>         // std::list
 #include <mutex>        // std::mutex
+#include <new>          // std::bad_alloc
 #include <string>       // std::string
 #include <thread>       // std::thread
 #include <type_traits>  // std::is_default_constructible
@@ -579,6 +580,12 @@ TEST(memory_buffer_test, max_size_allocator_overflow) {
   using test_allocator = max_size_allocator<std::allocator<char>, 160>;
   basic_memory_buffer<char, 10, test_allocator> buffer;
   EXPECT_THROW(buffer.resize(161), std::exception);
+}
+
+TEST(memory_buffer_test, default_allocator_overflow) {
+  // n * sizeof(char32_t) would wrap around to a small nonzero value.
+  size_t n = max_value<size_t>() / sizeof(char32_t) + 2;
+  EXPECT_THROW(fmt::detail::allocator<char32_t>().allocate(n), std::bad_alloc);
 }
 
 TEST(memory_buffer_test, back_insert_iterator) {
