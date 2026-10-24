@@ -107,6 +107,8 @@ auto get_path_string(const std::filesystem::path& p,
   if constexpr (std::is_same_v<Char, char> &&
                 std::is_same_v<PathChar, wchar_t>) {
     return to_utf8<wchar_t>(native, to_utf8_error_policy::wtf);
+  } else if constexpr (std::is_same_v<Char, PathChar>) {
+    return native;
   } else {
     return p.string<Char>();
   }

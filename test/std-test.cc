@@ -14,6 +14,7 @@
 
 #include "fmt/os.h"  // fmt::system_category
 #include "fmt/ranges.h"
+#include "fmt/xchar.h"
 #include "gtest-extra.h"  // StartsWith
 
 #ifdef __cpp_lib_filesystem
@@ -35,6 +36,8 @@ TEST(std_test, path) {
 #  ifdef _WIN32
   EXPECT_EQ(fmt::format("{}", path("C:\\foo")), "C:\\foo");
   EXPECT_EQ(fmt::format("{:g}", path("C:\\foo")), "C:/foo");
+  EXPECT_EQ(fmt::format(L"{}", path(L"C:\\foo")), L"C:\\foo");
+  EXPECT_EQ(fmt::format(L"{:g}", path(L"C:\\foo")), L"C:/foo");
 
   EXPECT_EQ(fmt::format("{}", path(L"\x0428\x0447\x0443\x0447\x044B\x043D\x0448"
                                    L"\x0447\x044B\x043D\x0430")),
