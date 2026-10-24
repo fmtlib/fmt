@@ -1673,20 +1673,16 @@ struct duration_formatter {
       negative = true;
     }
 
-    // this may overflow and/or the result may not fit in the
-    // target type.
-    // might need checked conversion (rep!=Rep)
     s = detail::duration_cast<seconds>(std::chrono::duration<rep, Period>(val));
   }
 
-  // returns true if nan or inf, writes to out.
-  auto handle_nan_inf() -> bool {
+  // If val is NaN or infinite, writes it to out and returns true.
+  auto write_if_nonfinite() -> bool {
     if (isfinite(val)) return false;
     if (isnan(val)) {
       write_nan();
       return true;
     }
-    // must be +-inf
     write_sign();
     std::copy_n("inf", 3, out);
     return true;
@@ -1774,12 +1770,12 @@ struct duration_formatter {
   void on_day_of_month(numeric_system, pad_type) {}
 
   void on_day_of_year(pad_type) {
-    if (handle_nan_inf()) return;
+    if (write_if_nonfinite()) return;
     write(days(), 0);
   }
 
   void on_24_hour(numeric_system ns, pad_type pad) {
-    if (handle_nan_inf()) return;
+    if (write_if_nonfinite()) return;
 
     if (ns == numeric_system::standard) return write(hour(), 2, pad);
     auto time = tm();
@@ -1788,7 +1784,7 @@ struct duration_formatter {
   }
 
   void on_12_hour(numeric_system ns, pad_type pad) {
-    if (handle_nan_inf()) return;
+    if (write_if_nonfinite()) return;
 
     if (ns == numeric_system::standard) return write(hour12(), 2, pad);
     auto time = tm();
@@ -1797,7 +1793,7 @@ struct duration_formatter {
   }
 
   void on_minute(numeric_system ns, pad_type pad) {
-    if (handle_nan_inf()) return;
+    if (write_if_nonfinite()) return;
 
     if (ns == numeric_system::standard) return write(minute(), 2, pad);
     auto time = tm();
@@ -1806,7 +1802,7 @@ struct duration_formatter {
   }
 
   void on_second(numeric_system ns, pad_type pad) {
-    if (handle_nan_inf()) return;
+    if (write_if_nonfinite()) return;
 
     if (ns == numeric_system::standard) {
       if (std::is_floating_point<rep>::value) {
@@ -1830,14 +1826,14 @@ struct duration_formatter {
   }
 
   void on_12_hour_time() {
-    if (handle_nan_inf()) return;
+    if (write_if_nonfinite()) return;
     format_tm(time(), &tm_writer_type::on_12_hour_time);
   }
 
   void on_24_hour_time() {
-    if (handle_nan_inf()) {
+    if (write_if_nonfinite()) {
       *out++ = ':';
-      handle_nan_inf();
+      write_if_nonfinite();
       return;
     }
 
@@ -1849,17 +1845,17 @@ struct duration_formatter {
   void on_iso_time() {
     on_24_hour_time();
     *out++ = ':';
-    if (handle_nan_inf()) return;
+    if (write_if_nonfinite()) return;
     on_second(numeric_system::standard, pad_type::zero);
   }
 
   void on_am_pm() {
-    if (handle_nan_inf()) return;
+    if (write_if_nonfinite()) return;
     format_tm(time(), &tm_writer_type::on_am_pm);
   }
 
   void on_duration_value() {
-    if (handle_nan_inf()) return;
+    if (write_if_nonfinite()) return;
     write_sign();
     out = format_duration_value<Char>(out, val, precision);
   }
