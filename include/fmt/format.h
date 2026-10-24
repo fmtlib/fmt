@@ -53,6 +53,7 @@
 
 #  include <cmath>   // std::signbit
 #  include <limits>  // std::numeric_limits
+#  include <new>     // std::bad_alloc
 #  if defined(__GLIBCXX__) && !defined(_GLIBCXX_USE_DUAL_ABI)
 // Workaround for pre gcc 5 libstdc++.
 #    include <memory>  // std::allocator_traits
@@ -730,7 +731,7 @@ template <typename T> struct allocator : private std::decay<void> {
   using value_type = T;
 
   auto allocate(size_t n) -> T* {
-    FMT_ASSERT(n <= max_value<size_t>() / sizeof(T), "");
+    if (n > max_value<size_t>() / sizeof(T)) FMT_THROW(std::bad_alloc());
     return static_cast<T*>(detail::allocate(n * sizeof(T)));
   }
 
