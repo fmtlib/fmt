@@ -630,6 +630,7 @@ auto vfprintf(std::FILE* f, basic_string_view<Char> fmt,
   auto buf = basic_memory_buffer<Char>();
   detail::vprintf(buf, fmt, args);
   size_t size = buf.size();
+  if (size > detail::to_unsigned(detail::max_value<int>())) return -1;
   return std::fwrite(buf.data(), sizeof(Char), size, f) < size
              ? -1
              : static_cast<int>(size);
