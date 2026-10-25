@@ -524,11 +524,13 @@ auto duration_cast(std::chrono::duration<FromRep, FromPeriod> from) -> To {
   auto count = detail::duration_cast<
                    std::chrono::duration<FromRep, typename To::period>>(from)
                    .count();
+  // The conversion truncates toward zero so check the truncated value.
   // max + 1 is a power of 2 so the cast to FromRep is exact even when max
   // itself is rounded up by the conversion; the comparison is false for NaN.
   auto upper = static_cast<FromRep>(max_value<to_rep>()) + 1;
   auto lower = static_cast<FromRep>((std::numeric_limits<to_rep>::min)());
-  if (!(count >= lower && count < upper)) throw_duration_error();
+  auto truncated = std::trunc(count);
+  if (!(truncated >= lower && truncated < upper)) throw_duration_error();
   return To(static_cast<to_rep>(count));
 #else
   return std::chrono::duration_cast<To>(from);

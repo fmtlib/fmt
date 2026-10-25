@@ -1006,6 +1006,33 @@ TEST(chrono_test, out_of_range) {
   EXPECT_THROW((void)fmt::format("{:%F}", flocal), fmt::format_error);
 }
 
+TEST(chrono_test, float_to_integral_duration_cast) {
+  using fsec = std::chrono::duration<double>;
+  // Values that truncate toward zero into range are valid.
+  EXPECT_EQ(
+      fmt::detail::duration_cast<std::chrono::duration<unsigned>>(fsec(-0.5))
+          .count(),
+      0u);
+  auto min = (std::numeric_limits<int>::min)();
+  EXPECT_EQ(
+      fmt::detail::duration_cast<std::chrono::duration<int>>(fsec(min - 0.5))
+          .count(),
+      min);
+  auto max = (std::numeric_limits<int>::max)();
+  EXPECT_EQ(
+      fmt::detail::duration_cast<std::chrono::duration<int>>(fsec(max + 0.5))
+          .count(),
+      max);
+  if (FMT_SAFE_DURATION_CAST) {
+    EXPECT_THROW(
+        fmt::detail::duration_cast<std::chrono::duration<unsigned>>(fsec(-1)),
+        fmt::format_error);
+    EXPECT_THROW(
+        fmt::detail::duration_cast<std::chrono::duration<int>>(fsec(min - 1.0)),
+        fmt::format_error);
+  }
+}
+
 TEST(chrono_test, calendar_padding) {
   EXPECT_EQ("05   ", fmt::format("{:5}", fmt::day(5)));
   EXPECT_EQ("  Jan", fmt::format("{:>5}", fmt::month(1)));
