@@ -458,4 +458,21 @@ TEST(std_test_xchar, optional) {
 #  endif
 }
 
+TEST(std_test_xchar, variant) {
+#  ifdef __cpp_lib_variant
+  EXPECT_EQ(fmt::format(L"{}", std::monostate{}), L"monostate");
+  EXPECT_EQ(fmt::format(L"{}", std::variant<int, std::wstring>{L"wide"}),
+            L"variant(\"wide\")");
+#  endif
+}
+
+TEST(std_test_xchar, expected) {
+#  ifdef __cpp_lib_expected
+  EXPECT_EQ(fmt::format(L"{}", std::expected<int, int>{1}), L"expected(1)");
+  EXPECT_EQ(fmt::format(L"{}", std::expected<int, int>{std::unexpected(1)}),
+            L"unexpected(1)");
+  EXPECT_EQ(fmt::format(L"{}", std::unexpected(1)), L"unexpected(1)");
+#  endif
+}
+
 #endif  // FMT_STATIC_THOUSANDS_SEPARATOR
