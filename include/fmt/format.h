@@ -3920,6 +3920,11 @@ auto write(OutputIt out, const T* value, const format_specs& specs = {},
   return write_ptr<Char>(out, bit_cast<uintptr_t>(value), &specs);
 }
 
+template <typename Char, typename OutputIt>
+auto write(OutputIt out, nullptr_t) -> OutputIt {
+  return write<Char>(out, static_cast<const void*>(nullptr));
+}
+
 template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(mapped_type_constant<T, Char>::value ==
                             type::custom_type &&

@@ -76,6 +76,7 @@ TEST(compile_test, format_default) {
   EXPECT_EQ("foo", fmt::format(FMT_COMPILE("{}"), "foo"));
   EXPECT_EQ("foo", fmt::format(FMT_COMPILE("{}"), std::string("foo")));
   EXPECT_EQ("foo", fmt::format(FMT_COMPILE("{}"), test_formattable()));
+  EXPECT_EQ("0x0", fmt::format(FMT_COMPILE("{}"), nullptr));
   auto t = std::chrono::system_clock::now();
   EXPECT_EQ(fmt::format("{}", t), fmt::format(FMT_COMPILE("{}"), t));
 }
@@ -314,6 +315,7 @@ TEST(compile_test, static_format_high_precision) {
 TEST(compile_test, text_and_arg) {
   EXPECT_EQ(">>>42<<<", fmt::format(FMT_COMPILE(">>>{}<<<"), 42));
   EXPECT_EQ("42!", fmt::format(FMT_COMPILE("{}!"), 42));
+  EXPECT_EQ("0x0!", fmt::format(FMT_COMPILE("{}!"), nullptr));
 }
 
 TEST(compile_test, unknown_format_fallback) {
