@@ -63,10 +63,11 @@ fmt's parser.
 
 <a id="format-spec"></a>
 <pre><code class="language-json"
->format_spec ::= [[fill]align][sign]["#"]["0"][width]["." precision]["L"][type]
+>format_spec ::= [[fill]align][sign]["#"]["0"][width][grouping]["." precision]["L"][type]
 fill        ::= &lt;a character other than '{' or '}'>
 align       ::= "<" | ">" | "^"
 sign        ::= "+" | "-" | " "
+grouping    ::= "'" [" " | "," | "_" | "'"]
 width       ::= <a href="#replacement-field">integer</a> | "{" [<a
   href="#replacement-field">arg_id</a>] "}"
 precision   ::= <a href="#replacement-field">integer</a> | "{" [<a
@@ -219,6 +220,46 @@ The flag has no effect on non-numeric types.
 auto loc = std::locale("en_US.UTF-8");
 fmt::format(loc, "{:L}", 1234567890);     // Result: "1,234,567,890"
 fmt::format(loc, "{:.2Lf}", 1234567.89);  // Result: "1,234,567.89"
+```
+
+### Digit grouping (`'`)
+
+The *grouping* option groups the digits of integers and of floating-point
+values in decimal notation in threes, counting from the decimal marker. The
+character after `'` selects the separator:
+
+| Option | Separator | Groups                     | With `L` |
+|--------|-----------|----------------------------|----------|
+| `'`    | U+202F NARROW NO-BREAK SPACE | integer and fraction part | allowed |
+| `' `   | U+0020 SPACE | integer and fraction part | allowed |
+| `',`   | `,`       | integer part only          | error    |
+| `'_`   | `_`       | integer part only          | error    |
+| `''`   | `'`       | integer part only          | error    |
+
+`'` alone follows ISO 80000-1 and the SI Brochure. U+202F is written as a
+single code unit for wide character types and as UTF-8 for `char` when the
+literal encoding is UTF-8; otherwise U+0020 SPACE is used. Each separator
+counts as one column of width. With `'` and `' `, `L` supplies only the
+decimal point; grouping never comes from the locale.
+
+In exponential notation only the fraction digits of the significand are
+grouped (by `'` and `' `), never the exponent. Infinity and NaN are not
+affected. With `0`, the padding zeros are grouped like other digits; the
+result never starts with a separator, so it can be one column wider than
+*width*.
+
+The option is accepted for integers (other than `bool` and characters) with
+presentation type `d` or none, and for floating-point values with presentation
+types `e`, `E`, `f`, `F`, `g`, `G` or none.
+
+```c++
+fmt::format("{:'}", 1234567);             // Result: "1 234 567" (U+202F)
+fmt::format("{:'.6f}", 1234567.891234);   // Result: "1 234 567.891 234" (U+202F)
+fmt::format("{:' .6e}", 123456.789);      // Result: "1.234 568e+05"
+fmt::format("{:',.6f}", 1234567.891234);  // Result: "1,234,567.891234"
+fmt::format("{:'_}", 1234567);            // Result: "1_234_567"
+fmt::format("{:*>12''}", 1234567);        // Result: "***1'234'567"
+fmt::format("{:010',}", 1234567);         // Result: "01,234,567"
 ```
 
 ### Presentation type
