@@ -448,6 +448,12 @@ template <> struct locale_writer<false> {
   }
 };
 
+template <typename T, typename U>
+using is_similar_arithmetic_type =
+    bool_constant<(std::is_integral<T>::value && std::is_integral<U>::value) ||
+                  (std::is_floating_point<T>::value &&
+                   std::is_floating_point<U>::value)>;
+
 FMT_NORETURN inline void throw_duration_error() {
   FMT_THROW(format_error("cannot format duration"));
 }
@@ -504,12 +510,17 @@ auto duration_cast(std::chrono::duration<FromRep, FromPeriod> from) -> To {
 #endif
 }
 
-// Mixed integer <-> float casts are not supported by safe_duration_cast.
-// An integer to float conversion is always defined.
+template <typename T, typename U>
+using is_float_to_integral = bool_constant<std::is_floating_point<T>::value &&
+                                           std::is_integral<U>::value>;
+
 template <typename To, typename FromRep, typename FromPeriod,
-          FMT_ENABLE_IF(std::is_integral<FromRep>::value&&
-                            std::is_floating_point<typename To::rep>::value)>
+          FMT_ENABLE_IF(
+              !is_similar_arithmetic_type<FromRep, typename To::rep>::value &&
+              !is_float_to_integral<FromRep, typename To::rep>::value)>
 auto duration_cast(std::chrono::duration<FromRep, FromPeriod> from) -> To {
+  // Integer to float and custom representations are not supported by safe
+  // duration_cast. An integer to float conversion is always defined.
   return std::chrono::duration_cast<To>(from);
 }
 

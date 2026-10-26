@@ -1033,6 +1033,27 @@ TEST(chrono_test, float_to_integral_duration_cast) {
   }
 }
 
+struct custom_rep {
+  long long value = 0;
+  custom_rep() = default;
+  custom_rep(long long v) : value(v) {}
+  operator long long() const { return value; }
+};
+
+namespace std {
+template <> struct common_type<custom_rep, long long> {
+  using type = long long;
+};
+template <> struct common_type<long long, custom_rep> {
+  using type = long long;
+};
+}  // namespace std
+
+TEST(chrono_test, custom_rep_duration_cast) {
+  auto d = std::chrono::duration<custom_rep, std::milli>(custom_rep(2500));
+  EXPECT_EQ(fmt::detail::duration_cast<std::chrono::seconds>(d).count(), 2);
+}
+
 TEST(chrono_test, calendar_padding) {
   EXPECT_EQ("05   ", fmt::format("{:5}", fmt::day(5)));
   EXPECT_EQ("  Jan", fmt::format("{:>5}", fmt::month(1)));
