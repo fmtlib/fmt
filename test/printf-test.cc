@@ -544,6 +544,9 @@ TEST(printf_test, string) {
   const char* null_str = nullptr;
   EXPECT_PRINTF("(null)", "%s", null_str);
   EXPECT_PRINTF("    (null)", "%10s", null_str);
+  // A precision must not apply pointer arithmetic to a null string argument.
+  EXPECT_PRINTF("(null)", "%.3s", null_str);
+  EXPECT_PRINTF("(null)", "%.0s", null_str);
 }
 
 TEST(printf_test, pointer) {
