@@ -33,6 +33,13 @@ TEST(std_test, path) {
   EXPECT_EQ(fmt::format("{:?}", path("foo\"bar")), "\"foo\\\"bar\"");
 
   EXPECT_EQ(fmt::format("{:g}", path("/usr/bin")), "/usr/bin");
+
+  // libstdc++ collapses repeated separators in the generic format.
+  const path repeated = "a//b";
+  EXPECT_EQ(fmt::format("{:g}", repeated), repeated.generic_string());
+  EXPECT_EQ(fmt::format(L"{:g}", repeated), repeated.generic_wstring());
+  EXPECT_EQ(fmt::format(L"{:?g}", repeated),
+            L"\"" + repeated.generic_wstring() + L"\"");
 #  ifdef _WIN32
   EXPECT_EQ(fmt::format("{}", path("C:\\foo")), "C:\\foo");
   EXPECT_EQ(fmt::format("{:g}", path("C:\\foo")), "C:/foo");
