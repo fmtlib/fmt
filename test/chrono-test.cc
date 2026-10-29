@@ -560,6 +560,16 @@ TEST(chrono_test, format_specs) {
   EXPECT_EQ(fmt::format("{:%q}", std::chrono::seconds(12345)), "s");
 }
 
+TEST(chrono_test, format_days_with_signed_char_rep) {
+  using signed_days = std::chrono::duration<signed char, std::ratio<86400>>;
+  EXPECT_EQ(fmt::format("{:%j}", signed_days(-128)), "-128");
+}
+
+TEST(chrono_test, format_days_with_unsigned_char_rep) {
+  using two_days = std::chrono::duration<unsigned char, std::ratio<172800>>;
+  EXPECT_EQ(fmt::format("{:%j}", two_days(200)), "400");
+}
+
 TEST(chrono_test, invalid_specs) {
   auto sec = std::chrono::seconds(0);
   EXPECT_THROW_MSG((void)fmt::format(runtime("{:%a}"), sec), fmt::format_error,

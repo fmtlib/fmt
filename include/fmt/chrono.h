@@ -1688,7 +1688,7 @@ struct duration_formatter {
     return true;
   }
 
-  auto days() const -> Rep { return static_cast<Rep>(s.count() / 86400); }
+  auto days() const -> rep { return static_cast<rep>(s.count() / 86400); }
   auto hour() const -> Rep {
     return static_cast<Rep>(mod((s.count() / 3600), 24));
   }
@@ -1717,7 +1717,7 @@ struct duration_formatter {
     negative = false;
   }
 
-  void write(Rep value, int width, pad_type pad = pad_type::zero) {
+  void write(rep value, int width, pad_type pad = pad_type::zero) {
     write_sign();
     if (isnan(value)) return write_nan();
     uint32_or_64_or_128_t<int> n =
