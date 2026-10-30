@@ -1382,7 +1382,7 @@ inline auto thousands_sep(locale_ref loc) -> thousands_sep_result<wchar_t> {
 }
 
 template <typename Char>
-FMT_API auto decimal_point_impl(locale_ref loc) -> Char;
+FMT_API FMT_NOINLINE auto decimal_point_impl(locale_ref loc) -> Char;
 template <typename Char> inline auto decimal_point(locale_ref loc) -> Char {
   return Char(decimal_point_impl<char>(loc));
 }
@@ -3398,6 +3398,20 @@ FMT_CONSTEXPR20 void format_hexfloat(Float value, format_specs specs,
   format_hexfloat(static_cast<double>(value), specs, buf);
 }
 
+template <typename Char, typename OutputIt>
+FMT_CONSTEXPR auto write_hexfloat(OutputIt out, string_view s,
+                                  const format_specs& specs, locale_ref loc)
+    -> OutputIt {
+  Char point = FMT_USE_LOCALE && specs.localized()
+                   ? detail::decimal_point<Char>(loc)
+                   : Char('.');
+  return write_padded<Char, align::right>(
+      out, specs, s.size(), [=](reserve_iterator<OutputIt> it) {
+        for (char c : s) *it++ = c == '.' ? point : static_cast<Char>(c);
+        return it;
+      });
+}
+
 constexpr auto fractional_part_rounding_thresholds(int index) -> uint32_t {
   // For checking rounding thresholds.
   // The kth entry is chosen to be the smallest integer such that the
@@ -3758,14 +3772,8 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value, format_specs specs,
       buffer.push_back(specs.upper() ? 'X' : 'x');
     }
     format_hexfloat(convert_float(value), specs, buffer);
-    Char point = FMT_USE_LOCALE && specs.localized()
-                     ? detail::decimal_point<Char>(loc)
-                     : Char('.');
-    return write_padded<Char, align::right>(
-        out, specs, buffer.size(), [&](reserve_iterator<OutputIt> it) {
-          for (char c : buffer) *it++ = c == '.' ? point : static_cast<Char>(c);
-          return it;
-        });
+    return write_hexfloat<Char>(out, {buffer.data(), buffer.size()}, specs,
+                                loc);
   }
 
   if (specs.type() == presentation_type::exp) {
