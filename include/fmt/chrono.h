@@ -1151,42 +1151,29 @@ class tm_writer {
     return static_cast<int>(l);
   }
 
-  // Returns the weekday of December 31 of the given year (0 = Sunday). Uses
-  // floored division and a non-negative remainder so that it is also correct
-  // for negative years.
-  static auto dec31_weekday(long long year) noexcept -> long long {
-    auto floor_div = [](long long a, long long b) {
-      return a / b - (a % b < 0 ? 1 : 0);
-    };
-    auto p = (year + floor_div(year, 4) - floor_div(year, 100) +
-              floor_div(year, 400)) %
-             days_per_week;
-    return p < 0 ? p + days_per_week : p;
+  static auto days_in_year(long long year) noexcept -> int {
+    return (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)) ? 366 : 365;
   }
 
-  // Algorithm: https://en.wikipedia.org/wiki/ISO_week_date.
-  auto iso_year_weeks(long long curr_year) const noexcept -> int {
-    auto curr_p = dec31_weekday(curr_year);
-    auto prev_p = dec31_weekday(curr_year - 1);
-    return 52 + ((curr_p == 4 || prev_p == 3) ? 1 : 0);
-  }
-  auto iso_week_num(int tm_yday, int tm_wday) const noexcept -> int {
-    return (tm_yday + 11 - (tm_wday == 0 ? days_per_week : tm_wday)) /
-           days_per_week;
+  // Returns the day of the year of the Thursday in the current week, which may
+  // be outside the current year. The ISO week-based year is the year of this
+  // Thursday: https://en.wikipedia.org/wiki/ISO_week_date.
+  auto thursday_yday() const noexcept -> int {
+    auto wday = tm_wday();
+    return tm_yday() + 4 - (wday == 0 ? days_per_week : wday);
   }
   auto tm_iso_week_year() const noexcept -> long long {
     auto year = tm_year();
-    auto w = iso_week_num(tm_yday(), tm_wday());
-    if (w < 1) return year - 1;
-    if (w > iso_year_weeks(year)) return year + 1;
+    auto thursday = thursday_yday();
+    if (thursday < 0) return year - 1;
+    if (thursday >= days_in_year(year)) return year + 1;
     return year;
   }
   auto tm_iso_week_of_year() const noexcept -> int {
-    auto year = tm_year();
-    auto w = iso_week_num(tm_yday(), tm_wday());
-    if (w < 1) return iso_year_weeks(year - 1);
-    if (w > iso_year_weeks(year)) return 1;
-    return w;
+    auto thursday = thursday_yday();
+    if (thursday >= days_in_year(tm_year())) return 1;
+    if (thursday < 0) thursday += days_in_year(tm_year() - 1);
+    return thursday / days_per_week + 1;
   }
 
   void write1(int value) {

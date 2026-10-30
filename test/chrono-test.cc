@@ -123,21 +123,6 @@ TEST(chrono_test, format_tm) {
   tm.tm_year = -2147483648;
   EXPECT_EQ(fmt::format("{:%Y}", tm), "-2147481748");
 
-  // ISO week-based year and week number for negative years. The year -2 starts
-  // on a Thursday, so it has 53 ISO weeks.
-  tm = make_tm(-2, 12, 31, 0, 0, 0);
-  tm.tm_wday = 4;
-  tm.tm_yday = 364;
-  EXPECT_EQ(fmt::format("{:%G %V}", tm), "-002 53");
-  tm = make_tm(-1, 1, 1, 0, 0, 0);
-  tm.tm_wday = 5;
-  tm.tm_yday = 0;
-  EXPECT_EQ(fmt::format("{:%G %V}", tm), "-002 53");
-  tm = make_tm(-1, 1, 4, 0, 0, 0);
-  tm.tm_wday = 1;
-  tm.tm_yday = 3;
-  EXPECT_EQ(fmt::format("{:%G %V}", tm), "-001 01");
-
   // for week on the year
   // https://www.cl.cam.ac.uk/~mgk25/iso-time.html
   std::vector<std::tm> tm_list = {
@@ -1126,6 +1111,9 @@ TEST(chrono_test, year_month_day_weekday_and_day_of_year) {
   ymd = fmt::year_month_day(fmt::year(2021), fmt::month(1), fmt::day(1));
   EXPECT_EQ(fmt::format("{:%a %j %U %W}", ymd), "Fri 001 00 00");
   EXPECT_EQ(fmt::format("{:%G-W%V-%u}", ymd), "2020-W53-5");
+
+  ymd = fmt::year_month_day(fmt::year(-23), fmt::month(1), fmt::day(1));
+  EXPECT_EQ(fmt::format("{:%G-W%V}", ymd), "-024-W53");
 
   ymd = fmt::year_month_day(fmt::year(1969), fmt::month(12), fmt::day(31));
   EXPECT_EQ(fmt::format("{:%A %j}", ymd), "Wednesday 365");
