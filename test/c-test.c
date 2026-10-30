@@ -83,6 +83,15 @@ void test_buffer_size_query(void) {
   ASSERT_INT_EQ(size, 15);
 }
 
+void test_max_supported_arguments(void) {
+  char buf[100];
+  int size =
+      fmt_format_cstr(buf, sizeof(buf), "{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}", 0,
+                      1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5);
+  ASSERT_INT_EQ(size, 16);
+  ASSERT_STR_EQ(buf, "0123456789012345");
+}
+
 void test_print(void) {
   FILE* file = tmpfile();
   if (!file) {
@@ -107,6 +116,7 @@ int main(void) {
   test_types();
   test_zero_arguments();
   test_buffer_size_query();
+  test_max_supported_arguments();
   test_print();
   printf("C API tests passed\n");
 }
