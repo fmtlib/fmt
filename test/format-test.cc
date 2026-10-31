@@ -2686,6 +2686,22 @@ TEST(format_test, format_locale) {
   EXPECT_EQ(fmt::format(loc, "{:10Lo}", 12345), "    30,071");
 }
 
+TEST(format_test, format_int_locale_zero_padding) {
+  auto loc = std::locale::classic();
+  EXPECT_EQ(fmt::format(loc, "{:08L}", -12), "-0000012");
+  EXPECT_EQ(fmt::format(loc, "{:+08L}", 12), "+0000012");
+  EXPECT_EQ(fmt::format(loc, "{: 08L}", 12), " 0000012");
+  EXPECT_EQ(fmt::format(loc, "{:08L}", 12), "00000012");
+  EXPECT_EQ(fmt::format(loc, "{:02L}", -12), "-12");
+  EXPECT_EQ(fmt::format(loc, "{:>08L}", -12), "     -12");
+  EXPECT_EQ(fmt::format(loc, "{:0>8L}", -12), "00000-12");
+  loc = std::locale(loc, new fmt::format_facet<std::locale>(","));
+  EXPECT_EQ(fmt::format(loc, "{:08L}", -1234), "-001,234");
+  EXPECT_EQ(fmt::format(loc, "{:#010Lx}", -0x1234), "-0x001,234");
+  EXPECT_EQ(fmt::format(loc, "{:#010Lb}", -10), "-0b001,010");
+  EXPECT_EQ(fmt::format(loc, "{:#08Lo}", -01234), "-001,234");
+}
+
 #endif  // FMT_USE_LOCALE
 
 struct convertible_to_nonconst_cstring {
