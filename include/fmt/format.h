@@ -2410,6 +2410,153 @@ FMT_CONSTEXPR FMT_NOINLINE auto write_int_noinline(OutputIt out,
   return write_int<Char>(out, arg, specs);
 }
 
+// ISO 80000-1 / SI Brochure digit grouping (the ' format option).
+//
+// Digits are grouped in threes counting from the decimal marker to the left
+// (integer part) and to the right (fraction part). If FMT_ISO_GROUPING_MIN2 is
+// nonzero, a part that has exactly four digits is not split (the "four-digit
+// exception"), applied to each part independently.
+#ifndef FMT_ISO_GROUPING_MIN2
+#  define FMT_ISO_GROUPING_MIN2 0
+#endif
+
+template <typename Char> struct iso_separator {
+  Char data[3];
+  size_t size;  // In code units; the display width is always 1.
+};
+
+// Returns the digit group separator for g: U+202F NARROW NO-BREAK SPACE for
+// group_separator::iso, encoded as a single code unit for wide character types,
+// as UTF-8 for char if the literal encoding is UTF-8, and U+0020 SPACE
+// otherwise. The other forms use the corresponding ASCII character.
+template <typename Char>
+FMT_CONSTEXPR auto iso_digit_separator(group_separator g)
+    -> iso_separator<Char> {
+  switch (g) {
+  case group_separator::space:      return {{Char(' '), Char(), Char()}, 1};
+  case group_separator::comma:      return {{Char(','), Char(), Char()}, 1};
+  case group_separator::underscore: return {{Char('_'), Char(), Char()}, 1};
+  case group_separator::apostrophe: return {{Char('\''), Char(), Char()}, 1};
+  default:                          break;
+  }
+  return {{static_cast<Char>(0x202F), Char(), Char()}, 1};
+}
+template <>
+FMT_CONSTEXPR inline auto iso_digit_separator<char>(group_separator g)
+    -> iso_separator<char> {
+  if (g == group_separator::iso) {
+    if (FMT_UNICODE != 0 && is_utf8_enabled != 0)
+      return {{'\xE2', '\x80', '\xAF'}, 3};
+    g = group_separator::space;
+  }
+  switch (g) {
+  case group_separator::comma:      return {{',', '\0', '\0'}, 1};
+  case group_separator::underscore: return {{'_', '\0', '\0'}, 1};
+  case group_separator::apostrophe: return {{'\'', '\0', '\0'}, 1};
+  default:                          return {{' ', '\0', '\0'}, 1};
+  }
+}
+
+FMT_CONSTEXPR inline auto is_iso_digit(char c) -> bool {
+  return '0' <= c && c <= '9';
+}
+
+// Returns the number of separators to insert into a run of num_digits digits.
+FMT_CONSTEXPR inline auto iso_separator_count(int num_digits) -> int {
+  if (num_digits <= 3 || (FMT_ISO_GROUPING_MIN2 && num_digits == 4)) return 0;
+  return (num_digits - 1) / 3;
+}
+
+// Writes an already formatted (unpadded) decimal number of the form
+//   [sign] digits ['.' digits] [exponent]
+// inserting ISO digit group separators, replacing '.' with point and applying
+// padding from specs. With zero padding (numeric alignment) the padding zeros
+// are digits of the integer part and are grouped as well: the smallest number
+// of zeros is used such that the display width is at least specs.width, so the
+// result can be one column wider than specs.width but never starts with a
+// separator.
+template <typename Char, typename OutputIt>
+FMT_CONSTEXPR auto write_iso_grouped(OutputIt out, const char* begin,
+                                     const char* end, const format_specs& specs,
+                                     Char point = Char('.')) -> OutputIt {
+  const char* int_begin = begin;
+  if (int_begin != end &&
+      (*int_begin == '-' || *int_begin == '+' || *int_begin == ' ')) {
+    ++int_begin;
+  }
+  const char* int_end = int_begin;
+  while (int_end != end && is_iso_digit(*int_end)) ++int_end;
+  const char* frac_begin = int_end;
+  const char* frac_end = int_end;
+  bool has_point = frac_begin != end && *frac_begin == '.';
+  if (has_point) {
+    frac_end = ++frac_begin;
+    while (frac_end != end && is_iso_digit(*frac_end)) ++frac_end;
+  }
+  int digits_size = static_cast<int>(int_end - int_begin);
+  int frac_size = static_cast<int>(frac_end - frac_begin);
+  // Only the ISO forms (' and ' ) group the fraction digits.
+  bool group_frac = specs.grouping() <= group_separator::space;
+  int frac_seps = group_frac ? iso_separator_count(frac_size) : 0;
+  auto num_chars = to_unsigned(end - begin);
+
+  auto padded_specs = specs;
+  int int_size = digits_size;  // Including padding zeros.
+  if (specs.align() == align::numeric) {
+    if (digits_size == 0) {
+      // Replace '0'-padding with space for non-finite values.
+      padded_specs.set_fill(' ');
+    } else {
+      // Display width of everything but the integer part.
+      auto other_width =
+          num_chars - to_unsigned(digits_size) + to_unsigned(frac_seps);
+      auto spec_width = to_unsigned(specs.width);
+      while (other_width +
+                 to_unsigned(int_size + iso_separator_count(int_size)) <
+             spec_width) {
+        ++int_size;
+      }
+    }
+  }
+  int num_zeros = int_size - digits_size;
+  int int_seps = iso_separator_count(int_size);
+  auto sep = iso_digit_separator<Char>(specs.grouping());
+  auto num_seps = to_unsigned(int_seps + frac_seps);
+  // Each separator is one code point of display width 1 but may take several
+  // code units, so size and width are passed to write_padded separately.
+  size_t size = num_chars + to_unsigned(num_zeros) + num_seps * sep.size;
+  size_t width = num_chars + to_unsigned(num_zeros) + num_seps;
+  return write_padded<Char, align::right>(
+      out, padded_specs, size, width, [&](reserve_iterator<OutputIt> it) {
+        it = copy<Char>(begin, int_begin, it);
+        for (int i = 0; i < int_size; ++i) {
+          if (int_seps != 0 && i != 0 && (int_size - i) % 3 == 0)
+            it = copy<Char>(sep.data, sep.data + sep.size, it);
+          *it++ = i < num_zeros ? Char('0')
+                                : static_cast<Char>(int_begin[i - num_zeros]);
+        }
+        if (has_point) *it++ = point;
+        for (int i = 0; i < frac_size; ++i) {
+          if (frac_seps != 0 && i != 0 && i % 3 == 0)
+            it = copy<Char>(sep.data, sep.data + sep.size, it);
+          *it++ = static_cast<Char>(frac_begin[i]);
+        }
+        return copy<Char>(frac_end, end, it);
+      });
+}
+
+template <typename Char, typename OutputIt, typename T>
+FMT_CONSTEXPR20 auto write_iso_grouped_int(OutputIt out, write_int_arg<T> arg,
+                                           const format_specs& specs)
+    -> OutputIt {
+  constexpr int buffer_size = num_bits<T>();
+  char buffer[buffer_size + 1];
+  if (is_constant_evaluated()) fill_n(buffer, buffer_size + 1, '\0');
+  char* begin = do_format_decimal(buffer + 1, arg.abs_value, buffer_size);
+  if (arg.prefix != 0) *--begin = static_cast<char>(arg.prefix & 0xff);
+  return write_iso_grouped<Char>(out, begin, buffer + buffer_size + 1, specs);
+}
+
 template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(is_integral<T>::value &&
                         !std::is_same<T, bool>::value &&
@@ -2417,6 +2564,11 @@ template <typename Char, typename OutputIt, typename T,
 FMT_CONSTEXPR FMT_INLINE auto write(OutputIt out, T value,
                                     const format_specs& specs, locale_ref loc)
     -> OutputIt {
+  // ' takes precedence over L: grouping never comes from the locale.
+  if (specs.iso_grouping()) {
+    return write_iso_grouped_int<Char>(
+        out, make_write_int_arg(value, specs.sign()), specs);
+  }
   if (specs.localized() && write_loc(out, value, specs, loc)) return out;
   auto arg = make_write_int_arg(value, specs.sign());
   // Out of line for appenders to avoid bloat; inlined for compiled formatting.
@@ -3740,6 +3892,22 @@ template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(is_floating_point<T>::value)>
 FMT_CONSTEXPR20 auto write(OutputIt out, T value, format_specs specs,
                            locale_ref loc = {}) -> OutputIt {
+  if (specs.iso_grouping()) {
+    // Format without padding, grouping and localization, then insert
+    // separators and pad. ' takes precedence over L for grouping; L only
+    // supplies the decimal point.
+    auto plain_specs = specs;
+    plain_specs.set_grouping(group_separator::none);
+    plain_specs.clear_localized();
+    plain_specs.set_align(align::none);
+    plain_specs.width = 0;
+    auto buffer = memory_buffer();
+    write<char>(appender(buffer), value, plain_specs, loc);
+    bool localized = FMT_USE_LOCALE && specs.localized();
+    Char point = localized ? detail::decimal_point<Char>(loc) : Char('.');
+    return write_iso_grouped<Char>(out, buffer.data(),
+                                   buffer.data() + buffer.size(), specs, point);
+  }
   if (specs.localized() && write_loc(out, value, specs, loc)) return out;
 
   // Use signbit because value < 0 is false for NaN.

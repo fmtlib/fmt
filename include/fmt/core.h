@@ -677,6 +677,12 @@ enum class presentation_type : unsigned char {
 
 enum class align { none, left, right, center, numeric };
 enum class sign { none, minus, plus, space };
+// Digit group separator selected by the ' option. iso (') is U+202F, or
+// U+0020 for char if the literal encoding is not UTF-8; space (' followed by
+// a space) is U+0020; comma (',), underscore ('_) and apostrophe ('') are the
+// corresponding characters. iso and space group both the integer and the
+// fraction part, the others group only the integer part.
+enum class group_separator { none, iso, space, comma, underscore, apostrophe };
 enum class arg_id_kind { none, index, name };
 
 // Basic format specifiers for built-in and string types.
@@ -687,8 +693,8 @@ class basic_specs {
   //  0                   1                   2                   3
   //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
   // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-  // |type |align| w | p | s |u|#|L|  f  |          unused           |
-  // +-----+-----+---+---+---+-+-+-+-----+---------------------------+
+  // |type |align| w | p | s |u|#|L|  f  |  '  |       unused        |
+  // +-----+-----+---+---+---+-+-+-+-----+-----+---------------------+
   //
   //   w - dynamic width info
   //   p - dynamic precision info
@@ -697,6 +703,7 @@ class basic_specs {
   //   # - alternate form ('#')
   //   L - localized
   //   f - fill size
+  //   ' - digit grouping (fmt::group_separator)
   //
   // Bitfields are not used because of compiler bugs such as gcc bug 61414.
   enum : unsigned {
@@ -709,18 +716,20 @@ class basic_specs {
     alternate_mask = 0x02000,
     localized_mask = 0x04000,
     fill_size_mask = 0x38000,
+    grouping_mask = 0x1C0000,
 
     align_shift = 3,
     width_shift = 6,
     precision_shift = 8,
     sign_shift = 10,
     fill_size_shift = 15,
+    grouping_shift = 18,
 
     max_fill_size = 4
   };
 
   unsigned data_ = 1 << fill_size_shift;
-  static_assert(sizeof(basic_specs::data_) * CHAR_BIT >= 18, "");
+  static_assert(sizeof(basic_specs::data_) * CHAR_BIT >= 21, "");
 
   // Character (code unit) type is erased to prevent template bloat.
   char fill_data_[max_fill_size] = {' '};
@@ -781,6 +790,19 @@ class basic_specs {
     return (data_ & localized_mask) != 0;
   }
   FMT_CONSTEXPR void set_localized() { data_ |= localized_mask; }
+  FMT_CONSTEXPR void clear_localized() { data_ &= ~localized_mask; }
+
+  // Digit grouping in threes counted from the decimal marker (the ' option).
+  constexpr auto grouping() const -> fmt::group_separator {
+    return static_cast<fmt::group_separator>((data_ & grouping_mask) >>
+                                             grouping_shift);
+  }
+  FMT_CONSTEXPR void set_grouping(fmt::group_separator g) {
+    data_ = (data_ & ~grouping_mask) | (unsigned(g) << grouping_shift);
+  }
+  constexpr auto iso_grouping() const -> bool {
+    return (data_ & grouping_mask) != 0;
+  }
 
   constexpr auto fill_size() const -> size_t {
     return (data_ & fill_size_mask) >> fill_size_shift;
@@ -1451,7 +1473,17 @@ FMT_CONSTEXPR auto parse_precision(const Char* begin, const Char* end,
   return result.end;
 }
 
-enum class state { start, align, sign, hash, zero, width, precision, locale };
+enum class state {
+  start,
+  align,
+  sign,
+  hash,
+  zero,
+  width,
+  iso_grouping,
+  precision,
+  locale
+};
 
 // Parses standard format specifiers.
 template <typename Char>
@@ -1486,6 +1518,12 @@ FMT_CONSTEXPR auto parse_format_specs(const Char* begin, const Char* end,
 
     FMT_CONSTEXPR auto operator()(pres pres_type, int set) -> const Char* {
       if (!in(arg_type, set)) report_error("invalid format specifier");
+      // Digit grouping is only defined for decimal presentations.
+      if (specs.iso_grouping() &&
+          (in(arg_type, float_set) ? pres_type == pres::hexfloat
+                                   : pres_type != pres::dec)) {
+        report_error("invalid presentation type for digit grouping");
+      }
       specs.set_type(pres_type);
       return begin + 1;
     }
@@ -1531,6 +1569,31 @@ FMT_CONSTEXPR auto parse_format_specs(const Char* begin, const Char* end,
       enter_state(state::width);
       begin = parse_width(begin, end, specs, specs.width_ref, ctx);
       break;
+    case '\'':
+      enter_state(state::iso_grouping,
+                  in(arg_type, sint_set | uint_set | float_set));
+      specs.set_grouping(group_separator::iso);
+      if (++begin != end) {
+        switch (to_ascii(*begin)) {
+        case ' ':
+          specs.set_grouping(group_separator::space);
+          ++begin;
+          break;
+        case ',':
+          specs.set_grouping(group_separator::comma);
+          ++begin;
+          break;
+        case '_':
+          specs.set_grouping(group_separator::underscore);
+          ++begin;
+          break;
+        case '\'':
+          specs.set_grouping(group_separator::apostrophe);
+          ++begin;
+          break;
+        }
+      }
+      break;
     case '.':
       enter_state(state::precision,
                   in(arg_type, float_set | string_set | cstring_set));
@@ -1538,6 +1601,9 @@ FMT_CONSTEXPR auto parse_format_specs(const Char* begin, const Char* end,
       break;
     case 'L':
       enter_state(state::locale, is_arithmetic_type(arg_type));
+      // L may only supply the decimal point for the ISO forms (' and ' ).
+      if (specs.grouping() > group_separator::space)
+        report_error("invalid digit group separator with 'L'");
       specs.set_localized();
       ++begin;
       break;
