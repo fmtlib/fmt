@@ -1051,7 +1051,10 @@ template <> struct common_type<long long, custom_rep> {
 
 TEST(chrono_test, custom_rep_duration_cast) {
   auto d = std::chrono::duration<custom_rep, std::milli>(custom_rep(2500));
-  EXPECT_EQ(fmt::detail::duration_cast<std::chrono::seconds>(d).count(), 2);
+  // Use an explicit rep since the rep of std::chrono::seconds varies between
+  // platforms and common_type is only specialized for long long.
+  using to_duration = std::chrono::duration<long long>;
+  EXPECT_EQ(fmt::detail::duration_cast<to_duration>(d).count(), 2);
 }
 
 TEST(chrono_test, calendar_padding) {
