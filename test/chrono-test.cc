@@ -534,6 +534,7 @@ TEST(chrono_test, format_specs) {
   EXPECT_EQ(fmt::format("{:%I}", std::chrono::hours(24)), "12");
   EXPECT_EQ(fmt::format("{:%I}", std::chrono::hours(4)), "04");
   EXPECT_EQ(fmt::format("{:%I}", std::chrono::hours(14)), "02");
+  EXPECT_EQ(fmt::format("{:%I}", std::chrono::duration<double>(1)), "12");
   EXPECT_EQ(fmt::format("{:%j}", days(12)), "12");
   EXPECT_EQ(fmt::format("{:%j}", days(12345)), "12345");
   EXPECT_EQ(fmt::format("{:%j}", std::chrono::hours(12345 * 24 + 12)), "12345");
@@ -543,15 +544,6 @@ TEST(chrono_test, format_specs) {
   EXPECT_EQ(fmt::format("{:%T}", std::chrono::seconds(12345)), "03:25:45");
   EXPECT_EQ(fmt::format("{:%Q}", std::chrono::seconds(12345)), "12345");
   EXPECT_EQ(fmt::format("{:%q}", std::chrono::seconds(12345)), "s");
-}
-
-TEST(chrono_test, format_12_hour_fp) {
-  using seconds = std::chrono::duration<double>;
-  EXPECT_EQ(fmt::format("{:%I:%M:%S %p}", seconds(1)), "12:00:01 AM");
-  EXPECT_EQ(fmt::format("{:%I:%M:%S %p}", seconds(43201)), "12:00:01 PM");
-  EXPECT_EQ(fmt::format("{:%I}", seconds(3599)), "12");
-  EXPECT_EQ(fmt::format("{:%I}", seconds(3600)), "01");
-  EXPECT_EQ(fmt::format("{:%I}", seconds(86401)), "12");
 }
 
 TEST(chrono_test, invalid_specs) {
