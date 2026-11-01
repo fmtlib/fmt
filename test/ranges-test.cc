@@ -59,10 +59,10 @@ TEST(ranges_test, format_vector) {
   auto vec = std::vector<char>{'a', '\n', '\t'};
   auto vvc = std::vector<std::vector<char>>{vc, vc};
   EXPECT_EQ(fmt::format("{}", vc), "['a', 'b', 'c']");
-  EXPECT_EQ(fmt::format("{:s}", vc), "\"abc\"");
+  EXPECT_EQ(fmt::format("{:s}", vc), "abc");
   EXPECT_EQ(fmt::format("{:?s}", vec), "\"a\\n\\t\"");
-  EXPECT_EQ(fmt::format("{:s}", vec), "\"a\n\t\"");
-  EXPECT_EQ(fmt::format("{::s}", vvc), "[\"abc\", \"abc\"]");
+  EXPECT_EQ(fmt::format("{:s}", vec), "a\n\t");
+  EXPECT_EQ(fmt::format("{::s}", vvc), "[abc, abc]");
   EXPECT_EQ(fmt::format("{}", vvc), "[['a', 'b', 'c'], ['a', 'b', 'c']]");
   EXPECT_EQ(fmt::format("{:n}", vvc), "['a', 'b', 'c'], ['a', 'b', 'c']");
   EXPECT_EQ(fmt::format("{:n:n}", vvc), "'a', 'b', 'c', 'a', 'b', 'c'");
