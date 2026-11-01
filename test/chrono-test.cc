@@ -1053,6 +1053,71 @@ TEST(chrono_test, out_of_range) {
   // A floating-point day count that doesn't fit in int.
   auto fd = std::chrono::duration<double>(1e300);
   EXPECT_THROW((void)fmt::format("{:%j}", fd), fmt::format_error);
+  // A floating-point time point whose seconds don't fit in time_t.
+  auto ftp = sys_time<std::chrono::duration<double>>(fd);
+  EXPECT_THROW((void)fmt::format("{:%T}", ftp), fmt::format_error);
+  auto fnan = sys_time<std::chrono::duration<double>>(
+      std::chrono::duration<double>(std::numeric_limits<double>::quiet_NaN()));
+  EXPECT_THROW((void)fmt::format("{:%T}", fnan), fmt::format_error);
+  auto flocal = fmt::local_time<std::chrono::duration<double>>(
+      std::chrono::duration<double>(-1e300));
+  EXPECT_THROW((void)fmt::format("{:%F}", flocal), fmt::format_error);
+}
+
+TEST(chrono_test, float_to_integral_duration_cast) {
+  using fsec = std::chrono::duration<double>;
+  // Values that truncate toward zero into range are valid.
+  EXPECT_EQ(
+      fmt::detail::duration_cast<std::chrono::duration<unsigned>>(fsec(-0.5))
+          .count(),
+      0u);
+  auto min = (std::numeric_limits<int>::min)();
+  EXPECT_EQ(
+      fmt::detail::duration_cast<std::chrono::duration<int>>(fsec(min - 0.5))
+          .count(),
+      min);
+  auto max = (std::numeric_limits<int>::max)();
+  EXPECT_EQ(
+      fmt::detail::duration_cast<std::chrono::duration<int>>(fsec(max + 0.5))
+          .count(),
+      max);
+  // Any nonzero value converts to true.
+  using bool_duration = std::chrono::duration<bool>;
+  EXPECT_FALSE(fmt::detail::duration_cast<bool_duration>(fsec(0)).count());
+  EXPECT_TRUE(fmt::detail::duration_cast<bool_duration>(fsec(2)).count());
+  EXPECT_TRUE(fmt::detail::duration_cast<bool_duration>(fsec(-1)).count());
+  if (FMT_SAFE_DURATION_CAST) {
+    EXPECT_THROW(
+        fmt::detail::duration_cast<std::chrono::duration<unsigned>>(fsec(-1)),
+        fmt::format_error);
+    EXPECT_THROW(
+        fmt::detail::duration_cast<std::chrono::duration<int>>(fsec(min - 1.0)),
+        fmt::format_error);
+  }
+}
+
+struct custom_rep {
+  long long value = 0;
+  custom_rep() = default;
+  custom_rep(long long v) : value(v) {}
+  operator long long() const { return value; }
+};
+
+namespace std {
+template <> struct common_type<custom_rep, long long> {
+  using type = long long;
+};
+template <> struct common_type<long long, custom_rep> {
+  using type = long long;
+};
+}  // namespace std
+
+TEST(chrono_test, custom_rep_duration_cast) {
+  auto d = std::chrono::duration<custom_rep, std::milli>(custom_rep(2500));
+  // Use an explicit rep since the rep of std::chrono::seconds varies between
+  // platforms and common_type is only specialized for long long.
+  using to_duration = std::chrono::duration<long long>;
+  EXPECT_EQ(fmt::detail::duration_cast<to_duration>(d).count(), 2);
 }
 
 TEST(chrono_test, calendar_padding) {
