@@ -500,6 +500,9 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
         auto sv = basic_string_view<Char>(
             str, to_unsigned(nul != str_end ? nul - str : specs.precision));
         arg = sv;
+      } else if (specs.precision < 6) {
+        // Like glibc, print "(null)" only if it fits in the precision.
+        arg = basic_string_view<Char>();
       }
     }
     if (specs.fill_unit<Char>() == '0') {
