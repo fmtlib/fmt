@@ -494,11 +494,16 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
     }
     if (specs.precision >= 0 && arg.type() == type::cstring_type) {
       auto str = arg.visit(get_cstring<Char>());
-      auto str_end = str + specs.precision;
-      auto nul = std::find(str, str_end, Char());
-      auto sv = basic_string_view<Char>(
-          str, to_unsigned(nul != str_end ? nul - str : specs.precision));
-      arg = sv;
+      if (str) {
+        auto str_end = str + specs.precision;
+        auto nul = std::find(str, str_end, Char());
+        auto sv = basic_string_view<Char>(
+            str, to_unsigned(nul != str_end ? nul - str : specs.precision));
+        arg = sv;
+      } else if (specs.precision < 6) {
+        // Like glibc, print "(null)" only if it fits in the precision.
+        arg = basic_string_view<Char>();
+      }
     }
     if (specs.fill_unit<Char>() == '0') {
       if (is_arithmetic_type(arg.type()) && specs.align() != align::left) {
