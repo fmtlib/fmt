@@ -102,19 +102,19 @@ template <int N> struct ubitint {};
 #if FMT_CPP_LIB_FILESYSTEM
 
 template <typename Char, typename PathChar>
-auto get_path_string(const std::filesystem::path& p,
-                     const std::basic_string<PathChar>& native) {
+auto get_path_string(const std::basic_string<PathChar>& native) {
   if constexpr (std::is_same_v<Char, char> &&
                 std::is_same_v<PathChar, wchar_t>) {
     return to_utf8<wchar_t>(native, to_utf8_error_policy::wtf);
+  } else if constexpr (std::is_same_v<Char, PathChar>) {
+    return native;
   } else {
-    return p.string<Char>();
+    return std::filesystem::path(native).string<Char>();
   }
 }
 
 template <typename Char, typename PathChar>
 void write_escaped_path(basic_memory_buffer<Char>& quoted,
-                        const std::filesystem::path& p,
                         const std::basic_string<PathChar>& native) {
   if constexpr (std::is_same_v<Char, char> &&
                 std::is_same_v<PathChar, wchar_t>) {
@@ -126,7 +126,8 @@ void write_escaped_path(basic_memory_buffer<Char>& quoted,
     write_escaped_string<std::filesystem::path::value_type>(
         std::back_inserter(quoted), native);
   } else {
-    write_escaped_string<Char>(std::back_inserter(quoted), p.string<Char>());
+    write_escaped_string<Char>(std::back_inserter(quoted),
+                               std::filesystem::path(native).string<Char>());
   }
 }
 
@@ -337,11 +338,11 @@ template <typename Char> struct formatter<std::filesystem::path, Char> {
     detail::handle_dynamic_spec(specs.dynamic_width(), specs.width, width_ref_,
                                 ctx);
     if (!debug_) {
-      auto s = detail::get_path_string<Char>(p, path_string);
+      auto s = detail::get_path_string<Char>(path_string);
       return detail::write(ctx.out(), basic_string_view<Char>(s), specs);
     }
     auto quoted = basic_memory_buffer<Char>();
-    detail::write_escaped_path(quoted, p, path_string);
+    detail::write_escaped_path(quoted, path_string);
     return detail::write(ctx.out(),
                          basic_string_view<Char>(quoted.data(), quoted.size()),
                          specs);
