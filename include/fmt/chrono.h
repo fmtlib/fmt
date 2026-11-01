@@ -510,9 +510,11 @@ auto duration_cast(std::chrono::duration<FromRep, FromPeriod> from) -> To {
 #endif
 }
 
+// Floating-point to bool conversion is always defined so bool is excluded.
 template <typename T, typename U>
-using is_float_to_integral = bool_constant<std::is_floating_point<T>::value &&
-                                           std::is_integral<U>::value>;
+using is_float_to_integral =
+    bool_constant<std::is_floating_point<T>::value &&
+                  std::is_integral<U>::value && !std::is_same<U, bool>::value>;
 
 template <typename To, typename FromRep, typename FromPeriod,
           FMT_ENABLE_IF(
@@ -527,8 +529,7 @@ auto duration_cast(std::chrono::duration<FromRep, FromPeriod> from) -> To {
 // Cast a floating-point duration to an integral one with a range check since
 // converting an out-of-range or NaN value to an integer is undefined behavior.
 template <typename To, typename FromRep, typename FromPeriod,
-          FMT_ENABLE_IF(std::is_floating_point<FromRep>::value&&
-                            std::is_integral<typename To::rep>::value)>
+          FMT_ENABLE_IF(is_float_to_integral<FromRep, typename To::rep>::value)>
 auto duration_cast(std::chrono::duration<FromRep, FromPeriod> from) -> To {
 #if FMT_SAFE_DURATION_CAST
   using to_rep = typename To::rep;

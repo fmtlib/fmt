@@ -1023,6 +1023,11 @@ TEST(chrono_test, float_to_integral_duration_cast) {
       fmt::detail::duration_cast<std::chrono::duration<int>>(fsec(max + 0.5))
           .count(),
       max);
+  // Any nonzero value converts to true.
+  using bool_duration = std::chrono::duration<bool>;
+  EXPECT_FALSE(fmt::detail::duration_cast<bool_duration>(fsec(0)).count());
+  EXPECT_TRUE(fmt::detail::duration_cast<bool_duration>(fsec(2)).count());
+  EXPECT_TRUE(fmt::detail::duration_cast<bool_duration>(fsec(-1)).count());
   if (FMT_SAFE_DURATION_CAST) {
     EXPECT_THROW(
         fmt::detail::duration_cast<std::chrono::duration<unsigned>>(fsec(-1)),
