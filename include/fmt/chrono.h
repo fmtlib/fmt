@@ -1706,20 +1706,16 @@ struct duration_formatter {
     return true;
   }
 
-  auto days() const -> rep { return static_cast<rep>(s.count() / 86400); }
-  auto hour() const -> Rep {
-    return static_cast<Rep>(mod((s.count() / 3600), 24));
-  }
+  auto days() const -> rep { return s.count() / 86400; }
+  auto hour() const -> rep { return mod((s.count() / 3600), 24); }
 
-  auto hour12() const -> Rep {
-    Rep hour = static_cast<Rep>(mod((s.count() / 3600), 12));
+  auto hour12() const -> rep {
+    auto hour = mod((s.count() / 3600), 12);
     return hour < 1 ? 12 : hour;
   }
 
-  auto minute() const -> Rep {
-    return static_cast<Rep>(mod((s.count() / 60), 60));
-  }
-  auto second() const -> Rep { return static_cast<Rep>(mod(s.count(), 60)); }
+  auto minute() const -> rep { return mod((s.count() / 60), 60); }
+  auto second() const -> rep { return mod(s.count(), 60); }
 
   auto time() const -> std::tm {
     auto time = std::tm();
