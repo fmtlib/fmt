@@ -295,6 +295,15 @@ TEST(ostream_test, buffer_size) {
   EXPECT_READ(in, "foo");
 }
 
+TEST(ostream_test, zero_buffer_size) {
+  auto test_file = uniq_file_name(__LINE__);
+  fmt::ostream out = fmt::output_file(test_file, fmt::buffer_size = 0);
+  out.print("{}{}", 'f', "oo");
+  out.close();
+  file in(test_file, file::RDONLY);
+  EXPECT_READ(in, "foo");
+}
+
 TEST(ostream_test, truncate) {
   auto test_file = uniq_file_name(__LINE__);
   {
