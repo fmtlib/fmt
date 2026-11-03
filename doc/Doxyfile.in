@@ -1,0 +1,66 @@
+# Doxygen configuration for the {fmt} API reference.
+# This file is processed by CMake (see FMT_DOXYGEN in CMakeLists.txt).
+
+PROJECT_NAME           = "{fmt}"
+PROJECT_NUMBER         = @FMT_VERSION@
+PROJECT_BRIEF          = "A modern formatting library"
+OUTPUT_DIRECTORY       = @FMT_DOXYGEN_OUTPUT_DIR@
+STRIP_FROM_PATH        = @PROJECT_SOURCE_DIR@/include \
+                         @FMT_DOXYGEN_PAGES_DIR@
+STRIP_FROM_INC_PATH    = @PROJECT_SOURCE_DIR@/include
+FULL_PATH_NAMES        = YES
+QUIET                  = YES
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = NO
+WARN_LOGFILE           = @FMT_DOXYGEN_OUTPUT_DIR@/warnings.log
+
+# Input: the public headers plus the Markdown pages from doc/.
+INPUT                  = @FMT_DOXYGEN_INPUT@
+FILE_PATTERNS          = *.h *.md
+RECURSIVE              = NO
+USE_MDFILE_AS_MAINPAGE = @FMT_DOXYGEN_PAGES_DIR@/index.md
+MARKDOWN_SUPPORT       = YES
+MARKDOWN_ID_STYLE      = GITHUB
+TOC_INCLUDE_HEADINGS   = 3
+AUTOLINK_SUPPORT       = YES
+IMAGE_PATH             = @PROJECT_SOURCE_DIR@/doc
+
+# Only document the public API.
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = NO
+HIDE_UNDOC_MEMBERS     = YES
+HIDE_UNDOC_CLASSES     = YES
+EXCLUDE_SYMBOLS        = detail::* fmt::detail::* *_impl
+INLINE_INHERITED_MEMB  = YES
+SORT_MEMBER_DOCS       = NO
+JAVADOC_AUTOBRIEF      = YES
+
+# The headers rely heavily on macros; expand the ones that affect declarations.
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = NO
+SEARCH_INCLUDES        = YES
+INCLUDE_PATH           = @PROJECT_SOURCE_DIR@/include
+PREDEFINED             = _WIN32=1 \
+                         __linux__=1 \
+                         FMT_ENABLE_IF(...)= \
+                         FMT_USE_USER_LITERALS=1 \
+                         FMT_USE_ALIAS_TEMPLATES=1 \
+                         FMT_USE_NONTYPE_TEMPLATE_ARGS=1 \
+                         FMT_API= \
+                         "FMT_BEGIN_NAMESPACE=namespace fmt {" \
+                         "FMT_END_NAMESPACE=}" \
+                         FMT_DOC=1
+
+# Output formats.
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+HTML_EXTRA_STYLESHEET  =
+GENERATE_TREEVIEW      = YES
+SEARCHENGINE           = YES
+GENERATE_LATEX         = NO
+GENERATE_XML           = NO
+GENERATE_MAN           = NO
+SOURCE_BROWSER         = NO
+HAVE_DOT               = NO

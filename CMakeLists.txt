@@ -85,6 +85,9 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND CMAKE_CXX_COMPILER_VERSION
 endif ()
 
 option(FMT_DOC "Generate the doc target." ${FMT_MASTER_PROJECT})
+option(FMT_DOXYGEN
+       "Build the Doxygen HTML API reference as part of the default build."
+       ${FMT_MASTER_PROJECT})
 option(FMT_INSTALL "Generate the install target." ${FMT_MASTER_PROJECT})
 option(FMT_TEST "Generate the test target." ${FMT_MASTER_PROJECT})
 option(FMT_FUZZ "Generate the fuzz target." OFF)
@@ -617,6 +620,94 @@ endfunction ()
 
 if (FMT_DOC)
   add_doc_target()
+endif ()
+
+# Generates the 'doxygen-doc' target which builds a standalone Doxygen HTML
+# reference from the public headers and the pages in doc/.
+function (add_doxygen_doc_target)
+  find_package(Doxygen)
+  if (NOT DOXYGEN_FOUND)
+    message(STATUS "Doxygen documentation disabled because doxygen not found; "
+                   "set FMT_DOXYGEN=OFF to silence this message")
+    return()
+  endif ()
+
+  set(pages index.md get-started.md api.md syntax.md)
+  set(headers
+      args.h
+      chrono.h
+      color.h
+      compile.h
+      core.h
+      enum.h
+      format.h
+      os.h
+      ostream.h
+      printf.h
+      ranges.h
+      std.h
+      xchar.h)
+
+  set(FMT_DOXYGEN_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
+  set(FMT_DOXYGEN_PAGES_DIR ${FMT_DOXYGEN_OUTPUT_DIR}/pages)
+
+  # Convert the MkDocs pages into Doxygen-compatible Markdown.
+  set(page_sources)
+  set(page_outputs)
+  foreach (page ${pages})
+    list(APPEND page_sources ${CMAKE_CURRENT_SOURCE_DIR}/doc/${page})
+    list(APPEND page_outputs ${FMT_DOXYGEN_PAGES_DIR}/${page})
+  endforeach ()
+  # Generated alongside the pages to document namespace fmt.
+  list(APPEND page_outputs ${FMT_DOXYGEN_PAGES_DIR}/namespaces.dox)
+  set(pages_script ${CMAKE_CURRENT_SOURCE_DIR}/support/cmake/doxygen-pages.cmake)
+  string(REPLACE ";" "," pages_arg "${pages}")
+  add_custom_command(
+    OUTPUT ${page_outputs}
+    COMMAND
+      ${CMAKE_COMMAND} -DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}/doc
+      -DOUTPUT_DIR=${FMT_DOXYGEN_PAGES_DIR} "-DPAGES=${pages_arg}" -P
+      ${pages_script}
+    DEPENDS ${page_sources} ${pages_script}
+    COMMENT "Preparing documentation pages for Doxygen"
+    VERBATIM)
+
+  set(header_paths)
+  foreach (header ${headers})
+    list(APPEND header_paths ${CMAKE_CURRENT_SOURCE_DIR}/include/fmt/${header})
+  endforeach ()
+  # Doxygen processes pages in INPUT order: put the main page first.
+  string(REPLACE ";" " \\\n    " FMT_DOXYGEN_INPUT
+                 "${page_outputs};${header_paths}")
+  set(doxyfile ${FMT_DOXYGEN_OUTPUT_DIR}/Doxyfile)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in ${doxyfile} @ONLY)
+
+  set(stamp ${FMT_DOXYGEN_OUTPUT_DIR}/html.stamp)
+  add_custom_command(
+    OUTPUT ${stamp}
+    COMMAND Doxygen::doxygen ${doxyfile}
+    COMMAND ${CMAKE_COMMAND} -E touch ${stamp}
+    DEPENDS ${doxyfile} ${page_outputs} ${header_paths}
+            ${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in
+    WORKING_DIRECTORY ${FMT_DOXYGEN_OUTPUT_DIR}
+    COMMENT "Generating Doxygen API documentation"
+    VERBATIM)
+
+  # Built by default so that the docs are produced together with the library.
+  add_custom_target(
+    doxygen-doc ALL
+    DEPENDS ${stamp}
+    SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in)
+
+  install(
+    DIRECTORY ${FMT_DOXYGEN_OUTPUT_DIR}/html/
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/doc/fmt/doxygen
+    COMPONENT fmt_doc
+    OPTIONAL)
+endfunction ()
+
+if (FMT_DOXYGEN)
+  add_doxygen_doc_target()
 endif ()
 
 if (FMT_TEST)
