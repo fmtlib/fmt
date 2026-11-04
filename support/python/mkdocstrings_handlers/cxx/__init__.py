@@ -4,7 +4,10 @@
 
 # pyright: strict
 
+import colorsys
 import os
+import re
+from html import escape
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from subprocess import PIPE, STDOUT, CalledProcessError, Popen
@@ -44,6 +47,10 @@ class Definition:
         self.template_params: "list[Definition] | None" = None
         self.trailing_return_type: "str | None" = None
         self.type: "str | None" = None
+        self.enum_values: "list[tuple[str, str, list[ET.Element[str]]]] | None" = None
+        self.color_values: "list[tuple[str, str, list[ET.Element[str]]]] | None" = None
+        self.qualifiers = ""
+        self.default = ""
 
 
 # A map from Doxygen to HTML tags.
@@ -153,9 +160,8 @@ def convert_params(func: ET.Element) -> list[Definition]:
     params: "list[Definition]" = []
     for p in func.findall("param"):
         declname = p.find("declname")
-        if declname is None or declname.text is None:
-            raise ValueError
-        d = Definition(declname.text, "param")
+        name = declname.text if declname is not None and declname.text else ""
+        d = Definition(name, "param")
         d.type = convert_type(p.find("type"))
         params.append(d)
     return params
@@ -178,7 +184,16 @@ def render_param(param: Definition) -> str:
     return param.type + (f"&nbsp;{param.name}" if len(param.name) > 0 else "")
 
 
-def render_decl(d: Definition) -> str:
+def display_type(type_: str, color_reference: bool) -> str:
+    if color_reference:
+        if type_.startswith("detail::styled_arg<"):
+            type_ = "unspecified-type"
+        type_ = type_.replace("detail::color_type", "unspecified-type")
+    text = escape_html(type_)
+    return text.replace("unspecified-type", "<em>unspecified-type</em>")
+
+
+def render_decl(d: Definition, color_reference: bool = False) -> str:
     text = ""
     if d.id is not None:
         text += f'<a id="{d.id}">\n'
@@ -198,7 +213,9 @@ def render_decl(d: Definition) -> str:
     if d.kind == "function" or d.kind == "variable":
         if d.type is None:
             raise ValueError
-        text += d.type + " " if len(d.type) > 0 else ""
+        text += display_type(d.type, color_reference) + " " if len(d.type) > 0 else ""
+    elif d.kind == "enum" and color_reference:
+        text += "enum class "
     elif d.kind == "typedef":
         text += "using "
     elif d.kind == "define":
@@ -209,11 +226,29 @@ def render_decl(d: Definition) -> str:
 
     if d.params is not None:
         params = ", ".join([
-            (p.type + " " if p.type else "") + p.name for p in d.params
+            (p.type + " " if p.type else "") + p.name
+            + (" = " + p.default if color_reference and p.default else "")
+            for p in d.params
         ])
-        text += "(" + escape_html(params) + ")"
+        text += "(" + display_type(params, color_reference) + ")"
+        if color_reference:
+            text += d.qualifiers
         if d.trailing_return_type:
-            text += " -&NoBreak;>&nbsp;" + escape_html(d.trailing_return_type)
+            text += " -&NoBreak;>&nbsp;" + display_type(d.trailing_return_type, color_reference)
+    elif d.kind == "enum" and color_reference:
+        if d.type:
+            text += " : " + escape_html(d.type)
+        if d.enum_values is not None:
+            text += " {\n"
+            for name, initializer, _ in d.enum_values:
+                text += "  " + name
+                if initializer:
+                    text += " " + escape_html(initializer)
+                text += ",\n"
+            text += "}"
+    elif d.kind == "namespace" and color_reference:
+        text += " { /* named RGB constants */ }"
+        end = ""
     elif d.kind == "typedef":
         if d.type is None:
             raise ValueError
@@ -225,6 +260,73 @@ def render_decl(d: Definition) -> str:
     if d.id is not None:
         text += "</a>\n"
     return text
+
+
+def swatch_luminance(packed: int) -> float:
+    rgb = tuple(((packed >> shift) & 255) / 255 for shift in (16, 8, 0))
+    linear = tuple(c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+                   for c in rgb)
+    return sum(c * w for c, w in zip(linear, (0.2126, 0.7152, 0.0722)))
+
+
+def swatch_foreground(luminance: float) -> str:
+    return "#000000" if (luminance + 0.05) / 0.05 >= 1.05 / (luminance + 0.05) else "#FFFFFF"
+
+
+def render_cube_palette() -> str:
+    """Render red rows, green columns, and six three-character blue fields."""
+    levels = (0, 95, 135, 175, 215, 255)
+    text = '<div class="cube-palette-scroll"><table class="cube-palette">'
+    text += '<thead><tr><th></th><th colspan="6">Green index →</th></tr>'
+    text += '<tr><th scope="col">Red ↓</th>'
+    text += ''.join(f'<th scope="col">{green}</th>' for green in range(6))
+    text += '</tr></thead><tbody>'
+    for red in range(6):
+        text += f'<tr><th scope="row">{red}</th>'
+        for green in range(6):
+            text += '<td>'
+            for blue in range(6):
+                packed = (levels[red] << 16) | (levels[green] << 8) | levels[blue]
+                background = f'#{packed:06X}'
+                label = (f'cube_color{{{red}, {green}, {blue}}}: '
+                         f'rgb{{{levels[red]}, {levels[green]}, {levels[blue]}}} '
+                         f'({background}); palette index {16 + 36 * red + 6 * green + blue}')
+                text += (f'<span class="cube-index" '
+                         f'style="background-color:{background};color:{swatch_foreground(swatch_luminance(packed))}" '
+                         f'title="{label}" aria-label="{label}"> {blue} </span>')
+            text += '</td>'
+        text += '</tr>'
+    return text + '</tbody></table></div>'
+
+
+def render_color_swatches(
+    values: "list[tuple[str, str, list[ET.Element[str]]]]", group: str
+) -> str:
+    """Render hue groups by lightness, or terminal RGB constants in palette order."""
+    groups = ("red", "yellow", "green", "cyan", "blue", "magenta")
+    if group not in groups + ("neutral", "terminal", "terminal-normal", "terminal-bright"):
+        raise ValueError(f"Unknown color group: {group}")
+    swatches: "list[tuple[float, float, str, str]]" = []
+    for index, (name, initializer, _) in enumerate(values):
+        packed = int(initializer.removeprefix("=").strip(), 0)
+        rgb = tuple(((packed >> shift) & 255) / 255 for shift in (16, 8, 0))
+        hue, saturation, _ = colorsys.rgb_to_hsv(*rgb)
+        category = "neutral" if saturation == 0 else groups[int((hue * 6 + 0.5) % 6)]
+        if name.startswith("term_"):
+            category = "terminal-bright" if name.startswith("term_bright_") else "terminal-normal"
+        if category != group and not (group == "terminal" and category.startswith("terminal-")):
+            continue
+        luminance = swatch_luminance(packed)
+        foreground = swatch_foreground(luminance)
+        background = f"#{packed:06X}"
+        tile = (f'<li id="named-color-{escape(name)}" class="color-swatch" '
+                f'style="background-color:{background};color:{foreground}" '
+                f'title="{escape(name)}: {background}">{escape(name)}</li>')
+        order = (0.0, float(index)) if group.startswith("terminal") else (
+            (hue + 1 / 12) % 1, luminance)
+        swatches.append((*order, name, tile))
+    swatches.sort()
+    return '<ul class="color-swatches">' + "".join(tile for _, _, _, tile in swatches) + '</ul>'
 
 
 @final
@@ -246,6 +348,7 @@ class CxxHandler(BaseHandler):
         headers = [
             "args.h",
             "chrono.h",
+            "color-ostream.h",
             "color.h",
             "compile.h",
             "core.h",
@@ -310,7 +413,8 @@ class CxxHandler(BaseHandler):
             for node in doxyxml.getroot():
                 root.append(node)
 
-    def collect_compound(self, identifier: str, cls: "list[ET.Element]") -> Definition:
+    def collect_compound(self, identifier: str, cls: "list[ET.Element]",
+                         color_reference: bool = False) -> Definition:
         """Collect a compound definition such as a struct."""
         refid = cls[0].get("refid")
         if refid is None:
@@ -324,9 +428,27 @@ class CxxHandler(BaseHandler):
         d.template_params = convert_template_params(node)
         d.desc = get_description(node)
         d.members = []
-        for m in node.findall(
+        if d.kind == "namespace" and color_reference:
+            d.color_values = []
+            for m in node.findall('sectiondef[@kind="var"]/memberdef'):
+                initializer = m.findtext("initializer", "")
+                components = re.fullmatch(r"\{\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\}",
+                                          initializer.strip())
+                if components is None:
+                    raise ValueError(f"Invalid named RGB initializer: {initializer}")
+                red, green, blue = (int(c) for c in components.groups())
+                packed = (red << 16) | (green << 8) | blue
+                d.color_values.append((m.findtext("name", ""), f"= 0x{packed:06X}",
+                                       get_description(m)))
+            return d
+        members = node.findall(
             'sectiondef[@kind="public-attrib"]/memberdef'
-        ) + node.findall('sectiondef[@kind="public-func"]/memberdef'):
+        ) + node.findall('sectiondef[@kind="public-func"]/memberdef')
+        if color_reference:
+            members += node.findall('sectiondef[@kind="friend"]/memberdef')
+        for m in members:
+            if m.get("prot") == "private":
+                continue
             name = m.find("name")
             if name is None or name.text is None:
                 raise ValueError
@@ -339,15 +461,29 @@ class CxxHandler(BaseHandler):
             if len(desc) == 0:
                 continue
             kind = m.get("kind")
+            if kind == "friend":
+                kind = "function"
             member = Definition(name if name else "", kind=kind, is_member=True)
             type_ = m.find("type")
             if type_ is None:
                 raise ValueError
             type_text = type_.text
             member.type = type_text if type_text else ""
+            if color_reference:
+                member.type = normalize_type("".join(type_.itertext()))
+                if m.get("explicit") == "yes":
+                    member.type = "explicit " + member.type
             if kind == "function":
                 member.params = convert_params(m)
+                for param, source in zip(member.params, m.findall("param")):
+                    default = source.find("defval")
+                    if default is not None:
+                        param.default = "".join(default.itertext())
                 convert_return_type(member, m)
+                if m.get("const") == "yes":
+                    member.qualifiers += " const"
+                if m.get("noexcept") == "yes":
+                    member.qualifiers += " noexcept"
             member.template_params = None
             member.desc = desc
             d.members.append(member)
@@ -410,12 +546,31 @@ class CxxHandler(BaseHandler):
             d.params = params
             convert_return_type(d, node)
             d.desc = get_description(node)
+            if options.get("color_reference"):
+                d.id = "color-" + re.sub(r"[^a-z0-9]+", "-", identifier.lower()).strip("-")
+                if node.get("noexcept") == "yes":
+                    d.qualifiers = " noexcept"
+                if d.kind == "enum":
+                    placeholder = options.get("enum_value_placeholder")
+                    d.enum_values = [
+                        (v.findtext("name", ""),
+                         "= " + str(placeholder)
+                         if placeholder is not None and v.find("initializer") is not None else
+                         ("".join(v.find("initializer").itertext())
+                          if v.find("initializer") is not None else ""),
+                         get_description(v))
+                        for v in node.findall("enumvalue")
+                    ]
+                    if not options.get("show_enum_members", True):
+                        d.enum_values = None
             return d
 
         cls = doxyxml.findall(f"compounddef/innerclass[.='{qual_name}']")
+        if not cls and options.get("color_reference"):
+            cls = doxyxml.findall(f"compounddef/innernamespace[.='{qual_name}']")
         if not cls:
             raise Exception(f"Cannot find {identifier}. Candidates: {candidates}")
-        return self.collect_compound(identifier, cls)
+        return self.collect_compound(identifier, cls, bool(options.get("color_reference")))
 
     @override
     def render(
@@ -426,16 +581,51 @@ class CxxHandler(BaseHandler):
         locale: "str | None" = None,
     ) -> str:
         d = data
+        swatch_group = options.get("color_swatch_group")
+        if swatch_group is not None:
+            if d.name == "cube_color" and swatch_group == "cube":
+                return render_cube_palette()
+            if d.name == "gray_color" and swatch_group == "gray":
+                values: "list[tuple[str, str, list[ET.Element[str]]]]" = [
+                    (f"gray_color{{{index}}}",
+                     f"= 0x{(8 + 10 * index) * 0x010101:06X}", [])
+                    for index in range(24)]
+                return render_color_swatches(values, "neutral")
+            if d.color_values is None:
+                raise ValueError("Color swatches require named RGB constants")
+            return render_color_swatches(d.color_values, str(swatch_group))
         if d.id is not None:
             _ = self.do_heading(Markup(), 0, id=d.id)
         if d.desc is None:
             raise ValueError
         text = '<div class="docblock">\n'
-        text += render_decl(d)
+        color_reference = bool(options.get("color_reference"))
+        text += render_decl(d, color_reference)
         text += '<div class="docblock-desc">\n'
         text += doxyxml2html(d.desc)
+        if color_reference and d.enum_values:
+            descriptions = [(name, desc) for name, _, desc in d.enum_values if desc]
+            if descriptions:
+                emphasis = d.name == "emphasis"
+                text += "<table><thead><tr><th>Attribute</th><th>Description</th>"
+                if emphasis:
+                    text += "<th>SGR</th>"
+                text += "</tr></thead><tbody>"
+                for name, desc in descriptions:
+                    text += "<tr><td><code>" + name + "</code></td><td>"
+                    description = doxyxml2html(desc)
+                    sgr = re.search(r" \(SGR (\d+)\)", description) if emphasis else None
+                    if sgr:
+                        description = description[:sgr.start()] + description[sgr.end():]
+                    text += description + "</td>"
+                    if emphasis:
+                        text += "<td>" + (sgr.group(1) if sgr else "") + "</td>"
+                    text += "</tr>"
+                text += "</tbody></table>"
         if d.members is not None:
             for m in d.members:
+                if m.name in options.get("exclude_members", []):
+                    continue
                 text += self.render(m, options, locale=locale)
         text += "</div>\n"
         text += "</div>\n"

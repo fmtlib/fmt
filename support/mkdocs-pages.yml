@@ -1,0 +1,12 @@
+# Fork publication settings; keep the shared MkDocs configuration unchanged.
+INHERIT: mkdocs.yml
+
+site_name: '{fmt} — FmtColor'
+site_url: https://tjgolubi.github.io/fmt/
+repo_url: https://github.com/tjgolubi/fmt
+repo_name: tjgolubi/fmt
+edit_uri: edit/color-dev/doc/
+
+# This deployment has one documentation version, rather than a mike archive.
+extra:
+  version: null

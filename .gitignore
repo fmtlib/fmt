@@ -22,3 +22,4 @@ build/
 cmake_install.cmake
 fmt-*.cmake
 fmt.pc
+__pycache__/

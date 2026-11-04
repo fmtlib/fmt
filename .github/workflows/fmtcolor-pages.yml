@@ -1,0 +1,60 @@
+name: FmtColor documentation
+
+on:
+  push:
+    branches: [color-dev]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fmtcolor-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.repository == 'tjgolubi/fmt'
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      with:
+        persist-credentials: false
+
+    - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+      with:
+        python-version: '3.12'
+
+    - name: Install documentation tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install --yes doxygen
+        python -m pip install --require-hashes -r support/doc-requirements.txt
+
+    - name: Build documentation
+      env:
+        PYTHONPATH: support/python
+      run: >-
+        python -m mkdocs build --config-file support/mkdocs-pages.yml
+        --site-dir "$GITHUB_WORKSPACE/build/doc-html" --no-directory-urls
+
+    - name: Upload Pages artifact
+      uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+      with:
+        path: build/doc-html
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+    - name: Configure Pages
+      uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+    - name: Publish documentation
+      id: deployment
+      uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

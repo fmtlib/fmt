@@ -12,6 +12,7 @@ The {fmt} library API consists of the following components:
 - [`fmt/enum.h`](#enum-api): formatting of annotated enums
 - [`fmt/compile.h`](#compile-api): format string compilation
 - [`fmt/color.h`](#color-api): terminal colors and text styles
+- [`fmt/color-ostream.h`](color/print.md#styled-ostream-output): styled narrow and wide ostream output
 - [`fmt/os.h`](#os-api): system APIs
 - [`fmt/ostream.h`](#ostream-api): `std::ostream` support
 - [`fmt/args.h`](#args-api): dynamic argument lists
@@ -679,11 +680,13 @@ Example:
 
 `fmt/color.h` provides support for terminal color and text style output.
 
+See [Terminal Colors and Text Styles](color/index.md) for detailed documentation.
+
 ::: print(text_style, format_string<T...>, T&&...)
 
-::: fg(detail::color_type)
+::: fg(color_t)
 
-::: bg(detail::color_type)
+::: bg(color_t)
 
 ::: styled(const T&, text_style)
 

@@ -20,6 +20,7 @@ jobs:
       TZ: Europe/Kyiv
       GTEST_DEATH_TEST_USE_FORK: ${{ matrix.sanitizers && startsWith(matrix.cxx, 'g++') && '1' || '0' }}
     strategy:
+      fail-fast: false
       matrix:
         cxx: [g++-4.9, g++-11, clang++-3.6, clang++-11]
         build_type: [Debug, Release]
@@ -48,12 +49,13 @@ jobs:
             std: 23
             os: ubuntu-24.04
             gen: Ninja
-          - cxx: g++-16
-            build_type: Debug
-            std: 26
-            os: ubuntu-24.04
-            cxxflags: -freflection
-            install: sudo apt install g++-16
+          # Temporarily disabled: toolchain PPA returns HTTP 503; see tjgolubi/fmt#2.
+          # - cxx: g++-16
+          #   build_type: Debug
+          #   std: 26
+          #   os: ubuntu-24.04
+          #   cxxflags: -freflection
+          #   install: sudo apt install g++-16
           - cxx: clang++-3.6
           - cxx: clang++-11
             build_type: Debug

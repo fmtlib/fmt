@@ -14,6 +14,7 @@
 
 #ifndef FMT_MODULE
 #  include <limits.h>  // CHAR_BIT
+#  include <stdint.h>  // uint64_t
 #  include <stdio.h>   // FILE
 #  include <string.h>  // memcmp
 
@@ -193,6 +194,16 @@
 #  define FMT_NORETURN [[noreturn]]
 #else
 #  define FMT_NORETURN
+#endif
+
+#ifdef FMT_MAYBE_UNUSED
+// Use the provided definition.
+#elif FMT_CLANG_VERSION && FMT_HAS_CPP17_ATTRIBUTE(maybe_unused)
+#  define FMT_MAYBE_UNUSED [[maybe_unused]]
+#elif FMT_CLANG_VERSION
+#  define FMT_MAYBE_UNUSED __attribute__((unused))
+#else
+#  define FMT_MAYBE_UNUSED
 #endif
 
 #ifdef FMT_NODISCARD
@@ -2409,7 +2420,7 @@ constexpr auto is_locking() -> bool {
 }
 
 FMT_API void vformat_to(buffer<char>& buf, string_view fmt, format_args args,
-                        locale_ref loc = {});
+                        locale_ref loc = {}, uint64_t color_state = 0);
 
 #if FMT_WIN32
 FMT_API void vprint_mojibake(FILE*, string_view, format_args, bool);
@@ -2641,12 +2652,16 @@ template <typename Context> class basic_format_args {
   }
 };
 
+namespace detail { struct color_context; }
+
 // A formatting context.
 class context {
  private:
   appender out_;
   format_args args_;
   FMT_NO_UNIQUE_ADDRESS locale_ref loc_;
+  FMT_MAYBE_UNUSED uint64_t color_state_;
+  friend struct detail::color_context;
 
  public:
   using char_type = char;  ///< The character type for the output.
@@ -2656,8 +2671,9 @@ class context {
 
   /// Constructs a `context` object. References to the arguments are stored
   /// in the object so make sure they have appropriate lifetimes.
-  constexpr context(iterator out, format_args args, locale_ref loc = {})
-      : out_(out), args_(args), loc_(loc) {}
+  constexpr context(iterator out, format_args args, locale_ref loc = {},
+                    uint64_t color_state = 0)
+      : out_(out), args_(args), loc_(loc), color_state_(color_state) {}
   context(context&&) = default;
   context(const context&) = delete;
   void operator=(const context&) = delete;
@@ -2679,6 +2695,23 @@ class context {
 
   constexpr auto locale() const -> locale_ref { return loc_; }
 };
+
+namespace detail {
+
+// Packed terminal style, kept independent of color.h. Zero means defaults.
+// This is internal state, not a stable numeric or serialization interface.
+struct color_context {
+  template <typename Context>
+  static constexpr auto get(const Context& ctx) noexcept -> uint64_t {
+    return ctx.color_state_;
+  }
+  template <typename Context>
+  static FMT_CONSTEXPR void set(Context& ctx, uint64_t state) noexcept {
+    ctx.color_state_ = state;
+  }
+}; // color_context
+
+}  // detail
 
 template <typename Char = char> struct runtime_format_string {
   basic_string_view<Char> str;

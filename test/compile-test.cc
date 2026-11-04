@@ -290,7 +290,11 @@ TEST(compile_test, constexpr_formatted_size) {
   FMT_CONSTEXPR20 size_t styled_size = fmt::formatted_size(
       FMT_COMPILE("{}"),
       fmt::styled(std::array{1, 2, 3}, fmt::bg(fmt::color::green)));
+#if FMT_COLOR_COMPACT_SGR == 1
+  EXPECT_EQ(styled_size, 28);
+#else
   EXPECT_EQ(styled_size, 32);
+#endif
   FMT_CONSTEXPR20 size_t variant_size = fmt::formatted_size(
       FMT_COMPILE("{}"), std::variant<std::monostate, char>{});
   EXPECT_EQ(variant_size, 18);

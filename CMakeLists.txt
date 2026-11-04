@@ -278,7 +278,11 @@ foreach (
   args.h
   base.h
   chrono.h
+  color-ostream.h
   color.h
+  styled_text.h
+  parse_styled_text.h
+  strip_ansi.h
   compile.h
   core.h
   enum.h

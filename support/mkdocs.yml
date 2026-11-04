@@ -31,6 +31,7 @@ extra_css:
   - fmt.css
 
 markdown_extensions:
+  - admonition
   - pymdownx.highlight:
       # Use JavaScript syntax highlighter instead of Pygments because it
       # automatically applies to code blocks extracted through Doxygen.
@@ -49,6 +50,15 @@ nav:
   - Home: index.md
   - Get Started: get-started.md
   - API: api.md
+  - Color:
+      - Overview: color/index.md
+      - Colors: color/colors.md
+      - Named colors: color/named-colors.md
+      - Emphasis: color/emphasis.md
+      - Text styles: color/text-style.md
+      - Styled arguments: color/styled.md
+      - Styled output: color/print.md
+      - Styled formatting: color/format.md
   - Syntax: syntax.md
 
 exclude_docs: ChangeLog-old.md

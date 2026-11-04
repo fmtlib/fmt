@@ -11,6 +11,7 @@ jobs:
       c++${{matrix.std }} ${{ matrix.build_type}}
       ${{matrix.shared && 'Shared' || ''}}
     strategy:
+      fail-fast: false
       matrix:
         os: [macos-15]
         build_type: [Debug, Release]

@@ -9,7 +9,7 @@
 //
 // For the license information refer to format.h.
 
-#include "fmt/core.h"
+#include "fmt/color.h"
 #include "gtest/gtest.h"
 
 TEST(assert_test, fail) {
@@ -29,3 +29,14 @@ TEST(assert_test, dangling_else) {
     executed_else = true;
   EXPECT_TRUE(executed_else);
 }
+
+#if GTEST_HAS_DEATH_TEST && !defined(NDEBUG)
+TEST(assert_test, color_argument_ranges) {
+  EXPECT_DEATH((void)(fmt::rgb{-1, 0, 0}), "channel out of range");
+  EXPECT_DEATH((void)(fmt::gray_color{24}), "index out of range");
+  EXPECT_DEATH((void)(fmt::cube_color{0, 6, 0}), "channel out of range");
+  EXPECT_DEATH((void)(fmt::cube_color{216}), "index out of range");
+  fmt::cube_color color;
+  EXPECT_DEATH((void)color.b(-1), "channel out of range");
+}
+#endif

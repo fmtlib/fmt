@@ -1,0 +1,90 @@
+#:schema https://www.schemastore.org/git-cliff.json
+# Draft FmtColor configuration; verify with git-cliff 2.14.2 on PC and tablet.
+# This generates FmtColorChangeLog.md, not upstream's ChangeLog.md.
+#
+# Always supply the accepted FmtColor history range explicitly. Tag filtering
+# alone does not exclude upstream commits or select the correct branch.
+# Current upstream baseline: b4ffa39b9994c961418406f47358791d89a5aa48
+# Example preview (stdout only):
+#   git cliff --config cliff.toml --offline --no-exec \
+#     b4ffa39b9994c961418406f47358791d89a5aa48..FmtColor
+#
+# Before creating a squash commit, preview its reviewed message with
+# --with-commit so its changelog entry can be included in the same commit.
+# Do not generate from the feature branch's intermediate commits.
+# Use --output FmtColorChangeLog.md only when the generated result is approved.
+# No automatic version bumping: fork release numbering is not yet agreed.
+
+[changelog]
+header = """
+---
+title: Change Log
+copyright: 2026 Terry Golubiewski, all rights reserved.
+---
+
+# Change Log
+
+"""
+header_marker = "<!-- git-cliff: end of header -->"
+
+# Keep section order independent of the bookkeeping exclusions below.
+# Those exclusions also name groups so protected breaking commits stay grouped.
+body = """
+{% if version %}\
+    ## [{{ version }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else %}\
+    ## Unreleased
+{% endif %}\
+{% set groups = ["🚀 Features", "🐛 Bug Fixes", "⚡ Performance", "🚜 Refactor", "📚 Documentation", "🧪 Tests", "🛠️ Build", "⚙️ Continuous Integration", "🎨 Source Formatting", "🧹 Maintenance", "⏪ Reverts", "📦 Other"] %}\
+{% for entry in commits | commit_groups(groups=groups) %}
+    ### {{ entry.group }}
+    {% for commit in entry.commits %}
+        - {% if commit.scope %}*({{ commit.scope }})* {% endif %}\
+            {% if commit.breaking %}[**breaking**] {% endif %}\
+            {{ commit.message | upper_first }}\
+            {% if commit.breaking_description and commit.breaking_description != commit.message %} — {{ commit.breaking_description | trim }}{% endif %}
+    {% endfor %}
+{% endfor %}
+"""
+trim = true
+render_always = true
+
+[git]
+conventional_commits = true
+# Fail on a nonconventional accepted commit rather than silently hiding it.
+# This assumes the explicit range contains only our accepted project commits.
+require_conventional = true
+filter_unconventional = false
+split_commits = false
+protect_breaking_commits = true
+
+# First match wins: bookkeeping exclusions must precede documentation/chore.
+# The optional ! is recognized; protect_breaking_commits keeps actual breaks.
+commit_parsers = [
+    { message = "^doc(s)?\\(changelog\\)!?:", skip = true, group = "📚 Documentation" },
+    { message = "^chore\\(release\\)!?:", skip = true, group = "🧹 Maintenance" },
+    { message = "^feat(\\([^)]*\\))?!?:", group = "🚀 Features" },
+    { message = "^fix(\\([^)]*\\))?!?:", group = "🐛 Bug Fixes" },
+    { message = "^perf(\\([^)]*\\))?!?:", group = "⚡ Performance" },
+    { message = "^refactor(\\([^)]*\\))?!?:", group = "🚜 Refactor" },
+    { message = "^doc(s)?(\\([^)]*\\))?!?:", group = "📚 Documentation" },
+    { message = "^test(\\([^)]*\\))?!?:", group = "🧪 Tests" },
+    { message = "^build(\\([^)]*\\))?!?:", group = "🛠️ Build" },
+    { message = "^ci(\\([^)]*\\))?!?:", group = "⚙️ Continuous Integration" },
+    { message = "^style(\\([^)]*\\))?!?:", group = "🎨 Source Formatting" },
+    { message = "^chore(\\([^)]*\\))?!?:", group = "🧹 Maintenance" },
+    { message = "^revert(\\([^)]*\\))?!?:", group = "⏪ Reverts" },
+    # Preserve unexpected conventional types for review rather than hide them.
+    { message = ".*", group = "📦 Other" },
+]
+filter_commits = false
+fail_on_unmatched_commit = true
+
+# Draft fork-tag namespace, independent of the final release-number format.
+# Imported upstream tags (such as 12.2.0) must not define our release sections.
+tag_pattern = "^fmtcolor-"
+use_branch_tags = true
+topo_order = false
+topo_order_commits = true
+sort_commits = "oldest"
+recurse_submodules = false

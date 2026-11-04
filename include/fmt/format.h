@@ -3944,11 +3944,13 @@ template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(mapped_type_constant<T, Char>::value ==
                             type::custom_type &&
                         !std::is_fundamental<T>::value)>
-FMT_CONSTEXPR auto write(OutputIt out, const T& value) -> OutputIt {
+FMT_CONSTEXPR auto write(OutputIt out, const T& value,
+                         uint64_t color_state = 0) -> OutputIt
+{
   auto f = formatter<T, Char>();
   auto parse_ctx = parse_context<Char>({});
   f.parse(parse_ctx);
-  auto ctx = basic_format_context<OutputIt, Char>(out, {}, {});
+  auto ctx = basic_format_context<OutputIt, Char>(out, {}, {}, color_state);
   return f.format(value, ctx);
 }
 
@@ -3962,6 +3964,10 @@ template <typename Char> struct default_arg_formatter {
   using context = buffered_context<Char>;
 
   basic_appender<Char> out;
+  uint64_t color_state;
+
+  explicit default_arg_formatter(basic_appender<Char> it, uint64_t state = 0)
+      : out(it), color_state(state) {}
 
   void operator()(monostate) { report_error("argument not found"); }
 
@@ -3978,7 +3984,7 @@ template <typename Char> struct default_arg_formatter {
   void operator()(typename basic_format_arg<context>::handle h) {
     // Use a null locale since the default format must be unlocalized.
     auto parse_ctx = parse_context<Char>({});
-    auto format_ctx = context(out, {}, {});
+    auto format_ctx = context(out, {}, {}, color_state);
     h.format(parse_ctx, format_ctx);
   }
 };
@@ -4087,7 +4093,8 @@ template <typename Char = char> struct format_handler {
   }
 
   FMT_INLINE void on_replacement_field(int id, const Char*) {
-    ctx.arg(id).visit(default_arg_formatter<Char>{ctx.out()});
+    ctx.arg(id).visit(
+        default_arg_formatter<Char>{ctx.out(), color_context::get(ctx)});
   }
 
   auto on_format_specs(int id, const Char* begin, const Char* end)
@@ -4178,6 +4185,7 @@ template <typename Char> class nested_format_specs {
     auto buf = basic_memory_buffer<Char>();
     auto buffer_ctx =
         buffer_context(basic_appender<Char>(buf), ctx.args(), ctx.locale());
+    color_context::set(buffer_ctx, color_context::get(ctx));
     f.write_body(buffer_ctx, static_cast<T&&>(values)...);
     return detail::write<Char>(
         ctx.out(), basic_string_view<Char>(buf.data(), buf.size()), specs);
@@ -4205,6 +4213,8 @@ class generic_context {
   OutputIt out_;
   basic_format_args<arg_context> args_;
   locale_ref loc_;
+  FMT_MAYBE_UNUSED uint64_t color_state_;
+  friend struct detail::color_context;
 
  public:
   using char_type = Char;
@@ -4212,8 +4222,8 @@ class generic_context {
   enum { builtin_types = FMT_BUILTIN_TYPES };
 
   constexpr generic_context(OutputIt out, basic_format_args<arg_context> args,
-                            locale_ref loc = {})
-      : out_(out), args_(args), loc_(loc) {}
+                            locale_ref loc = {}, uint64_t color_state = 0)
+      : out_(out), args_(args), loc_(loc), color_state_(color_state) {}
   generic_context(generic_context&&) = default;
   generic_context(const generic_context&) = delete;
   void operator=(const generic_context&) = delete;
@@ -4444,10 +4454,20 @@ template <typename U, typename Char = char> struct nested_formatter {
     return formatter_.format(*view.value, ctx);
   }
 
-  template <typename FormatContext, typename V>
+  template <typename FormatContext, typename V,
+            FMT_ENABLE_IF(detail::mapped_type_constant<V, Char>::value !=
+                          detail::type::custom_type)>
   auto write_arg(FormatContext& ctx, const V& value) const
       -> decltype(ctx.out()) {
     return detail::write<Char>(ctx.out(), value);
+  }
+
+  template <typename FormatContext, typename V,
+            FMT_ENABLE_IF(detail::mapped_type_constant<V, Char>::value ==
+                          detail::type::custom_type)>
+  auto write_arg(FormatContext& ctx, const V& value) const
+      -> decltype(ctx.out()) {
+    return detail::write<Char>(ctx.out(), value, detail::color_context::get(ctx));
   }
 
   template <typename FormatContext, typename... T>

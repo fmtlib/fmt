@@ -209,6 +209,10 @@ TEST(buffered_file_test, close_file_in_dtor) {
 }
 
 TEST(buffered_file_test, close_error_in_dtor) {
+#if defined(FMTCOLOR_SKIP) && FMTCOLOR_SKIP
+  GTEST_SKIP() << "WARNING: FMTCOLOR_SKIP is enabled; skipping intentional "
+                  "close of a FILE*-owned descriptor (Android fdsan conflict).";
+#endif
   auto f =
       std::unique_ptr<buffered_file>(new buffered_file(open_buffered_file()));
   EXPECT_WRITE(
@@ -233,6 +237,10 @@ TEST(buffered_file_test, close) {
 }
 
 TEST(buffered_file_test, close_error) {
+#if defined(FMTCOLOR_SKIP) && FMTCOLOR_SKIP
+  GTEST_SKIP() << "WARNING: FMTCOLOR_SKIP is enabled; skipping intentional "
+                  "close of a FILE*-owned descriptor (Android fdsan conflict).";
+#endif
   buffered_file f = open_buffered_file();
   FMT_POSIX(close(f.descriptor()));
   EXPECT_SYSTEM_ERROR_NOASSERT(f.close(), EBADF, "cannot close file");
@@ -524,6 +532,10 @@ TEST(file_test, fdopen) {
 // Windows CRT implements _IOLBF incorrectly (full buffering).
 #  ifndef _WIN32
 TEST(file_test, line_buffering) {
+#if defined(FMTCOLOR_SKIP) && FMTCOLOR_SKIP
+  GTEST_SKIP() << "WARNING: FMTCOLOR_SKIP is enabled; skipping intentional "
+                  "close of a FILE*-owned descriptor (Android fdsan conflict).";
+#endif
   auto pipe = fmt::pipe();
 
   int write_fd = pipe.write_end.descriptor();
