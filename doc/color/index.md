@@ -34,14 +34,14 @@ The first call styles the entire message. The second styles only `42`.
 
 ## Reference
 
-| Page                           | Contents                                                                                                                      |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| [Colors](colors.md)            | RGB, terminal, cube, and gray colors; `no_color`; public `color_t` values, access and visitation, and integer representations |
-| [Emphasis](emphasis.md)        | Text attributes and their combination                                                                                         |
-| [Text styles](text-style.md)   | `text_style`, its members and operators, and `fg`/`bg`                                                                        |
-| [Styled arguments](styled.md)  | Structured styled text, SGR parsing, ANSI stripping, `styled`, format specifications, and lifetimes                           |
-| [Styled output](print.md)      | `print`, `println`, `vprint`, and `vprintln`                                                                                  |
-| [Styled formatting](format.md) | `format`, `format_to`, and their `v` variants                                                                                 |
+| Page                           | Contents                                                                                                                           |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| [Colors](colors.md)            | RGB, terminal, cube, and gray colors; `no_color`; public `color_t` values, access and visitation, and integer representations      |
+| [Emphasis](emphasis.md)        | Text attributes and their combination                                                                                              |
+| [Text styles](text-style.md)   | `text_style`, its members and operators, and `fg`/`bg`                                                                             |
+| [Styled arguments](styled.md)  | Structured styled text, SGR parsing, ANSI stripping, backslash escaping/unescaping, `styled`, format specifications, and lifetimes |
+| [Styled output](print.md)      | `print`, `println`, `vprint`, and `vprintln`                                                                                       |
+| [Styled formatting](format.md) | `format`, `format_to`, and their `v` variants                                                                                      |
 
 ## Choosing and combining styles
 

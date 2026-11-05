@@ -17,3 +17,10 @@ representations and formatting-context layouts change. Styled replacement
 fields inherit and restore enclosing styles rather than unconditionally
 resetting to terminal defaults.
 
+- *(text)* Add backslash escaping and unescaping utilities
+
+
+### 🎨 Source Formatting
+
+- Conform to clang-format and cmake-format checks
+

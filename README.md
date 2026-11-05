@@ -27,10 +27,12 @@ The styling extensions include:
 - Owning narrow and wide styled-text trees with scoped concatenation, absolute styles, alignment, padding, and precision.
 - Nested styled values that inherit and restore their enclosing formatting style.
 - Standard ANSI SGR parsing into owned styled text and ANSI stripping for strings and individual tree leaves.
+- Backslash escaping and unescaping for inspecting and reconstructing control characters.
 
 Include `<fmt/color.h>` for color and style values, `<fmt/styled_text.h>` for
 owning text, `<fmt/parse_styled_text.h>` for SGR parsing, and `<fmt/strip_ansi.h>`
-for ANSI stripping. The generated user guide documents the API, behavior changes,
+for ANSI stripping. Include `<fmt/backslash.h>` for backslash escaping and
+unescaping. The generated user guide documents the API, behavior changes,
 and examples; the integration instructions cover Make, CMake, header-only use,
 and selecting the SGR output mode. The [working demo](demo/README.md) shows nested
 styles and absolute boundaries.

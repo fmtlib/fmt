@@ -304,6 +304,97 @@ Both narrow and wide styled text are supported. To strip sequences after joining
 all leaves, call `strip_ansi(text.plain_text())` instead; this also removes any
 complete sequences formed across leaf boundaries.
 
+## Backslash escaping and unescaping
+
+Include `<fmt/backslash.h>` for `backslash_escape` and `backslash_unescape`.
+These independent text utilities return owning strings and support narrow and
+wide text, including embedded NULs when passed a string or a length-bearing view.
+They require neither ANSI parsing nor styled text.
+
+```cpp
+#include <fmt/backslash.h>
+
+auto readable = fmt::backslash_escape("\x1b[31mred\x1b[0m\n");
+// readable contains the literal text: \e[31mred\e[0m\n
+auto original = fmt::backslash_unescape(readable);
+```
+
+The decoder accepts the following escape sequences. The last column describes
+the canonical spelling produced by `backslash_escape` and `backslash_escape_to`.
+
+| Escape | Character or value   | ASCII  | Emits |
+| ------ | -------------------- | ------ | ----- |
+| `\a`   | Alert (bell)         | `0x07` | Yes   |
+| `\b`   | Backspace            | `0x08` | Yes   |
+| `\e`   | Escape (ESC)         | `0x1b` | Yes   |
+| `\f`   | Form feed            | `0x0c` | Yes   |
+| `\n`   | Line feed (newline)  | `0x0a` | Yes   |
+| `\r`   | Carriage return      | `0x0d` | Yes   |
+| `\t`   | Horizontal tab       | `0x09` | Yes   |
+| `\v`   | Vertical tab         | `0x0b` | Yes   |
+| `\\`   | Backslash            | `0x5c` | Yes   |
+| `\"`   | Double quote         | `0x22` | Yes   |
+| `\'`   | Apostrophe           | `0x27` | No    |
+| `\?`   | Question mark        | `0x3f` | No    |
+| `\x00` | NUL                  | `0x00` | Yes   |
+| `\x7f` | Delete (DEL)         | `0x7f` | Yes   |
+| `\xhh` | Exactly 2 hex digits | `0xhh` | Yes   |
+| `\nnn` | 1 to 3 octal digits  |        | No    |
+
+`backslash_escape` uses `\a`, `\b`, `\e`, `\f`, `\n`, `\r`, `\t`, and `\v`
+for the corresponding controls. `\e` represents ESC (`0x1b`); it is an
+extension to the standard C++ escape spellings. It uses `\xhh` with two lowercase
+hexadecimal digits for other ASCII C0 controls and DEL (`0x7f`), including `\x00` for NUL. Literal
+backslashes become `\\` and double quotes become `\"`. Other code units,
+including non-ASCII text and UTF-8 bytes, are preserved. No surrounding quotes
+are added.
+
+`backslash_unescape` recognizes those forms, plus `\'` for an apostrophe and
+`\?` for a question mark. Ordinary apostrophes and question marks remain
+unchanged when escaping. Hex digits may use either case. The decoder also
+accepts one to three octal digits (`\0` through `\377`). Hex escapes consume
+exactly two digits; octal escapes consume at most three. Subsequent digits
+remain ordinary text.
+
+Unknown or malformed escapes throw `fmt::format_error`. This includes `\q`,
+`\x`, `\xG1`, a trailing backslash, and octal values above 255. Unicode and
+braced numeric escapes are not supported and also throw. Decoding is one pass:
+a decoded backslash does not start another escape. Surrounding quotes are
+retained. If `backslash_unescape_to` throws, output written before the invalid
+escape remains in the destination; the invalid escape itself writes nothing.
+
+To write into an existing destination, use `backslash_escape_to(out, text)` or
+`backslash_unescape_to(out, text)`. Both accept output iterators and return the
+advanced iterator. They support narrow and wide string views, literals, and
+strings without allocating an intermediate string.
+
+```cpp
+#include <iterator>
+#include <string>
+
+std::string log = "Received: ";
+fmt::backslash_escape_to(std::back_inserter(log), "\x1b[31mred\n");
+// log contains: Received: \e[31mred\n
+```
+
+The iterator functions support constant evaluation from C++14 when the output
+iterator and input view support it. With this {fmt} implementation, use explicit
+pointer-and-length views before C++20. The owning-string functions support
+constant evaluation where {fmt} enables constexpr `std::basic_string` support
+(C++20 and later with a supported compiler and standard library). Any dynamic
+storage allocated during constant evaluation must be released within that
+constant evaluation; these functions can produce temporary strings for a
+compile-time check.
+
+The output must not invalidate or overwrite unread input. In particular, do not
+append to the string supplying the input view, since reallocation can invalidate
+that view.
+
+`backslash_unescape(backslash_escape(text))` recovers the original code units.
+To inspect a styled value's text, pass `text.plain_text()`; to inspect its emitted
+SGR sequences too, pass the formatted string. These functions do not interpret
+ANSI sequences or remove explicit styles.
+
 ## Individual styled arguments
 
 Style an individual replacement field with `styled`. Its format

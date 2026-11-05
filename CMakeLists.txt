@@ -276,6 +276,7 @@ set(FMT_HEADERS)
 foreach (
   header
   args.h
+  backslash.h
   base.h
   chrono.h
   color-ostream.h

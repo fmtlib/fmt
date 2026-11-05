@@ -13,6 +13,7 @@ API supports C++11 and later; the application examples below target C++17.
 | `<fmt/styled_text.h>`       | Owning narrow/wide text trees and their formatter.         |
 | `<fmt/parse_styled_text.h>` | Parse standard ANSI SGR into owned styled text.            |
 | `<fmt/strip_ansi.h>`        | Strip ANSI sequences from strings or styled-text leaves.   |
+| `<fmt/backslash.h>`         | Escape control characters or decode backslash escapes.     |
 | `<fmt/color-ostream.h>`     | Styled narrow/wide ostream output and stream insertion.    |
 | `<fmt/xchar.h>`             | Wide-character formatting and printing entry points.       |
 
