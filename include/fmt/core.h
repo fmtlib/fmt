@@ -2652,7 +2652,9 @@ template <typename Context> class basic_format_args {
   }
 };
 
-namespace detail { struct color_context; }
+namespace detail {
+struct color_context;
+}
 
 // A formatting context.
 class context {
@@ -2709,9 +2711,9 @@ struct color_context {
   static FMT_CONSTEXPR void set(Context& ctx, uint64_t state) noexcept {
     ctx.color_state_ = state;
   }
-}; // color_context
+};  // color_context
 
-}  // detail
+}  // namespace detail
 
 template <typename Char = char> struct runtime_format_string {
   basic_string_view<Char> str;

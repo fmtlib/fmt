@@ -63,9 +63,8 @@ void vformat_to(buffer<Char>& buf, basic_string_view<Char> fmt,
                 locale_ref loc = {}, uint64_t color_state = 0) {
   static_assert(!std::is_same<Char, char>::value, "");
   auto out = basic_appender<Char>(buf);
-  parse_format_string(
-      fmt, format_handler<Char>{parse_context<Char>(fmt),
-                                {out, args, loc, color_state}});
+  parse_format_string(fmt, format_handler<Char>{parse_context<Char>(fmt),
+                                                {out, args, loc, color_state}});
 }
 }  // namespace detail
 

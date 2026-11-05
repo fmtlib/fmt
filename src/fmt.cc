@@ -139,8 +139,8 @@ extern "C++" {
 #if FMT_OS
 #  include "fmt/os.h"
 #endif
-#include "fmt/ostream.h"
 #include "fmt/color-ostream.h"
+#include "fmt/ostream.h"
 #include "fmt/printf.h"
 #include "fmt/ranges.h"
 #include "fmt/std.h"

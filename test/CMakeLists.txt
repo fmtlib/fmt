@@ -29,8 +29,8 @@ function (add_fmt_test name)
   add_executable(${name} ${sources})
   target_link_libraries(${name} ${libs})
 
-  if (FMTCOLOR_SKIP AND (name STREQUAL "gtest-extra-test" OR
-                        name STREQUAL "os-test"))
+  if (FMTCOLOR_SKIP AND (name STREQUAL "gtest-extra-test" OR name STREQUAL
+                                                             "os-test"))
     target_compile_definitions(${name} PRIVATE FMTCOLOR_SKIP=1)
   endif ()
 

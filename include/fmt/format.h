@@ -3944,9 +3944,8 @@ template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(mapped_type_constant<T, Char>::value ==
                             type::custom_type &&
                         !std::is_fundamental<T>::value)>
-FMT_CONSTEXPR auto write(OutputIt out, const T& value,
-                         uint64_t color_state = 0) -> OutputIt
-{
+FMT_CONSTEXPR auto write(OutputIt out, const T& value, uint64_t color_state = 0)
+    -> OutputIt {
   auto f = formatter<T, Char>();
   auto parse_ctx = parse_context<Char>({});
   f.parse(parse_ctx);
@@ -4467,7 +4466,8 @@ template <typename U, typename Char = char> struct nested_formatter {
                           detail::type::custom_type)>
   auto write_arg(FormatContext& ctx, const V& value) const
       -> decltype(ctx.out()) {
-    return detail::write<Char>(ctx.out(), value, detail::color_context::get(ctx));
+    return detail::write<Char>(ctx.out(), value,
+                               detail::color_context::get(ctx));
   }
 
   template <typename FormatContext, typename... T>
