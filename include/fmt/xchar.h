@@ -298,9 +298,27 @@ inline auto format_to_n(OutputIt out, size_t n, const S& fmt, T&&... args)
                       fmt::make_format_args<buffered_context<Char>>(args...));
 }
 
+template <typename... T>
+FMT_NODISCARD FMT_INLINE auto formatted_size(wformat_string<T...> fmt,
+                                             T&&... args) -> size_t {
+  auto buf = detail::counting_buffer<wchar_t>();
+  detail::vformat_to(buf, fmt.get(), fmt::make_wformat_args(args...));
+  return buf.count();
+}
+
+template <typename... T>
+FMT_NODISCARD FMT_INLINE auto formatted_size(locale_ref loc,
+                                             wformat_string<T...> fmt,
+                                             T&&... args) -> size_t {
+  auto buf = detail::counting_buffer<wchar_t>();
+  detail::vformat_to(buf, fmt.get(), fmt::make_wformat_args(args...), loc);
+  return buf.count();
+}
+
 template <typename S, typename... T,
           typename Char = detail::format_string_char_t<S>,
-          FMT_ENABLE_IF(detail::is_exotic_char<Char>::value)>
+          FMT_ENABLE_IF(detail::is_exotic_char<Char>::value &&
+                        !std::is_same<Char, wchar_t>::value)>
 inline auto formatted_size(const S& fmt, T&&... args) -> size_t {
   auto buf = detail::counting_buffer<Char>();
   detail::vformat_to(buf, detail::to_string_view(fmt),

@@ -165,6 +165,18 @@ TEST(format_test, wide_format_to_n_runtime) {
   EXPECT_EQ(L"BC x", fmt::wstring_view(buffer, 4));
 }
 
+TEST(format_test, wide_formatted_size) {
+  EXPECT_EQ(5u, fmt::formatted_size(L"{}", 12345));
+  EXPECT_EQ(2u, fmt::formatted_size(L"{}", 42));
+  fmt::wformat_string<int> wfmt = L"{}";
+  EXPECT_EQ(2u, fmt::formatted_size(wfmt, 42));
+  EXPECT_EQ(5u, fmt::formatted_size(fmt::wformat_string<int>(L"{}"), 12345));
+}
+
+TEST(format_test, wide_formatted_size_runtime) {
+  EXPECT_EQ(5u, fmt::formatted_size(fmt::runtime(L"{}"), 12345));
+}
+
 TEST(xchar_test, named_arg_udl) {
   using namespace fmt::literals;
   auto udl_a =
@@ -387,6 +399,10 @@ TEST(locale_test, wformat) {
   int n = 1234567;
   EXPECT_EQ(L"1~234~567",
             fmt::vformat(loc, L"{:L}", fmt::make_wformat_args(n)));
+  EXPECT_EQ(7u, fmt::formatted_size(std::locale(), L"{:L}", 1234567));
+  EXPECT_EQ(9u, fmt::formatted_size(loc, L"{:L}", 1234567));
+  fmt::wformat_string<int> loc_wfmt = L"{:L}";
+  EXPECT_EQ(9u, fmt::formatted_size(loc, loc_wfmt, 1234567));
   EXPECT_EQ(L"1234567", fmt::format(std::locale("C"), L"{:L}", 1234567));
   EXPECT_EQ(L"0x1?8p+0", fmt::format(loc, L"{:La}", 1.5));
 
