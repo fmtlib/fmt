@@ -1749,6 +1749,7 @@ struct duration_formatter {
   template <typename Callback, typename... Args>
   void format_tm(const tm& time, Callback cb, Args... args) {
     if (isnan(val)) return write_nan();
+    write_sign();
     auto w = tm_writer_type(locale, localized, out, time);
     (w.*cb)(args...);
     out = w.out();
