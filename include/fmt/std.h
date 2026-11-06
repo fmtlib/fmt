@@ -373,11 +373,6 @@ struct formatter<std::optional<T>, Char,
                  std::enable_if_t<is_formattable<T, Char>::value>> {
  private:
   formatter<std::remove_cv_t<T>, Char> underlying_;
-  static constexpr basic_string_view<Char> optional =
-      detail::string_literal<Char, 'o', 'p', 't', 'i', 'o', 'n', 'a', 'l',
-                             '('>{};
-  static constexpr basic_string_view<Char> none =
-      detail::string_literal<Char, 'n', 'o', 'n', 'e'>{};
 
  public:
   FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) {
@@ -388,10 +383,10 @@ struct formatter<std::optional<T>, Char,
   template <typename FormatContext>
   auto format(const std::optional<T>& opt, FormatContext& ctx) const
       -> decltype(ctx.out()) {
-    if (!opt) return detail::write<Char>(ctx.out(), none);
+    if (!opt) return detail::write_bytes<Char>(ctx.out(), "none");
 
     auto out = ctx.out();
-    out = detail::write<Char>(out, optional);
+    out = detail::write_bytes<Char>(out, "optional(");
     ctx.advance_to(out);
     out = underlying_.format(*opt, ctx);
     return detail::write(out, ')');
@@ -405,15 +400,6 @@ struct formatter<std::expected<T, E>, Char,
                  std::enable_if_t<(std::is_void<T>::value ||
                                    is_formattable<T, Char>::value) &&
                                   is_formattable<E, Char>::value>> {
- private:
-  static constexpr basic_string_view<Char> expected_prefix =
-      detail::string_literal<Char, 'e', 'x', 'p', 'e', 'c', 't', 'e', 'd',
-                             '('>{};
-  static constexpr basic_string_view<Char> unexpected_prefix =
-      detail::string_literal<Char, 'u', 'n', 'e', 'x', 'p', 'e', 'c', 't', 'e',
-                             'd', '('>{};
-
- public:
   FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     return ctx.begin();
   }
@@ -424,11 +410,11 @@ struct formatter<std::expected<T, E>, Char,
     auto out = ctx.out();
 
     if (value.has_value()) {
-      out = detail::write<Char>(out, expected_prefix);
+      out = detail::write_bytes<Char>(out, "expected(");
       if constexpr (!std::is_void<T>::value)
         out = detail::write_escaped_alternative<Char>(out, *value, ctx);
     } else {
-      out = detail::write<Char>(out, unexpected_prefix);
+      out = detail::write_bytes<Char>(out, "unexpected(");
       out = detail::write_escaped_alternative<Char>(out, value.error(), ctx);
     }
     *out++ = ')';
@@ -439,12 +425,6 @@ struct formatter<std::expected<T, E>, Char,
 template <typename E, typename Char>
 struct formatter<std::unexpected<E>, Char,
                  std::enable_if_t<is_formattable<E, Char>::value>> {
- private:
-  static constexpr basic_string_view<Char> unexpected_prefix =
-      detail::string_literal<Char, 'u', 'n', 'e', 'x', 'p', 'e', 'c', 't', 'e',
-                             'd', '('>{};
-
- public:
   FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     return ctx.begin();
   }
@@ -454,7 +434,7 @@ struct formatter<std::unexpected<E>, Char,
       -> decltype(ctx.out()) {
     auto out = ctx.out();
 
-    out = detail::write<Char>(out, unexpected_prefix);
+    out = detail::write_bytes<Char>(out, "unexpected(");
     out = detail::write_escaped_alternative<Char>(out, value.error(), ctx);
 
     *out++ = ')';
@@ -490,12 +470,6 @@ template <typename T> struct is_variant_like {
 };
 
 template <typename Char> struct formatter<std::monostate, Char> {
- private:
-  static constexpr basic_string_view<Char> monostate_str =
-      detail::string_literal<Char, 'm', 'o', 'n', 'o', 's', 't', 'a', 't',
-                             'e'>{};
-
- public:
   FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     return ctx.begin();
   }
@@ -503,7 +477,7 @@ template <typename Char> struct formatter<std::monostate, Char> {
   template <typename FormatContext>
   FMT_CONSTEXPR auto format(const std::monostate&, FormatContext& ctx) const
       -> decltype(ctx.out()) {
-    return detail::write<Char>(ctx.out(), monostate_str);
+    return detail::write_bytes<Char>(ctx.out(), "monostate");
   }
 };
 
@@ -512,15 +486,6 @@ struct formatter<Variant, Char,
                  std::enable_if_t<std::conjunction_v<
                      is_variant_like<Variant>,
                      detail::is_variant_formattable<Variant, Char>>>> {
- private:
-  static constexpr basic_string_view<Char> variant_prefix =
-      detail::string_literal<Char, 'v', 'a', 'r', 'i', 'a', 'n', 't', '('>{};
-  static constexpr basic_string_view<Char> valueless_str =
-      detail::string_literal<Char, 'v', 'a', 'l', 'u', 'e', 'l', 'e', 's', 's',
-                             ' ', 'b', 'y', ' ', 'e', 'x', 'c', 'e', 'p', 't',
-                             'i', 'o', 'n'>{};
-
- public:
   FMT_CONSTEXPR auto parse(parse_context<Char>& ctx) -> const Char* {
     return ctx.begin();
   }
@@ -530,7 +495,7 @@ struct formatter<Variant, Char,
       -> decltype(ctx.out()) {
     auto out = ctx.out();
 
-    out = detail::write<Char>(out, variant_prefix);
+    out = detail::write_bytes<Char>(out, "variant(");
     FMT_TRY {
       std::visit(
           [&](const auto& v) {
@@ -539,7 +504,7 @@ struct formatter<Variant, Char,
           value);
     }
     FMT_CATCH(const std::bad_variant_access&) {
-      detail::write<Char>(out, valueless_str);
+      out = detail::write_bytes<Char>(out, "valueless by exception");
     }
     *out++ = ')';
     return out;

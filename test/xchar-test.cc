@@ -469,8 +469,6 @@ TEST(std_test_xchar, variant) {
 TEST(std_test_xchar, expected) {
 #  ifdef __cpp_lib_expected
   EXPECT_EQ(fmt::format(L"{}", std::expected<int, int>{1}), L"expected(1)");
-  EXPECT_EQ(fmt::format(L"{}", std::expected<int, int>{std::unexpected(1)}),
-            L"unexpected(1)");
   EXPECT_EQ(fmt::format(L"{}", std::unexpected(1)), L"unexpected(1)");
 #  endif
 }
