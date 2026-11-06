@@ -714,6 +714,10 @@ TEST(chrono_test, negative_durations) {
   EXPECT_EQ(fmt::format("{:%M:%S}", std::chrono::duration<double>(-1)),
             "-00:01");
   EXPECT_EQ(fmt::format("{:%q}", std::chrono::seconds(-12345)), "s");
+  EXPECT_EQ(fmt::format("{:%OH:%OM:%OS}", std::chrono::seconds(-12345)),
+            "-03:25:45");
+  EXPECT_EQ(fmt::format("{:%r}", std::chrono::seconds(-12345)), "-03:25:45 AM");
+  EXPECT_EQ(fmt::format("{:%p %H}", std::chrono::seconds(-12345)), "-AM 03");
   EXPECT_EQ(fmt::format("{:%S}",
                         std::chrono::duration<signed char, std::milli>(-127)),
             "-00.127");
