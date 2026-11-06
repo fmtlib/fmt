@@ -1819,7 +1819,8 @@ struct duration_formatter {
   void on_second(numeric_system ns, pad_type pad) {
     if (write_if_nonfinite()) return;
 
-    if (ns == numeric_system::standard) {
+    if (ns == numeric_system::standard || !localized ||
+        locale_writer<>::is_classic(locale)) {
       if (std::is_floating_point<rep>::value) {
         auto buf = memory_buffer();
         write_floating_seconds(buf, std::chrono::duration<rep, Period>(val),
