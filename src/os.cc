@@ -383,7 +383,9 @@ void ostream::grow(buffer<char>& buf, size_t) {
 
 ostream::ostream(cstring_view path, const detail::ostream_params& params)
     : buffer<char>(grow), file_(path, params.oflag) {
-  set(new char[params.buffer_size], params.buffer_size);
+  // grow() can only make room by flushing, so the buffer can't be empty.
+  size_t size = max_of<size_t>(params.buffer_size, 1);
+  set(new char[size], size);
 }
 
 ostream::ostream(ostream&& other) noexcept
