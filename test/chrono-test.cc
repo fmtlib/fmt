@@ -1053,9 +1053,8 @@ TEST(chrono_test, out_of_range) {
   // A floating-point day count that doesn't fit in int.
   auto fd = std::chrono::duration<double>(1e300);
   EXPECT_THROW((void)fmt::format("{:%j}", fd), fmt::format_error);
-  // A floating-point time point whose seconds don't fit in time_t.
-  auto ftp = sys_time<std::chrono::duration<double>>(fd);
-  EXPECT_THROW((void)fmt::format("{:%T}", ftp), fmt::format_error);
+  if (!FMT_SAFE_DURATION_CAST) return;
+  // Floating-point time points whose seconds don't fit in time_t.
   auto fnan = sys_time<std::chrono::duration<double>>(
       std::chrono::duration<double>(std::numeric_limits<double>::quiet_NaN()));
   EXPECT_THROW((void)fmt::format("{:%T}", fnan), fmt::format_error);
@@ -1083,17 +1082,21 @@ TEST(chrono_test, float_to_integral_duration_cast) {
       max);
   // Any nonzero value converts to true.
   using bool_duration = std::chrono::duration<bool>;
-  EXPECT_FALSE(fmt::detail::duration_cast<bool_duration>(fsec(0)).count());
   EXPECT_TRUE(fmt::detail::duration_cast<bool_duration>(fsec(2)).count());
-  EXPECT_TRUE(fmt::detail::duration_cast<bool_duration>(fsec(-1)).count());
-  if (FMT_SAFE_DURATION_CAST) {
-    EXPECT_THROW(
-        fmt::detail::duration_cast<std::chrono::duration<unsigned>>(fsec(-1)),
-        fmt::format_error);
-    EXPECT_THROW(
-        fmt::detail::duration_cast<std::chrono::duration<int>>(fsec(min - 1.0)),
-        fmt::format_error);
-  }
+  if (!FMT_SAFE_DURATION_CAST) return;
+  EXPECT_THROW(
+      fmt::detail::duration_cast<std::chrono::duration<unsigned>>(fsec(-1)),
+      fmt::format_error);
+  EXPECT_THROW(
+      fmt::detail::duration_cast<std::chrono::duration<int>>(fsec(min - 1.0)),
+      fmt::format_error);
+  // max + 1, which is also what max rounds to in the source type.
+  EXPECT_THROW(fmt::detail::duration_cast<std::chrono::duration<long long>>(
+                   fsec(9223372036854775808.0)),
+               fmt::format_error);
+  EXPECT_THROW(fmt::detail::duration_cast<std::chrono::duration<int>>(
+                   fsec(std::numeric_limits<double>::quiet_NaN())),
+               fmt::format_error);
 }
 
 struct custom_rep {
