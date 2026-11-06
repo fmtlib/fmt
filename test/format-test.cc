@@ -1749,6 +1749,11 @@ TEST(format_test, format_double) {
   }
 
   EXPECT_EQ(fmt::format("{:.10a}", 4.2), "0x1.0ccccccccdp+2");
+  // Ties round to even like printf.
+  EXPECT_EQ(fmt::format("{:.1a}", 1.03125), "0x1.0p+0");
+  EXPECT_EQ(fmt::format("{:.1a}", 1.09375), "0x1.2p+0");
+  EXPECT_EQ(fmt::format("{:.1a}", 1.0322265625), "0x1.1p+0");
+  EXPECT_EQ(fmt::format("{:.1A}", 1.03125f), "0X1.0P+0");
 
   EXPECT_EQ(fmt::format("{:a}", -42.0), "-0x1.5p+5");
   EXPECT_EQ(fmt::format("{:A}", -42.0), "-0X1.5P+5");
