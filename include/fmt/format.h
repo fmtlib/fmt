@@ -2207,6 +2207,27 @@ FMT_CONSTEXPR auto write_int_chr(OutputIt out, UInt abs_value, bool negative,
   return write_char<Char>(out, static_cast<Char>(abs_value), specs);
 }
 
+// Size and padding computation separate from write_int to avoid template bloat.
+struct size_padding {
+  unsigned size;
+  unsigned padding;
+
+  FMT_CONSTEXPR size_padding(int num_digits, unsigned prefix,
+                             const format_specs& specs)
+      : size((prefix >> 24) + to_unsigned(num_digits)), padding(0) {
+    if (specs.align() == align::numeric) {
+      auto width = to_unsigned(specs.width);
+      if (width > size) {
+        padding = width - size;
+        size = width;
+      }
+    } else if (specs.precision > num_digits) {
+      size = (prefix >> 24) + to_unsigned(specs.precision);
+      padding = to_unsigned(specs.precision - num_digits);
+    }
+  }
+};
+
 // Writes a decimal integer with digit grouping.
 template <typename OutputIt, typename UInt, typename Char>
 auto write_int(OutputIt out, UInt value, unsigned prefix,
@@ -2246,19 +2267,13 @@ auto write_int(OutputIt out, UInt value, unsigned prefix,
     return write_int_chr<Char>(out, value, (prefix & 0xff) == '-', specs);
   }
 
-  unsigned size = (prefix != 0 ? prefix >> 24 : 0) + to_unsigned(num_digits) +
-                  to_unsigned(grouping.count_separators(num_digits));
-  unsigned padding = 0;
-  if (specs.align() == align::numeric) {
-    auto width = to_unsigned(specs.width);
-    if (width > size) padding = width - size;
-    size += padding;
-  }
+  auto sp = size_padding(num_digits + grouping.count_separators(num_digits),
+                         prefix, specs);
   return write_padded<Char, align::right>(
-      out, specs, size, size, [&](reserve_iterator<OutputIt> it) {
+      out, specs, sp.size, [&](reserve_iterator<OutputIt> it) {
         for (unsigned p = prefix & 0xffffff; p != 0; p >>= 8)
           *it++ = static_cast<Char>(p & 0xff);
-        it = detail::fill_n(it, padding, static_cast<Char>('0'));
+        it = detail::fill_n(it, sp.padding, static_cast<Char>('0'));
         return grouping.apply(it, string_view(buffer.data(), buffer.size()));
       });
 }
@@ -2314,27 +2329,6 @@ template <typename Char = char> struct loc_writer {
   template <typename T, FMT_ENABLE_IF(!is_integer<T>::value)>
   auto operator()(T) -> bool {
     return false;
-  }
-};
-
-// Size and padding computation separate from write_int to avoid template bloat.
-struct size_padding {
-  unsigned size;
-  unsigned padding;
-
-  FMT_CONSTEXPR size_padding(int num_digits, unsigned prefix,
-                             const format_specs& specs)
-      : size((prefix >> 24) + to_unsigned(num_digits)), padding(0) {
-    if (specs.align() == align::numeric) {
-      auto width = to_unsigned(specs.width);
-      if (width > size) {
-        padding = width - size;
-        size = width;
-      }
-    } else if (specs.precision > num_digits) {
-      size = (prefix >> 24) + to_unsigned(specs.precision);
-      padding = to_unsigned(specs.precision - num_digits);
-    }
   }
 };
 
