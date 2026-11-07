@@ -544,6 +544,10 @@ TEST(printf_test, string) {
   const char* null_str = nullptr;
   EXPECT_PRINTF("(null)", "%s", null_str);
   EXPECT_PRINTF("    (null)", "%10s", null_str);
+  // Like glibc, a precision too small for "(null)" gives an empty string.
+  EXPECT_PRINTF("", "%.0s", null_str);
+  EXPECT_PRINTF("", "%.3s", null_str);
+  EXPECT_PRINTF("(null)", "%.6s", null_str);
 }
 
 TEST(printf_test, pointer) {
