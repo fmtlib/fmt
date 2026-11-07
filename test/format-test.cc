@@ -1577,6 +1577,9 @@ TEST(format_test, format_dec) {
             fmt::format("{0}", int128_min));
   EXPECT_EQ("340282366920938463463374607431768211455",
             fmt::format("{0}", uint128_max));
+  constexpr auto pow10_19 = static_cast<__uint128_t>(10000000000000000000ULL);
+  EXPECT_EQ(fmt::format("{0}", pow10_19 << 64),
+            "184467440737095516160000000000000000000");
 #endif
 
   char buffer[buffer_size];

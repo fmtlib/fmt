@@ -259,6 +259,36 @@ TEST(format_impl_test, count_digits) {
   test_count_digits<uint64_t>();
 }
 
+#if FMT_USE_INT128
+TEST(format_impl_test, count_digits_uint128) {
+  auto n = static_cast<__uint128_t>(1);
+  for (int i = 1; i <= 38; ++i) {
+    n *= 10;
+    EXPECT_EQ(fmt::detail::count_digits(n - 1), i);
+    EXPECT_EQ(fmt::detail::count_digits(n), i + 1);
+  }
+}
+
+TEST(format_impl_test, divmod_pow10_19) {
+  auto make = [](uint64_t hi, uint64_t lo) {
+    return (static_cast<__uint128_t>(hi) << 64) | lo;
+  };
+  const uint64_t pow10_19 = 10000000000000000000ULL;
+  // Values that need the second correction, alone and after the first one.
+  const __uint128_t values[] = {make(0x865c9ad6ae6b0e9d, 0xfeec40e640600000),
+                                make(0x823a4a262b4babac, 0xffba5499255f60c0)};
+  for (auto n : values) {
+    uint64_t rem = 0;
+    auto q = fmt::detail::divmod_pow10_19(n, rem);
+    auto expected = n / pow10_19;
+    EXPECT_EQ(static_cast<uint64_t>(q >> 64),
+              static_cast<uint64_t>(expected >> 64));
+    EXPECT_EQ(static_cast<uint64_t>(q), static_cast<uint64_t>(expected));
+    EXPECT_EQ(rem, static_cast<uint64_t>(n % pow10_19));
+  }
+}
+#endif
+
 TEST(format_impl_test, countl_zero) {
   constexpr auto num_bits = fmt::detail::num_bits<uint32_t>();
   uint32_t n = 1u;

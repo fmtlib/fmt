@@ -1292,20 +1292,6 @@ FMT_CONSTEXPR20 inline auto count_digits(uint64_t n) -> int {
   return count_digits_fallback(n);
 }
 
-#if FMT_USE_INT128
-FMT_CONSTEXPR20 inline auto count_digits(native_uint128 n) -> int {
-  if (is_constant_evaluated()) return count_digits_fallback(n);
-  // 128-bit division is a slow library call, so reduce to 64-bit chunks via
-  // 10^19 (the largest power of 10 fitting in uint64_t).
-  const uint64_t pow10_19 = 10000000000000000000ULL;
-  if ((n >> 64) == 0) return count_digits(static_cast<uint64_t>(n));
-  n /= pow10_19;
-  if ((n >> 64) == 0) return count_digits(static_cast<uint64_t>(n)) + 19;
-  n /= pow10_19;
-  return count_digits(static_cast<uint64_t>(n)) + 38;
-}
-#endif
-
 // Counts the number of digits in n. BITS = log2(radix).
 template <int BITS, typename UInt>
 FMT_CONSTEXPR auto count_digits(UInt n) -> int {
@@ -1437,26 +1423,6 @@ template <typename Char, typename UInt>
 FMT_CONSTEXPR20 auto do_format_decimal(Char* out, UInt value, int size)
     -> Char* {
   FMT_ASSERT(size >= count_digits(value), "invalid digit count");
-#if FMT_USE_INT128
-  // Avoid slow 128-bit division by formatting 64-bit chunks of 19 digits each.
-  if (!is_constant_evaluated() && num_bits<UInt>() == 128) {
-    const uint64_t pow10_19 = 10000000000000000000ULL;
-    auto v = static_cast<native_uint128>(value);
-    unsigned pos = to_unsigned(size);
-    while ((v >> 64) != 0) {
-      auto chunk = static_cast<uint64_t>(v % pow10_19);
-      v /= pow10_19;
-      pos -= 19;
-      fill_n(out + pos, 19, Char('0'));
-      do_format_decimal(out + pos, chunk, 19);
-    }
-    auto top = static_cast<uint64_t>(v);
-    int top_digits = count_digits(top);
-    pos -= to_unsigned(top_digits);
-    do_format_decimal(out + pos, top, top_digits);
-    return out + pos;
-  }
-#endif  // FMT_USE_INT128
   unsigned n = to_unsigned(size);
   while (value >= 100) {
     n -= 2;
@@ -1481,6 +1447,61 @@ FMT_CONSTEXPR20 auto do_format_decimal(Char* out, UInt value, int size)
   }
   return out + n;
 }
+
+#if FMT_USE_INT128
+// Divides n by 10^19 and stores the remainder in rem. 128-bit division is a
+// slow library call, so this uses a precomputed reciprocal of the normalized
+// divisor (Moller & Granlund, "Improved division by invariant integers").
+FMT_CONSTEXPR20 inline auto divmod_pow10_19(uint128_t n, uint64_t& rem)
+    -> uint128_t {
+  const uint64_t d = 10000000000000000000ULL;
+  const uint64_t v = 0xd83c94fb6d2ac34a;  // floor((2^128 - 1) / d) - 2^64
+  uint64_t qhi = 0;
+  if ((n >> 64) >= d) {
+    qhi = 1;
+    n -= static_cast<uint128_t>(d) << 64;
+  }
+  auto p = static_cast<uint128_t>(v) * static_cast<uint64_t>(n >> 64) + n;
+  auto q = static_cast<uint64_t>(p >> 64) + 1;
+  auto r = static_cast<uint64_t>(n) - q * d;
+  if (r > static_cast<uint64_t>(p)) {
+    --q;
+    r += d;
+  }
+  if (r >= d) {
+    ++q;
+    r -= d;
+  }
+  rem = r;
+  return (static_cast<uint128_t>(qhi) << 64) | q;
+}
+
+FMT_CONSTEXPR20 inline auto count_digits(uint128_t n) -> int {
+  if ((n >> 64) == 0) return count_digits(static_cast<uint64_t>(n));
+  const uint64_t pow10_19 = 10000000000000000000ULL;
+  // 2^128 < 10^39, and a smaller n divided by 10^19 fits in 64 bits.
+  if (n >= static_cast<uint128_t>(pow10_19) * pow10_19) return 39;
+  uint64_t rem = 0;
+  return count_digits(static_cast<uint64_t>(divmod_pow10_19(n, rem))) + 19;
+}
+
+// Avoid slow 128-bit division by formatting 64-bit chunks of 19 digits each.
+template <typename Char>
+FMT_CONSTEXPR20 auto do_format_decimal(Char* out, uint128_t value, int size)
+    -> Char* {
+  FMT_ASSERT(size >= count_digits(value), "invalid digit count");
+  unsigned pos = to_unsigned(size);
+  while ((value >> 64) != 0) {
+    uint64_t chunk = 0;
+    value = divmod_pow10_19(value, chunk);
+    pos -= 19;
+    fill_n(out + pos, 19, Char('0'));
+    do_format_decimal(out + pos, chunk, 19);
+  }
+  return do_format_decimal(out, static_cast<uint64_t>(value),
+                           static_cast<int>(pos));
+}
+#endif  // FMT_USE_INT128
 
 template <typename Char, typename UInt>
 FMT_CONSTEXPR FMT_INLINE auto format_decimal(Char* out, UInt value,
@@ -1639,7 +1660,7 @@ template <typename WChar, typename Buffer = memory_buffer> class to_utf8 {
 // Computes 128-bit result of multiplication of two 64-bit unsigned integers.
 FMT_INLINE auto umul128(uint64_t x, uint64_t y) noexcept -> uint128 {
 #if FMT_USE_INT128
-  auto p = static_cast<native_uint128>(x) * static_cast<native_uint128>(y);
+  auto p = static_cast<uint128_t>(x) * static_cast<uint128_t>(y);
   return {static_cast<uint64_t>(p >> 64), static_cast<uint64_t>(p)};
 #elif defined(_MSC_VER) && defined(_M_AMD64)
   auto hi = uint64_t();
@@ -1682,7 +1703,7 @@ inline auto floor_log2_pow10(int e) noexcept -> int {
 // Computes upper 64 bits of multiplication of two 64-bit unsigned integers.
 inline auto umul128_upper64(uint64_t x, uint64_t y) noexcept -> uint64_t {
 #if FMT_USE_INT128
-  auto p = static_cast<native_uint128>(x) * static_cast<native_uint128>(y);
+  auto p = static_cast<uint128_t>(x) * static_cast<uint128_t>(y);
   return static_cast<uint64_t>(p >> 64);
 #elif defined(_MSC_VER) && defined(_M_AMD64)
   return __umulh(x, y);
@@ -1884,7 +1905,7 @@ FMT_CONSTEXPR auto normalize(basic_fp<F> value) -> basic_fp<F> {
 // Computes lhs * rhs / pow(2, 64) rounded to nearest with half-up tie breaking.
 FMT_CONSTEXPR inline auto multiply(uint64_t lhs, uint64_t rhs) -> uint64_t {
 #if FMT_USE_INT128
-  auto product = static_cast<__uint128_t>(lhs) * rhs;
+  auto product = static_cast<uint128_t>(lhs) * rhs;
   auto f = static_cast<uint64_t>(product >> 64);
   return (static_cast<uint64_t>(product) & (1ULL << 63)) != 0 ? f + 1 : f;
 #else

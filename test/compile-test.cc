@@ -456,6 +456,13 @@ TEST(compile_time_formatting_test, integer) {
   EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42l));
   EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42ll));
   EXPECT_EQ("   42", test_format<6>(FMT_COMPILE("{:5}"), 42ull));
+#  if FMT_USE_INT128
+  EXPECT_EQ("18446744073709551616",
+            test_format<21>(FMT_COMPILE("{}"),
+                            static_cast<__uint128_t>(UINT64_MAX) + 1));
+  EXPECT_EQ("340282366920938463463374607431768211455",
+            test_format<40>(FMT_COMPILE("{}"), ~static_cast<__uint128_t>(0)));
+#  endif
 
   EXPECT_EQ("42  ", test_format<5>(FMT_COMPILE("{:<4}"), 42));
   EXPECT_EQ("  42", test_format<5>(FMT_COMPILE("{:>4}"), 42));
