@@ -538,22 +538,16 @@ TEST(chrono_test, format_specs) {
   EXPECT_EQ(fmt::format("{:%j}", days(12)), "12");
   EXPECT_EQ(fmt::format("{:%j}", days(12345)), "12345");
   EXPECT_EQ(fmt::format("{:%j}", std::chrono::hours(12345 * 24 + 12)), "12345");
+  using signed_days = std::chrono::duration<signed char, std::ratio<86400>>;
+  EXPECT_EQ(fmt::format("{:%j}", signed_days(-128)), "-128");
+  using two_days = std::chrono::duration<unsigned char, std::ratio<172800>>;
+  EXPECT_EQ(fmt::format("{:%j}", two_days(200)), "400");
   EXPECT_EQ(fmt::format("{:%H:%M:%S}", std::chrono::seconds(12345)),
             "03:25:45");
   EXPECT_EQ(fmt::format("{:%R}", std::chrono::seconds(12345)), "03:25");
   EXPECT_EQ(fmt::format("{:%T}", std::chrono::seconds(12345)), "03:25:45");
   EXPECT_EQ(fmt::format("{:%Q}", std::chrono::seconds(12345)), "12345");
   EXPECT_EQ(fmt::format("{:%q}", std::chrono::seconds(12345)), "s");
-}
-
-TEST(chrono_test, format_days_with_signed_char_rep) {
-  using signed_days = std::chrono::duration<signed char, std::ratio<86400>>;
-  EXPECT_EQ(fmt::format("{:%j}", signed_days(-128)), "-128");
-}
-
-TEST(chrono_test, format_days_with_unsigned_char_rep) {
-  using two_days = std::chrono::duration<unsigned char, std::ratio<172800>>;
-  EXPECT_EQ(fmt::format("{:%j}", two_days(200)), "400");
 }
 
 TEST(chrono_test, invalid_specs) {

@@ -1665,30 +1665,33 @@ template <typename Char, typename Rep, typename Period>
 struct duration_formatter {
   using iterator = basic_appender<Char>;
   iterator out;
-  // rep is unsigned to avoid overflow.
-  using rep =
+  // Integral reps are made unsigned so that negating the minimum value can't
+  // overflow, and at least as wide as int to leave headroom for the conversion
+  // to seconds.
+  using abs_rep =
       conditional_t<std::is_integral<Rep>::value && sizeof(Rep) < sizeof(int),
                     unsigned, typename make_unsigned_or_unchanged<Rep>::type>;
-  rep val;
+  abs_rep val;
   int precision;
   locale_ref locale;
   bool localized = false;
-  using seconds = std::chrono::duration<rep>;
+  using seconds = std::chrono::duration<abs_rep>;
   seconds s;
-  using milliseconds = std::chrono::duration<rep, std::milli>;
-  bool negative;
+  using milliseconds = std::chrono::duration<abs_rep, std::milli>;
+  bool negative = false;
 
   using tm_writer_type = tm_writer<iterator, Char>;
 
   duration_formatter(iterator o, std::chrono::duration<Rep, Period> d,
                      locale_ref loc)
-      : out(o), val(static_cast<rep>(d.count())), locale(loc), negative(false) {
+      : out(o), val(static_cast<abs_rep>(d.count())), locale(loc) {
     if (d.count() < 0) {
       val = 0 - val;
       negative = true;
     }
 
-    s = detail::duration_cast<seconds>(std::chrono::duration<rep, Period>(val));
+    s = detail::duration_cast<seconds>(
+        std::chrono::duration<abs_rep, Period>(val));
   }
 
   // If val is NaN or infinite, writes it to out and returns true.
@@ -1703,16 +1706,16 @@ struct duration_formatter {
     return true;
   }
 
-  auto days() const -> rep { return s.count() / 86400; }
-  auto hour() const -> rep { return mod((s.count() / 3600), 24); }
+  auto days() const -> abs_rep { return s.count() / 86400; }
+  auto hour() const -> abs_rep { return mod(s.count() / 3600, 24); }
 
-  auto hour12() const -> rep {
-    auto hour = mod((s.count() / 3600), 12);
+  auto hour12() const -> abs_rep {
+    auto hour = mod(s.count() / 3600, 12);
     return hour < 1 ? 12 : hour;
   }
 
-  auto minute() const -> rep { return mod((s.count() / 60), 60); }
-  auto second() const -> rep { return mod(s.count(), 60); }
+  auto minute() const -> abs_rep { return mod(s.count() / 60, 60); }
+  auto second() const -> abs_rep { return mod(s.count(), 60); }
 
   auto time() const -> std::tm {
     auto time = std::tm();
@@ -1728,7 +1731,7 @@ struct duration_formatter {
     negative = false;
   }
 
-  void write(rep value, int width, pad_type pad = pad_type::zero) {
+  void write(abs_rep value, int width, pad_type pad = pad_type::zero) {
     write_sign();
     if (isnan(value)) return write_nan();
     uint32_or_64_or_128_t<int> n =
@@ -1816,9 +1819,9 @@ struct duration_formatter {
     if (write_if_nonfinite()) return;
 
     if (ns == numeric_system::standard) {
-      if (std::is_floating_point<rep>::value) {
+      if (std::is_floating_point<abs_rep>::value) {
         auto buf = memory_buffer();
-        write_floating_seconds(buf, std::chrono::duration<rep, Period>(val),
+        write_floating_seconds(buf, std::chrono::duration<abs_rep, Period>(val),
                                precision);
         write_sign();
         if (buf.size() < 2 || buf[1] == '.')
@@ -1827,7 +1830,7 @@ struct duration_formatter {
       } else {
         write(second(), 2, pad);
         write_fractional_seconds<Char>(
-            out, std::chrono::duration<rep, Period>(val), precision);
+            out, std::chrono::duration<abs_rep, Period>(val), precision);
       }
       return;
     }
