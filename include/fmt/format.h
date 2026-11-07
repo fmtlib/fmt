@@ -342,11 +342,13 @@ class uint128 {
     return {lhs.hi_ - (lhs.lo_ < rhs ? 1 : 0), lhs.lo_ - rhs};
   }
   FMT_CONSTEXPR auto operator>>(int shift) const -> uint128 {
+    if (shift == 0) return *this;
     if (shift == 64) return {0, hi_};
     if (shift > 64) return uint128(0, hi_) >> (shift - 64);
     return {hi_ >> shift, (hi_ << (64 - shift)) | (lo_ >> shift)};
   }
   FMT_CONSTEXPR auto operator<<(int shift) const -> uint128 {
+    if (shift == 0) return *this;
     if (shift == 64) return {lo_, 0};
     if (shift > 64) return uint128(lo_, 0) << (shift - 64);
     return {hi_ << shift | (lo_ >> (64 - shift)), (lo_ << shift)};

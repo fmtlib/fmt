@@ -76,6 +76,11 @@ TEST(uint128_test, shift) {
   EXPECT_EQ(static_cast<uint64_t>(n), 42);
   EXPECT_EQ(uint128(1) << 112, uint128(0x1000000000000, 0));
   EXPECT_EQ(uint128(0x1000000000000, 0) >> 112, uint128(1));
+  // FMT_CONSTEXPR turns an undefined shift into a compile error.
+  FMT_CONSTEXPR auto lshift = uint128(1, 2) << 0;
+  FMT_CONSTEXPR auto rshift = uint128(1, 2) >> 0;
+  EXPECT_EQ(lshift, uint128(1, 2));
+  EXPECT_EQ(rshift, uint128(1, 2));
 }
 
 TEST(uint128_test, minus) {
