@@ -17,6 +17,7 @@ CPack*.cmake
 CTestTestfile.cmake
 FMT.build
 Makefile
+__pycache__
 bin/
 build/
 cmake_install.cmake
