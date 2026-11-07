@@ -1,3 +1,9 @@
+# 12.2.1 - TBD
+
+- Fixed a heap buffer overflow on 32-bit targets when the size of a formatting
+  buffer overflows, e.g. `fmt::format(L"{:>{}}", s, 1100000000)`. Such
+  allocations now throw `std::bad_alloc`.
+
 # 12.2.0 - 2026-06-16
 
 - Added a C11 API that brings fast, type-safe formatting to C. The new
