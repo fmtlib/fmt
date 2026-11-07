@@ -3240,9 +3240,9 @@ FMT_CONSTEXPR20 inline void format_dragon(basic_fp<uint128_t> value,
     // In the shortest mode the upper boundary is included because the output
     // may round up to the next power of 10. With a given number of digits,
     // rounding happens after digit generation, so only the value is compared.
-    bool too_high = shortest
-                        ? add_compare(numerator, *upper, denominator) + even <= 0
-                        : compare(numerator, denominator) < 0;
+    bool too_high =
+        shortest ? add_compare(numerator, *upper, denominator) + even <= 0
+                 : compare(numerator, denominator) < 0;
     if (too_high) {
       --exp10;
       numerator *= 10;
