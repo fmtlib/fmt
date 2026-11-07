@@ -4,6 +4,14 @@
   buffer overflows, e.g. `fmt::format(L"{:>{}}", s, 1100000000)`. Such
   allocations now throw `std::bad_alloc`.
 
+- Fixed an out-of-bounds read when parsing format specifiers of
+  `std::error_code` (https://github.com/fmtlib/fmt/pull/4934).
+  Thanks @IfkumRfnl.
+
+- Fixed a crash when formatting `nullptr` with `FMT_COMPILE` and an exception
+  in `fmt::to_string(nullptr)`; both now format it as `0x0`
+  (https://github.com/fmtlib/fmt/pull/4993). Thanks @INo-xious.
+
 # 12.2.0 - 2026-06-16
 
 - Added a C11 API that brings fast, type-safe formatting to C. The new
