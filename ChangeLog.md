@@ -1,4 +1,4 @@
-# 12.2.1 - TBD
+# 12.2.1 - 2026-11-07
 
 - Fixed a heap buffer overflow on 32-bit targets when the size of a formatting
   buffer overflows, e.g. `fmt::format(L"{:>{}}", s, 1100000000)`. Such
