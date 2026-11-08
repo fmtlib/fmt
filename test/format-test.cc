@@ -2875,6 +2875,13 @@ TEST(format_test, print_to_broken_pipe) {
   }
   std::signal(SIGPIPE, old_handler);
 }
+
+TEST(format_test, print_to_read_only_file) {
+  auto pipe = fmt::pipe();
+  auto read_end = pipe.read_end.fdopen("r");
+  EXPECT_THROW(fmt::print(read_end.get(), "{}", std::string(100, 'x')),
+               std::system_error);
+}
 #endif  // FMT_USE_FCNTL
 
 // Only defined after the test case.

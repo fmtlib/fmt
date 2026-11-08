@@ -1521,11 +1521,14 @@ template <typename F> class glibc_file : public file_base<F> {
     return (this->file_->_flags & unbuffered) == 0;
   }
 
-  void init_buffer() {
-    if (this->file_->_IO_write_ptr < this->file_->_IO_write_end) return;
+  // Returns false if the buffer cannot be initialized, e.g. because the file
+  // is not open for writing.
+  auto init_buffer() -> bool {
+    if (this->file_->_IO_write_ptr < this->file_->_IO_write_end) return true;
     // Force buffer initialization by placing and removing a char in a buffer.
-    putc_unlocked(0, this->file_);
+    if (putc_unlocked(0, this->file_) == EOF) return false;
     --this->file_->_IO_write_ptr;
+    return true;
   }
 
   // Returns the file's read buffer.
@@ -1570,12 +1573,13 @@ template <typename F> class apple_file : public file_base<F> {
     return (this->file_->_flags & unbuffered) == 0;
   }
 
-  void init_buffer() {
-    if (this->file_->_p) return;
+  auto init_buffer() -> bool {
+    if (this->file_->_p) return true;
     // Force buffer initialization by placing and removing a char in a buffer.
-    putc_unlocked(0, this->file_);
+    if (putc_unlocked(0, this->file_) == EOF) return false;
     --this->file_->_p;
     ++this->file_->_w;
+    return true;
   }
 
   auto get_read_buffer() const -> span<const char> {
@@ -1612,7 +1616,7 @@ template <typename F> class fallback_file : public file_base<F> {
 
   auto is_buffered() const -> bool { return false; }
   auto needs_flush() const -> bool { return false; }
-  void init_buffer() {}
+  auto init_buffer() -> bool { return true; }
 
   auto get_read_buffer() const -> span<const char> {
     return {&next_, has_next_ ? 1u : 0u};
@@ -1665,6 +1669,14 @@ class file_print_buffer<F, enable_if_t<has_flockfile<F>::value>>
  private:
   file_ref file_;
 
+  void unlock() {
+    F* f = file_;  // Make funlockfile depend on the template parameter F.
+#ifdef __SANITIZE_THREAD__
+    __tsan_release(f);
+#endif
+    funlockfile(f);  // for the system API detection to work.
+  }
+
   static void grow(buffer<char>& base, size_t) {
     auto& self = static_cast<file_print_buffer&>(base);
     self.file_.advance_write_buffer(self.size());
@@ -1681,18 +1693,18 @@ class file_print_buffer<F, enable_if_t<has_flockfile<F>::value>>
 #ifdef __SANITIZE_THREAD__
     __tsan_acquire(f);
 #endif
-    file_.init_buffer();
+    if (!file_.init_buffer()) {
+      int error_code = errno;
+      unlock();
+      FMT_THROW(system_error(error_code, FMT_STRING("cannot write to file")));
+    }
     auto buf = file_.get_write_buffer();
     set(buf.data, buf.size);
   }
   ~file_print_buffer() {
     file_.advance_write_buffer(size());
     bool flush = file_.needs_flush();
-    F* f = file_;  // Make funlockfile depend on the template parameter F.
-#ifdef __SANITIZE_THREAD__
-    __tsan_release(f);
-#endif
-    funlockfile(f);  // for the system API detection to work.
+    unlock();
     if (flush) fflush(file_);
   }
 };
