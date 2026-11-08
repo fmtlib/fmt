@@ -298,10 +298,11 @@ TEST(ostream_test, buffer_size) {
 TEST(ostream_test, zero_buffer_size) {
   auto test_file = uniq_file_name(__LINE__);
   fmt::ostream out = fmt::output_file(test_file, fmt::buffer_size = 0);
-  out.print("{}{}", 'f', "oo");
-  out.close();
+  out.print("{}{}", 'A', " byte late!");
   file in(test_file, file::RDONLY);
-  EXPECT_READ(in, "foo");
+  EXPECT_READ(in, "A byte late");
+  out.close();
+  EXPECT_READ(in, "!");
 }
 
 TEST(ostream_test, truncate) {
