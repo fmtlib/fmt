@@ -376,9 +376,11 @@ class ostream : private detail::buffer<char> {
   }
 
   inline void flush() {
-    if (size() == 0) return;
-    file_.write(data(), size() * sizeof(data()[0]));
+    size_t n = size();
+    if (n == 0) return;
+    // Clear before writing to not write the data again if the write fails.
     clear();
+    file_.write(data(), n);
   }
 
   template <typename... T>

@@ -328,6 +328,23 @@ TEST(ostream_test, flush) {
   EXPECT_READ(in, "x");
 }
 
+TEST(ostream_test, write_error_in_dtor) {
+  auto test_file = uniq_file_name(__LINE__);
+  EXPECT_WRITE(
+      stderr,
+      fmt::output_file(test_file, file::RDONLY | file::CREATE).print("x"),
+      system_error_message(EBADF, "cannot write to file") + "\n");
+}
+
+TEST(ostream_test, close_error) {
+  auto out =
+      fmt::output_file(uniq_file_name(__LINE__), file::RDONLY | file::CREATE);
+  out.print("x");
+  EXPECT_THROW(out.close(), std::system_error);
+  // Check that the destructor doesn't try to write the data again.
+  EXPECT_WRITE(stderr, { auto moved = std::move(out); }, "");
+}
+
 TEST(file_test, default_ctor) {
   file f;
   EXPECT_EQ(-1, f.descriptor());

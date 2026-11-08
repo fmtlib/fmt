@@ -396,7 +396,8 @@ ostream::ostream(ostream&& other) noexcept
 }
 
 ostream::~ostream() {
-  flush();
+  FMT_TRY { flush(); }
+  FMT_CATCH(...) { report_system_error(errno, "cannot write to file"); }
   delete[] data();
 }
 #endif  // FMT_USE_FCNTL
