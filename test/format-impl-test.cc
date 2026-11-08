@@ -15,8 +15,35 @@
 #include "gmock/gmock.h"
 
 using fmt::detail::bigint;
-using fmt::detail::fp;
 using fmt::detail::max_value;
+
+FMT_BEGIN_NAMESPACE
+template <> struct formatter<detail::bigint> {
+  FMT_CONSTEXPR auto parse(format_parse_context& ctx)
+      -> format_parse_context::iterator {
+    return ctx.begin();
+  }
+
+  auto format(const detail::bigint& n, format_context& ctx) const
+      -> format_context::iterator {
+    auto out = ctx.out();
+    bool first = true;
+    for (auto i = n.bigits_.size(); i > 0; --i) {
+      auto value = n.bigits_[i - 1u];
+      if (first) {
+        out = fmt::format_to(out, FMT_STRING("{:x}"), value);
+        first = false;
+        continue;
+      }
+      out = fmt::format_to(out, FMT_STRING("{:08x}"), value);
+    }
+    if (n.exp_ > 0)
+      out = fmt::format_to(out, FMT_STRING("p{}"),
+                           n.exp_ * detail::bigint::bigit_bits);
+    return out;
+  }
+};
+FMT_END_NAMESPACE
 
 static_assert(!std::is_copy_constructible<bigint>::value, "");
 static_assert(!std::is_copy_assignable<bigint>::value, "");
@@ -171,27 +198,13 @@ template <bool is_iec559> void run_double_tests() {
 
 template <> void run_double_tests<true>() {
   // Construct from double.
-  EXPECT_EQ(fp(1.23), fp(0x13ae147ae147aeu, -52));
+  auto v = fmt::detail::basic_fp<uint64_t>(1.23);
+  EXPECT_EQ(v.f, 0x13ae147ae147aeu);
+  EXPECT_EQ(v.e, -52);
 }
 
 TEST(fp_test, double_tests) {
   run_double_tests<std::numeric_limits<double>::is_iec559>();
-}
-
-TEST(fp_test, normalize) {
-  const auto v = fp(0xbeef, 42);
-  auto normalized = normalize(v);
-  EXPECT_EQ(normalized.f, 0xbeef000000000000);
-  EXPECT_EQ(normalized.e, -6);
-}
-
-TEST(fp_test, multiply) {
-  auto v = fp(123ULL << 32, 4) * fp(56ULL << 32, 7);
-  EXPECT_EQ(v.f, 123u * 56u);
-  EXPECT_EQ(v.e, 4 + 7 + 64);
-  v = fp(123ULL << 32, 4) * fp(567ULL << 31, 8);
-  EXPECT_EQ(v.f, (123 * 567 + 1u) / 2);
-  EXPECT_EQ(v.e, 4 + 8 + 64);
 }
 
 TEST(fp_test, dragonbox_max_k) {

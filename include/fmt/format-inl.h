@@ -188,11 +188,6 @@ FMT_FUNC auto vsystem_error(int error_code, string_view fmt, format_args args)
 
 namespace detail {
 
-template <typename F>
-inline auto operator==(basic_fp<F> x, basic_fp<F> y) -> bool {
-  return x.f == y.f && x.e == y.e;
-}
-
 // Compilers should be able to optimize this into the ror instruction.
 FMT_INLINE auto rotr(uint32_t n, uint32_t r) noexcept -> uint32_t {
   r &= 31;
@@ -1397,32 +1392,6 @@ small_divisor_case_label:
 }  // namespace dragonbox
 }  // namespace detail
 
-template <> struct formatter<detail::bigint> {
-  FMT_CONSTEXPR auto parse(format_parse_context& ctx)
-      -> format_parse_context::iterator {
-    return ctx.begin();
-  }
-
-  auto format(const detail::bigint& n, format_context& ctx) const
-      -> format_context::iterator {
-    auto out = ctx.out();
-    bool first = true;
-    for (auto i = n.bigits_.size(); i > 0; --i) {
-      auto value = n.bigits_[i - 1u];
-      if (first) {
-        out = fmt::format_to(out, FMT_STRING("{:x}"), value);
-        first = false;
-        continue;
-      }
-      out = fmt::format_to(out, FMT_STRING("{:08x}"), value);
-    }
-    if (n.exp_ > 0)
-      out = fmt::format_to(out, FMT_STRING("p{}"),
-                           n.exp_ * detail::bigint::bigit_bits);
-    return out;
-  }
-};
-
 FMT_FUNC detail::utf8_to_utf16::utf8_to_utf16(string_view s) {
   for_each_codepoint(s, [this](uint32_t cp, string_view) {
     if (cp == invalid_code_point) FMT_THROW(std::runtime_error("invalid utf8"));
@@ -1463,6 +1432,11 @@ FMT_FUNC auto vformat(string_view fmt, format_args args) -> std::string {
 }
 
 namespace detail {
+
+// Compares two characters for equality.
+inline auto equal2(const char* lhs, const char* rhs) -> bool {
+  return memcmp(lhs, rhs, 2) == 0;
+}
 
 FMT_FUNC void vformat_to(buffer<char>& buf, string_view fmt, format_args args,
                          locale_ref loc) {

@@ -1389,14 +1389,6 @@ extern template FMT_API auto decimal_point_impl(locale_ref) -> wchar_t;
 FMT_END_EXPORT
 #endif  // FMT_HEADER_ONLY
 
-// Compares two characters for equality.
-template <typename Char> auto equal2(const Char* lhs, const char* rhs) -> bool {
-  return lhs[0] == Char(rhs[0]) && lhs[1] == Char(rhs[1]);
-}
-inline auto equal2(const char* lhs, const char* rhs) -> bool {
-  return memcmp(lhs, rhs, 2) == 0;
-}
-
 // Writes a two-digit value to out.
 template <typename Char>
 FMT_CONSTEXPR20 FMT_INLINE void write2digits(Char* out, size_t value) {
@@ -1842,11 +1834,7 @@ template <typename F> struct basic_fp {
   F f;
   int e;
 
-  static constexpr int num_significand_bits =
-      static_cast<int>(sizeof(F) * num_bits<unsigned char>());
-
   constexpr basic_fp() : f(0), e(0) {}
-  constexpr basic_fp(uint64_t f_val, int e_val) : f(f_val), e(e_val) {}
 
   // Constructs fp from an IEEE754 floating-point number.
   template <typename Float> FMT_CONSTEXPR basic_fp(Float n) { assign(n); }
@@ -1883,48 +1871,6 @@ template <typename F> struct basic_fp {
     return assign(static_cast<double>(n));
   }
 };
-
-using fp = basic_fp<ullong>;
-
-// Normalizes the value converted from double and multiplied by (1 << SHIFT).
-template <int SHIFT = 0, typename F>
-FMT_CONSTEXPR auto normalize(basic_fp<F> value) -> basic_fp<F> {
-  // Handle subnormals.
-  const auto implicit_bit = F(1) << num_significand_bits<double>();
-  const auto shifted_implicit_bit = implicit_bit << SHIFT;
-  while ((value.f & shifted_implicit_bit) == 0) {
-    value.f <<= 1;
-    --value.e;
-  }
-  // Subtract 1 to account for hidden bit.
-  const auto offset = basic_fp<F>::num_significand_bits -
-                      num_significand_bits<double>() - SHIFT - 1;
-  value.f <<= offset;
-  value.e -= offset;
-  return value;
-}
-
-// Computes lhs * rhs / pow(2, 64) rounded to nearest with half-up tie breaking.
-FMT_CONSTEXPR inline auto multiply(uint64_t lhs, uint64_t rhs) -> uint64_t {
-#if FMT_USE_INT128
-  auto product = static_cast<uint128_t>(lhs) * rhs;
-  auto f = static_cast<uint64_t>(product >> 64);
-  return (static_cast<uint64_t>(product) & (1ULL << 63)) != 0 ? f + 1 : f;
-#else
-  // Multiply 32-bit parts of significands.
-  uint64_t mask = (1ULL << 32) - 1;
-  uint64_t a = lhs >> 32, b = lhs & mask;
-  uint64_t c = rhs >> 32, d = rhs & mask;
-  uint64_t ac = a * c, bc = b * c, ad = a * d, bd = b * d;
-  // Compute mid 64-bit of result and round.
-  uint64_t mid = (bd >> 32) + (ad & mask) + (bc & mask) + (1U << 31);
-  return ac + (ad >> 32) + (bc >> 32) + (mid >> 32);
-#endif
-}
-
-FMT_CONSTEXPR inline auto operator*(fp x, fp y) -> fp {
-  return {multiply(x.f, y.f), x.e + y.e + 64};
-}
 
 template <typename T, bool doublish = num_bits<T>() == num_bits<double>()>
 using convert_float_result =
