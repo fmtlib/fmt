@@ -62,6 +62,10 @@ typedef struct {
 
 enum { fmt_error = -1, fmt_error_invalid_arg = -2 };
 
+// Formats `args` according to specifications in `fmt`, writes up to `size`
+// characters of the result to `buffer` and returns the total (not truncated)
+// output size or a negative error code. `fmt_vformat` does not append a
+// terminating null character.
 int FMT_CAPI fmt_vformat(char* buffer, size_t size, const char* fmt,
                          const fmt_arg* args, size_t num_args);
 int FMT_CAPI fmt_vprint(FILE* stream, const char* fmt, const fmt_arg* args,
