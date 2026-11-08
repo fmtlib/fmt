@@ -667,7 +667,7 @@ fmt::print("{}", std::vector{'h', 'e', 'l', 'l', 'o'});
 fmt::print("{:n}", std::vector{'h', 'e', 'l', 'l', 'o'});
 // Output: 'h', 'e', 'l', 'l', 'o'
 fmt::print("{:s}", std::vector{'h', 'e', 'l', 'l', 'o'});
-// Output: "hello"
+// Output: hello
 fmt::print("{:?s}", std::vector{'h', 'e', 'l', 'l', 'o', '\n'});
 // Output: "hello\n"
 fmt::print("{::}", std::vector{'h', 'e', 'l', 'l', 'o'});
