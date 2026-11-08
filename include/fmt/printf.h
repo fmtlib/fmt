@@ -236,12 +236,6 @@ class printf_arg_formatter : public arg_formatter<Char> {
 
   context_type& context_;
 
-  void write_null_pointer(bool is_string = false) {
-    auto s = this->specs;
-    s.set_type(presentation_type::none);
-    write_bytes<Char>(this->out, is_string ? "(null)" : "(nil)", s);
-  }
-
   template <typename T> void write(T value) {
     detail::write<Char>(this->out, value, this->specs, this->locale);
   }
@@ -292,27 +286,20 @@ class printf_arg_formatter : public arg_formatter<Char> {
   }
 
   void operator()(const char* value) {
-    if (value)
-      write(value);
-    else
-      write_null_pointer(this->specs.type() != presentation_type::pointer);
+    if (!value && this->specs.type() != presentation_type::pointer)
+      value = "(null)";
+    write(value);
   }
 
   void operator()(const wchar_t* value) {
-    if (value)
-      write(value);
-    else
-      write_null_pointer(this->specs.type() != presentation_type::pointer);
+    if (!value && this->specs.type() != presentation_type::pointer)
+      value = L"(null)";
+    write(value);
   }
 
   void operator()(basic_string_view<Char> value) { write(value); }
 
-  void operator()(const void* value) {
-    if (value)
-      write(value);
-    else
-      write_null_pointer();
-  }
+  void operator()(const void* value) { write(value); }
 
   void operator()(typename basic_format_arg<context_type>::handle handle) {
     auto parse_ctx = parse_context<Char>({});
@@ -500,9 +487,6 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
         auto sv = basic_string_view<Char>(
             str, to_unsigned(nul != str_end ? nul - str : specs.precision));
         arg = sv;
-      } else if (specs.precision < 6) {
-        // Like glibc, print "(null)" only if it fits in the precision.
-        arg = basic_string_view<Char>();
       }
     }
     if (specs.fill_unit<Char>() == '0') {

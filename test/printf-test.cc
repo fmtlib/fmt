@@ -544,10 +544,11 @@ TEST(printf_test, string) {
   const char* null_str = nullptr;
   EXPECT_PRINTF("(null)", "%s", null_str);
   EXPECT_PRINTF("    (null)", "%10s", null_str);
-  // Like glibc, a precision too small for "(null)" gives an empty string.
+  // A precision truncates "(null)" as it would any other string.
   EXPECT_PRINTF("", "%.0s", null_str);
-  EXPECT_PRINTF("", "%.3s", null_str);
+  EXPECT_PRINTF("(nu", "%.3s", null_str);
   EXPECT_PRINTF("(null)", "%.6s", null_str);
+  EXPECT_PRINTF("       (nu", "%10.3s", null_str);
 }
 
 TEST(printf_test, pointer) {
@@ -555,12 +556,12 @@ TEST(printf_test, pointer) {
   void* p = &n;
   EXPECT_PRINTF(fmt::format("{}", p), "%p", p);
   p = nullptr;
-  EXPECT_PRINTF("(nil)", "%p", p);
-  EXPECT_PRINTF("     (nil)", "%10p", p);
+  EXPECT_PRINTF("0x0", "%p", p);
+  EXPECT_PRINTF("       0x0", "%10p", p);
   const char* s = "test";
   EXPECT_PRINTF(fmt::format("{:p}", s), "%p", s);
   const char* null_str = nullptr;
-  EXPECT_PRINTF("(nil)", "%p", null_str);
+  EXPECT_PRINTF("0x0", "%p", null_str);
 }
 
 enum test_enum { answer = 42 };
