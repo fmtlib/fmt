@@ -377,10 +377,14 @@ class ostream : private detail::buffer<char> {
 
   inline void flush() {
     size_t n = size();
-    if (n == 0) return;
     // Clear before writing to not write the data again if the write fails.
     clear();
-    file_.write(data(), n);
+    // Write in a loop because write may write fewer bytes than requested.
+    for (const char* p = data(); n != 0;) {
+      size_t written = file_.write(p, n);
+      p += written;
+      n -= written;
+    }
   }
 
   template <typename... T>

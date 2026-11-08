@@ -54,6 +54,7 @@ int fclose_count;
 int fileno_count;
 size_t read_nbyte;
 size_t write_nbyte;
+size_t write_max;  // Maximum number of bytes written per call if nonzero.
 bool sysconf_error;
 
 enum { none, max_size, error } fstat_sim;
@@ -142,6 +143,7 @@ test::ssize_t test::read(int fildes, void* buf, test::size_t nbyte) {
 test::ssize_t test::write(int fildes, const void* buf, test::size_t nbyte) {
   write_nbyte = nbyte;
   EMULATE_EINTR(write, -1);
+  if (write_max != 0 && nbyte > write_max) nbyte = write_max;
   return ::FMT_POSIX(write(fildes, buf, nbyte));
 }
 
@@ -306,6 +308,17 @@ TEST(file_test, write_retry) {
   buffer[SIZE] = '\0';
   EXPECT_STREQ("test", buffer);
 #  endif
+}
+
+TEST(ostream_test, short_write) {
+  write_max = 1;
+  {
+    auto out = fmt::output_file("temp");
+    out.print("abc");
+  }
+  write_max = 0;
+  file f("temp", file::RDONLY);
+  EXPECT_READ(f, "abc");
 }
 
 #  ifdef _WIN32
