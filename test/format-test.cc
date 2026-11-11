@@ -2697,6 +2697,12 @@ TEST(format_test, format_facet_grouping) {
   EXPECT_EQ(fmt::format(loc, "{:L}", 1234567890), "1,234,567,89,0");
 }
 
+TEST(format_test, format_facet_empty_grouping) {
+  // Empty grouping means no grouping as in std::numpunct.
+  auto loc = std::locale({}, new fmt::format_facet<std::locale>(",", ""));
+  EXPECT_EQ(fmt::format(loc, "{:L}", 1234567), "1234567");
+}
+
 TEST(format_test, format_named_arg_with_locale) {
   EXPECT_EQ(fmt::format(std::locale(), "{answer}", fmt::arg("answer", 42)),
             "42");

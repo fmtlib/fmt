@@ -2100,7 +2100,7 @@ template <typename Char> class digit_grouping {
 
   // Returns the next digit group separator position.
   auto next(next_state& state) const -> int {
-    if (thousands_sep_.empty()) return max_value<int>();
+    if (thousands_sep_.empty() || grouping_.empty()) return max_value<int>();
     if (state.group == grouping_.end()) return state.pos += grouping_.back();
     if (*state.group <= 0 || *state.group == max_value<char>())
       return max_value<int>();
