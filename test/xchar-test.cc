@@ -483,3 +483,8 @@ TEST(std_test_xchar, path) {
   EXPECT_EQ(fmt::format(L"{:g}", q), q.generic_wstring());
 #endif
 }
+
+TEST(xchar_test, formatted_size_wformat_string) {
+  EXPECT_EQ(2u, fmt::formatted_size(fmt::wformat_string<int>(L"{}"), 42));
+  EXPECT_EQ(2u, fmt::formatted_size(L"{}", 42));
+}
