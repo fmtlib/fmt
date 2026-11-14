@@ -521,6 +521,9 @@ TEST(compile_time_formatting_test, floating_point) {
   EXPECT_EQ("+0000392.6", test_format<11>(FMT_COMPILE("{0:+010.4g}"), 392.65));
   EXPECT_EQ("9223372036854775808.000000",
             test_format<27>(FMT_COMPILE("{:f}"), 9223372036854775807.0));
+  EXPECT_EQ("1e+23", test_format<6>(FMT_COMPILE("{}"), 1e23));
+  EXPECT_EQ("9.99999999999999916114e+22",
+            test_format<27>(FMT_COMPILE("{:.20e}"), 1e23));
 
   constexpr double nan = std::numeric_limits<double>::quiet_NaN();
   EXPECT_EQ("nan", test_format<4>(FMT_COMPILE("{}"), nan));

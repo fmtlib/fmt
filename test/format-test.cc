@@ -1284,15 +1284,14 @@ TEST(format_test, precision) {
         fmt::format("{:0g}", std::numeric_limits<long double>::denorm_min()),
         "3.6452e-4951");
 
-    // Values just below a power of 10 where the initial exponent estimate is
-    // one too high.
-    ld = std::ldexp(static_cast<long double>(0x83126e978d4fdf3bULL), -73);
-    EXPECT_EQ(fmt::format("{:.20e}", ld), "9.99999999999999999958e-04");
-    ld = std::ldexp(static_cast<long double>(0xe596b7b0c643c719ULL), 79);
-    EXPECT_EQ(fmt::format("{:.0f}", ld),
+    // 1e-3L and 1e43L are just below the powers of 10 they approximate.
+    EXPECT_EQ(fmt::format("{:.20e}", 1e-3L), "9.99999999999999999958e-04");
+    EXPECT_EQ(fmt::format("{}", 1e-3L), "0.001");
+    EXPECT_EQ(fmt::format("{:.0f}", 1e43L),
               "9999999999999999999741184793924429452148736");
-    EXPECT_EQ(fmt::format("{:.19e}", ld), "9.9999999999999999997e+42");
-    EXPECT_EQ(fmt::format("{:.21g}", ld), "9.99999999999999999974e+42");
+    EXPECT_EQ(fmt::format("{:.19e}", 1e43L), "9.9999999999999999997e+42");
+    EXPECT_EQ(fmt::format("{:.21g}", 1e43L), "9.99999999999999999974e+42");
+    EXPECT_EQ(fmt::format("{}", 1e43L), "1e+43");
   }
 
   EXPECT_EQ(fmt::format("{:#.0f}", 123.0), "123.");
