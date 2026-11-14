@@ -449,7 +449,8 @@ void vprintf(buffer<Char>& buf, basic_string_view<Char> format,
       ++it;
       c = it != end ? *it : 0;
       if ('0' <= c && c <= '9') {
-        specs.precision = parse_nonnegative_int(it, end, 0);
+        specs.precision = parse_nonnegative_int(it, end, -1);
+        if (specs.precision == -1) report_error("number is too big");
       } else if (c == '*') {
         ++it;
         // Check for positional precision argument like .*1$
