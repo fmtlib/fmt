@@ -56,8 +56,7 @@ project(FMT CXX)
 # Compilers GCC>=14, Clang>=16 or MSVC >= 17.4
 # Source: https://cmake.org/cmake/help/latest/manual/cmake-cxxmodules.7.html
 set(FMT_USE_CMAKE_MODULES FALSE)
-if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.28 AND CMAKE_CXX_STANDARD
-                                                 GREATER_EQUAL 20)
+if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.28)
   if (CMAKE_GENERATOR STREQUAL "Ninja")
     execute_process(COMMAND "${CMAKE_MAKE_PROGRAM}" "--version"
                     OUTPUT_VARIABLE NINJA_VERSION)
@@ -78,7 +77,11 @@ if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.28 AND CMAKE_CXX_STANDARD
   endif ()
 endif ()
 
-set(FMT_USE_MODULES ${FMT_USE_CMAKE_MODULES})
+# fmt-module requires C++20 itself, so the standard only affects the default.
+set(FMT_USE_MODULES OFF)
+if (FMT_USE_CMAKE_MODULES AND CMAKE_CXX_STANDARD GREATER_EQUAL 20)
+  set(FMT_USE_MODULES ON)
+endif ()
 if (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" AND CMAKE_CXX_COMPILER_VERSION
                                                     VERSION_GREATER_EQUAL 21)
   set(FMT_USE_MODULES ON)
@@ -368,7 +371,10 @@ function (add_module_library name)
   endif ()
 
   if (CMAKE_COMPILER_IS_GNUCXX)
-    target_compile_options(${name} PUBLIC -fmodules-ts)
+    message(
+      FATAL_ERROR
+        "FMT_MODULE with GCC requires CMake 3.28 or newer, the Ninja generator "
+        "(Ninja 1.11 or newer) and GCC 15 or newer.")
   endif ()
 
   set(module_compile_options)
@@ -541,11 +547,16 @@ if (FMT_INSTALL)
     INSTALL_DESTINATION ${FMT_CMAKE_DIR})
 
   # Install the library and headers.
+  set(install_targets ${FMT_TARGETS})
   if (FMT_MODULE AND FMT_USE_CMAKE_MODULES)
     set(INSTALL_FILE_SET FILE_SET fmt DESTINATION ${FMT_INC_DIR}/fmt)
+  elseif (FMT_MODULE)
+    # Without CMake's module support the BMI is only usable from the build tree.
+    list(REMOVE_ITEM install_targets fmt-module)
+    message(STATUS "fmt-module is not installed without CMake module support")
   endif ()
   install(
-    TARGETS ${FMT_TARGETS}
+    TARGETS ${install_targets}
     COMPONENT fmt_core
     EXPORT ${targets_export_name}
     LIBRARY DESTINATION ${FMT_LIB_DIR}

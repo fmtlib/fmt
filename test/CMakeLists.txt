@@ -204,6 +204,37 @@ if (FMT_PEDANTIC
     "-DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}"
     "-DPEDANTIC_COMPILE_FLAGS=${PEDANTIC_COMPILE_FLAGS}"
     "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+
+  # Test if the module can be imported from an installed package.
+  if (FMT_MODULE
+      AND FMT_USE_CMAKE_MODULES
+      AND FMT_INSTALL)
+    set(prefix ${CMAKE_CURRENT_BINARY_DIR}/installed-module-test-prefix)
+    add_test(NAME installed-module-test-install
+             COMMAND ${CMAKE_COMMAND} --install ${PROJECT_BINARY_DIR} --config
+                     $<CONFIG> --prefix ${prefix})
+    set_tests_properties(installed-module-test-install
+                         PROPERTIES FIXTURES_SETUP installed-module)
+    add_test(
+      installed-module-test
+      ${CMAKE_CTEST_COMMAND}
+      -C
+      ${CMAKE_BUILD_TYPE}
+      --build-and-test
+      "${CMAKE_CURRENT_SOURCE_DIR}/installed-module-test"
+      "${CMAKE_CURRENT_BINARY_DIR}/installed-module-test"
+      --build-generator
+      ${CMAKE_GENERATOR}
+      --build-makeprogram
+      ${CMAKE_MAKE_PROGRAM}
+      --build-options
+      "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+      "-DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}"
+      "-DCMAKE_PREFIX_PATH=${prefix}"
+      "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+    set_tests_properties(installed-module-test PROPERTIES FIXTURES_REQUIRED
+                                                          installed-module)
+  endif ()
 endif ()
 
 # This test is disabled on Windows because it is POSIX-specific.
