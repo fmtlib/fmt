@@ -521,6 +521,7 @@ TEST(chrono_test, format_specs) {
   EXPECT_EQ(fmt::format("{:%S}", std::chrono::seconds(60)), "00");
   EXPECT_EQ(fmt::format("{:%S}", std::chrono::seconds(42)), "42");
   EXPECT_EQ(fmt::format("{:%S}", std::chrono::milliseconds(1234)), "01.234");
+  EXPECT_EQ(fmt::format("{:%OS}", std::chrono::milliseconds(1234)), "01.234");
   EXPECT_EQ(fmt::format("{:%M}", std::chrono::minutes(0)), "00");
   EXPECT_EQ(fmt::format("{:%M}", std::chrono::minutes(60)), "00");
   EXPECT_EQ(fmt::format("{:%M}", std::chrono::minutes(42)), "42");
