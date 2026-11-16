@@ -3181,31 +3181,18 @@ inline auto umul192_upper128(uint64_t x, uint128 y) noexcept -> uint128 {
 
 FMT_API auto get_cached_power(int k) noexcept -> uint128;
 
-// Type-specific information that Dragonbox uses.
+// Type-specific information about floating-point formats.
 template <typename T, typename Enable = void> struct float_info;
 
 template <> struct float_info<float> {
   using carrier_uint = uint32_t;
   static constexpr int exponent_bits = 8;
-  static constexpr int kappa = 1;
-  static constexpr int big_divisor = 100;
-  static constexpr int small_divisor = 10;
-  static constexpr int min_k = -31;
-  enum { max_k = 46 };
-  static constexpr int shorter_interval_tie_lower_threshold = -35;
-  static constexpr int shorter_interval_tie_upper_threshold = -35;
 };
 
 template <> struct float_info<double> {
   using carrier_uint = uint64_t;
   static constexpr int exponent_bits = 11;
   static constexpr int kappa = 2;
-  static constexpr int big_divisor = 1000;
-  static constexpr int small_divisor = 100;
-  static constexpr int min_k = -292;
-  enum { max_k = 341 };
-  static constexpr int shorter_interval_tie_lower_threshold = -77;
-  static constexpr int shorter_interval_tie_upper_threshold = -77;
 };
 
 // An 80- or 128-bit floating point number.
@@ -5189,7 +5176,7 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value, format_specs specs,
     if (specs.type() != presentation_type::none) {
       precision = 6;
     } else if (is_fast_float<T>::value && !is_constant_evaluated()) {
-      // Use Dragonbox for the shortest format.
+      // Use the shortest representation that round-trips.
       auto dec = dragonbox::to_decimal(static_cast<fast_float_t<T>>(value));
       return write_float<Char>(out, dec, specs, s, exp_upper, loc);
     }

@@ -207,22 +207,6 @@ TEST(fp_test, double_tests) {
   run_double_tests<std::numeric_limits<double>::is_iec559>();
 }
 
-TEST(fp_test, dragonbox_max_k) {
-  using fmt::detail::dragonbox::floor_log10_pow2;
-  using float_info = fmt::detail::dragonbox::float_info<float>;
-  EXPECT_EQ(
-      float_info::max_k,
-      float_info::kappa -
-          floor_log10_pow2(std::numeric_limits<float>::min_exponent -
-                           fmt::detail::num_significand_bits<float>() - 1));
-  using double_info = fmt::detail::dragonbox::float_info<double>;
-  EXPECT_EQ(double_info::max_k,
-            double_info::kappa -
-                floor_log10_pow2(
-                    std::numeric_limits<double>::min_exponent -
-                    2 * fmt::detail::num_significand_bits<double>() - 1));
-}
-
 TEST(format_impl_test, format_error_code) {
   std::string msg = "error 42", sep = ": ";
   {

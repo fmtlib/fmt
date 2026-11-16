@@ -42,8 +42,8 @@ Try {fmt} in [Compiler Explorer](https://godbolt.org/z/8Mx1EW73v).
   to Python\'s
   [format](https://docs.python.org/3/library/stdtypes.html#str.format)
 - Fast IEEE 754 floating-point formatter with correct rounding,
-  shortness and round-trip guarantees using the
-  [Dragonbox](https://github.com/jk-jeon/dragonbox) algorithm
+  shortness and round-trip guarantees using
+  [Żmij](https://github.com/vitaut/zmij)
 - Portable Unicode support
 - Safe [printf
   implementation](https://fmt.dev/latest/api/#printf-api)
