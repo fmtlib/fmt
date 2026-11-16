@@ -27,7 +27,7 @@ template FMT_API auto to_decimal(double x) noexcept -> decimal_fp<double>;
 // The Dragonbox API called from the headers of earlier 12.x versions.
 namespace dragonbox {
 template <typename T> struct decimal_fp {
-  typename float_info<T>::carrier_uint significand;
+  typename zmij::detail::float_traits<T>::sig_type significand;
   int exponent;
 };
 

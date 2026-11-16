@@ -3136,7 +3136,7 @@ struct float_info<T, enable_if_t<is_double_double<T>::value>> {
 
 // A decimal floating-point number significand * pow(10, exponent).
 template <typename T> struct decimal_fp {
-  using significand_type = typename float_info<T>::carrier_uint;
+  using significand_type = typename zmij::detail::float_traits<T>::sig_type;
   significand_type significand;
   int exponent;
 };
