@@ -14,6 +14,11 @@ template FMT_API locale_ref::locale_ref(const std::locale& loc);  // DEPRECATED!
 template FMT_API auto locale_ref::get<std::locale>() const -> std::locale;
 #endif
 
+template FMT_API auto zmij::detail::write(char* buffer, float value) noexcept
+    -> char*;
+template FMT_API auto zmij::detail::write(char* buffer, double value) noexcept
+    -> char*;
+
 namespace detail {
 
 template FMT_API auto dragonbox::to_decimal(float x) noexcept

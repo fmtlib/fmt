@@ -173,6 +173,12 @@ template <typename T> struct iterator_traits<fmt::basic_appender<T>> {
 #ifndef FMT_ZMIJ_USE_INT128
 #  define FMT_ZMIJ_USE_INT128 FMT_USE_INT128
 #endif
+// MSVC up to at least 19.37 miscompiles zmij's SSE2 code on 32-bit x86: the
+// upper half of _mm_set_epi64x of a computed 64-bit value comes out wrong.
+#if !defined(FMT_ZMIJ_USE_SSE) && defined(_M_IX86) && FMT_MSC_VERSION && \
+    !FMT_CLANG_VERSION
+#  define FMT_ZMIJ_USE_SSE 0
+#endif
 
 #ifndef FMT_MODULE
 #  include <assert.h>  // assert
@@ -5225,70 +5231,44 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value, format_specs specs,
   return write_float<Char>(out, f, specs, s, exp_upper, loc);
 }
 
+// Copies n chars, 1 <= n <= 32, with two overlapping copies of the same width.
+// Loads that don't line up with the stores zmij wrote the chars with stall on
+// store forwarding, which takes longer than writing them.
+inline void copy_shortest(char* to, const char* from, size_t n) {
+  if (n >= 16) {
+    memcpy(to, from, 16);
+    memcpy(to + n - 16, from + n - 16, 16);
+  } else if (n >= 8) {
+    memcpy(to, from, 8);
+    memcpy(to + n - 8, from + n - 8, 8);
+  } else if (n >= 4) {
+    memcpy(to, from, 4);
+    memcpy(to + n - 4, from + n - 4, 4);
+  } else {
+    // The first, middle and last chars cover 1 to 3 chars.
+    to[0] = from[0];
+    to[n / 2] = from[n / 2];
+    to[n - 1] = from[n - 1];
+  }
+}
+template <typename Char>
+void copy_shortest(Char* to, const char* from, size_t n) {
+  for (size_t i = 0; i < n; ++i) to[i] = static_cast<Char>(from[i]);
+}
+
 template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(is_fast_float<T>::value)>
 FMT_CONSTEXPR20 auto write(OutputIt out, T value) -> OutputIt {
   if (is_constant_evaluated()) return write<Char>(out, value, format_specs());
-
-  auto s = detail::signbit(value) ? sign::minus : sign::none;
-  auto mask = exponent_mask<fast_float_t<T>>();
-  if ((bit_cast<decltype(mask)>(value) & mask) == mask)
-    return write_nonfinite<Char>(out, std::isnan(value), {}, s);
-
-  auto dec = dragonbox::to_decimal(static_cast<fast_float_t<T>>(value));
-  auto significand = dec.significand;
-  int significand_size = count_digits(significand);
-  int exponent = dec.exponent + significand_size - 1;
-  if (use_fixed(exponent, detail::exp_upper<T>())) {
-    return write_fixed<Char, fallback_digit_grouping<Char>>(
-        out, dec, significand_size, Char('.'), {}, s);
+  // zmij writes the sign, inf and nan as well and can store past the end.
+  char buf[zmij::double_buffer_size];
+  char* end = zmij::detail::write(buf, static_cast<fast_float_t<T>>(value));
+  auto size = to_unsigned(end - buf);
+  if (Char* ptr = to_pointer<Char>(out, size)) {
+    copy_shortest(ptr, buf, size);
+    return out;
   }
-
-  // Write value in the exponential format.
-  const char* prefix = "e+";
-  int abs_exponent = exponent;
-  if (exponent < 0) {
-    abs_exponent = -exponent;
-    prefix = "e-";
-  }
-  auto has_decimal_point = significand_size != 1;
-  size_t size = std::is_pointer<OutputIt>::value
-                    ? 0u
-                    : to_unsigned((s != sign::none ? 1 : 0) + significand_size +
-                                  (has_decimal_point ? 1 : 0) +
-                                  (abs_exponent >= 100 ? 5 : 4));
-  if (auto ptr = to_pointer<Char>(out, size)) {
-    if (s != sign::none) *ptr++ = Char('-');
-    if (has_decimal_point) {
-      auto begin = ptr;
-      ptr = format_decimal<Char>(ptr, significand, significand_size + 1);
-      *begin = begin[1];
-      begin[1] = '.';
-    } else {
-      *ptr++ = static_cast<Char>('0' + significand);
-    }
-    if (std::is_same<Char, char>::value) {
-      memcpy(ptr, prefix, 2);
-      ptr += 2;
-    } else {
-      *ptr++ = static_cast<Char>(prefix[0]);
-      *ptr++ = static_cast<Char>(prefix[1]);
-    }
-    if (abs_exponent >= 100) {
-      *ptr++ = static_cast<Char>('0' + abs_exponent / 100);
-      abs_exponent %= 100;
-    }
-    write2digits(ptr, static_cast<unsigned>(abs_exponent));
-    return select<std::is_pointer<OutputIt>::value>(ptr + 2, out);
-  }
-  auto it = reserve(out, size);
-  if (s != sign::none) *it++ = Char('-');
-  // Insert a decimal point after the first digit and add an exponent.
-  it = write_significand(it, significand, significand_size, 1,
-                         has_decimal_point ? Char('.') : Char());
-  *it++ = Char('e');
-  it = write_exponent<Char>(exponent, it);
-  return base_iterator(out, it);
+  return copy<Char>(buf, end, out);
 }
 
 template <typename Char, typename OutputIt, typename T,
