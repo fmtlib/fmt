@@ -2235,7 +2235,8 @@ template <typename F> class apple_file : public file_base<F> {
  private:
   enum {
     line_buffered = 1,  // __SNBF
-    unbuffered = 2      // __SLBF
+    unbuffered = 2,     // __SLBF
+    writing = 8         // __SWR
   };
 
  public:
@@ -2246,7 +2247,8 @@ template <typename F> class apple_file : public file_base<F> {
   }
 
   auto init_buffer() -> bool {
-    if (this->file_->_p) return true;
+    // _p is also the read position so check that the stream is writing.
+    if (this->file_->_p && (this->file_->_flags & writing) != 0) return true;
     // Force buffer initialization by placing and removing a char in a buffer.
     if (putc_unlocked(0, this->file_) == EOF) return false;
     --this->file_->_p;

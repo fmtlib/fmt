@@ -2887,6 +2887,15 @@ TEST(format_test, print_to_read_only_file) {
   EXPECT_THROW(fmt::print(read_end.get(), "{}", std::string(100, 'x')),
                std::system_error);
 }
+
+TEST(format_test, print_to_read_only_file_after_read) {
+  auto pipe = fmt::pipe();
+  pipe.write_end.write("abc", 3);
+  auto read_end = pipe.read_end.fdopen("r");
+  EXPECT_EQ(std::fgetc(read_end.get()), 'a');
+  EXPECT_THROW(fmt::print(read_end.get(), "{}", std::string(100, 'x')),
+               std::system_error);
+}
 #endif  // FMT_USE_FCNTL
 
 // Only defined after the test case.
