@@ -62,7 +62,9 @@ module;
 #  include <string.h>
 #  include <time.h>
 #endif
+#include <cassert>
 #include <cerrno>
+#include <cfloat>
 #include <climits>
 #include <version>
 
@@ -77,6 +79,14 @@ module;
 #endif
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #  include <intrin.h>
+#endif
+// fmt/format-inl.h uses SIMD intrinsics if they are available.
+#if (defined(__ARM_NEON) && defined(__aarch64__)) || defined(_M_ARM64)
+#  include <arm_neon.h>
+#endif
+#if defined(__SSE2__) || defined(_M_AMD64) || \
+    (defined(_M_IX86_FP) && _M_IX86_FP == 2)
+#  include <smmintrin.h>
 #endif
 #if defined __APPLE__ || defined(__FreeBSD__)
 #  include <xlocale.h>
