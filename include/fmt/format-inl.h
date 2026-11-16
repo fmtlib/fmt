@@ -1948,91 +1948,120 @@ FMT_FUNC auto vsystem_error(int error_code, string_view fmt, format_args args)
 
 namespace detail {
 
-// Compilers should be able to optimize this into the ror instruction.
-FMT_INLINE auto rotr(uint32_t n, uint32_t r) noexcept -> uint32_t {
-  r &= 31;
-  return (n >> r) | (n << (32 - r));
-}
-FMT_INLINE auto rotr(uint64_t n, uint32_t r) noexcept -> uint64_t {
-  r &= 63;
-  return (n >> r) | (n << (64 - r));
-}
-
-// The Dragonbox API, implemented with zmij and kept for ABI compatibility.
-namespace dragonbox {
-// Remove trailing zeros from n and return the number of zeros removed (float).
-FMT_INLINE auto remove_trailing_zeros(uint32_t& n, int s = 0) noexcept -> int {
-  FMT_ASSERT(n != 0, "");
-  // Modular inverse of 5 (mod 2^32): (mod_inv_5 * 5) mod 2^32 = 1.
-  constexpr uint32_t mod_inv_5 = 0xcccccccd;
-  constexpr uint32_t mod_inv_25 = 0xc28f5c29;  // = mod_inv_5 * mod_inv_5
-
-  while (true) {
-    auto q = rotr(n * mod_inv_25, 2);
-    if (q > max_value<uint32_t>() / 100) break;
-    n = q;
-    s += 2;
-  }
-  auto q = rotr(n * mod_inv_5, 1);
-  if (q <= max_value<uint32_t>() / 10) {
-    n = q;
-    s |= 1;
-  }
-  return s;
-}
-
-// Removes trailing zeros and returns the number of zeros removed (double).
-FMT_INLINE auto remove_trailing_zeros(uint64_t& n) noexcept -> int {
-  FMT_ASSERT(n != 0, "");
-
-  // Is n is divisible by 10^8?
-  constexpr uint32_t ten_pow_8 = 100000000u;
-  if ((n % ten_pow_8) == 0) {
-    // If yes, work with the quotient...
-    auto n32 = static_cast<uint32_t>(n / ten_pow_8);
-    // ... and use the 32 bit variant of the function
-    int num_zeros = remove_trailing_zeros(n32, 8);
-    n = n32;
-    return num_zeros;
-  }
-
-  // If n is not divisible by 10^8, work with n itself.
-  constexpr uint64_t mod_inv_5 = 0xcccccccccccccccd;
-  constexpr uint64_t mod_inv_25 = 0x8f5c28f5c28f5c29;  // mod_inv_5 * mod_inv_5
-
-  int s = 0;
-  while (true) {
-    auto q = rotr(n * mod_inv_25, 2);
-    if (q > max_value<uint64_t>() / 100) break;
-    n = q;
-    s += 2;
-  }
-  auto q = rotr(n * mod_inv_5, 1);
-  if (q <= max_value<uint64_t>() / 10) {
-    n = q;
-    s |= 1;
-  }
-
-  return s;
-}
-
-FMT_FUNC auto get_cached_power(int k) noexcept -> uint128 {
-  // zmij's powers of 10 are rounded down and format_float needs them rounded
-  // up. They agree on 10^0 to 10^55, whose significands are exact in 128 bits.
-  auto p = zmij::static_data.pow10_significands[k];
-  uint64_t lo = p.lo + static_cast<uint64_t>(k < 0 || k > 55);
-  return {p.hi + static_cast<uint64_t>(lo < p.lo), lo};
+// Returns n / 10^k if n is a multiple of 10^k and a value above max / 10^k
+// otherwise, given inv = 5^-k mod 2^64.
+inline auto divide_exact(uint64_t n, uint64_t inv, int k) noexcept -> uint64_t {
+  uint64_t q = n * inv;
+  return q >> k | q << (64 - k);
 }
 
 template <typename T> auto to_decimal(T x) noexcept -> decimal_fp<T> {
   auto dec = zmij::to_decimal(x);
-  auto significand =
-      static_cast<typename decimal_fp<T>::significand_type>(dec.sig);
-  if (significand == 0) return {0, 0};
-  int exponent = dec.exp + remove_trailing_zeros(significand);
-  return {significand, exponent};
+  if (dec.sig == 0) return {0, 0};
+  // zmij's significand has trailing zeros, up to 16.
+  constexpr uint64_t inv5 = 0xcccccccccccccccd, inv25 = inv5 * inv5;
+  constexpr uint64_t inv5_8 = inv25 * inv25 * inv25 * inv25;
+  while (true) {
+    uint64_t q = divide_exact(dec.sig, inv5_8, 8);
+    if (q > max_value<uint64_t>() / 100000000) break;
+    dec.sig = q;
+    dec.exp += 8;
+  }
+  while (true) {
+    uint64_t q = divide_exact(dec.sig, inv25, 2);
+    if (q > max_value<uint64_t>() / 100) break;
+    dec.sig = q;
+    dec.exp += 2;
+  }
+  uint64_t q = divide_exact(dec.sig, inv5, 1);
+  if (q <= max_value<uint64_t>() / 10) {
+    dec.sig = q;
+    ++dec.exp;
+  }
+  return {static_cast<typename decimal_fp<T>::significand_type>(dec.sig),
+          dec.exp};
 }
-}  // namespace dragonbox
+
+FMT_FUNC auto format_zmij(double value, int& precision, bool fixed,
+                          buffer<char>& buf, int& exp) -> bool {
+  using traits = zmij::detail::float_traits<double>;
+  auto bits = traits::to_bits(value);
+  auto bin_exp = traits::get_exp(bits);
+  auto bin_sig = traits::get_sig(bits);
+  if (bin_exp == 0) zmij::detail::normalize<double>(bin_sig, bin_exp);
+  bin_exp -= traits::exp_offset;
+  bin_sig |= traits::implicit_bit;
+
+  uint64_t dec_sig = 0;  // The digits zero-padded to 18.
+  if (!fixed && precision <= 18) {
+    auto dec = zmij::to_decimal<double>(bin_sig, int(bin_exp), precision);
+    dec_sig = dec.sig;
+    exp = dec.lead_exp + 1 - precision;
+  } else {
+    // Scale to 18 significant digits to find the exponent of the first one.
+    int dec_exp =
+        zmij::detail::compute_dec_exp(int(bin_exp + traits::num_sig_bits)) - 17;
+    auto scaled = zmij::scale<double>(bin_sig, int(bin_exp), dec_exp);
+    int num_scaled_digits = 18 + (scaled.integral >= zmij::pow10s[18]);
+    int lead_exp = dec_exp + num_scaled_digits - 1;
+    if (fixed) adjust_precision(precision, lead_exp + 1);
+    if (precision > 18) {
+      exp = lead_exp;
+      return false;
+    }
+
+    bool has_fraction = (scaled.fraction | scaled.fraction_tail) != 0;
+    if (precision <= 0) {
+      // No digits are kept, so the value rounds to 0 or, if precision is 0 and
+      // it is above half of 10^(lead_exp + 1), up to that. A 19-digit scale
+      // starts with 1 and is never above half.
+      exp = lead_exp + 1;
+      if (precision == 0) {
+        uint64_t half = 5 * zmij::pow10s[17];
+        bool round_up = num_scaled_digits == 18 &&
+                        (half < scaled.integral ||
+                         (half == scaled.integral && has_fraction));
+        buf.push_back(round_up ? '1' : '0');
+      }
+      return true;
+    }
+
+    if (precision < num_scaled_digits) {
+      uint64_t pow = zmij::pow10s[num_scaled_digits - precision];
+      dec_sig = scaled.integral / pow;
+      uint64_t remainder = scaled.integral - dec_sig * pow;
+      uint64_t half = pow / 2;
+      dec_sig += half < remainder ||
+                 (half == remainder && (has_fraction || (dec_sig & 1) != 0));
+    } else {
+      dec_sig = zmij::round_even(scaled);
+    }
+    exp = lead_exp + 1 - precision;
+    if (dec_sig >= zmij::pow10s[precision]) {
+      // Rounding carried into a new digit, e.g. 9.99 to 10.00.
+      dec_sig = zmij::pow10s[17];
+      ++precision;
+    } else {
+      dec_sig *= zmij::pow10s[18 - precision];
+    }
+  }
+
+  if (precision <= 8) {
+    buf.try_resize(8);
+    auto dig =
+        zmij::to_digits<32>(dec_sig / zmij::pow10s[10], zmij::static_data);
+    memcpy(buf.data(), &dig.digits, 8);
+  } else {
+    buf.try_resize(19);
+    auto hi = zmij::to_digits<64>(dec_sig / 100, zmij::static_data);
+    memcpy(buf.data(), &hi.digits, 16);
+    memcpy(buf.data() + 16, zmij::digits2(static_cast<unsigned>(dec_sig % 100)),
+           2);
+    buf[18] = '0';
+  }
+  buf.try_resize(to_unsigned(precision));
+  return true;
+}
 }  // namespace detail
 
 FMT_FUNC detail::utf8_to_utf16::utf8_to_utf16(string_view s) {

@@ -72,7 +72,7 @@
 #  endif
 
 #  if FMT_MSC_VERSION
-#    include <intrin.h>  // _BitScanReverse[64], _umul128
+#    include <intrin.h>  // _BitScanReverse[64]
 #  endif
 #endif  // FMT_MODULE
 
@@ -1758,9 +1758,6 @@ class uint128 {
   constexpr uint128(uint64_t hi, uint64_t lo) : lo_(lo), hi_(hi) {}
   constexpr uint128(uint64_t value = 0) : lo_(value), hi_(0) {}
 
-  constexpr auto high() const noexcept -> uint64_t { return hi_; }
-  constexpr auto low() const noexcept -> uint64_t { return lo_; }
-
   template <typename T, FMT_ENABLE_IF(std::is_integral<T>::value)>
   constexpr explicit operator T() const {
     return static_cast<T>(lo_);
@@ -1910,13 +1907,6 @@ FMT_CONSTEXPR20 inline auto countl_zero_fallback(UInt n) -> int {
 FMT_CONSTEXPR20 inline auto countl_zero(uint32_t n) -> int {
 #ifdef FMT_BUILTIN_CLZ
   if (!is_constant_evaluated()) return FMT_BUILTIN_CLZ(n);
-#endif
-  return countl_zero_fallback(n);
-}
-
-FMT_CONSTEXPR20 inline auto countl_zero(uint64_t n) -> int {
-#ifdef FMT_BUILTIN_CLZLL
-  if (!is_constant_evaluated()) return FMT_BUILTIN_CLZLL(n);
 #endif
   return countl_zero_fallback(n);
 }
@@ -3116,71 +3106,6 @@ template <typename WChar, typename Buffer = memory_buffer> class to_utf8 {
   }
 };
 
-// Computes 128-bit result of multiplication of two 64-bit unsigned integers.
-FMT_INLINE auto umul128(uint64_t x, uint64_t y) noexcept -> uint128 {
-#if FMT_USE_INT128
-  auto p = static_cast<uint128_t>(x) * static_cast<uint128_t>(y);
-  return {static_cast<uint64_t>(p >> 64), static_cast<uint64_t>(p)};
-#elif defined(_MSC_VER) && defined(_M_AMD64)
-  auto hi = uint64_t();
-  auto lo = _umul128(x, y, &hi);
-  return {hi, lo};
-#else
-  const uint64_t mask = static_cast<uint64_t>(max_value<uint32_t>());
-
-  uint64_t a = x >> 32;
-  uint64_t b = x & mask;
-  uint64_t c = y >> 32;
-  uint64_t d = y & mask;
-
-  uint64_t ac = a * c;
-  uint64_t bc = b * c;
-  uint64_t ad = a * d;
-  uint64_t bd = b * d;
-
-  uint64_t intermediate = (bd >> 32) + (ad & mask) + (bc & mask);
-
-  return {ac + (intermediate >> 32) + (ad >> 32) + (bc >> 32),
-          (intermediate << 32) + (bd & mask)};
-#endif
-}
-
-namespace dragonbox {
-// Computes floor(log10(pow(2, e))) for e in [-2620, 2620] using the method from
-// https://fmt.dev/papers/Dragonbox.pdf#page=28, section 6.1.
-inline auto floor_log10_pow2(int e) noexcept -> int {
-  FMT_ASSERT(e <= 2620 && e >= -2620, "too large exponent");
-  static_assert((-1 >> 1) == -1, "right shift is not arithmetic");
-  return (e * 315653) >> 20;
-}
-
-inline auto floor_log2_pow10(int e) noexcept -> int {
-  FMT_ASSERT(e <= 1233 && e >= -1233, "too large exponent");
-  return (e * 1741647) >> 19;
-}
-
-// Computes upper 64 bits of multiplication of two 64-bit unsigned integers.
-inline auto umul128_upper64(uint64_t x, uint64_t y) noexcept -> uint64_t {
-#if FMT_USE_INT128
-  auto p = static_cast<uint128_t>(x) * static_cast<uint128_t>(y);
-  return static_cast<uint64_t>(p >> 64);
-#elif defined(_MSC_VER) && defined(_M_AMD64)
-  return __umulh(x, y);
-#else
-  return umul128(x, y).high();
-#endif
-}
-
-// Computes upper 128 bits of multiplication of a 64-bit unsigned integer and a
-// 128-bit unsigned integer.
-inline auto umul192_upper128(uint64_t x, uint128 y) noexcept -> uint128 {
-  uint128 r = umul128(x, y.high());
-  r += umul128_upper64(x, y.low());
-  return r;
-}
-
-FMT_API auto get_cached_power(int k) noexcept -> uint128;
-
 // Type-specific information about floating-point formats.
 template <typename T, typename Enable = void> struct float_info;
 
@@ -3192,7 +3117,6 @@ template <> struct float_info<float> {
 template <> struct float_info<double> {
   using carrier_uint = uint64_t;
   static constexpr int exponent_bits = 11;
-  static constexpr int kappa = 2;
 };
 
 // An 80- or 128-bit floating point number.
@@ -3210,14 +3134,16 @@ struct float_info<T, enable_if_t<is_double_double<T>::value>> {
   using carrier_uint = detail::uint128_t;
 };
 
+// A decimal floating-point number significand * pow(10, exponent).
 template <typename T> struct decimal_fp {
   using significand_type = typename float_info<T>::carrier_uint;
   significand_type significand;
   int exponent;
 };
 
+// Returns the shortest decimal representation of a finite x that round-trips,
+// without trailing zeros.
 template <typename T> FMT_API auto to_decimal(T x) noexcept -> decimal_fp<T>;
-}  // namespace dragonbox
 
 // Returns true iff Float has the implicit bit which is not stored.
 template <typename Float> constexpr auto has_implicit_bit() -> bool {
@@ -3235,10 +3161,9 @@ template <typename Float> constexpr auto num_significand_bits() -> int {
 }
 
 template <typename Float>
-constexpr auto exponent_mask() ->
-    typename dragonbox::float_info<Float>::carrier_uint {
-  using float_uint = typename dragonbox::float_info<Float>::carrier_uint;
-  return ((float_uint(1) << dragonbox::float_info<Float>::exponent_bits) - 1)
+constexpr auto exponent_mask() -> typename float_info<Float>::carrier_uint {
+  using float_uint = typename float_info<Float>::carrier_uint;
+  return ((float_uint(1) << float_info<Float>::exponent_bits) - 1)
          << num_significand_bits<Float>();
 }
 template <typename Float> constexpr auto exponent_bias() -> int {
@@ -3296,7 +3221,7 @@ template <typename F> struct basic_fp {
   FMT_CONSTEXPR auto assign(Float n) -> bool {
     static_assert(std::numeric_limits<Float>::digits <= 113, "unsupported FP");
     // Assume Float is in the format [sign][exponent][significand].
-    using carrier_uint = typename dragonbox::float_info<Float>::carrier_uint;
+    using carrier_uint = typename float_info<Float>::carrier_uint;
     const auto num_float_significand_bits =
         detail::num_significand_bits<Float>();
     const auto implicit_bit = carrier_uint(1) << num_float_significand_bits;
@@ -4063,7 +3988,7 @@ constexpr auto get_significand_size(const big_decimal_fp& f) -> int {
   return f.significand_size;
 }
 template <typename T>
-inline auto get_significand_size(const dragonbox::decimal_fp<T>& f) -> int {
+inline auto get_significand_size(const decimal_fp<T>& f) -> int {
   return count_digits(f.significand);
 }
 
@@ -4747,7 +4672,7 @@ FMT_CONSTEXPR20 void format_hexfloat(Float value, format_specs specs,
   // simplify implementation.
   static_assert(!std::is_same<Float, float>::value, "");
 
-  using info = dragonbox::float_info<Float>;
+  using info = float_info<Float>;
 
   // Assume Float is in the format [sign][exponent][significand].
   using carrier_uint = typename info::carrier_uint;
@@ -4835,17 +4760,13 @@ FMT_CONSTEXPR auto write_hexfloat(OutputIt out, string_view s,
       });
 }
 
-constexpr auto fractional_part_rounding_thresholds(int index) -> uint32_t {
-  // For checking rounding thresholds.
-  // The kth entry is chosen to be the smallest integer such that the
-  // upper 32-bits of 10^(k+1) times it is strictly bigger than 5 * 10^k.
-  // It is equal to ceil(2^31 + 2^32/10^(k + 1)).
-  // These are stored in a string literal because we cannot have static arrays
-  // in constexpr functions and non-static ones are poorly optimized.
-  return uint32_t(u"\x9999\x828f\x8041\x8006\x8000\x8000\x8000\x8000"[index])
-             << 16u |
-         uint32_t(u"\x999a\x5c29\x8938\x8db9\xa7c6\x10c7\x01ae\x002b"[index]);
-}
+// Formats value rounded to precision significant digits or, if fixed, to
+// precision digits after the decimal point, as digits without the point in buf
+// and sets exp to the exponent of the last one. If that takes more than 18
+// digits, returns false and sets precision to their number and exp to the
+// exponent of the first one instead.
+FMT_API auto format_zmij(double value, int& precision, bool fixed,
+                         buffer<char>& buf, int& exp) -> bool;
 
 template <typename Float>
 FMT_CONSTEXPR20 auto format_float(Float value, int precision,
@@ -4871,7 +4792,7 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision,
   unsigned dragon_flags = 0;
   if (!is_fast_float<Float>() || is_constant_evaluated()) {
     const auto inv_log2_10 = 0.3010299956639812;  // 1 / log2(10)
-    using info = dragonbox::float_info<decltype(converted_value)>;
+    using info = float_info<decltype(converted_value)>;
     const auto f = basic_fp<typename info::carrier_uint>(converted_value);
     // Compute exp, an approximate power of 10, such that
     //   10^(exp - 1) <= value < 10^exp or 10^exp <= value < 10^(exp + 1).
@@ -4882,245 +4803,8 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision,
     if (e > exp) ++exp;  // Compute ceil.
     dragon_flags = dragon::fixup;
   } else {
-    // Extract significand bits and exponent bits.
-    using info = dragonbox::float_info<double>;
-    auto br = bit_cast<uint64_t>(static_cast<double>(value));
-
-    const uint64_t significand_mask =
-        (static_cast<uint64_t>(1) << num_significand_bits<double>()) - 1;
-    uint64_t significand = (br & significand_mask);
-    int exponent = static_cast<int>((br & exponent_mask<double>()) >>
-                                    num_significand_bits<double>());
-
-    if (exponent != 0) {  // Check if normal.
-      exponent -= exponent_bias<double>() + num_significand_bits<double>();
-      significand |=
-          (static_cast<uint64_t>(1) << num_significand_bits<double>());
-      significand <<= 1;
-    } else {
-      // Normalize subnormal inputs.
-      FMT_ASSERT(significand != 0, "zeros should not appear here");
-      int shift = countl_zero(significand);
-      FMT_ASSERT(shift >= num_bits<uint64_t>() - num_significand_bits<double>(),
-                 "");
-      shift -= (num_bits<uint64_t>() - num_significand_bits<double>() - 2);
-      exponent = (std::numeric_limits<double>::min_exponent -
-                  num_significand_bits<double>()) -
-                 shift;
-      significand <<= shift;
-    }
-
-    // Compute the first several nonzero decimal significand digits.
-    // We call the number we get the first segment.
-    const int k = info::kappa - dragonbox::floor_log10_pow2(exponent);
-    exp = -k;
-    const int beta = exponent + dragonbox::floor_log2_pow10(k);
-    uint64_t first_segment;
-    bool has_more_segments;
-    int digits_in_the_first_segment;
-    {
-      const auto r = dragonbox::umul192_upper128(
-          significand << beta, dragonbox::get_cached_power(k));
-      first_segment = r.high();
-      has_more_segments = r.low() != 0;
-
-      // The first segment can have 18 ~ 19 digits.
-      if (first_segment >= 1000000000000000000ULL) {
-        digits_in_the_first_segment = 19;
-      } else {
-        // When it is of 18-digits, we align it to 19-digits by adding a bogus
-        // zero at the end.
-        digits_in_the_first_segment = 18;
-        first_segment *= 10;
-      }
-    }
-
-    // Compute the actual number of decimal digits to print.
-    if (fixed) adjust_precision(precision, exp + digits_in_the_first_segment);
-
-    // Use Dragon4 only when there might be not enough digits in the first
-    // segment.
-    if (digits_in_the_first_segment > precision) {
-      use_dragon = false;
-
-      if (precision <= 0) {
-        exp += digits_in_the_first_segment;
-
-        if (precision < 0) {
-          // Nothing to do, since all we have are just leading zeros.
-          buf.try_resize(0);
-        } else {
-          // We may need to round-up.
-          buf.try_resize(1);
-          if ((first_segment | static_cast<uint64_t>(has_more_segments)) >
-              5000000000000000000ULL) {
-            buf[0] = '1';
-          } else {
-            buf[0] = '0';
-          }
-        }
-      }  // precision <= 0
-      else {
-        exp += digits_in_the_first_segment - precision;
-
-        // When precision > 0, we divide the first segment into three
-        // subsegments, each with 9, 9, and 0 ~ 1 digits so that each fits
-        // in 32-bits which usually allows faster calculation than in
-        // 64-bits. Since some compiler (e.g. MSVC) doesn't know how to optimize
-        // division-by-constant for large 64-bit divisors, we do it here
-        // manually. The magic number 7922816251426433760 below is equal to
-        // ceil(2^(64+32) / 10^10).
-        const uint32_t first_subsegment = static_cast<uint32_t>(
-            dragonbox::umul128_upper64(first_segment, 7922816251426433760ULL) >>
-            32);
-        const uint64_t second_third_subsegments =
-            first_segment - first_subsegment * 10000000000ULL;
-
-        uint64_t prod;
-        uint32_t digits;
-        bool should_round_up;
-        int number_of_digits_to_print = min_of(precision, 9);
-
-        // Print a 9-digits subsegment, either the first or the second.
-        auto print_subsegment = [&](uint32_t subsegment, char* buffer) {
-          int number_of_digits_printed = 0;
-
-          // If we want to print an odd number of digits from the subsegment,
-          if ((number_of_digits_to_print & 1) != 0) {
-            // Convert to 64-bit fixed-point fractional form with 1-digit
-            // integer part. The magic number 720575941 is a good enough
-            // approximation of 2^(32 + 24) / 10^8; see
-            // https://jk-jeon.github.io/posts/2022/12/fixed-precision-formatting/#fixed-length-case
-            // for details.
-            prod = ((subsegment * static_cast<uint64_t>(720575941)) >> 24) + 1;
-            digits = static_cast<uint32_t>(prod >> 32);
-            *buffer = static_cast<char>('0' + digits);
-            number_of_digits_printed++;
-          }
-          // If we want to print an even number of digits from the
-          // first_subsegment,
-          else {
-            // Convert to 64-bit fixed-point fractional form with 2-digits
-            // integer part. The magic number 450359963 is a good enough
-            // approximation of 2^(32 + 20) / 10^7; see
-            // https://jk-jeon.github.io/posts/2022/12/fixed-precision-formatting/#fixed-length-case
-            // for details.
-            prod = ((subsegment * static_cast<uint64_t>(450359963)) >> 20) + 1;
-            digits = static_cast<uint32_t>(prod >> 32);
-            write2digits(buffer, digits);
-            number_of_digits_printed += 2;
-          }
-
-          // Print all digit pairs.
-          while (number_of_digits_printed < number_of_digits_to_print) {
-            prod = static_cast<uint32_t>(prod) * static_cast<uint64_t>(100);
-            digits = static_cast<uint32_t>(prod >> 32);
-            write2digits(buffer + number_of_digits_printed, digits);
-            number_of_digits_printed += 2;
-          }
-        };
-
-        // Print first subsegment.
-        print_subsegment(first_subsegment, buf.data());
-
-        // Perform rounding if the first subsegment is the last subsegment to
-        // print.
-        if (precision <= 9) {
-          // Rounding inside the subsegment.
-          // We round-up if:
-          //  - either the fractional part is strictly larger than 1/2, or
-          //  - the fractional part is exactly 1/2 and the last digit is odd.
-          // We rely on the following observations:
-          //  - If fractional_part >= threshold, then the fractional part is
-          //    strictly larger than 1/2.
-          //  - If the MSB of fractional_part is set, then the fractional part
-          //    must be at least 1/2.
-          //  - When the MSB of fractional_part is set, either
-          //    second_third_subsegments being nonzero or has_more_segments
-          //    being true means there are further digits not printed, so the
-          //    fractional part is strictly larger than 1/2.
-          if (precision < 9) {
-            uint32_t fractional_part = static_cast<uint32_t>(prod);
-            should_round_up =
-                fractional_part >= fractional_part_rounding_thresholds(
-                                       8 - number_of_digits_to_print) ||
-                ((fractional_part >> 31) &
-                 ((digits & 1) | (second_third_subsegments != 0) |
-                  has_more_segments)) != 0;
-          }
-          // Rounding at the subsegment boundary.
-          // In this case, the fractional part is at least 1/2 if and only if
-          // second_third_subsegments >= 5000000000ULL, and is strictly larger
-          // than 1/2 if we further have either second_third_subsegments >
-          // 5000000000ULL or has_more_segments == true.
-          else {
-            should_round_up = second_third_subsegments > 5000000000ULL ||
-                              (second_third_subsegments == 5000000000ULL &&
-                               ((digits & 1) != 0 || has_more_segments));
-          }
-        }
-        // Otherwise, print the second subsegment.
-        else {
-          // Compilers are not aware of how to leverage the maximum value of
-          // second_third_subsegments to find out a better magic number which
-          // allows us to eliminate an additional shift. 1844674407370955162 =
-          // ceil(2^64/10) < ceil(2^64*(10^9/(10^10 - 1))).
-          const uint32_t second_subsegment =
-              static_cast<uint32_t>(dragonbox::umul128_upper64(
-                  second_third_subsegments, 1844674407370955162ULL));
-          const uint32_t third_subsegment =
-              static_cast<uint32_t>(second_third_subsegments) -
-              second_subsegment * 10;
-
-          number_of_digits_to_print = precision - 9;
-          print_subsegment(second_subsegment, buf.data() + 9);
-
-          // Rounding inside the subsegment.
-          if (precision < 18) {
-            // The condition third_subsegment != 0 implies that the segment was
-            // of 19 digits, so in this case the third segment should be
-            // consisting of a genuine digit from the input.
-            uint32_t fractional_part = static_cast<uint32_t>(prod);
-            should_round_up =
-                fractional_part >= fractional_part_rounding_thresholds(
-                                       8 - number_of_digits_to_print) ||
-                ((fractional_part >> 31) &
-                 ((digits & 1) | (third_subsegment != 0) |
-                  has_more_segments)) != 0;
-          }
-          // Rounding at the subsegment boundary.
-          else {
-            // In this case, the segment must be of 19 digits, thus
-            // the third subsegment should be consisting of a genuine digit from
-            // the input.
-            should_round_up = third_subsegment > 5 ||
-                              (third_subsegment == 5 &&
-                               ((digits & 1) != 0 || has_more_segments));
-          }
-        }
-
-        // Round-up if necessary.
-        if (should_round_up) {
-          ++buf[precision - 1];
-          for (int i = precision - 1; i > 0 && buf[i] > '9'; --i) {
-            buf[i] = '0';
-            ++buf[i - 1];
-          }
-          if (buf[0] > '9') {
-            buf[0] = '1';
-            if (fixed)
-              buf[precision++] = '0';
-            else
-              ++exp;
-          }
-        }
-        buf.try_resize(to_unsigned(precision));
-      }
-    }  // if (digits_in_the_first_segment > precision)
-    else {
-      // Adjust the exponent for its use in Dragon4.
-      exp += digits_in_the_first_segment - 1;
-    }
+    use_dragon =
+        !format_zmij(static_cast<double>(value), precision, fixed, buf, exp);
   }
   if (use_dragon) {
     auto f = basic_fp<uint128_t>();
@@ -5177,7 +4861,7 @@ FMT_CONSTEXPR20 auto write(OutputIt out, T value, format_specs specs,
       precision = 6;
     } else if (is_fast_float<T>::value && !is_constant_evaluated()) {
       // Use the shortest representation that round-trips.
-      auto dec = dragonbox::to_decimal(static_cast<fast_float_t<T>>(value));
+      auto dec = to_decimal(static_cast<fast_float_t<T>>(value));
       return write_float<Char>(out, dec, specs, s, exp_upper, loc);
     }
   }
