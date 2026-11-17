@@ -1872,6 +1872,12 @@ struct duration_formatter {
   void on_duration_value() {
     if (write_if_nonfinite()) return;
     write_sign();
+    // %Q is the count itself, so without a precision it is written in full
+    // like {} and not with the default duration output's 6 significant digits.
+    if (precision < 0) {
+      out = detail::write<Char>(out, val);
+      return;
+    }
     out = format_duration_value<Char>(out, val, precision);
   }
 
