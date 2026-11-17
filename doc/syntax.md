@@ -267,7 +267,7 @@ fmt::format("{:#06x}", 0xfe);  // # adds the prefix, 06 zero-pads to width 6
 |------|---------------------------------------------------------------------|
 | `s`  | Plain string output. Default for string types and for `bool` (which is rendered as `true` or `false`). |
 | `c`  | Character output. Default for character types. Not allowed for `bool`. |
-| `?`  | Debug output: the value is wrapped in single quotes (characters) or double quotes (strings), and non-printable, non-ASCII, and special characters are escaped using C-style escape sequences such as `\n`, `\t`, `\"`, and `\u{...}`. |
+| `?`  | Debug output: the value is wrapped in single quotes (characters) or double quotes (strings), and non-printable and special characters are escaped using C-style escape sequences such as `\n`, `\t`, `\"`, and `\u200b`. |
 | none | Same as `s` for strings and `bool`, and as `c` for characters.      |
 
 ```c++
