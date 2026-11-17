@@ -288,6 +288,10 @@ template <typename T> struct iterator_traits<fmt::basic_appender<T>> {
 
 #ifdef FMT_ZMIJ_USE_SSE
 // Use the provided definition.
+#elif defined(_M_IX86) && FMT_ZMIJ_MSC_VER && !defined(__clang__)
+// MSVC up to at least 19.37 miscompiles the SSE2 code on 32-bit x86: the
+// upper half of _mm_set_epi64x of a computed 64-bit value comes out wrong.
+#  define FMT_ZMIJ_USE_SSE 0
 #elif defined(__SSE2__)
 #  define FMT_ZMIJ_USE_SSE FMT_ZMIJ_USE_SIMD
 #elif defined(_M_AMD64) || (defined(_M_IX86_FP) && _M_IX86_FP == 2)
@@ -326,11 +330,14 @@ static_assert(!FMT_ZMIJ_USE_SSE4_1 || FMT_ZMIJ_USE_SSE, "SSE4.1 requires SSE");
 
 #if FMT_ZMIJ_CPLUSPLUS >= 202002L && FMT_ZMIJ_HAS_CPP_ATTRIBUTE(likely) && \
     FMT_ZMIJ_HAS_CPP_ATTRIBUTE(unlikely)
-#  define FMT_ZMIJ_LIKELY likely
-#  define FMT_ZMIJ_UNLIKELY unlikely
+#  define FMT_ZMIJ_LIKELY(x) (x) [[likely]]
+#  define FMT_ZMIJ_UNLIKELY(x) (x) [[unlikely]]
+#elif FMT_ZMIJ_HAS_BUILTIN(__builtin_expect) || FMT_ZMIJ_GNUC_BUILTINS
+#  define FMT_ZMIJ_LIKELY(x) (__builtin_expect(!!(x), 1))
+#  define FMT_ZMIJ_UNLIKELY(x) (__builtin_expect(!!(x), 0))
 #else
-#  define FMT_ZMIJ_LIKELY
-#  define FMT_ZMIJ_UNLIKELY
+#  define FMT_ZMIJ_LIKELY(x) (x)
+#  define FMT_ZMIJ_UNLIKELY(x) (x)
 #endif
 
 #if FMT_ZMIJ_CPLUSPLUS >= 201703L && FMT_ZMIJ_HAS_CPP_ATTRIBUTE(maybe_unused)
@@ -521,6 +528,14 @@ struct uint128 {
 #  define FMT_ZMIJ_USE_INT128 0
 #endif
 
+#ifdef FMT_ZMIJ_USE_FLOAT128
+// Use the provided definition.
+#elif defined(__SIZEOF_FLOAT128__)
+#  define FMT_ZMIJ_USE_FLOAT128 1
+#else
+#  define FMT_ZMIJ_USE_FLOAT128 0
+#endif
+
 #if FMT_ZMIJ_USE_INT128
 using uint128_t = __uint128_t;
 #else
@@ -581,8 +596,22 @@ constexpr auto ilog2(int n) noexcept -> int {
   return n > 1 ? 1 + ilog2(n >> 1) : 0;
 }
 
+#if FMT_ZMIJ_USE_FLOAT128
+template <typename T> struct is_float128 : std::is_same<T, __float128> {};
+#else
+template <typename T> struct is_float128 : std::false_type {};
+#endif
+
 template <typename Float> struct float_traits : std::numeric_limits<Float> {
-  static_assert(std::numeric_limits<Float>::is_iec559, "IEEE 754 required");
+  // std::numeric_limits doesn't describe __float128, which is IEEE binary128.
+  static constexpr bool binary128 =
+      is_float128<Float>::value && !std::numeric_limits<Float>::is_specialized;
+  static_assert(std::numeric_limits<Float>::is_iec559 || binary128,
+                "IEEE 754 required");
+  static constexpr int digits =
+      binary128 ? 113 : std::numeric_limits<Float>::digits;
+  static constexpr int max_exponent =
+      binary128 ? 16384 : std::numeric_limits<Float>::max_exponent;
 
   // x87 80-bit stores the integer bit explicitly (digits == 64), so its
   // exponent sits one bit higher than the implicit-bit binary32/64/128 layouts.
@@ -1210,7 +1239,7 @@ FMT_ZMIJ_CONSTEXPR20 auto write_big(char* out, size_t n, Float value,
   writer w = {out, out + n, 0};
   if (traits::is_negative(bits)) w.write('-');
 
-  if (!traits::is_normal(bin_exp)) [[FMT_ZMIJ_UNLIKELY]] {
+  if FMT_ZMIJ_UNLIKELY (!traits::is_normal(bin_exp)) {
     if (bin_exp != 0)  // inf or nan
       return w.write(bin_sig != 0 ? "nan" : "inf", 3);
     bin_exp = 1;  // subnormal or zero
@@ -1316,7 +1345,7 @@ FMT_ZMIJ_CONSTEXPR20 auto write_hex(char* buffer, Float value,
   buffer += traits::is_negative(bits);
 
   bool zero = false;
-  if (!traits::is_normal(bin_exp)) [[FMT_ZMIJ_UNLIKELY]] {
+  if FMT_ZMIJ_UNLIKELY (!traits::is_normal(bin_exp)) {
     if (bin_exp != 0) return write_inf_nan(buffer, bin_sig != 0);
     zero = bin_sig == 0;
     if (zero)
