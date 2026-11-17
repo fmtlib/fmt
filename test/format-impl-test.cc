@@ -347,10 +347,6 @@ namespace detail {
 template <> struct is_floating_point<double_double> : std::true_type {};
 template <> struct is_floating_point<slow_float> : std::true_type {};
 template <> struct is_fast_float<slow_float> : std::false_type {};
-template <> struct float_info<slow_float> {
-  using carrier_uint = uint32_t;
-  static const int exponent_bits = 8;
-};
 }  // namespace detail
 FMT_END_NAMESPACE
 
