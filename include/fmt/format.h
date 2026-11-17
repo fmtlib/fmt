@@ -3106,33 +3106,11 @@ template <typename WChar, typename Buffer = memory_buffer> class to_utf8 {
   }
 };
 
-// Type-specific information about floating-point formats.
-template <typename T, typename Enable = void> struct float_info;
-
-template <> struct float_info<float> {
-  using carrier_uint = uint32_t;
-  static constexpr int exponent_bits = 8;
-};
-
-template <> struct float_info<double> {
-  using carrier_uint = uint64_t;
-  static constexpr int exponent_bits = 11;
-};
-
-// An 80- or 128-bit floating point number.
-template <typename T>
-struct float_info<T, enable_if_t<std::numeric_limits<T>::digits == 64 ||
-                                 std::numeric_limits<T>::digits == 113 ||
-                                 is_float128<T>::value>> {
-  using carrier_uint = detail::uint128_t;
-  static const int exponent_bits = 15;
-};
-
-// A double-double floating point number.
-template <typename T>
-struct float_info<T, enable_if_t<is_double_double<T>::value>> {
-  using carrier_uint = detail::uint128_t;
-};
+// An unsigned integer type that holds the bits of Float.
+template <typename Float>
+using carrier_uint_t =
+    conditional_t<sizeof(Float) <= 4, uint32_t,
+                  conditional_t<sizeof(Float) <= 8, uint64_t, uint128_t>>;
 
 // A decimal floating-point number significand * pow(10, exponent).
 template <typename T> struct decimal_fp {
@@ -3160,16 +3138,18 @@ template <typename Float> constexpr auto num_significand_bits() -> int {
                                  (has_implicit_bit<Float>() ? 1 : 0));
 }
 
-template <typename Float>
-constexpr auto exponent_mask() -> typename float_info<Float>::carrier_uint {
-  using float_uint = typename float_info<Float>::carrier_uint;
-  return ((float_uint(1) << float_info<Float>::exponent_bits) - 1)
-         << num_significand_bits<Float>();
-}
 template <typename Float> constexpr auto exponent_bias() -> int {
   // std::numeric_limits may not support __float128.
   return is_float128<Float>() ? 16383
                               : std::numeric_limits<Float>::max_exponent - 1;
+}
+
+// An exponent field with all bits set is 2 * bias + 1.
+template <typename Float>
+constexpr auto exponent_mask() -> carrier_uint_t<Float> {
+  return carrier_uint_t<Float>(
+             static_cast<unsigned>(2 * exponent_bias<Float>() + 1))
+         << num_significand_bits<Float>();
 }
 
 FMT_CONSTEXPR inline auto compute_exp_size(int exp) -> int {
@@ -3221,7 +3201,7 @@ template <typename F> struct basic_fp {
   FMT_CONSTEXPR auto assign(Float n) -> bool {
     static_assert(std::numeric_limits<Float>::digits <= 113, "unsupported FP");
     // Assume Float is in the format [sign][exponent][significand].
-    using carrier_uint = typename float_info<Float>::carrier_uint;
+    using carrier_uint = carrier_uint_t<Float>;
     const auto num_float_significand_bits =
         detail::num_significand_bits<Float>();
     const auto implicit_bit = carrier_uint(1) << num_float_significand_bits;
@@ -4672,10 +4652,8 @@ FMT_CONSTEXPR20 void format_hexfloat(Float value, format_specs specs,
   // simplify implementation.
   static_assert(!std::is_same<Float, float>::value, "");
 
-  using info = float_info<Float>;
-
   // Assume Float is in the format [sign][exponent][significand].
-  using carrier_uint = typename info::carrier_uint;
+  using carrier_uint = carrier_uint_t<Float>;
 
   const auto num_float_significand_bits = detail::num_significand_bits<Float>();
 
@@ -4792,8 +4770,8 @@ FMT_CONSTEXPR20 auto format_float(Float value, int precision,
   unsigned dragon_flags = 0;
   if (!is_fast_float<Float>() || is_constant_evaluated()) {
     const auto inv_log2_10 = 0.3010299956639812;  // 1 / log2(10)
-    using info = float_info<decltype(converted_value)>;
-    const auto f = basic_fp<typename info::carrier_uint>(converted_value);
+    const auto f =
+        basic_fp<carrier_uint_t<decltype(converted_value)>>(converted_value);
     // Compute exp, an approximate power of 10, such that
     //   10^(exp - 1) <= value < 10^exp or 10^exp <= value < 10^(exp + 1).
     // This is based on log10(value) == log2(value) / log2(10) and approximation
