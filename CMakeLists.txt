@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8...3.28)
+cmake_minimum_required(VERSION 3.8...4.5)
 include_guard(GLOBAL)
 
 # Fallback for using newer policies on CMake <3.12.
@@ -367,6 +367,11 @@ function (add_module_library name)
   if (${AML_USE_CMAKE_MODULES})
     target_sources(${name} PUBLIC FILE_SET fmt TYPE CXX_MODULES FILES
                                   ${sources})
+
+    if (CMAKE_CXX_STDLIB_MODULES_JSON AND CMAKE_VERSION VERSION_GREATER_EQUAL 4.5)
+      target_compile_definitions(${name} PUBLIC FMT_IMPORT_STD)
+    endif ()
+
     return()
   endif ()
 
