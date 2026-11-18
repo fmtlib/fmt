@@ -65,6 +65,31 @@ jobs:
       env:
         CTEST_OUTPUT_ON_FAILURE: True
 
+  shared-module:
+    name: x64 v143 shared module install
+    runs-on: windows-2022
+    steps:
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+    - name: Test the installed shared module
+      run: |
+        $PSNativeCommandUseErrorActionPreference = $true
+        $vswhere = "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe"
+        $vs = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+        Import-Module "$vs/Common7/Tools/Microsoft.VisualStudio.DevShell.dll"
+        Enter-VsDevShell -VsInstallPath $vs -SkipAutomaticLocation -DevCmdArguments "-arch=x64 -host_arch=x64"
+
+        $prefix = "$PWD/build/shared-module/install"
+        $fmt = "build/shared-module/fmt"
+        $test = "build/shared-module/test"
+        $options = @("-G", "Ninja", "-DCMAKE_BUILD_TYPE=Release", "-DCMAKE_CXX_STANDARD=20")
+        cmake -S . -B $fmt @options -DBUILD_SHARED_LIBS=ON -DFMT_MODULE=ON -DFMT_TEST=OFF "-DCMAKE_INSTALL_PREFIX=$prefix"
+        cmake --build $fmt --target install
+        cmake -S test/installed-module-test -B $test @options "-DCMAKE_PREFIX_PATH=$prefix" "-DFMT_BINARY_DIR:PATH=$PWD/$fmt"
+        cmake --build $test
+        $env:PATH = "$prefix/bin;$env:PATH"
+        & "./$test/module-test.exe"
+
   mingw:
     runs-on: windows-latest
     defaults:
