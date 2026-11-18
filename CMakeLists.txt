@@ -368,7 +368,8 @@ function (add_module_library name)
     target_sources(${name} PUBLIC FILE_SET fmt TYPE CXX_MODULES FILES
                                   ${sources})
 
-    if (CMAKE_CXX_STDLIB_MODULES_JSON AND CMAKE_VERSION VERSION_GREATER_EQUAL 4.5)
+    if (CMAKE_CXX_STDLIB_MODULES_JSON AND CMAKE_VERSION VERSION_GREATER_EQUAL
+                                          4.5)
       target_compile_definitions(${name} PUBLIC FMT_IMPORT_STD)
     endif ()
 
