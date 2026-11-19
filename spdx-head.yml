@@ -1,0 +1,54 @@
+name: spdx-head
+
+# 许可证头检查：只约束新增/修改的 .h/.cc，不影响存量文件。
+# 放入 .github/workflows/spdx-head.yml 即可生效。
+
+on:
+  pull_request:
+    paths:
+      - '**.h'
+      - '**.cc'
+
+permissions:
+  contents: read
+
+jobs:
+  spdx-head:
+    name: SPDX header check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Require SPDX-License-Identifier in changed sources
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin "${BASE_REF}"
+          mapfile -t files < <(git diff --name-only --diff-filter=ACMR \
+            "origin/${BASE_REF}...HEAD" -- '*.h' '*.cc')
+
+          if [ "${#files[@]}" -eq 0 ]; then
+            echo "没有新增或修改的 .h/.cc 文件，跳过检查。"
+            exit 0
+          fi
+
+          missing=0
+          for f in "${files[@]}"; do
+            [ -f "$f" ] || continue
+            if head -n 10 "$f" | grep -q 'SPDX-License-Identifier:'; then
+              echo "[OK]   $f"
+            else
+              echo "[MISS] $f"
+              missing=$((missing + 1))
+            fi
+          done
+
+          echo "checked=${#files[@]} missing=${missing}"
+          if [ "$missing" -gt 0 ]; then
+            echo "::error::${missing} 个文件缺少 SPDX-License-Identifier 头"
+            exit 1
+          fi
