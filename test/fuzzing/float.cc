@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <cstdlib>
+#include <iterator>
 #include <limits>
 #include <stdexcept>
 

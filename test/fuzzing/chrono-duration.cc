@@ -4,6 +4,7 @@
 #include <fmt/chrono.h>
 
 #include <cstdint>
+#include <iterator>
 
 #include "fuzzer-common.h"
 
