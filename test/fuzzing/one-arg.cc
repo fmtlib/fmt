@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <exception>
+#include <iterator>
 
 #include "fuzzer-common.h"
 

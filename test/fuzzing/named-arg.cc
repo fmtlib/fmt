@@ -4,6 +4,7 @@
 #include <fmt/chrono.h>
 
 #include <cstdint>
+#include <iterator>
 #include <type_traits>
 #include <vector>
 
