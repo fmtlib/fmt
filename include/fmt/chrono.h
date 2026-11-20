@@ -18,6 +18,7 @@
 #  include <locale>
 #  include <ostream>
 #  include <type_traits>
+#  include <array>
 #endif
 
 #include "format.h"
