@@ -315,6 +315,12 @@ template <typename Char> struct numpunct : std::numpunct<Char> {
   Char do_decimal_point() const override { return '?'; }
   std::string do_grouping() const override { return "\03"; }
   Char do_thousands_sep() const override { return '~'; }
+  std::basic_string<Char> do_truename() const override {
+    return {Char('y'), Char('e'), Char('s')};
+  }
+  std::basic_string<Char> do_falsename() const override {
+    return {Char('n'), Char('o')};
+  }
 };
 
 template <typename Char> struct no_grouping : std::numpunct<Char> {
@@ -337,6 +343,22 @@ template <typename Char> struct small_grouping : std::numpunct<Char> {
   std::string do_grouping() const override { return "\01"; }
   Char do_thousands_sep() const override { return ','; }
 };
+
+TEST(locale_test, format_bool) {
+  auto loc = std::locale(std::locale::classic(), new numpunct<char>());
+  EXPECT_EQ(fmt::format(loc, "{:L} {:Ls}", true, false), "yes no");
+  EXPECT_EQ(fmt::format(loc, "{:L} {:Ls}", false, true), "no yes");
+  EXPECT_EQ(fmt::format(loc, "{:5L}|{:*>5Ls}", true, false), "yes  |***no");
+  EXPECT_EQ(fmt::format(loc, "{} {:s}", true, false), "true false");
+  EXPECT_EQ(fmt::format(loc, "{:Ld} {:Ld}", true, false), "1 0");
+  EXPECT_EQ(fmt::format(std::locale::classic(), "{:L} {:Ls}", true, false),
+            "true false");
+
+  auto wloc = std::locale(std::locale::classic(), new numpunct<wchar_t>());
+  EXPECT_EQ(fmt::format(wloc, L"{:L} {:Ls}", true, false), L"yes no");
+  EXPECT_EQ(fmt::format(wloc, L"{:L} {:Ls}", false, true), L"no yes");
+  EXPECT_EQ(fmt::format(wloc, L"{:5L}|{:*>5Ls}", true, false), L"yes  |***no");
+}
 
 TEST(locale_test, localized_double) {
   auto loc = std::locale(std::locale(), new numpunct<char>());

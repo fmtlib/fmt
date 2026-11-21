@@ -2833,8 +2833,29 @@ template <> inline auto decimal_point(locale_ref loc) -> wchar_t {
   return decimal_point_impl<wchar_t>(loc);
 }
 
+#if FMT_USE_LOCALE
+template <typename Char>
+FMT_API auto bool_name_impl(bool value, locale_ref loc)
+    -> std::basic_string<Char>;
+template <typename Char>
+inline auto bool_name(bool value, locale_ref loc) -> std::basic_string<Char> {
+  auto name = bool_name_impl<char>(value, loc);
+  return {name.begin(), name.end()};
+}
+template <>
+inline auto bool_name<wchar_t>(bool value, locale_ref loc) -> std::wstring {
+  return bool_name_impl<wchar_t>(value, loc);
+}
+#endif
+
 #ifndef FMT_HEADER_ONLY
 FMT_BEGIN_EXPORT
+#if FMT_USE_LOCALE
+extern template FMT_API auto bool_name_impl<char>(bool, locale_ref)
+    -> std::string;
+extern template FMT_API auto bool_name_impl<wchar_t>(bool, locale_ref)
+    -> std::wstring;
+#endif
 extern template FMT_API auto thousands_sep_impl<char>(locale_ref)
     -> thousands_sep_result<char>;
 extern template FMT_API auto thousands_sep_impl<wchar_t>(locale_ref)
@@ -4981,11 +5002,17 @@ FMT_CONSTEXPR auto write(OutputIt out, T value) -> OutputIt {
 template <typename Char, typename OutputIt, typename T,
           FMT_ENABLE_IF(std::is_same<T, bool>::value)>
 FMT_CONSTEXPR auto write(OutputIt out, T value, const format_specs& specs = {},
-                         locale_ref = {}) -> OutputIt {
-  return specs.type() != presentation_type::none &&
-                 specs.type() != presentation_type::string
-             ? write<Char>(out, value ? 1 : 0, specs, {})
-             : write_bytes<Char>(out, value ? "true" : "false", specs);
+                         locale_ref loc = {}) -> OutputIt {
+  if (specs.type() != presentation_type::none &&
+      specs.type() != presentation_type::string)
+    return write<Char>(out, value ? 1 : 0, specs, {});
+#if FMT_USE_LOCALE
+  if (specs.localized())
+    return write<Char>(
+        out, basic_string_view<Char>(bool_name<Char>(value, loc)), specs);
+#endif
+  ignore_unused(loc);
+  return write_bytes<Char>(out, value ? "true" : "false", specs);
 }
 
 template <typename Char, typename OutputIt>

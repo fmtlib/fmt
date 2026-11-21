@@ -21,6 +21,11 @@ template FMT_API auto zmij::detail::write(char* buffer, double value) noexcept
 
 namespace detail {
 
+#if FMT_USE_LOCALE
+template FMT_API auto bool_name_impl<char>(bool, locale_ref) -> std::string;
+template FMT_API auto bool_name_impl<wchar_t>(bool, locale_ref) -> std::wstring;
+#endif
+
 template FMT_API auto to_decimal(float x) noexcept -> decimal_fp<float>;
 template FMT_API auto to_decimal(double x) noexcept -> decimal_fp<double>;
 
