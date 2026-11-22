@@ -99,6 +99,13 @@ TEST(string_view_test, compare) {
   check_op<std::greater_equal>();
 }
 
+#if FMT_USE_CONSTEXPR
+TEST(string_view_test, constexpr_from_c_string) {
+  constexpr auto sv = fmt::string_view("foo");
+  static_assert(sv.size() == 3, "");
+}
+#endif
+
 #if FMT_USE_CONSTEVAL
 TEST(string_view_test, from_constexpr_fixed_string) {
   constexpr int size = 4;
