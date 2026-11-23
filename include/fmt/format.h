@@ -2724,7 +2724,7 @@ template <typename T> FMT_CONSTEXPR auto count_digits_fallback(T n) -> int {
 // the lack of static constexpr in constexpr functions.
 inline auto do_count_digits(uint64_t n) -> int {
   // This has comparable performance to the version by Kendall Willets
-  // (https://github.com/fmtlib/format-benchmark/blob/master/digits10)
+  // (https://github.com/fmtlib/format-benchmark/tree/master/src/digits10)
   // but uses smaller tables.
   // Maps bsr(n) to ceil(log10(pow(2, bsr(n) + 1) - 1)).
   static constexpr uint8_t bsr2log10[] = {
