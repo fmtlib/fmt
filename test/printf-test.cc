@@ -326,6 +326,13 @@ TEST(printf_test, float_precision) {
   EXPECT_PRINTF(buffer, "%.3a", 1234.5678);
 }
 
+TEST(printf_test, precision_overflow) {
+  EXPECT_THROW_MSG(test_sprintf(format("%.{}d", big_num), 42), format_error,
+                   "number is too big");
+  EXPECT_THROW_MSG(test_sprintf("%.999999999999999999999999f", 1.0),
+                   format_error, "number is too big");
+}
+
 TEST(printf_test, string_precision) {
   char test[] = {'H', 'e', 'l', 'l', 'o'};
   EXPECT_EQ(fmt::sprintf("%.4s", test), "Hell");
