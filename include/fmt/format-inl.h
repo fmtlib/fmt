@@ -2234,8 +2234,8 @@ template <typename F> class glibc_file : public file_base<F> {
 template <typename F> class apple_file : public file_base<F> {
  private:
   enum {
-    line_buffered = 1,  // __SNBF
-    unbuffered = 2,     // __SLBF
+    line_buffered = 1,  // __SLBF
+    unbuffered = 2,     // __SNBF
     writing = 8         // __SWR
   };
 
