@@ -1794,6 +1794,7 @@ struct duration_formatter {
     if (ns == numeric_system::standard) return write(hour(), 2, pad);
     auto time = tm();
     time.tm_hour = to_nonnegative_int(hour(), 24);
+    write_sign();
     format_tm(time, &tm_writer_type::on_24_hour, ns, pad);
   }
 
@@ -1803,6 +1804,7 @@ struct duration_formatter {
     if (ns == numeric_system::standard) return write(hour12(), 2, pad);
     auto time = tm();
     time.tm_hour = to_nonnegative_int(hour12(), 12);
+    write_sign();
     format_tm(time, &tm_writer_type::on_12_hour, ns, pad);
   }
 
@@ -1812,6 +1814,7 @@ struct duration_formatter {
     if (ns == numeric_system::standard) return write(minute(), 2, pad);
     auto time = tm();
     time.tm_min = to_nonnegative_int(minute(), 60);
+    write_sign();
     format_tm(time, &tm_writer_type::on_minute, ns, pad);
   }
 
@@ -1837,11 +1840,13 @@ struct duration_formatter {
     }
     auto time = tm();
     time.tm_sec = to_nonnegative_int(second(), 60);
+    write_sign();
     format_tm(time, &tm_writer_type::on_second, ns, pad);
   }
 
   void on_12_hour_time() {
     if (write_if_nonfinite()) return;
+    write_sign();
     format_tm(time(), &tm_writer_type::on_12_hour_time);
   }
 
