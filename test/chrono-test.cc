@@ -914,6 +914,12 @@ TEST(chrono_test, timestamp_ratios) {
   }
 }
 
+TEST(chrono_test, timestamp_custom_period) {
+  using tick = std::chrono::duration<int, std::ratio<3, 2>>;
+  EXPECT_EQ(fmt::format("{:%S}", sys_time<tick>(tick(1))), "01.5");
+  EXPECT_EQ(fmt::format("{:%S}", sys_time<tick>(tick(-1))), "58.5");
+}
+
 TEST(chrono_test, timestamp_sub_seconds) {
   auto t1 = sys_time<std::chrono::duration<long long, std::ratio<1, 3>>>(
       std::chrono::duration<long long, std::ratio<1, 3>>(4));

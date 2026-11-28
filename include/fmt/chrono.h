@@ -2233,10 +2233,10 @@ struct formatter<sys_time<Duration>, Char> : private formatter<std::tm, Char> {
       return formatter<std::tm, Char>::format(tm, ctx);
     }
     Duration epoch = val.time_since_epoch();
-    Duration subsecs = detail::duration_cast<Duration>(
-        epoch - detail::duration_cast<std::chrono::seconds>(epoch));
+    auto subsecs = epoch - detail::duration_cast<std::chrono::seconds>(epoch);
     if (subsecs.count() < 0) {
-      auto second = detail::duration_cast<Duration>(std::chrono::seconds(1));
+      auto second =
+          detail::duration_cast<decltype(subsecs)>(std::chrono::seconds(1));
       if (tm.tm_sec != 0) {
         --tm.tm_sec;
       } else {
