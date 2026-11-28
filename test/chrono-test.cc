@@ -675,6 +675,12 @@ TEST(chrono_test, format_simple_q) {
   EXPECT_EQ(fmt::format("{:%Q %q}", std::chrono::duration<double>(1.234)),
             "1.234 s");
   EXPECT_EQ(fmt::format("{:%Q %q}", dms(1.234)), "1.234 ms");
+  // %Q writes the whole count, not 6 significant digits like {} does.
+  EXPECT_EQ(fmt::format("{:%Q %q}", std::chrono::duration<double>(98871.96)),
+            "98871.96 s");
+  EXPECT_EQ(fmt::format("{:%Q}", dms(1234567.0)), "1234567");
+  EXPECT_EQ(fmt::format("{:%Q}", dms(-0.1234567)), "-0.1234567");
+  EXPECT_EQ(fmt::format("{}", dms(1234567.0)), "1.23457e+06ms");
 }
 
 TEST(chrono_test, format_precision_q) {
