@@ -1299,9 +1299,12 @@ constexpr auto to_ascii(Char c) -> char {
 // Returns the number of code units in a code point or 1 on error.
 template <typename Char>
 FMT_CONSTEXPR auto code_point_length(const Char* begin) -> int {
-  if FMT_CONSTEXPR20 (sizeof(Char) != 1) return 1;
-  auto c = static_cast<unsigned char>(*begin);
-  return static_cast<int>((0x3a55000000000000ull >> (2 * (c >> 3))) & 3) + 1;
+  if FMT_CONSTEXPR20 (sizeof(Char) != 1) {
+    return 1;
+  } else {
+    auto c = static_cast<unsigned char>(*begin);
+    return static_cast<int>((0x3a55000000000000ull >> (2 * (c >> 3))) & 3) + 1;
+  }
 }
 
 // Parses the range [begin, end) as an unsigned integer. This function assumes
