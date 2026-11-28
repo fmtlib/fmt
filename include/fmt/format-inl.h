@@ -1900,6 +1900,14 @@ FMT_FUNC auto decimal_point_impl(locale_ref loc) -> Char {
 }
 
 #if FMT_USE_LOCALE
+template <typename Char>
+FMT_FUNC auto bool_name_impl(bool value, locale_ref loc)
+    -> std::basic_string<Char> {
+  auto locale = loc.get<detail::locale>();
+  auto& facet = use_facet<numpunct<Char>>(locale);
+  return value ? facet.truename() : facet.falsename();
+}
+
 FMT_FUNC auto write_loc(appender out, loc_value value,
                         const format_specs& specs, locale_ref loc) -> bool {
   auto locale = loc.get<std::locale>();
