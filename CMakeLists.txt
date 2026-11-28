@@ -455,6 +455,12 @@ if (FMT_MODULE)
   add_module_library(fmt-module src/fmt.cc USE_CMAKE_MODULES
                      ${FMT_USE_CMAKE_MODULES})
   setup_target(fmt-module PUBLIC)
+  if (WIN32 AND BUILD_SHARED_LIBS)
+    target_compile_definitions(
+      fmt-module
+      PRIVATE FMT_LIB_EXPORT
+      INTERFACE FMT_SHARED)
+  endif ()
 endif ()
 
 add_library(fmt-header-only INTERFACE)
