@@ -541,6 +541,14 @@ template <typename Char> class basic_string_view {
       size_ = __builtin_strlen(detail::narrow(s));  // strlen is not constexpr.
       return;
     }
+#elif FMT_MSC_VERSION >= 1925
+    // MSVC has __builtin_strlen but not __has_builtin; strlen generates the
+    // same code and also compiles with older versions.
+    if (std::is_same<Char, char>::value &&
+        !__builtin_is_constant_evaluated()) {
+      size_ = strlen(detail::narrow(s));
+      return;
+    }
 #endif
     size_t len = 0;
     while (*s++) ++len;
